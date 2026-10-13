@@ -1,8 +1,10 @@
 // Shared setup for the simulation tests: seeded games and a standard little center.
-import type { ItemType, Role, RoomType } from '../../src/data';
-import { Sim, type SimEvent } from '../../src/sim';
-import { newGame, type Room, setSeed, type Staff } from '../../src/state';
-import type { Rect } from '../../src/world';
+import { type ItemType, type Role, type RoomType } from '../../src/core/data';
+import { setSeed } from '../../src/core/random';
+import { Sim, type SimEvent } from '../../src/core/sim/sim';
+import { newGame } from '../../src/core/state/game';
+import { type Room, type Staff } from '../../src/core/state/types';
+import { type Rect } from '../../src/core/world';
 
 export function freshSim(seed = 1): Sim {
   setSeed(seed);

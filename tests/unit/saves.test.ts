@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { setSeed } from '../../src/core/random';
+import { newGame, SAVE_VERSION } from '../../src/core/state/game';
 import {
   archiveAutosave,
   autosave,
@@ -18,7 +20,6 @@ import {
   timeAgo,
   writeSave,
 } from '../../src/saves';
-import { newGame, SAVE_VERSION, setSeed } from '../../src/state';
 import { openCenter, run } from './helpers';
 
 // a stand-in for the browser's storage, with an optional size limit

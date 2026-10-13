@@ -1,5 +1,5 @@
 // Lookups for parts of the page that are always there, so a missing one fails loudly.
-import { must } from '../util';
+import { must } from '../core/util';
 
 export function byId(id: string): HTMLElement {
   return must(document.getElementById(id), `#${id}`);

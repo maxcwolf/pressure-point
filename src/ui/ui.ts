@@ -1,5 +1,5 @@
 // DOM heads-up display: build menus, inspector, objectives, advisor, toasts.
-import type { Audio } from '../audio';
+import { type Audio } from '../audio';
 import {
   conditionOf,
   CONDITIONS,
@@ -31,12 +31,12 @@ import {
   traitOf,
   WEAR_REPAIR,
   WINDOW_COST,
-} from '../data';
-import type { View } from '../render/view';
+} from '../core/data';
+import { dateOf, money, netOf, type Sim, type SimEvent } from '../core/sim/sim';
+import { type Guest, type Item, type Ledger, type Room, type Staff } from '../core/state/types';
+import { type View } from '../render/view';
 import { gameDate, latestSave } from '../saves';
-import { dateOf, money, netOf, type Sim, type SimEvent } from '../sim';
-import type { Guest, Item, Ledger, Room, Staff } from '../state';
-import type { Tools } from '../tools';
+import { type Tools } from '../tools';
 import { escapeHtml } from '../util';
 import { byId, query } from './dom';
 import { mountSaves } from './saves';

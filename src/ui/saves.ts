@@ -1,4 +1,6 @@
 // The saved-games list, shared by the title screen and the in-game menu.
+import { money } from '../core/sim/sim';
+import { type GameState } from '../core/state/types';
 import {
   AUTOSAVE_ID,
   defaultSaveName,
@@ -13,8 +15,6 @@ import {
   timeAgo,
   writeSave,
 } from '../saves';
-import { money } from '../sim';
-import type { GameState } from '../state';
 import { escapeHtml } from '../util';
 
 export interface SavesPanelOptions {

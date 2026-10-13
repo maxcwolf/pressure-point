@@ -1,6 +1,7 @@
 // Tiny synthesized sound effects and a generative lounge loop. No audio files needed.
 
-import { at, isRecord } from './util';
+import { at } from './core/util';
+import { isRecord } from './util';
 
 type Note = [freq: number, start: number, dur: number, gain?: number, type?: OscillatorType];
 

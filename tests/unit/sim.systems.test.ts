@@ -9,7 +9,7 @@ import {
   LOAN_STEP,
   PRICE_MAX,
   PRICE_MIN,
-} from '../../src/data';
+} from '../../src/core/data';
 import {
   addPostureLab,
   addRestroom,

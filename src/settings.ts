@@ -1,5 +1,5 @@
 // Player preferences that outlive any one game: which optional disciplines new games start with.
-import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from './data';
+import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from './core/data';
 import { isRecord } from './util';
 
 const KEY = 'pressure-point-settings';

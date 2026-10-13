@@ -3,8 +3,10 @@
 // Everything lives in localStorage, which both the browser and the desktop app
 // have. Saves can also be exported to a file and imported again, for backups
 // and for moving a game between the browser and the app.
-import { DAYS_PER_MONTH } from './data';
-import { type GameState, SAVE_VERSION, upgradeSave } from './state';
+import { DAYS_PER_MONTH } from './core/data';
+import { SAVE_VERSION } from './core/state/game';
+import { type GameState } from './core/state/types';
+import { upgradeSave } from './core/state/upgrade';
 import { isRecord } from './util';
 
 export const AUTOSAVE_ID = 'auto';

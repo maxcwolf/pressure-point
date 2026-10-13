@@ -1,5 +1,5 @@
 // What the desktop app offers the game. In a browser there is no desktop app, so this is undefined.
-import type { DesktopApi } from '../electron/api';
+import { type DesktopApi } from '../electron/api';
 
 declare global {
   interface Window {

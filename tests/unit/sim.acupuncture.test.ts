@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { conditionOf, CONDITIONS, DISCIPLINES, ITEMS, MODALITIES, ROOMS } from '../../src/data';
+import { conditionOf, CONDITIONS, DISCIPLINES, ITEMS, MODALITIES, ROOMS } from '../../src/core/data';
+import { type Sim } from '../../src/core/sim/sim';
+import { disciplineOn, newGame } from '../../src/core/state/game';
+import { type GameState } from '../../src/core/state/types';
+import { upgradeSave } from '../../src/core/state/upgrade';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../src/settings';
-import type { Sim } from '../../src/sim';
-import { disciplineOn, type GameState, newGame, upgradeSave } from '../../src/state';
 import { addAcupuncture, addPostureLab, addStaffRoom, addTraining, hire, openCenter, run, runUntil } from './helpers';
 
 const disciplineOf = (condition: string) => MODALITIES[conditionOf(condition).modality].discipline;

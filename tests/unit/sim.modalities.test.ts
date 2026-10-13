@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { conditionOf, DAY_SECONDS, MODALITIES, STONE_USE } from '../../src/data';
-import type { Sim } from '../../src/sim';
+import { conditionOf, DAY_SECONDS, MODALITIES, STONE_USE } from '../../src/core/data';
+import { type Sim } from '../../src/core/sim/sim';
 import { addTraining, hire, openCenter, run, runUntil } from './helpers';
 
 /** Play for a while, turning every arriving guest into one condition. */

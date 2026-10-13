@@ -17,7 +17,7 @@ import {
   SIDEWALK_Y,
   W,
 } from './data';
-import type { GameState, Item, Room, Waypoint } from './state';
+import { type GameState, type Item, type Room, type Waypoint } from './state/types';
 import { at } from './util';
 
 export const tileIdx = (x: number, y: number) => y * W + x;

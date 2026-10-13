@@ -19,11 +19,11 @@ import {
   SIDEWALK_Y,
   TITLE_LINES,
   W,
-} from '../data';
-import type { Sim } from '../sim';
-import type { Char, Room } from '../state';
-import { at, must } from '../util';
-import { itemCenter, itemDims, Z_CORRIDOR, Z_OUTSIDE } from '../world';
+} from '../core/data';
+import { type Sim } from '../core/sim/sim';
+import { type Char, type Room } from '../core/state/types';
+import { at, must } from '../core/util';
+import { itemCenter, itemDims, Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
 import {
   buildCharacter,
   buildItem,

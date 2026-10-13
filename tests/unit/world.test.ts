@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { BX0, BY0, ENT_IN_Y, ENT_X, SIDEWALK_Y, W } from '../../src/data';
-import { accessPose, accessTile, footprint, itemDims, rotPoint, rotVec } from '../../src/world';
+import { BX0, BY0, ENT_IN_Y, ENT_X, SIDEWALK_Y, W } from '../../src/core/data';
+import { accessPose, accessTile, footprint, itemDims, rotPoint, rotVec } from '../../src/core/world';
 import { addConsult, addMassage, freshSim, hire, LAYOUT } from './helpers';
 
 describe('item geometry', () => {

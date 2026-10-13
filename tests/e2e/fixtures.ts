@@ -6,10 +6,10 @@
 // what I am holding go?". Layout changes then move the answer, not the test.
 import { expect, type Page, test as base } from '@playwright/test';
 
-import type { ITEMS, ROOMS } from '../../src/data';
-import type { Sim } from '../../src/sim';
-import type { GameState, Room, WallSpot } from '../../src/state';
-import type { Check, Rect } from '../../src/world';
+import { type ITEMS, type ROOMS } from '../../src/core/data';
+import { type Sim } from '../../src/core/sim/sim';
+import { type GameState, type Room, type WallSpot } from '../../src/core/state/types';
+import { type Check, type Rect } from '../../src/core/world';
 
 interface Point {
   x: number;

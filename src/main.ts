@@ -5,17 +5,18 @@ import '@fontsource/fredoka/latin-700.css';
 import './style.css';
 
 import { Audio } from './audio';
-import { BX0, BX1, BY0, BY1, ITEMS, ROOMS, W } from './data';
+import { BX0, BX1, BY0, BY1, ITEMS, ROOMS, W } from './core/data';
+import { Sim } from './core/sim/sim';
+import { newGame } from './core/state/game';
+import { type GameState } from './core/state/types';
+import { accessTile, itemDims } from './core/world';
 import { desktop } from './desktop';
 import { isClick, isDragging } from './input';
 import { View } from './render/view';
 import { archiveAutosave, autosave, AUTOSAVE_ID, readSave } from './saves';
 import { loadDisciplinePrefs } from './settings';
-import { Sim } from './sim';
-import { type GameState, newGame } from './state';
 import { Tools } from './tools';
 import { showTitle, UI } from './ui/ui';
-import { accessTile, itemDims } from './world';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const audio = new Audio();

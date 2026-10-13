@@ -1,4 +1,5 @@
 // The simulation: guests, staff, queues, money, reputation.
+
 import {
   type AccessRole,
   ANNOUNCEMENTS,
@@ -42,33 +43,23 @@ import {
   WEAR_REPAIR,
   WINDOW_COST,
   WINDOW_MAX_BONUS,
-} from './data';
+} from '../data';
+import { fairSalary, makeCandidate, randomLook, randomName, refillCandidates } from '../people';
+import { irnd, pick, random, rnd } from '../random';
+import { disciplineOn, emptyLedger, sameSpot } from '../state/game';
 import {
   type Char,
-  clamp,
-  disciplineOn,
-  emptyLedger,
-  fairSalary,
   type GameState,
   type Guest,
-  irnd,
   type Item,
   type Ledger,
   type Look,
-  makeCandidate,
-  pick,
-  random,
-  randomLook,
-  randomName,
-  refillCandidates,
-  rnd,
   type Room,
-  sameSpot,
   type Staff,
   type WallSpot,
   type Waypoint,
-} from './state';
-import { at, must } from './util';
+} from '../state/types';
+import { at, clamp, must } from '../util';
 import {
   accessPose,
   accessTile,
@@ -82,7 +73,7 @@ import {
   tileIdx,
   World,
   Z_CORRIDOR,
-} from './world';
+} from '../world';
 
 export type SimEvent =
   | { type: 'float'; text: string; x: number; y: number; kind: 'good' | 'bad' | 'info' }
