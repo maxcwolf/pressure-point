@@ -4,7 +4,7 @@
 
 Or download the macOS or Windows app from the [latest release](https://github.com/maxcwolf/pressure-point/releases/latest).
 
-A healing-center management sim, in the spirit of the classic hospital tycoon games. Build rooms, hire staff, and untie the public.
+A healing-center management sim, in the spirit of the classic hospital tycoon games. Build rooms, hire staff, and treat guests.
 
 **Massage therapy** and **acupuncture** are in. Reiki is planned.
 
