@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.3.0
+
+- **Room blueprints:** furnish a room, add windows and move its door before you pay for it.
+- **Windows** on any room, for more prestige.
+- Placing furniture shows which square staff use and which guests use.
+- Behind the scenes: reorganized code, a rebuilt interface and a sandboxed desktop app. Saved games carry over.
+
 ## v0.2.0
 
 - **Acupuncture:** a new clinic, the Acupuncturist, four techniques and eight conditions, from the first star.
