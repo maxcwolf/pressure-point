@@ -13,6 +13,7 @@ import {
   H,
   ITEMS,
   ROAD_Y,
+  ROLES,
   ROOMS,
   SIDEWALK_Y,
   W,
@@ -274,7 +275,22 @@ export class View {
           const def = ROOMS[room.type];
           ctx.fillStyle = def.floor[alt ? 0 : 1];
           ctx.fillRect(px, py, TS, TS);
-          if (room.type === 'massage') {
+          if (room.type === 'acupuncture') {
+            // woven mats
+            ctx.strokeStyle = 'rgba(120,60,40,0.16)';
+            ctx.lineWidth = 1;
+            for (let i = 1; i < 6; i++) {
+              ctx.beginPath();
+              if (alt) {
+                ctx.moveTo(px + (i * TS) / 6, py);
+                ctx.lineTo(px + (i * TS) / 6, py + TS);
+              } else {
+                ctx.moveTo(px, py + (i * TS) / 6);
+                ctx.lineTo(px + TS, py + (i * TS) / 6);
+              }
+              ctx.stroke();
+            }
+          } else if (room.type === 'massage') {
             ctx.strokeStyle = 'rgba(90,55,20,0.18)';
             ctx.lineWidth = 1.5;
             for (let i = 1; i < 3; i++) {
@@ -503,28 +519,32 @@ export class View {
         view.group.scale.y = 0.82 + 0.18 * k;
       } else if (it.type === 'stone_warmer') {
         (view.group.userData.glow as THREE.MeshStandardMaterial).emissiveIntensity = (it.water / 100) * 1.4;
-      } else if (it.type === 'massage_table') {
-        const guest = it.progress > 0.04 ? this.sim.guest(it.serving) : undefined;
-        // only when it is being done properly: no stones without a hot warmer and trained hands
-        (view.group.userData.stones as THREE.Object3D).visible =
-          !!guest &&
-          guest.state === 'served' &&
-          CONDITION_BY_ID[guest.condition].modality === 'stone' &&
-          !this.sim.deliveryProblem(it, this.sim.staff(it.staffId), this.sim.modalityOf(guest));
       } else if (it.type === 'posture_scanner') {
         const ring = view.group.userData.ring as THREE.Mesh;
         const scanning = it.serving > 0 && it.progress > 0;
         ring.position.y = scanning ? 0.8 + Math.sin(t * 3.5) * 0.6 : 0.2;
         ring.visible = it.wear < 100;
-      } else if (it.type === 'diffuser') {
-        (view.group.userData.puffs as THREE.Group).children.forEach((p, i) => {
-          const f = (t * 0.5 + i / 3 + it.id * 0.13) % 1;
-          p.position.set(Math.sin(f * 5 + i) * 0.08, f * 0.6, 0);
-          p.scale.setScalar(0.4 + f * 0.9);
-        });
       } else if (it.type === 'fountain') {
         (view.group.userData.orb as THREE.Mesh).position.y = 0.9 + Math.sin(t * 3 + it.id) * 0.035;
       }
+      // props on the guest during a session, but only when it is being done properly:
+      // no hot stones without a hot warmer, no cups from untrained hands
+      const session = view.group.userData.session as Record<string, THREE.Object3D> | undefined;
+      if (session) {
+        const guest = it.progress > 0.04 ? this.sim.guest(it.serving) : undefined;
+        const mod = guest && guest.state === 'served' ? this.sim.modalityOf(guest) : undefined;
+        const showing = mod && !this.sim.deliveryProblem(it, this.sim.staff(it.staffId), mod) ? mod.id : '';
+        for (const key in session) session[key].visible = key === showing;
+      }
+      // drifting smoke or scent
+      const puffs = view.group.userData.puffs as THREE.Group | undefined;
+      puffs?.children.forEach((p, i) => {
+        const f = (t * 0.5 + i / 3 + it.id * 0.13) % 1;
+        p.position.set(Math.sin(f * 5 + i) * 0.08, f * 0.6, 0);
+        p.scale.setScalar(0.4 + f * 0.9);
+      });
+      const led = view.group.userData.led as THREE.MeshStandardMaterial | undefined;
+      if (led) led.emissiveIntensity = Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1;
       if (it.serving && it.progress > 0) {
         liveBars.add(it.id);
         let bar = this.bars.get(it.id);
@@ -590,9 +610,9 @@ export class View {
     }
   }
 
-  /** Which massage a busy therapist is giving, so each modality can move differently. */
+  /** Which treatment a busy practitioner is giving, so each modality can move differently. */
   private workStyle(c: Char): Modality | null {
-    if (c.kind !== 'staff' || !c.busy || c.role !== 'therapist') return null;
+    if (c.kind !== 'staff' || !c.busy || !ROLES[c.role].discipline) return null;
     const guest = this.sim.guest(this.sim.world.item(c.post)?.serving ?? 0);
     return guest ? CONDITION_BY_ID[guest.condition].modality : null;
   }
@@ -659,6 +679,22 @@ export class View {
       lean = 0.3;
       headX = 0.28;
       armL = armR = -1.25 + Math.sin(t * 1.1 + c.id) * 0.025;
+    } else if (c.busy && (style === 'needling' || style === 'electro')) {
+      // one steady hand, one quick precise tap at a time
+      lean = 0.24;
+      headX = 0.2;
+      armL = -1.15;
+      armR = -1.25 + Math.max(0, Math.sin(t * (style === 'electro' ? 3 : 5.5) + c.id)) * 0.3;
+    } else if (c.busy && style === 'cupping') {
+      // setting cups down one after another
+      lean = 0.18;
+      armL = -1.1 + Math.max(0, Math.sin(t * 2.4 + c.id)) * 0.4;
+      armR = -1.1 + Math.max(0, Math.sin(t * 2.4 + c.id + Math.PI)) * 0.4;
+    } else if (c.busy && style === 'moxa') {
+      // holding a smoldering stick just above the skin, moving it slowly
+      lean = 0.22;
+      armL = -0.5;
+      armR = -1.3 + Math.sin(t * 1.3 + c.id) * 0.08;
     } else if (c.busy && style === 'swedish') {
       // long flowing strokes
       lean = 0.2;
@@ -677,6 +713,10 @@ export class View {
       armOut = 0.32;
       if (c.pose !== 'sit') armL = armR = 0;
     } else if (visual === 'crick') headZ = 0.55;
+    else if (visual === 'battery') {
+      lean += 0.18;
+      headX += 0.15;
+    } else if (visual === 'blanket') lean += 0.12;
     else if (visual === 'flex') {
       armOut = 2.35;
       armL = armR = 0;
@@ -702,6 +742,20 @@ export class View {
     rig.armL.rotation.z += (-armOut - rig.armL.rotation.z) * k;
     rig.armR.rotation.z += (armOut - rig.armR.rotation.z) * k;
     if (rig.band && rig.band.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
+    if (visual === 'jitter' && c.pose !== 'lie') {
+      // pins and needles: a constant fizzing shiver
+      rig.body.position.x = Math.sin(t * 47 + c.id) * 0.012;
+      rig.legL.rotation.z = Math.sin(t * 39 + c.id) * 0.07;
+      rig.legR.rotation.z = Math.sin(t * 43 + c.id) * 0.07;
+    } else if (rig.visual === 'jitter') {
+      rig.body.position.x = 0;
+      rig.legL.rotation.z = rig.legR.rotation.z = 0;
+    }
+    if (rig.bob && !rig.cured) {
+      rig.bob.position.y = 0.4 + Math.sin(t * 2.2 + c.id) * 0.03;
+      rig.bob.visible = c.pose !== 'lie';
+    }
+    if (rig.blink) rig.blink.emissiveIntensity = Math.sin(t * 6 + c.id) > 0 ? 1.5 : 0.05;
     if (rig.orbit && !rig.cured) {
       rig.orbit.rotation.y = t * 3.5 + c.id;
       rig.orbit.visible = c.pose !== 'lie';

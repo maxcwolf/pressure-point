@@ -2,6 +2,7 @@
 import {
   CAMEO_CHANCE,
   CAMEO_NAMES,
+  DISCIPLINES,
   FIRST_NAMES,
   LAST_NAMES,
   MODALITIES,
@@ -11,6 +12,7 @@ import {
   START_MONEY,
   TRAITS,
   TRAIT_BY_ID,
+  type Discipline,
   type ItemType,
   type Modality,
   type Pose,
@@ -115,7 +117,7 @@ export interface Staff extends CharBase {
   post: number;
   job: { kind: 'litter' | 'water' | 'repair'; id: number } | null;
   served: number;
-  /** Massage modalities this therapist is qualified in. */
+  /** Modalities of their discipline this member of staff is qualified in. */
   quals: Modality[];
   /** Course in progress: a modality id, or 'skill'. */
   training: { course: string; progress: number; seconds: number; cost: number } | null;
@@ -245,6 +247,8 @@ export interface GameState {
   emergency: Emergency | null;
   /** Game day the next emergency offer may appear. */
   nextEmergency: number;
+  /** Optional disciplines switched off for this game (absent means on). */
+  options: Partial<Record<Discipline, boolean>>;
   seenTips: string[];
 }
 
@@ -291,12 +295,14 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   const skill = clamp(Math.round(rnd(0.6, 3.4 + s.stars * 0.6)), 1, 5);
   const traits: string[] = [];
   if (random() < 0.65) traits.push(pick(TRAITS).id);
-  // therapists all know Swedish; a few arrive already trained in something unlocked
+  // practitioners all know their discipline's basic modality; a few arrive trained in something more
   const quals: Modality[] = [];
-  if (role === 'therapist') {
+  const discipline = ROLES[role].discipline;
+  if (discipline) {
     for (const m of MODALITY_ORDER) {
       const def = MODALITIES[m];
-      if (m === 'swedish' || (def.star <= s.stars && random() < 0.28)) quals.push(m);
+      if (def.discipline !== discipline) continue;
+      if (m === DISCIPLINES[discipline].base || (def.star <= s.stars && random() < 0.28)) quals.push(m);
     }
   }
   const look = randomLook();
@@ -312,7 +318,7 @@ export const QUAL_PAY = 0.1;
 export function fairSalary(role: Role, skill: number, traits: string[], quals: Modality[]): number {
   let pay = ROLES[role].baseSalary * (0.75 + skill * 0.25);
   for (const t of traits) pay *= TRAIT_BY_ID[t]?.pay ?? 1;
-  if (role === 'therapist') pay *= 1 + QUAL_PAY * Math.max(0, quals.length - 1);
+  if (ROLES[role].discipline) pay *= 1 + QUAL_PAY * Math.max(0, quals.length - 1);
   return Math.round(pay / 10) * 10;
 }
 
@@ -351,23 +357,34 @@ export function newGame(): GameState {
     offer: null,
     emergency: null,
     nextEmergency: 75,
+    options: {},
   };
   refillCandidates(s);
   return s;
+}
+
+const baseQuals = (role: Role): Modality[] => {
+  const d = ROLES[role].discipline;
+  return d ? [DISCIPLINES[d].base] : [];
+};
+
+/** Whether a discipline is switched on for this game. Massage always is. */
+export function disciplineOn(s: GameState, d: Discipline): boolean {
+  return !DISCIPLINES[d].optional || s.options[d] !== false;
 }
 
 /** Bring a save from any earlier version up to date by filling in what it lacks. */
 export function upgradeSave(s: GameState) {
   for (const st of s.staff) {
     // before massage modalities, everyone on the payroll knew Swedish and nothing else
-    st.quals ??= st.role === 'therapist' ? ['swedish'] : [];
+    st.quals ??= baseQuals(st.role);
     st.training ??= null;
     st.strain ??= 1;
     st.morale ??= 75;
     st.raiseAsked ??= false;
     st.unhappyT ??= 0;
   }
-  for (const c of s.candidates) c.quals ??= c.role === 'therapist' ? ['swedish'] : [];
+  for (const c of s.candidates) c.quals ??= baseQuals(c.role);
   for (const it of s.items) it.wear ??= 0;
   for (const g of s.guests) g.emergency ??= false;
   for (const l of [s.ledger, s.lastLedger]) {
@@ -381,5 +398,6 @@ export function upgradeSave(s: GameState) {
   s.offer ??= null;
   s.emergency ??= null;
   s.nextEmergency ??= s.day + 60;
+  s.options ??= {};
   s.version = SAVE_VERSION;
 }

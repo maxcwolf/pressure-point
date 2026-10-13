@@ -6,7 +6,7 @@ Or download the macOS or Windows app from the [latest release](https://github.co
 
 A healing-center management sim, in the spirit of the classic hospital tycoon games. Build rooms, hire staff, and untie the public.
 
-The MVP covers **massage therapy**. Acupuncture and reiki are planned.
+**Massage therapy** and **acupuncture** are in. Reiki is planned.
 
 ![A busy healing center](docs/screenshot.png)
 
@@ -97,10 +97,13 @@ To ship a macOS build that opens without a warning, add the same five secrets th
 10. Staff have **morale**. Underpaid or overworked staff ask for a raise, and quit if ignored for long.
 11. Equipment **wears out** with use. A Janitor services it; left alone it breaks down.
 12. The **Money** menu offers loans and lets you set prices. **Emergencies** bring a batch of guests to heal against the clock for a bonus.
+13. From the first star you can add **acupuncture**: build an **Acupuncture Clinic** and hire an **Acupuncturist**, and a second kind of guest starts arriving.
 
-### Massage modalities
+### Treatments
 
-A diagnosis prescribes a modality. It only works properly with a therapist qualified in it and, for some, equipment in the same Massage Suite. An unqualified therapist will still try, at about a third of the usual success rate.
+A diagnosis prescribes a treatment. It only works properly with someone qualified in it and, for some, equipment in the same room. An unqualified member of staff will still try, at about a third of the usual success rate. The **Treatments** menu shows what each one treats and whether you can deliver it. Any member of staff can also take a skill course.
+
+**Massage**, delivered in a Massage Suite by Massage Therapists:
 
 | Modality | Unlocks | Needs | Character |
 | --- | --- | --- | --- |
@@ -110,7 +113,22 @@ A diagnosis prescribes a modality. It only works properly with a therapist quali
 | Hot Stone | Star 2 | Course, Stone Warmer | High fee; the warmer cools with use |
 | Cranio-sacral | Star 2 | Course | Slow, expensive, needs high skill |
 
-The **Massage** menu shows what each modality treats and whether you can deliver it. Any member of staff can also take a skill course.
+**Acupuncture**, delivered in an Acupuncture Clinic by Acupuncturists. The clinic unlocks at star 1, and its guests only start arriving once you have built one:
+
+| Technique | Unlocks | Needs | Character |
+| --- | --- | --- | --- |
+| Classic Needling | Star 1 | Nothing | Every acupuncturist knows it |
+| Cupping | Star 1 | Course, Cupping Cart | A step up in fee |
+| Moxibustion | Star 2 | Course, Moxa Burner | Slow and well paid |
+| Electroacupuncture | Star 2 | Course, Stim Unit | The best paid, and the hardest to get right |
+
+![An acupuncturist cupping a guest, with a line of guests showing the acupuncture conditions](docs/acupuncture.png)
+
+### Settings
+
+**Settings**, on the title screen and in the pause menu (☰), switches optional treatments on and off. Acupuncture is the first; reiki will join it. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Sound and music are there too.
+
+### Controls
 
 | Input | Action |
 | --- | --- |
@@ -132,7 +150,9 @@ Saves live in the browser's storage, so the web version and the desktop app each
 | Path | What lives there |
 | --- | --- |
 | `src/data.ts` | All tunable content: rooms, items, staff roles, traits, conditions, objectives, flavor text |
-| `src/state.ts` | The game state (plain JSON) plus save and load |
+| `src/state.ts` | The game state (plain JSON) and upgrades for older saves |
+| `src/saves.ts` | Autosave, named save slots, export and import |
+| `src/settings.ts` | Preferences that outlive a game, such as which treatments are on |
 | `src/world.ts` | Tile grid, placement rules, pathfinding |
 | `src/sim.ts` | Guests, staff, lines, money, reputation |
 | `src/tools.ts` | Build tools: room drag, doors, furniture placement |
@@ -141,4 +161,4 @@ Saves live in the browser's storage, so the web version and the desktop app each
 | `src/audio.ts` | Synthesized sound effects and music |
 | `electron/main.cjs` | Desktop shell |
 
-Modalities, conditions, courses and equipment are all defined in `data.ts`. Every condition currently routes to the Massage Suite; adding acupuncture or reiki means a new room, its items and a staff role, a model per item in `render/models.ts`, and a treatment room on each modality so the sim knows where to send guests.
+Disciplines, modalities, conditions, courses and equipment are all defined in `data.ts`. Adding a discipline such as reiki means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models.ts`. The simulation, menus and Settings pick it up from the data.

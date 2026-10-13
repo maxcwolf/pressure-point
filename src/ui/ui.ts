@@ -3,6 +3,8 @@ import {
   CONDITIONS,
   CONDITION_BY_ID,
   DIAGNOSIS_TARGET,
+  DISCIPLINES,
+  DISCIPLINE_ORDER,
   GAME_TITLE,
   TITLE_LINES,
   ITEMS,
@@ -22,6 +24,8 @@ import {
   STONE_USE,
   TRAIT_BY_ID,
   WEAR_REPAIR,
+  modalityLabel,
+  type Discipline,
   type Modality,
   type Role,
 } from '../data';
@@ -32,6 +36,7 @@ import type { Guest, Item, Ledger, Room, Staff } from '../state';
 import { gameDate, latestSave } from '../saves';
 import type { Tools } from '../tools';
 import { mountSaves } from './saves';
+import { mountSettings } from './settings';
 
 export interface UIHost {
   sim: Sim;
@@ -63,7 +68,7 @@ function guestStatus(g: Guest, sim: Sim): string {
       return 'Arriving';
     case 'toWait':
     case 'waiting':
-      if (!st) return g.goal === 'treat' ? 'Waiting for a working Massage Suite' : g.goal === 'consult' ? 'Waiting for a Consultation Room to exist' : g.goal === 'assess' ? 'Waiting for a working Posture Lab' : 'Looking for Reception';
+      if (!st) return g.goal === 'treat' ? `Waiting for a working ${ROOMS[DISCIPLINES[sim.modalityOf(g).discipline].room].name}` : g.goal === 'consult' ? 'Waiting for a Consultation Room to exist' : g.goal === 'assess' ? 'Waiting for a working Posture Lab' : 'Looking for Reception';
       return g.goal === 'reception' ? 'In line at Reception' : g.goal === 'consult' ? 'Waiting for a consultation' : g.goal === 'assess' ? 'Waiting for a posture scan' : 'Waiting for treatment';
     case 'called':
       return `Heading to the ${where}`;
@@ -108,7 +113,7 @@ function staffStatus(st: Staff, sim: Sim): string {
 }
 
 function courseName(id: string) {
-  return id === 'skill' ? 'professional development' : `${MODALITIES[id as Modality]?.name ?? id} massage`;
+  return id === 'skill' ? 'professional development' : id in MODALITIES ? modalityLabel(id as Modality) : id;
 }
 
 export class UI {
@@ -268,6 +273,9 @@ export class UI {
       case 'saves':
         this.showSaves();
         break;
+      case 'settings':
+        this.showSettings();
+        break;
       case 'newgame':
         this.confirmNewGame();
         break;
@@ -326,7 +334,7 @@ export class UI {
       `<button class="round ${this.menu === id ? 'on' : ''}" data-act="menu" data-arg="${id}"><i>${icon}</i><span>${label}</span></button>`;
     this.set(
       'buildbtns',
-      btn('rooms', '🏗️', 'Rooms') + btn('items', '🪴', 'Items') + btn('hire', '🤝', 'Hire') + btn('staff', '👥', 'Staff') + btn('treatments', '💆', 'Massage') + btn('finance', '📈', 'Money'),
+      btn('rooms', '🏗️', 'Rooms') + btn('items', '🪴', 'Items') + btn('hire', '🤝', 'Hire') + btn('staff', '👥', 'Staff') + btn('treatments', '💆', 'Treatments') + btn('finance', '📈', 'Money'),
     );
 
     // stats
@@ -358,16 +366,20 @@ export class UI {
     const s = sim.s;
     if (!this.menu) return '';
     if (this.menu === 'rooms') {
-      const cards = ROOM_ORDER.map((t) => {
+      const cards = ROOM_ORDER.filter((t) => this.available(ROOMS[t].discipline)).map((t) => {
         const r = ROOMS[t];
-        const staff = r.staff ? `<em>Needs: ${ROLES[r.staff].name}</em>` : '';
-        return `<button class="card ${s.money < r.cost ? 'poor' : ''}" data-act="room" data-arg="${t}">
+        const locked = (r.unlock ?? 0) > s.stars;
+        const staff = locked ? `<em>🔒 Unlocks at star ${r.unlock}</em>` : r.staff ? `<em>Needs: ${ROLES[r.staff].name}</em>` : '';
+        return `<button class="card ${locked ? 'locked' : s.money < r.cost ? 'poor' : ''}" data-act="room" data-arg="${t}">
           <i>${r.icon}</i><b>${r.name}</b><span class="cost">${money(r.cost)}</span><p>${r.desc}</p>${staff}</button>`;
       }).join('');
       return `<div class="panel menu"><h3>Build a room</h3><div class="cards">${cards}</div></div>`;
     }
     if (this.menu === 'items') {
-      const cards = ITEM_MENU.map((t) => {
+      const cards = ITEM_MENU.filter((t) => {
+        const where = ITEMS[t].where;
+        return where === 'corridor' || where === 'any' || this.available(ROOMS[where].discipline);
+      }).map((t) => {
         const it = ITEMS[t];
         const where = it.where === 'corridor' ? 'Corridor' : it.where === 'any' ? 'Anywhere' : ROOMS[it.where].name;
         const locked = (it.unlock ?? 0) > s.stars;
@@ -377,9 +389,15 @@ export class UI {
       return `<div class="panel menu"><h3>Place an item</h3><div class="cards small">${cards}</div></div>`;
     }
     if (this.menu === 'hire') {
-      const tabs = ROLE_ORDER.map(
-        (r) => `<button class="tab ${this.hireRole === r ? 'on' : ''}" data-act="hirerole" data-arg="${r}">${ROLES[r].icon} ${ROLES[r].name}</button>`,
-      ).join('');
+      // roles for a discipline appear once its room can be built
+      const roles = ROLE_ORDER.filter((r) => {
+        const d = ROLES[r].discipline;
+        return !d || (this.available(d) && s.stars >= (ROOMS[DISCIPLINES[d].room].unlock ?? 0));
+      });
+      if (!roles.includes(this.hireRole)) this.hireRole = roles[0];
+      const tabs = roles
+        .map((r) => `<button class="tab ${this.hireRole === r ? 'on' : ''}" data-act="hirerole" data-arg="${r}">${ROLES[r].icon} ${ROLES[r].name}</button>`)
+        .join('');
       const cards = s.candidates
         .filter((c) => c.role === this.hireRole)
         .map((c) => {
@@ -402,23 +420,39 @@ export class UI {
       return `<div class="panel menu"><h3>Your staff</h3>${rows || '<p class="sub">Nobody works here yet. Try the Hire menu.</p>'}<p class="sub">Monthly payroll: <b>${money(total)}</b></p></div>`;
     }
     if (this.menu === 'treatments') {
-      const therapists = s.staff.filter((x) => x.role === 'therapist' && x.state !== 'leaving');
-      const cards = MODALITY_ORDER.map((m) => {
-        const def = MODALITIES[m];
-        const locked = !sim.unlocked(m);
-        const treats = CONDITIONS.filter((c) => c.modality === m).map((c) => `${c.name} (${money(c.fee)})`).join(', ');
-        const qualified = therapists.filter((x) => x.quals.includes(m)).length;
-        const waiting = s.guests.filter((g) => g.goal === 'treat' && CONDITION_BY_ID[g.condition].modality === m).length;
-        const kit = def.equipment ? ITEMS[def.equipment] : null;
-        const kitOk = !kit || s.items.some((i) => i.type === def.equipment && sim.world.usable(i));
-        const lines = locked
-          ? `<em>🔒 Unlocks at star ${def.star}</em>`
-          : `<em class="${qualified ? 'ok' : 'warn'}">${qualified ? '✔' : '⚠️'} ${qualified} qualified therapist${qualified === 1 ? '' : 's'}</em>
-             ${kit ? `<em class="${kitOk ? 'ok' : 'warn'}">${kitOk ? `✔ ${kit.name} installed` : `⚠️ Needs a ${kit.name} in the suite`}</em>` : ''}
-             <em>${waiting} waiting · ${def.seconds}s session</em>`;
-        return `<div class="card mod ${locked ? 'locked' : ''}"><i>${def.icon}</i><b>${def.name}</b><p>${def.desc}</p><p class="treats">Treats: ${treats}</p>${lines}</div>`;
-      }).join('');
-      return `<div class="panel menu"><h3>Massage modalities</h3><p class="sub">A diagnosis prescribes a modality. It works properly only with a qualified therapist and the right equipment in the suite. Train therapists in a Training Room.</p><div class="cards">${cards}</div></div>`;
+      const sections = DISCIPLINE_ORDER.filter((d) => sim.enabled(d))
+        .map((d) => {
+          const disc = DISCIPLINES[d];
+          const role = ROLES[disc.role];
+          const room = ROOMS[disc.room];
+          const staff = s.staff.filter((x) => x.role === disc.role && x.state !== 'leaving');
+          const cards = MODALITY_ORDER.filter((m) => MODALITIES[m].discipline === d)
+            .map((m) => {
+              const def = MODALITIES[m];
+              const locked = !sim.unlocked(m);
+              const treats = CONDITIONS.filter((c) => c.modality === m).map((c) => `${c.name} (${money(c.fee)})`).join(', ');
+              const qualified = staff.filter((x) => x.quals.includes(m)).length;
+              const waiting = s.guests.filter((g) => g.goal === 'treat' && CONDITION_BY_ID[g.condition].modality === m).length;
+              const kit = def.equipment ? ITEMS[def.equipment] : null;
+              const kitOk = !kit || s.items.some((i) => i.type === def.equipment && sim.world.usable(i));
+              const lines = locked
+                ? `<em>🔒 Unlocks at star ${def.star}</em>`
+                : `<em class="${qualified ? 'ok' : 'warn'}">${qualified ? '✔' : '⚠️'} ${qualified} qualified</em>
+                   ${kit ? `<em class="${kitOk ? 'ok' : 'warn'}">${kitOk ? `✔ ${kit.name} installed` : `⚠️ Needs a ${kit.name} in the room`}</em>` : ''}
+                   <em>${waiting} waiting · ${def.seconds}s session</em>`;
+              return `<div class="card mod ${locked ? 'locked' : ''}"><i>${def.icon}</i><b>${def.name}</b><p>${def.desc}</p><p class="treats">Treats: ${treats}</p>${lines}</div>`;
+            })
+            .join('');
+          const built = sim.hasRoom(disc.room);
+          const note = built
+            ? `Delivered in the ${room.name} by ${role.name}s.`
+            : (room.unlock ?? 0) > s.stars
+              ? `The ${room.name} unlocks at star ${room.unlock}.`
+              : `Build an ${room.name} and hire an ${role.name} to offer these. Until then, guests who need them will not turn up.`;
+          return `<h4 class="section">${disc.icon} ${disc.name}</h4><p class="sub">${note}</p><div class="cards">${cards}</div>`;
+        })
+        .join('');
+      return `<div class="panel menu"><h3>Treatments</h3><p class="sub">A diagnosis prescribes a treatment. It works properly only with someone qualified in it and the right equipment in the room. Staff learn new ones in a Training Room.</p>${sections}</div>`;
     }
     const table = (title: string, l: Ledger) => `<div class="ledger"><h4>${title}</h4>
       <div><span>Consultations</span><b class="pos">${money(l.consult)}</b></div>
@@ -535,13 +569,19 @@ export class UI {
     return body;
   }
 
-  /** Which modalities a suite can deliver right now, and what is missing for the rest. */
+  /** Which modalities a treatment room can deliver right now, and what is missing for the rest. */
+  /** A discipline's rooms, staff and equipment are offered only while it is switched on. */
+  private available(d: Discipline | undefined): boolean {
+    return !d || this.host.sim.enabled(d);
+  }
+
   private suiteModalities(tables: Item[]): string {
     const { sim } = this.host;
     const table = tables[0];
     if (!table) return '';
     const staff = sim.staff(table.staffId);
-    const rows = MODALITY_ORDER.filter((m) => sim.unlocked(m))
+    const discipline = ITEMS[table.type].station?.discipline;
+    const rows = MODALITY_ORDER.filter((m) => MODALITIES[m].discipline === discipline && sim.unlocked(m))
       .map((m) => {
         const def = MODALITIES[m];
         const problem = sim.deliveryProblem(table, staff, def);
@@ -564,7 +604,7 @@ export class UI {
     return `<h3>${def.icon} ${def.name}</h3><p>${def.desc}</p>
       <p>Prestige ${stars(sim.prestige(room))}</p>
       <p class="sub">${room.w}×${room.h} tiles · Bigger rooms with more decor are more prestigious, which lifts staff morale and results.</p>
-      ${stations.map((i) => this.stationInfo(i)).join('')}${room.type === 'massage' ? this.suiteModalities(stations) : ''}
+      ${stations.map((i) => this.stationInfo(i)).join('')}${ROOMS[room.type].discipline ? this.suiteModalities(stations) : ''}
       <button class="danger" data-act="demolish" data-arg="${room.id}">Demolish (recover ${money(def.cost * 0.5)})</button>`;
   }
 
@@ -630,14 +670,20 @@ export class UI {
   private showStar(n: number) {
     this.pause();
     const next = STAR_GOALS[n];
-    const fresh = MODALITY_ORDER.filter((m) => MODALITIES[m].star === n).map((m) => `${MODALITIES[m].icon} ${MODALITIES[m].name}`);
-    const unlock = fresh.length
-      ? `<p class="unlock"><b>New massage modalities:</b> ${fresh.join(' and ')}.<br>Guests will start arriving who need them. Train your therapists in a Training Room and check the Massage menu for equipment.</p>`
-      : '';
+    const { sim } = this.host;
+    const rooms = ROOM_ORDER.filter((t) => ROOMS[t].unlock === n && this.available(ROOMS[t].discipline)).map((t) => `${ROOMS[t].icon} ${ROOMS[t].name}`);
+    const fresh = MODALITY_ORDER.filter((m) => MODALITIES[m].star === n && sim.enabled(MODALITIES[m].discipline)).map(
+      (m) => `${MODALITIES[m].icon} ${modalityLabel(m)}`,
+    );
+    const unlock =
+      (rooms.length ? `<p class="unlock"><b>New room:</b> ${rooms.join(', ')}. Build one and hire its staff to bring in a new kind of guest.</p>` : '') +
+      (fresh.length
+        ? `<p class="unlock"><b>New treatments:</b> ${fresh.join(', ')}.<br>Guests who need them will start arriving. Train your staff in a Training Room and check the Treatments menu for equipment.</p>`
+        : '');
     this.modal(`<div class="bigstars">${'★'.repeat(n)}<s>${'★'.repeat(STAR_GOALS.length - n)}</s></div>
       <h2>${n >= STAR_GOALS.length ? 'Three stars!' : `Star ${n} earned!`}</h2>
       <p>The wellness inspectors were deeply relaxed by what they saw. Here is a ${money(5000 * n)} grant.</p>${unlock}
-      <p class="sub">${next ? 'New objectives are waiting in the top-left corner.' : 'You have mastered massage. Acupuncture and reiki will follow in a future update.'}</p>
+      <p class="sub">${next ? 'New objectives are waiting in the top-left corner.' : 'You have mastered the lot. Reiki will follow in a future update.'}</p>
       <button class="go" data-act="close">Keep healing</button>`);
   }
 
@@ -655,7 +701,25 @@ export class UI {
     this.modal(`<h2>${GAME_TITLE}</h2>${this.controlsHtml()}
       <p class="sub">The game autosaves every few seconds. Use Save or load to keep named saves.</p>
       <div class="btnrow"><button class="go" data-act="close">Resume</button>
-      <button data-act="saves">Save or load</button><button class="danger" data-act="newgame">New game</button></div>`);
+      <button data-act="saves">Save or load</button><button data-act="settings">Settings</button><button class="danger" data-act="newgame">New game</button></div>`);
+  }
+
+  private showSettings() {
+    this.pause();
+    this.modal(
+      `<h2>Settings</h2><div id="settings-panel"></div>
+       <div class="btnrow"><button data-act="sysmenu">Back</button><button class="go" data-act="close">Resume</button></div>`,
+      true,
+    );
+    mountSettings(document.getElementById('settings-panel')!, {
+      audio: this.host.audio,
+      sim: this.host.sim,
+      onChange: () => {
+        // a switched-off discipline's menu may be open behind the dialog
+        this.menu = null;
+        this.update();
+      },
+    });
   }
 
   private showSaves() {
@@ -691,10 +755,12 @@ export function showTitle(audio: Audio): Promise<string> {
       <div class="btnrow">
         ${latest ? `<button class="go" data-pick="${latest.id}" title="${esc(latest.name)}, ${gameDate(latest.day)}">Continue</button><button data-show="saves">Load game</button>` : ''}
         <button class="${latest ? '' : 'go'}" data-pick="new">New game</button>
+        <button data-show="settings">Settings</button>
       </div>
       ${latest ? `<p class="sub">Continue picks up "${esc(latest.name)}" at ${gameDate(latest.day)}.</p>` : ''}
       <div id="title-saves" hidden></div>
-      <p class="sub">Massage therapy is open for business. Acupuncture and reiki are still limbering up.</p>
+      <div id="title-settings" hidden></div>
+      <p class="sub">Massage and acupuncture are open for business. Reiki is still limbering up.</p>
     </div>`;
     document.body.appendChild(el);
     const finish = (what: string) => {
@@ -713,10 +779,18 @@ export function showTitle(audio: Audio): Promise<string> {
         el.querySelector('.title-sys')!.innerHTML = switches();
         return;
       }
-      if (target.closest('[data-show="saves"]')) {
-        const panel = el.querySelector<HTMLElement>('#title-saves')!;
+      const show = target.closest<HTMLElement>('[data-show]')?.dataset.show;
+      if (show) {
+        // the two panels share the space under the buttons, one at a time
+        const saves = el.querySelector<HTMLElement>('#title-saves')!;
+        const settings = el.querySelector<HTMLElement>('#title-settings')!;
+        const [panel, other] = show === 'saves' ? [saves, settings] : [settings, saves];
+        other.hidden = true;
         panel.hidden = !panel.hidden;
-        if (!panel.hidden && !panel.childElementCount) mountSaves(panel, { onLoad: finish });
+        if (!panel.hidden && !panel.childElementCount) {
+          if (show === 'saves') mountSaves(panel, { onLoad: finish });
+          else mountSettings(panel, { audio, onChange: () => (el.querySelector('.title-sys')!.innerHTML = switches()) });
+        }
         return;
       }
       const pick = target.closest<HTMLElement>('[data-pick]')?.dataset.pick;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAMEO_CHANCE, CAMEO_NAMES, ROLE_ORDER } from '../../src/data';
+import { CAMEO_CHANCE, CAMEO_NAMES, MODALITIES, ROLES, ROLE_ORDER } from '../../src/data';
 import { SAVE_VERSION, fairSalary, newGame, random, randomName, setSeed, upgradeSave, type GameState } from '../../src/state';
 import { openCenter, run } from './helpers';
 
@@ -45,7 +45,10 @@ describe('a new game', () => {
     expect(s.priceLevel).toBe(1);
     for (const role of ROLE_ORDER) expect(s.candidates.filter((c) => c.role === role)).toHaveLength(3);
     expect(s.candidates.filter((c) => c.role === 'therapist').every((c) => c.quals.includes('swedish'))).toBe(true);
-    expect(s.candidates.filter((c) => c.role !== 'therapist').every((c) => c.quals.length === 0)).toBe(true);
+    expect(s.candidates.filter((c) => c.role === 'acupuncturist').every((c) => c.quals.includes('needling'))).toBe(true);
+    expect(s.candidates.filter((c) => !ROLES[c.role].discipline).every((c) => c.quals.length === 0)).toBe(true);
+    // nobody starts with a qualification from another discipline
+    expect(s.candidates.every((c) => c.quals.every((m) => MODALITIES[m].discipline === ROLES[c.role].discipline))).toBe(true);
   });
 });
 

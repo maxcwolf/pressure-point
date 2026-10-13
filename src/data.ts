@@ -24,8 +24,10 @@ export const DAYS_PER_MONTH = 30;
 export const START_MONEY = 30000;
 
 // ---- Rooms -----------------------------------------------------------------
-export type RoomType = 'consult' | 'assess' | 'massage' | 'staffroom' | 'restroom' | 'training';
-export type Role = 'receptionist' | 'consultant' | 'therapist' | 'caretaker';
+export type RoomType = 'consult' | 'assess' | 'massage' | 'acupuncture' | 'staffroom' | 'restroom' | 'training';
+export type Role = 'receptionist' | 'consultant' | 'therapist' | 'acupuncturist' | 'caretaker';
+/** A family of treatments with its own room, staff and equipment. */
+export type Discipline = 'massage' | 'acupuncture';
 export type ItemType =
   | 'reception_desk'
   | 'consult_desk'
@@ -50,7 +52,12 @@ export type ItemType =
   | 'diffuser'
   | 'statue'
   | 'rug'
-  | 'magazine_rack';
+  | 'magazine_rack'
+  | 'acu_table'
+  | 'needle_cabinet'
+  | 'cupping_cart'
+  | 'moxa_burner'
+  | 'stim_unit';
 
 export interface RoomDef {
   type: RoomType;
@@ -65,6 +72,10 @@ export interface RoomDef {
   staff?: Role;
   floor: [string, string];
   trim: number;
+  /** Treatment rooms belong to a discipline, which Settings can switch off. */
+  discipline?: Discipline;
+  /** Stars needed before it can be built. */
+  unlock?: number;
 }
 
 export const ROOMS: Record<RoomType, RoomDef> = {
@@ -104,8 +115,24 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     minLong: 3,
     required: ['massage_table', 'oil_trolley'],
     staff: 'therapist',
+    discipline: 'massage',
     floor: ['#d9b48a', '#cfa87c'],
     trim: 0x9a6fc9,
+  },
+  acupuncture: {
+    type: 'acupuncture',
+    name: 'Acupuncture Clinic',
+    icon: '📍',
+    desc: 'Needles, cups and smoldering herbs for what massage cannot reach. Needs an Acupuncturist.',
+    cost: 7500,
+    minShort: 3,
+    minLong: 3,
+    required: ['acu_table', 'needle_cabinet'],
+    staff: 'acupuncturist',
+    floor: ['#e6cdbf', '#dec2b2'],
+    trim: 0xb5523e,
+    discipline: 'acupuncture',
+    unlock: 1,
   },
   staffroom: {
     type: 'staffroom',
@@ -144,7 +171,7 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     trim: 0x5f9440,
   },
 };
-export const ROOM_ORDER: RoomType[] = ['consult', 'assess', 'massage', 'staffroom', 'restroom', 'training'];
+export const ROOM_ORDER: RoomType[] = ['consult', 'assess', 'massage', 'acupuncture', 'staffroom', 'restroom', 'training'];
 
 // ---- Items -----------------------------------------------------------------
 export type AccessRole = 'staff' | 'guest' | 'seat' | 'rest' | 'toilet' | 'drink' | 'eat' | 'study';
@@ -178,7 +205,7 @@ export interface ItemDef {
   /** Where it may be placed. */
   where: 'corridor' | 'any' | RoomType;
   /** Stations have a staff position and a line of guests. */
-  station?: { staff: Role; goal: 'reception' | 'consult' | 'assess' | 'treat'; seconds: number };
+  station?: { staff: Role; goal: 'reception' | 'consult' | 'assess' | 'treat'; seconds: number; discipline?: Discipline };
   inMenu?: boolean;
   /** Stars needed before it can be bought. */
   unlock?: number;
@@ -246,7 +273,7 @@ export const ITEMS: Record<ItemType, ItemDef> = {
       { role: 'staff', x: -1, y: 1, px: -0.28, py: 1.0, face: [1, 0], pose: 'stand' },
       { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.6 },
     ],
-    station: { staff: 'therapist', goal: 'treat', seconds: 10 },
+    station: { staff: 'therapist', goal: 'treat', seconds: 10, discipline: 'massage' },
     wear: 6,
   },
   oil_trolley: {
@@ -508,6 +535,72 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     inMenu: true,
     decor: 3,
   },
+  acu_table: {
+    type: 'acu_table',
+    name: 'Acupuncture Table',
+    icon: '📍',
+    desc: 'Like a massage table, but everyone holds much stiller.',
+    cost: 0,
+    w: 1,
+    h: 2,
+    where: 'acupuncture',
+    access: [
+      { role: 'staff', x: -1, y: 1, px: -0.28, py: 1.0, face: [1, 0], pose: 'stand' },
+      { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.6 },
+    ],
+    station: { staff: 'acupuncturist', goal: 'treat', seconds: 10, discipline: 'acupuncture' },
+    wear: 5,
+  },
+  needle_cabinet: {
+    type: 'needle_cabinet',
+    name: 'Needle Cabinet',
+    icon: '🗄️',
+    desc: 'A hundred tiny drawers. Ninety-nine contain needles. Do not open the other one.',
+    cost: 0,
+    w: 1,
+    h: 1,
+    where: 'acupuncture',
+    access: [],
+  },
+  cupping_cart: {
+    type: 'cupping_cart',
+    name: 'Cupping Cart',
+    icon: '⭕',
+    desc: 'A cart of glass cups. Needed for Cupping.',
+    cost: 700,
+    w: 1,
+    h: 1,
+    where: 'acupuncture',
+    access: [],
+    inMenu: true,
+    unlock: 1,
+  },
+  moxa_burner: {
+    type: 'moxa_burner',
+    name: 'Moxa Burner',
+    icon: '🔥',
+    desc: 'Smolders gently and smells like a campfire in a tea shop. Needed for Moxibustion.',
+    cost: 900,
+    w: 1,
+    h: 1,
+    where: 'acupuncture',
+    access: [],
+    inMenu: true,
+    unlock: 2,
+  },
+  stim_unit: {
+    type: 'stim_unit',
+    name: 'Stim Unit',
+    icon: '⚡',
+    desc: 'Adds a mild current to the needles. Needed for Electroacupuncture.',
+    cost: 1400,
+    w: 1,
+    h: 1,
+    where: 'acupuncture',
+    access: [],
+    inMenu: true,
+    unlock: 2,
+  },
 };
 export const ITEM_MENU: ItemType[] = [
   'reception_desk',
@@ -527,6 +620,9 @@ export const ITEM_MENU: ItemType[] = [
   'study_desk',
   'stretch_rack',
   'stone_warmer',
+  'cupping_cart',
+  'moxa_burner',
+  'stim_unit',
 ];
 
 // ---- Staff -----------------------------------------------------------------
@@ -538,6 +634,8 @@ export interface RoleDef {
   baseSalary: number;
   uniform: number;
   accent: number;
+  /** The discipline this role practices, if any. They hold qualifications in its modalities. */
+  discipline?: Discipline;
 }
 export const ROLES: Record<Role, RoleDef> = {
   receptionist: {
@@ -566,6 +664,17 @@ export const ROLES: Record<Role, RoleDef> = {
     baseSalary: 1400,
     uniform: 0xa784d6,
     accent: 0xf4f1ea,
+    discipline: 'massage',
+  },
+  acupuncturist: {
+    role: 'acupuncturist',
+    name: 'Acupuncturist',
+    icon: '📍',
+    desc: 'Treats guests in an Acupuncture Clinic. Each one knows certain techniques; train them to add more.',
+    baseSalary: 1600,
+    uniform: 0x3f9d7a,
+    accent: 0xf4f1ea,
+    discipline: 'acupuncture',
   },
   caretaker: {
     role: 'caretaker',
@@ -577,7 +686,7 @@ export const ROLES: Record<Role, RoleDef> = {
     accent: 0xe8c65a,
   },
 };
-export const ROLE_ORDER: Role[] = ['receptionist', 'consultant', 'therapist', 'caretaker'];
+export const ROLE_ORDER: Role[] = ['receptionist', 'consultant', 'therapist', 'acupuncturist', 'caretaker'];
 
 export interface TraitDef {
   id: string;
@@ -600,9 +709,10 @@ export const TRAITS: TraitDef[] = [
 export const TRAIT_BY_ID: Record<string, TraitDef> = Object.fromEntries(TRAITS.map((t) => [t.id, t]));
 
 // ---- Massage modalities -----------------------------------------------------
-export type Modality = 'swedish' | 'deep' | 'sports' | 'stone' | 'cranio';
+export type Modality = 'swedish' | 'deep' | 'sports' | 'stone' | 'cranio' | 'needling' | 'cupping' | 'moxa' | 'electro';
 export interface ModalityDef {
   id: Modality;
+  discipline: Discipline;
   name: string;
   icon: string;
   desc: string;
@@ -622,6 +732,7 @@ export interface ModalityDef {
 export const MODALITIES: Record<Modality, ModalityDef> = {
   swedish: {
     id: 'swedish',
+    discipline: 'massage',
     name: 'Swedish',
     icon: '🌿',
     desc: 'Long, flowing strokes. Quick, cheap and reliable. Every therapist knows it.',
@@ -634,6 +745,7 @@ export const MODALITIES: Record<Modality, ModalityDef> = {
   },
   deep: {
     id: 'deep',
+    discipline: 'massage',
     name: 'Deep Tissue',
     icon: '💪',
     desc: 'Elbows, knuckles and determination. Wears the therapist out fast.',
@@ -646,6 +758,7 @@ export const MODALITIES: Record<Modality, ModalityDef> = {
   },
   sports: {
     id: 'sports',
+    discipline: 'massage',
     name: 'Sports',
     icon: '🤸',
     desc: 'Stretching, pulling and the occasional alarming click. A long session that is hard to get right.',
@@ -659,6 +772,7 @@ export const MODALITIES: Record<Modality, ModalityDef> = {
   },
   stone: {
     id: 'stone',
+    discipline: 'massage',
     name: 'Hot Stone',
     icon: '🪨',
     desc: 'Warm basalt stones along the spine. Lucrative, as long as someone keeps the stones hot.',
@@ -672,6 +786,7 @@ export const MODALITIES: Record<Modality, ModalityDef> = {
   },
   cranio: {
     id: 'cranio',
+    discipline: 'massage',
     name: 'Cranio-sacral',
     icon: '👐',
     desc: 'Barely touching the head, very slowly. Slow and expensive, and it takes a skilled pair of hands.',
@@ -682,15 +797,115 @@ export const MODALITIES: Record<Modality, ModalityDef> = {
     trainCost: 2800,
     trainDays: 9,
   },
+  needling: {
+    id: 'needling',
+    discipline: 'acupuncture',
+    name: 'Classic Needling',
+    icon: '📍',
+    desc: 'Fine needles in exactly the right places. Every acupuncturist knows it.',
+    star: 1,
+    seconds: 10,
+    strain: 0.9,
+    difficulty: 0,
+    trainCost: 0,
+    trainDays: 0,
+  },
+  cupping: {
+    id: 'cupping',
+    discipline: 'acupuncture',
+    name: 'Cupping',
+    icon: '⭕',
+    desc: 'Glass cups that leave guests looking like they lost a fight with an octopus.',
+    star: 1,
+    equipment: 'cupping_cart',
+    seconds: 11,
+    strain: 1,
+    difficulty: 0.05,
+    trainCost: 1600,
+    trainDays: 6,
+  },
+  moxa: {
+    id: 'moxa',
+    discipline: 'acupuncture',
+    name: 'Moxibustion',
+    icon: '🔥',
+    desc: 'Smoldering herbs held near the skin. Warming, fragrant, and slow.',
+    star: 2,
+    equipment: 'moxa_burner',
+    seconds: 13,
+    strain: 0.9,
+    difficulty: 0.1,
+    trainCost: 2200,
+    trainDays: 7,
+  },
+  electro: {
+    id: 'electro',
+    discipline: 'acupuncture',
+    name: 'Electroacupuncture',
+    icon: '⚡',
+    desc: 'Needles with a gentle current. Lucrative, and unforgiving of shaky hands.',
+    star: 2,
+    equipment: 'stim_unit',
+    seconds: 12,
+    strain: 1.1,
+    difficulty: 0.2,
+    trainCost: 2800,
+    trainDays: 9,
+  },
 };
-export const MODALITY_ORDER: Modality[] = ['swedish', 'deep', 'sports', 'stone', 'cranio'];
+export const MODALITY_ORDER: Modality[] = ['swedish', 'deep', 'sports', 'stone', 'cranio', 'needling', 'cupping', 'moxa', 'electro'];
+
+// ---- Disciplines ---------------------------------------------------------------
+export interface DisciplineDef {
+  id: Discipline;
+  name: string;
+  icon: string;
+  desc: string;
+  role: Role;
+  room: RoomType;
+  /** The modality everyone in the role starts with. */
+  base: Modality;
+  /** Optional disciplines can be switched off in Settings. */
+  optional: boolean;
+}
+export const DISCIPLINES: Record<Discipline, DisciplineDef> = {
+  massage: {
+    id: 'massage',
+    name: 'Massage therapy',
+    icon: '💆',
+    desc: 'The heart of the center. Always on.',
+    role: 'therapist',
+    room: 'massage',
+    base: 'swedish',
+    optional: false,
+  },
+  acupuncture: {
+    id: 'acupuncture',
+    name: 'Acupuncture',
+    icon: '📍',
+    desc: 'A second line of treatment, available from one star: needling, cupping, moxibustion and electroacupuncture.',
+    role: 'acupuncturist',
+    room: 'acupuncture',
+    base: 'needling',
+    optional: true,
+  },
+};
+export const DISCIPLINE_ORDER: Discipline[] = ['massage', 'acupuncture'];
+/** Planned disciplines, listed in Settings so it is clear they are on the way. */
+export const COMING_SOON = [{ name: 'Reiki', icon: '✨' }];
+
+/** How a modality reads in a sentence: "Swedish massage", but plain "Cupping". */
+export const modalityLabel = (m: Modality) =>
+  MODALITIES[m].discipline === 'massage' ? `${MODALITIES[m].name} massage` : MODALITIES[m].name;
 /** Stone warmers lose this much heat per Hot Stone session and are useless below it. */
 export const STONE_USE = 25;
 /** Chance of success is multiplied by this when the modality cannot be delivered properly. */
 export const BOTCH_FACTOR = 0.35;
 
 // ---- Conditions ------------------------------------------------------------
-export type Visual = 'knot' | 'slump' | 'steam' | 'stiff' | 'neck' | 'band' | 'crick' | 'flex' | 'frost' | 'dizzy';
+export type Visual =
+  | 'knot' | 'slump' | 'steam' | 'stiff' | 'neck' | 'band' | 'crick' | 'flex' | 'frost' | 'dizzy'
+  | 'cloud' | 'jitter' | 'aura' | 'cork' | 'coldfeet' | 'blanket' | 'battery' | 'wires';
 export interface ConditionDef {
   id: string;
   name: string;
@@ -790,6 +1005,78 @@ export const CONDITIONS: ConditionDef[] = [
     modality: 'cranio',
     fee: 2000,
     visual: 'dizzy',
+  },
+  {
+    id: 'qi',
+    name: 'Blocked Qi',
+    desc: 'Energy has backed up somewhere around the sternum and formed a small weather system.',
+    treatment: 'Needling Unblocking',
+    modality: 'needling',
+    fee: 1000,
+    visual: 'cloud',
+  },
+  {
+    id: 'pins',
+    name: 'Pins and Needles',
+    desc: 'A permanent case of the fizzing foot. Ironically, the cure is more needles.',
+    treatment: 'Counter-needling',
+    modality: 'needling',
+    fee: 950,
+    visual: 'jitter',
+  },
+  {
+    id: 'vibes',
+    name: 'Stagnant Vibes',
+    desc: 'An aura that has not been aired out in years.',
+    treatment: 'Cupping Airing',
+    modality: 'cupping',
+    fee: 1250,
+    visual: 'aura',
+  },
+  {
+    id: 'bottled',
+    name: 'Bottled Up',
+    desc: 'Feelings corked for so long they are now a vintage.',
+    treatment: 'Cupping Uncorking',
+    modality: 'cupping',
+    fee: 1300,
+    visual: 'cork',
+  },
+  {
+    id: 'coldfeet',
+    name: 'Cold Feet',
+    desc: 'Got them before a big decision. Never got rid of them.',
+    treatment: 'Moxa Toe Warming',
+    modality: 'moxa',
+    fee: 1600,
+    visual: 'coldfeet',
+  },
+  {
+    id: 'blanket',
+    name: 'Wet Blanket',
+    desc: 'Dampens every room they enter, starting with their own shoulders.',
+    treatment: 'Moxa Drying Out',
+    modality: 'moxa',
+    fee: 1650,
+    visual: 'blanket',
+  },
+  {
+    id: 'battery',
+    name: 'Flat Battery',
+    desc: 'Runs out of charge by ten in the morning. Blinks red.',
+    treatment: 'Electro Jump Start',
+    modality: 'electro',
+    fee: 1900,
+    visual: 'battery',
+  },
+  {
+    id: 'wires',
+    name: 'Crossed Wires',
+    desc: 'Signals for left and right arrive at the same time.',
+    treatment: 'Electro Rewiring',
+    modality: 'electro',
+    fee: 2000,
+    visual: 'wires',
   },
 ];
 export const CONDITION_BY_ID: Record<string, ConditionDef> = Object.fromEntries(

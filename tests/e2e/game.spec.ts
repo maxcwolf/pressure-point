@@ -159,8 +159,8 @@ test.describe('staff', () => {
     await game.eval((pp) => (pp.state.speed = 1));
     await game.fastForward(80);
     expect(await game.eval((pp) => pp.state.staff.find((s) => s.role === 'therapist')!.quals)).toContain('deep');
-    await game.menu('Massage');
-    await expect(game.card('Deep Tissue')).toContainText('1 qualified therapist');
+    await game.menu('Treatments');
+    await expect(game.card('Deep Tissue')).toContainText('1 qualified');
   });
 });
 
@@ -183,12 +183,13 @@ test.describe('running a center', () => {
     await game.fastForward(60);
     await game.eval((pp) => (pp.state.speed = 0));
     await game.settle();
-    // pick a guest nobody is standing in front of
+    // pick a guest in plain view: nobody standing in front of them and no HUD panel over them
     const spot = await game.eval((pp) => {
       for (const g of pp.state.guests) {
         const p = pp.view.project(g.x, g.y, 0.6);
         const hit = pp.view.pick(p.x, p.y);
-        if (hit?.kind === 'guest' && hit.id === g.id) return { ...p, name: g.name };
+        const onCanvas = document.elementFromPoint(p.x, p.y)?.id === 'game';
+        if (onCanvas && hit?.kind === 'guest' && hit.id === g.id) return { ...p, name: g.name };
       }
       throw new Error('no guest in plain view');
     });
@@ -300,6 +301,132 @@ test.describe('controls and saving', () => {
     expect(await game.eval((pp) => pp.state.speed)).toBe(2);
   });
 
+});
+
+test.describe('acupuncture and settings', () => {
+  const pauseMenu = async (page: import('@playwright/test').Page, button: string) => {
+    await page.locator('#sys').getByTitle('Menu').click();
+    await page.getByRole('button', { name: button }).click();
+  };
+
+  test('the clinic is locked until the first star, then can be built and staffed', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.menu('Rooms');
+    await expect(game.card('Acupuncture Clinic')).toContainText('Unlocks at star 1');
+    await game.card('Acupuncture Clinic').click();
+    expect(await game.eval((pp) => pp.tools.tool.kind)).toBe('none');
+    await game.menu('Hire');
+    await expect(page.locator('#menu .tab', { hasText: 'Acupuncturist' })).toHaveCount(0);
+
+    await game.eval((pp) => (pp.state.stars = 1));
+    await game.menu('Rooms');
+    await game.card('Acupuncture Clinic').click();
+    await game.drag([24.5, 8.5], [27.5, 11.5]);
+    await game.click(25.5, 12.2);
+    await expect(page.locator('#hint')).toContainText('Acupuncture Table (1 of 2)');
+    await game.click(25.5, 9);
+    await game.click(27.5, 8.5);
+    await expect(page.locator('#toasts')).toContainText('Acupuncture Clinic built!');
+    await page.keyboard.press('Escape');
+
+    await game.menu('Hire');
+    await page.locator('#menu .tab', { hasText: 'Acupuncturist' }).click();
+    await expect(page.locator('#menu .quals').first()).toContainText('Classic Needling');
+    await page.locator('#menu .card.cv').first().getByRole('button', { name: 'Hire' }).click();
+    await game.menu('Treatments');
+    await expect(page.locator('#menu')).toContainText('Delivered in the Acupuncture Clinic');
+    await expect(game.card('Classic Needling')).toContainText('1 qualified');
+    await expect(game.card('Moxibustion')).toContainText('Unlocks at star 2');
+  });
+
+  test('acupuncture guests are treated in the clinic', async ({ game }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      const { sim, state } = pp;
+      state.stars = 1;
+      const r = sim.createRoom('acupuncture', { x: 24, y: 8, w: 4, h: 4 }, { x: 25, y: 11, dx: 0, dy: 1 });
+      sim.placeItem('acu_table', 25, 8, 0, { free: true, roomId: r.id });
+      sim.placeItem('needle_cabinet', 27, 8, 0, { free: true, roomId: r.id });
+      sim.finishRoom(r);
+      sim.hire(state.candidates.find((c) => c.role === 'acupuncturist')!.id);
+    });
+    // turn every new arrival into an acupuncture case and play until one has been seen
+    const served = await game.eval((pp) => {
+      const { sim, state } = pp;
+      const acu = state.staff.find((s) => s.role === 'acupuncturist')!;
+      for (let i = 0; i < 9000 && acu.served < 2; i++) {
+        for (const g of state.guests) if (g.diagnosis === 0) g.condition = 'qi';
+        sim.tick(0.1);
+      }
+      return acu.served;
+    });
+    expect(served).toBeGreaterThanOrEqual(2);
+    await game.settle();
+  });
+
+  test('switching acupuncture off in the pause menu hides it, and on brings it back', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => (pp.state.stars = 1));
+    await game.menu('Rooms');
+    await expect(game.card('Acupuncture Clinic')).toBeVisible();
+
+    await pauseMenu(page, 'Settings');
+    const toggle = page.getByRole('switch', { name: 'Acupuncture' });
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await expect(page.locator('#settings-panel')).toContainText('Massage therapy');
+    await expect(page.locator('#settings-panel')).toContainText('Always on');
+    await expect(page.locator('#settings-panel li', { hasText: 'Reiki' })).toContainText('Coming later');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await page.getByRole('button', { name: 'Resume' }).click();
+
+    await game.menu('Rooms');
+    await expect(game.card('Massage Suite')).toBeVisible();
+    await expect(game.card('Acupuncture Clinic')).toHaveCount(0);
+    await game.menu('Hire');
+    await expect(page.locator('#menu .tab', { hasText: 'Acupuncturist' })).toHaveCount(0);
+    await game.menu('Items');
+    await expect(game.card('Cupping Cart')).toHaveCount(0);
+    await game.menu('Treatments');
+    await expect(page.locator('#menu')).not.toContainText('Classic Needling');
+    expect(await game.eval((pp) => pp.sim.enabled('acupuncture'))).toBe(false);
+
+    await pauseMenu(page, 'Settings');
+    await page.getByRole('switch', { name: 'Acupuncture' }).click();
+    await page.getByRole('button', { name: 'Resume' }).click();
+    await game.menu('Rooms');
+    await expect(game.card('Acupuncture Clinic')).toBeVisible();
+  });
+
+  test('a choice made on the title screen applies to new games and is remembered', async ({ game, page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.getByRole('switch', { name: 'Acupuncture' }).click();
+    await expect(page.getByRole('switch', { name: 'Acupuncture' })).toHaveAttribute('aria-checked', 'false');
+    // the audio switches there stay in step with the ones in the corner
+    await page.getByRole('switch', { name: 'Music' }).click();
+    await expect(page.locator('.title-sys').getByTitle('Music')).toHaveAttribute('aria-pressed', 'false');
+
+    await page.getByRole('button', { name: 'New game' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => pp.sim.enabled('acupuncture'))).toBe(false);
+    await page.reload();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await expect(page.getByRole('switch', { name: 'Acupuncture' })).toHaveAttribute('aria-checked', 'false');
+  });
+
+  test('a saved game keeps its own choice', async ({ game, page }) => {
+    await game.start();
+    await pauseMenu(page, 'Settings');
+    await page.getByRole('switch', { name: 'Acupuncture' }).click();
+    await page.getByRole('button', { name: 'Resume' }).click();
+    await page.reload();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => pp.sim.enabled('acupuncture'))).toBe(false);
+  });
 });
 
 test.describe('saved games', () => {

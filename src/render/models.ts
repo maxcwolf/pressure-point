@@ -53,6 +53,9 @@ function put(
   return m;
 }
 
+// see-through glass for cupping cups
+const GLASS = new THREE.MeshStandardMaterial({ color: 0xd4eef7, transparent: true, opacity: 0.55, roughness: 0.08 });
+const LACQUER = 0x5a2e22;
 const WOOD = 0xb9834f;
 const WOOD_DARK = 0x8f5f38;
 const CREAM = 0xf5ecdb;
@@ -121,7 +124,8 @@ export function buildItem(type: ItemType): THREE.Group {
       }
       stones.visible = false;
       g.add(stones);
-      g.userData.stones = stones;
+      // props laid on the guest during a session, keyed by the modality that uses them
+      g.userData.session = { stone: stones };
       break;
     }
     case 'oil_trolley': {
@@ -294,6 +298,114 @@ export function buildItem(type: ItemType): THREE.Group {
       }
       break;
     }
+    case 'acu_table': {
+      for (const [x, z] of [[-0.3, -0.75], [0.3, -0.75], [-0.3, 0.75], [0.3, 0.75]])
+        put(g, rbox(0.09, 0.5, 0.09, 0.02), mat(LACQUER), x, 0.25, z);
+      put(g, rbox(0.8, 0.07, 1.82, 0.03), mat(LACQUER), 0, 0.5, 0);
+      put(g, rbox(0.74, 0.12, 1.76, 0.06), mat(0x9ad0b8), 0, 0.58, 0);
+      put(g, rbox(0.7, 0.03, 1.1, 0.015), mat(CREAM), 0, 0.645, 0.2);
+      const bolster = put(g, cyl(0.09, 0.09, 0.6, 14), mat(0xb5523e), 0, 0.68, -0.72);
+      bolster.rotation.z = Math.PI / 2;
+      // what gets put on the guest's back, one set per technique
+      const needle = (parent: THREE.Object3D, x: number, z: number, color: number) => {
+        put(parent, cyl(0.007, 0.007, 0.16, 5), mat(CHROME, 0.3), x, 1.0, z).castShadow = false;
+        put(parent, sph(0.02, 6), mat(color, 0.4), x, 1.08, z).castShadow = false;
+      };
+      const spots: [number, number][] = [[-0.07, -0.2], [0.07, -0.2], [-0.08, -0.05], [0.08, -0.05], [-0.07, 0.1], [0.07, 0.1], [-0.05, 0.25], [0.05, 0.25]];
+      const needles = new THREE.Group();
+      spots.forEach(([x, z], i) => needle(needles, x, z, [0xe5484d, 0xf2c14e, 0x4a9fe0][i % 3]));
+      const cups = new THREE.Group();
+      for (const [x, z] of spots.slice(0, 6)) {
+        const cup = put(cups, sph(0.062, 12), GLASS, x, 0.95, z);
+        cup.scale.y = 0.8;
+        cup.castShadow = false;
+      }
+      const moxa = new THREE.Group();
+      for (const [x, z] of [[0, -0.18], [0, 0.02], [0, 0.22]]) {
+        put(moxa, cyl(0.018, 0.03, 0.09, 8), mat(0x6b5a3a, 0.9), x, 0.97, z).castShadow = false;
+        put(moxa, sph(0.022, 8), mat(0xff7a2f, 0.4, 1.2), x, 1.02, z).castShadow = false;
+      }
+      const electro = new THREE.Group();
+      spots.slice(0, 4).forEach(([x, z], i) => {
+        needle(electro, x, z, i % 2 ? 0x2a2a2e : 0xe5484d);
+        const wire = put(electro, cyl(0.006, 0.006, 0.5, 5), mat(i % 2 ? 0x2a2a2e : 0xe5484d), x - 0.25, 1.1, z);
+        wire.rotation.z = Math.PI / 2 - 0.12;
+        wire.castShadow = false;
+      });
+      const session = { needling: needles, cupping: cups, moxa, electro };
+      for (const group of Object.values(session)) {
+        group.visible = false;
+        g.add(group);
+      }
+      g.userData.session = session;
+      break;
+    }
+    case 'needle_cabinet': {
+      put(g, rbox(0.88, 1.3, 0.5, 0.04), mat(LACQUER), 0, 0.65, -0.18);
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 4; col++) {
+          const x = -0.3 + col * 0.2;
+          const y = 0.2 + row * 0.23;
+          put(g, rbox(0.17, 0.19, 0.03, 0.01), mat(WOOD), x, y, 0.075);
+          put(g, sph(0.018, 6), mat(0xf2c14e, 0.4), x, y, 0.1);
+        }
+      }
+      put(g, cyl(0.07, 0.07, 0.16, 12), GLASS, 0.24, 1.38, -0.18);
+      const scroll = put(g, cyl(0.045, 0.045, 0.5, 10), mat(CREAM), -0.12, 1.35, -0.18);
+      scroll.rotation.z = Math.PI / 2;
+      break;
+    }
+    case 'cupping_cart': {
+      for (const [x, z] of [[-0.26, -0.18], [0.26, -0.18], [-0.26, 0.18], [0.26, 0.18]]) {
+        put(g, cyl(0.02, 0.02, 0.66, 8), mat(LACQUER), x, 0.4, z);
+        put(g, sph(0.05, 10), mat(DARK), x, 0.05, z);
+      }
+      put(g, rbox(0.62, 0.04, 0.46, 0.02), mat(WOOD_DARK), 0, 0.3, 0);
+      put(g, rbox(0.62, 0.04, 0.46, 0.02), mat(WOOD_DARK), 0, 0.72, 0);
+      for (let i = 0; i < 6; i++) {
+        const cup = put(g, sph(0.075, 12), GLASS, -0.19 + (i % 3) * 0.19, 0.8, -0.09 + Math.floor(i / 3) * 0.18);
+        cup.scale.y = 0.85;
+      }
+      put(g, rbox(0.4, 0.1, 0.3, 0.03), mat(WHITE), 0, 0.37, 0);
+      break;
+    }
+    case 'moxa_burner': {
+      put(g, cyl(0.2, 0.26, 0.08, 16), mat(LACQUER), 0, 0.04, 0);
+      put(g, cyl(0.05, 0.07, 0.5, 10), mat(LACQUER), 0, 0.33, 0);
+      put(g, cyl(0.26, 0.15, 0.18, 20), mat(0x2f6f6a, 0.4), 0, 0.67, 0);
+      put(g, cyl(0.23, 0.23, 0.02, 20), mat(0x8a8378, 0.95), 0, 0.755, 0);
+      for (const [x, z, lean] of [[-0.07, 0.02, 0.2], [0.06, -0.04, -0.15], [0.01, 0.08, 0.05]]) {
+        const stick = put(g, cyl(0.016, 0.016, 0.22, 6), mat(0x6b5a3a, 0.9), x, 0.86, z);
+        stick.rotation.z = lean;
+        put(g, sph(0.022, 8), mat(0xff7a2f, 0.4, 1.2), x - lean * 0.11, 0.97, z).castShadow = false;
+      }
+      const smoke = new THREE.Group();
+      for (let i = 0; i < 3; i++) put(smoke, sph(0.06, 8), mat(0xe8e4dc, 0.9, 0.2), 0, 0, 0).castShadow = false;
+      smoke.position.y = 1.0;
+      g.add(smoke);
+      g.userData.puffs = smoke;
+      break;
+    }
+    case 'stim_unit': {
+      for (const [x, z] of [[-0.24, -0.16], [0.24, -0.16], [-0.24, 0.16], [0.24, 0.16]]) put(g, sph(0.05, 10), mat(DARK), x, 0.05, z);
+      put(g, rbox(0.62, 0.66, 0.46, 0.05), mat(0xd7dce2), 0, 0.42, 0);
+      const face = put(g, rbox(0.58, 0.26, 0.05, 0.02), mat(DARK), 0, 0.88, 0.12);
+      face.rotation.x = -0.5;
+      put(g, rbox(0.2, 0.12, 0.02, 0.01), mat(0x7dffb0, 0.3, 0.8), -0.14, 0.9, 0.16).rotation.x = -0.5;
+      for (const x of [0.06, 0.18]) {
+        const dial = put(g, cyl(0.04, 0.04, 0.04, 12), mat(0xf2c14e, 0.4), x, 0.89, 0.17);
+        dial.rotation.x = Math.PI / 2 - 0.5;
+      }
+      // each unit owns its light so it can blink independently
+      const led = new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 });
+      put(g, sph(0.03, 8), led, 0.24, 0.98, 0.1).castShadow = false;
+      g.userData.led = led;
+      for (const [x, c] of [[-0.33, 0xe5484d], [0.33, 0x2a2a2e]] as [number, number][]) {
+        const coil = put(g, torus(0.09, 0.014), mat(c), x, 0.55, 0.05);
+        coil.rotation.y = Math.PI / 2;
+      }
+      break;
+    }
     case 'stone_warmer': {
       put(g, rbox(0.72, 0.5, 0.6, 0.06), mat(0x4a4f5a), 0, 0.25, 0);
       put(g, rbox(0.78, 0.06, 0.66, 0.03), mat(CHROME, 0.35), 0, 0.53, 0);
@@ -375,6 +487,10 @@ export interface CharRig {
   steam?: THREE.Group;
   band?: THREE.Mesh;
   orbit?: THREE.Group;
+  /** Something that hovers over the head and bobs gently. */
+  bob?: THREE.Object3D;
+  /** A material whose glow pulses. */
+  blink?: THREE.MeshStandardMaterial;
   /** Everything that only exists to show the symptom, hidden once healed. */
   props: THREE.Object3D[];
   visual?: Visual;
@@ -414,7 +530,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   const chest = put(torso, capsule(0.17, 0.2), top, 0, 0.2, 0);
   chest.scale.set(1.12, 1, 0.9);
   if (role === 'consultant') put(torso, cyl(0.2, 0.22, 0.24, 14), top, 0, -0.04, 0);
-  if (role === 'receptionist') {
+  if (role === 'acupuncturist') put(torso, rbox(0.09, 0.1, 0.03, 0.01), accent, -0.08, 0.26, 0.15);
+  if (role === 'receptionist' || role === 'acupuncturist') {
     const scarf = put(torso, torus(0.11, 0.035), accent, 0, 0.42, 0);
     scarf.rotation.x = Math.PI / 2;
   }
@@ -504,7 +621,53 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     rig.orbit.position.y = 0.3;
     head.add(rig.orbit);
   }
-  for (const o of [rig.knot, rig.steam, rig.band, rig.orbit]) if (o) rig.props.push(o);
+  else if (visual === 'cloud') {
+    const cloud = new THREE.Group();
+    for (const [x, y, r] of [[-0.12, 0, 0.11], [0.02, 0.05, 0.14], [0.14, 0, 0.1]]) put(cloud, sph(r, 10), mat(0x7d8894, 0.95), x, y, 0).castShadow = false;
+    cloud.position.y = 0.4;
+    head.add(cloud);
+    rig.bob = cloud;
+  } else if (visual === 'aura') {
+    rig.orbit = new THREE.Group();
+    const ring = put(rig.orbit, torus(0.36, 0.035), mat(0x7a4f9a, 0.5, 0.5), 0, 0, 0);
+    ring.rotation.x = Math.PI / 2 + 0.3;
+    ring.castShadow = false;
+    rig.orbit.position.y = 0.22;
+    torso.add(rig.orbit);
+  } else if (visual === 'cork') {
+    rig.props.push(put(head, cyl(0.07, 0.09, 0.15, 12), mat(0xc9a56a, 0.95), 0, 0.26, 0));
+    const neck = put(head, torus(0.095, 0.025), mat(0x3f6b52, 0.3), 0, 0.2, 0);
+    neck.rotation.x = Math.PI / 2;
+    rig.props.push(neck);
+  } else if (visual === 'coldfeet') {
+    const ice = mat(0xcdeeff, 0.15, 0.25);
+    for (const leg of [legL, legR]) rig.props.push(put(leg, rbox(0.21, 0.15, 0.3, 0.03), ice, 0, -0.36, 0.035));
+  } else if (visual === 'blanket') {
+    const wool = mat(0x4d7ea8, 0.95);
+    rig.props.push(put(torso, rbox(0.52, 0.1, 0.38, 0.04), wool, 0, 0.4, -0.01));
+    for (const x of [-0.25, 0.25]) rig.props.push(put(torso, rbox(0.1, 0.3, 0.36, 0.04), wool, x, 0.26, -0.01));
+    for (const [x, y] of [[-0.25, 0.08], [0.25, 0.05], [0.1, 0.02]]) rig.props.push(put(torso, sph(0.03, 8), mat(0x6ec6e6, 0.2), x, y, 0.12));
+  } else if (visual === 'battery') {
+    const cell = new THREE.Group();
+    put(cell, rbox(0.26, 0.13, 0.09, 0.02), mat(0x2f3136, 0.6), 0, 0, 0).castShadow = false;
+    put(cell, rbox(0.03, 0.06, 0.05, 0.01), mat(0x2f3136, 0.6), 0.145, 0, 0).castShadow = false;
+    rig.blink = new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 });
+    put(cell, rbox(0.05, 0.09, 0.1, 0.01), rig.blink, -0.085, 0, 0).castShadow = false;
+    cell.position.y = 0.4;
+    head.add(cell);
+    rig.bob = cell;
+  } else if (visual === 'wires') {
+    const tangle = new THREE.Group();
+    const knot = cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8));
+    put(tangle, knot, mat(0xe5484d, 0.5), 0, 0, 0).scale.setScalar(0.85);
+    const second = put(tangle, knot, mat(0x4a9fe0, 0.5), 0, 0, 0);
+    second.scale.setScalar(0.85);
+    second.rotation.set(1.2, 0.6, 0);
+    tangle.position.y = 0.3;
+    head.add(tangle);
+    rig.knot = tangle as unknown as THREE.Mesh;
+  }
+  for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   return rig;
 }
 

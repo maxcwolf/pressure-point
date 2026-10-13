@@ -29,6 +29,7 @@ export const LAYOUT = {
   restroom: { rect: { x: 21, y: 5, w: 3, h: 2 }, door: { x: 23, y: 6, dx: 0, dy: 1 } },
   training: { rect: { x: 5, y: 11, w: 4, h: 4 }, door: { x: 8, y: 12, dx: 1, dy: 0 } },
   assess: { rect: { x: 19, y: 11, w: 4, h: 4 }, door: { x: 19, y: 12, dx: -1, dy: 0 } },
+  acupuncture: { rect: { x: 24, y: 8, w: 4, h: 4 }, door: { x: 25, y: 11, dx: 0, dy: 1 } },
 } as const;
 
 export function addConsult(sim: Sim) {
@@ -48,6 +49,10 @@ export function addTraining(sim: Sim) {
 }
 export function addPostureLab(sim: Sim) {
   return buildRoom(sim, 'assess', LAYOUT.assess.rect, LAYOUT.assess.door, [['posture_scanner', 20, 12]]);
+}
+
+export function addAcupuncture(sim: Sim) {
+  return buildRoom(sim, 'acupuncture', LAYOUT.acupuncture.rect, LAYOUT.acupuncture.door, [['acu_table', 25, 8], ['needle_cabinet', 27, 8]]);
 }
 
 /** Hire the most skilled applicant for a role. */

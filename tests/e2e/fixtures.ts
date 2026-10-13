@@ -65,7 +65,7 @@ export class Game {
   }
 
   /** Open one of the round menus along the bottom. */
-  async menu(name: 'Rooms' | 'Items' | 'Hire' | 'Staff' | 'Massage' | 'Money') {
+  async menu(name: 'Rooms' | 'Items' | 'Hire' | 'Staff' | 'Treatments' | 'Money') {
     await this.page.locator('#buildbtns').getByRole('button', { name }).click();
   }
   card(name: string) {

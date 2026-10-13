@@ -9,6 +9,8 @@ import {
   DAY_SECONDS,
   DECOR_RADIUS,
   DIAGNOSIS_TARGET,
+  DISCIPLINES,
+  DISCIPLINE_ORDER,
   EMERGENCY_CAUSES,
   ENT_IN_Y,
   ENT_X,
@@ -30,7 +32,9 @@ import {
   W,
   H,
   WEAR_REPAIR,
+  modalityLabel,
   type AccessRole,
+  type Discipline,
   type ItemType,
   type Modality,
   type ModalityDef,
@@ -39,6 +43,7 @@ import {
 } from './data';
 import {
   clamp,
+  disciplineOn,
   emptyLedger,
   fairSalary,
   irnd,
@@ -372,9 +377,9 @@ export class Sim {
       const st = ITEMS[it.type].station;
       if (!st || !this.world.usable(it)) continue;
       if (it.queue.length >= 2 && !it.staffId)
-        return `Guests are lining up for a ${GOAL_NAME[st.goal]} with nobody staffing it. Hire another ${ROLES[st.staff].name}.`;
+        return `Guests are lining up for a ${this.stationPlace(it)} with nobody staffing it. Hire another ${ROLES[st.staff].name}.`;
       if (it.queue.length >= 6)
-        return `The line for the ${GOAL_NAME[st.goal]} is getting long. Build another and staff it.`;
+        return `The line for the ${this.stationPlace(it)} is getting long. Build another and staff it.`;
     }
     if (s.guests.length > 4 && !s.items.some((i) => i.type === 'bench'))
       return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
@@ -387,37 +392,67 @@ export class Sim {
   /** Nudge about modalities guests are waiting for that the center cannot deliver. */
   private modalityAdvice(): string {
     const s = this.s;
-    const therapists = s.staff.filter((x) => x.role === 'therapist' && x.state !== 'leaving');
     for (const m of MODALITY_ORDER) {
       const def = MODALITIES[m];
       if (!this.unlocked(m)) continue;
       const wanted = s.guests.some((g) => g.goal === 'treat' && CONDITION_BY_ID[g.condition].modality === m);
       if (!wanted) continue;
-      const studying = therapists.some((x) => x.training?.course === m);
-      if (!therapists.some((x) => x.quals.includes(m)) && !studying) {
+      const role = ROLES[DISCIPLINES[def.discipline].role];
+      const room = ROOMS[DISCIPLINES[def.discipline].room];
+      const staff = s.staff.filter((x) => x.role === role.role && x.state !== 'leaving');
+      const an = /^[AEIOU]/.test(role.name) ? 'an' : 'a';
+      if (!staff.length) return `Guests need ${modalityLabel(m)}. Hire ${an} ${role.name} for your ${room.name}.`;
+      const studying = staff.some((x) => x.training?.course === m);
+      if (!staff.some((x) => x.quals.includes(m)) && !studying) {
         return this.hasRoom('training')
-          ? `Guests need ${def.name} massage and nobody is qualified. Select a Massage Therapist and send them on the course.`
-          : `Guests need ${def.name} massage and nobody is qualified. Build a Training Room, then train a Massage Therapist.`;
+          ? `Guests need ${modalityLabel(m)} and nobody is qualified. Select ${an} ${role.name} and send them on the course.`
+          : `Guests need ${modalityLabel(m)} and nobody is qualified. Build a Training Room, then train ${an} ${role.name}.`;
       }
       if (def.equipment) {
         const eq = ITEMS[def.equipment];
         const have = s.items.filter((i) => i.type === def.equipment && this.world.usable(i));
-        if (!have.length) return `${def.name} massage needs a ${eq.name} in a Massage Suite. You'll find it in the Items menu.`;
+        if (!have.length) return `${modalityLabel(m)} needs a ${eq.name} in the ${room.name}. You'll find it in the Items menu.`;
         if (def.equipment === 'stone_warmer' && have.every((i) => i.water < STONE_USE))
           return this.hasStaff('caretaker')
             ? 'The massage stones have gone cold. Your Janitor is stretched thin.'
             : 'The massage stones have gone cold. Hire a Janitor to keep the Stone Warmer hot.';
       }
     }
+    // a newly available discipline nobody has set up yet
+    for (const d of DISCIPLINE_ORDER) {
+      const def = DISCIPLINES[d];
+      const room = ROOMS[def.room];
+      if (!def.optional || !this.enabled(d) || s.stars < (room.unlock ?? 0) || this.hasRoom(def.room)) continue;
+      return `${def.name} is now available. Build an ${room.name} and hire an ${ROLES[def.role].name} to bring in a new kind of guest.`;
+    }
     return '';
   }
 
-  // ---- Modalities ----------------------------------------------------------
+  // ---- Disciplines and modalities ------------------------------------------
+  /** Switched on for this game. */
+  enabled(d: Discipline) {
+    return disciplineOn(this.s, d);
+  }
+  /** Switch an optional discipline on or off. What is already built stays, but its guests stop arriving. */
+  setDiscipline(d: Discipline, on: boolean) {
+    if (!DISCIPLINES[d].optional) return;
+    this.s.options[d] = on;
+    refillCandidates(this.s);
+  }
+  /** The center can actually take guests for this discipline: it is on and has a finished room. */
+  offered(d: Discipline) {
+    return this.enabled(d) && this.hasRoom(DISCIPLINES[d].room);
+  }
   unlocked(m: Modality) {
-    return this.s.stars >= MODALITIES[m].star;
+    return this.s.stars >= MODALITIES[m].star && this.enabled(MODALITIES[m].discipline);
   }
   modalityOf(g: Guest): ModalityDef {
     return MODALITIES[CONDITION_BY_ID[g.condition].modality];
+  }
+  /** What to call the place a station is in: its room, or the item itself in a corridor. */
+  private stationPlace(it: Item): string {
+    const where = ITEMS[it.type].where;
+    return where === 'corridor' || where === 'any' ? ITEMS[it.type].name : ROOMS[where].name;
   }
   /** Working equipment for a modality in the suite around a table. */
   private equipmentProblem(table: Item, def: ModalityDef): DeliveryProblem {
@@ -440,7 +475,7 @@ export class Sim {
     for (const it of this.s.items) {
       const st = ITEMS[it.type].station;
       if (st && this.world.usable(it) && it.queue.length >= 2 && !it.staffId)
-        return `${ROLES[st.staff].name} needed at the ${GOAL_NAME[st.goal]}.`;
+        return `${ROLES[st.staff].name} needed at the ${this.stationPlace(it)}.`;
     }
     if (this.s.litter.length >= 4) return 'Janitor needed. The corridors are getting crunchy.';
     return null;
@@ -621,6 +656,7 @@ export class Sim {
     for (const it of this.s.items) {
       const st = ITEMS[it.type].station;
       if (!st || st.goal !== goal || !this.world.usable(it)) continue;
+      if (goal === 'treat' && st.discipline !== this.modalityOf(g).discipline) continue;
       const score = this.stationScore(it, g);
       if (score < bestScore) {
         bestScore = score;
@@ -776,13 +812,13 @@ export class Sim {
         if (problem === 'unqualified')
           this.tipOnce(
             `botch-qual-${mod.id}`,
-            `${staff.name} is not trained in ${mod.name} massage and botched it. Train a therapist in ${mod.name} in a Training Room.`,
+            `${staff.name} is not trained in ${modalityLabel(mod.id)} and botched it. Send them on the course in a Training Room.`,
             'bad',
           );
         else if (problem === 'no-equipment')
           this.tipOnce(
             `botch-equipment-${mod.id}`,
-            `${mod.name} massage needs a ${ITEMS[mod.equipment!].name} in the same Massage Suite as the table.`,
+            `${modalityLabel(mod.id)} needs a ${ITEMS[mod.equipment!].name} in the same ${ROOMS[DISCIPLINES[mod.discipline].room].name} as the table.`,
             'bad',
           );
         else if (problem === 'cold')
@@ -830,13 +866,15 @@ export class Sim {
   }
 
   /**
-   * Guests only arrive with conditions whose modality is unlocked. Ones nobody on the
-   * payroll can treat yet turn up less often, so a new star is not an instant flood of failures.
+   * Guests only arrive with conditions the center could treat: the modality is unlocked and
+   * its discipline has a finished room. Ones nobody on the payroll is qualified for turn up
+   * less often, so a new star or a new clinic is not an instant flood of failures.
    */
   private rollCondition(): string {
-    const therapists = this.s.staff.filter((x) => x.role === 'therapist' && x.state !== 'leaving');
-    const pool = CONDITIONS.filter((c) => this.unlocked(c.modality));
-    const weights = pool.map((c) => (therapists.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4));
+    const staff = this.s.staff.filter((x) => x.state !== 'leaving');
+    let pool = CONDITIONS.filter((c) => this.unlocked(c.modality) && this.offered(MODALITIES[c.modality].discipline));
+    if (!pool.length) pool = CONDITIONS.filter((c) => c.modality === DISCIPLINES.massage.base);
+    const weights = pool.map((c) => (staff.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4));
     let roll = random() * weights.reduce((a, b) => a + b, 0);
     for (let i = 0; i < pool.length; i++) {
       roll -= weights[i];
@@ -964,7 +1002,10 @@ export class Sim {
         return this.decide(g);
       }
       if (g.goal !== 'leave' && g.goal !== 'reception')
-        this.tipOnce(`missing-${g.goal}`, `Guests are waiting for a ${GOAL_NAME[g.goal]}, but there isn't one.`, 'bad');
+{
+        const place = g.goal === 'treat' ? ROOMS[DISCIPLINES[this.modalityOf(g).discipline].room].name : GOAL_NAME[g.goal];
+        this.tipOnce(`missing-${place}`, `Guests are waiting for a ${place}, but there isn't a working one.`, 'bad');
+      }
     } else {
       // hop to a clearly better line if one has opened up
       const better = this.pickStation(g);
@@ -1485,8 +1526,10 @@ export class Sim {
   offerEmergency(): boolean {
     const s = this.s;
     if (s.offer || s.emergency) return false;
-    const therapists = s.staff.filter((x) => x.role === 'therapist' && x.state !== 'leaving');
-    const pool = CONDITIONS.filter((c) => this.unlocked(c.modality) && therapists.some((t) => t.quals.includes(c.modality)));
+    const staff = s.staff.filter((x) => x.state !== 'leaving');
+    const pool = CONDITIONS.filter(
+      (c) => this.unlocked(c.modality) && this.offered(MODALITIES[c.modality].discipline) && staff.some((t) => t.quals.includes(c.modality)),
+    );
     if (!pool.length) {
       s.nextEmergency = s.day + 20;
       return false;
@@ -1546,11 +1589,12 @@ export class Sim {
   /** Courses this member of staff could take right now. */
   courses(st: Staff): Course[] {
     const out: Course[] = [];
-    if (st.role === 'therapist') {
+    const discipline = ROLES[st.role].discipline;
+    if (discipline) {
       for (const m of MODALITY_ORDER) {
         const def = MODALITIES[m];
-        if (st.quals.includes(m) || !this.unlocked(m)) continue;
-        out.push({ id: m, name: `${def.name} massage`, icon: def.icon, desc: def.desc, cost: def.trainCost, days: def.trainDays });
+        if (def.discipline !== discipline || st.quals.includes(m) || !this.unlocked(m)) continue;
+        out.push({ id: m, name: modalityLabel(m), icon: def.icon, desc: def.desc, cost: def.trainCost, days: def.trainDays });
       }
     }
     if (st.skill < 5)
@@ -1609,7 +1653,7 @@ export class Sim {
     } else {
       const m = t.course as Modality;
       if (!st.quals.includes(m)) st.quals.push(m);
-      what = `is now qualified in ${MODALITIES[m].name} massage`;
+      what = `is now qualified in ${modalityLabel(m)}`;
     }
     st.training = null;
     this.staffIdle(st);

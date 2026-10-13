@@ -7,6 +7,7 @@ import { Audio } from './audio';
 import { View } from './render/view';
 import { Sim } from './sim';
 import { AUTOSAVE_ID, archiveAutosave, autosave, readSave } from './saves';
+import { loadDisciplinePrefs } from './settings';
 import { newGame, type GameState } from './state';
 import { Tools } from './tools';
 import { UI, showTitle } from './ui/ui';
@@ -50,6 +51,8 @@ function reloadInto(what: string) {
 function open(what: string | null): GameState | null {
   if (!what) return null;
   const state = what === 'new' ? newGame() : readSave(what);
+  // a new game starts with the treatments chosen in Settings
+  if (state && what === 'new') state.options = loadDisciplinePrefs();
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
   if (state && what !== AUTOSAVE_ID) archiveAutosave();
   return state;
