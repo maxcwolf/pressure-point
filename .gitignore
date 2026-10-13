@@ -12,3 +12,6 @@ release/
 !.yarn/sdks
 !.yarn/versions
 .pnp.*
+
+# local Claude Code settings
+.claude/
