@@ -115,5 +115,5 @@ jobs:
           cat notes.md
           gh release create "$GITHUB_REF_NAME" installers/* \
             --verify-tag \
-            --title "Pressure Point Institute $GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
             --notes-file notes.md
