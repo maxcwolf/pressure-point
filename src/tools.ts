@@ -149,7 +149,7 @@ export class Tools {
     this.refresh();
   }
 
-  /** Top-left tile for an item centred on the cursor. */
+  /** Top-left tile for an item centered on the cursor. */
   private itemSpot(type: ItemType, rot: number): [number, number] | null {
     if (!this.cursor) return null;
     const [w, h] = itemDims(type, rot);

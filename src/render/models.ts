@@ -67,7 +67,7 @@ function chair(g: THREE.Object3D, x: number, z: number, backSign: number, color:
   put(g, rbox(0.46, 0.5, 0.09, 0.04), mat(color), x, 0.66, z + backSign * 0.23);
 }
 
-/** Build an item in its local frame: origin at the footprint centre, +z is the front. */
+/** Build an item in its local frame: origin at the footprint center, +z is the front. */
 export function buildItem(type: ItemType): THREE.Group {
   const g = new THREE.Group();
   switch (type) {

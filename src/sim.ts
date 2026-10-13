@@ -1,6 +1,6 @@
 // The simulation: guests, staff, queues, money, reputation.
 import {
-  BODGE_FACTOR,
+  BOTCH_FACTOR,
   CONDITIONS,
   CONDITION_BY_ID,
   CONSULT_FEE,
@@ -17,7 +17,7 @@ import {
   SIDEWALK_Y,
   STAR_GOALS,
   STONE_USE,
-  TANNOY,
+  ANNOUNCEMENTS,
   TRAIT_BY_ID,
   W,
   type AccessRole,
@@ -64,7 +64,7 @@ export type SimEvent =
   | { type: 'float'; text: string; x: number; y: number; kind: 'good' | 'bad' | 'info' }
   | { type: 'toast'; text: string; kind: 'good' | 'bad' | 'info' }
   | { type: 'sfx'; name: string }
-  | { type: 'tannoy'; text: string }
+  | { type: 'announce'; text: string }
   | { type: 'star'; stars: number };
 
 /** Something a member of staff can study in a Training Room. */
@@ -183,7 +183,7 @@ export class Sim {
       s.open = true;
       s.spawnT = 3;
       this.toast('Grand opening! Guests are on their way.', 'good');
-      this.emit({ type: 'tannoy', text: 'The healing centre is now open. Please form an orderly queue of ailments.' });
+      this.emit({ type: 'announce', text: 'The healing center is now open. Please form an orderly line of ailments.' });
       this.emit({ type: 'sfx', name: 'fanfare' });
     }
     if (s.open) {
@@ -208,10 +208,10 @@ export class Sim {
       this.updateAmbience();
       this.checkStars();
     }
-    s.tannoyT -= dt;
-    if (s.tannoyT <= 0) {
-      s.tannoyT = rnd(40, 70);
-      if (s.open) this.emit({ type: 'tannoy', text: this.contextTannoy() ?? pick(TANNOY) });
+    s.announceT -= dt;
+    if (s.announceT <= 0) {
+      s.announceT = rnd(40, 70);
+      if (s.open) this.emit({ type: 'announce', text: this.contextAnnouncement() ?? pick(ANNOUNCEMENTS) });
     }
   }
 
@@ -302,21 +302,21 @@ export class Sim {
     if (!this.hasRoom('massage')) return 'Now the main event: build a Massage Suite.';
     if (!this.hasStaff('therapist')) return 'Hire a Massage Therapist and the knots will start untying themselves.';
     const tired = s.staff.some((x) => x.energy < 20);
-    if (tired && !this.hasRoom('staffroom')) return 'Your staff are worn out and working slowly. Build a Staff Room so they can take breaks.';
+    if (tired && !this.hasRoom('staffroom')) return 'Your staff members are worn out and working slowly. Build a Staff Room so they can take breaks.';
     if (s.guests.some((g) => g.bladder > 85) && !this.hasRoom('restroom'))
       return 'Guests are crossing their legs. A Restroom would be a kindness.';
-    if (s.litter.length >= 3 && !this.hasStaff('caretaker')) return 'Litter is piling up. Hire a Caretaker to keep the place tidy.';
+    if (s.litter.length >= 3 && !this.hasStaff('caretaker')) return 'Litter is piling up. Hire a Janitor to keep the place clean.';
     if (s.items.some((i) => i.type === 'plant' && i.water < 20) && !this.hasStaff('caretaker'))
-      return 'Your plants are wilting. A Caretaker will water them.';
+      return 'Your plants are wilting. A Janitor will water them.';
     const gap = this.modalityAdvice();
     if (gap) return gap;
     for (const it of s.items) {
       const st = ITEMS[it.type].station;
       if (!st || !this.world.usable(it)) continue;
       if (it.queue.length >= 2 && !it.staffId)
-        return `Guests are queueing for a ${GOAL_NAME[st.goal]} with nobody staffing it. Hire another ${ROLES[st.staff].name}.`;
+        return `Guests are lining up for a ${GOAL_NAME[st.goal]} with nobody staffing it. Hire another ${ROLES[st.staff].name}.`;
       if (it.queue.length >= 6)
-        return `The queue for the ${GOAL_NAME[st.goal]} is getting long. Build another and staff it.`;
+        return `The line for the ${GOAL_NAME[st.goal]} is getting long. Build another and staff it.`;
     }
     if (s.guests.length > 4 && !s.items.some((i) => i.type === 'bench'))
       return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
@@ -326,7 +326,7 @@ export class Sim {
     return 'Looking good. Keep an eye on the objectives to earn your next star.';
   }
 
-  /** Nudge about modalities guests are waiting for that the centre cannot deliver. */
+  /** Nudge about modalities guests are waiting for that the center cannot deliver. */
   private modalityAdvice(): string {
     const s = this.s;
     const therapists = s.staff.filter((x) => x.role === 'therapist' && x.state !== 'leaving');
@@ -347,8 +347,8 @@ export class Sim {
         if (!have.length) return `${def.name} massage needs a ${eq.name} in a Massage Suite. You'll find it in the Items menu.`;
         if (def.equipment === 'stone_warmer' && have.every((i) => i.water < STONE_USE))
           return this.hasStaff('caretaker')
-            ? 'The massage stones have gone cold. Your Caretaker is stretched thin.'
-            : 'The massage stones have gone cold. Hire a Caretaker to keep the Stone Warmer hot.';
+            ? 'The massage stones have gone cold. Your Janitor is stretched thin.'
+            : 'The massage stones have gone cold. Hire a Janitor to keep the Stone Warmer hot.';
       }
     }
     return '';
@@ -378,13 +378,13 @@ export class Sim {
     return '';
   }
 
-  private contextTannoy(): string | null {
+  private contextAnnouncement(): string | null {
     for (const it of this.s.items) {
       const st = ITEMS[it.type].station;
       if (st && this.world.usable(it) && it.queue.length >= 2 && !it.staffId)
-        return `${ROLES[st.staff].name} required at the ${GOAL_NAME[st.goal]}.`;
+        return `${ROLES[st.staff].name} needed at the ${GOAL_NAME[st.goal]}.`;
     }
-    if (this.s.litter.length >= 4) return 'Caretaker required. The corridors are becoming crunchy.';
+    if (this.s.litter.length >= 4) return 'Janitor needed. The corridors are getting crunchy.';
     return null;
   }
 
@@ -546,7 +546,7 @@ export class Sim {
   }
 
   // ---- Stations ------------------------------------------------------------
-  /** Lower is better. Guests steer towards tables that can actually deliver what they need. */
+  /** Lower is better. Guests steer toward tables that can actually deliver what they need. */
   private stationScore(it: Item, g: Guest) {
     let score = it.queue.length + (it.serving ? 1 : 0) + (it.staffId ? 0 : 2.5);
     if (ITEMS[it.type].station?.goal === 'treat') {
@@ -667,8 +667,8 @@ export class Sim {
         0.3,
         0.98,
       );
-      // the wrong hands or missing kit: they have a go anyway, and it rarely works
-      if (problem) chance *= BODGE_FACTOR;
+      // the wrong hands or missing equipment: they try anyway, and it rarely works
+      if (problem) chance *= BOTCH_FACTOR;
       else if (mod.equipment === 'stone_warmer') {
         const zone = this.world.zoneAt(it.x, it.y);
         const warmer = this.s.items
@@ -695,18 +695,18 @@ export class Sim {
         this.emit({ type: 'sfx', name: 'fail' });
         if (problem === 'unqualified')
           this.tipOnce(
-            `bodge-qual-${mod.id}`,
+            `botch-qual-${mod.id}`,
             `${staff.name} is not trained in ${mod.name} massage and botched it. Train a therapist in ${mod.name} in a Training Room.`,
             'bad',
           );
         else if (problem === 'no-equipment')
           this.tipOnce(
-            `bodge-kit-${mod.id}`,
+            `botch-equipment-${mod.id}`,
             `${mod.name} massage needs a ${ITEMS[mod.equipment!].name} in the same Massage Suite as the table.`,
             'bad',
           );
         else if (problem === 'cold')
-          this.tipOnce('bodge-cold', 'The massage stones were cold. A Caretaker keeps Stone Warmers hot.', 'bad');
+          this.tipOnce('botch-cold', 'The massage stones were cold. A Janitor keeps Stone Warmers hot.', 'bad');
         else
           this.tipOnce(
             'failed',
@@ -880,7 +880,7 @@ export class Sim {
       if (g.goal !== 'leave' && g.goal !== 'reception')
         this.tipOnce(`missing-${g.goal}`, `Guests are waiting for a ${GOAL_NAME[g.goal]}, but there isn't one.`, 'bad');
     } else {
-      // hop to a clearly better queue if one has opened up
+      // hop to a clearly better line if one has opened up
       const better = this.pickStation(g);
       if (better && better !== st && this.stationScore(better, g) + 2 < this.stationScore(st, g) - 1) {
         this.removeFromStations(g);
@@ -996,7 +996,7 @@ export class Sim {
     this.emit({ type: 'float', text: 'Fed up!', x: g.x, y: g.y, kind: 'bad' });
     this.tipOnce(
       'stormed',
-      'A guest ran out of patience and left. Benches, tea, plants and shorter queues all help.',
+      'A guest ran out of patience and left. Benches, tea, plants and shorter lines all help.',
       'bad',
     );
     this.leave(g);
@@ -1233,7 +1233,7 @@ export class Sim {
           if (st.timer <= 0) {
             st.timer = 2;
             if (!this.tryBreak(st))
-              this.tipOnce('tired', 'Tired staff work slowly and botch treatments. Build a Staff Room so they can rest.', 'bad');
+              this.tipOnce('tired', 'Tired staff members work slowly and botch treatments. Build a Staff Room so they can rest.', 'bad');
           }
         }
         break;

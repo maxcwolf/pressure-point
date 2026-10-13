@@ -212,7 +212,7 @@ export class World {
   private came = new Int32Array(W * H);
   private state = new Uint8Array(W * H);
 
-  /** A* over the tile grid. The start tile may itself be blocked. Returns tile-centre waypoints. */
+  /** A* over the tile grid. The start tile may itself be blocked. Returns tile-center waypoints. */
   findPath(sx: number, sy: number, gx: number, gy: number): number[][] | null {
     if (!inBounds(sx, sy) || !this.walkable(gx, gy)) return null;
     if (sx === gx && sy === gy) return [];

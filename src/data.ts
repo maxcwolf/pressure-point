@@ -92,7 +92,7 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     type: 'staffroom',
     name: 'Staff Room',
     icon: '☕',
-    desc: 'Tired staff recover here. Without one they get slow, then grumpy.',
+    desc: 'Tired staff members recover here. Without one they get slow, then grumpy.',
     cost: 3000,
     minShort: 3,
     minLong: 3,
@@ -116,7 +116,7 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     type: 'training',
     name: 'Training Room',
     icon: '🎓',
-    desc: 'Staff study here to learn new massage modalities or sharpen their skill.',
+    desc: 'Staff members study here to learn new massage modalities or sharpen their skills.',
     cost: 4500,
     minShort: 3,
     minLong: 3,
@@ -158,7 +158,7 @@ export interface ItemDef {
   access: AccessDef[];
   /** Where it may be placed. */
   where: 'corridor' | 'any' | RoomType;
-  /** Stations have a staff post and a queue of guests. */
+  /** Stations have a staff position and a line of guests. */
   station?: { staff: Role; goal: 'reception' | 'consult' | 'treat'; seconds: number };
   inMenu?: boolean;
   /** Stars needed before it can be bought. */
@@ -201,7 +201,7 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     type: 'cabinet',
     name: 'Chart Cabinet',
     icon: '🗄️',
-    desc: 'Full of charts. Nobody has checked which way up they go.',
+    desc: 'Full of charts. Nobody has checked which side is up.',
     cost: 0,
     w: 1,
     h: 1,
@@ -225,9 +225,9 @@ export const ITEMS: Record<ItemType, ItemDef> = {
   },
   oil_trolley: {
     type: 'oil_trolley',
-    name: 'Oil Trolley',
+    name: 'Oil Cart',
     icon: '🧴',
-    desc: 'Lavender, eucalyptus, and one unlabelled bottle everyone avoids.',
+    desc: 'Lavender, eucalyptus, and one unlabeled bottle everyone avoids.',
     cost: 0,
     w: 1,
     h: 1,
@@ -236,9 +236,9 @@ export const ITEMS: Record<ItemType, ItemDef> = {
   },
   sofa: {
     type: 'sofa',
-    name: 'Squashy Sofa',
+    name: 'Squishy Couch',
     icon: '🛋️',
-    desc: 'Staff restore their energy here. Seats two.',
+    desc: 'Staff members recharge here. Seats two.',
     cost: 600,
     w: 2,
     h: 1,
@@ -251,7 +251,7 @@ export const ITEMS: Record<ItemType, ItemDef> = {
   },
   toilet: {
     type: 'toilet',
-    name: 'Cubicle',
+    name: 'Toilet Stall',
     icon: '🚽',
     desc: 'One guest at a time, please.',
     cost: 500,
@@ -265,7 +265,7 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     type: 'sink',
     name: 'Sink',
     icon: '🚰',
-    desc: 'For the look of the thing.',
+    desc: 'Mostly for show.',
     cost: 0,
     w: 1,
     h: 1,
@@ -289,9 +289,9 @@ export const ITEMS: Record<ItemType, ItemDef> = {
   },
   plant: {
     type: 'plant',
-    name: 'Pot Plant',
+    name: 'Potted Plant',
     icon: '🪴',
-    desc: 'Improves the ambience. Needs watering by a Caretaker.',
+    desc: 'Improves the ambience. Needs watering by a Janitor.',
     cost: 120,
     w: 1,
     h: 1,
@@ -325,9 +325,9 @@ export const ITEMS: Record<ItemType, ItemDef> = {
   },
   bin: {
     type: 'bin',
-    name: 'Bin',
+    name: 'Trash Can',
     icon: '🗑️',
-    desc: 'Guests near a bin are far less likely to litter.',
+    desc: 'Guests near a trash can are far less likely to litter.',
     cost: 60,
     w: 1,
     h: 1,
@@ -351,7 +351,7 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     type: 'stone_warmer',
     name: 'Stone Warmer',
     icon: '🪨',
-    desc: 'Heats basalt stones for Hot Stone massage. A Caretaker keeps it hot.',
+    desc: 'Heats basalt stones for Hot Stone massage. A Janitor keeps it hot.',
     cost: 900,
     w: 1,
     h: 1,
@@ -452,7 +452,7 @@ export const ROLES: Record<Role, RoleDef> = {
   },
   caretaker: {
     role: 'caretaker',
-    name: 'Caretaker',
+    name: 'Janitor',
     icon: '🧹',
     desc: 'Clears litter and waters the plants.',
     baseSalary: 600,
@@ -477,7 +477,7 @@ export const TRAITS: TraitDef[] = [
   { id: 'chatty', name: 'Chatterbox', desc: 'Works 15% slower. Has opinions about crystals.', speed: 0.85, pay: 0.92 },
   { id: 'sleepy', name: 'Sleepyhead', desc: 'Tires 35% faster.', stamina: 1.35, pay: 0.9 },
   { id: 'speedy', name: 'Power Walker', desc: 'Gets around 30% faster.', walk: 1.3, pay: 1.05 },
-  { id: 'dawdler', name: 'Dawdler', desc: 'Never knowingly hurried.', walk: 0.8, pay: 0.92 },
+  { id: 'dawdler', name: 'Dawdler', desc: 'Has never hurried in their life.', walk: 0.8, pay: 0.92 },
   { id: 'bargain', name: 'Undervalued', desc: 'Asks for 15% less pay. Do not tell them.', pay: 0.85 },
 ];
 export const TRAIT_BY_ID: Record<string, TraitDef> = Object.fromEntries(TRAITS.map((t) => [t.id, t]));
@@ -570,7 +570,7 @@ export const MODALITY_ORDER: Modality[] = ['swedish', 'deep', 'sports', 'stone',
 /** Stone warmers lose this much heat per Hot Stone session and are useless below it. */
 export const STONE_USE = 25;
 /** Chance of success is multiplied by this when the modality cannot be delivered properly. */
-export const BODGE_FACTOR = 0.35;
+export const BOTCH_FACTOR = 0.35;
 
 // ---- Conditions ------------------------------------------------------------
 export type Visual = 'knot' | 'slump' | 'steam' | 'stiff' | 'neck' | 'band' | 'crick' | 'flex' | 'frost' | 'dizzy';
@@ -707,17 +707,17 @@ export const LAST_NAMES = [
   'Flexmoor', 'Easeby', 'Musselwhite', 'Pummell', 'Glide', 'Hotstone',
 ];
 
-export const TANNOY = [
+export const ANNOUNCEMENTS = [
   'Guests are reminded that the knots are not contagious.',
   'Would the owner of a red aura please move it from the fire exit.',
   'Please do not tip the therapists. They fall over.',
-  'Staff are reminded that whale song is not a valid sick note.',
+  'Staff members are reminded that whale song is not a valid doctor’s note.',
   'Guests are asked not to hum along with the fountain.',
   'The herbal tea is herbal. That is all we are prepared to say.',
   'Please keep your chakras aligned and your belongings with you.',
   'Guests leaving face-shaped marks on the towels will be charged.',
   'A reminder that relaxation is mandatory.',
-  'Lost property now holds one flip-flop and a sense of urgency.',
+  'The lost and found now holds one flip-flop and a sense of urgency.',
   'Please breathe in. Further instructions will follow.',
   'Guests are reminded that the face hole is not a snack hatch.',
 ];

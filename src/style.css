@@ -150,14 +150,14 @@ s {
   color: #23805a;
 }
 
-/* ---- Top: tannoy, system buttons, hint ---- */
-#tannoy {
+/* ---- Top: announcements, system buttons, hint ---- */
+#announce {
   top: 14px;
   left: 50%;
   transform: translateX(-50%);
   max-width: 46vw;
 }
-.tannoy {
+.announce {
   background: var(--navy);
   color: var(--cream);
   padding: 8px 18px;

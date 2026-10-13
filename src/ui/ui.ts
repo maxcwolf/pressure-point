@@ -54,7 +54,7 @@ function guestStatus(g: Guest, sim: Sim): string {
     case 'toWait':
     case 'waiting':
       if (!st) return g.goal === 'treat' ? 'Waiting for a Massage Suite to exist' : g.goal === 'consult' ? 'Waiting for a Consultation Room to exist' : 'Looking for Reception';
-      return g.goal === 'reception' ? 'Queueing at Reception' : g.goal === 'consult' ? 'Waiting for a consultation' : 'Waiting for treatment';
+      return g.goal === 'reception' ? 'In line at Reception' : g.goal === 'consult' ? 'Waiting for a consultation' : 'Waiting for treatment';
     case 'called':
       return `Heading to the ${where}`;
     case 'served':
@@ -74,9 +74,9 @@ function staffStatus(st: Staff, sim: Sim): string {
       return 'Arriving for their first day';
     case 'idle':
     case 'wander':
-      return st.role === 'caretaker' ? 'Looking for something to tidy' : 'Idle: no free post to staff';
+      return st.role === 'caretaker' ? 'Looking for something to clean' : 'Idle: no open station to staff';
     case 'toPost':
-      return `Heading to the ${post ? ITEMS[post.type].name : 'post'}`;
+      return `Heading to the ${post ? ITEMS[post.type].name : 'station'}`;
     case 'atPost':
       return st.busy ? 'Working' : 'Waiting for a guest';
     case 'toBreak':
@@ -106,7 +106,7 @@ export class UI {
   private menu: Menu = null;
   private hireRole: Role = 'receptionist';
   private cache = new Map<string, string>();
-  private tannoyT = 0;
+  private announceT = 0;
   private modalOpen = false;
 
   constructor(private host: UIHost) {
@@ -114,7 +114,7 @@ export class UI {
     this.floaters = document.getElementById('floaters')!;
     this.root.innerHTML = `
       <div id="objectives" class="panel"></div>
-      <div id="tannoy"></div>
+      <div id="announce"></div>
       <div id="sys"></div>
       <div id="toasts"></div>
       <div id="inspector"></div>
@@ -352,7 +352,7 @@ export class UI {
         )
         .join('');
       const total = s.staff.reduce((a, x) => a + x.salary, 0);
-      return `<div class="panel menu"><h3>Your staff</h3>${rows || '<p class="sub">Nobody works here yet. Try the Hire menu.</p>'}<p class="sub">Monthly wage bill: <b>${money(total)}</b></p></div>`;
+      return `<div class="panel menu"><h3>Your staff</h3>${rows || '<p class="sub">Nobody works here yet. Try the Hire menu.</p>'}<p class="sub">Monthly payroll: <b>${money(total)}</b></p></div>`;
     }
     if (this.menu === 'treatments') {
       const therapists = s.staff.filter((x) => x.role === 'therapist' && x.state !== 'leaving');
@@ -455,7 +455,7 @@ export class UI {
     const staff = sim.staff(it.staffId);
     const g = sim.guest(it.serving);
     return `<p class="status">${staff ? `Staffed by ${esc(staff.name)}` : `⚠️ Needs a ${ROLES[def.staff].name}`}</p>
-      <p class="sub">Queue: ${it.queue.length}${g ? ` · Seeing ${esc(g.name)}` : ''}</p>${g ? bar(it.progress * 100, 'blue') : ''}`;
+      <p class="sub">In line: ${it.queue.length}${g ? ` · Seeing ${esc(g.name)}` : ''}</p>${g ? bar(it.progress * 100, 'blue') : ''}`;
   }
 
   private itemInfo(it: Item): string {
@@ -506,7 +506,7 @@ export class UI {
     for (const e of events) {
       if (e.type === 'sfx') audio.play(e.name);
       else if (e.type === 'toast') this.toast(e.text, e.kind);
-      else if (e.type === 'tannoy') this.tannoy(e.text);
+      else if (e.type === 'announce') this.announce(e.text);
       else if (e.type === 'star') this.showStar(e.stars);
       else if (e.type === 'float') {
         const p = view.project(e.x, e.y, 1.6);
@@ -532,12 +532,12 @@ export class UI {
     setTimeout(() => el.remove(), 7000);
   }
 
-  private tannoy(text: string) {
-    const el = document.getElementById('tannoy')!;
-    el.innerHTML = `<div class="tannoy">📢 ${esc(text)}</div>`;
-    this.host.audio.play('tannoy');
-    clearTimeout(this.tannoyT);
-    this.tannoyT = window.setTimeout(() => (el.innerHTML = ''), 8000);
+  private announce(text: string) {
+    const el = document.getElementById('announce')!;
+    el.innerHTML = `<div class="announce">📢 ${esc(text)}</div>`;
+    this.host.audio.play('announce');
+    clearTimeout(this.announceT);
+    this.announceT = window.setTimeout(() => (el.innerHTML = ''), 8000);
   }
 
   // ---- Modals --------------------------------------------------------------
@@ -591,7 +591,7 @@ export class UI {
   }
 
   private confirmNewGame() {
-    this.modal(`<h2>Start over?</h2><p>This demolishes your healing centre and erases the save. The knots will return.</p>
+    this.modal(`<h2>Start over?</h2><p>This demolishes your healing center and erases the save. The knots will return.</p>
       <div class="btnrow"><button data-act="close">Keep playing</button><button class="danger" data-act="newgame-yes">Erase and restart</button></div>`);
   }
 }
@@ -603,7 +603,7 @@ export function showTitle(canContinue: boolean): Promise<'new' | 'continue'> {
     el.id = 'title';
     el.innerHTML = `<div class="panel dialog">
       <div class="logo">${TITLE_LINES.map((w) => `<span>${w}</span>`).join('')}</div>
-      <p class="tagline">Build a healing centre. Untie the public.</p>
+      <p class="tagline">Build a healing center. Untie the public.</p>
       <div class="btnrow">
         ${canContinue ? '<button class="go" data-pick="continue">Continue</button>' : ''}
         <button class="${canContinue ? '' : 'go'}" data-pick="new">New game</button>

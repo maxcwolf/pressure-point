@@ -1,10 +1,10 @@
 # Pressure Point Institute
 
-A healing-centre management sim for macOS and Windows, in the spirit of the classic hospital tycoon games. Build rooms, hire staff, and untie the public.
+A healing-center management sim for macOS and Windows, in the spirit of the classic hospital tycoon games. Build rooms, hire staff, and untie the public.
 
 The MVP covers **massage therapy**. Acupuncture and reiki are planned.
 
-![A busy healing centre](docs/screenshot.png)
+![A busy healing center](docs/screenshot.png)
 
 ## Play
 
@@ -70,15 +70,15 @@ To ship a macOS build that opens without a warning, add the same five secrets th
 
 1. Place a **Reception Desk** and hire a **Receptionist**.
 2. Build a **Consultation Room** (drag the floor, click a wall for the door, place the furniture) and hire a **Wellness Consultant**.
-3. Build a **Massage Suite** and hire a **Massage Therapist**. The centre opens once all three exist.
+3. Build a **Massage Suite** and hire a **Massage Therapist**. The center opens once all three exist.
 4. Guests check in, get diagnosed, get treated, and pay. Keep them patient with benches, tea, snacks, plants and a restroom.
-5. Staff tire. A **Staff Room** lets them recover; a **Caretaker** clears litter, waters plants and keeps the massage stones hot.
+5. Staff members get tired. A **Staff Room** lets them recover; a **Janitor** clears litter, waters plants, and keeps the massage stones hot.
 6. Salaries come out at the end of each month. Hit the objectives to earn stars.
 7. Stars unlock new **massage modalities**. Build a **Training Room** and send therapists on courses to deliver them.
 
 ### Massage modalities
 
-A diagnosis prescribes a modality. It only works properly with a therapist qualified in it and, for some, equipment in the same Massage Suite. An unqualified therapist will still have a go, at about a third of the usual success rate.
+A diagnosis prescribes a modality. It only works properly with a therapist qualified in it and, for some, equipment in the same Massage Suite. An unqualified therapist will still try, at about a third of the usual success rate.
 
 | Modality | Unlocks | Needs | Character |
 | --- | --- | --- | --- |
@@ -108,7 +108,7 @@ The game autosaves to local storage every few seconds.
 | `src/data.ts` | All tunable content: rooms, items, staff roles, traits, conditions, objectives, flavour text |
 | `src/state.ts` | The game state (plain JSON) plus save and load |
 | `src/world.ts` | Tile grid, placement rules, pathfinding |
-| `src/sim.ts` | Guests, staff, queues, money, reputation |
+| `src/sim.ts` | Guests, staff, lines, money, reputation |
 | `src/tools.ts` | Build tools: room drag, doors, furniture placement |
 | `src/render/` | Three.js scene and the procedural models |
 | `src/ui/` | The HTML heads-up display |

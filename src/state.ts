@@ -44,7 +44,7 @@ export interface Item {
   progress: number;
   // plants
   water: number;
-  /** Caretaker currently heading over to deal with it. */
+  /** Janitor currently heading over to deal with it. */
   claimedBy: number;
 }
 
@@ -107,7 +107,7 @@ export interface Staff extends CharBase {
   traits: string[];
   energy: number;
   state: StaffState;
-  /** Station item this member of staff is assigned to. */
+  /** Station item this staff member is assigned to. */
   post: number;
   job: { kind: 'litter' | 'water'; id: number } | null;
   served: number;
@@ -199,7 +199,7 @@ export interface GameState {
   stats: { healed: number; failed: number; stormed: number; arrived: number };
   stars: number;
   spawnT: number;
-  tannoyT: number;
+  announceT: number;
   seenTips: string[];
 }
 
@@ -280,7 +280,7 @@ export function newGame(): GameState {
     stats: { healed: 0, failed: 0, stormed: 0, arrived: 0 },
     stars: 0,
     spawnT: 4,
-    tannoyT: 25,
+    announceT: 25,
     seenTips: [],
   };
   refillCandidates(s);
@@ -303,6 +303,8 @@ export function loadGame(): GameState | null {
     if (!Array.isArray(s.rooms)) return null;
     if (s.version === 1) migrateV1(s);
     if (s.version !== SAVE_VERSION) return null;
+    // older saves kept this timer under a different name
+    s.announceT ??= 25;
     return s;
   } catch {
     return null;

@@ -2,7 +2,7 @@
   "name": "pressure-point",
   "productName": "Pressure Point Institute",
   "version": "0.1.0",
-  "description": "A healing-centre management sim. Knead, heal, profit.",
+  "description": "A healing-center management sim. Knead, heal, profit.",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
