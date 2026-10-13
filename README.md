@@ -17,9 +17,22 @@ yarn app        # as a desktop app (builds, then opens Electron)
 Package installers into `release/`:
 
 ```bash
-yarn dist:mac   # .dmg
+yarn dist:mac   # .dmg for Apple silicon and Intel
 yarn dist:win   # .exe installer (x64)
 ```
+
+## Releasing
+
+Pushing a version tag builds the macOS and Windows installers on GitHub Actions and publishes them as a GitHub release:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The tag sets the version number in the installers. Running the **Release** workflow by hand from the Actions tab builds the installers as downloadable artifacts without publishing a release.
+
+The installers are not signed with a paid developer certificate, so macOS and Windows warn on first launch. The release notes in `.github/release-notes.md` tell players how to get past that.
 
 ## How it plays
 
