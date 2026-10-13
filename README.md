@@ -53,30 +53,6 @@ The tag sets the version number in the installers. Running the **Release** workf
 
 Everything runs on GitHub-hosted machines, which are free for a public repository: `macos-latest` for the macOS `.dmg` files (Apple silicon and Intel), `windows-latest` for the Windows `.exe` installer, and `ubuntu-latest` for publishing and for CI on pushes and pull requests.
 
-### Optional: build macOS on the Mac mini
-
-Set the repository variable `MAC_RUNNER` to move the macOS build onto the self-hosted Mac mini, and delete it to go back:
-
-```bash
-gh variable set MAC_RUNNER --body self-hosted
-```
-
-Self-hosted runners on a personal account belong to one repository, so the Mac mini first needs a runner registered for this repo alongside its existing ones. On the Mac mini:
-
-```bash
-mkdir ~/actions-runner-pressure-point && cd ~/actions-runner-pressure-point
-VERSION=$(gh api repos/actions/runner/releases/latest --jq .tag_name | sed 's/^v//')
-curl -fsSL -o runner.tar.gz "https://github.com/actions/runner/releases/download/v${VERSION}/actions-runner-osx-arm64-${VERSION}.tar.gz"
-tar xzf runner.tar.gz
-./config.sh --unattended \
-  --url https://github.com/maxcwolf/pressure-point \
-  --token "$(gh api -X POST repos/maxcwolf/pressure-point/actions/runners/registration-token --jq .token)" \
-  --name mac-arm64-runner-pressure-point --labels pressure-point
-./svc.sh install && ./svc.sh start
-```
-
-While the variable is set, a release waits for the Mac mini and is not published until its build finishes.
-
 ### Signing
 
 With no secrets set, the macOS build is signed ad hoc and the Windows installer is unsigned, so both operating systems warn on first launch. `.github/release-notes.md` tells players how to get past that.
