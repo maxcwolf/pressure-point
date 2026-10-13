@@ -40,7 +40,7 @@ Every bug fix comes with a test that fails on the old code and passes on the fix
 
 ## Releasing
 
-Pushing a version tag builds the installers on GitHub Actions and publishes them as a GitHub release:
+Add a short section for the new version to `CHANGELOG.md`; it becomes the release notes. Then push a version tag, which builds the installers on GitHub Actions and publishes them as a GitHub release:
 
 ```bash
 git tag v1.2.3
