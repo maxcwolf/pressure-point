@@ -22,6 +22,7 @@ export interface Desktop {
 }
 
 export const test = base.extend<{ desktop: Desktop }>({
+  /** Give each test a throwaway profile and a way to launch the app, then clean up. */
   // eslint-disable-next-line no-empty-pattern -- Playwright requires the fixtures argument to be destructured
   desktop: async ({}, use) => {
     // the real path, since macOS reaches its temporary folder through a link
@@ -29,6 +30,7 @@ export const test = base.extend<{ desktop: Desktop }>({
     const apps: ElectronApplication[] = [];
     await use({
       profile,
+      /** Open the app on the test profile with sound off and wait for the title screen. */
       launch: async () => {
         const args = [`--user-data-dir=${profile}`, ...SOFTWARE_WEBGL];
         const app = await electron.launch(
@@ -64,6 +66,7 @@ export async function newGame(page: Page) {
   await page.locator('#stats').waitFor();
 }
 
+/** Open the pause menu. */
 export async function openPauseMenu(page: Page) {
   await page.locator('#sys').getByTitle('Menu').click();
 }

@@ -7,6 +7,7 @@ import { newGame } from '../../src/core/state/game';
 import { type Room, type Staff } from '../../src/core/state/types';
 import { type Rect } from '../../src/core/world';
 
+/** Start a new game with a fixed random seed. */
 export function freshSim(seed = 1): Sim {
   setSeed(seed);
   return new Sim(newGame());
@@ -36,37 +37,44 @@ export const LAYOUT = {
   acupuncture: { rect: { x: 24, y: 8, w: 4, h: 4 }, door: { x: 25, y: 11, dx: 0, dy: 1 } },
 } as const;
 
+/** Add a furnished Consultation Room at its standard spot. */
 export function addConsult(sim: Sim) {
   return buildRoom(sim, 'consult', LAYOUT.consult.rect, LAYOUT.consult.door, [
     ['consult_desk', 6, 6],
     ['cabinet', 5, 8],
   ]);
 }
+/** Add a furnished Massage Suite at its standard spot. */
 export function addMassage(sim: Sim) {
   return buildRoom(sim, 'massage', LAYOUT.massage.rect, LAYOUT.massage.door, [
     ['massage_table', 12, 5],
     ['oil_trolley', 14, 5],
   ]);
 }
+/** Add a furnished Staff Room at its standard spot. */
 export function addStaffRoom(sim: Sim) {
   return buildRoom(sim, 'staffroom', LAYOUT.staffroom.rect, LAYOUT.staffroom.door, [['sofa', 17, 5]]);
 }
+/** Add a furnished Restroom at its standard spot. */
 export function addRestroom(sim: Sim) {
   return buildRoom(sim, 'restroom', LAYOUT.restroom.rect, LAYOUT.restroom.door, [
     ['toilet', 21, 5],
     ['sink', 22, 5],
   ]);
 }
+/** Add a furnished Training Room at its standard spot. */
 export function addTraining(sim: Sim) {
   return buildRoom(sim, 'training', LAYOUT.training.rect, LAYOUT.training.door, [
     ['whiteboard', 6, 11],
     ['study_desk', 6, 13],
   ]);
 }
+/** Add a furnished Posture Lab at its standard spot. */
 export function addPostureLab(sim: Sim) {
   return buildRoom(sim, 'assess', LAYOUT.assess.rect, LAYOUT.assess.door, [['posture_scanner', 20, 12]]);
 }
 
+/** Add a furnished Acupuncture Clinic at its standard spot. */
 export function addAcupuncture(sim: Sim) {
   return buildRoom(sim, 'acupuncture', LAYOUT.acupuncture.rect, LAYOUT.acupuncture.door, [
     ['acu_table', 25, 8],
@@ -110,4 +118,5 @@ export function runUntil(sim: Sim, done: () => boolean, maxSeconds = 600) {
   throw new Error(`condition not met within ${maxSeconds}s of game time`);
 }
 
+/** The text of every toast among some events. */
 export const toasts = (events: SimEvent[]) => events.flatMap((e) => (e.type === 'toast' ? [e.text] : []));

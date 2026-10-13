@@ -191,6 +191,7 @@ describe('prices', () => {
   });
 
   it('drive some guests away when they are steep', () => {
+    /** Count the guests who balk at the prices over a stretch of play at this price level. */
     const walkouts = (price: number) => {
       const { sim, s } = openCenter(21);
       sim.setPrice(price);

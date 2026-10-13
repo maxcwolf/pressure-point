@@ -56,6 +56,7 @@ export class Training extends System {
     return '';
   }
 
+  /** Send a member of staff on a course, paying the fee up front. False if it cannot start. */
   train(staffId: number, courseId: string): boolean {
     const st = this.sim.chars.staff(staffId);
     const course = st && this.courses(st).find((c) => c.id === courseId);
@@ -82,6 +83,7 @@ export class Training extends System {
     return true;
   }
 
+  /** Finish a course: one more skill level, or a new qualification. */
   graduate(st: Staff) {
     const t = st.training;
     if (!t) return;

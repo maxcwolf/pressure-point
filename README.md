@@ -51,6 +51,8 @@ yarn format:check   # Prettier
 
 `yarn lint:fix` and `yarn format` fix what they can. CI runs all three checks on every push and pull request.
 
+Every function has a one-line JSDoc comment saying what it does, with no tags: the types already say the rest. The linter insists on it.
+
 TypeScript is held at 6.x for now: typescript-eslint needs the compiler's JavaScript API, which TypeScript 7 does not ship yet.
 
 ## Releasing
@@ -142,23 +144,27 @@ Saves live in the browser's storage, so the web version and the desktop app each
 
 ## Code map
 
-| Path                  | What lives there                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------- |
-| `src/data.ts`         | All tunable content: rooms, items, staff roles, traits, conditions, objectives, flavor text |
-| `src/state.ts`        | The game state (plain JSON) and upgrades for older saves                                    |
-| `src/saves.ts`        | Autosave, named save slots, export and import                                               |
-| `src/settings.ts`     | Preferences that outlive a game, such as which treatments are on                            |
-| `src/world.ts`        | Tile grid, placement rules, pathfinding                                                     |
-| `src/sim.ts`          | Guests, staff, lines, money, reputation                                                     |
-| `src/tools.ts`        | Build tools: room drag, doors, furniture placement                                          |
-| `src/render/`         | Three.js scene and the procedural models                                                    |
-| `src/ui/`             | The HTML heads-up display                                                                   |
-| `src/audio.ts`        | Synthesized sound effects and music                                                         |
-| `src/desktop.ts`      | What the desktop app offers the game; undefined in a browser                                |
-| `electron/main.ts`    | Desktop app: the main process, which opens the window and locks it down                     |
-| `electron/preload.ts` | Desktop app: hands the game the API in `electron/api.ts`, with the sandbox on               |
+| Path                  | What lives there                                                                             |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `src/core/`           | The game itself, as plain logic: no drawing, no interface, no browser                        |
+| `src/core/data/`      | All tunable content: rooms, items, staff roles, treatments, conditions, rules, flavor text   |
+| `src/core/state/`     | The shape of a game in progress (plain JSON), starting one, and upgrades for older saves     |
+| `src/core/world.ts`   | Tile grid, placement rules, pathfinding                                                      |
+| `src/core/sim/`       | The simulation, one file per system: guests, staffing, stations, building, economy and so on |
+| `src/core/sim/sim.ts` | `Sim`: the clock, and the commands and questions the rest of the game uses                   |
+| `src/saves.ts`        | Autosave, named save slots, export and import                                                |
+| `src/settings.ts`     | Preferences that outlive a game, such as which treatments are on                             |
+| `src/tools.ts`        | Build tools: room drag, doors, furniture placement                                           |
+| `src/render/`         | Three.js scene and the procedural models                                                     |
+| `src/ui/`             | The HTML heads-up display                                                                    |
+| `src/audio.ts`        | Synthesized sound effects and music                                                          |
+| `src/desktop.ts`      | What the desktop app offers the game; undefined in a browser                                 |
+| `electron/main.ts`    | Desktop app: the main process, which opens the window and locks it down                      |
+| `electron/preload.ts` | Desktop app: hands the game the API in `electron/api.ts`, with the sandbox on                |
 
-Disciplines, modalities, conditions, courses and equipment are all defined in `data.ts`. Adding a discipline such as reiki means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models.ts`. The simulation, menus and Settings pick it up from the data.
+Disciplines, modalities, conditions, courses and equipment are all defined in `src/core/data/`. Adding a discipline such as reiki means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models.ts`. The simulation, menus and Settings pick it up from the data.
+
+The core is fenced off: a lint rule stops anything in `src/core/` importing from outside it, and it is type-checked without browser types, so it cannot reach the page, Three.js or the interface. Each system in `src/core/sim/` is a class that reaches the others through `this.sim` (`this.sim.guests`, `this.sim.economy`); `Sim` is the only part the rest of the game talks to.
 
 ## License
 

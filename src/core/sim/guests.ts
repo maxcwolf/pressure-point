@@ -38,6 +38,7 @@ export class Guests extends System {
     s.spawnT = (30 - s.reputation * 0.2) * rnd(0.7, 1.3);
   }
 
+  /** Add a guest on the street and send them to the lobby. */
   spawn(condition?: ConditionId, emergency = false) {
     const s = this.s;
     const [x, y] = this.sim.chars.streetTile();
@@ -96,6 +97,7 @@ export class Guests extends System {
     this.decide(g);
   }
 
+  /** Join the line at the best station for a guest's goal, or head home if they are done. */
   decide(g: Guest) {
     if (g.goal === 'leave') {
       this.leave(g);
@@ -132,6 +134,7 @@ export class Guests extends System {
     return [x, y];
   }
 
+  /** The spot a guest waits near: their station's door, or the entrance if they have no station. */
   private waitAnchor(g: Guest): [number, number] {
     const st = this.world.item(g.station);
     if (st) {
@@ -142,6 +145,7 @@ export class Guests extends System {
     return [ENT_X[0], ENT_IN_Y - 3];
   }
 
+  /** Send a guest to wait: in line at reception, otherwise on a nearby seat or standing spot. */
   private goWait(g: Guest) {
     this.sim.claims.release(g);
     g.state = 'toWait';
@@ -174,6 +178,7 @@ export class Guests extends System {
     }
   }
 
+  /** Head off for the toilet, a drink or a snack, if one is pressing and available. */
   private tryNeed(g: Guest): boolean {
     const kind = g.bladder > 75 ? 'toilet' : g.thirst > 70 ? 'drink' : g.hunger > 75 ? 'eat' : '';
     if (!kind) return false;
@@ -191,6 +196,7 @@ export class Guests extends System {
     return true;
   }
 
+  /** What a waiting guest reconsiders now and then: a better line, their needs, where to stand. */
   private waitingThink(g: Guest) {
     const st = this.world.item(g.station);
     if (!st || !this.world.usable(st)) {
@@ -250,6 +256,7 @@ export class Guests extends System {
     }
   }
 
+  /** Move one guest forward in time: needs, patience, walking and what they do next. */
   update(g: Guest, dt: number) {
     g.thirst = Math.min(100, g.thirst + dt * 0.5);
     g.hunger = Math.min(100, g.hunger + dt * 0.36);
@@ -331,6 +338,7 @@ export class Guests extends System {
     }
   }
 
+  /** A guest loses patience and leaves in a huff. */
   private stormOut(g: Guest) {
     g.outcome = 'stormed';
     this.s.stats.stormed++;
@@ -345,6 +353,7 @@ export class Guests extends System {
     this.leave(g);
   }
 
+  /** Send a guest home. */
   leave(g: Guest) {
     this.sim.claims.release(g);
     this.sim.stations.removeGuest(g);

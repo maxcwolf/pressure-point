@@ -112,6 +112,7 @@ export class Audio {
     });
   }
 
+  /** Remember the sound and music switches. */
   private save() {
     try {
       localStorage.setItem('pressure-point-audio', JSON.stringify({ sound: this.sound, music: this.music }));
@@ -119,16 +120,19 @@ export class Audio {
       // ignore
     }
   }
+  /** Turn sound effects on or off. */
   toggleSound() {
     this.sound = !this.sound;
     this.save();
   }
+  /** Turn the music on or off. */
   toggleMusic() {
     this.music = !this.music;
     if (this.ctx) this.musicGain.gain.setTargetAtTime(this.music ? 0.5 : 0, this.ctx.currentTime, 0.2);
     this.save();
   }
 
+  /** Schedule a single note that fades in quickly and dies away. */
   private tone(
     dest: AudioNode,
     freq: number,
@@ -152,6 +156,7 @@ export class Audio {
     osc.stop(at + dur + 0.05);
   }
 
+  /** Play a sound effect, unless sound is off. */
   play(name: SfxName) {
     if (!this.ctx || !this.sound) return;
     const now = this.ctx.currentTime;

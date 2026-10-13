@@ -18,6 +18,7 @@ const BESIDE: readonly (readonly [dx: number, dy: number])[] = [
 ];
 
 export class Staffing extends System {
+  /** Take on an applicant and send them in from the street. */
   hire(candidateId: number): Staff | null {
     const s = this.s;
     const c = s.candidates.find((x) => x.id === candidateId);
@@ -79,6 +80,7 @@ export class Staffing extends System {
     return Math.max(this.fairPay(st), Math.round((st.salary * 1.1) / 10) * 10);
   }
 
+  /** Give a member of staff the raise they are due, which lifts their morale. */
   giveRaise(id: number) {
     const st = this.sim.chars.staff(id);
     if (!st || st.state === 'leaving') return;
@@ -90,6 +92,7 @@ export class Staffing extends System {
     this.sim.events.emit({ type: 'sfx', name: 'cash' });
   }
 
+  /** Drift morale toward what pay and conditions deserve; the unhappy ask for a raise, then quit. */
   private updateMorale(st: Staff, dt: number) {
     if (st.state === 'leaving' || st.state === 'arriving') return;
     const fair = this.fairPay(st);
@@ -116,6 +119,7 @@ export class Staffing extends System {
     if (st.unhappyT > 60 && !st.busy && !st.training) this.fire(st.id, true);
   }
 
+  /** Step away from the station they were staffing. */
   private leavePost(st: Staff) {
     const it = this.world.item(st.post);
     if (it?.staffId === st.id) it.staffId = 0;
@@ -123,6 +127,7 @@ export class Staffing extends System {
     st.busy = false;
   }
 
+  /** Give up the cleaning, watering or repair job they had claimed. */
   private dropJob(st: Staff) {
     const job = st.job;
     if (!job) return;
@@ -131,6 +136,7 @@ export class Staffing extends System {
     st.job = null;
   }
 
+  /** Drop whatever a member of staff is doing and leave them free for new work. */
   idle(st: Staff) {
     if (st.training) {
       // interrupted before finishing: the course fee comes back
@@ -146,6 +152,7 @@ export class Staffing extends System {
     st.timer = 0.2;
   }
 
+  /** Head for a free rest spot, if there is one. */
   private tryBreak(st: Staff): boolean {
     const sofa = this.sim.claims.findAccess('rest', st.tx, st.ty);
     if (!sofa) return false;
@@ -162,6 +169,7 @@ export class Staffing extends System {
     return true;
   }
 
+  /** Find something to do: a break if tired, then a job or a station to staff, or else a wander. */
   private findWork(st: Staff) {
     if (st.energy < 18 && this.tryBreak(st)) return;
     const s = this.s;
@@ -183,6 +191,7 @@ export class Staffing extends System {
         else if ((p.type === 'plant' && p.water <= 40) || (p.type === 'stone_warmer' && p.water <= 55))
           tasks.push({ kind: 'water', id: p.id, x: p.x, y: p.y, urgency: 0 });
       }
+      /** How far a task is from this member of staff. */
       const dist = (t: Task) => Math.hypot(t.x - st.tx, t.y - st.ty);
       tasks.sort((a, b) => b.urgency - a.urgency || dist(a) - dist(b));
       for (const task of tasks.slice(0, 4)) {
@@ -246,6 +255,7 @@ export class Staffing extends System {
     }
   }
 
+  /** Move one member of staff forward in time: walking, morale, energy and what they do next. */
   update(st: Staff, dt: number) {
     if (st.bubbleT > 0) st.bubbleT -= dt;
     let walk = 2.3;

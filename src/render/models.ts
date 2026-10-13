@@ -7,6 +7,7 @@ import { type Look } from '../core/state/types';
 import { at, must } from '../core/util';
 
 const matCache = new Map<string, THREE.MeshStandardMaterial>();
+/** A shared material for a color, roughness and glow, made once and reused. */
 export function mat(color: number, rough = 0.72, emissive = 0): THREE.MeshStandardMaterial {
   const key = `${color}|${rough}|${emissive}`;
   let m = matCache.get(key);
@@ -22,6 +23,7 @@ export function mat(color: number, rough = 0.72, emissive = 0): THREE.MeshStanda
 }
 
 const geoCache = new Map<string, THREE.BufferGeometry>();
+/** A shared geometry by key, made on first use. */
 function cached<T extends THREE.BufferGeometry>(key: string, make: () => T): T {
   let g = geoCache.get(key);
   if (!g) {
@@ -30,16 +32,23 @@ function cached<T extends THREE.BufferGeometry>(key: string, make: () => T): T {
   }
   return g as T;
 }
+/** A shared rounded box geometry. */
 const rbox = (w: number, h: number, d: number, r = 0.05) =>
   cached(`b${w}|${h}|${d}|${r}`, () => new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2, h / 2, d / 2)));
+/** A shared cylinder or cone geometry. */
 const cyl = (rt: number, rb: number, h: number, seg = 18) =>
   cached(`c${rt}|${rb}|${h}|${seg}`, () => new THREE.CylinderGeometry(rt, rb, h, seg));
+/** A shared sphere geometry. */
 const sph = (r: number, seg = 18) =>
   cached(`s${r}|${seg}`, () => new THREE.SphereGeometry(r, seg, Math.ceil(seg * 0.7)));
+/** A shared icosahedron geometry. */
 const ico = (r: number) => cached(`i${r}`, () => new THREE.IcosahedronGeometry(r, 1));
+/** A shared torus geometry. */
 const torus = (r: number, t: number) => cached(`t${r}|${t}`, () => new THREE.TorusGeometry(r, t, 10, 24));
+/** A shared capsule geometry. */
 const capsule = (r: number, len: number) => cached(`k${r}|${len}`, () => new THREE.CapsuleGeometry(r, len, 6, 14));
 
+/** Add a shadow-casting mesh to a parent at a position and return it. */
 function put(
   parent: THREE.Object3D,
   geo: THREE.BufferGeometry,
@@ -66,6 +75,7 @@ const CHROME = 0xc5cbd3;
 const DARK = 0x3b3f4a;
 const WHITE = 0xfbfaf6;
 
+/** Add a swivel chair to a group, with its back toward the given side. */
 function chair(g: THREE.Object3D, x: number, z: number, backSign: number, color: number) {
   put(g, cyl(0.04, 0.04, 0.32), mat(DARK), x, 0.16, z);
   put(g, cyl(0.2, 0.22, 0.04), mat(DARK), x, 0.02, z);
@@ -344,6 +354,7 @@ export function buildItem(type: ItemType): THREE.Group {
       const bolster = put(g, cyl(0.09, 0.09, 0.6, 14), mat(0xb5523e), 0, 0.68, -0.72);
       bolster.rotation.z = Math.PI / 2;
       // what gets put on the guest's back, one set per technique
+      /** Stand one needle with a colored tip at a spot. */
       const needle = (parent: THREE.Object3D, x: number, z: number, color: number) => {
         put(parent, cyl(0.007, 0.007, 0.16, 5), mat(CHROME, 0.3), x, 1.0, z).castShadow = false;
         put(parent, sph(0.02, 6), mat(color, 0.4), x, 1.08, z).castShadow = false;
@@ -601,6 +612,7 @@ export interface CharRig {
 
 const pickMat = new THREE.MeshBasicMaterial({ visible: false });
 
+/** Build a person: a uniformed member of staff, or a guest showing their symptom. */
 export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRig {
   const group = new THREE.Group();
   const body = new THREE.Group();
@@ -612,6 +624,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   const bottom = mat(role === 'caretaker' ? 0x5c6b33 : look.bottom, 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
 
+  /** Add a leg with its shoe, hinged at the hip. */
   const makeLeg = (x: number) => {
     const leg = new THREE.Group();
     leg.position.set(x, 0.42, 0);
@@ -638,6 +651,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   if (role === 'consultant') put(torso, rbox(0.08, 0.14, 0.03, 0.01), accent, 0.08, 0.26, 0.15);
   if (role === 'caretaker') put(torso, rbox(0.2, 0.16, 0.03, 0.01), accent, 0, 0.2, 0.155);
 
+  /** Add an arm with its hand, hinged at the shoulder. */
   const makeArm = (x: number) => {
     const arm = new THREE.Group();
     arm.position.set(x, 0.37, 0);
@@ -656,6 +670,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   for (const x of [-0.075, 0.075]) put(head, sph(0.027, 8), mat(0x2a2422, 0.3), x, 0.02, 0.19);
   put(head, sph(0.03, 8), skin, 0, -0.035, 0.21);
   const hair = mat(look.hair, 0.85);
+  /** The shared half-sphere cap of hair. */
   const cap = () => cached('haircap', () => new THREE.SphereGeometry(0.228, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52));
   const style = role === 'caretaker' ? 0 : look.hairStyle;
   if (style !== 3) {
@@ -812,6 +827,7 @@ export function cureRig(rig: CharRig, look: Look) {
 
 // ---- Emoji speech bubbles --------------------------------------------------
 const bubbleCache = new Map<string, THREE.Texture>();
+/** A cached texture of an emoji, in a speech bubble unless plain. */
 export function emojiTexture(emoji: string, plain = false): THREE.Texture {
   const key = emoji + (plain ? '|p' : '');
   let t = bubbleCache.get(key);
@@ -846,6 +862,7 @@ export function emojiTexture(emoji: string, plain = false): THREE.Texture {
 }
 
 // ---- Scenery ---------------------------------------------------------------
+/** Build a tree whose height and color vary with the seed. */
 export function buildTree(seed: number): THREE.Group {
   const g = new THREE.Group();
   const h = 0.9 + (seed % 5) * 0.12;

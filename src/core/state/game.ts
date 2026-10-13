@@ -4,8 +4,10 @@ import { type Discipline, DISCIPLINES, START_MONEY } from '../data';
 import { refillCandidates } from '../people';
 import { type GameState, type Ledger, type WallSpot } from './types';
 
+/** Whether two wall spots are the same stretch of wall. */
 export const sameSpot = (a: WallSpot, b: WallSpot) => a.x === b.x && a.y === b.y && a.dx === b.dx && a.dy === b.dy;
 
+/** A ledger with every entry at zero. */
 export const emptyLedger = (): Ledger => ({
   consult: 0,
   treatment: 0,
@@ -19,6 +21,7 @@ export const emptyLedger = (): Ledger => ({
 
 export const SAVE_VERSION = 3;
 
+/** The state of a brand new game. */
 export function newGame(): GameState {
   const s: GameState = {
     version: SAVE_VERSION,

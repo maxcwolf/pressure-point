@@ -68,12 +68,15 @@ export class Tools {
     private sfx: (name: SfxName) => void,
   ) {}
 
+  /** Whether a tool is in hand. */
   get active() {
     return this.tool.kind !== 'none';
   }
+  /** What is currently selected, if anything. */
   get selected(): Selection | null {
     return this.view.selected;
   }
+  /** Change the selection, or clear it with null. */
   select(sel: Selection | null) {
     this.view.selected = sel;
     this.onChange();
@@ -116,6 +119,7 @@ export class Tools {
     this.refresh();
   }
 
+  /** Start dragging out a new room, if it can be afforded. */
   startRoom(type: RoomType) {
     this.cancel();
     const def = ROOMS[type];
@@ -194,6 +198,7 @@ export class Tools {
     } else this.cancel();
   }
 
+  /** Turn the item in hand a quarter turn. */
   rotate() {
     const t = this.tool;
     const held =
@@ -208,6 +213,7 @@ export class Tools {
     this.refresh();
   }
 
+  /** Track the cursor, stretching the room being dragged out. */
   pointerMove(clientX: number, clientY: number) {
     this.cursor = this.view.groundAt(clientX, clientY);
     const t = this.tool;
@@ -224,6 +230,7 @@ export class Tools {
     if (this.active) this.refresh();
   }
 
+  /** Left button pressed: anchor the corner of a room being dragged out. */
   pointerDown(clientX: number, clientY: number) {
     this.cursor = this.view.groundAt(clientX, clientY);
     const t = this.tool;
@@ -304,14 +311,17 @@ export class Tools {
     return next ? { kind: 'item', type: next, rot: 0, required: true } : null;
   }
 
+  /** The stretch of the room's wall nearest the cursor. */
   private wallSpot(room: Room): WallSpot | null {
     return this.cursor ? this.sim.world.nearestDoor(room, this.cursor.x, this.cursor.y) : null;
   }
+  /** Add or remove a window at the wall under the cursor. */
   private clickWindow(roomId: number) {
     const room = this.sim.world.room(roomId);
     const spot = room && this.wallSpot(room);
     if (!room || !spot || !this.sim.toggleWindow(roomId, spot)) this.sfx('error');
   }
+  /** Move the door to the wall under the cursor. False if it cannot go there. */
   private clickDoor(roomId: number): boolean {
     const room = this.sim.world.room(roomId);
     const spot = room && this.wallSpot(room);
@@ -379,6 +389,7 @@ export class Tools {
       this.view.setDoor({ door: spot, tone: check.ok ? 'ok' : 'bad' });
     }
   }
+  /** Marker and hint for moving one room's door. */
   private doorOverlay(room: Room) {
     this.view.setGhost(null);
     this.hint = '🚪 Click a wall to move the door there · Esc cancels';

@@ -6,6 +6,7 @@ import { type DesktopApi, QUIT_CHANNEL } from './api';
 
 const api: DesktopApi = {
   platform: process.platform,
+  /** Ask the desktop app to quit. */
   quit: () => {
     ipcRenderer.send(QUIT_CHANNEL);
   },

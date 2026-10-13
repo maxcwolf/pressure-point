@@ -8,6 +8,7 @@ import { upgradeSave } from '../../src/core/state/upgrade';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../src/settings';
 import { addAcupuncture, addPostureLab, addStaffRoom, addTraining, hire, openCenter, run, runUntil } from './helpers';
 
+/** The discipline that treats a condition. */
 const disciplineOf = (condition: ConditionId) => MODALITIES[conditionOf(condition).modality].discipline;
 
 /** Play for a while and report which disciplines' guests turned up. */
@@ -239,8 +240,11 @@ describe('settings', () => {
   beforeEach(() => {
     store.clear();
     globalThis.localStorage = {
+      /** Read a stored value, or null if there is none. */
       getItem: (k: string) => store.get(k) ?? null,
+      /** Store a value. */
       setItem: (k: string, v: string) => void store.set(k, v),
+      /** Forget a stored value. */
       removeItem: (k: string) => void store.delete(k),
     } as Storage;
   });

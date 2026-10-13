@@ -24,6 +24,7 @@ export interface SavesPanelOptions {
 }
 
 const esc = escapeHtml;
+/** Whether a save is a named slot rather than the autosave or the previous game. */
 const isSlot = (i: SaveInfo) => i.id !== AUTOSAVE_ID && i.id !== PREVIOUS_ID;
 const FULL = `Could not save. There is room for ${MAX_SAVES} named saves and limited browser storage: delete or export some first.`;
 
@@ -33,6 +34,7 @@ export function mountSaves(el: HTMLElement, opts: SavesPanelOptions) {
   let note: { text: string; bad: boolean } | null = null;
   let confirming = '';
 
+  /** Redraw the save list. */
   const render = () => {
     const saves = listSaves();
     const rows = saves
@@ -56,6 +58,7 @@ export function mountSaves(el: HTMLElement, opts: SavesPanelOptions) {
     </div>`;
   };
 
+  /** Save the current game to a new slot, or over an existing one, and note the result. */
   const save = (id?: string) => {
     if (!opts.current) return;
     const existing = id ? listSaves().find((s) => s.id === id) : undefined;

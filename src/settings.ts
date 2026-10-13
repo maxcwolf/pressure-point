@@ -21,6 +21,7 @@ export function loadDisciplinePrefs(): DisciplinePrefs {
   }
 }
 
+/** Remember whether new games start with a discipline switched on. */
 export function saveDisciplinePref(d: Discipline, on: boolean) {
   try {
     localStorage.setItem(KEY, JSON.stringify({ disciplines: { ...loadDisciplinePrefs(), [d]: on } }));

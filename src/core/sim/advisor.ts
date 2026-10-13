@@ -130,6 +130,7 @@ export class Advisor extends System {
     return where === 'corridor' || where === 'any' ? ITEMS[it.type].name : ROOMS[where].name;
   }
 
+  /** An announcement about something that needs attention right now, if anything does. */
   contextAnnouncement(): string | null {
     for (const it of this.s.items) {
       const st = ITEMS[it.type].station;

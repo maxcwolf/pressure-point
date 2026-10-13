@@ -26,6 +26,7 @@ export class Progress extends System {
     this.sim.events.emit({ type: 'sfx', name: 'fanfare' });
   }
 
+  /** Award the next star, and its cash prize, once its goals are met. */
   checkStars() {
     const s = this.s;
     const goal = STAR_GOALS[s.stars];
@@ -39,6 +40,7 @@ export class Progress extends System {
     }
   }
 
+  /** The goals for the next star and how far along each one is. */
   objectives(): Objective[] {
     const s = this.s;
     const goal = STAR_GOALS[s.stars];
@@ -64,14 +66,17 @@ export class Progress extends System {
     return out;
   }
 
+  /** Whether the center has a usable item of this type. */
   hasItem(t: ItemType) {
     return this.s.items.some((i) => i.type === t && this.world.usable(i));
   }
 
+  /** Whether the center has a finished room of this type. */
   hasRoom(t: RoomType) {
     return this.s.rooms.some((r) => r.type === t && r.done);
   }
 
+  /** Whether anyone in this role is on the payroll and staying. */
   hasStaff(r: Role) {
     return this.s.staff.some((x) => x.role === r && x.state !== 'leaving');
   }

@@ -66,6 +66,7 @@ describe('pathfinding', () => {
     const sim = freshSim();
     const room = addConsult(sim);
     const path = sim.world.findPath(15, 12, 6, 7)!;
+    /** Whether a point is inside the room. */
     const inside = (x: number, y: number) => sim.world.zoneAt(Math.floor(x), Math.floor(y)) === room.id;
     const firstInside = path.find(([x, y]) => inside(x, y))!;
     expect([Math.floor(firstInside[0]), Math.floor(firstInside[1])]).toEqual([room.door.x, room.door.y]);

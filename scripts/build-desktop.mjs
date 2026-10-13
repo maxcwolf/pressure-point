@@ -15,7 +15,12 @@ for (const [name, entry] of Object.entries(entries)) {
       // the Electron version is pinned, so there is nothing older to support
       target: 'esnext',
       minify: false,
-      lib: { entry, formats: ['cjs'], fileName: () => `${name}.cjs` },
+      lib: {
+        entry,
+        formats: ['cjs'],
+        /** Name the bundle after its entry. */
+        fileName: () => `${name}.cjs`,
+      },
       rolldownOptions: { external: ['electron', /^node:/] },
     },
   });

@@ -14,6 +14,7 @@ export class Upkeep extends System {
     }
   }
 
+  /** Add wear to an item after a use. At full wear it breaks down. */
   wear(it: Item) {
     const add = ITEMS[it.type].wear ?? 0;
     if (!add || it.wear >= 100) return;

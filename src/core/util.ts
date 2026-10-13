@@ -11,9 +11,11 @@ export function at<T>(list: ArrayLike<T>, index: number): T {
   return value;
 }
 
+/** A value that is known to be present. Throws if it is missing. */
 export function must<T>(value: T | null | undefined, what: string): T {
   if (value === null || value === undefined) throw new Error(`missing ${what}`);
   return value;
 }
 
+/** Keep a number between a lower and an upper bound. */
 export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));

@@ -17,6 +17,7 @@ describe('unlocking modalities', () => {
   it('only sends guests whose condition can be treated at the current star level', () => {
     const { sim, s } = openCenter(1);
     const seen = new Set<string>();
+    /** Play for a while, noting the modality each guest needs. */
     const watch = (seconds: number) => {
       for (let i = 0; i < seconds; i++) {
         // hold the healed count down so the next star (and its unlocks) cannot be earned mid-test
@@ -54,6 +55,7 @@ describe('unlocking modalities', () => {
   });
 
   it('makes unqualified treatment mostly fail and qualified treatment mostly work', () => {
+    /** Play a center where every guest has knots and return its stats. */
     const outcome = (qualified: boolean) => {
       const { sim, s, therapist } = openCenter(11);
       s.stars = 1;

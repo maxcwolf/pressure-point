@@ -62,6 +62,7 @@ interface PickData {
   charId?: number;
   itemId?: number;
 }
+/** Read what a clickable object stands for. */
 const pickData = (o: THREE.Object3D) => o.userData as PickData;
 
 const OVERLAY_COLORS = [0x3ddc84, 0xff5d5d, 0x4aa8ff, 0xffc93c, 0x9b6bff, 0xff8a3c].map((c) => new THREE.Color(c));
@@ -201,6 +202,7 @@ export class View {
     window.addEventListener('resize', () => this.resize());
   }
 
+  /** Fit the canvas and camera to the window. */
   resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -212,6 +214,7 @@ export class View {
   }
 
   // ---- Static scenery ------------------------------------------------------
+  /** Build the scenery that never changes: lawn, floor, outer walls, sign and trees. */
   private buildStatic() {
     const lawn = new THREE.Mesh(
       new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2),
@@ -239,6 +242,7 @@ export class View {
     const z0 = BY0;
     const z1 = BY1 + 1;
     const HT = 2.0;
+    /** Add a plain box to the outer shell. */
     const box = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) =>
       put(shell, new THREE.BoxGeometry(w, h, d), m, x, y, z);
     box(x1 - x0 + T * 2, HT, T, (x0 + x1) / 2, HT / 2, z0 - T / 2, wall);
@@ -317,6 +321,7 @@ export class View {
     }
   }
 
+  /** Repaint the floor texture. */
   private drawFloor() {
     const ctx = must(this.floorCanvas.getContext('2d'), '2D canvas');
     const world = this.sim.world;
@@ -415,12 +420,14 @@ export class View {
   }
 
   // ---- Rooms ---------------------------------------------------------------
+  /** Build a room's walls, windows, door and sign, in blueprint blue until it is finished. */
   private buildRoom(room: Room): THREE.Group {
     const g = new THREE.Group();
     const def = ROOMS[room.type];
     const wallM = room.done ? mat(0xf7f1e5, 0.85) : this.blueprintMat;
     const trimM = room.done ? mat(def.trim, 0.6) : this.blueprintMat;
     const T = WALL_T;
+    /** Add a box running along a wall from a to b, or nothing if it has no length. */
     const box = (
       horizontal: boolean,
       fixed: number,
@@ -438,6 +445,7 @@ export class View {
       mesh.castShadow = room.done;
     };
     const glass = room.done ? this.glass : this.blueprintMat;
+    /** Build one wall of the room, with its door and windows. */
     const side = (
       horizontal: boolean,
       fixed: number,
@@ -449,7 +457,7 @@ export class View {
       inward: number,
     ) => {
       const hgt = tall ? H_TALL : H_LOW;
-      // plain stretches of wall between the openings, merged into as few boxes as possible
+      /** Build one plain run of wall between openings, as a single box plus its trim. */
       const plain = (p: number, q: number) => {
         box(horizontal, fixed, p, q, 0, hgt, T, wallM);
         box(horizontal, fixed, p, q, hgt, 0.07, T + 0.05, trimM);
@@ -509,7 +517,7 @@ export class View {
       g.add(sprite);
     };
     const d = room.door;
-    // which tiles along each wall have a window
+    /** Which tiles along one wall have a window. */
     const wins = (dx: number, dy: number) =>
       room.windows.filter((w) => w.dx === dx && w.dy === dy).map((w) => (dx ? w.y : w.x));
     side(true, room.y + T / 2, room.x, room.x + room.w, true, d.dy === -1 ? d.x : null, wins(0, -1), 1);
@@ -519,6 +527,7 @@ export class View {
     return g;
   }
 
+  /** Take a group out of the scene and free its box geometry. */
   private disposeGroup(g: THREE.Object3D) {
     this.scene.remove(g);
     g.traverse((o) => {
@@ -526,6 +535,7 @@ export class View {
     });
   }
 
+  /** Repaint the floor and rebuild any rooms and items that changed. */
   private syncWorld() {
     const s = this.sim.s;
     this.drawFloor();
@@ -565,6 +575,7 @@ export class View {
     }
   }
 
+  /** Position and turn an item's model to match its tile and rotation. */
   private placeItemGroup(group: THREE.Object3D, type: ItemType, x: number, y: number, rot: number) {
     const [cx, cy] = itemCenter({ type, x, y, rot });
     group.position.set(cx, 0, cy);
@@ -572,6 +583,7 @@ export class View {
   }
 
   // ---- Per-frame sync ------------------------------------------------------
+  /** Update everything that moves each frame. */
   private syncDynamic(dt: number) {
     const s = this.sim.s;
     const t = this.time;
@@ -746,6 +758,7 @@ export class View {
     return guest ? conditionOf(guest.condition).modality : null;
   }
 
+  /** Pose a person for this frame: position, limbs, symptom effects and speech bubble. */
   private poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Modality | null) {
     rig.group.position.set(c.x, c.h, c.y);
     rig.group.rotation.y = c.facing;
@@ -922,6 +935,7 @@ export class View {
   }
 
   // ---- Build overlays ------------------------------------------------------
+  /** Show colored tiles on the floor for the current tool. */
   setOverlay(tiles: OverlayTile[]) {
     const m = new THREE.Matrix4();
     const n = Math.min(tiles.length, 700);
@@ -935,6 +949,7 @@ export class View {
     if (this.overlay.instanceColor) this.overlay.instanceColor.needsUpdate = true;
   }
 
+  /** Show a see-through preview of an item being placed, green if it fits and red if not, or hide it. */
   setGhost(spec: GhostSpec | null) {
     if (!spec) {
       if (this.ghost) this.scene.remove(this.ghost.group);
@@ -979,6 +994,7 @@ export class View {
     });
   }
 
+  /** Show or hide the highlight on a stretch of wall. */
   setDoor(spec: DoorSpec | null) {
     this.doorMarker.visible = !!spec;
     if (!spec) return;
@@ -989,6 +1005,7 @@ export class View {
   }
 
   // ---- Camera & picking ----------------------------------------------------
+  /** Move the camera target across the ground, kept near the map. */
   pan(dx: number, dy: number) {
     this.target.addScaledVector(PAN_RIGHT, dx).addScaledVector(PAN_UP, dy);
     this.target.x = Math.max(-2, Math.min(W + 2, this.target.x));
@@ -999,10 +1016,12 @@ export class View {
     const perPx = (2 * this.dist * Math.tan((this.camera.fov * Math.PI) / 360)) / window.innerHeight;
     this.pan(-dx * perPx, (dy * perPx) / CAM_DIR.y);
   }
+  /** Zoom in or out by a fraction, within limits. */
   zoom(delta: number) {
     this.dist = Math.max(16, Math.min(78, this.dist * (1 + delta)));
   }
 
+  /** Aim the picking ray through a point on the screen. */
   private setRay(clientX: number, clientY: number) {
     const ndc = new THREE.Vector2((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
     this.raycaster.setFromCamera(ndc, this.camera);
@@ -1014,6 +1033,7 @@ export class View {
     if (!this.raycaster.ray.intersectPlane(this.ground, p)) return null;
     return { x: p.x, y: p.z };
   }
+  /** What is under the cursor: a person first, then an item, then a room. */
   pick(clientX: number, clientY: number): Selection | null {
     this.setRay(clientX, clientY);
     const picks = [...this.chars.values()].map((r) => r.pick);
@@ -1033,11 +1053,13 @@ export class View {
     }
     return null;
   }
+  /** Screen position of a point in the world. */
   project(x: number, y: number, h = 0): { x: number; y: number } {
     const v = new THREE.Vector3(x, h, y).project(this.camera);
     return { x: (v.x * 0.5 + 0.5) * window.innerWidth, y: (-v.y * 0.5 + 0.5) * window.innerHeight };
   }
 
+  /** Draw one frame, syncing the scene with the game first. */
   render(dt: number) {
     this.time += dt;
     if (this.worldVersion !== this.sim.world.version) {

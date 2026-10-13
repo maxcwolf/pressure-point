@@ -19,20 +19,24 @@ export type SimEvent =
 export class Events extends System {
   private queue: SimEvent[] = [];
 
+  /** Queue an event for the outside world. */
   emit(e: SimEvent) {
     this.queue.push(e);
   }
 
+  /** Hand over the queued events and start a fresh queue. */
   drain(): SimEvent[] {
     const e = this.queue;
     this.queue = [];
     return e;
   }
 
+  /** Show the player a short message. */
   toast(text: string, kind: Tone = 'info') {
     this.emit({ type: 'toast', text, kind });
   }
 
+  /** Show a tip, but only the first time it comes up. */
   tipOnce(id: string, text: string, kind: Tone = 'info') {
     if (this.s.seenTips.includes(id)) return;
     this.s.seenTips.push(id);

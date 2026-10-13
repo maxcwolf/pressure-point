@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
+/** Run the release notes script for a tag and return what it prints. */
 const notes = (tag: string) =>
   execFileSync('node', ['scripts/release-notes.mjs', tag], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 const version = JSON.parse(readFileSync('package.json', 'utf8')).version as string;

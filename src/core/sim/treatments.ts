@@ -35,10 +35,12 @@ export class Treatments extends System {
     return this.enabled(d) && this.sim.progress.hasRoom(DISCIPLINES[d].room);
   }
 
+  /** Whether a modality is available: enough stars, and its discipline switched on. */
   unlocked(m: Modality) {
     return this.s.stars >= MODALITIES[m].star && this.enabled(MODALITIES[m].discipline);
   }
 
+  /** The modality that treats a guest's condition. */
   modalityOf(g: Guest): ModalityDef {
     return MODALITIES[conditionOf(g.condition).modality];
   }

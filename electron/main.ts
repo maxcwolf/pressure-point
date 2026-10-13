@@ -9,6 +9,7 @@ const isMac = process.platform === 'darwin';
 /** Set to the dev server's address to run the game from it instead of from the built files. */
 const devUrl = process.env.PP_DEV_URL;
 
+/** Open the game window and load the game into it. */
 function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
@@ -37,10 +38,12 @@ function createWindow() {
 
 /** Whether two addresses are the same page, ignoring anything after `?` or `#`. */
 function samePage(a: string, b: string): boolean {
+  /** Strip the query and fragment from an address. */
   const page = (url: string) => url.replace(/[?#].*$/, '');
   return page(a) === page(b);
 }
 
+/** Whether an address is an ordinary http or https link. */
 function isWebLink(url: string): boolean {
   return URL.canParse(url) && ['https:', 'http:'].includes(new URL(url).protocol);
 }

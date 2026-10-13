@@ -36,6 +36,7 @@ export class Stations extends System {
     return score;
   }
 
+  /** The best usable station for a guest's current goal, if there is one. */
   pickStation(g: Guest): Item | null {
     const goal = g.goal;
     let best: Item | null = null;
@@ -53,6 +54,7 @@ export class Stations extends System {
     return best;
   }
 
+  /** How long a service takes this member of staff, given their skill, traits, energy and morale. */
   private serviceSeconds(base: number, st: Staff) {
     let speed = 0.85 + st.skill * 0.05;
     for (const t of st.traits) speed *= traitOf(t).speed ?? 1;
@@ -61,6 +63,7 @@ export class Stations extends System {
     return base / speed;
   }
 
+  /** Run every station: tidy its line, call the next guest and move the service along. */
   update(dt: number) {
     for (const it of this.s.items) {
       const def = ITEMS[it.type].station;
@@ -99,6 +102,7 @@ export class Stations extends System {
     }
   }
 
+  /** Call a guest out of the line to be served. */
   private callGuest(it: Item, g: Guest) {
     it.queue = it.queue.filter((id) => id !== g.id);
     it.serving = g.id;
@@ -114,6 +118,7 @@ export class Stations extends System {
     }
   }
 
+  /** Finish a service and apply its outcome: checked in, diagnosed or treated. */
   private completeService(it: Item, g: Guest, staff: Staff) {
     const def = must(ITEMS[it.type].station, 'station');
     it.serving = 0;
@@ -239,6 +244,7 @@ export class Stations extends System {
     this.sim.guests.decide(g);
   }
 
+  /** Take a guest out of every line and off every station. */
   removeGuest(g: Guest) {
     for (const it of this.s.items) {
       if (it.serving === g.id) it.serving = 0;

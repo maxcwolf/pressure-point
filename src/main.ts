@@ -21,6 +21,7 @@ import { showTitle, UI } from './ui/ui';
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const audio = new Audio();
 
+/** Start up: open the game the last page asked for, or show the title screen until one is picked. */
 async function boot() {
   // the lawn sign and welcome mat are drawn to canvas, so the font has to be ready first
   await Promise.all([document.fonts.load('700 20px Fredoka'), document.fonts.load('500 20px Fredoka')]).catch(() => {
@@ -43,6 +44,7 @@ async function boot() {
 const exitApp = desktop?.quit;
 
 const HANDOFF_KEY = 'pressure-point-start';
+/** Read and clear the note the last page left saying what to open. */
 function takeHandoff(): string | null {
   try {
     const what = sessionStorage.getItem(HANDOFF_KEY);
@@ -52,6 +54,7 @@ function takeHandoff(): string | null {
     return null;
   }
 }
+/** Reload the page, leaving a note saying what to open. */
 function reloadInto(what: string) {
   try {
     sessionStorage.setItem(HANDOFF_KEY, what);
@@ -72,6 +75,7 @@ function open(what: string | null): GameState | null {
   return state;
 }
 
+/** Run a game: wire up the view, tools, interface, input and main loop. */
 function start(state: GameState) {
   const sim = new Sim(state);
   // a blueprint still open when the game was last closed is torn up, with anything bought for it refunded
@@ -85,6 +89,7 @@ function start(state: GameState) {
     () => (uiDirty = true),
     (name) => audio.play(name),
   );
+  /** Write the autosave now. */
   const save = () => autosave(state);
   /** Leave this game for another one, keeping it up to date in the autosave first. */
   const leaveFor = (what: string) => {
@@ -98,9 +103,11 @@ function start(state: GameState) {
     view,
     audio,
     save,
+    /** Leave for a fresh game. */
     newGame: () => leaveFor('new'),
+    /** Leave for a saved game. */
     loadGame: (id) => leaveFor(id),
-    // back to the title screen; the game is in the autosave, so Continue picks it straight up
+    /** Go back to the title screen. The game is in the autosave, so Continue picks it straight up. */
     mainMenu: () => {
       save();
       window.removeEventListener('beforeunload', save);
@@ -117,6 +124,7 @@ function start(state: GameState) {
   // ---- Pointer input -------------------------------------------------------
   let down: { x: number; y: number; button: number; moved: boolean; at: number } | null = null;
   let last = { x: 0, y: 0 };
+  /** Whether a room's floor is being dragged out. */
   const draggingRoom = () => tools.tool.kind === 'room' && tools.tool.phase === 'drag';
 
   canvas.addEventListener('pointerdown', (e) => {
@@ -192,6 +200,7 @@ function start(state: GameState) {
   let prev = performance.now();
   let uiT = 0;
   let saveT = 0;
+  /** One frame: advance the game, draw it and refresh the interface. */
   const frame = (now: number) => {
     const dt = Math.min(0.1, (now - prev) / 1000);
     prev = now;

@@ -258,6 +258,7 @@ test.describe('room blueprints', () => {
     await game.buildCenter();
     await game.eval((pp) => (pp.state.speed = 0));
     await game.settle();
+    /** Select the Massage Suite and wait for its inspector. */
     const openRoom = async () => {
       await game.clickRoom('massage');
       await expect(page.locator('#inspector')).toContainText('Massage Suite');
@@ -522,6 +523,7 @@ test.describe('clicking', () => {
     await game.page.mouse.up();
     await game.settle();
   };
+  /** The id of whatever is selected, or null. */
   const selectedId = (game: Game) => game.eval((pp) => pp.tools.selected?.id ?? null);
 
   test('selecting a second item switches to it, even when the click drifts a little', async ({ game, page }) => {
@@ -629,6 +631,7 @@ test.describe('leaving a game', () => {
 });
 
 test.describe('acupuncture and settings', () => {
+  /** Open the pause menu and press one of its buttons. */
   const pauseMenu = async (page: Page, button: string) => {
     await page.locator('#sys').getByTitle('Menu').click();
     await page.getByRole('button', { name: button }).click();
@@ -748,10 +751,12 @@ test.describe('acupuncture and settings', () => {
 });
 
 test.describe('saved games', () => {
+  /** Open the save and load screen from the pause menu. */
   const openSaves = async (page: Page) => {
     await page.locator('#sys').getByTitle('Menu').click();
     await page.getByRole('button', { name: 'Save or load' }).click();
   };
+  /** A few numbers that should survive saving and loading. */
   const summary = (game: Game) =>
     game.eval((pp) => ({
       rooms: pp.state.rooms.length,

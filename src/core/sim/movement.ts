@@ -5,6 +5,7 @@ import { clamp } from '../util';
 import { type PosePoint } from '../world';
 import { System } from './system';
 
+/** Turn an angle toward a target by at most `maxStep`, going the short way around. */
 function turnToward(cur: number, target: number, maxStep: number) {
   let d = target - cur;
   while (d > Math.PI) d -= Math.PI * 2;
@@ -13,6 +14,7 @@ function turnToward(cur: number, target: number, maxStep: number) {
 }
 
 export class Movement extends System {
+  /** Set someone walking to a tile, optionally ending in a pose there. False if there is no way. */
   goTo(c: Char, tx: number, ty: number, pp?: PosePoint): boolean {
     let sx = c.tx;
     let sy = c.ty;
@@ -81,6 +83,7 @@ export class Movement extends System {
     return false;
   }
 
+  /** Stop someone where they stand. */
   halt(c: Char) {
     c.path = null;
     c.dest = null;
@@ -89,6 +92,7 @@ export class Movement extends System {
     c.h = 0;
   }
 
+  /** Reroute everyone who is walking, and reset anyone who can no longer get where they were going. */
   repathAll() {
     for (const c of [...this.s.guests, ...this.s.staff] as Char[]) {
       const d = c.dest;

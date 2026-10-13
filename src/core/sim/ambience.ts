@@ -10,10 +10,12 @@ export class Ambience extends System {
   /** How pleasant each tile is, from nearby decor and litter. */
   attract = new Float32Array(W * H);
 
+  /** Work out afresh how pleasant each tile is. */
   update() {
     const grid = this.attract;
     grid.fill(0);
     const R = DECOR_RADIUS;
+    /** Add pleasantness around a tile, fading with distance. */
     const spread = (cx: number, cy: number, amount: number) => {
       for (let y = cy - R; y <= cy + R; y++) {
         for (let x = cx - R; x <= cx + R; x++) {

@@ -11,14 +11,18 @@ export interface SettingsPanelOptions {
   onChange?(): void;
 }
 
+/** Fill an element with the settings switches and wire them up. */
 export function mountSettings(el: HTMLElement, opts: SettingsPanelOptions) {
   const { audio, sim } = opts;
+  /** Whether a discipline is switched on, in this game or for new ones. */
   const isOn = (d: Discipline) => (sim ? sim.enabled(d) : loadDisciplinePrefs()[d] !== false);
 
+  /** One settings row: a switch, or a label when it cannot be changed. */
   const row = (key: string, icon: string, name: string, desc: string, on: boolean, locked = '') =>
     `<li class="${locked ? 'locked' : ''}"><i>${icon}</i><div><b>${name}</b><span>${desc}</span></div>
        ${locked ? `<em>${locked}</em>` : `<button class="switch ${on ? 'on' : ''}" role="switch" aria-checked="${on}" aria-label="${name}" data-setting="${key}"><span></span></button>`}</li>`;
 
+  /** Redraw the panel. */
   const render = () => {
     const disciplines = DISCIPLINE_ORDER.map((d) => {
       const def = DISCIPLINES[d];

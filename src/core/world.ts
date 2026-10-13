@@ -21,8 +21,11 @@ import {
 import { type GameState, type Item, type Room, type Waypoint } from './state/types';
 import { at } from './util';
 
+/** A tile's position in the flat grid arrays. */
 export const tileIdx = (x: number, y: number) => y * W + x;
+/** Whether a tile is on the map. */
 export const inBounds = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H;
+/** Whether a tile is inside the building. */
 export const inBuilding = (x: number, y: number) => x >= BX0 && x <= BX1 && y >= BY0 && y <= BY1;
 
 /** Zone ids: -2 scenery (not walkable), -1 outdoors path, 0 corridor, >0 room id. */
@@ -51,6 +54,7 @@ export function rotPoint(w: number, h: number, rot: number, cx: number, cy: numb
       return [cx, cy];
   }
 }
+/** Rotate a direction by `rot` quarter turns. */
 export function rotVec(rot: number, fx: number, fy: number): [number, number] {
   switch (rot & 3) {
     case 1:
@@ -63,16 +67,19 @@ export function rotVec(rot: number, fx: number, fy: number): [number, number] {
       return [fx, fy];
   }
 }
+/** An item's width and height once rotated. */
 export function itemDims(type: ItemType, rot: number): [number, number] {
   const d = ITEMS[type];
   return rot & 1 ? [d.h, d.w] : [d.w, d.h];
 }
+/** The tiles an item covers. */
 export function footprint(it: Placed): [number, number][] {
   const [w, h] = itemDims(it.type, it.rot);
   const out: [number, number][] = [];
   for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) out.push([it.x + dx, it.y + dy]);
   return out;
 }
+/** The tile someone stands on to use one of an item's access spots. */
 export function accessTile(it: Placed, i: number): [number, number] {
   const d = ITEMS[it.type];
   const a = at(d.access, i);
@@ -86,6 +93,7 @@ export interface PosePoint {
   pose: Pose;
   h: number;
 }
+/** Exactly where someone ends up at one of an item's access spots, and how they are posed. */
 export function accessPose(it: Placed, i: number): PosePoint {
   const d = ITEMS[it.type];
   const a = at(d.access, i);
@@ -93,6 +101,7 @@ export function accessPose(it: Placed, i: number): PosePoint {
   const [fx, fy] = rotVec(it.rot, a.face[0], a.face[1]);
   return { x: it.x + rx, y: it.y + ry, face: Math.atan2(fx, fy), pose: a.pose, h: a.h ?? 0 };
 }
+/** The center point of an item. */
 export function itemCenter(it: Placed): [number, number] {
   const [w, h] = itemDims(it.type, it.rot);
   return [it.x + w / 2, it.y + h / 2];
@@ -109,6 +118,7 @@ export interface Check {
   reason: string;
 }
 const OK: Check = { ok: true, reason: '' };
+/** A failed check, with the reason why. */
 const no = (reason: string): Check => ({ ok: false, reason });
 
 /** Steps to the eight neighbors, with the distance each one covers. The first four are the straight ones. */
@@ -136,11 +146,13 @@ export class World {
     this.rebuild();
   }
 
+  /** A key for the edge between two neighboring tiles. */
   private edgeKey(ax: number, ay: number, bx: number, by: number) {
     if (ay === by) return tileIdx(Math.min(ax, bx), ay) * 2;
     return tileIdx(ax, Math.min(ay, by)) * 2 + 1;
   }
 
+  /** Rebuild the zone, blocking, reserved and door grids from the game state. */
   rebuild(silent = false) {
     const { zone, blocked, reserved, doors } = this;
     blocked.fill(0);
@@ -178,22 +190,28 @@ export class World {
     if (!silent) this.version++;
   }
 
+  /** The room with this id, if there is one. */
   room(id: number): Room | undefined {
     return this.s.rooms.find((r) => r.id === id);
   }
+  /** The item with this id, if there is one. */
   item(id: number): Item | undefined {
     return id ? this.s.items.find((i) => i.id === id) : undefined;
   }
+  /** The zone id of a tile. Anything off the map counts as scenery. */
   zoneAt(x: number, y: number) {
     return inBounds(x, y) ? (this.zone[tileIdx(x, y)] ?? Z_SCENERY) : Z_SCENERY;
   }
+  /** The room a tile is in, if any. */
   roomAt(x: number, y: number): Room | undefined {
     const z = this.zoneAt(x, y);
     return z > 0 ? this.room(z) : undefined;
   }
+  /** The item covering a tile, if any. */
   itemAt(x: number, y: number): Item | undefined {
     return this.s.items.find((it) => footprint(it).some(([fx, fy]) => fx === x && fy === y));
   }
+  /** The room an item is in, if any. */
   roomOfItem(it: Item): Room | undefined {
     return this.roomAt(it.x, it.y);
   }
@@ -203,6 +221,7 @@ export class World {
     const r = this.roomOfItem(it);
     return !r || r.done;
   }
+  /** Whether a tile can be walked on. */
   walkable(x: number, y: number) {
     if (!inBounds(x, y)) return false;
     const i = tileIdx(x, y);
@@ -233,6 +252,7 @@ export class World {
     g[start] = 0;
     f.set(start, 0);
     state[start] = 1;
+    /** A lower bound on the distance left to the goal, allowing diagonal steps. */
     const hcost = (x: number, y: number) => {
       const dx = Math.abs(x - gx);
       const dy = Math.abs(y - gy);
@@ -327,6 +347,7 @@ export class World {
   connected(): boolean {
     const seen = new Uint8Array(W * H);
     for (const [x, y] of this.flood(0, SIDEWALK_Y)) seen[tileIdx(x, y)] = 1;
+    /** Whether a tile was reached from the street. */
     const need = (x: number, y: number) => inBounds(x, y) && seen[tileIdx(x, y)] === 1;
     if (!need(W - 1, SIDEWALK_Y)) return false;
     for (const x of ENT_X) if (!need(x, ENT_IN_Y - 1)) return false;
@@ -349,6 +370,7 @@ export class World {
   }
 
   // ---- Placement validation ------------------------------------------------
+  /** Can this item go here, facing this way? */
   canPlaceItem(type: ItemType, x: number, y: number, rot: number, roomId?: number): Check {
     const def = ITEMS[type];
     const it: Placed = { type, x, y, rot };
@@ -391,6 +413,7 @@ export class World {
     return fine ? OK : no('That would block the way');
   }
 
+  /** Can a room of this type cover this rectangle? */
   roomRectValid(type: RoomType, r: Rect): Check {
     const def = ROOMS[type];
     for (let y = r.y; y < r.y + r.h; y++) {

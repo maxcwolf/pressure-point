@@ -19,6 +19,7 @@ const FILE_FORMAT = 'pressure-point-save';
 // the autosave keeps the key of the original single save, so games from before save slots carry over
 const AUTOSAVE_KEY = 'pressure-point-save-v1';
 const INDEX_KEY = 'pressure-point-saves';
+/** The storage key a save's data is kept under. */
 const slotKey = (id: string) => (id === AUTOSAVE_ID ? AUTOSAVE_KEY : `pressure-point-save:${id}`);
 
 export interface SaveInfo {
@@ -39,8 +40,10 @@ export function gameDate(day: number): string {
   const d = Math.floor(day);
   return `Day ${(d % DAYS_PER_MONTH) + 1}, Month ${(Math.floor(d / DAYS_PER_MONTH) % 12) + 1}, Year ${Math.floor(d / (DAYS_PER_MONTH * 12)) + 1}`;
 }
+/** The name a save gets when the player gives none: the game date. */
 export const defaultSaveName = (s: GameState) => gameDate(s.day);
 
+/** The list entry for a save: its name, time and headline figures. */
 function summarize(id: string, name: string, s: GameState, savedAt: number): SaveInfo {
   return { id, name, savedAt, day: s.day, money: Math.round(s.money), stars: s.stars, healed: s.stats.healed };
 }
@@ -65,6 +68,7 @@ function parseState(raw: string | null): GameState | null {
   }
 }
 
+/** The stored list of saves, dropping any malformed entries. */
 function readIndex(): SaveInfo[] {
   try {
     const list: unknown = JSON.parse(localStorage.getItem(INDEX_KEY) ?? '[]');
@@ -73,6 +77,7 @@ function readIndex(): SaveInfo[] {
     return [];
   }
 }
+/** Store the list of saves. */
 function writeIndex(list: SaveInfo[]) {
   localStorage.setItem(INDEX_KEY, JSON.stringify(list));
 }
@@ -94,10 +99,12 @@ export function listSaves(): SaveInfo[] {
   return list.sort((a, b) => b.savedAt - a.savedAt);
 }
 
+/** The most recently saved game, if any. */
 export function latestSave(): SaveInfo | null {
   return listSaves()[0] ?? null;
 }
 
+/** Load a saved game by id, or null if it is missing or unreadable. */
 export function readSave(id: string): GameState | null {
   try {
     return parseState(localStorage.getItem(slotKey(id)));
@@ -127,6 +134,7 @@ export function writeSave(s: GameState, name: string, id?: string, now = Date.no
   return info;
 }
 
+/** The stored list of saves, or an empty one if storage cannot be read. */
 function readIndexSafe(): SaveInfo[] {
   try {
     return readIndex();
@@ -134,6 +142,7 @@ function readIndexSafe(): SaveInfo[] {
     return [];
   }
 }
+/** Remove a stored value, ignoring any failure. */
 function removeQuietly(key: string) {
   try {
     localStorage.removeItem(key);
@@ -147,6 +156,7 @@ export function autosave(s: GameState, now = Date.now()): boolean {
   return typeof writeSave(s, 'Autosave', AUTOSAVE_ID, now) !== 'string';
 }
 
+/** Delete a save and its list entry. */
 export function deleteSave(id: string) {
   removeQuietly(slotKey(id));
   try {

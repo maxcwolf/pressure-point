@@ -64,14 +64,18 @@ export interface UIHost {
 type Menu = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | null;
 
 const esc = escapeHtml;
+/** A progress bar filled to a percentage. */
 const bar = (v: number, cls = '') =>
   `<div class="bar ${cls}"><i style="width:${Math.max(0, Math.min(100, v)).toFixed(0)}%"></i></div>`;
+/** Chips naming the treatments someone is qualified in. */
 const qualChips = (quals: Modality[]) =>
   quals.length
     ? `<div class="quals">${quals.map((m) => `<span title="${MODALITIES[m].name}">${MODALITIES[m].icon} ${MODALITIES[m].name}</span>`).join('')}</div>`
     : '';
+/** A star rating out of a maximum. */
 const stars = (n: number, of = 5) => `<span class="skill">${'★'.repeat(n)}<s>${'★'.repeat(of - n)}</s></span>`;
 
+/** What a guest is doing, in a few words. */
 function guestStatus(g: Guest, sim: Sim): string {
   const st = sim.world.item(g.station);
   const where = st ? ITEMS[st.type].name : '';
@@ -123,6 +127,7 @@ function guestStatus(g: Guest, sim: Sim): string {
   }
 }
 
+/** What a member of staff is doing, in a few words. */
 function staffStatus(st: Staff, sim: Sim): string {
   const post = sim.world.item(st.post);
   switch (st.state) {
@@ -153,6 +158,7 @@ function staffStatus(st: Staff, sim: Sim): string {
   }
 }
 
+/** The display name of a training course. */
 function courseName(id: CourseId) {
   return id === 'skill' ? 'professional development' : modalityLabel(id);
 }
@@ -199,9 +205,11 @@ export class UI {
     this.update();
   }
 
+  /** Whether a dialog is open and holding the game's input. */
   get blocking() {
     return this.modalOpen;
   }
+  /** Open the pause menu. */
   openPauseMenu() {
     this.showSystemMenu();
     this.update();
@@ -212,6 +220,7 @@ export class UI {
     this.closeModal();
     this.update();
   }
+  /** Close the open build menu. False if none was open. */
   closeMenu() {
     if (this.menu) {
       this.menu = null;
@@ -221,6 +230,7 @@ export class UI {
     return false;
   }
 
+  /** Set a panel's HTML, touching the page only when it changed. */
   private set(id: string, html: string) {
     const before = this.cache.get(id);
     if (before === html) return;
@@ -234,6 +244,7 @@ export class UI {
     }
   }
 
+  /** Carry out a button press, named by its data-act and data-arg. */
   private act(act: string, arg: string) {
     const { sim, tools, audio, view } = this.host;
     audio.unlock();
@@ -362,6 +373,7 @@ export class UI {
   }
 
   // ---- Regular refresh -----------------------------------------------------
+  /** Redraw every panel from the current game state. */
   update() {
     const { sim, tools, audio } = this.host;
     const s = sim.s;
@@ -404,6 +416,7 @@ export class UI {
     );
 
     // build buttons
+    /** One of the round buttons that open a menu. */
     const btn = (id: string, icon: string, label: string) =>
       `<button class="round ${this.menu === id ? 'on' : ''}" data-act="menu" data-arg="${id}"><i>${icon}</i><span>${label}</span></button>`;
     this.set(
@@ -419,6 +432,7 @@ export class UI {
     // stats
     const d = dateOf(s.day);
     const net = netOf(s.ledger);
+    /** One game-speed button. */
     const speedBtn = (n: number, label: string, title: string) =>
       `<button class="speed ${s.speed === n ? 'on' : ''}" data-act="speed" data-arg="${n}" title="${title}">${label}</button>`;
     this.set(
@@ -443,6 +457,7 @@ export class UI {
     this.set('inspector', this.inspectorHtml());
   }
 
+  /** The open menu: rooms, items, hiring, staff, treatments or money. */
   private menuHtml(): string {
     const { sim } = this.host;
     const s = sim.s;
@@ -555,6 +570,7 @@ export class UI {
         .join('');
       return `<div class="panel menu"><h3>Treatments</h3><p class="sub">A diagnosis prescribes a treatment. It works properly only with someone qualified in it and the right equipment in the room. Staff learn new ones in a Training Room.</p>${sections}</div>`;
     }
+    /** One month's income and costs. */
     const table = (title: string, l: Ledger) => `<div class="ledger"><h4>${title}</h4>
       <div><span>Consultations</span><b class="pos">${money(l.consult)}</b></div>
       <div><span>Treatments</span><b class="pos">${money(l.treatment)}</b></div>
@@ -614,6 +630,7 @@ export class UI {
     </div>`;
   }
 
+  /** The panel for the selected guest, staff member, item or room. */
   private inspectorHtml(): string {
     const { sim, tools } = this.host;
     const sel = tools.selected;
@@ -658,6 +675,7 @@ export class UI {
     return `<div class="panel insp">${close}${this.roomInfo(room)}</div>`;
   }
 
+  /** The training courses a member of staff can take. */
   private coursesHtml(st: Staff): string {
     const { sim } = this.host;
     if (st.state === 'leaving' || st.training) return '';
@@ -676,6 +694,7 @@ export class UI {
     return `<h4>Training</h4>${rows}${note}`;
   }
 
+  /** Who staffs a station and who is in line at it. */
   private stationInfo(it: Item): string {
     const { sim } = this.host;
     const def = ITEMS[it.type].station;
@@ -686,6 +705,7 @@ export class UI {
       <p class="sub">In line: ${it.queue.length}${g ? ` · Seeing ${esc(g.name)}` : ''}</p>${g ? bar(it.progress * 100, 'blue') : ''}`;
   }
 
+  /** An item's details, with Move and Sell buttons. */
   private itemInfo(it: Item): string {
     const { sim } = this.host;
     const def = ITEMS[it.type];
@@ -705,12 +725,12 @@ export class UI {
     return body;
   }
 
-  /** Which modalities a treatment room can deliver right now, and what is missing for the rest. */
   /** A discipline's rooms, staff and equipment are offered only while it is switched on. */
   private available(d: Discipline | undefined): boolean {
     return !d || this.host.sim.enabled(d);
   }
 
+  /** Which modalities a treatment room can deliver right now, and what is missing for the rest. */
   private suiteModalities(tables: Item[]): string {
     const { sim } = this.host;
     const table = tables[0];
@@ -733,6 +753,7 @@ export class UI {
     return `<h4>Can deliver</h4>${rows}`;
   }
 
+  /** A room's details, with its window, door and demolish buttons. */
   private roomInfo(room: Room): string {
     const { sim } = this.host;
     const def = ROOMS[room.type];
@@ -746,6 +767,7 @@ export class UI {
   }
 
   // ---- Events --------------------------------------------------------------
+  /** React to game events: sounds, toasts, announcements, star awards and floating text. */
   handle(events: SimEvent[]) {
     const { view, audio } = this.host;
     for (const e of events) {
@@ -766,6 +788,7 @@ export class UI {
     }
   }
 
+  /** Show a message that fades after a few seconds, keeping at most four. */
   toast(text: string, kind: Tone = 'info') {
     const box = byId('toasts');
     const el = document.createElement('div');
@@ -777,6 +800,7 @@ export class UI {
     setTimeout(() => el.remove(), 7000);
   }
 
+  /** Show a banner announcement for a few seconds, with a chime. */
   private announce(text: string) {
     const el = byId('announce');
     el.innerHTML = `<div class="announce">📢 ${esc(text)}</div>`;
@@ -786,10 +810,12 @@ export class UI {
   }
 
   // ---- Modals --------------------------------------------------------------
+  /** Open a dialog over the game. */
   private modal(html: string, wide = false) {
     this.modalOpen = true;
     byId('modal').innerHTML = `<div class="veil"><div class="panel dialog ${wide ? 'wide' : ''}">${html}</div></div>`;
   }
+  /** Close the dialog and restore the game speed it paused. */
   private closeModal() {
     this.modalOpen = false;
     byId('modal').innerHTML = '';
@@ -799,11 +825,13 @@ export class UI {
     }
   }
   private pausedBy: number | null = null;
+  /** Pause the game, remembering the speed to return to. */
   private pause() {
     this.pausedBy ??= this.host.sim.s.speed;
     this.host.sim.s.speed = 0;
   }
 
+  /** Announce a newly earned star and what it unlocks. */
   private showStar(n: number) {
     this.pause();
     const next = STAR_GOALS[n];
@@ -828,6 +856,7 @@ export class UI {
       <button class="go" data-act="close">Keep healing</button>`);
   }
 
+  /** The list of mouse and keyboard controls. */
   private controlsHtml() {
     return `<ul class="keys">
       <li><kbd>Left click</kbd> select, place, confirm</li>
@@ -837,6 +866,7 @@ export class UI {
       <li><kbd>Space</kbd> pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> game speed</li></ul>`;
   }
 
+  /** Pause the game and show the pause menu. */
   private showSystemMenu() {
     this.pause();
     this.modal(`<h2>${GAME_TITLE}</h2>${this.controlsHtml()}
@@ -848,6 +878,7 @@ export class UI {
       <p class="sub">Main menu${this.host.exit ? ' and Exit game both save' : ' saves'} your game first.</p>`);
   }
 
+  /** Open the settings dialog. */
   private showSettings() {
     this.pause();
     this.modal(
@@ -858,6 +889,7 @@ export class UI {
     mountSettings(byId('settings-panel'), {
       audio: this.host.audio,
       sim: this.host.sim,
+      /** Close any open menu and redraw. */
       onChange: () => {
         // a switched-off discipline's menu may be open behind the dialog
         this.menu = null;
@@ -866,6 +898,7 @@ export class UI {
     });
   }
 
+  /** Open the saved games dialog, autosaving first. */
   private showSaves() {
     this.pause();
     this.host.save();
@@ -876,10 +909,12 @@ export class UI {
     );
     mountSaves(byId('saves-panel'), {
       current: this.host.sim.s,
+      /** Load the chosen save. */
       onLoad: (id) => this.host.loadGame(id),
     });
   }
 
+  /** Ask before starting a new game. */
   private confirmNewGame() {
     this
       .modal(`<h2>Start a new game?</h2><p>Your current center is not lost: it moves to "Previous game" in the saved games list.</p>
@@ -893,7 +928,7 @@ export function showTitle(audio: Audio, exit?: () => void): Promise<string> {
     const el = document.createElement('div');
     el.id = 'title';
     const latest = latestSave();
-    // the same sound and music switches as in the game, so they can be set before it starts
+    /** The same sound and music switches as in the game, so they can be set before it starts. */
     const switches = () =>
       `<button class="round small ${audio.sound ? '' : 'off'}" data-toggle="sound" title="Sound effects" aria-pressed="${audio.sound}">${audio.sound ? '🔊' : '🔇'}</button>
        <button class="round small ${audio.music ? '' : 'off'}" data-toggle="music" title="Music" aria-pressed="${audio.music}">🎵</button>`;
@@ -911,6 +946,7 @@ export function showTitle(audio: Audio, exit?: () => void): Promise<string> {
       <p class="sub">Massage and acupuncture are open for business. Reiki is still limbering up.</p>
     </div>`;
     document.body.appendChild(el);
+    /** Remove the title screen and report what was picked. */
     const finish = (what: string) => {
       el.remove();
       resolve(what);
@@ -938,7 +974,12 @@ export function showTitle(audio: Audio, exit?: () => void): Promise<string> {
         panel.hidden = !panel.hidden;
         if (!panel.hidden && !panel.childElementCount) {
           if (show === 'saves') mountSaves(panel, { onLoad: finish });
-          else mountSettings(panel, { audio, onChange: () => (query(el, '.title-sys').innerHTML = switches()) });
+          else
+            mountSettings(panel, {
+              audio,
+              /** Redraw the sound and music switches. */
+              onChange: () => (query(el, '.title-sys').innerHTML = switches()),
+            });
         }
         return;
       }

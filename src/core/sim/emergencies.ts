@@ -6,6 +6,7 @@ import { irnd, pick, rnd } from '../random';
 import { System } from './system';
 
 export class Emergencies extends System {
+  /** Run the emergency in progress, or offer a new one when it is time. */
   update() {
     const s = this.s;
     if (s.offer && s.day >= s.offer.deadline) this.decline();
@@ -52,6 +53,7 @@ export class Emergencies extends System {
     return true;
   }
 
+  /** Take on the offered emergency and start its clock. */
   accept() {
     const s = this.s;
     const e = s.offer;
@@ -64,11 +66,13 @@ export class Emergencies extends System {
     this.sim.events.emit({ type: 'sfx', name: 'place' });
   }
 
+  /** Turn the offer down and schedule the next one. */
   decline() {
     this.s.offer = null;
     this.s.nextEmergency = this.s.day + rnd(45, 75);
   }
 
+  /** Wrap up the emergency with a bonus if enough were healed, or a hit to reputation if not. */
   private end() {
     const s = this.s;
     const e = s.emergency;

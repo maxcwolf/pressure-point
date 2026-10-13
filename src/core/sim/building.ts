@@ -14,11 +14,13 @@ export interface PlaceOptions {
 }
 
 export class Building extends System {
+  /** Rebuild the grids and reroute everyone after the layout changes. */
   private worldChanged() {
     this.world.rebuild();
     this.sim.movement.repathAll();
   }
 
+  /** Buy an item and put it down, if it fits and can be afforded. */
   placeItem(type: ItemType, x: number, y: number, rot: number, opts: PlaceOptions = {}): Item | null {
     const def = ITEMS[type];
     if (!this.world.canPlaceItem(type, x, y, rot, opts.roomId).ok) return null;
@@ -49,6 +51,7 @@ export class Building extends System {
     return it;
   }
 
+  /** Start a new room as a blueprint, not yet paid for. */
   createRoom(type: RoomType, r: Rect, door: Room['door']): Room {
     const room: Room = { id: this.s.nextId++, type, x: r.x, y: r.y, w: r.w, h: r.h, door, windows: [], done: false };
     this.s.rooms.push(room);
@@ -57,6 +60,7 @@ export class Building extends System {
     return room;
   }
 
+  /** Turn a blueprint into a built room and pay for it. */
   finishRoom(room: Room) {
     room.done = true;
     this.sim.economy.spend(ROOMS[room.type].cost, 'building');
@@ -65,6 +69,7 @@ export class Building extends System {
     this.sim.events.emit({ type: 'sfx', name: 'build' });
   }
 
+  /** The items inside a room. */
   private itemsInRoom(room: Room) {
     return this.s.items.filter((it) => this.world.zoneAt(it.x, it.y) === room.id);
   }
@@ -96,6 +101,7 @@ export class Building extends System {
     return true;
   }
 
+  /** The guests and staff using, waiting on or heading for any of these items. */
   private usersOf(ids: Set<number>) {
     return {
       guests: this.s.guests.filter((g) => ids.has(g.claimItem) || ids.has(g.station)),
@@ -106,6 +112,7 @@ export class Building extends System {
     };
   }
 
+  /** Free these people from what they were using and have them start over. */
   private resetUsers({ guests, staff }: { guests: Guest[]; staff: Staff[] }) {
     for (const g of guests) {
       this.sim.claims.release(g);
@@ -208,6 +215,7 @@ export class Building extends System {
     return true;
   }
 
+  /** Whether an item can be sold. A room has to keep one of each thing it requires. */
   canSell(it: Item): boolean {
     const room = this.world.roomOfItem(it);
     if (!room) return true;
@@ -216,6 +224,7 @@ export class Building extends System {
     return this.itemsInRoom(room).filter((o) => o.type === it.type).length > 1;
   }
 
+  /** Sell an item for half of what it cost. */
   sellItem(id: number) {
     const it = this.world.item(id);
     if (!it || !this.canSell(it)) return;

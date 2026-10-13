@@ -8,11 +8,13 @@ import { type Ledger } from '../state/types';
 import { clamp } from '../util';
 import { System } from './system';
 
+/** A ledger's income minus its spending. */
 export function netOf(l: Ledger) {
   return l.consult + l.treatment + l.vending + l.bonus - l.salaries - l.building - l.training - l.interest;
 }
 
 export class Economy extends System {
+  /** Take in money, record it and show the amount floating up. */
   earn(amount: number, kind: 'consult' | 'treatment' | 'vending', x: number, y: number) {
     this.s.money += amount;
     this.s.ledger[kind] += amount;
@@ -20,11 +22,13 @@ export class Economy extends System {
     if (amount >= 100) this.sim.events.emit({ type: 'sfx', name: 'cash' });
   }
 
+  /** Pay out money and record it. */
   spend(amount: number, kind: 'salaries' | 'building' | 'training' | 'interest') {
     this.s.money -= amount;
     this.s.ledger[kind] += amount;
   }
 
+  /** Raise or lower reputation, kept between 0 and 100. */
   changeRep(delta: number) {
     const s = this.s;
     // gains taper off as reputation climbs
@@ -32,6 +36,7 @@ export class Economy extends System {
     s.reputation = clamp(s.reputation + delta, 0, 100);
   }
 
+  /** Pay salaries and loan interest, close the month's books and bring in new applicants. */
   monthEnd() {
     const s = this.s;
     const wages = s.staff.filter((x) => x.state !== 'leaving').reduce((a, x) => a + x.salary, 0);
@@ -50,6 +55,7 @@ export class Economy extends System {
     if (s.money < 0) this.sim.events.toast('You are in the red. Heal faster!', 'bad');
   }
 
+  /** Borrow one more step of the loan, if the limit allows. */
   borrow(): boolean {
     const s = this.s;
     if (s.loan + LOAN_STEP > LOAN_MAX) return false;
@@ -59,6 +65,7 @@ export class Economy extends System {
     return true;
   }
 
+  /** Pay back up to one step of the loan from the money on hand. */
   repay(): boolean {
     const s = this.s;
     const amount = Math.min(LOAN_STEP, s.loan, Math.max(0, s.money));
@@ -69,6 +76,7 @@ export class Economy extends System {
     return true;
   }
 
+  /** Set the price level, rounded to a tenth and kept within its limits. */
   setPrice(level: number) {
     this.s.priceLevel = clamp(Math.round(level * 10) / 10, PRICE_MIN, PRICE_MAX);
   }

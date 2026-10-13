@@ -29,21 +29,26 @@ beforeEach(() => {
   store.clear();
   quota = Infinity;
   globalThis.localStorage = {
+    /** Read a stored value, or null if there is none. */
     getItem: (k: string) => store.get(k) ?? null,
+    /** Store a value, failing as a full browser does when over the size limit. */
     setItem: (k: string, v: string) => {
       const size = [...store].reduce((n, [key, val]) => n + (key === k ? 0 : val.length), 0) + v.length;
       if (size > quota) throw new DOMException('quota exceeded', 'QuotaExceededError');
       store.set(k, v);
     },
+    /** Forget a stored value. */
     removeItem: (k: string) => void store.delete(k),
   } as Storage;
 });
 
+/** Play a standard center for a while and return its state. */
 const game = (seed = 1, seconds = 60) => {
   const { sim, s } = openCenter(seed);
   run(sim, seconds);
   return s;
 };
+/** Return the details of a save, or fail the test if it was refused. */
 const ok = (r: SaveInfo | string): SaveInfo => {
   if (typeof r === 'string') throw new Error(`save failed: ${r}`);
   return r;

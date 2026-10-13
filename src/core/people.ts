@@ -30,6 +30,7 @@ const TOPS = [
 
 const BOTTOMS = [0x3d405b, 0x5c4b3a, 0x2f4858, 0x6b705c, 0x7f5539, 0x4a4e69, 0x8d99ae];
 
+/** A random appearance. */
 export function randomLook(): Look {
   return {
     skin: pick(SKINS),
@@ -41,9 +42,11 @@ export function randomLook(): Look {
   };
 }
 
+/** A random name, now and then a cameo. */
 export const randomName = () =>
   random() < CAMEO_CHANCE ? pick(CAMEO_NAMES) : `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`;
 
+/** Make up a job applicant for a role. More stars bring more skilled ones. */
 export function makeCandidate(s: GameState, role: Role): Candidate {
   const skill = clamp(Math.round(rnd(0.6, 3.4 + s.stars * 0.6)), 1, 5);
   const traits: TraitId[] = [];
@@ -75,6 +78,7 @@ export function fairSalary(role: Role, skill: number, traits: TraitId[], quals: 
   return Math.round(pay / 10) * 10;
 }
 
+/** Top up the applicants to three per role, optionally replacing them all. */
 export function refillCandidates(s: GameState, replaceAll = false) {
   if (replaceAll) s.candidates = [];
   for (const role of ROLE_ORDER) {

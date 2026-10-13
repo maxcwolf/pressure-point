@@ -75,11 +75,14 @@ declare global {
 
 /** Installed in the page before the game loads. Must be self-contained: it is sent over as source. */
 function installFinders() {
+  /** The running game's debug handle, or an error if no game has started. */
   const pp = () => {
     if (!window.pp) throw new Error('no game is running');
     return window.pp;
   };
+  /** Whether the game canvas is the topmost thing at a screen point. */
   const onCanvas = (p: Point) => document.elementFromPoint(p.x, p.y)?.id === 'game';
+  /** Throw an error marked as coming from these helpers. */
   const fail = (what: string): never => {
     throw new Error(`e2e: ${what}`);
   };
@@ -93,6 +96,7 @@ function installFinders() {
       t.kind === 'room' && t.phase === 'plan' ? t.room : pp().state.rooms.find((r) => r.id === t.roomId);
     return room ? { room, rect: room, type: room.type } : fail('no room is being planned or edited');
   };
+  /** Whether the tool in hand is placing a door. */
   const wantsDoor = () => {
     const t = pp().tools.tool;
     return t.kind === 'door' || (t.kind === 'room' && (t.phase === 'door' || t.sub?.kind === 'door'));
@@ -107,6 +111,7 @@ function installFinders() {
         type: t.type as string,
         rot: t.rot as number,
         room: undefined,
+        /** Whether a new item of this type may be placed here. */
         ok: (x: number, y: number, r: number): Check => world.canPlaceItem(t.type, x, y, r),
       };
     if (t.kind === 'move') {
@@ -115,7 +120,7 @@ function installFinders() {
         type: t.type as string,
         rot: t.rot as number,
         room: undefined,
-        // somewhere other than where it already is
+        /** Whether the item may move here, which must be somewhere other than where it already is. */
         ok: (x: number, y: number, r: number): Check =>
           x === it.x && y === it.y ? { ok: false, reason: '' } : pp().sim.canMoveItem(it, x, y, r),
       };
@@ -126,6 +131,7 @@ function installFinders() {
         type: sub.type as string,
         rot: sub.rot as number,
         room: t.room as Room,
+        /** Whether the item may go here, kept to the planned room if the room requires it. */
         ok: (x: number, y: number, r: number): Check =>
           world.canPlaceItem(sub.type, x, y, r, sub.required ? t.room.id : undefined),
       };
@@ -155,12 +161,14 @@ function installFinders() {
     }
     return fail(`no valid spot for the ${type}`);
   };
+  /** The rectangle of tiles inside the building. */
   const building = (): Rect => {
     const d = pp().data;
     return { x: d.BX0, y: d.BY0, w: d.BX1 - d.BX0 + 1, h: d.BY1 - d.BY0 + 1 };
   };
 
   window.find = {
+    /** A clickable point on the nth placed item of a type. */
     item(type, nth) {
       const it = pp().state.items.filter((i) => i.type === type)[nth] ?? fail(`no ${type} #${nth} has been placed`);
       const [w, h] = pp().geo.itemDims(it.type, it.rot);
@@ -172,6 +180,7 @@ function installFinders() {
       }
       return fail(`the ${type} is hidden behind something`);
     },
+    /** A clickable point on a member of staff with this role who is in plain view. */
     staff(role) {
       for (const st of pp().state.staff.filter((s) => s.role === role)) {
         const p = pp().view.project(st.x, st.y, 0.6);
@@ -180,6 +189,7 @@ function installFinders() {
       }
       return fail(`no ${role} in plain view`);
     },
+    /** A clickable point on a guest who is in plain view. */
     guest() {
       for (const g of pp().state.guests) {
         const p = pp().view.project(g.x, g.y, 0.6);
@@ -188,6 +198,7 @@ function installFinders() {
       }
       return fail('no guest in plain view');
     },
+    /** A clickable point on bare floor in a room of this type. */
     roomFloor(type) {
       const room = pp().state.rooms.find((r) => r.type === type) ?? fail(`there is no ${type} room`);
       for (let y = room.y; y < room.y + room.h; y++) {
@@ -199,6 +210,7 @@ function installFinders() {
       }
       return fail(`no bare floor showing in the ${type} room`);
     },
+    /** A point on the lawn that is on screen. */
     lawn() {
       const d = pp().data;
       for (let y = d.BY0; y <= d.BY1; y++) {
@@ -209,9 +221,11 @@ function installFinders() {
       }
       return fail('no lawn on screen');
     },
+    /** The first free patch of corridor this big, with the screen points to drag between. */
     freePatch(w, h) {
       const { W } = pp().data;
       const world = pp().sim.world as unknown as { zone: Int32Array; blocked: Uint8Array; reserved: Uint8Array };
+      /** Whether a tile is open corridor: not in a room, blocked or reserved. */
       const free = (x: number, y: number) =>
         world.zone[y * W + x] === 0 && !world.blocked[y * W + x] && !world.reserved[y * W + x];
       const b = building();
@@ -225,10 +239,13 @@ function installFinders() {
       }
       return fail(`no free ${w}×${h} patch of corridor`);
     },
+    /** A clickable point on a wall of the current room, chosen by what the click is for. */
     wall(side, want) {
       const { room, rect, type } = currentRoom();
       const world = pp().sim.world;
+      /** Whether two wall spots are the same. */
       const same = (a: WallSpot, b: WallSpot) => a.x === b.x && a.y === b.y && a.dx === b.dx && a.dy === b.dy;
+      /** The screen point to click for a wall spot. */
       const point = (s: WallSpot) => pp().view.project(s.x + 0.5 + s.dx * 0.62, s.y + 0.5 + s.dy * 0.62, 0);
       if (want === 'door-spot') {
         const spot = room?.door ?? fail('the room has no door yet');
@@ -254,11 +271,13 @@ function installFinders() {
       }
       return fail(`nowhere suitable on the ${side} wall`);
     },
+    /** The first spot where what is in hand fits, in the blueprint's room or anywhere in the building. */
     held(inRoom) {
       const rules = heldRules();
       const bounds = inRoom ? (rules.room ?? pp().tools.plan?.room ?? fail('no blueprint is open')) : building();
       return firstFit(rules.type, rules.rot, bounds, rules.ok, true);
     },
+    /** Place an item at the first spot it fits and return its id. */
     place(type) {
       // straight into the game, for setting a scene: no menus, but the same placement rules
       const world = pp().sim.world;
@@ -303,10 +322,12 @@ export class Game {
     ] as const) as Promise<ReturnType<Finders[K]>>;
   }
 
+  /** Move the mouse to a point and click. */
   private async clickAt(p: Point) {
     await this.page.mouse.move(p.x, p.y, { steps: 4 });
     await this.page.mouse.click(p.x, p.y);
   }
+  /** Move the mouse to a point. */
   private async hoverAt(p: Point) {
     await this.page.mouse.move(p.x, p.y, { steps: 4 });
   }
@@ -316,6 +337,7 @@ export class Game {
   itemPoint(type: string, nth = 0) {
     return this.find('item', type, nth);
   }
+  /** Click a placed item. */
   async clickItem(type: string, nth = 0) {
     await this.clickAt(await this.find('item', type, nth));
   }
@@ -335,9 +357,11 @@ export class Game {
   async clickRoom(type: string) {
     await this.clickAt(await this.find('roomFloor', type));
   }
+  /** Hold the mouse over the lawn. */
   async hoverLawn() {
     await this.hoverAt(await this.find('lawn'));
   }
+  /** Click the lawn. */
   async clickLawn() {
     await this.clickAt(await this.find('lawn'));
   }
@@ -361,6 +385,7 @@ export class Game {
     await this.clickAt(target);
     return target.spot;
   }
+  /** Hold the mouse over a wall of the room being planned or edited, chosen as clickWall does. */
   async hoverWall(side: Side, want: WallWant = 'auto'): Promise<WallSpot> {
     const target = await this.find('wall', side, want);
     await this.hoverAt(target);
@@ -394,6 +419,7 @@ export class Game {
   async menu(name: 'Rooms' | 'Items' | 'Hire' | 'Staff' | 'Treatments' | 'Money') {
     await this.page.locator('#buildbtns').getByRole('button', { name }).click();
   }
+  /** The first card in the open menu with this name. */
   card(name: string) {
     return this.page.locator('#menu .card').filter({ hasText: name }).first();
   }
@@ -418,6 +444,7 @@ export class Game {
   buildCenter() {
     return this.eval((pp) => {
       const { sim, state } = pp;
+      /** Build a finished room with its furniture. */
       const room = (type: string, rect: object, door: object, items: [string, number, number][]) => {
         const r = sim.createRoom(type as never, rect as never, door as never);
         for (const [t, x, y] of items) sim.placeItem(t as never, x, y, 0, { free: true, roomId: r.id });
@@ -459,6 +486,7 @@ export class Game {
 }
 
 export const test = base.extend<{ game: Game }>({
+  /** Give each test a Game, and fail it if the page logged any errors. */
   game: async ({ page }, use) => {
     const game = new Game(page);
     await use(game);
