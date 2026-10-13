@@ -38,6 +38,18 @@ The unit tests seed the game's random numbers, so a failing run can be repeated 
 
 Every bug fix comes with a test that fails on the old code and passes on the fix, so the bug cannot quietly come back.
 
+## Code quality
+
+```bash
+yarn typecheck      # TypeScript, with its strictest settings, over the game, the tests and the config files
+yarn lint           # ESLint with typescript-eslint's strict, type-aware rules
+yarn format:check   # Prettier
+```
+
+`yarn lint:fix` and `yarn format` fix what they can. CI runs all three checks on every push and pull request.
+
+TypeScript is held at 6.x for now: typescript-eslint needs the compiler's JavaScript API, which TypeScript 7 does not ship yet.
+
 ## Releasing
 
 Add a short section for the new version to `CHANGELOG.md`; it becomes the release notes. Then push a version tag, which builds the installers on GitHub Actions and publishes them as a GitHub release:

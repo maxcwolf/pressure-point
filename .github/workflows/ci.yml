@@ -25,6 +25,10 @@ jobs:
           node-version: 22
       - run: corepack enable
       - run: yarn install --immutable
+      - name: Lint
+        run: yarn lint
+      - name: Check formatting
+        run: yarn format:check
       - run: yarn build
       - name: Unit tests
         run: yarn test
