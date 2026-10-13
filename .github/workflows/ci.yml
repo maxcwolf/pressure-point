@@ -44,3 +44,35 @@ jobs:
             playwright-report
             test-results
           retention-days: 7
+
+  # the built desktop app, launched for real: the sandbox, the preload API, quitting and saving
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: yarn install --immutable
+      - name: Desktop tests (Linux)
+        if: runner.os == 'Linux'
+        # Ubuntu blocks the user namespaces Electron's sandbox is built on, and the runner has no display
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          xvfb-run --auto-servernum yarn test:desktop
+      - name: Desktop tests
+        if: runner.os != 'Linux'
+        run: yarn test:desktop
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: desktop-test-results-${{ matrix.os }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

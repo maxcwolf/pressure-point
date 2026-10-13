@@ -28,13 +28,16 @@ yarn dist:win   # .exe installer (x64)
 ## Testing
 
 ```bash
-yarn test       # unit tests: grid, placement, pathfinding, saves and the whole simulation
-yarn test:e2e   # end-to-end tests: the real game in a headless browser, driven by mouse and keyboard
+yarn test           # unit tests: grid, placement, pathfinding, saves and the whole simulation
+yarn test:e2e       # end-to-end tests: the real game in a headless browser, driven by mouse and keyboard
+yarn test:desktop   # the built desktop app, launched for real
 ```
 
 The first end-to-end run needs a browser: `yarn playwright install chromium`.
 
-The unit tests seed the game's random numbers, so a failing run can be repeated exactly. They include hour-long sessions that check nothing goes missing, gets stuck or turns into `NaN`. The end-to-end tests start the dev server themselves and use the `window.pp` handle that dev builds expose to read game state and skip ahead in time. They do not hard-code where things are on screen: helpers in `tests/e2e/fixtures.ts` ask the running game where an item, a wall or a valid spot is, then click there (`game.clickItem('bench')`, `game.clickWall('east')`, `game.placeHeld()`). Both suites run in CI on every push and pull request.
+The unit tests seed the game's random numbers, so a failing run can be repeated exactly. They include hour-long sessions that check nothing goes missing, gets stuck or turns into `NaN`. The end-to-end tests start the dev server themselves and use the `window.pp` handle that dev builds expose to read game state and skip ahead in time. They do not hard-code where things are on screen: helpers in `tests/e2e/fixtures.ts` ask the running game where an item, a wall or a valid spot is, then click there (`game.clickItem('bench')`, `game.clickWall('east')`, `game.placeHeld()`). All three suites run in CI on every push and pull request.
+
+The desktop tests cover the shell around the game: that the page is sandboxed and cannot reach Node, that it is handed only the small API in `electron/api.ts`, that it cannot be sent to another address, and that Exit, Main menu and exporting a save work in the app. Each run uses a throwaway profile, so it never touches your own saved games. To test a packaged app instead of the build in this folder, set `PP_APP` to its executable.
 
 Every bug fix comes with a test that fails on the old code and passes on the fix, so the bug cannot quietly come back.
 
@@ -139,19 +142,21 @@ Saves live in the browser's storage, so the web version and the desktop app each
 
 ## Code map
 
-| Path                | What lives there                                                                            |
-| ------------------- | ------------------------------------------------------------------------------------------- |
-| `src/data.ts`       | All tunable content: rooms, items, staff roles, traits, conditions, objectives, flavor text |
-| `src/state.ts`      | The game state (plain JSON) and upgrades for older saves                                    |
-| `src/saves.ts`      | Autosave, named save slots, export and import                                               |
-| `src/settings.ts`   | Preferences that outlive a game, such as which treatments are on                            |
-| `src/world.ts`      | Tile grid, placement rules, pathfinding                                                     |
-| `src/sim.ts`        | Guests, staff, lines, money, reputation                                                     |
-| `src/tools.ts`      | Build tools: room drag, doors, furniture placement                                          |
-| `src/render/`       | Three.js scene and the procedural models                                                    |
-| `src/ui/`           | The HTML heads-up display                                                                   |
-| `src/audio.ts`      | Synthesized sound effects and music                                                         |
-| `electron/main.cjs` | Desktop shell                                                                               |
+| Path                  | What lives there                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `src/data.ts`         | All tunable content: rooms, items, staff roles, traits, conditions, objectives, flavor text |
+| `src/state.ts`        | The game state (plain JSON) and upgrades for older saves                                    |
+| `src/saves.ts`        | Autosave, named save slots, export and import                                               |
+| `src/settings.ts`     | Preferences that outlive a game, such as which treatments are on                            |
+| `src/world.ts`        | Tile grid, placement rules, pathfinding                                                     |
+| `src/sim.ts`          | Guests, staff, lines, money, reputation                                                     |
+| `src/tools.ts`        | Build tools: room drag, doors, furniture placement                                          |
+| `src/render/`         | Three.js scene and the procedural models                                                    |
+| `src/ui/`             | The HTML heads-up display                                                                   |
+| `src/audio.ts`        | Synthesized sound effects and music                                                         |
+| `src/desktop.ts`      | What the desktop app offers the game; undefined in a browser                                |
+| `electron/main.ts`    | Desktop app: the main process, which opens the window and locks it down                     |
+| `electron/preload.ts` | Desktop app: hands the game the API in `electron/api.ts`, with the sandbox on               |
 
 Disciplines, modalities, conditions, courses and equipment are all defined in `data.ts`. Adding a discipline such as reiki means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models.ts`. The simulation, menus and Settings pick it up from the data.
 
