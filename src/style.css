@@ -774,10 +774,6 @@ kbd {
   text-shadow: none;
   margin-top: 10px;
 }
-.tagline {
-  font-weight: 500;
-  margin-bottom: 6px;
-}
 
 @keyframes pop {
   from {

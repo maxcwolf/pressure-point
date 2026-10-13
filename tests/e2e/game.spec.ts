@@ -303,6 +303,66 @@ test.describe('controls and saving', () => {
 
 });
 
+test.describe('clicking', () => {
+  /** Press, let the pointer wander, release: how a hand or a trackpad actually clicks. */
+  const pressAndRelease = async (game: import('./fixtures').Game, x: number, y: number, h: number, drift: number, holdMs = 0) => {
+    const p = await game.eval((pp, [a, b, c]) => pp.view.project(a, b, c), [x, y, h] as const);
+    await game.page.mouse.move(p.x, p.y);
+    await game.page.mouse.down();
+    await game.page.mouse.move(p.x + drift, p.y + drift * 0.5, { steps: 3 });
+    if (holdMs) await game.page.waitForTimeout(holdMs);
+    await game.page.mouse.up();
+    await game.settle();
+  };
+  const selectedId = (game: import('./fixtures').Game) => game.eval((pp) => (pp.tools as unknown as { selected: { id: number } | null }).selected?.id ?? null);
+
+  test('selecting a second item switches to it, even when the click drifts a little', async ({ game, page }) => {
+    await game.start();
+    const [bench, fountain] = await game.eval((pp) => [pp.sim.placeItem('bench', 18, 12, 0)!.id, pp.sim.placeItem('fountain', 12, 12, 0)!.id]);
+    await game.settle();
+    // up to 8 pixels of drift, comfortably inside the 10 that makes a drag
+    for (const drift of [0, 4, 8]) {
+      await pressAndRelease(game, 19, 12.5, 0.4, 0);
+      expect(await selectedId(game), `first click, drift ${drift}`).toBe(bench);
+      await expect(page.locator('#inspector h3')).toContainText('Bench');
+      await pressAndRelease(game, 12.5, 12.5, 0.4, drift);
+      expect(await selectedId(game), `second click drifting ${drift}px`).toBe(fountain);
+      await expect(page.locator('#inspector h3')).toContainText('Zen Fountain');
+    }
+  });
+
+  test('an item in hand is placed even when the click drifts a little', async ({ game }) => {
+    await game.start();
+    await game.menu('Items');
+    await game.card('Potted Plant').click();
+    await pressAndRelease(game, 12.5, 12.5, 0, 8);
+    await pressAndRelease(game, 16.5, 12.5, 0, 7);
+    expect(await game.eval((pp) => pp.state.items.length)).toBe(2);
+  });
+
+  test('a real drag moves the camera and leaves the selection alone', async ({ game }) => {
+    await game.start();
+    const bench = await game.eval((pp) => pp.sim.placeItem('bench', 18, 12, 0)!.id);
+    await game.eval((pp) => void pp.sim.placeItem('fountain', 12, 12, 0));
+    await game.settle();
+    await pressAndRelease(game, 19, 12.5, 0.4, 0);
+    const before = await game.at(15, 10);
+    // start the drag on the other item: a slow, long drag is a pan, not a click on it
+    await pressAndRelease(game, 12.5, 12.5, 0.4, 120, 300);
+    const after = await game.at(15, 10);
+    expect(Math.abs(after.x - before.x)).toBeGreaterThan(60);
+    expect(await selectedId(game)).toBe(bench);
+  });
+
+  test('a real drag with an item in hand does not place it', async ({ game }) => {
+    await game.start();
+    await game.menu('Items');
+    await game.card('Potted Plant').click();
+    await pressAndRelease(game, 12.5, 12.5, 0, 90, 300);
+    expect(await game.eval((pp) => pp.state.items.length)).toBe(0);
+  });
+});
+
 test.describe('leaving a game', () => {
   test('Main menu saves and returns to the title screen, where Continue picks the game back up', async ({ game, page }) => {
     await game.start();

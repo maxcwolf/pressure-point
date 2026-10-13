@@ -36,6 +36,8 @@ The first end-to-end run needs a browser: `yarn playwright install chromium`.
 
 The unit tests seed the game's random numbers, so a failing run can be repeated exactly. They include hour-long sessions that check nothing goes missing, gets stuck or turns into `NaN`. The end-to-end tests start the dev server themselves and use the `window.pp` handle that dev builds expose to read game state and skip ahead in time. Both suites run in CI on every push and pull request.
 
+Every bug fix comes with a test that fails on the old code and passes on the fix, so the bug cannot quietly come back.
+
 ## Releasing
 
 Pushing a version tag builds the installers on GitHub Actions and publishes them as a GitHub release:

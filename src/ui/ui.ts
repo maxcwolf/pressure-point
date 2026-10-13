@@ -774,7 +774,6 @@ export function showTitle(audio: Audio, exit?: () => void): Promise<string> {
        <button class="round small ${audio.music ? '' : 'off'}" data-toggle="music" title="Music" aria-pressed="${audio.music}">🎵</button>`;
     el.innerHTML = `<div class="title-sys">${switches()}</div><div class="panel dialog wide">
       <div class="logo">${TITLE_LINES.map((w) => `<span>${w}</span>`).join('')}</div>
-      <p class="tagline">Build a healing center. Untie the public.</p>
       <div class="btnrow">
         ${latest ? `<button class="go" data-pick="${latest.id}" title="${esc(latest.name)}, ${gameDate(latest.day)}">Continue</button><button data-show="saves">Load game</button>` : ''}
         <button class="${latest ? '' : 'go'}" data-pick="new">New game</button>

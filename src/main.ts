@@ -4,6 +4,7 @@ import '@fontsource/fredoka/latin-600.css';
 import '@fontsource/fredoka/latin-700.css';
 import './style.css';
 import { Audio } from './audio';
+import { isClick, isDragging } from './input';
 import { View } from './render/view';
 import { Sim } from './sim';
 import { AUTOSAVE_ID, archiveAutosave, autosave, readSave } from './saves';
@@ -102,15 +103,14 @@ function start(state: GameState) {
   });
 
   // ---- Pointer input -------------------------------------------------------
-  const DRAG_PX = 6;
-  let down: { x: number; y: number; button: number; moved: boolean } | null = null;
+  let down: { x: number; y: number; button: number; moved: boolean; at: number } | null = null;
   let last = { x: 0, y: 0 };
   const draggingRoom = () => tools.tool.kind === 'room' && tools.tool.phase === 'drag';
 
   canvas.addEventListener('pointerdown', (e) => {
     audio.unlock();
     canvas.setPointerCapture(e.pointerId);
-    down = { x: e.clientX, y: e.clientY, button: e.button, moved: false };
+    down = { x: e.clientX, y: e.clientY, button: e.button, moved: false, at: performance.now() };
     last = { x: e.clientX, y: e.clientY };
     if (e.button === 0) {
       ui.closeMenu();
@@ -119,7 +119,7 @@ function start(state: GameState) {
   });
   canvas.addEventListener('pointermove', (e) => {
     if (down) {
-      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > DRAG_PX) down.moved = true;
+      if (isDragging(e.clientX - down.x, e.clientY - down.y)) down.moved = true;
       // with no tool in hand a left drag moves the camera, as do right and middle drags
       const pans = down.button !== 0 || (!tools.active && down.moved);
       if (pans && down.moved) view.panPixels(e.clientX - last.x, e.clientY - last.y);
@@ -131,9 +131,10 @@ function start(state: GameState) {
     const d = down;
     down = null;
     if (!d) return;
+    const click = isClick(d.moved, performance.now() - d.at, Math.hypot(e.clientX - d.x, e.clientY - d.y));
     if (d.button === 0) {
-      if (tools.active ? !d.moved || draggingRoom() : !d.moved) tools.pointerUp(e.clientX, e.clientY);
-    } else if (d.button === 2 && !d.moved) {
+      if (click || draggingRoom()) tools.pointerUp(e.clientX, e.clientY);
+    } else if (d.button === 2 && click) {
       if (tools.active) tools.cancel();
       else tools.select(null);
     }
