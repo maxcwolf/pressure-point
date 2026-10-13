@@ -1,7 +1,10 @@
 name: Release
 
-# Push a tag like v0.2.0 to build the macOS and Windows installers and publish
+# Push a tag like v0.1.0 to build the macOS and Windows installers and publish
 # them as a GitHub release. Run it by hand to build without publishing.
+#
+# Only tags and manual runs trigger this, never pull requests, so code from a
+# fork cannot reach the self-hosted Mac.
 on:
   push:
     tags: ['v*']
@@ -23,20 +26,20 @@ jobs:
       matrix:
         include:
           - name: macOS
-            os: macos-latest
-            # No Developer ID certificate yet, so sign ad hoc: without any
-            # signature macOS reports a downloaded app as damaged.
-            args: --mac --arm64 --x64 -c.mac.identity=- -c.mac.hardenedRuntime=false
+            # The Mac mini. Set the repository variable MAC_RUNNER to
+            # macos-latest to build on a GitHub-hosted Mac while it is offline.
+            os: ${{ vars.MAC_RUNNER || 'self-hosted' }}
+            args: --mac --arm64 --x64
           - name: Windows
             os: windows-latest
             args: --win --x64
     steps:
       - uses: actions/checkout@v7
-      - run: corepack enable
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: yarn
+      # after setup-node, so the self-hosted Mac needs nothing preinstalled
+      - run: corepack enable
       - run: yarn install --immutable
       - name: Work out the version
         id: version
@@ -50,7 +53,33 @@ jobs:
       - run: yarn build
       - name: Package
         shell: bash
-        run: yarn electron-builder ${{ matrix.args }} --publish never -c.extraMetadata.version="${{ steps.version.outputs.value }}"
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          # same secret names as the other macOS release pipelines
+          DEVELOPER_ID_CERT_BASE64: ${{ matrix.name == 'macOS' && secrets.DEVELOPER_ID_CERT_BASE64 || '' }}
+          DEVELOPER_ID_CERT_PASSWORD: ${{ matrix.name == 'macOS' && secrets.DEVELOPER_ID_CERT_PASSWORD || '' }}
+          NOTARIZE_APPLE_ID: ${{ matrix.name == 'macOS' && secrets.NOTARIZE_APPLE_ID || '' }}
+          NOTARIZE_PASSWORD: ${{ matrix.name == 'macOS' && secrets.NOTARIZE_PASSWORD || '' }}
+          NOTARIZE_TEAM_ID: ${{ matrix.name == 'macOS' && secrets.NOTARIZE_TEAM_ID || '' }}
+        run: |
+          args=(${{ matrix.args }})
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            if [[ -n "$DEVELOPER_ID_CERT_BASE64" ]]; then
+              echo "Signing with the Developer ID certificate"
+              export CSC_LINK="$DEVELOPER_ID_CERT_BASE64" CSC_KEY_PASSWORD="$DEVELOPER_ID_CERT_PASSWORD"
+              if [[ -n "$NOTARIZE_APPLE_ID" ]]; then
+                echo "Notarizing with Apple"
+                export APPLE_ID="$NOTARIZE_APPLE_ID" APPLE_APP_SPECIFIC_PASSWORD="$NOTARIZE_PASSWORD" APPLE_TEAM_ID="$NOTARIZE_TEAM_ID"
+                args+=(-c.mac.notarize=true)
+              fi
+            else
+              # No certificate configured: sign ad hoc, because macOS reports a
+              # download with no signature at all as damaged.
+              echo "No Developer ID certificate secret, signing ad hoc"
+              args+=(-c.mac.identity=- -c.mac.hardenedRuntime=false)
+            fi
+          fi
+          yarn electron-builder "${args[@]}" --publish never -c.extraMetadata.version="$VERSION"
       - uses: actions/upload-artifact@v7
         with:
           name: installers-${{ matrix.name }}

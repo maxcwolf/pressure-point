@@ -23,16 +23,50 @@ yarn dist:win   # .exe installer (x64)
 
 ## Releasing
 
-Pushing a version tag builds the macOS and Windows installers on GitHub Actions and publishes them as a GitHub release:
+Pushing a version tag builds the installers on GitHub Actions and publishes them as a GitHub release:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.1.0
+git push origin v0.1.0
 ```
 
 The tag sets the version number in the installers. Running the **Release** workflow by hand from the Actions tab builds the installers as downloadable artifacts without publishing a release.
 
-The installers are not signed with a paid developer certificate, so macOS and Windows warn on first launch. The release notes in `.github/release-notes.md` tell players how to get past that.
+| Build | Runs on |
+| --- | --- |
+| macOS `.dmg` (Apple silicon and Intel) | The self-hosted Mac mini |
+| Windows `.exe` installer (x64) | GitHub-hosted `windows-latest` |
+| Publishing the release, and CI on pushes and pull requests | GitHub-hosted `ubuntu-latest` |
+
+If the Mac mini is offline, the macOS build waits for it and the release is not published until it finishes. To build on a GitHub-hosted Mac instead, set the repository variable `MAC_RUNNER` to `macos-latest`; delete the variable to go back.
+
+```bash
+gh variable set MAC_RUNNER --body macos-latest
+```
+
+### One-time setup: register the Mac mini
+
+Self-hosted runners on a personal account belong to one repository, so the Mac mini needs a runner registered for this repo alongside its existing ones. On the Mac mini:
+
+```bash
+mkdir ~/actions-runner-pressure-point && cd ~/actions-runner-pressure-point
+VERSION=$(gh api repos/actions/runner/releases/latest --jq .tag_name | sed 's/^v//')
+curl -fsSL -o runner.tar.gz "https://github.com/actions/runner/releases/download/v${VERSION}/actions-runner-osx-arm64-${VERSION}.tar.gz"
+tar xzf runner.tar.gz
+./config.sh --unattended \
+  --url https://github.com/maxcwolf/pressure-point \
+  --token "$(gh api -X POST repos/maxcwolf/pressure-point/actions/runners/registration-token --jq .token)" \
+  --name mac-arm64-runner-pressure-point --labels pressure-point
+./svc.sh install && ./svc.sh start
+```
+
+### Signing
+
+With no secrets set, the macOS build is signed ad hoc and the Windows installer is unsigned, so both operating systems warn on first launch. `.github/release-notes.md` tells players how to get past that.
+
+To ship a macOS build that opens without a warning, add the same five secrets the other macOS release pipelines use. The workflow then signs with the Developer ID certificate and notarizes with Apple:
+
+`DEVELOPER_ID_CERT_BASE64`, `DEVELOPER_ID_CERT_PASSWORD`, `NOTARIZE_APPLE_ID`, `NOTARIZE_PASSWORD`, `NOTARIZE_TEAM_ID`
 
 ## How it plays
 
