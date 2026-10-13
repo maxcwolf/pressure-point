@@ -154,3 +154,7 @@ Saves live in the browser's storage, so the web version and the desktop app each
 | `electron/main.cjs` | Desktop shell                                                                               |
 
 Disciplines, modalities, conditions, courses and equipment are all defined in `data.ts`. Adding a discipline such as reiki means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models.ts`. The simulation, menus and Settings pick it up from the data.
+
+## License
+
+[MIT](LICENSE)
