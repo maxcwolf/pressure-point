@@ -1,4 +1,5 @@
 dist/
+dist-electron/
 release/
 node_modules/
 test-results/

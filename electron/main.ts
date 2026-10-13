@@ -1,0 +1,91 @@
+// The desktop app's main process: one window that shows the game.
+import path from 'node:path';
+
+import { app, BrowserWindow, ipcMain, Menu, type MenuItemConstructorOptions, session, shell } from 'electron';
+
+import { QUIT_CHANNEL } from './api';
+
+const isMac = process.platform === 'darwin';
+/** Set to the dev server's address to run the game from it instead of from the built files. */
+const devUrl = process.env.PP_DEV_URL;
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1440,
+    height: 900,
+    minWidth: 1024,
+    minHeight: 680,
+    backgroundColor: '#a8d8c8',
+    title: 'Pressure Point Institute',
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  win.once('ready-to-show', () => {
+    win.show();
+  });
+
+  // The built game is loaded as a file on purpose: saved games are kept per address,
+  // so serving it from anywhere else would hide every save a player already has.
+  if (devUrl) void win.loadURL(devUrl);
+  else void win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+}
+
+/** Whether two addresses are the same page, ignoring anything after `?` or `#`. */
+function samePage(a: string, b: string): boolean {
+  const page = (url: string) => url.replace(/[?#].*$/, '');
+  return page(a) === page(b);
+}
+
+function isWebLink(url: string): boolean {
+  return URL.canParse(url) && ['https:', 'http:'].includes(new URL(url).protocol);
+}
+
+// The window only ever shows the game. These apply to every page the app could create.
+app.on('web-contents-created', (_event, contents) => {
+  // links open in the player's browser, never in a second window
+  contents.setWindowOpenHandler(({ url }) => {
+    if (isWebLink(url)) void shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  // the game reloads itself to load a save or start over; it may not go anywhere else
+  contents.on('will-navigate', (event, url) => {
+    if (!samePage(url, contents.getURL())) event.preventDefault();
+  });
+  contents.on('will-attach-webview', (event) => {
+    event.preventDefault();
+  });
+});
+
+ipcMain.on(QUIT_CHANNEL, (event) => {
+  // only the game's own page may ask, not a frame inside it
+  if (event.senderFrame === event.sender.mainFrame) app.quit();
+});
+
+const gameMenu: MenuItemConstructorOptions[] = [
+  { role: 'togglefullscreen' },
+  { role: 'reload', label: 'Restart Renderer' },
+  { role: 'toggleDevTools' },
+];
+if (!isMac) gameMenu.push({ type: 'separator' }, { role: 'quit' });
+
+const menu: MenuItemConstructorOptions[] = [{ label: 'Game', submenu: gameMenu }, { role: 'windowMenu' }];
+if (isMac) menu.unshift({ role: 'appMenu' });
+Menu.setApplicationMenu(Menu.buildFromTemplate(menu));
+
+void app.whenReady().then(() => {
+  // the game asks for nothing: no camera, microphone, location or notifications
+  session.defaultSession.setPermissionRequestHandler((_contents, _permission, allow) => {
+    allow(false);
+  });
+  createWindow();
+});
+
+// one window, one game: closing it (or choosing Exit in the game) quits on every platform
+app.on('window-all-closed', () => {
+  app.quit();
+});

@@ -6,7 +6,9 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/', 'release/', 'node_modules/', 'test-results/', 'playwright-report/', '.yarn/'] },
+  {
+    ignores: ['dist/', 'dist-electron/', 'release/', 'node_modules/', 'test-results/', 'playwright-report/', '.yarn/'],
+  },
 
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
@@ -30,17 +32,27 @@ export default tseslint.config(
     },
   },
 
-  // the game runs in a browser
-  { files: ['src/**'], languageOptions: { globals: globals.browser } },
-
-  // plain JavaScript that runs in Node: the Electron shell, build scripts and this file
-  { files: ['**/*.cjs', '**/*.mjs', '**/*.js'], ...tseslint.configs.disableTypeChecked },
-  { files: ['**/*.cjs', '**/*.mjs', '**/*.js'], languageOptions: { globals: globals.node } },
+  // the game runs in a browser, and in the desktop app in a sandboxed page: it can reach neither Node nor Electron
   {
-    files: ['**/*.cjs'],
-    languageOptions: { sourceType: 'commonjs' },
-    rules: { '@typescript-eslint/no-require-imports': 'off' },
+    files: ['src/**'],
+    languageOptions: { globals: globals.browser },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [{ name: 'electron', message: 'The game cannot use Electron. Add what it needs to electron/api.ts.' }],
+          patterns: [{ group: ['node:*'], message: 'The game runs in a browser, where Node is not available.' }],
+        },
+      ],
+    },
   },
+
+  // the desktop shell runs in Node
+  { files: ['electron/**'], languageOptions: { globals: globals.node } },
+
+  // plain JavaScript that runs in Node: build scripts and this file
+  { files: ['**/*.mjs', '**/*.js'], ...tseslint.configs.disableTypeChecked },
+  { files: ['**/*.mjs', '**/*.js'], languageOptions: { globals: globals.node } },
   { files: ['scripts/**'], rules: { 'no-console': 'off' } },
 
   // tests reach into the running game and poke at its internals on purpose

@@ -6,10 +6,12 @@
   "license": "MIT",
   "private": true,
   "type": "module",
-  "main": "electron/main.cjs",
+  "main": "dist-electron/main.cjs",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && yarn build:web && yarn build:desktop",
+    "build:web": "vite build",
+    "build:desktop": "node scripts/build-desktop.mjs",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -18,6 +20,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:desktop": "yarn build && playwright test --config playwright.desktop.config.ts",
     "preview": "vite preview",
     "app": "yarn build && electron .",
     "dist:mac": "yarn build && electron-builder --mac --arm64 --x64 -c.mac.identity=- -c.mac.hardenedRuntime=false",
@@ -29,7 +32,7 @@
     "artifactName": "Pressure-Point-Institute-${version}-${os}-${arch}.${ext}",
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "dist-electron/**/*"
     ],
     "directories": {
       "output": "release"

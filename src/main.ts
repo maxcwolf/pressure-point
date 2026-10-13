@@ -6,6 +6,7 @@ import './style.css';
 
 import { Audio } from './audio';
 import { BX0, BX1, BY0, BY1, ITEMS, ROOMS, W } from './data';
+import { desktop } from './desktop';
 import { isClick, isDragging } from './input';
 import { View } from './render/view';
 import { archiveAutosave, autosave, AUTOSAVE_ID, readSave } from './saves';
@@ -35,10 +36,10 @@ async function boot() {
 }
 
 /**
- * In the desktop app there is a window to close, so the game offers Exit.
+ * The desktop app can be quit, so there the game offers Exit.
  * A browser tab cannot close itself, so the web version leaves that to the browser.
  */
-const exitApp = /\bElectron\//.test(navigator.userAgent) ? () => window.close() : undefined;
+const exitApp = desktop?.quit;
 
 const HANDOFF_KEY = 'pressure-point-start';
 function takeHandoff(): string | null {
