@@ -56,10 +56,7 @@ yarn format:check   # Prettier
 
 Every function has a one-line JSDoc comment saying what it does, with no tags: the types already say the rest. The linter insists on it.
 
-Two more conventions, which the linter does not check:
-
-- Logic lives in small pure functions wherever it can, exported and unit-tested, with the classes and components around them kept thin. `src/app/tools/` and `src/ui/lib/` are the models to follow.
-- Component files are PascalCase (`Objectives.tsx`, with `Objectives.css` beside it). Every other file is lowercase or kebab-case.
+The rest of the conventions are in [docs/architecture.md](docs/architecture.md#conventions).
 
 TypeScript is held at 6.x for now: typescript-eslint needs the compiler's JavaScript API, which TypeScript 7 does not ship yet.
 
@@ -158,7 +155,7 @@ Saves live in the browser's storage, so the web version and the desktop app each
 | `src/core/data/`      | All tunable content: rooms, items, staff roles, treatments, conditions, rules, flavor text                  |
 | `src/core/state/`     | The shape of a game in progress (plain JSON), starting one, and upgrades for older saves                    |
 | `src/core/world.ts`   | Tile grid, placement rules, pathfinding                                                                     |
-| `src/core/sim/`       | The simulation, one file per system: guests, staffing, stations, building, economy and so on                |
+| `src/core/sim/`       | The simulation, as functions grouped by area: guests, staffing, stations, building, economy and so on       |
 | `src/core/sim/sim.ts` | `Sim`: the clock, and the commands and questions the rest of the game uses                                  |
 | `src/app/`            | Running the game: startup, a game in progress, pointer and keyboard input, the frame loop                   |
 | `src/app/tools/`      | The build tools: a small class holding the tool in hand, over pure modules for geometry, hints and overlays |
@@ -177,7 +174,7 @@ Saves live in the browser's storage, so the web version and the desktop app each
 
 Disciplines, modalities, conditions, courses and equipment are all defined in `src/core/data/`. Adding a discipline such as reiki means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models/items/`. The simulation, menus and Settings pick it up from the data.
 
-The core is fenced off: a lint rule stops anything in `src/core/` importing from outside it, and it is type-checked without browser types, so it cannot reach the page, Three.js or the interface. Each system in `src/core/sim/` is a class that reaches the others through `this.sim` (`this.sim.guests`, `this.sim.economy`); `Sim` is the only part the rest of the game talks to.
+How the pieces fit together, and the conventions the code follows, are in [docs/architecture.md](docs/architecture.md).
 
 ## License
 
