@@ -6,7 +6,8 @@ import './style.css';
 import { Audio } from './audio';
 import { View } from './render/view';
 import { Sim } from './sim';
-import { clearSave, loadGame, newGame, saveGame, type GameState } from './state';
+import { AUTOSAVE_ID, archiveAutosave, autosave, readSave } from './saves';
+import { newGame, type GameState } from './state';
 import { Tools } from './tools';
 import { UI, showTitle } from './ui/ui';
 
@@ -16,11 +17,42 @@ const audio = new Audio();
 async function boot() {
   // the lawn sign and welcome mat are drawn to canvas, so the font has to be ready first
   await Promise.all([document.fonts.load('700 20px Fredoka'), document.fonts.load('500 20px Fredoka')]).catch(() => {});
-  const saved = loadGame();
-  const choice = await showTitle(!!saved, audio);
-  audio.unlock();
-  if (choice === 'new') clearSave();
-  start(choice === 'continue' && saved ? saved : newGame());
+  // loading or restarting from inside a game reloads the page and leaves a note saying what to open
+  let state = open(takeHandoff());
+  while (!state) {
+    const choice = await showTitle(audio);
+    audio.unlock();
+    state = open(choice);
+  }
+  start(state);
+}
+
+const HANDOFF_KEY = 'pressure-point-start';
+function takeHandoff(): string | null {
+  try {
+    const what = sessionStorage.getItem(HANDOFF_KEY);
+    sessionStorage.removeItem(HANDOFF_KEY);
+    return what;
+  } catch {
+    return null;
+  }
+}
+function reloadInto(what: string) {
+  try {
+    sessionStorage.setItem(HANDOFF_KEY, what);
+  } catch {
+    // without session storage the title screen appears instead, which is fine
+  }
+  location.reload();
+}
+
+/** Open a saved game by id, or a fresh one for 'new'. Null if there is nothing to open. */
+function open(what: string | null): GameState | null {
+  if (!what) return null;
+  const state = what === 'new' ? newGame() : readSave(what);
+  // the game being left behind moves to the "Previous game" slot rather than being overwritten
+  if (state && what !== AUTOSAVE_ID) archiveAutosave();
+  return state;
 }
 
 function start(state: GameState) {
@@ -32,7 +64,13 @@ function start(state: GameState) {
   let uiDirty = true;
   const tools = new Tools(sim, view, () => (uiDirty = true), (name) => audio.play(name));
   const save = () => {
-    if (!(tools.tool.kind === 'room' && tools.tool.phase === 'items')) saveGame(state);
+    if (!(tools.tool.kind === 'room' && tools.tool.phase === 'items')) autosave(state);
+  };
+  /** Leave this game for another one, keeping it up to date in the autosave first. */
+  const leaveFor = (what: string) => {
+    save();
+    window.removeEventListener('beforeunload', save);
+    reloadInto(what);
   };
   const ui = new UI({
     sim,
@@ -40,11 +78,8 @@ function start(state: GameState) {
     view,
     audio,
     save,
-    newGame: () => {
-      clearSave();
-      window.removeEventListener('beforeunload', save);
-      location.reload();
-    },
+    newGame: () => leaveFor('new'),
+    loadGame: (id) => leaveFor(id),
   });
 
   // ---- Pointer input -------------------------------------------------------

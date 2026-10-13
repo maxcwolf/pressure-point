@@ -29,15 +29,19 @@ import type { Audio } from '../audio';
 import type { View } from '../render/view';
 import { dateOf, money, netOf, type Sim, type SimEvent } from '../sim';
 import type { Guest, Item, Ledger, Room, Staff } from '../state';
+import { gameDate, latestSave } from '../saves';
 import type { Tools } from '../tools';
+import { mountSaves } from './saves';
 
 export interface UIHost {
   sim: Sim;
   tools: Tools;
   view: View;
   audio: Audio;
+  /** Write the autosave now. */
   save(): void;
   newGame(): void;
+  loadGame(id: string): void;
 }
 
 type Menu = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | null;
@@ -261,9 +265,8 @@ export class UI {
       case 'sysmenu':
         this.showSystemMenu();
         break;
-      case 'save':
-        this.host.save();
-        this.toast('Game saved.', 'good');
+      case 'saves':
+        this.showSaves();
         break;
       case 'newgame':
         this.confirmNewGame();
@@ -606,9 +609,9 @@ export class UI {
   }
 
   // ---- Modals --------------------------------------------------------------
-  private modal(html: string) {
+  private modal(html: string, wide = false) {
     this.modalOpen = true;
-    document.getElementById('modal')!.innerHTML = `<div class="veil"><div class="panel dialog">${html}</div></div>`;
+    document.getElementById('modal')!.innerHTML = `<div class="veil"><div class="panel dialog ${wide ? 'wide' : ''}">${html}</div></div>`;
   }
   private closeModal() {
     this.modalOpen = false;
@@ -650,38 +653,57 @@ export class UI {
   private showSystemMenu() {
     this.pause();
     this.modal(`<h2>${GAME_TITLE}</h2>${this.controlsHtml()}
-      <p class="sub">The game saves itself every few seconds.</p>
+      <p class="sub">The game autosaves every few seconds. Use Save or load to keep named saves.</p>
       <div class="btnrow"><button class="go" data-act="close">Resume</button>
-      <button data-act="save">Save now</button><button class="danger" data-act="newgame">New game</button></div>`);
+      <button data-act="saves">Save or load</button><button class="danger" data-act="newgame">New game</button></div>`);
+  }
+
+  private showSaves() {
+    this.pause();
+    this.host.save();
+    this.modal(
+      `<h2>Saved games</h2><div id="saves-panel"></div>
+       <div class="btnrow"><button data-act="sysmenu">Back</button><button class="go" data-act="close">Resume</button></div>`,
+      true,
+    );
+    mountSaves(document.getElementById('saves-panel')!, { current: this.host.sim.s, onLoad: (id) => this.host.loadGame(id) });
   }
 
   private confirmNewGame() {
-    this.modal(`<h2>Start over?</h2><p>This demolishes your healing center and erases the save. The knots will return.</p>
-      <div class="btnrow"><button data-act="close">Keep playing</button><button class="danger" data-act="newgame-yes">Erase and restart</button></div>`);
+    this.modal(`<h2>Start a new game?</h2><p>Your current center is not lost: it moves to "Previous game" in the saved games list.</p>
+      <div class="btnrow"><button data-act="close">Keep playing</button><button class="danger" data-act="newgame-yes">Start a new game</button></div>`);
   }
 }
 
-/** Title screen, shown before a game exists. */
-export function showTitle(canContinue: boolean, audio: Audio): Promise<'new' | 'continue'> {
+/** What the player picked on the title screen: 'new', or the id of a save to load. */
+export function showTitle(audio: Audio): Promise<string> {
   return new Promise((resolve) => {
     const el = document.createElement('div');
     el.id = 'title';
+    const latest = latestSave();
     // the same sound and music switches as in the game, so they can be set before it starts
     const switches = () =>
       `<button class="round small ${audio.sound ? '' : 'off'}" data-toggle="sound" title="Sound effects" aria-pressed="${audio.sound}">${audio.sound ? '🔊' : '🔇'}</button>
        <button class="round small ${audio.music ? '' : 'off'}" data-toggle="music" title="Music" aria-pressed="${audio.music}">🎵</button>`;
-    el.innerHTML = `<div class="title-sys">${switches()}</div><div class="panel dialog">
+    el.innerHTML = `<div class="title-sys">${switches()}</div><div class="panel dialog wide">
       <div class="logo">${TITLE_LINES.map((w) => `<span>${w}</span>`).join('')}</div>
       <p class="tagline">Build a healing center. Untie the public.</p>
       <div class="btnrow">
-        ${canContinue ? '<button class="go" data-pick="continue">Continue</button>' : ''}
-        <button class="${canContinue ? '' : 'go'}" data-pick="new">New game</button>
+        ${latest ? `<button class="go" data-pick="${latest.id}" title="${esc(latest.name)}, ${gameDate(latest.day)}">Continue</button><button data-show="saves">Load game</button>` : ''}
+        <button class="${latest ? '' : 'go'}" data-pick="new">New game</button>
       </div>
+      ${latest ? `<p class="sub">Continue picks up "${esc(latest.name)}" at ${gameDate(latest.day)}.</p>` : ''}
+      <div id="title-saves" hidden></div>
       <p class="sub">Massage therapy is open for business. Acupuncture and reiki are still limbering up.</p>
     </div>`;
     document.body.appendChild(el);
+    const finish = (what: string) => {
+      el.remove();
+      resolve(what);
+    };
     el.addEventListener('click', (e) => {
-      const toggle = (e.target as HTMLElement).closest<HTMLElement>('[data-toggle]')?.dataset.toggle;
+      const target = e.target as HTMLElement;
+      const toggle = target.closest<HTMLElement>('[data-toggle]')?.dataset.toggle;
       if (toggle) {
         // a click is what browsers need before any sound, so music can start right here
         audio.unlock();
@@ -691,10 +713,14 @@ export function showTitle(canContinue: boolean, audio: Audio): Promise<'new' | '
         el.querySelector('.title-sys')!.innerHTML = switches();
         return;
       }
-      const pick = (e.target as HTMLElement).closest<HTMLElement>('[data-pick]')?.dataset.pick;
-      if (!pick) return;
-      el.remove();
-      resolve(pick as 'new' | 'continue');
+      if (target.closest('[data-show="saves"]')) {
+        const panel = el.querySelector<HTMLElement>('#title-saves')!;
+        panel.hidden = !panel.hidden;
+        if (!panel.hidden && !panel.childElementCount) mountSaves(panel, { onLoad: finish });
+        return;
+      }
+      const pick = target.closest<HTMLElement>('[data-pick]')?.dataset.pick;
+      if (pick) finish(pick);
     });
   });
 }

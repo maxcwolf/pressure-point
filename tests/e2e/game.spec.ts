@@ -300,28 +300,148 @@ test.describe('controls and saving', () => {
     expect(await game.eval((pp) => pp.state.speed)).toBe(2);
   });
 
-  test('a saved game comes back after a reload', async ({ game, page }) => {
+});
+
+test.describe('saved games', () => {
+  const openSaves = async (page: import('@playwright/test').Page) => {
+    await page.locator('#sys').getByTitle('Menu').click();
+    await page.getByRole('button', { name: 'Save or load' }).click();
+  };
+  const summary = (game: import('./fixtures').Game) =>
+    game.eval((pp) => ({ rooms: pp.state.rooms.length, staff: pp.state.staff.length, arrived: pp.state.stats.arrived, money: pp.state.money }));
+
+  test('the autosave brings a game back after a reload', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
     await game.fastForward(120);
-    await page.locator('#sys').getByTitle('Menu').click();
-    await page.getByRole('button', { name: 'Save now' }).click();
-    const before = await game.eval((pp) => ({ rooms: pp.state.rooms.length, staff: pp.state.staff.length, arrived: pp.state.stats.arrived }));
+    await game.eval((pp) => (pp.state.speed = 0));
+    const before = await summary(game);
     await page.reload();
+    await expect(page.locator('#title')).toContainText('Continue picks up "Autosave"');
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.waitForFunction(() => !!window.pp);
-    const after = await game.eval((pp) => ({ rooms: pp.state.rooms.length, staff: pp.state.staff.length, arrived: pp.state.stats.arrived }));
-    expect(after).toEqual(before);
+    expect(await summary(game)).toEqual(before);
     await expect.poll(() => game.eval((pp) => pp.view.renderer.info.render.triangles)).toBeGreaterThan(5000);
   });
 
-  test('starting over wipes the save', async ({ game, page }) => {
+  test('a named save can be made, then loaded from the title screen', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(60);
+    await game.eval((pp) => (pp.state.speed = 0));
+    const saved = await summary(game);
+    await openSaves(page);
+    await page.getByLabel('Name for this save').fill('Before the inspectors');
+    await page.getByRole('button', { name: 'Save game' }).click();
+    await expect(page.locator('.save-note')).toHaveText('Saved "Before the inspectors".');
+    await expect(page.locator('.save-list li')).toHaveCount(2);
+
+    // play on, so the autosave moves past the named save
+    await page.getByRole('button', { name: 'Resume' }).click();
+    await game.eval((pp) => {
+      pp.state.speed = 1;
+      pp.state.money += 4321;
+    });
+    await game.fastForward(60);
+    await page.reload();
+
+    await page.getByRole('button', { name: 'Load game' }).click();
+    const row = page.locator('#title .save-list li', { hasText: 'Before the inspectors' });
+    await expect(row).toContainText('healed');
+    await row.getByRole('button', { name: 'Load' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    await game.eval((pp) => (pp.state.speed = 0));
+    expect(await summary(game)).toEqual(saved);
+  });
+
+  test('typing a save name does not trigger game shortcuts', async ({ game, page }) => {
+    await game.start();
+    await page.keyboard.press('2');
+    await openSaves(page);
+    await page.getByLabel('Name for this save').fill('');
+    await page.getByLabel('Name for this save').pressSequentially('r 1 3 wasd');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.save-list li', { hasText: 'r 1 3 wasd' })).toBeVisible();
+    await page.getByRole('button', { name: 'Resume' }).click();
+    expect(await game.eval((pp) => pp.state.speed)).toBe(2);
+  });
+
+  test('a save can be overwritten, and deleting asks twice', async ({ game, page }) => {
+    await game.start();
+    await openSaves(page);
+    await page.getByLabel('Name for this save').fill('Slot A');
+    await page.getByRole('button', { name: 'Save game' }).click();
+    const row = page.locator('.save-list li', { hasText: 'Slot A' });
+    await expect(row).toContainText('$30,000');
+    await game.eval((pp) => (pp.state.money = 4200));
+    await row.getByRole('button', { name: 'Overwrite' }).click();
+    await expect(row).toContainText('$4,200');
+    await expect(page.locator('.save-list li')).toHaveCount(2);
+
+    await row.getByRole('button', { name: 'Delete' }).click();
+    await expect(row.getByRole('button', { name: 'Really delete?' })).toBeVisible();
+    await expect(page.locator('.save-list li')).toHaveCount(2);
+    await row.getByRole('button', { name: 'Really delete?' }).click();
+    await expect(page.locator('.save-list li', { hasText: 'Slot A' })).toHaveCount(0);
+  });
+
+  test('a save can be exported to a file and imported again', async ({ game, page }, testInfo) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(30);
+    await game.eval((pp) => (pp.state.speed = 0));
+    const before = await summary(game);
+    await openSaves(page);
+    await page.getByLabel('Name for this save').fill('Travels well');
+    await page.getByRole('button', { name: 'Save game' }).click();
+    const row = page.locator('.save-list li', { hasText: 'Travels well' });
+    const [download] = await Promise.all([page.waitForEvent('download'), row.getByRole('button', { name: 'Export' }).click()]);
+    expect(download.suggestedFilename()).toBe('pressure-point-travels-well.json');
+    const file = testInfo.outputPath('export.json');
+    await download.saveAs(file);
+
+    // a different browser profile stands in for the desktop app: nothing saved there yet
+    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(() => sessionStorage.clear());
+    await page.goto('about:blank');
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'New game' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    await openSaves(page);
+    await page.locator('.filebtn input').setInputFiles(file);
+    await expect(page.locator('.save-note')).toHaveText('Imported "Travels well".');
+    await page.locator('.save-list li', { hasText: 'Travels well' }).getByRole('button', { name: 'Load' }).click();
+    await page.waitForFunction(() => !!window.pp && window.pp.state.rooms.length > 0);
+    await game.eval((pp) => (pp.state.speed = 0));
+    expect(await summary(game)).toEqual(before);
+  });
+
+  test('a file that is not a save is refused politely', async ({ game, page }) => {
+    await game.start();
+    await openSaves(page);
+    await page.locator('.filebtn input').setInputFiles({ name: 'holiday.json', mimeType: 'application/json', buffer: Buffer.from('{"photos": 12}') });
+    await expect(page.locator('.save-note.bad')).toContainText('"holiday.json" is not a Pressure Point Institute save');
+    await expect(page.locator('.save-list li')).toHaveCount(1);
+  });
+
+  test('starting a new game keeps the old one as Previous game', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
     await page.locator('#sys').getByTitle('Menu').click();
     await page.getByRole('button', { name: 'New game' }).click();
-    await page.getByRole('button', { name: 'Erase and restart' }).click();
-    await expect(page.getByRole('button', { name: 'New game' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    await expect(page.locator('#modal')).toContainText('moves to "Previous game"');
+    await page.getByRole('button', { name: 'Start a new game' }).click();
+    // straight into the new game, with no stop at the title screen
+    await page.waitForFunction(() => !!window.pp && window.pp.state.rooms.length === 0);
+    expect(await game.eval((pp) => pp.state.money)).toBe(30000);
+
+    await openSaves(page);
+    const prev = page.locator('.save-list li', { hasText: 'Previous game' });
+    await prev.getByRole('button', { name: 'Load' }).click();
+    await page.waitForFunction(() => !!window.pp && window.pp.state.rooms.length === 3);
+    expect(await game.eval((pp) => pp.state.staff.length)).toBe(3);
   });
 });

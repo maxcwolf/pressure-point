@@ -1,30 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { CAMEO_CHANCE, CAMEO_NAMES, ROLE_ORDER } from '../../src/data';
-import {
-  SAVE_VERSION,
-  clearSave,
-  fairSalary,
-  loadGame,
-  newGame,
-  random,
-  randomName,
-  saveGame,
-  setSeed,
-  upgradeSave,
-  type GameState,
-} from '../../src/state';
+import { SAVE_VERSION, fairSalary, newGame, random, randomName, setSeed, upgradeSave, type GameState } from '../../src/state';
 import { openCenter, run } from './helpers';
-
-// a stand-in for the browser's storage
-const store = new Map<string, string>();
-beforeEach(() => {
-  store.clear();
-  globalThis.localStorage = {
-    getItem: (k: string) => store.get(k) ?? null,
-    setItem: (k: string, v: string) => void store.set(k, v),
-    removeItem: (k: string) => void store.delete(k),
-  } as Storage;
-});
 
 describe('random numbers', () => {
   it('repeat exactly for the same seed', () => {
@@ -83,26 +60,7 @@ describe('fair salaries', () => {
   });
 });
 
-describe('saving and loading', () => {
-  it('round-trips a running game', () => {
-    const { sim, s } = openCenter(5);
-    run(sim, 120);
-    saveGame(s);
-    const loaded = loadGame()!;
-    expect(loaded).toEqual(JSON.parse(JSON.stringify(s)));
-    expect(loaded.guests.length).toBe(s.guests.length);
-  });
-
-  it('returns nothing when there is no save, a corrupt save, or one from the future', () => {
-    expect(loadGame()).toBeNull();
-    store.set('pressure-point-save-v1', '{not json');
-    expect(loadGame()).toBeNull();
-    saveGame({ ...newGame(), version: SAVE_VERSION + 1 });
-    expect(loadGame()).toBeNull();
-    clearSave();
-    expect(store.size).toBe(0);
-  });
-
+describe('older saves', () => {
   it('brings a first-version save up to date', () => {
     const { sim, s } = openCenter(2);
     run(sim, 30);

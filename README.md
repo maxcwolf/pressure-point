@@ -1,10 +1,12 @@
 # Pressure Point Institute
 
-A healing-center management sim for macOS and Windows, in the spirit of the classic hospital tycoon games. Build rooms, hire staff, and untie the public.
+### ▶ [Play it now in your browser](https://maxcwolf.github.io/pressure-point/)
+
+Or download the macOS or Windows app from the [latest release](https://github.com/maxcwolf/pressure-point/releases/latest).
+
+A healing-center management sim, in the spirit of the classic hospital tycoon games. Build rooms, hire staff, and untie the public.
 
 The MVP covers **massage therapy**. Acupuncture and reiki are planned.
-
-**[Play it in your browser](https://maxcwolf.github.io/pressure-point/)**, or download the macOS or Windows app from the [latest release](https://github.com/maxcwolf/pressure-point/releases/latest).
 
 ![A busy healing center](docs/screenshot.png)
 
@@ -119,7 +121,11 @@ The **Massage** menu shows what each modality treats and whether you can deliver
 | Esc / right click | Cancel |
 | Space, 1 2 3 | Pause, game speed |
 
-The game autosaves to local storage every few seconds.
+### Saved games
+
+The game autosaves every few seconds, in the browser and in the desktop app alike. **Save or load** in the pause menu (☰) keeps up to 20 named saves, and the title screen can load any of them. Starting a new game or loading a different one never destroys the game you were in: it moves to a "Previous game" slot.
+
+Saves live in the browser's storage, so the web version and the desktop app each have their own. **Export** writes a save to a file and **Import** reads one back, which is how to back a game up or move it from one to the other.
 
 ## Code map
 

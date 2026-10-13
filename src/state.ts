@@ -249,7 +249,6 @@ export interface GameState {
 }
 
 export const SAVE_VERSION = 3;
-const SAVE_KEY = 'pressure-point-save-v1';
 
 // ---- Random helpers --------------------------------------------------------
 let seed = (Math.random() * 2 ** 32) >>> 0;
@@ -357,28 +356,6 @@ export function newGame(): GameState {
   return s;
 }
 
-export function saveGame(s: GameState) {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(s));
-  } catch {
-    // storage full or unavailable: the game carries on unsaved
-  }
-}
-
-export function loadGame(): GameState | null {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
-    const s = JSON.parse(raw) as GameState;
-    if (!Array.isArray(s.rooms)) return null;
-    if (typeof s.version !== 'number' || s.version > SAVE_VERSION) return null;
-    upgradeSave(s);
-    return s;
-  } catch {
-    return null;
-  }
-}
-
 /** Bring a save from any earlier version up to date by filling in what it lacks. */
 export function upgradeSave(s: GameState) {
   for (const st of s.staff) {
@@ -405,16 +382,4 @@ export function upgradeSave(s: GameState) {
   s.emergency ??= null;
   s.nextEmergency ??= s.day + 60;
   s.version = SAVE_VERSION;
-}
-
-export function hasSave(): boolean {
-  return loadGame() !== null;
-}
-
-export function clearSave() {
-  try {
-    localStorage.removeItem(SAVE_KEY);
-  } catch {
-    // ignore
-  }
 }

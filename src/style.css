@@ -987,3 +987,192 @@ em.warn {
   display: flex;
   gap: 8px;
 }
+
+/* ---- Saved games ---- */
+.dialog.wide {
+  width: min(640px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+.saves {
+  text-align: left;
+  margin: 10px 0 4px;
+}
+#title-saves {
+  margin-top: 6px;
+}
+.save-new {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.save-new input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 15px;
+  color: var(--navy);
+  background: #fff;
+  border: 2.5px solid var(--navy);
+  border-radius: 12px;
+  padding: 6px 12px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.saves button {
+  pointer-events: auto;
+  border: 2px solid var(--navy);
+  border-radius: 10px;
+  padding: 3px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--cream);
+  margin: 0;
+  box-shadow: 0 2px 0 rgba(36, 56, 74, 0.25);
+}
+.saves .save-new button {
+  font-size: 15px;
+  padding: 6px 16px;
+}
+.save-note {
+  font-size: 13.5px !important;
+  background: #d8f1e2;
+  color: #1c6b49;
+  border-radius: 10px;
+  padding: 5px 10px;
+  margin-bottom: 8px;
+}
+.save-note.bad {
+  background: #fbe3e1;
+  color: #a8322b;
+}
+.save-list {
+  list-style: none;
+  padding: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.save-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fff;
+  border: 2px solid rgba(36, 56, 74, 0.3);
+  border-radius: 12px;
+  padding: 7px 10px;
+}
+.save-list li.empty {
+  justify-content: center;
+  opacity: 0.7;
+  font-size: 14px;
+}
+.save-what {
+  min-width: 0;
+}
+.save-what b {
+  display: block;
+  font-weight: 600;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.save-what span {
+  font-size: 12px;
+  opacity: 0.75;
+}
+.save-actions {
+  display: flex;
+  gap: 5px;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.save-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 9px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+.filebtn {
+  flex: none;
+  cursor: pointer;
+  border: 2px dashed var(--navy);
+  border-radius: 10px;
+  padding: 4px 11px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fff;
+}
+.filebtn:hover {
+  background: #f0fbf9;
+}
+
+/* ---- Narrow windows: stats move above the build buttons ---- */
+:root {
+  --bar-h: 104px;
+}
+#advisor,
+#inspector {
+  bottom: var(--bar-h);
+}
+#menu {
+  bottom: calc(var(--bar-h) + 4px);
+}
+@media (max-width: 1100px) {
+  :root {
+    --bar-h: 164px;
+  }
+  #bottom {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  #stats {
+    align-self: stretch;
+    justify-content: space-between;
+  }
+  .stat {
+    min-width: 0;
+    padding: 6px 9px;
+  }
+  .stat.money {
+    min-width: 0;
+  }
+  .speeds {
+    padding: 0 6px;
+  }
+}
+@media (max-width: 720px) {
+  .stat small,
+  .stat .bar {
+    display: none;
+  }
+  #buildbtns {
+    gap: 5px;
+  }
+  .round {
+    width: 56px;
+    height: 56px;
+  }
+  .round span {
+    font-size: 10px;
+  }
+  #objectives {
+    width: 200px;
+  }
+}
+.saves button.go {
+  background: var(--green);
+  color: #fff;
+}
+.saves button.danger {
+  background: #fbe3e1;
+  color: #a8322b;
+}
