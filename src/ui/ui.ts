@@ -32,7 +32,10 @@ import {
   WEAR_REPAIR,
   WINDOW_COST,
 } from '../core/data';
-import { dateOf, money, netOf, type Sim, type SimEvent } from '../core/sim/sim';
+import { dateOf, money } from '../core/format';
+import { netOf } from '../core/sim/economy';
+import { type SimEvent } from '../core/sim/events';
+import { type Sim } from '../core/sim/sim';
 import { type Guest, type Item, type Ledger, type Room, type Staff } from '../core/state/types';
 import { type View } from '../render/view';
 import { gameDate, latestSave } from '../saves';

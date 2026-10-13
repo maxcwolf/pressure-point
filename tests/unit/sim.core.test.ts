@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ITEMS, ROOMS, START_MONEY } from '../../src/core/data';
-import { netOf } from '../../src/core/sim/sim';
+import { netOf } from '../../src/core/sim/economy';
 import { addConsult, addMassage, addStaffRoom, freshSim, hire, openCenter, run, runUntil } from './helpers';
 
 describe('opening the center', () => {

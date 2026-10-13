@@ -1,5 +1,6 @@
 // Grid caches derived from the game state: zones, blocking, doors, plus
 // placement validation and pathfinding.
+
 import {
   BX0,
   BX1,

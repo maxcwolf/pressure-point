@@ -5,7 +5,8 @@
 // extras can be added, the door can be moved, and nothing is charged for the room
 // until it is confirmed.
 import { type AccessRole, ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from './core/data';
-import { money, type Sim } from './core/sim/sim';
+import { money } from './core/format';
+import { type Sim } from './core/sim/sim';
 import { sameSpot } from './core/state/game';
 import { type Room, type WallSpot } from './core/state/types';
 import { accessTile, footprint, inBuilding, itemDims, type Rect, tileIdx, Z_CORRIDOR } from './core/world';
