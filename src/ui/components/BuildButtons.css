@@ -1,0 +1,12 @@
+/* Styles for BuildButtons. */
+
+#buildbtns {
+  display: flex;
+  gap: 9px;
+}
+
+@media (max-width: 720px) {
+  #buildbtns {
+    gap: 5px;
+  }
+}

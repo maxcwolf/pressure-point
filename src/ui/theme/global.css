@@ -1,0 +1,128 @@
+/* Page-wide basics: the layers of the page, panels, shared text styles and animations. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #8cc98a;
+  font-family: var(--font);
+  color: var(--navy);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+  display: block;
+  touch-action: none;
+}
+
+#ui,
+#floaters {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+#ui > * {
+  position: absolute;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+h2,
+h3,
+h4,
+p,
+ul {
+  margin: 0;
+}
+
+s {
+  text-decoration: none;
+  opacity: 0.25;
+}
+
+.panel {
+  pointer-events: auto;
+  background: var(--cream);
+  border: 3px solid var(--navy);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 12px 14px;
+}
+
+.panel h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.sub {
+  font-size: 12.5px;
+  opacity: 0.72;
+  margin-top: 6px;
+}
+
+.pos {
+  color: #23805a;
+}
+
+.neg {
+  color: var(--red);
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.94) translateY(8px);
+    opacity: 0;
+  }
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+}
+
+@keyframes drop {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes floatup {
+  0% {
+    opacity: 0;
+    margin-top: 10px;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    margin-top: -60px;
+  }
+}
+
+em.ok {
+  background: #d8f1e2 !important;
+  color: #1c6b49;
+}
+
+em.warn {
+  background: #fbe3e1 !important;
+  color: #a8322b;
+}

@@ -5,7 +5,7 @@ import { newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { archiveAutosave, AUTOSAVE_ID, readSave } from '../storage/saves';
 import { loadDisciplinePrefs } from '../storage/settings';
-import { showTitle } from '../ui/ui';
+import { showTitle } from '../ui';
 import { desktop } from './desktop';
 import { startGame } from './game';
 import { takeHandoff } from './handoff';

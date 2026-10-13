@@ -1,0 +1,39 @@
+/* Styles for Dialog. */
+
+.veil {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(36, 56, 74, 0.45);
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.dialog {
+  width: min(460px, calc(100vw - 40px));
+  text-align: center;
+  padding: 22px 26px 24px;
+  animation: pop 0.2s ease-out;
+}
+
+.dialog h2 {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.dialog p {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.dialog.wide {
+  width: min(640px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.dialog .btnrow + .btnrow {
+  margin-top: 2px;
+}

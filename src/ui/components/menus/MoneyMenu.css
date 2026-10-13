@@ -1,0 +1,56 @@
+/* Styles for MoneyMenu. */
+
+.ledgers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ledger {
+  background: #fff;
+  border: 2px solid rgba(36, 56, 74, 0.3);
+  border-radius: 12px;
+  padding: 8px 11px;
+  font-size: 13.5px;
+}
+
+.ledger h4 {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ledger div {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.5px 0;
+}
+
+.ledger .total {
+  border-top: 2px solid rgba(36, 56, 74, 0.2);
+  margin-top: 4px;
+  padding-top: 4px;
+  font-weight: 600;
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 60px;
+  margin-top: 12px;
+}
+
+.chart i {
+  flex: 1;
+  max-width: 34px;
+  background: var(--green);
+  border-radius: 5px 5px 0 0;
+}
+
+.chart i.neg {
+  background: var(--red);
+}
+
+.ledgers.controls {
+  margin-top: 12px;
+}

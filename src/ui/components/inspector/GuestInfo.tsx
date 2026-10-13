@@ -1,0 +1,56 @@
+// The inspector for a guest.
+
+import { conditionOf, DIAGNOSIS_TARGET } from '../../../core/data';
+import { money } from '../../../core/format';
+import type { Guest } from '../../../core/state/types';
+import { useGame } from '../../hooks/use-hud';
+import { guestStatus } from '../../lib/status';
+import { Bar } from '../common/Bar';
+import { QualChips } from '../common/QualChips';
+
+/** A guest's condition, what they are doing and how they are holding up. */
+export function GuestInfo({ guest: g }: { guest: Guest }) {
+  const { sim } = useGame();
+  const c = conditionOf(g.condition);
+  // the condition is a mystery until a consultation has settled it
+  const known = g.goal === 'treat' || g.goal === 'leave';
+  return (
+    <>
+      <h3>{g.name}</h3>
+      <p class="tag">{g.emergency ? '🚨 Emergency guest' : 'Guest'}</p>{' '}
+      <p>
+        <b>{known ? c.name : 'Undiagnosed'}</b>
+        <br />
+        {known ? c.desc : 'Something is clearly wrong. A consultation will reveal what.'}
+      </p>{' '}
+      {known && (
+        <>
+          <p class="sub">{`Treatment: ${c.treatment} · ${money(c.fee)}`}</p>
+          <QualChips quals={[c.modality]} />
+        </>
+      )}{' '}
+      <p class="status">{guestStatus(g, sim)}</p>{' '}
+      <label>
+        Patience
+        <Bar value={g.patience} class={g.patience < 25 ? 'bad' : ''} />
+      </label>{' '}
+      <label>
+        Diagnosis
+        <Bar value={(g.diagnosis / DIAGNOSIS_TARGET) * 100} class="blue" />
+      </label>{' '}
+      <label>
+        Thirst
+        <Bar value={g.thirst} class="need" />
+      </label>
+      <label>
+        Hunger
+        <Bar value={g.hunger} class="need" />
+      </label>
+      <label>
+        Bladder
+        <Bar value={g.bladder} class="need" />
+      </label>{' '}
+      <p class="sub">{`Spent so far: ${money(g.spent)}`}</p>
+    </>
+  );
+}

@@ -1,0 +1,26 @@
+/* The palette, the font and the shadow everything shares. */
+
+:root {
+  --navy: #24384a;
+  --cream: #fff8ea;
+  --sand: #f3e7cf;
+  --teal: #2fa8a0;
+  --teal-dark: #23827c;
+  --orange: #f08a4b;
+  --gold: #f2c14e;
+  --red: #e5564d;
+  --green: #3bb273;
+  --blue: #4a9fe0;
+  --shadow: 0 5px 0 rgba(36, 56, 74, 0.32);
+  --font: 'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif;
+}
+
+:root {
+  --bar-h: 104px;
+}
+
+@media (max-width: 1100px) {
+  :root {
+    --bar-h: 164px;
+  }
+}

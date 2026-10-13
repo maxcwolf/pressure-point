@@ -7,7 +7,7 @@ import type { GameState } from '../core/state/types';
 import { accessTile, itemDims } from '../core/world';
 import { View } from '../render/view';
 import { autosave } from '../storage/saves';
-import { UI } from '../ui/ui';
+import { mountHud } from '../ui';
 import { reloadInto } from './handoff';
 import { bindKeyboard } from './keyboard';
 import { runLoop } from './loop';
@@ -52,7 +52,7 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     saveAndStop();
     reloadInto(what);
   };
-  const ui = new UI({
+  const ui = mountHud({
     sim,
     tools,
     view,

@@ -1,0 +1,110 @@
+/* Styles for Menu. */
+
+#menu {
+  left: 14px;
+  bottom: 108px;
+  width: min(780px, calc(100vw - 28px));
+}
+
+.menu {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+#menu.pop > .panel {
+  animation: pop 0.16s ease-out;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
+  gap: 9px;
+}
+
+.cards.small {
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+}
+
+.card {
+  position: relative;
+  text-align: left;
+  background: #fff;
+  border: 2.5px solid var(--navy);
+  border-radius: 14px;
+  padding: 9px 10px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: transform 0.08s;
+}
+
+button.card:hover {
+  transform: translateY(-3px);
+  background: #f0fbf9;
+  border-color: var(--teal-dark);
+}
+
+.card i {
+  font-style: normal;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.card b {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.card p {
+  font-size: 12px;
+  line-height: 1.25;
+  opacity: 0.8;
+}
+
+.card em {
+  font-style: normal;
+  font-size: 11.5px;
+  background: var(--sand);
+  border-radius: 8px;
+  padding: 2px 7px;
+  align-self: flex-start;
+  margin-top: 3px;
+}
+
+.card em.none {
+  opacity: 0.6;
+}
+
+.card .cost {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  background: var(--gold);
+  border: 2px solid var(--navy);
+  border-radius: 9px;
+  padding: 0 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.card.poor {
+  opacity: 0.55;
+}
+
+.card.poor .cost {
+  background: #f3b1ac;
+}
+
+.menu .sub {
+  margin: 7px 0 9px;
+}
+
+.card.locked {
+  opacity: 0.5;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+}
+
+#menu {
+  bottom: calc(var(--bar-h) + 4px);
+}

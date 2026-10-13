@@ -2,6 +2,7 @@
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import jsdoc from 'eslint-plugin-jsdoc';
+import reactHooks from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -101,6 +102,13 @@ export default tseslint.config(
     files: ['src/**'],
     languageOptions: { globals: globals.browser },
     rules: { 'no-restricted-imports': ['error', { paths: notInTheGame.paths, patterns: notInTheGame.patterns }] },
+  },
+
+  // components: hooks are called the same way on every render, and effects list what they depend on
+  {
+    files: ['src/ui/**'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: { 'react-hooks/rules-of-hooks': 'error', 'react-hooks/exhaustive-deps': 'error' },
   },
 
   // the game core is plain logic: no drawing, no interface, no browser. It imports only from itself.

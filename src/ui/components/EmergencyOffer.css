@@ -1,0 +1,20 @@
+/* Styles for EmergencyOffer. */
+
+#offer {
+  top: 62px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(430px, calc(100vw - 600px));
+  min-width: 320px;
+}
+
+.offer {
+  border-color: var(--red);
+  text-align: center;
+  animation: pop 0.2s ease-out;
+}
+
+.offer p {
+  font-size: 14px;
+  line-height: 1.3;
+}

@@ -45,6 +45,7 @@ interface Handle {
     problem: string;
     plan: { room: Room } | null;
     selected: { kind: string; id: number } | null;
+    select(sel: { kind: 'guest' | 'staff' | 'item' | 'room'; id: number } | null): void;
   };
   data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };
   geo: {

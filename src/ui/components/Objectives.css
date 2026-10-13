@@ -1,0 +1,54 @@
+/* Styles for Objectives. */
+
+#objectives {
+  top: 14px;
+  left: 14px;
+  width: 248px;
+}
+
+.stars {
+  color: var(--gold);
+  font-size: 22px;
+  letter-spacing: 2px;
+  -webkit-text-stroke: 1.5px var(--navy);
+  paint-order: stroke fill;
+}
+
+#objectives ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 4px;
+}
+
+#objectives li {
+  display: flex;
+  gap: 7px;
+  font-size: 13.5px;
+  padding: 4px 0;
+}
+
+#objectives li span {
+  flex: 1;
+}
+
+#objectives li.done {
+  color: #23805a;
+}
+
+.emergency {
+  margin-top: 8px;
+  padding: 7px 9px;
+  background: #fbe3e1;
+  border: 2px solid var(--red);
+  border-radius: 11px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+@media (max-width: 720px) {
+  #objectives {
+    width: 200px;
+  }
+}

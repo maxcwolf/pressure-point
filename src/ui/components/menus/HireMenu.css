@@ -1,0 +1,40 @@
+/* Styles for HireMenu. */
+
+.card.cv .cost {
+  position: static;
+  align-self: flex-start;
+  margin-top: 5px;
+}
+
+.card.cv .go {
+  margin-top: auto;
+}
+
+.card.cv .cost {
+  margin-bottom: 8px;
+}
+
+.card.cv small {
+  font-weight: 400;
+  font-size: 11px;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  border: 2.5px solid var(--navy);
+  background: #fff;
+  border-radius: 11px;
+  padding: 4px 11px;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.tab.on {
+  background: var(--teal);
+  color: #fff;
+}

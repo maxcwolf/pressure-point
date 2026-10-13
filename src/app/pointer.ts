@@ -2,7 +2,7 @@
 
 import type { Audio } from '../audio';
 import type { View } from '../render/view';
-import type { UI } from '../ui/ui';
+import type { Hud } from '../ui/hud';
 import { isClick, isDragging } from './click';
 import type { Tools } from './tools';
 
@@ -69,5 +69,5 @@ export interface PointerTargets {
   audio: Audio;
   tools: Tools;
   view: View;
-  ui: UI;
+  ui: Hud;
 }

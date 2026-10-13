@@ -1,0 +1,100 @@
+// The Treatments menu: each discipline's modalities, and whether the center can deliver them.
+
+import './TreatmentsMenu.css';
+
+import {
+  conditionOf,
+  CONDITIONS,
+  type Discipline,
+  DISCIPLINE_ORDER,
+  DISCIPLINES,
+  ITEMS,
+  MODALITIES,
+  type Modality,
+  MODALITY_ORDER,
+  ROLES,
+  ROOMS,
+} from '../../../core/data';
+import { money } from '../../../core/format';
+import { useGame } from '../../hooks/use-hud';
+import { cx } from '../../lib/cx';
+
+/** What a modality treats, who can give it and whether its equipment is in. */
+function ModalityCard({ modality }: { modality: Modality }) {
+  const { sim } = useGame();
+  const s = sim.s;
+  const def = MODALITIES[modality];
+  const locked = !sim.unlocked(modality);
+  const treats = CONDITIONS.filter((c) => c.modality === modality)
+    .map((c) => `${c.name} (${money(c.fee)})`)
+    .join(', ');
+  const role = DISCIPLINES[def.discipline].role;
+  const qualified = s.staff.filter(
+    (x) => x.role === role && x.state !== 'leaving' && x.quals.includes(modality),
+  ).length;
+  const waiting = s.guests.filter((g) => g.goal === 'treat' && conditionOf(g.condition).modality === modality).length;
+  const kit = def.equipment ? ITEMS[def.equipment] : null;
+  const kitOk = !kit || s.items.some((i) => i.type === def.equipment && sim.world.usable(i));
+  return (
+    <div class={cx('card mod', locked && 'locked')}>
+      <i>{def.icon}</i>
+      <b>{def.name}</b>
+      <p>{def.desc}</p>
+      <p class="treats">{`Treats: ${treats}`}</p>
+      {locked ? (
+        <em>{`🔒 Unlocks at star ${def.star}`}</em>
+      ) : (
+        <>
+          <em class={qualified ? 'ok' : 'warn'}>{`${qualified ? '✔' : '⚠️'} ${qualified} qualified`}</em>{' '}
+          {kit && (
+            <em class={kitOk ? 'ok' : 'warn'}>
+              {kitOk ? `✔ ${kit.name} installed` : `⚠️ Needs a ${kit.name} in the room`}
+            </em>
+          )}{' '}
+          <em>{`${waiting} waiting · ${def.seconds}s session`}</em>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** One discipline's modalities, and what it takes to offer them. */
+function DisciplineSection({ discipline }: { discipline: Discipline }) {
+  const { sim } = useGame();
+  const disc = DISCIPLINES[discipline];
+  const role = ROLES[disc.role];
+  const room = ROOMS[disc.room];
+  const note = sim.hasRoom(disc.room)
+    ? `Delivered in the ${room.name} by ${role.name}s.`
+    : (room.unlock ?? 0) > sim.s.stars
+      ? `The ${room.name} unlocks at star ${room.unlock}.`
+      : `Build an ${room.name} and hire an ${role.name} to offer these. Until then, guests who need them will not turn up.`;
+  return (
+    <>
+      <h4 class="section">{`${disc.icon} ${disc.name}`}</h4>
+      <p class="sub">{note}</p>
+      <div class="cards">
+        {MODALITY_ORDER.filter((m) => MODALITIES[m].discipline === discipline).map((m) => (
+          <ModalityCard key={m} modality={m} />
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** Every discipline that is switched on. */
+export function TreatmentsMenu() {
+  const { sim } = useGame();
+  return (
+    <div class="panel menu">
+      <h3>Treatments</h3>
+      <p class="sub">
+        A diagnosis prescribes a treatment. It works properly only with someone qualified in it and the right equipment
+        in the room. Staff learn new ones in a Training Room.
+      </p>
+      {DISCIPLINE_ORDER.filter((d) => sim.enabled(d)).map((d) => (
+        <DisciplineSection key={d} discipline={d} />
+      ))}
+    </div>
+  );
+}

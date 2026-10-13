@@ -1,0 +1,38 @@
+/* Styles for Toasts. */
+
+#toasts {
+  top: 70px;
+  right: 14px;
+  width: 290px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: var(--cream);
+  border: 3px solid var(--navy);
+  border-left-width: 10px;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 13.5px;
+  box-shadow: var(--shadow);
+  animation: slide 0.3s ease-out;
+  transition: opacity 0.4s;
+}
+
+.toast.good {
+  border-left-color: var(--green);
+}
+
+.toast.bad {
+  border-left-color: var(--red);
+}
+
+.toast.info {
+  border-left-color: var(--blue);
+}
+
+.toast.out {
+  opacity: 0;
+}

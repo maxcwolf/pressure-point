@@ -1,0 +1,21 @@
+/* Styles for Floaters. */
+
+.floater {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-weight: 700;
+  font-size: 19px;
+  color: #fff;
+  -webkit-text-stroke: 4px var(--navy);
+  paint-order: stroke fill;
+  animation: floatup 1.5s ease-out forwards;
+  white-space: nowrap;
+}
+
+.floater.good {
+  color: #7dffb0;
+}
+
+.floater.bad {
+  color: #ff9a92;
+}

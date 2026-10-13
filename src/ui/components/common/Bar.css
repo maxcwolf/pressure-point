@@ -1,0 +1,41 @@
+/* Styles for Bar. */
+
+.bar {
+  height: 10px;
+  border-radius: 6px;
+  background: rgba(36, 56, 74, 0.16);
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--green);
+  transition: width 0.3s;
+}
+
+.bar.thin {
+  height: 6px;
+}
+
+.bar.gold i {
+  background: var(--gold);
+}
+
+.bar.blue i {
+  background: var(--blue);
+}
+
+.bar.bad i {
+  background: var(--red);
+}
+
+.bar.need i {
+  background: var(--orange);
+}
+
+.bar.energy i {
+  background: #8a6fd1;
+}

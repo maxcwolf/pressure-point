@@ -1,0 +1,19 @@
+/* Styles for Hud. */
+
+#bottom {
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+@media (max-width: 1100px) {
+  #bottom {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
