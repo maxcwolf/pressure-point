@@ -22,7 +22,7 @@ export const DAYS_PER_MONTH = 30;
 export const START_MONEY = 30000;
 
 // ---- Rooms -----------------------------------------------------------------
-export type RoomType = 'consult' | 'massage' | 'staffroom' | 'restroom';
+export type RoomType = 'consult' | 'massage' | 'staffroom' | 'restroom' | 'training';
 export type Role = 'receptionist' | 'consultant' | 'therapist' | 'caretaker';
 export type ItemType =
   | 'reception_desk'
@@ -38,7 +38,11 @@ export type ItemType =
   | 'tea_station'
   | 'snack_machine'
   | 'bin'
-  | 'fountain';
+  | 'fountain'
+  | 'stone_warmer'
+  | 'stretch_rack'
+  | 'whiteboard'
+  | 'study_desk';
 
 export interface RoomDef {
   type: RoomType;
@@ -106,11 +110,23 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     floor: ['#bfe6d8', '#a9dccb'],
     trim: 0x3aa58a,
   },
+  training: {
+    type: 'training',
+    name: 'Training Room',
+    icon: '🎓',
+    desc: 'Staff study here to learn new massage modalities or sharpen their skill.',
+    cost: 4500,
+    minShort: 3,
+    minLong: 3,
+    required: ['whiteboard', 'study_desk'],
+    floor: ['#c3d9a6', '#b7cf98'],
+    trim: 0x5f9440,
+  },
 };
-export const ROOM_ORDER: RoomType[] = ['consult', 'massage', 'staffroom', 'restroom'];
+export const ROOM_ORDER: RoomType[] = ['consult', 'massage', 'staffroom', 'restroom', 'training'];
 
 // ---- Items -----------------------------------------------------------------
-export type AccessRole = 'staff' | 'guest' | 'seat' | 'rest' | 'toilet' | 'drink' | 'eat';
+export type AccessRole = 'staff' | 'guest' | 'seat' | 'rest' | 'toilet' | 'drink' | 'eat' | 'study';
 export type Pose = 'stand' | 'walk' | 'sit' | 'lie';
 
 /**
@@ -143,6 +159,8 @@ export interface ItemDef {
   /** Stations have a staff post and a queue of guests. */
   station?: { staff: Role; goal: 'reception' | 'consult' | 'treat'; seconds: number };
   inMenu?: boolean;
+  /** Stars needed before it can be bought. */
+  unlock?: number;
 }
 
 export const ITEMS: Record<ItemType, ItemDef> = {
@@ -327,6 +345,55 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     access: [],
     inMenu: true,
   },
+  stone_warmer: {
+    type: 'stone_warmer',
+    name: 'Stone Warmer',
+    icon: '🪨',
+    desc: 'Heats basalt stones for Hot Stone massage. A Caretaker keeps it hot.',
+    cost: 900,
+    w: 1,
+    h: 1,
+    where: 'massage',
+    access: [],
+    inMenu: true,
+    unlock: 2,
+  },
+  stretch_rack: {
+    type: 'stretch_rack',
+    name: 'Stretch Rack',
+    icon: '🤸',
+    desc: 'Mats, bands and rollers. Needed for Sports massage.',
+    cost: 600,
+    w: 1,
+    h: 1,
+    where: 'massage',
+    access: [],
+    inMenu: true,
+    unlock: 1,
+  },
+  whiteboard: {
+    type: 'whiteboard',
+    name: 'Whiteboard',
+    icon: '🧑‍🏫',
+    desc: 'Covered in diagrams of shoulders with arrows pointing at them.',
+    cost: 0,
+    w: 2,
+    h: 1,
+    where: 'training',
+    access: [],
+  },
+  study_desk: {
+    type: 'study_desk',
+    name: 'Study Desk',
+    icon: '📚',
+    desc: 'One member of staff can train here at a time. Add more to train several at once.',
+    cost: 400,
+    w: 1,
+    h: 1,
+    where: 'training',
+    access: [{ role: 'study', x: 0, y: 1, px: 0.5, py: 1.32, face: [0, -1], pose: 'sit' }],
+    inMenu: true,
+  },
 };
 export const ITEM_MENU: ItemType[] = [
   'reception_desk',
@@ -338,6 +405,9 @@ export const ITEM_MENU: ItemType[] = [
   'fountain',
   'sofa',
   'toilet',
+  'study_desk',
+  'stretch_rack',
+  'stone_warmer',
 ];
 
 // ---- Staff -----------------------------------------------------------------
@@ -373,7 +443,7 @@ export const ROLES: Record<Role, RoleDef> = {
     role: 'therapist',
     name: 'Massage Therapist',
     icon: '💆',
-    desc: 'Treats guests in a Massage Suite. Skill means more successful treatments.',
+    desc: 'Treats guests in a Massage Suite. Each one knows certain modalities; train them to add more.',
     baseSalary: 1400,
     uniform: 0xa784d6,
     accent: 0xf4f1ea,
@@ -410,63 +480,197 @@ export const TRAITS: TraitDef[] = [
 ];
 export const TRAIT_BY_ID: Record<string, TraitDef> = Object.fromEntries(TRAITS.map((t) => [t.id, t]));
 
+// ---- Massage modalities -----------------------------------------------------
+export type Modality = 'swedish' | 'deep' | 'sports' | 'stone' | 'cranio';
+export interface ModalityDef {
+  id: Modality;
+  name: string;
+  icon: string;
+  desc: string;
+  /** Stars needed before guests turn up wanting it. */
+  star: number;
+  /** Item that must be in the same Massage Suite as the table. */
+  equipment?: ItemType;
+  /** Length of a session at normal speed. */
+  seconds: number;
+  /** How hard a session is on the therapist's energy (1 = normal). */
+  strain: number;
+  /** Subtracted from the chance of success, so harder modalities need more skill. */
+  difficulty: number;
+  trainCost: number;
+  trainDays: number;
+}
+export const MODALITIES: Record<Modality, ModalityDef> = {
+  swedish: {
+    id: 'swedish',
+    name: 'Swedish',
+    icon: '🌿',
+    desc: 'Long, flowing strokes. Quick, cheap and reliable. Every therapist knows it.',
+    star: 0,
+    seconds: 9,
+    strain: 1,
+    difficulty: 0,
+    trainCost: 0,
+    trainDays: 0,
+  },
+  deep: {
+    id: 'deep',
+    name: 'Deep Tissue',
+    icon: '💪',
+    desc: 'Elbows, knuckles and determination. Wears the therapist out fast.',
+    star: 1,
+    seconds: 11,
+    strain: 1.9,
+    difficulty: 0.05,
+    trainCost: 1500,
+    trainDays: 6,
+  },
+  sports: {
+    id: 'sports',
+    name: 'Sports',
+    icon: '🤸',
+    desc: 'Stretching, pulling and the occasional alarming click. A long session that is hard to get right.',
+    star: 1,
+    equipment: 'stretch_rack',
+    seconds: 15,
+    strain: 1.4,
+    difficulty: 0.14,
+    trainCost: 1800,
+    trainDays: 6,
+  },
+  stone: {
+    id: 'stone',
+    name: 'Hot Stone',
+    icon: '🪨',
+    desc: 'Warm basalt stones along the spine. Lucrative, as long as someone keeps the stones hot.',
+    star: 2,
+    equipment: 'stone_warmer',
+    seconds: 12,
+    strain: 0.8,
+    difficulty: 0.04,
+    trainCost: 2200,
+    trainDays: 7,
+  },
+  cranio: {
+    id: 'cranio',
+    name: 'Cranio-sacral',
+    icon: '👐',
+    desc: 'Barely touching the head, very slowly. Slow and expensive, and it takes a skilled pair of hands.',
+    star: 2,
+    seconds: 16,
+    strain: 0.6,
+    difficulty: 0.22,
+    trainCost: 2800,
+    trainDays: 9,
+  },
+};
+export const MODALITY_ORDER: Modality[] = ['swedish', 'deep', 'sports', 'stone', 'cranio'];
+/** Stone warmers lose this much heat per Hot Stone session and are useless below it. */
+export const STONE_USE = 25;
+/** Chance of success is multiplied by this when the modality cannot be delivered properly. */
+export const BODGE_FACTOR = 0.35;
+
 // ---- Conditions ------------------------------------------------------------
-export type Visual = 'knot' | 'slump' | 'steam' | 'stiff' | 'neck';
+export type Visual = 'knot' | 'slump' | 'steam' | 'stiff' | 'neck' | 'band' | 'crick' | 'flex' | 'frost' | 'dizzy';
 export interface ConditionDef {
   id: string;
   name: string;
   desc: string;
   treatment: string;
+  modality: Modality;
   fee: number;
-  /** 0..1, subtracts from the chance of a successful treatment. */
-  difficulty: number;
   visual: Visual;
 }
 export const CONDITIONS: ConditionDef[] = [
-  {
-    id: 'knotted',
-    name: 'Knotted Up',
-    desc: 'Years of shrugging things off have tied the shoulders in an actual knot.',
-    treatment: 'Deep Tissue Untangling',
-    fee: 900,
-    difficulty: 0.0,
-    visual: 'knot',
-  },
   {
     id: 'slump',
     name: 'Desk Slump',
     desc: 'The spine has taken on the shape of a budget office chair.',
     treatment: 'Swedish Straightening',
-    fee: 1000,
-    difficulty: 0.05,
+    modality: 'swedish',
+    fee: 900,
     visual: 'slump',
+  },
+  {
+    id: 'band',
+    name: 'Tension Headband',
+    desc: 'A band of pure tension around the skull, now visible to the naked eye.',
+    treatment: 'Swedish Unwinding',
+    modality: 'swedish',
+    fee: 850,
+    visual: 'band',
+  },
+  {
+    id: 'knotted',
+    name: 'Knotted Up',
+    desc: 'Years of shrugging things off have tied the shoulders in an actual knot.',
+    treatment: 'Deep Tissue Untangling',
+    modality: 'deep',
+    fee: 1100,
+    visual: 'knot',
+  },
+  {
+    id: 'crick',
+    name: 'Crick of the Neck',
+    desc: 'Slept funny once. Has been looking at everything sideways since.',
+    treatment: 'Deep Tissue Decricking',
+    modality: 'deep',
+    fee: 1150,
+    visual: 'crick',
+  },
+  {
+    id: 'stiff',
+    name: 'Stiff Upper Everything',
+    desc: 'Started at the lip. Has since reached the ankles.',
+    treatment: 'Sports Loosening',
+    modality: 'sports',
+    fee: 1350,
+    visual: 'stiff',
+  },
+  {
+    id: 'flex',
+    name: 'Gym Lock',
+    desc: 'One bicep curl too many. The arms have not come down since.',
+    treatment: 'Sports Unflexing',
+    modality: 'sports',
+    fee: 1400,
+    visual: 'flex',
   },
   {
     id: 'steam',
     name: 'Stress Head',
     desc: 'Pressure builds between the ears. Whistles when a deadline is near.',
     treatment: 'Hot Stone De-steaming',
-    fee: 1150,
-    difficulty: 0.1,
+    modality: 'stone',
+    fee: 1600,
     visual: 'steam',
+  },
+  {
+    id: 'frost',
+    name: 'Cold Shoulder',
+    desc: 'Given to so many people that it has frozen solid.',
+    treatment: 'Hot Stone Defrosting',
+    modality: 'stone',
+    fee: 1650,
+    visual: 'frost',
   },
   {
     id: 'neck',
     name: 'Text Neck',
     desc: 'Head locked at the precise angle of a phone that is no longer there.',
-    treatment: 'Cervical Unscrolling',
-    fee: 1050,
-    difficulty: 0.07,
+    treatment: 'Cranio-sacral Unscrolling',
+    modality: 'cranio',
+    fee: 1900,
     visual: 'neck',
   },
   {
-    id: 'stiff',
-    name: 'Stiff Upper Everything',
-    desc: 'Started at the lip. Has since reached the ankles.',
-    treatment: 'Full Body Loosening',
-    fee: 1300,
-    difficulty: 0.15,
-    visual: 'stiff',
+    id: 'dizzy',
+    name: 'Scrambled Noggin',
+    desc: 'Thoughts orbit the head instead of staying inside it.',
+    treatment: 'Cranio-sacral Unscrambling',
+    modality: 'cranio',
+    fee: 2000,
+    visual: 'dizzy',
   },
 ];
 export const CONDITION_BY_ID: Record<string, ConditionDef> = Object.fromEntries(

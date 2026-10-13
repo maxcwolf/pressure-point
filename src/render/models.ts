@@ -113,6 +113,15 @@ export function buildItem(type: ItemType): THREE.Group {
       put(g, rbox(0.76, 0.03, 0.6, 0.015), mat(0xb9a1e0), 0, 0.645, 0.5);
       const cradle = put(g, torus(0.13, 0.055), mat(CREAM), 0, 0.58, -1.0);
       cradle.rotation.x = Math.PI / 2;
+      // hot stones, shown along the guest's back during a Hot Stone session
+      const stones = new THREE.Group();
+      for (let i = 0; i < 4; i++) {
+        const stone = put(stones, sph(0.075, 10), mat(0x2f3136, 0.55), (i % 2 ? 0.03 : -0.03), 0.95, -0.2 + i * 0.15);
+        stone.scale.y = 0.5;
+      }
+      stones.visible = false;
+      g.add(stones);
+      g.userData.stones = stones;
       break;
     }
     case 'oil_trolley': {
@@ -219,6 +228,65 @@ export function buildItem(type: ItemType): THREE.Group {
       g.userData.orb = orb;
       break;
     }
+    case 'stone_warmer': {
+      put(g, rbox(0.72, 0.5, 0.6, 0.06), mat(0x4a4f5a), 0, 0.25, 0);
+      put(g, rbox(0.78, 0.06, 0.66, 0.03), mat(CHROME, 0.35), 0, 0.53, 0);
+      put(g, cyl(0.27, 0.22, 0.22, 20), mat(0xb5714a, 0.4), 0, 0.67, 0);
+      // each warmer owns its glow so it can cool independently
+      const glow = new THREE.MeshStandardMaterial({ color: 0x2b2b30, roughness: 0.5, emissive: 0xff5a1f, emissiveIntensity: 1 });
+      g.userData.glow = glow;
+      put(g, cyl(0.24, 0.24, 0.02, 20), glow, 0, 0.775, 0);
+      for (const [x, z] of [[0, 0], [0.12, 0.08], [-0.11, 0.07], [0.04, -0.13], [-0.09, -0.09]]) {
+        const stone = put(g, sph(0.075, 10), mat(0x2f3136, 0.55), x, 0.81, z);
+        stone.scale.y = 0.5;
+      }
+      const dial = put(g, cyl(0.055, 0.055, 0.03, 12), mat(0xe9c46a, 0.4), 0.2, 0.3, 0.31);
+      dial.rotation.x = Math.PI / 2;
+      break;
+    }
+    case 'stretch_rack': {
+      for (const x of [-0.37, 0.37]) put(g, rbox(0.06, 1.2, 0.42, 0.02), mat(WOOD_DARK), x, 0.6, -0.1);
+      for (const y of [0.22, 0.6, 0.98]) put(g, rbox(0.76, 0.04, 0.42, 0.02), mat(WOOD), 0, y, -0.1);
+      const rolls: [number, number, number, number][] = [
+        [0.33, -0.18, 0x8a6fd1, 0.09], [0.33, 0, 0x2fa8a0, 0.09], [0.71, -0.16, 0xe76f51, 0.09], [0.71, 0.02, 0xe9c46a, 0.09], [1.1, -0.1, 0x4a9fe0, 0.1],
+      ];
+      for (const [y, z, c, r] of rolls) {
+        const roll = put(g, cyl(r, r, 0.62, 14), mat(c, 0.85), 0, y, z);
+        roll.rotation.z = Math.PI / 2;
+      }
+      for (const [y, c] of [[0.85, 0xe5484d], [0.62, 0x3bb273]] as [number, number][]) {
+        const band = put(g, torus(0.085, 0.018), mat(c), 0.42, y, 0);
+        band.rotation.y = Math.PI / 2;
+      }
+      break;
+    }
+    case 'whiteboard': {
+      put(g, rbox(1.82, 1.04, 0.05, 0.03), mat(0x8d99ae), 0, 1.15, -0.29);
+      put(g, rbox(1.7, 0.92, 0.04, 0.02), mat(WHITE, 0.35), 0, 1.15, -0.26);
+      put(g, rbox(1.3, 0.04, 0.1, 0.02), mat(0x8d99ae), 0, 0.64, -0.22);
+      for (const x of [-0.78, 0.78]) {
+        put(g, cyl(0.03, 0.03, 1.6, 8), mat(0x8d99ae), x, 0.8, -0.3);
+        put(g, rbox(0.08, 0.05, 0.5, 0.02), mat(DARK), x, 0.03, -0.3);
+      }
+      // a diagram of a shoulder with arrows pointing at it
+      const blob = put(g, torus(0.17, 0.02), mat(0xe5484d), -0.4, 1.2, -0.235);
+      blob.scale.y = 0.75;
+      put(g, rbox(0.3, 0.025, 0.01, 0.005), mat(0x3f7fb5), -0.02, 1.3, -0.235).rotation.z = -0.5;
+      put(g, rbox(0.3, 0.025, 0.01, 0.005), mat(0x3f7fb5), -0.02, 1.08, -0.235).rotation.z = 0.5;
+      for (let i = 0; i < 4; i++) put(g, rbox(0.5 - (i % 2) * 0.14, 0.022, 0.01, 0.005), mat(DARK), 0.45 - (i % 2) * 0.07, 1.36 - i * 0.12, -0.235);
+      put(g, rbox(0.1, 0.04, 0.06, 0.01), mat(0xe5484d), -0.3, 0.68, -0.22);
+      put(g, rbox(0.1, 0.04, 0.06, 0.01), mat(0x3f7fb5), -0.1, 0.68, -0.22);
+      break;
+    }
+    case 'study_desk': {
+      put(g, rbox(0.84, 0.06, 0.54, 0.03), mat(WOOD), 0, 0.62, -0.02);
+      for (const [x, z] of [[-0.36, -0.22], [0.36, -0.22], [-0.36, 0.18], [0.36, 0.18]]) put(g, cyl(0.03, 0.03, 0.6, 8), mat(DARK), x, 0.3, z);
+      put(g, rbox(0.3, 0.05, 0.22, 0.02), mat(0x5f9440), -0.12, 0.68, 0);
+      put(g, rbox(0.26, 0.04, 0.2, 0.02), mat(0xe76f51), -0.1, 0.725, 0.01).rotation.y = 0.3;
+      put(g, cyl(0.045, 0.04, 0.1, 10), mat(WHITE, 0.4), 0.26, 0.7, -0.08);
+      chair(g, 0, 0.82, 1, 0x5f9440);
+      break;
+    }
   }
   g.userData.dims = [ITEMS[type].w, ITEMS[type].h];
   return g;
@@ -239,6 +307,10 @@ export interface CharRig {
   bubble: THREE.Sprite;
   knot?: THREE.Mesh;
   steam?: THREE.Group;
+  band?: THREE.Mesh;
+  orbit?: THREE.Group;
+  /** Everything that only exists to show the symptom, hidden once healed. */
+  props: THREE.Object3D[];
   visual?: Visual;
   cured: boolean;
   scale: number;
@@ -324,6 +396,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     group, body, torso, legL, legR, armL, armR, head, headMesh,
     pick: new THREE.Mesh(cyl(0.34, 0.34, 1.4, 8), pickMat),
     bubble: new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false })),
+    props: [],
     visual,
     cured: false,
     scale: look.scale,
@@ -345,7 +418,27 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     for (let i = 0; i < 3; i++) put(rig.steam, sph(0.06, 8), mat(0xffffff, 0.9, 0.3), (i - 1) * 0.12, 0, 0).castShadow = false;
     rig.steam.position.y = 0.3;
     head.add(rig.steam);
+  } else if (visual === 'band') {
+    rig.band = put(head, torus(0.226, 0.038), mat(0xe5484d, 0.4, 0.7), 0, 0.07, 0);
+    rig.band.rotation.x = Math.PI / 2;
+  } else if (visual === 'flex') {
+    for (const arm of [armL, armR]) rig.props.push(put(arm, sph(0.092, 12), top, 0, -0.1, 0.02));
+  } else if (visual === 'frost') {
+    const ice = mat(0xcdeeff, 0.15, 0.25);
+    rig.props.push(put(torso, ico(0.135), ice, 0.21, 0.4, 0));
+    const icicle = put(torso, cyl(0.035, 0.001, 0.16, 6), ice, 0.3, 0.26, 0.02);
+    rig.props.push(icicle, put(torso, cyl(0.03, 0.001, 0.11, 6), ice, 0.2, 0.25, 0.1));
+  } else if (visual === 'dizzy') {
+    rig.orbit = new THREE.Group();
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const star = put(rig.orbit, cached('dizzystar', () => new THREE.OctahedronGeometry(0.055)), mat(0xffd23f, 0.3, 0.8), Math.cos(a) * 0.27, 0, Math.sin(a) * 0.27);
+      star.castShadow = false;
+    }
+    rig.orbit.position.y = 0.3;
+    head.add(rig.orbit);
   }
+  for (const o of [rig.knot, rig.steam, rig.band, rig.orbit]) if (o) rig.props.push(o);
   return rig;
 }
 
@@ -353,8 +446,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
 export function cureRig(rig: CharRig, look: Look) {
   if (rig.cured) return;
   rig.cured = true;
-  if (rig.knot) rig.knot.visible = false;
-  if (rig.steam) rig.steam.visible = false;
+  for (const o of rig.props) o.visible = false;
   rig.headMesh.material = mat(look.skin, 0.65);
 }
 

@@ -17,6 +17,7 @@ import {
   SIDEWALK_Y,
   W,
   type ItemType,
+  type Modality,
 } from '../data';
 import type { Sim } from '../sim';
 import type { Char, Room } from '../state';
@@ -463,7 +464,7 @@ export class View {
         this.scene.add(rig.group);
         this.chars.set(c.id, rig);
       }
-      this.poseChar(rig, c, t, dt);
+      this.poseChar(rig, c, t, dt, this.workStyle(c));
     }
     for (const [id, rig] of this.chars) {
       if (live.has(id)) continue;
@@ -500,6 +501,16 @@ export class View {
         const k = Math.min(1, it.water / 40);
         leaf.color.setRGB(0.34 * k + 0.62 * (1 - k), 0.66 * k + 0.5 * (1 - k), 0.35 * k + 0.25 * (1 - k), THREE.SRGBColorSpace);
         view.group.scale.y = 0.82 + 0.18 * k;
+      } else if (it.type === 'stone_warmer') {
+        (view.group.userData.glow as THREE.MeshStandardMaterial).emissiveIntensity = (it.water / 100) * 1.4;
+      } else if (it.type === 'massage_table') {
+        const guest = it.progress > 0.04 ? this.sim.guest(it.serving) : undefined;
+        // only when it is being done properly: no stones without a hot warmer and trained hands
+        (view.group.userData.stones as THREE.Object3D).visible =
+          !!guest &&
+          guest.state === 'served' &&
+          CONDITION_BY_ID[guest.condition].modality === 'stone' &&
+          !this.sim.deliveryProblem(it, this.sim.staff(it.staffId), this.sim.modalityOf(guest));
       } else if (it.type === 'fountain') {
         (view.group.userData.orb as THREE.Mesh).position.y = 0.9 + Math.sin(t * 3 + it.id) * 0.035;
       }
@@ -551,7 +562,14 @@ export class View {
     }
   }
 
-  private poseChar(rig: CharRig, c: Char, t: number, dt: number) {
+  /** Which massage a busy therapist is giving, so each modality can move differently. */
+  private workStyle(c: Char): Modality | null {
+    if (c.kind !== 'staff' || !c.busy || c.role !== 'therapist') return null;
+    const guest = this.sim.guest(this.sim.world.item(c.post)?.serving ?? 0);
+    return guest ? CONDITION_BY_ID[guest.condition].modality : null;
+  }
+
+  private poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Modality | null) {
     rig.group.position.set(c.x, c.h, c.y);
     rig.group.rotation.y = c.facing;
     const healed = c.kind === 'guest' && c.outcome === 'healed';
@@ -568,6 +586,7 @@ export class View {
     let bodyRX = 0;
     let bodyY = 0;
     let bodyZ = 0;
+    let headZ = 0;
     if (c.pose === 'walk') {
       const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : 0.62);
       legL = sw;
@@ -581,11 +600,42 @@ export class View {
       bodyY = 0.06;
       armL = armR = -0.55;
       if (c.busy) armR = -1.15 + Math.sin(t * 6 + c.id) * 0.25;
+      if (c.kind === 'staff' && c.state === 'training') {
+        // head down, scribbling notes
+        armR = -1.05 + Math.sin(t * 9 + c.id) * 0.08;
+        headX = 0.32 + Math.sin(t * 0.7 + c.id) * 0.08;
+      }
     } else if (c.pose === 'lie') {
       bodyRX = Math.PI / 2;
       bodyY = 0.16;
       bodyZ = -0.6 * rig.scale;
       armOut = 0.5;
+    } else if (c.busy && style === 'deep') {
+      // both elbows in, slow and heavy
+      const press = Math.sin(t * 3.2 + c.id);
+      lean = 0.4 + press * 0.07;
+      armL = armR = -0.95 + press * 0.2;
+      bodyY = -0.02 - press * 0.025;
+    } else if (c.busy && style === 'sports') {
+      // hauling on a limb, rocking back and forth
+      const pull = Math.sin(t * 2.3 + c.id);
+      lean = 0.08 + pull * 0.26;
+      armL = armR = -1.35 - pull * 0.15;
+    } else if (c.busy && style === 'stone') {
+      // placing stones one at a time
+      lean = 0.16;
+      armL = -1.1 + Math.max(0, Math.sin(t * 2 + c.id)) * 0.35;
+      armR = -1.1 + Math.max(0, Math.sin(t * 2 + c.id + Math.PI)) * 0.35;
+    } else if (c.busy && style === 'cranio') {
+      // hands held almost perfectly still, head bowed in concentration
+      lean = 0.3;
+      headX = 0.28;
+      armL = armR = -1.25 + Math.sin(t * 1.1 + c.id) * 0.025;
+    } else if (c.busy && style === 'swedish') {
+      // long flowing strokes
+      lean = 0.2;
+      armL = -1.2 + Math.sin(t * 4.2 + c.id) * 0.42;
+      armR = -1.2 + Math.sin(t * 4.2 + c.id + Math.PI) * 0.42;
     } else if (c.busy) {
       lean = 0.2;
       armL = -1.2 + Math.sin(t * 7.5 + c.id) * 0.32;
@@ -598,10 +648,16 @@ export class View {
     else if (visual === 'stiff') {
       armOut = 0.32;
       if (c.pose !== 'sit') armL = armR = 0;
-    }
+    } else if (visual === 'crick') headZ = 0.55;
+    else if (visual === 'flex') {
+      armOut = 2.35;
+      armL = armR = 0;
+    } else if (visual === 'frost') armR = c.pose === 'sit' ? armR : 0;
     if (c.pose === 'lie') {
       lean = 0;
       headX = 0;
+      headZ = 0;
+      if (visual === 'flex') armOut = 0.5;
     }
     const k = Math.min(1, dt * 14);
     const b = rig.body;
@@ -610,12 +666,18 @@ export class View {
     b.position.z += (bodyZ - b.position.z) * k;
     rig.torso.rotation.x += (lean - rig.torso.rotation.x) * k;
     rig.head.rotation.x += (headX - rig.head.rotation.x) * k;
+    rig.head.rotation.z += (headZ - rig.head.rotation.z) * k;
     rig.legL.rotation.x += (legL - rig.legL.rotation.x) * k;
     rig.legR.rotation.x += (legR - rig.legR.rotation.x) * k;
     rig.armL.rotation.x += (armL - rig.armL.rotation.x) * k;
     rig.armR.rotation.x += (armR - rig.armR.rotation.x) * k;
-    rig.armL.rotation.z = -armOut;
-    rig.armR.rotation.z = armOut;
+    rig.armL.rotation.z += (-armOut - rig.armL.rotation.z) * k;
+    rig.armR.rotation.z += (armOut - rig.armR.rotation.z) * k;
+    if (rig.band && rig.band.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
+    if (rig.orbit && !rig.cured) {
+      rig.orbit.rotation.y = t * 3.5 + c.id;
+      rig.orbit.visible = c.pose !== 'lie';
+    }
     if (rig.knot && rig.knot.visible) rig.knot.rotation.z = Math.sin(t * 2 + c.id) * 0.2;
     if (rig.steam && rig.steam.visible) {
       rig.steam.children.forEach((p, i) => {
@@ -634,6 +696,7 @@ export class View {
       else if (waiting && c.thirst >= 95) bubble = '🍵';
     } else if (!bubble && c.kind === 'staff') {
       if (c.state === 'onBreak') bubble = '💤';
+      else if (c.state === 'training') bubble = '📚';
       else if (c.energy < 15) bubble = '😴';
     }
     if (bubble !== rig.bubbleKey) {

@@ -287,6 +287,7 @@ s {
   bottom: 14px;
   display: flex;
   align-items: flex-end;
+  justify-content: space-between;
   gap: 14px;
 }
 #buildbtns {
@@ -294,9 +295,9 @@ s {
   gap: 9px;
 }
 #advisor {
-  flex: 1;
-  max-width: 540px;
-  margin: 0 auto;
+  left: 14px;
+  bottom: 104px;
+  max-width: 470px;
   display: flex;
   align-items: flex-end;
   gap: 8px;
@@ -800,22 +801,112 @@ kbd {
   }
 }
 
-@media (max-width: 1180px) {
-  #advisor {
-    position: fixed;
-    left: 276px;
-    right: 220px;
-    top: 14px;
-    max-width: none;
-    align-items: flex-start;
-  }
-  #tannoy {
-    top: 84px;
-  }
-  #hint {
-    top: 130px;
-  }
+@media (max-width: 1240px) {
   .stat.date {
     display: none;
   }
+  .round {
+    width: 66px;
+    height: 66px;
+  }
+  .round i {
+    font-size: 22px;
+  }
+  .round span {
+    font-size: 11px;
+  }
+}
+
+/* ---- Modalities & training ---- */
+.quals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 3px 0 5px;
+}
+.quals span {
+  font-size: 11.5px;
+  font-weight: 500;
+  background: #e4d9f7;
+  border: 1.5px solid #8a6fd1;
+  border-radius: 8px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+.card.locked {
+  opacity: 0.5;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+}
+.card.mod {
+  cursor: default;
+}
+.card.mod .treats {
+  opacity: 1;
+  font-weight: 500;
+  margin-top: 3px;
+}
+em.ok {
+  background: #d8f1e2 !important;
+  color: #1c6b49;
+}
+em.warn {
+  background: #fbe3e1 !important;
+  color: #a8322b;
+}
+.insp h4 {
+  font-size: 13.5px;
+  font-weight: 600;
+  margin: 9px 0 4px;
+}
+.course {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 7px;
+  text-align: left;
+  background: #fff;
+  border: 2px solid var(--navy);
+  border-radius: 10px;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.course:hover {
+  background: #f0fbf9;
+}
+.course i {
+  font-style: normal;
+  font-size: 17px;
+}
+.course small {
+  display: block;
+  font-weight: 400;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.course b {
+  background: var(--gold);
+  border: 1.5px solid var(--navy);
+  border-radius: 8px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+.course.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.unlock {
+  background: #e4d9f7;
+  border: 2px solid #8a6fd1;
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-top: 10px;
+  font-size: 14px !important;
+}
+#inspector .panel {
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
 }

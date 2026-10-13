@@ -1,16 +1,21 @@
 // DOM heads-up display: build menus, inspector, objectives, advisor, toasts.
 import {
+  CONDITIONS,
   CONDITION_BY_ID,
   DIAGNOSIS_TARGET,
   GAME_TITLE,
   ITEMS,
   ITEM_MENU,
+  MODALITIES,
+  MODALITY_ORDER,
   ROLES,
   ROLE_ORDER,
   ROOMS,
   ROOM_ORDER,
   STAR_GOALS,
+  STONE_USE,
   TRAIT_BY_ID,
+  type Modality,
   type Role,
 } from '../data';
 import type { Audio } from '../audio';
@@ -28,11 +33,15 @@ export interface UIHost {
   newGame(): void;
 }
 
-type Menu = 'rooms' | 'items' | 'hire' | 'staff' | 'finance' | null;
+type Menu = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | null;
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const bar = (v: number, cls = '') =>
   `<div class="bar ${cls}"><i style="width:${Math.max(0, Math.min(100, v)).toFixed(0)}%"></i></div>`;
+const qualChips = (quals: Modality[]) =>
+  quals.length
+    ? `<div class="quals">${quals.map((m) => `<span title="${MODALITIES[m].name}">${MODALITIES[m].icon} ${MODALITIES[m].name}</span>`).join('')}</div>`
+    : '';
 const stars = (n: number, of = 5) => `<span class="skill">${'★'.repeat(n)}<s>${'★'.repeat(of - n)}</s></span>`;
 
 function guestStatus(g: Guest, sim: Sim): string {
@@ -75,10 +84,19 @@ function staffStatus(st: Staff, sim: Sim): string {
       return 'Resting in the Staff Room';
     case 'toJob':
     case 'doingJob':
-      return st.job?.kind === 'water' ? 'Watering a plant' : 'Clearing litter';
+      if (st.job?.kind !== 'water') return 'Clearing litter';
+      return sim.world.item(st.job.id)?.type === 'stone_warmer' ? 'Reheating the massage stones' : 'Watering a plant';
+    case 'toTrain':
+      return 'Heading to the Training Room';
+    case 'training':
+      return `Studying: ${courseName(st.training?.course ?? '')}`;
     case 'leaving':
       return 'Leaving for good';
   }
+}
+
+function courseName(id: string) {
+  return id === 'skill' ? 'professional development' : `${MODALITIES[id as Modality]?.name ?? id} massage`;
 }
 
 export class UI {
@@ -101,9 +119,9 @@ export class UI {
       <div id="inspector"></div>
       <div id="hint"></div>
       <div id="menu"></div>
+      <div id="advisor"></div>
       <div id="bottom">
         <div id="buildbtns"></div>
-        <div id="advisor"></div>
         <div id="stats"></div>
       </div>
       <div id="modal"></div>`;
@@ -112,6 +130,10 @@ export class UI {
       const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
       if (!el || e.button !== 0) return;
       e.preventDefault();
+      if (el.classList.contains('locked')) {
+        this.host.audio.play('error');
+        return;
+      }
       this.act(el.dataset.act!, el.dataset.arg ?? '');
     });
     this.update();
@@ -166,6 +188,12 @@ export class UI {
         sim.hire(Number(arg));
         click = false;
         break;
+      case 'train': {
+        const [id, course] = arg.split(':');
+        sim.train(Number(id), course);
+        click = false;
+        break;
+      }
       case 'fire':
         sim.fire(Number(arg));
         tools.select(null);
@@ -250,7 +278,7 @@ export class UI {
       `<button class="round ${this.menu === id ? 'on' : ''}" data-act="menu" data-arg="${id}"><i>${icon}</i><span>${label}</span></button>`;
     this.set(
       'buildbtns',
-      btn('rooms', '🏗️', 'Rooms') + btn('items', '🪴', 'Items') + btn('hire', '🤝', 'Hire') + btn('staff', '👥', 'Staff') + btn('finance', '📈', 'Money'),
+      btn('rooms', '🏗️', 'Rooms') + btn('items', '🪴', 'Items') + btn('hire', '🤝', 'Hire') + btn('staff', '👥', 'Staff') + btn('treatments', '💆', 'Massage') + btn('finance', '📈', 'Money'),
     );
 
     // stats
@@ -267,7 +295,8 @@ export class UI {
        <div class="speeds">${speedBtn(0, '⏸', 'Pause (Space)')}${speedBtn(1, '▶', 'Normal (1)')}${speedBtn(2, '▶▶', 'Fast (2)')}${speedBtn(3, '▶▶▶', 'Fastest (3)')}</div>`,
     );
 
-    this.set('advisor', `<div class="face">🧘</div><p>${esc(sim.advice())}</p>`);
+    // the advisor sits where the build menus open, so it steps aside for them
+    this.set('advisor', this.menu ? '' : `<div class="face">🧘</div><p>${esc(sim.advice())}</p>`);
     this.set(
       'hint',
       tools.hint ? `<div class="hintpill ${tools.problem ? 'bad' : ''}">${esc(tools.hint)}${tools.problem ? `<b>${esc(tools.problem)}</b>` : ''}</div>` : '',
@@ -293,8 +322,9 @@ export class UI {
       const cards = ITEM_MENU.map((t) => {
         const it = ITEMS[t];
         const where = it.where === 'corridor' ? 'Corridor' : it.where === 'any' ? 'Anywhere' : ROOMS[it.where].name;
-        return `<button class="card ${s.money < it.cost ? 'poor' : ''}" data-act="item" data-arg="${t}">
-          <i>${it.icon}</i><b>${it.name}</b><span class="cost">${money(it.cost)}</span><p>${it.desc}</p><em>${where}</em></button>`;
+        const locked = (it.unlock ?? 0) > s.stars;
+        return `<button class="card ${locked ? 'locked' : s.money < it.cost ? 'poor' : ''}" data-act="item" data-arg="${t}">
+          <i>${it.icon}</i><b>${it.name}</b><span class="cost">${money(it.cost)}</span><p>${it.desc}</p><em>${locked ? `🔒 Unlocks at star ${it.unlock}` : where}</em></button>`;
       }).join('');
       return `<div class="panel menu"><h3>Place an item</h3><div class="cards small">${cards}</div></div>`;
     }
@@ -306,7 +336,7 @@ export class UI {
         .filter((c) => c.role === this.hireRole)
         .map((c) => {
           const traits = c.traits.map((t) => `<em title="${esc(TRAIT_BY_ID[t].desc)}">${TRAIT_BY_ID[t].name}: ${TRAIT_BY_ID[t].desc}</em>`).join('') || '<em class="none">No notable quirks</em>';
-          return `<div class="card cv"><b>${esc(c.name)}</b>${stars(c.skill)}${traits}
+          return `<div class="card cv"><b>${esc(c.name)}</b>${stars(c.skill)}${qualChips(c.quals ?? [])}${traits}
             <span class="cost">${money(c.salary)}<small>/month</small></span>
             <button class="go" data-act="hire" data-arg="${c.id}">Hire</button></div>`;
         })
@@ -323,12 +353,32 @@ export class UI {
       const total = s.staff.reduce((a, x) => a + x.salary, 0);
       return `<div class="panel menu"><h3>Your staff</h3>${rows || '<p class="sub">Nobody works here yet. Try the Hire menu.</p>'}<p class="sub">Monthly wage bill: <b>${money(total)}</b></p></div>`;
     }
+    if (this.menu === 'treatments') {
+      const therapists = s.staff.filter((x) => x.role === 'therapist' && x.state !== 'leaving');
+      const cards = MODALITY_ORDER.map((m) => {
+        const def = MODALITIES[m];
+        const locked = !sim.unlocked(m);
+        const treats = CONDITIONS.filter((c) => c.modality === m).map((c) => `${c.name} (${money(c.fee)})`).join(', ');
+        const qualified = therapists.filter((x) => x.quals.includes(m)).length;
+        const waiting = s.guests.filter((g) => g.goal === 'treat' && CONDITION_BY_ID[g.condition].modality === m).length;
+        const kit = def.equipment ? ITEMS[def.equipment] : null;
+        const kitOk = !kit || s.items.some((i) => i.type === def.equipment && sim.world.usable(i));
+        const lines = locked
+          ? `<em>🔒 Unlocks at star ${def.star}</em>`
+          : `<em class="${qualified ? 'ok' : 'warn'}">${qualified ? '✔' : '⚠️'} ${qualified} qualified therapist${qualified === 1 ? '' : 's'}</em>
+             ${kit ? `<em class="${kitOk ? 'ok' : 'warn'}">${kitOk ? `✔ ${kit.name} installed` : `⚠️ Needs a ${kit.name} in the suite`}</em>` : ''}
+             <em>${waiting} waiting · ${def.seconds}s session</em>`;
+        return `<div class="card mod ${locked ? 'locked' : ''}"><i>${def.icon}</i><b>${def.name}</b><p>${def.desc}</p><p class="treats">Treats: ${treats}</p>${lines}</div>`;
+      }).join('');
+      return `<div class="panel menu"><h3>Massage modalities</h3><p class="sub">A diagnosis prescribes a modality. It works properly only with a qualified therapist and the right equipment in the suite. Train therapists in a Training Room.</p><div class="cards">${cards}</div></div>`;
+    }
     const table = (title: string, l: Ledger) => `<div class="ledger"><h4>${title}</h4>
       <div><span>Consultations</span><b class="pos">${money(l.consult)}</b></div>
       <div><span>Treatments</span><b class="pos">${money(l.treatment)}</b></div>
       <div><span>Tea &amp; snacks</span><b class="pos">${money(l.vending)}</b></div>
       <div><span>Salaries</span><b class="neg">${money(-l.salaries)}</b></div>
       <div><span>Building</span><b class="neg">${money(-l.building)}</b></div>
+      <div><span>Training</span><b class="neg">${money(-(l.training ?? 0))}</b></div>
       <div class="total"><span>Net</span><b class="${netOf(l) < 0 ? 'neg' : 'pos'}">${money(netOf(l))}</b></div></div>`;
     const max = Math.max(1, ...s.history.map((v) => Math.abs(v)));
     const chart = s.history.length
@@ -350,7 +400,7 @@ export class UI {
       const known = g.goal === 'treat' || g.goal === 'leave';
       return `<div class="panel insp">${close}<h3>${esc(g.name)}</h3><p class="tag">Guest</p>
         <p><b>${known ? c.name : 'Undiagnosed'}</b><br>${known ? c.desc : 'Something is clearly wrong. A consultation will reveal what.'}</p>
-        ${known ? `<p class="sub">Treatment: ${c.treatment} · ${money(c.fee)}</p>` : ''}
+        ${known ? `<p class="sub">Treatment: ${c.treatment} · ${money(c.fee)}</p>${qualChips([c.modality])}` : ''}
         <p class="status">${guestStatus(g, sim)}</p>
         <label>Patience${bar(g.patience, g.patience < 25 ? 'bad' : '')}</label>
         <label>Diagnosis${bar((g.diagnosis / DIAGNOSIS_TARGET) * 100, 'blue')}</label>
@@ -362,10 +412,12 @@ export class UI {
       if (!st) return '';
       const traits = st.traits.map((t) => `<em>${TRAIT_BY_ID[t].name}: ${TRAIT_BY_ID[t].desc}</em>`).join('');
       return `<div class="panel insp">${close}<h3>${esc(st.name)}</h3><p class="tag">${ROLES[st.role].icon} ${ROLES[st.role].name}</p>
-        <p>Skill ${stars(st.skill)}</p>${traits}
+        <p>Skill ${stars(st.skill)}</p>${qualChips(st.quals ?? [])}${traits}
         <p class="status">${staffStatus(st, sim)}</p>
+        ${st.training ? `<label>Course progress${bar(st.training.progress * 100, 'blue')}</label>` : ''}
         <label>Energy${bar(st.energy, st.energy < 20 ? 'bad' : 'energy')}</label>
         <p class="sub">Salary ${money(st.salary)}/month · Guests served: ${st.served}</p>
+        ${this.coursesHtml(st)}
         ${st.state === 'leaving' ? '' : `<button class="danger" data-act="fire" data-arg="${st.id}">Let go</button>`}</div>`;
     }
     if (sel.kind === 'item') {
@@ -376,6 +428,23 @@ export class UI {
     const room = sim.world.room(sel.id);
     if (!room) return '';
     return `<div class="panel insp">${close}${this.roomInfo(room)}</div>`;
+  }
+
+  private coursesHtml(st: Staff): string {
+    const { sim } = this.host;
+    if (st.state === 'leaving' || st.training) return '';
+    const courses = sim.courses(st);
+    if (!courses.length) return '';
+    const rows = courses
+      .map((c) => {
+        const blocker = sim.trainBlocker(st, c);
+        return `<button class="course ${blocker ? 'locked' : ''}" data-act="train" data-arg="${st.id}:${c.id}" title="${esc(blocker || c.desc)}">
+          <i>${c.icon}</i><span>${c.name}<small>${c.days} days</small></span><b>${money(c.cost)}</b></button>`;
+      })
+      .join('');
+    const blocker = sim.trainBlocker(st, courses[0]);
+    const note = blocker && blocker !== 'Not enough money.' ? `<p class="sub">${blocker}</p>` : '';
+    return `<h4>Training</h4>${rows}${note}`;
   }
 
   private stationInfo(it: Item): string {
@@ -393,9 +462,32 @@ export class UI {
     const def = ITEMS[it.type];
     let body = `<h3>${def.icon} ${def.name}</h3><p>${def.desc}</p>${this.stationInfo(it)}`;
     if (it.type === 'plant') body += `<label>Water${bar(it.water, it.water < 25 ? 'bad' : 'blue')}</label>`;
+    if (it.type === 'stone_warmer') body += `<label>Heat${bar(it.water, it.water < STONE_USE ? 'bad' : 'need')}</label>`;
     if (sim.canSell(it)) body += `<button class="danger" data-act="sell" data-arg="${it.id}">Sell for ${money(def.cost * 0.5)}</button>`;
     else body += `<p class="sub">Part of the room. Demolish the room to remove it.</p>`;
     return body;
+  }
+
+  /** Which modalities a suite can deliver right now, and what is missing for the rest. */
+  private suiteModalities(tables: Item[]): string {
+    const { sim } = this.host;
+    const table = tables[0];
+    if (!table) return '';
+    const staff = sim.staff(table.staffId);
+    const rows = MODALITY_ORDER.filter((m) => sim.unlocked(m))
+      .map((m) => {
+        const def = MODALITIES[m];
+        const problem = sim.deliveryProblem(table, staff, def);
+        const why = {
+          '': staff ? '' : 'once staffed',
+          unqualified: `${staff?.name.split(' ')[0]} is not qualified`,
+          'no-equipment': `needs a ${def.equipment ? ITEMS[def.equipment].name : ''}`,
+          cold: 'stones are cold',
+        }[problem];
+        return `<em class="${problem ? 'warn' : 'ok'}">${problem ? '✗' : '✔'} ${def.icon} ${def.name}${why ? ` <small>(${why})</small>` : ''}</em>`;
+      })
+      .join('');
+    return `<h4>Can deliver</h4>${rows}`;
   }
 
   private roomInfo(room: Room): string {
@@ -403,7 +495,7 @@ export class UI {
     const def = ROOMS[room.type];
     const stations = sim.s.items.filter((i) => ITEMS[i.type].station && sim.world.zoneAt(i.x, i.y) === room.id);
     return `<h3>${def.icon} ${def.name}</h3><p>${def.desc}</p><p class="sub">${room.w}×${room.h} tiles</p>
-      ${stations.map((i) => this.stationInfo(i)).join('')}
+      ${stations.map((i) => this.stationInfo(i)).join('')}${room.type === 'massage' ? this.suiteModalities(stations) : ''}
       <button class="danger" data-act="demolish" data-arg="${room.id}">Demolish (recover ${money(def.cost * 0.5)})</button>`;
   }
 
@@ -469,9 +561,13 @@ export class UI {
   private showStar(n: number) {
     this.pause();
     const next = STAR_GOALS[n];
+    const fresh = MODALITY_ORDER.filter((m) => MODALITIES[m].star === n).map((m) => `${MODALITIES[m].icon} ${MODALITIES[m].name}`);
+    const unlock = fresh.length
+      ? `<p class="unlock"><b>New massage modalities:</b> ${fresh.join(' and ')}.<br>Guests will start arriving who need them. Train your therapists in a Training Room and check the Massage menu for equipment.</p>`
+      : '';
     this.modal(`<div class="bigstars">${'★'.repeat(n)}<s>${'★'.repeat(STAR_GOALS.length - n)}</s></div>
       <h2>${n >= STAR_GOALS.length ? 'Three stars!' : `Star ${n} earned!`}</h2>
-      <p>The wellness inspectors were deeply relaxed by what they saw. Here is a ${money(5000 * n)} grant.</p>
+      <p>The wellness inspectors were deeply relaxed by what they saw. Here is a ${money(5000 * n)} grant.</p>${unlock}
       <p class="sub">${next ? 'New objectives are waiting in the top-left corner.' : 'You have mastered massage. Acupuncture and reiki will follow in a future update.'}</p>
       <button class="go" data-act="close">Keep healing</button>`);
   }

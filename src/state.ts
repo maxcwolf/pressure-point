@@ -2,12 +2,15 @@
 import {
   FIRST_NAMES,
   LAST_NAMES,
+  MODALITIES,
+  MODALITY_ORDER,
   ROLES,
   ROLE_ORDER,
   START_MONEY,
   TRAITS,
   TRAIT_BY_ID,
   type ItemType,
+  type Modality,
   type Pose,
   type Role,
   type RoomType,
@@ -92,6 +95,8 @@ export type StaffState =
   | 'onBreak'
   | 'toJob'
   | 'doingJob'
+  | 'toTrain'
+  | 'training'
   | 'leaving';
 
 export interface Staff extends CharBase {
@@ -106,6 +111,12 @@ export interface Staff extends CharBase {
   post: number;
   job: { kind: 'litter' | 'water'; id: number } | null;
   served: number;
+  /** Massage modalities this therapist is qualified in. */
+  quals: Modality[];
+  /** Course in progress: a modality id, or 'skill'. */
+  training: { course: string; progress: number; seconds: number; cost: number } | null;
+  /** Energy-drain multiplier of the session in progress. */
+  strain: number;
 }
 
 export type GuestState =
@@ -153,6 +164,7 @@ export interface Candidate {
   skill: number;
   salary: number;
   traits: string[];
+  quals: Modality[];
   look: Look;
 }
 
@@ -162,8 +174,9 @@ export interface Ledger {
   vending: number;
   salaries: number;
   building: number;
+  training: number;
 }
-export const emptyLedger = (): Ledger => ({ consult: 0, treatment: 0, vending: 0, salaries: 0, building: 0 });
+export const emptyLedger = (): Ledger => ({ consult: 0, treatment: 0, vending: 0, salaries: 0, building: 0, training: 0 });
 
 export interface GameState {
   version: number;
@@ -190,7 +203,7 @@ export interface GameState {
   seenTips: string[];
 }
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 const SAVE_KEY = 'pressure-point-save-v1';
 
 // ---- Random helpers --------------------------------------------------------
@@ -222,10 +235,22 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   if (Math.random() < 0.65) traits.push(pick(TRAITS).id);
   let pay = ROLES[role].baseSalary * (0.75 + skill * 0.25);
   for (const t of traits) pay *= TRAIT_BY_ID[t].pay ?? 1;
+  // therapists all know Swedish; a few arrive already trained in something unlocked
+  const quals: Modality[] = [];
+  if (role === 'therapist') {
+    for (const m of MODALITY_ORDER) {
+      const def = MODALITIES[m];
+      if (m === 'swedish' || (def.star <= s.stars && Math.random() < 0.28)) quals.push(m);
+    }
+    pay *= 1 + QUAL_PAY * (quals.length - 1);
+  }
   const look = randomLook();
   look.top = ROLES[role].uniform;
-  return { id: s.nextId++, name: randomName(), role, skill, salary: Math.round(pay / 10) * 10, traits, look };
+  return { id: s.nextId++, name: randomName(), role, skill, salary: Math.round(pay / 10) * 10, traits, quals, look };
 }
+
+/** Each extra qualification is worth this much more pay. */
+export const QUAL_PAY = 0.1;
 
 export function refillCandidates(s: GameState, replaceAll = false) {
   if (replaceAll) s.candidates = [];
@@ -275,11 +300,26 @@ export function loadGame(): GameState | null {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as GameState;
-    if (s.version !== SAVE_VERSION || !Array.isArray(s.rooms)) return null;
+    if (!Array.isArray(s.rooms)) return null;
+    if (s.version === 1) migrateV1(s);
+    if (s.version !== SAVE_VERSION) return null;
     return s;
   } catch {
     return null;
   }
+}
+
+/** Saves from before massage modalities: everyone on the payroll knows Swedish and nothing else. */
+function migrateV1(s: GameState) {
+  for (const st of s.staff) {
+    st.quals = st.role === 'therapist' ? ['swedish'] : [];
+    st.training = null;
+    st.strain = 1;
+  }
+  for (const c of s.candidates) c.quals = c.role === 'therapist' ? ['swedish'] : [];
+  s.ledger.training = 0;
+  s.lastLedger.training = 0;
+  s.version = 2;
 }
 
 export function hasSave(): boolean {
