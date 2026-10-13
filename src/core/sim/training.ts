@@ -1,7 +1,7 @@
 // Courses staff can take in a Training Room.
 
 import { DAY_SECONDS, MODALITIES, MODALITY_ORDER, modalityLabel, ROLES } from '../data';
-import { type CourseId, type Staff } from '../state/types';
+import type { CourseId, Staff } from '../state/types';
 import { accessPose, accessTile } from '../world';
 import { System } from './system';
 

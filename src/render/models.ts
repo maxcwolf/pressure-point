@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 import { ITEMS, type ItemType, type Role, ROLES, type Visual } from '../core/data';
-import { type Look } from '../core/state/types';
+import type { Look } from '../core/state/types';
 import { at, must } from '../core/util';
 
 const matCache = new Map<string, THREE.MeshStandardMaterial>();

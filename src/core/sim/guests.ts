@@ -13,7 +13,7 @@ import {
 } from '../data';
 import { randomLook, randomName } from '../people';
 import { pick, random, rnd } from '../random';
-import { type Guest, type Item } from '../state/types';
+import type { Guest, Item } from '../state/types';
 import { at } from '../util';
 import { accessPose, accessTile, inBuilding, itemCenter, rotVec, tileIdx, Z_CORRIDOR } from '../world';
 import { System } from './system';

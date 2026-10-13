@@ -1,5 +1,6 @@
 // DOM heads-up display: build menus, inspector, objectives, advisor, toasts.
-import { type Audio } from '../audio';
+import type { Tools } from '../app/tools';
+import type { Audio } from '../audio';
 import {
   conditionOf,
   CONDITIONS,
@@ -35,16 +36,13 @@ import {
 import { dateOf, money } from '../core/format';
 import { netOf } from '../core/sim/economy';
 import type { SimEvent, Tone } from '../core/sim/events';
-import { type Sim } from '../core/sim/sim';
-import type { CourseId } from '../core/state/types';
-import { type Guest, type Item, type Ledger, type Room, type Staff } from '../core/state/types';
-import { type View } from '../render/view';
-import { gameDate, latestSave } from '../saves';
-import { type Tools } from '../tools';
-import { escapeHtml } from '../util';
-import { byId, query } from './dom';
-import { mountSaves } from './saves';
-import { mountSettings } from './settings';
+import type { Sim } from '../core/sim/sim';
+import type { CourseId, Guest, Item, Ledger, Room, Staff } from '../core/state/types';
+import type { View } from '../render/view';
+import { gameDate, latestSave } from '../storage/saves';
+import { byId, escapeHtml, query } from './dom';
+import { mountSaves } from './saves-panel';
+import { mountSettings } from './settings-panel';
 
 export interface UIHost {
   sim: Sim;

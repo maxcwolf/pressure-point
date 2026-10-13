@@ -1,7 +1,7 @@
 // How pleasant the place is: decor, litter and the prestige of each room.
 
 import { DECOR_RADIUS, H, ITEMS, ROOMS, W, WINDOW_MAX_BONUS } from '../data';
-import { type Item, type Room } from '../state/types';
+import type { Item, Room } from '../state/types';
 import { at, clamp } from '../util';
 import { inBounds, itemCenter, tileIdx } from '../world';
 import { System } from './system';

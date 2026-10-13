@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ROOMS, WINDOW_COST, WINDOW_MAX_BONUS } from '../../src/core/data';
-import { type GameState } from '../../src/core/state/types';
+import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { addConsult, addMassage, freshSim, LAYOUT, openCenter, run, runUntil } from './helpers';
 

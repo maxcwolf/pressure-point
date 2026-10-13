@@ -1,6 +1,6 @@
 // Every item that can be placed: furniture, equipment and decor.
 
-import { type ItemDef, type ItemType } from './types';
+import type { ItemDef, ItemType } from './types';
 
 export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   reception_desk: {

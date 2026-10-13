@@ -4,7 +4,7 @@ import { ITEMS, ROLES, traitOf, WEAR_REPAIR } from '../data';
 import { money } from '../format';
 import { fairSalary, makeCandidate } from '../people';
 import { pick, random } from '../random';
-import { type Item, type Staff } from '../state/types';
+import type { Item, Staff } from '../state/types';
 import { clamp, must } from '../util';
 import { accessPose, accessTile, footprint } from '../world';
 import { System } from './system';

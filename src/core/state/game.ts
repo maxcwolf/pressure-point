@@ -2,7 +2,7 @@
 
 import { type Discipline, DISCIPLINES, START_MONEY } from '../data';
 import { refillCandidates } from '../people';
-import { type GameState, type Ledger, type WallSpot } from './types';
+import type { GameState, Ledger, WallSpot } from './types';
 
 /** Whether two wall spots are the same stretch of wall. */
 export const sameSpot = (a: WallSpot, b: WallSpot) => a.x === b.x && a.y === b.y && a.dx === b.dx && a.dy === b.dy;

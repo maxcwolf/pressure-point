@@ -1,6 +1,6 @@
 // Every kind of room that can be built.
 
-import { type RoomDef, type RoomType } from './types';
+import type { RoomDef, RoomType } from './types';
 
 export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   consult: {

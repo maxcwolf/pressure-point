@@ -2,7 +2,7 @@
 
 import { DISCIPLINES, type Modality, type Role, ROLES } from '../data';
 import { SAVE_VERSION } from './game';
-import { type Candidate, type GameState, type Guest, type Item, type Ledger, type Room, type Staff } from './types';
+import type { Candidate, GameState, Guest, Item, Ledger, Room, Staff } from './types';
 
 /** What everyone in a role is qualified in to begin with: their discipline's basic modality. */
 const baseQuals = (role: Role): Modality[] => {

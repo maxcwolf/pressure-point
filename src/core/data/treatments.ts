@@ -1,6 +1,6 @@
 // Disciplines and the modalities practiced within each.
 
-import { type Discipline, type DisciplineDef, type Modality, type ModalityDef } from './types';
+import type { Discipline, DisciplineDef, Modality, ModalityDef } from './types';
 
 export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
   swedish: {

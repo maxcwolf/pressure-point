@@ -1,15 +1,6 @@
 // The shape of a game in progress. Everything here is plain JSON, so saving is a stringify away.
 
-import {
-  type ConditionId,
-  type Discipline,
-  type ItemType,
-  type Modality,
-  type Pose,
-  type Role,
-  type RoomType,
-  type TraitId,
-} from '../data';
+import type { ConditionId, Discipline, ItemType, Modality, Pose, Role, RoomType, TraitId } from '../data';
 
 export interface Room {
   id: number;

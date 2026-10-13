@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DRAG_PX, isClick, isDragging, QUICK_MS, QUICK_PX } from '../../src/input';
+import { DRAG_PX, isClick, isDragging, QUICK_MS, QUICK_PX } from '../../src/app/click';
 
 describe('telling a click from a drag', () => {
   it('does not call the few pixels of drift in an ordinary click a drag', () => {

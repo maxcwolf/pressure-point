@@ -2,7 +2,7 @@
 
 import { ENT_IN_Y, ENT_X, SIDEWALK_Y, W } from '../data';
 import { pick, random } from '../random';
-import { type Char, type Guest, type Look, type Staff } from '../state/types';
+import type { Char, Guest, Look, Staff } from '../state/types';
 import { System } from './system';
 
 export class Chars extends System {

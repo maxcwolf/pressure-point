@@ -1,6 +1,6 @@
 // The saved-games list, shared by the title screen and the in-game menu.
 import { money } from '../core/format';
-import { type GameState } from '../core/state/types';
+import type { GameState } from '../core/state/types';
 import {
   AUTOSAVE_ID,
   defaultSaveName,
@@ -14,8 +14,8 @@ import {
   type SaveInfo,
   timeAgo,
   writeSave,
-} from '../saves';
-import { escapeHtml } from '../util';
+} from '../storage/saves';
+import { escapeHtml } from './dom';
 
 export interface SavesPanelOptions {
   /** The game in progress, if there is one to save. */

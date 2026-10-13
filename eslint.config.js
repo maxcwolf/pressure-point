@@ -53,6 +53,8 @@ export default tseslint.config(
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
       '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
+      // an import of nothing but types must be `import type`, or the module is loaded at run time for no reason
+      '@typescript-eslint/no-import-type-side-effects': 'error',
       // numbers and booleans read fine in a template; anything else has to be converted on purpose
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true, allowBoolean: true }],
       '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],

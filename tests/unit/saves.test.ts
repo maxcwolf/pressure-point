@@ -19,7 +19,7 @@ import {
   type SaveInfo,
   timeAgo,
   writeSave,
-} from '../../src/saves';
+} from '../../src/storage/saves';
 import { openCenter, run } from './helpers';
 
 // a stand-in for the browser's storage, with an optional size limit

@@ -3,7 +3,7 @@
 import { ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from '../data';
 import { money } from '../format';
 import { sameSpot } from '../state/game';
-import { type Guest, type Item, type Room, type Staff, type WallSpot } from '../state/types';
+import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
 import { itemCenter, type Rect } from '../world';
 import { System } from './system';
 

@@ -1,6 +1,6 @@
 // Player preferences that outlive any one game: which optional disciplines new games start with.
-import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from './core/data';
-import { isRecord } from './util';
+import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from '../core/data';
+import { isRecord } from './json';
 
 const KEY = 'pressure-point-settings';
 export type DisciplinePrefs = Partial<Record<Discipline, boolean>>;

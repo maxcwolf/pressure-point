@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { type ConditionId, conditionOf, CONDITIONS, DISCIPLINES, ITEMS, MODALITIES, ROOMS } from '../../src/core/data';
-import { type Sim } from '../../src/core/sim/sim';
+import type { Sim } from '../../src/core/sim/sim';
 import { disciplineOn, newGame } from '../../src/core/state/game';
-import { type GameState } from '../../src/core/state/types';
+import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { loadDisciplinePrefs, saveDisciplinePref } from '../../src/settings';
+import { loadDisciplinePrefs, saveDisciplinePref } from '../../src/storage/settings';
 import { addAcupuncture, addPostureLab, addStaffRoom, addTraining, hire, openCenter, run, runUntil } from './helpers';
 
 /** The discipline that treats a condition. */

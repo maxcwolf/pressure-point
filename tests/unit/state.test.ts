@@ -4,7 +4,7 @@ import { CAMEO_CHANCE, CAMEO_NAMES, MODALITIES, ROLE_ORDER, ROLES } from '../../
 import { fairSalary, randomName } from '../../src/core/people';
 import { random, setSeed } from '../../src/core/random';
 import { newGame, SAVE_VERSION } from '../../src/core/state/game';
-import { type GameState } from '../../src/core/state/types';
+import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { openCenter, run } from './helpers';
 

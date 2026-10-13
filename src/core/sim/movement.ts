@@ -1,8 +1,8 @@
 // Walking: setting off for a tile, moving along the path and stopping.
 
-import { type Char, type Waypoint } from '../state/types';
+import type { Char, Waypoint } from '../state/types';
 import { clamp } from '../util';
-import { type PosePoint } from '../world';
+import type { PosePoint } from '../world';
 import { System } from './system';
 
 /** Turn an angle toward a target by at most `maxStep`, going the short way around. */

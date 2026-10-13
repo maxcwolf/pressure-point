@@ -4,13 +4,13 @@
 // blueprint step. In the blueprint the required furniture goes in, windows and
 // extras can be added, the door can be moved, and nothing is charged for the room
 // until it is confirmed.
-import { type AccessRole, ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from './core/data';
-import { money } from './core/format';
-import type { SfxName } from './core/sim/events';
-import { type Sim } from './core/sim/sim';
-import { sameSpot } from './core/state/game';
-import { type Room, type WallSpot } from './core/state/types';
-import { accessTile, footprint, inBuilding, itemDims, type Rect, tileIdx, Z_CORRIDOR } from './core/world';
+import { type AccessRole, ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from '../core/data';
+import { money } from '../core/format';
+import type { SfxName } from '../core/sim/events';
+import type { Sim } from '../core/sim/sim';
+import { sameSpot } from '../core/state/game';
+import type { Room, WallSpot } from '../core/state/types';
+import { accessTile, footprint, inBuilding, itemDims, type Rect, tileIdx, Z_CORRIDOR } from '../core/world';
 import {
   type Marker,
   OV_BAD,
@@ -22,7 +22,7 @@ import {
   type OverlayTile,
   type Selection,
   type View,
-} from './render/view';
+} from '../render/view';
 
 /** What is in hand while a blueprint is open. */
 type PlanSub =

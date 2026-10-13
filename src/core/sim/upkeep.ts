@@ -1,7 +1,7 @@
 // Wear and tear: equipment wearing out, plants drying and warm stones cooling.
 
 import { ITEMS } from '../data';
-import { type Item } from '../state/types';
+import type { Item } from '../state/types';
 import { itemCenter } from '../world';
 import { System } from './system';
 

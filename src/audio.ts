@@ -2,7 +2,7 @@
 
 import type { SfxName } from './core/sim/events';
 import { at } from './core/util';
-import { isRecord } from './util';
+import { isRecord } from './storage/json';
 
 type Note = [freq: number, start: number, dur: number, gain?: number, type?: OscillatorType];
 

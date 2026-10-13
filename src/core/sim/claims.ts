@@ -1,7 +1,7 @@
 // Seats and facilities: finding a free spot on an item and holding it for someone.
 
 import { type AccessRole, ITEMS } from '../data';
-import { type Char, type Item } from '../state/types';
+import type { Char, Item } from '../state/types';
 import { accessTile } from '../world';
 import { System } from './system';
 

@@ -18,7 +18,7 @@ import {
   SIDEWALK_Y,
   W,
 } from './data';
-import { type GameState, type Item, type Room, type Waypoint } from './state/types';
+import type { GameState, Item, Room, Waypoint } from './state/types';
 import { at } from './util';
 
 /** A tile's position in the flat grid arrays. */

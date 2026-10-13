@@ -1,6 +1,7 @@
 // The advisor: the next thing worth telling the player, and announcements over the speakers.
 
 import {
+  ANNOUNCEMENTS,
   conditionOf,
   DISCIPLINE_ORDER,
   DISCIPLINES,
@@ -14,9 +15,8 @@ import {
   STAR_GOALS,
   STONE_USE,
 } from '../data';
-import { ANNOUNCEMENTS } from '../data';
 import { pick, rnd } from '../random';
-import { type Item } from '../state/types';
+import type { Item } from '../state/types';
 import { System } from './system';
 
 export class Advisor extends System {

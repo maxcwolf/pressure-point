@@ -20,8 +20,8 @@ import {
   TITLE_LINES,
   W,
 } from '../core/data';
-import { type Sim } from '../core/sim/sim';
-import { type Char, type Room } from '../core/state/types';
+import type { Sim } from '../core/sim/sim';
+import type { Char, Room } from '../core/state/types';
 import { at, must } from '../core/util';
 import { itemCenter, itemDims, Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
 import {

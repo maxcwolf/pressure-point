@@ -15,7 +15,7 @@ import {
   traitOf,
 } from '../data';
 import { random, rnd } from '../random';
-import { type Guest, type Item, type Staff } from '../state/types';
+import type { Guest, Item, Staff } from '../state/types';
 import { clamp, must } from '../util';
 import { accessPose, accessTile } from '../world';
 import { System } from './system';

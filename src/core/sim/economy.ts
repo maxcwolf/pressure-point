@@ -4,7 +4,7 @@ import { LOAN_MAX, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../data';
 import { money } from '../format';
 import { refillCandidates } from '../people';
 import { emptyLedger } from '../state/game';
-import { type Ledger } from '../state/types';
+import type { Ledger } from '../state/types';
 import { clamp } from '../util';
 import { System } from './system';
 

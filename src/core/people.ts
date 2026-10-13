@@ -17,7 +17,7 @@ import {
   TRAITS,
 } from './data';
 import { irnd, pick, random, rnd } from './random';
-import { type Candidate, type GameState, type Look } from './state/types';
+import type { Candidate, GameState, Look } from './state/types';
 import { clamp } from './util';
 
 const SKINS = [0xf6d2b8, 0xeebf9e, 0xd9a078, 0xb97a55, 0x8d5a3b, 0x6b4229, 0xf9dfc9];

@@ -11,7 +11,7 @@ import {
 } from '../data';
 import { refillCandidates } from '../people';
 import { disciplineOn } from '../state/game';
-import { type Guest, type Item, type Staff } from '../state/types';
+import type { Guest, Item, Staff } from '../state/types';
 import { System } from './system';
 
 /** Why a table cannot deliver a modality properly right now ('' when it can). */

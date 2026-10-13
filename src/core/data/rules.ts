@@ -1,6 +1,6 @@
 // The numbers that tune the game: time, fees, loans, wear and the goals for each star.
 
-import { type StarGoal } from './types';
+import type { StarGoal } from './types';
 
 export const DAY_SECONDS = 6;
 export const DAYS_PER_MONTH = 30;
