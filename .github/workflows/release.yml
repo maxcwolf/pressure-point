@@ -4,7 +4,7 @@ name: Release
 # them as a GitHub release. Run it by hand to build without publishing.
 #
 # Only tags and manual runs trigger this, never pull requests, so code from a
-# fork cannot reach the self-hosted Mac.
+# fork can never reach a self-hosted runner if MAC_RUNNER points at one.
 on:
   push:
     tags: ['v*']
@@ -26,9 +26,9 @@ jobs:
       matrix:
         include:
           - name: macOS
-            # The Mac mini. Set the repository variable MAC_RUNNER to
-            # macos-latest to build on a GitHub-hosted Mac while it is offline.
-            os: ${{ vars.MAC_RUNNER || 'self-hosted' }}
+            # GitHub-hosted by default (free for public repositories). Set the
+            # repository variable MAC_RUNNER to self-hosted to use the Mac mini.
+            os: ${{ vars.MAC_RUNNER || 'macos-latest' }}
             args: --mac --arm64 --x64
           - name: Windows
             os: windows-latest
@@ -38,7 +38,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      # after setup-node, so the self-hosted Mac needs nothing preinstalled
+      # after setup-node, so a self-hosted Mac needs nothing preinstalled
       - run: corepack enable
       - run: yarn install --immutable
       - name: Work out the version

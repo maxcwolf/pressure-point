@@ -32,21 +32,17 @@ git push origin v0.1.0
 
 The tag sets the version number in the installers. Running the **Release** workflow by hand from the Actions tab builds the installers as downloadable artifacts without publishing a release.
 
-| Build | Runs on |
-| --- | --- |
-| macOS `.dmg` (Apple silicon and Intel) | The self-hosted Mac mini |
-| Windows `.exe` installer (x64) | GitHub-hosted `windows-latest` |
-| Publishing the release, and CI on pushes and pull requests | GitHub-hosted `ubuntu-latest` |
+Everything runs on GitHub-hosted machines, which are free for a public repository: `macos-latest` for the macOS `.dmg` files (Apple silicon and Intel), `windows-latest` for the Windows `.exe` installer, and `ubuntu-latest` for publishing and for CI on pushes and pull requests.
 
-If the Mac mini is offline, the macOS build waits for it and the release is not published until it finishes. To build on a GitHub-hosted Mac instead, set the repository variable `MAC_RUNNER` to `macos-latest`; delete the variable to go back.
+### Optional: build macOS on the Mac mini
+
+Set the repository variable `MAC_RUNNER` to move the macOS build onto the self-hosted Mac mini, and delete it to go back:
 
 ```bash
-gh variable set MAC_RUNNER --body macos-latest
+gh variable set MAC_RUNNER --body self-hosted
 ```
 
-### One-time setup: register the Mac mini
-
-Self-hosted runners on a personal account belong to one repository, so the Mac mini needs a runner registered for this repo alongside its existing ones. On the Mac mini:
+Self-hosted runners on a personal account belong to one repository, so the Mac mini first needs a runner registered for this repo alongside its existing ones. On the Mac mini:
 
 ```bash
 mkdir ~/actions-runner-pressure-point && cd ~/actions-runner-pressure-point
@@ -59,6 +55,8 @@ tar xzf runner.tar.gz
   --name mac-arm64-runner-pressure-point --labels pressure-point
 ./svc.sh install && ./svc.sh start
 ```
+
+While the variable is set, a release waits for the Mac mini and is not published until its build finishes.
 
 ### Signing
 
