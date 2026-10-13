@@ -4,12 +4,12 @@ import { createContext } from 'preact';
 import { useContext } from 'preact/hooks';
 
 import type { GameHost } from '../host';
-import type { Hud } from '../hud';
+import type { HudState } from '../hud';
 
-export const HudContext = createContext<Hud | null>(null);
+export const HudContext = createContext<HudState | null>(null);
 
 /** The interface's state: which menu and dialog are open, and the messages on screen. */
-export function useHud(): Hud {
+export function useHud(): HudState {
   const hud = useContext(HudContext);
   if (!hud) throw new Error('this component must be drawn inside the HUD');
   return hud;

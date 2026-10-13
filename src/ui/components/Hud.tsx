@@ -6,7 +6,7 @@ import { useEffect } from 'preact/hooks';
 
 import { HudContext } from '../hooks/use-hud';
 import { useRedraw } from '../hooks/use-redraw';
-import type { Hud as HudState } from '../hud';
+import type { HudState } from '../hud';
 import { Advisor } from './Advisor';
 import { Announcement } from './Announcement';
 import { BuildButtons } from './BuildButtons';

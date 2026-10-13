@@ -29,7 +29,7 @@ export interface Floater {
 /** How many toasts are kept on screen at once. */
 const MAX_TOASTS = 4;
 
-export class Hud {
+export class HudState {
   /** The build menu that is open, if any. */
   menu: MenuId | null = null;
   /** The tab showing in the Hire menu. */

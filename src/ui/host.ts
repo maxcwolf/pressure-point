@@ -1,6 +1,6 @@
 // What the interface needs from the game it is showing.
 
-import type { Tools } from '../app/tools';
+import type { Tools } from '../app/tools/tools';
 import type { Audio } from '../audio';
 import type { Sim } from '../core/sim/sim';
 import type { View } from '../render/view';

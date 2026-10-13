@@ -1,14 +1,14 @@
 // The keyboard: shortcuts, and which keys are held for moving the camera.
 
 import type { GameState } from '../core/state/types';
-import type { Hud } from '../ui/hud';
-import type { Tools } from './tools';
+import type { HudState } from '../ui/hud';
+import type { Tools } from './tools/tools';
 
 /** What the keyboard acts on. */
 export interface KeyboardTargets {
   state: GameState;
   tools: Tools;
-  ui: Hud;
+  ui: HudState;
   /** Called after a key that may have changed what the interface shows. */
   onChange: () => void;
 }

@@ -2,9 +2,9 @@
 
 import type { Audio } from '../audio';
 import type { View } from '../render/view';
-import type { Hud } from '../ui/hud';
+import type { HudState } from '../ui/hud';
 import { isClick, isDragging } from './click';
-import type { Tools } from './tools';
+import type { Tools } from './tools/tools';
 
 interface Press {
   x: number;
@@ -69,5 +69,5 @@ export interface PointerTargets {
   audio: Audio;
   tools: Tools;
   view: View;
-  ui: Hud;
+  ui: HudState;
 }

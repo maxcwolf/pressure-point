@@ -13,7 +13,7 @@ import { bindKeyboard } from './keyboard';
 import { runLoop } from './loop';
 import { bindPointer } from './pointer';
 import { Refresh } from './refresh';
-import { Tools } from './tools';
+import { Tools } from './tools/tools';
 
 /** What a game needs from the page it runs in. */
 export interface GameSetup {

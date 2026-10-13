@@ -2,7 +2,7 @@
 
 import type { Sim } from '../core/sim/sim';
 import type { View } from '../render/view';
-import type { Hud } from '../ui/hud';
+import type { HudState } from '../ui/hud';
 import type { Refresh } from './refresh';
 
 /** Seconds of play between autosaves. */
@@ -12,7 +12,7 @@ const AUTOSAVE_EVERY = 12;
 export interface LoopParts {
   sim: Sim;
   view: View;
-  ui: Hud;
+  ui: HudState;
   /** Keys currently held down, for moving the camera. */
   held: ReadonlySet<string>;
   refresh: Refresh;

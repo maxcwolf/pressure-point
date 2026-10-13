@@ -11,27 +11,11 @@ import { itemCenter, itemDims } from '../core/world';
 import { placeItemModel } from './items';
 import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
+import type { Marker, OverlayTile } from './overlay-codes';
 import type { Selection } from './picking';
-
-export type OverlayTile = [number, number, number];
-export const OV_GOOD = 0;
-export const OV_BAD = 1;
-export const OV_BLUE = 2;
-/** Free floor inside a room being dragged out that is still too small. */
-export const OV_FREE = 3;
-/** The square a member of staff uses a piece of furniture from. */
-export const OV_STAFF = 4;
-/** The square a guest uses it from. */
-export const OV_GUEST = 5;
 
 const OVERLAY_COLORS = [0x3ddc84, 0xff5d5d, 0x4aa8ff, 0xffc93c, 0x9b6bff, 0xff8a3c].map((c) => new THREE.Color(c));
 
-/** An icon floating over a floor tile, such as who a square is for. */
-export interface Marker {
-  x: number;
-  y: number;
-  icon: string;
-}
 export interface GhostSpec {
   type: ItemType;
   x: number;

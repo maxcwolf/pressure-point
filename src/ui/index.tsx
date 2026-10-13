@@ -7,11 +7,11 @@ import { FloaterLayer, Hud as HudView } from './components/Hud';
 import { TitleScreen } from './components/TitleScreen';
 import { byId } from './dom';
 import type { GameHost } from './host';
-import { Hud } from './hud';
+import { HudState } from './hud';
 
 /** Draw the in-game interface for a game and return its state, which the rest of the app talks to. */
-export function mountHud(host: GameHost): Hud {
-  const hud = new Hud(host);
+export function mountHud(host: GameHost): HudState {
+  const hud = new HudState(host);
   render(<HudView hud={hud} />, byId('ui'));
   render(<FloaterLayer hud={hud} />, byId('floaters'));
   return hud;
