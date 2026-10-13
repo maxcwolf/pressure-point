@@ -290,8 +290,12 @@ test.describe('room blueprints', () => {
     /** The tiles with an icon floating over them. */
     const marked = () =>
       game.eval((pp) => {
-        const view = pp.view as unknown as { markers: { visible: boolean; position: { x: number; z: number } }[] };
-        return view.markers.filter((m) => m.visible).map((m) => [Math.floor(m.position.x), Math.floor(m.position.z)]);
+        const view = pp.view as unknown as {
+          overlays: { markers: { visible: boolean; position: { x: number; z: number } }[] };
+        };
+        return view.overlays.markers
+          .filter((m) => m.visible)
+          .map((m) => [Math.floor(m.position.x), Math.floor(m.position.z)]);
       });
     /** The tiles the game says people use this item from, wherever it is being held. */
     const used = (held: { type: string; x: number; y: number; rot: number }) =>

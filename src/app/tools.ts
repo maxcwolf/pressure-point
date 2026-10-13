@@ -20,9 +20,9 @@ import {
   OV_GUEST,
   OV_STAFF,
   type OverlayTile,
-  type Selection,
-  type View,
-} from '../render/view';
+} from '../render/overlays';
+import type { Selection } from '../render/picking';
+import type { View } from '../render/view';
 
 /** What is in hand while a blueprint is open. */
 type PlanSub =

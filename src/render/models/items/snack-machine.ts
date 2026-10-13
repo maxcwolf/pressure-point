@@ -1,0 +1,24 @@
+// The Granola Dispenser model.
+
+import type * as THREE from 'three';
+
+import { at } from '../../../core/util';
+import { DARK, mat, put, rbox } from '../parts';
+
+/** Build the Granola Dispenser model. */
+export function buildSnackMachine(g: THREE.Group) {
+  put(g, rbox(0.86, 1.6, 0.68, 0.07), mat(0xd98e3a), 0, 0.8, -0.1);
+  put(g, rbox(0.62, 0.86, 0.04, 0.02), mat(0xfff3c4, 0.4, 0.35), 0, 1.02, 0.24);
+  const snacks = [0xe76f51, 0x8ab17d, 0xe9c46a, 0x5fa8d3, 0xb56576, 0xf4a261];
+  for (let r = 0; r < 3; r++)
+    for (let c = 0; c < 4; c++)
+      put(
+        g,
+        rbox(0.1, 0.14, 0.04, 0.02),
+        mat(at(snacks, (r * 4 + c) % snacks.length)),
+        -0.21 + c * 0.14,
+        0.76 + r * 0.26,
+        0.27,
+      );
+  put(g, rbox(0.5, 0.14, 0.04, 0.02), mat(DARK), 0, 0.3, 0.24);
+}
