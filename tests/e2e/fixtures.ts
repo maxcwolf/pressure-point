@@ -1,24 +1,236 @@
 // Helpers for driving the real game in a browser.
+//
+// The world is drawn on a canvas, so a click has to land on a point. Rather than
+// hard-coding where things are, the tests ask the running game: "where is the
+// massage table?", "which stretch of the east wall takes a door?", "where can
+// what I am holding go?". Layout changes then move the answer, not the test.
 import { expect, test as base, type Page } from '@playwright/test';
+import type { ITEMS, ROOMS } from '../../src/data';
 import type { Sim } from '../../src/sim';
-import type { GameState } from '../../src/state';
+import type { GameState, Item, Room, WallSpot } from '../../src/state';
+import type { Check, Rect } from '../../src/world';
+
+type Point = { x: number; y: number };
+/** Where something in hand can go: the point on screen to click, and the tile and rotation that is. */
+export interface HeldSpot {
+  at: Point;
+  x: number;
+  y: number;
+  rot: number;
+  /** Quarter turns needed from how it is currently held. */
+  turns: number;
+  type: string;
+}
+export type Side = 'north' | 'south' | 'east' | 'west';
+/** What a wall click is for: whatever the tool in hand wants, a window that is already there, or the door's own stretch. */
+type WallWant = 'auto' | 'existing-window' | 'door-spot';
 
 /** The debug handle the dev build puts on window. */
 interface Handle {
   sim: Sim;
   state: GameState;
   view: {
-    project(x: number, y: number, h?: number): { x: number; y: number };
+    project(x: number, y: number, h?: number): Point;
     pick(x: number, y: number): { kind: string; id: number } | null;
     dist: number;
     renderer: { info: { render: { triangles: number } } };
   };
-  tools: { tool: { kind: string; phase?: string }; hint: string; problem: string };
+  tools: { tool: any; hint: string; problem: string; plan: { room: Room } | null; selected: { kind: string; id: number } | null };
+  data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };
+  geo: {
+    itemDims(type: string, rot: number): [number, number];
+    accessTile(placed: { type: string; x: number; y: number; rot: number }, i: number): [number, number];
+  };
+}
+
+/** Lookups that run inside the page. Everything returns screen points the mouse can use. */
+interface Finders {
+  item(type: string, nth: number): Point & { id: number };
+  staff(role: string): Point & { id: number; name: string };
+  guest(): Point & { id: number; name: string };
+  roomFloor(type: string): Point & { id: number };
+  lawn(): Point;
+  freePatch(w: number, h: number): { rect: Rect; from: Point; to: Point };
+  wall(side: Side, want: WallWant): Point & { spot: WallSpot };
+  held(inRoom: boolean): HeldSpot;
+  place(type: string): number;
 }
 declare global {
   interface Window {
     pp: Handle;
+    find: Finders;
   }
+}
+
+/** Installed in the page before the game loads. Must be self-contained: it is sent over as source. */
+function installFinders() {
+  const pp = () => window.pp;
+  const onCanvas = (p: Point) => document.elementFromPoint(p.x, p.y)?.id === 'game';
+  const fail = (what: string): never => {
+    throw new Error(`e2e: ${what}`);
+  };
+  const SIDES = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] } as const;
+
+  /** The room a wall click is about: the one being planned or edited, or the rectangle being given a door. */
+  const currentRoom = (): { room?: Room; rect: Rect; type: string } => {
+    const t = pp().tools.tool;
+    if (t.kind === 'room' && t.phase === 'door') return { rect: t.rect, type: t.type };
+    const room: Room | undefined = t.kind === 'room' && t.phase === 'plan' ? t.room : pp().state.rooms.find((r) => r.id === t.roomId);
+    return room ? { room, rect: room, type: room.type } : fail('no room is being planned or edited');
+  };
+  const wantsDoor = () => {
+    const t = pp().tools.tool;
+    return t.kind === 'door' || (t.kind === 'room' && (t.phase === 'door' || t.sub?.kind === 'door'));
+  };
+
+  /** Where what is in hand may go, as the game itself judges it. */
+  const heldRules = () => {
+    const t = pp().tools.tool;
+    const world = pp().sim.world;
+    if (t.kind === 'item') return { type: t.type as string, rot: t.rot as number, room: undefined, ok: (x: number, y: number, r: number): Check => world.canPlaceItem(t.type, x, y, r) };
+    if (t.kind === 'move') {
+      const it = world.item(t.id) as Item;
+      return {
+        type: t.type as string,
+        rot: t.rot as number,
+        room: undefined,
+        // somewhere other than where it already is
+        ok: (x: number, y: number, r: number): Check => (x === it.x && y === it.y ? { ok: false, reason: '' } : pp().sim.canMoveItem(it, x, y, r)),
+      };
+    }
+    if (t.kind === 'room' && t.phase === 'plan' && t.sub?.kind === 'item') {
+      const sub = t.sub;
+      return { type: sub.type as string, rot: sub.rot as number, room: t.room as Room, ok: (x: number, y: number, r: number): Check => world.canPlaceItem(sub.type, x, y, r, sub.required ? t.room.id : undefined) };
+    }
+    return fail('nothing is in hand to place');
+  };
+
+  /** The first spot, scanning the given bounds, where an item fits. */
+  const firstFit = (type: string, startRot: number, bounds: Rect, ok: (x: number, y: number, r: number) => Check, visible: boolean) => {
+    for (let turns = 0; turns < 4; turns++) {
+      const rot = (startRot + turns) & 3;
+      const [w, h] = pp().geo.itemDims(type, rot);
+      for (let y = bounds.y; y < bounds.y + bounds.h; y++) {
+        for (let x = bounds.x; x < bounds.x + bounds.w; x++) {
+          if (!ok(x, y, rot).ok) continue;
+          const p = pp().view.project(x + w / 2, y + h / 2, 0);
+          if (visible && !onCanvas(p)) continue;
+          return { at: p, x, y, rot, turns, type };
+        }
+      }
+    }
+    return fail(`no valid spot for the ${type}`);
+  };
+  const building = (): Rect => {
+    const d = pp().data;
+    return { x: d.BX0, y: d.BY0, w: d.BX1 - d.BX0 + 1, h: d.BY1 - d.BY0 + 1 };
+  };
+
+  window.find = {
+    item(type, nth) {
+      const it = pp().state.items.filter((i) => i.type === type)[nth] ?? fail(`no ${type} #${nth} has been placed`);
+      const [w, h] = pp().geo.itemDims(it.type, it.rot);
+      // a point on the item itself that a click would actually select it from
+      for (const height of [0.4, 0.15, 0.8]) {
+        const p = pp().view.project(it.x + w / 2, it.y + h / 2, height);
+        const hit = pp().view.pick(p.x, p.y);
+        if (onCanvas(p) && hit?.kind === 'item' && hit.id === it.id) return { ...p, id: it.id };
+      }
+      return fail(`the ${type} is hidden behind something`);
+    },
+    staff(role) {
+      for (const st of pp().state.staff.filter((s) => s.role === role)) {
+        const p = pp().view.project(st.x, st.y, 0.6);
+        const hit = pp().view.pick(p.x, p.y);
+        if (onCanvas(p) && hit?.kind === 'staff' && hit.id === st.id) return { ...p, id: st.id, name: st.name };
+      }
+      return fail(`no ${role} in plain view`);
+    },
+    guest() {
+      for (const g of pp().state.guests) {
+        const p = pp().view.project(g.x, g.y, 0.6);
+        const hit = pp().view.pick(p.x, p.y);
+        if (onCanvas(p) && hit?.kind === 'guest' && hit.id === g.id) return { ...p, id: g.id, name: g.name };
+      }
+      return fail('no guest in plain view');
+    },
+    roomFloor(type) {
+      const room = pp().state.rooms.find((r) => r.type === type) ?? fail(`there is no ${type} room`);
+      for (let y = room.y; y < room.y + room.h; y++) {
+        for (let x = room.x; x < room.x + room.w; x++) {
+          const p = pp().view.project(x + 0.5, y + 0.5, 0);
+          const hit = pp().view.pick(p.x, p.y);
+          if (onCanvas(p) && hit?.kind === 'room' && hit.id === room.id) return { ...p, id: room.id };
+        }
+      }
+      return fail(`no bare floor showing in the ${type} room`);
+    },
+    lawn() {
+      const d = pp().data;
+      for (let y = d.BY0; y <= d.BY1; y++) {
+        for (let x = 0; x < d.BX0 - 1; x++) {
+          const p = pp().view.project(x + 0.5, y + 0.5, 0);
+          if (onCanvas(p)) return p;
+        }
+      }
+      return fail('no lawn on screen');
+    },
+    freePatch(w, h) {
+      const { W } = pp().data;
+      const world = pp().sim.world as unknown as { zone: Int32Array; blocked: Uint8Array; reserved: Uint8Array };
+      const free = (x: number, y: number) => world.zone[y * W + x] === 0 && !world.blocked[y * W + x] && !world.reserved[y * W + x];
+      const b = building();
+      for (let y = b.y; y + h <= b.y + b.h; y++) {
+        scan: for (let x = b.x; x + w <= b.x + b.w; x++) {
+          for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) if (!free(x + dx, y + dy)) continue scan;
+          const from = pp().view.project(x + 0.5, y + 0.5, 0);
+          const to = pp().view.project(x + w - 0.5, y + h - 0.5, 0);
+          if (onCanvas(from) && onCanvas(to)) return { rect: { x, y, w, h }, from, to };
+        }
+      }
+      return fail(`no free ${w}×${h} patch of corridor`);
+    },
+    wall(side, want) {
+      const { room, rect, type } = currentRoom();
+      const world = pp().sim.world;
+      const same = (a: WallSpot, b: WallSpot) => a.x === b.x && a.y === b.y && a.dx === b.dx && a.dy === b.dy;
+      const point = (s: WallSpot) => pp().view.project(s.x + 0.5 + s.dx * 0.62, s.y + 0.5 + s.dy * 0.62, 0);
+      if (want === 'door-spot') {
+        const spot = room?.door ?? fail('the room has no door yet');
+        return { ...point(spot), spot };
+      }
+      const [dx, dy] = SIDES[side];
+      const along = dx ? rect.h : rect.w;
+      for (let i = 0; i < along; i++) {
+        const spot: WallSpot = {
+          x: dx ? (dx > 0 ? rect.x + rect.w - 1 : rect.x) : rect.x + i,
+          y: dy ? (dy > 0 ? rect.y + rect.h - 1 : rect.y) : rect.y + i,
+          dx,
+          dy,
+        };
+        const hasWindow = !!room?.windows.some((w) => same(w, spot));
+        let fits: boolean;
+        if (want === 'existing-window') fits = hasWindow;
+        else if (wantsDoor()) fits = (!room || !same(room.door, spot)) && world.doorValid(type as never, rect, spot, room).ok;
+        else fits = !!room && !hasWindow && world.windowValid(room, spot).ok;
+        const p = point(spot);
+        if (fits && onCanvas(p)) return { ...p, spot };
+      }
+      return fail(`nowhere suitable on the ${side} wall`);
+    },
+    held(inRoom) {
+      const rules = heldRules();
+      const bounds = inRoom ? (rules.room ?? pp().tools.plan?.room ?? fail('no blueprint is open')) : building();
+      return firstFit(rules.type, rules.rot, bounds, rules.ok, true);
+    },
+    place(type) {
+      // straight into the game, for setting a scene: no menus, but the same placement rules
+      const world = pp().sim.world;
+      const spot = firstFit(type, 0, building(), (x, y, r) => world.canPlaceItem(type as never, x, y, r), true);
+      const item = pp().sim.placeItem(type as never, spot.x, spot.y, spot.rot) ?? fail(`could not place a ${type}`);
+      return item.id;
+    },
+  };
 }
 
 export class Game {
@@ -32,6 +244,7 @@ export class Game {
 
   /** Title screen, then a fresh game. */
   async start() {
+    await this.page.addInitScript(installFinders);
     await this.page.goto('/');
     await this.page.getByRole('button', { name: 'New game' }).click();
     await this.page.waitForFunction(() => !!window.pp);
@@ -41,27 +254,96 @@ export class Game {
   eval<T, A = undefined>(fn: (pp: Handle, arg: A) => T, arg?: A): Promise<T> {
     return this.page.evaluate(([f, a]) => new Function('pp', 'arg', `return (${f})(pp, arg)`)(window.pp, a), [fn.toString(), arg] as const) as Promise<T>;
   }
+  /** Ask the page where something is. */
+  private find<K extends keyof Finders>(what: K, ...args: Parameters<Finders[K]>): Promise<ReturnType<Finders[K]>> {
+    return this.page.evaluate(([name, list]) => (window.find[name] as (...a: unknown[]) => unknown)(...list), [what, args] as const) as Promise<ReturnType<Finders[K]>>;
+  }
 
-  /** Screen position of the middle of a floor tile (or any fractional tile coordinate). */
-  at(x: number, y: number) {
-    return this.eval((pp, [tx, ty]) => pp.view.project(tx, ty), [x, y] as const);
-  }
-  async hover(x: number, y: number) {
-    const p = await this.at(x, y);
-    await this.page.mouse.move(p.x, p.y, { steps: 4 });
-  }
-  async click(x: number, y: number) {
-    const p = await this.at(x, y);
+  private async clickAt(p: Point) {
     await this.page.mouse.move(p.x, p.y, { steps: 4 });
     await this.page.mouse.click(p.x, p.y);
   }
-  async drag(from: [number, number], to: [number, number]) {
-    const a = await this.at(...from);
-    const b = await this.at(...to);
-    await this.page.mouse.move(a.x, a.y);
+  private async hoverAt(p: Point) {
+    await this.page.mouse.move(p.x, p.y, { steps: 4 });
+  }
+
+  // ---- things in the world, found by what they are ----------------------------
+  /** A point on a placed item, for tests that need to do something other than a plain click. */
+  itemPoint(type: string, nth = 0) {
+    return this.find('item', type, nth);
+  }
+  async clickItem(type: string, nth = 0) {
+    await this.clickAt(await this.find('item', type, nth));
+  }
+  /** Click a member of staff with this role who is in plain view. Returns who it was. */
+  async clickStaff(role: string) {
+    const who = await this.find('staff', role);
+    await this.clickAt(who);
+    return who;
+  }
+  /** Click a guest who is in plain view. Returns who it was. */
+  async clickGuest() {
+    const who = await this.find('guest');
+    await this.clickAt(who);
+    return who;
+  }
+  /** Click a bare patch of floor in a room, which selects the room. */
+  async clickRoom(type: string) {
+    await this.clickAt(await this.find('roomFloor', type));
+  }
+  async hoverLawn() {
+    await this.hoverAt(await this.find('lawn'));
+  }
+  async clickLawn() {
+    await this.clickAt(await this.find('lawn'));
+  }
+
+  // ---- building -----------------------------------------------------------------
+  /** With a room tool in hand, drag out the first free patch of corridor this big. Returns where it went. */
+  async dragOutRoom(w: number, h: number): Promise<Rect> {
+    const { rect, from, to } = await this.find('freePatch', w, h);
+    await this.page.mouse.move(from.x, from.y);
     await this.page.mouse.down();
-    await this.page.mouse.move(b.x, b.y, { steps: 8 });
+    await this.page.mouse.move(to.x, to.y, { steps: 8 });
     await this.page.mouse.up();
+    return rect;
+  }
+  /**
+   * Click a wall of the room being planned or edited. By default it picks the first stretch
+   * on that side the game will accept for the tool in hand: a door, or a new window.
+   */
+  async clickWall(side: Side, want: WallWant = 'auto'): Promise<WallSpot> {
+    const target = await this.find('wall', side, want);
+    await this.clickAt(target);
+    return target.spot;
+  }
+  async hoverWall(side: Side, want: WallWant = 'auto'): Promise<WallSpot> {
+    const target = await this.find('wall', side, want);
+    await this.hoverAt(target);
+    return target.spot;
+  }
+  /** Where the game would let what is in hand go, without doing anything about it. */
+  heldSpot(opts: { inRoom?: boolean } = {}) {
+    return this.find('held', !!opts.inRoom);
+  }
+  /** Hold what is in hand over the first spot it fits. Returns the tile and rotation. */
+  async hoverHeld(opts: { inRoom?: boolean } = {}) {
+    const spot = await this.heldSpot(opts);
+    for (let i = 0; i < spot.turns; i++) await this.page.keyboard.press('r');
+    await this.hoverAt(spot.at);
+    return spot;
+  }
+  /** Put down what is in hand at the first spot it fits, turning it if it has to. Returns the tile and rotation. */
+  async placeHeld(opts: { inRoom?: boolean } = {}) {
+    const spot = await this.hoverHeld(opts);
+    await this.page.mouse.click(spot.at.x, spot.at.y);
+    return spot;
+  }
+  /** Set the scene: put an item into the game directly, wherever it fits. Returns its id. */
+  async give(type: string): Promise<number> {
+    const id = await this.find('place', type);
+    await this.settle();
+    return id;
   }
 
   /** Open one of the round menus along the bottom. */
@@ -88,7 +370,7 @@ export class Game {
     await this.settle();
   }
 
-  /** Build and staff a working center without going through the menus. */
+  /** Set the scene: a working, staffed center, built directly rather than through the menus. */
   buildCenter() {
     return this.eval((pp) => {
       const { sim, state } = pp;
@@ -106,6 +388,19 @@ export class Game {
         const best = state.candidates.filter((c) => c.role === role).sort((a, b) => b.skill - a.skill)[0];
         sim.hire(best.id);
       }
+    });
+  }
+
+  /** Set the scene: on top of the standard center, a staffed Acupuncture Clinic (which needs the first star). */
+  buildClinic() {
+    return this.eval((pp) => {
+      const { sim, state } = pp;
+      state.stars = Math.max(state.stars, 1);
+      const r = sim.createRoom('acupuncture', { x: 24, y: 8, w: 4, h: 4 }, { x: 25, y: 11, dx: 0, dy: 1 });
+      sim.placeItem('acu_table', 25, 8, 0, { free: true, roomId: r.id });
+      sim.placeItem('needle_cabinet', 27, 8, 0, { free: true, roomId: r.id });
+      sim.finishRoom(r);
+      sim.hire(state.candidates.find((c) => c.role === 'acupuncturist')!.id);
     });
   }
 }

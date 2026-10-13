@@ -4,6 +4,7 @@ import '@fontsource/fredoka/latin-600.css';
 import '@fontsource/fredoka/latin-700.css';
 import './style.css';
 import { Audio } from './audio';
+import { BX0, BX1, BY0, BY1, ITEMS, ROOMS, W } from './data';
 import { isClick, isDragging } from './input';
 import { View } from './render/view';
 import { Sim } from './sim';
@@ -12,6 +13,7 @@ import { loadDisciplinePrefs } from './settings';
 import { newGame, type GameState } from './state';
 import { Tools } from './tools';
 import { UI, showTitle } from './ui/ui';
+import { accessTile, itemDims } from './world';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const audio = new Audio();
@@ -213,7 +215,11 @@ function start(state: GameState) {
   requestAnimationFrame(frame);
   window.addEventListener('beforeunload', save);
 
-  if (import.meta.env.DEV) Object.assign(window, { pp: { sim, view, tools, ui, state } });
+  // a handle for the browser console and the end-to-end tests, in development builds only
+  if (import.meta.env.DEV) {
+    const data = { ITEMS, ROOMS, W, BX0, BX1, BY0, BY1 };
+    Object.assign(window, { pp: { sim, view, tools, ui, state, data, geo: { itemDims, accessTile } } });
+  }
 }
 
 void boot();

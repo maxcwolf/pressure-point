@@ -34,7 +34,7 @@ yarn test:e2e   # end-to-end tests: the real game in a headless browser, driven 
 
 The first end-to-end run needs a browser: `yarn playwright install chromium`.
 
-The unit tests seed the game's random numbers, so a failing run can be repeated exactly. They include hour-long sessions that check nothing goes missing, gets stuck or turns into `NaN`. The end-to-end tests start the dev server themselves and use the `window.pp` handle that dev builds expose to read game state and skip ahead in time. Both suites run in CI on every push and pull request.
+The unit tests seed the game's random numbers, so a failing run can be repeated exactly. They include hour-long sessions that check nothing goes missing, gets stuck or turns into `NaN`. The end-to-end tests start the dev server themselves and use the `window.pp` handle that dev builds expose to read game state and skip ahead in time. They do not hard-code where things are on screen: helpers in `tests/e2e/fixtures.ts` ask the running game where an item, a wall or a valid spot is, then click there (`game.clickItem('bench')`, `game.clickWall('east')`, `game.placeHeld()`). Both suites run in CI on every push and pull request.
 
 Every bug fix comes with a test that fails on the old code and passes on the fix, so the bug cannot quietly come back.
 
