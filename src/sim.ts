@@ -1,0 +1,1254 @@
+// The simulation: guests, staff, queues, money, reputation.
+import {
+  CONDITIONS,
+  CONDITION_BY_ID,
+  CONSULT_FEE,
+  DAYS_PER_MONTH,
+  DAY_SECONDS,
+  DIAGNOSIS_TARGET,
+  ENT_IN_Y,
+  ENT_X,
+  ITEMS,
+  ROLES,
+  ROOMS,
+  SIDEWALK_Y,
+  STAR_GOALS,
+  TANNOY,
+  TRAIT_BY_ID,
+  W,
+  type AccessRole,
+  type ItemType,
+  type Role,
+  type RoomType,
+} from './data';
+import {
+  clamp,
+  emptyLedger,
+  makeCandidate,
+  pick,
+  randomLook,
+  randomName,
+  refillCandidates,
+  rnd,
+  type Char,
+  type GameState,
+  type Guest,
+  type Item,
+  type Ledger,
+  type Look,
+  type Room,
+  type Staff,
+} from './state';
+import {
+  World,
+  Z_CORRIDOR,
+  accessPose,
+  accessTile,
+  footprint,
+  inBuilding,
+  itemCenter,
+  rotVec,
+  tileIdx,
+  type PosePoint,
+  type Rect,
+} from './world';
+
+export type SimEvent =
+  | { type: 'float'; text: string; x: number; y: number; kind: 'good' | 'bad' | 'info' }
+  | { type: 'toast'; text: string; kind: 'good' | 'bad' | 'info' }
+  | { type: 'sfx'; name: string }
+  | { type: 'tannoy'; text: string }
+  | { type: 'star'; stars: number };
+
+export interface Objective {
+  label: string;
+  done: boolean;
+  progress: number;
+}
+
+const GOAL_NAME = { reception: 'Reception Desk', consult: 'Consultation Room', treat: 'Massage Suite' } as const;
+const NEED_ICON = { drink: '🍵', eat: '🥜', toilet: '🚻' } as const;
+
+export const money = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(Math.round(n)).toLocaleString('en-US')}`;
+
+export function dateOf(day: number) {
+  const d = Math.floor(day);
+  return {
+    day: (d % DAYS_PER_MONTH) + 1,
+    month: (Math.floor(d / DAYS_PER_MONTH) % 12) + 1,
+    year: Math.floor(d / (DAYS_PER_MONTH * 12)) + 1,
+  };
+}
+
+function turnToward(cur: number, target: number, maxStep: number) {
+  let d = target - cur;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return cur + clamp(d, -maxStep, maxStep);
+}
+
+export class Sim {
+  world: World;
+  private events: SimEvent[] = [];
+  /** Patience-drain multiplier from plants, fountains and litter (lower is nicer). */
+  ambience = 1;
+  private slowT = 0;
+
+  constructor(public s: GameState) {
+    this.world = new World(s);
+  }
+
+  // ---- Lookups & events ----------------------------------------------------
+  guest(id: number): Guest | undefined {
+    return id ? this.s.guests.find((g) => g.id === id) : undefined;
+  }
+  staff(id: number): Staff | undefined {
+    return id ? this.s.staff.find((g) => g.id === id) : undefined;
+  }
+  char(id: number): Char | undefined {
+    return this.guest(id) ?? this.staff(id);
+  }
+  emit(e: SimEvent) {
+    this.events.push(e);
+  }
+  drain(): SimEvent[] {
+    const e = this.events;
+    this.events = [];
+    return e;
+  }
+  private toast(text: string, kind: 'good' | 'bad' | 'info' = 'info') {
+    this.emit({ type: 'toast', text, kind });
+  }
+  private tipOnce(id: string, text: string, kind: 'good' | 'bad' | 'info' = 'info') {
+    if (this.s.seenTips.includes(id)) return;
+    this.s.seenTips.push(id);
+    this.toast(text, kind);
+  }
+
+  // ---- Money ---------------------------------------------------------------
+  private earn(amount: number, kind: 'consult' | 'treatment' | 'vending', x: number, y: number) {
+    this.s.money += amount;
+    this.s.ledger[kind] += amount;
+    this.emit({ type: 'float', text: `+${money(amount)}`, x, y, kind: 'good' });
+    if (amount >= 100) this.emit({ type: 'sfx', name: 'cash' });
+  }
+  private spend(amount: number, kind: 'salaries' | 'building') {
+    this.s.money -= amount;
+    this.s.ledger[kind] += amount;
+  }
+  private changeRep(delta: number) {
+    const s = this.s;
+    // gains taper off as reputation climbs
+    if (delta > 0) delta *= 1.15 - s.reputation / 120;
+    s.reputation = clamp(s.reputation + delta, 0, 100);
+  }
+
+  // ---- Main loop -----------------------------------------------------------
+  tick(dtReal: number) {
+    let total = Math.min(dtReal, 0.1) * this.s.speed;
+    while (total > 1e-6) {
+      const h = Math.min(total, 0.05);
+      this.step(h);
+      total -= h;
+    }
+  }
+
+  private step(dt: number) {
+    const s = this.s;
+    const prevMonth = Math.floor(s.day / DAYS_PER_MONTH);
+    s.day += dt / DAY_SECONDS;
+    if (Math.floor(s.day / DAYS_PER_MONTH) !== prevMonth) this.monthEnd();
+
+    if (!s.open && this.hasItem('reception_desk') && this.hasRoom('consult') && this.hasRoom('massage')) {
+      s.open = true;
+      s.spawnT = 3;
+      this.toast('Grand opening! Guests are on their way.', 'good');
+      this.emit({ type: 'tannoy', text: 'The healing centre is now open. Please form an orderly queue of ailments.' });
+      this.emit({ type: 'sfx', name: 'fanfare' });
+    }
+    if (s.open) {
+      s.spawnT -= dt;
+      if (s.spawnT <= 0) {
+        if (s.guests.length < 14 + this.s.rooms.length * 5) this.spawnGuest();
+        s.spawnT = (30 - s.reputation * 0.2) * rnd(0.7, 1.3);
+      }
+    }
+
+    this.updateStations(dt);
+    for (const g of [...s.guests]) this.updateGuest(g, dt);
+    for (const st of [...s.staff]) this.updateStaff(st, dt);
+    for (const it of s.items) if (it.type === 'plant') it.water = Math.max(0, it.water - dt * 0.3);
+
+    this.slowT -= dt;
+    if (this.slowT <= 0) {
+      this.slowT = 1;
+      this.updateAmbience();
+      this.checkStars();
+    }
+    s.tannoyT -= dt;
+    if (s.tannoyT <= 0) {
+      s.tannoyT = rnd(40, 70);
+      if (s.open) this.emit({ type: 'tannoy', text: this.contextTannoy() ?? pick(TANNOY) });
+    }
+  }
+
+  private monthEnd() {
+    const s = this.s;
+    const wages = s.staff.filter((x) => x.state !== 'leaving').reduce((a, x) => a + x.salary, 0);
+    if (wages > 0) {
+      this.spend(wages, 'salaries');
+      this.toast(`Payday: ${money(wages)} in salaries.`, s.money < 0 ? 'bad' : 'info');
+      this.emit({ type: 'sfx', name: 'payday' });
+    }
+    s.history.push(netOf(s.ledger));
+    if (s.history.length > 12) s.history.shift();
+    s.lastLedger = s.ledger;
+    s.ledger = emptyLedger();
+    refillCandidates(s, true);
+    if (s.money < 0) this.toast('You are in the red. Heal faster!', 'bad');
+  }
+
+  private updateAmbience() {
+    const s = this.s;
+    let score = 0;
+    for (const it of s.items) {
+      if (it.type === 'plant') score += it.water > 15 ? 1 : -1;
+      else if (it.type === 'fountain') score += 3;
+    }
+    score -= s.litter.length * 1.5;
+    this.ambience = clamp(1.12 - score * 0.02, 0.72, 1.4);
+  }
+
+  private checkStars() {
+    const s = this.s;
+    const goal = STAR_GOALS[s.stars];
+    if (!goal) return;
+    if (s.stats.healed >= goal.healed && s.reputation >= goal.reputation && s.money >= goal.balance) {
+      s.stars++;
+      s.money += 5000 * s.stars;
+      this.emit({ type: 'star', stars: s.stars });
+      this.emit({ type: 'sfx', name: 'fanfare' });
+    }
+  }
+
+  objectives(): Objective[] {
+    const s = this.s;
+    const goal = STAR_GOALS[s.stars];
+    if (!goal) return [];
+    const out: Objective[] = [
+      {
+        label: `Heal ${goal.healed} guests (${Math.min(s.stats.healed, goal.healed)}/${goal.healed})`,
+        done: s.stats.healed >= goal.healed,
+        progress: s.stats.healed / goal.healed,
+      },
+      {
+        label: `Reach ${goal.reputation}% reputation`,
+        done: s.reputation >= goal.reputation,
+        progress: s.reputation / goal.reputation,
+      },
+    ];
+    if (goal.balance > 0)
+      out.push({
+        label: `Have ${money(goal.balance)} in the bank`,
+        done: s.money >= goal.balance,
+        progress: s.money / goal.balance,
+      });
+    return out;
+  }
+
+  hasItem(t: ItemType) {
+    return this.s.items.some((i) => i.type === t && this.world.usable(i));
+  }
+  hasRoom(t: RoomType) {
+    return this.s.rooms.some((r) => r.type === t && r.done);
+  }
+  hasStaff(r: Role) {
+    return this.s.staff.some((x) => x.role === r && x.state !== 'leaving');
+  }
+
+  /** The advisor's current nudge. */
+  advice(): string {
+    const s = this.s;
+    if (!this.hasItem('reception_desk'))
+      return 'Welcome! Open the Items menu and place a Reception Desk somewhere near the entrance.';
+    if (!this.hasStaff('receptionist')) return 'A desk needs a face behind it. Hire a Receptionist from the Hire menu.';
+    if (!this.hasRoom('consult'))
+      return 'Guests need diagnosing. Pick a Consultation Room from the Rooms menu, drag out the floor, add a door, then place the furniture.';
+    if (!this.hasStaff('consultant')) return 'Hire a Wellness Consultant to run the Consultation Room.';
+    if (!this.hasRoom('massage')) return 'Now the main event: build a Massage Suite.';
+    if (!this.hasStaff('therapist')) return 'Hire a Massage Therapist and the knots will start untying themselves.';
+    const tired = s.staff.some((x) => x.energy < 20);
+    if (tired && !this.hasRoom('staffroom')) return 'Your staff are worn out and working slowly. Build a Staff Room so they can take breaks.';
+    if (s.guests.some((g) => g.bladder > 85) && !this.hasRoom('restroom'))
+      return 'Guests are crossing their legs. A Restroom would be a kindness.';
+    if (s.litter.length >= 3 && !this.hasStaff('caretaker')) return 'Litter is piling up. Hire a Caretaker to keep the place tidy.';
+    if (s.items.some((i) => i.type === 'plant' && i.water < 20) && !this.hasStaff('caretaker'))
+      return 'Your plants are wilting. A Caretaker will water them.';
+    for (const it of s.items) {
+      const st = ITEMS[it.type].station;
+      if (!st || !this.world.usable(it)) continue;
+      if (it.queue.length >= 2 && !it.staffId)
+        return `Guests are queueing for a ${GOAL_NAME[st.goal]} with nobody staffing it. Hire another ${ROLES[st.staff].name}.`;
+      if (it.queue.length >= 6)
+        return `The queue for the ${GOAL_NAME[st.goal]} is getting long. Build another and staff it.`;
+    }
+    if (s.guests.length > 4 && !s.items.some((i) => i.type === 'bench'))
+      return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
+    if (s.guests.some((g) => g.thirst > 85) && !this.hasItem('tea_station'))
+      return 'Guests are parched. A Herbal Tea Station would help, and it earns a little too.';
+    if (!STAR_GOALS[s.stars]) return 'Three stars! You have mastered massage. Acupuncture and reiki are coming soon.';
+    return 'Looking good. Keep an eye on the objectives to earn your next star.';
+  }
+
+  private contextTannoy(): string | null {
+    for (const it of this.s.items) {
+      const st = ITEMS[it.type].station;
+      if (st && this.world.usable(it) && it.queue.length >= 2 && !it.staffId)
+        return `${ROLES[st.staff].name} required at the ${GOAL_NAME[st.goal]}.`;
+    }
+    if (this.s.litter.length >= 4) return 'Caretaker required. The corridors are becoming crunchy.';
+    return null;
+  }
+
+  // ---- Movement ------------------------------------------------------------
+  goTo(c: Char, tx: number, ty: number, pp?: PosePoint): boolean {
+    let sx = c.tx;
+    let sy = c.ty;
+    if (c.path && c.path.length && !c.path[0][2]) {
+      const [wx, wy] = c.path[0];
+      if (Math.hypot(wx - c.x, wy - c.y) < 0.5) {
+        sx = Math.floor(wx);
+        sy = Math.floor(wy);
+      }
+    }
+    const p = this.world.findPath(sx, sy, tx, ty);
+    if (!p) return false;
+    const path: number[][] = [];
+    if (Math.hypot(sx + 0.5 - c.x, sy + 0.5 - c.y) > 0.05) path.push([sx + 0.5, sy + 0.5, 0]);
+    for (const wp of p) path.push(wp);
+    if (pp) {
+      path.push([pp.x, pp.y, 1]);
+      c.endPose = pp.pose;
+      c.endH = pp.h;
+      c.endFace = pp.face;
+    }
+    c.dest = pp ? [tx, ty, pp.x, pp.y, 1] : [tx, ty, 0, 0, 0];
+    c.path = path;
+    c.pose = 'walk';
+    c.h = 0;
+    c.busy = false;
+    return true;
+  }
+
+  /** Advance along the current path. Returns true on the tick the path completes. */
+  private move(c: Char, dt: number, speed: number): boolean {
+    if (!c.path) return false;
+    let remaining = speed * dt;
+    while (c.path.length && remaining > 0) {
+      const [wx, wy, isPose] = c.path[0];
+      const dx = wx - c.x;
+      const dy = wy - c.y;
+      const d = Math.hypot(dx, dy);
+      if (d > 1e-3) c.facing = turnToward(c.facing, Math.atan2(dx, dy), dt * 14);
+      if (d <= remaining) {
+        c.x = wx;
+        c.y = wy;
+        remaining -= d;
+        c.path.shift();
+        if (isPose) {
+          c.pose = c.endPose;
+          c.h = c.endH;
+          c.facing = c.endFace;
+        } else {
+          c.tx = Math.floor(wx);
+          c.ty = Math.floor(wy);
+        }
+      } else {
+        c.x += (dx / d) * remaining;
+        c.y += (dy / d) * remaining;
+        remaining = 0;
+      }
+    }
+    if (!c.path.length) {
+      c.path = null;
+      c.dest = null;
+      if (c.pose === 'walk') c.pose = 'stand';
+      return true;
+    }
+    return false;
+  }
+
+  private halt(c: Char) {
+    c.path = null;
+    c.dest = null;
+    c.busy = false;
+    c.pose = 'stand';
+    c.h = 0;
+  }
+
+  private repathAll() {
+    for (const c of [...this.s.guests, ...this.s.staff] as Char[]) {
+      const d = c.dest;
+      if (!d || !c.path) continue;
+      const pp = d[4] ? { x: d[2], y: d[3], face: c.endFace, pose: c.endPose, h: c.endH } : undefined;
+      if (this.goTo(c, d[0], d[1], pp)) continue;
+      if (c.kind === 'guest') this.resetGuest(c);
+      else this.staffIdle(c);
+    }
+  }
+
+  // ---- Claims on seats and facilities --------------------------------------
+  private claim(c: Char, it: Item, idx: number) {
+    this.release(c);
+    it.users[idx] = c.id;
+    c.claimItem = it.id;
+    c.claimIdx = idx;
+  }
+  private release(c: Char) {
+    if (!c.claimItem) return;
+    const it = this.world.item(c.claimItem);
+    if (it && it.users[c.claimIdx] === c.id) it.users[c.claimIdx] = 0;
+    c.claimItem = 0;
+  }
+  private findAccess(role: AccessRole, x: number, y: number, maxDist = 1e9): { item: Item; idx: number } | null {
+    let best: { item: Item; idx: number } | null = null;
+    let bestD = maxDist;
+    for (const it of this.s.items) {
+      const acc = ITEMS[it.type].access;
+      for (let i = 0; i < acc.length; i++) {
+        if (acc[i].role !== role || it.users[i] || !this.world.usable(it)) continue;
+        const [ax, ay] = accessTile(it, i);
+        const d = Math.hypot(ax - x, ay - y);
+        if (d < bestD) {
+          bestD = d;
+          best = { item: it, idx: i };
+        }
+      }
+    }
+    return best;
+  }
+  private accessIndex(it: Item, role: AccessRole) {
+    return ITEMS[it.type].access.findIndex((a) => a.role === role);
+  }
+
+  private baseChar(name: string, look: Look, x: number, y: number) {
+    return {
+      id: this.s.nextId++,
+      name,
+      x: x + 0.5,
+      y: y + 0.5,
+      tx: x,
+      ty: y,
+      facing: 0,
+      path: null,
+      dest: null,
+      pose: 'stand' as const,
+      h: 0,
+      busy: false,
+      endPose: 'stand' as const,
+      endH: 0,
+      endFace: 0,
+      look,
+      bubble: '',
+      bubbleT: 0,
+      claimItem: 0,
+      claimIdx: 0,
+      timer: 0,
+    };
+  }
+  private say(c: Char, icon: string, seconds = 2.2) {
+    c.bubble = icon;
+    c.bubbleT = seconds;
+  }
+  private streetTile(): [number, number] {
+    return [Math.random() < 0.5 ? 0 : W - 1, SIDEWALK_Y];
+  }
+  private lobbyTile(): [number, number] {
+    return [pick(ENT_X), ENT_IN_Y - 1];
+  }
+
+  // ---- Stations ------------------------------------------------------------
+  private stationScore(it: Item) {
+    return it.queue.length + (it.serving ? 1 : 0) + (it.staffId ? 0 : 2.5);
+  }
+  private pickStation(goal: string): Item | null {
+    let best: Item | null = null;
+    let bestScore = 1e9;
+    for (const it of this.s.items) {
+      const st = ITEMS[it.type].station;
+      if (!st || st.goal !== goal || !this.world.usable(it)) continue;
+      const score = this.stationScore(it);
+      if (score < bestScore) {
+        bestScore = score;
+        best = it;
+      }
+    }
+    return best;
+  }
+
+  private serviceSeconds(base: number, st: Staff) {
+    let speed = 0.85 + st.skill * 0.05;
+    for (const t of st.traits) speed *= TRAIT_BY_ID[t]?.speed ?? 1;
+    if (st.energy < 15) speed *= 0.6;
+    return base / speed;
+  }
+
+  private updateStations(dt: number) {
+    for (const it of this.s.items) {
+      const def = ITEMS[it.type].station;
+      if (!def) continue;
+      const staff = this.staff(it.staffId);
+      if (it.staffId && (!staff || staff.post !== it.id)) it.staffId = 0;
+      const ready = !!staff && staff.state === 'atPost' && this.world.usable(it);
+      let g = this.guest(it.serving);
+      if (it.serving && (!g || g.station !== it.id || (g.state !== 'called' && g.state !== 'served'))) {
+        it.serving = 0;
+        g = undefined;
+      }
+      if (it.queue.some((id) => this.guest(id)?.station !== it.id))
+        it.queue = it.queue.filter((id) => this.guest(id)?.station === it.id);
+      // tired staff finish with their current guest, then stop calling new ones so they can get away
+      const wantsBreak = !!staff && staff.energy < 18 && !!this.findAccess('rest', staff.tx, staff.ty);
+      if (!it.serving && ready && !wantsBreak) {
+        for (const id of it.queue) {
+          const q = this.guest(id)!;
+          if (q.state === 'waiting' || q.state === 'toWait') {
+            this.callGuest(it, q);
+            break;
+          }
+        }
+      }
+      if (staff && ready) {
+        const serving = !!g && g.state === 'served';
+        staff.busy = serving;
+        if (serving) {
+          it.progress += dt / this.serviceSeconds(def.seconds, staff);
+          if (it.progress >= 1) this.completeService(it, g!, staff);
+        }
+      }
+    }
+  }
+
+  private callGuest(it: Item, g: Guest) {
+    it.queue = it.queue.filter((id) => id !== g.id);
+    it.serving = g.id;
+    it.progress = 0;
+    this.release(g);
+    const ai = this.accessIndex(it, 'guest');
+    const [ax, ay] = accessTile(it, ai);
+    g.state = 'called';
+    g.timer = 40;
+    if (!this.goTo(g, ax, ay, accessPose(it, ai))) {
+      it.serving = 0;
+      this.leave(g);
+    }
+  }
+
+  private completeService(it: Item, g: Guest, staff: Staff) {
+    const def = ITEMS[it.type].station!;
+    it.serving = 0;
+    it.progress = 0;
+    staff.busy = false;
+    staff.served++;
+    g.patience = Math.min(100, g.patience + 30);
+    if (def.goal === 'reception') {
+      g.goal = 'consult';
+      this.say(g, '📋');
+      this.emit({ type: 'sfx', name: 'blip' });
+    } else if (def.goal === 'consult') {
+      g.consults++;
+      g.diagnosis = clamp(g.diagnosis + 0.4 + staff.skill * 0.13 + rnd(0, 0.15), 0, 1);
+      this.earn(CONSULT_FEE, 'consult', g.x, g.y);
+      g.spent += CONSULT_FEE;
+      if (g.diagnosis >= DIAGNOSIS_TARGET || g.consults >= 3) {
+        g.goal = 'treat';
+        this.say(g, '💡');
+      } else {
+        this.say(g, '❓');
+        this.tipOnce(
+          'rediagnose',
+          'Some guests need a second consultation before the diagnosis is certain. A more skilled Consultant gets it right first time.',
+        );
+      }
+    } else {
+      const cond = CONDITION_BY_ID[g.condition];
+      const chance = clamp(
+        0.5 + staff.skill * 0.09 + Math.min(1, g.diagnosis) * 0.15 - cond.difficulty - (staff.energy < 15 ? 0.15 : 0),
+        0.3,
+        0.98,
+      );
+      g.goal = 'leave';
+      if (Math.random() < chance) {
+        g.outcome = 'healed';
+        this.s.stats.healed++;
+        this.earn(cond.fee, 'treatment', g.x, g.y);
+        g.spent += cond.fee;
+        this.changeRep(1.8 + g.patience / 100);
+        this.say(g, '💖', 6);
+        this.emit({ type: 'sfx', name: 'heal' });
+      } else {
+        g.outcome = 'failed';
+        this.s.stats.failed++;
+        this.changeRep(-2.5);
+        this.say(g, '💢', 6);
+        this.emit({ type: 'float', text: 'Still knotted!', x: g.x, y: g.y, kind: 'bad' });
+        this.emit({ type: 'sfx', name: 'fail' });
+        this.tipOnce(
+          'failed',
+          'A treatment failed, and that guest is not paying. Skilled, well-rested Therapists and a confident diagnosis improve the odds.',
+          'bad',
+        );
+      }
+    }
+    this.decide(g);
+  }
+
+  // ---- Guests --------------------------------------------------------------
+  private spawnGuest() {
+    const s = this.s;
+    const [x, y] = this.streetTile();
+    const g: Guest = {
+      ...this.baseChar(randomName(), randomLook(), x, y),
+      kind: 'guest',
+      condition: pick(CONDITIONS).id,
+      goal: 'reception',
+      state: 'enter',
+      station: 0,
+      needKind: '',
+      thirst: rnd(0, 45),
+      hunger: rnd(0, 40),
+      bladder: rnd(0, 40),
+      patience: 100,
+      diagnosis: 0,
+      consults: 0,
+      outcome: '',
+      spent: 0,
+      hasWrapper: false,
+      waited: 0,
+    };
+    const [lx, ly] = this.lobbyTile();
+    if (!this.goTo(g, lx, ly)) return;
+    s.guests.push(g);
+    s.stats.arrived++;
+  }
+
+  private removeFromStations(g: Guest) {
+    for (const it of this.s.items) {
+      if (it.serving === g.id) it.serving = 0;
+      if (it.queue.includes(g.id)) it.queue = it.queue.filter((id) => id !== g.id);
+    }
+    g.station = 0;
+  }
+
+  /** Put a guest back to square one of their current goal. */
+  private resetGuest(g: Guest) {
+    this.release(g);
+    this.removeFromStations(g);
+    this.halt(g);
+    this.decide(g);
+  }
+
+  private decide(g: Guest) {
+    if (g.goal === 'leave') return this.leave(g);
+    const st = this.pickStation(g.goal);
+    g.station = st ? st.id : 0;
+    if (st) st.queue.push(g.id);
+    this.goWait(g);
+  }
+
+  /** The n-th spot in the line in front of a reception desk. */
+  private queueTile(it: Item, n: number): [number, number] {
+    const ai = this.accessIndex(it, 'guest');
+    const [ax, ay] = accessTile(it, ai);
+    const face = ITEMS[it.type].access[ai].face;
+    const [dx, dy] = rotVec(it.rot, -face[0], -face[1]);
+    let x = ax;
+    let y = ay;
+    for (let i = 0; i <= n; i++) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (!inBuilding(nx, ny) || this.world.zone[tileIdx(nx, ny)] !== Z_CORRIDOR || this.world.blocked[tileIdx(nx, ny)]) {
+        const spots = this.world.standSpots(ax, ay, n + 6);
+        return spots[Math.min(spots.length - 1, n + 2)] ?? [ax, ay];
+      }
+      x = nx;
+      y = ny;
+    }
+    return [x, y];
+  }
+
+  private waitAnchor(g: Guest): [number, number] {
+    const st = this.world.item(g.station);
+    if (st) {
+      const room = this.world.roomOfItem(st);
+      if (room) return [room.door.x + room.door.dx, room.door.y + room.door.dy];
+      return accessTile(st, this.accessIndex(st, 'guest'));
+    }
+    return [ENT_X[0], ENT_IN_Y - 3];
+  }
+
+  private goWait(g: Guest) {
+    this.release(g);
+    g.state = 'toWait';
+    g.needKind = '';
+    const st = this.world.item(g.station);
+    let ok = false;
+    if (st && st.type === 'reception_desk') {
+      const [qx, qy] = this.queueTile(st, Math.max(0, st.queue.indexOf(g.id)));
+      ok = this.goTo(g, qx, qy);
+    } else {
+      const [ax, ay] = this.waitAnchor(g);
+      const seat = this.findAccess('seat', ax, ay, 11);
+      if (seat) {
+        this.claim(g, seat.item, seat.idx);
+        const [sx, sy] = accessTile(seat.item, seat.idx);
+        ok = this.goTo(g, sx, sy, accessPose(seat.item, seat.idx));
+        if (!ok) this.release(g);
+      }
+      if (!ok) {
+        const spots = this.world.standSpots(ax, ay, 14);
+        if (spots.length) {
+          const [sx, sy] = pick(spots);
+          ok = this.goTo(g, sx, sy);
+        }
+      }
+    }
+    if (!ok) {
+      this.halt(g);
+      g.state = 'waiting';
+    }
+  }
+
+  private tryNeed(g: Guest): boolean {
+    const kind = g.bladder > 75 ? 'toilet' : g.thirst > 70 ? 'drink' : g.hunger > 75 ? 'eat' : '';
+    if (!kind) return false;
+    const a = this.findAccess(kind, g.tx, g.ty);
+    if (!a) return false;
+    this.claim(g, a.item, a.idx);
+    const [ax, ay] = accessTile(a.item, a.idx);
+    if (!this.goTo(g, ax, ay, accessPose(a.item, a.idx))) {
+      this.release(g);
+      return false;
+    }
+    g.needKind = kind;
+    g.state = 'toNeed';
+    this.say(g, NEED_ICON[kind]);
+    return true;
+  }
+
+  private waitingThink(g: Guest) {
+    const st = this.world.item(g.station);
+    if (!st || !this.world.usable(st)) {
+      this.removeFromStations(g);
+      const ns = this.pickStation(g.goal);
+      if (ns) {
+        ns.queue.push(g.id);
+        g.station = ns.id;
+        return this.goWait(g);
+      }
+      if (g.goal !== 'leave' && g.goal !== 'reception')
+        this.tipOnce(`missing-${g.goal}`, `Guests are waiting for a ${GOAL_NAME[g.goal]}, but there isn't one.`, 'bad');
+    } else {
+      // hop to a clearly better queue if one has opened up
+      const better = this.pickStation(g.goal);
+      if (better && better !== st && this.stationScore(better) + 2 < this.stationScore(st) - 1) {
+        this.removeFromStations(g);
+        better.queue.push(g.id);
+        g.station = better.id;
+        return this.goWait(g);
+      }
+    }
+    if (this.tryNeed(g)) return;
+
+    if (g.hasWrapper && Math.random() < 0.2) {
+      g.hasWrapper = false;
+      const nearBin = this.s.items.some((i) => i.type === 'bin' && Math.hypot(i.x - g.tx, i.y - g.ty) < 7);
+      const clear = !this.s.litter.some((l) => l.x === g.tx && l.y === g.ty);
+      if (clear && Math.random() < (nearBin ? 0.12 : 0.9))
+        this.s.litter.push({ id: this.s.nextId++, x: g.tx, y: g.ty, claimedBy: 0 });
+    }
+
+    if (st && st.type === 'reception_desk') {
+      const [qx, qy] = this.queueTile(st, Math.max(0, st.queue.indexOf(g.id)));
+      if (qx !== g.tx || qy !== g.ty) {
+        if (this.goTo(g, qx, qy)) g.state = 'toWait';
+      }
+    } else if (!g.claimItem) {
+      const [ax, ay] = this.waitAnchor(g);
+      if (this.findAccess('seat', ax, ay, 11)) this.goWait(g);
+    }
+  }
+
+  private updateGuest(g: Guest, dt: number) {
+    g.thirst = Math.min(100, g.thirst + dt * 0.5);
+    g.hunger = Math.min(100, g.hunger + dt * 0.36);
+    g.bladder = Math.min(100, g.bladder + dt * 0.42);
+    if (g.bubbleT > 0) g.bubbleT -= dt;
+    const stiff = g.outcome !== 'healed' && CONDITION_BY_ID[g.condition].visual === 'stiff';
+    const arrived = this.move(g, dt, stiff ? 1.75 : 2.1);
+
+    const waiting = g.state === 'toWait' || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
+    if (waiting) {
+      let drain = 0.85 * this.ambience;
+      if (g.pose === 'sit') drain *= 0.6;
+      if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
+      g.patience -= drain * dt;
+      g.waited += dt;
+      if (g.patience <= 0) return this.stormOut(g);
+    }
+
+    switch (g.state) {
+      case 'enter':
+        if (arrived) this.decide(g);
+        break;
+      case 'toWait':
+        if (arrived || !g.path) {
+          g.state = 'waiting';
+          g.timer = rnd(0.3, 1);
+          const st = this.world.item(g.station);
+          if (st && g.pose === 'stand') {
+            const [cx, cy] = itemCenter(st);
+            g.facing = Math.atan2(cx - g.x, cy - g.y);
+          }
+        }
+        break;
+      case 'waiting':
+        g.timer -= dt;
+        if (g.timer <= 0) {
+          g.timer = 0.8;
+          this.waitingThink(g);
+        }
+        break;
+      case 'called':
+        g.timer -= dt;
+        if (arrived) g.state = 'served';
+        else if (g.timer <= 0 || !g.path) this.resetGuest(g);
+        break;
+      case 'served':
+        break;
+      case 'toNeed':
+        if (arrived) {
+          g.state = 'need';
+          g.timer = g.needKind === 'toilet' ? 3.5 : 2.2;
+          g.busy = g.needKind !== 'toilet';
+        } else if (!g.path) this.goWait(g);
+        break;
+      case 'need':
+        g.timer -= dt;
+        if (g.timer <= 0) {
+          if (g.needKind === 'drink') {
+            g.thirst = 0;
+            g.bladder = Math.min(100, g.bladder + 22);
+            this.earn(15, 'vending', g.x, g.y);
+          } else if (g.needKind === 'eat') {
+            g.hunger = 0;
+            g.hasWrapper = true;
+            this.earn(25, 'vending', g.x, g.y);
+          } else {
+            g.bladder = 0;
+          }
+          g.patience = Math.min(100, g.patience + 8);
+          this.goWait(g);
+        }
+        break;
+      case 'leaving':
+        if (arrived || !g.path) this.s.guests = this.s.guests.filter((x) => x !== g);
+        break;
+    }
+  }
+
+  private stormOut(g: Guest) {
+    g.outcome = 'stormed';
+    this.s.stats.stormed++;
+    this.changeRep(-3);
+    this.say(g, '😤', 8);
+    this.emit({ type: 'float', text: 'Fed up!', x: g.x, y: g.y, kind: 'bad' });
+    this.tipOnce(
+      'stormed',
+      'A guest ran out of patience and left. Benches, tea, plants and shorter queues all help.',
+      'bad',
+    );
+    this.leave(g);
+  }
+
+  private leave(g: Guest) {
+    this.release(g);
+    this.removeFromStations(g);
+    g.goal = 'leave';
+    g.state = 'leaving';
+    const [x, y] = this.streetTile();
+    if (!this.goTo(g, x, y)) this.s.guests = this.s.guests.filter((q) => q !== g);
+  }
+
+  // ---- Staff ---------------------------------------------------------------
+  hire(candidateId: number): Staff | null {
+    const s = this.s;
+    const c = s.candidates.find((x) => x.id === candidateId);
+    if (!c) return null;
+    const [x, y] = this.streetTile();
+    const st: Staff = {
+      ...this.baseChar(c.name, c.look, x, y),
+      kind: 'staff',
+      role: c.role,
+      skill: c.skill,
+      salary: c.salary,
+      traits: c.traits,
+      energy: 100,
+      state: 'arriving',
+      post: 0,
+      job: null,
+      served: 0,
+    };
+    const [lx, ly] = this.lobbyTile();
+    if (!this.goTo(st, lx, ly)) return null;
+    s.staff.push(st);
+    s.candidates = s.candidates.filter((x) => x !== c);
+    s.candidates.push(makeCandidate(s, c.role));
+    this.emit({ type: 'sfx', name: 'hire' });
+    this.toast(`${c.name} joins as a ${ROLES[c.role].name}.`, 'good');
+    return st;
+  }
+
+  fire(id: number) {
+    const st = this.staff(id);
+    if (!st || st.state === 'leaving') return;
+    this.staffIdle(st);
+    st.state = 'leaving';
+    this.say(st, '📦', 6);
+    const [x, y] = this.streetTile();
+    if (!this.goTo(st, x, y)) this.s.staff = this.s.staff.filter((q) => q !== st);
+    this.toast(`${st.name} has been let go.`, 'info');
+  }
+
+  private leavePost(st: Staff) {
+    const it = this.world.item(st.post);
+    if (it && it.staffId === st.id) it.staffId = 0;
+    st.post = 0;
+    st.busy = false;
+  }
+  private dropJob(st: Staff) {
+    if (!st.job) return;
+    if (st.job.kind === 'litter') {
+      const l = this.s.litter.find((x) => x.id === st.job!.id);
+      if (l && l.claimedBy === st.id) l.claimedBy = 0;
+    } else {
+      const p = this.world.item(st.job.id);
+      if (p && p.claimedBy === st.id) p.claimedBy = 0;
+    }
+    st.job = null;
+  }
+  private staffIdle(st: Staff) {
+    this.leavePost(st);
+    this.release(st);
+    this.dropJob(st);
+    this.halt(st);
+    st.state = 'idle';
+    st.timer = 0.2;
+  }
+
+  private tryBreak(st: Staff): boolean {
+    const sofa = this.findAccess('rest', st.tx, st.ty);
+    if (!sofa) return false;
+    this.leavePost(st);
+    this.dropJob(st);
+    this.claim(st, sofa.item, sofa.idx);
+    const [x, y] = accessTile(sofa.item, sofa.idx);
+    if (!this.goTo(st, x, y, accessPose(sofa.item, sofa.idx))) {
+      this.release(st);
+      return false;
+    }
+    st.state = 'toBreak';
+    this.say(st, '😴');
+    return true;
+  }
+
+  private findWork(st: Staff) {
+    if (st.energy < 18 && this.tryBreak(st)) return;
+    const s = this.s;
+    if (st.role === 'caretaker') {
+      let best: { kind: 'litter' | 'water'; id: number; x: number; y: number } | null = null;
+      let bestD = 1e9;
+      for (const l of s.litter) {
+        if (l.claimedBy) continue;
+        const d = Math.hypot(l.x - st.tx, l.y - st.ty);
+        if (d < bestD) {
+          bestD = d;
+          best = { kind: 'litter', id: l.id, x: l.x, y: l.y };
+        }
+      }
+      if (!best) {
+        for (const p of s.items) {
+          if (p.type !== 'plant' || p.claimedBy || p.water > 40) continue;
+          const d = Math.hypot(p.x - st.tx, p.y - st.ty);
+          if (d < bestD) {
+            bestD = d;
+            best = { kind: 'water', id: p.id, x: p.x, y: p.y };
+          }
+        }
+      }
+      if (best) {
+        let ok = false;
+        if (best.kind === 'litter') ok = this.goTo(st, best.x, best.y);
+        else {
+          for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) {
+            if (this.world.walkable(best.x + dx, best.y + dy) && this.goTo(st, best.x + dx, best.y + dy)) {
+              ok = true;
+              break;
+            }
+          }
+        }
+        if (ok) {
+          st.job = { kind: best.kind, id: best.id };
+          if (best.kind === 'litter') s.litter.find((l) => l.id === best!.id)!.claimedBy = st.id;
+          else this.world.item(best.id)!.claimedBy = st.id;
+          st.state = 'toJob';
+          return;
+        }
+      }
+    } else {
+      let best: Item | null = null;
+      let bestScore = -1e9;
+      for (const it of s.items) {
+        const def = ITEMS[it.type].station;
+        if (!def || def.staff !== st.role || it.staffId || !this.world.usable(it)) continue;
+        const score = it.queue.length * 10 - Math.hypot(it.x - st.tx, it.y - st.ty);
+        if (score > bestScore) {
+          bestScore = score;
+          best = it;
+        }
+      }
+      if (best) {
+        const ai = this.accessIndex(best, 'staff');
+        const [x, y] = accessTile(best, ai);
+        if (this.goTo(st, x, y, accessPose(best, ai))) {
+          best.staffId = st.id;
+          st.post = best.id;
+          st.state = 'toPost';
+          return;
+        }
+      }
+    }
+    // nothing to do: amble about
+    if (st.state === 'idle' && Math.random() < 0.25) {
+      const spots = this.world.standSpots(st.tx, st.ty, 40);
+      if (spots.length) {
+        const [x, y] = pick(spots);
+        if (this.goTo(st, x, y)) st.state = 'wander';
+      }
+    }
+  }
+
+  private updateStaff(st: Staff, dt: number) {
+    if (st.bubbleT > 0) st.bubbleT -= dt;
+    let walk = 2.3;
+    let stamina = 1;
+    for (const t of st.traits) {
+      walk *= TRAIT_BY_ID[t]?.walk ?? 1;
+      stamina *= TRAIT_BY_ID[t]?.stamina ?? 1;
+    }
+    if (st.energy < 15) walk *= 0.75;
+    const arrived = this.move(st, dt, walk);
+
+    if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * 9);
+    else if (st.state !== 'leaving') {
+      const rate = st.busy ? 0.42 : st.state === 'atPost' ? 0.14 : 0.2;
+      st.energy = Math.max(0, st.energy - rate * stamina * dt);
+    }
+
+    switch (st.state) {
+      case 'arriving':
+        if (arrived || !st.path) {
+          st.state = 'idle';
+          st.timer = 0;
+        }
+        break;
+      case 'idle':
+      case 'wander':
+        if (st.state === 'wander' && (arrived || !st.path)) st.state = 'idle';
+        st.timer -= dt;
+        if (st.timer <= 0) {
+          st.timer = 0.7;
+          this.findWork(st);
+        }
+        break;
+      case 'toPost': {
+        const it = this.world.item(st.post);
+        if (!it || it.staffId !== st.id) this.staffIdle(st);
+        else if (arrived) st.state = 'atPost';
+        else if (!st.path) this.staffIdle(st);
+        break;
+      }
+      case 'atPost': {
+        const it = this.world.item(st.post);
+        if (!it || it.staffId !== st.id || !this.world.usable(it)) this.staffIdle(st);
+        else if (st.energy < 18 && !it.serving) {
+          st.timer -= dt;
+          if (st.timer <= 0) {
+            st.timer = 2;
+            if (!this.tryBreak(st))
+              this.tipOnce('tired', 'Tired staff work slowly and botch treatments. Build a Staff Room so they can rest.', 'bad');
+          }
+        }
+        break;
+      }
+      case 'toBreak':
+        if (arrived) st.state = 'onBreak';
+        else if (!st.path) this.staffIdle(st);
+        break;
+      case 'onBreak':
+        if (st.energy >= 100 || !st.claimItem) this.staffIdle(st);
+        break;
+      case 'toJob':
+        if (arrived) {
+          st.state = 'doingJob';
+          st.timer = 1.6;
+          st.busy = true;
+          if (st.job?.kind === 'water') {
+            const p = this.world.item(st.job.id);
+            if (p) st.facing = Math.atan2(p.x + 0.5 - st.x, p.y + 0.5 - st.y);
+          }
+        } else if (!st.path) this.staffIdle(st);
+        break;
+      case 'doingJob':
+        st.timer -= dt;
+        if (st.timer <= 0) {
+          if (st.job?.kind === 'litter') this.s.litter = this.s.litter.filter((l) => l.id !== st.job!.id);
+          else if (st.job) {
+            const p = this.world.item(st.job.id);
+            if (p) {
+              p.water = 100;
+              p.claimedBy = 0;
+            }
+          }
+          st.job = null;
+          this.staffIdle(st);
+        }
+        break;
+      case 'leaving':
+        if (arrived || !st.path) this.s.staff = this.s.staff.filter((x) => x !== st);
+        break;
+    }
+  }
+
+  // ---- Building ------------------------------------------------------------
+  private worldChanged() {
+    this.world.rebuild();
+    this.repathAll();
+  }
+
+  placeItem(type: ItemType, x: number, y: number, rot: number, opts: { free?: boolean; roomId?: number } = {}): Item | null {
+    const def = ITEMS[type];
+    if (!this.world.canPlaceItem(type, x, y, rot, opts.roomId).ok) return null;
+    if (!opts.free && this.s.money < def.cost) {
+      this.toast(`Not enough money for a ${def.name}.`, 'bad');
+      this.emit({ type: 'sfx', name: 'error' });
+      return null;
+    }
+    const it: Item = {
+      id: this.s.nextId++,
+      type,
+      x,
+      y,
+      rot,
+      users: def.access.map(() => 0),
+      queue: [],
+      serving: 0,
+      staffId: 0,
+      progress: 0,
+      water: 100,
+      claimedBy: 0,
+    };
+    this.s.items.push(it);
+    if (!opts.free) this.spend(def.cost, 'building');
+    this.worldChanged();
+    this.emit({ type: 'sfx', name: 'place' });
+    return it;
+  }
+
+  createRoom(type: RoomType, r: Rect, door: Room['door']): Room {
+    const room: Room = { id: this.s.nextId++, type, x: r.x, y: r.y, w: r.w, h: r.h, door, done: false };
+    this.s.rooms.push(room);
+    this.worldChanged();
+    this.emit({ type: 'sfx', name: 'place' });
+    return room;
+  }
+
+  finishRoom(room: Room) {
+    room.done = true;
+    this.spend(ROOMS[room.type].cost, 'building');
+    this.world.version++;
+    this.toast(`${ROOMS[room.type].name} built!`, 'good');
+    this.emit({ type: 'sfx', name: 'build' });
+  }
+
+  private itemsInRoom(room: Room) {
+    return this.s.items.filter((it) => this.world.zoneAt(it.x, it.y) === room.id);
+  }
+
+  /** Remove items and patch up anyone who was using them. */
+  private removeItems(gone: Item[]) {
+    const ids = new Set(gone.map((i) => i.id));
+    const guests = this.s.guests.filter((g) => ids.has(g.claimItem) || ids.has(g.station));
+    const staff = this.s.staff.filter(
+      (st) => ids.has(st.post) || ids.has(st.claimItem) || (st.job?.kind === 'water' && ids.has(st.job.id)),
+    );
+    this.s.items = this.s.items.filter((i) => !ids.has(i.id));
+    this.world.rebuild();
+    for (const g of guests) {
+      g.claimItem = 0;
+      this.resetGuest(g);
+    }
+    for (const st of staff) {
+      st.claimItem = 0;
+      if (st.job?.kind === 'water') st.job = null;
+      if (st.state !== 'leaving') this.staffIdle(st);
+    }
+    this.repathAll();
+  }
+
+  /** Remove a room. `refund` is the fraction of its cost returned (0 while still a blueprint). */
+  removeRoom(roomId: number, refund: number) {
+    const room = this.world.room(roomId);
+    if (!room) return;
+    const items = this.itemsInRoom(room);
+    let back = room.done ? ROOMS[room.type].cost * refund : 0;
+    for (const it of items) back += ITEMS[it.type].cost * refund;
+    this.s.rooms = this.s.rooms.filter((r) => r !== room);
+    this.removeItems(items);
+    if (back > 0) {
+      this.s.money += back;
+      this.s.ledger.building -= back;
+      this.toast(`${ROOMS[room.type].name} demolished. ${money(back)} recovered.`, 'info');
+      this.emit({ type: 'sfx', name: 'sell' });
+    }
+  }
+
+  canSell(it: Item): boolean {
+    const room = this.world.roomOfItem(it);
+    if (!room) return true;
+    const def = ROOMS[room.type];
+    if (!def.required.includes(it.type)) return true;
+    return this.itemsInRoom(room).filter((o) => o.type === it.type).length > 1;
+  }
+
+  sellItem(id: number) {
+    const it = this.world.item(id);
+    if (!it || !this.canSell(it)) return;
+    const back = Math.round(ITEMS[it.type].cost * 0.5);
+    this.removeItems([it]);
+    this.s.money += back;
+    this.s.ledger.building -= back;
+    this.emit({ type: 'sfx', name: 'sell' });
+    const [cx, cy] = itemCenter(it);
+    if (back > 0) this.emit({ type: 'float', text: `+${money(back)}`, x: cx, y: cy, kind: 'good' });
+  }
+
+  /** Tiles a blueprint's footprint covers, for the build overlay. */
+  footprintOf(type: ItemType, x: number, y: number, rot: number) {
+    return footprint({ type, x, y, rot });
+  }
+}
+
+export function netOf(l: Ledger) {
+  return l.consult + l.treatment + l.vending - l.salaries - l.building;
+}

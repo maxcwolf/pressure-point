@@ -1,0 +1,57 @@
+{
+  "name": "pressure-point",
+  "productName": "Pressure Point",
+  "version": "0.1.0",
+  "description": "A healing-centre management sim. Knead, heal, profit.",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview",
+    "app": "yarn build && electron .",
+    "dist:mac": "yarn build && electron-builder --mac",
+    "dist:win": "yarn build && electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.maxwolf.pressurepoint",
+    "productName": "Pressure Point",
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "category": "public.app-category.simulation-games",
+      "target": [
+        "dmg"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
+  },
+  "packageManager": "yarn@4.18.1+sha512.b2e1e7524f654f2749d32b4ebcb4622473cb5bcbc485df2007e12a154e50162a4d795526768bc5f5b8f81717bfd79deb2472813d86fb5ae2eb551fa9c872b08f",
+  "dependencies": {
+    "@fontsource/fredoka": "^5.3.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "electron": "^44.7.0",
+    "electron-builder": "26.15.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  },
+  "dependenciesMeta": {
+    "electron": {
+      "built": true
+    }
+  }
+}

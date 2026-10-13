@@ -1,0 +1,158 @@
+import '@fontsource/fredoka/latin-400.css';
+import '@fontsource/fredoka/latin-500.css';
+import '@fontsource/fredoka/latin-600.css';
+import '@fontsource/fredoka/latin-700.css';
+import './style.css';
+import { Audio } from './audio';
+import { View } from './render/view';
+import { Sim } from './sim';
+import { clearSave, loadGame, newGame, saveGame, type GameState } from './state';
+import { Tools } from './tools';
+import { UI, showTitle } from './ui/ui';
+
+const canvas = document.getElementById('game') as HTMLCanvasElement;
+const audio = new Audio();
+
+async function boot() {
+  // the lawn sign and welcome mat are drawn to canvas, so the font has to be ready first
+  await Promise.all([document.fonts.load('700 20px Fredoka'), document.fonts.load('500 20px Fredoka')]).catch(() => {});
+  const saved = loadGame();
+  const choice = await showTitle(!!saved);
+  audio.unlock();
+  if (choice === 'new') clearSave();
+  start(choice === 'continue' && saved ? saved : newGame());
+}
+
+function start(state: GameState) {
+  const sim = new Sim(state);
+  // a room still being laid out when the game was last closed never got paid for
+  for (const r of [...state.rooms]) if (!r.done) sim.removeRoom(r.id, 0);
+
+  const view = new View(canvas, sim);
+  let uiDirty = true;
+  const tools = new Tools(sim, view, () => (uiDirty = true), (name) => audio.play(name));
+  const save = () => {
+    if (!(tools.tool.kind === 'room' && tools.tool.phase === 'items')) saveGame(state);
+  };
+  const ui = new UI({
+    sim,
+    tools,
+    view,
+    audio,
+    save,
+    newGame: () => {
+      clearSave();
+      window.removeEventListener('beforeunload', save);
+      location.reload();
+    },
+  });
+
+  // ---- Pointer input -------------------------------------------------------
+  const DRAG_PX = 6;
+  let down: { x: number; y: number; button: number; moved: boolean } | null = null;
+  let last = { x: 0, y: 0 };
+  const draggingRoom = () => tools.tool.kind === 'room' && tools.tool.phase === 'drag';
+
+  canvas.addEventListener('pointerdown', (e) => {
+    audio.unlock();
+    canvas.setPointerCapture(e.pointerId);
+    down = { x: e.clientX, y: e.clientY, button: e.button, moved: false };
+    last = { x: e.clientX, y: e.clientY };
+    if (e.button === 0) {
+      ui.closeMenu();
+      tools.pointerDown(e.clientX, e.clientY);
+    }
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (down) {
+      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > DRAG_PX) down.moved = true;
+      // with no tool in hand a left drag moves the camera, as do right and middle drags
+      const pans = down.button !== 0 || (!tools.active && down.moved);
+      if (pans && down.moved) view.panPixels(e.clientX - last.x, e.clientY - last.y);
+    }
+    last = { x: e.clientX, y: e.clientY };
+    tools.pointerMove(e.clientX, e.clientY);
+  });
+  canvas.addEventListener('pointerup', (e) => {
+    const d = down;
+    down = null;
+    if (!d) return;
+    if (d.button === 0) {
+      if (tools.active ? !d.moved || draggingRoom() : !d.moved) tools.pointerUp(e.clientX, e.clientY);
+    } else if (d.button === 2 && !d.moved) {
+      if (tools.active) tools.cancel();
+      else tools.select(null);
+    }
+  });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  canvas.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      view.zoom(Math.max(-0.25, Math.min(0.25, e.deltaY * 0.0015)));
+    },
+    { passive: false },
+  );
+
+  // ---- Keyboard ------------------------------------------------------------
+  const keys = new Set<string>();
+  window.addEventListener('keydown', (e) => {
+    if (ui.blocking) return;
+    const k = e.key.toLowerCase();
+    keys.add(k);
+    if (k === 'escape') {
+      if (tools.active) tools.cancel();
+      else if (!ui.closeMenu()) tools.select(null);
+    } else if (k === 'r') tools.rotate();
+    else if (k === ' ') {
+      e.preventDefault();
+      state.speed = state.speed === 0 ? 1 : 0;
+    } else if (k === '1' || k === '2' || k === '3') state.speed = Number(k);
+    uiDirty = true;
+  });
+  window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
+  window.addEventListener('blur', () => keys.clear());
+
+  // ---- Main loop -----------------------------------------------------------
+  let prev = performance.now();
+  let uiT = 0;
+  let saveT = 0;
+  const frame = (now: number) => {
+    const dt = Math.min(0.1, (now - prev) / 1000);
+    prev = now;
+
+    if (!ui.blocking) {
+      const pan = dt * view.dist * 0.55;
+      if (keys.has('w') || keys.has('arrowup')) view.pan(0, pan);
+      if (keys.has('s') || keys.has('arrowdown')) view.pan(0, -pan);
+      if (keys.has('a') || keys.has('arrowleft')) view.pan(-pan, 0);
+      if (keys.has('d') || keys.has('arrowright')) view.pan(pan, 0);
+    }
+
+    sim.tick(dt);
+    view.render(dt);
+    const events = sim.drain();
+    if (events.length) {
+      ui.handle(events);
+      uiDirty = true;
+    }
+    uiT += dt;
+    if (uiDirty || uiT > 0.2) {
+      uiT = 0;
+      uiDirty = false;
+      ui.update();
+    }
+    saveT += dt;
+    if (saveT > 12) {
+      saveT = 0;
+      save();
+    }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+  window.addEventListener('beforeunload', save);
+
+  if (import.meta.env.DEV) Object.assign(window, { pp: { sim, view, tools, ui, state } });
+}
+
+void boot();
