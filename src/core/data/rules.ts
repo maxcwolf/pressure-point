@@ -36,7 +36,7 @@ export const WEAR_REPAIR = 50;
 export const DECOR_RADIUS = 4;
 export const DIAGNOSIS_TARGET = 0.75;
 
-export const STAR_GOALS: StarGoal[] = [
+export const STAR_GOALS: readonly StarGoal[] = [
   { healed: 8, reputation: 40, balance: 0 },
   { healed: 30, reputation: 60, balance: 50000 },
   { healed: 80, reputation: 80, balance: 120000 },

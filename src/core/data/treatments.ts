@@ -2,7 +2,7 @@
 
 import { type Discipline, type DisciplineDef, type Modality, type ModalityDef } from './types';
 
-export const MODALITIES: Record<Modality, ModalityDef> = {
+export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
   swedish: {
     id: 'swedish',
     discipline: 'massage',
@@ -127,7 +127,7 @@ export const MODALITIES: Record<Modality, ModalityDef> = {
   },
 };
 
-export const MODALITY_ORDER: Modality[] = [
+export const MODALITY_ORDER: readonly Modality[] = [
   'swedish',
   'deep',
   'sports',
@@ -139,7 +139,7 @@ export const MODALITY_ORDER: Modality[] = [
   'electro',
 ];
 
-export const DISCIPLINES: Record<Discipline, DisciplineDef> = {
+export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
   massage: {
     id: 'massage',
     name: 'Massage therapy',
@@ -162,7 +162,7 @@ export const DISCIPLINES: Record<Discipline, DisciplineDef> = {
   },
 };
 
-export const DISCIPLINE_ORDER: Discipline[] = ['massage', 'acupuncture'];
+export const DISCIPLINE_ORDER: readonly Discipline[] = ['massage', 'acupuncture'];
 
 /** Planned disciplines, listed in Settings so it is clear they are on the way. */
 export const COMING_SOON = [{ name: 'Reiki', icon: '✨' }];

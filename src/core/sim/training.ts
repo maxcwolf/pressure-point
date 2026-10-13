@@ -1,13 +1,13 @@
 // Courses staff can take in a Training Room.
 
-import { DAY_SECONDS, MODALITIES, type Modality, MODALITY_ORDER, modalityLabel, ROLES } from '../data';
-import { type Staff } from '../state/types';
+import { DAY_SECONDS, MODALITIES, MODALITY_ORDER, modalityLabel, ROLES } from '../data';
+import { type CourseId, type Staff } from '../state/types';
 import { accessPose, accessTile } from '../world';
 import { System } from './system';
 
 /** Something a member of staff can study in a Training Room. */
 export interface Course {
-  id: string;
+  id: CourseId;
   name: string;
   icon: string;
   desc: string;
@@ -90,7 +90,7 @@ export class Training extends System {
       st.skill = Math.min(5, st.skill + 1);
       what = `reached skill level ${st.skill}`;
     } else {
-      const m = t.course as Modality;
+      const m = t.course;
       if (!st.quals.includes(m)) st.quals.push(m);
       what = `is now qualified in ${modalityLabel(m)}`;
     }

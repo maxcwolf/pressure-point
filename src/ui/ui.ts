@@ -34,8 +34,9 @@ import {
 } from '../core/data';
 import { dateOf, money } from '../core/format';
 import { netOf } from '../core/sim/economy';
-import { type SimEvent } from '../core/sim/events';
+import type { SimEvent, Tone } from '../core/sim/events';
 import { type Sim } from '../core/sim/sim';
+import type { CourseId } from '../core/state/types';
 import { type Guest, type Item, type Ledger, type Room, type Staff } from '../core/state/types';
 import { type View } from '../render/view';
 import { gameDate, latestSave } from '../saves';
@@ -146,14 +147,14 @@ function staffStatus(st: Staff, sim: Sim): string {
     case 'toTrain':
       return 'Heading to the Training Room';
     case 'training':
-      return `Studying: ${courseName(st.training?.course ?? '')}`;
+      return `Studying: ${st.training ? courseName(st.training.course) : ''}`;
     case 'leaving':
       return 'Leaving for good';
   }
 }
 
-function courseName(id: string) {
-  return id === 'skill' ? 'professional development' : id in MODALITIES ? modalityLabel(id as Modality) : id;
+function courseName(id: CourseId) {
+  return id === 'skill' ? 'professional development' : modalityLabel(id);
 }
 
 export class UI {
@@ -765,7 +766,7 @@ export class UI {
     }
   }
 
-  toast(text: string, kind: 'good' | 'bad' | 'info' = 'info') {
+  toast(text: string, kind: Tone = 'info') {
     const box = byId('toasts');
     const el = document.createElement('div');
     el.className = `toast ${kind}`;

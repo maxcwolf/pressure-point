@@ -2,10 +2,17 @@
 
 import { System } from './system';
 
+/** Whether a message is good news, bad news or neither. */
+export type Tone = 'good' | 'bad' | 'info';
+
+/** The sound effects the game can ask for. */
+export type SfxName =
+  'blip' | 'place' | 'error' | 'cash' | 'sell' | 'hire' | 'build' | 'heal' | 'fail' | 'payday' | 'announce' | 'fanfare';
+
 export type SimEvent =
-  | { type: 'float'; text: string; x: number; y: number; kind: 'good' | 'bad' | 'info' }
-  | { type: 'toast'; text: string; kind: 'good' | 'bad' | 'info' }
-  | { type: 'sfx'; name: string }
+  | { type: 'float'; text: string; x: number; y: number; kind: Tone }
+  | { type: 'toast'; text: string; kind: Tone }
+  | { type: 'sfx'; name: SfxName }
   | { type: 'announce'; text: string }
   | { type: 'star'; stars: number };
 
@@ -22,11 +29,11 @@ export class Events extends System {
     return e;
   }
 
-  toast(text: string, kind: 'good' | 'bad' | 'info' = 'info') {
+  toast(text: string, kind: Tone = 'info') {
     this.emit({ type: 'toast', text, kind });
   }
 
-  tipOnce(id: string, text: string, kind: 'good' | 'bad' | 'info' = 'info') {
+  tipOnce(id: string, text: string, kind: Tone = 'info') {
     if (this.s.seenTips.includes(id)) return;
     this.s.seenTips.push(id);
     this.toast(text, kind);

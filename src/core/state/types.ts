@@ -1,6 +1,15 @@
 // The shape of a game in progress. Everything here is plain JSON, so saving is a stringify away.
 
-import { type Discipline, type ItemType, type Modality, type Pose, type Role, type RoomType } from '../data';
+import {
+  type ConditionId,
+  type Discipline,
+  type ItemType,
+  type Modality,
+  type Pose,
+  type Role,
+  type RoomType,
+  type TraitId,
+} from '../data';
 
 export interface Room {
   id: number;
@@ -102,17 +111,17 @@ export interface Staff extends CharBase {
   role: Role;
   skill: number;
   salary: number;
-  traits: string[];
+  traits: TraitId[];
   energy: number;
   state: StaffState;
   /** Station item this staff member is assigned to. */
   post: number;
-  job: { kind: 'litter' | 'water' | 'repair'; id: number } | null;
+  job: Job | null;
   served: number;
   /** Modalities of their discipline this member of staff is qualified in. */
   quals: Modality[];
-  /** Course in progress: a modality id, or 'skill'. */
-  training: { course: string; progress: number; seconds: number; cost: number } | null;
+  /** The course they are on, if any. */
+  training: Enrollment | null;
   /** Energy-drain multiplier of the session in progress. */
   strain: number;
   /** 0 to 100. Low morale means slow work, then a demand for a raise, then a resignation. */
@@ -122,22 +131,46 @@ export interface Staff extends CharBase {
   unhappyT: number;
 }
 
+/** A chore for a Janitor: the litter or item to see to. */
+export interface Job {
+  kind: 'litter' | 'water' | 'repair';
+  id: number;
+}
+
+/** Something staff can study: a modality, or a general step up in skill. */
+export type CourseId = Modality | 'skill';
+
+/** A course in progress. The fee is kept so it can be refunded if the course is cut short. */
+export interface Enrollment {
+  course: CourseId;
+  progress: number;
+  seconds: number;
+  cost: number;
+}
+
+/** The step of a visit a guest is on. */
+export type GuestGoal = 'reception' | 'consult' | 'assess' | 'treat' | 'leave';
+/** Something a guest breaks off waiting to see to. */
+export type Need = 'drink' | 'eat' | 'toilet';
+/** How a guest's visit ended. */
+export type Outcome = 'healed' | 'failed' | 'stormed';
+
 export type GuestState = 'enter' | 'toWait' | 'waiting' | 'called' | 'served' | 'toNeed' | 'need' | 'leaving';
 
 export interface Guest extends CharBase {
   kind: 'guest';
-  condition: string;
-  goal: 'reception' | 'consult' | 'assess' | 'treat' | 'leave';
+  condition: ConditionId;
+  goal: GuestGoal;
   state: GuestState;
   station: number;
-  needKind: '' | 'drink' | 'eat' | 'toilet';
+  needKind: Need | '';
   thirst: number;
   hunger: number;
   bladder: number;
   patience: number;
   diagnosis: number;
   consults: number;
-  outcome: '' | 'healed' | 'failed' | 'stormed';
+  outcome: Outcome | '';
   spent: number;
   hasWrapper: boolean;
   waited: number;
@@ -166,7 +199,7 @@ export interface Candidate {
   role: Role;
   skill: number;
   salary: number;
-  traits: string[];
+  traits: TraitId[];
   quals: Modality[];
   look: Look;
 }
@@ -185,7 +218,7 @@ export interface Ledger {
 
 /** A batch of guests with one condition, to be healed against the clock for a reward. */
 export interface Emergency {
-  condition: string;
+  condition: ConditionId;
   cause: string;
   total: number;
   target: number;
@@ -195,6 +228,14 @@ export interface Emergency {
   reward: number;
   /** Game day the offer lapses, or the accepted emergency ends. */
   deadline: number;
+}
+
+/** Running totals of how guests' visits have gone. */
+export interface Stats {
+  healed: number;
+  failed: number;
+  stormed: number;
+  arrived: number;
 }
 
 export interface GameState {
@@ -215,7 +256,7 @@ export interface GameState {
   ledger: Ledger;
   lastLedger: Ledger;
   history: number[];
-  stats: { healed: number; failed: number; stormed: number; arrived: number };
+  stats: Stats;
   stars: number;
   spawnT: number;
   announceT: number;

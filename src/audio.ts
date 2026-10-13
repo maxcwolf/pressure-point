@@ -1,11 +1,12 @@
 // Tiny synthesized sound effects and a generative lounge loop. No audio files needed.
 
+import type { SfxName } from './core/sim/events';
 import { at } from './core/util';
 import { isRecord } from './util';
 
 type Note = [freq: number, start: number, dur: number, gain?: number, type?: OscillatorType];
 
-const SFX: Record<string, Note[]> = {
+const SFX: Record<SfxName, Note[]> = {
   blip: [[660, 0, 0.06, 0.12, 'triangle']],
   place: [
     [220, 0, 0.09, 0.2, 'sine'],
@@ -151,12 +152,10 @@ export class Audio {
     osc.stop(at + dur + 0.05);
   }
 
-  play(name: string) {
+  play(name: SfxName) {
     if (!this.ctx || !this.sound) return;
-    const notes = SFX[name];
-    if (!notes) return;
     const now = this.ctx.currentTime;
-    for (const [f, start, dur, gain = 0.12, type = 'triangle'] of notes)
+    for (const [f, start, dur, gain = 0.12, type = 'triangle'] of SFX[name])
       this.tone(this.master, f, now + start, dur, gain, type);
   }
 

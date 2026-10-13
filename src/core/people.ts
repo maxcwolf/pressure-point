@@ -12,6 +12,7 @@ import {
   type Role,
   ROLE_ORDER,
   ROLES,
+  type TraitId,
   traitOf,
   TRAITS,
 } from './data';
@@ -45,7 +46,7 @@ export const randomName = () =>
 
 export function makeCandidate(s: GameState, role: Role): Candidate {
   const skill = clamp(Math.round(rnd(0.6, 3.4 + s.stars * 0.6)), 1, 5);
-  const traits: string[] = [];
+  const traits: TraitId[] = [];
   if (random() < 0.65) traits.push(pick(TRAITS).id);
   // practitioners all know their discipline's basic modality; a few arrive trained in something more
   const quals: Modality[] = [];
@@ -67,7 +68,7 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
 export const QUAL_PAY = 0.1;
 
 /** The going rate for someone with this role, skill, quirks and training. */
-export function fairSalary(role: Role, skill: number, traits: string[], quals: Modality[]): number {
+export function fairSalary(role: Role, skill: number, traits: TraitId[], quals: Modality[]): number {
   let pay = ROLES[role].baseSalary * (0.75 + skill * 0.25);
   for (const t of traits) pay *= traitOf(t).pay ?? 1;
   if (ROLES[role].discipline) pay *= 1 + QUAL_PAY * Math.max(0, quals.length - 1);

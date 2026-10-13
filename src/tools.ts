@@ -6,6 +6,7 @@
 // until it is confirmed.
 import { type AccessRole, ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from './core/data';
 import { money } from './core/format';
+import type { SfxName } from './core/sim/events';
 import { type Sim } from './core/sim/sim';
 import { sameSpot } from './core/state/game';
 import { type Room, type WallSpot } from './core/state/types';
@@ -64,7 +65,7 @@ export class Tools {
     private sim: Sim,
     private view: View,
     private onChange: () => void,
-    private sfx: (name: string) => void,
+    private sfx: (name: SfxName) => void,
   ) {}
 
   get active() {

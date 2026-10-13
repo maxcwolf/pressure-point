@@ -1,6 +1,16 @@
 // Guests: arriving, waiting their turn, looking after their needs and leaving.
 
-import { conditionOf, CONDITIONS, DISCIPLINES, ENT_IN_Y, ENT_X, ITEMS, MODALITIES, ROOMS } from '../data';
+import {
+  type ConditionId,
+  conditionOf,
+  CONDITIONS,
+  DISCIPLINES,
+  ENT_IN_Y,
+  ENT_X,
+  ITEMS,
+  MODALITIES,
+  ROOMS,
+} from '../data';
 import { randomLook, randomName } from '../people';
 import { pick, random, rnd } from '../random';
 import { type Guest, type Item } from '../state/types';
@@ -28,7 +38,7 @@ export class Guests extends System {
     s.spawnT = (30 - s.reputation * 0.2) * rnd(0.7, 1.3);
   }
 
-  spawn(condition?: string, emergency = false) {
+  spawn(condition?: ConditionId, emergency = false) {
     const s = this.s;
     const [x, y] = this.sim.chars.streetTile();
     const g: Guest = {
@@ -63,7 +73,7 @@ export class Guests extends System {
    * its discipline has a finished room. Ones nobody on the payroll is qualified for turn up
    * less often, so a new star or a new clinic is not an instant flood of failures.
    */
-  private rollCondition(): string {
+  private rollCondition(): ConditionId {
     const staff = this.s.staff.filter((x) => x.state !== 'leaving');
     let pool = CONDITIONS.filter(
       (c) => this.sim.treatments.unlocked(c.modality) && this.sim.treatments.offered(MODALITIES[c.modality].discipline),

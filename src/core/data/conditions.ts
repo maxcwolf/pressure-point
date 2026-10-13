@@ -1,8 +1,8 @@
 // What guests arrive suffering from, and which modality treats it.
 
-import { type ConditionDef } from './types';
+import type { ConditionDef, ConditionId } from './types';
 
-export const CONDITIONS: ConditionDef[] = [
+export const CONDITIONS: readonly ConditionDef[] = [
   {
     id: 'slump',
     name: 'Desk Slump',
@@ -170,7 +170,7 @@ export const CONDITIONS: ConditionDef[] = [
 const CONDITION_BY_ID = new Map(CONDITIONS.map((c) => [c.id, c]));
 
 /** Look up a condition by id. An unknown id is a bug or a corrupt save, so it throws. */
-export function conditionOf(id: string): ConditionDef {
+export function conditionOf(id: ConditionId): ConditionDef {
   const def = CONDITION_BY_ID.get(id);
   if (!def) throw new Error(`unknown condition "${id}"`);
   return def;

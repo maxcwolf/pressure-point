@@ -5,6 +5,33 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+/** Imports no game code may use, wherever it lives. */
+const notInTheGame = {
+  paths: [{ name: 'electron', message: 'The game cannot use Electron. Add what it needs to electron/api.ts.' }],
+  patterns: [{ group: ['node:*'], message: 'The game runs in a browser, where Node is not available.' }],
+};
+
+/** Rules for game core files at one depth: `leaves` matches an import path that climbs out of src/core. */
+function coreBoundary(files, leaves) {
+  return {
+    files: [files],
+    languageOptions: { globals: {} },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [...notInTheGame.paths, { name: 'three', message: 'The game core does not draw anything.' }],
+          patterns: [
+            ...notInTheGame.patterns,
+            { regex: leaves, message: 'The game core imports only from itself: no rendering, interface or app code.' },
+          ],
+        },
+      ],
+      'no-restricted-globals': ['error', 'window', 'document', 'navigator', 'localStorage', 'sessionStorage'],
+    },
+  };
+}
+
 export default tseslint.config(
   {
     ignores: ['dist/', 'dist-electron/', 'release/', 'node_modules/', 'test-results/', 'playwright-report/', '.yarn/'],
@@ -36,16 +63,12 @@ export default tseslint.config(
   {
     files: ['src/**'],
     languageOptions: { globals: globals.browser },
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [{ name: 'electron', message: 'The game cannot use Electron. Add what it needs to electron/api.ts.' }],
-          patterns: [{ group: ['node:*'], message: 'The game runs in a browser, where Node is not available.' }],
-        },
-      ],
-    },
+    rules: { 'no-restricted-imports': ['error', { paths: notInTheGame.paths, patterns: notInTheGame.patterns }] },
   },
+
+  // the game core is plain logic: no drawing, no interface, no browser. It imports only from itself.
+  coreBoundary('src/core/*.ts', '^\\.\\./'),
+  coreBoundary('src/core/*/*.ts', '^\\.\\./\\.\\./'),
 
   // the desktop shell runs in Node
   { files: ['electron/**'], languageOptions: { globals: globals.node } },

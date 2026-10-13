@@ -118,8 +118,11 @@ export interface RoleDef {
   discipline?: Discipline;
 }
 
+/** A quirk a member of staff can have. */
+export type TraitId = 'brisk' | 'tireless' | 'chatty' | 'sleepy' | 'speedy' | 'dawdler' | 'bargain';
+
 export interface TraitDef {
-  id: string;
+  id: TraitId;
   name: string;
   desc: string;
   speed?: number; // service speed multiplier
@@ -183,8 +186,29 @@ export type Visual =
   | 'battery'
   | 'wires';
 
+/** What a guest can arrive suffering from. */
+export type ConditionId =
+  | 'slump'
+  | 'band'
+  | 'knotted'
+  | 'crick'
+  | 'stiff'
+  | 'flex'
+  | 'steam'
+  | 'frost'
+  | 'neck'
+  | 'dizzy'
+  | 'qi'
+  | 'pins'
+  | 'vibes'
+  | 'bottled'
+  | 'coldfeet'
+  | 'blanket'
+  | 'battery'
+  | 'wires';
+
 export interface ConditionDef {
-  id: string;
+  id: ConditionId;
   name: string;
   desc: string;
   treatment: string;

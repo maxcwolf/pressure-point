@@ -1,8 +1,8 @@
 // Staff roles and the quirks a member of staff can have.
 
-import { type Role, type RoleDef, type TraitDef } from './types';
+import type { Role, RoleDef, TraitDef, TraitId } from './types';
 
-export const ROLES: Record<Role, RoleDef> = {
+export const ROLES: Readonly<Record<Role, RoleDef>> = {
   receptionist: {
     role: 'receptionist',
     name: 'Receptionist',
@@ -52,9 +52,9 @@ export const ROLES: Record<Role, RoleDef> = {
   },
 };
 
-export const ROLE_ORDER: Role[] = ['receptionist', 'consultant', 'therapist', 'acupuncturist', 'caretaker'];
+export const ROLE_ORDER: readonly Role[] = ['receptionist', 'consultant', 'therapist', 'acupuncturist', 'caretaker'];
 
-export const TRAITS: TraitDef[] = [
+export const TRAITS: readonly TraitDef[] = [
   { id: 'brisk', name: 'Brisk', desc: 'Works 20% faster.', speed: 1.2, pay: 1.1 },
   { id: 'tireless', name: 'Tireless', desc: 'Tires 35% more slowly.', stamina: 0.65, pay: 1.1 },
   { id: 'chatty', name: 'Chatterbox', desc: 'Works 15% slower. Has opinions about crystals.', speed: 0.85, pay: 0.92 },
@@ -67,7 +67,7 @@ export const TRAITS: TraitDef[] = [
 const TRAIT_BY_ID = new Map(TRAITS.map((t) => [t.id, t]));
 
 /** Look up a staff quirk by id. An unknown id is a bug or a corrupt save, so it throws. */
-export function traitOf(id: string): TraitDef {
+export function traitOf(id: TraitId): TraitDef {
   const def = TRAIT_BY_ID.get(id);
   if (!def) throw new Error(`unknown trait "${id}"`);
   return def;

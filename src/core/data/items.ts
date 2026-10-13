@@ -2,7 +2,7 @@
 
 import { type ItemDef, type ItemType } from './types';
 
-export const ITEMS: Record<ItemType, ItemDef> = {
+export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   reception_desk: {
     type: 'reception_desk',
     name: 'Reception Desk',
@@ -388,7 +388,7 @@ export const ITEMS: Record<ItemType, ItemDef> = {
   },
 };
 
-export const ITEM_MENU: ItemType[] = [
+export const ITEM_MENU: readonly ItemType[] = [
   'reception_desk',
   'bench',
   'plant',

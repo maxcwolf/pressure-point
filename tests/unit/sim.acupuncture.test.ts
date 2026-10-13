@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { conditionOf, CONDITIONS, DISCIPLINES, ITEMS, MODALITIES, ROOMS } from '../../src/core/data';
+import { type ConditionId, conditionOf, CONDITIONS, DISCIPLINES, ITEMS, MODALITIES, ROOMS } from '../../src/core/data';
 import { type Sim } from '../../src/core/sim/sim';
 import { disciplineOn, newGame } from '../../src/core/state/game';
 import { type GameState } from '../../src/core/state/types';
@@ -8,7 +8,7 @@ import { upgradeSave } from '../../src/core/state/upgrade';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../src/settings';
 import { addAcupuncture, addPostureLab, addStaffRoom, addTraining, hire, openCenter, run, runUntil } from './helpers';
 
-const disciplineOf = (condition: string) => MODALITIES[conditionOf(condition).modality].discipline;
+const disciplineOf = (condition: ConditionId) => MODALITIES[conditionOf(condition).modality].discipline;
 
 /** Play for a while and report which disciplines' guests turned up. */
 function watchArrivals(sim: Sim, seconds: number) {

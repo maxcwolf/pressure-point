@@ -2,7 +2,7 @@
 
 import { type RoomDef, type RoomType } from './types';
 
-export const ROOMS: Record<RoomType, RoomDef> = {
+export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   consult: {
     type: 'consult',
     name: 'Consultation Room',
@@ -96,7 +96,7 @@ export const ROOMS: Record<RoomType, RoomDef> = {
   },
 };
 
-export const ROOM_ORDER: RoomType[] = [
+export const ROOM_ORDER: readonly RoomType[] = [
   'consult',
   'assess',
   'massage',

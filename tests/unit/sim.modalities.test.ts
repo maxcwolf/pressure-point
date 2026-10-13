@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import type { ConditionId } from '../../src/core/data';
 import { conditionOf, DAY_SECONDS, MODALITIES, STONE_USE } from '../../src/core/data';
 import { type Sim } from '../../src/core/sim/sim';
 import { addTraining, hire, openCenter, run, runUntil } from './helpers';
 
 /** Play for a while, turning every arriving guest into one condition. */
-function playWithCondition(sim: Sim, condition: string, seconds: number) {
+function playWithCondition(sim: Sim, condition: ConditionId, seconds: number) {
   for (let i = 0; i < seconds; i++) {
     for (const g of sim.s.guests) if (g.diagnosis === 0) g.condition = condition;
     run(sim, 1);
