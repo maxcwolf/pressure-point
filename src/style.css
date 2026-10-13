@@ -1264,3 +1264,11 @@ em.warn {
 .switch.on span {
   left: 24px;
 }
+
+.btnrow button.danger {
+  background: #fbe3e1;
+  color: #a8322b;
+}
+.dialog .btnrow + .btnrow {
+  margin-top: 2px;
+}

@@ -48,6 +48,5 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('window-all-closed', () => {
-  if (!isMac) app.quit();
-});
+// one window, one game: closing it (or choosing Exit in the game) quits on every platform
+app.on('window-all-closed', () => app.quit());

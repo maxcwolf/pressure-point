@@ -303,6 +303,57 @@ test.describe('controls and saving', () => {
 
 });
 
+test.describe('leaving a game', () => {
+  test('Main menu saves and returns to the title screen, where Continue picks the game back up', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.speed = 0));
+    const before = await game.eval((pp) => ({ rooms: pp.state.rooms.length, staff: pp.state.staff.length, money: pp.state.money }));
+    await page.locator('#sys').getByTitle('Menu').click();
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await expect(page.locator('#title .logo')).toBeVisible();
+    await expect(page.locator('#title')).toContainText('Continue picks up "Autosave"');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => ({ rooms: pp.state.rooms.length, staff: pp.state.staff.length, money: pp.state.money }))).toEqual(before);
+  });
+
+  test('Esc opens the pause menu when nothing is in hand, and closes it again', async ({ game, page }) => {
+    await game.start();
+    await page.keyboard.press('2');
+    // first Esc clears a selection, the next one opens the menu
+    await game.eval((pp) => void pp.sim.placeItem('plant', 12, 12, 0));
+    await game.settle();
+    const p = await game.eval((pp) => pp.view.project(12.5, 12.5, 0.5));
+    await page.mouse.click(p.x, p.y);
+    await expect(page.locator('#inspector')).toContainText('Potted Plant');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#inspector')).toBeEmpty();
+    await expect(page.locator('#modal')).toBeEmpty();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#modal')).toContainText('Main menu');
+    expect(await game.eval((pp) => pp.state.speed)).toBe(0);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#modal')).toBeEmpty();
+    expect(await game.eval((pp) => pp.state.speed)).toBe(2);
+    // and from a dialog inside the menu
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#modal')).toBeEmpty();
+  });
+
+  test('a browser has no Exit button, since a tab cannot close itself', async ({ game, page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: 'New game' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Exit/ })).toHaveCount(0);
+    await game.start();
+    await page.locator('#sys').getByTitle('Menu').click();
+    await expect(page.getByRole('button', { name: 'Main menu' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Exit/ })).toHaveCount(0);
+  });
+});
+
 test.describe('acupuncture and settings', () => {
   const pauseMenu = async (page: import('@playwright/test').Page, button: string) => {
     await page.locator('#sys').getByTitle('Menu').click();

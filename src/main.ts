@@ -21,12 +21,18 @@ async function boot() {
   // loading or restarting from inside a game reloads the page and leaves a note saying what to open
   let state = open(takeHandoff());
   while (!state) {
-    const choice = await showTitle(audio);
+    const choice = await showTitle(audio, exitApp);
     audio.unlock();
     state = open(choice);
   }
   start(state);
 }
+
+/**
+ * In the desktop app there is a window to close, so the game offers Exit.
+ * A browser tab cannot close itself, so the web version leaves that to the browser.
+ */
+const exitApp = /\bElectron\//.test(navigator.userAgent) ? () => window.close() : undefined;
 
 const HANDOFF_KEY = 'pressure-point-start';
 function takeHandoff(): string | null {
@@ -83,6 +89,16 @@ function start(state: GameState) {
     save,
     newGame: () => leaveFor('new'),
     loadGame: (id) => leaveFor(id),
+    // back to the title screen; the game is in the autosave, so Continue picks it straight up
+    mainMenu: () => {
+      save();
+      window.removeEventListener('beforeunload', save);
+      location.reload();
+    },
+    exit: exitApp && (() => {
+      save();
+      exitApp();
+    }),
   });
 
   // ---- Pointer input -------------------------------------------------------
@@ -135,12 +151,19 @@ function start(state: GameState) {
   // ---- Keyboard ------------------------------------------------------------
   const keys = new Set<string>();
   window.addEventListener('keydown', (e) => {
-    if (ui.blocking) return;
     const k = e.key.toLowerCase();
+    if (ui.blocking) {
+      // Esc backs out of the pause menu and its dialogs
+      if (k === 'escape') ui.dismiss();
+      return;
+    }
     keys.add(k);
     if (k === 'escape') {
+      // Esc cancels whatever is in hand; with nothing in hand it opens the pause menu
       if (tools.active) tools.cancel();
-      else if (!ui.closeMenu()) tools.select(null);
+      else if (ui.closeMenu()) void 0;
+      else if (tools.selected) tools.select(null);
+      else ui.openPauseMenu();
     } else if (k === 'r') tools.rotate();
     else if (k === ' ') {
       e.preventDefault();

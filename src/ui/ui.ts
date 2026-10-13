@@ -47,6 +47,10 @@ export interface UIHost {
   save(): void;
   newGame(): void;
   loadGame(id: string): void;
+  /** Leave for the title screen, keeping the game in the autosave. */
+  mainMenu(): void;
+  /** Quit the desktop app. Absent in a browser, where there is nothing to quit. */
+  exit?: () => void;
 }
 
 type Menu = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | null;
@@ -159,6 +163,16 @@ export class UI {
 
   get blocking() {
     return this.modalOpen;
+  }
+  openPauseMenu() {
+    this.showSystemMenu();
+    this.update();
+  }
+  /** Close whatever dialog is open and carry on playing. */
+  dismiss() {
+    if (!this.modalOpen) return;
+    this.closeModal();
+    this.update();
   }
   closeMenu() {
     if (this.menu) {
@@ -281,6 +295,12 @@ export class UI {
         break;
       case 'newgame-yes':
         this.host.newGame();
+        break;
+      case 'mainmenu':
+        this.host.mainMenu();
+        break;
+      case 'exit':
+        this.host.exit?.();
         break;
       case 'close':
         this.closeModal();
@@ -692,7 +712,7 @@ export class UI {
       <li><kbd>Left click</kbd> select, place, confirm</li>
       <li><kbd>Drag</kbd> or <kbd>W A S D</kbd> move the camera</li>
       <li><kbd>Scroll</kbd> zoom</li>
-      <li><kbd>R</kbd> rotate furniture · <kbd>Esc</kbd> / right click cancel</li>
+      <li><kbd>R</kbd> rotate furniture · <kbd>Esc</kbd> / right click cancel · <kbd>Esc</kbd> again for this menu</li>
       <li><kbd>Space</kbd> pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> game speed</li></ul>`;
   }
 
@@ -701,7 +721,10 @@ export class UI {
     this.modal(`<h2>${GAME_TITLE}</h2>${this.controlsHtml()}
       <p class="sub">The game autosaves every few seconds. Use Save or load to keep named saves.</p>
       <div class="btnrow"><button class="go" data-act="close">Resume</button>
-      <button data-act="saves">Save or load</button><button data-act="settings">Settings</button><button class="danger" data-act="newgame">New game</button></div>`);
+      <button data-act="saves">Save or load</button><button data-act="settings">Settings</button></div>
+      <div class="btnrow"><button data-act="mainmenu">Main menu</button><button class="danger" data-act="newgame">New game</button>
+      ${this.host.exit ? '<button class="danger" data-act="exit">Exit game</button>' : ''}</div>
+      <p class="sub">Main menu${this.host.exit ? ' and Exit game both save' : ' saves'} your game first.</p>`);
   }
 
   private showSettings() {
@@ -740,7 +763,7 @@ export class UI {
 }
 
 /** What the player picked on the title screen: 'new', or the id of a save to load. */
-export function showTitle(audio: Audio): Promise<string> {
+export function showTitle(audio: Audio, exit?: () => void): Promise<string> {
   return new Promise((resolve) => {
     const el = document.createElement('div');
     el.id = 'title';
@@ -756,6 +779,7 @@ export function showTitle(audio: Audio): Promise<string> {
         ${latest ? `<button class="go" data-pick="${latest.id}" title="${esc(latest.name)}, ${gameDate(latest.day)}">Continue</button><button data-show="saves">Load game</button>` : ''}
         <button class="${latest ? '' : 'go'}" data-pick="new">New game</button>
         <button data-show="settings">Settings</button>
+        ${exit ? '<button class="danger" data-exit>Exit</button>' : ''}
       </div>
       ${latest ? `<p class="sub">Continue picks up "${esc(latest.name)}" at ${gameDate(latest.day)}.</p>` : ''}
       <div id="title-saves" hidden></div>
@@ -779,6 +803,7 @@ export function showTitle(audio: Audio): Promise<string> {
         el.querySelector('.title-sys')!.innerHTML = switches();
         return;
       }
+      if (target.closest('[data-exit]')) return exit?.();
       const show = target.closest<HTMLElement>('[data-show]')?.dataset.show;
       if (show) {
         // the two panels share the space under the buttons, one at a time

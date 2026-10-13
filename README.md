@@ -136,8 +136,10 @@ A diagnosis prescribes a treatment. It only works properly with someone qualifie
 | Drag, or W A S D | Move the camera |
 | Scroll | Zoom |
 | R | Rotate furniture |
-| Esc / right click | Cancel |
+| Esc / right click | Cancel; Esc with nothing in hand opens the pause menu |
 | Space, 1 2 3 | Pause, game speed |
+
+The pause menu (☰ or Esc) has **Main menu**, which saves and returns to the title screen, and in the desktop app **Exit game**, which saves and quits. The title screen has **Exit** there too. The browser version has no Exit, because a browser tab cannot close itself.
 
 ### Saved games
 
