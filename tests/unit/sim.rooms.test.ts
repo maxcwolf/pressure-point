@@ -33,7 +33,7 @@ describe('windows', () => {
     expect(sim.s.money).toBe(before);
   });
 
-  it('only go in the room\'s own outer walls, and never where the door is', () => {
+  it("only go in the room's own outer walls, and never where the door is", () => {
     const { sim, massage } = openCenter(1);
     const { world } = sim;
     expect(world.windowValid(massage, NORTH).ok).toBe(true);
@@ -64,10 +64,17 @@ describe('windows', () => {
     expect(massage.windows).toEqual([]);
   });
 
-  it('raise a room\'s prestige, up to a limit', () => {
+  it("raise a room's prestige, up to a limit", () => {
     const { sim, massage } = openCenter(1);
     const plain = sim.prestige(massage);
-    const spots = [NORTH, EAST, WEST, { x: 11, y: 5, dx: 0, dy: -1 }, { x: 14, y: 8, dx: 0, dy: 1 }, { x: 14, y: 5, dx: 1, dy: 0 }];
+    const spots = [
+      NORTH,
+      EAST,
+      WEST,
+      { x: 11, y: 5, dx: 0, dy: -1 },
+      { x: 14, y: 8, dx: 0, dy: 1 },
+      { x: 14, y: 5, dx: 1, dy: 0 },
+    ];
     const levels: number[] = [];
     for (const spot of spots) {
       expect(sim.toggleWindow(massage.id, spot)).toBe('added');

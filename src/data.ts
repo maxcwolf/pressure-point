@@ -171,7 +171,15 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     trim: 0x5f9440,
   },
 };
-export const ROOM_ORDER: RoomType[] = ['consult', 'assess', 'massage', 'acupuncture', 'staffroom', 'restroom', 'training'];
+export const ROOM_ORDER: RoomType[] = [
+  'consult',
+  'assess',
+  'massage',
+  'acupuncture',
+  'staffroom',
+  'restroom',
+  'training',
+];
 
 // ---- Items -----------------------------------------------------------------
 export type AccessRole = 'staff' | 'guest' | 'seat' | 'rest' | 'toilet' | 'drink' | 'eat' | 'study';
@@ -205,7 +213,12 @@ export interface ItemDef {
   /** Where it may be placed. */
   where: 'corridor' | 'any' | RoomType;
   /** Stations have a staff position and a line of guests. */
-  station?: { staff: Role; goal: 'reception' | 'consult' | 'assess' | 'treat'; seconds: number; discipline?: Discipline };
+  station?: {
+    staff: Role;
+    goal: 'reception' | 'consult' | 'assess' | 'treat';
+    seconds: number;
+    discipline?: Discipline;
+  };
   inMenu?: boolean;
   /** Stars needed before it can be bought. */
   unlock?: number;
@@ -853,7 +866,17 @@ export const MODALITIES: Record<Modality, ModalityDef> = {
     trainDays: 9,
   },
 };
-export const MODALITY_ORDER: Modality[] = ['swedish', 'deep', 'sports', 'stone', 'cranio', 'needling', 'cupping', 'moxa', 'electro'];
+export const MODALITY_ORDER: Modality[] = [
+  'swedish',
+  'deep',
+  'sports',
+  'stone',
+  'cranio',
+  'needling',
+  'cupping',
+  'moxa',
+  'electro',
+];
 
 // ---- Disciplines ---------------------------------------------------------------
 export interface DisciplineDef {
@@ -904,8 +927,24 @@ export const BOTCH_FACTOR = 0.35;
 
 // ---- Conditions ------------------------------------------------------------
 export type Visual =
-  | 'knot' | 'slump' | 'steam' | 'stiff' | 'neck' | 'band' | 'crick' | 'flex' | 'frost' | 'dizzy'
-  | 'cloud' | 'jitter' | 'aura' | 'cork' | 'coldfeet' | 'blanket' | 'battery' | 'wires';
+  | 'knot'
+  | 'slump'
+  | 'steam'
+  | 'stiff'
+  | 'neck'
+  | 'band'
+  | 'crick'
+  | 'flex'
+  | 'frost'
+  | 'dizzy'
+  | 'cloud'
+  | 'jitter'
+  | 'aura'
+  | 'cork'
+  | 'coldfeet'
+  | 'blanket'
+  | 'battery'
+  | 'wires';
 export interface ConditionDef {
   id: string;
   name: string;
@@ -1079,9 +1118,7 @@ export const CONDITIONS: ConditionDef[] = [
     visual: 'wires',
   },
 ];
-export const CONDITION_BY_ID: Record<string, ConditionDef> = Object.fromEntries(
-  CONDITIONS.map((c) => [c.id, c]),
-);
+export const CONDITION_BY_ID: Record<string, ConditionDef> = Object.fromEntries(CONDITIONS.map((c) => [c.id, c]));
 export const CONSULT_FEE = 200;
 export const ASSESS_FEE = 150;
 export const WINDOW_COST = 150;
@@ -1125,22 +1162,90 @@ export const STAR_GOALS: StarGoal[] = [
 
 // ---- Flavor ----------------------------------------------------------------
 export const FIRST_NAMES = [
-  'Ada', 'Barnaby', 'Cleo', 'Dmitri', 'Edie', 'Fergus', 'Greta', 'Hamish', 'Ines', 'Jasper',
-  'Kiki', 'Lionel', 'Mabel', 'Nico', 'Odette', 'Percy', 'Queenie', 'Rufus', 'Saskia', 'Tobias',
-  'Uma', 'Vernon', 'Wilma', 'Xander', 'Yolanda', 'Zeb', 'Priya', 'Kenji', 'Amara', 'Mateo',
-  'Noor', 'Soren', 'Tamsin', 'Idris', 'Beatrix', 'Cosmo',
+  'Ada',
+  'Barnaby',
+  'Cleo',
+  'Dmitri',
+  'Edie',
+  'Fergus',
+  'Greta',
+  'Hamish',
+  'Ines',
+  'Jasper',
+  'Kiki',
+  'Lionel',
+  'Mabel',
+  'Nico',
+  'Odette',
+  'Percy',
+  'Queenie',
+  'Rufus',
+  'Saskia',
+  'Tobias',
+  'Uma',
+  'Vernon',
+  'Wilma',
+  'Xander',
+  'Yolanda',
+  'Zeb',
+  'Priya',
+  'Kenji',
+  'Amara',
+  'Mateo',
+  'Noor',
+  'Soren',
+  'Tamsin',
+  'Idris',
+  'Beatrix',
+  'Cosmo',
 ];
 export const LAST_NAMES = [
-  'Kneadham', 'Rubsworth', 'Stretchley', 'Oilfield', 'Thumbwell', 'Knuckleby', 'Palmer-Pressley',
-  'Soothington', 'Limberlake', 'Achewood', 'Tenderson', 'Crickmore', 'Spinewell', 'Loosely',
-  'Relaxworth', 'Supple', 'Kinkaid', 'Twinge', 'Balmforth', 'Unwind', 'Shoulders', 'Calmley',
-  'Flexmoor', 'Easeby', 'Musselwhite', 'Pummell', 'Glide', 'Hotstone',
+  'Kneadham',
+  'Rubsworth',
+  'Stretchley',
+  'Oilfield',
+  'Thumbwell',
+  'Knuckleby',
+  'Palmer-Pressley',
+  'Soothington',
+  'Limberlake',
+  'Achewood',
+  'Tenderson',
+  'Crickmore',
+  'Spinewell',
+  'Loosely',
+  'Relaxworth',
+  'Supple',
+  'Kinkaid',
+  'Twinge',
+  'Balmforth',
+  'Unwind',
+  'Shoulders',
+  'Calmley',
+  'Flexmoor',
+  'Easeby',
+  'Musselwhite',
+  'Pummell',
+  'Glide',
+  'Hotstone',
 ];
 
 /** Full names borrowed from Tim and Eric, mixed in among the generated ones. */
 export const CAMEO_NAMES = [
-  'Rang Dipkin', 'Bilb Ono', 'Hosta Mohogey', 'Tairy Greene', 'Steve Brule', 'Jan Skylar', 'Wayne Skylar',
-  'Carol Krabit', 'Casey Tatum', 'Glen Tennis', 'Doug Prishpreed', 'Scott Clam', 'Jimes Tooper', 'Terry Bruge-Hiplo',
+  'Rang Dipkin',
+  'Bilb Ono',
+  'Hosta Mohogey',
+  'Tairy Greene',
+  'Steve Brule',
+  'Jan Skylar',
+  'Wayne Skylar',
+  'Carol Krabit',
+  'Casey Tatum',
+  'Glen Tennis',
+  'Doug Prishpreed',
+  'Scott Clam',
+  'Jimes Tooper',
+  'Terry Bruge-Hiplo',
 ];
 /** Share of guests and applicants who get a cameo name instead of a generated one. */
 export const CAMEO_CHANCE = 0.12;

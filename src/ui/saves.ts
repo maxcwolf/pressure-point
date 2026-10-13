@@ -36,7 +36,8 @@ export function mountSaves(el: HTMLElement, opts: SavesPanelOptions) {
     const saves = listSaves();
     const rows = saves
       .map((s) => {
-        const overwrite = opts.current && isSlot(s) ? `<button data-save="overwrite" data-id="${s.id}">Overwrite</button>` : '';
+        const overwrite =
+          opts.current && isSlot(s) ? `<button data-save="overwrite" data-id="${s.id}">Overwrite</button>` : '';
         const del = confirming === s.id ? 'Really delete?' : 'Delete';
         return `<li data-id="${s.id}">
           <div class="save-what"><b>${esc(s.name)}</b>
@@ -81,7 +82,10 @@ export function mountSaves(el: HTMLElement, opts: SavesPanelOptions) {
       const result = importSave(text);
       note =
         result === 'invalid'
-          ? { text: `"${file.name}" is not a Pressure Point Institute save, or it is from a newer version of the game.`, bad: true }
+          ? {
+              text: `"${file.name}" is not a Pressure Point Institute save, or it is from a newer version of the game.`,
+              bad: true,
+            }
           : result === 'full'
             ? { text: FULL, bad: true }
             : { text: `Imported "${result.name}".`, bad: false };

@@ -83,22 +83,22 @@ A diagnosis prescribes a treatment. It only works properly with someone qualifie
 
 **Massage**, delivered in a Massage Suite by Massage Therapists:
 
-| Modality | Unlocks | Needs | Character |
-| --- | --- | --- | --- |
-| Swedish | Start | Nothing | Quick, cheap, reliable |
-| Deep Tissue | Star 1 | Course | Tires the therapist fast |
-| Sports | Star 1 | Course, Stretch Rack | Long and hard to get right |
-| Hot Stone | Star 2 | Course, Stone Warmer | High fee; the warmer cools with use |
-| Cranio-sacral | Star 2 | Course | Slow, expensive, needs high skill |
+| Modality      | Unlocks | Needs                | Character                           |
+| ------------- | ------- | -------------------- | ----------------------------------- |
+| Swedish       | Start   | Nothing              | Quick, cheap, reliable              |
+| Deep Tissue   | Star 1  | Course               | Tires the therapist fast            |
+| Sports        | Star 1  | Course, Stretch Rack | Long and hard to get right          |
+| Hot Stone     | Star 2  | Course, Stone Warmer | High fee; the warmer cools with use |
+| Cranio-sacral | Star 2  | Course               | Slow, expensive, needs high skill   |
 
 **Acupuncture**, delivered in an Acupuncture Clinic by Acupuncturists. The clinic unlocks at star 1, and its guests only start arriving once you have built one:
 
-| Technique | Unlocks | Needs | Character |
-| --- | --- | --- | --- |
-| Classic Needling | Star 1 | Nothing | Every acupuncturist knows it |
-| Cupping | Star 1 | Course, Cupping Cart | A step up in fee |
-| Moxibustion | Star 2 | Course, Moxa Burner | Slow and well paid |
-| Electroacupuncture | Star 2 | Course, Stim Unit | The best paid, and the hardest to get right |
+| Technique          | Unlocks | Needs                | Character                                   |
+| ------------------ | ------- | -------------------- | ------------------------------------------- |
+| Classic Needling   | Star 1  | Nothing              | Every acupuncturist knows it                |
+| Cupping            | Star 1  | Course, Cupping Cart | A step up in fee                            |
+| Moxibustion        | Star 2  | Course, Moxa Burner  | Slow and well paid                          |
+| Electroacupuncture | Star 2  | Course, Stim Unit    | The best paid, and the hardest to get right |
 
 ![An acupuncturist cupping a guest, with a line of guests showing the acupuncture conditions](docs/acupuncture.png)
 
@@ -108,14 +108,14 @@ A diagnosis prescribes a treatment. It only works properly with someone qualifie
 
 ### Controls
 
-| Input | Action |
-| --- | --- |
-| Left click | Select, place, confirm |
-| Drag, or W A S D | Move the camera |
-| Scroll | Zoom |
-| R | Rotate furniture |
+| Input             | Action                                                |
+| ----------------- | ----------------------------------------------------- |
+| Left click        | Select, place, confirm                                |
+| Drag, or W A S D  | Move the camera                                       |
+| Scroll            | Zoom                                                  |
+| R                 | Rotate furniture                                      |
 | Esc / right click | Cancel; Esc with nothing in hand opens the pause menu |
-| Space, 1 2 3 | Pause, game speed |
+| Space, 1 2 3      | Pause, game speed                                     |
 
 The pause menu (☰ or Esc) has **Main menu**, which saves and returns to the title screen, and in the desktop app **Exit game**, which saves and quits. The title screen has **Exit** there too. The browser version has no Exit, because a browser tab cannot close itself.
 
@@ -127,18 +127,18 @@ Saves live in the browser's storage, so the web version and the desktop app each
 
 ## Code map
 
-| Path | What lives there |
-| --- | --- |
-| `src/data.ts` | All tunable content: rooms, items, staff roles, traits, conditions, objectives, flavor text |
-| `src/state.ts` | The game state (plain JSON) and upgrades for older saves |
-| `src/saves.ts` | Autosave, named save slots, export and import |
-| `src/settings.ts` | Preferences that outlive a game, such as which treatments are on |
-| `src/world.ts` | Tile grid, placement rules, pathfinding |
-| `src/sim.ts` | Guests, staff, lines, money, reputation |
-| `src/tools.ts` | Build tools: room drag, doors, furniture placement |
-| `src/render/` | Three.js scene and the procedural models |
-| `src/ui/` | The HTML heads-up display |
-| `src/audio.ts` | Synthesized sound effects and music |
-| `electron/main.cjs` | Desktop shell |
+| Path                | What lives there                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------- |
+| `src/data.ts`       | All tunable content: rooms, items, staff roles, traits, conditions, objectives, flavor text |
+| `src/state.ts`      | The game state (plain JSON) and upgrades for older saves                                    |
+| `src/saves.ts`      | Autosave, named save slots, export and import                                               |
+| `src/settings.ts`   | Preferences that outlive a game, such as which treatments are on                            |
+| `src/world.ts`      | Tile grid, placement rules, pathfinding                                                     |
+| `src/sim.ts`        | Guests, staff, lines, money, reputation                                                     |
+| `src/tools.ts`      | Build tools: room drag, doors, furniture placement                                          |
+| `src/render/`       | Three.js scene and the procedural models                                                    |
+| `src/ui/`           | The HTML heads-up display                                                                   |
+| `src/audio.ts`      | Synthesized sound effects and music                                                         |
+| `electron/main.cjs` | Desktop shell                                                                               |
 
 Disciplines, modalities, conditions, courses and equipment are all defined in `data.ts`. Adding a discipline such as reiki means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models.ts`. The simulation, menus and Settings pick it up from the data.

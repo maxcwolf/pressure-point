@@ -73,10 +73,14 @@ describe('unlocking modalities', () => {
     therapist.quals = ['swedish', 'stone'];
     const warmer = sim.placeItem('stone_warmer', 14, 6, 0)!;
     const start = warmer.water;
-    runUntil(sim, () => {
-      for (const g of s.guests) if (g.diagnosis === 0) g.condition = 'steam';
-      return s.stats.healed + s.stats.failed >= 2;
-    }, 900);
+    runUntil(
+      sim,
+      () => {
+        for (const g of s.guests) if (g.diagnosis === 0) g.condition = 'steam';
+        return s.stats.healed + s.stats.failed >= 2;
+      },
+      900,
+    );
     expect(warmer.water).toBeLessThan(start - STONE_USE);
     warmer.water = 20;
     hire(sim, 'caretaker');

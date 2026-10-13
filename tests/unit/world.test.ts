@@ -16,7 +16,11 @@ describe('item geometry', () => {
   it('swaps width and height on odd rotations', () => {
     expect(itemDims('massage_table', 0)).toEqual([1, 2]);
     expect(itemDims('massage_table', 1)).toEqual([2, 1]);
-    expect(footprint({ type: 'reception_desk', x: 10, y: 10, rot: 1 })).toEqual([[10, 10], [10, 11], [10, 12]]);
+    expect(footprint({ type: 'reception_desk', x: 10, y: 10, rot: 1 })).toEqual([
+      [10, 10],
+      [10, 11],
+      [10, 12],
+    ]);
   });
 
   it('keeps access spots outside the footprint at every rotation', () => {

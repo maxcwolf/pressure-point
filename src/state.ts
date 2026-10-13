@@ -141,15 +141,7 @@ export interface Staff extends CharBase {
   unhappyT: number;
 }
 
-export type GuestState =
-  | 'enter'
-  | 'toWait'
-  | 'waiting'
-  | 'called'
-  | 'served'
-  | 'toNeed'
-  | 'need'
-  | 'leaving';
+export type GuestState = 'enter' | 'toWait' | 'waiting' | 'called' | 'served' | 'toNeed' | 'need' | 'leaving';
 
 export interface Guest extends CharBase {
   kind: 'guest';
@@ -286,7 +278,9 @@ export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b
 
 const SKINS = [0xf6d2b8, 0xeebf9e, 0xd9a078, 0xb97a55, 0x8d5a3b, 0x6b4229, 0xf9dfc9];
 const HAIRS = [0x2b1d16, 0x4a2f1d, 0x8a5a2b, 0xd9a441, 0xb5422e, 0x8c8c8c, 0xe9e3d3, 0x6a4fb0, 0x2f7f7a];
-const TOPS = [0xe76f51, 0xf4a261, 0xe9c46a, 0x2a9d8f, 0x4d7ea8, 0xb56576, 0x8ab17d, 0x6d597a, 0xef8fa2, 0x5fa8d3, 0xf2f2f2];
+const TOPS = [
+  0xe76f51, 0xf4a261, 0xe9c46a, 0x2a9d8f, 0x4d7ea8, 0xb56576, 0x8ab17d, 0x6d597a, 0xef8fa2, 0x5fa8d3, 0xf2f2f2,
+];
 const BOTTOMS = [0x3d405b, 0x5c4b3a, 0x2f4858, 0x6b705c, 0x7f5539, 0x4a4e69, 0x8d99ae];
 
 export function randomLook(): Look {

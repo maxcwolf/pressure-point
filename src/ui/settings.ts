@@ -24,7 +24,9 @@ export function mountSettings(el: HTMLElement, opts: SettingsPanelOptions) {
       const def = DISCIPLINES[d];
       return row(`discipline:${d}`, def.icon, def.name, def.desc, isOn(d), def.optional ? '' : 'Always on');
     }).join('');
-    const soon = COMING_SOON.map((c) => row('', c.icon, c.name, 'Not in the game yet.', false, 'Coming later')).join('');
+    const soon = COMING_SOON.map((c) => row('', c.icon, c.name, 'Not in the game yet.', false, 'Coming later')).join(
+      '',
+    );
     el.innerHTML = `<div class="settings">
       <h4>Treatments</h4>
       <ul>${disciplines}${soon}</ul>

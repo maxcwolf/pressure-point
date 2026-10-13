@@ -23,10 +23,7 @@ import { accessTile, footprint, inBuilding, itemDims, tileIdx, Z_CORRIDOR, type 
 
 /** What is in hand while a blueprint is open. */
 type PlanSub =
-  | null
-  | { kind: 'item'; type: ItemType; rot: number; required: boolean }
-  | { kind: 'window' }
-  | { kind: 'door' };
+  null | { kind: 'item'; type: ItemType; rot: number; required: boolean } | { kind: 'window' } | { kind: 'door' };
 
 type Tool =
   | { kind: 'none' }
@@ -85,7 +82,12 @@ export class Tools {
     if (t.kind !== 'room' || t.phase !== 'plan') return null;
     const missing = this.sim.missingItems(t.room);
     const sub = t.sub;
-    return { room: t.room, missing, holding: !sub ? '' : sub.kind === 'item' ? sub.type : sub.kind, ready: missing.length === 0 };
+    return {
+      room: t.room,
+      missing,
+      holding: !sub ? '' : sub.kind === 'item' ? sub.type : sub.kind,
+      ready: missing.length === 0,
+    };
   }
 
   /** Pick something to place. With a blueprint open it is added to the blueprint's session instead of replacing it. */
@@ -115,7 +117,11 @@ export class Tools {
     this.cancel();
     const def = ROOMS[type];
     if (this.sim.s.money < def.cost) {
-      this.sim.emit({ type: 'toast', text: `A ${def.name} costs ${money(def.cost)}. You can't afford it yet.`, kind: 'bad' });
+      this.sim.emit({
+        type: 'toast',
+        text: `A ${def.name} costs ${money(def.cost)}. You can't afford it yet.`,
+        kind: 'bad',
+      });
       this.sfx('error');
       return;
     }
@@ -187,7 +193,12 @@ export class Tools {
 
   rotate() {
     const t = this.tool;
-    const held = t.kind === 'item' || t.kind === 'move' ? t : t.kind === 'room' && t.phase === 'plan' && t.sub?.kind === 'item' ? t.sub : null;
+    const held =
+      t.kind === 'item' || t.kind === 'move'
+        ? t
+        : t.kind === 'room' && t.phase === 'plan' && t.sub?.kind === 'item'
+          ? t.sub
+          : null;
     if (!held) return;
     held.rot = (held.rot + 1) & 3;
     this.sfx('blip');
@@ -314,7 +325,14 @@ export class Tools {
   }
 
   /** Ghost, footprint and the squares people will use, marked by who they are for. */
-  private itemOverlay(type: ItemType, rot: number, roomId: number | undefined, tiles: OverlayTile[], markers: Marker[], movingId = 0) {
+  private itemOverlay(
+    type: ItemType,
+    rot: number,
+    roomId: number | undefined,
+    tiles: OverlayTile[],
+    markers: Marker[],
+    movingId = 0,
+  ) {
     const spot = this.itemSpot(type, rot);
     if (!spot) {
       this.view.setGhost(null);

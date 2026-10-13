@@ -32,7 +32,8 @@ const rbox = (w: number, h: number, d: number, r = 0.05) =>
   cached(`b${w}|${h}|${d}|${r}`, () => new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2, h / 2, d / 2)));
 const cyl = (rt: number, rb: number, h: number, seg = 18) =>
   cached(`c${rt}|${rb}|${h}|${seg}`, () => new THREE.CylinderGeometry(rt, rb, h, seg));
-const sph = (r: number, seg = 18) => cached(`s${r}|${seg}`, () => new THREE.SphereGeometry(r, seg, Math.ceil(seg * 0.7)));
+const sph = (r: number, seg = 18) =>
+  cached(`s${r}|${seg}`, () => new THREE.SphereGeometry(r, seg, Math.ceil(seg * 0.7)));
 const ico = (r: number) => cached(`i${r}`, () => new THREE.IcosahedronGeometry(r, 1));
 const torus = (r: number, t: number) => cached(`t${r}|${t}`, () => new THREE.TorusGeometry(r, t, 10, 24));
 const capsule = (r: number, len: number) => cached(`k${r}|${len}`, () => new THREE.CapsuleGeometry(r, len, 6, 14));
@@ -109,7 +110,12 @@ export function buildItem(type: ItemType): THREE.Group {
       break;
     }
     case 'massage_table': {
-      for (const [x, z] of [[-0.3, -0.75], [0.3, -0.75], [-0.3, 0.75], [0.3, 0.75]])
+      for (const [x, z] of [
+        [-0.3, -0.75],
+        [0.3, -0.75],
+        [-0.3, 0.75],
+        [0.3, 0.75],
+      ])
         put(g, cyl(0.045, 0.045, 0.5), mat(WOOD_DARK), x, 0.25, z);
       put(g, rbox(0.78, 0.06, 1.8, 0.03), mat(WOOD), 0, 0.5, 0);
       put(g, rbox(0.74, 0.12, 1.76, 0.06), mat(CREAM), 0, 0.58, 0);
@@ -119,7 +125,7 @@ export function buildItem(type: ItemType): THREE.Group {
       // hot stones, shown along the guest's back during a Hot Stone session
       const stones = new THREE.Group();
       for (let i = 0; i < 4; i++) {
-        const stone = put(stones, sph(0.075, 10), mat(0x2f3136, 0.55), (i % 2 ? 0.03 : -0.03), 0.95, -0.2 + i * 0.15);
+        const stone = put(stones, sph(0.075, 10), mat(0x2f3136, 0.55), i % 2 ? 0.03 : -0.03, 0.95, -0.2 + i * 0.15);
         stone.scale.y = 0.5;
       }
       stones.visible = false;
@@ -129,7 +135,12 @@ export function buildItem(type: ItemType): THREE.Group {
       break;
     }
     case 'oil_trolley': {
-      for (const [x, z] of [[-0.26, -0.18], [0.26, -0.18], [-0.26, 0.18], [0.26, 0.18]]) {
+      for (const [x, z] of [
+        [-0.26, -0.18],
+        [0.26, -0.18],
+        [-0.26, 0.18],
+        [0.26, 0.18],
+      ]) {
         put(g, cyl(0.02, 0.02, 0.66), mat(CHROME, 0.35), x, 0.4, z);
         put(g, sph(0.05, 10), mat(DARK), x, 0.05, z);
       }
@@ -188,7 +199,11 @@ export function buildItem(type: ItemType): THREE.Group {
       const leaf = new THREE.MeshStandardMaterial({ color: 0x57a85a, roughness: 0.8, flatShading: true });
       g.userData.leaf = leaf;
       const blobs: [number, number, number, number][] = [
-        [0, 0.95, 0, 0.26], [0.2, 0.78, 0.05, 0.2], [-0.19, 0.8, -0.04, 0.2], [0.02, 0.76, -0.2, 0.18], [-0.03, 0.75, 0.2, 0.18],
+        [0, 0.95, 0, 0.26],
+        [0.2, 0.78, 0.05, 0.2],
+        [-0.19, 0.8, -0.04, 0.2],
+        [0.02, 0.76, -0.2, 0.18],
+        [-0.03, 0.75, 0.2, 0.18],
       ];
       for (const [x, y, z, r] of blobs) put(g, ico(r), leaf, x, y, z);
       break;
@@ -199,7 +214,8 @@ export function buildItem(type: ItemType): THREE.Group {
       put(g, cyl(0.16, 0.17, 0.34), mat(0xc77d4a, 0.35), -0.2, 1.03, -0.16);
       put(g, sph(0.15), mat(0xc77d4a, 0.35), -0.2, 1.2, -0.16);
       put(g, sph(0.04, 10), mat(DARK), -0.2, 1.36, -0.16);
-      for (let i = 0; i < 3; i++) put(g, cyl(0.055, 0.045, 0.1), mat(WHITE, 0.4), 0.14 + (i % 2) * 0.16, 0.91, -0.22 + i * 0.12);
+      for (let i = 0; i < 3; i++)
+        put(g, cyl(0.055, 0.045, 0.1), mat(WHITE, 0.4), 0.14 + (i % 2) * 0.16, 0.91, -0.22 + i * 0.12);
       put(g, rbox(0.7, 0.3, 0.04, 0.02), mat(0x3f6b52), 0, 0.42, 0.19);
       break;
     }
@@ -209,7 +225,14 @@ export function buildItem(type: ItemType): THREE.Group {
       const snacks = [0xe76f51, 0x8ab17d, 0xe9c46a, 0x5fa8d3, 0xb56576, 0xf4a261];
       for (let r = 0; r < 3; r++)
         for (let c = 0; c < 4; c++)
-          put(g, rbox(0.1, 0.14, 0.04, 0.02), mat(snacks[(r * 4 + c) % snacks.length]), -0.21 + c * 0.14, 0.76 + r * 0.26, 0.27);
+          put(
+            g,
+            rbox(0.1, 0.14, 0.04, 0.02),
+            mat(snacks[(r * 4 + c) % snacks.length]),
+            -0.21 + c * 0.14,
+            0.76 + r * 0.26,
+            0.27,
+          );
       put(g, rbox(0.5, 0.14, 0.04, 0.02), mat(DARK), 0, 0.3, 0.24);
       break;
     }
@@ -292,14 +315,26 @@ export function buildItem(type: ItemType): THREE.Group {
       for (let row = 0; row < 3; row++) {
         put(g, rbox(0.66, 0.04, 0.28, 0.01), mat(WOOD), 0, 0.2 + row * 0.28, -0.07);
         for (let c = 0; c < 2; c++) {
-          const mag = put(g, rbox(0.26, 0.22, 0.03, 0.01), mat(covers[(row * 2 + c) % covers.length]), -0.15 + c * 0.3, 0.33 + row * 0.28, -0.02);
+          const mag = put(
+            g,
+            rbox(0.26, 0.22, 0.03, 0.01),
+            mat(covers[(row * 2 + c) % covers.length]),
+            -0.15 + c * 0.3,
+            0.33 + row * 0.28,
+            -0.02,
+          );
           mag.rotation.x = -0.25;
         }
       }
       break;
     }
     case 'acu_table': {
-      for (const [x, z] of [[-0.3, -0.75], [0.3, -0.75], [-0.3, 0.75], [0.3, 0.75]])
+      for (const [x, z] of [
+        [-0.3, -0.75],
+        [0.3, -0.75],
+        [-0.3, 0.75],
+        [0.3, 0.75],
+      ])
         put(g, rbox(0.09, 0.5, 0.09, 0.02), mat(LACQUER), x, 0.25, z);
       put(g, rbox(0.8, 0.07, 1.82, 0.03), mat(LACQUER), 0, 0.5, 0);
       put(g, rbox(0.74, 0.12, 1.76, 0.06), mat(0x9ad0b8), 0, 0.58, 0);
@@ -311,7 +346,16 @@ export function buildItem(type: ItemType): THREE.Group {
         put(parent, cyl(0.007, 0.007, 0.16, 5), mat(CHROME, 0.3), x, 1.0, z).castShadow = false;
         put(parent, sph(0.02, 6), mat(color, 0.4), x, 1.08, z).castShadow = false;
       };
-      const spots: [number, number][] = [[-0.07, -0.2], [0.07, -0.2], [-0.08, -0.05], [0.08, -0.05], [-0.07, 0.1], [0.07, 0.1], [-0.05, 0.25], [0.05, 0.25]];
+      const spots: [number, number][] = [
+        [-0.07, -0.2],
+        [0.07, -0.2],
+        [-0.08, -0.05],
+        [0.08, -0.05],
+        [-0.07, 0.1],
+        [0.07, 0.1],
+        [-0.05, 0.25],
+        [0.05, 0.25],
+      ];
       const needles = new THREE.Group();
       spots.forEach(([x, z], i) => needle(needles, x, z, [0xe5484d, 0xf2c14e, 0x4a9fe0][i % 3]));
       const cups = new THREE.Group();
@@ -321,7 +365,11 @@ export function buildItem(type: ItemType): THREE.Group {
         cup.castShadow = false;
       }
       const moxa = new THREE.Group();
-      for (const [x, z] of [[0, -0.18], [0, 0.02], [0, 0.22]]) {
+      for (const [x, z] of [
+        [0, -0.18],
+        [0, 0.02],
+        [0, 0.22],
+      ]) {
         put(moxa, cyl(0.018, 0.03, 0.09, 8), mat(0x6b5a3a, 0.9), x, 0.97, z).castShadow = false;
         put(moxa, sph(0.022, 8), mat(0xff7a2f, 0.4, 1.2), x, 1.02, z).castShadow = false;
       }
@@ -356,7 +404,12 @@ export function buildItem(type: ItemType): THREE.Group {
       break;
     }
     case 'cupping_cart': {
-      for (const [x, z] of [[-0.26, -0.18], [0.26, -0.18], [-0.26, 0.18], [0.26, 0.18]]) {
+      for (const [x, z] of [
+        [-0.26, -0.18],
+        [0.26, -0.18],
+        [-0.26, 0.18],
+        [0.26, 0.18],
+      ]) {
         put(g, cyl(0.02, 0.02, 0.66, 8), mat(LACQUER), x, 0.4, z);
         put(g, sph(0.05, 10), mat(DARK), x, 0.05, z);
       }
@@ -374,7 +427,11 @@ export function buildItem(type: ItemType): THREE.Group {
       put(g, cyl(0.05, 0.07, 0.5, 10), mat(LACQUER), 0, 0.33, 0);
       put(g, cyl(0.26, 0.15, 0.18, 20), mat(0x2f6f6a, 0.4), 0, 0.67, 0);
       put(g, cyl(0.23, 0.23, 0.02, 20), mat(0x8a8378, 0.95), 0, 0.755, 0);
-      for (const [x, z, lean] of [[-0.07, 0.02, 0.2], [0.06, -0.04, -0.15], [0.01, 0.08, 0.05]]) {
+      for (const [x, z, lean] of [
+        [-0.07, 0.02, 0.2],
+        [0.06, -0.04, -0.15],
+        [0.01, 0.08, 0.05],
+      ]) {
         const stick = put(g, cyl(0.016, 0.016, 0.22, 6), mat(0x6b5a3a, 0.9), x, 0.86, z);
         stick.rotation.z = lean;
         put(g, sph(0.022, 8), mat(0xff7a2f, 0.4, 1.2), x - lean * 0.11, 0.97, z).castShadow = false;
@@ -387,7 +444,13 @@ export function buildItem(type: ItemType): THREE.Group {
       break;
     }
     case 'stim_unit': {
-      for (const [x, z] of [[-0.24, -0.16], [0.24, -0.16], [-0.24, 0.16], [0.24, 0.16]]) put(g, sph(0.05, 10), mat(DARK), x, 0.05, z);
+      for (const [x, z] of [
+        [-0.24, -0.16],
+        [0.24, -0.16],
+        [-0.24, 0.16],
+        [0.24, 0.16],
+      ])
+        put(g, sph(0.05, 10), mat(DARK), x, 0.05, z);
       put(g, rbox(0.62, 0.66, 0.46, 0.05), mat(0xd7dce2), 0, 0.42, 0);
       const face = put(g, rbox(0.58, 0.26, 0.05, 0.02), mat(DARK), 0, 0.88, 0.12);
       face.rotation.x = -0.5;
@@ -400,7 +463,10 @@ export function buildItem(type: ItemType): THREE.Group {
       const led = new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 });
       put(g, sph(0.03, 8), led, 0.24, 0.98, 0.1).castShadow = false;
       g.userData.led = led;
-      for (const [x, c] of [[-0.33, 0xe5484d], [0.33, 0x2a2a2e]] as [number, number][]) {
+      for (const [x, c] of [
+        [-0.33, 0xe5484d],
+        [0.33, 0x2a2a2e],
+      ] as [number, number][]) {
         const coil = put(g, torus(0.09, 0.014), mat(c), x, 0.55, 0.05);
         coil.rotation.y = Math.PI / 2;
       }
@@ -411,10 +477,21 @@ export function buildItem(type: ItemType): THREE.Group {
       put(g, rbox(0.78, 0.06, 0.66, 0.03), mat(CHROME, 0.35), 0, 0.53, 0);
       put(g, cyl(0.27, 0.22, 0.22, 20), mat(0xb5714a, 0.4), 0, 0.67, 0);
       // each warmer owns its glow so it can cool independently
-      const glow = new THREE.MeshStandardMaterial({ color: 0x2b2b30, roughness: 0.5, emissive: 0xff5a1f, emissiveIntensity: 1 });
+      const glow = new THREE.MeshStandardMaterial({
+        color: 0x2b2b30,
+        roughness: 0.5,
+        emissive: 0xff5a1f,
+        emissiveIntensity: 1,
+      });
       g.userData.glow = glow;
       put(g, cyl(0.24, 0.24, 0.02, 20), glow, 0, 0.775, 0);
-      for (const [x, z] of [[0, 0], [0.12, 0.08], [-0.11, 0.07], [0.04, -0.13], [-0.09, -0.09]]) {
+      for (const [x, z] of [
+        [0, 0],
+        [0.12, 0.08],
+        [-0.11, 0.07],
+        [0.04, -0.13],
+        [-0.09, -0.09],
+      ]) {
         const stone = put(g, sph(0.075, 10), mat(0x2f3136, 0.55), x, 0.81, z);
         stone.scale.y = 0.5;
       }
@@ -426,13 +503,20 @@ export function buildItem(type: ItemType): THREE.Group {
       for (const x of [-0.37, 0.37]) put(g, rbox(0.06, 1.2, 0.42, 0.02), mat(WOOD_DARK), x, 0.6, -0.1);
       for (const y of [0.22, 0.6, 0.98]) put(g, rbox(0.76, 0.04, 0.42, 0.02), mat(WOOD), 0, y, -0.1);
       const rolls: [number, number, number, number][] = [
-        [0.33, -0.18, 0x8a6fd1, 0.09], [0.33, 0, 0x2fa8a0, 0.09], [0.71, -0.16, 0xe76f51, 0.09], [0.71, 0.02, 0xe9c46a, 0.09], [1.1, -0.1, 0x4a9fe0, 0.1],
+        [0.33, -0.18, 0x8a6fd1, 0.09],
+        [0.33, 0, 0x2fa8a0, 0.09],
+        [0.71, -0.16, 0xe76f51, 0.09],
+        [0.71, 0.02, 0xe9c46a, 0.09],
+        [1.1, -0.1, 0x4a9fe0, 0.1],
       ];
       for (const [y, z, c, r] of rolls) {
         const roll = put(g, cyl(r, r, 0.62, 14), mat(c, 0.85), 0, y, z);
         roll.rotation.z = Math.PI / 2;
       }
-      for (const [y, c] of [[0.85, 0xe5484d], [0.62, 0x3bb273]] as [number, number][]) {
+      for (const [y, c] of [
+        [0.85, 0xe5484d],
+        [0.62, 0x3bb273],
+      ] as [number, number][]) {
         const band = put(g, torus(0.085, 0.018), mat(c), 0.42, y, 0);
         band.rotation.y = Math.PI / 2;
       }
@@ -451,14 +535,28 @@ export function buildItem(type: ItemType): THREE.Group {
       blob.scale.y = 0.75;
       put(g, rbox(0.3, 0.025, 0.01, 0.005), mat(0x3f7fb5), -0.02, 1.3, -0.235).rotation.z = -0.5;
       put(g, rbox(0.3, 0.025, 0.01, 0.005), mat(0x3f7fb5), -0.02, 1.08, -0.235).rotation.z = 0.5;
-      for (let i = 0; i < 4; i++) put(g, rbox(0.5 - (i % 2) * 0.14, 0.022, 0.01, 0.005), mat(DARK), 0.45 - (i % 2) * 0.07, 1.36 - i * 0.12, -0.235);
+      for (let i = 0; i < 4; i++)
+        put(
+          g,
+          rbox(0.5 - (i % 2) * 0.14, 0.022, 0.01, 0.005),
+          mat(DARK),
+          0.45 - (i % 2) * 0.07,
+          1.36 - i * 0.12,
+          -0.235,
+        );
       put(g, rbox(0.1, 0.04, 0.06, 0.01), mat(0xe5484d), -0.3, 0.68, -0.22);
       put(g, rbox(0.1, 0.04, 0.06, 0.01), mat(0x3f7fb5), -0.1, 0.68, -0.22);
       break;
     }
     case 'study_desk': {
       put(g, rbox(0.84, 0.06, 0.54, 0.03), mat(WOOD), 0, 0.62, -0.02);
-      for (const [x, z] of [[-0.36, -0.22], [0.36, -0.22], [-0.36, 0.18], [0.36, 0.18]]) put(g, cyl(0.03, 0.03, 0.6, 8), mat(DARK), x, 0.3, z);
+      for (const [x, z] of [
+        [-0.36, -0.22],
+        [0.36, -0.22],
+        [-0.36, 0.18],
+        [0.36, 0.18],
+      ])
+        put(g, cyl(0.03, 0.03, 0.6, 8), mat(DARK), x, 0.3, z);
       put(g, rbox(0.3, 0.05, 0.22, 0.02), mat(0x5f9440), -0.12, 0.68, 0);
       put(g, rbox(0.26, 0.04, 0.2, 0.02), mat(0xe76f51), -0.1, 0.725, 0.01).rotation.y = 0.3;
       put(g, cyl(0.045, 0.04, 0.1, 10), mat(WHITE, 0.4), 0.26, 0.7, -0.08);
@@ -556,8 +654,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   for (const x of [-0.075, 0.075]) put(head, sph(0.027, 8), mat(0x2a2422, 0.3), x, 0.02, 0.19);
   put(head, sph(0.03, 8), skin, 0, -0.035, 0.21);
   const hair = mat(look.hair, 0.85);
-  const cap = () =>
-    cached('haircap', () => new THREE.SphereGeometry(0.228, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52));
+  const cap = () => cached('haircap', () => new THREE.SphereGeometry(0.228, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52));
   const style = role === 'caretaker' ? 0 : look.hairStyle;
   if (style !== 3) {
     const c = put(head, cap(), hair, 0, 0.012, -0.018);
@@ -576,7 +673,15 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   }
 
   const rig: CharRig = {
-    group, body, torso, legL, legR, armL, armR, head, headMesh,
+    group,
+    body,
+    torso,
+    legL,
+    legR,
+    armL,
+    armR,
+    head,
+    headMesh,
     pick: new THREE.Mesh(cyl(0.34, 0.34, 1.4, 8), pickMat),
     bubble: new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false })),
     props: [],
@@ -594,11 +699,19 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   group.add(rig.bubble);
 
   if (visual === 'knot') {
-    rig.knot = put(torso, cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8)), mat(0xd9584a, 0.5), 0, 0.46, -0.19);
+    rig.knot = put(
+      torso,
+      cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8)),
+      mat(0xd9584a, 0.5),
+      0,
+      0.46,
+      -0.19,
+    );
   } else if (visual === 'steam') {
     headMesh.material = mat(0xe8836f, 0.65);
     rig.steam = new THREE.Group();
-    for (let i = 0; i < 3; i++) put(rig.steam, sph(0.06, 8), mat(0xffffff, 0.9, 0.3), (i - 1) * 0.12, 0, 0).castShadow = false;
+    for (let i = 0; i < 3; i++)
+      put(rig.steam, sph(0.06, 8), mat(0xffffff, 0.9, 0.3), (i - 1) * 0.12, 0, 0).castShadow = false;
     rig.steam.position.y = 0.3;
     head.add(rig.steam);
   } else if (visual === 'band') {
@@ -615,15 +728,26 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     rig.orbit = new THREE.Group();
     for (let i = 0; i < 3; i++) {
       const a = (i / 3) * Math.PI * 2;
-      const star = put(rig.orbit, cached('dizzystar', () => new THREE.OctahedronGeometry(0.055)), mat(0xffd23f, 0.3, 0.8), Math.cos(a) * 0.27, 0, Math.sin(a) * 0.27);
+      const star = put(
+        rig.orbit,
+        cached('dizzystar', () => new THREE.OctahedronGeometry(0.055)),
+        mat(0xffd23f, 0.3, 0.8),
+        Math.cos(a) * 0.27,
+        0,
+        Math.sin(a) * 0.27,
+      );
       star.castShadow = false;
     }
     rig.orbit.position.y = 0.3;
     head.add(rig.orbit);
-  }
-  else if (visual === 'cloud') {
+  } else if (visual === 'cloud') {
     const cloud = new THREE.Group();
-    for (const [x, y, r] of [[-0.12, 0, 0.11], [0.02, 0.05, 0.14], [0.14, 0, 0.1]]) put(cloud, sph(r, 10), mat(0x7d8894, 0.95), x, y, 0).castShadow = false;
+    for (const [x, y, r] of [
+      [-0.12, 0, 0.11],
+      [0.02, 0.05, 0.14],
+      [0.14, 0, 0.1],
+    ])
+      put(cloud, sph(r, 10), mat(0x7d8894, 0.95), x, y, 0).castShadow = false;
     cloud.position.y = 0.4;
     head.add(cloud);
     rig.bob = cloud;
@@ -646,7 +770,12 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     const wool = mat(0x4d7ea8, 0.95);
     rig.props.push(put(torso, rbox(0.52, 0.1, 0.38, 0.04), wool, 0, 0.4, -0.01));
     for (const x of [-0.25, 0.25]) rig.props.push(put(torso, rbox(0.1, 0.3, 0.36, 0.04), wool, x, 0.26, -0.01));
-    for (const [x, y] of [[-0.25, 0.08], [0.25, 0.05], [0.1, 0.02]]) rig.props.push(put(torso, sph(0.03, 8), mat(0x6ec6e6, 0.2), x, y, 0.12));
+    for (const [x, y] of [
+      [-0.25, 0.08],
+      [0.25, 0.05],
+      [0.1, 0.02],
+    ])
+      rig.props.push(put(torso, sph(0.03, 8), mat(0x6ec6e6, 0.2), x, y, 0.12));
   } else if (visual === 'battery') {
     const cell = new THREE.Group();
     put(cell, rbox(0.26, 0.13, 0.09, 0.02), mat(0x2f3136, 0.6), 0, 0, 0).castShadow = false;
@@ -722,7 +851,11 @@ export function buildTree(seed: number): THREE.Group {
   const green = [0x5fae5a, 0x4f9a55, 0x74b85c][seed % 3];
   const leaf = cached(`treeleaf${seed % 3}`, () => new THREE.IcosahedronGeometry(1, 1));
   const m = new THREE.MeshStandardMaterial({ color: green, roughness: 0.85, flatShading: true });
-  for (const [x, y, z, r] of [[0, h + 0.45, 0, 0.62], [0.35, h + 0.15, 0.1, 0.42], [-0.3, h + 0.2, -0.15, 0.45]]) {
+  for (const [x, y, z, r] of [
+    [0, h + 0.45, 0, 0.62],
+    [0.35, h + 0.15, 0.1, 0.42],
+    [-0.3, h + 0.2, -0.15, 0.45],
+  ]) {
     const b = put(g, leaf, m, x, y, z);
     b.scale.setScalar(r);
   }

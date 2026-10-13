@@ -74,7 +74,12 @@ function start(state: GameState) {
 
   const view = new View(canvas, sim);
   let uiDirty = true;
-  const tools = new Tools(sim, view, () => (uiDirty = true), (name) => audio.play(name));
+  const tools = new Tools(
+    sim,
+    view,
+    () => (uiDirty = true),
+    (name) => audio.play(name),
+  );
   const save = () => autosave(state);
   /** Leave this game for another one, keeping it up to date in the autosave first. */
   const leaveFor = (what: string) => {
@@ -96,10 +101,12 @@ function start(state: GameState) {
       window.removeEventListener('beforeunload', save);
       location.reload();
     },
-    exit: exitApp && (() => {
-      save();
-      exitApp();
-    }),
+    exit:
+      exitApp &&
+      (() => {
+        save();
+        exitApp();
+      }),
   });
 
   // ---- Pointer input -------------------------------------------------------

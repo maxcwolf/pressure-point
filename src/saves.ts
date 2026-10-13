@@ -154,7 +154,8 @@ export function deleteSave(id: string) {
 export function archiveAutosave(now = Date.now()) {
   const old = readSave(AUTOSAVE_ID);
   if (!old) return;
-  if (typeof writeSave(old, `Previous game (${gameDate(old.day)})`, PREVIOUS_ID, now) !== 'string') deleteSave(AUTOSAVE_ID);
+  if (typeof writeSave(old, `Previous game (${gameDate(old.day)})`, PREVIOUS_ID, now) !== 'string')
+    deleteSave(AUTOSAVE_ID);
 }
 
 /** A save as the text of a file, ready to download. */
@@ -162,7 +163,11 @@ export function exportSave(id: string): { filename: string; text: string } | nul
   const state = readSave(id);
   const info = listSaves().find((i) => i.id === id);
   if (!state || !info) return null;
-  const safe = info.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'save';
+  const safe =
+    info.name
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase() || 'save';
   return {
     filename: `pressure-point-${safe}.json`,
     text: JSON.stringify({ format: FILE_FORMAT, name: info.name, savedAt: info.savedAt, state }),

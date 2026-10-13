@@ -203,9 +203,7 @@ export class World {
   /** Orthogonal step between adjacent tiles. */
   canStep(ax: number, ay: number, bx: number, by: number) {
     if (!this.walkable(bx, by)) return false;
-    return (
-      this.zone[tileIdx(ax, ay)] === this.zone[tileIdx(bx, by)] || this.doors.has(this.edgeKey(ax, ay, bx, by))
-    );
+    return this.zone[tileIdx(ax, ay)] === this.zone[tileIdx(bx, by)] || this.doors.has(this.edgeKey(ax, ay, bx, by));
   }
 
   // ---- Pathfinding ---------------------------------------------------------
@@ -412,8 +410,7 @@ export class World {
   doorValid(type: RoomType, r: Rect, door: Room['door'], replacing?: Room): Check {
     const ox = door.x + door.dx;
     const oy = door.y + door.dy;
-    if (!inBuilding(ox, oy) || this.zone[tileIdx(ox, oy)] !== Z_CORRIDOR)
-      return no('Doors must open onto a corridor');
+    if (!inBuilding(ox, oy) || this.zone[tileIdx(ox, oy)] !== Z_CORRIDOR) return no('Doors must open onto a corridor');
     if (this.blocked[tileIdx(ox, oy)]) return no('Something is blocking that doorway');
     if (replacing) {
       if (replacing.windows.some((w) => w.x === door.x && w.y === door.y && w.dx === door.dx && w.dy === door.dy))
@@ -436,7 +433,7 @@ export class World {
     const ox = spot.x + spot.dx;
     const oy = spot.y + spot.dy;
     const outside = ox < room.x || ox >= room.x + room.w || oy < room.y || oy >= room.y + room.h;
-    if (!inside || !outside || Math.abs(spot.dx) + Math.abs(spot.dy) !== 1) return no('Windows go in the room\'s walls');
+    if (!inside || !outside || Math.abs(spot.dx) + Math.abs(spot.dy) !== 1) return no("Windows go in the room's walls");
     const d = room.door;
     if (d.x === spot.x && d.y === spot.y && d.dx === spot.dx && d.dy === spot.dy) return no('The door is there');
     // a window onto the room next door would just be a hole in two walls

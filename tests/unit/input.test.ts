@@ -4,7 +4,14 @@ import { DRAG_PX, QUICK_MS, QUICK_PX, isClick, isDragging } from '../../src/inpu
 describe('telling a click from a drag', () => {
   it('does not call the few pixels of drift in an ordinary click a drag', () => {
     // a hand or a trackpad easily moves this much between press and release
-    for (const [dx, dy] of [[0, 0], [3, 2], [6, 4], [7, 6], [-8, 3]]) expect(isDragging(dx, dy), `${dx},${dy}`).toBe(false);
+    for (const [dx, dy] of [
+      [0, 0],
+      [3, 2],
+      [6, 4],
+      [7, 6],
+      [-8, 3],
+    ])
+      expect(isDragging(dx, dy), `${dx},${dy}`).toBe(false);
     expect(DRAG_PX).toBeGreaterThanOrEqual(10);
   });
 

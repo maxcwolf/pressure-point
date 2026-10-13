@@ -52,7 +52,13 @@ describe('named saves', () => {
     const s = game(5, 120);
     const info = ok(writeSave(s, 'Before the audit'));
     expect(readSave(info.id)).toEqual(JSON.parse(JSON.stringify(s)));
-    expect(info).toMatchObject({ name: 'Before the audit', day: s.day, stars: s.stars, healed: s.stats.healed, money: Math.round(s.money) });
+    expect(info).toMatchObject({
+      name: 'Before the audit',
+      day: s.day,
+      stars: s.stars,
+      healed: s.stats.healed,
+      money: Math.round(s.money),
+    });
   });
 
   it('are listed newest first, alongside the autosave', () => {
@@ -225,7 +231,9 @@ describe('export and import', () => {
     expect(importSave('{}')).toBe('invalid');
     expect(importSave(JSON.stringify({ format: 'pressure-point-save', state: { rooms: 'nope' } }))).toBe('invalid');
     expect(importSave(JSON.stringify({ format: 'something-else', state: newGame() }))).toBe('invalid');
-    expect(importSave(JSON.stringify({ format: 'pressure-point-save', state: { ...newGame(), version: SAVE_VERSION + 5 } }))).toBe('invalid');
+    expect(
+      importSave(JSON.stringify({ format: 'pressure-point-save', state: { ...newGame(), version: SAVE_VERSION + 5 } })),
+    ).toBe('invalid');
     expect(listSaves()).toEqual([]);
   });
 

@@ -2,7 +2,8 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const notes = (tag: string) => execFileSync('node', ['scripts/release-notes.mjs', tag], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+const notes = (tag: string) =>
+  execFileSync('node', ['scripts/release-notes.mjs', tag], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 const version = JSON.parse(readFileSync('package.json', 'utf8')).version as string;
 
 describe('release notes', () => {

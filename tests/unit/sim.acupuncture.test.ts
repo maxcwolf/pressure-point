@@ -91,11 +91,15 @@ describe('treating acupuncture guests', () => {
     const acu = hire(sim, 'acupuncturist');
     acu.skill = 4;
     let healedAcu = 0;
-    runUntil(sim, () => {
-      for (const g of s.guests) if (g.diagnosis === 0) g.condition = 'qi';
-      healedAcu = s.guests.filter((g) => g.outcome === 'healed' && g.condition === 'qi').length;
-      return healedAcu > 0;
-    }, 900);
+    runUntil(
+      sim,
+      () => {
+        for (const g of s.guests) if (g.diagnosis === 0) g.condition = 'qi';
+        healedAcu = s.guests.filter((g) => g.outcome === 'healed' && g.condition === 'qi').length;
+        return healedAcu > 0;
+      },
+      900,
+    );
     expect(acu.served).toBeGreaterThan(0);
     expect(s.ledger.treatment + s.lastLedger.treatment).toBeGreaterThan(0);
   });
@@ -126,8 +130,19 @@ describe('acupuncturists', () => {
     expect(acu.quals).toContain('needling');
     acu.quals = ['needling'];
     therapist.quals = ['swedish'];
-    expect(sim.courses(acu).map((c) => c.id)).toEqual(['cupping', 'moxa', 'electro', ...(acu.skill < 5 ? ['skill'] : [])]);
-    expect(sim.courses(therapist).map((c) => c.id)).toEqual(['deep', 'sports', 'stone', 'cranio', ...(therapist.skill < 5 ? ['skill'] : [])]);
+    expect(sim.courses(acu).map((c) => c.id)).toEqual([
+      'cupping',
+      'moxa',
+      'electro',
+      ...(acu.skill < 5 ? ['skill'] : []),
+    ]);
+    expect(sim.courses(therapist).map((c) => c.id)).toEqual([
+      'deep',
+      'sports',
+      'stone',
+      'cranio',
+      ...(therapist.skill < 5 ? ['skill'] : []),
+    ]);
     expect(sim.courses(acu).find((c) => c.id === 'cupping')!.name).toBe('Cupping');
     expect(sim.courses(therapist).find((c) => c.id === 'deep')!.name).toBe('Deep Tissue massage');
   });
@@ -238,7 +253,10 @@ describe('settings', () => {
   it('ignore junk and anything that is not optional', () => {
     store.set('pressure-point-settings', 'not json');
     expect(loadDisciplinePrefs()).toEqual({});
-    store.set('pressure-point-settings', JSON.stringify({ disciplines: { massage: false, acupuncture: 'no', reiki: false } }));
+    store.set(
+      'pressure-point-settings',
+      JSON.stringify({ disciplines: { massage: false, acupuncture: 'no', reiki: false } }),
+    );
     expect(loadDisciplinePrefs()).toEqual({});
   });
 
@@ -260,11 +278,15 @@ describe('settings', () => {
 
 describe('the data', () => {
   it('gives every modality conditions to treat and every condition a real modality', () => {
-    for (const m of Object.keys(MODALITIES)) expect(Object.values(CONDITION_BY_ID).some((c) => c.modality === m), m).toBe(true);
+    for (const m of Object.keys(MODALITIES))
+      expect(
+        Object.values(CONDITION_BY_ID).some((c) => c.modality === m),
+        m,
+      ).toBe(true);
     for (const c of Object.values(CONDITION_BY_ID)) expect(MODALITIES[c.modality], c.id).toBeDefined();
   });
 
-  it('puts each discipline\'s equipment in its own room', () => {
+  it("puts each discipline's equipment in its own room", () => {
     for (const def of Object.values(MODALITIES)) {
       if (!def.equipment) continue;
       expect(ITEMS[def.equipment].where, def.id).toBe(DISCIPLINES[def.discipline].room);
@@ -290,7 +312,15 @@ describe('a long session with both disciplines', () => {
     const acu = hire(sim, 'acupuncturist');
     acu.quals = ['needling', 'cupping', 'moxa', 'electro'];
     therapist.quals = ['swedish', 'deep', 'sports', 'stone', 'cranio'];
-    for (const [type, x, y] of [['stretch_rack', 14, 7], ['stone_warmer', 14, 6], ['cupping_cart', 27, 10], ['moxa_burner', 27, 9], ['stim_unit', 24, 8], ['bench', 10, 9], ['bench', 20, 9]] as const)
+    for (const [type, x, y] of [
+      ['stretch_rack', 14, 7],
+      ['stone_warmer', 14, 6],
+      ['cupping_cart', 27, 10],
+      ['moxa_burner', 27, 9],
+      ['stim_unit', 24, 8],
+      ['bench', 10, 9],
+      ['bench', 20, 9],
+    ] as const)
       expect(sim.placeItem(type, x, y, 0), type).not.toBeNull();
     const healedBy = { massage: 0, acupuncture: 0 };
     const counted = new Set<number>();

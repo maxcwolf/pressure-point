@@ -23,7 +23,19 @@ import {
 import type { Sim } from '../sim';
 import type { Char, Room } from '../state';
 import { Z_CORRIDOR, Z_OUTSIDE, itemCenter, itemDims, tileIdx } from '../world';
-import { buildCharacter, buildItem, buildTree, cureRig, cyl, emojiTexture, mat, put, rbox, sph, type CharRig } from './models';
+import {
+  buildCharacter,
+  buildItem,
+  buildTree,
+  cureRig,
+  cyl,
+  emojiTexture,
+  mat,
+  put,
+  rbox,
+  sph,
+  type CharRig,
+} from './models';
 
 const TS = 48;
 const WALL_T = 0.12;
@@ -102,10 +114,22 @@ export class View {
     new THREE.MeshBasicMaterial({ color: 0xffc93c, transparent: true, opacity: 0.7, depthWrite: false }),
   ];
   private markers: THREE.Sprite[] = [];
-  private glass = new THREE.MeshStandardMaterial({ color: 0xbfe6f5, transparent: true, opacity: 0.5, roughness: 0.1, emissive: 0x9fd8ee, emissiveIntensity: 0.25 });
+  private glass = new THREE.MeshStandardMaterial({
+    color: 0xbfe6f5,
+    transparent: true,
+    opacity: 0.5,
+    roughness: 0.1,
+    emissive: 0x9fd8ee,
+    emissiveIntensity: 0.25,
+  });
   private doorMarker: THREE.Mesh;
   private ring: THREE.Mesh;
-  private blueprintMat = new THREE.MeshStandardMaterial({ color: 0x6fb7ff, transparent: true, opacity: 0.55, roughness: 0.6 });
+  private blueprintMat = new THREE.MeshStandardMaterial({
+    color: 0x6fb7ff,
+    transparent: true,
+    opacity: 0.55,
+    roughness: 0.6,
+  });
   private raycaster = new THREE.Raycaster();
   private ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -218,7 +242,10 @@ export class View {
     // low front walls with a gap for the entrance
     const e0 = ENT_X[0];
     const e1 = ENT_X[ENT_X.length - 1] + 1;
-    for (const [a, b] of [[x0, e0], [e1, x1 + T]]) {
+    for (const [a, b] of [
+      [x0, e0],
+      [e1, x1 + T],
+    ]) {
       box(b - a, H_LOW + 0.05, T, (a + b) / 2, (H_LOW + 0.05) / 2, z1 + T / 2, wall);
       box(b - a, 0.07, T + 0.06, (a + b) / 2, H_LOW + 0.085, z1 + T / 2, trim);
     }
@@ -252,7 +279,10 @@ export class View {
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     const board = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1, 0.12), [
-      mat(0x2fa8a0), mat(0x2fa8a0), mat(0x2fa8a0), mat(0x2fa8a0),
+      mat(0x2fa8a0),
+      mat(0x2fa8a0),
+      mat(0x2fa8a0),
+      mat(0x2fa8a0),
       new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }),
       mat(0x2fa8a0),
     ]);
@@ -382,7 +412,16 @@ export class View {
     const wallM = room.done ? mat(0xf7f1e5, 0.85) : this.blueprintMat;
     const trimM = room.done ? mat(def.trim, 0.6) : this.blueprintMat;
     const T = WALL_T;
-    const box = (horizontal: boolean, fixed: number, a: number, b: number, y0: number, h: number, thick: number, m: THREE.Material) => {
+    const box = (
+      horizontal: boolean,
+      fixed: number,
+      a: number,
+      b: number,
+      y0: number,
+      h: number,
+      thick: number,
+      m: THREE.Material,
+    ) => {
       const len = b - a;
       if (len <= 0.001) return;
       const geo = horizontal ? new THREE.BoxGeometry(len, h, thick) : new THREE.BoxGeometry(thick, h, len);
@@ -390,7 +429,16 @@ export class View {
       mesh.castShadow = room.done;
     };
     const glass = room.done ? this.glass : this.blueprintMat;
-    const side = (horizontal: boolean, fixed: number, a: number, b: number, tall: boolean, doorAt: number | null, windowsAt: number[], inward: number) => {
+    const side = (
+      horizontal: boolean,
+      fixed: number,
+      a: number,
+      b: number,
+      tall: boolean,
+      doorAt: number | null,
+      windowsAt: number[],
+      inward: number,
+    ) => {
       const hgt = tall ? H_TALL : H_LOW;
       // plain stretches of wall between the openings, merged into as few boxes as possible
       const plain = (p: number, q: number) => {
@@ -439,15 +487,22 @@ export class View {
         }
         g.add(pivot);
       }
-      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTexture(def.icon), transparent: true, depthTest: false }));
+      const sprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: emojiTexture(def.icon), transparent: true, depthTest: false }),
+      );
       sprite.scale.setScalar(0.72);
       sprite.renderOrder = 9;
-      sprite.position.set(horizontal ? doorAt + 0.5 : fixed, tall ? hgt + 0.55 : 1.0, horizontal ? fixed : doorAt + 0.5);
+      sprite.position.set(
+        horizontal ? doorAt + 0.5 : fixed,
+        tall ? hgt + 0.55 : 1.0,
+        horizontal ? fixed : doorAt + 0.5,
+      );
       g.add(sprite);
     };
     const d = room.door;
     // which tiles along each wall have a window
-    const wins = (dx: number, dy: number) => room.windows.filter((w) => w.dx === dx && w.dy === dy).map((w) => (dx ? w.y : w.x));
+    const wins = (dx: number, dy: number) =>
+      room.windows.filter((w) => w.dx === dx && w.dy === dy).map((w) => (dx ? w.y : w.x));
     side(true, room.y + T / 2, room.x, room.x + room.w, true, d.dy === -1 ? d.x : null, wins(0, -1), 1);
     side(true, room.y + room.h - T / 2, room.x, room.x + room.w, false, d.dy === 1 ? d.x : null, wins(0, 1), -1);
     side(false, room.x + T / 2, room.y, room.y + room.h, true, d.dx === -1 ? d.y : null, wins(-1, 0), 1);
@@ -540,7 +595,14 @@ export class View {
       const g = new THREE.Group();
       const colors = [0xe76f51, 0xe9c46a, 0x5fa8d3];
       for (let i = 0; i < 3; i++) {
-        const m = put(g, rbox(0.16, 0.05, 0.11, 0.02), mat(colors[(l.id + i) % 3]), (hash(l.id, i) - 0.5) * 0.4, 0.03, (hash(i, l.id) - 0.5) * 0.4);
+        const m = put(
+          g,
+          rbox(0.16, 0.05, 0.11, 0.02),
+          mat(colors[(l.id + i) % 3]),
+          (hash(l.id, i) - 0.5) * 0.4,
+          0.03,
+          (hash(i, l.id) - 0.5) * 0.4,
+        );
         m.rotation.y = hash(l.id, i + 5) * 3;
       }
       g.position.set(l.x + 0.5, 0, l.y + 0.5);
@@ -560,7 +622,12 @@ export class View {
       if (it.type === 'plant') {
         const leaf = view.group.userData.leaf as THREE.MeshStandardMaterial;
         const k = Math.min(1, it.water / 40);
-        leaf.color.setRGB(0.34 * k + 0.62 * (1 - k), 0.66 * k + 0.5 * (1 - k), 0.35 * k + 0.25 * (1 - k), THREE.SRGBColorSpace);
+        leaf.color.setRGB(
+          0.34 * k + 0.62 * (1 - k),
+          0.66 * k + 0.5 * (1 - k),
+          0.35 * k + 0.25 * (1 - k),
+          THREE.SRGBColorSpace,
+        );
         view.group.scale.y = 0.82 + 0.18 * k;
       } else if (it.type === 'stone_warmer') {
         (view.group.userData.glow as THREE.MeshStandardMaterial).emissiveIntensity = (it.water / 100) * 1.4;
@@ -595,8 +662,14 @@ export class View {
         let bar = this.bars.get(it.id);
         if (!bar) {
           const group = new THREE.Group();
-          const back = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.2, 0.05), new THREE.MeshBasicMaterial({ color: 0x2f4858 }));
-          const fill = new THREE.Mesh(new THREE.BoxGeometry(1, 0.14, 0.07), new THREE.MeshBasicMaterial({ color: 0x3ddc84 }));
+          const back = new THREE.Mesh(
+            new THREE.BoxGeometry(1.06, 0.2, 0.05),
+            new THREE.MeshBasicMaterial({ color: 0x2f4858 }),
+          );
+          const fill = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 0.14, 0.07),
+            new THREE.MeshBasicMaterial({ color: 0x3ddc84 }),
+          );
           group.add(back, fill);
           group.rotation.y = Math.PI / 4;
           const [cx, cy] = itemCenter(it);
@@ -615,7 +688,9 @@ export class View {
       if (!view) continue;
       let wrench = view.group.userData.wrench as THREE.Sprite | undefined;
       if (it.wear >= 100 && !wrench) {
-        wrench = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTexture('🔧'), transparent: true, depthTest: false }));
+        wrench = new THREE.Sprite(
+          new THREE.SpriteMaterial({ map: emojiTexture('🔧'), transparent: true, depthTest: false }),
+        );
         wrench.scale.setScalar(0.7);
         wrench.renderOrder = 9;
         wrench.userData.itemId = it.id;
@@ -936,7 +1011,10 @@ export class View {
     const picks = [...this.chars.values()].map((r) => r.pick);
     const hit = this.raycaster.intersectObjects(picks, false)[0];
     if (hit) return { kind: hit.object.userData.charKind, id: hit.object.userData.charId };
-    const itemHit = this.raycaster.intersectObjects([...this.items.values()].map((i) => i.group), true)[0];
+    const itemHit = this.raycaster.intersectObjects(
+      [...this.items.values()].map((i) => i.group),
+      true,
+    )[0];
     if (itemHit && itemHit.object.userData.itemId) return { kind: 'item', id: itemHit.object.userData.itemId };
     const g = this.groundAt(clientX, clientY);
     if (g) {

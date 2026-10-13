@@ -4,19 +4,56 @@ type Note = [freq: number, start: number, dur: number, gain?: number, type?: Osc
 
 const SFX: Record<string, Note[]> = {
   blip: [[660, 0, 0.06, 0.12, 'triangle']],
-  place: [[220, 0, 0.09, 0.2, 'sine'], [330, 0.04, 0.1, 0.14, 'sine']],
-  error: [[160, 0, 0.14, 0.16, 'sawtooth'], [120, 0.1, 0.18, 0.16, 'sawtooth']],
-  cash: [[1175, 0, 0.08, 0.1, 'triangle'], [1568, 0.07, 0.2, 0.1, 'triangle']],
-  sell: [[784, 0, 0.08, 0.1, 'triangle'], [523, 0.07, 0.16, 0.1, 'triangle']],
-  hire: [[523, 0, 0.1, 0.12, 'triangle'], [659, 0.09, 0.1, 0.12, 'triangle'], [784, 0.18, 0.2, 0.12, 'triangle']],
-  build: [[392, 0, 0.1, 0.14, 'triangle'], [523, 0.09, 0.1, 0.14, 'triangle'], [659, 0.18, 0.1, 0.14, 'triangle'], [784, 0.27, 0.3, 0.14, 'triangle']],
-  heal: [[880, 0, 0.12, 0.09, 'sine'], [1109, 0.1, 0.12, 0.09, 'sine'], [1319, 0.2, 0.4, 0.09, 'sine']],
-  fail: [[311, 0, 0.18, 0.12, 'triangle'], [233, 0.16, 0.34, 0.12, 'triangle']],
-  payday: [[659, 0, 0.1, 0.1, 'square'], [523, 0.1, 0.2, 0.1, 'square']],
-  announce: [[784, 0, 0.3, 0.1, 'sine'], [622, 0.28, 0.5, 0.1, 'sine']],
+  place: [
+    [220, 0, 0.09, 0.2, 'sine'],
+    [330, 0.04, 0.1, 0.14, 'sine'],
+  ],
+  error: [
+    [160, 0, 0.14, 0.16, 'sawtooth'],
+    [120, 0.1, 0.18, 0.16, 'sawtooth'],
+  ],
+  cash: [
+    [1175, 0, 0.08, 0.1, 'triangle'],
+    [1568, 0.07, 0.2, 0.1, 'triangle'],
+  ],
+  sell: [
+    [784, 0, 0.08, 0.1, 'triangle'],
+    [523, 0.07, 0.16, 0.1, 'triangle'],
+  ],
+  hire: [
+    [523, 0, 0.1, 0.12, 'triangle'],
+    [659, 0.09, 0.1, 0.12, 'triangle'],
+    [784, 0.18, 0.2, 0.12, 'triangle'],
+  ],
+  build: [
+    [392, 0, 0.1, 0.14, 'triangle'],
+    [523, 0.09, 0.1, 0.14, 'triangle'],
+    [659, 0.18, 0.1, 0.14, 'triangle'],
+    [784, 0.27, 0.3, 0.14, 'triangle'],
+  ],
+  heal: [
+    [880, 0, 0.12, 0.09, 'sine'],
+    [1109, 0.1, 0.12, 0.09, 'sine'],
+    [1319, 0.2, 0.4, 0.09, 'sine'],
+  ],
+  fail: [
+    [311, 0, 0.18, 0.12, 'triangle'],
+    [233, 0.16, 0.34, 0.12, 'triangle'],
+  ],
+  payday: [
+    [659, 0, 0.1, 0.1, 'square'],
+    [523, 0.1, 0.2, 0.1, 'square'],
+  ],
+  announce: [
+    [784, 0, 0.3, 0.1, 'sine'],
+    [622, 0.28, 0.5, 0.1, 'sine'],
+  ],
   fanfare: [
-    [523, 0, 0.14, 0.14, 'triangle'], [659, 0.13, 0.14, 0.14, 'triangle'], [784, 0.26, 0.14, 0.14, 'triangle'],
-    [1047, 0.39, 0.5, 0.16, 'triangle'], [784, 0.39, 0.5, 0.08, 'sine'],
+    [523, 0, 0.14, 0.14, 'triangle'],
+    [659, 0.13, 0.14, 0.14, 'triangle'],
+    [784, 0.26, 0.14, 0.14, 'triangle'],
+    [1047, 0.39, 0.5, 0.16, 'triangle'],
+    [784, 0.39, 0.5, 0.08, 'sine'],
   ],
 };
 
@@ -54,7 +91,8 @@ export class Audio {
       void this.ctx.resume();
       return;
     }
-    const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const Ctor =
+      window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
     this.ctx = new Ctor();
     this.master = this.ctx.createGain();
@@ -89,7 +127,15 @@ export class Audio {
     this.save();
   }
 
-  private tone(dest: AudioNode, freq: number, at: number, dur: number, gain: number, type: OscillatorType, attack = 0.008) {
+  private tone(
+    dest: AudioNode,
+    freq: number,
+    at: number,
+    dur: number,
+    gain: number,
+    type: OscillatorType,
+    attack = 0.008,
+  ) {
     const ctx = this.ctx!;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
@@ -108,7 +154,8 @@ export class Audio {
     const notes = SFX[name];
     if (!notes) return;
     const now = this.ctx.currentTime;
-    for (const [f, start, dur, gain = 0.12, type = 'triangle'] of notes) this.tone(this.master, f, now + start, dur, gain, type);
+    for (const [f, start, dur, gain = 0.12, type = 'triangle'] of notes)
+      this.tone(this.master, f, now + start, dur, gain, type);
   }
 
   /** Queue the next four-second bar: a soft pad plus a few plucked notes. */

@@ -21,7 +21,9 @@ test.describe('starting out', () => {
     await expect(music).toHaveAttribute('aria-pressed', 'false');
     await sound.click();
     await expect(sound).toHaveText('🔇');
-    expect(await page.evaluate(() => localStorage.getItem('pressure-point-audio'))).toBe('{"sound":false,"music":false}');
+    expect(await page.evaluate(() => localStorage.getItem('pressure-point-audio'))).toBe(
+      '{"sound":false,"music":false}',
+    );
     // the choice carries into the game, and survives a reload
     await page.getByRole('button', { name: 'New game' }).click();
     await page.waitForFunction(() => !!window.pp);
@@ -117,7 +119,9 @@ test.describe('building rooms', () => {
     expect(await game.eval((pp) => pp.state.rooms.length)).toBe(1);
     await page.keyboard.press('Escape');
     await expect(page.locator('#plan')).toBeEmpty();
-    expect(await game.eval((pp) => [pp.state.rooms.length, pp.state.items.length, pp.state.money])).toEqual([0, 0, 30000]);
+    expect(await game.eval((pp) => [pp.state.rooms.length, pp.state.items.length, pp.state.money])).toEqual([
+      0, 0, 30000,
+    ]);
   });
 
   test('R rotates furniture before it is placed', async ({ game, page }) => {
@@ -163,7 +167,10 @@ test.describe('room blueprints', () => {
     await startSuite(game);
     await game.placeHeld();
     await game.placeHeld();
-    await page.locator('#plan').getByRole('button', { name: /Windows \(0\)/ }).click();
+    await page
+      .locator('#plan')
+      .getByRole('button', { name: /Windows \(0\)/ })
+      .click();
     await expect(page.locator('#hint')).toContainText('click a wall to add one');
     const south = await game.clickWall('south');
     const east = await game.clickWall('east');
@@ -198,24 +205,37 @@ test.describe('room blueprints', () => {
     await expect(page.locator('#plan')).toContainText('Massage Suite blueprint');
     await game.card('Potted Plant').click();
     await game.placeHeld({ inRoom: true });
-    expect(await game.eval((pp) => [pp.state.items.map((i) => i.type), pp.state.money])).toEqual([['plant'], 30000 - 120]);
+    expect(await game.eval((pp) => [pp.state.items.map((i) => i.type), pp.state.money])).toEqual([
+      ['plant'],
+      30000 - 120,
+    ]);
     // it went inside the blueprint's room
-    expect(await game.eval((pp) => pp.sim.world.zoneAt(pp.state.items[0].x, pp.state.items[0].y) === pp.state.rooms[0].id)).toBe(true);
+    expect(
+      await game.eval((pp) => pp.sim.world.zoneAt(pp.state.items[0].x, pp.state.items[0].y) === pp.state.rooms[0].id),
+    ).toBe(true);
     await expect(page.locator('#plan')).toContainText('Still needed: Massage Table, Oil Cart');
     // pick the required table back up from the panel
-    await page.locator('#plan').getByRole('button', { name: /Massage Table/ }).click();
+    await page
+      .locator('#plan')
+      .getByRole('button', { name: /Massage Table/ })
+      .click();
     await game.placeHeld();
     await expect(page.locator('#plan')).toContainText('Still needed: Oil Cart');
     // cancelling refunds the plant along with everything else
     await page.locator('#plan').getByRole('button', { name: 'Cancel' }).click();
-    expect(await game.eval((pp) => [pp.state.rooms.length, pp.state.items.length, pp.state.money])).toEqual([0, 0, 30000]);
+    expect(await game.eval((pp) => [pp.state.rooms.length, pp.state.items.length, pp.state.money])).toEqual([
+      0, 0, 30000,
+    ]);
   });
 
   test('a blueprint left open when the game closes is torn up and refunded on return', async ({ game, page }) => {
     await startSuite(game);
     await game.placeHeld();
     // a window and a plant, both paid for
-    await page.locator('#plan').getByRole('button', { name: /Windows/ }).click();
+    await page
+      .locator('#plan')
+      .getByRole('button', { name: /Windows/ })
+      .click();
     await game.clickWall('east');
     await game.menu('Items');
     await game.card('Potted Plant').click();
@@ -224,7 +244,9 @@ test.describe('room blueprints', () => {
     await page.reload();
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.waitForFunction(() => !!window.pp);
-    expect(await game.eval((pp) => [pp.state.rooms.length, pp.state.items.length, pp.state.money])).toEqual([0, 0, 30000]);
+    expect(await game.eval((pp) => [pp.state.rooms.length, pp.state.items.length, pp.state.money])).toEqual([
+      0, 0, 30000,
+    ]);
   });
 
   test('a built room can have windows added and its door moved', async ({ game, page }) => {
@@ -239,11 +261,16 @@ test.describe('room blueprints', () => {
     await openRoom();
     await expect(page.locator('#inspector')).toContainText('0 windows');
     const money = await game.eval((pp) => pp.state.money);
-    await page.locator('#inspector').getByRole('button', { name: /Windows/ }).click();
+    await page
+      .locator('#inspector')
+      .getByRole('button', { name: /Windows/ })
+      .click();
     await game.clickWall('north');
     await game.clickWall('east');
     await page.keyboard.press('Escape');
-    expect(await game.eval((pp) => [pp.state.rooms.find((r) => r.type === 'massage')!.windows.length, pp.state.money])).toEqual([2, money - 300]);
+    expect(
+      await game.eval((pp) => [pp.state.rooms.find((r) => r.type === 'massage')!.windows.length, pp.state.money]),
+    ).toEqual([2, money - 300]);
     await openRoom();
     await expect(page.locator('#inspector')).toContainText('2 windows');
     await page.locator('#inspector').getByRole('button', { name: 'Move door' }).click();
@@ -263,7 +290,13 @@ test.describe('room blueprints', () => {
       });
     /** The tiles the game says people use this item from, wherever it is being held. */
     const used = (held: { type: string; x: number; y: number; rot: number }) =>
-      game.eval((pp, h) => (pp.data.ITEMS as Record<string, { access: unknown[] }>)[h.type].access.map((_, i) => pp.geo.accessTile(h, i)), held);
+      game.eval(
+        (pp, h) =>
+          (pp.data.ITEMS as Record<string, { access: unknown[] }>)[h.type].access.map((_, i) =>
+            pp.geo.accessTile(h, i),
+          ),
+        held,
+      );
 
     // the massage table is used from two sides: the therapist on one, the guest on the other
     const table = await game.hoverHeld();
@@ -323,7 +356,9 @@ test.describe('staff', () => {
     await expect(page.locator('#inspector .tag')).toContainText('Massage Therapist');
 
     await page.locator('#inspector button.raise').click();
-    expect(await game.eval((pp) => pp.state.staff.find((s) => s.role === 'therapist')!.salary)).toBeGreaterThan(spot.salary);
+    expect(await game.eval((pp) => pp.state.staff.find((s) => s.role === 'therapist')!.salary)).toBeGreaterThan(
+      spot.salary,
+    );
 
     await page.locator('#inspector .course', { hasText: 'Deep Tissue' }).click();
     expect(await game.eval((pp) => pp.state.staff.find((s) => s.role === 'therapist')!.training?.course)).toBe('deep');
@@ -400,7 +435,11 @@ test.describe('running a center', () => {
     await expect(page.locator('#hint')).toContainText('Moving the Potted Plant');
     const to = await game.placeHeld();
     // it is where it was put, which is not where it was, and moving it cost nothing beyond its price
-    expect(await game.eval((pp) => [pp.state.items[0].x, pp.state.items[0].y, pp.state.money])).toEqual([to.x, to.y, 30000 - 120]);
+    expect(await game.eval((pp) => [pp.state.items[0].x, pp.state.items[0].y, pp.state.money])).toEqual([
+      to.x,
+      to.y,
+      30000 - 120,
+    ]);
     expect([to.x, to.y]).not.toEqual(was);
   });
 
@@ -410,12 +449,18 @@ test.describe('running a center', () => {
     await game.eval((pp) => (pp.state.money = 10000));
     await game.give('bench');
     await game.clickItem('bench');
-    await page.locator('#inspector').getByRole('button', { name: /Sell for \$75/ }).click();
+    await page
+      .locator('#inspector')
+      .getByRole('button', { name: /Sell for \$75/ })
+      .click();
     expect(await game.eval((pp) => pp.state.items.some((i) => i.type === 'bench'))).toBe(false);
 
     await game.clickRoom('massage');
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
-    await page.locator('#inspector').getByRole('button', { name: /Demolish/ }).click();
+    await page
+      .locator('#inspector')
+      .getByRole('button', { name: /Demolish/ })
+      .click();
     expect(await game.eval((pp) => pp.state.rooms.map((r) => r.type))).toEqual(['consult', 'training']);
   });
 });
@@ -461,7 +506,6 @@ test.describe('controls and saving', () => {
     await page.getByRole('button', { name: 'Resume' }).click();
     expect(await game.eval((pp) => pp.state.speed)).toBe(2);
   });
-
 });
 
 test.describe('clicking', () => {
@@ -524,18 +568,27 @@ test.describe('clicking', () => {
 });
 
 test.describe('leaving a game', () => {
-  test('Main menu saves and returns to the title screen, where Continue picks the game back up', async ({ game, page }) => {
+  test('Main menu saves and returns to the title screen, where Continue picks the game back up', async ({
+    game,
+    page,
+  }) => {
     await game.start();
     await game.buildCenter();
     await game.eval((pp) => (pp.state.speed = 0));
-    const before = await game.eval((pp) => ({ rooms: pp.state.rooms.length, staff: pp.state.staff.length, money: pp.state.money }));
+    const before = await game.eval((pp) => ({
+      rooms: pp.state.rooms.length,
+      staff: pp.state.staff.length,
+      money: pp.state.money,
+    }));
     await page.locator('#sys').getByTitle('Menu').click();
     await page.getByRole('button', { name: 'Main menu' }).click();
     await expect(page.locator('#title .logo')).toBeVisible();
     await expect(page.locator('#title')).toContainText('Continue picks up "Autosave"');
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.waitForFunction(() => !!window.pp);
-    expect(await game.eval((pp) => ({ rooms: pp.state.rooms.length, staff: pp.state.staff.length, money: pp.state.money }))).toEqual(before);
+    expect(
+      await game.eval((pp) => ({ rooms: pp.state.rooms.length, staff: pp.state.staff.length, money: pp.state.money })),
+    ).toEqual(before);
   });
 
   test('Esc opens the pause menu when nothing is in hand, and closes it again', async ({ game, page }) => {
@@ -697,7 +750,12 @@ test.describe('saved games', () => {
     await page.getByRole('button', { name: 'Save or load' }).click();
   };
   const summary = (game: import('./fixtures').Game) =>
-    game.eval((pp) => ({ rooms: pp.state.rooms.length, staff: pp.state.staff.length, arrived: pp.state.stats.arrived, money: pp.state.money }));
+    game.eval((pp) => ({
+      rooms: pp.state.rooms.length,
+      staff: pp.state.staff.length,
+      arrived: pp.state.stats.arrived,
+      money: pp.state.money,
+    }));
 
   test('the autosave brings a game back after a reload', async ({ game, page }) => {
     await game.start();
@@ -784,7 +842,10 @@ test.describe('saved games', () => {
     await page.getByLabel('Name for this save').fill('Travels well');
     await page.getByRole('button', { name: 'Save game' }).click();
     const row = page.locator('.save-list li', { hasText: 'Travels well' });
-    const [download] = await Promise.all([page.waitForEvent('download'), row.getByRole('button', { name: 'Export' }).click()]);
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      row.getByRole('button', { name: 'Export' }).click(),
+    ]);
     expect(download.suggestedFilename()).toBe('pressure-point-travels-well.json');
     const file = testInfo.outputPath('export.json');
     await download.saveAs(file);
@@ -811,7 +872,9 @@ test.describe('saved games', () => {
   test('a file that is not a save is refused politely', async ({ game, page }) => {
     await game.start();
     await openSaves(page);
-    await page.locator('.filebtn input').setInputFiles({ name: 'holiday.json', mimeType: 'application/json', buffer: Buffer.from('{"photos": 12}') });
+    await page
+      .locator('.filebtn input')
+      .setInputFiles({ name: 'holiday.json', mimeType: 'application/json', buffer: Buffer.from('{"photos": 12}') });
     await expect(page.locator('.save-note.bad')).toContainText('"holiday.json" is not a Pressure Point Institute save');
     await expect(page.locator('.save-list li')).toHaveCount(1);
   });

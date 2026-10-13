@@ -1,0 +1,7 @@
+dist/
+release/
+node_modules/
+test-results/
+playwright-report/
+.yarn/
+yarn.lock

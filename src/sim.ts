@@ -362,10 +362,12 @@ export class Sim {
     if (!this.hasRoom('massage')) return 'Now the main event: build a Massage Suite.';
     if (!this.hasStaff('therapist')) return 'Hire a Massage Therapist and the knots will start untying themselves.';
     const tired = s.staff.some((x) => x.energy < 20);
-    if (tired && !this.hasRoom('staffroom')) return 'Your staff members are worn out and working slowly. Build a Staff Room so they can take breaks.';
+    if (tired && !this.hasRoom('staffroom'))
+      return 'Your staff members are worn out and working slowly. Build a Staff Room so they can take breaks.';
     if (s.guests.some((g) => g.bladder > 85) && !this.hasRoom('restroom'))
       return 'Guests are crossing their legs. A Restroom would be a kindness.';
-    if (s.litter.length >= 3 && !this.hasStaff('caretaker')) return 'Litter is piling up. Hire a Janitor to keep the place clean.';
+    if (s.litter.length >= 3 && !this.hasStaff('caretaker'))
+      return 'Litter is piling up. Hire a Janitor to keep the place clean.';
     if (s.items.some((i) => i.type === 'plant' && i.water < 20) && !this.hasStaff('caretaker'))
       return 'Your plants are wilting. A Janitor will water them.';
     if (s.offer) return 'There is an emergency on offer at the top of the screen. Accept it only if you can cope.';
@@ -417,7 +419,8 @@ export class Sim {
       if (def.equipment) {
         const eq = ITEMS[def.equipment];
         const have = s.items.filter((i) => i.type === def.equipment && this.world.usable(i));
-        if (!have.length) return `${modalityLabel(m)} needs a ${eq.name} in the ${room.name}. You'll find it in the Items menu.`;
+        if (!have.length)
+          return `${modalityLabel(m)} needs a ${eq.name} in the ${room.name}. You'll find it in the Items menu.`;
         if (def.equipment === 'stone_warmer' && have.every((i) => i.water < STONE_USE))
           return this.hasStaff('caretaker')
             ? 'The massage stones have gone cold. Your Janitor is stretched thin.'
@@ -766,7 +769,11 @@ export class Sim {
           this.changeRep(-1);
           this.say(g, '💸', 6);
           this.emit({ type: 'float', text: 'Too pricey!', x: g.x, y: g.y, kind: 'bad' });
-          this.tipOnce('pricey', 'A guest balked at your prices and left. High prices earn more per guest but drive some away.', 'bad');
+          this.tipOnce(
+            'pricey',
+            'A guest balked at your prices and left. High prices earn more per guest but drive some away.',
+            'bad',
+          );
         }
       } else {
         // unsure: a scan settles it if there is a Posture Lab, otherwise it is back to the Consultant
@@ -782,7 +789,12 @@ export class Sim {
       const mod = MODALITIES[cond.modality];
       const problem = this.deliveryProblem(it, staff, mod);
       let chance = clamp(
-        0.56 + staff.skill * 0.09 + Math.min(1, g.diagnosis) * 0.15 + nice - mod.difficulty - (staff.energy < 15 ? 0.15 : 0),
+        0.56 +
+          staff.skill * 0.09 +
+          Math.min(1, g.diagnosis) * 0.15 +
+          nice -
+          mod.difficulty -
+          (staff.energy < 15 ? 0.15 : 0),
         0.3,
         0.98,
       );
@@ -812,7 +824,12 @@ export class Sim {
         this.s.stats.failed++;
         this.changeRep(-2.5);
         this.say(g, '💢', 6);
-        const why = { '': 'Still knotted!', unqualified: 'Not qualified!', 'no-equipment': 'No equipment!', cold: 'Cold stones!' }[problem];
+        const why = {
+          '': 'Still knotted!',
+          unqualified: 'Not qualified!',
+          'no-equipment': 'No equipment!',
+          cold: 'Cold stones!',
+        }[problem];
         this.emit({ type: 'float', text: why, x: g.x, y: g.y, kind: 'bad' });
         this.emit({ type: 'sfx', name: 'fail' });
         if (problem === 'unqualified')
@@ -924,7 +941,11 @@ export class Sim {
     for (let i = 0; i <= n; i++) {
       const nx = x + dx;
       const ny = y + dy;
-      if (!inBuilding(nx, ny) || this.world.zone[tileIdx(nx, ny)] !== Z_CORRIDOR || this.world.blocked[tileIdx(nx, ny)]) {
+      if (
+        !inBuilding(nx, ny) ||
+        this.world.zone[tileIdx(nx, ny)] !== Z_CORRIDOR ||
+        this.world.blocked[tileIdx(nx, ny)]
+      ) {
         const spots = this.world.standSpots(ax, ay, n + 6);
         return spots[Math.min(spots.length - 1, n + 2)] ?? [ax, ay];
       }
@@ -1007,9 +1028,9 @@ export class Sim {
         g.goal = 'consult';
         return this.decide(g);
       }
-      if (g.goal !== 'leave' && g.goal !== 'reception')
-{
-        const place = g.goal === 'treat' ? ROOMS[DISCIPLINES[this.modalityOf(g).discipline].room].name : GOAL_NAME[g.goal];
+      if (g.goal !== 'leave' && g.goal !== 'reception') {
+        const place =
+          g.goal === 'treat' ? ROOMS[DISCIPLINES[this.modalityOf(g).discipline].room].name : GOAL_NAME[g.goal];
         this.tipOnce(`missing-${place}`, `Guests are waiting for a ${place}, but there isn't a working one.`, 'bad');
       }
     } else {
@@ -1299,7 +1320,8 @@ export class Sim {
       for (const l of s.litter) if (!l.claimedBy) tasks.push({ kind: 'litter', id: l.id, x: l.x, y: l.y, urgency: 1 });
       for (const p of s.items) {
         if (p.claimedBy) continue;
-        if (p.wear >= WEAR_REPAIR) tasks.push({ kind: 'repair', id: p.id, x: p.x, y: p.y, urgency: p.wear >= 100 ? 2 : 0 });
+        if (p.wear >= WEAR_REPAIR)
+          tasks.push({ kind: 'repair', id: p.id, x: p.x, y: p.y, urgency: p.wear >= 100 ? 2 : 0 });
         else if ((p.type === 'plant' && p.water <= 40) || (p.type === 'stone_warmer' && p.water <= 55))
           tasks.push({ kind: 'water', id: p.id, x: p.x, y: p.y, urgency: 0 });
       }
@@ -1312,7 +1334,12 @@ export class Sim {
           // stand next to the item, on whichever side can be reached
           const item = this.world.item(task.id)!;
           search: for (const [fx, fy] of footprint(item)) {
-            for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) {
+            for (const [dx, dy] of [
+              [0, 1],
+              [1, 0],
+              [-1, 0],
+              [0, -1],
+            ]) {
               if (this.world.walkable(fx + dx, fy + dy) && this.goTo(st, fx + dx, fy + dy)) {
                 ok = true;
                 break search;
@@ -1416,7 +1443,11 @@ export class Sim {
           if (st.timer <= 0) {
             st.timer = 2;
             if (!this.tryBreak(st))
-              this.tipOnce('tired', 'Tired staff members work slowly and botch treatments. Build a Staff Room so they can rest.', 'bad');
+              this.tipOnce(
+                'tired',
+                'Tired staff members work slowly and botch treatments. Build a Staff Room so they can rest.',
+                'bad',
+              );
           }
         }
         break;
@@ -1534,7 +1565,10 @@ export class Sim {
     if (s.offer || s.emergency) return false;
     const staff = s.staff.filter((x) => x.state !== 'leaving');
     const pool = CONDITIONS.filter(
-      (c) => this.unlocked(c.modality) && this.offered(MODALITIES[c.modality].discipline) && staff.some((t) => t.quals.includes(c.modality)),
+      (c) =>
+        this.unlocked(c.modality) &&
+        this.offered(MODALITIES[c.modality].discipline) &&
+        staff.some((t) => t.quals.includes(c.modality)),
     );
     if (!pool.length) {
       s.nextEmergency = s.day + 20;
@@ -1600,7 +1634,14 @@ export class Sim {
       for (const m of MODALITY_ORDER) {
         const def = MODALITIES[m];
         if (def.discipline !== discipline || st.quals.includes(m) || !this.unlocked(m)) continue;
-        out.push({ id: m, name: modalityLabel(m), icon: def.icon, desc: def.desc, cost: def.trainCost, days: def.trainDays });
+        out.push({
+          id: m,
+          name: modalityLabel(m),
+          icon: def.icon,
+          desc: def.desc,
+          cost: def.trainCost,
+          days: def.trainDays,
+        });
       }
     }
     if (st.skill < 5)
@@ -1675,7 +1716,13 @@ export class Sim {
     this.repathAll();
   }
 
-  placeItem(type: ItemType, x: number, y: number, rot: number, opts: { free?: boolean; roomId?: number } = {}): Item | null {
+  placeItem(
+    type: ItemType,
+    x: number,
+    y: number,
+    rot: number,
+    opts: { free?: boolean; roomId?: number } = {},
+  ): Item | null {
     const def = ITEMS[type];
     if (!this.world.canPlaceItem(type, x, y, rot, opts.roomId).ok) return null;
     if (!opts.free && this.s.money < def.cost) {
@@ -1756,7 +1803,8 @@ export class Sim {
     return {
       guests: this.s.guests.filter((g) => ids.has(g.claimItem) || ids.has(g.station)),
       staff: this.s.staff.filter(
-        (st) => ids.has(st.post) || ids.has(st.claimItem) || (!!st.job && st.job.kind !== 'litter' && ids.has(st.job.id)),
+        (st) =>
+          ids.has(st.post) || ids.has(st.claimItem) || (!!st.job && st.job.kind !== 'litter' && ids.has(st.job.id)),
       ),
     };
   }

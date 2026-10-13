@@ -35,7 +35,13 @@ interface Handle {
     dist: number;
     renderer: { info: { render: { triangles: number } } };
   };
-  tools: { tool: any; hint: string; problem: string; plan: { room: Room } | null; selected: { kind: string; id: number } | null };
+  tools: {
+    tool: any;
+    hint: string;
+    problem: string;
+    plan: { room: Room } | null;
+    selected: { kind: string; id: number } | null;
+  };
   data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };
   geo: {
     itemDims(type: string, rot: number): [number, number];
@@ -75,7 +81,8 @@ function installFinders() {
   const currentRoom = (): { room?: Room; rect: Rect; type: string } => {
     const t = pp().tools.tool;
     if (t.kind === 'room' && t.phase === 'door') return { rect: t.rect, type: t.type };
-    const room: Room | undefined = t.kind === 'room' && t.phase === 'plan' ? t.room : pp().state.rooms.find((r) => r.id === t.roomId);
+    const room: Room | undefined =
+      t.kind === 'room' && t.phase === 'plan' ? t.room : pp().state.rooms.find((r) => r.id === t.roomId);
     return room ? { room, rect: room, type: room.type } : fail('no room is being planned or edited');
   };
   const wantsDoor = () => {
@@ -87,7 +94,13 @@ function installFinders() {
   const heldRules = () => {
     const t = pp().tools.tool;
     const world = pp().sim.world;
-    if (t.kind === 'item') return { type: t.type as string, rot: t.rot as number, room: undefined, ok: (x: number, y: number, r: number): Check => world.canPlaceItem(t.type, x, y, r) };
+    if (t.kind === 'item')
+      return {
+        type: t.type as string,
+        rot: t.rot as number,
+        room: undefined,
+        ok: (x: number, y: number, r: number): Check => world.canPlaceItem(t.type, x, y, r),
+      };
     if (t.kind === 'move') {
       const it = world.item(t.id) as Item;
       return {
@@ -95,18 +108,31 @@ function installFinders() {
         rot: t.rot as number,
         room: undefined,
         // somewhere other than where it already is
-        ok: (x: number, y: number, r: number): Check => (x === it.x && y === it.y ? { ok: false, reason: '' } : pp().sim.canMoveItem(it, x, y, r)),
+        ok: (x: number, y: number, r: number): Check =>
+          x === it.x && y === it.y ? { ok: false, reason: '' } : pp().sim.canMoveItem(it, x, y, r),
       };
     }
     if (t.kind === 'room' && t.phase === 'plan' && t.sub?.kind === 'item') {
       const sub = t.sub;
-      return { type: sub.type as string, rot: sub.rot as number, room: t.room as Room, ok: (x: number, y: number, r: number): Check => world.canPlaceItem(sub.type, x, y, r, sub.required ? t.room.id : undefined) };
+      return {
+        type: sub.type as string,
+        rot: sub.rot as number,
+        room: t.room as Room,
+        ok: (x: number, y: number, r: number): Check =>
+          world.canPlaceItem(sub.type, x, y, r, sub.required ? t.room.id : undefined),
+      };
     }
     return fail('nothing is in hand to place');
   };
 
   /** The first spot, scanning the given bounds, where an item fits. */
-  const firstFit = (type: string, startRot: number, bounds: Rect, ok: (x: number, y: number, r: number) => Check, visible: boolean) => {
+  const firstFit = (
+    type: string,
+    startRot: number,
+    bounds: Rect,
+    ok: (x: number, y: number, r: number) => Check,
+    visible: boolean,
+  ) => {
     for (let turns = 0; turns < 4; turns++) {
       const rot = (startRot + turns) & 3;
       const [w, h] = pp().geo.itemDims(type, rot);
@@ -178,7 +204,8 @@ function installFinders() {
     freePatch(w, h) {
       const { W } = pp().data;
       const world = pp().sim.world as unknown as { zone: Int32Array; blocked: Uint8Array; reserved: Uint8Array };
-      const free = (x: number, y: number) => world.zone[y * W + x] === 0 && !world.blocked[y * W + x] && !world.reserved[y * W + x];
+      const free = (x: number, y: number) =>
+        world.zone[y * W + x] === 0 && !world.blocked[y * W + x] && !world.reserved[y * W + x];
       const b = building();
       for (let y = b.y; y + h <= b.y + b.h; y++) {
         scan: for (let x = b.x; x + w <= b.x + b.w; x++) {
@@ -211,7 +238,8 @@ function installFinders() {
         const hasWindow = !!room?.windows.some((w) => same(w, spot));
         let fits: boolean;
         if (want === 'existing-window') fits = hasWindow;
-        else if (wantsDoor()) fits = (!room || !same(room.door, spot)) && world.doorValid(type as never, rect, spot, room).ok;
+        else if (wantsDoor())
+          fits = (!room || !same(room.door, spot)) && world.doorValid(type as never, rect, spot, room).ok;
         else fits = !!room && !hasWindow && world.windowValid(room, spot).ok;
         const p = point(spot);
         if (fits && onCanvas(p)) return { ...p, spot };
@@ -252,11 +280,17 @@ export class Game {
 
   /** Run code against the live game and return what it returns. */
   eval<T, A = undefined>(fn: (pp: Handle, arg: A) => T, arg?: A): Promise<T> {
-    return this.page.evaluate(([f, a]) => new Function('pp', 'arg', `return (${f})(pp, arg)`)(window.pp, a), [fn.toString(), arg] as const) as Promise<T>;
+    return this.page.evaluate(([f, a]) => new Function('pp', 'arg', `return (${f})(pp, arg)`)(window.pp, a), [
+      fn.toString(),
+      arg,
+    ] as const) as Promise<T>;
   }
   /** Ask the page where something is. */
   private find<K extends keyof Finders>(what: K, ...args: Parameters<Finders[K]>): Promise<ReturnType<Finders[K]>> {
-    return this.page.evaluate(([name, list]) => (window.find[name] as (...a: unknown[]) => unknown)(...list), [what, args] as const) as Promise<ReturnType<Finders[K]>>;
+    return this.page.evaluate(([name, list]) => (window.find[name] as (...a: unknown[]) => unknown)(...list), [
+      what,
+      args,
+    ] as const) as Promise<ReturnType<Finders[K]>>;
   }
 
   private async clickAt(p: Point) {
@@ -381,9 +415,18 @@ export class Game {
       };
       state.money = 100000;
       sim.placeItem('reception_desk', 14, 13, 0);
-      room('consult', { x: 5, y: 5, w: 4, h: 4 }, { x: 8, y: 7, dx: 1, dy: 0 }, [['consult_desk', 6, 6], ['cabinet', 5, 8]]);
-      room('massage', { x: 11, y: 5, w: 4, h: 4 }, { x: 12, y: 8, dx: 0, dy: 1 }, [['massage_table', 12, 5], ['oil_trolley', 14, 5]]);
-      room('training', { x: 5, y: 11, w: 4, h: 4 }, { x: 8, y: 12, dx: 1, dy: 0 }, [['whiteboard', 6, 11], ['study_desk', 6, 13]]);
+      room('consult', { x: 5, y: 5, w: 4, h: 4 }, { x: 8, y: 7, dx: 1, dy: 0 }, [
+        ['consult_desk', 6, 6],
+        ['cabinet', 5, 8],
+      ]);
+      room('massage', { x: 11, y: 5, w: 4, h: 4 }, { x: 12, y: 8, dx: 0, dy: 1 }, [
+        ['massage_table', 12, 5],
+        ['oil_trolley', 14, 5],
+      ]);
+      room('training', { x: 5, y: 11, w: 4, h: 4 }, { x: 8, y: 12, dx: 1, dy: 0 }, [
+        ['whiteboard', 6, 11],
+        ['study_desk', 6, 13],
+      ]);
       for (const role of ['receptionist', 'consultant', 'therapist']) {
         const best = state.candidates.filter((c) => c.role === role).sort((a, b) => b.skill - a.skill)[0];
         sim.hire(best.id);

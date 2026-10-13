@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ASSESS_FEE, CONDITION_BY_ID, CONSULT_FEE, LOAN_MAX, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../../src/data';
+import {
+  ASSESS_FEE,
+  CONDITION_BY_ID,
+  CONSULT_FEE,
+  LOAN_MAX,
+  LOAN_RATE,
+  LOAN_STEP,
+  PRICE_MAX,
+  PRICE_MIN,
+} from '../../src/data';
 import {
   addPostureLab,
   addRestroom,
@@ -31,7 +40,14 @@ describe('decor and prestige', () => {
 
   it('caps prestige at five', () => {
     const { sim, massage } = openCenter(1);
-    for (const [x, y] of [[14, 8], [11, 8], [14, 7], [14, 6], [11, 5]]) sim.placeItem('statue', x, y, 0);
+    for (const [x, y] of [
+      [14, 8],
+      [11, 8],
+      [14, 7],
+      [14, 6],
+      [11, 5],
+    ])
+      sim.placeItem('statue', x, y, 0);
     expect(sim.prestige(massage)).toBe(5);
   });
 
@@ -179,7 +195,10 @@ describe('prices', () => {
       sim.setPrice(price);
       sim.drain();
       run(sim, 900);
-      return toasts(sim.drain()).filter((t) => /balked at your prices/.test(t)).length + s.guests.filter((g) => g.bubble === '💸').length;
+      return (
+        toasts(sim.drain()).filter((t) => /balked at your prices/.test(t)).length +
+        s.guests.filter((g) => g.bubble === '💸').length
+      );
     };
     expect(walkouts(1)).toBe(0);
     expect(walkouts(2)).toBeGreaterThan(0);
@@ -194,10 +213,14 @@ describe('the Posture Lab', () => {
     hire(sim, 'consultant');
     const scanner = s.items.find((i) => i.type === 'posture_scanner')!;
     let sentForScan = false;
-    runUntil(sim, () => {
-      sentForScan ||= s.guests.some((g) => g.goal === 'assess');
-      return scanner.wear > 0;
-    }, 900);
+    runUntil(
+      sim,
+      () => {
+        sentForScan ||= s.guests.some((g) => g.goal === 'assess');
+        return scanner.wear > 0;
+      },
+      900,
+    );
     expect(sentForScan).toBe(true);
     const fees = s.ledger.consult + s.lastLedger.consult;
     expect((fees - ASSESS_FEE) % 50).toBe(0);
@@ -349,7 +372,17 @@ describe('a long session', () => {
     addPostureLab(sim);
     hire(sim, 'caretaker');
     hire(sim, 'consultant');
-    for (const [type, x, y] of [['bench', 10, 9], ['bench', 16, 9], ['tea_station', 10, 13], ['snack_machine', 12, 13], ['plant', 4, 4], ['bin', 22, 10], ['fountain', 12, 11], ['magazine_rack', 9, 10], ['rug', 24, 12]] as const)
+    for (const [type, x, y] of [
+      ['bench', 10, 9],
+      ['bench', 16, 9],
+      ['tea_station', 10, 13],
+      ['snack_machine', 12, 13],
+      ['plant', 4, 4],
+      ['bin', 22, 10],
+      ['fountain', 12, 11],
+      ['magazine_rack', 9, 10],
+      ['rug', 24, 12],
+    ] as const)
       expect(sim.placeItem(type, x, y, 0), `${type}`).not.toBeNull();
     s.stars = 2;
     sim.placeItem('stretch_rack', 14, 7, 0);

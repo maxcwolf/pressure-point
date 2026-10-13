@@ -16,7 +16,8 @@ type Furniture = [type: ItemType, x: number, y: number, rot?: number];
 export function buildRoom(sim: Sim, type: RoomType, rect: Rect, door: Door, items: Furniture[]): Room {
   const room = sim.createRoom(type, rect, door);
   for (const [t, x, y, rot] of items) {
-    if (!sim.placeItem(t, x, y, rot ?? 0, { free: true, roomId: room.id })) throw new Error(`could not place ${t} at ${x},${y}`);
+    if (!sim.placeItem(t, x, y, rot ?? 0, { free: true, roomId: room.id }))
+      throw new Error(`could not place ${t} at ${x},${y}`);
   }
   sim.finishRoom(room);
   return room;
@@ -33,26 +34,41 @@ export const LAYOUT = {
 } as const;
 
 export function addConsult(sim: Sim) {
-  return buildRoom(sim, 'consult', LAYOUT.consult.rect, LAYOUT.consult.door, [['consult_desk', 6, 6], ['cabinet', 5, 8]]);
+  return buildRoom(sim, 'consult', LAYOUT.consult.rect, LAYOUT.consult.door, [
+    ['consult_desk', 6, 6],
+    ['cabinet', 5, 8],
+  ]);
 }
 export function addMassage(sim: Sim) {
-  return buildRoom(sim, 'massage', LAYOUT.massage.rect, LAYOUT.massage.door, [['massage_table', 12, 5], ['oil_trolley', 14, 5]]);
+  return buildRoom(sim, 'massage', LAYOUT.massage.rect, LAYOUT.massage.door, [
+    ['massage_table', 12, 5],
+    ['oil_trolley', 14, 5],
+  ]);
 }
 export function addStaffRoom(sim: Sim) {
   return buildRoom(sim, 'staffroom', LAYOUT.staffroom.rect, LAYOUT.staffroom.door, [['sofa', 17, 5]]);
 }
 export function addRestroom(sim: Sim) {
-  return buildRoom(sim, 'restroom', LAYOUT.restroom.rect, LAYOUT.restroom.door, [['toilet', 21, 5], ['sink', 22, 5]]);
+  return buildRoom(sim, 'restroom', LAYOUT.restroom.rect, LAYOUT.restroom.door, [
+    ['toilet', 21, 5],
+    ['sink', 22, 5],
+  ]);
 }
 export function addTraining(sim: Sim) {
-  return buildRoom(sim, 'training', LAYOUT.training.rect, LAYOUT.training.door, [['whiteboard', 6, 11], ['study_desk', 6, 13]]);
+  return buildRoom(sim, 'training', LAYOUT.training.rect, LAYOUT.training.door, [
+    ['whiteboard', 6, 11],
+    ['study_desk', 6, 13],
+  ]);
 }
 export function addPostureLab(sim: Sim) {
   return buildRoom(sim, 'assess', LAYOUT.assess.rect, LAYOUT.assess.door, [['posture_scanner', 20, 12]]);
 }
 
 export function addAcupuncture(sim: Sim) {
-  return buildRoom(sim, 'acupuncture', LAYOUT.acupuncture.rect, LAYOUT.acupuncture.door, [['acu_table', 25, 8], ['needle_cabinet', 27, 8]]);
+  return buildRoom(sim, 'acupuncture', LAYOUT.acupuncture.rect, LAYOUT.acupuncture.door, [
+    ['acu_table', 25, 8],
+    ['needle_cabinet', 27, 8],
+  ]);
 }
 
 /** Hire the most skilled applicant for a role. */
