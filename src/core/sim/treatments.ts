@@ -12,54 +12,58 @@ import {
 import { refillCandidates } from '../people';
 import { disciplineOn } from '../state/game';
 import type { Guest, Item, Staff } from '../state/types';
-import { System } from './system';
+import type { SimContext } from './context';
+import { hasRoom } from './progress';
 
 /** Why a table cannot deliver a modality properly right now ('' when it can). */
 export type DeliveryProblem = '' | 'unqualified' | 'no-equipment' | 'cold';
 
-export class Treatments extends System {
-  /** Switched on for this game. */
-  enabled(d: Discipline) {
-    return disciplineOn(this.s, d);
-  }
+/** Switched on for this game. */
+export function enabled(ctx: SimContext, d: Discipline) {
+  return disciplineOn(ctx.s, d);
+}
 
-  /** Switch an optional discipline on or off. What is already built stays, but its guests stop arriving. */
-  setDiscipline(d: Discipline, on: boolean) {
-    if (!DISCIPLINES[d].optional) return;
-    this.s.options[d] = on;
-    refillCandidates(this.s);
-  }
+/** Switch an optional discipline on or off. What is already built stays, but its guests stop arriving. */
+export function setDiscipline(ctx: SimContext, d: Discipline, on: boolean) {
+  if (!DISCIPLINES[d].optional) return;
+  ctx.s.options[d] = on;
+  refillCandidates(ctx.s);
+}
 
-  /** The center can actually take guests for this discipline: it is on and has a finished room. */
-  offered(d: Discipline) {
-    return this.enabled(d) && this.sim.progress.hasRoom(DISCIPLINES[d].room);
-  }
+/** The center can actually take guests for this discipline: it is on and has a finished room. */
+export function offered(ctx: SimContext, d: Discipline) {
+  return enabled(ctx, d) && hasRoom(ctx, DISCIPLINES[d].room);
+}
 
-  /** Whether a modality is available: enough stars, and its discipline switched on. */
-  unlocked(m: Modality) {
-    return this.s.stars >= MODALITIES[m].star && this.enabled(MODALITIES[m].discipline);
-  }
+/** Whether a modality is available: enough stars, and its discipline switched on. */
+export function unlocked(ctx: SimContext, m: Modality) {
+  return ctx.s.stars >= MODALITIES[m].star && enabled(ctx, MODALITIES[m].discipline);
+}
 
-  /** The modality that treats a guest's condition. */
-  modalityOf(g: Guest): ModalityDef {
-    return MODALITIES[conditionOf(g.condition).modality];
-  }
+/** The modality that treats a guest's condition. */
+export function modalityOf(g: Guest): ModalityDef {
+  return MODALITIES[conditionOf(g.condition).modality];
+}
 
-  /** Working equipment for a modality in the suite around a table. */
-  private equipmentProblem(table: Item, def: ModalityDef): DeliveryProblem {
-    if (!def.equipment) return '';
-    const zone = this.world.zoneAt(table.x, table.y);
-    const kit = this.s.items.filter((i) => i.type === def.equipment && this.world.zoneAt(i.x, i.y) === zone);
-    if (!kit.length) return 'no-equipment';
-    if (def.equipment === 'stone_warmer' && kit.every((i) => i.water < STONE_USE)) return 'cold';
-    return '';
-  }
+/** Working equipment for a modality in the suite around a table. */
+export function equipmentProblem(ctx: SimContext, table: Item, def: ModalityDef): DeliveryProblem {
+  if (!def.equipment) return '';
+  const zone = ctx.world.zoneAt(table.x, table.y);
+  const kit = ctx.s.items.filter((i) => i.type === def.equipment && ctx.world.zoneAt(i.x, i.y) === zone);
+  if (!kit.length) return 'no-equipment';
+  if (def.equipment === 'stone_warmer' && kit.every((i) => i.water < STONE_USE)) return 'cold';
+  return '';
+}
 
-  /** Can this table, with this therapist, deliver the modality properly? */
-  deliveryProblem(table: Item, staff: Staff | undefined, def: ModalityDef): DeliveryProblem {
-    const kit = this.equipmentProblem(table, def);
-    if (kit) return kit;
-    if (staff && !staff.quals.includes(def.id)) return 'unqualified';
-    return '';
-  }
+/** Can this table, with this therapist, deliver the modality properly? */
+export function deliveryProblem(
+  ctx: SimContext,
+  table: Item,
+  staff: Staff | undefined,
+  def: ModalityDef,
+): DeliveryProblem {
+  const kit = equipmentProblem(ctx, table, def);
+  if (kit) return kit;
+  if (staff && !staff.quals.includes(def.id)) return 'unqualified';
+  return '';
 }

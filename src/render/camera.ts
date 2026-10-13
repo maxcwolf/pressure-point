@@ -2,7 +2,8 @@
 
 import * as THREE from 'three';
 
-import { BY0, BY1, H, W } from '../core/data';
+import { BY0, BY1, W } from '../core/data';
+import { keepNearMap, tilesPerPixel, zoomedDist } from './camera-math';
 
 const CAM_DIR = new THREE.Vector3(1, 1.2, 1).normalize();
 const PAN_RIGHT = new THREE.Vector3(1, 0, -1).normalize();
@@ -24,17 +25,16 @@ export class CameraRig {
   /** Move the camera target across the ground, kept near the map. */
   pan(dx: number, dy: number) {
     this.target.addScaledVector(PAN_RIGHT, dx).addScaledVector(PAN_UP, dy);
-    this.target.x = Math.max(-2, Math.min(W + 2, this.target.x));
-    this.target.z = Math.max(-2, Math.min(H + 2, this.target.z));
+    [this.target.x, this.target.z] = keepNearMap(this.target.x, this.target.z);
   }
   /** Pan by a screen-space drag in pixels. */
   panPixels(dx: number, dy: number) {
-    const perPx = (2 * this.dist * Math.tan((this.camera.fov * Math.PI) / 360)) / window.innerHeight;
+    const perPx = tilesPerPixel(this.dist, this.camera.fov, window.innerHeight);
     this.pan(-dx * perPx, (dy * perPx) / CAM_DIR.y);
   }
   /** Zoom in or out by a fraction, within limits. */
   zoom(delta: number) {
-    this.dist = Math.max(16, Math.min(78, this.dist * (1 + delta)));
+    this.dist = zoomedDist(this.dist, delta);
   }
 
   /** Move the camera to where the target and zoom put it. */

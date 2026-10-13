@@ -12,7 +12,7 @@ import { reloadInto } from './handoff';
 import { bindKeyboard } from './keyboard';
 import { runLoop } from './loop';
 import { bindPointer } from './pointer';
-import { Refresh } from './refresh';
+import { createRefresh } from './refresh';
 import { Tools } from './tools/tools';
 
 /** What a game needs from the page it runs in. */
@@ -31,7 +31,7 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
   for (const r of [...state.rooms]) if (!r.done) sim.removeRoom(r.id, 1);
 
   const view = new View(canvas, sim);
-  const refresh = new Refresh();
+  const refresh = createRefresh();
   const tools = new Tools(
     sim,
     view,

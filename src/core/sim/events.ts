@@ -1,6 +1,5 @@
+import type { SimContext } from './context';
 // What the simulation tells the outside world: sounds, toasts, announcements and floating text.
-
-import { System } from './system';
 
 /** Whether a message is good news, bad news or neither. */
 export type Tone = 'good' | 'bad' | 'info';
@@ -16,30 +15,26 @@ export type SimEvent =
   | { type: 'announce'; text: string }
   | { type: 'star'; stars: number };
 
-export class Events extends System {
-  private queue: SimEvent[] = [];
+/** Queue an event for the outside world. */
+export function emit(ctx: SimContext, e: SimEvent) {
+  ctx.events.push(e);
+}
 
-  /** Queue an event for the outside world. */
-  emit(e: SimEvent) {
-    this.queue.push(e);
-  }
+/** Hand over the queued events and start a fresh queue. */
+export function drainEvents(ctx: SimContext): SimEvent[] {
+  const e = ctx.events;
+  ctx.events = [];
+  return e;
+}
 
-  /** Hand over the queued events and start a fresh queue. */
-  drain(): SimEvent[] {
-    const e = this.queue;
-    this.queue = [];
-    return e;
-  }
+/** Show the player a short message. */
+export function toast(ctx: SimContext, text: string, kind: Tone = 'info') {
+  emit(ctx, { type: 'toast', text, kind });
+}
 
-  /** Show the player a short message. */
-  toast(text: string, kind: Tone = 'info') {
-    this.emit({ type: 'toast', text, kind });
-  }
-
-  /** Show a tip, but only the first time it comes up. */
-  tipOnce(id: string, text: string, kind: Tone = 'info') {
-    if (this.s.seenTips.includes(id)) return;
-    this.s.seenTips.push(id);
-    this.toast(text, kind);
-  }
+/** Show a tip, but only the first time it comes up. */
+export function tipOnce(ctx: SimContext, id: string, text: string, kind: Tone = 'info') {
+  if (ctx.s.seenTips.includes(id)) return;
+  ctx.s.seenTips.push(id);
+  toast(ctx, text, kind);
 }
