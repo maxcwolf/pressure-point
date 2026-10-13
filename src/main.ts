@@ -17,7 +17,7 @@ async function boot() {
   // the lawn sign and welcome mat are drawn to canvas, so the font has to be ready first
   await Promise.all([document.fonts.load('700 20px Fredoka'), document.fonts.load('500 20px Fredoka')]).catch(() => {});
   const saved = loadGame();
-  const choice = await showTitle(!!saved);
+  const choice = await showTitle(!!saved, audio);
   audio.unlock();
   if (choice === 'new') clearSave();
   start(choice === 'continue' && saved ? saved : newGame());

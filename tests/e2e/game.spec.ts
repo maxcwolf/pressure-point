@@ -12,6 +12,28 @@ test.describe('starting out', () => {
     await expect.poll(() => game.eval((pp) => pp.view.renderer.info.render.triangles)).toBeGreaterThan(1000);
   });
 
+  test('music and sound can be switched off on the title screen', async ({ game, page }) => {
+    await page.goto('/');
+    const music = page.locator('#title').getByTitle('Music');
+    const sound = page.locator('#title').getByTitle('Sound effects');
+    await expect(music).toHaveAttribute('aria-pressed', 'true');
+    await music.click();
+    await expect(music).toHaveAttribute('aria-pressed', 'false');
+    await sound.click();
+    await expect(sound).toHaveText('🔇');
+    expect(await page.evaluate(() => localStorage.getItem('pressure-point-audio'))).toBe('{"sound":false,"music":false}');
+    // the choice carries into the game, and survives a reload
+    await page.getByRole('button', { name: 'New game' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    await expect(page.locator('#sys').getByTitle('Music')).toHaveClass(/off/);
+    await expect(page.locator('#sys').getByTitle('Sound effects')).toHaveText('🔇');
+    await page.reload();
+    await expect(page.locator('#title').getByTitle('Music')).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('#title').getByTitle('Music').click();
+    await expect(page.locator('#title').getByTitle('Music')).toHaveAttribute('aria-pressed', 'true');
+    expect(game.errors).toEqual([]);
+  });
+
   test('a reception desk can be placed from the Items menu', async ({ game, page }) => {
     await game.start();
     await game.menu('Items');

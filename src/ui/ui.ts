@@ -662,11 +662,15 @@ export class UI {
 }
 
 /** Title screen, shown before a game exists. */
-export function showTitle(canContinue: boolean): Promise<'new' | 'continue'> {
+export function showTitle(canContinue: boolean, audio: Audio): Promise<'new' | 'continue'> {
   return new Promise((resolve) => {
     const el = document.createElement('div');
     el.id = 'title';
-    el.innerHTML = `<div class="panel dialog">
+    // the same sound and music switches as in the game, so they can be set before it starts
+    const switches = () =>
+      `<button class="round small ${audio.sound ? '' : 'off'}" data-toggle="sound" title="Sound effects" aria-pressed="${audio.sound}">${audio.sound ? '🔊' : '🔇'}</button>
+       <button class="round small ${audio.music ? '' : 'off'}" data-toggle="music" title="Music" aria-pressed="${audio.music}">🎵</button>`;
+    el.innerHTML = `<div class="title-sys">${switches()}</div><div class="panel dialog">
       <div class="logo">${TITLE_LINES.map((w) => `<span>${w}</span>`).join('')}</div>
       <p class="tagline">Build a healing center. Untie the public.</p>
       <div class="btnrow">
@@ -677,6 +681,16 @@ export function showTitle(canContinue: boolean): Promise<'new' | 'continue'> {
     </div>`;
     document.body.appendChild(el);
     el.addEventListener('click', (e) => {
+      const toggle = (e.target as HTMLElement).closest<HTMLElement>('[data-toggle]')?.dataset.toggle;
+      if (toggle) {
+        // a click is what browsers need before any sound, so music can start right here
+        audio.unlock();
+        if (toggle === 'sound') audio.toggleSound();
+        else audio.toggleMusic();
+        audio.play('blip');
+        el.querySelector('.title-sys')!.innerHTML = switches();
+        return;
+      }
       const pick = (e.target as HTMLElement).closest<HTMLElement>('[data-pick]')?.dataset.pick;
       if (!pick) return;
       el.remove();

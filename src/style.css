@@ -979,3 +979,11 @@ em.warn {
   background: var(--gold);
   color: var(--navy);
 }
+
+.title-sys {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  gap: 8px;
+}
