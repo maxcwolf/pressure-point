@@ -1,6 +1,6 @@
 {
   "name": "pressure-point",
-  "productName": "Pressure Point",
+  "productName": "Pressure Point Institute",
   "version": "0.1.0",
   "description": "A healing-centre management sim. Knead, heal, profit.",
   "private": true,
@@ -17,7 +17,7 @@
   },
   "build": {
     "appId": "com.maxwolf.pressurepoint",
-    "productName": "Pressure Point",
+    "productName": "Pressure Point Institute",
     "files": [
       "dist/**/*",
       "electron/**/*"

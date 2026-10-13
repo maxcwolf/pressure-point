@@ -761,8 +761,18 @@ kbd {
   text-shadow: 0 5px 0 rgba(36, 56, 74, 0.3);
   margin-bottom: 8px;
 }
-.logo span:last-child {
+.logo span:nth-child(2) {
   color: var(--orange);
+}
+.logo span:nth-child(3) {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 7px;
+  text-transform: uppercase;
+  color: var(--cream);
+  -webkit-text-stroke: 5px var(--navy);
+  text-shadow: none;
+  margin-top: 10px;
 }
 .tagline {
   font-weight: 500;

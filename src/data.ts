@@ -1,6 +1,8 @@
 // Static game data: map layout, rooms, items, staff roles, conditions, flavour text.
 
-export const GAME_TITLE = 'Pressure Point';
+export const GAME_TITLE = 'Pressure Point Institute';
+/** The title broken up for the places that stack it: the lawn sign and the title screen. */
+export const TITLE_LINES = ['Pressure', 'Point', 'Institute'] as const;
 
 // ---- Map -------------------------------------------------------------------
 export const W = 32;

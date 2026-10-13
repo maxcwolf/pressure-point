@@ -9,7 +9,7 @@ import {
   ENT_IN_Y,
   ENT_OUT_Y,
   ENT_X,
-  GAME_TITLE,
+  TITLE_LINES,
   H,
   ITEMS,
   ROAD_Y,
@@ -227,10 +227,10 @@ export class View {
     ctx.font = '700 62px Fredoka, "Arial Rounded MT Bold", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(GAME_TITLE.toUpperCase(), 256, 68);
+    ctx.fillText(`${TITLE_LINES[0]} ${TITLE_LINES[1]}`.toUpperCase(), 256, 66);
     ctx.fillStyle = '#2fa8a0';
-    ctx.font = '500 26px Fredoka, "Arial Rounded MT Bold", sans-serif';
-    ctx.fillText('HEALING CENTRE', 256, 122);
+    ctx.font = '600 34px Fredoka, "Arial Rounded MT Bold", sans-serif';
+    ctx.fillText(TITLE_LINES[2].toUpperCase().split('').join('\u200a'), 256, 120);
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     const board = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1, 0.12), [

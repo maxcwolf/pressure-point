@@ -10,7 +10,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 680,
     backgroundColor: '#a8d8c8',
-    title: 'Pressure Point',
+    title: 'Pressure Point Institute',
     show: false,
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });

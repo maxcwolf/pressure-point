@@ -4,6 +4,7 @@ import {
   CONDITION_BY_ID,
   DIAGNOSIS_TARGET,
   GAME_TITLE,
+  TITLE_LINES,
   ITEMS,
   ITEM_MENU,
   MODALITIES,
@@ -601,7 +602,7 @@ export function showTitle(canContinue: boolean): Promise<'new' | 'continue'> {
     const el = document.createElement('div');
     el.id = 'title';
     el.innerHTML = `<div class="panel dialog">
-      <div class="logo"><span>Pressure</span><span>Point</span></div>
+      <div class="logo">${TITLE_LINES.map((w) => `<span>${w}</span>`).join('')}</div>
       <p class="tagline">Build a healing centre. Untie the public.</p>
       <div class="btnrow">
         ${canContinue ? '<button class="go" data-pick="continue">Continue</button>' : ''}

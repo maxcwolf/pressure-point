@@ -1,4 +1,4 @@
-# Pressure Point
+# Pressure Point Institute
 
 A healing-centre management sim for macOS and Windows, in the spirit of the classic hospital tycoon games. Build rooms, hire staff, and untie the public.
 
