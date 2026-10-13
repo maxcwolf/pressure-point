@@ -1,3 +1,5 @@
+**[Play this version in your browser](https://maxcwolf.github.io/pressure-point/)**, or download it:
+
 ## Download
 
 | Your computer | File |

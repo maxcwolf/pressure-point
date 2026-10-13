@@ -4,6 +4,8 @@ A healing-center management sim for macOS and Windows, in the spirit of the clas
 
 The MVP covers **massage therapy**. Acupuncture and reiki are planned.
 
+**[Play it in your browser](https://maxcwolf.github.io/pressure-point/)**, or download the macOS or Windows app from the [latest release](https://github.com/maxcwolf/pressure-point/releases/latest).
+
 ![A busy healing center](docs/screenshot.png)
 
 ## Play
@@ -40,6 +42,8 @@ Pushing a version tag builds the installers on GitHub Actions and publishes them
 git tag v0.1.1
 git push origin v0.1.1
 ```
+
+The same tag also publishes the browser build to GitHub Pages at https://maxcwolf.github.io/pressure-point/, so the web version always matches the installers. The **Deploy web version** workflow can be run by hand to publish any other branch or tag.
 
 The tag sets the version number in the installers. Running the **Release** workflow by hand from the Actions tab builds the installers as downloadable artifacts without publishing a release.
 
