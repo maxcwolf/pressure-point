@@ -26,3 +26,17 @@ jobs:
       - run: corepack enable
       - run: yarn install --immutable
       - run: yarn build
+      - name: Unit tests
+        run: yarn test
+      - name: Install the browser for end-to-end tests
+        run: yarn playwright install --with-deps chromium
+      - name: End-to-end tests
+        run: yarn test:e2e
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

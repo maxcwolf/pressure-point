@@ -21,6 +21,17 @@ yarn dist:mac   # .dmg for Apple silicon and Intel
 yarn dist:win   # .exe installer (x64)
 ```
 
+## Testing
+
+```bash
+yarn test       # unit tests: grid, placement, pathfinding, saves and the whole simulation
+yarn test:e2e   # end-to-end tests: the real game in a headless browser, driven by mouse and keyboard
+```
+
+The first end-to-end run needs a browser: `yarn playwright install chromium`.
+
+The unit tests seed the game's random numbers, so a failing run can be repeated exactly. They include hour-long sessions that check nothing goes missing, gets stuck or turns into `NaN`. The end-to-end tests start the dev server themselves and use the `window.pp` handle that dev builds expose to read game state and skip ahead in time. Both suites run in CI on every push and pull request.
+
 ## Releasing
 
 Pushing a version tag builds the installers on GitHub Actions and publishes them as a GitHub release:
@@ -75,6 +86,11 @@ To ship a macOS build that opens without a warning, add the same five secrets th
 5. Staff members get tired. A **Staff Room** lets them recover; a **Janitor** clears litter, waters plants, and keeps the massage stones hot.
 6. Salaries come out at the end of each month. Hit the objectives to earn stars.
 7. Stars unlock new **massage modalities**. Build a **Training Room** and send therapists on courses to deliver them.
+8. A **Posture Lab** settles diagnoses the Consultant was unsure about, so fewer guests need a second consultation.
+9. **Decor** (salt lamps, statues, rugs, magazine racks) makes its surroundings nicer to wait in and raises a room's **prestige**, which lifts staff morale and results.
+10. Staff have **morale**. Underpaid or overworked staff ask for a raise, and quit if ignored for long.
+11. Equipment **wears out** with use. A Janitor services it; left alone it breaks down.
+12. The **Money** menu offers loans and lets you set prices. **Emergencies** bring a batch of guests to heal against the clock for a bonus.
 
 ### Massage modalities
 

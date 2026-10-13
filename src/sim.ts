@@ -1,17 +1,25 @@
 // The simulation: guests, staff, queues, money, reputation.
 import {
+  ASSESS_FEE,
   BOTCH_FACTOR,
   CONDITIONS,
   CONDITION_BY_ID,
   CONSULT_FEE,
   DAYS_PER_MONTH,
   DAY_SECONDS,
+  DECOR_RADIUS,
   DIAGNOSIS_TARGET,
+  EMERGENCY_CAUSES,
   ENT_IN_Y,
   ENT_X,
   ITEMS,
+  LOAN_MAX,
+  LOAN_RATE,
+  LOAN_STEP,
   MODALITIES,
   MODALITY_ORDER,
+  PRICE_MAX,
+  PRICE_MIN,
   ROLES,
   ROOMS,
   SIDEWALK_Y,
@@ -20,6 +28,8 @@ import {
   ANNOUNCEMENTS,
   TRAIT_BY_ID,
   W,
+  H,
+  WEAR_REPAIR,
   type AccessRole,
   type ItemType,
   type Modality,
@@ -28,11 +38,13 @@ import {
   type RoomType,
 } from './data';
 import {
-  QUAL_PAY,
   clamp,
   emptyLedger,
+  fairSalary,
+  irnd,
   makeCandidate,
   pick,
+  random,
   randomLook,
   randomName,
   refillCandidates,
@@ -52,6 +64,7 @@ import {
   accessPose,
   accessTile,
   footprint,
+  inBounds,
   inBuilding,
   itemCenter,
   rotVec,
@@ -86,7 +99,12 @@ export interface Objective {
   progress: number;
 }
 
-const GOAL_NAME = { reception: 'Reception Desk', consult: 'Consultation Room', treat: 'Massage Suite' } as const;
+const GOAL_NAME = {
+  reception: 'Reception Desk',
+  consult: 'Consultation Room',
+  assess: 'Posture Lab',
+  treat: 'Massage Suite',
+} as const;
 const NEED_ICON = { drink: '🍵', eat: '🥜', toilet: '🚻' } as const;
 
 export const money = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(Math.round(n)).toLocaleString('en-US')}`;
@@ -110,8 +128,8 @@ function turnToward(cur: number, target: number, maxStep: number) {
 export class Sim {
   world: World;
   private events: SimEvent[] = [];
-  /** Patience-drain multiplier from plants, fountains and litter (lower is nicer). */
-  ambience = 1;
+  /** How pleasant each tile is, from nearby decor and litter. */
+  attract = new Float32Array(W * H);
   private slowT = 0;
 
   constructor(public s: GameState) {
@@ -152,7 +170,7 @@ export class Sim {
     this.emit({ type: 'float', text: `+${money(amount)}`, x, y, kind: 'good' });
     if (amount >= 100) this.emit({ type: 'sfx', name: 'cash' });
   }
-  private spend(amount: number, kind: 'salaries' | 'building' | 'training') {
+  private spend(amount: number, kind: 'salaries' | 'building' | 'training' | 'interest') {
     this.s.money -= amount;
     this.s.ledger[kind] += amount;
   }
@@ -205,7 +223,8 @@ export class Sim {
     this.slowT -= dt;
     if (this.slowT <= 0) {
       this.slowT = 1;
-      this.updateAmbience();
+      this.updateAttract();
+      this.updateEmergency();
       this.checkStars();
     }
     s.announceT -= dt;
@@ -223,6 +242,8 @@ export class Sim {
       this.toast(`Payday: ${money(wages)} in salaries.`, s.money < 0 ? 'bad' : 'info');
       this.emit({ type: 'sfx', name: 'payday' });
     }
+    const interest = Math.round(s.loan * LOAN_RATE);
+    if (interest > 0) this.spend(interest, 'interest');
     s.history.push(netOf(s.ledger));
     if (s.history.length > 12) s.history.shift();
     s.lastLedger = s.ledger;
@@ -231,15 +252,43 @@ export class Sim {
     if (s.money < 0) this.toast('You are in the red. Heal faster!', 'bad');
   }
 
-  private updateAmbience() {
-    const s = this.s;
-    let score = 0;
-    for (const it of s.items) {
-      if (it.type === 'plant') score += it.water > 15 ? 1 : -1;
-      else if (it.type === 'fountain') score += 3;
+  private updateAttract() {
+    const grid = this.attract;
+    grid.fill(0);
+    const R = DECOR_RADIUS;
+    const spread = (cx: number, cy: number, amount: number) => {
+      for (let y = cy - R; y <= cy + R; y++) {
+        for (let x = cx - R; x <= cx + R; x++) {
+          if (!inBounds(x, y)) continue;
+          const d = Math.hypot(x - cx, y - cy);
+          if (d <= R) grid[tileIdx(x, y)] += amount * (1 - d / (R + 1));
+        }
+      }
+    };
+    for (const it of this.s.items) {
+      const decor = this.decorOf(it);
+      if (!decor) continue;
+      const [cx, cy] = itemCenter(it);
+      spread(Math.floor(cx), Math.floor(cy), decor);
     }
-    score -= s.litter.length * 1.5;
-    this.ambience = clamp(1.12 - score * 0.02, 0.72, 1.4);
+    for (const l of this.s.litter) spread(l.x, l.y, -2.5);
+  }
+  /** A wilted plant drags its surroundings down instead of lifting them. */
+  private decorOf(it: Item): number {
+    if (it.type === 'plant' && it.water <= 15) return -1;
+    return ITEMS[it.type].decor ?? 0;
+  }
+  /** Patience drains slower in pleasant surroundings and faster in grim ones. */
+  drainFactor(x: number, y: number): number {
+    return clamp(1.12 - (inBounds(x, y) ? this.attract[tileIdx(x, y)] : 0) * 0.035, 0.7, 1.4);
+  }
+  /** One to five, from how roomy and how nicely furnished a room is. */
+  prestige(room: Room): number {
+    const def = ROOMS[room.type];
+    let score = (room.w * room.h - def.minShort * def.minLong) * 0.4;
+    for (const it of this.s.items) if (this.world.zoneAt(it.x, it.y) === room.id) score += this.decorOf(it);
+    for (const l of this.s.litter) if (this.world.zoneAt(l.x, l.y) === room.id) score -= 2;
+    return clamp(1 + Math.floor(score / 3), 1, 5);
   }
 
   private checkStars() {
@@ -308,6 +357,15 @@ export class Sim {
     if (s.litter.length >= 3 && !this.hasStaff('caretaker')) return 'Litter is piling up. Hire a Janitor to keep the place clean.';
     if (s.items.some((i) => i.type === 'plant' && i.water < 20) && !this.hasStaff('caretaker'))
       return 'Your plants are wilting. A Janitor will water them.';
+    if (s.offer) return 'There is an emergency on offer at the top of the screen. Accept it only if you can cope.';
+    const broken = s.items.find((i) => i.wear >= 100);
+    if (broken)
+      return this.hasStaff('caretaker')
+        ? `A ${ITEMS[broken.type].name} has broken down. Your Janitor will get to it.`
+        : `A ${ITEMS[broken.type].name} has broken down. Hire a Janitor to repair it.`;
+    const asking = s.staff.filter((x) => x.raiseAsked && x.state !== 'leaving');
+    if (asking.length) return `${asking[0].name} wants a raise. Select them to respond, or they may quit.`;
+    if (s.money < 0 && s.loan < LOAN_MAX) return 'You are in the red. A loan from the Money menu would tide you over.';
     const gap = this.modalityAdvice();
     if (gap) return gap;
     for (const it of s.items) {
@@ -539,7 +597,7 @@ export class Sim {
     c.bubbleT = seconds;
   }
   private streetTile(): [number, number] {
-    return [Math.random() < 0.5 ? 0 : W - 1, SIDEWALK_Y];
+    return [random() < 0.5 ? 0 : W - 1, SIDEWALK_Y];
   }
   private lobbyTile(): [number, number] {
     return [pick(ENT_X), ENT_IN_Y - 1];
@@ -576,6 +634,7 @@ export class Sim {
     let speed = 0.85 + st.skill * 0.05;
     for (const t of st.traits) speed *= TRAIT_BY_ID[t]?.speed ?? 1;
     if (st.energy < 15) speed *= 0.6;
+    speed *= 0.9 + st.morale / 500;
     return base / speed;
   }
 
@@ -639,23 +698,41 @@ export class Sim {
     staff.busy = false;
     staff.served++;
     g.patience = Math.min(100, g.patience + 30);
+    this.addWear(it);
+    const room = this.world.roomOfItem(it);
+    const nice = room ? (this.prestige(room) - 1) * 0.02 : 0;
+    const price = this.s.priceLevel;
     if (def.goal === 'reception') {
       g.goal = 'consult';
       this.say(g, '📋');
       this.emit({ type: 'sfx', name: 'blip' });
-    } else if (def.goal === 'consult') {
+    } else if (def.goal === 'consult' || def.goal === 'assess') {
       g.consults++;
-      g.diagnosis = clamp(g.diagnosis + 0.4 + staff.skill * 0.13 + rnd(0, 0.15), 0, 1);
-      this.earn(CONSULT_FEE, 'consult', g.x, g.y);
-      g.spent += CONSULT_FEE;
-      if (g.diagnosis >= DIAGNOSIS_TARGET || g.consults >= 3) {
+      const gain = def.goal === 'consult' ? 0.4 + staff.skill * 0.13 + rnd(0, 0.15) : 0.45 + staff.skill * 0.08;
+      g.diagnosis = clamp(g.diagnosis + gain + nice, 0, 1);
+      const fee = Math.round((def.goal === 'consult' ? CONSULT_FEE : ASSESS_FEE) * price);
+      this.earn(fee, 'consult', g.x, g.y);
+      g.spent += fee;
+      if (g.diagnosis >= DIAGNOSIS_TARGET || g.consults >= 4) {
         g.goal = 'treat';
         this.say(g, '💡');
+        // steep prices put some guests off once they hear what the treatment costs
+        if (!g.emergency && random() < Math.max(0, (price - 1) * 0.35)) {
+          g.outcome = 'stormed';
+          g.goal = 'leave';
+          this.s.stats.stormed++;
+          this.changeRep(-1);
+          this.say(g, '💸', 6);
+          this.emit({ type: 'float', text: 'Too pricey!', x: g.x, y: g.y, kind: 'bad' });
+          this.tipOnce('pricey', 'A guest balked at your prices and left. High prices earn more per guest but drive some away.', 'bad');
+        }
       } else {
+        // unsure: a scan settles it if there is a Posture Lab, otherwise it is back to the Consultant
+        g.goal = def.goal === 'consult' && this.hasRoom('assess') ? 'assess' : 'consult';
         this.say(g, '❓');
         this.tipOnce(
           'rediagnose',
-          'Some guests need a second consultation before the diagnosis is certain. A more skilled Consultant gets it right first time.',
+          'Some guests need more than one consultation before the diagnosis is certain. A skilled Consultant helps, and so does a Posture Lab.',
         );
       }
     } else {
@@ -663,7 +740,7 @@ export class Sim {
       const mod = MODALITIES[cond.modality];
       const problem = this.deliveryProblem(it, staff, mod);
       let chance = clamp(
-        0.56 + staff.skill * 0.09 + Math.min(1, g.diagnosis) * 0.15 - mod.difficulty - (staff.energy < 15 ? 0.15 : 0),
+        0.56 + staff.skill * 0.09 + Math.min(1, g.diagnosis) * 0.15 + nice - mod.difficulty - (staff.energy < 15 ? 0.15 : 0),
         0.3,
         0.98,
       );
@@ -677,12 +754,15 @@ export class Sim {
         if (warmer) warmer.water -= STONE_USE;
       }
       g.goal = 'leave';
-      if (Math.random() < chance) {
+      if (random() < chance) {
         g.outcome = 'healed';
         this.s.stats.healed++;
-        this.earn(cond.fee, 'treatment', g.x, g.y);
-        g.spent += cond.fee;
-        this.changeRep(1.8 + g.patience / 100);
+        const fee = Math.round(cond.fee * price);
+        this.earn(fee, 'treatment', g.x, g.y);
+        g.spent += fee;
+        // good value earns a better name than a steep bill does
+        this.changeRep((1.8 + g.patience / 100) * (1.25 - 0.25 * price));
+        if (g.emergency && this.s.emergency) this.s.emergency.healed++;
         this.say(g, '💖', 6);
         this.emit({ type: 'sfx', name: 'heal' });
       } else {
@@ -719,14 +799,15 @@ export class Sim {
   }
 
   // ---- Guests --------------------------------------------------------------
-  private spawnGuest() {
+  private spawnGuest(condition?: string, emergency = false) {
     const s = this.s;
     const [x, y] = this.streetTile();
     const g: Guest = {
       ...this.baseChar(randomName(), randomLook(), x, y),
       kind: 'guest',
-      condition: this.rollCondition(),
-      goal: 'reception',
+      condition: condition ?? this.rollCondition(),
+      // emergency cases arrive already diagnosed and go straight to treatment
+      goal: emergency ? 'treat' : 'reception',
       state: 'enter',
       station: 0,
       needKind: '',
@@ -734,12 +815,13 @@ export class Sim {
       hunger: rnd(0, 40),
       bladder: rnd(0, 40),
       patience: 100,
-      diagnosis: 0,
+      diagnosis: emergency ? 1 : 0,
       consults: 0,
       outcome: '',
       spent: 0,
       hasWrapper: false,
       waited: 0,
+      emergency,
     };
     const [lx, ly] = this.lobbyTile();
     if (!this.goTo(g, lx, ly)) return;
@@ -755,7 +837,7 @@ export class Sim {
     const therapists = this.s.staff.filter((x) => x.role === 'therapist' && x.state !== 'leaving');
     const pool = CONDITIONS.filter((c) => this.unlocked(c.modality));
     const weights = pool.map((c) => (therapists.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4));
-    let roll = Math.random() * weights.reduce((a, b) => a + b, 0);
+    let roll = random() * weights.reduce((a, b) => a + b, 0);
     for (let i = 0; i < pool.length; i++) {
       roll -= weights[i];
       if (roll <= 0) return pool[i].id;
@@ -877,6 +959,10 @@ export class Sim {
         g.station = ns.id;
         return this.goWait(g);
       }
+      if (g.goal === 'assess') {
+        g.goal = 'consult';
+        return this.decide(g);
+      }
       if (g.goal !== 'leave' && g.goal !== 'reception')
         this.tipOnce(`missing-${g.goal}`, `Guests are waiting for a ${GOAL_NAME[g.goal]}, but there isn't one.`, 'bad');
     } else {
@@ -891,11 +977,11 @@ export class Sim {
     }
     if (this.tryNeed(g)) return;
 
-    if (g.hasWrapper && Math.random() < 0.2) {
+    if (g.hasWrapper && random() < 0.2) {
       g.hasWrapper = false;
       const nearBin = this.s.items.some((i) => i.type === 'bin' && Math.hypot(i.x - g.tx, i.y - g.ty) < 7);
       const clear = !this.s.litter.some((l) => l.x === g.tx && l.y === g.ty);
-      if (clear && Math.random() < (nearBin ? 0.12 : 0.9))
+      if (clear && random() < (nearBin ? 0.12 : 0.9))
         this.s.litter.push({ id: this.s.nextId++, x: g.tx, y: g.ty, claimedBy: 0 });
     }
 
@@ -920,7 +1006,7 @@ export class Sim {
 
     const waiting = g.state === 'toWait' || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
     if (waiting) {
-      let drain = 0.85 * this.ambience;
+      let drain = 0.85 * this.drainFactor(g.tx, g.ty);
       if (g.pose === 'sit') drain *= 0.6;
       if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
       g.patience -= drain * dt;
@@ -1032,6 +1118,9 @@ export class Sim {
       quals: [...c.quals],
       training: null,
       strain: 1,
+      morale: 75,
+      raiseAsked: false,
+      unhappyT: 0,
     };
     const [lx, ly] = this.lobbyTile();
     if (!this.goTo(st, lx, ly)) return null;
@@ -1043,15 +1132,66 @@ export class Sim {
     return st;
   }
 
-  fire(id: number) {
+  /** Send a member of staff home for good, either fired or because they quit. */
+  fire(id: number, quit = false) {
     const st = this.staff(id);
     if (!st || st.state === 'leaving') return;
     this.staffIdle(st);
     st.state = 'leaving';
-    this.say(st, '📦', 6);
+    st.raiseAsked = false;
+    this.say(st, quit ? '😠' : '📦', 6);
     const [x, y] = this.streetTile();
     if (!this.goTo(st, x, y)) this.s.staff = this.s.staff.filter((q) => q !== st);
-    this.toast(`${st.name} has been let go.`, 'info');
+    if (quit) {
+      this.changeRep(-2);
+      this.toast(`${st.name} has quit. Unhappy staff do not stay.`, 'bad');
+      this.emit({ type: 'sfx', name: 'fail' });
+    } else this.toast(`${st.name} has been let go.`, 'info');
+  }
+
+  /** What this member of staff could reasonably expect to be paid. */
+  fairPay(st: Staff): number {
+    return fairSalary(st.role, st.skill, st.traits, st.quals);
+  }
+  /** The salary a raise would take them to: the going rate, or 10% more if they already earn it. */
+  raiseTo(st: Staff): number {
+    return Math.max(this.fairPay(st), Math.round((st.salary * 1.1) / 10) * 10);
+  }
+  giveRaise(id: number) {
+    const st = this.staff(id);
+    if (!st || st.state === 'leaving') return;
+    st.salary = this.raiseTo(st);
+    st.morale = Math.min(100, st.morale + 22);
+    st.raiseAsked = false;
+    st.unhappyT = 0;
+    this.say(st, '😊', 4);
+    this.emit({ type: 'sfx', name: 'cash' });
+  }
+
+  private updateMorale(st: Staff, dt: number) {
+    if (st.state === 'leaving' || st.state === 'arriving') return;
+    const fair = this.fairPay(st);
+    let target = 62 + clamp((st.salary / fair - 1) * 90, -45, 20);
+    if (st.energy < 20) target -= 18;
+    const post = this.world.item(st.post);
+    const room = post && st.state === 'atPost' ? this.world.roomOfItem(post) : undefined;
+    if (room) target += (this.prestige(room) - 2) * 5;
+    if (this.s.litter.length > 6) target -= 6;
+    st.morale = clamp(st.morale + (target - st.morale) * Math.min(1, dt * 0.03), 0, 100);
+
+    if (!st.raiseAsked && st.salary < fair * 0.97 && st.morale < 56) {
+      st.raiseAsked = true;
+      this.say(st, '💰', 5);
+      this.toast(`${st.name} thinks they are worth ${money(fair)} a month and wants a raise.`, 'info');
+    }
+    const before = st.unhappyT;
+    if (st.morale < 25) st.unhappyT += dt;
+    else st.unhappyT = Math.max(0, st.unhappyT - dt);
+    if (before < 20 && st.unhappyT >= 20) {
+      this.say(st, '😠', 6);
+      this.toast(`${st.name} is miserable and thinking of quitting.`, 'bad');
+    }
+    if (st.unhappyT > 60 && !st.busy && !st.training) this.fire(st.id, true);
   }
 
   private leavePost(st: Staff) {
@@ -1106,45 +1246,39 @@ export class Sim {
     if (st.energy < 18 && this.tryBreak(st)) return;
     const s = this.s;
     if (st.role === 'caretaker') {
-      let best: { kind: 'litter' | 'water'; id: number; x: number; y: number } | null = null;
-      let bestD = 1e9;
-      for (const l of s.litter) {
-        if (l.claimedBy) continue;
-        const d = Math.hypot(l.x - st.tx, l.y - st.ty);
-        if (d < bestD) {
-          bestD = d;
-          best = { kind: 'litter', id: l.id, x: l.x, y: l.y };
-        }
+      // broken equipment first, then litter, then routine watering and servicing
+      type Task = { kind: 'litter' | 'water' | 'repair'; id: number; x: number; y: number; urgency: number };
+      const tasks: Task[] = [];
+      for (const l of s.litter) if (!l.claimedBy) tasks.push({ kind: 'litter', id: l.id, x: l.x, y: l.y, urgency: 1 });
+      for (const p of s.items) {
+        if (p.claimedBy) continue;
+        if (p.wear >= WEAR_REPAIR) tasks.push({ kind: 'repair', id: p.id, x: p.x, y: p.y, urgency: p.wear >= 100 ? 2 : 0 });
+        else if ((p.type === 'plant' && p.water <= 40) || (p.type === 'stone_warmer' && p.water <= 55))
+          tasks.push({ kind: 'water', id: p.id, x: p.x, y: p.y, urgency: 0 });
       }
-      if (!best) {
-        for (const p of s.items) {
-          const needy = (p.type === 'plant' && p.water <= 40) || (p.type === 'stone_warmer' && p.water <= 55);
-          if (!needy || p.claimedBy) continue;
-          const d = Math.hypot(p.x - st.tx, p.y - st.ty);
-          if (d < bestD) {
-            bestD = d;
-            best = { kind: 'water', id: p.id, x: p.x, y: p.y };
-          }
-        }
-      }
-      if (best) {
+      const dist = (t: Task) => Math.hypot(t.x - st.tx, t.y - st.ty);
+      tasks.sort((a, b) => b.urgency - a.urgency || dist(a) - dist(b));
+      for (const task of tasks.slice(0, 4)) {
         let ok = false;
-        if (best.kind === 'litter') ok = this.goTo(st, best.x, best.y);
+        if (task.kind === 'litter') ok = this.goTo(st, task.x, task.y);
         else {
-          for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) {
-            if (this.world.walkable(best.x + dx, best.y + dy) && this.goTo(st, best.x + dx, best.y + dy)) {
-              ok = true;
-              break;
+          // stand next to the item, on whichever side can be reached
+          const item = this.world.item(task.id)!;
+          search: for (const [fx, fy] of footprint(item)) {
+            for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) {
+              if (this.world.walkable(fx + dx, fy + dy) && this.goTo(st, fx + dx, fy + dy)) {
+                ok = true;
+                break search;
+              }
             }
           }
         }
-        if (ok) {
-          st.job = { kind: best.kind, id: best.id };
-          if (best.kind === 'litter') s.litter.find((l) => l.id === best!.id)!.claimedBy = st.id;
-          else this.world.item(best.id)!.claimedBy = st.id;
-          st.state = 'toJob';
-          return;
-        }
+        if (!ok) continue;
+        st.job = { kind: task.kind, id: task.id };
+        if (task.kind === 'litter') s.litter.find((l) => l.id === task.id)!.claimedBy = st.id;
+        else this.world.item(task.id)!.claimedBy = st.id;
+        st.state = 'toJob';
+        return;
       }
     } else {
       let best: Item | null = null;
@@ -1176,7 +1310,7 @@ export class Sim {
       }
     }
     // nothing to do: amble about
-    if (st.state === 'idle' && Math.random() < 0.25) {
+    if (st.state === 'idle' && random() < 0.25) {
       const spots = this.world.standSpots(st.tx, st.ty, 40);
       if (spots.length) {
         const [x, y] = pick(spots);
@@ -1196,6 +1330,8 @@ export class Sim {
     if (st.energy < 15) walk *= 0.75;
     const arrived = this.move(st, dt, walk);
 
+    this.updateMorale(st, dt);
+    if (st.state === 'leaving' && !this.s.staff.includes(st)) return;
     if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * 9);
     else if (st.state !== 'leaving' && st.state !== 'training') {
       const rate = st.busy ? 0.42 * (st.strain || 1) : st.state === 'atPost' ? 0.14 : 0.2;
@@ -1248,9 +1384,9 @@ export class Sim {
       case 'toJob':
         if (arrived) {
           st.state = 'doingJob';
-          st.timer = 1.6;
+          st.timer = st.job?.kind === 'repair' ? 3.2 : 1.6;
           st.busy = true;
-          if (st.job?.kind === 'water') {
+          if (st.job && st.job.kind !== 'litter') {
             const p = this.world.item(st.job.id);
             if (p) st.facing = Math.atan2(p.x + 0.5 - st.x, p.y + 0.5 - st.y);
           }
@@ -1263,8 +1399,10 @@ export class Sim {
           else if (st.job) {
             const p = this.world.item(st.job.id);
             if (p) {
-              p.water = 100;
+              if (st.job.kind === 'repair') p.wear = 0;
+              else p.water = 100;
               p.claimedBy = 0;
+              if (st.job.kind === 'repair') this.world.version++;
             }
           }
           st.job = null;
@@ -1289,6 +1427,119 @@ export class Sim {
         if (arrived || !st.path) this.s.staff = this.s.staff.filter((x) => x !== st);
         break;
     }
+  }
+
+  // ---- Upkeep ----------------------------------------------------------------
+  private addWear(it: Item) {
+    const add = ITEMS[it.type].wear ?? 0;
+    if (!add || it.wear >= 100) return;
+    it.wear = Math.min(100, it.wear + add);
+    if (it.wear < 100) return;
+    // broken: nobody can use it until a Janitor has been
+    this.world.version++;
+    const [cx, cy] = itemCenter(it);
+    this.emit({ type: 'float', text: 'Broken!', x: cx, y: cy, kind: 'bad' });
+    this.emit({ type: 'sfx', name: 'fail' });
+    this.toast(`A ${ITEMS[it.type].name} has broken down. It is out of action until a Janitor repairs it.`, 'bad');
+  }
+
+  // ---- Loans & prices --------------------------------------------------------
+  borrow(): boolean {
+    const s = this.s;
+    if (s.loan + LOAN_STEP > LOAN_MAX) return false;
+    s.loan += LOAN_STEP;
+    s.money += LOAN_STEP;
+    this.emit({ type: 'sfx', name: 'cash' });
+    return true;
+  }
+  repay(): boolean {
+    const s = this.s;
+    const amount = Math.min(LOAN_STEP, s.loan, Math.max(0, s.money));
+    if (amount <= 0) return false;
+    s.loan -= amount;
+    s.money -= amount;
+    this.emit({ type: 'sfx', name: 'sell' });
+    return true;
+  }
+  setPrice(level: number) {
+    this.s.priceLevel = clamp(Math.round(level * 10) / 10, PRICE_MIN, PRICE_MAX);
+  }
+
+  // ---- Emergencies -----------------------------------------------------------
+  private updateEmergency() {
+    const s = this.s;
+    if (s.offer && s.day >= s.offer.deadline) this.declineEmergency();
+    const e = s.emergency;
+    if (e) {
+      // arrivals trickle in, one a second
+      if (e.pending > 0) {
+        this.spawnGuest(e.condition, true);
+        e.pending--;
+      }
+      const stillHere = s.guests.some((g) => g.emergency);
+      if (e.healed >= e.target || s.day >= e.deadline || (e.pending === 0 && !stillHere)) this.endEmergency();
+    } else if (!s.offer && s.open && s.stars >= 1 && s.day >= s.nextEmergency) this.offerEmergency();
+  }
+
+  /** Put an emergency on the table. Only conditions someone on the payroll can treat are offered. */
+  offerEmergency(): boolean {
+    const s = this.s;
+    if (s.offer || s.emergency) return false;
+    const therapists = s.staff.filter((x) => x.role === 'therapist' && x.state !== 'leaving');
+    const pool = CONDITIONS.filter((c) => this.unlocked(c.modality) && therapists.some((t) => t.quals.includes(c.modality)));
+    if (!pool.length) {
+      s.nextEmergency = s.day + 20;
+      return false;
+    }
+    const cond = pick(pool);
+    const total = irnd(4, 5 + s.stars * 2);
+    s.offer = {
+      condition: cond.id,
+      cause: pick(EMERGENCY_CAUSES),
+      total,
+      target: Math.ceil(total * 0.6),
+      healed: 0,
+      pending: 0,
+      reward: Math.round((total * cond.fee * 0.7) / 100) * 100,
+      deadline: s.day + 8,
+    };
+    this.emit({ type: 'announce', text: `Emergency incoming! ${s.offer.cause}` });
+    return true;
+  }
+  acceptEmergency() {
+    const s = this.s;
+    const e = s.offer;
+    if (!e) return;
+    s.offer = null;
+    e.deadline = s.day + 25;
+    e.pending = e.total;
+    e.healed = 0;
+    s.emergency = e;
+    this.emit({ type: 'sfx', name: 'place' });
+  }
+  declineEmergency() {
+    this.s.offer = null;
+    this.s.nextEmergency = this.s.day + rnd(45, 75);
+  }
+  private endEmergency() {
+    const s = this.s;
+    const e = s.emergency;
+    if (!e) return;
+    const name = CONDITION_BY_ID[e.condition].name;
+    if (e.healed >= e.target) {
+      s.money += e.reward;
+      s.ledger.bonus += e.reward;
+      this.changeRep(4);
+      this.toast(`Emergency handled: ${e.healed} cases of ${name} healed. ${money(e.reward)} bonus.`, 'good');
+      this.emit({ type: 'sfx', name: 'fanfare' });
+    } else {
+      this.changeRep(-4);
+      this.toast(`Emergency failed: only ${e.healed} of the ${e.target} needed cases of ${name} were healed.`, 'bad');
+      this.emit({ type: 'sfx', name: 'fail' });
+    }
+    for (const g of s.guests) g.emergency = false;
+    s.emergency = null;
+    s.nextEmergency = s.day + rnd(50, 80);
   }
 
   // ---- Training ------------------------------------------------------------
@@ -1351,22 +1602,20 @@ export class Sim {
 
   private graduate(st: Staff) {
     const t = st.training!;
-    const base = ROLES[st.role].baseSalary;
     let what: string;
     if (t.course === 'skill') {
       st.skill = Math.min(5, st.skill + 1);
-      st.salary += Math.round((base * 0.25) / 10) * 10;
       what = `reached skill level ${st.skill}`;
     } else {
       const m = t.course as Modality;
       if (!st.quals.includes(m)) st.quals.push(m);
-      st.salary += Math.round((base * QUAL_PAY) / 10) * 10;
       what = `is now qualified in ${MODALITIES[m].name} massage`;
     }
     st.training = null;
     this.staffIdle(st);
     this.say(st, '🎓', 5);
-    this.toast(`${st.name} ${what}, and expects ${money(st.salary)} a month for it.`, 'good');
+    // being worth more now, they will soon ask to be paid more
+    this.toast(`${st.name} ${what}.`, 'good');
     this.emit({ type: 'sfx', name: 'build' });
   }
 
@@ -1396,6 +1645,7 @@ export class Sim {
       staffId: 0,
       progress: 0,
       water: 100,
+      wear: 0,
       claimedBy: 0,
     };
     this.s.items.push(it);
@@ -1425,25 +1675,68 @@ export class Sim {
     return this.s.items.filter((it) => this.world.zoneAt(it.x, it.y) === room.id);
   }
 
-  /** Remove items and patch up anyone who was using them. */
-  private removeItems(gone: Item[]) {
-    const ids = new Set(gone.map((i) => i.id));
-    const guests = this.s.guests.filter((g) => ids.has(g.claimItem) || ids.has(g.station));
-    const staff = this.s.staff.filter(
-      (st) => ids.has(st.post) || ids.has(st.claimItem) || (st.job?.kind === 'water' && ids.has(st.job.id)),
-    );
-    this.s.items = this.s.items.filter((i) => !ids.has(i.id));
+  /** Can this item be picked up and put down here instead? */
+  canMoveItem(it: Item, x: number, y: number, rot: number) {
+    const zone = this.world.zoneAt(it.x, it.y);
+    const at = this.s.items.indexOf(it);
+    // judge the new spot as if the item had already been lifted out
+    this.s.items.splice(at, 1);
+    this.world.rebuild(true);
+    const check = this.world.canPlaceItem(it.type, x, y, rot, zone > 0 ? zone : undefined);
+    this.s.items.splice(at, 0, it);
+    this.world.rebuild(true);
+    return check;
+  }
+
+  /** Move an item for free. Furniture that belongs to a room has to stay in that room. */
+  moveItem(id: number, x: number, y: number, rot: number): boolean {
+    const it = this.world.item(id);
+    if (!it || !this.canMoveItem(it, x, y, rot).ok) return false;
+    const users = this.usersOf(new Set([id]));
+    it.x = x;
+    it.y = y;
+    it.rot = rot;
     this.world.rebuild();
+    this.resetUsers(users);
+    this.emit({ type: 'sfx', name: 'place' });
+    return true;
+  }
+
+  private usersOf(ids: Set<number>) {
+    return {
+      guests: this.s.guests.filter((g) => ids.has(g.claimItem) || ids.has(g.station)),
+      staff: this.s.staff.filter(
+        (st) => ids.has(st.post) || ids.has(st.claimItem) || (!!st.job && st.job.kind !== 'litter' && ids.has(st.job.id)),
+      ),
+    };
+  }
+  private resetUsers({ guests, staff }: { guests: Guest[]; staff: Staff[] }) {
     for (const g of guests) {
-      g.claimItem = 0;
+      this.release(g);
       this.resetGuest(g);
     }
     for (const st of staff) {
-      st.claimItem = 0;
-      if (st.job?.kind === 'water') st.job = null;
+      this.release(st);
       if (st.state !== 'leaving') this.staffIdle(st);
     }
+    for (const it of this.s.items) {
+      it.users = it.users.map((u) => (this.char(u) ? u : 0));
+    }
     this.repathAll();
+  }
+
+  /** Remove items and patch up anyone who was using them. */
+  private removeItems(gone: Item[]) {
+    const ids = new Set(gone.map((i) => i.id));
+    const users = this.usersOf(ids);
+    this.s.items = this.s.items.filter((i) => !ids.has(i.id));
+    this.world.rebuild();
+    for (const g of users.guests) g.claimItem = 0;
+    for (const st of users.staff) {
+      st.claimItem = 0;
+      if (st.job && st.job.kind !== 'litter') st.job = null;
+    }
+    this.resetUsers(users);
   }
 
   /** Remove a room. `refund` is the fraction of its cost returned (0 while still a blueprint). */
@@ -1490,5 +1783,5 @@ export class Sim {
 }
 
 export function netOf(l: Ledger) {
-  return l.consult + l.treatment + l.vending - l.salaries - l.building - (l.training ?? 0);
+  return l.consult + l.treatment + l.vending + l.bonus - l.salaries - l.building - l.training - l.interest;
 }

@@ -228,6 +228,72 @@ export function buildItem(type: ItemType): THREE.Group {
       g.userData.orb = orb;
       break;
     }
+    case 'posture_scanner': {
+      // console on the left tile, scanning platform on the right
+      put(g, rbox(0.7, 0.9, 0.5, 0.06), mat(0x4f66b0), -0.5, 0.45, -0.15);
+      const screen = put(g, rbox(0.56, 0.36, 0.05, 0.02), mat(0x9fe8ff, 0.3, 0.5), -0.5, 1.0, 0.02);
+      screen.rotation.x = -0.35;
+      put(g, rbox(0.5, 0.04, 0.2, 0.02), mat(DARK), -0.5, 0.92, 0.22);
+      put(g, cyl(0.42, 0.45, 0.08, 28), mat(0x8d99ae, 0.5), 0.5, 0.04, 0);
+      put(g, cyl(0.36, 0.36, 0.02, 28), mat(0x9fe8ff, 0.3, 0.35), 0.5, 0.09, 0);
+      for (const x of [0.08, 0.92]) put(g, cyl(0.035, 0.035, 1.5, 10), mat(CHROME, 0.3), x, 0.75, -0.3);
+      put(g, rbox(0.9, 0.07, 0.07, 0.02), mat(CHROME, 0.3), 0.5, 1.5, -0.3);
+      // the ring sweeps up and down while a scan is running
+      const ring = put(g, torus(0.4, 0.03), mat(0x4aa8ff, 0.3, 0.9), 0.5, 0.8, 0);
+      ring.rotation.x = Math.PI / 2;
+      ring.castShadow = false;
+      g.userData.ring = ring;
+      break;
+    }
+    case 'salt_lamp': {
+      put(g, cyl(0.2, 0.22, 0.08, 16), mat(WOOD_DARK), 0, 0.04, 0);
+      const salt = put(g, ico(0.24), mat(0xff9d5c, 0.5, 0.75), 0, 0.3, 0);
+      salt.scale.set(0.85, 1.25, 0.85);
+      salt.castShadow = false;
+      break;
+    }
+    case 'diffuser': {
+      put(g, rbox(0.34, 0.5, 0.34, 0.08), mat(WOOD), 0, 0.25, 0);
+      put(g, cyl(0.13, 0.17, 0.26, 16), mat(WHITE, 0.3), 0, 0.63, 0);
+      const puffs = new THREE.Group();
+      for (let i = 0; i < 3; i++) put(puffs, sph(0.07, 8), mat(0xffffff, 0.9, 0.35), 0, 0, 0).castShadow = false;
+      puffs.position.y = 0.8;
+      g.add(puffs);
+      g.userData.puffs = puffs;
+      break;
+    }
+    case 'statue': {
+      const stone = mat(0xb9b2a4, 0.85);
+      put(g, rbox(0.7, 0.2, 0.7, 0.04), stone, 0, 0.1, 0);
+      put(g, cyl(0.26, 0.32, 0.3, 14), stone, 0, 0.35, 0);
+      put(g, capsule(0.19, 0.2), stone, 0, 0.72, 0);
+      put(g, sph(0.17, 14), stone, 0, 1.08, 0);
+      put(g, sph(0.07, 10), stone, 0, 1.26, 0);
+      for (const x of [-0.24, 0.24]) put(g, sph(0.09, 10), stone, x, 0.5, 0.14);
+      break;
+    }
+    case 'rug': {
+      put(g, rbox(1.84, 0.03, 1.84, 0.015), mat(0xb5524a, 0.95), 0, 0.016, 0).castShadow = false;
+      put(g, rbox(1.5, 0.034, 1.5, 0.015), mat(0xe9c46a, 0.95), 0, 0.018, 0).castShadow = false;
+      put(g, rbox(1.16, 0.038, 1.16, 0.015), mat(0x2a9d8f, 0.95), 0, 0.02, 0).castShadow = false;
+      const diamond = put(g, rbox(0.56, 0.042, 0.56, 0.015), mat(0xf5ecdb, 0.95), 0, 0.022, 0);
+      diamond.rotation.y = Math.PI / 4;
+      diamond.castShadow = false;
+      break;
+    }
+    case 'magazine_rack': {
+      put(g, rbox(0.7, 0.9, 0.08, 0.03), mat(WOOD_DARK), 0, 0.5, -0.25);
+      for (const x of [-0.33, 0.33]) put(g, rbox(0.05, 0.9, 0.4, 0.02), mat(WOOD_DARK), x, 0.5, -0.07);
+      const covers = [0xe76f51, 0x5fa8d3, 0xe9c46a, 0x8ab17d, 0xb56576, 0xf4a261];
+      for (let row = 0; row < 3; row++) {
+        put(g, rbox(0.66, 0.04, 0.28, 0.01), mat(WOOD), 0, 0.2 + row * 0.28, -0.07);
+        for (let c = 0; c < 2; c++) {
+          const mag = put(g, rbox(0.26, 0.22, 0.03, 0.01), mat(covers[(row * 2 + c) % covers.length]), -0.15 + c * 0.3, 0.33 + row * 0.28, -0.02);
+          mag.rotation.x = -0.25;
+        }
+      }
+      break;
+    }
     case 'stone_warmer': {
       put(g, rbox(0.72, 0.5, 0.6, 0.06), mat(0x4a4f5a), 0, 0.25, 0);
       put(g, rbox(0.78, 0.06, 0.66, 0.03), mat(CHROME, 0.35), 0, 0.53, 0);

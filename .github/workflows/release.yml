@@ -51,6 +51,8 @@ jobs:
             echo "value=$(node -p "require('./package.json').version")-dev.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           fi
       - run: yarn build
+      - name: Unit tests
+        run: yarn test
       - name: Package
         shell: bash
         env:

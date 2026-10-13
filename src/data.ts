@@ -24,7 +24,7 @@ export const DAYS_PER_MONTH = 30;
 export const START_MONEY = 30000;
 
 // ---- Rooms -----------------------------------------------------------------
-export type RoomType = 'consult' | 'massage' | 'staffroom' | 'restroom' | 'training';
+export type RoomType = 'consult' | 'assess' | 'massage' | 'staffroom' | 'restroom' | 'training';
 export type Role = 'receptionist' | 'consultant' | 'therapist' | 'caretaker';
 export type ItemType =
   | 'reception_desk'
@@ -44,7 +44,13 @@ export type ItemType =
   | 'stone_warmer'
   | 'stretch_rack'
   | 'whiteboard'
-  | 'study_desk';
+  | 'study_desk'
+  | 'posture_scanner'
+  | 'salt_lamp'
+  | 'diffuser'
+  | 'statue'
+  | 'rug'
+  | 'magazine_rack';
 
 export interface RoomDef {
   type: RoomType;
@@ -74,6 +80,19 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     staff: 'consultant',
     floor: ['#8fb8d8', '#84aed0'],
     trim: 0x3f7fb5,
+  },
+  assess: {
+    type: 'assess',
+    name: 'Posture Lab',
+    icon: '📐',
+    desc: 'A scan settles any diagnosis the Consultant was unsure about. Needs a Wellness Consultant.',
+    cost: 5500,
+    minShort: 3,
+    minLong: 3,
+    required: ['posture_scanner'],
+    staff: 'consultant',
+    floor: ['#b9c7e6', '#adbde0'],
+    trim: 0x4f66b0,
   },
   massage: {
     type: 'massage',
@@ -125,7 +144,7 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     trim: 0x5f9440,
   },
 };
-export const ROOM_ORDER: RoomType[] = ['consult', 'massage', 'staffroom', 'restroom', 'training'];
+export const ROOM_ORDER: RoomType[] = ['consult', 'assess', 'massage', 'staffroom', 'restroom', 'training'];
 
 // ---- Items -----------------------------------------------------------------
 export type AccessRole = 'staff' | 'guest' | 'seat' | 'rest' | 'toilet' | 'drink' | 'eat' | 'study';
@@ -159,10 +178,16 @@ export interface ItemDef {
   /** Where it may be placed. */
   where: 'corridor' | 'any' | RoomType;
   /** Stations have a staff position and a line of guests. */
-  station?: { staff: Role; goal: 'reception' | 'consult' | 'treat'; seconds: number };
+  station?: { staff: Role; goal: 'reception' | 'consult' | 'assess' | 'treat'; seconds: number };
   inMenu?: boolean;
   /** Stars needed before it can be bought. */
   unlock?: number;
+  /** How much nicer it makes its surroundings, and the room it is in. */
+  decor?: number;
+  /** People can walk over it, and furniture can stand on it. */
+  walkable?: boolean;
+  /** Wear added each time it is used. At 100 it breaks until a Janitor repairs it. */
+  wear?: number;
 }
 
 export const ITEMS: Record<ItemType, ItemDef> = {
@@ -222,6 +247,7 @@ export const ITEMS: Record<ItemType, ItemDef> = {
       { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.6 },
     ],
     station: { staff: 'therapist', goal: 'treat', seconds: 10 },
+    wear: 6,
   },
   oil_trolley: {
     type: 'oil_trolley',
@@ -291,13 +317,14 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     type: 'plant',
     name: 'Potted Plant',
     icon: '🪴',
-    desc: 'Improves the ambience. Needs watering by a Janitor.',
+    desc: 'Makes its surroundings nicer. Needs watering by a Janitor.',
     cost: 120,
     w: 1,
     h: 1,
     where: 'any',
     access: [],
     inMenu: true,
+    decor: 1,
   },
   tea_station: {
     type: 'tea_station',
@@ -310,6 +337,7 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     where: 'corridor',
     access: [{ role: 'drink', x: 0, y: 1, px: 0.5, py: 1.3, face: [0, -1], pose: 'stand' }],
     inMenu: true,
+    wear: 1.5,
   },
   snack_machine: {
     type: 'snack_machine',
@@ -322,6 +350,7 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     where: 'corridor',
     access: [{ role: 'eat', x: 0, y: 1, px: 0.5, py: 1.3, face: [0, -1], pose: 'stand' }],
     inMenu: true,
+    wear: 1.5,
   },
   bin: {
     type: 'bin',
@@ -339,13 +368,14 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     type: 'fountain',
     name: 'Zen Fountain',
     icon: '⛲',
-    desc: 'A soothing trickle. Big ambience boost.',
+    desc: 'A soothing trickle. Makes a big stretch of corridor nicer.',
     cost: 900,
     w: 1,
     h: 1,
     where: 'corridor',
     access: [],
     inMenu: true,
+    decor: 4,
   },
   stone_warmer: {
     type: 'stone_warmer',
@@ -396,6 +426,88 @@ export const ITEMS: Record<ItemType, ItemDef> = {
     access: [{ role: 'study', x: 0, y: 1, px: 0.5, py: 1.32, face: [0, -1], pose: 'sit' }],
     inMenu: true,
   },
+  posture_scanner: {
+    type: 'posture_scanner',
+    name: 'Posture Scanner',
+    icon: '📐',
+    desc: 'Measures exactly how crooked a guest is, to two decimal places.',
+    cost: 0,
+    w: 2,
+    h: 1,
+    where: 'assess',
+    access: [
+      { role: 'staff', x: 0, y: 1, px: 0.5, py: 1.3, face: [0, -1], pose: 'stand' },
+      { role: 'guest', x: 1, y: 1, px: 1.5, py: 0.5, face: [0, 1], pose: 'stand' },
+    ],
+    station: { staff: 'consultant', goal: 'assess', seconds: 7 },
+    wear: 5,
+  },
+  salt_lamp: {
+    type: 'salt_lamp',
+    name: 'Salt Lamp',
+    icon: '🧂',
+    desc: 'Glows reassuringly. Raises the prestige of the room it is in.',
+    cost: 180,
+    w: 1,
+    h: 1,
+    where: 'any',
+    access: [],
+    inMenu: true,
+    decor: 2,
+  },
+  diffuser: {
+    type: 'diffuser',
+    name: 'Aroma Diffuser',
+    icon: '💨',
+    desc: 'Puffs lavender at passers-by whether they asked or not.',
+    cost: 240,
+    w: 1,
+    h: 1,
+    where: 'any',
+    access: [],
+    inMenu: true,
+    decor: 2,
+  },
+  statue: {
+    type: 'statue',
+    name: 'Serenity Statue',
+    icon: '🗿',
+    desc: 'Calm, expensive, and heavier than it looks. A big prestige boost.',
+    cost: 650,
+    w: 1,
+    h: 1,
+    where: 'any',
+    access: [],
+    inMenu: true,
+    decor: 4,
+  },
+  rug: {
+    type: 'rug',
+    name: 'Woven Rug',
+    icon: '🧶',
+    desc: 'Ties the room together. Furniture can stand on it.',
+    cost: 300,
+    w: 2,
+    h: 2,
+    where: 'any',
+    access: [],
+    inMenu: true,
+    decor: 3,
+    walkable: true,
+  },
+  magazine_rack: {
+    type: 'magazine_rack',
+    name: 'Magazine Rack',
+    icon: '📰',
+    desc: 'Three-year-old issues of Chakra Monthly. Keeps waiting guests occupied.',
+    cost: 220,
+    w: 1,
+    h: 1,
+    where: 'corridor',
+    access: [],
+    inMenu: true,
+    decor: 3,
+  },
 };
 export const ITEM_MENU: ItemType[] = [
   'reception_desk',
@@ -405,6 +517,11 @@ export const ITEM_MENU: ItemType[] = [
   'snack_machine',
   'bin',
   'fountain',
+  'magazine_rack',
+  'salt_lamp',
+  'diffuser',
+  'statue',
+  'rug',
   'sofa',
   'toilet',
   'study_desk',
@@ -679,6 +796,29 @@ export const CONDITION_BY_ID: Record<string, ConditionDef> = Object.fromEntries(
   CONDITIONS.map((c) => [c.id, c]),
 );
 export const CONSULT_FEE = 200;
+export const ASSESS_FEE = 150;
+
+// ---- Economy & upkeep ---------------------------------------------------------
+export const LOAN_STEP = 5000;
+export const LOAN_MAX = 50000;
+/** Interest charged on the outstanding loan each month. */
+export const LOAN_RATE = 0.02;
+export const PRICE_MIN = 0.5;
+export const PRICE_MAX = 2;
+/** Janitors start repairing equipment at this much wear; at 100 it is broken. */
+export const WEAR_REPAIR = 50;
+/** How far a decorative item's effect reaches, in tiles. */
+export const DECOR_RADIUS = 4;
+
+/** Flavor for emergencies: a batch of guests who all turn up with the same condition. */
+export const EMERGENCY_CAUSES = [
+  'A yoga retreat attempted a group pose and it went badly.',
+  'The city fun run turned out to be neither.',
+  'An all-hands meeting ran three hours over with no chairs.',
+  'A flash mob forgot to warm up.',
+  'The local choir held one note for far too long.',
+  'A furniture store ran a build-it-yourself weekend.',
+];
 export const DIAGNOSIS_TARGET = 0.75;
 
 // ---- Objectives ------------------------------------------------------------
@@ -706,6 +846,14 @@ export const LAST_NAMES = [
   'Relaxworth', 'Supple', 'Kinkaid', 'Twinge', 'Balmforth', 'Unwind', 'Shoulders', 'Calmley',
   'Flexmoor', 'Easeby', 'Musselwhite', 'Pummell', 'Glide', 'Hotstone',
 ];
+
+/** Full names borrowed from Tim and Eric, mixed in among the generated ones. */
+export const CAMEO_NAMES = [
+  'Rang Dipkin', 'Bilb Ono', 'Hosta Mohogey', 'Tairy Greene', 'Steve Brule', 'Jan Skylar', 'Wayne Skylar',
+  'Carol Krabit', 'Casey Tatum', 'Glen Tennis', 'Doug Prishpreed', 'Scott Clam', 'Jimes Tooper', 'Terry Bruge-Hiplo',
+];
+/** Share of guests and applicants who get a cameo name instead of a generated one. */
+export const CAMEO_CHANCE = 0.12;
 
 export const ANNOUNCEMENTS = [
   'Guests are reminded that the knots are not contagious.',

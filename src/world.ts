@@ -160,7 +160,7 @@ export class World {
       if (inBounds(ox, oy)) reserved[tileIdx(ox, oy)] = 1;
     }
     for (const it of this.s.items) {
-      for (const [x, y] of footprint(it)) if (inBounds(x, y)) blocked[tileIdx(x, y)] = 1;
+      if (!ITEMS[it.type].walkable) for (const [x, y] of footprint(it)) if (inBounds(x, y)) blocked[tileIdx(x, y)] = 1;
       for (let i = 0; i < ITEMS[it.type].access.length; i++) {
         const [x, y] = accessTile(it, i);
         if (inBounds(x, y)) reserved[tileIdx(x, y)] = 1;
@@ -188,8 +188,9 @@ export class World {
   roomOfItem(it: Item): Room | undefined {
     return this.roomAt(it.x, it.y);
   }
-  /** Corridor items always work; room items only once the room is finished. */
+  /** Corridor items always work; room items only once the room is finished. Broken items never do. */
   usable(it: Item): boolean {
+    if (it.wear >= 100) return false;
     const r = this.roomOfItem(it);
     return !r || r.done;
   }
@@ -323,6 +324,12 @@ export class World {
         if (!need(x, y)) return false;
       }
     }
+    // nobody already inside may be walled in (their own tile may be the one being built on)
+    for (const c of [...this.s.guests, ...this.s.staff]) {
+      if (!inBuilding(c.tx, c.ty)) continue;
+      const { tx: x, ty: y } = c;
+      if (!need(x, y) && !need(x + 1, y) && !need(x - 1, y) && !need(x, y + 1) && !need(x, y - 1)) return false;
+    }
     return true;
   }
 
@@ -335,8 +342,14 @@ export class World {
     for (const [tx, ty] of tiles) {
       if (!inBuilding(tx, ty)) return no('Must be inside the building');
       const i = tileIdx(tx, ty);
-      if (this.blocked[i]) return no('Something is in the way');
-      if (this.reserved[i]) return no('Keep doorways and access spots clear');
+      if (def.walkable) {
+        // rugs lie flat: fine under furniture and in doorways, but not on another rug
+        if (this.s.items.some((o) => ITEMS[o.type].walkable && footprint(o).some(([ox, oy]) => ox === tx && oy === ty)))
+          return no('There is already a rug here');
+      } else {
+        if (this.blocked[i]) return no('Something is in the way');
+        if (this.reserved[i]) return no('Keep doorways and access spots clear');
+      }
       if (z === null) z = this.zone[i];
       else if (z !== this.zone[i]) return no('Cannot straddle a wall');
     }

@@ -511,6 +511,17 @@ export class View {
           guest.state === 'served' &&
           CONDITION_BY_ID[guest.condition].modality === 'stone' &&
           !this.sim.deliveryProblem(it, this.sim.staff(it.staffId), this.sim.modalityOf(guest));
+      } else if (it.type === 'posture_scanner') {
+        const ring = view.group.userData.ring as THREE.Mesh;
+        const scanning = it.serving > 0 && it.progress > 0;
+        ring.position.y = scanning ? 0.8 + Math.sin(t * 3.5) * 0.6 : 0.2;
+        ring.visible = it.wear < 100;
+      } else if (it.type === 'diffuser') {
+        (view.group.userData.puffs as THREE.Group).children.forEach((p, i) => {
+          const f = (t * 0.5 + i / 3 + it.id * 0.13) % 1;
+          p.position.set(Math.sin(f * 5 + i) * 0.08, f * 0.6, 0);
+          p.scale.setScalar(0.4 + f * 0.9);
+        });
       } else if (it.type === 'fountain') {
         (view.group.userData.orb as THREE.Mesh).position.y = 0.9 + Math.sin(t * 3 + it.id) * 0.035;
       }
@@ -532,6 +543,23 @@ export class View {
         const p = Math.min(1, it.progress);
         bar.fill.scale.x = Math.max(0.02, p);
         bar.fill.position.x = -(1 - p) / 2;
+      }
+    }
+    for (const it of s.items) {
+      const view = this.items.get(it.id);
+      if (!view) continue;
+      let wrench = view.group.userData.wrench as THREE.Sprite | undefined;
+      if (it.wear >= 100 && !wrench) {
+        wrench = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTexture('🔧'), transparent: true, depthTest: false }));
+        wrench.scale.setScalar(0.7);
+        wrench.renderOrder = 9;
+        wrench.userData.itemId = it.id;
+        view.group.add(wrench);
+        view.group.userData.wrench = wrench;
+      }
+      if (wrench) {
+        wrench.visible = it.wear >= 100;
+        wrench.position.y = 1.9 + Math.sin(t * 4 + it.id) * 0.06;
       }
     }
     for (const [id, bar] of this.bars) {

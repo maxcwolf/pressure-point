@@ -1,0 +1,127 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+import { CAMEO_CHANCE, CAMEO_NAMES, ROLE_ORDER } from '../../src/data';
+import {
+  SAVE_VERSION,
+  clearSave,
+  fairSalary,
+  loadGame,
+  newGame,
+  random,
+  randomName,
+  saveGame,
+  setSeed,
+  upgradeSave,
+  type GameState,
+} from '../../src/state';
+import { openCenter, run } from './helpers';
+
+// a stand-in for the browser's storage
+const store = new Map<string, string>();
+beforeEach(() => {
+  store.clear();
+  globalThis.localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => void store.set(k, v),
+    removeItem: (k: string) => void store.delete(k),
+  } as Storage;
+});
+
+describe('random numbers', () => {
+  it('repeat exactly for the same seed', () => {
+    setSeed(42);
+    const a = [random(), random(), random()];
+    setSeed(42);
+    expect([random(), random(), random()]).toEqual(a);
+    expect(a.every((n) => n >= 0 && n < 1)).toBe(true);
+  });
+
+  it('are roughly uniform', () => {
+    setSeed(7);
+    let sum = 0;
+    for (let i = 0; i < 5000; i++) sum += random();
+    expect(sum / 5000).toBeGreaterThan(0.47);
+    expect(sum / 5000).toBeLessThan(0.53);
+  });
+});
+
+describe('names', () => {
+  it('mix in the cameo names at about the configured rate', () => {
+    setSeed(3);
+    let cameos = 0;
+    for (let i = 0; i < 3000; i++) if (CAMEO_NAMES.includes(randomName())) cameos++;
+    expect(cameos / 3000).toBeGreaterThan(CAMEO_CHANCE * 0.7);
+    expect(cameos / 3000).toBeLessThan(CAMEO_CHANCE * 1.3);
+  });
+
+  it('include the ones that were asked for', () => {
+    expect(CAMEO_NAMES).toEqual(expect.arrayContaining(['Rang Dipkin', 'Bilb Ono', 'Hosta Mohogey']));
+  });
+});
+
+describe('a new game', () => {
+  it('starts closed, solvent and with three applicants per role', () => {
+    setSeed(1);
+    const s = newGame();
+    expect(s.open).toBe(false);
+    expect(s.money).toBe(30000);
+    expect(s.loan).toBe(0);
+    expect(s.priceLevel).toBe(1);
+    for (const role of ROLE_ORDER) expect(s.candidates.filter((c) => c.role === role)).toHaveLength(3);
+    expect(s.candidates.filter((c) => c.role === 'therapist').every((c) => c.quals.includes('swedish'))).toBe(true);
+    expect(s.candidates.filter((c) => c.role !== 'therapist').every((c) => c.quals.length === 0)).toBe(true);
+  });
+});
+
+describe('fair salaries', () => {
+  it('rise with skill and with qualifications', () => {
+    expect(fairSalary('therapist', 3, [], ['swedish'])).toBeGreaterThan(fairSalary('therapist', 2, [], ['swedish']));
+    expect(fairSalary('therapist', 2, [], ['swedish', 'deep'])).toBeGreaterThan(fairSalary('therapist', 2, [], ['swedish']));
+  });
+  it('reflect quirks', () => {
+    expect(fairSalary('caretaker', 2, ['bargain'], [])).toBeLessThan(fairSalary('caretaker', 2, [], []));
+    expect(fairSalary('caretaker', 2, ['brisk'], [])).toBeGreaterThan(fairSalary('caretaker', 2, [], []));
+  });
+});
+
+describe('saving and loading', () => {
+  it('round-trips a running game', () => {
+    const { sim, s } = openCenter(5);
+    run(sim, 120);
+    saveGame(s);
+    const loaded = loadGame()!;
+    expect(loaded).toEqual(JSON.parse(JSON.stringify(s)));
+    expect(loaded.guests.length).toBe(s.guests.length);
+  });
+
+  it('returns nothing when there is no save, a corrupt save, or one from the future', () => {
+    expect(loadGame()).toBeNull();
+    store.set('pressure-point-save-v1', '{not json');
+    expect(loadGame()).toBeNull();
+    saveGame({ ...newGame(), version: SAVE_VERSION + 1 });
+    expect(loadGame()).toBeNull();
+    clearSave();
+    expect(store.size).toBe(0);
+  });
+
+  it('brings a first-version save up to date', () => {
+    const { sim, s } = openCenter(2);
+    run(sim, 30);
+    const old = JSON.parse(JSON.stringify(s)) as Record<string, any>;
+    old.version = 1;
+    for (const st of old.staff) for (const k of ['quals', 'training', 'strain', 'morale', 'raiseAsked', 'unhappyT']) delete st[k];
+    for (const c of old.candidates) delete c.quals;
+    for (const it of old.items) delete it.wear;
+    for (const k of ['loan', 'priceLevel', 'offer', 'emergency', 'nextEmergency', 'announceT']) delete old[k];
+    delete old.ledger.training;
+    delete old.ledger.interest;
+    upgradeSave(old as GameState);
+    const up = old as GameState;
+    expect(up.version).toBe(SAVE_VERSION);
+    expect(up.staff.find((x) => x.role === 'therapist')!.quals).toEqual(['swedish']);
+    expect(up.staff.every((x) => x.morale === 75 && x.training === null)).toBe(true);
+    expect(up.items.every((i) => i.wear === 0)).toBe(true);
+    expect(up.priceLevel).toBe(1);
+    expect(up.ledger.interest).toBe(0);
+    expect(up.nextEmergency).toBeGreaterThan(up.day);
+  });
+});

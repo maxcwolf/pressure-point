@@ -65,6 +65,11 @@ export class Audio {
     this.musicGain.connect(this.master);
     this.scheduleMusic();
     this.musicTimer = window.setInterval(() => this.scheduleMusic(), 4000);
+    // go quiet while the window is hidden or minimized
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) void this.ctx?.suspend();
+      else void this.ctx?.resume();
+    });
   }
 
   private save() {

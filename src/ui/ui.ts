@@ -7,8 +7,13 @@ import {
   TITLE_LINES,
   ITEMS,
   ITEM_MENU,
+  LOAN_MAX,
+  LOAN_RATE,
+  LOAN_STEP,
   MODALITIES,
   MODALITY_ORDER,
+  PRICE_MAX,
+  PRICE_MIN,
   ROLES,
   ROLE_ORDER,
   ROOMS,
@@ -16,6 +21,7 @@ import {
   STAR_GOALS,
   STONE_USE,
   TRAIT_BY_ID,
+  WEAR_REPAIR,
   type Modality,
   type Role,
 } from '../data';
@@ -53,17 +59,17 @@ function guestStatus(g: Guest, sim: Sim): string {
       return 'Arriving';
     case 'toWait':
     case 'waiting':
-      if (!st) return g.goal === 'treat' ? 'Waiting for a Massage Suite to exist' : g.goal === 'consult' ? 'Waiting for a Consultation Room to exist' : 'Looking for Reception';
-      return g.goal === 'reception' ? 'In line at Reception' : g.goal === 'consult' ? 'Waiting for a consultation' : 'Waiting for treatment';
+      if (!st) return g.goal === 'treat' ? 'Waiting for a working Massage Suite' : g.goal === 'consult' ? 'Waiting for a Consultation Room to exist' : g.goal === 'assess' ? 'Waiting for a working Posture Lab' : 'Looking for Reception';
+      return g.goal === 'reception' ? 'In line at Reception' : g.goal === 'consult' ? 'Waiting for a consultation' : g.goal === 'assess' ? 'Waiting for a posture scan' : 'Waiting for treatment';
     case 'called':
       return `Heading to the ${where}`;
     case 'served':
-      return g.goal === 'reception' ? 'Checking in' : g.goal === 'consult' ? 'Being diagnosed' : 'Being treated';
+      return g.goal === 'reception' ? 'Checking in' : g.goal === 'consult' ? 'Being diagnosed' : g.goal === 'assess' ? 'Being scanned' : 'Being treated';
     case 'toNeed':
     case 'need':
       return g.needKind === 'toilet' ? 'Answering a call of nature' : g.needKind === 'drink' ? 'Getting a herbal tea' : 'Getting a snack';
     case 'leaving':
-      return g.outcome === 'healed' ? 'Going home healed' : g.outcome === 'failed' ? 'Going home, still knotted' : g.outcome === 'stormed' ? 'Storming out' : 'Leaving';
+      return g.outcome === 'healed' ? 'Going home healed' : g.outcome === 'failed' ? 'Going home, still knotted' : g.outcome === 'stormed' ? 'Leaving in a huff' : 'Leaving';
   }
 }
 
@@ -85,6 +91,7 @@ function staffStatus(st: Staff, sim: Sim): string {
       return 'Resting in the Staff Room';
     case 'toJob':
     case 'doingJob':
+      if (st.job?.kind === 'repair') return `Repairing the ${ITEMS[sim.world.item(st.job.id)?.type ?? 'bin'].name}`;
       if (st.job?.kind !== 'water') return 'Clearing litter';
       return sim.world.item(st.job.id)?.type === 'stone_warmer' ? 'Reheating the massage stones' : 'Watering a plant';
     case 'toTrain':
@@ -115,6 +122,7 @@ export class UI {
     this.root.innerHTML = `
       <div id="objectives" class="panel"></div>
       <div id="announce"></div>
+      <div id="offer"></div>
       <div id="sys"></div>
       <div id="toasts"></div>
       <div id="inspector"></div>
@@ -195,6 +203,28 @@ export class UI {
         click = false;
         break;
       }
+      case 'raise':
+        sim.giveRaise(Number(arg));
+        click = false;
+        break;
+      case 'move':
+        tools.startMove(Number(arg));
+        break;
+      case 'borrow':
+        if (!sim.borrow()) audio.play('error');
+        click = false;
+        break;
+      case 'repay':
+        if (!sim.repay()) audio.play('error');
+        click = false;
+        break;
+      case 'price':
+        sim.setPrice(sim.s.priceLevel + Number(arg));
+        break;
+      case 'emergency':
+        if (arg === 'accept') sim.acceptEmergency();
+        else sim.declineEmergency();
+        break;
       case 'fire':
         sim.fire(Number(arg));
         tools.select(null);
@@ -261,9 +291,23 @@ export class UI {
       .objectives()
       .map((o) => `<li class="${o.done ? 'done' : ''}"><b>${o.done ? '✔' : '○'}</b><span>${o.label}${bar(o.progress * 100, 'thin')}</span></li>`)
       .join('');
+    const em = s.emergency;
+    const emergency = em
+      ? `<div class="emergency"><b>🚨 Emergency: ${CONDITION_BY_ID[em.condition].name}</b>
+           <span>${em.healed}/${em.target} healed · ${Math.max(0, Math.ceil(em.deadline - s.day))} days left</span>${bar((em.healed / em.target) * 100, 'thin bad')}</div>`
+      : '';
     this.set(
       'objectives',
-      `<h3>${goal ? `Star ${s.stars + 1} objectives` : 'All stars earned!'}</h3>${starRow}<ul>${objs || '<li class="done"><b>✔</b><span>Nothing left to prove. For now.</span></li>'}</ul>`,
+      `<h3>${goal ? `Star ${s.stars + 1} objectives` : 'All stars earned!'}</h3>${starRow}<ul>${objs || '<li class="done"><b>✔</b><span>Nothing left to prove. For now.</span></li>'}</ul>${emergency}`,
+    );
+    const offer = s.offer;
+    this.set(
+      'offer',
+      offer
+        ? `<div class="panel offer"><h3>🚨 Emergency</h3><p>${esc(offer.cause)} <b>${offer.total} guests</b> with <b>${CONDITION_BY_ID[offer.condition].name}</b> need ${MODALITIES[CONDITION_BY_ID[offer.condition].modality].name} massage.</p>
+            <p class="sub">Heal ${offer.target} of them within 25 days for a <b>${money(offer.reward)}</b> bonus. Fail and your reputation suffers. Offer lapses in ${Math.max(1, Math.ceil(offer.deadline - s.day))} days.</p>
+            <div class="btnrow"><button class="go" data-act="emergency" data-arg="accept">Accept</button><button data-act="emergency" data-arg="decline">Decline</button></div></div>`
+        : '',
     );
 
     // system buttons
@@ -348,7 +392,7 @@ export class UI {
       const rows = s.staff
         .map(
           (st) => `<button class="row" data-act="select" data-arg="staff:${st.id}">
-            <i>${ROLES[st.role].icon}</i><b>${esc(st.name)}</b><span>${staffStatus(st, sim)}</span>${bar(st.energy, 'thin energy')}<small>${money(st.salary)}</small></button>`,
+            <i>${ROLES[st.role].icon}</i><b>${st.raiseAsked ? '💰 ' : ''}${esc(st.name)}</b><span>${staffStatus(st, sim)}</span>${bar(st.energy, 'thin energy')}<small>${money(st.salary)}</small></button>`,
         )
         .join('');
       const total = s.staff.reduce((a, x) => a + x.salary, 0);
@@ -379,13 +423,24 @@ export class UI {
       <div><span>Tea &amp; snacks</span><b class="pos">${money(l.vending)}</b></div>
       <div><span>Salaries</span><b class="neg">${money(-l.salaries)}</b></div>
       <div><span>Building</span><b class="neg">${money(-l.building)}</b></div>
-      <div><span>Training</span><b class="neg">${money(-(l.training ?? 0))}</b></div>
+      <div><span>Emergency bonuses</span><b class="pos">${money(l.bonus)}</b></div>
+      <div><span>Training</span><b class="neg">${money(-l.training)}</b></div>
+      <div><span>Loan interest</span><b class="neg">${money(-l.interest)}</b></div>
       <div class="total"><span>Net</span><b class="${netOf(l) < 0 ? 'neg' : 'pos'}">${money(netOf(l))}</b></div></div>`;
     const max = Math.max(1, ...s.history.map((v) => Math.abs(v)));
     const chart = s.history.length
       ? `<div class="chart">${s.history.map((v) => `<i class="${v < 0 ? 'neg' : ''}" style="height:${Math.max(4, (Math.abs(v) / max) * 56)}px" title="${money(v)}"></i>`).join('')}</div><p class="sub">Monthly net, oldest to newest</p>`
       : '';
-    return `<div class="panel menu"><h3>Money</h3><div class="ledgers">${table('This month', s.ledger)}${table('Last month', s.lastLedger)}</div>${chart}
+    const pct = Math.round(s.priceLevel * 100);
+    const controls = `<div class="ledgers controls">
+      <div class="ledger"><h4>Prices: ${pct}% of standard</h4>
+        <p class="sub">Higher prices earn more per guest, but build reputation more slowly and some guests walk out.</p>
+        <div class="btnrow left"><button class="${s.priceLevel <= PRICE_MIN ? 'locked' : ''}" data-act="price" data-arg="-0.1">−10%</button><button class="${s.priceLevel >= PRICE_MAX ? 'locked' : ''}" data-act="price" data-arg="0.1">+10%</button></div></div>
+      <div class="ledger"><h4>Loan: ${money(s.loan)} of ${money(LOAN_MAX)}</h4>
+        <p class="sub">Costs ${(LOAN_RATE * 100).toFixed(0)}% interest a month, currently ${money(s.loan * LOAN_RATE)}.</p>
+        <div class="btnrow left"><button class="${s.loan + LOAN_STEP > LOAN_MAX ? 'locked' : ''}" data-act="borrow">Borrow ${money(LOAN_STEP)}</button><button class="${s.loan <= 0 || s.money <= 0 ? 'locked' : ''}" data-act="repay">Repay ${money(LOAN_STEP)}</button></div></div>
+    </div>`;
+    return `<div class="panel menu"><h3>Money</h3><div class="ledgers">${table('This month', s.ledger)}${table('Last month', s.lastLedger)}</div>${controls}${chart}
       <p class="sub">Healed ${s.stats.healed} · Failed ${s.stats.failed} · Stormed out ${s.stats.stormed} · Salaries are paid at the end of each month.</p></div>`;
   }
 
@@ -399,7 +454,7 @@ export class UI {
       if (!g) return '';
       const c = CONDITION_BY_ID[g.condition];
       const known = g.goal === 'treat' || g.goal === 'leave';
-      return `<div class="panel insp">${close}<h3>${esc(g.name)}</h3><p class="tag">Guest</p>
+      return `<div class="panel insp">${close}<h3>${esc(g.name)}</h3><p class="tag">${g.emergency ? '🚨 Emergency guest' : 'Guest'}</p>
         <p><b>${known ? c.name : 'Undiagnosed'}</b><br>${known ? c.desc : 'Something is clearly wrong. A consultation will reveal what.'}</p>
         ${known ? `<p class="sub">Treatment: ${c.treatment} · ${money(c.fee)}</p>${qualChips([c.modality])}` : ''}
         <p class="status">${guestStatus(g, sim)}</p>
@@ -417,7 +472,9 @@ export class UI {
         <p class="status">${staffStatus(st, sim)}</p>
         ${st.training ? `<label>Course progress${bar(st.training.progress * 100, 'blue')}</label>` : ''}
         <label>Energy${bar(st.energy, st.energy < 20 ? 'bad' : 'energy')}</label>
-        <p class="sub">Salary ${money(st.salary)}/month · Guests served: ${st.served}</p>
+        <label>Morale${bar(st.morale, st.morale < 30 ? 'bad' : 'gold')}</label>
+        <p class="sub">Salary ${money(st.salary)}/month (going rate ${money(sim.fairPay(st))}) · Guests served: ${st.served}</p>
+        ${st.state === 'leaving' ? '' : `<button class="${st.raiseAsked ? 'go' : ''} raise" data-act="raise" data-arg="${st.id}">${st.raiseAsked ? '💰 Wants a raise: pay' : 'Raise to'} ${money(sim.raiseTo(st))}</button>`}
         ${this.coursesHtml(st)}
         ${st.state === 'leaving' ? '' : `<button class="danger" data-act="fire" data-arg="${st.id}">Let go</button>`}</div>`;
     }
@@ -464,6 +521,12 @@ export class UI {
     let body = `<h3>${def.icon} ${def.name}</h3><p>${def.desc}</p>${this.stationInfo(it)}`;
     if (it.type === 'plant') body += `<label>Water${bar(it.water, it.water < 25 ? 'bad' : 'blue')}</label>`;
     if (it.type === 'stone_warmer') body += `<label>Heat${bar(it.water, it.water < STONE_USE ? 'bad' : 'need')}</label>`;
+    if (def.wear) {
+      body += `<label>Condition${bar(100 - it.wear, it.wear >= WEAR_REPAIR ? 'bad' : '')}</label>`;
+      if (it.wear >= 100) body += `<p class="status">🔧 Broken: needs a Janitor</p>`;
+    }
+    if (def.decor) body += `<p class="sub">Decor: +${def.decor} to its surroundings</p>`;
+    body += `<button data-act="move" data-arg="${it.id}">Move</button> `;
     if (sim.canSell(it)) body += `<button class="danger" data-act="sell" data-arg="${it.id}">Sell for ${money(def.cost * 0.5)}</button>`;
     else body += `<p class="sub">Part of the room. Demolish the room to remove it.</p>`;
     return body;
@@ -495,7 +558,9 @@ export class UI {
     const { sim } = this.host;
     const def = ROOMS[room.type];
     const stations = sim.s.items.filter((i) => ITEMS[i.type].station && sim.world.zoneAt(i.x, i.y) === room.id);
-    return `<h3>${def.icon} ${def.name}</h3><p>${def.desc}</p><p class="sub">${room.w}×${room.h} tiles</p>
+    return `<h3>${def.icon} ${def.name}</h3><p>${def.desc}</p>
+      <p>Prestige ${stars(sim.prestige(room))}</p>
+      <p class="sub">${room.w}×${room.h} tiles · Bigger rooms with more decor are more prestigious, which lifts staff morale and results.</p>
       ${stations.map((i) => this.stationInfo(i)).join('')}${room.type === 'massage' ? this.suiteModalities(stations) : ''}
       <button class="danger" data-act="demolish" data-arg="${room.id}">Demolish (recover ${money(def.cost * 0.5)})</button>`;
   }

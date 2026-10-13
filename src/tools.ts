@@ -8,6 +8,7 @@ import { accessTile, footprint, inBuilding, itemDims, tileIdx, Z_CORRIDOR, type 
 type Tool =
   | { kind: 'none' }
   | { kind: 'item'; type: ItemType; rot: number }
+  | { kind: 'move'; id: number; type: ItemType; rot: number }
   | { kind: 'room'; type: RoomType; phase: 'drag'; start: [number, number] | null; rect: Rect | null }
   | { kind: 'room'; type: RoomType; phase: 'door'; rect: Rect }
   | { kind: 'room'; type: RoomType; phase: 'items'; room: Room; queue: ItemType[]; rot: number };
@@ -45,6 +46,15 @@ export class Tools {
     this.refresh();
   }
 
+  /** Pick up an existing item to put it down somewhere else. */
+  startMove(id: number) {
+    this.cancel();
+    const it = this.sim.world.item(id);
+    if (!it) return;
+    this.tool = { kind: 'move', id, type: it.type, rot: it.rot };
+    this.refresh();
+  }
+
   startRoom(type: RoomType) {
     this.cancel();
     const def = ROOMS[type];
@@ -68,7 +78,7 @@ export class Tools {
 
   rotate() {
     const t = this.tool;
-    if (t.kind === 'item' || (t.kind === 'room' && t.phase === 'items')) {
+    if (t.kind === 'item' || t.kind === 'move' || (t.kind === 'room' && t.phase === 'items')) {
       t.rot = (t.rot + 1) & 3;
       this.sfx('blip');
       this.refresh();
@@ -117,6 +127,12 @@ export class Tools {
       const spot = this.itemSpot(t.type, t.rot);
       if (spot && sim.placeItem(t.type, spot[0], spot[1], t.rot)) this.onChange();
       else if (spot) this.sfx('error');
+    } else if (t.kind === 'move') {
+      const spot = this.itemSpot(t.type, t.rot);
+      if (spot && sim.moveItem(t.id, spot[0], spot[1], t.rot)) {
+        this.tool = { kind: 'none' };
+        this.select({ kind: 'item', id: t.id });
+      } else if (spot) this.sfx('error');
     } else if (t.phase === 'drag') {
       const rect = t.rect;
       t.start = null;
@@ -156,13 +172,16 @@ export class Tools {
     return [Math.floor(this.cursor.x - w / 2 + 0.5), Math.floor(this.cursor.y - h / 2 + 0.5)];
   }
 
-  private itemOverlay(type: ItemType, rot: number, roomId: number | undefined, tiles: OverlayTile[]) {
+  private itemOverlay(type: ItemType, rot: number, roomId: number | undefined, tiles: OverlayTile[], movingId = 0) {
     const spot = this.itemSpot(type, rot);
     if (!spot) {
       this.view.setGhost(null);
       return;
     }
-    const check = this.sim.world.canPlaceItem(type, spot[0], spot[1], rot, roomId);
+    const moving = this.sim.world.item(movingId);
+    const check = moving
+      ? this.sim.canMoveItem(moving, spot[0], spot[1], rot)
+      : this.sim.world.canPlaceItem(type, spot[0], spot[1], rot, roomId);
     const placed = { type, x: spot[0], y: spot[1], rot };
     for (const [x, y] of footprint(placed)) tiles.push([x, y, check.ok ? OV_GOOD : OV_BAD]);
     for (let i = 0; i < ITEMS[type].access.length; i++) {
@@ -188,6 +207,10 @@ export class Tools {
       const def = ITEMS[t.type];
       this.hint = `${def.icon} ${def.name} · ${money(def.cost)} each · click to place · R rotates · Esc when done`;
       this.itemOverlay(t.type, t.rot, undefined, tiles);
+    } else if (t.kind === 'move') {
+      const def = ITEMS[t.type];
+      this.hint = `${def.icon} Moving the ${def.name} · click to put it down · R rotates · Esc cancels`;
+      this.itemOverlay(t.type, t.rot, undefined, tiles, t.id);
     } else if (t.phase === 'drag') {
       const def = ROOMS[t.type];
       view.setGhost(null);
