@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   ASSESS_FEE,
-  CONDITION_BY_ID,
+  conditionOf,
   CONSULT_FEE,
   LOAN_MAX,
   LOAN_RATE,
@@ -46,7 +47,7 @@ describe('decor and prestige', () => {
       [14, 7],
       [14, 6],
       [11, 5],
-    ])
+    ] as const)
       sim.placeItem('statue', x, y, 0);
     expect(sim.prestige(massage)).toBe(5);
   });
@@ -74,7 +75,7 @@ describe('equipment wear', () => {
     sim.drain();
     runUntil(sim, () => table.wear >= 100, 600);
     expect(sim.world.usable(table)).toBe(false);
-    expect(toasts(sim.drain()).some((t) => /broken down/.test(t))).toBe(true);
+    expect(toasts(sim.drain()).some((t) => t.includes('broken down'))).toBe(true);
     run(sim, 2);
     expect(therapist.state).not.toBe('atPost');
     expect(sim.advice()).toMatch(/broken down/);
@@ -105,7 +106,7 @@ describe('morale and pay', () => {
     therapist.salary = Math.round(fair * 0.8);
     sim.drain();
     runUntil(sim, () => therapist.raiseAsked, 300);
-    expect(toasts(sim.drain()).some((t) => /wants a raise/.test(t))).toBe(true);
+    expect(toasts(sim.drain()).some((t) => t.includes('wants a raise'))).toBe(true);
     expect(sim.advice()).toMatch(/wants a raise/);
     const before = therapist.morale;
     sim.giveRaise(therapist.id);
@@ -138,8 +139,8 @@ describe('morale and pay', () => {
     sim.drain();
     runUntil(sim, () => !s.staff.includes(therapist), 400);
     const said = toasts(sim.drain());
-    expect(said.some((t) => /thinking of quitting/.test(t))).toBe(true);
-    expect(said.some((t) => /has quit/.test(t))).toBe(true);
+    expect(said.some((t) => t.includes('thinking of quitting'))).toBe(true);
+    expect(said.some((t) => t.includes('has quit'))).toBe(true);
     expect(s.reputation).toBeLessThan(rep + 5);
   });
 });
@@ -196,7 +197,7 @@ describe('prices', () => {
       sim.drain();
       run(sim, 900);
       return (
-        toasts(sim.drain()).filter((t) => /balked at your prices/.test(t)).length +
+        toasts(sim.drain()).filter((t) => t.includes('balked at your prices')).length +
         s.guests.filter((g) => g.bubble === '💸').length
       );
     };
@@ -241,7 +242,7 @@ describe('the Posture Lab', () => {
     const { sim, s } = openCenter(1);
     const lab = addPostureLab(sim);
     runUntil(sim, () => s.guests.length > 0, 120);
-    const g = s.guests[0];
+    const g = s.guests[0]!;
     Object.assign(g, { goal: 'assess', state: 'waiting', station: 0, timer: 0, path: null, dest: null });
     sim.removeRoom(lab.id, 0);
     run(sim, 2);
@@ -256,7 +257,7 @@ describe('emergencies', () => {
     therapist.quals = ['swedish'];
     for (let i = 0; i < 20; i++) {
       expect(sim.offerEmergency()).toBe(true);
-      expect(CONDITION_BY_ID[s.offer!.condition].modality).toBe('swedish');
+      expect(conditionOf(s.offer!.condition).modality).toBe('swedish');
       expect(s.offer!.target).toBeLessThanOrEqual(s.offer!.total);
       expect(s.offer!.reward).toBeGreaterThan(0);
       sim.declineEmergency();
@@ -300,7 +301,7 @@ describe('emergencies', () => {
     expect(s.money).toBeGreaterThanOrEqual(before + reward);
     expect(s.ledger.bonus).toBe(reward);
     expect(s.reputation).toBeGreaterThan(rep);
-    expect(toasts(sim.drain()).some((t) => /Emergency handled/.test(t))).toBe(true);
+    expect(toasts(sim.drain()).some((t) => t.includes('Emergency handled'))).toBe(true);
     expect(s.guests.some((g) => g.emergency)).toBe(false);
   });
 
@@ -316,7 +317,7 @@ describe('emergencies', () => {
     run(sim, 2);
     expect(s.emergency).toBeNull();
     expect(s.reputation).toBeLessThan(rep);
-    expect(toasts(sim.drain()).some((t) => /Emergency failed/.test(t))).toBe(true);
+    expect(toasts(sim.drain()).some((t) => t.includes('Emergency failed'))).toBe(true);
   });
 
   it('count real heals toward the target', () => {
@@ -383,7 +384,7 @@ describe('a long session', () => {
       ['magazine_rack', 9, 10],
       ['rug', 24, 12],
     ] as const)
-      expect(sim.placeItem(type, x, y, 0), `${type}`).not.toBeNull();
+      expect(sim.placeItem(type, x, y, 0), type).not.toBeNull();
     s.stars = 2;
     sim.placeItem('stretch_rack', 14, 7, 0);
     sim.placeItem('stone_warmer', 14, 6, 0);
@@ -398,7 +399,7 @@ describe('a long session', () => {
       expect(s.reputation).toBeLessThanOrEqual(100);
       expect(s.guests.length).toBeLessThan(60);
       for (const c of [...s.guests, ...s.staff]) {
-        expect(Number.isFinite(c.x + c.y + c.facing), `${c.name}`).toBe(true);
+        expect(Number.isFinite(c.x + c.y + c.facing), c.name).toBe(true);
         if (c.kind === 'staff') expect(c.morale >= 0 && c.morale <= 100 && c.energy >= 0 && c.energy <= 100).toBe(true);
         else expect(c.patience).toBeLessThanOrEqual(100);
       }

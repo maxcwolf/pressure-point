@@ -1,32 +1,34 @@
 // Three.js scene: floor, walls, furniture, people, build overlays, camera and picking.
 import * as THREE from 'three';
+
 import {
   BX0,
   BX1,
   BY0,
   BY1,
-  CONDITION_BY_ID,
+  conditionOf,
   ENT_IN_Y,
   ENT_OUT_Y,
   ENT_X,
-  TITLE_LINES,
   H,
-  ITEMS,
+  type ItemType,
+  type Modality,
   ROAD_Y,
   ROLES,
   ROOMS,
   SIDEWALK_Y,
+  TITLE_LINES,
   W,
-  type ItemType,
-  type Modality,
 } from '../data';
 import type { Sim } from '../sim';
 import type { Char, Room } from '../state';
-import { Z_CORRIDOR, Z_OUTSIDE, itemCenter, itemDims, tileIdx } from '../world';
+import { at, must } from '../util';
+import { itemCenter, itemDims, Z_CORRIDOR, Z_OUTSIDE } from '../world';
 import {
   buildCharacter,
   buildItem,
   buildTree,
+  type CharRig,
   cureRig,
   cyl,
   emojiTexture,
@@ -34,7 +36,6 @@ import {
   put,
   rbox,
   sph,
-  type CharRig,
 } from './models';
 
 const TS = 48;
@@ -55,6 +56,14 @@ export const OV_FREE = 3;
 export const OV_STAFF = 4;
 /** The square a guest uses it from. */
 export const OV_GUEST = 5;
+/** What a clickable object stands for, kept in its three.js userData. */
+interface PickData {
+  charKind?: 'guest' | 'staff';
+  charId?: number;
+  itemId?: number;
+}
+const pickData = (o: THREE.Object3D) => o.userData as PickData;
+
 const OVERLAY_COLORS = [0x3ddc84, 0xff5d5d, 0x4aa8ff, 0xffc93c, 0x9b6bff, 0xff8a3c].map((c) => new THREE.Color(c));
 
 /** An icon floating over a floor tile, such as who a square is for. */
@@ -108,11 +117,11 @@ export class View {
   private bars = new Map<number, { group: THREE.Group; fill: THREE.Mesh }>();
   private overlay: THREE.InstancedMesh;
   private ghost: { group: THREE.Group; type: ItemType } | null = null;
-  private ghostMats = [
-    new THREE.MeshBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.6, depthWrite: false }),
-    new THREE.MeshBasicMaterial({ color: 0xff5d5d, transparent: true, opacity: 0.6, depthWrite: false }),
-    new THREE.MeshBasicMaterial({ color: 0xffc93c, transparent: true, opacity: 0.7, depthWrite: false }),
-  ];
+  private ghostMats = {
+    ok: new THREE.MeshBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.6, depthWrite: false }),
+    bad: new THREE.MeshBasicMaterial({ color: 0xff5d5d, transparent: true, opacity: 0.6, depthWrite: false }),
+    remove: new THREE.MeshBasicMaterial({ color: 0xffc93c, transparent: true, opacity: 0.7, depthWrite: false }),
+  };
   private markers: THREE.Sprite[] = [];
   private glass = new THREE.MeshStandardMaterial({
     color: 0xbfe6f5,
@@ -176,7 +185,7 @@ export class View {
     this.overlay.renderOrder = 2;
     this.scene.add(this.overlay);
 
-    this.doorMarker = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.16), this.ghostMats[0]);
+    this.doorMarker = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.16), this.ghostMats.ok);
     this.doorMarker.visible = false;
     this.scene.add(this.doorMarker);
 
@@ -241,11 +250,11 @@ export class View {
     for (let z = z0 + 2; z < z1 - 1; z += 3) box(0.04, 0.75, 1.5, x0 + 0.02, 1.3, z + 0.5, glass);
     // low front walls with a gap for the entrance
     const e0 = ENT_X[0];
-    const e1 = ENT_X[ENT_X.length - 1] + 1;
+    const e1 = ENT_X[1] + 1;
     for (const [a, b] of [
       [x0, e0],
       [e1, x1 + T],
-    ]) {
+    ] as const) {
       box(b - a, H_LOW + 0.05, T, (a + b) / 2, (H_LOW + 0.05) / 2, z1 + T / 2, wall);
       box(b - a, 0.07, T + 0.06, (a + b) / 2, H_LOW + 0.085, z1 + T / 2, trim);
     }
@@ -263,7 +272,7 @@ export class View {
     const c = document.createElement('canvas');
     c.width = 512;
     c.height = 160;
-    const ctx = c.getContext('2d')!;
+    const ctx = must(c.getContext('2d'), '2D canvas');
     ctx.fillStyle = '#2fa8a0';
     ctx.fillRect(0, 0, 512, 160);
     ctx.fillStyle = '#fff8e8';
@@ -309,16 +318,16 @@ export class View {
   }
 
   private drawFloor() {
-    const ctx = this.floorCanvas.getContext('2d')!;
+    const ctx = must(this.floorCanvas.getContext('2d'), '2D canvas');
     const world = this.sim.world;
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
-        const z = world.zone[tileIdx(x, y)];
+        const z = world.zoneAt(x, y);
         const px = x * TS;
         const py = y * TS;
         const alt = (x + y) % 2 === 0;
         if (z > 0) {
-          const room = world.room(z)!;
+          const room = must(world.room(z), 'room for its floor');
           const def = ROOMS[room.type];
           ctx.fillStyle = def.floor[alt ? 0 : 1];
           ctx.fillRect(px, py, TS, TS);
@@ -574,7 +583,7 @@ export class View {
         rig =
           c.kind === 'staff'
             ? buildCharacter(c.look, c.role)
-            : buildCharacter(c.look, undefined, CONDITION_BY_ID[c.condition].visual);
+            : buildCharacter(c.look, undefined, conditionOf(c.condition).visual);
         rig.pick.userData.charId = c.id;
         rig.pick.userData.charKind = c.kind;
         this.scene.add(rig.group);
@@ -598,7 +607,7 @@ export class View {
         const m = put(
           g,
           rbox(0.16, 0.05, 0.11, 0.02),
-          mat(colors[(l.id + i) % 3]),
+          mat(at(colors, (l.id + i) % 3)),
           (hash(l.id, i) - 0.5) * 0.4,
           0.03,
           (hash(i, l.id) - 0.5) * 0.4,
@@ -644,9 +653,9 @@ export class View {
       const session = view.group.userData.session as Record<string, THREE.Object3D> | undefined;
       if (session) {
         const guest = it.progress > 0.04 ? this.sim.guest(it.serving) : undefined;
-        const mod = guest && guest.state === 'served' ? this.sim.modalityOf(guest) : undefined;
+        const mod = guest?.state === 'served' ? this.sim.modalityOf(guest) : undefined;
         const showing = mod && !this.sim.deliveryProblem(it, this.sim.staff(it.staffId), mod) ? mod.id : '';
-        for (const key in session) session[key].visible = key === showing;
+        for (const [key, prop] of Object.entries(session)) prop.visible = key === showing;
       }
       // drifting smoke or scent
       const puffs = view.group.userData.puffs as THREE.Group | undefined;
@@ -718,7 +727,7 @@ export class View {
         this.ring.position.set(c.x, 0.04, c.y);
         this.ring.scale.setScalar(1 + Math.sin(t * 5) * 0.06);
       }
-    } else if (sel && sel.kind === 'item') {
+    } else if (sel?.kind === 'item') {
       const it = this.sim.world.item(sel.id);
       if (it) {
         const [cx, cy] = itemCenter(it);
@@ -734,7 +743,7 @@ export class View {
   private workStyle(c: Char): Modality | null {
     if (c.kind !== 'staff' || !c.busy || !ROLES[c.role].discipline) return null;
     const guest = this.sim.guest(this.sim.world.item(c.post)?.serving ?? 0);
-    return guest ? CONDITION_BY_ID[guest.condition].modality : null;
+    return guest ? conditionOf(guest.condition).modality : null;
   }
 
   private poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Modality | null) {
@@ -861,7 +870,7 @@ export class View {
     rig.armR.rotation.x += (armR - rig.armR.rotation.x) * k;
     rig.armL.rotation.z += (-armOut - rig.armL.rotation.z) * k;
     rig.armR.rotation.z += (armOut - rig.armR.rotation.z) * k;
-    if (rig.band && rig.band.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
+    if (rig.band?.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
     if (visual === 'jitter' && c.pose !== 'lie') {
       // pins and needles: a constant fizzing shiver
       rig.body.position.x = Math.sin(t * 47 + c.id) * 0.012;
@@ -880,8 +889,8 @@ export class View {
       rig.orbit.rotation.y = t * 3.5 + c.id;
       rig.orbit.visible = c.pose !== 'lie';
     }
-    if (rig.knot && rig.knot.visible) rig.knot.rotation.z = Math.sin(t * 2 + c.id) * 0.2;
-    if (rig.steam && rig.steam.visible) {
+    if (rig.knot?.visible) rig.knot.rotation.z = Math.sin(t * 2 + c.id) * 0.2;
+    if (rig.steam?.visible) {
       rig.steam.children.forEach((p, i) => {
         const f = (t * 0.9 + i * 0.33 + c.id * 0.1) % 1;
         p.position.y = f * 0.4;
@@ -916,11 +925,10 @@ export class View {
   setOverlay(tiles: OverlayTile[]) {
     const m = new THREE.Matrix4();
     const n = Math.min(tiles.length, 700);
-    for (let i = 0; i < n; i++) {
-      const [x, y, c] = tiles[i];
+    for (const [i, [x, y, c]] of tiles.slice(0, n).entries()) {
       m.makeTranslation(x + 0.5, 0.025, y + 0.5);
       this.overlay.setMatrixAt(i, m);
-      this.overlay.setColorAt(i, OVERLAY_COLORS[c]);
+      this.overlay.setColorAt(i, at(OVERLAY_COLORS, c));
     }
     this.overlay.count = n;
     this.overlay.instanceMatrix.needsUpdate = true;
@@ -933,7 +941,7 @@ export class View {
       this.ghost = null;
       return;
     }
-    if (!this.ghost || this.ghost.type !== spec.type) {
+    if (this.ghost?.type !== spec.type) {
       if (this.ghost) this.scene.remove(this.ghost.group);
       const group = buildItem(spec.type);
       group.traverse((o) => {
@@ -945,7 +953,7 @@ export class View {
       this.scene.add(group);
       this.ghost = { group, type: spec.type };
     }
-    const m = this.ghostMats[spec.ok ? 0 : 1];
+    const m = spec.ok ? this.ghostMats.ok : this.ghostMats.bad;
     this.ghost.group.traverse((o) => {
       if (o instanceof THREE.Mesh) o.material = m;
     });
@@ -975,7 +983,7 @@ export class View {
     this.doorMarker.visible = !!spec;
     if (!spec) return;
     const d = spec.door;
-    this.doorMarker.material = this.ghostMats[spec.tone === 'ok' ? 0 : spec.tone === 'bad' ? 1 : 2];
+    this.doorMarker.material = this.ghostMats[spec.tone];
     this.doorMarker.position.set(d.x + 0.5 + d.dx * 0.5, 0.55, d.y + 0.5 + d.dy * 0.5);
     this.doorMarker.rotation.y = d.dx ? Math.PI / 2 : 0;
   }
@@ -1010,12 +1018,14 @@ export class View {
     this.setRay(clientX, clientY);
     const picks = [...this.chars.values()].map((r) => r.pick);
     const hit = this.raycaster.intersectObjects(picks, false)[0];
-    if (hit) return { kind: hit.object.userData.charKind, id: hit.object.userData.charId };
+    const char = hit && pickData(hit.object);
+    if (char?.charKind && char.charId !== undefined) return { kind: char.charKind, id: char.charId };
     const itemHit = this.raycaster.intersectObjects(
       [...this.items.values()].map((i) => i.group),
       true,
     )[0];
-    if (itemHit && itemHit.object.userData.itemId) return { kind: 'item', id: itemHit.object.userData.itemId };
+    const itemId = itemHit && pickData(itemHit.object).itemId;
+    if (itemId) return { kind: 'item', id: itemId };
     const g = this.groundAt(clientX, clientY);
     if (g) {
       const room = this.sim.world.roomAt(Math.floor(g.x), Math.floor(g.y));

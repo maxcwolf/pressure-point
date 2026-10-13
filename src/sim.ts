@@ -1,54 +1,60 @@
 // The simulation: guests, staff, queues, money, reputation.
 import {
+  type AccessRole,
+  ANNOUNCEMENTS,
   ASSESS_FEE,
   BOTCH_FACTOR,
+  conditionOf,
   CONDITIONS,
-  CONDITION_BY_ID,
   CONSULT_FEE,
-  DAYS_PER_MONTH,
   DAY_SECONDS,
+  DAYS_PER_MONTH,
   DECOR_RADIUS,
   DIAGNOSIS_TARGET,
-  DISCIPLINES,
+  type Discipline,
   DISCIPLINE_ORDER,
+  DISCIPLINES,
   EMERGENCY_CAUSES,
   ENT_IN_Y,
   ENT_X,
+  H,
   ITEMS,
+  type ItemType,
   LOAN_MAX,
   LOAN_RATE,
   LOAN_STEP,
   MODALITIES,
+  type Modality,
   MODALITY_ORDER,
+  type ModalityDef,
+  modalityLabel,
   PRICE_MAX,
   PRICE_MIN,
+  type Role,
   ROLES,
   ROOMS,
+  type RoomType,
   SIDEWALK_Y,
   STAR_GOALS,
   STONE_USE,
-  ANNOUNCEMENTS,
-  TRAIT_BY_ID,
+  traitOf,
   W,
-  H,
   WEAR_REPAIR,
   WINDOW_COST,
   WINDOW_MAX_BONUS,
-  modalityLabel,
-  type AccessRole,
-  type Discipline,
-  type ItemType,
-  type Modality,
-  type ModalityDef,
-  type Role,
-  type RoomType,
 } from './data';
 import {
+  type Char,
   clamp,
   disciplineOn,
   emptyLedger,
   fairSalary,
+  type GameState,
+  type Guest,
   irnd,
+  type Item,
+  type Ledger,
+  type Look,
   makeCandidate,
   pick,
   random,
@@ -56,30 +62,26 @@ import {
   randomName,
   refillCandidates,
   rnd,
-  sameSpot,
-  type Char,
-  type GameState,
-  type Guest,
-  type Item,
-  type Ledger,
-  type Look,
   type Room,
+  sameSpot,
   type Staff,
   type WallSpot,
+  type Waypoint,
 } from './state';
+import { at, must } from './util';
 import {
-  World,
-  Z_CORRIDOR,
   accessPose,
   accessTile,
   footprint,
   inBounds,
   inBuilding,
   itemCenter,
-  rotVec,
-  tileIdx,
   type PosePoint,
   type Rect,
+  rotVec,
+  tileIdx,
+  World,
+  Z_CORRIDOR,
 } from './world';
 
 export type SimEvent =
@@ -133,6 +135,14 @@ function turnToward(cur: number, target: number, maxStep: number) {
   while (d < -Math.PI) d += Math.PI * 2;
   return cur + clamp(d, -maxStep, maxStep);
 }
+
+/** The four tiles beside a tile, for standing next to something. */
+const BESIDE: readonly (readonly [dx: number, dy: number])[] = [
+  [0, 1],
+  [1, 0],
+  [-1, 0],
+  [0, -1],
+];
 
 export class Sim {
   world: World;
@@ -270,7 +280,8 @@ export class Sim {
         for (let x = cx - R; x <= cx + R; x++) {
           if (!inBounds(x, y)) continue;
           const d = Math.hypot(x - cx, y - cy);
-          if (d <= R) grid[tileIdx(x, y)] += amount * (1 - d / (R + 1));
+          const i = tileIdx(x, y);
+          if (d <= R) grid[i] = at(grid, i) + amount * (1 - d / (R + 1));
         }
       }
     };
@@ -289,7 +300,7 @@ export class Sim {
   }
   /** Patience drains slower in pleasant surroundings and faster in grim ones. */
   drainFactor(x: number, y: number): number {
-    return clamp(1.12 - (inBounds(x, y) ? this.attract[tileIdx(x, y)] : 0) * 0.035, 0.7, 1.4);
+    return clamp(1.12 - (inBounds(x, y) ? at(this.attract, tileIdx(x, y)) : 0) * 0.035, 0.7, 1.4);
   }
   /** One to five, from how roomy and how nicely furnished a room is. */
   prestige(room: Room): number {
@@ -376,8 +387,8 @@ export class Sim {
       return this.hasStaff('caretaker')
         ? `A ${ITEMS[broken.type].name} has broken down. Your Janitor will get to it.`
         : `A ${ITEMS[broken.type].name} has broken down. Hire a Janitor to repair it.`;
-    const asking = s.staff.filter((x) => x.raiseAsked && x.state !== 'leaving');
-    if (asking.length) return `${asking[0].name} wants a raise. Select them to respond, or they may quit.`;
+    const asking = s.staff.find((x) => x.raiseAsked && x.state !== 'leaving');
+    if (asking) return `${asking.name} wants a raise. Select them to respond, or they may quit.`;
     if (s.money < 0 && s.loan < LOAN_MAX) return 'You are in the red. A loan from the Money menu would tide you over.';
     const gap = this.modalityAdvice();
     if (gap) return gap;
@@ -403,7 +414,7 @@ export class Sim {
     for (const m of MODALITY_ORDER) {
       const def = MODALITIES[m];
       if (!this.unlocked(m)) continue;
-      const wanted = s.guests.some((g) => g.goal === 'treat' && CONDITION_BY_ID[g.condition].modality === m);
+      const wanted = s.guests.some((g) => g.goal === 'treat' && conditionOf(g.condition).modality === m);
       if (!wanted) continue;
       const role = ROLES[DISCIPLINES[def.discipline].role];
       const room = ROOMS[DISCIPLINES[def.discipline].room];
@@ -456,7 +467,7 @@ export class Sim {
     return this.s.stars >= MODALITIES[m].star && this.enabled(MODALITIES[m].discipline);
   }
   modalityOf(g: Guest): ModalityDef {
-    return MODALITIES[CONDITION_BY_ID[g.condition].modality];
+    return MODALITIES[conditionOf(g.condition).modality];
   }
   /** What to call the place a station is in: its room, or the item itself in a corridor. */
   private stationPlace(it: Item): string {
@@ -494,8 +505,9 @@ export class Sim {
   goTo(c: Char, tx: number, ty: number, pp?: PosePoint): boolean {
     let sx = c.tx;
     let sy = c.ty;
-    if (c.path && c.path.length && !c.path[0][2]) {
-      const [wx, wy] = c.path[0];
+    const ahead = c.path?.[0];
+    if (ahead && !ahead[2]) {
+      const [wx, wy] = ahead;
       if (Math.hypot(wx - c.x, wy - c.y) < 0.5) {
         sx = Math.floor(wx);
         sy = Math.floor(wy);
@@ -503,7 +515,7 @@ export class Sim {
     }
     const p = this.world.findPath(sx, sy, tx, ty);
     if (!p) return false;
-    const path: number[][] = [];
+    const path: Waypoint[] = [];
     if (Math.hypot(sx + 0.5 - c.x, sy + 0.5 - c.y) > 0.05) path.push([sx + 0.5, sy + 0.5, 0]);
     for (const wp of p) path.push(wp);
     if (pp) {
@@ -524,8 +536,8 @@ export class Sim {
   private move(c: Char, dt: number, speed: number): boolean {
     if (!c.path) return false;
     let remaining = speed * dt;
-    while (c.path.length && remaining > 0) {
-      const [wx, wy, isPose] = c.path[0];
+    for (let next = c.path[0]; next && remaining > 0; next = c.path[0]) {
+      const [wx, wy, isPose] = next;
       const dx = wx - c.x;
       const dy = wy - c.y;
       const d = Math.hypot(dx, dy);
@@ -587,7 +599,7 @@ export class Sim {
   private release(c: Char) {
     if (!c.claimItem) return;
     const it = this.world.item(c.claimItem);
-    if (it && it.users[c.claimIdx] === c.id) it.users[c.claimIdx] = 0;
+    if (it?.users[c.claimIdx] === c.id) it.users[c.claimIdx] = 0;
     c.claimItem = 0;
   }
   private findAccess(role: AccessRole, x: number, y: number, maxDist = 1e9): { item: Item; idx: number } | null {
@@ -595,8 +607,8 @@ export class Sim {
     let bestD = maxDist;
     for (const it of this.s.items) {
       const acc = ITEMS[it.type].access;
-      for (let i = 0; i < acc.length; i++) {
-        if (acc[i].role !== role || it.users[i] || !this.world.usable(it)) continue;
+      for (const [i, spot] of acc.entries()) {
+        if (spot.role !== role || it.users[i] || !this.world.usable(it)) continue;
         const [ax, ay] = accessTile(it, i);
         const d = Math.hypot(ax - x, ay - y);
         if (d < bestD) {
@@ -664,7 +676,7 @@ export class Sim {
     let bestScore = 1e9;
     for (const it of this.s.items) {
       const st = ITEMS[it.type].station;
-      if (!st || st.goal !== goal || !this.world.usable(it)) continue;
+      if (st?.goal !== goal || !this.world.usable(it)) continue;
       if (goal === 'treat' && st.discipline !== this.modalityOf(g).discipline) continue;
       const score = this.stationScore(it, g);
       if (score < bestScore) {
@@ -677,7 +689,7 @@ export class Sim {
 
   private serviceSeconds(base: number, st: Staff) {
     let speed = 0.85 + st.skill * 0.05;
-    for (const t of st.traits) speed *= TRAIT_BY_ID[t]?.speed ?? 1;
+    for (const t of st.traits) speed *= traitOf(t).speed ?? 1;
     if (st.energy < 15) speed *= 0.6;
     speed *= 0.9 + st.morale / 500;
     return base / speed;
@@ -688,10 +700,10 @@ export class Sim {
       const def = ITEMS[it.type].station;
       if (!def) continue;
       const staff = this.staff(it.staffId);
-      if (it.staffId && (!staff || staff.post !== it.id)) it.staffId = 0;
+      if (it.staffId && staff?.post !== it.id) it.staffId = 0;
       const ready = !!staff && staff.state === 'atPost' && this.world.usable(it);
       let g = this.guest(it.serving);
-      if (it.serving && (!g || g.station !== it.id || (g.state !== 'called' && g.state !== 'served'))) {
+      if (it.serving && (g?.station !== it.id || (g.state !== 'called' && g.state !== 'served'))) {
         it.serving = 0;
         g = undefined;
       }
@@ -701,21 +713,21 @@ export class Sim {
       const wantsBreak = !!staff && staff.energy < 18 && !!this.findAccess('rest', staff.tx, staff.ty);
       if (!it.serving && ready && !wantsBreak) {
         for (const id of it.queue) {
-          const q = this.guest(id)!;
-          if (q.state === 'waiting' || q.state === 'toWait') {
+          const q = this.guest(id);
+          if (q?.state === 'waiting' || q?.state === 'toWait') {
             this.callGuest(it, q);
             break;
           }
         }
       }
       if (staff && ready) {
-        const serving = !!g && g.state === 'served';
-        const mod = serving && def.goal === 'treat' ? this.modalityOf(g!) : null;
-        staff.busy = serving;
+        const served = g?.state === 'served' ? g : undefined;
+        const mod = served && def.goal === 'treat' ? this.modalityOf(served) : null;
+        staff.busy = !!served;
         staff.strain = mod ? mod.strain : 1;
-        if (serving) {
+        if (served) {
           it.progress += dt / this.serviceSeconds(mod ? mod.seconds : def.seconds, staff);
-          if (it.progress >= 1) this.completeService(it, g!, staff);
+          if (it.progress >= 1) this.completeService(it, served, staff);
         }
       }
     }
@@ -737,7 +749,7 @@ export class Sim {
   }
 
   private completeService(it: Item, g: Guest, staff: Staff) {
-    const def = ITEMS[it.type].station!;
+    const def = must(ITEMS[it.type].station, 'station');
     it.serving = 0;
     it.progress = 0;
     staff.busy = false;
@@ -785,7 +797,7 @@ export class Sim {
         );
       }
     } else {
-      const cond = CONDITION_BY_ID[g.condition];
+      const cond = conditionOf(g.condition);
       const mod = MODALITIES[cond.modality];
       const problem = this.deliveryProblem(it, staff, mod);
       let chance = clamp(
@@ -841,7 +853,7 @@ export class Sim {
         else if (problem === 'no-equipment')
           this.tipOnce(
             `botch-equipment-${mod.id}`,
-            `${modalityLabel(mod.id)} needs a ${ITEMS[mod.equipment!].name} in the same ${ROOMS[DISCIPLINES[mod.discipline].room].name} as the table.`,
+            `${modalityLabel(mod.id)} needs a ${mod.equipment ? ITEMS[mod.equipment].name : 'piece of equipment'} in the same ${ROOMS[DISCIPLINES[mod.discipline].room].name} as the table.`,
             'bad',
           );
         else if (problem === 'cold')
@@ -899,11 +911,11 @@ export class Sim {
     if (!pool.length) pool = CONDITIONS.filter((c) => c.modality === DISCIPLINES.massage.base);
     const weights = pool.map((c) => (staff.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4));
     let roll = random() * weights.reduce((a, b) => a + b, 0);
-    for (let i = 0; i < pool.length; i++) {
-      roll -= weights[i];
-      if (roll <= 0) return pool[i].id;
+    for (const [i, condition] of pool.entries()) {
+      roll -= at(weights, i);
+      if (roll <= 0) return condition.id;
     }
-    return pool[0].id;
+    return at(pool, 0).id;
   }
 
   private removeFromStations(g: Guest) {
@@ -923,7 +935,10 @@ export class Sim {
   }
 
   private decide(g: Guest) {
-    if (g.goal === 'leave') return this.leave(g);
+    if (g.goal === 'leave') {
+      this.leave(g);
+      return;
+    }
     const st = this.pickStation(g);
     g.station = st ? st.id : 0;
     if (st) st.queue.push(g.id);
@@ -934,7 +949,7 @@ export class Sim {
   private queueTile(it: Item, n: number): [number, number] {
     const ai = this.accessIndex(it, 'guest');
     const [ax, ay] = accessTile(it, ai);
-    const face = ITEMS[it.type].access[ai].face;
+    const face = at(ITEMS[it.type].access, ai).face;
     const [dx, dy] = rotVec(it.rot, -face[0], -face[1]);
     let x = ax;
     let y = ay;
@@ -971,7 +986,7 @@ export class Sim {
     g.needKind = '';
     const st = this.world.item(g.station);
     let ok = false;
-    if (st && st.type === 'reception_desk') {
+    if (st?.type === 'reception_desk') {
       const [qx, qy] = this.queueTile(st, Math.max(0, st.queue.indexOf(g.id)));
       ok = this.goTo(g, qx, qy);
     } else {
@@ -1022,11 +1037,13 @@ export class Sim {
       if (ns) {
         ns.queue.push(g.id);
         g.station = ns.id;
-        return this.goWait(g);
+        this.goWait(g);
+        return;
       }
       if (g.goal === 'assess') {
         g.goal = 'consult';
-        return this.decide(g);
+        this.decide(g);
+        return;
       }
       if (g.goal !== 'leave' && g.goal !== 'reception') {
         const place =
@@ -1040,7 +1057,8 @@ export class Sim {
         this.removeFromStations(g);
         better.queue.push(g.id);
         g.station = better.id;
-        return this.goWait(g);
+        this.goWait(g);
+        return;
       }
     }
     if (this.tryNeed(g)) return;
@@ -1053,7 +1071,7 @@ export class Sim {
         this.s.litter.push({ id: this.s.nextId++, x: g.tx, y: g.ty, claimedBy: 0 });
     }
 
-    if (st && st.type === 'reception_desk') {
+    if (st?.type === 'reception_desk') {
       const [qx, qy] = this.queueTile(st, Math.max(0, st.queue.indexOf(g.id)));
       if (qx !== g.tx || qy !== g.ty) {
         if (this.goTo(g, qx, qy)) g.state = 'toWait';
@@ -1069,7 +1087,7 @@ export class Sim {
     g.hunger = Math.min(100, g.hunger + dt * 0.36);
     g.bladder = Math.min(100, g.bladder + dt * 0.42);
     if (g.bubbleT > 0) g.bubbleT -= dt;
-    const stiff = g.outcome !== 'healed' && CONDITION_BY_ID[g.condition].visual === 'stiff';
+    const stiff = g.outcome !== 'healed' && conditionOf(g.condition).visual === 'stiff';
     const arrived = this.move(g, dt, stiff ? 1.75 : 2.1);
 
     const waiting = g.state === 'toWait' || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
@@ -1079,7 +1097,10 @@ export class Sim {
       if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
       g.patience -= drain * dt;
       g.waited += dt;
-      if (g.patience <= 0) return this.stormOut(g);
+      if (g.patience <= 0) {
+        this.stormOut(g);
+        return;
+      }
     }
 
     switch (g.state) {
@@ -1264,19 +1285,15 @@ export class Sim {
 
   private leavePost(st: Staff) {
     const it = this.world.item(st.post);
-    if (it && it.staffId === st.id) it.staffId = 0;
+    if (it?.staffId === st.id) it.staffId = 0;
     st.post = 0;
     st.busy = false;
   }
   private dropJob(st: Staff) {
-    if (!st.job) return;
-    if (st.job.kind === 'litter') {
-      const l = this.s.litter.find((x) => x.id === st.job!.id);
-      if (l && l.claimedBy === st.id) l.claimedBy = 0;
-    } else {
-      const p = this.world.item(st.job.id);
-      if (p && p.claimedBy === st.id) p.claimedBy = 0;
-    }
+    const job = st.job;
+    if (!job) return;
+    const claimed = job.kind === 'litter' ? this.s.litter.find((x) => x.id === job.id) : this.world.item(job.id);
+    if (claimed?.claimedBy === st.id) claimed.claimedBy = 0;
     st.job = null;
   }
   private staffIdle(st: Staff) {
@@ -1315,7 +1332,13 @@ export class Sim {
     const s = this.s;
     if (st.role === 'caretaker') {
       // broken equipment first, then litter, then routine watering and servicing
-      type Task = { kind: 'litter' | 'water' | 'repair'; id: number; x: number; y: number; urgency: number };
+      interface Task {
+        kind: 'litter' | 'water' | 'repair';
+        id: number;
+        x: number;
+        y: number;
+        urgency: number;
+      }
       const tasks: Task[] = [];
       for (const l of s.litter) if (!l.claimedBy) tasks.push({ kind: 'litter', id: l.id, x: l.x, y: l.y, urgency: 1 });
       for (const p of s.items) {
@@ -1332,14 +1355,9 @@ export class Sim {
         if (task.kind === 'litter') ok = this.goTo(st, task.x, task.y);
         else {
           // stand next to the item, on whichever side can be reached
-          const item = this.world.item(task.id)!;
+          const item = must(this.world.item(task.id), 'item to tend');
           search: for (const [fx, fy] of footprint(item)) {
-            for (const [dx, dy] of [
-              [0, 1],
-              [1, 0],
-              [-1, 0],
-              [0, -1],
-            ]) {
+            for (const [dx, dy] of BESIDE) {
               if (this.world.walkable(fx + dx, fy + dy) && this.goTo(st, fx + dx, fy + dy)) {
                 ok = true;
                 break search;
@@ -1349,8 +1367,8 @@ export class Sim {
         }
         if (!ok) continue;
         st.job = { kind: task.kind, id: task.id };
-        if (task.kind === 'litter') s.litter.find((l) => l.id === task.id)!.claimedBy = st.id;
-        else this.world.item(task.id)!.claimedBy = st.id;
+        const target = task.kind === 'litter' ? s.litter.find((l) => l.id === task.id) : this.world.item(task.id);
+        if (target) target.claimedBy = st.id;
         st.state = 'toJob';
         return;
       }
@@ -1359,7 +1377,7 @@ export class Sim {
       let bestScore = -1e9;
       for (const it of s.items) {
         const def = ITEMS[it.type].station;
-        if (!def || def.staff !== st.role || it.staffId || !this.world.usable(it)) continue;
+        if (def?.staff !== st.role || it.staffId || !this.world.usable(it)) continue;
         let score = it.queue.length * 10 - Math.hypot(it.x - st.tx, it.y - st.ty);
         if (def.goal === 'treat') {
           for (const id of it.queue) {
@@ -1398,8 +1416,8 @@ export class Sim {
     let walk = 2.3;
     let stamina = 1;
     for (const t of st.traits) {
-      walk *= TRAIT_BY_ID[t]?.walk ?? 1;
-      stamina *= TRAIT_BY_ID[t]?.stamina ?? 1;
+      walk *= traitOf(t).walk ?? 1;
+      stamina *= traitOf(t).stamina ?? 1;
     }
     if (st.energy < 15) walk *= 0.75;
     const arrived = this.move(st, dt, walk);
@@ -1430,14 +1448,14 @@ export class Sim {
         break;
       case 'toPost': {
         const it = this.world.item(st.post);
-        if (!it || it.staffId !== st.id) this.staffIdle(st);
+        if (it?.staffId !== st.id) this.staffIdle(st);
         else if (arrived) st.state = 'atPost';
         else if (!st.path) this.staffIdle(st);
         break;
       }
       case 'atPost': {
         const it = this.world.item(st.post);
-        if (!it || it.staffId !== st.id || !this.world.usable(it)) this.staffIdle(st);
+        if (it?.staffId !== st.id || !this.world.usable(it)) this.staffIdle(st);
         else if (st.energy < 18 && !it.serving) {
           st.timer -= dt;
           if (st.timer <= 0) {
@@ -1473,14 +1491,15 @@ export class Sim {
       case 'doingJob':
         st.timer -= dt;
         if (st.timer <= 0) {
-          if (st.job?.kind === 'litter') this.s.litter = this.s.litter.filter((l) => l.id !== st.job!.id);
-          else if (st.job) {
-            const p = this.world.item(st.job.id);
+          const job = st.job;
+          if (job?.kind === 'litter') this.s.litter = this.s.litter.filter((l) => l.id !== job.id);
+          else if (job) {
+            const p = this.world.item(job.id);
             if (p) {
-              if (st.job.kind === 'repair') p.wear = 0;
+              if (job.kind === 'repair') p.wear = 0;
               else p.water = 100;
               p.claimedBy = 0;
-              if (st.job.kind === 'repair') this.world.version++;
+              if (job.kind === 'repair') this.world.version++;
             }
           }
           st.job = null;
@@ -1608,7 +1627,7 @@ export class Sim {
     const s = this.s;
     const e = s.emergency;
     if (!e) return;
-    const name = CONDITION_BY_ID[e.condition].name;
+    const name = conditionOf(e.condition).name;
     if (e.healed >= e.target) {
       s.money += e.reward;
       s.ledger.bonus += e.reward;
@@ -1673,7 +1692,8 @@ export class Sim {
       this.emit({ type: 'sfx', name: 'error' });
       return false;
     }
-    const desk = this.findAccess('study', st.tx, st.ty)!;
+    const desk = this.findAccess('study', st.tx, st.ty);
+    if (!desk) return false;
     this.staffIdle(st);
     this.claim(st, desk.item, desk.idx);
     const [x, y] = accessTile(desk.item, desk.idx);
@@ -1692,7 +1712,8 @@ export class Sim {
   }
 
   private graduate(st: Staff) {
-    const t = st.training!;
+    const t = st.training;
+    if (!t) return;
     let what: string;
     if (t.course === 'skill') {
       st.skill = Math.min(5, st.skill + 1);

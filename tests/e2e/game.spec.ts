@@ -1,4 +1,6 @@
-import { expect, test } from './fixtures';
+import type { Page } from '@playwright/test';
+
+import { expect, type Game, test } from './fixtures';
 
 test.describe('starting out', () => {
   test('the title screen leads into a fresh, rendering game', async ({ game, page }) => {
@@ -58,7 +60,7 @@ test.describe('starting out', () => {
     expect(await game.eval((pp) => pp.state.items.length)).toBe(0);
   });
 
-  test('locked equipment cannot be picked before its star', async ({ game, page }) => {
+  test('locked equipment cannot be picked before its star', async ({ game }) => {
     await game.start();
     await game.menu('Items');
     await expect(game.card('Stone Warmer')).toContainText('Unlocks at star 2');
@@ -84,7 +86,7 @@ test.describe('building rooms', () => {
     await game.placeHeld();
     await expect(page.locator('#plan')).toContainText('Ready to build');
     // nothing is charged, and the room is not open, until it is confirmed
-    expect(await game.eval((pp) => [pp.state.money, pp.state.rooms[0].done])).toEqual([28800 + 1200, false]);
+    expect(await game.eval((pp) => [pp.state.money, pp.state.rooms[0]!.done])).toEqual([28800 + 1200, false]);
     await page.locator('#plan').getByRole('button', { name: 'Build room' }).click();
     await expect(page.locator('#toasts')).toContainText('Consultation Room built!');
     await expect(page.locator('#plan')).toBeEmpty();
@@ -133,13 +135,13 @@ test.describe('building rooms', () => {
     // it goes down the way it is now being held, with no further turning needed
     const spot = await game.placeHeld();
     expect(spot.turns).toBe(0);
-    expect(await game.eval((pp) => pp.state.items[0].rot)).toBe(1);
+    expect(await game.eval((pp) => pp.state.items[0]!.rot)).toBe(1);
   });
 });
 
 test.describe('room blueprints', () => {
   /** Drag out a four-by-four Massage Suite and put its door in the south wall, which opens the blueprint. */
-  const startSuite = async (game: import('./fixtures').Game) => {
+  const startSuite = async (game: Game) => {
     await game.start();
     await game.menu('Rooms');
     await game.card('Massage Suite').click();
@@ -153,13 +155,13 @@ test.describe('room blueprints', () => {
     await expect(build).toHaveClass(/locked/);
     await build.click();
     await page.keyboard.press('Enter');
-    expect(await game.eval((pp) => pp.state.rooms[0].done)).toBe(false);
+    expect(await game.eval((pp) => pp.state.rooms[0]!.done)).toBe(false);
     await game.placeHeld();
     await expect(page.locator('#plan .chip.done')).toHaveCount(2);
     await game.placeHeld();
     await expect(build).not.toHaveClass(/locked/);
     await build.click();
-    expect(await game.eval((pp) => [pp.state.rooms[0].done, pp.state.money])).toEqual([true, 23000]);
+    expect(await game.eval((pp) => [pp.state.rooms[0]!.done, pp.state.money])).toEqual([true, 23000]);
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
   });
 
@@ -176,17 +178,17 @@ test.describe('room blueprints', () => {
     const east = await game.clickWall('east');
     await expect(page.locator('#plan')).toContainText('Windows (2)');
     await expect(page.locator('#plan h3')).toContainText('$7,000 + $300');
-    expect(await game.eval((pp) => pp.state.rooms[0].windows)).toEqual([south, east]);
+    expect(await game.eval((pp) => pp.state.rooms[0]!.windows)).toEqual([south, east]);
     // clicking a window again takes it out
     await game.clickWall('east', 'existing-window');
     await expect(page.locator('#plan')).toContainText('Windows (1)');
-    expect(await game.eval((pp) => pp.state.rooms[0].windows)).toEqual([south]);
+    expect(await game.eval((pp) => pp.state.rooms[0]!.windows)).toEqual([south]);
     // the door's own stretch of wall is refused
     await game.hoverWall('south', 'door-spot');
     await expect(page.locator('#hint')).toContainText('The door is there');
     await page.keyboard.press('Escape');
     await page.keyboard.press('Enter');
-    expect(await game.eval((pp) => [pp.state.rooms[0].done, pp.state.money])).toEqual([true, 30000 - 7000 - 150]);
+    expect(await game.eval((pp) => [pp.state.rooms[0]!.done, pp.state.money])).toEqual([true, 30000 - 7000 - 150]);
   });
 
   test('the door can be moved while planning', async ({ game, page }) => {
@@ -196,7 +198,7 @@ test.describe('room blueprints', () => {
     await page.locator('#plan').getByRole('button', { name: 'Move door' }).click();
     const moved = await game.clickWall('east');
     expect(moved).toMatchObject({ dx: 1, dy: 0 });
-    expect(await game.eval((pp) => pp.state.rooms[0].door)).toEqual(moved);
+    expect(await game.eval((pp) => pp.state.rooms[0]!.door)).toEqual(moved);
   });
 
   test('opening a menu keeps the blueprint, and extras from it can go in the room', async ({ game, page }) => {
@@ -211,7 +213,9 @@ test.describe('room blueprints', () => {
     ]);
     // it went inside the blueprint's room
     expect(
-      await game.eval((pp) => pp.sim.world.zoneAt(pp.state.items[0].x, pp.state.items[0].y) === pp.state.rooms[0].id),
+      await game.eval(
+        (pp) => pp.sim.world.zoneAt(pp.state.items[0]!.x, pp.state.items[0]!.y) === pp.state.rooms[0]!.id,
+      ),
     ).toBe(true);
     await expect(page.locator('#plan')).toContainText('Still needed: Massage Table, Oil Cart');
     // pick the required table back up from the panel
@@ -292,7 +296,7 @@ test.describe('room blueprints', () => {
     const used = (held: { type: string; x: number; y: number; rot: number }) =>
       game.eval(
         (pp, h) =>
-          (pp.data.ITEMS as Record<string, { access: unknown[] }>)[h.type].access.map((_, i) =>
+          (pp.data.ITEMS as Record<string, { access: unknown[] }>)[h.type]!.access.map((_, i) =>
             pp.geo.accessTile(h, i),
           ),
         held,
@@ -428,14 +432,14 @@ test.describe('running a center', () => {
   test('furniture can be picked up and moved', async ({ game, page }) => {
     await game.start();
     await game.give('plant');
-    const was = await game.eval((pp) => [pp.state.items[0].x, pp.state.items[0].y]);
+    const was = await game.eval((pp) => [pp.state.items[0]!.x, pp.state.items[0]!.y]);
     await game.clickItem('plant');
     await expect(page.locator('#inspector')).toContainText('Potted Plant');
     await page.locator('#inspector').getByRole('button', { name: 'Move' }).click();
     await expect(page.locator('#hint')).toContainText('Moving the Potted Plant');
     const to = await game.placeHeld();
     // it is where it was put, which is not where it was, and moving it cost nothing beyond its price
-    expect(await game.eval((pp) => [pp.state.items[0].x, pp.state.items[0].y, pp.state.money])).toEqual([
+    expect(await game.eval((pp) => [pp.state.items[0]!.x, pp.state.items[0]!.y, pp.state.money])).toEqual([
       to.x,
       to.y,
       30000 - 120,
@@ -509,7 +513,6 @@ test.describe('controls and saving', () => {
 });
 
 test.describe('clicking', () => {
-  type Game = import('./fixtures').Game;
   /** Press, let the pointer wander, release: how a hand or a trackpad actually clicks. */
   const pressAndRelease = async (game: Game, at: { x: number; y: number }, drift: number, holdMs = 0) => {
     await game.page.mouse.move(at.x, at.y);
@@ -626,7 +629,7 @@ test.describe('leaving a game', () => {
 });
 
 test.describe('acupuncture and settings', () => {
-  const pauseMenu = async (page: import('@playwright/test').Page, button: string) => {
+  const pauseMenu = async (page: Page, button: string) => {
     await page.locator('#sys').getByTitle('Menu').click();
     await page.getByRole('button', { name: button }).click();
   };
@@ -745,11 +748,11 @@ test.describe('acupuncture and settings', () => {
 });
 
 test.describe('saved games', () => {
-  const openSaves = async (page: import('@playwright/test').Page) => {
+  const openSaves = async (page: Page) => {
     await page.locator('#sys').getByTitle('Menu').click();
     await page.getByRole('button', { name: 'Save or load' }).click();
   };
-  const summary = (game: import('./fixtures').Game) =>
+  const summary = (game: Game) =>
     game.eval((pp) => ({
       rooms: pp.state.rooms.length,
       staff: pp.state.staff.length,
@@ -864,7 +867,7 @@ test.describe('saved games', () => {
     await page.locator('.filebtn input').setInputFiles(file);
     await expect(page.locator('.save-note')).toHaveText('Imported "Travels well".');
     await page.locator('.save-list li', { hasText: 'Travels well' }).getByRole('button', { name: 'Load' }).click();
-    await page.waitForFunction(() => !!window.pp && window.pp.state.rooms.length > 0);
+    await page.waitForFunction(() => (window.pp?.state.rooms.length ?? 0) > 0);
     await game.eval((pp) => (pp.state.speed = 0));
     expect(await summary(game)).toEqual(before);
   });
@@ -887,13 +890,13 @@ test.describe('saved games', () => {
     await expect(page.locator('#modal')).toContainText('moves to "Previous game"');
     await page.getByRole('button', { name: 'Start a new game' }).click();
     // straight into the new game, with no stop at the title screen
-    await page.waitForFunction(() => !!window.pp && window.pp.state.rooms.length === 0);
+    await page.waitForFunction(() => window.pp?.state.rooms.length === 0);
     expect(await game.eval((pp) => pp.state.money)).toBe(30000);
 
     await openSaves(page);
     const prev = page.locator('.save-list li', { hasText: 'Previous game' });
     await prev.getByRole('button', { name: 'Load' }).click();
-    await page.waitForFunction(() => !!window.pp && window.pp.state.rooms.length === 3);
+    await page.waitForFunction(() => window.pp?.state.rooms.length === 3);
     expect(await game.eval((pp) => pp.state.staff.length)).toBe(3);
   });
 });

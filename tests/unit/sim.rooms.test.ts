@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+
 import { ROOMS, WINDOW_COST, WINDOW_MAX_BONUS } from '../../src/data';
-import { upgradeSave, type GameState } from '../../src/state';
-import { LAYOUT, addConsult, addMassage, freshSim, openCenter, run, runUntil } from './helpers';
+import { type GameState, upgradeSave } from '../../src/state';
+import { addConsult, addMassage, freshSim, LAYOUT, openCenter, run, runUntil } from './helpers';
 
 // the standard massage suite covers x 11..14, y 5..8, with its door in the south wall at (12, 8)
 const NORTH = { x: 13, y: 5, dx: 0, dy: -1 };

@@ -1,42 +1,44 @@
 // DOM heads-up display: build menus, inspector, objectives, advisor, toasts.
+import type { Audio } from '../audio';
 import {
+  conditionOf,
   CONDITIONS,
-  CONDITION_BY_ID,
   DIAGNOSIS_TARGET,
-  DISCIPLINES,
+  type Discipline,
   DISCIPLINE_ORDER,
+  DISCIPLINES,
   GAME_TITLE,
-  TITLE_LINES,
-  ITEMS,
   ITEM_MENU,
+  ITEMS,
+  type ItemType,
   LOAN_MAX,
   LOAN_RATE,
   LOAN_STEP,
   MODALITIES,
+  type Modality,
   MODALITY_ORDER,
+  modalityLabel,
   PRICE_MAX,
   PRICE_MIN,
-  ROLES,
+  type Role,
   ROLE_ORDER,
-  ROOMS,
+  ROLES,
   ROOM_ORDER,
+  ROOMS,
   STAR_GOALS,
   STONE_USE,
-  TRAIT_BY_ID,
+  TITLE_LINES,
+  traitOf,
   WEAR_REPAIR,
   WINDOW_COST,
-  modalityLabel,
-  type ItemType,
-  type Discipline,
-  type Modality,
-  type Role,
 } from '../data';
-import type { Audio } from '../audio';
 import type { View } from '../render/view';
+import { gameDate, latestSave } from '../saves';
 import { dateOf, money, netOf, type Sim, type SimEvent } from '../sim';
 import type { Guest, Item, Ledger, Room, Staff } from '../state';
-import { gameDate, latestSave } from '../saves';
 import type { Tools } from '../tools';
+import { escapeHtml } from '../util';
+import { byId, query } from './dom';
 import { mountSaves } from './saves';
 import { mountSettings } from './settings';
 
@@ -51,13 +53,13 @@ export interface UIHost {
   loadGame(id: string): void;
   /** Leave for the title screen, keeping the game in the autosave. */
   mainMenu(): void;
-  /** Quit the desktop app. Absent in a browser, where there is nothing to quit. */
-  exit?: () => void;
+  /** Quit the desktop app. Undefined in a browser, where there is nothing to quit. */
+  exit: (() => void) | undefined;
 }
 
 type Menu = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | null;
 
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+const esc = escapeHtml;
 const bar = (v: number, cls = '') =>
   `<div class="bar ${cls}"><i style="width:${Math.max(0, Math.min(100, v)).toFixed(0)}%"></i></div>`;
 const qualChips = (quals: Modality[]) =>
@@ -161,8 +163,8 @@ export class UI {
   private modalOpen = false;
 
   constructor(private host: UIHost) {
-    this.root = document.getElementById('ui')!;
-    this.floaters = document.getElementById('floaters')!;
+    this.root = byId('ui');
+    this.floaters = byId('floaters');
     this.root.innerHTML = `
       <div id="objectives" class="panel"></div>
       <div id="announce"></div>
@@ -188,7 +190,7 @@ export class UI {
         this.host.audio.play('error');
         return;
       }
-      this.act(el.dataset.act!, el.dataset.arg ?? '');
+      this.act(el.dataset.act ?? '', el.dataset.arg ?? '');
     });
     this.update();
   }
@@ -219,7 +221,7 @@ export class UI {
     const before = this.cache.get(id);
     if (before === html) return;
     this.cache.set(id, html);
-    const el = document.getElementById(id)!;
+    const el = byId(id);
     el.innerHTML = html;
     // animate panels in when they open, not on every refresh
     if (!before && html && (id === 'menu' || id === 'inspector')) {
@@ -266,7 +268,7 @@ export class UI {
         click = false;
         break;
       case 'train': {
-        const [id, course] = arg.split(':');
+        const [id, course = ''] = arg.split(':');
         sim.train(Number(id), course);
         click = false;
         break;
@@ -372,7 +374,7 @@ export class UI {
       .join('');
     const em = s.emergency;
     const emergency = em
-      ? `<div class="emergency"><b>🚨 Emergency: ${CONDITION_BY_ID[em.condition].name}</b>
+      ? `<div class="emergency"><b>🚨 Emergency: ${conditionOf(em.condition).name}</b>
            <span>${em.healed}/${em.target} healed · ${Math.max(0, Math.ceil(em.deadline - s.day))} days left</span>${bar((em.healed / em.target) * 100, 'thin bad')}</div>`
       : '';
     this.set(
@@ -383,7 +385,7 @@ export class UI {
     this.set(
       'offer',
       offer
-        ? `<div class="panel offer"><h3>🚨 Emergency</h3><p>${esc(offer.cause)} <b>${offer.total} guests</b> with <b>${CONDITION_BY_ID[offer.condition].name}</b> need ${MODALITIES[CONDITION_BY_ID[offer.condition].modality].name} massage.</p>
+        ? `<div class="panel offer"><h3>🚨 Emergency</h3><p>${esc(offer.cause)} <b>${offer.total} guests</b> with <b>${conditionOf(offer.condition).name}</b> need ${MODALITIES[conditionOf(offer.condition).modality].name} massage.</p>
             <p class="sub">Heal ${offer.target} of them within 25 days for a <b>${money(offer.reward)}</b> bonus. Fail and your reputation suffers. Offer lapses in ${Math.max(1, Math.ceil(offer.deadline - s.day))} days.</p>
             <div class="btnrow"><button class="go" data-act="emergency" data-arg="accept">Accept</button><button data-act="emergency" data-arg="decline">Decline</button></div></div>`
         : '',
@@ -478,7 +480,8 @@ export class UI {
         const d = ROLES[r].discipline;
         return !d || (this.available(d) && s.stars >= (ROOMS[DISCIPLINES[d].room].unlock ?? 0));
       });
-      if (!roles.includes(this.hireRole)) this.hireRole = roles[0];
+      const first = roles[0];
+      if (first && !roles.includes(this.hireRole)) this.hireRole = first;
       const tabs = roles
         .map(
           (r) =>
@@ -490,9 +493,9 @@ export class UI {
         .map((c) => {
           const traits =
             c.traits
-              .map((t) => `<em title="${esc(TRAIT_BY_ID[t].desc)}">${TRAIT_BY_ID[t].name}: ${TRAIT_BY_ID[t].desc}</em>`)
+              .map((t) => `<em title="${esc(traitOf(t).desc)}">${traitOf(t).name}: ${traitOf(t).desc}</em>`)
               .join('') || '<em class="none">No notable quirks</em>';
-          return `<div class="card cv"><b>${esc(c.name)}</b>${stars(c.skill)}${qualChips(c.quals ?? [])}${traits}
+          return `<div class="card cv"><b>${esc(c.name)}</b>${stars(c.skill)}${qualChips(c.quals)}${traits}
             <span class="cost">${money(c.salary)}<small>/month</small></span>
             <button class="go" data-act="hire" data-arg="${c.id}">Hire</button></div>`;
         })
@@ -525,7 +528,7 @@ export class UI {
                 .join(', ');
               const qualified = staff.filter((x) => x.quals.includes(m)).length;
               const waiting = s.guests.filter(
-                (g) => g.goal === 'treat' && CONDITION_BY_ID[g.condition].modality === m,
+                (g) => g.goal === 'treat' && conditionOf(g.condition).modality === m,
               ).length;
               const kit = def.equipment ? ITEMS[def.equipment] : null;
               const kitOk = !kit || s.items.some((i) => i.type === def.equipment && sim.world.usable(i));
@@ -615,7 +618,7 @@ export class UI {
     if (sel.kind === 'guest') {
       const g = sim.guest(sel.id);
       if (!g) return '';
-      const c = CONDITION_BY_ID[g.condition];
+      const c = conditionOf(g.condition);
       const known = g.goal === 'treat' || g.goal === 'leave';
       return `<div class="panel insp">${close}<h3>${esc(g.name)}</h3><p class="tag">${g.emergency ? '🚨 Emergency guest' : 'Guest'}</p>
         <p><b>${known ? c.name : 'Undiagnosed'}</b><br>${known ? c.desc : 'Something is clearly wrong. A consultation will reveal what.'}</p>
@@ -629,9 +632,9 @@ export class UI {
     if (sel.kind === 'staff') {
       const st = sim.staff(sel.id);
       if (!st) return '';
-      const traits = st.traits.map((t) => `<em>${TRAIT_BY_ID[t].name}: ${TRAIT_BY_ID[t].desc}</em>`).join('');
+      const traits = st.traits.map((t) => `<em>${traitOf(t).name}: ${traitOf(t).desc}</em>`).join('');
       return `<div class="panel insp">${close}<h3>${esc(st.name)}</h3><p class="tag">${ROLES[st.role].icon} ${ROLES[st.role].name}</p>
-        <p>Skill ${stars(st.skill)}</p>${qualChips(st.quals ?? [])}${traits}
+        <p>Skill ${stars(st.skill)}</p>${qualChips(st.quals)}${traits}
         <p class="status">${staffStatus(st, sim)}</p>
         ${st.training ? `<label>Course progress${bar(st.training.progress * 100, 'blue')}</label>` : ''}
         <label>Energy${bar(st.energy, st.energy < 20 ? 'bad' : 'energy')}</label>
@@ -655,7 +658,8 @@ export class UI {
     const { sim } = this.host;
     if (st.state === 'leaving' || st.training) return '';
     const courses = sim.courses(st);
-    if (!courses.length) return '';
+    const first = courses[0];
+    if (!first) return '';
     const rows = courses
       .map((c) => {
         const blocker = sim.trainBlocker(st, c);
@@ -663,7 +667,7 @@ export class UI {
           <i>${c.icon}</i><span>${c.name}<small>${c.days} days</small></span><b>${money(c.cost)}</b></button>`;
       })
       .join('');
-    const blocker = sim.trainBlocker(st, courses[0]);
+    const blocker = sim.trainBlocker(st, first);
     const note = blocker && blocker !== 'Not enough money.' ? `<p class="sub">${blocker}</p>` : '';
     return `<h4>Training</h4>${rows}${note}`;
   }
@@ -745,7 +749,7 @@ export class UI {
       else if (e.type === 'toast') this.toast(e.text, e.kind);
       else if (e.type === 'announce') this.announce(e.text);
       else if (e.type === 'star') this.showStar(e.stars);
-      else if (e.type === 'float') {
+      else {
         const p = view.project(e.x, e.y, 1.6);
         const el = document.createElement('div');
         el.className = `floater ${e.kind}`;
@@ -759,18 +763,18 @@ export class UI {
   }
 
   toast(text: string, kind: 'good' | 'bad' | 'info' = 'info') {
-    const box = document.getElementById('toasts')!;
+    const box = byId('toasts');
     const el = document.createElement('div');
     el.className = `toast ${kind}`;
     el.textContent = text;
     box.appendChild(el);
-    while (box.children.length > 4) box.firstElementChild!.remove();
+    while (box.children.length > 4) box.firstElementChild?.remove();
     setTimeout(() => el.classList.add('out'), 6500);
     setTimeout(() => el.remove(), 7000);
   }
 
   private announce(text: string) {
-    const el = document.getElementById('announce')!;
+    const el = byId('announce');
     el.innerHTML = `<div class="announce">📢 ${esc(text)}</div>`;
     this.host.audio.play('announce');
     clearTimeout(this.announceT);
@@ -780,12 +784,11 @@ export class UI {
   // ---- Modals --------------------------------------------------------------
   private modal(html: string, wide = false) {
     this.modalOpen = true;
-    document.getElementById('modal')!.innerHTML =
-      `<div class="veil"><div class="panel dialog ${wide ? 'wide' : ''}">${html}</div></div>`;
+    byId('modal').innerHTML = `<div class="veil"><div class="panel dialog ${wide ? 'wide' : ''}">${html}</div></div>`;
   }
   private closeModal() {
     this.modalOpen = false;
-    document.getElementById('modal')!.innerHTML = '';
+    byId('modal').innerHTML = '';
     if (this.pausedBy !== null) {
       this.host.sim.s.speed = this.pausedBy;
       this.pausedBy = null;
@@ -793,7 +796,7 @@ export class UI {
   }
   private pausedBy: number | null = null;
   private pause() {
-    if (this.pausedBy === null) this.pausedBy = this.host.sim.s.speed;
+    this.pausedBy ??= this.host.sim.s.speed;
     this.host.sim.s.speed = 0;
   }
 
@@ -848,7 +851,7 @@ export class UI {
        <div class="btnrow"><button data-act="sysmenu">Back</button><button class="go" data-act="close">Resume</button></div>`,
       true,
     );
-    mountSettings(document.getElementById('settings-panel')!, {
+    mountSettings(byId('settings-panel'), {
       audio: this.host.audio,
       sim: this.host.sim,
       onChange: () => {
@@ -867,7 +870,7 @@ export class UI {
        <div class="btnrow"><button data-act="sysmenu">Back</button><button class="go" data-act="close">Resume</button></div>`,
       true,
     );
-    mountSaves(document.getElementById('saves-panel')!, {
+    mountSaves(byId('saves-panel'), {
       current: this.host.sim.s,
       onLoad: (id) => this.host.loadGame(id),
     });
@@ -917,22 +920,21 @@ export function showTitle(audio: Audio, exit?: () => void): Promise<string> {
         if (toggle === 'sound') audio.toggleSound();
         else audio.toggleMusic();
         audio.play('blip');
-        el.querySelector('.title-sys')!.innerHTML = switches();
+        query(el, '.title-sys').innerHTML = switches();
         return;
       }
       if (target.closest('[data-exit]')) return exit?.();
       const show = target.closest<HTMLElement>('[data-show]')?.dataset.show;
       if (show) {
         // the two panels share the space under the buttons, one at a time
-        const saves = el.querySelector<HTMLElement>('#title-saves')!;
-        const settings = el.querySelector<HTMLElement>('#title-settings')!;
+        const saves = query(el, '#title-saves');
+        const settings = query(el, '#title-settings');
         const [panel, other] = show === 'saves' ? [saves, settings] : [settings, saves];
         other.hidden = true;
         panel.hidden = !panel.hidden;
         if (!panel.hidden && !panel.childElementCount) {
           if (show === 'saves') mountSaves(panel, { onLoad: finish });
-          else
-            mountSettings(panel, { audio, onChange: () => (el.querySelector('.title-sys')!.innerHTML = switches()) });
+          else mountSettings(panel, { audio, onChange: () => (query(el, '.title-sys').innerHTML = switches()) });
         }
         return;
       }

@@ -1,5 +1,6 @@
 // Player preferences that outlive any one game: which optional disciplines new games start with.
-import { DISCIPLINES, DISCIPLINE_ORDER, type Discipline } from './data';
+import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from './data';
+import { isRecord } from './util';
 
 const KEY = 'pressure-point-settings';
 export type DisciplinePrefs = Partial<Record<Discipline, boolean>>;
@@ -7,10 +8,12 @@ export type DisciplinePrefs = Partial<Record<Discipline, boolean>>;
 /** The saved choices, with anything unset left out (unset means on). */
 export function loadDisciplinePrefs(): DisciplinePrefs {
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+    const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+    const saved = isRecord(raw) && isRecord(raw.disciplines) ? raw.disciplines : {};
     const out: DisciplinePrefs = {};
     for (const d of DISCIPLINE_ORDER) {
-      if (DISCIPLINES[d].optional && typeof raw?.disciplines?.[d] === 'boolean') out[d] = raw.disciplines[d];
+      const on = saved[d];
+      if (DISCIPLINES[d].optional && typeof on === 'boolean') out[d] = on;
     }
     return out;
   } catch {

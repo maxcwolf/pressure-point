@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+
 import { BX0, BY0, ENT_IN_Y, ENT_X, SIDEWALK_Y, W } from '../../src/data';
 import { accessPose, accessTile, footprint, itemDims, rotPoint, rotVec } from '../../src/world';
-import { LAYOUT, addConsult, addMassage, freshSim, hire } from './helpers';
+import { addConsult, addMassage, freshSim, hire, LAYOUT } from './helpers';
 
 describe('item geometry', () => {
   it('rotates points a quarter turn at a time and comes back round', () => {

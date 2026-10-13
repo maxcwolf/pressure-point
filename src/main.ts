@@ -3,16 +3,17 @@ import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
 import '@fontsource/fredoka/latin-700.css';
 import './style.css';
+
 import { Audio } from './audio';
 import { BX0, BX1, BY0, BY1, ITEMS, ROOMS, W } from './data';
 import { isClick, isDragging } from './input';
 import { View } from './render/view';
-import { Sim } from './sim';
-import { AUTOSAVE_ID, archiveAutosave, autosave, readSave } from './saves';
+import { archiveAutosave, autosave, AUTOSAVE_ID, readSave } from './saves';
 import { loadDisciplinePrefs } from './settings';
-import { newGame, type GameState } from './state';
+import { Sim } from './sim';
+import { type GameState, newGame } from './state';
 import { Tools } from './tools';
-import { UI, showTitle } from './ui/ui';
+import { showTitle, UI } from './ui/ui';
 import { accessTile, itemDims } from './world';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -20,7 +21,9 @@ const audio = new Audio();
 
 async function boot() {
   // the lawn sign and welcome mat are drawn to canvas, so the font has to be ready first
-  await Promise.all([document.fonts.load('700 20px Fredoka'), document.fonts.load('500 20px Fredoka')]).catch(() => {});
+  await Promise.all([document.fonts.load('700 20px Fredoka'), document.fonts.load('500 20px Fredoka')]).catch(() => {
+    // the fallback font will do
+  });
   // loading or restarting from inside a game reloads the page and leaves a note saying what to open
   let state = open(takeHandoff());
   while (!state) {

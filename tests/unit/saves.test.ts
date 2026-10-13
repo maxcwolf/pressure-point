@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+
 import {
-  AUTOSAVE_ID,
-  MAX_SAVES,
-  PREVIOUS_ID,
   archiveAutosave,
   autosave,
+  AUTOSAVE_ID,
   defaultSaveName,
   deleteSave,
   exportSave,
@@ -12,12 +11,14 @@ import {
   importSave,
   latestSave,
   listSaves,
+  MAX_SAVES,
+  PREVIOUS_ID,
   readSave,
+  type SaveInfo,
   timeAgo,
   writeSave,
-  type SaveInfo,
 } from '../../src/saves';
-import { SAVE_VERSION, newGame, setSeed } from '../../src/state';
+import { newGame, SAVE_VERSION, setSeed } from '../../src/state';
 import { openCenter, run } from './helpers';
 
 // a stand-in for the browser's storage, with an optional size limit
@@ -78,7 +79,7 @@ describe('named saves', () => {
     expect(again.id).toBe(first.id);
     expect(listSaves()).toHaveLength(1);
     expect(readSave(first.id)!.money).toBe(123);
-    expect(listSaves()[0].savedAt).toBe(2000);
+    expect(listSaves()[0]!.savedAt).toBe(2000);
   });
 
   it('fall back to the game date when given no name, and trim long ones', () => {
@@ -173,7 +174,7 @@ describe('starting over', () => {
     autosave(s, 1000);
     archiveAutosave(2000);
     expect(readSave(AUTOSAVE_ID)).toBeNull();
-    const [prev] = listSaves();
+    const prev = listSaves()[0]!;
     expect(prev.id).toBe(PREVIOUS_ID);
     expect(prev.name).toContain('Previous game');
     expect(readSave(PREVIOUS_ID)!.stats).toEqual(s.stats);

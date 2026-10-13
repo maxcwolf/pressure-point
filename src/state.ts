@@ -2,23 +2,24 @@
 import {
   CAMEO_CHANCE,
   CAMEO_NAMES,
+  type Discipline,
   DISCIPLINES,
   FIRST_NAMES,
+  type ItemType,
   LAST_NAMES,
   MODALITIES,
-  MODALITY_ORDER,
-  ROLES,
-  ROLE_ORDER,
-  START_MONEY,
-  TRAITS,
-  TRAIT_BY_ID,
-  type Discipline,
-  type ItemType,
   type Modality,
+  MODALITY_ORDER,
   type Pose,
   type Role,
+  ROLE_ORDER,
+  ROLES,
   type RoomType,
+  START_MONEY,
+  traitOf,
+  TRAITS,
 } from './data';
+import { at } from './util';
 
 export interface Room {
   id: number;
@@ -84,8 +85,8 @@ interface CharBase {
   ty: number;
   facing: number;
   /** Waypoints: [x, y, isPosePoint]. */
-  path: number[][] | null;
-  dest: number[] | null;
+  path: Waypoint[] | null;
+  dest: Destination | null;
   pose: Pose;
   h: number;
   busy: boolean;
@@ -165,6 +166,11 @@ export interface Guest extends CharBase {
 }
 
 export type Char = Staff | Guest;
+
+/** A point on a route. `pose` is 1 for the final step off the grid into a seat, onto a table and so on. */
+export type Waypoint = [x: number, y: number, pose: number];
+/** Where someone is headed: the tile, then the pose point beyond it and whether there is one. */
+export type Destination = [tx: number, ty: number, px: number, py: number, hasPose: number];
 
 export interface Litter {
   id: number;
@@ -273,7 +279,7 @@ export function random(): number {
 }
 export const rnd = (a = 1, b?: number) => (b === undefined ? random() * a : a + random() * (b - a));
 export const irnd = (a: number, b: number) => Math.floor(rnd(a, b + 1));
-export const pick = <T>(arr: readonly T[]): T => arr[Math.floor(random() * arr.length)];
+export const pick = <T>(arr: readonly T[]): T => at(arr, Math.floor(random() * arr.length));
 export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 const SKINS = [0xf6d2b8, 0xeebf9e, 0xd9a078, 0xb97a55, 0x8d5a3b, 0x6b4229, 0xf9dfc9];
@@ -322,7 +328,7 @@ export const QUAL_PAY = 0.1;
 /** The going rate for someone with this role, skill, quirks and training. */
 export function fairSalary(role: Role, skill: number, traits: string[], quals: Modality[]): number {
   let pay = ROLES[role].baseSalary * (0.75 + skill * 0.25);
-  for (const t of traits) pay *= TRAIT_BY_ID[t]?.pay ?? 1;
+  for (const t of traits) pay *= traitOf(t).pay ?? 1;
   if (ROLES[role].discipline) pay *= 1 + QUAL_PAY * Math.max(0, quals.length - 1);
   return Math.round(pay / 10) * 10;
 }
@@ -378,8 +384,27 @@ export function disciplineOn(s: GameState, d: Discipline): boolean {
   return !DISCIPLINES[d].optional || s.options[d] !== false;
 }
 
+/** A record written before some of its fields existed, so those fields may be missing. */
+type Before<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+type OldLedger = Before<Ledger, 'training' | 'interest' | 'bonus'>;
+
+/** A save as an earlier version may have written it. */
+type OldSave = Before<
+  Omit<GameState, 'staff' | 'candidates' | 'items' | 'rooms' | 'guests' | 'ledger' | 'lastLedger'>,
+  'announceT' | 'loan' | 'priceLevel' | 'offer' | 'emergency' | 'nextEmergency' | 'options'
+> & {
+  staff: Before<Staff, 'quals' | 'training' | 'strain' | 'morale' | 'raiseAsked' | 'unhappyT'>[];
+  candidates: Before<Candidate, 'quals'>[];
+  items: Before<Item, 'wear'>[];
+  rooms: Before<Room, 'windows'>[];
+  guests: Before<Guest, 'emergency'>[];
+  ledger: OldLedger;
+  lastLedger: OldLedger;
+};
+
 /** Bring a save from any earlier version up to date by filling in what it lacks. */
-export function upgradeSave(s: GameState) {
+export function upgradeSave(save: GameState) {
+  const s: OldSave = save;
   for (const st of s.staff) {
     // before massage modalities, everyone on the payroll knew Swedish and nothing else
     st.quals ??= baseQuals(st.role);

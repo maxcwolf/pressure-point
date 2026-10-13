@@ -1,6 +1,6 @@
 // The Settings panel, shared by the title screen and the pause menu.
 import type { Audio } from '../audio';
-import { COMING_SOON, DISCIPLINES, DISCIPLINE_ORDER, type Discipline } from '../data';
+import { COMING_SOON, type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from '../data';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../settings';
 import type { Sim } from '../sim';
 

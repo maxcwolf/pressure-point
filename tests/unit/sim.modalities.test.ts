@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CONDITION_BY_ID, DAY_SECONDS, MODALITIES, STONE_USE } from '../../src/data';
+
+import { conditionOf, DAY_SECONDS, MODALITIES, STONE_USE } from '../../src/data';
 import type { Sim } from '../../src/sim';
 import { addTraining, hire, openCenter, run, runUntil } from './helpers';
 
@@ -20,7 +21,7 @@ describe('unlocking modalities', () => {
         // hold the healed count down so the next star (and its unlocks) cannot be earned mid-test
         s.stats.healed = Math.min(s.stats.healed, 5);
         run(sim, 1);
-        for (const g of s.guests) seen.add(CONDITION_BY_ID[g.condition].modality);
+        for (const g of s.guests) seen.add(conditionOf(g.condition).modality);
       }
     };
     watch(400);

@@ -4,13 +4,17 @@
 // hard-coding where things are, the tests ask the running game: "where is the
 // massage table?", "which stretch of the east wall takes a door?", "where can
 // what I am holding go?". Layout changes then move the answer, not the test.
-import { expect, test as base, type Page } from '@playwright/test';
+import { expect, type Page, test as base } from '@playwright/test';
+
 import type { ITEMS, ROOMS } from '../../src/data';
 import type { Sim } from '../../src/sim';
-import type { GameState, Item, Room, WallSpot } from '../../src/state';
+import type { GameState, Room, WallSpot } from '../../src/state';
 import type { Check, Rect } from '../../src/world';
 
-type Point = { x: number; y: number };
+interface Point {
+  x: number;
+  y: number;
+}
 /** Where something in hand can go: the point on screen to click, and the tile and rotation that is. */
 export interface HeldSpot {
   at: Point;
@@ -63,14 +67,18 @@ interface Finders {
 }
 declare global {
   interface Window {
-    pp: Handle;
+    /** Only there once a game has started. */
+    pp?: Handle;
     find: Finders;
   }
 }
 
 /** Installed in the page before the game loads. Must be self-contained: it is sent over as source. */
 function installFinders() {
-  const pp = () => window.pp;
+  const pp = () => {
+    if (!window.pp) throw new Error('no game is running');
+    return window.pp;
+  };
   const onCanvas = (p: Point) => document.elementFromPoint(p.x, p.y)?.id === 'game';
   const fail = (what: string): never => {
     throw new Error(`e2e: ${what}`);
@@ -102,7 +110,7 @@ function installFinders() {
         ok: (x: number, y: number, r: number): Check => world.canPlaceItem(t.type, x, y, r),
       };
     if (t.kind === 'move') {
-      const it = world.item(t.id) as Item;
+      const it = world.item(t.id)!;
       return {
         type: t.type as string,
         rot: t.rot as number,
@@ -279,11 +287,13 @@ export class Game {
   }
 
   /** Run code against the live game and return what it returns. */
-  eval<T, A = undefined>(fn: (pp: Handle, arg: A) => T, arg?: A): Promise<T> {
-    return this.page.evaluate(([f, a]) => new Function('pp', 'arg', `return (${f})(pp, arg)`)(window.pp, a), [
-      fn.toString(),
-      arg,
-    ] as const) as Promise<T>;
+  async eval<T, A = undefined>(fn: (pp: Handle, arg: A) => T, arg?: A): Promise<T> {
+    const pp = await this.page.evaluateHandle(() => window.pp);
+    try {
+      return await pp.evaluate(fn as (pp: Handle | undefined, arg: unknown) => T, arg);
+    } finally {
+      await pp.dispose();
+    }
   }
   /** Ask the page where something is. */
   private find<K extends keyof Finders>(what: K, ...args: Parameters<Finders[K]>): Promise<ReturnType<Finders[K]>> {
@@ -429,7 +439,7 @@ export class Game {
       ]);
       for (const role of ['receptionist', 'consultant', 'therapist']) {
         const best = state.candidates.filter((c) => c.role === role).sort((a, b) => b.skill - a.skill)[0];
-        sim.hire(best.id);
+        if (best) sim.hire(best.id);
       }
     });
   }

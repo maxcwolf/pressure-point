@@ -10,14 +10,15 @@ import {
   ENT_X,
   H,
   ITEMS,
-  ROOMS,
-  SIDEWALK_Y,
-  W,
   type ItemType,
   type Pose,
+  ROOMS,
   type RoomType,
+  SIDEWALK_Y,
+  W,
 } from './data';
-import type { GameState, Item, Room } from './state';
+import type { GameState, Item, Room, Waypoint } from './state';
+import { at } from './util';
 
 export const tileIdx = (x: number, y: number) => y * W + x;
 export const inBounds = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H;
@@ -29,7 +30,12 @@ export const Z_OUTSIDE = -1;
 export const Z_CORRIDOR = 0;
 
 // ---- Item geometry ---------------------------------------------------------
-type Placed = { type: ItemType; x: number; y: number; rot: number };
+interface Placed {
+  type: ItemType;
+  x: number;
+  y: number;
+  rot: number;
+}
 
 /** Rotate a continuous local point (rotation-0 frame) by `rot` quarter turns. */
 export function rotPoint(w: number, h: number, rot: number, cx: number, cy: number): [number, number] {
@@ -68,7 +74,7 @@ export function footprint(it: Placed): [number, number][] {
 }
 export function accessTile(it: Placed, i: number): [number, number] {
   const d = ITEMS[it.type];
-  const a = d.access[i];
+  const a = at(d.access, i);
   const [rx, ry] = rotPoint(d.w, d.h, it.rot, a.x + 0.5, a.y + 0.5);
   return [it.x + Math.floor(rx), it.y + Math.floor(ry)];
 }
@@ -81,7 +87,7 @@ export interface PosePoint {
 }
 export function accessPose(it: Placed, i: number): PosePoint {
   const d = ITEMS[it.type];
-  const a = d.access[i];
+  const a = at(d.access, i);
   const [rx, ry] = rotPoint(d.w, d.h, it.rot, a.px, a.py);
   const [fx, fy] = rotVec(it.rot, a.face[0], a.face[1]);
   return { x: it.x + rx, y: it.y + ry, face: Math.atan2(fx, fy), pose: a.pose, h: a.h ?? 0 };
@@ -104,7 +110,8 @@ export interface Check {
 const OK: Check = { ok: true, reason: '' };
 const no = (reason: string): Check => ({ ok: false, reason });
 
-const DIRS8 = [
+/** Steps to the eight neighbors, with the distance each one covers. The first four are the straight ones. */
+const DIRS8: readonly (readonly [dx: number, dy: number, cost: number])[] = [
   [1, 0, 1],
   [-1, 0, 1],
   [0, 1, 1],
@@ -114,6 +121,7 @@ const DIRS8 = [
   [-1, 1, Math.SQRT2],
   [-1, -1, Math.SQRT2],
 ];
+const DIRS4 = DIRS8.slice(0, 4);
 
 export class World {
   zone = new Int32Array(W * H);
@@ -176,7 +184,7 @@ export class World {
     return id ? this.s.items.find((i) => i.id === id) : undefined;
   }
   zoneAt(x: number, y: number) {
-    return inBounds(x, y) ? this.zone[tileIdx(x, y)] : Z_SCENERY;
+    return inBounds(x, y) ? (this.zone[tileIdx(x, y)] ?? Z_SCENERY) : Z_SCENERY;
   }
   roomAt(x: number, y: number): Room | undefined {
     const z = this.zoneAt(x, y);
@@ -212,7 +220,7 @@ export class World {
   private state = new Uint8Array(W * H);
 
   /** A* over the tile grid. The start tile may itself be blocked. Returns tile-center waypoints. */
-  findPath(sx: number, sy: number, gx: number, gy: number): number[][] | null {
+  findPath(sx: number, sy: number, gx: number, gy: number): Waypoint[] | null {
     if (!inBounds(sx, sy) || !this.walkable(gx, gy)) return null;
     if (sx === gx && sy === gy) return [];
     const { g, came, state } = this;
@@ -230,10 +238,18 @@ export class World {
       return Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy);
     };
     while (open.length) {
+      // take the most promising tile off the open list
       let bi = 0;
-      for (let i = 1; i < open.length; i++) if (f.get(open[i])! < f.get(open[bi])!) bi = i;
-      const cur = open[bi];
-      open[bi] = open[open.length - 1];
+      let best = Infinity;
+      open.forEach((tile, i) => {
+        const score = f.get(tile) ?? Infinity;
+        if (score < best) {
+          best = score;
+          bi = i;
+        }
+      });
+      const cur = at(open, bi);
+      open[bi] = at(open, open.length - 1);
       open.pop();
       if (cur === goal) break;
       state[cur] = 2;
@@ -254,8 +270,8 @@ export class World {
           )
             continue;
         } else if (!this.canStep(cx, cy, nx, ny)) continue;
-        const ng = g[cur] + cost;
-        if (state[n] === 1 && ng >= g[n]) continue;
+        const ng = at(g, cur) + cost;
+        if (state[n] === 1 && ng >= at(g, n)) continue;
         g[n] = ng;
         came[n] = cur;
         f.set(n, ng + hcost(nx, ny));
@@ -266,12 +282,12 @@ export class World {
       }
     }
     if (state[goal] === 0) return null;
-    const path: number[][] = [];
+    const path: Waypoint[] = [];
     let c = goal;
     while (c !== start) {
       const x = c % W;
       path.push([x + 0.5, (c - x) / W + 0.5, 0]);
-      c = came[c];
+      c = at(came, c);
     }
     return path.reverse();
   }
@@ -283,12 +299,12 @@ export class World {
     if (!inBounds(sx, sy)) return out;
     const queue: [number, number][] = [[sx, sy]];
     seen[tileIdx(sx, sy)] = 1;
-    while (queue.length && out.length < limit) {
-      const [x, y] = queue.shift()!;
+    for (let next = queue.shift(); next && out.length < limit; next = queue.shift()) {
+      const [x, y] = next;
       out.push([x, y]);
-      for (let d = 0; d < 4; d++) {
-        const nx = x + DIRS8[d][0];
-        const ny = y + DIRS8[d][1];
+      for (const [dx, dy] of DIRS4) {
+        const nx = x + dx;
+        const ny = y + dy;
         if (!inBounds(nx, ny) || seen[tileIdx(nx, ny)]) continue;
         if (!this.canStep(x, y, nx, ny)) continue;
         seen[tileIdx(nx, ny)] = 1;
@@ -348,15 +364,16 @@ export class World {
         if (this.blocked[i]) return no('Something is in the way');
         if (this.reserved[i]) return no('Keep doorways and access spots clear');
       }
-      if (z === null) z = this.zone[i];
-      else if (z !== this.zone[i]) return no('Cannot straddle a wall');
+      const here = at(this.zone, i);
+      if (z === null) z = here;
+      else if (z !== here) return no('Cannot straddle a wall');
     }
     if (z === null) return no('Invalid');
     if (roomId !== undefined && z !== roomId) return no('Place it inside the new room');
     if (def.where === 'corridor' && z !== Z_CORRIDOR) return no('Goes in a corridor, not a room');
     if (def.where !== 'corridor' && def.where !== 'any') {
       const room = z > 0 ? this.room(z) : undefined;
-      if (!room || room.type !== def.where) return no(`Goes inside a ${ROOMS[def.where].name}`);
+      if (room?.type !== def.where) return no(`Goes inside a ${ROOMS[def.where].name}`);
     }
     for (let i = 0; i < def.access.length; i++) {
       const [ax, ay] = accessTile(it, i);
@@ -400,7 +417,7 @@ export class World {
       [Math.abs(fx - (r.x + r.w)), { x: r.x + r.w - 1, y: cy, dx: 1, dy: 0 }],
     ];
     options.sort((a, b) => a[0] - b[0]);
-    return options[0][1];
+    return at(options, 0)[1];
   }
 
   /**

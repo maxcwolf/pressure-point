@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CONDITION_BY_ID, DISCIPLINES, ITEMS, MODALITIES, ROOMS } from '../../src/data';
+
+import { conditionOf, CONDITIONS, DISCIPLINES, ITEMS, MODALITIES, ROOMS } from '../../src/data';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../src/settings';
 import type { Sim } from '../../src/sim';
-import { disciplineOn, newGame, upgradeSave, type GameState } from '../../src/state';
+import { disciplineOn, type GameState, newGame, upgradeSave } from '../../src/state';
 import { addAcupuncture, addPostureLab, addStaffRoom, addTraining, hire, openCenter, run, runUntil } from './helpers';
 
-const disciplineOf = (condition: string) => MODALITIES[CONDITION_BY_ID[condition].modality].discipline;
+const disciplineOf = (condition: string) => MODALITIES[conditionOf(condition).modality].discipline;
 
 /** Play for a while and report which disciplines' guests turned up. */
 function watchArrivals(sim: Sim, seconds: number) {
@@ -280,10 +281,10 @@ describe('the data', () => {
   it('gives every modality conditions to treat and every condition a real modality', () => {
     for (const m of Object.keys(MODALITIES))
       expect(
-        Object.values(CONDITION_BY_ID).some((c) => c.modality === m),
+        CONDITIONS.some((c) => c.modality === m),
         m,
       ).toBe(true);
-    for (const c of Object.values(CONDITION_BY_ID)) expect(MODALITIES[c.modality], c.id).toBeDefined();
+    for (const c of CONDITIONS) expect(MODALITIES[c.modality], c.id).toBeDefined();
   });
 
   it("puts each discipline's equipment in its own room", () => {

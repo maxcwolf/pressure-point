@@ -1,7 +1,7 @@
 // Shared setup for the simulation tests: seeded games and a standard little center.
 import type { ItemType, Role, RoomType } from '../../src/data';
 import { Sim, type SimEvent } from '../../src/sim';
-import { newGame, setSeed, type Room, type Staff } from '../../src/state';
+import { newGame, type Room, setSeed, type Staff } from '../../src/state';
 import type { Rect } from '../../src/world';
 
 export function freshSim(seed = 1): Sim {
@@ -74,7 +74,7 @@ export function addAcupuncture(sim: Sim) {
 /** Hire the most skilled applicant for a role. */
 export function hire(sim: Sim, role: Role): Staff {
   const best = sim.s.candidates.filter((c) => c.role === role).sort((a, b) => b.skill - a.skill)[0];
-  const staff = sim.hire(best.id);
+  const staff = best && sim.hire(best.id);
   if (!staff) throw new Error(`could not hire a ${role}`);
   return staff;
 }

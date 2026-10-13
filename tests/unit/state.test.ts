@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { CAMEO_CHANCE, CAMEO_NAMES, MODALITIES, ROLES, ROLE_ORDER } from '../../src/data';
+
+import { CAMEO_CHANCE, CAMEO_NAMES, MODALITIES, ROLE_ORDER, ROLES } from '../../src/data';
 import {
-  SAVE_VERSION,
   fairSalary,
+  type GameState,
   newGame,
   random,
   randomName,
+  SAVE_VERSION,
   setSeed,
   upgradeSave,
-  type GameState,
 } from '../../src/state';
 import { openCenter, run } from './helpers';
 
@@ -85,10 +86,12 @@ describe('older saves', () => {
     const old = JSON.parse(JSON.stringify(s)) as Record<string, any>;
     old.version = 1;
     for (const st of old.staff)
-      for (const k of ['quals', 'training', 'strain', 'morale', 'raiseAsked', 'unhappyT']) delete st[k];
+      for (const k of ['quals', 'training', 'strain', 'morale', 'raiseAsked', 'unhappyT'])
+        Reflect.deleteProperty(st, k);
     for (const c of old.candidates) delete c.quals;
     for (const it of old.items) delete it.wear;
-    for (const k of ['loan', 'priceLevel', 'offer', 'emergency', 'nextEmergency', 'announceT']) delete old[k];
+    for (const k of ['loan', 'priceLevel', 'offer', 'emergency', 'nextEmergency', 'announceT'])
+      Reflect.deleteProperty(old, k);
     delete old.ledger.training;
     delete old.ledger.interest;
     upgradeSave(old as GameState);

@@ -12,11 +12,12 @@ export const BX0 = 3;
 export const BX1 = 27;
 export const BY0 = 3;
 export const BY1 = 17;
-export const ENT_X = [14, 15];
+/** The two tiles of the front entrance. */
+export const ENT_X: readonly [number, number] = [14, 15];
 export const ENT_IN_Y = BY1;
 export const ENT_OUT_Y = BY1 + 1;
 export const SIDEWALK_Y = 20;
-export const ROAD_Y = [21, 22];
+export const ROAD_Y: readonly [number, number] = [21, 22];
 
 // ---- Time ------------------------------------------------------------------
 export const DAY_SECONDS = 6;
@@ -719,7 +720,13 @@ export const TRAITS: TraitDef[] = [
   { id: 'dawdler', name: 'Dawdler', desc: 'Has never hurried in their life.', walk: 0.8, pay: 0.92 },
   { id: 'bargain', name: 'Undervalued', desc: 'Asks for 15% less pay. Do not tell them.', pay: 0.85 },
 ];
-export const TRAIT_BY_ID: Record<string, TraitDef> = Object.fromEntries(TRAITS.map((t) => [t.id, t]));
+const TRAIT_BY_ID = new Map(TRAITS.map((t) => [t.id, t]));
+/** Look up a staff quirk by id. An unknown id is a bug or a corrupt save, so it throws. */
+export function traitOf(id: string): TraitDef {
+  const def = TRAIT_BY_ID.get(id);
+  if (!def) throw new Error(`unknown trait "${id}"`);
+  return def;
+}
 
 // ---- Massage modalities -----------------------------------------------------
 export type Modality = 'swedish' | 'deep' | 'sports' | 'stone' | 'cranio' | 'needling' | 'cupping' | 'moxa' | 'electro';
@@ -1118,7 +1125,13 @@ export const CONDITIONS: ConditionDef[] = [
     visual: 'wires',
   },
 ];
-export const CONDITION_BY_ID: Record<string, ConditionDef> = Object.fromEntries(CONDITIONS.map((c) => [c.id, c]));
+const CONDITION_BY_ID = new Map(CONDITIONS.map((c) => [c.id, c]));
+/** Look up a condition by id. An unknown id is a bug or a corrupt save, so it throws. */
+export function conditionOf(id: string): ConditionDef {
+  const def = CONDITION_BY_ID.get(id);
+  if (!def) throw new Error(`unknown condition "${id}"`);
+  return def;
+}
 export const CONSULT_FEE = 200;
 export const ASSESS_FEE = 150;
 export const WINDOW_COST = 150;

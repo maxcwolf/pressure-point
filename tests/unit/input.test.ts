@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DRAG_PX, QUICK_MS, QUICK_PX, isClick, isDragging } from '../../src/input';
+
+import { DRAG_PX, isClick, isDragging, QUICK_MS, QUICK_PX } from '../../src/input';
 
 describe('telling a click from a drag', () => {
   it('does not call the few pixels of drift in an ordinary click a drag', () => {
@@ -10,7 +11,7 @@ describe('telling a click from a drag', () => {
       [6, 4],
       [7, 6],
       [-8, 3],
-    ])
+    ] as const)
       expect(isDragging(dx, dy), `${dx},${dy}`).toBe(false);
     expect(DRAG_PX).toBeGreaterThanOrEqual(10);
   });

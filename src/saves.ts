@@ -4,7 +4,8 @@
 // have. Saves can also be exported to a file and imported again, for backups
 // and for moving a game between the browser and the app.
 import { DAYS_PER_MONTH } from './data';
-import { SAVE_VERSION, upgradeSave, type GameState } from './state';
+import { type GameState, SAVE_VERSION, upgradeSave } from './state';
+import { isRecord } from './util';
 
 export const AUTOSAVE_ID = 'auto';
 /** Where the game being replaced by a new one is kept, so starting over never destroys anything. */
@@ -42,13 +43,19 @@ function summarize(id: string, name: string, s: GameState, savedAt: number): Sav
   return { id, name, savedAt, day: s.day, money: Math.round(s.money), stars: s.stars, healed: s.stats.healed };
 }
 
+/** Whether parsed JSON has the shape of a game this version can open. */
+function isGame(value: unknown): value is GameState {
+  if (!isRecord(value)) return false;
+  if (!Array.isArray(value.rooms) || !Array.isArray(value.staff) || !Array.isArray(value.guests)) return false;
+  return typeof value.version === 'number' && value.version <= SAVE_VERSION;
+}
+
 /** Turn stored text back into a game, or null if it is not one we can load. */
 function parseState(raw: string | null): GameState | null {
   if (!raw) return null;
   try {
-    const s = JSON.parse(raw) as GameState;
-    if (!s || !Array.isArray(s.rooms) || !Array.isArray(s.staff) || !Array.isArray(s.guests)) return null;
-    if (typeof s.version !== 'number' || s.version > SAVE_VERSION) return null;
+    const s: unknown = JSON.parse(raw);
+    if (!isGame(s)) return null;
     upgradeSave(s);
     return s;
   } catch {
@@ -58,8 +65,8 @@ function parseState(raw: string | null): GameState | null {
 
 function readIndex(): SaveInfo[] {
   try {
-    const list = JSON.parse(localStorage.getItem(INDEX_KEY) ?? '[]');
-    return Array.isArray(list) ? list.filter((i) => i && typeof i.id === 'string') : [];
+    const list: unknown = JSON.parse(localStorage.getItem(INDEX_KEY) ?? '[]');
+    return Array.isArray(list) ? list.filter((i): i is SaveInfo => isRecord(i) && typeof i.id === 'string') : [];
   } catch {
     return [];
   }
@@ -176,13 +183,13 @@ export function exportSave(id: string): { filename: string; text: string } | nul
 
 /** Add a game from the text of an exported file as a new slot. */
 export function importSave(text: string, now = Date.now()): SaveInfo | SaveError {
-  let file: { format?: string; name?: unknown; state?: unknown };
+  let file: unknown;
   try {
     file = JSON.parse(text);
   } catch {
     return 'invalid';
   }
-  if (!file || file.format !== FILE_FORMAT) return 'invalid';
+  if (!isRecord(file) || file.format !== FILE_FORMAT) return 'invalid';
   const state = parseState(JSON.stringify(file.state ?? null));
   if (!state) return 'invalid';
   const name = typeof file.name === 'string' && file.name.trim() ? file.name : defaultSaveName(state);

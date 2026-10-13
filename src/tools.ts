@@ -4,22 +4,22 @@
 // blueprint step. In the blueprint the required furniture goes in, windows and
 // extras can be added, the door can be moved, and nothing is charged for the room
 // until it is confirmed.
-import { ITEMS, ROOMS, WINDOW_COST, type AccessRole, type ItemType, type RoomType } from './data';
+import { type AccessRole, ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from './data';
 import {
+  type Marker,
   OV_BAD,
   OV_BLUE,
   OV_FREE,
   OV_GOOD,
   OV_GUEST,
   OV_STAFF,
-  type Marker,
   type OverlayTile,
   type Selection,
   type View,
 } from './render/view';
 import { money, type Sim } from './sim';
-import { sameSpot, type Room, type WallSpot } from './state';
-import { accessTile, footprint, inBuilding, itemDims, tileIdx, Z_CORRIDOR, type Rect } from './world';
+import { type Room, sameSpot, type WallSpot } from './state';
+import { accessTile, footprint, inBuilding, itemDims, type Rect, tileIdx, Z_CORRIDOR } from './world';
 
 /** What is in hand while a blueprint is open. */
 type PlanSub =

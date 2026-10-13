@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { ITEMS, ROOMS, START_MONEY } from '../../src/data';
 import { netOf } from '../../src/sim';
 import { addConsult, addMassage, addStaffRoom, freshSim, hire, openCenter, run, runUntil } from './helpers';

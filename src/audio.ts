@@ -1,5 +1,7 @@
 // Tiny synthesized sound effects and a generative lounge loop. No audio files needed.
 
+import { at, isRecord } from './util';
+
 type Note = [freq: number, start: number, dur: number, gain?: number, type?: OscillatorType];
 
 const SFX: Record<string, Note[]> = {
@@ -70,16 +72,17 @@ export class Audio {
   private ctx: AudioContext | null = null;
   private master!: GainNode;
   private musicGain!: GainNode;
-  private musicTimer = 0;
   private bar = 0;
   sound = true;
   music = true;
 
   constructor() {
     try {
-      const prefs = JSON.parse(localStorage.getItem('pressure-point-audio') ?? '{}');
-      if (typeof prefs.sound === 'boolean') this.sound = prefs.sound;
-      if (typeof prefs.music === 'boolean') this.music = prefs.music;
+      const prefs: unknown = JSON.parse(localStorage.getItem('pressure-point-audio') ?? '{}');
+      if (isRecord(prefs)) {
+        if (typeof prefs.sound === 'boolean') this.sound = prefs.sound;
+        if (typeof prefs.music === 'boolean') this.music = prefs.music;
+      }
     } catch {
       // defaults are fine
     }
@@ -91,10 +94,7 @@ export class Audio {
       void this.ctx.resume();
       return;
     }
-    const Ctor =
-      window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!Ctor) return;
-    this.ctx = new Ctor();
+    this.ctx = new AudioContext();
     this.master = this.ctx.createGain();
     this.master.gain.value = 0.8;
     this.master.connect(this.ctx.destination);
@@ -102,7 +102,7 @@ export class Audio {
     this.musicGain.gain.value = this.music ? 0.5 : 0;
     this.musicGain.connect(this.master);
     this.scheduleMusic();
-    this.musicTimer = window.setInterval(() => this.scheduleMusic(), 4000);
+    window.setInterval(() => this.scheduleMusic(), 4000);
     // go quiet while the window is hidden or minimized
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) void this.ctx?.suspend();
@@ -136,7 +136,8 @@ export class Audio {
     type: OscillatorType,
     attack = 0.008,
   ) {
-    const ctx = this.ctx!;
+    const ctx = this.ctx;
+    if (!ctx) return;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     osc.type = type;
@@ -161,15 +162,15 @@ export class Audio {
   /** Queue the next four-second bar: a soft pad plus a few plucked notes. */
   private scheduleMusic() {
     const ctx = this.ctx;
-    if (!ctx || ctx.state !== 'running') return;
-    const at = ctx.currentTime + 0.1;
-    const chord = CHORDS[this.bar++ % CHORDS.length];
-    for (const f of chord) this.tone(this.musicGain, f, at, 4.6, 0.035, 'sine', 1.2);
-    this.tone(this.musicGain, chord[0] / 2, at, 3.8, 0.06, 'triangle', 0.05);
+    if (ctx?.state !== 'running') return;
+    const start = ctx.currentTime + 0.1;
+    const chord = at(CHORDS, this.bar++ % CHORDS.length);
+    for (const f of chord) this.tone(this.musicGain, f, start, 4.6, 0.035, 'sine', 1.2);
+    this.tone(this.musicGain, at(chord, 0) / 2, start, 3.8, 0.06, 'triangle', 0.05);
     for (let i = 0; i < 8; i++) {
       if (Math.random() < 0.45) continue;
-      const f = SCALE[Math.floor(Math.random() * SCALE.length)];
-      this.tone(this.musicGain, f, at + i * 0.5, 0.9, 0.028, 'triangle', 0.01);
+      const f = at(SCALE, Math.floor(Math.random() * SCALE.length));
+      this.tone(this.musicGain, f, start + i * 0.5, 0.9, 0.028, 'triangle', 0.01);
     }
   }
 }

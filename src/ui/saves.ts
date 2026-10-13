@@ -1,20 +1,21 @@
 // The saved-games list, shared by the title screen and the in-game menu.
 import {
   AUTOSAVE_ID,
-  MAX_SAVES,
-  PREVIOUS_ID,
   defaultSaveName,
   deleteSave,
   exportSave,
   gameDate,
   importSave,
   listSaves,
+  MAX_SAVES,
+  PREVIOUS_ID,
+  type SaveInfo,
   timeAgo,
   writeSave,
-  type SaveInfo,
 } from '../saves';
 import { money } from '../sim';
 import type { GameState } from '../state';
+import { escapeHtml } from '../util';
 
 export interface SavesPanelOptions {
   /** The game in progress, if there is one to save. */
@@ -22,7 +23,7 @@ export interface SavesPanelOptions {
   onLoad(id: string): void;
 }
 
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+const esc = escapeHtml;
 const isSlot = (i: SaveInfo) => i.id !== AUTOSAVE_ID && i.id !== PREVIOUS_ID;
 const FULL = `Could not save. There is room for ${MAX_SAVES} named saves and limited browser storage: delete or export some first.`;
 
@@ -98,7 +99,10 @@ export function mountSaves(el: HTMLElement, opts: SavesPanelOptions) {
     const id = btn.dataset.id ?? '';
     const act = btn.dataset.save;
     if (act !== 'delete') confirming = '';
-    if (act === 'load') return opts.onLoad(id);
+    if (act === 'load') {
+      opts.onLoad(id);
+      return;
+    }
     if (act === 'new') save();
     else if (act === 'overwrite') save(id);
     else if (act === 'export') {

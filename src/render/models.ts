@@ -1,8 +1,10 @@
 // Procedural models: furniture and the little clay people.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { ITEMS, ROLES, type ItemType, type Role, type Visual } from '../data';
+
+import { ITEMS, type ItemType, type Role, ROLES, type Visual } from '../data';
 import type { Look } from '../state';
+import { at, must } from '../util';
 
 const matCache = new Map<string, THREE.MeshStandardMaterial>();
 export function mat(color: number, rough = 0.72, emissive = 0): THREE.MeshStandardMaterial {
@@ -228,7 +230,7 @@ export function buildItem(type: ItemType): THREE.Group {
           put(
             g,
             rbox(0.1, 0.14, 0.04, 0.02),
-            mat(snacks[(r * 4 + c) % snacks.length]),
+            mat(at(snacks, (r * 4 + c) % snacks.length)),
             -0.21 + c * 0.14,
             0.76 + r * 0.26,
             0.27,
@@ -318,7 +320,7 @@ export function buildItem(type: ItemType): THREE.Group {
           const mag = put(
             g,
             rbox(0.26, 0.22, 0.03, 0.01),
-            mat(covers[(row * 2 + c) % covers.length]),
+            mat(at(covers, (row * 2 + c) % covers.length)),
             -0.15 + c * 0.3,
             0.33 + row * 0.28,
             -0.02,
@@ -357,7 +359,7 @@ export function buildItem(type: ItemType): THREE.Group {
         [0.05, 0.25],
       ];
       const needles = new THREE.Group();
-      spots.forEach(([x, z], i) => needle(needles, x, z, [0xe5484d, 0xf2c14e, 0x4a9fe0][i % 3]));
+      spots.forEach(([x, z], i) => needle(needles, x, z, at([0xe5484d, 0xf2c14e, 0x4a9fe0], i % 3)));
       const cups = new THREE.Group();
       for (const [x, z] of spots.slice(0, 6)) {
         const cup = put(cups, sph(0.062, 12), GLASS, x, 0.95, z);
@@ -431,7 +433,7 @@ export function buildItem(type: ItemType): THREE.Group {
         [-0.07, 0.02, 0.2],
         [0.06, -0.04, -0.15],
         [0.01, 0.08, 0.05],
-      ]) {
+      ] as const) {
         const stick = put(g, cyl(0.016, 0.016, 0.22, 6), mat(0x6b5a3a, 0.9), x, 0.86, z);
         stick.rotation.z = lean;
         put(g, sph(0.022, 8), mat(0xff7a2f, 0.4, 1.2), x - lean * 0.11, 0.97, z).castShadow = false;
@@ -591,7 +593,7 @@ export interface CharRig {
   blink?: THREE.MeshStandardMaterial;
   /** Everything that only exists to show the symptom, hidden once healed. */
   props: THREE.Object3D[];
-  visual?: Visual;
+  visual: Visual | undefined;
   cured: boolean;
   scale: number;
   bubbleKey: string;
@@ -746,7 +748,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
       [-0.12, 0, 0.11],
       [0.02, 0.05, 0.14],
       [0.14, 0, 0.1],
-    ])
+    ] as const)
       put(cloud, sph(r, 10), mat(0x7d8894, 0.95), x, y, 0).castShadow = false;
     cloud.position.y = 0.4;
     head.add(cloud);
@@ -816,7 +818,7 @@ export function emojiTexture(emoji: string, plain = false): THREE.Texture {
   if (t) return t;
   const c = document.createElement('canvas');
   c.width = c.height = 128;
-  const ctx = c.getContext('2d')!;
+  const ctx = must(c.getContext('2d'), '2D canvas');
   if (!plain) {
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#2f4858';
@@ -848,18 +850,18 @@ export function buildTree(seed: number): THREE.Group {
   const g = new THREE.Group();
   const h = 0.9 + (seed % 5) * 0.12;
   put(g, cyl(0.09, 0.13, h, 8), mat(0x7a5a3c, 0.9), 0, h / 2, 0);
-  const green = [0x5fae5a, 0x4f9a55, 0x74b85c][seed % 3];
+  const green = at([0x5fae5a, 0x4f9a55, 0x74b85c], seed % 3);
   const leaf = cached(`treeleaf${seed % 3}`, () => new THREE.IcosahedronGeometry(1, 1));
   const m = new THREE.MeshStandardMaterial({ color: green, roughness: 0.85, flatShading: true });
   for (const [x, y, z, r] of [
     [0, h + 0.45, 0, 0.62],
     [0.35, h + 0.15, 0.1, 0.42],
     [-0.3, h + 0.2, -0.15, 0.45],
-  ]) {
+  ] as const) {
     const b = put(g, leaf, m, x, y, z);
     b.scale.setScalar(r);
   }
   return g;
 }
 
-export { rbox, cyl, sph, put, torus };
+export { cyl, put, rbox, sph, torus };
