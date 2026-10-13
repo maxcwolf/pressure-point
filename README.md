@@ -37,8 +37,8 @@ The unit tests seed the game's random numbers, so a failing run can be repeated 
 Pushing a version tag builds the installers on GitHub Actions and publishes them as a GitHub release:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 The tag sets the version number in the installers. Running the **Release** workflow by hand from the Actions tab builds the installers as downloadable artifacts without publishing a release.
@@ -121,14 +121,14 @@ The game autosaves to local storage every few seconds.
 
 | Path | What lives there |
 | --- | --- |
-| `src/data.ts` | All tunable content: rooms, items, staff roles, traits, conditions, objectives, flavour text |
+| `src/data.ts` | All tunable content: rooms, items, staff roles, traits, conditions, objectives, flavor text |
 | `src/state.ts` | The game state (plain JSON) plus save and load |
 | `src/world.ts` | Tile grid, placement rules, pathfinding |
 | `src/sim.ts` | Guests, staff, lines, money, reputation |
 | `src/tools.ts` | Build tools: room drag, doors, furniture placement |
 | `src/render/` | Three.js scene and the procedural models |
 | `src/ui/` | The HTML heads-up display |
-| `src/audio.ts` | Synthesised sound effects and music |
+| `src/audio.ts` | Synthesized sound effects and music |
 | `electron/main.cjs` | Desktop shell |
 
 Modalities, conditions, courses and equipment are all defined in `data.ts`. Every condition currently routes to the Massage Suite; adding acupuncture or reiki means a new room, its items and a staff role, a model per item in `render/models.ts`, and a treatment room on each modality so the sim knows where to send guests.

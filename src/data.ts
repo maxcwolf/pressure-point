@@ -1,4 +1,4 @@
-// Static game data: map layout, rooms, items, staff roles, conditions, flavour text.
+// Static game data: map layout, rooms, items, staff roles, conditions, flavor text.
 
 export const GAME_TITLE = 'Pressure Point Institute';
 /** The title broken up for the places that stack it: the lawn sign and the title screen. */
@@ -833,7 +833,7 @@ export const STAR_GOALS: StarGoal[] = [
   { healed: 80, reputation: 80, balance: 120000 },
 ];
 
-// ---- Flavour ---------------------------------------------------------------
+// ---- Flavor ----------------------------------------------------------------
 export const FIRST_NAMES = [
   'Ada', 'Barnaby', 'Cleo', 'Dmitri', 'Edie', 'Fergus', 'Greta', 'Hamish', 'Ines', 'Jasper',
   'Kiki', 'Lionel', 'Mabel', 'Nico', 'Odette', 'Percy', 'Queenie', 'Rufus', 'Saskia', 'Tobias',

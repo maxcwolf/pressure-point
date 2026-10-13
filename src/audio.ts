@@ -1,4 +1,4 @@
-// Tiny synthesised sound effects and a generative lounge loop. No audio files needed.
+// Tiny synthesized sound effects and a generative lounge loop. No audio files needed.
 
 type Note = [freq: number, start: number, dur: number, gain?: number, type?: OscillatorType];
 
