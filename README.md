@@ -41,8 +41,8 @@ The unit tests seed the game's random numbers, so a failing run can be repeated 
 Pushing a version tag builds the installers on GitHub Actions and publishes them as a GitHub release:
 
 ```bash
-git tag v0.1.1
-git push origin v0.1.1
+git tag v1.2.3
+git push origin v1.2.3
 ```
 
 The same tag also publishes the browser build to GitHub Pages at https://maxcwolf.github.io/pressure-point/, so the web version always matches the installers. The **Deploy web version** workflow can be run by hand to publish any other branch or tag.
