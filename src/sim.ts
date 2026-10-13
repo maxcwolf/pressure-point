@@ -32,6 +32,8 @@ import {
   W,
   H,
   WEAR_REPAIR,
+  WINDOW_COST,
+  WINDOW_MAX_BONUS,
   modalityLabel,
   type AccessRole,
   type Discipline,
@@ -54,6 +56,7 @@ import {
   randomName,
   refillCandidates,
   rnd,
+  sameSpot,
   type Char,
   type GameState,
   type Guest,
@@ -62,6 +65,7 @@ import {
   type Look,
   type Room,
   type Staff,
+  type WallSpot,
 } from './state';
 import {
   World,
@@ -293,6 +297,8 @@ export class Sim {
     let score = (room.w * room.h - def.minShort * def.minLong) * 0.4;
     for (const it of this.s.items) if (this.world.zoneAt(it.x, it.y) === room.id) score += this.decorOf(it);
     for (const l of this.s.litter) if (this.world.zoneAt(l.x, l.y) === room.id) score -= 2;
+    // daylight helps, up to a point
+    score += Math.min(room.windows.length, WINDOW_MAX_BONUS) * 1.5;
     return clamp(1 + Math.floor(score / 3), 1, 5);
   }
 
@@ -1700,7 +1706,7 @@ export class Sim {
   }
 
   createRoom(type: RoomType, r: Rect, door: Room['door']): Room {
-    const room: Room = { id: this.s.nextId++, type, x: r.x, y: r.y, w: r.w, h: r.h, door, done: false };
+    const room: Room = { id: this.s.nextId++, type, x: r.x, y: r.y, w: r.w, h: r.h, door, windows: [], done: false };
     this.s.rooms.push(room);
     this.worldChanged();
     this.emit({ type: 'sfx', name: 'place' });
@@ -1788,16 +1794,72 @@ export class Sim {
     const room = this.world.room(roomId);
     if (!room) return;
     const items = this.itemsInRoom(room);
+    // a blueprint has not been paid for yet, but any extras bought for it have
     let back = room.done ? ROOMS[room.type].cost * refund : 0;
     for (const it of items) back += ITEMS[it.type].cost * refund;
+    back += room.windows.length * WINDOW_COST * refund;
     this.s.rooms = this.s.rooms.filter((r) => r !== room);
     this.removeItems(items);
     if (back > 0) {
       this.s.money += back;
       this.s.ledger.building -= back;
-      this.toast(`${ROOMS[room.type].name} demolished. ${money(back)} recovered.`, 'info');
+      if (room.done) this.toast(`${ROOMS[room.type].name} demolished. ${money(back)} recovered.`, 'info');
       this.emit({ type: 'sfx', name: 'sell' });
     }
+  }
+
+  /** Required furniture a room still lacks, in the order it is asked for. */
+  missingItems(room: Room): ItemType[] {
+    const have = this.itemsInRoom(room).map((i) => i.type);
+    const missing: ItemType[] = [];
+    for (const type of ROOMS[room.type].required) {
+      const at = have.indexOf(type);
+      if (at >= 0) have.splice(at, 1);
+      else missing.push(type);
+    }
+    return missing;
+  }
+
+  /**
+   * Add a window to a stretch of wall, or take out the one already there.
+   * Returns what happened, or '' if it could not be done.
+   */
+  toggleWindow(roomId: number, spot: WallSpot): 'added' | 'removed' | '' {
+    const room = this.world.room(roomId);
+    if (!room) return '';
+    const at = room.windows.findIndex((w) => sameSpot(w, spot));
+    if (at >= 0) {
+      room.windows.splice(at, 1);
+      // a blueprint's windows come back in full; a built room's at half, like everything else
+      const back = Math.round(WINDOW_COST * (room.done ? 0.5 : 1));
+      this.s.money += back;
+      this.s.ledger.building -= back;
+      this.world.version++;
+      this.emit({ type: 'sfx', name: 'sell' });
+      return 'removed';
+    }
+    if (!this.world.windowValid(room, spot).ok) return '';
+    if (this.s.money < WINDOW_COST) {
+      this.toast('Not enough money for a window.', 'bad');
+      this.emit({ type: 'sfx', name: 'error' });
+      return '';
+    }
+    room.windows.push({ ...spot });
+    this.spend(WINDOW_COST, 'building');
+    this.world.version++;
+    this.emit({ type: 'sfx', name: 'place' });
+    return 'added';
+  }
+
+  /** Move a room's door to another stretch of its wall, for free. */
+  moveDoor(roomId: number, door: WallSpot): boolean {
+    const room = this.world.room(roomId);
+    if (!room || sameSpot(room.door, door)) return false;
+    if (!this.world.doorValid(room.type, room, door, room).ok) return false;
+    room.door = { ...door };
+    this.worldChanged();
+    this.emit({ type: 'sfx', name: 'place' });
+    return true;
   }
 
   canSell(it: Item): boolean {

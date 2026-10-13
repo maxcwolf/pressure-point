@@ -37,8 +37,20 @@ export type OverlayTile = [number, number, number];
 export const OV_GOOD = 0;
 export const OV_BAD = 1;
 export const OV_BLUE = 2;
-export const OV_ACCESS = 3;
-const OVERLAY_COLORS = [0x3ddc84, 0xff5d5d, 0x4aa8ff, 0xffc93c].map((c) => new THREE.Color(c));
+/** Free floor inside a room being dragged out that is still too small. */
+export const OV_FREE = 3;
+/** The square a member of staff uses a piece of furniture from. */
+export const OV_STAFF = 4;
+/** The square a guest uses it from. */
+export const OV_GUEST = 5;
+const OVERLAY_COLORS = [0x3ddc84, 0xff5d5d, 0x4aa8ff, 0xffc93c, 0x9b6bff, 0xff8a3c].map((c) => new THREE.Color(c));
+
+/** An icon floating over a floor tile, such as who a square is for. */
+export interface Marker {
+  x: number;
+  y: number;
+  icon: string;
+}
 
 export interface Selection {
   kind: 'guest' | 'staff' | 'item' | 'room';
@@ -51,9 +63,11 @@ export interface GhostSpec {
   rot: number;
   ok: boolean;
 }
+/** A highlight on one tile's worth of wall, for placing doors and windows. */
 export interface DoorSpec {
   door: Room['door'];
-  ok: boolean;
+  /** Fine to place here, not allowed, or something is already here that a click would remove. */
+  tone: 'ok' | 'bad' | 'remove';
 }
 
 /** Stable pseudo-random number from tile coordinates, so redraws do not shimmer. */
@@ -85,7 +99,10 @@ export class View {
   private ghostMats = [
     new THREE.MeshBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.6, depthWrite: false }),
     new THREE.MeshBasicMaterial({ color: 0xff5d5d, transparent: true, opacity: 0.6, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ color: 0xffc93c, transparent: true, opacity: 0.7, depthWrite: false }),
   ];
+  private markers: THREE.Sprite[] = [];
+  private glass = new THREE.MeshStandardMaterial({ color: 0xbfe6f5, transparent: true, opacity: 0.5, roughness: 0.1, emissive: 0x9fd8ee, emissiveIntensity: 0.25 });
   private doorMarker: THREE.Mesh;
   private ring: THREE.Mesh;
   private blueprintMat = new THREE.MeshStandardMaterial({ color: 0x6fb7ff, transparent: true, opacity: 0.55, roughness: 0.6 });
@@ -372,13 +389,39 @@ export class View {
       const mesh = put(g, geo, m, horizontal ? (a + b) / 2 : fixed, y0 + h / 2, horizontal ? fixed : (a + b) / 2);
       mesh.castShadow = room.done;
     };
-    const side = (horizontal: boolean, fixed: number, a: number, b: number, tall: boolean, doorAt: number | null, inward: number) => {
+    const glass = room.done ? this.glass : this.blueprintMat;
+    const side = (horizontal: boolean, fixed: number, a: number, b: number, tall: boolean, doorAt: number | null, windowsAt: number[], inward: number) => {
       const hgt = tall ? H_TALL : H_LOW;
-      const runs: [number, number][] = doorAt === null ? [[a, b]] : [[a, doorAt], [doorAt + 1, b]];
-      for (const [p, q] of runs) {
+      // plain stretches of wall between the openings, merged into as few boxes as possible
+      const plain = (p: number, q: number) => {
         box(horizontal, fixed, p, q, 0, hgt, T, wallM);
         box(horizontal, fixed, p, q, hgt, 0.07, T + 0.05, trimM);
+      };
+      let runStart = a;
+      for (let t = a; t < b; t++) {
+        const isDoor = t === doorAt;
+        const isWindow = windowsAt.includes(t);
+        if (!isDoor && !isWindow) continue;
+        plain(runStart, t);
+        runStart = t + 1;
+        if (!isWindow) continue;
+        if (tall) {
+          // a sill, a pane and a header
+          box(horizontal, fixed, t, t + 1, 0, 0.42, T, wallM);
+          box(horizontal, fixed, t + 0.06, t + 0.94, 0.42, 0.56, 0.04, glass);
+          box(horizontal, fixed, t, t + 1, 0.98, hgt - 0.98, T, wallM);
+          box(horizontal, fixed, t, t + 1, hgt, 0.07, T + 0.05, trimM);
+          box(horizontal, fixed, t, t + 1, 0.4, 0.05, T + 0.08, trimM);
+          for (const p of [t, t + 0.94]) box(horizontal, fixed, p, p + 0.06, 0.42, 0.56, T + 0.03, trimM);
+        } else {
+          // the near walls are cut low so you can see in, so a window there is a pane standing on the low wall
+          box(horizontal, fixed, t, t + 1, 0, hgt, T, wallM);
+          box(horizontal, fixed, t + 0.06, t + 0.94, hgt, 0.5, 0.04, glass);
+          box(horizontal, fixed, t, t + 1, hgt + 0.5, 0.05, T + 0.03, trimM);
+          for (const p of [t, t + 0.94]) box(horizontal, fixed, p, p + 0.06, hgt, 0.5, T + 0.03, trimM);
+        }
       }
+      plain(runStart, b);
       if (doorAt === null) return;
       for (const p of [doorAt, doorAt + 0.9]) box(horizontal, fixed, p, p + 0.1, 0, hgt + 0.07, T + 0.07, trimM);
       if (tall) {
@@ -403,10 +446,12 @@ export class View {
       g.add(sprite);
     };
     const d = room.door;
-    side(true, room.y + T / 2, room.x, room.x + room.w, true, d.dy === -1 ? d.x : null, 1);
-    side(true, room.y + room.h - T / 2, room.x, room.x + room.w, false, d.dy === 1 ? d.x : null, -1);
-    side(false, room.x + T / 2, room.y, room.y + room.h, true, d.dx === -1 ? d.y : null, 1);
-    side(false, room.x + room.w - T / 2, room.y, room.y + room.h, false, d.dx === 1 ? d.y : null, -1);
+    // which tiles along each wall have a window
+    const wins = (dx: number, dy: number) => room.windows.filter((w) => w.dx === dx && w.dy === dy).map((w) => (dx ? w.y : w.x));
+    side(true, room.y + T / 2, room.x, room.x + room.w, true, d.dy === -1 ? d.x : null, wins(0, -1), 1);
+    side(true, room.y + room.h - T / 2, room.x, room.x + room.w, false, d.dy === 1 ? d.x : null, wins(0, 1), -1);
+    side(false, room.x + T / 2, room.y, room.y + room.h, true, d.dx === -1 ? d.y : null, wins(-1, 0), 1);
+    side(false, room.x + room.w - T / 2, room.y, room.y + room.h, false, d.dx === 1 ? d.y : null, wins(1, 0), -1);
     return g;
   }
 
@@ -423,7 +468,7 @@ export class View {
     const liveRooms = new Set<number>();
     for (const r of s.rooms) {
       liveRooms.add(r.id);
-      const key = `${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done}`;
+      const key = `${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done},${r.windows.map((w) => `${w.x}.${w.y}.${w.dx}.${w.dy}`).join('|')}`;
       const cur = this.rooms.get(r.id);
       if (cur?.key === key) continue;
       if (cur) this.disposeGroup(cur.group);
@@ -832,11 +877,30 @@ export class View {
     this.placeItemGroup(this.ghost.group, spec.type, spec.x, spec.y, spec.rot);
   }
 
+  /** Icons floating over tiles, used to show who each square beside a piece of furniture is for. */
+  setMarkers(list: Marker[]) {
+    while (this.markers.length < list.length) {
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
+      sprite.scale.setScalar(0.62);
+      sprite.renderOrder = 11;
+      this.scene.add(sprite);
+      this.markers.push(sprite);
+    }
+    this.markers.forEach((sprite, i) => {
+      const m = list[i];
+      sprite.visible = !!m;
+      if (!m) return;
+      sprite.material.map = emojiTexture(m.icon);
+      sprite.material.needsUpdate = true;
+      sprite.position.set(m.x + 0.5, 1.15, m.y + 0.5);
+    });
+  }
+
   setDoor(spec: DoorSpec | null) {
     this.doorMarker.visible = !!spec;
     if (!spec) return;
     const d = spec.door;
-    this.doorMarker.material = this.ghostMats[spec.ok ? 0 : 1];
+    this.doorMarker.material = this.ghostMats[spec.tone === 'ok' ? 0 : spec.tone === 'bad' ? 1 : 2];
     this.doorMarker.position.set(d.x + 0.5 + d.dx * 0.5, 0.55, d.y + 0.5 + d.dy * 0.5);
     this.doorMarker.rotation.y = d.dx ? Math.PI / 2 : 0;
   }

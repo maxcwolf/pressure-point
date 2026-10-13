@@ -24,7 +24,9 @@ import {
   STONE_USE,
   TRAIT_BY_ID,
   WEAR_REPAIR,
+  WINDOW_COST,
   modalityLabel,
+  type ItemType,
   type Discipline,
   type Modality,
   type Role,
@@ -140,6 +142,7 @@ export class UI {
       <div id="toasts"></div>
       <div id="inspector"></div>
       <div id="hint"></div>
+      <div id="plan"></div>
       <div id="menu"></div>
       <div id="advisor"></div>
       <div id="bottom">
@@ -202,8 +205,21 @@ export class UI {
     let click = true;
     switch (act) {
       case 'menu':
-        tools.cancel();
+        // an open blueprint stays open while you fetch something from a menu
+        tools.setAside();
         this.menu = this.menu === arg ? null : (arg as Menu);
+        break;
+      case 'plan':
+        if (arg === 'build') tools.planBuild();
+        else if (arg === 'cancel') tools.cancel();
+        else if (arg === 'window' || arg === 'door') tools.planHold(tools.plan?.holding === arg ? '' : arg);
+        else tools.startItem(arg as ItemType);
+        break;
+      case 'roomwindows':
+        tools.startWindows(Number(arg));
+        break;
+      case 'roomdoor':
+        tools.startMoveDoor(Number(arg));
         break;
       case 'room':
         this.menu = null;
@@ -372,7 +388,8 @@ export class UI {
     );
 
     // the advisor sits where the build menus open, so it steps aside for them
-    this.set('advisor', this.menu ? '' : `<div class="face">🧘</div><p>${esc(sim.advice())}</p>`);
+    this.set('advisor', this.menu || tools.plan ? '' : `<div class="face">🧘</div><p>${esc(sim.advice())}</p>`);
+    this.set('plan', this.planHtml());
     this.set(
       'hint',
       tools.hint ? `<div class="hintpill ${tools.problem ? 'bad' : ''}">${esc(tools.hint)}${tools.problem ? `<b>${esc(tools.problem)}</b>` : ''}</div>` : '',
@@ -501,6 +518,38 @@ export class UI {
       <p class="sub">Healed ${s.stats.healed} · Failed ${s.stats.failed} · Stormed out ${s.stats.stormed} · Salaries are paid at the end of each month.</p></div>`;
   }
 
+  /** The blueprint panel: what the room still needs, what can be added, and the Build button. */
+  private planHtml(): string {
+    const { sim, tools } = this.host;
+    const plan = tools.plan;
+    if (!plan) return '';
+    const { room, missing, holding, ready } = plan;
+    const def = ROOMS[room.type];
+    const left = [...missing];
+    // one chip per piece of required furniture: ticked once placed, clickable while not
+    const chips = def.required
+      .map((type) => {
+        const item = ITEMS[type];
+        const at = left.indexOf(type);
+        if (at < 0) return `<span class="chip done">✔ ${item.name}</span>`;
+        left.splice(at, 1);
+        return `<button class="chip ${holding === type ? 'on' : ''}" data-act="plan" data-arg="${type}">○ ${item.name}</button>`;
+      })
+      .join('');
+    const extras = room.windows.length * WINDOW_COST;
+    return `<div class="panel plan">
+      <h3>${def.icon} ${def.name} blueprint <span class="cost">${money(def.cost)}${extras ? ` + ${money(extras)}` : ''}</span></h3>
+      <div class="chips"><span class="chip done">✔ Door</span>${chips}</div>
+      <div class="chips">
+        <button class="chip ${holding === 'window' ? 'on' : ''}" data-act="plan" data-arg="window">🪟 Windows (${room.windows.length}) · ${money(WINDOW_COST)} each</button>
+        <button class="chip ${holding === 'door' ? 'on' : ''}" data-act="plan" data-arg="door">🚪 Move door</button>
+      </div>
+      <p class="sub">${ready ? 'Ready to build. Add windows, or extras from the Items menu, first if you like.' : `Still needed: ${missing.map((t) => ITEMS[t].name).join(', ')}.`} Prestige ${stars(sim.prestige(room))}</p>
+      <div class="btnrow"><button data-act="plan" data-arg="cancel">Cancel</button>
+        <button class="go ${ready ? '' : 'locked'}" data-act="plan" data-arg="build">Build room</button></div>
+    </div>`;
+  }
+
   private inspectorHtml(): string {
     const { sim, tools } = this.host;
     const sel = tools.selected;
@@ -623,8 +672,9 @@ export class UI {
     const stations = sim.s.items.filter((i) => ITEMS[i.type].station && sim.world.zoneAt(i.x, i.y) === room.id);
     return `<h3>${def.icon} ${def.name}</h3><p>${def.desc}</p>
       <p>Prestige ${stars(sim.prestige(room))}</p>
-      <p class="sub">${room.w}×${room.h} tiles · Bigger rooms with more decor are more prestigious, which lifts staff morale and results.</p>
+      <p class="sub">${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'} · Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.</p>
       ${stations.map((i) => this.stationInfo(i)).join('')}${ROOMS[room.type].discipline ? this.suiteModalities(stations) : ''}
+      <button data-act="roomwindows" data-arg="${room.id}">🪟 Windows</button> <button data-act="roomdoor" data-arg="${room.id}">🚪 Move door</button>
       <button class="danger" data-act="demolish" data-arg="${room.id}">Demolish (recover ${money(def.cost * 0.5)})</button>`;
   }
 

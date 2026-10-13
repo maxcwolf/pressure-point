@@ -67,15 +67,13 @@ function open(what: string | null): GameState | null {
 
 function start(state: GameState) {
   const sim = new Sim(state);
-  // a room still being laid out when the game was last closed never got paid for
-  for (const r of [...state.rooms]) if (!r.done) sim.removeRoom(r.id, 0);
+  // a blueprint still open when the game was last closed is torn up, with anything bought for it refunded
+  for (const r of [...state.rooms]) if (!r.done) sim.removeRoom(r.id, 1);
 
   const view = new View(canvas, sim);
   let uiDirty = true;
   const tools = new Tools(sim, view, () => (uiDirty = true), (name) => audio.play(name));
-  const save = () => {
-    if (!(tools.tool.kind === 'room' && tools.tool.phase === 'items')) autosave(state);
-  };
+  const save = () => autosave(state);
   /** Leave this game for another one, keeping it up to date in the autosave first. */
   const leaveFor = (what: string) => {
     save();
@@ -135,7 +133,7 @@ function start(state: GameState) {
     if (d.button === 0) {
       if (click || draggingRoom()) tools.pointerUp(e.clientX, e.clientY);
     } else if (d.button === 2 && click) {
-      if (tools.active) tools.cancel();
+      if (tools.active) tools.back();
       else tools.select(null);
     }
   });
@@ -161,11 +159,12 @@ function start(state: GameState) {
     keys.add(k);
     if (k === 'escape') {
       // Esc cancels whatever is in hand; with nothing in hand it opens the pause menu
-      if (tools.active) tools.cancel();
+      if (tools.active) tools.back();
       else if (ui.closeMenu()) void 0;
       else if (tools.selected) tools.select(null);
       else ui.openPauseMenu();
-    } else if (k === 'r') tools.rotate();
+    } else if (k === 'enter') tools.planBuild();
+    else if (k === 'r') tools.rotate();
     else if (k === ' ') {
       e.preventDefault();
       state.speed = state.speed === 0 ? 1 : 0;

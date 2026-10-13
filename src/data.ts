@@ -1084,6 +1084,9 @@ export const CONDITION_BY_ID: Record<string, ConditionDef> = Object.fromEntries(
 );
 export const CONSULT_FEE = 200;
 export const ASSESS_FEE = 150;
+export const WINDOW_COST = 150;
+/** Windows beyond this many add nothing more to a room's prestige. */
+export const WINDOW_MAX_BONUS = 4;
 
 // ---- Economy & upkeep ---------------------------------------------------------
 export const LOAN_STEP = 5000;

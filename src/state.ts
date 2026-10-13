@@ -28,10 +28,21 @@ export interface Room {
   w: number;
   h: number;
   /** Inside tile of the door plus the outward direction. */
-  door: { x: number; y: number; dx: number; dy: number };
-  /** True once every required item has been placed. */
+  door: WallSpot;
+  /** Windows, each on one tile's worth of wall. */
+  windows: WallSpot[];
+  /** True once the room has been built: every required item placed and the blueprint confirmed. */
   done: boolean;
 }
+
+/** One tile's worth of a room's wall: the tile just inside it, and the direction pointing out. */
+export interface WallSpot {
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+}
+export const sameSpot = (a: WallSpot, b: WallSpot) => a.x === b.x && a.y === b.y && a.dx === b.dx && a.dy === b.dy;
 
 export interface Item {
   id: number;
@@ -386,6 +397,7 @@ export function upgradeSave(s: GameState) {
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
   for (const it of s.items) it.wear ??= 0;
+  for (const r of s.rooms) r.windows ??= [];
   for (const g of s.guests) g.emergency ??= false;
   for (const l of [s.ledger, s.lastLedger]) {
     l.training ??= 0;

@@ -73,11 +73,19 @@ test.describe('building rooms', () => {
     await game.drag([5.5, 5.5], [8.5, 8.5]);
     await expect(page.locator('#hint')).toContainText('place the door');
     await game.click(9.2, 7.5);
-    await expect(page.locator('#hint')).toContainText('Consultation Desk (1 of 2)');
+    // the blueprint opens and hands over the required furniture one piece at a time
+    await expect(page.locator('#plan')).toContainText('Consultation Room blueprint');
+    await expect(page.locator('#plan')).toContainText('Still needed: Consultation Desk, Chart Cabinet');
+    await expect(page.locator('#hint')).toContainText('Place the Consultation Desk inside the room');
     await game.click(7, 6.5);
-    await expect(page.locator('#hint')).toContainText('Chart Cabinet (2 of 2)');
+    await expect(page.locator('#hint')).toContainText('Place the Chart Cabinet inside the room');
     await game.click(5.5, 8.5);
+    await expect(page.locator('#plan')).toContainText('Ready to build');
+    // nothing is charged, and the room is not open, until it is confirmed
+    expect(await game.eval((pp) => [pp.state.money, pp.state.rooms[0].done])).toEqual([28800 + 1200, false]);
+    await page.locator('#plan').getByRole('button', { name: 'Build room' }).click();
     await expect(page.locator('#toasts')).toContainText('Consultation Room built!');
+    await expect(page.locator('#plan')).toBeEmpty();
     const room = await game.eval((pp) => pp.state.rooms[0]);
     expect(room).toMatchObject({ type: 'consult', x: 5, y: 5, w: 4, h: 4, done: true, door: { x: 8, y: 7, dx: 1, dy: 0 } });
     await expect(page.locator('#stats')).toContainText('$26,000');
@@ -100,8 +108,14 @@ test.describe('building rooms', () => {
     await game.card('Massage Suite').click();
     await game.drag([11.5, 5.5], [14.5, 8.5]);
     await game.click(12.5, 9.2);
-    await expect(page.locator('#hint')).toContainText('Massage Table (1 of 2)');
+    await expect(page.locator('#hint')).toContainText('Place the Massage Table inside the room');
+    await game.click(12.5, 6);
+    // the first Esc only puts down what is in hand; the blueprint stays open
     await page.keyboard.press('Escape');
+    await expect(page.locator('#plan')).toContainText('Massage Suite blueprint');
+    expect(await game.eval((pp) => pp.state.rooms.length)).toBe(1);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#plan')).toBeEmpty();
     expect(await game.eval((pp) => [pp.state.rooms.length, pp.state.items.length, pp.state.money])).toEqual([0, 0, 30000]);
   });
 
@@ -113,6 +127,151 @@ test.describe('building rooms', () => {
     await page.keyboard.press('r');
     await game.click(12.5, 12.5);
     expect(await game.eval((pp) => pp.state.items[0].rot)).toBe(1);
+  });
+});
+
+test.describe('room blueprints', () => {
+  /** Drag out a Massage Suite at x 11..14, y 5..8 and put its door in the south wall. */
+  const startSuite = async (game: import('./fixtures').Game) => {
+    await game.start();
+    await game.menu('Rooms');
+    await game.card('Massage Suite').click();
+    await game.drag([11.5, 5.5], [14.5, 8.5]);
+    await game.click(12.5, 9.2);
+  };
+
+  test('the Build button stays locked until the required furniture is in', async ({ game, page }) => {
+    await startSuite(game);
+    const build = page.locator('#plan').getByRole('button', { name: 'Build room' });
+    await expect(build).toHaveClass(/locked/);
+    await build.click();
+    await page.keyboard.press('Enter');
+    expect(await game.eval((pp) => pp.state.rooms[0].done)).toBe(false);
+    await game.click(12.5, 6);
+    await expect(page.locator('#plan .chip.done')).toHaveCount(2);
+    await game.click(14.5, 5.5);
+    await expect(build).not.toHaveClass(/locked/);
+    await build.click();
+    expect(await game.eval((pp) => [pp.state.rooms[0].done, pp.state.money])).toEqual([true, 23000]);
+    await expect(page.locator('#inspector')).toContainText('Massage Suite');
+  });
+
+  test('windows can be added to the blueprint, and are charged with the room', async ({ game, page }) => {
+    await startSuite(game);
+    await game.click(12.5, 6);
+    await game.click(14.5, 5.5);
+    await page.locator('#plan').getByRole('button', { name: /Windows \(0\)/ }).click();
+    await expect(page.locator('#hint')).toContainText('click a wall to add one');
+    await game.click(13.5, 4.9);
+    await game.click(15.1, 6.5);
+    await expect(page.locator('#plan')).toContainText('Windows (2)');
+    await expect(page.locator('#plan h3')).toContainText('$7,000 + $300');
+    // clicking a window again takes it out
+    await game.click(15.1, 6.5);
+    await expect(page.locator('#plan')).toContainText('Windows (1)');
+    expect(await game.eval((pp) => pp.state.rooms[0].windows)).toEqual([{ x: 13, y: 5, dx: 0, dy: -1 }]);
+    // the door's own stretch of wall is refused
+    await game.hover(12.5, 9.1);
+    await expect(page.locator('#hint')).toContainText('The door is there');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Enter');
+    expect(await game.eval((pp) => [pp.state.rooms[0].done, pp.state.money])).toEqual([true, 30000 - 7000 - 150]);
+  });
+
+  test('the door can be moved while planning', async ({ game, page }) => {
+    await startSuite(game);
+    await game.click(12.5, 6);
+    await game.click(14.5, 5.5);
+    await page.locator('#plan').getByRole('button', { name: 'Move door' }).click();
+    await game.click(15.1, 7.5);
+    expect(await game.eval((pp) => pp.state.rooms[0].door)).toEqual({ x: 14, y: 7, dx: 1, dy: 0 });
+  });
+
+  test('opening a menu keeps the blueprint, and extras from it can go in the room', async ({ game, page }) => {
+    await startSuite(game);
+    await game.menu('Items');
+    await expect(page.locator('#plan')).toContainText('Massage Suite blueprint');
+    await game.card('Potted Plant').click();
+    await game.click(11.5, 5.5);
+    expect(await game.eval((pp) => [pp.state.items.map((i) => i.type), pp.state.money])).toEqual([['plant'], 30000 - 120]);
+    await expect(page.locator('#plan')).toContainText('Still needed: Massage Table, Oil Cart');
+    // pick the required table back up from the panel
+    await page.locator('#plan').getByRole('button', { name: /Massage Table/ }).click();
+    await game.click(12.5, 6);
+    await expect(page.locator('#plan')).toContainText('Still needed: Oil Cart');
+    // cancelling refunds the plant along with everything else
+    await page.locator('#plan').getByRole('button', { name: 'Cancel' }).click();
+    expect(await game.eval((pp) => [pp.state.rooms.length, pp.state.items.length, pp.state.money])).toEqual([0, 0, 30000]);
+  });
+
+  test('a blueprint left open when the game closes is torn up and refunded on return', async ({ game, page }) => {
+    await startSuite(game);
+    await game.click(12.5, 6);
+    // a window and a plant, both paid for
+    await page.locator('#plan').getByRole('button', { name: /Windows/ }).click();
+    await game.click(13.5, 4.9);
+    await game.menu('Items');
+    await game.card('Potted Plant').click();
+    await game.click(11.5, 8.5);
+    expect(await game.eval((pp) => pp.state.money)).toBe(30000 - 150 - 120);
+    await page.reload();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => [pp.state.rooms.length, pp.state.items.length, pp.state.money])).toEqual([0, 0, 30000]);
+  });
+
+  test('a built room can have windows added and its door moved', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    const openRoom = async () => {
+      const floor = await game.at(13.5, 7.5);
+      await page.mouse.click(floor.x, floor.y);
+      await expect(page.locator('#inspector')).toContainText('Massage Suite');
+    };
+    await openRoom();
+    await expect(page.locator('#inspector')).toContainText('0 windows');
+    const money = await game.eval((pp) => pp.state.money);
+    await page.locator('#inspector').getByRole('button', { name: /Windows/ }).click();
+    await game.click(13.5, 4.9);
+    await game.click(15.1, 6.5);
+    await page.keyboard.press('Escape');
+    expect(await game.eval((pp) => [pp.state.rooms.find((r) => r.type === 'massage')!.windows.length, pp.state.money])).toEqual([2, money - 300]);
+    await openRoom();
+    await expect(page.locator('#inspector')).toContainText('2 windows');
+    await page.locator('#inspector').getByRole('button', { name: 'Move door' }).click();
+    await game.click(15.1, 7.5);
+    expect(await game.eval((pp) => pp.state.rooms.find((r) => r.type === 'massage')!.door)).toEqual({ x: 14, y: 7, dx: 1, dy: 0 });
+    await expect(page.locator('#inspector')).toContainText('Massage Suite');
+  });
+
+  test('placing furniture shows which square is for staff and which is for guests', async ({ game, page }) => {
+    await startSuite(game);
+    await game.hover(12.5, 6);
+    await expect(page.locator('#hint')).toContainText('purple square: staff');
+    await expect(page.locator('#hint')).toContainText('orange square: guests');
+    const shown = () =>
+      game.eval((pp) => {
+        const view = pp.view as unknown as { markers: { visible: boolean; position: { x: number; z: number } }[] };
+        return view.markers.filter((m) => m.visible).map((m) => [Math.floor(m.position.x), Math.floor(m.position.z)]);
+      });
+    // the massage table: the therapist stands on its west side, the guest gets on from the east
+    expect(await shown()).toEqual([[11, 6], [13, 6]]);
+    await game.click(12.5, 6);
+    // the oil cart is not used by anyone, so it marks no squares and the hint says nothing about them
+    await game.hover(14.5, 5.5);
+    expect(await shown()).toEqual([]);
+    await expect(page.locator('#hint')).not.toContainText('square');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    // a bench is for guests only
+    await game.menu('Items');
+    await game.card('Bench').click();
+    await game.hover(15.5, 14.5);
+    await expect(page.locator('#hint')).toContainText('orange square: guests');
+    await expect(page.locator('#hint')).not.toContainText('staff');
+    expect((await shown()).length).toBe(2);
   });
 });
 
@@ -435,9 +594,10 @@ test.describe('acupuncture and settings', () => {
     await game.card('Acupuncture Clinic').click();
     await game.drag([24.5, 8.5], [27.5, 11.5]);
     await game.click(25.5, 12.2);
-    await expect(page.locator('#hint')).toContainText('Acupuncture Table (1 of 2)');
+    await expect(page.locator('#hint')).toContainText('Place the Acupuncture Table inside the room');
     await game.click(25.5, 9);
     await game.click(27.5, 8.5);
+    await page.keyboard.press('Enter');
     await expect(page.locator('#toasts')).toContainText('Acupuncture Clinic built!');
     await page.keyboard.press('Escape');
 

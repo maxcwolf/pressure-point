@@ -405,18 +405,43 @@ export class World {
     return options[0][1];
   }
 
-  doorValid(type: RoomType, r: Rect, door: Room['door']): Check {
+  /**
+   * Can a room have its door here? Pass `replacing` when moving the door of a room
+   * that already exists, so it is judged as if that room had the new door.
+   */
+  doorValid(type: RoomType, r: Rect, door: Room['door'], replacing?: Room): Check {
     const ox = door.x + door.dx;
     const oy = door.y + door.dy;
     if (!inBuilding(ox, oy) || this.zone[tileIdx(ox, oy)] !== Z_CORRIDOR)
       return no('Doors must open onto a corridor');
     if (this.blocked[tileIdx(ox, oy)]) return no('Something is blocking that doorway');
-    const trial: Room = { id: 2147483000, type, ...r, door, done: false };
-    this.s.rooms.push(trial);
+    if (replacing) {
+      if (replacing.windows.some((w) => w.x === door.x && w.y === door.y && w.dx === door.dx && w.dy === door.dy))
+        return no('There is a window there');
+      if (this.blocked[tileIdx(door.x, door.y)]) return no('Furniture is in the way inside the room');
+    }
+    const rooms = this.s.rooms;
+    const trial: Room = { id: replacing?.id ?? 2147483000, type, ...r, door, windows: [], done: false };
+    this.s.rooms = [...rooms.filter((x) => x !== replacing), trial];
     this.rebuild(true);
     const fine = this.connected();
-    this.s.rooms.pop();
+    this.s.rooms = rooms;
     this.rebuild(true);
     return fine ? OK : no('That would block the way');
+  }
+
+  /** Can this stretch of a room's wall take a window? */
+  windowValid(room: Room, spot: Room['door']): Check {
+    const inside = spot.x >= room.x && spot.x < room.x + room.w && spot.y >= room.y && spot.y < room.y + room.h;
+    const ox = spot.x + spot.dx;
+    const oy = spot.y + spot.dy;
+    const outside = ox < room.x || ox >= room.x + room.w || oy < room.y || oy >= room.y + room.h;
+    if (!inside || !outside || Math.abs(spot.dx) + Math.abs(spot.dy) !== 1) return no('Windows go in the room\'s walls');
+    const d = room.door;
+    if (d.x === spot.x && d.y === spot.y && d.dx === spot.dx && d.dy === spot.dy) return no('The door is there');
+    // a window onto the room next door would just be a hole in two walls
+    const beyond = this.zoneAt(ox, oy);
+    if (beyond > 0 && beyond !== room.id) return no('Another room is on the other side');
+    return OK;
   }
 }
