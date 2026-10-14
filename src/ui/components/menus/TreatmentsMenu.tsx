@@ -12,12 +12,11 @@ import {
   MODALITIES,
   type Modality,
   MODALITY_ORDER,
-  ROLES,
-  ROOMS,
 } from '../../../core/data';
 import { money } from '../../../core/format';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
+import { disciplineNote } from '../../lib/delivery';
 
 /** What a modality treats, who can give it and whether its equipment is in. */
 function ModalityCard({ modality }: { modality: Modality }) {
@@ -62,13 +61,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
 function DisciplineSection({ discipline }: { discipline: Discipline }) {
   const { sim } = useGame();
   const disc = DISCIPLINES[discipline];
-  const role = ROLES[disc.role];
-  const room = ROOMS[disc.room];
-  const note = sim.hasRoom(disc.room)
-    ? `Delivered in the ${room.name} by ${role.name}s.`
-    : (room.unlock ?? 0) > sim.s.stars
-      ? `The ${room.name} unlocks at star ${room.unlock}.`
-      : `Build an ${room.name} and hire an ${role.name} to offer these. Until then, guests who need them will not turn up.`;
+  const note = disciplineNote(discipline, sim.hasRoom(disc.room), sim.s.stars);
   return (
     <>
       <h4 class="section">{`${disc.icon} ${disc.name}`}</h4>

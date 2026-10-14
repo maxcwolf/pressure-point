@@ -4,7 +4,7 @@ import { type Discipline, ITEMS, MODALITIES, ROOMS } from '../../src/core/data';
 import { available, hireableRoles, itemOffered, placeLabel } from '../../src/ui/lib/catalog';
 import { barHeights, CHART_HEIGHT } from '../../src/ui/lib/chart';
 import { cx } from '../../src/ui/lib/cx';
-import { deliveryNote } from '../../src/ui/lib/delivery';
+import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
 import { placedFlags } from '../../src/ui/lib/plan';
 import { courseName, guestStatus, staffStatus } from '../../src/ui/lib/status';
 import { saveFacts, titleBadges } from '../../src/ui/lib/title';
@@ -84,6 +84,24 @@ describe('why a table can or cannot deliver a treatment', () => {
     expect(deliveryNote('unqualified', MODALITIES.deep, 'Ada Lovelace')).toBe('Ada is not qualified');
     expect(deliveryNote('no-equipment', MODALITIES.stone, 'Ada Lovelace')).toBe('needs a Stone Warmer');
     expect(deliveryNote('cold', MODALITIES.stone, 'Ada Lovelace')).toBe('stones are cold');
+  });
+});
+
+describe('what it takes to offer a discipline', () => {
+  it('says where it is delivered once its room is built', () => {
+    expect(disciplineNote('massage', true, 0)).toBe('Delivered in the Massage Suite by Massage Therapists.');
+  });
+
+  it('says when its room unlocks', () => {
+    expect(disciplineNote('reiki', false, 1)).toBe('The Reiki Studio unlocks at star 2.');
+  });
+
+  it('says what to build and whom to hire, in good English', () => {
+    expect(disciplineNote('massage', false, 0)).toMatch(/^Build a Massage Suite and hire a Massage Therapist to/);
+    expect(disciplineNote('acupuncture', false, 1)).toMatch(
+      /^Build an Acupuncture Clinic and hire an Acupuncturist to/,
+    );
+    expect(disciplineNote('reiki', false, 2)).toMatch(/^Build a Reiki Studio and hire a Reiki Practitioner to/);
   });
 });
 

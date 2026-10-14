@@ -1,7 +1,18 @@
 // Explaining why a table can or cannot deliver a treatment.
 
-import { ITEMS, type ModalityDef } from '../../core/data';
+import { type Discipline, DISCIPLINES, ITEMS, type ModalityDef, ROLES, ROOMS } from '../../core/data';
+import { article } from '../../core/sim/advisor';
 import type { DeliveryProblem } from '../../core/sim/treatments';
+
+/** What it takes to offer a discipline: where it is delivered, when its room unlocks, or what to build and hire. */
+export function disciplineNote(discipline: Discipline, hasRoom: boolean, stars: number): string {
+  const disc = DISCIPLINES[discipline];
+  const role = ROLES[disc.role].name;
+  const room = ROOMS[disc.room];
+  if (hasRoom) return `Delivered in the ${room.name} by ${role}s.`;
+  if ((room.unlock ?? 0) > stars) return `The ${room.name} unlocks at star ${room.unlock}.`;
+  return `Build ${article(room.name)} ${room.name} and hire ${article(role)} ${role} to offer these. Until then, guests who need them will not turn up.`;
+}
 
 /** A few words on why a modality cannot be delivered, or on what it is waiting for. Empty when all is well. */
 export function deliveryNote(problem: DeliveryProblem, def: ModalityDef, staffName: string | undefined): string {
