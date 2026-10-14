@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.8.0
 
 - **A Policy menu:** set how sure a diagnosis must be before treatment (75% to start), call emergency guests ahead of everyone else, choose the energy at which staff take a break, and cap how many of each role may be on a break at once.
 - **Lines you can manage:** a station's inspector lists who is waiting, with their patience and chance of success, and buttons to move each guest up or down, over to the shortest other line of the same kind, or home.
