@@ -25,6 +25,7 @@ import {
   moveItem,
   placeItem,
   removeRoom,
+  roomRefund,
   sellItem,
   toggleWindow,
 } from './building';
@@ -299,6 +300,11 @@ export class Sim {
   /** Remove a room, refunding a fraction of what it cost. */
   removeRoom(roomId: number, refund: number) {
     removeRoom(this.ctx, roomId, refund);
+  }
+
+  /** What removing a room would give back, at this fraction of what was paid. */
+  roomRefund(room: Room, refund: number): number {
+    return roomRefund(this.ctx, room, refund);
   }
 
   /** Required furniture a room still lacks. */

@@ -160,15 +160,26 @@ function removeItems(ctx: SimContext, gone: Item[]) {
   resetUsers(ctx, users);
 }
 
+/** What removing a room gives back: `refund` of whatever was paid for it, its extras and its windows. */
+export function roomRefund(ctx: SimContext, room: Room, refund: number) {
+  // a blueprint has not been paid for yet, but any extras bought for it have
+  let back = room.done ? ROOMS[room.type].cost * refund : 0;
+  // the required furniture came free with the room, so only what is left over was bought
+  const free = [...ROOMS[room.type].required];
+  for (const it of itemsInRoom(ctx, room)) {
+    const at = free.indexOf(it.type);
+    if (at >= 0) free.splice(at, 1);
+    else back += ITEMS[it.type].cost * refund;
+  }
+  return back + room.windows.length * WINDOW_COST * refund;
+}
+
 /** Remove a room. `refund` is the fraction of its cost returned (0 while still a blueprint). */
 export function removeRoom(ctx: SimContext, roomId: number, refund: number) {
   const room = ctx.world.room(roomId);
   if (!room) return;
   const items = itemsInRoom(ctx, room);
-  // a blueprint has not been paid for yet, but any extras bought for it have
-  let back = room.done ? ROOMS[room.type].cost * refund : 0;
-  for (const it of items) back += ITEMS[it.type].cost * refund;
-  back += room.windows.length * WINDOW_COST * refund;
+  const back = roomRefund(ctx, room, refund);
   ctx.s.rooms = ctx.s.rooms.filter((r) => r !== room);
   removeItems(ctx, items);
   if (back > 0) {

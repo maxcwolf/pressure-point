@@ -82,7 +82,7 @@ export function RoomInfo({ room }: { room: Room }) {
           tools.select(null);
         }}
       >
-        {`Demolish (recover ${money(def.cost * 0.5)})`}
+        {`Demolish (recover ${money(sim.roomRefund(room, 0.5))})`}
       </Button>
     </>
   );

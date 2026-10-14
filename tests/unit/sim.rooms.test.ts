@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { ROOMS, WINDOW_COST, WINDOW_MAX_BONUS } from '../../src/core/data';
+import { ITEMS, ROOMS, WINDOW_COST, WINDOW_MAX_BONUS } from '../../src/core/data';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { addConsult, addMassage, freshSim, LAYOUT, openCenter, run, runUntil } from './helpers';
+import { addConsult, addMassage, addStaffRoom, freshSim, LAYOUT, openCenter, run, runUntil } from './helpers';
 
 // the standard massage suite covers x 11..14, y 5..8, with its door in the south wall at (12, 8)
 const NORTH = { x: 13, y: 5, dx: 0, dy: -1 };
@@ -183,6 +183,27 @@ describe('blueprints', () => {
     expect(sim.s.money).toBe(before);
     expect(sim.s.rooms).toHaveLength(0);
     expect(sim.s.items).toHaveLength(0);
+  });
+
+  it('give nothing back for the furniture that came free with them', () => {
+    const sim = freshSim();
+    const before = sim.s.money;
+    for (let round = 0; round < 3; round++) {
+      const room = sim.createRoom('staffroom', LAYOUT.staffroom.rect, LAYOUT.staffroom.door);
+      expect(sim.placeItem('sofa', 17, 5, 0, { free: true, roomId: room.id })).not.toBeNull();
+      sim.removeRoom(room.id, 1);
+    }
+    expect(sim.s.money).toBe(before);
+  });
+
+  it('return half of what was paid when a built room is demolished', () => {
+    const sim = freshSim();
+    const room = addStaffRoom(sim);
+    // a plant, bought as an extra
+    expect(sim.placeItem('plant', 19, 5, 0)).not.toBeNull();
+    const before = sim.s.money;
+    sim.removeRoom(room.id, 0.5);
+    expect(sim.s.money).toBe(before + (ROOMS.staffroom.cost + ITEMS.plant.cost) * 0.5);
   });
 
   it('are not open for business until built', () => {
