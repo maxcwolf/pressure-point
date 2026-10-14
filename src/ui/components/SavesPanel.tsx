@@ -61,7 +61,12 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
   const [note, setNote] = useState<Note | null>(null);
   /** The save whose Delete has been pressed once and is waiting to be pressed again. */
   const [confirming, setConfirming] = useState('');
-  const saves = listSaves();
+  // read once and again after each change, not on every redraw: reading the list reads every save in it
+  const [saves, setSaves] = useState(listSaves);
+  /** Read the list of saves again after changing it. */
+  const reread = () => {
+    setSaves(listSaves());
+  };
 
   /** Save the current game to a new slot, or over an existing one, and note the result. */
   const save = (id?: string) => {
@@ -69,6 +74,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
     const existing = id ? saves.find((s) => s.id === id) : undefined;
     const result = writeSave(current, existing ? existing.name : draft, id);
     if (typeof result !== 'string' && snapshot) storeThumb(result.id, snapshot());
+    reread();
     setNote(typeof result === 'string' ? FULL : { text: `Saved "${result.name}".`, bad: false });
   };
   /** Write a save out as a file. */
@@ -85,6 +91,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
       return;
     }
     deleteSave(id);
+    reread();
     setConfirming('');
     setNote(null);
   };
@@ -94,6 +101,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
     if (!file) return;
     void file.text().then((text) => {
       const result = importSave(text);
+      reread();
       if (result === 'invalid')
         setNote({
           text: `"${file.name}" is not a Pressure Point Institute save, or it is from a newer version of the game.`,
