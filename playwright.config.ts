@@ -7,8 +7,10 @@ export default defineConfig({
   timeout: 60_000,
   // every test starts its own game, so they can run side by side even though they share a file
   fullyParallel: true,
-  // each one draws with software WebGL, which is hard on the processor: more than four gains nothing
-  workers: 4,
+  // Each one draws with software WebGL, which is hard on the processor. More than four gains nothing
+  // here, and on a four-core CI machine even four starve each other, so CI splits the suite across
+  // machines instead (see the e2e job in ci.yml) and runs one at a time on each.
+  workers: process.env.CI ? 1 : 4,
   expect: { timeout: 10_000 },
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
