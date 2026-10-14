@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { BX0, BX1, BY0, BY1, ENT_OUT_Y, ENT_X, H, ROAD_Y, SIDEWALK_Y, TITLE_LINES, W } from '../core/data';
 import { must } from '../core/util';
 import { cyl, mat, put, rbox, sph } from './models/parts';
-import { buildTree } from './models/tree';
+import { buildForest, type TreeSpot } from './models/tree';
 import { H_LOW, hash } from './shared';
 
 /** Build the scenery that never changes and add it to the scene. */
@@ -94,15 +94,19 @@ export function buildScenery(scene: THREE.Scene) {
   scene.add(sign);
 
   // trees wherever there is lawn
+  const trees: TreeSpot[] = [];
   for (let y = -3; y < H + 2; y++) {
     for (let x = -4; x < W + 4; x++) {
       const inPlot = x >= BX0 - 1 && x <= BX1 + 2 && y >= BY0 - 1 && y <= BY1 + 1;
       const onRoad = y >= SIDEWALK_Y && y <= ROAD_Y[1];
       const nearPath = x >= e0 - 7 && x <= e1 + 2 && y > BY1;
       if (inPlot || onRoad || nearPath || hash(x, y) > 0.2) continue;
-      const tree = buildTree(Math.floor(hash(y, x) * 97));
-      tree.position.set(x + 0.5 + (hash(x + 9, y) - 0.5) * 0.5, 0, y + 0.5 + (hash(x, y + 9) - 0.5) * 0.5);
-      scene.add(tree);
+      trees.push({
+        x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.5,
+        z: y + 0.5 + (hash(x, y + 9) - 0.5) * 0.5,
+        seed: Math.floor(hash(y, x) * 97),
+      });
     }
   }
+  scene.add(buildForest(trees));
 }
