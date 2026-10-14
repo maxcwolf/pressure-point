@@ -1,4 +1,4 @@
-// Rooms: their walls, windows, doors and signs.
+// Rooms: their walls, windows, doors and signs, and the windows in the building's back walls that make way for them.
 
 import * as THREE from 'three';
 
@@ -7,10 +7,16 @@ import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { emojiTexture } from './models/emoji';
 import { mat, put } from './models/parts';
+import { outerPanes } from './outer-walls';
 import { roomShape } from './room-walls';
+import { OUTER_PANE_H, OUTER_PANE_Y0 } from './shared';
 
 export class RoomsLayer {
   private rooms = new Map<number, { group: THREE.Group; key: string }>();
+  /** The building's own windows, and the rooms they were last laid out around. */
+  private panes = new THREE.Group();
+  private panesKey = '';
+  private paneGlass = mat(0xbfe6f5, 0.2, 0.25);
   private glass = new THREE.MeshStandardMaterial({
     color: 0xbfe6f5,
     transparent: true,
@@ -29,7 +35,9 @@ export class RoomsLayer {
   constructor(
     private scene: THREE.Scene,
     private sim: Sim,
-  ) {}
+  ) {
+    scene.add(this.panes);
+  }
 
   /** Rebuild any room that has changed, and remove the ones that are gone. */
   sync() {
@@ -49,6 +57,28 @@ export class RoomsLayer {
       this.dispose(r.group);
       this.rooms.delete(id);
     }
+    this.syncPanes();
+  }
+
+  /** Lay out the building's back-wall windows again if the rooms they make way for have changed. */
+  private syncPanes() {
+    const { plot } = this.sim.world;
+    const panes = outerPanes(plot, this.sim.s.rooms);
+    const key = panes.map((p) => `${p.horizontal ? 'n' : 'w'}${p.a}`).join('|');
+    if (key === this.panesKey) return;
+    this.panesKey = key;
+    for (const old of [...this.panes.children]) {
+      this.panes.remove(old);
+      if (old instanceof THREE.Mesh && old.geometry instanceof THREE.BoxGeometry) old.geometry.dispose();
+    }
+    for (const p of panes) {
+      const len = p.b - p.a;
+      const mid = (p.a + p.b) / 2;
+      const y = OUTER_PANE_Y0 + OUTER_PANE_H / 2;
+      if (p.horizontal)
+        put(this.panes, new THREE.BoxGeometry(len, OUTER_PANE_H, 0.04), this.paneGlass, mid, y, plot.y0 + 0.02);
+      else put(this.panes, new THREE.BoxGeometry(0.04, OUTER_PANE_H, len), this.paneGlass, plot.x0 + 0.02, y, mid);
+    }
   }
 
   /** Build a room's walls, windows, door and sign, in blueprint blue until it is finished. */
@@ -61,7 +91,7 @@ export class RoomsLayer {
       trim: plain ? this.blueprintMat : mat(def.trim, 0.6),
       glass: plain ? this.blueprintMat : this.glass,
     };
-    const { boxes, doorway } = roomShape(room);
+    const { boxes, doorway } = roomShape(room, this.sim.world.plot);
     for (const b of boxes) {
       const len = b.b - b.a;
       const geo = b.horizontal ? new THREE.BoxGeometry(len, b.h, b.thick) : new THREE.BoxGeometry(b.thick, b.h, len);

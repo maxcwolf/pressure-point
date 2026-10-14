@@ -1,4 +1,5 @@
 // The scenery that never changes: the lawn, the building's outer walls, the sign and the trees.
+// The windows in the outer walls do change, as rooms are built against them, so they are drawn with the rooms.
 
 import * as THREE from 'three';
 
@@ -8,7 +9,7 @@ import { buildBeach } from './models/beach';
 import { cyl, mat, put, rbox, sph } from './models/parts';
 import { buildForest, type TreeSpot } from './models/tree';
 import type { Setting } from './setting';
-import { H_LOW, hash } from './shared';
+import { H_LOW, hash, OUTER_HT, OUTER_T } from './shared';
 
 /** Build the scenery that never changes around a building on its plot, in its setting, and add it to the scene. */
 export function buildScenery(scene: THREE.Scene, plot: Plot, setting: 'park' | 'seaside', colors: Setting) {
@@ -24,12 +25,12 @@ export function buildScenery(scene: THREE.Scene, plot: Plot, setting: 'park' | '
   const shell = new THREE.Group();
   const wall = mat(0xf7f1e5, 0.85);
   const trim = mat(0x2fa8a0, 0.6);
-  const T = 0.28;
+  const T = OUTER_T;
   const x0 = plot.x0;
   const x1 = plot.x1 + 1;
   const z0 = plot.y0;
   const z1 = plot.y1 + 1;
-  const HT = 2.0;
+  const HT = OUTER_HT;
   /** Add a plain box to the outer shell. */
   const box = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) =>
     put(shell, new THREE.BoxGeometry(w, h, d), m, x, y, z);
@@ -37,9 +38,7 @@ export function buildScenery(scene: THREE.Scene, plot: Plot, setting: 'park' | '
   box(x1 - x0 + T * 2 + 0.06, 0.12, T + 0.08, (x0 + x1) / 2, HT + 0.06, z0 - T / 2, trim);
   box(T, HT, z1 - z0 + T, x0 - T / 2, HT / 2, (z0 + z1) / 2 + T / 2, wall);
   box(T + 0.08, 0.12, z1 - z0 + T + 0.06, x0 - T / 2, HT + 0.06, (z0 + z1) / 2 + T / 2, trim);
-  const glass = mat(0xbfe6f5, 0.2, 0.25);
-  for (let x = x0 + 2; x < x1 - 1; x += 3) box(1.5, 0.75, 0.04, x + 0.5, 1.3, z0 + 0.02, glass);
-  for (let z = z0 + 2; z < z1 - 1; z += 3) box(0.04, 0.75, 1.5, x0 + 0.02, 1.3, z + 0.5, glass);
+  // the windows in the back walls make way for rooms built against them, so the rooms layer draws them
   // low front walls with a gap for the entrance
   const e0 = plot.door[0];
   const e1 = plot.door[1] + 1;

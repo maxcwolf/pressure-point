@@ -1,8 +1,9 @@
 // The shape of a room: every box that makes up its walls, windows and door frame.
 // Nothing here draws anything, so it can be tested without a renderer.
 
+import type { Plot } from '../core/data';
 import type { Room } from '../core/state/types';
-import { H_LOW, H_TALL, WALL_T } from './shared';
+import { H_LOW, H_TALL, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, WALL_T } from './shared';
 
 /** What a box is made of: plain wall, the room's colored trim, or window glass. */
 export type WallMaterial = 'wall' | 'trim' | 'glass';
@@ -57,10 +58,23 @@ interface Side {
   doorAt: number | null;
   windowsAt: number[];
   inward: number;
+  /** It runs along the building's outer wall, which stands in for it; `fixed` is then where that wall is. */
+  outer: boolean;
+}
+
+/** Which of a room's sides run along the building's outer walls. */
+export function alongOuterWall(room: Room, plot: Plot) {
+  return {
+    north: room.y === plot.y0,
+    south: room.y + room.h - 1 === plot.y1,
+    west: room.x === plot.x0,
+    east: room.x + room.w - 1 === plot.x1,
+  };
 }
 
 /** Every box of one wall, with its door frame and windows. */
 function sideBoxes(side: Side): WallBox[] {
+  if (side.outer) return outerSideBoxes(side);
   const { horizontal, fixed, a, b, tall, doorAt, windowsAt } = side;
   const T = WALL_T;
   const hgt = tall ? H_TALL : H_LOW;
@@ -105,53 +119,88 @@ function sideBoxes(side: Side): WallBox[] {
   return boxes;
 }
 
-/** Everything a room is built from: its four walls, with their windows and its door. */
-export function roomShape(room: Room): RoomShape {
+/**
+ * A side along the building's outer wall: no wall of the room's own, only its windows set into the outer wall.
+ * At the back they sit in the tall wall at the building's own window height; at the front they stand on the low wall.
+ */
+function outerSideBoxes(side: Side): WallBox[] {
+  const { horizontal, fixed, tall, windowsAt, inward } = side;
+  const boxes: WallBox[] = [];
+  /** Add a box running along the wall from p to q, standing off the wall's face by `off`. */
+  const box = (p: number, q: number, y0: number, h: number, thick: number, material: WallMaterial, off = 0) => {
+    boxes.push({ horizontal, fixed: fixed + off * inward, a: p, b: q, y0, h, thick, material });
+  };
+  for (const t of windowsAt) {
+    if (tall) {
+      const top = OUTER_PANE_Y0 + OUTER_PANE_H;
+      box(t + 0.06, t + 0.94, OUTER_PANE_Y0, OUTER_PANE_H, 0.04, 'glass', 0.02);
+      box(t, t + 1, OUTER_PANE_Y0 - 0.05, 0.05, 0.08, 'trim', 0.04);
+      box(t, t + 1, top, 0.05, 0.08, 'trim', 0.04);
+      for (const p of [t, t + 0.94]) box(p, p + 0.06, OUTER_PANE_Y0, OUTER_PANE_H, 0.08, 'trim', 0.04);
+    } else {
+      const paneTop = WINDOW_SILL + WINDOW_PANE;
+      box(t, t + 1, 0, WINDOW_SILL, OUTER_T, 'wall');
+      box(t + 0.06, t + 0.94, WINDOW_SILL, WINDOW_PANE, 0.04, 'glass');
+      box(t, t + 1, WINDOW_SILL - 0.02, 0.05, OUTER_T + 0.08, 'trim');
+      for (const p of [t, t + 0.94]) box(p, p + 0.06, WINDOW_SILL, WINDOW_PANE, OUTER_T + 0.03, 'trim');
+      box(t, t + 1, paneTop, 0.05, OUTER_T + 0.03, 'trim');
+    }
+  }
+  return boxes;
+}
+
+/** Everything a room is built from: its four walls, with their windows and its door, in a building on a plot. */
+export function roomShape(room: Room, plot: Plot): RoomShape {
   const T = WALL_T;
   const d = room.door;
+  const outer = alongOuterWall(room, plot);
   /** Which tiles along one wall have a window. */
   const wins = (dx: number, dy: number) =>
     room.windows.filter((w) => w.dx === dx && w.dy === dy).map((w) => (dx ? w.y : w.x));
   const sides: Side[] = [
     {
       horizontal: true,
-      fixed: room.y + T / 2,
+      fixed: outer.north ? plot.y0 : room.y + T / 2,
       a: room.x,
       b: room.x + room.w,
       tall: true,
       doorAt: d.dy === -1 ? d.x : null,
       windowsAt: wins(0, -1),
       inward: 1,
+      outer: outer.north,
     },
     {
       horizontal: true,
-      fixed: room.y + room.h - T / 2,
+      fixed: outer.south ? plot.y1 + 1 + OUTER_T / 2 : room.y + room.h - T / 2,
       a: room.x,
       b: room.x + room.w,
       tall: false,
       doorAt: d.dy === 1 ? d.x : null,
       windowsAt: wins(0, 1),
       inward: -1,
+      outer: outer.south,
     },
     {
       horizontal: false,
-      fixed: room.x + T / 2,
+      fixed: outer.west ? plot.x0 : room.x + T / 2,
       a: room.y,
       b: room.y + room.h,
       tall: true,
       doorAt: d.dx === -1 ? d.y : null,
       windowsAt: wins(-1, 0),
       inward: 1,
+      outer: outer.west,
     },
     {
       horizontal: false,
-      fixed: room.x + room.w - T / 2,
+      fixed: outer.east ? plot.x1 + 1 + OUTER_T / 2 : room.x + room.w - T / 2,
       a: room.y,
       b: room.y + room.h,
       tall: false,
       doorAt: d.dx === 1 ? d.y : null,
       windowsAt: wins(1, 0),
       inward: -1,
+      outer: outer.east,
     },
   ];
   const withDoor = sides.find((s) => s.doorAt !== null);

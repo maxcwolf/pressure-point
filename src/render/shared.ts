@@ -7,6 +7,13 @@ export const H_TALL = 1.25;
 /** The height of the walls at the front, cut low so you can see in. */
 export const H_LOW = 0.3;
 
+/** How thick the building's outer walls are, and how tall at the back. */
+export const OUTER_T = 0.28;
+export const OUTER_HT = 2.0;
+/** The bottom of the windows in the building's tall back walls, and how tall their panes are. */
+export const OUTER_PANE_Y0 = 0.925;
+export const OUTER_PANE_H = 0.75;
+
 /** The top of the building's low front walls, trim included. Anything lower is hidden behind them from outside. */
 export const OUTER_LOW_TOP = H_LOW + 0.12;
 
