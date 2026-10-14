@@ -8,6 +8,11 @@ import { QUIT_CHANNEL } from './api';
 const isMac = process.platform === 'darwin';
 /** Set to the dev server's address to run the game from it instead of from the built files. */
 const devUrl = process.env.PP_DEV_URL;
+/**
+ * The app icon, for runs straight from this folder. Installed apps carry it in their own files, but a dev
+ * run is the stock Electron program, which would otherwise show Electron's icon.
+ */
+const devIcon = app.isPackaged ? undefined : path.join(__dirname, '..', 'build', 'icon.png');
 
 /** Open the game window and load the game into it. */
 function createWindow() {
@@ -18,6 +23,7 @@ function createWindow() {
     minHeight: 680,
     backgroundColor: '#a8d8c8',
     title: 'Pressure Point Institute',
+    ...(devIcon && { icon: devIcon }),
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -85,6 +91,7 @@ void app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, allow) => {
     allow(false);
   });
+  if (devIcon && isMac) app.dock?.setIcon(devIcon);
   createWindow();
 });
 
