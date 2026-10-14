@@ -104,21 +104,21 @@ Some Two Point systems don't fit a healing center as they are, but a version of 
 
 **35. Guest reviews** (from reputation in parts, 28). Guests leave a star rating and a one-line review as they go ("Lovely hot stones. Someone was playing pool next to my reiki."). Reputation is split into results, experience, value, staff and word of mouth, so the player can see which part is dragging. Reviews are how feelings (5) reach the player.
 
-**36. A retail counter** (from the Pharmacy and Museum's gift shop). A receptionist-staffed counter in the lobby sells oils, candles and crystals to guests on their way out, more after a good treatment. A second income stream that real spas depend on.
+**36. A retail counter** (from the Pharmacy and Museum's gift shop). A receptionist-staffed counter in the lobby sells books, crystals, oils and candles to guests on their way out, more after a good treatment. A second income stream that real spas depend on.
 
 **37. House calls** (from ambulances). Send a therapist out for a day to an office or a hotel for a fee, leaving the center short while they are gone. At The Exchange, desk-massage contracts with the office towers.
 
 **38. Fresh linens** (from hygiene, 21). Treatment tables need fresh towels and sheets. Used linens pile up in a hamper until a janitor takes them to be laundered. A guest on a stale table is unhappy, and results suffer.
 
-**39. Calm** (alongside temperature, 17). A spa should be quiet. Arcades, pool tables, crowds and the snack machine make noise, and noise near a treatment room hurts its results. Its own overlay, and a real decision about where the fun items go. Two Point has nothing like it.
+**39. Calm** (alongside temperature, 17). A healing center should be quiet. Arcades, pool tables, crowds and the snack machine make noise, and noise near a treatment room hurts its results. Its own overlay, and a real decision about where the fun items go. Two Point has nothing like it.
 
-**40. A rival spa** (from rival hospitals). A franchise across the street undercuts your prices, poaches unhappy staff, and competes with you at the year-end awards.
+**40. A rival center** (from rival hospitals). A healing-center franchise across the street undercuts your prices, poaches unhappy staff, and competes with you at the year-end awards.
 
 **41. Mishaps** (from disasters, 22). One per center: a power cut at The Exchange stops the stim units and turns the lights off; a storm at Saltmarsh floods the restrooms; a snowstorm freezes the pipes at High Pines. A fire drill anywhere sends everyone outside, and the Fire Extinguisher finally matters.
 
 **42. Bad vibes** (from ghosts). A failed treatment leaves a lingering cloud in its room that unsettles everyone who comes in, until someone clears it: a Reiki Practitioner, or a janitor trained in smudging.
 
-**43. The center's standing** (from the hospital level, 28). The center climbs through grades (Day Spa, Wellness Center, Destination Retreat) from its rooms, staff and prestige, which drive arrivals, applicants and what guests expect.
+**43. The center's standing** (from the hospital level, 28). The center climbs through grades (Back-Room Practice, Wellness Center, Healing Institute) from its rooms, staff and prestige, which drive arrivals, applicants and what guests expect.
 
 **44. Regulars and group classes** (from Campus's social life). Guests come back, are greeted by name and grow loyal. A studio runs group yoga or meditation sessions from a weekly calendar, a different rhythm from one-on-one treatments.
 

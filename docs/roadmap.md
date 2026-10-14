@@ -45,12 +45,12 @@ Making what the sim already knows visible, so the player can tell what is wrong.
 - **The casebook** [26]: for each condition, how many came, were healed, failed and stormed out, and its cure rate, in the Treatments menu.
 - **Overlays** [18]: a button that colors the floor by decor (from `ctx.attract`), then guest patience, needs, and equipment wear and dirt. Calm and temperature join later.
 
-## Phase 5: The spa business
+## Phase 5: The business side
 
 New money levers, and new ways to earn.
 
 - **Prices per treatment** [25]: each technique's own price, alongside the overall level, in the Money menu, with how many turned it down.
-- **A retail counter** [36]: a Shop Counter in the lobby, run by a receptionist, selling to guests on their way out. A healed guest who had a good visit buys more. Its own line in the books.
+- **A retail counter** [36]: a Shop Counter in the lobby, run by a receptionist, selling books, crystals, oils and candles to guests on their way out. A healed guest who had a good visit buys more. Its own line in the books.
 - **Marketing** [23]: campaigns bought for a month or more: one for word of mouth (reputation), one per condition (more guests with it, using the centers' existing condition weights), and one for applicants. No new room or qualification at first.
 - **House calls** [37]: an offer, like an emergency's, to send a therapist out for a day or two for a fee. They are away and their station stands empty. The Exchange offers them most.
 
@@ -77,8 +77,8 @@ The building itself matters more.
 The outside world takes an interest.
 
 - **VIPs and the inspector** [6]: a VIP writes ahead, tours a few rooms, and leaves a reward or a fine. The inspector visits every center now and then and looks for, among other things, a Fire Extinguisher.
-- **The center's standing** [43]: a grade from rooms, staff and prestige, from Day Spa to Destination Retreat, which raises arrivals and applicants and what guests expect.
-- **A rival spa** [40]: a franchise across the street, shown as a storefront in the scenery and a panel. It undercuts on price from time to time, tries to poach staff whose morale is low, and competes at the year-end awards.
+- **The center's standing** [43]: a grade from rooms, staff and prestige, from Back-Room Practice to Healing Institute, which raises arrivals and applicants and what guests expect.
+- **A rival center** [40]: a healing-center franchise across the street, shown as a storefront in the scenery and a panel. It undercuts on price from time to time, tries to poach staff whose morale is low, and competes at the year-end awards.
 
 **The Orchard Estate** opens after this phase, with its picky guests and the inspector.
 
@@ -105,7 +105,7 @@ The outside world takes an interest.
 Only if the game grows to need it, since everything above works offline.
 
 - **Community research** [45]: goals every player works toward together, unlocking items for everyone.
-- **Other players' institutes** [45]: real players' centers in place of the made-up rival spa, compared at the year-end awards, and their owners visiting as VIPs who judge by what their own center is good at.
+- **Other players' institutes** [45]: real players' centers in place of the made-up rival center, compared at the year-end awards, and their owners visiting as VIPs who judge by what their own center is good at.
 
 No Steam Workshop.
 
@@ -120,4 +120,4 @@ Each has the default that the phases above assume.
 5. **Marketing needs no room.** Campaigns are bought from the Money menu. A Marketing room, as Two Point has, can come later.
 6. **The retail counter is staffed by a receptionist.** Not a new role.
 7. **Bad vibes can be cleared without reiki.** A janitor with a Smudging course can do it, so Willow Lane is not stuck.
-8. **The rival spa is offscreen.** A storefront in the scenery and a panel, not a second simulated building.
+8. **The rival center is offscreen.** A storefront in the scenery and a panel, not a second simulated building.
