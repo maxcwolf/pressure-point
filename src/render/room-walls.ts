@@ -83,21 +83,19 @@ function sideBoxes(side: Side): WallBox[] {
     plain(runStart, t);
     runStart = t + 1;
     if (!isWindow) continue;
+    // A sill, a pane and a frame, at the same height in every wall. The near walls are cut low so you
+    // can see in, so there the window stands up out of the wall. Its sill clears the building's low
+    // outer wall, which would otherwise hide all but the top of a window at the edge of the building.
+    const paneTop = WINDOW_SILL + WINDOW_PANE;
+    box(t, t + 1, 0, WINDOW_SILL, T, 'wall');
+    box(t + 0.06, t + 0.94, WINDOW_SILL, WINDOW_PANE, 0.04, 'glass');
+    box(t, t + 1, WINDOW_SILL - 0.02, 0.05, T + 0.08, 'trim');
+    for (const p of [t, t + 0.94]) box(p, p + 0.06, WINDOW_SILL, WINDOW_PANE, T + 0.03, 'trim');
     if (tall) {
-      // a sill, a pane and a header
-      box(t, t + 1, 0, WINDOW_SILL, T, 'wall');
-      box(t + 0.06, t + 0.94, WINDOW_SILL, WINDOW_PANE, 0.04, 'glass');
-      box(t, t + 1, 0.98, hgt - 0.98, T, 'wall');
+      // the wall carries on over the window
+      box(t, t + 1, paneTop, hgt - paneTop, T, 'wall');
       box(t, t + 1, hgt, 0.07, T + 0.05, 'trim');
-      box(t, t + 1, 0.4, 0.05, T + 0.08, 'trim');
-      for (const p of [t, t + 0.94]) box(p, p + 0.06, WINDOW_SILL, WINDOW_PANE, T + 0.03, 'trim');
-    } else {
-      // the near walls are cut low so you can see in, so a window there is a pane standing on the low wall
-      box(t, t + 1, 0, hgt, T, 'wall');
-      box(t + 0.06, t + 0.94, hgt, 0.5, 0.04, 'glass');
-      box(t, t + 1, hgt + 0.5, 0.05, T + 0.03, 'trim');
-      for (const p of [t, t + 0.94]) box(p, p + 0.06, hgt, 0.5, T + 0.03, 'trim');
-    }
+    } else box(t, t + 1, paneTop, 0.05, T + 0.03, 'trim');
   }
   plain(runStart, b);
   if (doorAt !== null) {

@@ -62,12 +62,12 @@ The autosave and up to twenty named saves live in the browser's storage, with ex
 
 ## Tests
 
-| Command             | What it covers                                                                  |
-| ------------------- | ------------------------------------------------------------------------------- |
-| `yarn test`         | Unit tests: the simulation, the grid, saves, and the pure functions everywhere. |
-| `yarn test:e2e`     | The real game in a headless browser, driven by mouse and keyboard.              |
-| `yarn test:desktop` | The built desktop app: sandbox, preload API, quitting, exporting a save.        |
-| `yarn test:visual`  | A screenshot of every screen of the interface, compared with stored pictures.   |
+| Command             | What it covers                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `yarn test`         | Unit tests: the simulation, the grid, saves, and the pure functions everywhere.                 |
+| `yarn test:e2e`     | The real game in a headless browser, driven by mouse and keyboard.                              |
+| `yarn test:desktop` | The built desktop app: sandbox, preload API, quitting, exporting a save.                        |
+| `yarn test:visual`  | A screenshot of every screen of the interface, and of the scene, compared with stored pictures. |
 
 End-to-end tests find things by meaning (`game.clickItem('bench')`), not by screen coordinates.
 
