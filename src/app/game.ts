@@ -45,10 +45,25 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     },
     (name) => audio.play(name),
   );
-  /** Write the autosave, with a picture of the view for the title screen. */
-  const save = () => {
-    if (autosave(state)) storeThumb(AUTOSAVE_ID, view.snapshot());
+  /** Whether the last autosave failed, so a run of failures is reported once. */
+  let saveFailed = false;
+  /** Write the autosave. One that fails for want of room is reported, once, until a save works again. */
+  const autosaveNow = (): boolean => {
+    const ok = autosave(state);
     recordGame(state);
+    if (ok) saveFailed = false;
+    else if (!saveFailed) {
+      saveFailed = true;
+      ui.toast('Your game could not be saved: storage is full. Delete or export some saved games to make room.', 'bad');
+    }
+    return ok;
+  };
+  /**
+   * Write the autosave with a picture of the view for the title screen, as the game is left or hidden. The regular
+   * autosave goes without: drawing the picture stalls a frame, and only the last one before leaving is ever seen.
+   */
+  const save = () => {
+    if (autosaveNow()) storeThumb(AUTOSAVE_ID, view.snapshot());
   };
   /** Save as the page is hidden: phones and Safari may close a hidden page without warning, or without unloading it. */
   const saveIfHidden = () => {
@@ -99,7 +114,7 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
       refresh.request();
     },
   });
-  runLoop({ sim, view, ui, held, refresh, save });
+  runLoop({ sim, view, ui, held, refresh, save: autosaveNow });
   window.addEventListener('beforeunload', save);
   window.addEventListener('pagehide', save);
   document.addEventListener('visibilitychange', saveIfHidden);

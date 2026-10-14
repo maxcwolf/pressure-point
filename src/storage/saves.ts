@@ -227,14 +227,16 @@ export function deleteSave(id: string) {
 
 /**
  * Called when a new game starts: the autosave of the game being left moves into
- * the single "Previous game" slot instead of being overwritten.
+ * the single "Previous game" slot instead of being overwritten. False if there is no room to keep it, when the
+ * new game must not start, or its first autosave would overwrite the old one.
  */
-export function archiveAutosave(now = Date.now()) {
+export function archiveAutosave(now = Date.now()): boolean {
   const old = readSave(AUTOSAVE_ID);
-  if (!old) return;
-  if (typeof writeSave(old, `Previous game (${gameDate(old.day)})`, PREVIOUS_ID, now) === 'string') return;
+  if (!old) return true;
+  if (typeof writeSave(old, `Previous game (${gameDate(old.day)})`, PREVIOUS_ID, now) === 'string') return false;
   copyThumb(AUTOSAVE_ID, PREVIOUS_ID);
   deleteSave(AUTOSAVE_ID);
+  return true;
 }
 
 /** A save as the text of a file, ready to download. */

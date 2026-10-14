@@ -59,12 +59,15 @@ export function objectiveFor(ctx: SimContext, goal: GoalSpec): Objective {
         done: s.reputation >= goal.percent,
         progress: s.reputation / goal.percent,
       };
-    case 'balance':
+    case 'balance': {
+      // what is owed comes off, or a loan could be borrowed for a star and paid straight back
+      const own = s.money - s.loan;
       return {
-        label: `Have ${money(goal.amount)} in the bank`,
-        done: s.money >= goal.amount,
-        progress: s.money / goal.amount,
+        label: `Have ${money(goal.amount)} in the bank${s.loan > 0 ? ', after your loan' : ''}`,
+        done: own >= goal.amount,
+        progress: Math.max(0, own) / goal.amount,
       };
+    }
     case 'cureRate': {
       const best = Math.max(0, ...recentMonths(ctx).map((t) => cureRate(t) ?? 0));
       return {

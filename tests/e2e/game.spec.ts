@@ -1220,6 +1220,66 @@ test.describe('saved games', () => {
     await expect(page.locator('.save-list li', { hasText: 'Slot A' })).toHaveCount(0);
   });
 
+  test('says once when an autosave fails for want of room', async ({ game, page }) => {
+    await game.start();
+    // storage that has no room left for the game
+    await page.evaluate(() => {
+      const store = Object.getOwnPropertyDescriptor(Storage.prototype, 'setItem')!.value as Storage['setItem'];
+      /** Refuse the game's saves, as full storage does, and keep anything else. */
+      Storage.prototype.setItem = function (this: Storage, key: string, value: string) {
+        if (key.startsWith('pressure-point-save')) throw new DOMException('full', 'QuotaExceededError');
+        store.call(this, key, value);
+      };
+    });
+    // opening the saves screen saves the game first
+    await openSaves(page);
+    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Resume' }).click();
+    await expect(page.locator('#toasts')).toContainText('could not be saved');
+    await openSaves(page);
+    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Resume' }).click();
+    await expect(page.locator('#toasts .toast', { hasText: 'could not be saved' })).toHaveCount(1);
+  });
+
+  test('a new game is refused, not started, when there is no room to keep the old one', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => (pp.state.money = 12345));
+    await page.locator('#sys').getByTitle('Menu').click();
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await page.getByRole('button', { name: 'Continue' }).waitFor();
+    // no room for a Previous game copy
+    await page.addInitScript(() => {
+      const store = Object.getOwnPropertyDescriptor(Storage.prototype, 'setItem')!.value as Storage['setItem'];
+      /** Refuse the Previous game copy, as full storage does, and keep anything else. */
+      Storage.prototype.setItem = function (this: Storage, key: string, value: string) {
+        if (key === 'pressure-point-save:previous') throw new DOMException('full', 'QuotaExceededError');
+        store.call(this, key, value);
+      };
+    });
+    await page.reload();
+    await page.getByRole('button', { name: 'Sandbox' }).click();
+    await page.getByRole('button', { name: 'Start building' }).click();
+    await expect(page.locator('#title [role="alert"]')).toContainText('no room to keep');
+    // the old game is still there to continue
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => pp.state.money)).toBe(12345);
+  });
+
+  test("takes the title screen's picture of the game on the way out, not at every autosave", async ({ game, page }) => {
+    await game.start();
+    /** Whether the autosave has a picture. */
+    const pictured = () => page.evaluate(() => localStorage.getItem('pressure-point-thumb:auto') !== null);
+    // the regular autosave, after twelve seconds of play
+    await page.waitForFunction(() => localStorage.getItem('pressure-point-save-v1') !== null, null, {
+      timeout: 20_000,
+    });
+    expect(await pictured()).toBe(false);
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    expect(await pictured()).toBe(true);
+  });
+
   test('the same file can be picked to import again', async ({ game, page }) => {
     await game.start();
     await openSaves(page);

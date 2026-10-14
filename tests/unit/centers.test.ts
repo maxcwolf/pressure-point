@@ -160,6 +160,23 @@ describe('each kind of goal', () => {
     });
   });
 
+  it('counts the bank balance after any loan, so borrowing cannot buy a star', () => {
+    ctx.s.money = 60000;
+    expect(check({ kind: 'balance', amount: 50000 })).toEqual({
+      label: 'Have $50,000 in the bank',
+      done: true,
+      progress: 60000 / 50000,
+    });
+    ctx.s.loan = 20000;
+    expect(check({ kind: 'balance', amount: 50000 })).toEqual({
+      label: 'Have $50,000 in the bank, after your loan',
+      done: false,
+      progress: 40000 / 50000,
+    });
+    ctx.s.money = 10000;
+    expect(check({ kind: 'balance', amount: 50000 }).progress).toBe(0);
+  });
+
   it('judges the cure rate and the wait over this month or the last one, once enough guests count', () => {
     expect(cureRate(emptyTally())).toBeNull();
     expect(cureRate({ ...emptyTally(), healed: 8, failed: 2 })).toBe(80);

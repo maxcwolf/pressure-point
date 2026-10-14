@@ -24,17 +24,24 @@ export async function boot() {
     // the fallback font will do
   });
   // loading or restarting from inside a game reloads the page and leaves a note saying what to open
-  let state = open(takeHandoff());
-  while (!state) {
-    const choice = await showTitle(audio, exit);
+  let opened = open(takeHandoff());
+  while (!opened || opened === 'no-room') {
+    const choice = await showTitle(audio, exit, opened === 'no-room' ? NO_ROOM : '');
     audio.unlock();
-    state = open(choice);
+    opened = open(choice);
   }
-  startGame({ canvas, audio, state, exit });
+  startGame({ canvas, audio, state: opened, exit });
 }
 
-/** Open a saved game by id, or a fresh one for 'new' or 'new:<center>'. Null if there is nothing to open. */
-function open(what: string | null): GameState | null {
+/** Why a game was not opened, when keeping the one in the autosave would not fit in storage. */
+const NO_ROOM =
+  'There is no room to keep your current game as "Previous game", so the new one has not started. Delete or export a saved game under Load game, then try again.';
+
+/**
+ * Open a saved game by id, or a fresh one for 'new' or 'new:<center>'. Null if there is nothing to open, and
+ * 'no-room' if the game in the autosave could not be kept, so opening another would lose it.
+ */
+function open(what: string | null): GameState | 'no-room' | null {
   if (!what) return null;
   const center = newGameCenter(what);
   const state = center ? newGame(center) : readSave(what);
@@ -46,6 +53,6 @@ function open(what: string | null): GameState | null {
     state.unlockAll = unlockAll;
   }
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
-  if (state && what !== AUTOSAVE_ID) archiveAutosave();
+  if (state && what !== AUTOSAVE_ID && !archiveAutosave()) return 'no-room';
   return state;
 }

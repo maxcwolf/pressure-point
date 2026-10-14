@@ -4,34 +4,6 @@ Issues found in the October 2026 audit and left open, with where each one is and
 
 When one of these is fixed, add a test that fails without the fix, as for any bug, and take it off this list.
 
-## Decisions to make
-
-These work as written, but may not work as intended. Each needs a decision before it is changed.
-
-### Borrowed money counts toward a star
-
-The bank balance objective (`checkStars` and `objectives` in `src/core/sim/progress.ts`) compares `money` with the goal and ignores `loan`. A player can borrow the maximum, collect the star and its cash prize, then repay the loan in full, ending up with the star and the prize.
-
-If loans should not count, compare `money - loan` with the goal, in both functions so the objective shown still decides the star, and say so in the objective's label.
-
-### Starting a new game when storage is nearly full loses the old one
-
-`archiveAutosave` (`src/storage/saves.ts`) copies the autosave into the Previous game slot before a new game starts. If that copy does not fit, it gives up silently and leaves the old game in the autosave slot. The new game's first autosave is small enough to fit, and overwrites it. This needs storage close to the browser's limit, but then the game is lost without a word.
-
-A fix needs a decision on what the player sees: for example, refuse to start the new game and ask them to delete or export a save first.
-
-### Autosaves fail silently once storage is full
-
-`save()` in `src/app/game.ts` ignores the `false` that `autosave()` returns when storage is full. The game keeps playing and keeps trying, and the stored game falls further and further behind with nothing on screen to say so.
-
-A toast the first time an autosave fails (and not every 12 seconds after) would let the player free up space.
-
-### The autosave picture costs a long frame every 12 seconds
-
-Each autosave also takes a picture of the view for the title screen (`view.snapshot()` in `src/render/view.ts`), which draws the scene again and reads the canvas back. Under software WebGL that took about 250 ms, against about 1 ms for a normal frame, and showed up as a hitch at the moment of the autosave. A real graphics card is far faster, but the readback still stalls.
-
-The picture is only seen on the title screen, so it could be taken less often (once a minute) or only when leaving the game. `yarn test:perf` reports frame times and would show the difference.
-
 ## Latent risks
 
 These have not been seen to go wrong, but would if the code around them changed.

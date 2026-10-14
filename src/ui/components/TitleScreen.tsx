@@ -23,6 +23,8 @@ export interface TitleScreenProps {
   audio: Audio;
   /** Quit the desktop app. Undefined in a browser, where there is nothing to quit. */
   exit: (() => void) | undefined;
+  /** Something the player needs to know, such as why the game they picked did not start. */
+  note?: string;
   /** Called with 'new' for a sandbox game, 'new:<center>' for a campaign one, or the id of a save to load. */
   onPick: (what: string) => void;
 }
@@ -30,7 +32,7 @@ export interface TitleScreenProps {
 type Panel = 'campaign' | 'sandbox' | 'saves' | 'settings';
 
 /** The logo, the latest save and the ways into the game. */
-export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
+export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps) {
   const redraw = useRedraw();
   /** The panel showing under the buttons. The two share the space, one at a time. */
   const [showing, setShowing] = useState<Panel | null>(null);
@@ -87,6 +89,11 @@ export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
           <img src={logo} alt={GAME_TITLE} />
         </h1>
         <div class="title-panel">
+          {note && (
+            <p class="title-note" role="alert">
+              {note}
+            </p>
+          )}
           {latest && (
             <div class="save-card">
               <h2>{latest.name}</h2>

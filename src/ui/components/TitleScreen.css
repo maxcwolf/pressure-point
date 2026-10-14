@@ -61,6 +61,18 @@
   text-align: center;
 }
 
+.title-note {
+  background: #fbe3e1;
+  color: #8f2a24;
+  border: 2px solid #a8322b;
+  border-radius: 12px;
+  padding: 9px 12px;
+  margin-bottom: 14px;
+  font-size: 14.5px;
+  line-height: 1.35;
+  text-align: left;
+}
+
 .save-card h2 {
   font-size: 24px;
   font-weight: 600;

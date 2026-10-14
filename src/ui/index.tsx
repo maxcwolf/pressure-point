@@ -17,8 +17,8 @@ export function mountHud(host: GameHost): HudState {
   return hud;
 }
 
-/** Show the title screen until the player picks 'new' or a save to load, and report which. */
-export function showTitle(audio: Audio, exit: (() => void) | undefined): Promise<string> {
+/** Show the title screen, with a note if there is one, until the player picks 'new' or a save to load, and report which. */
+export function showTitle(audio: Audio, exit: (() => void) | undefined, note = ''): Promise<string> {
   return new Promise((resolve) => {
     const el = document.createElement('div');
     el.id = 'title';
@@ -29,6 +29,6 @@ export function showTitle(audio: Audio, exit: (() => void) | undefined): Promise
       el.remove();
       resolve(what);
     };
-    render(<TitleScreen audio={audio} exit={exit} onPick={finish} />, el);
+    render(<TitleScreen audio={audio} exit={exit} note={note} onPick={finish} />, el);
   });
 }
