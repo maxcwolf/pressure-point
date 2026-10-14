@@ -74,6 +74,9 @@ export function MoneyMenu() {
           <p class="sub">
             Higher prices earn more per guest, but build reputation more slowly and some guests walk out.
           </p>
+          <p class="priced">
+            {`Put off by prices: ${s.tally.priced} this month, ${s.months.at(-1)?.priced ?? 0} last month`}
+          </p>
           <div class="btnrow left">
             <Button
               locked={s.priceLevel <= PRICE_MIN}
@@ -134,7 +137,7 @@ export function MoneyMenu() {
         </>
       )}{' '}
       <p class="sub">
-        {`Healed ${s.stats.healed} · Failed ${s.stats.failed} · Stormed out ${s.stats.stormed} · Salaries are paid at the end of each month.`}
+        {`Healed ${s.stats.healed} · Failed ${s.stats.failed} · Stormed out ${s.stats.stormed} · Put off by prices ${s.stats.priced} · Salaries are paid at the end of each month. More in Stats.`}
       </p>
     </div>
   );

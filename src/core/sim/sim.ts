@@ -10,7 +10,7 @@ import {
   type ModalityDef,
   type RoomType,
 } from '../data';
-import type { Char, GameState, Guest, Item, Room, Staff, WallSpot } from '../state/types';
+import type { Char, GameState, Guest, Item, MonthRecord, Room, Staff, WallSpot } from '../state/types';
 import type { Check, Rect, World } from '../world';
 import { type Advice, advice, advise, announce } from './advisor';
 import { drainFactor, prestige, updateAmbience } from './ambience';
@@ -38,6 +38,7 @@ import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
+import { monthSoFar } from './records';
 import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
 import { updateStations } from './stations';
 import { subjectSpot } from './subjects';
@@ -151,6 +152,11 @@ export class Sim {
   /** Whether someone will walk out within two days unless something changes. */
   aboutToQuit(st: Staff): boolean {
     return aboutToQuit(st);
+  }
+
+  /** This month so far, in the same shape as the finished months in `s.months`. */
+  monthSoFar(): MonthRecord {
+    return monthSoFar(this.ctx);
   }
 
   /** Where on the ground a message's subject is now, or null if it has gone. */

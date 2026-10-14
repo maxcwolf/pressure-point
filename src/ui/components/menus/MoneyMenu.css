@@ -54,3 +54,9 @@
 .ledgers.controls {
   margin-top: 12px;
 }
+
+.ledger .priced {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+}

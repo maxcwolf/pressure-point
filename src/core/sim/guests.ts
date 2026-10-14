@@ -29,6 +29,7 @@ import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce } from './events';
 import { goTo, halt, moveAlong } from './movement';
+import { countArrival, countVisit } from './records';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
 import { addWear, dirtier } from './upkeep';
@@ -80,7 +81,7 @@ export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency =
   const [lx, ly] = lobbyTile();
   if (!goTo(ctx, g, lx, ly)) return;
   s.guests.push(g);
-  s.stats.arrived++;
+  countArrival(ctx);
 }
 
 /**
@@ -365,7 +366,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
 /** A guest loses patience and leaves in a huff. */
 function stormOut(ctx: SimContext, g: Guest) {
   g.outcome = 'stormed';
-  ctx.s.stats.stormed++;
+  countVisit(ctx, g, 'stormed');
   changeRep(ctx, -3);
   say(g, '😤', 8);
   emit(ctx, { type: 'float', text: 'Fed up!', x: g.x, y: g.y, kind: 'bad' });

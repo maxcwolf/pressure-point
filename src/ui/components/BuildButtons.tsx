@@ -13,7 +13,8 @@ const MENUS: readonly { id: MenuId; icon: string; label: string }[] = [
   { id: 'hire', icon: '🤝', label: 'Hire' },
   { id: 'staff', icon: '👥', label: 'Staff' },
   { id: 'treatments', icon: '💆', label: 'Treatments' },
-  { id: 'finance', icon: '📈', label: 'Money' },
+  { id: 'finance', icon: '💰', label: 'Money' },
+  { id: 'stats', icon: '📊', label: 'Stats' },
 ];
 
 /** One round button per build menu. */

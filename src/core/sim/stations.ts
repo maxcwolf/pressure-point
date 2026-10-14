@@ -27,6 +27,7 @@ import { emit, tipOnce } from './events';
 import { decide, leave } from './guests';
 import { goTo } from './movement';
 import { hasRoom } from './progress';
+import { countVisit } from './records';
 import { deliveryProblem, modalityOf } from './treatments';
 import { addWear } from './upkeep';
 
@@ -153,7 +154,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       if (!g.emergency && random() < Math.max(0, (price - 1) * 0.35)) {
         g.outcome = 'stormed';
         g.goal = 'leave';
-        ctx.s.stats.stormed++;
+        countVisit(ctx, g, 'priced');
         changeRep(ctx, -1);
         say(g, '💸', 6);
         emit(ctx, { type: 'float', text: 'Too pricey!', x: g.x, y: g.y, kind: 'bad' });
@@ -200,7 +201,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     g.goal = 'leave';
     if (random() < chance) {
       g.outcome = 'healed';
-      ctx.s.stats.healed++;
+      countVisit(ctx, g, 'healed');
       const fee = Math.round(cond.fee * price);
       earn(ctx, fee, 'treatment', g.x, g.y);
       g.spent += fee;
@@ -211,7 +212,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       emit(ctx, { type: 'sfx', name: 'heal' });
     } else {
       g.outcome = 'failed';
-      ctx.s.stats.failed++;
+      countVisit(ctx, g, 'failed');
       changeRep(ctx, -2.5);
       say(g, '💢', 6);
       const why = {

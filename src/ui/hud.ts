@@ -5,7 +5,7 @@ import type { Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { GameHost } from './host';
 
-export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance';
+export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'stats';
 export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star';
 
 /** A message that fades after a few seconds. */

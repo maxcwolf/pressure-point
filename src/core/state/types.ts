@@ -227,8 +227,32 @@ export interface Emergency {
 export interface Stats {
   healed: number;
   failed: number;
+  /** Ran out of patience waiting. */
   stormed: number;
+  /** Turned down the treatment once they heard what it cost. */
+  priced: number;
   arrived: number;
+}
+
+/** A month's count of guests: how many came, how each visit ended, and how long they waited. */
+export interface Tally {
+  arrived: number;
+  healed: number;
+  failed: number;
+  stormed: number;
+  priced: number;
+  /** Seconds spent waiting, summed over the guests who left this month, and how many they were. */
+  waitTotal: number;
+  waitCount: number;
+  /** Guests healed, by the discipline that healed them. */
+  healedBy: Partial<Record<Discipline, number>>;
+}
+
+/** A finished month: its tally and its books, and how the center stood at the end of it. */
+export interface MonthRecord extends Tally {
+  ledger: Ledger;
+  reputation: number;
+  money: number;
 }
 
 export interface GameState {
@@ -250,6 +274,10 @@ export interface GameState {
   lastLedger: Ledger;
   history: number[];
   stats: Stats;
+  /** This month so far. */
+  tally: Tally;
+  /** The last twelve finished months, oldest first. */
+  months: MonthRecord[];
   stars: number;
   spawnT: number;
   announceT: number;

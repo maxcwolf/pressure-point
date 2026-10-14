@@ -1,8 +1,8 @@
 // Bringing saves written by earlier versions up to date.
 
 import { DISCIPLINES, type Modality, type Role, ROLES } from '../data';
-import { SAVE_VERSION } from './game';
-import type { Candidate, GameState, Guest, Item, Ledger, Room, Staff } from './types';
+import { emptyTally, SAVE_VERSION } from './game';
+import type { Candidate, GameState, Guest, Item, Ledger, Room, Staff, Stats } from './types';
 
 /** What everyone in a role is qualified in to begin with: their discipline's basic modality. */
 const baseQuals = (role: Role): Modality[] => {
@@ -17,9 +17,10 @@ type OldLedger = Before<Ledger, 'training' | 'interest' | 'bonus'>;
 
 /** A save as an earlier version may have written it. */
 type OldSave = Before<
-  Omit<GameState, 'staff' | 'candidates' | 'items' | 'rooms' | 'guests' | 'ledger' | 'lastLedger'>,
-  'announceT' | 'loan' | 'priceLevel' | 'offer' | 'emergency' | 'nextEmergency' | 'options'
+  Omit<GameState, 'staff' | 'candidates' | 'items' | 'rooms' | 'guests' | 'ledger' | 'lastLedger' | 'stats'>,
+  'announceT' | 'loan' | 'priceLevel' | 'offer' | 'emergency' | 'nextEmergency' | 'options' | 'tally' | 'months'
 > & {
+  stats: Before<Stats, 'priced'>;
   staff: Before<Staff, 'quals' | 'training' | 'strain' | 'morale' | 'raiseAsked' | 'unhappyT'>[];
   candidates: Before<Candidate, 'quals'>[];
   items: Before<Item, 'wear' | 'dirt'>[];
@@ -60,5 +61,8 @@ export function upgradeSave(save: GameState) {
   s.emergency ??= null;
   s.nextEmergency ??= s.day + 60;
   s.options ??= {};
+  s.stats.priced ??= 0;
+  s.tally ??= emptyTally();
+  s.months ??= [];
   s.version = SAVE_VERSION;
 }

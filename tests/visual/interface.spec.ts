@@ -23,7 +23,7 @@ test.describe('in a game', () => {
     await screens.shot('hud');
   });
 
-  for (const menu of ['Rooms', 'Items', 'Hire', 'Staff', 'Treatments', 'Money'] as const) {
+  for (const menu of ['Rooms', 'Items', 'Hire', 'Staff', 'Treatments', 'Money', 'Stats'] as const) {
     test(`the ${menu} menu`, async ({ screens, game }) => {
       await screens.play();
       await game.menu(menu);

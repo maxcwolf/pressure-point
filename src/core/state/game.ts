@@ -2,10 +2,22 @@
 
 import { type Discipline, DISCIPLINES, START_MONEY } from '../data';
 import { refillCandidates } from '../people';
-import type { GameState, Ledger, WallSpot } from './types';
+import type { GameState, Ledger, Tally, WallSpot } from './types';
 
 /** Whether two wall spots are the same stretch of wall. */
 export const sameSpot = (a: WallSpot, b: WallSpot) => a.x === b.x && a.y === b.y && a.dx === b.dx && a.dy === b.dy;
+
+/** A month with nothing counted yet. */
+export const emptyTally = (): Tally => ({
+  arrived: 0,
+  healed: 0,
+  failed: 0,
+  stormed: 0,
+  priced: 0,
+  waitTotal: 0,
+  waitCount: 0,
+  healedBy: {},
+});
 
 /** A ledger with every entry at zero. */
 export const emptyLedger = (): Ledger => ({
@@ -40,7 +52,9 @@ export function newGame(): GameState {
     ledger: emptyLedger(),
     lastLedger: emptyLedger(),
     history: [],
-    stats: { healed: 0, failed: 0, stormed: 0, arrived: 0 },
+    stats: { healed: 0, failed: 0, stormed: 0, priced: 0, arrived: 0 },
+    tally: emptyTally(),
+    months: [],
     stars: 0,
     spawnT: 4,
     announceT: 25,

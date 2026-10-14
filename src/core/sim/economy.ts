@@ -8,6 +8,7 @@ import type { Ledger } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
+import { closeMonth } from './records';
 
 /** A ledger's income minus its spending. */
 export function netOf(l: Ledger) {
@@ -47,6 +48,7 @@ export function monthEnd(ctx: SimContext) {
   }
   const interest = Math.round(s.loan * LOAN_RATE);
   if (interest > 0) spend(ctx, interest, 'interest');
+  closeMonth(ctx);
   s.history.push(netOf(s.ledger));
   if (s.history.length > 12) s.history.shift();
   s.lastLedger = s.ledger;

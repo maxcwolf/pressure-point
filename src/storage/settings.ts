@@ -29,3 +29,24 @@ export function saveDisciplinePref(d: Discipline, on: boolean) {
     // the choice still applies to the current game
   }
 }
+
+const STATS_KEY = 'pressure-point-stats-view';
+
+/** The charts chosen for the Stats menu, or none if the player has not chosen (so the defaults show). */
+export function loadStatsView(): string[] {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(STATS_KEY) ?? '[]');
+    return Array.isArray(raw) ? raw.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Remember the charts chosen for the Stats menu, for this game and the next. */
+export function saveStatsView(ids: readonly string[]) {
+  try {
+    localStorage.setItem(STATS_KEY, JSON.stringify(ids));
+  } catch {
+    // the choice still applies until the page closes
+  }
+}

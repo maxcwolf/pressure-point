@@ -833,6 +833,43 @@ test.describe('messages', () => {
   });
 });
 
+test.describe('stats', () => {
+  test('the Money menu counts guests put off by prices', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.tally.priced = 3;
+      pp.state.months = [{ ...pp.state.tally, priced: 5, ledger: pp.state.ledger, reputation: 30, money: 0 }];
+    });
+    await game.menu('Money');
+    await expect(page.locator('#menu .priced')).toHaveText('Put off by prices: 3 this month, 5 last month');
+  });
+
+  test('the Stats menu charts chosen figures, and remembers the choice', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(200);
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.menu('Stats');
+    const cards = page.locator('#menu .stat-card');
+    await expect(cards).toHaveCount(6);
+    await expect(page.locator('#menu .stat-card[data-metric="arrived"] .chart i')).toHaveCount(2);
+
+    await page.getByRole('button', { name: 'Choose charts' }).click();
+    await page.locator('#menu .chip', { hasText: 'Bank balance' }).click();
+    await page.locator('#menu .chip', { hasText: 'Stormed out' }).click();
+    await page.getByRole('button', { name: 'Done' }).click();
+    await expect(page.locator('#menu .stat-card[data-metric="money"]')).toBeVisible();
+    await expect(page.locator('#menu .stat-card[data-metric="stormed"]')).toHaveCount(0);
+
+    await page.reload();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    await game.menu('Stats');
+    await expect(page.locator('#menu .stat-card[data-metric="money"]')).toBeVisible();
+    await expect(page.locator('#menu .stat-card[data-metric="stormed"]')).toHaveCount(0);
+  });
+});
+
 test.describe('reiki', () => {
   test('the studio is locked until the second star, then can be built and staffed', async ({ game, page }) => {
     await game.start();

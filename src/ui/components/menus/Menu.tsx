@@ -12,6 +12,7 @@ import { ItemsMenu } from './ItemsMenu';
 import { MoneyMenu } from './MoneyMenu';
 import { RoomsMenu } from './RoomsMenu';
 import { StaffMenu } from './StaffMenu';
+import { StatsMenu } from './StatsMenu';
 import { TreatmentsMenu } from './TreatmentsMenu';
 
 /** The contents of a menu. */
@@ -29,6 +30,8 @@ function contents(menu: MenuId): ComponentChildren {
       return <TreatmentsMenu />;
     case 'finance':
       return <MoneyMenu />;
+    case 'stats':
+      return <StatsMenu />;
   }
 }
 
