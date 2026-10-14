@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Rooms against the building's walls** use those walls instead of standing a second wall in front of them. Their windows are set into the building's wall, and the building's own windows make way.
+- **Fixed:** an emergency under way is called off, not failed, when its treatment is switched off; the desktop app runs one copy at a time, and a browser tab warns when another tab saves over its game; the game saves as the page is hidden, so a phone or Safari closing it loses nothing; a cancelled drag no longer leaves the camera panning; W, A, S and D pan on any keyboard layout; and the same save file can be imported twice.
+
 ## v0.7.0
 
 - **A campaign:** Campaign on the title screen leads to a trail of centers, each with its own building, goals and guests. Start at Willow Lane, a small massage-only unit; a star there opens The Exchange downtown, with acupuncture, office ailments and rush hours. Earned stars are kept between games.
