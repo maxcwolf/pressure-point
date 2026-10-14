@@ -275,6 +275,40 @@ describe('export and import', () => {
     expect(listSaves()).toEqual([]);
   });
 
+  it('reject games with things this version does not know, rather than crash opening them', () => {
+    /** A file holding a fresh game with one change made to it. */
+    const fileWith = (change: (s: Record<string, any>) => void) => {
+      const state = JSON.parse(JSON.stringify(game())) as Record<string, any>;
+      change(state);
+      return JSON.stringify({ format: 'pressure-point-save', name: 'From the future', state });
+    };
+    expect(importSave(fileWith((s) => (s.items[0].type = 'hover_table')))).toBe('invalid');
+    expect(importSave(fileWith((s) => (s.rooms[0].type = 'float_tank')))).toBe('invalid');
+    expect(importSave(fileWith((s) => (s.staff[0].role = 'shaman')))).toBe('invalid');
+    expect(importSave(fileWith((s) => (s.candidates[0].role = 'shaman')))).toBe('invalid');
+    expect(importSave(fileWith((s) => (s.staff[0].quals = ['levitation'])))).toBe('invalid');
+    expect(importSave(fileWith((s) => s.guests.push({ ...s.guests[0], condition: 'hiccups' })))).toBe('invalid');
+    expect(listSaves()).toEqual([]);
+    // and the same goes for a game already in storage
+    store.set('pressure-point-save-v1', JSON.stringify(JSON.parse(fileWith((s) => (s.items[0].type = 'x'))).state));
+    expect(readSave(AUTOSAVE_ID)).toBeNull();
+  });
+
+  it('reject games whose headline figures are missing or out of range', () => {
+    /** A file holding a brand new game with one change made to it. */
+    const fileWith = (change: (s: Record<string, any>) => void) => {
+      const state = JSON.parse(JSON.stringify(newGame())) as Record<string, any>;
+      change(state);
+      return JSON.stringify({ format: 'pressure-point-save', state });
+    };
+    expect(importSave(fileWith((s) => delete s.stats))).toBe('invalid');
+    expect(importSave(fileWith((s) => (s.stars = -1)))).toBe('invalid');
+    expect(importSave(fileWith((s) => (s.stars = 99)))).toBe('invalid');
+    expect(importSave(fileWith((s) => (s.money = 'lots')))).toBe('invalid');
+    expect(importSave(fileWith((s) => (s.day = null)))).toBe('invalid');
+    expect(listSaves()).toEqual([]);
+  });
+
   it('upgrade an old exported save on the way in', () => {
     const old = JSON.parse(JSON.stringify(game())) as Record<string, any>;
     old.version = 1;

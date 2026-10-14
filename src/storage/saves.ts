@@ -3,7 +3,7 @@
 // Everything lives in localStorage, which both the browser and the desktop app
 // have. Saves can also be exported to a file and imported again, for backups
 // and for moving a game between the browser and the app.
-import { DAYS_PER_MONTH } from '../core/data';
+import { CONDITIONS, DAYS_PER_MONTH, ITEMS, MODALITIES, ROLES, ROOMS, STAR_GOALS } from '../core/data';
 import { SAVE_VERSION } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { upgradeSave } from '../core/state/upgrade';
@@ -49,11 +49,42 @@ function summarize(id: string, name: string, s: GameState, savedAt: number): Sav
   return { id, name, savedAt, day: s.day, money: Math.round(s.money), stars: s.stars, healed: s.stats.healed };
 }
 
-/** Whether parsed JSON has the shape of a game this version can open. */
+const CONDITION_IDS = new Set<unknown>(CONDITIONS.map((c) => c.id));
+
+/** A test for whether a value names an entry in one of the content tables. */
+const keyOf = (table: object) => (id: unknown) => typeof id === 'string' && Object.hasOwn(table, id);
+const knownRoom = keyOf(ROOMS);
+const knownItem = keyOf(ITEMS);
+const knownRole = keyOf(ROLES);
+const knownModality = keyOf(MODALITIES);
+/** Whether a value is a finite number. */
+const isNumber = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
+/** Whether a value is a list whose every entry is a record that passes a test. */
+const listOf = (list: unknown, ok: (x: Record<string, unknown>) => boolean) =>
+  Array.isArray(list) && list.every((x) => isRecord(x) && ok(x));
+/** Whether someone's role and qualifications, if they have any yet, are all ones this version knows. */
+const knownPerson = (p: Record<string, unknown>) =>
+  knownRole(p.role) && (p.quals === undefined || (Array.isArray(p.quals) && p.quals.every(knownModality)));
+
+/**
+ * Whether parsed JSON is a game this version can open: the right shape, its headline figures in range,
+ * and nothing in it (rooms, items, staff, treatments, conditions) that this version has never heard of,
+ * as a save from a newer version may have.
+ */
 function isGame(value: unknown): value is GameState {
   if (!isRecord(value)) return false;
-  if (!Array.isArray(value.rooms) || !Array.isArray(value.staff) || !Array.isArray(value.guests)) return false;
-  return typeof value.version === 'number' && value.version <= SAVE_VERSION;
+  if (!isNumber(value.version) || value.version > SAVE_VERSION) return false;
+  if (!isNumber(value.money) || !isNumber(value.day) || !isRecord(value.stats) || !isNumber(value.stats.healed))
+    return false;
+  const stars = value.stars;
+  if (typeof stars !== 'number' || !Number.isInteger(stars) || stars < 0 || stars > STAR_GOALS.length) return false;
+  return (
+    listOf(value.rooms, (r) => knownRoom(r.type)) &&
+    listOf(value.items, (i) => knownItem(i.type)) &&
+    listOf(value.staff, knownPerson) &&
+    listOf(value.candidates, knownPerson) &&
+    listOf(value.guests, (g) => CONDITION_IDS.has(g.condition))
+  );
 }
 
 /** Turn stored text back into a game, or null if it is not one we can load. */
