@@ -2,15 +2,15 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.6.0
 
 - **Messages take you there:** click a message or the advisor about someone or something, and the camera glides over with it selected.
-- **Morale in the Staff menu**, beside energy, for everyone at once.
 - **Emergency offers can wait:** put one aside and it shrinks to a button with the days left to decide; press it to accept or decline. The offer itself now shows its countdown too.
 - **Items menu filters:** by where an item goes (the corridors or a room) and what it is for (equipment, guest comforts, decor, things for staff).
 - **A Stats menu:** charts of guests, outcomes, waiting times, money and reputation, month by month for a year. Choose which to show; the choice is remembered.
 - **Guests put off by prices** are now counted on their own, and shown in the Money menu beside the price controls.
-- **A last warning before someone quits:** an alarm, a ⚠️ over their head and a countdown in their details, two days before they walk out.
+- **Morale at a glance:** in the Staff menu beside energy, and a last warning two days before someone quits: an alarm, a ⚠️ over their head and a countdown.
+- **Fixed:** a batch of bugs found in an audit, among them refunds for torn-up rooms, saves that could not be read, staff vanishing as they quit and keyboard shortcuts firing on key repeat. The game also runs more smoothly, with lighter trees and music that costs nothing while switched off.
 
 ## v0.5.0
 
