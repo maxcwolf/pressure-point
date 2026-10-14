@@ -71,6 +71,8 @@ A diagnosis prescribes a treatment. It only works properly with someone qualifie
 | Sound Bath       | Star 3  | Course, Singing Bowls | Long, calm and well paid                    |
 | Chakra Balancing | Star 3  | Course                | The best paid, and the hardest to get right |
 
+![A reiki practitioner laying crystals on a guest, with a line of guests showing the reiki conditions](docs/assets/reiki.png)
+
 ## Settings
 
 **Settings**, on the title screen and in the pause menu (☰), switches acupuncture and reiki on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Sound and music are there too.

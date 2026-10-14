@@ -6,7 +6,7 @@ Tick an item off when it is done, with the commit or release it landed in.
 
 ## Requested 14 October 2026
 
-- [ ] **A reiki picture in the README**, beside the acupuncture one.
+- [x] **A reiki picture in the README**, beside the acupuncture one.
 - [ ] **Clicking a message takes you to what it is about.** A toast or advisor line about a member of staff (asking for a raise, quitting, finishing a course) selects them and moves the camera to them. One about an item (broken down, out of stones) opens that item's inspector. One about a room opens the room.
 - [x] **"Cupping massage" in a popup.** Acupuncture techniques were called massage in the emergency offer. Fixed in v0.5.0 (`6f57783`); every place that names a treatment now goes through `modalityLabel`.
 - [ ] **A morale bar in the staff inspector**, next to energy.
