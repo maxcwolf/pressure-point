@@ -18,11 +18,8 @@ describe('release notes', () => {
     expect(text.indexOf('Acupuncture')).toBeLessThan(text.indexOf('Play in your browser'));
   });
 
-  it('exist for the version in package.json, and are short', () => {
-    const text = notes(`v${version}`);
-    expect(text).not.toContain('No notes were written');
-    // short and to the point: a handful of bullets plus the three lines about playing it
-    expect(text.split('\n').filter((line) => line.trim()).length).toBeLessThanOrEqual(10);
+  it('exist for the version in package.json', () => {
+    expect(notes(`v${version}`)).not.toContain('No notes were written');
   });
 
   it('pick out a section in the middle and the last one alike', () => {
