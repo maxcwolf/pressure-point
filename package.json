@@ -46,6 +46,7 @@
     },
     "mac": {
       "category": "public.app-category.simulation-games",
+      "icon": "build/icon-mac.png",
       "target": [
         "dmg"
       ]

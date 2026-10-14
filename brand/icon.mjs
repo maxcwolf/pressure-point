@@ -75,15 +75,46 @@ export function letters(scale = 1.08) {
   );
 }
 
+/** The card and its letters, on the 256-unit square, with the gradient they use. */
+function cardArt() {
+  return `<defs><linearGradient id="mint" x1="0" y1="20" x2="0" y2="230" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#94d3c7"/><stop offset="1" stop-color="#13a48c"/></linearGradient></defs>
+<path d="${cardPath()}" fill="#fff" stroke="#fff" stroke-width="${BORDER}" stroke-linejoin="round"/>
+<path d="${cardPath()}" fill="url(#mint)"/>
+${letters()}`;
+}
+
 /** The whole icon as SVG, at a pixel size, with an optional margin of empty space around the art. */
 export function iconSvg(size = 256, margin = 0) {
   const span = 256 + 2 * margin;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-margin} ${-margin} ${span} ${span}" width="${size}" height="${size}">
-<defs><linearGradient id="mint" x1="0" y1="20" x2="0" y2="230" gradientUnits="userSpaceOnUse">
-<stop offset="0" stop-color="#94d3c7"/><stop offset="1" stop-color="#13a48c"/></linearGradient></defs>
-<path d="${cardPath()}" fill="#fff" stroke="#fff" stroke-width="${BORDER}" stroke-linejoin="round"/>
-<path d="${cardPath()}" fill="url(#mint)"/>
-${letters()}
+${cardArt()}
+</svg>
+`;
+}
+
+/** The part of the 256-unit square the card covers, white border included. */
+const CARD_BOX = { x0: 5, x1: 248, y0: 6, y1: 243 };
+
+/**
+ * The macOS icon: the card on a light rounded square of Apple's icon grid (824 of 1024 pixels, corners of 185),
+ * filling it almost to the edge. macOS shows an icon of any other shape shrunk onto a gray tile of its own.
+ */
+export function macIconSvg(size = 1024) {
+  const tile = 824;
+  const at = (1024 - tile) / 2;
+  const pad = 46;
+  const scale = (tile - 2 * pad) / Math.max(CARD_BOX.x1 - CARD_BOX.x0, CARD_BOX.y1 - CARD_BOX.y0);
+  const cx = (CARD_BOX.x0 + CARD_BOX.x1) / 2;
+  const cy = (CARD_BOX.y0 + CARD_BOX.y1) / 2;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${size}" height="${size}">
+<defs><linearGradient id="tile" x1="0" y1="${at}" x2="0" y2="${at + tile}" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#fbf8f2"/><stop offset="1" stop-color="#e3ddd1"/></linearGradient>
+<filter id="lift" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#2c3a4e" flood-opacity="0.28"/></filter></defs>
+<rect x="${at}" y="${at}" width="${tile}" height="${tile}" rx="185" fill="url(#tile)"/>
+<g filter="url(#lift)" transform="translate(512 512) scale(${scale.toFixed(3)}) translate(${-cx} ${-cy})">
+${cardArt()}
+</g>
 </svg>
 `;
 }

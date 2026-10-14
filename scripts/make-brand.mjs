@@ -1,10 +1,10 @@
-// Renders the brand art from brand/: the desktop app icon, the web favicon and the README wordmark.
+// Renders the brand art from brand/: the desktop app icons (one for macOS), the web favicon and the README wordmark.
 // The wordmark needs Montserrat from Google Fonts, so this needs a network connection.
 import { readFileSync, writeFileSync } from 'node:fs';
 
 import { chromium } from '@playwright/test';
 
-import { iconSvg } from '../brand/icon.mjs';
+import { iconSvg, macIconSvg } from '../brand/icon.mjs';
 
 // macOS icons keep their art inside 824 of 1024 pixels, so the Dock shows them at the usual size
 const MAC_MARGIN = 31;
@@ -16,6 +16,10 @@ const page = await browser.newPage();
 
 await page.setContent(`<body style="margin:0">${iconSvg(1024, MAC_MARGIN)}</body>`);
 await page.locator('svg').screenshot({ path: 'build/icon.png', omitBackground: true });
+
+// macOS wants an icon that is a rounded square of its own; anything else it shrinks onto a gray tile
+await page.setContent(`<body style="margin:0">${macIconSvg(1024)}</body>`);
+await page.locator('svg').screenshot({ path: 'build/icon-mac.png', omitBackground: true });
 
 await page.setContent(
   '<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=block" rel="stylesheet">' +

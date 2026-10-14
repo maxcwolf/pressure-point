@@ -9,6 +9,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Loans no longer count toward a bank balance goal,** so a star cannot be bought with borrowed money and paid back.
 - **Running out of storage is no longer silent:** a failed autosave says so, once, and a new game is refused rather than started when there is no room to keep the old one.
 - **The title screen fits the window:** it sizes itself to the window's height, and Campaign, Sandbox, Load game and Settings now open in place of the menu under the logo, with a Back button (or Esc), scrolling within themselves when they are long.
+- **A proper macOS icon:** the app's icon is now a rounded square of its own, with the PPI card filling it, rather than a small card that macOS shrank onto a gray tile.
 - **Smoother autosaves:** the title screen's picture of the game is taken only on the way out, rather than at every autosave, which stalled a frame.
 
 ## v0.7.0

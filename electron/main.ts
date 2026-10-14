@@ -13,6 +13,8 @@ const devUrl = process.env.PP_DEV_URL;
  * run is the stock Electron program, which would otherwise show Electron's icon.
  */
 const devIcon = app.isPackaged ? undefined : path.join(__dirname, '..', 'build', 'icon.png');
+/** The Dock's icon for a dev run: macOS has its own, a rounded square, or it shrinks the icon onto a gray tile. */
+const devDockIcon = app.isPackaged ? undefined : path.join(__dirname, '..', 'build', 'icon-mac.png');
 
 /** Open the game window and load the game into it. */
 function createWindow() {
@@ -103,7 +105,7 @@ void app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, allow) => {
     allow(false);
   });
-  if (devIcon && isMac) app.dock?.setIcon(devIcon);
+  if (devDockIcon && isMac) app.dock?.setIcon(devDockIcon);
   createWindow();
 });
 
