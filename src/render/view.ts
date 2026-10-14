@@ -8,6 +8,7 @@ import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
 import { Heatmap, type HeatTile } from './heatmap';
 import { ItemsLayer } from './items';
+import { addLights, placeSun } from './lighting';
 import { LitterLayer } from './litter';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type DoorSpec, type GhostSpec, Overlays } from './overlays';
@@ -46,20 +47,7 @@ export class View {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene.background = new THREE.Color(settingOf(sim.s).ground);
 
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0xc9b99a, 1.15));
-    this.sun = new THREE.DirectionalLight(0xfff1d6, 2.1);
-    this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
-    const sc = this.sun.shadow.camera;
-    sc.left = -26;
-    sc.right = 26;
-    sc.top = 26;
-    sc.bottom = -26;
-    sc.near = 1;
-    sc.far = 90;
-    this.sun.shadow.bias = -0.0004;
-    this.sun.shadow.normalBias = 0.03;
-    this.scene.add(this.sun, this.sun.target);
+    this.sun = addLights(this.scene);
 
     this.rig = new CameraRig(sim.world.plot);
     buildScenery(this.scene, sim.world.plot, settingName(sim.s), settingOf(sim.s));
@@ -107,9 +95,7 @@ export class View {
     this.items.animate(this.time);
     this.overlays.updateRing(this.time);
     this.rig.update();
-    const target = this.rig.target;
-    this.sun.position.set(target.x - 16, 30, target.z + 9);
-    this.sun.target.position.copy(target);
+    placeSun(this.sun, this.rig.target);
     this.renderer.render(this.scene, this.rig.camera);
   }
 

@@ -9,6 +9,7 @@
   "main": "dist-electron/main.cjs",
   "scripts": {
     "dev": "vite",
+    "lab": "vite --open /lab.html",
     "build": "tsc -b && yarn build:web && yarn build:desktop",
     "build:web": "vite build",
     "build:desktop": "node scripts/build-desktop.mjs",

@@ -18,6 +18,46 @@ export function placeItemModel(model: THREE.Object3D, type: ItemType, x: number,
   model.rotation.y = (-rot * Math.PI) / 2;
 }
 
+/** What an item's moving parts follow: how watered or hot it is, whether it is scanning, whether it has broken. */
+export interface ItemCondition {
+  id: number;
+  water: number;
+  scanning: boolean;
+  broken: boolean;
+  /** How many trophies the center has won, each shown as a cup in a trophy cabinet. */
+  trophies: number;
+}
+
+/** Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke and blinking lights. */
+export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: number) {
+  const { leaf, glow, ring, orb, puffs, led, cups } = partsOf(model);
+  if (leaf) {
+    // a plant browns and droops as it dries out
+    const k = Math.min(1, it.water / 40);
+    leaf.color.setRGB(
+      0.34 * k + 0.62 * (1 - k),
+      0.66 * k + 0.5 * (1 - k),
+      0.35 * k + 0.25 * (1 - k),
+      THREE.SRGBColorSpace,
+    );
+    model.scale.y = 0.82 + 0.18 * k;
+  }
+  if (glow) glow.emissiveIntensity = (it.water / 100) * 1.4;
+  if (ring) {
+    ring.position.y = it.scanning ? 0.8 + Math.sin(t * 3.5) * 0.6 : 0.2;
+    ring.visible = !it.broken;
+  }
+  if (orb) orb.position.y = 0.9 + Math.sin(t * 3 + it.id) * 0.035;
+  // drifting smoke or scent
+  puffs?.children.forEach((p, i) => {
+    const f = (t * 0.5 + i / 3 + it.id * 0.13) % 1;
+    p.position.set(Math.sin(f * 5 + i) * 0.08, f * 0.6, 0);
+    p.scale.setScalar(0.4 + f * 0.9);
+  });
+  if (led) led.emissiveIntensity = Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1;
+  cups?.forEach((cup, i) => (cup.visible = i < it.trophies));
+}
+
 // every progress bar is drawn with the same few pieces, so a bar costs nothing to make or throw away
 const BAR_BACK = new THREE.BoxGeometry(1.06, 0.2, 0.05);
 const BAR_FILL = new THREE.BoxGeometry(1, 0.14, 0.07);
@@ -85,27 +125,20 @@ export class ItemsLayer {
     }
   }
 
-  /** The touches particular to each kind of item: wilting leaves, glowing stones, drifting smoke and so on. */
+  /** The touches particular to each kind of item, and the props laid on a guest during a session. */
   private effects(it: Item, model: THREE.Object3D, t: number) {
-    const { leaf, glow, ring, orb, session, puffs, led, cups } = partsOf(model);
-    if (leaf) {
-      // a plant browns and droops as it dries out
-      const k = Math.min(1, it.water / 40);
-      leaf.color.setRGB(
-        0.34 * k + 0.62 * (1 - k),
-        0.66 * k + 0.5 * (1 - k),
-        0.35 * k + 0.25 * (1 - k),
-        THREE.SRGBColorSpace,
-      );
-      model.scale.y = 0.82 + 0.18 * k;
-    }
-    if (glow) glow.emissiveIntensity = (it.water / 100) * 1.4;
-    if (ring) {
-      const scanning = it.serving > 0 && it.progress > 0;
-      ring.position.y = scanning ? 0.8 + Math.sin(t * 3.5) * 0.6 : 0.2;
-      ring.visible = it.wear < 100;
-    }
-    if (orb) orb.position.y = 0.9 + Math.sin(t * 3 + it.id) * 0.035;
+    animateItemParts(
+      model,
+      {
+        id: it.id,
+        water: it.water,
+        scanning: it.serving > 0 && it.progress > 0,
+        broken: it.wear >= 100,
+        trophies: this.sim.s.trophies.length,
+      },
+      t,
+    );
+    const { session } = partsOf(model);
     // props on the guest during a session, but only when it is being done properly:
     // no hot stones without a hot warmer, no cups from untrained hands
     if (session) {
@@ -114,14 +147,6 @@ export class ItemsLayer {
       const showing = mod && !this.sim.deliveryProblem(it, this.sim.staff(it.staffId), mod) ? mod.id : '';
       for (const [key, prop] of Object.entries(session)) prop.visible = key === showing;
     }
-    // drifting smoke or scent
-    puffs?.children.forEach((p, i) => {
-      const f = (t * 0.5 + i / 3 + it.id * 0.13) % 1;
-      p.position.set(Math.sin(f * 5 + i) * 0.08, f * 0.6, 0);
-      p.scale.setScalar(0.4 + f * 0.9);
-    });
-    if (led) led.emissiveIntensity = Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1;
-    cups?.forEach((cup, i) => (cup.visible = i < this.sim.s.trophies.length));
   }
 
   /** Bob a marker over an item that needs a Janitor: a wrench when broken, flies when filthy. */

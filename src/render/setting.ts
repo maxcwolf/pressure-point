@@ -10,7 +10,8 @@ export interface Setting {
   fleck: string;
 }
 
-const SETTINGS = {
+/** The colors of each setting a center can have. */
+export const SETTINGS = {
   park: { ground: 0x8cc98a, tiles: ['#8cc98a', '#86c384'], fleck: 'rgba(60,130,70,0.35)' },
   seaside: { ground: 0xead9ab, tiles: ['#ead9ab', '#e4d2a2'], fleck: 'rgba(160,130,80,0.3)' },
 } as const satisfies Record<string, Setting>;

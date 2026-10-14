@@ -10,7 +10,10 @@ The game is TypeScript, with Three.js for the 3D scene, Preact for the interface
 yarn install
 yarn dev        # in the browser at http://localhost:5183
 yarn app        # as a desktop app (builds, then opens Electron)
+yarn lab        # the model lab, at http://localhost:5183/lab.html
 ```
+
+The model lab shows any model on its own: every item, a guest with each condition, each role of staff, and the scenery. Turn it about, check it against the tiles it covers and a person for scale, and try its moving parts, poses and session props. It reloads as you edit a model. Link straight to one with `lab.html?model=item:bench`, and add `&still` to stop everything moving. The lab is for the dev server only: the build makes the game's page alone.
 
 Build the installers into `release/`:
 
@@ -75,6 +78,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 | `src/storage/`        | Autosave, named save slots, export and import, and preferences that outlive a game                                                                              |
 | `src/render/`         | The Three.js scene, one file per layer: floor, rooms, items, people, overlays, camera, picking                                                                  |
 | `src/render/models/`  | The procedural models: shared parts, the people, and one file per item in `items/`                                                                              |
+| `src/lab/`            | The model lab: a dev-only page for looking at any one model                                                                                                     |
 | `src/ui/components/`  | The interface, in Preact: one component per panel, menu, inspector and dialog, each with its stylesheet                                                         |
 | `src/ui/hooks/`       | How components reach the game and the interface's state                                                                                                         |
 | `src/ui/lib/`         | The interface's decisions as small pure functions: what the menus offer, status text, chart sizing                                                              |
