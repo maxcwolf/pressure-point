@@ -98,16 +98,34 @@ Not gaps worth closing soon, but part of what makes Two Point feel complete:
 - **Campus social life**: clubs, parties and events on a calendar, friendships and romances. ([PCGamesN](https://www.pcgamesn.com/two-point-campus/guide))
 - **Ambulances** (Hospital's Speedy Recovery expansion): road and air ambulances that need staff with driving or flying qualifications.
 
-## Recommended order
+## Themed versions
 
-Ordered by how much depth each adds for the work, with the ones that reuse what exists first:
+Some Two Point systems don't fit a healing center as they are, but a version of them does. These are ours, not Two Point's.
 
-1. **Policy** (3), **chances shown** (4), **a queue you can manage** (2) and **room priority** (10, its small half): they turn guests from something that happens to you into something you manage.
-2. **Staff objectives** (27) and **year-end awards** (14): small, built on the goals and records already there.
-3. **Experience and promotions** (8) with **general qualifications** (9): the staff side's long game.
-4. **A worsening condition** (1): the biggest change to how the game feels, best done once the player has the tools above to respond to it.
-5. **Marketing** (23), **prices per treatment** (25), **the casebook** (26) and **reputation in parts** (28): small economic levers and readouts.
-6. **Overlays** (18) and **guest feelings** (5): making what the sim already knows visible.
-7. **VIP and inspector visits** (6), then **a stress outbreak** (7).
-8. **Machine upgrades** (24), **temperature** (17), **job assignment** (10).
-9. The large ones, when wanted: **more land** (15), **research** (24), **camera rotation** (19), **new rooms** (30).
+**35. Guest reviews** (from reputation in parts, 28). Guests leave a star rating and a one-line review as they go ("Lovely hot stones. Someone was playing pool next to my reiki."). Reputation is split into results, experience, value, staff and word of mouth, so the player can see which part is dragging. Reviews are how feelings (5) reach the player.
+
+**36. A retail counter** (from the Pharmacy and Museum's gift shop). A receptionist-staffed counter in the lobby sells oils, candles and crystals to guests on their way out, more after a good treatment. A second income stream that real spas depend on.
+
+**37. House calls** (from ambulances). Send a therapist out for a day to an office or a hotel for a fee, leaving the center short while they are gone. At The Exchange, desk-massage contracts with the office towers.
+
+**38. Fresh linens** (from hygiene, 21). Treatment tables need fresh towels and sheets. Used linens pile up in a hamper until a janitor takes them to be laundered. A guest on a stale table is unhappy, and results suffer.
+
+**39. Calm** (alongside temperature, 17). A spa should be quiet. Arcades, pool tables, crowds and the snack machine make noise, and noise near a treatment room hurts its results. Its own overlay, and a real decision about where the fun items go. Two Point has nothing like it.
+
+**40. A rival spa** (from rival hospitals). A franchise across the street undercuts your prices, poaches unhappy staff, and competes with you at the year-end awards.
+
+**41. Mishaps** (from disasters, 22). One per center: a power cut at The Exchange stops the stim units and turns the lights off; a storm at Saltmarsh floods the restrooms; a snowstorm freezes the pipes at High Pines. A fire drill anywhere sends everyone outside, and the Fire Extinguisher finally matters.
+
+**42. Bad vibes** (from ghosts). A failed treatment leaves a lingering cloud in its room that unsettles everyone who comes in, until someone clears it: a Reiki Practitioner, or a janitor trained in smudging.
+
+**43. The center's standing** (from the hospital level, 28). The center climbs through grades (Day Spa, Wellness Center, Destination Retreat) from its rooms, staff and prestige, which drive arrivals, applicants and what guests expect.
+
+**44. Regulars and group classes** (from Campus's social life). Guests come back, are greeted by name and grow loyal. A studio runs group yoga or meditation sessions from a weekly calendar, a different rhythm from one-on-one treatments.
+
+**45. Other players' institutes** (from community research and rival hospitals). Way down the line, with a server: research goals shared by every player, other players' centers appearing as rivals, and their owners visiting as VIPs.
+
+Left out: Steam Workshop sharing.
+
+## Plan
+
+The order to build all this in is in [roadmap.md](roadmap.md).

@@ -20,10 +20,19 @@ Tick an item off when it is done, with the commit or release it landed in.
 - [x] **Resize a built room**, by dragging its walls, as Two Point Hospital's room editing allows. Done: Resize in the room's inspector; the door and windows move with their walls, the furniture has to stay inside, the room keeps its minimum size, and floor added costs $200 a tile, with half back for floor given up.
 - [x] **Room walls against the building's outer walls.** The outer wall's own window panes sit at fixed spots, so a room built against it cuts through them, and the room's windows sit inside the outer wall and look doubled. The outer wall should leave its panes out where a room's wall runs along it, and a room's windows on that side should be set into the outer wall instead of a second wall in front of it. Done: a room's side along the outer wall uses that wall, its windows are set into it, and the building's own windows make way.
 
-## From the Two Point audit
+## Roadmap
 
-The first three picks from [two-point-gaps.md](two-point-gaps.md), which has the rest.
+The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two-point-gaps.md). Its decisions to make are still open.
 
-- [ ] **Policy, chances shown, and a queue you can manage** (gaps 2, 3, 4 and 10). A policy screen with the diagnosis threshold (75% today, hard-coded; Two Point defaults to 90%) and a fast-track switch for guests whose condition is already known. A break policy: how many of each role may be on a break at once, and for how long. Each guest's chance of success shown before treatment starts, with Send Home in the guest's inspector. A station's queue in its inspector, to reorder guests or move one to another room of the same type. Any room can be set to high priority, so staff fill it first.
-- [ ] **Staff objectives and year-end awards** (gaps 27 and 14). Partway through a game, a member of staff sets an objective with 90 to 180 days to meet it (heal so many guests, earn so much, reach a decor level, go so long without anyone quitting), rewarded with staff morale and karma. An awards ceremony at each year end, with awards for the center and its staff paying money, karma and reputation, and trophies for the Trophy Cabinet.
-- [ ] **Experience, promotions and general qualifications** (gaps 8 and 9). Staff earn experience from their work, through five ranks (the skill stars). Each promotion comes with a raise they insist on, and putting it off upsets them. It also opens a qualification slot, up to five, to be filled by training before the next promotion. General courses: Bedside Manner, Motivation and Stamina for anyone, Customer Service for receptionists, Maintenance for janitors, each changing how they work.
+- [ ] **Phase 1, taking charge:** policy, chances shown, send home, a queue you can manage, room priority.
+- [ ] **Phase 2, goals along the way:** staff objectives and year-end awards.
+- [ ] **Phase 3, staff careers:** experience and promotions, general qualifications, job assignment, a hiring pool that grows, traits you can see.
+- [ ] **Phase 4, reading the center:** guest feelings, reviews and reputation in parts, the casebook, overlays.
+- [ ] **Phase 5, the spa business:** prices per treatment, a retail counter, marketing, house calls.
+- [ ] **Phase 6, stakes:** a worsening condition, bad vibes, a stress outbreak.
+- [ ] **Phase 7, comfort:** calm, fresh linens, temperature and staff needs. Then High Pines.
+- [ ] **Phase 8, visitors and rivals:** VIPs and the inspector, the center's standing, a rival spa. Then The Orchard Estate.
+- [ ] **Phase 9, events:** a mishap per center.
+- [ ] **Phase 10, building tools:** move and copy rooms, templates, decorating rooms, camera rotation, more land.
+- [ ] **Phase 11, the long game:** machine upgrades, new rooms, regulars, treatment gags, a radio, game settings.
+- [ ] **Way down the line:** a server for community research and other players' institutes as rivals and VIPs.
