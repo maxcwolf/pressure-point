@@ -22,6 +22,8 @@ export const CONSULT_FEE = 200;
 
 export const ASSESS_FEE = 150;
 export const WINDOW_COST = 150;
+/** What each tile added to a built room costs. Each tile taken away gives back half. */
+export const ROOM_TILE_COST = 200;
 
 /** Windows beyond this many add nothing more to a room's prestige. */
 export const WINDOW_MAX_BONUS = 4;

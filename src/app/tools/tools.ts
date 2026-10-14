@@ -3,25 +3,39 @@
 // Building a room goes: drag out the floor, click a wall for the door, then a
 // blueprint step. In the blueprint the required furniture goes in, windows and
 // extras can be added, the door can be moved, and nothing is charged for the room
-// until it is confirmed.
+// until it is confirmed. A built room can have its windows changed, its door moved
+// and its walls dragged in or out.
 //
 // This class holds the tool in hand and talks to the game and the scene. The working
 // out (geometry, hints, which tiles to color) lives in the small modules beside it.
 
 import { type ItemType, ROOMS, type RoomType } from '../../core/data';
 import { money } from '../../core/format';
+import { resizeCost, sameRect } from '../../core/resize';
 import type { SfxName } from '../../core/sim/events';
 import type { Sim } from '../../core/sim/sim';
 import { sameSpot } from '../../core/state/game';
 import type { Room, WallSpot } from '../../core/state/types';
-import { tileIdx, Z_CORRIDOR } from '../../core/world';
+import { type Rect, tileIdx, Z_CORRIDOR } from '../../core/world';
 import { type Marker, OV_BAD, OV_BLUE, OV_GOOD, type OverlayTile } from '../../render/overlay-codes';
 import type { Selection } from '../../render/picking';
 import type { View } from '../../render/view';
 import { dragRect, itemSpot, tileOf } from './geometry';
-import { doorHint, dragHint, MOVE_DOOR_HINT, moveHint, placeHint, planHint, WINDOW_HINT } from './hints';
+import {
+  doorHint,
+  dragHint,
+  MOVE_DOOR_HINT,
+  moveHint,
+  placeHint,
+  planHint,
+  RESIZE_HINT,
+  resizeHint,
+  WINDOW_HINT,
+} from './hints';
 import { dragTiles, itemTiles, rectTiles } from './overlay';
 import { heldItem, nextRequired, planStatus, quarterTurn } from './plan';
+import type { Edge } from './resize';
+import { dragEdge, edgeNear, edgeTiles } from './resize';
 import type { HeldItem, PlanStatus, Point, Tool } from './types';
 
 /** What a refresh has worked out so far: the tiles and icons to draw over the floor. */
@@ -127,6 +141,20 @@ export class Tools {
     this.refresh();
   }
 
+  /** Drag the walls of a room that is already built. */
+  startResize(roomId: number) {
+    this.cancel();
+    if (!this.sim.world.room(roomId)) return;
+    this.tool = { kind: 'resize', roomId, edge: null, rect: null };
+    this.refresh();
+  }
+
+  /** Whether the pointer is dragging something out (a new room's floor or a wall), so its release counts. */
+  get dragging(): boolean {
+    const t = this.tool;
+    return (t.kind === 'room' && t.phase === 'drag') || (t.kind === 'resize' && t.edge !== null);
+  }
+
   /** In a blueprint: take up the door, the window tool, or nothing. */
   planHold(what: 'window' | 'door' | '') {
     const t = this.tool;
@@ -189,6 +217,8 @@ export class Tools {
     if (t.kind === 'room' && t.phase === 'drag' && t.start && this.cursor) {
       t.rect = dragRect(t.start, tileOf(this.cursor));
     }
+    const room = t.kind === 'resize' ? this.sim.world.room(t.roomId) : undefined;
+    if (t.kind === 'resize' && t.edge && room && this.cursor) t.rect = dragEdge(room, t.edge, this.cursor);
     if (this.active) this.refresh();
   }
 
@@ -199,6 +229,12 @@ export class Tools {
     if (t.kind === 'room' && t.phase === 'drag' && this.cursor) {
       t.start = tileOf(this.cursor);
       t.rect = dragRect(t.start, t.start);
+      this.refresh();
+    }
+    const room = t.kind === 'resize' ? this.sim.world.room(t.roomId) : undefined;
+    if (t.kind === 'resize' && room && this.cursor) {
+      t.edge = edgeNear(room, this.cursor);
+      t.rect = t.edge ? { x: room.x, y: room.y, w: room.w, h: room.h } : null;
       this.refresh();
     }
   }
@@ -230,6 +266,13 @@ export class Tools {
         this.tool = { kind: 'none' };
         this.select({ kind: 'room', id: t.roomId });
       }
+    } else if (t.kind === 'resize') {
+      // the wall is let go: the room takes the new shape if it can, and the tool stays for the next wall
+      const room = sim.world.room(t.roomId);
+      const rect = t.rect;
+      t.edge = null;
+      t.rect = null;
+      if (room && rect && !sameRect(room, rect) && !sim.resizeRoom(room.id, rect)) this.sfx('error');
     } else if (t.phase === 'drag') {
       const rect = t.rect;
       t.start = null;
@@ -338,6 +381,24 @@ export class Tools {
     this.view.setDoor({ door: spot, tone: check.ok ? 'ok' : 'bad' });
   }
 
+  /** The room being resized: its floor, the wall under the cursor, or the shape a wall is being dragged to. */
+  private drawResize(room: Room, edge: Edge | null, rect: Rect | null, drawing: Drawing) {
+    this.hint = RESIZE_HINT;
+    if (edge && rect) {
+      const check = this.sim.world.resizeValid(room, rect);
+      const same = sameRect(room, rect);
+      if (!same) {
+        this.problem = check.reason;
+        this.hint = resizeHint(room, rect, resizeCost(room, rect));
+      }
+      drawing.tiles.push(...rectTiles(rect, same || check.ok ? OV_GOOD : OV_BAD));
+      return;
+    }
+    drawing.tiles.push(...rectTiles(room, OV_BLUE));
+    const near = this.cursor && edgeNear(room, this.cursor);
+    if (near) drawing.tiles.push(...edgeTiles(room, near).map(([x, y]): OverlayTile => [x, y, OV_GOOD]));
+  }
+
   /** Recompute overlays, ghost and hint for the current tool state. */
   refresh() {
     const t = this.tool;
@@ -367,6 +428,10 @@ export class Tools {
         this.hint = MOVE_DOOR_HINT;
         this.drawDoor(room);
       }
+    } else if (t.kind === 'resize') {
+      view.setGhost(null);
+      const room = world.room(t.roomId);
+      if (room) this.drawResize(room, t.edge, t.rect, drawing);
     } else if (t.phase === 'drag') {
       view.setGhost(null);
       this.hint = dragHint(t.type, t.start ? t.rect : null);

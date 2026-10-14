@@ -18,8 +18,8 @@ interface Press {
 export function bindPointer(canvas: HTMLCanvasElement, { audio, tools, view, ui }: PointerTargets) {
   let down: Press | null = null;
   let last = { x: 0, y: 0 };
-  /** Whether a room's floor is being dragged out. */
-  const draggingRoom = () => tools.tool.kind === 'room' && tools.tool.phase === 'drag';
+  /** Whether a room's floor or wall is being dragged, so letting go counts even after a long drag. */
+  const draggingRoom = () => tools.dragging;
 
   canvas.addEventListener('pointerdown', (e) => {
     audio.unlock();

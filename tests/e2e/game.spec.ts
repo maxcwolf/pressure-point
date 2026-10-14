@@ -298,6 +298,47 @@ test.describe('room blueprints', () => {
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
   });
 
+  test('a built room can be resized by dragging one of its walls', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    await game.clickRoom('massage');
+    await page
+      .locator('#inspector')
+      .getByRole('button', { name: /Resize/ })
+      .click();
+    // a wall the suite can be pushed out through by two tiles, and where to grab it and let it go on screen
+    const plan = await game.eval((pp) => {
+      const room = pp.state.rooms.find((r) => r.type === 'massage')!;
+      const { x, y, w, h } = room;
+      const pushes = [
+        { rect: { x, y, w: w + 2, h }, grab: [x + w, y + h / 2], drop: [x + w + 2, y + h / 2] },
+        { rect: { x: x - 2, y, w: w + 2, h }, grab: [x, y + h / 2], drop: [x - 2, y + h / 2] },
+        { rect: { x, y, w, h: h + 2 }, grab: [x + w / 2, y + h], drop: [x + w / 2, y + h + 2] },
+        { rect: { x, y: y - 2, w, h: h + 2 }, grab: [x + w / 2, y], drop: [x + w / 2, y - 2] },
+      ];
+      const push = pushes.find((p) => pp.sim.world.resizeValid(room, p.rect).ok)!;
+      /** Where a point on the ground is on screen. */
+      const at = (p: number[]) => pp.view.project(p[0]!, p[1]!, 0);
+      return { rect: push.rect, from: at(push.grab), to: at(push.drop), money: pp.state.money };
+    });
+    await page.mouse.move(plan.from.x, plan.from.y);
+    await page.mouse.down();
+    await page.mouse.move(plan.to.x, plan.to.y, { steps: 10 });
+    await expect(page.locator('#hint')).toContainText('costs $');
+    await page.mouse.up();
+    const after = await game.eval((pp) => {
+      const { x, y, w, h } = pp.state.rooms.find((r) => r.type === 'massage')!;
+      return { rect: { x, y, w, h }, money: pp.state.money };
+    });
+    expect(after.rect).toEqual(plan.rect);
+    expect(after.money).toBeLessThan(plan.money);
+    await page.keyboard.press('Escape');
+    expect(await game.eval((pp) => pp.tools.tool.kind)).toBe('none');
+    expect(game.errors).toEqual([]);
+  });
+
   test('placing furniture shows which square is for staff and which is for guests', async ({ game, page }) => {
     await startSuite(game);
     /** The tiles with an icon floating over them. */

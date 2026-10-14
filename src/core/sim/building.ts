@@ -2,6 +2,7 @@
 
 import { ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from '../data';
 import { money } from '../format';
+import { carryWallSpot, carryWindows, resizeCost } from '../resize';
 import { sameSpot } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
 import { itemCenter, type Rect } from '../world';
@@ -241,6 +242,39 @@ export function moveDoor(ctx: SimContext, roomId: number, door: WallSpot): boole
   room.door = { ...door };
   worldChanged(ctx);
   emit(ctx, { type: 'sfx', name: 'place' });
+  return true;
+}
+
+/**
+ * Give a room a new shape. Tiles added are paid for and tiles taken away half refunded; the door and windows move
+ * with their walls, and a window whose stretch of wall is gone, or that would look into another room, is refunded
+ * at half. False if the room cannot take that shape or the change cannot be afforded.
+ */
+export function resizeRoom(ctx: SimContext, roomId: number, r: Rect): boolean {
+  const room = ctx.world.room(roomId);
+  if (!room || !ctx.world.resizeValid(room, r).ok) return false;
+  const door = carryWallSpot(room.door, r);
+  if (!door) return false;
+  const cost = resizeCost(room, r);
+  if (cost > 0 && ctx.s.money < cost) {
+    toast(ctx, `Not enough money: that costs ${money(cost)}.`, 'bad');
+    emit(ctx, { type: 'sfx', name: 'error' });
+    return false;
+  }
+  const windows = room.windows.length;
+  const carried = carryWindows(room, r);
+  Object.assign(room, { x: r.x, y: r.y, w: r.w, h: r.h, door, windows: [] });
+  ctx.world.rebuild(true);
+  // only now can a window be judged against the room's new walls and its new neighbors
+  for (const w of carried) if (ctx.world.windowValid(room, w).ok) room.windows.push(w);
+  const back = (windows - room.windows.length) * Math.round(WINDOW_COST / 2) - Math.min(cost, 0);
+  if (cost > 0) spend(ctx, cost, 'building');
+  if (back > 0) {
+    ctx.s.money += back;
+    ctx.s.ledger.building -= back;
+  }
+  worldChanged(ctx);
+  emit(ctx, { type: 'sfx', name: 'build' });
   return true;
 }
 

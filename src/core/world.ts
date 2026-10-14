@@ -14,6 +14,7 @@ import {
   SIDEWALK_Y,
   W,
 } from './data';
+import { carryWallSpot, inRect, sameRect } from './resize';
 import type { GameState, Item, Room, Waypoint } from './state/types';
 import { at } from './util';
 
@@ -484,6 +485,63 @@ export class World {
     this.s.rooms = rooms;
     this.rebuild(true);
     return fine ? OK : no('That would block the way');
+  }
+
+  /**
+   * Can a room take a new shape? Its new floor has to be free corridor inside the building, its furniture and the
+   * spots it is used from have to stay inside, its door has to stay on a wall it can still open from, and nobody
+   * may be cut off.
+   */
+  resizeValid(room: Room, r: Rect): Check {
+    const def = ROOMS[room.type];
+    if (sameRect(room, r)) return no('Drag a wall in or out');
+    if (Math.min(r.w, r.h) < def.minShort || Math.max(r.w, r.h) < def.minLong)
+      return no(`Too small: needs at least ${def.minShort}×${def.minLong}`);
+    const ownDoorway = tileIdx(room.door.x + room.door.dx, room.door.y + room.door.dy);
+    for (let y = r.y; y < r.y + r.h; y++) {
+      for (let x = r.x; x < r.x + r.w; x++) {
+        if (inRect(room, x, y)) continue;
+        if (!this.inside(x, y)) return no('Must be inside the building');
+        const i = tileIdx(x, y);
+        if (this.zone[i] !== Z_CORRIDOR) return no('Overlaps another room');
+        if (this.blocked[i]) return no('Something is in the way');
+        // the room's own doorway moves out of the way with the wall
+        if (this.reserved[i] && i !== ownDoorway) return no('Keep doorways and access spots clear');
+      }
+    }
+    const inside = this.s.items.filter((it) => this.zoneAt(it.x, it.y) === room.id);
+    for (const it of inside) {
+      const spots = [...footprint(it)];
+      for (let i = 0; i < ITEMS[it.type].access.length; i++) spots.push(accessTile(it, i));
+      if (spots.some(([x, y]) => !inRect(r, x, y))) return no('The furniture has to stay inside: move it first');
+    }
+    // anything outside the room, like a rug, has to end up wholly on one side of the new walls
+    for (const it of this.s.items) {
+      if (inside.includes(it)) continue;
+      if (footprint(it).some(([x, y]) => inRect(r, x, y))) return no('Something is in the way');
+    }
+    for (const other of this.s.rooms)
+      if (other !== room && other.windows.some((w) => inRect(r, w.x + w.dx, w.y + w.dy)))
+        return no('A window is in the way');
+    const door = carryWallSpot(room.door, r);
+    if (!door) return no('That would cut off the door: move it first');
+    // try it: the door has to open onto corridor as things will be, and everyone and everything still be reached
+    const before = { x: room.x, y: room.y, w: room.w, h: room.h, door: room.door };
+    Object.assign(room, r, { door });
+    this.rebuild(true);
+    const ox = door.x + door.dx;
+    const oy = door.y + door.dy;
+    const check =
+      !this.inside(ox, oy) || this.zone[tileIdx(ox, oy)] !== Z_CORRIDOR
+        ? no('The door must open onto a corridor')
+        : this.blocked[tileIdx(ox, oy)]
+          ? no('Something is blocking the doorway')
+          : this.connected()
+            ? OK
+            : no('That would block the way');
+    Object.assign(room, before);
+    this.rebuild(true);
+    return check;
   }
 
   /** Can this stretch of a room's wall take a window? */

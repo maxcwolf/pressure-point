@@ -75,6 +75,14 @@ export function RoomInfo({ room }: { room: Room }) {
         🚪 Move door
       </Button>{' '}
       <Button
+        class="roomresize"
+        onPress={() => {
+          tools.startResize(room.id);
+        }}
+      >
+        ↔️ Resize
+      </Button>{' '}
+      <Button
         class="danger"
         quiet
         onPress={() => {

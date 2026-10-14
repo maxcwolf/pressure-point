@@ -3,6 +3,7 @@
 import type { ItemType, RoomType } from '../../core/data';
 import type { Room } from '../../core/state/types';
 import type { Rect } from '../../core/world';
+import type { Edge } from './resize';
 
 /** A point on the ground, in tiles, as the cursor reports it. */
 export interface Point {
@@ -33,7 +34,9 @@ export type Tool =
   | { kind: 'room'; type: RoomType; phase: 'plan'; room: Room; sub: PlanSub }
   // on a room that is already built
   | { kind: 'window'; roomId: number }
-  | { kind: 'door'; roomId: number };
+  | { kind: 'door'; roomId: number }
+  // dragging one of a built room's walls: `rect` is the shape it is being dragged to
+  | { kind: 'resize'; roomId: number; edge: Edge | null; rect: Rect | null };
 
 /** The state of an open blueprint, for the panel that shows it. */
 export interface PlanStatus {

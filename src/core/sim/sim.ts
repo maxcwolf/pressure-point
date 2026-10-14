@@ -27,6 +27,7 @@ import {
   moveItem,
   placeItem,
   removeRoom,
+  resizeRoom,
   roomRefund,
   sellItem,
   toggleWindow,
@@ -359,5 +360,10 @@ export class Sim {
   /** Move a room's door to another stretch of its wall. */
   moveDoor(roomId: number, door: WallSpot): boolean {
     return moveDoor(this.ctx, roomId, door);
+  }
+
+  /** Give a room a new shape, moving its door and windows with their walls. */
+  resizeRoom(roomId: number, rect: Rect): boolean {
+    return resizeRoom(this.ctx, roomId, rect);
   }
 }

@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Resize a built room:** Resize in a room's inspector lets you drag any wall in or out. The door and windows move with their walls, the furniture has to stay inside, and floor added costs $200 a tile, with half back for floor given up.
+
 ## v0.7.1
 
 - **The title screen fits the window:** it sizes itself to the window's height, and Campaign, Sandbox, Load game and Settings now open in place of the menu under the logo, with a Back button (or Esc), scrolling within themselves when they are long.

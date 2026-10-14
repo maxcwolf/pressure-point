@@ -121,6 +121,21 @@ test.describe('in a game', () => {
     await screens.shot('blueprint');
   });
 
+  test("dragging a room's wall", async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      const room = pp.state.rooms.find((r) => r.type === 'massage')!;
+      pp.tools.select({ kind: 'room', id: room.id });
+      pp.tools.startResize(room.id);
+      // take hold of the east wall and pull it out two tiles, without letting go
+      const from = pp.view.project(room.x + room.w, room.y + room.h / 2, 0);
+      const to = pp.view.project(room.x + room.w + 2, room.y + room.h / 2, 0);
+      pp.tools.pointerDown(from.x, from.y);
+      pp.tools.pointerMove(to.x, to.y);
+    });
+    await screens.shot('room-resize');
+  });
+
   test('the pause menu and its dialogs', async ({ screens, page }) => {
     await screens.play();
     await page.locator('#sys').getByTitle('Menu').click();

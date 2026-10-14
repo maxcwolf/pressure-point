@@ -1,6 +1,6 @@
 // The one-line instruction shown for each tool.
 
-import { ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from '../../core/data';
+import { ITEMS, type ItemType, ROOM_TILE_COST, ROOMS, type RoomType, WINDOW_COST } from '../../core/data';
 import { money } from '../../core/format';
 import type { Rect } from '../../core/world';
 import { legend } from './squares';
@@ -8,6 +8,13 @@ import type { PlanSub } from './types';
 
 export const WINDOW_HINT = `🪟 Windows · ${money(WINDOW_COST)} each · click a wall to add one, or a window to remove it · Esc when done`;
 export const MOVE_DOOR_HINT = '🚪 Click a wall to move the door there · Esc cancels';
+export const RESIZE_HINT = `↔️ Drag a wall in or out · ${money(ROOM_TILE_COST)} a tile added, half back for a tile taken away · Esc when done`;
+
+/** The hint while a wall is being dragged: the room's size now and as dragged, and what that costs or gives back. */
+export function resizeHint(from: Rect, to: Rect, cost: number): string {
+  const price = cost > 0 ? `costs ${money(cost)}` : cost < 0 ? `gives back ${money(-cost)}` : 'no charge';
+  return `↔️ ${from.w}×${from.h} → ${to.w}×${to.h} · ${price} · release to resize`;
+}
 
 /** The hint for placing a new item. */
 export function placeHint(type: ItemType): string {
