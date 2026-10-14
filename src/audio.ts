@@ -164,10 +164,10 @@ export class Audio {
       this.tone(this.master, f, now + start, dur, gain, type);
   }
 
-  /** Queue the next four-second bar: a soft pad plus a few plucked notes. */
+  /** Queue the next four-second bar: a soft pad plus a few plucked notes. Nothing at all while the music is off. */
   private scheduleMusic() {
     const ctx = this.ctx;
-    if (ctx?.state !== 'running') return;
+    if (ctx?.state !== 'running' || !this.music) return;
     const start = ctx.currentTime + 0.1;
     const chord = at(CHORDS, this.bar++ % CHORDS.length);
     for (const f of chord) this.tone(this.musicGain, f, start, 4.6, 0.035, 'sine', 1.2);
