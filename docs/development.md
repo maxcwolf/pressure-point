@@ -89,3 +89,5 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 Disciplines, modalities, conditions, courses and equipment are all defined in `src/core/data/`. Adding a discipline means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models/items/`. The simulation, menus and Settings pick it up from the data.
 
 How the pieces fit together, and the conventions the code follows, are in [architecture.md](architecture.md).
+
+Issues found but not yet fixed are listed in [known-issues.md](known-issues.md).
