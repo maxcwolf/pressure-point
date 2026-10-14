@@ -14,6 +14,7 @@ const MENUS: readonly { id: MenuId; icon: string; label: string }[] = [
   { id: 'staff', icon: '👥', label: 'Staff' },
   { id: 'treatments', icon: '💆', label: 'Treatments' },
   { id: 'finance', icon: '💰', label: 'Money' },
+  { id: 'policy', icon: '📋', label: 'Policy' },
   { id: 'stats', icon: '📊', label: 'Stats' },
 ];
 

@@ -5,7 +5,6 @@ import {
   BOTCH_FACTOR,
   conditionOf,
   CONSULT_FEE,
-  DIAGNOSIS_TARGET,
   DISCIPLINES,
   ITEMS,
   MODALITIES,
@@ -26,9 +25,10 @@ import { changeRep, earn } from './economy';
 import { emit, tipOnce } from './events';
 import { decide, leave } from './guests';
 import { goTo } from './movement';
+import { breakDue } from './policy';
 import { hasRoom } from './progress';
 import { countVisit } from './records';
-import { deliveryProblem, modalityOf } from './treatments';
+import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments';
 import { addWear } from './upkeep';
 
 /** Lower is better. Guests steer toward tables that can actually deliver what they need. */
@@ -69,6 +69,47 @@ export function serviceSeconds(base: number, st: Staff) {
   return base / speed;
 }
 
+/** How much a room's prestige adds to a service's results there. */
+function prestigeBonus(ctx: SimContext, it: Item): number {
+  const room = ctx.world.roomOfItem(it);
+  return room ? (prestige(ctx, room) - 1) * 0.02 : 0;
+}
+
+/** A treatment's chance of working, and what, if anything, stops it being delivered properly. */
+export interface Chance {
+  chance: number;
+  problem: DeliveryProblem;
+}
+
+/**
+ * The chance a guest's treatment at this table works if this member of staff gives it now: better with skill, a
+ * confident diagnosis and a prestigious room, worse for a hard technique or a tired therapist, and only a fraction
+ * of that without the right training or equipment.
+ */
+export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest): Chance {
+  const mod = MODALITIES[conditionOf(g.condition).modality];
+  const problem = deliveryProblem(ctx, it, staff, mod);
+  const chance = clamp(
+    0.56 +
+      staff.skill * 0.09 +
+      Math.min(1, g.diagnosis) * 0.15 +
+      prestigeBonus(ctx, it) -
+      mod.difficulty -
+      (staff.energy < 15 ? 0.15 : 0),
+    0.3,
+    0.98,
+  );
+  return { chance: problem ? chance * BOTCH_FACTOR : chance, problem };
+}
+
+/** The guest a station calls next: the first waiting in line, or the first emergency if the policy puts them first. */
+export function nextInLine(ctx: SimContext, it: Item): Guest | undefined {
+  const waiting = it.queue
+    .map((id) => guestById(ctx, id))
+    .filter((q): q is Guest => q?.state === 'waiting' || q?.state === 'toWait');
+  return (ctx.s.policy.emergenciesFirst ? waiting.find((q) => q.emergency) : undefined) ?? waiting[0];
+}
+
 /** Run every station: tidy its line, call the next guest and move the service along. */
 export function updateStations(ctx: SimContext, dt: number) {
   for (const it of ctx.s.items) {
@@ -89,15 +130,10 @@ export function updateStations(ctx: SimContext, dt: number) {
     if (it.queue.some((id) => guestById(ctx, id)?.station !== it.id))
       it.queue = it.queue.filter((id) => guestById(ctx, id)?.station === it.id);
     // tired staff finish with their current guest, then stop calling new ones so they can get away
-    const wantsBreak = !!staff && staff.energy < 18 && !!findAccess(ctx, 'rest', staff.tx, staff.ty);
+    const wantsBreak = !!staff && breakDue(ctx, staff) && !!findAccess(ctx, 'rest', staff.tx, staff.ty);
     if (!it.serving && ready && !wantsBreak) {
-      for (const id of it.queue) {
-        const q = guestById(ctx, id);
-        if (q?.state === 'waiting' || q?.state === 'toWait') {
-          callGuest(ctx, it, q);
-          break;
-        }
-      }
+      const next = nextInLine(ctx, it);
+      if (next) callGuest(ctx, it, next);
     }
     if (staff && ready) {
       const served = g?.state === 'served' ? g : undefined;
@@ -137,8 +173,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   staff.served++;
   g.patience = Math.min(100, g.patience + 30);
   addWear(ctx, it);
-  const room = ctx.world.roomOfItem(it);
-  const nice = room ? (prestige(ctx, room) - 1) * 0.02 : 0;
+  const nice = prestigeBonus(ctx, it);
   const price = ctx.s.priceLevel;
   if (def.goal === 'reception') {
     g.goal = 'consult';
@@ -151,7 +186,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const fee = Math.round((def.goal === 'consult' ? CONSULT_FEE : ASSESS_FEE) * price);
     earn(ctx, fee, 'consult', g.x, g.y);
     g.spent += fee;
-    if (g.diagnosis >= DIAGNOSIS_TARGET || g.consults >= 4) {
+    if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= 4) {
       g.goal = 'treat';
       say(g, '💡');
       // steep prices put some guests off once they hear what the treatment costs
@@ -182,20 +217,9 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   } else {
     const cond = conditionOf(g.condition);
     const mod = MODALITIES[cond.modality];
-    const problem = deliveryProblem(ctx, it, staff, mod);
-    let chance = clamp(
-      0.56 +
-        staff.skill * 0.09 +
-        Math.min(1, g.diagnosis) * 0.15 +
-        nice -
-        mod.difficulty -
-        (staff.energy < 15 ? 0.15 : 0),
-      0.3,
-      0.98,
-    );
     // the wrong hands or missing equipment: they try anyway, and it rarely works
-    if (problem) chance *= BOTCH_FACTOR;
-    else if (mod.equipment === 'stone_warmer') {
+    const { chance, problem } = successChance(ctx, it, staff, g);
+    if (!problem && mod.equipment === 'stone_warmer') {
       const zone = ctx.world.zoneAt(it.x, it.y);
       const warmer = ctx.s.items
         .filter((i) => i.type === 'stone_warmer' && ctx.world.zoneAt(i.x, i.y) === zone && i.water >= STONE_USE)

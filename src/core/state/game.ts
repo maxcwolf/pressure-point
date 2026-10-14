@@ -1,8 +1,8 @@
 // Starting a game, and small questions asked of one.
 
-import { type CenterId, CENTERS, type Discipline, DISCIPLINES } from '../data';
+import { BREAK_AT, type CenterId, CENTERS, DIAGNOSIS_TARGET, type Discipline, DISCIPLINES } from '../data';
 import { refillCandidates } from '../people';
-import type { GameState, Ledger, Tally, WallSpot } from './types';
+import type { GameState, Ledger, Policy, Tally, WallSpot } from './types';
 
 /** Whether two wall spots are the same stretch of wall. */
 export const sameSpot = (a: WallSpot, b: WallSpot) => a.x === b.x && a.y === b.y && a.dx === b.dx && a.dy === b.dy;
@@ -14,6 +14,7 @@ export const emptyTally = (): Tally => ({
   failed: 0,
   stormed: 0,
   priced: 0,
+  sent: 0,
   waitTotal: 0,
   waitCount: 0,
   healedBy: {},
@@ -31,11 +32,20 @@ export const emptyLedger = (): Ledger => ({
   bonus: 0,
 });
 
+/** The policy a new game starts with. */
+export const defaultPolicy = (): Policy => ({
+  diagnosis: DIAGNOSIS_TARGET,
+  emergenciesFirst: false,
+  breakAt: BREAK_AT,
+  breakLimit: {},
+});
+
 /**
  * Goes up whenever a save could hold content an older version has never heard of (tests/unit/save-version.test.ts
  * notices), so that older versions refuse the save rather than crash on it. 4: the karma items and Saltmarsh.
+ * 5: policy, room priority and sending guests home.
  */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {
@@ -57,7 +67,17 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     ledger: emptyLedger(),
     lastLedger: emptyLedger(),
     history: [],
-    stats: { healed: 0, failed: 0, stormed: 0, priced: 0, arrived: 0, healedBy: {}, emergencies: 0, lastQuit: -1 },
+    stats: {
+      healed: 0,
+      failed: 0,
+      stormed: 0,
+      priced: 0,
+      sent: 0,
+      arrived: 0,
+      healedBy: {},
+      emergencies: 0,
+      lastQuit: -1,
+    },
     tally: emptyTally(),
     months: [],
     stars: 0,
@@ -69,6 +89,7 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     offer: null,
     emergency: null,
     nextEmergency: 75,
+    policy: defaultPolicy(),
     options: {},
     unlockAll: false,
     achieved: [],

@@ -10,7 +10,7 @@ import type { SimContext } from './context';
 export const MONTHS_KEPT = 12;
 
 /** How a visit ended, as far as the record is concerned. */
-export type VisitEnd = 'healed' | 'failed' | 'stormed' | 'priced';
+export type VisitEnd = 'healed' | 'failed' | 'stormed' | 'priced' | 'sent';
 
 /** Count a guest arriving. */
 export function countArrival(ctx: SimContext) {

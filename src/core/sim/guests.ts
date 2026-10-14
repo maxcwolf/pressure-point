@@ -84,6 +84,7 @@ export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency =
     hasWrapper: false,
     waited: 0,
     emergency,
+    placed: false,
   };
   const [lx, ly] = lobbyTile(ctx.world.plot);
   if (!goTo(ctx, g, lx, ly)) return null;
@@ -131,7 +132,18 @@ export function decide(ctx: SimContext, g: Guest) {
   }
   const st = pickStation(ctx, g);
   g.station = st ? st.id : 0;
-  if (st) st.queue.push(g.id);
+  g.placed = false;
+  if (st) {
+    st.queue.push(g.id);
+    if (st.queue.length >= 4)
+      tipOnce(
+        ctx,
+        'queue',
+        `A line is building at the ${ITEMS[st.type].name}. Click it to see who is waiting: you can move guests up the line, send them to another one, or send them home.`,
+        'info',
+        { kind: 'item', id: st.id },
+      );
+  }
   goWait(ctx, g);
 }
 
@@ -173,7 +185,7 @@ function waitAnchor(ctx: SimContext, g: Guest): [number, number] {
 }
 
 /** Send a guest to wait: in line at reception, otherwise on a nearby seat or standing spot. */
-function goWait(ctx: SimContext, g: Guest) {
+export function goWait(ctx: SimContext, g: Guest) {
   release(ctx, g);
   g.state = 'toWait';
   g.needKind = '';
@@ -251,6 +263,7 @@ function waitingThink(ctx: SimContext, g: Guest) {
   const st = ctx.world.item(g.station);
   if (!st || !ctx.world.usable(st)) {
     removeFromStations(ctx, g);
+    g.placed = false;
     const ns = pickStation(ctx, g);
     if (ns) {
       ns.queue.push(g.id);
@@ -268,8 +281,8 @@ function waitingThink(ctx: SimContext, g: Guest) {
       tipOnce(ctx, `missing-${place}`, `Guests are waiting for a ${place}, but there isn't a working one.`, 'bad');
     }
   } else {
-    // hop to a clearly better line if one has opened up
-    const better = pickStation(ctx, g);
+    // hop to a clearly better line if one has opened up, unless the player put them in this one
+    const better = g.placed ? null : pickStation(ctx, g);
     if (better && better !== st && stationScore(ctx, better, g) + 2 < stationScore(ctx, st, g) - 1) {
       removeFromStations(ctx, g);
       better.queue.push(g.id);

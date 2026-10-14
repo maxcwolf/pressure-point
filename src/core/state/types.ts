@@ -26,6 +26,8 @@ export interface Room {
   windows: WallSpot[];
   /** True once the room has been built: every required item placed and the blueprint confirmed. */
   done: boolean;
+  /** Staff fill its stations, and janitors see to it, before anywhere else. */
+  priority: boolean;
 }
 
 /** One tile's worth of a room's wall: the tile just inside it, and the direction pointing out. */
@@ -157,7 +159,7 @@ export type GuestGoal = 'reception' | 'consult' | 'assess' | 'treat' | 'leave';
 /** Something a guest breaks off waiting to see to. */
 export type Need = 'drink' | 'eat' | 'toilet' | 'play';
 /** How a guest's visit ended. */
-export type Outcome = 'healed' | 'failed' | 'stormed';
+export type Outcome = 'healed' | 'failed' | 'stormed' | 'sent';
 
 export type GuestState = 'enter' | 'toWait' | 'waiting' | 'called' | 'served' | 'toNeed' | 'need' | 'leaving';
 
@@ -180,6 +182,8 @@ export interface Guest extends CharBase {
   waited: number;
   /** Arrived as part of an emergency. */
   emergency: boolean;
+  /** Put in their line by the player, so they stay in it rather than look for a shorter one. */
+  placed: boolean;
 }
 
 export type Char = Staff | Guest;
@@ -242,6 +246,8 @@ export interface Stats {
   stormed: number;
   /** Turned down the treatment once they heard what it cost. */
   priced: number;
+  /** Sent home by the player. */
+  sent: number;
   arrived: number;
   /** Guests healed, by the discipline that healed them. */
   healedBy: Partial<Record<Discipline, number>>;
@@ -258,6 +264,7 @@ export interface Tally {
   failed: number;
   stormed: number;
   priced: number;
+  sent: number;
   /** Seconds spent waiting, summed over the guests who left this month, and how many they were. */
   waitTotal: number;
   waitCount: number;
@@ -270,6 +277,18 @@ export interface MonthRecord extends Tally {
   ledger: Ledger;
   reputation: number;
   money: number;
+}
+
+/** The rules the player sets for how the center is run. */
+export interface Policy {
+  /** How sure a diagnosis must be before a guest goes for treatment, from 0.5 to 0.95. */
+  diagnosis: number;
+  /** Emergency guests are called before anyone else in line. */
+  emergenciesFirst: boolean;
+  /** The energy at which staff stop for a break. */
+  breakAt: number;
+  /** How many of each role may be on a break at once. Absent means no limit. */
+  breakLimit: Partial<Record<Role, number>>;
 }
 
 export interface GameState {
@@ -308,6 +327,8 @@ export interface GameState {
   emergency: Emergency | null;
   /** Game day the next emergency offer may appear. */
   nextEmergency: number;
+  /** How the center is run: how sure a diagnosis must be, who goes first, and when staff take breaks. */
+  policy: Policy;
   /** Optional disciplines switched off for this game (absent means on). */
   options: Partial<Record<Discipline, boolean>>;
   /** Everything unlocked from the start, whatever the stars: a sandbox setting. */

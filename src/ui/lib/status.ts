@@ -51,7 +51,9 @@ export function guestStatus(g: Guest, sim: Sim): string {
           ? 'Going home, still knotted'
           : g.outcome === 'stormed'
             ? 'Leaving in a huff'
-            : 'Leaving';
+            : g.outcome === 'sent'
+              ? 'Sent home'
+              : 'Leaving';
   }
 }
 

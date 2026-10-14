@@ -473,6 +473,81 @@ test.describe('running a center', () => {
     expect(await game.eval((pp) => [pp.state.loan, pp.state.money, pp.state.priceLevel])).toEqual([0, 30000, 1.1]);
   });
 
+  test('the Policy menu sets the diagnosis threshold, emergencies first and breaks', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.menu('Policy');
+    const menu = page.locator('#menu');
+    await expect(menu).toContainText('75% sure');
+    await menu.locator('.stepper').filter({ hasText: 'Treat once' }).getByRole('button', { name: '+' }).click();
+    await expect(menu).toContainText('80% sure');
+    await menu.getByRole('button', { name: /Emergencies first: off/ }).click();
+    await expect(menu).toContainText('Emergencies first: on');
+    await menu.locator('.stepper').filter({ hasText: 'Take a break' }).getByRole('button', { name: '+' }).click();
+    // no limit on breaks to begin with; stepping down from it starts at five
+    await menu.locator('.stepper').filter({ hasText: 'Massage Therapists' }).getByRole('button', { name: '−' }).click();
+    await expect(menu.locator('.stepper').filter({ hasText: 'Massage Therapists' })).toContainText('5');
+    expect(await game.eval((pp) => pp.state.policy)).toEqual({
+      diagnosis: 0.8,
+      emergenciesFirst: true,
+      breakAt: 23,
+      breakLimit: { therapist: 5 },
+    });
+  });
+
+  test("a station's line can be reordered, and a guest sent home from it", async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    // play on until three guests are waiting somewhere, then stop the clock and line them up at the table
+    const ids = await game.eval((pp) => {
+      /** Guests in the building who are not being seen or on their way out. */
+      const free = () => pp.state.guests.filter((g) => !['leaving', 'called', 'served'].includes(g.state));
+      pp.state.speed = 1;
+      for (let i = 0; i < 6000 && free().length < 3; i++) pp.sim.tick(0.1);
+      pp.state.speed = 0;
+      const table = pp.state.items.find((i) => i.type === 'massage_table')!;
+      const guests = free().slice(0, 3);
+      for (const it of pp.state.items) it.queue = it.queue.filter((id) => !guests.some((g) => g.id === id));
+      table.queue = guests.map((g) => g.id);
+      for (const g of guests) Object.assign(g, { station: table.id, state: 'waiting', goal: 'treat' });
+      return table.queue.slice();
+    });
+    expect(ids.length).toBe(3);
+    // a star earned while playing on is out of the way first
+    await game.settle();
+    const keepHealing = page.getByRole('button', { name: 'Keep healing' });
+    if (await keepHealing.isVisible()) await keepHealing.click();
+    // selected directly: someone standing in front of the table would take a click meant for it
+    await game.eval((pp) => {
+      pp.tools.select({ kind: 'item', id: pp.state.items.find((i) => i.type === 'massage_table')!.id });
+    });
+    const rows = page.locator('#inspector .in-line');
+    await expect(rows).toHaveCount(3);
+    await rows.nth(1).getByRole('button', { name: '▲' }).click();
+    expect(await game.eval((pp) => pp.state.items.find((i) => i.type === 'massage_table')!.queue)).toEqual([
+      ids[1],
+      ids[0],
+      ids[2],
+    ]);
+    await rows.nth(0).getByRole('button', { name: '🏠' }).click();
+    await expect(rows).toHaveCount(2);
+    expect(await game.eval((pp) => pp.state.stats.sent)).toBe(1);
+  });
+
+  test('a room can be given priority from its inspector', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    await game.clickRoom('training');
+    await page
+      .locator('#inspector')
+      .getByRole('button', { name: /Priority: off/ })
+      .click();
+    await expect(page.locator('#inspector')).toContainText('Priority: on');
+    expect(await game.eval((pp) => pp.state.rooms.find((r) => r.type === 'training')!.priority)).toBe(true);
+  });
+
   test('an emergency can be accepted from its offer', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
@@ -1346,9 +1421,10 @@ test.describe('saved games', () => {
     await game.start();
     /** Whether the autosave has a picture. */
     const pictured = () => page.evaluate(() => localStorage.getItem('pressure-point-thumb:auto') !== null);
-    // the regular autosave, after twelve seconds of play
+    // the regular autosave, after twelve seconds of play: a frame counts for at most a tenth of a second, so on a
+    // machine busy enough to draw fewer than ten frames a second, that takes longer than twelve seconds
     await page.waitForFunction(() => localStorage.getItem('pressure-point-save-v1') !== null, null, {
-      timeout: 20_000,
+      timeout: 45_000,
     });
     expect(await pictured()).toBe(false);
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));

@@ -1,8 +1,8 @@
 // Bringing saves written by earlier versions up to date.
 
 import { ACHIEVEMENTS, DISCIPLINES, type Modality, type Role, ROLES } from '../data';
-import { emptyTally, SAVE_VERSION } from './game';
-import type { Candidate, GameState, Guest, Item, Ledger, Room, Staff, Stats } from './types';
+import { defaultPolicy, emptyTally, SAVE_VERSION } from './game';
+import type { Candidate, GameState, Guest, Item, Ledger, MonthRecord, Room, Staff, Stats, Tally } from './types';
 
 /** What everyone in a role is qualified in to begin with: their discipline's basic modality. */
 const baseQuals = (role: Role): Modality[] => {
@@ -17,7 +17,10 @@ type OldLedger = Before<Ledger, 'training' | 'interest' | 'bonus'>;
 
 /** A save as an earlier version may have written it. */
 type OldSave = Before<
-  Omit<GameState, 'staff' | 'candidates' | 'items' | 'rooms' | 'guests' | 'ledger' | 'lastLedger' | 'stats'>,
+  Omit<
+    GameState,
+    'staff' | 'candidates' | 'items' | 'rooms' | 'guests' | 'ledger' | 'lastLedger' | 'stats' | 'tally' | 'months'
+  >,
   | 'announceT'
   | 'loan'
   | 'priceLevel'
@@ -25,18 +28,19 @@ type OldSave = Before<
   | 'emergency'
   | 'nextEmergency'
   | 'options'
-  | 'tally'
-  | 'months'
   | 'center'
   | 'unlockAll'
   | 'achieved'
+  | 'policy'
 > & {
-  stats: Before<Stats, 'priced' | 'healedBy' | 'emergencies' | 'lastQuit'>;
+  stats: Before<Stats, 'priced' | 'sent' | 'healedBy' | 'emergencies' | 'lastQuit'>;
+  tally?: Before<Tally, 'sent'>;
+  months?: Before<MonthRecord, 'sent'>[];
   staff: Before<Staff, 'quals' | 'training' | 'strain' | 'morale' | 'raiseAsked' | 'unhappyT'>[];
   candidates: Before<Candidate, 'quals'>[];
   items: Before<Item, 'wear' | 'dirt'>[];
-  rooms: Before<Room, 'windows'>[];
-  guests: Before<Guest, 'emergency'>[];
+  rooms: Before<Room, 'windows' | 'priority'>[];
+  guests: Before<Guest, 'emergency' | 'placed'>[];
   ledger: OldLedger;
   lastLedger: OldLedger;
 };
@@ -58,8 +62,14 @@ export function upgradeSave(save: GameState) {
     it.wear ??= 0;
     it.dirt ??= 0;
   }
-  for (const r of s.rooms) r.windows ??= [];
-  for (const g of s.guests) g.emergency ??= false;
+  for (const r of s.rooms) {
+    r.windows ??= [];
+    r.priority ??= false;
+  }
+  for (const g of s.guests) {
+    g.emergency ??= false;
+    g.placed ??= false;
+  }
   for (const l of [s.ledger, s.lastLedger]) {
     l.training ??= 0;
     l.interest ??= 0;
@@ -73,6 +83,7 @@ export function upgradeSave(save: GameState) {
   s.nextEmergency ??= s.day + 60;
   s.options ??= {};
   s.stats.priced ??= 0;
+  s.stats.sent ??= 0;
   s.stats.healedBy ??= {};
   s.stats.emergencies ??= 0;
   s.stats.lastQuit ??= -1;
@@ -80,6 +91,8 @@ export function upgradeSave(save: GameState) {
   s.center ??= 'sandbox';
   s.tally ??= emptyTally();
   s.months ??= [];
+  for (const t of [s.tally, ...s.months]) t.sent ??= 0;
+  s.policy ??= defaultPolicy();
   s.unlockAll ??= false;
   // an achievement from a newer version means nothing here
   s.achieved = (s.achieved ?? []).filter((id) => Object.hasOwn(ACHIEVEMENTS, id));

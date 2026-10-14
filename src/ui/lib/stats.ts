@@ -26,6 +26,7 @@ export const METRICS: readonly Metric[] = [
   { id: 'failed', name: 'Treatments failed', desc: 'Treated, but not healed.', unit: 'count' },
   { id: 'stormed', name: 'Stormed out', desc: 'Ran out of patience waiting.', unit: 'count' },
   { id: 'priced', name: 'Put off by prices', desc: 'Heard what their treatment would cost and left.', unit: 'count' },
+  { id: 'sent', name: 'Sent home', desc: 'Sent home untreated, by you.', unit: 'count' },
   { id: 'wait', name: 'Average wait', desc: 'Time spent waiting, per guest who left.', unit: 'days' },
   ...DISCIPLINE_ORDER.map((d): Metric => ({
     id: `healed-${d}`,
@@ -61,6 +62,8 @@ export function metricValue(metric: Metric, m: MonthRecord): number {
       return m.stormed;
     case 'priced':
       return m.priced;
+    case 'sent':
+      return m.sent;
     case 'wait':
       return m.waitCount ? m.waitTotal / m.waitCount / DAY_SECONDS : 0;
     case 'income':

@@ -54,7 +54,7 @@ test.describe('in a game', () => {
     await screens.shot('hud');
   });
 
-  for (const menu of ['Rooms', 'Items', 'Hire', 'Staff', 'Treatments', 'Money', 'Stats'] as const) {
+  for (const menu of ['Rooms', 'Items', 'Hire', 'Staff', 'Treatments', 'Money', 'Policy', 'Stats'] as const) {
     test(`the ${menu} menu`, async ({ screens, game }) => {
       await screens.play();
       await game.menu(menu);
@@ -96,6 +96,28 @@ test.describe('in a game', () => {
       await screens.shot(`inspector-${type.replace('_', '-')}`);
     });
   }
+
+  test('a line at a massage table', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      // the guests there are, lined up at the table, one of them an emergency
+      const table = pp.state.items.find((i) => i.type === 'massage_table')!;
+      const guests = pp.state.guests.filter((g) => g.state !== 'leaving').slice(0, 3);
+      for (const it of pp.state.items) it.queue = it.queue.filter((id) => !guests.some((g) => g.id === id));
+      table.queue = guests.map((g) => g.id);
+      guests.forEach((g, i) =>
+        Object.assign(g, {
+          station: table.id,
+          state: 'waiting',
+          goal: 'treat',
+          patience: 90 - i * 30,
+          emergency: i === 1,
+        }),
+      );
+      pp.tools.select({ kind: 'item', id: table.id });
+    });
+    await screens.shot('inspector-line');
+  });
 
   for (const type of ['massage', 'consult'] as const) {
     test(`the inspector for a ${type} room`, async ({ screens, game }) => {

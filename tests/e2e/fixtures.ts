@@ -422,7 +422,7 @@ export class Game {
   }
 
   /** Open one of the round menus along the bottom. */
-  async menu(name: 'Rooms' | 'Items' | 'Hire' | 'Staff' | 'Treatments' | 'Money' | 'Stats') {
+  async menu(name: 'Rooms' | 'Items' | 'Hire' | 'Staff' | 'Treatments' | 'Money' | 'Policy' | 'Stats') {
     await this.page.locator('#buildbtns').getByRole('button', { name }).click();
   }
   /** The first card in the open menu with this name. */

@@ -134,6 +134,7 @@ describe('what each center offers', () => {
         door: { x: 11, y: 12, dx: 0, dy: 1 },
         windows: [],
         done: true,
+        priority: false,
       });
       let hits = 0;
       for (let i = 0; i < 2000; i++) if (office.has(rollCondition(ctx))) hits++;
@@ -260,6 +261,7 @@ describe('Saltmarsh', () => {
           door: { x: 1, y: 2, dx: 0, dy: 1 },
           windows: [],
           done: true,
+          priority: false,
         });
       const found = new Set<string>();
       for (let i = 0; i < 3000; i++) found.add(rollCondition(ctx));

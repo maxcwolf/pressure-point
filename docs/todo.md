@@ -24,7 +24,7 @@ Tick an item off when it is done, with the commit or release it landed in.
 
 The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two-point-gaps.md). Its decisions to make are still open.
 
-- [ ] **Phase 1, taking charge:** policy, chances shown, send home, a queue you can manage, room priority.
+- [x] **Phase 1, taking charge:** policy, chances shown, send home, a queue you can manage, room priority. Two Point's fast-track switch has nothing to do here, since guests already go straight to treatment once diagnosed, so it became calling emergencies first.
 - [ ] **Phase 2, goals along the way:** staff objectives and year-end awards.
 - [ ] **Phase 3, staff careers:** experience and promotions, general qualifications, job assignment, a hiring pool that grows, traits you can see.
 - [ ] **Phase 4, reading the center:** guest feelings, reviews and reputation in parts, the casebook, overlays.

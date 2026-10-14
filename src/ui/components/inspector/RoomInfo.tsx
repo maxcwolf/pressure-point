@@ -4,6 +4,7 @@ import { ITEMS, MODALITIES, MODALITY_ORDER, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
 import type { Item, Room } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
+import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
 import { Button } from '../common/Button';
 import { Stars } from '../common/Stars';
@@ -58,6 +59,15 @@ export function RoomInfo({ room }: { room: Room }) {
         <StationInfo key={i.id} item={i} />
       ))}
       {table && <CanDeliver table={table} />}{' '}
+      <Button
+        class={cx('roompriority', room.priority && 'on')}
+        title="Staff fill a priority room's stations first, and Janitors see to it before anywhere else."
+        onPress={() => {
+          sim.setRoomPriority(room.id, !room.priority);
+        }}
+      >
+        {room.priority ? '⭐ Priority: on' : '☆ Priority: off'}
+      </Button>{' '}
       <Button
         class="roomwindows"
         onPress={() => {

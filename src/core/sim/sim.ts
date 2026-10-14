@@ -6,6 +6,7 @@ import {
   DAY_SECONDS,
   DAYS_PER_MONTH,
   type Discipline,
+  ITEMS,
   type ItemType,
   type Modality,
   type ModalityDef,
@@ -39,11 +40,13 @@ import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } fr
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
+import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
+import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
 import { monthSoFar } from './records';
 import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
-import { updateStations } from './stations';
+import { type Chance, successChance, updateStations } from './stations';
 import { subjectSpot } from './subjects';
 import type { Course } from './training';
 import { courses, train, trainBlocker } from './training';
@@ -224,6 +227,42 @@ export class Sim {
     return deliveryProblem(this.ctx, table, staff, def);
   }
 
+  /**
+   * The chance a guest's treatment works, if it were given now at the table they are lined up for, by whoever is
+   * working it. Null until they are diagnosed and in line for a table with someone at it.
+   */
+  chanceFor(g: Guest): Chance | null {
+    const it = this.world.item(g.station);
+    const staff = it && this.staff(it.staffId);
+    if (g.goal !== 'treat' || !it || !staff || ITEMS[it.type].station?.goal !== 'treat') return null;
+    return successChance(this.ctx, it, staff, g);
+  }
+  // ---- Lines -----------------------------------------------------------------
+  /** Move a guest up (negative) or down (positive) their line. */
+  moveInLine(guestId: number, by: number): boolean {
+    return moveInLine(this.ctx, guestId, by);
+  }
+  /** Send a waiting guest to another station that does the same job. */
+  moveToStation(guestId: number, stationId: number): boolean {
+    return moveToStation(this.ctx, guestId, stationId);
+  }
+  /** Of the other stations doing the same job as this one, the one with the shortest line. */
+  shortestOtherLine(it: Item): Item | undefined {
+    return shortestOtherLine(this.ctx, it);
+  }
+  /** Send a guest home untreated. */
+  sendHome(guestId: number): boolean {
+    return sendHome(this.ctx, guestId);
+  }
+  // ---- Policy ----------------------------------------------------------------
+  /** Change how the center is run. */
+  setPolicy(change: PolicyChange) {
+    setPolicy(this.ctx, change);
+  }
+  /** Put a room first for staff and janitors, or back among the rest. */
+  setRoomPriority(roomId: number, on: boolean) {
+    setRoomPriority(this.ctx, roomId, on);
+  }
   // ---- Staff -----------------------------------------------------------------
 
   /** Hire an applicant. */

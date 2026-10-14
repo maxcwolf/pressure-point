@@ -66,7 +66,16 @@ export const PLAY_PATIENCE = 25;
 export const SEAT_DRAIN = 0.6;
 
 export const DECOR_RADIUS = 4;
+/** How sure a diagnosis must be before treatment, unless the policy says otherwise, and the range it can be set in. */
 export const DIAGNOSIS_TARGET = 0.75;
+export const DIAGNOSIS_MIN = 0.5;
+export const DIAGNOSIS_MAX = 0.95;
+/** The energy at which staff stop for a break, unless the policy says otherwise, and the range it can be set in. */
+export const BREAK_AT = 18;
+export const BREAK_AT_MIN = 10;
+export const BREAK_AT_MAX = 50;
+/** What sending a guest home costs in reputation: less than a failed treatment. */
+export const SEND_HOME_REP = 1;
 
 /** Share of guests and applicants who get a cameo name instead of a generated one. */
 export const CAMEO_CHANCE = 0.12;

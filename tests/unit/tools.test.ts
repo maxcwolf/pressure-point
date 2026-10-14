@@ -31,6 +31,7 @@ const ROOM: Room = {
   door: { x: 5, y: 6, dx: 0, dy: 1 },
   windows: [],
   done: false,
+  priority: false,
 };
 
 describe('cursor geometry', () => {

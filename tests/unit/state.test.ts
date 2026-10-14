@@ -100,3 +100,24 @@ describe('older saves', () => {
     expect(up.nextEmergency).toBeGreaterThan(up.day);
   });
 });
+
+describe('a save from before the policy', () => {
+  it('gets the standard policy, no priority rooms, and nobody sent home', () => {
+    const { sim, s } = openCenter(2);
+    run(sim, 30);
+    const old = JSON.parse(JSON.stringify(s)) as Record<string, any>;
+    old.version = 4;
+    delete old.policy;
+    delete old.stats.sent;
+    delete old.tally.sent;
+    for (const r of old.rooms) delete r.priority;
+    for (const g of old.guests) delete g.placed;
+    upgradeSave(old as GameState);
+    const up = old as GameState;
+    expect(up.policy).toEqual({ diagnosis: 0.75, emergenciesFirst: false, breakAt: 18, breakLimit: {} });
+    expect(up.rooms.every((r) => !r.priority)).toBe(true);
+    expect(up.guests.every((g) => !g.placed)).toBe(true);
+    expect(up.stats.sent).toBe(0);
+    expect(up.tally.sent).toBe(0);
+  });
+});

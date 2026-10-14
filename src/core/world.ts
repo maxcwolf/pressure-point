@@ -478,7 +478,15 @@ export class World {
       if (this.blocked[tileIdx(door.x, door.y)]) return no('Furniture is in the way inside the room');
     }
     const rooms = this.s.rooms;
-    const trial: Room = { id: replacing?.id ?? 2147483000, type, ...r, door, windows: [], done: false };
+    const trial: Room = {
+      id: replacing?.id ?? 2147483000,
+      type,
+      ...r,
+      door,
+      windows: [],
+      done: false,
+      priority: false,
+    };
     this.s.rooms = [...rooms.filter((x) => x !== replacing), trial];
     this.rebuild(true);
     const fine = this.connected();

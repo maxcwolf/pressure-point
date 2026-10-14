@@ -1,17 +1,36 @@
 // The inspector for a guest.
 
-import { conditionOf, DIAGNOSIS_TARGET } from '../../../core/data';
+import { conditionOf, MODALITIES } from '../../../core/data';
 import { money } from '../../../core/format';
 import type { Guest } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
+import { chanceText, percent, poorChance } from '../../lib/chance';
+import { cx } from '../../lib/cx';
 import { guestStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
+import { Button } from '../common/Button';
 import { QualChips } from '../common/QualChips';
+
+/** The chance a diagnosed guest's treatment works, if given now, or what it is waiting on. */
+function ChanceLine({ guest: g }: { guest: Guest }) {
+  const { sim } = useGame();
+  if (g.goal !== 'treat') return null;
+  const chance = sim.chanceFor(g);
+  const staff = sim.staff(sim.world.item(g.station)?.staffId ?? 0);
+  if (!chance || !staff) return <p class="sub chance">Chance of success: not known until someone is at the table</p>;
+  const def = MODALITIES[conditionOf(g.condition).modality];
+  return (
+    <p class={cx('sub', 'chance', poorChance(chance) && 'poor')}>
+      {`Chance of success: ${chanceText(chance, def, staff.name)}`}
+    </p>
+  );
+}
 
 /** A guest's condition, what they are doing and how they are holding up. */
 export function GuestInfo({ guest: g }: { guest: Guest }) {
   const { sim } = useGame();
   const c = conditionOf(g.condition);
+  const sure = sim.s.policy.diagnosis;
   // the condition is a mystery until a consultation has settled it
   const known = g.goal === 'treat' || g.goal === 'leave';
   return (
@@ -29,14 +48,14 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
           <QualChips quals={[c.modality]} />
         </>
       )}{' '}
-      <p class="status">{guestStatus(g, sim)}</p>{' '}
+      {g.state !== 'leaving' && <ChanceLine guest={g} />} <p class="status">{guestStatus(g, sim)}</p>{' '}
       <label>
         Patience
         <Bar value={g.patience} class={g.patience < 25 ? 'bad' : ''} />
       </label>{' '}
       <label>
-        Diagnosis
-        <Bar value={(g.diagnosis / DIAGNOSIS_TARGET) * 100} class="blue" />
+        {`Diagnosis (${percent(Math.min(g.diagnosis, 1))} sure, ${percent(sure)} needed)`}
+        <Bar value={(g.diagnosis / sure) * 100} class="blue" />
       </label>{' '}
       <label>
         Thirst
@@ -51,6 +70,17 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
         <Bar value={g.bladder} class="need" />
       </label>{' '}
       <p class="sub">{`Spent so far: ${money(g.spent)}`}</p>
+      {g.state !== 'leaving' && (
+        <Button
+          class="danger sendhome"
+          title="They leave without treatment: no fee, and a small knock to your reputation."
+          onPress={() => {
+            sim.sendHome(g.id);
+          }}
+        >
+          🏠 Send home
+        </Button>
+      )}
     </>
   );
 }

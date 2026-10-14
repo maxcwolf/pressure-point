@@ -4,6 +4,12 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **A Policy menu:** set how sure a diagnosis must be before treatment (75% to start), call emergency guests ahead of everyone else, choose the energy at which staff take a break, and cap how many of each role may be on a break at once.
+- **Lines you can manage:** a station's inspector lists who is waiting, with their patience and chance of success, and buttons to move each guest up or down, over to the shortest other line of the same kind, or home.
+- **Chances shown:** a diagnosed guest's inspector gives their treatment's chance of success, and why it is low when it is.
+- **Send a guest home** from their inspector or the line: they leave untreated, pay no treatment fee, and your reputation takes a small knock, less than a failed treatment. Sent home is counted in the Stats menu.
+- **Fixed:** an emergency's days left could read a day too many, when subtracting one part day from another came out a hair over a whole number.
+- **Priority rooms:** switch Priority on in a room's inspector and staff fill its stations first, leaving a quieter post to do it, and Janitors see to it before anywhere else.
 - **Raise requests wait at the side:** each open request has its own card at the top right until it is answered, and clicking it selects the person asking. The advisor stays free for tips and goals.
 - **The announcer mixes it up:** a filler line is not said again until at least half the others have been.
 - **Tidier front lawn and title screen:** the sign out front no longer has a leg in the building's wall, and the save card on the title screen keeps clear of the panel's edges, wrapping a long date rather than spilling over.

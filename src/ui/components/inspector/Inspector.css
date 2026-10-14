@@ -103,7 +103,8 @@
 
 .insp button.roomwindows,
 .insp button.roomdoor,
-.insp button.roomresize {
+.insp button.roomresize,
+.insp button.roompriority {
   border: 2.5px solid var(--navy);
   border-radius: 12px;
   padding: 5px 11px;
@@ -123,4 +124,16 @@
   background: #fbe3e1;
   border-radius: 8px;
   padding: 4px 8px;
+}
+
+.insp .chance {
+  font-weight: 600;
+}
+
+.insp .chance.poor {
+  color: #a8322b;
+}
+
+.insp button.roompriority.on {
+  background: var(--gold);
 }

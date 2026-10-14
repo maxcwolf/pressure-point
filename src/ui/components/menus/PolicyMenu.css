@@ -1,0 +1,70 @@
+/* Styles for PolicyMenu. */
+
+.policy-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.policy-card {
+  background: #fff;
+  border: 2px solid rgba(36, 56, 74, 0.3);
+  border-radius: 12px;
+  padding: 8px 11px;
+  font-size: 13.5px;
+}
+
+.policy-card h4 {
+  font-weight: 600;
+  margin: 2px 0 6px;
+}
+
+.policy-card .sub {
+  margin-top: 6px;
+}
+
+.stepper {
+  display: grid;
+  grid-template-columns: 28px minmax(90px, auto) 28px 1fr;
+  align-items: center;
+  gap: 4px 6px;
+  margin-bottom: 4px;
+}
+
+.stepper span {
+  grid-column: 1 / -1;
+}
+
+.stepper b {
+  text-align: center;
+}
+
+/* a short setting, such as one role's break limit, all on one line */
+.stepper.inline {
+  grid-template-columns: 1fr 28px 40px 28px;
+}
+
+.stepper.inline span {
+  grid-column: auto;
+}
+
+.stepper button,
+.policy-card button.toggle {
+  border: 2px solid var(--navy);
+  border-radius: 9px;
+  background: var(--cream);
+  font-weight: 600;
+  height: 28px;
+}
+
+.policy-card button.toggle {
+  padding: 0 12px;
+}
+
+.policy-card button.toggle.on {
+  background: var(--gold);
+}
+
+.stepper button.locked {
+  opacity: 0.35;
+}

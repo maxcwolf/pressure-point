@@ -68,7 +68,18 @@ export function placeItem(
 
 /** Start a new room as a blueprint, not yet paid for. */
 export function createRoom(ctx: SimContext, type: RoomType, r: Rect, door: Room['door']): Room {
-  const room: Room = { id: ctx.s.nextId++, type, x: r.x, y: r.y, w: r.w, h: r.h, door, windows: [], done: false };
+  const room: Room = {
+    id: ctx.s.nextId++,
+    type,
+    x: r.x,
+    y: r.y,
+    w: r.w,
+    h: r.h,
+    door,
+    windows: [],
+    done: false,
+    priority: false,
+  };
   ctx.s.rooms.push(room);
   worldChanged(ctx);
   emit(ctx, { type: 'sfx', name: 'place' });

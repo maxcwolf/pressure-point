@@ -10,6 +10,7 @@ import type { MenuId } from '../../hud';
 import { HireMenu } from './HireMenu';
 import { ItemsMenu } from './ItemsMenu';
 import { MoneyMenu } from './MoneyMenu';
+import { PolicyMenu } from './PolicyMenu';
 import { RoomsMenu } from './RoomsMenu';
 import { StaffMenu } from './StaffMenu';
 import { StatsMenu } from './StatsMenu';
@@ -30,6 +31,8 @@ function contents(menu: MenuId): ComponentChildren {
       return <TreatmentsMenu />;
     case 'finance':
       return <MoneyMenu />;
+    case 'policy':
+      return <PolicyMenu />;
     case 'stats':
       return <StatsMenu />;
   }

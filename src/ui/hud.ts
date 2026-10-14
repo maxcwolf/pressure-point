@@ -7,7 +7,7 @@ import { voiceFor } from '../voice';
 import type { GameHost } from './host';
 import type { ItemKind, Place } from './lib/catalog';
 
-export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'stats';
+export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'policy' | 'stats';
 export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma';
 
 /** A message that fades after a few seconds. */

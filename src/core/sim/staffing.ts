@@ -33,6 +33,7 @@ import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { resetGuest } from './guests';
 import { goTo, halt, moveAlong } from './movement';
+import { breakDue } from './policy';
 import { hasItem } from './progress';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
@@ -254,9 +255,26 @@ export function jobSeconds(kind: Job['kind'] | undefined): number {
   return 1.6;
 }
 
+/** Whether a tile is in a room the player has put first. */
+export function inPriorityRoom(ctx: SimContext, x: number, y: number): boolean {
+  return !!ctx.world.room(ctx.world.zoneAt(x, y))?.priority;
+}
+
+/** A station in a priority room that nobody is working and this member of staff could. */
+export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
+  if (!ctx.s.rooms.some((r) => r.priority)) return undefined;
+  return ctx.s.items.find(
+    (it) =>
+      ITEMS[it.type].station?.staff === st.role &&
+      !it.staffId &&
+      ctx.world.usable(it) &&
+      inPriorityRoom(ctx, it.x, it.y),
+  );
+}
+
 /** Find something to do: a break if tired, then a job or a station to staff, or else a wander. */
 function findWork(ctx: SimContext, st: Staff) {
-  if (st.energy < 18 && tryBreak(ctx, st)) return;
+  if (breakDue(ctx, st) && tryBreak(ctx, st)) return;
   const s = ctx.s;
   if (st.role === 'caretaker') {
     // broken equipment first, then litter and filthy toilets, then routine cleaning, watering and servicing
@@ -268,15 +286,17 @@ function findWork(ctx: SimContext, st: Staff) {
       urgency: number;
     }
     const tasks: Task[] = [];
-    for (const l of s.litter) if (!l.claimedBy) tasks.push({ kind: 'litter', id: l.id, x: l.x, y: l.y, urgency: 1 });
+    /** Note a task, ahead of the same kind of thing elsewhere if it is in a priority room. */
+    const add = (kind: Job['kind'], id: number, x: number, y: number, urgency: number) => {
+      tasks.push({ kind, id, x, y, urgency: urgency + (inPriorityRoom(ctx, x, y) ? 0.5 : 0) });
+    };
+    for (const l of s.litter) if (!l.claimedBy) add('litter', l.id, l.x, l.y, 1);
     for (const p of s.items) {
       if (p.claimedBy) continue;
-      if (p.wear >= WEAR_REPAIR)
-        tasks.push({ kind: 'repair', id: p.id, x: p.x, y: p.y, urgency: p.wear >= 100 ? 2 : 0 });
-      else if (p.dirt >= DIRT_CLEAN)
-        tasks.push({ kind: 'clean', id: p.id, x: p.x, y: p.y, urgency: p.dirt >= DIRT_FILTHY ? 1 : 0 });
+      if (p.wear >= WEAR_REPAIR) add('repair', p.id, p.x, p.y, p.wear >= 100 ? 2 : 0);
+      else if (p.dirt >= DIRT_CLEAN) add('clean', p.id, p.x, p.y, p.dirt >= DIRT_FILTHY ? 1 : 0);
       else if ((p.type === 'plant' && p.water <= 40) || (p.type === 'stone_warmer' && p.water <= 55))
-        tasks.push({ kind: 'water', id: p.id, x: p.x, y: p.y, urgency: 0 });
+        add('water', p.id, p.x, p.y, 0);
     }
     /** How far a task is from this member of staff. */
     const dist = (t: Task) => Math.hypot(t.x - st.tx, t.y - st.ty);
@@ -310,6 +330,7 @@ function findWork(ctx: SimContext, st: Staff) {
       const def = ITEMS[it.type].station;
       if (def?.staff !== st.role || it.staffId || !ctx.world.usable(it)) continue;
       let score = it.queue.length * 10 - Math.hypot(it.x - st.tx, it.y - st.ty);
+      if (inPriorityRoom(ctx, it.x, it.y)) score += 1000;
       if (def.goal === 'treat') {
         for (const id of it.queue) {
           const q = guestById(ctx, id);
@@ -390,7 +411,9 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
     case 'atPost': {
       const it = ctx.world.item(st.post);
       if (it?.staffId !== st.id || !ctx.world.usable(it)) staffIdle(ctx, st);
-      else if (st.energy < 18 && !it.serving) {
+      // free to go, and a priority room is short of someone: off to work there instead
+      else if (!it.serving && !inPriorityRoom(ctx, it.x, it.y) && openPriorityPost(ctx, st)) staffIdle(ctx, st);
+      else if (breakDue(ctx, st) && !it.serving) {
         st.timer -= dt;
         if (st.timer <= 0) {
           st.timer = 2;

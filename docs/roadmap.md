@@ -11,7 +11,7 @@ Two rules hold for every phase:
 
 Guests stop being something that happens to the player and become something to manage.
 
-- **Policy** [3]: a Policy tab in the Money menu (or its own menu) with the diagnosis threshold, today the constant `DIAGNOSIS_TARGET` (75%), and a fast-track switch for a guest whose condition is already known. A **break policy**: how many of each role may be on a break at once, and the energy at which they go (today hard-coded at 18 in `staffing.ts` and `stations.ts`).
+- **Policy** [3]: a Policy menu with the diagnosis threshold, until now the constant `DIAGNOSIS_TARGET` (75%), and a switch to call emergency guests first (Two Point's fast-track switch has nothing to do here, since guests already go straight to treatment once diagnosed). A **break policy**: how many of each role may be on a break at once, and the energy at which they go (today hard-coded at 18 in `staffing.ts` and `stations.ts`).
 - **Chances shown** [4]: the chance of success, today worked out inline in `stations.ts`, moved into a pure `successChance` function and shown in the guest's inspector before treatment, with the reason when it is low (unqualified, missing equipment, tired).
 - **Send home** [2]: a button in the guest's inspector. The guest leaves without paying for treatment; reputation takes a small knock, smaller than a failed treatment.
 - **A queue you can manage** [2]: a station's queue in its inspector, with each guest's patience and chance of success, to move a guest up or down or to another station of the same kind.
@@ -59,7 +59,7 @@ New money levers, and new ways to earn.
 The biggest change to how the game feels, once the player has phases 1 to 4 to respond with.
 
 - **A worsening condition** [1]: each guest has a condition bar that falls over the visit, faster for some conditions. It lowers the chance of success; at zero the guest leaves worse off, with a big reputation hit and a bad review. No deaths.
-- **Bad vibes** [42]: a failed treatment leaves a cloud in its room that lowers results and unsettles anyone in it, until a Reiki Practitioner, or a janitor with a new Smudging course, clears it.
+- **Bad vibes** [42]: a failed treatment leaves a cloud in its room that lowers results and unsettles anyone in it, until a Reiki Practitioner, or a janitor with a new Smudging course, clears it. Whoever clears it walks the room holding a smoking bundle of sage, wafting it around.
 - **A stress outbreak** [7]: offered like an emergency. Stress spreads among guests waiting close together; the player has a few calming sessions to hand out to carriers, spotted by their symptoms, before too many leave.
 
 ## Phase 7: Comfort
