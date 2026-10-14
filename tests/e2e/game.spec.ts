@@ -445,6 +445,30 @@ test.describe('running a center', () => {
     expect(await game.eval((pp) => pp.state.guests.filter((g) => g.emergency).length)).toBeGreaterThan(3);
   });
 
+  // the offer used to add "massage" to every technique, so an acupuncture emergency asked for "Cupping massage"
+  test('an emergency offer names the treatment as the Treatments menu does', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.buildClinic();
+    await game.eval((pp) => {
+      pp.state.offer = {
+        condition: 'vibes',
+        cause: 'A bus tour arrived.',
+        total: 5,
+        target: 3,
+        healed: 0,
+        pending: 0,
+        reward: 4000,
+        deadline: pp.state.day + 8,
+      };
+    });
+    await expect(page.locator('#offer')).toContainText('need Cupping.');
+    await game.eval((pp) => {
+      pp.state.offer!.condition = 'slump';
+    });
+    await expect(page.locator('#offer')).toContainText('need Swedish massage.');
+  });
+
   test('furniture can be picked up and moved', async ({ game, page }) => {
     await game.start();
     await game.give('plant');

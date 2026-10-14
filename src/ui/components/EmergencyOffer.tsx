@@ -2,7 +2,7 @@
 
 import './EmergencyOffer.css';
 
-import { conditionOf, MODALITIES } from '../../core/data';
+import { conditionOf, modalityLabel } from '../../core/data';
 import { money } from '../../core/format';
 import { useGame } from '../hooks/use-hud';
 import { Button } from './common/Button';
@@ -20,7 +20,7 @@ export function EmergencyOffer() {
         <p>
           {`${offer.cause} `}
           <b>{`${offer.total} guests`}</b> with <b>{condition.name}</b>
-          {` need ${MODALITIES[condition.modality].name} massage.`}
+          {` need ${modalityLabel(condition.modality)}.`}
         </p>{' '}
         <p class="sub">
           {`Heal ${offer.target} of them within 25 days for a `}

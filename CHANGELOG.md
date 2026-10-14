@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Fixed:** an acupuncture emergency no longer asks for "Cupping massage" and the like.
+
 ## v0.4.1
 
 - **A new title screen**, with the new logo, a picture of your latest game and its stats, and big buttons to get going.
