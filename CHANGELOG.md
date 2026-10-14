@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.3.1
 
 - **Fixed:** a window in a room's near wall is now a full window. Before, only its top showed above the building's outer wall.
 
