@@ -6,7 +6,8 @@ import { Sim } from '../core/sim/sim';
 import type { GameState } from '../core/state/types';
 import { accessTile, itemDims } from '../core/world';
 import { View } from '../render/view';
-import { autosave } from '../storage/saves';
+import { autosave, AUTOSAVE_ID } from '../storage/saves';
+import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
 import { reloadInto } from './handoff';
 import { bindKeyboard } from './keyboard';
@@ -40,8 +41,10 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     },
     (name) => audio.play(name),
   );
-  /** Write the autosave. */
-  const save = () => autosave(state);
+  /** Write the autosave, with a picture of the view for the title screen. */
+  const save = () => {
+    if (autosave(state)) storeThumb(AUTOSAVE_ID, view.snapshot());
+  };
   /** Save, then stop saving on the way out, so the page that loads next finds this game as it was left. */
   const saveAndStop = () => {
     save();

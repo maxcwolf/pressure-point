@@ -89,6 +89,6 @@ End-to-end tests find things by meaning (`game.clickItem('bench')`), not by scre
 
 **Add a discipline** such as reiki. Add an entry to `DISCIPLINES`, a room, its items, a staff role, and its modalities and conditions, all in `core/data/`, then a model for each new item. The simulation, the menus and Settings pick it up from the data.
 
-**Change the icon or the logo.** Edit `brand/icon.mjs` or `brand/wordmark.mjs` and run `yarn brand`, which renders the app icon (`build/icon.png`, picked up by the installers), the favicon (`public/favicon.svg`) and the README logo (`docs/logo.png`). Commit what it writes.
+**Change the icon or the logo.** Edit `brand/icon.mjs` or `brand/wordmark.mjs` and run `yarn brand`, which renders the app icon (`build/icon.png`, picked up by the installers), the favicon (`public/favicon.svg`) and the logo on the title screen and in the README (`src/ui/theme/logo.png`). Commit what it writes.
 
 **Add something the desktop app can do.** Declare it in `electron/api.ts`, implement it in `preload.ts` and `main.ts`, and read it through `src/app/desktop.ts`. Check that the web build still works without it.

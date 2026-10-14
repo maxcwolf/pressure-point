@@ -8,6 +8,7 @@ import { SAVE_VERSION } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { upgradeSave } from '../core/state/upgrade';
 import { isRecord } from './json';
+import { copyThumb, dropThumb } from './thumbnails';
 
 export const AUTOSAVE_ID = 'auto';
 /** Where the game being replaced by a new one is kept, so starting over never destroys anything. */
@@ -159,6 +160,7 @@ export function autosave(s: GameState, now = Date.now()): boolean {
 /** Delete a save and its list entry. */
 export function deleteSave(id: string) {
   removeQuietly(slotKey(id));
+  dropThumb(id);
   try {
     writeIndex(readIndex().filter((i) => i.id !== id));
   } catch {
@@ -173,8 +175,9 @@ export function deleteSave(id: string) {
 export function archiveAutosave(now = Date.now()) {
   const old = readSave(AUTOSAVE_ID);
   if (!old) return;
-  if (typeof writeSave(old, `Previous game (${gameDate(old.day)})`, PREVIOUS_ID, now) !== 'string')
-    deleteSave(AUTOSAVE_ID);
+  if (typeof writeSave(old, `Previous game (${gameDate(old.day)})`, PREVIOUS_ID, now) === 'string') return;
+  copyThumb(AUTOSAVE_ID, PREVIOUS_ID);
+  deleteSave(AUTOSAVE_ID);
 }
 
 /** A save as the text of a file, ready to download. */

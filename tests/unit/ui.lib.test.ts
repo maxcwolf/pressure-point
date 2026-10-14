@@ -7,6 +7,7 @@ import { cx } from '../../src/ui/lib/cx';
 import { deliveryNote } from '../../src/ui/lib/delivery';
 import { placedFlags } from '../../src/ui/lib/plan';
 import { courseName, guestStatus, staffStatus } from '../../src/ui/lib/status';
+import { saveFacts, titleBadges } from '../../src/ui/lib/title';
 import { roomsUnlockedAt, treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
 import { hire, openCenter, run, runUntil } from './helpers';
 
@@ -125,5 +126,24 @@ describe('describing what people are doing', () => {
     const receptionist = sim.s.staff.find((x) => x.role === 'receptionist')!;
     runUntil(sim, () => receptionist.state === 'atPost', 60);
     expect(staffStatus(receptionist, sim)).toMatch(/^(Working|Waiting for a guest)$/);
+  });
+});
+
+describe('the title screen', () => {
+  const info = { id: 'auto', name: 'Autosave', savedAt: 0, day: 0, money: 12345, stars: 1, healed: 26 };
+
+  it('sums up the latest save in a few lines', () => {
+    expect(saveFacts(info).map((f) => f.text)).toEqual(['1 star', '$12,345', '26 healed', 'Day 1, Month 1, Year 1']);
+    expect(saveFacts({ ...info, stars: 2 })[0]?.text).toBe('2 stars');
+  });
+
+  it('lights a badge for each discipline new games include, and dims what is still to come', () => {
+    const badges = titleBadges(allOn);
+    expect(badges.map((b) => b.on)).toEqual([true, true, false]);
+    expect(badges.at(-1)?.label).toMatch(/Reiki/);
+    const off = titleBadges(massageOnly);
+    expect(off[1]).toMatchObject({ on: false, label: 'Acupuncture: switched off in Settings' });
+    // massage cannot be switched off, so its badge stays lit whatever is asked
+    expect(titleBadges(() => false)[0]?.on).toBe(true);
   });
 });

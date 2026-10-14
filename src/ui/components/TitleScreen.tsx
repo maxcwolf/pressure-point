@@ -1,14 +1,19 @@
-// The title screen: continue, load, start a new game or change the settings.
+// The title screen: the logo, the latest save, and the ways into the game, over a blurred view of it.
 
 import './TitleScreen.css';
 
 import { useState } from 'preact/hooks';
 
 import type { Audio } from '../../audio';
-import { TITLE_LINES } from '../../core/data';
-import { gameDate, latestSave } from '../../storage/saves';
+import { GAME_TITLE } from '../../core/data';
+import { latestSave, timeAgo } from '../../storage/saves';
+import { loadDisciplinePrefs } from '../../storage/settings';
+import { readThumb } from '../../storage/thumbnails';
 import { useRedraw } from '../hooks/use-redraw';
 import { cx } from '../lib/cx';
+import { saveFacts, titleBadges } from '../lib/title';
+import backdrop from '../theme/backdrop.jpg';
+import logo from '../theme/logo.png';
 import { SavesPanel } from './SavesPanel';
 import { SettingsPanel } from './SettingsPanel';
 
@@ -22,7 +27,7 @@ export interface TitleScreenProps {
 
 type Panel = 'saves' | 'settings';
 
-/** The game's name and the ways into it. */
+/** The logo, the latest save and the ways into the game. */
 export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
   const redraw = useRedraw();
   /** The panel showing under the buttons. The two share the space, one at a time. */
@@ -42,8 +47,11 @@ export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
     audio.play('blip');
     redraw();
   };
+  const badges = titleBadges((d) => loadDisciplinePrefs()[d] !== false);
+  const picture = latest ? readThumb(latest.id) : null;
   return (
     <>
+      <div class="title-backdrop" style={{ backgroundImage: `url(${picture ?? backdrop})` }} />
       <div class="title-sys">
         <button
           class={cx('round small', !audio.sound && 'off')}
@@ -66,66 +74,87 @@ export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
           🎵
         </button>
       </div>
-      <div class="panel dialog wide">
-        <div class="logo">
-          {TITLE_LINES.map((word) => (
-            <span key={word}>{word}</span>
-          ))}
-        </div>{' '}
-        <div class="btnrow">
+      <div class="title-stack">
+        <h1 class="title-logo">
+          <img src={logo} alt={GAME_TITLE} />
+        </h1>
+        <div class="title-panel">
           {latest && (
-            <>
-              <button
-                class="go"
-                title={`${latest.name}, ${gameDate(latest.day)}`}
-                onClick={() => {
-                  onPick(latest.id);
-                }}
-              >
-                Continue
-              </button>
-              <button
-                onClick={() => {
-                  toggle('saves');
-                }}
-              >
-                Load game
-              </button>
-            </>
-          )}{' '}
-          <button
-            class={latest ? '' : 'go'}
-            onClick={() => {
-              onPick('new');
-            }}
-          >
-            New game
-          </button>{' '}
-          <button
-            onClick={() => {
-              toggle('settings');
-            }}
-          >
-            Settings
-          </button>{' '}
-          {exit && (
-            <button class="danger" onClick={exit}>
-              Exit
-            </button>
+            <div class="save-card">
+              <h2>{latest.name}</h2>
+              <div class="save-card-body">
+                {picture ? <img class="save-thumb" src={picture} alt="" /> : <div class="save-thumb empty">💆</div>}
+                <ul>
+                  {saveFacts(latest).map((f) => (
+                    <li key={f.icon}>
+                      <i>{f.icon}</i>
+                      {f.text}
+                    </li>
+                  ))}
+                  <li class="saved-at">{`Saved ${timeAgo(latest.savedAt)}`}</li>
+                </ul>
+              </div>
+            </div>
           )}
-        </div>{' '}
-        {latest && (
-          <p class="sub">
-            Continue picks up "{latest.name}" at {gameDate(latest.day)}.
-          </p>
-        )}{' '}
-        <div id="title-saves" hidden={showing !== 'saves'}>
-          {opened.includes('saves') && <SavesPanel onLoad={onPick} />}
-        </div>{' '}
-        <div id="title-settings" hidden={showing !== 'settings'}>
-          {opened.includes('settings') && <SettingsPanel audio={audio} onChange={redraw} />}
-        </div>{' '}
-        <p class="sub">Massage and acupuncture are open for business. Reiki is still limbering up.</p>
+          <div class="title-buttons">
+            {latest && (
+              <>
+                <button
+                  class="title-btn"
+                  onClick={() => {
+                    onPick(latest.id);
+                  }}
+                >
+                  Continue
+                </button>
+                <button
+                  class="title-btn"
+                  aria-expanded={showing === 'saves' ? 'true' : 'false'}
+                  onClick={() => {
+                    toggle('saves');
+                  }}
+                >
+                  Load game
+                </button>
+              </>
+            )}
+            <button
+              class="title-btn"
+              onClick={() => {
+                onPick('new');
+              }}
+            >
+              New game
+            </button>
+            <button
+              class="title-btn"
+              aria-expanded={showing === 'settings' ? 'true' : 'false'}
+              onClick={() => {
+                toggle('settings');
+              }}
+            >
+              Settings
+            </button>
+            {exit && (
+              <button class="title-btn" onClick={exit}>
+                Exit
+              </button>
+            )}
+          </div>
+          <div id="title-saves" class="title-sub" hidden={showing !== 'saves'}>
+            {opened.includes('saves') && <SavesPanel onLoad={onPick} />}
+          </div>
+          <div id="title-settings" class="title-sub" hidden={showing !== 'settings'}>
+            {opened.includes('settings') && <SettingsPanel audio={audio} onChange={redraw} />}
+          </div>
+        </div>
+        <div class="title-tray">
+          {badges.map((b) => (
+            <span key={b.label} class={cx('title-badge', !b.on && 'off')} title={b.label} aria-label={b.label}>
+              {b.icon}
+            </span>
+          ))}
+        </div>
       </div>
     </>
   );

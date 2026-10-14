@@ -62,7 +62,9 @@ export const test = base.extend<{ screens: Screens }>({
       await page.reload();
       await seedStorage(page);
       await page.reload();
-      await expect(page.locator('#title .logo')).toBeVisible();
+      // the logo and the backdrop behind it are pictures, so wait for them to arrive
+      await expect(page.locator('#title .title-logo img')).toHaveJSProperty('complete', true);
+      await page.waitForLoadState('networkidle');
     };
     await use({
       title,

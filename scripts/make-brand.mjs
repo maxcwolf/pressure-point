@@ -28,6 +28,6 @@ await page.addScriptTag({
   content: `${readFileSync('brand/wordmark.mjs', 'utf8')}\ndrawWordmark(document.getElementById('logo'), ${JSON.stringify(readFileSync('brand/massage.svg', 'utf8'))});\ndocument.title = 'drawn';`,
 });
 await page.waitForFunction("document.title === 'drawn'");
-await page.locator('#logo').screenshot({ path: 'docs/logo.png', omitBackground: true });
+await page.locator('#logo').screenshot({ path: 'src/ui/theme/logo.png', omitBackground: true });
 
 await browser.close();

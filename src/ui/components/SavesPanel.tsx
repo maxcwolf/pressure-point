@@ -20,11 +20,14 @@ import {
   timeAgo,
   writeSave,
 } from '../../storage/saves';
+import { storeThumb } from '../../storage/thumbnails';
 import { cx } from '../lib/cx';
 
 export interface SavesPanelProps {
   /** The game in progress, if there is one to save. */
   current?: GameState | undefined;
+  /** A picture of the game in progress, kept with each save of it. */
+  snapshot?: (() => string) | undefined;
   onLoad: (id: string) => void;
 }
 
@@ -53,7 +56,7 @@ function download(filename: string, text: string) {
 }
 
 /** The list of saved games, with saving, loading, exporting, importing and deleting. */
-export function SavesPanel({ current, onLoad }: SavesPanelProps) {
+export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
   const [draft, setDraft] = useState(current ? defaultSaveName(current) : '');
   const [note, setNote] = useState<Note | null>(null);
   /** The save whose Delete has been pressed once and is waiting to be pressed again. */
@@ -65,6 +68,7 @@ export function SavesPanel({ current, onLoad }: SavesPanelProps) {
     if (!current) return;
     const existing = id ? saves.find((s) => s.id === id) : undefined;
     const result = writeSave(current, existing ? existing.name : draft, id);
+    if (typeof result !== 'string' && snapshot) storeThumb(result.id, snapshot());
     setNote(typeof result === 'string' ? FULL : { text: `Saved "${result.name}".`, bad: false });
   };
   /** Write a save out as a file. */

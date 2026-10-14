@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 import type { Sim } from '../core/sim/sim';
 import { CameraRig } from './camera';
+import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
 import { ItemsLayer } from './items';
 import { LitterLayer } from './litter';
@@ -96,6 +97,17 @@ export class View {
     this.sun.position.set(target.x - 16, 30, target.z + 9);
     this.sun.target.position.copy(target);
     this.renderer.render(this.scene, this.rig.camera);
+  }
+
+  /** A small JPEG of the view as it is now, for a save's picture on the title screen. */
+  snapshot(width = 320, height = 200): string {
+    // drawn afresh so the picture is taken before the browser clears the canvas
+    this.renderer.render(this.scene, this.rig.camera);
+    const out = Object.assign(document.createElement('canvas'), { width, height });
+    const src = this.renderer.domElement;
+    const { sx, sy, sw, sh } = coverCrop(src.width, src.height, width, height);
+    out.getContext('2d')?.drawImage(src, sx, sy, sw, sh, 0, 0, width, height);
+    return out.toDataURL('image/jpeg', 0.75);
   }
 
   // ---- Selection -------------------------------------------------------------

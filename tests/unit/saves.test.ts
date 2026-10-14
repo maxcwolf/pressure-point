@@ -20,6 +20,7 @@ import {
   timeAgo,
   writeSave,
 } from '../../src/storage/saves';
+import { copyThumb, readThumb, storeThumb } from '../../src/storage/thumbnails';
 import { openCenter, run } from './helpers';
 
 // a stand-in for the browser's storage, with an optional size limit
@@ -209,6 +210,36 @@ describe('starting over', () => {
     autosave(s);
     for (let i = 0; i < MAX_SAVES; i++) ok(writeSave(s, `Save ${i}`));
     expect(listSaves()).toHaveLength(MAX_SAVES + 2);
+  });
+});
+
+describe('save pictures', () => {
+  it('are kept per save and go when the save is deleted', () => {
+    const info = ok(writeSave(game(), 'Pictured'));
+    storeThumb(info.id, 'data:image/jpeg;base64,AAAA');
+    expect(readThumb(info.id)).toBe('data:image/jpeg;base64,AAAA');
+    deleteSave(info.id);
+    expect(readThumb(info.id)).toBeNull();
+  });
+
+  it('move with the autosave into the previous game slot', () => {
+    autosave(game(), 1000);
+    storeThumb(AUTOSAVE_ID, 'data:image/jpeg;base64,BBBB');
+    archiveAutosave(2000);
+    expect(readThumb(PREVIOUS_ID)).toBe('data:image/jpeg;base64,BBBB');
+    expect(readThumb(AUTOSAVE_ID)).toBeNull();
+  });
+
+  it('are not carried over from a save that has none', () => {
+    storeThumb(PREVIOUS_ID, 'data:image/jpeg;base64,CCCC');
+    copyThumb(AUTOSAVE_ID, PREVIOUS_ID);
+    expect(readThumb(PREVIOUS_ID)).toBeNull();
+  });
+
+  it('are skipped, not fatal, when storage is full', () => {
+    quota = 10;
+    storeThumb('x', 'data:image/jpeg;base64,DDDDDDDDDDDD');
+    expect(readThumb('x')).toBeNull();
   });
 });
 

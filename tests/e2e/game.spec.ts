@@ -5,7 +5,9 @@ import { expect, type Game, test } from './fixtures';
 test.describe('starting out', () => {
   test('the title screen leads into a fresh, rendering game', async ({ game, page }) => {
     await page.goto('/');
-    await expect(page.locator('.logo')).toHaveText('PressurePointInstitute');
+    await expect(page.getByRole('heading', { name: 'Pressure Point Institute' })).toBeVisible();
+    // a first visit has no save to show or continue
+    await expect(page.locator('#title .save-card')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
     await game.start();
     await expect(page.locator('#stats')).toContainText('$30,000');
@@ -600,8 +602,10 @@ test.describe('leaving a game', () => {
     }));
     await page.locator('#sys').getByTitle('Menu').click();
     await page.getByRole('button', { name: 'Main menu' }).click();
-    await expect(page.locator('#title .logo')).toBeVisible();
-    await expect(page.locator('#title')).toContainText('Continue picks up "Autosave"');
+    await expect(page.locator('#title .title-logo')).toBeVisible();
+    await expect(page.locator('#title .save-card')).toContainText('Autosave');
+    // the card shows a picture of the game just left
+    await expect(page.locator('#title .save-thumb')).toHaveAttribute('src', /^data:image\/jpeg/);
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.waitForFunction(() => !!window.pp);
     expect(
@@ -785,7 +789,7 @@ test.describe('saved games', () => {
     await game.eval((pp) => (pp.state.speed = 0));
     const before = await summary(game);
     await page.reload();
-    await expect(page.locator('#title')).toContainText('Continue picks up "Autosave"');
+    await expect(page.locator('#title .save-card')).toContainText('Autosave');
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.waitForFunction(() => !!window.pp);
     expect(await summary(game)).toEqual(before);

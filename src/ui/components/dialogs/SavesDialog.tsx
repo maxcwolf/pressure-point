@@ -7,12 +7,12 @@ import { Dialog } from './Dialog';
 
 /** Saving the game in progress, or loading another. */
 export function SavesDialog() {
-  const { sim, loadGame } = useGame();
+  const { sim, view, loadGame } = useGame();
   return (
     <Dialog wide>
       <h2>Saved games</h2>
       <div id="saves-panel">
-        <SavesPanel current={sim.s} onLoad={loadGame} />
+        <SavesPanel current={sim.s} snapshot={() => view.snapshot()} onLoad={loadGame} />
       </div>{' '}
       <BackOrResume />
     </Dialog>
