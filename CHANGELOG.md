@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.9.0
 
 - **Staff challenges:** now and then a member of staff sets the center an objective with a deadline of two to four months, such as healing more guests, a better cure rate, a finer room or nobody quitting. It shows under the star objectives; meet it in time for a cash reward and a happier team. The sandbox can switch them off.
 - **Year-end awards:** at the end of each year the center is judged on the year just gone, for eight awards from Healing Hands and Fair Prices to Healer of the Year and Janitor of the Year. Each won pays out and adds to reputation, a member of staff who wins one is delighted, and the bar rises every year. Trophies won fill the Trophy Cabinet's shelves and are listed under Awards in the Stats menu.
