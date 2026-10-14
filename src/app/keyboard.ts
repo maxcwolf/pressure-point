@@ -23,6 +23,11 @@ export function bindKeyboard({ state, tools, ui, onChange }: KeyboardTargets): R
       if (k === 'escape') ui.dismiss();
       return;
     }
+    // Space would scroll the page, held down or not
+    if (k === ' ') e.preventDefault();
+    // a key held down repeats, and a chord with Ctrl, Cmd or Alt is meant for the browser.
+    // On a Mac the key-up of a Cmd chord never comes, so such a key is not counted as held either.
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     held.add(k);
     if (k === 'escape') {
       // Esc cancels whatever is in hand; with nothing in hand it opens the pause menu
@@ -32,10 +37,8 @@ export function bindKeyboard({ state, tools, ui, onChange }: KeyboardTargets): R
       else ui.openPauseMenu();
     } else if (k === 'enter') tools.planBuild();
     else if (k === 'r') tools.rotate();
-    else if (k === ' ') {
-      e.preventDefault();
-      state.speed = state.speed === 0 ? 1 : 0;
-    } else if (k === '1' || k === '2' || k === '3') state.speed = Number(k);
+    else if (k === ' ') state.speed = state.speed === 0 ? 1 : 0;
+    else if (k === '1' || k === '2' || k === '3') state.speed = Number(k);
     onChange();
   });
   window.addEventListener('keyup', (e) => held.delete(e.key.toLowerCase()));

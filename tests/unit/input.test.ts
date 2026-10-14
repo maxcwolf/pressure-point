@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { DRAG_PX, isClick, isDragging, QUICK_MS, QUICK_PX } from '../../src/app/click';
+import { bindKeyboard } from '../../src/app/keyboard';
+import type { GameState } from '../../src/core/state/types';
 
 describe('telling a click from a drag', () => {
   it('does not call the few pixels of drift in an ordinary click a drag', () => {
@@ -36,5 +38,49 @@ describe('telling a click from a drag', () => {
     expect(isClick(true, QUICK_MS - 1, QUICK_PX + 1)).toBe(false);
     expect(isClick(true, QUICK_MS + 1, QUICK_PX - 1)).toBe(false);
     expect(isClick(true, 800, 150)).toBe(false);
+  });
+});
+
+describe('keyboard shortcuts', () => {
+  /** Bind the keyboard to a stand-in window and game, and return a way to press keys. */
+  function setup() {
+    const win = new EventTarget();
+    Object.assign(globalThis, { window: win });
+    const state = { speed: 1 } as GameState;
+    const rotations: number[] = [];
+    const tools = {
+      active: false,
+      selected: null,
+      /** Note a turn of whatever is in hand. */
+      rotate: () => rotations.push(1),
+      /** There is never a blueprint to build here. */
+      planBuild: () => false,
+    };
+    const ui = { blocking: false };
+    /** Nothing to redraw. */
+    const onChange = () => undefined;
+    const held = bindKeyboard({ state, tools: tools as never, ui: ui as never, onChange });
+    /** Press (or keep holding) a key, with any modifiers. */
+    const press = (key: string, extra: Partial<KeyboardEvent> = {}) =>
+      win.dispatchEvent(Object.assign(new Event('keydown'), { key, repeat: false, ...extra }));
+    return { state, rotations, held, press };
+  }
+
+  it('pauses once for a held Space, however long the key repeats', () => {
+    const { state, press } = setup();
+    press(' ');
+    for (let i = 0; i < 5; i++) press(' ', { repeat: true });
+    expect(state.speed).toBe(0);
+  });
+
+  it('leaves chords with Ctrl, Cmd or Alt to the browser', () => {
+    const { state, rotations, held, press } = setup();
+    press('3', { ctrlKey: true });
+    press('r', { metaKey: true });
+    press('d', { metaKey: true });
+    expect(state.speed).toBe(1);
+    expect(rotations).toEqual([]);
+    // on a Mac the key-up of a Cmd chord never arrives, so it must not count as held for panning
+    expect(held.has('d')).toBe(false);
   });
 });
