@@ -90,10 +90,19 @@ Today's game, plus a settings screen before it starts: starting money, which dis
 
 Each phase ships on its own.
 
-## Decisions for Max
+## Decided (14 October 2026)
 
-1. **How many centers in the first campaign release:** three (tutorial, downtown, seaside) or all five?
-2. **Carry-over:** nothing but the stars on the map, or a currency that unlocks items for good?
-3. **Disciplines:** opened one by one across the campaign (massage, then acupuncture, then reiki), or available in every center, opened by its own stars as today?
-4. **Building shapes:** different-sized rectangles first (simpler), or real outlines such as L shapes and courtyards from the start?
-5. **Names and places:** keep the working names, or a different setting altogether?
+1. **Three centers in the first campaign release:** Willow Lane, The Exchange and Saltmarsh. High Pines and The Orchard Estate follow in a later release.
+2. **Carry-over is an unlock currency,** Two Point style: stars and a few achievements earn it, and it buys items that stay unlocked in every center.
+3. **Disciplines open along the way:** massage only at Willow Lane, acupuncture from The Exchange. With three centers, reiki opens at Saltmarsh for now; once High Pines exists it can move there.
+4. **Rectangular buildings first,** in a different size and position on each plot. L shapes and courtyards come later.
+5. **Names:** the working names stand until something better comes up.
+
+That makes the phases:
+
+1. **Foundations:** the map into the game state, a center per game, per-center goals. Nothing visible changes.
+2. **The campaign, playable:** progress storage, the region map, Willow Lane and The Exchange with rush hours.
+3. **Saltmarsh:** the seasons twist, its conditions and seaside scenery, reiki in the campaign.
+4. **The unlock currency and sandbox settings.**
+
+Then a later release adds High Pines and The Orchard Estate.
