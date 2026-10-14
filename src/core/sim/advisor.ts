@@ -15,7 +15,7 @@ import {
   ROOMS,
   STONE_USE,
 } from '../data';
-import { pick, rnd } from '../random';
+import { pickFresh, rnd } from '../random';
 import { unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import type { SimContext } from './context';
@@ -30,7 +30,8 @@ export function announce(ctx: SimContext, dt: number) {
   s.announceT -= dt;
   if (s.announceT > 0) return;
   s.announceT = rnd(40, 70);
-  if (s.open) emit(ctx, { type: 'announce', text: contextAnnouncement(ctx) ?? pick(ANNOUNCEMENTS) });
+  if (s.open)
+    emit(ctx, { type: 'announce', text: contextAnnouncement(ctx) ?? pickFresh(ANNOUNCEMENTS, ctx.announced) });
 }
 
 /** One of the advisor's nudges, and what it is about when it is about someone or something in particular. */
@@ -92,12 +93,7 @@ function nudge(ctx: SimContext): string | Advice {
         : `A ${ITEMS[broken.type].name} has broken down. Hire a Janitor to repair it.`,
       about: { kind: 'item', id: broken.id },
     };
-  const asking = s.staff.find((x) => x.raiseAsked && x.state !== 'leaving');
-  if (asking)
-    return {
-      text: `${asking.name} wants a raise. Select them to respond, or they may quit.`,
-      about: { kind: 'staff', id: asking.id },
-    };
+  // a raise request waits on a card of its own at the side of the screen, leaving the advisor for other things
   if (s.money < 0 && s.loan < LOAN_MAX) return 'You are in the red. A loan from the Money menu would tide you over.';
   const gap = modalityAdvice(ctx);
   if (gap) return gap;

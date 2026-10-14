@@ -139,13 +139,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 18px;
+  gap: clamp(12px, 2vh, 18px);
   margin-bottom: clamp(8px, 1.8vh, 16px);
+  /* a little room at the sides, so the picture never presses against the edge of the panel */
+  padding: 0 clamp(6px, 1.4vh, 12px);
   text-align: left;
 }
 
 .save-thumb {
-  height: clamp(56px, 11vh, 115px);
+  height: clamp(56px, 10vh, 100px);
   aspect-ratio: 1.6;
   flex: none;
   object-fit: cover;
@@ -167,10 +169,18 @@
   display: grid;
   grid-template-columns: auto auto;
   column-gap: 16px;
-  font-size: clamp(13px, 2.3vh, 16px);
+  min-width: 0;
+  font-size: clamp(13px, 2.2vh, 15.5px);
   font-weight: 600;
-  line-height: 1.55;
-  white-space: nowrap;
+  line-height: 1.4;
+  row-gap: 3px;
+}
+
+/* a long fact, like a late date, wraps within its own column, lined up under its text rather than its icon */
+.save-card li {
+  display: grid;
+  grid-template-columns: 1.7em auto;
+  align-items: start;
 }
 
 .save-card .saved-at {
@@ -184,6 +194,7 @@
 }
 
 .save-card .saved-at {
+  display: block;
   font-size: 0.82em;
   color: #7fe6f2;
   padding-left: 1.7em;

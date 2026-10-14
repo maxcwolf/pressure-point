@@ -104,3 +104,8 @@ export function quitWarning(days: number | null): string {
   const plural = left === 1 ? 'day' : 'days';
   return days <= 2 ? `⚠️ About to quit: ${left} ${plural} left` : `😠 Miserable: will quit in ${left} ${plural}`;
 }
+
+/** The staff waiting on an answer about a raise, in payroll order. Anyone already on their way out is past asking. */
+export function raiseRequests(staff: readonly Staff[]): Staff[] {
+  return staff.filter((st) => st.raiseAsked && st.state !== 'leaving');
+}

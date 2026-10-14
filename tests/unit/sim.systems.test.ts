@@ -109,7 +109,7 @@ describe('morale and pay', () => {
     sim.drain();
     runUntil(sim, () => therapist.raiseAsked, 300);
     expect(toasts(sim.drain()).some((t) => t.includes('wants a raise'))).toBe(true);
-    expect(sim.advice()).toMatch(/wants a raise/);
+    expect(sim.advice()).not.toMatch(/wants a raise/);
     const before = therapist.morale;
     sim.giveRaise(therapist.id);
     expect(therapist.salary).toBeGreaterThanOrEqual(fair);

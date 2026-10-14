@@ -934,7 +934,7 @@ test.describe('messages', () => {
       .toBeLessThan(0.5);
   });
 
-  test('clicking the advisor about a raise selects the one asking', async ({ game, page }) => {
+  test('a raise request waits on a card at the side, which selects the one asking', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
     const name = await game.eval((pp) => {
@@ -943,10 +943,16 @@ test.describe('messages', () => {
       st.raiseAsked = true;
       return st.name;
     });
-    const note = page.locator('#advisor .note');
-    await expect(note).toContainText(`${name} wants a raise`);
-    await note.click();
+    const card = page.locator('#toasts .request');
+    await expect(card).toContainText(`${name} wants a raise`);
+    await expect(page.locator('#advisor')).not.toContainText('wants a raise');
+    await card.click();
     await expect(page.locator('#inspector')).toContainText(name);
+    // answered, the card goes
+    await game.eval((pp) => {
+      pp.state.staff.find((s) => s.role === 'consultant')!.raiseAsked = false;
+    });
+    await expect(card).toHaveCount(0);
   });
 });
 

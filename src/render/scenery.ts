@@ -3,13 +3,14 @@
 
 import * as THREE from 'three';
 
-import { H, outsideDoor, type Plot, ROAD_Y, SIDEWALK_Y, TITLE_LINES, W } from '../core/data';
+import { H, type Plot, ROAD_Y, SIDEWALK_Y, TITLE_LINES, W } from '../core/data';
 import { must } from '../core/util';
 import { buildBeach } from './models/beach';
 import { cyl, mat, put, rbox, sph } from './models/parts';
 import { buildForest, type TreeSpot } from './models/tree';
 import type { Setting } from './setting';
 import { H_LOW, hash, OUTER_HT, OUTER_T } from './shared';
+import { SIGN_HALF, SIGN_LEG, signSpot } from './sign';
 
 /** Build the scenery that never changes around a building on its plot, in its setting, and add it to the scene. */
 export function buildScenery(scene: THREE.Scene, plot: Plot, setting: 'park' | 'seaside', colors: Setting) {
@@ -78,7 +79,7 @@ export function buildScenery(scene: THREE.Scene, plot: Plot, setting: 'park' | '
   ctx.fillText(TITLE_LINES[2].toUpperCase().split('').join('\u200a'), 256, 120);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const board = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1, 0.12), [
+  const board = new THREE.Mesh(new THREE.BoxGeometry(SIGN_HALF * 2, 1, 0.12), [
     mat(0x2fa8a0),
     mat(0x2fa8a0),
     mat(0x2fa8a0),
@@ -89,9 +90,10 @@ export function buildScenery(scene: THREE.Scene, plot: Plot, setting: 'park' | '
   board.position.y = 1.25;
   board.castShadow = true;
   sign.add(board);
-  for (const x of [-1.3, 1.3]) put(sign, cyl(0.07, 0.07, 0.9), mat(0x8f5f38), x, 0.45, 0);
-  sign.position.set(e0 - 4.2, 0, outsideDoor(plot) + 1);
-  sign.rotation.y = Math.PI / 5;
+  for (const x of [-SIGN_LEG, SIGN_LEG]) put(sign, cyl(0.07, 0.07, 0.9), mat(0x8f5f38), x, 0.45, 0);
+  const spot = signSpot(plot);
+  sign.position.set(spot.x, 0, spot.z);
+  sign.rotation.y = spot.angle;
   scene.add(sign);
 
   if (setting === 'seaside') {

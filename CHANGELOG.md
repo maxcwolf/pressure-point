@@ -4,6 +4,9 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **Raise requests wait at the side:** each open request has its own card at the top right until it is answered, and clicking it selects the person asking. The advisor stays free for tips and goals.
+- **The announcer mixes it up:** a filler line is not said again until at least half the others have been.
+- **Tidier front lawn and title screen:** the sign out front no longer has a leg in the building's wall, and the save card on the title screen keeps clear of the panel's edges, wrapping a long date rather than spilling over.
 - **Fixed:** five rare cases found in the October audit, among them staff on their way out being put back to work and emergency guests counted as sent when they could not get in. The desktop app also turns down permission checks and connects to nothing but itself, and saves now carry a new version number, so older versions of the game refuse them rather than crash.
 
 ## v0.7.2

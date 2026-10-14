@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SimEvent, Subject } from '../../src/core/sim/events';
+import { raiseRequests } from '../../src/ui/lib/status';
 import { addStaffRoom, hire, LAYOUT, openCenter, run, runUntil } from './helpers';
 
 /** What the toasts in a batch of events are about. */
@@ -48,13 +49,14 @@ describe('toasts about someone or something', () => {
 });
 
 describe("the advisor's nudges", () => {
-  it('point at the member of staff who wants a raise', () => {
+  it('leave a raise request to its own card, keeping the advisor for other things', () => {
     const { sim, therapist } = openCenter(1);
+    const before = sim.adviceNote();
     therapist.raiseAsked = true;
-    const note = sim.adviceNote();
-    expect(note.text).toMatch(/wants a raise/);
-    expect(note.about).toEqual({ kind: 'staff', id: therapist.id });
-    expect(sim.advice()).toBe(note.text);
+    expect(sim.adviceNote()).toEqual(before);
+    expect(raiseRequests(sim.s.staff)).toEqual([therapist]);
+    therapist.state = 'leaving';
+    expect(raiseRequests(sim.s.staff)).toEqual([]);
   });
 
   it('point at a broken item, and at a station with a line and nobody on it', () => {

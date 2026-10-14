@@ -26,3 +26,15 @@ export const irnd = (a: number, b: number) => Math.floor(rnd(a, b + 1));
 
 /** A random element of a list. */
 export const pick = <T>(arr: readonly T[]): T => at(arr, Math.floor(random() * arr.length));
+
+/**
+ * A random element of a list that is not among the most recent picks, which are noted in `recent`. Half the list
+ * is held back at a time, so at least that many others come up before any one comes up again.
+ */
+export function pickFresh<T>(arr: readonly T[], recent: T[]): T {
+  const fresh = arr.filter((x) => !recent.includes(x));
+  const chosen = pick(fresh.length ? fresh : arr);
+  recent.push(chosen);
+  while (recent.length > Math.floor(arr.length / 2)) recent.shift();
+  return chosen;
+}

@@ -33,6 +33,11 @@
   border-left-color: var(--blue);
 }
 
+.toast.request {
+  border-left-color: var(--gold);
+  animation: none;
+}
+
 .toast.link {
   pointer-events: auto;
   text-align: left;

@@ -15,9 +15,11 @@ export interface SimContext {
   events: SimEvent[];
   /** How pleasant each tile is, from nearby decor and litter. */
   readonly attract: Float32Array;
+  /** The announcer's latest lines, so none comes round again too soon. */
+  readonly announced: string[];
 }
 
 /** Set up the working data for a game. */
 export function createContext(s: GameState): SimContext {
-  return { s, world: new World(s), events: [], attract: new Float32Array(W * H) };
+  return { s, world: new World(s), events: [], attract: new Float32Array(W * H), announced: [] };
 }
