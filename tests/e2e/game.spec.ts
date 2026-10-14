@@ -833,6 +833,28 @@ test.describe('messages', () => {
   });
 });
 
+test.describe('the Items menu', () => {
+  test('can be filtered by where an item goes and what it is for', async ({ game, page }) => {
+    await game.start();
+    await game.menu('Items');
+    await expect(game.card('Bench')).toBeVisible();
+    await page.locator('#menu .tab', { hasText: 'Staff Room' }).click();
+    await expect(game.card('Squishy Couch')).toBeVisible();
+    await expect(game.card('Bench')).toHaveCount(0);
+    await expect(game.card('Potted Plant')).toBeVisible();
+    await page.locator('#menu .tab', { hasText: 'Decor' }).click();
+    await expect(game.card('Squishy Couch')).toHaveCount(0);
+    await expect(game.card('Potted Plant')).toBeVisible();
+    // the choice stays while the menu is closed and opened again
+    await game.menu('Items');
+    await game.menu('Items');
+    await expect(page.locator('#menu .tab.on')).toHaveText(['Staff Room', 'Decor']);
+    await page.locator('#menu .tab', { hasText: 'Everywhere' }).click();
+    await page.locator('#menu .tab', { hasText: 'Everything' }).click();
+    await expect(game.card('Bench')).toBeVisible();
+  });
+});
+
 test.describe('stats', () => {
   test('the Money menu counts guests put off by prices', async ({ game, page }) => {
     await game.start();

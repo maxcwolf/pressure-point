@@ -4,6 +4,7 @@
 import type { Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { GameHost } from './host';
+import type { ItemKind, Place } from './lib/catalog';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'stats';
 export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star';
@@ -36,6 +37,9 @@ export class HudState {
   menu: MenuId | null = null;
   /** The tab showing in the Hire menu. */
   hireRole: Role = 'receptionist';
+  /** What the Items menu is filtered to: a place and a kind of item. */
+  itemPlace: Place = 'all';
+  itemKind: ItemKind | 'all' = 'all';
   /** The dialog over the game, if any. */
   dialog: DialogId | null = null;
   /** The star being celebrated while its dialog is open. */

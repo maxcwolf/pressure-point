@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { type Discipline, ITEMS, MODALITIES, ROOMS } from '../../src/core/data';
-import { available, hireableRoles, itemOffered, placeLabel } from '../../src/ui/lib/catalog';
+import { type Discipline, ITEM_MENU, ITEMS, MODALITIES, ROOMS } from '../../src/core/data';
+import {
+  available,
+  filterItems,
+  hireableRoles,
+  itemKind,
+  itemOffered,
+  placeFilters,
+  placeLabel,
+  placeName,
+} from '../../src/ui/lib/catalog';
 import { barHeights, CHART_HEIGHT } from '../../src/ui/lib/chart';
 import { cx } from '../../src/ui/lib/cx';
 import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
@@ -163,5 +172,42 @@ describe('the title screen', () => {
     expect(off[1]).toMatchObject({ on: false, label: 'Acupuncture: switched off in Settings' });
     // massage cannot be switched off, so its badge stays lit whatever is asked
     expect(titleBadges(() => false)[0]?.on).toBe(true);
+  });
+});
+
+describe('filtering the Items menu', () => {
+  it('sorts every item into a kind by what it is for', () => {
+    expect(itemKind('reception_desk')).toBe('equipment');
+    expect(itemKind('stone_warmer')).toBe('equipment');
+    expect(itemKind('singing_bowls')).toBe('equipment');
+    expect(itemKind('bench')).toBe('comfort');
+    expect(itemKind('arcade_machine')).toBe('comfort');
+    expect(itemKind('bin')).toBe('comfort');
+    expect(itemKind('toilet')).toBe('comfort');
+    expect(itemKind('statue')).toBe('decor');
+    expect(itemKind('plant')).toBe('decor');
+    expect(itemKind('sofa')).toBe('staff');
+    expect(itemKind('bookcase')).toBe('staff');
+  });
+
+  it('offers a filter for the corridors and for each room that has items of its own', () => {
+    const places = placeFilters(ITEM_MENU);
+    expect(places.slice(0, 2)).toEqual(['all', 'corridor']);
+    expect(places).toEqual(expect.arrayContaining(['massage', 'acupuncture', 'reiki', 'staffroom', 'training']));
+    expect(places).not.toContain('consult');
+    expect(placeName('all')).toBe('Everywhere');
+    expect(placeName('reiki')).toBe('Reiki Studio');
+  });
+
+  it("shows a room's own items and whatever can go anywhere, of the kind asked for", () => {
+    const studio = filterItems(ITEM_MENU, 'reiki', 'all');
+    expect(studio).toEqual(expect.arrayContaining(['crystal_grid', 'singing_bowls', 'plant', 'statue']));
+    expect(studio).not.toContain('bench');
+    expect(filterItems(ITEM_MENU, 'reiki', 'equipment')).toEqual(['crystal_grid', 'singing_bowls']);
+    const corridorDecor = filterItems(ITEM_MENU, 'corridor', 'decor');
+    expect(corridorDecor).toEqual(expect.arrayContaining(['fountain', 'statue']));
+    expect(corridorDecor.every((t) => ['corridor', 'any'].includes(ITEMS[t].where))).toBe(true);
+    expect(filterItems(ITEM_MENU, 'all', 'all')).toEqual([...ITEM_MENU]);
+    expect(filterItems(ITEM_MENU, 'restroom', 'staff')).toEqual([]);
   });
 });
