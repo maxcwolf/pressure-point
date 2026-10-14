@@ -12,6 +12,7 @@ import { buildBookcase } from './bookcase';
 import { buildCabinet } from './cabinet';
 import { buildCoffeeMachine } from './coffee-machine';
 import { buildConsultDesk } from './consult-desk';
+import { buildCrystalGrid } from './crystal-grid';
 import { buildCuppingCart } from './cupping-cart';
 import { buildDiffuser } from './diffuser';
 import { buildFireExtinguisher } from './fire-extinguisher';
@@ -25,8 +26,11 @@ import { buildPlant } from './plant';
 import { buildPoolTable } from './pool-table';
 import { buildPostureScanner } from './posture-scanner';
 import { buildReceptionDesk } from './reception-desk';
+import { buildReikiAltar } from './reiki-altar';
+import { buildReikiTable } from './reiki-table';
 import { buildRug } from './rug';
 import { buildSaltLamp } from './salt-lamp';
+import { buildSingingBowls } from './singing-bowls';
 import { buildSink } from './sink';
 import { buildSnackMachine } from './snack-machine';
 import { buildSofa } from './sofa';
@@ -68,6 +72,10 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   cupping_cart: buildCuppingCart,
   moxa_burner: buildMoxaBurner,
   stim_unit: buildStimUnit,
+  reiki_table: buildReikiTable,
+  reiki_altar: buildReikiAltar,
+  crystal_grid: buildCrystalGrid,
+  singing_bowls: buildSingingBowls,
   stone_warmer: buildStoneWarmer,
   stretch_rack: buildStretchRack,
   whiteboard: buildWhiteboard,

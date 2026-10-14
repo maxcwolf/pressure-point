@@ -27,21 +27,11 @@ export interface Badge {
   on: boolean;
 }
 
-/** Disciplines still to come, shown dimmed. */
-const COMING = [{ icon: '🤲', label: 'Reiki: still limbering up' }];
-
-/** A badge for each discipline, lit when new games include it, then one for each still to come. */
+/** A badge for each discipline, lit when new games include it. */
 export function titleBadges(on: (d: Discipline) => boolean): Badge[] {
-  return [
-    ...DISCIPLINE_ORDER.map((d) => {
-      const def = DISCIPLINES[d];
-      const lit = !def.optional || on(d);
-      return {
-        icon: def.icon,
-        label: `${def.name}: ${lit ? 'open for business' : 'switched off in Settings'}`,
-        on: lit,
-      };
-    }),
-    ...COMING.map((c) => ({ ...c, on: false })),
-  ];
+  return DISCIPLINE_ORDER.map((d) => {
+    const def = DISCIPLINES[d];
+    const lit = !def.optional || on(d);
+    return { icon: def.icon, label: `${def.name}: ${lit ? 'open for business' : 'switched off in Settings'}`, on: lit };
+  });
 }

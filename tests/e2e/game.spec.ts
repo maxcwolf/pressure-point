@@ -739,7 +739,7 @@ test.describe('acupuncture and settings', () => {
     await expect(toggle).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#settings-panel')).toContainText('Massage therapy');
     await expect(page.locator('#settings-panel')).toContainText('Always on');
-    await expect(page.locator('#settings-panel li', { hasText: 'Reiki' })).toContainText('Coming later');
+    await expect(page.getByRole('switch', { name: 'Reiki' })).toHaveAttribute('aria-checked', 'true');
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-checked', 'false');
     await page.getByRole('button', { name: 'Resume' }).click();
@@ -788,6 +788,65 @@ test.describe('acupuncture and settings', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.waitForFunction(() => !!window.pp);
     expect(await game.eval((pp) => pp.sim.enabled('acupuncture'))).toBe(false);
+  });
+});
+
+test.describe('reiki', () => {
+  test('the studio is locked until the second star, then can be built and staffed', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.stars = 1));
+    await game.menu('Rooms');
+    await expect(game.card('Reiki Studio')).toContainText('Unlocks at star 2');
+    await game.menu('Hire');
+    await expect(page.locator('#menu .tab', { hasText: 'Reiki Practitioner' })).toHaveCount(0);
+
+    await game.eval((pp) => (pp.state.stars = 2));
+    await game.menu('Rooms');
+    await game.card('Reiki Studio').click();
+    await game.dragOutRoom(4, 4);
+    await game.clickWall('south');
+    await expect(page.locator('#hint')).toContainText('Place the Reiki Table inside the room');
+    await game.placeHeld();
+    await game.placeHeld();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#toasts')).toContainText('Reiki Studio built!');
+    await page.keyboard.press('Escape');
+
+    await game.menu('Hire');
+    await page.locator('#menu .tab', { hasText: 'Reiki Practitioner' }).click();
+    await expect(page.locator('#menu .quals').first()).toContainText('Usui Reiki');
+    await page.locator('#menu .card.cv').first().getByRole('button', { name: 'Hire' }).click();
+    await game.menu('Treatments');
+    await expect(page.locator('#menu')).toContainText('Delivered in the Reiki Studio');
+    await expect(game.card('Usui Reiki')).toContainText('1 qualified');
+    await expect(game.card('Sound Bath')).toContainText('Unlocks at star 3');
+  });
+
+  test('switching reiki off in Settings hides its studio, staff and equipment', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => (pp.state.stars = 3));
+    await game.menu('Rooms');
+    await expect(game.card('Reiki Studio')).toBeVisible();
+
+    await page.locator('#sys').getByTitle('Menu').click();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    const toggle = page.getByRole('switch', { name: 'Reiki' });
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    // acupuncture keeps its own switch
+    await expect(page.getByRole('switch', { name: 'Acupuncture' })).toHaveAttribute('aria-checked', 'true');
+    await page.getByRole('button', { name: 'Resume' }).click();
+
+    await game.menu('Rooms');
+    await expect(game.card('Reiki Studio')).toHaveCount(0);
+    await expect(game.card('Acupuncture Clinic')).toBeVisible();
+    await game.menu('Hire');
+    await expect(page.locator('#menu .tab', { hasText: 'Reiki Practitioner' })).toHaveCount(0);
+    await game.menu('Items');
+    await expect(game.card('Crystal Grid')).toHaveCount(0);
+    expect(await game.eval((pp) => pp.sim.enabled('reiki'))).toBe(false);
   });
 });
 

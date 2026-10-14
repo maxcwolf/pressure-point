@@ -1,11 +1,12 @@
 // The shapes of the game's content: what a room, an item, a role, a modality and a condition are.
 
-export type RoomType = 'consult' | 'assess' | 'massage' | 'acupuncture' | 'staffroom' | 'restroom' | 'training';
+export type RoomType =
+  'consult' | 'assess' | 'massage' | 'acupuncture' | 'reiki' | 'staffroom' | 'restroom' | 'training';
 
-export type Role = 'receptionist' | 'consultant' | 'therapist' | 'acupuncturist' | 'caretaker';
+export type Role = 'receptionist' | 'consultant' | 'therapist' | 'acupuncturist' | 'practitioner' | 'caretaker';
 
 /** A family of treatments with its own room, staff and equipment. */
-export type Discipline = 'massage' | 'acupuncture';
+export type Discipline = 'massage' | 'acupuncture' | 'reiki';
 
 export type ItemType =
   | 'reception_desk'
@@ -37,6 +38,10 @@ export type ItemType =
   | 'cupping_cart'
   | 'moxa_burner'
   | 'stim_unit'
+  | 'reiki_table'
+  | 'reiki_altar'
+  | 'crystal_grid'
+  | 'singing_bowls'
   | 'water_cooler'
   | 'fire_extinguisher'
   | 'arcade_machine'
@@ -143,7 +148,20 @@ export interface TraitDef {
   walk?: number; // walk speed multiplier
 }
 
-export type Modality = 'swedish' | 'deep' | 'sports' | 'stone' | 'cranio' | 'needling' | 'cupping' | 'moxa' | 'electro';
+export type Modality =
+  | 'swedish'
+  | 'deep'
+  | 'sports'
+  | 'stone'
+  | 'cranio'
+  | 'needling'
+  | 'cupping'
+  | 'moxa'
+  | 'electro'
+  | 'usui'
+  | 'crystal'
+  | 'sound'
+  | 'chakra';
 
 export interface ModalityDef {
   id: Modality;
@@ -196,7 +214,15 @@ export type Visual =
   | 'coldfeet'
   | 'blanket'
   | 'battery'
-  | 'wires';
+  | 'wires'
+  | 'pale'
+  | 'static'
+  | 'shards'
+  | 'bulb'
+  | 'notes'
+  | 'gears'
+  | 'chakra'
+  | 'tilt';
 
 /** What a guest can arrive suffering from. */
 export type ConditionId =
@@ -217,7 +243,15 @@ export type ConditionId =
   | 'coldfeet'
   | 'blanket'
   | 'battery'
-  | 'wires';
+  | 'wires'
+  | 'drained'
+  | 'static'
+  | 'scattered'
+  | 'dim'
+  | 'tune'
+  | 'noisy'
+  | 'blocked'
+  | 'tilted';
 
 export interface ConditionDef {
   id: ConditionId;

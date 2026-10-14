@@ -3,7 +3,7 @@
 import './SettingsPanel.css';
 
 import type { Audio } from '../../audio';
-import { COMING_SOON, type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from '../../core/data';
+import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
@@ -89,9 +89,6 @@ export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
             />
           );
         })}
-        {COMING_SOON.map((c) => (
-          <Row key={c.name} icon={c.icon} name={c.name} desc="Not in the game yet." on={false} locked="Coming later" />
-        ))}
       </ul>
       <p class="sub">
         {sim

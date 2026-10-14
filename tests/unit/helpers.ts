@@ -35,6 +35,7 @@ export const LAYOUT = {
   training: { rect: { x: 5, y: 11, w: 4, h: 4 }, door: { x: 8, y: 12, dx: 1, dy: 0 } },
   assess: { rect: { x: 19, y: 11, w: 4, h: 4 }, door: { x: 19, y: 12, dx: -1, dy: 0 } },
   acupuncture: { rect: { x: 24, y: 8, w: 4, h: 4 }, door: { x: 25, y: 11, dx: 0, dy: 1 } },
+  reiki: { rect: { x: 24, y: 13, w: 4, h: 4 }, door: { x: 24, y: 15, dx: -1, dy: 0 } },
 } as const;
 
 /** Add a furnished Consultation Room at its standard spot. */
@@ -79,6 +80,14 @@ export function addAcupuncture(sim: Sim) {
   return buildRoom(sim, 'acupuncture', LAYOUT.acupuncture.rect, LAYOUT.acupuncture.door, [
     ['acu_table', 25, 8],
     ['needle_cabinet', 27, 8],
+  ]);
+}
+
+/** Add a furnished Reiki Studio at its standard spot. */
+export function addReiki(sim: Sim) {
+  return buildRoom(sim, 'reiki', LAYOUT.reiki.rect, LAYOUT.reiki.door, [
+    ['reiki_table', 25, 13],
+    ['reiki_altar', 27, 13],
   ]);
 }
 

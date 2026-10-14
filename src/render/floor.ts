@@ -63,6 +63,15 @@ export class Floor {
               }
               ctx.stroke();
             }
+          } else if (room.type === 'reiki') {
+            // a faint circle on every other tile, like a field of cushions
+            if (alt) {
+              ctx.strokeStyle = 'rgba(122,90,168,0.18)';
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.arc(px + TS / 2, py + TS / 2, TS * 0.32, 0, Math.PI * 2);
+              ctx.stroke();
+            }
           } else if (room.type === 'massage') {
             ctx.strokeStyle = 'rgba(90,55,20,0.18)';
             ctx.lineWidth = 1.5;

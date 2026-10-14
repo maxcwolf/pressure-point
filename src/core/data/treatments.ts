@@ -125,6 +125,60 @@ export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
     trainCost: 2800,
     trainDays: 9,
   },
+  usui: {
+    id: 'usui',
+    discipline: 'reiki',
+    name: 'Usui Reiki',
+    icon: '✨',
+    desc: 'Palms held just above the body, moving slowly from head to toe. Every practitioner knows it.',
+    star: 2,
+    seconds: 11,
+    strain: 0.7,
+    difficulty: 0,
+    trainCost: 0,
+    trainDays: 0,
+  },
+  crystal: {
+    id: 'crystal',
+    discipline: 'reiki',
+    name: 'Crystal Reiki',
+    icon: '💎',
+    desc: 'Quartz points laid along the body to focus the energy. A step up in fee.',
+    star: 2,
+    equipment: 'crystal_grid',
+    seconds: 12,
+    strain: 0.8,
+    difficulty: 0.08,
+    trainCost: 2000,
+    trainDays: 7,
+  },
+  sound: {
+    id: 'sound',
+    discipline: 'reiki',
+    name: 'Sound Bath',
+    icon: '🔔',
+    desc: 'Singing bowls rung slowly around the guest. Long, calm and well paid.',
+    star: 3,
+    equipment: 'singing_bowls',
+    seconds: 15,
+    strain: 0.8,
+    difficulty: 0.12,
+    trainCost: 2600,
+    trainDays: 8,
+  },
+  chakra: {
+    id: 'chakra',
+    discipline: 'reiki',
+    name: 'Chakra Balancing',
+    icon: '🌈',
+    desc: 'Seven energy centers, one at a time, from crown to root. The best paid, and the hardest to get right.',
+    star: 3,
+    seconds: 14,
+    strain: 1,
+    difficulty: 0.24,
+    trainCost: 3200,
+    trainDays: 10,
+  },
 };
 
 export const MODALITY_ORDER: readonly Modality[] = [
@@ -137,6 +191,10 @@ export const MODALITY_ORDER: readonly Modality[] = [
   'cupping',
   'moxa',
   'electro',
+  'usui',
+  'crystal',
+  'sound',
+  'chakra',
 ];
 
 export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
@@ -160,12 +218,19 @@ export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
     base: 'needling',
     optional: true,
   },
+  reiki: {
+    id: 'reiki',
+    name: 'Reiki',
+    icon: '✨',
+    desc: 'A third line of treatment, available from two stars: Usui reiki, crystals, sound baths and chakra balancing.',
+    role: 'practitioner',
+    room: 'reiki',
+    base: 'usui',
+    optional: true,
+  },
 };
 
-export const DISCIPLINE_ORDER: readonly Discipline[] = ['massage', 'acupuncture'];
-
-/** Planned disciplines, listed in Settings so it is clear they are on the way. */
-export const COMING_SOON = [{ name: 'Reiki', icon: '✨' }];
+export const DISCIPLINE_ORDER: readonly Discipline[] = ['massage', 'acupuncture', 'reiki'];
 
 /** How a modality reads in a sentence: "Swedish massage", but plain "Cupping". */
 export const modalityLabel = (m: Modality) =>

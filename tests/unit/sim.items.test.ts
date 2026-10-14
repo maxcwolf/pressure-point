@@ -129,9 +129,11 @@ describe('the arcade', () => {
   });
 
   it('cheers up bored guests waiting nearby, and takes their coins', () => {
-    const { sim, s } = openCenter(5);
+    const { sim, s, therapist } = openCenter(5);
     s.stars = 1;
     const arcade = sim.placeItem('arcade_machine', 18, 13, 0)!;
+    // with nobody to treat them, diagnosed guests have to wait
+    sim.fire(therapist.id);
     runUntil(sim, () => s.guests.some((g) => g.state === 'waiting'), 300);
     const bored = s.guests.find((g) => g.state === 'waiting')!;
     bored.patience = 40;

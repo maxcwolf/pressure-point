@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **Reiki**, from the second star: build a Reiki Studio, hire a Reiki Practitioner, and treat eight new conditions with Usui reiki, crystals, sound baths and chakra balancing. It has its own switch in Settings.
 - **Fixed:** an acupuncture emergency no longer asks for "Cupping massage" and the like.
 
 ## v0.4.1

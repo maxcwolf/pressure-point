@@ -44,7 +44,7 @@ export function StarDialog() {
       <p class="sub">
         {STAR_GOALS[n]
           ? 'New objectives are waiting in the top-left corner.'
-          : 'You have mastered the lot. Reiki will follow in a future update.'}
+          : 'You have mastered the lot. Every treatment is open to you.'}
       </p>{' '}
       <Button
         class="go"

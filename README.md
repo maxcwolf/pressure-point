@@ -4,7 +4,7 @@
 
 A healing-center management sim, in the spirit of the classic hospital tycoon games. Build treatment rooms, hire therapists, and keep your guests happy enough to come back.
 
-**Massage therapy** and **acupuncture** are open for business. Reiki is on the way.
+**Massage therapy**, **acupuncture** and **reiki** are open for business.
 
 ![A busy healing center](docs/assets/screenshot.png)
 
@@ -35,6 +35,7 @@ The browser version needs nothing installed and is always the same version as th
 11. Equipment **wears out** with use. A Janitor services it; left alone it breaks down.
 12. The **Money** menu offers loans and lets you set prices. **Emergencies** bring a batch of guests to heal against the clock for a bonus.
 13. From the first star you can add **acupuncture**: build an **Acupuncture Clinic** and hire an **Acupuncturist**, and a second kind of guest starts arriving.
+14. From the second star you can add **reiki**: build a **Reiki Studio** and hire a **Reiki Practitioner** for a third.
 
 ## Treatments
 
@@ -61,9 +62,18 @@ A diagnosis prescribes a treatment. It only works properly with someone qualifie
 
 ![An acupuncturist cupping a guest, with a line of guests showing the acupuncture conditions](docs/assets/acupuncture.png)
 
+**Reiki**, delivered in a Reiki Studio by Reiki Practitioners. The studio unlocks at star 2, and its guests only start arriving once you have built one:
+
+| Technique        | Unlocks | Needs                 | Character                                   |
+| ---------------- | ------- | --------------------- | ------------------------------------------- |
+| Usui Reiki       | Star 2  | Nothing               | Every practitioner knows it; easy on them   |
+| Crystal Reiki    | Star 2  | Course, Crystal Grid  | A step up in fee                            |
+| Sound Bath       | Star 3  | Course, Singing Bowls | Long, calm and well paid                    |
+| Chakra Balancing | Star 3  | Course                | The best paid, and the hardest to get right |
+
 ## Settings
 
-**Settings**, on the title screen and in the pause menu (☰), switches optional treatments on and off. Acupuncture is the first; reiki will join it. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Sound and music are there too.
+**Settings**, on the title screen and in the pause menu (☰), switches acupuncture and reiki on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Sound and music are there too.
 
 ## Controls
 

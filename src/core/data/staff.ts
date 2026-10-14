@@ -41,6 +41,16 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
     accent: 0xf4f1ea,
     discipline: 'acupuncture',
   },
+  practitioner: {
+    role: 'practitioner',
+    name: 'Reiki Practitioner',
+    icon: '✨',
+    desc: 'Treats guests in a Reiki Studio. Each one knows certain techniques; train them to add more.',
+    baseSalary: 1700,
+    uniform: 0xece6f5,
+    accent: 0x7a5aa8,
+    discipline: 'reiki',
+  },
   caretaker: {
     role: 'caretaker',
     name: 'Janitor',
@@ -52,7 +62,14 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   },
 };
 
-export const ROLE_ORDER: readonly Role[] = ['receptionist', 'consultant', 'therapist', 'acupuncturist', 'caretaker'];
+export const ROLE_ORDER: readonly Role[] = [
+  'receptionist',
+  'consultant',
+  'therapist',
+  'acupuncturist',
+  'practitioner',
+  'caretaker',
+];
 
 export const TRAITS: readonly TraitDef[] = [
   { id: 'brisk', name: 'Brisk', desc: 'Works 20% faster.', speed: 1.2, pay: 1.1 },

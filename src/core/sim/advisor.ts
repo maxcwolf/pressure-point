@@ -77,7 +77,7 @@ export function advice(ctx: SimContext): string {
     return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
   if (s.guests.some((g) => g.thirst > 85) && !hasItem(ctx, 'tea_station'))
     return 'Guests are parched. A Herbal Tea Station would help, and it earns a little too.';
-  if (!STAR_GOALS[s.stars]) return 'Three stars! You have mastered massage. Acupuncture and reiki are coming soon.';
+  if (!STAR_GOALS[s.stars]) return 'Three stars! Every treatment is open to you. Keep the guests coming back.';
   return 'Looking good. Keep an eye on the objectives to earn your next star.';
 }
 
@@ -92,7 +92,7 @@ function modalityAdvice(ctx: SimContext): string {
     const role = ROLES[DISCIPLINES[def.discipline].role];
     const room = ROOMS[DISCIPLINES[def.discipline].room];
     const staff = s.staff.filter((x) => x.role === role.role && x.state !== 'leaving');
-    const an = /^[AEIOU]/.test(role.name) ? 'an' : 'a';
+    const an = article(role.name);
     if (!staff.length) return `Guests need ${modalityLabel(m)}. Hire ${an} ${role.name} for your ${room.name}.`;
     const studying = staff.some((x) => x.training?.course === m);
     if (!staff.some((x) => x.quals.includes(m)) && !studying) {
@@ -116,10 +116,13 @@ function modalityAdvice(ctx: SimContext): string {
     const def = DISCIPLINES[d];
     const room = ROOMS[def.room];
     if (!def.optional || !enabled(ctx, d) || s.stars < (room.unlock ?? 0) || hasRoom(ctx, def.room)) continue;
-    return `${def.name} is now available. Build an ${room.name} and hire an ${ROLES[def.role].name} to bring in a new kind of guest.`;
+    return `${def.name} is now available. Build ${article(room.name)} ${room.name} and hire ${article(ROLES[def.role].name)} ${ROLES[def.role].name} to bring in a new kind of guest.`;
   }
   return '';
 }
+
+/** "a" or "an", to go before a name. */
+export const article = (name: string) => (/^[AEIOU]/.test(name) ? 'an' : 'a');
 
 /** What to call the place a station is in: its room, or the item itself in a corridor. */
 export function stationPlace(it: Item): string {

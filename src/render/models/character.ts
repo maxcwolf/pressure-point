@@ -73,6 +73,11 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   }
   if (role === 'consultant') put(torso, rbox(0.08, 0.14, 0.03, 0.01), accent, 0.08, 0.26, 0.15);
   if (role === 'caretaker') put(torso, rbox(0.2, 0.16, 0.03, 0.01), accent, 0, 0.2, 0.155);
+  if (role === 'practitioner') {
+    const chain = put(torso, torus(0.13, 0.012), mat(0xc9963f, 0.3), 0, 0.36, 0.03);
+    chain.rotation.x = Math.PI / 2 - 0.5;
+    put(torso, sph(0.04, 10), accent, 0, 0.27, 0.17);
+  }
 
   /** Add an arm with its hand, hinged at the shoulder. */
   const makeArm = (x: number) => {
@@ -235,6 +240,96 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     tangle.position.y = 0.3;
     head.add(tangle);
     rig.knot = tangle as unknown as THREE.Mesh;
+  } else if (visual === 'pale') {
+    headMesh.material = mat(0xd3cfcb, 0.65);
+  } else if (visual === 'static') {
+    // hair standing on end, with a spark or two
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2;
+      const spike = put(head, cyl(0.002, 0.024, 0.14, 5), hair, Math.cos(a) * 0.12, 0.24, Math.sin(a) * 0.12 - 0.02);
+      spike.rotation.set(Math.sin(a) * 0.6, 0, -Math.cos(a) * 0.6);
+      rig.props.push(spike);
+    }
+    rig.orbit = new THREE.Group();
+    for (const a of [0, Math.PI]) {
+      const spark = put(
+        rig.orbit,
+        cached('spark', () => new THREE.OctahedronGeometry(0.035)),
+        mat(0xfff27a, 0.3, 1.2),
+      );
+      spark.position.set(Math.cos(a) * 0.3, 0, Math.sin(a) * 0.3);
+      spark.castShadow = false;
+    }
+    rig.orbit.position.y = 0.2;
+    head.add(rig.orbit);
+  } else if (visual === 'shards') {
+    // pieces of them, drifting round
+    rig.orbit = new THREE.Group();
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      const shard = put(
+        rig.orbit,
+        ico(0.045),
+        mat(i % 2 ? 0xb9a7d9 : 0x9aa4b0, 0.4),
+        Math.cos(a) * 0.36,
+        0,
+        Math.sin(a) * 0.36,
+      );
+      shard.scale.y = 1.6;
+      shard.castShadow = false;
+    }
+    rig.orbit.position.y = 0.25;
+    torso.add(rig.orbit);
+  } else if (visual === 'bulb') {
+    // a dim light bulb that keeps flickering
+    const lamp = new THREE.Group();
+    rig.blink = new THREE.MeshStandardMaterial({ color: 0x8f8a6a, emissive: 0xfff0a0, emissiveIntensity: 0.4 });
+    put(lamp, sph(0.075, 14), rig.blink, 0, 0, 0).castShadow = false;
+    put(lamp, cyl(0.035, 0.035, 0.06, 10), mat(0x9aa4b0, 0.4), 0, -0.08, 0).castShadow = false;
+    lamp.position.y = 0.42;
+    head.add(lamp);
+    rig.bob = lamp;
+  } else if (visual === 'notes') {
+    // a few sour notes going round the head
+    rig.orbit = new THREE.Group();
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const note = new THREE.Group();
+      put(note, sph(0.032, 8), mat(0x2a2422, 0.4), 0, 0, 0).scale.set(1.2, 0.85, 1);
+      put(note, cyl(0.007, 0.007, 0.1, 5), mat(0x2a2422, 0.4), 0.032, 0.05, 0);
+      note.position.set(Math.cos(a) * 0.3, (i - 1) * 0.04, Math.sin(a) * 0.3);
+      rig.orbit.add(note);
+    }
+    rig.orbit.position.y = 0.25;
+    head.add(rig.orbit);
+  } else if (visual === 'gears') {
+    // a cog turning over the head
+    rig.orbit = new THREE.Group();
+    const steel = mat(0x8c939c, 0.35);
+    put(rig.orbit, torus(0.07, 0.025), steel, 0, 0, 0).rotation.x = Math.PI / 2;
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const tooth = put(rig.orbit, rbox(0.04, 0.03, 0.04, 0.005), steel, Math.cos(a) * 0.105, 0, Math.sin(a) * 0.105);
+      tooth.rotation.y = -a;
+    }
+    rig.orbit.position.y = 0.36;
+    head.add(rig.orbit);
+  } else if (visual === 'chakra') {
+    // seven glowing centers down the front, the third gone dark
+    const colors = [0x9b6fd1, 0x5b5fc7, 0x4a9fe0, 0x3bb273, 0xf2c14e, 0xf08a4b, 0xe5484d];
+    colors.forEach((color, i) => {
+      const blocked = i === 4;
+      const dot = put(
+        torso,
+        sph(0.028, 8),
+        mat(blocked ? 0x4a4a4a : color, 0.3, blocked ? 0 : 0.8),
+        0,
+        0.46 - i * 0.065,
+        0.165,
+      );
+      dot.castShadow = false;
+      rig.props.push(dot);
+    });
   }
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   return rig;

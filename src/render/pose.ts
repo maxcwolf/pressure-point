@@ -24,6 +24,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
   let bodyY = 0;
   let bodyZ = 0;
   let headZ = 0;
+  /** Leaning to one side, for a guest who is off balance. */
+  let side = 0;
   if (c.pose === 'walk') {
     const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : 0.62);
     legL = sw;
@@ -84,6 +86,21 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     lean = 0.22;
     armL = -0.5;
     armR = -1.3 + Math.sin(t * 1.3 + c.id) * 0.08;
+  } else if (c.busy && (style === 'usui' || style === 'crystal')) {
+    // palms held just above the body, barely moving
+    lean = 0.24;
+    headX = 0.12;
+    armL = armR = -1.32 + Math.sin(t * 0.9 + c.id) * 0.06;
+  } else if (c.busy && style === 'chakra') {
+    // hands working slowly from one center to the next
+    lean = 0.24;
+    armL = -1.25 + Math.sin(t * 0.6 + c.id) * 0.25;
+    armR = -1.25 + Math.sin(t * 0.6 + c.id + 0.4) * 0.25;
+  } else if (c.busy && style === 'sound') {
+    // one hand holding the bowl, the other circling its rim
+    lean = 0.18;
+    armL = -1.05;
+    armR = -1.2 + Math.sin(t * 3 + c.id) * 0.12;
   } else if (c.busy && style === 'swedish') {
     // long flowing strokes
     lean = 0.2;
@@ -102,7 +119,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     armOut = 0.32;
     if (c.pose !== 'sit') armL = armR = 0;
   } else if (visual === 'crick') headZ = 0.55;
-  else if (visual === 'battery') {
+  else if (visual === 'tilt') {
+    side = 0.24;
+    headZ = -0.12;
+  } else if (visual === 'battery') {
     lean += 0.18;
     headX += 0.15;
   } else if (visual === 'blanket') lean += 0.12;
@@ -114,6 +134,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     lean = 0;
     headX = 0;
     headZ = 0;
+    side = 0;
     if (visual === 'flex') armOut = 0.5;
   }
   const k = Math.min(1, dt * 14);
@@ -122,6 +143,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
   b.position.y += (bodyY - b.position.y) * k;
   b.position.z += (bodyZ - b.position.z) * k;
   rig.torso.rotation.x += (lean - rig.torso.rotation.x) * k;
+  rig.torso.rotation.z += (side - rig.torso.rotation.z) * k;
   rig.head.rotation.x += (headX - rig.head.rotation.x) * k;
   rig.head.rotation.z += (headZ - rig.head.rotation.z) * k;
   rig.legL.rotation.x += (legL - rig.legL.rotation.x) * k;
