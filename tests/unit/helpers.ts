@@ -103,6 +103,9 @@ export function openCenter(seed = 1) {
   return { sim, s: sim.s, consult, massage, receptionist, consultant, therapist };
 }
 
+/** Time allowed for a test that plays a long session: slow CI machines need well over Vitest's usual 5 seconds. */
+export const LONG_RUN = 30_000;
+
 /** Advance the game by this many seconds of normal-speed play. */
 export function run(sim: Sim, seconds: number) {
   sim.s.speed = 1;

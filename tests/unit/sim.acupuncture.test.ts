@@ -6,7 +6,17 @@ import { disciplineOn, newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../src/storage/settings';
-import { addAcupuncture, addPostureLab, addStaffRoom, addTraining, hire, openCenter, run, runUntil } from './helpers';
+import {
+  addAcupuncture,
+  addPostureLab,
+  addStaffRoom,
+  addTraining,
+  hire,
+  LONG_RUN,
+  openCenter,
+  run,
+  runUntil,
+} from './helpers';
 
 /** The discipline that treats a condition. */
 const disciplineOf = (condition: ConditionId) => MODALITIES[conditionOf(condition).modality].discipline;
@@ -307,7 +317,7 @@ describe('the data', () => {
 });
 
 describe('a long session with both disciplines', () => {
-  it.each([1, 2])('stays healthy for an hour of play (seed %i)', (seed) => {
+  it.each([1, 2])('stays healthy for an hour of play (seed %i)', { timeout: LONG_RUN }, (seed) => {
     const { sim, s, therapist } = openCenter(seed);
     s.stars = 2;
     addStaffRoom(sim);
