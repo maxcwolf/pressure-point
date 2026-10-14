@@ -167,6 +167,15 @@ describe('loading', () => {
     expect(listSaves().map((i) => i.id)).toEqual([a.id]);
   });
 
+  it('do not count list entries whose data has gone missing against the limit', () => {
+    const s = newGame();
+    const first = ok(writeSave(s, 'First'));
+    for (let i = 1; i < MAX_SAVES; i++) ok(writeSave(s, `Save ${i}`));
+    store.delete(`pressure-point-save:${first.id}`);
+    expect(listSaves()).toHaveLength(MAX_SAVES - 1);
+    ok(writeSave(s, 'One more'));
+  });
+
   it('survives a mangled list', () => {
     store.set('pressure-point-saves', 'garbage');
     expect(listSaves()).toEqual([]);

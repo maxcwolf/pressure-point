@@ -114,12 +114,16 @@ function writeIndex(list: SaveInfo[]) {
   localStorage.setItem(INDEX_KEY, JSON.stringify(list));
 }
 
+/** The entries whose data is still there, forgetting any that has gone missing. */
+function liveEntries(list: SaveInfo[]): SaveInfo[] {
+  return list.filter((i) => localStorage.getItem(slotKey(i.id)) !== null);
+}
+
 /** Every saved game, newest first. */
 export function listSaves(): SaveInfo[] {
   let list: SaveInfo[];
   try {
-    // forget entries whose data has gone missing
-    list = readIndex().filter((i) => localStorage.getItem(slotKey(i.id)) !== null);
+    list = liveEntries(readIndex());
     // an autosave from before save slots existed has no entry yet
     if (!list.some((i) => i.id === AUTOSAVE_ID)) {
       const legacy = parseState(localStorage.getItem(AUTOSAVE_KEY));
@@ -166,10 +170,10 @@ export function writeSave(s: GameState, name: string, id?: string, now = Date.no
   return info;
 }
 
-/** The stored list of saves, or an empty one if storage cannot be read. */
+/** The stored list of saves that still have their data, or an empty one if storage cannot be read. */
 function readIndexSafe(): SaveInfo[] {
   try {
-    return readIndex();
+    return liveEntries(readIndex());
   } catch {
     return [];
   }
