@@ -47,10 +47,11 @@ function open(what: string | null): GameState | 'no-room' | null {
   const state = center ? newGame(center) : readSave(what);
   // a new sandbox game starts as set up on the title screen; a campaign center decides everything itself
   if (state && center === 'sandbox') {
-    const { money, unlockAll } = loadSandbox();
+    const { money, unlockAll, challenges } = loadSandbox();
     state.options = loadDisciplinePrefs();
     state.money = money;
     state.unlockAll = unlockAll;
+    state.challengesOn = challenges;
   }
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
   if (state && what !== AUTOSAVE_ID && !archiveAutosave()) return 'no-room';

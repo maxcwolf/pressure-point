@@ -35,7 +35,8 @@
   color: #23805a;
 }
 
-.emergency {
+.emergency,
+.challenge {
   margin-top: 8px;
   padding: 7px 9px;
   background: #fbe3e1;
@@ -45,6 +46,11 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.challenge {
+  background: #fff6dc;
+  border-color: var(--gold);
 }
 
 @media (max-width: 720px) {

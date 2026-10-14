@@ -120,6 +120,8 @@ export interface ItemParts {
   wrench?: THREE.Sprite;
   /** The flies shown over an item that is filthy. */
   flies?: THREE.Sprite;
+  /** A trophy cabinet's cups, shown one for each award the center has won. */
+  cups?: THREE.Object3D[];
 }
 
 /** The changing parts of an item's model. */

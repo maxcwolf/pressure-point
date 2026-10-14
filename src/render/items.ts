@@ -87,7 +87,7 @@ export class ItemsLayer {
 
   /** The touches particular to each kind of item: wilting leaves, glowing stones, drifting smoke and so on. */
   private effects(it: Item, model: THREE.Object3D, t: number) {
-    const { leaf, glow, ring, orb, session, puffs, led } = partsOf(model);
+    const { leaf, glow, ring, orb, session, puffs, led, cups } = partsOf(model);
     if (leaf) {
       // a plant browns and droops as it dries out
       const k = Math.min(1, it.water / 40);
@@ -121,6 +121,7 @@ export class ItemsLayer {
       p.scale.setScalar(0.4 + f * 0.9);
     });
     if (led) led.emissiveIntensity = Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1;
+    cups?.forEach((cup, i) => (cup.visible = i < this.sim.s.trophies.length));
   }
 
   /** Bob a marker over an item that needs a Janitor: a wrench when broken, flies when filthy. */

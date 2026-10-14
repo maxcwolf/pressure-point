@@ -4,6 +4,7 @@ import type { ComponentChildren } from 'preact';
 
 import { useHud } from '../../hooks/use-hud';
 import type { DialogId } from '../../hud';
+import { AwardsDialog } from './AwardsDialog';
 import { ConfirmNewGame } from './ConfirmNewGame';
 import { KarmaDialog } from './KarmaDialog';
 import { PauseMenu } from './PauseMenu';
@@ -26,6 +27,8 @@ function contents(dialog: DialogId): ComponentChildren {
       return <StarDialog />;
     case 'karma':
       return <KarmaDialog />;
+    case 'awards':
+      return <AwardsDialog />;
   }
 }
 

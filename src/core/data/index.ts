@@ -1,5 +1,6 @@
 // All of the game's content. Adding a room, an item or a treatment starts here.
 
+export * from './awards';
 export * from './centers';
 export * from './conditions';
 export * from './items';

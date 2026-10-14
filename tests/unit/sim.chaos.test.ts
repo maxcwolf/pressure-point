@@ -99,6 +99,32 @@ const MOVES: Record<string, (sim: Sim) => void> = {
   raise: (sim) => {
     for (const st of sim.s.staff) if (st.raiseAsked) sim.giveRaise(st.id);
   },
+  /** Move a guest up or down their line, over to another, or home, whatever they are doing. */
+  line: (sim) => {
+    const g = sim.s.guests.length ? pick(sim.s.guests) : undefined;
+    if (!g) return;
+    const what = irnd(0, 2);
+    if (what === 0) sim.moveInLine(g.id, pick([-1, 1]));
+    else if (what === 1) {
+      const it = sim.world.item(g.station);
+      const other = it && sim.shortestOtherLine(it);
+      if (other) sim.moveToStation(g.id, other.id);
+    } else sim.sendHome(g.id);
+  },
+  /** Change the policy, anywhere in its range. */
+  policy: (sim) => {
+    sim.setPolicy({
+      diagnosis: 0.5 + random() * 0.45,
+      emergenciesFirst: random() < 0.5,
+      breakAt: irnd(10, 50),
+      breakLimit: { role: pick(ROLES), limit: irnd(0, 3) },
+    });
+  },
+  /** Put a room first, or back among the rest. */
+  priority: (sim) => {
+    const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
+    if (room) sim.setRoomPriority(room.id, !room.priority);
+  },
 };
 
 /** How often each move comes up, compared with the rest. */
@@ -108,6 +134,8 @@ describe('a restless player', () => {
   it.each([1, 2, 3, 4])('never leaves the books unbalanced (seed %i)', { timeout: LONG_RUN }, (seed) => {
     const { sim, s } = openCenter(seed);
     s.stars = 3;
+    // challenges, and the year-end awards, come and go while all this goes on
+    s.challengesOn = true;
     // building comes up more often than tearing down, so there is a busy center to disrupt
     const names = Object.entries(MOVES).flatMap(([name]) => Array<string>(WEIGHTS[name] ?? 1).fill(name));
     const log: string[] = [];
@@ -122,6 +150,7 @@ describe('a restless player', () => {
       expect(inconsistencies(sim), `playing on after ${log.slice(-5).join(', ')}`).toEqual([]);
       expect(Number.isFinite(s.money) && Number.isFinite(s.reputation)).toBe(true);
       for (const c of [...s.guests, ...s.staff]) expect(Number.isFinite(c.x + c.y), c.name).toBe(true);
+      if (s.challenge) expect(Number.isFinite(sim.challengeObjective()!.progress)).toBe(true);
       // a lot of money keeps the moves coming: being broke is not what this is testing
       s.money = Math.max(s.money, 50_000);
       sim.drain();

@@ -1053,6 +1053,55 @@ test.describe('the Items menu', () => {
   });
 });
 
+test.describe('goals along the way', () => {
+  test('a member of staff sets a challenge, shown under the objectives until it is met', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.nextChallenge = 0;
+      pp.state.speed = 1;
+      for (let i = 0; i < 100 && !pp.state.challenge; i++) pp.sim.tick(0.1);
+      pp.state.speed = 0;
+    });
+    const card = page.locator('#objectives .challenge');
+    const setter = await game.eval((pp) => pp.state.challenge!.staffName);
+    await expect(card).toContainText(`${setter}'s challenge`);
+    await expect(card).toContainText('days left');
+    await expect(page.locator('#toasts')).toContainText(`${setter} has set the center a challenge`);
+    // met: paid out, and gone
+    await game.eval((pp) => {
+      pp.state.challenge!.goal = { kind: 'healed', count: 1 };
+      pp.state.challenge!.from = pp.state.stats.healed - 1;
+      pp.state.speed = 1;
+      for (let i = 0; i < 20 && pp.state.challenge; i++) pp.sim.tick(0.1);
+      pp.state.speed = 0;
+    });
+    await expect(card).toHaveCount(0);
+    await expect(page.locator('#toasts')).toContainText('Challenge met!');
+  });
+
+  test('the year ends with an awards ceremony, remembered under Stats', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.day = 360 - 0.01;
+      pp.state.speed = 1;
+      for (let i = 0; i < 5; i++) pp.sim.tick(0.1);
+    });
+    const dialog = page.locator('#modal');
+    await expect(dialog).toContainText('Year 1 awards');
+    await expect(dialog.locator('.awards li')).toHaveCount(8);
+    // the game waits while the ceremony is on
+    expect(await game.eval((pp) => pp.state.speed)).toBe(0);
+    await dialog.getByRole('button', { name: 'Back to work' }).click();
+    await expect(dialog).toBeEmpty();
+    expect(await game.eval((pp) => pp.state.speed)).toBe(1);
+    await game.menu('Stats');
+    await page.locator('#menu').getByRole('button', { name: 'See the year 1 ceremony' }).click();
+    await expect(dialog).toContainText('Year 1 awards');
+  });
+});
+
 test.describe('stats', () => {
   test('the Money menu counts guests put off by prices', async ({ game, page }) => {
     await game.start();
@@ -1168,11 +1217,18 @@ test.describe('the sandbox', () => {
     await panel.getByRole('radio', { name: '$200,000' }).click();
     await panel.getByRole('switch', { name: 'Reiki' }).click();
     await panel.getByRole('switch', { name: 'Everything unlocked' }).click();
+    await panel.getByRole('switch', { name: 'Staff challenges' }).click();
     await panel.getByRole('button', { name: 'Start building' }).click();
     await page.waitForFunction(() => !!window.pp);
     expect(
-      await game.eval((pp) => [pp.state.money, pp.state.unlockAll, pp.sim.enabled('reiki'), pp.sim.unlocked('stone')]),
-    ).toEqual([200000, true, false, true]);
+      await game.eval((pp) => [
+        pp.state.money,
+        pp.state.unlockAll,
+        pp.sim.enabled('reiki'),
+        pp.sim.unlocked('stone'),
+        pp.state.challengesOn,
+      ]),
+    ).toEqual([200000, true, false, true, false]);
     await game.menu('Items');
     await expect(game.card('Koi Pond')).not.toHaveClass(/locked/);
     await game.menu('Rooms');

@@ -2,9 +2,11 @@
 
 import type {
   AchievementId,
+  AwardId,
   CenterId,
   ConditionId,
   Discipline,
+  GoalSpec,
   ItemType,
   Modality,
   Pose,
@@ -135,6 +137,8 @@ export interface Staff extends CharBase {
   raiseAsked: boolean;
   /** Seconds spent miserable; they quit when it runs too long. */
   unhappyT: number;
+  /** Guests served, or jobs done, since the year began, for the year-end awards. */
+  yearServed: number;
 }
 
 /** A chore for a Janitor: the litter or item to see to. */
@@ -291,6 +295,43 @@ export interface Policy {
   breakLimit: Partial<Record<Role, number>>;
 }
 
+/** An objective a member of staff sets the center, with a deadline and a reward. */
+export interface Challenge {
+  /** Who set it, kept by name too in case they leave. */
+  staffId: number;
+  staffName: string;
+  goal: GoalSpec;
+  /** For a count, where it stood when the challenge was set, since the challenge asks for that many more. */
+  from: number;
+  /** The game day it was set, and the day it must be met by. */
+  set: number;
+  deadline: number;
+  /** What meeting it pays the center. */
+  reward: number;
+}
+
+/** One award at a year-end ceremony: whether it was won, how the center did, and who won it, if it goes to someone. */
+export interface AwardResult {
+  award: AwardId;
+  won: boolean;
+  /** How the center did against what it took, in a few words. */
+  note: string;
+  /** The member of staff it went to, by name. */
+  winner?: string;
+}
+
+/** A year-end awards ceremony. */
+export interface Ceremony {
+  year: number;
+  results: AwardResult[];
+}
+
+/** An award won, for the trophy cabinet. */
+export interface Trophy {
+  award: AwardId;
+  year: number;
+}
+
 export interface GameState {
   version: number;
   /** The center this game is set in. */
@@ -333,6 +374,14 @@ export interface GameState {
   options: Partial<Record<Discipline, boolean>>;
   /** Everything unlocked from the start, whatever the stars: a sandbox setting. */
   unlockAll: boolean;
+  /** The challenge a member of staff has set, if any, and the day the next may be set. */
+  challenge: Challenge | null;
+  nextChallenge: number;
+  /** Whether staff set challenges at all: a sandbox setting. */
+  challengesOn: boolean;
+  /** The last year-end awards ceremony, and every award won. */
+  ceremony: Ceremony | null;
+  trophies: Trophy[];
   /** Campaign achievements earned already, in this game or an earlier one, so none is awarded twice. */
   achieved: AchievementId[];
   seenTips: string[];

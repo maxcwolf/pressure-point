@@ -19,7 +19,8 @@ export type SimEvent =
   | { type: 'toast'; text: string; kind: Tone; about?: Subject }
   | { type: 'sfx'; name: SfxName }
   | { type: 'announce'; text: string }
-  | { type: 'star'; stars: number };
+  | { type: 'star'; stars: number }
+  | { type: 'awards'; year: number };
 
 /** Queue an event for the outside world. */
 export function emit(ctx: SimContext, e: SimEvent) {

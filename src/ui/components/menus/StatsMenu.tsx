@@ -4,9 +4,10 @@ import './StatsMenu.css';
 
 import { useState } from 'preact/hooks';
 
+import { AWARDS } from '../../../core/data';
 import type { MonthRecord } from '../../../core/state/types';
 import { loadStatsView, saveStatsView } from '../../../storage/settings';
-import { useGame } from '../../hooks/use-hud';
+import { useGame, useHud } from '../../hooks/use-hud';
 import { barHeights } from '../../lib/chart';
 import { cx } from '../../lib/cx';
 import { formatMetric, type Metric, monthlyValues, offeredMetrics, shownMetrics, toggleMetric } from '../../lib/stats';
@@ -93,6 +94,42 @@ export function StatsMenu() {
         ))}
       </div>
       <p class="sub">Each chart runs from the oldest month kept, on the left, to this month so far.</p>
+      <Trophies />
+    </div>
+  );
+}
+
+/** The awards won at each year's end, and the last ceremony to look back on. */
+function Trophies() {
+  const { sim } = useGame();
+  const hud = useHud();
+  const { trophies, ceremony } = sim.s;
+  return (
+    <div class="trophies">
+      <h4>🏆 Awards</h4>
+      {trophies.length ? (
+        <ul>
+          {trophies.map((t) => (
+            <li key={`${t.award}-${t.year}`}>{`${AWARDS[t.award].icon} ${AWARDS[t.award].name}, year ${t.year}`}</li>
+          ))}
+        </ul>
+      ) : (
+        <p class="sub">
+          {ceremony
+            ? 'None won yet. The next awards are at the end of the year.'
+            : 'Awards are handed out at the end of each year, judged on the year just gone.'}
+        </p>
+      )}
+      {ceremony && (
+        <Button
+          class="chip"
+          onPress={() => {
+            hud.open('awards');
+          }}
+        >
+          {`See the year ${ceremony.year} ceremony`}
+        </Button>
+      )}
     </div>
   );
 }

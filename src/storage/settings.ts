@@ -37,16 +37,22 @@ const SANDBOX_KEY = 'pressure-point-sandbox';
 export interface SandboxSettings {
   money: number;
   unlockAll: boolean;
+  /** Whether staff set challenges. */
+  challenges: boolean;
 }
 
-/** The sandbox settings last chosen, or the defaults: the sandbox's usual money, and unlocking as stars are earned. */
+/**
+ * The sandbox settings last chosen, or the defaults: the sandbox's usual money, unlocking as stars are earned, and
+ * staff challenges.
+ */
 export function loadSandbox(): SandboxSettings {
-  const out: SandboxSettings = { money: CENTERS.sandbox.startMoney, unlockAll: false };
+  const out: SandboxSettings = { money: CENTERS.sandbox.startMoney, unlockAll: false, challenges: true };
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(SANDBOX_KEY) ?? '{}');
     if (!isRecord(raw)) return out;
     if (typeof raw.money === 'number' && SANDBOX_MONEY.includes(raw.money)) out.money = raw.money;
     if (typeof raw.unlockAll === 'boolean') out.unlockAll = raw.unlockAll;
+    if (typeof raw.challenges === 'boolean') out.challenges = raw.challenges;
   } catch {
     // the defaults will do
   }

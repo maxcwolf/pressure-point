@@ -210,6 +210,49 @@ test.describe('in a game', () => {
     await game.eval((pp) => pp.sim.emit({ type: 'star', stars: 1 }));
     await screens.shot('star');
   });
+
+  test('a staff challenge', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      const st = pp.state.staff[0]!;
+      pp.state.challenge = {
+        staffId: st.id,
+        staffName: st.name,
+        goal: { kind: 'healed', count: 12 },
+        from: pp.state.stats.healed - 5,
+        set: pp.state.day,
+        deadline: pp.state.day + 74,
+        reward: 3000,
+      };
+    });
+    await screens.shot('challenge');
+  });
+
+  test('the year-end awards', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      pp.state.ceremony = {
+        year: 2,
+        results: [
+          { award: 'healing-hands', won: true, note: '81% healed, 77% needed' },
+          { award: 'busiest', won: false, note: '38 healed, 50 needed' },
+          { award: 'no-waiting', won: true, note: '1.4 days on average, 1.8 at most' },
+          { award: 'fair-prices', won: true, note: '1% put off by prices, 3% at most' },
+          { award: 'healthy-books', won: false, note: '$21,400 net, $30,000 needed' },
+          { award: 'happy-team', won: false, note: 'Someone quit this year' },
+          {
+            award: 'healer-of-the-year',
+            won: true,
+            note: 'Glen Tennis: 31 guests seen, 19 needed',
+            winner: 'Glen Tennis',
+          },
+          { award: 'janitor-of-the-year', won: false, note: 'No Janitor to give it to' },
+        ],
+      };
+      pp.sim.emit({ type: 'awards', year: 2 });
+    });
+    await screens.shot('awards');
+  });
 });
 
 test.describe('in a narrow window', () => {

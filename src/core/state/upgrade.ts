@@ -1,7 +1,7 @@
 // Bringing saves written by earlier versions up to date.
 
-import { ACHIEVEMENTS, DISCIPLINES, type Modality, type Role, ROLES } from '../data';
-import { defaultPolicy, emptyTally, SAVE_VERSION } from './game';
+import { ACHIEVEMENTS, AWARDS, CHALLENGE_GAP_MIN, DISCIPLINES, type Modality, type Role, ROLES } from '../data';
+import { defaultPolicy, emptyTally, FIRST_CHALLENGE_DAY, SAVE_VERSION } from './game';
 import type { Candidate, GameState, Guest, Item, Ledger, MonthRecord, Room, Staff, Stats, Tally } from './types';
 
 /** What everyone in a role is qualified in to begin with: their discipline's basic modality. */
@@ -32,11 +32,16 @@ type OldSave = Before<
   | 'unlockAll'
   | 'achieved'
   | 'policy'
+  | 'challenge'
+  | 'nextChallenge'
+  | 'challengesOn'
+  | 'ceremony'
+  | 'trophies'
 > & {
   stats: Before<Stats, 'priced' | 'sent' | 'healedBy' | 'emergencies' | 'lastQuit'>;
   tally?: Before<Tally, 'sent'>;
   months?: Before<MonthRecord, 'sent'>[];
-  staff: Before<Staff, 'quals' | 'training' | 'strain' | 'morale' | 'raiseAsked' | 'unhappyT'>[];
+  staff: Before<Staff, 'quals' | 'training' | 'strain' | 'morale' | 'raiseAsked' | 'unhappyT' | 'yearServed'>[];
   candidates: Before<Candidate, 'quals'>[];
   items: Before<Item, 'wear' | 'dirt'>[];
   rooms: Before<Room, 'windows' | 'priority'>[];
@@ -56,6 +61,7 @@ export function upgradeSave(save: GameState) {
     st.morale ??= 75;
     st.raiseAsked ??= false;
     st.unhappyT ??= 0;
+    st.yearServed ??= 0;
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
   for (const it of s.items) {
@@ -93,6 +99,13 @@ export function upgradeSave(save: GameState) {
   s.months ??= [];
   for (const t of [s.tally, ...s.months]) t.sent ??= 0;
   s.policy ??= defaultPolicy();
+  s.challenge ??= null;
+  s.nextChallenge ??= Math.max(FIRST_CHALLENGE_DAY, s.day + CHALLENGE_GAP_MIN);
+  s.challengesOn ??= true;
+  s.ceremony ??= null;
+  // an award from a newer version means nothing here
+  s.trophies = (s.trophies ?? []).filter((t) => Object.hasOwn(AWARDS, t.award));
+  if (s.ceremony) s.ceremony.results = s.ceremony.results.filter((r) => Object.hasOwn(AWARDS, r.award));
   s.unlockAll ??= false;
   // an achievement from a newer version means nothing here
   s.achieved = (s.achieved ?? []).filter((id) => Object.hasOwn(ACHIEVEMENTS, id));

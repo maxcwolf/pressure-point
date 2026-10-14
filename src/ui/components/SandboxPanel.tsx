@@ -83,6 +83,20 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           }}
         />
       </ul>
+      <h4>Events</h4>
+      <ul>
+        <SettingRow
+          icon="🎯"
+          name="Staff challenges"
+          desc="Now and then a member of staff sets the center an objective with a deadline, for a reward."
+          on={settings.challenges}
+          onToggle={() => {
+            change(() => {
+              saveSandbox({ ...settings, challenges: !settings.challenges });
+            });
+          }}
+        />
+      </ul>
       <button class="go start" onClick={onStart}>
         Start building
       </button>

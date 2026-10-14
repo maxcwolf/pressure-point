@@ -23,8 +23,8 @@ Done when every one has unit tests, the queue is covered end to end, and the tut
 
 Something to aim for between stars, built on the objectives that already exist.
 
-- **Staff objectives** [27]: now and then a member of staff sets the center an objective with 90 to 180 days to meet it: heal so many guests, earn so much, reach a decor level, go so long without anyone quitting. Each is a `GoalSpec` with a deadline. Met, it pays staff morale and, in the campaign, karma. One at a time, shown under the star objectives.
-- **Year-end awards** [14]: at the end of each game year, a ceremony dialog with eight awards, some for the center (best results, best value, cleanest) and some for staff (therapist of the year, janitor of the year), each judged on the year's monthly records and won or lost against a bar that rises each year. Prizes are money, reputation and karma. Trophies won go on display in the Trophy Cabinet and on an Awards tab.
+- **Staff objectives** [27]: now and then a member of staff sets the center an objective with 90 to 180 days to meet it: heal so many guests, earn so much, reach a decor level, go so long without anyone quitting. Each is a `GoalSpec` with a deadline. Met, it pays money and staff morale (not karma, which is earned once per star and achievement, where a repeatable reward could be farmed by replaying). One at a time, shown under the star objectives.
+- **Year-end awards** [14]: at the end of each game year, a ceremony dialog with eight awards, some for the center (best results, best value, cleanest) and some for staff (therapist of the year, janitor of the year), each judged on the year's monthly records and won or lost against a bar that rises each year. Prizes are money and reputation, and a member of staff who wins one is delighted. Trophies won go on display in the Trophy Cabinet and under Awards in the Stats menu. (Built with healing record, busiest, shortest wait, fair prices, the books and the happiest team for the center, since cleanliness is not recorded month by month.)
 
 ## Phase 3: Staff careers
 

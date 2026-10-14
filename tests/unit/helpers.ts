@@ -7,10 +7,15 @@ import { newGame } from '../../src/core/state/game';
 import type { Room, Staff } from '../../src/core/state/types';
 import type { Rect } from '../../src/core/world';
 
-/** Start a new game with a fixed random seed. */
+/**
+ * Start a new game with a fixed random seed. Staff challenges are off, since the random numbers they draw would shift
+ * the seeded runs the other tests were written against; challenges have tests of their own.
+ */
 export function freshSim(seed = 1): Sim {
   setSeed(seed);
-  return new Sim(newGame());
+  const s = newGame();
+  s.challengesOn = false;
+  return new Sim(s);
 }
 
 type Door = Room['door'];

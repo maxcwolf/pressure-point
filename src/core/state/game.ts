@@ -32,6 +32,9 @@ export const emptyLedger = (): Ledger => ({
   bonus: 0,
 });
 
+/** The day the first staff challenge may be set. */
+export const FIRST_CHALLENGE_DAY = 30;
+
 /** The policy a new game starts with. */
 export const defaultPolicy = (): Policy => ({
   diagnosis: DIAGNOSIS_TARGET,
@@ -43,9 +46,9 @@ export const defaultPolicy = (): Policy => ({
 /**
  * Goes up whenever a save could hold content an older version has never heard of (tests/unit/save-version.test.ts
  * notices), so that older versions refuse the save rather than crash on it. 4: the karma items and Saltmarsh.
- * 5: policy, room priority and sending guests home.
+ * 5: policy, room priority and sending guests home. 6: staff challenges and the year-end awards.
  */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {
@@ -92,6 +95,11 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     policy: defaultPolicy(),
     options: {},
     unlockAll: false,
+    challenge: null,
+    nextChallenge: FIRST_CHALLENGE_DAY,
+    challengesOn: true,
+    ceremony: null,
+    trophies: [],
     achieved: [],
   };
   refillCandidates(s);

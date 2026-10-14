@@ -8,7 +8,7 @@ import type { GameHost } from './host';
 import type { ItemKind, Place } from './lib/catalog';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'policy' | 'stats';
-export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma';
+export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards';
 
 /** A message that fades after a few seconds. */
 export interface Toast {
@@ -149,7 +149,8 @@ export class HudState {
       else if (e.type === 'star') {
         this.star = e.stars;
         this.open('star');
-      } else this.float(e.text, e.kind, view.project(e.x, e.y, 1.6));
+      } else if (e.type === 'awards') this.open('awards');
+      else this.float(e.text, e.kind, view.project(e.x, e.y, 1.6));
     }
   }
 

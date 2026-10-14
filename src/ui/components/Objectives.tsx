@@ -3,12 +3,28 @@
 import './Objectives.css';
 
 import { centerOf, conditionOf } from '../../core/data';
+import { money } from '../../core/format';
 import { useGame } from '../hooks/use-hud';
 import { wholeDaysLeft } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { StarRow } from './common/Stars';
 
-/** The objectives for the next star, with the emergency in progress under them. */
+/** The challenge a member of staff has set, if any: what it asks, how far along it is, and the days left. */
+function ChallengeCard() {
+  const { sim } = useGame();
+  const ch = sim.s.challenge;
+  const o = sim.challengeObjective();
+  if (!ch || !o) return null;
+  return (
+    <div class="challenge">
+      <b>{`🎯 ${ch.staffName}'s challenge`}</b>{' '}
+      <span>{`${o.label} · ${wholeDaysLeft(ch.deadline - sim.s.day)} days left · ${money(ch.reward)}`}</span>
+      <Bar value={o.progress * 100} class="thin gold" />
+    </div>
+  );
+}
+
+/** The objectives for the next star, with the staff challenge and the emergency in progress under them. */
 export function Objectives() {
   const { sim } = useGame();
   const s = sim.s;
@@ -40,6 +56,7 @@ export function Objectives() {
           </li>
         )}
       </ul>
+      <ChallengeCard />
       {emergency && (
         <div class="emergency">
           <b>{`🚨 Emergency: ${conditionOf(emergency.condition).name}`}</b>{' '}

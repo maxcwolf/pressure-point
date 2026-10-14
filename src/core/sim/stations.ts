@@ -171,6 +171,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   it.progress = 0;
   staff.busy = false;
   staff.served++;
+  staff.yearServed++;
   g.patience = Math.min(100, g.patience + 30);
   addWear(ctx, it);
   const nice = prestigeBonus(ctx, it);

@@ -70,6 +70,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     morale: 75,
     raiseAsked: false,
     unhappyT: 0,
+    yearServed: 0,
   };
   const [lx, ly] = lobbyTile(ctx.world.plot);
   if (!goTo(ctx, st, lx, ly)) return null;
@@ -461,6 +462,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
             if (job.kind === 'repair') ctx.world.version++;
           }
         }
+        if (job) st.yearServed++;
         st.job = null;
         staffIdle(ctx, st);
       }

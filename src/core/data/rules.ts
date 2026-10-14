@@ -74,6 +74,15 @@ export const DIAGNOSIS_MAX = 0.95;
 export const BREAK_AT = 18;
 export const BREAK_AT_MIN = 10;
 export const BREAK_AT_MAX = 50;
+/** Days from a staff challenge being set to its deadline, at least and at most. */
+export const CHALLENGE_DAYS_MIN = 60;
+export const CHALLENGE_DAYS_MAX = 120;
+/** Days between one staff challenge ending and the next being set, at least and at most. */
+export const CHALLENGE_GAP_MIN = 30;
+export const CHALLENGE_GAP_MAX = 60;
+/** How much every member of staff cheers up when a challenge is met, and how much its setter sulks when it is not. */
+export const CHALLENGE_MORALE = 12;
+export const CHALLENGE_SULK = 10;
 /** What sending a guest home costs in reputation: less than a failed treatment. */
 export const SEND_HOME_REP = 1;
 

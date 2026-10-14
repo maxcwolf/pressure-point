@@ -51,6 +51,7 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 15. Click a built room to change it: add **windows**, **move its door**, or **resize** it by dragging a wall in or out. Extra floor costs $200 a tile, and floor given up refunds half. Switch on **Priority** to have staff fill it first.
 16. Click a desk or table to see its **line**: move guests up or down, over to another line, or **send them home**. A diagnosed guest's inspector shows the **chance** their treatment works.
 17. The **Policy** menu sets how sure a diagnosis must be before treatment, whether emergency guests go first, and when staff take breaks.
+18. Now and then a member of staff sets a **challenge** with a deadline, shown under the objectives; meet it for a reward. Each year ends with an **awards ceremony**, and the trophies won fill a **Trophy Cabinet**.
 
 ## Treatments
 

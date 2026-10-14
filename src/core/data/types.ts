@@ -305,6 +305,25 @@ export interface AchievementDef {
   karma: number;
 }
 
+export type AwardId =
+  | 'healing-hands'
+  | 'busiest'
+  | 'no-waiting'
+  | 'fair-prices'
+  | 'healthy-books'
+  | 'happy-team'
+  | 'healer-of-the-year'
+  | 'janitor-of-the-year';
+/** One of the awards handed out at the end of each year. */
+export interface AwardDef {
+  id: AwardId;
+  name: string;
+  icon: string;
+  /** What it is for, in a few words. */
+  desc: string;
+  /** What winning it pays the center. */
+  prize: number;
+}
 /** One objective toward a star. */
 export type GoalSpec =
   /** Heal this many guests in all, or with one discipline. */

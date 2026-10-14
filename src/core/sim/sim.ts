@@ -17,6 +17,7 @@ import type { Check, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce } from './advisor';
 import { drainFactor, prestige, updateAmbience } from './ambience';
+import { holdAwards, YEAR_MONTHS } from './awards';
 import type { PlaceOptions } from './building';
 import {
   canMoveItem,
@@ -33,6 +34,7 @@ import {
   sellItem,
   toggleWindow,
 } from './building';
+import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
 import { createContext, type SimContext } from './context';
 import { borrow, monthEnd, repay, setPrice } from './economy';
@@ -84,7 +86,11 @@ export class Sim {
     const { s } = ctx;
     const prevMonth = Math.floor(s.day / DAYS_PER_MONTH);
     s.day += dt / DAY_SECONDS;
-    if (Math.floor(s.day / DAYS_PER_MONTH) !== prevMonth) monthEnd(ctx);
+    const month = Math.floor(s.day / DAYS_PER_MONTH);
+    if (month !== prevMonth) {
+      monthEnd(ctx);
+      if (month % YEAR_MONTHS === 0) holdAwards(ctx, month / YEAR_MONTHS);
+    }
 
     checkOpening(ctx);
     admitGuests(ctx, dt);
@@ -100,6 +106,7 @@ export class Sim {
       updateEmergency(ctx);
       checkStars(ctx);
       checkAchievements(ctx);
+      updateChallenge(ctx);
     }
     announce(ctx, dt);
     updateTwists(ctx, dt);
@@ -136,6 +143,10 @@ export class Sim {
 
   // ---- Progress and advice ---------------------------------------------------
 
+  /** How the challenge a member of staff has set is going, if there is one. */
+  challengeObjective(): Objective | null {
+    return this.s.challenge ? challengeObjective(this.ctx, this.s.challenge) : null;
+  }
   /** What stands between the center and its next star. */
   objectives(): Objective[] {
     return objectives(this.ctx);

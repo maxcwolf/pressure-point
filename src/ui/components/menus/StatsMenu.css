@@ -78,3 +78,29 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.trophies {
+  margin-top: 12px;
+}
+
+.trophies h4 {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.trophies ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.trophies li {
+  background: #fff6dc;
+  border: 2px solid var(--gold);
+  border-radius: 9px;
+  padding: 2px 8px;
+  font-size: 13px;
+}
