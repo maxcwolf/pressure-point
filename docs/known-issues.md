@@ -6,5 +6,4 @@ When one of these is fixed, add a test that fails without the fix, as for any bu
 
 ## Housekeeping
 
-- **One end-to-end test failed once.** `an emergency offer can be put aside and brought back before it lapses` failed in one full run on 14 October 2026 and passed in every run since, alone and in the full suite. The failure's details were lost before they were read. If it happens again, keep `test-results/` and look at what the offer said.
-- **Another failed once, under load.** `the camera pans and zooms` failed in one full run on 14 October 2026 that took twice as long as usual, and passed three times in a row alone straight after. Its details were overwritten by the rerun. If it fails again, keep `test-results/` before rerunning.
+- **An end-to-end test failed once, under load.** `the camera pans and zooms` failed in one full run on 14 October 2026 that took twice as long as usual, and passed three times in a row alone straight after. Its details were overwritten by the rerun. If it fails again, keep `test-results/` before rerunning.

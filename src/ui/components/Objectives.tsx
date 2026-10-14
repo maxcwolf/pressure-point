@@ -4,6 +4,7 @@ import './Objectives.css';
 
 import { centerOf, conditionOf } from '../../core/data';
 import { useGame } from '../hooks/use-hud';
+import { wholeDaysLeft } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { StarRow } from './common/Stars';
 
@@ -43,7 +44,7 @@ export function Objectives() {
         <div class="emergency">
           <b>{`🚨 Emergency: ${conditionOf(emergency.condition).name}`}</b>{' '}
           <span>
-            {`${emergency.healed}/${emergency.target} healed · ${Math.max(0, Math.ceil(emergency.deadline - s.day))} days left`}
+            {`${emergency.healed}/${emergency.target} healed · ${wholeDaysLeft(emergency.deadline - s.day)} days left`}
           </span>
           <Bar value={(emergency.healed / emergency.target) * 100} class="thin bad" />
         </div>

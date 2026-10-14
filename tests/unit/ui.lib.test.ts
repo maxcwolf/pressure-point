@@ -14,7 +14,7 @@ import {
 import { barHeights, CHART_HEIGHT } from '../../src/ui/lib/chart';
 import { cx } from '../../src/ui/lib/cx';
 import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
-import { offerTimeLeft, timeLeftLabel } from '../../src/ui/lib/emergency';
+import { offerTimeLeft, timeLeftLabel, wholeDaysLeft } from '../../src/ui/lib/emergency';
 import { placedFlags } from '../../src/ui/lib/plan';
 import { courseName, guestStatus, staffStatus } from '../../src/ui/lib/status';
 import { saveFacts, titleBadges } from '../../src/ui/lib/title';
@@ -224,5 +224,14 @@ describe('the time left on an emergency offer', () => {
     expect(timeLeftLabel(4.2)).toBe('5 days left');
     expect(timeLeftLabel(1)).toBe('1 day left');
     expect(timeLeftLabel(0.4)).toBe('less than a day left');
+  });
+
+  it('is not a day out when the days left come out a hair over a whole number', () => {
+    // offered on day 1.3 with eight days to decide, then five days on: (1.3 + 8) - (1.3 + 5) is 3.000000000000001
+    const { days } = offerTimeLeft(1.3 + 8, 1.3 + 5);
+    expect(timeLeftLabel(days)).toBe('3 days left');
+    expect(wholeDaysLeft(days)).toBe(3);
+    expect(wholeDaysLeft(2.5)).toBe(3);
+    expect(wholeDaysLeft(-1)).toBe(0);
   });
 });
