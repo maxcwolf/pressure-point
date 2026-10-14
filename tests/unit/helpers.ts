@@ -132,3 +132,36 @@ export function runUntil(sim: Sim, done: () => boolean, maxSeconds = 600) {
 
 /** The text of every toast among some events. */
 export const toasts = (events: SimEvent[]) => events.flatMap((e) => (e.type === 'toast' ? [e.text] : []));
+
+/**
+ * Every way the game's bookkeeping can fall out of step with itself, as a list of readable problems:
+ * seats held for someone who is not sitting there, guests waiting on a station with nobody to serve
+ * them, and lines holding people who left. Empty when all is well.
+ */
+export function inconsistencies(sim: Sim): string[] {
+  const s = sim.s;
+  const out: string[] = [];
+  for (const it of s.items) {
+    for (const [idx, id] of it.users.entries()) {
+      if (!id) continue;
+      const c = sim.char(id);
+      if (!c) out.push(`${it.type} #${it.id} seat ${idx} held for #${id}, who has gone`);
+      else if (c.claimItem !== it.id || c.claimIdx !== idx)
+        out.push(`${it.type} #${it.id} seat ${idx} held for ${c.name}, who holds ${c.claimItem}:${c.claimIdx}`);
+    }
+    for (const id of it.queue) if (!sim.guest(id)) out.push(`${it.type} #${it.id} line holds #${id}, who has gone`);
+    if (it.serving) {
+      const g = sim.guest(it.serving);
+      if (g?.state === 'served' && !it.staffId) out.push(`${g.name} is on ${it.type} #${it.id} with nobody serving`);
+    }
+    if (it.staffId && sim.staff(it.staffId)?.post !== it.id) out.push(`${it.type} #${it.id} staffed by a stranger`);
+  }
+  for (const c of [...s.guests, ...s.staff]) {
+    if (!c.claimItem) continue;
+    const it = sim.world.item(c.claimItem);
+    if (!it) out.push(`${c.name} holds a seat on #${c.claimItem}, which has gone`);
+    else if (it.users[c.claimIdx] !== c.id)
+      out.push(`${c.name} thinks they hold ${it.type} #${it.id} seat ${c.claimIdx}`);
+  }
+  return out;
+}
