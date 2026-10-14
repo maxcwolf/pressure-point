@@ -66,9 +66,16 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     emergency: null,
     nextEmergency: 75,
     options: {},
+    unlockAll: false,
+    achieved: [],
   };
   refillCandidates(s);
   return s;
+}
+
+/** The star whose rooms, items and treatments are unlocked so far: every one, in a game with everything unlocked. */
+export function unlockedUpTo(s: GameState): number {
+  return s.unlockAll ? Infinity : s.stars;
 }
 
 /** Whether a discipline exists in this game's center at all. Massage always does. */

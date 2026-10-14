@@ -1,34 +1,57 @@
-// The campaign's progress: the stars earned in each center, kept apart from saved games.
+// The campaign's progress: stars, achievements and karma unlocks, kept apart from saved games.
 
-import { type CampaignStars, withStars } from '../core/campaign';
-import { type CenterId, CENTERS } from '../core/data';
+import { type CampaignProgress, freshCampaign, withAchievements, withStars, withUnlock } from '../core/campaign';
+import { type AchievementId, ACHIEVEMENTS, type CenterId, CENTERS, ITEMS, type ItemType } from '../core/data';
+import type { GameState } from '../core/state/types';
 import { isRecord } from './json';
 
 const KEY = 'pressure-point-campaign';
 
-/** The stars earned in each campaign center so far, ignoring anything malformed. */
-export function loadCampaign(): CampaignStars {
+/** The campaign so far, ignoring anything malformed or unknown to this version. */
+export function loadCampaign(): CampaignProgress {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-    const stars = isRecord(raw) && isRecord(raw.stars) ? raw.stars : {};
-    const out: CampaignStars = {};
+    if (!isRecord(raw)) return freshCampaign();
+    const p = freshCampaign();
+    const stars = isRecord(raw.stars) ? raw.stars : {};
     for (const [id, n] of Object.entries(stars)) {
-      if (Object.hasOwn(CENTERS, id) && typeof n === 'number' && Number.isInteger(n) && n > 0) out[id as CenterId] = n;
+      if (Object.hasOwn(CENTERS, id) && typeof n === 'number' && Number.isInteger(n) && n > 0)
+        p.stars[id as CenterId] = n;
     }
-    return out;
+    /** The entries of a stored list that name something in a table. */
+    const known = <T extends string>(list: unknown, table: object): T[] =>
+      Array.isArray(list) ? list.filter((x): x is T => typeof x === 'string' && Object.hasOwn(table, x)) : [];
+    p.achieved = known<AchievementId>(raw.achieved, ACHIEVEMENTS);
+    p.unlocked = known<ItemType>(raw.unlocked, ITEMS).filter((t) => ITEMS[t].karma !== undefined);
+    return p;
   } catch {
-    return {};
+    return freshCampaign();
   }
 }
 
-/** Note the stars a game has reached in its center, if it is a campaign center and that beats the best so far. */
-export function recordStars(center: CenterId, stars: number) {
-  const before = loadCampaign();
-  const after = withStars(before, center, stars);
-  if (after === before) return;
+/** Store the campaign's progress. */
+function saveCampaign(p: CampaignProgress) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ stars: after }));
+    localStorage.setItem(KEY, JSON.stringify(p));
   } catch {
-    // the stars are still in the game's own save
+    // the stars and achievements are still in the game's own save, and are recorded again next time
   }
+}
+
+/** Note what a game has earned for the campaign: its stars, if they beat the best there, and its achievements. */
+export function recordGame(s: GameState) {
+  const before = loadCampaign();
+  const stars = withStars(before.stars, s.center, s.stars);
+  const achieved = withAchievements(before.achieved, s.achieved);
+  if (stars === before.stars && achieved.length === before.achieved.length) return;
+  saveCampaign({ ...before, stars, achieved });
+}
+
+/** Unlock an item for good with karma. False if it cannot be: not for karma, already unlocked, or too dear. */
+export function buyWithKarma(type: ItemType): boolean {
+  const before = loadCampaign();
+  const after = withUnlock(before, type);
+  if (after === before) return false;
+  saveCampaign(after);
+  return true;
 }

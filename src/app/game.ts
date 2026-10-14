@@ -1,12 +1,13 @@
 // A game in progress: the simulation, the view of it, the tools, the interface and the loop that runs them.
 
 import type { Audio } from '../audio';
+import { withAchievements } from '../core/campaign';
 import { ITEMS, ROOMS, W } from '../core/data';
 import { Sim } from '../core/sim/sim';
 import type { GameState } from '../core/state/types';
 import { accessTile, itemDims } from '../core/world';
 import { View } from '../render/view';
-import { recordStars } from '../storage/campaign';
+import { loadCampaign, recordGame } from '../storage/campaign';
 import { autosave, AUTOSAVE_ID } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
@@ -28,6 +29,8 @@ export interface GameSetup {
 
 /** Run a game: wire up the view, tools, interface, input and main loop. */
 export function startGame({ canvas, audio, state, exit }: GameSetup) {
+  // achievements earned in other games are not earned again in this one
+  if (state.center !== 'sandbox') state.achieved = withAchievements(state.achieved, loadCampaign().achieved);
   const sim = new Sim(state);
   // a blueprint still open when the game was last closed is torn up, with anything bought for it refunded
   for (const r of [...state.rooms]) if (!r.done) sim.removeRoom(r.id, 1);
@@ -45,7 +48,7 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
   /** Write the autosave, with a picture of the view for the title screen. */
   const save = () => {
     if (autosave(state)) storeThumb(AUTOSAVE_ID, view.snapshot());
-    recordStars(state.center, state.stars);
+    recordGame(state);
   };
   /** Save, then stop saving on the way out, so the page that loads next finds this game as it was left. */
   const saveAndStop = () => {

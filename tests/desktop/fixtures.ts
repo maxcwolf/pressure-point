@@ -63,6 +63,7 @@ export { expect } from '@playwright/test';
 /** Start a new game from the title screen. */
 export async function newGame(page: Page) {
   await page.getByRole('button', { name: 'Sandbox' }).click();
+  await page.getByRole('button', { name: 'Start building' }).click();
   await page.locator('#stats').waitFor();
 }
 

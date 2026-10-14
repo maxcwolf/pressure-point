@@ -13,6 +13,7 @@ import {
 } from '../data';
 import type { Char, GameState, Guest, Item, MonthRecord, Room, Staff, WallSpot } from '../state/types';
 import type { Check, Rect, World } from '../world';
+import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce } from './advisor';
 import { drainFactor, prestige, updateAmbience } from './ambience';
 import type { PlaceOptions } from './building';
@@ -94,6 +95,7 @@ export class Sim {
       updateAmbience(ctx);
       updateEmergency(ctx);
       checkStars(ctx);
+      checkAchievements(ctx);
     }
     announce(ctx, dt);
     updateTwists(ctx, dt);

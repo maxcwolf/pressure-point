@@ -51,7 +51,10 @@ export type ItemType =
   | 'coffee_machine'
   | 'aquarium'
   | 'pool_table'
-  | 'trophy_cabinet';
+  | 'trophy_cabinet'
+  | 'bonsai'
+  | 'massage_chair'
+  | 'koi_pond';
 
 export interface RoomDef {
   type: RoomType;
@@ -113,6 +116,11 @@ export interface ItemDef {
   inMenu?: boolean;
   /** Stars needed before it can be bought. */
   unlock?: number;
+  /**
+   * Karma that unlocks it for good, in every game: before its star if it has one, or at all if it does not.
+   * An item with karma and no star is only ever unlocked with karma.
+   */
+  karma?: number;
   /** How much nicer it makes its surroundings, and the room it is in. */
   decor?: number;
   /** People can walk over it, and furniture can stand on it. */
@@ -123,6 +131,8 @@ export interface ItemDef {
   dirt?: number;
   /** What a guest pays each time they use it, for drinks, snacks and games. */
   sale?: number;
+  /** How fast a guest sitting in it loses patience, against standing. Seats default to 0.6. */
+  seatDrain?: number;
 }
 
 export interface RoleDef {
@@ -271,6 +281,28 @@ export interface ConditionDef {
   visual: Visual;
   /** The only centers guests turn up with it in, for a local ailment. Absent means anywhere. */
   only?: readonly CenterId[];
+}
+
+export type AchievementId =
+  | 'called-in'
+  | 'century'
+  | 'talk-of-the-town'
+  | 'nest-egg'
+  | 'showpiece'
+  | 'one-big-family'
+  | 'pins-and-needles'
+  | 'good-vibrations';
+
+/** A one-off feat in the campaign, worth some karma the first time it is done in any center. */
+export interface AchievementDef {
+  id: AchievementId;
+  name: string;
+  icon: string;
+  /** What it takes, in a few words. */
+  desc: string;
+  /** Done when this objective is met. */
+  goal: GoalSpec;
+  karma: number;
 }
 
 /** One objective toward a star. */

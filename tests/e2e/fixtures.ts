@@ -303,6 +303,7 @@ export class Game {
     await this.page.addInitScript(installFinders);
     await this.page.goto('/');
     await this.page.getByRole('button', { name: 'Sandbox' }).click();
+    await this.page.getByRole('button', { name: 'Start building' }).click();
     await this.page.waitForFunction(() => !!window.pp);
   }
 

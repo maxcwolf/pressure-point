@@ -60,6 +60,8 @@ export const BORED_PATIENCE = 60;
 export const PLAY_RANGE = 12;
 /** How much patience a round on the arcade gives back. */
 export const PLAY_PATIENCE = 25;
+/** How fast a seated guest loses patience against standing, unless the seat says otherwise. */
+export const SEAT_DRAIN = 0.6;
 
 export const DECOR_RADIUS = 4;
 export const DIAGNOSIS_TARGET = 0.75;

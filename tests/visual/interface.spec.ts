@@ -19,10 +19,23 @@ test.describe('title screen', () => {
   test('the campaign trail', async ({ screens, page }) => {
     await screens.title();
     await page.evaluate(() =>
-      localStorage.setItem('pressure-point-campaign', JSON.stringify({ stars: { willow: 2 } })),
+      localStorage.setItem(
+        'pressure-point-campaign',
+        JSON.stringify({ stars: { willow: 2 }, achieved: ['called-in'], unlocked: ['bonsai'] }),
+      ),
     );
     await page.getByRole('button', { name: 'Campaign' }).click();
     await screens.shot('title-campaign');
+    await page.getByRole('tab', { name: 'Karma shop' }).click();
+    await screens.shot('title-karma-shop');
+    await page.getByRole('tab', { name: 'Achievements' }).click();
+    await screens.shot('title-achievements');
+  });
+
+  test('the sandbox settings', async ({ screens, page }) => {
+    await screens.title();
+    await page.getByRole('button', { name: 'Sandbox' }).click();
+    await screens.shot('title-sandbox');
   });
 });
 
@@ -134,6 +147,16 @@ test.describe('in a game', () => {
     await screens.shot('messages');
     await page.locator('#offer').getByTitle('Decide later').click();
     await screens.shot('offer-aside');
+  });
+
+  test('unlocking an item with karma', async ({ screens, game, page }) => {
+    await screens.play();
+    await page.evaluate(() =>
+      localStorage.setItem('pressure-point-campaign', JSON.stringify({ stars: { willow: 3, exchange: 1 } })),
+    );
+    await game.menu('Items');
+    await game.card('Koi Pond').click();
+    await screens.shot('karma');
   });
 
   test('a star earned', async ({ screens, game }) => {

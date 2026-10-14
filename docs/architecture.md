@@ -36,6 +36,7 @@ Input goes the other way. Pointer and keyboard handlers in `src/app/` call the b
 - **`Sim` is the front door.** The rest of the game talks only to the `Sim` class, which runs the clock and passes each call to the function that does the work.
 - **The game reports, it does not draw.** It queues events (`core/sim/events.ts`); the interface decides how to show them.
 - **Every game is set in a center** (`core/data/centers.ts`): the sandbox, or one of the campaign's. A center decides where the building stands on the lot (its `Plot`), the starting money, and the objectives for each star. The `World` reads the plot from the game's center, so nothing else assumes a fixed building. Objectives are small specs (`GoalSpec`) that `core/sim/goals.ts` checks against the game.
+- **The campaign is kept apart from saved games** (`storage/campaign.ts`): the best stars in each center, the achievements earned and the items unlocked with karma. Its rules are pure functions in `core/campaign.ts`. A game only carries its own `achieved` list, topped up from the campaign when it starts, so an achievement is never awarded twice; karma is always worked out from the stars and achievements, never stored.
 - **Random numbers are seeded.** Everything random goes through `core/random.ts`, so a test can replay a game exactly.
 
 ## Rendering (`src/render/`)

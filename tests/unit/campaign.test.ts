@@ -12,7 +12,7 @@ import { Sim } from '../../src/core/sim/sim';
 import { arrivalFactor, impatience, inRush, seasonOf, updateTwists } from '../../src/core/sim/twists';
 import { addWear } from '../../src/core/sim/upkeep';
 import { disciplineHere, disciplineOn, newGame } from '../../src/core/state/game';
-import { loadCampaign, recordStars } from '../../src/storage/campaign';
+import { loadCampaign, recordGame } from '../../src/storage/campaign';
 import { campaignCards } from '../../src/ui/lib/campaign';
 import { runUntil } from './helpers';
 
@@ -70,24 +70,27 @@ describe('campaign progress', () => {
     } as Storage;
   });
 
+  /** Note the stars a game in a center has reached. */
+  const recordStars = (center: CenterId, stars: number) => recordGame({ ...newGame(center), stars });
+
   it('is kept between games, best stars only', () => {
-    expect(loadCampaign()).toEqual({});
+    expect(loadCampaign().stars).toEqual({});
     recordStars('willow', 1);
     recordStars('willow', 0);
     recordStars('sandbox', 3);
-    expect(loadCampaign()).toEqual({ willow: 1 });
+    expect(loadCampaign().stars).toEqual({ willow: 1 });
     recordStars('willow', 2);
-    expect(loadCampaign()).toEqual({ willow: 2 });
+    expect(loadCampaign().stars).toEqual({ willow: 2 });
   });
 
   it('ignores junk', () => {
     store.set('pressure-point-campaign', 'not json');
-    expect(loadCampaign()).toEqual({});
+    expect(loadCampaign()).toEqual({ stars: {}, achieved: [], unlocked: [] });
     store.set(
       'pressure-point-campaign',
       JSON.stringify({ stars: { willow: 2, atlantis: 3, exchange: 'lots', sandbox: -1 } }),
     );
-    expect(loadCampaign()).toEqual({ willow: 2 });
+    expect(loadCampaign().stars).toEqual({ willow: 2 });
   });
 });
 

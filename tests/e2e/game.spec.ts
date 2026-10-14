@@ -30,6 +30,7 @@ test.describe('starting out', () => {
     );
     // the choice carries into the game, and survives a reload
     await page.getByRole('button', { name: 'Sandbox' }).click();
+    await page.getByRole('button', { name: 'Start building' }).click();
     await page.waitForFunction(() => !!window.pp);
     await expect(page.locator('#sys').getByTitle('Music')).toHaveClass(/off/);
     await expect(page.locator('#sys').getByTitle('Sound effects')).toHaveText('🔇');
@@ -62,13 +63,14 @@ test.describe('starting out', () => {
     expect(await game.eval((pp) => pp.state.items.length)).toBe(0);
   });
 
-  test('the newer items wait for their stars', async ({ game }) => {
+  test('the newer items wait for their stars, or karma', async ({ game }) => {
     await game.start();
     await game.menu('Items');
     await expect(game.card('Water Cooler')).toContainText('Corridor');
-    await expect(game.card('Mindfulness Arcade')).toContainText('Unlocks at star 1');
-    await expect(game.card('Aquarium')).toContainText('Unlocks at star 2');
-    await expect(game.card('Trophy Cabinet')).toContainText('Unlocks at star 3');
+    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or ✨ 3 karma');
+    await expect(game.card('Aquarium')).toContainText('Star 2, or ✨ 5 karma');
+    await expect(game.card('Trophy Cabinet')).toContainText('Star 3, or ✨ 5 karma');
+    await expect(game.card('Koi Pond')).toContainText('🔒 ✨ 6 karma');
   });
 
   test('locked equipment cannot be picked before its star', async ({ game }) => {
@@ -793,6 +795,8 @@ test.describe('acupuncture and settings', () => {
     await expect(page.locator('.title-sys').getByTitle('Music')).toHaveAttribute('aria-pressed', 'false');
 
     await page.getByRole('button', { name: 'Sandbox' }).click();
+
+    await page.getByRole('button', { name: 'Start building' }).click();
     await page.waitForFunction(() => !!window.pp);
     expect(await game.eval((pp) => pp.sim.enabled('acupuncture'))).toBe(false);
     await page.reload();
@@ -941,6 +945,73 @@ test.describe('the campaign', () => {
     await page.getByRole('button', { name: 'Play The Exchange' }).click();
     await page.waitForFunction(() => window.pp?.state.center === 'exchange');
     await expect(page.locator('#objectives')).toContainText('The Exchange');
+  });
+
+  test('karma from stars unlocks an item for good, in a game or from the karma shop', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.evaluate(() =>
+      localStorage.setItem('pressure-point-campaign', JSON.stringify({ stars: { willow: 3 } })),
+    );
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    const panel = page.locator('#title-campaign');
+    await expect(panel.locator('.karma')).toHaveText('✨ 6 karma');
+    await panel.getByRole('tab', { name: 'Karma shop' }).click();
+    await panel.locator('.shop li', { hasText: 'Bonsai' }).getByRole('button').click();
+    await expect(panel.locator('.shop li', { hasText: 'Bonsai' })).toContainText('Unlocked');
+    await expect(panel.locator('.karma')).toHaveText('✨ 3 karma');
+    // the koi pond costs more than is left
+    await expect(panel.locator('.shop li', { hasText: 'Koi Pond' }).getByRole('button')).toBeDisabled();
+
+    await panel.getByRole('tab', { name: 'Centers' }).click();
+    await panel.getByRole('button', { name: 'Play Willow Lane again' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    await game.menu('Items');
+    await expect(game.card('Bonsai')).not.toHaveClass(/locked/);
+    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or ✨ 3 karma');
+    await game.card('Mindfulness Arcade').click();
+    await expect(page.locator('#modal')).toContainText('Unlock the Mindfulness Arcade?');
+    await page.getByRole('button', { name: 'Unlock for ✨ 3 karma' }).click();
+    await expect(page.locator('#modal')).toBeEmpty();
+    await expect(game.card('Mindfulness Arcade')).not.toHaveClass(/locked/);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pressure-point-campaign')!).unlocked)).toEqual([
+      'bonsai',
+      'arcade_machine',
+    ]);
+    // nothing left for the next one
+    await game.card('Koi Pond').click();
+    await expect(page.locator('#modal')).toContainText('Earn more with stars and achievements');
+    await page.locator('#modal').getByRole('button', { name: 'OK', exact: true }).click();
+    expect(game.errors).toEqual([]);
+  });
+});
+
+test.describe('the sandbox', () => {
+  test('starts with the money, treatments and unlocks chosen for it', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Sandbox' }).click();
+    const panel = page.locator('#title-sandbox');
+    await panel.getByRole('radio', { name: '$200,000' }).click();
+    await panel.getByRole('switch', { name: 'Reiki' }).click();
+    await panel.getByRole('switch', { name: 'Everything unlocked' }).click();
+    await panel.getByRole('button', { name: 'Start building' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(
+      await game.eval((pp) => [pp.state.money, pp.state.unlockAll, pp.sim.enabled('reiki'), pp.sim.unlocked('stone')]),
+    ).toEqual([200000, true, false, true]);
+    await game.menu('Items');
+    await expect(game.card('Koi Pond')).not.toHaveClass(/locked/);
+    await game.menu('Rooms');
+    await expect(game.card('Acupuncture Clinic')).not.toHaveClass(/locked/);
+
+    // the next sandbox game, from the pause menu, is set up the same way
+    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#modal').getByRole('button', { name: 'New game' }).click();
+    await page.getByRole('button', { name: 'Start a new game' }).click();
+    await page.waitForFunction(() => window.pp?.state.day === 0);
+    expect(await game.eval((pp) => [pp.state.money, pp.state.unlockAll])).toEqual([200000, true]);
+    expect(game.errors).toEqual([]);
   });
 });
 
@@ -1120,6 +1191,7 @@ test.describe('saved games', () => {
     await page.reload();
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Sandbox' }).click();
+    await page.getByRole('button', { name: 'Start building' }).click();
     await page.waitForFunction(() => !!window.pp);
     await openSaves(page);
     await page.locator('.filebtn input').setInputFiles(file);

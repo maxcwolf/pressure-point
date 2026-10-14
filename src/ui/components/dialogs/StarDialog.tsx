@@ -2,10 +2,14 @@
 
 import './StarDialog.css';
 
+import { useState } from 'preact/hooks';
+
 import { nextCenter } from '../../../core/campaign';
-import { centerOf, CENTERS } from '../../../core/data';
+import { CAMPAIGN, centerOf, CENTERS, STAR_KARMA } from '../../../core/data';
 import { money } from '../../../core/format';
+import { loadCampaign } from '../../../storage/campaign';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { karmaText } from '../../lib/karma';
 import { roomsUnlockedAt, treatmentsUnlockedAt } from '../../lib/unlocks';
 import { Button } from '../common/Button';
 import { StarRow } from '../common/Stars';
@@ -21,8 +25,12 @@ export function StarDialog() {
   const opens = n === 1 ? nextCenter(sim.s.center) : undefined;
   /** Whether a discipline is switched on. */
   const enabled = sim.enabled.bind(sim);
-  const rooms = roomsUnlockedAt(n, enabled);
-  const treatments = treatmentsUnlockedAt(n, enabled);
+  // with everything unlocked from the start, a star opens nothing new
+  const rooms = sim.s.unlockAll ? [] : roomsUnlockedAt(n, enabled);
+  const treatments = sim.s.unlockAll ? [] : treatmentsUnlockedAt(n, enabled);
+  // karma comes with a campaign star the first time it is earned; a replay that only matches the best earns none
+  // (worked out once, as the dialog opens, since an autosave while it is open records the star)
+  const [karma] = useState(() => CAMPAIGN.includes(sim.s.center) && n > (loadCampaign().stars[sim.s.center] ?? 0));
   return (
     <Dialog>
       <div class="bigstars">
@@ -43,6 +51,12 @@ export function StarDialog() {
           <br />
           Guests who need them will start arriving. Train your staff in a Training Room and check the Treatments menu
           for equipment.
+        </p>
+      )}{' '}
+      {karma && (
+        <p class="unlock">
+          <b>{`+${karmaText(STAR_KARMA)}`}</b>
+          {' to unlock items that stay unlocked in every center. Find them in the Items menu, or the karma shop.'}
         </p>
       )}{' '}
       {opens && (

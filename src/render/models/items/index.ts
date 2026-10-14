@@ -8,6 +8,7 @@ import { buildAquarium } from './aquarium';
 import { buildArcadeMachine } from './arcade-machine';
 import { buildBench } from './bench';
 import { buildBin } from './bin';
+import { buildBonsai } from './bonsai';
 import { buildBookcase } from './bookcase';
 import { buildCabinet } from './cabinet';
 import { buildCoffeeMachine } from './coffee-machine';
@@ -17,7 +18,9 @@ import { buildCuppingCart } from './cupping-cart';
 import { buildDiffuser } from './diffuser';
 import { buildFireExtinguisher } from './fire-extinguisher';
 import { buildFountain } from './fountain';
+import { buildKoiPond } from './koi-pond';
 import { buildMagazineRack } from './magazine-rack';
+import { buildMassageChair } from './massage-chair';
 import { buildMassageTable } from './massage-table';
 import { buildMoxaBurner } from './moxa-burner';
 import { buildNeedleCabinet } from './needle-cabinet';
@@ -88,6 +91,9 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   aquarium: buildAquarium,
   pool_table: buildPoolTable,
   trophy_cabinet: buildTrophyCabinet,
+  bonsai: buildBonsai,
+  massage_chair: buildMassageChair,
+  koi_pond: buildKoiPond,
 };
 
 /** Build an item in its local frame: origin at the footprint center, +z is the front. */

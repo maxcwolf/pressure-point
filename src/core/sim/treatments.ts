@@ -10,7 +10,7 @@ import {
   STONE_USE,
 } from '../data';
 import { refillCandidates } from '../people';
-import { disciplineOn } from '../state/game';
+import { disciplineOn, unlockedUpTo } from '../state/game';
 import type { Guest, Item, Staff } from '../state/types';
 import type { SimContext } from './context';
 import { hasRoom } from './progress';
@@ -38,9 +38,9 @@ export function offered(ctx: SimContext, d: Discipline) {
   return enabled(ctx, d) && hasRoom(ctx, DISCIPLINES[d].room);
 }
 
-/** Whether a modality is available: enough stars, and its discipline switched on. */
+/** Whether a modality is available: enough stars (or everything unlocked), and its discipline switched on. */
 export function unlocked(ctx: SimContext, m: Modality) {
-  return ctx.s.stars >= MODALITIES[m].star && enabled(ctx, MODALITIES[m].discipline);
+  return unlockedUpTo(ctx.s) >= MODALITIES[m].star && enabled(ctx, MODALITIES[m].discipline);
 }
 
 /** The modality that treats a guest's condition. */

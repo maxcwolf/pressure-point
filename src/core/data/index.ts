@@ -3,6 +3,7 @@
 export * from './centers';
 export * from './conditions';
 export * from './items';
+export * from './karma';
 export * from './map';
 export * from './rooms';
 export * from './rules';

@@ -4,7 +4,7 @@ import { Audio } from '../audio';
 import { newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { archiveAutosave, AUTOSAVE_ID, readSave } from '../storage/saves';
-import { loadDisciplinePrefs } from '../storage/settings';
+import { loadDisciplinePrefs, loadSandbox } from '../storage/settings';
 import { showTitle } from '../ui';
 import { desktop } from './desktop';
 import { startGame } from './game';
@@ -38,8 +38,13 @@ function open(what: string | null): GameState | null {
   if (!what) return null;
   const center = newGameCenter(what);
   const state = center ? newGame(center) : readSave(what);
-  // a new sandbox game starts with the treatments chosen in Settings; a campaign center decides its own
-  if (state && center === 'sandbox') state.options = loadDisciplinePrefs();
+  // a new sandbox game starts as set up on the title screen; a campaign center decides everything itself
+  if (state && center === 'sandbox') {
+    const { money, unlockAll } = loadSandbox();
+    state.options = loadDisciplinePrefs();
+    state.money = money;
+    state.unlockAll = unlockAll;
+  }
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
   if (state && what !== AUTOSAVE_ID) archiveAutosave();
   return state;

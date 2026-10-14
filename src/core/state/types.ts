@@ -1,6 +1,17 @@
 // The shape of a game in progress. Everything here is plain JSON, so saving is a stringify away.
 
-import type { CenterId, ConditionId, Discipline, ItemType, Modality, Pose, Role, RoomType, TraitId } from '../data';
+import type {
+  AchievementId,
+  CenterId,
+  ConditionId,
+  Discipline,
+  ItemType,
+  Modality,
+  Pose,
+  Role,
+  RoomType,
+  TraitId,
+} from '../data';
 
 export interface Room {
   id: number;
@@ -299,5 +310,9 @@ export interface GameState {
   nextEmergency: number;
   /** Optional disciplines switched off for this game (absent means on). */
   options: Partial<Record<Discipline, boolean>>;
+  /** Everything unlocked from the start, whatever the stars: a sandbox setting. */
+  unlockAll: boolean;
+  /** Campaign achievements earned already, in this game or an earlier one, so none is awarded twice. */
+  achieved: AchievementId[];
   seenTips: string[];
 }

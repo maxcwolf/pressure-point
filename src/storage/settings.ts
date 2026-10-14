@@ -1,5 +1,6 @@
-// Player preferences that outlive any one game: which optional disciplines new games start with.
-import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from '../core/data';
+// Player preferences that outlive any one game: which optional disciplines new games start with,
+// how a sandbox game is set up, and the Stats menu's charts.
+import { CENTERS, type Discipline, DISCIPLINE_ORDER, DISCIPLINES, SANDBOX_MONEY } from '../core/data';
 import { isRecord } from './json';
 
 const KEY = 'pressure-point-settings';
@@ -27,6 +28,37 @@ export function saveDisciplinePref(d: Discipline, on: boolean) {
     localStorage.setItem(KEY, JSON.stringify({ disciplines: { ...loadDisciplinePrefs(), [d]: on } }));
   } catch {
     // the choice still applies to the current game
+  }
+}
+
+const SANDBOX_KEY = 'pressure-point-sandbox';
+
+/** How a new sandbox game is set up, beyond its disciplines. */
+export interface SandboxSettings {
+  money: number;
+  unlockAll: boolean;
+}
+
+/** The sandbox settings last chosen, or the defaults: the sandbox's usual money, and unlocking as stars are earned. */
+export function loadSandbox(): SandboxSettings {
+  const out: SandboxSettings = { money: CENTERS.sandbox.startMoney, unlockAll: false };
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(SANDBOX_KEY) ?? '{}');
+    if (!isRecord(raw)) return out;
+    if (typeof raw.money === 'number' && SANDBOX_MONEY.includes(raw.money)) out.money = raw.money;
+    if (typeof raw.unlockAll === 'boolean') out.unlockAll = raw.unlockAll;
+  } catch {
+    // the defaults will do
+  }
+  return out;
+}
+
+/** Remember the sandbox settings for the next sandbox game. */
+export function saveSandbox(settings: SandboxSettings) {
+  try {
+    localStorage.setItem(SANDBOX_KEY, JSON.stringify(settings));
+  } catch {
+    // the settings still apply to the game about to start
   }
 }
 

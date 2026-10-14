@@ -6,6 +6,8 @@ Each release's notes are taken from its section here. Keep them short.
 
 - **A campaign:** Campaign on the title screen leads to a trail of centers, each with its own building, goals and guests. Start at Willow Lane, a small massage-only unit; a star there opens The Exchange downtown, with acupuncture, office ailments and rush hours. Earned stars are kept between games.
 - **Saltmarsh,** the third center: a seaside town with seasons (busy summers, quiet winters), seaside ailments, sea air that wears equipment out faster, and reiki.
+- **Karma:** campaign stars and eight achievements earn karma, spent in the karma shop or from the Items menu on items that stay unlocked in every center. It unlocks comfort and decor early, and three new items found nowhere else: a Massage Chair, a Bonsai and a Koi Pond.
+- **Sandbox settings:** choose the starting money, the treatments on offer, and whether everything is unlocked from the start.
 - **The announcer speaks:** some announcements are now read out over the center's speakers, after the chime, with the music turned down while they talk.
 - **Sandbox** on the title screen starts the open-ended game, as New game did before.
 

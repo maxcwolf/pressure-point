@@ -3,6 +3,9 @@
 import { SANDBOX_PLOT } from './map';
 import type { CenterDef, CenterId } from './types';
 
+/** The starting money a sandbox game can be set to. */
+export const SANDBOX_MONEY: readonly number[] = [10000, 30000, 75000, 200000];
+
 export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
   sandbox: {
     id: 'sandbox',

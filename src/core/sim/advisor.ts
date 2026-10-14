@@ -16,6 +16,7 @@ import {
   STONE_USE,
 } from '../data';
 import { pick, rnd } from '../random';
+import { unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import type { SimContext } from './context';
 import { emit, type Subject } from './events';
@@ -158,7 +159,7 @@ function modalityAdvice(ctx: SimContext): string | Advice {
   for (const d of DISCIPLINE_ORDER) {
     const def = DISCIPLINES[d];
     const room = ROOMS[def.room];
-    if (!def.optional || !enabled(ctx, d) || s.stars < (room.unlock ?? 0) || hasRoom(ctx, def.room)) continue;
+    if (!def.optional || !enabled(ctx, d) || unlockedUpTo(s) < (room.unlock ?? 0) || hasRoom(ctx, def.room)) continue;
     return `${def.name} is now available. Build ${article(room.name)} ${room.name} and hire ${article(ROLES[def.role].name)} ${ROLES[def.role].name} to bring in a new kind of guest.`;
   }
   return '';

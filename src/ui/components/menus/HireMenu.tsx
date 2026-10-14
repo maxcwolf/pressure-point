@@ -4,6 +4,7 @@ import './HireMenu.css';
 
 import { ROLES, traitOf } from '../../../core/data';
 import { money } from '../../../core/format';
+import { unlockedUpTo } from '../../../core/state/game';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { hireableRoles } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
@@ -16,7 +17,7 @@ export function HireMenu() {
   const hud = useHud();
   const { sim } = useGame();
   const s = sim.s;
-  const roles = hireableRoles(s.stars, (d) => sim.enabled(d));
+  const roles = hireableRoles(unlockedUpTo(s), (d) => sim.enabled(d));
   // a role whose discipline has been switched off cannot stay selected
   const role = roles.includes(hud.hireRole) ? hud.hireRole : (roles[0] ?? hud.hireRole);
   return (

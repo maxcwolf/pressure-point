@@ -2,6 +2,7 @@
 
 import { ROLES, ROOM_ORDER, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
+import { unlockedUpTo } from '../../../core/state/game';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { available } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
@@ -19,7 +20,7 @@ export function RoomsMenu() {
       <div class="cards">
         {types.map((t) => {
           const r = ROOMS[t];
-          const locked = (r.unlock ?? 0) > s.stars;
+          const locked = (r.unlock ?? 0) > unlockedUpTo(s);
           return (
             <Button
               key={t}

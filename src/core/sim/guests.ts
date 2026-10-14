@@ -15,6 +15,7 @@ import {
   PLAY_PATIENCE,
   PLAY_RANGE,
   ROOMS,
+  SEAT_DRAIN,
 } from '../data';
 import { randomLook, randomName } from '../people';
 import { pick, random, rnd } from '../random';
@@ -198,6 +199,12 @@ function goWait(ctx: SimContext, g: Guest) {
   }
 }
 
+/** How fast a seated guest loses patience against standing: their seat's own rate, or the usual one. */
+export function seatDrain(ctx: SimContext, g: Guest): number {
+  const seat = g.claimItem ? ctx.world.item(g.claimItem) : undefined;
+  return (seat && ITEMS[seat.type].seatDrain) ?? SEAT_DRAIN;
+}
+
 /** The patience a guest gets back from seeing to a need: a filthy toilet takes some away instead. */
 export function needRelief(need: Need | '', dirt: number): number {
   if (need === 'play') return PLAY_PATIENCE;
@@ -298,7 +305,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   const waiting = g.state === 'toWait' || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
   if (waiting) {
     let drain = 0.85 * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);
-    if (g.pose === 'sit') drain *= 0.6;
+    if (g.pose === 'sit') drain *= seatDrain(ctx, g);
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
     g.patience -= drain * dt;
     g.waited += dt;

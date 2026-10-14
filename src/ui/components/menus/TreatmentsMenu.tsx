@@ -15,6 +15,7 @@ import {
   MODALITY_ORDER,
 } from '../../../core/data';
 import { money } from '../../../core/format';
+import { unlockedUpTo } from '../../../core/state/game';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { disciplineNote } from '../../lib/delivery';
@@ -62,7 +63,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
 function DisciplineSection({ discipline }: { discipline: Discipline }) {
   const { sim } = useGame();
   const disc = DISCIPLINES[discipline];
-  const note = disciplineNote(discipline, sim.hasRoom(disc.room), sim.s.stars);
+  const note = disciplineNote(discipline, sim.hasRoom(disc.room), unlockedUpTo(sim.s));
   return (
     <>
       <h4 class="section">{`${disc.icon} ${disc.name}`}</h4>

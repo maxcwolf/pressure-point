@@ -1,14 +1,14 @@
 // The interface's own state: which menu and dialog are open, and the messages on screen.
 // The components draw it; the rest of the app talks to it.
 
-import type { Role } from '../core/data';
+import type { ItemType, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import { voiceFor } from '../voice';
 import type { GameHost } from './host';
 import type { ItemKind, Place } from './lib/catalog';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'stats';
-export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star';
+export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma';
 
 /** A message that fades after a few seconds. */
 export interface Toast {
@@ -47,6 +47,8 @@ export class HudState {
   dialog: DialogId | null = null;
   /** The star being celebrated while its dialog is open. */
   star = 0;
+  /** The locked item asked about in the karma dialog. */
+  karmaItem: ItemType | null = null;
   toasts: Toast[] = [];
   floaters: Floater[] = [];
   announcement = '';

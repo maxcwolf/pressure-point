@@ -1,6 +1,6 @@
 // Bringing saves written by earlier versions up to date.
 
-import { DISCIPLINES, type Modality, type Role, ROLES } from '../data';
+import { ACHIEVEMENTS, DISCIPLINES, type Modality, type Role, ROLES } from '../data';
 import { emptyTally, SAVE_VERSION } from './game';
 import type { Candidate, GameState, Guest, Item, Ledger, Room, Staff, Stats } from './types';
 
@@ -28,6 +28,8 @@ type OldSave = Before<
   | 'tally'
   | 'months'
   | 'center'
+  | 'unlockAll'
+  | 'achieved'
 > & {
   stats: Before<Stats, 'priced' | 'healedBy' | 'emergencies' | 'lastQuit'>;
   staff: Before<Staff, 'quals' | 'training' | 'strain' | 'morale' | 'raiseAsked' | 'unhappyT'>[];
@@ -78,5 +80,8 @@ export function upgradeSave(save: GameState) {
   s.center ??= 'sandbox';
   s.tally ??= emptyTally();
   s.months ??= [];
+  s.unlockAll ??= false;
+  // an achievement from a newer version means nothing here
+  s.achieved = (s.achieved ?? []).filter((id) => Object.hasOwn(ACHIEVEMENTS, id));
   s.version = SAVE_VERSION;
 }

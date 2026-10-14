@@ -15,6 +15,7 @@ import { saveFacts, titleBadges } from '../lib/title';
 import backdrop from '../theme/backdrop.jpg';
 import logo from '../theme/logo.png';
 import { CampaignPanel } from './CampaignPanel';
+import { SandboxPanel } from './SandboxPanel';
 import { SavesPanel } from './SavesPanel';
 import { SettingsPanel } from './SettingsPanel';
 
@@ -26,7 +27,7 @@ export interface TitleScreenProps {
   onPick: (what: string) => void;
 }
 
-type Panel = 'campaign' | 'saves' | 'settings';
+type Panel = 'campaign' | 'sandbox' | 'saves' | 'settings';
 
 /** The logo, the latest save and the ways into the game. */
 export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
@@ -138,8 +139,9 @@ export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
             <button
               class="title-btn"
               title="A center of your own, with no deadline"
+              aria-expanded={showing === 'sandbox' ? 'true' : 'false'}
               onClick={() => {
-                onPick('new');
+                toggle('sandbox');
               }}
             >
               Sandbox
@@ -161,6 +163,16 @@ export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
           </div>
           <div id="title-campaign" class="title-sub" hidden={showing !== 'campaign'}>
             {opened.includes('campaign') && <CampaignPanel onStart={onPick} />}
+          </div>
+          <div id="title-sandbox" class="title-sub" hidden={showing !== 'sandbox'}>
+            {opened.includes('sandbox') && (
+              <SandboxPanel
+                audio={audio}
+                onStart={() => {
+                  onPick('new');
+                }}
+              />
+            )}
           </div>
           <div id="title-saves" class="title-sub" hidden={showing !== 'saves'}>
             {opened.includes('saves') && <SavesPanel onLoad={onPick} />}

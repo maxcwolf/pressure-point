@@ -18,7 +18,7 @@ export interface SettingsPanelProps {
   onChange?: (() => void) | undefined;
 }
 
-interface RowProps {
+export interface SettingRowProps {
   icon: string;
   name: string;
   desc: string;
@@ -29,7 +29,7 @@ interface RowProps {
 }
 
 /** One settings row: a switch, or a label when it cannot be changed. */
-function Row({ icon, name, desc, on, locked = '', onToggle }: RowProps) {
+export function SettingRow({ icon, name, desc, on, locked = '', onToggle }: SettingRowProps) {
   return (
     <li class={locked ? 'locked' : ''}>
       <i>{icon}</i>
@@ -75,7 +75,7 @@ export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
         {DISCIPLINE_ORDER.filter((d) => !sim || disciplineHere(sim.s, d)).map((d) => {
           const def = DISCIPLINES[d];
           return (
-            <Row
+            <SettingRow
               key={d}
               icon={def.icon}
               name={def.name}
@@ -99,7 +99,7 @@ export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
       </p>
       <h4>Audio</h4>
       <ul>
-        <Row
+        <SettingRow
           icon="🔊"
           name="Sound effects"
           desc="Clicks, chimes and the cash register."
@@ -108,7 +108,7 @@ export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
             audio.toggleSound();
           })}
         />
-        <Row
+        <SettingRow
           icon="🎵"
           name="Music"
           desc="The lounge loop in the background."
