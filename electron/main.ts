@@ -86,7 +86,19 @@ const menu: MenuItemConstructorOptions[] = [{ label: 'Game', submenu: gameMenu }
 if (isMac) menu.unshift({ role: 'appMenu' });
 Menu.setApplicationMenu(Menu.buildFromTemplate(menu));
 
+// One copy of the game at a time: two would autosave over each other's game. A second copy hands over to the
+// first, which comes to the front, and quits.
+const firstCopy = app.requestSingleInstanceLock();
+if (!firstCopy) app.quit();
+app.on('second-instance', () => {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (!win) return;
+  if (win.isMinimized()) win.restore();
+  win.focus();
+});
+
 void app.whenReady().then(() => {
+  if (!firstCopy) return;
   // the game asks for nothing: no camera, microphone, location or notifications
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, allow) => {
     allow(false);

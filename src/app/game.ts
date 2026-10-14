@@ -8,7 +8,7 @@ import type { GameState } from '../core/state/types';
 import { accessTile, itemDims } from '../core/world';
 import { View } from '../render/view';
 import { loadCampaign, recordGame } from '../storage/campaign';
-import { autosave, AUTOSAVE_ID } from '../storage/saves';
+import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
 import { reloadInto } from './handoff';
@@ -50,10 +50,16 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     if (autosave(state)) storeThumb(AUTOSAVE_ID, view.snapshot());
     recordGame(state);
   };
+  /** Save as the page is hidden: phones and Safari may close a hidden page without warning, or without unloading it. */
+  const saveIfHidden = () => {
+    if (document.visibilityState === 'hidden') save();
+  };
   /** Save, then stop saving on the way out, so the page that loads next finds this game as it was left. */
   const saveAndStop = () => {
     save();
     window.removeEventListener('beforeunload', save);
+    window.removeEventListener('pagehide', save);
+    document.removeEventListener('visibilitychange', saveIfHidden);
   };
   /** Leave this game for another one, keeping it up to date in the autosave first. */
   const leaveFor = (what: string) => {
@@ -95,6 +101,18 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
   });
   runLoop({ sim, view, ui, held, refresh, save });
   window.addEventListener('beforeunload', save);
+  window.addEventListener('pagehide', save);
+  document.addEventListener('visibilitychange', saveIfHidden);
+  // another tab or window with the game open writes the same autosave, so the two save over each other: say so, once
+  let warned = false;
+  window.addEventListener('storage', (e) => {
+    if (warned || !isAutosaveKey(e.key)) return;
+    warned = true;
+    ui.toast(
+      'This game is also open in another tab or window, and the two are saving over each other. Close one.',
+      'bad',
+    );
+  });
 
   // a handle for the browser console and the end-to-end tests, in development builds only
   if (import.meta.env.DEV) {

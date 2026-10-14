@@ -53,6 +53,12 @@ export function bindPointer(canvas: HTMLCanvasElement, { audio, tools, view, ui 
       else tools.select(null);
     }
   });
+  /** Forget a press the browser has taken away, without acting on it, so hovering afterwards does not pan. */
+  const cancel = () => {
+    down = null;
+  };
+  canvas.addEventListener('pointercancel', cancel);
+  canvas.addEventListener('lostpointercapture', cancel);
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   canvas.addEventListener(
     'wheel',

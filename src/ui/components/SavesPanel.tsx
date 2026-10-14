@@ -98,6 +98,8 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
   /** Read a save file the player picked and add it to the list. */
   const importFrom = (input: HTMLInputElement) => {
     const file = input.files?.[0];
+    // empty the input, or picking the same file again would not count as a change and nothing would happen
+    input.value = '';
     if (!file) return;
     void file.text().then((text) => {
       const result = importSave(text);

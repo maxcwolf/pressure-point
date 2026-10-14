@@ -17,6 +17,7 @@ import {
   openCenter,
   run,
   runUntil,
+  toasts,
 } from './helpers';
 
 /** The discipline that treats a condition. */
@@ -259,6 +260,29 @@ describe('switching acupuncture off', () => {
     run(sim, 10);
     expect(s.emergency).toBeNull();
     expect(s.guests.filter((g) => g.emergency)).toEqual([]);
+  });
+
+  it('calls off an acupuncture emergency already under way, without counting it as failed', () => {
+    const { sim, s, therapist } = openCenter(2);
+    s.stars = 1;
+    addAcupuncture(sim);
+    hire(sim, 'acupuncturist');
+    sim.fire(therapist.id);
+    expect(sim.offerEmergency()).toBe(true);
+    sim.acceptEmergency();
+    run(sim, 2);
+    const sent = s.guests.filter((g) => g.emergency).length;
+    expect(sent).toBeGreaterThan(0);
+    expect(s.emergency!.pending).toBeGreaterThan(0);
+    sim.drain();
+    sim.setDiscipline('acupuncture', false);
+    expect(s.emergency).toBeNull();
+    expect(toasts(sim.drain())).toEqual(['Emergency called off: Acupuncture is switched off.']);
+    run(sim, 10);
+    // nobody else is sent, and it never counts as failed, which would cost reputation
+    expect(s.guests.filter((g) => g.emergency)).toEqual([]);
+    expect(s.emergency).toBeNull();
+    expect(toasts(sim.drain()).filter((t) => t.startsWith('Emergency'))).toEqual([]);
   });
 });
 

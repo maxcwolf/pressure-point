@@ -20,6 +20,12 @@ const FILE_FORMAT = 'pressure-point-save';
 // the autosave keeps the key of the original single save, so games from before save slots carry over
 const AUTOSAVE_KEY = 'pressure-point-save-v1';
 const INDEX_KEY = 'pressure-point-saves';
+
+/** Whether a storage key is the autosave's, as another tab or window writing it reports. */
+export function isAutosaveKey(key: string | null): boolean {
+  return key === AUTOSAVE_KEY;
+}
+
 /** The storage key a save's data is kept under. */
 const slotKey = (id: string) => (id === AUTOSAVE_ID ? AUTOSAVE_KEY : `pressure-point-save:${id}`);
 

@@ -13,6 +13,14 @@ export interface KeyboardTargets {
   onChange: () => void;
 }
 
+/** The panning keys, by where they sit on the keyboard rather than the letter the layout gives them. */
+const PAN_KEYS: Readonly<Record<string, string>> = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
+
+/** The name a key is held under: W, A, S or D by position, so they pan on any layout; anything else by what it types. */
+export function heldName(e: Pick<KeyboardEvent, 'key' | 'code'>): string {
+  return PAN_KEYS[e.code] ?? e.key.toLowerCase();
+}
+
 /** Listen for the keyboard and return the set of keys currently held down. */
 export function bindKeyboard({ state, tools, ui, onChange }: KeyboardTargets): ReadonlySet<string> {
   const held = new Set<string>();
@@ -28,7 +36,7 @@ export function bindKeyboard({ state, tools, ui, onChange }: KeyboardTargets): R
     // a key held down repeats, and a chord with Ctrl, Cmd or Alt is meant for the browser.
     // On a Mac the key-up of a Cmd chord never comes, so such a key is not counted as held either.
     if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-    held.add(k);
+    held.add(heldName(e));
     if (k === 'escape') {
       // Esc cancels whatever is in hand; with nothing in hand it opens the pause menu
       if (tools.active) tools.back();
@@ -41,7 +49,7 @@ export function bindKeyboard({ state, tools, ui, onChange }: KeyboardTargets): R
     else if (k === '1' || k === '2' || k === '3') state.speed = Number(k);
     onChange();
   });
-  window.addEventListener('keyup', (e) => held.delete(e.key.toLowerCase()));
+  window.addEventListener('keyup', (e) => held.delete(heldName(e)));
   window.addEventListener('blur', () => {
     held.clear();
   });

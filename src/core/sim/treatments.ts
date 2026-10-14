@@ -10,9 +10,11 @@ import {
   STONE_USE,
 } from '../data';
 import { refillCandidates } from '../people';
+import { rnd } from '../random';
 import { disciplineOn, unlockedUpTo } from '../state/game';
-import type { Guest, Item, Staff } from '../state/types';
+import type { Emergency, Guest, Item, Staff } from '../state/types';
 import type { SimContext } from './context';
+import { toast } from './events';
 import { hasRoom } from './progress';
 
 /** Why a table cannot deliver a modality properly right now ('' when it can). */
@@ -26,11 +28,21 @@ export function enabled(ctx: SimContext, d: Discipline) {
 /** Switch an optional discipline on or off. What is already built stays, but its guests stop arriving. */
 export function setDiscipline(ctx: SimContext, d: Discipline, on: boolean) {
   if (!DISCIPLINES[d].optional) return;
-  ctx.s.options[d] = on;
-  refillCandidates(ctx.s);
+  const s = ctx.s;
+  s.options[d] = on;
+  refillCandidates(s);
+  if (on) return;
+  /** Whether an emergency is for this discipline. */
+  const forThis = (e: Emergency | null) => !!e && MODALITIES[conditionOf(e.condition).modality].discipline === d;
   // an emergency on the table for a discipline switched off is withdrawn: its guests would have nowhere to go
-  const offer = ctx.s.offer;
-  if (!on && offer && MODALITIES[conditionOf(offer.condition).modality].discipline === d) ctx.s.offer = null;
+  if (forThis(s.offer)) s.offer = null;
+  // and one under way is called off, not failed: those already here stay to be seen, but nobody more is sent
+  if (forThis(s.emergency)) {
+    for (const g of s.guests) g.emergency = false;
+    s.emergency = null;
+    s.nextEmergency = s.day + rnd(50, 80);
+    toast(ctx, `Emergency called off: ${DISCIPLINES[d].name} is switched off.`, 'info');
+  }
 }
 
 /** The center can actually take guests for this discipline: it is on and has a finished room. */

@@ -32,32 +32,6 @@ Each autosave also takes a picture of the view for the title screen (`view.snaps
 
 The picture is only seen on the title screen, so it could be taken less often (once a minute) or only when leaving the game. `yarn test:perf` reports frame times and would show the difference.
 
-## Bugs
-
-### A running emergency still sends its guests after its discipline is switched off
-
-Switching a discipline off now withdraws an emergency still on offer for it, but one already accepted keeps sending its remaining guests (`updateEmergency` in `src/core/sim/emergencies.ts`), although the discipline is off. Ending it early, without the reputation penalty for failing, would match how switching off is described in Settings.
-
-### Two copies of the game overwrite each other's autosave
-
-Nothing coordinates writes to the autosave between two browser tabs, or two copies of the desktop app on Windows and Linux (`electron/main.ts` does not call `app.requestSingleInstanceLock()`). Both autosave every 12 seconds over each other, and starting a new game in one moves the other's game to Previous game. Asking for the single-instance lock fixes the desktop app; for tabs, a `storage` event listener could warn that the game is open elsewhere.
-
-### Up to 12 seconds of play is lost when a hidden page is closed
-
-The game saves on `beforeunload` and every 12 seconds of play. Mobile browsers and Safari often close a hidden page without `beforeunload`. Saving on `visibilitychange` to hidden, or on `pagehide`, as well would close the gap.
-
-### A cancelled pointer can leave the camera panning
-
-`src/app/pointer.ts` has no handler for `pointercancel` or `lostpointercapture`, so after the browser cancels a drag (rare with a mouse, more likely with touch or a pen), plain hovering pans the camera until the next button release. Treating a cancel like a release would fix it.
-
-### Panning keys depend on the keyboard layout
-
-Held keys are tracked by `e.key` (`src/app/keyboard.ts`), so WASD does not pan on a non-Latin keyboard layout. Tracking `e.code` for the panning keys (`KeyW`, `KeyA`, `KeyS`, `KeyD`) would make them work by position on any layout.
-
-### Choosing the same file to import twice does nothing
-
-The file input in `src/ui/components/SavesPanel.tsx` is never cleared, so picking the same file again does not fire `change`. Clearing `input.value` after reading the file would fix it. Not yet confirmed in a browser.
-
 ## Latent risks
 
 These have not been seen to go wrong, but would if the code around them changed.

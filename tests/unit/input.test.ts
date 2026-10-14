@@ -63,7 +63,10 @@ describe('keyboard shortcuts', () => {
     /** Press (or keep holding) a key, with any modifiers. */
     const press = (key: string, extra: Partial<KeyboardEvent> = {}) =>
       win.dispatchEvent(Object.assign(new Event('keydown'), { key, repeat: false, ...extra }));
-    return { state, rotations, held, press };
+    /** Let go of a key. */
+    const release = (key: string, extra: Partial<KeyboardEvent> = {}) =>
+      win.dispatchEvent(Object.assign(new Event('keyup'), { key, ...extra }));
+    return { state, rotations, held, press, release };
   }
 
   it('pauses once for a held Space, however long the key repeats', () => {
@@ -82,5 +85,18 @@ describe('keyboard shortcuts', () => {
     expect(rotations).toEqual([]);
     // on a Mac the key-up of a Cmd chord never arrives, so it must not count as held for panning
     expect(held.has('d')).toBe(false);
+  });
+
+  it('pans with W, A, S and D by where they are on the keyboard, whatever letters the layout puts there', () => {
+    const { held, press, release } = setup();
+    // the W key on a Russian layout types ц
+    press('ц', { code: 'KeyW' });
+    press('ф', { code: 'KeyA' });
+    expect([...held]).toEqual(['w', 'a']);
+    release('ц', { code: 'KeyW' });
+    expect([...held]).toEqual(['a']);
+    // and the arrows, which have no letters to change
+    press('ArrowUp', { code: 'ArrowUp' });
+    expect(held.has('arrowup')).toBe(true);
   });
 });

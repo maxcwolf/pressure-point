@@ -1,11 +1,34 @@
 // The built desktop app, launched for real. The browser tests cover the game;
 // these cover the shell around it: the sandbox, the preload API, quitting and saving.
+import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+
+import electronPath from 'electron';
 
 import { expect, newGame, openPauseMenu, test } from './fixtures';
 
 test.describe('the desktop shell', () => {
+  test('runs one copy at a time, since two would save over each other', async ({ desktop }) => {
+    const { app } = await desktop.launch();
+    // a second copy on the same profile gives up at once and leaves the first one running
+    const second = spawn(electronPath as unknown as string, ['.', `--user-data-dir=${desktop.profile}`], {
+      stdio: 'ignore',
+    });
+    const code = await new Promise<number | null>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        second.kill();
+        reject(new Error('the second copy kept running'));
+      }, 15_000);
+      second.on('exit', (exitCode) => {
+        clearTimeout(timer);
+        resolve(exitCode);
+      });
+    });
+    expect(code).toBe(0);
+    expect(app.windows()).toHaveLength(1);
+  });
+
   test('runs the game in a sandboxed page with no access to Node', async ({ desktop }) => {
     const { app, page } = await desktop.launch();
     expect(await page.evaluate(() => [typeof require, typeof process, typeof module])).toEqual([

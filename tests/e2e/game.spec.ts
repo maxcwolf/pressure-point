@@ -625,6 +625,29 @@ test.describe('clicking', () => {
     expect(await selectedId(game)).toBe(bench);
   });
 
+  test('a drag the browser cancels stops panning, rather than panning on every hover after', async ({ game, page }) => {
+    await game.start();
+    /** Where the camera is looking. */
+    const target = () =>
+      game.eval((pp) => {
+        const { target: t } = (pp.view as unknown as { rig: { target: { x: number; z: number } } }).rig;
+        return [t.x, t.z];
+      });
+    await page.mouse.move(600, 400);
+    await page.mouse.down({ button: 'right' });
+    await page.mouse.move(680, 400, { steps: 4 });
+    await page.evaluate(() => document.getElementById('game')!.dispatchEvent(new PointerEvent('pointercancel')));
+    const before = await target();
+    // plain hovering, with no button down, as a pen or touch screen goes on reporting after a cancel
+    await page.evaluate(() => {
+      const canvas = document.getElementById('game')!;
+      for (const x of [700, 760, 820])
+        canvas.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: 400 }));
+    });
+    expect(await target()).toEqual(before);
+    await page.mouse.up({ button: 'right' });
+  });
+
   test('a real drag with an item in hand does not place it', async ({ game }) => {
     await game.start();
     await game.menu('Items');
@@ -1080,6 +1103,39 @@ test.describe('saved games', () => {
     await page.locator('#sys').getByTitle('Menu').click();
     await page.getByRole('button', { name: 'Save or load' }).click();
   };
+  test('warns when the game is also open in another tab, saving over this one', async ({ game, page }) => {
+    await game.start();
+    const other = await page.context().newPage();
+    await other.goto('/');
+    await other.getByRole('button', { name: 'Sandbox' }).click();
+    await other.getByRole('button', { name: 'Start building' }).click();
+    await other.waitForFunction(() => !!window.pp);
+    // opening the saves screen there saves that copy of the game
+    await openSaves(other);
+    await expect(page.locator('#toasts')).toContainText('also open in another tab or window');
+    await other.close();
+    expect(game.errors).toEqual([]);
+  });
+
+  test('saves as the page is hidden, since a hidden page may be closed without warning', async ({ game, page }) => {
+    await game.start();
+    /** The money in the stored autosave. */
+    const stored = () =>
+      page.evaluate(
+        () => (JSON.parse(localStorage.getItem('pressure-point-save-v1') ?? '{}') as { money?: number }).money,
+      );
+    await game.eval((pp) => (pp.state.money = 12345));
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(await stored()).toBe(12345);
+    // and as it goes, for browsers that close a page without a word
+    await game.eval((pp) => (pp.state.money = 23456));
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    expect(await stored()).toBe(23456);
+  });
+
   /** A few numbers that should survive saving and loading. */
   const summary = (game: Game) =>
     game.eval((pp) => ({
@@ -1162,6 +1218,16 @@ test.describe('saved games', () => {
     await expect(page.locator('.save-list li')).toHaveCount(2);
     await row.getByRole('button', { name: 'Really delete?' }).click();
     await expect(page.locator('.save-list li', { hasText: 'Slot A' })).toHaveCount(0);
+  });
+
+  test('the same file can be picked to import again', async ({ game, page }) => {
+    await game.start();
+    await openSaves(page);
+    const input = page.locator('.filebtn input');
+    await input.setInputFiles({ name: 'notes.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
+    await expect(page.locator('.save-note')).toContainText('"notes.json" is not a Pressure Point Institute save');
+    // a browser reports a pick only when the file changes, so the input is emptied after each one
+    expect(await input.inputValue()).toBe('');
   });
 
   test('a save can be exported to a file and imported again', async ({ game, page }, testInfo) => {
