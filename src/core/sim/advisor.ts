@@ -3,6 +3,7 @@
 import {
   ANNOUNCEMENTS,
   conditionOf,
+  DIRT_FILTHY,
   DISCIPLINE_ORDER,
   DISCIPLINES,
   ITEMS,
@@ -51,6 +52,8 @@ export function advice(ctx: SimContext): string {
     return 'Litter is piling up. Hire a Janitor to keep the place clean.';
   if (s.items.some((i) => i.type === 'plant' && i.water < 20) && !hasStaff(ctx, 'caretaker'))
     return 'Your plants are wilting. A Janitor will water them.';
+  if (s.items.some((i) => i.dirt >= DIRT_FILTHY) && !hasStaff(ctx, 'caretaker'))
+    return 'The toilets are filthy and guests are noticing. Hire a Janitor to clean them.';
   if (s.offer) return 'There is an emergency on offer at the top of the screen. Accept it only if you can cope.';
   const broken = s.items.find((i) => i.wear >= 100);
   if (broken)

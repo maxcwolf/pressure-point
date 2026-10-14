@@ -42,6 +42,8 @@ export interface Item {
   water: number;
   /** 0 is new, 100 is broken. */
   wear: number;
+  /** 0 is spotless, 100 is filthy. */
+  dirt: number;
   /** Janitor currently heading over to deal with it. */
   claimedBy: number;
 }
@@ -124,7 +126,7 @@ export interface Staff extends CharBase {
 
 /** A chore for a Janitor: the litter or item to see to. */
 export interface Job {
-  kind: 'litter' | 'water' | 'repair';
+  kind: 'litter' | 'water' | 'repair' | 'clean';
   id: number;
 }
 

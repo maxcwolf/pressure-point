@@ -1,6 +1,6 @@
-// How pleasant the place is: decor, litter and the prestige of each room.
+// How pleasant the place is: decor, litter, grime and the prestige of each room.
 
-import { DECOR_RADIUS, ITEMS, ROOMS, WINDOW_MAX_BONUS } from '../data';
+import { DECOR_RADIUS, DIRT_FILTHY, FILTHY_DECOR, ITEMS, ROOMS, WINDOW_MAX_BONUS } from '../data';
 import type { Item, Room } from '../state/types';
 import { at, clamp } from '../util';
 import { inBounds, itemCenter, tileIdx } from '../world';
@@ -31,9 +31,10 @@ export function updateAmbience(ctx: SimContext) {
   for (const l of ctx.s.litter) spread(l.x, l.y, -2.5);
 }
 
-/** A wilted plant drags its surroundings down instead of lifting them. */
+/** A wilted plant or a filthy toilet drags its surroundings down instead of lifting them. */
 export function decorOf(it: Item): number {
   if (it.type === 'plant' && it.water <= 15) return -1;
+  if (it.dirt >= DIRT_FILTHY) return FILTHY_DECOR;
   return ITEMS[it.type].decor ?? 0;
 }
 

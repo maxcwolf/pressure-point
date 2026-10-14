@@ -1,6 +1,6 @@
-// Wear and tear: equipment wearing out, plants drying and warm stones cooling.
+// Wear and tear: equipment wearing out, toilets getting grubby, plants drying and warm stones cooling.
 
-import { ITEMS } from '../data';
+import { ITEMS, type ItemType } from '../data';
 import type { Item } from '../state/types';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
@@ -26,4 +26,9 @@ export function addWear(ctx: SimContext, it: Item) {
   emit(ctx, { type: 'float', text: 'Broken!', x: cx, y: cy, kind: 'bad' });
   emit(ctx, { type: 'sfx', name: 'fail' });
   toast(ctx, `A ${ITEMS[it.type].name} has broken down. It is out of action until a Janitor repairs it.`, 'bad');
+}
+
+/** How grubby an item is after one more use. */
+export function dirtier(type: ItemType, dirt: number): number {
+  return Math.min(100, dirt + (ITEMS[type].dirt ?? 0));
 }

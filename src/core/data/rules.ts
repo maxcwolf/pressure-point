@@ -31,6 +31,14 @@ export const PRICE_MAX = 2;
 
 /** Janitors start repairing equipment at this much wear; at 100 it is broken. */
 export const WEAR_REPAIR = 50;
+/** Janitors start cleaning at this much grime. */
+export const DIRT_CLEAN = 40;
+/** From this much grime it is filthy: guests are put off and it spoils its surroundings. */
+export const DIRT_FILTHY = 70;
+/** What a filthy item does to its surroundings, in place of its usual decor. */
+export const FILTHY_DECOR = -2;
+/** How much patience a guest loses using a filthy toilet. */
+export const FILTHY_PATIENCE = 12;
 
 /** How far a decorative item's effect reaches, in tiles. */
 /** How much faster staff get their energy back on a break with an Espresso Machine in the room. */

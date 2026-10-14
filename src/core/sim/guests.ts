@@ -5,9 +5,11 @@ import {
   type ConditionId,
   conditionOf,
   CONDITIONS,
+  DIRT_FILTHY,
   DISCIPLINES,
   ENT_IN_Y,
   ENT_X,
+  FILTHY_PATIENCE,
   ITEMS,
   MODALITIES,
   PLAY_PATIENCE,
@@ -29,7 +31,7 @@ import { emit, tipOnce } from './events';
 import { goTo, halt, moveAlong } from './movement';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
-import { addWear } from './upkeep';
+import { addWear, dirtier } from './upkeep';
 
 const GOAL_NAME = {
   reception: 'Reception Desk',
@@ -184,6 +186,13 @@ function goWait(ctx: SimContext, g: Guest) {
   }
 }
 
+/** The patience a guest gets back from seeing to a need: a filthy toilet takes some away instead. */
+export function needRelief(need: Need | '', dirt: number): number {
+  if (need === 'play') return PLAY_PATIENCE;
+  if (need === 'toilet' && dirt >= DIRT_FILTHY) return -FILTHY_PATIENCE;
+  return 8;
+}
+
 /** What a waiting guest most wants to break off for, if anything: the toilet, a drink, a snack, or a game. */
 export function needNow(g: Guest): Need | '' {
   if (g.bladder > 75) return 'toilet';
@@ -331,6 +340,9 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
           const price = ITEMS[used.type].sale ?? 0;
           if (price > 0) earn(ctx, price, 'vending', g.x, g.y);
           addWear(ctx, used);
+          if (g.needKind === 'toilet' && used.dirt >= DIRT_FILTHY) say(g, '🤢');
+          g.patience = Math.max(0, Math.min(100, g.patience + needRelief(g.needKind, used.dirt)));
+          used.dirt = dirtier(used.type, used.dirt);
         }
         if (g.needKind === 'drink') {
           g.thirst = 0;
@@ -341,7 +353,6 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
         } else if (g.needKind === 'toilet') {
           g.bladder = 0;
         }
-        g.patience = Math.min(100, g.patience + (g.needKind === 'play' ? PLAY_PATIENCE : 8));
         goWait(ctx, g);
       }
       break;

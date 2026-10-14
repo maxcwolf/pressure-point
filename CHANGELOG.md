@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Toilets get grubby** with use. A filthy one costs guests patience and spoils the room until a Janitor cleans it.
+- The Janitor's description now lists everything they do.
+
 ## v0.4.0
 
 - **Eight new items:** a Water Cooler and a Fire Extinguisher to start with, then with each star a Mindfulness Arcade, a Bookcase and an Espresso Machine, an Aquarium and a Pool Table, and a Trophy Cabinet.

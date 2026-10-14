@@ -1,6 +1,6 @@
 // The inspector for an item.
 
-import { ITEMS, STONE_USE, WEAR_REPAIR } from '../../../core/data';
+import { DIRT_CLEAN, DIRT_FILTHY, ITEMS, STONE_USE, WEAR_REPAIR } from '../../../core/data';
 import { money } from '../../../core/format';
 import type { Item } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
@@ -36,6 +36,13 @@ export function ItemInfo({ item: it }: { item: Item }) {
         </label>
       )}
       {!!def.wear && it.wear >= 100 && <p class="status">🔧 Broken: needs a Janitor</p>}
+      {!!def.dirt && (
+        <label>
+          Cleanliness
+          <Bar value={100 - it.dirt} class={it.dirt >= DIRT_CLEAN ? 'bad' : 'blue'} />
+        </label>
+      )}
+      {!!def.dirt && it.dirt >= DIRT_FILTHY && <p class="status">🪰 Filthy: needs a Janitor</p>}
       {!!def.decor && <p class="sub">{`Decor: +${def.decor} to its surroundings`}</p>}
       <Button
         class="move"

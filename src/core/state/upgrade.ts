@@ -22,7 +22,7 @@ type OldSave = Before<
 > & {
   staff: Before<Staff, 'quals' | 'training' | 'strain' | 'morale' | 'raiseAsked' | 'unhappyT'>[];
   candidates: Before<Candidate, 'quals'>[];
-  items: Before<Item, 'wear'>[];
+  items: Before<Item, 'wear' | 'dirt'>[];
   rooms: Before<Room, 'windows'>[];
   guests: Before<Guest, 'emergency'>[];
   ledger: OldLedger;
@@ -42,7 +42,10 @@ export function upgradeSave(save: GameState) {
     st.unhappyT ??= 0;
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
-  for (const it of s.items) it.wear ??= 0;
+  for (const it of s.items) {
+    it.wear ??= 0;
+    it.dirt ??= 0;
+  }
   for (const r of s.rooms) r.windows ??= [];
   for (const g of s.guests) g.emergency ??= false;
   for (const l of [s.ledger, s.lastLedger]) {

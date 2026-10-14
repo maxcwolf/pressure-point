@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 
-import type { ItemType } from '../core/data';
+import { DIRT_FILTHY, type ItemType } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Item } from '../core/state/types';
 import { itemCenter } from '../core/world';
@@ -53,14 +53,15 @@ export class ItemsLayer {
     }
   }
 
-  /** Update what changes from frame to frame: effects, progress bars and breakdown markers. */
+  /** Update what changes from frame to frame: effects, progress bars and markers for broken or filthy items. */
   animate(t: number) {
     const busy = new Set<number>();
     for (const it of this.sim.s.items) {
       const model = this.items.get(it.id)?.group;
       if (!model) continue;
       this.effects(it, model, t);
-      this.wrench(it, model, t);
+      this.marker(model, it, 'wrench', '🔧', it.wear >= 100, t);
+      this.marker(model, it, 'flies', '🪰', it.dirt >= DIRT_FILTHY, t);
       if (it.serving && it.progress > 0) {
         busy.add(it.id);
         this.bar(it);
@@ -111,23 +112,23 @@ export class ItemsLayer {
     if (led) led.emissiveIntensity = Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1;
   }
 
-  /** Show a wrench over an item that has broken down. */
-  private wrench(it: Item, model: THREE.Object3D, t: number) {
+  /** Bob a marker over an item that needs a Janitor: a wrench when broken, flies when filthy. */
+  private marker(model: THREE.Object3D, it: Item, key: 'wrench' | 'flies', emoji: string, show: boolean, t: number) {
     const parts = partsOf(model);
-    let wrench = parts.wrench;
-    if (it.wear >= 100 && !wrench) {
-      wrench = new THREE.Sprite(
-        new THREE.SpriteMaterial({ map: emojiTexture('🔧'), transparent: true, depthTest: false }),
+    let sprite = parts[key];
+    if (show && !sprite) {
+      sprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: emojiTexture(emoji), transparent: true, depthTest: false }),
       );
-      wrench.scale.setScalar(0.7);
-      wrench.renderOrder = 9;
-      wrench.userData.itemId = it.id;
-      model.add(wrench);
-      parts.wrench = wrench;
+      sprite.scale.setScalar(0.7);
+      sprite.renderOrder = 9;
+      sprite.userData.itemId = it.id;
+      model.add(sprite);
+      parts[key] = sprite;
     }
-    if (wrench) {
-      wrench.visible = it.wear >= 100;
-      wrench.position.y = 1.9 + Math.sin(t * 4 + it.id) * 0.06;
+    if (sprite) {
+      sprite.visible = show;
+      sprite.position.y = 1.9 + Math.sin(t * 4 + it.id) * 0.06;
     }
   }
 

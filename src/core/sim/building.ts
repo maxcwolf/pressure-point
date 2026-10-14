@@ -55,6 +55,7 @@ export function placeItem(
     progress: 0,
     water: 100,
     wear: 0,
+    dirt: 0,
     claimedBy: 0,
   };
   ctx.s.items.push(it);

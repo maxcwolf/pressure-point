@@ -118,6 +118,8 @@ export interface ItemParts {
   led?: THREE.MeshStandardMaterial;
   /** The wrench shown over an item that has broken down. */
   wrench?: THREE.Sprite;
+  /** The flies shown over an item that is filthy. */
+  flies?: THREE.Sprite;
 }
 
 /** The changing parts of an item's model. */

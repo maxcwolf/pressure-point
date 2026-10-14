@@ -4,6 +4,8 @@ import {
   BOOKCASE_MAX,
   BOOKCASE_SPEEDUP,
   COFFEE_BREAK_BOOST,
+  DIRT_CLEAN,
+  DIRT_FILTHY,
   ITEMS,
   POOL_TABLE_MORALE,
   ROLES,
@@ -13,7 +15,7 @@ import {
 import { money } from '../format';
 import { fairSalary, makeCandidate } from '../people';
 import { pick, random } from '../random';
-import type { Item, Staff } from '../state/types';
+import type { Item, Job, Staff } from '../state/types';
 import { clamp, must } from '../util';
 import { accessPose, accessTile, footprint } from '../world';
 import { prestige } from './ambience';
@@ -212,14 +214,21 @@ function tryBreak(ctx: SimContext, st: Staff): boolean {
   return true;
 }
 
+/** How long a Janitor takes over a chore. */
+export function jobSeconds(kind: Job['kind'] | undefined): number {
+  if (kind === 'repair') return 3.2;
+  if (kind === 'clean') return 2.4;
+  return 1.6;
+}
+
 /** Find something to do: a break if tired, then a job or a station to staff, or else a wander. */
 function findWork(ctx: SimContext, st: Staff) {
   if (st.energy < 18 && tryBreak(ctx, st)) return;
   const s = ctx.s;
   if (st.role === 'caretaker') {
-    // broken equipment first, then litter, then routine watering and servicing
+    // broken equipment first, then litter and filthy toilets, then routine cleaning, watering and servicing
     interface Task {
-      kind: 'litter' | 'water' | 'repair';
+      kind: Job['kind'];
       id: number;
       x: number;
       y: number;
@@ -231,6 +240,8 @@ function findWork(ctx: SimContext, st: Staff) {
       if (p.claimedBy) continue;
       if (p.wear >= WEAR_REPAIR)
         tasks.push({ kind: 'repair', id: p.id, x: p.x, y: p.y, urgency: p.wear >= 100 ? 2 : 0 });
+      else if (p.dirt >= DIRT_CLEAN)
+        tasks.push({ kind: 'clean', id: p.id, x: p.x, y: p.y, urgency: p.dirt >= DIRT_FILTHY ? 1 : 0 });
       else if ((p.type === 'plant' && p.water <= 40) || (p.type === 'stone_warmer' && p.water <= 55))
         tasks.push({ kind: 'water', id: p.id, x: p.x, y: p.y, urgency: 0 });
     }
@@ -369,7 +380,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
     case 'toJob':
       if (arrived) {
         st.state = 'doingJob';
-        st.timer = st.job?.kind === 'repair' ? 3.2 : 1.6;
+        st.timer = jobSeconds(st.job?.kind);
         st.busy = true;
         if (st.job && st.job.kind !== 'litter') {
           const p = ctx.world.item(st.job.id);
@@ -386,6 +397,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
           const p = ctx.world.item(job.id);
           if (p) {
             if (job.kind === 'repair') p.wear = 0;
+            else if (job.kind === 'clean') p.dirt = 0;
             else p.water = 100;
             p.claimedBy = 0;
             if (job.kind === 'repair') ctx.world.version++;

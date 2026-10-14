@@ -75,6 +75,7 @@ export function staffStatus(st: Staff, sim: Sim): string {
     case 'toJob':
     case 'doingJob':
       if (st.job?.kind === 'repair') return `Repairing the ${ITEMS[sim.world.item(st.job.id)?.type ?? 'bin'].name}`;
+      if (st.job?.kind === 'clean') return 'Cleaning a toilet';
       if (st.job?.kind !== 'water') return 'Clearing litter';
       return sim.world.item(st.job.id)?.type === 'stone_warmer' ? 'Reheating the massage stones' : 'Watering a plant';
     case 'toTrain':

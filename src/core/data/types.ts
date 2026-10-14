@@ -112,6 +112,8 @@ export interface ItemDef {
   walkable?: boolean;
   /** Wear added each time it is used. At 100 it breaks until a Janitor repairs it. */
   wear?: number;
+  /** Grime added each time it is used, until a Janitor cleans it. */
+  dirt?: number;
   /** What a guest pays each time they use it, for drinks, snacks and games. */
   sale?: number;
 }
