@@ -243,6 +243,22 @@ describe('switching acupuncture off', () => {
       sim.declineEmergency();
     }
   });
+
+  it('withdraws an acupuncture emergency already on the table', () => {
+    const { sim, s, therapist } = openCenter(2);
+    s.stars = 1;
+    addAcupuncture(sim);
+    hire(sim, 'acupuncturist');
+    // with no therapist left, only acupuncture cases can be offered
+    sim.fire(therapist.id);
+    expect(sim.offerEmergency()).toBe(true);
+    sim.setDiscipline('acupuncture', false);
+    expect(s.offer).toBeNull();
+    sim.acceptEmergency();
+    run(sim, 10);
+    expect(s.emergency).toBeNull();
+    expect(s.guests.filter((g) => g.emergency)).toEqual([]);
+  });
 });
 
 describe('settings', () => {

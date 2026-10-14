@@ -28,6 +28,9 @@ export function setDiscipline(ctx: SimContext, d: Discipline, on: boolean) {
   if (!DISCIPLINES[d].optional) return;
   ctx.s.options[d] = on;
   refillCandidates(ctx.s);
+  // an emergency on the table for a discipline switched off is withdrawn: its guests would have nowhere to go
+  const offer = ctx.s.offer;
+  if (!on && offer && MODALITIES[conditionOf(offer.condition).modality].discipline === d) ctx.s.offer = null;
 }
 
 /** The center can actually take guests for this discipline: it is on and has a finished room. */
