@@ -5,6 +5,9 @@ import { must } from '../../core/util';
 
 const bubbleCache = new Map<string, THREE.Texture>();
 
+/** How many emoji textures have been made. Each is kept for good, so this grows only with the emoji seen so far. */
+export const emojiTextures = () => bubbleCache.size;
+
 /** A cached texture of an emoji, in a speech bubble unless plain. */
 export function emojiTexture(emoji: string, plain = false): THREE.Texture {
   const key = emoji + (plain ? '|p' : '');
