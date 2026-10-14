@@ -89,19 +89,23 @@ export class Tools {
     this.refresh();
   }
 
+  /** Whether a room can be paid for, saying so if not. */
+  private affords(type: RoomType): boolean {
+    const def = ROOMS[type];
+    if (this.sim.s.money >= def.cost) return true;
+    this.sim.emit({
+      type: 'toast',
+      text: `A ${def.name} costs ${money(def.cost)}. You can't afford it yet.`,
+      kind: 'bad',
+    });
+    this.sfx('error');
+    return false;
+  }
+
   /** Start dragging out a new room, if it can be afforded. */
   startRoom(type: RoomType) {
     this.cancel();
-    const def = ROOMS[type];
-    if (this.sim.s.money < def.cost) {
-      this.sim.emit({
-        type: 'toast',
-        text: `A ${def.name} costs ${money(def.cost)}. You can't afford it yet.`,
-        kind: 'bad',
-      });
-      this.sfx('error');
-      return;
-    }
+    if (!this.affords(type)) return;
     this.tool = { kind: 'room', type, phase: 'drag', start: null, rect: null };
     this.select(null);
     this.refresh();
@@ -131,10 +135,11 @@ export class Tools {
     this.refresh();
   }
 
-  /** Confirm the blueprint: the room is charged for and opens. */
+  /** Confirm the blueprint: the room is charged for and opens. The money may have gone on extras since it was started. */
   planBuild(): boolean {
     const t = this.tool;
     if (t.kind !== 'room' || t.phase !== 'plan' || this.sim.missingItems(t.room).length) return false;
+    if (!this.affords(t.type)) return false;
     this.sim.finishRoom(t.room);
     this.tool = { kind: 'none' };
     this.select({ kind: 'room', id: t.room.id });

@@ -13,9 +13,13 @@ import {
 import { dragTiles, itemTiles, rectTiles } from '../../src/app/tools/overlay';
 import { heldItem, nextRequired, planStatus, quarterTurn } from '../../src/app/tools/plan';
 import { GUEST_ICON, isStaffRole, legend, STAFF_ICON, useSquares } from '../../src/app/tools/squares';
+import { Tools } from '../../src/app/tools/tools';
 import type { Tool } from '../../src/app/tools/types';
+import { ROOMS } from '../../src/core/data';
 import type { Room } from '../../src/core/state/types';
 import { OV_BAD, OV_BLUE, OV_FREE, OV_GOOD, OV_GUEST, OV_STAFF } from '../../src/render/overlay-codes';
+import type { View } from '../../src/render/view';
+import { freshSim, LAYOUT, toasts } from './helpers';
 
 const ROOM: Room = {
   id: 7,
@@ -189,5 +193,39 @@ describe('blueprints', () => {
 
   it('turns through four quarter turns and back to the start', () => {
     expect([0, 1, 2, 3].map(quarterTurn)).toEqual([1, 2, 3, 0]);
+  });
+});
+
+describe('building a blueprint', () => {
+  /** Ignore a call to the scene. */
+  const nothing = () => undefined;
+  /** A finished Consultation Room blueprint, open in the build tools, with a stand-in for the scene. */
+  function openBlueprint() {
+    const sim = freshSim();
+    const room = sim.createRoom('consult', LAYOUT.consult.rect, LAYOUT.consult.door);
+    sim.placeItem('consult_desk', 6, 6, 0, { free: true, roomId: room.id });
+    sim.placeItem('cabinet', 5, 8, 0, { free: true, roomId: room.id });
+    const view = { selected: null, setOverlay: nothing, setMarkers: nothing, setGhost: nothing, setDoor: nothing };
+    const tools = new Tools(sim, view as unknown as View, nothing, nothing);
+    tools.tool = { kind: 'room', type: 'consult', phase: 'plan', room, sub: null };
+    return { sim, room, tools };
+  }
+
+  it('builds the room and charges for it', () => {
+    const { sim, room, tools } = openBlueprint();
+    const before = sim.s.money;
+    expect(tools.planBuild()).toBe(true);
+    expect(room.done).toBe(true);
+    expect(sim.s.money).toBe(before - ROOMS.consult.cost);
+  });
+
+  it('refuses to build once the money has been spent elsewhere, and says why', () => {
+    const { sim, room, tools } = openBlueprint();
+    sim.drain();
+    sim.s.money = ROOMS.consult.cost - 1;
+    expect(tools.planBuild()).toBe(false);
+    expect(room.done).toBe(false);
+    expect(sim.s.money).toBe(ROOMS.consult.cost - 1);
+    expect(toasts(sim.drain()).some((t) => t.includes("can't afford"))).toBe(true);
   });
 });
