@@ -26,6 +26,7 @@
     "test:visual:update": "playwright test --config playwright.visual.config.ts --update-snapshots",
     "test:desktop": "yarn build && playwright test --config playwright.desktop.config.ts",
     "test:perf": "playwright test --config playwright.perf.config.ts",
+    "bench": "vitest run --config vitest.bench.config.ts",
     "preview": "vite preview",
     "app": "yarn build && electron .",
     "dist:mac": "yarn build && electron-builder --mac --arm64 --x64 -c.mac.identity=- -c.mac.hardenedRuntime=false",

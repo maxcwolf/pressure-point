@@ -7,6 +7,7 @@
   },
   "include": [
     "vite.config.ts",
+    "vitest.bench.config.ts",
     "playwright.config.ts",
     "playwright.desktop.config.ts",
     "playwright.perf.config.ts",
