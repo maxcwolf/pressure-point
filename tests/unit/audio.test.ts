@@ -4,6 +4,37 @@ import { Audio } from '../../src/audio';
 
 /** How many notes the stand-in audio context has been asked to play. */
 let notes = 0;
+/** Every volume the music has been asked to move to. */
+let musicLevels: number[] = [];
+/** The announcer's lines the stand-in page has been asked to play, in order. */
+let spoken: FakeVoice[] = [];
+
+/** A stand-in for an audio element, noting whether it is playing. */
+class FakeVoice {
+  src = '';
+  volume = 1;
+  playing = false;
+  private ended: (() => void) | null = null;
+  /** Remember what to do when the line ends. */
+  addEventListener(_: string, done: () => void) {
+    this.ended = done;
+  }
+  /** Start speaking. */
+  play() {
+    this.playing = true;
+    spoken.push(this);
+    return Promise.resolve();
+  }
+  /** Stop speaking. */
+  pause() {
+    this.playing = false;
+  }
+  /** Reach the end of the line. */
+  finish() {
+    this.playing = false;
+    this.ended?.();
+  }
+}
 
 /** A stand-in for an audio parameter that takes every change and ignores it. */
 function param() {
@@ -15,8 +46,8 @@ function param() {
     linearRampToValueAtTime: () => undefined,
     /** Ignored. */
     exponentialRampToValueAtTime: () => undefined,
-    /** Ignored. */
-    setTargetAtTime: () => undefined,
+    /** Note where the volume is heading. */
+    setTargetAtTime: (level: number) => void musicLevels.push(level),
   };
 }
 /** A stand-in for an audio node that can be wired up to anything. */
@@ -66,10 +97,12 @@ function quietAudio() {
       /** Ignored. */
       setItem: () => undefined,
     },
-    window: { setInterval },
+    window: { setInterval, setTimeout },
     document: {
       /** Ignored. */
       addEventListener: () => undefined,
+      /** A stand-in audio element. */
+      createElement: () => new FakeVoice(),
     },
   });
   return new Audio();
@@ -98,5 +131,59 @@ describe('music', () => {
     audio.toggleMusic();
     vi.advanceTimersByTime(8_000);
     expect(notes).toBeGreaterThan(0);
+  });
+});
+
+describe('the announcer', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    musicLevels = [];
+    spoken = [];
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Audio with the music on, unlocked as if the player had clicked. */
+  function playing() {
+    const audio = quietAudio();
+    audio.unlock();
+    audio.toggleMusic();
+    musicLevels = [];
+    return audio;
+  }
+
+  it('speaks just after the chime, with the music turned down until the line ends', () => {
+    const audio = playing();
+    audio.speak('line.mp3');
+    expect(spoken).toHaveLength(0);
+    vi.advanceTimersByTime(1000);
+    expect(spoken.map((v) => v.src)).toEqual(['line.mp3']);
+    expect(musicLevels).toEqual([0.12]);
+    spoken[0]!.finish();
+    expect(musicLevels).toEqual([0.12, 0.5]);
+  });
+
+  it('cuts off one line to say the next', () => {
+    const audio = playing();
+    audio.speak('first.mp3');
+    vi.advanceTimersByTime(1000);
+    audio.speak('second.mp3');
+    vi.advanceTimersByTime(1000);
+    expect(spoken.map((v) => [v.src, v.playing])).toEqual([
+      ['first.mp3', false],
+      ['second.mp3', true],
+    ]);
+  });
+
+  it('stays quiet while sound is off, and stops when sound is switched off', () => {
+    const audio = playing();
+    audio.speak('line.mp3');
+    vi.advanceTimersByTime(1000);
+    audio.toggleSound();
+    expect(spoken[0]!.playing).toBe(false);
+    audio.speak('again.mp3');
+    vi.advanceTimersByTime(1000);
+    expect(spoken).toHaveLength(1);
   });
 });

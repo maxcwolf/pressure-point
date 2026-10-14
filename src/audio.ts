@@ -1,4 +1,4 @@
-// Tiny synthesized sound effects and a generative lounge loop. No audio files needed.
+// Tiny synthesized sound effects, a generative lounge loop, and the announcer's recorded lines.
 
 import type { SfxName } from './core/sim/events';
 import { at } from './core/util';
@@ -70,11 +70,23 @@ const CHORDS = [
 ];
 const SCALE = [523.3, 587.3, 659.3, 784, 880, 1046.5, 1174.7];
 
+/** The music's usual volume. */
+const MUSIC_LEVEL = 0.5;
+/** The music's volume while the announcer speaks. */
+const MUSIC_UNDER_VOICE = 0.12;
+/** How loud the announcer is. */
+const VOICE_LEVEL = 0.8;
+/** How long after the chime starts the announcer begins to speak, in milliseconds. */
+const VOICE_DELAY = 700;
+
 export class Audio {
   private ctx: AudioContext | null = null;
   private master!: GainNode;
   private musicGain!: GainNode;
   private bar = 0;
+  /** The line the announcer is saying, or about to say. */
+  private voice: HTMLAudioElement | null = null;
+  private voiceTimer = 0;
   sound = true;
   music = true;
 
@@ -101,14 +113,16 @@ export class Audio {
     this.master.gain.value = 0.8;
     this.master.connect(this.ctx.destination);
     this.musicGain = this.ctx.createGain();
-    this.musicGain.gain.value = this.music ? 0.5 : 0;
+    this.musicGain.gain.value = this.music ? MUSIC_LEVEL : 0;
     this.musicGain.connect(this.master);
     this.scheduleMusic();
     window.setInterval(() => this.scheduleMusic(), 4000);
     // go quiet while the window is hidden or minimized
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) void this.ctx?.suspend();
-      else void this.ctx?.resume();
+      if (document.hidden) {
+        void this.ctx?.suspend();
+        this.hush();
+      } else void this.ctx?.resume();
     });
   }
 
@@ -123,12 +137,13 @@ export class Audio {
   /** Turn sound effects on or off. */
   toggleSound() {
     this.sound = !this.sound;
+    if (!this.sound) this.hush();
     this.save();
   }
   /** Turn the music on or off. */
   toggleMusic() {
     this.music = !this.music;
-    if (this.ctx) this.musicGain.gain.setTargetAtTime(this.music ? 0.5 : 0, this.ctx.currentTime, 0.2);
+    if (this.ctx) this.musicGain.gain.setTargetAtTime(this.music ? MUSIC_LEVEL : 0, this.ctx.currentTime, 0.2);
     this.save();
   }
 
@@ -162,6 +177,40 @@ export class Audio {
     const now = this.ctx.currentTime;
     for (const [f, start, dur, gain = 0.12, type = 'triangle'] of SFX[name])
       this.tone(this.master, f, now + start, dur, gain, type);
+  }
+
+  /** Have the announcer say a recorded line just after the chime, with the music turned down. Nothing while sound is off. */
+  speak(url: string) {
+    if (!this.ctx || !this.sound) return;
+    this.hush();
+    const voice = document.createElement('audio');
+    voice.src = url;
+    voice.volume = VOICE_LEVEL;
+    voice.addEventListener('ended', () => {
+      if (this.voice === voice) this.hush();
+    });
+    this.voice = voice;
+    this.voiceTimer = window.setTimeout(() => {
+      this.underVoice(true);
+      voice.play().catch(() => {
+        if (this.voice === voice) this.hush();
+      });
+    }, VOICE_DELAY);
+  }
+
+  /** Stop the announcer, if they are speaking or about to, and bring the music back up. */
+  private hush() {
+    clearTimeout(this.voiceTimer);
+    if (!this.voice) return;
+    this.voice.pause();
+    this.voice = null;
+    this.underVoice(false);
+  }
+
+  /** Turn the music down under the announcer, or back up to its usual level. */
+  private underVoice(down: boolean) {
+    if (!this.ctx || !this.music) return;
+    this.musicGain.gain.setTargetAtTime(down ? MUSIC_UNDER_VOICE : MUSIC_LEVEL, this.ctx.currentTime, 0.15);
   }
 
   /** Queue the next four-second bar: a soft pad plus a few plucked notes. Nothing at all while the music is off. */

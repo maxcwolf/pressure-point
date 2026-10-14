@@ -12,6 +12,7 @@
     "playwright.desktop.config.ts",
     "playwright.perf.config.ts",
     "playwright.visual.config.ts",
-    "electron"
+    "electron",
+    "scripts/*.d.mts"
   ]
 }

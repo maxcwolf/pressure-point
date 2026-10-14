@@ -3,6 +3,7 @@
 
 import type { Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
+import { voiceFor } from '../voice';
 import type { GameHost } from './host';
 import type { ItemKind, Place } from './lib/catalog';
 
@@ -165,10 +166,12 @@ export class HudState {
     this.update();
   }
 
-  /** Show a banner announcement for a few seconds, with a chime. */
+  /** Show a banner announcement for a few seconds, with a chime, and the announcer's voice when it is recorded. */
   private announce(text: string) {
     this.announcement = text;
     this.host.audio.play('announce');
+    const voice = voiceFor(text);
+    if (voice) this.host.audio.speak(voice);
     clearTimeout(this.announceTimer);
     this.announceTimer = window.setTimeout(() => {
       this.announcement = '';

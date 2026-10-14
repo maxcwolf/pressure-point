@@ -13,6 +13,7 @@
     "build:web": "vite build",
     "build:desktop": "node scripts/build-desktop.mjs",
     "brand": "node scripts/make-brand.mjs",
+    "announcer": "node scripts/make-announcer.mjs",
     "postinstall": "husky",
     "typecheck": "tsc -b",
     "lint": "eslint .",
