@@ -104,7 +104,7 @@ test.describe('in a game', () => {
     await screens.shot('confirm-new-game');
   });
 
-  test('messages and an emergency on offer', async ({ screens, game }) => {
+  test('messages and an emergency on offer', async ({ screens, game, page }) => {
     await screens.play();
     await game.eval((pp) => {
       pp.sim.emit({ type: 'toast', text: 'A good thing happened.', kind: 'good' });
@@ -123,6 +123,8 @@ test.describe('in a game', () => {
       };
     });
     await screens.shot('messages');
+    await page.locator('#offer').getByTitle('Decide later').click();
+    await screens.shot('offer-aside');
   });
 
   test('a star earned', async ({ screens, game }) => {

@@ -14,6 +14,7 @@ import {
 import { barHeights, CHART_HEIGHT } from '../../src/ui/lib/chart';
 import { cx } from '../../src/ui/lib/cx';
 import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
+import { offerTimeLeft, timeLeftLabel } from '../../src/ui/lib/emergency';
 import { placedFlags } from '../../src/ui/lib/plan';
 import { courseName, guestStatus, staffStatus } from '../../src/ui/lib/status';
 import { saveFacts, titleBadges } from '../../src/ui/lib/title';
@@ -209,5 +210,19 @@ describe('filtering the Items menu', () => {
     expect(corridorDecor.every((t) => ['corridor', 'any'].includes(ITEMS[t].where))).toBe(true);
     expect(filterItems(ITEM_MENU, 'all', 'all')).toEqual([...ITEM_MENU]);
     expect(filterItems(ITEM_MENU, 'restroom', 'staff')).toEqual([]);
+  });
+});
+
+describe('the time left on an emergency offer', () => {
+  it('runs down from the whole offer to nothing', () => {
+    expect(offerTimeLeft(18, 10)).toEqual({ days: 8, share: 1 });
+    expect(offerTimeLeft(18, 14)).toEqual({ days: 4, share: 0.5 });
+    expect(offerTimeLeft(18, 20)).toEqual({ days: 0, share: 0 });
+  });
+
+  it('is said in whole days, and less than a day at the end', () => {
+    expect(timeLeftLabel(4.2)).toBe('5 days left');
+    expect(timeLeftLabel(1)).toBe('1 day left');
+    expect(timeLeftLabel(0.4)).toBe('less than a day left');
   });
 });

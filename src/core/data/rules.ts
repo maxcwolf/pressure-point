@@ -3,6 +3,9 @@
 import type { StarGoal } from './types';
 
 export const DAY_SECONDS = 6;
+/** Days an emergency stays on offer, and days to heal its guests once accepted. */
+export const OFFER_DAYS = 8;
+export const EMERGENCY_DAYS = 25;
 /** Below this morale a member of staff is miserable, and the clock toward quitting runs. */
 export const MISERABLE_MORALE = 25;
 /** Seconds of misery before they say they are thinking of quitting, and before they walk out. */

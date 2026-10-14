@@ -469,6 +469,27 @@ test.describe('running a center', () => {
     await expect(page.locator('#offer')).toContainText('need Swedish massage.');
   });
 
+  test('an emergency offer can be put aside and brought back before it lapses', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.stars = 1;
+      pp.sim.offerEmergency();
+      pp.state.speed = 0;
+    });
+    const offer = page.locator('#offer');
+    await expect(offer).toContainText('Offer lapses: 8 days left');
+    await offer.getByTitle('Decide later').click();
+    await expect(offer).toHaveText('🚨 Emergency on offer: 8 days left to decide');
+    // the clock keeps running while it is put aside
+    await game.eval((pp) => (pp.state.day += 5));
+    await expect(offer).toContainText('3 days left to decide');
+    await offer.getByTitle('Show the emergency').click();
+    await offer.getByRole('button', { name: 'Accept' }).click();
+    await expect(offer).toBeEmpty();
+    await expect(page.locator('#objectives .emergency')).toContainText('days left');
+  });
+
   test('furniture can be picked up and moved', async ({ game, page }) => {
     await game.start();
     await game.give('plant');

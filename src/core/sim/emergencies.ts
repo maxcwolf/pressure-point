@@ -1,6 +1,6 @@
 // Emergencies: a batch of guests with one condition, healed against the clock for a reward.
 
-import { conditionOf, CONDITIONS, EMERGENCY_CAUSES, MODALITIES } from '../data';
+import { conditionOf, CONDITIONS, EMERGENCY_CAUSES, EMERGENCY_DAYS, MODALITIES, OFFER_DAYS } from '../data';
 import { money } from '../format';
 import { irnd, pick, rnd } from '../random';
 import type { SimContext } from './context';
@@ -50,7 +50,7 @@ export function offerEmergency(ctx: SimContext): boolean {
     healed: 0,
     pending: 0,
     reward: Math.round((total * cond.fee * 0.7) / 100) * 100,
-    deadline: s.day + 8,
+    deadline: s.day + OFFER_DAYS,
   };
   emit(ctx, { type: 'announce', text: `Emergency incoming! ${s.offer.cause}` });
   return true;
@@ -62,7 +62,7 @@ export function acceptEmergency(ctx: SimContext) {
   const e = s.offer;
   if (!e) return;
   s.offer = null;
-  e.deadline = s.day + 25;
+  e.deadline = s.day + EMERGENCY_DAYS;
   e.pending = e.total;
   e.healed = 0;
   s.emergency = e;

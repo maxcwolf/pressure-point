@@ -40,6 +40,8 @@ export class HudState {
   /** What the Items menu is filtered to: a place and a kind of item. */
   itemPlace: Place = 'all';
   itemKind: ItemKind | 'all' = 'all';
+  /** The deadline of an emergency offer put aside to decide on later, which tells it from any later offer. */
+  offerAside: number | null = null;
   /** The dialog over the game, if any. */
   dialog: DialogId | null = null;
   /** The star being celebrated while its dialog is open. */
