@@ -2,15 +2,15 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.7.1
 
-- **Rooms against the building's walls** use those walls instead of standing a second wall in front of them. Their windows are set into the building's wall, and the building's own windows make way.
-- **Fixed:** an emergency under way is called off, not failed, when its treatment is switched off; the desktop app runs one copy at a time, and a browser tab warns when another tab saves over its game; the game saves as the page is hidden, so a phone or Safari closing it loses nothing; a cancelled drag no longer leaves the camera panning; W, A, S and D pan on any keyboard layout; and the same save file can be imported twice.
-- **Loans no longer count toward a bank balance goal,** so a star cannot be bought with borrowed money and paid back.
-- **Running out of storage is no longer silent:** a failed autosave says so, once, and a new game is refused rather than started when there is no room to keep the old one.
 - **The title screen fits the window:** it sizes itself to the window's height, and Campaign, Sandbox, Load game and Settings now open in place of the menu under the logo, with a Back button (or Esc), scrolling within themselves when they are long.
 - **A proper macOS icon:** the app's icon is now a rounded square of its own, with the PPI card filling it, rather than a small card that macOS shrank onto a gray tile.
+- **Rooms against the building's walls** use those walls instead of standing a second wall in front of them. Their windows are set into the building's wall, and the building's own windows make way.
+- **Loans no longer count toward a bank balance goal,** so a star cannot be bought with borrowed money and paid back.
+- **Running out of storage is no longer silent:** a failed autosave says so, once, and a new game is refused rather than started when there is no room to keep the old one.
 - **Smoother autosaves:** the title screen's picture of the game is taken only on the way out, rather than at every autosave, which stalled a frame.
+- **Fixed:** an emergency under way is called off, not failed, when its treatment is switched off; the desktop app runs one copy at a time, and a browser tab warns when another tab saves over its game; the game saves as the page is hidden, so a phone or Safari closing it loses nothing; a cancelled drag no longer leaves the camera panning; W, A, S and D pan on any keyboard layout; and the same save file can be imported twice.
 
 ## v0.7.0
 
