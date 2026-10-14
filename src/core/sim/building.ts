@@ -155,11 +155,8 @@ function removeItems(ctx: SimContext, gone: Item[]) {
   const users = usersOf(ctx, ids);
   ctx.s.items = ctx.s.items.filter((i) => !ids.has(i.id));
   ctx.world.rebuild();
-  for (const g of users.guests) g.claimItem = 0;
-  for (const st of users.staff) {
-    st.claimItem = 0;
-    if (st.job && st.job.kind !== 'litter') st.job = null;
-  }
+  // a seat on something that is going has nothing left to give back; a seat elsewhere is released as usual
+  for (const st of users.staff) if (st.job && st.job.kind !== 'litter') st.job = null;
   resetUsers(ctx, users);
 }
 

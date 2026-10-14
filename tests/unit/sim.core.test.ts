@@ -2,7 +2,19 @@ import { describe, expect, it } from 'vitest';
 
 import { ITEMS, ROOMS, START_MONEY } from '../../src/core/data';
 import { netOf } from '../../src/core/sim/economy';
-import { addConsult, addMassage, addStaffRoom, freshSim, hire, openCenter, run, runUntil } from './helpers';
+import {
+  addConsult,
+  addMassage,
+  addRestroom,
+  addStaffRoom,
+  addTraining,
+  freshSim,
+  hire,
+  inconsistencies,
+  openCenter,
+  run,
+  runUntil,
+} from './helpers';
 
 describe('opening the center', () => {
   it('stays closed until reception, consultation and massage all exist', () => {
@@ -171,6 +183,33 @@ describe('selling', () => {
     expect(sim.canSell(desk)).toBe(false);
     sim.sellItem(desk.id);
     expect(sim.s.items).toContain(desk);
+  });
+
+  it('frees the seat a guest was holding elsewhere when the station they wanted is sold', () => {
+    const { sim, s, receptionist } = openCenter(1);
+    addRestroom(sim);
+    const toilet = s.items.find((i) => i.type === 'toilet')!;
+    const desk = s.items.find((i) => i.type === 'reception_desk')!;
+    // nobody at the desk, so guests wait in its line until one needs the toilet
+    sim.fire(receptionist.id);
+    runUntil(sim, () => s.guests.some((g) => g.station === desk.id), 300);
+    const g = s.guests.find((x) => x.station === desk.id)!;
+    g.bladder = 100;
+    runUntil(sim, () => g.claimItem === toilet.id, 120);
+    sim.sellItem(desk.id);
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+});
+
+describe('demolishing a room', () => {
+  it('frees the bench seats of the guests who were waiting for it', () => {
+    const { sim, s, massage, therapist } = openCenter(4);
+    sim.fire(therapist.id);
+    const bench = sim.placeItem('bench', 10, 9, 0)!;
+    const table = s.items.find((i) => i.type === 'massage_table')!;
+    runUntil(sim, () => s.guests.some((g) => g.station === table.id && g.claimItem === bench.id), 600);
+    sim.removeRoom(massage.id, 0.5);
+    expect(inconsistencies(sim)).toEqual([]);
   });
 });
 
