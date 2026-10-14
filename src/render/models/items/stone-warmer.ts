@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 
+import { owned } from '../../disposal';
 import { CHROME, cyl, mat, partsOf, put, rbox, sph } from '../parts';
 
 /** Build the Stone Warmer model. */
@@ -10,12 +11,14 @@ export function buildStoneWarmer(g: THREE.Group) {
   put(g, rbox(0.78, 0.06, 0.66, 0.03), mat(CHROME, 0.35), 0, 0.53, 0);
   put(g, cyl(0.27, 0.22, 0.22, 20), mat(0xb5714a, 0.4), 0, 0.67, 0);
   // each warmer owns its glow so it can cool independently
-  const glow = new THREE.MeshStandardMaterial({
-    color: 0x2b2b30,
-    roughness: 0.5,
-    emissive: 0xff5a1f,
-    emissiveIntensity: 1,
-  });
+  const glow = owned(
+    new THREE.MeshStandardMaterial({
+      color: 0x2b2b30,
+      roughness: 0.5,
+      emissive: 0xff5a1f,
+      emissiveIntensity: 1,
+    }),
+  );
   partsOf(g).glow = glow;
   put(g, cyl(0.24, 0.24, 0.02, 20), glow, 0, 0.775, 0);
   for (const [x, z] of [

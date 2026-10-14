@@ -101,6 +101,8 @@ export function itemsInRoom(ctx: SimContext, room: Room) {
 export function canMoveItem(ctx: SimContext, it: Item, x: number, y: number, rot: number) {
   const zone = ctx.world.zoneAt(it.x, it.y);
   const at = ctx.s.items.indexOf(it);
+  // an item that is not in the game has nothing to move, and splicing at -1 would lift out the last one instead
+  if (at < 0) return { ok: false, reason: 'That item is gone' };
   // judge the new spot as if the item had already been lifted out
   ctx.s.items.splice(at, 1);
   ctx.world.rebuild(true);

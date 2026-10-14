@@ -3,6 +3,7 @@ import * as THREE from 'three';
 
 import { type Role, ROLES, type Visual } from '../../core/data';
 import type { Look } from '../../core/state/types';
+import { owned } from '../disposal';
 import { cached, capsule, cyl, ico, mat, put, rbox, sph, torus } from './parts';
 
 export interface CharRig {
@@ -128,7 +129,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     head,
     headMesh,
     pick: new THREE.Mesh(cyl(0.34, 0.34, 1.4, 8), pickMat),
-    bubble: new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false })),
+    bubble: new THREE.Sprite(owned(new THREE.SpriteMaterial({ transparent: true, depthTest: false }))),
     props: [],
     visual,
     cured: false,
@@ -225,7 +226,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     const cell = new THREE.Group();
     put(cell, rbox(0.26, 0.13, 0.09, 0.02), mat(0x2f3136, 0.6), 0, 0, 0).castShadow = false;
     put(cell, rbox(0.03, 0.06, 0.05, 0.01), mat(0x2f3136, 0.6), 0.145, 0, 0).castShadow = false;
-    rig.blink = new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 });
+    rig.blink = owned(new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 }));
     put(cell, rbox(0.05, 0.09, 0.1, 0.01), rig.blink, -0.085, 0, 0).castShadow = false;
     cell.position.y = 0.4;
     head.add(cell);
@@ -283,7 +284,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   } else if (visual === 'bulb') {
     // a dim light bulb that keeps flickering
     const lamp = new THREE.Group();
-    rig.blink = new THREE.MeshStandardMaterial({ color: 0x8f8a6a, emissive: 0xfff0a0, emissiveIntensity: 0.4 });
+    rig.blink = owned(new THREE.MeshStandardMaterial({ color: 0x8f8a6a, emissive: 0xfff0a0, emissiveIntensity: 0.4 }));
     put(lamp, sph(0.075, 14), rig.blink, 0, 0, 0).castShadow = false;
     put(lamp, cyl(0.035, 0.035, 0.06, 10), mat(0x9aa4b0, 0.4), 0, -0.08, 0).castShadow = false;
     lamp.position.y = 0.42;

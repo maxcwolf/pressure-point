@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 
+import { owned } from '../../disposal';
 import { cyl, mat, put, rbox, sph } from '../parts';
 
 /** The koi: where each swims, which way it faces and its color. */
@@ -29,12 +30,14 @@ export function buildKoiPond(g: THREE.Group) {
   }
   put(g, cyl(0.8, 0.8, 0.04, 28), mat(0x2d5a4c, 0.9), 0, 0.02, 0);
   // the water is see-through, so the fish show under it
-  const water = new THREE.MeshStandardMaterial({
-    color: 0x6cc4c4,
-    transparent: true,
-    opacity: 0.3,
-    roughness: 0.05,
-  });
+  const water = owned(
+    new THREE.MeshStandardMaterial({
+      color: 0x6cc4c4,
+      transparent: true,
+      opacity: 0.3,
+      roughness: 0.05,
+    }),
+  );
   put(g, cyl(0.78, 0.78, 0.02, 28), water, 0, 0.12, 0).castShadow = false;
   for (const [x, z, angle, color] of KOI) {
     const fish = new THREE.Group();

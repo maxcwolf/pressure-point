@@ -105,6 +105,8 @@ void app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, allow) => {
     allow(false);
   });
+  // and when it only asks whether it has one, the answer is no as well
+  session.defaultSession.setPermissionCheckHandler(() => false);
   if (devDockIcon && isMac) app.dock?.setIcon(devDockIcon);
   createWindow();
 });

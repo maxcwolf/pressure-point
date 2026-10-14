@@ -5,6 +5,7 @@ import type * as THREE from 'three';
 import { conditionOf, type Modality, ROLES } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Char } from '../core/state/types';
+import { disposeOwned } from './disposal';
 import { buildCharacter, type CharRig } from './models/character';
 import { poseChar } from './pose';
 
@@ -42,6 +43,7 @@ export class PeopleLayer {
     for (const [id, rig] of this.chars) {
       if (live.has(id)) continue;
       this.scene.remove(rig.group);
+      disposeOwned(rig.group);
       this.chars.delete(id);
     }
   }

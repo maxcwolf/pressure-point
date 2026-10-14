@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Fixed:** five rare cases found in the October audit, among them staff on their way out being put back to work and emergency guests counted as sent when they could not get in. The desktop app also turns down permission checks and connects to nothing but itself, and saves now carry a new version number, so older versions of the game refuse them rather than crash.
+
 ## v0.7.2
 
 - **Resize a built room:** Resize in a room's inspector lets you drag any wall in or out. The door and windows move with their walls, the furniture has to stay inside, and floor added costs $200 a tile, with half back for floor given up.

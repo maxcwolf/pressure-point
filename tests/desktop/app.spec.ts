@@ -46,6 +46,23 @@ test.describe('the desktop shell', () => {
     expect(pages).toEqual([process.platform === 'linux' ? undefined : true]);
   });
 
+  test('says no when the game is asked whether it may use anything, and connects only to itself', async ({
+    desktop,
+  }) => {
+    const { page } = await desktop.launch();
+    const states = await page.evaluate(() =>
+      Promise.all(
+        (['notifications', 'geolocation', 'camera'] as PermissionName[]).map((name) =>
+          navigator.permissions.query({ name }).then((p) => p.state),
+        ),
+      ),
+    );
+    expect(states).toEqual(['denied', 'denied', 'denied']);
+    const policy = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+    expect(policy).toContain("connect-src 'self'");
+    expect(policy).not.toMatch(/localhost|ws:/);
+  });
+
   test('hands the game a small API and nothing else', async ({ desktop }) => {
     const { page } = await desktop.launch();
     const api = await page.evaluate(() =>

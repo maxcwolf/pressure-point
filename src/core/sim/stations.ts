@@ -74,8 +74,12 @@ export function updateStations(ctx: SimContext, dt: number) {
   for (const it of ctx.s.items) {
     const def = ITEMS[it.type].station;
     if (!def) continue;
-    const staff = staffById(ctx, it.staffId);
-    if (it.staffId && staff?.post !== it.id) it.staffId = 0;
+    let staff = staffById(ctx, it.staffId);
+    // someone posted elsewhere does not work this station, this step or any other
+    if (it.staffId && staff?.post !== it.id) {
+      it.staffId = 0;
+      staff = undefined;
+    }
     const ready = !!staff && staff.state === 'atPost' && ctx.world.usable(it);
     let g = guestById(ctx, it.serving);
     if (it.serving && (g?.station !== it.id || (g.state !== 'called' && g.state !== 'served'))) {

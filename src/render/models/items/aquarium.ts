@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 
+import { owned } from '../../disposal';
 import { cyl, DARK, mat, partsOf, put, rbox, sph, WHITE } from '../parts';
 
 /** The fish: where each swims and its color. */
@@ -16,14 +17,16 @@ const FISH: readonly (readonly [x: number, y: number, z: number, color: number])
 export function buildAquarium(g: THREE.Group) {
   put(g, rbox(1.8, 0.6, 0.6, 0.04), mat(DARK), 0, 0.3, 0);
   // the water is see-through, so it gets a material of its own rather than a shared solid one
-  const water = new THREE.MeshStandardMaterial({
-    color: 0x5ec8f2,
-    emissive: 0x2a8fc4,
-    emissiveIntensity: 0.35,
-    transparent: true,
-    opacity: 0.4,
-    roughness: 0.05,
-  });
+  const water = owned(
+    new THREE.MeshStandardMaterial({
+      color: 0x5ec8f2,
+      emissive: 0x2a8fc4,
+      emissiveIntensity: 0.35,
+      transparent: true,
+      opacity: 0.4,
+      roughness: 0.05,
+    }),
+  );
   put(g, rbox(1.8, 0.78, 0.6, 0.03), water, 0, 0.99, 0).castShadow = false;
   put(g, rbox(1.74, 0.06, 0.54, 0.02), mat(0xe9d8a6, 0.9), 0, 0.64, 0);
   put(g, rbox(1.84, 0.06, 0.64, 0.02), mat(DARK), 0, 1.43, 0);

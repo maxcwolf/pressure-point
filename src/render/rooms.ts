@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { ROOMS } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
+import { disposeOwned, owned } from './disposal';
 import { emojiTexture } from './models/emoji';
 import { mat, put } from './models/parts';
 import { outerPanes } from './outer-walls';
@@ -123,7 +124,7 @@ export class RoomsLayer {
         g.add(pivot);
       }
       const sprite = new THREE.Sprite(
-        new THREE.SpriteMaterial({ map: emojiTexture(def.icon), transparent: true, depthTest: false }),
+        owned(new THREE.SpriteMaterial({ map: emojiTexture(def.icon), transparent: true, depthTest: false })),
       );
       sprite.scale.setScalar(0.72);
       sprite.renderOrder = 9;
@@ -133,9 +134,10 @@ export class RoomsLayer {
     return g;
   }
 
-  /** Take a group out of the scene and free its box geometry. */
+  /** Take a group out of the scene and free its box geometry and its own sign. */
   private dispose(g: THREE.Object3D) {
     this.scene.remove(g);
+    disposeOwned(g);
     g.traverse((o) => {
       if (o instanceof THREE.Mesh && o.geometry instanceof THREE.BoxGeometry) o.geometry.dispose();
     });

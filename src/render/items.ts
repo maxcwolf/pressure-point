@@ -6,6 +6,7 @@ import { DIRT_FILTHY, type ItemType } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Item } from '../core/state/types';
 import { itemCenter } from '../core/world';
+import { disposeOwned, owned } from './disposal';
 import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
 import { partsOf } from './models/parts';
@@ -45,7 +46,10 @@ export class ItemsLayer {
       const key = `${it.type},${it.x},${it.y},${it.rot}`;
       if (this.items.get(it.id)?.key === key) continue;
       const old = this.items.get(it.id);
-      if (old) this.scene.remove(old.group);
+      if (old) {
+        this.scene.remove(old.group);
+        disposeOwned(old.group);
+      }
       const group = buildItem(it.type);
       placeItemModel(group, it.type, it.x, it.y, it.rot);
       group.traverse((o) => (o.userData.itemId = it.id));
@@ -55,6 +59,7 @@ export class ItemsLayer {
     for (const [id, it] of this.items) {
       if (liveItems.has(id)) continue;
       this.scene.remove(it.group);
+      disposeOwned(it.group);
       this.items.delete(id);
     }
   }
@@ -124,7 +129,7 @@ export class ItemsLayer {
     let sprite = parts[key];
     if (show && !sprite) {
       sprite = new THREE.Sprite(
-        new THREE.SpriteMaterial({ map: emojiTexture(emoji), transparent: true, depthTest: false }),
+        owned(new THREE.SpriteMaterial({ map: emojiTexture(emoji), transparent: true, depthTest: false })),
       );
       sprite.scale.setScalar(0.7);
       sprite.renderOrder = 9;

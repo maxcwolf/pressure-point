@@ -101,6 +101,8 @@ export function repathAll(ctx: SimContext) {
     const pp = d[4] ? { x: d[2], y: d[3], face: c.endFace, pose: c.endPose, h: c.endH } : undefined;
     if (goTo(ctx, c, d[0], d[1], pp)) continue;
     if (c.kind === 'guest') resetGuest(ctx, c);
+    // someone on their way out with no way out is simply gone, as when they are fired with nowhere to walk
+    else if (c.state === 'leaving') ctx.s.staff = ctx.s.staff.filter((st) => st !== c);
     else staffIdle(ctx, c);
   }
 }

@@ -19,7 +19,7 @@ import {
 } from '../data';
 import { randomLook, randomName } from '../people';
 import { pick, random, rnd } from '../random';
-import type { Guest, Item, Need } from '../state/types';
+import type { GameState, Guest, Item, Need } from '../state/types';
 import { at } from '../util';
 import { accessPose, accessTile, itemCenter, rotVec, tileIdx, Z_CORRIDOR } from '../world';
 import { drainFactor } from './ambience';
@@ -51,12 +51,17 @@ export function admitGuests(ctx: SimContext, dt: number) {
   if (!s.open) return;
   s.spawnT -= dt;
   if (s.spawnT > 0) return;
-  if (s.guests.length < 14 + s.rooms.length * 5) spawnGuest(ctx);
+  if (s.guests.length < guestCap(s)) spawnGuest(ctx);
   s.spawnT = ((30 - s.reputation * 0.2) * rnd(0.7, 1.3)) / arrivalFactor(ctx);
 }
 
-/** Add a guest on the street and send them to the lobby. */
-export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency = false) {
+/** How many guests the center lets in at once: more for every finished room, not counting blueprints. */
+export function guestCap(s: GameState): number {
+  return 14 + s.rooms.filter((r) => r.done).length * 5;
+}
+
+/** Add a guest on the street and send them to the lobby. Null if there is no way in for them. */
+export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency = false): Guest | null {
   const s = ctx.s;
   const [x, y] = streetTile();
   const g: Guest = {
@@ -81,9 +86,10 @@ export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency =
     emergency,
   };
   const [lx, ly] = lobbyTile(ctx.world.plot);
-  if (!goTo(ctx, g, lx, ly)) return;
+  if (!goTo(ctx, g, lx, ly)) return null;
   s.guests.push(g);
   countArrival(ctx);
+  return g;
 }
 
 /**

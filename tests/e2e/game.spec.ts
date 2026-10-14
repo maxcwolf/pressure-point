@@ -886,6 +886,28 @@ test.describe('acupuncture and settings', () => {
   });
 });
 
+test.describe('the interface', () => {
+  test('stays subscribed to the game across redraws, rather than signing up again each time', async ({ game }) => {
+    await game.start();
+    const signups = await game.eval(async (pp) => {
+      const ui = pp.ui;
+      const subscribe = ui.subscribe.bind(ui);
+      let count = 0;
+      /** Count each signup on the way through. */
+      ui.subscribe = (f) => {
+        count++;
+        return subscribe(f);
+      };
+      for (let i = 0; i < 5; i++) {
+        ui.update();
+        await new Promise((r) => setTimeout(r, 30));
+      }
+      return count;
+    });
+    expect(signups).toBe(0);
+  });
+});
+
 test.describe('messages', () => {
   /** Where the camera is looking, on the ground. */
   const lookingAt = (game: Game) =>

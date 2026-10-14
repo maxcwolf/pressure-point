@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 
+import { owned } from '../../disposal';
 import { cyl, DARK, mat, partsOf, put, rbox, sph, torus } from '../parts';
 
 /** Build the Stim Unit model. */
@@ -22,7 +23,7 @@ export function buildStimUnit(g: THREE.Group) {
     dial.rotation.x = Math.PI / 2 - 0.5;
   }
   // each unit owns its light so it can blink independently
-  const led = new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 });
+  const led = owned(new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 }));
   put(g, sph(0.03, 8), led, 0.24, 0.98, 0.1).castShadow = false;
   partsOf(g).led = led;
   for (const [x, c] of [

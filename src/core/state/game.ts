@@ -31,7 +31,11 @@ export const emptyLedger = (): Ledger => ({
   bonus: 0,
 });
 
-export const SAVE_VERSION = 3;
+/**
+ * Goes up whenever a save could hold content an older version has never heard of (tests/unit/save-version.test.ts
+ * notices), so that older versions refuse the save rather than crash on it. 4: the karma items and Saltmarsh.
+ */
+export const SAVE_VERSION = 4;
 
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {
