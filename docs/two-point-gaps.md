@@ -104,7 +104,7 @@ Some Two Point systems don't fit a healing center as they are, but a version of 
 
 **35. Guest reviews** (from reputation in parts, 28). Guests leave a star rating and a one-line review as they go ("Lovely hot stones. Someone was playing pool next to my reiki."). Reputation is split into results, experience, value, staff and word of mouth, so the player can see which part is dragging. Reviews are how feelings (5) reach the player.
 
-**36. A retail counter** (from the Pharmacy and Museum's gift shop). A receptionist-staffed counter in the lobby sells books, crystals, oils and candles to guests on their way out, more after a good treatment. A second income stream that real spas depend on.
+**36. A retail counter** (from the Pharmacy and Museum's gift shop). A receptionist-staffed counter in the lobby sells books, crystals, oils and candles to guests on their way out, more after a good treatment. A second income stream, as real healing centers have.
 
 **37. House calls** (from ambulances). Send a therapist out for a day to an office or a hotel for a fee, leaving the center short while they are gone. At The Exchange, desk-massage contracts with the office towers.
 
