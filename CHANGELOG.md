@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.10.0
 
 - **Staff careers:** staff earn experience from the guests they see and the jobs they do, and rise through five ranks, from Trainee to Expert, in place of skill stars. When ready they wait on a card at the side for a promotion, which brings the raise they insist on; putting it off sours them. Each rank brings a qualification slot, and every slot must be filled by training before the next promotion.
 - **General courses:** Bedside Manner, Motivation and Stamina Training for anyone, Customer Service for receptionists and Maintenance for Janitors. They take the place of the old skill course, and each fills a slot.
