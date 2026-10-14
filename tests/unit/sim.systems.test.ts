@@ -144,6 +144,21 @@ describe('morale and pay', () => {
     expect(said.some((t) => t.includes('has quit'))).toBe(true);
     expect(s.reputation).toBeLessThan(rep + 5);
   });
+
+  it('has someone who quits as a walk ends walk out, rather than vanish on the spot', () => {
+    const { sim, s } = openCenter(1);
+    const janitor = hire(sim, 'caretaker');
+    runUntil(sim, () => janitor.state === 'idle', 100);
+    // a hundredth of a tile from the end of a stroll, and at the end of their tether
+    janitor.state = 'wander';
+    janitor.path = [[janitor.x + 0.01, janitor.y, 0]];
+    janitor.unhappyT = 61;
+    janitor.morale = 0;
+    sim.tick(0.05);
+    expect(janitor.state).toBe('leaving');
+    expect(s.staff).toContain(janitor);
+    runUntil(sim, () => !s.staff.includes(janitor), 200);
+  });
 });
 
 describe('loans', () => {

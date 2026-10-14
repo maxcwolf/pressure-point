@@ -326,6 +326,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
   }
   if (st.energy < 15) walk *= 0.75;
   const arrived = moveAlong(st, dt, walk);
+  // someone who quits this very step has only just set off for the door
+  const wasLeaving = st.state === 'leaving';
 
   updateMorale(ctx, st, dt);
   if (st.state === 'leaving' && !ctx.s.staff.includes(st)) return;
@@ -428,7 +430,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       break;
     }
     case 'leaving':
-      if (arrived || !st.path) ctx.s.staff = ctx.s.staff.filter((x) => x !== st);
+      if ((arrived && wasLeaving) || !st.path) ctx.s.staff = ctx.s.staff.filter((x) => x !== st);
       break;
   }
 }
