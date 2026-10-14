@@ -135,11 +135,15 @@ export class Stage {
     this.orbit.update();
   }
 
-  /** Move the models on and draw a frame, turning the stage a little if it is spinning. */
-  render(t: number, dt: number, spin: boolean) {
+  /**
+   * Move the models on and draw a frame, turning the stage a little if it is spinning. A snap puts people
+   * straight into their pose, where they would otherwise ease into it over a few frames.
+   */
+  render(t: number, dt: number, spin: boolean, snap: boolean) {
     if (spin) this.pivot.rotation.y += dt * 0.6;
-    this.model?.animate(t, dt);
-    this.person?.animate(t, dt);
+    const step = snap ? 1 : dt;
+    this.model?.animate(t, step);
+    this.person?.animate(t, step);
     this.orbit.update();
     placeSun(this.sun, this.orbit.target.clone().setY(0));
     this.renderer.render(this.scene, this.camera);

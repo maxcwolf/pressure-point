@@ -270,7 +270,8 @@ function loop(now: number) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   if (view.animate) t += dt;
-  stage.render(t, dt, view.spin);
+  // held still, everyone is put straight into their pose, so a picture comes out the same every time
+  stage.render(t, dt, view.spin, still);
   if (settling > 0) settling--;
   requestAnimationFrame(loop);
 }
