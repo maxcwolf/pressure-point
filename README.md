@@ -20,6 +20,16 @@ The apps are not signed yet, so your computer will ask before opening one the fi
 
 The browser version needs nothing installed and is always the same version as the latest release.
 
+## Campaign and sandbox
+
+**Campaign** takes you through a series of centers, each with its own building, guests, goals and quirks. Earn a center's first star to open the next:
+
+1. **Willow Lane**, a small high-street unit. Massage only: the place to learn the ropes.
+2. **The Exchange**, downtown. Office workers with office ailments, arriving in rush hours before and after work. Acupuncture opens here.
+3. **Saltmarsh**, a seaside town. Packed in summer and quiet in winter, with seaside ailments and sea air that is hard on equipment. Reiki opens here.
+
+**Sandbox** is a big lot of your own, with every treatment and no deadline.
+
 ## How to play
 
 1. Place a **Reception Desk** and hire a **Receptionist**.

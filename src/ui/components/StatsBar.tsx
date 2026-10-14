@@ -9,6 +9,9 @@ import { cx } from '../lib/cx';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 
+/** How each season reads beside the date, in a center that has seasons. */
+const SEASON_NAMES = { winter: '❄️ Winter', spring: '🌱 Spring', summer: '☀️ Summer', autumn: '🍂 Autumn' } as const;
+
 const SPEEDS: readonly { speed: number; label: string; title: string }[] = [
   { speed: 0, label: '⏸', title: 'Pause (Space)' },
   { speed: 1, label: '▶', title: 'Normal (1)' },
@@ -21,6 +24,7 @@ export function StatsBar() {
   const { sim } = useGame();
   const s = sim.s;
   const date = dateOf(s.day);
+  const season = sim.season();
   const net = netOf(s.ledger);
   return (
     <div id="stats">
@@ -42,7 +46,13 @@ export function StatsBar() {
       <div class="stat date" title="Date">
         <i>📅</i>
         <b>{`Day ${date.day}`}</b>
-        <small>{sim.rushHour() ? <em class="rush">Rush hour</em> : `Month ${date.month}, Year ${date.year}`}</small>
+        <small>
+          {sim.rushHour() ? (
+            <em class="rush">Rush hour</em>
+          ) : (
+            `Month ${date.month}, Year ${date.year}${season ? ` · ${SEASON_NAMES[season]}` : ''}`
+          )}
+        </small>
       </div>{' '}
       <div class="speeds">
         {SPEEDS.map((sp) => (

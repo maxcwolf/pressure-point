@@ -3,6 +3,7 @@
 import {
   BORED_PATIENCE,
   centerOf,
+  conditionHere,
   type ConditionId,
   conditionOf,
   CONDITIONS,
@@ -91,8 +92,12 @@ export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency =
  */
 export function rollCondition(ctx: SimContext): ConditionId {
   const staff = ctx.s.staff.filter((x) => x.state !== 'leaving');
-  let pool = CONDITIONS.filter((c) => unlocked(ctx, c.modality) && offered(ctx, MODALITIES[c.modality].discipline));
-  if (!pool.length) pool = CONDITIONS.filter((c) => c.modality === DISCIPLINES.massage.base);
+  let pool = CONDITIONS.filter(
+    (c) =>
+      conditionHere(c, ctx.s.center) && unlocked(ctx, c.modality) && offered(ctx, MODALITIES[c.modality].discipline),
+  );
+  if (!pool.length)
+    pool = CONDITIONS.filter((c) => conditionHere(c, ctx.s.center) && c.modality === DISCIPLINES.massage.base);
   const local = centerOf(ctx.s).conditions ?? {};
   const weights = pool.map((c) => (staff.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4) * (local[c.id] ?? 1));
   let roll = random() * weights.reduce((a, b) => a + b, 0);

@@ -47,7 +47,7 @@ import type { Course } from './training';
 import { courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
 import { deliveryProblem, enabled, modalityOf, offered, setDiscipline, unlocked } from './treatments';
-import { inRush, updateTwists } from './twists';
+import { inRush, type Season, seasonOf, updateTwists } from './twists';
 import { decayItems } from './upkeep';
 
 export class Sim {
@@ -160,6 +160,11 @@ export class Sim {
   /** Whether it is rush hour here right now: only in a center that has them. */
   rushHour(): boolean {
     return !!centerOf(this.s).rush && inRush(this.s.day);
+  }
+
+  /** The season now, in a center that has seasons; null elsewhere. */
+  season(): Season | null {
+    return centerOf(this.s).seasons ? seasonOf(this.s.day) : null;
   }
 
   /** This month so far, in the same shape as the finished months in `s.months`. */

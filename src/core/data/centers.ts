@@ -84,10 +84,42 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       ],
     ],
   },
+  saltmarsh: {
+    id: 'saltmarsh',
+    name: 'Saltmarsh',
+    place: 'A seaside town',
+    blurb:
+      'Packed in summer, half asleep in winter, and the sea air is hard on equipment. Reiki opens at the second star.',
+    plot: { x0: 4, x1: 26, y0: 7, y1: 16, door: [14, 15] },
+    startMoney: 30000,
+    disciplines: ['acupuncture', 'reiki'],
+    conditions: { lobstered: 3, sealegs: 2.5, gull: 2.5 },
+    seasons: { summer: 1.9, winter: 0.6 },
+    wear: 1.4,
+    scenery: 'seaside',
+    goals: [
+      [
+        { kind: 'healed', count: 25 },
+        { kind: 'reputation', percent: 45 },
+        { kind: 'balance', amount: 20000 },
+      ],
+      [
+        { kind: 'healed', count: 70 },
+        { kind: 'cureRate', percent: 75 },
+        { kind: 'wait', days: 2.5 },
+      ],
+      [
+        { kind: 'healed', count: 160 },
+        { kind: 'healed', count: 15, discipline: 'reiki' },
+        { kind: 'reputation', percent: 75 },
+        { kind: 'noQuits', days: 60 },
+      ],
+    ],
+  },
 };
 
 /** The campaign's centers, in the order they are played. */
-export const CAMPAIGN: readonly CenterId[] = ['willow', 'exchange'];
+export const CAMPAIGN: readonly CenterId[] = ['willow', 'exchange', 'saltmarsh'];
 
 /** The center a game is set in. */
 export const centerOf = (s: { center: CenterId }) => CENTERS[s.center];

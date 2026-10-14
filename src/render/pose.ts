@@ -120,6 +120,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     armOut = 0.32;
     if (c.pose !== 'sit') armL = armR = 0;
   } else if (visual === 'crick') headZ = 0.55;
+  else if (visual === 'sway' && c.pose !== 'lie') side = Math.sin(t * 1.4 + c.id) * 0.16;
   else if (visual === 'tilt') {
     side = 0.24;
     headZ = -0.12;

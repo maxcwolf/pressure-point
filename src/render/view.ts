@@ -14,6 +14,7 @@ import { PeopleLayer } from './people';
 import { Picker, type Selection } from './picking';
 import { RoomsLayer } from './rooms';
 import { buildScenery } from './scenery';
+import { settingName, settingOf } from './setting';
 
 export class View {
   readonly renderer: THREE.WebGLRenderer;
@@ -39,7 +40,7 @@ export class View {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
-    this.scene.background = new THREE.Color(0x8cc98a);
+    this.scene.background = new THREE.Color(settingOf(sim.s).ground);
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0xc9b99a, 1.15));
     this.sun = new THREE.DirectionalLight(0xfff1d6, 2.1);
@@ -57,7 +58,7 @@ export class View {
     this.scene.add(this.sun, this.sun.target);
 
     this.rig = new CameraRig(sim.world.plot);
-    buildScenery(this.scene, sim.world.plot);
+    buildScenery(this.scene, sim.world.plot, settingName(sim.s), settingOf(sim.s));
     this.floor = new Floor(this.scene, sim);
     this.rooms = new RoomsLayer(this.scene, sim);
     this.items = new ItemsLayer(this.scene, sim);

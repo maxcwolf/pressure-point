@@ -4,15 +4,17 @@ import * as THREE from 'three';
 
 import { H, outsideDoor, type Plot, ROAD_Y, SIDEWALK_Y, TITLE_LINES, W } from '../core/data';
 import { must } from '../core/util';
+import { buildBeach } from './models/beach';
 import { cyl, mat, put, rbox, sph } from './models/parts';
 import { buildForest, type TreeSpot } from './models/tree';
+import type { Setting } from './setting';
 import { H_LOW, hash } from './shared';
 
-/** Build the scenery that never changes around a building on its plot, and add it to the scene. */
-export function buildScenery(scene: THREE.Scene, plot: Plot) {
+/** Build the scenery that never changes around a building on its plot, in its setting, and add it to the scene. */
+export function buildScenery(scene: THREE.Scene, plot: Plot, setting: 'park' | 'seaside', colors: Setting) {
   const lawn = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: 0x8cc98a, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: colors.ground, roughness: 1 }),
   );
   lawn.position.set(W / 2, -0.03, H / 2);
   lawn.receiveShadow = true;
@@ -93,14 +95,16 @@ export function buildScenery(scene: THREE.Scene, plot: Plot) {
   sign.rotation.y = Math.PI / 5;
   scene.add(sign);
 
+  if (setting === 'seaside') {
+    scene.add(buildSeaside(plot));
+    return;
+  }
+
   // trees wherever there is lawn
   const trees: TreeSpot[] = [];
   for (let y = -3; y < H + 2; y++) {
     for (let x = -4; x < W + 4; x++) {
-      const inPlot = x >= plot.x0 - 1 && x <= plot.x1 + 2 && y >= plot.y0 - 1 && y <= plot.y1 + 1;
-      const onRoad = y >= SIDEWALK_Y && y <= ROAD_Y[1];
-      const nearPath = x >= e0 - 7 && x <= e1 + 2 && y > plot.y1;
-      if (inPlot || onRoad || nearPath || hash(x, y) > 0.2) continue;
+      if (keptClear(plot, x, y) || hash(x, y) > 0.2) continue;
       trees.push({
         x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.5,
         z: y + 0.5 + (hash(x, y + 9) - 0.5) * 0.5,
@@ -109,4 +113,44 @@ export function buildScenery(scene: THREE.Scene, plot: Plot) {
     }
   }
   scene.add(buildForest(trees));
+}
+
+/** Whether a tile is kept clear of scenery: the building and a margin round it, the street, and the path to the door. */
+function keptClear(plot: Plot, x: number, y: number): boolean {
+  const inPlot = x >= plot.x0 - 1 && x <= plot.x1 + 2 && y >= plot.y0 - 1 && y <= plot.y1 + 1;
+  const onRoad = y >= SIDEWALK_Y && y <= ROAD_Y[1];
+  const nearPath = x >= plot.door[0] - 7 && x <= plot.door[1] + 3 && y > plot.y1;
+  return inPlot || onRoad || nearPath;
+}
+
+/** The sea behind the lot, a row of beach huts along the shore, and dune grass on the sand. */
+function buildSeaside(plot: Plot): THREE.Group {
+  const shore = new THREE.Group();
+  const sea = new THREE.Mesh(
+    new THREE.PlaneGeometry(400, 200).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ color: 0x4aa8c9, roughness: 0.25 }),
+  );
+  sea.position.set(W / 2, -0.01, -2 - 100);
+  sea.receiveShadow = true;
+  const foam = new THREE.Mesh(
+    new THREE.PlaneGeometry(400, 0.7).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ color: 0xf4fbfc, roughness: 0.6 }),
+  );
+  foam.position.set(W / 2, -0.005, -1.8);
+  shore.add(sea, foam);
+  const huts: TreeSpot[] = [];
+  for (let x = -12; x < W + 12; x += 2) huts.push({ x: x + 0.5, z: 0.6, seed: Math.floor(hash(x, 3) * 97) });
+  const grass: TreeSpot[] = [];
+  for (let y = 2; y < H + 2; y++) {
+    for (let x = -4; x < W + 4; x++) {
+      if (keptClear(plot, x, y) || hash(x, y) > 0.12) continue;
+      grass.push({
+        x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.6,
+        z: y + 0.5 + (hash(x, y + 9) - 0.5) * 0.6,
+        seed: Math.floor(hash(y, x) * 97),
+      });
+    }
+  }
+  shore.add(buildBeach(huts, grass));
+  return shore;
 }

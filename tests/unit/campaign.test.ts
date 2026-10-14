@@ -9,7 +9,8 @@ import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
 import { rollCondition } from '../../src/core/sim/guests';
 import { Sim } from '../../src/core/sim/sim';
-import { arrivalFactor, impatience, inRush, updateTwists } from '../../src/core/sim/twists';
+import { arrivalFactor, impatience, inRush, seasonOf, updateTwists } from '../../src/core/sim/twists';
+import { addWear } from '../../src/core/sim/upkeep';
 import { disciplineHere, disciplineOn, newGame } from '../../src/core/state/game';
 import { loadCampaign, recordStars } from '../../src/storage/campaign';
 import { campaignCards } from '../../src/ui/lib/campaign';
@@ -17,13 +18,14 @@ import { runUntil } from './helpers';
 
 describe('the campaign trail', () => {
   it('opens each center once the one before it has a star', () => {
-    expect(CAMPAIGN).toEqual(['willow', 'exchange']);
+    expect(CAMPAIGN).toEqual(['willow', 'exchange', 'saltmarsh']);
     expect(centerOpen({}, 'willow')).toBe(true);
     expect(centerOpen({}, 'exchange')).toBe(false);
     expect(centerOpen({ willow: 1 }, 'exchange')).toBe(true);
     expect(centerOpen({ willow: 3 }, 'sandbox')).toBe(false);
     expect(nextCenter('willow')).toBe('exchange');
-    expect(nextCenter('exchange')).toBeUndefined();
+    expect(nextCenter('exchange')).toBe('saltmarsh');
+    expect(nextCenter('saltmarsh')).toBeUndefined();
     expect(nextCenter('sandbox')).toBeUndefined();
   });
 
@@ -200,5 +202,108 @@ describe('The Exchange', () => {
     }
     runUntil(sim, () => sim.s.stats.healed >= 3, 1200);
     expect(sim.objectives()[0]?.label).toMatch(/^Heal 15 guests/);
+  });
+});
+
+describe('Saltmarsh', () => {
+  it('has seasons, starting the year in winter', () => {
+    expect(seasonOf(0)).toBe('winter');
+    expect(seasonOf(2 * 30)).toBe('spring');
+    expect(seasonOf(5 * 30 + 10)).toBe('summer');
+    expect(seasonOf(8 * 30)).toBe('autumn');
+    expect(seasonOf(11 * 30)).toBe('winter');
+    expect(seasonOf(12 * 30 + 5 * 30)).toBe('summer');
+  });
+
+  it('is busy in summer and quiet in winter, and nothing else has seasons', () => {
+    const ctx = createContext(newGame('saltmarsh'));
+    const seasons = CENTERS.saltmarsh.seasons;
+    ctx.s.day = 6 * 30;
+    expect(arrivalFactor(ctx)).toBe(seasons?.summer);
+    ctx.s.day = 10;
+    expect(arrivalFactor(ctx)).toBe(seasons?.winter);
+    ctx.s.day = 3 * 30;
+    expect(arrivalFactor(ctx)).toBe(1);
+    expect(new Sim(newGame('saltmarsh')).season()).toBe('winter');
+    expect(new Sim(newGame('exchange')).season()).toBeNull();
+  });
+
+  it('announces each season as it starts', () => {
+    const ctx = createContext(newGame('saltmarsh'));
+    ctx.s.open = true;
+    ctx.s.day = 5 * 30 + 0.01;
+    updateTwists(ctx, 0.1);
+    expect(drainEvents(ctx)).toEqual([{ type: 'announce', text: expect.stringContaining('Summer') }]);
+    ctx.s.day += 1;
+    updateTwists(ctx, 0.1);
+    expect(drainEvents(ctx)).toEqual([]);
+  });
+
+  it('has its own seaside ailments, found nowhere else', () => {
+    const local = ['lobstered', 'sealegs', 'gull'];
+    /** The local ailments that turn up among many guests in a center, two stars in, with every room built. */
+    const seen = (id: CenterId) => {
+      setSeed(3);
+      const ctx = createContext(newGame(id));
+      ctx.s.stars = 2;
+      for (const type of ['massage', 'acupuncture', 'reiki'] as const)
+        ctx.s.rooms.push({
+          id: ctx.s.nextId++,
+          type,
+          x: 0,
+          y: 0,
+          w: 3,
+          h: 3,
+          door: { x: 1, y: 2, dx: 0, dy: 1 },
+          windows: [],
+          done: true,
+        });
+      const found = new Set<string>();
+      for (let i = 0; i < 3000; i++) found.add(rollCondition(ctx));
+      return local.filter((c) => found.has(c));
+    };
+    expect(seen('saltmarsh')).toEqual(local);
+    expect(seen('sandbox')).toEqual([]);
+    expect(seen('exchange')).toEqual([]);
+  });
+
+  it('can be built and run inside its own walls', () => {
+    setSeed(8);
+    const sim = new Sim(newGame('saltmarsh'));
+    sim.s.money = 100_000;
+    /** Build a finished room with its furniture. */
+    const room = (type: 'consult' | 'massage', rect: object, door: object, items: [string, number, number][]) => {
+      const r = sim.createRoom(type, rect as never, door as never);
+      for (const [t, x, y] of items)
+        expect(sim.placeItem(t as never, x, y, 0, { free: true, roomId: r.id }), t).not.toBeNull();
+      sim.finishRoom(r);
+    };
+    expect(sim.placeItem('reception_desk', 14, 13, 0)).not.toBeNull();
+    room('consult', { x: 4, y: 7, w: 4, h: 4 }, { x: 7, y: 9, dx: 1, dy: 0 }, [
+      ['consult_desk', 5, 8],
+      ['cabinet', 4, 10],
+    ]);
+    room('massage', { x: 21, y: 7, w: 4, h: 4 }, { x: 22, y: 10, dx: 0, dy: 1 }, [
+      ['massage_table', 22, 7],
+      ['oil_trolley', 24, 7],
+    ]);
+    for (const role of ['receptionist', 'consultant', 'therapist'] as const) {
+      const best = sim.s.candidates.filter((c) => c.role === role).sort((a, b) => b.skill - a.skill)[0];
+      expect(best && sim.hire(best.id), role).toBeTruthy();
+    }
+    runUntil(sim, () => sim.s.stats.healed >= 3, 1500);
+    expect(sim.objectives()[0]?.label).toMatch(/^Heal 25 guests/);
+  });
+
+  it('offers reiki, and wears equipment out faster', () => {
+    expect(disciplineOn(newGame('saltmarsh'), 'reiki')).toBe(true);
+    /** The wear one use adds to a massage table in a center. */
+    const wearIn = (id: CenterId) => {
+      const ctx = createContext(newGame(id));
+      const table = { type: 'massage_table', wear: 0 } as never as Parameters<typeof addWear>[1];
+      addWear(ctx, table);
+      return table.wear;
+    };
+    expect(wearIn('saltmarsh')).toBeCloseTo(wearIn('sandbox') * (CENTERS.saltmarsh.wear ?? 1));
   });
 });

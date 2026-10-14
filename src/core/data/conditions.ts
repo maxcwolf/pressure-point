@@ -1,6 +1,6 @@
 // What guests arrive suffering from, and which modality treats it.
 
-import type { ConditionDef, ConditionId } from './types';
+import type { CenterId, ConditionDef, ConditionId } from './types';
 
 export const CONDITIONS: readonly ConditionDef[] = [
   {
@@ -237,7 +237,40 @@ export const CONDITIONS: readonly ConditionDef[] = [
     fee: 2500,
     visual: 'tilt',
   },
+  {
+    id: 'sealegs',
+    name: 'Sea Legs',
+    desc: 'Back on dry land a week ago, and still swaying with the tide.',
+    treatment: 'Needling Ashore',
+    modality: 'needling',
+    fee: 1250,
+    visual: 'sway',
+    only: ['saltmarsh'],
+  },
+  {
+    id: 'gull',
+    name: 'Gull Shock',
+    desc: 'A seagull took their chips, and their peace of mind with them.',
+    treatment: 'Usui Unruffling',
+    modality: 'usui',
+    fee: 1450,
+    visual: 'gull',
+    only: ['saltmarsh'],
+  },
+  {
+    id: 'lobstered',
+    name: 'Lobstered',
+    desc: 'Fell asleep on the beach and woke up the color of the local seafood.',
+    treatment: 'Swedish Cool-down',
+    modality: 'swedish',
+    fee: 950,
+    visual: 'sunburn',
+    only: ['saltmarsh'],
+  },
 ];
+
+/** Whether guests can turn up with a condition in a center: everywhere, unless it is a local one. */
+export const conditionHere = (c: ConditionDef, center: CenterId) => !c.only || c.only.includes(center);
 
 const CONDITION_BY_ID = new Map(CONDITIONS.map((c) => [c.id, c]));
 

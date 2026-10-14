@@ -70,6 +70,8 @@ These have not been seen to go wrong, but would if the code around them changed.
 
 ## Housekeeping
 
+- **One end-to-end test failed once.** `an emergency offer can be put aside and brought back before it lapses` failed in one full run on 14 October 2026 and passed in every run since, alone and in the full suite. The failure's details were lost before they were read. If it happens again, keep `test-results/` and look at what the offer said.
+
 - **Materials are dropped without `dispose()`.** These are a speech bubble per person, the glow on battery and bulb guests, the marker sprites, a room's sign on each rebuild, and some item models' own materials when an item is moved. Three.js frees these when they are garbage-collected, and `yarn test:perf` shows no growth, so they hold no GPU memory, but disposing them would make that explicit.
 - **The HUD unsubscribes and subscribes again on every redraw**, because `useRedraw` (`src/ui/hooks/use-redraw.ts`) returns a new function each time and `Hud.tsx` lists it as an effect dependency. Harmless, and cheap.
 - **Electron hardening.** There is a permission request handler but no `setPermissionCheckHandler`, and the production content security policy still allows `connect-src ws: http://localhost:*`. Neither can be exploited without a way to inject content first.

@@ -330,6 +330,27 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
       dot.castShadow = false;
       rig.props.push(dot);
     });
+  } else if (visual === 'gull') {
+    // a seagull, settled in for the day
+    const bird = new THREE.Group();
+    const white = mat(0xf7f7f2, 0.6);
+    put(bird, sph(0.075, 10), white, 0, 0, 0).scale.set(1.5, 0.85, 1);
+    put(bird, sph(0.045, 10), white, 0.1, 0.05, 0);
+    put(bird, cyl(0.001, 0.018, 0.06, 6), mat(0xf2a33a, 0.4), 0.15, 0.045, 0).rotation.z = -Math.PI / 2;
+    for (const z of [-0.06, 0.06]) put(bird, rbox(0.13, 0.025, 0.06, 0.01), mat(0x6f7884, 0.6), -0.02, 0.035, z);
+    put(bird, sph(0.012, 6), mat(0x1d1f24, 0.3), 0.13, 0.065, 0.03);
+    bird.scale.setScalar(1.7);
+    bird.position.y = 0.3;
+    bird.rotation.y = 0.6;
+    for (const o of bird.children) o.castShadow = false;
+    head.add(bird);
+    rig.props.push(bird);
+  } else if (visual === 'sunburn') {
+    // lobster red, behind a pair of sunglasses
+    headMesh.material = mat(0xe8604c, 0.6);
+    const shades = mat(0x1d1f24, 0.2);
+    for (const x of [-0.075, 0.075]) rig.props.push(put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2));
+    rig.props.push(put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205));
   }
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   return rig;

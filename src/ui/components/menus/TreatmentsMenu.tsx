@@ -3,6 +3,7 @@
 import './TreatmentsMenu.css';
 
 import {
+  conditionHere,
   conditionOf,
   CONDITIONS,
   type Discipline,
@@ -24,7 +25,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
   const s = sim.s;
   const def = MODALITIES[modality];
   const locked = !sim.unlocked(modality);
-  const treats = CONDITIONS.filter((c) => c.modality === modality)
+  const treats = CONDITIONS.filter((c) => c.modality === modality && conditionHere(c, s.center))
     .map((c) => `${c.name} (${money(c.fee)})`)
     .join(', ');
   const role = DISCIPLINES[def.discipline].role;

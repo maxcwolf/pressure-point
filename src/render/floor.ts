@@ -6,6 +6,7 @@ import { H, ROAD_Y, ROOMS, W } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import { must } from '../core/util';
 import { Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
+import { settingOf } from './setting';
 import { hash } from './shared';
 
 /** How many texture pixels a tile gets. */
@@ -37,6 +38,7 @@ export class Floor {
   draw() {
     const ctx = must(this.canvas.getContext('2d'), '2D canvas');
     const world = this.sim.world;
+    const setting = settingOf(this.sim.s);
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
         const z = world.zoneAt(x, y);
@@ -110,9 +112,9 @@ export class Floor {
           ctx.strokeStyle = 'rgba(90,80,60,0.2)';
           ctx.strokeRect(px + 0.5, py + 0.5, TS - 1, TS - 1);
         } else {
-          ctx.fillStyle = hash(x, y) > 0.5 ? '#8cc98a' : '#86c384';
+          ctx.fillStyle = setting.tiles[hash(x, y) > 0.5 ? 0 : 1];
           ctx.fillRect(px, py, TS, TS);
-          ctx.fillStyle = 'rgba(60,130,70,0.35)';
+          ctx.fillStyle = setting.fleck;
           for (let i = 0; i < 4; i++)
             ctx.fillRect(px + hash(x + i, y) * (TS - 4), py + hash(x, y + i * 3) * (TS - 6), 2, 5);
         }

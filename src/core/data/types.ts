@@ -224,7 +224,10 @@ export type Visual =
   | 'notes'
   | 'gears'
   | 'chakra'
-  | 'tilt';
+  | 'tilt'
+  | 'sway'
+  | 'gull'
+  | 'sunburn';
 
 /** What a guest can arrive suffering from. */
 export type ConditionId =
@@ -253,7 +256,10 @@ export type ConditionId =
   | 'tune'
   | 'noisy'
   | 'blocked'
-  | 'tilted';
+  | 'tilted'
+  | 'sealegs'
+  | 'gull'
+  | 'lobstered';
 
 export interface ConditionDef {
   id: ConditionId;
@@ -263,6 +269,8 @@ export interface ConditionDef {
   modality: Modality;
   fee: number;
   visual: Visual;
+  /** The only centers guests turn up with it in, for a local ailment. Absent means anywhere. */
+  only?: readonly CenterId[];
 }
 
 /** One objective toward a star. */
@@ -285,7 +293,7 @@ export type GoalSpec =
 /** The objectives for one star: all must be met at once. */
 export type StarGoal = readonly GoalSpec[];
 
-export type CenterId = 'sandbox' | 'willow' | 'exchange';
+export type CenterId = 'sandbox' | 'willow' | 'exchange' | 'saltmarsh';
 
 /** A center to run: the sandbox, or one of the campaign's. */
 export interface CenterDef {
@@ -304,6 +312,18 @@ export interface CenterDef {
   conditions?: Partial<Record<ConditionId, number>>;
   /** Rush hours: arrivals bunch up at the start and end of each day, and guests are less patient. */
   rush?: RushHours;
+  /** Seasons: busier summers and quieter winters. */
+  seasons?: Seasons;
+  /** How much faster than usual equipment wears out here. */
+  wear?: number;
+  /** What surrounds the building: a park, or the seaside. */
+  scenery?: 'park' | 'seaside';
+}
+
+/** How much more often guests arrive in summer, and how much less in winter. */
+export interface Seasons {
+  summer: number;
+  winter: number;
 }
 
 /** How busy rush hours are: arrivals during them and between them, and how much faster patience runs out. */

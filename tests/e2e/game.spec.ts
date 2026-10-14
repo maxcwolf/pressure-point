@@ -919,7 +919,7 @@ test.describe('the campaign', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Campaign' }).click();
     const trail = page.locator('#title-campaign');
-    await expect(trail.locator('.stop')).toHaveCount(2);
+    await expect(trail.locator('.stop')).toHaveCount(3);
     await expect(trail.locator('.stop').nth(1)).toContainText('Earn a star at Willow Lane to open');
     await expect(trail.getByRole('button', { name: 'Play The Exchange' })).toHaveCount(0);
 

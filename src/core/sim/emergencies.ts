@@ -1,6 +1,14 @@
 // Emergencies: a batch of guests with one condition, healed against the clock for a reward.
 
-import { conditionOf, CONDITIONS, EMERGENCY_CAUSES, EMERGENCY_DAYS, MODALITIES, OFFER_DAYS } from '../data';
+import {
+  conditionHere,
+  conditionOf,
+  CONDITIONS,
+  EMERGENCY_CAUSES,
+  EMERGENCY_DAYS,
+  MODALITIES,
+  OFFER_DAYS,
+} from '../data';
 import { money } from '../format';
 import { irnd, pick, rnd } from '../random';
 import type { SimContext } from './context';
@@ -32,6 +40,7 @@ export function offerEmergency(ctx: SimContext): boolean {
   const staff = s.staff.filter((x) => x.state !== 'leaving');
   const pool = CONDITIONS.filter(
     (c) =>
+      conditionHere(c, s.center) &&
       unlocked(ctx, c.modality) &&
       offered(ctx, MODALITIES[c.modality].discipline) &&
       staff.some((t) => t.quals.includes(c.modality)),
