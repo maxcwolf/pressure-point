@@ -53,7 +53,9 @@ test.describe('the desktop shell', () => {
       const [win, ...others] = BrowserWindow.getAllWindows();
       return {
         url: win?.webContents.getURL(),
-        showsTitle: (await win?.webContents.executeJavaScript(`!!document.querySelector('#title .logo')`)) as boolean,
+        showsTitle: (await win?.webContents.executeJavaScript(
+          `!!document.querySelector('#title .title-logo')`,
+        )) as boolean,
         otherWindows: others.length,
       };
     });
@@ -88,7 +90,7 @@ test.describe('leaving the desktop app', () => {
     await newGame(page);
     await openPauseMenu(page);
     await page.getByRole('button', { name: 'Main menu' }).click();
-    await expect(page.locator('#title .logo')).toBeVisible();
+    await expect(page.locator('#title .title-logo')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   });
 });

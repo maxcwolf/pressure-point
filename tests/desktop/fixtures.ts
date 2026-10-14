@@ -48,7 +48,7 @@ export const test = base.extend<{ desktop: Desktop }>({
           localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}');
         });
         await page.reload();
-        await page.locator('#title .logo').waitFor();
+        await page.locator('#title .title-logo').waitFor();
         return { app, page };
       },
     });
