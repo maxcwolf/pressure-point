@@ -31,9 +31,12 @@ export function checkStars(ctx: SimContext) {
   const s = ctx.s;
   const goal = STAR_GOALS[s.stars];
   if (!goal) return;
-  if (s.stats.healed >= goal.healed && s.reputation >= goal.reputation && s.money >= goal.balance) {
+  // exactly the objectives the player is shown, so nothing hidden holds a star back
+  if (objectives(ctx).every((o) => o.done)) {
     s.stars++;
-    s.money += 5000 * s.stars;
+    const grant = 5000 * s.stars;
+    s.money += grant;
+    s.ledger.bonus += grant;
     refillCandidates(s, true);
     emit(ctx, { type: 'star', stars: s.stars });
     emit(ctx, { type: 'sfx', name: 'fanfare' });

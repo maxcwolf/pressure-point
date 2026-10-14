@@ -259,4 +259,24 @@ describe('stars', () => {
     run(sim, 2);
     expect(s.stars).toBe(0);
   });
+
+  it('are awarded exactly when every objective shown is met, even in debt', () => {
+    const { sim, s } = openCenter(1);
+    s.stats.healed = 8;
+    s.reputation = 45;
+    s.money = -500;
+    expect(sim.objectives().every((o) => o.done)).toBe(true);
+    run(sim, 2);
+    expect(s.stars).toBe(1);
+  });
+
+  it('record their grant in the books', () => {
+    const { sim, s } = openCenter(1);
+    s.stats.healed = 8;
+    s.reputation = 45;
+    const before = { money: s.money, net: netOf(s.ledger) };
+    sim.tick(0.05);
+    expect(s.stars).toBe(1);
+    expect(netOf(s.ledger) - before.net).toBe(s.money - before.money);
+  });
 });
