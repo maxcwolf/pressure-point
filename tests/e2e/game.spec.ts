@@ -29,7 +29,7 @@ test.describe('starting out', () => {
       '{"sound":false,"music":false}',
     );
     // the choice carries into the game, and survives a reload
-    await page.getByRole('button', { name: 'New game' }).click();
+    await page.getByRole('button', { name: 'Sandbox' }).click();
     await page.waitForFunction(() => !!window.pp);
     await expect(page.locator('#sys').getByTitle('Music')).toHaveClass(/off/);
     await expect(page.locator('#sys').getByTitle('Sound effects')).toHaveText('🔇');
@@ -683,7 +683,7 @@ test.describe('leaving a game', () => {
 
   test('a browser has no Exit button, since a tab cannot close itself', async ({ game, page }) => {
     await page.goto('/');
-    await expect(page.getByRole('button', { name: 'New game' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sandbox' })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Exit/ })).toHaveCount(0);
     await game.start();
     await page.locator('#sys').getByTitle('Menu').click();
@@ -792,7 +792,7 @@ test.describe('acupuncture and settings', () => {
     await page.getByRole('switch', { name: 'Music' }).click();
     await expect(page.locator('.title-sys').getByTitle('Music')).toHaveAttribute('aria-pressed', 'false');
 
-    await page.getByRole('button', { name: 'New game' }).click();
+    await page.getByRole('button', { name: 'Sandbox' }).click();
     await page.waitForFunction(() => !!window.pp);
     expect(await game.eval((pp) => pp.sim.enabled('acupuncture'))).toBe(false);
     await page.reload();
@@ -910,6 +910,37 @@ test.describe('stats', () => {
     await game.menu('Stats');
     await expect(page.locator('#menu .stat-card[data-metric="money"]')).toBeVisible();
     await expect(page.locator('#menu .stat-card[data-metric="stormed"]')).toHaveCount(0);
+  });
+});
+
+test.describe('the campaign', () => {
+  test('starts at Willow Lane, and a star there opens The Exchange', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    const trail = page.locator('#title-campaign');
+    await expect(trail.locator('.stop')).toHaveCount(2);
+    await expect(trail.locator('.stop').nth(1)).toContainText('Earn a star at Willow Lane to open');
+    await expect(trail.getByRole('button', { name: 'Play The Exchange' })).toHaveCount(0);
+
+    await trail.getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    await expect(page.locator('#objectives')).toContainText('Willow Lane');
+    await expect(page.locator('#objectives')).toContainText('Heal 5 guests (0/5)');
+    expect(await game.eval((pp) => [pp.state.center, pp.state.money])).toEqual(['willow', 20000]);
+    // Willow Lane is massage only
+    await game.menu('Rooms');
+    await expect(game.card('Acupuncture Clinic')).toHaveCount(0);
+
+    await game.eval((pp) => (pp.state.stars = 1));
+    await page.locator('#sys').getByTitle('Menu').click();
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await expect(page.locator('#title .save-card')).toContainText('Willow Lane');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await expect(page.locator('#title-campaign .stop').first()).toContainText('★');
+    await page.getByRole('button', { name: 'Play The Exchange' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'exchange');
+    await expect(page.locator('#objectives')).toContainText('The Exchange');
   });
 });
 
@@ -1088,7 +1119,7 @@ test.describe('saved games', () => {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
-    await page.getByRole('button', { name: 'New game' }).click();
+    await page.getByRole('button', { name: 'Sandbox' }).click();
     await page.waitForFunction(() => !!window.pp);
     await openSaves(page);
     await page.locator('.filebtn input').setInputFiles(file);

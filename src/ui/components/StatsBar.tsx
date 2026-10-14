@@ -42,7 +42,7 @@ export function StatsBar() {
       <div class="stat date" title="Date">
         <i>📅</i>
         <b>{`Day ${date.day}`}</b>
-        <small>{`Month ${date.month}, Year ${date.year}`}</small>
+        <small>{sim.rushHour() ? <em class="rush">Rush hour</em> : `Month ${date.month}, Year ${date.year}`}</small>
       </div>{' '}
       <div class="speeds">
         {SPEEDS.map((sp) => (

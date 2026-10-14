@@ -2,6 +2,7 @@
 // questions the interface needs. The work is done by the functions in this folder.
 
 import {
+  centerOf,
   DAY_SECONDS,
   DAYS_PER_MONTH,
   type Discipline,
@@ -46,6 +47,7 @@ import type { Course } from './training';
 import { courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
 import { deliveryProblem, enabled, modalityOf, offered, setDiscipline, unlocked } from './treatments';
+import { inRush, updateTwists } from './twists';
 import { decayItems } from './upkeep';
 
 export class Sim {
@@ -94,6 +96,7 @@ export class Sim {
       checkStars(ctx);
     }
     announce(ctx, dt);
+    updateTwists(ctx, dt);
   }
 
   // ---- Events ----------------------------------------------------------------
@@ -152,6 +155,11 @@ export class Sim {
   /** Whether someone will walk out within two days unless something changes. */
   aboutToQuit(st: Staff): boolean {
     return aboutToQuit(st);
+  }
+
+  /** Whether it is rush hour here right now: only in a center that has them. */
+  rushHour(): boolean {
+    return !!centerOf(this.s).rush && inRush(this.s.day);
   }
 
   /** This month so far, in the same shape as the finished months in `s.months`. */

@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **A campaign:** Campaign on the title screen leads to a trail of centers, each with its own building, goals and guests. Start at Willow Lane, a small massage-only unit; a star there opens The Exchange downtown, with acupuncture, office ailments and rush hours. Earned stars are kept between games.
+- **Sandbox** on the title screen starts the open-ended game, as New game did before.
+
 ## v0.6.0
 
 - **Messages take you there:** click a message or the advisor about someone or something, and the camera glides over with it selected.

@@ -6,6 +6,7 @@ import { Sim } from '../core/sim/sim';
 import type { GameState } from '../core/state/types';
 import { accessTile, itemDims } from '../core/world';
 import { View } from '../render/view';
+import { recordStars } from '../storage/campaign';
 import { autosave, AUTOSAVE_ID } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
@@ -44,6 +45,7 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
   /** Write the autosave, with a picture of the view for the title screen. */
   const save = () => {
     if (autosave(state)) storeThumb(AUTOSAVE_ID, view.snapshot());
+    recordStars(state.center, state.stars);
   };
   /** Save, then stop saving on the way out, so the page that loads next finds this game as it was left. */
   const saveAndStop = () => {
@@ -62,7 +64,7 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     audio,
     save,
     /** Leave for a fresh game. */
-    newGame: () => leaveFor('new'),
+    newGame: () => leaveFor(state.center === 'sandbox' ? 'new' : `new:${state.center}`),
     /** Leave for a saved game. */
     loadGame: (id) => leaveFor(id),
     /** Go back to the title screen. The game is in the autosave, so Continue picks it straight up. */

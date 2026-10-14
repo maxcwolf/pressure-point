@@ -52,3 +52,11 @@
     width: 200px;
   }
 }
+
+#objectives .center-name {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--teal-dark);
+}

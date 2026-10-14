@@ -15,6 +15,15 @@ test.describe('title screen', () => {
     await page.getByRole('button', { name: 'Load game' }).click();
     await screens.shot('title-saves');
   });
+
+  test('the campaign trail', async ({ screens, page }) => {
+    await screens.title();
+    await page.evaluate(() =>
+      localStorage.setItem('pressure-point-campaign', JSON.stringify({ stars: { willow: 2 } })),
+    );
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await screens.shot('title-campaign');
+  });
 });
 
 test.describe('in a game', () => {

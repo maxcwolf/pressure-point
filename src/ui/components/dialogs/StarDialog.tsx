@@ -2,7 +2,8 @@
 
 import './StarDialog.css';
 
-import { centerOf } from '../../../core/data';
+import { nextCenter } from '../../../core/campaign';
+import { centerOf, CENTERS } from '../../../core/data';
 import { money } from '../../../core/format';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { roomsUnlockedAt, treatmentsUnlockedAt } from '../../lib/unlocks';
@@ -16,6 +17,8 @@ export function StarDialog() {
   const { sim } = useGame();
   const n = hud.star;
   const goals = centerOf(sim.s).goals;
+  // the first star in a campaign center opens the next one
+  const opens = n === 1 ? nextCenter(sim.s.center) : undefined;
   /** Whether a discipline is switched on. */
   const enabled = sim.enabled.bind(sim);
   const rooms = roomsUnlockedAt(n, enabled);
@@ -42,10 +45,18 @@ export function StarDialog() {
           for equipment.
         </p>
       )}{' '}
+      {opens && (
+        <p class="unlock">
+          <b>{`${CENTERS[opens].name} is open:`}</b>
+          {' choose it from Campaign on the title screen whenever you are ready.'}
+        </p>
+      )}{' '}
       <p class="sub">
         {goals[n]
           ? 'New objectives are waiting in the top-left corner.'
-          : 'You have mastered the lot. Every treatment is open to you.'}
+          : sim.s.center === 'sandbox'
+            ? 'You have mastered the lot. Every treatment is open to you.'
+            : `${centerOf(sim.s).name} is complete. Every star there is yours.`}
       </p>{' '}
       <Button
         class="go"

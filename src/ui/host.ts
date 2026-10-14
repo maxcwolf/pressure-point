@@ -12,7 +12,7 @@ export interface GameHost {
   audio: Audio;
   /** Write the autosave now. */
   save: () => void;
-  /** Leave for a fresh game. */
+  /** Leave for a fresh game in the same center. */
   newGame: () => void;
   /** Leave for a saved game. */
   loadGame: (id: string) => void;

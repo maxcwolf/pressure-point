@@ -285,7 +285,7 @@ export type GoalSpec =
 /** The objectives for one star: all must be met at once. */
 export type StarGoal = readonly GoalSpec[];
 
-export type CenterId = 'sandbox' | 'willow';
+export type CenterId = 'sandbox' | 'willow' | 'exchange';
 
 /** A center to run: the sandbox, or one of the campaign's. */
 export interface CenterDef {
@@ -298,4 +298,17 @@ export interface CenterDef {
   startMoney: number;
   /** The objectives for each star in turn. */
   goals: readonly StarGoal[];
+  /** The optional disciplines on offer here, each still opened by its room's star. Massage is always on offer. */
+  disciplines: readonly Discipline[];
+  /** How much more (or less) often guests arrive with a condition here than elsewhere. Unlisted ones count once. */
+  conditions?: Partial<Record<ConditionId, number>>;
+  /** Rush hours: arrivals bunch up at the start and end of each day, and guests are less patient. */
+  rush?: RushHours;
+}
+
+/** How busy rush hours are: arrivals during them and between them, and how much faster patience runs out. */
+export interface RushHours {
+  peak: number;
+  lull: number;
+  impatience: number;
 }

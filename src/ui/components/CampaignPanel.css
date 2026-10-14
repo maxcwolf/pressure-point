@@ -1,0 +1,87 @@
+/* Styles for CampaignPanel. */
+
+.campaign h3 {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.trail {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.stop {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  padding-bottom: 12px;
+}
+
+/* the dotted trail from one center to the next */
+.stop:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 34px;
+  bottom: 0;
+  border-left: 3px dashed rgba(36, 56, 74, 0.35);
+}
+
+.stop .pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--teal);
+  border: 3px solid var(--navy);
+  color: #fff;
+  font-weight: 700;
+}
+
+.stop .about {
+  background: #fff;
+  border: 2px solid rgba(36, 56, 74, 0.3);
+  border-radius: 12px;
+  padding: 8px 11px;
+}
+
+.stop .about b {
+  font-size: 15.5px;
+}
+
+.stop .stars {
+  margin-left: 8px;
+  color: var(--gold);
+}
+
+.stop small {
+  display: block;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.stop p {
+  font-size: 13px;
+  margin: 3px 0 6px;
+}
+
+.stop .go {
+  margin-top: 0;
+}
+
+.stop.locked .about {
+  opacity: 0.6;
+}
+
+.stop.locked .pin {
+  background: #8a929c;
+}
+
+.stop .why {
+  font-weight: 600;
+  margin-bottom: 0;
+}

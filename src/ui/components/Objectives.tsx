@@ -16,6 +16,7 @@ export function Objectives() {
   const goals = centerOf(s).goals;
   return (
     <div id="objectives" class="panel">
+      {s.center !== 'sandbox' && <p class="center-name">{centerOf(s).name}</p>}
       <h3>{goals[s.stars] ? `Star ${s.stars + 1} objectives` : 'All stars earned!'}</h3>
       <div class="stars">
         <StarRow earned={s.stars} of={goals.length} />

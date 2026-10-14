@@ -2,6 +2,7 @@
 
 import {
   BORED_PATIENCE,
+  centerOf,
   type ConditionId,
   conditionOf,
   CONDITIONS,
@@ -30,6 +31,7 @@ import { goTo, halt, moveAlong } from './movement';
 import { countArrival, countVisit } from './records';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
+import { arrivalFactor, impatience } from './twists';
 import { addWear, dirtier } from './upkeep';
 
 const GOAL_NAME = {
@@ -48,7 +50,7 @@ export function admitGuests(ctx: SimContext, dt: number) {
   s.spawnT -= dt;
   if (s.spawnT > 0) return;
   if (s.guests.length < 14 + s.rooms.length * 5) spawnGuest(ctx);
-  s.spawnT = (30 - s.reputation * 0.2) * rnd(0.7, 1.3);
+  s.spawnT = ((30 - s.reputation * 0.2) * rnd(0.7, 1.3)) / arrivalFactor(ctx);
 }
 
 /** Add a guest on the street and send them to the lobby. */
@@ -91,7 +93,8 @@ export function rollCondition(ctx: SimContext): ConditionId {
   const staff = ctx.s.staff.filter((x) => x.state !== 'leaving');
   let pool = CONDITIONS.filter((c) => unlocked(ctx, c.modality) && offered(ctx, MODALITIES[c.modality].discipline));
   if (!pool.length) pool = CONDITIONS.filter((c) => c.modality === DISCIPLINES.massage.base);
-  const weights = pool.map((c) => (staff.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4));
+  const local = centerOf(ctx.s).conditions ?? {};
+  const weights = pool.map((c) => (staff.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4) * (local[c.id] ?? 1));
   let roll = random() * weights.reduce((a, b) => a + b, 0);
   for (const [i, condition] of pool.entries()) {
     roll -= at(weights, i);
@@ -289,7 +292,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
 
   const waiting = g.state === 'toWait' || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
   if (waiting) {
-    let drain = 0.85 * drainFactor(ctx, g.tx, g.ty);
+    let drain = 0.85 * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);
     if (g.pose === 'sit') drain *= 0.6;
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
     g.patience -= drain * dt;

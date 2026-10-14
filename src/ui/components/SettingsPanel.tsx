@@ -5,6 +5,7 @@ import './SettingsPanel.css';
 import type { Audio } from '../../audio';
 import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
+import { disciplineHere } from '../../core/state/game';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
 import { cx } from '../lib/cx';
@@ -70,7 +71,8 @@ export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
     <div class="settings">
       <h4>Treatments</h4>
       <ul>
-        {DISCIPLINE_ORDER.map((d) => {
+        {/* in a game, only the treatments its center offers; for new games, all of them */}
+        {DISCIPLINE_ORDER.filter((d) => !sim || disciplineHere(sim.s, d)).map((d) => {
           const def = DISCIPLINES[d];
           return (
             <Row

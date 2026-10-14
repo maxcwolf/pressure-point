@@ -112,3 +112,9 @@
     display: none;
   }
 }
+
+.stat .rush {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--red);
+}

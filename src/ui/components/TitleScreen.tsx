@@ -5,7 +5,7 @@ import './TitleScreen.css';
 import { useState } from 'preact/hooks';
 
 import type { Audio } from '../../audio';
-import { GAME_TITLE } from '../../core/data';
+import { CENTERS, GAME_TITLE } from '../../core/data';
 import { latestSave, timeAgo } from '../../storage/saves';
 import { loadDisciplinePrefs } from '../../storage/settings';
 import { readThumb } from '../../storage/thumbnails';
@@ -14,6 +14,7 @@ import { cx } from '../lib/cx';
 import { saveFacts, titleBadges } from '../lib/title';
 import backdrop from '../theme/backdrop.jpg';
 import logo from '../theme/logo.png';
+import { CampaignPanel } from './CampaignPanel';
 import { SavesPanel } from './SavesPanel';
 import { SettingsPanel } from './SettingsPanel';
 
@@ -21,11 +22,11 @@ export interface TitleScreenProps {
   audio: Audio;
   /** Quit the desktop app. Undefined in a browser, where there is nothing to quit. */
   exit: (() => void) | undefined;
-  /** Called with 'new', or the id of a save to load. */
+  /** Called with 'new' for a sandbox game, 'new:<center>' for a campaign one, or the id of a save to load. */
   onPick: (what: string) => void;
 }
 
-type Panel = 'saves' | 'settings';
+type Panel = 'campaign' | 'saves' | 'settings';
 
 /** The logo, the latest save and the ways into the game. */
 export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
@@ -37,8 +38,14 @@ export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
   const latest = latestSave();
   /** Show a panel, or hide it if it is the one showing. */
   const toggle = (panel: Panel) => {
-    setShowing(showing === panel ? null : panel);
+    const opening = showing !== panel;
+    setShowing(opening ? panel : null);
     if (!opened.includes(panel)) setOpened([...opened, panel]);
+    // a panel opens under the buttons, often below the bottom of the window, so bring it into view
+    if (opening)
+      requestAnimationFrame(() => {
+        document.getElementById(`title-${panel}`)?.scrollIntoView({ block: 'nearest' });
+      });
   };
   /** Flip a sound switch. A click is what browsers need before any sound, so music can start right here. */
   const flip = (change: () => void) => () => {
@@ -82,6 +89,7 @@ export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
           {latest && (
             <div class="save-card">
               <h2>{latest.name}</h2>
+              {latest.center && latest.center !== 'sandbox' && <p class="center-name">{CENTERS[latest.center].name}</p>}
               <div class="save-card-body">
                 {picture ? <img class="save-thumb" src={picture} alt="" /> : <div class="save-thumb empty">💆</div>}
                 <ul>
@@ -120,11 +128,21 @@ export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
             )}
             <button
               class="title-btn"
+              aria-expanded={showing === 'campaign' ? 'true' : 'false'}
+              onClick={() => {
+                toggle('campaign');
+              }}
+            >
+              Campaign
+            </button>
+            <button
+              class="title-btn"
+              title="A center of your own, with no deadline"
               onClick={() => {
                 onPick('new');
               }}
             >
-              New game
+              Sandbox
             </button>
             <button
               class="title-btn"
@@ -140,6 +158,9 @@ export function TitleScreen({ audio, exit, onPick }: TitleScreenProps) {
                 Exit
               </button>
             )}
+          </div>
+          <div id="title-campaign" class="title-sub" hidden={showing !== 'campaign'}>
+            {opened.includes('campaign') && <CampaignPanel onStart={onPick} />}
           </div>
           <div id="title-saves" class="title-sub" hidden={showing !== 'saves'}>
             {opened.includes('saves') && <SavesPanel onLoad={onPick} />}

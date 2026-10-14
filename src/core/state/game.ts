@@ -71,7 +71,12 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
   return s;
 }
 
-/** Whether a discipline is switched on for this game. Massage always is. */
+/** Whether a discipline exists in this game's center at all. Massage always does. */
+export function disciplineHere(s: GameState, d: Discipline): boolean {
+  return !DISCIPLINES[d].optional || CENTERS[s.center].disciplines.includes(d);
+}
+
+/** Whether a discipline is switched on for this game: on offer in its center, and not switched off. Massage always is. */
 export function disciplineOn(s: GameState, d: Discipline): boolean {
-  return !DISCIPLINES[d].optional || s.options[d] !== false;
+  return !DISCIPLINES[d].optional || (disciplineHere(s, d) && s.options[d] !== false);
 }

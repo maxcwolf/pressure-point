@@ -9,6 +9,7 @@ import { showTitle } from '../ui';
 import { desktop } from './desktop';
 import { startGame } from './game';
 import { takeHandoff } from './handoff';
+import { newGameCenter } from './start';
 
 /** Start up: open the game the last page asked for, or show the title screen until one is picked. */
 export async function boot() {
@@ -32,12 +33,13 @@ export async function boot() {
   startGame({ canvas, audio, state, exit });
 }
 
-/** Open a saved game by id, or a fresh one for 'new'. Null if there is nothing to open. */
+/** Open a saved game by id, or a fresh one for 'new' or 'new:<center>'. Null if there is nothing to open. */
 function open(what: string | null): GameState | null {
   if (!what) return null;
-  const state = what === 'new' ? newGame() : readSave(what);
-  // a new game starts with the treatments chosen in Settings
-  if (state && what === 'new') state.options = loadDisciplinePrefs();
+  const center = newGameCenter(what);
+  const state = center ? newGame(center) : readSave(what);
+  // a new sandbox game starts with the treatments chosen in Settings; a campaign center decides its own
+  if (state && center === 'sandbox') state.options = loadDisciplinePrefs();
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
   if (state && what !== AUTOSAVE_ID) archiveAutosave();
   return state;

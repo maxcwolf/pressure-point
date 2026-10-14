@@ -3,7 +3,7 @@
 // Everything lives in localStorage, which both the browser and the desktop app
 // have. Saves can also be exported to a file and imported again, for backups
 // and for moving a game between the browser and the app.
-import { CENTERS, CONDITIONS, DAYS_PER_MONTH, ITEMS, MODALITIES, ROLES, ROOMS } from '../core/data';
+import { type CenterId, CENTERS, CONDITIONS, DAYS_PER_MONTH, ITEMS, MODALITIES, ROLES, ROOMS } from '../core/data';
 import { SAVE_VERSION } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { upgradeSave } from '../core/state/upgrade';
@@ -32,6 +32,8 @@ export interface SaveInfo {
   money: number;
   stars: number;
   healed: number;
+  /** The center the game is set in; absent in entries written before there were centers, which were sandbox games. */
+  center?: CenterId;
 }
 
 export type SaveError = 'invalid' | 'full';
@@ -46,7 +48,16 @@ export const defaultSaveName = (s: GameState) => gameDate(s.day);
 
 /** The list entry for a save: its name, time and headline figures. */
 function summarize(id: string, name: string, s: GameState, savedAt: number): SaveInfo {
-  return { id, name, savedAt, day: s.day, money: Math.round(s.money), stars: s.stars, healed: s.stats.healed };
+  return {
+    id,
+    name,
+    savedAt,
+    day: s.day,
+    money: Math.round(s.money),
+    stars: s.stars,
+    healed: s.stats.healed,
+    center: s.center,
+  };
 }
 
 const CONDITION_IDS = new Set<unknown>(CONDITIONS.map((c) => c.id));
