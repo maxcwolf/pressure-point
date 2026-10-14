@@ -3,6 +3,9 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import type { Item } from '../../src/core/state/types';
 import { ItemsLayer } from '../../src/render/items';
+import { partsOf } from '../../src/render/models/parts';
+import type { PeopleLayer } from '../../src/render/people';
+import { Picker } from '../../src/render/picking';
 import { openCenter } from './helpers';
 
 /** Does nothing, for every call the scene makes that a test has no use for. */
@@ -81,5 +84,30 @@ describe('drawing items', () => {
     const afterOne = seen.size;
     for (let i = 0; i < 20; i++) session(items, table, seen, scene);
     expect(seen.size).toBe(afterOne);
+  });
+
+  it('does not let a hidden marker over a mended item catch clicks', () => {
+    const { sim, scene, items, table } = drawnCenter();
+    // broken, so a wrench appears over it; then mended, so the wrench is hidden
+    table.wear = 100;
+    items.animate(0);
+    table.wear = 0;
+    items.animate(0);
+    const model = items.models().find((m) => m.userData.itemId === table.id)!;
+    const wrench = partsOf(model).wrench!;
+    expect(wrench.visible).toBe(false);
+    // look straight at where the wrench floats, from the direction the game's camera looks
+    scene.updateMatrixWorld(true);
+    const at = wrench.getWorldPosition(new THREE.Vector3());
+    const camera = new THREE.PerspectiveCamera(30, 1440 / 900, 1, 400);
+    camera.position.copy(at).addScaledVector(new THREE.Vector3(1, 1.2, 1).normalize(), 41);
+    camera.lookAt(at);
+    camera.updateMatrixWorld();
+    const people = {
+      /** Nobody is in the way. */
+      picks: () => [] as THREE.Object3D[],
+    };
+    const picked = new Picker(camera, people as unknown as PeopleLayer, items, sim).pick(720, 450);
+    expect(picked).not.toEqual({ kind: 'item', id: table.id });
   });
 });

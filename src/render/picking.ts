@@ -15,6 +15,12 @@ interface PickData {
 /** Read what a clickable object stands for. */
 const pickData = (o: THREE.Object3D) => o.userData as PickData;
 
+/** Whether an object is actually drawn: it and everything it hangs from are visible. Rays hit hidden objects too. */
+export function shown(o: THREE.Object3D | null): boolean {
+  for (; o; o = o.parent) if (!o.visible) return false;
+  return true;
+}
+
 export interface Selection {
   kind: 'guest' | 'staff' | 'item' | 'room';
   id: number;
@@ -49,7 +55,7 @@ export class Picker {
     const hit = this.raycaster.intersectObjects(this.people.picks(), false)[0];
     const char = hit && pickData(hit.object);
     if (char?.charKind && char.charId !== undefined) return { kind: char.charKind, id: char.charId };
-    const itemHit = this.raycaster.intersectObjects(this.items.models(), true)[0];
+    const itemHit = this.raycaster.intersectObjects(this.items.models(), true).find((h) => shown(h.object));
     const itemId = itemHit && pickData(itemHit.object).itemId;
     if (itemId) return { kind: 'item', id: itemId };
     const g = this.groundAt(clientX, clientY);
