@@ -2,8 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.4.1
 
+- **A new title screen**, with the new logo, a picture of your latest game and its stats, and big buttons to get going.
+- **An app icon** for macOS and Windows, and one for the browser tab.
 - **Toilets get grubby** with use. A filthy one costs guests patience and spoils the room until a Janitor cleans it.
 - The Janitor's description now lists everything they do.
 
