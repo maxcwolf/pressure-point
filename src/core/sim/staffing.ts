@@ -26,6 +26,7 @@ import { accessIndex, claim, findAccess, release } from './claims';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
+import { resetGuest } from './guests';
 import { goTo, halt, moveAlong } from './movement';
 import { hasItem } from './progress';
 import { graduate } from './training';
@@ -167,7 +168,12 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
 /** Step away from the station they were staffing. */
 function leavePost(ctx: SimContext, st: Staff) {
   const it = ctx.world.item(st.post);
-  if (it?.staffId === st.id) it.staffId = 0;
+  if (it?.staffId === st.id) {
+    it.staffId = 0;
+    // whoever they had called or were seeing goes back to the line, rather than wait on the table for nobody
+    const g = guestById(ctx, it.serving);
+    if (g) resetGuest(ctx, g);
+  }
   st.post = 0;
   st.busy = false;
 }

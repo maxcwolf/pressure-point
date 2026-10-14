@@ -147,6 +147,30 @@ describe('staff', () => {
     expect(table.staffId).toBe(0);
     runUntil(sim, () => !s.staff.includes(therapist), 200);
   });
+
+  it('send the guest on their table back to the line when let go mid-treatment', () => {
+    const { sim, s, therapist } = openCenter(1);
+    const table = s.items.find((i) => i.type === 'massage_table')!;
+    runUntil(sim, () => sim.guest(table.serving)?.state === 'served', 600);
+    const g = sim.guest(table.serving)!;
+    sim.fire(therapist.id);
+    expect(inconsistencies(sim)).toEqual([]);
+    expect(g.state).not.toBe('served');
+    // with nobody to treat them they lose patience and leave, rather than lying there for good
+    runUntil(sim, () => !s.guests.includes(g), 900);
+  });
+
+  it('send the guest on their table back to the line when sent on a course mid-treatment', () => {
+    const { sim, s, therapist } = openCenter(3);
+    addTraining(sim);
+    const table = s.items.find((i) => i.type === 'massage_table')!;
+    runUntil(sim, () => sim.guest(table.serving)?.state === 'served', 600);
+    const g = sim.guest(table.serving)!;
+    expect(sim.train(therapist.id, 'skill')).toBe(true);
+    expect(inconsistencies(sim)).toEqual([]);
+    expect(g.state).not.toBe('served');
+    expect(table.serving).toBe(0);
+  });
 });
 
 describe('janitors', () => {
