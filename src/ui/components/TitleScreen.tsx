@@ -2,7 +2,7 @@
 
 import './TitleScreen.css';
 
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 
 import type { Audio } from '../../audio';
 import { CENTERS, GAME_TITLE } from '../../core/data';
@@ -31,25 +31,38 @@ export interface TitleScreenProps {
 
 type Panel = 'campaign' | 'sandbox' | 'saves' | 'settings';
 
+/** The heading over each panel. */
+const PANEL_NAMES: Readonly<Record<Panel, string>> = {
+  campaign: 'Campaign',
+  sandbox: 'Sandbox',
+  saves: 'Load game',
+  settings: 'Settings',
+};
+
 /** The logo, the latest save and the ways into the game. */
 export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps) {
   const redraw = useRedraw();
-  /** The panel showing under the buttons. The two share the space, one at a time. */
+  /** The panel showing under the logo in place of the menu, if any. */
   const [showing, setShowing] = useState<Panel | null>(null);
   /** Panels that have been opened stay in place while hidden, so they keep what was typed into them. */
   const [opened, setOpened] = useState<readonly Panel[]>([]);
   const latest = latestSave();
-  /** Show a panel, or hide it if it is the one showing. */
-  const toggle = (panel: Panel) => {
-    const opening = showing !== panel;
-    setShowing(opening ? panel : null);
+  /** Show a panel in place of the menu. */
+  const open = (panel: Panel) => {
+    setShowing(panel);
     if (!opened.includes(panel)) setOpened([...opened, panel]);
-    // a panel opens under the buttons, often below the bottom of the window, so bring it into view
-    if (opening)
-      requestAnimationFrame(() => {
-        document.getElementById(`title-${panel}`)?.scrollIntoView({ block: 'nearest' });
-      });
   };
+  // Esc goes back from a panel to the menu
+  useEffect(() => {
+    /** Close the panel on Esc. */
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowing(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+    };
+  }, []);
   /** Flip a sound switch. A click is what browsers need before any sound, so music can start right here. */
   const flip = (change: () => void) => () => {
     audio.unlock();
@@ -88,13 +101,26 @@ export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps
         <h1 class="title-logo">
           <img src={logo} alt={GAME_TITLE} />
         </h1>
-        <div class="title-panel">
+        <div class={cx('title-panel', showing && 'has-sub')}>
           {note && (
             <p class="title-note" role="alert">
               {note}
             </p>
           )}
-          {latest && (
+          {showing && (
+            <div class="title-sub-head">
+              <button
+                class="title-back"
+                onClick={() => {
+                  setShowing(null);
+                }}
+              >
+                ‹ Back
+              </button>
+              <h2>{PANEL_NAMES[showing]}</h2>
+            </div>
+          )}
+          {!showing && latest && (
             <div class="save-card">
               <h2>{latest.name}</h2>
               {latest.center && latest.center !== 'sandbox' && <p class="center-name">{CENTERS[latest.center].name}</p>}
@@ -112,7 +138,7 @@ export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps
               </div>
             </div>
           )}
-          <div class="title-buttons">
+          <div class="title-buttons" hidden={!!showing}>
             {latest && (
               <>
                 <button
@@ -125,9 +151,8 @@ export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps
                 </button>
                 <button
                   class="title-btn"
-                  aria-expanded={showing === 'saves' ? 'true' : 'false'}
                   onClick={() => {
-                    toggle('saves');
+                    open('saves');
                   }}
                 >
                   Load game
@@ -136,9 +161,8 @@ export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps
             )}
             <button
               class="title-btn"
-              aria-expanded={showing === 'campaign' ? 'true' : 'false'}
               onClick={() => {
-                toggle('campaign');
+                open('campaign');
               }}
             >
               Campaign
@@ -146,18 +170,16 @@ export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps
             <button
               class="title-btn"
               title="A center of your own, with no deadline"
-              aria-expanded={showing === 'sandbox' ? 'true' : 'false'}
               onClick={() => {
-                toggle('sandbox');
+                open('sandbox');
               }}
             >
               Sandbox
             </button>
             <button
               class="title-btn"
-              aria-expanded={showing === 'settings' ? 'true' : 'false'}
               onClick={() => {
-                toggle('settings');
+                open('settings');
               }}
             >
               Settings
@@ -188,7 +210,7 @@ export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps
             {opened.includes('settings') && <SettingsPanel audio={audio} onChange={redraw} />}
           </div>
         </div>
-        <div class="title-tray">
+        <div class="title-tray" hidden={!!showing}>
           {badges.map((b) => (
             <span key={b.label} class={cx('title-badge', !b.on && 'off')} title={b.label} aria-label={b.label}>
               {b.icon}

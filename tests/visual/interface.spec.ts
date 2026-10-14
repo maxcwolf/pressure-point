@@ -12,6 +12,7 @@ test.describe('title screen', () => {
     await screens.title();
     await page.getByRole('button', { name: 'Settings' }).click();
     await screens.shot('title-settings');
+    await page.getByRole('button', { name: 'Back' }).click();
     await page.getByRole('button', { name: 'Load game' }).click();
     await screens.shot('title-saves');
   });
@@ -30,6 +31,14 @@ test.describe('title screen', () => {
     await screens.shot('title-karma-shop');
     await page.getByRole('tab', { name: 'Achievements' }).click();
     await screens.shot('title-achievements');
+  });
+
+  test('in a short window', async ({ screens, page }) => {
+    await page.setViewportSize({ width: 1000, height: 600 });
+    await screens.title();
+    await screens.shot('title-short');
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await screens.shot('title-short-settings');
   });
 
   test('the sandbox settings', async ({ screens, page }) => {

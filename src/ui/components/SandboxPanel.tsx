@@ -29,7 +29,6 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
   };
   return (
     <div class="sandbox settings">
-      <h3>Sandbox</h3>
       <p class="sub">A big lot of your own, with no deadline. Set it up how you like.</p>
       <h4>Starting money</h4>
       <div class="tabs money" role="radiogroup" aria-label="Starting money">

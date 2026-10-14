@@ -817,6 +817,12 @@ test.describe('acupuncture and settings', () => {
     await page.getByRole('switch', { name: 'Music' }).click();
     await expect(page.locator('.title-sys').getByTitle('Music')).toHaveAttribute('aria-pressed', 'false');
 
+    // the panel stands in for the menu until Back, or Esc
+    await expect(page.getByRole('button', { name: 'Sandbox' })).toBeHidden();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Sandbox' }).click();
+    await expect(page.locator('#title-sandbox')).toBeVisible();
+    await page.getByRole('button', { name: 'Back' }).click();
     await page.getByRole('button', { name: 'Sandbox' }).click();
 
     await page.getByRole('button', { name: 'Start building' }).click();

@@ -32,7 +32,6 @@ export function CampaignPanel({ onStart }: CampaignPanelProps) {
   const progress = loadCampaign();
   return (
     <div class="campaign">
-      <h3>Campaign</h3>
       <p class="karma">{karmaText(karmaLeft(progress))}</p>
       <div class="tabs" role="tablist">
         {TABS.map((t) => (
