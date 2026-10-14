@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 
-import { BY0, BY1, W } from '../core/data';
+import type { Plot } from '../core/data';
 import { keepNearMap, tilesPerPixel, zoomedDist } from './camera-math';
 
 const CAM_DIR = new THREE.Vector3(1, 1.2, 1).normalize();
@@ -11,8 +11,12 @@ const PAN_UP = new THREE.Vector3(-1, 0, -1).normalize();
 
 export class CameraRig {
   readonly camera = new THREE.PerspectiveCamera(30, 1, 1, 400);
-  /** The point on the ground the camera looks at. */
-  readonly target = new THREE.Vector3(W / 2 - 1, 0, (BY0 + BY1) / 2 + 1.5);
+  /** The point on the ground the camera looks at: to begin with, the middle of the building. */
+  readonly target: THREE.Vector3;
+  constructor(plot: Plot) {
+    this.target = new THREE.Vector3((plot.x0 + plot.x1) / 2, 0, (plot.y0 + plot.y1) / 2 + 1.5);
+  }
+
   /** How far back from the target the camera sits. */
   dist = 41;
   /** Where the camera is gliding to, if it has been asked to look somewhere. */

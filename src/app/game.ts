@@ -1,7 +1,7 @@
 // A game in progress: the simulation, the view of it, the tools, the interface and the loop that runs them.
 
 import type { Audio } from '../audio';
-import { BX0, BX1, BY0, BY1, ITEMS, ROOMS, W } from '../core/data';
+import { ITEMS, ROOMS, W } from '../core/data';
 import { Sim } from '../core/sim/sim';
 import type { GameState } from '../core/state/types';
 import { accessTile, itemDims } from '../core/world';
@@ -93,7 +93,8 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
 
   // a handle for the browser console and the end-to-end tests, in development builds only
   if (import.meta.env.DEV) {
-    const data = { ITEMS, ROOMS, W, BX0, BX1, BY0, BY1 };
+    const { x0, x1, y0, y1 } = sim.world.plot;
+    const data = { ITEMS, ROOMS, W, BX0: x0, BX1: x1, BY0: y0, BY1: y1 };
     Object.assign(window, { pp: { sim, view, tools, ui, state, data, geo: { itemDims, accessTile } } });
   }
 }

@@ -1,6 +1,6 @@
 // Starting a game, and small questions asked of one.
 
-import { type Discipline, DISCIPLINES, START_MONEY } from '../data';
+import { type CenterId, CENTERS, type Discipline, DISCIPLINES } from '../data';
 import { refillCandidates } from '../people';
 import type { GameState, Ledger, Tally, WallSpot } from './types';
 
@@ -33,12 +33,13 @@ export const emptyLedger = (): Ledger => ({
 
 export const SAVE_VERSION = 3;
 
-/** The state of a brand new game. */
-export function newGame(): GameState {
+/** The state of a brand new game, in the sandbox unless a center is given. */
+export function newGame(center: CenterId = 'sandbox'): GameState {
   const s: GameState = {
     version: SAVE_VERSION,
+    center,
     nextId: 1,
-    money: START_MONEY,
+    money: CENTERS[center].startMoney,
     reputation: 30,
     day: 0,
     speed: 1,
@@ -52,7 +53,7 @@ export function newGame(): GameState {
     ledger: emptyLedger(),
     lastLedger: emptyLedger(),
     history: [],
-    stats: { healed: 0, failed: 0, stormed: 0, priced: 0, arrived: 0 },
+    stats: { healed: 0, failed: 0, stormed: 0, priced: 0, arrived: 0, healedBy: {}, emergencies: 0, lastQuit: -1 },
     tally: emptyTally(),
     months: [],
     stars: 0,

@@ -7,8 +7,6 @@ import {
   CONDITIONS,
   DIRT_FILTHY,
   DISCIPLINES,
-  ENT_IN_Y,
-  ENT_X,
   FILTHY_PATIENCE,
   ITEMS,
   MODALITIES,
@@ -20,7 +18,7 @@ import { randomLook, randomName } from '../people';
 import { pick, random, rnd } from '../random';
 import type { Guest, Item, Need } from '../state/types';
 import { at } from '../util';
-import { accessPose, accessTile, inBuilding, itemCenter, rotVec, tileIdx, Z_CORRIDOR } from '../world';
+import { accessPose, accessTile, itemCenter, rotVec, tileIdx, Z_CORRIDOR } from '../world';
 import { drainFactor } from './ambience';
 import { lobbyTile, say, streetTile } from './chars';
 import { newChar } from './chars';
@@ -78,7 +76,7 @@ export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency =
     waited: 0,
     emergency,
   };
-  const [lx, ly] = lobbyTile();
+  const [lx, ly] = lobbyTile(ctx.world.plot);
   if (!goTo(ctx, g, lx, ly)) return;
   s.guests.push(g);
   countArrival(ctx);
@@ -133,7 +131,11 @@ function queueTile(ctx: SimContext, it: Item, n: number): [number, number] {
   for (let i = 0; i <= n; i++) {
     const nx = x + dx;
     const ny = y + dy;
-    if (!inBuilding(nx, ny) || ctx.world.zone[tileIdx(nx, ny)] !== Z_CORRIDOR || ctx.world.blocked[tileIdx(nx, ny)]) {
+    if (
+      !ctx.world.inside(nx, ny) ||
+      ctx.world.zone[tileIdx(nx, ny)] !== Z_CORRIDOR ||
+      ctx.world.blocked[tileIdx(nx, ny)]
+    ) {
       const spots = ctx.world.standSpots(ax, ay, n + 6);
       return spots[Math.min(spots.length - 1, n + 2)] ?? [ax, ay];
     }
@@ -151,7 +153,8 @@ function waitAnchor(ctx: SimContext, g: Guest): [number, number] {
     if (room) return [room.door.x + room.door.dx, room.door.y + room.door.dy];
     return accessTile(st, accessIndex(st, 'guest'));
   }
-  return [ENT_X[0], ENT_IN_Y - 3];
+  const { door, y1 } = ctx.world.plot;
+  return [door[0], y1 - 3];
 }
 
 /** Send a guest to wait: in line at reception, otherwise on a nearby seat or standing spot. */

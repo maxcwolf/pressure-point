@@ -14,7 +14,7 @@ import type { SfxName } from '../../core/sim/events';
 import type { Sim } from '../../core/sim/sim';
 import { sameSpot } from '../../core/state/game';
 import type { Room, WallSpot } from '../../core/state/types';
-import { inBuilding, tileIdx, Z_CORRIDOR } from '../../core/world';
+import { tileIdx, Z_CORRIDOR } from '../../core/world';
 import { type Marker, OV_BAD, OV_BLUE, OV_GOOD, type OverlayTile } from '../../render/overlay-codes';
 import type { Selection } from '../../render/picking';
 import type { View } from '../../render/view';
@@ -293,7 +293,7 @@ export class Tools {
   private isFree(x: number, y: number): boolean {
     const world = this.sim.world;
     const i = tileIdx(x, y);
-    return inBuilding(x, y) && world.zone[i] === Z_CORRIDOR && !world.blocked[i] && !world.reserved[i];
+    return world.inside(x, y) && world.zone[i] === Z_CORRIDOR && !world.blocked[i] && !world.reserved[i];
   }
 
   /** Ghost, footprint and the squares people will use, marked by who they are for. */

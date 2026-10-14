@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { BX0, BY0, ENT_IN_Y, ENT_X, SIDEWALK_Y, W } from '../../src/core/data';
+import { SANDBOX_PLOT, SIDEWALK_Y, W } from '../../src/core/data';
 import { accessPose, accessTile, footprint, itemDims, rotPoint, rotVec } from '../../src/core/world';
 import { addConsult, addMassage, freshSim, hire, LAYOUT } from './helpers';
+
+/** The sandbox building's corner and front door. */
+const { x0: BX0, y0: BY0, y1: ENT_IN_Y, door: ENT_X } = SANDBOX_PLOT;
 
 describe('item geometry', () => {
   it('rotates points a quarter turn at a time and comes back round', () => {

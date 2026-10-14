@@ -100,7 +100,7 @@ Each phase ships on its own.
 
 That makes the phases:
 
-1. **Foundations:** the map into the game state, a center per game, per-center goals. Nothing visible changes.
+1. **Foundations:** the map into the game state, a center per game, per-center goals. Nothing visible changes. _Done:_ every game has a center, the building's place comes from it, goals are per center with eight kinds of objective, and Willow Lane exists as data (not yet reachable from the title screen).
 2. **The campaign, playable:** progress storage, the region map, Willow Lane and The Exchange with rush hours.
 3. **Saltmarsh:** the seasons twist, its conditions and seaside scenery, reiki in the campaign.
 4. **The unlock currency and sandbox settings.**

@@ -2,7 +2,7 @@
 
 import './StarDialog.css';
 
-import { STAR_GOALS } from '../../../core/data';
+import { centerOf } from '../../../core/data';
 import { money } from '../../../core/format';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { roomsUnlockedAt, treatmentsUnlockedAt } from '../../lib/unlocks';
@@ -15,6 +15,7 @@ export function StarDialog() {
   const hud = useHud();
   const { sim } = useGame();
   const n = hud.star;
+  const goals = centerOf(sim.s).goals;
   /** Whether a discipline is switched on. */
   const enabled = sim.enabled.bind(sim);
   const rooms = roomsUnlockedAt(n, enabled);
@@ -22,9 +23,9 @@ export function StarDialog() {
   return (
     <Dialog>
       <div class="bigstars">
-        <StarRow earned={n} of={STAR_GOALS.length} />
+        <StarRow earned={n} of={goals.length} />
       </div>{' '}
-      <h2>{n >= STAR_GOALS.length ? 'Three stars!' : `Star ${n} earned!`}</h2>{' '}
+      <h2>{n >= goals.length ? 'Three stars!' : `Star ${n} earned!`}</h2>{' '}
       <p>{`The wellness inspectors were deeply relaxed by what they saw. Here is a ${money(5000 * n)} grant.`}</p>
       {rooms.length > 0 && (
         <p class="unlock">
@@ -42,7 +43,7 @@ export function StarDialog() {
         </p>
       )}{' '}
       <p class="sub">
-        {STAR_GOALS[n]
+        {goals[n]
           ? 'New objectives are waiting in the top-left corner.'
           : 'You have mastered the lot. Every treatment is open to you.'}
       </p>{' '}

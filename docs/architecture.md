@@ -35,6 +35,7 @@ Input goes the other way. Pointer and keyboard handlers in `src/app/` call the b
 - **Logic is functions.** Each file in `core/sim/` covers one area (guests, staffing, stations, building, economy and so on) as functions that take a `SimContext`: the state, the `World` grid built from it, the queue of events and the ambience grid. Functions that need none of that take no context and are pure.
 - **`Sim` is the front door.** The rest of the game talks only to the `Sim` class, which runs the clock and passes each call to the function that does the work.
 - **The game reports, it does not draw.** It queues events (`core/sim/events.ts`); the interface decides how to show them.
+- **Every game is set in a center** (`core/data/centers.ts`): the sandbox, or one of the campaign's. A center decides where the building stands on the lot (its `Plot`), the starting money, and the objectives for each star. The `World` reads the plot from the game's center, so nothing else assumes a fixed building. Objectives are small specs (`GoalSpec`) that `core/sim/goals.ts` checks against the game.
 - **Random numbers are seeded.** Everything random goes through `core/random.ts`, so a test can replay a game exactly.
 
 ## Rendering (`src/render/`)
@@ -88,6 +89,8 @@ End-to-end tests find things by meaning (`game.clickItem('bench')`), not by scre
 ## Common changes
 
 **Add an item.** Add its type to `ItemType` and an entry to `ITEMS` in `core/data/`, then a model in `render/models/items/` and a line in that folder's `index.ts`. The compiler will not build until every item type has a model.
+
+**Add a center.** Add its id to `CenterId` and an entry to `CENTERS`: a plot that passes `plotFits`, starting money and three stars of goals. A new kind of objective is a case in `GoalSpec` and in `objectiveFor`.
 
 **Add a discipline.** Add an entry to `DISCIPLINES`, a room, its items, a staff role, and its modalities and conditions, all in `core/data/`, then a model for each new item. The simulation, the menus and Settings pick it up from the data.
 

@@ -1,6 +1,4 @@
-// The numbers that tune the game: time, fees, loans, wear and the goals for each star.
-
-import type { StarGoal } from './types';
+// The numbers that tune the game: time, fees, loans and wear. Each center's goals are in centers.ts.
 
 export const DAY_SECONDS = 6;
 /** Days an emergency stays on offer, and days to heal its guests once accepted. */
@@ -14,8 +12,6 @@ export const QUIT_AFTER = 60;
 /** How long before walking out the alarm goes up: two days. */
 export const QUIT_WARNING = 2 * DAY_SECONDS;
 export const DAYS_PER_MONTH = 30;
-
-export const START_MONEY = 30000;
 
 /** Stone warmers lose this much heat per Hot Stone session and are useless below it. */
 export const STONE_USE = 25;
@@ -67,12 +63,6 @@ export const PLAY_PATIENCE = 25;
 
 export const DECOR_RADIUS = 4;
 export const DIAGNOSIS_TARGET = 0.75;
-
-export const STAR_GOALS: readonly StarGoal[] = [
-  { healed: 8, reputation: 40, balance: 0 },
-  { healed: 30, reputation: 60, balance: 50000 },
-  { healed: 80, reputation: 80, balance: 120000 },
-];
 
 /** Share of guests and applicants who get a cameo name instead of a generated one. */
 export const CAMEO_CHANCE = 0.12;

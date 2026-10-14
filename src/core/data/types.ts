@@ -1,5 +1,7 @@
 // The shapes of the game's content: what a room, an item, a role, a modality and a condition are.
 
+import type { Plot } from './map';
+
 export type RoomType =
   'consult' | 'assess' | 'massage' | 'acupuncture' | 'reiki' | 'staffroom' | 'restroom' | 'training';
 
@@ -263,8 +265,37 @@ export interface ConditionDef {
   visual: Visual;
 }
 
-export interface StarGoal {
-  healed: number;
-  reputation: number;
-  balance: number;
+/** One objective toward a star. */
+export type GoalSpec =
+  /** Heal this many guests in all, or with one discipline. */
+  | { kind: 'healed'; count: number; discipline?: Discipline }
+  | { kind: 'reputation'; percent: number }
+  | { kind: 'balance'; amount: number }
+  /** Heal at least this share of the guests treated in a month (with at least a few treated). */
+  | { kind: 'cureRate'; percent: number }
+  /** Keep the average wait in a month under this many days. */
+  | { kind: 'wait'; days: number }
+  /** See emergencies through to the end successfully. */
+  | { kind: 'emergencies'; count: number }
+  /** Have a finished room of this type at this prestige or better. */
+  | { kind: 'prestige'; room: RoomType; level: number }
+  /** Go this many days without anyone quitting. */
+  | { kind: 'noQuits'; days: number };
+
+/** The objectives for one star: all must be met at once. */
+export type StarGoal = readonly GoalSpec[];
+
+export type CenterId = 'sandbox' | 'willow';
+
+/** A center to run: the sandbox, or one of the campaign's. */
+export interface CenterDef {
+  id: CenterId;
+  name: string;
+  /** Where it is, in a few words, and a line or two about it. */
+  place: string;
+  blurb: string;
+  plot: Plot;
+  startMoney: number;
+  /** The objectives for each star in turn. */
+  goals: readonly StarGoal[];
 }

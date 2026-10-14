@@ -18,9 +18,18 @@ type OldLedger = Before<Ledger, 'training' | 'interest' | 'bonus'>;
 /** A save as an earlier version may have written it. */
 type OldSave = Before<
   Omit<GameState, 'staff' | 'candidates' | 'items' | 'rooms' | 'guests' | 'ledger' | 'lastLedger' | 'stats'>,
-  'announceT' | 'loan' | 'priceLevel' | 'offer' | 'emergency' | 'nextEmergency' | 'options' | 'tally' | 'months'
+  | 'announceT'
+  | 'loan'
+  | 'priceLevel'
+  | 'offer'
+  | 'emergency'
+  | 'nextEmergency'
+  | 'options'
+  | 'tally'
+  | 'months'
+  | 'center'
 > & {
-  stats: Before<Stats, 'priced'>;
+  stats: Before<Stats, 'priced' | 'healedBy' | 'emergencies' | 'lastQuit'>;
   staff: Before<Staff, 'quals' | 'training' | 'strain' | 'morale' | 'raiseAsked' | 'unhappyT'>[];
   candidates: Before<Candidate, 'quals'>[];
   items: Before<Item, 'wear' | 'dirt'>[];
@@ -62,6 +71,11 @@ export function upgradeSave(save: GameState) {
   s.nextEmergency ??= s.day + 60;
   s.options ??= {};
   s.stats.priced ??= 0;
+  s.stats.healedBy ??= {};
+  s.stats.emergencies ??= 0;
+  s.stats.lastQuit ??= -1;
+  // every game from before the campaign was a sandbox game
+  s.center ??= 'sandbox';
   s.tally ??= emptyTally();
   s.months ??= [];
   s.version = SAVE_VERSION;

@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 
-import { ENT_IN_Y, ENT_X, H, ROAD_Y, ROOMS, W } from '../core/data';
+import { H, ROAD_Y, ROOMS, W } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import { must } from '../core/util';
 import { Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
@@ -119,13 +119,14 @@ export class Floor {
       }
     }
     // welcome mat
+    const { door, y1 } = world.plot;
     ctx.fillStyle = '#2fa8a0';
-    ctx.fillRect(ENT_X[0] * TS + 10, ENT_IN_Y * TS + 14, ENT_X.length * TS - 20, TS - 22);
+    ctx.fillRect(door[0] * TS + 10, y1 * TS + 14, door.length * TS - 20, TS - 22);
     ctx.fillStyle = '#fff8e8';
     ctx.font = '700 15px Fredoka, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('NAMASTE', (ENT_X[0] + ENT_X.length / 2) * TS, ENT_IN_Y * TS + TS / 2 + 4);
+    ctx.fillText('NAMASTE', (door[0] + door.length / 2) * TS, y1 * TS + TS / 2 + 4);
     // door thresholds
     for (const r of this.sim.s.rooms) {
       ctx.fillStyle = `#${ROOMS[r.type].trim.toString(16).padStart(6, '0')}`;

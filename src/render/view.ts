@@ -22,7 +22,7 @@ export class View {
   private sun: THREE.DirectionalLight;
   /** The world as last drawn, so rooms and items are only rebuilt when something changes. */
   private worldVersion = -1;
-  private rig = new CameraRig();
+  private rig: CameraRig;
   private floor: Floor;
   private rooms: RoomsLayer;
   private items: ItemsLayer;
@@ -56,7 +56,8 @@ export class View {
     this.sun.shadow.normalBias = 0.03;
     this.scene.add(this.sun, this.sun.target);
 
-    buildScenery(this.scene);
+    this.rig = new CameraRig(sim.world.plot);
+    buildScenery(this.scene, sim.world.plot);
     this.floor = new Floor(this.scene, sim);
     this.rooms = new RoomsLayer(this.scene, sim);
     this.items = new ItemsLayer(this.scene, sim);

@@ -2,7 +2,7 @@
 
 import './Objectives.css';
 
-import { conditionOf, STAR_GOALS } from '../../core/data';
+import { centerOf, conditionOf } from '../../core/data';
 import { useGame } from '../hooks/use-hud';
 import { Bar } from './common/Bar';
 import { StarRow } from './common/Stars';
@@ -13,11 +13,12 @@ export function Objectives() {
   const s = sim.s;
   const objectives = sim.objectives();
   const emergency = s.emergency;
+  const goals = centerOf(s).goals;
   return (
     <div id="objectives" class="panel">
-      <h3>{STAR_GOALS[s.stars] ? `Star ${s.stars + 1} objectives` : 'All stars earned!'}</h3>
+      <h3>{goals[s.stars] ? `Star ${s.stars + 1} objectives` : 'All stars earned!'}</h3>
       <div class="stars">
-        <StarRow earned={s.stars} of={STAR_GOALS.length} />
+        <StarRow earned={s.stars} of={goals.length} />
       </div>
       <ul>
         {objectives.length ? (

@@ -1,6 +1,6 @@
 // People in general, guests and staff alike: finding them, creating them and where they come and go.
 
-import { ENT_IN_Y, ENT_X, SIDEWALK_Y, W } from '../data';
+import { type Plot, SIDEWALK_Y, W } from '../data';
 import { pick, random } from '../random';
 import type { Char, Guest, Look, Staff } from '../state/types';
 import type { SimContext } from './context';
@@ -58,7 +58,7 @@ export function streetTile(): [number, number] {
   return [random() < 0.5 ? 0 : W - 1, SIDEWALK_Y];
 }
 
-/** A tile just inside one of the entrances. */
-export function lobbyTile(): [number, number] {
-  return [pick(ENT_X), ENT_IN_Y - 1];
+/** A tile just inside the front door, on one side or the other. */
+export function lobbyTile(plot: Plot): [number, number] {
+  return [pick(plot.door), plot.y1 - 1];
 }

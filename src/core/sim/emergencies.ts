@@ -85,6 +85,7 @@ function endEmergency(ctx: SimContext) {
     s.money += e.reward;
     s.ledger.bonus += e.reward;
     changeRep(ctx, 4);
+    s.stats.emergencies++;
     toast(ctx, `Emergency handled: ${e.healed} cases of ${name} healed. ${money(e.reward)} bonus.`, 'good');
     emit(ctx, { type: 'sfx', name: 'fanfare' });
   } else {

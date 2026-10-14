@@ -1,16 +1,12 @@
 // Stars, the objectives for the next one, and what the center has so far.
 
-import { type ItemType, type Role, type RoomType, STAR_GOALS } from '../data';
-import { money } from '../format';
+import { centerOf, type ItemType, type Role, type RoomType } from '../data';
 import { refillCandidates } from '../people';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
+import { type Objective, objectiveFor } from './goals';
 
-export interface Objective {
-  label: string;
-  done: boolean;
-  progress: number;
-}
+export type { Objective } from './goals';
 
 /** Open the doors once the center has the bare minimum: a desk, a consultation room and a massage suite. */
 export function checkOpening(ctx: SimContext) {
@@ -29,8 +25,7 @@ export function checkOpening(ctx: SimContext) {
 /** Award the next star, and its cash prize, once its goals are met. */
 export function checkStars(ctx: SimContext) {
   const s = ctx.s;
-  const goal = STAR_GOALS[s.stars];
-  if (!goal) return;
+  if (!centerOf(s).goals[s.stars]) return;
   // exactly the objectives the player is shown, so nothing hidden holds a star back
   if (objectives(ctx).every((o) => o.done)) {
     s.stars++;
@@ -45,28 +40,13 @@ export function checkStars(ctx: SimContext) {
 
 /** The goals for the next star and how far along each one is. */
 export function objectives(ctx: SimContext): Objective[] {
-  const s = ctx.s;
-  const goal = STAR_GOALS[s.stars];
-  if (!goal) return [];
-  const out: Objective[] = [
-    {
-      label: `Heal ${goal.healed} guests (${Math.min(s.stats.healed, goal.healed)}/${goal.healed})`,
-      done: s.stats.healed >= goal.healed,
-      progress: s.stats.healed / goal.healed,
-    },
-    {
-      label: `Reach ${goal.reputation}% reputation`,
-      done: s.reputation >= goal.reputation,
-      progress: s.reputation / goal.reputation,
-    },
-  ];
-  if (goal.balance > 0)
-    out.push({
-      label: `Have ${money(goal.balance)} in the bank`,
-      done: s.money >= goal.balance,
-      progress: s.money / goal.balance,
-    });
-  return out;
+  const goal = centerOf(ctx.s).goals[ctx.s.stars];
+  return goal ? goal.map((g) => objectiveFor(ctx, g)) : [];
+}
+
+/** Whether every star there is to earn in this center has been earned. */
+export function allStars(ctx: SimContext): boolean {
+  return !centerOf(ctx.s).goals[ctx.s.stars];
 }
 
 /** Whether the center has a usable item of this type. */

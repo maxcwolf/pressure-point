@@ -13,14 +13,13 @@ import {
   modalityLabel,
   ROLES,
   ROOMS,
-  STAR_GOALS,
   STONE_USE,
 } from '../data';
 import { pick, rnd } from '../random';
 import type { Item } from '../state/types';
 import type { SimContext } from './context';
 import { emit, type Subject } from './events';
-import { hasItem, hasRoom, hasStaff } from './progress';
+import { allStars, hasItem, hasRoom, hasStaff } from './progress';
 import { aboutToQuit } from './staffing';
 import { enabled, unlocked } from './treatments';
 
@@ -117,7 +116,7 @@ function nudge(ctx: SimContext): string | Advice {
     return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
   if (s.guests.some((g) => g.thirst > 85) && !hasItem(ctx, 'tea_station'))
     return 'Guests are parched. A Herbal Tea Station would help, and it earns a little too.';
-  if (!STAR_GOALS[s.stars]) return 'Three stars! Every treatment is open to you. Keep the guests coming back.';
+  if (allStars(ctx)) return 'Three stars! Every treatment is open to you. Keep the guests coming back.';
   return 'Looking good. Keep an eye on the objectives to earn your next star.';
 }
 

@@ -2,16 +2,12 @@
 // placement validation and pathfinding.
 
 import {
-  BX0,
-  BX1,
-  BY0,
-  BY1,
-  ENT_IN_Y,
-  ENT_OUT_Y,
-  ENT_X,
+  centerOf,
   H,
   ITEMS,
   type ItemType,
+  outsideDoor,
+  type Plot,
   type Pose,
   ROOMS,
   type RoomType,
@@ -25,8 +21,8 @@ import { at } from './util';
 export const tileIdx = (x: number, y: number) => y * W + x;
 /** Whether a tile is on the map. */
 export const inBounds = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H;
-/** Whether a tile is inside the building. */
-export const inBuilding = (x: number, y: number) => x >= BX0 && x <= BX1 && y >= BY0 && y <= BY1;
+/** Whether a tile is inside a building on its plot. */
+export const inPlot = (p: Plot, x: number, y: number) => x >= p.x0 && x <= p.x1 && y >= p.y0 && y <= p.y1;
 
 /** Zone ids: -2 scenery (not walkable), -1 outdoors path, 0 corridor, >0 room id. */
 export const Z_SCENERY = -2;
@@ -146,6 +142,16 @@ export class World {
     this.rebuild();
   }
 
+  /** Where this game's building stands on its lot. */
+  get plot(): Plot {
+    return centerOf(this.s).plot;
+  }
+
+  /** Whether a tile is inside the building. */
+  inside(x: number, y: number): boolean {
+    return inPlot(this.plot, x, y);
+  }
+
   /** A key for the edge between two neighboring tiles. */
   private edgeKey(ax: number, ay: number, bx: number, by: number) {
     if (ay === by) return tileIdx(Math.min(ax, bx), ay) * 2;
@@ -158,19 +164,21 @@ export class World {
     blocked.fill(0);
     reserved.fill(0);
     doors.clear();
+    const plot = this.plot;
+    const outside = outsideDoor(plot);
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
         let z = Z_SCENERY;
-        if (inBuilding(x, y)) z = Z_CORRIDOR;
+        if (inPlot(plot, x, y)) z = Z_CORRIDOR;
         else if (y === SIDEWALK_Y) z = Z_OUTSIDE;
-        else if (ENT_X.includes(x) && y >= ENT_OUT_Y && y < SIDEWALK_Y) z = Z_OUTSIDE;
+        else if (plot.door.includes(x) && y >= outside && y < SIDEWALK_Y) z = Z_OUTSIDE;
         zone[tileIdx(x, y)] = z;
       }
     }
-    for (const x of ENT_X) {
-      doors.add(this.edgeKey(x, ENT_IN_Y, x, ENT_OUT_Y));
-      reserved[tileIdx(x, ENT_IN_Y)] = 1;
-      reserved[tileIdx(x, ENT_IN_Y - 1)] = 1;
+    for (const x of plot.door) {
+      doors.add(this.edgeKey(x, plot.y1, x, outside));
+      reserved[tileIdx(x, plot.y1)] = 1;
+      reserved[tileIdx(x, plot.y1 - 1)] = 1;
     }
     for (const r of this.s.rooms) {
       for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) zone[tileIdx(x, y)] = r.id;
@@ -350,7 +358,7 @@ export class World {
     /** Whether a tile was reached from the street. */
     const need = (x: number, y: number) => inBounds(x, y) && seen[tileIdx(x, y)] === 1;
     if (!need(W - 1, SIDEWALK_Y)) return false;
-    for (const x of ENT_X) if (!need(x, ENT_IN_Y - 1)) return false;
+    for (const x of this.plot.door) if (!need(x, this.plot.y1 - 1)) return false;
     for (const r of this.s.rooms) {
       if (!need(r.door.x, r.door.y) || !need(r.door.x + r.door.dx, r.door.y + r.door.dy)) return false;
     }
@@ -362,7 +370,7 @@ export class World {
     }
     // nobody already inside may be walled in (their own tile may be the one being built on)
     for (const c of [...this.s.guests, ...this.s.staff]) {
-      if (!inBuilding(c.tx, c.ty)) continue;
+      if (!this.inside(c.tx, c.ty)) continue;
       const { tx: x, ty: y } = c;
       if (!need(x, y) && !need(x + 1, y) && !need(x - 1, y) && !need(x, y + 1) && !need(x, y - 1)) return false;
     }
@@ -377,7 +385,7 @@ export class World {
     const tiles = footprint(it);
     let z: number | null = null;
     for (const [tx, ty] of tiles) {
-      if (!inBuilding(tx, ty)) return no('Must be inside the building');
+      if (!this.inside(tx, ty)) return no('Must be inside the building');
       const i = tileIdx(tx, ty);
       if (def.walkable) {
         // rugs lie flat: fine under furniture and in doorways, but not on another rug
@@ -400,7 +408,7 @@ export class World {
     }
     for (let i = 0; i < def.access.length; i++) {
       const [ax, ay] = accessTile(it, i);
-      if (!inBuilding(ax, ay) || this.zone[tileIdx(ax, ay)] !== z || this.blocked[tileIdx(ax, ay)])
+      if (!this.inside(ax, ay) || this.zone[tileIdx(ax, ay)] !== z || this.blocked[tileIdx(ax, ay)])
         return no('Needs clear space to use it (R rotates)');
     }
     // trial placement to make sure nothing gets cut off
@@ -418,7 +426,7 @@ export class World {
     const def = ROOMS[type];
     for (let y = r.y; y < r.y + r.h; y++) {
       for (let x = r.x; x < r.x + r.w; x++) {
-        if (!inBuilding(x, y)) return no('Must be inside the building');
+        if (!this.inside(x, y)) return no('Must be inside the building');
         const i = tileIdx(x, y);
         if (this.zone[i] !== Z_CORRIDOR) return no('Overlaps another room');
         if (this.blocked[i]) return no('Something is in the way');
@@ -461,7 +469,7 @@ export class World {
   doorValid(type: RoomType, r: Rect, door: Room['door'], replacing?: Room): Check {
     const ox = door.x + door.dx;
     const oy = door.y + door.dy;
-    if (!inBuilding(ox, oy) || this.zone[tileIdx(ox, oy)] !== Z_CORRIDOR) return no('Doors must open onto a corridor');
+    if (!this.inside(ox, oy) || this.zone[tileIdx(ox, oy)] !== Z_CORRIDOR) return no('Doors must open onto a corridor');
     if (this.blocked[tileIdx(ox, oy)]) return no('Something is blocking that doorway');
     if (replacing) {
       if (replacing.windows.some((w) => w.x === door.x && w.y === door.y && w.dx === door.dx && w.dy === door.dy))

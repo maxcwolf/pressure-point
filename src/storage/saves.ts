@@ -3,7 +3,7 @@
 // Everything lives in localStorage, which both the browser and the desktop app
 // have. Saves can also be exported to a file and imported again, for backups
 // and for moving a game between the browser and the app.
-import { CONDITIONS, DAYS_PER_MONTH, ITEMS, MODALITIES, ROLES, ROOMS, STAR_GOALS } from '../core/data';
+import { CENTERS, CONDITIONS, DAYS_PER_MONTH, ITEMS, MODALITIES, ROLES, ROOMS } from '../core/data';
 import { SAVE_VERSION } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { upgradeSave } from '../core/state/upgrade';
@@ -57,6 +57,7 @@ const knownRoom = keyOf(ROOMS);
 const knownItem = keyOf(ITEMS);
 const knownRole = keyOf(ROLES);
 const knownModality = keyOf(MODALITIES);
+const knownCenter = keyOf(CENTERS);
 /** Whether a value is a finite number. */
 const isNumber = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
 /** Whether a value is a list whose every entry is a record that passes a test. */
@@ -77,7 +78,11 @@ function isGame(value: unknown): value is GameState {
   if (!isNumber(value.money) || !isNumber(value.day) || !isRecord(value.stats) || !isNumber(value.stats.healed))
     return false;
   const stars = value.stars;
-  if (typeof stars !== 'number' || !Number.isInteger(stars) || stars < 0 || stars > STAR_GOALS.length) return false;
+  // a save from before the campaign has no center, and is a sandbox game
+  const center = value.center ?? 'sandbox';
+  if (!knownCenter(center)) return false;
+  const goals = CENTERS[center as keyof typeof CENTERS].goals;
+  if (typeof stars !== 'number' || !Number.isInteger(stars) || stars < 0 || stars > goals.length) return false;
   return (
     listOf(value.rooms, (r) => knownRoom(r.type)) &&
     listOf(value.items, (i) => knownItem(i.type)) &&

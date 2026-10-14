@@ -3,7 +3,7 @@
 // are drawn from the game's own seeded random numbers, so a failure replays exactly.
 import { describe, expect, it } from 'vitest';
 
-import { BX0, BX1, BY0, BY1, type ItemType, type Role } from '../../src/core/data';
+import { type ItemType, type Role, SANDBOX_PLOT } from '../../src/core/data';
 import { irnd, pick, random } from '../../src/core/random';
 import type { Sim } from '../../src/core/sim/sim';
 import {
@@ -20,6 +20,9 @@ import {
   openCenter,
   run,
 } from './helpers';
+
+/** The sandbox building's inside walls. */
+const { x0: BX0, x1: BX1, y0: BY0, y1: BY1 } = SANDBOX_PLOT;
 
 const EXTRAS: ItemType[] = [
   'bench',

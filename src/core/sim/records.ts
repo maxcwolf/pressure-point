@@ -28,6 +28,7 @@ export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
   if (end === 'healed') {
     const d = MODALITIES[conditionOf(g.condition).modality].discipline;
     tally.healedBy[d] = (tally.healedBy[d] ?? 0) + 1;
+    stats.healedBy[d] = (stats.healedBy[d] ?? 0) + 1;
   }
 }
 

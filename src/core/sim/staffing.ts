@@ -70,7 +70,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     raiseAsked: false,
     unhappyT: 0,
   };
-  const [lx, ly] = lobbyTile();
+  const [lx, ly] = lobbyTile(ctx.world.plot);
   if (!goTo(ctx, st, lx, ly)) return null;
   s.staff.push(st);
   s.candidates = s.candidates.filter((x) => x !== c);
@@ -91,6 +91,7 @@ export function fire(ctx: SimContext, id: number, quit = false) {
   const [x, y] = streetTile();
   if (!goTo(ctx, st, x, y)) ctx.s.staff = ctx.s.staff.filter((q) => q !== st);
   if (quit) {
+    ctx.s.stats.lastQuit = ctx.s.day;
     changeRep(ctx, -2);
     toast(ctx, `${st.name} has quit. Unhappy staff do not stay.`, 'bad', { kind: 'staff', id: st.id });
     emit(ctx, { type: 'sfx', name: 'fail' });

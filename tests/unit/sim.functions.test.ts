@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createRefresh, REFRESH_EVERY } from '../../src/app/refresh';
 import {
-  ENT_X,
   H,
   ITEMS,
   LOAN_MAX,
@@ -11,6 +10,7 @@ import {
   MODALITIES,
   PRICE_MAX,
   PRICE_MIN,
+  SANDBOX_PLOT,
   SIDEWALK_Y,
   W,
 } from '../../src/core/data';
@@ -226,12 +226,12 @@ describe('walking', () => {
 
   it('walks someone along their path and says when they arrive', () => {
     const st = recruit('caretaker');
-    expect(goTo(ctx, st, ENT_X[0], 15)).toBe(true);
+    expect(goTo(ctx, st, SANDBOX_PLOT.door[0], 15)).toBe(true);
     expect(st.pose).toBe('walk');
     let arrived = false;
     for (let i = 0; i < 2000 && !arrived; i++) arrived = moveAlong(st, 0.05, 2);
     expect(arrived).toBe(true);
-    expect([st.tx, st.ty, st.pose, st.path]).toEqual([ENT_X[0], 15, 'stand', null]);
+    expect([st.tx, st.ty, st.pose, st.path]).toEqual([SANDBOX_PLOT.door[0], 15, 'stand', null]);
     expect(moveAlong(st, 0.05, 2)).toBe(false);
   });
 
@@ -242,7 +242,7 @@ describe('walking', () => {
 
   it('stops someone where they stand', () => {
     const st = recruit('caretaker');
-    goTo(ctx, st, ENT_X[0], 15);
+    goTo(ctx, st, SANDBOX_PLOT.door[0], 15);
     halt(st);
     expect([st.path, st.dest, st.pose, st.busy]).toEqual([null, null, 'stand', false]);
   });
@@ -266,7 +266,7 @@ describe('people', () => {
       const [x, y] = streetTile();
       expect([0, W - 1]).toContain(x);
       expect(y).toBe(SIDEWALK_Y);
-      expect(ENT_X).toContain(lobbyTile()[0]);
+      expect(SANDBOX_PLOT.door).toContain(lobbyTile(SANDBOX_PLOT)[0]);
     }
   });
 

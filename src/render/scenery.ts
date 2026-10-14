@@ -2,14 +2,14 @@
 
 import * as THREE from 'three';
 
-import { BX0, BX1, BY0, BY1, ENT_OUT_Y, ENT_X, H, ROAD_Y, SIDEWALK_Y, TITLE_LINES, W } from '../core/data';
+import { H, outsideDoor, type Plot, ROAD_Y, SIDEWALK_Y, TITLE_LINES, W } from '../core/data';
 import { must } from '../core/util';
 import { cyl, mat, put, rbox, sph } from './models/parts';
 import { buildForest, type TreeSpot } from './models/tree';
 import { H_LOW, hash } from './shared';
 
-/** Build the scenery that never changes and add it to the scene. */
-export function buildScenery(scene: THREE.Scene) {
+/** Build the scenery that never changes around a building on its plot, and add it to the scene. */
+export function buildScenery(scene: THREE.Scene, plot: Plot) {
   const lawn = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({ color: 0x8cc98a, roughness: 1 }),
@@ -23,10 +23,10 @@ export function buildScenery(scene: THREE.Scene) {
   const wall = mat(0xf7f1e5, 0.85);
   const trim = mat(0x2fa8a0, 0.6);
   const T = 0.28;
-  const x0 = BX0;
-  const x1 = BX1 + 1;
-  const z0 = BY0;
-  const z1 = BY1 + 1;
+  const x0 = plot.x0;
+  const x1 = plot.x1 + 1;
+  const z0 = plot.y0;
+  const z1 = plot.y1 + 1;
   const HT = 2.0;
   /** Add a plain box to the outer shell. */
   const box = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) =>
@@ -39,8 +39,8 @@ export function buildScenery(scene: THREE.Scene) {
   for (let x = x0 + 2; x < x1 - 1; x += 3) box(1.5, 0.75, 0.04, x + 0.5, 1.3, z0 + 0.02, glass);
   for (let z = z0 + 2; z < z1 - 1; z += 3) box(0.04, 0.75, 1.5, x0 + 0.02, 1.3, z + 0.5, glass);
   // low front walls with a gap for the entrance
-  const e0 = ENT_X[0];
-  const e1 = ENT_X[1] + 1;
+  const e0 = plot.door[0];
+  const e1 = plot.door[1] + 1;
   for (const [a, b] of [
     [x0, e0],
     [e1, x1 + T],
@@ -89,7 +89,7 @@ export function buildScenery(scene: THREE.Scene) {
   board.castShadow = true;
   sign.add(board);
   for (const x of [-1.3, 1.3]) put(sign, cyl(0.07, 0.07, 0.9), mat(0x8f5f38), x, 0.45, 0);
-  sign.position.set(e0 - 4.2, 0, ENT_OUT_Y + 1);
+  sign.position.set(e0 - 4.2, 0, outsideDoor(plot) + 1);
   sign.rotation.y = Math.PI / 5;
   scene.add(sign);
 
@@ -97,9 +97,9 @@ export function buildScenery(scene: THREE.Scene) {
   const trees: TreeSpot[] = [];
   for (let y = -3; y < H + 2; y++) {
     for (let x = -4; x < W + 4; x++) {
-      const inPlot = x >= BX0 - 1 && x <= BX1 + 2 && y >= BY0 - 1 && y <= BY1 + 1;
+      const inPlot = x >= plot.x0 - 1 && x <= plot.x1 + 2 && y >= plot.y0 - 1 && y <= plot.y1 + 1;
       const onRoad = y >= SIDEWALK_Y && y <= ROAD_Y[1];
-      const nearPath = x >= e0 - 7 && x <= e1 + 2 && y > BY1;
+      const nearPath = x >= e0 - 7 && x <= e1 + 2 && y > plot.y1;
       if (inPlot || onRoad || nearPath || hash(x, y) > 0.2) continue;
       trees.push({
         x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.5,

@@ -1,6 +1,6 @@
 // The shape of a game in progress. Everything here is plain JSON, so saving is a stringify away.
 
-import type { ConditionId, Discipline, ItemType, Modality, Pose, Role, RoomType, TraitId } from '../data';
+import type { CenterId, ConditionId, Discipline, ItemType, Modality, Pose, Role, RoomType, TraitId } from '../data';
 
 export interface Room {
   id: number;
@@ -232,6 +232,12 @@ export interface Stats {
   /** Turned down the treatment once they heard what it cost. */
   priced: number;
   arrived: number;
+  /** Guests healed, by the discipline that healed them. */
+  healedBy: Partial<Record<Discipline, number>>;
+  /** Emergencies seen through successfully. */
+  emergencies: number;
+  /** The game day someone last quit, or -1 if nobody ever has. */
+  lastQuit: number;
 }
 
 /** A month's count of guests: how many came, how each visit ended, and how long they waited. */
@@ -257,6 +263,8 @@ export interface MonthRecord extends Tally {
 
 export interface GameState {
   version: number;
+  /** The center this game is set in. */
+  center: CenterId;
   nextId: number;
   money: number;
   reputation: number;

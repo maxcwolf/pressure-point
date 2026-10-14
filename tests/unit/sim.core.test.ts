@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ITEMS, ROOMS, START_MONEY } from '../../src/core/data';
+import { CENTERS, ITEMS, ROOMS } from '../../src/core/data';
 import { netOf } from '../../src/core/sim/economy';
 import {
   addConsult,
@@ -35,7 +35,7 @@ describe('opening the center', () => {
     const sim = freshSim();
     sim.placeItem('reception_desk', 14, 13, 0);
     addConsult(sim);
-    expect(sim.s.money).toBe(START_MONEY - ITEMS.reception_desk.cost - ROOMS.consult.cost);
+    expect(sim.s.money).toBe(CENTERS.sandbox.startMoney - ITEMS.reception_desk.cost - ROOMS.consult.cost);
     expect(sim.s.ledger.building).toBe(ITEMS.reception_desk.cost + ROOMS.consult.cost);
   });
 });
