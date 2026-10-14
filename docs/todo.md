@@ -19,3 +19,11 @@ Tick an item off when it is done, with the commit or release it landed in.
 - [ ] **High Pines and The Orchard Estate**, the fourth and fifth centers, as planned in [campaign.md](campaign.md).
 - [x] **Resize a built room**, by dragging its walls, as Two Point Hospital's room editing allows. Done: Resize in the room's inspector; the door and windows move with their walls, the furniture has to stay inside, the room keeps its minimum size, and floor added costs $200 a tile, with half back for floor given up.
 - [x] **Room walls against the building's outer walls.** The outer wall's own window panes sit at fixed spots, so a room built against it cuts through them, and the room's windows sit inside the outer wall and look doubled. The outer wall should leave its panes out where a room's wall runs along it, and a room's windows on that side should be set into the outer wall instead of a second wall in front of it. Done: a room's side along the outer wall uses that wall, its windows are set into it, and the building's own windows make way.
+
+## From the Two Point audit
+
+The first three picks from [two-point-gaps.md](two-point-gaps.md), which has the rest.
+
+- [ ] **Center policy, chances shown, and a queue you can manage.** A policy screen for how sure a diagnosis must be before treatment (75% today, hard-coded), the chance of success below which a guest is sent home rather than treated, and the energy at which staff take a break. Each guest's chance of success shown before treatment starts. A station's queue in its inspector, with "to the front" and "send home".
+- [ ] **Mid-level challenges and year-end awards.** Challenges offered partway through a game (heal so many of a condition by a date, reach a cure rate, build something), each an objective with a deadline and a reward. An awards ceremony at each year end, with categories for the center and its staff, prize money, and a trophy for the Trophy Cabinet.
+- [ ] **Staff experience and general qualifications.** Staff gain experience from the guests they serve, level up, and ask for a raise when they do. General courses any role can take: Customer Service, Motivation, Stamina and Mechanics, each changing how they work.
