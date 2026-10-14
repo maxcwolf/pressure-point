@@ -17,6 +17,12 @@ export function placeItemModel(model: THREE.Object3D, type: ItemType, x: number,
   model.rotation.y = (-rot * Math.PI) / 2;
 }
 
+// every progress bar is drawn with the same few pieces, so a bar costs nothing to make or throw away
+const BAR_BACK = new THREE.BoxGeometry(1.06, 0.2, 0.05);
+const BAR_FILL = new THREE.BoxGeometry(1, 0.14, 0.07);
+const BAR_BACK_MAT = new THREE.MeshBasicMaterial({ color: 0x2f4858 });
+const BAR_FILL_MAT = new THREE.MeshBasicMaterial({ color: 0x3ddc84 });
+
 export class ItemsLayer {
   private items = new Map<number, { group: THREE.Group; key: string }>();
   private bars = new Map<number, { group: THREE.Group; fill: THREE.Mesh }>();
@@ -137,14 +143,8 @@ export class ItemsLayer {
     let bar = this.bars.get(it.id);
     if (!bar) {
       const group = new THREE.Group();
-      const back = new THREE.Mesh(
-        new THREE.BoxGeometry(1.06, 0.2, 0.05),
-        new THREE.MeshBasicMaterial({ color: 0x2f4858 }),
-      );
-      const fill = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 0.14, 0.07),
-        new THREE.MeshBasicMaterial({ color: 0x3ddc84 }),
-      );
+      const back = new THREE.Mesh(BAR_BACK, BAR_BACK_MAT);
+      const fill = new THREE.Mesh(BAR_FILL, BAR_FILL_MAT);
       group.add(back, fill);
       group.rotation.y = Math.PI / 4;
       const [cx, cy] = itemCenter(it);
