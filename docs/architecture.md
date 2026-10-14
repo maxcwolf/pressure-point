@@ -68,6 +68,8 @@ The autosave and up to twenty named saves live in the browser's storage, with ex
 | `yarn test:e2e`     | The real game in a headless browser, driven by mouse and keyboard.                              |
 | `yarn test:desktop` | The built desktop app: sandbox, preload API, quitting, exporting a save.                        |
 | `yarn test:visual`  | A screenshot of every screen of the interface, and of the scene, compared with stored pictures. |
+| `yarn test:perf`    | Draw calls, GPU memory over a long session and idle work, in the real game in a browser.        |
+| `yarn bench`        | The simulation's time per frame as the crowd grows. Reported, not checked.                      |
 
 End-to-end tests find things by meaning (`game.clickItem('bench')`), not by screen coordinates.
 
