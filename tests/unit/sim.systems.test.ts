@@ -16,6 +16,7 @@ import {
   addStaffRoom,
   addTraining,
   hire,
+  inconsistencies,
   LONG_RUN,
   openCenter,
   run,
@@ -411,6 +412,7 @@ describe('a long session', () => {
       if (s.offer) sim.acceptEmergency();
       for (const st of s.staff) if (st.raiseAsked) sim.giveRaise(st.id);
       run(sim, 60);
+      expect(inconsistencies(sim)).toEqual([]);
       expect(Number.isFinite(s.money) && Number.isFinite(s.reputation)).toBe(true);
       expect(s.reputation).toBeGreaterThanOrEqual(0);
       expect(s.reputation).toBeLessThanOrEqual(100);

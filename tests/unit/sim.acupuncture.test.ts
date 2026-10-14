@@ -12,6 +12,7 @@ import {
   addStaffRoom,
   addTraining,
   hire,
+  inconsistencies,
   LONG_RUN,
   openCenter,
   run,
@@ -361,6 +362,7 @@ describe('a long session with both disciplines', () => {
       if (s.offer) sim.acceptEmergency();
       for (const st of s.staff) if (st.raiseAsked) sim.giveRaise(st.id);
       run(sim, 1);
+      if (second % 60 === 0) expect(inconsistencies(sim)).toEqual([]);
       for (const g of s.guests) {
         if (g.outcome === 'healed' && !counted.has(g.id)) {
           counted.add(g.id);
