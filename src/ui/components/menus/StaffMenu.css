@@ -3,7 +3,7 @@
 .row {
   width: 100%;
   display: grid;
-  grid-template-columns: 30px 1.1fr 1.3fr 80px 64px;
+  grid-template-columns: 30px 1.1fr 1.3fr 96px 64px;
   align-items: center;
   gap: 8px;
   text-align: left;
@@ -27,6 +27,43 @@
 
 .row b {
   font-weight: 600;
+}
+
+.row .meters {
+  display: grid;
+  row-gap: 3px;
+}
+
+.row .meters .bar {
+  margin-top: 0;
+}
+
+.row.head {
+  background: none;
+  border-color: transparent;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: 2px;
+  font-size: 11.5px;
+  opacity: 0.7;
+}
+
+.row.head:hover {
+  background: none;
+  border-color: transparent;
+}
+
+.row.head em {
+  font-style: normal;
+  font-weight: 600;
+}
+
+.energy-key {
+  color: #6f55b8;
+}
+
+.morale-key {
+  color: #b8860b;
 }
 
 .row small {

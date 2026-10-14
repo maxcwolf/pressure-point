@@ -351,7 +351,7 @@ test.describe('staff', () => {
     await page.locator('#menu .card.cv').first().getByRole('button', { name: 'Hire' }).click();
     expect(await game.eval((pp) => pp.state.staff.map((s) => s.role))).toEqual(['receptionist', 'therapist']);
     await game.menu('Staff');
-    await expect(page.locator('#menu .row')).toHaveCount(2);
+    await expect(page.locator('#menu .row:not(.head)')).toHaveCount(2);
   });
 
   test('can be selected in the world, sent on a course and given a raise', async ({ game, page }) => {
@@ -788,6 +788,48 @@ test.describe('acupuncture and settings', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.waitForFunction(() => !!window.pp);
     expect(await game.eval((pp) => pp.sim.enabled('acupuncture'))).toBe(false);
+  });
+});
+
+test.describe('messages', () => {
+  /** Where the camera is looking, on the ground. */
+  const lookingAt = (game: Game) =>
+    game.eval((pp) => {
+      const { target } = (pp.view as unknown as { rig: { target: { x: number; z: number } } }).rig;
+      return { x: target.x, z: target.z };
+    });
+
+  test('clicking a toast about someone selects them and takes the camera there', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const therapist = await game.eval((pp) => {
+      const st = pp.state.staff.find((s) => s.role === 'therapist')!;
+      return { name: st.name, x: st.x, y: st.y };
+    });
+    await game.eval((pp) => (pp.state.speed = 0));
+    await page.locator('#toasts .toast', { hasText: `${therapist.name} joins` }).click();
+    await expect(page.locator('#inspector')).toContainText(therapist.name);
+    await expect
+      .poll(async () => {
+        const at = await lookingAt(game);
+        return Math.hypot(at.x - therapist.x, at.z - therapist.y);
+      })
+      .toBeLessThan(0.5);
+  });
+
+  test('clicking the advisor about a raise selects the one asking', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const name = await game.eval((pp) => {
+      pp.state.speed = 0;
+      const st = pp.state.staff.find((s) => s.role === 'consultant')!;
+      st.raiseAsked = true;
+      return st.name;
+    });
+    const note = page.locator('#advisor .note');
+    await expect(note).toContainText(`${name} wants a raise`);
+    await note.click();
+    await expect(page.locator('#inspector')).toContainText(name);
   });
 });
 

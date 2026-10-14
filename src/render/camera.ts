@@ -15,6 +15,8 @@ export class CameraRig {
   readonly target = new THREE.Vector3(W / 2 - 1, 0, (BY0 + BY1) / 2 + 1.5);
   /** How far back from the target the camera sits. */
   dist = 41;
+  /** Where the camera is gliding to, if it has been asked to look somewhere. */
+  private goal: THREE.Vector3 | null = null;
 
   /** Match the camera's shape to the window's. */
   resize(width: number, height: number) {
@@ -22,8 +24,17 @@ export class CameraRig {
     this.camera.updateProjectionMatrix();
   }
 
+  /** Glide over to look at a point on the ground, closing in a little if the camera is far out. */
+  centerOn(x: number, z: number) {
+    const [gx, gz] = keepNearMap(x, z);
+    this.goal = new THREE.Vector3(gx, 0, gz);
+    this.dist = Math.min(this.dist, 26);
+  }
+
   /** Move the camera target across the ground, kept near the map. */
   pan(dx: number, dy: number) {
+    // taking the controls back cancels any glide in progress
+    this.goal = null;
     this.target.addScaledVector(PAN_RIGHT, dx).addScaledVector(PAN_UP, dy);
     [this.target.x, this.target.z] = keepNearMap(this.target.x, this.target.z);
   }
@@ -39,6 +50,10 @@ export class CameraRig {
 
   /** Move the camera to where the target and zoom put it. */
   update() {
+    if (this.goal) {
+      this.target.lerp(this.goal, 0.18);
+      if (this.target.distanceTo(this.goal) < 0.02) this.goal = null;
+    }
     this.camera.position.copy(this.target).addScaledVector(CAM_DIR, this.dist);
     this.camera.lookAt(this.target);
   }

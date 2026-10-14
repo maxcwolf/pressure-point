@@ -1,6 +1,7 @@
 // How a person is posed each frame: walking, sitting, lying down, working, and showing their symptoms.
 
 import type { Modality } from '../core/data';
+import { aboutToQuit } from '../core/sim/staffing';
 import type { Char } from '../core/state/types';
 import { type CharRig, cureRig } from './models/character';
 import { emojiTexture } from './models/emoji';
@@ -181,7 +182,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     });
   }
 
-  let bubble = c.bubbleT > 0 ? c.bubble : '';
+  // someone about to quit keeps a warning over their head until it is dealt with
+  let bubble = c.kind === 'staff' && aboutToQuit(c) ? '⚠️' : c.bubbleT > 0 ? c.bubble : '';
   if (!bubble && c.kind === 'guest') {
     const waiting = c.state === 'waiting' || c.state === 'toWait';
     if (waiting && c.patience < 25) bubble = '💢';

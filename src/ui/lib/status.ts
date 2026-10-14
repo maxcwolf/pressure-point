@@ -91,3 +91,16 @@ export function staffStatus(st: Staff, sim: Sim): string {
 export function courseName(id: CourseId) {
   return id === 'skill' ? 'professional development' : modalityLabel(id);
 }
+
+/** How a morale bar is drawn: red once it is low enough to worry about. */
+export function moraleLook(morale: number): string {
+  return morale < 30 ? 'bad' : 'gold';
+}
+
+/** A warning about someone on course to quit, from the days they have left; empty while they are not. */
+export function quitWarning(days: number | null): string {
+  if (days === null) return '';
+  const left = Math.max(1, Math.ceil(days));
+  const plural = left === 1 ? 'day' : 'days';
+  return days <= 2 ? `⚠️ About to quit: ${left} ${plural} left` : `😠 Miserable: will quit in ${left} ${plural}`;
+}

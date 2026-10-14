@@ -12,7 +12,7 @@ import {
 } from '../data';
 import type { Char, GameState, Guest, Item, Room, Staff, WallSpot } from '../state/types';
 import type { Check, Rect, World } from '../world';
-import { advice, announce } from './advisor';
+import { type Advice, advice, advise, announce } from './advisor';
 import { drainFactor, prestige, updateAmbience } from './ambience';
 import type { PlaceOptions } from './building';
 import {
@@ -33,13 +33,14 @@ import { charById, guestById, staffById } from './chars';
 import { createContext, type SimContext } from './context';
 import { borrow, monthEnd, repay, setPrice } from './economy';
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
-import type { SimEvent } from './events';
+import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
-import { fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
+import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
 import { updateStations } from './stations';
+import { subjectSpot } from './subjects';
 import type { Course } from './training';
 import { courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
@@ -138,6 +139,23 @@ export class Sim {
   /** The advisor's current nudge. */
   advice(): string {
     return advice(this.ctx);
+  }
+  /** The advisor's current nudge, with what it is about, if anything. */
+  adviceNote(): Advice {
+    return advise(this.ctx);
+  }
+  /** Days until a miserable member of staff walks out, or null while they are not on course to quit. */
+  daysUntilQuit(st: Staff): number | null {
+    return daysUntilQuit(st);
+  }
+  /** Whether someone will walk out within two days unless something changes. */
+  aboutToQuit(st: Staff): boolean {
+    return aboutToQuit(st);
+  }
+
+  /** Where on the ground a message's subject is now, or null if it has gone. */
+  whereIs(about: Subject): [x: number, y: number] | null {
+    return subjectSpot(this.ctx, about);
   }
 
   // ---- Surroundings ----------------------------------------------------------

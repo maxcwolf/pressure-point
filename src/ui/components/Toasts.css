@@ -33,6 +33,13 @@
   border-left-color: var(--blue);
 }
 
+.toast.link {
+  pointer-events: auto;
+  text-align: left;
+  font: inherit;
+  font-size: 13.5px;
+}
+
 .toast.out {
   opacity: 0;
 }

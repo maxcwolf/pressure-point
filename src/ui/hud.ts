@@ -2,7 +2,7 @@
 // The components draw it; the rest of the app talks to it.
 
 import type { Role } from '../core/data';
-import type { SimEvent, Tone } from '../core/sim/events';
+import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { GameHost } from './host';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance';
@@ -13,6 +13,8 @@ export interface Toast {
   id: number;
   text: string;
   kind: Tone;
+  /** Who or what it is about, if clicking it should take the player there. */
+  about?: Subject;
   /** Fading out, about to be removed. */
   leaving: boolean;
 }
@@ -91,6 +93,17 @@ export class HudState {
     return true;
   }
 
+  /** Take the player to what a message is about: select it, show its inspector and glide the camera over. */
+  show(about: Subject) {
+    const spot = this.host.sim.whereIs(about);
+    if (!spot) return;
+    // a build menu shares the space the inspector needs
+    this.menu = null;
+    this.host.tools.select(about);
+    this.host.view.lookAt(spot[0], spot[1]);
+    this.update();
+  }
+
   /** Open a dialog over the game, pausing it. */
   open(dialog: DialogId) {
     this.pause();
@@ -122,7 +135,7 @@ export class HudState {
     const { view, audio } = this.host;
     for (const e of events) {
       if (e.type === 'sfx') audio.play(e.name);
-      else if (e.type === 'toast') this.toast(e.text, e.kind);
+      else if (e.type === 'toast') this.toast(e.text, e.kind, e.about);
       else if (e.type === 'announce') this.announce(e.text);
       else if (e.type === 'star') {
         this.star = e.stars;
@@ -132,8 +145,8 @@ export class HudState {
   }
 
   /** Show a message that fades after a few seconds. */
-  toast(text: string, kind: Tone = 'info') {
-    const toast: Toast = { id: this.nextId++, text, kind, leaving: false };
+  toast(text: string, kind: Tone = 'info', about?: Subject) {
+    const toast: Toast = { id: this.nextId++, text, kind, leaving: false, ...(about && { about }) };
     this.toasts = [...this.toasts, toast].slice(-MAX_TOASTS);
     setTimeout(() => {
       toast.leaving = true;

@@ -79,7 +79,7 @@ export function finishRoom(ctx: SimContext, room: Room) {
   room.done = true;
   spend(ctx, ROOMS[room.type].cost, 'building');
   ctx.world.version++;
-  toast(ctx, `${ROOMS[room.type].name} built!`, 'good');
+  toast(ctx, `${ROOMS[room.type].name} built!`, 'good', { kind: 'room', id: room.id });
   emit(ctx, { type: 'sfx', name: 'build' });
 }
 

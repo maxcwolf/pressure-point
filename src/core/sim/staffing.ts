@@ -4,10 +4,15 @@ import {
   BOOKCASE_MAX,
   BOOKCASE_SPEEDUP,
   COFFEE_BREAK_BOOST,
+  DAY_SECONDS,
   DIRT_CLEAN,
   DIRT_FILTHY,
   ITEMS,
+  MISERABLE_MORALE,
   POOL_TABLE_MORALE,
+  QUIT_AFTER,
+  QUIT_THINKING,
+  QUIT_WARNING,
   ROLES,
   traitOf,
   WEAR_REPAIR,
@@ -71,7 +76,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
   s.candidates = s.candidates.filter((x) => x !== c);
   s.candidates.push(makeCandidate(s, c.role));
   emit(ctx, { type: 'sfx', name: 'hire' });
-  toast(ctx, `${c.name} joins as a ${ROLES[c.role].name}.`, 'good');
+  toast(ctx, `${c.name} joins as a ${ROLES[c.role].name}.`, 'good', { kind: 'staff', id: st.id });
   return st;
 }
 
@@ -87,7 +92,7 @@ export function fire(ctx: SimContext, id: number, quit = false) {
   if (!goTo(ctx, st, x, y)) ctx.s.staff = ctx.s.staff.filter((q) => q !== st);
   if (quit) {
     changeRep(ctx, -2);
-    toast(ctx, `${st.name} has quit. Unhappy staff do not stay.`, 'bad');
+    toast(ctx, `${st.name} has quit. Unhappy staff do not stay.`, 'bad', { kind: 'staff', id: st.id });
     emit(ctx, { type: 'sfx', name: 'fail' });
   } else toast(ctx, `${st.name} has been let go.`, 'info');
 }
@@ -143,6 +148,18 @@ export function moraleTarget(ctx: SimContext, st: Staff): number {
   return target;
 }
 
+/** Days until a miserable member of staff walks out, or null while they are not on course to quit. */
+export function daysUntilQuit(st: Staff): number | null {
+  if (st.state === 'leaving' || st.morale >= MISERABLE_MORALE || st.unhappyT <= 0) return null;
+  return Math.max(0, (QUIT_AFTER - st.unhappyT) / DAY_SECONDS);
+}
+
+/** Whether someone will walk out within two days unless something changes. */
+export function aboutToQuit(st: Staff): boolean {
+  const days = daysUntilQuit(st);
+  return days !== null && days * DAY_SECONDS <= QUIT_WARNING;
+}
+
 /** Drift morale toward what pay and conditions deserve; the unhappy ask for a raise, then quit. */
 function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   if (st.state === 'leaving' || st.state === 'arriving') return;
@@ -153,16 +170,25 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   if (!st.raiseAsked && st.salary < fair * 0.97 && st.morale < 56) {
     st.raiseAsked = true;
     say(st, '💰', 5);
-    toast(ctx, `${st.name} thinks they are worth ${money(fair)} a month and wants a raise.`, 'info');
+    toast(ctx, `${st.name} thinks they are worth ${money(fair)} a month and wants a raise.`, 'info', {
+      kind: 'staff',
+      id: st.id,
+    });
   }
   const before = st.unhappyT;
-  if (st.morale < 25) st.unhappyT += dt;
+  if (st.morale < MISERABLE_MORALE) st.unhappyT += dt;
   else st.unhappyT = Math.max(0, st.unhappyT - dt);
-  if (before < 20 && st.unhappyT >= 20) {
+  const about = { kind: 'staff', id: st.id } as const;
+  if (before < QUIT_THINKING && st.unhappyT >= QUIT_THINKING) {
     say(st, '😠', 6);
-    toast(ctx, `${st.name} is miserable and thinking of quitting.`, 'bad');
+    toast(ctx, `${st.name} is miserable and thinking of quitting.`, 'bad', about);
   }
-  if (st.unhappyT > 60 && !st.busy && !st.training) fire(ctx, st.id, true);
+  const alarm = QUIT_AFTER - QUIT_WARNING;
+  if (before < alarm && st.unhappyT >= alarm) {
+    toast(ctx, `⚠️ ${st.name} will quit within two days. Give them a raise or a break, now.`, 'bad', about);
+    emit(ctx, { type: 'sfx', name: 'error' });
+  }
+  if (st.unhappyT > QUIT_AFTER && !st.busy && !st.training) fire(ctx, st.id, true);
 }
 
 /** Step away from the station they were staffing. */

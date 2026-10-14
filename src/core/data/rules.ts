@@ -3,6 +3,13 @@
 import type { StarGoal } from './types';
 
 export const DAY_SECONDS = 6;
+/** Below this morale a member of staff is miserable, and the clock toward quitting runs. */
+export const MISERABLE_MORALE = 25;
+/** Seconds of misery before they say they are thinking of quitting, and before they walk out. */
+export const QUIT_THINKING = 20;
+export const QUIT_AFTER = 60;
+/** How long before walking out the alarm goes up: two days. */
+export const QUIT_WARNING = 2 * DAY_SECONDS;
 export const DAYS_PER_MONTH = 30;
 
 export const START_MONEY = 30000;

@@ -86,7 +86,7 @@ export function train(ctx: SimContext, staffId: number, courseId: string): boole
   st.state = 'toTrain';
   say(st, '📚', 3);
   emit(ctx, { type: 'sfx', name: 'place' });
-  toast(ctx, `${st.name} is off to study ${course.name}.`, 'info');
+  toast(ctx, `${st.name} is off to study ${course.name}.`, 'info', { kind: 'staff', id: st.id });
   return true;
 }
 
@@ -107,6 +107,6 @@ export function graduate(ctx: SimContext, st: Staff) {
   staffIdle(ctx, st);
   say(st, '🎓', 5);
   // being worth more now, they will soon ask to be paid more
-  toast(ctx, `${st.name} ${what}.`, 'good');
+  toast(ctx, `${st.name} ${what}.`, 'good', { kind: 'staff', id: st.id });
   emit(ctx, { type: 'sfx', name: 'build' });
 }

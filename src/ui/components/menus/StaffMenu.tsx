@@ -4,33 +4,47 @@ import './StaffMenu.css';
 
 import { ROLES } from '../../../core/data';
 import { money } from '../../../core/format';
-import { useGame } from '../../hooks/use-hud';
-import { staffStatus } from '../../lib/status';
+import { useGame, useHud } from '../../hooks/use-hud';
+import { moraleLook, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 
-/** A row per member of staff. Pressing one selects them and moves the camera there. */
+/** A row per member of staff, with their energy and morale. Pressing one selects them and moves the camera there. */
 export function StaffMenu() {
-  const { sim, tools, view } = useGame();
+  const hud = useHud();
+  const { sim } = useGame();
   const staff = sim.s.staff;
   const payroll = staff.reduce((total, st) => total + st.salary, 0);
   return (
     <div class="panel menu">
       <h3>Your staff</h3>
+      {staff.length > 0 && (
+        <div class="row head" aria-hidden="true">
+          <i />
+          <b>Name</b>
+          <span>Doing</span>
+          <span>
+            <em class="energy-key">Energy</em> / <em class="morale-key">morale</em>
+          </span>
+          <small>Salary</small>
+        </div>
+      )}
       {staff.length ? (
         staff.map((st) => (
           <Button
             key={st.id}
             class="row"
             onPress={() => {
-              tools.select({ kind: 'staff', id: st.id });
-              view.target.set(st.x, 0, st.y);
+              hud.show({ kind: 'staff', id: st.id });
             }}
           >
             <i>{ROLES[st.role].icon}</i>
-            <b>{`${st.raiseAsked ? '💰 ' : ''}${st.name}`}</b>
+            <b>{`${sim.aboutToQuit(st) ? '⚠️ ' : st.raiseAsked ? '💰 ' : ''}${st.name}`}</b>
             <span>{staffStatus(st, sim)}</span>
-            <Bar value={st.energy} class="thin energy" />
+            <span class="meters" title={`Energy ${Math.round(st.energy)}%, morale ${Math.round(st.morale)}%`}>
+              <Bar value={st.energy} class="thin energy" />
+              <Bar value={st.morale} class={`thin ${moraleLook(st.morale)}`} />
+            </span>
             <small>{money(st.salary)}</small>
           </Button>
         ))

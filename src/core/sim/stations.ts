@@ -228,6 +228,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
           `botch-qual-${mod.id}`,
           `${staff.name} is not trained in ${modalityLabel(mod.id)} and botched it. Send them on the course in a Training Room.`,
           'bad',
+          { kind: 'staff', id: staff.id },
         );
       else if (problem === 'no-equipment')
         tipOnce(

@@ -22,7 +22,7 @@
   box-shadow: var(--shadow);
 }
 
-#advisor p {
+#advisor .note {
   background: var(--cream);
   border: 3px solid var(--navy);
   border-radius: 16px 16px 16px 4px;
@@ -30,6 +30,24 @@
   font-size: 14px;
   line-height: 1.3;
   box-shadow: var(--shadow);
+  text-align: left;
+}
+
+#advisor .note.link {
+  pointer-events: auto;
+}
+
+#advisor .note.link:hover,
+.toast.link:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+#advisor .note.link::after,
+.toast.link::after {
+  content: ' ›';
+  font-weight: 700;
+  opacity: 0.55;
 }
 
 #advisor {

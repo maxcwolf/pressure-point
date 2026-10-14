@@ -5,7 +5,7 @@ import { money } from '../../../core/format';
 import type { Staff } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
-import { staffStatus } from '../../lib/status';
+import { moraleLook, quitWarning, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { QualChips } from '../common/QualChips';
@@ -29,6 +29,9 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
         <em key={t}>{`${traitOf(t).name}: ${traitOf(t).desc}`}</em>
       ))}{' '}
       <p class="status">{staffStatus(st, sim)}</p>{' '}
+      {sim.daysUntilQuit(st) !== null && (
+        <p class={cx('status', 'quitting', sim.aboutToQuit(st) && 'alarm')}>{quitWarning(sim.daysUntilQuit(st))}</p>
+      )}{' '}
       {st.training && (
         <label>
           Course progress
@@ -41,7 +44,7 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
       </label>{' '}
       <label>
         Morale
-        <Bar value={st.morale} class={st.morale < 30 ? 'bad' : 'gold'} />
+        <Bar value={st.morale} class={moraleLook(st.morale)} />
       </label>{' '}
       <p class="sub">
         {`Salary ${money(st.salary)}/month (going rate ${money(sim.fairPay(st))}) · Guests served: ${st.served}`}

@@ -2,6 +2,12 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Messages take you there:** click a message or the advisor about someone or something, and the camera glides over with it selected.
+- **Morale in the Staff menu**, beside energy, for everyone at once.
+- **A last warning before someone quits:** an alarm, a ⚠️ over their head and a countdown in their details, two days before they walk out.
+
 ## v0.5.0
 
 - **Reiki**, from the second star: build a Reiki Studio, hire a Reiki Practitioner, and treat eight new conditions with Usui reiki, crystals, sound baths and chakra balancing. It has its own switch in Settings.

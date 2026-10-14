@@ -79,6 +79,11 @@ export class View {
     this.rig.resize(w, h);
   }
 
+  /** Glide the camera over to look at a spot on the ground. */
+  lookAt(x: number, y: number) {
+    this.rig.centerOn(x, y);
+  }
+
   /** Draw one frame, syncing the scene with the game first. */
   render(dt: number) {
     this.time += dt;
