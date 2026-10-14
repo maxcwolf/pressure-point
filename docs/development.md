@@ -90,4 +90,4 @@ Disciplines, modalities, conditions, courses and equipment are all defined in `s
 
 How the pieces fit together, and the conventions the code follows, are in [architecture.md](architecture.md).
 
-Issues found but not yet fixed are listed in [known-issues.md](known-issues.md).
+Issues found but not yet fixed are listed in [known-issues.md](known-issues.md), and planned work in [todo.md](todo.md).
