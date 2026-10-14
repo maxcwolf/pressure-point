@@ -88,6 +88,35 @@ jobs:
             test-results
           retention-days: 7
 
+  # performance: draw calls, GPU memory over a long session and idle work in the browser, which fail
+  # on a regression; and the simulation's timings, which are only reported, kept to compare over time
+  perf:
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: yarn install --immutable
+      - name: Install the browser
+        run: yarn playwright install --with-deps chromium
+      - name: Performance checks
+        run: yarn test:perf
+      - name: Simulation timings
+        if: always()
+        run: yarn bench
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: perf-results
+          path: |
+            playwright-report
+            test-results
+          retention-days: 30
+
   # the built desktop app, launched for real: the sandbox, the preload API, quitting and saving
   desktop:
     strategy:
