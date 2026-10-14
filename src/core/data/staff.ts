@@ -79,6 +79,11 @@ export const TRAITS: readonly TraitDef[] = [
   { id: 'speedy', name: 'Power Walker', desc: 'Gets around 30% faster.', walk: 1.3, pay: 1.05 },
   { id: 'dawdler', name: 'Dawdler', desc: 'Has never hurried in their life.', walk: 0.8, pay: 0.92 },
   { id: 'bargain', name: 'Undervalued', desc: 'Asks for 15% less pay. Do not tell them.', pay: 0.85 },
+  { id: 'litterbug', name: 'Litterbug', desc: 'Drops litter as they go.', pay: 0.9, habit: 'litter' },
+  { id: 'grump', name: 'Grump', desc: 'Guests they see leave less pleased.', pay: 0.9, habit: 'grump' },
+  { id: 'sunny', name: 'Ray of Sunshine', desc: 'Lifts the morale of colleagues nearby.', pay: 1.1, habit: 'cheer' },
+  { id: 'quick', name: 'Quick Study', desc: 'Gets through courses 40% faster.', pay: 1.05, learn: 1.4 },
+  { id: 'green', name: 'Green Thumb', desc: 'Waters thirsty plants in passing.', habit: 'water' },
 ];
 
 const TRAIT_BY_ID = new Map(TRAITS.map((t) => [t.id, t]));

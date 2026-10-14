@@ -40,7 +40,7 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 4. Guests check in, get diagnosed, get treated, and pay. Keep them patient with benches, tea, snacks, plants and a restroom, and as you earn stars, an arcade, an aquarium and more.
 5. Staff members get tired. A **Staff Room** lets them recover; a **Janitor** clears litter, cleans the toilets, waters plants and keeps the massage stones hot.
 6. Salaries come out at the end of each month. Hit the objectives to earn stars.
-7. Stars unlock new **massage modalities**. Build a **Training Room** and send therapists on courses to deliver them.
+7. Stars unlock new **massage modalities**. Build a **Training Room** and send therapists on courses to deliver them. Staff earn experience and rise through five **ranks**; each rank brings a qualification slot for a course, and a promotion comes with a raise.
 8. A **Posture Lab** settles diagnoses the Consultant was unsure about, so fewer guests need a second consultation.
 9. **Decor** (salt lamps, statues, rugs, magazine racks) makes its surroundings nicer to wait in and raises a room's **prestige**, which lifts staff morale and results.
 10. Staff have **morale**. Underpaid or overworked staff ask for a raise, and quit if ignored for long.
@@ -51,7 +51,8 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 15. Click a built room to change it: add **windows**, **move its door**, or **resize** it by dragging a wall in or out. Extra floor costs $200 a tile, and floor given up refunds half. Switch on **Priority** to have staff fill it first.
 16. Click a desk or table to see its **line**: move guests up or down, over to another line, or **send them home**. A diagnosed guest's inspector shows the **chance** their treatment works.
 17. The **Policy** menu sets how sure a diagnosis must be before treatment, whether emergency guests go first, and when staff take breaks.
-18. Now and then a member of staff sets a **challenge** with a deadline, shown under the objectives; meet it for a reward. Each year ends with an **awards ceremony**, and the trophies won fill a **Trophy Cabinet**.
+18. A consultant can be kept to consultations or scans, and a Janitor from any of their jobs, under **Duties** in their inspector. New applicants turn up every few days in the **Hire** menu, and can be turned down to make room.
+19. Now and then a member of staff sets a **challenge** with a deadline, shown under the objectives; meet it for a reward. Each year ends with an **awards ceremony**, and the trophies won fill a **Trophy Cabinet**.
 
 ## Treatments
 

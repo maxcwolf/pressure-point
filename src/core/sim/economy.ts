@@ -2,7 +2,6 @@
 
 import { LOAN_MAX, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../data';
 import { money } from '../format';
-import { refillCandidates } from '../people';
 import { emptyLedger } from '../state/game';
 import type { Ledger } from '../state/types';
 import { clamp } from '../util';
@@ -53,7 +52,6 @@ export function monthEnd(ctx: SimContext) {
   if (s.history.length > 12) s.history.shift();
   s.lastLedger = s.ledger;
   s.ledger = emptyLedger();
-  refillCandidates(s, true);
   if (s.money < 0) toast(ctx, 'You are in the red. Heal faster!', 'bad');
 }
 

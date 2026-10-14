@@ -229,7 +229,10 @@ describe('the Posture Lab', () => {
     const { sim, s, consultant } = openCenter(1);
     consultant.skill = 1;
     addPostureLab(sim);
-    hire(sim, 'consultant');
+    // an unsure consultant at the desk, and another kept to the scanner
+    expect(sim.setDuty(consultant.id, 'assess', false)).toBe(true);
+    const scanning = hire(sim, 'consultant');
+    expect(sim.setDuty(scanning.id, 'consult', false)).toBe(true);
     const scanner = s.items.find((i) => i.type === 'posture_scanner')!;
     let sentForScan = false;
     runUntil(

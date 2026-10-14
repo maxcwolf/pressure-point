@@ -19,6 +19,7 @@ import {
   run,
   runUntil,
 } from './helpers';
+import { treatmentCourses } from './helpers';
 
 /** The discipline that treats a condition. */
 const disciplineOf = (condition: ConditionId) => MODALITIES[conditionOf(condition).modality].discipline;
@@ -124,12 +125,7 @@ describe('reiki practitioners', () => {
     const practitioner = hire(sim, 'practitioner');
     expect(practitioner.quals).toContain('usui');
     practitioner.quals = ['usui'];
-    expect(sim.courses(practitioner).map((c) => c.id)).toEqual([
-      'crystal',
-      'sound',
-      'chakra',
-      ...(practitioner.skill < 5 ? ['skill'] : []),
-    ]);
+    expect(treatmentCourses(sim.courses(practitioner))).toEqual(['crystal', 'sound', 'chakra']);
     expect(sim.train(practitioner.id, 'deep')).toBe(false);
   });
 

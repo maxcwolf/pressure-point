@@ -2,6 +2,14 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Staff careers:** staff earn experience from the guests they see and the jobs they do, and rise through five ranks, from Trainee to Expert, in place of skill stars. When ready they wait on a card at the side for a promotion, which brings the raise they insist on; putting it off sours them. Each rank brings a qualification slot, and every slot must be filled by training before the next promotion.
+- **General courses:** Bedside Manner, Motivation and Stamina Training for anyone, Customer Service for receptionists and Maintenance for Janitors. They take the place of the old skill course, and each fills a slot.
+- **Duties:** keep a consultant to consultations or to the Posture Lab, or a Janitor from any of their jobs, from the staff inspector.
+- **A hiring pool that grows:** a new applicant turns up every few days rather than a fresh batch each month, up to six per role as stars are earned, and an applicant can be turned down to make room.
+- **Five new traits you can see:** a Litterbug drops litter, a Grump sends guests off less pleased, a Ray of Sunshine cheers colleagues nearby, a Quick Study gets through courses faster, and a Green Thumb waters thirsty plants in passing.
+
 ## v0.9.0
 
 - **Staff challenges:** now and then a member of staff sets the center an objective with a deadline of two to four months, such as healing more guests, a better cure rate, a finer room or nobody quitting. It shows under the star objectives; meet it in time for a cash reward and a happier team. The sandbox can switch them off.

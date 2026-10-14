@@ -6,6 +6,7 @@ import {
   DAY_SECONDS,
   DAYS_PER_MONTH,
   type Discipline,
+  type Duty,
   ITEMS,
   type ItemType,
   type Modality,
@@ -34,6 +35,7 @@ import {
   sellItem,
   toggleWindow,
 } from './building';
+import { promote, reject, setDuty, updateApplicants, updateHabits } from './careers';
 import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
 import { createContext, type SimContext } from './context';
@@ -107,6 +109,8 @@ export class Sim {
       checkStars(ctx);
       checkAchievements(ctx);
       updateChallenge(ctx);
+      updateApplicants(ctx);
+      updateHabits(ctx);
     }
     announce(ctx, dt);
     updateTwists(ctx, dt);
@@ -296,6 +300,18 @@ export class Sim {
     return raiseTo(st);
   }
 
+  /** Promote a member of staff who is ready, with the raise that comes with it. */
+  promote(id: number): boolean {
+    return promote(this.ctx, id);
+  }
+  /** Keep a member of staff from a duty, or put them back on it. */
+  setDuty(id: number, duty: Duty, on: boolean): boolean {
+    return setDuty(this.ctx, id, duty, on);
+  }
+  /** Turn a job applicant down. */
+  reject(candidateId: number): boolean {
+    return reject(this.ctx, candidateId);
+  }
   /** Give a member of staff a raise. */
   giveRaise(id: number) {
     giveRaise(this.ctx, id);

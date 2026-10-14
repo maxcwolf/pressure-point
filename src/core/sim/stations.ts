@@ -6,18 +6,23 @@ import {
   conditionOf,
   CONSULT_FEE,
   DISCIPLINES,
+  GRUMP_REP,
   ITEMS,
   MODALITIES,
   modalityLabel,
+  MOTIVATION_SPEED,
   ROOMS,
+  SERVICE_SPEED,
   STONE_USE,
   traitOf,
+  XP_PER_GUEST,
 } from '../data';
 import { random, rnd } from '../random';
 import type { Guest, Item, Staff } from '../state/types';
 import { clamp, must } from '../util';
 import { accessPose, accessTile } from '../world';
 import { prestige } from './ambience';
+import { gainXp, habitOf, hasGeneral } from './careers';
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
 import type { SimContext } from './context';
@@ -60,10 +65,12 @@ export function pickStation(ctx: SimContext, g: Guest): Item | null {
   return best;
 }
 
-/** How long a service takes this member of staff, given their skill, traits, energy and morale. */
+/** How long a service takes this member of staff, given their skill, traits, courses, energy and morale. */
 export function serviceSeconds(base: number, st: Staff) {
   let speed = 0.85 + st.skill * 0.05;
   for (const t of st.traits) speed *= traitOf(t).speed ?? 1;
+  if (hasGeneral(st, 'motivation')) speed *= MOTIVATION_SPEED;
+  if (hasGeneral(st, 'service')) speed *= SERVICE_SPEED;
   if (st.energy < 15) speed *= 0.6;
   speed *= 0.9 + st.morale / 500;
   return base / speed;
@@ -172,7 +179,10 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   staff.busy = false;
   staff.served++;
   staff.yearServed++;
-  g.patience = Math.min(100, g.patience + 30);
+  gainXp(ctx, staff, XP_PER_GUEST);
+  // a grump sends guests on their way without much of a lift
+  const grump = habitOf(staff, 'grump');
+  g.patience = Math.min(100, g.patience + (grump ? 10 : 30));
   addWear(ctx, it);
   const nice = prestigeBonus(ctx, it);
   const price = ctx.s.priceLevel;
@@ -235,7 +245,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       earn(ctx, fee, 'treatment', g.x, g.y);
       g.spent += fee;
       // good value earns a better name than a steep bill does
-      changeRep(ctx, (1.8 + g.patience / 100) * (1.25 - 0.25 * price));
+      changeRep(ctx, (1.8 + g.patience / 100) * (1.25 - 0.25 * price) * (grump ? GRUMP_REP : 1));
       if (g.emergency && ctx.s.emergency) ctx.s.emergency.healed++;
       say(g, '💖', 6);
       emit(ctx, { type: 'sfx', name: 'heal' });

@@ -1,6 +1,16 @@
 // Bringing saves written by earlier versions up to date.
 
-import { ACHIEVEMENTS, AWARDS, CHALLENGE_GAP_MIN, DISCIPLINES, type Modality, type Role, ROLES } from '../data';
+import {
+  ACHIEVEMENTS,
+  APPLICANT_DAYS,
+  AWARDS,
+  CHALLENGE_GAP_MIN,
+  DISCIPLINES,
+  type Modality,
+  RANK_XP,
+  type Role,
+  ROLES,
+} from '../data';
 import { defaultPolicy, emptyTally, FIRST_CHALLENGE_DAY, SAVE_VERSION } from './game';
 import type { Candidate, GameState, Guest, Item, Ledger, MonthRecord, Room, Staff, Stats, Tally } from './types';
 
@@ -37,11 +47,25 @@ type OldSave = Before<
   | 'challengesOn'
   | 'ceremony'
   | 'trophies'
+  | 'nextApplicant'
 > & {
   stats: Before<Stats, 'priced' | 'sent' | 'healedBy' | 'emergencies' | 'lastQuit'>;
   tally?: Before<Tally, 'sent'>;
   months?: Before<MonthRecord, 'sent'>[];
-  staff: Before<Staff, 'quals' | 'training' | 'strain' | 'morale' | 'raiseAsked' | 'unhappyT' | 'yearServed'>[];
+  staff: Before<
+    Staff,
+    | 'quals'
+    | 'training'
+    | 'strain'
+    | 'morale'
+    | 'raiseAsked'
+    | 'unhappyT'
+    | 'yearServed'
+    | 'xp'
+    | 'promotion'
+    | 'general'
+    | 'off'
+  >[];
   candidates: Before<Candidate, 'quals'>[];
   items: Before<Item, 'wear' | 'dirt'>[];
   rooms: Before<Room, 'windows' | 'priority'>[];
@@ -62,6 +86,11 @@ export function upgradeSave(save: GameState) {
     st.raiseAsked ??= false;
     st.unhappyT ??= 0;
     st.yearServed ??= 0;
+    // before ranks, skill was all there was: they start at the beginning of the rank it makes them
+    st.xp ??= RANK_XP[st.skill - 1] ?? 0;
+    st.promotion ??= false;
+    st.general ??= [];
+    st.off ??= [];
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
   for (const it of s.items) {
@@ -102,6 +131,7 @@ export function upgradeSave(save: GameState) {
   s.challenge ??= null;
   s.nextChallenge ??= Math.max(FIRST_CHALLENGE_DAY, s.day + CHALLENGE_GAP_MIN);
   s.challengesOn ??= true;
+  s.nextApplicant ??= s.day + APPLICANT_DAYS;
   s.ceremony ??= null;
   // an award from a newer version means nothing here
   s.trophies = (s.trophies ?? []).filter((t) => Object.hasOwn(AWARDS, t.award));

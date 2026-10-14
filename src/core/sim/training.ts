@@ -1,8 +1,18 @@
 // Courses staff can take in a Training Room.
 
-import { DAY_SECONDS, MODALITIES, MODALITY_ORDER, modalityLabel, ROLES } from '../data';
+import {
+  DAY_SECONDS,
+  GENERAL_COURSES,
+  isGeneral,
+  MODALITIES,
+  MODALITY_ORDER,
+  modalityLabel,
+  RANK_XP,
+  ROLES,
+} from '../data';
 import type { CourseId, Staff } from '../state/types';
 import { accessPose, accessTile } from '../world';
+import { generalFor, slotFree } from './careers';
 import { say, staffById } from './chars';
 import { claim, findAccess, release } from './claims';
 import type { SimContext } from './context';
@@ -41,15 +51,11 @@ export function courses(ctx: SimContext, st: Staff): Course[] {
       });
     }
   }
-  if (st.skill < 5)
-    out.push({
-      id: 'skill',
-      name: `Skill level ${st.skill + 1}`,
-      icon: '⭐',
-      desc: 'General professional development. Faster and more reliable at everything.',
-      cost: 600 + st.skill * 700,
-      days: 5 + st.skill * 2,
-    });
+  for (const id of generalFor(st.role)) {
+    if (st.general.includes(id)) continue;
+    const def = GENERAL_COURSES[id];
+    out.push({ id, name: def.name, icon: def.icon, desc: def.desc, cost: def.cost, days: def.days });
+  }
   return out;
 }
 
@@ -57,6 +63,7 @@ export function courses(ctx: SimContext, st: Staff): Course[] {
 export function trainBlocker(ctx: SimContext, st: Staff, course: Course): string {
   if (st.state === 'leaving') return 'They are leaving.';
   if (st.training) return 'Already on a course.';
+  if (!slotFree(st)) return 'Every qualification slot is full. A promotion brings another.';
   if (!hasRoom(ctx, 'training')) return 'Build a Training Room first.';
   if (!findAccess(ctx, 'study', st.tx, st.ty)) return 'Every Study Desk is taken. Add another.';
   if (ctx.s.money < course.cost) return 'Not enough money.';
@@ -90,18 +97,22 @@ export function train(ctx: SimContext, staffId: number, courseId: string): boole
   return true;
 }
 
-/** Finish a course: one more skill level, or a new qualification. */
+/** Finish a course: a new qualification, or (on a course begun before ranks) a rank up. */
 export function graduate(ctx: SimContext, st: Staff) {
   const t = st.training;
   if (!t) return;
   let what: string;
-  if (t.course === 'skill') {
+  const course = t.course;
+  if (course === 'skill') {
     st.skill = Math.min(5, st.skill + 1);
-    what = `reached skill level ${st.skill}`;
+    st.xp = Math.max(st.xp, RANK_XP[st.skill - 1] ?? 0);
+    what = `reached rank ${st.skill}`;
+  } else if (isGeneral(course)) {
+    if (!st.general.includes(course)) st.general.push(course);
+    what = `has passed ${GENERAL_COURSES[course].name}`;
   } else {
-    const m = t.course;
-    if (!st.quals.includes(m)) st.quals.push(m);
-    what = `is now qualified in ${modalityLabel(m)}`;
+    if (!st.quals.includes(course)) st.quals.push(course);
+    what = `is now qualified in ${modalityLabel(course)}`;
   }
   st.training = null;
   staffIdle(ctx, st);

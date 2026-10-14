@@ -16,3 +16,8 @@
   padding: 0 6px;
   white-space: nowrap;
 }
+
+.quals span.general {
+  background: #fff6dc;
+  border-color: var(--gold);
+}

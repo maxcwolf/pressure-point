@@ -197,7 +197,7 @@ describe('a line', () => {
 describe('sending a guest home', () => {
   it('counts them as sent home, costs a little reputation and no fee', () => {
     const { sim, s } = busyCenter();
-    const g = s.guests[0]!;
+    const g = s.guests.find((x) => x.state !== 'leaving')!;
     const rep = s.reputation;
     const money = s.money;
     expect(sim.sendHome(g.id)).toBe(true);

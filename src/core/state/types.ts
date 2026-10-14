@@ -6,6 +6,8 @@ import type {
   CenterId,
   ConditionId,
   Discipline,
+  Duty,
+  GeneralId,
   GoalSpec,
   ItemType,
   Modality,
@@ -117,7 +119,16 @@ export type StaffState =
 export interface Staff extends CharBase {
   kind: 'staff';
   role: Role;
+  /** Their rank, from 1 to 5: how skilled they are. */
   skill: number;
+  /** Experience from the work they have done, toward their next rank. */
+  xp: number;
+  /** Ready for promotion, and waiting on it. */
+  promotion: boolean;
+  /** General courses passed, beyond the treatments of their discipline. */
+  general: GeneralId[];
+  /** Duties they are kept from. */
+  off: Duty[];
   salary: number;
   traits: TraitId[];
   energy: number;
@@ -147,8 +158,8 @@ export interface Job {
   id: number;
 }
 
-/** Something staff can study: a modality, or a general step up in skill. */
-export type CourseId = Modality | 'skill';
+/** Something staff can study: a modality, a general course, or (on a course begun before ranks) a step up in skill. */
+export type CourseId = Modality | GeneralId | 'skill';
 
 /** A course in progress. The fee is kept so it can be refunded if the course is cut short. */
 export interface Enrollment {
@@ -374,6 +385,8 @@ export interface GameState {
   options: Partial<Record<Discipline, boolean>>;
   /** Everything unlocked from the start, whatever the stars: a sandbox setting. */
   unlockAll: boolean;
+  /** The game day the next job applicant turns up. */
+  nextApplicant: number;
   /** The challenge a member of staff has set, if any, and the day the next may be set. */
   challenge: Challenge | null;
   nextChallenge: number;

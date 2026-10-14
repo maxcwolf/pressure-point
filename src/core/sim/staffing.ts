@@ -8,23 +8,30 @@ import {
   DIRT_CLEAN,
   DIRT_FILTHY,
   ITEMS,
+  MAINTENANCE_SPEED,
   MISERABLE_MORALE,
+  MOTIVATION_SPEED,
   POOL_TABLE_MORALE,
+  PROMOTION_SULK,
   QUIT_AFTER,
   QUIT_THINKING,
   QUIT_WARNING,
+  RANK_XP,
   ROLES,
+  STAMINA_DRAIN,
   traitOf,
   WEAR_REPAIR,
+  XP_PER_JOB,
 } from '../data';
 import { money } from '../format';
-import { fairSalary, makeCandidate } from '../people';
+import { fairSalary } from '../people';
 import { pick, random } from '../random';
 import type { Item, Job, Staff } from '../state/types';
 import { clamp, must } from '../util';
 import { accessPose, accessTile, footprint } from '../world';
 import { prestige } from './ambience';
 import { sameRoomCount } from './building';
+import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
 import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
 import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
@@ -71,12 +78,16 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     raiseAsked: false,
     unhappyT: 0,
     yearServed: 0,
+    xp: RANK_XP[c.skill - 1] ?? 0,
+    promotion: false,
+    general: [],
+    off: [],
   };
   const [lx, ly] = lobbyTile(ctx.world.plot);
   if (!goTo(ctx, st, lx, ly)) return null;
   s.staff.push(st);
+  // their place in the pool fills again as new applicants turn up
   s.candidates = s.candidates.filter((x) => x !== c);
-  s.candidates.push(makeCandidate(s, c.role));
   emit(ctx, { type: 'sfx', name: 'hire' });
   toast(ctx, `${c.name} joins as a ${ROLES[c.role].name}.`, 'good', { kind: 'staff', id: st.id });
   return st;
@@ -102,7 +113,7 @@ export function fire(ctx: SimContext, id: number, quit = false) {
 
 /** What this member of staff could reasonably expect to be paid. */
 export function fairPay(st: Staff): number {
-  return fairSalary(st.role, st.skill, st.traits, st.quals);
+  return fairSalary(st.role, st.skill, st.traits, st.quals, st.general.length);
 }
 
 /** The salary a raise would take them to: the going rate, or 10% more if they already earn it. */
@@ -131,7 +142,9 @@ export function breakBoost(ctx: SimContext, st: Staff): number {
 /** How much faster than usual someone's course is going: quicker with bookcases in the Training Room. */
 export function courseSpeed(ctx: SimContext, st: Staff): number {
   const desk = ctx.world.item(st.claimItem);
-  return trainingSpeed(desk ? sameRoomCount(ctx, desk, 'bookcase') : 0);
+  let learn = 1;
+  for (const t of st.traits) learn *= traitOf(t).learn ?? 1;
+  return trainingSpeed(desk ? sameRoomCount(ctx, desk, 'bookcase') : 0) * learn;
 }
 
 /** How much faster a course goes with this many bookcases in its room. Only the first few count. */
@@ -148,6 +161,8 @@ export function moraleTarget(ctx: SimContext, st: Staff): number {
   if (room) target += (prestige(ctx, room) - 2) * 5;
   if (hasItem(ctx, 'pool_table')) target += POOL_TABLE_MORALE;
   if (ctx.s.litter.length > 6) target -= 6;
+  if (st.promotion) target -= PROMOTION_SULK;
+  if (cheeredUp(ctx.s, st)) target += CHEER_MORALE;
   return target;
 }
 
@@ -249,6 +264,13 @@ function tryBreak(ctx: SimContext, st: Staff): boolean {
   return true;
 }
 
+/** How much faster than usual a Janitor gets through their jobs: quicker with Maintenance, and with Motivation. */
+export function janitorSpeed(st: Staff): number {
+  return (
+    (hasGeneral(st, 'maintenance') ? MAINTENANCE_SPEED : 1) * (hasGeneral(st, 'motivation') ? MOTIVATION_SPEED : 1)
+  );
+}
+
 /** How long a Janitor takes over a chore. */
 export function jobSeconds(kind: Job['kind'] | undefined): number {
   if (kind === 'repair') return 3.2;
@@ -267,6 +289,7 @@ export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
   return ctx.s.items.find(
     (it) =>
       ITEMS[it.type].station?.staff === st.role &&
+      onDuty(st, stationDuty(it)) &&
       !it.staffId &&
       ctx.world.usable(it) &&
       inPriorityRoom(ctx, it.x, it.y),
@@ -289,6 +312,7 @@ function findWork(ctx: SimContext, st: Staff) {
     const tasks: Task[] = [];
     /** Note a task, ahead of the same kind of thing elsewhere if it is in a priority room. */
     const add = (kind: Job['kind'], id: number, x: number, y: number, urgency: number) => {
+      if (!onDuty(st, jobDuty(kind, kind === 'litter' ? undefined : ctx.world.item(id)))) return;
       tasks.push({ kind, id, x, y, urgency: urgency + (inPriorityRoom(ctx, x, y) ? 0.5 : 0) });
     };
     for (const l of s.litter) if (!l.claimedBy) add('litter', l.id, l.x, l.y, 1);
@@ -329,7 +353,7 @@ function findWork(ctx: SimContext, st: Staff) {
     let bestScore = -1e9;
     for (const it of s.items) {
       const def = ITEMS[it.type].station;
-      if (def?.staff !== st.role || it.staffId || !ctx.world.usable(it)) continue;
+      if (def?.staff !== st.role || it.staffId || !ctx.world.usable(it) || !onDuty(st, stationDuty(it))) continue;
       let score = it.queue.length * 10 - Math.hypot(it.x - st.tx, it.y - st.ty);
       if (inPriorityRoom(ctx, it.x, it.y)) score += 1000;
       if (def.goal === 'treat') {
@@ -373,6 +397,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
     walk *= traitOf(t).walk ?? 1;
     stamina *= traitOf(t).stamina ?? 1;
   }
+  if (hasGeneral(st, 'stamina')) stamina *= STAMINA_DRAIN;
   if (st.energy < 15) walk *= 0.75;
   const arrived = moveAlong(st, dt, walk);
   // someone who quits this very step has only just set off for the door
@@ -412,6 +437,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
     case 'atPost': {
       const it = ctx.world.item(st.post);
       if (it?.staffId !== st.id || !ctx.world.usable(it)) staffIdle(ctx, st);
+      // kept from this station's duty: off to find something else, once the guest in hand is seen to
+      else if (!it.serving && !onDuty(st, stationDuty(it))) staffIdle(ctx, st);
       // free to go, and a priority room is short of someone: off to work there instead
       else if (!it.serving && !inPriorityRoom(ctx, it.x, it.y) && openPriorityPost(ctx, st)) staffIdle(ctx, st);
       else if (breakDue(ctx, st) && !it.serving) {
@@ -439,7 +466,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
     case 'toJob':
       if (arrived) {
         st.state = 'doingJob';
-        st.timer = jobSeconds(st.job?.kind);
+        st.timer = jobSeconds(st.job?.kind) / janitorSpeed(st);
         st.busy = true;
         if (st.job && st.job.kind !== 'litter') {
           const p = ctx.world.item(st.job.id);
@@ -462,7 +489,10 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
             if (job.kind === 'repair') ctx.world.version++;
           }
         }
-        if (job) st.yearServed++;
+        if (job) {
+          st.yearServed++;
+          gainXp(ctx, st, XP_PER_JOB);
+        }
         st.job = null;
         staffIdle(ctx, st);
       }

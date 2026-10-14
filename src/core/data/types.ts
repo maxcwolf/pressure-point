@@ -148,7 +148,19 @@ export interface RoleDef {
 }
 
 /** A quirk a member of staff can have. */
-export type TraitId = 'brisk' | 'tireless' | 'chatty' | 'sleepy' | 'speedy' | 'dawdler' | 'bargain';
+export type TraitId =
+  | 'brisk'
+  | 'tireless'
+  | 'chatty'
+  | 'sleepy'
+  | 'speedy'
+  | 'dawdler'
+  | 'bargain'
+  | 'litterbug'
+  | 'grump'
+  | 'sunny'
+  | 'quick'
+  | 'green';
 
 export interface TraitDef {
   id: TraitId;
@@ -158,7 +170,28 @@ export interface TraitDef {
   stamina?: number; // energy drain multiplier (lower is better)
   pay?: number; // salary multiplier
   walk?: number; // walk speed multiplier
+  /** Course speed multiplier. */
+  learn?: number;
+  /** Something they do that can be seen: drop litter, put guests off, cheer colleagues, or water plants in passing. */
+  habit?: 'litter' | 'grump' | 'cheer' | 'water';
 }
+
+/** A course any member of staff (or any in some roles) can take, beyond the treatments of their discipline. */
+export type GeneralId = 'bedside' | 'motivation' | 'stamina' | 'service' | 'maintenance';
+
+export interface GeneralDef {
+  id: GeneralId;
+  name: string;
+  icon: string;
+  desc: string;
+  cost: number;
+  days: number;
+  /** The roles it is for; absent means every role. */
+  roles?: readonly Role[];
+}
+
+/** Something a member of staff can be kept to or kept from: a kind of station, or a kind of Janitor's job. */
+export type Duty = 'consult' | 'assess' | 'litter' | 'clean' | 'repair' | 'plants' | 'stones';
 
 export type Modality =
   | 'swedish'

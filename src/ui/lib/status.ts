@@ -1,6 +1,6 @@
 // Describing what people are up to, in a few words.
 
-import { DISCIPLINES, ITEMS, modalityLabel, ROOMS } from '../../core/data';
+import { DISCIPLINES, GENERAL_COURSES, isGeneral, ITEMS, modalityLabel, ROOMS } from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
 import type { CourseId, Guest, Staff } from '../../core/state/types';
 
@@ -91,7 +91,8 @@ export function staffStatus(st: Staff, sim: Sim): string {
 
 /** The display name of a training course. */
 export function courseName(id: CourseId) {
-  return id === 'skill' ? 'professional development' : modalityLabel(id);
+  if (id === 'skill') return 'professional development';
+  return isGeneral(id) ? GENERAL_COURSES[id].name : modalityLabel(id);
 }
 
 /** How a morale bar is drawn: red once it is low enough to worry about. */
@@ -110,4 +111,9 @@ export function quitWarning(days: number | null): string {
 /** The staff waiting on an answer about a raise, in payroll order. Anyone already on their way out is past asking. */
 export function raiseRequests(staff: readonly Staff[]): Staff[] {
   return staff.filter((st) => st.raiseAsked && st.state !== 'leaving');
+}
+
+/** Staff ready for promotion, still waiting on it. */
+export function promotionRequests(staff: readonly Staff[]): Staff[] {
+  return staff.filter((st) => st.promotion && st.state !== 'leaving');
 }

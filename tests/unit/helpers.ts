@@ -1,5 +1,5 @@
 // Shared setup for the simulation tests: seeded games and a standard little center.
-import type { ItemType, Role, RoomType } from '../../src/core/data';
+import { isGeneral, type ItemType, type Role, type RoomType } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import type { SimEvent } from '../../src/core/sim/events';
 import { Sim } from '../../src/core/sim/sim';
@@ -8,13 +8,14 @@ import type { Room, Staff } from '../../src/core/state/types';
 import type { Rect } from '../../src/core/world';
 
 /**
- * Start a new game with a fixed random seed. Staff challenges are off, since the random numbers they draw would shift
- * the seeded runs the other tests were written against; challenges have tests of their own.
+ * Start a new game with a fixed random seed. Staff challenges are off and no new applicants turn up, since the random
+ * numbers they draw would shift the seeded runs the other tests were written against; both have tests of their own.
  */
 export function freshSim(seed = 1): Sim {
   setSeed(seed);
   const s = newGame();
   s.challengesOn = false;
+  s.nextApplicant = 1e9;
   return new Sim(s);
 }
 
@@ -170,3 +171,7 @@ export function inconsistencies(sim: Sim): string[] {
   }
   return out;
 }
+
+/** The treatment courses among some courses, leaving out the general ones every role can take. */
+export const treatmentCourses = (courses: readonly { id: string }[]) =>
+  courses.map((c) => c.id).filter((id) => !isGeneral(id));

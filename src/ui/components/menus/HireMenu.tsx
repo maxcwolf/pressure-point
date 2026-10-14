@@ -1,9 +1,10 @@
-// The Hire menu: this month's applicants, a tab per role.
+// The Hire menu: the applicants for each role, a tab per role.
 
 import './HireMenu.css';
 
 import { ROLES, traitOf } from '../../../core/data';
 import { money } from '../../../core/format';
+import { applicantCap, rankName } from '../../../core/sim/careers';
 import { unlockedUpTo } from '../../../core/state/game';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { hireableRoles } from '../../lib/catalog';
@@ -36,14 +37,18 @@ export function HireMenu() {
           </Button>
         ))}
       </div>
-      <p class="sub">{`${ROLES[role].desc} New applicants arrive each month.`}</p>
+      <p class="sub">
+        {`${ROLES[role].desc} Up to ${applicantCap(s)} apply for each role at a time, more as stars are earned; a new applicant turns up every few days.`}
+      </p>
       <div class="cards">
         {s.candidates
           .filter((c) => c.role === role)
           .map((c) => (
             <div key={c.id} class="card cv">
               <b>{c.name}</b>
-              <Stars count={c.skill} />
+              <span class="rank">
+                {rankName(c.skill)} <Stars count={c.skill} />
+              </span>
               <QualChips quals={c.quals} />
               {c.traits.length ? (
                 c.traits.map((t) => <em key={t} title={traitOf(t).desc}>{`${traitOf(t).name}: ${traitOf(t).desc}`}</em>)
@@ -54,15 +59,26 @@ export function HireMenu() {
                 {money(c.salary)}
                 <small>/month</small>
               </span>{' '}
-              <Button
-                class="go"
-                quiet
-                onPress={() => {
-                  sim.hire(c.id);
-                }}
-              >
-                Hire
-              </Button>
+              <div class="btnrow">
+                <Button
+                  class="go"
+                  quiet
+                  onPress={() => {
+                    sim.hire(c.id);
+                  }}
+                >
+                  Hire
+                </Button>
+                <Button
+                  class="reject"
+                  title="Turn them down, to make room for someone new"
+                  onPress={() => {
+                    sim.reject(c.id);
+                  }}
+                >
+                  Reject
+                </Button>
+              </div>
             </div>
           ))}
       </div>

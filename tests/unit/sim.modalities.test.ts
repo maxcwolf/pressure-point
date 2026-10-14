@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { type ConditionId, conditionOf, DAY_SECONDS, MODALITIES, STONE_USE } from '../../src/core/data';
+import { createContext } from '../../src/core/sim/context';
 import type { Sim } from '../../src/core/sim/sim';
+import { graduate } from '../../src/core/sim/training';
 import { addTraining, hire, openCenter, run, runUntil } from './helpers';
 
 /** Play for a while, turning every arriving guest into one condition. */
@@ -108,18 +110,29 @@ describe('training', () => {
     expect(sim.trainBlocker(therapist, deep)).toMatch(/Study Desk/);
   });
 
-  it('offers only unlocked modalities the therapist lacks, plus a skill course', () => {
-    const { sim, s, therapist, consultant } = openCenter(1);
+  it('offers only unlocked modalities the therapist lacks, then the general courses for their role', () => {
+    const { sim, s, therapist, consultant, receptionist } = openCenter(1);
     therapist.quals = ['swedish'];
+    therapist.general = [];
     therapist.skill = 2;
-    expect(sim.courses(therapist).map((c) => c.id)).toEqual(['skill']);
+    expect(sim.courses(therapist).map((c) => c.id)).toEqual(['bedside', 'motivation', 'stamina']);
     s.stars = 2;
-    expect(sim.courses(therapist).map((c) => c.id)).toEqual(['deep', 'sports', 'stone', 'cranio', 'skill']);
+    expect(sim.courses(therapist).map((c) => c.id)).toEqual([
+      'deep',
+      'sports',
+      'stone',
+      'cranio',
+      'bedside',
+      'motivation',
+      'stamina',
+    ]);
     therapist.quals.push('deep');
+    therapist.general.push('stamina');
     expect(sim.courses(therapist).map((c) => c.id)).not.toContain('deep');
-    expect(sim.courses(consultant).map((c) => c.id)).toEqual(consultant.skill < 5 ? ['skill'] : []);
-    consultant.skill = 5;
-    expect(sim.courses(consultant)).toEqual([]);
+    expect(sim.courses(therapist).map((c) => c.id)).not.toContain('stamina');
+    // and a course only some roles can take
+    expect(sim.courses(receptionist).map((c) => c.id)).toContain('service');
+    expect(sim.courses(consultant).map((c) => c.id)).not.toContain('service');
   });
 
   it('charges the fee, takes the stated time and grants the qualification', () => {
@@ -141,12 +154,13 @@ describe('training', () => {
     expect(sim.fairPay(therapist)).toBeGreaterThan(therapist.salary);
   });
 
-  it('raises skill by one level on the skill course', () => {
+  it('still finishes a skill course begun before ranks, as a rank up', () => {
     const { sim, consultant } = openCenter(1);
     addTraining(sim);
     consultant.skill = 2;
-    expect(sim.train(consultant.id, 'skill')).toBe(true);
-    runUntil(sim, () => consultant.training === null, 300);
+    consultant.training = { course: 'skill', progress: 1, seconds: 30, cost: 1000 };
+    graduate(createContext(sim.s), consultant);
+    expect(consultant.training).toBeNull();
     expect(consultant.skill).toBe(3);
   });
 

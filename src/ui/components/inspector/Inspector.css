@@ -137,3 +137,30 @@
 .insp button.roompriority.on {
   background: var(--gold);
 }
+
+.insp .rank {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.insp .duties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.insp button.duty {
+  border: 2px solid var(--navy);
+  border-radius: 9px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fff;
+  opacity: 0.6;
+}
+
+.insp button.duty.on {
+  background: var(--cream);
+  opacity: 1;
+}

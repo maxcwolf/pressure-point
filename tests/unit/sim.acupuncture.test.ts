@@ -19,6 +19,7 @@ import {
   runUntil,
   toasts,
 } from './helpers';
+import { treatmentCourses } from './helpers';
 
 /** The discipline that treats a condition. */
 const disciplineOf = (condition: ConditionId) => MODALITIES[conditionOf(condition).modality].discipline;
@@ -146,19 +147,8 @@ describe('acupuncturists', () => {
     expect(acu.quals).toContain('needling');
     acu.quals = ['needling'];
     therapist.quals = ['swedish'];
-    expect(sim.courses(acu).map((c) => c.id)).toEqual([
-      'cupping',
-      'moxa',
-      'electro',
-      ...(acu.skill < 5 ? ['skill'] : []),
-    ]);
-    expect(sim.courses(therapist).map((c) => c.id)).toEqual([
-      'deep',
-      'sports',
-      'stone',
-      'cranio',
-      ...(therapist.skill < 5 ? ['skill'] : []),
-    ]);
+    expect(treatmentCourses(sim.courses(acu))).toEqual(['cupping', 'moxa', 'electro']);
+    expect(treatmentCourses(sim.courses(therapist))).toEqual(['deep', 'sports', 'stone', 'cranio']);
     expect(sim.courses(acu).find((c) => c.id === 'cupping')!.name).toBe('Cupping');
     expect(sim.courses(therapist).find((c) => c.id === 'deep')!.name).toBe('Deep Tissue massage');
   });
@@ -213,7 +203,7 @@ describe('switching acupuncture off', () => {
     expect(sim.enabled('acupuncture')).toBe(false);
     expect(sim.offered('acupuncture')).toBe(false);
     expect(sim.unlocked('needling')).toBe(false);
-    expect(sim.courses(acu).every((c) => c.id === 'skill')).toBe(true);
+    expect(treatmentCourses(sim.courses(acu))).toEqual([]);
     // let anyone already inside finish, then nobody new should need acupuncture
     run(sim, 300);
     s.guests = s.guests.filter((g) => disciplineOf(g.condition) === 'massage');

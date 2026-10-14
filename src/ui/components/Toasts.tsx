@@ -1,14 +1,14 @@
-// Right side: raise requests waiting on an answer, then messages that fade after a few seconds. One about someone
+// Right side: raise requests and promotions waiting on an answer, then messages that fade after a few seconds. One about someone
 // or something takes you there when clicked.
 
 import './Toasts.css';
 
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
-import { raiseRequests } from '../lib/status';
+import { promotionRequests, raiseRequests } from '../lib/status';
 import { Button } from './common/Button';
 
-/** Raise requests still waiting, and the messages currently on screen. */
+/** Raise requests and promotions still waiting, and the messages currently on screen. */
 export function Toasts() {
   const hud = useHud();
   const { sim } = useGame();
@@ -24,6 +24,18 @@ export function Toasts() {
           }}
         >
           {`💸 ${st.name} wants a raise`}
+        </Button>
+      ))}
+      {promotionRequests(sim.s.staff).map((st) => (
+        <Button
+          key={`promote-${st.id}`}
+          class="toast request link"
+          title="Show me"
+          onPress={() => {
+            hud.show({ kind: 'staff', id: st.id });
+          }}
+        >
+          {`⬆️ ${st.name} is ready for promotion`}
         </Button>
       ))}
       {hud.toasts.map((t) => {

@@ -166,7 +166,9 @@ describe('staff', () => {
     const table = s.items.find((i) => i.type === 'massage_table')!;
     runUntil(sim, () => sim.guest(table.serving)?.state === 'served', 600);
     const g = sim.guest(table.serving)!;
-    expect(sim.train(therapist.id, 'skill')).toBe(true);
+    // a free qualification slot for the course
+    therapist.quals = ['swedish'];
+    expect(sim.train(therapist.id, 'stamina')).toBe(true);
     expect(inconsistencies(sim)).toEqual([]);
     expect(g.state).not.toBe('served');
     expect(table.serving).toBe(0);

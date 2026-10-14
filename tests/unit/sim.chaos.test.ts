@@ -3,7 +3,7 @@
 // are drawn from the game's own seeded random numbers, so a failure replays exactly.
 import { describe, expect, it } from 'vitest';
 
-import { type ItemType, type Role, SANDBOX_PLOT } from '../../src/core/data';
+import { DUTIES, type ItemType, type Role, SANDBOX_PLOT } from '../../src/core/data';
 import { irnd, pick, random } from '../../src/core/random';
 import type { Sim } from '../../src/core/sim/sim';
 import {
@@ -120,6 +120,24 @@ const MOVES: Record<string, (sim: Sim) => void> = {
       breakLimit: { role: pick(ROLES), limit: irnd(0, 3) },
     });
   },
+  /** Promote everyone who is ready. */
+  promote: (sim) => {
+    for (const st of sim.s.staff) if (st.promotion) sim.promote(st.id);
+  },
+  /** Keep someone from one of their duties, or put them back on it. */
+  duty: (sim) => {
+    const st = sim.s.staff.length ? pick(sim.s.staff) : undefined;
+    const duties = st ? (DUTIES[st.role] ?? []) : [];
+    if (st && duties.length) {
+      const d = pick(duties);
+      sim.setDuty(st.id, d, st.off.includes(d));
+    }
+  },
+  /** Turn an applicant down. */
+  reject: (sim) => {
+    const c = sim.s.candidates.length ? pick(sim.s.candidates) : undefined;
+    if (c) sim.reject(c.id);
+  },
   /** Put a room first, or back among the rest. */
   priority: (sim) => {
     const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
@@ -134,8 +152,9 @@ describe('a restless player', () => {
   it.each([1, 2, 3, 4])('never leaves the books unbalanced (seed %i)', { timeout: LONG_RUN }, (seed) => {
     const { sim, s } = openCenter(seed);
     s.stars = 3;
-    // challenges, and the year-end awards, come and go while all this goes on
+    // challenges, the year-end awards and new applicants come and go while all this goes on
     s.challengesOn = true;
+    s.nextApplicant = 0;
     // building comes up more often than tearing down, so there is a busy center to disrupt
     const names = Object.entries(MOVES).flatMap(([name]) => Array<string>(WEIGHTS[name] ?? 1).fill(name));
     const log: string[] = [];
@@ -151,6 +170,10 @@ describe('a restless player', () => {
       expect(Number.isFinite(s.money) && Number.isFinite(s.reputation)).toBe(true);
       for (const c of [...s.guests, ...s.staff]) expect(Number.isFinite(c.x + c.y), c.name).toBe(true);
       if (s.challenge) expect(Number.isFinite(sim.challengeObjective()!.progress)).toBe(true);
+      for (const st of s.staff) {
+        expect(st.skill >= 1 && st.skill <= 5, st.name).toBe(true);
+        expect(st.off.length < (DUTIES[st.role]?.length ?? 1), `${st.name} has a duty left`).toBe(true);
+      }
       // a lot of money keeps the moves coming: being broke is not what this is testing
       s.money = Math.max(s.money, 50_000);
       sim.drain();

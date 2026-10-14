@@ -1,7 +1,6 @@
 // Stars, the objectives for the next one, and what the center has so far.
 
 import { centerOf, type ItemType, type Role, type RoomType } from '../data';
-import { refillCandidates } from '../people';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
 import { type Objective, objectiveFor } from './goals';
@@ -32,7 +31,6 @@ export function checkStars(ctx: SimContext) {
     const grant = 5000 * s.stars;
     s.money += grant;
     s.ledger.bonus += grant;
-    refillCandidates(s, true);
     emit(ctx, { type: 'star', stars: s.stars });
     emit(ctx, { type: 'sfx', name: 'fanfare' });
   }

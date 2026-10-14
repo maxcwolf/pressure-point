@@ -1,6 +1,7 @@
 // Guests: arriving, waiting their turn, looking after their needs and leaving.
 
 import {
+  BEDSIDE_PATIENCE,
   BORED_PATIENCE,
   centerOf,
   conditionHere,
@@ -23,7 +24,8 @@ import type { GameState, Guest, Item, Need } from '../state/types';
 import { at } from '../util';
 import { accessPose, accessTile, itemCenter, rotVec, tileIdx, Z_CORRIDOR } from '../world';
 import { drainFactor } from './ambience';
-import { lobbyTile, say, streetTile } from './chars';
+import { hasGeneral } from './careers';
+import { lobbyTile, say, staffById, streetTile } from './chars';
 import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import type { SimContext } from './context';
@@ -324,6 +326,9 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   const waiting = g.state === 'toWait' || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
   if (waiting) {
     let drain = 0.85 * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);
+    // the one they are waiting for has a good bedside manner
+    const station = ctx.world.item(g.station);
+    if (station && hasGeneral(staffById(ctx, station.staffId), 'bedside')) drain *= BEDSIDE_PATIENCE;
     if (g.pose === 'sit') drain *= seatDrain(ctx, g);
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
     g.patience -= drain * dt;

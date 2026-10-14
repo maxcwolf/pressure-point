@@ -1053,6 +1053,54 @@ test.describe('the Items menu', () => {
   });
 });
 
+test.describe('staff careers', () => {
+  test('someone ready for promotion waits on a card at the side, and is promoted from their inspector', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    const name = await game.eval((pp) => {
+      pp.state.speed = 0;
+      const st = pp.state.staff.find((x) => x.role === 'therapist')!;
+      // every slot filled and the experience for the next rank: ready, and waiting
+      Object.assign(st, { skill: 1, quals: ['swedish'], general: ['stamina'], xp: 20, promotion: true });
+      return st.name;
+    });
+    const card = page.locator('#toasts .request', { hasText: `${name} is ready for promotion` });
+    await card.click();
+    const insp = page.locator('#inspector');
+    await expect(insp.locator('h3')).toHaveText(name);
+    await insp.getByRole('button', { name: /Promote to Junior/ }).click();
+    await expect(insp.locator('.rank')).toContainText('Junior');
+    await expect(card).toHaveCount(0);
+    expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'therapist')!.skill)).toBe(2);
+  });
+
+  test('a consultant can be kept to one duty, but not from them all', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.tools.select({ kind: 'staff', id: pp.state.staff.find((x) => x.role === 'consultant')!.id });
+    });
+    const insp = page.locator('#inspector');
+    await insp.getByRole('button', { name: /Posture Lab scans/ }).click();
+    await expect(insp.getByRole('button', { name: /Posture Lab scans/ })).toContainText('✗');
+    await insp.getByRole('button', { name: /Consultations/ }).click();
+    expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'consultant')!.off)).toEqual(['assess']);
+  });
+
+  test('an applicant can be turned down', async ({ game, page }) => {
+    await game.start();
+    await game.menu('Hire');
+    const cards = page.locator('#menu .card.cv');
+    await expect(cards).toHaveCount(3);
+    await cards.first().getByRole('button', { name: 'Reject' }).click();
+    await expect(cards).toHaveCount(2);
+  });
+});
+
 test.describe('goals along the way', () => {
   test('a member of staff sets a challenge, shown under the objectives until it is met', async ({ game, page }) => {
     await game.start();

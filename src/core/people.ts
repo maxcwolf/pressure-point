@@ -70,11 +70,12 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
 /** Each extra qualification is worth this much more pay. */
 export const QUAL_PAY = 0.1;
 
-/** The going rate for someone with this role, skill, quirks and training. */
-export function fairSalary(role: Role, skill: number, traits: TraitId[], quals: Modality[]): number {
+/** The going rate for someone with this role, rank, quirks and training (treatments, and general courses passed). */
+export function fairSalary(role: Role, skill: number, traits: TraitId[], quals: Modality[], general = 0): number {
   let pay = ROLES[role].baseSalary * (0.75 + skill * 0.25);
   for (const t of traits) pay *= traitOf(t).pay ?? 1;
   if (ROLES[role].discipline) pay *= 1 + QUAL_PAY * Math.max(0, quals.length - 1);
+  pay *= 1 + QUAL_PAY * general;
   return Math.round(pay / 10) * 10;
 }
 
