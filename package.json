@@ -12,6 +12,7 @@
     "build": "tsc -b && yarn build:web && yarn build:desktop",
     "build:web": "vite build",
     "build:desktop": "node scripts/build-desktop.mjs",
+    "brand": "node scripts/make-brand.mjs",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

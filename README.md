@@ -1,4 +1,4 @@
-# Pressure Point Institute
+<h1 align="center"><img src="docs/logo.png" alt="Pressure Point Institute" width="600"></h1>
 
 ### ▶ [Play it now in your browser](https://maxcwolf.github.io/pressure-point/)
 
@@ -149,28 +149,29 @@ Saves live in the browser's storage, so the web version and the desktop app each
 
 ## Code map
 
-| Path                  | What lives there                                                                                            |
-| --------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `src/core/`           | The game itself, as plain logic: no drawing, no interface, no browser                                       |
-| `src/core/data/`      | All tunable content: rooms, items, staff roles, treatments, conditions, rules, flavor text                  |
-| `src/core/state/`     | The shape of a game in progress (plain JSON), starting one, and upgrades for older saves                    |
-| `src/core/world.ts`   | Tile grid, placement rules, pathfinding                                                                     |
-| `src/core/sim/`       | The simulation, as functions grouped by area: guests, staffing, stations, building, economy and so on       |
-| `src/core/sim/sim.ts` | `Sim`: the clock, and the commands and questions the rest of the game uses                                  |
-| `src/app/`            | Running the game: startup, a game in progress, pointer and keyboard input, the frame loop                   |
-| `src/app/tools/`      | The build tools: a small class holding the tool in hand, over pure modules for geometry, hints and overlays |
-| `src/storage/`        | Autosave, named save slots, export and import, and preferences that outlive a game                          |
-| `src/render/`         | The Three.js scene, one file per layer: floor, rooms, items, people, overlays, camera, picking              |
-| `src/render/models/`  | The procedural models: shared parts, the people, and one file per item in `items/`                          |
-| `src/ui/components/`  | The interface, in Preact: one component per panel, menu, inspector and dialog, each with its stylesheet     |
-| `src/ui/hooks/`       | How components reach the game and the interface's state                                                     |
-| `src/ui/lib/`         | The interface's decisions as small pure functions: what the menus offer, status text, chart sizing          |
-| `src/ui/theme/`       | The palette, and the styles everything shares                                                               |
-| `src/ui/hud.ts`       | The interface's own state (open menu and dialog, messages), which the rest of the app talks to              |
-| `src/audio.ts`        | Synthesized sound effects and music                                                                         |
-| `src/main.ts`         | The entry point                                                                                             |
-| `electron/main.ts`    | Desktop app: the main process, which opens the window and locks it down                                     |
-| `electron/preload.ts` | Desktop app: hands the game the API in `electron/api.ts`, with the sandbox on                               |
+| Path                  | What lives there                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `src/core/`           | The game itself, as plain logic: no drawing, no interface, no browser                                        |
+| `src/core/data/`      | All tunable content: rooms, items, staff roles, treatments, conditions, rules, flavor text                   |
+| `src/core/state/`     | The shape of a game in progress (plain JSON), starting one, and upgrades for older saves                     |
+| `src/core/world.ts`   | Tile grid, placement rules, pathfinding                                                                      |
+| `src/core/sim/`       | The simulation, as functions grouped by area: guests, staffing, stations, building, economy and so on        |
+| `src/core/sim/sim.ts` | `Sim`: the clock, and the commands and questions the rest of the game uses                                   |
+| `src/app/`            | Running the game: startup, a game in progress, pointer and keyboard input, the frame loop                    |
+| `src/app/tools/`      | The build tools: a small class holding the tool in hand, over pure modules for geometry, hints and overlays  |
+| `src/storage/`        | Autosave, named save slots, export and import, and preferences that outlive a game                           |
+| `src/render/`         | The Three.js scene, one file per layer: floor, rooms, items, people, overlays, camera, picking               |
+| `src/render/models/`  | The procedural models: shared parts, the people, and one file per item in `items/`                           |
+| `src/ui/components/`  | The interface, in Preact: one component per panel, menu, inspector and dialog, each with its stylesheet      |
+| `src/ui/hooks/`       | How components reach the game and the interface's state                                                      |
+| `src/ui/lib/`         | The interface's decisions as small pure functions: what the menus offer, status text, chart sizing           |
+| `src/ui/theme/`       | The palette, and the styles everything shares                                                                |
+| `src/ui/hud.ts`       | The interface's own state (open menu and dialog, messages), which the rest of the app talks to               |
+| `src/audio.ts`        | Synthesized sound effects and music                                                                          |
+| `src/main.ts`         | The entry point                                                                                              |
+| `electron/main.ts`    | Desktop app: the main process, which opens the window and locks it down                                      |
+| `electron/preload.ts` | Desktop app: hands the game the API in `electron/api.ts`, with the sandbox on                                |
+| `brand/`              | The app icon and the logo above, drawn in code. `yarn brand` renders them to `build/`, `public/` and `docs/` |
 
 Disciplines, modalities, conditions, courses and equipment are all defined in `src/core/data/`. Adding a discipline such as reiki means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models/items/`. The simulation, menus and Settings pick it up from the data.
 

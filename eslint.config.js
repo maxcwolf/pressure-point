@@ -121,6 +121,8 @@ export default tseslint.config(
   // plain JavaScript that runs in Node: build scripts and this file
   { files: ['**/*.mjs', '**/*.js'], ...tseslint.configs.disableTypeChecked },
   { files: ['**/*.mjs', '**/*.js'], languageOptions: { globals: globals.node } },
+  // drawn in a browser by scripts/make-brand.mjs
+  { files: ['brand/wordmark.mjs'], languageOptions: { globals: globals.browser } },
   { files: ['scripts/**'], rules: { 'no-console': 'off' } },
 
   // tests reach into the running game and poke at its internals on purpose
