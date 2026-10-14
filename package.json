@@ -13,6 +13,7 @@
     "build:web": "vite build",
     "build:desktop": "node scripts/build-desktop.mjs",
     "brand": "node scripts/make-brand.mjs",
+    "postinstall": "husky",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -59,6 +60,8 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.0",
     "@types/node": "^26.6.5",
@@ -71,6 +74,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-simple-import-sort": "^14.0.0",
     "globals": "^17.13.0",
+    "husky": "^9.1.7",
     "prettier": "^3.9.10",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.2",

@@ -81,7 +81,7 @@ End-to-end tests find things by meaning (`game.clickItem('bench')`), not by scre
 - **Type-only imports use `import type`**, so they load nothing at run time. The linter requires it.
 - **Every bug fix comes with a test** that fails on the old code and passes on the fix.
 - **American English** in code, comments, interface text and docs.
-- **Conventional Commits** for commit messages (`feat: ...`, `fix: ...`, `refactor: ...`).
+- **Conventional Commits** for commit messages (`feat: ...`, `fix: ...`, `refactor: ...`), in lowercase. commitlint checks each message as it is committed (a Husky hook, set up by `yarn install`) and again in CI.
 
 ## Common changes
 
