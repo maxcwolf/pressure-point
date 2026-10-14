@@ -1,6 +1,7 @@
 // Guests: arriving, waiting their turn, looking after their needs and leaving.
 
 import {
+  BORED_PATIENCE,
   type ConditionId,
   conditionOf,
   CONDITIONS,
@@ -9,11 +10,13 @@ import {
   ENT_X,
   ITEMS,
   MODALITIES,
+  PLAY_PATIENCE,
+  PLAY_RANGE,
   ROOMS,
 } from '../data';
 import { randomLook, randomName } from '../people';
 import { pick, random, rnd } from '../random';
-import type { Guest, Item } from '../state/types';
+import type { Guest, Item, Need } from '../state/types';
 import { at } from '../util';
 import { accessPose, accessTile, inBuilding, itemCenter, rotVec, tileIdx, Z_CORRIDOR } from '../world';
 import { drainFactor } from './ambience';
@@ -26,6 +29,7 @@ import { emit, tipOnce } from './events';
 import { goTo, halt, moveAlong } from './movement';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
+import { addWear } from './upkeep';
 
 const GOAL_NAME = {
   reception: 'Reception Desk',
@@ -34,7 +38,7 @@ const GOAL_NAME = {
   treat: 'Massage Suite',
 } as const;
 
-const NEED_ICON = { drink: '🍵', eat: '🥜', toilet: '🚻' } as const;
+const NEED_ICON = { drink: '🍵', eat: '🥜', toilet: '🚻', play: '🕹️' } as const;
 
 /** Bring in a new guest now and then, more often as the center's reputation grows. */
 export function admitGuests(ctx: SimContext, dt: number) {
@@ -180,11 +184,21 @@ function goWait(ctx: SimContext, g: Guest) {
   }
 }
 
+/** What a waiting guest most wants to break off for, if anything: the toilet, a drink, a snack, or a game. */
+export function needNow(g: Guest): Need | '' {
+  if (g.bladder > 75) return 'toilet';
+  if (g.thirst > 70) return 'drink';
+  if (g.hunger > 75) return 'eat';
+  if (g.patience < BORED_PATIENCE) return 'play';
+  return '';
+}
+
 /** Head off for the toilet, a drink or a snack, if one is pressing and available. */
 function tryNeed(ctx: SimContext, g: Guest): boolean {
-  const kind = g.bladder > 75 ? 'toilet' : g.thirst > 70 ? 'drink' : g.hunger > 75 ? 'eat' : '';
+  const kind = needNow(g);
   if (!kind) return false;
-  const a = findAccess(ctx, kind, g.tx, g.ty);
+  // a game is only worth a short walk
+  const a = findAccess(ctx, kind, g.tx, g.ty, kind === 'play' ? PLAY_RANGE : undefined);
   if (!a) return false;
   claim(ctx, g, a.item, a.idx);
   const [ax, ay] = accessTile(a.item, a.idx);
@@ -305,25 +319,29 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     case 'toNeed':
       if (arrived) {
         g.state = 'need';
-        g.timer = g.needKind === 'toilet' ? 3.5 : 2.2;
+        g.timer = g.needKind === 'toilet' ? 3.5 : g.needKind === 'play' ? 3 : 2.2;
         g.busy = g.needKind !== 'toilet';
       } else if (!g.path) goWait(ctx, g);
       break;
     case 'need':
       g.timer -= dt;
       if (g.timer <= 0) {
+        const used = ctx.world.item(g.claimItem);
+        if (used) {
+          const price = ITEMS[used.type].sale ?? 0;
+          if (price > 0) earn(ctx, price, 'vending', g.x, g.y);
+          addWear(ctx, used);
+        }
         if (g.needKind === 'drink') {
           g.thirst = 0;
           g.bladder = Math.min(100, g.bladder + 22);
-          earn(ctx, 15, 'vending', g.x, g.y);
         } else if (g.needKind === 'eat') {
           g.hunger = 0;
           g.hasWrapper = true;
-          earn(ctx, 25, 'vending', g.x, g.y);
-        } else {
+        } else if (g.needKind === 'toilet') {
           g.bladder = 0;
         }
-        g.patience = Math.min(100, g.patience + 8);
+        g.patience = Math.min(100, g.patience + (g.needKind === 'play' ? PLAY_PATIENCE : 8));
         goWait(ctx, g);
       }
       break;

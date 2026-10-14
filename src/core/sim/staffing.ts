@@ -1,6 +1,15 @@
 // Staff: hiring and firing, pay and morale, breaks and finding work to do.
 
-import { ITEMS, ROLES, traitOf, WEAR_REPAIR } from '../data';
+import {
+  BOOKCASE_MAX,
+  BOOKCASE_SPEEDUP,
+  COFFEE_BREAK_BOOST,
+  ITEMS,
+  POOL_TABLE_MORALE,
+  ROLES,
+  traitOf,
+  WEAR_REPAIR,
+} from '../data';
 import { money } from '../format';
 import { fairSalary, makeCandidate } from '../people';
 import { pick, random } from '../random';
@@ -8,6 +17,7 @@ import type { Item, Staff } from '../state/types';
 import { clamp, must } from '../util';
 import { accessPose, accessTile, footprint } from '../world';
 import { prestige } from './ambience';
+import { sameRoomCount } from './building';
 import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
 import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
@@ -15,6 +25,7 @@ import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { goTo, halt, moveAlong } from './movement';
+import { hasItem } from './progress';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
 
@@ -100,16 +111,40 @@ export function giveRaise(ctx: SimContext, id: number) {
   emit(ctx, { type: 'sfx', name: 'cash' });
 }
 
-/** Drift morale toward what pay and conditions deserve; the unhappy ask for a raise, then quit. */
-function updateMorale(ctx: SimContext, st: Staff, dt: number) {
-  if (st.state === 'leaving' || st.state === 'arriving') return;
-  const fair = fairPay(st);
-  let target = 62 + clamp((st.salary / fair - 1) * 90, -45, 20);
+/** How much faster than usual a member of staff on a break gets their energy back: quicker with an Espresso Machine in the room. */
+export function breakBoost(ctx: SimContext, st: Staff): number {
+  const seat = ctx.world.item(st.claimItem);
+  return seat && sameRoomCount(ctx, seat, 'coffee_machine') > 0 ? COFFEE_BREAK_BOOST : 1;
+}
+
+/** How much faster than usual someone's course is going: quicker with bookcases in the Training Room. */
+export function courseSpeed(ctx: SimContext, st: Staff): number {
+  const desk = ctx.world.item(st.claimItem);
+  return trainingSpeed(desk ? sameRoomCount(ctx, desk, 'bookcase') : 0);
+}
+
+/** How much faster a course goes with this many bookcases in its room. Only the first few count. */
+export function trainingSpeed(bookcases: number): number {
+  return 1 + BOOKCASE_SPEEDUP * Math.min(BOOKCASE_MAX, bookcases);
+}
+
+/** The morale a member of staff drifts toward: set by their pay, energy, workplace and the state of the center. */
+export function moraleTarget(ctx: SimContext, st: Staff): number {
+  let target = 62 + clamp((st.salary / fairPay(st) - 1) * 90, -45, 20);
   if (st.energy < 20) target -= 18;
   const post = ctx.world.item(st.post);
   const room = post && st.state === 'atPost' ? ctx.world.roomOfItem(post) : undefined;
   if (room) target += (prestige(ctx, room) - 2) * 5;
+  if (hasItem(ctx, 'pool_table')) target += POOL_TABLE_MORALE;
   if (ctx.s.litter.length > 6) target -= 6;
+  return target;
+}
+
+/** Drift morale toward what pay and conditions deserve; the unhappy ask for a raise, then quit. */
+function updateMorale(ctx: SimContext, st: Staff, dt: number) {
+  if (st.state === 'leaving' || st.state === 'arriving') return;
+  const fair = fairPay(st);
+  const target = moraleTarget(ctx, st);
   st.morale = clamp(st.morale + (target - st.morale) * Math.min(1, dt * 0.03), 0, 100);
 
   if (!st.raiseAsked && st.salary < fair * 0.97 && st.morale < 56) {
@@ -277,7 +312,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
 
   updateMorale(ctx, st, dt);
   if (st.state === 'leaving' && !ctx.s.staff.includes(st)) return;
-  if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * 9);
+  if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * 9 * breakBoost(ctx, st));
   else if (st.state !== 'leaving' && st.state !== 'training') {
     const rate = st.busy ? 0.42 * (st.strain || 1) : st.state === 'atPost' ? 0.14 : 0.2;
     st.energy = Math.max(0, st.energy - rate * stamina * dt);
@@ -370,7 +405,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
         staffIdle(ctx, st);
         break;
       }
-      t.progress += dt / t.seconds;
+      t.progress += (dt / t.seconds) * courseSpeed(ctx, st);
       if (t.progress >= 1) graduate(ctx, st);
       break;
     }

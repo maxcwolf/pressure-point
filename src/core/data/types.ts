@@ -36,7 +36,15 @@ export type ItemType =
   | 'needle_cabinet'
   | 'cupping_cart'
   | 'moxa_burner'
-  | 'stim_unit';
+  | 'stim_unit'
+  | 'water_cooler'
+  | 'fire_extinguisher'
+  | 'arcade_machine'
+  | 'bookcase'
+  | 'coffee_machine'
+  | 'aquarium'
+  | 'pool_table'
+  | 'trophy_cabinet';
 
 export interface RoomDef {
   type: RoomType;
@@ -57,7 +65,7 @@ export interface RoomDef {
   unlock?: number;
 }
 
-export type AccessRole = 'staff' | 'guest' | 'seat' | 'rest' | 'toilet' | 'drink' | 'eat' | 'study';
+export type AccessRole = 'staff' | 'guest' | 'seat' | 'rest' | 'toilet' | 'drink' | 'eat' | 'play' | 'study';
 
 export type Pose = 'stand' | 'walk' | 'sit' | 'lie';
 
@@ -104,6 +112,8 @@ export interface ItemDef {
   walkable?: boolean;
   /** Wear added each time it is used. At 100 it breaks until a Janitor repairs it. */
   wear?: number;
+  /** What a guest pays each time they use it, for drinks, snacks and games. */
+  sale?: number;
 }
 
 export interface RoleDef {

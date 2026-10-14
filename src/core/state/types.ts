@@ -142,7 +142,7 @@ export interface Enrollment {
 /** The step of a visit a guest is on. */
 export type GuestGoal = 'reception' | 'consult' | 'assess' | 'treat' | 'leave';
 /** Something a guest breaks off waiting to see to. */
-export type Need = 'drink' | 'eat' | 'toilet';
+export type Need = 'drink' | 'eat' | 'toilet' | 'play';
 /** How a guest's visit ended. */
 export type Outcome = 'healed' | 'failed' | 'stormed';
 

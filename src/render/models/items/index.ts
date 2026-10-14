@@ -4,12 +4,17 @@ import * as THREE from 'three';
 
 import type { ItemType } from '../../../core/data';
 import { buildAcuTable } from './acu-table';
+import { buildAquarium } from './aquarium';
+import { buildArcadeMachine } from './arcade-machine';
 import { buildBench } from './bench';
 import { buildBin } from './bin';
+import { buildBookcase } from './bookcase';
 import { buildCabinet } from './cabinet';
+import { buildCoffeeMachine } from './coffee-machine';
 import { buildConsultDesk } from './consult-desk';
 import { buildCuppingCart } from './cupping-cart';
 import { buildDiffuser } from './diffuser';
+import { buildFireExtinguisher } from './fire-extinguisher';
 import { buildFountain } from './fountain';
 import { buildMagazineRack } from './magazine-rack';
 import { buildMassageTable } from './massage-table';
@@ -17,6 +22,7 @@ import { buildMoxaBurner } from './moxa-burner';
 import { buildNeedleCabinet } from './needle-cabinet';
 import { buildOilTrolley } from './oil-trolley';
 import { buildPlant } from './plant';
+import { buildPoolTable } from './pool-table';
 import { buildPostureScanner } from './posture-scanner';
 import { buildReceptionDesk } from './reception-desk';
 import { buildRug } from './rug';
@@ -31,6 +37,8 @@ import { buildStretchRack } from './stretch-rack';
 import { buildStudyDesk } from './study-desk';
 import { buildTeaStation } from './tea-station';
 import { buildToilet } from './toilet';
+import { buildTrophyCabinet } from './trophy-cabinet';
+import { buildWaterCooler } from './water-cooler';
 import { buildWhiteboard } from './whiteboard';
 
 /** What builds each item's model. Every item type has to have one. */
@@ -64,6 +72,14 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   stretch_rack: buildStretchRack,
   whiteboard: buildWhiteboard,
   study_desk: buildStudyDesk,
+  water_cooler: buildWaterCooler,
+  fire_extinguisher: buildFireExtinguisher,
+  arcade_machine: buildArcadeMachine,
+  bookcase: buildBookcase,
+  coffee_machine: buildCoffeeMachine,
+  aquarium: buildAquarium,
+  pool_table: buildPoolTable,
+  trophy_cabinet: buildTrophyCabinet,
 };
 
 /** Build an item in its local frame: origin at the footprint center, +z is the front. */

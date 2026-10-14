@@ -2,6 +2,12 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Eight new items:** a Water Cooler and a Fire Extinguisher to start with, then with each star a Mindfulness Arcade, a Bookcase and an Espresso Machine, an Aquarium and a Pool Table, and a Trophy Cabinet.
+- Bored guests play the arcade, staff rest faster with espresso, bookcases speed up training and a pool table lifts morale.
+- **Fixed:** tea stations and snack machines now wear out with use, as they were meant to.
+
 ## v0.3.1
 
 - **Fixed:** a window in a room's near wall is now a full window. Before, only its top showed above the building's outer wall.

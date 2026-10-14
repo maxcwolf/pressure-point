@@ -82,6 +82,14 @@ export function finishRoom(ctx: SimContext, room: Room) {
   emit(ctx, { type: 'sfx', name: 'build' });
 }
 
+/** How many working items of a type share a room with an item. */
+export function sameRoomCount(ctx: SimContext, item: Item, type: ItemType): number {
+  const zone = ctx.world.zoneAt(item.x, item.y);
+  if (zone <= 0) return 0;
+  return ctx.s.items.filter((i) => i.type === type && ctx.world.usable(i) && ctx.world.zoneAt(i.x, i.y) === zone)
+    .length;
+}
+
 /** The items inside a room. */
 export function itemsInRoom(ctx: SimContext, room: Room) {
   return ctx.s.items.filter((it) => ctx.world.zoneAt(it.x, it.y) === room.id);

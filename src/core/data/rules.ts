@@ -33,6 +33,20 @@ export const PRICE_MAX = 2;
 export const WEAR_REPAIR = 50;
 
 /** How far a decorative item's effect reaches, in tiles. */
+/** How much faster staff get their energy back on a break with an Espresso Machine in the room. */
+export const COFFEE_BREAK_BOOST = 1.5;
+/** How much a Pool Table in a Staff Room lifts the morale everyone settles toward. */
+export const POOL_TABLE_MORALE = 5;
+/** How much faster a course goes for each bookcase in its Training Room, and how many count. */
+export const BOOKCASE_SPEEDUP = 0.2;
+export const BOOKCASE_MAX = 2;
+/** A waiting guest whose patience falls below this goes looking for a game to play. */
+export const BORED_PATIENCE = 60;
+/** How far a bored guest will walk to play, in tiles. */
+export const PLAY_RANGE = 12;
+/** How much patience a round on the arcade gives back. */
+export const PLAY_PATIENCE = 25;
+
 export const DECOR_RADIUS = 4;
 export const DIAGNOSIS_TARGET = 0.75;
 

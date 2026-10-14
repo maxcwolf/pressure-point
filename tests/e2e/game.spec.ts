@@ -60,6 +60,15 @@ test.describe('starting out', () => {
     expect(await game.eval((pp) => pp.state.items.length)).toBe(0);
   });
 
+  test('the newer items wait for their stars', async ({ game }) => {
+    await game.start();
+    await game.menu('Items');
+    await expect(game.card('Water Cooler')).toContainText('Corridor');
+    await expect(game.card('Mindfulness Arcade')).toContainText('Unlocks at star 1');
+    await expect(game.card('Aquarium')).toContainText('Unlocks at star 2');
+    await expect(game.card('Trophy Cabinet')).toContainText('Unlocks at star 3');
+  });
+
   test('locked equipment cannot be picked before its star', async ({ game }) => {
     await game.start();
     await game.menu('Items');

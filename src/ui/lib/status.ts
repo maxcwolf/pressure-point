@@ -40,11 +40,10 @@ export function guestStatus(g: Guest, sim: Sim): string {
             : 'Being treated';
     case 'toNeed':
     case 'need':
-      return g.needKind === 'toilet'
-        ? 'Answering a call of nature'
-        : g.needKind === 'drink'
-          ? 'Getting a herbal tea'
-          : 'Getting a snack';
+      if (g.needKind === 'toilet') return 'Answering a call of nature';
+      if (g.needKind === 'play') return 'Playing a round on the arcade';
+      if (g.needKind === 'eat') return 'Getting a snack';
+      return sim.world.item(g.claimItem)?.type === 'water_cooler' ? 'Getting a glass of water' : 'Getting a herbal tea';
     case 'leaving':
       return g.outcome === 'healed'
         ? 'Going home healed'
