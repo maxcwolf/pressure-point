@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.7.2
 
 - **Resize a built room:** Resize in a room's inspector lets you drag any wall in or out. The door and windows move with their walls, the furniture has to stay inside, and floor added costs $200 a tile, with half back for floor given up.
 
