@@ -156,6 +156,25 @@ describe('laying out rooms', () => {
     expect(sim.world.roomRectValid('massage', { x: 13, y: 15, w: 3, h: 3 }).ok).toBe(false);
   });
 
+  it('will not cut a corridor rug in two', () => {
+    const sim = freshSim();
+    expect(sim.placeItem('rug', 10, 10, 0)).not.toBeNull();
+    // the rug covers x 10..11; a room starting at x 11 would put a wall through it
+    expect(sim.world.roomRectValid('consult', { x: 11, y: 9, w: 3, h: 3 }).ok).toBe(false);
+    // clear of it, or right over it, is fine
+    expect(sim.world.roomRectValid('consult', { x: 12, y: 9, w: 3, h: 3 }).ok).toBe(true);
+    expect(sim.world.roomRectValid('consult', { x: 9, y: 9, w: 4, h: 4 }).ok).toBe(true);
+  });
+
+  it('will not wall up the window of the room next door', () => {
+    const sim = freshSim();
+    const consult = addConsult(sim);
+    expect(sim.toggleWindow(consult.id, { x: 8, y: 5, dx: 1, dy: 0 })).toBe('added');
+    expect(sim.world.roomRectValid('staffroom', { x: 9, y: 4, w: 3, h: 3 }).reason).toMatch(/window/);
+    // a tile further out, leaving the window a strip of corridor to look onto, is fine
+    expect(sim.world.roomRectValid('staffroom', { x: 10, y: 4, w: 3, h: 3 }).ok).toBe(true);
+  });
+
   it('only allows doors that open onto a corridor', () => {
     const sim = freshSim();
     const rect = { x: BX0, y: BY0, w: 3, h: 3 };

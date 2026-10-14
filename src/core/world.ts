@@ -425,6 +425,16 @@ export class World {
         if (this.reserved[i]) return no('Keep doorways and access spots clear');
       }
     }
+    /** Whether a tile is inside the new room. */
+    const within = (x: number, y: number) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
+    // things that can be walked over, like rugs, have to end up wholly on one side of the new walls
+    for (const it of this.s.items) {
+      const tiles = footprint(it);
+      const n = tiles.filter(([x, y]) => within(x, y)).length;
+      if (n > 0 && n < tiles.length) return no('Something is in the way');
+    }
+    for (const room of this.s.rooms)
+      if (room.windows.some((w) => within(w.x + w.dx, w.y + w.dy))) return no('A window is in the way');
     if (Math.min(r.w, r.h) < def.minShort || Math.max(r.w, r.h) < def.minLong)
       return no(`Too small: needs at least ${def.minShort}×${def.minLong}`);
     return OK;
