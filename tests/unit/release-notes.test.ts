@@ -14,7 +14,7 @@ describe('release notes', () => {
     expect(text).toContain('**Acupuncture:**');
     expect(text).not.toContain('Saved games');
     expect(text).not.toContain('## v0.');
-    expect(text).toContain('https://maxcwolf.github.io/pressure-point/');
+    expect(text).toContain('[▶ Play in your browser](https://maxcwolf.github.io/pressure-point/)');
     expect(text.indexOf('Acupuncture')).toBeLessThan(text.indexOf('Play in your browser'));
   });
 

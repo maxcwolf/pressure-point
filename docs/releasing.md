@@ -7,7 +7,7 @@ git tag v1.2.3
 git push origin v1.2.3
 ```
 
-The same tag also publishes the browser build to GitHub Pages at https://maxcwolf.github.io/pressure-point/, so the web version always matches the installers. The **Deploy web version** workflow can be run by hand to publish any other branch or tag.
+The same tag also publishes the browser build to [GitHub Pages](https://maxcwolf.github.io/pressure-point/), so the web version always matches the installers. The **Deploy web version** workflow can be run by hand to publish any other branch or tag.
 
 The tag sets the version number in the installers. Running the **Release** workflow by hand from the Actions tab builds the installers as downloadable artifacts without publishing a release.
 
