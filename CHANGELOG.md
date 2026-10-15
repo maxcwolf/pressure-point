@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.13.0
 
 - **The Janitor is now the Caretaker,** a better name for someone who cleans, repairs, waters, reheats the stones, changes the linens and, with the Smudging course, clears bad vibes. Janitor of the Year is now Caretaker of the Year. Saved games keep their staff and trophies.
 - **A worsening condition:** every guest has a Condition bar that falls while they wait, faster with some conditions (Stress Head, Flat Battery, Gull Shock) and slower with others. The lower it gets, the less likely their treatment is to work, and if it runs out they go home worse off: a one-star review and a big knock to reputation. Emergency guests arrive already in a bad way. A 🤕 shows over anyone in poor shape.
