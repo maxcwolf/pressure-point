@@ -7,6 +7,10 @@ import { type Objective, objectiveFor } from './goals';
 
 export type { Objective } from './goals';
 
+/** What the speakers say as the doors open. */
+export const OPENING_LINE =
+  'The healing center is now open. Please form an orderly line in order of your aura’s color code.';
+
 /** Open the doors once the center has the bare minimum: a desk, a consultation room and a massage suite. */
 export function checkOpening(ctx: SimContext) {
   const s = ctx.s;
@@ -14,10 +18,7 @@ export function checkOpening(ctx: SimContext) {
   s.open = true;
   s.spawnT = 3;
   toast(ctx, 'Grand opening! Guests are on their way.', 'good');
-  emit(ctx, {
-    type: 'announce',
-    text: 'The healing center is now open. Please form an orderly line of ailments.',
-  });
+  emit(ctx, { type: 'announce', text: OPENING_LINE });
   emit(ctx, { type: 'sfx', name: 'fanfare' });
 }
 

@@ -15,6 +15,7 @@ import {
 import { CARETAKER_WANTED, staffWanted } from '../../src/core/sim/advisor';
 import { SWEAT_LODGE_OPEN } from '../../src/core/sim/ceremonies';
 import { emergencyNews } from '../../src/core/sim/emergencies';
+import { OPENING_LINE } from '../../src/core/sim/progress';
 import { VOICE_LINES, voiceFor } from '../../src/voice';
 
 /** Every line the speakers can say that does not change from game to game. */
@@ -32,6 +33,7 @@ function spokenLines(): string[] {
     ...mishaps,
     ...emergencies,
     SWEAT_LODGE_OPEN,
+    OPENING_LINE,
   ];
 }
 
@@ -70,6 +72,7 @@ describe('the announcer', () => {
     expect(voiceFor(MISHAPS.storm.end)).toMatch(/storm-ended.*\.m4a$/);
     expect(voiceFor(CARETAKER_WANTED)).toMatch(/caretaker-needed.*\.m4a$/);
     expect(voiceFor(SWEAT_LODGE_OPEN)).toMatch(/sweat-shop-open.*\.m4a$/);
+    expect(voiceFor(OPENING_LINE)).toMatch(/healing-center-open-1.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.vip)).toMatch(/vip-visiting.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.inspector)).toMatch(/health-inspector.*\.m4a$/);
     expect(voiceFor(emergencyNews('The city fun run turned out to be an unfun run.'))).toMatch(

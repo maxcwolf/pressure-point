@@ -10,6 +10,7 @@ import emergencyFunRun from './sounds/announcer/emergency-fun-run.m4a';
 import emergencyFurniture from './sounds/announcer/emergency-furniture.m4a';
 import emergencyYoga from './sounds/announcer/emergency-yoga.m4a';
 import faceShapedMarks from './sounds/announcer/face-shaped-marks.m4a';
+import healingCenterOpen1 from './sounds/announcer/healing-center-open-1.m4a';
 import healthInspector from './sounds/announcer/health-inspector.m4a';
 import herbalTea from './sounds/announcer/herbal-tea.m4a';
 import humAlong from './sounds/announcer/hum-along.m4a';
@@ -48,6 +49,7 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'Please breathe in. Further instructions will follow.': pleaseBreatheIn,
   'Guests are reminded that clothing is mandatory in the hallways.': clothingMandatory,
   'Attention male visitors, please do not completely remove your pants while using the urinal.': removePantsUrinal,
+  'The healing center is now open. Please form an orderly line in order of your aura’s color code.': healingCenterOpen1,
   'Receptionist needed at the Reception Desk.': receptionistAtReception,
   'Wellness Consultant needed at the Consultation Room.': wellnessAtConsultation,
   'Wellness Consultant needed at the Posture Lab.': wellnessAtPosture,

@@ -20,7 +20,8 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [x] Guests are reminded that clothing is mandatory in the hallways.
   - [x] Attention male visitors, please do not completely remove your pants while using the urinal.
 - Opening day (`src/core/sim/progress.ts`)
-  - [ ] The healing center is now open. Please form an orderly line of ailments.
+  - [x] The healing center is now open. Please form an orderly line in order of your aura’s color code.
+  - [ ] More opening lines to alternate with it, recorded as `healing-center-open-2.mp3` and on; `OPENING_LINE` in `src/core/sim/progress.ts` then becomes a list to pick from.
 - Staff wanted (`contextAnnouncement` in `src/core/sim/advisor.ts`)
   - [x] Caretaker needed. The corridors are getting gross.
   - [x] Receptionist needed at the Reception Desk.
