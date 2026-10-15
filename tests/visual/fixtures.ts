@@ -50,7 +50,8 @@ export const test = base.extend<{ screens: Screens }>({
     await page.addInitScript(() => {
       document.addEventListener('DOMContentLoaded', () => {
         const style = document.createElement('style');
-        style.textContent = '#game { opacity: 0 !important; }';
+        // the version on the title screen changes with every release, so it is left out of the pictures
+        style.textContent = '#game, .title-version { opacity: 0 !important; }';
         document.head.appendChild(style);
       });
     });

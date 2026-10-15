@@ -210,6 +210,7 @@ export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps
             {opened.includes('settings') && <SettingsPanel audio={audio} onChange={redraw} />}
           </div>
         </div>
+        <p class="title-version">{`v${__APP_VERSION__}`}</p>
         <div class="title-tray" hidden={!!showing}>
           {badges.map((b) => (
             <span key={b.label} class={cx('title-badge', !b.on && 'off')} title={b.label} aria-label={b.label}>

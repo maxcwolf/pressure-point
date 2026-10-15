@@ -1,5 +1,11 @@
 /// <reference types="vitest/config" />
+import { readFileSync } from 'node:fs';
+
 import { defineConfig, type Plugin } from 'vite';
+
+/** The game's version, from package.json, which a release tag sets. */
+const VERSION = (JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string })
+  .version;
 
 /** The dev server's live reload needs a socket to localhost; the built game connects to nothing but itself. */
 const DEV_CONNECTIONS = ' ws: http://localhost:*';
@@ -19,6 +25,7 @@ export default defineConfig({
   // relative base so the built game loads from file:// inside Electron
   base: './',
   plugins: [productionPolicy],
+  define: { __APP_VERSION__: JSON.stringify(VERSION) },
   server: { port: 5183, strictPort: true },
   build: { target: 'es2022', chunkSizeWarningLimit: 1500 },
   test: {
