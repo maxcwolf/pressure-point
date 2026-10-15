@@ -26,6 +26,7 @@ import {
   VIP_REP,
   VIP_ROOMS,
   VIPS,
+  VISIT_NEWS,
   VISIT_NOTICE_DAYS,
   WEAR_REPAIR,
 } from '../data';
@@ -218,6 +219,7 @@ export function newNotice(ctx: SimContext, visit: VisitorKind): VisitNotice {
 function writeAhead(ctx: SimContext, visit: VisitorKind) {
   const notice = newNotice(ctx, visit);
   ctx.s.visitNotice = notice;
+  emit(ctx, { type: 'announce', text: VISIT_NEWS[visit] });
   if (visit === 'inspector')
     toast(ctx, `📋 The health inspector will call in ${VISIT_NOTICE_DAYS} days. They will check every room.`, 'info');
   else

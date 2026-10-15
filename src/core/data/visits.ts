@@ -31,6 +31,12 @@ export const ASPECT_NOTES: Readonly<Record<Aspect, { good: string; bad: string; 
 export const VISIT_NOTICE_DAYS = 5;
 export const LOOK_SECONDS = 4;
 
+/** What the speakers say when a visitor writes ahead. The VIP's line, as recorded, says five days: the notice above. */
+export const VISIT_NEWS = {
+  vip: 'A VIP will be visiting in five days. Look busy.',
+  inspector: 'The health inspector is on the way. Hide the sage.',
+} as const;
+
 /** Days from the start until the first VIP may write (once the center has a star), and between one and the next. */
 export const VIP_FIRST_DAY = 30;
 export const VIP_GAP_DAYS: readonly [number, number] = [45, 90];

@@ -4,13 +4,16 @@ import chakrasAligned from './sounds/announcer/chakras-aligned.m4a';
 import doNotTip from './sounds/announcer/do-not-tip.m4a';
 import faceHole from './sounds/announcer/face-hole.m4a';
 import faceShapedMarks from './sounds/announcer/face-shaped-marks.m4a';
+import healthInspector from './sounds/announcer/health-inspector.m4a';
 import herbalTea from './sounds/announcer/herbal-tea.m4a';
 import humAlong from './sounds/announcer/hum-along.m4a';
 import knotsNotContagious from './sounds/announcer/knots-not-contagious.m4a';
 import lostAndFound from './sounds/announcer/lost-and-found.m4a';
 import pleaseBreatheIn from './sounds/announcer/please-breathe-in.m4a';
+import receptionistAtReception from './sounds/announcer/receptionist-at-reception.m4a';
 import redAura from './sounds/announcer/red-aura.m4a';
 import relaxationIsMandatory from './sounds/announcer/relaxation-is-mandatory.m4a';
+import vipVisiting from './sounds/announcer/vip-visiting.m4a';
 import whaleSong from './sounds/announcer/whale-song.m4a';
 
 /** Each recorded announcement, by the exact text shown with it. */
@@ -27,6 +30,9 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'The herbal tea is herbal. That is all we are prepared to say.': herbalTea,
   'Please breathe in. Further instructions will follow.': pleaseBreatheIn,
   'Guests are reminded that the face hole is not a snack hatch.': faceHole,
+  'Receptionist needed at the Reception Desk.': receptionistAtReception,
+  'A VIP will be visiting in five days. Look busy.': vipVisiting,
+  'The health inspector is on the way. Hide the sage.': healthInspector,
 };
 
 /** The recording of an announcement, if the announcer has recorded it. */

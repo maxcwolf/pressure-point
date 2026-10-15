@@ -12,6 +12,7 @@ import {
   VIP_CARES,
   VIP_PRIZE,
   VIP_REP,
+  VISIT_NEWS,
   VISIT_NOTICE_DAYS,
 } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
@@ -150,10 +151,12 @@ describe('visits', () => {
     updateVisits(ctx);
     expect(s.visitNotice).toMatchObject({ visit: 'vip', arrives: s.day + VISIT_NOTICE_DAYS });
     expect(s.visitNotice?.cares).toBeDefined();
+    expect(drainEvents(ctx), 'over the speakers').toContainEqual({ type: 'announce', text: VISIT_NEWS.vip });
     s.visitNotice = null;
     s.nextInspection = 0;
     updateVisits(ctx);
     expect(s.visitNotice).toMatchObject({ visit: 'inspector', title: 'the health inspector' });
+    expect(drainEvents(ctx)).toContainEqual({ type: 'announce', text: VISIT_NEWS.inspector });
   });
 
   it('never come with visits switched off, or before the center opens', () => {

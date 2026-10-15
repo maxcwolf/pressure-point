@@ -205,17 +205,22 @@ function modalityAdvice(ctx: SimContext): string | Advice {
 export const article = (name: string) => (/^[AEIOU]/.test(name) ? 'an' : 'a');
 
 /** What to call the place a station is in: its room, or the item itself in a corridor. */
-export function stationPlace(it: Item): string {
+export function stationPlace(it: Pick<Item, 'type'>): string {
   const where = ITEMS[it.type].where;
   return where === 'corridor' || where === 'any' ? ITEMS[it.type].name : ROOMS[where].name;
+}
+
+/** What the speakers say when a station has a line and nobody working it. */
+export function staffWanted(it: Pick<Item, 'type'>): string {
+  const st = ITEMS[it.type].station;
+  return st ? `${ROLES[st.staff].name} needed at the ${stationPlace(it)}.` : '';
 }
 
 /** An announcement about something that needs attention right now, if anything does. */
 export function contextAnnouncement(ctx: SimContext): string | null {
   for (const it of ctx.s.items) {
     const st = ITEMS[it.type].station;
-    if (st && ctx.world.usable(it) && it.queue.length >= 2 && !it.staffId)
-      return `${ROLES[st.staff].name} needed at the ${stationPlace(it)}.`;
+    if (st && ctx.world.usable(it) && it.queue.length >= 2 && !it.staffId) return staffWanted(it);
   }
   if (ctx.s.litter.length >= 4) return 'Caretaker needed. The corridors are getting crunchy.';
   return null;
