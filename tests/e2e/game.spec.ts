@@ -661,6 +661,34 @@ test.describe('running a center', () => {
   });
 
   // the offer used to add "massage" to every technique, so an acupuncture emergency asked for "Cupping massage"
+
+  test('a mishap is announced, can be prepared for from its notice, and shows while it lasts', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(10);
+    const money = await game.eval((pp) => {
+      const day = pp.state.day;
+      pp.state.mishap = { kind: 'power', starts: day + 3, ends: day + 4, prepared: false, started: false };
+      return pp.state.money;
+    });
+    const notice = page.locator('#offer .mishap');
+    await expect(notice).toContainText('Power cut coming');
+    await expect(notice).toContainText('Starts in 3 days');
+    // put aside, it waits as a line, and comes back when clicked
+    await notice.getByRole('button', { name: 'Take my chances' }).click();
+    await expect(page.locator('.mishap-pill')).toContainText('not prepared');
+    await page.locator('.mishap-pill').click();
+    await notice.getByRole('button', { name: /Hire a generator/ }).click();
+    await expect(page.locator('.mishap-pill')).toContainText('Power cut: starts in 3 days · prepared');
+    expect(await game.eval((pp) => pp.state.money)).toBe(money - 1500);
+    await game.fastForward(3 * 6 + 1);
+    await expect(page.locator('.mishap-pill.on')).toContainText('day left · prepared');
+    await game.fastForward(6);
+    await expect(page.locator('#offer')).toBeEmpty();
+  });
   test('an emergency offer names the treatment as the Treatments menu does', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

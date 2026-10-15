@@ -47,11 +47,13 @@ export interface SandboxSettings {
   visits: boolean;
   /** Whether a rival center opens across the street. */
   rival: boolean;
+  /** Whether mishaps happen: power cuts, storms, freezes, wasps and fire drills. */
+  mishaps: boolean;
 }
 
 /**
  * The sandbox settings last chosen, or the defaults: the sandbox's usual money, unlocking as stars are earned, staff
- * challenges, stress outbreaks, weather, visits and a rival.
+ * challenges, stress outbreaks, weather, visits, a rival and mishaps.
  */
 export function loadSandbox(): SandboxSettings {
   const out: SandboxSettings = {
@@ -62,6 +64,7 @@ export function loadSandbox(): SandboxSettings {
     weather: true,
     visits: true,
     rival: true,
+    mishaps: true,
   };
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(SANDBOX_KEY) ?? '{}');
@@ -73,6 +76,7 @@ export function loadSandbox(): SandboxSettings {
     if (typeof raw.weather === 'boolean') out.weather = raw.weather;
     if (typeof raw.visits === 'boolean') out.visits = raw.visits;
     if (typeof raw.rival === 'boolean') out.rival = raw.rival;
+    if (typeof raw.mishaps === 'boolean') out.mishaps = raw.mishaps;
   } catch {
     // the defaults will do
   }

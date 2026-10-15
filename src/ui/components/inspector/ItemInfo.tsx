@@ -6,6 +6,7 @@ import {
   HAMPER_SIZE,
   ITEMS,
   LINENS_STALE,
+  MISHAPS,
   NOISE_NOTICE,
   STONE_USE,
   WEAR_REPAIR,
@@ -14,6 +15,7 @@ import { money } from '../../../core/format';
 import { calmness } from '../../../core/sim/noise';
 import type { Item } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
+import { stoppedLabel } from '../../lib/mishaps';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { StationInfo } from './StationInfo';
@@ -53,6 +55,7 @@ function Calm({ item: it }: { item: Item }) {
 export function ItemInfo({ item: it }: { item: Item }) {
   const { sim, tools } = useGame();
   const def = ITEMS[it.type];
+  const stoppedBy = sim.world.stoppedByMishap(it) ? sim.s.mishap : null;
   return (
     <>
       <h3>{`${def.icon} ${def.name}`}</h3>
@@ -77,6 +80,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
         </label>
       )}
       {!!def.wear && it.wear >= 100 && <p class="status">🔧 Broken: needs a Caretaker</p>}
+      {stoppedBy && <p class="status">{stoppedLabel(MISHAPS[stoppedBy.kind])}</p>}
       {!!def.dirt && !def.linens && (
         <label>
           Cleanliness

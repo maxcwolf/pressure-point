@@ -23,8 +23,8 @@ export function flakeSpot(i: number): { x: number; z: number; start: number } {
 }
 
 /** How high a flake is at a moment: falling from the top to the ground, then starting again at the top. */
-export function flakeHeight(start: number, t: number): number {
-  const through = (start + (t * FALL) / TOP) % 1;
+export function flakeHeight(start: number, t: number, fall = FALL): number {
+  const through = (start + (t * fall) / TOP) % 1;
   return TOP * (1 - through);
 }
 

@@ -93,3 +93,12 @@
 .outbreak-pill {
   border-color: #8a6fd1;
 }
+
+.offer.mishap,
+.mishap-pill {
+  border-color: #d08a2c;
+}
+
+.mishap-pill.on {
+  background: #fff1dc;
+}

@@ -15,8 +15,10 @@ export function freshSim(seed = 1): Sim {
   setSeed(seed);
   const s = newGame();
   s.challengesOn = false;
-  // the rival hires staff away and draws guests off, which only its own tests and the chaos test want
+  // the rival hires staff away and draws guests off, and mishaps stop things, which only their own tests and the
+  // chaos test want
   s.rivalOn = false;
+  s.mishapsOn = false;
   s.nextApplicant = 1e9;
   return new Sim(s);
 }

@@ -141,6 +141,17 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
             });
           }}
         />
+        <SettingRow
+          icon="🚨"
+          name="Mishaps"
+          desc="Power cuts, storms, freezes, wasps and fire drills, each warned of a few days ahead."
+          on={settings.mishaps}
+          onToggle={() => {
+            change(() => {
+              saveSandbox({ ...settings, mishaps: !settings.mishaps });
+            });
+          }}
+        />
       </ul>
       <button class="go start" onClick={onStart}>
         Start building

@@ -16,6 +16,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     startMoney: 30000,
     climate: { average: 66, swing: 6 },
     disciplines: ['acupuncture', 'reiki'],
+    mishap: 'power',
     goals: [
       [
         { kind: 'healed', count: 8 },
@@ -71,6 +72,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     disciplines: ['acupuncture'],
     conditions: { slump: 3, band: 2.5, crick: 2.5, neck: 3, steam: 2 },
     rush: { peak: 2.4, lull: 0.6, impatience: 1.25 },
+    mishap: 'power',
     calls: {
       often: 2,
       clients: ['the Exchange Tower', 'Halberd & Finch, solicitors', 'the trading floor on Mercer Street'],
@@ -108,6 +110,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     seasons: { summer: 1.9, winter: 0.6 },
     wear: 1.4,
     scenery: 'seaside',
+    mishap: 'storm',
     calls: { often: 1, clients: ['the Saltmarsh Beach Club', 'the lifeboat station', 'the pier theater'] },
     goals: [
       [
@@ -141,6 +144,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     conditions: { frost: 3, coldfeet: 2.5, steam: 1.5, frozen: 3, wipeout: 2.5, cabin: 2.5 },
     snow: { chance: 0.3, days: 2 },
     scenery: 'mountain',
+    mishap: 'freeze',
     calls: { often: 1, clients: ['the ski school', 'the Summit Hotel', 'the mountain rescue hut'] },
     goals: [
       [
@@ -176,6 +180,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     picky: { fee: 1.5, expects: 2 },
     inspections: 2,
     scenery: 'orchard',
+    mishap: 'wasps',
     calls: { often: 1.5, clients: ['the manor house', 'the croquet club', 'the cider press tasting room'] },
     goals: [
       [

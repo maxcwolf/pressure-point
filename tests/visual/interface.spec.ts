@@ -301,6 +301,20 @@ test.describe('in a game', () => {
     await screens.shot('house-call');
   });
 
+  test('a mishap coming, and one under way', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      const day = pp.state.day;
+      pp.state.mishap = { kind: 'storm', starts: day + 3, ends: day + 5, prepared: false, started: false };
+    });
+    await screens.shot('mishap');
+    await game.eval((pp) => {
+      const day = pp.state.day;
+      pp.state.mishap = { kind: 'power', starts: day - 0.5, ends: day + 0.5, prepared: false, started: true };
+    });
+    await screens.shot('mishap-on');
+  });
+
   test('the floor colored by an overlay', async ({ screens, page }) => {
     await screens.play();
     await page

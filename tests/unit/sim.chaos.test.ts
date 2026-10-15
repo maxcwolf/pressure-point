@@ -197,6 +197,10 @@ const MOVES: Record<string, (sim: Sim) => void> = {
       if (it.type === 'linen_hamper') it.water = HAMPER_LAUNDER;
     }
   },
+  /** Prepare for a mishap coming, if one is. */
+  prepare: (sim) => {
+    sim.prepareMishap();
+  },
   /** Put a room first, or back among the rest. */
   priority: (sim) => {
     const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
@@ -211,9 +215,10 @@ describe('a restless player', () => {
   it.each([1, 2, 3, 4])('never leaves the books unbalanced (seed %i)', (seed) => {
     const { sim, s } = openCenter(seed);
     s.stars = 3;
-    // challenges, the year-end awards, new applicants and the rival come and go while all this goes on
+    // challenges, the year-end awards, new applicants, the rival and mishaps come and go while all this goes on
     s.challengesOn = true;
     s.rivalOn = true;
+    s.mishapsOn = true;
     s.nextApplicant = 0;
     // building comes up more often than tearing down, so there is a busy center to disrupt
     const names = Object.entries(MOVES).flatMap(([name]) => Array<string>(WEIGHTS[name] ?? 1).fill(name));

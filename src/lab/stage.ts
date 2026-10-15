@@ -45,7 +45,7 @@ export class Stage {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     // a small stage needs only a small shadow, which keeps it sharp
-    this.sun = addLights(this.scene, 8);
+    this.sun = addLights(this.scene, 8).sun;
 
     this.ground = new THREE.Mesh(
       new THREE.PlaneGeometry(GRID_REACH * 6, GRID_REACH * 6),

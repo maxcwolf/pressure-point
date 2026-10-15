@@ -1,6 +1,7 @@
 // The shapes of the game's content: what a room, an item, a role, a modality and a condition are.
 
 import type { Plot } from './map';
+import type { MishapId } from './mishaps';
 
 export type RoomType =
   'consult' | 'assess' | 'massage' | 'acupuncture' | 'reiki' | 'staffroom' | 'restroom' | 'training';
@@ -496,6 +497,8 @@ export interface CenterDef {
   picky?: { fee: number; expects: number };
   /** How much more often than usual the health inspector calls. */
   inspections?: number;
+  /** The mishap of its own that comes now and then, besides a fire drill. */
+  mishap?: MishapId;
   /** The weather outside through the year. */
   climate: Climate;
 }

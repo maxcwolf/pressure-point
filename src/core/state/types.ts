@@ -13,6 +13,7 @@ import type {
   GeneralId,
   GoalSpec,
   ItemType,
+  MishapId,
   Modality,
   Pose,
   Role,
@@ -476,6 +477,15 @@ export interface AwardResult {
 }
 
 /** A year-end awards ceremony. */
+/** A mishap announced ahead: what it is, when it starts and ends, whether it was prepared for, and whether it has begun. */
+export interface Mishap {
+  kind: MishapId;
+  starts: number;
+  ends: number;
+  prepared: boolean;
+  started: boolean;
+}
+
 /** The rival center across the street: when it has a sale on, and what it has done to the center so far. */
 export interface Rival {
   /** The day it opened, or null until it does. */
@@ -602,6 +612,11 @@ export interface GameState {
   rival: Rival;
   /** Whether there is a rival at all: a sandbox setting. */
   rivalOn: boolean;
+  /** The mishap announced or under way, if any, the day the next may be announced, and whether they come at all (a
+   * sandbox setting). */
+  mishap: Mishap | null;
+  nextMishap: number;
+  mishapsOn: boolean;
   /** The last year-end awards ceremony, and every award won. */
   ceremony: Ceremony | null;
   trophies: Trophy[];

@@ -6,6 +6,8 @@ import {
   H,
   ITEMS,
   type ItemType,
+  MISHAPS,
+  mishapStopsType,
   outsideDoor,
   type Plot,
   type Pose,
@@ -236,9 +238,14 @@ export class World {
   }
   /** Corridor items always work; room items only once the room is finished. Broken items never do. */
   usable(it: Item): boolean {
-    if (it.wear >= 100) return false;
+    if (it.wear >= 100 || this.stoppedByMishap(it)) return false;
     const r = this.roomOfItem(it);
     return !r || r.done;
+  }
+  /** Whether the mishap under way has taken an item out of action, as a power cut does to anything with a plug. */
+  stoppedByMishap(it: Item): boolean {
+    const m = this.s.mishap;
+    return !!m?.started && mishapStopsType(MISHAPS[m.kind], it.type, m.prepared);
   }
   /** Whether a tile can be walked on. */
   walkable(x: number, y: number) {

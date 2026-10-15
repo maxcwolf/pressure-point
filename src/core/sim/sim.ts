@@ -49,6 +49,7 @@ import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
+import { prepareMishap, updateMishaps } from './mishaps';
 import { itemNoise, noiseAt, updateNoise } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
@@ -135,6 +136,7 @@ export class Sim {
       updateVisits(ctx);
       updateStanding(ctx);
       updateRival(ctx);
+      updateMishaps(ctx);
     }
     announce(ctx, dt);
     updateTwists(ctx, dt);
@@ -379,6 +381,11 @@ export class Sim {
   /** Give a member of staff a raise. */
   giveRaise(id: number) {
     giveRaise(this.ctx, id);
+  }
+
+  /** Prepare for the mishap coming, at its price. */
+  prepareMishap(): boolean {
+    return prepareMishap(this.ctx);
   }
 
   /** The center's standing points as it is now, part by part. */

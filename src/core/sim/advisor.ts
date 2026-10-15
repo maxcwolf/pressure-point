@@ -23,6 +23,7 @@ import type { Item } from '../state/types';
 import type { SimContext } from './context';
 import { emit, type Subject } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
+import { mishapAdvice } from './mishaps';
 import { allStars, hasItem, hasRoom, hasStaff } from './progress';
 import { fedUp, refreshmentFor, wants } from './staff-needs';
 import { aboutToQuit } from './staffing';
@@ -59,6 +60,9 @@ export function advice(ctx: SimContext): string {
 /** Work out the advisor's nudge: plain text, or text about someone or something. */
 function nudge(ctx: SimContext): string | Advice {
   const s = ctx.s;
+  // while a mishap has things stopped, they are not missing, so say so rather than ask for them
+  const mishap = mishapAdvice(s);
+  if (mishap) return mishap;
   if (!hasItem(ctx, 'reception_desk'))
     return 'Welcome! Open the Items menu and place a Reception Desk somewhere near the entrance.';
   if (!hasStaff(ctx, 'receptionist')) return 'A desk needs a face behind it. Hire a Receptionist from the Hire menu.';

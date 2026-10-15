@@ -61,7 +61,8 @@ export function updateWarmth(ctx: SimContext) {
   grid.fill(indoorTemp(outdoorTemp(centerOf(ctx.s).climate, ctx.s.day)));
   const spread = spreader(ctx, heatLeak);
   for (const it of ctx.s.items) {
-    const heat = itemHeat(it);
+    // a radiator in a power cut or a freeze gives off nothing
+    const heat = ctx.world.stoppedByMishap(it) ? 0 : itemHeat(it);
     if (!heat) continue;
     const [cx, cy] = itemCenter(it);
     spread(grid, Math.floor(cx), Math.floor(cy), heat, HEAT_RADIUS);

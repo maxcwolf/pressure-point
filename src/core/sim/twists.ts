@@ -4,6 +4,7 @@ import { centerOf, DAY_SECONDS, DAYS_PER_MONTH } from '../data';
 import type { Snowfall } from '../data/types';
 import type { SimContext } from './context';
 import { emit, tipOnce } from './events';
+import { mishapArrivals } from './mishaps';
 import { rivalDraw } from './rival';
 import { gradeArrivals } from './standing';
 
@@ -68,8 +69,9 @@ export function arrivalFactor(ctx: SimContext): number {
     if (season === 'summer') factor *= seasons.summer;
     else if (season === 'winter') factor *= seasons.winter;
   }
-  // a center that stands higher draws more guests, and the rival across the street draws some away
-  return factor * gradeArrivals(ctx.s.grade) * (1 - rivalDraw(ctx.s));
+  // a center that stands higher draws more guests, the rival across the street draws some away, and a storm keeps
+  // most at home
+  return factor * gradeArrivals(ctx.s.grade) * (1 - rivalDraw(ctx.s)) * mishapArrivals(ctx.s);
 }
 
 /** What the speakers say as each season starts, in a center that has them. */

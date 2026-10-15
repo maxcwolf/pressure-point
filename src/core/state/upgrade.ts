@@ -11,6 +11,8 @@ import {
   FEELINGS,
   FIRST_OUTBREAK_DAY,
   INSPECTION_FIRST_DAY,
+  MISHAP_FIRST_DAY,
+  MISHAP_GAP_DAYS,
   type Modality,
   OUTBREAK_GAP_MIN,
   RANK_XP,
@@ -97,6 +99,9 @@ type OldSave = Before<
   | 'grade'
   | 'rival'
   | 'rivalOn'
+  | 'mishap'
+  | 'nextMishap'
+  | 'mishapsOn'
 > & {
   stats: Before<Stats, 'priced' | 'sent' | 'worse' | 'healedBy' | 'emergencies' | 'lastQuit'>;
   tally?: Before<Tally, 'sent' | 'worse'>;
@@ -225,6 +230,9 @@ export function upgradeSave(save: GameState) {
   s.grade ??= 0;
   s.rival ??= newRival(s.day);
   s.rivalOn ??= true;
+  s.mishap ??= null;
+  s.nextMishap ??= Math.max(MISHAP_FIRST_DAY, s.day + MISHAP_GAP_DAYS[0]);
+  s.mishapsOn ??= true;
   s.nextApplicant ??= s.day + APPLICANT_DAYS;
   s.reviews = (s.reviews ?? []).map((r) => ({ ...r, feelings: r.feelings.filter((f) => Object.hasOwn(FEELINGS, f)) }));
   s.casebook ??= {};

@@ -10,6 +10,7 @@ import {
   DISCIPLINE_ORDER,
   DISCIPLINES,
   ITEMS,
+  MISHAPS,
   MODALITIES,
   type Modality,
   MODALITY_ORDER,
@@ -19,6 +20,7 @@ import { unlockedUpTo } from '../../../core/state/game';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { disciplineNote } from '../../lib/delivery';
+import { kitNote } from '../../lib/mishaps';
 
 /** What a modality treats, who can give it and whether its equipment is in. */
 function ModalityCard({ modality }: { modality: Modality }) {
@@ -35,7 +37,15 @@ function ModalityCard({ modality }: { modality: Modality }) {
   ).length;
   const waiting = s.guests.filter((g) => g.goal === 'treat' && conditionOf(g.condition).modality === modality).length;
   const kit = def.equipment ? ITEMS[def.equipment] : null;
-  const kitOk = !kit || s.items.some((i) => i.type === def.equipment && sim.world.usable(i));
+  const kits = s.items.filter((i) => i.type === def.equipment);
+  const stopped = kits.some((i) => sim.world.stoppedByMishap(i));
+  const note =
+    kit &&
+    kitNote(
+      kit.name,
+      kits.some((i) => sim.world.usable(i)),
+      stopped ? MISHAPS[s.mishap?.kind ?? 'drill'] : undefined,
+    );
   return (
     <div class={cx('card mod', locked && 'locked')}>
       <i>{def.icon}</i>
@@ -47,11 +57,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
       ) : (
         <>
           <em class={qualified ? 'ok' : 'warn'}>{`${qualified ? '✔' : '⚠️'} ${qualified} qualified`}</em>{' '}
-          {kit && (
-            <em class={kitOk ? 'ok' : 'warn'}>
-              {kitOk ? `✔ ${kit.name} installed` : `⚠️ Needs a ${kit.name} in the room`}
-            </em>
-          )}{' '}
+          {note && <em class={note.ok ? 'ok' : 'warn'}>{note.text}</em>}{' '}
           <em>{`${waiting} waiting · ${def.seconds}s session`}</em>
         </>
       )}

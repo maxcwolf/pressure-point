@@ -8,12 +8,13 @@ import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
-import { addLights, placeSun } from './lighting';
+import { addLights, easeLights, lightLevel, type Lights, placeSun } from './lighting';
 import { LitterLayer } from './litter';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type DoorSpec, type GhostSpec, Overlays } from './overlays';
 import { PeopleLayer } from './people';
 import { Picker, type Selection } from './picking';
+import { RainLayer } from './rain';
 import { RoomsLayer } from './rooms';
 import { buildScenery } from './scenery';
 import { settingName, settingOf } from './setting';
@@ -25,7 +26,7 @@ export class View {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
   private time = 0;
-  private sun: THREE.DirectionalLight;
+  private lights: Lights;
   /** The world as last drawn, so rooms and items are only rebuilt when something changes. */
   private worldVersion = -1;
   private rig: CameraRig;
@@ -36,6 +37,7 @@ export class View {
   private litter: LitterLayer;
   private vibes: VibesLayer;
   private snow: SnowfallLayer;
+  private rain: RainLayer;
   private storefront: StorefrontLayer;
   private overlays: Overlays;
   private heat: Heatmap;
@@ -56,7 +58,7 @@ export class View {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene.background = new THREE.Color(settingOf(sim.s).ground);
 
-    this.sun = addLights(this.scene);
+    this.lights = addLights(this.scene);
 
     this.rig = new CameraRig(sim.world.plot);
     buildScenery(this.scene, sim.world.plot, settingName(sim.s), settingOf(sim.s));
@@ -67,6 +69,7 @@ export class View {
     this.litter = new LitterLayer(this.scene, sim);
     this.vibes = new VibesLayer(this.scene, sim);
     this.snow = new SnowfallLayer(this.scene, sim);
+    this.rain = new RainLayer(this.scene, sim);
     this.storefront = new StorefrontLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene);
@@ -106,11 +109,13 @@ export class View {
     this.litter.update();
     this.vibes.update(this.time);
     this.snow.update(this.time);
+    this.rain.update(this.time);
     this.storefront.update();
     this.items.animate(this.time);
     this.overlays.updateRing(this.time);
     this.rig.update();
-    placeSun(this.sun, this.rig.target);
+    easeLights(this.lights, lightLevel(this.sim.s.mishap), dt);
+    placeSun(this.lights.sun, this.rig.target);
     if (this.drawing) this.renderer.render(this.scene, this.rig.camera);
     else {
       // what drawing would have done along the way, so clicks still find what is where
