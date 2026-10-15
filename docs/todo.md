@@ -6,7 +6,7 @@ Tick an item off when it is done, with the commit or release it landed in.
 
 ## Next up
 
-- [ ] **More PA announcer lines.** New filler lines for the announcer, recorded and run through the PA speaker effect like the twelve there are (`yarn announcer`), and perhaps lines for events: an emergency arriving, a season turning, the awards.
+- [ ] **More PA announcer lines.** New filler lines for the announcer, recorded and run through the PA speaker effect like the twelve there are (`yarn announcer`), and recordings for the 26 event lines that have none yet: opening day, staff wanted, seasons, snow, emergencies and stress outbreaks. Listed word for word in [announcer-lines.md](announcer-lines.md).
 - [x] **Rename the Janitor** to something that fits all they do now (cleaning, repairs, plants, stones, linens and laundry, and sage with the Smudging course). Now the **Caretaker**, which the role was already called in the code, so saved staff carry over; the Janitor of the Year award is now Caretaker of the Year, and saved trophies are renamed with it.
 - [ ] **A cheat console.** A console opened with a key, taking commands such as adding money, reputation or karma, earning a star, spawning guests or an emergency, unlocking everything, and skipping ahead in time. For testing and for fun; achievements could be withheld in a game where it has been used.
 
@@ -25,6 +25,11 @@ Tick an item off when it is done, with the commit or release it landed in.
 - [ ] **High Pines and The Orchard Estate**, the fourth and fifth centers, as planned in [campaign.md](campaign.md). High Pines is done; The Orchard Estate comes after roadmap phase 8.
 - [x] **Resize a built room**, by dragging its walls, as Two Point Hospital's room editing allows. Done: Resize in the room's inspector; the door and windows move with their walls, the furniture has to stay inside, the room keeps its minimum size, and floor added costs $200 a tile, with half back for floor given up.
 - [x] **Room walls against the building's outer walls.** The outer wall's own window panes sit at fixed spots, so a room built against it cuts through them, and the room's windows sit inside the outer wall and look doubled. The outer wall should leave its panes out where a room's wall runs along it, and a room's windows on that side should be set into the outer wall instead of a second wall in front of it. Done: a room's side along the outer wall uses that wall, its windows are set into it, and the building's own windows make way.
+
+## Requested 15 October 2026
+
+- [ ] **Assign staff to rooms.** Select a member of staff, press Assign, and click one or more rooms; they then take posts and do their duties only there, as Two Point Hospital allows. Today staff choose the nearest free station with the longest line, steered only by their duties and by room priority.
+- [ ] **Announce visits over the speakers**, perhaps: a VIP or the health inspector writing ahead comes as a message today. Lines suggested in [announcer-lines.md](announcer-lines.md).
 
 ## Roadmap
 
