@@ -47,6 +47,9 @@ describe('the announcer', () => {
     expect(voiceFor(MISHAPS.power.warning)).toMatch(/power-out-soon.*\.m4a$/);
     expect(voiceFor(MISHAPS.power.start)).toMatch(/power-out.*\.m4a$/);
     expect(voiceFor(MISHAPS.power.start)).not.toBe(voiceFor(MISHAPS.power.warning));
+    expect(voiceFor(MISHAPS.storm.warning)).toMatch(/storm-incoming.*\.m4a$/);
+    expect(voiceFor(MISHAPS.storm.start)).toMatch(/storm-started.*\.m4a$/);
+    expect(voiceFor(MISHAPS.storm.end)).toMatch(/storm-ended.*\.m4a$/);
     expect(voiceFor(CARETAKER_WANTED)).toMatch(/caretaker-needed.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.vip)).toMatch(/vip-visiting.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.inspector)).toMatch(/health-inspector.*\.m4a$/);

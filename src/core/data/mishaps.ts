@@ -59,7 +59,7 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
     name: 'Storm',
     icon: '⛈️',
     warning: 'A storm is coming in off the sea later this week. Batten down the hatches.',
-    start: 'The storm has arrived. Please keep away from the windows and the sea.',
+    start: 'The storm has arrived. Please keep away from the windows... and Brent.',
     end: 'The storm has passed. The seagulls are back, and so are the guests.',
     days: 2,
     prepare: { cost: 800, label: 'Board up the windows', effect: 'Nothing gets broken. Fewer guests come either way.' },

@@ -61,9 +61,9 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [x] The power company will be working on the lines this week. Expect a power cut.
   - [x] The power is out. Anything with a plug is now a very expensive ornament.
   - [ ] The power is back. Please stop meditating by candlelight.
-  - [ ] A storm is coming in off the sea later this week. Batten down the hatches.
-  - [ ] The storm has arrived. Please keep away from the windows and the sea.
-  - [ ] The storm has passed. The seagulls are back, and so are the guests.
+  - [x] A storm is coming in off the sea later this week. Batten down the hatches.
+  - [x] The storm has arrived. Please keep away from the windows... and Brent.
+  - [x] The storm has passed. The seagulls are back, and so are the guests.
   - [ ] A big freeze is forecast later this week. The pipes are nervous.
   - [ ] The pipes have frozen. Please hold on, in every sense.
   - [ ] The pipes have thawed. Normal flushing is resumed.

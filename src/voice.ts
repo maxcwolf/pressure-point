@@ -23,6 +23,9 @@ import receptionistAtReception from './sounds/announcer/receptionist-at-receptio
 import redAura from './sounds/announcer/red-aura.m4a';
 import reikiAtReiki from './sounds/announcer/reiki-at-reiki.m4a';
 import relaxationIsMandatory from './sounds/announcer/relaxation-is-mandatory.m4a';
+import stormEnded from './sounds/announcer/storm-ended.m4a';
+import stormIncoming from './sounds/announcer/storm-incoming.m4a';
+import stormStarted from './sounds/announcer/storm-started.m4a';
 import vipVisiting from './sounds/announcer/vip-visiting.m4a';
 import wellnessAtConsultation from './sounds/announcer/wellness-at-consultation.m4a';
 import wellnessAtPosture from './sounds/announcer/wellness-at-posture.m4a';
@@ -53,6 +56,9 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'The power is out. Anything with a plug is now a very expensive ornament.': powerOut,
   'A VIP will be visiting in five days. Look busy.': vipVisiting,
   'The health inspector is on the way. Hide the sage.': healthInspector,
+  'A storm is coming in off the sea later this week. Batten down the hatches.': stormIncoming,
+  'The storm has arrived. Please keep away from the windows... and Brent.': stormStarted,
+  'The storm has passed. The seagulls are back, and so are the guests.': stormEnded,
   'Emergency incoming! A yoga retreat attempted a group pose and it went badly.': emergencyYoga,
   'Emergency incoming! The city fun run turned out to be an unfun run.': emergencyFunRun,
   'Emergency incoming! An all-hands meeting ran three hours over with no chairs.': emergencyAllHands,
