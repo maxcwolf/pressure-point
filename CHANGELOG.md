@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.20.0
 
 - **Decorate rooms.** A built room's inspector picks its floor and walls, for that room or every room of its kind, and new ones of that kind follow. Oak planks, slate, sage and sky are free; terrazzo, checkerboard, bamboo, a chakra rainbow, wood paneling, botanical wallpaper, tie-dye and a starry night floor and walls are unlocked with karma, in the karma shop or straight from the inspector. Copies, moves and templates keep a room's look.
 - **The announcer voices four of the emergencies and the storm at The Boardwalk.** The city fun run now turns out to be an unfun run, and the storm asks you to keep away from the windows... and Brent.
