@@ -6,9 +6,49 @@ Tick an item off when it is done, with the commit or release it landed in.
 
 ## Next up
 
-- [ ] **More PA announcer lines.** New filler lines for the announcer, recorded and run through the PA speaker effect like the twelve there are (`yarn announcer`), and recordings for the 26 event lines that have none yet: opening day, staff wanted, seasons, snow, emergencies and stress outbreaks. Listed word for word in [announcer-lines.md](announcer-lines.md).
+- [ ] **More PA announcer lines.** New filler lines for the announcer, recorded and run through the PA speaker effect like the twelve there are (`yarn announcer`), and recordings for the 26 event lines that have none yet: opening day, staff wanted, seasons, snow, emergencies and stress outbreaks. Listed word for word under [Audio](#audio).
 - [x] **Rename the Janitor** to something that fits all they do now (cleaning, repairs, plants, stones, linens and laundry, and sage with the Smudging course). Now the **Caretaker**, which the role was already called in the code, so saved staff carry over; the Janitor of the Year award is now Caretaker of the Year, and saved trophies are renamed with it.
 - [ ] **A cheat console.** A console opened with a key, taking commands such as adding money, reputation or karma, earning a star, spawning guests or an emergency, unlocking everything, and skipping ahead in time. For testing and for fun; achievements could be withheld in a game where it has been used.
+
+## Audio
+
+Announcer lines that have no recording yet. A recording plays only when its text matches the banner exactly, punctuation included, so record each line word for word. Put each file in `src/sounds/announcer/` as a kebab-case `.m4a`, run it through the PA speaker effect (`yarn announcer`), and add it to `VOICE_LINES` in `src/voice.ts`. When a line is added or changed in the code, update this list.
+
+- Opening day (`src/core/sim/progress.ts`)
+  - [ ] The healing center is now open. Please form an orderly line of ailments.
+- Staff wanted (`contextAnnouncement` in `src/core/sim/advisor.ts`)
+  - [ ] Caretaker needed. The corridors are getting crunchy.
+  - [ ] Receptionist needed at the Reception Desk.
+  - [ ] Receptionist needed at the Shop Counter.
+  - [ ] Wellness Consultant needed at the Consultation Room.
+  - [ ] Wellness Consultant needed at the Posture Lab.
+  - [ ] Massage Therapist needed at the Massage Suite.
+  - [ ] Acupuncturist needed at the Acupuncture Clinic.
+  - [ ] Reiki Practitioner needed at the Reiki Studio.
+- Seasons, at Saltmarsh (`SEASON_NEWS` in `src/core/sim/twists.ts`)
+  - [ ] Winter is here. The promenade is empty, so watch the budget until spring.
+  - [ ] Spring! The first day-trippers are back in town.
+  - [ ] Summer at last, and the town is packed. Expect a crowd.
+  - [ ] Autumn. The visitors are heading home.
+- Snow, at High Pines (`SNOW_NEWS` in `src/core/sim/twists.ts`)
+  - [ ] Snowed in! The road up the mountain is closed, so nobody new can get here for a day or two.
+  - [ ] The snowplow has been through, and the road is open again.
+- Emergencies (`EMERGENCY_CAUSES` in `src/core/data/text.ts`)
+  - [ ] Emergency incoming! A yoga retreat attempted a group pose and it went badly.
+  - [ ] Emergency incoming! The city fun run turned out to be neither.
+  - [ ] Emergency incoming! An all-hands meeting ran three hours over with no chairs.
+  - [ ] Emergency incoming! A flash mob forgot to warm up.
+  - [ ] Emergency incoming! The local choir held one note for far too long.
+  - [ ] Emergency incoming! A furniture store ran a build-it-yourself weekend.
+- Stress outbreaks (`OUTBREAK_CAUSES` in `src/core/data/stakes.ts`)
+  - [ ] Stress outbreak! The office block across the road has just had its quarterly review.
+  - [ ] Stress outbreak! Exam results are out at the college.
+  - [ ] Stress outbreak! A wedding party has arrived, and the seating plan did not go well.
+  - [ ] Stress outbreak! The phone network went down for an hour.
+  - [ ] Stress outbreak! A yoga retreat let out early and nobody is speaking to each other.
+- Perhaps, if visits are announced over the speakers too:
+  - [ ] A VIP will be visiting in five days. Look busy.
+  - [ ] The health inspector is on the way. Hide the sage.
 
 ## Requested 14 October 2026
 
@@ -29,7 +69,7 @@ Tick an item off when it is done, with the commit or release it landed in.
 ## Requested 15 October 2026
 
 - [ ] **Assign staff to rooms.** Select a member of staff, press Assign, and click one or more rooms; they then take posts and do their duties only there, as Two Point Hospital allows. Today staff choose the nearest free station with the longest line, steered only by their duties and by room priority.
-- [ ] **Announce visits over the speakers**, perhaps: a VIP or the health inspector writing ahead comes as a message today. Lines suggested in [announcer-lines.md](announcer-lines.md).
+- [ ] **Announce visits over the speakers**, perhaps: a VIP or the health inspector writing ahead comes as a message today. Lines suggested under [Audio](#audio).
 
 ## Roadmap
 
