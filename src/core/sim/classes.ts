@@ -233,7 +233,8 @@ export function setClasses(ctx: SimContext, on: boolean) {
 }
 
 /** What the speakers say as a day with a class begins. */
-export const CLASS_STARTING = 'Qi Gong is starting in the studio. Please move slowly, and with intention.';
+export const CLASS_STARTING =
+  'Qi Gong is starting in the studio. Come cultivate your inner energy, because your outer energy is frankly exhausting.';
 
 /** As a day begins, announce its class if a studio has one with anybody booked for it. */
 export function announceClasses(ctx: SimContext) {

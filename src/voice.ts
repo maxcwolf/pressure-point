@@ -24,11 +24,15 @@ import mercuryNotInRetrograde from './sounds/announcer/mercury-not-in-retrograde
 import pleaseBreatheIn from './sounds/announcer/please-breathe-in.m4a';
 import powerOut from './sounds/announcer/power-out.m4a';
 import powerOutSoon from './sounds/announcer/power-out-soon.m4a';
+import qiGongAtQiGong from './sounds/announcer/qi-gong-at-qi-gong.m4a';
+import qiGongStarting from './sounds/announcer/qi-gong-starting.m4a';
 import receptionistAtReception from './sounds/announcer/receptionist-at-reception.m4a';
 import redAura from './sounds/announcer/red-aura.m4a';
 import reikiAtReiki from './sounds/announcer/reiki-at-reiki.m4a';
 import relaxationIsMandatory from './sounds/announcer/relaxation-is-mandatory.m4a';
 import removePantsUrinal from './sounds/announcer/remove-pants-urinal.m4a';
+import screamingIntoVoid from './sounds/announcer/screaming-into-void.m4a';
+import sighingNotBreathwork from './sounds/announcer/sighing-not-breathwork.m4a';
 import stormEnded from './sounds/announcer/storm-ended.m4a';
 import stormIncoming from './sounds/announcer/storm-incoming.m4a';
 import stormStarted from './sounds/announcer/storm-started.m4a';
@@ -58,6 +62,8 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
     welcomeSeekers,
   'A polite reminder: Mercury is no longer in retrograde, so you have absolutely no excuse for your behavior.':
     mercuryNotInRetrograde,
+  'Reminder: Screaming into the void is permitted only between the hours of two and four PM.': screamingIntoVoid,
+  'Visitors are reminded that sighing heavily does not count as breathwork.': sighingNotBreathwork,
   'The healing center is now open. Please form an orderly line in order of your aura’s color code.': healingCenterOpen1,
   'The healing center is now open. Praise Rang!': healingCenterOpen2,
   'The healing center is now open. Please align your chakras, empty your wallets, and form an orderly line.':
@@ -70,6 +76,9 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'Massage Therapist needed at the Massage Suite.': massageAtMassage,
   'Acupuncturist needed at the Acupuncture Clinic.': acupuncturistAtAcupuncture,
   'Reiki Practitioner needed at the Reiki Studio.': reikiAtReiki,
+  'Qi Gong Instructor needed at the Qi Gong Studio.': qiGongAtQiGong,
+  'Qi Gong is starting in the studio. Come cultivate your inner energy, because your outer energy is frankly exhausting.':
+    qiGongStarting,
   'Caretaker needed. The corridors are getting gross.': caretakerNeeded,
   'The power company will be working on the lines this week. Expect a power cut.': powerOutSoon,
   'The power is out. Anything with a plug is now a very expensive ornament.': powerOut,

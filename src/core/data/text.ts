@@ -137,4 +137,6 @@ export const ANNOUNCEMENTS = [
   'Attention male visitors, please do not completely remove your pants while using the urinal.',
   'Welcome, seekers. We remind you that enlightenment is a journey, and our gift shop accepts all major credit cards.',
   'A polite reminder: Mercury is no longer in retrograde, so you have absolutely no excuse for your behavior.',
+  'Reminder: Screaming into the void is permitted only between the hours of two and four PM.',
+  'Visitors are reminded that sighing heavily does not count as breathwork.',
 ];

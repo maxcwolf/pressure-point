@@ -21,6 +21,8 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [x] Attention male visitors, please do not completely remove your pants while using the urinal.
   - [x] Welcome, seekers. We remind you that enlightenment is a journey, and our gift shop accepts all major credit cards.
   - [x] A polite reminder: Mercury is no longer in retrograde, so you have absolutely no excuse for your behavior.
+  - [x] Reminder: Screaming into the void is permitted only between the hours of two and four PM.
+  - [x] Visitors are reminded that sighing heavily does not count as breathwork.
 - Opening day (`src/core/sim/progress.ts`)
   - [x] The healing center is now open. Please form an orderly line in order of your aura’s color code.
   - [x] More opening lines to alternate with it, recorded as `healing-center-open-2.mp3` and on. Three more: `OPENING_LINES` in `src/core/sim/progress.ts`.
@@ -33,8 +35,11 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [x] Massage Therapist needed at the Massage Suite.
   - [x] Acupuncturist needed at the Acupuncture Clinic.
   - [x] Reiki Practitioner needed at the Reiki Studio.
+  - [x] Qi Gong Instructor needed at the Qi Gong Studio.
   - [ ] Sound Healer needed at the Sound Bath Studio.
   - [ ] Shaman needed at the Ceremony Lodge.
+- A Qi Gong class (`CLASS_STARTING` in `src/core/sim/classes.ts`)
+  - [x] Qi Gong is starting in the studio. Come cultivate your inner energy, because your outer energy is frankly exhausting.
 - The first Sweat Lodge (`SWEAT_LODGE_OPEN` in `src/core/sim/ceremonies.ts`)
   - [x] The sweat shop... I mean, sweat lodge, is now open.
 - Seasons, at The Boardwalk (`SEASON_NEWS` in `src/core/sim/twists.ts`)
@@ -122,7 +127,7 @@ The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two
 - [x] **Phase 8, visitors and rivals:** VIPs and the inspector, the center's standing, a rival center. Then The Orchard Estate. VIPs and the inspector are done: the inspector visits every center, not only The Orchard Estate, with a notice five days ahead; VIPs from the first star. The standing and the rival are done: five grades on points for rooms, prestige and staff, kept once reached; ZenMart opens on day 45 at every center, with sales, job offers to staff below 35 morale, and Center of the Year. The Orchard Estate is done too.
 - [x] **Phase 9, events:** a mishap per center. Every 80 to 140 days from day 75, announced three days ahead: a power cut at The Exchange and in the sandbox, a storm at The Boardwalk, a big freeze at High Pines (winter only), and wasps at The Orchard Estate; Willow Lane has none. A fire drill anywhere was built, then taken out at Max's request. Each has a price to prepare for it, paid from the notice at the top of the screen. A power cut dims the lights and a storm brings rain. The storm breaks equipment rather than flooding the restrooms as [two-point-gaps.md](two-point-gaps.md) suggested; that is under Next up.
 - [x] **Phase 10, building tools:** move and copy rooms, templates, and decorating rooms. Moving is free, and a copy or a room from a template costs what building it would. Templates are kept for every game and export to a file. Decorating is for looks alone, with three floors and three walls free and nine more for karma. Camera rotation and more land moved to Phase 12.
-- [ ] **Phase 11, the long game:** machine upgrades, new rooms, regulars, treatment gags, a radio, game settings. Machine upgrades are done: three levels for each piece of treatment equipment, installed by a Caretaker with the Mechanics course. The Recovery Lounge and the Qi Gong Studio are done too, and game settings (keys, edge scrolling, autosave interval), and regulars, with the Shaman's Vision Quest. To record: "Qi Gong is starting in the studio. Please move slowly, and with intention." and "Qi Gong Instructor needed at the Qi Gong Studio." for the announcer.
+- [ ] **Phase 11, the long game:** machine upgrades, new rooms, regulars, treatment gags, a radio, game settings. Machine upgrades are done: three levels for each piece of treatment equipment, installed by a Caretaker with the Mechanics course. The Recovery Lounge and the Qi Gong Studio are done too, and game settings (keys, edge scrolling, autosave interval), and regulars, with the Shaman's Vision Quest.
 - [x] **Phase 12, more building:** camera rotation and more land, put off from Phase 10. More land is done: plots to the west, east and back, from the Money menu's Land tab. Camera rotation is done: a quarter turn at a time with Q and E or a button.
 - [ ] **The lot sign from behind.** Turned to look from the north, the sign on the front lawn shows its plain back, a teal wedge by the road. Give it a back, or turn it to face the camera.
 - [x] **Difficulty settings.** Presets for a new game (Relaxed, Standard, Demanding) alongside finer settings, the way Two Point's sandbox has them: how many applicants turn up and how often, how often guests arrive and how patient they are, how quickly equipment wears and staff tire, salaries and prices, loan limits, emergency and challenge frequency, and how fast the award bars rise. A preset fills the settings in, and any can then be changed. Done for the sandbox, with eleven settings; "how fast the award bars rise" became how fast reputation grows, and applicants come more or less often rather than in bigger or smaller numbers.

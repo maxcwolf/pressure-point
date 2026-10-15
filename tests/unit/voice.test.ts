@@ -14,6 +14,7 @@ import {
 } from '../../src/core/data';
 import { CARETAKER_WANTED, staffWanted } from '../../src/core/sim/advisor';
 import { SWEAT_LODGE_OPEN } from '../../src/core/sim/ceremonies';
+import { CLASS_STARTING } from '../../src/core/sim/classes';
 import { emergencyNews } from '../../src/core/sim/emergencies';
 import { OPENING_LINES, openingLine } from '../../src/core/sim/progress';
 import { VOICE_LINES, voiceFor } from '../../src/voice';
@@ -33,6 +34,7 @@ function spokenLines(): string[] {
     ...mishaps,
     ...emergencies,
     SWEAT_LODGE_OPEN,
+    CLASS_STARTING,
     ...OPENING_LINES,
   ];
 }
@@ -77,6 +79,10 @@ describe('the announcer', () => {
     expect(voiceFor(MISHAPS.storm.end)).toMatch(/storm-ended.*\.m4a$/);
     expect(voiceFor(CARETAKER_WANTED)).toMatch(/caretaker-needed.*\.m4a$/);
     expect(voiceFor(SWEAT_LODGE_OPEN)).toMatch(/sweat-shop-open.*\.m4a$/);
+    expect(voiceFor(staffWanted({ type: 'instructor_mat' }))).toMatch(/qi-gong-at-qi-gong.*\.m4a$/);
+    expect(voiceFor(CLASS_STARTING)).toMatch(/qi-gong-starting.*\.m4a$/);
+    expect(voiceFor(ANNOUNCEMENTS.find((l) => l.includes('void')) ?? '')).toMatch(/screaming-into-void.*\.m4a$/);
+    expect(voiceFor(ANNOUNCEMENTS.find((l) => l.includes('sighing')) ?? '')).toMatch(/sighing-not-breathwork.*\.m4a$/);
     OPENING_LINES.forEach((line, i) =>
       expect(voiceFor(line)).toMatch(new RegExp(`healing-center-open-${i + 1}.*\\.m4a$`)),
     );
