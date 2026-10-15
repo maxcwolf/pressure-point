@@ -1,5 +1,5 @@
 // A picture of every model on its own, from the model lab: each item, a guest with each condition, each role of
-// staff and the scenery. A change to a shared part shows up in every model that uses it.
+// staff, each kind of visitor and the scenery. A change to a shared part shows up in every model that uses it.
 import { expect, type Page, test } from '@playwright/test';
 
 import { CONDITIONS, ITEMS, ROLE_ORDER } from '../../src/core/data';
@@ -9,6 +9,8 @@ const IDS = [
   ...Object.keys(ITEMS).map((type) => `item:${type}`),
   ...CONDITIONS.map((c) => `guest:${c.id}`),
   ...ROLE_ORDER.map((role) => `staff:${role}`),
+  'visitor:vip',
+  'visitor:inspector',
   'scenery:trees',
   'scenery:pines',
   'scenery:beach',

@@ -10,11 +10,14 @@ import {
   DISCIPLINES,
   FEELINGS,
   FIRST_OUTBREAK_DAY,
+  INSPECTION_FIRST_DAY,
   type Modality,
   OUTBREAK_GAP_MIN,
   RANK_XP,
   type Role,
   ROLES,
+  VIP_FIRST_DAY,
+  VIP_GAP_DAYS,
 } from '../data';
 import { defaultPolicy, emptyTally, FIRST_CALL_DAY, FIRST_CHALLENGE_DAY, SAVE_VERSION } from './game';
 import type {
@@ -40,7 +43,7 @@ const baseQuals = (role: Role): Modality[] => {
 /** A record written before some of its fields existed, so those fields may be missing. */
 type Before<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
-type OldLedger = Before<Ledger, 'training' | 'interest' | 'bonus' | 'shop' | 'calls' | 'marketing'>;
+type OldLedger = Before<Ledger, 'training' | 'interest' | 'bonus' | 'shop' | 'calls' | 'marketing' | 'fines'>;
 
 /** A save as an earlier version may have written it. */
 type OldSave = Before<
@@ -85,6 +88,12 @@ type OldSave = Before<
   | 'nextOutbreak'
   | 'outbreaksOn'
   | 'weatherOn'
+  | 'visitors'
+  | 'visitNotice'
+  | 'visitReport'
+  | 'nextVip'
+  | 'nextInspection'
+  | 'visitsOn'
 > & {
   stats: Before<Stats, 'priced' | 'sent' | 'worse' | 'healedBy' | 'emergencies' | 'lastQuit'>;
   tally?: Before<Tally, 'sent' | 'worse'>;
@@ -160,13 +169,14 @@ export function upgradeSave(save: GameState) {
     // a feeling from a newer version means nothing here
     g.feelings = (g.feelings ?? []).filter((f) => Object.hasOwn(FEELINGS, f));
   }
-  for (const l of [s.ledger, s.lastLedger]) {
+  for (const l of [s.ledger, s.lastLedger, ...(s.months ?? []).map((m) => m.ledger as OldLedger)]) {
     l.training ??= 0;
     l.interest ??= 0;
     l.bonus ??= 0;
     l.shop ??= 0;
     l.calls ??= 0;
     l.marketing ??= 0;
+    l.fines ??= 0;
   }
   s.announceT ??= 25;
   s.loan ??= 0;
@@ -198,6 +208,12 @@ export function upgradeSave(save: GameState) {
   s.challengesOn ??= true;
   s.outbreaksOn ??= true;
   s.weatherOn ??= true;
+  s.visitors ??= [];
+  s.visitNotice ??= null;
+  s.visitReport ??= null;
+  s.nextVip ??= Math.max(VIP_FIRST_DAY, s.day + VIP_GAP_DAYS[0]);
+  s.nextInspection ??= Math.max(INSPECTION_FIRST_DAY, s.day + INSPECTION_FIRST_DAY);
+  s.visitsOn ??= true;
   s.nextApplicant ??= s.day + APPLICANT_DAYS;
   s.reviews = (s.reviews ?? []).map((r) => ({ ...r, feelings: r.feelings.filter((f) => Object.hasOwn(FEELINGS, f)) }));
   s.casebook ??= {};

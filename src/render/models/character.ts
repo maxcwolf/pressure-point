@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 
 import { type Role, ROLES, type Visual } from '../../core/data';
-import type { Look } from '../../core/state/types';
+import type { Look, VisitorKind } from '../../core/state/types';
 import { owned } from '../disposal';
 import { cached, capsule, cyl, ico, mat, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
@@ -41,16 +41,23 @@ export interface CharRig {
 
 const pickMat = new THREE.MeshBasicMaterial({ visible: false });
 
-/** Build a person: a uniformed member of staff, or a guest showing their symptom. */
-export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRig {
+/** What a visitor wears: a VIP's dark suit, or the inspector's trench coat. */
+const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: number }>> = {
+  vip: { top: 0x2b2f3a, bottom: 0x23262e },
+  inspector: { top: 0xb59a6a, bottom: 0x4a4a52 },
+};
+
+/** Build a person: a uniformed member of staff, a guest showing their symptom, or a visitor dressed for the part. */
+export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor?: VisitorKind): CharRig {
   const group = new THREE.Group();
   const body = new THREE.Group();
   body.scale.setScalar(look.scale);
   group.add(body);
   const skin = mat(look.skin, 0.65);
-  const topColor = role ? ROLES[role].uniform : look.top;
+  const clothes = visitor && VISITOR_CLOTHES[visitor];
+  const topColor = role ? ROLES[role].uniform : (clothes?.top ?? look.top);
   const top = mat(topColor, 0.7);
-  const bottom = mat(role === 'caretaker' ? 0x5c6b33 : look.bottom, 0.8);
+  const bottom = mat(role === 'caretaker' ? 0x5c6b33 : (clothes?.bottom ?? look.bottom), 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
 
   /** Add a leg with its shoe, hinged at the hip. */
@@ -106,7 +113,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   const hair = mat(look.hair, 0.85);
   /** The shared half-sphere cap of hair. */
   const cap = () => cached('haircap', () => new THREE.SphereGeometry(0.228, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52));
-  const style = role === 'caretaker' ? 0 : look.hairStyle;
+  // a cap needs short hair under it
+  const style = role === 'caretaker' || visitor === 'inspector' ? 0 : look.hairStyle;
   if (style !== 3) {
     const c = put(head, cap(), hair, 0, 0.012, -0.018);
     c.rotation.x = -0.28;
@@ -121,6 +129,22 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
   if (role === 'therapist') {
     const band = put(head, torus(0.212, 0.03), accent, 0, 0.07, 0);
     band.rotation.x = Math.PI / 2 - 0.2;
+  }
+  if (visitor === 'vip') {
+    // dark glasses, a white shirt collar and a gold pin on the lapel
+    const shades = mat(0x1d1f24, 0.2);
+    for (const x of [-0.075, 0.075]) put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2);
+    put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205);
+    put(torso, rbox(0.1, 0.12, 0.03, 0.01), mat(0xf4f1ea, 0.6), 0, 0.33, 0.15);
+    put(torso, sph(0.025, 8), mat(0xd9a93a, 0.3, 0.3), -0.09, 0.27, 0.165);
+  }
+  if (visitor === 'inspector') {
+    // a flat cap, and a clipboard held at the ready
+    put(head, cyl(0.215, 0.225, 0.1, 16), mat(0x6b5b45, 0.85), 0, 0.2, -0.01);
+    put(head, rbox(0.24, 0.025, 0.14, 0.01), mat(0x6b5b45, 0.85), 0, 0.16, 0.17);
+    const board = put(armR, rbox(0.17, 0.22, 0.02, 0.01), mat(0x8f6a45, 0.7), -0.02, -0.33, 0.08);
+    board.rotation.x = -0.9;
+    put(board, rbox(0.13, 0.16, 0.01, 0.004), mat(0xf7f4ec, 0.6), 0, -0.01, 0.012);
   }
 
   const rig: CharRig = {

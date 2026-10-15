@@ -89,6 +89,18 @@ describe('finding a subject', () => {
     expect(sim.whereIs({ kind: 'room', id: massage.id })).toEqual([x + w / 2, y + h / 2]);
   });
 
+  it('finds a visitor where they stand, and nothing once they have gone', () => {
+    const { sim, s } = openCenter(1);
+    runUntil(sim, () => s.open, 60);
+    s.nextInspection = 1e9;
+    s.visitNotice = { visit: 'inspector', name: 'Pat', title: 'the health inspector', arrives: s.day };
+    runUntil(sim, () => s.visitors.length > 0, 10);
+    const v = s.visitors[0]!;
+    expect(sim.whereIs({ kind: 'visitor', id: v.id })).toEqual([v.x, v.y]);
+    runUntil(sim, () => s.visitors.length === 0, 240);
+    expect(sim.whereIs({ kind: 'visitor', id: v.id })).toBeNull();
+  });
+
   it('finds nothing once it has gone', () => {
     const { sim, therapist, massage } = openCenter(1);
     const gone: Subject[] = [

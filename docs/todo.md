@@ -37,7 +37,7 @@ The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two
 - [x] **Phase 5, the business side:** prices per treatment, a retail counter, marketing, house calls.
 - [x] **Phase 6, stakes:** a worsening condition, bad vibes cleared with sage, stress outbreaks. Treatment calms a stressed guest as well as a calming session does, and the calming sessions are handed out by clicking, with no one sent to give them.
 - [x] **Phase 7, comfort:** calm, fresh linens, temperature and staff needs. Noise and warmth carry like decor does, held back by the walls of each room they pass through. Changing linens is part of a Caretaker's cleaning, and needs a Linen Hamper to take fresh ones from. Staff thirst and hunger only, no toilets: they are seen to between jobs from the guests' own drinks and snacks. Sandbox switches for stress outbreaks (missed in phase 6) and the weather. High Pines comes next.
-- [ ] **Phase 8, visitors and rivals:** VIPs and the inspector, the center's standing, a rival center. Then The Orchard Estate.
+- [ ] **Phase 8, visitors and rivals:** VIPs and the inspector, the center's standing, a rival center. Then The Orchard Estate. VIPs and the inspector are done: the inspector visits every center, not only The Orchard Estate, with a notice five days ahead; VIPs from the first star.
 - [ ] **Phase 9, events:** a mishap per center.
 - [ ] **Phase 10, building tools:** move and copy rooms, templates, decorating rooms, camera rotation, more land.
 - [ ] **Phase 11, the long game:** machine upgrades, new rooms, regulars, treatment gags, a radio, game settings.

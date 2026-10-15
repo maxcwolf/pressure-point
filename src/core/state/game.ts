@@ -9,6 +9,8 @@ import {
   type Discipline,
   DISCIPLINES,
   FIRST_OUTBREAK_DAY,
+  INSPECTION_FIRST_DAY,
+  VIP_FIRST_DAY,
 } from '../data';
 import { refillCandidates } from '../people';
 import type { GameState, Ledger, Policy, Tally, WallSpot } from './types';
@@ -43,6 +45,7 @@ export const emptyLedger = (): Ledger => ({
   shop: 0,
   calls: 0,
   marketing: 0,
+  fines: 0,
 });
 
 /** The day the first house call may be offered. */
@@ -66,9 +69,9 @@ export const defaultPolicy = (): Policy => ({
  * and the new traits. 8: guests' feelings, reviews and the casebook. 9: the Shop Counter, prices per treatment,
  * marketing and house calls. 10: guests' worsening condition, bad vibes, stress outbreaks and the Smudging course.
  * 11: noise, linens, temperature, staff needs, and the radiator, air conditioner and linen hamper. 12: High Pines,
- * its ailments and the Fireplace.
+ * its ailments and the Fireplace. 13: VIPs and the health inspector.
  */
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {
@@ -131,6 +134,12 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     challengesOn: true,
     outbreaksOn: true,
     weatherOn: true,
+    visitors: [],
+    visitNotice: null,
+    visitReport: null,
+    nextVip: VIP_FIRST_DAY,
+    nextInspection: INSPECTION_FIRST_DAY,
+    visitsOn: true,
     ceremony: null,
     trophies: [],
     achieved: [],

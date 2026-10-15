@@ -419,8 +419,10 @@ describe('a long session', () => {
       expect(s.reputation).toBeGreaterThanOrEqual(0);
       expect(s.reputation).toBeLessThanOrEqual(100);
       expect(s.guests.length).toBeLessThan(60);
-      for (const c of [...s.guests, ...s.staff]) {
+      expect(s.visitors.length).toBeLessThanOrEqual(1);
+      for (const c of [...s.guests, ...s.staff, ...s.visitors]) {
         expect(Number.isFinite(c.x + c.y + c.facing), c.name).toBe(true);
+        if (c.kind === 'visitor') continue;
         if (c.kind === 'staff') expect(c.morale >= 0 && c.morale <= 100 && c.energy >= 0 && c.energy <= 100).toBe(true);
         else expect(c.patience).toBeLessThanOrEqual(100);
       }

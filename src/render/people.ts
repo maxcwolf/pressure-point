@@ -29,14 +29,16 @@ export class PeopleLayer {
   /** Give everyone a figure, pose them for this frame and remove those who have left. */
   update(t: number, dt: number) {
     const live = new Set<number>();
-    for (const c of [...this.sim.s.guests, ...this.sim.s.staff] as Char[]) {
+    for (const c of [...this.sim.s.guests, ...this.sim.s.staff, ...this.sim.s.visitors] as Char[]) {
       live.add(c.id);
       let rig = this.chars.get(c.id);
       if (!rig) {
         rig =
           c.kind === 'staff'
             ? buildCharacter(c.look, c.role)
-            : buildCharacter(c.look, undefined, conditionOf(c.condition).visual);
+            : c.kind === 'visitor'
+              ? buildCharacter(c.look, undefined, undefined, c.visit)
+              : buildCharacter(c.look, undefined, conditionOf(c.condition).visual);
         rig.pick.userData.charId = c.id;
         rig.pick.userData.charKind = c.kind;
         this.scene.add(rig.group);

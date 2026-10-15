@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **VIPs** write ahead, from the first star, then tour three to five rooms and judge them by their own tastes: one cares most about decor, another about cleanliness, peace and quiet, the temperature or working equipment. A delighted VIP leaves a reward; a disappointed one costs reputation.
+- **The health inspector** calls on every center now and then, and checks each room for dirt, broken equipment and a Fire Extinguisher near its door. Pass and reputation rises; fail and there is a fine, shown as Fines in the books.
+- **A report after each visit** lists every room seen and what the visitor made of it. Click a visitor to see who they are, where they are going and their notes so far.
+- **A sandbox switch** for VIPs and inspections.
+
 ## v0.14.0
 
 - **High Pines,** the fourth center, opened by a star at Saltmarsh: a lodge up in the mountains, cold all year, so it needs heating. A few times each winter it is snowed in for a couple of days and nobody new can get up the road. Three mountain ailments are found only there (Frozen Stiff, Wipeout and Cabin Fever), and Cold Shoulder and Cold Feet are common.

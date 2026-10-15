@@ -17,7 +17,7 @@ import {
   ROLES,
 } from '../core/data';
 import { randomLook } from '../core/people';
-import type { Char, Look } from '../core/state/types';
+import type { Char, Look, VisitorKind } from '../core/state/types';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { buildBeach } from '../render/models/beach';
 import { buildCharacter, type CharRig } from '../render/models/character';
@@ -27,7 +27,7 @@ import { buildPines } from '../render/models/pine';
 import { buildForest } from '../render/models/tree';
 import { poseChar } from '../render/pose';
 import { button, choice, type Control, type Option, range, toggle } from './controls';
-import { demoGuest, demoStaff, LAB_LOOK } from './people';
+import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from './people';
 
 /** A model as built for the lab, with what moves it each frame and the settings that change it. */
 export interface Model {
@@ -39,7 +39,7 @@ export interface Model {
   controls: Control[];
 }
 
-export type Group = 'Items' | 'Guests' | 'Staff' | 'Scenery';
+export type Group = 'Items' | 'Guests' | 'Staff' | 'Visitors' | 'Scenery';
 
 /** Something the lab can show. */
 export interface Specimen {
@@ -230,6 +230,30 @@ function staffSpecimen(role: Role): Specimen {
   };
 }
 
+/** A visitor dressed for the part: a VIP in a dark suit, or the inspector with a clipboard. */
+function visitorSpecimen(visit: VisitorKind): Specimen {
+  const st: PersonState = { look: { ...LAB_LOOK }, pose: 'stand', bubble: '' };
+  return {
+    id: `visitor:${visit}`,
+    group: 'Visitors',
+    name: visit === 'vip' ? 'VIP' : 'Health inspector',
+    footprint: [1, 1],
+    /** Build them in their outfit. */
+    build() {
+      const rig = buildCharacter(st.look, undefined, undefined, visit);
+      const c = demoVisitor(st.look, visit);
+      return {
+        root: rig.group,
+        controls: personControls(st),
+        /** Pose them. */
+        animate(t, dt) {
+          posePerson(rig, c, st, t, dt);
+        },
+      };
+    },
+  };
+}
+
 /** Scenery that is drawn as a batch, shown with a few of each so the variety shows. */
 const SCENERY: Specimen[] = [
   {
@@ -278,6 +302,7 @@ export const CATALOG: readonly Specimen[] = [
   ...(Object.keys(ITEMS) as ItemType[]).map(itemSpecimen).sort((a, b) => a.name.localeCompare(b.name)),
   ...CONDITIONS.map(guestSpecimen),
   ...ROLE_ORDER.map(staffSpecimen),
+  ...(['vip', 'inspector'] as const).map(visitorSpecimen),
   ...SCENERY,
 ];
 

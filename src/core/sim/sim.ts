@@ -15,7 +15,7 @@ import {
   type ModalityDef,
   type RoomType,
 } from '../data';
-import type { Char, GameState, Guest, Item, MonthRecord, Room, Staff, WallSpot } from '../state/types';
+import type { Char, GameState, Guest, Item, MonthRecord, Room, Staff, Visitor, WallSpot } from '../state/types';
 import type { Check, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce } from './advisor';
@@ -65,6 +65,7 @@ import { deliveryProblem, enabled, modalityOf, offered, setDiscipline, unlocked 
 import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
 import { decayItems } from './upkeep';
 import { fadeVibes } from './vibes';
+import { updateVisitor, updateVisits } from './visits';
 import { outdoorTemp, updateWarmth, warmthAt } from './warmth';
 
 export class Sim {
@@ -109,6 +110,7 @@ export class Sim {
     updateStations(ctx, dt);
     for (const g of [...s.guests]) updateGuest(ctx, g, dt);
     for (const st of [...s.staff]) updateStaff(ctx, st, dt);
+    for (const v of [...s.visitors]) updateVisitor(ctx, v, dt);
     decayItems(ctx, dt);
     fadeVibes(ctx, dt);
 
@@ -127,6 +129,7 @@ export class Sim {
       updateCampaigns(ctx);
       updateCalls(ctx);
       updateHabits(ctx);
+      updateVisits(ctx);
     }
     announce(ctx, dt);
     updateTwists(ctx, dt);
@@ -149,6 +152,11 @@ export class Sim {
   /** The guest with this id. */
   guest(id: number): Guest | undefined {
     return guestById(this.ctx, id);
+  }
+
+  /** A visitor by id, while they are here. */
+  visitor(id: number): Visitor | undefined {
+    return this.s.visitors.find((v) => v.id === id);
   }
 
   /** The member of staff with this id. */

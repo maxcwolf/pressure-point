@@ -11,7 +11,7 @@ import { closeMonth } from './records';
 
 /** A ledger's income minus its spending. */
 export function netOf(l: Ledger) {
-  return incomeOf(l) - l.salaries - l.building - l.training - l.interest - l.marketing;
+  return incomeOf(l) - l.salaries - l.building - l.training - l.interest - l.marketing - l.fines;
 }
 
 /** A ledger's income: fees, sales, house calls and bonuses. */
@@ -37,7 +37,7 @@ export function earn(
 export function spend(
   ctx: SimContext,
   amount: number,
-  kind: 'salaries' | 'building' | 'training' | 'interest' | 'marketing',
+  kind: 'salaries' | 'building' | 'training' | 'interest' | 'marketing' | 'fines',
 ) {
   ctx.s.money -= amount;
   ctx.s.ledger[kind] += amount;

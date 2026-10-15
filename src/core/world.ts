@@ -412,7 +412,7 @@ export class World {
       }
     }
     // nobody already inside may be walled in (their own tile may be the one being built on)
-    for (const c of [...this.s.guests, ...this.s.staff]) {
+    for (const c of [...this.s.guests, ...this.s.staff, ...this.s.visitors]) {
       if (!this.inside(c.tx, c.ty)) continue;
       const { tx: x, ty: y } = c;
       if (!need(x, y) && !need(x + 1, y) && !need(x - 1, y) && !need(x, y + 1) && !need(x, y - 1)) return false;

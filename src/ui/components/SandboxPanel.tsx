@@ -119,6 +119,17 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
             });
           }}
         />
+        <SettingRow
+          icon="🕶️"
+          name="VIPs and inspections"
+          desc="VIPs who write ahead and judge a few rooms, and a health inspector who checks them all."
+          on={settings.visits}
+          onToggle={() => {
+            change(() => {
+              saveSandbox({ ...settings, visits: !settings.visits });
+            });
+          }}
+        />
       </ul>
       <button class="go start" onClick={onStart}>
         Start building

@@ -86,7 +86,7 @@ describe('the guest journey', () => {
     const { sim, s } = openCenter(5);
     for (let minute = 0; minute < 10; minute++) {
       run(sim, 60);
-      for (const c of [...s.guests, ...s.staff]) {
+      for (const c of [...s.guests, ...s.staff, ...s.visitors]) {
         expect(Number.isFinite(c.x) && Number.isFinite(c.y), `${c.name} position`).toBe(true);
         expect(c.x).toBeGreaterThanOrEqual(0);
         expect(c.y).toBeGreaterThanOrEqual(0);

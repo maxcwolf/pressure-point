@@ -220,7 +220,7 @@ describe('a restless player', () => {
       run(sim, 2 + random() * 20);
       expect(inconsistencies(sim), `playing on after ${log.slice(-5).join(', ')}`).toEqual([]);
       expect(Number.isFinite(s.money) && Number.isFinite(s.reputation)).toBe(true);
-      for (const c of [...s.guests, ...s.staff]) expect(Number.isFinite(c.x + c.y), c.name).toBe(true);
+      for (const c of [...s.guests, ...s.staff, ...s.visitors]) expect(Number.isFinite(c.x + c.y), c.name).toBe(true);
       if (s.challenge) expect(Number.isFinite(sim.challengeObjective()!.progress)).toBe(true);
       for (const st of s.staff)
         if (st.state === 'away' || st.state === 'toCall') expect(st.call, st.name).not.toBeNull();

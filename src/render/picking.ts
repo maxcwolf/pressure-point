@@ -22,7 +22,7 @@ export function shown(o: THREE.Object3D | null): boolean {
 }
 
 export interface Selection {
-  kind: 'guest' | 'staff' | 'item' | 'room';
+  kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room';
   id: number;
 }
 

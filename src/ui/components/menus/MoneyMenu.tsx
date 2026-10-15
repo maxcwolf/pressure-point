@@ -41,6 +41,7 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
       <Line name="Training" amount={ledger.training} cost />
       <Line name="Marketing" amount={ledger.marketing} cost />
       <Line name="Loan interest" amount={ledger.interest} cost />
+      <Line name="Fines" amount={ledger.fines} cost />
       <div class="total">
         <span>Net</span>
         <b class={net < 0 ? 'neg' : 'pos'}>{money(net)}</b>

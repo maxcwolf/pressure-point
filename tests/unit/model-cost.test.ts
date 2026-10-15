@@ -66,7 +66,7 @@ describe('the cost of drawing each model', () => {
   it('keeps every model within a few dozen draw calls', async () => {
     // the heaviest when this was written: a shop counter 23, a trophy cabinet 21, a guest 29, staff 23 (people in the
     // game are drawn in batches, so the figures for them here are what one person alone would cost)
-    const limit = { Items: 30, Guests: 32, Staff: 26, Scenery: 20 };
+    const limit = { Items: 30, Guests: 32, Staff: 26, Visitors: 26, Scenery: 20 };
     const over = (await costs()).filter((m) => m.calls > limit[m.group]).map((m) => `${m.id}: ${m.calls}`);
     expect(over).toEqual([]);
   });

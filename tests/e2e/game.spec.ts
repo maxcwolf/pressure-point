@@ -1104,6 +1104,39 @@ test.describe('the Items menu', () => {
   });
 });
 
+test.describe('visitors', () => {
+  test('a VIP writes ahead, tours the center, and leaves a report', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(5);
+    await game.eval((pp) => {
+      pp.state.visitsOn = true;
+      pp.state.nextInspection = 1e9;
+      pp.state.nextVip = 0;
+      pp.state.stars = 1;
+    });
+    await game.fastForward(2);
+    await expect(page.locator('#toasts')).toContainText('is visiting in 5 days');
+    await game.eval((pp) => {
+      pp.state.visitNotice!.arrives = pp.state.day;
+    });
+    await game.fastForward(2);
+    // the message that they have arrived takes the player to them
+    await game.eval((pp) => (pp.state.speed = 0));
+    await page.locator('#toasts .toast', { hasText: 'has arrived' }).click();
+    const insp = page.locator('#inspector');
+    await expect(insp.locator('.tag')).toContainText('VIP');
+    await expect(insp).toContainText('cares most about');
+    await game.fastForward(120);
+    const modal = page.locator('#modal');
+    await expect(modal.locator('h2')).toContainText('visit');
+    expect(await modal.locator('.visit-rooms li').count()).toBeGreaterThanOrEqual(1);
+    await modal.getByRole('button', { name: 'Back to work' }).click();
+    await expect(modal.locator('h2')).toHaveCount(0);
+    expect(await game.eval((pp) => [pp.state.visitors.length, pp.state.visitReport?.visit])).toEqual([0, 'vip']);
+  });
+});
+
 test.describe('the business side', () => {
   test("a treatment's own price is set on top of the overall level", async ({ game, page }) => {
     await game.start();

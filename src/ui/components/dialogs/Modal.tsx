@@ -11,6 +11,7 @@ import { PauseMenu } from './PauseMenu';
 import { SavesDialog } from './SavesDialog';
 import { SettingsDialog } from './SettingsDialog';
 import { StarDialog } from './StarDialog';
+import { VisitDialog } from './VisitDialog';
 
 /** The contents of a dialog. */
 function contents(dialog: DialogId): ComponentChildren {
@@ -29,6 +30,8 @@ function contents(dialog: DialogId): ComponentChildren {
       return <KarmaDialog />;
     case 'awards':
       return <AwardsDialog />;
+    case 'visit':
+      return <VisitDialog />;
   }
 }
 

@@ -15,7 +15,7 @@ export type MoneyTab = 'books' | 'prices' | 'marketing' | 'loan';
 /** The tabs of the Stats menu. */
 export type StatsTab = 'charts' | 'reputation' | 'casebook' | 'awards';
 
-export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards';
+export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards' | 'visit';
 
 /** A message that fades after a few seconds. */
 export interface Toast {
@@ -158,7 +158,7 @@ export class HudState {
     s.speed = 0;
   }
 
-  /** React to game events: sounds, toasts, announcements, star awards and floating text. */
+  /** React to game events: sounds, toasts, announcements, star awards, visit reports and floating text. */
   handle(events: SimEvent[]) {
     const { view, audio } = this.host;
     for (const e of events) {
@@ -169,6 +169,7 @@ export class HudState {
         this.star = e.stars;
         this.open('star');
       } else if (e.type === 'awards') this.open('awards');
+      else if (e.type === 'visit') this.open('visit');
       else this.float(e.text, e.kind, view.project(e.x, e.y, 1.6));
     }
   }

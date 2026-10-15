@@ -46,7 +46,7 @@ interface Handle {
     problem: string;
     plan: { room: Room } | null;
     selected: { kind: string; id: number } | null;
-    select(sel: { kind: 'guest' | 'staff' | 'item' | 'room'; id: number } | null): void;
+    select(sel: { kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room'; id: number } | null): void;
     startResize(roomId: number): void;
     pointerDown(clientX: number, clientY: number): void;
     pointerMove(clientX: number, clientY: number): void;
@@ -470,6 +470,8 @@ export class Game {
         sim.finishRoom(r);
       };
       state.money = 100000;
+      // a visit ends in a report that pauses the game, so only the tests of visits have them
+      state.visitsOn = false;
       sim.placeItem('reception_desk', 14, 13, 0);
       room('consult', { x: 5, y: 5, w: 4, h: 4 }, { x: 8, y: 7, dx: 1, dy: 0 }, [
         ['consult_desk', 6, 6],

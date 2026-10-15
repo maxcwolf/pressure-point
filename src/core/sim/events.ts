@@ -10,7 +10,7 @@ export type SfxName =
 
 /** What a message is about, so clicking it can take the player there. */
 export interface Subject {
-  kind: 'guest' | 'staff' | 'item' | 'room';
+  kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room';
   id: number;
 }
 
@@ -20,7 +20,8 @@ export type SimEvent =
   | { type: 'sfx'; name: SfxName }
   | { type: 'announce'; text: string }
   | { type: 'star'; stars: number }
-  | { type: 'awards'; year: number };
+  | { type: 'awards'; year: number }
+  | { type: 'visit' };
 
 /** Queue an event for the outside world. */
 export function emit(ctx: SimContext, e: SimEvent) {

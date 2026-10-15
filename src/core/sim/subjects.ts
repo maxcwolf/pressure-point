@@ -7,8 +7,13 @@ import type { Subject } from './events';
 
 /** Where on the ground a subject is now, or null if it has gone (left, sold or demolished). */
 export function subjectSpot(ctx: SimContext, about: Subject): [x: number, y: number] | null {
-  if (about.kind === 'staff' || about.kind === 'guest') {
-    const who = about.kind === 'staff' ? staffById(ctx, about.id) : guestById(ctx, about.id);
+  if (about.kind === 'staff' || about.kind === 'guest' || about.kind === 'visitor') {
+    const who =
+      about.kind === 'staff'
+        ? staffById(ctx, about.id)
+        : about.kind === 'guest'
+          ? guestById(ctx, about.id)
+          : ctx.s.visitors.find((v) => v.id === about.id);
     return who ? [who.x, who.y] : null;
   }
   if (about.kind === 'item') {

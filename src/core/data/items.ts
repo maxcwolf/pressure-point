@@ -491,7 +491,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     type: 'fire_extinguisher',
     name: 'Fire Extinguisher',
     icon: '🧯',
-    desc: 'Cheap, reassuring, and the inspectors like to see one. A small prestige boost.',
+    desc: 'Cheap and reassuring, and the health inspector wants to see one near every room. A small prestige boost.',
     cost: 80,
     w: 1,
     h: 1,

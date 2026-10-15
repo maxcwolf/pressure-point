@@ -339,6 +339,55 @@ test.describe('in a game', () => {
     });
     await screens.shot('awards');
   });
+
+  test('a visitor, and the report after a visit', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      const s = pp.state;
+      const [first, second, third] = s.rooms.filter((r) => r.done);
+      const guest = s.guests[0]!;
+      // a VIP partway round, standing where a guest stands
+      s.visitors.push({
+        ...guest,
+        id: s.nextId++,
+        name: 'Morgan Bell',
+        kind: 'visitor',
+        visit: 'vip',
+        title: 'a lifestyle columnist',
+        cares: 'decor',
+        state: 'looking',
+        tour: [second!.id, third!.id],
+        seen: [{ room: first!.id, name: 'Consultation Room', score: 74, note: 'Beautifully done.', problems: [] }],
+      });
+      pp.tools.select({ kind: 'visitor', id: s.visitors[0]!.id });
+    });
+    await screens.shot('inspector-visitor');
+    await game.eval((pp) => {
+      pp.state.visitReport = {
+        visit: 'inspector',
+        name: 'Pat Quill',
+        title: 'the health inspector',
+        day: 40,
+        rooms: [
+          { room: 1, name: 'Consultation Room', score: 100, note: 'All in order.', problems: [] },
+          {
+            room: 2,
+            name: 'Massage Suite',
+            score: 32,
+            note: 'Dirty, no Fire Extinguisher nearby.',
+            problems: ['dirty', 'no Fire Extinguisher nearby'],
+          },
+          { room: 3, name: 'Staff Room', score: 66, note: 'Broken equipment.', problems: ['broken equipment'] },
+        ],
+        score: 3,
+        outcome: 'failed',
+        money: -2400,
+        rep: -3,
+      };
+      pp.sim.emit({ type: 'visit' });
+    });
+    await screens.shot('visit-report');
+  });
 });
 
 test.describe('in a narrow window', () => {

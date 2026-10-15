@@ -17,3 +17,4 @@ export * from './stakes';
 export * from './text';
 export * from './treatments';
 export * from './types';
+export * from './visits';

@@ -1,0 +1,340 @@
+// Visitors who judge the center. A VIP writes ahead, tours a few rooms and judges them by their own tastes, leaving
+// a reward if delighted and a dent in the center's reputation if disappointed. The health inspector calls now and
+// then, ready or not, and checks every room for dirt, broken equipment and a Fire Extinguisher close by.
+
+import {
+  type Aspect,
+  ASPECT_NOTES,
+  DIRT_FILTHY,
+  EXTINGUISHER_REACH,
+  IDEAL_TEMP,
+  INSPECTION_ALLOWED,
+  INSPECTION_CLEAN_REP,
+  INSPECTION_FINE,
+  INSPECTION_GAP_DAYS,
+  INSPECTION_REP,
+  INSPECTOR_ROOMS,
+  ITEMS,
+  LOOK_SECONDS,
+  NOISE_LOUD,
+  ROOMS,
+  VIP_CARES,
+  VIP_DELIGHTED,
+  VIP_DISAPPOINTED,
+  VIP_GAP_DAYS,
+  VIP_PRIZE,
+  VIP_REP,
+  VIP_ROOMS,
+  VIPS,
+  VISIT_NOTICE_DAYS,
+  WEAR_REPAIR,
+} from '../data';
+import { money } from '../format';
+import { randomLook, randomName } from '../people';
+import { irnd, pick, random } from '../random';
+import type { Item, Room, RoomVerdict, VisitNotice, Visitor, VisitorKind, VisitReport } from '../state/types';
+import { clamp } from '../util';
+import { accessTile } from '../world';
+import { prestige } from './ambience';
+import { newChar, say, streetTile } from './chars';
+import type { SimContext } from './context';
+import { changeRep, spend } from './economy';
+import { emit, tipOnce, toast } from './events';
+import { goTo, moveAlong } from './movement';
+import { noiseAt } from './noise';
+import { cutOff } from './twists';
+import { discomfort, warmthAt } from './warmth';
+
+/** How a visitor rates each aspect of a room, from 0 (dreadful) to 1 (perfect). */
+export type AspectScores = Record<Aspect, number>;
+
+/** The aspects, in the order they are weighed. */
+const ASPECTS = Object.keys(ASPECT_NOTES) as Aspect[];
+
+/** The items standing in a room. */
+const itemsIn = (ctx: SimContext, room: Room) => ctx.s.items.filter((it) => ctx.world.zoneAt(it.x, it.y) === room.id);
+
+/** The pieces of litter on a room's floor. */
+const litterIn = (ctx: SimContext, room: Room) =>
+  ctx.s.litter.filter((l) => ctx.world.zoneAt(l.x, l.y) === room.id).length;
+
+/** The spot a visitor stands to look round a room: the open floor nearest its middle, out of everyone's way. */
+export function viewingTile(ctx: SimContext, room: Room): [number, number] | null {
+  // the spots where people sit, lie or work, and the doorway, are left free if anywhere else will do
+  const busy = new Set([`${room.door.x},${room.door.y}`]);
+  for (const it of itemsIn(ctx, room))
+    for (let i = 0; i < ITEMS[it.type].access.length; i++) busy.add(accessTile(it, i).join(','));
+  return nearestMiddle(ctx, room, busy) ?? nearestMiddle(ctx, room, new Set());
+}
+
+/** The open floor in a room nearest its middle, leaving out some tiles. */
+function nearestMiddle(ctx: SimContext, room: Room, skip: ReadonlySet<string>): [number, number] | null {
+  const cx = room.x + (room.w - 1) / 2;
+  const cy = room.y + (room.h - 1) / 2;
+  let best: [number, number] | null = null;
+  let bestD = Infinity;
+  for (let y = room.y; y < room.y + room.h; y++) {
+    for (let x = room.x; x < room.x + room.w; x++) {
+      if (ctx.world.zoneAt(x, y) !== room.id || !ctx.world.walkable(x, y) || skip.has(`${x},${y}`)) continue;
+      const d = (x - cx) ** 2 + (y - cy) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = [x, y];
+      }
+    }
+  }
+  return best;
+}
+
+/** How a room does on each aspect a visitor looks at. */
+export function aspectScores(ctx: SimContext, room: Room): AspectScores {
+  const items = itemsIn(ctx, room);
+  const filthy = items.filter((it) => it.dirt >= DIRT_FILTHY).length + litterIn(ctx, room);
+  const broken = items.filter((it) => it.wear >= 100).length;
+  const worn = items.filter((it) => it.wear >= WEAR_REPAIR && it.wear < 100).length;
+  const [x, y] = viewingTile(ctx, room) ?? [room.x, room.y];
+  return {
+    decor: (prestige(ctx, room) - 1) / 4,
+    cleanliness: clamp(1 - filthy * 0.35, 0, 1),
+    calm: 1 - Math.min(1, noiseAt(ctx, x, y) / NOISE_LOUD),
+    warmth: 1 - discomfort(warmthAt(ctx, x, y)),
+    equipment: clamp(1 - broken * 0.5 - worn * 0.2, 0, 1),
+  };
+}
+
+/** A VIP's score for a room, from 0 to 100: what they care about weighs most, and a gloomy air spoils it all. */
+export function vipScore(scores: AspectScores, cares: Aspect, vibes: number): number {
+  let total = 0;
+  let weight = 0;
+  for (const a of ASPECTS) {
+    const w = a === cares ? VIP_CARES : 1;
+    total += scores[a] * w;
+    weight += w;
+  }
+  return Math.round((total / weight) * (1 - (vibes / 100) * 0.5) * 100);
+}
+
+/** How an aspect reads in a note, good or bad: a room too warm reads as hot, not cold. */
+function aspectNote(a: Aspect, good: boolean, temp: number): string {
+  if (a === 'warmth' && !good) return temp > IDEAL_TEMP ? 'too hot' : 'too cold';
+  return good ? ASPECT_NOTES[a].good : ASPECT_NOTES[a].bad;
+}
+
+/** A VIP's note on a room: what they made of what they care about, and the worst of the rest if it let them down. */
+export function vipNote(scores: AspectScores, cares: Aspect, vibes: number, temp: number): string {
+  const liked = scores[cares] >= 0.6;
+  let note = aspectNote(cares, liked, temp);
+  const worst = ASPECTS.filter((a) => a !== cares).sort((a, b) => scores[a] - scores[b])[0];
+  if (worst && scores[worst] < 0.35) note += `${liked ? ', but' : ', and'} ${aspectNote(worst, false, temp)}`;
+  if (vibes >= 30) note += ', with a gloomy air about it';
+  return `${note.charAt(0).toUpperCase()}${note.slice(1)}.`;
+}
+
+/** Whether a Fire Extinguisher that works stands near enough a room's door for the inspector. */
+export function extinguisherNear(ctx: SimContext, room: Room): boolean {
+  const { x, y } = room.door;
+  return ctx.s.items.some(
+    (it: Item) =>
+      it.type === 'fire_extinguisher' &&
+      ctx.world.usable(it) &&
+      Math.max(Math.abs(it.x - x), Math.abs(it.y - y)) <= EXTINGUISHER_REACH,
+  );
+}
+
+/** What the inspector finds wrong in a room. */
+export function inspectionProblems(ctx: SimContext, room: Room): string[] {
+  const items = itemsIn(ctx, room);
+  const problems: string[] = [];
+  if (items.some((it) => it.dirt >= DIRT_FILTHY) || litterIn(ctx, room) > 0) problems.push('dirty');
+  if (items.some((it) => it.wear >= 100)) problems.push('broken equipment');
+  if (!extinguisherNear(ctx, room)) problems.push('no Fire Extinguisher nearby');
+  return problems;
+}
+
+/** What a visitor makes of a room. */
+export function judgeRoom(ctx: SimContext, v: Visitor, room: Room): RoomVerdict {
+  const name = ROOMS[room.type].name;
+  if (v.visit === 'inspector') {
+    const problems = inspectionProblems(ctx, room);
+    const listed = problems.join(', ');
+    const note = problems.length ? `${listed.charAt(0).toUpperCase()}${listed.slice(1)}.` : 'All in order.';
+    return { room: room.id, name, score: Math.max(0, 100 - problems.length * 34), note, problems };
+  }
+  const cares = v.cares ?? 'decor';
+  const scores = aspectScores(ctx, room);
+  const [x, y] = viewingTile(ctx, room) ?? [room.x, room.y];
+  return {
+    room: room.id,
+    name,
+    score: vipScore(scores, cares, room.vibes),
+    note: vipNote(scores, cares, room.vibes, warmthAt(ctx, x, y)),
+    problems: [],
+  };
+}
+
+/** How a visit turned out, from what the visitor made of each room. */
+export function verdict(
+  visit: VisitorKind,
+  rooms: readonly RoomVerdict[],
+  stars: number,
+): Pick<VisitReport, 'score' | 'outcome' | 'money' | 'rep'> {
+  if (visit === 'inspector') {
+    const problems = rooms.reduce((n, r) => n + r.problems.length, 0);
+    if (problems > INSPECTION_ALLOWED)
+      return { score: problems, outcome: 'failed', money: -problems * INSPECTION_FINE, rep: -INSPECTION_REP };
+    return { score: problems, outcome: 'passed', money: 0, rep: problems ? 0 : INSPECTION_CLEAN_REP };
+  }
+  const score = rooms.length ? Math.round(rooms.reduce((n, r) => n + r.score, 0) / rooms.length) : 0;
+  if (score >= VIP_DELIGHTED)
+    return { score, outcome: 'delighted', money: VIP_PRIZE * Math.max(1, stars), rep: VIP_REP };
+  if (score < VIP_DISAPPOINTED) return { score, outcome: 'disappointed', money: 0, rep: -VIP_REP };
+  return { score, outcome: 'satisfied', money: 0, rep: 1 };
+}
+
+/** The rooms a visitor will see, by id: a few at random for a VIP, and most of them for the inspector. */
+export function chooseTour(ctx: SimContext, visit: VisitorKind): number[] {
+  const rooms = ctx.s.rooms.filter((r) => r.done).map((r) => r.id);
+  // shuffled, so a VIP sees a different few each time
+  for (let i = rooms.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    const a = rooms[i];
+    const b = rooms[j];
+    if (a === undefined || b === undefined) continue;
+    rooms[i] = b;
+    rooms[j] = a;
+  }
+  return rooms.slice(0, visit === 'inspector' ? INSPECTOR_ROOMS : irnd(VIP_ROOMS[0], VIP_ROOMS[1]));
+}
+
+/** What a visitor is called and what they care about, for a VIP or the inspector. */
+export function newNotice(ctx: SimContext, visit: VisitorKind): VisitNotice {
+  const arrives = ctx.s.day + VISIT_NOTICE_DAYS;
+  if (visit === 'inspector') return { visit, name: randomName(), title: 'the health inspector', arrives };
+  const vip = pick(VIPS);
+  return { visit, name: randomName(), title: vip.title, cares: vip.cares, arrives };
+}
+
+/** Put a visit on the calendar, and say who is coming. */
+function writeAhead(ctx: SimContext, visit: VisitorKind) {
+  const notice = newNotice(ctx, visit);
+  ctx.s.visitNotice = notice;
+  if (visit === 'inspector')
+    toast(ctx, `📋 The health inspector will call in ${VISIT_NOTICE_DAYS} days. They will check every room.`, 'info');
+  else
+    toast(
+      ctx,
+      `🕶️ ${notice.name}, ${notice.title}, is visiting in ${VISIT_NOTICE_DAYS} days, and cares most about ${ASPECT_NOTES[notice.cares ?? 'decor'].name}.`,
+      'info',
+    );
+  tipOnce(
+    ctx,
+    'visits',
+    'A visitor tours a few rooms and judges what they find. A delighted VIP leaves a reward; the inspector fines dirt, broken equipment and a room with no Fire Extinguisher near its door.',
+  );
+}
+
+/** Bring in the visitor who wrote ahead. False if they cannot get in yet. */
+function arrive(ctx: SimContext, notice: VisitNotice): boolean {
+  const [x, y] = streetTile();
+  const v: Visitor = {
+    ...newChar(ctx, notice.name, randomLook(), x, y),
+    kind: 'visitor',
+    visit: notice.visit,
+    title: notice.title,
+    ...(notice.cares && { cares: notice.cares }),
+    state: 'toRoom',
+    tour: chooseTour(ctx, notice.visit),
+    seen: [],
+  };
+  if (!v.tour.length) return false;
+  ctx.s.visitors.push(v);
+  if (!nextRoom(ctx, v)) {
+    ctx.s.visitors = ctx.s.visitors.filter((o) => o !== v);
+    return false;
+  }
+  const who = notice.visit === 'inspector' ? '📋 The health inspector' : `🕶️ ${notice.name}`;
+  toast(ctx, `${who} has arrived, and is looking round.`, 'info', { kind: 'visitor', id: v.id });
+  return true;
+}
+
+/** Write ahead, or bring in whoever wrote, as the days come round. Run once a second. */
+export function updateVisits(ctx: SimContext) {
+  const s = ctx.s;
+  if (!s.visitsOn || !s.open || s.visitors.length) return;
+  const notice = s.visitNotice;
+  if (notice) {
+    // nobody gets up the road while the center is snowed in, so they come once it is open again
+    if (s.day >= notice.arrives && !cutOff(ctx) && arrive(ctx, notice)) s.visitNotice = null;
+    return;
+  }
+  if (s.day >= s.nextInspection) writeAhead(ctx, 'inspector');
+  else if (s.stars >= 1 && s.day >= s.nextVip) writeAhead(ctx, 'vip');
+}
+
+/** Send a visitor to the next room on their tour that they can reach, or out if there is none. False if stuck. */
+export function nextRoom(ctx: SimContext, v: Visitor): boolean {
+  while (v.tour.length) {
+    const room = ctx.world.room(v.tour[0] ?? 0);
+    const spot = room?.done ? viewingTile(ctx, room) : null;
+    if (spot && goTo(ctx, v, spot[0], spot[1])) {
+      v.state = 'toRoom';
+      return true;
+    }
+    // knocked down, or not to be got at: on to the next
+    v.tour.shift();
+  }
+  v.state = 'leaving';
+  const [x, y] = streetTile();
+  if (goTo(ctx, v, x, y)) return true;
+  finishVisit(ctx, v);
+  return false;
+}
+
+/** Move one visitor forward in time: walking to a room, looking round it, or leaving. */
+export function updateVisitor(ctx: SimContext, v: Visitor, dt: number) {
+  if (v.bubbleT > 0) v.bubbleT -= dt;
+  const arrived = moveAlong(v, dt, 2);
+  switch (v.state) {
+    case 'toRoom':
+      if (arrived || !v.path) {
+        v.state = 'looking';
+        v.timer = LOOK_SECONDS;
+        say(v, v.visit === 'inspector' ? '📋' : '🧐', LOOK_SECONDS);
+      }
+      break;
+    case 'looking': {
+      v.timer -= dt;
+      if (v.timer > 0) break;
+      const room = ctx.world.room(v.tour.shift() ?? 0);
+      if (room) {
+        const seen = judgeRoom(ctx, v, room);
+        v.seen.push(seen);
+        say(v, seen.score >= VIP_DELIGHTED ? '😊' : seen.score < VIP_DISAPPOINTED ? '😒' : '🤔', 2);
+      }
+      nextRoom(ctx, v);
+      break;
+    }
+    case 'leaving':
+      if (arrived || !v.path) finishVisit(ctx, v);
+      break;
+  }
+}
+
+/** A visitor has gone: weigh up what they saw, pay out or fine, and write the report. */
+export function finishVisit(ctx: SimContext, v: Visitor) {
+  const s = ctx.s;
+  s.visitors = s.visitors.filter((o) => o !== v);
+  const result = verdict(v.visit, v.seen, s.stars);
+  if (result.money > 0) {
+    s.money += result.money;
+    s.ledger.bonus += result.money;
+  } else if (result.money < 0) spend(ctx, -result.money, 'fines');
+  changeRep(ctx, result.rep);
+  s.visitReport = { visit: v.visit, name: v.name, title: v.title, day: s.day, rooms: v.seen, ...result };
+  if (v.visit === 'inspector') s.nextInspection = s.day + irnd(INSPECTION_GAP_DAYS[0], INSPECTION_GAP_DAYS[1]);
+  else s.nextVip = s.day + irnd(VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
+  const good = result.outcome === 'delighted' || result.outcome === 'passed';
+  emit(ctx, { type: 'sfx', name: good ? 'fanfare' : 'fail' });
+  emit(ctx, { type: 'visit' });
+  if (result.money < 0) toast(ctx, `The inspection failed: a ${money(-result.money)} fine.`, 'bad');
+}

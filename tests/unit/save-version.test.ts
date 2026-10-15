@@ -33,6 +33,6 @@ describe('the save version', () => {
   it('goes up with the content a save can hold', () => {
     // When this fails because content was added: raise SAVE_VERSION in src/core/state/game.ts, then put the new
     // version and the fingerprint this test reports here.
-    expect({ version: SAVE_VERSION, content: fingerprint(contentIds()) }).toEqual({ version: 12, content: 'eb796867' });
+    expect({ version: SAVE_VERSION, content: fingerprint(contentIds()) }).toEqual({ version: 13, content: 'eb796867' });
   });
 });

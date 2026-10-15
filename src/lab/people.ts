@@ -1,7 +1,7 @@
-// Stand-in guests and staff for the model lab: just enough of a person for the game's posing to work on.
+// Stand-in guests, staff and visitors for the model lab: just enough of a person for the game's posing to work on.
 
 import type { ConditionId, Role } from '../core/data';
-import type { Guest, Look, Staff } from '../core/state/types';
+import type { Guest, Look, Staff, Visitor, VisitorKind } from '../core/state/types';
 
 /** The look everyone in the lab starts with, so pictures of them stay the same from one run to the next. */
 export const LAB_LOOK: Look = {
@@ -95,5 +95,18 @@ export function demoStaff(look: Look, role: Role): Staff {
     general: [],
     off: [],
     call: null,
+  };
+}
+
+/** A visitor, a VIP or the inspector, partway round a room. */
+export function demoVisitor(look: Look, visit: VisitorKind): Visitor {
+  return {
+    ...base(look),
+    kind: 'visitor',
+    visit,
+    title: visit === 'vip' ? 'a lifestyle columnist' : 'the health inspector',
+    state: 'looking',
+    tour: [],
+    seen: [],
   };
 }

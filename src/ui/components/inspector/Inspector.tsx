@@ -11,8 +11,9 @@ import { GuestInfo } from './GuestInfo';
 import { ItemInfo } from './ItemInfo';
 import { RoomInfo } from './RoomInfo';
 import { StaffInfo } from './StaffInfo';
+import { VisitorInfo } from './VisitorInfo';
 
-/** The details of the selected guest, member of staff, item or room, if it still exists. */
+/** The details of the selected guest, member of staff, visitor, item or room, if it still exists. */
 function useSelectionInfo(): ComponentChildren {
   const { sim, tools } = useGame();
   const sel = tools.selected;
@@ -25,6 +26,10 @@ function useSelectionInfo(): ComponentChildren {
   if (sel.kind === 'staff') {
     const staff = sim.staff(sel.id);
     return staff ? <StaffInfo staff={staff} /> : null;
+  }
+  if (sel.kind === 'visitor') {
+    const visitor = sim.visitor(sel.id);
+    return visitor ? <VisitorInfo visitor={visitor} /> : null;
   }
   if (sel.kind === 'item') {
     const item = sim.world.item(sel.id);

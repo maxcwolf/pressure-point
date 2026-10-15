@@ -145,7 +145,7 @@ export class Overlays {
   updateRing(t: number) {
     const sel = this.selected;
     this.ring.visible = false;
-    if (sel && (sel.kind === 'guest' || sel.kind === 'staff')) {
+    if (sel && (sel.kind === 'guest' || sel.kind === 'staff' || sel.kind === 'visitor')) {
       const c = this.sim.char(sel.id);
       if (c) {
         this.ring.visible = true;

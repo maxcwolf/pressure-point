@@ -2,6 +2,7 @@
 
 import type {
   AchievementId,
+  Aspect,
   AwardId,
   CampaignKind,
   CenterId,
@@ -234,7 +235,63 @@ export interface Guest extends CharBase {
   calmed: boolean;
 }
 
-export type Char = Staff | Guest;
+/** Who a visitor is: a VIP, or the health inspector. */
+export type VisitorKind = 'vip' | 'inspector';
+
+/** What a visitor is doing: on the way to a room, looking round it, or on the way out. */
+export type VisitorState = 'toRoom' | 'looking' | 'leaving';
+
+/** What a visitor made of one room. */
+export interface RoomVerdict {
+  room: number;
+  name: string;
+  /** From 0 to 100: for a VIP how much they liked it, for the inspector how well it did. */
+  score: number;
+  note: string;
+  /** What the inspector found wrong in it. Empty for a VIP. */
+  problems: string[];
+}
+
+/** Someone touring the center to judge it. */
+export interface Visitor extends CharBase {
+  kind: 'visitor';
+  visit: VisitorKind;
+  /** Who they are, in a few words: a VIP's line of work, or "the health inspector". */
+  title: string;
+  /** What a VIP cares about most. Absent for the inspector, who goes by the rules. */
+  cares?: Aspect;
+  state: VisitorState;
+  /** The rooms still to see, by id, the one being seen or walked to first. */
+  tour: number[];
+  /** What they made of each room seen so far. */
+  seen: RoomVerdict[];
+}
+
+/** A visit written ahead: who is coming, and on which day. */
+export interface VisitNotice {
+  visit: VisitorKind;
+  name: string;
+  title: string;
+  cares?: Aspect;
+  arrives: number;
+}
+
+/** How a visit went, kept until the next one. */
+export interface VisitReport {
+  visit: VisitorKind;
+  name: string;
+  title: string;
+  day: number;
+  rooms: RoomVerdict[];
+  /** A VIP's verdict from 0 to 100, or the number of problems the inspector found. */
+  score: number;
+  outcome: 'delighted' | 'satisfied' | 'disappointed' | 'passed' | 'failed';
+  /** What it brought in, or (below zero) what it cost, in money and reputation. */
+  money: number;
+  rep: number;
+}
+
+export type Char = Staff | Guest | Visitor;
 
 /** A point on a route. `pose` is 1 for the final step off the grid into a seat, onto a table and so on. */
 export type Waypoint = [x: number, y: number, pose: number];
@@ -276,6 +333,8 @@ export interface Ledger {
   calls: number;
   /** Marketing campaigns. */
   marketing: number;
+  /** Fines, such as the health inspector's. */
+  fines: number;
 }
 
 /** A marketing campaign: for word of mouth, for more guests with one condition, or for applicants. */
@@ -511,6 +570,14 @@ export interface GameState {
   /** Whether stress outbreaks are offered, and whether the weather outside makes it hot or cold: sandbox settings. */
   outbreaksOn: boolean;
   weatherOn: boolean;
+  /** VIPs and the health inspector: whoever is here now, whoever has written ahead, how the last visit went, the days
+   * the next of each may write, and whether they call at all (a sandbox setting). */
+  visitors: Visitor[];
+  visitNotice: VisitNotice | null;
+  visitReport: VisitReport | null;
+  nextVip: number;
+  nextInspection: number;
+  visitsOn: boolean;
   /** The last year-end awards ceremony, and every award won. */
   ceremony: Ceremony | null;
   trophies: Trophy[];

@@ -18,7 +18,7 @@ export function staffById(ctx: SimContext, id: number): Staff | undefined {
 
 /** The guest or member of staff with this id, if there is one. */
 export function charById(ctx: SimContext, id: number): Char | undefined {
-  return guestById(ctx, id) ?? staffById(ctx, id);
+  return guestById(ctx, id) ?? staffById(ctx, id) ?? ctx.s.visitors.find((v) => v.id === id);
 }
 
 /** What every person starts with, guest or staff, standing on the given tile. */
