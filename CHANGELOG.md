@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.26.0
 
 - **Turn the camera.** Q and E, or the 🔄 button at the top right, turn the view round the building a quarter at a time, so you can see and build behind any wall. The walls facing the camera are cut low, and the ones across from it stand tall with their windows, whichever way you look. Q and E can be set to other keys in Settings.
 - **Four new announcements, all voiced:** Qi Gong classes start with a new line, the studio calls for its Instructor when nobody is on the mat, and two new reminders, about screaming into the void and about sighing.
