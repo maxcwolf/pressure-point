@@ -4,6 +4,11 @@ Work planned for the game itself. Bugs and risks found in the October 2026 audit
 
 Tick an item off when it is done, with the commit or release it landed in.
 
+## Next up
+
+- [ ] **More PA announcer lines.** New filler lines for the announcer, recorded and run through the PA speaker effect like the twelve there are (`yarn announcer`), and perhaps lines for events: an emergency arriving, a season turning, the awards.
+- [ ] **A cheat console.** A console opened with a key, taking commands such as adding money, reputation or karma, earning a star, spawning guests or an emergency, unlocking everything, and skipping ahead in time. For testing and for fun; achievements could be withheld in a game where it has been used.
+
 ## Requested 14 October 2026
 
 - [x] **A reiki picture in the README**, beside the acupuncture one.
