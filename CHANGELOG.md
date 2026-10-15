@@ -7,6 +7,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **High Pines,** the fourth center, opened by a star at Saltmarsh: a lodge up in the mountains, cold all year, so it needs heating. A few times each winter it is snowed in for a couple of days and nobody new can get up the road. Three mountain ailments are found only there (Frozen Stiff, Wipeout and Cabin Fever), and Cold Shoulder and Cold Feet are common.
 - **Stone Warmers cool faster in a cold room,** so heat the Massage Suite.
 - **A Fireplace,** unlocked with karma, warms the room around it and soothes the nerves.
+- **House calls charge your prices:** the fee follows the price level in the Money menu, and a call that asks for a technique follows that technique's own price too.
 - **The season and the weather outside** show beside the day, with the temperature in blue when it calls for heating and in red when it calls for cooling.
 - **Promotions explained:** someone with the experience for a promotion but empty qualification slots now says so in their inspector, with how many slots are filled. A promotion comes as soon as a course fills the last slot, and a Wellness Consultant, who has fewer courses than a Senior has slots, can now reach Expert.
 

@@ -18,11 +18,11 @@ import {
 } from '../data';
 import { money } from '../format';
 import { irnd, pick, random } from '../random';
-import type { HouseCall, Staff } from '../state/types';
+import type { GameState, HouseCall, Staff } from '../state/types';
 import { gainXp } from './careers';
 import { lobbyTile, say, staffById, streetTile } from './chars';
 import type { SimContext } from './context';
-import { earn } from './economy';
+import { earn, priceFor } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { goTo } from './movement';
 import { staffIdle } from './staffing';
@@ -31,9 +31,13 @@ import { offered, unlocked } from './treatments';
 /** Experience from a house call. */
 export const CALL_XP = 3;
 
-/** What a house call pays if this member of staff goes: more for each rank above the first. */
-export function callFee(call: HouseCall, st: Staff): number {
-  return Math.round(call.perDay * call.days * (1 + CALL_RANK_BONUS * (st.skill - 1)));
+/**
+ * What a house call pays if this member of staff goes: more for each rank above the first, and at the center's prices,
+ * the overall level and, for a call that asks for a technique, that technique's own.
+ */
+export function callFee(s: GameState, call: HouseCall, st: Staff): number {
+  const prices = call.modality ? priceFor(s, call.modality) : s.priceLevel;
+  return Math.round(call.perDay * call.days * (1 + CALL_RANK_BONUS * (st.skill - 1)) * prices);
 }
 
 /** Whether this member of staff could go on a house call: in its discipline, trained in what it asks, and free. */
@@ -91,7 +95,7 @@ export function acceptCall(ctx: SimContext, staffId: number): boolean {
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
   }
-  st.call = { client: call.client, days: call.days, back: s.day + call.days, fee: callFee(call, st) };
+  st.call = { client: call.client, days: call.days, back: s.day + call.days, fee: callFee(s, call, st) };
   st.state = 'toCall';
   say(st, '🧳', 3);
   s.callOffer = null;
@@ -146,6 +150,6 @@ export function updateCalls(ctx: SimContext) {
   tipOnce(
     ctx,
     'house-call',
-    'A house call sends someone out for a day or more, for a fee that rises with their rank. Their station stands empty while they are away.',
+    'A house call sends someone out for a day or more, for a fee that rises with their rank and with your prices. Their station stands empty while they are away.',
   );
 }

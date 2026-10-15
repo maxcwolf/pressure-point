@@ -424,7 +424,7 @@ export class Sim {
   }
   /** What the house call on offer pays if this member of staff goes. */
   callFee(st: Staff): number {
-    return this.s.callOffer ? callFee(this.s.callOffer, st) : 0;
+    return this.s.callOffer ? callFee(this.s, this.s.callOffer, st) : 0;
   }
   /** Send someone on the house call on offer. */
   acceptCall(staffId: number): boolean {

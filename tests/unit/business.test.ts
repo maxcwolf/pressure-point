@@ -139,13 +139,28 @@ describe('a house call', () => {
     const { s, therapist, consultant } = openCenter(1);
     therapist.state = 'atPost';
     therapist.skill = 3;
-    expect(callFee(call(s.day), therapist)).toBe(Math.round(CALL_PER_DAY * 2 * (1 + CALL_RANK_BONUS * 2)));
+    expect(callFee(s, call(s.day), therapist)).toBe(Math.round(CALL_PER_DAY * 2 * (1 + CALL_RANK_BONUS * 2)));
     expect(canGo(therapist, call(s.day))).toBe(true);
     expect(canGo(consultant, call(s.day))).toBe(false);
     therapist.quals = ['swedish'];
     expect(canGo(therapist, call(s.day, { modality: 'deep' }))).toBe(false);
     therapist.state = 'training';
     expect(canGo(therapist, call(s.day))).toBe(false);
+  });
+
+  it('charges what the center charges: the price level, and the price of the technique it asks for', () => {
+    const { s, therapist } = openCenter(1);
+    therapist.skill = 1;
+    const standard = CALL_PER_DAY * 2;
+    s.priceLevel = 1.5;
+    expect(callFee(s, call(s.day), therapist)).toBe(Math.round(standard * 1.5));
+    // a technique's own price counts only when the call asks for that technique
+    s.prices = { stone: 1.2 };
+    expect(callFee(s, call(s.day), therapist)).toBe(Math.round(standard * 1.5));
+    expect(callFee(s, call(s.day, { modality: 'stone' }), therapist)).toBe(Math.round(standard * 1.5 * 1.2));
+    s.priceLevel = 0.8;
+    s.prices = {};
+    expect(callFee(s, call(s.day, { modality: 'stone' }), therapist)).toBe(Math.round(standard * 0.8));
   });
 
   it('is offered now and then for a discipline the center has someone in, and lapses', () => {
