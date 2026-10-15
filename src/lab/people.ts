@@ -94,6 +94,7 @@ export function demoStaff(look: Look, role: Role): Staff {
     promotion: false,
     general: [],
     off: [],
+    rooms: [],
     call: null,
   };
 }

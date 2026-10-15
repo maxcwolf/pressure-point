@@ -2,6 +2,7 @@
 
 import { ITEMS, MODALITIES, MODALITY_ORDER, NOISE_NOTICE, NOISE_PEACEFUL, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
+import { roomLabels } from '../../../core/sim/assignments';
 import { tempFeel } from '../../../core/sim/warmth';
 import type { Item, Room } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
@@ -83,9 +84,10 @@ export function RoomInfo({ room }: { room: Room }) {
   const def = ROOMS[room.type];
   const stations = sim.s.items.filter((i) => ITEMS[i.type].station && sim.world.zoneAt(i.x, i.y) === room.id);
   const table = def.discipline ? stations[0] : undefined;
+  const assigned = sim.s.staff.filter((st) => st.rooms.includes(room.id));
   return (
     <>
-      <h3>{`${def.icon} ${def.name}`}</h3>
+      <h3>{`${def.icon} ${roomLabels(sim.s.rooms).get(room.id) ?? def.name}`}</h3>
       <p>{def.desc}</p>{' '}
       <p>
         {'Prestige '}
@@ -99,6 +101,9 @@ export function RoomInfo({ room }: { room: Room }) {
         <StationInfo key={i.id} item={i} />
       ))}
       {table && <CanDeliver table={table} />}{' '}
+      {assigned.length > 0 && (
+        <p class="sub assigned">{`Assigned here: ${assigned.map((st) => st.name).join(', ')}`}</p>
+      )}{' '}
       <Button
         class={cx('roompriority', room.priority && 'on')}
         title="Staff fill a priority room's stations first, and Caretakers see to it before anywhere else."

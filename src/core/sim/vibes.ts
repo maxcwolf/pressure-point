@@ -5,6 +5,7 @@
 import { ROOMS, SMUDGE_SECONDS, VIBES_FADE, VIBES_PENALTY, VIBES_PER_FAIL } from '../data';
 import { pick } from '../random';
 import type { Item, Room, Staff } from '../state/types';
+import { worksIn } from './assignments';
 import { hasGeneral } from './careers';
 import type { SimContext } from './context';
 import { tipOnce } from './events';
@@ -45,7 +46,7 @@ export function fadeVibes(ctx: SimContext, dt: number) {
 export function roomToSmudge(ctx: SimContext, st: Staff): Room | undefined {
   if (!canSmudge(st)) return undefined;
   return ctx.s.rooms
-    .filter((r) => r.done && r.vibes > 0 && !r.claimedBy)
+    .filter((r) => r.done && r.vibes > 0 && !r.claimedBy && worksIn(st.rooms, r.id))
     .sort((a, b) => Math.hypot(a.x - st.tx, a.y - st.ty) - Math.hypot(b.x - st.tx, b.y - st.ty))[0];
 }
 

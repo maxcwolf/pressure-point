@@ -147,6 +147,8 @@ export interface Staff extends CharBase {
   general: GeneralId[];
   /** Duties they are kept from. */
   off: Duty[];
+  /** The rooms they are assigned to work in, or none to work anywhere. */
+  rooms: number[];
   /** The house call they are on, if any. */
   call: Call | null;
   salary: number;

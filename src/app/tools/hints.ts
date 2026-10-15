@@ -1,6 +1,15 @@
 // The one-line instruction shown for each tool.
 
-import { ITEMS, type ItemType, ROOM_TILE_COST, ROOMS, type RoomType, WINDOW_COST } from '../../core/data';
+import {
+  ITEMS,
+  type ItemType,
+  type Role,
+  ROLES,
+  ROOM_TILE_COST,
+  ROOMS,
+  type RoomType,
+  WINDOW_COST,
+} from '../../core/data';
 import { money } from '../../core/format';
 import type { Rect } from '../../core/world';
 import { legend } from './squares';
@@ -52,4 +61,15 @@ export function planHint(sub: PlanSub, missing: number): string {
   return sub.required
     ? `${def.icon} Place the ${def.name} inside the room · R rotates${legend(sub.type)}`
     : `${def.icon} ${def.name} · ${money(def.cost)} each · click to place · R rotates · Esc puts it down${legend(sub.type)}`;
+}
+
+/** The hint while assigning someone to rooms: who, and how many rooms they have so far. */
+export function assignHint(name: string, rooms: number): string {
+  const now = rooms === 0 ? 'works anywhere' : rooms === 1 ? 'works in 1 room' : `works in ${rooms} rooms`;
+  return `📌 ${name} ${now} · click a room to assign them to it, or again to take it away · Esc when done`;
+}
+
+/** Why someone cannot be assigned to a kind of room. */
+export function assignProblem(role: Role, type: RoomType): string {
+  return `There is no work for a ${ROLES[role].name} in a ${ROOMS[type].name}`;
 }

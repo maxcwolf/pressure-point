@@ -12,6 +12,7 @@
 import { type ItemType, ROOMS, type RoomType } from '../../core/data';
 import { money } from '../../core/format';
 import { resizeCost, sameRect } from '../../core/resize';
+import { canWorkIn } from '../../core/sim/assignments';
 import type { SfxName } from '../../core/sim/events';
 import type { Sim } from '../../core/sim/sim';
 import { sameSpot } from '../../core/state/game';
@@ -22,6 +23,8 @@ import type { Selection } from '../../render/picking';
 import type { View } from '../../render/view';
 import { dragRect, itemSpot, tileOf } from './geometry';
 import {
+  assignHint,
+  assignProblem,
   doorHint,
   dragHint,
   MOVE_DOOR_HINT,
@@ -32,7 +35,7 @@ import {
   resizeHint,
   WINDOW_HINT,
 } from './hints';
-import { dragTiles, itemTiles, rectTiles } from './overlay';
+import { assignTiles, dragTiles, itemTiles, rectTiles } from './overlay';
 import { heldItem, nextRequired, planStatus, quarterTurn } from './plan';
 import type { Edge } from './resize';
 import { dragEdge, edgeNear, edgeTiles } from './resize';
@@ -147,6 +150,23 @@ export class Tools {
     if (!this.sim.world.room(roomId)) return;
     this.tool = { kind: 'resize', roomId, edge: null, rect: null };
     this.refresh();
+  }
+
+  /** Click rooms to assign a member of staff to them, with them kept selected meanwhile. */
+  startAssign(staffId: number) {
+    this.cancel();
+    if (!this.sim.staff(staffId)) return;
+    this.tool = { kind: 'assign', staffId };
+    this.select({ kind: 'staff', id: staffId });
+    this.refresh();
+  }
+
+  /** The built room under the cursor, if there is one. */
+  private roomUnderCursor(): Room | undefined {
+    if (!this.cursor) return undefined;
+    const [x, y] = tileOf(this.cursor);
+    const room = this.sim.world.room(this.sim.world.zoneAt(x, y));
+    return room?.done ? room : undefined;
   }
 
   /** Whether the pointer is dragging something out (a new room's floor or a wall), so its release counts. */
@@ -266,6 +286,10 @@ export class Tools {
         this.tool = { kind: 'none' };
         this.select({ kind: 'room', id: t.roomId });
       }
+    } else if (t.kind === 'assign') {
+      const room = this.roomUnderCursor();
+      if (room && sim.assignRoom(t.staffId, room.id)) this.sfx('blip');
+      else this.sfx('error');
     } else if (t.kind === 'resize') {
       // the wall is let go: the room takes the new shape if it can, and the tool stays for the next wall
       const room = sim.world.room(t.roomId);
@@ -399,6 +423,23 @@ export class Tools {
     if (near) drawing.tiles.push(...edgeTiles(room, near).map(([x, y]): OverlayTile => [x, y, OV_GOOD]));
   }
 
+  /** The rooms someone is assigned to, and the room under the cursor, marked by whether they could work there. */
+  private drawAssign(staffId: number, drawing: Drawing) {
+    const st = this.sim.staff(staffId);
+    // let go meanwhile: nobody left to assign
+    if (!st) {
+      this.tool = { kind: 'none' };
+      return;
+    }
+    const world = this.sim.world;
+    this.hint = assignHint(st.name, st.rooms.length);
+    const hover = this.roomUnderCursor();
+    const workable = !!hover && canWorkIn(st.role, hover.type);
+    if (hover && !workable) this.problem = assignProblem(st.role, hover.type);
+    const assigned = st.rooms.map((id) => world.room(id)).filter((r) => r !== undefined);
+    drawing.tiles.push(...assignTiles(assigned, hover, workable));
+  }
+
   /** Recompute overlays, ghost and hint for the current tool state. */
   refresh() {
     const t = this.tool;
@@ -428,6 +469,9 @@ export class Tools {
         this.hint = MOVE_DOOR_HINT;
         this.drawDoor(room);
       }
+    } else if (t.kind === 'assign') {
+      view.setGhost(null);
+      this.drawAssign(t.staffId, drawing);
     } else if (t.kind === 'resize') {
       view.setGhost(null);
       const room = world.room(t.roomId);

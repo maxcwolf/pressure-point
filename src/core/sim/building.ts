@@ -6,6 +6,7 @@ import { carryWallSpot, carryWindows, resizeCost } from '../resize';
 import { sameSpot } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
 import { itemCenter, type Rect } from '../world';
+import { forgetRoom } from './assignments';
 import { charById } from './chars';
 import { release } from './claims';
 import type { SimContext } from './context';
@@ -198,6 +199,7 @@ export function removeRoom(ctx: SimContext, roomId: number, refund: number) {
   const items = itemsInRoom(ctx, room);
   const back = roomRefund(ctx, room, refund);
   ctx.s.rooms = ctx.s.rooms.filter((r) => r !== room);
+  forgetRoom(ctx, room.id);
   removeItems(ctx, items);
   if (back > 0) {
     ctx.s.money += back;

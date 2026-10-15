@@ -112,6 +112,7 @@ type OldSave = Before<
     | 'promotion'
     | 'general'
     | 'off'
+    | 'rooms'
     | 'call'
     | 'thirst'
     | 'hunger'
@@ -145,6 +146,7 @@ export function upgradeSave(save: GameState) {
     st.promotion ??= false;
     st.general ??= [];
     st.off ??= [];
+    st.rooms ??= [];
     st.call ??= null;
     st.thirst ??= 0;
     st.hunger ??= 0;

@@ -34,6 +34,7 @@ import type { Item, Job, Staff } from '../state/types';
 import { clamp, must } from '../util';
 import { accessPose, accessTile, footprint } from '../world';
 import { prestige } from './ambience';
+import { worksAt } from './assignments';
 import { sameRoomCount } from './building';
 import { returnFromCall } from './calls';
 import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
@@ -93,6 +94,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     promotion: false,
     general: [],
     off: [],
+    rooms: [],
     call: null,
   };
   const [lx, ly] = lobbyTile(ctx.world.plot);
@@ -311,6 +313,7 @@ export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
     (it) =>
       ITEMS[it.type].station?.staff === st.role &&
       onDuty(st, stationDuty(it)) &&
+      worksAt(ctx, st, it.x, it.y) &&
       !it.staffId &&
       ctx.world.usable(it) &&
       inPriorityRoom(ctx, it.x, it.y),
@@ -338,6 +341,7 @@ function findWork(ctx: SimContext, st: Staff) {
     /** Note a task, ahead of the same kind of thing elsewhere if it is in a priority room. */
     const add = (kind: Job['kind'], id: number, x: number, y: number, urgency: number) => {
       if (!onDuty(st, jobDuty(kind, kind === 'litter' ? undefined : ctx.world.item(id)))) return;
+      if (!worksAt(ctx, st, x, y)) return;
       tasks.push({ kind, id, x, y, urgency: urgency + (inPriorityRoom(ctx, x, y) ? 0.5 : 0) });
     };
     for (const l of s.litter) if (!l.claimedBy) add('litter', l.id, l.x, l.y, 1);
@@ -385,6 +389,7 @@ function findWork(ctx: SimContext, st: Staff) {
     for (const it of s.items) {
       const def = ITEMS[it.type].station;
       if (def?.staff !== st.role || it.staffId || !ctx.world.usable(it) || !onDuty(st, stationDuty(it))) continue;
+      if (!worksAt(ctx, st, it.x, it.y)) continue;
       let score = it.queue.length * 10 - Math.hypot(it.x - st.tx, it.y - st.ty);
       if (inPriorityRoom(ctx, it.x, it.y)) score += 1000;
       if (def.goal === 'treat') {
@@ -409,8 +414,13 @@ function findWork(ctx: SimContext, st: Staff) {
       }
     }
   }
-  // nothing to do: amble about
+  // nothing to do: amble about, inside their own rooms if they have been assigned some
   if (st.state === 'idle' && random() < 0.25) {
+    const own = st.rooms.map((id) => ctx.world.room(id)).filter((r) => r !== undefined);
+    if (own.length) {
+      if (wander(ctx, st, pick(own))) st.state = 'wander';
+      return;
+    }
     const spots = ctx.world.standSpots(st.tx, st.ty, 40);
     if (spots.length) {
       const [x, y] = pick(spots);
@@ -493,6 +503,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       if (it?.staffId !== st.id || !ctx.world.usable(it)) staffIdle(ctx, st);
       // kept from this station's duty: off to find something else, once the guest in hand is seen to
       else if (!it.serving && !onDuty(st, stationDuty(it))) staffIdle(ctx, st);
+      // the station is outside the rooms they have been assigned to
+      else if (!it.serving && !worksAt(ctx, st, it.x, it.y)) staffIdle(ctx, st);
       // free to go, and a priority room is short of someone: off to work there instead
       else if (!it.serving && !inPriorityRoom(ctx, it.x, it.y) && openPriorityPost(ctx, st)) staffIdle(ctx, st);
       // free to go, and a room has bad vibes that they know how to clear

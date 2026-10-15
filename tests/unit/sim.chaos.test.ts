@@ -144,6 +144,13 @@ const MOVES: Record<string, (sim: Sim) => void> = {
       sim.setDuty(st.id, d, st.off.includes(d));
     }
   },
+  /** Assign someone to a room or take it away, or now and then let them work anywhere again. */
+  assign: (sim) => {
+    const st = sim.s.staff.length ? pick(sim.s.staff) : undefined;
+    const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
+    if (st && random() < 0.2) sim.clearRooms(st.id);
+    else if (st && room) sim.assignRoom(st.id, room.id);
+  },
   /** Turn an applicant down. */
   reject: (sim) => {
     const c = sim.s.candidates.length ? pick(sim.s.candidates) : undefined;

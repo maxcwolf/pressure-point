@@ -558,6 +558,31 @@ test.describe('running a center', () => {
     expect(await game.eval((pp) => pp.state.rooms.find((r) => r.type === 'training')!.priority)).toBe(true);
   });
 
+  test('a member of staff can be assigned to a room by clicking it', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    // at their table, in plain view
+    await game.fastForward(40);
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    await game.clickStaff('therapist');
+    const inspector = page.locator('#inspector');
+    await inspector.getByRole('button', { name: /Assign to rooms/ }).click();
+    await expect(page.locator('#hint')).toContainText('works anywhere');
+    await game.clickRoom('massage');
+    await expect(inspector.locator('.works-in')).toHaveText('Massage Suite');
+    await expect(page.locator('#hint')).toContainText('works in 1 room');
+    await inspector.getByRole('button', { name: /Done/ }).click();
+    expect(await game.eval((pp) => pp.tools.tool.kind)).toBe('none');
+    const assigned = await game.eval((pp) => {
+      const st = pp.state.staff.find((s) => s.role === 'therapist')!;
+      return st.rooms.map((id) => pp.state.rooms.find((r) => r.id === id)?.type);
+    });
+    expect(assigned).toEqual(['massage']);
+    await inspector.getByRole('button', { name: 'Anywhere' }).click();
+    await expect(inspector.locator('.works-in')).toHaveText('Anywhere');
+  });
+
   test('an emergency can be accepted from its offer', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

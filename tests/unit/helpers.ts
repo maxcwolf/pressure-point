@@ -139,7 +139,7 @@ export const toasts = (events: SimEvent[]) => events.flatMap((e) => (e.type === 
 /**
  * Every way the game's bookkeeping can fall out of step with itself, as a list of readable problems:
  * seats held for someone who is not sitting there, guests waiting on a station with nobody to serve
- * them, and lines holding people who left. Empty when all is well.
+ * them, lines holding people who left, and staff assigned to rooms that are gone. Empty when all is well.
  */
 export function inconsistencies(sim: Sim): string[] {
   const s = sim.s;
@@ -165,6 +165,9 @@ export function inconsistencies(sim: Sim): string[] {
     if (who?.job?.kind !== 'smudge' || who.job.id !== r.id)
       out.push(`room #${r.id} is being cleared by #${r.claimedBy}, who is not clearing it`);
   }
+  for (const st of s.staff)
+    for (const id of st.rooms)
+      if (!sim.world.room(id)) out.push(`${st.name} is assigned to room #${id}, which has gone`);
   for (const c of [...s.guests, ...s.staff]) {
     if (!c.claimItem) continue;
     const it = sim.world.item(c.claimItem);

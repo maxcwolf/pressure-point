@@ -36,7 +36,9 @@ export type Tool =
   | { kind: 'window'; roomId: number }
   | { kind: 'door'; roomId: number }
   // dragging one of a built room's walls: `rect` is the shape it is being dragged to
-  | { kind: 'resize'; roomId: number; edge: Edge | null; rect: Rect | null };
+  | { kind: 'resize'; roomId: number; edge: Edge | null; rect: Rect | null }
+  // clicking rooms to add them to a member of staff's assignment, or take them away
+  | { kind: 'assign'; staffId: number };
 
 /** The state of an open blueprint, for the panel that shows it. */
 export interface PlanStatus {

@@ -1,9 +1,11 @@
 // Working out which floor tiles to color for the tool in hand.
 
+import type { Room } from '../../core/state/types';
 import { footprint, type Rect } from '../../core/world';
 import {
   type Marker,
   OV_BAD,
+  OV_BLUE,
   OV_FREE,
   OV_GOOD,
   OV_GUEST,
@@ -18,6 +20,13 @@ export function rectTiles(rect: Rect, code: number): OverlayTile[] {
   const tiles: OverlayTile[] = [];
   for (let y = rect.y; y < rect.y + rect.h; y++)
     for (let x = rect.x; x < rect.x + rect.w; x++) tiles.push([x, y, code]);
+  return tiles;
+}
+
+/** The rooms someone is assigned to in green, and the room under the cursor in blue if they could work there, or red. */
+export function assignTiles(assigned: readonly Room[], hover: Room | undefined, workable: boolean): OverlayTile[] {
+  const tiles = assigned.flatMap((r) => rectTiles(r, OV_GOOD));
+  if (hover && !assigned.includes(hover)) tiles.push(...rectTiles(hover, workable ? OV_BLUE : OV_BAD));
   return tiles;
 }
 

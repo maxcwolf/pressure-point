@@ -17,8 +17,8 @@ import { VisitorInfo } from './VisitorInfo';
 function useSelectionInfo(): ComponentChildren {
   const { sim, tools } = useGame();
   const sel = tools.selected;
-  // the inspector steps aside while a tool is in hand
-  if (!sel || tools.active) return null;
+  // the inspector steps aside while a tool is in hand, but stays for assigning someone to rooms, to show their rooms
+  if (!sel || (tools.active && tools.tool.kind !== 'assign')) return null;
   if (sel.kind === 'guest') {
     const guest = sim.guest(sel.id);
     return guest ? <GuestInfo guest={guest} /> : null;

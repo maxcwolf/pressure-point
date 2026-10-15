@@ -71,7 +71,7 @@ export const defaultPolicy = (): Policy => ({
  * 11: noise, linens, temperature, staff needs, and the radiator, air conditioner and linen hamper. 12: High Pines,
  * its ailments and the Fireplace. 13: VIPs and the health inspector.
  */
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {

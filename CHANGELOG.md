@@ -8,6 +8,8 @@ Each release's notes are taken from its section here. Keep them short.
 - **The health inspector** calls on every center now and then, and checks each room for dirt, broken equipment and a Fire Extinguisher near its door. Pass and reputation rises; fail and there is a fine, shown as Fines in the books.
 - **A report after each visit** lists every room seen and what the visitor made of it. Click a visitor to see who they are, where they are going and their notes so far.
 - **A sandbox switch** for VIPs and inspections.
+- **Assign staff to rooms.** Select someone, press Assign to rooms in their inspector, and click the rooms they should work in: they take posts and do their chores only there. Click a room again to take it away, or press Anywhere to undo it all. A room's inspector lists who is assigned there, and rooms of the same kind are numbered.
+- **The announcer calls out visits,** and three new recorded lines: a VIP or the health inspector writing ahead, and a Receptionist wanted at the Reception Desk.
 
 ## v0.14.0
 

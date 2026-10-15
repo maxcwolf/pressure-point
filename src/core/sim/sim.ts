@@ -20,6 +20,7 @@ import type { Check, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce } from './advisor';
 import { drainFactor, prestige, updateAmbience } from './ambience';
+import { assignRoom, clearRooms } from './assignments';
 import { holdAwards, YEAR_MONTHS } from './awards';
 import type { PlaceOptions } from './building';
 import {
@@ -354,6 +355,14 @@ export class Sim {
   /** Promote a member of staff who is ready, with the raise that comes with it. */
   promote(id: number): boolean {
     return promote(this.ctx, id);
+  }
+  /** Add a room to the rooms a member of staff works in, or take it away. False if there is no work for them there. */
+  assignRoom(staffId: number, roomId: number): boolean {
+    return assignRoom(this.ctx, staffId, roomId);
+  }
+  /** Let a member of staff work anywhere again. */
+  clearRooms(staffId: number): boolean {
+    return clearRooms(this.ctx, staffId);
   }
   /** Keep a member of staff from a duty, or put them back on it. */
   setDuty(id: number, duty: Duty, on: boolean): boolean {

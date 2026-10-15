@@ -2,6 +2,7 @@
 
 import { DUTIES, DUTY_NAMES, ROLES, traitOf } from '../../../core/data';
 import { money } from '../../../core/format';
+import { assignableRole, roomLabels } from '../../../core/sim/assignments';
 import { rankName, rankProgress, slots, trained, xpToNext } from '../../../core/sim/careers';
 import type { Staff } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
@@ -85,6 +86,45 @@ function Duties({ staff: st }: { staff: Staff }) {
   );
 }
 
+/** The rooms a member of staff works in, with buttons to assign them to rooms or let them work anywhere. */
+function WorksIn({ staff: st }: { staff: Staff }) {
+  const { sim, tools } = useGame();
+  if (!assignableRole(st.role) || st.state === 'leaving') return null;
+  const labels = roomLabels(sim.s.rooms);
+  const assigning = tools.tool.kind === 'assign' && tools.tool.staffId === st.id;
+  return (
+    <>
+      <h4>Works in</h4>
+      <p class="sub works-in">
+        {st.rooms.length ? st.rooms.map((id) => labels.get(id) ?? 'a room').join(', ') : 'Anywhere'}
+      </p>
+      <div class="duties">
+        <Button
+          class={cx('duty', 'assign', assigning && 'on')}
+          title="Click rooms to have them work only there, and click a room again to take it away"
+          onPress={() => {
+            if (assigning) tools.cancel();
+            else tools.startAssign(st.id);
+          }}
+        >
+          {assigning ? '✔ Done' : '📌 Assign to rooms'}
+        </Button>
+        {st.rooms.length > 0 && (
+          <Button
+            class="duty"
+            title="Let them work anywhere again"
+            onPress={() => {
+              sim.clearRooms(st.id);
+            }}
+          >
+            Anywhere
+          </Button>
+        )}
+      </div>
+    </>
+  );
+}
+
 /** A member of staff's skills, mood and pay, with raises, training and letting them go. */
 export function StaffInfo({ staff: st }: { staff: Staff }) {
   const { sim, tools } = useGame();
@@ -137,6 +177,7 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
         </Button>
       )}{' '}
       <Duties staff={st} />
+      <WorksIn staff={st} />
       <Courses staff={st} />{' '}
       {!leaving && (
         <Button
