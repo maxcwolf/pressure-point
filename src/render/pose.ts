@@ -193,8 +193,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
     armL = -0.75 + Math.sin(t * 4.2 + c.id + 1.2) * 0.3;
     headX = -0.1;
   }
-  if (c.kind === 'staff' && c.state === 'doingJob' && c.job?.kind === 'soul') {
-    // both hands held up toward the one whose soul it is, beckoning it back in slow circles
+  if (c.kind === 'staff' && c.state === 'doingJob' && (c.job?.kind === 'soul' || c.job?.kind === 'ward')) {
+    // both hands held up, toward the one whose soul it is or to the sky, beckoning in slow circles
     armL = -1.7 + Math.sin(t * 2.4 + c.id) * 0.3;
     armR = -1.7 + Math.sin(t * 2.4 + c.id + Math.PI) * 0.3;
     armOut = 0.35;

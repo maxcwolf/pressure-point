@@ -39,6 +39,7 @@ import type {
   Item,
   Ledger,
   MonthRecord,
+  Policy,
   Room,
   Staff,
   Stats,
@@ -56,7 +57,7 @@ type Before<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 type OldLedger = Before<
   Ledger,
-  'training' | 'interest' | 'bonus' | 'shop' | 'calls' | 'marketing' | 'fines' | 'classes'
+  'training' | 'interest' | 'bonus' | 'shop' | 'calls' | 'marketing' | 'fines' | 'classes' | 'mushrooms'
 >;
 
 /** A save as an earlier version may have written it. */
@@ -86,6 +87,8 @@ type OldSave = Before<
   | 'unlockAll'
   | 'achieved'
   | 'policy'
+  | 'mushrooms'
+  | 'mushroomsStashed'
   | 'challenge'
   | 'nextChallenge'
   | 'challengesOn'
@@ -232,6 +235,7 @@ export function upgradeSave(save: GameState) {
     l.marketing ??= 0;
     l.fines ??= 0;
     l.classes ??= 0;
+    l.mushrooms ??= 0;
   }
   s.announceT ??= 25;
   s.loan ??= 0;
@@ -301,6 +305,11 @@ export function upgradeSave(save: GameState) {
   if (s.version < 21)
     while (s.candidates.filter((c) => c.role === 'instructor').length < 3)
       s.candidates.push(makeCandidate(save, 'instructor'));
+  s.mushrooms ??= false;
+  s.mushroomsStashed ??= false;
+  // a policy saved before the mushrooms has no word on putting them away
+  const policy: Partial<Policy> = s.policy;
+  policy.stashMushrooms ??= true;
   // and the Shaman with version 22
   if (s.version < 22)
     while (s.candidates.filter((c) => c.role === 'shaman').length < 3) s.candidates.push(makeCandidate(save, 'shaman'));

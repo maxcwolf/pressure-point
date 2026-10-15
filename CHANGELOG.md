@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Magic mushrooms under the counter.** With a Shaman on the payroll, the Shop Counter's inspector has a switch to sell mushrooms on the quiet: some sales come with a bag from under the counter, worth much more. The Money menu counts them on their own line.
+- **Hide them from the inspector.** A new Policy, on by default, puts the mushrooms away as soon as the health inspector writes ahead and brings them back once they have gone. Turn it off and the inspector's notice warns you they are still out. Found, they fail the inspection, with a big fine.
+- **Pay off the inspector.** A failed inspection now asks before the fine is paid: pay it, or make it go away for twice as much (at least $10,000). One time in ten, word gets out: reputation takes a knock and the inspector is back within the month.
+- **A Shaman's ward.** A mishap's notice has a **Ward it off** button while a Shaman is here. It costs only their time, and holds three times in four.
+
 ## v0.23.1
 
 - **A new opening-day announcement, voiced:** "The healing center is now open. Please form an orderly line in order of your aura’s color code."

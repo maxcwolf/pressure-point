@@ -49,6 +49,7 @@ import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { resetGuest } from './guests';
 import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaundering } from './linens';
+import { startWard, wardStep, wardWanted } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
 import { breakDue } from './policy';
 import { hasItem } from './progress';
@@ -269,7 +270,7 @@ function dropJob(ctx: SimContext, st: Staff) {
       : job.kind === 'smudge'
         ? ctx.s.rooms.find((r) => r.id === job.id)
         : // a soul retrieval is for a member of staff, and claims nothing
-          job.kind === 'soul'
+          job.kind === 'soul' || job.kind === 'ward'
           ? undefined
           : ctx.world.item(job.id);
   if (claimed?.claimedBy === st.id) claimed.claimedBy = 0;
@@ -411,9 +412,13 @@ function findWork(ctx: SimContext, st: Staff) {
     // a Reiki Practitioner or a Shaman clears bad vibes before taking up a post
     const cloudy = roomToSmudge(ctx, st);
     if (cloudy && startSmudge(ctx, st, cloudy)) return;
-    // and a Shaman goes to anyone whose soul they have been asked to retrieve
+    // and a Shaman goes to anyone whose soul they have been asked to retrieve, and wards off a mishap if asked
     const lost = soulToRetrieve(ctx, st);
     if (lost && startSoul(ctx, st, lost)) return;
+    if (wardWanted(ctx, st)) {
+      startWard(st);
+      return;
+    }
     let best: Item | null = null;
     let bestScore = -1e9;
     for (const it of s.items) {
@@ -545,7 +550,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       // free to go, and a priority room is short of someone: off to work there instead
       else if (!it.serving && !inPriorityRoom(ctx, it.x, it.y) && openPriorityPost(ctx, st)) staffIdle(ctx, st);
       // free to go, and a room has bad vibes that they know how to clear
-      else if (!it.serving && (roomToSmudge(ctx, st) || soulToRetrieve(ctx, st))) staffIdle(ctx, st);
+      else if (!it.serving && (roomToSmudge(ctx, st) || soulToRetrieve(ctx, st) || wardWanted(ctx, st)))
+        staffIdle(ctx, st);
       // free to go, and in want of a drink or a snack that is to be had
       else if (!it.serving && wantsRefresh(ctx, st)) staffIdle(ctx, st);
       else if (breakDue(ctx, st) && !it.serving) {
@@ -604,6 +610,10 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       }
       if (st.job?.kind === 'soul') {
         if (soulStep(ctx, st, dt)) staffIdle(ctx, st);
+        break;
+      }
+      if (st.job?.kind === 'ward') {
+        if (wardStep(ctx, st, dt)) staffIdle(ctx, st);
         break;
       }
       // the guest on a table is treated before a Mechanic starts work on it

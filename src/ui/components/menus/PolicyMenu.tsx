@@ -81,6 +81,23 @@ export function PolicyMenu() {
           </Button>
           <p class="sub">Emergency guests are called ahead of everyone else in line, whatever their place in it.</p>
         </div>
+        {sim.mushroomSupplier() && (
+          <div class="policy-card">
+            <h4>Mushrooms</h4>
+            <Button
+              class={cx('toggle', 'stash-mushrooms', p.stashMushrooms && 'on')}
+              onPress={() => {
+                sim.setPolicy({ stashMushrooms: !p.stashMushrooms });
+              }}
+            >
+              {p.stashMushrooms ? '🍄 Hide from inspector: on' : '🍄 Hide from inspector: off'}
+            </Button>
+            <p class="sub">
+              The mushrooms under the Shop Counter are put away as soon as the health inspector writes ahead, and come
+              back out once they have gone.
+            </p>
+          </div>
+        )}
         <div class="policy-card">
           <h4>Breaks</h4>
           <Stepper

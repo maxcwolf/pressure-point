@@ -10,10 +10,13 @@ import {
   type MishapDef,
   type MishapId,
   MISHAPS,
+  WARD_CHANCE,
+  WARD_SECONDS,
 } from '../data';
 import { money } from '../format';
-import { irnd, pick } from '../random';
-import type { GameState, Mishap } from '../state/types';
+import { irnd, pick, random } from '../random';
+import type { GameState, Mishap, Staff } from '../state/types';
+import { say } from './chars';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, tipOnce, toast } from './events';
@@ -115,6 +118,17 @@ function startMishap(ctx: SimContext, m: Mishap) {
   m.started = true;
   emit(ctx, { type: 'announce', text: def.start });
   emit(ctx, { type: 'sfx', name: 'error' });
+  // a Shaman's ward holds, most of the time, as well as preparing would
+  if (!m.prepared && m.ward === 'done') {
+    m.prepared = random() < WARD_CHANCE;
+    toast(
+      ctx,
+      m.prepared
+        ? `🪶 The ward held. ${def.prepare.effect}`
+        : `🪶 The ward did not hold against the ${def.name.toLowerCase()}.`,
+      m.prepared ? 'good' : 'bad',
+    );
+  } else if (!m.prepared && m.ward === 'asked') toast(ctx, '🪶 The Shaman did not get to the ward in time.', 'bad');
   if (m.prepared) return;
   // the wind breaks a few things as it starts
   const breakable = s.items.filter((it) => ITEMS[it.type].wear && it.wear < 100);
@@ -151,4 +165,51 @@ export function updateMishaps(ctx: SimContext) {
   // out of season, look again in a few days
   if (kind) announceMishap(ctx, kind);
   else s.nextMishap = s.day + MISHAP_RETRY_DAYS;
+}
+
+/** Whether a Shaman is on the payroll and here to perform a ward. */
+const shamanHere = (s: GameState) =>
+  s.staff.some((st) => st.role === 'shaman' && st.state !== 'leaving' && st.state !== 'away');
+
+/** Whether a Shaman can be asked to ward off the mishap coming: one is coming, not yet prepared for or warded, and a Shaman is here. */
+export function canWard(s: GameState): boolean {
+  const m = s.mishap;
+  return !!m && !m.started && !m.prepared && !m.ward && shamanHere(s);
+}
+
+/** Ask a Shaman to ward off the mishap coming. It costs nothing but their time. False if they cannot. */
+export function askWard(ctx: SimContext): boolean {
+  if (!canWard(ctx.s) || !ctx.s.mishap) return false;
+  ctx.s.mishap.ward = 'asked';
+  toast(ctx, '🪶 A Shaman will ward off the mishap when they are free. Most wards hold.', 'info');
+  return true;
+}
+
+/** Whether this member of staff should go and perform the ward asked for: a Shaman, and nobody else on it already. */
+export function wardWanted(ctx: SimContext, st: Staff): boolean {
+  const m = ctx.s.mishap;
+  if (st.role !== 'shaman' || m?.ward !== 'asked' || m.started) return false;
+  return !ctx.s.staff.some((o) => o.job?.kind === 'ward');
+}
+
+/** Perform the ward where they stand. */
+export function startWard(st: Staff) {
+  st.job = { kind: 'ward', id: 0 };
+  st.state = 'doingJob';
+  st.busy = true;
+  st.timer = WARD_SECONDS;
+  say(st, '🪶', 3);
+}
+
+/** A ward goes on for a step. True when it is over: done, or no longer needed. */
+export function wardStep(ctx: SimContext, st: Staff, dt: number): boolean {
+  const m = ctx.s.mishap;
+  if (m?.ward !== 'asked' || m.started) return true;
+  st.timer -= dt;
+  if (st.timer > 0) return false;
+  m.ward = 'done';
+  const def = MISHAPS[m.kind];
+  toast(ctx, `🪶 ${st.name} has warded off the ${def.name.toLowerCase()}. It should hold.`, 'good');
+  emit(ctx, { type: 'float', text: 'Warded', x: st.x, y: st.y, kind: 'good' });
+  return true;
 }

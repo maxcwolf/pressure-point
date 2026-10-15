@@ -2,6 +2,7 @@
 
 import './VisitDialog.css';
 
+import { money } from '../../../core/format';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { reportHeading, reportSummary, verdictTone } from '../../lib/visits';
@@ -27,14 +28,42 @@ export function VisitDialog() {
           </li>
         ))}
       </ul>
-      <Button
-        class="go"
-        onPress={() => {
-          hud.close();
-        }}
-      >
-        Back to work
-      </Button>
+      {report.bribe === undefined ? (
+        <Button
+          class="go"
+          onPress={() => {
+            hud.close();
+          }}
+        >
+          Back to work
+        </Button>
+      ) : (
+        <div class="btnrow">
+          <Button
+            class="go"
+            onPress={() => {
+              sim.settleInspection(false);
+              hud.close();
+            }}
+          >
+            {`Pay the fine (${money(-report.money)})`}
+          </Button>
+          <Button
+            class="bribe"
+            locked={sim.s.money < report.bribe}
+            title={
+              sim.s.money < report.bribe
+                ? "You can't afford it"
+                : 'The inspection counts as passed, with no fine and no hit to reputation. Word of it may get out.'
+            }
+            onPress={() => {
+              if (sim.settleInspection(true)) hud.close();
+            }}
+          >
+            {`💼 Make it go away (${money(report.bribe)})`}
+          </Button>
+        </div>
+      )}
     </Dialog>
   );
 }

@@ -24,7 +24,7 @@ export function MishapNotice() {
       </div>
     );
   const timer = <Bar value={noticeShare(left) * 100} class={left < 1 ? 'thin bad' : 'thin need'} />;
-  if (m.prepared || hud.mishapAside === m.starts)
+  if (m.prepared || m.ward || hud.mishapAside === m.starts)
     return (
       <Button
         class="panel offer-pill mishap-pill"
@@ -58,6 +58,17 @@ export function MishapNotice() {
         >
           {`${def.prepare.label} (${money(def.prepare.cost)})`}
         </Button>
+        {sim.canWard() && (
+          <Button
+            quiet
+            title="A Shaman performs a ward against it. It costs nothing but their time, and holds most of the time."
+            onPress={() => {
+              sim.askWard();
+            }}
+          >
+            🪶 Ward it off
+          </Button>
+        )}
         <Button
           onPress={() => {
             hud.mishapAside = m.starts;

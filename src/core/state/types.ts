@@ -230,7 +230,7 @@ export interface Staff extends CharBase {
  * a hamper), the room someone clears of bad vibes, or the drink or snack someone goes to for themselves.
  */
 export interface Job {
-  kind: 'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh' | 'install' | 'soul';
+  kind: 'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh' | 'install' | 'soul' | 'ward';
   id: number;
 }
 
@@ -338,10 +338,15 @@ export interface VisitReport {
   rooms: RoomVerdict[];
   /** A VIP's verdict from 0 to 100, or the number of problems the inspector found. */
   score: number;
-  outcome: 'delighted' | 'satisfied' | 'disappointed' | 'passed' | 'failed';
+  outcome: 'delighted' | 'satisfied' | 'disappointed' | 'passed' | 'failed' | 'paid off';
   /** What it brought in, or (below zero) what it cost, in money and reputation. */
   money: number;
   rep: number;
+  /**
+   * For a failed inspection still to be settled: what it would take to make it go away. Paying the fine or the bribe
+   * settles it, and closing the report pays the fine.
+   */
+  bribe?: number;
 }
 
 export type Char = Staff | Guest | Visitor;
@@ -390,6 +395,8 @@ export interface Ledger {
   fines: number;
   /** Fees for places in Qi Gong classes. */
   classes: number;
+  /** Magic mushrooms sold under the Shop Counter. */
+  mushrooms: number;
 }
 
 /** A marketing campaign: for word of mouth, for more guests with one condition, or for applicants. */
@@ -504,6 +511,8 @@ export interface Policy {
   breakAt: number;
   /** How many of each role may be on a break at once. Absent means no limit. */
   breakLimit: Partial<Record<Role, number>>;
+  /** Put the mushrooms away under the Shop Counter as soon as the health inspector writes ahead. */
+  stashMushrooms: boolean;
 }
 
 /** An objective a member of staff sets the center, with a deadline and a reward. */
@@ -539,6 +548,8 @@ export interface Mishap {
   ends: number;
   prepared: boolean;
   started: boolean;
+  /** A Shaman's ward against it: asked for, or performed. It holds, or not, as the mishap starts. */
+  ward?: 'asked' | 'done';
 }
 
 /** The rival center across the street: when it has a sale on, and what it has done to the center so far. */
@@ -682,4 +693,8 @@ export interface GameState {
   /** Campaign achievements earned already, in this game or an earlier one, so none is awarded twice. */
   achieved: AchievementId[];
   seenTips: string[];
+  /** Magic mushrooms are on sale under the Shop Counter, while there is a Shaman to supply them. */
+  mushrooms: boolean;
+  /** They were put away when the health inspector wrote ahead, to come back out once the inspection is over. */
+  mushroomsStashed: boolean;
 }

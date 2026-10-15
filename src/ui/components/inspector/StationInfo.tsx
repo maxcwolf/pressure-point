@@ -5,6 +5,7 @@ import './StationInfo.css';
 import { conditionOf, ITEMS, MODALITIES, ROLES } from '../../../core/data';
 import type { Guest, Item } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { mushroomNote, mushroomSwitch } from '../../lib/ceremonies';
 import { chanceText, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
 import { sessionNote } from '../../lib/sessions';
@@ -118,7 +119,28 @@ export function StationInfo({ item }: { item: Item }) {
             <InLine key={g.id} item={item} guest={g} index={i} />
           ))}
         </ol>
-      )}
+      )}{' '}
+      {def.goal === 'shop' && <Mushrooms />}
+    </>
+  );
+}
+
+/** The Shop Counter's switch for magic mushrooms, while there is a Shaman to supply them. */
+function Mushrooms() {
+  const { sim } = useGame();
+  const s = sim.s;
+  if (!sim.mushroomSupplier()) return null;
+  return (
+    <>
+      <Button
+        class={cx('toggle', 'mushrooms', s.mushrooms && 'on')}
+        onPress={() => {
+          sim.setMushrooms(!s.mushrooms);
+        }}
+      >
+        {mushroomSwitch(s.mushrooms)}
+      </Button>
+      <p class="sub">{mushroomNote(s.mushrooms, s.mushroomsStashed)}</p>
     </>
   );
 }

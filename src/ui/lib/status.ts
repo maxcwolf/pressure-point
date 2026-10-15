@@ -89,7 +89,9 @@ export function guestStatus(g: Guest, sim: Sim): string {
 function choreStatus(st: Staff, sim: Sim): string {
   const job = st.job;
   const it =
-    job && job.kind !== 'litter' && job.kind !== 'smudge' && job.kind !== 'soul' ? sim.world.item(job.id) : undefined;
+    job && job.kind !== 'litter' && job.kind !== 'smudge' && job.kind !== 'soul' && job.kind !== 'ward'
+      ? sim.world.item(job.id)
+      : undefined;
   switch (job?.kind) {
     case 'repair':
       return `Repairing the ${ITEMS[it?.type ?? 'bin'].name}`;
@@ -101,6 +103,8 @@ function choreStatus(st: Staff, sim: Sim): string {
       return it?.type === 'stone_warmer' ? 'Reheating the massage stones' : 'Watering a plant';
     case 'smudge':
       return st.role === 'shaman' ? 'Clearing bad vibes, and blessing the room' : 'Clearing bad vibes with sage';
+    case 'ward':
+      return 'Warding off the mishap coming';
     case 'soul':
       return `Retrieving ${sim.staff(job.id)?.name ?? 'someone'}’s soul`;
     case 'refresh':

@@ -40,6 +40,7 @@ import { feel, reviewStars } from './feelings';
 import { decide, leave } from './guests';
 import { linensPenalty, useLinens } from './linens';
 import { goTo } from './movement';
+import { sellMushrooms } from './mushrooms';
 import { feelNoise, itemNoise, noisePenalty } from './noise';
 import { breakDue } from './policy';
 import { hasRoom } from './progress';
@@ -260,7 +261,9 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const amount = shopSpend(visitStars(g));
     earn(ctx, amount, 'shop', g.x, g.y);
     g.spent += amount;
-    say(g, at(SHOP_ICONS, g.id % SHOP_ICONS.length), 4);
+    // and now and then, something from under the counter
+    const extra = sellMushrooms(ctx, g);
+    say(g, extra ? '🍄' : at(SHOP_ICONS, g.id % SHOP_ICONS.length), 4);
     g.goal = 'leave';
   } else if (def.goal === 'consult' || def.goal === 'assess') {
     g.consults++;

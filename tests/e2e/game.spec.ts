@@ -696,6 +696,7 @@ test.describe('running a center', () => {
       emergenciesFirst: true,
       breakAt: 23,
       breakLimit: { therapist: 5 },
+      stashMushrooms: true,
     });
   });
 
@@ -2008,6 +2009,55 @@ test.describe('the shaman', () => {
     await expect(game.card('Spirit Animal Reading')).toContainText('1 qualified');
     await expect(game.card('Mushroom Ceremony')).toContainText('Set and setting');
     await expect(game.card('Ayahuasca Ceremony')).toContainText('Unlocks at star 3');
+    expect(game.errors).toEqual([]);
+  });
+});
+
+test.describe('magic mushrooms', () => {
+  test('a Shaman supplies them under the Shop Counter, and the inspector who finds them can be paid off', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.stars = 2;
+      pp.state.money = 100000;
+      pp.sim.hire(pp.state.candidates.find((c) => c.role === 'shaman')!.id);
+    });
+    await game.give('shop_counter');
+    await game.clickItem('shop_counter');
+    const insp = page.locator('#inspector');
+    await insp.getByRole('button', { name: /Mushrooms under the counter: put away/ }).click();
+    await expect(insp).toContainText('Mushrooms under the counter: on sale');
+    await page.keyboard.press('Escape');
+
+    // left out on purpose, for the inspector to find
+    await game.menu('Policy');
+    await page.locator('#menu').getByRole('button', { name: '🍄 Hide from inspector: on' }).click();
+    await expect(page.locator('#menu')).toContainText('Hide from inspector: off');
+    await page.keyboard.press('Escape');
+    await game.eval((pp) => {
+      pp.state.visitsOn = true;
+      pp.state.nextVip = 1e9;
+      pp.state.nextInspection = 0;
+    });
+    await game.fastForward(2);
+    await expect(page.locator('#toasts')).toContainText('still on sale');
+    await game.eval((pp) => {
+      pp.state.visitNotice!.arrives = pp.state.day;
+      // only until the report, as the game pauses for it, and an unsettled fine is paid the day after
+      pp.state.speed = 1;
+      for (let i = 0; i < 2400 && !pp.state.visitReport; i++) pp.sim.tick(0.1);
+    });
+    await game.settle();
+    const modal = page.locator('#modal');
+    await expect(modal.locator('.visit-rooms')).toContainText('Magic mushrooms under the counter!');
+    const fines = await game.eval((pp) => pp.state.ledger.fines);
+    await modal.getByRole('button', { name: /Make it go away/ }).click();
+    await expect(modal.locator('h2')).toHaveCount(0);
+    expect(await game.eval((pp) => pp.state.visitReport?.outcome)).toBe('paid off');
+    expect((await game.eval((pp) => pp.state.ledger.fines)) - fines).toBeGreaterThanOrEqual(10000);
     expect(game.errors).toEqual([]);
   });
 });

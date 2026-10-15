@@ -24,7 +24,11 @@ export function reportSummary(r: VisitReport): string {
         ? `Passed, with ${r.score === 1 ? 'one thing' : `${r.score} things`} to put right.`
         : `Passed, with nothing to put right.${rep}`;
     case 'failed':
-      return `Failed, with ${r.score} things wrong: a ${money(-r.money)} fine.${rep}`;
+      return r.bribe === undefined
+        ? `Failed, with ${r.score} things wrong: a ${money(-r.money)} fine.${rep}`
+        : `Failed, with ${r.score} things wrong: a ${money(-r.money)} fine and ${r.rep}% reputation, unless it goes away.`;
+    case 'paid off':
+      return `Failed, but it went away for ${money(-r.money)}.${rep ? `${rep} Word got out.` : ''}`;
   }
 }
 

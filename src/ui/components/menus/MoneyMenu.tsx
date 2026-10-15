@@ -35,6 +35,7 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
       <Line name="Qi Gong classes" amount={ledger.classes} />
       <Line name="Tea &amp; snacks" amount={ledger.vending} />
       <Line name="Shop sales" amount={ledger.shop} />
+      {ledger.mushrooms > 0 && <Line name="Under the counter" amount={ledger.mushrooms} />}
       <Line name="House calls" amount={ledger.calls} />
       <Line name="Bonuses and prizes" amount={ledger.bonus} />
       <Line name="Salaries" amount={ledger.salaries} cost />

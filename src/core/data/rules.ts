@@ -96,6 +96,23 @@ export const SOUL_LIFT = 40;
 export const SOUL_ENERGY = 20;
 /** Seconds a soul retrieval takes, at normal speed. */
 export const SOUL_SECONDS = 6;
+/** The chance a Shop Counter sale comes with magic mushrooms from under the counter, while they are on sale. */
+export const MUSHROOM_CHANCE = 0.35;
+/** What a bag of magic mushrooms sells for, give or take a fifth. */
+export const MUSHROOM_SALE = 180;
+/** What the health inspector finding the mushrooms adds to the fine, and takes off the center's reputation. */
+export const MUSHROOM_FINE = 6000;
+export const MUSHROOM_REP = 5;
+/** What making a failed inspection go away costs: so many times the fine, and never less than a floor. */
+export const BRIBE_TIMES = 2;
+export const BRIBE_MIN = 10000;
+/** The chance word of a bribe gets out, what that costs in reputation, and how soon the inspector is back then. */
+export const BRIBE_LEAK = 0.1;
+export const BRIBE_REP = 6;
+export const BRIBE_RECHECK_DAYS = 30;
+/** The chance a Shaman's ward against a mishap holds, and how long performing it takes them. */
+export const WARD_CHANCE = 0.75;
+export const WARD_SECONDS = 8;
 
 /** Caretakers start repairing equipment at this much wear; at 100 it is broken. */
 export const WEAR_REPAIR = 50;

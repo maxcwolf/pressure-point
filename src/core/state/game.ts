@@ -51,6 +51,7 @@ export const emptyLedger = (): Ledger => ({
   shop: 0,
   calls: 0,
   classes: 0,
+  mushrooms: 0,
   marketing: 0,
   fines: 0,
 });
@@ -67,6 +68,7 @@ export const defaultPolicy = (): Policy => ({
   emergenciesFirst: false,
   breakAt: BREAK_AT,
   breakLimit: {},
+  stashMushrooms: true,
 });
 
 /**
@@ -164,6 +166,8 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     ceremony: null,
     trophies: [],
     achieved: [],
+    mushrooms: false,
+    mushroomsStashed: false,
   };
   refillCandidates(s);
   return s;

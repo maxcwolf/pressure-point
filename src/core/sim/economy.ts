@@ -14,16 +14,16 @@ export function netOf(l: Ledger) {
   return incomeOf(l) - l.salaries - l.building - l.training - l.interest - l.marketing - l.fines;
 }
 
-/** A ledger's income: fees, class places, sales, house calls and bonuses. */
+/** A ledger's income: fees, class places, sales over and under the counter, house calls and bonuses. */
 export function incomeOf(l: Ledger) {
-  return l.consult + l.treatment + l.classes + l.vending + l.shop + l.calls + l.bonus;
+  return l.consult + l.treatment + l.classes + l.vending + l.shop + l.mushrooms + l.calls + l.bonus;
 }
 
 /** Take in money, record it and show the amount floating up. */
 export function earn(
   ctx: SimContext,
   amount: number,
-  kind: 'consult' | 'treatment' | 'vending' | 'shop' | 'calls' | 'classes',
+  kind: 'consult' | 'treatment' | 'vending' | 'shop' | 'mushrooms' | 'calls' | 'classes',
   x: number,
   y: number,
 ) {

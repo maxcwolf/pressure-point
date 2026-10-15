@@ -115,7 +115,13 @@ describe('a save from before the policy', () => {
     for (const g of old.guests) delete g.placed;
     upgradeSave(old as GameState);
     const up = old as GameState;
-    expect(up.policy).toEqual({ diagnosis: 0.75, emergenciesFirst: false, breakAt: 18, breakLimit: {} });
+    expect(up.policy).toEqual({
+      diagnosis: 0.75,
+      emergenciesFirst: false,
+      breakAt: 18,
+      breakLimit: {},
+      stashMushrooms: true,
+    });
     expect(up.rooms.every((r) => !r.priority)).toBe(true);
     expect(up.guests.every((g) => !g.placed)).toBe(true);
     expect(up.stats.sent).toBe(0);

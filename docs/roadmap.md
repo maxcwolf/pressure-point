@@ -104,7 +104,7 @@ A fourth discipline, decided on 15 October 2026, built alongside Phase 10. Done,
 
 ## The Shaman
 
-A fifth discipline, wanted on 15 October 2026, planned the same day and built in stages. The first stage is done: the Ceremony Lodge and the Shaman, open at The Orchard Estate from the start and in the sandbox from the second star; five techniques (Spirit Animal Reading, Spiritual Extraction, Sweat Lodge, and the Mushroom and Ayahuasca Ceremonies, the last at the third star); set and setting, which count the lodge twice for the two ceremonies, and bad trips; and eight ailments, among them guests possessed by a chicken, a goat and Brent. The second stage is done too: the sweat shop announcement, voiced, once a game when the first Sweat Lodge opens; the Shaman clearing bad vibes twice as fast as sage and blessing the room for a week (4% more treatments work there); and soul retrieval, which sends a Shaman to anyone with morale below half to lift it by 40. Still to come: mushrooms under the shop counter (which the health inspector can fine you for), a ceremony to ward off a mishap, and later a vision quest once there are regulars. Chosen at the start:
+A fifth discipline, wanted on 15 October 2026, planned the same day and built in stages. The first stage is done: the Ceremony Lodge and the Shaman, open at The Orchard Estate from the start and in the sandbox from the second star; five techniques (Spirit Animal Reading, Spiritual Extraction, Sweat Lodge, and the Mushroom and Ayahuasca Ceremonies, the last at the third star); set and setting, which count the lodge twice for the two ceremonies, and bad trips; and eight ailments, among them guests possessed by a chicken, a goat and Brent. The second stage is done too: the sweat shop announcement, voiced, once a game when the first Sweat Lodge opens; the Shaman clearing bad vibes twice as fast as sage and blessing the room for a week (4% more treatments work there); and soul retrieval, which sends a Shaman to anyone with morale below half to lift it by 40. The third stage is done as well: mushrooms sold under the Shop Counter while a Shaman supplies them, put away by a Policy when the health inspector writes ahead, and a big fine if the inspector finds them; paying the inspector off, for twice the fine, with a one-in-ten chance that word gets out; and a ward against a mishap, asked for from its notice, which holds three times in four. Still to come: the vision quest, once there are regulars. Chosen at the start:
 
 - **Psychedelic ceremonies:** mushrooms and ayahuasca, with animations to match, and set and setting: a noisy, dirty or gloomy room risks a bad trip.
 - **Spiritual Extraction,** an exorcism, with a funny animation.
@@ -113,6 +113,15 @@ A fifth discipline, wanted on 15 October 2026, planned the same day and built in
 - **Other ideas liked:** soul retrieval for burnt-out staff, spirit animal readings, blessing a room, a vision quest that brings a guest back as a regular, a ceremony to ward off a mishap, and integration in the Recovery Lounge after a ceremony.
 - **Not wanted:** a cacao ceremony or a drum journey, and no Lion's Mane tea.
 - **The gift shop sells psychedelic mushrooms** on the quiet, the shop counter doing a little business under the counter.
+
+## Next, in order
+
+Max's order, from 15 October 2026, once the Shaman's third stage is done:
+
+1. **Game settings** [33]: key rebinding, edge scrolling and the autosave interval.
+2. **More land** [15]: buying the next plot over to grow the building.
+3. **Difficulty presets:** Relaxed, Standard and Demanding.
+4. **Regulars** [44]: guests who come back, greeted by name, and grow loyal. The Shaman's vision quest waits on them.
 
 ## Phase 11: The long game
 

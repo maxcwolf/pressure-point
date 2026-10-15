@@ -80,7 +80,8 @@ import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
-import { prepareMishap, updateMishaps } from './mishaps';
+import { askWard, canWard, prepareMishap, updateMishaps } from './mishaps';
+import { hasSupplier, setMushrooms } from './mushrooms';
 import { itemNoise, noiseAt, updateNoise } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
@@ -103,7 +104,7 @@ import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
 import { orderUpgrade } from './upgrades';
 import { decayItems } from './upkeep';
 import { fadeVibes } from './vibes';
-import { updateVisitor, updateVisits } from './visits';
+import { lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
 import { outdoorTemp, updateWarmth, warmthAt } from './warmth';
 
 export class Sim {
@@ -142,6 +143,7 @@ export class Sim {
       giveUp(ctx);
       bookClasses(ctx);
       announceClasses(ctx);
+      lapseInspection(ctx);
     }
     const month = Math.floor(s.day / DAYS_PER_MONTH);
     if (month !== prevMonth) {
@@ -440,6 +442,26 @@ export class Sim {
   /** Prepare for the mishap coming, at its price. */
   prepareMishap(): boolean {
     return prepareMishap(this.ctx);
+  }
+  /** Ask a Shaman to ward off the mishap coming. */
+  askWard(): boolean {
+    return askWard(this.ctx);
+  }
+  /** Whether a Shaman can be asked to ward off the mishap coming. */
+  canWard(): boolean {
+    return canWard(this.s);
+  }
+  /** Put the magic mushrooms on sale under the Shop Counter, or away. */
+  setMushrooms(on: boolean): boolean {
+    return setMushrooms(this.ctx, on);
+  }
+  /** Whether there is a Shaman to supply magic mushrooms for the Shop Counter. */
+  mushroomSupplier(): boolean {
+    return hasSupplier(this.ctx);
+  }
+  /** Settle a failed inspection: pay the fine, or pay to make it go away. */
+  settleInspection(payOff: boolean): boolean {
+    return settleInspection(this.ctx, payOff);
   }
 
   /** The center's standing points as it is now, part by part. */

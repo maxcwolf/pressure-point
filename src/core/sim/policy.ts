@@ -12,6 +12,7 @@ export interface PolicyChange {
   emergenciesFirst?: boolean;
   breakAt?: number;
   breakLimit?: { role: Role; limit: number };
+  stashMushrooms?: boolean;
 }
 
 /** The policy with a change made, each setting kept in its range. */
@@ -20,6 +21,7 @@ export function changedPolicy(p: Policy, change: PolicyChange): Policy {
   if (change.diagnosis !== undefined)
     next.diagnosis = Math.round(clamp(change.diagnosis, DIAGNOSIS_MIN, DIAGNOSIS_MAX) * 100) / 100;
   if (change.emergenciesFirst !== undefined) next.emergenciesFirst = change.emergenciesFirst;
+  if (change.stashMushrooms !== undefined) next.stashMushrooms = change.stashMushrooms;
   if (change.breakAt !== undefined) next.breakAt = Math.round(clamp(change.breakAt, BREAK_AT_MIN, BREAK_AT_MAX));
   if (change.breakLimit) {
     const { role, limit } = change.breakLimit;

@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  BRIBE_MIN,
   CENTERS,
   DIRT_FILTHY,
   IDEAL_TEMP,
@@ -216,6 +217,11 @@ describe('visits', () => {
     const report = s.visitReport!;
     expect(report.rooms.map((r) => r.name).sort()).toEqual(['Consultation Room', 'Massage Suite']);
     expect(report).toMatchObject({ outcome: 'failed', score: 2, money: -2 * INSPECTION_FINE });
+    // the fine waits on a choice: pay it, or make it go away
+    expect(report.bribe).toBe(BRIBE_MIN);
+    expect(s.ledger.fines).toBe(0);
+    expect(sim.settleInspection(false)).toBe(true);
+    expect(report.bribe).toBeUndefined();
     expect(s.ledger.fines).toBe(2 * INSPECTION_FINE);
     expect(s.money).toBeLessThan(money);
     expect(s.nextInspection).toBeGreaterThan(s.day);
