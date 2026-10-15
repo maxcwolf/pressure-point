@@ -40,7 +40,8 @@ export function buildMohawk(head: THREE.Object3D, skin: number, hairColor: numbe
   const cap = cached('buzz', () => new THREE.SphereGeometry(0.228, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.47));
   put(head, cap, buzz, 0, 0.012, -0.018).rotation.x = -0.28;
 
-  put(head, hairShape(), hair);
+  // the head's own shadow covers the hair's, which would only be one more thing to draw
+  put(head, hairShape(), hair).castShadow = false;
 
   // the scrunchie, ringed around the ponytail as it leaves the head
   const ring = put(head, torus(0.052, 0.017), mat(SCRUNCHIE, 0.6));

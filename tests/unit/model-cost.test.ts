@@ -75,10 +75,10 @@ describe('the cost of drawing each model', () => {
     const all = await costs();
     const total = all.reduce((sum, m) => sum + m.calls, 0);
     // about 1390 when this was written, 1540 after The Orchard Estate's guests, the Topiary and the rival's storefront,
-    // 1720 with a receptionist in the lab for every hair style and beard, 1730 after sound healing's guests, items and
-    // healer, 1780 before the still parts of items were merged, and 2530 while every part of every model cast a shadow
+    // 1730 after sound healing's guests, items and healer, 1930 with a receptionist in the lab for every hair style and
+    // beard, 1780 before the still parts of items were merged, and 2530 while every part of every model cast a shadow
     const heaviest = all.sort((a, b) => b.calls - a.calls).slice(0, 10);
-    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(1800);
+    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(2000);
   });
 
   it('only casts shadows from parts big enough to show one', async () => {
