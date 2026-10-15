@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.23.1
 
 - **A new opening-day announcement, voiced:** "The healing center is now open. Please form an orderly line in order of your aura’s color code."
 
