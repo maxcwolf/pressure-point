@@ -90,8 +90,8 @@ The outside world takes an interest.
 
 - **Move and copy rooms** [16]: pick up a built room with its furniture and set it down elsewhere, rotated if wanted; copy a room. Then **templates**, saved and exported to a file. All done: moving is free, a copy or a room from a template costs what building it would, and templates are kept for every game, with export and import.
 - **Decorating rooms** [20]: wall and floor patterns per room, or per room type, with more patterns bought with karma. Done: three floors and three walls free, nine more for 13 karma in all, and purely for looks.
-- **Camera rotation** [19]: turn in steps, with the walls facing the camera cut away.
-- **More land** [15]: buy an adjoining plot to grow the building. The largest piece of work here.
+
+Camera rotation and more land were put off to Phase 12, on 15 October 2026.
 
 ## Sound Healing
 
@@ -120,6 +120,13 @@ A fifth discipline, wanted on 15 October 2026. A full plan comes before it is bu
 - **New rooms** [30, 44]: a Recovery Lounge (some treatments leave guests needing a rest), a Qi Gong Studio with group classes on a weekly calendar, and a second diagnosis room.
 - **Regulars** [44]: guests who come back, greeted by name, and grow loyal.
 - **Treatment gags** [31], **a radio** [34] and **game settings** [33] (key rebinding, edge scrolling, autosave interval), fitted in where there is room.
+
+## Phase 12: More building
+
+The two building tools put off from Phase 10.
+
+- **Camera rotation** [19]: turn in steps, with the walls facing the camera cut away.
+- **More land** [15]: buy an adjoining plot to grow the building. The largest piece of work left.
 
 ## Way down the line: a server
 
