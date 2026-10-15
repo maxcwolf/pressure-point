@@ -146,17 +146,19 @@ describe('what each center offers', () => {
 });
 
 describe('rush hours', () => {
-  it('come before and after work', () => {
-    expect(inRush(3.1)).toBe(true);
-    expect(inRush(3.5)).toBe(false);
-    expect(inRush(3.75)).toBe(true);
-    expect(inRush(3.95)).toBe(false);
+  it('come in waves: two days in every six', () => {
+    expect(inRush(1)).toBe(false);
+    expect(inRush(3)).toBe(true);
+    expect(inRush(4.9)).toBe(true);
+    expect(inRush(5)).toBe(false);
+    expect(inRush(9.5)).toBe(true);
+    expect(inRush(11.5)).toBe(false);
   });
 
   it('bunch up arrivals and shorten tempers at The Exchange, and nowhere else', () => {
     const exchange = createContext(newGame('exchange'));
     const { rush } = CENTERS.exchange;
-    exchange.s.day = 0.1;
+    exchange.s.day = 3.5;
     expect(arrivalFactor(exchange)).toBe(rush?.peak);
     exchange.s.day = 0.5;
     expect(arrivalFactor(exchange)).toBe(rush?.lull);
@@ -167,13 +169,15 @@ describe('rush hours', () => {
     expect(impatience(sandbox)).toBe(1);
   });
 
-  it('are announced as each one starts', () => {
+  it('are explained the first time one starts, and not again', () => {
     const ctx = createContext(newGame('exchange'));
     ctx.s.open = true;
-    ctx.s.day = 0.051;
+    ctx.s.day = 3.001;
     updateTwists(ctx, 0.1);
-    expect(drainEvents(ctx)).toEqual([{ type: 'announce', text: expect.stringContaining('Rush hour') }]);
-    ctx.s.day = 0.1;
+    expect(drainEvents(ctx)).toEqual([
+      expect.objectContaining({ type: 'toast', text: expect.stringContaining('Rush hour') }),
+    ]);
+    ctx.s.day = 9.001;
     updateTwists(ctx, 0.1);
     expect(drainEvents(ctx)).toEqual([]);
   });

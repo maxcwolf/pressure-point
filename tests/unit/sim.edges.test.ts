@@ -2,13 +2,17 @@
 // if anything around it changes. Each was found in the October 2026 audit.
 import { describe, expect, it } from 'vitest';
 
+import { DAY_SECONDS } from '../../src/core/data';
 import { canMoveItem } from '../../src/core/sim/building';
 import { createContext } from '../../src/core/sim/context';
 import { updateEmergency } from '../../src/core/sim/emergencies';
+import { drainEvents } from '../../src/core/sim/events';
 import { guestCap } from '../../src/core/sim/guests';
 import { repathAll } from '../../src/core/sim/movement';
 import { Sim } from '../../src/core/sim/sim';
 import { updateStations } from '../../src/core/sim/stations';
+import { inRush, updateTwists } from '../../src/core/sim/twists';
+import { newGame } from '../../src/core/state/game';
 import { openCenter, run, runUntil } from './helpers';
 
 describe('someone on their way out', () => {
@@ -91,5 +95,33 @@ describe('the surroundings', () => {
     // the same game, loaded afresh and still paused
     const loaded = new Sim(JSON.parse(JSON.stringify(s)) as typeof s);
     expect(loaded.drainFactor(16, 14)).toBe(near);
+  });
+});
+
+describe('rush hours', () => {
+  it('last long enough to notice: two days or so, not a second', () => {
+    let longest = 0;
+    let run = 0;
+    const step = 0.01;
+    for (let day = 0; day < 40; day += step) {
+      run = inRush(day) ? run + step : 0;
+      longest = Math.max(longest, run);
+    }
+    expect(longest).toBeGreaterThanOrEqual(1.5);
+  });
+
+  it('are not announced over and over, chiming every few seconds', () => {
+    const s = newGame('exchange');
+    s.open = true;
+    const ctx = createContext(s);
+    const dt = 0.05;
+    // a minute of play
+    for (let t = 0; t < 60; t += dt) {
+      s.day += dt / DAY_SECONDS;
+      updateTwists(ctx, dt);
+    }
+    const events = drainEvents(ctx);
+    expect(events.filter((e) => e.type === 'announce')).toEqual([]);
+    expect(events.filter((e) => e.type === 'toast' && /rush/i.test(e.text)).length).toBeLessThanOrEqual(1);
   });
 });

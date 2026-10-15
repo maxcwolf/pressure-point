@@ -2,18 +2,20 @@
 
 import { centerOf, DAY_SECONDS, DAYS_PER_MONTH } from '../data';
 import type { SimContext } from './context';
-import { emit } from './events';
+import { emit, tipOnce } from './events';
 
-/** The rush hours, as parts of each day: before work and after it. */
-export const RUSH_WINDOWS: readonly (readonly [start: number, end: number])[] = [
-  [0.05, 0.22],
-  [0.68, 0.85],
-];
+/**
+ * Rush hours come in waves: two days of them in every six, as the office crowd comes in. A game day lasts only a few
+ * seconds, so anything shorter would flicker past.
+ */
+export const RUSH_CYCLE_DAYS = 6;
+export const RUSH_START = 3;
+export const RUSH_DAYS = 2;
 
 /** Whether a moment of the game falls in a rush hour. */
 export function inRush(day: number): boolean {
-  const t = day - Math.floor(day);
-  return RUSH_WINDOWS.some(([a, b]) => t >= a && t < b);
+  const t = day - Math.floor(day / RUSH_CYCLE_DAYS) * RUSH_CYCLE_DAYS;
+  return t >= RUSH_START && t < RUSH_START + RUSH_DAYS;
 }
 
 /** The seasons, a quarter of the year each, starting the year in winter. */
@@ -54,14 +56,19 @@ export function impatience(ctx: SimContext): number {
   return centerOf(ctx.s).rush?.impatience ?? 1;
 }
 
-/** Announce each rush hour and each season as it starts. */
+/** Explain rush hours the first time one comes, and announce each season as it starts. */
 export function updateTwists(ctx: SimContext, dt: number) {
   const s = ctx.s;
   const { rush, seasons } = centerOf(s);
   if (!s.open) return;
   const before = s.day - dt / DAY_SECONDS;
+  // they come round too often to announce every time: the bottom bar says when one is on
   if (rush && inRush(s.day) && !inRush(before))
-    emit(ctx, { type: 'announce', text: 'Rush hour! A crowd of desk workers is on its way.' });
+    tipOnce(
+      ctx,
+      'rush-hour',
+      'Rush hour! The office crowd comes in waves: a couple of busy days in every six, when guests are less patient. The bottom bar shows when one is on.',
+    );
   const season = seasonOf(s.day);
   if (seasons && season !== seasonOf(before)) emit(ctx, { type: 'announce', text: SEASON_NEWS[season] });
 }

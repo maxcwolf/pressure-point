@@ -25,7 +25,7 @@ The browser version needs nothing installed and is always the same version as th
 **Campaign** takes you through a series of centers, each with its own building, guests, goals and quirks. Earn a center's first star to open the next:
 
 1. **Willow Lane**, a small high-street unit. Massage only: the place to learn the ropes.
-2. **The Exchange**, downtown. Office workers with office ailments, arriving in rush hours before and after work. Acupuncture opens here.
+2. **The Exchange**, downtown. Office workers with office ailments, arriving in rush hours when the office crowd comes in. Acupuncture opens here.
 3. **Saltmarsh**, a seaside town. Packed in summer and quiet in winter, with seaside ailments and sea air that is hard on equipment. Reiki opens here.
 
 Every campaign star earns **✨ karma**, and so do eight one-off **achievements**, like seeing an emergency through or healing 100 guests in one center. Spend karma in the **karma shop** (under Campaign on the title screen) or on a locked card in the Items menu. Each purchase stays unlocked in every center and the sandbox. Karma unlocks comfort and decor items early, before their star comes round, and three you can only get with karma: a **Massage Chair** that keeps a waiting guest patient, a **Bonsai** and a **Koi Pond**. The whole campaign earns enough karma to unlock all of them.

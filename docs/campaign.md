@@ -53,7 +53,7 @@ The Stats menu's monthly record already holds most of what these need.
 Plain working names; all of them can change.
 
 1. **Willow Lane** (the tutorial). A small high-street unit, massage only. The goals walk through the basics: reception, consultation, a suite, a staff room. No twist.
-2. **The Exchange** (downtown, office workers). Desk Slump, Tension Headband and Crick of the Neck are common. Acupuncture opens at the first star. Twist: **rush hours**, when arrivals spike at the start and end of each day, and guests are less patient.
+2. **The Exchange** (downtown, office workers). Desk Slump, Tension Headband and Crick of the Neck are common. Acupuncture opens at the first star. Twist: **rush hours**, when arrivals spike for a couple of days in every six, and guests are less patient. (First built as two windows within each day, which with days a few seconds long flickered past and chimed every few seconds; fixed in v0.12.0.)
 3. **Saltmarsh** (a seaside town). Twist: **seasons**, with a summer surge of visitors and a quiet winter that has to be budgeted for. The sea air wears equipment faster. A few new beach conditions.
 4. **High Pines** (a mountain lodge). Cold-weather conditions (Cold Shoulder, Cold Feet) are common, and Hot Stone is in demand, but Stone Warmers cool faster. Twist: **snowed-in days**, with no arrivals for a day or two. Reiki opens here.
 5. **The Orchard Estate** (a wealthy resort). All three disciplines from the start. Twist: **picky guests**, who pay far more but judge the decor and prestige of each room, and an inspector who visits and rates the center.
