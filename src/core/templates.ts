@@ -44,7 +44,10 @@ function readItem(v: unknown): LayoutItem | null {
   return { type: v.type as ItemType, x: v.x, y: v.y, rot: v.rot };
 }
 
-/** A layout read from a file, or null if it is not one or could not be built as it stands. */
+/**
+ * A layout read from storage or a file, or null if it is not one. One that could not be built as it stands is still
+ * read, so a template saved before the game changed is kept, and `templateLock` says what is wrong with it.
+ */
 export function readLayout(v: unknown): Layout | null {
   if (!isRecord(v) || typeof v.type !== 'string' || !(v.type in ROOMS)) return null;
   if (!isInt(v.w, 1, MAX_SIDE) || !isInt(v.h, 1, MAX_SIDE)) return null;
@@ -53,7 +56,7 @@ export function readLayout(v: unknown): Layout | null {
   const windows = v.windows.map(readSpot);
   const items = v.items.map(readItem);
   if (!door || windows.some((w) => !w) || items.some((it) => !it)) return null;
-  const layout: Layout = {
+  return {
     type: v.type as RoomType,
     w: v.w,
     h: v.h,
@@ -61,7 +64,6 @@ export function readLayout(v: unknown): Layout | null {
     windows: windows as WallSpot[],
     items: items as LayoutItem[],
   };
-  return layoutProblem(layout) ? null : layout;
 }
 
 /** Whether a spot is on the inside of a layout's wall, facing out through it. */
@@ -193,8 +195,13 @@ export interface Allowed {
   enabled: (d: Discipline) => boolean;
 }
 
-/** Why a template cannot be built in a game, or '' if it can: its room or some of its furniture is not open yet. */
+/**
+ * Why a template cannot be built in a game, or '' if it can: something is wrong with the layout itself, or its room or
+ * some of its furniture is not open yet.
+ */
 export function templateLock(l: Layout, allowed: Allowed): string {
+  const problem = layoutProblem(l);
+  if (problem) return problem;
   const room = ROOMS[l.type];
   if (room.discipline && !allowed.enabled(room.discipline))
     return `${DISCIPLINES[room.discipline].name} is switched off`;

@@ -371,10 +371,17 @@ test.describe('room blueprints', () => {
     await page.locator('#menu').getByRole('button', { name: 'Templates (1)' }).click();
     const card = page.locator('.card.template');
     await expect(card).toContainText('Massage Suite, 4×4, 2 items');
-    // typing a name goes to the name, not to the camera or the tools
-    await card.getByLabel('Template name').fill('Corner suite');
-    await card.getByLabel('Template name').press('Enter');
-    await expect(card.getByLabel('Template name')).toHaveValue('Corner suite');
+    // typing a name goes to the name, not to the camera or the tools, and survives the interface redrawing as the
+    // game runs, a few times a second
+    await game.eval((pp) => (pp.state.speed = 1));
+    const name = card.getByLabel('Template name');
+    await name.fill('');
+    await name.pressSequentially('Corner suite', { delay: 60 });
+    await expect(name).toHaveValue('Corner suite');
+    await name.press('Enter');
+    await expect(name).toHaveValue('Corner suite');
+    expect(await page.evaluate(() => localStorage.getItem('pressure-point-room-templates'))).toContain('Corner suite');
+    await game.eval((pp) => (pp.state.speed = 0));
 
     const rooms = await game.eval((pp) => pp.state.rooms.length);
     await card.getByRole('button', { name: 'Build' }).click();

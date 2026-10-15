@@ -1,5 +1,7 @@
 // The Rooms menu's templates: rooms saved with their furniture, to build again in any game, export or import.
 
+import { useState } from 'preact/hooks';
+
 import { ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
 import { copyCost } from '../../../core/room-layout';
@@ -30,6 +32,8 @@ function TemplateCard({ t, lock }: { t: Template; lock: string }) {
   const { layout } = t;
   const room = ROOMS[layout.type];
   const cost = copyCost(layout);
+  // the name as it is being typed: kept here, or the interface redrawing as the game runs would put the old one back
+  const [draft, setDraft] = useState<string | null>(null);
   return (
     <div class={cx('card', 'template', !lock && sim.s.money < cost && 'poor')} data-template={t.name}>
       <i>{room.icon}</i>
@@ -37,10 +41,14 @@ function TemplateCard({ t, lock }: { t: Template; lock: string }) {
       <input
         class="tname"
         aria-label="Template name"
-        value={t.name}
+        value={draft ?? t.name}
         maxLength={MAX_NAME}
+        onInput={(e) => {
+          setDraft(e.currentTarget.value);
+        }}
         onChange={(e) => {
           keepTemplates(hud, renameTemplate(hud.templates, t.id, e.currentTarget.value));
+          setDraft(null);
         }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
@@ -99,7 +107,7 @@ export function TemplatesTab() {
     void file.text().then((text) => {
       const found = readTemplatesFile(text);
       if (!found?.length) {
-        hud.toast(`"${file.name}" holds no room templates this game can build.`, 'bad');
+        hud.toast(`"${file.name}" holds no room templates.`, 'bad');
         return;
       }
       const merged = mergeTemplates(hud.templates, found);

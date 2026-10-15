@@ -17,6 +17,7 @@ import {
 } from '../data';
 import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import type { Char, GameState, Guest, Item, MonthRecord, Room, Staff, Visitor, WallSpot } from '../state/types';
+import { layoutProblem } from '../templates';
 import type { Check, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce } from './advisor';
@@ -617,6 +618,8 @@ export class Sim {
 
   /** Build a room from a template at a spot, at what building it from scratch would cost. */
   buildTemplate(name: string, layout: Layout, placed: PlacedLayout): Room | null {
+    // a template kept from before the game changed may no longer make a room
+    if (layoutProblem(layout)) return null;
     return buildLayout(this.ctx, layout, placed, { cost: `"${name}"`, built: `"${name}" built` });
   }
 }

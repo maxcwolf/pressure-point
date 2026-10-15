@@ -143,8 +143,6 @@ describe('reading a layout from a file', () => {
       { ...SUITE, items: [{ type: 'jacuzzi', x: 0, y: 0, rot: 0 }] },
       { ...SUITE, items: [{ ...SUITE.items[0], rot: 4 }] },
       { ...SUITE, items: [{ ...SUITE.items[0], x: -1 }] },
-      // well formed, but the trolley is missing a table
-      { ...SUITE, items: [SUITE.items[1]] },
     ])
       expect(readLayout(bad), JSON.stringify(bad)).toBeNull();
   });
@@ -229,20 +227,42 @@ describe('describing a template', () => {
   });
 });
 
+describe('a template that no longer passes', () => {
+  it('is kept, rather than lost the next time the templates are stored, and says why it cannot be built', () => {
+    // well formed, but with no table: as a template saved before a room came to need something would be
+    const tableless = { ...SUITE, items: [SUITE.items[1]!] };
+    const kept = readTemplates([{ name: 'Old suite', layout: tableless }]);
+    expect(kept.map((t) => t.name)).toEqual(['Old suite']);
+    expect(templateLock(tableless, ALL_OPEN)).toBe(`It needs a ${ITEMS[ROOMS.massage.required[0]!].name}`);
+  });
+
+  it('is not built, even if asked', () => {
+    const { sim, s } = openCenter(10);
+    const tableless = { ...SUITE, items: [SUITE.items[1]!] };
+    const rooms = s.rooms.length;
+    expect(sim.buildTemplate('Old suite', tableless, placeLayout(tableless, FREE.x, FREE.y))).toBeNull();
+    expect(s.rooms).toHaveLength(rooms);
+  });
+});
+
 describe('what a game lets a template build', () => {
   it('builds anything once everything is open', () => {
     expect(templateLock(SUITE, ALL_OPEN)).toBe('');
   });
 
   it('says when the room is locked or switched off, or some of its furniture is locked', () => {
-    const studio: Layout = { ...SUITE, type: 'sound', items: [] };
+    const { sim } = openCenter(11);
+    const studio = sim.roomLayout(addSound(sim));
     expect(templateLock(studio, { ...ALL_OPEN, upTo: 0 })).toBe(
       `The Sound Bath Studio unlocks at star ${ROOMS.sound.unlock}`,
     );
     /** Every discipline is off. */
     const off = () => false;
     expect(templateLock(studio, { ...ALL_OPEN, enabled: off })).toBe(`${DISCIPLINES.sound.name} is switched off`);
-    const locked = Object.values(ITEMS).find((d) => d.where === 'any' && (d.unlock ?? 0) > 0)!;
+    // something small locked until a later star, in the suite's free corner
+    const locked = Object.values(ITEMS).find(
+      (d) => d.where === 'any' && (d.unlock ?? 0) > 0 && d.w === 1 && d.h === 1 && !d.walkable,
+    )!;
     const decorated: Layout = { ...SUITE, items: [...SUITE.items, { type: locked.type, x: 0, y: 0, rot: 0 }] };
     expect(templateLock(decorated, { ...ALL_OPEN, upTo: 0 })).toBe(`The ${locked.name} is still locked`);
     expect(templateLock(decorated, { ...ALL_OPEN, upTo: 0, unlocked: [locked.type] })).toBe('');
