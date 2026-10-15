@@ -36,6 +36,7 @@ import {
   planHint,
   RESIZE_HINT,
   resizeHint,
+  templateHint,
   WINDOW_HINT,
 } from './hints';
 import { assignTiles, dragTiles, itemTiles, layoutTiles, rectTiles } from './overlay';
@@ -165,6 +166,14 @@ export class Tools {
     this.refresh();
   }
 
+  /** Put down rooms built from a template, as many as are clicked. */
+  startTemplate(name: string, layout: Layout) {
+    this.cancel();
+    this.tool = { kind: 'template', name, layout };
+    this.select(null);
+    this.refresh();
+  }
+
   /** Where the room in hand would go, centered on the cursor. */
   private placedRoom(t: { layout: Layout }): PlacedLayout | null {
     return this.cursor ? placeLayout(t.layout, ...cornerFor(t.layout, this.cursor)) : null;
@@ -242,7 +251,7 @@ export class Tools {
   /** Turn the item, or the room, in hand a quarter turn. */
   rotate() {
     const t = this.tool;
-    if (t.kind === 'moveRoom') {
+    if (t.kind === 'moveRoom' || t.kind === 'template') {
       t.layout = turnLayout(t.layout);
       this.sfx('blip');
       this.refresh();
@@ -317,6 +326,10 @@ export class Tools {
       else this.sfx('error');
     } else if (t.kind === 'moveRoom') {
       this.putRoomDown(t.roomId, t.copy);
+    } else if (t.kind === 'template') {
+      // the tool stays for another
+      const placed = this.placedRoom(t);
+      if (placed && !sim.buildTemplate(t.name, t.layout, placed)) this.sfx('error');
     } else if (t.kind === 'resize') {
       // the wall is let go: the room takes the new shape if it can, and the tool stays for the next wall
       const room = sim.world.room(t.roomId);
@@ -490,9 +503,14 @@ export class Tools {
       return;
     }
     this.hint = copy ? copyRoomHint(room.type, copyCost(t.layout)) : moveRoomHint(room.type);
-    const placed = this.placedRoom(t);
+    this.drawLayout(t.layout, drawing, copy ? undefined : room);
+  }
+
+  /** A room about to be put down from a layout, colored by whether it fits, with its furniture and door. */
+  private drawLayout(layout: Layout, drawing: Drawing, moving?: Room) {
+    const placed = this.placedRoom({ layout });
     if (!placed) return;
-    const check = this.sim.world.layoutValid(room.type, placed, copy ? undefined : room);
+    const check = this.sim.world.layoutValid(layout.type, placed, moving);
     this.problem = check.reason;
     drawing.tiles.push(...layoutTiles(placed, check.ok));
     this.view.setDoor({ door: placed.door, tone: check.ok ? 'ok' : 'bad' });
@@ -533,6 +551,10 @@ export class Tools {
     } else if (t.kind === 'moveRoom') {
       view.setGhost(null);
       this.drawRoomMove(t.roomId, t.copy, drawing);
+    } else if (t.kind === 'template') {
+      view.setGhost(null);
+      this.hint = templateHint(t.name, t.layout.type, copyCost(t.layout));
+      this.drawLayout(t.layout, drawing);
     } else if (t.kind === 'resize') {
       view.setGhost(null);
       const room = world.room(t.roomId);

@@ -21,10 +21,22 @@ export function heldName(e: Pick<KeyboardEvent, 'key' | 'code'>): string {
   return PAN_KEYS[e.code] ?? e.key.toLowerCase();
 }
 
+/** The kinds of input that take no typing, so shortcuts still work with one of them focused. */
+const UNTYPED = new Set(['button', 'checkbox', 'file', 'radio', 'range']);
+
+/** Whether a key went to a field being typed in, such as a template's name, rather than to the game. */
+export function typingIn(target: unknown): boolean {
+  const el = target as { tagName?: string; type?: string } | null;
+  if (el?.tagName === 'TEXTAREA') return true;
+  return el?.tagName === 'INPUT' && !UNTYPED.has(el.type ?? 'text');
+}
+
 /** Listen for the keyboard and return the set of keys currently held down. */
 export function bindKeyboard({ state, tools, ui, onChange }: KeyboardTargets): ReadonlySet<string> {
   const held = new Set<string>();
   window.addEventListener('keydown', (e) => {
+    // Esc still backs out of a field, but every other key is typing
+    if (typingIn(e.target) && e.key !== 'Escape') return;
     const k = e.key.toLowerCase();
     if (ui.blocking) {
       // Esc backs out of the pause menu and its dialogs

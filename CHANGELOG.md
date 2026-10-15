@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Room templates.** Press **Save as template** in a built room's inspector to keep it, furniture, windows and all. The Rooms menu's new Templates tab builds it again, in this game or any later one, for what building it would cost, with R to turn it. Rename a template there, delete it, or export it to a file to keep or share, and import template files.
+
 ## v0.19.0
 
 - **Sound healing,** a fourth discipline, open at High Pines from the first star, at The Orchard Estate from the start, and in the sandbox. Build a **Sound Bath Studio** and hire a **Sound Healer**: guests lie on its mats, and the healer at the Singing Bowls plays for them all at once, starting when the mats fill or after a short wait. Five techniques (Singing Bowls, Tuning Forks, Gong Bath, Crystal Bowls and Overtone Chanting), a **Gong** that carries to the rooms nearby, and six new ailments, among them Earworm and Glass Half Empty.

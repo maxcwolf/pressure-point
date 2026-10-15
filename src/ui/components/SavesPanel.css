@@ -118,21 +118,6 @@
   opacity: 0.85;
 }
 
-.filebtn {
-  flex: none;
-  cursor: pointer;
-  border: 2px dashed var(--navy);
-  border-radius: 10px;
-  padding: 4px 11px;
-  font-size: 13px;
-  font-weight: 600;
-  background: #fff;
-}
-
-.filebtn:hover {
-  background: #f0fbf9;
-}
-
 .saves button.go {
   background: var(--green);
   color: #fff;

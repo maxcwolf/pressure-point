@@ -3,6 +3,8 @@
 
 import type { ItemType, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
+import type { Template } from '../core/templates';
+import { loadTemplates } from '../storage/templates';
 import { voiceFor } from '../voice';
 import type { GameHost } from './host';
 import type { ItemKind, Place } from './lib/catalog';
@@ -11,6 +13,9 @@ import type { OverlayMode } from './lib/overlays';
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'policy' | 'stats';
 /** The tabs of the Money menu. */
 export type MoneyTab = 'books' | 'prices' | 'marketing' | 'loan';
+
+/** The tabs of the Rooms menu. */
+export type RoomsTab = 'rooms' | 'templates';
 
 /** The tabs of the Stats menu. */
 export type StatsTab = 'charts' | 'reputation' | 'standing' | 'casebook' | 'awards';
@@ -43,6 +48,10 @@ const MAX_TOASTS = 4;
 export class HudState {
   /** The build menu that is open, if any. */
   menu: MenuId | null = null;
+  /** The tab showing in the Rooms menu. */
+  roomsTab: RoomsTab = 'rooms';
+  /** The room templates saved, kept for every game. */
+  templates: Template[] = loadTemplates();
   /** The tab showing in the Hire menu. */
   hireRole: Role = 'receptionist';
   /** The tab showing in the Stats menu. */

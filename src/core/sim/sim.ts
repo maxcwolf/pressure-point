@@ -25,6 +25,7 @@ import { assignRoom, clearRooms } from './assignments';
 import { holdAwards, YEAR_MONTHS } from './awards';
 import type { PlaceOptions } from './building';
 import {
+  buildLayout,
   canMoveItem,
   canSell,
   copyRoom,
@@ -612,5 +613,10 @@ export class Sim {
   /** Build a copy of a room at a spot, at what building it from scratch would cost. */
   copyRoom(roomId: number, placed: PlacedLayout): Room | null {
     return copyRoom(this.ctx, roomId, placed);
+  }
+
+  /** Build a room from a template at a spot, at what building it from scratch would cost. */
+  buildTemplate(name: string, layout: Layout, placed: PlacedLayout): Room | null {
+    return buildLayout(this.ctx, layout, placed, { cost: `"${name}"`, built: `"${name}" built` });
   }
 }

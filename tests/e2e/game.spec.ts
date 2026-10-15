@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 
+import type { Layout } from '../../src/core/room-layout';
 import { expect, type Game, test } from './fixtures';
 
 test.describe('drawing', () => {
@@ -348,6 +349,76 @@ test.describe('room blueprints', () => {
     expect(await game.eval((pp) => pp.state.rooms.length)).toBe(rooms + 1);
     await page.keyboard.press('Escape');
     expect(await game.eval((pp) => pp.tools.tool.kind)).toBe('none');
+    expect(game.errors).toEqual([]);
+  });
+
+  test('a room saved as a template is built again, turned, renamed, exported and imported', async ({
+    game,
+    page,
+  }, testInfo) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    await game.clickRoom('massage');
+    await page
+      .locator('#inspector')
+      .getByRole('button', { name: /Save as template/ })
+      .click();
+    await expect(page.locator('#toasts')).toContainText('Saved as the template "Massage Suite"');
+
+    await game.menu('Rooms');
+    await page.locator('#menu').getByRole('button', { name: 'Templates (1)' }).click();
+    const card = page.locator('.card.template');
+    await expect(card).toContainText('Massage Suite, 4×4, 2 items');
+    // typing a name goes to the name, not to the camera or the tools
+    await card.getByLabel('Template name').fill('Corner suite');
+    await card.getByLabel('Template name').press('Enter');
+    await expect(card.getByLabel('Template name')).toHaveValue('Corner suite');
+
+    const rooms = await game.eval((pp) => pp.state.rooms.length);
+    await card.getByRole('button', { name: 'Build' }).click();
+    await expect(page.locator('#hint')).toContainText('Building "Corner suite"');
+    await page.keyboard.press('r');
+    /** The first free spot the turned suite fits, scanning the lot, and where on screen its middle is. */
+    const spot = await game.eval((pp) => {
+      const tool = pp.tools.tool as { kind: string; layout: Layout };
+      if (tool.kind !== 'template') throw new Error('no template in hand');
+      const { layout } = tool;
+      for (let y = 0; y < 30; y++)
+        for (let x = 0; x < 40; x++) {
+          const placed = {
+            rect: { x, y, w: layout.w, h: layout.h },
+            door: { ...layout.door, x: layout.door.x + x, y: layout.door.y + y },
+            windows: [],
+            items: layout.items.map((it) => ({ ...it, x: it.x + x, y: it.y + y })),
+          };
+          if (pp.sim.world.layoutValid(layout.type, placed).ok)
+            return { x, y, screen: pp.view.project(x + layout.w / 2, y + layout.h / 2, 0) };
+        }
+      throw new Error('nowhere for the suite to go');
+    });
+    await page.mouse.move(spot.screen.x, spot.screen.y, { steps: 4 });
+    await page.mouse.click(spot.screen.x, spot.screen.y);
+    await expect(page.locator('#toasts')).toContainText('"Corner suite" built for');
+    expect(await game.eval((pp) => pp.state.rooms.length)).toBe(rooms + 1);
+    expect(await game.eval((pp) => pp.state.rooms.at(-1))).toMatchObject({ type: 'massage', x: spot.x, y: spot.y });
+    await page.keyboard.press('Escape');
+
+    await game.menu('Rooms');
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      card.getByRole('button', { name: 'Export' }).click(),
+    ]);
+    expect(download.suggestedFilename()).toBe('pressure-point-room-corner-suite.json');
+    const file = testInfo.outputPath('template.json');
+    await download.saveAs(file);
+    await card.getByRole('button', { name: 'Delete' }).click();
+    await expect(card).toHaveCount(0);
+    await expect(page.locator('#menu')).toContainText('No templates yet');
+    await page.locator('#menu .filebtn input').setInputFiles(file);
+    await expect(page.locator('#toasts')).toContainText('Imported a template from "template.json"');
+    await expect(card.getByLabel('Template name')).toHaveValue('Corner suite');
     expect(game.errors).toEqual([]);
   });
 

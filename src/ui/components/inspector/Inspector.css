@@ -106,6 +106,7 @@
 .insp button.roomresize,
 .insp button.roommove,
 .insp button.roomcopy,
+.insp button.roomtemplate,
 .insp button.roompriority {
   border: 2.5px solid var(--navy);
   border-radius: 12px;

@@ -6,9 +6,10 @@ import { copyCost } from '../../../core/room-layout';
 import { roomLabels } from '../../../core/sim/assignments';
 import { tempFeel } from '../../../core/sim/warmth';
 import type { Item, Room } from '../../../core/state/types';
-import { useGame } from '../../hooks/use-hud';
+import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
+import { saveAsTemplate } from '../../templates';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { Stars } from '../common/Stars';
@@ -81,6 +82,7 @@ function Comfort({ room }: { room: Room }) {
 
 /** A room's details, with its window, door and demolish buttons. */
 export function RoomInfo({ room }: { room: Room }) {
+  const hud = useHud();
   const { sim, tools } = useGame();
   const def = ROOMS[room.type];
   const stations = sim.s.items.filter((i) => ITEMS[i.type].station && sim.world.zoneAt(i.x, i.y) === room.id);
@@ -156,6 +158,15 @@ export function RoomInfo({ room }: { room: Room }) {
         }}
       >
         {`📋 Copy (${money(copyCost(sim.roomLayout(room)))})`}
+      </Button>{' '}
+      <Button
+        class="roomtemplate"
+        title="Keep this room, furniture, windows and all, to build again from the Rooms menu, in this game or any other."
+        onPress={() => {
+          saveAsTemplate(hud, sim.roomLayout(room));
+        }}
+      >
+        📐 Save as template
       </Button>{' '}
       <Button
         class="danger"

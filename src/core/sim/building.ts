@@ -3,7 +3,7 @@
 import { ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from '../data';
 import { money } from '../format';
 import { carryWallSpot, carryWindows, resizeCost } from '../resize';
-import { copyCost, layoutOf, type PlacedLayout } from '../room-layout';
+import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { sameSpot } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
 import { itemCenter, type Rect } from '../world';
@@ -345,16 +345,35 @@ function refundWindows(ctx: SimContext, count: number) {
  */
 export function copyRoom(ctx: SimContext, roomId: number, placed: PlacedLayout): Room | null {
   const from = ctx.world.room(roomId);
-  if (!from?.done || !ctx.world.layoutValid(from.type, placed).ok) return null;
-  const cost = copyCost(layoutOf(from, itemsInRoom(ctx, from)));
+  if (!from?.done) return null;
+  const name = ROOMS[from.type].name;
+  return buildLayout(ctx, layoutOf(from, itemsInRoom(ctx, from)), placed, {
+    cost: `A copy of the ${name}`,
+    built: `${name} copied`,
+  });
+}
+
+/**
+ * Build a room from a layout, furniture, windows and all, at a spot, for what building it from scratch would cost.
+ * It opens at once. `say` words the messages: what it costs ("A copy of the Massage Suite costs...") and that it was
+ * built ("Massage Suite copied for..."). Returns the new room, or null if it cannot go there or cannot be afforded.
+ */
+export function buildLayout(
+  ctx: SimContext,
+  layout: Layout,
+  placed: PlacedLayout,
+  say: { cost: string; built: string },
+): Room | null {
+  if (!ctx.world.layoutValid(layout.type, placed).ok) return null;
+  const cost = copyCost(layout);
   if (ctx.s.money < cost) {
-    toast(ctx, `A copy of the ${ROOMS[from.type].name} costs ${money(cost)}. You can't afford it.`, 'bad');
+    toast(ctx, `${say.cost} costs ${money(cost)}. You can't afford it.`, 'bad');
     emit(ctx, { type: 'sfx', name: 'error' });
     return null;
   }
   const room: Room = {
     id: ctx.s.nextId++,
-    type: from.type,
+    type: layout.type,
     ...placed.rect,
     door: { ...placed.door },
     windows: [],
@@ -368,10 +387,7 @@ export function copyRoom(ctx: SimContext, roomId: number, placed: PlacedLayout):
   const lost = keepWindows(ctx, room, placed.windows);
   spend(ctx, cost - lost * WINDOW_COST, 'building');
   worldChanged(ctx);
-  toast(ctx, `${ROOMS[room.type].name} copied for ${money(cost - lost * WINDOW_COST)}.`, 'good', {
-    kind: 'room',
-    id: room.id,
-  });
+  toast(ctx, `${say.built} for ${money(cost - lost * WINDOW_COST)}.`, 'good', { kind: 'room', id: room.id });
   emit(ctx, { type: 'sfx', name: 'build' });
   return room;
 }

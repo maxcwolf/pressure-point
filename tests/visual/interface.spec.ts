@@ -74,6 +74,35 @@ test.describe('in a game', () => {
     });
   }
 
+  test("the Rooms menu's templates", async ({ screens, game, page }) => {
+    // two templates kept from earlier games: one to build, and one whose room is still locked here
+    await page.addInitScript(() => {
+      /** A 4×4 room with its door on the bottom wall and two pieces of furniture along the top. */
+      const room = (type: string, table: string, side: string) => ({
+        type,
+        w: 4,
+        h: 4,
+        door: { x: 1, y: 3, dx: 0, dy: 1 },
+        windows: [{ x: 0, y: 1, dx: -1, dy: 0 }],
+        items: [
+          { type: table, x: 1, y: 0, rot: 0 },
+          { type: side, x: 3, y: 0, rot: 0 },
+        ],
+      });
+      localStorage.setItem(
+        'pressure-point-room-templates',
+        JSON.stringify([
+          { name: 'Corner suite', layout: room('massage', 'massage_table', 'oil_trolley') },
+          { name: 'Quiet reiki', layout: room('reiki', 'reiki_table', 'reiki_altar') },
+        ]),
+      );
+    });
+    await screens.play();
+    await game.menu('Rooms');
+    await page.locator('#menu .tab', { hasText: 'Templates' }).click();
+    await screens.shot('menu-rooms-templates');
+  });
+
   test('the Hire menu on another tab', async ({ screens, game, page }) => {
     await screens.play();
     await game.menu('Hire');

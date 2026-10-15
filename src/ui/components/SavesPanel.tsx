@@ -21,6 +21,7 @@ import {
   writeSave,
 } from '../../storage/saves';
 import { storeThumb } from '../../storage/thumbnails';
+import { download } from '../dom';
 import { cx } from '../lib/cx';
 
 export interface SavesPanelProps {
@@ -44,16 +45,6 @@ const FULL: Note = {
   text: `Could not save. There is room for ${MAX_SAVES} named saves and limited browser storage: delete or export some first.`,
   bad: true,
 };
-
-/** Hand a file to the browser to download. */
-function download(filename: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 2000);
-}
 
 /** The list of saved games, with saving, loading, exporting, importing and deleting. */
 export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {

@@ -79,6 +79,11 @@ export function moveRoomHint(type: RoomType): string {
   return `${ROOMS[type].icon} Moving the ${ROOMS[type].name} · click to put it down · R turns it · Esc cancels`;
 }
 
+/** The hint while putting down rooms from a template, with what each costs. */
+export function templateHint(name: string, type: RoomType, cost: number): string {
+  return `${ROOMS[type].icon} Building "${name}" · ${money(cost)} each · click to build one · R turns it · Esc when done`;
+}
+
 /** The hint while putting down copies of a room, with what each costs. */
 export function copyRoomHint(type: RoomType, cost: number): string {
   return `${ROOMS[type].icon} Copying the ${ROOMS[type].name} · ${money(cost)} each · click to build a copy · R turns it · Esc when done`;

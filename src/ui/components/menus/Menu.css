@@ -139,3 +139,83 @@ button.card:hover {
   padding: 3px 10px;
   border-width: 2px;
 }
+
+/* the Rooms menu's templates, wide enough for their buttons */
+.cards.templates {
+  grid-template-columns: repeat(auto-fill, minmax(214px, 1fr));
+}
+
+.card.template {
+  gap: 4px;
+}
+
+.card.template .tname {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 1px 4px;
+  margin: 0 -6px;
+  width: calc(100% + 8px);
+  background: transparent;
+}
+
+.card.template .tname:hover,
+.card.template .tname:focus {
+  border-color: var(--teal);
+  background: #f0fbf9;
+  outline: none;
+}
+
+.template-actions {
+  display: flex;
+  gap: 5px;
+  /* along the bottom, level with the cards beside it */
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.template-actions button {
+  border: 2px solid var(--navy);
+  border-radius: 9px;
+  padding: 2px 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: #fff;
+}
+
+.template-actions button:hover {
+  background: #f0fbf9;
+}
+
+.template-actions button.build {
+  background: var(--green);
+  color: #fff;
+}
+
+.template-actions button.delete {
+  margin-left: auto;
+  background: #fbe3e1;
+  color: #a8322b;
+}
+
+.template-actions button.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.template-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.template-foot .sub {
+  margin: 0 0 0 auto;
+  font-size: 12.5px;
+  opacity: 0.75;
+}
