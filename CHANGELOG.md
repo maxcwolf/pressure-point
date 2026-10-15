@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.22.1
 
 - **Two new announcements, both voiced:** guests are reminded that clothing is mandatory in the hallways, and male visitors are asked not to completely remove their pants while using the urinal. The face hole line is gone.
 
