@@ -37,42 +37,6 @@ Drag out a room, click a wall for its door, and furnish it. Hire from the applic
 - **Keep it running.** Equipment wears out and breaks down unless a Caretaker services it. Noise spoils treatments nearby, winters get cold and summers hot, and a failed treatment leaves bad vibes over its room.
 - **Keep the books.** Set prices, take out loans, run marketing campaigns, and send staff out on house calls. A health inspector and the odd VIP come to judge, and a ZenMart opens across the street to compete for your guests.
 
-## The healing arts
-
-**Massage** is the heart of every center: Swedish to start with, then Deep Tissue, Sports, Hot Stone and Cranio-sacral as you earn stars and train your therapists.
-
-<p align="center">
-  <img src="docs/assets/acupuncture.png" alt="An acupuncturist cupping a guest, with a line of guests showing the acupuncture conditions" width="100%" />
-</p>
-
-**Acupuncture** opens at the first star, with its own clinic, its own specialists and a new kind of guest, from Blocked Qi to Pins and Needles. Train up to Cupping, Moxibustion and Electroacupuncture.
-
-<p align="center">
-  <img src="docs/assets/reiki.png" alt="A reiki practitioner laying crystals on a guest, with a line of guests showing the reiki conditions" width="100%" />
-</p>
-
-**Reiki** opens at the second star. A Reiki Practitioner clears bad vibes as well as treating guests, with Crystal Reiki, Distance Reiki and Chakra Balancing to learn.
-
-<p align="center">
-  <img src="docs/assets/sound.jpg" alt="A sound healer at the singing bowls, playing for a guest lying on a mat, beside a gong" width="100%" />
-</p>
-
-**Sound healing** treats a whole room at once. Guests lie on the studio's mats and a Sound Healer plays for them all. A Gong Bath carries to the rooms nearby, so build the studio with care.
-
-<p align="center">
-  <img src="docs/assets/shaman.jpg" alt="A Shaman pulling a little dark cloud out of a guest on the Ceremony Mat, with a sweat lodge in the corner of the Ceremony Lodge" width="100%" />
-</p>
-
-**The Shaman** opens at The Orchard Estate and in the sandbox, and works in a Ceremony Lodge, one guest at a time: guests with a Lost Spirit Animal, Toxic Ex Energy, or a possession by a chicken, a goat or Brent. There are five techniques, from a Spirit Animal Reading (everyone is an otter) and Spiritual Extraction to the Sweat Lodge and two psychedelic ceremonies. The ceremonies depend on **set and setting**: hold one in a noisy, grubby or gloomy lodge and it may be a bad trip. Between guests, a Shaman clears bad vibes, blesses rooms, and retrieves the souls of burnt-out staff.
-
-<p align="center">
-  <img src="docs/assets/qigong.jpg" alt="A Qi Gong Instructor leading a class of guests on their Practice Spots" width="100%" />
-</p>
-
-From the second star, **Qi Gong classes** run on a weekly timetable. Pick the days, add Practice Spots, and class-goers book a place and come in just for the class.
-
-The harder treatments leave a guest needing a lie-down in a **Recovery Lounge** before they head home. Every art but massage, and the Qi Gong classes, can be switched off in **Settings** if you'd rather keep things simple. Every treatment, and what it needs, is in the [player's guide](docs/guide.md#treatments).
-
 ## Two ways to play
 
 <p align="center">
