@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.12.0
 
 - **A Shop Counter** (from the first star): books, crystals, oils and candles for guests to take home. Treated guests stop on their way out, more often and for more the better their visit went, and a receptionist serves them. Keep a receptionist to the front desk or the shop under Duties.
 - **Prices per treatment:** each treatment has its own price on top of the overall level, with how many it has put off, so a popular treatment can cost more while the everyday ones stay cheap.
