@@ -62,7 +62,7 @@ import type { Course } from './training';
 import { courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
 import { deliveryProblem, enabled, modalityOf, offered, setDiscipline, unlocked } from './treatments';
-import { inRush, type Season, seasonOf, updateTwists } from './twists';
+import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
 import { decayItems } from './upkeep';
 import { fadeVibes } from './vibes';
 import { outdoorTemp, updateWarmth, warmthAt } from './warmth';
@@ -199,9 +199,14 @@ export class Sim {
     return !!centerOf(this.s).rush && inRush(this.s.day);
   }
 
-  /** The season now, in a center that has seasons; null elsewhere. */
-  season(): Season | null {
-    return centerOf(this.s).seasons ? seasonOf(this.s.day) : null;
+  /** Whether the center is snowed in right now, so nobody new can get here: only in a center that gets snow. */
+  snowedIn(): boolean {
+    return cutOff(this.ctx);
+  }
+
+  /** The season now: every center has its weather through the year, if not always its crowds. */
+  season(): Season {
+    return seasonOf(this.s.day);
   }
 
   /** This month so far, in the same shape as the finished months in `s.months`. */

@@ -35,7 +35,7 @@ const view = {
   wireframe: false,
   tiles: true,
   person: false,
-  setting: 'park',
+  setting: 'park' as keyof typeof SETTINGS,
 };
 
 /** Frames left before the model on show counts as drawn, long enough for a person to settle into a pose. */
@@ -202,7 +202,7 @@ function step(by: number) {
 function applyView() {
   stage.setTilesVisible(view.tiles);
   stage.setWireframe(view.wireframe);
-  stage.setGround(SETTINGS[view.setting === 'seaside' ? 'seaside' : 'park'].ground);
+  stage.setGround(SETTINGS[view.setting].ground);
 }
 
 let showingPerson = false;
@@ -225,6 +225,7 @@ const VIEW_CONTROLS: Control[] = [
   choice('Setting', view, 'setting', [
     ['park', 'Park'],
     ['seaside', 'Seaside'],
+    ['mountain', 'Mountain'],
   ]),
   ...(Object.keys(VIEWS) as ViewName[]).map((name) =>
     button(name === 'game' ? 'Game angle' : `${name.charAt(0).toUpperCase()}${name.slice(1)}`, () => stage.frame(name)),

@@ -126,6 +126,8 @@ export interface ItemParts {
   linens?: THREE.MeshStandardMaterial;
   /** The soiled linens heaped in a hamper, which rise as it fills. */
   heap?: THREE.Object3D;
+  /** A fire's flames, which flicker. */
+  flames?: THREE.Object3D[];
 }
 
 /** The changing parts of an item's model. */

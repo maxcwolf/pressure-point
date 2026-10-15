@@ -58,7 +58,8 @@ export type ItemType =
   | 'shop_counter'
   | 'radiator'
   | 'air_conditioner'
-  | 'linen_hamper';
+  | 'linen_hamper'
+  | 'fireplace';
 
 export interface RoomDef {
   type: RoomType;
@@ -280,7 +281,10 @@ export type Visual =
   | 'tilt'
   | 'sway'
   | 'gull'
-  | 'sunburn';
+  | 'sunburn'
+  | 'icicles'
+  | 'cast'
+  | 'thermometer';
 
 /** What a guest can arrive suffering from. */
 export type ConditionId =
@@ -312,7 +316,10 @@ export type ConditionId =
   | 'tilted'
   | 'sealegs'
   | 'gull'
-  | 'lobstered';
+  | 'lobstered'
+  | 'frozen'
+  | 'wipeout'
+  | 'cabin';
 
 export interface ConditionDef {
   id: ConditionId;
@@ -443,7 +450,7 @@ export type GoalSpec =
 /** The objectives for one star: all must be met at once. */
 export type StarGoal = readonly GoalSpec[];
 
-export type CenterId = 'sandbox' | 'willow' | 'exchange' | 'saltmarsh';
+export type CenterId = 'sandbox' | 'willow' | 'exchange' | 'saltmarsh' | 'highpines';
 
 /** A center to run: the sandbox, or one of the campaign's. */
 export interface CenterDef {
@@ -468,8 +475,10 @@ export interface CenterDef {
   wear?: number;
   /** House calls: how much more often than usual they are offered here, and who here asks for them. */
   calls?: { often: number; clients: readonly string[] };
-  /** What surrounds the building: a park, or the seaside. */
-  scenery?: 'park' | 'seaside';
+  /** Snowed-in spells in winter, when nobody can get up the road. */
+  snow?: Snowfall;
+  /** What surrounds the building: a park, the seaside, or snowy mountains. */
+  scenery?: 'park' | 'seaside' | 'mountain';
   /** The weather outside through the year. */
   climate: Climate;
 }
@@ -478,6 +487,12 @@ export interface CenterDef {
 export interface Climate {
   average: number;
   swing: number;
+}
+
+/** How often a winter's spell of a few days is snowed in, from 0 to 1, and how many days a spell lasts. */
+export interface Snowfall {
+  chance: number;
+  days: number;
 }
 
 /** How much more often guests arrive in summer, and how much less in winter. */

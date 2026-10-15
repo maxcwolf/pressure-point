@@ -22,6 +22,7 @@ import { placedFlags } from '../../src/ui/lib/plan';
 import { courseName, guestStatus, promotionNote, staffStatus } from '../../src/ui/lib/status';
 import { saveFacts, titleBadges } from '../../src/ui/lib/title';
 import { roomsUnlockedAt, treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
+import { weatherNote } from '../../src/ui/lib/weather';
 import { hire, openCenter, run, runUntil } from './helpers';
 
 /** Every discipline switched on. */
@@ -297,5 +298,22 @@ describe('what a promotion still needs', () => {
     expect(promotionNote(receptionist, true)).toBe('');
     receptionist.promotion = true;
     expect(promotionNote(receptionist, false)).toBe('');
+  });
+});
+
+describe('the weather beside the date', () => {
+  it('says how warm it is outside, and whether that calls for heating or cooling', () => {
+    expect(weatherNote(68.4, true)).toMatchObject({ text: '68°F', need: '' });
+    const cold = weatherNote(28, true);
+    expect(cold).toMatchObject({ text: '28°F', need: 'heat' });
+    expect(cold?.title).toBe(
+      '28°F outside. Indoors it is about 50°F before any heating or cooling: too cold, so Radiators are needed.',
+    );
+    expect(weatherNote(100, true)?.need).toBe('cool');
+    expect(weatherNote(100, true)?.title).toMatch(/Air Conditioners are needed/);
+  });
+
+  it('says nothing with the weather switched off', () => {
+    expect(weatherNote(28, false)).toBeNull();
   });
 });

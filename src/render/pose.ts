@@ -145,6 +145,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     armOut = 2.35;
     armL = armR = 0;
   } else if (visual === 'frost') armR = c.pose === 'sit' ? armR : 0;
+  else if (visual === 'icicles') {
+    // stiff with cold, and shivering
+    armOut = 0.2;
+    side = Math.sin(t * 38 + c.id) * 0.025;
+  } else if (visual === 'thermometer') headZ += Math.sin(t * 21 + c.id) * 0.04;
   if (c.pose === 'lie') {
     lean = 0;
     headX = 0;

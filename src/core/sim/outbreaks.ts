@@ -21,6 +21,7 @@ import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit, toast } from './events';
 import { feel } from './feelings';
+import { cutOff } from './twists';
 
 /** Whether a guest is waiting about, where stress can pass between them and the guests around them. */
 const idle = (g: Guest) => g.state === 'waiting' || g.state === 'toWait' || g.state === 'need' || g.state === 'toNeed';
@@ -46,7 +47,8 @@ export function updateOutbreak(ctx: SimContext) {
     !s.emergency &&
     s.open &&
     s.stars >= OUTBREAK_STARS &&
-    s.day >= s.nextOutbreak
+    s.day >= s.nextOutbreak &&
+    !cutOff(ctx)
   )
     offerOutbreak(ctx);
 }

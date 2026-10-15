@@ -35,7 +35,7 @@ export interface ItemCondition {
 
 /** Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke, blinking lights and grubby linens. */
 export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: number) {
-  const { leaf, glow, ring, orb, puffs, led, cups, linens, heap } = partsOf(model);
+  const { leaf, glow, ring, orb, puffs, led, cups, linens, heap, flames } = partsOf(model);
   if (leaf) {
     // a plant browns and droops as it dries out
     const k = Math.min(1, it.water / 40);
@@ -68,6 +68,10 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
     heap.visible = full > 0;
     heap.position.y = 0.45 + full * 0.27;
   }
+  // each flame leaps and dies back on its own beat
+  flames?.forEach((f, i) => {
+    f.scale.y = 0.8 + Math.sin(t * (7 + i * 1.7) + i * 2 + it.id) * 0.2 + Math.sin(t * 13 + i) * 0.08;
+  });
 }
 
 // every progress bar is drawn with the same few pieces, so a bar costs nothing to make or throw away

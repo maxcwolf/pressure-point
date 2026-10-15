@@ -357,6 +357,40 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     const shades = mat(0x1d1f24, 0.2);
     for (const x of [-0.075, 0.075]) rig.props.push(put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2));
     rig.props.push(put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205));
+  } else if (visual === 'icicles') {
+    // frozen blue, with snow settled on the shoulders and icicles hanging off the chin
+    headMesh.material = mat(0xb9d7e8, 0.5);
+    for (const x of [-0.17, 0.17]) {
+      const drift = put(torso, sph(0.11, 12), mat(0xf4f8fb, 0.6), x, 0.47, 0);
+      drift.scale.y = 0.5;
+      rig.props.push(drift);
+    }
+    const ice = mat(0xcdeeff, 0.15, 0.25);
+    for (const [x, h] of [
+      [-0.07, 0.11],
+      [0, 0.15],
+      [0.07, 0.1],
+    ] as const)
+      rig.props.push(put(head, cyl(0.022, 0.001, h, 6), ice, x, -0.17 - h / 2, 0.12));
+  } else if (visual === 'cast') {
+    // a plaster cast up one leg, signed by the ski school, and a sticking plaster on the forehead
+    const plaster = mat(0xf7f4ec, 0.8);
+    rig.props.push(put(legR, rbox(0.15, 0.3, 0.17, 0.05), plaster, 0, -0.22, 0.01));
+    rig.props.push(put(legR, rbox(0.05, 0.03, 0.005, 0.005), mat(0x4a9fe0, 0.6), 0.02, -0.18, 0.096));
+    const strip = put(head, rbox(0.11, 0.035, 0.02, 0.008), mat(0xe8c39e, 0.7), 0.06, 0.11, 0.18);
+    strip.rotation.set(-0.5, 0, 0.5);
+    rig.props.push(strip);
+  } else if (visual === 'thermometer') {
+    // a thermometer in the mouth, and flushed cheeks
+    const glass = put(head, cyl(0.011, 0.011, 0.2, 8), mat(0xf4f8fb, 0.2), 0.04, -0.09, 0.27);
+    glass.rotation.set(Math.PI / 2 - 0.35, 0, -0.3);
+    rig.props.push(glass, put(head, sph(0.016, 8), mat(0xe5484d, 0.4, 0.4), 0.075, -0.06, 0.355));
+    for (const x of [-0.12, 0.12]) {
+      const cheek = put(head, sph(0.045, 10), mat(0xf08a8a, 0.7), x, -0.04, 0.165);
+      cheek.scale.z = 0.4;
+      cheek.castShadow = false;
+      rig.props.push(cheek);
+    }
   }
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   if (role === 'practitioner' || role === 'caretaker') {

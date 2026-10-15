@@ -5,12 +5,14 @@ import type { Item } from '../state/types';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
+import { stoneCooling, warmthAt } from './warmth';
 
-/** Plants dry out and warm stones cool as time passes. */
+/** Plants dry out and warm stones cool as time passes, the stones faster in a cold room. */
 export function decayItems(ctx: SimContext, dt: number) {
   for (const it of ctx.s.items) {
     if (it.type === 'plant') it.water = Math.max(0, it.water - dt * 0.3);
-    else if (it.type === 'stone_warmer') it.water = Math.max(0, it.water - dt * 0.08);
+    else if (it.type === 'stone_warmer')
+      it.water = Math.max(0, it.water - dt * stoneCooling(warmthAt(ctx, it.x, it.y)));
   }
 }
 

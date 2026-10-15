@@ -6,11 +6,13 @@ import { dateOf, money } from '../../core/format';
 import { netOf } from '../../core/sim/economy';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
+import { weatherNote } from '../lib/weather';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 
-/** How each season reads beside the date, in a center that has seasons. */
-const SEASON_NAMES = { winter: '❄️ Winter', spring: '🌱 Spring', summer: '☀️ Summer', autumn: '🍂 Autumn' } as const;
+/** The icon beside the date for each season, and its name. */
+const SEASON_ICONS = { winter: '❄️', spring: '🌱', summer: '☀️', autumn: '🍂' } as const;
+const SEASON_NAMES = { winter: 'Winter', spring: 'Spring', summer: 'Summer', autumn: 'Autumn' } as const;
 
 const SPEEDS: readonly { speed: number; label: string; title: string }[] = [
   { speed: 0, label: '⏸', title: 'Pause (Space)' },
@@ -26,6 +28,7 @@ export function StatsBar() {
   const s = sim.s;
   const date = dateOf(s.day);
   const season = sim.season();
+  const weather = weatherNote(sim.outdoorTemp(), s.weatherOn);
   const net = netOf(s.ledger);
   return (
     <div id="stats">
@@ -51,14 +54,23 @@ export function StatsBar() {
         <b>{s.guests.length}</b>
         <small>{`${s.stats.healed} healed`}</small>
       </div>{' '}
-      <div class="stat date" title="Date">
-        <i>📅</i>
-        <b>{`Day ${date.day}`}</b>
+      <div class="stat date" title="Date and weather">
+        <i>{SEASON_ICONS[season]}</i>
+        <b>
+          {`Day ${date.day}`}
+          {weather && (
+            <span class={cx('temp', weather.need)} title={weather.title}>
+              {weather.text}
+            </span>
+          )}
+        </b>
         <small>
-          {sim.rushHour() ? (
+          {sim.snowedIn() ? (
+            <em class="rush">Snowed in</em>
+          ) : sim.rushHour() ? (
             <em class="rush">Rush hour</em>
           ) : (
-            `Month ${date.month}, Year ${date.year}${season ? ` · ${SEASON_NAMES[season]}` : ''}`
+            `${SEASON_NAMES[season]} · Month ${date.month}, Year ${date.year}`
           )}
         </small>
       </div>{' '}

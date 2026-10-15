@@ -10,6 +10,7 @@ const IDS = [
   ...CONDITIONS.map((c) => `guest:${c.id}`),
   ...ROLE_ORDER.map((role) => `staff:${role}`),
   'scenery:trees',
+  'scenery:pines',
   'scenery:beach',
 ];
 

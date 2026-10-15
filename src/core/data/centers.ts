@@ -128,10 +128,43 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       ],
     ],
   },
+  highpines: {
+    id: 'highpines',
+    name: 'High Pines',
+    place: 'A lodge up in the mountains',
+    blurb:
+      'Cold all year, and snowed in now and then through the winter, so keep the place warm and the stones hot. Reiki opens at the second star.',
+    plot: { x0: 6, x1: 25, y0: 5, y1: 16, door: [15, 16] },
+    startMoney: 35000,
+    climate: { average: 44, swing: 18 },
+    disciplines: ['acupuncture', 'reiki'],
+    conditions: { frost: 3, coldfeet: 2.5, steam: 1.5, frozen: 3, wipeout: 2.5, cabin: 2.5 },
+    snow: { chance: 0.3, days: 2 },
+    scenery: 'mountain',
+    calls: { often: 1, clients: ['the ski school', 'the Summit Hotel', 'the mountain rescue hut'] },
+    goals: [
+      [
+        { kind: 'healed', count: 25 },
+        { kind: 'reputation', percent: 45 },
+        { kind: 'balance', amount: 25000 },
+      ],
+      [
+        { kind: 'healed', count: 70 },
+        { kind: 'reputation', percent: 60 },
+        { kind: 'wait', days: 2.5 },
+      ],
+      [
+        { kind: 'healed', count: 160 },
+        { kind: 'healed', count: 15, discipline: 'reiki' },
+        { kind: 'cureRate', percent: 80 },
+        { kind: 'noQuits', days: 60 },
+      ],
+    ],
+  },
 };
 
 /** The campaign's centers, in the order they are played. */
-export const CAMPAIGN: readonly CenterId[] = ['willow', 'exchange', 'saltmarsh'];
+export const CAMPAIGN: readonly CenterId[] = ['willow', 'exchange', 'saltmarsh', 'highpines'];
 
 /** The center a game is set in. */
 export const centerOf = (s: { center: CenterId }) => CENTERS[s.center];

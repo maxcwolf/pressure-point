@@ -49,6 +49,9 @@ export const HEAT_THIRST = 1;
 export const DISCOMFORT_MORALE = 10;
 /** Someone notices the cold or heat from this much discomfort. */
 export const DISCOMFORT_NOTICE = 0.3;
+/** How fast a Stone Warmer's stones cool, in points a second, and how many times faster still in the worst cold. */
+export const STONE_COOLING = 0.08;
+export const COLD_STONES = 3;
 
 /** How fast staff get thirsty and hungry, in points a second. */
 export const STAFF_THIRST = 0.2;

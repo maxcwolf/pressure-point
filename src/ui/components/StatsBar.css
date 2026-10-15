@@ -113,6 +113,22 @@
   }
 }
 
+.stat .temp {
+  margin-left: 8px;
+  font-size: 15px;
+  color: var(--navy);
+}
+
+.stat .temp.heat {
+  font-weight: 700;
+  color: #2f6fae;
+}
+
+.stat .temp.cool {
+  font-weight: 700;
+  color: var(--red);
+}
+
 .stat .rush {
   font-style: normal;
   font-weight: 700;

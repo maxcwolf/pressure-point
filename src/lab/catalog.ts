@@ -23,6 +23,7 @@ import { buildBeach } from '../render/models/beach';
 import { buildCharacter, type CharRig } from '../render/models/character';
 import { buildItem } from '../render/models/items';
 import { partsOf } from '../render/models/parts';
+import { buildPines } from '../render/models/pine';
 import { buildForest } from '../render/models/tree';
 import { poseChar } from '../render/pose';
 import { button, choice, type Control, type Option, range, toggle } from './controls';
@@ -239,6 +240,18 @@ const SCENERY: Specimen[] = [
     /** Three trees, one of each color. */
     build: () => ({
       root: buildForest([0, 1, 2].map((seed) => ({ x: (seed - 1) * 1.4, z: 0, seed }))),
+      animate: still,
+      controls: [],
+    }),
+  },
+  {
+    id: 'scenery:pines',
+    group: 'Scenery',
+    name: 'Pines in the snow',
+    footprint: [4, 1],
+    /** Pines of every height and color. */
+    build: () => ({
+      root: buildPines([0, 1, 2, 3].map((seed) => ({ x: (seed - 1.5) * 1.3, z: 0, seed }))),
       animate: still,
       controls: [],
     }),

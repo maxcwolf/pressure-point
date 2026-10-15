@@ -27,8 +27,9 @@ The browser version needs nothing installed and is always the same version as th
 1. **Willow Lane**, a small high-street unit. Massage only: the place to learn the ropes.
 2. **The Exchange**, downtown. Office workers with office ailments, arriving in rush hours when the office crowd comes in. Acupuncture opens here.
 3. **Saltmarsh**, a seaside town. Packed in summer and quiet in winter, with seaside ailments and sea air that is hard on equipment. Reiki opens here.
+4. **High Pines**, a lodge up in the mountains. Cold all year, so keep it heated, and snowed in now and then each winter, when nobody new can get up the road. Mountain ailments, and Stone Warmers that cool fast in the cold.
 
-Every campaign star earns **✨ karma**, and so do eight one-off **achievements**, like seeing an emergency through or healing 100 guests in one center. Spend karma in the **karma shop** (under Campaign on the title screen) or on a locked card in the Items menu. Each purchase stays unlocked in every center and the sandbox. Karma unlocks comfort and decor items early, before their star comes round, and three you can only get with karma: a **Massage Chair** that keeps a waiting guest patient, a **Bonsai** and a **Koi Pond**. The whole campaign earns enough karma to unlock all of them.
+Every campaign star earns **✨ karma**, and so do eight one-off **achievements**, like seeing an emergency through or healing 100 guests in one center. Spend karma in the **karma shop** (under Campaign on the title screen) or on a locked card in the Items menu. Each purchase stays unlocked in every center and the sandbox. Karma unlocks comfort and decor items early, before their star comes round, and four you can only get with karma: a **Massage Chair** that keeps a waiting guest patient, a **Bonsai**, a **Koi Pond** and a **Fireplace** that warms and soothes the room around it. The whole campaign earns enough karma to unlock all of them.
 
 **Sandbox** is a big lot of your own, with no deadline. Choose the starting money, which treatments to offer, and whether everything is unlocked from day one.
 

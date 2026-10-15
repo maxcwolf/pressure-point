@@ -18,14 +18,15 @@ import { runUntil } from './helpers';
 
 describe('the campaign trail', () => {
   it('opens each center once the one before it has a star', () => {
-    expect(CAMPAIGN).toEqual(['willow', 'exchange', 'saltmarsh']);
+    expect(CAMPAIGN).toEqual(['willow', 'exchange', 'saltmarsh', 'highpines']);
     expect(centerOpen({}, 'willow')).toBe(true);
     expect(centerOpen({}, 'exchange')).toBe(false);
     expect(centerOpen({ willow: 1 }, 'exchange')).toBe(true);
     expect(centerOpen({ willow: 3 }, 'sandbox')).toBe(false);
     expect(nextCenter('willow')).toBe('exchange');
     expect(nextCenter('exchange')).toBe('saltmarsh');
-    expect(nextCenter('saltmarsh')).toBeUndefined();
+    expect(nextCenter('saltmarsh')).toBe('highpines');
+    expect(nextCenter('highpines')).toBeUndefined();
     expect(nextCenter('sandbox')).toBeUndefined();
   });
 
@@ -235,7 +236,6 @@ describe('Saltmarsh', () => {
     ctx.s.day = 3 * 30;
     expect(arrivalFactor(ctx)).toBe(1);
     expect(new Sim(newGame('saltmarsh')).season()).toBe('winter');
-    expect(new Sim(newGame('exchange')).season()).toBeNull();
   });
 
   it('announces each season as it starts', () => {

@@ -1419,7 +1419,7 @@ test.describe('the campaign', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Campaign' }).click();
     const trail = page.locator('#title-campaign');
-    await expect(trail.locator('.stop')).toHaveCount(3);
+    await expect(trail.locator('.stop')).toHaveCount(4);
     await expect(trail.locator('.stop').nth(1)).toContainText('Earn a star at Willow Lane to open');
     await expect(trail.getByRole('button', { name: 'Play The Exchange' })).toHaveCount(0);
 
@@ -1441,6 +1441,32 @@ test.describe('the campaign', () => {
     await page.getByRole('button', { name: 'Play The Exchange' }).click();
     await page.waitForFunction(() => window.pp?.state.center === 'exchange');
     await expect(page.locator('#objectives')).toContainText('The Exchange');
+  });
+
+  test('a star at Saltmarsh opens High Pines, which is snowed in now and then each winter', async ({ game, page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}');
+      localStorage.setItem(
+        'pressure-point-campaign',
+        JSON.stringify({ stars: { willow: 1, exchange: 1, saltmarsh: 1 } }),
+      );
+    });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.getByRole('button', { name: 'Play High Pines' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'highpines');
+    await expect(page.locator('#objectives')).toContainText('High Pines');
+    expect(await game.eval((pp) => pp.state.money)).toBe(35000);
+    await expect(page.locator('#stats .date')).not.toContainText('Snowed in');
+    // the first day of a snowed-in spell, found by stepping through the year
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      for (let day = 0; day < 400; day++) {
+        pp.state.day = day;
+        if (pp.sim.snowedIn()) return;
+      }
+    });
+    await expect(page.locator('#stats .date')).toContainText('Snowed in');
   });
 
   test('karma from stars unlocks an item for good, in a game or from the karma shop', async ({ game, page }) => {

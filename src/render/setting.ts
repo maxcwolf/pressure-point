@@ -1,4 +1,5 @@
-// What surrounds a center's building: the colors of the ground around it, a park's lawn or the seaside's sand.
+// What surrounds a center's building: the colors of the ground around it, a park's lawn, the seaside's sand or the
+// mountains' snow.
 
 import { centerOf } from '../core/data';
 import type { GameState } from '../core/state/types';
@@ -14,6 +15,7 @@ export interface Setting {
 export const SETTINGS = {
   park: { ground: 0x8cc98a, tiles: ['#8cc98a', '#86c384'], fleck: 'rgba(60,130,70,0.35)' },
   seaside: { ground: 0xead9ab, tiles: ['#ead9ab', '#e4d2a2'], fleck: 'rgba(160,130,80,0.3)' },
+  mountain: { ground: 0xe8eef2, tiles: ['#e8eef2', '#e0e8ed'], fleck: 'rgba(130,155,180,0.35)' },
 } as const satisfies Record<string, Setting>;
 
 /** Which setting a game's center has. */

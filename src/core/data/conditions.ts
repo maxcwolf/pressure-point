@@ -275,6 +275,38 @@ export const CONDITIONS: readonly ConditionDef[] = [
     only: ['saltmarsh'],
     worsens: 0.8,
   },
+  {
+    id: 'frozen',
+    name: 'Frozen Stiff',
+    desc: 'Queued for the ski lift in a T-shirt. Thawing out one joint at a time.',
+    treatment: 'Swedish Thaw',
+    modality: 'swedish',
+    fee: 1000,
+    visual: 'icicles',
+    only: ['highpines'],
+    worsens: 1.3,
+  },
+  {
+    id: 'wipeout',
+    name: 'Wipeout',
+    desc: 'Took the black run on the first morning. The skis came home separately.',
+    treatment: 'Sports Rewaxing',
+    modality: 'sports',
+    fee: 1450,
+    visual: 'cast',
+    only: ['highpines'],
+  },
+  {
+    id: 'cabin',
+    name: 'Cabin Fever',
+    desc: 'Snowed in for a week with the in-laws. One eye has started to twitch.',
+    treatment: 'Crystal Airing',
+    modality: 'crystal',
+    fee: 1700,
+    visual: 'thermometer',
+    only: ['highpines'],
+    worsens: 1.2,
+  },
 ];
 
 /** Whether guests can turn up with a condition in a center: everywhere, unless it is a local one. */

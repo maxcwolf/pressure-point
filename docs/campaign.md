@@ -1,6 +1,6 @@
 # Campaign: design draft
 
-A plan for turning the game from one open-ended center into a campaign of centers, with the current game kept as a sandbox. The decisions made are at the end, and all four phases are built; High Pines and The Orchard Estate are still to come.
+A plan for turning the game from one open-ended center into a campaign of centers, with the current game kept as a sandbox. The decisions made are at the end, and all four phases are built, along with High Pines; The Orchard Estate is still to come.
 
 ## What Two Point Hospital does
 
@@ -106,3 +106,5 @@ That makes the phases:
 4. **The unlock currency and sandbox settings.** _Done:_ karma (✨), 2 for each campaign star and 2 or 3 for each of eight achievements, 36 in all. It unlocks comfort and decor items early (arcade, bookcase, espresso machine, aquarium, pool table, trophy cabinet) and three karma-only items (Massage Chair, Bonsai, Koi Pond), 36 in all, so finishing everything unlocks everything. Treatment equipment stays tied to its treatment's star. Spent in the karma shop under Campaign, or by clicking a locked card in the Items menu. Achievements are earned only in campaign games. The sandbox has settings for starting money, treatments, and everything unlocked.
 
 Then a later release adds High Pines and The Orchard Estate.
+
+5. **High Pines** (after roadmap phase 7). _Done:_ a cold climate (about 26°F outside at the depth of winter), so a center there needs Radiators; snowed-in spells of two days, about three winter spells in ten, when no guests, emergencies or outbreaks arrive, announced as each starts and ends, shown in the bottom bar and with snow falling, and none in a game's first month; Stone Warmers cooling up to four times as fast in a cold room (anywhere, not only here); Cold Shoulder, Cold Feet and Stress Head common, and three mountain ailments found only there (Frozen Stiff, Wipeout, Cabin Fever); snowy ground and pines; acupuncture and reiki. Reiki stays at Saltmarsh too, since moving it would take it from Saltmarsh games and goals. The **Fireplace**, a karma-only item for 6 karma, matches the karma High Pines' stars add, so finishing everything still unlocks everything.

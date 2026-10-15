@@ -4,6 +4,7 @@
 
 import {
   centerOf,
+  COLD_STONES,
   COMFORT_BAND,
   DAYS_PER_MONTH,
   DISCOMFORT_NOTICE,
@@ -13,6 +14,7 @@ import {
   IDEAL_TEMP,
   INDOOR_PULL,
   ITEMS,
+  STONE_COOLING,
   WEAR_REPAIR,
   WORN_HEAT,
 } from '../data';
@@ -73,6 +75,12 @@ export const discomfort = (temp: number) => clamp((Math.abs(temp - IDEAL_TEMP) -
 
 /** How uncomfortably hot it is, from 0 to 1: nothing when it is cold. */
 export const hotness = (temp: number) => (temp > IDEAL_TEMP ? discomfort(temp) : 0);
+
+/** How uncomfortably cold it is, from 0 to 1: nothing when it is warm. */
+export const coldness = (temp: number) => (temp < IDEAL_TEMP ? discomfort(temp) : 0);
+
+/** How fast a Stone Warmer's stones cool at a temperature: faster the colder the room. */
+export const stoneCooling = (temp: number) => STONE_COOLING * (1 + COLD_STONES * coldness(temp));
 
 /** How comfortable a temperature is, as an overlay shows it: 0 freezing, a half just right, 1 sweltering. */
 export const tempScale = (temp: number) =>

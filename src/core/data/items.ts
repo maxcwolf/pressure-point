@@ -676,6 +676,22 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
   },
+  fireplace: {
+    type: 'fireplace',
+    name: 'Fireplace',
+    icon: '🔥',
+    desc: 'A crackling log fire. Warms the room, soothes the nerves and looks wonderful doing it.',
+    cost: 2200,
+    w: 2,
+    h: 1,
+    where: 'any',
+    access: [],
+    inMenu: true,
+    karma: 6,
+    decor: 5,
+    heat: 14,
+    noise: -1,
+  },
 };
 
 export const ITEM_MENU: readonly ItemType[] = [
@@ -705,6 +721,7 @@ export const ITEM_MENU: readonly ItemType[] = [
   'pool_table',
   'toilet',
   'radiator',
+  'fireplace',
   'air_conditioner',
   'linen_hamper',
   'study_desk',

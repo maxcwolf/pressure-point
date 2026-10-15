@@ -1,4 +1,4 @@
-// The scenery that never changes: the lawn, the building's outer walls, the sign and the trees.
+// The scenery that never changes: the lawn, the building's outer walls, the sign and the trees, or pines in the snow.
 // The windows in the outer walls do change, as rooms are built against them, so they are drawn with the rooms.
 
 import * as THREE from 'three';
@@ -7,13 +7,19 @@ import { H, type Plot, ROAD_Y, SIDEWALK_Y, TITLE_LINES, W } from '../core/data';
 import { must } from '../core/util';
 import { buildBeach } from './models/beach';
 import { cyl, mat, put, rbox, sph } from './models/parts';
+import { buildPines } from './models/pine';
 import { buildForest, type TreeSpot } from './models/tree';
 import type { Setting } from './setting';
 import { H_LOW, hash, OUTER_HT, OUTER_T } from './shared';
 import { SIGN_HALF, SIGN_LEG, signSpot } from './sign';
 
 /** Build the scenery that never changes around a building on its plot, in its setting, and add it to the scene. */
-export function buildScenery(scene: THREE.Scene, plot: Plot, setting: 'park' | 'seaside', colors: Setting) {
+export function buildScenery(
+  scene: THREE.Scene,
+  plot: Plot,
+  setting: 'park' | 'seaside' | 'mountain',
+  colors: Setting,
+) {
   const lawn = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({ color: colors.ground, roughness: 1 }),
@@ -101,7 +107,7 @@ export function buildScenery(scene: THREE.Scene, plot: Plot, setting: 'park' | '
     return;
   }
 
-  // trees wherever there is lawn
+  // trees wherever there is lawn, or snow
   const trees: TreeSpot[] = [];
   for (let y = -3; y < H + 2; y++) {
     for (let x = -4; x < W + 4; x++) {
@@ -113,7 +119,7 @@ export function buildScenery(scene: THREE.Scene, plot: Plot, setting: 'park' | '
       });
     }
   }
-  scene.add(buildForest(trees));
+  scene.add(setting === 'mountain' ? buildPines(trees) : buildForest(trees));
 }
 
 /** Whether a tile is kept clear of scenery: the building and a margin round it, the street, and the path to the door. */

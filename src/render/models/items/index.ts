@@ -18,6 +18,7 @@ import { buildCrystalGrid } from './crystal-grid';
 import { buildCuppingCart } from './cupping-cart';
 import { buildDiffuser } from './diffuser';
 import { buildFireExtinguisher } from './fire-extinguisher';
+import { buildFireplace } from './fireplace';
 import { buildFountain } from './fountain';
 import { buildKoiPond } from './koi-pond';
 import { buildLinenHamper } from './linen-hamper';
@@ -100,6 +101,7 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   massage_chair: buildMassageChair,
   koi_pond: buildKoiPond,
   radiator: buildRadiator,
+  fireplace: buildFireplace,
   air_conditioner: buildAirConditioner,
   linen_hamper: buildLinenHamper,
 };

@@ -45,7 +45,7 @@ import { arriveCarrying, carriedOut } from './outbreaks';
 import { countArrival, countVisit } from './records';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
-import { arrivalFactor, impatience } from './twists';
+import { arrivalFactor, cutOff, impatience } from './twists';
 import { addWear, dirtier } from './upkeep';
 import { discomfort, feelTemperature, hotness, warmthAt } from './warmth';
 import { worsen } from './worsening';
@@ -63,7 +63,8 @@ const NEED_ICON = { drink: '🍵', eat: '🥜', toilet: '🚻', play: '🕹️' 
 /** Bring in a new guest now and then, more often as the center's reputation grows. */
 export function admitGuests(ctx: SimContext, dt: number) {
   const s = ctx.s;
-  if (!s.open) return;
+  // snowed in: nobody can get up the road until it is cleared
+  if (!s.open || cutOff(ctx)) return;
   s.spawnT -= dt;
   if (s.spawnT > 0) return;
   if (s.guests.length < guestCap(s)) spawnGuest(ctx);

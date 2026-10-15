@@ -16,6 +16,7 @@ import { changeRep } from './economy';
 import { emit, toast } from './events';
 import { spawnGuest } from './guests';
 import { offered, unlocked } from './treatments';
+import { cutOff } from './twists';
 
 /** Run the emergency in progress, or offer a new one when it is time. */
 export function updateEmergency(ctx: SimContext) {
@@ -27,7 +28,7 @@ export function updateEmergency(ctx: SimContext) {
     if (e.pending > 0 && spawnGuest(ctx, e.condition, true)) e.pending--;
     const stillHere = s.guests.some((g) => g.emergency);
     if (e.healed >= e.target || s.day >= e.deadline || (e.pending === 0 && !stillHere)) endEmergency(ctx);
-  } else if (!s.offer && s.open && s.stars >= 1 && s.day >= s.nextEmergency) offerEmergency(ctx);
+  } else if (!s.offer && s.open && s.stars >= 1 && s.day >= s.nextEmergency && !cutOff(ctx)) offerEmergency(ctx);
 }
 
 /** Put an emergency on the table. Only conditions someone on the payroll can treat are offered. */

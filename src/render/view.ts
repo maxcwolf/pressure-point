@@ -17,6 +17,7 @@ import { Picker, type Selection } from './picking';
 import { RoomsLayer } from './rooms';
 import { buildScenery } from './scenery';
 import { settingName, settingOf } from './setting';
+import { SnowfallLayer } from './snowfall';
 import { VibesLayer } from './vibes';
 
 export class View {
@@ -33,6 +34,7 @@ export class View {
   private people: PeopleLayer;
   private litter: LitterLayer;
   private vibes: VibesLayer;
+  private snow: SnowfallLayer;
   private overlays: Overlays;
   private heat: Heatmap;
   private picker: Picker;
@@ -57,6 +59,7 @@ export class View {
     this.people = new PeopleLayer(this.scene, sim);
     this.litter = new LitterLayer(this.scene, sim);
     this.vibes = new VibesLayer(this.scene, sim);
+    this.snow = new SnowfallLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
@@ -92,6 +95,7 @@ export class View {
     this.people.update(this.time, dt);
     this.litter.update();
     this.vibes.update(this.time);
+    this.snow.update(this.time);
     this.items.animate(this.time);
     this.overlays.updateRing(this.time);
     this.rig.update();
