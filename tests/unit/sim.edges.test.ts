@@ -7,6 +7,7 @@ import { createContext } from '../../src/core/sim/context';
 import { updateEmergency } from '../../src/core/sim/emergencies';
 import { guestCap } from '../../src/core/sim/guests';
 import { repathAll } from '../../src/core/sim/movement';
+import { Sim } from '../../src/core/sim/sim';
 import { updateStations } from '../../src/core/sim/stations';
 import { openCenter, run, runUntil } from './helpers';
 
@@ -77,5 +78,18 @@ describe('the number of guests let in', () => {
     const cap = guestCap(s);
     sim.createRoom('staffroom', { x: 17, y: 5, w: 3, h: 3 }, { x: 18, y: 7, dx: 0, dy: 1 });
     expect(guestCap(s)).toBe(cap);
+  });
+});
+
+describe('the surroundings', () => {
+  it('count from the moment a game is loaded, before any time has passed', () => {
+    const { sim, s } = openCenter(1);
+    sim.placeItem('statue', 16, 15, 0, { free: true });
+    run(sim, 2);
+    const near = sim.drainFactor(16, 14);
+    expect(near).toBeLessThan(1.12);
+    // the same game, loaded afresh and still paused
+    const loaded = new Sim(JSON.parse(JSON.stringify(s)) as typeof s);
+    expect(loaded.drainFactor(16, 14)).toBe(near);
   });
 });

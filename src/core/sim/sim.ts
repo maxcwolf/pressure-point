@@ -68,6 +68,8 @@ export class Sim {
   constructor(readonly s: GameState) {
     this.ctx = createContext(s);
     this.world = this.ctx.world;
+    // how pleasant each spot is counts from the start, not only once a second of play has passed
+    updateAmbience(this.ctx);
   }
 
   // ---- The clock -------------------------------------------------------------
@@ -200,6 +202,10 @@ export class Sim {
 
   // ---- Surroundings ----------------------------------------------------------
 
+  /** Work out again how pleasant each spot is, for an overlay drawn while the game is paused. */
+  refreshAmbience() {
+    updateAmbience(this.ctx);
+  }
   /** How fast patience drains on a tile: slower in pleasant surroundings, faster in grim ones. */
   drainFactor(x: number, y: number): number {
     return drainFactor(this.ctx, x, y);
