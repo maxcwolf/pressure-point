@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.14.0
 
 - **High Pines,** the fourth center, opened by a star at Saltmarsh: a lodge up in the mountains, cold all year, so it needs heating. A few times each winter it is snowed in for a couple of days and nobody new can get up the road. Three mountain ailments are found only there (Frozen Stiff, Wipeout and Cabin Fever), and Cold Shoulder and Cold Feet are common.
 - **Stone Warmers cool faster in a cold room,** so heat the Massage Suite.
