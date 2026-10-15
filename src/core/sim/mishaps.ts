@@ -13,6 +13,7 @@ import {
   WARD_CHANCE,
   WARD_SECONDS,
 } from '../data';
+import { tuning } from '../difficulty';
 import { money } from '../format';
 import { irnd, pick, random } from '../random';
 import type { GameState, Mishap, Staff } from '../state/types';
@@ -148,7 +149,7 @@ function endMishap(ctx: SimContext) {
   if (!m) return;
   emit(ctx, { type: 'announce', text: MISHAPS[m.kind].end });
   s.mishap = null;
-  s.nextMishap = s.day + irnd(MISHAP_GAP_DAYS[0], MISHAP_GAP_DAYS[1]);
+  s.nextMishap = s.day + irnd(MISHAP_GAP_DAYS[0], MISHAP_GAP_DAYS[1]) * tuning(s, 'trouble');
 }
 
 /** Announce a mishap when one is due, start it on its day, and end it when it is over. */

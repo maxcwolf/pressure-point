@@ -2,8 +2,9 @@
 
 import './MoneyMenu.css';
 
-import { LOAN_MAX, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../../../core/data';
+import { LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../../../core/data';
 import { money } from '../../../core/format';
+import { loanLimit } from '../../../core/sim/economy';
 import { netOf } from '../../../core/sim/economy';
 import type { Ledger } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
@@ -126,14 +127,14 @@ function Loan() {
   const s = sim.s;
   return (
     <div class="ledger">
-      <h4>{`Loan: ${money(s.loan)} of ${money(LOAN_MAX)}`}</h4>
+      <h4>{`Loan: ${money(s.loan)} of ${money(loanLimit(s))}`}</h4>
       <p class="sub">
         {`Costs ${(LOAN_RATE * 100).toFixed(0)}% interest a month, currently ${money(s.loan * LOAN_RATE)}.`}
       </p>
       <div class="btnrow left">
         <Button
           quiet
-          locked={s.loan + LOAN_STEP > LOAN_MAX}
+          locked={s.loan + LOAN_STEP > loanLimit(s)}
           onPress={() => {
             if (!sim.borrow()) audio.play('error');
           }}

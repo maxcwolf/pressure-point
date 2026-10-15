@@ -10,7 +10,7 @@ From memory, not checked against current sources:
 - **Three stars per hospital.** Each star has its own objectives. One star opens the next hospital; the other two are optional and can be earned later by going back.
 - **Unlocks that carry over.** A currency earned from achievements and challenges buys new items, which then stay unlocked in every hospital.
 - **Challenges** pop up mid-level (cure a number of patients by a date, build something) with a reward.
-- **A sandbox**, added after launch: any map, with settings for money, difficulty and how much is unlocked.
+- **A sandbox**, added after launch: any map, with settings for money, difficulty and how much is unlocked. The difficulty is done: Relaxed, Standard and Demanding presets, and eleven settings to change on their own.
 
 ## What this game has to build on
 

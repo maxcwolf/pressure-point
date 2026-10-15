@@ -22,6 +22,7 @@ import {
   WOMEN_APPLY,
   WOMEN_NAMES,
 } from './data';
+import { tuning } from './difficulty';
 import { pick, random, rnd } from './random';
 import type { Candidate, GameState, Look } from './state/types';
 import { clamp } from './util';
@@ -153,15 +154,18 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
       name: AMANDA.name,
       role,
       skill: best,
-      salary: fairSalary(role, best, traits, hers),
+      salary: scalePay(fairSalary(role, best, traits, hers), tuning(s, 'salaries')),
       traits,
       quals: hers,
       look,
     };
   }
-  const salary = fairSalary(role, skill, traits, quals);
+  const salary = scalePay(fairSalary(role, skill, traits, quals), tuning(s, 'salaries'));
   return { id: s.nextId++, name: randomName(sex), role, skill, salary, traits, quals, look };
 }
+
+/** A salary scaled up or down, to the nearest $10. Scaled by 1, a salary from `fairSalary` is unchanged. */
+export const scalePay = (salary: number, scale: number) => Math.round((salary * scale) / 10) * 10;
 
 /** Each extra qualification is worth this much more pay. */
 export const QUAL_PAY = 0.1;

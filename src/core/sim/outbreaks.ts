@@ -13,6 +13,7 @@ import {
   SPREAD_CHANCE,
   SPREAD_RANGE,
 } from '../data';
+import { tuning } from '../difficulty';
 import { money } from '../format';
 import { irnd, pick, random, rnd } from '../random';
 import type { Guest, Outbreak } from '../state/types';
@@ -94,7 +95,7 @@ export function acceptOutbreak(ctx: SimContext) {
 /** Turn the outbreak down, and schedule the next. */
 export function declineOutbreak(ctx: SimContext) {
   ctx.s.outbreakOffer = null;
-  ctx.s.nextOutbreak = ctx.s.day + rnd(OUTBREAK_GAP_MIN, OUTBREAK_GAP_MAX);
+  ctx.s.nextOutbreak = ctx.s.day + rnd(OUTBREAK_GAP_MIN, OUTBREAK_GAP_MAX) * tuning(ctx.s, 'trouble');
 }
 
 /** A newly arrived guest might bring the outbreak in with them, while it still has carriers to come. */
@@ -169,7 +170,7 @@ export function endOutbreak(ctx: SimContext) {
   }
   for (const g of s.guests) g.calmed = false;
   s.outbreak = null;
-  s.nextOutbreak = s.day + rnd(OUTBREAK_GAP_MIN, OUTBREAK_GAP_MAX);
+  s.nextOutbreak = s.day + rnd(OUTBREAK_GAP_MIN, OUTBREAK_GAP_MAX) * tuning(s, 'trouble');
 }
 
 /** Days an outbreak has left, or its offer has left to decide on. */

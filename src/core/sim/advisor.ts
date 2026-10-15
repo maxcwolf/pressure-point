@@ -9,7 +9,6 @@ import {
   DISCOMFORT_NOTICE,
   IDEAL_TEMP,
   ITEMS,
-  LOAN_MAX,
   MODALITIES,
   MODALITY_ORDER,
   modalityLabel,
@@ -21,6 +20,7 @@ import { pickFresh, rnd } from '../random';
 import { offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import type { SimContext } from './context';
+import { loanLimit } from './economy';
 import { emit, type Subject } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { mishapAdvice } from './mishaps';
@@ -115,7 +115,8 @@ function nudge(ctx: SimContext): string | Advice {
   const comfort = comfortAdvice(ctx);
   if (comfort) return comfort;
   // a raise request waits on a card of its own at the side of the screen, leaving the advisor for other things
-  if (s.money < 0 && s.loan < LOAN_MAX) return 'You are in the red. A loan from the Money menu would tide you over.';
+  if (s.money < 0 && s.loan < loanLimit(s))
+    return 'You are in the red. A loan from the Money menu would tide you over.';
   const gap = modalityAdvice(ctx);
   if (gap) return gap;
   for (const it of s.items) {

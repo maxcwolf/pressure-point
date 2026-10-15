@@ -1,6 +1,7 @@
 // Wear and tear: equipment wearing out, toilets getting grubby, plants drying and warm stones cooling.
 
 import { centerOf, ITEMS, type ItemType } from '../data';
+import { tuning } from '../difficulty';
 import type { Item } from '../state/types';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
@@ -20,7 +21,7 @@ export function decayItems(ctx: SimContext, dt: number) {
 /** Add wear to an item after a use. At full wear it breaks down. */
 export function addWear(ctx: SimContext, it: Item) {
   // the sea air is hard on equipment, and upgraded equipment stands up to it better
-  const add = (ITEMS[it.type].wear ?? 0) * (centerOf(ctx.s).wear ?? 1) * upgradeWear(it.level);
+  const add = (ITEMS[it.type].wear ?? 0) * (centerOf(ctx.s).wear ?? 1) * upgradeWear(it.level) * tuning(ctx.s, 'wear');
   if (!add || it.wear >= 100) return;
   it.wear = Math.min(100, it.wear + add);
   if (it.wear < 100) return;

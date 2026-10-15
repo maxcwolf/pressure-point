@@ -91,6 +91,7 @@ type OldSave = Before<
   | 'mushroomsStashed'
   | 'land'
   | 'regulars'
+  | 'difficulty'
   | 'challenge'
   | 'nextChallenge'
   | 'challengesOn'
@@ -181,6 +182,8 @@ function movedSoundBath(s: OldSave) {
 /** Bring a save from any earlier version up to date by filling in what it lacks. */
 export function upgradeSave(save: GameState) {
   const s: OldSave = save;
+  // first, since the applicants made below are paid as the difficulty sets
+  s.difficulty ??= {};
   for (const st of s.staff) {
     // before massage modalities, everyone on the payroll knew Swedish and nothing else
     st.quals ??= baseQuals(st.role);

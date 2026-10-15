@@ -1950,6 +1950,34 @@ test.describe('the sandbox', () => {
   });
 });
 
+test.describe('difficulty', () => {
+  test('a preset sets every pressure, any can be changed, and the sandbox game plays at it', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Sandbox' }).click();
+    const panel = page.locator('#title-sandbox');
+    await expect(panel.getByRole('radio', { name: 'Standard' })).toHaveAttribute('aria-checked', 'true');
+    await panel.getByRole('radio', { name: 'Demanding' }).click();
+    await expect(panel.getByRole('button', { name: 'Loans: Lower' })).toBeVisible();
+    // one setting changed on its own makes it a custom difficulty
+    await panel.getByRole('button', { name: 'Patience: Impatient' }).click();
+    await expect(panel.getByRole('button', { name: 'Patience: Patient' })).toBeVisible();
+    await expect(panel.getByRole('radio', { name: 'Demanding' })).toHaveAttribute('aria-checked', 'false');
+    await expect(panel).toContainText('Custom');
+    await panel.getByRole('button', { name: 'Start building' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => [pp.state.difficulty.loans, pp.state.difficulty.patience])).toEqual([
+      'harder',
+      'easier',
+    ]);
+    // the bank lends half as much
+    await game.menu('Money');
+    await page.locator('#menu').getByRole('button', { name: /Loan/ }).click();
+    await expect(page.locator('#menu')).toContainText('of $25,000');
+    expect(game.errors).toEqual([]);
+  });
+});
+
 test.describe('reiki', () => {
   test('the studio is locked until the second star, then can be built and staffed', async ({ game, page }) => {
     await game.start();

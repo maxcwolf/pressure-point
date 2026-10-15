@@ -24,6 +24,7 @@ import {
   type TraitDef,
   traitOf,
 } from '../data';
+import { tuning } from '../difficulty';
 import { money } from '../format';
 import { makeCandidate } from '../people';
 import { pick, random } from '../random';
@@ -116,7 +117,7 @@ export function promote(ctx: SimContext, id: number): boolean {
   if (!st?.promotion || st.state === 'leaving') return false;
   st.skill += 1;
   st.promotion = false;
-  st.salary = Math.max(st.salary, fairPay(st));
+  st.salary = Math.max(st.salary, fairPay(st, tuning(ctx.s, 'salaries')));
   st.raiseAsked = false;
   st.morale = Math.min(100, st.morale + PROMOTION_CHEER);
   say(st, '🎉', 5);
@@ -180,7 +181,7 @@ export const applicantCap = (s: GameState) => Math.min(APPLICANTS_MAX, 3 + s.sta
 export function updateApplicants(ctx: SimContext) {
   const s = ctx.s;
   if (s.day < s.nextApplicant) return;
-  s.nextApplicant = s.day + (running(s, 'recruit') ? RECRUIT_APPLICANT_DAYS : APPLICANT_DAYS);
+  s.nextApplicant = s.day + (running(s, 'recruit') ? RECRUIT_APPLICANT_DAYS : APPLICANT_DAYS) * tuning(s, 'applicants');
   /** How many are applying for a role. */
   const count = (r: Role) => s.candidates.filter((c) => c.role === r).length;
   const fewest = Math.min(...ROLE_ORDER.map(count));

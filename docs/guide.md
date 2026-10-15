@@ -14,7 +14,7 @@ Everything the [README](../README.md) leaves out: how a center works, step by st
 
 Every campaign star earns **✨ karma**, and so do eight one-off **achievements**, like seeing an emergency through or healing 100 guests in one center. Spend karma in the **karma shop** (under Campaign on the title screen) or on a locked card in the Items menu. Each purchase stays unlocked in every center and the sandbox. Karma unlocks comfort and decor items early, before their star comes round, and four you can only get with karma: a **Massage Chair** that keeps a waiting guest patient, a **Bonsai**, a **Koi Pond** and a **Fireplace** that warms and soothes the room around it. It also unlocks floors and walls to decorate rooms with. The whole campaign earns enough karma to unlock every item, but not every floor and wall as well, so choose.
 
-**Sandbox** is a big lot of your own, with no deadline. Choose the starting money, which treatments to offer, and whether everything is unlocked from day one.
+**Sandbox** is a big lot of your own, with no deadline. Choose the starting money, the difficulty, which treatments to offer, and whether everything is unlocked from day one. **Relaxed** eases every pressure, **Standard** is the game as the campaign plays it, and **Demanding** turns every one up. Or set each on its own, easier, usual or harder: how often guests arrive, their patience, how often applicants turn up, equipment wear, staff tiredness, salaries, treatment fees, the loan limit, how often trouble comes (mishaps, stress outbreaks and the health inspector), how often emergencies, challenges and house calls are offered, and how fast reputation grows. Point at a setting to see what it does.
 
 ## How to play
 

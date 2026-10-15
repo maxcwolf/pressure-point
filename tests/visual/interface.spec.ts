@@ -59,6 +59,11 @@ test.describe('title screen', () => {
     await screens.title();
     await page.getByRole('button', { name: 'Sandbox' }).click();
     await screens.shot('title-sandbox');
+    // relaxed, but for impatient guests: a custom difficulty
+    await page.getByRole('radio', { name: 'Relaxed' }).click();
+    await page.getByRole('button', { name: 'Patience: Patient' }).click();
+    await page.getByRole('button', { name: 'Patience: Usual' }).click();
+    await screens.shot('title-sandbox-custom');
   });
 });
 

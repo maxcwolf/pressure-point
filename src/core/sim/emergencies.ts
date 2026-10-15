@@ -9,6 +9,7 @@ import {
   MODALITIES,
   OFFER_DAYS,
 } from '../data';
+import { tuning } from '../difficulty';
 import { money } from '../format';
 import { irnd, pick, rnd } from '../random';
 import type { SimContext } from './context';
@@ -84,7 +85,7 @@ export function acceptEmergency(ctx: SimContext) {
 /** Turn the offer down and schedule the next one. */
 export function declineEmergency(ctx: SimContext) {
   ctx.s.offer = null;
-  ctx.s.nextEmergency = ctx.s.day + rnd(45, 75);
+  ctx.s.nextEmergency = ctx.s.day + rnd(45, 75) * tuning(ctx.s, 'chances');
 }
 
 /** Wrap up the emergency with a bonus if enough were healed, or a hit to reputation if not. */
@@ -107,5 +108,5 @@ function endEmergency(ctx: SimContext) {
   }
   for (const g of s.guests) g.emergency = false;
   s.emergency = null;
-  s.nextEmergency = s.day + rnd(50, 80);
+  s.nextEmergency = s.day + rnd(50, 80) * tuning(s, 'chances');
 }

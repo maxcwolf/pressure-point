@@ -18,6 +18,7 @@ import {
   type Priced,
   type RoomType,
 } from '../data';
+import { tuning } from '../difficulty';
 import type { LandOffer } from '../land';
 import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { offeringOn } from '../state/game';
@@ -401,12 +402,12 @@ export class Sim {
 
   /** What a member of staff could reasonably expect to be paid. */
   fairPay(st: Staff): number {
-    return fairPay(st);
+    return fairPay(st, tuning(this.s, 'salaries'));
   }
 
   /** The salary a raise would take a member of staff to. */
   raiseTo(st: Staff): number {
-    return raiseTo(st);
+    return raiseTo(st, tuning(this.s, 'salaries'));
   }
 
   /** Promote a member of staff who is ready, with the raise that comes with it. */

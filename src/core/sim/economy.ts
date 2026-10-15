@@ -1,6 +1,7 @@
 // Money and reputation: income, spending, payday, loans and prices.
 
 import { LOAN_MAX, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN, type Priced } from '../data';
+import { tuning } from '../difficulty';
 import { money } from '../format';
 import { emptyLedger } from '../state/game';
 import type { GameState, Ledger } from '../state/types';
@@ -46,10 +47,13 @@ export function spend(
 /** Raise or lower reputation, kept between 0 and 100. */
 export function changeRep(ctx: SimContext, delta: number) {
   const s = ctx.s;
-  // gains taper off as reputation climbs
-  if (delta > 0) delta *= 1.15 - s.reputation / 120;
+  // gains taper off as reputation climbs, and come faster or slower as the difficulty sets
+  if (delta > 0) delta *= (1.15 - s.reputation / 120) * tuning(s, 'reputation');
   s.reputation = clamp(s.reputation + delta, 0, 100);
 }
+
+/** The most the bank will lend: more or less than usual, as the difficulty sets, in whole steps. */
+export const loanLimit = (s: GameState) => Math.round((LOAN_MAX * tuning(s, 'loans')) / LOAN_STEP) * LOAN_STEP;
 
 /** Pay salaries and loan interest, close the month's books and bring in new applicants. */
 export function monthEnd(ctx: SimContext) {
@@ -73,7 +77,7 @@ export function monthEnd(ctx: SimContext) {
 /** Borrow one more step of the loan, if the limit allows. */
 export function borrow(ctx: SimContext): boolean {
   const s = ctx.s;
-  if (s.loan + LOAN_STEP > LOAN_MAX) return false;
+  if (s.loan + LOAN_STEP > loanLimit(s)) return false;
   s.loan += LOAN_STEP;
   s.money += LOAN_STEP;
   emit(ctx, { type: 'sfx', name: 'cash' });

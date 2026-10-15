@@ -26,6 +26,7 @@ import {
   STRESS_DRAIN,
   WOMEN_VISIT,
 } from '../data';
+import { tuning } from '../difficulty';
 import { randomLook, randomName, rollSex } from '../people';
 import { pick, random, rnd } from '../random';
 import type { GameState, Guest, Item, Need, Regular } from '../state/types';
@@ -77,7 +78,7 @@ export function admitGuests(ctx: SimContext, dt: number) {
     const regular = dueRegular(s);
     spawnGuest(ctx, undefined, false, 0, regular);
   }
-  s.spawnT = ((30 - s.reputation * 0.2) * rnd(0.7, 1.3)) / arrivalFactor(ctx);
+  s.spawnT = ((30 - s.reputation * 0.2) * rnd(0.7, 1.3)) / arrivalFactor(ctx) / tuning(s, 'arrivals');
 }
 
 /** How many guests the center lets in at once: more for every finished room, not counting blueprints. */
@@ -402,7 +403,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
     if (g.stressed) drain *= STRESS_DRAIN;
     // a loyal regular is used to the wait
-    drain *= regularPatience(ctx.s, g);
+    drain *= regularPatience(ctx.s, g) * tuning(ctx.s, 'patience');
     drain *= 1 + discomfort(temp) * DISCOMFORT_DRAIN;
     g.patience -= drain * dt;
     if (g.patience < LONG_WAIT_PATIENCE) feel(g, 'long-wait');

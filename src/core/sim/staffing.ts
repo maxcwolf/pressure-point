@@ -29,8 +29,9 @@ import {
   WEAR_REPAIR,
   XP_PER_JOB,
 } from '../data';
+import { tuning } from '../difficulty';
 import { money } from '../format';
-import { fairSalary } from '../people';
+import { fairSalary, scalePay } from '../people';
 import { pick, random } from '../random';
 import type { Item, Job, Staff } from '../state/types';
 import { clamp, must } from '../util';
@@ -140,21 +141,21 @@ export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poach
   emit(ctx, { type: 'sfx', name: 'fail' });
 }
 
-/** What this member of staff could reasonably expect to be paid. */
-export function fairPay(st: Staff): number {
-  return fairSalary(st.role, st.skill, st.traits, st.quals, st.general.length);
+/** What this member of staff could reasonably expect to be paid, with salaries scaled as the game's difficulty sets. */
+export function fairPay(st: Staff, scale = 1): number {
+  return scalePay(fairSalary(st.role, st.skill, st.traits, st.quals, st.general.length), scale);
 }
 
 /** The salary a raise would take them to: the going rate, or 10% more if they already earn it. */
-export function raiseTo(st: Staff): number {
-  return Math.max(fairPay(st), Math.round((st.salary * 1.1) / 10) * 10);
+export function raiseTo(st: Staff, scale = 1): number {
+  return Math.max(fairPay(st, scale), Math.round((st.salary * 1.1) / 10) * 10);
 }
 
 /** Give a member of staff the raise they are due, which lifts their morale. */
 export function giveRaise(ctx: SimContext, id: number) {
   const st = staffById(ctx, id);
   if (!st || st.state === 'leaving') return;
-  st.salary = raiseTo(st);
+  st.salary = raiseTo(st, tuning(ctx.s, 'salaries'));
   st.morale = Math.min(100, st.morale + 22);
   st.raiseAsked = false;
   st.unhappyT = 0;
@@ -183,7 +184,7 @@ export function trainingSpeed(bookcases: number): number {
 
 /** The morale a member of staff drifts toward: set by their pay, energy, workplace and the state of the center. */
 export function moraleTarget(ctx: SimContext, st: Staff): number {
-  let target = 62 + clamp((st.salary / fairPay(st) - 1) * 90, -45, 20);
+  let target = 62 + clamp((st.salary / fairPay(st, tuning(ctx.s, 'salaries')) - 1) * 90, -45, 20);
   if (st.energy < 20) target -= 18;
   const post = ctx.world.item(st.post);
   const room = post && st.state === 'atPost' ? ctx.world.roomOfItem(post) : undefined;
@@ -213,7 +214,7 @@ export function aboutToQuit(st: Staff): boolean {
 /** Drift morale toward what pay and conditions deserve; the unhappy ask for a raise, then quit. */
 function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   if (st.state === 'leaving' || st.state === 'arriving' || st.state === 'toCall' || st.state === 'away') return;
-  const fair = fairPay(st);
+  const fair = fairPay(st, tuning(ctx.s, 'salaries'));
   const target = moraleTarget(ctx, st);
   st.morale = clamp(st.morale + (target - st.morale) * Math.min(1, dt * 0.03), 0, 100);
 
@@ -514,7 +515,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
   if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * 9 * breakBoost(ctx, st));
   else if (st.state !== 'leaving' && st.state !== 'training' && st.state !== 'away') {
     const rate = st.busy ? 0.42 * (st.strain || 1) : st.state === 'atPost' ? 0.14 : 0.2;
-    st.energy = Math.max(0, st.energy - rate * stamina * dt);
+    st.energy = Math.max(0, st.energy - rate * stamina * tuning(ctx.s, 'tiredness') * dt);
   }
 
   switch (st.state) {

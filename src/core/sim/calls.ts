@@ -16,6 +16,7 @@ import {
   MODALITY_ORDER,
   ROLES,
 } from '../data';
+import { tuning } from '../difficulty';
 import { money } from '../format';
 import { irnd, pick, random } from '../random';
 import type { GameState, HouseCall, Staff } from '../state/types';
@@ -142,7 +143,7 @@ export function updateCalls(ctx: SimContext) {
   }
   if (s.callOffer || !s.open || s.day < s.nextCall) return;
   const often = centerOf(s).calls?.often ?? 1;
-  s.nextCall = s.day + irnd(CALL_GAP_MIN, CALL_GAP_MAX) / often;
+  s.nextCall = s.day + (irnd(CALL_GAP_MIN, CALL_GAP_MAX) / often) * tuning(s, 'chances');
   const call = makeCall(ctx);
   if (!call) return;
   s.callOffer = call;

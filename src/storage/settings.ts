@@ -1,6 +1,7 @@
 // Player preferences that outlive any one game: which optional disciplines, and whether Qi Gong classes, new games start with,
-// how a sandbox game is set up, and the Stats menu's charts.
-import { CENTERS, DISCIPLINE_ORDER, DISCIPLINES, type Offering, SANDBOX_MONEY } from '../core/data';
+// how a sandbox game is set up, its difficulty among the rest, and the Stats menu's charts.
+import { CENTERS, type Difficulty, DISCIPLINE_ORDER, DISCIPLINES, type Offering, SANDBOX_MONEY } from '../core/data';
+import { readDifficulty } from '../core/difficulty';
 import { isRecord } from './json';
 
 const KEY = 'pressure-point-settings';
@@ -50,11 +51,13 @@ export interface SandboxSettings {
   rival: boolean;
   /** Whether mishaps happen: power cuts, storms, freezes and wasps. */
   mishaps: boolean;
+  /** How hard the game is, setting by setting. One left out is as usual. */
+  difficulty: Difficulty;
 }
 
 /**
  * The sandbox settings last chosen, or the defaults: the sandbox's usual money, unlocking as stars are earned, staff
- * challenges, stress outbreaks, weather, visits, a rival and mishaps.
+ * challenges, stress outbreaks, weather, visits, a rival and mishaps, at the Standard difficulty.
  */
 export function loadSandbox(): SandboxSettings {
   const out: SandboxSettings = {
@@ -66,6 +69,7 @@ export function loadSandbox(): SandboxSettings {
     visits: true,
     rival: true,
     mishaps: true,
+    difficulty: {},
   };
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(SANDBOX_KEY) ?? '{}');
@@ -78,6 +82,7 @@ export function loadSandbox(): SandboxSettings {
     if (typeof raw.visits === 'boolean') out.visits = raw.visits;
     if (typeof raw.rival === 'boolean') out.rival = raw.rival;
     if (typeof raw.mishaps === 'boolean') out.mishaps = raw.mishaps;
+    out.difficulty = readDifficulty(raw.difficulty);
   } catch {
     // the defaults will do
   }

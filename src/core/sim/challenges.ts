@@ -14,6 +14,7 @@ import {
   DISCIPLINES,
   type GoalSpec,
 } from '../data';
+import { tuning } from '../difficulty';
 import { money } from '../format';
 import { irnd, pick } from '../random';
 import type { Challenge, GameState } from '../state/types';
@@ -156,5 +157,5 @@ export function updateChallenge(ctx: SimContext) {
     toast(ctx, `🎯 ${ch.staffName}'s challenge ran out of time. They are a little disappointed.`, 'bad', about);
   } else return;
   s.challenge = null;
-  s.nextChallenge = s.day + irnd(CHALLENGE_GAP_MIN, CHALLENGE_GAP_MAX);
+  s.nextChallenge = s.day + irnd(CHALLENGE_GAP_MIN, CHALLENGE_GAP_MAX) * tuning(s, 'chances');
 }

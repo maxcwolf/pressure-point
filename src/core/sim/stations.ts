@@ -23,6 +23,7 @@ import {
   traitOf,
   XP_PER_GUEST,
 } from '../data';
+import { tuning } from '../difficulty';
 import { random, rnd } from '../random';
 import type { GameState, Guest, Item, Staff } from '../state/types';
 import { at, clamp, must } from '../util';
@@ -56,9 +57,10 @@ import { addVibes, vibesAt, vibesPenalty } from './vibes';
 import { discomfort, feelTemperature, warmthAt } from './warmth';
 import { conditionPenalty } from './worsening';
 
-/** What a treatment costs a guest: its fee at the price set, and more from picky guests, who pay extra. */
+/** What a treatment costs a guest: its fee at the price set, more from picky guests, who pay extra, and as the
+ * difficulty sets. */
 export function treatmentFee(s: GameState, fee: number, price: number): number {
-  return Math.round(fee * price * (centerOf(s).picky?.fee ?? 1));
+  return Math.round(fee * price * (centerOf(s).picky?.fee ?? 1) * tuning(s, 'fees'));
 }
 
 /** Lower is better. Guests steer toward tables that can actually deliver what they need. */

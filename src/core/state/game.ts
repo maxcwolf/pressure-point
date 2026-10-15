@@ -170,6 +170,7 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     mushroomsStashed: false,
     land: [],
     regulars: [],
+    difficulty: {},
   };
   refillCandidates(s);
   return s;

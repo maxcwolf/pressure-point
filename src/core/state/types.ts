@@ -7,6 +7,7 @@ import type {
   CampaignKind,
   CenterId,
   ConditionId,
+  Difficulty,
   Discipline,
   Duty,
   FeelingId,
@@ -719,4 +720,6 @@ export interface GameState {
   land: LandSide[];
   /** Guests who come back every few weeks, whether here now or due. */
   regulars: Regular[];
+  /** How hard the game is, setting by setting: a sandbox setting. One left out is as usual. */
+  difficulty: Difficulty;
 }

@@ -1,5 +1,5 @@
-// Setting up a sandbox game on the title screen: its money, its treatments, whether everything starts unlocked, and
-// which events and pressures it has.
+// Setting up a sandbox game on the title screen: its money, how hard it is, its treatments, whether everything starts
+// unlocked, and which events and pressures it has.
 
 import './SandboxPanel.css';
 
@@ -9,6 +9,7 @@ import { money } from '../../core/format';
 import { loadDisciplinePrefs, loadSandbox, saveDisciplinePref, saveSandbox } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
 import { cx } from '../lib/cx';
+import { DifficultySettings } from './DifficultySettings';
 import { SettingRow } from './SettingRow';
 
 export interface SandboxPanelProps {
@@ -49,6 +50,14 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           </button>
         ))}
       </div>
+      <DifficultySettings
+        difficulty={settings.difficulty}
+        onChange={(difficulty) => {
+          change(() => {
+            saveSandbox({ ...settings, difficulty });
+          });
+        }}
+      />
       <h4>Treatments</h4>
       <ul>
         {DISCIPLINE_ORDER.filter((d) => DISCIPLINES[d].optional).map((d) => {

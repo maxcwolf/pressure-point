@@ -39,6 +39,7 @@ import {
   WEAR_REPAIR,
   WOMEN_VISIT,
 } from '../data';
+import { tuning } from '../difficulty';
 import { money } from '../format';
 import { randomLook, randomName, rollSex, sexOfName } from '../people';
 import { irnd, pick, random } from '../random';
@@ -263,9 +264,11 @@ function writeAhead(ctx: SimContext, visit: VisitorKind) {
   );
 }
 
-/** Days until the inspector calls again: sooner at a center where they call more often. */
+/** Days until the inspector calls again: sooner at a center where they call more often, or with more trouble set. */
 export function inspectionGap(s: GameState): number {
-  return Math.round(irnd(INSPECTION_GAP_DAYS[0], INSPECTION_GAP_DAYS[1]) / (centerOf(s).inspections ?? 1));
+  return Math.round(
+    (irnd(INSPECTION_GAP_DAYS[0], INSPECTION_GAP_DAYS[1]) / (centerOf(s).inspections ?? 1)) * tuning(s, 'trouble'),
+  );
 }
 
 /** Bring in the visitor who wrote ahead. False if they cannot get in yet. */
