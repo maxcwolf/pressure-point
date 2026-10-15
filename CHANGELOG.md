@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **Sound healing,** a fourth discipline, open at High Pines from the first star, at The Orchard Estate from the start, and in the sandbox. Build a **Sound Bath Studio** and hire a **Sound Healer**: guests lie on its mats, and the healer at the Singing Bowls plays for them all at once, starting when the mats fill or after a short wait. Five techniques (Singing Bowls, Tuning Forks, Gong Bath, Crystal Bowls and Overtone Chanting), a **Gong** that carries to the rooms nearby, and six new ailments, among them Earworm and Glass Half Empty.
+- **A small arrow shows which way an item faces** while you place it, for anything with a front and a back, such as desks, benches, sofas and vending machines.
 - **Distance Reiki** takes the Sound Bath's place in reiki. In a saved game, Reiki Practitioners forget the Sound Bath, and Singing Bowls in a Reiki Studio are sold back for what they cost.
 
 ## v0.18.0

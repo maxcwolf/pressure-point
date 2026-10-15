@@ -1,5 +1,5 @@
 // What is drawn over the scene for the player's benefit: tile highlights, the preview of an item being
-// placed, the door and window marker, floating icons and the ring around whatever is selected.
+// placed and the way it faces, the door and window marker, floating icons and the ring around whatever is selected.
 
 import * as THREE from 'three';
 
@@ -7,12 +7,26 @@ import type { ItemType } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { at } from '../core/util';
-import { itemCenter, itemDims } from '../core/world';
+import { frontOf, itemCenter, itemDims } from '../core/world';
 import { placeItemModel } from './items';
 import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
 import type { Marker, OverlayTile } from './overlay-codes';
 import type { Selection } from './picking';
+
+/** How far out from an item's front edge the arrow showing its front sits. */
+const FRONT_GAP = 0.2;
+
+/** A small flat arrowhead on the floor, pointing along +z. */
+function frontArrow(): THREE.BufferGeometry {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0.13);
+  shape.lineTo(0.17, -0.05);
+  shape.lineTo(0, 0.01);
+  shape.lineTo(-0.17, -0.05);
+  shape.closePath();
+  return new THREE.ShapeGeometry(shape).rotateX(Math.PI / 2);
+}
 
 const OVERLAY_COLORS = [0x3ddc84, 0xff5d5d, 0x4aa8ff, 0xffc93c, 0x9b6bff, 0xff8a3c].map((c) => new THREE.Color(c));
 
@@ -42,6 +56,7 @@ export class Overlays {
   };
   private markers: THREE.Sprite[] = [];
   private doorMarker: THREE.Mesh;
+  private frontMarker: THREE.Mesh;
   private ring: THREE.Mesh;
 
   constructor(
@@ -62,6 +77,21 @@ export class Overlays {
     this.doorMarker = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.16), this.ghostMats.ok);
     this.doorMarker.visible = false;
     this.scene.add(this.doorMarker);
+
+    this.frontMarker = new THREE.Mesh(
+      frontArrow(),
+      new THREE.MeshBasicMaterial({
+        // the teal of the notch marking a model's front in the model lab
+        color: 0x23827c,
+        transparent: true,
+        opacity: 0.8,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    this.frontMarker.visible = false;
+    this.frontMarker.renderOrder = 3;
+    this.scene.add(this.frontMarker);
 
     this.ring = new THREE.Mesh(
       new THREE.RingGeometry(0.4, 0.52, 40).rotateX(-Math.PI / 2),
@@ -86,8 +116,21 @@ export class Overlays {
     if (this.overlay.instanceColor) this.overlay.instanceColor.needsUpdate = true;
   }
 
-  /** Show a see-through preview of an item being placed, green if it fits and red if not, or hide it. */
+  /**
+   * Show a see-through preview of an item being placed, green if it fits and red if not, with an arrow on the floor
+   * by its front if it has one; or hide it.
+   */
   setGhost(spec: GhostSpec | null) {
+    const front = spec && frontOf(spec);
+    this.frontMarker.visible = !!front;
+    if (front) {
+      this.frontMarker.position.set(
+        front.x + Math.sin(front.face) * FRONT_GAP,
+        0.035,
+        front.y + Math.cos(front.face) * FRONT_GAP,
+      );
+      this.frontMarker.rotation.y = front.face;
+    }
     if (!spec) {
       if (this.ghost) this.scene.remove(this.ghost.group);
       this.ghost = null;

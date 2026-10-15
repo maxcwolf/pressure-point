@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { SANDBOX_PLOT, SIDEWALK_Y, W } from '../../src/core/data';
-import { accessPose, accessTile, footprint, itemDims, rotPoint, rotVec } from '../../src/core/world';
+import { ITEMS, SANDBOX_PLOT, SIDEWALK_Y, W } from '../../src/core/data';
+import { accessPose, accessTile, footprint, frontOf, itemDims, rotPoint, rotVec } from '../../src/core/world';
 import { addConsult, addMassage, freshSim, hire, LAYOUT } from './helpers';
 
 /** The sandbox building's corner and front door. */
@@ -46,6 +46,36 @@ describe('item geometry', () => {
     expect(lying.pose).toBe('lie');
     expect(lying.x).toBeCloseTo(12.5);
     expect(lying.y).toBeCloseTo(6);
+  });
+
+  it('finds the middle of the front edge of an item with a front, turning with it', () => {
+    // a 3×1 desk at (10,10), its front first facing down the map, then turned a quarter at a time
+    const expected = [
+      [11.5, 11, 0],
+      [10, 11.5, -Math.PI / 2],
+      [11.5, 10, Math.PI],
+      [11, 11.5, Math.PI / 2],
+    ];
+    expected.forEach(([x, y, face], rot) => {
+      const front = frontOf({ type: 'reception_desk', x: 10, y: 10, rot })!;
+      expect(front.x, `rot ${rot}`).toBeCloseTo(x!);
+      expect(front.y, `rot ${rot}`).toBeCloseTo(y!);
+      expect(Math.cos(front.face - face!), `rot ${rot}`).toBeCloseTo(1);
+    });
+    expect(frontOf({ type: 'plant', x: 10, y: 10, rot: 0 }), 'a plant looks the same all round').toBeNull();
+  });
+
+  it('puts the guest at a desk half a tile out from its front, at every rotation', () => {
+    for (const type of ['reception_desk', 'consult_desk', 'shop_counter'] as const) {
+      const guest = ITEMS[type].access.findIndex((a) => a.role === 'guest');
+      for (let rot = 0; rot < 4; rot++) {
+        const desk = { type, x: 10, y: 10, rot };
+        const front = frontOf(desk)!;
+        const [gx, gy] = accessTile(desk, guest);
+        const out = (gx + 0.5 - front.x) * Math.sin(front.face) + (gy + 0.5 - front.y) * Math.cos(front.face);
+        expect(out, `${type} rot ${rot}`).toBeCloseTo(0.5);
+      }
+    }
   });
 });
 

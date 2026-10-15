@@ -107,6 +107,14 @@ export function itemCenter(it: Placed): [number, number] {
   const [w, h] = itemDims(it.type, it.rot);
   return [it.x + w / 2, it.y + h / 2];
 }
+/** The middle of an item's front edge, and the way its front faces as `accessPose` gives it, for an item with a front. */
+export function frontOf(it: Placed): { x: number; y: number; face: number } | null {
+  if (!ITEMS[it.type].front) return null;
+  const [cx, cy] = itemCenter(it);
+  const [w, h] = itemDims(it.type, it.rot);
+  const [dx, dy] = rotVec(it.rot, 0, 1);
+  return { x: cx + (dx * w) / 2, y: cy + (dy * h) / 2, face: Math.atan2(dx, dy) };
+}
 
 export interface Rect {
   x: number;

@@ -156,6 +156,8 @@ export interface ItemDef {
   heat?: number;
   /** A table with linens on it, soiled a little with each session until a Caretaker changes them. */
   linens?: boolean;
+  /** It has a front and a back, so a marker shows which way it will face while it is being placed. */
+  front?: boolean;
 }
 
 export interface RoleDef {
