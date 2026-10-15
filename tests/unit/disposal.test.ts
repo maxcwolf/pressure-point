@@ -23,4 +23,15 @@ describe('taking a model away', () => {
     disposeOwned(model);
     expect(freed.sort()).toEqual(['bubble', 'own']);
   });
+
+  it('frees the shapes it owns and leaves shared ones', () => {
+    const own = owned(new THREE.BoxGeometry());
+    const shared = new THREE.BoxGeometry();
+    const freed: THREE.BufferGeometry[] = [];
+    for (const g of [own, shared]) g.addEventListener('dispose', () => freed.push(g));
+    const model = new THREE.Group();
+    model.add(new THREE.Mesh(own, mat(0x123456)), new THREE.Mesh(shared, mat(0x123456)));
+    disposeOwned(model);
+    expect(freed).toEqual([own]);
+  });
 });

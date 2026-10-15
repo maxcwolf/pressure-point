@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { H, type Plot, ROAD_Y, SIDEWALK_Y, TITLE_LINES, W } from '../core/data';
 import { must } from '../core/util';
 import { buildBeach } from './models/beach';
+import { mergeStill } from './models/merge';
 import { cyl, mat, put, rbox, sph } from './models/parts';
 import { buildPines } from './models/pine';
 import { buildForest, type TreeSpot } from './models/tree';
@@ -63,6 +64,7 @@ export function buildScenery(
     put(shell, rbox(0.42, 0.1, 0.42, 0.04), trim, x, 1.52, z1 + T / 2);
     put(shell, sph(0.17), mat(0xffe9a8, 0.3, 0.7), x, 1.72, z1 + T / 2);
   }
+  mergeStill(shell);
   scene.add(shell);
 
   // sign on the front lawn

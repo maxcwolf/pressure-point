@@ -2,10 +2,12 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import type { Item } from '../../src/core/state/types';
+import { isOwned } from '../../src/render/disposal';
 import { ItemsLayer } from '../../src/render/items';
-import { partsOf } from '../../src/render/models/parts';
+import { mat, partsOf } from '../../src/render/models/parts';
 import type { PeopleLayer } from '../../src/render/people';
 import { Picker } from '../../src/render/picking';
+import { RoomsLayer } from '../../src/render/rooms';
 import { openCenter } from './helpers';
 
 /** Does nothing, for every call the scene makes that a test has no use for. */
@@ -109,5 +111,54 @@ describe('drawing items', () => {
     };
     const picked = new Picker(camera, people as unknown as PeopleLayer, items, sim).pick(720, 450);
     expect(picked).not.toEqual({ kind: 'item', id: table.id });
+  });
+});
+
+/** Every shape in a scene right now. */
+function shapes(scene: THREE.Scene) {
+  const out = new Set<THREE.BufferGeometry>();
+  scene.traverse((o) => o instanceof THREE.Mesh && out.add(o.geometry));
+  return out;
+}
+
+describe('drawing rooms', () => {
+  /** The standard center's rooms, with a window in every wall, drawn into a scene of their own. */
+  function drawnRooms() {
+    const { sim, s } = openCenter(1);
+    for (const r of s.rooms)
+      r.windows.push(
+        { x: r.x + 1, y: r.y, dx: 0, dy: -1 },
+        { x: r.x, y: r.y + 1, dx: -1, dy: 0 },
+        { x: r.x + r.w - 1, y: r.y + 1, dx: 1, dy: 0 },
+      );
+    const scene = new THREE.Scene();
+    const rooms = new RoomsLayer(scene, sim);
+    rooms.sync();
+    return { s, scene, rooms };
+  }
+
+  it("draws a finished room's walls in one go, rather than a box at a time", () => {
+    const { s, scene } = drawnRooms();
+    const wall = mat(0xf7f1e5, 0.85);
+    let walls = 0;
+    scene.traverse((o) => o instanceof THREE.Mesh && o.material === wall && walls++);
+    expect(s.rooms.filter((r) => r.done).length).toBeGreaterThan(1);
+    expect(walls).toBe(s.rooms.filter((r) => r.done).length);
+  });
+
+  it('frees every shape a room was drawn with once it is rebuilt or taken away', () => {
+    const { s, scene, rooms } = drawnRooms();
+    const disposed = new Set<THREE.BufferGeometry>();
+    const before = shapes(scene);
+    for (const g of before) g.addEventListener('dispose', () => disposed.add(g));
+    // one room rebuilt with another window, and the rest knocked down
+    const [kept] = s.rooms;
+    kept!.windows.pop();
+    s.rooms = [kept!];
+    rooms.sync();
+    const after = shapes(scene);
+    const leaked = [...before].filter((g) => !after.has(g) && isOwned(g) && !disposed.has(g));
+    expect(before.size - after.size).toBeGreaterThan(0);
+    expect(leaked).toEqual([]);
   });
 });

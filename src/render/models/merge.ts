@@ -3,6 +3,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
+import { isOwned, owned } from '../disposal';
+
 /** The merged shapes made for each kind of model, kept for good and shared by every copy, like those in parts.ts. */
 const merged = new Map<string, (THREE.BufferGeometry | null)[]>();
 
@@ -37,10 +39,13 @@ const vertices = (parts: THREE.Mesh[]) => parts.reduce((n, m) => n + m.geometry.
 
 /**
  * Merge the parts of a model that never move into one mesh for each material, in place. Parts named in the model's
- * parts (see `ItemParts`), and anything inside them, are left as they are so they can still move. Every model of the
- * same kind must be built the same way, so the merged shapes made for the first can be shared by the rest.
+ * parts (see `ItemParts`), and anything inside them, are left as they are so they can still move.
+ *
+ * Given a kind, the merged shapes made for the first model of that kind are shared by every later one, so every model
+ * of a kind must be built the same way. Without one, the merged shapes belong to this model alone (see `owned`), to be
+ * freed with it, and the parts' own shapes it owned are freed now.
  */
-export function mergeStill(root: THREE.Object3D, kind: string) {
+export function mergeStill(root: THREE.Object3D, kind?: string) {
   root.updateMatrixWorld(true);
   const moving = new Set<THREE.Object3D>();
   named(root.userData, moving);
@@ -55,15 +60,17 @@ export function mergeStill(root: THREE.Object3D, kind: string) {
   // a part alone gains nothing from merging
   const groups = [...buckets.values()].filter((b) => b.length > 1);
   const toRoot = root.matrixWorld.clone().invert();
-  let shapes = merged.get(kind);
+  let shapes = kind === undefined ? undefined : merged.get(kind);
   if (!shapes) {
-    shapes = groups.map((b) =>
-      mergeGeometries(
+    shapes = groups.map((b) => {
+      // null if the shapes cannot be merged after all, whatever the types say
+      const shape = mergeGeometries(
         b.map((m) => m.geometry.clone().applyMatrix4(toRoot.clone().multiply(m.matrixWorld))),
         false,
-      ),
-    );
-    merged.set(kind, shapes);
+      ) as THREE.BufferGeometry | null;
+      return shape && kind === undefined ? owned(shape) : shape;
+    });
+    if (kind !== undefined) merged.set(kind, shapes);
   }
   // built differently from the first of its kind, so the shared shapes do not fit: leave its parts as they are
   if (
@@ -79,6 +86,9 @@ export function mergeStill(root: THREE.Object3D, kind: string) {
     mesh.castShadow = first.castShadow;
     mesh.receiveShadow = first.receiveShadow;
     root.add(mesh);
-    for (const m of b) m.removeFromParent();
+    for (const m of b) {
+      m.removeFromParent();
+      if (kind === undefined && isOwned(m.geometry)) m.geometry.dispose();
+    }
   });
 }

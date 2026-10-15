@@ -7,6 +7,7 @@ import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { disposeOwned, owned } from './disposal';
 import { emojiTexture } from './models/emoji';
+import { mergeStill } from './models/merge';
 import { mat, put } from './models/parts';
 import { outerPanes } from './outer-walls';
 import { roomShape } from './room-walls';
@@ -68,18 +69,19 @@ export class RoomsLayer {
     const key = panes.map((p) => `${p.horizontal ? 'n' : 'w'}${p.a}`).join('|');
     if (key === this.panesKey) return;
     this.panesKey = key;
-    for (const old of [...this.panes.children]) {
-      this.panes.remove(old);
-      if (old instanceof THREE.Mesh && old.geometry instanceof THREE.BoxGeometry) old.geometry.dispose();
-    }
+    this.dispose(this.panes);
+    this.panes = new THREE.Group();
     for (const p of panes) {
       const len = p.b - p.a;
       const mid = (p.a + p.b) / 2;
       const y = OUTER_PANE_Y0 + OUTER_PANE_H / 2;
       if (p.horizontal)
-        put(this.panes, new THREE.BoxGeometry(len, OUTER_PANE_H, 0.04), this.paneGlass, mid, y, plot.y0 + 0.02);
-      else put(this.panes, new THREE.BoxGeometry(0.04, OUTER_PANE_H, len), this.paneGlass, plot.x0 + 0.02, y, mid);
+        put(this.panes, owned(new THREE.BoxGeometry(len, OUTER_PANE_H, 0.04)), this.paneGlass, mid, y, plot.y0 + 0.02);
+      else
+        put(this.panes, owned(new THREE.BoxGeometry(0.04, OUTER_PANE_H, len)), this.paneGlass, plot.x0 + 0.02, y, mid);
     }
+    mergeStill(this.panes);
+    this.scene.add(this.panes);
   }
 
   /** Build a room's walls, windows, door and sign, in blueprint blue until it is finished. */
@@ -95,7 +97,9 @@ export class RoomsLayer {
     const { boxes, doorway } = roomShape(room, this.sim.world.plot);
     for (const b of boxes) {
       const len = b.b - b.a;
-      const geo = b.horizontal ? new THREE.BoxGeometry(len, b.h, b.thick) : new THREE.BoxGeometry(b.thick, b.h, len);
+      const geo = owned(
+        b.horizontal ? new THREE.BoxGeometry(len, b.h, b.thick) : new THREE.BoxGeometry(b.thick, b.h, len),
+      );
       const mid = (b.a + b.b) / 2;
       const mesh = put(
         g,
@@ -112,7 +116,14 @@ export class RoomsLayer {
       if (tall) {
         // door leaf, propped open into the room
         const pivot = new THREE.Group();
-        const leaf = put(pivot, new THREE.BoxGeometry(0.8, hgt - 0.14, 0.05), materials.trim, 0.4, (hgt - 0.14) / 2, 0);
+        const leaf = put(
+          pivot,
+          owned(new THREE.BoxGeometry(0.8, hgt - 0.14, 0.05)),
+          materials.trim,
+          0.4,
+          (hgt - 0.14) / 2,
+          0,
+        );
         leaf.castShadow = room.done;
         if (horizontal) {
           pivot.position.set(at + 0.1, 0, fixed);
@@ -131,15 +142,14 @@ export class RoomsLayer {
       sprite.position.set(horizontal ? at + 0.5 : fixed, tall ? hgt + 0.55 : 1.0, horizontal ? fixed : at + 0.5);
       g.add(sprite);
     }
+    // a finished room's walls and trim are drawn in a call each; the glass, and a blueprint, are see-through and drawn pane by pane
+    mergeStill(g);
     return g;
   }
 
-  /** Take a group out of the scene and free its box geometry and its own sign. */
+  /** Take a group out of the scene and free its own shapes and sign. */
   private dispose(g: THREE.Object3D) {
     this.scene.remove(g);
     disposeOwned(g);
-    g.traverse((o) => {
-      if (o instanceof THREE.Mesh && o.geometry instanceof THREE.BoxGeometry) o.geometry.dispose();
-    });
   }
 }
