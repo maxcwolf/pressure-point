@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
-const PORT = 5183;
+/** The dev server's port: 5183 as usual, or another set in E2E_PORT, so a second checkout can run its own. */
+const PORT = Number(process.env.E2E_PORT ?? 5183);
 /** Point the suite at another running build with VISUAL_URL, for example to compare against an older version. */
 const elsewhere = process.env.VISUAL_URL;
 
@@ -27,7 +28,7 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: 'yarn dev',
+          command: `yarn vite --port ${PORT} --strictPort`,
           url: `http://localhost:${PORT}`,
           reuseExistingServer: !process.env.CI,
           timeout: 60_000,

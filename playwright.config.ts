@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
-const PORT = 5183;
+/** The dev server's port: 5183 as usual, or another set in E2E_PORT, so a second checkout can run its own. */
+const PORT = Number(process.env.E2E_PORT ?? 5183);
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -24,7 +25,7 @@ export default defineConfig({
   },
   // the dev build exposes window.pp, which the tests use to read state and skip ahead in time
   webServer: {
-    command: 'yarn dev',
+    command: `yarn vite --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
