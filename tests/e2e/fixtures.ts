@@ -63,7 +63,7 @@ interface Handle {
 interface Finders {
   item(type: string, nth: number): Point & { id: number };
   staff(role: string): Point & { id: number; name: string };
-  guest(): Point & { id: number; name: string };
+  guest(staying: boolean): Point & { id: number; name: string };
   roomFloor(type: string): Point & { id: number };
   lawn(): Point;
   freePatch(w: number, h: number): { rect: Rect; from: Point; to: Point };
@@ -195,14 +195,15 @@ function installFinders() {
       }
       return fail(`no ${role} in plain view`);
     },
-    /** A clickable point on a guest who is in plain view. */
-    guest() {
+    /** A clickable point on a guest who is in plain view, and if asked, not on their way out. */
+    guest(staying) {
       for (const g of pp().state.guests) {
+        if (staying && g.state === 'leaving') continue;
         const p = pp().view.project(g.x, g.y, 0.6);
         const hit = pp().view.pick(p.x, p.y);
         if (onCanvas(p) && hit?.kind === 'guest' && hit.id === g.id) return { ...p, id: g.id, name: g.name };
       }
-      return fail('no guest in plain view');
+      return fail(staying ? 'no staying guest in plain view' : 'no guest in plain view');
     },
     /** A clickable point on bare floor in a room of this type. */
     roomFloor(type) {
@@ -354,9 +355,12 @@ export class Game {
     await this.clickAt(who);
     return who;
   }
-  /** Click a guest who is in plain view. Returns who it was. */
-  async clickGuest() {
-    const who = await this.find('guest');
+  /**
+   * Click a guest who is in plain view, or with `staying`, one who is not leaving, as some of the inspector only shows
+   * for those. Returns who it was.
+   */
+  async clickGuest(opts: { staying?: boolean } = {}) {
+    const who = await this.find('guest', !!opts.staying);
     await this.clickAt(who);
     return who;
   }

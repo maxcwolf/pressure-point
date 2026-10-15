@@ -590,7 +590,8 @@ test.describe('running a center', () => {
     await expect(page.locator('#objectives .outbreak')).toContainText('calming sessions left');
     await game.eval((pp) => (pp.state.speed = 0));
     await game.settle();
-    const spot = await game.clickGuest();
+    // the calming button is not offered to a guest who is going home, and after a minute some are
+    const spot = await game.clickGuest({ staying: true });
     await expect(page.locator('#inspector')).toContainText('Condition');
     const calms = await game.eval((pp, name) => {
       const g = pp.state.guests.find((x) => x.name === name)!;
