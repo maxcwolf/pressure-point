@@ -9,7 +9,7 @@ import { money } from '../../core/format';
 import { loadDisciplinePrefs, loadSandbox, saveDisciplinePref, saveSandbox } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
 import { cx } from '../lib/cx';
-import { SettingRow } from './SettingsPanel';
+import { SettingRow } from './SettingRow';
 
 export interface SandboxPanelProps {
   audio: Audio;

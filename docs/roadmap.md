@@ -118,7 +118,7 @@ A fifth discipline, wanted on 15 October 2026, planned the same day and built in
 
 Max's order, from 15 October 2026, once the Shaman's third stage is done:
 
-1. **Game settings** [33]: key rebinding, edge scrolling and the autosave interval.
+1. **Game settings** [33]: key rebinding, edge scrolling and the autosave interval. Done: a Controls section in Settings, kept for every game on the computer. Keys are kept by where they sit on the keyboard, a key already in use swaps over, and Esc and the arrows are fixed. Edge scrolling is off to begin with. Autosave every 12 seconds, minute or 5 minutes, or only on leaving.
 2. **More land** [15]: buying the next plot over to grow the building.
 3. **Difficulty presets:** Relaxed, Standard and Demanding.
 4. **Regulars** [44]: guests who come back, greeted by name, and grow loyal. The Shaman's vision quest waits on them.
@@ -128,7 +128,7 @@ Max's order, from 15 October 2026, once the Shaman's third stage is done:
 - **Machine upgrades** [24]: each treatment machine upgraded to be more reliable and effective, paid for and fitted by a caretaker with a Mechanics course. Research [24] can come later, if upgrades alone feel thin. Done: three levels for each treatment table, mat and the Posture Scanner, one opening with each star, installed by a Caretaker with the Mechanics course. Each level slows wear and adds 3% to the chance a treatment works.
 - **New rooms** [30, 44]: a Recovery Lounge (some treatments leave guests needing a rest), a Qi Gong Studio with group classes on a weekly calendar, and a second diagnosis room. The Recovery Lounge is done: no staff, open at the first star, with a Recliner for each guest resting at once. Six of the harder treatments need a rest after, and work 10% less often without a free Recliner. The Qi Gong Studio is done too: a Qi Gong Instructor leads classes on the days its timetable sets, for class-goers who come in just for them and book two days ahead. Since a day is only six seconds, a class starts on its day once the Instructor is in and someone is on a spot, and lasts ten seconds, rather than taking up a whole day. Class-goers skip Reception, as the walk in takes about two days.
 - **Regulars** [44]: guests who come back, greeted by name, and grow loyal.
-- **Treatment gags** [31], **a radio** [34] and **game settings** [33] (key rebinding, edge scrolling, autosave interval), fitted in where there is room.
+- **Treatment gags** [31] and **a radio** [34], fitted in where there is room. **Game settings** [33] are done (see Next, in order).
 
 ## Phase 12: More building
 

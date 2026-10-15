@@ -1377,6 +1377,35 @@ test.describe('the Items menu', () => {
   });
 });
 
+test.describe('controls', () => {
+  test('a key can be set to another in the settings, and the pause menu shows it', async ({ game, page }) => {
+    await game.start();
+    await page.locator('#sys').getByTitle('Menu').click();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.getByRole('button', { name: 'Pause: Space' }).click();
+    await expect(page.locator('#settings-panel')).toContainText('Press a key');
+    // Esc gives up on the key, and leaves the settings open
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('button', { name: 'Pause: Space' })).toBeVisible();
+    await page.getByRole('button', { name: 'Pause: Space' }).click();
+    await page.keyboard.press('KeyP');
+    await expect(page.getByRole('button', { name: 'Pause: P' })).toBeVisible();
+    await page.getByRole('button', { name: 'Every 12 seconds' }).click();
+    await expect(page.getByRole('button', { name: 'Every minute' })).toBeVisible();
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.locator('#modal')).toContainText('The game autosaves every minute.');
+    await expect(page.locator('#modal .keys')).toContainText('P pause');
+    await page.getByRole('button', { name: 'Resume' }).click();
+
+    await game.eval((pp) => (pp.state.speed = 1));
+    await page.keyboard.press('Space');
+    expect(await game.eval((pp) => pp.state.speed), 'Space no longer pauses').toBe(1);
+    await page.keyboard.press('KeyP');
+    expect(await game.eval((pp) => pp.state.speed)).toBe(0);
+    expect(game.errors).toEqual([]);
+  });
+});
+
 test.describe('visitors', () => {
   test('a VIP writes ahead, tours the center, and leaves a report', async ({ game, page }) => {
     await game.start();

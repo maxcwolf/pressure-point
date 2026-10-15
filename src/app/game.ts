@@ -12,6 +12,7 @@ import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
 import { heatTiles, overlayPalette } from '../ui/lib/overlays';
+import { trackMouse } from './edge';
 import { reloadInto } from './handoff';
 import { bindKeyboard } from './keyboard';
 import { runLoop } from './loop';
@@ -120,6 +121,7 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     view,
     ui,
     held,
+    mouse: trackMouse(),
     refresh,
     save: autosaveNow,
     /** Color the floor for the overlay showing, or clear it. */

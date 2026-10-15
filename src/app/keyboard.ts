@@ -1,6 +1,7 @@
-// The keyboard: shortcuts, and which keys are held for moving the camera.
+// The keyboard: shortcuts, set in the settings, and which keys are held for moving the camera.
 
 import type { GameState } from '../core/state/types';
+import { actionFor, type KeyBindings, loadControls } from '../storage/controls';
 import type { HudState } from '../ui/hud';
 import type { Tools } from './tools/tools';
 
@@ -13,12 +14,30 @@ export interface KeyboardTargets {
   onChange: () => void;
 }
 
-/** The panning keys, by where they sit on the keyboard rather than the letter the layout gives them. */
-const PAN_KEYS: Readonly<Record<string, string>> = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
+/** The arrow keys, which always move the camera as well as whatever keys are set to. */
+const ARROWS: Readonly<Record<string, [number, number]>> = {
+  ArrowUp: [0, 1],
+  ArrowDown: [0, -1],
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+};
 
-/** The name a key is held under: W, A, S or D by position, so they pan on any layout; anything else by what it types. */
-export function heldName(e: Pick<KeyboardEvent, 'key' | 'code'>): string {
-  return PAN_KEYS[e.code] ?? e.key.toLowerCase();
+/** Which way the keys held move the camera: -1, 0 or 1 across and up. */
+export function heldPan(held: ReadonlySet<string>, keys: Readonly<KeyBindings>): [number, number] {
+  let across = 0;
+  let up = 0;
+  for (const code of held) {
+    const arrow = ARROWS[code];
+    if (arrow) {
+      across += arrow[0];
+      up += arrow[1];
+    }
+  }
+  if (held.has(keys.up)) up++;
+  if (held.has(keys.down)) up--;
+  if (held.has(keys.left)) across--;
+  if (held.has(keys.right)) across++;
+  return [Math.sign(across), Math.sign(up)];
 }
 
 /** The kinds of input that take no typing, so shortcuts still work with one of them focused. */
@@ -37,31 +56,36 @@ export function bindKeyboard({ state, tools, ui, onChange }: KeyboardTargets): R
   window.addEventListener('keydown', (e) => {
     // Esc still backs out of a field, but every other key is typing
     if (typingIn(e.target) && e.key !== 'Escape') return;
-    const k = e.key.toLowerCase();
     if (ui.blocking) {
       // Esc backs out of the pause menu and its dialogs
-      if (k === 'escape') ui.dismiss();
+      if (e.key === 'Escape') ui.dismiss();
       return;
     }
     // Space would scroll the page, held down or not
-    if (k === ' ') e.preventDefault();
+    if (e.code === 'Space') e.preventDefault();
     // a key held down repeats, and a chord with Ctrl, Cmd or Alt is meant for the browser.
     // On a Mac the key-up of a Cmd chord never comes, so such a key is not counted as held either.
     if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-    held.add(heldName(e));
-    if (k === 'escape') {
+    held.add(e.code);
+    if (e.key === 'Escape') {
       // Esc cancels whatever is in hand; with nothing in hand it opens the pause menu
       if (tools.active) tools.back();
       else if (ui.closeMenu()) void 0;
       else if (tools.selected) tools.select(null);
       else ui.openPauseMenu();
-    } else if (k === 'enter') tools.planBuild();
-    else if (k === 'r') tools.rotate();
-    else if (k === ' ') state.speed = state.speed === 0 ? 1 : 0;
-    else if (k === '1' || k === '2' || k === '3') state.speed = Number(k);
+      onChange();
+      return;
+    }
+    const action = actionFor(loadControls().keys, e.code);
+    if (action === 'build') tools.planBuild();
+    else if (action === 'rotate') tools.rotate();
+    else if (action === 'pause') state.speed = state.speed === 0 ? 1 : 0;
+    else if (action === 'speed1') state.speed = 1;
+    else if (action === 'speed2') state.speed = 2;
+    else if (action === 'speed3') state.speed = 3;
     onChange();
   });
-  window.addEventListener('keyup', (e) => held.delete(heldName(e)));
+  window.addEventListener('keyup', (e) => held.delete(e.code));
   window.addEventListener('blur', () => {
     held.clear();
   });

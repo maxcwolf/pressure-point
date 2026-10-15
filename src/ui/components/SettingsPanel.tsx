@@ -8,7 +8,8 @@ import type { Sim } from '../../core/sim/sim';
 import { disciplineHere } from '../../core/state/game';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
-import { cx } from '../lib/cx';
+import { ControlSettings } from './ControlSettings';
+import { SettingRow } from './SettingRow';
 
 export interface SettingsPanelProps {
   audio: Audio;
@@ -18,43 +19,7 @@ export interface SettingsPanelProps {
   onChange?: (() => void) | undefined;
 }
 
-export interface SettingRowProps {
-  icon: string;
-  name: string;
-  desc: string;
-  on: boolean;
-  /** Why the setting cannot be changed, shown in place of the switch. */
-  locked?: string;
-  onToggle?: () => void;
-}
-
-/** One settings row: a switch, or a label when it cannot be changed. */
-export function SettingRow({ icon, name, desc, on, locked = '', onToggle }: SettingRowProps) {
-  return (
-    <li class={locked ? 'locked' : ''}>
-      <i>{icon}</i>
-      <div>
-        <b>{name}</b>
-        <span>{desc}</span>
-      </div>{' '}
-      {locked ? (
-        <em>{locked}</em>
-      ) : (
-        <button
-          class={cx('switch', on && 'on')}
-          role="switch"
-          aria-checked={on ? 'true' : 'false'}
-          aria-label={name}
-          onClick={onToggle}
-        >
-          <span />
-        </button>
-      )}
-    </li>
-  );
-}
-
-/** Switches for which treatments are offered, and for sound and music. */
+/** Switches for which treatments are offered, the controls, and sound and music. */
 export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
   const redraw = useRedraw();
   /** Whether a discipline is switched on, in this game or for new ones. */
@@ -108,6 +73,13 @@ export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
           ? 'Switching a treatment off hides its room, staff and equipment and stops its guests arriving. Anything already built stays where it is.'
           : 'These choices apply to new games. A game in progress keeps its own, which you can change from its pause menu.'}
       </p>
+      <ControlSettings
+        onChange={() => {
+          audio.unlock();
+          audio.play('blip');
+          onChange?.();
+        }}
+      />
       <h4>Audio</h4>
       <ul>
         <SettingRow

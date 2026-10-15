@@ -98,3 +98,53 @@
 .switch.on span {
   left: 24px;
 }
+
+.settings .choice {
+  pointer-events: auto;
+  flex: none;
+  border: 2.5px solid var(--navy);
+  border-radius: 10px;
+  padding: 4px 12px;
+  font-weight: 600;
+  font-size: 13.5px;
+  background: var(--cream);
+  box-shadow: 0 3px 0 rgba(36, 56, 74, 0.3);
+}
+
+.settings .key-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.settings .key-list li {
+  justify-content: space-between;
+  padding: 5px 9px 5px 12px;
+  font-size: 14px;
+}
+
+.settings .keycap {
+  pointer-events: auto;
+  flex: none;
+  min-width: 46px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fff;
+  border: 2px solid var(--navy);
+  border-bottom-width: 3.5px;
+  border-radius: 7px;
+  padding: 2px 8px;
+}
+
+.settings .keycap.waiting {
+  background: var(--sand);
+}
+
+.settings .link {
+  pointer-events: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  text-decoration: underline;
+}

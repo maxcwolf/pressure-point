@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import { DRAG_PX, isClick, isDragging, QUICK_MS, QUICK_PX } from '../../src/app/click';
-import { bindKeyboard } from '../../src/app/keyboard';
+import { EDGE_PX, edgePan } from '../../src/app/edge';
+import { bindKeyboard, heldPan } from '../../src/app/keyboard';
 import type { GameState } from '../../src/core/state/types';
+import {
+  DEFAULT_KEYS,
+  defaultControls,
+  forgetControls,
+  loadControls,
+  rebind,
+  saveControls,
+} from '../../src/storage/controls';
 
 describe('telling a click from a drag', () => {
   it('does not call the few pixels of drift in an ordinary click a drag', () => {
@@ -44,6 +53,15 @@ describe('telling a click from a drag', () => {
 describe('keyboard shortcuts', () => {
   /** Bind the keyboard to a stand-in window and game, and return a way to press keys. */
   function setup() {
+    const store = new Map<string, string>();
+    globalThis.localStorage = {
+      /** Read a stored value, or null if there is none. */
+      getItem: (k: string) => store.get(k) ?? null,
+      /** Store a value. */
+      setItem: (k: string, v: string) => void store.set(k, v),
+    } as Storage;
+    forgetControls();
+    saveControls(defaultControls());
     const win = new EventTarget();
     Object.assign(globalThis, { window: win });
     const state = { speed: 1 } as GameState;
@@ -71,20 +89,20 @@ describe('keyboard shortcuts', () => {
 
   it('pauses once for a held Space, however long the key repeats', () => {
     const { state, press } = setup();
-    press(' ');
-    for (let i = 0; i < 5; i++) press(' ', { repeat: true });
+    press(' ', { code: 'Space' });
+    for (let i = 0; i < 5; i++) press(' ', { code: 'Space', repeat: true });
     expect(state.speed).toBe(0);
   });
 
   it('leaves chords with Ctrl, Cmd or Alt to the browser', () => {
     const { state, rotations, held, press } = setup();
-    press('3', { ctrlKey: true });
-    press('r', { metaKey: true });
-    press('d', { metaKey: true });
+    press('3', { code: 'Digit3', ctrlKey: true });
+    press('r', { code: 'KeyR', metaKey: true });
+    press('d', { code: 'KeyD', metaKey: true });
     expect(state.speed).toBe(1);
     expect(rotations).toEqual([]);
     // on a Mac the key-up of a Cmd chord never arrives, so it must not count as held for panning
-    expect(held.has('d')).toBe(false);
+    expect(held.has('KeyD')).toBe(false);
   });
 
   it('pans with W, A, S and D by where they are on the keyboard, whatever letters the layout puts there', () => {
@@ -92,11 +110,40 @@ describe('keyboard shortcuts', () => {
     // the W key on a Russian layout types ц
     press('ц', { code: 'KeyW' });
     press('ф', { code: 'KeyA' });
-    expect([...held]).toEqual(['w', 'a']);
+    expect(heldPan(held, DEFAULT_KEYS)).toEqual([-1, 1]);
     release('ц', { code: 'KeyW' });
-    expect([...held]).toEqual(['a']);
-    // and the arrows, which have no letters to change
+    expect(heldPan(held, DEFAULT_KEYS)).toEqual([-1, 0]);
+    // and the arrows, whatever the keys are set to
     press('ArrowUp', { code: 'ArrowUp' });
-    expect(held.has('arrowup')).toBe(true);
+    expect(heldPan(held, DEFAULT_KEYS)).toEqual([-1, 1]);
+  });
+
+  it('acts on the keys as they are set, by where they sit', () => {
+    const { state, rotations, press } = setup();
+    saveControls({ ...loadControls(), keys: rebind(rebind(DEFAULT_KEYS, 'rotate', 'KeyQ'), 'speed3', 'KeyR') });
+    press('q', { code: 'KeyQ' });
+    expect(rotations).toEqual([1]);
+    press('r', { code: 'KeyR' });
+    expect(rotations, 'R no longer rotates').toEqual([1]);
+    expect(state.speed).toBe(3);
+  });
+});
+
+describe('moving the camera', () => {
+  it('cancels out opposite keys, and holds a direction while either of its keys is down', () => {
+    expect(heldPan(new Set(['KeyW', 'KeyS']), DEFAULT_KEYS)).toEqual([0, 0]);
+    expect(heldPan(new Set(['KeyD', 'ArrowRight']), DEFAULT_KEYS)).toEqual([1, 0]);
+    expect(heldPan(new Set(['KeyS', 'ArrowLeft']), DEFAULT_KEYS)).toEqual([-1, -1]);
+    expect(heldPan(new Set(), DEFAULT_KEYS)).toEqual([0, 0]);
+  });
+
+  it('moves from the edge of the window, only right at the edge', () => {
+    expect(edgePan(400, 300, 800, 600)).toEqual([0, 0]);
+    expect(edgePan(0, 300, 800, 600)).toEqual([-1, 0]);
+    expect(edgePan(799, 300, 800, 600)).toEqual([1, 0]);
+    expect(edgePan(400, 0, 800, 600)).toEqual([0, 1]);
+    expect(edgePan(400, 599, 800, 600)).toEqual([0, -1]);
+    expect(edgePan(2, 597, 800, 600), 'a corner moves both ways').toEqual([-1, -1]);
+    expect(edgePan(EDGE_PX, 300, 800, 600), 'just inside').toEqual([0, 0]);
   });
 });

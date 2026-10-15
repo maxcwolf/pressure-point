@@ -9,6 +9,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Pay off the inspector.** A failed inspection now asks before the fine is paid: pay it, or make it go away for twice as much (at least $10,000). One time in ten, word gets out: reputation takes a knock and the inspector is back within the month.
 - **A Shaman's ward.** A mishap's notice has a **Ward it off** button while a Shaman is here. It costs only their time, and holds three times in four.
 - **Five new announcements, all voiced:** three more ways to open the doors (one of them praising Rang), a welcome to seekers that mentions the gift shop takes credit cards, and a reminder that Mercury is no longer in retrograde.
+- **Controls in Settings:** set any key to another (they swap if already in use), switch on **edge scrolling**, and choose how often the game autosaves: every 12 seconds, every minute, every 5 minutes, or only on leaving. Kept for every game on this computer.
 
 ## v0.23.1
 

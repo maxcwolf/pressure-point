@@ -1,7 +1,9 @@
 // The pause menu.
 
 import { GAME_TITLE } from '../../../core/data';
+import { loadControls } from '../../../storage/controls';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { autosaveNote } from '../../lib/keys';
 import { Button } from '../common/Button';
 import { Controls } from './Controls';
 import { Dialog } from './Dialog';
@@ -13,7 +15,7 @@ export function PauseMenu() {
   return (
     <Dialog>
       <h2>{GAME_TITLE}</h2>
-      <Controls /> <p class="sub">The game autosaves every few seconds. Use Save or load to keep named saves.</p>{' '}
+      <Controls /> <p class="sub">{autosaveNote(loadControls().autosave)} Use Save or load to keep named saves.</p>{' '}
       <div class="btnrow">
         <Button
           class="go"

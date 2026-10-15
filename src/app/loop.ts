@@ -2,11 +2,12 @@
 
 import type { Sim } from '../core/sim/sim';
 import type { View } from '../render/view';
+import { loadControls } from '../storage/controls';
 import type { HudState } from '../ui/hud';
+import { edgePan, type MouseSpot } from './edge';
+import { heldPan } from './keyboard';
 import type { Refresh } from './refresh';
 
-/** Seconds of play between autosaves. */
-const AUTOSAVE_EVERY = 12;
 /** Seconds between redraws of the floor overlay. */
 const OVERLAY_EVERY = 0.4;
 
@@ -17,6 +18,8 @@ export interface LoopParts {
   ui: HudState;
   /** Keys currently held down, for moving the camera. */
   held: ReadonlySet<string>;
+  /** Where the mouse is, for edge scrolling. */
+  mouse: MouseSpot;
   refresh: Refresh;
   save: () => void;
   /** Redraw the floor overlay, if one is showing. */
@@ -24,7 +27,7 @@ export interface LoopParts {
 }
 
 /** Run the game until the page goes away: move the camera, advance the game, draw it, refresh the interface. */
-export function runLoop({ sim, view, ui, held, refresh, save, overlay }: LoopParts) {
+export function runLoop({ sim, view, ui, held, mouse, refresh, save, overlay }: LoopParts) {
   let prev = performance.now();
   let sinceSave = 0;
   let sinceOverlay = 0;
@@ -33,12 +36,16 @@ export function runLoop({ sim, view, ui, held, refresh, save, overlay }: LoopPar
     const dt = Math.min(0.1, (now - prev) / 1000);
     prev = now;
 
+    const controls = loadControls();
     if (!ui.blocking) {
+      let [across, up] = heldPan(held, controls.keys);
+      if (controls.edgeScroll && mouse.at) {
+        const [ex, ey] = edgePan(mouse.at.x, mouse.at.y, window.innerWidth, window.innerHeight);
+        across = Math.sign(across + ex);
+        up = Math.sign(up + ey);
+      }
       const pan = dt * view.dist * 0.55;
-      if (held.has('w') || held.has('arrowup')) view.pan(0, pan);
-      if (held.has('s') || held.has('arrowdown')) view.pan(0, -pan);
-      if (held.has('a') || held.has('arrowleft')) view.pan(-pan, 0);
-      if (held.has('d') || held.has('arrowright')) view.pan(pan, 0);
+      if (across || up) view.pan(across * pan, up * pan);
     }
 
     sim.tick(dt);
@@ -55,7 +62,8 @@ export function runLoop({ sim, view, ui, held, refresh, save, overlay }: LoopPar
       overlay();
     }
     sinceSave += dt;
-    if (sinceSave > AUTOSAVE_EVERY) {
+    // with autosaving set to only on leaving, the game is saved as it is left or hidden
+    if (controls.autosave && sinceSave > controls.autosave) {
       sinceSave = 0;
       save();
     }

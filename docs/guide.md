@@ -103,6 +103,8 @@ Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupunct
 
 **Settings**, on the title screen and in the pause menu (☰), switches acupuncture, reiki, sound healing, the Shaman and the Qi Gong classes on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Sound and music are there too.
 
+The **Controls** there are kept for every game on this computer: **edge scrolling** (off to begin with), how often the game **autosaves** (every 12 seconds, every minute, every 5 minutes, or only on leaving), and the **keys**. Click a key and press the one you want in its place; a key already in use swaps over. The arrow keys always move the camera and Esc always cancels, whatever the keys are set to.
+
 ## Controls
 
 | Input             | Action                                                |
@@ -114,10 +116,12 @@ Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupunct
 | Esc / right click | Cancel; Esc with nothing in hand opens the pause menu |
 | Space, 1 2 3      | Pause, game speed                                     |
 
+These are the keys to begin with; any of them but Esc can be changed in **Settings**.
+
 The pause menu (☰ or Esc) has **Main menu**, which saves and returns to the title screen, and in the desktop app **Exit game**, which saves and quits. The title screen has **Exit** there too. The browser version has no Exit, because a browser tab cannot close itself.
 
 ## Saved games
 
-The game autosaves every few seconds, in the browser and in the desktop app alike. **Save or load** in the pause menu (☰) keeps up to 20 named saves, and the title screen can load any of them. Starting a new game or loading a different one never destroys the game you were in: it moves to a "Previous game" slot.
+The game autosaves every 12 seconds unless **Settings** says otherwise, and always as you leave it, in the browser and in the desktop app alike. **Save or load** in the pause menu (☰) keeps up to 20 named saves, and the title screen can load any of them. Starting a new game or loading a different one never destroys the game you were in: it moves to a "Previous game" slot.
 
 Saves live in the browser's storage, so the web version and the desktop app each have their own. **Export** writes a save to a file and **Import** reads one back, which is how to back a game up or move it from one to the other.

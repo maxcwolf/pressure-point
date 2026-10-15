@@ -19,12 +19,12 @@ Dependencies point toward `core`. A lint rule and a separate TypeScript project 
 
 `src/app/loop.ts` runs this once per frame:
 
-1. Move the camera for any keys held down.
+1. Move the camera for any keys held down, or the mouse at the edge of the window if edge scrolling is on.
 2. `sim.tick(dt)` advances the game.
 3. `view.render(dt)` draws it.
 4. `sim.drain()` hands over what happened (sounds, toasts, floating text) and the interface shows it.
 5. The interface redraws if something changed, or five times a second regardless.
-6. Every twelve seconds, autosave.
+6. Autosave, every twelve seconds unless the player has chosen otherwise (`storage/controls.ts`).
 
 Input goes the other way. Pointer and keyboard handlers in `src/app/` call the build tools or the simulation, and the next frame shows the result.
 
