@@ -112,6 +112,15 @@ describe('treating guests on the mats', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
+  it('sends guests on the mats back to the line when the healer leaves mid-session', () => {
+    const { sim, healer, mats } = withStudio(1);
+    playWith(sim, 'tune', 600);
+    runUntil(sim, () => lying(sim, mats) > 0, 600);
+    sim.fire(healer.id);
+    expect(lying(sim, mats)).toBe(0);
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
   it('waits for the second mat before it starts, but not for long', () => {
     const { sim, s, mats, bowls, healer } = withStudio(3);
     runUntil(sim, () => healer.state === 'atPost', 200);

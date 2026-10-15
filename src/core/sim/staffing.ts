@@ -50,7 +50,7 @@ import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaun
 import { goTo, halt, moveAlong } from './movement';
 import { breakDue } from './policy';
 import { hasItem } from './progress';
-import { matsOf } from './sessions';
+import { isLeadStation, matsOf } from './sessions';
 import { fedUp, goRefresh, growNeeds, refreshed, refreshSeconds, wants, wantsRefresh } from './staff-needs';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
@@ -244,6 +244,12 @@ function leavePost(ctx: SimContext, st: Staff) {
     // whoever they had called or were seeing goes back to the line, rather than wait on the table for nobody
     const g = guestById(ctx, it.serving);
     if (g) resetGuest(ctx, g);
+    // and at the bowls, so does everyone lying on the mats they played for
+    if (isLeadStation(it))
+      for (const m of matsOf(ctx, it)) {
+        const lying = guestById(ctx, m.serving);
+        if (lying) resetGuest(ctx, lying);
+      }
   }
   st.post = 0;
   st.busy = false;
