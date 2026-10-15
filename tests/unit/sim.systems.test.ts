@@ -17,7 +17,6 @@ import {
   addTraining,
   hire,
   inconsistencies,
-  LONG_RUN,
   openCenter,
   run,
   runUntil,
@@ -386,7 +385,7 @@ describe('moving items', () => {
 });
 
 describe('a long session', () => {
-  it.each([1, 2, 3])('stays healthy for an hour of play (seed %i)', { timeout: LONG_RUN }, (seed) => {
+  it.each([1, 2, 3])('stays healthy for an hour of play (seed %i)', (seed) => {
     const { sim, s, therapist } = openCenter(seed);
     addStaffRoom(sim);
     addRestroom(sim);

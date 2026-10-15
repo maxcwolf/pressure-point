@@ -6,13 +6,20 @@
 // measured too, and reported, but only a runaway fails the test.
 import type { Page } from '@playwright/test';
 
-import { expect, test } from '../e2e/fixtures';
+import { expect, type Game, test } from '../e2e/fixtures';
 
 /** What the renderer is holding and how much it drew last frame. */
 interface RendererInfo {
   memory: { geometries: number; textures: number };
   render: { calls: number; triangles: number };
   programs: unknown[] | null;
+}
+
+/** Let no one new in and wait for every guest to be seen to and gone. */
+async function emptyOfGuests(game: Game) {
+  await game.eval((pp) => (pp.state.spawnT = 1e9));
+  for (let i = 0; i < 60 && (await game.eval((pp) => pp.state.guests.length)) > 0; i++) await game.fastForward(15);
+  expect(await game.eval((pp) => pp.state.guests.length), 'every guest has left').toBe(0);
 }
 
 /** The renderer's counters after drawing the next frame. */
@@ -24,8 +31,12 @@ async function rendererInfo(page: Page) {
     const emoji = (await import(/* @vite-ignore */ `${location.origin}/src/render/models/emoji.ts`)) as {
       emojiTextures: () => number;
     };
+    const parts = (await import(/* @vite-ignore */ `${location.origin}/src/render/models/parts.ts`)) as {
+      cachedShapes: () => number;
+    };
     return {
-      geometries: info.memory.geometries,
+      // shared shapes are made the first time something needs them and kept, like emoji
+      geometries: info.memory.geometries - parts.cachedShapes(),
       // emoji are drawn once each and kept, so a new one turning up late in a session is not a leak
       textures: info.memory.textures - emoji.emojiTextures(),
       calls: info.render.calls,
@@ -52,15 +63,19 @@ test.describe('performance', () => {
     await game.buildCenter();
     // warm up: everything that is drawn once and kept, such as each kind of model and emoji, is made now
     await game.fastForward(120);
+    // compared with the center emptied of guests each time, so what is measured is what lasts, not who is in
+    await emptyOfGuests(game);
     const before = await rendererInfo(page);
     // ten minutes of play, drawn as it goes, with guests checked in, diagnosed and treated throughout
+    await game.eval((pp) => (pp.state.spawnT = 1));
     for (let i = 0; i < 20; i++) await game.fastForward(30);
-    const after = await rendererInfo(page);
     const served = await game.eval((pp) => pp.state.stats.healed + pp.state.stats.failed);
+    await emptyOfGuests(game);
+    const after = await rendererInfo(page);
     test.info().annotations.push({ type: 'gpu memory', description: JSON.stringify({ before, after, served }) });
     expect(served, 'guests were treated, so the busy parts of the scene ran').toBeGreaterThan(5);
-    // a person or a mess on the floor may come and go, but nothing should pile up with every guest served
-    expect(after.geometries - before.geometries).toBeLessThan(10);
+    // with every guest gone again, whatever they alone were drawn with should have gone with them
+    expect(after.geometries - before.geometries).toBeLessThan(3);
     expect(after.textures - before.textures).toBeLessThan(5);
     // a shader is compiled the first time each kind of material is drawn, and one may first turn up late
     expect(after.programs - before.programs).toBeLessThanOrEqual(2);

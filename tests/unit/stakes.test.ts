@@ -25,7 +25,7 @@ import type { GameState, Guest } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { puffAge } from '../../src/render/models/sage';
 import { wafting } from '../../src/render/pose';
-import { addReiki, addTraining, hire, inconsistencies, LONG_RUN, openCenter, run, runUntil } from './helpers';
+import { addReiki, addTraining, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
 
 /** A center with a guest in it, waiting in line. */
 function withGuest(seed = 1) {
@@ -143,7 +143,7 @@ describe('bad vibes', () => {
     expect(moraleTarget(ctx, therapist)).toBeCloseTo(settled - VIBES_MORALE);
   });
 
-  it('are cleared by a Reiki Practitioner, wafting sage through the room', { timeout: LONG_RUN }, () => {
+  it('are cleared by a Reiki Practitioner, wafting sage through the room', () => {
     const { sim, s, massage } = openCenter(1);
     s.stars = 2;
     addReiki(sim);
@@ -165,7 +165,7 @@ describe('bad vibes', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
-  it('are left alone by a Caretaker until they learn Smudging', { timeout: LONG_RUN }, () => {
+  it('are left alone by a Caretaker until they learn Smudging', () => {
     const { sim, s, massage } = openCenter(1);
     const caretaker = hire(sim, 'caretaker');
     const ctx = createContext(s);
@@ -186,7 +186,7 @@ describe('bad vibes', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
-  it('are given up on cleanly if the room is knocked down mid-clearing', { timeout: LONG_RUN }, () => {
+  it('are given up on cleanly if the room is knocked down mid-clearing', () => {
     const { sim, s, massage } = openCenter(1);
     s.stars = 2;
     addReiki(sim);

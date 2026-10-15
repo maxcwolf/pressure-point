@@ -45,7 +45,7 @@ import {
 import { SAVE_VERSION } from '../../src/core/state/game';
 import type { GameState, Guest, Room } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { addStaffRoom, hire, inconsistencies, LONG_RUN, openCenter, run, runUntil } from './helpers';
+import { addStaffRoom, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
 
 /** A guest who has just arrived, for checking what they feel. */
 const guest = () => ({ feelings: [] }) as unknown as Guest;
@@ -128,7 +128,7 @@ describe('fresh linens', () => {
     expect(decorOf(table)).toBe(0);
   });
 
-  it('are changed by a Caretaker only once there is a hamper to change them from', { timeout: LONG_RUN }, () => {
+  it('are changed by a Caretaker only once there is a hamper to change them from', () => {
     const { sim, s } = openCenter(1);
     hire(sim, 'caretaker');
     const table = s.items.find((i) => i.type === 'massage_table')!;
@@ -142,7 +142,7 @@ describe('fresh linens', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
-  it('cannot be changed when every hamper is full, until a Caretaker launders one', { timeout: LONG_RUN }, () => {
+  it('cannot be changed when every hamper is full, until a Caretaker launders one', () => {
     const { sim, s } = openCenter(1);
     const ctx = createContext(s);
     const table = s.items.find((i) => i.type === 'massage_table')!;
@@ -218,7 +218,7 @@ describe('temperature', () => {
     expect(warmthAt(ctx, 13, 10)).toBe(IDEAL_TEMP);
   });
 
-  it('leaves a guest treated beside an air conditioner in winter feeling the cold', { timeout: LONG_RUN }, () => {
+  it('leaves a guest treated beside an air conditioner in winter feeling the cold', () => {
     const { sim, s } = openCenter(1);
     expect(sim.placeItem('air_conditioner', 14, 7, 0)).toBeTruthy();
     runUntil(sim, () => s.guests.some((g) => g.feelings.includes('too-cold')), 300);
@@ -240,7 +240,7 @@ describe('staff needs', () => {
     expect(therapist.thirst).toBeGreaterThan(mild * 1.5);
   });
 
-  it('send someone free for a drink, and back to work after', { timeout: LONG_RUN }, () => {
+  it('send someone free for a drink, and back to work after', () => {
     const { sim, therapist } = openCenter(1);
     sim.placeItem('water_cooler', 16, 10, 0);
     runUntil(sim, () => therapist.state === 'atPost', 60);

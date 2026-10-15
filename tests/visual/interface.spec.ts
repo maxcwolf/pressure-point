@@ -213,6 +213,8 @@ test.describe('in a game', () => {
     );
     await game.menu('Items');
     await game.card('Koi Pond').click();
+    // the click scrolls the list as far as it happens to need to, so behind the dialog it is put back at the top
+    await page.locator('#menu .panel').evaluate((panel) => panel.scrollTo(0, 0));
     await screens.shot('karma');
   });
 

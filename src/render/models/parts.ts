@@ -21,6 +21,9 @@ export function mat(color: number, rough = 0.72, emissive = 0): THREE.MeshStanda
 
 const geoCache = new Map<string, THREE.BufferGeometry>();
 
+/** How many shared shapes have been made. Each is kept for good, so this grows only with the shapes seen so far. */
+export const cachedShapes = () => geoCache.size;
+
 /** A shared geometry by key, made on first use. */
 export function cached<T extends THREE.BufferGeometry>(key: string, make: () => T): T {
   let g = geoCache.get(key);

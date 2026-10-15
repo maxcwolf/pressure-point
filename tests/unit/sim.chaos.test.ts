@@ -24,7 +24,6 @@ import {
   addStaffRoom,
   addTraining,
   inconsistencies,
-  LONG_RUN,
   openCenter,
   run,
 } from './helpers';
@@ -202,7 +201,7 @@ const MOVES: Record<string, (sim: Sim) => void> = {
 const WEIGHTS: Record<string, number> = { build: 3, place: 4, move: 2, hire: 3, fire: 2, train: 2 };
 
 describe('a restless player', () => {
-  it.each([1, 2, 3, 4])('never leaves the books unbalanced (seed %i)', { timeout: LONG_RUN }, (seed) => {
+  it.each([1, 2, 3, 4])('never leaves the books unbalanced (seed %i)', (seed) => {
     const { sim, s } = openCenter(seed);
     s.stars = 3;
     // challenges, the year-end awards and new applicants come and go while all this goes on

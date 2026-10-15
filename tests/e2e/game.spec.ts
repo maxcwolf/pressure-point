@@ -2,7 +2,10 @@ import type { Page } from '@playwright/test';
 
 import { expect, type Game, test } from './fixtures';
 
-test.describe('starting out', () => {
+test.describe('drawing', () => {
+  // the one test here that draws: the rest check behavior, and the screenshot tests check the pictures
+  test.use({ draw: true });
+
   test('the title screen leads into a fresh, rendering game', async ({ game, page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Pressure Point Institute' })).toBeVisible();
@@ -15,7 +18,9 @@ test.describe('starting out', () => {
     await expect(page.locator('#advisor')).toContainText('Reception Desk');
     await expect.poll(() => game.eval((pp) => pp.view.renderer.info.render.triangles)).toBeGreaterThan(1000);
   });
+});
 
+test.describe('starting out', () => {
   test('music and sound can be switched off on the title screen', async ({ game, page }) => {
     await page.goto('/');
     const music = page.locator('#title').getByTitle('Music');
@@ -444,6 +449,7 @@ test.describe('running a center', () => {
     expect(stats.arrived).toBeGreaterThan(5);
     expect(stats.healed).toBeGreaterThan(0);
     await expect(page.locator('#stats')).toContainText(`${stats.healed} healed`);
+    await game.draw();
     await expect.poll(() => game.eval((pp) => pp.view.renderer.info.render.triangles)).toBeGreaterThan(5000);
   });
 
@@ -706,14 +712,18 @@ test.describe('controls and saving', () => {
 
   test('the camera pans and zooms', async ({ game, page }) => {
     await game.start();
-    // a plant to watch: when the camera moves right, it slides left across the screen
-    await game.give('plant');
-    const before = await game.itemPoint('plant');
+    // a spot on the ground to watch: when the camera moves right, it slides left across the screen
+    /** How far across the screen the spot is. */
+    const spot = () => game.eval((pp) => pp.view.project(16, 12).x);
+    const before = await spot();
+    // held until it has moved, however many frames a busy machine draws while it is held
     await page.keyboard.down('d');
-    await page.waitForTimeout(400);
+    await expect.poll(spot, { intervals: [50] }).toBeLessThan(before - 20);
     await page.keyboard.up('d');
-    const after = await game.itemPoint('plant');
-    expect(after.x).toBeLessThan(before.x - 20);
+    // and still once it is let go
+    const stopped = await spot();
+    await game.settle();
+    expect(await spot()).toBeCloseTo(stopped, 0);
     const dist = await game.eval((pp) => pp.view.dist);
     await page.mouse.move(700, 450);
     await page.mouse.wheel(0, -400);
@@ -1535,10 +1545,12 @@ test.describe('the sandbox', () => {
     await expect(game.card('Acupuncture Clinic')).not.toHaveClass(/locked/);
 
     // the next sandbox game, from the pause menu, is set up the same way
+    await game.eval((pp) => Object.assign(window, { oldState: pp.state }));
     await page.locator('#sys').getByTitle('Menu').click();
     await page.locator('#modal').getByRole('button', { name: 'New game' }).click();
     await page.getByRole('button', { name: 'Start a new game' }).click();
-    await page.waitForFunction(() => window.pp?.state.day === 0);
+    // a new game, however far it has got by the time anyone looks
+    await page.waitForFunction(() => window.pp && window.pp.state !== (window as { oldState?: unknown }).oldState);
     expect(await game.eval((pp) => [pp.state.money, pp.state.unlockAll])).toEqual([200000, true]);
     expect(game.errors).toEqual([]);
   });
@@ -1662,6 +1674,7 @@ test.describe('saved games', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.waitForFunction(() => !!window.pp);
     expect(await summary(game)).toEqual(before);
+    await game.draw();
     await expect.poll(() => game.eval((pp) => pp.view.renderer.info.render.triangles)).toBeGreaterThan(5000);
   });
 

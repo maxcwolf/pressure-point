@@ -14,7 +14,6 @@ import {
   hire,
   inconsistencies,
   LAYOUT,
-  LONG_RUN,
   openCenter,
   run,
   runUntil,
@@ -186,7 +185,7 @@ describe('the reiki setting', () => {
 });
 
 describe('a long session with all three disciplines', () => {
-  it.each([1, 2])('stays healthy for an hour of play (seed %i)', { timeout: LONG_RUN }, (seed) => {
+  it.each([1, 2])('stays healthy for an hour of play (seed %i)', (seed) => {
     const { sim, s, therapist } = openCenter(seed);
     s.stars = 3;
     addStaffRoom(sim);

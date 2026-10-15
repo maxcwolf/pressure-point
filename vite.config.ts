@@ -31,5 +31,8 @@ export default defineConfig({
   test: {
     include: ['tests/unit/**/*.test.ts'],
     environment: 'node',
+    // Some tests play an hour of the game, which takes a second or two, or several on a busy machine. Vitest's usual
+    // five seconds made them fail whenever something else was using the processor, so every test gets thirty.
+    testTimeout: 30_000,
   },
 });

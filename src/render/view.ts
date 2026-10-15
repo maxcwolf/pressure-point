@@ -38,6 +38,11 @@ export class View {
   private overlays: Overlays;
   private heat: Heatmap;
   private picker: Picker;
+  /**
+   * Whether each frame is drawn. The browser tests that check behavior rather than pixels switch it off: everything
+   * else still runs, the scene included, and software WebGL takes most of the processor otherwise.
+   */
+  drawing = true;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -100,7 +105,12 @@ export class View {
     this.overlays.updateRing(this.time);
     this.rig.update();
     placeSun(this.sun, this.rig.target);
-    this.renderer.render(this.scene, this.rig.camera);
+    if (this.drawing) this.renderer.render(this.scene, this.rig.camera);
+    else {
+      // what drawing would have done along the way, so clicks still find what is where
+      this.scene.updateMatrixWorld();
+      this.rig.camera.updateMatrixWorld();
+    }
   }
 
   /** A small JPEG of the view as it is now, for a save's picture on the title screen. */

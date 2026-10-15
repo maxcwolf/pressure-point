@@ -37,6 +37,7 @@ interface Handle {
     project(x: number, y: number, h?: number): Point;
     pick(x: number, y: number): { kind: string; id: number } | null;
     dist: number;
+    drawing: boolean;
     renderer: { info: { render: { triangles: number } } };
   };
   tools: {
@@ -430,6 +431,14 @@ export class Game {
     return this.page.locator('#menu .card').filter({ hasText: name }).first();
   }
 
+  /** Start drawing frames again, in a test that otherwise does without, to check what ends up on screen. */
+  async draw() {
+    await this.eval((pp) => {
+      pp.view.drawing = true;
+    });
+    await this.settle();
+  }
+
   /** Wait until the scene on screen has caught up with the game state. */
   async settle() {
     await this.page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
@@ -491,9 +500,35 @@ export class Game {
   }
 }
 
-export const test = base.extend<{ game: Game }>({
+/** The options a test can set: whether the game draws each frame. */
+export interface GameOptions {
+  draw: boolean;
+}
+
+/**
+ * Switch drawing off in every game the page starts, the moment the game hands the tests its handle. Run in the page
+ * before anything else, so it catches a reload or a new game as well as the first.
+ */
+function stopDrawing() {
+  let handle: unknown;
+  Object.defineProperty(window, 'pp', {
+    configurable: true,
+    /** The game's handle. */
+    get: () => handle,
+    /** Take the game's handle, switching its drawing off. */
+    set: (value: { view: { drawing: boolean } }) => {
+      value.view.drawing = false;
+      handle = value;
+    },
+  });
+}
+
+export const test = base.extend<GameOptions & { game: Game }>({
+  // drawing is the slow part of software WebGL; tests of behavior turn it off (playwright.config.ts)
+  draw: [true, { option: true }],
   /** Give each test a Game, and fail it if the page logged any errors. */
-  game: async ({ page }, use) => {
+  game: async ({ page, draw }, use) => {
+    if (!draw) await page.addInitScript(stopDrawing);
     const game = new Game(page);
     await use(game);
     expect(game.errors, 'errors logged by the page').toEqual([]);

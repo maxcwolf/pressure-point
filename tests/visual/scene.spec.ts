@@ -2,6 +2,9 @@
 import { expect, test } from '../e2e/fixtures';
 
 test.describe('the scene', () => {
+  // the one picture of the scene, so the one place the screenshot tests draw it
+  test.use({ draw: true });
+
   test('rooms with windows on every side, at the back, middle and front of the building', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => {
