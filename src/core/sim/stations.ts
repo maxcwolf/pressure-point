@@ -46,6 +46,7 @@ import { breakDue } from './policy';
 import { hasRoom } from './progress';
 import { countVisit } from './records';
 import { goRest, restPenalty, settleRest } from './recovery';
+import { greeting, tipFor } from './regulars';
 import { leadOf, sessionPlaying, stationStaff, updateSession } from './sessions';
 import { expectedPrestige } from './standing';
 import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments';
@@ -256,6 +257,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   if (def.goal === 'reception') {
     g.goal = 'consult';
     say(g, '📋');
+    // a regular is greeted by name
+    if (g.regular) emit(ctx, { type: 'float', text: greeting(g.name), x: staff.x, y: staff.y, kind: 'good' });
     emit(ctx, { type: 'sfx', name: 'blip' });
   } else if (def.goal === 'shop') {
     const amount = shopSpend(visitStars(g));
@@ -275,8 +278,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= 4) {
       g.goal = 'treat';
       say(g, '💡');
-      // steep prices put some guests off once they hear what the treatment costs
-      if (!g.emergency && random() < Math.max(0, (treatPrice - 1) * 0.35)) {
+      // steep prices put some guests off once they hear what the treatment costs, though never a regular, who knows
+      if (!g.emergency && !g.regular && random() < Math.max(0, (treatPrice - 1) * 0.35)) {
         g.outcome = 'stormed';
         g.goal = 'leave';
         feel(g, 'pricey');
@@ -336,7 +339,9 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       // a ceremony that works is a good trip, which goes in their review
       if (isTrip(mod)) goodTrip(g);
       countVisit(ctx, g, 'healed');
-      const fee = treatmentFee(ctx.s, cond.fee, treatPrice);
+      // and a loyal regular tips on top
+      const base = treatmentFee(ctx.s, cond.fee, treatPrice);
+      const fee = base + tipFor(ctx.s, g, base);
       earn(ctx, fee, 'treatment', g.x, g.y);
       g.spent += fee;
       // good value earns a better name than a steep bill does

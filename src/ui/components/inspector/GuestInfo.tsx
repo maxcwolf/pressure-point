@@ -3,10 +3,12 @@
 import { CLASS_FEE, conditionOf, FEELINGS, MODALITIES, POOR_CONDITION, WEEKDAYS } from '../../../core/data';
 import { money } from '../../../core/format';
 import { weekday } from '../../../core/sim/classes';
+import { regularOf } from '../../../core/sim/regulars';
 import type { Guest } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { chanceText, percent, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
+import { regularTag } from '../../lib/regulars';
 import { guestStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -89,10 +91,11 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
   const sure = sim.s.policy.diagnosis;
   // the condition is a mystery until a consultation has settled it
   const known = g.goal === 'treat' || g.goal === 'leave';
+  const regular = regularOf(sim.s, g);
   return (
     <>
       <h3>{g.name}</h3>
-      <p class="tag">{g.emergency ? '🚨 Emergency guest' : 'Guest'}</p>{' '}
+      <p class="tag">{g.emergency ? '🚨 Emergency guest' : regular ? regularTag(regular) : 'Guest'}</p>{' '}
       <p>
         <b>{known ? c.name : 'Undiagnosed'}</b>
         <br />

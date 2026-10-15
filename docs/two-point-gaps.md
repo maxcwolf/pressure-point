@@ -120,7 +120,7 @@ Some Two Point systems don't fit a healing center as they are, but a version of 
 
 **43. The center's standing** (from the hospital level, 28). The center climbs through grades (Back-Room Practice, Wellness Center, Healing Institute) from its rooms, staff and prestige, which drive arrivals, applicants and what guests expect.
 
-**44. Regulars and group classes** (from Campus's social life). Guests come back, are greeted by name and grow loyal. A studio runs group yoga or meditation sessions from a weekly calendar, a different rhythm from one-on-one treatments.
+**44. Regulars and group classes** (from Campus's social life). Guests come back, are greeted by name and grow loyal. A studio runs group yoga or meditation sessions from a weekly calendar, a different rhythm from one-on-one treatments. Done: the Qi Gong Studio's weekly classes, and regulars, up to twelve, who grow loyal or stop coming by how their visits go, listed under Stats.
 
 **45. Other players' institutes** (from community research and rival hospitals). Way down the line, with a server: research goals shared by every player, other players' centers appearing as rivals, and their owners visiting as VIPs.
 

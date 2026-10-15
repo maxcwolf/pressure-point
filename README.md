@@ -32,7 +32,7 @@ Drag out a room, click a wall for its door, and furnish it. Hire from the applic
   <img src="docs/assets/visit.png" alt="A guest's visit: check in at reception, a diagnosis from a Wellness Consultant, a treatment from a qualified healer, then pay up" width="100%" />
 </p>
 
-- **Look after the guests.** Benches, tea, snacks, plants and a restroom keep them patient while they wait. Their condition worsens the longer they wait, and the worse it gets, the less likely their treatment is to work.
+- **Look after the guests.** Benches, tea, snacks, plants and a restroom keep them patient while they wait. Their condition worsens the longer they wait, and the worse it gets, the less likely their treatment is to work. Treat them well and some come back as regulars, greeted by name.
 - **Look after the staff.** They tire, get thirsty and hungry, and need a Staff Room to recover in. They gain experience, rise through five ranks and expect a raise to match, and quit if you ignore them for too long.
 - **Keep it running.** Equipment wears out and breaks down unless a Caretaker services it. Noise spoils treatments nearby, winters get cold and summers hot, and a failed treatment leaves bad vibes over its room.
 - **Keep the books.** Set prices, take out loans, run marketing campaigns, and send staff out on house calls. A health inspector and the odd VIP come to judge, and a ZenMart opens across the street to compete for your guests.

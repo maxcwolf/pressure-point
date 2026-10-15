@@ -324,6 +324,19 @@ export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
     rest: true,
     trip: true,
   },
+  quest: {
+    id: 'quest',
+    discipline: 'shaman',
+    name: 'Vision Quest',
+    icon: '🦅',
+    desc: 'A long sit with the eyes shut until the way ahead appears. Anyone it works for comes back as a regular.',
+    star: 3,
+    seconds: 16,
+    strain: 1.1,
+    difficulty: 0.12,
+    trainCost: 3400,
+    trainDays: 10,
+  },
 };
 
 export const MODALITY_ORDER: readonly Modality[] = [
@@ -350,6 +363,7 @@ export const MODALITY_ORDER: readonly Modality[] = [
   'sweat',
   'mushroom',
   'ayahuasca',
+  'quest',
 ];
 
 export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
@@ -397,7 +411,7 @@ export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
     id: 'shaman',
     name: 'Shamanism',
     icon: '🪶',
-    desc: 'A fifth line of treatment, from The Orchard Estate: spirit animals, extractions, a sweat lodge and psychedelic ceremonies.',
+    desc: 'A fifth line of treatment, from The Orchard Estate: spirit animals, extractions, a sweat lodge, psychedelic ceremonies and vision quests.',
     role: 'shaman',
     room: 'lodge',
     base: 'reading',

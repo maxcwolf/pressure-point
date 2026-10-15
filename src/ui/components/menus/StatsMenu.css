@@ -300,3 +300,15 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+.regulars td.loyalty {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.regulars td.loyalty .bar {
+  width: 90px;
+  margin: 0;
+}

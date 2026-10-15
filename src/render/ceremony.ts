@@ -21,7 +21,10 @@ export function cloudAt(progress: number): { x: number; y: number; z: number; sc
 
 /** Move a ceremony's parts for this frame, by how far through it is and the time. */
 export function animateCeremony(parts: Required<ItemParts>['ceremony'], progress: number, t: number, id: number) {
-  const { spirit, cloud, steam, swirls } = parts;
+  const { spirit, cloud, steam, swirls, circling } = parts;
+  // the eagle wheels round, banking into the turn
+  circling.rotation.y = -t * 0.8 + id;
+  circling.rotation.z = 0.1 + Math.sin(t * 1.3 + id) * 0.05;
   spirit.position.y = 0.95 + Math.sin(t * 2 + id) * 0.05;
   spirit.rotation.y = Math.sin(t * 0.7 + id) * 0.6;
   const c = cloudAt(progress);

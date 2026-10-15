@@ -99,6 +99,13 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
       armOut = 0.45;
       side = Math.sin(t * 0.9 + c.id) * 0.12;
       headX = -0.2;
+    } else if (c.busy && style === 'quest') {
+      // eyes on the far distance, one hand shading them, the other pointing the way, turning slowly to look about
+      armL = -2.4;
+      armR = -1.6;
+      armOut = 0.25;
+      headX = -0.15;
+      side = Math.sin(t * 0.5 + c.id) * 0.06;
     } else if (c.busy && style === 'ayahuasca') {
       // singing over the guest, shaking a bundle of leaves in a steady rustle
       armR = -1.6 + Math.sin(t * 9 + c.id) * 0.12;

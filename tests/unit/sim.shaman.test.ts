@@ -68,7 +68,7 @@ function playWith(sim: Sim, condition: ConditionId, seconds: number) {
 const PERFECT = { vibes: 0, noise: 0, linens: 0, prestige: 0, discomfort: 0 };
 
 describe('offering the Shaman', () => {
-  it('opens at the second star, in the sandbox and The Orchard Estate only, with ayahuasca at the third', () => {
+  it('opens at the second star, in the sandbox and The Orchard Estate only, with ayahuasca and vision quests at the third', () => {
     const { sim, s } = openCenter(1);
     expect(ROOMS.lodge.unlock).toBe(2);
     s.stars = 1;
@@ -76,8 +76,10 @@ describe('offering the Shaman', () => {
     s.stars = 2;
     expect(['reading', 'extraction', 'sweat', 'mushroom'].every((m) => sim.unlocked(m as 'reading'))).toBe(true);
     expect(sim.unlocked('ayahuasca')).toBe(false);
+    expect(sim.unlocked('quest')).toBe(false);
     s.stars = 3;
     expect(sim.unlocked('ayahuasca')).toBe(true);
+    expect(sim.unlocked('quest')).toBe(true);
     const here = Object.values(CENTERS).filter((c) => c.disciplines.includes('shaman'));
     expect(here.map((c) => c.id).sort()).toEqual(['orchard', 'sandbox']);
   });
@@ -93,7 +95,7 @@ describe('offering the Shaman', () => {
   it('has guests possessed by a chicken, a goat and Brent', () => {
     const possessed = CONDITIONS.filter((c) => c.name.startsWith('Possessed by')).map((c) => c.name);
     expect(possessed).toEqual(['Possessed by a Chicken', 'Possessed by a Goat', 'Possessed by Brent']);
-    expect(CONDITIONS.filter((c) => MODALITIES[c.modality].discipline === 'shaman')).toHaveLength(8);
+    expect(CONDITIONS.filter((c) => MODALITIES[c.modality].discipline === 'shaman')).toHaveLength(9);
   });
 
   it('has Shamans who arrive knowing Spirit Animal Reading and train only in their own techniques', () => {
@@ -103,7 +105,7 @@ describe('offering the Shaman', () => {
     const shaman = hire(sim, 'shaman');
     expect(shaman.quals).toContain('reading');
     shaman.quals = ['reading'];
-    expect(treatmentCourses(sim.courses(shaman))).toEqual(['extraction', 'sweat', 'mushroom', 'ayahuasca']);
+    expect(treatmentCourses(sim.courses(shaman))).toEqual(['extraction', 'sweat', 'mushroom', 'ayahuasca', 'quest']);
     expect(sim.train(shaman.id, 'usui')).toBe(false);
   });
 });

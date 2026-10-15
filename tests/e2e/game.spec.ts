@@ -2455,3 +2455,29 @@ test.describe('saved games', () => {
     expect(await game.eval((pp) => pp.state.staff.length)).toBe(3);
   });
 });
+
+test.describe('regulars', () => {
+  test('come back under their own name, are tagged as regulars, and are listed under Stats', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      const s = pp.state;
+      s.open = true;
+      s.regulars = [{ id: 9000, name: 'Margo Finch', look: s.candidates[0]!.look, visits: 2, loyalty: 64, due: 0 }];
+      s.spawnT = 0;
+    });
+    await game.fastForward(1);
+    const id = await game.eval((pp) => pp.state.guests.find((g) => g.regular === 9000)?.id ?? 0);
+    expect(id).toBeGreaterThan(0);
+    await game.eval((pp, guest) => pp.tools.select({ kind: 'guest', id: guest }), id);
+    const inspector = page.locator('#inspector');
+    await expect(inspector).toContainText('Margo Finch');
+    await expect(inspector).toContainText('Loyal regular, on their 3rd visit');
+    await game.menu('Stats');
+    const menu = page.locator('#menu');
+    await menu.getByRole('button', { name: /Regulars/ }).click();
+    await expect(menu.locator('.regulars tbody tr')).toHaveCount(1);
+    await expect(menu.locator('.regulars')).toContainText('Here now');
+    expect(game.errors).toEqual([]);
+  });
+});

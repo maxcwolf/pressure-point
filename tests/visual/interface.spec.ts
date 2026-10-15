@@ -116,6 +116,13 @@ test.describe('in a game', () => {
     await screens.play();
     await game.eval((pp) => pp.tools.select({ kind: 'guest', id: pp.state.guests[0]!.id }));
     await screens.shot('inspector-guest');
+    // a loyal regular, back for their fifth visit
+    await game.eval((pp) => {
+      const g = pp.state.guests[0]!;
+      pp.state.regulars = [{ id: 9000, name: g.name, look: g.look, visits: 5, loyalty: 64, due: 0 }];
+      g.regular = 9000;
+    });
+    await screens.shot('inspector-regular');
   });
 
   for (const role of ['receptionist', 'therapist'] as const) {
@@ -305,6 +312,31 @@ test.describe('in a game', () => {
       .getByRole('button', { name: /Standing/ })
       .click();
     await screens.shot('stats-standing');
+    // regulars at every level of loyalty, one of them here now
+    await game.eval((pp) => {
+      const s = pp.state;
+      const look = s.candidates[0]!.look;
+      const people: [string, number, number, number][] = [
+        ['Margo Finch', 12, 92, 0],
+        ['Dev Okafor', 5, 64, 6],
+        ['Priya Shah', 2, 38, 11],
+        ['Hal Brennan', 1, 12, 0.5],
+      ];
+      s.regulars = people.map(([name, visits, loyalty, due], i) => ({
+        id: 9000 + i,
+        name,
+        look,
+        visits,
+        loyalty,
+        due: s.day + due,
+      }));
+      s.guests[0]!.regular = 9000;
+    });
+    await page
+      .locator('#menu')
+      .getByRole('button', { name: /Regulars/ })
+      .click();
+    await screens.shot('stats-regulars');
   });
 
   test('the Money menu tabs', async ({ screens, game, page }) => {

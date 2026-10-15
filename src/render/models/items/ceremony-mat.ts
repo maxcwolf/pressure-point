@@ -68,13 +68,25 @@ export function buildCeremonyMat(g: THREE.Group) {
   const outer = swirl(9, 0.48, 0.055, 0.75);
   const inner = swirl(6, 0.24, 0.045, 0.95);
   ayahuasca.add(outer, inner);
-  const session = { reading, extraction, sweat, mushroom, ayahuasca };
+  // an eagle circling high over a guest on a vision quest, to show them the way
+  const quest = new THREE.Group();
+  const eagle = new THREE.Group();
+  const brown = mat(0x8a5a32, 0.8);
+  put(eagle, sph(0.06, 10), brown, 0, 0, 0).scale.set(1.6, 0.7, 0.8);
+  put(eagle, sph(0.035, 8), mat(0xf4f1ea, 0.6), 0.09, 0.02, 0);
+  for (const side of [-1, 1])
+    put(eagle, rbox(0.06, 0.012, 0.22, 0.006), brown, 0, 0.01, side * 0.13).rotation.x = side * 0.25;
+  eagle.scale.setScalar(1.8);
+  eagle.position.set(0.45, 0, 0);
+  quest.add(eagle);
+  quest.position.y = 1.15;
+  const session = { reading, extraction, sweat, mushroom, ayahuasca, quest };
   for (const group of Object.values(session)) {
     group.visible = false;
     for (const o of group.children) o.castShadow = false;
     g.add(group);
   }
   partsOf(g).session = session;
-  partsOf(g).ceremony = { spirit: reading, cloud, steam, swirls: [shrooms, outer, inner] };
+  partsOf(g).ceremony = { spirit: reading, cloud, steam, swirls: [shrooms, outer, inner], circling: quest };
   partsOf(g).linens = linens;
 }

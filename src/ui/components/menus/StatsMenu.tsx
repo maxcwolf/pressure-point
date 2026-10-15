@@ -15,6 +15,7 @@ import { cx } from '../../lib/cx';
 import { formatMetric, type Metric, monthlyValues, offeredMetrics, shownMetrics, toggleMetric } from '../../lib/stats';
 import { Button } from '../common/Button';
 import { CasebookTab } from './CasebookTab';
+import { RegularsTab } from './RegularsTab';
 import { ReputationTab } from './ReputationTab';
 import { StandingTab } from './StandingTab';
 
@@ -55,6 +56,7 @@ const TABS: readonly { id: StatsTab; name: string }[] = [
   { id: 'reputation', name: '⭐ Reputation' },
   { id: 'standing', name: '🏛️ Standing' },
   { id: 'casebook', name: '📖 Casebook' },
+  { id: 'regulars', name: '👋 Regulars' },
   { id: 'awards', name: '🏆 Awards' },
 ];
 
@@ -81,6 +83,7 @@ export function StatsMenu() {
       {hud.statsTab === 'reputation' && <ReputationTab />}
       {hud.statsTab === 'standing' && <StandingTab />}
       {hud.statsTab === 'casebook' && <CasebookTab />}
+      {hud.statsTab === 'regulars' && <RegularsTab />}
       {hud.statsTab === 'awards' && <Trophies />}
     </div>
   );

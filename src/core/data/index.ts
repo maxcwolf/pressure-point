@@ -12,6 +12,7 @@ export * from './items';
 export * from './karma';
 export * from './map';
 export * from './mishaps';
+export * from './regulars';
 export * from './rooms';
 export * from './rules';
 export * from './staff';

@@ -355,6 +355,15 @@ export const CONDITIONS: readonly ConditionDef[] = [
     visual: 'bighead',
   },
   {
+    id: 'lost',
+    name: 'Lost Their Way',
+    desc: 'Has been finding themselves for eleven years, and keeps looking in the same three places.',
+    treatment: 'Vision Quest',
+    modality: 'quest',
+    fee: 2700,
+    visual: 'compass',
+  },
+  {
     id: 'blocked',
     name: 'Blocked Chakra',
     desc: 'Energy stuck at the third stop, like an elevator between floors.',

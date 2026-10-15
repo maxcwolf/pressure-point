@@ -287,6 +287,23 @@ export interface Guest extends CharBase {
   calmed: boolean;
   /** For a class-goer, the day of the Qi Gong class they came for; 0 for anyone come for a treatment. */
   classDay: number;
+  /** For a regular back for another visit, who they are among the regulars. */
+  regular?: number;
+}
+
+/** A guest who enjoyed their visit and comes back every few weeks, greeted by name. */
+export interface Regular {
+  /** Who they are among the regulars: the id they had on their first visit. */
+  id: number;
+  name: string;
+  look: Look;
+  /** Visits made so far, the first included. */
+  visits: number;
+  /** How attached they are to the center, from 0 to 100. Good visits raise it, bad ones lower it, and at 0 they stop
+   * coming. */
+  loyalty: number;
+  /** The game day they are due back. */
+  due: number;
 }
 
 /** Who a visitor is: a VIP, or the health inspector. */
@@ -700,4 +717,6 @@ export interface GameState {
   mushroomsStashed: boolean;
   /** The plots of land bought next to the building, by side, in the order they were bought. */
   land: LandSide[];
+  /** Guests who come back every few weeks, whether here now or due. */
+  regulars: Regular[];
 }

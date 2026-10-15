@@ -44,6 +44,7 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 24. **VIPs** write ahead and tour a few rooms, each judging by their own tastes, and the **health inspector** checks every room for dirt, broken equipment and a Fire Extinguisher near the door. A report afterward says what they made of each room. A failed inspection can be **made to go away** for twice the fine, at least $10,000, though one time in ten word gets out, reputation takes a knock, and the inspector is back within the month.
 25. The center climbs through five grades of **standing**, from Back-Room Practice to Healing Institute, as it builds rooms, makes them finer and takes on staff. Each grade brings more guests and better applicants, but guests at a grander center expect grander treatment rooms. A **ZenMart** opens across the street a few weeks in: it holds sales that draw away guests who think you charge too much, offers jobs to unhappy staff, and competes with you for **Center of the Year**. Both are in the Stats menu under **Standing**.
 26. Every few months a **mishap** is announced three days ahead: a power cut, a storm, a big freeze or wasps, depending on the center (Willow Lane has none). A notice at the top of the screen says what it will do, with a button to prepare for it at a price. With a Shaman here, **Ward it off** costs only their time and holds three times in four.
+27. Now and then a guest who enjoyed their visit becomes a **regular**: they come back every few weeks under their own name, and Reception greets them. Good visits make them **loyal** and then **devoted**: more patient, back sooner, never put off by prices, and tipping on top of the fee. A bad visit or two and they stop coming. The Stats menu lists them under **Regulars**, up to twelve at a time, and anyone a Shaman's **Vision Quest** heals comes back as a loyal one even past that.
 
 ## Treatments
 
@@ -98,6 +99,7 @@ Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupunct
 | Sweat Lodge           | Star 2  | Course, Sweat Lodge         | Long and hot, and the hut heats the whole room        |
 | Mushroom Ceremony     | Star 2  | Course, Mushroom Altar      | Well paid, if the room is right                       |
 | Ayahuasca Ceremony    | Star 3  | Course, Brew Pot            | The best paid and the hardest, if the room is right   |
+| Vision Quest          | Star 3  | Course                      | Anyone it heals comes back as a loyal regular         |
 
 ## Settings
 

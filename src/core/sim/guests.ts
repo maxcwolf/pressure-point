@@ -28,7 +28,7 @@ import {
 } from '../data';
 import { randomLook, randomName, rollSex } from '../people';
 import { pick, random, rnd } from '../random';
-import type { GameState, Guest, Item, Need } from '../state/types';
+import type { GameState, Guest, Item, Need, Regular } from '../state/types';
 import { at } from '../util';
 import { accessPose, accessTile, itemCenter, rotVec, tileIdx, Z_CORRIDOR } from '../world';
 import { drainFactor } from './ambience';
@@ -46,6 +46,7 @@ import { goTo, halt, moveAlong } from './movement';
 import { arriveCarrying, carriedOut } from './outbreaks';
 import { countArrival, countVisit } from './records';
 import { updateRest } from './recovery';
+import { dueRegular, regularPatience, welcomeBack } from './regulars';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
 import { arrivalFactor, cutOff, impatience } from './twists';
@@ -71,7 +72,11 @@ export function admitGuests(ctx: SimContext, dt: number) {
   if (!s.open || cutOff(ctx)) return;
   s.spawnT -= dt;
   if (s.spawnT > 0) return;
-  if (s.guests.length < guestCap(s)) spawnGuest(ctx);
+  // a regular due back takes the place of someone new
+  if (s.guests.length < guestCap(s)) {
+    const regular = dueRegular(s);
+    spawnGuest(ctx, undefined, false, 0, regular);
+  }
   s.spawnT = ((30 - s.reputation * 0.2) * rnd(0.7, 1.3)) / arrivalFactor(ctx);
 }
 
@@ -82,14 +87,22 @@ export function guestCap(s: GameState): number {
 
 /**
  * Add a guest on the street and send them to the lobby: come for a treatment, or with a class day, for a Qi Gong class.
- * Null if there is no way in for them.
+ * A regular comes back as themselves. Null if there is no way in for them.
  */
-export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency = false, classDay = 0): Guest | null {
+export function spawnGuest(
+  ctx: SimContext,
+  condition?: ConditionId,
+  emergency = false,
+  classDay = 0,
+  regular?: Regular,
+): Guest | null {
   const s = ctx.s;
   const [x, y] = streetTile();
-  const sex = rollSex(WOMEN_VISIT);
+  const sex = regular ? regular.look.sex : rollSex(WOMEN_VISIT);
+  const name = regular ? regular.name : randomName(sex);
+  const look = regular ? { ...regular.look } : randomLook(sex);
   const g: Guest = {
-    ...newChar(ctx, randomName(sex), randomLook(sex), x, y),
+    ...newChar(ctx, name, look, x, y),
     kind: 'guest',
     condition: condition ?? rollCondition(ctx),
     // emergency cases arrive already diagnosed and go straight to treatment, and class-goers booked their place
@@ -118,6 +131,7 @@ export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency =
   const [lx, ly] = lobbyTile(ctx.world.plot);
   if (!goTo(ctx, g, lx, ly)) return null;
   s.guests.push(g);
+  if (regular) welcomeBack(ctx, g, regular);
   // a class-goer is counted when their class is done, not as a guest come for treatment
   if (!classDay) countArrival(ctx);
   arriveCarrying(ctx, g);
@@ -387,6 +401,8 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     if (g.pose === 'sit') drain *= seatDrain(ctx, g);
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
     if (g.stressed) drain *= STRESS_DRAIN;
+    // a loyal regular is used to the wait
+    drain *= regularPatience(ctx.s, g);
     drain *= 1 + discomfort(temp) * DISCOMFORT_DRAIN;
     g.patience -= drain * dt;
     if (g.patience < LONG_WAIT_PATIENCE) feel(g, 'long-wait');

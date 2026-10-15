@@ -6,6 +6,7 @@ import type { Guest, Review } from '../state/types';
 import { at, clamp } from '../util';
 import type { SimContext } from './context';
 import type { VisitEnd } from './records';
+import { afterVisit } from './regulars';
 
 /** Note a feeling a guest has had, once. */
 export function feel(g: Guest, id: FeelingId) {
@@ -66,7 +67,7 @@ export function reviewText(g: Guest, stars: number): string {
   return at(lines, g.id % lines.length);
 }
 
-/** File a leaving guest's review, keeping only the latest. */
+/** File a leaving guest's review, keeping only the latest, and let it settle whether they come back. */
 export function writeReview(ctx: SimContext, g: Guest, end: ReviewEnd) {
   const outcome = END_FEELING[end];
   if (outcome) feel(g, outcome);
@@ -74,6 +75,7 @@ export function writeReview(ctx: SimContext, g: Guest, end: ReviewEnd) {
   const s = ctx.s;
   s.reviews.push({ name: g.name, stars, text: reviewText(g, stars), day: s.day, feelings: [...g.feelings] });
   if (s.reviews.length > REVIEWS_KEPT) s.reviews.splice(0, s.reviews.length - REVIEWS_KEPT);
+  afterVisit(ctx, g, stars, end === 'healed');
 }
 
 /** How the center is spoken of, part by part, from 0 to 100: half good and half bad feelings is 50. */

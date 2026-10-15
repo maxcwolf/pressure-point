@@ -288,7 +288,8 @@ export type Modality =
   | 'extraction'
   | 'sweat'
   | 'mushroom'
-  | 'ayahuasca';
+  | 'ayahuasca'
+  | 'quest';
 
 export interface ModalityDef {
   id: Modality;
@@ -368,6 +369,7 @@ export type Visual =
   | 'chicken'
   | 'goat'
   | 'brent'
+  | 'compass'
   | 'toxic'
   | 'leash'
   | 'cactus'
@@ -423,7 +425,8 @@ export type ConditionId =
   | 'spiritanimal'
   | 'parched'
   | 'midlife'
-  | 'ego';
+  | 'ego'
+  | 'lost';
 
 export interface ConditionDef {
   id: ConditionId;

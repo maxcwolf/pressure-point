@@ -191,9 +191,15 @@ export interface ItemParts {
   flames?: THREE.Object3D[];
   /**
    * What moves over the guest during a ceremony: a spirit animal that bobs, a dark cloud pulled out of them, steam that
-   * rises off them, and colors that swirl.
+   * rises off them, colors that swirl, and an eagle that circles.
    */
-  ceremony?: { spirit: THREE.Object3D; cloud: THREE.Object3D; steam: THREE.Group; swirls: THREE.Object3D[] };
+  ceremony?: {
+    spirit: THREE.Object3D;
+    cloud: THREE.Object3D;
+    steam: THREE.Group;
+    swirls: THREE.Object3D[];
+    circling: THREE.Object3D;
+  };
 }
 
 /** The changing parts of an item's model. */
