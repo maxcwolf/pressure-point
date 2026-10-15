@@ -30,6 +30,8 @@ import { demoGuest, demoStaff, LAB_LOOK } from './people';
 /** A model as built for the lab, with what moves it each frame and the settings that change it. */
 export interface Model {
   root: THREE.Object3D;
+  /** Parts that hang in the world rather than move with the model, such as a trail of smoke left behind. */
+  loose?: THREE.Object3D[];
   /** Move the model's parts for a moment in time. */
   animate: (t: number, dt: number) => void;
   controls: Control[];
@@ -111,6 +113,7 @@ const POSES: readonly Option[] = [
 const BUBBLES: readonly Option[] = [
   ['', 'None'],
   ['💢', '💢 Fed up'],
+  ['🤕', '🤕 Getting worse'],
   ['🚻', '🚻 Needs the toilet'],
   ['🍵', '🍵 Thirsty'],
   ['💤', '💤 On a break'],
@@ -145,7 +148,13 @@ function posePerson(rig: CharRig, c: Char, st: PersonState, t: number, dt: numbe
 
 /** A guest showing a condition's symptom, or cured of it. */
 function guestSpecimen(def: ConditionDef): Specimen {
-  const st: PersonState & { healed: boolean } = { look: { ...LAB_LOOK }, pose: 'stand', bubble: '', healed: false };
+  const st: PersonState & { healed: boolean; stressed: boolean } = {
+    look: { ...LAB_LOOK },
+    pose: 'stand',
+    bubble: '',
+    healed: false,
+    stressed: false,
+  };
   return {
     id: `guest:${def.id}`,
     group: 'Guests',
@@ -159,9 +168,12 @@ function guestSpecimen(def: ConditionDef): Specimen {
       c.outcome = st.healed ? 'healed' : '';
       return {
         root: rig.group,
-        controls: [...personControls(st), toggle('Healed', st, 'healed', true)],
+        controls: [...personControls(st), toggle('Healed', st, 'healed', true), toggle('Stressed', st, 'stressed')],
         /** Pose the guest. */
-        animate: (t, dt) => posePerson(rig, c, st, t, dt),
+        animate(t, dt) {
+          c.stressed = st.stressed;
+          posePerson(rig, c, st, t, dt);
+        },
       };
     },
   };
@@ -169,12 +181,13 @@ function guestSpecimen(def: ConditionDef): Specimen {
 
 /** A member of staff in their uniform, working on any treatment their role gives. */
 function staffSpecimen(role: Role): Specimen {
-  const st: PersonState & { busy: boolean; style: string } = {
+  const st: PersonState & { busy: boolean; style: string; smudging: boolean } = {
     look: { ...LAB_LOOK },
     pose: 'stand',
     bubble: '',
     busy: false,
     style: '',
+    smudging: false,
   };
   const discipline = ROLES[role].discipline;
   const styles = MODALITY_ORDER.filter((m) => discipline && MODALITIES[m].discipline === discipline);
@@ -194,10 +207,14 @@ function staffSpecimen(role: Role): Specimen {
       const c = demoStaff(st.look, role);
       return {
         root: rig.group,
-        controls,
-        /** Pose them, at work on the treatment picked if they are working. */
+        loose: rig.smoke ? [rig.smoke] : [],
+        // only those who clear bad vibes carry sage
+        controls: rig.sage ? [...controls, toggle('Smudging', st, 'smudging')] : controls,
+        /** Pose them, at work on the treatment picked if they are working, or wafting sage. */
         animate(t, dt) {
           c.busy = st.busy;
+          c.state = st.smudging ? 'doingJob' : 'atPost';
+          c.job = st.smudging ? { kind: 'smudge', id: 0 } : null;
           posePerson(rig, c, st, t, dt, st.busy && st.style ? (st.style as Modality) : null);
         },
       };

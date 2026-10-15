@@ -80,10 +80,13 @@ export class Stage {
   show(model: Model, footprint: readonly [number, number]) {
     if (this.model) {
       this.pivot.remove(this.model.root);
+      for (const o of this.model.loose ?? []) this.scene.remove(o);
       disposeOwned(this.model.root);
     }
     this.model = model;
     this.pivot.add(model.root);
+    // loose parts place themselves in the world, so they hang in the scene and do not turn with the stage
+    for (const o of model.loose ?? []) this.scene.add(o);
     this.pivot.rotation.y = 0;
     this.drawTiles(footprint);
     this.placePerson(footprint);
