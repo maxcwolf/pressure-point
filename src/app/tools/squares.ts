@@ -1,6 +1,6 @@
 // The squares beside a piece of furniture that people use it from, and who each is for.
 
-import { type AccessRole, ITEMS, type ItemType } from '../../core/data';
+import { type AccessRole, ITEMS, type ItemType, ROLES } from '../../core/data';
 import { accessTile } from '../../core/world';
 import type { HeldItem } from './types';
 
@@ -15,18 +15,26 @@ export function isStaffRole(role: AccessRole): boolean {
   return STAFF_ROLES.includes(role);
 }
 
-/** A square someone uses an item from. */
+/** Who works an item: the role that staffs it if it is a station, or any member of staff, with an icon for each. */
+export function workedBy(type: ItemType): { icon: string; name: string } {
+  const role = ITEMS[type].station?.staff;
+  return role ? { icon: ROLES[role].icon, name: ROLES[role].name } : { icon: STAFF_ICON, name: 'staff' };
+}
+
+/** A square someone uses an item from, and the icon for who. */
 export interface UseSquare {
   x: number;
   y: number;
   staff: boolean;
+  icon: string;
 }
 
 /** The squares an item would be used from if it were put down at a tile. */
 export function useSquares(item: HeldItem & { x: number; y: number }): UseSquare[] {
   return ITEMS[item.type].access.map((a, i) => {
     const [x, y] = accessTile(item, i);
-    return { x, y, staff: isStaffRole(a.role) };
+    const staff = isStaffRole(a.role);
+    return { x, y, staff, icon: staff ? workedBy(item.type).icon : GUEST_ICON };
   });
 }
 
@@ -34,7 +42,8 @@ export function useSquares(item: HeldItem & { x: number; y: number }): UseSquare
 export function legend(type: ItemType): string {
   const staffed = ITEMS[type].access.map((a) => isStaffRole(a.role));
   const parts = [];
-  if (staffed.includes(true)) parts.push(`${STAFF_ICON} purple square: staff`);
+  const who = workedBy(type);
+  if (staffed.includes(true)) parts.push(`${who.icon} purple square: ${who.name}`);
   if (staffed.includes(false)) parts.push(`${GUEST_ICON} orange square: guests`);
   return parts.length ? ` · ${parts.join(' · ')}` : '';
 }

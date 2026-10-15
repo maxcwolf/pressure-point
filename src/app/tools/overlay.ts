@@ -10,7 +10,7 @@ import {
   OV_STAFF,
   type OverlayTile,
 } from '../../render/overlay-codes';
-import { GUEST_ICON, STAFF_ICON, useSquares } from './squares';
+import { useSquares } from './squares';
 import type { HeldItem } from './types';
 
 /** Every tile of a rectangle, in one color. */
@@ -41,7 +41,7 @@ export function itemTiles(
   const markers: Marker[] = [];
   for (const sq of useSquares(item)) {
     tiles.push([sq.x, sq.y, sq.staff ? OV_STAFF : OV_GUEST]);
-    markers.push({ x: sq.x, y: sq.y, icon: sq.staff ? STAFF_ICON : GUEST_ICON });
+    markers.push({ x: sq.x, y: sq.y, icon: sq.icon });
   }
   return { tiles, markers };
 }

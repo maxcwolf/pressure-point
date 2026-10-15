@@ -15,6 +15,7 @@ import { heldItem, nextRequired, planStatus, quarterTurn } from '../../src/app/t
 import { GUEST_ICON, isStaffRole, legend, STAFF_ICON, useSquares } from '../../src/app/tools/squares';
 import { Tools } from '../../src/app/tools/tools';
 import type { Tool } from '../../src/app/tools/types';
+import { ROLES } from '../../src/core/data';
 import { ROOMS } from '../../src/core/data';
 import type { Room } from '../../src/core/state/types';
 import { OV_BAD, OV_BLUE, OV_FREE, OV_GOOD, OV_GUEST, OV_STAFF } from '../../src/render/overlay-codes';
@@ -87,8 +88,11 @@ describe('the squares people use furniture from', () => {
     expect(turned.map((s) => [s.x, s.y])).not.toEqual(here.map((s) => [s.x, s.y]));
   });
 
-  it('explains the colors only for the kinds of square an item has', () => {
-    expect(legend('massage_table')).toBe(` · ${STAFF_ICON} purple square: staff · ${GUEST_ICON} orange square: guests`);
+  it('explains the colors only for the kinds of square an item has, naming who works it', () => {
+    expect(legend('massage_table')).toBe(
+      ` · 💆 purple square: Massage Therapist · ${GUEST_ICON} orange square: guests`,
+    );
+    expect(legend('sofa')).toBe(` · ${STAFF_ICON} purple square: staff`);
     expect(legend('bench')).toBe(` · ${GUEST_ICON} orange square: guests`);
     expect(legend('plant')).toBe('');
   });
@@ -146,7 +150,11 @@ describe('floor overlays', () => {
     expect(fits.tiles.filter((t) => t[2] === OV_GOOD).length).toBeGreaterThan(0);
     expect(fits.tiles.filter((t) => t[2] === OV_STAFF)).toHaveLength(1);
     expect(fits.tiles.filter((t) => t[2] === OV_GUEST)).toHaveLength(1);
-    expect(fits.markers.map((m) => m.icon).sort()).toEqual([GUEST_ICON, STAFF_ICON].sort());
+    // the staff square shows who works it: here, a massage therapist
+    expect(fits.markers.map((m) => m.icon).sort()).toEqual([GUEST_ICON, ROLES.therapist.icon].sort());
+    expect(itemTiles({ type: 'reception_desk', x: 10, y: 10, rot: 0 }, true).markers.map((m) => m.icon)).toContain(
+      ROLES.receptionist.icon,
+    );
     const blocked = itemTiles({ type: 'massage_table', x: 10, y: 10, rot: 0 }, false);
     expect(blocked.tiles.filter((t) => t[2] === OV_BAD).length).toBeGreaterThan(0);
     expect(blocked.tiles.some((t) => t[2] === OV_GOOD)).toBe(false);
