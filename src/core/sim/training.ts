@@ -1,18 +1,9 @@
 // Courses staff can take in a Training Room.
 
-import {
-  DAY_SECONDS,
-  GENERAL_COURSES,
-  isGeneral,
-  MODALITIES,
-  MODALITY_ORDER,
-  modalityLabel,
-  RANK_XP,
-  ROLES,
-} from '../data';
+import { DAY_SECONDS, GENERAL_COURSES, isGeneral, MODALITIES, modalityLabel, RANK_XP } from '../data';
 import type { CourseId, Staff } from '../state/types';
 import { accessPose, accessTile } from '../world';
-import { generalFor, slotFree } from './careers';
+import { generalToLearn, offerPromotion, slotFree, treatmentsToLearn } from './careers';
 import { say, staffById } from './chars';
 import { claim, findAccess, release } from './claims';
 import type { SimContext } from './context';
@@ -21,7 +12,6 @@ import { emit, toast } from './events';
 import { goTo } from './movement';
 import { hasRoom } from './progress';
 import { staffIdle } from './staffing';
-import { unlocked } from './treatments';
 
 /** Something a member of staff can study in a Training Room. */
 export interface Course {
@@ -35,28 +25,15 @@ export interface Course {
 
 /** Courses this member of staff could take right now. */
 export function courses(ctx: SimContext, st: Staff): Course[] {
-  const out: Course[] = [];
-  const discipline = ROLES[st.role].discipline;
-  if (discipline) {
-    for (const m of MODALITY_ORDER) {
-      const def = MODALITIES[m];
-      if (def.discipline !== discipline || st.quals.includes(m) || !unlocked(ctx, m)) continue;
-      out.push({
-        id: m,
-        name: modalityLabel(m),
-        icon: def.icon,
-        desc: def.desc,
-        cost: def.trainCost,
-        days: def.trainDays,
-      });
-    }
-  }
-  for (const id of generalFor(st.role)) {
-    if (st.general.includes(id)) continue;
+  const treatments = treatmentsToLearn(ctx, st).map((m): Course => {
+    const def = MODALITIES[m];
+    return { id: m, name: modalityLabel(m), icon: def.icon, desc: def.desc, cost: def.trainCost, days: def.trainDays };
+  });
+  const general = generalToLearn(st).map((id): Course => {
     const def = GENERAL_COURSES[id];
-    out.push({ id, name: def.name, icon: def.icon, desc: def.desc, cost: def.cost, days: def.days });
-  }
-  return out;
+    return { id, name: def.name, icon: def.icon, desc: def.desc, cost: def.cost, days: def.days };
+  });
+  return [...treatments, ...general];
 }
 
 /** Why training cannot start ('' when it can). */
@@ -120,4 +97,6 @@ export function graduate(ctx: SimContext, st: Staff) {
   // being worth more now, they will soon ask to be paid more
   toast(ctx, `${st.name} ${what}.`, 'good', { kind: 'staff', id: st.id });
   emit(ctx, { type: 'sfx', name: 'build' });
+  // the experience may already be there, waiting on this course
+  offerPromotion(ctx, st);
 }

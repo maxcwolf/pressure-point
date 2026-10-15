@@ -11,6 +11,9 @@ import {
   GENERAL_ORDER,
   type GeneralId,
   ITEMS,
+  MODALITIES,
+  type Modality,
+  MODALITY_ORDER,
   PROMOTION_CHEER,
   RANK_XP,
   RANKS,
@@ -32,6 +35,7 @@ import type { SimContext } from './context';
 import { emit, tipOnce, toast } from './events';
 import { running } from './marketing';
 import { fairPay } from './staffing';
+import { unlocked } from './treatments';
 
 /** The name of a rank, from 1 to 5. */
 export const rankName = (rank: number) => at(RANKS, Math.max(1, Math.min(RANKS.length, rank)) - 1);
@@ -62,12 +66,36 @@ export function rankProgress(st: Staff): number {
   return to === undefined ? 1 : Math.min(1, Math.max(0, (st.xp - from) / (to - from)));
 }
 
-/** Add experience for work done, and ask for promotion once there is enough of it and every slot is filled. */
+/** Treatments of their own discipline, open now, that they have yet to learn. */
+export function treatmentsToLearn(ctx: SimContext, st: Staff): Modality[] {
+  const discipline = ROLES[st.role].discipline;
+  if (!discipline) return [];
+  return MODALITY_ORDER.filter(
+    (m) => MODALITIES[m].discipline === discipline && !st.quals.includes(m) && unlocked(ctx, m),
+  );
+}
+
+/** General courses open to their role that they have yet to take. */
+export const generalToLearn = (st: Staff) => generalFor(st.role).filter((id) => !st.general.includes(id));
+
+/**
+ * Whether they are as qualified as they can be for now: every slot filled, or no course left to fill one with. A
+ * consultant has only three courses, so as a Senior, with four slots, they would otherwise never be promoted again.
+ */
+export const fullyTrained = (ctx: SimContext, st: Staff) =>
+  !slotFree(st) || (treatmentsToLearn(ctx, st).length === 0 && generalToLearn(st).length === 0);
+
+/** Add experience for work done, and see whether it has earned a promotion. */
 export function gainXp(ctx: SimContext, st: Staff, amount: number) {
   st.xp += amount;
+  offerPromotion(ctx, st);
+}
+
+/** Ask for promotion once there is the experience for it and they are fully trained, or nudge to train them first. */
+export function offerPromotion(ctx: SimContext, st: Staff) {
   if (st.promotion || xpToNext(st) !== 0) return;
   const about = { kind: 'staff', id: st.id } as const;
-  if (slotFree(st)) {
+  if (!fullyTrained(ctx, st)) {
     tipOnce(
       ctx,
       `slots-${st.id}`,

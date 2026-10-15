@@ -6,7 +6,7 @@ import { rankName, rankProgress, slots, trained, xpToNext } from '../../../core/
 import type { Staff } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
-import { moraleLook, quitWarning, staffStatus } from '../../lib/status';
+import { moraleLook, promotionNote, quitWarning, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { QualChips } from '../common/QualChips';
@@ -17,6 +17,7 @@ import { Courses } from './Courses';
 function Career({ staff: st }: { staff: Staff }) {
   const { sim } = useGame();
   const left = xpToNext(st);
+  const note = promotionNote(st, sim.fullyTrained(st));
   return (
     <>
       <p class="rank">
@@ -30,7 +31,11 @@ function Career({ staff: st }: { staff: Staff }) {
             : `Experience: enough for ${rankName(st.skill + 1)}`}
         <Bar value={rankProgress(st) * 100} class="blue" />
       </label>
-      <p class="sub">{`Qualification slots: ${trained(st)} of ${slots(st)} filled. Each promotion brings another.`}</p>
+      {note ? (
+        <p class="status needs">{note}</p>
+      ) : (
+        <p class="sub">{`Qualification slots: ${trained(st)} of ${slots(st)} filled. Each promotion brings another.`}</p>
+      )}
       <QualChips quals={st.quals} general={st.general} />
       {st.promotion && st.state !== 'leaving' && (
         <Button

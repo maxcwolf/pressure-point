@@ -38,7 +38,7 @@ import {
   toggleWindow,
 } from './building';
 import { acceptCall, callFee, declineCall, updateCalls, whoCanGo } from './calls';
-import { promote, reject, setDuty, updateApplicants, updateHabits } from './careers';
+import { fullyTrained, promote, reject, setDuty, updateApplicants, updateHabits } from './careers';
 import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
 import { createContext, type SimContext } from './context';
@@ -353,6 +353,11 @@ export class Sim {
   /** Give a member of staff a raise. */
   giveRaise(id: number) {
     giveRaise(this.ctx, id);
+  }
+
+  /** Whether a member of staff is as qualified as they can be for now, as a promotion needs. */
+  fullyTrained(st: Staff): boolean {
+    return fullyTrained(this.ctx, st);
   }
 
   /** Courses a member of staff could take right now. */

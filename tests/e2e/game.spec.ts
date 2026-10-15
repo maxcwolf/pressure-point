@@ -1176,6 +1176,23 @@ test.describe('staff careers', () => {
     expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'therapist')!.skill)).toBe(2);
   });
 
+  test('someone with the experience but empty slots is told to train before a promotion', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      const st = pp.state.staff.find((x) => x.role === 'consultant')!;
+      Object.assign(st, { skill: 2, general: ['bedside'], xp: 45, promotion: false });
+      pp.tools.select({ kind: 'staff', id: st.id });
+    });
+    const insp = page.locator('#inspector');
+    await expect(insp).toContainText('Experience: enough for Experienced');
+    await expect(insp.locator('.needs')).toHaveText(
+      'To be promoted, fill every qualification slot (1 of 2 filled) with a course in a Training Room.',
+    );
+    await expect(insp.getByRole('button', { name: /Promote/ })).toHaveCount(0);
+  });
+
   test('a consultant can be kept to one duty, but not from them all', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

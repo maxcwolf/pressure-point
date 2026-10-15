@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type Discipline, ITEM_MENU, ITEMS, MODALITIES, ROOMS } from '../../src/core/data';
+import { type Discipline, ITEM_MENU, ITEMS, MODALITIES, RANK_XP, ROOMS } from '../../src/core/data';
 import type { Job } from '../../src/core/state/types';
 import { cureShare, seen, starText } from '../../src/ui/lib/casebook';
 import {
@@ -19,7 +19,7 @@ import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
 import { offerTimeLeft, timeLeftLabel, wholeDaysLeft } from '../../src/ui/lib/emergency';
 import { pleasantness } from '../../src/ui/lib/overlays';
 import { placedFlags } from '../../src/ui/lib/plan';
-import { courseName, guestStatus, staffStatus } from '../../src/ui/lib/status';
+import { courseName, guestStatus, promotionNote, staffStatus } from '../../src/ui/lib/status';
 import { saveFacts, titleBadges } from '../../src/ui/lib/title';
 import { roomsUnlockedAt, treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
 import { hire, openCenter, run, runUntil } from './helpers';
@@ -278,5 +278,24 @@ describe('the overlays', () => {
     expect(pleasantness(1.37)).toBeCloseTo(0);
     expect(pleasantness(0.7)).toBe(1);
     expect(pleasantness(1.4)).toBe(0);
+  });
+});
+
+describe('what a promotion still needs', () => {
+  it('says to fill the slots when the experience is there but the training is not', () => {
+    const { receptionist } = openCenter(1);
+    receptionist.skill = 2;
+    receptionist.general = ['service'];
+    receptionist.xp = RANK_XP[1]! + 1;
+    // not enough experience yet: nothing to say
+    expect(promotionNote(receptionist, false)).toBe('');
+    receptionist.xp = RANK_XP[2]!;
+    expect(promotionNote(receptionist, false)).toBe(
+      'To be promoted, fill every qualification slot (1 of 2 filled) with a course in a Training Room.',
+    );
+    // fully trained, or already asking: nothing more is needed
+    expect(promotionNote(receptionist, true)).toBe('');
+    receptionist.promotion = true;
+    expect(promotionNote(receptionist, false)).toBe('');
   });
 });

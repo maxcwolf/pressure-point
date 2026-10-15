@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Promotions explained:** someone with the experience for a promotion but empty qualification slots now says so in their inspector, with how many slots are filled. A promotion comes as soon as a course fills the last slot, and a Wellness Consultant, who has fewer courses than a Senior has slots, can now reach Expert.
+
 ## v0.13.0
 
 - **The Janitor is now the Caretaker,** a better name for someone who cleans, repairs, waters, reheats the stones, changes the linens and, with the Smudging course, clears bad vibes. Janitor of the Year is now Caretaker of the Year. Saved games keep their staff and trophies.

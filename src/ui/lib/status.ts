@@ -1,6 +1,7 @@
 // Describing what people are up to, in a few words.
 
 import { DISCIPLINES, GENERAL_COURSES, isGeneral, ITEMS, modalityLabel, ROOMS } from '../../core/data';
+import { slots, trained, xpToNext } from '../../core/sim/careers';
 import type { Sim } from '../../core/sim/sim';
 import type { CourseId, Guest, Staff } from '../../core/state/types';
 
@@ -143,4 +144,10 @@ export function raiseRequests(staff: readonly Staff[]): Staff[] {
 /** Staff ready for promotion, still waiting on it. */
 export function promotionRequests(staff: readonly Staff[]): Staff[] {
   return staff.filter((st) => st.promotion && st.state !== 'leaving');
+}
+
+/** What still stands between a member of staff and a promotion they have the experience for, if anything. */
+export function promotionNote(st: Staff, fullyTrained: boolean): string {
+  if (st.promotion || xpToNext(st) !== 0 || fullyTrained) return '';
+  return `To be promoted, fill every qualification slot (${trained(st)} of ${slots(st)} filled) with a course in a Training Room.`;
 }

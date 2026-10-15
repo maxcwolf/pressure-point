@@ -115,6 +115,11 @@
   margin-top: 6px;
 }
 
+.status.needs {
+  color: #8a5a12;
+  font-weight: 600;
+}
+
 .status.quitting {
   color: #a8322b;
   font-weight: 600;

@@ -81,6 +81,29 @@ describe('ranks', () => {
     );
   });
 
+  it('are asked for by someone with every course they can take, though slots are left over', () => {
+    const { s, consultant } = openCenter(1);
+    const ctx = createContext(s);
+    // a Senior has four slots, but a consultant has only three courses to fill them with
+    consultant.skill = 4;
+    consultant.general = ['bedside', 'motivation', 'stamina'];
+    consultant.xp = RANK_XP[4]! - 1;
+    expect(slotFree(consultant)).toBe(true);
+    gainXp(ctx, consultant, 1);
+    expect(consultant.promotion).toBe(true);
+  });
+
+  it('are asked for as soon as a course fills the last slot, with the experience already there', () => {
+    const { sim, receptionist } = openCenter(1);
+    addTraining(sim);
+    receptionist.skill = 1;
+    receptionist.general = [];
+    receptionist.xp = RANK_XP[1]!;
+    expect(sim.train(receptionist.id, 'service')).toBe(true);
+    runUntil(sim, () => receptionist.general.includes('service'), 120);
+    expect(receptionist.promotion).toBe(true);
+  });
+
   it('are promoted into, with the raise that comes with it', () => {
     const { sim, s, therapist } = openCenter(1);
     therapist.skill = 1;
