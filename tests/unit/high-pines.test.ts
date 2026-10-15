@@ -26,7 +26,7 @@ function firstSnowDay(): number {
 }
 
 describe('High Pines', () => {
-  it('comes after Saltmarsh, with acupuncture and reiki', () => {
+  it('comes after Driftwood Bay, with acupuncture and reiki', () => {
     expect(nextCenter('saltmarsh')).toBe('highpines');
     expect(nextCenter('highpines')).toBe('orchard');
     expect(disciplineOn(newGame('highpines'), 'reiki')).toBe(true);

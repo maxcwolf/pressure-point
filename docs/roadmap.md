@@ -68,7 +68,7 @@ The building itself matters more.
 
 - **Calm** [39]: items and crowds make noise, spreading like decor does; noise near a treatment room lowers its results and guests' experience. Treatment rooms keep out some noise; windows and doors let more in. A Calm overlay.
 - **Fresh linens** [38]: each treatment table gets dirtier linens with use; a hamper fills; a caretaker launders them. Stale linens upset guests and lower results. Builds on today's dirt.
-- **Temperature** [17]: radiators and air conditioners, each center's climate (cold at High Pines, hot Saltmarsh summers), and guests and staff who mind. A Temperature overlay. Staff needs (11) come in here, since heat makes people thirsty.
+- **Temperature** [17]: radiators and air conditioners, each center's climate (cold at High Pines, hot Driftwood Bay summers), and guests and staff who mind. A Temperature overlay. Staff needs (11) come in here, since heat makes people thirsty.
 
 **High Pines** opens after this phase, with snow, cold and Hot Stone in demand.
 
@@ -84,7 +84,7 @@ The outside world takes an interest.
 
 ## Phase 9: Events
 
-- **Mishaps** [41]: one per center, using the twist hooks: a power cut at The Exchange, a storm at Saltmarsh, a freeze at High Pines, and a fire drill anywhere. Each warns first, can be prepared for, and has a sandbox switch. Done: wasps at The Orchard Estate too, and the sandbox has the power cut. The fire drill was dropped, so Willow Lane has no mishap.
+- **Mishaps** [41]: one per center, using the twist hooks: a power cut at The Exchange, a storm at Driftwood Bay, a freeze at High Pines, and a fire drill anywhere. Each warns first, can be prepared for, and has a sandbox switch. Done: wasps at The Orchard Estate too, and the sandbox has the power cut. The fire drill was dropped, so Willow Lane has no mishap.
 
 ## Phase 10: Building tools
 

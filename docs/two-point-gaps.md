@@ -46,7 +46,7 @@ So the gaps below are read in proportion: we have rooms built by dragging, doors
 
 **16. Moving, copying and templating rooms.** Two Point Hospital has all three: pick a built room up, furniture and all, to move or rotate it; copy and paste a room (added in 2018); and save rooms as templates (added in 2020). Campus has them too. We have resizing, door moves and windows. _Medium each._ ([wiki: Rooms](https://two-point-hospital.fandom.com/wiki/Rooms), [Changelist](https://two-point-hospital.fandom.com/wiki/Changelist), [templates blog](https://community.twopointcounty.com/two-point-studios/two-point-hospital/blogs/9-room-templates-deep-dive))
 
-**17. Temperature.** Radiators and air conditioners, regions with temperate, cold and hot climates, and patients and staff who mind. Failing machines give off heat. We have none. Seasons at Saltmarsh and the snow at High Pines would make it bite. _Medium._ ([wiki: Hospitals](https://two-point-hospital.fandom.com/wiki/Hospitals))
+**17. Temperature.** Radiators and air conditioners, regions with temperate, cold and hot climates, and patients and staff who mind. Failing machines give off heat. We have none. Seasons at Driftwood Bay and the snow at High Pines would make it bite. _Medium._ ([wiki: Hospitals](https://two-point-hospital.fandom.com/wiki/Hospitals))
 
 **18. Overlays.** Two Point Hospital has twelve: attractiveness, health, patient happiness, staff happiness, temperature, thirst, hunger, staff energy, hygiene, toilet, boredom and maintenance. We already compute how pleasant every tile is (`ctx.attract`), every guest's needs and every item's wear and dirt, so several overlays are close to free. _Small._ ([wiki: Visualisation Modes](https://two-point-hospital.fandom.com/wiki/Visualisation_Modes))
 
@@ -56,7 +56,7 @@ So the gaps below are read in proportion: we have rooms built by dragging, doors
 
 **21. Hygiene.** People and areas have a hygiene level. Low hygiene makes patients' health drain faster, and sinks, hand dryers and sanitizers raise it. We have dirt on items and litter on floors, but nothing on people. Matters only alongside item 1. _Small to medium._ ([wiki: Hospitals](https://two-point-hospital.fandom.com/wiki/Hospitals))
 
-**22. Disasters.** Fires, earthquakes, electrical storms and volcanic eruptions damage machines and leave debris. Our Fire Extinguisher does nothing but look reassuring. A center-specific one (a storm at Saltmarsh, a power cut at The Exchange) would fit the twist system. _Medium._ ([wiki: Disasters](https://two-point-hospital.fandom.com/wiki/Disasters))
+**22. Disasters.** Fires, earthquakes, electrical storms and volcanic eruptions damage machines and leave debris. Our Fire Extinguisher does nothing but look reassuring. A center-specific one (a storm at Driftwood Bay, a power cut at The Exchange) would fit the twist system. _Medium._ ([wiki: Disasters](https://two-point-hospital.fandom.com/wiki/Disasters))
 
 ## Money and growth
 
@@ -114,7 +114,7 @@ Some Two Point systems don't fit a healing center as they are, but a version of 
 
 **40. A rival center** (from rival hospitals). A healing-center franchise across the street undercuts your prices, poaches unhappy staff, and competes with you at the year-end awards.
 
-**41. Mishaps** (from disasters, 22). One per center: a power cut at The Exchange stops the stim units and turns the lights off; a storm at Saltmarsh floods the restrooms; a snowstorm freezes the pipes at High Pines. A fire drill anywhere sends everyone outside, and the Fire Extinguisher finally matters.
+**41. Mishaps** (from disasters, 22). One per center: a power cut at The Exchange stops the stim units and turns the lights off; a storm at Driftwood Bay floods the restrooms; a snowstorm freezes the pipes at High Pines. A fire drill anywhere sends everyone outside, and the Fire Extinguisher finally matters.
 
 **42. Bad vibes** (from ghosts). A failed treatment leaves a lingering cloud in its room that unsettles everyone who comes in, until someone clears it: a Reiki Practitioner, or a janitor trained in smudging.
 

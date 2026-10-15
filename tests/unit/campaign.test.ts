@@ -217,7 +217,7 @@ describe('The Exchange', () => {
   });
 });
 
-describe('Saltmarsh', () => {
+describe('Driftwood Bay', () => {
   it('has seasons, starting the year in winter', () => {
     expect(seasonOf(0)).toBe('winter');
     expect(seasonOf(2 * 30)).toBe('spring');

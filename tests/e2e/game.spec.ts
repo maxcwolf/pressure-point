@@ -1565,7 +1565,10 @@ test.describe('the campaign', () => {
     await expect(page.locator('#objectives')).toContainText('The Exchange');
   });
 
-  test('a star at Saltmarsh opens High Pines, which is snowed in now and then each winter', async ({ game, page }) => {
+  test('a star at Driftwood Bay opens High Pines, which is snowed in now and then each winter', async ({
+    game,
+    page,
+  }) => {
     await page.addInitScript(() => {
       localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}');
       localStorage.setItem(

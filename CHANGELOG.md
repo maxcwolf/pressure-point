@@ -9,6 +9,7 @@ Each release's notes are taken from its section here. Keep them short.
   - **A storm** at Saltmarsh keeps most guests away for two days, with rain over the lot, and breaks a few things as it starts unless the windows are boarded up.
   - **A big freeze** at High Pines, in winter only, stops the toilets, sinks, drinks and radiators for two days unless the pipes are lagged.
   - **Wasps** at The Orchard Estate keep everyone off the snacks, drinks and bins for two days unless pest control is called.
+- **Saltmarsh is now Driftwood Bay,** a name that suits a seaside town better. Saved games and stars there carry over.
 - An item out of action says so in its inspector and the Treatments menu, the advisor says what is stopped rather than asking for it, and a sandbox switch turns mishaps off.
 
 ## v0.16.0
