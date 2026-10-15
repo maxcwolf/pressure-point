@@ -6,6 +6,7 @@ import { DIRT_FILTHY, HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Item } from '../core/state/types';
 import { itemCenter } from '../core/world';
+import { animateCeremony } from './ceremony';
 import { disposeOwned, owned } from './disposal';
 import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
@@ -159,7 +160,7 @@ export class ItemsLayer {
       },
       t,
     );
-    const { session } = partsOf(model);
+    const { session, ceremony } = partsOf(model);
     // props on the guest during a session, but only when it is being done properly:
     // no hot stones without a hot warmer, no cups from untrained hands
     if (session) {
@@ -168,6 +169,7 @@ export class ItemsLayer {
       const showing = mod && !this.sim.deliveryProblem(it, this.sim.staff(it.staffId), mod) ? mod.id : '';
       for (const [key, prop] of Object.entries(session)) prop.visible = key === showing;
     }
+    if (ceremony) animateCeremony(ceremony, it.progress, t, it.id);
   }
 
   /** Bob a marker over an item that needs a Caretaker: a wrench when broken, flies when filthy. */

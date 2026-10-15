@@ -253,6 +253,28 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'results',
     lines: ['Booked a Qi Gong class and stood about all day. No teacher.', 'The class was a no-show.'],
   },
+  'good-trip': {
+    id: 'good-trip',
+    icon: '🌈',
+    text: 'Saw the universe, and it was lovely',
+    good: true,
+    part: 'experience',
+    lines: [
+      'I met my grandmother, and also a talking fern. Five stars.',
+      'Everything is connected. Especially the ceiling.',
+    ],
+  },
+  'bad-trip': {
+    id: 'bad-trip',
+    icon: '🌀',
+    text: 'Had a bad trip',
+    good: false,
+    part: 'experience',
+    lines: [
+      'The room was loud and grubby and the walls kept breathing at me.',
+      'Bad trip. The wallpaper said things I cannot repeat.',
+    ],
+  },
   woozy: {
     id: 'woozy',
     icon: '😵‍💫',

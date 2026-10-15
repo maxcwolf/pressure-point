@@ -43,8 +43,8 @@ describe('treatments that need a rest', () => {
     const rest = Object.values(MODALITIES)
       .filter((m) => m.rest)
       .map((m) => m.id);
-    expect(rest.sort()).toEqual(['chakra', 'cranio', 'deep', 'electro', 'gong', 'moxa']);
-    for (const d of ['massage', 'acupuncture', 'reiki', 'sound'])
+    expect(rest.sort()).toEqual(['ayahuasca', 'chakra', 'cranio', 'deep', 'electro', 'gong', 'moxa', 'mushroom']);
+    for (const d of ['massage', 'acupuncture', 'reiki', 'sound', 'shaman'])
       expect(Object.values(MODALITIES).some((m) => m.rest && m.discipline === d)).toBe(true);
   });
 

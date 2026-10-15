@@ -108,6 +108,10 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     ]);
     put(torso, pump, mat(0xf4f1ea, 0.4), 0.15, 0.13, 0.135);
   }
+  if (role === 'shaman') {
+    // a woven poncho over the shoulders
+    put(torso, rbox(0.5, 0.26, 0.4, 0.08), accent, 0, 0.36, 0).scale.set(1, 1, 0.95);
+  }
   if (role === 'practitioner') {
     const chain = put(torso, torus(0.13, 0.012), mat(0xc9963f, 0.3), 0, 0.36, 0.03);
     chain.rotation.x = Math.PI / 2 - 0.5;
@@ -178,6 +182,11 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
         0,
         0,
       );
+  }
+  if (role === 'shaman') {
+    // a single feather tucked in behind one ear
+    const feather = put(head, rbox(0.05, 0.26, 0.012, 0.01), mat(0xf4f1ea, 0.8), 0.17, 0.16, -0.12);
+    feather.rotation.set(-0.4, 0, -0.35);
   }
   if (role === 'caretaker') {
     put(head, cyl(0.2, 0.22, 0.1, 16), accent, 0, 0.18, 0);
@@ -535,6 +544,97 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     const nose = put(head, sph(0.04, 10), mat(0xe5484d, 0.4), 0, -0.01, 0.215);
     nose.castShadow = false;
     rig.props.push(nose);
+  } else if (visual === 'chicken') {
+    // a hen, settled on top of the head as if it were home
+    const hen = new THREE.Group();
+    const white = mat(0xf7f4ec, 0.7);
+    put(hen, sph(0.09, 12), white, 0, 0, 0).scale.set(1.3, 0.9, 1);
+    put(hen, sph(0.055, 10), white, 0.1, 0.08, 0);
+    put(hen, rbox(0.03, 0.05, 0.015, 0.006), mat(0xd9362f, 0.5), 0.1, 0.14, 0);
+    put(hen, cyl(0.001, 0.016, 0.04, 6), mat(0xf2a33a, 0.4), 0.16, 0.08, 0).rotation.z = -Math.PI / 2;
+    put(hen, sph(0.018, 6), mat(0xd9362f, 0.5), 0.14, 0.05, 0);
+    put(hen, rbox(0.07, 0.09, 0.08, 0.02), white, -0.12, 0.05, 0).rotation.z = 0.5;
+    for (const z of [-0.03, 0.03]) put(hen, sph(0.01, 6), mat(0x1d1f24, 0.3), 0.13, 0.095, z);
+    hen.position.y = 0.27;
+    hen.rotation.y = -Math.PI / 2;
+    for (const o of hen.children) o.castShadow = false;
+    head.add(hen);
+    rig.props.push(hen);
+  } else if (visual === 'goat') {
+    // a pair of curling goat horns, and a little beard to go with them
+    const horn = mat(0xd9c9a8, 0.6);
+    for (const side of [-1, 1]) {
+      const h = put(head, torus(0.07, 0.025), horn, side * 0.13, 0.2, -0.02);
+      h.rotation.set(0, Math.PI / 2, side * 0.6);
+      rig.props.push(h);
+    }
+    rig.props.push(put(head, cyl(0.04, 0.001, 0.12, 8), mat(0xf4f1ea, 0.8), 0, -0.24, 0.13));
+  } else if (visual === 'brent') {
+    // Brent: a small see-through man in a polo shirt and lanyard, hovering at their shoulder with a thumbs up
+    const brent = new THREE.Group();
+    /** A see-through, faintly glowing material, for a ghost. */
+    const ghost = (color: number) =>
+      owned(
+        new THREE.MeshStandardMaterial({
+          color,
+          transparent: true,
+          opacity: 0.75,
+          emissive: color,
+          emissiveIntensity: 0.3,
+        }),
+      );
+    put(brent, capsule(0.06, 0.08), ghost(0x7fb3e0), 0, 0, 0);
+    put(brent, sph(0.06, 10), ghost(0xf0c8a8), 0, 0.13, 0);
+    put(brent, rbox(0.1, 0.02, 0.1, 0.01), ghost(0x6b4a2a), 0, 0.18, 0);
+    put(brent, rbox(0.03, 0.05, 0.01, 0.004), ghost(0xffffff), 0, -0.02, 0.06);
+    put(brent, capsule(0.02, 0.06), ghost(0x7fb3e0), 0.08, 0.05, 0).rotation.z = 2.4;
+    for (const o of brent.children) o.castShadow = false;
+    brent.scale.setScalar(1.7);
+    brent.position.set(0.38, 0.4, 0);
+    torso.add(brent);
+    rig.bob = brent;
+  } else if (visual === 'toxic') {
+    // a faint green haze hanging round them
+    rig.orbit = new THREE.Group();
+    const haze = owned(
+      new THREE.MeshStandardMaterial({
+        color: 0x8fd16a,
+        transparent: true,
+        opacity: 0.45,
+        emissive: 0x6fb34a,
+        emissiveIntensity: 0.4,
+      }),
+    );
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      put(rig.orbit, sph(0.09, 8), haze, Math.cos(a) * 0.3, Math.sin(i * 2.1) * 0.08, Math.sin(a) * 0.3).castShadow =
+        false;
+    }
+    rig.orbit.position.y = 0.3;
+    torso.add(rig.orbit);
+  } else if (visual === 'leash') {
+    // an empty leash, held out hopefully, with nothing on the end of it
+    const strap = put(armR, cyl(0.01, 0.01, 0.42, 6), mat(0xd9362f, 0.5), 0, -0.48, 0.08);
+    strap.rotation.x = 0.35;
+    const collar = put(armR, torus(0.06, 0.012), mat(0xd9362f, 0.5), 0, -0.68, 0.16);
+    collar.rotation.x = Math.PI / 2;
+    rig.props.push(strap, collar);
+  } else if (visual === 'cactus') {
+    // a little cactus in a pot, balanced on the head, about as dry as they feel
+    const pot = new THREE.Group();
+    put(pot, cyl(0.06, 0.045, 0.07, 10), mat(0xb5523e, 0.8), 0, 0, 0);
+    const green = mat(0x5a9a4f, 0.7);
+    put(pot, capsule(0.035, 0.08), green, 0, 0.09, 0);
+    put(pot, capsule(0.02, 0.03), green, 0.045, 0.1, 0).rotation.z = -0.9;
+    pot.scale.setScalar(1.6);
+    pot.position.y = 0.27;
+    for (const o of pot.children) o.castShadow = false;
+    head.add(pot);
+    rig.props.push(pot);
+  } else if (visual === 'bighead') {
+    // a head swollen to half as big again, and a smug little crown on it
+    head.scale.setScalar(1.45);
+    rig.props.push(put(head, cyl(0.1, 0.08, 0.07, 6), mat(0xd9a93a, 0.3, 0.2), 0, 0.24, 0));
   }
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   if (role === 'practitioner' || role === 'caretaker') {
@@ -554,5 +654,6 @@ export function cureRig(rig: CharRig, look: Look) {
   if (rig.cured) return;
   rig.cured = true;
   for (const o of rig.props) o.visible = false;
+  rig.head.scale.setScalar(1);
   rig.headMesh.material = mat(look.skin, 0.65);
 }

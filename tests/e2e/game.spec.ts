@@ -1977,6 +1977,41 @@ test.describe('sound healing', () => {
   });
 });
 
+test.describe('the shaman', () => {
+  test('the Ceremony Lodge opens at the second star, is staffed by a Shaman, and its ceremonies want a good room', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.stars = 1));
+    await game.menu('Rooms');
+    await expect(game.card('Ceremony Lodge')).toContainText('Unlocks at star 2');
+
+    await game.eval((pp) => (pp.state.stars = 2));
+    await game.card('Ceremony Lodge').click();
+    await game.dragOutRoom(4, 4);
+    await game.clickWall('south');
+    await expect(page.locator('#hint')).toContainText('Place the Ceremony Mat inside the room');
+    await game.placeHeld();
+    await game.placeHeld();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#toasts')).toContainText('Ceremony Lodge built!');
+    await page.keyboard.press('Escape');
+
+    await game.menu('Hire');
+    await page.locator('#menu .tab', { hasText: 'Shaman' }).click();
+    await expect(page.locator('#menu .quals').first()).toContainText('Spirit Animal Reading');
+    await page.locator('#menu .card.cv').first().getByRole('button', { name: 'Hire' }).click();
+    await game.menu('Treatments');
+    await expect(page.locator('#menu')).toContainText('Delivered in the Ceremony Lodge');
+    await expect(game.card('Spirit Animal Reading')).toContainText('1 qualified');
+    await expect(game.card('Mushroom Ceremony')).toContainText('Set and setting');
+    await expect(game.card('Ayahuasca Ceremony')).toContainText('Unlocks at star 3');
+    expect(game.errors).toEqual([]);
+  });
+});
+
 test.describe('the qi gong studio', () => {
   test('opens at the second star, is staffed by an Instructor, and keeps a weekly timetable', async ({
     game,

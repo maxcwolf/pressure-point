@@ -18,6 +18,7 @@ import {
 import { money } from '../../../core/format';
 import { unlockedUpTo } from '../../../core/state/game';
 import { useGame } from '../../hooks/use-hud';
+import { tripNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
 import { disciplineNote } from '../../lib/delivery';
 import { kitNote } from '../../lib/mishaps';
@@ -48,6 +49,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
       stoppedBy,
     );
   const rest = restNote(def.rest, sim.hasRoom('recovery'));
+  const trip = tripNote(def.trip);
   return (
     <div class={cx('card mod', locked && 'locked')}>
       <i>{def.icon}</i>
@@ -60,7 +62,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
         <>
           <em class={qualified ? 'ok' : 'warn'}>{`${qualified ? '✔' : '⚠️'} ${qualified} qualified`}</em>{' '}
           {note && <em class={note.ok ? 'ok' : 'warn'}>{note.text}</em>}{' '}
-          {rest && <em class={rest.ok ? 'ok' : 'warn'}>{rest.text}</em>}{' '}
+          {rest && <em class={rest.ok ? 'ok' : 'warn'}>{rest.text}</em>} {trip && <em>{trip}</em>}{' '}
           <em>{`${waiting} waiting · ${def.seconds}s session`}</em>
         </>
       )}

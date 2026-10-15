@@ -31,6 +31,7 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [x] Acupuncturist needed at the Acupuncture Clinic.
   - [x] Reiki Practitioner needed at the Reiki Studio.
   - [ ] Sound Healer needed at the Sound Bath Studio.
+  - [ ] Shaman needed at the Ceremony Lodge.
 - Seasons, at The Boardwalk (`SEASON_NEWS` in `src/core/sim/twists.ts`)
   - [ ] Winter is here. The promenade is empty, so watch the budget until spring.
   - [ ] Spring! The first day-trippers are back in town.

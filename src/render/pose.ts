@@ -75,6 +75,37 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
       headX = -0.35;
       side = Math.sin(t * 0.8 + c.id) * 0.08;
     }
+    if (c.busy && style === 'reading') {
+      // chin in hand, studying the guest, with a slow knowing nod now and then
+      armR = -2.0;
+      armL = -0.5;
+      headZ = 0.22;
+      headX = 0.12 + Math.max(0, Math.sin(t * 1.3 + c.id)) * 0.18;
+    } else if (c.busy && style === 'extraction') {
+      // reaching in, then hauling back hard on something that does not want to come, the rattle going all the while
+      const pull = Math.max(0, Math.sin(t * 2.6 + c.id));
+      armL = -1.4 + pull * 0.7;
+      armR = -1.4 + pull * 0.7 + Math.sin(t * 22 + c.id) * 0.08;
+      lean = 0.3 - pull * 0.5;
+    } else if (c.busy && style === 'sweat') {
+      // ladling water onto the hot stones, and wiping a brow
+      armR = -0.9 + Math.sin(t * 1.8 + c.id) * 0.5;
+      armL = -0.4;
+      lean = 0.1;
+      headX = -0.1;
+    } else if (c.busy && style === 'mushroom') {
+      // swaying slowly with both hands held out, eyes on the ceiling
+      armL = armR = -0.8;
+      armOut = 0.45;
+      side = Math.sin(t * 0.9 + c.id) * 0.12;
+      headX = -0.2;
+    } else if (c.busy && style === 'ayahuasca') {
+      // singing over the guest, shaking a bundle of leaves in a steady rustle
+      armR = -1.6 + Math.sin(t * 9 + c.id) * 0.12;
+      armL = -0.5;
+      headX = -0.3;
+      side = Math.sin(t * 1.2 + c.id) * 0.1;
+    }
     if (c.kind === 'staff' && c.state === 'training') {
       // head down, scribbling notes
       armR = -1.05 + Math.sin(t * 9 + c.id) * 0.08;

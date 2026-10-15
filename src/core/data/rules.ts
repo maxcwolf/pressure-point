@@ -76,6 +76,12 @@ export const CLASS_INTEREST = 2.5;
 export const REST_SECONDS = 15;
 /** Taken off the chance of such a treatment working when there is no free Recliner to rest on afterwards. */
 export const NO_REST_PENALTY = 0.1;
+/** How many times over a psychedelic ceremony feels its room's set and setting: its vibes, noise, linens and prestige. */
+export const SETTING_WEIGHT = 2;
+/** What a lodge too hot or too cold for comfort takes off a psychedelic ceremony's chance, at its worst. */
+export const TRIP_DISCOMFORT = 0.15;
+/** What a bad trip costs in reputation, on top of a failed treatment. */
+export const BAD_TRIP_REP = 1.5;
 
 /** Caretakers start repairing equipment at this much wear; at 100 it is broken. */
 export const WEAR_REPAIR = 50;
@@ -148,6 +154,7 @@ export const WOMEN_APPLY: Readonly<Record<Role, number>> = {
   practitioner: 0.7,
   healer: 0.7,
   instructor: 0.6,
+  shaman: 0.5,
   caretaker: 0.3,
 };
 /** Share of guests and visitors who are women. */

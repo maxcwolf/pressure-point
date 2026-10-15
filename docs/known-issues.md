@@ -14,6 +14,8 @@ When one of these is fixed, add a test that fails without the fix, as for any bu
 
 ## Interface
 
+- **The Sound Healer sits at chair height over the Singing Bowls' floor cushion.** Their seat at the bowls has no height of its own (`h` in its access in `src/core/data/items.ts`), so they sit as if on an invisible chair. The Shaman's seat at the Ceremony Mat has `h: -0.3`, which puts them on their cushion; the same would fix the Sound Healer, with the screenshots that show them redone.
+
 - **The bottom bar cuts off the last speed button** on windows 1240 to 1450 pixels wide. Below 1240 the round buttons shrink and everything fits, and above 1450 there is room, but in between the bar is wider than the window. Lowering the `max-width: 1240px` breakpoint in the stylesheet to about 1450, or letting the bar wrap, would fix it. Add a screenshot test at 1300 pixels.
 
 ## Saves

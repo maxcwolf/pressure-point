@@ -196,8 +196,8 @@ describe('the title screen', () => {
 
   it('lights a badge for each discipline new games include, and dims those switched off', () => {
     const badges = titleBadges(allOn);
-    expect(badges.map((b) => b.on)).toEqual([true, true, true, true]);
-    expect(badges.at(-1)?.label).toBe('Sound healing: open for business');
+    expect(badges.map((b) => b.on)).toEqual([true, true, true, true, true]);
+    expect(badges.at(-1)?.label).toBe('Shamanism: open for business');
     const off = titleBadges(massageOnly);
     expect(off[1]).toMatchObject({ on: false, label: 'Acupuncture: switched off in Settings' });
     // massage cannot be switched off, so its badge stays lit whatever is asked

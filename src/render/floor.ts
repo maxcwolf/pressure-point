@@ -77,6 +77,19 @@ export class Floor {
               ctx.arc(px + TS / 2, py + TS / 2, TS * 0.32, 0, Math.PI * 2);
               ctx.stroke();
             }
+          } else if (room.type === 'lodge') {
+            // a woven rug pattern: a diamond on every other tile
+            if (alt) {
+              ctx.strokeStyle = 'rgba(122,74,42,0.22)';
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.moveTo(px + TS / 2, py + TS * 0.18);
+              ctx.lineTo(px + TS * 0.82, py + TS / 2);
+              ctx.lineTo(px + TS / 2, py + TS * 0.82);
+              ctx.lineTo(px + TS * 0.18, py + TS / 2);
+              ctx.closePath();
+              ctx.stroke();
+            }
           } else if (room.type === 'massage') {
             ctx.strokeStyle = 'rgba(90,55,20,0.18)';
             ctx.lineWidth = 1.5;

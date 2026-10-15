@@ -251,6 +251,79 @@ export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
     trainCost: 3200,
     trainDays: 10,
   },
+  reading: {
+    id: 'reading',
+    discipline: 'shaman',
+    name: 'Spirit Animal Reading',
+    icon: '🦦',
+    desc: 'A long look into the guest’s eyes, and then the news that they are an otter. Every Shaman knows it.',
+    star: 2,
+    seconds: 10,
+    strain: 0.7,
+    difficulty: 0,
+    trainCost: 0,
+    trainDays: 0,
+  },
+  extraction: {
+    id: 'extraction',
+    discipline: 'shaman',
+    name: 'Spiritual Extraction',
+    icon: '🪶',
+    desc: 'Whatever has got into the guest is rattled loose, pulled out by hand and shooed out of the room. Hard work.',
+    star: 2,
+    equipment: 'rattle',
+    seconds: 12,
+    strain: 1.6,
+    difficulty: 0.08,
+    trainCost: 2200,
+    trainDays: 7,
+  },
+  sweat: {
+    id: 'sweat',
+    discipline: 'shaman',
+    name: 'Sweat Lodge',
+    icon: '♨️',
+    desc: 'Water ladled on hot stones in a little domed hut until everyone inside is very sorry. Long, and hot.',
+    star: 2,
+    equipment: 'sweat_lodge',
+    seconds: 16,
+    strain: 1.2,
+    difficulty: 0.06,
+    trainCost: 2400,
+    trainDays: 7,
+  },
+  mushroom: {
+    id: 'mushroom',
+    discipline: 'shaman',
+    name: 'Mushroom Ceremony',
+    icon: '🍄',
+    desc: 'A small cup of mushroom tea and a long lie-down. Well paid, but the room has to be right, or it goes badly.',
+    star: 2,
+    equipment: 'mushroom_altar',
+    seconds: 18,
+    strain: 0.9,
+    difficulty: 0.14,
+    trainCost: 3000,
+    trainDays: 9,
+    rest: true,
+    trip: true,
+  },
+  ayahuasca: {
+    id: 'ayahuasca',
+    discipline: 'shaman',
+    name: 'Ayahuasca Ceremony',
+    icon: '🌿',
+    desc: 'A bitter brew, a bucket within reach, and a very long night. The best paid, the hardest, and the room has to be right.',
+    star: 3,
+    equipment: 'brew_pot',
+    seconds: 20,
+    strain: 1.3,
+    difficulty: 0.24,
+    trainCost: 3800,
+    trainDays: 11,
+    rest: true,
+    trip: true,
+  },
 };
 
 export const MODALITY_ORDER: readonly Modality[] = [
@@ -272,6 +345,11 @@ export const MODALITY_ORDER: readonly Modality[] = [
   'gong',
   'crystalbowls',
   'overtone',
+  'reading',
+  'extraction',
+  'sweat',
+  'mushroom',
+  'ayahuasca',
 ];
 
 export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
@@ -315,9 +393,19 @@ export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
     base: 'sound',
     optional: true,
   },
+  shaman: {
+    id: 'shaman',
+    name: 'Shamanism',
+    icon: '🪶',
+    desc: 'A fifth line of treatment, from The Orchard Estate: spirit animals, extractions, a sweat lodge and psychedelic ceremonies.',
+    role: 'shaman',
+    room: 'lodge',
+    base: 'reading',
+    optional: true,
+  },
 };
 
-export const DISCIPLINE_ORDER: readonly Discipline[] = ['massage', 'acupuncture', 'reiki', 'sound'];
+export const DISCIPLINE_ORDER: readonly Discipline[] = ['massage', 'acupuncture', 'reiki', 'sound', 'shaman'];
 
 /** How a modality reads in a sentence: "Swedish massage", but plain "Cupping". */
 export const modalityLabel = (m: Modality) =>

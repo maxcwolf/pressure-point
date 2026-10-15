@@ -12,6 +12,7 @@ export type RoomType =
   | 'sound'
   | 'recovery'
   | 'qigong'
+  | 'lodge'
   | 'staffroom'
   | 'restroom'
   | 'training';
@@ -27,10 +28,11 @@ export type Role =
   | 'practitioner'
   | 'healer'
   | 'instructor'
+  | 'shaman'
   | 'caretaker';
 
 /** A family of treatments with its own room, staff and equipment. */
-export type Discipline = 'massage' | 'acupuncture' | 'reiki' | 'sound';
+export type Discipline = 'massage' | 'acupuncture' | 'reiki' | 'sound' | 'shaman';
 
 /** Something Settings can switch off: an optional discipline, or the Qi Gong classes. */
 export type Offering = Discipline | 'qigong';
@@ -94,7 +96,13 @@ export type ItemType =
   | 'topiary'
   | 'recliner'
   | 'instructor_mat'
-  | 'practice_spot';
+  | 'practice_spot'
+  | 'ceremony_mat'
+  | 'ember_bowl'
+  | 'rattle'
+  | 'sweat_lodge'
+  | 'mushroom_altar'
+  | 'brew_pot';
 
 export interface RoomDef {
   type: RoomType;
@@ -275,7 +283,12 @@ export type Modality =
   | 'forks'
   | 'gong'
   | 'crystalbowls'
-  | 'overtone';
+  | 'overtone'
+  | 'reading'
+  | 'extraction'
+  | 'sweat'
+  | 'mushroom'
+  | 'ayahuasca';
 
 export interface ModalityDef {
   id: Modality;
@@ -297,6 +310,8 @@ export interface ModalityDef {
   trainDays: number;
   /** Leaves a guest needing a lie-down in a Recovery Lounge afterwards, or it works less often. */
   rest?: boolean;
+  /** A psychedelic ceremony: the room's set and setting count double, and a failure is a bad trip. */
+  trip?: boolean;
 }
 
 export interface DisciplineDef {
@@ -349,7 +364,14 @@ export type Visual =
   | 'mallet'
   | 'blossom'
   | 'worm'
-  | 'glass';
+  | 'glass'
+  | 'chicken'
+  | 'goat'
+  | 'brent'
+  | 'toxic'
+  | 'leash'
+  | 'cactus'
+  | 'bighead';
 
 /** What a guest can arrive suffering from. */
 export type ConditionId =
@@ -393,7 +415,15 @@ export type ConditionId =
   | 'earworm'
   | 'badvibrations'
   | 'glasshalf'
-  | 'monotone';
+  | 'monotone'
+  | 'chicken'
+  | 'goat'
+  | 'brent'
+  | 'toxicex'
+  | 'spiritanimal'
+  | 'parched'
+  | 'midlife'
+  | 'ego';
 
 export interface ConditionDef {
   id: ConditionId;
@@ -486,7 +516,9 @@ export type FeelingId =
   | 'rested'
   | 'woozy'
   | 'class'
-  | 'no-class';
+  | 'no-class'
+  | 'good-trip'
+  | 'bad-trip';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
 export interface FeelingDef {

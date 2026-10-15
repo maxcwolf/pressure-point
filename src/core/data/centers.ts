@@ -15,7 +15,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     plot: SANDBOX_PLOT,
     startMoney: 30000,
     climate: { average: 66, swing: 6 },
-    disciplines: ['acupuncture', 'reiki', 'sound'],
+    disciplines: ['acupuncture', 'reiki', 'sound', 'shaman'],
     mishap: 'power',
     goals: [
       [
@@ -171,11 +171,11 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     name: 'The Orchard Estate',
     place: 'A country resort among the apple orchards',
     blurb:
-      'Wealthy guests who pay handsomely and expect beautiful rooms, and a health inspector who calls twice as often. Acupuncture, reiki and sound healing are open from the start.',
+      'Wealthy guests who pay handsomely and expect beautiful rooms, and a health inspector who calls twice as often. Acupuncture, reiki, sound healing and a Shaman are open from the start.',
     plot: { x0: 4, x1: 27, y0: 5, y1: 16, door: [15, 16] },
     startMoney: 45000,
     climate: { average: 62, swing: 16 },
-    disciplines: ['acupuncture', 'reiki', 'sound'],
+    disciplines: ['acupuncture', 'reiki', 'sound', 'shaman'],
     conditions: { windfall: 3, croquet: 2.5, blossom: 2.5, neck: 1.5 },
     unlockedFrom: 2,
     picky: { fee: 1.5, expects: 2 },

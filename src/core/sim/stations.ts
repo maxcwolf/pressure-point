@@ -29,6 +29,7 @@ import { at, clamp, must } from '../util';
 import { accessPose, accessTile } from '../world';
 import { prestige } from './ambience';
 import { gainXp, habitOf, hasGeneral } from './careers';
+import { badTrip, goodTrip, isTrip, settingPenalty } from './ceremonies';
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
 import { isClassLead, updateClass } from './classes';
@@ -50,7 +51,7 @@ import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments'
 import { upgradeSuccess } from './upgrades';
 import { addWear } from './upkeep';
 import { addVibes, vibesAt, vibesPenalty } from './vibes';
-import { feelTemperature, warmthAt } from './warmth';
+import { discomfort, feelTemperature, warmthAt } from './warmth';
 import { conditionPenalty } from './worsening';
 
 /** What a treatment costs a guest: its fee at the price set, and more from picky guests, who pay extra. */
@@ -113,26 +114,34 @@ export interface Chance {
 
 /**
  * The chance a guest's treatment at this table works if this member of staff gives it now: better with skill, a
- * confident diagnosis, a prestigious room and upgraded equipment, worse for a hard technique, a tired therapist, a guest whose condition
- * has worsened, a room with bad vibes, noise or stale linens, nowhere to rest afterwards if it needs it, and only a
- * fraction of that without the right
- * training or equipment.
+ * confident diagnosis, a prestigious room and upgraded equipment, worse for a hard technique, a tired therapist, a guest
+ * whose condition has worsened, a room with bad vibes, noise or stale linens, nowhere to rest afterwards if it needs
+ * it, and only a fraction of that without the right training or equipment. For a psychedelic ceremony the room counts
+ * for twice as much, and so does an uncomfortable temperature.
  */
 export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest): Chance {
   const mod = MODALITIES[conditionOf(g.condition).modality];
   const problem = deliveryProblem(ctx, it, staff, mod);
+  const setting = {
+    vibes: vibesPenalty(vibesAt(ctx, it)),
+    noise: noisePenalty(itemNoise(ctx, it)),
+    linens: linensPenalty(it),
+    prestige: prestigeBonus(ctx, it),
+    discomfort: isTrip(mod) ? discomfort(warmthAt(ctx, g.tx, g.ty)) : 0,
+  };
   const chance = clamp(
     0.56 +
       staff.skill * 0.09 +
       Math.min(1, g.diagnosis) * 0.15 +
-      prestigeBonus(ctx, it) +
+      setting.prestige +
       upgradeSuccess(it.level) -
       mod.difficulty -
       (staff.energy < 15 ? 0.15 : 0) -
       conditionPenalty(g.health) -
-      vibesPenalty(vibesAt(ctx, it)) -
-      noisePenalty(itemNoise(ctx, it)) -
-      linensPenalty(it) -
+      setting.vibes -
+      setting.noise -
+      setting.linens -
+      settingPenalty(mod, setting) -
       restPenalty(ctx, g),
     0.3,
     0.98,
@@ -320,6 +329,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       g.outcome = 'healed';
       // feeling better takes the stress out of them too
       g.stressed = false;
+      // a ceremony that works is a good trip, which goes in their review
+      if (isTrip(mod)) goodTrip(g);
       countVisit(ctx, g, 'healed');
       const fee = treatmentFee(ctx.s, cond.fee, treatPrice);
       earn(ctx, fee, 'treatment', g.x, g.y);
@@ -331,6 +342,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       emit(ctx, { type: 'sfx', name: 'heal' });
     } else {
       g.outcome = 'failed';
+      // a ceremony that fails is a bad trip, whatever went wrong, and that goes in their review too
+      if (isTrip(mod)) badTrip(ctx, g, it);
       countVisit(ctx, g, 'failed');
       changeRep(ctx, -2.5);
       if (room) addVibes(ctx, room);
@@ -341,7 +354,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
         'no-equipment': 'No equipment!',
         cold: 'Cold stones!',
       }[problem];
-      emit(ctx, { type: 'float', text: why, x: g.x, y: g.y, kind: 'bad' });
+      if (!isTrip(mod)) emit(ctx, { type: 'float', text: why, x: g.x, y: g.y, kind: 'bad' });
       emit(ctx, { type: 'sfx', name: 'fail' });
       if (problem === 'unqualified')
         tipOnce(
@@ -360,7 +373,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
         );
       else if (problem === 'cold')
         tipOnce(ctx, 'botch-cold', 'The massage stones were cold. A Caretaker keeps Stone Warmers hot.', 'bad');
-      else
+      else if (!isTrip(mod))
         tipOnce(
           ctx,
           'failed',

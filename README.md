@@ -4,7 +4,7 @@
 
 A healing-center management sim, in the spirit of the classic hospital tycoon games. Build treatment rooms, hire therapists, and keep your guests happy enough to come back.
 
-**Massage therapy**, **acupuncture**, **reiki** and **sound healing** are open for business.
+**Massage therapy**, **acupuncture**, **reiki**, **sound healing** and a **Shaman** are open for business.
 
 ![A busy healing center](docs/assets/screenshot.png)
 
@@ -28,7 +28,7 @@ The browser version needs nothing installed and is always the same version as th
 2. **The Exchange**, downtown. Office workers with office ailments, arriving in rush hours when the office crowd comes in. Acupuncture opens here.
 3. **The Boardwalk**, a seaside town. Packed in summer and quiet in winter, with seaside ailments and sea air that is hard on equipment. Reiki opens here.
 4. **High Pines**, a lodge up in the mountains. Cold all year, so keep it heated, and snowed in now and then each winter, when nobody new can get up the road. A big freeze can stop the water. Mountain ailments, and Stone Warmers that cool fast in the cold. Sound healing opens here.
-5. **The Orchard Estate**, a country resort among the apple orchards. Picky guests pay half as much again but expect beautiful treatment rooms, the health inspector calls twice as often, and each star asks for a higher standing. Acupuncture, reiki and sound healing are open from the start.
+5. **The Orchard Estate**, a country resort among the apple orchards. Picky guests pay half as much again but expect beautiful treatment rooms, the health inspector calls twice as often, and each star asks for a higher standing. Acupuncture, reiki, sound healing and a Shaman are open from the start.
 
 Every campaign star earns **✨ karma**, and so do eight one-off **achievements**, like seeing an emergency through or healing 100 guests in one center. Spend karma in the **karma shop** (under Campaign on the title screen) or on a locked card in the Items menu. Each purchase stays unlocked in every center and the sandbox. Karma unlocks comfort and decor items early, before their star comes round, and four you can only get with karma: a **Massage Chair** that keeps a waiting guest patient, a **Bonsai**, a **Koi Pond** and a **Fireplace** that warms and soothes the room around it. It also unlocks floors and walls to decorate rooms with. The whole campaign earns enough karma to unlock every item, but not every floor and wall as well, so choose.
 
@@ -111,9 +111,19 @@ Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupunct
 | Crystal Bowls     | Star 2  | Course, Crystal Bowls | A step up in fee                            |
 | Overtone Chanting | Star 3  | Course                | The best paid, and the hardest to get right |
 
+**Shamanism**, delivered in a Ceremony Lodge by a Shaman, one guest at a time on a Ceremony Mat. The lodge unlocks at star 2 at The Orchard Estate (where it is open from the start) and in the sandbox. Guests arrive possessed by a chicken, a goat or Brent, among other things. The two psychedelic ceremonies depend on **set and setting**: the lodge's bad vibes, noise, stale linens and prestige count twice for them, and so does a lodge too hot or too cold. One that fails is a **bad trip**, which costs more reputation and leaves the lodge's vibes worse. Both need a rest in a Recovery Lounge after:
+
+| Technique             | Unlocks | Needs                       | Character                                             |
+| --------------------- | ------- | --------------------------- | ----------------------------------------------------- |
+| Spirit Animal Reading | Star 2  | Nothing                     | Every Shaman knows it; everyone is an otter           |
+| Spiritual Extraction  | Star 2  | Course, Rattle and Feathers | Something dark pulled out by hand; hard on the Shaman |
+| Sweat Lodge           | Star 2  | Course, Sweat Lodge         | Long and hot, and the hut heats the whole room        |
+| Mushroom Ceremony     | Star 2  | Course, Mushroom Altar      | Well paid, if the room is right                       |
+| Ayahuasca Ceremony    | Star 3  | Course, Brew Pot            | The best paid and the hardest, if the room is right   |
+
 ## Settings
 
-**Settings**, on the title screen and in the pause menu (☰), switches acupuncture, reiki and sound healing on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Sound and music are there too.
+**Settings**, on the title screen and in the pause menu (☰), switches acupuncture, reiki, sound healing, the Shaman and the Qi Gong classes on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Sound and music are there too.
 
 ## Controls
 

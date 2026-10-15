@@ -71,6 +71,16 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
     accent: 0xf2d27a,
     room: 'qigong',
   },
+  shaman: {
+    role: 'shaman',
+    name: 'Shaman',
+    icon: '🪶',
+    desc: 'Treats guests one at a time in a Ceremony Lodge. Each one knows certain techniques; train them to add more.',
+    baseSalary: 1900,
+    uniform: 0x8a4b2a,
+    accent: 0xe0b04a,
+    discipline: 'shaman',
+  },
   caretaker: {
     role: 'caretaker',
     name: 'Caretaker',
@@ -91,6 +101,7 @@ export const ROLE_ORDER: readonly Role[] = [
   'healer',
   'caretaker',
   'instructor',
+  'shaman',
 ];
 
 export const TRAITS: readonly TraitDef[] = [

@@ -42,7 +42,14 @@ describe('upgrade prices', () => {
 
   it('are only set for treatment equipment', () => {
     const upgradable = Object.entries(ITEMS).flatMap(([type, def]) => (def.upgrade ? [type] : []));
-    expect(upgradable.sort()).toEqual(['acu_table', 'massage_table', 'posture_scanner', 'reiki_table', 'sound_mat']);
+    expect(upgradable.sort()).toEqual([
+      'acu_table',
+      'ceremony_mat',
+      'massage_table',
+      'posture_scanner',
+      'reiki_table',
+      'sound_mat',
+    ]);
   });
 
   it('add up to everything paid, counting one waiting to be installed', () => {

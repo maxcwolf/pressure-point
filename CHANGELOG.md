@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **The Shaman,** a fifth discipline, open at The Orchard Estate from the start and in the sandbox from the second star. Build a **Ceremony Lodge** and hire a **Shaman**, who treats one guest at a time on a Ceremony Mat. Five techniques: Spirit Animal Reading, Spiritual Extraction (with a little dark cloud pulled out of the guest and shooed away), Sweat Lodge, and two psychedelic ceremonies, mushrooms and ayahuasca. The ceremonies depend on **set and setting**: a noisy, grubby, gloomy, plain or uncomfortably hot or cold lodge counts twice against them, and one that fails is a **bad trip**. Both ceremonies need a rest in the Recovery Lounge after. Eight new ailments, among them guests possessed by a chicken, a goat, and Brent.
+
 ## v0.22.1
 
 - **Two new announcements, both voiced:** guests are reminded that clothing is mandatory in the hallways, and male visitors are asked not to completely remove their pants while using the urinal. The face hole line is gone.

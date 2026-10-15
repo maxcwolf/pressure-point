@@ -293,8 +293,8 @@ describe('export and import', () => {
     };
     expect(importSave(fileWith((s) => (s.items[0].type = 'hover_table')))).toBe('invalid');
     expect(importSave(fileWith((s) => (s.rooms[0].type = 'float_tank')))).toBe('invalid');
-    expect(importSave(fileWith((s) => (s.staff[0].role = 'shaman')))).toBe('invalid');
-    expect(importSave(fileWith((s) => (s.candidates[0].role = 'shaman')))).toBe('invalid');
+    expect(importSave(fileWith((s) => (s.staff[0].role = 'druid')))).toBe('invalid');
+    expect(importSave(fileWith((s) => (s.candidates[0].role = 'druid')))).toBe('invalid');
     expect(importSave(fileWith((s) => (s.staff[0].quals = ['levitation'])))).toBe('invalid');
     expect(importSave(fileWith((s) => s.guests.push({ ...s.guests[0], condition: 'hiccups' })))).toBe('invalid');
     expect(listSaves()).toEqual([]);

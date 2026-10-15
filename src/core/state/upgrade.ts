@@ -301,5 +301,8 @@ export function upgradeSave(save: GameState) {
   if (s.version < 21)
     while (s.candidates.filter((c) => c.role === 'instructor').length < 3)
       s.candidates.push(makeCandidate(save, 'instructor'));
+  // and the Shaman with version 22
+  if (s.version < 22)
+    while (s.candidates.filter((c) => c.role === 'shaman').length < 3) s.candidates.push(makeCandidate(save, 'shaman'));
   s.version = SAVE_VERSION;
 }

@@ -13,13 +13,16 @@ import { buildBench } from './bench';
 import { buildBin } from './bin';
 import { buildBonsai } from './bonsai';
 import { buildBookcase } from './bookcase';
+import { buildBrewPot } from './brew-pot';
 import { buildCabinet } from './cabinet';
+import { buildCeremonyMat } from './ceremony-mat';
 import { buildCoffeeMachine } from './coffee-machine';
 import { buildConsultDesk } from './consult-desk';
 import { buildCrystalBowls } from './crystal-bowls';
 import { buildCrystalGrid } from './crystal-grid';
 import { buildCuppingCart } from './cupping-cart';
 import { buildDiffuser } from './diffuser';
+import { buildEmberBowl } from './ember-bowl';
 import { buildFireExtinguisher } from './fire-extinguisher';
 import { buildFireplace } from './fireplace';
 import { buildFountain } from './fountain';
@@ -31,6 +34,7 @@ import { buildMagazineRack } from './magazine-rack';
 import { buildMassageChair } from './massage-chair';
 import { buildMassageTable } from './massage-table';
 import { buildMoxaBurner } from './moxa-burner';
+import { buildMushroomAltar } from './mushroom-altar';
 import { buildNeedleCabinet } from './needle-cabinet';
 import { buildOilTrolley } from './oil-trolley';
 import { buildPlant } from './plant';
@@ -38,6 +42,7 @@ import { buildPoolTable } from './pool-table';
 import { buildPostureScanner } from './posture-scanner';
 import { buildPracticeSpot } from './practice-spot';
 import { buildRadiator } from './radiator';
+import { buildRattle } from './rattle';
 import { buildReceptionDesk } from './reception-desk';
 import { buildRecliner } from './recliner';
 import { buildReikiAltar } from './reiki-altar';
@@ -55,6 +60,7 @@ import { buildStimUnit } from './stim-unit';
 import { buildStoneWarmer } from './stone-warmer';
 import { buildStretchRack } from './stretch-rack';
 import { buildStudyDesk } from './study-desk';
+import { buildSweatLodge } from './sweat-lodge';
 import { buildTeaStation } from './tea-station';
 import { buildToilet } from './toilet';
 import { buildTopiary } from './topiary';
@@ -98,6 +104,12 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   recliner: buildRecliner,
   instructor_mat: buildInstructorMat,
   practice_spot: buildPracticeSpot,
+  ceremony_mat: buildCeremonyMat,
+  ember_bowl: buildEmberBowl,
+  rattle: buildRattle,
+  sweat_lodge: buildSweatLodge,
+  mushroom_altar: buildMushroomAltar,
+  brew_pot: buildBrewPot,
   gong: buildGong,
   crystal_bowls: buildCrystalBowls,
   stone_warmer: buildStoneWarmer,
