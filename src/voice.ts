@@ -13,6 +13,8 @@ import knotsNotContagious from './sounds/announcer/knots-not-contagious.m4a';
 import lostAndFound from './sounds/announcer/lost-and-found.m4a';
 import massageAtMassage from './sounds/announcer/massage-at-massage.m4a';
 import pleaseBreatheIn from './sounds/announcer/please-breathe-in.m4a';
+import powerOut from './sounds/announcer/power-out.m4a';
+import powerOutSoon from './sounds/announcer/power-out-soon.m4a';
 import receptionistAtReception from './sounds/announcer/receptionist-at-reception.m4a';
 import redAura from './sounds/announcer/red-aura.m4a';
 import reikiAtReiki from './sounds/announcer/reiki-at-reiki.m4a';
@@ -43,6 +45,8 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'Acupuncturist needed at the Acupuncture Clinic.': acupuncturistAtAcupuncture,
   'Reiki Practitioner needed at the Reiki Studio.': reikiAtReiki,
   'Caretaker needed. The corridors are getting gross.': caretakerNeeded,
+  'The power company will be working on the lines this week. Expect a power cut.': powerOutSoon,
+  'The power is out. Anything with a plug is now a very expensive ornament.': powerOut,
   'A VIP will be visiting in five days. Look busy.': vipVisiting,
   'The health inspector is on the way. Hide the sage.': healthInspector,
 };

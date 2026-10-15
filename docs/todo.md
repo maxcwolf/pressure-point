@@ -56,8 +56,8 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [ ] We are now a Healing Center. Thank you for bringing us your knots.
   - [ ] We are now a Healing Institute. Thank you for bringing us your knots.
 - Mishaps, as each is announced, starts and ends (`MISHAPS` in `src/core/data/mishaps.ts`)
-  - [ ] The power company will be working on the lines this week. Expect a power cut.
-  - [ ] The power is out. Anything with a plug is now a very expensive ornament.
+  - [x] The power company will be working on the lines this week. Expect a power cut.
+  - [x] The power is out. Anything with a plug is now a very expensive ornament.
   - [ ] The power is back. Please stop meditating by candlelight.
   - [ ] A storm is coming in off the sea later this week. Batten down the hatches.
   - [ ] The storm has arrived. Please keep away from the windows and the sea.

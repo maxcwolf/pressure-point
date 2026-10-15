@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ANNOUNCEMENTS, ITEMS, type ItemType, VISIT_NEWS, VISIT_NOTICE_DAYS } from '../../src/core/data';
+import { ANNOUNCEMENTS, ITEMS, type ItemType, MISHAPS, VISIT_NEWS, VISIT_NOTICE_DAYS } from '../../src/core/data';
 import { CARETAKER_WANTED, staffWanted } from '../../src/core/sim/advisor';
 import { VOICE_LINES, voiceFor } from '../../src/voice';
 
@@ -9,7 +9,8 @@ function spokenLines(): string[] {
   const stations = (Object.keys(ITEMS) as ItemType[])
     .filter((t) => ITEMS[t].station)
     .map((type) => staffWanted({ type }));
-  return [...ANNOUNCEMENTS, ...Object.values(VISIT_NEWS), ...stations, CARETAKER_WANTED];
+  const mishaps = Object.values(MISHAPS).flatMap((m) => [m.warning, m.start, m.end]);
+  return [...ANNOUNCEMENTS, ...Object.values(VISIT_NEWS), ...stations, CARETAKER_WANTED, ...mishaps];
 }
 
 describe('the announcer', () => {
@@ -33,6 +34,9 @@ describe('the announcer', () => {
     expect(staffWanted({ type: 'reception_desk' })).toBe('Receptionist needed at the Reception Desk.');
     expect(staffWanted({ type: 'massage_table' })).toBe('Massage Therapist needed at the Massage Suite.');
     expect(staffWanted({ type: 'bench' }), 'not a station').toBe('');
+    expect(voiceFor(MISHAPS.power.warning)).toMatch(/power-out-soon.*\.m4a$/);
+    expect(voiceFor(MISHAPS.power.start)).toMatch(/power-out.*\.m4a$/);
+    expect(voiceFor(MISHAPS.power.start)).not.toBe(voiceFor(MISHAPS.power.warning));
     expect(voiceFor(CARETAKER_WANTED)).toMatch(/caretaker-needed.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.vip)).toMatch(/vip-visiting.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.inspector)).toMatch(/health-inspector.*\.m4a$/);
