@@ -14,6 +14,7 @@ import {
   PROMOTION_CHEER,
   RANK_XP,
   RANKS,
+  RECRUIT_APPLICANT_DAYS,
   type Role,
   ROLE_ORDER,
   ROLES,
@@ -29,6 +30,7 @@ import { tileIdx, Z_CORRIDOR } from '../world';
 import { say, staffById } from './chars';
 import type { SimContext } from './context';
 import { emit, tipOnce, toast } from './events';
+import { running } from './marketing';
 import { fairPay } from './staffing';
 
 /** The name of a rank, from 1 to 5. */
@@ -112,7 +114,7 @@ export const hasGeneral = (st: Staff | undefined, id: GeneralId) => !!st?.genera
 /** The duty a station is, for the roles that have a choice. */
 export function stationDuty(it: Item): Duty | null {
   const goal = ITEMS[it.type].station?.goal;
-  return goal === 'consult' || goal === 'assess' ? goal : null;
+  return goal === 'reception' || goal === 'shop' || goal === 'consult' || goal === 'assess' ? goal : null;
 }
 
 /** The duty a Janitor's job is. */
@@ -145,7 +147,7 @@ export const applicantCap = (s: GameState) => Math.min(APPLICANTS_MAX, 3 + s.sta
 export function updateApplicants(ctx: SimContext) {
   const s = ctx.s;
   if (s.day < s.nextApplicant) return;
-  s.nextApplicant = s.day + APPLICANT_DAYS;
+  s.nextApplicant = s.day + (running(s, 'recruit') ? RECRUIT_APPLICANT_DAYS : APPLICANT_DAYS);
   /** How many are applying for a role. */
   const count = (r: Role) => s.candidates.filter((c) => c.role === r).length;
   const fewest = Math.min(...ROLE_ORDER.map(count));

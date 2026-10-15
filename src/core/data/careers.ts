@@ -78,12 +78,15 @@ export const GRUMP_REP = 0.85;
 
 /** The duties a member of each role can be kept to or kept from. Roles with one duty have nothing to choose. */
 export const DUTIES: Readonly<Partial<Record<Role, readonly Duty[]>>> = {
+  receptionist: ['reception', 'shop'],
   consultant: ['consult', 'assess'],
   caretaker: ['litter', 'clean', 'repair', 'plants', 'stones'],
 };
 
 /** What each duty is called in the interface. */
 export const DUTY_NAMES: Readonly<Record<Duty, string>> = {
+  reception: 'Front desk',
+  shop: 'Shop Counter',
   consult: 'Consultations',
   assess: 'Posture Lab scans',
   litter: 'Litter',

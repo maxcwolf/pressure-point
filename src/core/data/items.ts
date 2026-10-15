@@ -19,6 +19,24 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     station: { staff: 'receptionist', goal: 'reception', seconds: 3.5 },
     inMenu: true,
   },
+  shop_counter: {
+    type: 'shop_counter',
+    name: 'Shop Counter',
+    icon: '📚',
+    desc: 'Books, crystals, oils and candles for guests to take home. Happy guests buy more. Needs a Receptionist.',
+    cost: 2500,
+    w: 2,
+    h: 1,
+    where: 'corridor',
+    access: [
+      { role: 'staff', x: 0, y: -1, px: 1, py: -0.35, face: [0, 1], pose: 'stand' },
+      { role: 'guest', x: 0, y: 1, px: 1, py: 1.4, face: [0, -1], pose: 'stand' },
+    ],
+    station: { staff: 'receptionist', goal: 'shop', seconds: 4 },
+    inMenu: true,
+    unlock: 1,
+    decor: 1,
+  },
   consult_desk: {
     type: 'consult_desk',
     name: 'Consultation Desk',
@@ -604,6 +622,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
 
 export const ITEM_MENU: readonly ItemType[] = [
   'reception_desk',
+  'shop_counter',
   'bench',
   'massage_chair',
   'plant',

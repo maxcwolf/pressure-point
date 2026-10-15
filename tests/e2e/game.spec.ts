@@ -363,7 +363,7 @@ test.describe('room blueprints', () => {
 
     // the massage table is used from two sides: the therapist on one, the guest on the other
     const table = await game.hoverHeld();
-    await expect(page.locator('#hint')).toContainText('purple square: staff');
+    await expect(page.locator('#hint')).toContainText('purple square: Massage Therapist');
     await expect(page.locator('#hint')).toContainText('orange square: guests');
     expect(await marked()).toEqual(await used(table));
     expect(await marked()).toHaveLength(2);
@@ -464,11 +464,15 @@ test.describe('running a center', () => {
   test('the Money menu lends money and changes prices', async ({ game, page }) => {
     await game.start();
     await game.menu('Money');
+    const menu = page.locator('#menu');
+    await menu.getByRole('button', { name: /Loan/ }).click();
     await page.getByRole('button', { name: 'Borrow $5,000' }).click();
     await expect(page.locator('#stats')).toContainText('$35,000');
-    await expect(page.locator('#menu')).toContainText('Loan: $5,000 of $50,000');
+    await expect(menu).toContainText('Loan: $5,000 of $50,000');
+    await menu.getByRole('button', { name: /Prices/ }).click();
     await page.getByRole('button', { name: '+10%' }).click();
-    await expect(page.locator('#menu')).toContainText('Prices: 110% of standard');
+    await expect(menu).toContainText('Overall: 110% of standard');
+    await menu.getByRole('button', { name: /Loan/ }).click();
     await page.getByRole('button', { name: 'Repay $5,000' }).click();
     expect(await game.eval((pp) => [pp.state.loan, pp.state.money, pp.state.priceLevel])).toEqual([0, 30000, 1.1]);
   });
@@ -1053,6 +1057,65 @@ test.describe('the Items menu', () => {
   });
 });
 
+test.describe('the business side', () => {
+  test("a treatment's own price is set on top of the overall level", async ({ game, page }) => {
+    await game.start();
+    await game.menu('Money');
+    const menu = page.locator('#menu');
+    await menu.getByRole('button', { name: /Prices/ }).click();
+    const swedish = menu.locator('.technique-price', { hasText: 'Swedish' });
+    await swedish.getByRole('button', { name: '+' }).click();
+    await expect(swedish).toContainText('110%');
+    expect(await game.eval((pp) => pp.state.prices)).toEqual({ swedish: 1.1 });
+  });
+
+  test('a marketing campaign is bought from the Money menu', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.menu('Money');
+    const menu = page.locator('#menu');
+    await menu.getByRole('button', { name: /Marketing/ }).click();
+    const card = menu.locator('.campaign', { hasText: 'Word of mouth' });
+    await card.getByRole('button', { name: /1 mo/ }).click();
+    await expect(card).toContainText('Running');
+    expect(await game.eval((pp) => pp.state.campaigns.map((c) => c.kind))).toEqual(['word']);
+  });
+
+  test('a house call is offered, and someone sent on it from the card', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(20);
+    const name = await game.eval((pp) => {
+      pp.state.speed = 0;
+      const st = pp.state.staff.find((x) => x.role === 'therapist')!;
+      st.state = 'atPost';
+      pp.state.callOffer = {
+        client: 'the Grand Hotel',
+        days: 2,
+        perDay: 1200,
+        discipline: 'massage',
+        deadline: pp.state.day + 6,
+      };
+      return st.name;
+    });
+    const card = page.locator('#offer .call');
+    await expect(card).toContainText('The Grand Hotel would like a Massage Therapist');
+    await card.getByRole('button', { name: new RegExp(`Send ${name}`) }).click();
+    await expect(card).toHaveCount(0);
+    expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'therapist')!.state)).toBe('toCall');
+  });
+
+  test('the Shop Counter is in the Items menu from the first star', async ({ game }) => {
+    await game.start();
+    await game.menu('Items');
+    await expect(game.card('Shop Counter')).toHaveClass(/locked/);
+    await game.eval((pp) => (pp.state.stars = 1));
+    await game.menu('Items');
+    await game.menu('Items');
+    await expect(game.card('Shop Counter')).not.toHaveClass(/locked/);
+  });
+});
+
 test.describe('staff careers', () => {
   test('someone ready for promotion waits on a card at the side, and is promoted from their inspector', async ({
     game,
@@ -1202,7 +1265,10 @@ test.describe('goals along the way', () => {
     await expect(dialog).toBeEmpty();
     expect(await game.eval((pp) => pp.state.speed)).toBe(1);
     await game.menu('Stats');
-    await page.locator('#menu').getByRole('button', { name: /Awards/ }).click();
+    await page
+      .locator('#menu')
+      .getByRole('button', { name: /Awards/ })
+      .click();
     await page.locator('#menu').getByRole('button', { name: 'See the year 1 ceremony' }).click();
     await expect(dialog).toContainText('Year 1 awards');
   });
@@ -1216,6 +1282,10 @@ test.describe('stats', () => {
       pp.state.months = [{ ...pp.state.tally, priced: 5, ledger: pp.state.ledger, reputation: 30, money: 0 }];
     });
     await game.menu('Money');
+    await page
+      .locator('#menu')
+      .getByRole('button', { name: /Prices/ })
+      .click();
     await expect(page.locator('#menu .priced')).toHaveText('Put off by prices: 3 this month, 5 last month');
   });
 
@@ -1224,6 +1294,9 @@ test.describe('stats', () => {
     await game.buildCenter();
     await game.fastForward(200);
     await game.eval((pp) => (pp.state.speed = 0));
+    // a star earned on the way is out of the way first
+    const keepHealing = page.getByRole('button', { name: 'Keep healing' });
+    if (await keepHealing.isVisible()) await keepHealing.click();
     await game.menu('Stats');
     const cards = page.locator('#menu .stat-card');
     await expect(cards).toHaveCount(6);

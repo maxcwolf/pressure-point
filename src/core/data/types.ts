@@ -54,7 +54,8 @@ export type ItemType =
   | 'trophy_cabinet'
   | 'bonsai'
   | 'massage_chair'
-  | 'koi_pond';
+  | 'koi_pond'
+  | 'shop_counter';
 
 export interface RoomDef {
   type: RoomType;
@@ -109,7 +110,7 @@ export interface ItemDef {
   /** Stations have a staff position and a line of guests. */
   station?: {
     staff: Role;
-    goal: 'reception' | 'consult' | 'assess' | 'treat';
+    goal: 'reception' | 'consult' | 'assess' | 'treat' | 'shop';
     seconds: number;
     discipline?: Discipline;
   };
@@ -191,7 +192,7 @@ export interface GeneralDef {
 }
 
 /** Something a member of staff can be kept to or kept from: a kind of station, or a kind of Janitor's job. */
-export type Duty = 'consult' | 'assess' | 'litter' | 'clean' | 'repair' | 'plants' | 'stones';
+export type Duty = 'reception' | 'shop' | 'consult' | 'assess' | 'litter' | 'clean' | 'repair' | 'plants' | 'stones';
 
 export type Modality =
   | 'swedish'
@@ -393,6 +394,16 @@ export interface FeelingDef {
   /** What they might write about it in a review. */
   lines: readonly string[];
 }
+/** A kind of marketing campaign. */
+export type CampaignKind = 'word' | 'condition' | 'recruit';
+export interface CampaignDef {
+  kind: CampaignKind;
+  name: string;
+  icon: string;
+  desc: string;
+  /** What it costs for each month it runs. */
+  perMonth: number;
+}
 /** One objective toward a star. */
 export type GoalSpec =
   /** Heal this many guests in all, or with one discipline. */
@@ -430,12 +441,14 @@ export interface CenterDef {
   disciplines: readonly Discipline[];
   /** How much more (or less) often guests arrive with a condition here than elsewhere. Unlisted ones count once. */
   conditions?: Partial<Record<ConditionId, number>>;
-  /** Rush hours: arrivals bunch up at the start and end of each day, and guests are less patient. */
+  /** Rush hours: arrivals come in waves every few days, and guests are less patient while they last. */
   rush?: RushHours;
   /** Seasons: busier summers and quieter winters. */
   seasons?: Seasons;
   /** How much faster than usual equipment wears out here. */
   wear?: number;
+  /** House calls: how much more often than usual they are offered here, and who here asks for them. */
+  calls?: { often: number; clients: readonly string[] };
   /** What surrounds the building: a park, or the seaside. */
   scenery?: 'park' | 'seaside';
 }

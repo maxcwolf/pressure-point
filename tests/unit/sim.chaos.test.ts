@@ -25,6 +25,7 @@ import {
 const { x0: BX0, x1: BX1, y0: BY0, y1: BY1 } = SANDBOX_PLOT;
 
 const EXTRAS: ItemType[] = [
+  'shop_counter',
   'bench',
   'bench',
   'plant',
@@ -138,6 +139,21 @@ const MOVES: Record<string, (sim: Sim) => void> = {
     const c = sim.s.candidates.length ? pick(sim.s.candidates) : undefined;
     if (c) sim.reject(c.id);
   },
+  /** Price a treatment up or down. */
+  price: (sim) => {
+    sim.setTechniquePrice(pick(['swedish', 'deep', 'needling', 'usui'] as const), 0.5 + random() * 1.5);
+  },
+  /** Start a campaign, if one of its kind is not running. */
+  market: (sim) => {
+    sim.startCampaign(pick(['word', 'condition', 'recruit'] as const), irnd(1, 3), 'slump');
+  },
+  /** Send someone on the house call on offer, or offer one and turn it down. */
+  call: (sim) => {
+    const who = sim.whoCanGo();
+    if (who.length) sim.acceptCall(pick(who).id);
+    else if (sim.s.callOffer) sim.declineCall();
+    else sim.s.nextCall = sim.s.day;
+  },
   /** Put a room first, or back among the rest. */
   priority: (sim) => {
     const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
@@ -170,6 +186,8 @@ describe('a restless player', () => {
       expect(Number.isFinite(s.money) && Number.isFinite(s.reputation)).toBe(true);
       for (const c of [...s.guests, ...s.staff]) expect(Number.isFinite(c.x + c.y), c.name).toBe(true);
       if (s.challenge) expect(Number.isFinite(sim.challengeObjective()!.progress)).toBe(true);
+      for (const st of s.staff)
+        if (st.state === 'away' || st.state === 'toCall') expect(st.call, st.name).not.toBeNull();
       for (const st of s.staff) {
         expect(st.skill >= 1 && st.skill <= 5, st.name).toBe(true);
         expect(st.off.length < (DUTIES[st.role]?.length ?? 1), `${st.name} has a duty left`).toBe(true);

@@ -27,7 +27,9 @@ export function guestStatus(g: Guest, sim: Sim): string {
           ? 'Waiting for a consultation'
           : g.goal === 'assess'
             ? 'Waiting for a posture scan'
-            : 'Waiting for treatment';
+            : g.goal === 'shop'
+              ? 'In line at the Shop Counter'
+              : 'Waiting for treatment';
     case 'called':
       return `Heading to the ${where}`;
     case 'served':
@@ -37,7 +39,9 @@ export function guestStatus(g: Guest, sim: Sim): string {
           ? 'Being diagnosed'
           : g.goal === 'assess'
             ? 'Being scanned'
-            : 'Being treated';
+            : g.goal === 'shop'
+              ? 'Buying something to take home'
+              : 'Being treated';
     case 'toNeed':
     case 'need':
       if (g.needKind === 'toilet') return 'Answering a call of nature';
@@ -84,6 +88,10 @@ export function staffStatus(st: Staff, sim: Sim): string {
       return 'Heading to the Training Room';
     case 'training':
       return `Studying: ${st.training ? courseName(st.training.course) : ''}`;
+    case 'toCall':
+      return `Setting off on a house call to ${st.call?.client ?? 'a client'}`;
+    case 'away':
+      return `On a house call to ${st.call?.client ?? 'a client'}`;
     case 'leaving':
       return 'Leaving for good';
   }

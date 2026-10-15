@@ -256,6 +256,31 @@ test.describe('in a game', () => {
     await screens.shot('stats-casebook');
   });
 
+  test('the Money menu tabs', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.menu('Money');
+    const menu = page.locator('#menu');
+    await menu.getByRole('button', { name: /Prices/ }).click();
+    await screens.shot('money-prices');
+    await menu.getByRole('button', { name: /Marketing/ }).click();
+    await screens.shot('money-marketing');
+  });
+
+  test('a house call on offer', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      pp.state.callOffer = {
+        client: 'the Grand Hotel',
+        days: 2,
+        perDay: 1200,
+        discipline: 'massage',
+        deadline: pp.state.day + 6,
+      };
+      for (const st of pp.state.staff) if (st.role === 'therapist') st.state = 'atPost';
+    });
+    await screens.shot('house-call');
+  });
+
   test('the floor colored by an overlay', async ({ screens, page }) => {
     await screens.play();
     await page

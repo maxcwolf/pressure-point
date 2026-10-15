@@ -4,6 +4,7 @@ import {
   BEDSIDE_PATIENCE,
   BORED_PATIENCE,
   centerOf,
+  CONDITION_BOOST,
   conditionHere,
   type ConditionId,
   conditionOf,
@@ -34,6 +35,7 @@ import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce } from './events';
 import { feel } from './feelings';
+import { campaignBoost } from './marketing';
 import { goTo, halt, moveAlong } from './movement';
 import { countArrival, countVisit } from './records';
 import { pickStation, removeFromStations, stationScore } from './stations';
@@ -46,6 +48,7 @@ const GOAL_NAME = {
   consult: 'Consultation Room',
   assess: 'Posture Lab',
   treat: 'Massage Suite',
+  shop: 'Shop Counter',
 } as const;
 
 const NEED_ICON = { drink: '🍵', eat: '🥜', toilet: '🚻', play: '🕹️' } as const;
@@ -113,7 +116,12 @@ export function rollCondition(ctx: SimContext): ConditionId {
   if (!pool.length)
     pool = CONDITIONS.filter((c) => conditionHere(c, ctx.s.center) && c.modality === DISCIPLINES.massage.base);
   const local = centerOf(ctx.s).conditions ?? {};
-  const weights = pool.map((c) => (staff.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4) * (local[c.id] ?? 1));
+  const weights = pool.map(
+    (c) =>
+      (staff.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4) *
+      (local[c.id] ?? 1) *
+      campaignBoost(ctx.s, c.id, CONDITION_BOOST),
+  );
   let roll = random() * weights.reduce((a, b) => a + b, 0);
   for (const [i, condition] of pool.entries()) {
     roll -= at(weights, i);
@@ -290,6 +298,11 @@ function waitingThink(ctx: SimContext, g: Guest) {
       decide(ctx, g);
       return;
     }
+    // no shop to buy anything in after all
+    if (g.goal === 'shop') {
+      leave(ctx, g);
+      return;
+    }
     if (g.goal !== 'leave' && g.goal !== 'reception') {
       const place = g.goal === 'treat' ? ROOMS[DISCIPLINES[modalityOf(g).discipline].room].name : GOAL_NAME[g.goal];
       tipOnce(ctx, `missing-${place}`, `Guests are waiting for a ${place}, but there isn't a working one.`, 'bad');
@@ -350,7 +363,9 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     if (g.bladder >= 100) feel(g, 'bursting');
     g.waited += dt;
     if (g.patience <= 0) {
-      stormOut(ctx, g);
+      // someone only waiting to buy something gives up on it; their visit is counted already
+      if (g.goal === 'shop') leave(ctx, g);
+      else stormOut(ctx, g);
       return;
     }
   }

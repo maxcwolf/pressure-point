@@ -62,12 +62,16 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     name: 'The Exchange',
     place: 'Downtown, between the office towers',
     blurb:
-      'Desk workers by the busload, all arriving at once before and after work. Acupuncture opens at the first star.',
+      'Desk workers by the busload, arriving in waves when the office crowd comes in. Acupuncture opens at the first star.',
     plot: { x0: 5, x1: 25, y0: 6, y1: 17, door: [14, 15] },
     startMoney: 25000,
     disciplines: ['acupuncture'],
     conditions: { slump: 3, band: 2.5, crick: 2.5, neck: 3, steam: 2 },
     rush: { peak: 2.4, lull: 0.6, impatience: 1.25 },
+    calls: {
+      often: 2,
+      clients: ['the Exchange Tower', 'Halberd & Finch, solicitors', 'the trading floor on Mercer Street'],
+    },
     goals: [
       [
         { kind: 'healed', count: 15 },
@@ -100,6 +104,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     seasons: { summer: 1.9, winter: 0.6 },
     wear: 1.4,
     scenery: 'seaside',
+    calls: { often: 1, clients: ['the Saltmarsh Beach Club', 'the lifeboat station', 'the pier theater'] },
     goals: [
       [
         { kind: 'healed', count: 25 },

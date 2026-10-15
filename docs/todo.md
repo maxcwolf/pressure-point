@@ -33,7 +33,7 @@ The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two
 - [x] **Phase 2, goals along the way:** staff objectives and year-end awards. Challenges pay money and morale rather than karma: karma is earned once per star and achievement, and a repeatable reward would let a replay farm it.
 - [x] **Phase 3, staff careers:** experience and promotions, general qualifications, job assignment, a hiring pool that grows, traits you can see.
 - [x] **Phase 4, reading the center:** guest feelings, reviews and reputation in parts, the casebook, overlays. The casebook went in the Stats menu, which now has tabs, rather than the Treatments menu.
-- [ ] **Phase 5, the business side:** prices per treatment, a retail counter, marketing, house calls.
+- [x] **Phase 5, the business side:** prices per treatment, a retail counter, marketing, house calls.
 - [ ] **Phase 6, stakes:** a worsening condition, bad vibes, a stress outbreak.
 - [ ] **Phase 7, comfort:** calm, fresh linens, temperature and staff needs. Then High Pines.
 - [ ] **Phase 8, visitors and rivals:** VIPs and the inspector, the center's standing, a rival center. Then The Orchard Estate.

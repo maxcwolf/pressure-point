@@ -2,7 +2,9 @@
 // questions the interface needs. The work is done by the functions in this folder.
 
 import {
+  type CampaignKind,
   centerOf,
+  type ConditionId,
   DAY_SECONDS,
   DAYS_PER_MONTH,
   type Discipline,
@@ -35,15 +37,17 @@ import {
   sellItem,
   toggleWindow,
 } from './building';
+import { acceptCall, callFee, declineCall, updateCalls, whoCanGo } from './calls';
 import { promote, reject, setDuty, updateApplicants, updateHabits } from './careers';
 import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
 import { createContext, type SimContext } from './context';
-import { borrow, monthEnd, repay, setPrice } from './economy';
+import { borrow, monthEnd, priceFor, repay, setPrice, setTechniquePrice } from './economy';
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
+import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
@@ -112,6 +116,8 @@ export class Sim {
       checkAchievements(ctx);
       updateChallenge(ctx);
       updateApplicants(ctx);
+      updateCampaigns(ctx);
+      updateCalls(ctx);
       updateHabits(ctx);
     }
     announce(ctx, dt);
@@ -353,6 +359,44 @@ export class Sim {
   /** Set the multiplier on every fee. */
   setPrice(level: number) {
     setPrice(this.ctx, level);
+  }
+  /** Set a technique's own price, on top of the overall level. */
+  setTechniquePrice(m: Modality, level: number) {
+    setTechniquePrice(this.ctx, m, level);
+  }
+  /** What a technique costs against standard, all told. */
+  priceFor(m: Modality): number {
+    return priceFor(this.s, m);
+  }
+  // ---- Marketing -------------------------------------------------------------
+  /** Why a campaign cannot start, or '' if it can. */
+  campaignBlocker(kind: CampaignKind, months: number, condition?: ConditionId): string {
+    return campaignBlocker(this.s, kind, months, condition);
+  }
+  /** What a campaign costs for so many months. */
+  campaignCost(kind: CampaignKind, months: number): number {
+    return campaignCost(kind, months);
+  }
+  /** Pay for a campaign and start it. */
+  startCampaign(kind: CampaignKind, months: number, condition?: ConditionId): boolean {
+    return startCampaign(this.ctx, kind, months, condition);
+  }
+  // ---- House calls -----------------------------------------------------------
+  /** Who could go on the house call on offer. */
+  whoCanGo(): Staff[] {
+    return this.s.callOffer ? whoCanGo(this.ctx, this.s.callOffer) : [];
+  }
+  /** What the house call on offer pays if this member of staff goes. */
+  callFee(st: Staff): number {
+    return this.s.callOffer ? callFee(this.s.callOffer, st) : 0;
+  }
+  /** Send someone on the house call on offer. */
+  acceptCall(staffId: number): boolean {
+    return acceptCall(this.ctx, staffId);
+  }
+  /** Turn the house call on offer down. */
+  declineCall() {
+    declineCall(this.ctx);
   }
 
   // ---- Emergencies -----------------------------------------------------------

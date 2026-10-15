@@ -2,8 +2,8 @@
 
 import { DAY_SECONDS, type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from '../../core/data';
 import { money } from '../../core/format';
-import { netOf } from '../../core/sim/economy';
-import type { Ledger, MonthRecord } from '../../core/state/types';
+import { incomeOf, netOf } from '../../core/sim/economy';
+import type { MonthRecord } from '../../core/state/types';
 
 /** How a figure reads: a count of guests, an amount of money, days, or a percentage. */
 export type Unit = 'count' | 'money' | 'days' | 'percent';
@@ -35,8 +35,9 @@ export const METRICS: readonly Metric[] = [
     unit: 'count',
     discipline: d,
   })),
-  { id: 'income', name: 'Income', desc: 'Fees, vending and bonuses.', unit: 'money' },
-  { id: 'costs', name: 'Costs', desc: 'Salaries, building, training and interest.', unit: 'money' },
+  { id: 'income', name: 'Income', desc: 'Fees, sales, house calls and bonuses.', unit: 'money' },
+  { id: 'costs', name: 'Costs', desc: 'Salaries, building, training, marketing and interest.', unit: 'money' },
+  { id: 'shop', name: 'Shop sales', desc: 'Sales at the Shop Counter.', unit: 'money' },
   { id: 'net', name: 'Net', desc: 'Income less costs.', unit: 'money' },
   { id: 'reputation', name: 'Reputation', desc: 'At the end of the month.', unit: 'percent' },
   { id: 'money', name: 'Bank balance', desc: 'At the end of the month.', unit: 'money' },
@@ -46,7 +47,6 @@ export const METRICS: readonly Metric[] = [
 export const DEFAULT_METRICS: readonly string[] = ['arrived', 'healed', 'priced', 'stormed', 'wait', 'net'];
 
 /** Money coming in during a month. */
-const incomeOf = (l: Ledger) => l.consult + l.treatment + l.vending + l.bonus;
 
 /** A figure's value for one month. */
 export function metricValue(metric: Metric, m: MonthRecord): number {
@@ -68,6 +68,8 @@ export function metricValue(metric: Metric, m: MonthRecord): number {
       return m.waitCount ? m.waitTotal / m.waitCount / DAY_SECONDS : 0;
     case 'income':
       return incomeOf(m.ledger);
+    case 'shop':
+      return m.ledger.shop;
     case 'costs':
       return incomeOf(m.ledger) - netOf(m.ledger);
     case 'net':

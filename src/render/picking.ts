@@ -52,7 +52,7 @@ export class Picker {
   /** What is under the cursor: a person first, then an item, then a room. */
   pick(clientX: number, clientY: number): Selection | null {
     this.setRay(clientX, clientY);
-    const hit = this.raycaster.intersectObjects(this.people.picks(), false)[0];
+    const hit = this.raycaster.intersectObjects(this.people.picks(), false).find((h) => shown(h.object));
     const char = hit && pickData(hit.object);
     if (char?.charKind && char.charId !== undefined) return { kind: char.charKind, id: char.charId };
     const itemHit = this.raycaster.intersectObjects(this.items.models(), true).find((h) => shown(h.object));

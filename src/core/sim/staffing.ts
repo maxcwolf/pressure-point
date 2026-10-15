@@ -31,6 +31,7 @@ import { clamp, must } from '../util';
 import { accessPose, accessTile, footprint } from '../world';
 import { prestige } from './ambience';
 import { sameRoomCount } from './building';
+import { returnFromCall } from './calls';
 import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
 import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
 import { newChar } from './chars';
@@ -82,6 +83,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     promotion: false,
     general: [],
     off: [],
+    call: null,
   };
   const [lx, ly] = lobbyTile(ctx.world.plot);
   if (!goTo(ctx, st, lx, ly)) return null;
@@ -180,7 +182,7 @@ export function aboutToQuit(st: Staff): boolean {
 
 /** Drift morale toward what pay and conditions deserve; the unhappy ask for a raise, then quit. */
 function updateMorale(ctx: SimContext, st: Staff, dt: number) {
-  if (st.state === 'leaving' || st.state === 'arriving') return;
+  if (st.state === 'leaving' || st.state === 'arriving' || st.state === 'toCall' || st.state === 'away') return;
   const fair = fairPay(st);
   const target = moraleTarget(ctx, st);
   st.morale = clamp(st.morale + (target - st.morale) * Math.min(1, dt * 0.03), 0, 100);
@@ -406,7 +408,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
   updateMorale(ctx, st, dt);
   if (st.state === 'leaving' && !ctx.s.staff.includes(st)) return;
   if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * 9 * breakBoost(ctx, st));
-  else if (st.state !== 'leaving' && st.state !== 'training') {
+  else if (st.state !== 'leaving' && st.state !== 'training' && st.state !== 'away') {
     const rate = st.busy ? 0.42 * (st.strain || 1) : st.state === 'atPost' ? 0.14 : 0.2;
     st.energy = Math.max(0, st.energy - rate * stamina * dt);
   }
@@ -496,6 +498,17 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
         st.job = null;
         staffIdle(ctx, st);
       }
+      break;
+    case 'toCall':
+      if (arrived || !st.path) {
+        st.state = 'away';
+        // the days away count from leaving the building, not from setting off across it
+        if (st.call) st.call.back = ctx.s.day + st.call.days;
+      }
+      break;
+    case 'away':
+      if (st.call && ctx.s.day >= st.call.back) returnFromCall(ctx, st);
+      else if (!st.call) st.state = 'arriving';
       break;
     case 'toTrain':
       if (arrived) st.state = 'training';

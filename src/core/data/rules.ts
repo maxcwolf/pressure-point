@@ -83,6 +83,13 @@ export const CHALLENGE_GAP_MAX = 60;
 /** How much every member of staff cheers up when a challenge is met, and how much its setter sulks when it is not. */
 export const CHALLENGE_MORALE = 12;
 export const CHALLENGE_SULK = 10;
+/** Days between one house call being offered and the next, at least and at most, and days an offer stays open. */
+export const CALL_GAP_MIN = 25;
+export const CALL_GAP_MAX = 45;
+export const CALL_OFFER_DAYS = 6;
+/** What a house call pays a day for someone of the first rank, and how much more for each rank above it. */
+export const CALL_PER_DAY = 1200;
+export const CALL_RANK_BONUS = 0.25;
 /** What sending a guest home costs in reputation: less than a failed treatment. */
 export const SEND_HOME_REP = 1;
 

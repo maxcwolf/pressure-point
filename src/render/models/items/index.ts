@@ -33,6 +33,7 @@ import { buildReikiAltar } from './reiki-altar';
 import { buildReikiTable } from './reiki-table';
 import { buildRug } from './rug';
 import { buildSaltLamp } from './salt-lamp';
+import { buildShopCounter } from './shop-counter';
 import { buildSingingBowls } from './singing-bowls';
 import { buildSink } from './sink';
 import { buildSnackMachine } from './snack-machine';
@@ -51,6 +52,7 @@ import { buildWhiteboard } from './whiteboard';
 /** What builds each item's model. Every item type has to have one. */
 const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   reception_desk: buildReceptionDesk,
+  shop_counter: buildShopCounter,
   consult_desk: buildConsultDesk,
   cabinet: buildCabinet,
   massage_table: buildMassageTable,

@@ -3,6 +3,7 @@
 import type {
   AchievementId,
   AwardId,
+  CampaignKind,
   CenterId,
   ConditionId,
   Discipline,
@@ -115,7 +116,18 @@ export type StaffState =
   | 'doingJob'
   | 'toTrain'
   | 'training'
+  | 'toCall'
+  | 'away'
   | 'leaving';
+
+/** A house call a member of staff is out on: who for, how long, when they are back, and what it pays when they are. */
+export interface Call {
+  client: string;
+  days: number;
+  /** The game day they are back: counted from when they set off down the street. */
+  back: number;
+  fee: number;
+}
 
 export interface Staff extends CharBase {
   kind: 'staff';
@@ -130,6 +142,8 @@ export interface Staff extends CharBase {
   general: GeneralId[];
   /** Duties they are kept from. */
   off: Duty[];
+  /** The house call they are on, if any. */
+  call: Call | null;
   salary: number;
   traits: TraitId[];
   energy: number;
@@ -171,7 +185,7 @@ export interface Enrollment {
 }
 
 /** The step of a visit a guest is on. */
-export type GuestGoal = 'reception' | 'consult' | 'assess' | 'treat' | 'leave';
+export type GuestGoal = 'reception' | 'consult' | 'assess' | 'treat' | 'shop' | 'leave';
 /** Something a guest breaks off waiting to see to. */
 export type Need = 'drink' | 'eat' | 'toilet' | 'play';
 /** How a guest's visit ended. */
@@ -238,8 +252,36 @@ export interface Ledger {
   building: number;
   training: number;
   interest: number;
-  /** Emergency rewards. */
+  /** Emergency rewards, and other prizes and rewards. */
   bonus: number;
+  /** Sales at the Shop Counter. */
+  shop: number;
+  /** Fees for house calls. */
+  calls: number;
+  /** Marketing campaigns. */
+  marketing: number;
+}
+
+/** A marketing campaign: for word of mouth, for more guests with one condition, or for applicants. */
+export interface Campaign {
+  kind: CampaignKind;
+  /** The condition a condition campaign is for. */
+  condition?: ConditionId;
+  /** The game day it ends. */
+  until: number;
+}
+
+/** An offer to send someone out for a day or more, to an office, a hotel or a home. */
+export interface HouseCall {
+  client: string;
+  days: number;
+  /** What it pays for each day, for someone of the first rank; more for higher ranks. */
+  perDay: number;
+  /** The discipline it is for, and a technique it asks for, if any. */
+  discipline: Discipline;
+  modality?: Modality;
+  /** The game day the offer lapses. */
+  deadline: number;
 }
 
 /** A batch of guests with one condition, to be healed against the clock for a reward. */
@@ -411,6 +453,13 @@ export interface GameState {
   reviews: Review[];
   /** How visits ended, condition by condition. */
   casebook: Partial<Record<ConditionId, CaseRecord>>;
+  /** Each technique's own price against standard, on top of the overall level; absent is standard. */
+  prices: Partial<Record<Modality, number>>;
+  /** Marketing campaigns running. */
+  campaigns: Campaign[];
+  /** A house call on offer, if any, and the game day the next may be offered. */
+  callOffer: HouseCall | null;
+  nextCall: number;
   /** The game day the next job applicant turns up. */
   nextApplicant: number;
   /** The challenge a member of staff has set, if any, and the day the next may be set. */

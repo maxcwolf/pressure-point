@@ -9,6 +9,9 @@ import type { ItemKind, Place } from './lib/catalog';
 import type { OverlayMode } from './lib/overlays';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'policy' | 'stats';
+/** The tabs of the Money menu. */
+export type MoneyTab = 'books' | 'prices' | 'marketing' | 'loan';
+
 /** The tabs of the Stats menu. */
 export type StatsTab = 'charts' | 'reputation' | 'casebook' | 'awards';
 
@@ -44,6 +47,8 @@ export class HudState {
   hireRole: Role = 'receptionist';
   /** The tab showing in the Stats menu. */
   statsTab: StatsTab = 'charts';
+  /** The tab showing in the Money menu. */
+  moneyTab: MoneyTab = 'books';
   /** What the floor is colored by, if anything, and whether the list to choose from is open. */
   overlay: OverlayMode | null = null;
   overlayPicker = false;
@@ -52,6 +57,8 @@ export class HudState {
   itemKind: ItemKind | 'all' = 'all';
   /** The deadline of an emergency offer put aside to decide on later, which tells it from any later offer. */
   offerAside: number | null = null;
+  /** The deadline of the house call put aside to decide on later, if it is. */
+  callAside: number | null = null;
   /** The dialog over the game, if any. */
   dialog: DialogId | null = null;
   /** The star being celebrated while its dialog is open. */

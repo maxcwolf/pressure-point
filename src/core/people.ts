@@ -10,6 +10,7 @@ import {
   MODALITIES,
   type Modality,
   MODALITY_ORDER,
+  RECRUIT_SKILL,
   type Role,
   ROLE_ORDER,
   ROLES,
@@ -53,7 +54,9 @@ export const amandaAround = (s: GameState) =>
 
 /** Make up a job applicant for a role. More stars bring more skilled ones, and now and then a familiar face. */
 export function makeCandidate(s: GameState, role: Role): Candidate {
-  const skill = clamp(Math.round(rnd(0.6, 3.4 + s.stars * 0.6)), 1, 5);
+  // a recruitment drive brings in a better class of applicant
+  const drive = s.campaigns.some((c) => c.kind === 'recruit') ? RECRUIT_SKILL : 0;
+  const skill = clamp(Math.round(rnd(0.6, 3.4 + s.stars * 0.6)) + drive, 1, 5);
   const traits: TraitId[] = [];
   if (random() < 0.65) traits.push(pick(TRAITS).id);
   // practitioners all know their discipline's basic modality; a few arrive trained in something more

@@ -8,19 +8,30 @@ import { useGame, useHud } from '../hooks/use-hud';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
+import { HouseCallOffer } from './HouseCallOffer';
+
+/** The offers waiting on an answer, an emergency over a house call, in one column. */
+export function EmergencyOffer() {
+  return (
+    <div id="offer">
+      <Emergency />
+      <HouseCallOffer />
+    </div>
+  );
+}
 
 /** The emergency on offer: in full with Accept and Decline, or tucked away as a button showing the time left. */
-export function EmergencyOffer() {
+function Emergency() {
   const hud = useHud();
   const { sim } = useGame();
   const offer = sim.s.offer;
-  if (!offer) return <div id="offer" />;
+  if (!offer) return null;
   const condition = conditionOf(offer.condition);
   const left = offerTimeLeft(offer.deadline, sim.s.day);
   const timer = <Bar value={left.share * 100} class={left.share < 0.3 ? 'thin bad' : 'thin need'} />;
   if (hud.offerAside === offer.deadline)
     return (
-      <div id="offer">
+      <>
         <Button
           class="panel offer-pill"
           title="Show the emergency"
@@ -31,10 +42,10 @@ export function EmergencyOffer() {
           <span>{`🚨 Emergency on offer: ${timeLeftLabel(left.days)} to decide`}</span>
           {timer}
         </Button>
-      </div>
+      </>
     );
   return (
-    <div id="offer">
+    <>
       <div class="panel offer">
         <Button
           class="later"
@@ -78,6 +89,6 @@ export function EmergencyOffer() {
           </Button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

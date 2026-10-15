@@ -38,7 +38,11 @@ export class PeopleLayer {
         this.scene.add(rig.group);
         this.chars.set(c.id, rig);
       }
-      poseChar(rig, c, t, dt, this.workStyle(c));
+      // someone away on a house call is not here to be seen, or clicked
+      const away = c.kind === 'staff' && c.state === 'away';
+      rig.group.visible = !away;
+      rig.pick.visible = !away;
+      if (!away) poseChar(rig, c, t, dt, this.workStyle(c));
     }
     for (const [id, rig] of this.chars) {
       if (live.has(id)) continue;

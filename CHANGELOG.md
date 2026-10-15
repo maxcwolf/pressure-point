@@ -2,6 +2,17 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **A Shop Counter** (from the first star): books, crystals, oils and candles for guests to take home. Treated guests stop on their way out, more often and for more the better their visit went, and a receptionist serves them. Keep a receptionist to the front desk or the shop under Duties.
+- **Prices per treatment:** each treatment has its own price on top of the overall level, with how many it has put off, so a popular treatment can cost more while the everyday ones stay cheap.
+- **Marketing:** campaigns for word of mouth, for a condition in the spotlight (three times as many guests with it), or for recruitment (an applicant a day, and better ones), bought for one to three months.
+- **House calls:** now and then someone asks for a practitioner to come to them for a day or more, sometimes trained in a particular treatment. Whoever goes is away until they are back, and the fee rises with their rank. The Exchange gets the most.
+- **The Money menu has tabs:** Books, Prices, Marketing and Loan, and the books show shop sales, house calls and marketing.
+- **The version is shown on the title screen.**
+- **Placing furniture shows who works it:** the square a member of staff stands on shows their role's icon, and the hint names the role.
+- **Fixed:** rush hours at The Exchange lasted about a second each and chimed every few seconds. They now come in waves of two days in every six, the same share of the time, with a tip the first time instead of an announcement each time.
+
 ## v0.11.0
 
 - **Guest feelings:** guests notice what pleases and annoys them (a long wait, nothing to drink, a filthy toilet, litter, a lovely spot to wait, a comfy seat, an untrained practitioner, steep prices, a beautiful room) and their inspector lists it.

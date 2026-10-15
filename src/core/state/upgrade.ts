@@ -4,6 +4,7 @@ import {
   ACHIEVEMENTS,
   APPLICANT_DAYS,
   AWARDS,
+  CALL_GAP_MIN,
   CHALLENGE_GAP_MIN,
   DISCIPLINES,
   FEELINGS,
@@ -12,7 +13,7 @@ import {
   type Role,
   ROLES,
 } from '../data';
-import { defaultPolicy, emptyTally, FIRST_CHALLENGE_DAY, SAVE_VERSION } from './game';
+import { defaultPolicy, emptyTally, FIRST_CALL_DAY, FIRST_CHALLENGE_DAY, SAVE_VERSION } from './game';
 import type { Candidate, GameState, Guest, Item, Ledger, MonthRecord, Room, Staff, Stats, Tally } from './types';
 
 /** What everyone in a role is qualified in to begin with: their discipline's basic modality. */
@@ -24,7 +25,7 @@ const baseQuals = (role: Role): Modality[] => {
 /** A record written before some of its fields existed, so those fields may be missing. */
 type Before<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
-type OldLedger = Before<Ledger, 'training' | 'interest' | 'bonus'>;
+type OldLedger = Before<Ledger, 'training' | 'interest' | 'bonus' | 'shop' | 'calls' | 'marketing'>;
 
 /** A save as an earlier version may have written it. */
 type OldSave = Before<
@@ -51,6 +52,10 @@ type OldSave = Before<
   | 'nextApplicant'
   | 'reviews'
   | 'casebook'
+  | 'prices'
+  | 'campaigns'
+  | 'callOffer'
+  | 'nextCall'
 > & {
   stats: Before<Stats, 'priced' | 'sent' | 'healedBy' | 'emergencies' | 'lastQuit'>;
   tally?: Before<Tally, 'sent'>;
@@ -68,6 +73,7 @@ type OldSave = Before<
     | 'promotion'
     | 'general'
     | 'off'
+    | 'call'
   >[];
   candidates: Before<Candidate, 'quals'>[];
   items: Before<Item, 'wear' | 'dirt'>[];
@@ -94,6 +100,7 @@ export function upgradeSave(save: GameState) {
     st.promotion ??= false;
     st.general ??= [];
     st.off ??= [];
+    st.call ??= null;
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
   for (const it of s.items) {
@@ -114,6 +121,9 @@ export function upgradeSave(save: GameState) {
     l.training ??= 0;
     l.interest ??= 0;
     l.bonus ??= 0;
+    l.shop ??= 0;
+    l.calls ??= 0;
+    l.marketing ??= 0;
   }
   s.announceT ??= 25;
   s.loan ??= 0;
@@ -139,6 +149,10 @@ export function upgradeSave(save: GameState) {
   s.nextApplicant ??= s.day + APPLICANT_DAYS;
   s.reviews = (s.reviews ?? []).map((r) => ({ ...r, feelings: r.feelings.filter((f) => Object.hasOwn(FEELINGS, f)) }));
   s.casebook ??= {};
+  s.prices ??= {};
+  s.campaigns ??= [];
+  s.callOffer ??= null;
+  s.nextCall ??= Math.max(FIRST_CALL_DAY, s.day + CALL_GAP_MIN);
   s.ceremony ??= null;
   // an award from a newer version means nothing here
   s.trophies = (s.trophies ?? []).filter((t) => Object.hasOwn(AWARDS, t.award));

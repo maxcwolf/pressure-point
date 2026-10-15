@@ -38,7 +38,13 @@ export const emptyLedger = (): Ledger => ({
   training: 0,
   interest: 0,
   bonus: 0,
+  shop: 0,
+  calls: 0,
+  marketing: 0,
 });
+
+/** The day the first house call may be offered. */
+export const FIRST_CALL_DAY = 40;
 
 /** The day the first staff challenge may be set. */
 export const FIRST_CHALLENGE_DAY = 30;
@@ -55,9 +61,10 @@ export const defaultPolicy = (): Policy => ({
  * Goes up whenever a save could hold content an older version has never heard of (tests/unit/save-version.test.ts
  * notices), so that older versions refuse the save rather than crash on it. 4: the karma items and Saltmarsh.
  * 5: policy, room priority and sending guests home. 6: staff challenges and the year-end awards. 7: staff careers
- * and the new traits. 8: guests' feelings, reviews and the casebook.
+ * and the new traits. 8: guests' feelings, reviews and the casebook. 9: the Shop Counter, prices per treatment,
+ * marketing and house calls.
  */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {
@@ -106,6 +113,10 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     unlockAll: false,
     reviews: [],
     casebook: {},
+    prices: {},
+    campaigns: [],
+    callOffer: null,
+    nextCall: FIRST_CALL_DAY,
     nextApplicant: APPLICANT_DAYS,
     challenge: null,
     nextChallenge: FIRST_CHALLENGE_DAY,

@@ -61,3 +61,30 @@
   font-size: 14px;
   line-height: 1.3;
 }
+
+#offer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.offer.call,
+.call-pill {
+  border-color: var(--blue);
+}
+
+.call-who {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.call-who button {
+  font-size: 13px;
+}
+
+.offer .warn {
+  color: #a8322b;
+  font-weight: 600;
+}
