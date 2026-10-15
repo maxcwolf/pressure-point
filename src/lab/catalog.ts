@@ -5,6 +5,7 @@ import type * as THREE from 'three';
 import {
   type ConditionDef,
   CONDITIONS,
+  HAMPER_SIZE,
   ITEMS,
   type ItemType,
   MODALITIES,
@@ -61,6 +62,7 @@ function itemSpecimen(type: ItemType): Specimen {
   const st: ItemCondition & { session: string } = {
     id: 1,
     water: 100,
+    dirt: 0,
     scanning: false,
     broken: false,
     trophies: 99,
@@ -79,6 +81,11 @@ function itemSpecimen(type: ItemType): Specimen {
       const controls: Control[] = [];
       if (parts.leaf) controls.push(range('Water', st, 'water'));
       if (parts.glow) controls.push(range('Heat', st, 'water'));
+      if (parts.linens) controls.push(range('Soiled linens', st, 'dirt'));
+      if (parts.heap) {
+        st.water = Math.min(st.water, HAMPER_SIZE / 2);
+        controls.push(range('Linens in it', st, 'water', 0, HAMPER_SIZE));
+      }
       if (parts.ring) controls.push(toggle('Scanning', st, 'scanning'), toggle('Broken', st, 'broken'));
       if (parts.cups) {
         st.trophies = Math.min(st.trophies, parts.cups.length);

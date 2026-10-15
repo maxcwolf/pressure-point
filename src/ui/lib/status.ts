@@ -61,6 +61,28 @@ export function guestStatus(g: Guest, sim: Sim): string {
   }
 }
 
+/** The chore a member of staff is on, in a few words. */
+function choreStatus(st: Staff, sim: Sim): string {
+  const job = st.job;
+  const it = job && job.kind !== 'litter' && job.kind !== 'smudge' ? sim.world.item(job.id) : undefined;
+  switch (job?.kind) {
+    case 'repair':
+      return `Repairing the ${ITEMS[it?.type ?? 'bin'].name}`;
+    case 'clean':
+      return it && ITEMS[it.type].linens ? 'Changing the linens' : 'Cleaning a toilet';
+    case 'launder':
+      return 'Laundering the linens';
+    case 'water':
+      return it?.type === 'stone_warmer' ? 'Reheating the massage stones' : 'Watering a plant';
+    case 'smudge':
+      return 'Clearing bad vibes with sage';
+    case 'refresh':
+      return it?.type === 'snack_machine' ? 'Getting a snack' : 'Getting a drink';
+    default:
+      return 'Clearing litter';
+  }
+}
+
 /** What a member of staff is doing, in a few words. */
 export function staffStatus(st: Staff, sim: Sim): string {
   const post = sim.world.item(st.post);
@@ -80,10 +102,7 @@ export function staffStatus(st: Staff, sim: Sim): string {
       return 'Resting in the Staff Room';
     case 'toJob':
     case 'doingJob':
-      if (st.job?.kind === 'repair') return `Repairing the ${ITEMS[sim.world.item(st.job.id)?.type ?? 'bin'].name}`;
-      if (st.job?.kind === 'clean') return 'Cleaning a toilet';
-      if (st.job?.kind !== 'water') return 'Clearing litter';
-      return sim.world.item(st.job.id)?.type === 'stone_warmer' ? 'Reheating the massage stones' : 'Watering a plant';
+      return choreStatus(st, sim);
     case 'toTrain':
       return 'Heading to the Training Room';
     case 'training':

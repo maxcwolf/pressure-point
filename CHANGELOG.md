@@ -8,6 +8,12 @@ Each release's notes are taken from its section here. Keep them short.
 - **Bad vibes:** a failed treatment leaves a gloomy cloud over its room. Treatments there work less often and staff working there are unsettled. The cloud fades slowly on its own, or a Reiki Practitioner, or a Janitor with the new Smudging course, clears it at once by walking the room wafting a smoldering bundle of sage.
 - **Stress outbreaks** (from the second star): offered like an emergency. Stressed guests sweat and fidget, and stress spreads to anyone waiting close by. Click the ones you spot and calm them with the few sessions you have; if few enough leave still stressed, it pays a bonus.
 - **Got worse** is counted in the casebook, the Stats charts and the Money menu.
+- **Calm:** arcades, pool tables, snack machines and crowds make noise that carries, though a room's walls keep most of it out and each window lets more in. Noise at a treatment table lowers results and spoils the visit; a quiet room earns a "peaceful" review. A fountain, aquarium or koi pond soothes it. A **Calm** overlay shows where it is loud.
+- **Fresh linens:** every session soils a table's linens, which grow grubby until a Janitor changes them from a new **Linen Hamper**. Stale linens lower results and guests notice. When a hamper fills, a Janitor launders it.
+- **Temperature:** each center has its own weather through the seasons (mild in the sandbox, hot summers at Saltmarsh), and some of it gets indoors. New **Radiators** and **Air Conditioners** warm or cool the air around them, most of all inside their own room, and worn equipment gives off heat. Guests who are too cold or too hot lose patience faster and say so, and staff are less happy. A **Temperature** overlay shows where.
+- **Staff get thirsty and hungry,** thirstier in the heat. Between jobs they use the same Water Coolers, Tea Stations and Snack Machines as guests, and an Espresso Machine in the Staff Room sees to their thirst on a break. Left wanting, they are fed up.
+- **The room inspector** shows the temperature and how quiet it is; a table's shows its linens and calm, and a member of staff's their thirst and hunger.
+- **Sandbox switches** for stress outbreaks and the weather.
 
 ## v0.12.0
 

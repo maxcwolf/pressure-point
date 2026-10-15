@@ -54,7 +54,8 @@ export function placeItem(
     serving: 0,
     staffId: 0,
     progress: 0,
-    water: 100,
+    // a hamper starts empty; everything else starts watered, or hot
+    water: type === 'linen_hamper' ? 0 : 100,
     wear: 0,
     dirt: 0,
     claimedBy: 0,

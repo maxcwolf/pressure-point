@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 
+import { linensMaterial } from '../linens';
 import { CREAM, cyl, mat, partsOf, put, rbox, sph, torus, WOOD, WOOD_DARK } from '../parts';
 
 /** Build the Massage Table model. */
@@ -15,7 +16,8 @@ export function buildMassageTable(g: THREE.Group) {
     put(g, cyl(0.045, 0.045, 0.5), mat(WOOD_DARK), x, 0.25, z);
   put(g, rbox(0.78, 0.06, 1.8, 0.03), mat(WOOD), 0, 0.5, 0);
   put(g, rbox(0.74, 0.12, 1.76, 0.06), mat(CREAM), 0, 0.58, 0);
-  put(g, rbox(0.76, 0.03, 0.6, 0.015), mat(0xb9a1e0), 0, 0.645, 0.5);
+  const linens = linensMaterial(0xb9a1e0);
+  put(g, rbox(0.76, 0.03, 0.6, 0.015), linens, 0, 0.645, 0.5);
   const cradle = put(g, torus(0.13, 0.055), mat(CREAM), 0, 0.58, -1.0);
   cradle.rotation.x = Math.PI / 2;
   // hot stones, shown along the guest's back during a Hot Stone session
@@ -28,4 +30,5 @@ export function buildMassageTable(g: THREE.Group) {
   g.add(stones);
   // props laid on the guest during a session, keyed by the modality that uses them
   partsOf(g).session = { stone: stones };
+  partsOf(g).linens = linens;
 }

@@ -18,6 +18,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     ],
     station: { staff: 'receptionist', goal: 'reception', seconds: 3.5 },
     inMenu: true,
+    noise: 2,
   },
   shop_counter: {
     type: 'shop_counter',
@@ -36,6 +37,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     unlock: 1,
     decor: 1,
+    noise: 2,
   },
   consult_desk: {
     type: 'consult_desk',
@@ -78,6 +80,8 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     ],
     station: { staff: 'therapist', goal: 'treat', seconds: 10, discipline: 'massage' },
     wear: 6,
+    dirt: 8,
+    linens: true,
   },
   oil_trolley: {
     type: 'oil_trolley',
@@ -117,6 +121,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [{ role: 'toilet', x: 0, y: 1, px: 0.5, py: 0.5, face: [0, 1], pose: 'sit' }],
     dirt: 12,
     inMenu: true,
+    noise: 2,
   },
   sink: {
     type: 'sink',
@@ -170,6 +175,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     wear: 1.5,
     sale: 15,
+    noise: 1,
   },
   snack_machine: {
     type: 'snack_machine',
@@ -184,6 +190,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     sale: 25,
     wear: 1.5,
+    noise: 2,
   },
   bin: {
     type: 'bin',
@@ -209,6 +216,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 4,
+    noise: -2,
   },
   stone_warmer: {
     type: 'stone_warmer',
@@ -356,6 +364,8 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     ],
     station: { staff: 'acupuncturist', goal: 'treat', seconds: 10, discipline: 'acupuncture' },
     wear: 5,
+    dirt: 7,
+    linens: true,
   },
   needle_cabinet: {
     type: 'needle_cabinet',
@@ -422,6 +432,8 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     ],
     station: { staff: 'practitioner', goal: 'treat', seconds: 11, discipline: 'reiki' },
     wear: 3,
+    dirt: 6,
+    linens: true,
   },
   reiki_altar: {
     type: 'reiki_altar',
@@ -473,6 +485,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     wear: 1,
     sale: 0,
+    noise: 1,
   },
   fire_extinguisher: {
     type: 'fire_extinguisher',
@@ -502,6 +515,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     karma: 3,
     wear: 3,
     sale: 10,
+    noise: 6,
   },
   bookcase: {
     type: 'bookcase',
@@ -531,6 +545,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     unlock: 1,
     karma: 3,
+    noise: 2,
   },
   aquarium: {
     type: 'aquarium',
@@ -546,6 +561,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     unlock: 2,
     karma: 5,
     decor: 6,
+    noise: -1,
   },
   pool_table: {
     type: 'pool_table',
@@ -560,6 +576,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     unlock: 2,
     karma: 5,
+    noise: 5,
   },
   trophy_cabinet: {
     type: 'trophy_cabinet',
@@ -617,6 +634,47 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     karma: 6,
     decor: 8,
+    noise: -3,
+  },
+  radiator: {
+    type: 'radiator',
+    name: 'Radiator',
+    icon: '♨️',
+    desc: 'Warms the air around it, and the room it is in most of all. Nobody heals in the cold.',
+    cost: 300,
+    w: 1,
+    h: 1,
+    where: 'any',
+    access: [],
+    inMenu: true,
+    heat: 12,
+  },
+  air_conditioner: {
+    type: 'air_conditioner',
+    name: 'Air Conditioner',
+    icon: '❄️',
+    desc: 'Cools the air around it, and the room it is in most of all. A hum, but a quiet one.',
+    cost: 700,
+    w: 1,
+    h: 1,
+    where: 'any',
+    access: [],
+    inMenu: true,
+    heat: -12,
+    noise: 1,
+    wear: 1,
+  },
+  linen_hamper: {
+    type: 'linen_hamper',
+    name: 'Linen Hamper',
+    icon: '🧺',
+    desc: 'Fresh linens for the treatment tables, and somewhere for the used ones to go. A Janitor launders them when it fills.',
+    cost: 250,
+    w: 1,
+    h: 1,
+    where: 'any',
+    access: [],
+    inMenu: true,
   },
 };
 
@@ -646,6 +704,9 @@ export const ITEM_MENU: readonly ItemType[] = [
   'coffee_machine',
   'pool_table',
   'toilet',
+  'radiator',
+  'air_conditioner',
+  'linen_hamper',
   'study_desk',
   'bookcase',
   'stretch_rack',

@@ -11,8 +11,10 @@ import {
   CONDITIONS,
   DIRT_FILTHY,
   DISCIPLINES,
+  DISCOMFORT_DRAIN,
   EMERGENCY_CONDITION,
   FILTHY_PATIENCE,
+  HEAT_THIRST,
   ITEMS,
   LONG_WAIT_PATIENCE,
   MODALITIES,
@@ -45,6 +47,7 @@ import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
 import { arrivalFactor, impatience } from './twists';
 import { addWear, dirtier } from './upkeep';
+import { discomfort, feelTemperature, hotness, warmthAt } from './warmth';
 import { worsen } from './worsening';
 
 const GOAL_NAME = {
@@ -284,6 +287,7 @@ function tryNeed(ctx: SimContext, g: Guest): boolean {
 function noticeSurroundings(ctx: SimContext, g: Guest) {
   if (drainFactor(ctx, g.tx, g.ty) <= PLEASANT_DRAIN) feel(g, 'pleasant');
   if (g.pose === 'sit') feel(g, 'comfy');
+  feelTemperature(g, warmthAt(ctx, g.tx, g.ty));
   if (ctx.s.litter.some((l) => Math.abs(l.x - g.tx) <= 2 && Math.abs(l.y - g.ty) <= 2)) feel(g, 'litter');
 }
 
@@ -349,7 +353,8 @@ function waitingThink(ctx: SimContext, g: Guest) {
 
 /** Move one guest forward in time: needs, patience, walking and what they do next. */
 export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
-  g.thirst = Math.min(100, g.thirst + dt * 0.5);
+  const temp = warmthAt(ctx, g.tx, g.ty);
+  g.thirst = Math.min(100, g.thirst + dt * 0.5 * (1 + hotness(temp) * HEAT_THIRST));
   g.hunger = Math.min(100, g.hunger + dt * 0.36);
   g.bladder = Math.min(100, g.bladder + dt * 0.42);
   if (g.bubbleT > 0) g.bubbleT -= dt;
@@ -366,6 +371,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     if (g.pose === 'sit') drain *= seatDrain(ctx, g);
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
     if (g.stressed) drain *= STRESS_DRAIN;
+    drain *= 1 + discomfort(temp) * DISCOMFORT_DRAIN;
     g.patience -= drain * dt;
     if (g.patience < LONG_WAIT_PATIENCE) feel(g, 'long-wait');
     if (g.thirst >= 100) feel(g, 'thirsty');

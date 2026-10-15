@@ -48,6 +48,7 @@ import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
+import { itemNoise, noiseAt, updateNoise } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import type { Objective } from './progress';
@@ -64,6 +65,7 @@ import { deliveryProblem, enabled, modalityOf, offered, setDiscipline, unlocked 
 import { inRush, type Season, seasonOf, updateTwists } from './twists';
 import { decayItems } from './upkeep';
 import { fadeVibes } from './vibes';
+import { outdoorTemp, updateWarmth, warmthAt } from './warmth';
 
 export class Sim {
   readonly world: World;
@@ -114,6 +116,8 @@ export class Sim {
     if (this.slowT <= 0) {
       this.slowT = 1;
       updateAmbience(ctx);
+      updateNoise(ctx);
+      updateWarmth(ctx);
       updateEmergency(ctx);
       updateOutbreak(ctx);
       checkStars(ctx);
@@ -215,10 +219,28 @@ export class Sim {
   /** Work out again how pleasant each spot is, for an overlay drawn while the game is paused. */
   refreshAmbience() {
     updateAmbience(this.ctx);
+    updateNoise(this.ctx);
+    updateWarmth(this.ctx);
   }
   /** How fast patience drains on a tile: slower in pleasant surroundings, faster in grim ones. */
   drainFactor(x: number, y: number): number {
     return drainFactor(this.ctx, x, y);
+  }
+  /** How noisy a tile is: 0 is silent, and from NOISE_LOUD it is loud. */
+  noiseAt(x: number, y: number): number {
+    return noiseAt(this.ctx, x, y);
+  }
+  /** How warm a tile is, in degrees Fahrenheit. */
+  warmthAt(x: number, y: number): number {
+    return warmthAt(this.ctx, x, y);
+  }
+  /** How noisy it is at an item, such as a treatment table. */
+  itemNoise(it: Item): number {
+    return itemNoise(this.ctx, it);
+  }
+  /** The temperature outside today. */
+  outdoorTemp(): number {
+    return outdoorTemp(centerOf(this.s).climate, this.s.day);
   }
 
   /** A room's prestige, from one to five. */

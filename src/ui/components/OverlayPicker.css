@@ -69,6 +69,10 @@
   background: linear-gradient(90deg, #e5484d, #f5b83d, #3fbf6f);
 }
 
+#overlay-key .scale.temperature i {
+  background: linear-gradient(90deg, #4a9fe0, #3fbf6f, #e5484d);
+}
+
 #overlay-key .x {
   top: 50%;
   transform: translateY(-50%);

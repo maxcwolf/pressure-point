@@ -40,6 +40,7 @@ export function updateOutbreak(ctx: SimContext) {
     const carriers = s.guests.some((g) => g.stressed);
     if (s.day >= o.deadline || (o.pending === 0 && !carriers)) endOutbreak(ctx);
   } else if (
+    s.outbreaksOn &&
     !s.outbreakOffer &&
     !s.offer &&
     !s.emergency &&

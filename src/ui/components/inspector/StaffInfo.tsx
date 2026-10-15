@@ -109,6 +109,14 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
         Morale
         <Bar value={st.morale} class={moraleLook(st.morale)} />
       </label>{' '}
+      <label title="Seen to between jobs at a Water Cooler or Tea Station, or by an Espresso Machine on a break.">
+        Thirst
+        <Bar value={st.thirst} class={st.thirst >= 100 ? 'bad' : 'need'} />
+      </label>{' '}
+      <label title="Seen to between jobs at a Snack Machine.">
+        Hunger
+        <Bar value={st.hunger} class={st.hunger >= 100 ? 'bad' : 'need'} />
+      </label>{' '}
       <p class="sub">
         {`Salary ${money(st.salary)}/month (going rate ${money(sim.fairPay(st))}) · Guests served: ${st.served}`}
       </p>{' '}

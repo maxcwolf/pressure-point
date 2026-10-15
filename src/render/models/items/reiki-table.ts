@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 
 import { at } from '../../../core/util';
+import { linensMaterial } from '../linens';
 import { cyl, mat, partsOf, put, rbox, sph, torus, WOOD } from '../parts';
 
 /** Pale purple quartz, a little see-through. */
@@ -30,7 +31,8 @@ export function buildReikiTable(g: THREE.Group) {
   put(g, rbox(0.8, 0.07, 1.82, 0.03), mat(WOOD), 0, 0.5, 0);
   put(g, rbox(0.76, 0.14, 1.78, 0.07), mat(0xc9b6e4), 0, 0.59, 0);
   // a folded blanket over the foot, and a round pillow at the head
-  put(g, rbox(0.78, 0.05, 0.5, 0.02), mat(0x7a5aa8), 0, 0.68, 0.6);
+  const linens = linensMaterial(0x7a5aa8);
+  put(g, rbox(0.78, 0.05, 0.5, 0.02), linens, 0, 0.68, 0.6);
   const pillow = put(g, cyl(0.1, 0.1, 0.5, 14), mat(0xf5ecdb), 0, 0.72, -0.72);
   pillow.rotation.z = Math.PI / 2;
 
@@ -65,4 +67,5 @@ export function buildReikiTable(g: THREE.Group) {
     g.add(group);
   }
   partsOf(g).session = session;
+  partsOf(g).linens = linens;
 }

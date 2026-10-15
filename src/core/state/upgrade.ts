@@ -82,6 +82,8 @@ type OldSave = Before<
   | 'outbreakOffer'
   | 'outbreak'
   | 'nextOutbreak'
+  | 'outbreaksOn'
+  | 'weatherOn'
 > & {
   stats: Before<Stats, 'priced' | 'sent' | 'worse' | 'healedBy' | 'emergencies' | 'lastQuit'>;
   tally?: Before<Tally, 'sent' | 'worse'>;
@@ -101,6 +103,8 @@ type OldSave = Before<
     | 'general'
     | 'off'
     | 'call'
+    | 'thirst'
+    | 'hunger'
   >[];
   candidates: Before<Candidate, 'quals'>[];
   items: Before<Item, 'wear' | 'dirt'>[];
@@ -128,6 +132,8 @@ export function upgradeSave(save: GameState) {
     st.general ??= [];
     st.off ??= [];
     st.call ??= null;
+    st.thirst ??= 0;
+    st.hunger ??= 0;
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
   for (const it of s.items) {
@@ -185,6 +191,8 @@ export function upgradeSave(save: GameState) {
   s.challenge ??= null;
   s.nextChallenge ??= Math.max(FIRST_CHALLENGE_DAY, s.day + CHALLENGE_GAP_MIN);
   s.challengesOn ??= true;
+  s.outbreaksOn ??= true;
+  s.weatherOn ??= true;
   s.nextApplicant ??= s.day + APPLICANT_DAYS;
   s.reviews = (s.reviews ?? []).map((r) => ({ ...r, feelings: r.feelings.filter((f) => Object.hasOwn(FEELINGS, f)) }));
   s.casebook ??= {};

@@ -6,7 +6,7 @@ import type { Sim } from '../core/sim/sim';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
-import { Heatmap, type HeatTile } from './heatmap';
+import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
 import { addLights, placeSun } from './lighting';
 import { LitterLayer } from './litter';
@@ -124,8 +124,8 @@ export class View {
   // ---- Build overlays --------------------------------------------------------
 
   /** Color the floor for an information overlay, or clear it with null. */
-  setHeat(tiles: readonly HeatTile[] | null) {
-    this.heat.set(tiles);
+  setHeat(tiles: readonly HeatTile[] | null, palette?: Palette) {
+    this.heat.set(tiles, palette);
   }
 
   /** Show colored tiles on the floor for the current tool. */

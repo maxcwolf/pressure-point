@@ -16,7 +16,13 @@ const CLOUD_Y = 1.75;
 function buildCloud(room: Room): THREE.Group {
   const g = new THREE.Group();
   const murk = owned(
-    new THREE.MeshStandardMaterial({ color: 0x5b4a6b, roughness: 1, transparent: true, opacity: 0.8, depthWrite: false }),
+    new THREE.MeshStandardMaterial({
+      color: 0x5b4a6b,
+      roughness: 1,
+      transparent: true,
+      opacity: 0.8,
+      depthWrite: false,
+    }),
   );
   const lumps = 6;
   for (let i = 0; i < lumps; i++) {

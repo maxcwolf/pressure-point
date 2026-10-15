@@ -4,6 +4,7 @@ export * from './awards';
 export * from './business';
 export * from './careers';
 export * from './centers';
+export * from './comfort';
 export * from './conditions';
 export * from './feelings';
 export * from './items';

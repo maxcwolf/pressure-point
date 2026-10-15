@@ -189,6 +189,46 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'staff',
     lines: ['They talked me down when I was in a state.', 'Kept their cool when I could not keep mine.'],
   },
+  noisy: {
+    id: 'noisy',
+    icon: '🔊',
+    text: 'A noisy treatment room',
+    good: false,
+    part: 'experience',
+    lines: ['Hard to relax with an arcade machine going next door.', 'I could hear every word from the waiting area.'],
+  },
+  peaceful: {
+    id: 'peaceful',
+    icon: '🤫',
+    text: 'A peaceful treatment room',
+    good: true,
+    part: 'experience',
+    lines: ['So quiet I nearly fell asleep on the table.', 'Peace and quiet at last.'],
+  },
+  'stale-linens': {
+    id: 'stale-linens',
+    icon: '🧺',
+    text: 'Stale linens on the table',
+    good: false,
+    part: 'experience',
+    lines: ['The sheets on the table had seen a few guests before me.', 'Change the towels, please.'],
+  },
+  'too-cold': {
+    id: 'too-cold',
+    icon: '🥶',
+    text: 'Too cold',
+    good: false,
+    part: 'experience',
+    lines: ['Freezing. Kept my coat on the whole time.', 'Could see my breath in the waiting area.'],
+  },
+  'too-hot': {
+    id: 'too-hot',
+    icon: '🥵',
+    text: 'Too hot',
+    good: false,
+    part: 'experience',
+    lines: ['Like waiting in a sauna, only without the benefits.', 'Sweltering. Open a window.'],
+  },
 };
 
 /** The parts of a center's reputation, in the order they are shown. */

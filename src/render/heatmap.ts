@@ -1,4 +1,5 @@
-// A layer of colored tiles over the floor for the overlays: red where things are bad, through amber, to green.
+// A layer of colored tiles over the floor for the overlays: red where things are bad, through amber, to green; or,
+// for temperature, blue where it is cold, through green, to red where it is hot.
 
 import * as THREE from 'three';
 
@@ -8,14 +9,24 @@ import { at } from '../core/util';
 /** A floor tile and how good things are there, from 0 to 1. */
 export type HeatTile = [x: number, y: number, value: number];
 
+/** How values are colored: bad to good, or cold through just right to hot. */
+export type Palette = 'good' | 'temperature';
+
 const BAD = new THREE.Color(0xe5484d);
 const MIDDLING = new THREE.Color(0xf5b83d);
 const GOOD = new THREE.Color(0x3fbf6f);
+const COLD = new THREE.Color(0x4a9fe0);
 
 /** The color for a value from 0 (bad) to 1 (good). */
 export function heatColor(value: number, out = new THREE.Color()): THREE.Color {
   const v = Math.max(0, Math.min(1, value));
   return v < 0.5 ? out.lerpColors(BAD, MIDDLING, v * 2) : out.lerpColors(MIDDLING, GOOD, (v - 0.5) * 2);
+}
+
+/** The color for a temperature, from 0 (freezing) through a half (just right) to 1 (sweltering). */
+export function tempColor(value: number, out = new THREE.Color()): THREE.Color {
+  const v = Math.max(0, Math.min(1, value));
+  return v < 0.5 ? out.lerpColors(COLD, GOOD, v * 2) : out.lerpColors(GOOD, BAD, (v - 0.5) * 2);
 }
 
 /** Tiles colored by how good things are on each, drawn just above the floor and under everything else. */
@@ -37,14 +48,15 @@ export class Heatmap {
   }
 
   /** Color these tiles, or clear the layer. */
-  set(tiles: readonly HeatTile[] | null) {
+  set(tiles: readonly HeatTile[] | null, palette: Palette = 'good') {
+    const paint = palette === 'temperature' ? tempColor : heatColor;
     const list = tiles ?? [];
     const n = Math.min(list.length, W * H);
     for (let i = 0; i < n; i++) {
       const [x, y, v] = at(list, i);
       this.matrix.makeTranslation(x + 0.5, 0.02, y + 0.5);
       this.mesh.setMatrixAt(i, this.matrix);
-      this.mesh.setColorAt(i, heatColor(v, this.color));
+      this.mesh.setColorAt(i, paint(v, this.color));
     }
     this.mesh.count = n;
     this.mesh.instanceMatrix.needsUpdate = true;

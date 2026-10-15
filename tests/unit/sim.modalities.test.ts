@@ -10,6 +10,8 @@ import { addTraining, hire, openCenter, run, runUntil } from './helpers';
 function playWithCondition(sim: Sim, condition: ConditionId, seconds: number) {
   for (let i = 0; i < seconds; i++) {
     for (const g of sim.s.guests) if (g.diagnosis === 0) g.condition = condition;
+    // fresh linens throughout, so only the treatment's own odds count
+    for (const it of sim.s.items) it.dirt = 0;
     run(sim, 1);
   }
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { type Discipline, ITEM_MENU, ITEMS, MODALITIES, ROOMS } from '../../src/core/data';
+import type { Job } from '../../src/core/state/types';
 import { cureShare, seen, starText } from '../../src/ui/lib/casebook';
 import {
   available,
@@ -156,6 +157,24 @@ describe('describing what people are doing', () => {
     const receptionist = sim.s.staff.find((x) => x.role === 'receptionist')!;
     runUntil(sim, () => receptionist.state === 'atPost', 60);
     expect(staffStatus(receptionist, sim)).toMatch(/^(Working|Waiting for a guest)$/);
+  });
+
+  it('says which chore someone is on, not litter for every one that is not watering', () => {
+    const { sim, s, massage } = openCenter(3);
+    const janitor = hire(sim, 'caretaker');
+    const table = s.items.find((i) => i.type === 'massage_table')!;
+    const hamper = sim.placeItem('linen_hamper', 16, 10, 0)!;
+    const cooler = sim.placeItem('water_cooler', 18, 10, 0)!;
+    janitor.state = 'doingJob';
+    /** What the Janitor is said to be doing on a chore. */
+    const on = (kind: Job['kind'], id: number) => {
+      janitor.job = { kind, id };
+      return staffStatus(janitor, sim);
+    };
+    expect(on('clean', table.id)).toBe('Changing the linens');
+    expect(on('launder', hamper.id)).toBe('Laundering the linens');
+    expect(on('refresh', cooler.id)).toBe('Getting a drink');
+    expect(on('smudge', massage.id)).toBe('Clearing bad vibes with sage');
   });
 });
 

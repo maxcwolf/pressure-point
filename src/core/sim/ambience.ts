@@ -31,10 +31,13 @@ export function updateAmbience(ctx: SimContext) {
   for (const l of ctx.s.litter) spread(l.x, l.y, -2.5);
 }
 
-/** A wilted plant or a filthy toilet drags its surroundings down instead of lifting them. */
+/**
+ * A wilted plant or a filthy toilet drags its surroundings down instead of lifting them. Stale linens on a table do
+ * their harm on the table, not to the room.
+ */
 export function decorOf(it: Item): number {
   if (it.type === 'plant' && it.water <= 15) return -1;
-  if (it.dirt >= DIRT_FILTHY) return FILTHY_DECOR;
+  if (it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens) return FILTHY_DECOR;
   return ITEMS[it.type].decor ?? 0;
 }
 

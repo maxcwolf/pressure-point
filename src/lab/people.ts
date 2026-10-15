@@ -77,6 +77,8 @@ export function demoStaff(look: Look, role: Role): Staff {
     salary: 0,
     traits: [],
     energy: 100,
+    thirst: 0,
+    hunger: 0,
     state: 'atPost',
     post: 0,
     job: null,

@@ -1,4 +1,5 @@
-// Setting up a sandbox game on the title screen: its money, its treatments, and whether everything starts unlocked.
+// Setting up a sandbox game on the title screen: its money, its treatments, whether everything starts unlocked, and
+// which events and pressures it has.
 
 import './SandboxPanel.css';
 
@@ -93,6 +94,28 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           onToggle={() => {
             change(() => {
               saveSandbox({ ...settings, challenges: !settings.challenges });
+            });
+          }}
+        />
+        <SettingRow
+          icon="😰"
+          name="Stress outbreaks"
+          desc="From the second star, an outbreak of stress may be offered, to be calmed before it spreads."
+          on={settings.outbreaks}
+          onToggle={() => {
+            change(() => {
+              saveSandbox({ ...settings, outbreaks: !settings.outbreaks });
+            });
+          }}
+        />
+        <SettingRow
+          icon="🌡️"
+          name="Weather"
+          desc="Cold winters and warm summers that radiators and air conditioners keep out. Off, it is always just right."
+          on={settings.weather}
+          onToggle={() => {
+            change(() => {
+              saveSandbox({ ...settings, weather: !settings.weather });
             });
           }}
         />

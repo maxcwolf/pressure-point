@@ -7,7 +7,9 @@ import {
   DAY_SECONDS,
   DIRT_CLEAN,
   DIRT_FILTHY,
+  DISCOMFORT_MORALE,
   ITEMS,
+  LAUNDER_SECONDS,
   MAINTENANCE_SPEED,
   MISERABLE_MORALE,
   MOTIVATION_SPEED,
@@ -18,6 +20,7 @@ import {
   QUIT_WARNING,
   RANK_XP,
   ROLES,
+  STAFF_NEED_MORALE,
   STAMINA_DRAIN,
   traitOf,
   VIBES_MORALE,
@@ -41,12 +44,15 @@ import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { resetGuest } from './guests';
+import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaundering } from './linens';
 import { goTo, halt, moveAlong } from './movement';
 import { breakDue } from './policy';
 import { hasItem } from './progress';
+import { fedUp, goRefresh, growNeeds, refreshed, refreshSeconds, wants, wantsRefresh } from './staff-needs';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
 import { clearVibes, roomToSmudge, smudgeSeconds, smudging, startSmudge, wander } from './vibes';
+import { discomfort, warmthAt } from './warmth';
 
 /** The four tiles beside a tile, for standing next to something. */
 const BESIDE: readonly (readonly [dx: number, dy: number])[] = [
@@ -70,6 +76,8 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     salary: c.salary,
     traits: c.traits,
     energy: 100,
+    thirst: 0,
+    hunger: 0,
     state: 'arriving',
     post: 0,
     job: null,
@@ -164,6 +172,8 @@ export function moraleTarget(ctx: SimContext, st: Staff): number {
   const room = post && st.state === 'atPost' ? ctx.world.roomOfItem(post) : undefined;
   if (room) target += (prestige(ctx, room) - 2) * 5;
   if (room && room.vibes > 0) target -= VIBES_MORALE;
+  target -= discomfort(warmthAt(ctx, st.tx, st.ty)) * DISCOMFORT_MORALE;
+  if (fedUp(st)) target -= STAFF_NEED_MORALE;
   if (hasItem(ctx, 'pool_table')) target += POOL_TABLE_MORALE;
   if (ctx.s.litter.length > 6) target -= 6;
   if (st.promotion) target -= PROMOTION_SULK;
@@ -285,6 +295,7 @@ export function janitorSpeed(st: Staff): number {
 export function jobSeconds(kind: Job['kind'] | undefined): number {
   if (kind === 'repair') return 3.2;
   if (kind === 'clean') return 2.4;
+  if (kind === 'launder') return LAUNDER_SECONDS;
   return 1.6;
 }
 
@@ -309,6 +320,7 @@ export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
 /** Find something to do: a break if tired, then a job or a station to staff, or else a wander. */
 function findWork(ctx: SimContext, st: Staff) {
   if (breakDue(ctx, st) && tryBreak(ctx, st)) return;
+  if (goRefresh(ctx, st)) return;
   const s = ctx.s;
   if (st.role === 'caretaker') {
     // broken equipment first, then litter and filthy toilets, then routine cleaning, watering and servicing
@@ -332,7 +344,10 @@ function findWork(ctx: SimContext, st: Staff) {
     for (const p of s.items) {
       if (p.claimedBy) continue;
       if (p.wear >= WEAR_REPAIR) add('repair', p.id, p.x, p.y, p.wear >= 100 ? 2 : 0);
-      else if (p.dirt >= DIRT_CLEAN) add('clean', p.id, p.x, p.y, p.dirt >= DIRT_FILTHY ? 1 : 0);
+      // linens can only be changed with a hamper to take fresh ones from and put the used ones in
+      else if (p.dirt >= DIRT_CLEAN && (!hasLinens(p) || hamperWithRoom(ctx)))
+        add('clean', p.id, p.x, p.y, p.dirt >= DIRT_FILTHY ? 1 : 0);
+      else if (wantsLaundering(p)) add('launder', p.id, p.x, p.y, hamperFull(p) ? 1 : 0);
       else if ((p.type === 'plant' && p.water <= 40) || (p.type === 'stone_warmer' && p.water <= 55))
         add('water', p.id, p.x, p.y, 0);
     }
@@ -443,6 +458,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
 
   updateMorale(ctx, st, dt);
   if (st.state === 'leaving' && !ctx.s.staff.includes(st)) return;
+  growNeeds(ctx, st, dt, breakBoost(ctx, st) > 1);
   if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * 9 * breakBoost(ctx, st));
   else if (st.state !== 'leaving' && st.state !== 'training' && st.state !== 'away') {
     const rate = st.busy ? 0.42 * (st.strain || 1) : st.state === 'atPost' ? 0.14 : 0.2;
@@ -481,6 +497,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       else if (!it.serving && !inPriorityRoom(ctx, it.x, it.y) && openPriorityPost(ctx, st)) staffIdle(ctx, st);
       // free to go, and a room has bad vibes that they know how to clear
       else if (!it.serving && roomToSmudge(ctx, st)) staffIdle(ctx, st);
+      // free to go, and in want of a drink or a snack that is to be had
+      else if (!it.serving && wantsRefresh(ctx, st)) staffIdle(ctx, st);
       else if (breakDue(ctx, st) && !it.serving) {
         st.timer -= dt;
         if (st.timer <= 0) {
@@ -512,6 +530,11 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
           say(st, '🌿', 2);
           break;
         }
+        if (st.job?.kind === 'refresh') {
+          st.timer = refreshSeconds();
+          say(st, wants(st) === 'eat' ? '🍪' : '🥤', 2);
+          break;
+        }
         st.timer = jobSeconds(st.job?.kind) / janitorSpeed(st);
         if (st.job && st.job.kind !== 'litter') {
           const p = ctx.world.item(st.job.id);
@@ -527,12 +550,21 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       st.timer -= dt;
       if (st.timer <= 0) {
         const job = st.job;
+        if (job?.kind === 'refresh') {
+          refreshed(st, ctx.world.item(job.id));
+          st.job = null;
+          staffIdle(ctx, st);
+          break;
+        }
         if (job?.kind === 'litter') ctx.s.litter = ctx.s.litter.filter((l) => l.id !== job.id);
         else if (job) {
           const p = ctx.world.item(job.id);
           if (p) {
             if (job.kind === 'repair') p.wear = 0;
-            else if (job.kind === 'clean') p.dirt = 0;
+            else if (job.kind === 'clean') {
+              if (!hasLinens(p)) p.dirt = 0;
+              else if (changeLinens(ctx, p)) say(st, '🧺', 2);
+            } else if (job.kind === 'launder') launder(p);
             else p.water = 100;
             p.claimedBy = 0;
             if (job.kind === 'repair') ctx.world.version++;

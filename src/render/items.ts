@@ -2,13 +2,14 @@
 
 import * as THREE from 'three';
 
-import { DIRT_FILTHY, type ItemType } from '../core/data';
+import { DIRT_FILTHY, HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Item } from '../core/state/types';
 import { itemCenter } from '../core/world';
 import { disposeOwned, owned } from './disposal';
 import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
+import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
 
 /** Position and turn an item's model to match its tile and rotation. */
@@ -18,19 +19,23 @@ export function placeItemModel(model: THREE.Object3D, type: ItemType, x: number,
   model.rotation.y = (-rot * Math.PI) / 2;
 }
 
-/** What an item's moving parts follow: how watered or hot it is, whether it is scanning, whether it has broken. */
+/**
+ * What an item's moving parts follow: how watered or hot it is (or how full, for a hamper), how soiled its linens,
+ * whether it is scanning, whether it has broken.
+ */
 export interface ItemCondition {
   id: number;
   water: number;
+  dirt: number;
   scanning: boolean;
   broken: boolean;
   /** How many trophies the center has won, each shown as a cup in a trophy cabinet. */
   trophies: number;
 }
 
-/** Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke and blinking lights. */
+/** Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke, blinking lights and grubby linens. */
 export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: number) {
-  const { leaf, glow, ring, orb, puffs, led, cups } = partsOf(model);
+  const { leaf, glow, ring, orb, puffs, led, cups, linens, heap } = partsOf(model);
   if (leaf) {
     // a plant browns and droops as it dries out
     const k = Math.min(1, it.water / 40);
@@ -56,6 +61,13 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
   });
   if (led) led.emissiveIntensity = Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1;
   cups?.forEach((cup, i) => (cup.visible = i < it.trophies));
+  if (linens) soilLinens(linens, it.dirt);
+  if (heap) {
+    // the soiled linens rise up the basket as it fills
+    const full = Math.min(1, it.water / HAMPER_SIZE);
+    heap.visible = full > 0;
+    heap.position.y = 0.45 + full * 0.27;
+  }
 }
 
 // every progress bar is drawn with the same few pieces, so a bar costs nothing to make or throw away
@@ -112,7 +124,8 @@ export class ItemsLayer {
       if (!model) continue;
       this.effects(it, model, t);
       this.marker(model, it, 'wrench', '🔧', it.wear >= 100, t);
-      this.marker(model, it, 'flies', '🪰', it.dirt >= DIRT_FILTHY, t);
+      // stale linens show on the table itself, not as flies over it
+      this.marker(model, it, 'flies', '🪰', it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens, t);
       if (it.serving && it.progress > 0) {
         busy.add(it.id);
         this.bar(it);
@@ -132,6 +145,7 @@ export class ItemsLayer {
       {
         id: it.id,
         water: it.water,
+        dirt: it.dirt,
         scanning: it.serving > 0 && it.progress > 0,
         broken: it.wear >= 100,
         trophies: this.sim.s.trophies.length,

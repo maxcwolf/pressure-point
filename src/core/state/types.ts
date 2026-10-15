@@ -61,7 +61,7 @@ export interface Item {
   serving: number;
   staffId: number;
   progress: number;
-  // plants
+  /** A plant's water, a stone warmer's heat, or how many soiled sets of linens are in a hamper. */
   water: number;
   /** 0 is new, 100 is broken. */
   wear: number;
@@ -151,6 +151,9 @@ export interface Staff extends CharBase {
   salary: number;
   traits: TraitId[];
   energy: number;
+  /** 0 to 100: how much they want a drink, and a snack, seen to between jobs. */
+  thirst: number;
+  hunger: number;
   state: StaffState;
   /** Station item this staff member is assigned to. */
   post: number;
@@ -171,9 +174,12 @@ export interface Staff extends CharBase {
   yearServed: number;
 }
 
-/** A chore: the litter or item a Janitor sees to, or the room someone clears of bad vibes. */
+/**
+ * A chore: the litter or item a Janitor sees to (changing a table's linens is cleaning it, and laundering is emptying
+ * a hamper), the room someone clears of bad vibes, or the drink or snack someone goes to for themselves.
+ */
 export interface Job {
-  kind: 'litter' | 'water' | 'repair' | 'clean' | 'smudge';
+  kind: 'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh';
   id: number;
 }
 
@@ -502,6 +508,9 @@ export interface GameState {
   nextChallenge: number;
   /** Whether staff set challenges at all: a sandbox setting. */
   challengesOn: boolean;
+  /** Whether stress outbreaks are offered, and whether the weather outside makes it hot or cold: sandbox settings. */
+  outbreaksOn: boolean;
+  weatherOn: boolean;
   /** The last year-end awards ceremony, and every award won. */
   ceremony: Ceremony | null;
   trophies: Trophy[];

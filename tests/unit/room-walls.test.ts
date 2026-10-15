@@ -8,7 +8,20 @@ import { H_LOW, H_TALL, OUTER_LOW_TOP, OUTER_PANE_H, OUTER_PANE_Y0 } from '../..
 
 /** A 4×4 room at 10,10 with its door in the south wall, and whatever windows are asked for. */
 function room(windows: WallSpot[] = [], door: WallSpot = { x: 11, y: 13, dx: 0, dy: 1 }): Room {
-  return { id: 1, type: 'staffroom', x: 10, y: 10, w: 4, h: 4, door, windows, done: true, priority: false, vibes: 0, claimedBy: 0 };
+  return {
+    id: 1,
+    type: 'staffroom',
+    x: 10,
+    y: 10,
+    w: 4,
+    h: 4,
+    door,
+    windows,
+    done: true,
+    priority: false,
+    vibes: 0,
+    claimedBy: 0,
+  };
 }
 
 /** The glass in a room's walls. */

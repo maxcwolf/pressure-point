@@ -65,8 +65,9 @@ export const defaultPolicy = (): Policy => ({
  * 5: policy, room priority and sending guests home. 6: staff challenges and the year-end awards. 7: staff careers
  * and the new traits. 8: guests' feelings, reviews and the casebook. 9: the Shop Counter, prices per treatment,
  * marketing and house calls. 10: guests' worsening condition, bad vibes, stress outbreaks and the Smudging course.
+ * 11: noise, linens, temperature, staff needs, and the radiator, air conditioner and linen hamper.
  */
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {
@@ -127,6 +128,8 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     challenge: null,
     nextChallenge: FIRST_CHALLENGE_DAY,
     challengesOn: true,
+    outbreaksOn: true,
+    weatherOn: true,
     ceremony: null,
     trophies: [],
     achieved: [],

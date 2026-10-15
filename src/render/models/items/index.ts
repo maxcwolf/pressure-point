@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 import type { ItemType } from '../../../core/data';
 import { buildAcuTable } from './acu-table';
+import { buildAirConditioner } from './air-conditioner';
 import { buildAquarium } from './aquarium';
 import { buildArcadeMachine } from './arcade-machine';
 import { buildBench } from './bench';
@@ -19,6 +20,7 @@ import { buildDiffuser } from './diffuser';
 import { buildFireExtinguisher } from './fire-extinguisher';
 import { buildFountain } from './fountain';
 import { buildKoiPond } from './koi-pond';
+import { buildLinenHamper } from './linen-hamper';
 import { buildMagazineRack } from './magazine-rack';
 import { buildMassageChair } from './massage-chair';
 import { buildMassageTable } from './massage-table';
@@ -28,6 +30,7 @@ import { buildOilTrolley } from './oil-trolley';
 import { buildPlant } from './plant';
 import { buildPoolTable } from './pool-table';
 import { buildPostureScanner } from './posture-scanner';
+import { buildRadiator } from './radiator';
 import { buildReceptionDesk } from './reception-desk';
 import { buildReikiAltar } from './reiki-altar';
 import { buildReikiTable } from './reiki-table';
@@ -96,6 +99,9 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   bonsai: buildBonsai,
   massage_chair: buildMassageChair,
   koi_pond: buildKoiPond,
+  radiator: buildRadiator,
+  air_conditioner: buildAirConditioner,
+  linen_hamper: buildLinenHamper,
 };
 
 /** Build an item in its local frame: origin at the footprint center, +z is the front. */

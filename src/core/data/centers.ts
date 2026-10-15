@@ -14,6 +14,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb: 'Build the center you want, at your own pace.',
     plot: SANDBOX_PLOT,
     startMoney: 30000,
+    climate: { average: 66, swing: 6 },
     disciplines: ['acupuncture', 'reiki'],
     goals: [
       [
@@ -39,6 +40,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb: 'Where it all starts: one massage suite, a few loyal regulars, and a lot to learn.',
     plot: { x0: 7, x1: 22, y0: 8, y1: 17, door: [14, 15] },
     startMoney: 20000,
+    climate: { average: 60, swing: 12 },
     disciplines: [],
     goals: [
       [
@@ -65,6 +67,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       'Desk workers by the busload, arriving in waves when the office crowd comes in. Acupuncture opens at the first star.',
     plot: { x0: 5, x1: 25, y0: 6, y1: 17, door: [14, 15] },
     startMoney: 25000,
+    climate: { average: 62, swing: 14 },
     disciplines: ['acupuncture'],
     conditions: { slump: 3, band: 2.5, crick: 2.5, neck: 3, steam: 2 },
     rush: { peak: 2.4, lull: 0.6, impatience: 1.25 },
@@ -99,6 +102,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       'Packed in summer, half asleep in winter, and the sea air is hard on equipment. Reiki opens at the second star.',
     plot: { x0: 4, x1: 26, y0: 7, y1: 16, door: [14, 15] },
     startMoney: 30000,
+    climate: { average: 66, swing: 22 },
     disciplines: ['acupuncture', 'reiki'],
     conditions: { lobstered: 3, sealegs: 2.5, gull: 2.5 },
     seasons: { summer: 1.9, winter: 0.6 },

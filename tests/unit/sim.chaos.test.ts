@@ -3,7 +3,15 @@
 // are drawn from the game's own seeded random numbers, so a failure replays exactly.
 import { describe, expect, it } from 'vitest';
 
-import { DUTIES, type ItemType, type Role, SANDBOX_PLOT } from '../../src/core/data';
+import {
+  DUTIES,
+  HAMPER_LAUNDER,
+  HAMPER_SIZE,
+  ITEMS,
+  type ItemType,
+  type Role,
+  SANDBOX_PLOT,
+} from '../../src/core/data';
 import { irnd, pick, random } from '../../src/core/random';
 import type { Sim } from '../../src/core/sim/sim';
 import {
@@ -26,6 +34,9 @@ const { x0: BX0, x1: BX1, y0: BY0, y1: BY1 } = SANDBOX_PLOT;
 
 const EXTRAS: ItemType[] = [
   'shop_counter',
+  'radiator',
+  'air_conditioner',
+  'linen_hamper',
   'bench',
   'bench',
   'plant',
@@ -171,6 +182,15 @@ const MOVES: Record<string, (sim: Sim) => void> = {
     const g = sim.s.guests.length ? pick(sim.s.guests) : undefined;
     if (g) g.health = Math.min(g.health, 2);
   },
+  /** Make someone thirsty and hungry, or soil a table's linens, or fill a hamper. */
+  comfort: (sim) => {
+    const st = sim.s.staff.length ? pick(sim.s.staff) : undefined;
+    if (st) st.thirst = st.hunger = 95;
+    for (const it of sim.s.items) {
+      if (ITEMS[it.type].linens) it.dirt = 90;
+      if (it.type === 'linen_hamper') it.water = HAMPER_LAUNDER;
+    }
+  },
   /** Put a room first, or back among the rest. */
   priority: (sim) => {
     const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
@@ -207,6 +227,9 @@ describe('a restless player', () => {
         if (st.state === 'away' || st.state === 'toCall') expect(st.call, st.name).not.toBeNull();
       for (const g of s.guests) expect(g.health >= 0 && g.health <= 100, g.name).toBe(true);
       if (s.outbreak) expect(s.outbreak.calms >= 0 && s.outbreak.lost >= 0).toBe(true);
+      for (const st of s.staff) expect(st.thirst >= 0 && st.thirst <= 100 && st.hunger <= 100, st.name).toBe(true);
+      for (const it of s.items)
+        if (it.type === 'linen_hamper') expect(it.water >= 0 && it.water <= HAMPER_SIZE).toBe(true);
       for (const st of s.staff) {
         expect(st.skill >= 1 && st.skill <= 5, st.name).toBe(true);
         expect(st.off.length < (DUTIES[st.role]?.length ?? 1), `${st.name} has a duty left`).toBe(true);

@@ -592,10 +592,15 @@ test.describe('running a center', () => {
       g.calmed = false;
       return pp.state.outbreak!.calms;
     }, spot.name);
-    await page.locator('#inspector').getByRole('button', { name: /Calm them/ }).click();
+    await page
+      .locator('#inspector')
+      .getByRole('button', { name: /Calm them/ })
+      .click();
     await expect(page.locator('#inspector')).toContainText('Has had a calming session');
     await expect(page.locator('#objectives .outbreak')).toContainText(`${calms - 1} calming session`);
-    expect(await game.eval((pp, name) => pp.state.guests.find((x) => x.name === name)!.stressed, spot.name)).toBe(false);
+    expect(await game.eval((pp, name) => pp.state.guests.find((x) => x.name === name)!.stressed, spot.name)).toBe(
+      false,
+    );
   });
 
   // the offer used to add "massage" to every technique, so an acupuncture emergency asked for "Cupping massage"
@@ -1249,6 +1254,47 @@ test.describe('reading the center', () => {
       .getByTitle(/Stop coloring/)
       .click();
     await expect(page.locator('#overlay-key')).toHaveCount(0);
+  });
+
+  test('the Temperature overlay keys its colors from cold to hot', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await page
+      .locator('#sys')
+      .getByTitle(/Overlays/)
+      .click();
+    await page
+      .locator('#overlay-picker')
+      .getByRole('button', { name: /Temperature/ })
+      .click();
+    await expect(page.locator('#overlay-key .scale.temperature')).toContainText('Cold');
+    await expect(page.locator('#overlay-key .scale.temperature')).toContainText('Hot');
+    await expect.poll(() => game.eval((pp) => pp.ui.overlay)).toBe('temperature');
+  });
+});
+
+test.describe('comfort', () => {
+  test('stale linens show on the table until a Janitor changes them from a Linen Hamper', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.menu('Items');
+    await game.card('Linen Hamper').click();
+    await game.placeHeld();
+    await page.keyboard.press('Escape');
+    expect(await game.eval((pp) => pp.state.items.some((i) => i.type === 'linen_hamper'))).toBe(true);
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.state.items.find((i) => i.type === 'massage_table')!.dirt = 90;
+    });
+    await game.clickItem('massage_table');
+    await expect(page.locator('#inspector')).toContainText('Stale linens');
+    await game.eval((pp) => {
+      const best = pp.state.candidates.filter((c) => c.role === 'caretaker').sort((a, b) => b.skill - a.skill)[0]!;
+      pp.sim.hire(best.id);
+    });
+    await game.fastForward(60);
+    await expect(page.locator('#inspector')).not.toContainText('Stale linens');
+    expect(await game.eval((pp) => pp.state.items.find((i) => i.type === 'linen_hamper')!.water)).toBe(1);
   });
 });
 

@@ -171,15 +171,20 @@ describe('the campaign kept between games', () => {
   });
 
   it('remembers the sandbox settings, ignoring money it does not offer', () => {
-    const usual = { money: CENTERS.sandbox.startMoney, unlockAll: false, challenges: true };
+    const on = { challenges: true, outbreaks: true, weather: true };
+    const usual = { money: CENTERS.sandbox.startMoney, unlockAll: false, ...on };
     expect(loadSandbox()).toEqual(usual);
-    saveSandbox({ money: 200000, unlockAll: true, challenges: false });
-    expect(loadSandbox()).toEqual({ money: 200000, unlockAll: true, challenges: false });
-    store.set('pressure-point-sandbox', JSON.stringify({ money: 1e9, unlockAll: 'yes', challenges: 1 }));
+    const chosen = { money: 200000, unlockAll: true, challenges: false, outbreaks: false, weather: false };
+    saveSandbox(chosen);
+    expect(loadSandbox()).toEqual(chosen);
+    store.set(
+      'pressure-point-sandbox',
+      JSON.stringify({ money: 1e9, unlockAll: 'yes', challenges: 1, outbreaks: 'no', weather: 0 }),
+    );
     expect(loadSandbox()).toEqual(usual);
-    // settings saved before there were challenges have them on
+    // settings saved before there were challenges, outbreaks or weather have them on
     store.set('pressure-point-sandbox', JSON.stringify({ money: 75000, unlockAll: true }));
-    expect(loadSandbox()).toEqual({ money: 75000, unlockAll: true, challenges: true });
+    expect(loadSandbox()).toEqual({ money: 75000, unlockAll: true, ...on });
   });
 });
 

@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 
 import { at } from '../../../core/util';
+import { linensMaterial } from '../linens';
 import { CHROME, CREAM, cyl, GLASS, LACQUER, mat, partsOf, put, rbox, sph } from '../parts';
 
 /** Build the Acupuncture Table model. */
@@ -16,7 +17,8 @@ export function buildAcuTable(g: THREE.Group) {
     put(g, rbox(0.09, 0.5, 0.09, 0.02), mat(LACQUER), x, 0.25, z);
   put(g, rbox(0.8, 0.07, 1.82, 0.03), mat(LACQUER), 0, 0.5, 0);
   put(g, rbox(0.74, 0.12, 1.76, 0.06), mat(0x9ad0b8), 0, 0.58, 0);
-  put(g, rbox(0.7, 0.03, 1.1, 0.015), mat(CREAM), 0, 0.645, 0.2);
+  const linens = linensMaterial(CREAM);
+  put(g, rbox(0.7, 0.03, 1.1, 0.015), linens, 0, 0.645, 0.2);
   const bolster = put(g, cyl(0.09, 0.09, 0.6, 14), mat(0xb5523e), 0, 0.68, -0.72);
   bolster.rotation.z = Math.PI / 2;
   // what gets put on the guest's back, one set per technique
@@ -65,4 +67,5 @@ export function buildAcuTable(g: THREE.Group) {
     g.add(group);
   }
   partsOf(g).session = session;
+  partsOf(g).linens = linens;
 }

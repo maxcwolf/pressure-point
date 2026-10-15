@@ -1,7 +1,8 @@
 // The inspector for a room.
 
-import { ITEMS, MODALITIES, MODALITY_ORDER, ROOMS } from '../../../core/data';
+import { ITEMS, MODALITIES, MODALITY_ORDER, NOISE_NOTICE, NOISE_PEACEFUL, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
+import { tempFeel } from '../../../core/sim/warmth';
 import type { Item, Room } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
@@ -62,6 +63,20 @@ function BadVibes({ room }: { room: Room }) {
   );
 }
 
+/** How warm and how calm it is in the middle of a room. */
+function Comfort({ room }: { room: Room }) {
+  const { sim } = useGame();
+  const x = Math.floor(room.x + room.w / 2);
+  const y = Math.floor(room.y + room.h / 2);
+  const temp = sim.warmthAt(x, y);
+  const noise = sim.noiseAt(x, y);
+  return (
+    <p class="sub comfort">
+      {`🌡️ ${Math.round(temp)}°F, ${tempFeel(temp).toLowerCase()} · 🤫 ${noise >= NOISE_NOTICE ? 'Noisy' : noise <= NOISE_PEACEFUL ? 'Peaceful' : 'Fairly quiet'}`}
+    </p>
+  );
+}
+
 /** A room's details, with its window, door and demolish buttons. */
 export function RoomInfo({ room }: { room: Room }) {
   const { sim, tools } = useGame();
@@ -79,7 +94,7 @@ export function RoomInfo({ room }: { room: Room }) {
       <p class="sub">
         {`${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'} · Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.`}
       </p>{' '}
-      <BadVibes room={room} />{' '}
+      <Comfort room={room} /> <BadVibes room={room} />{' '}
       {stations.map((i) => (
         <StationInfo key={i.id} item={i} />
       ))}

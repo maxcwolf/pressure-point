@@ -6,6 +6,8 @@ import {
   DIRT_FILTHY,
   DISCIPLINE_ORDER,
   DISCIPLINES,
+  DISCOMFORT_NOTICE,
+  IDEAL_TEMP,
   ITEMS,
   LOAN_MAX,
   MODALITIES,
@@ -20,9 +22,12 @@ import { unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import type { SimContext } from './context';
 import { emit, type Subject } from './events';
+import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { allStars, hasItem, hasRoom, hasStaff } from './progress';
+import { fedUp, refreshmentFor, wants } from './staff-needs';
 import { aboutToQuit } from './staffing';
 import { enabled, unlocked } from './treatments';
+import { discomfort, warmthAt } from './warmth';
 
 /** Make an announcement over the speakers every so often. */
 export function announce(ctx: SimContext, dt: number) {
@@ -78,7 +83,7 @@ function nudge(ctx: SimContext): string | Advice {
   const wilting = s.items.find((i) => i.type === 'plant' && i.water < 20);
   if (wilting && !hasStaff(ctx, 'caretaker'))
     return { text: 'Your plants are wilting. A Janitor will water them.', about: { kind: 'item', id: wilting.id } };
-  const filthy = s.items.find((i) => i.dirt >= DIRT_FILTHY);
+  const filthy = s.items.find((i) => i.dirt >= DIRT_FILTHY && !hasLinens(i));
   if (filthy && !hasStaff(ctx, 'caretaker'))
     return {
       text: 'The toilets are filthy and guests are noticing. Hire a Janitor to clean them.',
@@ -93,6 +98,8 @@ function nudge(ctx: SimContext): string | Advice {
         : `A ${ITEMS[broken.type].name} has broken down. Hire a Janitor to repair it.`,
       about: { kind: 'item', id: broken.id },
     };
+  const comfort = comfortAdvice(ctx);
+  if (comfort) return comfort;
   // a raise request waits on a card of its own at the side of the screen, leaving the advisor for other things
   if (s.money < 0 && s.loan < LOAN_MAX) return 'You are in the red. A loan from the Money menu would tide you over.';
   const gap = modalityAdvice(ctx);
@@ -115,6 +122,39 @@ function nudge(ctx: SimContext): string | Advice {
     return 'Guests are parched. A Herbal Tea Station would help, and it earns a little too.';
   if (allStars(ctx)) return 'Three stars! Every treatment is open to you. Keep the guests coming back.';
   return 'Looking good. Keep an eye on the objectives to earn your next star.';
+}
+
+/** Nudge about stale linens, a building too cold or too hot, and staff with nothing to drink. */
+export function comfortAdvice(ctx: SimContext): string | Advice {
+  const s = ctx.s;
+  const stale = s.items.find(staleLinens);
+  if (stale && !hamperWithRoom(ctx))
+    return {
+      text: s.items.some(isHamper)
+        ? 'The Linen Hamper is full and the treatment tables need fresh linens. A Janitor will launder it, and a second hamper helps.'
+        : 'The linens on the treatment tables are stale. Place a Linen Hamper so a Janitor can change them.',
+      about: { kind: 'item', id: stale.id },
+    };
+  if (stale && !hasStaff(ctx, 'caretaker'))
+    return {
+      text: 'The linens on the treatment tables are stale. Hire a Janitor to change them.',
+      about: { kind: 'item', id: stale.id },
+    };
+  const waiting = s.guests.filter((g) => g.state === 'waiting');
+  const uneasy = waiting.filter((g) => discomfort(warmthAt(ctx, g.tx, g.ty)) >= DISCOMFORT_NOTICE);
+  if (uneasy.length >= 3) {
+    const hot = uneasy.filter((g) => warmthAt(ctx, g.tx, g.ty) > IDEAL_TEMP).length * 2 > uneasy.length;
+    return hot
+      ? 'Guests are sweltering while they wait. Air Conditioners would cool things down; the Temperature overlay shows where.'
+      : 'Guests are shivering while they wait. Radiators would warm the place up; the Temperature overlay shows where.';
+  }
+  const parched = s.staff.find((st) => wants(st) && !refreshmentFor(ctx, st, wants(st) ?? 'drink'));
+  if (parched && fedUp(parched))
+    return {
+      text: `${parched.name} has nothing to drink or eat and is fed up. Staff use the Water Coolers, Tea Stations and Snack Machines too.`,
+      about: { kind: 'staff', id: parched.id },
+    };
+  return '';
 }
 
 /** Nudge about modalities guests are waiting for that the center cannot deliver. */

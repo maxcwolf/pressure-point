@@ -35,13 +35,16 @@ import { changeRep, earn, priceFor } from './economy';
 import { emit, tipOnce } from './events';
 import { feel, reviewStars } from './feelings';
 import { decide, leave } from './guests';
+import { linensPenalty, useLinens } from './linens';
 import { goTo } from './movement';
+import { feelNoise, itemNoise, noisePenalty } from './noise';
 import { breakDue } from './policy';
 import { hasRoom } from './progress';
 import { countVisit } from './records';
 import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments';
 import { addWear } from './upkeep';
 import { addVibes, vibesAt, vibesPenalty } from './vibes';
+import { feelTemperature, warmthAt } from './warmth';
 import { conditionPenalty } from './worsening';
 
 /** Lower is better. Guests steer toward tables that can actually deliver what they need. */
@@ -99,7 +102,8 @@ export interface Chance {
 /**
  * The chance a guest's treatment at this table works if this member of staff gives it now: better with skill, a
  * confident diagnosis and a prestigious room, worse for a hard technique, a tired therapist, a guest whose condition
- * has worsened or a room with bad vibes, and only a fraction of that without the right training or equipment.
+ * has worsened, a room with bad vibes, noise or stale linens, and only a fraction of that without the right
+ * training or equipment.
  */
 export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest): Chance {
   const mod = MODALITIES[conditionOf(g.condition).modality];
@@ -112,7 +116,9 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
       mod.difficulty -
       (staff.energy < 15 ? 0.15 : 0) -
       conditionPenalty(g.health) -
-      vibesPenalty(vibesAt(ctx, it)),
+      vibesPenalty(vibesAt(ctx, it)) -
+      noisePenalty(itemNoise(ctx, it)) -
+      linensPenalty(it),
     0.3,
     0.98,
   );
@@ -256,6 +262,9 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const room = ctx.world.roomOfItem(it);
     if (room && prestige(ctx, room) >= 4) feel(g, 'fine-room');
     if (room && room.vibes > 0) feel(g, 'bad-vibes');
+    feelNoise(g, itemNoise(ctx, it));
+    feelTemperature(g, warmthAt(ctx, g.tx, g.ty));
+    useLinens(ctx, it, g);
     if (treatPrice >= PRICEY) feel(g, 'pricey');
     else if (treatPrice <= BARGAIN) feel(g, 'bargain');
     if (!problem && mod.equipment === 'stone_warmer') {

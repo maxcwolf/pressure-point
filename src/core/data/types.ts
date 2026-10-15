@@ -55,7 +55,10 @@ export type ItemType =
   | 'bonsai'
   | 'massage_chair'
   | 'koi_pond'
-  | 'shop_counter';
+  | 'shop_counter'
+  | 'radiator'
+  | 'air_conditioner'
+  | 'linen_hamper';
 
 export interface RoomDef {
   type: RoomType;
@@ -134,6 +137,12 @@ export interface ItemDef {
   sale?: number;
   /** How fast a guest sitting in it loses patience, against standing. Seats default to 0.6. */
   seatDrain?: number;
+  /** How much noise it makes, carrying like decor does; below zero, it soothes the noise around it. */
+  noise?: number;
+  /** Degrees it warms (or, below zero, cools) the air around it. */
+  heat?: number;
+  /** A table with linens on it, soiled a little with each session until a Janitor changes them. */
+  linens?: boolean;
 }
 
 export interface RoleDef {
@@ -385,7 +394,12 @@ export type FeelingId =
   | 'bargain'
   | 'worse'
   | 'bad-vibes'
-  | 'calmed';
+  | 'calmed'
+  | 'noisy'
+  | 'peaceful'
+  | 'stale-linens'
+  | 'too-cold'
+  | 'too-hot';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
 export interface FeelingDef {
@@ -456,6 +470,14 @@ export interface CenterDef {
   calls?: { often: number; clients: readonly string[] };
   /** What surrounds the building: a park, or the seaside. */
   scenery?: 'park' | 'seaside';
+  /** The weather outside through the year. */
+  climate: Climate;
+}
+
+/** The weather outside, in degrees Fahrenheit: the year's average, and how far above it summer goes and below it winter. */
+export interface Climate {
+  average: number;
+  swing: number;
 }
 
 /** How much more often guests arrive in summer, and how much less in winter. */

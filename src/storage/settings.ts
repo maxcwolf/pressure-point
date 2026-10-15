@@ -39,20 +39,32 @@ export interface SandboxSettings {
   unlockAll: boolean;
   /** Whether staff set challenges. */
   challenges: boolean;
+  /** Whether stress outbreaks are offered. */
+  outbreaks: boolean;
+  /** Whether the weather outside makes it hot or cold indoors. */
+  weather: boolean;
 }
 
 /**
- * The sandbox settings last chosen, or the defaults: the sandbox's usual money, unlocking as stars are earned, and
- * staff challenges.
+ * The sandbox settings last chosen, or the defaults: the sandbox's usual money, unlocking as stars are earned, staff
+ * challenges, stress outbreaks and weather.
  */
 export function loadSandbox(): SandboxSettings {
-  const out: SandboxSettings = { money: CENTERS.sandbox.startMoney, unlockAll: false, challenges: true };
+  const out: SandboxSettings = {
+    money: CENTERS.sandbox.startMoney,
+    unlockAll: false,
+    challenges: true,
+    outbreaks: true,
+    weather: true,
+  };
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(SANDBOX_KEY) ?? '{}');
     if (!isRecord(raw)) return out;
     if (typeof raw.money === 'number' && SANDBOX_MONEY.includes(raw.money)) out.money = raw.money;
     if (typeof raw.unlockAll === 'boolean') out.unlockAll = raw.unlockAll;
     if (typeof raw.challenges === 'boolean') out.challenges = raw.challenges;
+    if (typeof raw.outbreaks === 'boolean') out.outbreaks = raw.outbreaks;
+    if (typeof raw.weather === 'boolean') out.weather = raw.weather;
   } catch {
     // the defaults will do
   }
