@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.11.0
 
 - **Guest feelings:** guests notice what pleases and annoys them (a long wait, nothing to drink, a filthy toilet, litter, a lovely spot to wait, a comfy seat, an untrained practitioner, steep prices, a beautiful room) and their inspector lists it.
 - **Reviews and reputation in parts:** every guest leaves a star rating and a line about their visit. Click the reputation figure, or open Stats, to see the latest reviews and how the center does on results, experience, value, staff and word of mouth. The overall reputation works as before.
