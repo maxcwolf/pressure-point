@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.22.0
 
 - **The Qi Gong Studio,** open from the second star. Hire a **Qi Gong Instructor**, add **Practice Spots**, and pick the days of the week it holds classes in its inspector: Monday, Wednesday and Friday to begin with. Class-goers book a place two days ahead, come straight to the studio, follow the Instructor through the class and pay for their place. Each week's class-goers are shared among its classes, so a few full classes can beat many half-empty ones. The price of a place is set under Money, the Stats menu counts class-goers, and the classes can be switched off in Settings.
 
