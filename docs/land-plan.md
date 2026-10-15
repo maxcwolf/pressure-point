@@ -1,0 +1,187 @@
+# More land, the Two Point way
+
+A plan for making buying land feel like it does in Two Point Hospital and Two Point Campus. The version shipped on 15 October 2026 (`core/land.ts`, the Money menu's Land tab) works, but it is a stopgap. This plan is for doing it properly, even where that means refactoring the game's model of the building, the renderer and the tests.
+
+Nothing here is built yet. The phases at the end are each meant to ship on their own, with all tests green.
+
+## Where we are now
+
+- **One rectangle per building.** `Plot` (`core/data/map.ts`) is `x0..x1, y0..y1` plus a two-tile front door. Every center has one, fixed in `core/data/centers.ts`.
+- **Land is strips.** `GameState.land` lists sides bought (`'west' | 'east' | 'back'`). `plotWith()` (`core/land.ts`) grows the rectangle by up to 4 tiles per purchase. The front never moves.
+- **Bought from a menu.** The Money menu's Land tab lists the strips with a price. While it is open, the strips are tinted on the ground with floating For Sale sprites (`render/land-signs.ts`).
+- **One fixed map.** The lot is 32 × 24 tiles for every center (`W`, `H` in `core/data/map.ts`). The street runs along the front at rows 20 to 22.
+- **People walk in from the ends of the street.** `streetTile()` (`core/sim/chars.ts`) starts every guest, member of staff and visitor at x = 0 or x = W − 1. So the map's width sets how long everyone walks, and so the pacing of every seeded test.
+
+## What Two Point does
+
+**Two Point Hospital**
+
+- Each hospital has extra plots around the starting building. They show as construction sites once they can be bought.
+- Clicking a site shows its price, and buying it adds a ready-made building.
+- Plots are designed by hand for each map. They are often whole separate buildings, linked across outdoor space, so hospitals grow in irregular shapes.
+- Some maps sell no land at all, and more plots open as you progress. The numbered plots are part of the campaign's achievements.
+- Sources: [Twinfinite](https://twinfinite.net/guides/two-point-hospital-buy-more-buildings-how-to/) and Steam discussions ([1](https://steamcommunity.com/app/535930/discussions/0/1737715419909396845), [2](https://steamcommunity.com/app/535930/discussions/0/1743356517520544766)).
+
+**Two Point Campus** goes further. Sources: [Two Point Studios' creativity tools breakdown](https://www.twopointstudios.com/de/node/1888) and [Gamer Guides](https://gamerguides.com/two-point-campus/guide/getting-started/basics/how-to-buy-new-plots).
+
+- Plots are found on the map itself. Hovering one shows a dotted outline, and clicking it shows its cost and build time. It can be bought while paused.
+- A construction fence goes up and the work takes time. Nothing happens until the game is unpaused.
+- A plot can be bought with its ready-made buildings or as a blank lot. You drag out a building's footprint the way you drag out a room, and edit buildings later without moving anyone out.
+- The grounds are yours too: paths, lawns, hedges and fences, and outdoor items like trees, fountains and food trucks.
+- Plots can be renamed, such as "Science Block 1."
+
+**To check in the games before building:** what Hospital's plot prices scale with, whether either game lets you sell a plot back, and how Hospital gates plots (star level, a campaign milestone, or both). The sources above don't settle these. They decide details in phase 4, not the shape of the plan.
+
+## The gaps
+
+1. **Plots are not places.** Ours are strips worked out by arithmetic, not plots designed for each center with a shape and a character. A courtyard wing, a back annex or the shop next door would all qualify.
+2. **No separate buildings.** Everything is one rectangle, so a center can never become a cluster of buildings with outdoor space between them.
+3. **Bought from a menu, not from the world.** Two Point has you find a plot on the map, hover it for its outline and price, and click it to buy.
+4. **No construction.** Land is usable the moment it is paid for.
+5. **No room for the sandbox.** The map is the same size everywhere and the sandbox building nearly fills it, so it can grow by only 2 to 3 tiles on each side.
+6. **Plots open only with the first star.** Two Point opens them over a center's progression.
+7. **The outdoors is scenery.** Nothing can be built or placed outside.
+
+## Target design
+
+My recommendations, each open to Max's call (see [Decisions to make](#decisions-to-make)).
+
+- **Hand-designed plots per center.**
+  - Each center lists its plots in data. Each plot has:
+    - an id and a name,
+    - a footprint (one or more rectangles),
+    - a price,
+    - the star that opens it,
+    - how it joins the building: sharing a wall, or as a separate building with its own entrance and a path to the main one.
+  - Willow Lane might get the empty unit next door. The Exchange might get an upper-floor annex (still on the ground: no floors) and a courtyard block. The Boardwalk might get a beach-facing wing.
+- **Buy from the world.**
+  - An **Expand** button opens a mode where every plot for sale is outlined, with a For Sale board standing on it. The boards are models, not floating sprites.
+  - Plots not yet open show the star that opens them.
+  - Hovering a plot shows its name, size and price, and clicking it opens a confirmation. It works while paused, as in Campus.
+  - The Land tab goes, or becomes a list that points into the world.
+- **Construction time.** A fence and a few days' work before the plot can be built on. It's cheap to add once plots are places, and it gives buying some weight.
+- **Bigger lots.** Each center has its own map size, with room for its plots. The sandbox gets a real neighborhood.
+- **Separate buildings and the outdoors between them.**
+  - Paths connect a plot's entrance to the street and to the other buildings. Guests and staff walk outside between buildings, which brings in the weather.
+  - Outdoor items and drawing your own paths come later, Campus-style.
+- **Later, perhaps: draw your own building** on a blank plot, the way a room is dragged out. This is Campus's biggest step beyond Hospital, and it lands naturally once buildings are footprints.
+
+## What has to change
+
+### The building model (`core/`)
+
+- **Plot to footprint.**
+  - Replace `Plot`'s rectangle with a footprint: the set of tiles inside the building, built from the rectangles of the center's base building and its bought plots.
+  - Keep a mask (`Uint8Array`, one byte a tile) in `World` for fast lookups.
+  - `inPlot()` and `World.inside()` read the mask.
+  - `plotFits()` becomes a check per tile: inside the map, off the street, and every building reachable.
+- **Entrances.**
+  - Today there is one front door (`Plot.door`, with `outsideDoor()` and `lobbyTile()`). Each building gets its own entrance.
+  - Guests and staff pick the nearest door to wherever they are headed, so `lobbyTile()` takes a destination.
+  - The connectivity check in `World` (`world.ts`, around the `need(W - 1, SIDEWALK_Y)` line) must cover every entrance.
+- **Outdoor zones.**
+  - `Z_OUTSIDE` covers only the sidewalk and the path to the one door. It becomes a real outdoor area: paths between buildings, walkable, with the outdoor temperature.
+  - `core/sim/warmth.ts` and `core/sim/spread.ts` treat the outdoors as outside, so walls between a building and a courtyard insulate.
+- **State and saves.**
+  - `GameState.land` becomes a list of plot ids, with construction in progress tracked per plot.
+  - `upgradeSave` turns the old sides (`LandSide[]`) into equivalent rectangles: a "legacy strip" plot kind, so a building grown today keeps its exact shape.
+  - The save version goes up again.
+- **Map size per center.**
+  - `W` and `H` stop being constants and become the center's.
+  - Imported today by `core/world.ts`, `core/data/map.ts`, `core/sim/chars.ts`, `core/sim/context.ts`, `core/sim/spread.ts`, `render/camera-math.ts`, `render/floor.ts`, `render/heatmap.ts`, `render/scenery.ts`, `render/snowfall.ts` and `app/game.ts`.
+  - `tileIdx()` and `inBounds()` become methods of `World`, or take the width.
+  - Every grid array (`zone`, `blocked`, the pathfinder's buffers, and `ctx.attract`, `ctx.noise` and `ctx.warmth`) is sized from it.
+- **Arrivals that don't depend on the map's width.**
+  - `streetTile()` starts people at a fixed distance along the sidewalk from the nearest entrance, not at the map's ends.
+  - This must come before any map grows. It is the one change that moves every seeded test, so it should move them once, on its own.
+- **Growing the map at the back or the west moves the origin.**
+  - Saves store absolute tile positions. A center whose map grows toward x < 0 or y < 0 needs every coordinate in an old save shifted:
+    - rooms, with their doors and windows,
+    - items,
+    - every person's position, target and path,
+    - litter,
+    - visitors,
+    - queued spots.
+  - Write it as one `shiftSave(s, dx, dy)`. Pair it with a test that walks the `GameState` type's fields, so a coordinate added later can't be missed.
+  - Prefer growing maps east and back only where that avoids a shift. It can't always be avoided.
+
+### Drawing (`render/`)
+
+- **Outer walls from edges.**
+  - `render/scenery.ts` builds the shell as four boxes from `x0..x1, y0..y1`. Instead, a pure function walks the footprint mask and returns wall segments: tile edges with inside on one side and outside on the other.
+  - Each segment is tall or low by which way it faces, the same cutaway rule as now: the back and west tall, the front and east low.
+  - Corners and T-junctions need joins.
+  - Test it as plain data, like `render/outer-walls.ts` is.
+- **Back windows** (`render/outer-walls.ts`) come from the tall segments rather than the two back walls.
+- **Room walls along the building's edge.** `alongOuterWall()` (`render/room-walls.ts`) compares a room with `x0`, `x1`, `y0` and `y1`. It should ask the edge set whether each side of the room lies on an outer wall.
+- **Floor, overlays and the heatmap** loop over `plot.x0..x1, y0..y1` in places (`ui/lib/overlays.ts`, `render/floor.ts`). They should loop over the footprint.
+- **Scenery.**
+  - `keptClear()` keeps trees off the footprint, the plots for sale (until bought, when a fence replaces them), the paths and the street.
+  - The scenery already rebuilds when the building grows (`View.growScenery`), and that stays.
+- **For Sale boards and construction fences**, as models in `render/models/`. Boards sit in the plot, not floating.
+- **Camera.** The starting target is the footprint's middle, and `keepNearMap()` uses the center's map size.
+
+### The interface (`ui/`, `app/tools/`)
+
+- **An Expand tool** in `app/tools/`, beside the build tools. Hovering picks a plot (a new kind in `render/picking.ts`), the ground shows its outline, and a tooltip gives its name, size, price and star. Clicking opens a confirmation dialog.
+- **Retire the Land tab**, or keep it as a list where clicking a plot glides the camera to it.
+- **A plot's own panel** once bought: its name (renamable), its construction progress, and its rooms.
+
+## Tests to refactor
+
+- **Seeded tests.**
+  - Moving arrivals off the map's ends changes how long everyone walks, which shifts most seeded tests in `tests/unit`.
+  - Do it in its own commit. Go through each failing assertion and decide whether the new value is right before updating it, rather than accepting new numbers wholesale.
+  - Record anything odd in `docs/known-issues.md`.
+- **Absolute layouts.**
+  - `tests/unit/helpers.ts` places every test room at fixed tiles (`LAYOUT`, used about 40 times) that assume the sandbox building at `x0 = 3, y0 = 3`.
+  - If the sandbox's map or building moves, give `LAYOUT` positions relative to the building's corner through a small helper, so the tests survive any later change of lot.
+- **End-to-end fixtures.**
+  - `tests/e2e/fixtures.ts` finds free spots inside `BX0..BX1, BY0..BY1`, now live getters on `pp.data` in `app/game.ts`. Give it the footprint's tiles instead.
+  - `buildCenter()` places rooms at fixed coordinates too, so it needs the same relative positions.
+- **Screenshots.** Every scene picture changes once walls come from edges and maps change size. Re-take them and look at each one, as usual.
+- **New tests.**
+  - Footprint edges and wall segments, as pure data: rectangles, L shapes, two buildings, a courtyard.
+  - Every center's plot data is valid: inside the map, off the street, not overlapping another plot, every building reachable, and every star that opens a plot one the center has.
+  - Old saves: the legacy strips keep their exact shape, and `shiftSave` moves every coordinate.
+  - The Expand tool: picking, the dialog, buying while paused, construction finishing.
+  - Walking between buildings outdoors, in the cold.
+
+## Phases
+
+Each phase ships on its own with everything green, in this order.
+
+1. **Footprints, no change in play.**
+   - `Plot` becomes a footprint built from rectangles, and today's strips become rectangles in it.
+   - Walls, windows and room walls come from edges.
+   - Floor and overlays loop over the footprint.
+   - Screenshots should not change. That is the test of the refactor.
+2. **Arrivals from near the entrance.** `streetTile()` stops depending on the map's width, and the seeded tests are re-checked once.
+3. **Map size per center.**
+   - `W` and `H` become the center's, with `shiftSave` for any center whose origin moves.
+   - The sandbox and the tighter campaign lots get room.
+4. **Hand-designed plots.**
+   - Plot data per center, opened by stars or campaign progress, priced by hand.
+   - The Expand tool, For Sale boards, the confirmation dialog, and legacy strips in old saves.
+   - The Land tab retires.
+5. **Construction.** A fence and a few days' work before a plot can be used.
+6. **Separate buildings and the outdoors.** Entrances per building, paths, guests and staff walking outside, and weather on the way.
+7. **Later, Campus-style:** drawing your own building on a blank plot, paths, and outdoor items.
+
+Phases 1 to 4 deliver the Two Point Hospital experience. Phases 5 to 7 reach toward Campus.
+
+## Decisions to make
+
+- **Hand-designed plots, or generated ones?** I recommend hand-designed, a few per center. That is what makes Two Point's maps memorable, and it lets each center's plots fit its setting.
+- **What opens a plot?** I recommend stars, per plot, with the first plot open from the start at the bigger centers. Campaign milestones could open some too.
+- **Construction time?** I recommend a few in-game days, with a fence. It can be left out if it feels like waiting for nothing.
+- **Selling land back?** I recommend no, unless one of the games does. It complicates everything for little play.
+- **Separate buildings in the first round, or only joined plots?** I recommend joined plots first (phase 4), then separate buildings (phase 6). Walking outdoors touches the most systems.
+- **How big should maps get?** It depends on frame rate: software WebGL in the tests and the draw-call budget. Measure with the sandbox first.
+
+## Risks
+
+- **Seeded tests.** Phase 2 changes walking time for everyone. That is why it stands alone.
+- **Old saves.** Shifting coordinates is easy to get subtly wrong. A type-driven test and a real save from Max's machine (`~/Library/Application Support/Pressure Point Institute`, copied, never touched) should both pass through it before release.
+- **Performance.** Bigger maps mean bigger grids, more trees and longer paths. Check frame time and the draw-call budget in `tests/unit/model-cost.test.ts`.
+- **Scope.** Phase 6 touches pathing, warmth, noise, weather and every system that assumes "inside." It is the one to pause before.
