@@ -110,7 +110,8 @@ A fifth discipline, wanted on 15 October 2026. A full plan comes before it is bu
 - **Spiritual Extraction,** an exorcism, with a funny animation.
 - **A sweat lodge,** announced over the speakers as a sweat shop before the announcer corrects herself.
 - **Clearing bad vibes,** better than sage does.
-- **Other ideas liked:** a cacao ceremony, a drum journey, soul retrieval for burnt-out staff, spirit animal readings, blessing a room, a vision quest that brings a guest back as a regular, a ceremony to ward off a mishap, and integration in the Recovery Lounge after a ceremony.
+- **Other ideas liked:** soul retrieval for burnt-out staff, spirit animal readings, blessing a room, a vision quest that brings a guest back as a regular, a ceremony to ward off a mishap, and integration in the Recovery Lounge after a ceremony.
+- **Not wanted:** a cacao ceremony or a drum journey, and no Lion's Mane tea.
 - **The gift shop sells psychedelic mushrooms** on the quiet, the shop counter doing a little business under the counter.
 
 ## Phase 11: The long game
