@@ -18,14 +18,14 @@ Announcer lines that have no recording yet. A recording plays only when its text
 - Opening day (`src/core/sim/progress.ts`)
   - [ ] The healing center is now open. Please form an orderly line of ailments.
 - Staff wanted (`contextAnnouncement` in `src/core/sim/advisor.ts`)
-  - [ ] Caretaker needed. The corridors are getting crunchy.
+  - [x] Caretaker needed. The corridors are getting gross.
   - [x] Receptionist needed at the Reception Desk.
   - [ ] Receptionist needed at the Shop Counter.
-  - [ ] Wellness Consultant needed at the Consultation Room.
-  - [ ] Wellness Consultant needed at the Posture Lab.
-  - [ ] Massage Therapist needed at the Massage Suite.
-  - [ ] Acupuncturist needed at the Acupuncture Clinic.
-  - [ ] Reiki Practitioner needed at the Reiki Studio.
+  - [x] Wellness Consultant needed at the Consultation Room.
+  - [x] Wellness Consultant needed at the Posture Lab.
+  - [x] Massage Therapist needed at the Massage Suite.
+  - [x] Acupuncturist needed at the Acupuncture Clinic.
+  - [x] Reiki Practitioner needed at the Reiki Studio.
 - Seasons, at Driftwood Bay (`SEASON_NEWS` in `src/core/sim/twists.ts`)
   - [ ] Winter is here. The promenade is empty, so watch the budget until spring.
   - [ ] Spring! The first day-trippers are back in town.

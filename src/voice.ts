@@ -1,5 +1,7 @@
 // The announcer's recorded lines, each matched to the text it says on the announcement banner.
 
+import acupuncturistAtAcupuncture from './sounds/announcer/acupuncturist-at-acupuncture.m4a';
+import caretakerNeeded from './sounds/announcer/caretaker-needed.m4a';
 import chakrasAligned from './sounds/announcer/chakras-aligned.m4a';
 import doNotTip from './sounds/announcer/do-not-tip.m4a';
 import faceHole from './sounds/announcer/face-hole.m4a';
@@ -9,11 +11,15 @@ import herbalTea from './sounds/announcer/herbal-tea.m4a';
 import humAlong from './sounds/announcer/hum-along.m4a';
 import knotsNotContagious from './sounds/announcer/knots-not-contagious.m4a';
 import lostAndFound from './sounds/announcer/lost-and-found.m4a';
+import massageAtMassage from './sounds/announcer/massage-at-massage.m4a';
 import pleaseBreatheIn from './sounds/announcer/please-breathe-in.m4a';
 import receptionistAtReception from './sounds/announcer/receptionist-at-reception.m4a';
 import redAura from './sounds/announcer/red-aura.m4a';
+import reikiAtReiki from './sounds/announcer/reiki-at-reiki.m4a';
 import relaxationIsMandatory from './sounds/announcer/relaxation-is-mandatory.m4a';
 import vipVisiting from './sounds/announcer/vip-visiting.m4a';
+import wellnessAtConsultation from './sounds/announcer/wellness-at-consultation.m4a';
+import wellnessAtPosture from './sounds/announcer/wellness-at-posture.m4a';
 import whaleSong from './sounds/announcer/whale-song.m4a';
 
 /** Each recorded announcement, by the exact text shown with it. */
@@ -31,6 +37,12 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'Please breathe in. Further instructions will follow.': pleaseBreatheIn,
   'Guests are reminded that the face hole is not a snack hatch.': faceHole,
   'Receptionist needed at the Reception Desk.': receptionistAtReception,
+  'Wellness Consultant needed at the Consultation Room.': wellnessAtConsultation,
+  'Wellness Consultant needed at the Posture Lab.': wellnessAtPosture,
+  'Massage Therapist needed at the Massage Suite.': massageAtMassage,
+  'Acupuncturist needed at the Acupuncture Clinic.': acupuncturistAtAcupuncture,
+  'Reiki Practitioner needed at the Reiki Studio.': reikiAtReiki,
+  'Caretaker needed. The corridors are getting gross.': caretakerNeeded,
   'A VIP will be visiting in five days. Look busy.': vipVisiting,
   'The health inspector is on the way. Hide the sage.': healthInspector,
 };

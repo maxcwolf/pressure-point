@@ -220,12 +220,15 @@ export function staffWanted(it: Pick<Item, 'type'>): string {
   return st ? `${ROLES[st.staff].name} needed at the ${stationPlace(it)}.` : '';
 }
 
+/** What the speakers say when litter piles up. */
+export const CARETAKER_WANTED = 'Caretaker needed. The corridors are getting gross.';
+
 /** An announcement about something that needs attention right now, if anything does. */
 export function contextAnnouncement(ctx: SimContext): string | null {
   for (const it of ctx.s.items) {
     const st = ITEMS[it.type].station;
     if (st && ctx.world.usable(it) && it.queue.length >= 2 && !it.staffId) return staffWanted(it);
   }
-  if (ctx.s.litter.length >= 4) return 'Caretaker needed. The corridors are getting crunchy.';
+  if (ctx.s.litter.length >= 4) return CARETAKER_WANTED;
   return null;
 }

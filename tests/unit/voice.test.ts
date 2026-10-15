@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ANNOUNCEMENTS, ITEMS, type ItemType, VISIT_NEWS, VISIT_NOTICE_DAYS } from '../../src/core/data';
-import { staffWanted } from '../../src/core/sim/advisor';
+import { CARETAKER_WANTED, staffWanted } from '../../src/core/sim/advisor';
 import { VOICE_LINES, voiceFor } from '../../src/voice';
 
 /** Every line the speakers can say that does not change from game to game. */
@@ -9,7 +9,7 @@ function spokenLines(): string[] {
   const stations = (Object.keys(ITEMS) as ItemType[])
     .filter((t) => ITEMS[t].station)
     .map((type) => staffWanted({ type }));
-  return [...ANNOUNCEMENTS, ...Object.values(VISIT_NEWS), ...stations];
+  return [...ANNOUNCEMENTS, ...Object.values(VISIT_NEWS), ...stations, CARETAKER_WANTED];
 }
 
 describe('the announcer', () => {
@@ -33,6 +33,7 @@ describe('the announcer', () => {
     expect(staffWanted({ type: 'reception_desk' })).toBe('Receptionist needed at the Reception Desk.');
     expect(staffWanted({ type: 'massage_table' })).toBe('Massage Therapist needed at the Massage Suite.');
     expect(staffWanted({ type: 'bench' }), 'not a station').toBe('');
+    expect(voiceFor(CARETAKER_WANTED)).toMatch(/caretaker-needed.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.vip)).toMatch(/vip-visiting.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.inspector)).toMatch(/health-inspector.*\.m4a$/);
     // the VIP's line was recorded saying five days: a different notice needs a new recording
