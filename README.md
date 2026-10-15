@@ -1,16 +1,130 @@
-<h1 align="center"><img src="src/ui/theme/logo.png" alt="Pressure Point Institute" width="600"></h1>
+<p align="center">
+  <img src="docs/assets/hero.jpg" alt="Pressure Point Institute: run your own healing center" width="100%" />
+</p>
 
-<p align="center"><b><a href="https://maxcwolf.github.io/pressure-point/">▶ Play it now in your browser</a></b><br>or download it for <a href="https://github.com/maxcwolf/pressure-point/releases/latest">macOS or Windows</a></p>
+<p align="center">
+  <a href="https://maxcwolf.github.io/pressure-point/"><b>▶ Play in your browser</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/maxcwolf/pressure-point/releases/latest"><b>Download for Mac or Windows</b></a>
+  &nbsp;·&nbsp;
+  <a href="docs/guide.md">Player's guide</a>
+  &nbsp;·&nbsp;
+  <a href="#build-it-yourself">Build it yourself</a>
+</p>
 
-A healing-center management sim, in the spirit of the classic hospital tycoon games. Build treatment rooms, hire therapists, and keep your guests happy enough to come back.
+---
 
-**Massage therapy**, **acupuncture**, **reiki**, **sound healing** and a **Shaman** are open for business.
+**Pressure Point Institute is a healing-center management sim, in the spirit of the classic hospital tycoon games.** Lay out treatment rooms, hire therapists, and send them on courses. Then keep a waiting room full of people with Text Neck, Stagnant Vibes and Gull Shock patient long enough to be seen. Massage, acupuncture, reiki, sound healing and a Shaman are all open for business, and the Qi Gong classes run every week. It runs in your browser with nothing to install, or as a desktop app for macOS and Windows.
 
-![A busy healing center](docs/assets/screenshot.png)
+<p align="center">
+  <img src="docs/assets/numbers.png" alt="5 campaign centers, 5 healing arts, 23 treatments, 49 ailments" width="100%" />
+</p>
+
+## Run the place
+
+<p align="center">
+  <img src="docs/assets/center.jpg" alt="A busy healing center: guests waiting by the koi pond, treatments under way in every room, a Qi Gong class and a Ceremony Lodge with its sweat lodge" width="100%" />
+</p>
+
+Drag out a room, click a wall for its door, and furnish it. Hire from the applicants who turn up, and watch your center fill. Every guest has something wrong with them and a limited supply of patience.
+
+<p align="center">
+  <img src="docs/assets/visit.png" alt="A guest's visit: check in at reception, a diagnosis from a Wellness Consultant, a treatment from a qualified healer, then pay up" width="100%" />
+</p>
+
+- **Look after the guests.** Benches, tea, snacks, plants and a restroom keep them patient while they wait. Their condition worsens the longer they wait, and the worse it gets, the less likely their treatment is to work.
+- **Look after the staff.** They tire, get thirsty and hungry, and need a Staff Room to recover in. They gain experience, rise through five ranks and expect a raise to match, and quit if you ignore them for too long.
+- **Keep it running.** Equipment wears out and breaks down unless a Caretaker services it. Noise spoils treatments nearby, winters get cold and summers hot, and a failed treatment leaves bad vibes over its room.
+- **Keep the books.** Set prices, take out loans, run marketing campaigns, and send staff out on house calls. A health inspector and the odd VIP come to judge, and a ZenMart opens across the street to compete for your guests.
+
+## The healing arts
+
+**Massage** is the heart of every center: Swedish to start with, then Deep Tissue, Sports, Hot Stone and Cranio-sacral as you earn stars and train your therapists.
+
+<p align="center">
+  <img src="docs/assets/acupuncture.png" alt="An acupuncturist cupping a guest, with a line of guests showing the acupuncture conditions" width="100%" />
+</p>
+
+**Acupuncture** opens at the first star, with its own clinic, its own specialists and a new kind of guest, from Blocked Qi to Pins and Needles. Train up to Cupping, Moxibustion and Electroacupuncture.
+
+<p align="center">
+  <img src="docs/assets/reiki.png" alt="A reiki practitioner laying crystals on a guest, with a line of guests showing the reiki conditions" width="100%" />
+</p>
+
+**Reiki** opens at the second star. A Reiki Practitioner clears bad vibes as well as treating guests, with Crystal Reiki, Distance Reiki and Chakra Balancing to learn.
+
+<p align="center">
+  <img src="docs/assets/sound.jpg" alt="A sound healer at the singing bowls, playing for a guest lying on a mat, beside a gong" width="100%" />
+</p>
+
+**Sound healing** treats a whole room at once. Guests lie on the studio's mats and a Sound Healer plays for them all. A Gong Bath carries to the rooms nearby, so build the studio with care.
+
+<p align="center">
+  <img src="docs/assets/shaman.jpg" alt="A Shaman pulling a little dark cloud out of a guest on the Ceremony Mat, with a sweat lodge in the corner of the Ceremony Lodge" width="100%" />
+</p>
+
+**The Shaman** opens at The Orchard Estate and in the sandbox, and works in a Ceremony Lodge, one guest at a time: guests with a Lost Spirit Animal, Toxic Ex Energy, or a possession by a chicken, a goat or Brent. There are five techniques, from a Spirit Animal Reading (everyone is an otter) and Spiritual Extraction to the Sweat Lodge and two psychedelic ceremonies. The ceremonies depend on **set and setting**: hold one in a noisy, grubby or gloomy lodge and it may be a bad trip. Between guests, a Shaman clears bad vibes, blesses rooms, and retrieves the souls of burnt-out staff.
+
+<p align="center">
+  <img src="docs/assets/qigong.jpg" alt="A Qi Gong Instructor leading a class of guests on their Practice Spots" width="100%" />
+</p>
+
+From the second star, **Qi Gong classes** run on a weekly timetable. Pick the days, add Practice Spots, and class-goers book a place and come in just for the class.
+
+The harder treatments leave a guest needing a lie-down in a **Recovery Lounge** before they head home. Every art but massage, and the Qi Gong classes, can be switched off in **Settings** if you'd rather keep things simple. Every treatment, and what it needs, is in the [player's guide](docs/guide.md#treatments).
+
+## Two ways to play
+
+<p align="center">
+  <img src="docs/assets/modes.png" alt="Campaign: five centers, three stars each. Sandbox: a big lot of your own, with no deadline" width="100%" />
+</p>
+
+New to it? Start the campaign at **Willow Lane**: one massage suite and a few regulars, the place to learn the ropes. Each center after it brings a new building, new ailments and a new twist, from rush hours downtown to snowed-in winters in the mountains.
+
+## The campaign
+
+<p align="center">
+  <img src="docs/assets/trail.png" alt="The five campaign centers in order, Willow Lane, The Exchange, The Boardwalk, High Pines and The Orchard Estate, with the healing art each one brings" width="100%" />
+</p>
+
+Five centers, each with its own building, guests, goals and quirks, and three stars to earn at each. A center's **first star opens the next**, and you can always go back for the other two. Each new center brings a healing art with it, until The Orchard Estate, where the Shaman joins the rest and the guests are at their pickiest. Every center is described in the [player's guide](docs/guide.md#campaign-and-sandbox).
+
+### Karma: unlocks that stay unlocked
+
+<p align="center">
+  <img src="docs/assets/karma.png" alt="Earn karma: 2 for each campaign star and 2 or 3 for each achievement, 48 in all. Spend it on items such as a Koi Pond, a Fireplace and a Massage Chair, and on floors and walls" width="100%" />
+</p>
+
+Every star and achievement earns **✨ karma**. Spend it in the karma shop on items you can't get any other way, or to unlock one before its star comes round. Whatever you buy stays unlocked in every center and the sandbox.
+
+## How you progress
+
+Whether in the campaign or the sandbox, four things grow as you play.
+
+<p align="center">
+  <img src="docs/assets/progress.png" alt="Four tracks: stars that open rooms and treatments, karma kept forever, a center's standing from Back-Room Practice to Healing Institute, and staff ranks from Trainee to Expert" width="100%" />
+</p>
+
+- **Stars** are earned center by center. Each one opens new rooms, treatments and items, and a level of equipment upgrade.
+- **Karma** is for keeps. Spend it on items you can't get any other way, and on floors and walls to decorate with, in every center from then on.
+- **Standing** rises as you build finer rooms and take on staff. Each grade brings more guests and better applicants, and guests who expect more.
+- **Staff** rise through five ranks as they work. Each rank adds a course they can take, and a promotion comes with a raise.
+
+## What you get
+
+- **A campaign of five centers**, three stars each, plus a sandbox.
+- **A healing art for every taste**, each with its own room, staff, treatments and ailments you can spot on the guests who have them, and weekly Qi Gong classes.
+- **Staff with careers:** ranks, traits, courses, raises, breaks, and duties you can set.
+- **Rooms you can change:** resize them, move them, copy them, save them as templates, and decorate them.
+- **Events to plan for:** emergencies, stress outbreaks, VIPs, the health inspector, mishaps like power cuts and storms, staff challenges and a year-end awards ceremony.
+- **Overlays and stats:** color the floor by how pleasant, quiet or warm each spot is, or by guests' patience and staff energy, and read the reviews and a casebook of every visit.
+- **Sound and music**, with an announcer, and autosave.
 
 ## Download
 
-The [latest release](https://github.com/maxcwolf/pressure-point/releases/latest) has:
+**[Play in your browser](https://maxcwolf.github.io/pressure-point/)**: nothing to install, always the latest version.
+
+Or get the desktop app from the [latest release](https://github.com/maxcwolf/pressure-point/releases/latest):
 
 - `mac-arm64.dmg` for Macs with Apple silicon (M1 and later)
 - `mac-x64.dmg` for Intel Macs
@@ -18,139 +132,23 @@ The [latest release](https://github.com/maxcwolf/pressure-point/releases/latest)
 
 The apps are not signed yet, so your computer will ask before opening one the first time. On macOS, right-click the app and choose **Open**. On Windows, click **More info**, then **Run anyway**.
 
-The browser version needs nothing installed and is always the same version as the latest release.
+The game saves itself every few seconds. The browser and the desktop app keep their own saves, and **Save or load**, in the pause menu, can export a game to a file and import it into the other.
 
-## Campaign and sandbox
+See the [changelog](CHANGELOG.md) for what's new.
 
-**Campaign** takes you through a series of centers, each with its own building, guests, goals and quirks. Earn a center's first star to open the next:
+## Build it yourself
 
-1. **Willow Lane**, a small high-street unit. Massage only: the place to learn the ropes.
-2. **The Exchange**, downtown. Office workers with office ailments, arriving in rush hours when the office crowd comes in. Acupuncture opens here.
-3. **The Boardwalk**, a seaside town. Packed in summer and quiet in winter, with seaside ailments and sea air that is hard on equipment. Reiki opens here.
-4. **High Pines**, a lodge up in the mountains. Cold all year, so keep it heated, and snowed in now and then each winter, when nobody new can get up the road. A big freeze can stop the water. Mountain ailments, and Stone Warmers that cool fast in the cold. Sound healing opens here.
-5. **The Orchard Estate**, a country resort among the apple orchards. Picky guests pay half as much again but expect beautiful treatment rooms, the health inspector calls twice as often, and each star asks for a higher standing. Acupuncture, reiki, sound healing and a Shaman are open from the start.
+The game is TypeScript, with Three.js for the 3D scene, Preact for the interface and Electron for the desktop app. You'll need Node and Yarn (`corepack enable`).
 
-Every campaign star earns **✨ karma**, and so do eight one-off **achievements**, like seeing an emergency through or healing 100 guests in one center. Spend karma in the **karma shop** (under Campaign on the title screen) or on a locked card in the Items menu. Each purchase stays unlocked in every center and the sandbox. Karma unlocks comfort and decor items early, before their star comes round, and four you can only get with karma: a **Massage Chair** that keeps a waiting guest patient, a **Bonsai**, a **Koi Pond** and a **Fireplace** that warms and soothes the room around it. It also unlocks floors and walls to decorate rooms with. The whole campaign earns enough karma to unlock every item, but not every floor and wall as well, so choose.
+```sh
+yarn install
+yarn dev   # play it at http://localhost:5183
+yarn app   # or as a desktop app
+```
 
-**Sandbox** is a big lot of your own, with no deadline. Choose the starting money, which treatments to offer, and whether everything is unlocked from day one.
-
-## How to play
-
-1. Place a **Reception Desk** and hire a **Receptionist**.
-2. Build a **Consultation Room** (drag the floor, click a wall for the door, place the furniture) and hire a **Wellness Consultant**.
-3. Build a **Massage Suite** and hire a **Massage Therapist**. The center opens once all three exist.
-4. Guests check in, get diagnosed, get treated, and pay. Keep them patient with benches, tea, snacks, plants and a restroom, and as you earn stars, an arcade, an aquarium and more.
-5. Staff members get tired. A **Staff Room** lets them recover; a **Caretaker** clears litter, cleans the toilets, waters plants and keeps the massage stones hot.
-6. Salaries come out at the end of each month. Hit the objectives to earn stars.
-7. Stars unlock new **massage modalities**. Build a **Training Room** and send therapists on courses to deliver them. Staff earn experience and rise through five **ranks**; each rank brings a qualification slot for a course, and a promotion comes with a raise.
-8. A **Posture Lab** settles diagnoses the Consultant was unsure about, so fewer guests need a second consultation.
-9. **Decor** (salt lamps, statues, rugs, magazine racks) makes its surroundings nicer to wait in and raises a room's **prestige**, which lifts staff morale and results.
-10. Staff have **morale**. Underpaid or overworked staff ask for a raise, and quit if ignored for long.
-11. Equipment **wears out** with use. A Caretaker services it; left alone it breaks down. From the first star, **upgrade** a treatment table, mat or scanner from its inspector, up to a level for each star: it wears more slowly and its treatments work more often. A Caretaker with the **Mechanics** course installs each upgrade.
-12. The **Money** menu offers loans and lets you set prices. **Emergencies** bring a batch of guests to heal against the clock for a bonus.
-13. From the first star you can add **acupuncture**: build an **Acupuncture Clinic** and hire an **Acupuncturist**, and a second kind of guest starts arriving.
-14. From the second star you can add **reiki**: build a **Reiki Studio** and hire a **Reiki Practitioner** for a third. At High Pines and The Orchard Estate, and in the sandbox, **sound healing** opens at the first star: build a **Sound Bath Studio** and hire a **Sound Healer**, who plays for every guest lying on the studio's mats at once. From the second star, a **Qi Gong Studio** holds weekly classes for guests who come in just for them: hire a **Qi Gong Instructor**, add **Practice Spots** (each a place in the class), and pick the days of the week in its inspector. Each week's class-goers are shared among its classes, so more classes a week fill fewer places each.
-15. Click a built room to change it: add **windows**, **move its door**, or **resize** it by dragging a wall in or out. Extra floor costs $200 a tile, and floor given up refunds half. **Move** picks the room up, furniture and all, to put down somewhere else for free, and **Copy** builds as many copies as you click, at what building one would cost; R turns either. **Save as template** keeps the room, furniture and all, under the Rooms menu's Templates tab, to build again in this game or any other, and to export to a file or import from one. **Decorate** it with a floor and walls of your choosing, for that room or every room of its kind, free and for looks alone: oak, slate, sage and sky to start with, and terrazzo, bamboo, a chakra rainbow, wood paneling, tie-dye, a starry night and more for karma. Switch on **Priority** to have staff fill it first. To keep someone to particular rooms, press **Assign to rooms** in their inspector and click the rooms.
-16. Click a desk or table to see its **line**: move guests up or down, over to another line, or **send them home**. A diagnosed guest's inspector shows the **chance** their treatment works.
-17. The **Policy** menu sets how sure a diagnosis must be before treatment, whether emergency guests go first, and when staff take breaks.
-18. A consultant can be kept to consultations or scans, and a Caretaker from any of their jobs, under **Duties** in their inspector. New applicants turn up every few days in the **Hire** menu, and can be turned down to make room.
-19. Click the **reputation** figure to see what guests are saying, and how the center does on results, experience, value and staff. The **🗺️** button at the top right colors the floor by how pleasant each spot is, guests' patience or needs, staff energy, or upkeep. The **Stats** menu also has a **casebook** of every visit by condition.
-20. From the first star, a **Shop Counter** sells books, crystals, oils and candles to guests on their way out; the better their visit, the likelier they are to buy. The **Money** menu sets each treatment's own **price**, runs **marketing** campaigns, and manages the loan. Now and then a **house call** is offered: send someone out for a day or more, for a fee that rises with their rank.
-21. Now and then a member of staff sets a **challenge** with a deadline, shown under the objectives; meet it for a reward. Each year ends with an **awards ceremony**, and the trophies won fill a **Trophy Cabinet**.
-22. Guests' **condition** worsens while they wait, faster with some conditions; the worse it gets, the less likely the treatment is to work, and if it runs out they go home worse off. A failed treatment leaves **bad vibes** over its room, which fade slowly unless a Reiki Practitioner, or a Caretaker with the Smudging course, clears them sooner with a bundle of sage. From the second star, a **stress outbreak** may be offered: calm the guests you spot sweating and fidgeting before it spreads.
-23. Keep the place comfortable. Noise from arcades, pool tables, machines and crowds spoils treatments nearby, so keep the fun items away from the treatment rooms. Each session soils a table's linens: place a **Linen Hamper** so a Caretaker can change them. Winters are cold and summers can be hot: **Radiators** and **Air Conditioners** fix that, and the **🗺️** button has **Calm** and **Temperature** overlays. Staff get thirsty and hungry too, so keep drinks and snacks within reach.
-24. **VIPs** write ahead and tour a few rooms, each judging by their own tastes, and the **health inspector** checks every room for dirt, broken equipment and a Fire Extinguisher near the door. A report afterward says what they made of each room.
-25. The center climbs through five grades of **standing**, from Back-Room Practice to Healing Institute, as it builds rooms, makes them finer and takes on staff. Each grade brings more guests and better applicants, but guests at a grander center expect grander treatment rooms. A **ZenMart** opens across the street a few weeks in: it holds sales that draw away guests who think you charge too much, offers jobs to unhappy staff, and competes with you for **Center of the Year**. Both are in the Stats menu under **Standing**.
-26. Every few months a **mishap** is announced three days ahead: a power cut, a storm, a big freeze or wasps, depending on the center (Willow Lane has none). A notice at the top of the screen says what it will do, with a button to prepare for it at a price.
-
-## Treatments
-
-A diagnosis prescribes a treatment. It only works properly with someone qualified in it and, for some, equipment in the same room. An unqualified member of staff will still try, at about a third of the usual success rate. The **Treatments** menu shows what each one treats and whether you can deliver it. Any member of staff can also take a skill course.
-
-Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupuncture, Chakra Balancing and the Gong Bath) leave a guest needing a rest. From the first star, build a **Recovery Lounge** with a **Recliner** for each guest who might need one at once: they lie back on it for a while before heading home. With no free Recliner, those treatments work 10% less often and the guest goes home woozy.
-
-**Massage**, delivered in a Massage Suite by Massage Therapists:
-
-| Modality      | Unlocks | Needs                | Character                           |
-| ------------- | ------- | -------------------- | ----------------------------------- |
-| Swedish       | Start   | Nothing              | Quick, cheap, reliable              |
-| Deep Tissue   | Star 1  | Course               | Tires the therapist fast            |
-| Sports        | Star 1  | Course, Stretch Rack | Long and hard to get right          |
-| Hot Stone     | Star 2  | Course, Stone Warmer | High fee; the warmer cools with use |
-| Cranio-sacral | Star 2  | Course               | Slow, expensive, needs high skill   |
-
-**Acupuncture**, delivered in an Acupuncture Clinic by Acupuncturists. The clinic unlocks at star 1, and its guests only start arriving once you have built one:
-
-| Technique          | Unlocks | Needs                | Character                                   |
-| ------------------ | ------- | -------------------- | ------------------------------------------- |
-| Classic Needling   | Star 1  | Nothing              | Every acupuncturist knows it                |
-| Cupping            | Star 1  | Course, Cupping Cart | A step up in fee                            |
-| Moxibustion        | Star 2  | Course, Moxa Burner  | Slow and well paid                          |
-| Electroacupuncture | Star 2  | Course, Stim Unit    | The best paid, and the hardest to get right |
-
-![An acupuncturist cupping a guest, with a line of guests showing the acupuncture conditions](docs/assets/acupuncture.png)
-
-**Reiki**, delivered in a Reiki Studio by Reiki Practitioners. The studio unlocks at star 2, and its guests only start arriving once you have built one:
-
-| Technique        | Unlocks | Needs                | Character                                   |
-| ---------------- | ------- | -------------------- | ------------------------------------------- |
-| Usui Reiki       | Star 2  | Nothing              | Every practitioner knows it; easy on them   |
-| Crystal Reiki    | Star 2  | Course, Crystal Grid | A step up in fee                            |
-| Distance Reiki   | Star 3  | Course               | Well paid, and nobody can tell if it worked |
-| Chakra Balancing | Star 3  | Course               | The best paid, and the hardest to get right |
-
-![A reiki practitioner laying crystals on a guest, with a line of guests showing the reiki conditions](docs/assets/reiki.png)
-
-**Sound healing**, delivered in a Sound Bath Studio by Sound Healers. The studio unlocks at star 1 where sound healing is open. Guests lie on mats, and the healer at the Singing Bowls plays for them all at once, starting when the mats fill or after a short wait. A Gong Bath carries to the rooms nearby:
-
-| Technique         | Unlocks | Needs                 | Character                                   |
-| ----------------- | ------- | --------------------- | ------------------------------------------- |
-| Singing Bowls     | Star 1  | Nothing               | Every healer knows it                       |
-| Tuning Forks      | Star 1  | Course                | Fiddly to get right                         |
-| Gong Bath         | Star 2  | Course, Gong          | Long, loud and hard on the healer           |
-| Crystal Bowls     | Star 2  | Course, Crystal Bowls | A step up in fee                            |
-| Overtone Chanting | Star 3  | Course                | The best paid, and the hardest to get right |
-
-**Shamanism**, delivered in a Ceremony Lodge by a Shaman, one guest at a time on a Ceremony Mat. The lodge unlocks at star 2 at The Orchard Estate (where it is open from the start) and in the sandbox. Guests arrive possessed by a chicken, a goat or Brent, among other things. The two psychedelic ceremonies depend on **set and setting**: the lodge's bad vibes, noise, stale linens and prestige count twice for them, and so does a lodge too hot or too cold. One that fails is a **bad trip**, which costs more reputation and leaves the lodge's vibes worse. Both need a rest in a Recovery Lounge after. Between guests, a Shaman clears bad vibes twice as fast as sage does, and blesses the room for a week; and a member of staff whose morale has sunk below half can be sent a Shaman for a **soul retrieval** from their inspector:
-
-| Technique             | Unlocks | Needs                       | Character                                             |
-| --------------------- | ------- | --------------------------- | ----------------------------------------------------- |
-| Spirit Animal Reading | Star 2  | Nothing                     | Every Shaman knows it; everyone is an otter           |
-| Spiritual Extraction  | Star 2  | Course, Rattle and Feathers | Something dark pulled out by hand; hard on the Shaman |
-| Sweat Lodge           | Star 2  | Course, Sweat Lodge         | Long and hot, and the hut heats the whole room        |
-| Mushroom Ceremony     | Star 2  | Course, Mushroom Altar      | Well paid, if the room is right                       |
-| Ayahuasca Ceremony    | Star 3  | Course, Brew Pot            | The best paid and the hardest, if the room is right   |
-
-## Settings
-
-**Settings**, on the title screen and in the pause menu (☰), switches acupuncture, reiki, sound healing, the Shaman and the Qi Gong classes on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Sound and music are there too.
-
-## Controls
-
-| Input             | Action                                                |
-| ----------------- | ----------------------------------------------------- |
-| Left click        | Select, place, confirm                                |
-| Drag, or W A S D  | Move the camera                                       |
-| Scroll            | Zoom                                                  |
-| R                 | Rotate furniture                                      |
-| Esc / right click | Cancel; Esc with nothing in hand opens the pause menu |
-| Space, 1 2 3      | Pause, game speed                                     |
-
-The pause menu (☰ or Esc) has **Main menu**, which saves and returns to the title screen, and in the desktop app **Exit game**, which saves and quits. The title screen has **Exit** there too. The browser version has no Exit, because a browser tab cannot close itself.
-
-## Saved games
-
-The game autosaves every few seconds, in the browser and in the desktop app alike. **Save or load** in the pause menu (☰) keeps up to 20 named saves, and the title screen can load any of them. Starting a new game or loading a different one never destroys the game you were in: it moves to a "Previous game" slot.
-
-Saves live in the browser's storage, so the web version and the desktop app each have their own. **Export** writes a save to a file and **Import** reads one back, which is how to back a game up or move it from one to the other.
-
-## What's new
-
-See the [changelog](CHANGELOG.md).
-
-## For developers
-
-Pressure Point Institute is open source. To run it from the code, test it or change it, start with [docs/development.md](docs/development.md).
+- **[docs/development.md](docs/development.md):** running, testing and building the game, and where the code lives.
+- **[docs/architecture.md](docs/architecture.md):** how the pieces fit together.
+- **[docs/releasing.md](docs/releasing.md):** publishing a release.
 
 ## License
 
