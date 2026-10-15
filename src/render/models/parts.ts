@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 const matCache = new Map<string, THREE.MeshStandardMaterial>();
+/** The roughness of each shared material with no glow: these differ from one another only in color. */
+const plain = new WeakMap<THREE.Material, number>();
 
 /** A shared material for a color, roughness and glow, made once and reused. */
 export function mat(color: number, rough = 0.72, emissive = 0): THREE.MeshStandardMaterial {
@@ -13,11 +15,14 @@ export function mat(color: number, rough = 0.72, emissive = 0): THREE.MeshStanda
     if (emissive) {
       m.emissive = new THREE.Color(color);
       m.emissiveIntensity = emissive;
-    }
+    } else plain.set(m, rough);
     matCache.set(key, m);
   }
   return m;
 }
+
+/** The roughness of a shared material with no glow, which `mat(0xffffff, rough)` can stand in for when tinted; else undefined. */
+export const plainRoughness = (m: THREE.Material | THREE.Material[]) => (Array.isArray(m) ? undefined : plain.get(m));
 
 const geoCache = new Map<string, THREE.BufferGeometry>();
 

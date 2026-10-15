@@ -59,6 +59,31 @@ test.describe('performance', () => {
     expect(info.calls).toBeLessThan(400);
   });
 
+  test('draws a crowd in hardly more draw calls than a few people', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.speed = 0));
+    const few = await rendererInfo(page);
+    // forty guests arrive at once, each with a condition and a look of their own
+    await game.eval(async (pp) => {
+      const guests = (await import(/* @vite-ignore */ `${location.origin}/src/core/sim/guests.ts`)) as {
+        spawnGuest: (ctx: unknown) => unknown;
+      };
+      const ctx = (pp.sim as unknown as { ctx: unknown }).ctx;
+      for (let i = 0; i < 40; i++) guests.spawnGuest(ctx);
+    });
+    const crowd = await rendererInfo(page);
+    const guests = await game.eval((pp) => pp.state.guests.length);
+    test.info().annotations.push({
+      type: 'draw calls',
+      description: JSON.stringify({ few: few.calls, crowd: crowd.calls, guests }),
+    });
+    expect(guests).toBeGreaterThanOrEqual(40);
+    // the same part of different people is drawn in one go, so only a new shape or a glowing symptom adds a call:
+    // about 30 more when this was written, and about 545 more while each person's every part was drawn alone
+    expect(crowd.calls - few.calls).toBeLessThan(80);
+  });
+
   test('keeps GPU memory level through a long, busy session', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

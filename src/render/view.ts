@@ -68,6 +68,8 @@ export class View {
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
+    /** Hand the people to the batches that draw them: the renderer calls this once everything is in place, just before it draws. */
+    this.scene.onBeforeRender = () => this.people.gather();
 
     this.resize();
     window.addEventListener('resize', () => this.resize());

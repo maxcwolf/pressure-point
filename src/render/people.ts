@@ -5,17 +5,21 @@ import type * as THREE from 'three';
 import { conditionOf, type Modality, ROLES } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Char } from '../core/state/types';
+import { Crowd } from './crowd';
 import { disposeOwned } from './disposal';
 import { buildCharacter, type CharRig } from './models/character';
 import { poseChar } from './pose';
 
 export class PeopleLayer {
   private chars = new Map<number, CharRig>();
+  private crowd: Crowd;
 
   constructor(
     private scene: THREE.Scene,
     private sim: Sim,
-  ) {}
+  ) {
+    this.crowd = new Crowd(scene);
+  }
 
   /** The invisible shape around each person that a click lands on. */
   picks(): THREE.Object3D[] {
@@ -54,6 +58,11 @@ export class PeopleLayer {
       disposeOwned(rig.group);
       this.chars.delete(id);
     }
+  }
+
+  /** Hand everyone's parts, as posed for this frame, to the batches that draw them. Call once positions are final. */
+  gather() {
+    this.crowd.gather([...this.chars.values()].map((r) => r.group));
   }
 
   /** Which treatment a busy practitioner is giving, so each modality can move differently. */
