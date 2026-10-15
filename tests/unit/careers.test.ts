@@ -363,4 +363,23 @@ describe('Amanda Jablonsky', () => {
     for (let i = 0; i < 2000; i++) expect(makeCandidate(s, 'therapist').name).not.toBe(AMANDA.name);
     expect(amandaAround(s)).toBe(true);
   });
+  it('wears her hair in a mohawk, which no one else does', () => {
+    const s = newGame();
+    s.candidates = [];
+    const applicants = Array.from({ length: 2000 }, () => makeCandidate(s, 'therapist'));
+    for (const c of applicants) expect(c.look.hairStyle === AMANDA.hairStyle).toBe(c.name === AMANDA.name);
+    expect(applicants.some((c) => c.name === AMANDA.name)).toBe(true);
+  });
+
+  it('has her mohawk in a save from before she wore one', () => {
+    const { s } = openCenter(1);
+    const first = s.staff[0]!;
+    const hired = { ...first, name: AMANDA.name, look: { ...first.look, hairStyle: 2 } };
+    s.staff.push(hired);
+    s.candidates.push({ ...makeCandidate(s, 'therapist'), name: AMANDA.name, look: { ...hired.look } });
+    upgradeSave(s);
+    expect(s.staff.at(-1)?.look.hairStyle).toBe(AMANDA.hairStyle);
+    expect(s.candidates.at(-1)?.look.hairStyle).toBe(AMANDA.hairStyle);
+    expect(s.staff[0]?.look.hairStyle).not.toBe(AMANDA.hairStyle);
+  });
 });

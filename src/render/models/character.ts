@@ -1,9 +1,10 @@
 // The little clay people: guests and staff, and what their symptoms look like.
 import * as THREE from 'three';
 
-import { type Role, ROLES, type Visual } from '../../core/data';
+import { AMANDA, type Role, ROLES, type Visual } from '../../core/data';
 import type { Look, VisitorKind } from '../../core/state/types';
 import { owned } from '../disposal';
+import { buildMohawk } from './mohawk';
 import { cached, capsule, cyl, ico, mat, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
 
@@ -122,7 +123,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const cap = () => cached('haircap', () => new THREE.SphereGeometry(0.228, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52));
   // a cap needs short hair under it
   const style = role === 'caretaker' || visitor === 'inspector' ? 0 : look.hairStyle;
-  if (style !== 3) {
+  if (style === AMANDA.hairStyle) buildMohawk(head, look.skin, look.hair);
+  else if (style !== 3) {
     const c = put(head, cap(), hair, 0, 0.012, -0.018);
     c.rotation.x = -0.28;
   }

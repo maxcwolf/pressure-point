@@ -99,13 +99,14 @@ export const TRAITS: readonly TraitDef[] = [
 
 /**
  * A massage therapist who now and then applies: at least three stars, and trained in every massage technique but
- * Sports and Hot Stone. There is only ever one of her.
+ * Sports and Hot Stone. There is only ever one of her, and she wears her hair in a mohawk, a style no one else has.
  */
 export const AMANDA = {
   name: 'Amanda Jablonsky',
   chance: 0.05,
   minSkill: 3,
   quals: ['swedish', 'deep', 'cranio'],
+  hairStyle: 5,
 } as const;
 
 const TRAIT_BY_ID = new Map(TRAITS.map((t) => [t.id, t]));

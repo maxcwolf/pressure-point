@@ -1,5 +1,6 @@
 // The model lab: a page for the dev server only, to look at any of the game's models on its own.
-// Open /lab.html, or /lab.html?model=item:bench for one model. Add &still to stop everything moving, for pictures.
+// Open /lab.html, or /lab.html?model=item:bench for one model. Add &still to stop everything moving, for pictures,
+// and &view=head (or front, side, top) to start from another angle.
 import '@fontsource/fredoka/latin-400.css';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
@@ -27,6 +28,8 @@ declare global {
 
 const params = new URLSearchParams(location.search);
 const still = params.has('still');
+/** The camera angle each model is framed from to begin with: the game's, unless the address asks for another. */
+const startView = (Object.keys(VIEWS) as ViewName[]).find((v) => v === params.get('view')) ?? 'game';
 
 /** The lab-wide settings, kept as the model on show changes. */
 const view = {
@@ -147,7 +150,7 @@ function rebuild(reframe: boolean) {
   fillPanel(modelPanel, model.controls, (again) => {
     if (again) rebuild(false);
   });
-  if (reframe) stage.frame('game');
+  if (reframe) stage.frame(startView);
   settling = SETTLE_FRAMES;
 }
 
@@ -212,7 +215,7 @@ function viewChanged() {
   if (view.person !== showingPerson) {
     showingPerson = view.person;
     stage.setPerson(view.person ? scalePerson() : null, current.footprint);
-    stage.frame('game');
+    stage.frame(startView);
   }
 }
 

@@ -16,7 +16,12 @@ export const VIEWS = {
   front: new THREE.Vector3(0, 0.25, 1).normalize(),
   side: new THREE.Vector3(1, 0.25, 0).normalize(),
   top: new THREE.Vector3(0, 1, 0.001).normalize(),
+  /** Close in on the top of a model from a three-quarter angle: a person's head and hair. */
+  head: new THREE.Vector3(0.75, 0.35, 1).normalize(),
 } as const;
+
+/** How much of the top of a model the head view takes in. */
+const HEAD_HEIGHT = 0.7;
 export type ViewName = keyof typeof VIEWS;
 
 /** How far the tile grid reaches from the middle of the stage. */
@@ -124,10 +129,13 @@ export class Stage {
 
   /** Point the camera at the whole model from one side, close enough to fill the view. */
   frame(view: ViewName) {
-    const box = new THREE.Box3().setFromObject(this.pivot, true);
+    // a close-up is of what can be seen of the model alone, not the tiles under it or a hidden speech bubble
+    const box =
+      view === 'head' ? visibleBox(this.pivot, this.footprint) : new THREE.Box3().setFromObject(this.pivot, true);
+    if (view === 'head') box.min.y = Math.max(box.min.y, box.max.y - HEAD_HEIGHT);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     const fov = (this.camera.fov * Math.PI) / 180;
-    const fit = Math.max(sphere.radius, 0.6) / Math.sin(fov / 2);
+    const fit = Math.max(sphere.radius, view === 'head' ? 0.25 : 0.6) / Math.sin(fov / 2);
     // a wide window fits by height, a tall one by width
     const dist = fit * (this.camera.aspect < 1 ? 1 / this.camera.aspect : 1) * 1.3;
     this.orbit.target.copy(sphere.center);
@@ -197,4 +205,27 @@ export class Stage {
   private placePerson([w]: readonly [number, number]) {
     this.personSpot.position.set(w / 2 + 0.55, 0, 0);
   }
+}
+
+/** The box around everything in a model that can be seen, leaving out hidden parts such as an unused speech bubble, and one part more if asked. */
+function visibleBox(root: THREE.Object3D, leaveOut: THREE.Object3D | null): THREE.Box3 {
+  const box = new THREE.Box3();
+  root.updateWorldMatrix(true, true);
+  /** Take in a part and everything on it, unless it is hidden. */
+  const visit = (o: THREE.Object3D) => {
+    if (!o.visible || o === leaveOut) return;
+    // a sprite's shape is not its size in the world, and a mesh with an unseen material is only there to be clicked
+    const shown = o instanceof THREE.Mesh && !(o instanceof THREE.Sprite) && (o.material as THREE.Material).visible;
+    if (shown && o instanceof THREE.InstancedMesh) {
+      // every copy at once
+      o.computeBoundingBox();
+      if (o.boundingBox) box.union(o.boundingBox.clone().applyMatrix4(o.matrixWorld));
+    } else if (shown) {
+      const position = (o.geometry as THREE.BufferGeometry).getAttribute('position') as THREE.BufferAttribute;
+      box.union(new THREE.Box3().setFromBufferAttribute(position).applyMatrix4(o.matrixWorld));
+    }
+    for (const c of o.children) visit(c);
+  };
+  visit(root);
+  return box;
 }

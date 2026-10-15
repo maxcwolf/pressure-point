@@ -76,6 +76,7 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   if (role === 'therapist' && !amandaAround(s) && random() < AMANDA.chance) {
     const best = Math.max(skill, AMANDA.minSkill);
     const hers = [...AMANDA.quals];
+    look.hairStyle = AMANDA.hairStyle;
     return {
       id: s.nextId++,
       name: AMANDA.name,

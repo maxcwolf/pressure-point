@@ -9,6 +9,7 @@ const IDS = [
   ...Object.keys(ITEMS).map((type) => `item:${type}`),
   ...CONDITIONS.map((c) => `guest:${c.id}`),
   ...ROLE_ORDER.map((role) => `staff:${role}`),
+  'staff:amanda',
   'visitor:vip',
   'visitor:inspector',
   'scenery:trees',

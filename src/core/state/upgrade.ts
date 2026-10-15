@@ -2,6 +2,7 @@
 
 import {
   ACHIEVEMENTS,
+  AMANDA,
   APPLICANT_DAYS,
   type AwardId,
   AWARDS,
@@ -190,6 +191,8 @@ export function upgradeSave(save: GameState) {
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
   movedSoundBath(s);
+  // Amanda Jablonsky's mohawk came later than she did: in an older save she may have an ordinary haircut
+  for (const p of [...s.staff, ...s.candidates]) if (p.name === AMANDA.name) p.look.hairStyle = AMANDA.hairStyle;
   for (const it of s.items) {
     it.wear ??= 0;
     it.dirt ??= 0;

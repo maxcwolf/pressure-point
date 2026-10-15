@@ -3,6 +3,7 @@
 import type * as THREE from 'three';
 
 import {
+  AMANDA,
   type ConditionDef,
   CONDITIONS,
   HAMPER_SIZE,
@@ -139,12 +140,14 @@ interface PersonState {
 }
 
 /** The settings every person has: their pose, a speech bubble and a new look. */
-function personControls(st: PersonState): Control[] {
+function personControls(st: PersonState, home = LAB_LOOK): Control[] {
+  // someone set apart by their hair keeps it whatever else changes
+  const keep = home === LAB_LOOK ? {} : { hairStyle: home.hairStyle };
   return [
     choice('Pose', st, 'pose', POSES),
     choice('Bubble', st, 'bubble', BUBBLES),
-    button('Shuffle look', () => (st.look = randomLook()), true),
-    button('Reset look', () => (st.look = { ...LAB_LOOK }), true),
+    button('Shuffle look', () => (st.look = { ...randomLook(), ...keep }), true),
+    button('Reset look', () => (st.look = { ...home }), true),
   ];
 }
 
@@ -189,10 +192,18 @@ function guestSpecimen(def: ConditionDef): Specimen {
   };
 }
 
+/** Someone on the staff who is not one of the crowd, with the look that sets them apart. */
+interface Named {
+  id: string;
+  name: string;
+  look: Look;
+}
+
 /** A member of staff in their uniform, working on any treatment their role gives. */
-function staffSpecimen(role: Role): Specimen {
+function staffSpecimen(role: Role, named?: Named): Specimen {
+  const home = named?.look ?? LAB_LOOK;
   const st: PersonState & { busy: boolean; style: string; smudging: boolean } = {
-    look: { ...LAB_LOOK },
+    look: { ...home },
     pose: 'stand',
     bubble: '',
     busy: false,
@@ -201,15 +212,15 @@ function staffSpecimen(role: Role): Specimen {
   };
   const discipline = ROLES[role].discipline;
   const styles = MODALITY_ORDER.filter((m) => discipline && MODALITIES[m].discipline === discipline);
-  const controls: Control[] = [...personControls(st), toggle('Working', st, 'busy')];
+  const controls: Control[] = [...personControls(st, home), toggle('Working', st, 'busy')];
   if (styles.length) {
     const options = styles.map((m): Option => [m, MODALITIES[m].name]);
     controls.push(choice('Treatment', st, 'style', [['', 'General'], ...options]));
   }
   return {
-    id: `staff:${role}`,
+    id: `staff:${named?.id ?? role}`,
     group: 'Staff',
-    name: ROLES[role].name,
+    name: named?.name ?? ROLES[role].name,
     footprint: [1, 1],
     /** Build them in their uniform. */
     build() {
@@ -316,7 +327,13 @@ const SCENERY: Specimen[] = [
 export const CATALOG: readonly Specimen[] = [
   ...(Object.keys(ITEMS) as ItemType[]).map(itemSpecimen).sort((a, b) => a.name.localeCompare(b.name)),
   ...CONDITIONS.map(guestSpecimen),
-  ...ROLE_ORDER.map(staffSpecimen),
+  ...ROLE_ORDER.map((role) => staffSpecimen(role)),
+  // the one member of staff with a look all her own
+  staffSpecimen('therapist', {
+    id: 'amanda',
+    name: AMANDA.name,
+    look: { ...LAB_LOOK, hairStyle: AMANDA.hairStyle },
+  }),
   ...(['vip', 'inspector'] as const).map(visitorSpecimen),
   ...SCENERY,
 ];

@@ -13,7 +13,7 @@ yarn app        # as a desktop app (builds, then opens Electron)
 yarn lab        # the model lab, at http://localhost:5183/lab.html
 ```
 
-The model lab shows any model on its own: every item, a guest with each condition, each role of staff, and the scenery. Turn it about, check it against the tiles it covers and a person for scale, and try its moving parts, poses and session props. It reloads as you edit a model. Link straight to one with `lab.html?model=item:bench`, and add `&still` to stop everything moving. The lab is for the dev server only: the build makes the game's page alone.
+The model lab shows any model on its own: every item, a guest with each condition, each role of staff, and the scenery. Turn it about, check it against the tiles it covers and a person for scale, and try its moving parts, poses and session props. It reloads as you edit a model. Link straight to one with `lab.html?model=item:bench`, add `&still` to stop everything moving, and `&view=head` to start close in on a person's head (or `front`, `side`, `top`). The lab is for the dev server only: the build makes the game's page alone.
 
 Build the installers into `release/`:
 
