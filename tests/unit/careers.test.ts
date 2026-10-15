@@ -371,15 +371,15 @@ describe('Amanda Jablonsky', () => {
     expect(applicants.some((c) => c.name === AMANDA.name)).toBe(true);
   });
 
-  it('has her mohawk in a save from before she wore one', () => {
+  it('has her brown mohawk in a save from before she wore one', () => {
     const { s } = openCenter(1);
     const first = s.staff[0]!;
-    const hired = { ...first, name: AMANDA.name, look: { ...first.look, hairStyle: 2 } };
+    const hired = { ...first, name: AMANDA.name, look: { ...first.look, hairStyle: 2, hair: 0xd9a441 } };
     s.staff.push(hired);
     s.candidates.push({ ...makeCandidate(s, 'therapist'), name: AMANDA.name, look: { ...hired.look } });
     upgradeSave(s);
-    expect(s.staff.at(-1)?.look.hairStyle).toBe(AMANDA.hairStyle);
-    expect(s.candidates.at(-1)?.look.hairStyle).toBe(AMANDA.hairStyle);
+    for (const her of [s.staff.at(-1), s.candidates.at(-1)])
+      expect([her?.look.hairStyle, her?.look.hair]).toEqual([AMANDA.hairStyle, AMANDA.hair]);
     expect(s.staff[0]?.look.hairStyle).not.toBe(AMANDA.hairStyle);
   });
 });

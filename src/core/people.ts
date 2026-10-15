@@ -96,8 +96,8 @@ export function sexOfName(name: string): Sex | undefined {
 
 /**
  * Give a look from before women and men were told apart a sex, from the name if it says, from the hair if not, and
- * failing both from the id; then a hair style to match if theirs does not. The mohawk goes to Amanda Jablonsky, whose
- * save may be older than it, and is taken from anyone else. Choices come from the id rather than the game's random
+ * failing both from the id; then a hair style to match if theirs does not. The mohawk, and brown hair, go to Amanda
+ * Jablonsky, whose save may be older than either, and the mohawk is taken from anyone else. Choices come from the id rather than the game's random
  * numbers, so loading a save changes nothing about what happens next.
  */
 export function settleSex(person: { id: number; name: string; look: Partial<Look> & Omit<Look, 'sex' | 'beard'> }) {
@@ -113,7 +113,7 @@ export function settleSex(person: { id: number; name: string; look: Partial<Look
           ? 'female'
           : 'male');
   const styles = hairFor(look.sex);
-  if (person.name === AMANDA.name) look.hairStyle = AMANDA.hairStyle;
+  if (person.name === AMANDA.name) Object.assign(look, { hairStyle: AMANDA.hairStyle, hair: AMANDA.hair });
   else if (!styles.includes(look.hairStyle)) look.hairStyle = styles[person.id % styles.length] ?? HAIR.short;
 }
 
@@ -147,7 +147,7 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   if (amanda) {
     const best = Math.max(skill, AMANDA.minSkill);
     const hers = [...AMANDA.quals];
-    look.hairStyle = AMANDA.hairStyle;
+    Object.assign(look, { hairStyle: AMANDA.hairStyle, hair: AMANDA.hair });
     return {
       id: s.nextId++,
       name: AMANDA.name,

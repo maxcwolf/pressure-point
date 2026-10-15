@@ -96,7 +96,7 @@ describe('applicants', () => {
     });
     const hers = pool.filter((c) => c.name === AMANDA.name);
     expect(hers.length / pool.length).toBeCloseTo(AMANDA.chance, 2);
-    for (const c of hers) expect(c.look.sex).toBe('female');
+    for (const c of hers) expect([c.look.sex, c.look.hair]).toEqual(['female', AMANDA.hair]);
   });
 });
 
@@ -142,10 +142,11 @@ describe('a save from before women and men were told apart', () => {
     }
   });
 
-  it('gives Amanda Jablonsky her mohawk, and takes it from anyone else', () => {
+  it('gives Amanda Jablonsky her brown mohawk, and takes the mohawk from anyone else', () => {
     const amanda = { id: 6, name: AMANDA.name, look: { ...old(HAIR.short), sex: 'female' as const, beard: 0 } };
+    amanda.look.hair = 0xd9a441;
     settleSex(amanda);
-    expect(amanda.look.hairStyle).toBe(HAIR.mohawk);
+    expect([amanda.look.hairStyle, amanda.look.hair]).toEqual([HAIR.mohawk, AMANDA.hair]);
     for (const sex of ['female', 'male'] as const) {
       const other = { id: 7, name: 'Unknown Person', look: { ...old(HAIR.mohawk), sex, beard: 0 } };
       settleSex(other);

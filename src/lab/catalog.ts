@@ -142,7 +142,7 @@ interface PersonState {
 /** The settings every person has: their pose, a speech bubble and a new look. */
 function personControls(st: PersonState, home = LAB_LOOK): Control[] {
   // someone set apart by their hair keeps it whatever else changes
-  const keep = home === LAB_LOOK ? {} : { hairStyle: home.hairStyle };
+  const keep = home === LAB_LOOK ? {} : { hairStyle: home.hairStyle, hair: home.hair };
   return [
     choice('Pose', st, 'pose', POSES),
     choice('Bubble', st, 'bubble', BUBBLES),
@@ -345,7 +345,7 @@ export const CATALOG: readonly Specimen[] = [
   staffSpecimen('therapist', {
     id: 'amanda',
     name: AMANDA.name,
-    look: { ...LAB_LOOK, hairStyle: AMANDA.hairStyle },
+    look: { ...LAB_LOOK, hairStyle: AMANDA.hairStyle, hair: AMANDA.hair },
   }),
   ...LOOKS.map(([key, label, look]) =>
     staffSpecimen('receptionist', { id: `look-${key}`, name: `With ${label}`, look: { ...LAB_LOOK, ...look } }),
