@@ -34,4 +34,24 @@ test.describe('the scene', () => {
     await game.settle();
     await expect(page).toHaveScreenshot('scene-windows.png');
   });
+
+  test('rooms decorated with every floor and wall', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      const { sim } = pp;
+      const floors = ['oak', 'slate', 'terrazzo', 'checker', 'bamboo', 'rainbow', 'starry', 'standard'] as const;
+      const walls = ['sage', 'sky', 'paneling', 'botanical', 'tiedye', 'starry', 'standard', 'sage'] as const;
+      floors.forEach((floor, i) => {
+        const x = 3 + (i % 4) * 6;
+        const y = 3 + Math.floor(i / 4) * 7;
+        const room = sim.createRoom('staffroom', { x, y, w: 4, h: 4 }, { x: x + 1, y: y + 3, dx: 0, dy: 1 });
+        room.done = true;
+        sim.decorateRoom(room.id, { floor, wall: walls[i] ?? 'standard' });
+      });
+      pp.state.speed = 0;
+    });
+    await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-decor.png');
+  });
 });

@@ -3,7 +3,7 @@
 // they can be tested without a game.
 
 import { ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from './data';
-import type { Item, Room, WallSpot } from './state/types';
+import type { Item, Room, RoomDecor, WallSpot } from './state/types';
 import { itemDims, type Rect } from './world';
 
 /** A piece of furniture in a layout: what it is, where from the room's corner, and which way it faces. */
@@ -14,8 +14,8 @@ export interface LayoutItem {
   rot: number;
 }
 
-/** A room's shape and contents, measured from its top-left corner. */
-export interface Layout {
+/** A room's shape, contents and look, measured from its top-left corner. */
+export interface Layout extends RoomDecor {
   type: RoomType;
   w: number;
   h: number;
@@ -44,6 +44,8 @@ export function layoutOf(room: Room, items: readonly Item[]): Layout {
     door: shift(room.door, -room.x, -room.y),
     windows: room.windows.map((w) => shift(w, -room.x, -room.y)),
     items: items.map((it) => ({ type: it.type, x: it.x - room.x, y: it.y - room.y, rot: it.rot })),
+    ...(room.floor && { floor: room.floor }),
+    ...(room.wall && { wall: room.wall }),
   };
 }
 
@@ -55,6 +57,7 @@ function turnSpot(s: WallSpot, h: number): WallSpot {
 /** A layout turned a quarter turn, the same way R turns furniture: everything in it turns with it. */
 export function turnLayout(l: Layout): Layout {
   return {
+    ...l,
     type: l.type,
     w: l.h,
     h: l.w,

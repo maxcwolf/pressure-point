@@ -1,37 +1,85 @@
-// Unlocking a locked item for good with karma.
+// Unlocking a locked item, floor or walls for good with karma.
 
 import './KarmaDialog.css';
 
-import { cannotBuy, karmaLeft } from '../../../core/campaign';
-import { ITEMS } from '../../../core/data';
-import { buyWithKarma, loadCampaign } from '../../../storage/campaign';
-import { useHud } from '../../hooks/use-hud';
+import { cannotBuy, cannotBuyDecor, karmaLeft } from '../../../core/campaign';
+import { decorDef, type DecorKey, decorLabel, ITEMS, type ItemType } from '../../../core/data';
+import { decorChange } from '../../../core/sim/decor';
+import { buyDecorWithKarma, buyWithKarma, loadCampaign } from '../../../storage/campaign';
+import { useGame, useHud } from '../../hooks/use-hud';
 import { karmaText } from '../../lib/karma';
 import { Button } from '../common/Button';
 import { Dialog } from './Dialog';
 
-/** The price of the item asked about, the karma there is to spend, and a way to unlock it if there is enough. */
+/** What is on offer, in the dialog's words, and how to unlock it. */
+interface Offer {
+  icon: string;
+  title: string;
+  /** What unlocks it, and where it can be used once it is. */
+  about: string;
+  /** Why it cannot be unlocked now, if it cannot. */
+  short: boolean;
+  price: string;
+  /** Unlock it, and say so. False if it could not be. */
+  buy: () => boolean;
+  done: string;
+}
+
+/** The offer for a locked item. */
+function itemOffer(type: ItemType): Offer {
+  const def = ITEMS[type];
+  const price = karmaText(def.karma ?? 0);
+  return {
+    icon: def.icon,
+    title: `Unlock the ${def.name}?`,
+    about: `${
+      def.unlock === undefined
+        ? `Only karma unlocks it. It costs ${price}.`
+        : `It unlocks at star ${def.unlock} in each center, or now and for good for ${price}.`
+    } Once unlocked, it can be built in every center and in the sandbox.`,
+    short: cannotBuy(loadCampaign(), type) === 'short',
+    price,
+    /** Unlock the item. */
+    buy: () => buyWithKarma(type),
+    done: `${def.icon} ${def.name} unlocked for good.`,
+  };
+}
+
+/** The offer for a locked floor or walls. */
+function decorOffer(key: DecorKey): Offer {
+  const price = karmaText(decorDef(key).karma ?? 0);
+  const label = decorLabel(key);
+  return {
+    icon: '🎨',
+    title: `Unlock ${label}?`,
+    about: `Only karma unlocks it. It costs ${price}. Once unlocked, it can be used in every center and in the sandbox.`,
+    short: cannotBuyDecor(loadCampaign(), key) === 'short',
+    price,
+    /** Unlock the floor or walls. */
+    buy: () => buyDecorWithKarma(key),
+    done: `🎨 ${label.charAt(0).toUpperCase()}${label.slice(1)} unlocked for good.`,
+  };
+}
+
+/** The price of what was asked about, the karma there is to spend, and a way to unlock it if there is enough. */
 export function KarmaDialog() {
   const hud = useHud();
-  const type = hud.karmaItem;
-  if (!type) return null;
-  const def = ITEMS[type];
-  const progress = loadCampaign();
-  const short = cannotBuy(progress, type) === 'short';
-  const price = karmaText(def.karma ?? 0);
+  const { sim } = useGame();
+  const asked = hud.karmaDecor;
+  const offer = asked ? decorOffer(asked.key) : hud.karmaItem ? itemOffer(hud.karmaItem) : null;
+  if (!offer) return null;
+  /** Put a floor or walls just unlocked straight down in the room they were chosen for. */
+  const putDown = () => {
+    if (asked) sim.decorateRoom(asked.roomId, decorChange(asked.key));
+  };
   return (
     <Dialog>
-      <div class="bigicon">{def.icon}</div>
-      <h2>{`Unlock the ${def.name}?`}</h2>
-      <p>
-        {def.unlock === undefined
-          ? `Only karma unlocks it. It costs ${price}.`
-          : `It unlocks at star ${def.unlock} in each center, or now and for good for ${price}.`}{' '}
-        Once unlocked, it can be built in every center and in the sandbox.
-      </p>
+      <div class="bigicon">{offer.icon}</div>
+      <h2>{offer.title}</h2>
+      <p>{offer.about}</p>
       <p class="sub">
-        {`You have ${karmaText(karmaLeft(progress))}. `}
-        {short ? 'Earn more with stars and achievements in the campaign.' : ''}
+        {`You have ${karmaText(karmaLeft(loadCampaign()))}. `}
+        {offer.short ? 'Earn more with stars and achievements in the campaign.' : ''}
       </p>
       <div class="btnrow">
         <Button
@@ -39,21 +87,22 @@ export function KarmaDialog() {
             hud.close();
           }}
         >
-          {short ? 'OK' : 'Not now'}
+          {offer.short ? 'OK' : 'Not now'}
         </Button>
-        {!short && (
+        {!offer.short && (
           <Button
             class="go"
             quiet
             onPress={() => {
-              if (buyWithKarma(type)) {
+              if (offer.buy()) {
                 hud.host.audio.play('cash');
-                hud.toast(`${def.icon} ${def.name} unlocked for good.`, 'good');
+                hud.toast(offer.done, 'good');
+                putDown();
               }
               hud.close();
             }}
           >
-            {`Unlock for ${price}`}
+            {`Unlock for ${offer.price}`}
           </Button>
         )}
       </div>

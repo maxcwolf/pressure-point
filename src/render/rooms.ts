@@ -1,10 +1,11 @@
-// Rooms: their walls, windows, doors and signs, and the windows in the building's back walls that make way for them.
+// Rooms: their walls, painted or papered as chosen, windows, doors and signs, and the windows in the building's back walls that make way for them.
 
 import * as THREE from 'three';
 
 import { ROOMS } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
+import { papered, paperUVs, wallMaterial } from './decor-paint';
 import { disposeOwned, owned } from './disposal';
 import { emojiTexture } from './models/emoji';
 import { mergeStill } from './models/merge';
@@ -46,7 +47,7 @@ export class RoomsLayer {
     const liveRooms = new Set<number>();
     for (const r of this.sim.s.rooms) {
       liveRooms.add(r.id);
-      const key = `${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done},${r.windows.map((w) => `${w.x}.${w.y}.${w.dx}.${w.dy}`).join('|')}`;
+      const key = `${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done},${r.wall ?? ''},${r.windows.map((w) => `${w.x}.${w.y}.${w.dx}.${w.dy}`).join('|')}`;
       const cur = this.rooms.get(r.id);
       if (cur?.key === key) continue;
       if (cur) this.dispose(cur.group);
@@ -89,8 +90,9 @@ export class RoomsLayer {
     const g = new THREE.Group();
     const def = ROOMS[room.type];
     const plain = !room.done;
+    const wall = room.wall ?? 'standard';
     const materials = {
-      wall: plain ? this.blueprintMat : mat(0xf7f1e5, 0.85),
+      wall: plain ? this.blueprintMat : wallMaterial(wall),
       trim: plain ? this.blueprintMat : mat(def.trim, 0.6),
       glass: plain ? this.blueprintMat : this.glass,
     };
@@ -101,6 +103,7 @@ export class RoomsLayer {
         b.horizontal ? new THREE.BoxGeometry(len, b.h, b.thick) : new THREE.BoxGeometry(b.thick, b.h, len),
       );
       const mid = (b.a + b.b) / 2;
+      if (!plain && b.material === 'wall' && papered(wall)) paperUVs(geo, b.horizontal, mid, b.y0 + b.h / 2);
       const mesh = put(
         g,
         geo,

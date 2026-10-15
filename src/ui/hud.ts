@@ -1,7 +1,7 @@
 // The interface's own state: which menu and dialog are open, and the messages on screen.
 // The components draw it; the rest of the app talks to it.
 
-import type { ItemType, Role } from '../core/data';
+import type { DecorKey, ItemType, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { Template } from '../core/templates';
 import { loadTemplates } from '../storage/templates';
@@ -78,6 +78,8 @@ export class HudState {
   star = 0;
   /** The locked item asked about in the karma dialog. */
   karmaItem: ItemType | null = null;
+  /** The locked floor or wall asked about in the karma dialog, and the room to put it in once unlocked. */
+  karmaDecor: { key: DecorKey; roomId: number } | null = null;
   toasts: Toast[] = [];
   floaters: Floater[] = [];
   announcement = '';

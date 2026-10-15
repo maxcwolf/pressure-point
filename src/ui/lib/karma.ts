@@ -1,13 +1,16 @@
 // What the interface says about karma: locked items' prices, the karma shop and the achievements.
 
-import { type CampaignProgress, cannotBuy } from '../../core/campaign';
+import { type CampaignProgress, cannotBuy, cannotBuyDecor } from '../../core/campaign';
 import {
   ACHIEVEMENT_ORDER,
   type AchievementId,
   ACHIEVEMENTS,
+  decorDef,
+  type DecorKey,
   type ItemDef,
   ITEMS,
   type ItemType,
+  KARMA_DECOR,
   KARMA_ITEMS,
 } from '../../core/data';
 
@@ -46,6 +49,33 @@ export function shopCards(p: CampaignProgress): ShopCard[] {
       name: def.name,
       karma: def.karma ?? 0,
       star: def.unlock,
+      state: why === 'owned' ? 'owned' : why ? 'short' : 'buy',
+    };
+  });
+}
+
+/** One floor or wall in the karma shop. */
+export interface DecorCard {
+  key: DecorKey;
+  name: string;
+  /** "Floor" or "Walls". */
+  part: string;
+  swatch: string;
+  karma: number;
+  state: 'owned' | 'buy' | 'short';
+}
+
+/** A card for every floor and wall karma can unlock, floors first. */
+export function decorCards(p: CampaignProgress): DecorCard[] {
+  return KARMA_DECOR.map((key) => {
+    const def = decorDef(key);
+    const why = cannotBuyDecor(p, key);
+    return {
+      key,
+      name: def.name,
+      part: key.startsWith('floor:') ? 'Floor' : 'Walls',
+      swatch: def.swatch,
+      karma: def.karma ?? 0,
       state: why === 'owned' ? 'owned' : why ? 'short' : 'buy',
     };
   });

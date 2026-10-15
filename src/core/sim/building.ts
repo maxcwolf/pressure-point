@@ -11,6 +11,7 @@ import { forgetRoom } from './assignments';
 import { charById } from './chars';
 import { release } from './claims';
 import type { SimContext } from './context';
+import { decorFor, withDecor } from './decor';
 import { spend } from './economy';
 import { emit, toast } from './events';
 import { resetGuest } from './guests';
@@ -89,6 +90,8 @@ export function createRoom(ctx: SimContext, type: RoomType, r: Rect, door: Room[
     priority: false,
     vibes: 0,
     claimedBy: 0,
+    // decorated as the last rooms of its kind were, if every room like them was given a look
+    ...decorFor(ctx.s.roomDecor, type),
   };
   ctx.s.rooms.push(room);
   worldChanged(ctx);
@@ -381,6 +384,7 @@ export function buildLayout(
     priority: false,
     vibes: 0,
     claimedBy: 0,
+    ...withDecor({}, layout),
   };
   ctx.s.rooms.push(room);
   for (const it of placed.items) ctx.s.items.push(newItem(ctx, it.type, it.x, it.y, it.rot));

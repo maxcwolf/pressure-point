@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **Decorate rooms.** A built room's inspector picks its floor and walls, for that room or every room of its kind, and new ones of that kind follow. Oak planks, slate, sage and sky are free; terrazzo, checkerboard, bamboo, a chakra rainbow, wood paneling, botanical wallpaper, tie-dye and a starry night floor and walls are unlocked with karma, in the karma shop or straight from the inspector. Copies, moves and templates keep a room's look.
 - **The announcer voices four of the emergencies and the storm at The Boardwalk.** The city fun run now turns out to be an unfun run, and the storm asks you to keep away from the windows... and Brent.
 - **Room templates.** Press **Save as template** in a built room's inspector to keep it, furniture, windows and all. The Rooms menu's new Templates tab builds it again, in this game or any later one, for what building it would cost, with R to turn it. Rename a template there, delete it, or export it to a file to keep or share, and import template files.
 

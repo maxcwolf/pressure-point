@@ -1,7 +1,23 @@
 // The campaign's progress: stars, achievements and karma unlocks, kept apart from saved games.
 
-import { type CampaignProgress, freshCampaign, withAchievements, withStars, withUnlock } from '../core/campaign';
-import { type AchievementId, ACHIEVEMENTS, type CenterId, CENTERS, ITEMS, type ItemType } from '../core/data';
+import {
+  type CampaignProgress,
+  freshCampaign,
+  withAchievements,
+  withDecorUnlock,
+  withStars,
+  withUnlock,
+} from '../core/campaign';
+import {
+  type AchievementId,
+  ACHIEVEMENTS,
+  type CenterId,
+  CENTERS,
+  type DecorKey,
+  ITEMS,
+  type ItemType,
+  KARMA_DECOR,
+} from '../core/data';
 import type { GameState } from '../core/state/types';
 import { isRecord } from './json';
 
@@ -23,6 +39,8 @@ export function loadCampaign(): CampaignProgress {
       Array.isArray(list) ? list.filter((x): x is T => typeof x === 'string' && Object.hasOwn(table, x)) : [];
     p.achieved = known<AchievementId>(raw.achieved, ACHIEVEMENTS);
     p.unlocked = known<ItemType>(raw.unlocked, ITEMS).filter((t) => ITEMS[t].karma !== undefined);
+    const decor: unknown[] = Array.isArray(raw.decor) ? raw.decor : [];
+    p.decor = KARMA_DECOR.filter((key: DecorKey) => decor.includes(key));
     return p;
   } catch {
     return freshCampaign();
@@ -51,6 +69,15 @@ export function recordGame(s: GameState) {
 export function buyWithKarma(type: ItemType): boolean {
   const before = loadCampaign();
   const after = withUnlock(before, type);
+  if (after === before) return false;
+  saveCampaign(after);
+  return true;
+}
+
+/** Unlock a floor or wall for good with karma. False if it cannot be: free, already unlocked, or too dear. */
+export function buyDecorWithKarma(key: DecorKey): boolean {
+  const before = loadCampaign();
+  const after = withDecorUnlock(before, key);
   if (after === before) return false;
   saveCampaign(after);
   return true;

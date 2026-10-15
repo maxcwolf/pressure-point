@@ -172,3 +172,16 @@
 .feats li.done em {
   color: var(--green);
 }
+
+.shop-head {
+  margin: 14px 0 0;
+  text-align: left;
+  font-size: 15px;
+}
+
+.shop i.swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 2px solid rgba(36, 56, 74, 0.3);
+}

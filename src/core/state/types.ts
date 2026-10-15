@@ -10,6 +10,7 @@ import type {
   Discipline,
   Duty,
   FeelingId,
+  FloorId,
   GeneralId,
   GoalSpec,
   ItemType,
@@ -20,6 +21,7 @@ import type {
   RoomType,
   Sex,
   TraitId,
+  WallId,
 } from '../data';
 
 export interface Room {
@@ -41,6 +43,15 @@ export interface Room {
   vibes: number;
   /** Whoever is on their way to clear its bad vibes. */
   claimedBy: number;
+  /** How it is decorated, if not as standard. */
+  floor?: FloorId;
+  wall?: WallId;
+}
+
+/** A room's floor and walls, where they are not standard. */
+export interface RoomDecor {
+  floor?: FloorId;
+  wall?: WallId;
 }
 
 /** One tile's worth of a room's wall: the tile just inside it, and the direction pointing out. */
@@ -548,6 +559,8 @@ export interface GameState {
   speed: number;
   open: boolean;
   rooms: Room[];
+  /** How new rooms of each kind are decorated, as chosen with "every room like this"; standard where unset. */
+  roomDecor?: Partial<Record<RoomType, RoomDecor>>;
   items: Item[];
   staff: Staff[];
   guests: Guest[];

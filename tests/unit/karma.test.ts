@@ -154,7 +154,12 @@ describe('the campaign kept between games', () => {
   it("records a game's stars and achievements, and spends karma on items", () => {
     recordGame({ ...newGame('willow'), stars: 2, achieved: ['century'] });
     recordGame({ ...newGame('exchange'), stars: 0, achieved: ['called-in'] });
-    expect(loadCampaign()).toEqual({ stars: { willow: 2 }, achieved: ['called-in', 'century'], unlocked: [] });
+    expect(loadCampaign()).toEqual({
+      stars: { willow: 2 },
+      achieved: ['called-in', 'century'],
+      unlocked: [],
+      decor: [],
+    });
     expect(buyWithKarma('koi_pond')).toBe(true);
     expect(buyWithKarma('koi_pond')).toBe(false);
     expect(buyWithKarma('trophy_cabinet')).toBe(false);

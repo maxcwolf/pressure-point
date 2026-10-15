@@ -212,3 +212,75 @@
   display: block;
   margin-top: 8px;
 }
+
+/* decorating a room: a row of swatches for the floor and one for the walls */
+.insp .decor {
+  margin-top: 10px;
+  border-top: 2px dashed rgba(36, 56, 74, 0.18);
+  padding-top: 7px;
+}
+
+.insp .decor h4 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.insp .swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0 6px;
+}
+
+.insp button.swatch {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  padding: 2px;
+  border: 2px solid rgba(36, 56, 74, 0.35);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.insp button.swatch i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.insp button.swatch.on {
+  border-color: var(--teal-dark);
+  box-shadow: 0 0 0 2px var(--teal);
+}
+
+.insp button.swatch.karma i {
+  opacity: 0.6;
+}
+
+/* a small lock in the corner of a swatch that karma unlocks */
+.insp button.swatch .lock {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  font-size: 9px;
+  line-height: 1;
+  background: #fff;
+  border-radius: 50%;
+  padding: 1px;
+}
+
+.insp .decor-row {
+  margin: 4px 0 0;
+}
+
+.insp button.roomdecorall {
+  border: 2.5px solid var(--navy);
+  border-radius: 12px;
+  padding: 5px 11px;
+  font-weight: 600;
+  font-size: 13px;
+  background: var(--cream);
+  box-shadow: 0 3px 0 rgba(36, 56, 74, 0.3);
+  margin: 2px 0 6px;
+}

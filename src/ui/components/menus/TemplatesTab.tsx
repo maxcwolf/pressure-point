@@ -2,7 +2,8 @@
 
 import { useState } from 'preact/hooks';
 
-import { ROOMS } from '../../../core/data';
+import { decorOpen } from '../../../core/campaign';
+import { type DecorKey, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
 import { copyCost } from '../../../core/room-layout';
 import { unlockedUpTo } from '../../../core/state/game';
@@ -11,6 +12,7 @@ import {
   MAX_NAME,
   MAX_TEMPLATES,
   mergeTemplates,
+  openDecor,
   readTemplatesFile,
   renameTemplate,
   type Template,
@@ -26,7 +28,7 @@ import { keepTemplates } from '../../templates';
 import { Button } from '../common/Button';
 
 /** A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. */
-function TemplateCard({ t, lock }: { t: Template; lock: string }) {
+function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key: DecorKey) => boolean }) {
   const hud = useHud();
   const { sim, tools } = useGame();
   const { layout } = t;
@@ -63,7 +65,8 @@ function TemplateCard({ t, lock }: { t: Template; lock: string }) {
           locked={!!lock || sim.s.money < cost}
           onPress={() => {
             hud.menu = null;
-            tools.startTemplate(t.name, layout);
+            // a floor or walls not unlocked in this game are left standard
+            tools.startTemplate(t.name, openDecor(layout, open));
           }}
         >
           Build
@@ -97,7 +100,10 @@ function TemplateCard({ t, lock }: { t: Template; lock: string }) {
 export function TemplatesTab() {
   const hud = useHud();
   const { sim } = useGame();
-  const allowed = { upTo: unlockedUpTo(sim.s), unlocked: loadCampaign().unlocked, enabled: sim.enabled.bind(sim) };
+  const campaign = loadCampaign();
+  const allowed = { upTo: unlockedUpTo(sim.s), unlocked: campaign.unlocked, enabled: sim.enabled.bind(sim) };
+  /** Whether a floor or wall can be used in this game. */
+  const open = (key: DecorKey) => decorOpen(key, allowed.upTo, campaign.decor);
   /** Add the templates in a file the player picked. */
   const importFrom = (input: HTMLInputElement) => {
     const file = input.files?.[0];
@@ -122,7 +128,7 @@ export function TemplatesTab() {
       {hud.templates.length ? (
         <div class="cards templates">
           {hud.templates.map((t) => (
-            <TemplateCard key={t.id} t={t} lock={templateLock(t.layout, allowed)} />
+            <TemplateCard key={t.id} t={t} lock={templateLock(t.layout, allowed)} open={open} />
           ))}
         </div>
       ) : (

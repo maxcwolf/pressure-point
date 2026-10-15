@@ -65,6 +65,7 @@ export function ItemsMenu() {
                 locked={locked && !forKarma}
                 onPress={() => {
                   if (forKarma) {
+                    hud.karmaDecor = null;
                     hud.karmaItem = t;
                     hud.open('karma');
                     return;

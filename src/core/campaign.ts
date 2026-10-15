@@ -5,6 +5,8 @@ import {
   ACHIEVEMENTS,
   CAMPAIGN,
   type CenterId,
+  decorDef,
+  type DecorKey,
   type ItemDef,
   ITEMS,
   type ItemType,
@@ -21,11 +23,13 @@ export interface CampaignProgress {
   achieved: AchievementId[];
   /** Items unlocked for good with karma. */
   unlocked: ItemType[];
+  /** Floors and walls unlocked for good with karma. */
+  decor: DecorKey[];
 }
 
 /** A campaign with nothing earned yet. */
 export function freshCampaign(): CampaignProgress {
-  return { stars: {}, achieved: [], unlocked: [] };
+  return { stars: {}, achieved: [], unlocked: [], decor: [] };
 }
 
 /** Whether a campaign center can be played: the first always can, the rest once the one before has a star. */
@@ -61,9 +65,11 @@ export function karmaEarned(p: CampaignProgress): number {
   return total;
 }
 
-/** The karma left to spend, after what the unlocked items cost. */
+/** The karma left to spend, after what the unlocked items, floors and walls cost. */
 export function karmaLeft(p: CampaignProgress): number {
-  return karmaEarned(p) - p.unlocked.reduce((sum, t) => sum + (ITEMS[t].karma ?? 0), 0);
+  const items = p.unlocked.reduce((sum, t) => sum + (ITEMS[t].karma ?? 0), 0);
+  const decor = p.decor.reduce((sum, key) => sum + (decorDef(key).karma ?? 0), 0);
+  return karmaEarned(p) - items - decor;
 }
 
 /** Why karma cannot unlock an item right now ('' when it can). */
@@ -85,4 +91,22 @@ export function itemOpen(def: ItemDef, upTo: number, unlocked: readonly ItemType
   // an item sold only for karma has no star that unlocks it, except in a game with everything unlocked
   if (def.unlock === undefined) return def.karma === undefined || upTo === Infinity;
   return def.unlock <= upTo;
+}
+
+/** Why karma cannot unlock a floor or wall right now ('' when it can). */
+export function cannotBuyDecor(p: CampaignProgress, key: DecorKey): '' | 'not-for-karma' | 'owned' | 'short' {
+  const price = decorDef(key).karma;
+  if (price === undefined) return 'not-for-karma';
+  if (p.decor.includes(key)) return 'owned';
+  return karmaLeft(p) < price ? 'short' : '';
+}
+
+/** The progress after unlocking a floor or wall with karma, or the same progress if it cannot be unlocked. */
+export function withDecorUnlock(p: CampaignProgress, key: DecorKey): CampaignProgress {
+  return cannotBuyDecor(p, key) ? p : { ...p, decor: [...p.decor, key] };
+}
+
+/** Whether a floor or wall can be chosen in a game: free, unlocked for good with karma, or everything is unlocked. */
+export function decorOpen(key: DecorKey, upTo: number, decor: readonly DecorKey[]): boolean {
+  return decorDef(key).karma === undefined || upTo === Infinity || decor.includes(key);
 }

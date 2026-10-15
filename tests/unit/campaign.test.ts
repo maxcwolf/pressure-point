@@ -87,7 +87,7 @@ describe('campaign progress', () => {
 
   it('ignores junk', () => {
     store.set('pressure-point-campaign', 'not json');
-    expect(loadCampaign()).toEqual({ stars: {}, achieved: [], unlocked: [] });
+    expect(loadCampaign()).toEqual({ stars: {}, achieved: [], unlocked: [], decor: [] });
     store.set(
       'pressure-point-campaign',
       JSON.stringify({ stars: { willow: 2, atlantis: 3, exchange: 'lots', sandbox: -1 } }),

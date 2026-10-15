@@ -13,6 +13,7 @@ import { saveAsTemplate } from '../../templates';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { Stars } from '../common/Stars';
+import { DecorPicker } from './DecorPicker';
 import { StationInfo } from './StationInfo';
 
 /** Which modalities a treatment room can deliver right now, and what is missing for the rest. */
@@ -168,6 +169,7 @@ export function RoomInfo({ room }: { room: Room }) {
       >
         📐 Save as template
       </Button>{' '}
+      {room.done && <DecorPicker room={room} />}
       <Button
         class="danger"
         quiet

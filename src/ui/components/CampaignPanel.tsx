@@ -5,11 +5,11 @@ import './CampaignPanel.css';
 import { useState } from 'preact/hooks';
 
 import { karmaLeft } from '../../core/campaign';
-import { buyWithKarma, loadCampaign } from '../../storage/campaign';
+import { buyDecorWithKarma, buyWithKarma, loadCampaign } from '../../storage/campaign';
 import { useRedraw } from '../hooks/use-redraw';
 import { campaignCards } from '../lib/campaign';
 import { cx } from '../lib/cx';
-import { achievementCards, karmaText, shopCards } from '../lib/karma';
+import { achievementCards, decorCards, karmaText, shopCards } from '../lib/karma';
 import { StarRow } from './common/Stars';
 
 export interface CampaignPanelProps {
@@ -92,7 +92,7 @@ function Centers({ onStart }: CampaignPanelProps) {
   );
 }
 
-/** Every item karma can unlock, with a button to unlock the ones there is enough karma for. */
+/** Every item, floor and wall karma can unlock, with a button to unlock the ones there is enough karma for. */
 function Shop({ onBuy }: { onBuy: () => void }) {
   return (
     <>
@@ -116,6 +116,32 @@ function Shop({ onBuy }: { onBuy: () => void }) {
                 disabled={c.state === 'short'}
                 onClick={() => {
                   buyWithKarma(c.type);
+                  onBuy();
+                }}
+              >
+                {karmaText(c.karma)}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      <h4 class="shop-head">Floors and walls</h4>
+      <ul class="shop">
+        {decorCards(loadCampaign()).map((c) => (
+          <li key={c.key} class={cx(c.state === 'owned' && 'owned')}>
+            <i class="swatch" style={{ background: c.swatch }} />
+            <div>
+              <b>{c.name}</b>
+              <small>{`${c.part}, to decorate any room`}</small>
+            </div>
+            {c.state === 'owned' ? (
+              <em>Unlocked</em>
+            ) : (
+              <button
+                class="go"
+                disabled={c.state === 'short'}
+                onClick={() => {
+                  buyDecorWithKarma(c.key);
                   onBuy();
                 }}
               >

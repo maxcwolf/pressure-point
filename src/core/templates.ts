@@ -2,7 +2,19 @@
 // file to keep or share. Plain functions of the templates, so they can be tested without a game or storage.
 
 import { itemOpen } from './campaign';
-import { type Discipline, DISCIPLINES, ITEMS, type ItemType, ROOMS, type RoomType } from './data';
+import {
+  type DecorKey,
+  type Discipline,
+  DISCIPLINES,
+  type FloorId,
+  FLOORS,
+  ITEMS,
+  type ItemType,
+  ROOMS,
+  type RoomType,
+  type WallId,
+  WALLS,
+} from './data';
 import type { Layout, LayoutItem } from './room-layout';
 import type { WallSpot } from './state/types';
 import { accessTile, footprint } from './world';
@@ -56,6 +68,9 @@ export function readLayout(v: unknown): Layout | null {
   const windows = v.windows.map(readSpot);
   const items = v.items.map(readItem);
   if (!door || windows.some((w) => !w) || items.some((it) => !it)) return null;
+  // a floor or wall this version does not know is left standard, rather than losing the template
+  const floor = typeof v.floor === 'string' && Object.hasOwn(FLOORS, v.floor) ? (v.floor as FloorId) : undefined;
+  const wall = typeof v.wall === 'string' && Object.hasOwn(WALLS, v.wall) ? (v.wall as WallId) : undefined;
   return {
     type: v.type as RoomType,
     w: v.w,
@@ -63,6 +78,8 @@ export function readLayout(v: unknown): Layout | null {
     door,
     windows: windows as WallSpot[],
     items: items as LayoutItem[],
+    ...(floor && floor !== 'standard' && { floor }),
+    ...(wall && wall !== 'standard' && { wall }),
   };
 }
 
@@ -208,4 +225,14 @@ export function templateLock(l: Layout, allowed: Allowed): string {
   if ((room.unlock ?? 0) > allowed.upTo) return `The ${room.name} unlocks at star ${room.unlock}`;
   const shut = l.items.find((it) => !itemOpen(ITEMS[it.type], allowed.upTo, allowed.unlocked));
   return shut ? `The ${ITEMS[shut.type].name} is still locked` : '';
+}
+
+/** A layout with any floor or walls not unlocked left standard: a template still builds, plainer, until they are. */
+export function openDecor(l: Layout, open: (key: DecorKey) => boolean): Layout {
+  const { floor, wall, ...rest } = l;
+  return {
+    ...rest,
+    ...(floor && open(`floor:${floor}`) && { floor }),
+    ...(wall && open(`wall:${wall}`) && { wall }),
+  };
 }

@@ -6,6 +6,7 @@ export * from './careers';
 export * from './centers';
 export * from './comfort';
 export * from './conditions';
+export * from './decor';
 export * from './feelings';
 export * from './items';
 export * from './karma';

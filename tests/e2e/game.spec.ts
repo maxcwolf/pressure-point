@@ -429,6 +429,41 @@ test.describe('room blueprints', () => {
     expect(game.errors).toEqual([]);
   });
 
+  test('a room is decorated from its inspector, with locked floors and walls offered for karma', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    await game.clickRoom('massage');
+    const decor = page.locator('#inspector .decor');
+    await expect(decor).toContainText('Floor: Standard');
+    await decor.getByRole('button', { name: 'Oak planks', exact: true }).click();
+    await decor.getByRole('button', { name: 'Sage', exact: true }).click();
+    await expect(decor).toContainText('Floor: Oak planks');
+    await expect(decor).toContainText('Walls: Sage');
+    expect(await game.eval((pp) => pp.state.rooms.find((r) => r.type === 'massage'))).toMatchObject({
+      floor: 'oak',
+      wall: 'sage',
+    });
+
+    // a fresh campaign has no karma: the offer says what it costs and to earn more
+    await decor
+      .getByRole('button', { name: /Starry night: unlock/ })
+      .first()
+      .click();
+    await expect(page.locator('.dialog')).toContainText('Unlock the Starry night floor?');
+    await page.locator('.dialog').getByRole('button', { name: 'OK' }).click();
+    await expect(page.locator('.dialog')).toHaveCount(0);
+
+    await decor.getByRole('button', { name: /Use for every Massage Suite/ }).click();
+    await expect(page.locator('#toasts')).toContainText('Every Massage Suite now looks like this one');
+    expect(await game.eval((pp) => pp.state.roomDecor)).toEqual({ massage: { floor: 'oak', wall: 'sage' } });
+    expect(game.errors).toEqual([]);
+  });
+
   test('a built room can be resized by dragging one of its walls', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

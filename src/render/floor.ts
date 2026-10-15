@@ -1,4 +1,5 @@
-// The floor: one texture painted from the tile grid, with each room's flooring, the corridor, paving and road.
+// The floor: one texture painted from the tile grid, with each room's flooring, as chosen or its own, the corridor,
+// paving and road.
 
 import * as THREE from 'three';
 
@@ -6,6 +7,7 @@ import { H, ROAD_Y, ROOMS, W } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import { must } from '../core/util';
 import { Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
+import { paintFloorTile } from './decor-paint';
 import { settingOf } from './setting';
 import { hash } from './shared';
 
@@ -50,7 +52,8 @@ export class Floor {
           const def = ROOMS[room.type];
           ctx.fillStyle = def.floor[alt ? 0 : 1];
           ctx.fillRect(px, py, TS, TS);
-          if (room.type === 'acupuncture') {
+          if (room.floor && room.floor !== 'standard') paintFloorTile(ctx, room.floor, px, py, TS, x, y);
+          else if (room.type === 'acupuncture') {
             // woven mats
             ctx.strokeStyle = 'rgba(120,60,40,0.16)';
             ctx.lineWidth = 1;

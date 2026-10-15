@@ -16,7 +16,18 @@ import {
   type RoomType,
 } from '../data';
 import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
-import type { Char, GameState, Guest, Item, MonthRecord, Room, Staff, Visitor, WallSpot } from '../state/types';
+import type {
+  Char,
+  GameState,
+  Guest,
+  Item,
+  MonthRecord,
+  Room,
+  RoomDecor,
+  Staff,
+  Visitor,
+  WallSpot,
+} from '../state/types';
 import { layoutProblem } from '../templates';
 import type { Check, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
@@ -49,6 +60,7 @@ import { fullyTrained, promote, reject, setDuty, updateApplicants, updateHabits 
 import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
 import { createContext, type SimContext } from './context';
+import { decorateRoom } from './decor';
 import { borrow, monthEnd, priceFor, repay, setPrice, setTechniquePrice } from './economy';
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
@@ -614,6 +626,11 @@ export class Sim {
   /** Build a copy of a room at a spot, at what building it from scratch would cost. */
   copyRoom(roomId: number, placed: PlacedLayout): Room | null {
     return copyRoom(this.ctx, roomId, placed);
+  }
+
+  /** Change a room's floor or walls, or those of every room of its kind. */
+  decorateRoom(roomId: number, change: RoomDecor, everyRoom = false): boolean {
+    return decorateRoom(this.ctx, roomId, change, everyRoom);
   }
 
   /** Build a room from a template at a spot, at what building it from scratch would cost. */

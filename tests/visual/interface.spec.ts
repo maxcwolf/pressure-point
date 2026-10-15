@@ -41,6 +41,8 @@ test.describe('title screen', () => {
     await screens.shot('title-campaign');
     await page.getByRole('tab', { name: 'Karma shop' }).click();
     await screens.shot('title-karma-shop');
+    await page.locator('.shop-head').scrollIntoViewIfNeeded();
+    await screens.shot('title-karma-shop-decor');
     await page.getByRole('tab', { name: 'Achievements' }).click();
     await screens.shot('title-achievements');
   });

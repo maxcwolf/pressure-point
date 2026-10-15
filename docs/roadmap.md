@@ -89,7 +89,7 @@ The outside world takes an interest.
 ## Phase 10: Building tools
 
 - **Move and copy rooms** [16]: pick up a built room with its furniture and set it down elsewhere, rotated if wanted; copy a room. Then **templates**, saved and exported to a file. All done: moving is free, a copy or a room from a template costs what building it would, and templates are kept for every game, with export and import.
-- **Decorating rooms** [20]: wall and floor patterns per room, or per room type, with more patterns bought with karma.
+- **Decorating rooms** [20]: wall and floor patterns per room, or per room type, with more patterns bought with karma. Done: three floors and three walls free, nine more for 13 karma in all, and purely for looks.
 - **Camera rotation** [19]: turn in steps, with the walls facing the camera cut away.
 - **More land** [15]: buy an adjoining plot to grow the building. The largest piece of work here.
 
