@@ -135,4 +135,6 @@ export const ANNOUNCEMENTS = [
   'Please breathe in. Further instructions will follow.',
   'Guests are reminded that clothing is mandatory in the hallways.',
   'Attention male visitors, please do not completely remove your pants while using the urinal.',
+  'Welcome, seekers. We remind you that enlightenment is a journey, and our gift shop accepts all major credit cards.',
+  'A polite reminder: Mercury is no longer in retrograde, so you have absolutely no excuse for your behavior.',
 ];

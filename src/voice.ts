@@ -11,12 +11,16 @@ import emergencyFurniture from './sounds/announcer/emergency-furniture.m4a';
 import emergencyYoga from './sounds/announcer/emergency-yoga.m4a';
 import faceShapedMarks from './sounds/announcer/face-shaped-marks.m4a';
 import healingCenterOpen1 from './sounds/announcer/healing-center-open-1.m4a';
+import healingCenterOpen2 from './sounds/announcer/healing-center-open-2.m4a';
+import healingCenterOpen3 from './sounds/announcer/healing-center-open-3.m4a';
+import healingCenterOpen4 from './sounds/announcer/healing-center-open-4.m4a';
 import healthInspector from './sounds/announcer/health-inspector.m4a';
 import herbalTea from './sounds/announcer/herbal-tea.m4a';
 import humAlong from './sounds/announcer/hum-along.m4a';
 import knotsNotContagious from './sounds/announcer/knots-not-contagious.m4a';
 import lostAndFound from './sounds/announcer/lost-and-found.m4a';
 import massageAtMassage from './sounds/announcer/massage-at-massage.m4a';
+import mercuryNotInRetrograde from './sounds/announcer/mercury-not-in-retrograde.m4a';
 import pleaseBreatheIn from './sounds/announcer/please-breathe-in.m4a';
 import powerOut from './sounds/announcer/power-out.m4a';
 import powerOutSoon from './sounds/announcer/power-out-soon.m4a';
@@ -30,6 +34,7 @@ import stormIncoming from './sounds/announcer/storm-incoming.m4a';
 import stormStarted from './sounds/announcer/storm-started.m4a';
 import sweatShopOpen from './sounds/announcer/sweat-shop-open.m4a';
 import vipVisiting from './sounds/announcer/vip-visiting.m4a';
+import welcomeSeekers from './sounds/announcer/welcome-seekers.m4a';
 import wellnessAtConsultation from './sounds/announcer/wellness-at-consultation.m4a';
 import wellnessAtPosture from './sounds/announcer/wellness-at-posture.m4a';
 import whaleSong from './sounds/announcer/whale-song.m4a';
@@ -49,7 +54,16 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'Please breathe in. Further instructions will follow.': pleaseBreatheIn,
   'Guests are reminded that clothing is mandatory in the hallways.': clothingMandatory,
   'Attention male visitors, please do not completely remove your pants while using the urinal.': removePantsUrinal,
+  'Welcome, seekers. We remind you that enlightenment is a journey, and our gift shop accepts all major credit cards.':
+    welcomeSeekers,
+  'A polite reminder: Mercury is no longer in retrograde, so you have absolutely no excuse for your behavior.':
+    mercuryNotInRetrograde,
   'The healing center is now open. Please form an orderly line in order of your aura’s color code.': healingCenterOpen1,
+  'The healing center is now open. Praise Rang!': healingCenterOpen2,
+  'The healing center is now open. Please align your chakras, empty your wallets, and form an orderly line.':
+    healingCenterOpen3,
+  'The healing center is now open. Management requests that you leave your negative energy... and your lawyer, at the door.':
+    healingCenterOpen4,
   'Receptionist needed at the Reception Desk.': receptionistAtReception,
   'Wellness Consultant needed at the Consultation Room.': wellnessAtConsultation,
   'Wellness Consultant needed at the Posture Lab.': wellnessAtPosture,

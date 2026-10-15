@@ -7,9 +7,19 @@ import { type Objective, objectiveFor } from './goals';
 
 export type { Objective } from './goals';
 
-/** What the speakers say as the doors open. */
-export const OPENING_LINE =
-  'The healing center is now open. Please form an orderly line in order of your aura’s color code.';
+/** What the speakers may say as the doors open. */
+export const OPENING_LINES = [
+  'The healing center is now open. Please form an orderly line in order of your aura’s color code.',
+  'The healing center is now open. Praise Rang!',
+  'The healing center is now open. Please align your chakras, empty your wallets, and form an orderly line.',
+  'The healing center is now open. Management requests that you leave your negative energy... and your lawyer, at the door.',
+];
+
+/**
+ * The line for this opening, chosen by how much was built to get here rather than by a random draw, so the games
+ * the tests replay go on as before.
+ */
+export const openingLine = (nextId: number) => OPENING_LINES[nextId % OPENING_LINES.length] ?? '';
 
 /** Open the doors once the center has the bare minimum: a desk, a consultation room and a massage suite. */
 export function checkOpening(ctx: SimContext) {
@@ -18,7 +28,7 @@ export function checkOpening(ctx: SimContext) {
   s.open = true;
   s.spawnT = 3;
   toast(ctx, 'Grand opening! Guests are on their way.', 'good');
-  emit(ctx, { type: 'announce', text: OPENING_LINE });
+  emit(ctx, { type: 'announce', text: openingLine(s.nextId) });
   emit(ctx, { type: 'sfx', name: 'fanfare' });
 }
 

@@ -19,9 +19,11 @@ Announcer lines that have no recording yet. A recording plays only when its text
 - Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
   - [x] Guests are reminded that clothing is mandatory in the hallways.
   - [x] Attention male visitors, please do not completely remove your pants while using the urinal.
+  - [x] Welcome, seekers. We remind you that enlightenment is a journey, and our gift shop accepts all major credit cards.
+  - [x] A polite reminder: Mercury is no longer in retrograde, so you have absolutely no excuse for your behavior.
 - Opening day (`src/core/sim/progress.ts`)
   - [x] The healing center is now open. Please form an orderly line in order of your aura’s color code.
-  - [ ] More opening lines to alternate with it, recorded as `healing-center-open-2.mp3` and on; `OPENING_LINE` in `src/core/sim/progress.ts` then becomes a list to pick from.
+  - [x] More opening lines to alternate with it, recorded as `healing-center-open-2.mp3` and on. Three more: `OPENING_LINES` in `src/core/sim/progress.ts`.
 - Staff wanted (`contextAnnouncement` in `src/core/sim/advisor.ts`)
   - [x] Caretaker needed. The corridors are getting gross.
   - [x] Receptionist needed at the Reception Desk.
