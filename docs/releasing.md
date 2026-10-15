@@ -20,3 +20,9 @@ With no secrets set, the macOS build is signed ad hoc and the Windows installer 
 To ship a macOS build that opens without a warning, add the same five secrets the other macOS release pipelines use. The workflow then signs with the Developer ID certificate and notarizes with Apple:
 
 `DEVELOPER_ID_CERT_BASE64`, `DEVELOPER_ID_CERT_PASSWORD`, `NOTARIZE_APPLE_ID`, `NOTARIZE_PASSWORD`, `NOTARIZE_TEAM_ID`
+
+## Error reports
+
+The web version reports its errors, and logs each game it opens, to the `pressure-point` project in Sentry (`src/app/sentry.ts`), tagged with the version as `pressure-point@1.2.3`. The dev server and the desktop app report nothing.
+
+For the reports to show the real code rather than the minified bundle, add a Sentry organization auth token as the `SENTRY_AUTH_TOKEN` secret. The **Deploy web version** workflow then uploads the build's source maps to Sentry and deletes them before publishing. Without it the deploy still works, and the workflow warns that no source maps were uploaded.

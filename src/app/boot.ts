@@ -1,5 +1,7 @@
 // Starting up: from a blank page to a running game.
 
+import { logger } from '@sentry/browser';
+
 import { Audio } from '../audio';
 import { newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
@@ -24,12 +26,20 @@ export async function boot() {
     // the fallback font will do
   });
   // loading or restarting from inside a game reloads the page and leaves a note saying what to open
-  let opened = open(takeHandoff());
+  let what = takeHandoff();
+  let opened = open(what);
   while (!opened || opened === 'no-room') {
-    const choice = await showTitle(audio, exit, opened === 'no-room' ? NO_ROOM : '');
+    if (opened === 'no-room') logger.warn('No room to keep the autosave, so the new game did not start');
+    what = await showTitle(audio, exit, opened === 'no-room' ? NO_ROOM : '');
     audio.unlock();
-    opened = open(choice);
+    opened = open(what);
   }
+  // the save's name is the player's own, so the log says only what kind of game it is
+  logger.info('Game opened', {
+    kind: what && newGameCenter(what) ? 'new' : 'saved',
+    center: opened.center,
+    day: Math.floor(opened.day),
+  });
   startGame({ canvas, audio, state: opened, exit });
 }
 
