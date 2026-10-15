@@ -1,0 +1,46 @@
+/* Styles for ChangelogPanel. */
+
+.changelog {
+  text-align: left;
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+
+.changelog section + section {
+  margin-top: 14px;
+}
+
+.changelog h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--teal-dark);
+  margin-bottom: 4px;
+}
+
+.changelog-here {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--teal);
+  border-radius: 8px;
+  padding: 1px 7px;
+}
+
+.changelog ul {
+  padding-left: 18px;
+}
+
+.changelog li + li {
+  margin-top: 4px;
+}
+
+.changelog li ul {
+  margin-top: 4px;
+}
+
+.changelog strong {
+  font-weight: 600;
+}

@@ -15,6 +15,7 @@ import { saveFacts, titleBadges } from '../lib/title';
 import backdrop from '../theme/backdrop.jpg';
 import logo from '../theme/logo.png';
 import { CampaignPanel } from './CampaignPanel';
+import { ChangelogPanel } from './ChangelogPanel';
 import { SandboxPanel } from './SandboxPanel';
 import { SavesPanel } from './SavesPanel';
 import { SettingsPanel } from './SettingsPanel';
@@ -29,7 +30,7 @@ export interface TitleScreenProps {
   onPick: (what: string) => void;
 }
 
-type Panel = 'campaign' | 'sandbox' | 'saves' | 'settings';
+type Panel = 'campaign' | 'sandbox' | 'saves' | 'settings' | 'changes';
 
 /** The heading over each panel. */
 const PANEL_NAMES: Readonly<Record<Panel, string>> = {
@@ -37,6 +38,7 @@ const PANEL_NAMES: Readonly<Record<Panel, string>> = {
   sandbox: 'Sandbox',
   saves: 'Load game',
   settings: 'Settings',
+  changes: 'What’s new',
 };
 
 /** The logo, the latest save and the ways into the game. */
@@ -209,8 +211,20 @@ export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps
           <div id="title-settings" class="title-sub" hidden={showing !== 'settings'}>
             {opened.includes('settings') && <SettingsPanel audio={audio} onChange={redraw} />}
           </div>
+          <div id="title-changes" class="title-sub" hidden={showing !== 'changes'}>
+            {opened.includes('changes') && <ChangelogPanel />}
+          </div>
         </div>
         <p class="title-version">{`v${__APP_VERSION__}`}</p>
+        <button
+          class="title-news"
+          hidden={showing === 'changes'}
+          onClick={() => {
+            open('changes');
+          }}
+        >
+          📜 What’s new
+        </button>
         <div class="title-tray" hidden={!!showing}>
           {badges.map((b) => (
             <span key={b.label} class={cx('title-badge', !b.on && 'off')} title={b.label} aria-label={b.label}>

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import type { Page } from '@playwright/test';
 
 import type { Layout } from '../../src/core/room-layout';
@@ -22,6 +24,22 @@ test.describe('drawing', () => {
 });
 
 test.describe('starting out', () => {
+  test('the changelog opens from the corner of the title screen, marking the version being played', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const version = JSON.parse(readFileSync('package.json', 'utf8')).version as string;
+    await page.getByRole('button', { name: 'What’s new' }).click();
+    const panel = page.locator('#title-changes');
+    await expect(panel.getByRole('heading', { name: `v${version}` })).toContainText('This version');
+    await expect(panel).toContainText('First release');
+    // the button makes way for the panel it opens, and comes back with the menu
+    await expect(page.getByRole('button', { name: 'What’s new' })).toBeHidden();
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+    await expect(page.getByRole('button', { name: 'What’s new' })).toBeVisible();
+  });
+
   test('music and sound can be switched off on the title screen', async ({ game, page }) => {
     await page.goto('/');
     const music = page.locator('#title').getByTitle('Music');

@@ -65,6 +65,14 @@ test.describe('title screen', () => {
     await page.getByRole('button', { name: 'Patience: Usual' }).click();
     await screens.shot('title-sandbox-custom');
   });
+
+  test('what is new', async ({ screens, page }) => {
+    await screens.title();
+    await page.getByRole('button', { name: 'What’s new' }).click();
+    // the oldest notes, which never change, unlike the newest
+    await page.locator('#title-changes section').last().scrollIntoViewIfNeeded();
+    await screens.shot('title-changelog');
+  });
 });
 
 test.describe('in a game', () => {

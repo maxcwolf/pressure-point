@@ -123,6 +123,8 @@ These are the keys to begin with; any of them but Esc can be changed in **Settin
 
 The pause menu (☰ or Esc) has **Main menu**, which saves and returns to the title screen, and in the desktop app **Exit game**, which saves and quits. The title screen has **Exit** there too. The browser version has no Exit, because a browser tab cannot close itself.
 
+**📜 What’s new**, in the bottom right corner of the title screen, lists what changed in every version, newest first, with the one you are playing marked.
+
 ## Saved games
 
 The game autosaves every 12 seconds unless **Settings** says otherwise, and always as you leave it, in the browser and in the desktop app alike. **Save or load** in the pause menu (☰) keeps up to 20 named saves, and the title screen can load any of them. Starting a new game or loading a different one never destroys the game you were in: it moves to a "Previous game" slot.
