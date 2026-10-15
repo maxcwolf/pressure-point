@@ -2,9 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.18.0
 
 - **Move and copy rooms.** Press Move in a built room's inspector to pick it up, furniture, windows and all, and put it down somewhere else for free. Copy builds a copy wherever you click, finished and ready, for what building it from scratch would cost, and keeps going until you press Esc. R turns the room in hand either way.
+- **The announcer warns of a power cut** and announces it as the power goes out, with recorded lines.
 
 ## v0.17.0
 
