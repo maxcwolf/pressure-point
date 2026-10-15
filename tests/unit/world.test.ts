@@ -107,9 +107,9 @@ describe('placing items', () => {
 
   it('will not let furniture wall anyone in', () => {
     const sim = freshSim();
-    const janitor = hire(sim, 'caretaker');
+    const caretaker = hire(sim, 'caretaker');
     // put them at the back of the building, then build a wall of plants across it with one gap
-    Object.assign(janitor, { x: 10.5, y: 5.5, tx: 10, ty: 5, path: null, dest: null, state: 'idle', timer: 999 });
+    Object.assign(caretaker, { x: 10.5, y: 5.5, tx: 10, ty: 5, path: null, dest: null, state: 'idle', timer: 999 });
     const row = ENT_IN_Y - 2;
     for (let x = BX0; x <= 27; x++) {
       if (x === 20) continue;
@@ -117,7 +117,7 @@ describe('placing items', () => {
     }
     expect(sim.world.canPlaceItem('plant', 20, row, 0).reason).toMatch(/block the way/);
     // with nobody behind it, closing the gap strands no one and is allowed
-    Object.assign(janitor, { x: 14.5, y: 16.5, tx: 14, ty: 16 });
+    Object.assign(caretaker, { x: 14.5, y: 16.5, tx: 14, ty: 16 });
     expect(sim.world.canPlaceItem('plant', 20, row, 0).ok).toBe(true);
   });
 

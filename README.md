@@ -38,25 +38,25 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 2. Build a **Consultation Room** (drag the floor, click a wall for the door, place the furniture) and hire a **Wellness Consultant**.
 3. Build a **Massage Suite** and hire a **Massage Therapist**. The center opens once all three exist.
 4. Guests check in, get diagnosed, get treated, and pay. Keep them patient with benches, tea, snacks, plants and a restroom, and as you earn stars, an arcade, an aquarium and more.
-5. Staff members get tired. A **Staff Room** lets them recover; a **Janitor** clears litter, cleans the toilets, waters plants and keeps the massage stones hot.
+5. Staff members get tired. A **Staff Room** lets them recover; a **Caretaker** clears litter, cleans the toilets, waters plants and keeps the massage stones hot.
 6. Salaries come out at the end of each month. Hit the objectives to earn stars.
 7. Stars unlock new **massage modalities**. Build a **Training Room** and send therapists on courses to deliver them. Staff earn experience and rise through five **ranks**; each rank brings a qualification slot for a course, and a promotion comes with a raise.
 8. A **Posture Lab** settles diagnoses the Consultant was unsure about, so fewer guests need a second consultation.
 9. **Decor** (salt lamps, statues, rugs, magazine racks) makes its surroundings nicer to wait in and raises a room's **prestige**, which lifts staff morale and results.
 10. Staff have **morale**. Underpaid or overworked staff ask for a raise, and quit if ignored for long.
-11. Equipment **wears out** with use. A Janitor services it; left alone it breaks down.
+11. Equipment **wears out** with use. A Caretaker services it; left alone it breaks down.
 12. The **Money** menu offers loans and lets you set prices. **Emergencies** bring a batch of guests to heal against the clock for a bonus.
 13. From the first star you can add **acupuncture**: build an **Acupuncture Clinic** and hire an **Acupuncturist**, and a second kind of guest starts arriving.
 14. From the second star you can add **reiki**: build a **Reiki Studio** and hire a **Reiki Practitioner** for a third.
 15. Click a built room to change it: add **windows**, **move its door**, or **resize** it by dragging a wall in or out. Extra floor costs $200 a tile, and floor given up refunds half. Switch on **Priority** to have staff fill it first.
 16. Click a desk or table to see its **line**: move guests up or down, over to another line, or **send them home**. A diagnosed guest's inspector shows the **chance** their treatment works.
 17. The **Policy** menu sets how sure a diagnosis must be before treatment, whether emergency guests go first, and when staff take breaks.
-18. A consultant can be kept to consultations or scans, and a Janitor from any of their jobs, under **Duties** in their inspector. New applicants turn up every few days in the **Hire** menu, and can be turned down to make room.
+18. A consultant can be kept to consultations or scans, and a Caretaker from any of their jobs, under **Duties** in their inspector. New applicants turn up every few days in the **Hire** menu, and can be turned down to make room.
 19. Click the **reputation** figure to see what guests are saying, and how the center does on results, experience, value and staff. The **🗺️** button at the top right colors the floor by how pleasant each spot is, guests' patience or needs, staff energy, or upkeep. The **Stats** menu also has a **casebook** of every visit by condition.
 20. From the first star, a **Shop Counter** sells books, crystals, oils and candles to guests on their way out; the better their visit, the likelier they are to buy. The **Money** menu sets each treatment's own **price**, runs **marketing** campaigns, and manages the loan. Now and then a **house call** is offered: send someone out for a day or more, for a fee that rises with their rank.
 21. Now and then a member of staff sets a **challenge** with a deadline, shown under the objectives; meet it for a reward. Each year ends with an **awards ceremony**, and the trophies won fill a **Trophy Cabinet**.
-22. Guests' **condition** worsens while they wait, faster with some conditions; the worse it gets, the less likely the treatment is to work, and if it runs out they go home worse off. A failed treatment leaves **bad vibes** over its room, which fade slowly unless a Reiki Practitioner, or a Janitor with the Smudging course, clears them sooner with a bundle of sage. From the second star, a **stress outbreak** may be offered: calm the guests you spot sweating and fidgeting before it spreads.
-23. Keep the place comfortable. Noise from arcades, pool tables, machines and crowds spoils treatments nearby, so keep the fun items away from the treatment rooms. Each session soils a table's linens: place a **Linen Hamper** so a Janitor can change them. Winters are cold and summers can be hot: **Radiators** and **Air Conditioners** fix that, and the **🗺️** button has **Calm** and **Temperature** overlays. Staff get thirsty and hungry too, so keep drinks and snacks within reach.
+22. Guests' **condition** worsens while they wait, faster with some conditions; the worse it gets, the less likely the treatment is to work, and if it runs out they go home worse off. A failed treatment leaves **bad vibes** over its room, which fade slowly unless a Reiki Practitioner, or a Caretaker with the Smudging course, clears them sooner with a bundle of sage. From the second star, a **stress outbreak** may be offered: calm the guests you spot sweating and fidgeting before it spreads.
+23. Keep the place comfortable. Noise from arcades, pool tables, machines and crowds spoils treatments nearby, so keep the fun items away from the treatment rooms. Each session soils a table's linens: place a **Linen Hamper** so a Caretaker can change them. Winters are cold and summers can be hot: **Radiators** and **Air Conditioners** fix that, and the **🗺️** button has **Calm** and **Temperature** overlays. Staff get thirsty and hungry too, so keep drinks and snacks within reach.
 
 ## Treatments
 

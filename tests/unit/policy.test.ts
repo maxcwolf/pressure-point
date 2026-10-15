@@ -238,18 +238,18 @@ describe('a priority room', () => {
     expect(second.priority).toBe(false);
   });
 
-  it('is seen to first by janitors', () => {
+  it('is seen to first by caretakers', () => {
     const { sim, s, massage } = openCenter(1);
     const restroom = addRestroom(sim);
-    const janitor = hire(sim, 'caretaker');
-    runUntil(sim, () => janitor.state === 'idle' || janitor.state === 'wander', 60);
+    const caretaker = hire(sim, 'caretaker');
+    runUntil(sim, () => caretaker.state === 'idle' || caretaker.state === 'wander', 60);
     // litter right beside them, and some in the restroom across the building
-    s.litter.push({ id: 90001, x: janitor.tx, y: janitor.ty, claimedBy: 0 });
+    s.litter.push({ id: 90001, x: caretaker.tx, y: caretaker.ty, claimedBy: 0 });
     s.litter.push({ id: 90002, x: 22, y: 6, claimedBy: 0 });
     expect(sim.world.zoneAt(22, 6)).toBe(restroom.id);
     sim.setRoomPriority(restroom.id, true);
-    runUntil(sim, () => !!janitor.job, 30);
-    expect(janitor.job?.id).toBe(90002);
+    runUntil(sim, () => !!caretaker.job, 30);
+    expect(caretaker.job?.id).toBe(90002);
     expect(massage.priority).toBe(false);
   });
 });

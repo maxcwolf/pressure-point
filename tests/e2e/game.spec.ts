@@ -1274,7 +1274,7 @@ test.describe('reading the center', () => {
 });
 
 test.describe('comfort', () => {
-  test('stale linens show on the table until a Janitor changes them from a Linen Hamper', async ({ game, page }) => {
+  test('stale linens show on the table until a Caretaker changes them from a Linen Hamper', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
     await game.menu('Items');

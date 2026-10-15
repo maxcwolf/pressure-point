@@ -7,7 +7,7 @@ Tick an item off when it is done, with the commit or release it landed in.
 ## Next up
 
 - [ ] **More PA announcer lines.** New filler lines for the announcer, recorded and run through the PA speaker effect like the twelve there are (`yarn announcer`), and perhaps lines for events: an emergency arriving, a season turning, the awards.
-- [ ] **Rename the Janitor** to something that fits all they do now (cleaning, repairs, plants, stones, linens and laundry, and sage with the Smudging course). The role is `caretaker` in the code already, so **Caretaker** is the likely name.
+- [x] **Rename the Janitor** to something that fits all they do now (cleaning, repairs, plants, stones, linens and laundry, and sage with the Smudging course). Now the **Caretaker**, which the role was already called in the code, so saved staff carry over; the Janitor of the Year award is now Caretaker of the Year, and saved trophies are renamed with it.
 - [ ] **A cheat console.** A console opened with a key, taking commands such as adding money, reputation or karma, earning a star, spawning guests or an emergency, unlocking everything, and skipping ahead in time. For testing and for fun; achievements could be withheld in a game where it has been used.
 
 ## Requested 14 October 2026
@@ -36,7 +36,7 @@ The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two
 - [x] **Phase 4, reading the center:** guest feelings, reviews and reputation in parts, the casebook, overlays. The casebook went in the Stats menu, which now has tabs, rather than the Treatments menu.
 - [x] **Phase 5, the business side:** prices per treatment, a retail counter, marketing, house calls.
 - [x] **Phase 6, stakes:** a worsening condition, bad vibes cleared with sage, stress outbreaks. Treatment calms a stressed guest as well as a calming session does, and the calming sessions are handed out by clicking, with no one sent to give them.
-- [x] **Phase 7, comfort:** calm, fresh linens, temperature and staff needs. Noise and warmth carry like decor does, held back by the walls of each room they pass through. Changing linens is part of a Janitor's cleaning, and needs a Linen Hamper to take fresh ones from. Staff thirst and hunger only, no toilets: they are seen to between jobs from the guests' own drinks and snacks. Sandbox switches for stress outbreaks (missed in phase 6) and the weather. High Pines comes next.
+- [x] **Phase 7, comfort:** calm, fresh linens, temperature and staff needs. Noise and warmth carry like decor does, held back by the walls of each room they pass through. Changing linens is part of a Caretaker's cleaning, and needs a Linen Hamper to take fresh ones from. Staff thirst and hunger only, no toilets: they are seen to between jobs from the guests' own drinks and snacks. Sandbox switches for stress outbreaks (missed in phase 6) and the weather. High Pines comes next.
 - [ ] **Phase 8, visitors and rivals:** VIPs and the inspector, the center's standing, a rival center. Then The Orchard Estate.
 - [ ] **Phase 9, events:** a mishap per center.
 - [ ] **Phase 10, building tools:** move and copy rooms, templates, decorating rooms, camera rotation, more land.

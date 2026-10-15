@@ -21,12 +21,12 @@ export function addWear(ctx: SimContext, it: Item) {
   if (!add || it.wear >= 100) return;
   it.wear = Math.min(100, it.wear + add);
   if (it.wear < 100) return;
-  // broken: nobody can use it until a Janitor has been
+  // broken: nobody can use it until a Caretaker has been
   ctx.world.version++;
   const [cx, cy] = itemCenter(it);
   emit(ctx, { type: 'float', text: 'Broken!', x: cx, y: cy, kind: 'bad' });
   emit(ctx, { type: 'sfx', name: 'fail' });
-  toast(ctx, `A ${ITEMS[it.type].name} has broken down. It is out of action until a Janitor repairs it.`, 'bad', {
+  toast(ctx, `A ${ITEMS[it.type].name} has broken down. It is out of action until a Caretaker repairs it.`, 'bad', {
     kind: 'item',
     id: it.id,
   });

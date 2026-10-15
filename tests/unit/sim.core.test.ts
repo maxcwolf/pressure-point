@@ -175,7 +175,7 @@ describe('staff', () => {
   });
 });
 
-describe('janitors', () => {
+describe('caretakers', () => {
   it('clear litter', () => {
     const { sim, s } = openCenter(1);
     s.litter.push({ id: s.nextId++, x: 10, y: 12, claimedBy: 0 }, { id: s.nextId++, x: 20, y: 14, claimedBy: 0 });

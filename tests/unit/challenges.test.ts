@@ -160,7 +160,7 @@ describe('the year-end awards', () => {
     second.yearServed = 22;
     const t = yearTotals([]);
     expect(judge(s, 'healer-of-the-year', 1, t)).toMatchObject({ won: true, winner: second.name });
-    expect(judge(s, 'janitor-of-the-year', 1, t)).toMatchObject({ won: false, note: 'No Janitor to give it to' });
+    expect(judge(s, 'caretaker-of-the-year', 1, t)).toMatchObject({ won: false, note: 'No Caretaker to give it to' });
   });
 
   it('pay out for each won, fill the trophy cabinet, and start the year afresh', () => {
@@ -201,8 +201,8 @@ describe('the year-end awards', () => {
     const { sim, therapist } = withChallenges();
     const before = therapist.yearServed;
     runUntil(sim, () => therapist.yearServed > before, 300);
-    const janitor = hire(sim, 'caretaker');
+    const caretaker = hire(sim, 'caretaker');
     sim.s.litter.push({ id: 99001, x: 14, y: 11, claimedBy: 0 });
-    runUntil(sim, () => janitor.yearServed > 0, 120);
+    runUntil(sim, () => caretaker.yearServed > 0, 120);
   });
 });

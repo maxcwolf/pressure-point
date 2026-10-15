@@ -37,9 +37,9 @@ export const PRICE_MIN = 0.5;
 
 export const PRICE_MAX = 2;
 
-/** Janitors start repairing equipment at this much wear; at 100 it is broken. */
+/** Caretakers start repairing equipment at this much wear; at 100 it is broken. */
 export const WEAR_REPAIR = 50;
-/** Janitors start cleaning at this much grime. */
+/** Caretakers start cleaning at this much grime. */
 export const DIRT_CLEAN = 40;
 /** From this much grime it is filthy: guests are put off and it spoils its surroundings. */
 export const DIRT_FILTHY = 70;

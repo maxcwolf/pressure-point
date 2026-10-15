@@ -318,7 +318,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
           'bad',
         );
       else if (problem === 'cold')
-        tipOnce(ctx, 'botch-cold', 'The massage stones were cold. A Janitor keeps Stone Warmers hot.', 'bad');
+        tipOnce(ctx, 'botch-cold', 'The massage stones were cold. A Caretaker keeps Stone Warmers hot.', 'bad');
       else
         tipOnce(
           ctx,

@@ -312,7 +312,7 @@ export class Sim {
   setPolicy(change: PolicyChange) {
     setPolicy(this.ctx, change);
   }
-  /** Put a room first for staff and janitors, or back among the rest. */
+  /** Put a room first for staff and caretakers, or back among the rest. */
   setRoomPriority(roomId: number, on: boolean) {
     setRoomPriority(this.ctx, roomId, on);
   }

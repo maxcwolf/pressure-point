@@ -128,7 +128,7 @@ describe('fresh linens', () => {
     expect(decorOf(table)).toBe(0);
   });
 
-  it('are changed by a Janitor only once there is a hamper to change them from', { timeout: LONG_RUN }, () => {
+  it('are changed by a Caretaker only once there is a hamper to change them from', { timeout: LONG_RUN }, () => {
     const { sim, s } = openCenter(1);
     hire(sim, 'caretaker');
     const table = s.items.find((i) => i.type === 'massage_table')!;
@@ -142,7 +142,7 @@ describe('fresh linens', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
-  it('cannot be changed when every hamper is full, until a Janitor launders one', { timeout: LONG_RUN }, () => {
+  it('cannot be changed when every hamper is full, until a Caretaker launders one', { timeout: LONG_RUN }, () => {
     const { sim, s } = openCenter(1);
     const ctx = createContext(s);
     const table = s.items.find((i) => i.type === 'massage_table')!;
@@ -302,5 +302,19 @@ describe('a save from before comfort', () => {
     expect(up.outbreaksOn).toBe(true);
     expect(up.weatherOn).toBe(true);
     for (const st of up.staff) expect([st.thirst, st.hunger]).toEqual([0, 0]);
+  });
+});
+
+describe('a save from before the Caretaker', () => {
+  it('keeps a Janitor of the Year trophy, as Caretaker of the Year', () => {
+    const { s } = openCenter(2);
+    const old = JSON.parse(JSON.stringify(s)) as Record<string, any>;
+    old.version = 10;
+    old.trophies = [{ award: 'janitor-of-the-year', year: 1 }];
+    old.ceremony = { year: 1, results: [{ award: 'janitor-of-the-year', won: true, note: 'Ines Loosely' }] };
+    upgradeSave(old as GameState);
+    const up = old as GameState;
+    expect(up.trophies.map((t) => t.award)).toEqual(['caretaker-of-the-year']);
+    expect(up.ceremony?.results.map((r) => r.award)).toEqual(['caretaker-of-the-year']);
   });
 });

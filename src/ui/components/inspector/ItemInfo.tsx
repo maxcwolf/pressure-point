@@ -24,13 +24,13 @@ function Linens({ item: it }: { item: Item }) {
   const hamper = sim.s.items.some((i) => i.type === 'linen_hamper' && i.water < HAMPER_SIZE);
   return (
     <>
-      <label title="Each session soils the linens a little. A Janitor changes them from a Linen Hamper.">
+      <label title="Each session soils the linens a little. A Caretaker changes them from a Linen Hamper.">
         Linens
         <Bar value={100 - it.dirt} class={it.dirt >= DIRT_CLEAN ? 'bad' : 'blue'} />
       </label>
       {it.dirt >= LINENS_STALE && (
         <p class="status">
-          {hamper ? '🧺 Stale linens: a Janitor will change them' : '🧺 Stale linens: place a Linen Hamper'}
+          {hamper ? '🧺 Stale linens: a Caretaker will change them' : '🧺 Stale linens: place a Linen Hamper'}
         </p>
       )}
     </>
@@ -76,14 +76,14 @@ export function ItemInfo({ item: it }: { item: Item }) {
           <Bar value={100 - it.wear} class={it.wear >= WEAR_REPAIR ? 'bad' : ''} />
         </label>
       )}
-      {!!def.wear && it.wear >= 100 && <p class="status">🔧 Broken: needs a Janitor</p>}
+      {!!def.wear && it.wear >= 100 && <p class="status">🔧 Broken: needs a Caretaker</p>}
       {!!def.dirt && !def.linens && (
         <label>
           Cleanliness
           <Bar value={100 - it.dirt} class={it.dirt >= DIRT_CLEAN ? 'bad' : 'blue'} />
         </label>
       )}
-      {!!def.dirt && !def.linens && it.dirt >= DIRT_FILTHY && <p class="status">🪰 Filthy: needs a Janitor</p>}
+      {!!def.dirt && !def.linens && it.dirt >= DIRT_FILTHY && <p class="status">🪰 Filthy: needs a Caretaker</p>}
       {def.linens && <Linens item={it} />}
       {def.station?.goal === 'treat' && <Calm item={it} />}
       {it.type === 'linen_hamper' && (

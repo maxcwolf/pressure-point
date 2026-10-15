@@ -149,10 +149,10 @@ describe('describing what people are doing', () => {
 
   it('says what staff are up to', () => {
     const { sim } = openCenter(3);
-    const janitor = hire(sim, 'caretaker');
-    expect(staffStatus(janitor, sim)).toBe('Arriving for their first day');
-    runUntil(sim, () => janitor.state === 'idle', 60);
-    expect(staffStatus(janitor, sim)).toBe('Looking for something to clean');
+    const caretaker = hire(sim, 'caretaker');
+    expect(staffStatus(caretaker, sim)).toBe('Arriving for their first day');
+    runUntil(sim, () => caretaker.state === 'idle', 60);
+    expect(staffStatus(caretaker, sim)).toBe('Looking for something to clean');
     run(sim, 1);
     const receptionist = sim.s.staff.find((x) => x.role === 'receptionist')!;
     runUntil(sim, () => receptionist.state === 'atPost', 60);
@@ -161,15 +161,15 @@ describe('describing what people are doing', () => {
 
   it('says which chore someone is on, not litter for every one that is not watering', () => {
     const { sim, s, massage } = openCenter(3);
-    const janitor = hire(sim, 'caretaker');
+    const caretaker = hire(sim, 'caretaker');
     const table = s.items.find((i) => i.type === 'massage_table')!;
     const hamper = sim.placeItem('linen_hamper', 16, 10, 0)!;
     const cooler = sim.placeItem('water_cooler', 18, 10, 0)!;
-    janitor.state = 'doingJob';
-    /** What the Janitor is said to be doing on a chore. */
+    caretaker.state = 'doingJob';
+    /** What the Caretaker is said to be doing on a chore. */
     const on = (kind: Job['kind'], id: number) => {
-      janitor.job = { kind, id };
-      return staffStatus(janitor, sim);
+      caretaker.job = { kind, id };
+      return staffStatus(caretaker, sim);
     };
     expect(on('clean', table.id)).toBe('Changing the linens');
     expect(on('launder', hamper.id)).toBe('Laundering the linens');

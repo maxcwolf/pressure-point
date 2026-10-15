@@ -56,7 +56,7 @@ function BadVibes({ room }: { room: Room }) {
             ? `${who.name} is clearing them with a bundle of sage.`
             : able
               ? 'Someone who can clear them will be along when they are free.'
-              : 'A Reiki Practitioner can clear them, or a Janitor who has taken the Smudging course.'
+              : 'A Reiki Practitioner can clear them, or a Caretaker who has taken the Smudging course.'
         }`}
       </p>
     </div>
@@ -101,7 +101,7 @@ export function RoomInfo({ room }: { room: Room }) {
       {table && <CanDeliver table={table} />}{' '}
       <Button
         class={cx('roompriority', room.priority && 'on')}
-        title="Staff fill a priority room's stations first, and Janitors see to it before anywhere else."
+        title="Staff fill a priority room's stations first, and Caretakers see to it before anywhere else."
         onPress={() => {
           sim.setRoomPriority(room.id, !room.priority);
         }}

@@ -47,7 +47,7 @@ export function breakDue(ctx: SimContext, st: Staff): boolean {
   return !limit || onBreak(ctx.s, st.role) < limit;
 }
 
-/** Put a room first for staff and janitors, or back among the rest. */
+/** Put a room first for staff and caretakers, or back among the rest. */
 export function setRoomPriority(ctx: SimContext, roomId: number, on: boolean) {
   const room = ctx.world.room(roomId);
   if (room) room.priority = on;

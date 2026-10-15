@@ -79,14 +79,14 @@ function nudge(ctx: SimContext): string | Advice {
   if (s.guests.some((g) => g.bladder > 85) && !hasRoom(ctx, 'restroom'))
     return 'Guests are crossing their legs. A Restroom would be a kindness.';
   if (s.litter.length >= 3 && !hasStaff(ctx, 'caretaker'))
-    return 'Litter is piling up. Hire a Janitor to keep the place clean.';
+    return 'Litter is piling up. Hire a Caretaker to keep the place clean.';
   const wilting = s.items.find((i) => i.type === 'plant' && i.water < 20);
   if (wilting && !hasStaff(ctx, 'caretaker'))
-    return { text: 'Your plants are wilting. A Janitor will water them.', about: { kind: 'item', id: wilting.id } };
+    return { text: 'Your plants are wilting. A Caretaker will water them.', about: { kind: 'item', id: wilting.id } };
   const filthy = s.items.find((i) => i.dirt >= DIRT_FILTHY && !hasLinens(i));
   if (filthy && !hasStaff(ctx, 'caretaker'))
     return {
-      text: 'The toilets are filthy and guests are noticing. Hire a Janitor to clean them.',
+      text: 'The toilets are filthy and guests are noticing. Hire a Caretaker to clean them.',
       about: { kind: 'item', id: filthy.id },
     };
   if (s.offer) return 'There is an emergency on offer at the top of the screen. Accept it only if you can cope.';
@@ -94,8 +94,8 @@ function nudge(ctx: SimContext): string | Advice {
   if (broken)
     return {
       text: hasStaff(ctx, 'caretaker')
-        ? `A ${ITEMS[broken.type].name} has broken down. Your Janitor will get to it.`
-        : `A ${ITEMS[broken.type].name} has broken down. Hire a Janitor to repair it.`,
+        ? `A ${ITEMS[broken.type].name} has broken down. Your Caretaker will get to it.`
+        : `A ${ITEMS[broken.type].name} has broken down. Hire a Caretaker to repair it.`,
       about: { kind: 'item', id: broken.id },
     };
   const comfort = comfortAdvice(ctx);
@@ -131,13 +131,13 @@ export function comfortAdvice(ctx: SimContext): string | Advice {
   if (stale && !hamperWithRoom(ctx))
     return {
       text: s.items.some(isHamper)
-        ? 'The Linen Hamper is full and the treatment tables need fresh linens. A Janitor will launder it, and a second hamper helps.'
-        : 'The linens on the treatment tables are stale. Place a Linen Hamper so a Janitor can change them.',
+        ? 'The Linen Hamper is full and the treatment tables need fresh linens. A Caretaker will launder it, and a second hamper helps.'
+        : 'The linens on the treatment tables are stale. Place a Linen Hamper so a Caretaker can change them.',
       about: { kind: 'item', id: stale.id },
     };
   if (stale && !hasStaff(ctx, 'caretaker'))
     return {
-      text: 'The linens on the treatment tables are stale. Hire a Janitor to change them.',
+      text: 'The linens on the treatment tables are stale. Hire a Caretaker to change them.',
       about: { kind: 'item', id: stale.id },
     };
   const waiting = s.guests.filter((g) => g.state === 'waiting');
@@ -185,8 +185,8 @@ function modalityAdvice(ctx: SimContext): string | Advice {
       if (warmer && def.equipment === 'stone_warmer' && have.every((i) => i.water < STONE_USE))
         return {
           text: hasStaff(ctx, 'caretaker')
-            ? 'The massage stones have gone cold. Your Janitor is stretched thin.'
-            : 'The massage stones have gone cold. Hire a Janitor to keep the Stone Warmer hot.',
+            ? 'The massage stones have gone cold. Your Caretaker is stretched thin.'
+            : 'The massage stones have gone cold. Hire a Caretaker to keep the Stone Warmer hot.',
           about: { kind: 'item', id: warmer.id },
         };
     }
@@ -217,6 +217,6 @@ export function contextAnnouncement(ctx: SimContext): string | null {
     if (st && ctx.world.usable(it) && it.queue.length >= 2 && !it.staffId)
       return `${ROLES[st.staff].name} needed at the ${stationPlace(it)}.`;
   }
-  if (ctx.s.litter.length >= 4) return 'Janitor needed. The corridors are getting crunchy.';
+  if (ctx.s.litter.length >= 4) return 'Caretaker needed. The corridors are getting crunchy.';
   return null;
 }

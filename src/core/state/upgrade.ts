@@ -3,6 +3,7 @@
 import {
   ACHIEVEMENTS,
   APPLICANT_DAYS,
+  type AwardId,
   AWARDS,
   CALL_GAP_MIN,
   CHALLENGE_GAP_MIN,
@@ -114,6 +115,10 @@ type OldSave = Before<
   lastLedger: OldLedger;
 };
 
+/** An award's id now, for one saved under a name it has since changed from. */
+export const renamedAward = (id: string): AwardId =>
+  (id === 'janitor-of-the-year' ? 'caretaker-of-the-year' : id) as AwardId;
+
 /** Bring a save from any earlier version up to date by filling in what it lacks. */
 export function upgradeSave(save: GameState) {
   const s: OldSave = save;
@@ -202,6 +207,8 @@ export function upgradeSave(save: GameState) {
   s.callOffer ??= null;
   s.nextCall ??= Math.max(FIRST_CALL_DAY, s.day + CALL_GAP_MIN);
   s.ceremony ??= null;
+  // the Janitor became the Caretaker, and their award with them
+  for (const t of [...(s.trophies ?? []), ...(s.ceremony?.results ?? [])]) t.award = renamedAward(t.award);
   // an award from a newer version means nothing here
   s.trophies = (s.trophies ?? []).filter((t) => Object.hasOwn(AWARDS, t.award));
   if (s.ceremony) s.ceremony.results = s.ceremony.results.filter((r) => Object.hasOwn(AWARDS, r.award));

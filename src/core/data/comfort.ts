@@ -18,11 +18,11 @@ export const NOISE_PENALTY = 0.12;
 export const NOISE_NOTICE = 3;
 export const NOISE_PEACEFUL = 0.6;
 
-/** Linens are fresh until a Janitor would change them, and stale from the item's filthy mark. */
+/** Linens are fresh until a Caretaker would change them, and stale from the item's filthy mark. */
 export const LINENS_STALE = 70;
 /** The most stale linens take off the chance of a treatment working. */
 export const LINENS_PENALTY = 0.1;
-/** Soiled sets of linens a hamper holds, and how full it gets before a Janitor takes it to be laundered. */
+/** Soiled sets of linens a hamper holds, and how full it gets before a Caretaker takes it to be laundered. */
 export const HAMPER_SIZE = 8;
 export const HAMPER_LAUNDER = 4;
 /** How long laundering a hamper's linens takes. */

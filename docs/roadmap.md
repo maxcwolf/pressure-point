@@ -24,15 +24,15 @@ Done when every one has unit tests, the queue is covered end to end, and the tut
 Something to aim for between stars, built on the objectives that already exist.
 
 - **Staff objectives** [27]: now and then a member of staff sets the center an objective with 90 to 180 days to meet it: heal so many guests, earn so much, reach a decor level, go so long without anyone quitting. Each is a `GoalSpec` with a deadline. Met, it pays money and staff morale (not karma, which is earned once per star and achievement, where a repeatable reward could be farmed by replaying). One at a time, shown under the star objectives.
-- **Year-end awards** [14]: at the end of each game year, a ceremony dialog with eight awards, some for the center (best results, best value, cleanest) and some for staff (therapist of the year, janitor of the year), each judged on the year's monthly records and won or lost against a bar that rises each year. Prizes are money and reputation, and a member of staff who wins one is delighted. Trophies won go on display in the Trophy Cabinet and under Awards in the Stats menu. (Built with healing record, busiest, shortest wait, fair prices, the books and the happiest team for the center, since cleanliness is not recorded month by month.)
+- **Year-end awards** [14]: at the end of each game year, a ceremony dialog with eight awards, some for the center (best results, best value, cleanest) and some for staff (therapist of the year, caretaker of the year), each judged on the year's monthly records and won or lost against a bar that rises each year. Prizes are money and reputation, and a member of staff who wins one is delighted. Trophies won go on display in the Trophy Cabinet and under Awards in the Stats menu. (Built with healing record, busiest, shortest wait, fair prices, the books and the happiest team for the center, since cleanliness is not recorded month by month.)
 
 ## Phase 3: Staff careers
 
 The staff side's long game.
 
 - **Experience and promotions** [8]: staff earn experience from the guests they serve and the jobs they do, through five ranks, which take the place of today's skill stars. At each promotion they ask for a raise, which they insist on; putting it off lowers morale. Each promotion opens a qualification slot, up to five, to be filled by training before the next promotion. The skill course goes; treatment courses fill slots.
-- **General qualifications** [9]: Bedside Manner (guests lose patience more slowly with them), Motivation (works faster), Stamina (tires more slowly) for anyone; Customer Service for receptionists; Maintenance for janitors (faster repairs). Each is a multiplier the sim already applies.
-- **Job assignment** [10]: in the staff inspector, switches for which stations a member of staff works and, for janitors, which jobs (litter, plants, cleaning, repairs, stones).
+- **General qualifications** [9]: Bedside Manner (guests lose patience more slowly with them), Motivation (works faster), Stamina (tires more slowly) for anyone; Customer Service for receptionists; Maintenance for caretakers (faster repairs). Each is a multiplier the sim already applies.
+- **Job assignment** [10]: in the staff inspector, switches for which stations a member of staff works and, for caretakers, which jobs (litter, plants, cleaning, repairs, stones).
 - **A hiring pool that grows** [13]: more applicants per role as stars are earned, a new one every so often instead of all at once each month, and reject to free a slot.
 - **Traits you can see** [12]: four or five new traits with visible behavior, good and bad (a litterbug, a grump who upsets guests, a cheerful one who lifts the room, a quick learner, a green thumb who waters plants in passing).
 
@@ -59,7 +59,7 @@ New money levers, and new ways to earn.
 The biggest change to how the game feels, once the player has phases 1 to 4 to respond with.
 
 - **A worsening condition** [1]: each guest has a condition bar that falls over the visit, faster for some conditions. It lowers the chance of success; at zero the guest leaves worse off, with a big reputation hit and a bad review. No deaths.
-- **Bad vibes** [42]: a failed treatment leaves a cloud in its room that lowers results and unsettles anyone in it, until a Reiki Practitioner, or a janitor with a new Smudging course, clears it. Whoever clears it walks the room holding a smoking bundle of sage, wafting it around.
+- **Bad vibes** [42]: a failed treatment leaves a cloud in its room that lowers results and unsettles anyone in it, until a Reiki Practitioner, or a caretaker with a new Smudging course, clears it. Whoever clears it walks the room holding a smoking bundle of sage, wafting it around.
 - **A stress outbreak** [7]: offered like an emergency. Stress spreads among guests waiting close together; the player has a few calming sessions to hand out to carriers, spotted by their symptoms, before too many leave.
 
 ## Phase 7: Comfort
@@ -67,7 +67,7 @@ The biggest change to how the game feels, once the player has phases 1 to 4 to r
 The building itself matters more.
 
 - **Calm** [39]: items and crowds make noise, spreading like decor does; noise near a treatment room lowers its results and guests' experience. Treatment rooms keep out some noise; windows and doors let more in. A Calm overlay.
-- **Fresh linens** [38]: each treatment table gets dirtier linens with use; a hamper fills; a janitor launders them. Stale linens upset guests and lower results. Builds on today's dirt.
+- **Fresh linens** [38]: each treatment table gets dirtier linens with use; a hamper fills; a caretaker launders them. Stale linens upset guests and lower results. Builds on today's dirt.
 - **Temperature** [17]: radiators and air conditioners, each center's climate (cold at High Pines, hot Saltmarsh summers), and guests and staff who mind. A Temperature overlay. Staff needs (11) come in here, since heat makes people thirsty.
 
 **High Pines** opens after this phase, with snow, cold and Hot Stone in demand.
@@ -95,7 +95,7 @@ The outside world takes an interest.
 
 ## Phase 11: The long game
 
-- **Machine upgrades** [24]: each treatment machine upgraded to be more reliable and effective, paid for and fitted by a janitor with a Mechanics course. Research [24] can come later, if upgrades alone feel thin.
+- **Machine upgrades** [24]: each treatment machine upgraded to be more reliable and effective, paid for and fitted by a caretaker with a Mechanics course. Research [24] can come later, if upgrades alone feel thin.
 - **New rooms** [30, 44]: a Recovery Lounge (some treatments leave guests needing a rest), a Yoga Studio with group classes on a weekly calendar, and a second diagnosis room.
 - **Regulars** [44]: guests who come back, greeted by name, and grow loyal.
 - **Treatment gags** [31], **a radio** [34] and **game settings** [33] (key rebinding, edge scrolling, autosave interval), fitted in where there is room.
@@ -119,5 +119,5 @@ Each has the default that the phases above assume.
 4. **Reputation stays one number for goals.** The parts explain it but goals and arrivals still use the total.
 5. **Marketing needs no room.** Campaigns are bought from the Money menu. A Marketing room, as Two Point has, can come later.
 6. **The retail counter is staffed by a receptionist.** Not a new role.
-7. **Bad vibes can be cleared without reiki.** A janitor with a Smudging course can do it, so Willow Lane is not stuck.
+7. **Bad vibes can be cleared without reiki.** A caretaker with a Smudging course can do it, so Willow Lane is not stuck.
 8. **The rival center is offscreen.** A storefront in the scenery and a panel, not a second simulated building.

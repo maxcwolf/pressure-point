@@ -67,7 +67,7 @@ describe('decor and prestige', () => {
 });
 
 describe('equipment wear', () => {
-  it('builds up with use until the table breaks, then a janitor repairs it', () => {
+  it('builds up with use until the table breaks, then a caretaker repairs it', () => {
     const { sim, s, therapist } = openCenter(1);
     const table = s.items.find((i) => i.type === 'massage_table')!;
     runUntil(sim, () => s.stats.healed + s.stats.failed >= 1, 600);
@@ -92,7 +92,7 @@ describe('equipment wear', () => {
     runUntil(sim, () => therapist.state === 'atPost', 120);
   });
 
-  it('gets serviced before it breaks when a janitor is on the payroll', () => {
+  it('gets serviced before it breaks when a caretaker is on the payroll', () => {
     const { sim, s } = openCenter(1);
     hire(sim, 'caretaker');
     const table = s.items.find((i) => i.type === 'massage_table')!;
@@ -148,17 +148,17 @@ describe('morale and pay', () => {
 
   it('has someone who quits as a walk ends walk out, rather than vanish on the spot', () => {
     const { sim, s } = openCenter(1);
-    const janitor = hire(sim, 'caretaker');
-    runUntil(sim, () => janitor.state === 'idle', 100);
+    const caretaker = hire(sim, 'caretaker');
+    runUntil(sim, () => caretaker.state === 'idle', 100);
     // a hundredth of a tile from the end of a stroll, and at the end of their tether
-    janitor.state = 'wander';
-    janitor.path = [[janitor.x + 0.01, janitor.y, 0]];
-    janitor.unhappyT = 61;
-    janitor.morale = 0;
+    caretaker.state = 'wander';
+    caretaker.path = [[caretaker.x + 0.01, caretaker.y, 0]];
+    caretaker.unhappyT = 61;
+    caretaker.morale = 0;
     sim.tick(0.05);
-    expect(janitor.state).toBe('leaving');
-    expect(s.staff).toContain(janitor);
-    runUntil(sim, () => !s.staff.includes(janitor), 200);
+    expect(caretaker.state).toBe('leaving');
+    expect(s.staff).toContain(caretaker);
+    runUntil(sim, () => !s.staff.includes(caretaker), 200);
   });
 });
 

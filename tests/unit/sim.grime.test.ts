@@ -1,4 +1,4 @@
-// Toilets get grubby with use, put guests off when filthy, and Janitors clean them.
+// Toilets get grubby with use, put guests off when filthy, and Caretakers clean them.
 import { describe, expect, it } from 'vitest';
 
 import { DIRT_CLEAN, DIRT_FILTHY, FILTHY_DECOR, FILTHY_PATIENCE, ITEMS, PLAY_PATIENCE } from '../../src/core/data';
@@ -37,7 +37,7 @@ describe('grime', () => {
     expect(needRelief('play', 0)).toBe(PLAY_PATIENCE);
   });
 
-  it('takes a Janitor longer to clean than to sweep, and less time than a repair', () => {
+  it('takes a Caretaker longer to clean than to sweep, and less time than a repair', () => {
     expect(jobSeconds('clean')).toBeGreaterThan(jobSeconds('litter'));
     expect(jobSeconds('clean')).toBeLessThan(jobSeconds('repair'));
   });
@@ -63,7 +63,7 @@ describe('a toilet in play', () => {
     expect(loo.dirt).toBe(ITEMS.toilet.dirt);
   });
 
-  it('gets the advisor asking for a Janitor once it is filthy', () => {
+  it('gets the advisor asking for a Caretaker once it is filthy', () => {
     const { sim, s } = openCenter(2);
     addRestroom(sim);
     addStaffRoom(sim);
@@ -71,14 +71,14 @@ describe('a toilet in play', () => {
     expect(sim.advice()).toMatch(/toilets are filthy/);
   });
 
-  it('is cleaned by a Janitor, who says so', () => {
+  it('is cleaned by a Caretaker, who says so', () => {
     const { sim, s } = openCenter(2);
     addRestroom(sim);
     const loo = s.items.find((i) => i.type === 'toilet')!;
     loo.dirt = DIRT_CLEAN;
-    const janitor = hire(sim, 'caretaker');
-    runUntil(sim, () => janitor.job?.kind === 'clean', 120);
-    expect(staffStatus(janitor, sim)).toBe('Cleaning a toilet');
+    const caretaker = hire(sim, 'caretaker');
+    runUntil(sim, () => caretaker.job?.kind === 'clean', 120);
+    expect(staffStatus(caretaker, sim)).toBe('Cleaning a toilet');
     runUntil(sim, () => loo.dirt === 0, 120);
   });
 });

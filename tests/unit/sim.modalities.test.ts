@@ -74,7 +74,7 @@ describe('unlocking modalities', () => {
     expect(good.healed).toBeGreaterThan(good.failed * 2);
   });
 
-  it('uses up the heat in a stone warmer, which a janitor restores', () => {
+  it('uses up the heat in a stone warmer, which a caretaker restores', () => {
     const { sim, s, therapist } = openCenter(12);
     s.stars = 2;
     therapist.quals = ['swedish', 'stone'];

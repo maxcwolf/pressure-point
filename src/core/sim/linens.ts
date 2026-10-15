@@ -1,5 +1,5 @@
-// Fresh linens: each session soils a treatment table's linens a little, until a Janitor changes them for fresh ones
-// from a hamper, where the used set goes. When the hamper fills, a Janitor launders the lot.
+// Fresh linens: each session soils a treatment table's linens a little, until a Caretaker changes them for fresh ones
+// from a hamper, where the used set goes. When the hamper fills, a Caretaker launders the lot.
 
 import { DIRT_CLEAN, HAMPER_LAUNDER, HAMPER_SIZE, ITEMS, LINENS_PENALTY, LINENS_STALE } from '../data';
 import type { Guest, Item } from '../state/types';
@@ -41,8 +41,8 @@ export function useLinens(ctx: SimContext, it: Item, g: Guest) {
     ctx,
     'linens',
     hamperWithRoom(ctx)
-      ? 'The linens on a treatment table are stale. Guests notice, and treatments work less often. A Janitor will be along to change them.'
-      : 'The linens on a treatment table are stale, and there is nowhere to get fresh ones. Place a Linen Hamper, and a Janitor will change them.',
+      ? 'The linens on a treatment table are stale. Guests notice, and treatments work less often. A Caretaker will be along to change them.'
+      : 'The linens on a treatment table are stale, and there is nowhere to get fresh ones. Place a Linen Hamper, and a Caretaker will change them.',
     'bad',
     { kind: 'item', id: it.id },
   );
@@ -58,7 +58,7 @@ export function changeLinens(ctx: SimContext, it: Item): boolean {
     tipOnce(
       ctx,
       'hamper-full',
-      'A Linen Hamper is full. Until a Janitor launders it, no more linens can be changed from it. A second hamper helps.',
+      'A Linen Hamper is full. Until a Caretaker launders it, no more linens can be changed from it. A second hamper helps.',
       'bad',
       { kind: 'item', id: hamper.id },
     );

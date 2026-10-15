@@ -129,9 +129,9 @@ export interface ItemDef {
   decor?: number;
   /** People can walk over it, and furniture can stand on it. */
   walkable?: boolean;
-  /** Wear added each time it is used. At 100 it breaks until a Janitor repairs it. */
+  /** Wear added each time it is used. At 100 it breaks until a Caretaker repairs it. */
   wear?: number;
-  /** Grime added each time it is used, until a Janitor cleans it. */
+  /** Grime added each time it is used, until a Caretaker cleans it. */
   dirt?: number;
   /** What a guest pays each time they use it, for drinks, snacks and games. */
   sale?: number;
@@ -141,7 +141,7 @@ export interface ItemDef {
   noise?: number;
   /** Degrees it warms (or, below zero, cools) the air around it. */
   heat?: number;
-  /** A table with linens on it, soiled a little with each session until a Janitor changes them. */
+  /** A table with linens on it, soiled a little with each session until a Caretaker changes them. */
   linens?: boolean;
 }
 
@@ -200,7 +200,7 @@ export interface GeneralDef {
   roles?: readonly Role[];
 }
 
-/** Something a member of staff can be kept to or kept from: a kind of station, or a kind of Janitor's job. */
+/** Something a member of staff can be kept to or kept from: a kind of station, or a kind of Caretaker's job. */
 export type Duty = 'reception' | 'shop' | 'consult' | 'assess' | 'litter' | 'clean' | 'repair' | 'plants' | 'stones';
 
 export type Modality =
@@ -358,7 +358,7 @@ export type AwardId =
   | 'healthy-books'
   | 'happy-team'
   | 'healer-of-the-year'
-  | 'janitor-of-the-year';
+  | 'caretaker-of-the-year';
 /** One of the awards handed out at the end of each year. */
 export interface AwardDef {
   id: AwardId;

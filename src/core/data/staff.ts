@@ -53,9 +53,9 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   },
   caretaker: {
     role: 'caretaker',
-    name: 'Janitor',
+    name: 'Caretaker',
     icon: '🧹',
-    desc: 'Clears litter, cleans toilets, waters plants, reheats Stone Warmers and repairs worn equipment.',
+    desc: 'Clears litter, cleans toilets, changes and launders the linens, waters plants, reheats Stone Warmers and repairs worn equipment.',
     baseSalary: 600,
     uniform: 0x7d8f45,
     accent: 0xe8c65a,

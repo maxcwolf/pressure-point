@@ -13,9 +13,9 @@ describe('toasts about someone or something', () => {
   it('point at a new member of staff', () => {
     const { sim } = openCenter(1);
     sim.drain();
-    const janitor = hire(sim, 'caretaker');
+    const caretaker = hire(sim, 'caretaker');
     const [joined] = toastSubjects(sim.drain());
-    expect(joined?.about).toEqual({ kind: 'staff', id: janitor.id });
+    expect(joined?.about).toEqual({ kind: 'staff', id: caretaker.id });
   });
 
   it('point at an item that breaks down', () => {

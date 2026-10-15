@@ -128,7 +128,7 @@ describe('bad vibes', () => {
 
   it('come with every failed treatment', () => {
     const { sim, s, massage } = openCenter(3);
-    // no reiki here, and no Janitor who could clear them
+    // no reiki here, and no Caretaker who could clear them
     runUntil(sim, () => s.stats.failed > 0, 1500);
     expect(massage.vibes).toBeGreaterThan(0);
   });
@@ -165,22 +165,22 @@ describe('bad vibes', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
-  it('are left alone by a Janitor until they learn Smudging', { timeout: LONG_RUN }, () => {
+  it('are left alone by a Caretaker until they learn Smudging', { timeout: LONG_RUN }, () => {
     const { sim, s, massage } = openCenter(1);
-    const janitor = hire(sim, 'caretaker');
+    const caretaker = hire(sim, 'caretaker');
     const ctx = createContext(s);
     massage.vibes = 100;
-    expect(canSmudge(janitor)).toBe(false);
-    expect(roomToSmudge(ctx, janitor)).toBeUndefined();
+    expect(canSmudge(caretaker)).toBe(false);
+    expect(roomToSmudge(ctx, caretaker)).toBeUndefined();
     run(sim, 30);
     // only fading, with nobody clearing them
     expect(massage.vibes).toBeCloseTo(100 - VIBES_FADE * 30, 0);
     addTraining(sim);
-    expect(sim.courses(janitor).some((c) => c.id === 'smudging')).toBe(true);
-    expect(sim.train(janitor.id, 'smudging')).toBe(true);
-    runUntil(sim, () => janitor.general.includes('smudging'), 120);
+    expect(sim.courses(caretaker).some((c) => c.id === 'smudging')).toBe(true);
+    expect(sim.train(caretaker.id, 'smudging')).toBe(true);
+    runUntil(sim, () => caretaker.general.includes('smudging'), 120);
     massage.vibes = 100;
-    runUntil(sim, () => wafting(janitor), 120);
+    runUntil(sim, () => wafting(caretaker), 120);
     // cleared long before they could have faded
     runUntil(sim, () => massage.vibes === 0, 60);
     expect(inconsistencies(sim)).toEqual([]);

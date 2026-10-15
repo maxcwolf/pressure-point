@@ -27,7 +27,7 @@ import {
 } from '../../src/core/sim/careers';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
-import { courseSpeed, janitorSpeed, moraleTarget } from '../../src/core/sim/staffing';
+import { caretakerSpeed, courseSpeed, moraleTarget } from '../../src/core/sim/staffing';
 import { serviceSeconds } from '../../src/core/sim/stations';
 import { newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
@@ -142,13 +142,13 @@ describe('general courses', () => {
     expect(s).toBeTruthy();
   });
 
-  it('let a Janitor with Maintenance get through jobs faster', () => {
+  it('let a Caretaker with Maintenance get through jobs faster', () => {
     const { sim } = openCenter(1);
-    const janitor = hire(sim, 'caretaker');
-    janitor.general = [];
-    expect(janitorSpeed(janitor)).toBe(1);
-    janitor.general = ['maintenance'];
-    expect(janitorSpeed(janitor)).toBeCloseTo(MAINTENANCE_SPEED, 6);
+    const caretaker = hire(sim, 'caretaker');
+    caretaker.general = [];
+    expect(caretakerSpeed(caretaker)).toBe(1);
+    caretaker.general = ['maintenance'];
+    expect(caretakerSpeed(caretaker)).toBeCloseTo(MAINTENANCE_SPEED, 6);
   });
 
   it('keep guests in the line of someone with a good bedside manner patient for longer', () => {
@@ -182,14 +182,14 @@ describe('duties', () => {
     expect(sim.setDuty(receptionist.id, 'consult', false)).toBe(false);
   });
 
-  it('keep a Janitor from a kind of job', () => {
+  it('keep a Caretaker from a kind of job', () => {
     const { sim, s } = openCenter(1);
-    const janitor = hire(sim, 'caretaker');
-    expect(sim.setDuty(janitor.id, 'litter', false)).toBe(true);
+    const caretaker = hire(sim, 'caretaker');
+    expect(sim.setDuty(caretaker.id, 'litter', false)).toBe(true);
     s.litter.push({ id: 99001, x: 14, y: 11, claimedBy: 0 });
     run(sim, 30);
     expect(s.litter.some((l) => l.id === 99001)).toBe(true);
-    sim.setDuty(janitor.id, 'litter', true);
+    sim.setDuty(caretaker.id, 'litter', true);
     runUntil(sim, () => !s.litter.some((l) => l.id === 99001), 60);
   });
 

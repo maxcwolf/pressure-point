@@ -116,10 +116,10 @@ export function judge(s: GameState, id: AwardId, year: number, t: YearTotals): A
       if (!best) return result(false, 'Nobody to give it to');
       return result(best.yearServed >= bar, `${best.name}: ${best.yearServed} guests seen, ${bar} needed`, best);
     }
-    case 'janitor-of-the-year': {
+    case 'caretaker-of-the-year': {
       const bar = Math.round(80 * (1 + later * 0.25));
       const best = busiest(s, ['caretaker']);
-      if (!best) return result(false, 'No Janitor to give it to');
+      if (!best) return result(false, 'No Caretaker to give it to');
       return result(best.yearServed >= bar, `${best.name}: ${best.yearServed} jobs done, ${bar} needed`, best);
     }
   }

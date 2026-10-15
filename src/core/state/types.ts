@@ -32,7 +32,7 @@ export interface Room {
   windows: WallSpot[];
   /** True once the room has been built: every required item placed and the blueprint confirmed. */
   done: boolean;
-  /** Staff fill its stations, and janitors see to it, before anywhere else. */
+  /** Staff fill its stations, and caretakers see to it, before anywhere else. */
   priority: boolean;
   /** The bad vibes a failed treatment left in it, from 0 (none) to 100, until someone clears them. */
   vibes: number;
@@ -67,7 +67,7 @@ export interface Item {
   wear: number;
   /** 0 is spotless, 100 is filthy. */
   dirt: number;
-  /** Janitor currently heading over to deal with it. */
+  /** Caretaker currently heading over to deal with it. */
   claimedBy: number;
 }
 
@@ -175,7 +175,7 @@ export interface Staff extends CharBase {
 }
 
 /**
- * A chore: the litter or item a Janitor sees to (changing a table's linens is cleaning it, and laundering is emptying
+ * A chore: the litter or item a Caretaker sees to (changing a table's linens is cleaning it, and laundering is emptying
  * a hamper), the room someone clears of bad vibes, or the drink or snack someone goes to for themselves.
  */
 export interface Job {

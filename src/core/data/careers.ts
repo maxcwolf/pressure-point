@@ -9,7 +9,7 @@ export const RANKS: readonly string[] = ['Trainee', 'Junior', 'Experienced', 'Se
 /** Experience needed to be ready for each rank, from rank 1 (none) to rank 5. */
 export const RANK_XP: readonly number[] = [0, 20, 45, 80, 125];
 
-/** Experience for a guest served, and for a Janitor's job done (there are many more of those). */
+/** Experience for a guest served, and for a Caretaker's job done (there are many more of those). */
 export const XP_PER_GUEST = 1;
 export const XP_PER_JOB = 0.4;
 

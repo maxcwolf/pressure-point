@@ -284,14 +284,14 @@ function tryBreak(ctx: SimContext, st: Staff): boolean {
   return true;
 }
 
-/** How much faster than usual a Janitor gets through their jobs: quicker with Maintenance, and with Motivation. */
-export function janitorSpeed(st: Staff): number {
+/** How much faster than usual a Caretaker gets through their jobs: quicker with Maintenance, and with Motivation. */
+export function caretakerSpeed(st: Staff): number {
   return (
     (hasGeneral(st, 'maintenance') ? MAINTENANCE_SPEED : 1) * (hasGeneral(st, 'motivation') ? MOTIVATION_SPEED : 1)
   );
 }
 
-/** How long a Janitor takes over a chore. */
+/** How long a Caretaker takes over a chore. */
 export function jobSeconds(kind: Job['kind'] | undefined): number {
   if (kind === 'repair') return 3.2;
   if (kind === 'clean') return 2.4;
@@ -332,7 +332,7 @@ function findWork(ctx: SimContext, st: Staff) {
       urgency: number;
     }
     const tasks: Task[] = [];
-    // bad vibes first of all, for a Janitor who knows how to clear them
+    // bad vibes first of all, for a Caretaker who knows how to clear them
     const cloudy = roomToSmudge(ctx, st);
     if (cloudy && startSmudge(ctx, st, cloudy)) return;
     /** Note a task, ahead of the same kind of thing elsewhere if it is in a priority room. */
@@ -526,7 +526,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
         st.state = 'doingJob';
         st.busy = true;
         if (st.job?.kind === 'smudge') {
-          st.timer = smudgeSeconds(janitorSpeed(st));
+          st.timer = smudgeSeconds(caretakerSpeed(st));
           say(st, '🌿', 2);
           break;
         }
@@ -535,7 +535,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
           say(st, wants(st) === 'eat' ? '🍪' : '🥤', 2);
           break;
         }
-        st.timer = jobSeconds(st.job?.kind) / janitorSpeed(st);
+        st.timer = jobSeconds(st.job?.kind) / caretakerSpeed(st);
         if (st.job && st.job.kind !== 'litter') {
           const p = ctx.world.item(st.job.id);
           if (p) st.facing = Math.atan2(p.x + 0.5 - st.x, p.y + 0.5 - st.y);

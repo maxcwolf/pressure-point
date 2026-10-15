@@ -330,7 +330,7 @@ test.describe('in a game', () => {
             note: 'Glen Tennis: 31 guests seen, 19 needed',
             winner: 'Glen Tennis',
           },
-          { award: 'janitor-of-the-year', won: false, note: 'No Janitor to give it to' },
+          { award: 'caretaker-of-the-year', won: false, note: 'No Caretaker to give it to' },
         ],
       };
       pp.sim.emit({ type: 'awards', year: 2 });

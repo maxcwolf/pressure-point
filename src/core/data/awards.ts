@@ -46,11 +46,11 @@ export const AWARDS: Readonly<Record<AwardId, AwardDef>> = {
     desc: 'The therapist, acupuncturist or practitioner who saw the most guests',
     prize: 1000,
   },
-  'janitor-of-the-year': {
-    id: 'janitor-of-the-year',
-    name: 'Janitor of the Year',
+  'caretaker-of-the-year': {
+    id: 'caretaker-of-the-year',
+    name: 'Caretaker of the Year',
     icon: '🧹',
-    desc: 'The Janitor who did the most jobs',
+    desc: 'The Caretaker who did the most jobs',
     prize: 1000,
   },
 };

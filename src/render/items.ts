@@ -163,7 +163,7 @@ export class ItemsLayer {
     }
   }
 
-  /** Bob a marker over an item that needs a Janitor: a wrench when broken, flies when filthy. */
+  /** Bob a marker over an item that needs a Caretaker: a wrench when broken, flies when filthy. */
   private marker(model: THREE.Object3D, it: Item, key: 'wrench' | 'flies', emoji: string, show: boolean, t: number) {
     const parts = partsOf(model);
     let sprite = parts[key];
