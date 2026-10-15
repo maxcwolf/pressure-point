@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.24.0
 
 - **Magic mushrooms under the counter.** With a Shaman on the payroll, the Shop Counter's inspector has a switch to sell mushrooms on the quiet: some sales come with a bag from under the counter, worth much more. The Money menu counts them on their own line.
 - **Hide them from the inspector.** A new Policy, on by default, puts the mushrooms away as soon as the health inspector writes ahead and brings them back once they have gone. Turn it off and the inspector's notice warns you they are still out. Found, they fail the inspection, with a big fine.
