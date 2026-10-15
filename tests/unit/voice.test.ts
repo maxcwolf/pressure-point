@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { ANNOUNCEMENTS, ITEMS, type ItemType, MISHAPS, VISIT_NEWS, VISIT_NOTICE_DAYS } from '../../src/core/data';
+import {
+  ANNOUNCEMENTS,
+  EMERGENCY_CAUSES,
+  ITEMS,
+  type ItemType,
+  MISHAPS,
+  VISIT_NEWS,
+  VISIT_NOTICE_DAYS,
+} from '../../src/core/data';
 import { CARETAKER_WANTED, staffWanted } from '../../src/core/sim/advisor';
+import { emergencyNews } from '../../src/core/sim/emergencies';
 import { VOICE_LINES, voiceFor } from '../../src/voice';
 
 /** Every line the speakers can say that does not change from game to game. */
@@ -10,7 +19,8 @@ function spokenLines(): string[] {
     .filter((t) => ITEMS[t].station)
     .map((type) => staffWanted({ type }));
   const mishaps = Object.values(MISHAPS).flatMap((m) => [m.warning, m.start, m.end]);
-  return [...ANNOUNCEMENTS, ...Object.values(VISIT_NEWS), ...stations, CARETAKER_WANTED, ...mishaps];
+  const emergencies = EMERGENCY_CAUSES.map(emergencyNews);
+  return [...ANNOUNCEMENTS, ...Object.values(VISIT_NEWS), ...stations, CARETAKER_WANTED, ...mishaps, ...emergencies];
 }
 
 describe('the announcer', () => {
@@ -40,6 +50,10 @@ describe('the announcer', () => {
     expect(voiceFor(CARETAKER_WANTED)).toMatch(/caretaker-needed.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.vip)).toMatch(/vip-visiting.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.inspector)).toMatch(/health-inspector.*\.m4a$/);
+    expect(voiceFor(emergencyNews('The city fun run turned out to be an unfun run.'))).toMatch(
+      /emergency-fun-run.*\.m4a$/,
+    );
+    expect(voiceFor(emergencyNews('A flash mob forgot to warm up.')), 'not recorded yet').toBeUndefined();
     // the VIP's line was recorded saying five days: a different notice needs a new recording
     expect(VISIT_NOTICE_DAYS).toBe(5);
   });

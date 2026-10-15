@@ -37,12 +37,12 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [ ] Snowed in! The road up the mountain is closed, so nobody new can get here for a day or two.
   - [ ] The snowplow has been through, and the road is open again.
 - Emergencies (`EMERGENCY_CAUSES` in `src/core/data/text.ts`)
-  - [ ] Emergency incoming! A yoga retreat attempted a group pose and it went badly.
-  - [ ] Emergency incoming! The city fun run turned out to be neither.
-  - [ ] Emergency incoming! An all-hands meeting ran three hours over with no chairs.
+  - [x] Emergency incoming! A yoga retreat attempted a group pose and it went badly.
+  - [x] Emergency incoming! The city fun run turned out to be an unfun run.
+  - [x] Emergency incoming! An all-hands meeting ran three hours over with no chairs.
   - [ ] Emergency incoming! A flash mob forgot to warm up.
   - [ ] Emergency incoming! The local choir held one note for far too long.
-  - [ ] Emergency incoming! A furniture store ran a build-it-yourself weekend.
+  - [x] Emergency incoming! A furniture store ran a build-it-yourself weekend.
 - Stress outbreaks (`OUTBREAK_CAUSES` in `src/core/data/stakes.ts`)
   - [ ] Stress outbreak! The office block across the road has just had its quarterly review.
   - [ ] Stress outbreak! Exam results are out at the college.

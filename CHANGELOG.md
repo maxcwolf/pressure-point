@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **The announcer voices four of the emergencies,** and the city fun run now turns out to be an unfun run.
 - **Room templates.** Press **Save as template** in a built room's inspector to keep it, furniture, windows and all. The Rooms menu's new Templates tab builds it again, in this game or any later one, for what building it would cost, with R to turn it. Rename a template there, delete it, or export it to a file to keep or share, and import template files.
 
 ## v0.19.0

@@ -4,6 +4,10 @@ import acupuncturistAtAcupuncture from './sounds/announcer/acupuncturist-at-acup
 import caretakerNeeded from './sounds/announcer/caretaker-needed.m4a';
 import chakrasAligned from './sounds/announcer/chakras-aligned.m4a';
 import doNotTip from './sounds/announcer/do-not-tip.m4a';
+import emergencyAllHands from './sounds/announcer/emergency-all-hands.m4a';
+import emergencyFunRun from './sounds/announcer/emergency-fun-run.m4a';
+import emergencyFurniture from './sounds/announcer/emergency-furniture.m4a';
+import emergencyYoga from './sounds/announcer/emergency-yoga.m4a';
 import faceHole from './sounds/announcer/face-hole.m4a';
 import faceShapedMarks from './sounds/announcer/face-shaped-marks.m4a';
 import healthInspector from './sounds/announcer/health-inspector.m4a';
@@ -49,6 +53,10 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'The power is out. Anything with a plug is now a very expensive ornament.': powerOut,
   'A VIP will be visiting in five days. Look busy.': vipVisiting,
   'The health inspector is on the way. Hide the sage.': healthInspector,
+  'Emergency incoming! A yoga retreat attempted a group pose and it went badly.': emergencyYoga,
+  'Emergency incoming! The city fun run turned out to be an unfun run.': emergencyFunRun,
+  'Emergency incoming! An all-hands meeting ran three hours over with no chairs.': emergencyAllHands,
+  'Emergency incoming! A furniture store ran a build-it-yourself weekend.': emergencyFurniture,
 };
 
 /** The recording of an announcement, if the announcer has recorded it. */

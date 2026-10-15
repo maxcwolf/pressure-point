@@ -10,7 +10,7 @@ export const TITLE_LINES = ['Pressure', 'Point', 'Institute'] as const;
 /** Flavor for emergencies: a batch of guests who all turn up with the same condition. */
 export const EMERGENCY_CAUSES = [
   'A yoga retreat attempted a group pose and it went badly.',
-  'The city fun run turned out to be neither.',
+  'The city fun run turned out to be an unfun run.',
   'An all-hands meeting ran three hours over with no chairs.',
   'A flash mob forgot to warm up.',
   'The local choir held one note for far too long.',

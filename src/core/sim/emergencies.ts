@@ -18,6 +18,11 @@ import { spawnGuest } from './guests';
 import { offered, unlocked } from './treatments';
 import { cutOff } from './twists';
 
+/** What the speakers say when an emergency is offered. */
+export function emergencyNews(cause: string): string {
+  return `Emergency incoming! ${cause}`;
+}
+
 /** Run the emergency in progress, or offer a new one when it is time. */
 export function updateEmergency(ctx: SimContext) {
   const s = ctx.s;
@@ -59,7 +64,7 @@ export function offerEmergency(ctx: SimContext): boolean {
     reward: Math.round((total * cond.fee * 0.7) / 100) * 100,
     deadline: s.day + OFFER_DAYS,
   };
-  emit(ctx, { type: 'announce', text: `Emergency incoming! ${s.offer.cause}` });
+  emit(ctx, { type: 'announce', text: emergencyNews(s.offer.cause) });
   return true;
 }
 
