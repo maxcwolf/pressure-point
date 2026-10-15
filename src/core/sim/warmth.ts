@@ -24,7 +24,7 @@ import { clamp } from '../util';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { feel } from './feelings';
-import { gridAt, spreadInto } from './spread';
+import { gridAt, spreader } from './spread';
 
 /** The month of the year, with a fraction, when summer is at its hottest and winter at its coldest. */
 const MIDSUMMER = 6.5;
@@ -59,11 +59,12 @@ export function updateWarmth(ctx: SimContext) {
     return;
   }
   grid.fill(indoorTemp(outdoorTemp(centerOf(ctx.s).climate, ctx.s.day)));
+  const spread = spreader(ctx, heatLeak);
   for (const it of ctx.s.items) {
     const heat = itemHeat(it);
     if (!heat) continue;
     const [cx, cy] = itemCenter(it);
-    spreadInto(ctx, grid, Math.floor(cx), Math.floor(cy), heat, HEAT_RADIUS, heatLeak);
+    spread(grid, Math.floor(cx), Math.floor(cy), heat, HEAT_RADIUS);
   }
 }
 

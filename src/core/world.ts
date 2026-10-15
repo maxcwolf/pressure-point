@@ -14,6 +14,7 @@ import {
   SIDEWALK_Y,
   W,
 } from './data';
+import { byId } from './lookup';
 import { carryWallSpot, inRect, sameRect } from './resize';
 import type { GameState, Item, Room, Waypoint } from './state/types';
 import { at } from './util';
@@ -130,6 +131,8 @@ const DIRS8: readonly (readonly [dx: number, dy: number, cost: number])[] = [
   [-1, -1, Math.SQRT2],
 ];
 const DIRS4 = DIRS8.slice(0, 4);
+/** How many tiles out from a spot to look for somewhere to stand. */
+const STAND_SEARCH = 160;
 
 export class World {
   zone = new Int32Array(W * H);
@@ -138,6 +141,11 @@ export class World {
   doors = new Set<number>();
   /** Bumped on every rebuild so the renderer knows to resync. */
   version = 0;
+  /** Bumped on every rebuild, silent ones too, so answers worked out from the grids know when they are stale. */
+  private stamp = 0;
+  /** Standing spots already worked out, by tile and count, while the grids stay as they were. */
+  private spots = new Map<number, readonly [number, number][]>();
+  private spotsStamp = -1;
 
   constructor(public s: GameState) {
     this.rebuild();
@@ -196,16 +204,18 @@ export class World {
         if (inBounds(x, y)) reserved[tileIdx(x, y)] = 1;
       }
     }
+    this.stamp++;
     if (!silent) this.version++;
   }
 
   /** The room with this id, if there is one. */
   room(id: number): Room | undefined {
-    return this.s.rooms.find((r) => r.id === id);
+    // zone ids for the corridor, the path and the scenery are never rooms
+    return id > 0 ? byId(this.s.rooms, id) : undefined;
   }
   /** The item with this id, if there is one. */
   item(id: number): Item | undefined {
-    return id ? this.s.items.find((i) => i.id === id) : undefined;
+    return id ? byId(this.s.items, id) : undefined;
   }
   /** The zone id of a tile. Anything off the map counts as scenery. */
   zoneAt(x: number, y: number) {
@@ -327,10 +337,16 @@ export class World {
     const seen = new Uint8Array(W * H);
     const out: [number, number][] = [];
     if (!inBounds(sx, sy)) return out;
-    const queue: [number, number][] = [[sx, sy]];
+    // a queue of tile indexes read from the front, as taking from the front of an array moves everything behind it
+    const queue = new Int32Array(W * H);
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = tileIdx(sx, sy);
     seen[tileIdx(sx, sy)] = 1;
-    for (let next = queue.shift(); next && out.length < limit; next = queue.shift()) {
-      const [x, y] = next;
+    while (head < tail && out.length < limit) {
+      const i = at(queue, head++);
+      const x = i % W;
+      const y = (i - x) / W;
       out.push([x, y]);
       for (const [dx, dy] of DIRS4) {
         const nx = x + dx;
@@ -338,18 +354,33 @@ export class World {
         if (!inBounds(nx, ny) || seen[tileIdx(nx, ny)]) continue;
         if (!this.canStep(x, y, nx, ny)) continue;
         seen[tileIdx(nx, ny)] = 1;
-        queue.push([nx, ny]);
+        queue[tail++] = tileIdx(nx, ny);
       }
     }
     return out;
   }
 
-  /** Free standing spots near a tile: same zone, not blocking a doorway or an access spot. */
-  standSpots(x: number, y: number, count: number): [number, number][] {
-    const z = this.zoneAt(x, y);
-    return this.flood(x, y, 160)
-      .filter(([tx, ty]) => this.zone[tileIdx(tx, ty)] === z && !this.reserved[tileIdx(tx, ty)])
-      .slice(0, count);
+  /**
+   * Free standing spots near a tile: same zone, not blocking a doorway or an access spot. They depend only on the
+   * grids, so each is worked out once and kept until the grids next change; the list is shared, so it is read-only.
+   */
+  standSpots(x: number, y: number, count: number): readonly [number, number][] {
+    if (this.spotsStamp !== this.stamp) {
+      this.spots.clear();
+      this.spotsStamp = this.stamp;
+    }
+    if (!inBounds(x, y)) return [];
+    // the search stops 160 tiles out, so asking for more than that finds the same
+    const key = tileIdx(x, y) * (STAND_SEARCH + 1) + Math.min(count, STAND_SEARCH);
+    let found = this.spots.get(key);
+    if (!found) {
+      const z = this.zoneAt(x, y);
+      found = this.flood(x, y, STAND_SEARCH)
+        .filter(([tx, ty]) => this.zone[tileIdx(tx, ty)] === z && !this.reserved[tileIdx(tx, ty)])
+        .slice(0, count);
+      this.spots.set(key, found);
+    }
+    return found;
   }
 
   /** Everything that needs reaching can be reached from the street. */

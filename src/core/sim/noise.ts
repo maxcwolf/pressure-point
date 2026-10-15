@@ -19,7 +19,7 @@ import { clamp } from '../util';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { feel } from './feelings';
-import { gridAt, spreadInto } from './spread';
+import { gridAt, spreader } from './spread';
 
 /** How much of the noise outside a room gets in through its walls: more with each window, up to a point. */
 export const noiseLeak = (room: Room) => Math.min(MAX_LEAK, WALL_DAMPING + room.windows.length * WINDOW_LEAK);
@@ -34,15 +34,16 @@ export function guestNoise(g: Guest): number {
 export function updateNoise(ctx: SimContext) {
   const grid = ctx.noise;
   grid.fill(0);
+  const spread = spreader(ctx, noiseLeak);
   for (const it of ctx.s.items) {
     const noise = ITEMS[it.type].noise;
     if (!noise) continue;
     const [cx, cy] = itemCenter(it);
-    spreadInto(ctx, grid, Math.floor(cx), Math.floor(cy), noise, NOISE_RADIUS, noiseLeak);
+    spread(grid, Math.floor(cx), Math.floor(cy), noise, NOISE_RADIUS);
   }
   for (const g of ctx.s.guests) {
     const noise = guestNoise(g);
-    if (noise) spreadInto(ctx, grid, g.tx, g.ty, noise, NOISE_RADIUS, noiseLeak);
+    if (noise) spread(grid, g.tx, g.ty, noise, NOISE_RADIUS);
   }
 }
 

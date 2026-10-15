@@ -3,6 +3,8 @@
 // rebuilds the grid while nothing is being built, fails here instead of quietly slowing the game.
 import { describe, expect, it, vi } from 'vitest';
 
+import type { SimContext } from '../../src/core/sim/context';
+import { spawnGuest } from '../../src/core/sim/guests';
 import { addPostureLab, addRestroom, addStaffRoom, addTraining, hire, openCenter, run } from './helpers';
 
 /** The grid's expensive questions: a route, a flood fill, a fresh grid, a check nobody is walled in. */
@@ -46,5 +48,25 @@ describe('the work a busy center takes', () => {
     expect(perMinute('rebuild')).toBe(0);
     expect(perMinute('connected')).toBe(0);
     expect(perMinute('canPlaceItem')).toBe(0);
+  });
+
+  it('keeps a long line at reception from searching the floor for every guest in it', () => {
+    const { sim } = busyCenter(1);
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    /** Top the center up to a hundred guests, patient enough to stay: most of them queue for the one desk. */
+    const crowd = () => {
+      while (sim.s.guests.length < 100) spawnGuest(ctx);
+      for (const g of sim.s.guests) g.patience = 100;
+    };
+    crowd();
+    const flood = vi.spyOn(sim.world, 'flood');
+    const minutes = 3;
+    for (let i = 0; i < minutes * 6; i++) {
+      crowd();
+      run(sim, 10);
+    }
+    // where to stand only changes when something is built, so it is worked out once for each spot in line: about
+    // 37 a minute when this was written, and about 3300 while every guest worked theirs out afresh
+    expect(flood.mock.calls.length / minutes).toBeLessThan(80);
   });
 });

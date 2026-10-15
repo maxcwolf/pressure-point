@@ -1,18 +1,19 @@
 // People in general, guests and staff alike: finding them, creating them and where they come and go.
 
 import { type Plot, SIDEWALK_Y, W } from '../data';
+import { byId } from '../lookup';
 import { pick, random } from '../random';
 import type { Char, Guest, Look, Staff } from '../state/types';
 import type { SimContext } from './context';
 
 /** The guest with this id, if there is one. */
 export function guestById(ctx: SimContext, id: number): Guest | undefined {
-  return id ? ctx.s.guests.find((g) => g.id === id) : undefined;
+  return id ? byId(ctx.s.guests, id) : undefined;
 }
 
 /** The member of staff with this id, if there is one. */
 export function staffById(ctx: SimContext, id: number): Staff | undefined {
-  return id ? ctx.s.staff.find((g) => g.id === id) : undefined;
+  return id ? byId(ctx.s.staff, id) : undefined;
 }
 
 /** The guest or member of staff with this id, if there is one. */

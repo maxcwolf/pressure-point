@@ -81,6 +81,16 @@ describe('pathfinding', () => {
 });
 
 describe('placing items', () => {
+  it('stops offering a spot to stand on once something is built there', () => {
+    const sim = freshSim();
+    const before = sim.world.standSpots(10, 10, 40);
+    const [x, y] = before[5]!;
+    expect(sim.placeItem('plant', x, y, 0)).not.toBeNull();
+    const after = sim.world.standSpots(10, 10, 40);
+    expect(after).not.toContainEqual([x, y]);
+    expect(after.length).toBeGreaterThan(0);
+  });
+
   it('accepts a bench in the corridor and charges for it', () => {
     const sim = freshSim();
     const before = sim.s.money;

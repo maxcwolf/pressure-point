@@ -1,6 +1,7 @@
 // Something that carries from a spot to the tiles around it, fading with distance and held back by the walls of the
 // rooms it passes out of and into: noise, and warmth or cool.
 
+import { H, W } from '../data';
 import type { Room } from '../state/types';
 import { at } from '../util';
 import { inBounds, tileIdx } from '../world';
@@ -9,35 +10,57 @@ import type { SimContext } from './context';
 /** How much of what carries gets through a room's walls, from 0 (none) to 1 (all of it). */
 export type Leak = (room: Room) => number;
 
-/** How much of something carries from one zone into another: all of it within one, less through each room's walls. */
-export function carry(ctx: SimContext, from: number, to: number, leak: Leak): number {
-  if (from === to) return 1;
-  const a = ctx.world.room(from);
-  const b = ctx.world.room(to);
-  return (a ? leak(a) : 1) * (b ? leak(b) : 1);
+/** How much of what spreads reaches each tile of the square around a spot, by radius: 0 beyond the radius itself. */
+const kernels = new Map<number, Float64Array>();
+
+/** The share of what spreads from a spot that reaches each tile of the square around it, out to a radius. */
+function kernel(radius: number): Float64Array {
+  let k = kernels.get(radius);
+  if (!k) {
+    const side = radius * 2 + 1;
+    k = new Float64Array(side * side);
+    for (let dy = -radius; dy <= radius; dy++)
+      for (let dx = -radius; dx <= radius; dx++) {
+        const d = Math.hypot(dx, dy);
+        k[(dy + radius) * side + dx + radius] = d > radius ? 0 : 1 - d / (radius + 1);
+      }
+    kernels.set(radius, k);
+  }
+  return k;
 }
 
-/** Add an amount around a tile into a grid, fading with distance out to a radius and held back by walls. */
-export function spreadInto(
-  ctx: SimContext,
-  grid: Float32Array,
-  cx: number,
-  cy: number,
-  amount: number,
-  radius: number,
-  leak: Leak,
-) {
-  if (!inBounds(cx, cy)) return;
-  const from = ctx.world.zoneAt(cx, cy);
-  for (let y = cy - radius; y <= cy + radius; y++) {
-    for (let x = cx - radius; x <= cx + radius; x++) {
-      if (!inBounds(x, y)) continue;
-      const d = Math.hypot(x - cx, y - cy);
-      if (d > radius) continue;
-      const i = tileIdx(x, y);
-      grid[i] = at(grid, i) + amount * (1 - d / (radius + 1)) * carry(ctx, from, ctx.world.zoneAt(x, y), leak);
-    }
+/** Something spread from a spot into a grid: an amount, fading with distance out to a radius. */
+export type Spread = (grid: Float32Array, cx: number, cy: number, amount: number, radius: number) => void;
+
+/**
+ * A way to spread something into a grid, held back by the walls of the rooms it passes out of and into: all of it
+ * carries within one zone, and from one into another as much as both rooms' walls let through. What each tile's walls
+ * let through is worked out once, so a spreader is for the rooms as they are now.
+ */
+export function spreader(ctx: SimContext, leak: Leak): Spread {
+  const { world } = ctx;
+  const walls = new Float64Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const room = world.room(at(world.zone, i));
+    walls[i] = room ? leak(room) : 1;
   }
+  return (grid, cx, cy, amount, radius) => {
+    if (!inBounds(cx, cy)) return;
+    const from = world.zoneAt(cx, cy);
+    const out = at(walls, tileIdx(cx, cy));
+    const k = kernel(radius);
+    const side = radius * 2 + 1;
+    for (let y = cy - radius; y <= cy + radius; y++) {
+      for (let x = cx - radius; x <= cx + radius; x++) {
+        if (!inBounds(x, y)) continue;
+        const share = at(k, (y - cy + radius) * side + x - cx + radius);
+        if (share === 0) continue;
+        const i = tileIdx(x, y);
+        const carry = at(world.zone, i) === from ? 1 : out * at(walls, i);
+        grid[i] = at(grid, i) + amount * share * carry;
+      }
+    }
+  };
 }
 
 /** The value of a grid at a tile, or a fallback off the map. */
