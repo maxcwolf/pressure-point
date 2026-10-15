@@ -2,11 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.17.0
 
 - **Mishaps.** Every few months something goes wrong, announced three days ahead in a notice at the top of the screen. Pay to prepare for it, or take your chances. Each center but Willow Lane has its own:
   - **A power cut** at The Exchange stops anything with a plug and dims the lights for a day, unless you hire a generator.
-  - **A storm** at Saltmarsh keeps most guests away for two days, with rain over the lot, and breaks a few things as it starts unless the windows are boarded up.
+  - **A storm** at The Boardwalk keeps most guests away for two days, with rain over the lot, and breaks a few things as it starts unless the windows are boarded up.
   - **A big freeze** at High Pines, in winter only, stops the toilets, sinks, drinks and radiators for two days unless the pipes are lagged.
   - **Wasps** at The Orchard Estate keep everyone off the snacks, drinks and bins for two days unless pest control is called.
 - **The announcer calls for every kind of staff** with a recorded line: a Caretaker when the corridors get gross, and a Wellness Consultant, Massage Therapist, Acupuncturist or Reiki Practitioner where a line has nobody to serve it.
