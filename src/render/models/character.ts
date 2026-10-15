@@ -6,7 +6,7 @@ import { HAIR } from '../../core/people';
 import type { Look, VisitorKind } from '../../core/state/types';
 import { owned } from '../disposal';
 import { buildMohawk } from './mohawk';
-import { cached, capsule, cyl, ico, mat, put, rbox, sph, torus, trimShadows } from './parts';
+import { cached, capsule, cyl, ico, joined, mat, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
 
 export interface CharRig {
@@ -95,6 +95,19 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     const beads = put(torso, torus(0.12, 0.016), mat(0x8a5a2c, 0.5), 0, 0.33, 0.04);
     beads.rotation.x = Math.PI / 2 - 0.45;
   }
+  if (role === 'therapist') {
+    // a belt round the waist, shaped to the body, with a pump bottle of massage oil clipped on at the hip
+    const belt = put(torso, torus(0.172, 0.022), mat(0x5a3b28, 0.6), 0, 0.1, 0);
+    belt.rotation.x = Math.PI / 2;
+    belt.scale.set(1.1, 0.92, 1);
+    put(torso, cyl(0.034, 0.034, 0.1, 12), mat(0xd98a2b, 0.25), 0.15, 0.08, 0.135);
+    const pump = joined('lotion pump', [
+      [cyl(0.012, 0.012, 0.03, 8), 0, 0.015, 0],
+      [cyl(0.022, 0.022, 0.016, 10), 0, 0.036, 0],
+      [rbox(0.016, 0.012, 0.045, 0.005), 0, 0.04, 0.03],
+    ]);
+    put(torso, pump, mat(0xf4f1ea, 0.4), 0.15, 0.13, 0.135);
+  }
   if (role === 'practitioner') {
     const chain = put(torso, torus(0.13, 0.012), mat(0xc9963f, 0.3), 0, 0.36, 0.03);
     chain.rotation.x = Math.PI / 2 - 0.5;
@@ -105,7 +118,15 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const makeArm = (x: number) => {
     const arm = new THREE.Group();
     arm.position.set(x, 0.37, 0);
-    put(arm, capsule(0.055, 0.17), top, 0, -0.13, 0);
+    if (role === 'therapist') {
+      // sleeves rolled up past the elbow, ready to work
+      const rolled = joined('rolled sleeve', [
+        [capsule(0.055, 0.06), 0, -0.07, 0],
+        [torus(0.05, 0.022), 0, -0.135, 0, Math.PI / 2],
+      ]);
+      put(arm, rolled, top);
+      put(arm, capsule(0.046, 0.09), skin, 0, -0.2, 0);
+    } else put(arm, capsule(0.055, 0.17), top, 0, -0.13, 0);
     put(arm, sph(0.062, 10), skin, 0, -0.29, 0);
     torso.add(arm);
     return arm;
@@ -161,10 +182,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   if (role === 'caretaker') {
     put(head, cyl(0.2, 0.22, 0.1, 16), accent, 0, 0.18, 0);
     put(head, rbox(0.3, 0.03, 0.2, 0.01), accent, 0, 0.14, 0.2);
-  }
-  if (role === 'therapist') {
-    const band = put(head, torus(0.212, 0.03), accent, 0, 0.07, 0);
-    band.rotation.x = Math.PI / 2 - 0.2;
   }
   if (visitor === 'vip') {
     // dark glasses, a white shirt collar and a gold pin on the lapel

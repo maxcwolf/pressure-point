@@ -1,6 +1,7 @@
 // The building blocks every model is made from: shared shapes, materials and colors.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const matCache = new Map<string, THREE.MeshStandardMaterial>();
 /** The roughness of each shared material with no glow: these differ from one another only in color. */
@@ -60,6 +61,35 @@ export const torus = (r: number, t: number) => cached(`t${r}|${t}`, () => new TH
 /** A shared capsule geometry. */
 export const capsule = (r: number, len: number) =>
   cached(`k${r}|${len}`, () => new THREE.CapsuleGeometry(r, len, 6, 14));
+
+/** A shape for joining with others: where it sits, and how far it is turned about each axis. */
+export type Piece = readonly [
+  shape: THREE.BufferGeometry,
+  x: number,
+  y: number,
+  z: number,
+  rx?: number,
+  ry?: number,
+  rz?: number,
+];
+
+/** Several shapes placed and joined into one, made once and shared, so together they cost a single part to draw. */
+export const joined = (key: string, pieces: readonly Piece[]) =>
+  cached(`j${key}`, () => {
+    // some shapes share their corners through an index and some do not: without one, any can join any other
+    const placed = pieces.map(([shape, x, y, z, rx = 0, ry = 0, rz = 0]) =>
+      (shape.index ? shape.toNonIndexed() : shape.clone()).applyMatrix4(
+        new THREE.Matrix4().compose(
+          new THREE.Vector3(x, y, z),
+          new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)),
+          new THREE.Vector3(1, 1, 1),
+        ),
+      ),
+    );
+    const shape = mergeGeometries(placed, false) as THREE.BufferGeometry | null;
+    if (!shape) throw new Error(`the shapes of ${key} could not be joined`);
+    return shape;
+  });
 
 /** Add a shadow-casting mesh to a parent at a position and return it. `trimShadows` later stops the small ones casting. */
 export function put(
