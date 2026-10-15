@@ -37,7 +37,16 @@ const TOPS = [
 const BOTTOMS = [0x3d405b, 0x5c4b3a, 0x2f4858, 0x6b705c, 0x7f5539, 0x4a4e69, 0x8d99ae];
 
 /** The hair styles, by the number a look keeps. A number already in saves never changes meaning. */
-export const HAIR = { short: 0, bun: 1, long: 2, bald: 3, curls: 4, mohawk: AMANDA.hairStyle, bob: 6, ponytail: 7 } as const;
+export const HAIR = {
+  short: 0,
+  bun: 1,
+  long: 2,
+  bald: 3,
+  curls: 4,
+  mohawk: AMANDA.hairStyle,
+  bob: 6,
+  ponytail: 7,
+} as const;
 
 /** The hair styles women and men wear. Either may have big curls; the mohawk is Amanda Jablonsky's alone. */
 export const WOMEN_HAIR: readonly number[] = [HAIR.bun, HAIR.long, HAIR.curls, HAIR.bob, HAIR.ponytail];
@@ -87,15 +96,14 @@ export function sexOfName(name: string): Sex | undefined {
 
 /**
  * Give a look from before women and men were told apart a sex, from the name if it says, from the hair if not, and
- * failing both from the id; then a hair style to match if theirs does not. Choices come from the id rather than the
- * game's random numbers, so loading a save changes nothing about what happens next.
+ * failing both from the id; then a hair style to match if theirs does not. The mohawk goes to Amanda Jablonsky, whose
+ * save may be older than it, and is taken from anyone else. Choices come from the id rather than the game's random
+ * numbers, so loading a save changes nothing about what happens next.
  */
 export function settleSex(person: { id: number; name: string; look: Partial<Look> & Omit<Look, 'sex' | 'beard'> }) {
   const { look } = person;
   look.beard ??= 0;
-  // a look that already has a sex was made to fit it, Amanda Jablonsky's mohawk and all
-  if (look.sex) return;
-  look.sex =
+  look.sex ??=
     sexOfName(person.name) ??
     (look.hairStyle === HAIR.bun || look.hairStyle === HAIR.long
       ? 'female'
@@ -105,7 +113,8 @@ export function settleSex(person: { id: number; name: string; look: Partial<Look
           ? 'female'
           : 'male');
   const styles = hairFor(look.sex);
-  if (!styles.includes(look.hairStyle)) look.hairStyle = styles[person.id % styles.length] ?? HAIR.short;
+  if (person.name === AMANDA.name) look.hairStyle = AMANDA.hairStyle;
+  else if (!styles.includes(look.hairStyle)) look.hairStyle = styles[person.id % styles.length] ?? HAIR.short;
 }
 
 /** Whether Amanda Jablonsky already works here or is applying. */

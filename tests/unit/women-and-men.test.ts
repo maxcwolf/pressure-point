@@ -53,6 +53,19 @@ describe('looks', () => {
     expect(new Set(men.map((l) => l.hairStyle))).toEqual(new Set(MEN_HAIR));
     expect(new Set(men.map((l) => l.beard))).toEqual(new Set([0, 1, 2]));
   });
+
+  it('never give the mohawk to anyone but Amanda Jablonsky', () => {
+    setSeed(9);
+    expect([...WOMEN_HAIR, ...MEN_HAIR]).not.toContain(HAIR.mohawk);
+    const s = newGame();
+    for (const role of ROLE_ORDER) {
+      for (let i = 0; i < 3000; i++) {
+        s.candidates = [];
+        const c = makeCandidate(s, role);
+        expect(c.look.hairStyle === HAIR.mohawk, c.name).toBe(c.name === AMANDA.name);
+      }
+    }
+  });
 });
 
 describe('applicants', () => {
@@ -127,6 +140,20 @@ describe('a save from before women and men were told apart', () => {
       settleSex(either);
       expect(hairFor(either.look.sex)).toContain(either.look.hairStyle);
     }
+  });
+
+  it('gives Amanda Jablonsky her mohawk, and takes it from anyone else', () => {
+    const amanda = { id: 6, name: AMANDA.name, look: { ...old(HAIR.short), sex: 'female' as const, beard: 0 } };
+    settleSex(amanda);
+    expect(amanda.look.hairStyle).toBe(HAIR.mohawk);
+    for (const sex of ['female', 'male'] as const) {
+      const other = { id: 7, name: 'Unknown Person', look: { ...old(HAIR.mohawk), sex, beard: 0 } };
+      settleSex(other);
+      expect(hairFor(sex)).toContain(other.look.hairStyle);
+    }
+    const unsexed = { id: 8, name: 'Unknown Person', look: old(HAIR.mohawk) };
+    settleSex(unsexed);
+    expect(unsexed.look.hairStyle).not.toBe(HAIR.mohawk);
   });
 
   it('settles everyone on loading, and leaves a look that has a sex alone', () => {

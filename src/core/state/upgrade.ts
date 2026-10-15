@@ -2,7 +2,6 @@
 
 import {
   ACHIEVEMENTS,
-  AMANDA,
   APPLICANT_DAYS,
   type AwardId,
   AWARDS,
@@ -192,10 +191,9 @@ export function upgradeSave(save: GameState) {
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
   movedSoundBath(s);
-  // before women and men were told apart, a look had no sex, and any hair style went with any name
+  // before women and men were told apart, a look had no sex, and any hair style went with any name; and Amanda
+  // Jablonsky's mohawk came later than she did, so in an older save she may have an ordinary haircut
   for (const p of [...s.staff, ...s.candidates, ...s.guests, ...(s.visitors ?? [])]) settleSex(p);
-  // Amanda Jablonsky's mohawk came later than she did: in an older save she may have an ordinary haircut
-  for (const p of [...s.staff, ...s.candidates]) if (p.name === AMANDA.name) p.look.hairStyle = AMANDA.hairStyle;
   for (const it of s.items) {
     it.wear ??= 0;
     it.dirt ??= 0;
