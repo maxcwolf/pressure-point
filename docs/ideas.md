@@ -1,0 +1,11 @@
+# Possible additions
+
+Ideas worth keeping that nobody has decided on yet. Nothing here is planned: an idea moves to [todo.md](todo.md) or [roadmap.md](roadmap.md) once it is chosen.
+
+## Rooms and treatments
+
+- **A signature room at each center,** like Two Point Hospital's single-illness clinics: a room that cures one or two of the center's own conditions, with an animation of its own. For example a Float Tank at The Boardwalk, a Sauna at High Pines, or a cider-press bath at The Orchard Estate. It would give each center more character and add the room-fitting puzzle that much of Two Point's fun comes from. Raised 15 October 2026 when comparing our treatments with Two Point's.
+
+## Staff
+
+- **A Shaman, for psychedelic healing.** Max wants this (15 October 2026); what exactly they do is still to choose. Mushroom and ayahuasca ceremonies, and clearing bad vibes. Other ideas proposed: a cacao ceremony, a drum journey, soul retrieval for burnt-out staff, spirit animal readings, a sweat lodge, blessing a room, a vision quest that brings a guest back as a regular, a ceremony to ward off a mishap, and set and setting (a noisy or gloomy room risks a bad trip).

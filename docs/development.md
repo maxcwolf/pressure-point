@@ -102,4 +102,4 @@ To give an announcement a voice, put the recording in `brand/announcer/`, run `y
 
 How the pieces fit together, and the conventions the code follows, are in [architecture.md](architecture.md).
 
-Issues found but not yet fixed are listed in [known-issues.md](known-issues.md), and planned work in [todo.md](todo.md).
+Issues found but not yet fixed are listed in [known-issues.md](known-issues.md), planned work in [todo.md](todo.md), and ideas not yet decided on in [ideas.md](ideas.md).

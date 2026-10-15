@@ -96,7 +96,7 @@ The outside world takes an interest.
 ## Phase 11: The long game
 
 - **Machine upgrades** [24]: each treatment machine upgraded to be more reliable and effective, paid for and fitted by a caretaker with a Mechanics course. Research [24] can come later, if upgrades alone feel thin.
-- **New rooms** [30, 44]: a Recovery Lounge (some treatments leave guests needing a rest), a Yoga Studio with group classes on a weekly calendar, and a second diagnosis room.
+- **New rooms** [30, 44]: a Recovery Lounge (some treatments leave guests needing a rest), a Qi Gong Studio with group classes on a weekly calendar, and a second diagnosis room.
 - **Regulars** [44]: guests who come back, greeted by name, and grow loyal.
 - **Treatment gags** [31], **a radio** [34] and **game settings** [33] (key rebinding, edge scrolling, autosave interval), fitted in where there is room.
 
