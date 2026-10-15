@@ -567,6 +567,37 @@ test.describe('running a center', () => {
     expect(await game.eval((pp) => pp.state.guests.filter((g) => g.emergency).length)).toBeGreaterThan(3);
   });
 
+  test('a stress outbreak can be taken on, and a stressed guest calmed from their inspector', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(60);
+    await game.eval((pp) => {
+      pp.state.stars = 2;
+      pp.sim.offerOutbreak();
+    });
+    await expect(page.locator('#offer')).toContainText('Stress outbreak');
+    await page.locator('#offer').getByRole('button', { name: 'Accept' }).click();
+    await expect(page.locator('#offer')).toBeEmpty();
+    await expect(page.locator('#objectives .outbreak')).toContainText('calming sessions left');
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    const spot = await game.clickGuest();
+    await expect(page.locator('#inspector')).toContainText('Condition');
+    const calms = await game.eval((pp, name) => {
+      const g = pp.state.guests.find((x) => x.name === name)!;
+      g.stressed = true;
+      g.calmed = false;
+      return pp.state.outbreak!.calms;
+    }, spot.name);
+    await page.locator('#inspector').getByRole('button', { name: /Calm them/ }).click();
+    await expect(page.locator('#inspector')).toContainText('Has had a calming session');
+    await expect(page.locator('#objectives .outbreak')).toContainText(`${calms - 1} calming session`);
+    expect(await game.eval((pp, name) => pp.state.guests.find((x) => x.name === name)!.stressed, spot.name)).toBe(false);
+  });
+
   // the offer used to add "massage" to every technique, so an acupuncture emergency asked for "Cupping massage"
   test('an emergency offer names the treatment as the Treatments menu does', async ({ game, page }) => {
     await game.start();
@@ -1228,7 +1259,8 @@ test.describe('goals along the way', () => {
     await game.eval((pp) => {
       pp.state.nextChallenge = 0;
       pp.state.speed = 1;
-      for (let i = 0; i < 100 && !pp.state.challenge; i++) pp.sim.tick(0.1);
+      // someone sets one as soon as two of the staff have arrived and the center is open
+      for (let i = 0; i < 300 && !pp.state.challenge; i++) pp.sim.tick(0.1);
       pp.state.speed = 0;
     });
     const card = page.locator('#objectives .challenge');

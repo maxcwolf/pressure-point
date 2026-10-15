@@ -60,6 +60,15 @@ export const GENERAL_COURSES: Readonly<Record<GeneralId, GeneralDef>> = {
     days: 5,
     roles: ['caretaker'],
   },
+  smudging: {
+    id: 'smudging',
+    name: 'Smudging',
+    icon: '🌿',
+    desc: 'Clears the bad vibes a failed treatment leaves behind, wafting burning sage through the room.',
+    cost: 600,
+    days: 4,
+    roles: ['caretaker'],
+  },
 };
 
 export const GENERAL_ORDER = Object.keys(GENERAL_COURSES) as GeneralId[];

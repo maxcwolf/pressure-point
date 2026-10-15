@@ -13,13 +13,21 @@ export function feel(g: Guest, id: FeelingId) {
 }
 
 /** Where a review starts from, by how the visit ended, before what they felt along the way. */
-const BASE_STARS: Readonly<Record<VisitEnd, number>> = { healed: 4, failed: 2, stormed: 1, sent: 2, priced: 2 };
+const BASE_STARS: Readonly<Record<VisitEnd, number>> = {
+  healed: 4,
+  failed: 2,
+  stormed: 1,
+  sent: 2,
+  priced: 2,
+  worse: 1,
+};
 
 /** How a visit ended, as a feeling, if it is one. */
 const END_FEELING: Readonly<Partial<Record<VisitEnd, FeelingId>>> = {
   healed: 'healed',
   failed: 'not-healed',
   sent: 'sent-home',
+  worse: 'worse',
 };
 
 /** The stars a guest gives their visit: from how it ended, up half a star for each good feeling and down for each bad. */

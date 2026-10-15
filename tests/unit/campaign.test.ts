@@ -135,6 +135,8 @@ describe('what each center offers', () => {
         windows: [],
         done: true,
         priority: false,
+        vibes: 0,
+        claimedBy: 0,
       });
       let hits = 0;
       for (let i = 0; i < 2000; i++) if (office.has(rollCondition(ctx))) hits++;
@@ -266,6 +268,8 @@ describe('Saltmarsh', () => {
           windows: [],
           done: true,
           priority: false,
+          vibes: 0,
+          claimedBy: 0,
         });
       const found = new Set<string>();
       for (let i = 0; i < 3000; i++) found.add(rollCondition(ctx));

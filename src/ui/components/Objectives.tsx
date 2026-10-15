@@ -24,6 +24,22 @@ function ChallengeCard() {
   );
 }
 
+/** The stress outbreak in progress, if any: calming sessions left, carriers lost so far, and the days left. */
+function OutbreakCard() {
+  const { sim } = useGame();
+  const o = sim.s.outbreak;
+  if (!o) return null;
+  return (
+    <div class="emergency outbreak">
+      <b>😰 Stress outbreak</b>{' '}
+      <span>
+        {`${o.calms} calming session${o.calms === 1 ? '' : 's'} left · ${o.lost}/${o.lostMax} lost · ${wholeDaysLeft(o.deadline - sim.s.day)} days left`}
+      </span>
+      <Bar value={(1 - o.lost / (o.lostMax + 1)) * 100} class="thin bad" />
+    </div>
+  );
+}
+
 /** The objectives for the next star, with the staff challenge and the emergency in progress under them. */
 export function Objectives() {
   const { sim } = useGame();
@@ -57,6 +73,7 @@ export function Objectives() {
         )}
       </ul>
       <ChallengeCard />
+      <OutbreakCard />
       {emergency && (
         <div class="emergency">
           <b>{`🚨 Emergency: ${conditionOf(emergency.condition).name}`}</b>{' '}

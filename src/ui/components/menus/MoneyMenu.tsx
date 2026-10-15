@@ -74,7 +74,7 @@ function Books() {
         </>
       )}{' '}
       <p class="sub">
-        {`Healed ${s.stats.healed} · Failed ${s.stats.failed} · Stormed out ${s.stats.stormed} · Put off by prices ${s.stats.priced} · Sent home ${s.stats.sent} · Salaries are paid at the end of each month. More in Stats.`}
+        {`Healed ${s.stats.healed} · Failed ${s.stats.failed} · Stormed out ${s.stats.stormed} · Put off by prices ${s.stats.priced} · Sent home ${s.stats.sent} · Got worse ${s.stats.worse} · Salaries are paid at the end of each month. More in Stats.`}
       </p>
     </>
   );

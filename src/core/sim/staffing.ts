@@ -20,6 +20,7 @@ import {
   ROLES,
   STAMINA_DRAIN,
   traitOf,
+  VIBES_MORALE,
   WEAR_REPAIR,
   XP_PER_JOB,
 } from '../data';
@@ -45,6 +46,7 @@ import { breakDue } from './policy';
 import { hasItem } from './progress';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
+import { clearVibes, roomToSmudge, smudgeSeconds, smudging, startSmudge, wander } from './vibes';
 
 /** The four tiles beside a tile, for standing next to something. */
 const BESIDE: readonly (readonly [dx: number, dy: number])[] = [
@@ -161,6 +163,7 @@ export function moraleTarget(ctx: SimContext, st: Staff): number {
   const post = ctx.world.item(st.post);
   const room = post && st.state === 'atPost' ? ctx.world.roomOfItem(post) : undefined;
   if (room) target += (prestige(ctx, room) - 2) * 5;
+  if (room && room.vibes > 0) target -= VIBES_MORALE;
   if (hasItem(ctx, 'pool_table')) target += POOL_TABLE_MORALE;
   if (ctx.s.litter.length > 6) target -= 6;
   if (st.promotion) target -= PROMOTION_SULK;
@@ -228,7 +231,12 @@ function leavePost(ctx: SimContext, st: Staff) {
 function dropJob(ctx: SimContext, st: Staff) {
   const job = st.job;
   if (!job) return;
-  const claimed = job.kind === 'litter' ? ctx.s.litter.find((x) => x.id === job.id) : ctx.world.item(job.id);
+  const claimed =
+    job.kind === 'litter'
+      ? ctx.s.litter.find((x) => x.id === job.id)
+      : job.kind === 'smudge'
+        ? ctx.s.rooms.find((r) => r.id === job.id)
+        : ctx.world.item(job.id);
   if (claimed?.claimedBy === st.id) claimed.claimedBy = 0;
   st.job = null;
 }
@@ -312,6 +320,9 @@ function findWork(ctx: SimContext, st: Staff) {
       urgency: number;
     }
     const tasks: Task[] = [];
+    // bad vibes first of all, for a Janitor who knows how to clear them
+    const cloudy = roomToSmudge(ctx, st);
+    if (cloudy && startSmudge(ctx, st, cloudy)) return;
     /** Note a task, ahead of the same kind of thing elsewhere if it is in a priority room. */
     const add = (kind: Job['kind'], id: number, x: number, y: number, urgency: number) => {
       if (!onDuty(st, jobDuty(kind, kind === 'litter' ? undefined : ctx.world.item(id)))) return;
@@ -351,6 +362,9 @@ function findWork(ctx: SimContext, st: Staff) {
       return;
     }
   } else {
+    // a Reiki Practitioner clears bad vibes before taking up a post
+    const cloudy = roomToSmudge(ctx, st);
+    if (cloudy && startSmudge(ctx, st, cloudy)) return;
     let best: Item | null = null;
     let bestScore = -1e9;
     for (const it of s.items) {
@@ -388,6 +402,27 @@ function findWork(ctx: SimContext, st: Staff) {
       if (goTo(ctx, st, x, y)) st.state = 'wander';
     }
   }
+}
+
+/** Walk the room wafting burning sage, until the bad vibes are gone. */
+function smudgeStep(ctx: SimContext, st: Staff, dt: number) {
+  const room = smudging(ctx, st);
+  if (!room) {
+    staffIdle(ctx, st);
+    return;
+  }
+  st.timer -= dt;
+  if (st.timer > 0) {
+    if (!st.path) wander(ctx, st, room);
+    return;
+  }
+  clearVibes(room);
+  st.job = null;
+  st.yearServed++;
+  gainXp(ctx, st, XP_PER_JOB);
+  say(st, '✨', 3);
+  emit(ctx, { type: 'float', text: 'Vibes cleared', x: st.x, y: st.y, kind: 'good' });
+  staffIdle(ctx, st);
 }
 
 /** Move one member of staff forward in time: walking, morale, energy and what they do next. */
@@ -443,6 +478,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       else if (!it.serving && !onDuty(st, stationDuty(it))) staffIdle(ctx, st);
       // free to go, and a priority room is short of someone: off to work there instead
       else if (!it.serving && !inPriorityRoom(ctx, it.x, it.y) && openPriorityPost(ctx, st)) staffIdle(ctx, st);
+      // free to go, and a room has bad vibes that they know how to clear
+      else if (!it.serving && roomToSmudge(ctx, st)) staffIdle(ctx, st);
       else if (breakDue(ctx, st) && !it.serving) {
         st.timer -= dt;
         if (st.timer <= 0) {
@@ -468,8 +505,13 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
     case 'toJob':
       if (arrived) {
         st.state = 'doingJob';
-        st.timer = jobSeconds(st.job?.kind) / janitorSpeed(st);
         st.busy = true;
+        if (st.job?.kind === 'smudge') {
+          st.timer = smudgeSeconds(janitorSpeed(st));
+          say(st, '🌿', 2);
+          break;
+        }
+        st.timer = jobSeconds(st.job?.kind) / janitorSpeed(st);
         if (st.job && st.job.kind !== 'litter') {
           const p = ctx.world.item(st.job.id);
           if (p) st.facing = Math.atan2(p.x + 0.5 - st.x, p.y + 0.5 - st.y);
@@ -477,6 +519,10 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       } else if (!st.path) staffIdle(ctx, st);
       break;
     case 'doingJob':
+      if (st.job?.kind === 'smudge') {
+        smudgeStep(ctx, st, dt);
+        break;
+      }
       st.timer -= dt;
       if (st.timer <= 0) {
         const job = st.job;

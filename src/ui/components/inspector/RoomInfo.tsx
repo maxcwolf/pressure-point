@@ -6,6 +6,7 @@ import type { Item, Room } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
+import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { Stars } from '../common/Stars';
 import { StationInfo } from './StationInfo';
@@ -38,6 +39,29 @@ function CanDeliver({ table }: { table: Item }) {
   );
 }
 
+/** The bad vibes hanging over a room, if any, and whether anyone is coming to clear them. */
+function BadVibes({ room }: { room: Room }) {
+  const { sim } = useGame();
+  if (room.vibes <= 0) return null;
+  const who = sim.staff(room.claimedBy);
+  const able = sim.s.staff.some((st) => st.role === 'practitioner' || st.general.includes('smudging'));
+  return (
+    <div class="vibes">
+      <b>☁️ Bad vibes</b>
+      <Bar value={room.vibes} class="thin bad" />
+      <p class="sub">
+        {`A failed treatment left these behind. Treatments here work less often, and staff here are unsettled. ${
+          who
+            ? `${who.name} is clearing them with a bundle of sage.`
+            : able
+              ? 'Someone who can clear them will be along when they are free.'
+              : 'A Reiki Practitioner can clear them, or a Janitor who has taken the Smudging course.'
+        }`}
+      </p>
+    </div>
+  );
+}
+
 /** A room's details, with its window, door and demolish buttons. */
 export function RoomInfo({ room }: { room: Room }) {
   const { sim, tools } = useGame();
@@ -55,6 +79,7 @@ export function RoomInfo({ room }: { room: Room }) {
       <p class="sub">
         {`${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'} · Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.`}
       </p>{' '}
+      <BadVibes room={room} />{' '}
       {stations.map((i) => (
         <StationInfo key={i.id} item={i} />
       ))}

@@ -11,6 +11,7 @@ import {
   CONDITIONS,
   DIRT_FILTHY,
   DISCIPLINES,
+  EMERGENCY_CONDITION,
   FILTHY_PATIENCE,
   ITEMS,
   LONG_WAIT_PATIENCE,
@@ -20,6 +21,7 @@ import {
   PLEASANT_DRAIN,
   ROOMS,
   SEAT_DRAIN,
+  STRESS_DRAIN,
 } from '../data';
 import { randomLook, randomName } from '../people';
 import { pick, random, rnd } from '../random';
@@ -37,11 +39,13 @@ import { emit, tipOnce } from './events';
 import { feel } from './feelings';
 import { campaignBoost } from './marketing';
 import { goTo, halt, moveAlong } from './movement';
+import { arriveCarrying, carriedOut } from './outbreaks';
 import { countArrival, countVisit } from './records';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
 import { arrivalFactor, impatience } from './twists';
 import { addWear, dirtier } from './upkeep';
+import { worsen } from './worsening';
 
 const GOAL_NAME = {
   reception: 'Reception Desk',
@@ -94,11 +98,15 @@ export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency =
     emergency,
     placed: false,
     feelings: [],
+    health: emergency ? EMERGENCY_CONDITION : 100,
+    stressed: false,
+    calmed: false,
   };
   const [lx, ly] = lobbyTile(ctx.world.plot);
   if (!goTo(ctx, g, lx, ly)) return null;
   s.guests.push(g);
   countArrival(ctx);
+  arriveCarrying(ctx, g);
   return g;
 }
 
@@ -347,6 +355,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   if (g.bubbleT > 0) g.bubbleT -= dt;
   const stiff = g.outcome !== 'healed' && conditionOf(g.condition).visual === 'stiff';
   const arrived = moveAlong(g, dt, stiff ? 1.75 : 2.1);
+  if (worsen(ctx, g, dt)) return;
 
   const waiting = g.state === 'toWait' || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
   if (waiting) {
@@ -356,6 +365,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     if (station && hasGeneral(staffById(ctx, station.staffId), 'bedside')) drain *= BEDSIDE_PATIENCE;
     if (g.pose === 'sit') drain *= seatDrain(ctx, g);
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
+    if (g.stressed) drain *= STRESS_DRAIN;
     g.patience -= drain * dt;
     if (g.patience < LONG_WAIT_PATIENCE) feel(g, 'long-wait');
     if (g.thirst >= 100) feel(g, 'thirsty');
@@ -459,6 +469,7 @@ function stormOut(ctx: SimContext, g: Guest) {
 
 /** Send a guest home. */
 export function leave(ctx: SimContext, g: Guest) {
+  carriedOut(ctx, g);
   release(ctx, g);
   removeFromStations(ctx, g);
   g.goal = 'leave';

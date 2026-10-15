@@ -11,7 +11,7 @@ import { feel, writeReview } from './feelings';
 export const MONTHS_KEPT = 12;
 
 /** How a visit ended, as far as the record is concerned. */
-export type VisitEnd = 'healed' | 'failed' | 'stormed' | 'priced' | 'sent';
+export type VisitEnd = 'healed' | 'failed' | 'stormed' | 'priced' | 'sent' | 'worse';
 
 /** Count a guest arriving. */
 export function countArrival(ctx: SimContext) {
@@ -24,7 +24,7 @@ export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
   const { stats, tally, casebook } = ctx.s;
   stats[end]++;
   tally[end]++;
-  const record = (casebook[g.condition] ??= { healed: 0, failed: 0, stormed: 0, sent: 0, priced: 0 });
+  const record = (casebook[g.condition] ??= { healed: 0, failed: 0, stormed: 0, sent: 0, priced: 0, worse: 0 });
   record[end]++;
   if (end === 'healed' && g.waited < QUICK_DAYS * DAY_SECONDS) feel(g, 'quick');
   writeReview(ctx, g, end);

@@ -33,6 +33,8 @@ const ROOM: Room = {
   windows: [],
   done: false,
   priority: false,
+  vibes: 0,
+  claimedBy: 0,
 };
 
 describe('cursor geometry', () => {

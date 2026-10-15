@@ -8,13 +8,27 @@ import {
   CHALLENGE_GAP_MIN,
   DISCIPLINES,
   FEELINGS,
+  FIRST_OUTBREAK_DAY,
   type Modality,
+  OUTBREAK_GAP_MIN,
   RANK_XP,
   type Role,
   ROLES,
 } from '../data';
 import { defaultPolicy, emptyTally, FIRST_CALL_DAY, FIRST_CHALLENGE_DAY, SAVE_VERSION } from './game';
-import type { Candidate, GameState, Guest, Item, Ledger, MonthRecord, Room, Staff, Stats, Tally } from './types';
+import type {
+  Candidate,
+  CaseRecord,
+  GameState,
+  Guest,
+  Item,
+  Ledger,
+  MonthRecord,
+  Room,
+  Staff,
+  Stats,
+  Tally,
+} from './types';
 
 /** What everyone in a role is qualified in to begin with: their discipline's basic modality. */
 const baseQuals = (role: Role): Modality[] => {
@@ -31,7 +45,17 @@ type OldLedger = Before<Ledger, 'training' | 'interest' | 'bonus' | 'shop' | 'ca
 type OldSave = Before<
   Omit<
     GameState,
-    'staff' | 'candidates' | 'items' | 'rooms' | 'guests' | 'ledger' | 'lastLedger' | 'stats' | 'tally' | 'months'
+    | 'staff'
+    | 'candidates'
+    | 'items'
+    | 'rooms'
+    | 'guests'
+    | 'ledger'
+    | 'lastLedger'
+    | 'stats'
+    | 'tally'
+    | 'months'
+    | 'casebook'
   >,
   | 'announceT'
   | 'loan'
@@ -51,15 +75,18 @@ type OldSave = Before<
   | 'trophies'
   | 'nextApplicant'
   | 'reviews'
-  | 'casebook'
   | 'prices'
   | 'campaigns'
   | 'callOffer'
   | 'nextCall'
+  | 'outbreakOffer'
+  | 'outbreak'
+  | 'nextOutbreak'
 > & {
-  stats: Before<Stats, 'priced' | 'sent' | 'healedBy' | 'emergencies' | 'lastQuit'>;
-  tally?: Before<Tally, 'sent'>;
-  months?: Before<MonthRecord, 'sent'>[];
+  stats: Before<Stats, 'priced' | 'sent' | 'worse' | 'healedBy' | 'emergencies' | 'lastQuit'>;
+  tally?: Before<Tally, 'sent' | 'worse'>;
+  months?: Before<MonthRecord, 'sent' | 'worse'>[];
+  casebook?: Partial<Record<string, Before<CaseRecord, 'worse'>>>;
   staff: Before<
     Staff,
     | 'quals'
@@ -77,8 +104,8 @@ type OldSave = Before<
   >[];
   candidates: Before<Candidate, 'quals'>[];
   items: Before<Item, 'wear' | 'dirt'>[];
-  rooms: Before<Room, 'windows' | 'priority'>[];
-  guests: Before<Guest, 'emergency' | 'placed' | 'feelings'>[];
+  rooms: Before<Room, 'windows' | 'priority' | 'vibes' | 'claimedBy'>[];
+  guests: Before<Guest, 'emergency' | 'placed' | 'feelings' | 'health' | 'stressed' | 'calmed'>[];
   ledger: OldLedger;
   lastLedger: OldLedger;
 };
@@ -110,10 +137,15 @@ export function upgradeSave(save: GameState) {
   for (const r of s.rooms) {
     r.windows ??= [];
     r.priority ??= false;
+    r.vibes ??= 0;
+    r.claimedBy ??= 0;
   }
   for (const g of s.guests) {
     g.emergency ??= false;
     g.placed ??= false;
+    g.health ??= 100;
+    g.stressed ??= false;
+    g.calmed ??= false;
     // a feeling from a newer version means nothing here
     g.feelings = (g.feelings ?? []).filter((f) => Object.hasOwn(FEELINGS, f));
   }
@@ -131,9 +163,13 @@ export function upgradeSave(save: GameState) {
   s.offer ??= null;
   s.emergency ??= null;
   s.nextEmergency ??= s.day + 60;
+  s.outbreakOffer ??= null;
+  s.outbreak ??= null;
+  s.nextOutbreak ??= Math.max(FIRST_OUTBREAK_DAY, s.day + OUTBREAK_GAP_MIN);
   s.options ??= {};
   s.stats.priced ??= 0;
   s.stats.sent ??= 0;
+  s.stats.worse ??= 0;
   s.stats.healedBy ??= {};
   s.stats.emergencies ??= 0;
   s.stats.lastQuit ??= -1;
@@ -141,7 +177,10 @@ export function upgradeSave(save: GameState) {
   s.center ??= 'sandbox';
   s.tally ??= emptyTally();
   s.months ??= [];
-  for (const t of [s.tally, ...s.months]) t.sent ??= 0;
+  for (const t of [s.tally, ...s.months]) {
+    t.sent ??= 0;
+    t.worse ??= 0;
+  }
   s.policy ??= defaultPolicy();
   s.challenge ??= null;
   s.nextChallenge ??= Math.max(FIRST_CHALLENGE_DAY, s.day + CHALLENGE_GAP_MIN);
@@ -149,6 +188,7 @@ export function upgradeSave(save: GameState) {
   s.nextApplicant ??= s.day + APPLICANT_DAYS;
   s.reviews = (s.reviews ?? []).map((r) => ({ ...r, feelings: r.feelings.filter((f) => Object.hasOwn(FEELINGS, f)) }));
   s.casebook ??= {};
+  for (const c of Object.values(s.casebook)) if (c) c.worse ??= 0;
   s.prices ??= {};
   s.campaigns ??= [];
   s.callOffer ??= null;

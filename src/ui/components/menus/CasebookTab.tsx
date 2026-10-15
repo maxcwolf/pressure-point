@@ -24,6 +24,7 @@ export function CasebookTab() {
             <th>Stormed out</th>
             <th>Sent home</th>
             <th>Put off by price</th>
+            <th>Got worse</th>
             <th>Cure rate</th>
           </tr>
         </thead>
@@ -40,6 +41,7 @@ export function CasebookTab() {
                 <td>{c.stormed}</td>
                 <td>{c.sent}</td>
                 <td>{c.priced}</td>
+                <td>{c.worse}</td>
                 <td class={cx(rate !== null && rate < 60 && 'poor')}>{rate === null ? '–' : `${rate}%`}</td>
               </tr>
             );

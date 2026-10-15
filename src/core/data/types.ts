@@ -178,7 +178,7 @@ export interface TraitDef {
 }
 
 /** A course any member of staff (or any in some roles) can take, beyond the treatments of their discipline. */
-export type GeneralId = 'bedside' | 'motivation' | 'stamina' | 'service' | 'maintenance';
+export type GeneralId = 'bedside' | 'motivation' | 'stamina' | 'service' | 'maintenance' | 'smudging';
 
 export interface GeneralDef {
   id: GeneralId;
@@ -315,6 +315,8 @@ export interface ConditionDef {
   visual: Visual;
   /** The only centers guests turn up with it in, for a local ailment. Absent means anywhere. */
   only?: readonly CenterId[];
+  /** How much faster than usual it worsens while they wait. Absent means the usual rate. */
+  worsens?: number;
 }
 
 export type AchievementId =
@@ -380,7 +382,10 @@ export type FeelingId =
   | 'played'
   | 'fine-room'
   | 'pricey'
-  | 'bargain';
+  | 'bargain'
+  | 'worse'
+  | 'bad-vibes'
+  | 'calmed';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
 export interface FeelingDef {

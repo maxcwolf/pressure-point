@@ -34,6 +34,10 @@ export interface Room {
   done: boolean;
   /** Staff fill its stations, and janitors see to it, before anywhere else. */
   priority: boolean;
+  /** The bad vibes a failed treatment left in it, from 0 (none) to 100, until someone clears them. */
+  vibes: number;
+  /** Whoever is on their way to clear its bad vibes. */
+  claimedBy: number;
 }
 
 /** One tile's worth of a room's wall: the tile just inside it, and the direction pointing out. */
@@ -167,9 +171,9 @@ export interface Staff extends CharBase {
   yearServed: number;
 }
 
-/** A chore for a Janitor: the litter or item to see to. */
+/** A chore: the litter or item a Janitor sees to, or the room someone clears of bad vibes. */
 export interface Job {
-  kind: 'litter' | 'water' | 'repair' | 'clean';
+  kind: 'litter' | 'water' | 'repair' | 'clean' | 'smudge';
   id: number;
 }
 
@@ -189,7 +193,7 @@ export type GuestGoal = 'reception' | 'consult' | 'assess' | 'treat' | 'shop' | 
 /** Something a guest breaks off waiting to see to. */
 export type Need = 'drink' | 'eat' | 'toilet' | 'play';
 /** How a guest's visit ended. */
-export type Outcome = 'healed' | 'failed' | 'stormed' | 'sent';
+export type Outcome = 'healed' | 'failed' | 'stormed' | 'sent' | 'worse';
 
 export type GuestState = 'enter' | 'toWait' | 'waiting' | 'called' | 'served' | 'toNeed' | 'need' | 'leaving';
 
@@ -216,6 +220,12 @@ export interface Guest extends CharBase {
   placed: boolean;
   /** What they have felt about their visit so far, each once. */
   feelings: FeelingId[];
+  /** How they are holding up, from 100 down: it worsens while they wait, and at 0 they leave worse off. */
+  health: number;
+  /** Caught the stress going around in an outbreak, and spreading it. */
+  stressed: boolean;
+  /** Given a calming session in an outbreak, so it cannot catch them. */
+  calmed: boolean;
 }
 
 export type Char = Staff | Guest;
@@ -298,6 +308,23 @@ export interface Emergency {
   deadline: number;
 }
 
+/** A stress outbreak: on offer, or in progress, with calming sessions to hand out to the guests carrying it. */
+export interface Outbreak {
+  cause: string;
+  /** Guests it starts with. */
+  seed: number;
+  /** Calming sessions left to hand out. */
+  calms: number;
+  /** Carriers who have left still stressed, and how many may before it counts as a failure. */
+  lost: number;
+  lostMax: number;
+  reward: number;
+  /** Carriers still to be chosen from the next guests to arrive. */
+  pending: number;
+  /** Game day the offer lapses, or the outbreak in progress ends. */
+  deadline: number;
+}
+
 /** Running totals of how guests' visits have gone. */
 export interface Stats {
   healed: number;
@@ -308,6 +335,8 @@ export interface Stats {
   priced: number;
   /** Sent home by the player. */
   sent: number;
+  /** Got worse while they waited, and left. */
+  worse: number;
   arrived: number;
   /** Guests healed, by the discipline that healed them. */
   healedBy: Partial<Record<Discipline, number>>;
@@ -325,6 +354,7 @@ export interface Tally {
   stormed: number;
   priced: number;
   sent: number;
+  worse: number;
   /** Seconds spent waiting, summed over the guests who left this month, and how many they were. */
   waitTotal: number;
   waitCount: number;
@@ -399,6 +429,7 @@ export interface CaseRecord {
   stormed: number;
   sent: number;
   priced: number;
+  worse: number;
 }
 
 /** An award won, for the trophy cabinet. */
@@ -443,6 +474,10 @@ export interface GameState {
   emergency: Emergency | null;
   /** Game day the next emergency offer may appear. */
   nextEmergency: number;
+  /** A stress outbreak on offer, the one in progress, and the day the next may be offered. */
+  outbreakOffer: Outbreak | null;
+  outbreak: Outbreak | null;
+  nextOutbreak: number;
   /** How the center is run: how sure a diagnosis must be, who goes first, and when staff take breaks. */
   policy: Policy;
   /** Optional disciplines switched off for this game (absent means on). */

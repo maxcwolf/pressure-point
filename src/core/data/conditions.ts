@@ -11,6 +11,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'swedish',
     fee: 900,
     visual: 'slump',
+    worsens: 0.7,
   },
   {
     id: 'band',
@@ -65,6 +66,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'stone',
     fee: 1600,
     visual: 'steam',
+    worsens: 1.6,
   },
   {
     id: 'frost',
@@ -155,6 +157,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'electro',
     fee: 1900,
     visual: 'battery',
+    worsens: 1.5,
   },
   {
     id: 'wires',
@@ -173,6 +176,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'usui',
     fee: 1400,
     visual: 'pale',
+    worsens: 1.3,
   },
   {
     id: 'static',
@@ -182,6 +186,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'usui',
     fee: 1450,
     visual: 'static',
+    worsens: 1.3,
   },
   {
     id: 'scattered',
@@ -218,6 +223,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'sound',
     fee: 2150,
     visual: 'gears',
+    worsens: 1.4,
   },
   {
     id: 'blocked',
@@ -256,6 +262,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     fee: 1450,
     visual: 'gull',
     only: ['saltmarsh'],
+    worsens: 1.5,
   },
   {
     id: 'lobstered',
@@ -266,6 +273,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     fee: 950,
     visual: 'sunburn',
     only: ['saltmarsh'],
+    worsens: 0.8,
   },
 ];
 

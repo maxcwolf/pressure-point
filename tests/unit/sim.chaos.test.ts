@@ -154,6 +154,23 @@ const MOVES: Record<string, (sim: Sim) => void> = {
     else if (sim.s.callOffer) sim.declineCall();
     else sim.s.nextCall = sim.s.day;
   },
+  /** Take on a stress outbreak, hand out a calming session, or bring one on. */
+  outbreak: (sim) => {
+    const g = sim.s.guests.length ? pick(sim.s.guests) : undefined;
+    if (sim.s.outbreakOffer) sim.acceptOutbreak();
+    else if (sim.s.outbreak && g) sim.calm(g.id);
+    else sim.offerOutbreak();
+  },
+  /** Leave bad vibes in a room, as a failed treatment would. */
+  vibes: (sim) => {
+    const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
+    if (room) room.vibes = 100;
+  },
+  /** Bring a guest to the brink of getting worse. */
+  worsen: (sim) => {
+    const g = sim.s.guests.length ? pick(sim.s.guests) : undefined;
+    if (g) g.health = Math.min(g.health, 2);
+  },
   /** Put a room first, or back among the rest. */
   priority: (sim) => {
     const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
@@ -188,6 +205,8 @@ describe('a restless player', () => {
       if (s.challenge) expect(Number.isFinite(sim.challengeObjective()!.progress)).toBe(true);
       for (const st of s.staff)
         if (st.state === 'away' || st.state === 'toCall') expect(st.call, st.name).not.toBeNull();
+      for (const g of s.guests) expect(g.health >= 0 && g.health <= 100, g.name).toBe(true);
+      if (s.outbreak) expect(s.outbreak.calms >= 0 && s.outbreak.lost >= 0).toBe(true);
       for (const st of s.staff) {
         expect(st.skill >= 1 && st.skill <= 5, st.name).toBe(true);
         expect(st.off.length < (DUTIES[st.role]?.length ?? 1), `${st.name} has a duty left`).toBe(true);

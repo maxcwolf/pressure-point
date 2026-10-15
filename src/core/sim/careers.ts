@@ -117,9 +117,10 @@ export function stationDuty(it: Item): Duty | null {
   return goal === 'reception' || goal === 'shop' || goal === 'consult' || goal === 'assess' ? goal : null;
 }
 
-/** The duty a Janitor's job is. */
-export function jobDuty(kind: Job['kind'], it: Item | undefined): Duty {
+/** The duty a Janitor's job is, if it is one they can be kept from. */
+export function jobDuty(kind: Job['kind'], it: Item | undefined): Duty | null {
   if (kind === 'water') return it?.type === 'stone_warmer' ? 'stones' : 'plants';
+  if (kind === 'smudge') return null;
   return kind;
 }
 

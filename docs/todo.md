@@ -34,7 +34,7 @@ The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two
 - [x] **Phase 3, staff careers:** experience and promotions, general qualifications, job assignment, a hiring pool that grows, traits you can see.
 - [x] **Phase 4, reading the center:** guest feelings, reviews and reputation in parts, the casebook, overlays. The casebook went in the Stats menu, which now has tabs, rather than the Treatments menu.
 - [x] **Phase 5, the business side:** prices per treatment, a retail counter, marketing, house calls.
-- [ ] **Phase 6, stakes:** a worsening condition, bad vibes, a stress outbreak.
+- [x] **Phase 6, stakes:** a worsening condition, bad vibes cleared with sage, stress outbreaks. Treatment calms a stressed guest as well as a calming session does, and the calming sessions are handed out by clicking, with no one sent to give them.
 - [ ] **Phase 7, comfort:** calm, fresh linens, temperature and staff needs. Then High Pines.
 - [ ] **Phase 8, visitors and rivals:** VIPs and the inspector, the center's standing, a rival center. Then The Orchard Estate.
 - [ ] **Phase 9, events:** a mishap per center.

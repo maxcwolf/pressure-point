@@ -12,6 +12,7 @@ export * from './map';
 export * from './rooms';
 export * from './rules';
 export * from './staff';
+export * from './stakes';
 export * from './text';
 export * from './treatments';
 export * from './types';

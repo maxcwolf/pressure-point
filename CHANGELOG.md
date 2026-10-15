@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **A worsening condition:** every guest has a Condition bar that falls while they wait, faster with some conditions (Stress Head, Flat Battery, Gull Shock) and slower with others. The lower it gets, the less likely their treatment is to work, and if it runs out they go home worse off: a one-star review and a big knock to reputation. Emergency guests arrive already in a bad way. A 🤕 shows over anyone in poor shape.
+- **Bad vibes:** a failed treatment leaves a gloomy cloud over its room. Treatments there work less often and staff working there are unsettled, until a Reiki Practitioner, or a Janitor with the new Smudging course, walks the room wafting a smoldering bundle of sage.
+- **Stress outbreaks** (from the second star): offered like an emergency. Stressed guests sweat and fidget, and stress spreads to anyone waiting close by. Click the ones you spot and calm them with the few sessions you have; if few enough leave still stressed, it pays a bonus.
+- **Got worse** is counted in the casebook, the Stats charts and the Money menu.
+
 ## v0.12.0
 
 - **A Shop Counter** (from the first star): books, crystals, oils and candles for guests to take home. Treated guests stop on their way out, more often and for more the better their visit went, and a receptionist serves them. Keep a receptionist to the front desk or the shop under Duties.

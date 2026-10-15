@@ -36,17 +36,21 @@ export class PeopleLayer {
         rig.pick.userData.charId = c.id;
         rig.pick.userData.charKind = c.kind;
         this.scene.add(rig.group);
+        // the smoke from a bundle of sage hangs in the room, not on whoever is carrying it
+        if (rig.smoke) this.scene.add(rig.smoke);
         this.chars.set(c.id, rig);
       }
       // someone away on a house call is not here to be seen, or clicked
       const away = c.kind === 'staff' && c.state === 'away';
       rig.group.visible = !away;
       rig.pick.visible = !away;
+      if (away && rig.smoke) rig.smoke.visible = false;
       if (!away) poseChar(rig, c, t, dt, this.workStyle(c));
     }
     for (const [id, rig] of this.chars) {
       if (live.has(id)) continue;
       this.scene.remove(rig.group);
+      if (rig.smoke) this.scene.remove(rig.smoke);
       disposeOwned(rig.group);
       this.chars.delete(id);
     }

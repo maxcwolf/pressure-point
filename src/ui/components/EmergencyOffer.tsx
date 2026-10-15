@@ -9,12 +9,14 @@ import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 import { HouseCallOffer } from './HouseCallOffer';
+import { OutbreakOffer } from './OutbreakOffer';
 
-/** The offers waiting on an answer, an emergency over a house call, in one column. */
+/** The offers waiting on an answer, an emergency and a stress outbreak over a house call, in one column. */
 export function EmergencyOffer() {
   return (
     <div id="offer">
       <Emergency />
+      <OutbreakOffer />
       <HouseCallOffer />
     </div>
   );

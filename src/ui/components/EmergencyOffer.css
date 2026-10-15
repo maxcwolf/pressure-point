@@ -88,3 +88,8 @@
   color: #a8322b;
   font-weight: 600;
 }
+
+.offer.outbreak,
+.outbreak-pill {
+  border-color: #8a6fd1;
+}

@@ -5,6 +5,7 @@ import { type Role, ROLES, type Visual } from '../../core/data';
 import type { Look } from '../../core/state/types';
 import { owned } from '../disposal';
 import { cached, capsule, cyl, ico, mat, put, rbox, sph, torus } from './parts';
+import { buildSage, buildSmoke } from './sage';
 
 export interface CharRig {
   group: THREE.Group;
@@ -28,6 +29,10 @@ export interface CharRig {
   blink?: THREE.MeshStandardMaterial;
   /** Everything that only exists to show the symptom, hidden once healed. */
   props: THREE.Object3D[];
+  /** A bundle of sage in the right hand, for those who clear bad vibes, its glowing tip, and the smoke it gives off. */
+  sage?: THREE.Object3D;
+  sageTip?: THREE.Object3D;
+  smoke?: THREE.Group;
   visual: Visual | undefined;
   cured: boolean;
   scale: number;
@@ -354,6 +359,14 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     rig.props.push(put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205));
   }
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
+  if (role === 'practitioner' || role === 'caretaker') {
+    const { bundle, tip } = buildSage();
+    bundle.position.set(0, -0.31, 0.03);
+    armR.add(bundle);
+    rig.sage = bundle;
+    rig.sageTip = tip;
+    rig.smoke = buildSmoke();
+  }
   return rig;
 }
 

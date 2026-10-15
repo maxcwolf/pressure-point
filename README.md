@@ -55,6 +55,7 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 19. Click the **reputation** figure to see what guests are saying, and how the center does on results, experience, value and staff. The **🗺️** button at the top right colors the floor by how pleasant each spot is, guests' patience or needs, staff energy, or upkeep. The **Stats** menu also has a **casebook** of every visit by condition.
 20. From the first star, a **Shop Counter** sells books, crystals, oils and candles to guests on their way out; the better their visit, the likelier they are to buy. The **Money** menu sets each treatment's own **price**, runs **marketing** campaigns, and manages the loan. Now and then a **house call** is offered: send someone out for a day or more, for a fee that rises with their rank.
 21. Now and then a member of staff sets a **challenge** with a deadline, shown under the objectives; meet it for a reward. Each year ends with an **awards ceremony**, and the trophies won fill a **Trophy Cabinet**.
+22. Guests' **condition** worsens while they wait, faster with some conditions; the worse it gets, the less likely the treatment is to work, and if it runs out they go home worse off. A failed treatment leaves **bad vibes** over its room until a Reiki Practitioner, or a Janitor with the Smudging course, clears them with a bundle of sage. From the second star, a **stress outbreak** may be offered: calm the guests you spot sweating and fidgeting before it spreads.
 
 ## Treatments
 

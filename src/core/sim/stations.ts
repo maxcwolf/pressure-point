@@ -41,6 +41,8 @@ import { hasRoom } from './progress';
 import { countVisit } from './records';
 import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments';
 import { addWear } from './upkeep';
+import { addVibes, vibesAt, vibesPenalty } from './vibes';
+import { conditionPenalty } from './worsening';
 
 /** Lower is better. Guests steer toward tables that can actually deliver what they need. */
 export function stationScore(ctx: SimContext, it: Item, g: Guest) {
@@ -96,8 +98,8 @@ export interface Chance {
 
 /**
  * The chance a guest's treatment at this table works if this member of staff gives it now: better with skill, a
- * confident diagnosis and a prestigious room, worse for a hard technique or a tired therapist, and only a fraction
- * of that without the right training or equipment.
+ * confident diagnosis and a prestigious room, worse for a hard technique, a tired therapist, a guest whose condition
+ * has worsened or a room with bad vibes, and only a fraction of that without the right training or equipment.
  */
 export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest): Chance {
   const mod = MODALITIES[conditionOf(g.condition).modality];
@@ -108,7 +110,9 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
       Math.min(1, g.diagnosis) * 0.15 +
       prestigeBonus(ctx, it) -
       mod.difficulty -
-      (staff.energy < 15 ? 0.15 : 0),
+      (staff.energy < 15 ? 0.15 : 0) -
+      conditionPenalty(g.health) -
+      vibesPenalty(vibesAt(ctx, it)),
     0.3,
     0.98,
   );
@@ -251,6 +255,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     else if (problem) feel(g, 'no-kit');
     const room = ctx.world.roomOfItem(it);
     if (room && prestige(ctx, room) >= 4) feel(g, 'fine-room');
+    if (room && room.vibes > 0) feel(g, 'bad-vibes');
     if (treatPrice >= PRICEY) feel(g, 'pricey');
     else if (treatPrice <= BARGAIN) feel(g, 'bargain');
     if (!problem && mod.equipment === 'stone_warmer') {
@@ -263,6 +268,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     g.goal = 'leave';
     if (random() < chance) {
       g.outcome = 'healed';
+      // feeling better takes the stress out of them too
+      g.stressed = false;
       countVisit(ctx, g, 'healed');
       const fee = Math.round(cond.fee * treatPrice);
       earn(ctx, fee, 'treatment', g.x, g.y);
@@ -276,6 +283,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       g.outcome = 'failed';
       countVisit(ctx, g, 'failed');
       changeRep(ctx, -2.5);
+      if (room) addVibes(ctx, room);
       say(g, '💢', 6);
       const why = {
         '': 'Still knotted!',

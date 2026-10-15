@@ -486,6 +486,8 @@ export class World {
       windows: [],
       done: false,
       priority: false,
+      vibes: 0,
+      claimedBy: 0,
     };
     this.s.rooms = [...rooms.filter((x) => x !== replacing), trial];
     this.rebuild(true);

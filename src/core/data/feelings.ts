@@ -165,6 +165,30 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'value',
     lines: ['Great value for money.', 'Cheaper than I expected.'],
   },
+  worse: {
+    id: 'worse',
+    icon: '🤕',
+    text: 'Got worse while waiting',
+    good: false,
+    part: 'results',
+    lines: ['Came in bad, left worse.', 'I got worse in the waiting area. In the waiting area!'],
+  },
+  'bad-vibes': {
+    id: 'bad-vibes',
+    icon: '☁️',
+    text: 'Treated in a room with bad vibes',
+    good: false,
+    part: 'experience',
+    lines: ['Something felt off about that room.', 'The treatment room had a cloud over it. An actual cloud.'],
+  },
+  calmed: {
+    id: 'calmed',
+    icon: '😌',
+    text: 'Calmed down when it all got too much',
+    good: true,
+    part: 'staff',
+    lines: ['They talked me down when I was in a state.', 'Kept their cool when I could not keep mine.'],
+  },
 };
 
 /** The parts of a center's reputation, in the order they are shown. */

@@ -188,3 +188,19 @@
   background: #fbe3e1;
   border-color: #e5484d;
 }
+
+.vibes {
+  margin: 8px 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(91, 74, 107, 0.12);
+}
+
+.vibes p {
+  margin: 4px 0 0;
+}
+
+.calm {
+  display: block;
+  margin-top: 8px;
+}

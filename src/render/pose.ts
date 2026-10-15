@@ -1,10 +1,14 @@
 // How a person is posed each frame: walking, sitting, lying down, working, and showing their symptoms.
 
-import type { Modality } from '../core/data';
+import { type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
 import type { Char } from '../core/state/types';
 import { type CharRig, cureRig } from './models/character';
 import { emojiTexture } from './models/emoji';
+import { driftSmoke } from './models/sage';
+
+/** Whether someone is walking a room with a bundle of sage, clearing it of bad vibes. */
+export const wafting = (c: Char) => c.kind === 'staff' && c.state === 'doingJob' && c.job?.kind === 'smudge';
 
 /** Pose a person for this frame: position, limbs, symptom effects and speech bubble. */
 export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Modality | null) {
@@ -112,6 +116,15 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     armL = -1.2 + Math.sin(t * 7.5 + c.id) * 0.32;
     armR = -1.2 + Math.sin(t * 7.5 + c.id + Math.PI) * 0.32;
   }
+  const smudging = wafting(c);
+  if (smudging) {
+    // the sage held up and swung in slow arcs, the other hand fanning the smoke along
+    armR = -1.15 + Math.sin(t * 4.2 + c.id) * 0.4;
+    armL = -0.75 + Math.sin(t * 4.2 + c.id + 1.2) * 0.3;
+    headX = -0.1;
+  }
+  // stressed in an outbreak: a nervous glance one way and the other
+  if (c.kind === 'guest' && c.stressed && c.pose !== 'lie') headZ += Math.sin(t * 13 + c.id) * 0.12;
   if (visual === 'slump') {
     lean += 0.42;
     headX += 0.2;
@@ -183,11 +196,18 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     });
   }
 
+  if (rig.sage && rig.sageTip && rig.smoke) {
+    rig.sage.visible = smudging;
+    if (smudging) rig.group.updateMatrixWorld(true);
+    driftSmoke(rig.smoke, rig.sageTip, t, smudging);
+  }
+
   // someone about to quit keeps a warning over their head until it is dealt with
   let bubble = c.kind === 'staff' && aboutToQuit(c) ? '⚠️' : c.bubbleT > 0 ? c.bubble : '';
   if (!bubble && c.kind === 'guest') {
     const waiting = c.state === 'waiting' || c.state === 'toWait';
     if (waiting && c.patience < 25) bubble = '💢';
+    else if (waiting && !c.outcome && c.health < POOR_CONDITION) bubble = '🤕';
     else if (waiting && c.bladder >= 95) bubble = '🚻';
     else if (waiting && c.thirst >= 95) bubble = '🍵';
   } else if (!bubble && c.kind === 'staff') {

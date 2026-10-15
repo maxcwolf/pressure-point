@@ -79,6 +79,8 @@ export function createRoom(ctx: SimContext, type: RoomType, r: Rect, door: Room[
     windows: [],
     done: false,
     priority: false,
+    vibes: 0,
+    claimedBy: 0,
   };
   ctx.s.rooms.push(room);
   worldChanged(ctx);

@@ -59,6 +59,8 @@ export class HudState {
   offerAside: number | null = null;
   /** The deadline of the house call put aside to decide on later, if it is. */
   callAside: number | null = null;
+  /** The deadline of the stress outbreak put aside to decide on later, if it is. */
+  outbreakAside: number | null = null;
   /** The dialog over the game, if any. */
   dialog: DialogId | null = null;
   /** The star being celebrated while its dialog is open. */

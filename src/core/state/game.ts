@@ -8,6 +8,7 @@ import {
   DIAGNOSIS_TARGET,
   type Discipline,
   DISCIPLINES,
+  FIRST_OUTBREAK_DAY,
 } from '../data';
 import { refillCandidates } from '../people';
 import type { GameState, Ledger, Policy, Tally, WallSpot } from './types';
@@ -23,6 +24,7 @@ export const emptyTally = (): Tally => ({
   stormed: 0,
   priced: 0,
   sent: 0,
+  worse: 0,
   waitTotal: 0,
   waitCount: 0,
   healedBy: {},
@@ -62,9 +64,9 @@ export const defaultPolicy = (): Policy => ({
  * notices), so that older versions refuse the save rather than crash on it. 4: the karma items and Saltmarsh.
  * 5: policy, room priority and sending guests home. 6: staff challenges and the year-end awards. 7: staff careers
  * and the new traits. 8: guests' feelings, reviews and the casebook. 9: the Shop Counter, prices per treatment,
- * marketing and house calls.
+ * marketing and house calls. 10: guests' worsening condition, bad vibes, stress outbreaks and the Smudging course.
  */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {
@@ -92,6 +94,7 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
       stormed: 0,
       priced: 0,
       sent: 0,
+      worse: 0,
       arrived: 0,
       healedBy: {},
       emergencies: 0,
@@ -108,6 +111,9 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     offer: null,
     emergency: null,
     nextEmergency: 75,
+    outbreakOffer: null,
+    outbreak: null,
+    nextOutbreak: FIRST_OUTBREAK_DAY,
     policy: defaultPolicy(),
     options: {},
     unlockAll: false,

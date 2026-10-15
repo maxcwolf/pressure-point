@@ -48,6 +48,7 @@ import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
+import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
@@ -112,6 +113,7 @@ export class Sim {
       this.slowT = 1;
       updateAmbience(ctx);
       updateEmergency(ctx);
+      updateOutbreak(ctx);
       checkStars(ctx);
       checkAchievements(ctx);
       updateChallenge(ctx);
@@ -414,6 +416,28 @@ export class Sim {
   /** Turn the emergency on offer down. */
   declineEmergency() {
     declineEmergency(this.ctx);
+  }
+
+  // ---- Stress outbreaks -------------------------------------------------------
+
+  /** Put a stress outbreak on the table. */
+  offerOutbreak(): boolean {
+    return offerOutbreak(this.ctx);
+  }
+
+  /** Take on the stress outbreak on offer. */
+  acceptOutbreak() {
+    acceptOutbreak(this.ctx);
+  }
+
+  /** Turn the stress outbreak on offer down. */
+  declineOutbreak() {
+    declineOutbreak(this.ctx);
+  }
+
+  /** Give a guest one of the outbreak's calming sessions. */
+  calm(guestId: number): CalmResult {
+    return calm(this.ctx, guestId);
   }
 
   // ---- Building --------------------------------------------------------------

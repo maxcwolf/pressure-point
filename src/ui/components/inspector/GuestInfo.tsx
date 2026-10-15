@@ -1,6 +1,6 @@
 // The inspector for a guest.
 
-import { conditionOf, FEELINGS, MODALITIES } from '../../../core/data';
+import { conditionOf, FEELINGS, MODALITIES, POOR_CONDITION } from '../../../core/data';
 import { money } from '../../../core/format';
 import type { Guest } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
@@ -23,6 +23,26 @@ function ChanceLine({ guest: g }: { guest: Guest }) {
     <p class={cx('sub', 'chance', poorChance(chance) && 'poor')}>
       {`Chance of success: ${chanceText(chance, def, staff.name)}`}
     </p>
+  );
+}
+
+/** During a stress outbreak, a calming session for this guest: wasted on one who was not stressed. */
+function CalmButton({ guest: g }: { guest: Guest }) {
+  const { sim, audio } = useGame();
+  const o = sim.s.outbreak;
+  if (!o || g.state === 'leaving') return null;
+  if (g.calmed) return <p class="sub calmed">😌 Has had a calming session</p>;
+  return (
+    <Button
+      class="go calm"
+      locked={o.calms <= 0}
+      title="Spot the stressed by their sweating and fidgeting. A session given to a guest who was fine is wasted."
+      onPress={() => {
+        if (!sim.calm(g.id)) audio.play('error');
+      }}
+    >
+      {`😌 Calm them (${o.calms} left)`}
+    </Button>
   );
 }
 
@@ -49,6 +69,10 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
         </>
       )}{' '}
       {g.state !== 'leaving' && <ChanceLine guest={g} />} <p class="status">{guestStatus(g, sim)}</p>{' '}
+      <label title="It worsens while they wait, faster with some conditions. The worse it gets, the less likely their treatment is to work, and if it runs out they go home worse off.">
+        Condition
+        <Bar value={g.health} class={g.health < POOR_CONDITION ? 'bad' : ''} />
+      </label>{' '}
       <label>
         Patience
         <Bar value={g.patience} class={g.patience < 25 ? 'bad' : ''} />
@@ -80,6 +104,7 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
         </>
       )}
       <p class="sub">{`Spent so far: ${money(g.spent)}`}</p>
+      <CalmButton guest={g} />
       {g.state !== 'leaving' && (
         <Button
           class="danger sendhome"

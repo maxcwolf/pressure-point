@@ -239,8 +239,8 @@ test.describe('in a game', () => {
         feelings: feelings as never,
       }));
       pp.state.casebook = {
-        slump: { healed: 9, failed: 2, stormed: 1, sent: 0, priced: 1 },
-        knotted: { healed: 1, failed: 3, stormed: 0, sent: 1, priced: 0 },
+        slump: { healed: 9, failed: 2, stormed: 1, sent: 0, priced: 1, worse: 0 },
+        knotted: { healed: 1, failed: 3, stormed: 0, sent: 1, priced: 0, worse: 0 },
       };
     });
     await game.menu('Stats');

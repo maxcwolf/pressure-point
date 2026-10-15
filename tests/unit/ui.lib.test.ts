@@ -240,8 +240,8 @@ describe('the time left on an emergency offer', () => {
 
 describe('the casebook', () => {
   it('counts every way a visit ended, and the share of treatments that worked', () => {
-    const c = { healed: 6, failed: 2, stormed: 1, sent: 1, priced: 3 };
-    expect(seen(c)).toBe(13);
+    const c = { healed: 6, failed: 2, stormed: 1, sent: 1, priced: 3, worse: 2 };
+    expect(seen(c)).toBe(15);
     expect(cureShare(c)).toBe(75);
     expect(cureShare({ ...c, healed: 0, failed: 0 })).toBeNull();
   });

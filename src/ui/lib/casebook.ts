@@ -4,7 +4,7 @@ import { type ConditionId, conditionOf, type Modality } from '../../core/data';
 import type { CaseRecord } from '../../core/state/types';
 
 /** How many came with a condition and left, however they left. */
-export const seen = (c: CaseRecord) => c.healed + c.failed + c.stormed + c.sent + c.priced;
+export const seen = (c: CaseRecord) => c.healed + c.failed + c.stormed + c.sent + c.priced + c.worse;
 
 /** The share of a condition's treatments that worked, as a whole percentage, or null before any were given. */
 export function cureShare(c: CaseRecord): number | null {

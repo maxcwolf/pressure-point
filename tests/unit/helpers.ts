@@ -162,6 +162,12 @@ export function inconsistencies(sim: Sim): string[] {
     }
     if (it.staffId && sim.staff(it.staffId)?.post !== it.id) out.push(`${it.type} #${it.id} staffed by a stranger`);
   }
+  for (const r of s.rooms) {
+    if (!r.claimedBy) continue;
+    const who = sim.staff(r.claimedBy);
+    if (who?.job?.kind !== 'smudge' || who.job.id !== r.id)
+      out.push(`room #${r.id} is being cleared by #${r.claimedBy}, who is not clearing it`);
+  }
   for (const c of [...s.guests, ...s.staff]) {
     if (!c.claimItem) continue;
     const it = sim.world.item(c.claimItem);
