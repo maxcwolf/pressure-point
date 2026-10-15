@@ -63,6 +63,8 @@ TypeScript is held at 6.x for now: typescript-eslint needs the compiler's JavaSc
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat: ...`, `fix: ...`), in lowercase. commitlint checks each one as you commit, through a Husky hook that `yarn install` sets up, and CI checks every pushed commit again.
 
+Before each commit, a second Husky hook runs ESLint and Prettier over the staged files, fixing what they can and staging the fixes ([lint-staged](https://github.com/lint-staged/lint-staged)), then checks the types of the whole project with `yarn typecheck`. A commit that still has lint or type errors stops there.
+
 ## Code map
 
 | Path                  | What lives there                                                                                                                                                |
