@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.25.0
 
 - **More land.** From the first star, the Money menu's new **Land** tab sells the plots next door: to the west, to the east and out the back, up to four tiles deep at a time. The plots for sale are outlined on the ground with For Sale signs, and the building grows into each one you buy, walls, windows and all. The front stays on the street.
 - **Regulars.** Now and then a guest who enjoyed their visit comes back every few weeks, under their own name and looking just the same, and Reception greets them by name. Good visits make a regular **loyal**, then **devoted**: more patient in line, back sooner, never put off by your prices, and tipping on top of the fee. A bad visit or two and they stop coming. The Stats menu's new **Regulars** tab lists them all, and a regular's inspector says which visit this is.
