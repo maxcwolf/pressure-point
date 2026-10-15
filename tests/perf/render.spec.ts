@@ -54,9 +54,9 @@ test.describe('performance', () => {
     await game.eval((pp) => (pp.state.speed = 0));
     const info = await rendererInfo(page);
     test.info().annotations.push({ type: 'draw calls', description: String(info.calls) });
-    // about 340 when this was written; it was about 410 while every small part cast a shadow, and about 1090 before
-    // the lawn's trees were instanced
-    expect(info.calls).toBeLessThan(400);
+    // about 250 when this was written; about 310 before the still parts of items were merged, about 410 while every
+    // small part cast a shadow, and about 1090 before the lawn's trees were instanced
+    expect(info.calls).toBeLessThan(300);
   });
 
   test('draws a crowd in hardly more draw calls than a few people', async ({ game, page }) => {

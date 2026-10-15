@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 
 import type { ItemType } from '../../../core/data';
+import { mergeStill } from '../merge';
 import { trimShadows } from '../parts';
 import { buildAcuTable } from './acu-table';
 import { buildAirConditioner } from './air-conditioner';
@@ -112,5 +113,6 @@ export function buildItem(type: ItemType): THREE.Group {
   const g = new THREE.Group();
   BUILDERS[type](g);
   trimShadows(g);
+  mergeStill(g, `item:${type}`);
   return g;
 }

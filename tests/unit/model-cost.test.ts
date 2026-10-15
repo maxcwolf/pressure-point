@@ -64,8 +64,9 @@ async function costs() {
 
 describe('the cost of drawing each model', () => {
   it('keeps every model within a few dozen draw calls', async () => {
-    // the heaviest when this was written: a bookcase 56, a koi pond and the needle cabinet 44, a guest 29, staff 23
-    const limit = { Items: 60, Guests: 32, Staff: 26, Scenery: 20 };
+    // the heaviest when this was written: a shop counter 23, a trophy cabinet 21, a guest 29, staff 23 (people in the
+    // game are drawn in batches, so the figures for them here are what one person alone would cost)
+    const limit = { Items: 30, Guests: 32, Staff: 26, Scenery: 20 };
     const over = (await costs()).filter((m) => m.calls > limit[m.group]).map((m) => `${m.id}: ${m.calls}`);
     expect(over).toEqual([]);
   });
@@ -73,9 +74,10 @@ describe('the cost of drawing each model', () => {
   it('keeps every model together within a budget', async () => {
     const all = await costs();
     const total = all.reduce((sum, m) => sum + m.calls, 0);
-    // about 1720 when this was written, and 2530 while every part of every model cast a shadow
+    // about 1390 when this was written, 1780 before the still parts of items were merged, and 2530 while every part
+    // of every model cast a shadow
     const heaviest = all.sort((a, b) => b.calls - a.calls).slice(0, 10);
-    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(1850);
+    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(1500);
   });
 
   it('only casts shadows from parts big enough to show one', async () => {
