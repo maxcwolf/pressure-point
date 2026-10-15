@@ -36,7 +36,16 @@ function coreBoundary(files, leaves) {
 
 export default tseslint.config(
   {
-    ignores: ['dist/', 'dist-electron/', 'release/', 'node_modules/', 'test-results/', 'playwright-report/', '.yarn/'],
+    ignores: [
+      '.claude/',
+      'dist/',
+      'dist-electron/',
+      'release/',
+      'node_modules/',
+      'test-results/',
+      'playwright-report/',
+      '.yarn/',
+    ],
   },
 
   js.configs.recommended,
