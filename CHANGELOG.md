@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **The Recovery Lounge,** a room with no staff that opens at the first star. Deep Tissue, Cranio-sacral, Moxibustion, Electroacupuncture, Chakra Balancing and the Gong Bath now leave a guest needing a rest: they lie back on a **Recliner** for a while before heading home, and leave happier for it. With no free Recliner those treatments work less often, and the guest goes home woozy. A Caretaker changes the Recliners' blankets.
 - **Upgrade treatment equipment.** A treatment table, mat or the Posture Scanner can be upgraded three times from its inspector, a level for each star. Each level makes it wear out more slowly and its treatments work a little more often, and a brass plate on it shows a star for each. A Caretaker with the new **Mechanics** course installs an upgrade once it is bought, closing the station while they work.
 
 ## v0.20.0

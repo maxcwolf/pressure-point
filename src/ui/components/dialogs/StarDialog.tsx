@@ -10,7 +10,7 @@ import { money } from '../../../core/format';
 import { loadCampaign } from '../../../storage/campaign';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { karmaText } from '../../lib/karma';
-import { roomsUnlockedAt, treatmentsUnlockedAt } from '../../lib/unlocks';
+import { newRoomsText, treatmentsUnlockedAt } from '../../lib/unlocks';
 import { Button } from '../common/Button';
 import { StarRow } from '../common/Stars';
 import { Dialog } from './Dialog';
@@ -26,7 +26,7 @@ export function StarDialog() {
   /** Whether a discipline is switched on. */
   const enabled = sim.enabled.bind(sim);
   // with everything unlocked from the start, a star opens nothing new
-  const rooms = sim.s.unlockAll ? [] : roomsUnlockedAt(n, enabled);
+  const rooms = sim.s.unlockAll ? '' : newRoomsText(n, enabled);
   const treatments = sim.s.unlockAll ? [] : treatmentsUnlockedAt(n, enabled);
   // karma comes with a campaign star the first time it is earned; a replay that only matches the best earns none
   // (worked out once, as the dialog opens, since an autosave while it is open records the star)
@@ -38,10 +38,10 @@ export function StarDialog() {
       </div>{' '}
       <h2>{n >= goals.length ? 'Three stars!' : `Star ${n} earned!`}</h2>{' '}
       <p>{`The wellness inspectors were deeply relaxed by what they saw. Here is a ${money(5000 * n)} grant.`}</p>
-      {rooms.length > 0 && (
+      {rooms && (
         <p class="unlock">
           <b>New room:</b>
-          {` ${rooms.join(', ')}. Build one and hire its staff to bring in a new kind of guest.`}
+          {` ${rooms}`}
         </p>
       )}
       {treatments.length > 0 && (

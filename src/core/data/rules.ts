@@ -50,6 +50,11 @@ export const UPGRADE_SUCCESS = 0.03;
 /** How long a Mechanic takes to install an upgrade, in seconds of game time before their speed is counted. */
 export const INSTALL_SECONDS = 20;
 
+/** How long a guest lies back in a Recovery Lounge after a treatment that leaves them needing a rest. */
+export const REST_SECONDS = 15;
+/** Taken off the chance of such a treatment working when there is no free Recliner to rest on afterwards. */
+export const NO_REST_PENALTY = 0.1;
+
 /** Caretakers start repairing equipment at this much wear; at 100 it is broken. */
 export const WEAR_REPAIR = 50;
 /** Caretakers start cleaning at this much grime. */

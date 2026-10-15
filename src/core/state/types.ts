@@ -227,7 +227,8 @@ export type Need = 'drink' | 'eat' | 'toilet' | 'play';
 /** How a guest's visit ended. */
 export type Outcome = 'healed' | 'failed' | 'stormed' | 'sent' | 'worse';
 
-export type GuestState = 'enter' | 'toWait' | 'waiting' | 'called' | 'served' | 'toNeed' | 'need' | 'leaving';
+export type GuestState =
+  'enter' | 'toWait' | 'waiting' | 'called' | 'served' | 'toRest' | 'resting' | 'toNeed' | 'need' | 'leaving';
 
 export interface Guest extends CharBase {
   kind: 'guest';

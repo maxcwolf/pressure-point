@@ -21,6 +21,7 @@ import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { disciplineNote } from '../../lib/delivery';
 import { kitNote } from '../../lib/mishaps';
+import { restNote } from '../../lib/recovery';
 
 /** What a modality treats, who can give it and whether its equipment is in. */
 function ModalityCard({ modality }: { modality: Modality }) {
@@ -46,6 +47,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
       kits.some((i) => sim.world.usable(i)),
       stoppedBy,
     );
+  const rest = restNote(def.rest, sim.hasRoom('recovery'));
   return (
     <div class={cx('card mod', locked && 'locked')}>
       <i>{def.icon}</i>
@@ -58,6 +60,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
         <>
           <em class={qualified ? 'ok' : 'warn'}>{`${qualified ? '✔' : '⚠️'} ${qualified} qualified`}</em>{' '}
           {note && <em class={note.ok ? 'ok' : 'warn'}>{note.text}</em>}{' '}
+          {rest && <em class={rest.ok ? 'ok' : 'warn'}>{rest.text}</em>}{' '}
           <em>{`${waiting} waiting · ${def.seconds}s session`}</em>
         </>
       )}
@@ -91,7 +94,8 @@ export function TreatmentsMenu() {
       <h3>Treatments</h3>
       <p class="sub">
         A diagnosis prescribes a treatment. It works properly only with someone qualified in it and the right equipment
-        in the room. Staff learn new ones in a Training Room.
+        in the room. Staff learn new ones in a Training Room. The harder ones leave guests needing a rest in a Recovery
+        Lounge after.
       </p>
       {DISCIPLINE_ORDER.filter((d) => sim.enabled(d)).map((d) => (
         <DisciplineSection key={d} discipline={d} />

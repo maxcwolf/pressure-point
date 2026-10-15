@@ -67,6 +67,8 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 
 A diagnosis prescribes a treatment. It only works properly with someone qualified in it and, for some, equipment in the same room. An unqualified member of staff will still try, at about a third of the usual success rate. The **Treatments** menu shows what each one treats and whether you can deliver it. Any member of staff can also take a skill course.
 
+Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupuncture, Chakra Balancing and the Gong Bath) leave a guest needing a rest. From the first star, build a **Recovery Lounge** with a **Recliner** for each guest who might need one at once: they lie back on it for a while before heading home. With no free Recliner, those treatments work 10% less often and the guest goes home woozy.
+
 **Massage**, delivered in a Massage Suite by Massage Therapists:
 
 | Modality      | Unlocks | Needs                | Character                           |

@@ -117,7 +117,7 @@ A fifth discipline, wanted on 15 October 2026. A full plan comes before it is bu
 ## Phase 11: The long game
 
 - **Machine upgrades** [24]: each treatment machine upgraded to be more reliable and effective, paid for and fitted by a caretaker with a Mechanics course. Research [24] can come later, if upgrades alone feel thin. Done: three levels for each treatment table, mat and the Posture Scanner, one opening with each star, installed by a Caretaker with the Mechanics course. Each level slows wear and adds 3% to the chance a treatment works.
-- **New rooms** [30, 44]: a Recovery Lounge (some treatments leave guests needing a rest), a Qi Gong Studio with group classes on a weekly calendar, and a second diagnosis room.
+- **New rooms** [30, 44]: a Recovery Lounge (some treatments leave guests needing a rest), a Qi Gong Studio with group classes on a weekly calendar, and a second diagnosis room. The Recovery Lounge is done: no staff, open at the first star, with a Recliner for each guest resting at once. Six of the harder treatments need a rest after, and work 10% less often without a free Recliner.
 - **Regulars** [44]: guests who come back, greeted by name, and grow loyal.
 - **Treatment gags** [31], **a radio** [34] and **game settings** [33] (key rebinding, edge scrolling, autosave interval), fitted in where there is room.
 

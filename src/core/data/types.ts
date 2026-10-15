@@ -4,7 +4,16 @@ import type { Plot } from './map';
 import type { MishapId } from './mishaps';
 
 export type RoomType =
-  'consult' | 'assess' | 'massage' | 'acupuncture' | 'reiki' | 'sound' | 'staffroom' | 'restroom' | 'training';
+  | 'consult'
+  | 'assess'
+  | 'massage'
+  | 'acupuncture'
+  | 'reiki'
+  | 'sound'
+  | 'recovery'
+  | 'staffroom'
+  | 'restroom'
+  | 'training';
 
 /** Whether someone is a woman or a man: their hair and first name follow it. */
 export type Sex = 'female' | 'male';
@@ -68,7 +77,8 @@ export type ItemType =
   | 'air_conditioner'
   | 'linen_hamper'
   | 'fireplace'
-  | 'topiary';
+  | 'topiary'
+  | 'recliner';
 
 export interface RoomDef {
   type: RoomType;
@@ -89,7 +99,8 @@ export interface RoomDef {
   unlock?: number;
 }
 
-export type AccessRole = 'staff' | 'guest' | 'seat' | 'rest' | 'toilet' | 'drink' | 'eat' | 'play' | 'study';
+export type AccessRole =
+  'staff' | 'guest' | 'seat' | 'rest' | 'recover' | 'toilet' | 'drink' | 'eat' | 'play' | 'study';
 
 export type Pose = 'stand' | 'walk' | 'sit' | 'lie';
 
@@ -264,6 +275,8 @@ export interface ModalityDef {
   difficulty: number;
   trainCost: number;
   trainDays: number;
+  /** Leaves a guest needing a lie-down in a Recovery Lounge afterwards, or it works less often. */
+  rest?: boolean;
 }
 
 export interface DisciplineDef {
@@ -449,7 +462,9 @@ export type FeelingId =
   | 'peaceful'
   | 'stale-linens'
   | 'too-cold'
-  | 'too-hot';
+  | 'too-hot'
+  | 'rested'
+  | 'woozy';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
 export interface FeelingDef {

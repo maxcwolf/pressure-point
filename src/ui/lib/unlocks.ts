@@ -1,13 +1,30 @@
 // What a newly earned star opens up.
 
-import { type Discipline, MODALITIES, MODALITY_ORDER, modalityLabel, ROOM_ORDER, ROOMS } from '../../core/data';
+import {
+  type Discipline,
+  MODALITIES,
+  MODALITY_ORDER,
+  modalityLabel,
+  ROOM_ORDER,
+  ROOMS,
+  type RoomType,
+} from '../../core/data';
 import { available } from './catalog';
 
-/** The rooms a star unlocks, as "icon name" labels, leaving out any whose discipline is switched off. */
-export function roomsUnlockedAt(star: number, enabled: (d: Discipline) => boolean): string[] {
-  return ROOM_ORDER.filter((t) => ROOMS[t].unlock === star && available(ROOMS[t].discipline, enabled)).map(
-    (t) => `${ROOMS[t].icon} ${ROOMS[t].name}`,
-  );
+/**
+ * What the star dialog says about the rooms a star unlocks, or '' if none: treatment rooms bring in a new kind of
+ * guest once staffed, and any other room says what it is for.
+ */
+export function newRoomsText(star: number, enabled: (d: Discipline) => boolean): string {
+  const types = ROOM_ORDER.filter((t) => ROOMS[t].unlock === star && available(ROOMS[t].discipline, enabled));
+  /** A room's "icon name" label. */
+  const label = (t: RoomType) => `${ROOMS[t].icon} ${ROOMS[t].name}`;
+  const treatment = types.filter((t) => ROOMS[t].discipline);
+  const parts = treatment.length
+    ? [`${treatment.map(label).join(', ')}. Build one and hire its staff to bring in a new kind of guest.`]
+    : [];
+  for (const t of types.filter((t) => !ROOMS[t].discipline)) parts.push(`${label(t)}: ${ROOMS[t].desc}`);
+  return parts.join(' ');
 }
 
 /** The treatments a star unlocks, as "icon name" labels, leaving out any whose discipline is switched off. */

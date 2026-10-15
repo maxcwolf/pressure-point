@@ -37,6 +37,7 @@ import { buildPoolTable } from './pool-table';
 import { buildPostureScanner } from './posture-scanner';
 import { buildRadiator } from './radiator';
 import { buildReceptionDesk } from './reception-desk';
+import { buildRecliner } from './recliner';
 import { buildReikiAltar } from './reiki-altar';
 import { buildReikiTable } from './reiki-table';
 import { buildRug } from './rug';
@@ -92,6 +93,7 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   crystal_grid: buildCrystalGrid,
   singing_bowls: buildSingingBowls,
   sound_mat: buildSoundMat,
+  recliner: buildRecliner,
   gong: buildGong,
   crystal_bowls: buildCrystalBowls,
   stone_warmer: buildStoneWarmer,

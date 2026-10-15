@@ -74,9 +74,9 @@ export const defaultPolicy = (): Policy => ({
  * marketing and house calls. 10: guests' worsening condition, bad vibes, stress outbreaks and the Smudging course.
  * 11: noise, linens, temperature, staff needs, and the radiator, air conditioner and linen hamper. 12: High Pines,
  * its ailments and the Fireplace. 13: VIPs and the health inspector. 18: sound healing, and Distance Reiki in place
- * of the sound bath. 19: equipment upgrades and the Mechanics course.
+ * of the sound bath. 19: equipment upgrades and the Mechanics course. 20: the Recovery Lounge and its Recliner.
  */
-export const SAVE_VERSION = 19;
+export const SAVE_VERSION = 20;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

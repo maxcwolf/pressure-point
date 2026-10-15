@@ -25,9 +25,9 @@ import { gridAt, spreader } from './spread';
 /** How much of the noise outside a room gets in through its walls: more with each window, up to a point. */
 export const noiseLeak = (room: Room) => Math.min(MAX_LEAK, WALL_DAMPING + room.windows.length * WINDOW_LEAK);
 
-/** The noise a guest makes: a murmur from anyone about the place, more from someone stressed, none from the table. */
+/** The noise a guest makes: a murmur from anyone about the place, more from someone stressed, none lying down. */
 export function guestNoise(g: Guest): number {
-  if (g.state === 'leaving' || g.state === 'served') return 0;
+  if (g.state === 'leaving' || g.state === 'served' || g.state === 'resting') return 0;
   return g.stressed ? STRESSED_NOISE : CROWD_NOISE;
 }
 

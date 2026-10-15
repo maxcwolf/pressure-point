@@ -43,6 +43,10 @@ export function guestStatus(g: Guest, sim: Sim): string {
             : g.goal === 'shop'
               ? 'Buying something to take home'
               : 'Being treated';
+    case 'toRest':
+      return 'Heading to the Recovery Lounge for a lie-down';
+    case 'resting':
+      return 'Resting in the Recovery Lounge';
     case 'toNeed':
     case 'need':
       if (g.needKind === 'toilet') return 'Answering a call of nature';

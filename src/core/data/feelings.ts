@@ -229,6 +229,22 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'experience',
     lines: ['Freezing. Kept my coat on the whole time.', 'Could see my breath in the waiting area.'],
   },
+  rested: {
+    id: 'rested',
+    icon: '🛌',
+    text: 'A lovely lie-down after',
+    good: true,
+    part: 'experience',
+    lines: ['They let me lie down afterwards with a blanket. Bliss.', 'The recovery lounge was the best part.'],
+  },
+  woozy: {
+    id: 'woozy',
+    icon: '😵‍💫',
+    text: 'Sent straight out, still woozy',
+    good: false,
+    part: 'results',
+    lines: ['Walked out like a newborn deer. Nowhere to lie down.', 'They could have let me rest a minute.'],
+  },
   'too-hot': {
     id: 'too-hot',
     icon: '🥵',

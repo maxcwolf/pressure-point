@@ -44,6 +44,7 @@ import { campaignBoost } from './marketing';
 import { goTo, halt, moveAlong } from './movement';
 import { arriveCarrying, carriedOut } from './outbreaks';
 import { countArrival, countVisit } from './records';
+import { updateRest } from './recovery';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
 import { arrivalFactor, cutOff, impatience } from './twists';
@@ -417,6 +418,10 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
       else if (g.timer <= 0 || !g.path) resetGuest(ctx, g);
       break;
     case 'served':
+      break;
+    case 'toRest':
+    case 'resting':
+      if (updateRest(g, dt, arrived)) decide(ctx, g);
       break;
     case 'toNeed':
       if (arrived) {

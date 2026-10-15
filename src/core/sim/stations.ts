@@ -42,6 +42,7 @@ import { feelNoise, itemNoise, noisePenalty } from './noise';
 import { breakDue } from './policy';
 import { hasRoom } from './progress';
 import { countVisit } from './records';
+import { goRest, restPenalty, settleRest } from './recovery';
 import { leadOf, sessionPlaying, stationStaff, updateSession } from './sessions';
 import { expectedPrestige } from './standing';
 import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments';
@@ -112,7 +113,8 @@ export interface Chance {
 /**
  * The chance a guest's treatment at this table works if this member of staff gives it now: better with skill, a
  * confident diagnosis, a prestigious room and upgraded equipment, worse for a hard technique, a tired therapist, a guest whose condition
- * has worsened, a room with bad vibes, noise or stale linens, and only a fraction of that without the right
+ * has worsened, a room with bad vibes, noise or stale linens, nowhere to rest afterwards if it needs it, and only a
+ * fraction of that without the right
  * training or equipment.
  */
 export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest): Chance {
@@ -129,7 +131,8 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
       conditionPenalty(g.health) -
       vibesPenalty(vibesAt(ctx, it)) -
       noisePenalty(itemNoise(ctx, it)) -
-      linensPenalty(it),
+      linensPenalty(it) -
+      restPenalty(ctx, g),
     0.3,
     0.98,
   );
@@ -282,6 +285,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const mod = MODALITIES[cond.modality];
     // the wrong hands or missing equipment: they try anyway, and it rarely works
     const { chance, problem } = successChance(ctx, it, staff, g);
+    // the harder treatments need a lie-down after, if there is a Recliner free
+    const rest = settleRest(ctx, g);
     if (problem === 'unqualified') feel(g, 'unqualified');
     else if (problem) feel(g, 'no-kit');
     const room = ctx.world.roomOfItem(it);
@@ -357,6 +362,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     }
     // a good visit sends some home with something from the shop
     if (wantsToShop(ctx, g)) g.goal = 'shop';
+    if (rest && goRest(ctx, g, rest)) return;
   }
   decide(ctx, g);
 }

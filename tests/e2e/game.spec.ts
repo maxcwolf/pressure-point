@@ -1977,6 +1977,36 @@ test.describe('sound healing', () => {
   });
 });
 
+test.describe('the recovery lounge', () => {
+  test('is locked until the first star, then built for the treatments that need a rest after', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.menu('Rooms');
+    await expect(game.card('Recovery Lounge')).toContainText('Unlocks at star 1');
+    await game.eval((pp) => (pp.state.stars = 1));
+    await game.menu('Treatments');
+    await expect(game.card('Deep Tissue')).toContainText('Rest after: needs a Recovery Lounge');
+    await expect(game.card('Swedish')).not.toContainText('Rest after');
+
+    await game.menu('Rooms');
+    await game.card('Recovery Lounge').click();
+    await game.dragOutRoom(3, 3);
+    await game.clickWall('south');
+    await expect(page.locator('#hint')).toContainText('Place the Recliner inside the room');
+    await game.placeHeld();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#toasts')).toContainText('Recovery Lounge built!');
+    await page.keyboard.press('Escape');
+
+    await game.menu('Treatments');
+    await expect(game.card('Deep Tissue')).toContainText('Rest after, in the Recovery Lounge');
+    expect(game.errors).toEqual([]);
+  });
+});
+
 test.describe('saved games', () => {
   /** Open the save and load screen from the pause menu. */
   const openSaves = async (page: Page) => {

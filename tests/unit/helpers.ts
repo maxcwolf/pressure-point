@@ -47,6 +47,7 @@ export const LAYOUT = {
   acupuncture: { rect: { x: 24, y: 8, w: 4, h: 4 }, door: { x: 25, y: 11, dx: 0, dy: 1 } },
   reiki: { rect: { x: 24, y: 13, w: 4, h: 4 }, door: { x: 24, y: 15, dx: -1, dy: 0 } },
   sound: { rect: { x: 10, y: 10, w: 4, h: 4 }, door: { x: 12, y: 13, dx: 0, dy: 1 } },
+  recovery: { rect: { x: 15, y: 9, w: 3, h: 3 }, door: { x: 17, y: 10, dx: 1, dy: 0 } },
 } as const;
 
 /** Add a furnished Consultation Room at its standard spot. */
@@ -109,6 +110,11 @@ export function addSound(sim: Sim) {
     ['sound_mat', 12, 10],
     ['singing_bowls', 11, 13, 2],
   ]);
+}
+
+/** Add a Recovery Lounge at its standard spot, with its one Recliner. */
+export function addRecovery(sim: Sim) {
+  return buildRoom(sim, 'recovery', LAYOUT.recovery.rect, LAYOUT.recovery.door, [['recliner', 15, 9]]);
 }
 
 /** Hire the most skilled applicant for a role. */

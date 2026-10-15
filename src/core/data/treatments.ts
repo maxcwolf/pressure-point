@@ -28,6 +28,7 @@ export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
     difficulty: 0.05,
     trainCost: 1500,
     trainDays: 6,
+    rest: true,
   },
   sports: {
     id: 'sports',
@@ -69,6 +70,7 @@ export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
     difficulty: 0.22,
     trainCost: 2800,
     trainDays: 9,
+    rest: true,
   },
   needling: {
     id: 'needling',
@@ -110,6 +112,7 @@ export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
     difficulty: 0.1,
     trainCost: 2200,
     trainDays: 7,
+    rest: true,
   },
   electro: {
     id: 'electro',
@@ -124,6 +127,7 @@ export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
     difficulty: 0.2,
     trainCost: 2800,
     trainDays: 9,
+    rest: true,
   },
   usui: {
     id: 'usui',
@@ -177,6 +181,7 @@ export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
     difficulty: 0.24,
     trainCost: 3200,
     trainDays: 10,
+    rest: true,
   },
   sound: {
     id: 'sound',
@@ -217,6 +222,7 @@ export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
     difficulty: 0.08,
     trainCost: 2200,
     trainDays: 7,
+    rest: true,
   },
   crystalbowls: {
     id: 'crystalbowls',

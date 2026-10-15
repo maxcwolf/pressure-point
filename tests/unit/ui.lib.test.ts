@@ -21,7 +21,7 @@ import { pleasantness } from '../../src/ui/lib/overlays';
 import { placedFlags } from '../../src/ui/lib/plan';
 import { courseName, guestStatus, promotionNote, staffStatus } from '../../src/ui/lib/status';
 import { saveFacts, titleBadges } from '../../src/ui/lib/title';
-import { roomsUnlockedAt, treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
+import { newRoomsText, treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
 import { weatherNote } from '../../src/ui/lib/weather';
 import { hire, openCenter, run, runUntil } from './helpers';
 
@@ -120,16 +120,20 @@ describe('what it takes to offer a discipline', () => {
 });
 
 describe('what a star unlocks', () => {
-  it('lists the acupuncture clinic, the sound bath studio and needling at star one', () => {
-    expect(roomsUnlockedAt(1, allOn)).toEqual([
-      `${ROOMS.acupuncture.icon} Acupuncture Clinic`,
-      `${ROOMS.sound.icon} Sound Bath Studio`,
-    ]);
+  it('lists needling at star one', () => {
     expect(treatmentsUnlockedAt(1, allOn).join(' ')).toContain('Needling');
   });
 
+  it('says treatment rooms bring in new guests, and what any other room is for', () => {
+    expect(newRoomsText(1, allOn)).toBe(
+      `${ROOMS.acupuncture.icon} Acupuncture Clinic, ${ROOMS.sound.icon} Sound Bath Studio. Build one and hire its staff to bring in a new kind of guest. ${ROOMS.recovery.icon} Recovery Lounge: ${ROOMS.recovery.desc}`,
+    );
+    expect(newRoomsText(1, massageOnly)).toBe(`${ROOMS.recovery.icon} Recovery Lounge: ${ROOMS.recovery.desc}`);
+    expect(newRoomsText(3, allOn)).toBe('');
+  });
+
   it('leaves out anything from a discipline that is switched off', () => {
-    expect(roomsUnlockedAt(1, massageOnly).join(' ')).not.toContain('Acupuncture');
+    expect(newRoomsText(1, massageOnly)).not.toContain('Acupuncture');
     expect(treatmentsUnlockedAt(1, massageOnly).join(' ')).not.toContain('Needling');
   });
 });

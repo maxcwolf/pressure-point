@@ -738,6 +738,22 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     noise: 1,
     wear: 1,
   },
+  recliner: {
+    type: 'recliner',
+    name: 'Recliner',
+    icon: '🛌',
+    desc: 'A padded recliner and a soft blanket, for a guest to lie back on after a hard treatment. A Caretaker changes the blanket.',
+    cost: 700,
+    w: 1,
+    h: 2,
+    where: 'recovery',
+    access: [{ role: 'recover', x: 1, y: 1, px: 0.5, py: 1.05, face: [0, -1], pose: 'lie', h: 0.32 }],
+    inMenu: true,
+    unlock: 1,
+    wear: 1,
+    linens: true,
+    dirt: 6,
+  },
   linen_hamper: {
     type: 'linen_hamper',
     name: 'Linen Hamper',
@@ -825,4 +841,5 @@ export const ITEM_MENU: readonly ItemType[] = [
   'sound_mat',
   'gong',
   'crystal_bowls',
+  'recliner',
 ];
