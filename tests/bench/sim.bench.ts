@@ -25,24 +25,32 @@ function bigCenter() {
   return { sim, s };
 }
 
-/** Fill the center to this many guests, all patient enough to stay for the timing. */
-function crowd(sim: Sim, guests: number) {
+/**
+ * Let one more guest in, if there are fewer than this many, and keep everyone patient enough to stay for the timing.
+ * One at a time, as the game admits them: a whole crowd let in at once would wait in step, every one of them
+ * rethinking their place in line in the same frame, which never happens in play.
+ */
+function admit(sim: Sim, guests: number) {
   const ctx = (sim as unknown as { ctx: SimContext }).ctx;
-  while (sim.s.guests.length < guests) spawnGuest(ctx);
+  if (sim.s.guests.length < guests) spawnGuest(ctx);
   for (const g of sim.s.guests) g.patience = 100;
 }
 
 it('times the simulation as the crowd grows', () => {
   const results = CROWDS.map((guests) => {
     const { sim } = bigCenter();
-    crowd(sim, guests);
-    run(sim, 5);
     // a frame at top speed: 0.1 s of real time is 0.3 s of game time
     sim.s.speed = 3;
+    // fill the center, untimed, and let it settle
+    for (let i = 0; i < guests + 300; i++) {
+      admit(sim, guests);
+      sim.tick(0.1);
+    }
     const frames = 600;
     const times: number[] = [];
     for (let i = 0; i < frames; i++) {
-      if (i % 100 === 0) crowd(sim, guests);
+      // making up for those who leave, a guest at a time
+      admit(sim, guests);
       const t = performance.now();
       sim.tick(0.1);
       times.push(performance.now() - t);
@@ -50,13 +58,13 @@ it('times the simulation as the crowd grows', () => {
     times.sort((a, b) => a - b);
     /** The time below which this fraction of frames came in, in milliseconds. */
     const pct = (p: number) => Number((times[Math.min(frames - 1, Math.floor(frames * p))] ?? 0).toFixed(3));
-    return { guests, medianMs: pct(0.5), p95Ms: pct(0.95), worstMs: pct(1) };
+    return { guests, inAtEnd: sim.s.guests.length, medianMs: pct(0.5), p95Ms: pct(0.95), worstMs: pct(1) };
   });
   mkdirSync('test-results', { recursive: true });
   writeFileSync('test-results/bench-sim.json', `${JSON.stringify(results, null, 2)}\n`);
   process.stdout.write('\nsimulation time per frame at top speed\n');
   for (const r of results)
     process.stdout.write(
-      `  ${String(r.guests).padStart(4)} guests: median ${r.medianMs} ms, 95% under ${r.p95Ms} ms, worst ${r.worstMs} ms\n`,
+      `  ${String(r.guests).padStart(4)} guests (${r.inAtEnd} in at the end): median ${r.medianMs} ms, 95% under ${r.p95Ms} ms, worst ${r.worstMs} ms\n`,
     );
 });
