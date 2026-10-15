@@ -133,5 +133,6 @@ export const ANNOUNCEMENTS = [
   'A reminder that relaxation is mandatory.',
   'The lost and found now holds one flip-flop and a sense of urgency.',
   'Please breathe in. Further instructions will follow.',
-  'Guests are reminded that the face hole is not a snack hatch.',
+  'Guests are reminded that clothing is mandatory in the hallways.',
+  'Attention male visitors, please do not completely remove your pants while using the urinal.',
 ];

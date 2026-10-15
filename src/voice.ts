@@ -3,12 +3,12 @@
 import acupuncturistAtAcupuncture from './sounds/announcer/acupuncturist-at-acupuncture.m4a';
 import caretakerNeeded from './sounds/announcer/caretaker-needed.m4a';
 import chakrasAligned from './sounds/announcer/chakras-aligned.m4a';
+import clothingMandatory from './sounds/announcer/clothing-mandatory.m4a';
 import doNotTip from './sounds/announcer/do-not-tip.m4a';
 import emergencyAllHands from './sounds/announcer/emergency-all-hands.m4a';
 import emergencyFunRun from './sounds/announcer/emergency-fun-run.m4a';
 import emergencyFurniture from './sounds/announcer/emergency-furniture.m4a';
 import emergencyYoga from './sounds/announcer/emergency-yoga.m4a';
-import faceHole from './sounds/announcer/face-hole.m4a';
 import faceShapedMarks from './sounds/announcer/face-shaped-marks.m4a';
 import healthInspector from './sounds/announcer/health-inspector.m4a';
 import herbalTea from './sounds/announcer/herbal-tea.m4a';
@@ -23,6 +23,7 @@ import receptionistAtReception from './sounds/announcer/receptionist-at-receptio
 import redAura from './sounds/announcer/red-aura.m4a';
 import reikiAtReiki from './sounds/announcer/reiki-at-reiki.m4a';
 import relaxationIsMandatory from './sounds/announcer/relaxation-is-mandatory.m4a';
+import removePantsUrinal from './sounds/announcer/remove-pants-urinal.m4a';
 import stormEnded from './sounds/announcer/storm-ended.m4a';
 import stormIncoming from './sounds/announcer/storm-incoming.m4a';
 import stormStarted from './sounds/announcer/storm-started.m4a';
@@ -44,7 +45,8 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'Please do not tip the therapists. They fall over.': doNotTip,
   'The herbal tea is herbal. That is all we are prepared to say.': herbalTea,
   'Please breathe in. Further instructions will follow.': pleaseBreatheIn,
-  'Guests are reminded that the face hole is not a snack hatch.': faceHole,
+  'Guests are reminded that clothing is mandatory in the hallways.': clothingMandatory,
+  'Attention male visitors, please do not completely remove your pants while using the urinal.': removePantsUrinal,
   'Receptionist needed at the Reception Desk.': receptionistAtReception,
   'Wellness Consultant needed at the Consultation Room.': wellnessAtConsultation,
   'Wellness Consultant needed at the Posture Lab.': wellnessAtPosture,

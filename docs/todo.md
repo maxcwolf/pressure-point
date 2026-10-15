@@ -6,7 +6,7 @@ Tick an item off when it is done, with the commit or release it landed in.
 
 ## Next up
 
-- [ ] **More PA announcer lines.** New filler lines for the announcer, recorded and run through the PA speaker effect like the twelve there are (`yarn announcer`), and recordings for the event lines that have none yet: opening day, staff wanted, seasons, snow, emergencies and stress outbreaks. Listed word for word under [Audio](#audio).
+- [ ] **More PA announcer lines.** New filler lines for the announcer, recorded and run through the PA speaker effect like the thirteen there are (`yarn announcer`), and recordings for the event lines that have none yet: opening day, staff wanted, seasons, snow, emergencies and stress outbreaks. Listed word for word under [Audio](#audio).
 - [x] **Rename the Janitor** to something that fits all they do now (cleaning, repairs, plants, stones, linens and laundry, and sage with the Smudging course). Now the **Caretaker**, which the role was already called in the code, so saved staff carry over; the Janitor of the Year award is now Caretaker of the Year, and saved trophies are renamed with it.
 - [ ] **Mishaps, a second pass.** A storm could flood a restroom, out of action until a Caretaker mops it, as [two-point-gaps.md](two-point-gaps.md) suggests. Not done in Phase 9.
 - [x] **Show which way an item faces when placing it.** Items with a front and a back, such as desks, benches and the Singing Bowls, get a small teal arrow on the floor at their front while held, so it is clear which way they will face before they go down.
@@ -16,6 +16,9 @@ Tick an item off when it is done, with the commit or release it landed in.
 
 Announcer lines that have no recording yet. A recording plays only when its text matches the banner exactly, punctuation included, so record each line word for word. Put each file in `src/sounds/announcer/` as a kebab-case `.m4a`, run it through the PA speaker effect (`yarn announcer`), and add it to `VOICE_LINES` in `src/voice.ts`. When a line is added or changed in the code, update this list.
 
+- Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
+  - [x] Guests are reminded that clothing is mandatory in the hallways.
+  - [x] Attention male visitors, please do not completely remove your pants while using the urinal.
 - Opening day (`src/core/sim/progress.ts`)
   - [ ] The healing center is now open. Please form an orderly line of ailments.
 - Staff wanted (`contextAnnouncement` in `src/core/sim/advisor.ts`)
