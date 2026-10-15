@@ -84,7 +84,7 @@ The outside world takes an interest.
 
 ## Phase 9: Events
 
-- **Mishaps** [41]: one per center, using the twist hooks: a power cut at The Exchange, a storm at Saltmarsh, a freeze at High Pines, and a fire drill anywhere. Each warns first, can be prepared for, and has a sandbox switch. Done: wasps at The Orchard Estate too, and the sandbox has the power cut.
+- **Mishaps** [41]: one per center, using the twist hooks: a power cut at The Exchange, a storm at Saltmarsh, a freeze at High Pines, and a fire drill anywhere. Each warns first, can be prepared for, and has a sandbox switch. Done: wasps at The Orchard Estate too, and the sandbox has the power cut. The fire drill was dropped, so Willow Lane has no mishap.
 
 ## Phase 10: Building tools
 

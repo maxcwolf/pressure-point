@@ -38,13 +38,13 @@ function ModalityCard({ modality }: { modality: Modality }) {
   const waiting = s.guests.filter((g) => g.goal === 'treat' && conditionOf(g.condition).modality === modality).length;
   const kit = def.equipment ? ITEMS[def.equipment] : null;
   const kits = s.items.filter((i) => i.type === def.equipment);
-  const stopped = kits.some((i) => sim.world.stoppedByMishap(i));
+  const stoppedBy = s.mishap && kits.some((i) => sim.world.stoppedByMishap(i)) ? MISHAPS[s.mishap.kind] : undefined;
   const note =
     kit &&
     kitNote(
       kit.name,
       kits.some((i) => sim.world.usable(i)),
-      stopped ? MISHAPS[s.mishap?.kind ?? 'drill'] : undefined,
+      stoppedBy,
     );
   return (
     <div class={cx('card mod', locked && 'locked')}>

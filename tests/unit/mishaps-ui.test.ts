@@ -62,7 +62,7 @@ describe('how a mishap looks', () => {
     expect(lightLevel(power)).toBe(POWER_CUT_LIGHT);
     expect(lightLevel({ ...power, prepared: true })).toBe(1);
     expect(lightLevel({ ...newMishap(0, 'storm'), started: true })).toBe(STORM_LIGHT);
-    expect(lightLevel({ ...newMishap(0, 'drill'), started: true })).toBe(1);
+    expect(lightLevel({ ...newMishap(0, 'wasps'), started: true })).toBe(1);
   });
 
   it('draws the rain as streaks slanting in the wind, falling faster than snow', () => {

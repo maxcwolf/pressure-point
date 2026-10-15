@@ -4,12 +4,11 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
-- **Mishaps.** Every few months something goes wrong, announced three days ahead in a notice at the top of the screen. Pay to prepare for it, or take your chances. Each center has its own, and a fire drill can come anywhere:
+- **Mishaps.** Every few months something goes wrong, announced three days ahead in a notice at the top of the screen. Pay to prepare for it, or take your chances. Each center but Willow Lane has its own:
   - **A power cut** at The Exchange stops anything with a plug and dims the lights for a day, unless you hire a generator.
   - **A storm** at Saltmarsh keeps most guests away for two days, with rain over the lot, and breaks a few things as it starts unless the windows are boarded up.
   - **A big freeze** at High Pines, in winter only, stops the toilets, sinks, drinks and radiators for two days unless the pipes are lagged.
   - **Wasps** at The Orchard Estate keep everyone off the snacks, drinks and bins for two days unless pest control is called.
-  - **A fire drill** stops every station for a day and costs the guests waiting some patience. Rehearse it and it is over in a few hours.
 - An item out of action says so in its inspector and the Treatments menu, the advisor says what is stopped rather than asking for it, and a sandbox switch turns mishaps off.
 
 ## v0.16.0

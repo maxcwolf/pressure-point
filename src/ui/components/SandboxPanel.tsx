@@ -144,7 +144,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
         <SettingRow
           icon="🚨"
           name="Mishaps"
-          desc="Power cuts, storms, freezes, wasps and fire drills, each warned of a few days ahead."
+          desc="Power cuts, storms, freezes and wasps, each warned of a few days ahead."
           on={settings.mishaps}
           onToggle={() => {
             change(() => {

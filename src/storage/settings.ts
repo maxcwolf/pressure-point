@@ -47,7 +47,7 @@ export interface SandboxSettings {
   visits: boolean;
   /** Whether a rival center opens across the street. */
   rival: boolean;
-  /** Whether mishaps happen: power cuts, storms, freezes, wasps and fire drills. */
+  /** Whether mishaps happen: power cuts, storms, freezes and wasps. */
   mishaps: boolean;
 }
 

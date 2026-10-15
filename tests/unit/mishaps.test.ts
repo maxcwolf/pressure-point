@@ -5,10 +5,10 @@ import {
   MISHAP_FIRST_DAY,
   MISHAP_GAP_DAYS,
   MISHAP_NOTICE_DAYS,
+  MISHAP_RETRY_DAYS,
   type MishapId,
   MISHAPS,
   mishapStopsType,
-  OWN_MISHAP_CHANCE,
 } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import { createContext } from '../../src/core/sim/context';
@@ -17,7 +17,6 @@ import {
   chooseMishap,
   mishapArrivals,
   mishapDaysLeft,
-  mishapOn,
   newMishap,
   prepareMishap,
   updateMishaps,
@@ -26,7 +25,7 @@ import { arrivalFactor } from '../../src/core/sim/twists';
 import { newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { openCenter, run, runUntil, toasts } from './helpers';
+import { openCenter, runUntil, toasts } from './helpers';
 
 /** An open center with mishaps switched on, and a context on it. */
 function withMishaps(seed = 1) {
@@ -45,25 +44,22 @@ const WINTER_DAY = 15;
 const SUMMER_DAY = 200;
 
 describe('which mishap comes', () => {
-  it("is the center's own most of the time, and a fire drill the rest", () => {
-    const s = newGame('exchange');
-    expect(chooseMishap(s, 0)).toBe('power');
-    expect(chooseMishap(s, OWN_MISHAP_CHANCE - 0.01)).toBe('power');
-    expect(chooseMishap(s, OWN_MISHAP_CHANCE)).toBe('drill');
-    expect(chooseMishap(newGame('saltmarsh'), 0)).toBe('storm');
-    expect(chooseMishap(newGame('orchard'), 0)).toBe('wasps');
+  it("is the center's own", () => {
+    expect(chooseMishap(newGame('exchange'))).toBe('power');
+    expect(chooseMishap(newGame('saltmarsh'))).toBe('storm');
+    expect(chooseMishap(newGame('orchard'))).toBe('wasps');
   });
 
-  it('is always a fire drill at a center with none of its own', () => {
-    expect(chooseMishap(newGame('willow'), 0)).toBe('drill');
+  it('is none at a center with none of its own', () => {
+    expect(chooseMishap(newGame('willow'))).toBeNull();
   });
 
   it('is a freeze only in winter', () => {
     const s = newGame('highpines');
     s.day = WINTER_DAY;
-    expect(chooseMishap(s, 0)).toBe('freeze');
+    expect(chooseMishap(s)).toBe('freeze');
     s.day = SUMMER_DAY;
-    expect(chooseMishap(s, 0)).toBe('drill');
+    expect(chooseMishap(s)).toBeNull();
   });
 });
 
@@ -92,20 +88,17 @@ describe('a mishap announced', () => {
 });
 
 describe('what a mishap stops', () => {
-  it('is its own list of items, or every station for a fire drill, and nothing for a storm', () => {
+  it('is its own list of items, and nothing for a storm', () => {
     expect(mishapStopsType(MISHAPS.power, 'stim_unit', false)).toBe(true);
     expect(mishapStopsType(MISHAPS.power, 'massage_table', false)).toBe(false);
     expect(mishapStopsType(MISHAPS.freeze, 'toilet', false)).toBe(true);
     expect(mishapStopsType(MISHAPS.wasps, 'snack_machine', false)).toBe(true);
-    expect(mishapStopsType(MISHAPS.drill, 'massage_table', false)).toBe(true);
-    expect(mishapStopsType(MISHAPS.drill, 'bench', false)).toBe(false);
     expect(mishapStopsType(MISHAPS.storm, 'massage_table', false)).toBe(false);
   });
 
-  it('is nothing once prepared for, except a fire drill, which is only shorter', () => {
+  it('is nothing once prepared for', () => {
     expect(mishapStopsType(MISHAPS.power, 'stim_unit', true)).toBe(false);
     expect(mishapStopsType(MISHAPS.freeze, 'toilet', true)).toBe(false);
-    expect(mishapStopsType(MISHAPS.drill, 'massage_table', true)).toBe(true);
   });
 
   it('takes items out of action only once it has started, and stops a radiator heating', () => {
@@ -118,18 +111,6 @@ describe('what a mishap stops', () => {
     expect(sim.world.stoppedByMishap(radiator)).toBe(true);
     s.mishap.prepared = true;
     expect(sim.world.usable(radiator), 'a generator hired').toBe(true);
-  });
-
-  it('sends staff from a stopped station until it is over, then back to it', () => {
-    const { sim, s, therapist, ctx } = withMishaps();
-    runUntil(sim, () => therapist.state === 'atPost', 120);
-    s.mishap = dueToday(s.day, 'drill');
-    updateMishaps(ctx);
-    expect(mishapOn(s)?.id).toBe('drill');
-    runUntil(sim, () => therapist.state !== 'atPost', 10);
-    run(sim, MISHAPS.drill.days * 6 + 2);
-    expect(s.mishap).toBeNull();
-    runUntil(sim, () => therapist.state === 'atPost', 120);
   });
 });
 
@@ -151,6 +132,23 @@ describe('the run of a mishap', () => {
     expect(s.mishap?.starts).toBe(s.day + MISHAP_NOTICE_DAYS);
     const events = drainEvents(ctx);
     expect(events).toContainEqual({ type: 'announce', text: MISHAPS[s.mishap!.kind].warning });
+  });
+
+  it('never comes at a center with none of its own, and waits for winter for a freeze', () => {
+    const { s, ctx } = withMishaps();
+    s.center = 'willow';
+    s.day = s.nextMishap = MISHAP_FIRST_DAY;
+    updateMishaps(ctx);
+    expect(s.mishap).toBeNull();
+    expect(s.nextMishap).toBe(MISHAP_FIRST_DAY);
+    s.center = 'highpines';
+    s.day = s.nextMishap = SUMMER_DAY;
+    updateMishaps(ctx);
+    expect(s.mishap).toBeNull();
+    expect(s.nextMishap).toBe(SUMMER_DAY + MISHAP_RETRY_DAYS);
+    s.day = s.nextMishap = WINTER_DAY + 360;
+    updateMishaps(ctx);
+    expect(s.mishap?.kind).toBe('freeze');
   });
 
   it('starts on its day, ends after its days, and sets when the next may come', () => {
@@ -189,25 +187,9 @@ describe('the run of a mishap', () => {
     updateMishaps(prepared.ctx);
     expect(prepared.s.items.filter((it) => it.wear >= 100)).toEqual([]);
   });
-
-  it('costs waiting guests patience in an unrehearsed fire drill', () => {
-    const { sim, s, ctx } = withMishaps();
-    runUntil(sim, () => s.guests.length >= 2, 300);
-    for (const g of s.guests) g.patience = 80;
-    s.mishap = dueToday(s.day, 'drill');
-    updateMishaps(ctx);
-    for (const g of s.guests) expect(g.patience).toBe(80 - MISHAPS.drill.patience!);
-  });
 });
 
 describe('the advisor in a mishap', () => {
-  it('says the stations are stopped by a fire drill, not that the center has no Reception Desk', () => {
-    const { s, ctx } = withMishaps();
-    s.mishap = { ...newMishap(s.day, 'drill'), started: true };
-    expect(advice(ctx)).not.toContain('place a Reception Desk');
-    expect(advice(ctx)).toContain('fire drill');
-  });
-
   it('says a power cut has stopped the Stone Warmer, not that one is needed', () => {
     const { sim, s, ctx, therapist } = withMishaps();
     s.stars = 2;
@@ -239,15 +221,14 @@ describe('the advisor in a mishap', () => {
 });
 
 describe('preparing for a mishap', () => {
-  it('costs its price, and makes a fire drill shorter', () => {
+  it('costs its price, once only', () => {
     const { s, ctx } = withMishaps();
-    s.mishap = newMishap(s.day, 'drill');
+    s.mishap = newMishap(s.day, 'power');
     const money = s.money;
     expect(prepareMishap(ctx)).toBe(true);
-    expect(s.money).toBe(money - MISHAPS.drill.prepare.cost);
-    expect(s.ledger.building).toBeGreaterThanOrEqual(MISHAPS.drill.prepare.cost);
+    expect(s.money).toBe(money - MISHAPS.power.prepare.cost);
+    expect(s.ledger.building).toBeGreaterThanOrEqual(MISHAPS.power.prepare.cost);
     expect(s.mishap.prepared).toBe(true);
-    expect(s.mishap.ends).toBe(s.mishap.starts + MISHAPS.drill.preparedDays);
     expect(prepareMishap(ctx), 'once only').toBe(false);
   });
 

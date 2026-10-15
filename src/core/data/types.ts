@@ -497,7 +497,7 @@ export interface CenterDef {
   picky?: { fee: number; expects: number };
   /** How much more often than usual the health inspector calls. */
   inspections?: number;
-  /** The mishap of its own that comes now and then, besides a fire drill. */
+  /** The mishap of its own that comes now and then, if any. */
   mishap?: MishapId;
   /** The weather outside through the year. */
   climate: Climate;
