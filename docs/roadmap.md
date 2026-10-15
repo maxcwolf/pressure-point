@@ -93,6 +93,26 @@ The outside world takes an interest.
 - **Camera rotation** [19]: turn in steps, with the walls facing the camera cut away.
 - **More land** [15]: buy an adjoining plot to grow the building. The largest piece of work here.
 
+## Sound Healing
+
+A fourth discipline, decided on 15 October 2026, built alongside Phase 10.
+
+- **A Sound Bath Studio and a Sound Healer,** opening at High Pines: at its first star there, and at the second at The Orchard Estate.
+- **Group sessions:** guests lie on mats while one healer plays for them all, so one healer serves several guests at once. The same machinery serves the Qi Gong Studio's classes later.
+- **Five techniques:** Singing Bowls (moved from reiki, where it was the Sound Bath), Tuning Forks, Gong Bath, Crystal Bowls and Overtone Chanting. Reiki gets **Distance Reiki** in its place.
+- **Noise both ways:** a gong carries to the rooms nearby, and a sound bath goes badly beside the arcade.
+
+## The Shaman
+
+A fifth discipline, wanted on 15 October 2026. A full plan comes before it is built. Chosen so far:
+
+- **Psychedelic ceremonies:** mushrooms and ayahuasca, with animations to match, and set and setting: a noisy, dirty or gloomy room risks a bad trip.
+- **Spiritual Extraction,** an exorcism, with a funny animation.
+- **A sweat lodge,** announced over the speakers as a sweat shop before the announcer corrects herself.
+- **Clearing bad vibes,** better than sage does.
+- **Other ideas liked:** a cacao ceremony, a drum journey, soul retrieval for burnt-out staff, spirit animal readings, blessing a room, a vision quest that brings a guest back as a regular, a ceremony to ward off a mishap, and integration in the Recovery Lounge after a ceremony.
+- **The gift shop sells psychedelic mushrooms** on the quiet, the shop counter doing a little business under the counter.
+
 ## Phase 11: The long game
 
 - **Machine upgrades** [24]: each treatment machine upgraded to be more reliable and effective, paid for and fitted by a caretaker with a Mechanics course. Research [24] can come later, if upgrades alone feel thin.
