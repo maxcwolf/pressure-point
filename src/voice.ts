@@ -27,6 +27,7 @@ import removePantsUrinal from './sounds/announcer/remove-pants-urinal.m4a';
 import stormEnded from './sounds/announcer/storm-ended.m4a';
 import stormIncoming from './sounds/announcer/storm-incoming.m4a';
 import stormStarted from './sounds/announcer/storm-started.m4a';
+import sweatShopOpen from './sounds/announcer/sweat-shop-open.m4a';
 import vipVisiting from './sounds/announcer/vip-visiting.m4a';
 import wellnessAtConsultation from './sounds/announcer/wellness-at-consultation.m4a';
 import wellnessAtPosture from './sounds/announcer/wellness-at-posture.m4a';
@@ -56,6 +57,7 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'Caretaker needed. The corridors are getting gross.': caretakerNeeded,
   'The power company will be working on the lines this week. Expect a power cut.': powerOutSoon,
   'The power is out. Anything with a plug is now a very expensive ornament.': powerOut,
+  'The sweat shop... I mean, sweat lodge, is now open.': sweatShopOpen,
   'A VIP will be visiting in five days. Look busy.': vipVisiting,
   'The health inspector is on the way. Hide the sage.': healthInspector,
   'A storm is coming in off the sea later this week. Batten down the hatches.': stormIncoming,

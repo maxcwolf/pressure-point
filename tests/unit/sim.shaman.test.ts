@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { BAD_TRIP_REP, CENTERS, type ConditionId, CONDITIONS, MODALITIES, ROOMS } from '../../src/core/data';
-import { badTrip, settingPenalty } from '../../src/core/sim/ceremonies';
+import { badTrip, settingPenalty, SWEAT_LODGE_OPEN } from '../../src/core/sim/ceremonies';
 import type { SimContext } from '../../src/core/sim/context';
 import { Sim } from '../../src/core/sim/sim';
 import { successChance } from '../../src/core/sim/stations';
@@ -108,7 +108,7 @@ describe('treating guests in the lodge', () => {
       expect(sim.deliveryProblem(mat, shaman, MODALITIES[m]), m).toBe('no-equipment');
     expect(sim.deliveryProblem(mat, shaman, MODALITIES.reading)).toBe('');
     const { x, y } = LAYOUT.lodge.rect;
-    expect(sim.placeItem('rattle', x, y, 0)).not.toBeNull();
+    expect(sim.placeItem('rattle', x + 2, y, 0)).not.toBeNull();
     expect(sim.deliveryProblem(mat, shaman, MODALITIES.extraction)).toBe('');
   });
 });
@@ -131,7 +131,7 @@ describe('set and setting', () => {
     s.stars = 3;
     shaman.quals = ['reading', 'mushroom'];
     const { x, y } = LAYOUT.lodge.rect;
-    expect(sim.placeItem('mushroom_altar', x, y, 0)).not.toBeNull();
+    expect(sim.placeItem('mushroom_altar', x + 2, y, 0)).not.toBeNull();
     runUntil(sim, () => s.guests.length > 0, 300);
     const g = s.guests[0]!;
     g.diagnosis = 1;
@@ -166,7 +166,7 @@ describe('set and setting', () => {
     shaman.quals = ['reading', 'mushroom'];
     addRecovery(sim);
     const { x, y } = LAYOUT.lodge.rect;
-    expect(sim.placeItem('mushroom_altar', x, y, 0)).not.toBeNull();
+    expect(sim.placeItem('mushroom_altar', x + 2, y, 0)).not.toBeNull();
     let rested = false;
     for (let i = 0; i < 900 && !rested; i++) {
       for (const g of s.guests) if (g.diagnosis === 0) g.condition = 'midlife';
@@ -176,6 +176,21 @@ describe('set and setting', () => {
     expect(rested).toBe(true);
     expect(s.reviews.some((r) => r.feelings.includes('good-trip') || r.feelings.includes('bad-trip'))).toBe(true);
     expect(inconsistencies(sim)).toEqual([]);
+  });
+});
+
+describe('the first Sweat Lodge', () => {
+  it('is announced as a sweat shop, corrected, once a game', () => {
+    const { sim } = withLodge(8);
+    const { x, y } = LAYOUT.lodge.rect;
+    run(sim, 1);
+    sim.drain();
+    expect(sim.placeItem('sweat_lodge', x + 3, y, 0)).not.toBeNull();
+    run(sim, 1);
+    const said = sim.drain().filter((e) => e.type === 'announce' && e.text === SWEAT_LODGE_OPEN);
+    expect(said).toHaveLength(1);
+    run(sim, 5);
+    expect(sim.drain().some((e) => e.type === 'announce' && e.text === SWEAT_LODGE_OPEN)).toBe(false);
   });
 });
 
@@ -214,10 +229,9 @@ describe('a long session with the Shaman', () => {
   it.each([1, 2])('stays healthy for half an hour of play (seed %i)', (seed) => {
     const { sim, s } = withLodge(seed);
     s.stars = 3;
-    for (const t of ['rattle', 'mushroom_altar'] as const) {
-      const { x, y } = LAYOUT.lodge.rect;
-      sim.placeItem(t, t === 'rattle' ? x : x + 2, y + (t === 'rattle' ? 0 : 2), 0);
-    }
+    const { x, y } = LAYOUT.lodge.rect;
+    expect(sim.placeItem('rattle', x + 2, y, 0)).not.toBeNull();
+    expect(sim.placeItem('mushroom_altar', x + 4, y + 2, 0)).not.toBeNull();
     let healed = 0;
     for (let second = 0; second < 1800; second++) {
       if (s.offer) sim.acceptEmergency();

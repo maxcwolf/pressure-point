@@ -50,7 +50,7 @@ export const LAYOUT = {
   recovery: { rect: { x: 15, y: 9, w: 3, h: 3 }, door: { x: 17, y: 10, dx: 1, dy: 0 } },
   // where the Training Room goes, so not alongside one
   qigong: { rect: { x: 5, y: 11, w: 4, h: 4 }, door: { x: 8, y: 12, dx: 1, dy: 0 } },
-  lodge: { rect: { x: 3, y: 15, w: 4, h: 3 }, door: { x: 6, y: 16, dx: 1, dy: 0 } },
+  lodge: { rect: { x: 3, y: 15, w: 6, h: 3 }, door: { x: 8, y: 16, dx: 1, dy: 0 } },
 } as const;
 
 /** Add a furnished Consultation Room at its standard spot. */
@@ -130,11 +130,14 @@ export function addQigong(sim: Sim) {
   ]);
 }
 
-/** Add a Ceremony Lodge in the corner by the front: the Ceremony Mat with the Shaman's cushion to its left, and the Ember Bowl. */
+/**
+ * Add a Ceremony Lodge in the corner by the front: the Ceremony Mat with the Shaman's cushion to its left, the Ember
+ * Bowl, and room at the far end for a Sweat Lodge.
+ */
 export function addLodge(sim: Sim) {
   return buildRoom(sim, 'lodge', LAYOUT.lodge.rect, LAYOUT.lodge.door, [
     ['ceremony_mat', 4, 15],
-    ['ember_bowl', 6, 17],
+    ['ember_bowl', 3, 15],
   ]);
 }
 

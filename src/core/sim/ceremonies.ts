@@ -6,7 +6,7 @@ import { BAD_TRIP_REP, type ModalityDef, SETTING_WEIGHT, TRIP_DISCOMFORT } from 
 import type { Guest, Item } from '../state/types';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
-import { emit, tipOnce } from './events';
+import { announceOnce, emit, tipOnce } from './events';
 import { feel } from './feelings';
 import { addVibes } from './vibes';
 
@@ -51,4 +51,14 @@ export function badTrip(ctx: SimContext, g: Guest, it: Item) {
     'A guest had a bad trip. Psychedelic ceremonies depend on set and setting: keep the Ceremony Lodge calm, clean, beautiful and comfortably warm.',
     'bad',
   );
+}
+
+/** What the speakers say when the first Sweat Lodge opens, catching the slip a moment too late. */
+export const SWEAT_LODGE_OPEN = 'The sweat shop... I mean, sweat lodge, is now open.';
+
+/** Announce the first Sweat Lodge in a finished Ceremony Lodge, once a game, once the center is open. */
+export function announceSweatLodge(ctx: SimContext) {
+  if (!ctx.s.open) return;
+  if (!ctx.s.items.some((it) => it.type === 'sweat_lodge' && ctx.world.roomOfItem(it)?.done)) return;
+  announceOnce(ctx, 'sweat-shop', SWEAT_LODGE_OPEN);
 }

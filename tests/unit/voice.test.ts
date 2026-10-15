@@ -13,6 +13,7 @@ import {
   VISIT_NOTICE_DAYS,
 } from '../../src/core/data';
 import { CARETAKER_WANTED, staffWanted } from '../../src/core/sim/advisor';
+import { SWEAT_LODGE_OPEN } from '../../src/core/sim/ceremonies';
 import { emergencyNews } from '../../src/core/sim/emergencies';
 import { VOICE_LINES, voiceFor } from '../../src/voice';
 
@@ -23,7 +24,15 @@ function spokenLines(): string[] {
     .map((type) => staffWanted({ type }));
   const mishaps = Object.values(MISHAPS).flatMap((m) => [m.warning, m.start, m.end]);
   const emergencies = EMERGENCY_CAUSES.map(emergencyNews);
-  return [...ANNOUNCEMENTS, ...Object.values(VISIT_NEWS), ...stations, CARETAKER_WANTED, ...mishaps, ...emergencies];
+  return [
+    ...ANNOUNCEMENTS,
+    ...Object.values(VISIT_NEWS),
+    ...stations,
+    CARETAKER_WANTED,
+    ...mishaps,
+    ...emergencies,
+    SWEAT_LODGE_OPEN,
+  ];
 }
 
 describe('the announcer', () => {
@@ -60,6 +69,7 @@ describe('the announcer', () => {
     expect(voiceFor(MISHAPS.storm.start)).toMatch(/storm-started.*\.m4a$/);
     expect(voiceFor(MISHAPS.storm.end)).toMatch(/storm-ended.*\.m4a$/);
     expect(voiceFor(CARETAKER_WANTED)).toMatch(/caretaker-needed.*\.m4a$/);
+    expect(voiceFor(SWEAT_LODGE_OPEN)).toMatch(/sweat-shop-open.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.vip)).toMatch(/vip-visiting.*\.m4a$/);
     expect(voiceFor(VISIT_NEWS.inspector)).toMatch(/health-inspector.*\.m4a$/);
     expect(voiceFor(emergencyNews('The city fun run turned out to be an unfun run.'))).toMatch(

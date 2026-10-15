@@ -60,6 +60,7 @@ import {
 } from './building';
 import { acceptCall, callFee, declineCall, updateCalls, whoCanGo } from './calls';
 import { fullyTrained, promote, reject, setDuty, updateApplicants, updateHabits } from './careers';
+import { announceSweatLodge } from './ceremonies';
 import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
 import {
@@ -156,6 +157,7 @@ export class Sim {
     for (const v of [...s.visitors]) updateVisitor(ctx, v, dt);
     decayItems(ctx, dt);
     fadeVibes(ctx, dt);
+    announceSweatLodge(ctx);
 
     this.slowT -= dt;
     if (this.slowT <= 0) {

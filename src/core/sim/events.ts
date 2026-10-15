@@ -46,3 +46,10 @@ export function tipOnce(ctx: SimContext, id: string, text: string, kind: Tone = 
   ctx.s.seenTips.push(id);
   toast(ctx, text, kind, about);
 }
+
+/** Say something over the speakers, but only the first time it comes up in a game. */
+export function announceOnce(ctx: SimContext, id: string, text: string) {
+  if (ctx.s.seenTips.includes(id)) return;
+  ctx.s.seenTips.push(id);
+  emit(ctx, { type: 'announce', text });
+}
