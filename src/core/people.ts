@@ -1,6 +1,7 @@
 // Making up people: how they look, what they are called and what a job applicant offers.
 
 import {
+  AMANDA,
   CAMEO_CHANCE,
   CAMEO_NAMES,
   DISCIPLINES,
@@ -46,7 +47,11 @@ export function randomLook(): Look {
 export const randomName = () =>
   random() < CAMEO_CHANCE ? pick(CAMEO_NAMES) : `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`;
 
-/** Make up a job applicant for a role. More stars bring more skilled ones. */
+/** Whether Amanda Jablonsky already works here or is applying. */
+export const amandaAround = (s: GameState) =>
+  s.staff.some((st) => st.name === AMANDA.name) || s.candidates.some((c) => c.name === AMANDA.name);
+
+/** Make up a job applicant for a role. More stars bring more skilled ones, and now and then a familiar face. */
 export function makeCandidate(s: GameState, role: Role): Candidate {
   const skill = clamp(Math.round(rnd(0.6, 3.4 + s.stars * 0.6)), 1, 5);
   const traits: TraitId[] = [];
@@ -63,6 +68,20 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   }
   const look = randomLook();
   look.top = ROLES[role].uniform;
+  if (role === 'therapist' && !amandaAround(s) && random() < AMANDA.chance) {
+    const best = Math.max(skill, AMANDA.minSkill);
+    const hers = [...AMANDA.quals];
+    return {
+      id: s.nextId++,
+      name: AMANDA.name,
+      role,
+      skill: best,
+      salary: fairSalary(role, best, traits, hers),
+      traits,
+      quals: hers,
+      look,
+    };
+  }
   const salary = fairSalary(role, skill, traits, quals);
   return { id: s.nextId++, name: randomName(), role, skill, salary, traits, quals, look };
 }

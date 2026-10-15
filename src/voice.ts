@@ -1,10 +1,15 @@
 // The announcer's recorded lines, each matched to the text it says on the announcement banner.
 
 import chakrasAligned from './sounds/announcer/chakras-aligned.m4a';
+import doNotTip from './sounds/announcer/do-not-tip.m4a';
+import faceHole from './sounds/announcer/face-hole.m4a';
 import faceShapedMarks from './sounds/announcer/face-shaped-marks.m4a';
+import herbalTea from './sounds/announcer/herbal-tea.m4a';
 import humAlong from './sounds/announcer/hum-along.m4a';
 import knotsNotContagious from './sounds/announcer/knots-not-contagious.m4a';
 import lostAndFound from './sounds/announcer/lost-and-found.m4a';
+import pleaseBreatheIn from './sounds/announcer/please-breathe-in.m4a';
+import redAura from './sounds/announcer/red-aura.m4a';
 import relaxationIsMandatory from './sounds/announcer/relaxation-is-mandatory.m4a';
 import whaleSong from './sounds/announcer/whale-song.m4a';
 
@@ -17,6 +22,11 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'Guests leaving face-shaped marks on the towels will be charged.': faceShapedMarks,
   'A reminder that relaxation is mandatory.': relaxationIsMandatory,
   'The lost and found now holds one flip-flop and a sense of urgency.': lostAndFound,
+  'Would the owner of a red aura please move it from the fire exit.': redAura,
+  'Please do not tip the therapists. They fall over.': doNotTip,
+  'The herbal tea is herbal. That is all we are prepared to say.': herbalTea,
+  'Please breathe in. Further instructions will follow.': pleaseBreatheIn,
+  'Guests are reminded that the face hole is not a snack hatch.': faceHole,
 };
 
 /** The recording of an announcement, if the announcer has recorded it. */

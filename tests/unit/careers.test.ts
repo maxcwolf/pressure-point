@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  AMANDA,
   APPLICANT_DAYS,
   BEDSIDE_PATIENCE,
   GENERAL_COURSES,
@@ -11,6 +12,7 @@ import {
   RANK_XP,
   STAMINA_DRAIN,
 } from '../../src/core/data';
+import { amandaAround, makeCandidate } from '../../src/core/people';
 import {
   applicantCap,
   cheeredUp,
@@ -27,6 +29,7 @@ import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
 import { courseSpeed, janitorSpeed, moraleTarget } from '../../src/core/sim/staffing';
 import { serviceSeconds } from '../../src/core/sim/stations';
+import { newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { addTraining, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
@@ -311,5 +314,26 @@ describe('a save from before staff careers', () => {
     const up = old as GameState;
     expect(up.staff[0]).toMatchObject({ xp: RANK_XP[2], promotion: false, general: [], off: [] });
     expect(up.nextApplicant).toBeGreaterThan(up.day);
+  });
+});
+
+describe('Amanda Jablonsky', () => {
+  it('applies now and then as a massage therapist of three stars or more, trained in all but Sports and Hot Stone', () => {
+    const s = newGame();
+    s.candidates = [];
+    const applicants = Array.from({ length: 2000 }, () => makeCandidate(s, 'therapist'));
+    const amanda = applicants.find((c) => c.name === AMANDA.name);
+    expect(amanda?.skill).toBeGreaterThanOrEqual(3);
+    expect([...(amanda?.quals ?? [])].sort()).toEqual(['cranio', 'deep', 'swedish']);
+    // never for another role
+    for (let i = 0; i < 500; i++) expect(makeCandidate(s, 'consultant').name).not.toBe(AMANDA.name);
+  });
+
+  it('only ever turns up once at a time', () => {
+    const s = newGame();
+    s.candidates = [];
+    s.candidates.push({ ...makeCandidate(s, 'therapist'), name: AMANDA.name });
+    for (let i = 0; i < 2000; i++) expect(makeCandidate(s, 'therapist').name).not.toBe(AMANDA.name);
+    expect(amandaAround(s)).toBe(true);
   });
 });

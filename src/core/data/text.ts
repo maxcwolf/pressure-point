@@ -87,6 +87,9 @@ export const LAST_NAMES = [
 
 /** Full names borrowed from Tim and Eric, mixed in among the generated ones. */
 export const CAMEO_NAMES = [
+  'Max Wolf',
+  'Tanner Costin',
+  'Katie Maverick',
   'Rang Dipkin',
   'Bilb Ono',
   'Hosta Mohogey',

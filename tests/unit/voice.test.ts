@@ -12,6 +12,11 @@ describe('the announcer', () => {
 
   it('finds the recording for a line, and none for a line not recorded', () => {
     expect(voiceFor('A reminder that relaxation is mandatory.')).toMatch(/relaxation-is-mandatory.*\.m4a$/);
-    expect(voiceFor('Please breathe in. Further instructions will follow.')).toBeUndefined();
+    expect(voiceFor('Please breathe in. Further instructions will follow.')).toMatch(/please-breathe-in.*\.m4a$/);
+    expect(voiceFor('Summer is here, and so are the crowds.')).toBeUndefined();
+  });
+
+  it('has recorded every one of the filler lines', () => {
+    for (const line of ANNOUNCEMENTS) expect(voiceFor(line), line).toBeDefined();
   });
 });
