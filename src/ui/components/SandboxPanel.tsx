@@ -130,6 +130,17 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
             });
           }}
         />
+        <SettingRow
+          icon="🏪"
+          name="Rival center"
+          desc="A franchise across the street that holds sales, hires away unhappy staff and competes for Center of the Year."
+          on={settings.rival}
+          onToggle={() => {
+            change(() => {
+              saveSandbox({ ...settings, rival: !settings.rival });
+            });
+          }}
+        />
       </ul>
       <button class="go start" onClick={onStart}>
         Start building

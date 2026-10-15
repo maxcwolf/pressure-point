@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **The center's standing.** The center climbs through five grades, from Back-Room Practice through Wellness Studio, Wellness Center and Healing Center to Healing Institute, on points for its rooms, how fine they are, and its staff and their ranks. Each grade brings more guests, more and better applicants, and guests who expect finer treatment rooms; a room too plain for the grade lets them down. A grade once reached is kept. See it in the Stats menu under Standing.
+- **A rival across the street.** A ZenMart opens a few weeks in, with a storefront over the road. It grows steadily, holds sales that draw away guests unless your prices come down, offers jobs to staff whose morale is low (cheer them up within five days, or they go), and competes for a new award, **Center of the Year**. A sandbox switch turns it off.
+
 ## v0.15.0
 
 - **VIPs** write ahead, from the first star, then tour three to five rooms and judge them by their own tastes: one cares most about decor, another about cleanliness, peace and quiet, the temperature or working equipment. A delighted VIP leaves a reward; a disappointed one costs reputation.

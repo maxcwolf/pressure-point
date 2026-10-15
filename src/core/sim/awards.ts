@@ -8,6 +8,7 @@ import {
   AWARDS,
   DAY_SECONDS,
   DAYS_PER_MONTH,
+  RIVAL_NAME,
   type Role,
 } from '../data';
 import { money } from '../format';
@@ -15,6 +16,8 @@ import type { AwardResult, GameState, MonthRecord, Staff } from '../state/types'
 import type { SimContext } from './context';
 import { changeRep, netOf } from './economy';
 import { emit } from './events';
+import { rivalOpen, rivalPoints } from './rival';
+import { standingPoints } from './standing';
 
 /** Months in a year. */
 export const YEAR_MONTHS = 12;
@@ -61,8 +64,17 @@ function busiest(s: GameState, roles: readonly Role[]): Staff | undefined {
 /** A percentage, whole. */
 const pct = (x: number) => `${Math.round(x)}%`;
 
-/** How the center did for one award in a year (counting from 1): won or not, and why. */
-export function judge(s: GameState, id: AwardId, year: number, t: YearTotals): AwardResult {
+/** The center's standing points against the rival's, for Center of the Year. */
+export interface Contest {
+  ours: number;
+  theirs: number;
+}
+
+/**
+ * How the center did for one award in a year (counting from 1): won or not, and why. Center of the Year is judged on
+ * the contest with the rival, and lost without one.
+ */
+export function judge(s: GameState, id: AwardId, year: number, t: YearTotals, contest?: Contest): AwardResult {
   const later = year - 1;
   /** A result, with how the center did. */
   const result = (won: boolean, note: string, winner?: Staff): AwardResult => ({
@@ -122,6 +134,13 @@ export function judge(s: GameState, id: AwardId, year: number, t: YearTotals): A
       if (!best) return result(false, 'No Caretaker to give it to');
       return result(best.yearServed >= bar, `${best.name}: ${best.yearServed} jobs done, ${bar} needed`, best);
     }
+    case 'center-of-the-year': {
+      if (!contest) return result(false, 'No rival to beat');
+      return result(
+        contest.ours > contest.theirs,
+        `Standing ${contest.ours} against ${RIVAL_NAME}'s ${contest.theirs}`,
+      );
+    }
   }
 }
 
@@ -132,7 +151,12 @@ export function judge(s: GameState, id: AwardId, year: number, t: YearTotals): A
 export function holdAwards(ctx: SimContext, year: number) {
   const s = ctx.s;
   const totals = yearTotals(s.months.slice(-YEAR_MONTHS));
-  const results = AWARD_ORDER.map((id) => judge(s, id, year, totals));
+  // Center of the Year is contested only once the rival is open
+  const contest = rivalOpen(s) ? { ours: standingPoints(ctx).total, theirs: rivalPoints(s) } : undefined;
+  const results = AWARD_ORDER.filter((id) => id !== 'center-of-the-year' || contest).map((id) =>
+    judge(s, id, year, totals, contest),
+  );
+  if (contest && !results.some((r) => r.award === 'center-of-the-year' && r.won)) s.rival.trophies++;
   for (const r of results) {
     if (!r.won) continue;
     const prize = AWARDS[r.award].prize;

@@ -149,6 +149,8 @@ export interface Staff extends CharBase {
   off: Duty[];
   /** The rooms they are assigned to work in, or none to work anywhere. */
   rooms: number[];
+  /** The day by which they will take the rival's job offer unless cheered up, or 0 for no offer. */
+  offer: number;
   /** The house call they are on, if any. */
   call: Call | null;
   salary: number;
@@ -474,6 +476,20 @@ export interface AwardResult {
 }
 
 /** A year-end awards ceremony. */
+/** The rival center across the street: when it has a sale on, and what it has done to the center so far. */
+export interface Rival {
+  /** The day it opened, or null until it does. */
+  opened: number | null;
+  /** The day its sale ends, or 0 when none is on, and the day the next may start. */
+  saleUntil: number;
+  nextSale: number;
+  /** The day it next tries to hire someone away. */
+  nextPoach: number;
+  /** Staff it has hired away, and Center of the Year awards it has won. */
+  poached: number;
+  trophies: number;
+}
+
 export interface Ceremony {
   year: number;
   results: AwardResult[];
@@ -580,6 +596,12 @@ export interface GameState {
   nextVip: number;
   nextInspection: number;
   visitsOn: boolean;
+  /** The highest grade of standing the center has reached, from 0: it never goes back down. */
+  grade: number;
+  /** The franchise across the street. */
+  rival: Rival;
+  /** Whether there is a rival at all: a sandbox setting. */
+  rivalOn: boolean;
   /** The last year-end awards ceremony, and every award won. */
   ceremony: Ceremony | null;
   trophies: Trophy[];

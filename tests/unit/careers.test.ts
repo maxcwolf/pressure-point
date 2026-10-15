@@ -228,15 +228,18 @@ describe('duties', () => {
 });
 
 describe('the hiring pool', () => {
-  it('grows with the stars, a new applicant at a time', () => {
+  it('grows with the stars and the standing, a new applicant at a time', () => {
     const { s } = openCenter(1);
     const ctx = createContext(s);
     expect(applicantCap(s)).toBe(3);
     s.stars = 2;
     expect(applicantCap(s)).toBe(5);
     s.stars = 9;
-    expect(applicantCap(s)).toBe(6);
+    expect(applicantCap(s)).toBe(8);
     s.stars = 0;
+    s.grade = 4;
+    expect(applicantCap(s), 'a Healing Institute').toBe(5);
+    s.grade = 0;
     s.nextApplicant = s.day;
     const before = s.candidates.length;
     // the role with the fewest goes first: after hiring, that is the role hired for

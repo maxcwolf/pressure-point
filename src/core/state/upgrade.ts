@@ -19,7 +19,7 @@ import {
   VIP_FIRST_DAY,
   VIP_GAP_DAYS,
 } from '../data';
-import { defaultPolicy, emptyTally, FIRST_CALL_DAY, FIRST_CHALLENGE_DAY, SAVE_VERSION } from './game';
+import { defaultPolicy, emptyTally, FIRST_CALL_DAY, FIRST_CHALLENGE_DAY, newRival, SAVE_VERSION } from './game';
 import type {
   Candidate,
   CaseRecord,
@@ -94,6 +94,9 @@ type OldSave = Before<
   | 'nextVip'
   | 'nextInspection'
   | 'visitsOn'
+  | 'grade'
+  | 'rival'
+  | 'rivalOn'
 > & {
   stats: Before<Stats, 'priced' | 'sent' | 'worse' | 'healedBy' | 'emergencies' | 'lastQuit'>;
   tally?: Before<Tally, 'sent' | 'worse'>;
@@ -113,6 +116,7 @@ type OldSave = Before<
     | 'general'
     | 'off'
     | 'rooms'
+    | 'offer'
     | 'call'
     | 'thirst'
     | 'hunger'
@@ -147,6 +151,7 @@ export function upgradeSave(save: GameState) {
     st.general ??= [];
     st.off ??= [];
     st.rooms ??= [];
+    st.offer ??= 0;
     st.call ??= null;
     st.thirst ??= 0;
     st.hunger ??= 0;
@@ -216,6 +221,10 @@ export function upgradeSave(save: GameState) {
   s.nextVip ??= Math.max(VIP_FIRST_DAY, s.day + VIP_GAP_DAYS[0]);
   s.nextInspection ??= Math.max(INSPECTION_FIRST_DAY, s.day + INSPECTION_FIRST_DAY);
   s.visitsOn ??= true;
+  // standing is worked out again from the center as it is, and announced as reached
+  s.grade ??= 0;
+  s.rival ??= newRival(s.day);
+  s.rivalOn ??= true;
   s.nextApplicant ??= s.day + APPLICANT_DAYS;
   s.reviews = (s.reviews ?? []).map((r) => ({ ...r, feelings: r.feelings.filter((f) => Object.hasOwn(FEELINGS, f)) }));
   s.casebook ??= {};

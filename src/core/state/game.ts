@@ -10,10 +10,13 @@ import {
   DISCIPLINES,
   FIRST_OUTBREAK_DAY,
   INSPECTION_FIRST_DAY,
+  POACH_GAP_DAYS,
+  RIVAL_OPENS,
+  SALE_GAP_DAYS,
   VIP_FIRST_DAY,
 } from '../data';
 import { refillCandidates } from '../people';
-import type { GameState, Ledger, Policy, Tally, WallSpot } from './types';
+import type { GameState, Ledger, Policy, Rival, Tally, WallSpot } from './types';
 
 /** Whether two wall spots are the same stretch of wall. */
 export const sameSpot = (a: WallSpot, b: WallSpot) => a.x === b.x && a.y === b.y && a.dx === b.dx && a.dy === b.dy;
@@ -71,7 +74,7 @@ export const defaultPolicy = (): Policy => ({
  * 11: noise, linens, temperature, staff needs, and the radiator, air conditioner and linen hamper. 12: High Pines,
  * its ailments and the Fireplace. 13: VIPs and the health inspector.
  */
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {
@@ -140,6 +143,9 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     nextVip: VIP_FIRST_DAY,
     nextInspection: INSPECTION_FIRST_DAY,
     visitsOn: true,
+    grade: 0,
+    rival: newRival(0),
+    rivalOn: true,
     ceremony: null,
     trophies: [],
     achieved: [],
@@ -161,4 +167,17 @@ export function disciplineHere(s: GameState, d: Discipline): boolean {
 /** Whether a discipline is switched on for this game: on offer in its center, and not switched off. Massage always is. */
 export function disciplineOn(s: GameState, d: Discipline): boolean {
   return !DISCIPLINES[d].optional || (disciplineHere(s, d) && s.options[d] !== false);
+}
+
+/** The rival across the street, not yet open: it opens on its day, or straight away in a game already past it. */
+export function newRival(day: number): Rival {
+  const opens = Math.max(RIVAL_OPENS, day);
+  return {
+    opened: null,
+    saleUntil: 0,
+    nextSale: opens + SALE_GAP_DAYS[0],
+    nextPoach: opens + POACH_GAP_DAYS[0],
+    poached: 0,
+    trophies: 0,
+  };
 }

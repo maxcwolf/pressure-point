@@ -16,6 +16,7 @@ import { formatMetric, type Metric, monthlyValues, offeredMetrics, shownMetrics,
 import { Button } from '../common/Button';
 import { CasebookTab } from './CasebookTab';
 import { ReputationTab } from './ReputationTab';
+import { StandingTab } from './StandingTab';
 
 /** One figure: this month so far and last month, over a bar for each month kept. */
 function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRecord[] }) {
@@ -52,6 +53,7 @@ function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRe
 const TABS: readonly { id: StatsTab; name: string }[] = [
   { id: 'charts', name: '📊 Charts' },
   { id: 'reputation', name: '⭐ Reputation' },
+  { id: 'standing', name: '🏛️ Standing' },
   { id: 'casebook', name: '📖 Casebook' },
   { id: 'awards', name: '🏆 Awards' },
 ];
@@ -77,6 +79,7 @@ export function StatsMenu() {
       </div>
       {hud.statsTab === 'charts' && <Charts />}
       {hud.statsTab === 'reputation' && <ReputationTab />}
+      {hud.statsTab === 'standing' && <StandingTab />}
       {hud.statsTab === 'casebook' && <CasebookTab />}
       {hud.statsTab === 'awards' && <Trophies />}
     </div>

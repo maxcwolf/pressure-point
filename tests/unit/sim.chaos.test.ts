@@ -211,8 +211,9 @@ describe('a restless player', () => {
   it.each([1, 2, 3, 4])('never leaves the books unbalanced (seed %i)', (seed) => {
     const { sim, s } = openCenter(seed);
     s.stars = 3;
-    // challenges, the year-end awards and new applicants come and go while all this goes on
+    // challenges, the year-end awards, new applicants and the rival come and go while all this goes on
     s.challengesOn = true;
+    s.rivalOn = true;
     s.nextApplicant = 0;
     // building comes up more often than tearing down, so there is a busy center to disrupt
     const names = Object.entries(MOVES).flatMap(([name]) => Array<string>(WEIGHTS[name] ?? 1).fill(name));

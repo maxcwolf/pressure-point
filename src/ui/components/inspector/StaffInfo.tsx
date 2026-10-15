@@ -7,6 +7,7 @@ import { rankName, rankProgress, slots, trained, xpToNext } from '../../../core/
 import type { Staff } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
+import { offerWarning } from '../../lib/standing';
 import { moraleLook, promotionNote, quitWarning, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -137,6 +138,9 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
         <em key={t}>{`${traitOf(t).name}: ${traitOf(t).desc}`}</em>
       ))}{' '}
       <p class="status">{staffStatus(st, sim)}</p>{' '}
+      {st.offer > 0 && st.state !== 'leaving' && (
+        <p class="status quitting rival-offer">{offerWarning(st.offer - sim.s.day)}</p>
+      )}{' '}
       {sim.daysUntilQuit(st) !== null && (
         <p class={cx('status', 'quitting', sim.aboutToQuit(st) && 'alarm')}>{quitWarning(sim.daysUntilQuit(st))}</p>
       )}{' '}

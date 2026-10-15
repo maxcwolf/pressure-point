@@ -168,8 +168,8 @@ export function setDuty(ctx: SimContext, id: number, duty: Duty, on: boolean): b
   return true;
 }
 
-/** How many applicants each role can have at once: more as stars are earned. */
-export const applicantCap = (s: GameState) => Math.min(APPLICANTS_MAX, 3 + s.stars);
+/** How many applicants each role can have at once: more as stars are earned and the center rises in standing. */
+export const applicantCap = (s: GameState) => Math.min(APPLICANTS_MAX, 3 + s.stars + Math.floor(s.grade / 2));
 
 /**
  * Now and then a new applicant turns up: for the role with the fewest, or once every role is full, in place of

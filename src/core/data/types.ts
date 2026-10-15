@@ -365,7 +365,8 @@ export type AwardId =
   | 'healthy-books'
   | 'happy-team'
   | 'healer-of-the-year'
-  | 'caretaker-of-the-year';
+  | 'caretaker-of-the-year'
+  | 'center-of-the-year';
 /** One of the awards handed out at the end of each year. */
 export interface AwardDef {
   id: AwardId;
@@ -397,6 +398,7 @@ export type FeelingId =
   | 'refreshed'
   | 'played'
   | 'fine-room'
+  | 'underwhelmed'
   | 'pricey'
   | 'bargain'
   | 'worse'

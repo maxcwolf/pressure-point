@@ -53,6 +53,13 @@ export const AWARDS: Readonly<Record<AwardId, AwardDef>> = {
     desc: 'The Caretaker who did the most jobs',
     prize: 1000,
   },
+  'center-of-the-year': {
+    id: 'center-of-the-year',
+    name: 'Center of the Year',
+    icon: '🏛️',
+    desc: 'Standing higher than the rival across the street',
+    prize: 4000,
+  },
 };
 
 export const AWARD_ORDER = Object.keys(AWARDS) as AwardId[];

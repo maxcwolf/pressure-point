@@ -6,6 +6,7 @@ import {
   CAMEO_NAMES,
   DISCIPLINES,
   FIRST_NAMES,
+  GRADE_APPLICANT_SKILL,
   LAST_NAMES,
   MODALITIES,
   type Modality,
@@ -56,7 +57,8 @@ export const amandaAround = (s: GameState) =>
 export function makeCandidate(s: GameState, role: Role): Candidate {
   // a recruitment drive brings in a better class of applicant
   const drive = s.campaigns.some((c) => c.kind === 'recruit') ? RECRUIT_SKILL : 0;
-  const skill = clamp(Math.round(rnd(0.6, 3.4 + s.stars * 0.6)) + drive, 1, 5);
+  // and a center standing higher, better still
+  const skill = clamp(Math.round(rnd(0.6, 3.4 + s.stars * 0.6 + s.grade * GRADE_APPLICANT_SKILL)) + drive, 1, 5);
   const traits: TraitId[] = [];
   if (random() < 0.65) traits.push(pick(TRAITS).id);
   // practitioners all know their discipline's basic modality; a few arrive trained in something more

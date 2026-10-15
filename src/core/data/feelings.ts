@@ -149,6 +149,14 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'experience',
     lines: ['The treatment room was gorgeous.'],
   },
+  underwhelmed: {
+    id: 'underwhelmed',
+    icon: '😒',
+    text: 'Treated in a room too plain for a place like this',
+    good: false,
+    part: 'experience',
+    lines: ['For a place with that reputation, the treatment room was a letdown.'],
+  },
   pricey: {
     id: 'pricey',
     icon: '💸',

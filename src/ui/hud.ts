@@ -13,7 +13,7 @@ export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'fina
 export type MoneyTab = 'books' | 'prices' | 'marketing' | 'loan';
 
 /** The tabs of the Stats menu. */
-export type StatsTab = 'charts' | 'reputation' | 'casebook' | 'awards';
+export type StatsTab = 'charts' | 'reputation' | 'standing' | 'casebook' | 'awards';
 
 export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards' | 'visit';
 

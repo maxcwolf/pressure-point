@@ -106,5 +106,5 @@ export const DUTY_NAMES: Readonly<Record<Duty, string>> = {
 };
 
 /** The most applicants for one role at a time, and how many days apart new ones turn up. */
-export const APPLICANTS_MAX = 6;
+export const APPLICANTS_MAX = 8;
 export const APPLICANT_DAYS = 4;

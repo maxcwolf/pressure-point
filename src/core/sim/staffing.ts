@@ -19,6 +19,7 @@ import {
   QUIT_THINKING,
   QUIT_WARNING,
   RANK_XP,
+  RIVAL_NAME,
   ROLES,
   STAFF_NEED_MORALE,
   STAMINA_DRAIN,
@@ -95,6 +96,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     general: [],
     off: [],
     rooms: [],
+    offer: 0,
     call: null,
   };
   const [lx, ly] = lobbyTile(ctx.world.plot);
@@ -108,21 +110,28 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
 }
 
 /** Send a member of staff home for good, either fired or because they quit. */
-export function fire(ctx: SimContext, id: number, quit = false) {
+export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poached' = 'fired') {
   const st = staffById(ctx, id);
   if (!st || st.state === 'leaving') return;
   staffIdle(ctx, st);
   st.state = 'leaving';
   st.raiseAsked = false;
-  say(st, quit ? '😠' : '📦', 6);
+  st.offer = 0;
+  say(st, how === 'fired' ? '📦' : '😠', 6);
   const [x, y] = streetTile();
   if (!goTo(ctx, st, x, y)) ctx.s.staff = ctx.s.staff.filter((q) => q !== st);
-  if (quit) {
-    ctx.s.stats.lastQuit = ctx.s.day;
-    changeRep(ctx, -2);
-    toast(ctx, `${st.name} has quit. Unhappy staff do not stay.`, 'bad', { kind: 'staff', id: st.id });
-    emit(ctx, { type: 'sfx', name: 'fail' });
-  } else toast(ctx, `${st.name} has been let go.`, 'info');
+  if (how === 'fired') {
+    toast(ctx, `${st.name} has been let go.`, 'info');
+    return;
+  }
+  ctx.s.stats.lastQuit = ctx.s.day;
+  changeRep(ctx, -2);
+  const text =
+    how === 'quit'
+      ? `${st.name} has quit. Unhappy staff do not stay.`
+      : `${st.name} has left to work at ${RIVAL_NAME}. Unhappy staff do not stay.`;
+  toast(ctx, text, 'bad', { kind: 'staff', id: st.id });
+  emit(ctx, { type: 'sfx', name: 'fail' });
 }
 
 /** What this member of staff could reasonably expect to be paid. */
@@ -223,7 +232,7 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
     toast(ctx, `⚠️ ${st.name} will quit within two days. Give them a raise or a break, now.`, 'bad', about);
     emit(ctx, { type: 'sfx', name: 'error' });
   }
-  if (st.unhappyT > QUIT_AFTER && !st.busy && !st.training) fire(ctx, st.id, true);
+  if (st.unhappyT > QUIT_AFTER && !st.busy && !st.training) fire(ctx, st.id, 'quit');
 }
 
 /** Step away from the station they were staffing. */

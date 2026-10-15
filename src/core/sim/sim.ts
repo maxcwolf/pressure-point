@@ -56,7 +56,9 @@ import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
 import { monthSoFar } from './records';
+import { updateRival } from './rival';
 import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
+import { type StandingPoints, standingPoints, updateStanding } from './standing';
 import { type Chance, successChance, updateStations } from './stations';
 import { subjectSpot } from './subjects';
 import type { Course } from './training';
@@ -131,6 +133,8 @@ export class Sim {
       updateCalls(ctx);
       updateHabits(ctx);
       updateVisits(ctx);
+      updateStanding(ctx);
+      updateRival(ctx);
     }
     announce(ctx, dt);
     updateTwists(ctx, dt);
@@ -375,6 +379,11 @@ export class Sim {
   /** Give a member of staff a raise. */
   giveRaise(id: number) {
     giveRaise(this.ctx, id);
+  }
+
+  /** The center's standing points as it is now, part by part. */
+  standing(): StandingPoints {
+    return standingPoints(this.ctx);
   }
 
   /** Whether a member of staff is as qualified as they can be for now, as a promotion needs. */

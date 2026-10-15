@@ -256,6 +256,24 @@ test.describe('in a game', () => {
       .getByRole('button', { name: /Casebook/ })
       .click();
     await screens.shot('stats-casebook');
+    // a center a grade up, with the rival open across the street and a sale on
+    await game.eval((pp) => {
+      pp.state.grade = 1;
+      pp.state.rivalOn = true;
+      pp.state.rival = {
+        opened: 0,
+        saleUntil: pp.state.day + 6,
+        nextSale: 1e9,
+        nextPoach: 1e9,
+        poached: 1,
+        trophies: 0,
+      };
+    });
+    await page
+      .locator('#menu')
+      .getByRole('button', { name: /Standing/ })
+      .click();
+    await screens.shot('stats-standing');
   });
 
   test('the Money menu tabs', async ({ screens, game, page }) => {

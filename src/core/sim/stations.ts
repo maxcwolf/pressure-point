@@ -41,6 +41,7 @@ import { feelNoise, itemNoise, noisePenalty } from './noise';
 import { breakDue } from './policy';
 import { hasRoom } from './progress';
 import { countVisit } from './records';
+import { expectedPrestige } from './standing';
 import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments';
 import { addWear } from './upkeep';
 import { addVibes, vibesAt, vibesPenalty } from './vibes';
@@ -260,7 +261,10 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     if (problem === 'unqualified') feel(g, 'unqualified');
     else if (problem) feel(g, 'no-kit');
     const room = ctx.world.roomOfItem(it);
-    if (room && prestige(ctx, room) >= 4) feel(g, 'fine-room');
+    const stars = room ? prestige(ctx, room) : 0;
+    if (stars >= 4) feel(g, 'fine-room');
+    // a center that stands higher has guests who expect a finer room
+    else if (room && stars < expectedPrestige(ctx.s)) feel(g, 'underwhelmed');
     if (room && room.vibes > 0) feel(g, 'bad-vibes');
     feelNoise(g, itemNoise(ctx, it));
     feelTemperature(g, warmthAt(ctx, g.tx, g.ty));

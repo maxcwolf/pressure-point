@@ -14,6 +14,7 @@ export * from './rooms';
 export * from './rules';
 export * from './staff';
 export * from './stakes';
+export * from './standing';
 export * from './text';
 export * from './treatments';
 export * from './types';

@@ -24,8 +24,10 @@ import { buildCharacter, type CharRig } from '../render/models/character';
 import { buildItem } from '../render/models/items';
 import { partsOf } from '../render/models/parts';
 import { buildPines } from '../render/models/pine';
+import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
 import { poseChar } from '../render/pose';
+import { SHOP_TURN } from '../render/storefront';
 import { button, choice, type Control, type Option, range, toggle } from './controls';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from './people';
 
@@ -279,6 +281,19 @@ const SCENERY: Specimen[] = [
       animate: still,
       controls: [],
     }),
+  },
+  {
+    id: 'scenery:storefront',
+    group: 'Scenery',
+    name: 'The rival storefront',
+    footprint: [3, 6],
+    /** The rival's shop, with its sale banner out, turned as it stands in the game. */
+    build: () => {
+      const shop = buildStorefront();
+      shop.sale.visible = true;
+      shop.root.rotation.y = SHOP_TURN;
+      return { root: shop.root, animate: still, controls: [] };
+    },
   },
   {
     id: 'scenery:beach',

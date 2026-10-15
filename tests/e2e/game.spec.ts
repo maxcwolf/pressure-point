@@ -583,6 +583,31 @@ test.describe('running a center', () => {
     await expect(inspector.locator('.works-in')).toHaveText('Anywhere');
   });
 
+  test('the rival makes an unhappy member of staff an offer, which a raise sees off', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(40);
+    await game.eval((pp) => {
+      pp.state.rivalOn = true;
+      pp.state.rival.opened = pp.state.day;
+      pp.state.rival.nextSale = 1e9;
+      pp.state.rival.nextPoach = pp.state.day;
+      for (const st of pp.state.staff) st.morale = st.role === 'therapist' ? 20 : 90;
+    });
+    await game.fastForward(2);
+    await expect(page.locator('#toasts')).toContainText('ZenMart has offered');
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    await game.clickStaff('therapist');
+    const inspector = page.locator('#inspector');
+    await expect(inspector.locator('.rival-offer')).toContainText('ZenMart has offered them a job');
+    await inspector.getByRole('button', { name: /Raise to/ }).click();
+    await game.fastForward(2);
+    await expect(page.locator('#toasts')).toContainText("turned down ZenMart's offer");
+    await expect(inspector.locator('.rival-offer')).toHaveCount(0);
+    expect(await game.eval((pp) => pp.state.rival.poached)).toBe(0);
+  });
+
   test('an emergency can be accepted from its offer', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

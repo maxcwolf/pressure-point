@@ -45,11 +45,13 @@ export interface SandboxSettings {
   weather: boolean;
   /** Whether VIPs and the health inspector call. */
   visits: boolean;
+  /** Whether a rival center opens across the street. */
+  rival: boolean;
 }
 
 /**
  * The sandbox settings last chosen, or the defaults: the sandbox's usual money, unlocking as stars are earned, staff
- * challenges, stress outbreaks, weather and visits.
+ * challenges, stress outbreaks, weather, visits and a rival.
  */
 export function loadSandbox(): SandboxSettings {
   const out: SandboxSettings = {
@@ -59,6 +61,7 @@ export function loadSandbox(): SandboxSettings {
     outbreaks: true,
     weather: true,
     visits: true,
+    rival: true,
   };
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(SANDBOX_KEY) ?? '{}');
@@ -69,6 +72,7 @@ export function loadSandbox(): SandboxSettings {
     if (typeof raw.outbreaks === 'boolean') out.outbreaks = raw.outbreaks;
     if (typeof raw.weather === 'boolean') out.weather = raw.weather;
     if (typeof raw.visits === 'boolean') out.visits = raw.visits;
+    if (typeof raw.rival === 'boolean') out.rival = raw.rival;
   } catch {
     // the defaults will do
   }

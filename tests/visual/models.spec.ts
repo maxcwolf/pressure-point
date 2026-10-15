@@ -14,6 +14,7 @@ const IDS = [
   'scenery:trees',
   'scenery:pines',
   'scenery:beach',
+  'scenery:storefront',
 ];
 
 // a small window keeps the pictures small; the stage is what is left beside the list of models

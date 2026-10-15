@@ -470,8 +470,10 @@ export class Game {
         sim.finishRoom(r);
       };
       state.money = 100000;
-      // a visit ends in a report that pauses the game, so only the tests of visits have them
+      // a visit ends in a report that pauses the game, and the rival draws guests away and hires staff, so only the
+      // tests of each have them
       state.visitsOn = false;
+      state.rivalOn = false;
       sim.placeItem('reception_desk', 14, 13, 0);
       room('consult', { x: 5, y: 5, w: 4, h: 4 }, { x: 8, y: 7, dx: 1, dy: 0 }, [
         ['consult_desk', 6, 6],

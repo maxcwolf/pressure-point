@@ -4,6 +4,8 @@ import { centerOf, DAY_SECONDS, DAYS_PER_MONTH } from '../data';
 import type { Snowfall } from '../data/types';
 import type { SimContext } from './context';
 import { emit, tipOnce } from './events';
+import { rivalDraw } from './rival';
+import { gradeArrivals } from './standing';
 
 /**
  * Rush hours come in waves: two days of them in every six, as the office crowd comes in. A game day lasts only a few
@@ -66,7 +68,8 @@ export function arrivalFactor(ctx: SimContext): number {
     if (season === 'summer') factor *= seasons.summer;
     else if (season === 'winter') factor *= seasons.winter;
   }
-  return factor;
+  // a center that stands higher draws more guests, and the rival across the street draws some away
+  return factor * gradeArrivals(ctx.s.grade) * (1 - rivalDraw(ctx.s));
 }
 
 /** What the speakers say as each season starts, in a center that has them. */

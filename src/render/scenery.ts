@@ -13,6 +13,7 @@ import { buildForest, type TreeSpot } from './models/tree';
 import type { Setting } from './setting';
 import { H_LOW, hash, OUTER_HT, OUTER_T } from './shared';
 import { SIGN_HALF, SIGN_LEG, signSpot } from './sign';
+import { onStorefront } from './storefront';
 
 /** Build the scenery that never changes around a building on its plot, in its setting, and add it to the scene. */
 export function buildScenery(
@@ -124,12 +125,15 @@ export function buildScenery(
   scene.add(setting === 'mountain' ? buildPines(trees) : buildForest(trees));
 }
 
-/** Whether a tile is kept clear of scenery: the building and a margin round it, the street, and the path to the door. */
+/**
+ * Whether a tile is kept clear of scenery: the building and a margin round it, the street, the path to the door, and
+ * the rival's storefront across the street.
+ */
 function keptClear(plot: Plot, x: number, y: number): boolean {
   const inPlot = x >= plot.x0 - 1 && x <= plot.x1 + 2 && y >= plot.y0 - 1 && y <= plot.y1 + 1;
   const onRoad = y >= SIDEWALK_Y && y <= ROAD_Y[1];
   const nearPath = x >= plot.door[0] - 7 && x <= plot.door[1] + 3 && y > plot.y1;
-  return inPlot || onRoad || nearPath;
+  return inPlot || onRoad || nearPath || onStorefront(plot, x, y);
 }
 
 /** The sea behind the lot, a row of beach huts along the shore, and dune grass on the sand. */

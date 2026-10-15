@@ -174,7 +174,8 @@ describe('the year-end awards', () => {
     const money = s.money;
     holdAwards(ctx, 1);
     const won = s.ceremony!.results.filter((r) => r.won).map((r) => r.award);
-    expect(s.ceremony!.results.map((r) => r.award)).toEqual(AWARD_ORDER);
+    // with no rival open, Center of the Year is not contested
+    expect(s.ceremony!.results.map((r) => r.award)).toEqual(AWARD_ORDER.filter((id) => id !== 'center-of-the-year'));
     expect(won).toEqual(expect.arrayContaining(['busiest', 'healing-hands', 'no-waiting', 'fair-prices']));
     expect(won).toContain('healer-of-the-year');
     expect(s.money).toBe(money + won.reduce((sum, id) => sum + AWARDS[id].prize, 0));
