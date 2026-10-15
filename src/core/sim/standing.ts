@@ -72,7 +72,7 @@ export function updateStanding(ctx: SimContext) {
   if (reached <= s.grade) return;
   s.grade = reached;
   const g = gradeDef(reached);
-  emit(ctx, { type: 'announce', text: `We are now a ${g.name}. Thank you for your custom, and your knots.` });
+  emit(ctx, { type: 'announce', text: `We are now a ${g.name}. Thank you for bringing us your knots.` });
   toast(
     ctx,
     `${g.icon} The center has risen to ${g.name}: more guests and better applicants, and guests who expect finer rooms.`,

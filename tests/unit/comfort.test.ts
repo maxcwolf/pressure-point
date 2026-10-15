@@ -163,7 +163,7 @@ describe('temperature', () => {
   it('follows the seasons outside, and only some of that gets indoors', () => {
     expect(seasonal(midMonth(6))).toBeCloseTo(1);
     expect(seasonal(midMonth(0))).toBeCloseTo(-1);
-    const climate = CENTERS.saltmarsh.climate;
+    const climate = CENTERS.boardwalk.climate;
     expect(outdoorTemp(climate, midMonth(6))).toBeCloseTo(climate.average + climate.swing);
     expect(indoorTemp(IDEAL_TEMP + 20)).toBeCloseTo(IDEAL_TEMP + 20 * INDOOR_PULL);
   });

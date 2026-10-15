@@ -462,7 +462,7 @@ export type GoalSpec =
 /** The objectives for one star: all must be met at once. */
 export type StarGoal = readonly GoalSpec[];
 
-export type CenterId = 'sandbox' | 'willow' | 'exchange' | 'saltmarsh' | 'highpines' | 'orchard';
+export type CenterId = 'sandbox' | 'willow' | 'exchange' | 'boardwalk' | 'highpines' | 'orchard';
 
 /** A center to run: the sandbox, or one of the campaign's. */
 export interface CenterDef {

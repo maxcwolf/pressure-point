@@ -26,7 +26,7 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [x] Massage Therapist needed at the Massage Suite.
   - [x] Acupuncturist needed at the Acupuncture Clinic.
   - [x] Reiki Practitioner needed at the Reiki Studio.
-- Seasons, at Driftwood Bay (`SEASON_NEWS` in `src/core/sim/twists.ts`)
+- Seasons, at The Boardwalk (`SEASON_NEWS` in `src/core/sim/twists.ts`)
   - [ ] Winter is here. The promenade is empty, so watch the budget until spring.
   - [ ] Spring! The first day-trippers are back in town.
   - [ ] Summer at last, and the town is packed. Expect a crowd.
@@ -51,10 +51,10 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [x] A VIP will be visiting in five days. Look busy.
   - [x] The health inspector is on the way. Hide the sage.
 - Standing, as the center rises a grade (`updateStanding` in `src/core/sim/standing.ts`)
-  - [ ] We are now a Wellness Studio. Thank you for your custom, and your knots.
-  - [ ] We are now a Wellness Center. Thank you for your custom, and your knots.
-  - [ ] We are now a Healing Center. Thank you for your custom, and your knots.
-  - [ ] We are now a Healing Institute. Thank you for your custom, and your knots.
+  - [ ] We are now a Wellness Studio. Thank you for bringing us your knots.
+  - [ ] We are now a Wellness Center. Thank you for bringing us your knots.
+  - [ ] We are now a Healing Center. Thank you for bringing us your knots.
+  - [ ] We are now a Healing Institute. Thank you for bringing us your knots.
 - Mishaps, as each is announced, starts and ends (`MISHAPS` in `src/core/data/mishaps.ts`)
   - [ ] The power company will be working on the lines this week. Expect a power cut.
   - [ ] The power is out. Anything with a plug is now a very expensive ornament.
@@ -80,7 +80,7 @@ Announcer lines that have no recording yet. A recording plays only when its text
 - [x] **A Stats view you can arrange.** More figures than the Money menu shows today (arrivals, healed, failed, stormed out, put off by prices, waiting times, income by treatment), each as a small chart, with a choice of which to show, remembered between games.
 - [x] **Filter the Items menu by room and type**, so the list for a room shows only what goes in it, and decor, comforts and equipment can be picked out.
 - [x] **An emergency offer that can be put aside.** Dismissing the popup tucks it into a small button that shows the time left to decide; pressing it brings the offer back to accept or decline.
-- [x] **More than one sandbox.** A campaign of centers in different places, each with its own map, goals and twist, as Two Point Hospital does with its hospitals, alongside a free sandbox with its own settings. Designed in [campaign.md](campaign.md). All four phases are done: Willow Lane, The Exchange and Driftwood Bay, karma and achievements, and sandbox settings.
+- [x] **More than one sandbox.** A campaign of centers in different places, each with its own map, goals and twist, as Two Point Hospital does with its hospitals, alongside a free sandbox with its own settings. Designed in [campaign.md](campaign.md). All four phases are done: Willow Lane, The Exchange and The Boardwalk, karma and achievements, and sandbox settings.
 - [x] **High Pines and The Orchard Estate**, the fourth and fifth centers, as planned in [campaign.md](campaign.md). Both done.
 - [x] **Resize a built room**, by dragging its walls, as Two Point Hospital's room editing allows. Done: Resize in the room's inspector; the door and windows move with their walls, the furniture has to stay inside, the room keeps its minimum size, and floor added costs $200 a tile, with half back for floor given up.
 - [x] **Room walls against the building's outer walls.** The outer wall's own window panes sit at fixed spots, so a room built against it cuts through them, and the room's windows sit inside the outer wall and look doubled. The outer wall should leave its panes out where a room's wall runs along it, and a room's windows on that side should be set into the outer wall instead of a second wall in front of it. Done: a room's side along the outer wall uses that wall, its windows are set into it, and the building's own windows make way.
@@ -88,7 +88,8 @@ Announcer lines that have no recording yet. A recording plays only when its text
 ## Requested 15 October 2026
 
 - [x] **Remove the fire drill mishap.** Each center gets only its own mishap now, and Willow Lane has none.
-- [x] **Rename Saltmarsh** to something more fitting. Now **Driftwood Bay**; the code still calls it `saltmarsh`, so saves carry over.
+- [x] **Rename Saltmarsh** to something more fitting. Now **The Boardwalk**, in the code too (`boardwalk`); no saves used it yet.
+- [x] **"Thank you for your custom"** in the grade announcements was British English. Now "Thank you for bringing us your knots."
 - [x] **Assign staff to rooms.** Select a member of staff, press Assign to rooms, and click one or more rooms; they then take posts and do their chores only there, as Two Point Hospital allows. Done: the rooms are colored while assigning, the room's inspector lists who is assigned there, Anywhere undoes it, and a Receptionist, whose desk and counter are in the corridors, has no rooms to be assigned to.
 - [x] **Announce visits over the speakers.** A VIP or the health inspector writing ahead is announced, with a recorded line, as well as the message.
 
@@ -104,7 +105,7 @@ The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two
 - [x] **Phase 6, stakes:** a worsening condition, bad vibes cleared with sage, stress outbreaks. Treatment calms a stressed guest as well as a calming session does, and the calming sessions are handed out by clicking, with no one sent to give them.
 - [x] **Phase 7, comfort:** calm, fresh linens, temperature and staff needs. Noise and warmth carry like decor does, held back by the walls of each room they pass through. Changing linens is part of a Caretaker's cleaning, and needs a Linen Hamper to take fresh ones from. Staff thirst and hunger only, no toilets: they are seen to between jobs from the guests' own drinks and snacks. Sandbox switches for stress outbreaks (missed in phase 6) and the weather. High Pines comes next.
 - [x] **Phase 8, visitors and rivals:** VIPs and the inspector, the center's standing, a rival center. Then The Orchard Estate. VIPs and the inspector are done: the inspector visits every center, not only The Orchard Estate, with a notice five days ahead; VIPs from the first star. The standing and the rival are done: five grades on points for rooms, prestige and staff, kept once reached; ZenMart opens on day 45 at every center, with sales, job offers to staff below 35 morale, and Center of the Year. The Orchard Estate is done too.
-- [x] **Phase 9, events:** a mishap per center. Every 80 to 140 days from day 75, announced three days ahead: a power cut at The Exchange and in the sandbox, a storm at Driftwood Bay, a big freeze at High Pines (winter only), and wasps at The Orchard Estate; Willow Lane has none. A fire drill anywhere was built, then taken out at Max's request. Each has a price to prepare for it, paid from the notice at the top of the screen. A power cut dims the lights and a storm brings rain. The storm breaks equipment rather than flooding the restrooms as [two-point-gaps.md](two-point-gaps.md) suggested; that is under Next up.
+- [x] **Phase 9, events:** a mishap per center. Every 80 to 140 days from day 75, announced three days ahead: a power cut at The Exchange and in the sandbox, a storm at The Boardwalk, a big freeze at High Pines (winter only), and wasps at The Orchard Estate; Willow Lane has none. A fire drill anywhere was built, then taken out at Max's request. Each has a price to prepare for it, paid from the notice at the top of the screen. A power cut dims the lights and a storm brings rain. The storm breaks equipment rather than flooding the restrooms as [two-point-gaps.md](two-point-gaps.md) suggested; that is under Next up.
 - [ ] **Phase 10, building tools:** move and copy rooms, templates, decorating rooms, camera rotation, more land.
 - [ ] **Phase 11, the long game:** machine upgrades, new rooms, regulars, treatment gags, a radio, game settings.
 - [ ] **Difficulty settings.** Presets for a new game (Relaxed, Standard, Demanding) alongside finer settings, the way Two Point's sandbox has them: how many applicants turn up and how often, how often guests arrive and how patient they are, how quickly equipment wears and staff tire, salaries and prices, loan limits, emergency and challenge frequency, and how fast the award bars rise. A preset fills the settings in, and any can then be changed. For the sandbox first, then perhaps per campaign center.

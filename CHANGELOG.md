@@ -10,7 +10,7 @@ Each release's notes are taken from its section here. Keep them short.
   - **A big freeze** at High Pines, in winter only, stops the toilets, sinks, drinks and radiators for two days unless the pipes are lagged.
   - **Wasps** at The Orchard Estate keep everyone off the snacks, drinks and bins for two days unless pest control is called.
 - **The announcer calls for every kind of staff** with a recorded line: a Caretaker when the corridors get gross, and a Wellness Consultant, Massage Therapist, Acupuncturist or Reiki Practitioner where a line has nobody to serve it.
-- **Saltmarsh is now Driftwood Bay,** a name that suits a seaside town better. Saved games and stars there carry over.
+- **Saltmarsh is now The Boardwalk,** a name that suits a seaside town better.
 - An item out of action says so in its inspector and the Treatments menu, the advisor says what is stopped rather than asking for it, and a sandbox switch turns mishaps off.
 
 ## v0.16.0

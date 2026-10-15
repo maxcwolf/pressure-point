@@ -251,7 +251,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'needling',
     fee: 1250,
     visual: 'sway',
-    only: ['saltmarsh'],
+    only: ['boardwalk'],
   },
   {
     id: 'gull',
@@ -261,7 +261,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'usui',
     fee: 1450,
     visual: 'gull',
-    only: ['saltmarsh'],
+    only: ['boardwalk'],
     worsens: 1.5,
   },
   {
@@ -272,7 +272,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'swedish',
     fee: 950,
     visual: 'sunburn',
-    only: ['saltmarsh'],
+    only: ['boardwalk'],
     worsens: 0.8,
   },
   {

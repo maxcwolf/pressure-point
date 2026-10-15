@@ -142,7 +142,7 @@ describe('climbing a grade', () => {
     const events = drainEvents(ctx);
     expect(events).toContainEqual({
       type: 'announce',
-      text: `We are now a ${gradeDef(reached).name}. Thank you for your custom, and your knots.`,
+      text: `We are now a ${gradeDef(reached).name}. Thank you for bringing us your knots.`,
     });
     updateStanding(ctx);
     expect(

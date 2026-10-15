@@ -18,14 +18,14 @@ import { runUntil } from './helpers';
 
 describe('the campaign trail', () => {
   it('opens each center once the one before it has a star', () => {
-    expect(CAMPAIGN).toEqual(['willow', 'exchange', 'saltmarsh', 'highpines', 'orchard']);
+    expect(CAMPAIGN).toEqual(['willow', 'exchange', 'boardwalk', 'highpines', 'orchard']);
     expect(centerOpen({}, 'willow')).toBe(true);
     expect(centerOpen({}, 'exchange')).toBe(false);
     expect(centerOpen({ willow: 1 }, 'exchange')).toBe(true);
     expect(centerOpen({ willow: 3 }, 'sandbox')).toBe(false);
     expect(nextCenter('willow')).toBe('exchange');
-    expect(nextCenter('exchange')).toBe('saltmarsh');
-    expect(nextCenter('saltmarsh')).toBe('highpines');
+    expect(nextCenter('exchange')).toBe('boardwalk');
+    expect(nextCenter('boardwalk')).toBe('highpines');
     expect(nextCenter('highpines')).toBe('orchard');
     expect(nextCenter('orchard')).toBeUndefined();
     expect(nextCenter('sandbox')).toBeUndefined();
@@ -217,7 +217,7 @@ describe('The Exchange', () => {
   });
 });
 
-describe('Driftwood Bay', () => {
+describe('The Boardwalk', () => {
   it('has seasons, starting the year in winter', () => {
     expect(seasonOf(0)).toBe('winter');
     expect(seasonOf(2 * 30)).toBe('spring');
@@ -228,19 +228,19 @@ describe('Driftwood Bay', () => {
   });
 
   it('is busy in summer and quiet in winter, and nothing else has seasons', () => {
-    const ctx = createContext(newGame('saltmarsh'));
-    const seasons = CENTERS.saltmarsh.seasons;
+    const ctx = createContext(newGame('boardwalk'));
+    const seasons = CENTERS.boardwalk.seasons;
     ctx.s.day = 6 * 30;
     expect(arrivalFactor(ctx)).toBe(seasons?.summer);
     ctx.s.day = 10;
     expect(arrivalFactor(ctx)).toBe(seasons?.winter);
     ctx.s.day = 3 * 30;
     expect(arrivalFactor(ctx)).toBe(1);
-    expect(new Sim(newGame('saltmarsh')).season()).toBe('winter');
+    expect(new Sim(newGame('boardwalk')).season()).toBe('winter');
   });
 
   it('announces each season as it starts', () => {
-    const ctx = createContext(newGame('saltmarsh'));
+    const ctx = createContext(newGame('boardwalk'));
     ctx.s.open = true;
     ctx.s.day = 5 * 30 + 0.01;
     updateTwists(ctx, 0.1);
@@ -276,14 +276,14 @@ describe('Driftwood Bay', () => {
       for (let i = 0; i < 3000; i++) found.add(rollCondition(ctx));
       return local.filter((c) => found.has(c));
     };
-    expect(seen('saltmarsh')).toEqual(local);
+    expect(seen('boardwalk')).toEqual(local);
     expect(seen('sandbox')).toEqual([]);
     expect(seen('exchange')).toEqual([]);
   });
 
   it('can be built and run inside its own walls', () => {
     setSeed(8);
-    const sim = new Sim(newGame('saltmarsh'));
+    const sim = new Sim(newGame('boardwalk'));
     sim.s.money = 100_000;
     /** Build a finished room with its furniture. */
     const room = (type: 'consult' | 'massage', rect: object, door: object, items: [string, number, number][]) => {
@@ -310,7 +310,7 @@ describe('Driftwood Bay', () => {
   });
 
   it('offers reiki, and wears equipment out faster', () => {
-    expect(disciplineOn(newGame('saltmarsh'), 'reiki')).toBe(true);
+    expect(disciplineOn(newGame('boardwalk'), 'reiki')).toBe(true);
     /** The wear one use adds to a massage table in a center. */
     const wearIn = (id: CenterId) => {
       const ctx = createContext(newGame(id));
@@ -318,6 +318,6 @@ describe('Driftwood Bay', () => {
       addWear(ctx, table);
       return table.wear;
     };
-    expect(wearIn('saltmarsh')).toBeCloseTo(wearIn('sandbox') * (CENTERS.saltmarsh.wear ?? 1));
+    expect(wearIn('boardwalk')).toBeCloseTo(wearIn('sandbox') * (CENTERS.boardwalk.wear ?? 1));
   });
 });

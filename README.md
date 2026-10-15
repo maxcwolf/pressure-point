@@ -26,7 +26,7 @@ The browser version needs nothing installed and is always the same version as th
 
 1. **Willow Lane**, a small high-street unit. Massage only: the place to learn the ropes.
 2. **The Exchange**, downtown. Office workers with office ailments, arriving in rush hours when the office crowd comes in. Acupuncture opens here.
-3. **Driftwood Bay**, a seaside town. Packed in summer and quiet in winter, with seaside ailments and sea air that is hard on equipment. Reiki opens here.
+3. **The Boardwalk**, a seaside town. Packed in summer and quiet in winter, with seaside ailments and sea air that is hard on equipment. Reiki opens here.
 4. **High Pines**, a lodge up in the mountains. Cold all year, so keep it heated, and snowed in now and then each winter, when nobody new can get up the road. A big freeze can stop the water. Mountain ailments, and Stone Warmers that cool fast in the cold.
 5. **The Orchard Estate**, a country resort among the apple orchards. Picky guests pay half as much again but expect beautiful treatment rooms, the health inspector calls twice as often, and each star asks for a higher standing. Acupuncture and reiki are open from the start.
 

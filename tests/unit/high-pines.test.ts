@@ -26,8 +26,8 @@ function firstSnowDay(): number {
 }
 
 describe('High Pines', () => {
-  it('comes after Driftwood Bay, with acupuncture and reiki', () => {
-    expect(nextCenter('saltmarsh')).toBe('highpines');
+  it('comes after The Boardwalk, with acupuncture and reiki', () => {
+    expect(nextCenter('boardwalk')).toBe('highpines');
     expect(nextCenter('highpines')).toBe('orchard');
     expect(disciplineOn(newGame('highpines'), 'reiki')).toBe(true);
     expect(disciplineOn(newGame('highpines'), 'acupuncture')).toBe(true);
@@ -61,7 +61,7 @@ describe('High Pines', () => {
 
   it('is the only center that is ever snowed in', () => {
     const day = firstSnowDay();
-    for (const id of ['sandbox', 'willow', 'exchange', 'saltmarsh', 'highpines'] as const) {
+    for (const id of ['sandbox', 'willow', 'exchange', 'boardwalk', 'highpines'] as const) {
       const ctx = createContext(newGame(id));
       ctx.s.day = day;
       expect(cutOff(ctx), id).toBe(id === 'highpines');
@@ -111,7 +111,7 @@ describe('High Pines', () => {
   it('has its own mountain ailments, found nowhere else', () => {
     const local = ['frozen', 'wipeout', 'cabin'];
     /** The local ailments among many guests in a center two stars in, with a suite and a studio to treat them. */
-    const seen = (id: 'highpines' | 'saltmarsh') => {
+    const seen = (id: 'highpines' | 'boardwalk') => {
       setSeed(5);
       const ctx = createContext(newGame(id));
       ctx.s.stars = 2;
@@ -135,7 +135,7 @@ describe('High Pines', () => {
       return local.filter((c) => found.has(c));
     };
     expect(seen('highpines')).toEqual(local);
-    expect(seen('saltmarsh')).toEqual([]);
+    expect(seen('boardwalk')).toEqual([]);
   });
 
   it('is cold indoors in winter until a radiator warms it', () => {

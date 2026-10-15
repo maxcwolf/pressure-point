@@ -1565,7 +1565,7 @@ test.describe('the campaign', () => {
     await expect(page.locator('#objectives')).toContainText('The Exchange');
   });
 
-  test('a star at Driftwood Bay opens High Pines, which is snowed in now and then each winter', async ({
+  test('a star at The Boardwalk opens High Pines, which is snowed in now and then each winter', async ({
     game,
     page,
   }) => {
@@ -1573,7 +1573,7 @@ test.describe('the campaign', () => {
       localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}');
       localStorage.setItem(
         'pressure-point-campaign',
-        JSON.stringify({ stars: { willow: 1, exchange: 1, saltmarsh: 1 } }),
+        JSON.stringify({ stars: { willow: 1, exchange: 1, boardwalk: 1 } }),
       );
     });
     await page.goto('/');
@@ -1602,7 +1602,7 @@ test.describe('the campaign', () => {
       localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}');
       localStorage.setItem(
         'pressure-point-campaign',
-        JSON.stringify({ stars: { willow: 1, exchange: 1, saltmarsh: 1, highpines: 1 } }),
+        JSON.stringify({ stars: { willow: 1, exchange: 1, boardwalk: 1, highpines: 1 } }),
       );
     });
     await page.goto('/');

@@ -46,7 +46,7 @@ const SUMMER_DAY = 200;
 describe('which mishap comes', () => {
   it("is the center's own", () => {
     expect(chooseMishap(newGame('exchange'))).toBe('power');
-    expect(chooseMishap(newGame('saltmarsh'))).toBe('storm');
+    expect(chooseMishap(newGame('boardwalk'))).toBe('storm');
     expect(chooseMishap(newGame('orchard'))).toBe('wasps');
   });
 

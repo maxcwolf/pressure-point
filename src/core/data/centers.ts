@@ -96,9 +96,9 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       ],
     ],
   },
-  saltmarsh: {
-    id: 'saltmarsh',
-    name: 'Driftwood Bay',
+  boardwalk: {
+    id: 'boardwalk',
+    name: 'The Boardwalk',
     place: 'A seaside town',
     blurb:
       'Packed in summer, half asleep in winter, and the sea air is hard on equipment. Reiki opens at the second star.',
@@ -111,7 +111,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     wear: 1.4,
     scenery: 'seaside',
     mishap: 'storm',
-    calls: { often: 1, clients: ['the Driftwood Beach Club', 'the lifeboat station', 'the pier theater'] },
+    calls: { often: 1, clients: ['the Boardwalk Beach Club', 'the lifeboat station', 'the pier theater'] },
     goals: [
       [
         { kind: 'healed', count: 25 },
@@ -205,7 +205,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
 };
 
 /** The campaign's centers, in the order they are played. */
-export const CAMPAIGN: readonly CenterId[] = ['willow', 'exchange', 'saltmarsh', 'highpines', 'orchard'];
+export const CAMPAIGN: readonly CenterId[] = ['willow', 'exchange', 'boardwalk', 'highpines', 'orchard'];
 
 /** The center a game is set in. */
 export const centerOf = (s: { center: CenterId }) => CENTERS[s.center];
