@@ -5,6 +5,7 @@
 import {
   type Aspect,
   ASPECT_NOTES,
+  centerOf,
   DIRT_FILTHY,
   EXTINGUISHER_REACH,
   IDEAL_TEMP,
@@ -33,7 +34,16 @@ import {
 import { money } from '../format';
 import { randomLook, randomName } from '../people';
 import { irnd, pick, random } from '../random';
-import type { Item, Room, RoomVerdict, VisitNotice, Visitor, VisitorKind, VisitReport } from '../state/types';
+import type {
+  GameState,
+  Item,
+  Room,
+  RoomVerdict,
+  VisitNotice,
+  Visitor,
+  VisitorKind,
+  VisitReport,
+} from '../state/types';
 import { clamp } from '../util';
 import { accessTile } from '../world';
 import { prestige } from './ambience';
@@ -235,6 +245,11 @@ function writeAhead(ctx: SimContext, visit: VisitorKind) {
   );
 }
 
+/** Days until the inspector calls again: sooner at a center where they call more often. */
+export function inspectionGap(s: GameState): number {
+  return Math.round(irnd(INSPECTION_GAP_DAYS[0], INSPECTION_GAP_DAYS[1]) / (centerOf(s).inspections ?? 1));
+}
+
 /** Bring in the visitor who wrote ahead. False if they cannot get in yet. */
 function arrive(ctx: SimContext, notice: VisitNotice): boolean {
   const [x, y] = streetTile();
@@ -333,7 +348,7 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
   } else if (result.money < 0) spend(ctx, -result.money, 'fines');
   changeRep(ctx, result.rep);
   s.visitReport = { visit: v.visit, name: v.name, title: v.title, day: s.day, rooms: v.seen, ...result };
-  if (v.visit === 'inspector') s.nextInspection = s.day + irnd(INSPECTION_GAP_DAYS[0], INSPECTION_GAP_DAYS[1]);
+  if (v.visit === 'inspector') s.nextInspection = s.day + inspectionGap(s);
   else s.nextVip = s.day + irnd(VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
   const good = result.outcome === 'delighted' || result.outcome === 'passed';
   emit(ctx, { type: 'sfx', name: good ? 'fanfare' : 'fail' });

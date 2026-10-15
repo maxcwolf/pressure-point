@@ -161,10 +161,46 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       ],
     ],
   },
+  orchard: {
+    id: 'orchard',
+    name: 'The Orchard Estate',
+    place: 'A country resort among the apple orchards',
+    blurb:
+      'Wealthy guests who pay handsomely and expect beautiful rooms, and a health inspector who calls twice as often. Acupuncture and reiki are open from the start.',
+    plot: { x0: 4, x1: 27, y0: 5, y1: 16, door: [15, 16] },
+    startMoney: 45000,
+    climate: { average: 62, swing: 16 },
+    disciplines: ['acupuncture', 'reiki'],
+    conditions: { windfall: 3, croquet: 2.5, blossom: 2.5, neck: 1.5 },
+    unlockedFrom: 2,
+    picky: { fee: 1.5, expects: 2 },
+    inspections: 2,
+    scenery: 'orchard',
+    calls: { often: 1.5, clients: ['the manor house', 'the croquet club', 'the cider press tasting room'] },
+    goals: [
+      [
+        { kind: 'healed', count: 30 },
+        { kind: 'reputation', percent: 50 },
+        { kind: 'grade', grade: 1 },
+      ],
+      [
+        { kind: 'healed', count: 90 },
+        { kind: 'cureRate', percent: 80 },
+        { kind: 'prestige', room: 'massage', level: 4 },
+        { kind: 'grade', grade: 2 },
+      ],
+      [
+        { kind: 'healed', count: 200 },
+        { kind: 'reputation', percent: 80 },
+        { kind: 'balance', amount: 150000 },
+        { kind: 'grade', grade: 3 },
+      ],
+    ],
+  },
 };
 
 /** The campaign's centers, in the order they are played. */
-export const CAMPAIGN: readonly CenterId[] = ['willow', 'exchange', 'saltmarsh', 'highpines'];
+export const CAMPAIGN: readonly CenterId[] = ['willow', 'exchange', 'saltmarsh', 'highpines', 'orchard'];
 
 /** The center a game is set in. */
 export const centerOf = (s: { center: CenterId }) => CENTERS[s.center];

@@ -5,6 +5,7 @@ import { money } from '../format';
 import type { Tally } from '../state/types';
 import { prestige } from './ambience';
 import type { SimContext } from './context';
+import { gradeDef, standingPoints } from './standing';
 
 /** One objective as the player sees it: what to do, whether it is done, and how far along it is (0 to 1). */
 export interface Objective {
@@ -100,6 +101,14 @@ export function objectiveFor(ctx: SimContext, goal: GoalSpec): Objective {
         label: `Have a ${ROOMS[goal.room].name} of prestige ${goal.level}`,
         done: best >= goal.level,
         progress: best / goal.level,
+      };
+    }
+    case 'grade': {
+      const want = gradeDef(goal.grade);
+      return {
+        label: `Rise to ${want.name}`,
+        done: s.grade >= goal.grade,
+        progress: s.grade >= goal.grade ? 1 : Math.min(0.99, standingPoints(ctx).total / Math.max(1, want.points)),
       };
     }
     case 'noQuits': {

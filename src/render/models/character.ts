@@ -415,6 +415,47 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       cheek.castShadow = false;
       rig.props.push(cheek);
     }
+  } else if (visual === 'apple') {
+    // an apple balanced where it landed, with a bump coming up beside it
+    rig.props.push(put(head, sph(0.075, 12), mat(0xd9362f, 0.45), 0.02, 0.36, 0));
+    rig.props.push(put(head, cyl(0.008, 0.008, 0.05, 6), mat(0x6b4f33, 0.8), 0.02, 0.45, 0));
+    const leaf = put(head, sph(0.03, 8), mat(0x5aa34f, 0.7), 0.05, 0.45, 0);
+    leaf.scale.set(1.4, 0.4, 0.8);
+    const bump = put(head, sph(0.05, 10), mat(0xf0a58e, 0.6), -0.12, 0.2, 0.08);
+    for (const o of [leaf, bump]) {
+      o.castShadow = false;
+      rig.props.push(o);
+    }
+  } else if (visual === 'mallet') {
+    // still holding the croquet mallet
+    const wood = mat(0x9b6b3f, 0.6);
+    const shaft = put(armR, cyl(0.016, 0.016, 0.62, 8), wood, 0, -0.42, 0.06);
+    const block = put(armR, cyl(0.05, 0.05, 0.2, 10), mat(0x3b6fb3, 0.5), 0, -0.73, 0.06);
+    block.rotation.z = Math.PI / 2;
+    rig.props.push(shaft, block);
+  } else if (visual === 'blossom') {
+    // petals all over the hair and shoulders, and a nose rubbed red
+    const petal = mat(0xf6bfd0, 0.7);
+    for (const [x, y, z] of [
+      [-0.12, 0.2, 0.06],
+      [0.08, 0.23, -0.05],
+      [0.15, 0.14, 0.1],
+      [-0.04, 0.25, 0.1],
+    ] as const) {
+      const p = put(head, sph(0.03, 6), petal, x, y, z);
+      p.scale.y = 0.35;
+      p.castShadow = false;
+      rig.props.push(p);
+    }
+    for (const x of [-0.17, 0.17]) {
+      const p = put(torso, sph(0.035, 6), petal, x, 0.5, 0.02);
+      p.scale.y = 0.35;
+      p.castShadow = false;
+      rig.props.push(p);
+    }
+    const nose = put(head, sph(0.04, 10), mat(0xe5484d, 0.4), 0, -0.01, 0.215);
+    nose.castShadow = false;
+    rig.props.push(nose);
   }
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   if (role === 'practitioner' || role === 'caretaker') {

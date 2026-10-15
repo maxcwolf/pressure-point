@@ -4,6 +4,7 @@ import {
   ASSESS_FEE,
   BARGAIN,
   BOTCH_FACTOR,
+  centerOf,
   conditionOf,
   CONSULT_FEE,
   DISCIPLINES,
@@ -23,7 +24,7 @@ import {
   XP_PER_GUEST,
 } from '../data';
 import { random, rnd } from '../random';
-import type { Guest, Item, Staff } from '../state/types';
+import type { GameState, Guest, Item, Staff } from '../state/types';
 import { at, clamp, must } from '../util';
 import { accessPose, accessTile } from '../world';
 import { prestige } from './ambience';
@@ -47,6 +48,11 @@ import { addWear } from './upkeep';
 import { addVibes, vibesAt, vibesPenalty } from './vibes';
 import { feelTemperature, warmthAt } from './warmth';
 import { conditionPenalty } from './worsening';
+
+/** What a treatment costs a guest: its fee at the price set, and more from picky guests, who pay extra. */
+export function treatmentFee(s: GameState, fee: number, price: number): number {
+  return Math.round(fee * price * (centerOf(s).picky?.fee ?? 1));
+}
 
 /** Lower is better. Guests steer toward tables that can actually deliver what they need. */
 export function stationScore(ctx: SimContext, it: Item, g: Guest) {
@@ -284,7 +290,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       // feeling better takes the stress out of them too
       g.stressed = false;
       countVisit(ctx, g, 'healed');
-      const fee = Math.round(cond.fee * treatPrice);
+      const fee = treatmentFee(ctx.s, cond.fee, treatPrice);
       earn(ctx, fee, 'treatment', g.x, g.y);
       g.spent += fee;
       // good value earns a better name than a steep bill does

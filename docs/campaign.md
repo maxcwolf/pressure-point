@@ -1,6 +1,6 @@
 # Campaign: design draft
 
-A plan for turning the game from one open-ended center into a campaign of centers, with the current game kept as a sandbox. The decisions made are at the end, and all four phases are built, along with High Pines; The Orchard Estate is still to come.
+A plan for turning the game from one open-ended center into a campaign of centers, with the current game kept as a sandbox. The decisions made are at the end, and all four phases are built, along with High Pines and The Orchard Estate.
 
 ## What Two Point Hospital does
 
@@ -108,3 +108,5 @@ That makes the phases:
 Then a later release adds High Pines and The Orchard Estate.
 
 5. **High Pines** (after roadmap phase 7). _Done:_ a cold climate (about 26°F outside at the depth of winter), so a center there needs Radiators; snowed-in spells of two days, about three winter spells in ten, when no guests, emergencies or outbreaks arrive, announced as each starts and ends, shown in the bottom bar and with snow falling, and none in a game's first month; Stone Warmers cooling up to four times as fast in a cold room (anywhere, not only here); Cold Shoulder, Cold Feet and Stress Head common, and three mountain ailments found only there (Frozen Stiff, Wipeout, Cabin Fever); snowy ground and pines; acupuncture and reiki. Reiki stays at Saltmarsh too, since moving it would take it from Saltmarsh games and goals. The **Fireplace**, a karma-only item for 6 karma, matches the karma High Pines' stars add, so finishing everything still unlocks everything.
+
+6. **The Orchard Estate** (after roadmap phase 8). _Done:_ picky guests, who pay half as much again for a treatment and expect two more stars of prestige of its room than the center's standing asks, so a plain room lets them down; the health inspector calls twice as often; what the first two stars bring is open from the start, so acupuncture and reiki are there on day one (sound and chakra healing still take three stars); three local ailments (Windfall, Croquet Back, Blossom Nose); rows of apple trees round the building; and each star asks for a grade of standing, Wellness Studio, Wellness Center, then Healing Center. The **Topiary**, a karma-only item for 6 karma, matches the karma its stars add.

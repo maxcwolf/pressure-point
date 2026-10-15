@@ -307,6 +307,37 @@ export const CONDITIONS: readonly ConditionDef[] = [
     only: ['highpines'],
     worsens: 1.2,
   },
+  {
+    id: 'windfall',
+    name: 'Windfall',
+    desc: 'Stood under the oldest tree on the estate at harvest time. It let go of everything at once.',
+    treatment: 'Cranio-sacral Settling',
+    modality: 'cranio',
+    fee: 2100,
+    visual: 'apple',
+    only: ['orchard'],
+  },
+  {
+    id: 'croquet',
+    name: 'Croquet Back',
+    desc: 'Bent double over the mallet for a whole tournament, and still lost to the vicar.',
+    treatment: 'Deep Tissue Straightening',
+    modality: 'deep',
+    fee: 1500,
+    visual: 'mallet',
+    only: ['orchard'],
+    worsens: 1.2,
+  },
+  {
+    id: 'blossom',
+    name: 'Blossom Nose',
+    desc: 'Took one deep breath on the blossom walk and has not stopped sneezing since.',
+    treatment: 'Usui Unsneezing',
+    modality: 'usui',
+    fee: 1300,
+    visual: 'blossom',
+    only: ['orchard'],
+  },
 ];
 
 /** Whether guests can turn up with a condition in a center: everywhere, unless it is a local one. */

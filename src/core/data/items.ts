@@ -692,6 +692,20 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     heat: 14,
     noise: -1,
   },
+  topiary: {
+    type: 'topiary',
+    name: 'Topiary',
+    icon: '🌲',
+    desc: 'A bay tree clipped into three perfect spheres, in a stone urn. The sort of thing a country estate has.',
+    cost: 1500,
+    w: 1,
+    h: 1,
+    where: 'any',
+    access: [],
+    inMenu: true,
+    karma: 6,
+    decor: 6,
+  },
 };
 
 export const ITEM_MENU: readonly ItemType[] = [
@@ -700,6 +714,7 @@ export const ITEM_MENU: readonly ItemType[] = [
   'bench',
   'massage_chair',
   'plant',
+  'topiary',
   'bonsai',
   'tea_station',
   'water_cooler',

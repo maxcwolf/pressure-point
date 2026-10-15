@@ -59,7 +59,8 @@ export type ItemType =
   | 'radiator'
   | 'air_conditioner'
   | 'linen_hamper'
-  | 'fireplace';
+  | 'fireplace'
+  | 'topiary';
 
 export interface RoomDef {
   type: RoomType;
@@ -284,7 +285,10 @@ export type Visual =
   | 'sunburn'
   | 'icicles'
   | 'cast'
-  | 'thermometer';
+  | 'thermometer'
+  | 'apple'
+  | 'mallet'
+  | 'blossom';
 
 /** What a guest can arrive suffering from. */
 export type ConditionId =
@@ -319,7 +323,10 @@ export type ConditionId =
   | 'lobstered'
   | 'frozen'
   | 'wipeout'
-  | 'cabin';
+  | 'cabin'
+  | 'windfall'
+  | 'croquet'
+  | 'blossom';
 
 export interface ConditionDef {
   id: ConditionId;
@@ -447,12 +454,14 @@ export type GoalSpec =
   /** Have a finished room of this type at this prestige or better. */
   | { kind: 'prestige'; room: RoomType; level: number }
   /** Go this many days without anyone quitting. */
-  | { kind: 'noQuits'; days: number };
+  | { kind: 'noQuits'; days: number }
+  /** Reach this grade of standing, counting from 0 for the first. */
+  | { kind: 'grade'; grade: number };
 
 /** The objectives for one star: all must be met at once. */
 export type StarGoal = readonly GoalSpec[];
 
-export type CenterId = 'sandbox' | 'willow' | 'exchange' | 'saltmarsh' | 'highpines';
+export type CenterId = 'sandbox' | 'willow' | 'exchange' | 'saltmarsh' | 'highpines' | 'orchard';
 
 /** A center to run: the sandbox, or one of the campaign's. */
 export interface CenterDef {
@@ -479,8 +488,14 @@ export interface CenterDef {
   calls?: { often: number; clients: readonly string[] };
   /** Snowed-in spells in winter, when nobody can get up the road. */
   snow?: Snowfall;
-  /** What surrounds the building: a park, the seaside, or snowy mountains. */
-  scenery?: 'park' | 'seaside' | 'mountain';
+  /** What surrounds the building: a park, the seaside, snowy mountains or apple orchards. */
+  scenery?: 'park' | 'seaside' | 'mountain' | 'orchard';
+  /** Treatments, rooms and items open from the start as though this many stars were already earned. */
+  unlockedFrom?: number;
+  /** Picky guests: how much more they pay for a treatment, and how many more stars of prestige they expect of its room. */
+  picky?: { fee: number; expects: number };
+  /** How much more often than usual the health inspector calls. */
+  inspections?: number;
   /** The weather outside through the year. */
   climate: Climate;
 }

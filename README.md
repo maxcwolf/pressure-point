@@ -28,6 +28,7 @@ The browser version needs nothing installed and is always the same version as th
 2. **The Exchange**, downtown. Office workers with office ailments, arriving in rush hours when the office crowd comes in. Acupuncture opens here.
 3. **Saltmarsh**, a seaside town. Packed in summer and quiet in winter, with seaside ailments and sea air that is hard on equipment. Reiki opens here.
 4. **High Pines**, a lodge up in the mountains. Cold all year, so keep it heated, and snowed in now and then each winter, when nobody new can get up the road. Mountain ailments, and Stone Warmers that cool fast in the cold.
+5. **The Orchard Estate**, a country resort among the apple orchards. Picky guests pay half as much again but expect beautiful treatment rooms, the health inspector calls twice as often, and each star asks for a higher standing. Acupuncture and reiki are open from the start.
 
 Every campaign star earns **✨ karma**, and so do eight one-off **achievements**, like seeing an emergency through or healing 100 guests in one center. Spend karma in the **karma shop** (under Campaign on the title screen) or on a locked card in the Items menu. Each purchase stays unlocked in every center and the sandbox. Karma unlocks comfort and decor items early, before their star comes round, and four you can only get with karma: a **Massage Chair** that keeps a waiting guest patient, a **Bonsai**, a **Koi Pond** and a **Fireplace** that warms and soothes the room around it. The whole campaign earns enough karma to unlock all of them.
 

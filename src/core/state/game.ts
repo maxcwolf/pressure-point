@@ -74,7 +74,7 @@ export const defaultPolicy = (): Policy => ({
  * 11: noise, linens, temperature, staff needs, and the radiator, air conditioner and linen hamper. 12: High Pines,
  * its ailments and the Fireplace. 13: VIPs and the health inspector.
  */
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {
@@ -156,7 +156,8 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
 
 /** The star whose rooms, items and treatments are unlocked so far: every one, in a game with everything unlocked. */
 export function unlockedUpTo(s: GameState): number {
-  return s.unlockAll ? Infinity : s.stars;
+  // a center can open with some of what the stars bring already open
+  return s.unlockAll ? Infinity : Math.max(s.stars, CENTERS[s.center].unlockedFrom ?? 0);
 }
 
 /** Whether a discipline exists in this game's center at all. Massage always does. */

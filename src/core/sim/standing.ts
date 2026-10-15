@@ -2,6 +2,7 @@
 // grades. A grade once reached is kept. Each brings more guests and better applicants, and guests who expect more.
 
 import {
+  centerOf,
   GRADE_ARRIVALS,
   GRADE_EXPECTS,
   type GradeDef,
@@ -57,9 +58,10 @@ export const nextGrade = (grade: number): GradeDef | undefined => GRADES[grade +
 /** How many more guests arrive at a grade than at the first, as a multiplier. */
 export const gradeArrivals = (grade: number) => 1 + GRADE_ARRIVALS * grade;
 
-/** The prestige guests expect of a treatment room here, below which it lets them down. */
+/** The prestige guests expect of a treatment room here, below which it lets them down: more as the center rises. */
 export function expectedPrestige(s: GameState): number {
-  return at(GRADE_EXPECTS, Math.min(s.grade, GRADE_EXPECTS.length - 1));
+  // picky guests expect more on top
+  return at(GRADE_EXPECTS, Math.min(s.grade, GRADE_EXPECTS.length - 1)) + (centerOf(s).picky?.expects ?? 0);
 }
 
 /** Climb to the grade the center's points now earn, announcing it. A center never drops a grade. */

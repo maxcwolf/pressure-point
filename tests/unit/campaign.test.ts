@@ -18,7 +18,7 @@ import { runUntil } from './helpers';
 
 describe('the campaign trail', () => {
   it('opens each center once the one before it has a star', () => {
-    expect(CAMPAIGN).toEqual(['willow', 'exchange', 'saltmarsh', 'highpines']);
+    expect(CAMPAIGN).toEqual(['willow', 'exchange', 'saltmarsh', 'highpines', 'orchard']);
     expect(centerOpen({}, 'willow')).toBe(true);
     expect(centerOpen({}, 'exchange')).toBe(false);
     expect(centerOpen({ willow: 1 }, 'exchange')).toBe(true);
@@ -26,7 +26,8 @@ describe('the campaign trail', () => {
     expect(nextCenter('willow')).toBe('exchange');
     expect(nextCenter('exchange')).toBe('saltmarsh');
     expect(nextCenter('saltmarsh')).toBe('highpines');
-    expect(nextCenter('highpines')).toBeUndefined();
+    expect(nextCenter('highpines')).toBe('orchard');
+    expect(nextCenter('orchard')).toBeUndefined();
     expect(nextCenter('sandbox')).toBeUndefined();
   });
 

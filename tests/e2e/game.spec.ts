@@ -1513,7 +1513,7 @@ test.describe('the campaign', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Campaign' }).click();
     const trail = page.locator('#title-campaign');
-    await expect(trail.locator('.stop')).toHaveCount(4);
+    await expect(trail.locator('.stop')).toHaveCount(5);
     await expect(trail.locator('.stop').nth(1)).toContainText('Earn a star at Willow Lane to open');
     await expect(trail.getByRole('button', { name: 'Play The Exchange' })).toHaveCount(0);
 
@@ -1561,6 +1561,28 @@ test.describe('the campaign', () => {
       }
     });
     await expect(page.locator('#stats .date')).toContainText('Snowed in');
+  });
+
+  test('a star at High Pines opens The Orchard Estate, with every treatment room from the start', async ({
+    game,
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}');
+      localStorage.setItem(
+        'pressure-point-campaign',
+        JSON.stringify({ stars: { willow: 1, exchange: 1, saltmarsh: 1, highpines: 1 } }),
+      );
+    });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.getByRole('button', { name: 'Play The Orchard Estate' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'orchard');
+    await expect(page.locator('#objectives')).toContainText('Rise to Wellness Studio');
+    expect(await game.eval((pp) => pp.state.money)).toBe(45000);
+    await game.menu('Rooms');
+    await expect(game.card('Acupuncture Clinic')).toHaveCount(1);
+    await expect(game.card('Reiki Studio')).toHaveCount(1);
   });
 
   test('karma from stars unlocks an item for good, in a game or from the karma shop', async ({ game, page }) => {

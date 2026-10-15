@@ -51,6 +51,7 @@ import { buildStretchRack } from './stretch-rack';
 import { buildStudyDesk } from './study-desk';
 import { buildTeaStation } from './tea-station';
 import { buildToilet } from './toilet';
+import { buildTopiary } from './topiary';
 import { buildTrophyCabinet } from './trophy-cabinet';
 import { buildWaterCooler } from './water-cooler';
 import { buildWhiteboard } from './whiteboard';
@@ -104,6 +105,7 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   koi_pond: buildKoiPond,
   radiator: buildRadiator,
   fireplace: buildFireplace,
+  topiary: buildTopiary,
   air_conditioner: buildAirConditioner,
   linen_hamper: buildLinenHamper,
 };

@@ -6,6 +6,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 - **The center's standing.** The center climbs through five grades, from Back-Room Practice through Wellness Studio, Wellness Center and Healing Center to Healing Institute, on points for its rooms, how fine they are, and its staff and their ranks. Each grade brings more guests, more and better applicants, and guests who expect finer treatment rooms; a room too plain for the grade lets them down. A grade once reached is kept. See it in the Stats menu under Standing.
 - **A rival across the street.** A ZenMart opens a few weeks in, with a storefront over the road. It grows steadily, holds sales that draw away guests unless your prices come down, offers jobs to staff whose morale is low (cheer them up within five days, or they go), and competes for a new award, **Center of the Year**. A sandbox switch turns it off.
+- **The Orchard Estate,** the fifth center, opened by a star at High Pines: a country resort among the apple orchards. Picky guests pay half as much again and expect beautiful treatment rooms, the health inspector calls twice as often, and each star asks for a higher standing. Acupuncture and reiki are open from day one. Three orchard ailments (Windfall, Croquet Back and Blossom Nose), and a karma-only **Topiary**.
 
 ## v0.15.0
 
