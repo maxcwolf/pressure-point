@@ -14,7 +14,7 @@ function crowd(people: number) {
   const scene = new THREE.Scene();
   const batches = new Crowd(scene);
   const rigs = Array.from({ length: people }, (_, i) => {
-    const look = randomLook();
+    const look = randomLook(i % 2 ? 'female' : 'male');
     const rig = buildCharacter(look, undefined, i % 2 ? 'knot' : undefined);
     rig.group.position.set(i, 0, 0);
     scene.add(rig.group);

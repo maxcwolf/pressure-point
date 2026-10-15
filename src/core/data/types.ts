@@ -6,6 +6,9 @@ import type { MishapId } from './mishaps';
 export type RoomType =
   'consult' | 'assess' | 'massage' | 'acupuncture' | 'reiki' | 'sound' | 'staffroom' | 'restroom' | 'training';
 
+/** Whether someone is a woman or a man: their hair and first name follow it. */
+export type Sex = 'female' | 'male';
+
 export type Role =
   'receptionist' | 'consultant' | 'therapist' | 'acupuncturist' | 'practitioner' | 'healer' | 'caretaker';
 

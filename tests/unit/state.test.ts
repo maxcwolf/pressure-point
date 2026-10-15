@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CAMEO_CHANCE, CAMEO_NAMES, MODALITIES, ROLE_ORDER, ROLES } from '../../src/core/data';
+import { CAMEO_CHANCE, CAMEOS, MODALITIES, ROLE_ORDER, ROLES } from '../../src/core/data';
 import { fairSalary, randomName } from '../../src/core/people';
 import { random, setSeed } from '../../src/core/random';
 import { newGame, SAVE_VERSION } from '../../src/core/state/game';
@@ -30,13 +30,14 @@ describe('names', () => {
   it('mix in the cameo names at about the configured rate', () => {
     setSeed(3);
     let cameos = 0;
-    for (let i = 0; i < 3000; i++) if (CAMEO_NAMES.includes(randomName())) cameos++;
+    const names = CAMEOS.map((c) => c.name);
+    for (let i = 0; i < 3000; i++) if (names.includes(randomName(i % 2 ? 'female' : 'male'))) cameos++;
     expect(cameos / 3000).toBeGreaterThan(CAMEO_CHANCE * 0.7);
     expect(cameos / 3000).toBeLessThan(CAMEO_CHANCE * 1.3);
   });
 
   it('include the ones that were asked for', () => {
-    expect(CAMEO_NAMES).toEqual(expect.arrayContaining(['Rang Dipkin', 'Bilb Ono', 'Hosta Mohogey']));
+    expect(CAMEOS.map((c) => c.name)).toEqual(expect.arrayContaining(['Rang Dipkin', 'Bilb Ono', 'Hosta Mohogey']));
   });
 });
 

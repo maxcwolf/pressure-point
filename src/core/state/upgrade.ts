@@ -22,6 +22,7 @@ import {
   VIP_FIRST_DAY,
   VIP_GAP_DAYS,
 } from '../data';
+import { settleSex } from '../people';
 import {
   defaultPolicy,
   emptyTally,
@@ -191,6 +192,8 @@ export function upgradeSave(save: GameState) {
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
   movedSoundBath(s);
+  // before women and men were told apart, a look had no sex, and any hair style went with any name
+  for (const p of [...s.staff, ...s.candidates, ...s.guests, ...(s.visitors ?? [])]) settleSex(p);
   // Amanda Jablonsky's mohawk came later than she did: in an older save she may have an ordinary haircut
   for (const p of [...s.staff, ...s.candidates]) if (p.name === AMANDA.name) p.look.hairStyle = AMANDA.hairStyle;
   for (const it of s.items) {

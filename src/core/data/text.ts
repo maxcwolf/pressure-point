@@ -1,5 +1,7 @@
 // Names and flavor text.
 
+import type { Sex } from './types';
+
 export const GAME_TITLE = 'Pressure Point Institute';
 
 /** The title broken up for the places that stack it: the lawn sign and the title screen. */
@@ -15,43 +17,56 @@ export const EMERGENCY_CAUSES = [
   'A furniture store ran a build-it-yourself weekend.',
 ];
 
-export const FIRST_NAMES = [
+/** First names for women. */
+export const WOMEN_NAMES = [
   'Ada',
-  'Barnaby',
   'Cleo',
-  'Dmitri',
   'Edie',
-  'Fergus',
   'Greta',
-  'Hamish',
   'Ines',
-  'Jasper',
   'Kiki',
-  'Lionel',
   'Mabel',
-  'Nico',
   'Odette',
-  'Percy',
   'Queenie',
-  'Rufus',
   'Saskia',
-  'Tobias',
   'Uma',
-  'Vernon',
   'Wilma',
-  'Xander',
   'Yolanda',
-  'Zeb',
   'Priya',
-  'Kenji',
   'Amara',
-  'Mateo',
   'Noor',
-  'Soren',
   'Tamsin',
-  'Idris',
   'Beatrix',
+  'Marisol',
+  'Hazel',
+  'Ingrid',
+  'Rosalind',
+];
+
+/** First names for men. */
+export const MEN_NAMES = [
+  'Barnaby',
+  'Dmitri',
+  'Fergus',
+  'Hamish',
+  'Jasper',
+  'Lionel',
+  'Nico',
+  'Percy',
+  'Rufus',
+  'Tobias',
+  'Vernon',
+  'Xander',
+  'Zeb',
+  'Kenji',
+  'Mateo',
+  'Soren',
+  'Idris',
   'Cosmo',
+  'Otis',
+  'Ravi',
+  'Bram',
+  'Felix',
 ];
 
 export const LAST_NAMES = [
@@ -85,25 +100,25 @@ export const LAST_NAMES = [
   'Hotstone',
 ];
 
-/** Full names borrowed from Tim and Eric, mixed in among the generated ones. */
-export const CAMEO_NAMES = [
-  'Max Wolf',
-  'Tanner Costin',
-  'Katie Maverick',
-  'Rang Dipkin',
-  'Bilb Ono',
-  'Hosta Mohogey',
-  'Tairy Greene',
-  'Steve Brule',
-  'Jan Skylar',
-  'Wayne Skylar',
-  'Carol Krabit',
-  'Casey Tatum',
-  'Glen Tennis',
-  'Doug Prishpreed',
-  'Scott Clam',
-  'Jimes Tooper',
-  'Terry Bruge-Hiplo',
+/** Full names borrowed from Tim and Eric, mixed in among the generated ones, each a woman or a man. */
+export const CAMEOS: readonly { name: string; sex: Sex }[] = [
+  { name: 'Max Wolf', sex: 'male' },
+  { name: 'Tanner Costin', sex: 'male' },
+  { name: 'Katie Maverick', sex: 'female' },
+  { name: 'Rang Dipkin', sex: 'male' },
+  { name: 'Bilb Ono', sex: 'male' },
+  { name: 'Hosta Mohogey', sex: 'female' },
+  { name: 'Tairy Greene', sex: 'male' },
+  { name: 'Steve Brule', sex: 'male' },
+  { name: 'Jan Skylar', sex: 'female' },
+  { name: 'Wayne Skylar', sex: 'male' },
+  { name: 'Carol Krabit', sex: 'female' },
+  { name: 'Casey Tatum', sex: 'male' },
+  { name: 'Glen Tennis', sex: 'male' },
+  { name: 'Doug Prishpreed', sex: 'male' },
+  { name: 'Scott Clam', sex: 'male' },
+  { name: 'Jimes Tooper', sex: 'male' },
+  { name: 'Terry Bruge-Hiplo', sex: 'male' },
 ];
 
 export const ANNOUNCEMENTS = [

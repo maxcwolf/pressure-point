@@ -1,5 +1,7 @@
 // The numbers that tune the game: time, fees, loans and wear. Each center's goals are in centers.ts.
 
+import type { Role } from './types';
+
 export const DAY_SECONDS = 6;
 /** Days an emergency stays on offer, and days to heal its guests once accepted. */
 export const OFFER_DAYS = 8;
@@ -98,3 +100,16 @@ export const CAMEO_CHANCE = 0.12;
 
 /** Seconds a group session waits for its mats to fill after the first guest lies down, before it starts anyway. */
 export const SESSION_WAIT = 8;
+
+/** Share of applicants for each role who are women: most of those at the desk and the tables, few caretakers. */
+export const WOMEN_APPLY: Readonly<Record<Role, number>> = {
+  receptionist: 0.7,
+  consultant: 0.7,
+  therapist: 0.7,
+  acupuncturist: 0.7,
+  practitioner: 0.7,
+  healer: 0.7,
+  caretaker: 0.3,
+};
+/** Share of guests and visitors who are women. */
+export const WOMEN_VISIT = 0.5;

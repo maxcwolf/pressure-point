@@ -17,7 +17,7 @@ import {
   ROLE_ORDER,
   ROLES,
 } from '../core/data';
-import { randomLook } from '../core/people';
+import { HAIR, randomLook } from '../core/people';
 import type { Char, Look, VisitorKind } from '../core/state/types';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { buildBeach } from '../render/models/beach';
@@ -146,7 +146,8 @@ function personControls(st: PersonState, home = LAB_LOOK): Control[] {
   return [
     choice('Pose', st, 'pose', POSES),
     choice('Bubble', st, 'bubble', BUBBLES),
-    button('Shuffle look', () => (st.look = { ...randomLook(), ...keep }), true),
+    button('Shuffle as a woman', () => (st.look = { ...randomLook('female'), ...keep }), true),
+    button('Shuffle as a man', () => (st.look = { ...randomLook('male'), ...keep }), true),
     button('Reset look', () => (st.look = { ...home }), true),
   ];
 }
@@ -198,6 +199,18 @@ interface Named {
   name: string;
   look: Look;
 }
+
+/** Every hair style and facial hair, each on a receptionist, so a picture of each is kept. */
+const LOOKS: readonly (readonly [key: string, label: string, look: Partial<Look>])[] = [
+  ['long', 'long hair', { hairStyle: HAIR.long }],
+  ['bob', 'a bob', { hairStyle: HAIR.bob, hair: 0x8a5a2b }],
+  ['ponytail', 'a ponytail', { hairStyle: HAIR.ponytail, skin: 0xb97a55, hair: 0x2b1d16 }],
+  ['curls', 'big curls', { hairStyle: HAIR.curls, skin: 0x6b4229, hair: 0x2b1d16 }],
+  ['short', 'short hair', { sex: 'male', hairStyle: HAIR.short }],
+  ['bald', 'bald', { sex: 'male', hairStyle: HAIR.bald, skin: 0xd9a078 }],
+  ['moustache', 'a moustache', { sex: 'male', hairStyle: HAIR.short, beard: 1, hair: 0x8c8c8c }],
+  ['beard', 'a beard', { sex: 'male', hairStyle: HAIR.curls, beard: 2, skin: 0x8d5a3b, hair: 0x2b1d16 }],
+];
 
 /** A member of staff in their uniform, working on any treatment their role gives. */
 function staffSpecimen(role: Role, named?: Named): Specimen {
@@ -334,6 +347,9 @@ export const CATALOG: readonly Specimen[] = [
     name: AMANDA.name,
     look: { ...LAB_LOOK, hairStyle: AMANDA.hairStyle },
   }),
+  ...LOOKS.map(([key, label, look]) =>
+    staffSpecimen('receptionist', { id: `look-${key}`, name: `With ${label}`, look: { ...LAB_LOOK, ...look } }),
+  ),
   ...(['vip', 'inspector'] as const).map(visitorSpecimen),
   ...SCENERY,
 ];

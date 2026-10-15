@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 
 import { AMANDA, type Role, ROLES, type Visual } from '../../core/data';
+import { HAIR } from '../../core/people';
 import type { Look, VisitorKind } from '../../core/state/types';
 import { owned } from '../disposal';
 import { buildMohawk } from './mohawk';
@@ -121,16 +122,42 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const hair = mat(look.hair, 0.85);
   /** The shared half-sphere cap of hair. */
   const cap = () => cached('haircap', () => new THREE.SphereGeometry(0.228, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52));
-  // a cap needs short hair under it
-  const style = role === 'caretaker' || visitor === 'inspector' ? 0 : look.hairStyle;
+  // a hat needs short hair under it, or a woman's tied back low
+  const hatted = role === 'caretaker' || visitor === 'inspector';
+  const style = hatted ? HAIR.short : look.hairStyle;
   if (style === AMANDA.hairStyle) buildMohawk(head, look.skin, look.hair);
-  else if (style !== 3) {
+  else if (style !== HAIR.bald) {
     const c = put(head, cap(), hair, 0, 0.012, -0.018);
     c.rotation.x = -0.28;
   }
-  if (style === 1) put(head, sph(0.1, 12), hair, 0, 0.22, -0.1);
-  if (style === 2) put(head, rbox(0.4, 0.34, 0.16, 0.07), hair, 0, -0.08, -0.15);
-  if (style === 4) put(head, sph(0.25, 14), hair, 0, 0.06, -0.06);
+  if (style === HAIR.bun) put(head, sph(0.1, 12), hair, 0, 0.22, -0.1);
+  if (style === HAIR.long) put(head, rbox(0.4, 0.34, 0.16, 0.07), hair, 0, -0.08, -0.15);
+  if (style === HAIR.curls) put(head, sph(0.25, 14), hair, 0, 0.06, -0.06);
+  // a bob: hair to the jaw at the sides and back, clear of the face
+  if (style === HAIR.bob) put(head, rbox(0.47, 0.26, 0.34, 0.1), hair, 0, -0.03, -0.05);
+  if (style === HAIR.ponytail) {
+    // tied high at the crown, arcing back and falling behind the head
+    put(head, sph(0.065, 10), hair, 0, 0.19, -0.15);
+    put(head, capsule(0.06, 0.08), hair, 0, 0.2, -0.25).rotation.x = -1.35;
+    put(head, capsule(0.055, 0.15), hair, 0, 0.08, -0.32).rotation.x = -0.2;
+  } else if (hatted && look.sex === 'female') {
+    // tied low under the hat, hanging down the back
+    put(head, sph(0.06, 10), hair, 0, 0.04, -0.22);
+    put(head, capsule(0.055, 0.2), hair, 0, -0.06, -0.27).rotation.x = 0.35;
+  }
+  if (look.sex === 'male' && look.beard) {
+    // a moustache, and with a beard, hair round the jaw from ear to ear below it
+    put(head, rbox(0.13, 0.035, 0.035, 0.015), hair, 0, -0.07, 0.205);
+    if (look.beard === 2)
+      put(
+        head,
+        cached('beard', () => new THREE.SphereGeometry(0.226, 16, 8, 0, Math.PI, Math.PI * 0.6, Math.PI * 0.32)),
+        hair,
+        0,
+        0,
+        0,
+      );
+  }
   if (role === 'caretaker') {
     put(head, cyl(0.2, 0.22, 0.1, 16), accent, 0, 0.18, 0);
     put(head, rbox(0.3, 0.03, 0.2, 0.01), accent, 0, 0.14, 0.2);

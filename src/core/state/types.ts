@@ -18,6 +18,7 @@ import type {
   Pose,
   Role,
   RoomType,
+  Sex,
   TraitId,
 } from '../data';
 
@@ -80,6 +81,10 @@ export interface Look {
   top: number;
   bottom: number;
   scale: number;
+  /** Whether they are a woman or a man: their hair and first name follow it. */
+  sex: Sex;
+  /** A man's facial hair: 0 none, 1 a moustache, 2 a beard. */
+  beard: number;
 }
 
 interface CharBase {

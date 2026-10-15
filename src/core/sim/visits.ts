@@ -30,9 +30,10 @@ import {
   VISIT_NEWS,
   VISIT_NOTICE_DAYS,
   WEAR_REPAIR,
+  WOMEN_VISIT,
 } from '../data';
 import { money } from '../format';
-import { randomLook, randomName } from '../people';
+import { randomLook, randomName, rollSex, sexOfName } from '../people';
 import { irnd, pick, random } from '../random';
 import type {
   GameState,
@@ -220,9 +221,10 @@ export function chooseTour(ctx: SimContext, visit: VisitorKind): number[] {
 /** What a visitor is called and what they care about, for a VIP or the inspector. */
 export function newNotice(ctx: SimContext, visit: VisitorKind): VisitNotice {
   const arrives = ctx.s.day + VISIT_NOTICE_DAYS;
-  if (visit === 'inspector') return { visit, name: randomName(), title: 'the health inspector', arrives };
+  const name = randomName(rollSex(WOMEN_VISIT));
+  if (visit === 'inspector') return { visit, name, title: 'the health inspector', arrives };
   const vip = pick(VIPS);
-  return { visit, name: randomName(), title: vip.title, cares: vip.cares, arrives };
+  return { visit, name, title: vip.title, cares: vip.cares, arrives };
 }
 
 /** Put a visit on the calendar, and say who is coming. */
@@ -254,7 +256,8 @@ export function inspectionGap(s: GameState): number {
 function arrive(ctx: SimContext, notice: VisitNotice): boolean {
   const [x, y] = streetTile();
   const v: Visitor = {
-    ...newChar(ctx, notice.name, randomLook(), x, y),
+    // the name was a woman's or a man's, and the look that turns up follows it
+    ...newChar(ctx, notice.name, randomLook(sexOfName(notice.name) ?? rollSex(WOMEN_VISIT)), x, y),
     kind: 'visitor',
     visit: notice.visit,
     title: notice.title,

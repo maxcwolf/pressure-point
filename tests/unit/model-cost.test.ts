@@ -75,8 +75,8 @@ describe('the cost of drawing each model', () => {
     const all = await costs();
     const total = all.reduce((sum, m) => sum + m.calls, 0);
     // about 1390 when this was written, 1540 after The Orchard Estate's guests, the Topiary and the rival's storefront,
-    // 1730 after sound healing's guests, items and healer, 1780 before the still parts of items were merged, and 2530
-    // while every part of every model cast a shadow
+    // 1720 with a receptionist in the lab for every hair style and beard, 1730 after sound healing's guests, items and
+    // healer, 1780 before the still parts of items were merged, and 2530 while every part of every model cast a shadow
     const heaviest = all.sort((a, b) => b.calls - a.calls).slice(0, 10);
     expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(1800);
   });
@@ -121,9 +121,9 @@ describe('trimming shadows', () => {
 
   it.each([0.92, 1, 1.08])("leaves a person's shadow falling from their legs, body and head (scale %f)", (scale) => {
     setSeed(1);
-    // a dozen looks, so every hairstyle is in, with and without a uniform
+    // a dozen looks, women and men, so every hairstyle and beard is in, with and without a uniform
     for (let i = 0; i < 12; i++) {
-      const look = { ...randomLook(), scale };
+      const look = { ...randomLook(i % 2 ? 'female' : 'male'), scale };
       const rig = buildCharacter(look, i % 3 ? undefined : i % 2 ? 'receptionist' : 'caretaker');
       /** Does any drawn part of this cast a shadow? */
       const casts = (o: THREE.Object3D) => {

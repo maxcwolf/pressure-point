@@ -107,6 +107,7 @@ export const AMANDA = {
   minSkill: 3,
   quals: ['swedish', 'deep', 'cranio'],
   hairStyle: 5,
+  sex: 'female',
 } as const;
 
 const TRAIT_BY_ID = new Map(TRAITS.map((t) => [t.id, t]));

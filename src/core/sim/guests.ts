@@ -24,8 +24,9 @@ import {
   ROOMS,
   SEAT_DRAIN,
   STRESS_DRAIN,
+  WOMEN_VISIT,
 } from '../data';
-import { randomLook, randomName } from '../people';
+import { randomLook, randomName, rollSex } from '../people';
 import { pick, random, rnd } from '../random';
 import type { GameState, Guest, Item, Need } from '../state/types';
 import { at } from '../util';
@@ -80,8 +81,9 @@ export function guestCap(s: GameState): number {
 export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency = false): Guest | null {
   const s = ctx.s;
   const [x, y] = streetTile();
+  const sex = rollSex(WOMEN_VISIT);
   const g: Guest = {
-    ...newChar(ctx, randomName(), randomLook(), x, y),
+    ...newChar(ctx, randomName(sex), randomLook(sex), x, y),
     kind: 'guest',
     condition: condition ?? rollCondition(ctx),
     // emergency cases arrive already diagnosed and go straight to treatment
