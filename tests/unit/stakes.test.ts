@@ -7,6 +7,7 @@ import {
   CONDITION_PENALTY,
   EMERGENCY_CONDITION,
   OUTBREAK_STARS,
+  VIBES_FADE,
   VIBES_MORALE,
   VIBES_PENALTY,
   VIBES_PER_FAIL,
@@ -17,7 +18,7 @@ import { reviewStars } from '../../src/core/sim/feelings';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { endOutbreak, spreadStress } from '../../src/core/sim/outbreaks';
 import { moraleTarget } from '../../src/core/sim/staffing';
-import { addVibes, canSmudge, roomToSmudge, vibesPenalty } from '../../src/core/sim/vibes';
+import { addVibes, canSmudge, fadeVibes, roomToSmudge, vibesPenalty } from '../../src/core/sim/vibes';
 import { conditionPenalty, worsening, worsenRate } from '../../src/core/sim/worsening';
 import { SAVE_VERSION } from '../../src/core/state/game';
 import type { GameState, Guest } from '../../src/core/state/types';
@@ -113,6 +114,18 @@ describe('bad vibes', () => {
     expect(sim.chanceFor(g)!.chance).toBeLessThan(clear);
   });
 
+  it('fade slowly on their own, and are gone in the end', () => {
+    const { s, massage } = openCenter(1);
+    const ctx = createContext(s);
+    addVibes(ctx, massage);
+    fadeVibes(ctx, 10);
+    expect(massage.vibes).toBeCloseTo(VIBES_PER_FAIL - VIBES_FADE * 10);
+    // slowly: a few days on, they are still most of the way there
+    expect(massage.vibes).toBeGreaterThan(VIBES_PER_FAIL / 2);
+    fadeVibes(ctx, VIBES_PER_FAIL / VIBES_FADE);
+    expect(massage.vibes).toBe(0);
+  });
+
   it('come with every failed treatment', () => {
     const { sim, s, massage } = openCenter(3);
     // no reiki here, and no Janitor who could clear them
@@ -160,12 +173,16 @@ describe('bad vibes', () => {
     expect(canSmudge(janitor)).toBe(false);
     expect(roomToSmudge(ctx, janitor)).toBeUndefined();
     run(sim, 30);
-    expect(massage.vibes).toBe(100);
+    // only fading, with nobody clearing them
+    expect(massage.vibes).toBeCloseTo(100 - VIBES_FADE * 30, 0);
     addTraining(sim);
     expect(sim.courses(janitor).some((c) => c.id === 'smudging')).toBe(true);
     expect(sim.train(janitor.id, 'smudging')).toBe(true);
     runUntil(sim, () => janitor.general.includes('smudging'), 120);
-    runUntil(sim, () => massage.vibes === 0, 300);
+    massage.vibes = 100;
+    runUntil(sim, () => wafting(janitor), 120);
+    // cleared long before they could have faded
+    runUntil(sim, () => massage.vibes === 0, 60);
     expect(inconsistencies(sim)).toEqual([]);
   });
 

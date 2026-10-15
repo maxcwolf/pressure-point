@@ -50,7 +50,7 @@ function BadVibes({ room }: { room: Room }) {
       <b>☁️ Bad vibes</b>
       <Bar value={room.vibes} class="thin bad" />
       <p class="sub">
-        {`A failed treatment left these behind. Treatments here work less often, and staff here are unsettled. ${
+        {`A failed treatment left these behind. Treatments here work less often, and staff here are unsettled, until they fade or are cleared. ${
           who
             ? `${who.name} is clearing them with a bundle of sage.`
             : able

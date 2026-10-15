@@ -412,7 +412,8 @@ function smudgeStep(ctx: SimContext, st: Staff, dt: number) {
     return;
   }
   st.timer -= dt;
-  if (st.timer > 0) {
+  // done when the time is up, or sooner if the vibes have faded away meanwhile
+  if (st.timer > 0 && room.vibes > 0) {
     if (!st.path) wander(ctx, st, room);
     return;
   }

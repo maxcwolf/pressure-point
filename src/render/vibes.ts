@@ -1,4 +1,5 @@
-// Bad vibes: a small gloomy cloud hanging over each room a failed treatment has left them in, until they are cleared.
+// Bad vibes: a small gloomy cloud hanging over each room a failed treatment has left them in, shrinking and thinning
+// as they fade, until they are gone.
 
 import * as THREE from 'three';
 
@@ -49,7 +50,7 @@ export class VibesLayer {
         this.scene.add(cloud);
         this.clouds.set(room.id, cloud);
       }
-      const size = 0.6 + (room.vibes / 100) * 0.6;
+      const size = 0.4 + (room.vibes / 100) * 0.8;
       cloud.scale.setScalar(size);
       cloud.position.set(
         room.x + room.w / 2 + Math.sin(t * 0.5 + room.id) * 0.25,
@@ -57,7 +58,7 @@ export class VibesLayer {
         room.y + room.h / 2 + Math.cos(t * 0.4 + room.id) * 0.15,
       );
       cloud.rotation.y = t * 0.15 + room.id;
-      (cloud.userData.murk as THREE.MeshStandardMaterial).opacity = 0.45 + (room.vibes / 100) * 0.4;
+      (cloud.userData.murk as THREE.MeshStandardMaterial).opacity = 0.15 + (room.vibes / 100) * 0.7;
     }
     for (const [id, cloud] of this.clouds) {
       if (live.has(id)) continue;

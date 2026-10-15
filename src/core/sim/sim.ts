@@ -63,6 +63,7 @@ import type { DeliveryProblem } from './treatments';
 import { deliveryProblem, enabled, modalityOf, offered, setDiscipline, unlocked } from './treatments';
 import { inRush, type Season, seasonOf, updateTwists } from './twists';
 import { decayItems } from './upkeep';
+import { fadeVibes } from './vibes';
 
 export class Sim {
   readonly world: World;
@@ -107,6 +108,7 @@ export class Sim {
     for (const g of [...s.guests]) updateGuest(ctx, g, dt);
     for (const st of [...s.staff]) updateStaff(ctx, st, dt);
     decayItems(ctx, dt);
+    fadeVibes(ctx, dt);
 
     this.slowT -= dt;
     if (this.slowT <= 0) {

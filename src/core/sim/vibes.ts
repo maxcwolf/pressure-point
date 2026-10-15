@@ -1,7 +1,8 @@
 // Bad vibes: the cloud a failed treatment leaves over its room, which lowers results there and unsettles whoever
-// works in it, until a Reiki Practitioner, or a Janitor who has learned Smudging, wafts burning sage through it.
+// works in it, until a Reiki Practitioner, or a Janitor who has learned Smudging, wafts burning sage through it. Left
+// alone, they fade slowly on their own.
 
-import { ROOMS, SMUDGE_SECONDS, VIBES_PENALTY, VIBES_PER_FAIL } from '../data';
+import { ROOMS, SMUDGE_SECONDS, VIBES_FADE, VIBES_PENALTY, VIBES_PER_FAIL } from '../data';
 import { pick } from '../random';
 import type { Item, Room, Staff } from '../state/types';
 import { hasGeneral } from './careers';
@@ -29,10 +30,15 @@ export function addVibes(ctx: SimContext, room: Room) {
   tipOnce(
     ctx,
     'vibes',
-    `That failed treatment has left bad vibes hanging over the ${ROOMS[room.type].name}: treatments there work less often until they are cleared. ${someone ? 'Someone will be along with a bundle of sage.' : 'A Reiki Practitioner can clear them, or a Janitor who has taken the Smudging course.'}`,
+    `That failed treatment has left bad vibes hanging over the ${ROOMS[room.type].name}: treatments there work less often until they fade or are cleared. ${someone ? 'Someone will be along with a bundle of sage.' : 'A Reiki Practitioner can clear them, or a Janitor who has taken the Smudging course.'}`,
     'bad',
     { kind: 'room', id: room.id },
   );
+}
+
+/** Let bad vibes fade a little with time, wherever they hang. */
+export function fadeVibes(ctx: SimContext, dt: number) {
+  for (const room of ctx.s.rooms) if (room.vibes > 0) room.vibes = Math.max(0, room.vibes - VIBES_FADE * dt);
 }
 
 /** A room with bad vibes that nobody is clearing yet, the nearest first, if this member of staff can clear it. */
