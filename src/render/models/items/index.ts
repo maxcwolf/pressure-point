@@ -24,6 +24,7 @@ import { buildFireExtinguisher } from './fire-extinguisher';
 import { buildFireplace } from './fireplace';
 import { buildFountain } from './fountain';
 import { buildGong } from './gong';
+import { buildInstructorMat } from './instructor-mat';
 import { buildKoiPond } from './koi-pond';
 import { buildLinenHamper } from './linen-hamper';
 import { buildMagazineRack } from './magazine-rack';
@@ -35,6 +36,7 @@ import { buildOilTrolley } from './oil-trolley';
 import { buildPlant } from './plant';
 import { buildPoolTable } from './pool-table';
 import { buildPostureScanner } from './posture-scanner';
+import { buildPracticeSpot } from './practice-spot';
 import { buildRadiator } from './radiator';
 import { buildReceptionDesk } from './reception-desk';
 import { buildRecliner } from './recliner';
@@ -94,6 +96,8 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   singing_bowls: buildSingingBowls,
   sound_mat: buildSoundMat,
   recliner: buildRecliner,
+  instructor_mat: buildInstructorMat,
+  practice_spot: buildPracticeSpot,
   gong: buildGong,
   crystal_bowls: buildCrystalBowls,
   stone_warmer: buildStoneWarmer,

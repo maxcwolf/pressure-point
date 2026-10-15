@@ -1,7 +1,8 @@
 // The inspector for a guest.
 
-import { conditionOf, FEELINGS, MODALITIES, POOR_CONDITION } from '../../../core/data';
+import { CLASS_FEE, conditionOf, FEELINGS, MODALITIES, POOR_CONDITION, WEEKDAYS } from '../../../core/data';
 import { money } from '../../../core/format';
+import { weekday } from '../../../core/sim/classes';
 import type { Guest } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { chanceText, percent, poorChance } from '../../lib/chance';
@@ -46,9 +47,44 @@ function CalmButton({ guest: g }: { guest: Guest }) {
   );
 }
 
+/** A class-goer: the class they came for, what they are doing, how they are holding up and how they feel. */
+function ClassgoerInfo({ guest: g }: { guest: Guest }) {
+  const { sim } = useGame();
+  return (
+    <>
+      <h3>{g.name}</h3>
+      <p class="tag">☯️ Class-goer</p>{' '}
+      <p>{`Here for ${WEEKDAYS[weekday(g.classDay)] ?? ''}’s Qi Gong class, at ${money(Math.round(CLASS_FEE * sim.priceFor('qigong')))} a place.`}</p>{' '}
+      <p class="status">{guestStatus(g, sim)}</p>{' '}
+      <label>
+        Patience
+        <Bar value={g.patience} class={g.patience < 25 ? 'bad' : ''} />
+      </label>{' '}
+      <Feelings guest={g} />
+      <p class="sub">{`Spent so far: ${money(g.spent)}`}</p>
+    </>
+  );
+}
+
+/** What a guest has felt about their visit so far. */
+function Feelings({ guest: g }: { guest: Guest }) {
+  if (!g.feelings.length) return null;
+  return (
+    <>
+      <h4>How they feel</h4>
+      <div class="feelings">
+        {g.feelings.map((f) => (
+          <span key={f} class={FEELINGS[f].good ? 'good' : 'bad'}>{`${FEELINGS[f].icon} ${FEELINGS[f].text}`}</span>
+        ))}
+      </div>
+    </>
+  );
+}
+
 /** A guest's condition, what they are doing and how they are holding up. */
 export function GuestInfo({ guest: g }: { guest: Guest }) {
   const { sim } = useGame();
+  if (g.classDay) return <ClassgoerInfo guest={g} />;
   const c = conditionOf(g.condition);
   const sure = sim.s.policy.diagnosis;
   // the condition is a mystery until a consultation has settled it
@@ -93,16 +129,7 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
         Bladder
         <Bar value={g.bladder} class="need" />
       </label>{' '}
-      {g.feelings.length > 0 && (
-        <>
-          <h4>How they feel</h4>
-          <div class="feelings">
-            {g.feelings.map((f) => (
-              <span key={f} class={FEELINGS[f].good ? 'good' : 'bad'}>{`${FEELINGS[f].icon} ${FEELINGS[f].text}`}</span>
-            ))}
-          </div>
-        </>
-      )}
+      <Feelings guest={g} />
       <p class="sub">{`Spent so far: ${money(g.spent)}`}</p>
       <CalmButton guest={g} />
       {g.state !== 'leaving' && (

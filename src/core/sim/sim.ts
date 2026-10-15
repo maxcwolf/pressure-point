@@ -13,9 +13,12 @@ import {
   type ItemType,
   type Modality,
   type ModalityDef,
+  type Offering,
+  type Priced,
   type RoomType,
 } from '../data';
 import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
+import { offeringOn } from '../state/game';
 import type {
   Char,
   GameState,
@@ -59,6 +62,15 @@ import { acceptCall, callFee, declineCall, updateCalls, whoCanGo } from './calls
 import { fullyTrained, promote, reject, setDuty, updateApplicants, updateHabits } from './careers';
 import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
+import {
+  admitClassgoers,
+  announceClasses,
+  bookClasses,
+  classPlaying,
+  giveUp,
+  setClasses,
+  toggleClassDay,
+} from './classes';
 import { createContext, type SimContext } from './context';
 import { decorateRoom } from './decor';
 import { borrow, monthEnd, priceFor, repay, setPrice, setTechniquePrice } from './economy';
@@ -84,7 +96,7 @@ import { subjectSpot } from './subjects';
 import type { Course } from './training';
 import { courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
-import { deliveryProblem, enabled, modalityOf, offered, setDiscipline, unlocked } from './treatments';
+import { deliveryProblem, modalityOf, offered, setDiscipline, unlocked } from './treatments';
 import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
 import { orderUpgrade } from './upgrades';
 import { decayItems } from './upkeep';
@@ -122,7 +134,13 @@ export class Sim {
     const { ctx } = this;
     const { s } = ctx;
     const prevMonth = Math.floor(s.day / DAYS_PER_MONTH);
+    const prevDay = Math.floor(s.day);
     s.day += dt / DAY_SECONDS;
+    if (Math.floor(s.day) !== prevDay) {
+      giveUp(ctx);
+      bookClasses(ctx);
+      announceClasses(ctx);
+    }
     const month = Math.floor(s.day / DAYS_PER_MONTH);
     if (month !== prevMonth) {
       monthEnd(ctx);
@@ -131,6 +149,7 @@ export class Sim {
 
     checkOpening(ctx);
     admitGuests(ctx, dt);
+    admitClassgoers(ctx);
     updateStations(ctx, dt);
     for (const g of [...s.guests]) updateGuest(ctx, g, dt);
     for (const st of [...s.staff]) updateStaff(ctx, st, dt);
@@ -290,13 +309,17 @@ export class Sim {
 
   // ---- Treatments ------------------------------------------------------------
 
-  /** Whether a discipline is switched on for this game. */
-  enabled(d: Discipline): boolean {
-    return enabled(this.ctx, d);
+  /** Whether a discipline, or the Qi Gong classes, is switched on for this game. */
+  enabled(d: Offering): boolean {
+    return offeringOn(this.s, d);
   }
 
-  /** Switch an optional discipline on or off. */
-  setDiscipline(d: Discipline, on: boolean) {
+  /** Switch an optional discipline, or the Qi Gong classes, on or off. */
+  setDiscipline(d: Offering, on: boolean) {
+    if (d === 'qigong') {
+      setClasses(this.ctx, on);
+      return;
+    }
     setDiscipline(this.ctx, d, on);
   }
 
@@ -450,11 +473,11 @@ export class Sim {
     setPrice(this.ctx, level);
   }
   /** Set a technique's own price, on top of the overall level. */
-  setTechniquePrice(m: Modality, level: number) {
+  setTechniquePrice(m: Priced, level: number) {
     setTechniquePrice(this.ctx, m, level);
   }
   /** What a technique costs against standard, all told. */
-  priceFor(m: Modality): number {
+  priceFor(m: Priced): number {
     return priceFor(this.s, m);
   }
   // ---- Marketing -------------------------------------------------------------
@@ -632,6 +655,16 @@ export class Sim {
   /** Pay for the next upgrade to a piece of treatment equipment, for a Mechanic to install. */
   orderUpgrade(id: number): boolean {
     return orderUpgrade(this.ctx, id);
+  }
+
+  /** Whether a Qi Gong class is going on at a Practice Spot's studio now. */
+  classPlaying(spot: Item): boolean {
+    return classPlaying(this.ctx, spot);
+  }
+
+  /** Switch a day of the week on or off in a Qi Gong Studio's timetable. */
+  toggleClassDay(roomId: number, day: number): boolean {
+    return toggleClassDay(this.ctx, roomId, day);
   }
 
   /** Change a room's floor or walls, or those of every room of its kind. */

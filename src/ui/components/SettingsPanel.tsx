@@ -3,7 +3,7 @@
 import './SettingsPanel.css';
 
 import type { Audio } from '../../audio';
-import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from '../../core/data';
+import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
 import { disciplineHere } from '../../core/state/game';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../storage/settings';
@@ -91,6 +91,17 @@ export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
             />
           );
         })}
+        <SettingRow
+          icon={QIGONG_SETTING.icon}
+          name={QIGONG_SETTING.name}
+          desc={QIGONG_SETTING.desc}
+          on={sim ? sim.enabled('qigong') : loadDisciplinePrefs().qigong !== false}
+          onToggle={flip(() => {
+            const on = !(sim ? sim.enabled('qigong') : loadDisciplinePrefs().qigong !== false);
+            saveDisciplinePref('qigong', on);
+            sim?.setDiscipline('qigong', on);
+          })}
+        />
       </ul>
       <p class="sub">
         {sim

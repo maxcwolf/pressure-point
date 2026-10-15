@@ -2,13 +2,13 @@
 
 import type * as THREE from 'three';
 
-import { conditionOf, type Modality, ROLES } from '../core/data';
+import { conditionOf, ROLES } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Char } from '../core/state/types';
 import { Crowd } from './crowd';
 import { disposeOwned } from './disposal';
 import { buildCharacter, type CharRig } from './models/character';
-import { poseChar } from './pose';
+import { poseChar, type WorkStyle } from './pose';
 
 export class PeopleLayer {
   private chars = new Map<number, CharRig>();
@@ -38,7 +38,8 @@ export class PeopleLayer {
             ? buildCharacter(c.look, c.role)
             : c.kind === 'visitor'
               ? buildCharacter(c.look, undefined, undefined, c.visit)
-              : buildCharacter(c.look, undefined, conditionOf(c.condition).visual);
+              : // a class-goer is here for a class, and shows no symptoms
+                buildCharacter(c.look, undefined, c.classDay ? undefined : conditionOf(c.condition).visual);
         rig.pick.userData.charId = c.id;
         rig.pick.userData.charKind = c.kind;
         this.scene.add(rig.group);
@@ -67,8 +68,16 @@ export class PeopleLayer {
     this.crowd.gather([...this.chars.values()].map((r) => r.group));
   }
 
-  /** Which treatment a busy practitioner is giving, so each modality can move differently. */
-  private workStyle(c: Char): Modality | null {
+  /**
+   * Which treatment a busy practitioner is giving, so each modality can move differently, or Qi Gong, for an
+   * Instructor leading a class and the class-goers following.
+   */
+  private workStyle(c: Char): WorkStyle {
+    if (c.kind === 'guest') {
+      const spot = c.classDay && c.state === 'served' ? this.sim.world.item(c.station) : undefined;
+      return spot && this.sim.classPlaying(spot) ? 'qigong' : null;
+    }
+    if (c.kind === 'staff' && c.busy && c.role === 'instructor') return 'qigong';
     if (c.kind !== 'staff' || !c.busy || !ROLES[c.role].discipline) return null;
     const post = this.sim.world.item(c.post);
     const guest = post && this.sim.servedAt(post);

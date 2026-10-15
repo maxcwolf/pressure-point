@@ -1,12 +1,12 @@
 // Deciding what the build and hire menus offer.
 
 import {
-  type Discipline,
   DISCIPLINES,
   type ItemDef,
   ITEMS,
   type ItemType,
   MODALITIES,
+  type Offering,
   type Role,
   ROLE_ORDER,
   ROLES,
@@ -15,16 +15,24 @@ import {
   type RoomType,
 } from '../../core/data';
 
-/** Whether something tied to a discipline is on offer: anything with no discipline always is. */
-export function available(d: Discipline | undefined, enabled: (d: Discipline) => boolean): boolean {
+/** Whether something tied to a discipline, or the Qi Gong classes, is on offer: anything tied to neither always is. */
+export function available(d: Offering | undefined, enabled: (d: Offering) => boolean): boolean {
   return !d || enabled(d);
 }
 
-/** The roles that can be hired: a discipline's role appears once it is switched on and its room can be built. */
-export function hireableRoles(stars: number, enabled: (d: Discipline) => boolean): Role[] {
+/** What switches a room off in Settings, if anything: its discipline, or what else it offers. */
+export const roomOffering = (type: RoomType): Offering | undefined => ROOMS[type].discipline ?? ROOMS[type].offering;
+
+/**
+ * The roles that can be hired: a discipline's role, or one tied to a room, appears once it is switched on and its room
+ * can be built.
+ */
+export function hireableRoles(stars: number, enabled: (d: Offering) => boolean): Role[] {
   return ROLE_ORDER.filter((r) => {
     const d = ROLES[r].discipline;
-    return !d || (enabled(d) && stars >= (ROOMS[DISCIPLINES[d].room].unlock ?? 0));
+    const room = d ? DISCIPLINES[d].room : ROLES[r].room;
+    if (!room) return true;
+    return available(roomOffering(room), enabled) && stars >= (ROOMS[room].unlock ?? 0);
   });
 }
 
@@ -36,9 +44,9 @@ export function placeLabel(item: ItemDef): string {
 }
 
 /** Whether an item's home is on offer: corridor items always are, room items when their room's discipline is. */
-export function itemOffered(item: ItemDef, enabled: (d: Discipline) => boolean): boolean {
+export function itemOffered(item: ItemDef, enabled: (d: Offering) => boolean): boolean {
   if (item.where === 'corridor' || item.where === 'any') return true;
-  return available(ROOMS[item.where].discipline, enabled);
+  return available(roomOffering(item.where), enabled);
 }
 
 /** What an item is for, to filter the Items menu by. */

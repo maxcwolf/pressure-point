@@ -16,7 +16,9 @@ import type {
   ItemType,
   MishapId,
   Modality,
+  Offering,
   Pose,
+  Priced,
   Role,
   RoomType,
   Sex,
@@ -46,6 +48,25 @@ export interface Room {
   /** How it is decorated, if not as standard. */
   floor?: FloorId;
   wall?: WallId;
+  /** A Qi Gong Studio's timetable: the days of the week, from Monday as 0, it holds classes, if not the usual. */
+  classDays?: number[];
+  /** A Qi Gong Studio's next or latest class: its day, how many booked a place, and how many found it full. */
+  booked?: ClassBooking;
+  /** The day a Qi Gong Studio last started a class, so each class day has one class. */
+  lastClass?: number;
+}
+
+/** How a Qi Gong class filled up: its day, how many booked a place, and how many were turned away. */
+export interface ClassBooking {
+  day: number;
+  count: number;
+  turned: number;
+}
+
+/** A class-goer due to arrive: when, and the day of the class they booked. */
+export interface Arrival {
+  at: number;
+  day: number;
 }
 
 /** A room's floor and walls, where they are not standard. */
@@ -221,11 +242,11 @@ export interface Enrollment {
 }
 
 /** The step of a visit a guest is on. */
-export type GuestGoal = 'reception' | 'consult' | 'assess' | 'treat' | 'shop' | 'leave';
+export type GuestGoal = 'reception' | 'consult' | 'assess' | 'treat' | 'class' | 'shop' | 'leave';
 /** Something a guest breaks off waiting to see to. */
 export type Need = 'drink' | 'eat' | 'toilet' | 'play';
 /** How a guest's visit ended. */
-export type Outcome = 'healed' | 'failed' | 'stormed' | 'sent' | 'worse';
+export type Outcome = 'healed' | 'failed' | 'stormed' | 'sent' | 'worse' | 'class';
 
 export type GuestState =
   'enter' | 'toWait' | 'waiting' | 'called' | 'served' | 'toRest' | 'resting' | 'toNeed' | 'need' | 'leaving';
@@ -259,6 +280,8 @@ export interface Guest extends CharBase {
   stressed: boolean;
   /** Given a calming session in an outbreak, so it cannot catch them. */
   calmed: boolean;
+  /** For a class-goer, the day of the Qi Gong class they came for; 0 for anyone come for a treatment. */
+  classDay: number;
 }
 
 /** Who a visitor is: a VIP, or the health inspector. */
@@ -361,6 +384,8 @@ export interface Ledger {
   marketing: number;
   /** Fines, such as the health inspector's. */
   fines: number;
+  /** Fees for places in Qi Gong classes. */
+  classes: number;
 }
 
 /** A marketing campaign: for word of mouth, for more guests with one condition, or for applicants. */
@@ -435,6 +460,9 @@ export interface Stats {
   emergencies: number;
   /** The game day someone last quit, or -1 if nobody ever has. */
   lastQuit: number;
+  /** Qi Gong classes held, and the class-goers who came to them. */
+  classes: number;
+  classgoers: number;
 }
 
 /** A month's count of guests: how many came, how each visit ended, and how long they waited. */
@@ -451,6 +479,8 @@ export interface Tally {
   waitCount: number;
   /** Guests healed, by the discipline that healed them. */
   healedBy: Partial<Record<Discipline, number>>;
+  /** Class-goers who came to a Qi Gong class. */
+  classgoers: number;
 }
 
 /** A finished month: its tally and its books, and how the center stood at the end of it. */
@@ -597,7 +627,7 @@ export interface GameState {
   /** How the center is run: how sure a diagnosis must be, who goes first, and when staff take breaks. */
   policy: Policy;
   /** Optional disciplines switched off for this game (absent means on). */
-  options: Partial<Record<Discipline, boolean>>;
+  options: Partial<Record<Offering, boolean>>;
   /** Everything unlocked from the start, whatever the stars: a sandbox setting. */
   unlockAll: boolean;
   /** The latest reviews, oldest first. */
@@ -605,7 +635,9 @@ export interface GameState {
   /** How visits ended, condition by condition. */
   casebook: Partial<Record<ConditionId, CaseRecord>>;
   /** Each technique's own price against standard, on top of the overall level; absent is standard. */
-  prices: Partial<Record<Modality, number>>;
+  prices: Partial<Record<Priced, number>>;
+  /** Class-goers on their way, booked for upcoming Qi Gong classes. */
+  arrivals: Arrival[];
   /** Marketing campaigns running. */
   campaigns: Campaign[];
   /** A house call on offer, if any, and the game day the next may be offered. */

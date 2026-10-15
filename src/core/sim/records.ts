@@ -21,6 +21,11 @@ export function countArrival(ctx: SimContext) {
 
 /** Count how a guest's visit ended, how long they waited, and who healed them; enter it in the casebook, and file their review. */
 export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
+  // a class-goer came for a class, not a treatment, so only their review counts
+  if (g.classDay) {
+    writeReview(ctx, g, end);
+    return;
+  }
   const { stats, tally, casebook } = ctx.s;
   stats[end]++;
   tally[end]++;

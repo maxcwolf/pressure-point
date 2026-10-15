@@ -1977,6 +1977,46 @@ test.describe('sound healing', () => {
   });
 });
 
+test.describe('the qi gong studio', () => {
+  test('opens at the second star, is staffed by an Instructor, and keeps a weekly timetable', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.stars = 1));
+    await game.menu('Rooms');
+    await expect(game.card('Qi Gong Studio')).toContainText('Unlocks at star 2');
+
+    await game.eval((pp) => (pp.state.stars = 2));
+    await game.card('Qi Gong Studio').click();
+    await game.dragOutRoom(4, 4);
+    await game.clickWall('south');
+    await expect(page.locator('#hint')).toContainText('Place the Instructor’s Mat inside the room');
+    await game.placeHeld();
+    await game.placeHeld();
+    await game.placeHeld();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#toasts')).toContainText('Qi Gong Studio built!');
+    await page.keyboard.press('Escape');
+
+    await game.menu('Hire');
+    await page.locator('#menu .tab', { hasText: 'Qi Gong Instructor' }).click();
+    await page.locator('#menu .card.cv').first().getByRole('button', { name: 'Hire' }).click();
+    await page.keyboard.press('Escape');
+
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    await game.clickRoom('qigong');
+    const timetable = page.locator('#inspector .timetable');
+    await expect(timetable).toContainText('3 classes a week');
+    await timetable.getByRole('button', { name: 'Sun', exact: true }).click();
+    await expect(timetable).toContainText('4 classes a week');
+    expect(await game.eval((pp) => pp.state.rooms.find((r) => r.type === 'qigong')?.classDays)).toEqual([0, 2, 4, 6]);
+    expect(game.errors).toEqual([]);
+  });
+});
+
 test.describe('the recovery lounge', () => {
   test('is locked until the first star, then built for the treatments that need a rest after', async ({
     game,

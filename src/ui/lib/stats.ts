@@ -1,6 +1,6 @@
 // The Stats menu's figures: what each one measures in a month, how to show it, and which are shown.
 
-import { DAY_SECONDS, type Discipline, DISCIPLINE_ORDER, DISCIPLINES } from '../../core/data';
+import { DAY_SECONDS, type Discipline, DISCIPLINE_ORDER, DISCIPLINES, type Offering } from '../../core/data';
 import { money } from '../../core/format';
 import { incomeOf, netOf } from '../../core/sim/economy';
 import type { MonthRecord } from '../../core/state/types';
@@ -15,8 +15,9 @@ export interface Metric {
   /** A sentence on what it counts, for its card. */
   desc: string;
   unit: Unit;
-  /** The discipline it belongs to, if it is about one. */
+  /** The discipline it belongs to, if it is about one, or the Qi Gong classes. */
   discipline?: Discipline;
+  offering?: 'qigong';
 }
 
 /** Every figure the Stats menu can chart. */
@@ -36,6 +37,13 @@ export const METRICS: readonly Metric[] = [
     unit: 'count',
     discipline: d,
   })),
+  {
+    id: 'classgoers',
+    name: 'Class-goers',
+    desc: 'Guests who came for a Qi Gong class and had it.',
+    unit: 'count',
+    offering: 'qigong',
+  },
   { id: 'income', name: 'Income', desc: 'Fees, sales, house calls and bonuses.', unit: 'money' },
   { id: 'costs', name: 'Costs', desc: 'Salaries, building, training, marketing, interest and fines.', unit: 'money' },
   { id: 'shop', name: 'Shop sales', desc: 'Sales at the Shop Counter.', unit: 'money' },
@@ -67,6 +75,8 @@ export function metricValue(metric: Metric, m: MonthRecord): number {
       return m.sent;
     case 'worse':
       return m.worse;
+    case 'classgoers':
+      return m.classgoers;
     case 'wait':
       return m.waitCount ? m.waitTotal / m.waitCount / DAY_SECONDS : 0;
     case 'income':
@@ -99,13 +109,13 @@ export function formatMetric(unit: Unit, value: number): string {
   return String(Math.round(value));
 }
 
-/** The figures on offer: everything, less the per-discipline ones for disciplines switched off. */
-export function offeredMetrics(enabled: (d: Discipline) => boolean): Metric[] {
-  return METRICS.filter((m) => !m.discipline || enabled(m.discipline));
+/** The figures on offer: everything, less those for disciplines, or the Qi Gong classes, switched off. */
+export function offeredMetrics(enabled: (d: Offering) => boolean): Metric[] {
+  return METRICS.filter((m) => (!m.discipline || enabled(m.discipline)) && (!m.offering || enabled(m.offering)));
 }
 
 /** The figures to show, in menu order: the chosen ones still on offer, or the defaults if there are none. */
-export function shownMetrics(chosen: readonly string[], enabled: (d: Discipline) => boolean): Metric[] {
+export function shownMetrics(chosen: readonly string[], enabled: (d: Offering) => boolean): Metric[] {
   const offered = offeredMetrics(enabled);
   const wanted = offered.filter((m) => chosen.includes(m.id));
   return wanted.length ? wanted : offered.filter((m) => DEFAULT_METRICS.includes(m.id));

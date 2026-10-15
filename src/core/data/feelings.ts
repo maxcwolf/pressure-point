@@ -237,6 +237,22 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'experience',
     lines: ['They let me lie down afterwards with a blanket. Bliss.', 'The recovery lounge was the best part.'],
   },
+  class: {
+    id: 'class',
+    icon: '☯️',
+    text: 'Came for a Qi Gong class',
+    good: true,
+    part: 'results',
+    lines: ['The Qi Gong class left me floating.', 'Moved like a crane all morning. Back next week.'],
+  },
+  'no-class': {
+    id: 'no-class',
+    icon: '😞',
+    text: 'Came for a Qi Gong class that never happened',
+    good: false,
+    part: 'results',
+    lines: ['Booked a Qi Gong class and stood about all day. No teacher.', 'The class was a no-show.'],
+  },
   woozy: {
     id: 'woozy',
     icon: '😵‍💫',

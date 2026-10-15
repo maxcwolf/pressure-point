@@ -5,10 +5,29 @@ import { slots, trained, xpToNext } from '../../core/sim/careers';
 import type { Sim } from '../../core/sim/sim';
 import type { CourseId, Guest, Staff } from '../../core/state/types';
 
+/** What a class-goer is doing, in a few words. */
+function classgoerStatus(g: Guest, sim: Sim): string {
+  const spot = sim.world.item(g.station);
+  switch (g.state) {
+    case 'enter':
+      return 'Arriving for a Qi Gong class';
+    case 'called':
+      return 'Heading to their Practice Spot';
+    case 'served':
+      return spot && sim.classPlaying(spot) ? 'In the Qi Gong class' : 'On their Practice Spot, waiting for the class';
+    case 'leaving':
+      if (g.feelings.includes('no-class')) return 'Going home: the class never happened';
+      return g.outcome === 'class' ? 'Going home after the class' : 'Leaving';
+    default:
+      return spot ? 'Waiting for a place in the class' : 'Looking for a Qi Gong Studio';
+  }
+}
+
 /** What a guest is doing, in a few words. */
 export function guestStatus(g: Guest, sim: Sim): string {
   const st = sim.world.item(g.station);
   const where = st ? ITEMS[st.type].name : '';
+  if (g.classDay) return classgoerStatus(g, sim);
   switch (g.state) {
     case 'enter':
       return 'Arriving';

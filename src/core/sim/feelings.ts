@@ -12,8 +12,13 @@ export function feel(g: Guest, id: FeelingId) {
   if (!g.feelings.includes(id)) g.feelings.push(id);
 }
 
+/** How a visit ended, for a review: a treatment's ends, or a class-goer's class held or missed. */
+export type ReviewEnd = VisitEnd | 'class' | 'missed';
+
 /** Where a review starts from, by how the visit ended, before what they felt along the way. */
-const BASE_STARS: Readonly<Record<VisitEnd, number>> = {
+const BASE_STARS: Readonly<Record<ReviewEnd, number>> = {
+  class: 4,
+  missed: 1,
   healed: 4,
   failed: 2,
   stormed: 1,
@@ -23,7 +28,9 @@ const BASE_STARS: Readonly<Record<VisitEnd, number>> = {
 };
 
 /** How a visit ended, as a feeling, if it is one. */
-const END_FEELING: Readonly<Partial<Record<VisitEnd, FeelingId>>> = {
+const END_FEELING: Readonly<Partial<Record<ReviewEnd, FeelingId>>> = {
+  class: 'class',
+  missed: 'no-class',
   healed: 'healed',
   failed: 'not-healed',
   sent: 'sent-home',
@@ -31,7 +38,7 @@ const END_FEELING: Readonly<Partial<Record<VisitEnd, FeelingId>>> = {
 };
 
 /** The stars a guest gives their visit: from how it ended, up half a star for each good feeling and down for each bad. */
-export function reviewStars(end: VisitEnd, feelings: readonly FeelingId[]): number {
+export function reviewStars(end: ReviewEnd, feelings: readonly FeelingId[]): number {
   let stars = BASE_STARS[end];
   for (const f of feelings) {
     if (f === END_FEELING[end]) continue;
@@ -60,7 +67,7 @@ export function reviewText(g: Guest, stars: number): string {
 }
 
 /** File a leaving guest's review, keeping only the latest. */
-export function writeReview(ctx: SimContext, g: Guest, end: VisitEnd) {
+export function writeReview(ctx: SimContext, g: Guest, end: ReviewEnd) {
   const outcome = END_FEELING[end];
   if (outcome) feel(g, outcome);
   const stars = reviewStars(end, g.feelings);

@@ -305,3 +305,28 @@
   background: var(--cream);
   opacity: 0.7;
 }
+
+.insp .timetable {
+  margin: 8px 0 4px;
+}
+
+.insp .timetable .days {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.insp button.day {
+  flex: 1;
+  border: 2px solid var(--navy);
+  border-radius: 9px;
+  padding: 4px 0;
+  font-weight: 600;
+  font-size: 12px;
+  background: var(--cream);
+  box-shadow: 0 2px 0 rgba(36, 56, 74, 0.3);
+}
+
+.insp button.day.on {
+  background: var(--gold);
+}

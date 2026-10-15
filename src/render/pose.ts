@@ -10,8 +10,11 @@ import { driftSmoke } from './models/sage';
 /** Whether someone is walking a room with a bundle of sage, clearing it of bad vibes. */
 export const wafting = (c: Char) => c.kind === 'staff' && c.state === 'doingJob' && c.job?.kind === 'smudge';
 
+/** How someone is working, so each kind of work moves differently: a treatment they are giving, or Qi Gong. */
+export type WorkStyle = Modality | 'qigong' | null;
+
 /** Pose a person for this frame: position, limbs, symptom effects and speech bubble. */
-export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Modality | null) {
+export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: WorkStyle) {
   rig.group.position.set(c.x, c.h, c.y);
   rig.group.rotation.y = c.facing;
   const healed = c.kind === 'guest' && c.outcome === 'healed';
@@ -82,6 +85,13 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     bodyY = 0.16;
     bodyZ = -0.6 * rig.scale;
     armOut = 0.5;
+  } else if (style === 'qigong') {
+    // lifting the sky: both arms rise slowly out and overhead, then float back down, knees softening as they fall
+    const rise = (1 - Math.cos(t * 0.9)) / 2;
+    armL = armR = -0.2 - rise * 2.6;
+    armOut = 0.1 + Math.sin(rise * Math.PI) * 0.5;
+    bodyY = -0.03 * (1 - rise);
+    headX = -0.15 * rise;
   } else if (c.busy && style === 'deep') {
     // both elbows in, slow and heavy
     const press = Math.sin(t * 3.2 + c.id);

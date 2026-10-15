@@ -4,7 +4,7 @@ import { type ConditionId, conditionOf, DAY_SECONDS, MODALITIES, STONE_USE } fro
 import { createContext } from '../../src/core/sim/context';
 import type { Sim } from '../../src/core/sim/sim';
 import { graduate } from '../../src/core/sim/training';
-import { addTraining, hire, openCenter, run, runUntil } from './helpers';
+import { addRecovery, addTraining, hire, openCenter, run, runUntil } from './helpers';
 
 /** Play for a while, turning every arriving guest into one condition. */
 function playWithCondition(sim: Sim, condition: ConditionId, seconds: number) {
@@ -64,6 +64,8 @@ describe('unlocking modalities', () => {
       s.stars = 1;
       therapist.skill = 3;
       therapist.quals = qualified ? ['swedish', 'deep'] : ['swedish'];
+      // somewhere to rest after Deep Tissue, so only the therapist's training counts
+      addRecovery(sim);
       playWithCondition(sim, 'knotted', 1500);
       return s.stats;
     };

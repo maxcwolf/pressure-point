@@ -1,6 +1,16 @@
 // The Money menu's prices for each treatment, on top of the overall level.
 
-import { DISCIPLINE_ORDER, MODALITIES, MODALITY_ORDER, PRICE_MAX, PRICE_MIN } from '../../../core/data';
+import {
+  CLASS_FEE,
+  DISCIPLINE_ORDER,
+  MODALITIES,
+  MODALITY_ORDER,
+  PRICE_MAX,
+  PRICE_MIN,
+  ROOMS,
+} from '../../../core/data';
+import { money } from '../../../core/format';
+import { unlockedUpTo } from '../../../core/state/game';
 import { useGame } from '../../hooks/use-hud';
 import { pricedFor } from '../../lib/casebook';
 import { Button } from '../common/Button';
@@ -13,6 +23,8 @@ export function TechniquePrices() {
     const d = MODALITIES[m].discipline;
     return DISCIPLINE_ORDER.includes(d) && sim.enabled(d) && sim.unlocked(m);
   });
+  // a place in a class has its price too, once a studio can be built
+  const classes = sim.enabled('qigong') && unlockedUpTo(s) >= (ROOMS.qigong.unlock ?? 0);
   return (
     <div class="ledger technique-prices">
       <h4>Each treatment</h4>
@@ -46,6 +58,36 @@ export function TechniquePrices() {
           </div>
         );
       })}
+      {classes && <ClassPrice />}
+    </div>
+  );
+}
+
+/** The price of a place in a Qi Gong class, on top of the overall level, and how many have come to one. */
+function ClassPrice() {
+  const { sim } = useGame();
+  const own = sim.s.prices.qigong ?? 1;
+  return (
+    <div class="technique-price">
+      <span>{`☯️ Qi Gong class (${money(Math.round(CLASS_FEE * sim.priceFor('qigong')))})`}</span>
+      <small>{`${sim.s.stats.classgoers} class-goers so far`}</small>
+      <Button
+        locked={own <= PRICE_MIN}
+        onPress={() => {
+          sim.setTechniquePrice('qigong', own - 0.1);
+        }}
+      >
+        −
+      </Button>
+      <b title={`${Math.round(sim.priceFor('qigong') * 100)}% of standard, all told`}>{`${Math.round(own * 100)}%`}</b>
+      <Button
+        locked={own >= PRICE_MAX}
+        onPress={() => {
+          sim.setTechniquePrice('qigong', own + 0.1);
+        }}
+      >
+        +
+      </Button>
     </div>
   );
 }

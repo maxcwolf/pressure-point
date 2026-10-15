@@ -5,7 +5,7 @@ import { money } from '../../../core/format';
 import { unlockedUpTo } from '../../../core/state/game';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { RoomsTab } from '../../hud';
-import { available } from '../../lib/catalog';
+import { available, roomOffering } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { TemplatesTab } from './TemplatesTab';
@@ -45,7 +45,7 @@ function RoomCards() {
   const hud = useHud();
   const { sim, tools } = useGame();
   const s = sim.s;
-  const types = ROOM_ORDER.filter((t) => available(ROOMS[t].discipline, (d) => sim.enabled(d)));
+  const types = ROOM_ORDER.filter((t) => available(roomOffering(t), (d) => sim.enabled(d)));
   return (
     <div class="cards">
       {types.map((t) => {

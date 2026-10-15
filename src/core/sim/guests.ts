@@ -36,6 +36,7 @@ import { hasGeneral } from './careers';
 import { lobbyTile, say, staffById, streetTile } from './chars';
 import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
+import { missClass } from './classes';
 import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce } from './events';
@@ -57,6 +58,7 @@ const GOAL_NAME = {
   consult: 'Consultation Room',
   assess: 'Posture Lab',
   treat: 'Massage Suite',
+  class: 'Qi Gong Studio',
   shop: 'Shop Counter',
 } as const;
 
@@ -78,8 +80,11 @@ export function guestCap(s: GameState): number {
   return 14 + s.rooms.filter((r) => r.done).length * 5;
 }
 
-/** Add a guest on the street and send them to the lobby. Null if there is no way in for them. */
-export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency = false): Guest | null {
+/**
+ * Add a guest on the street and send them to the lobby: come for a treatment, or with a class day, for a Qi Gong class.
+ * Null if there is no way in for them.
+ */
+export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency = false, classDay = 0): Guest | null {
   const s = ctx.s;
   const [x, y] = streetTile();
   const sex = rollSex(WOMEN_VISIT);
@@ -87,8 +92,8 @@ export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency =
     ...newChar(ctx, randomName(sex), randomLook(sex), x, y),
     kind: 'guest',
     condition: condition ?? rollCondition(ctx),
-    // emergency cases arrive already diagnosed and go straight to treatment
-    goal: emergency ? 'treat' : 'reception',
+    // emergency cases arrive already diagnosed and go straight to treatment, and class-goers booked their place
+    goal: emergency ? 'treat' : classDay ? 'class' : 'reception',
     state: 'enter',
     station: 0,
     needKind: '',
@@ -108,11 +113,13 @@ export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency =
     health: emergency ? EMERGENCY_CONDITION : 100,
     stressed: false,
     calmed: false,
+    classDay,
   };
   const [lx, ly] = lobbyTile(ctx.world.plot);
   if (!goTo(ctx, g, lx, ly)) return null;
   s.guests.push(g);
-  countArrival(ctx);
+  // a class-goer is counted when their class is done, not as a guest come for treatment
+  if (!classDay) countArrival(ctx);
   arriveCarrying(ctx, g);
   return g;
 }
@@ -312,6 +319,11 @@ function waitingThink(ctx: SimContext, g: Guest) {
     if (g.goal === 'assess') {
       g.goal = 'consult';
       decide(ctx, g);
+      return;
+    }
+    // no class to go to after all
+    if (g.goal === 'class') {
+      missClass(ctx, g);
       return;
     }
     // no shop to buy anything in after all

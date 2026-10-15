@@ -18,7 +18,7 @@ export const worsenRate = (id: ConditionId) => CONDITION_DRAIN * (conditionOf(id
 export const conditionPenalty = (health: number) => (1 - clamp(health, 0, 100) / 100) * CONDITION_PENALTY;
 
 /** Whether a guest's condition is still worsening: untreated, in the building, and not on the table. */
-export const worsening = (g: Guest) => !g.outcome && g.goal !== 'leave' && g.state !== 'served';
+export const worsening = (g: Guest) => !g.classDay && !g.outcome && g.goal !== 'leave' && g.state !== 'served';
 
 /** Worsen a guest's condition by a step of time, sending them home worse off if it runs out. True if it did. */
 export function worsen(ctx: SimContext, g: Guest, dt: number): boolean {

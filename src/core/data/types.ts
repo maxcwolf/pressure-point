@@ -11,6 +11,7 @@ export type RoomType =
   | 'reiki'
   | 'sound'
   | 'recovery'
+  | 'qigong'
   | 'staffroom'
   | 'restroom'
   | 'training';
@@ -19,10 +20,23 @@ export type RoomType =
 export type Sex = 'female' | 'male';
 
 export type Role =
-  'receptionist' | 'consultant' | 'therapist' | 'acupuncturist' | 'practitioner' | 'healer' | 'caretaker';
+  | 'receptionist'
+  | 'consultant'
+  | 'therapist'
+  | 'acupuncturist'
+  | 'practitioner'
+  | 'healer'
+  | 'instructor'
+  | 'caretaker';
 
 /** A family of treatments with its own room, staff and equipment. */
 export type Discipline = 'massage' | 'acupuncture' | 'reiki' | 'sound';
+
+/** Something Settings can switch off: an optional discipline, or the Qi Gong classes. */
+export type Offering = Discipline | 'qigong';
+
+/** Something with a price of its own in the Money menu: a treatment, or a place in a Qi Gong class. */
+export type Priced = Modality | 'qigong';
 
 export type ItemType =
   | 'reception_desk'
@@ -78,7 +92,9 @@ export type ItemType =
   | 'linen_hamper'
   | 'fireplace'
   | 'topiary'
-  | 'recliner';
+  | 'recliner'
+  | 'instructor_mat'
+  | 'practice_spot';
 
 export interface RoomDef {
   type: RoomType;
@@ -97,6 +113,8 @@ export interface RoomDef {
   discipline?: Discipline;
   /** Stars needed before it can be built. */
   unlock?: number;
+  /** Something other than a discipline that Settings can switch it off with. */
+  offering?: 'qigong';
 }
 
 export type AccessRole =
@@ -137,7 +155,7 @@ export interface ItemDef {
    */
   station?: {
     staff: Role;
-    goal: 'reception' | 'consult' | 'assess' | 'treat' | 'shop' | 'lead';
+    goal: 'reception' | 'consult' | 'assess' | 'treat' | 'shop' | 'lead' | 'class';
     seconds: number;
     discipline?: Discipline;
     group?: boolean;
@@ -189,6 +207,8 @@ export interface RoleDef {
   accent: number;
   /** The discipline this role practices, if any. They hold qualifications in its modalities. */
   discipline?: Discipline;
+  /** The room a role with no discipline works in, if only one: they can be hired once it can be built. */
+  room?: RoomType;
 }
 
 /** A quirk a member of staff can have. */
@@ -464,7 +484,9 @@ export type FeelingId =
   | 'too-cold'
   | 'too-hot'
   | 'rested'
-  | 'woozy';
+  | 'woozy'
+  | 'class'
+  | 'no-class';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
 export interface FeelingDef {

@@ -50,6 +50,28 @@ export const UPGRADE_SUCCESS = 0.03;
 /** How long a Mechanic takes to install an upgrade, in seconds of game time before their speed is counted. */
 export const INSTALL_SECONDS = 20;
 
+/** The Qi Gong classes as Settings shows them, to switch on or off like an optional discipline. */
+export const QIGONG_SETTING = {
+  icon: '☯️',
+  name: 'Qi Gong classes',
+  desc: 'From the second star, a Qi Gong Studio holds weekly classes for guests who come in just for them.',
+} as const;
+
+/** What a place in a Qi Gong class costs at standard prices. */
+export const CLASS_FEE = 120;
+/** The days of the week a new Qi Gong Studio holds classes: Monday, Wednesday and Friday. */
+export const CLASS_DAYS: readonly number[] = [0, 2, 4];
+/** The days of the week, from Monday, as the timetable shows them. */
+export const WEEKDAYS: readonly string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+/** How long a Qi Gong class lasts, in seconds of game time before the Instructor's pace is counted. */
+export const CLASS_SECONDS = 10;
+/** Days after their class day that class-goers who never had it give up and go home. */
+export const CLASS_PATIENCE = 3;
+/** How many days before a class its places are booked and its class-goers set off. */
+export const BOOK_AHEAD = 2;
+/** How many class-goers a week each Practice Spot draws at 50% reputation, shared among the week's classes. */
+export const CLASS_INTEREST = 2.5;
+
 /** How long a guest lies back in a Recovery Lounge after a treatment that leaves them needing a rest. */
 export const REST_SECONDS = 15;
 /** Taken off the chance of such a treatment working when there is no free Recliner to rest on afterwards. */
@@ -125,6 +147,7 @@ export const WOMEN_APPLY: Readonly<Record<Role, number>> = {
   acupuncturist: 0.7,
   practitioner: 0.7,
   healer: 0.7,
+  instructor: 0.6,
   caretaker: 0.3,
 };
 /** Share of guests and visitors who are women. */

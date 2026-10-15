@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type Discipline, ITEM_MENU, ITEMS, MODALITIES, RANK_XP, ROOMS } from '../../src/core/data';
+import { ITEM_MENU, ITEMS, MODALITIES, type Offering, RANK_XP, ROOMS } from '../../src/core/data';
 import type { Job } from '../../src/core/state/types';
 import { cureShare, seen, starText } from '../../src/ui/lib/casebook';
 import {
@@ -28,7 +28,7 @@ import { hire, openCenter, run, runUntil } from './helpers';
 /** Every discipline switched on. */
 const allOn = () => true;
 /** Acupuncture switched off. */
-const massageOnly = (d: Discipline) => d === 'massage';
+const massageOnly = (d: Offering) => d === 'massage';
 
 describe('joining class names', () => {
   it('keeps what applies and drops the rest', () => {

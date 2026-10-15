@@ -11,6 +11,7 @@ import {
   FIRST_OUTBREAK_DAY,
   INSPECTION_FIRST_DAY,
   MISHAP_FIRST_DAY,
+  type Offering,
   POACH_GAP_DAYS,
   RIVAL_OPENS,
   SALE_GAP_DAYS,
@@ -34,6 +35,7 @@ export const emptyTally = (): Tally => ({
   waitTotal: 0,
   waitCount: 0,
   healedBy: {},
+  classgoers: 0,
 });
 
 /** A ledger with every entry at zero. */
@@ -48,6 +50,7 @@ export const emptyLedger = (): Ledger => ({
   bonus: 0,
   shop: 0,
   calls: 0,
+  classes: 0,
   marketing: 0,
   fines: 0,
 });
@@ -75,8 +78,9 @@ export const defaultPolicy = (): Policy => ({
  * 11: noise, linens, temperature, staff needs, and the radiator, air conditioner and linen hamper. 12: High Pines,
  * its ailments and the Fireplace. 13: VIPs and the health inspector. 18: sound healing, and Distance Reiki in place
  * of the sound bath. 19: equipment upgrades and the Mechanics course. 20: the Recovery Lounge and its Recliner.
+ * 21: Qi Gong classes, the Qi Gong Studio and its Instructor.
  */
-export const SAVE_VERSION = 20;
+export const SAVE_VERSION = 21;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -112,6 +116,8 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
       healedBy: {},
       emergencies: 0,
       lastQuit: -1,
+      classes: 0,
+      classgoers: 0,
     },
     tally: emptyTally(),
     months: [],
@@ -133,6 +139,7 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     reviews: [],
     casebook: {},
     prices: {},
+    arrivals: [],
     campaigns: [],
     callOffer: null,
     nextCall: FIRST_CALL_DAY,
@@ -166,6 +173,11 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
 export function unlockedUpTo(s: GameState): number {
   // a center can open with some of what the stars bring already open
   return s.unlockAll ? Infinity : Math.max(s.stars, CENTERS[s.center].unlockedFrom ?? 0);
+}
+
+/** Whether something Settings can switch off is on in this game: an optional discipline, or the Qi Gong classes. */
+export function offeringOn(s: GameState, o: Offering): boolean {
+  return o === 'qigong' ? s.options.qigong !== false : disciplineOn(s, o);
 }
 
 /** Whether a discipline exists in this game's center at all. Massage always does. */

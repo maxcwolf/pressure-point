@@ -31,6 +31,7 @@ import { prestige } from './ambience';
 import { gainXp, habitOf, hasGeneral } from './careers';
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
+import { isClassLead, updateClass } from './classes';
 import type { SimContext } from './context';
 import { changeRep, earn, priceFor } from './economy';
 import { emit, tipOnce } from './events';
@@ -161,7 +162,9 @@ export function updateStations(ctx: SimContext, dt: number) {
       staff = undefined;
     }
     if (def.goal === 'lead') {
-      updateSession(ctx, it, staff?.state === 'atPost' && ctx.world.usable(it) ? staff : undefined, dt);
+      const at = staff?.state === 'atPost' && ctx.world.usable(it) ? staff : undefined;
+      if (isClassLead(it)) updateClass(ctx, it, at, dt);
+      else updateSession(ctx, it, at, dt);
       continue;
     }
     const ready = !!staff && staff.state === 'atPost' && ctx.world.usable(it) && (!lead || ctx.world.usable(lead));
@@ -181,6 +184,11 @@ export function updateStations(ctx: SimContext, dt: number) {
     if (staff && ready) {
       const served = g?.state === 'served' ? g : undefined;
       const mod = served && def.goal === 'treat' ? modalityOf(served) : null;
+      // on a Practice Spot the class goes on all day, and ends for everyone together as the day does
+      if (lead && isClassLead(lead)) {
+        it.progress = served ? lead.progress : 0;
+        continue;
+      }
       // on a mat, the session sets how busy the healer is, and the treatment only goes on while it plays
       if (lead) {
         if (served && sessionPlaying(lead.progress)) {
@@ -367,8 +375,9 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   decide(ctx, g);
 }
 
-/** The stars a treated guest gave their visit. */
-export const visitStars = (g: Guest) => reviewStars(g.outcome === 'healed' ? 'healed' : 'failed', g.feelings);
+/** The stars a treated guest, or a class-goer, gave their visit. */
+export const visitStars = (g: Guest) =>
+  reviewStars(g.outcome === 'healed' || g.outcome === 'class' ? g.outcome : 'failed', g.feelings);
 
 /** What a guest spends at the Shop Counter, by the stars they gave their visit: a round number, a little either way. */
 export function shopSpend(stars: number): number {

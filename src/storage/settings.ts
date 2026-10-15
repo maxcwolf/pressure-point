@@ -1,10 +1,10 @@
-// Player preferences that outlive any one game: which optional disciplines new games start with,
+// Player preferences that outlive any one game: which optional disciplines, and whether Qi Gong classes, new games start with,
 // how a sandbox game is set up, and the Stats menu's charts.
-import { CENTERS, type Discipline, DISCIPLINE_ORDER, DISCIPLINES, SANDBOX_MONEY } from '../core/data';
+import { CENTERS, DISCIPLINE_ORDER, DISCIPLINES, type Offering, SANDBOX_MONEY } from '../core/data';
 import { isRecord } from './json';
 
 const KEY = 'pressure-point-settings';
-export type DisciplinePrefs = Partial<Record<Discipline, boolean>>;
+export type DisciplinePrefs = Partial<Record<Offering, boolean>>;
 
 /** The saved choices, with anything unset left out (unset means on). */
 export function loadDisciplinePrefs(): DisciplinePrefs {
@@ -16,14 +16,15 @@ export function loadDisciplinePrefs(): DisciplinePrefs {
       const on = saved[d];
       if (DISCIPLINES[d].optional && typeof on === 'boolean') out[d] = on;
     }
+    if (typeof saved.qigong === 'boolean') out.qigong = saved.qigong;
     return out;
   } catch {
     return {};
   }
 }
 
-/** Remember whether new games start with a discipline switched on. */
-export function saveDisciplinePref(d: Discipline, on: boolean) {
+/** Remember whether new games start with a discipline, or the Qi Gong classes, switched on. */
+export function saveDisciplinePref(d: Offering, on: boolean) {
   try {
     localStorage.setItem(KEY, JSON.stringify({ disciplines: { ...loadDisciplinePrefs(), [d]: on } }));
   } catch {

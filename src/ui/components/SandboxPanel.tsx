@@ -4,7 +4,7 @@
 import './SandboxPanel.css';
 
 import type { Audio } from '../../audio';
-import { DISCIPLINE_ORDER, DISCIPLINES, SANDBOX_MONEY } from '../../core/data';
+import { DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING, SANDBOX_MONEY } from '../../core/data';
 import { money } from '../../core/format';
 import { loadDisciplinePrefs, loadSandbox, saveDisciplinePref, saveSandbox } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
@@ -69,6 +69,17 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
             />
           );
         })}
+        <SettingRow
+          icon={QIGONG_SETTING.icon}
+          name={QIGONG_SETTING.name}
+          desc={QIGONG_SETTING.desc}
+          on={loadDisciplinePrefs().qigong !== false}
+          onToggle={() => {
+            change(() => {
+              saveDisciplinePref('qigong', loadDisciplinePrefs().qigong === false);
+            });
+          }}
+        />
       </ul>
       <h4>Unlocks</h4>
       <ul>

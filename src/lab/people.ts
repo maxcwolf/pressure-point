@@ -66,6 +66,7 @@ export function demoGuest(look: Look, condition: ConditionId): Guest {
     health: 100,
     stressed: false,
     calmed: false,
+    classDay: 0,
   };
 }
 

@@ -48,6 +48,8 @@ export const LAYOUT = {
   reiki: { rect: { x: 24, y: 13, w: 4, h: 4 }, door: { x: 24, y: 15, dx: -1, dy: 0 } },
   sound: { rect: { x: 10, y: 10, w: 4, h: 4 }, door: { x: 12, y: 13, dx: 0, dy: 1 } },
   recovery: { rect: { x: 15, y: 9, w: 3, h: 3 }, door: { x: 17, y: 10, dx: 1, dy: 0 } },
+  // where the Training Room goes, so not alongside one
+  qigong: { rect: { x: 5, y: 11, w: 4, h: 4 }, door: { x: 8, y: 12, dx: 1, dy: 0 } },
 } as const;
 
 /** Add a furnished Consultation Room at its standard spot. */
@@ -115,6 +117,16 @@ export function addSound(sim: Sim) {
 /** Add a Recovery Lounge at its standard spot, with its one Recliner. */
 export function addRecovery(sim: Sim) {
   return buildRoom(sim, 'recovery', LAYOUT.recovery.rect, LAYOUT.recovery.door, [['recliner', 15, 9]]);
+}
+
+/** Add a Qi Gong Studio where the Training Room goes: the Instructor's Mat at the back, and three Practice Spots. */
+export function addQigong(sim: Sim) {
+  return buildRoom(sim, 'qigong', LAYOUT.qigong.rect, LAYOUT.qigong.door, [
+    ['instructor_mat', 6, 11],
+    ['practice_spot', 5, 13],
+    ['practice_spot', 6, 13],
+    ['practice_spot', 7, 13],
+  ]);
 }
 
 /** Hire the most skilled applicant for a role. */

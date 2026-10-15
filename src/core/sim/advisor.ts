@@ -18,7 +18,7 @@ import {
   STONE_USE,
 } from '../data';
 import { pickFresh, rnd } from '../random';
-import { unlockedUpTo } from '../state/game';
+import { offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import type { SimContext } from './context';
 import { emit, type Subject } from './events';
@@ -110,6 +110,8 @@ function nudge(ctx: SimContext): string | Advice {
       text: `An upgrade for the ${ITEMS[waiting.type].name} is waiting. Send a Caretaker on the Mechanics course to install it.`,
       about: { kind: 'item', id: waiting.id },
     };
+  if (offeringOn(s, 'qigong') && hasRoom(ctx, 'qigong') && !hasStaff(ctx, 'instructor'))
+    return 'Your Qi Gong Studio is ready for its first class. Hire a Qi Gong Instructor to lead it.';
   const comfort = comfortAdvice(ctx);
   if (comfort) return comfort;
   // a raise request waits on a card of its own at the side of the screen, leaving the advisor for other things

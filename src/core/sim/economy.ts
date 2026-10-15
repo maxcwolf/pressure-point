@@ -1,6 +1,6 @@
 // Money and reputation: income, spending, payday, loans and prices.
 
-import { LOAN_MAX, LOAN_RATE, LOAN_STEP, type Modality, PRICE_MAX, PRICE_MIN } from '../data';
+import { LOAN_MAX, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN, type Priced } from '../data';
 import { money } from '../format';
 import { emptyLedger } from '../state/game';
 import type { GameState, Ledger } from '../state/types';
@@ -14,16 +14,16 @@ export function netOf(l: Ledger) {
   return incomeOf(l) - l.salaries - l.building - l.training - l.interest - l.marketing - l.fines;
 }
 
-/** A ledger's income: fees, sales, house calls and bonuses. */
+/** A ledger's income: fees, class places, sales, house calls and bonuses. */
 export function incomeOf(l: Ledger) {
-  return l.consult + l.treatment + l.vending + l.shop + l.calls + l.bonus;
+  return l.consult + l.treatment + l.classes + l.vending + l.shop + l.calls + l.bonus;
 }
 
 /** Take in money, record it and show the amount floating up. */
 export function earn(
   ctx: SimContext,
   amount: number,
-  kind: 'consult' | 'treatment' | 'vending' | 'shop' | 'calls',
+  kind: 'consult' | 'treatment' | 'vending' | 'shop' | 'calls' | 'classes',
   x: number,
   y: number,
 ) {
@@ -92,12 +92,12 @@ export function repay(ctx: SimContext): boolean {
 }
 
 /** What a technique costs against standard: the overall price level, times its own. */
-export function priceFor(s: GameState, m: Modality): number {
+export function priceFor(s: GameState, m: Priced): number {
   return s.priceLevel * (s.prices[m] ?? 1);
 }
 
 /** Set a technique's own price, against standard, on top of the overall level: rounded to a tenth, within limits. */
-export function setTechniquePrice(ctx: SimContext, m: Modality, level: number) {
+export function setTechniquePrice(ctx: SimContext, m: Priced, level: number) {
   const own = Math.round(clamp(level, PRICE_MIN, PRICE_MAX) * 10) / 10;
   const { [m]: _old, ...others } = ctx.s.prices;
   ctx.s.prices = own === 1 ? others : { ...others, [m]: own };

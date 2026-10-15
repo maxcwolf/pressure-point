@@ -21,7 +21,7 @@ import {
   VIP_FIRST_DAY,
   VIP_GAP_DAYS,
 } from '../data';
-import { settleSex } from '../people';
+import { makeCandidate, settleSex } from '../people';
 import {
   defaultPolicy,
   emptyTally,
@@ -54,7 +54,10 @@ const baseQuals = (role: Role): Modality[] => {
 /** A record written before some of its fields existed, so those fields may be missing. */
 type Before<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
-type OldLedger = Before<Ledger, 'training' | 'interest' | 'bonus' | 'shop' | 'calls' | 'marketing' | 'fines'>;
+type OldLedger = Before<
+  Ledger,
+  'training' | 'interest' | 'bonus' | 'shop' | 'calls' | 'marketing' | 'fines' | 'classes'
+>;
 
 /** A save as an earlier version may have written it. */
 type OldSave = Before<
@@ -111,10 +114,14 @@ type OldSave = Before<
   | 'mishap'
   | 'nextMishap'
   | 'mishapsOn'
+  | 'arrivals'
 > & {
-  stats: Before<Stats, 'priced' | 'sent' | 'worse' | 'healedBy' | 'emergencies' | 'lastQuit'>;
-  tally?: Before<Tally, 'sent' | 'worse'>;
-  months?: Before<MonthRecord, 'sent' | 'worse'>[];
+  stats: Before<
+    Stats,
+    'priced' | 'sent' | 'worse' | 'healedBy' | 'emergencies' | 'lastQuit' | 'classes' | 'classgoers'
+  >;
+  tally?: Before<Tally, 'sent' | 'worse' | 'classgoers'>;
+  months?: Before<MonthRecord, 'sent' | 'worse' | 'classgoers'>[];
   casebook?: Partial<Record<string, Before<CaseRecord, 'worse'>>>;
   staff: Before<
     Staff,
@@ -138,7 +145,7 @@ type OldSave = Before<
   candidates: Before<Candidate, 'quals'>[];
   items: Before<Item, 'wear' | 'dirt' | 'level' | 'upgradePaid'>[];
   rooms: Before<Room, 'windows' | 'priority' | 'vibes' | 'claimedBy'>[];
-  guests: Before<Guest, 'emergency' | 'placed' | 'feelings' | 'health' | 'stressed' | 'calmed'>[];
+  guests: Before<Guest, 'emergency' | 'placed' | 'feelings' | 'health' | 'stressed' | 'calmed' | 'classDay'>[];
   ledger: OldLedger;
   lastLedger: OldLedger;
 };
@@ -212,6 +219,7 @@ export function upgradeSave(save: GameState) {
     g.health ??= 100;
     g.stressed ??= false;
     g.calmed ??= false;
+    g.classDay ??= 0;
     // a feeling from a newer version means nothing here
     g.feelings = (g.feelings ?? []).filter((f) => Object.hasOwn(FEELINGS, f));
   }
@@ -223,6 +231,7 @@ export function upgradeSave(save: GameState) {
     l.calls ??= 0;
     l.marketing ??= 0;
     l.fines ??= 0;
+    l.classes ??= 0;
   }
   s.announceT ??= 25;
   s.loan ??= 0;
@@ -240,6 +249,8 @@ export function upgradeSave(save: GameState) {
   s.stats.healedBy ??= {};
   s.stats.emergencies ??= 0;
   s.stats.lastQuit ??= -1;
+  s.stats.classes ??= 0;
+  s.stats.classgoers ??= 0;
   // every game from before the campaign was a sandbox game
   s.center ??= 'sandbox';
   s.tally ??= emptyTally();
@@ -247,6 +258,7 @@ export function upgradeSave(save: GameState) {
   for (const t of [s.tally, ...s.months]) {
     t.sent ??= 0;
     t.worse ??= 0;
+    t.classgoers ??= 0;
   }
   s.policy ??= defaultPolicy();
   s.challenge ??= null;
@@ -272,6 +284,7 @@ export function upgradeSave(save: GameState) {
   s.casebook ??= {};
   for (const c of Object.values(s.casebook)) if (c) c.worse ??= 0;
   s.prices ??= {};
+  s.arrivals ??= [];
   s.campaigns ??= [];
   s.callOffer ??= null;
   s.nextCall ??= Math.max(FIRST_CALL_DAY, s.day + CALL_GAP_MIN);
@@ -284,5 +297,9 @@ export function upgradeSave(save: GameState) {
   s.unlockAll ??= false;
   // an achievement from a newer version means nothing here
   s.achieved = (s.achieved ?? []).filter((id) => Object.hasOwn(ACHIEVEMENTS, id));
+  // the Qi Gong Instructor came with version 21: a few apply straight away, as for any role in a new game
+  if (s.version < 21)
+    while (s.candidates.filter((c) => c.role === 'instructor').length < 3)
+      s.candidates.push(makeCandidate(save, 'instructor'));
   s.version = SAVE_VERSION;
 }

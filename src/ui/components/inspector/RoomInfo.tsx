@@ -15,6 +15,7 @@ import { Button } from '../common/Button';
 import { Stars } from '../common/Stars';
 import { DecorPicker } from './DecorPicker';
 import { StationInfo } from './StationInfo';
+import { Timetable } from './Timetable';
 
 /** Which modalities a treatment room can deliver right now, and what is missing for the rest. */
 function CanDeliver({ table }: { table: Item }) {
@@ -101,10 +102,9 @@ export function RoomInfo({ room }: { room: Room }) {
         {`${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'} · Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.`}
       </p>{' '}
       <Comfort room={room} /> <BadVibes room={room} />{' '}
-      {stations.map((i) => (
-        <StationInfo key={i.id} item={i} />
-      ))}
-      {table && <CanDeliver table={table} />}{' '}
+      {/* a studio's spots are summed up in its timetable rather than listed one by one */}
+      {room.type !== 'qigong' && stations.map((i) => <StationInfo key={i.id} item={i} />)}
+      {table && <CanDeliver table={table} />} {room.done && room.type === 'qigong' && <Timetable room={room} />}{' '}
       {assigned.length > 0 && (
         <p class="sub assigned">{`Assigned here: ${assigned.map((st) => st.name).join(', ')}`}</p>
       )}{' '}

@@ -5,18 +5,19 @@ import {
   MODALITIES,
   MODALITY_ORDER,
   modalityLabel,
+  type Offering,
   ROOM_ORDER,
   ROOMS,
   type RoomType,
 } from '../../core/data';
-import { available } from './catalog';
+import { available, roomOffering } from './catalog';
 
 /**
  * What the star dialog says about the rooms a star unlocks, or '' if none: treatment rooms bring in a new kind of
  * guest once staffed, and any other room says what it is for.
  */
-export function newRoomsText(star: number, enabled: (d: Discipline) => boolean): string {
-  const types = ROOM_ORDER.filter((t) => ROOMS[t].unlock === star && available(ROOMS[t].discipline, enabled));
+export function newRoomsText(star: number, enabled: (d: Offering) => boolean): string {
+  const types = ROOM_ORDER.filter((t) => ROOMS[t].unlock === star && available(roomOffering(t), enabled));
   /** A room's "icon name" label. */
   const label = (t: RoomType) => `${ROOMS[t].icon} ${ROOMS[t].name}`;
   const treatment = types.filter((t) => ROOMS[t].discipline);

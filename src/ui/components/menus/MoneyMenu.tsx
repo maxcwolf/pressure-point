@@ -32,6 +32,7 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
       <h4>{title}</h4>
       <Line name="Consultations" amount={ledger.consult} />
       <Line name="Treatments" amount={ledger.treatment} />
+      <Line name="Qi Gong classes" amount={ledger.classes} />
       <Line name="Tea &amp; snacks" amount={ledger.vending} />
       <Line name="Shop sales" amount={ledger.shop} />
       <Line name="House calls" amount={ledger.calls} />
