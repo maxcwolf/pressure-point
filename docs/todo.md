@@ -35,4 +35,5 @@ The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two
 - [ ] **Phase 9, events:** a mishap per center.
 - [ ] **Phase 10, building tools:** move and copy rooms, templates, decorating rooms, camera rotation, more land.
 - [ ] **Phase 11, the long game:** machine upgrades, new rooms, regulars, treatment gags, a radio, game settings.
+- [ ] **Difficulty settings.** Presets for a new game (Relaxed, Standard, Demanding) alongside finer settings, the way Two Point's sandbox has them: how many applicants turn up and how often, how often guests arrive and how patient they are, how quickly equipment wears and staff tire, salaries and prices, loan limits, emergency and challenge frequency, and how fast the award bars rise. A preset fills the settings in, and any can then be changed. For the sandbox first, then perhaps per campaign center.
 - [ ] **Way down the line:** a server for community research and other players' institutes as rivals and VIPs.
