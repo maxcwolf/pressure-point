@@ -127,8 +127,16 @@ describe('morale and pay', () => {
   it('keeps fairly paid, rested staff content', () => {
     const { sim, therapist } = openCenter(1);
     addStaffRoom(sim);
-    run(sim, 400);
-    expect(therapist.morale).toBeGreaterThan(50);
+    // no trait to cheer them up or bring them down, and the going rate
+    therapist.traits = [];
+    therapist.salary = sim.fairPay(therapist);
+    // morale dips as they tire and recovers after a break, so take it across the whole stretch
+    let total = 0;
+    for (let i = 0; i < 400; i++) {
+      run(sim, 1);
+      total += therapist.morale;
+    }
+    expect(total / 400).toBeGreaterThan(50);
     expect(therapist.raiseAsked).toBe(false);
   });
 

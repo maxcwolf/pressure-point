@@ -54,8 +54,10 @@ describe('grime', () => {
 
 describe('a toilet in play', () => {
   it('gets dirtier as guests use it', () => {
-    const { sim, s } = openCenter(5);
+    const { sim, s, consultant } = openCenter(5);
     addRestroom(sim);
+    // with nobody to see them, guests wait in line, which is when they look for a toilet
+    sim.fire(consultant.id);
     const loo = s.items.find((i) => i.type === 'toilet')!;
     runUntil(sim, () => s.guests.some((g) => g.state === 'waiting'), 300);
     for (const g of s.guests) g.bladder = 100;

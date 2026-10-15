@@ -107,8 +107,10 @@ describe('the new items', () => {
 
 describe('the water cooler', () => {
   it('quenches thirst for free, and wears with use', () => {
-    const { sim, s } = openCenter(5);
+    const { sim, s, consultant } = openCenter(5);
     const cooler = sim.placeItem('water_cooler', 18, 13, 0)!;
+    // with nobody to see them, guests wait in line, which is when they look for a drink
+    sim.fire(consultant.id);
     runUntil(sim, () => s.guests.some((g) => g.state === 'waiting'), 300);
     for (const g of s.guests) g.thirst = 100;
     runUntil(sim, () => cooler.wear > 0, 120);
