@@ -42,7 +42,7 @@ So the gaps below are read in proportion: we have rooms built by dragging, doors
 
 ## The building
 
-**15. More land.** Two Point Hospital lets you buy extra plots, shown as construction sites around the hospital. Done: from the first star, plots up to four tiles deep are for sale to the west, the east and the back, and the building, still a rectangle, grows into each. _Large._ ([Twinfinite guide](https://twinfinite.net/guides/two-point-hospital-buy-more-buildings-how-to/))
+**15. More land.** Two Point Hospital lets you buy extra plots, shown as construction sites around the hospital. Done: from the first star, plots up to four tiles deep are for sale to the west, the east and the back, and the building, still a rectangle, grows into each. Doing it the Two Point way, with plots designed for each center, bought from the world, is planned in [land-plan.md](land-plan.md). _Large._ ([Twinfinite guide](https://twinfinite.net/guides/two-point-hospital-buy-more-buildings-how-to/))
 
 **16. Moving, copying and templating rooms.** Two Point Hospital has all three: pick a built room up, furniture and all, to move or rotate it; copy and paste a room (added in 2018); and save rooms as templates (added in 2020). Campus has them too. We have resizing, door moves and windows. _Medium each._ ([wiki: Rooms](https://two-point-hospital.fandom.com/wiki/Rooms), [Changelist](https://two-point-hospital.fandom.com/wiki/Changelist), [templates blog](https://community.twopointcounty.com/two-point-studios/two-point-hospital/blogs/9-room-templates-deep-dive))
 
@@ -84,7 +84,7 @@ So the gaps below are read in proportion: we have rooms built by dragging, doors
 
 **32. A fuller sandbox.** Two Point Hospital's sandbox sets cash, Kudosh, an income multiplier, how often patients arrive, which illnesses appear, objectives, the hiring pool, temperature, what is unlocked, and which plots are owned, with switches for staff objectives, emergencies, VIP visits, disasters and epidemics. Ours sets money, treatments and unlock-all. Most switches would come free with the systems above. _Small, after them._ ([wiki: Sandbox Mode](https://two-point-hospital.fandom.com/wiki/Sandbox_Mode))
 
-**33. Game settings.** Two Point Hospital has key rebinding, an edge-scrolling switch and an autosave interval; UI scale and camera speed are _unverified_. We have sound, music and treatments. _Small._ ([wiki: Preferences](https://two-point-hospital.fandom.com/wiki/Preferences), [PCGamingWiki](https://www.pcgamingwiki.com/wiki/Two_Point_Hospital))
+**33. Game settings.** Two Point Hospital has key rebinding, an edge-scrolling switch and an autosave interval; UI scale and camera speed are _unverified_. Done: key rebinding, edge scrolling and an autosave interval, in a Controls section of Settings, beside sound, music and treatments. _Small._ ([wiki: Preferences](https://two-point-hospital.fandom.com/wiki/Preferences), [PCGamingWiki](https://www.pcgamingwiki.com/wiki/Two_Point_Hospital))
 
 **34. A radio.** Two Point Radio has three DJs, adverts and news between songs; tracks can be switched off and your own music added. We have the PA announcer and music. Possible once there are voiced lines enough. _Medium, mostly content._ ([wiki: Two Point Radio](https://two-point-hospital.fandom.com/wiki/Two_Point_Radio))
 

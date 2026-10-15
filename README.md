@@ -79,10 +79,10 @@ Whether in the campaign or the sandbox, four things grow as you play.
 - **A campaign of five centers**, three stars each, plus a sandbox.
 - **A healing art for every taste**, each with its own room, staff, treatments and ailments you can spot on the guests who have them, and weekly Qi Gong classes.
 - **Staff with careers:** ranks, traits, courses, raises, breaks, and duties you can set.
-- **Rooms you can change:** resize them, move them, copy them, save them as templates, and decorate them.
+- **Rooms you can change:** resize them, move them, copy them, save them as templates, and decorate them. Buy the land next door when the building gets too small.
 - **Events to plan for:** emergencies, stress outbreaks, VIPs, the health inspector, mishaps like power cuts and storms, staff challenges and a year-end awards ceremony.
 - **Overlays and stats:** color the floor by how pleasant, quiet or warm each spot is, or by guests' patience and staff energy, and read the reviews and a casebook of every visit.
-- **Sound and music**, with an announcer, and autosave.
+- **Sound and music**, with an announcer, plus keys you can set, edge scrolling and autosave.
 
 ## Download
 
