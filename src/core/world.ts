@@ -255,44 +255,51 @@ export class World {
 
   // ---- Pathfinding ---------------------------------------------------------
   private g = new Float32Array(W * H);
+  private f = new Float64Array(W * H);
   private came = new Int32Array(W * H);
+  /** 1 for a tile on the open list, 2 for one done with, in the search numbered in `marked`; else not yet seen. */
   private state = new Uint8Array(W * H);
+  /** Which search last marked each tile, so a new search need not clear the marks of the last. */
+  private marked = new Uint32Array(W * H);
+  private search = 0;
 
   /** A* over the tile grid. The start tile may itself be blocked. Returns tile-center waypoints. */
   findPath(sx: number, sy: number, gx: number, gy: number): Waypoint[] | null {
     if (!inBounds(sx, sy) || !this.walkable(gx, gy)) return null;
     if (sx === gx && sy === gy) return [];
-    const { g, came, state } = this;
-    state.fill(0);
+    // a single step to the next tile along is what the search would find, the shortest way there being that step
+    if (Math.abs(gx - sx) + Math.abs(gy - sy) === 1 && this.canStep(sx, sy, gx, gy)) return [[gx + 0.5, gy + 0.5, 0]];
+    const { g, f, came, state, marked } = this;
+    const search = ++this.search;
+    /** Where a tile stands in this search: 0 not yet seen, 1 on the open list, 2 done with. */
+    const stateOf = (i: number) => (marked[i] === search ? at(state, i) : 0);
+    /** Mark where a tile stands in this search. */
+    const mark = (i: number, v: number) => {
+      marked[i] = search;
+      state[i] = v;
+    };
     const start = tileIdx(sx, sy);
     const goal = tileIdx(gx, gy);
     const open: number[] = [start];
-    const f = new Map<number, number>();
     g[start] = 0;
-    f.set(start, 0);
-    state[start] = 1;
-    /** A lower bound on the distance left to the goal, allowing diagonal steps. */
-    const hcost = (x: number, y: number) => {
-      const dx = Math.abs(x - gx);
-      const dy = Math.abs(y - gy);
-      return Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy);
-    };
+    f[start] = 0;
+    mark(start, 1);
     while (open.length) {
-      // take the most promising tile off the open list
+      // take the most promising tile off the open list: the first of any that are as promising as each other
       let bi = 0;
       let best = Infinity;
-      open.forEach((tile, i) => {
-        const score = f.get(tile) ?? Infinity;
+      for (let i = 0; i < open.length; i++) {
+        const score = at(f, at(open, i));
         if (score < best) {
           best = score;
           bi = i;
         }
-      });
+      }
       const cur = at(open, bi);
       open[bi] = at(open, open.length - 1);
       open.pop();
       if (cur === goal) break;
-      state[cur] = 2;
+      mark(cur, 2);
       const cx = cur % W;
       const cy = (cur - cx) / W;
       for (const [dx, dy, cost] of DIRS8) {
@@ -300,7 +307,8 @@ export class World {
         const ny = cy + dy;
         if (!inBounds(nx, ny)) continue;
         const n = tileIdx(nx, ny);
-        if (state[n] === 2) continue;
+        const seen = stateOf(n);
+        if (seen === 2) continue;
         if (dx && dy) {
           if (
             !this.canStep(cx, cy, nx, cy) ||
@@ -311,17 +319,20 @@ export class World {
             continue;
         } else if (!this.canStep(cx, cy, nx, ny)) continue;
         const ng = at(g, cur) + cost;
-        if (state[n] === 1 && ng >= at(g, n)) continue;
+        if (seen === 1 && ng >= at(g, n)) continue;
         g[n] = ng;
         came[n] = cur;
-        f.set(n, ng + hcost(nx, ny));
-        if (state[n] !== 1) {
-          state[n] = 1;
+        // the distance so far, and a lower bound on the distance left to the goal, allowing diagonal steps
+        const hx = Math.abs(nx - gx);
+        const hy = Math.abs(ny - gy);
+        f[n] = ng + (Math.max(hx, hy) + (Math.SQRT2 - 1) * Math.min(hx, hy));
+        if (seen !== 1) {
+          mark(n, 1);
           open.push(n);
         }
       }
     }
-    if (state[goal] === 0) return null;
+    if (stateOf(goal) === 0) return null;
     const path: Waypoint[] = [];
     let c = goal;
     while (c !== start) {

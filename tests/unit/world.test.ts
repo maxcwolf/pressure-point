@@ -78,6 +78,80 @@ describe('pathfinding', () => {
   it('returns an empty path when already there', () => {
     expect(freshSim().world.findPath(10, 10, 10, 10)).toEqual([]);
   });
+
+  it('finds the shortest way every time, however many searches came before', () => {
+    const sim = freshSim();
+    addConsult(sim);
+    addMassage(sim);
+    const { world } = sim;
+    /** The length of a path from a tile, every step allowed by the same rules as the search. */
+    const length = (sx: number, sy: number, path: readonly (readonly number[])[]) => {
+      let [x, y] = [sx, sy];
+      let total = 0;
+      for (const [px, py] of path) {
+        const [nx, ny] = [Math.floor(px!), Math.floor(py!)];
+        const [dx, dy] = [nx - x, ny - y];
+        expect(Math.max(Math.abs(dx), Math.abs(dy)), 'one tile at a time').toBe(1);
+        if (dx && dy) expect(world.canStep(x, y, nx, y) && world.canStep(x, y, x, ny)).toBe(true);
+        else expect(world.canStep(x, y, nx, ny)).toBe(true);
+        total += dx && dy ? Math.SQRT2 : 1;
+        [x, y] = [nx, ny];
+      }
+      return total;
+    };
+    /** The shortest distance between two tiles, by a plain search of every way there. */
+    const shortest = (sx: number, sy: number, gx: number, gy: number) => {
+      const dist = new Map<number, number>([[sy * W + sx, 0]]);
+      const todo = [[sx, sy, 0]];
+      while (todo.length) {
+        todo.sort((a, b) => a[2]! - b[2]!);
+        const [x, y, d] = todo.shift()!;
+        if (x === gx && y === gy) return d!;
+        for (const [dx, dy] of [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+          [1, 1],
+          [1, -1],
+          [-1, 1],
+          [-1, -1],
+        ] as const) {
+          const [nx, ny] = [x! + dx, y! + dy];
+          const ok =
+            dx && dy
+              ? world.canStep(x!, y!, nx, y!) &&
+                world.canStep(nx, y!, nx, ny) &&
+                world.canStep(x!, y!, x!, ny) &&
+                world.canStep(x!, ny, nx, ny)
+              : world.canStep(x!, y!, nx, ny);
+          const nd = d! + (dx && dy ? Math.SQRT2 : 1);
+          if (!ok || (dist.get(ny * W + nx) ?? Infinity) <= nd) continue;
+          dist.set(ny * W + nx, nd);
+          todo.push([nx, ny, nd]);
+        }
+      }
+      return null;
+    };
+    // long and short searches in turn, from the street, the lobby and the rooms, near and far
+    const spots = [
+      [0, SIDEWALK_Y],
+      [ENT_X[0], ENT_IN_Y - 1],
+      [15, 12],
+      [6, 7],
+      [10, 10],
+      [11, 10],
+      [BX0, BY0],
+      [12, 15],
+    ] as const;
+    for (const [sx, sy] of spots)
+      for (const [gx, gy] of spots) {
+        const path = world.findPath(sx, sy, gx, gy);
+        const best = shortest(sx, sy, gx, gy);
+        if (best === null) expect(path).toBeNull();
+        else expect(length(sx, sy, path!), `${sx},${sy} to ${gx},${gy}`).toBeCloseTo(best);
+      }
+  });
 });
 
 describe('placing items', () => {
