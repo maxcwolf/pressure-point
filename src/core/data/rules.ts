@@ -82,6 +82,20 @@ export const SETTING_WEIGHT = 2;
 export const TRIP_DISCOMFORT = 0.15;
 /** What a bad trip costs in reputation, on top of a failed treatment. */
 export const BAD_TRIP_REP = 1.5;
+/** How many times faster a Shaman clears bad vibes than sage does. */
+export const SHAMAN_CLEARING = 2;
+/** How many days the blessing a Shaman leaves on a room they clear lasts. */
+export const BLESS_DAYS = 7;
+/** What a blessed room adds to the chance of a treatment there working. */
+export const BLESS_BONUS = 0.04;
+/** Morale below which a member of staff is burnt out enough for a Shaman to retrieve their soul. */
+export const SOUL_MORALE = 50;
+/** How much morale a soul retrieval gives back. */
+export const SOUL_LIFT = 40;
+/** What a soul retrieval takes out of the Shaman's energy. */
+export const SOUL_ENERGY = 20;
+/** Seconds a soul retrieval takes, at normal speed. */
+export const SOUL_SECONDS = 6;
 
 /** Caretakers start repairing equipment at this much wear; at 100 it is broken. */
 export const WEAR_REPAIR = 50;

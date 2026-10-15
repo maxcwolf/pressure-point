@@ -4,9 +4,11 @@ import { DUTIES, DUTY_NAMES, ROLES, traitOf } from '../../../core/data';
 import { money } from '../../../core/format';
 import { assignableRole, roomLabels } from '../../../core/sim/assignments';
 import { rankName, rankProgress, slots, trained, xpToNext } from '../../../core/sim/careers';
+import { burntOut } from '../../../core/sim/souls';
 import type { Staff } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
+import { soulNote } from '../../lib/souls';
 import { offerWarning } from '../../lib/standing';
 import { moraleLook, promotionNote, quitWarning, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
@@ -126,6 +128,29 @@ function WorksIn({ staff: st }: { staff: Staff }) {
   );
 }
 
+/** A button to send a Shaman to someone burnt out to retrieve their soul, or how that is going. */
+function Soul({ staff: st }: { staff: Staff }) {
+  const { sim } = useGame();
+  if (st.state === 'leaving') return null;
+  const shaman = sim.s.staff.some((sh) => sh.role === 'shaman' && sh.id !== st.id && sh.state !== 'leaving');
+  // the hint is only for a center where a Shaman can be hired
+  const note = soulNote(!!st.soulAsked, burntOut(st.morale) && sim.enabled('shaman'), shaman);
+  if (sim.canRetrieve(st))
+    return (
+      <Button
+        class="raise"
+        quiet
+        title="A Shaman comes over and brings their soul back, lifting their morale a long way. It tires the Shaman."
+        onPress={() => {
+          sim.askSoul(st.id);
+        }}
+      >
+        🪶 Soul retrieval
+      </Button>
+    );
+  return note ? <p class="sub">{note}</p> : null;
+}
+
 /** A member of staff's skills, mood and pay, with raises, training and letting them go. */
 export function StaffInfo({ staff: st }: { staff: Staff }) {
   const { sim, tools } = useGame();
@@ -158,6 +183,7 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
         Morale
         <Bar value={st.morale} class={moraleLook(st.morale)} />
       </label>{' '}
+      <Soul staff={st} />
       <label title="Seen to between jobs at a Water Cooler or Tea Station, or by an Espresso Machine on a break.">
         Thirst
         <Bar value={st.thirst} class={st.thirst >= 100 ? 'bad' : 'need'} />

@@ -1,9 +1,18 @@
-// Psychedelic ceremonies: set and setting. The room matters far more to a guest on a trip, so its bad vibes, noise,
-// stale linens and prestige count again, and so does a lodge too hot or too cold for comfort. One that fails is a bad
-// trip, which leaves the lodge worse than before.
+// The Shaman's work beyond the mat. Psychedelic ceremonies and set and setting: the room matters far more to a guest
+// on a trip, so its bad vibes, noise, stale linens and prestige count again, and so does a lodge too hot or too cold
+// for comfort. One that fails is a bad trip, which leaves the lodge worse than before. And rooms a Shaman clears of bad
+// vibes, which they do faster than sage, are blessed for a week after.
 
-import { BAD_TRIP_REP, type ModalityDef, SETTING_WEIGHT, TRIP_DISCOMFORT } from '../data';
-import type { Guest, Item } from '../state/types';
+import {
+  BAD_TRIP_REP,
+  BLESS_BONUS,
+  BLESS_DAYS,
+  type ModalityDef,
+  SETTING_WEIGHT,
+  SHAMAN_CLEARING,
+  TRIP_DISCOMFORT,
+} from '../data';
+import type { Guest, Item, Room, Staff } from '../state/types';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { announceOnce, emit, tipOnce } from './events';
@@ -62,3 +71,20 @@ export function announceSweatLodge(ctx: SimContext) {
   if (!ctx.s.items.some((it) => it.type === 'sweat_lodge' && ctx.world.roomOfItem(it)?.done)) return;
   announceOnce(ctx, 'sweat-shop', SWEAT_LODGE_OPEN);
 }
+
+/** Whether a room is under a Shaman's blessing on a day. */
+export const blessed = (room: Pick<Room, 'blessedUntil'> | undefined, day: number) =>
+  !!room?.blessedUntil && day < room.blessedUntil;
+
+/** What a room's blessing adds to the chance of a treatment there working, on a day. */
+export const blessBonus = (room: Pick<Room, 'blessedUntil'> | undefined, day: number) =>
+  blessed(room, day) ? BLESS_BONUS : 0;
+
+/** Bless a room, for a week from a day. */
+export function bless(room: Pick<Room, 'blessedUntil'>, day: number) {
+  room.blessedUntil = day + BLESS_DAYS;
+}
+
+/** How long clearing a room takes someone: a Shaman does it faster than sage does. */
+export const clearingSeconds = (st: Pick<Staff, 'role'>, seconds: number) =>
+  st.role === 'shaman' ? seconds / SHAMAN_CLEARING : seconds;

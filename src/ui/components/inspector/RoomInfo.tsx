@@ -7,6 +7,7 @@ import { roomLabels } from '../../../core/sim/assignments';
 import { tempFeel } from '../../../core/sim/warmth';
 import type { Item, Room } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
 import { saveAsTemplate } from '../../templates';
@@ -50,7 +51,9 @@ function BadVibes({ room }: { room: Room }) {
   const { sim } = useGame();
   if (room.vibes <= 0) return null;
   const who = sim.staff(room.claimedBy);
-  const able = sim.s.staff.some((st) => st.role === 'practitioner' || st.general.includes('smudging'));
+  const able = sim.s.staff.some(
+    (st) => st.role === 'practitioner' || st.role === 'shaman' || st.general.includes('smudging'),
+  );
   return (
     <div class="vibes">
       <b>☁️ Bad vibes</b>
@@ -58,14 +61,23 @@ function BadVibes({ room }: { room: Room }) {
       <p class="sub">
         {`A failed treatment left these behind. Treatments here work less often, and staff here are unsettled, until they fade or are cleared. ${
           who
-            ? `${who.name} is clearing them with a bundle of sage.`
+            ? who.role === 'shaman'
+              ? `${who.name} is clearing them, and will bless the room.`
+              : `${who.name} is clearing them with a bundle of sage.`
             : able
               ? 'Someone who can clear them will be along when they are free.'
-              : 'A Reiki Practitioner can clear them, or a Caretaker who has taken the Smudging course.'
+              : 'A Reiki Practitioner or a Shaman can clear them, or a Caretaker who has taken the Smudging course.'
         }`}
       </p>
     </div>
   );
+}
+
+/** The blessing a Shaman has left on a room, while it lasts. */
+function Blessing({ room }: { room: Room }) {
+  const { sim } = useGame();
+  const note = blessingNote(room.blessedUntil, sim.s.day);
+  return note ? <p class="sub">{note}</p> : null;
 }
 
 /** How warm and how calm it is in the middle of a room. */
@@ -101,7 +113,7 @@ export function RoomInfo({ room }: { room: Room }) {
       <p class="sub">
         {`${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'} · Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.`}
       </p>{' '}
-      <Comfort room={room} /> <BadVibes room={room} />{' '}
+      <Comfort room={room} /> <BadVibes room={room} /> <Blessing room={room} />{' '}
       {/* a studio's spots are summed up in its timetable rather than listed one by one */}
       {room.type !== 'qigong' && stations.map((i) => <StationInfo key={i.id} item={i} />)}
       {table && <CanDeliver table={table} />} {room.done && room.type === 'qigong' && <Timetable room={room} />}{' '}

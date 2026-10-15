@@ -1,6 +1,6 @@
 // Bad vibes: the cloud a failed treatment leaves over its room, which lowers results there and unsettles whoever
-// works in it, until a Reiki Practitioner, or a Caretaker who has learned Smudging, wafts burning sage through it. Left
-// alone, they fade slowly on their own.
+// works in it, until a Reiki Practitioner, or a Caretaker who has learned Smudging, wafts burning sage through it, or a
+// Shaman clears it. Left alone, they fade slowly on their own.
 
 import { ROOMS, SMUDGE_SECONDS, VIBES_FADE, VIBES_PENALTY, VIBES_PER_FAIL } from '../data';
 import { pick } from '../random';
@@ -11,9 +11,12 @@ import type { SimContext } from './context';
 import { tipOnce } from './events';
 import { goTo } from './movement';
 
-/** Whether a member of staff can clear bad vibes: any Reiki Practitioner, and a Caretaker who has learned Smudging. */
+/**
+ * Whether a member of staff can clear bad vibes: any Reiki Practitioner or Shaman, and a Caretaker who has learned
+ * Smudging.
+ */
 export const canSmudge = (st: Staff) =>
-  st.role === 'practitioner' || (st.role === 'caretaker' && hasGeneral(st, 'smudging'));
+  st.role === 'practitioner' || st.role === 'shaman' || (st.role === 'caretaker' && hasGeneral(st, 'smudging'));
 
 /** How much a room's bad vibes take off the chance of a treatment there working. */
 export const vibesPenalty = (room: Room | undefined) => (room ? (room.vibes / 100) * VIBES_PENALTY : 0);
@@ -31,7 +34,7 @@ export function addVibes(ctx: SimContext, room: Room) {
   tipOnce(
     ctx,
     'vibes',
-    `That failed treatment has left bad vibes hanging over the ${ROOMS[room.type].name}: treatments there work less often until they fade or are cleared. ${someone ? 'Someone will be along with a bundle of sage.' : 'A Reiki Practitioner can clear them, or a Caretaker who has taken the Smudging course.'}`,
+    `That failed treatment has left bad vibes hanging over the ${ROOMS[room.type].name}: treatments there work less often until they fade or are cleared. ${someone ? 'Someone will be along with a bundle of sage.' : 'A Reiki Practitioner or a Shaman can clear them, or a Caretaker who has taken the Smudging course.'}`,
     'bad',
     { kind: 'room', id: room.id },
   );

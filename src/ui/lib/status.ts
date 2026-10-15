@@ -88,7 +88,8 @@ export function guestStatus(g: Guest, sim: Sim): string {
 /** The chore a member of staff is on, in a few words. */
 function choreStatus(st: Staff, sim: Sim): string {
   const job = st.job;
-  const it = job && job.kind !== 'litter' && job.kind !== 'smudge' ? sim.world.item(job.id) : undefined;
+  const it =
+    job && job.kind !== 'litter' && job.kind !== 'smudge' && job.kind !== 'soul' ? sim.world.item(job.id) : undefined;
   switch (job?.kind) {
     case 'repair':
       return `Repairing the ${ITEMS[it?.type ?? 'bin'].name}`;
@@ -99,7 +100,9 @@ function choreStatus(st: Staff, sim: Sim): string {
     case 'water':
       return it?.type === 'stone_warmer' ? 'Reheating the massage stones' : 'Watering a plant';
     case 'smudge':
-      return 'Clearing bad vibes with sage';
+      return st.role === 'shaman' ? 'Clearing bad vibes, and blessing the room' : 'Clearing bad vibes with sage';
+    case 'soul':
+      return `Retrieving ${sim.staff(job.id)?.name ?? 'someone'}’s soul`;
     case 'refresh':
       return it?.type === 'snack_machine' ? 'Getting a snack' : 'Getting a drink';
     default:

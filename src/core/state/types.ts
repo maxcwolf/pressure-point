@@ -54,6 +54,8 @@ export interface Room {
   booked?: ClassBooking;
   /** The day a Qi Gong Studio last started a class, so each class day has one class. */
   lastClass?: number;
+  /** The day a Shaman's blessing on it runs out, once it has had one. */
+  blessedUntil?: number;
 }
 
 /** How a Qi Gong class filled up: its day, how many booked a place, and how many were turned away. */
@@ -219,6 +221,8 @@ export interface Staff extends CharBase {
   unhappyT: number;
   /** Guests served, or jobs done, since the year began, for the year-end awards. */
   yearServed: number;
+  /** A Shaman has been asked to retrieve their soul, and has not yet. */
+  soulAsked?: boolean;
 }
 
 /**
@@ -226,7 +230,7 @@ export interface Staff extends CharBase {
  * a hamper), the room someone clears of bad vibes, or the drink or snack someone goes to for themselves.
  */
 export interface Job {
-  kind: 'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh' | 'install';
+  kind: 'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh' | 'install' | 'soul';
   id: number;
 }
 

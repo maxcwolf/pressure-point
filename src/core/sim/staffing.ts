@@ -40,6 +40,7 @@ import { worksAt } from './assignments';
 import { sameRoomCount } from './building';
 import { returnFromCall } from './calls';
 import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
+import { bless, clearingSeconds } from './ceremonies';
 import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
 import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
@@ -52,6 +53,7 @@ import { goTo, halt, moveAlong } from './movement';
 import { breakDue } from './policy';
 import { hasItem } from './progress';
 import { isLeadStation, matsOf } from './sessions';
+import { reachSoul, soulStep, soulToRetrieve, startSoul } from './souls';
 import { fedUp, goRefresh, growNeeds, refreshed, refreshSeconds, wants, wantsRefresh } from './staff-needs';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
@@ -266,7 +268,10 @@ function dropJob(ctx: SimContext, st: Staff) {
       ? ctx.s.litter.find((x) => x.id === job.id)
       : job.kind === 'smudge'
         ? ctx.s.rooms.find((r) => r.id === job.id)
-        : ctx.world.item(job.id);
+        : // a soul retrieval is for a member of staff, and claims nothing
+          job.kind === 'soul'
+          ? undefined
+          : ctx.world.item(job.id);
   if (claimed?.claimedBy === st.id) claimed.claimedBy = 0;
   st.job = null;
 }
@@ -403,9 +408,12 @@ function findWork(ctx: SimContext, st: Staff) {
       return;
     }
   } else {
-    // a Reiki Practitioner clears bad vibes before taking up a post
+    // a Reiki Practitioner or a Shaman clears bad vibes before taking up a post
     const cloudy = roomToSmudge(ctx, st);
     if (cloudy && startSmudge(ctx, st, cloudy)) return;
+    // and a Shaman goes to anyone whose soul they have been asked to retrieve
+    const lost = soulToRetrieve(ctx, st);
+    if (lost && startSoul(ctx, st, lost)) return;
     let best: Item | null = null;
     let bestScore = -1e9;
     for (const it of s.items) {
@@ -469,11 +477,14 @@ function smudgeStep(ctx: SimContext, st: Staff, dt: number) {
     return;
   }
   clearVibes(room);
+  // a Shaman leaves a blessing behind them
+  const shaman = st.role === 'shaman';
+  if (shaman) bless(room, ctx.s.day);
   st.job = null;
   st.yearServed++;
   gainXp(ctx, st, XP_PER_JOB);
   say(st, '✨', 3);
-  emit(ctx, { type: 'float', text: 'Vibes cleared', x: st.x, y: st.y, kind: 'good' });
+  emit(ctx, { type: 'float', text: shaman ? 'Cleared and blessed' : 'Vibes cleared', x: st.x, y: st.y, kind: 'good' });
   staffIdle(ctx, st);
 }
 
@@ -534,7 +545,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       // free to go, and a priority room is short of someone: off to work there instead
       else if (!it.serving && !inPriorityRoom(ctx, it.x, it.y) && openPriorityPost(ctx, st)) staffIdle(ctx, st);
       // free to go, and a room has bad vibes that they know how to clear
-      else if (!it.serving && roomToSmudge(ctx, st)) staffIdle(ctx, st);
+      else if (!it.serving && (roomToSmudge(ctx, st) || soulToRetrieve(ctx, st))) staffIdle(ctx, st);
       // free to go, and in want of a drink or a snack that is to be had
       else if (!it.serving && wantsRefresh(ctx, st)) staffIdle(ctx, st);
       else if (breakDue(ctx, st) && !it.serving) {
@@ -560,11 +571,16 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       if (st.energy >= 100 || !st.claimItem) staffIdle(ctx, st);
       break;
     case 'toJob':
+      // a soul is retrieved from someone who may have moved on: follow them until close enough
+      if (st.job?.kind === 'soul') {
+        if ((arrived || !st.path) && !reachSoul(ctx, st)) staffIdle(ctx, st);
+        break;
+      }
       if (arrived) {
         st.state = 'doingJob';
         st.busy = true;
         if (st.job?.kind === 'smudge') {
-          st.timer = smudgeSeconds(caretakerSpeed(st));
+          st.timer = clearingSeconds(st, smudgeSeconds(caretakerSpeed(st)));
           say(st, '🌿', 2);
           break;
         }
@@ -584,6 +600,10 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
     case 'doingJob':
       if (st.job?.kind === 'smudge') {
         smudgeStep(ctx, st, dt);
+        break;
+      }
+      if (st.job?.kind === 'soul') {
+        if (soulStep(ctx, st, dt)) staffIdle(ctx, st);
         break;
       }
       // the guest on a table is treated before a Mechanic starts work on it

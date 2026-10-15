@@ -90,6 +90,7 @@ import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues
 import { monthSoFar } from './records';
 import { updateRival } from './rival';
 import { playingFor, servedAt, sessionState, stationStaff } from './sessions';
+import { askSoul, canRetrieve } from './souls';
 import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
 import { type StandingPoints, standingPoints, updateStanding } from './standing';
 import { type Chance, successChance, updateStations } from './stations';
@@ -422,6 +423,14 @@ export class Sim {
   /** Turn a job applicant down. */
   reject(candidateId: number): boolean {
     return reject(this.ctx, candidateId);
+  }
+  /** Whether a Shaman can be sent to retrieve a member of staff's soul. */
+  canRetrieve(st: Staff): boolean {
+    return canRetrieve(this.ctx, st);
+  }
+  /** Send a Shaman to retrieve a burnt-out member of staff's soul. False if none can be. */
+  askSoul(id: number): boolean {
+    return askSoul(this.ctx, id);
   }
   /** Give a member of staff a raise. */
   giveRaise(id: number) {

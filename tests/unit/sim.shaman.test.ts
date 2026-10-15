@@ -2,8 +2,25 @@
 // or a psychedelic ceremony that depends on the room's set and setting.
 import { describe, expect, it } from 'vitest';
 
-import { BAD_TRIP_REP, CENTERS, type ConditionId, CONDITIONS, MODALITIES, ROOMS } from '../../src/core/data';
-import { badTrip, settingPenalty, SWEAT_LODGE_OPEN } from '../../src/core/sim/ceremonies';
+import {
+  BAD_TRIP_REP,
+  BLESS_BONUS,
+  CENTERS,
+  type ConditionId,
+  CONDITIONS,
+  MODALITIES,
+  ROOMS,
+  SOUL_LIFT,
+} from '../../src/core/data';
+import {
+  badTrip,
+  bless,
+  blessBonus,
+  blessed,
+  clearingSeconds,
+  settingPenalty,
+  SWEAT_LODGE_OPEN,
+} from '../../src/core/sim/ceremonies';
 import type { SimContext } from '../../src/core/sim/context';
 import { Sim } from '../../src/core/sim/sim';
 import { successChance } from '../../src/core/sim/stations';
@@ -11,7 +28,8 @@ import { newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { cloudAt } from '../../src/render/ceremony';
-import { tripNote } from '../../src/ui/lib/ceremonies';
+import { blessingNote, tripNote } from '../../src/ui/lib/ceremonies';
+import { soulNote } from '../../src/ui/lib/souls';
 import {
   addLodge,
   addRecovery,
@@ -242,5 +260,74 @@ describe('a long session with the Shaman', () => {
     }
     expect(healed).toBeGreaterThan(0);
     expect(Number.isFinite(s.money)).toBe(true);
+  });
+});
+
+describe('clearing and blessing', () => {
+  it('has a Shaman clear bad vibes twice as fast as sage, and only a Shaman bless the room', () => {
+    expect(clearingSeconds({ role: 'shaman' }, 7)).toBe(3.5);
+    expect(clearingSeconds({ role: 'practitioner' }, 7)).toBe(7);
+  });
+
+  it('blesses a room for a week, helping treatments there a little', () => {
+    const room: { blessedUntil?: number } = {};
+    expect(blessed(room, 3)).toBe(false);
+    bless(room, 3);
+    expect(blessed(room, 9.9)).toBe(true);
+    expect(blessed(room, 10)).toBe(false);
+    expect(blessBonus(room, 5)).toBe(BLESS_BONUS);
+    expect(blessBonus(room, 11)).toBe(0);
+    expect(blessingNote(10, 8.2)).toBe(
+      '✨ Blessed by a Shaman: treatments here work a little more often, for 2 more days',
+    );
+    expect(blessingNote(10, 9.5)).toMatch(/for 1 more day$/);
+    expect(blessingNote(10, 10)).toBe('');
+  });
+
+  it('sends the Shaman to clear a lodge with bad vibes, which leaves it blessed', () => {
+    const { sim, s, lodge, shaman } = withLodge(9);
+    runUntil(sim, () => shaman.state === 'atPost', 300);
+    lodge.vibes = 100;
+    runUntil(sim, () => lodge.vibes === 0, 300);
+    expect(blessed(lodge, s.day)).toBe(true);
+  });
+});
+
+describe('soul retrieval', () => {
+  it('can be asked for someone burnt out, with a Shaman to go who is not them', () => {
+    const { sim, therapist, shaman } = withLodge(10);
+    therapist.morale = 60;
+    expect(sim.canRetrieve(therapist)).toBe(false);
+    therapist.morale = 30;
+    expect(sim.canRetrieve(therapist)).toBe(true);
+    shaman.morale = 30;
+    expect(sim.canRetrieve(shaman), 'no other Shaman').toBe(false);
+    expect(sim.askSoul(therapist.id)).toBe(true);
+    expect(sim.askSoul(therapist.id), 'already asked').toBe(false);
+  });
+
+  it('sends the Shaman over, lifting their morale a long way and tiring the Shaman', () => {
+    const { sim, therapist, shaman } = withLodge(11);
+    runUntil(sim, () => shaman.state === 'atPost' && therapist.state === 'atPost', 300);
+    therapist.morale = 20;
+    sim.askSoul(therapist.id);
+    let energy = 0;
+    runUntil(
+      sim,
+      () => {
+        if (shaman.job?.kind === 'soul' && shaman.state === 'doingJob') energy = shaman.energy;
+        return !therapist.soulAsked;
+      },
+      300,
+    );
+    expect(therapist.morale).toBeGreaterThan(20 + SOUL_LIFT - 10);
+    expect(energy).toBeGreaterThan(0);
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('says who is coming, or that a Shaman could help', () => {
+    expect(soulNote(true, true, true)).toBe('🪶 A Shaman is seeing to their soul');
+    expect(soulNote(false, true, false)).toBe('Burnt out: a Shaman could retrieve their soul');
+    expect(soulNote(false, false, false)).toBe('');
   });
 });

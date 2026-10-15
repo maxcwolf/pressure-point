@@ -29,7 +29,7 @@ import { at, clamp, must } from '../util';
 import { accessPose, accessTile } from '../world';
 import { prestige } from './ambience';
 import { gainXp, habitOf, hasGeneral } from './careers';
-import { badTrip, goodTrip, isTrip, settingPenalty } from './ceremonies';
+import { badTrip, blessBonus, goodTrip, isTrip, settingPenalty } from './ceremonies';
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
 import { isClassLead, updateClass } from './classes';
@@ -116,8 +116,8 @@ export interface Chance {
  * The chance a guest's treatment at this table works if this member of staff gives it now: better with skill, a
  * confident diagnosis, a prestigious room and upgraded equipment, worse for a hard technique, a tired therapist, a guest
  * whose condition has worsened, a room with bad vibes, noise or stale linens, nowhere to rest afterwards if it needs
- * it, and only a fraction of that without the right training or equipment. For a psychedelic ceremony the room counts
- * for twice as much, and so does an uncomfortable temperature.
+ * it, and only a fraction of that without the right training or equipment. A room a Shaman has blessed helps a
+ * little. For a psychedelic ceremony the room counts for twice as much, and so does an uncomfortable temperature.
  */
 export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest): Chance {
   const mod = MODALITIES[conditionOf(g.condition).modality];
@@ -134,6 +134,7 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
       staff.skill * 0.09 +
       Math.min(1, g.diagnosis) * 0.15 +
       setting.prestige +
+      blessBonus(ctx.world.roomOfItem(it), ctx.s.day) +
       upgradeSuccess(it.level) -
       mod.difficulty -
       (staff.energy < 15 ? 0.15 : 0) -

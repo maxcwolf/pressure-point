@@ -6,6 +6,8 @@ Each release's notes are taken from its section here. Keep them short.
 
 - **The Shaman,** a fifth discipline, open at The Orchard Estate from the start and in the sandbox from the second star. Build a **Ceremony Lodge** and hire a **Shaman**, who treats one guest at a time on a Ceremony Mat. Five techniques: Spirit Animal Reading, Spiritual Extraction (with a little dark cloud pulled out of the guest and shooed away), Sweat Lodge, and two psychedelic ceremonies, mushrooms and ayahuasca. The ceremonies depend on **set and setting**: a noisy, grubby, gloomy, plain or uncomfortably hot or cold lodge counts twice against them, and one that fails is a **bad trip**. Both ceremonies need a rest in the Recovery Lounge after. Eight new ailments, among them guests possessed by a chicken, a goat, and Brent.
 - **The first Sweat Lodge is announced,** voiced: "The sweat shop... I mean, sweat lodge, is now open."
+- **A Shaman clears bad vibes** twice as fast as sage does, and leaves the room **blessed** for a week, so its treatments work a little more often. The room's inspector shows the blessing.
+- **Soul retrieval.** A member of staff with morale below half gets a **Soul retrieval** button in their inspector: a Shaman walks over and brings their soul back, lifting their morale a long way at some cost to the Shaman's energy.
 
 ## v0.22.1
 
