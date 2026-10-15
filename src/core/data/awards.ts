@@ -43,7 +43,7 @@ export const AWARDS: Readonly<Record<AwardId, AwardDef>> = {
     id: 'healer-of-the-year',
     name: 'Healer of the Year',
     icon: '🌟',
-    desc: 'The therapist, acupuncturist or practitioner who saw the most guests',
+    desc: 'The therapist, acupuncturist, practitioner or sound healer who saw the most guests',
     prize: 1000,
   },
   'caretaker-of-the-year': {

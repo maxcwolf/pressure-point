@@ -4,12 +4,13 @@ import type { Plot } from './map';
 import type { MishapId } from './mishaps';
 
 export type RoomType =
-  'consult' | 'assess' | 'massage' | 'acupuncture' | 'reiki' | 'staffroom' | 'restroom' | 'training';
+  'consult' | 'assess' | 'massage' | 'acupuncture' | 'reiki' | 'sound' | 'staffroom' | 'restroom' | 'training';
 
-export type Role = 'receptionist' | 'consultant' | 'therapist' | 'acupuncturist' | 'practitioner' | 'caretaker';
+export type Role =
+  'receptionist' | 'consultant' | 'therapist' | 'acupuncturist' | 'practitioner' | 'healer' | 'caretaker';
 
 /** A family of treatments with its own room, staff and equipment. */
-export type Discipline = 'massage' | 'acupuncture' | 'reiki';
+export type Discipline = 'massage' | 'acupuncture' | 'reiki' | 'sound';
 
 export type ItemType =
   | 'reception_desk'
@@ -45,6 +46,9 @@ export type ItemType =
   | 'reiki_altar'
   | 'crystal_grid'
   | 'singing_bowls'
+  | 'sound_mat'
+  | 'gong'
+  | 'crystal_bowls'
   | 'water_cooler'
   | 'fire_extinguisher'
   | 'arcade_machine'
@@ -113,12 +117,16 @@ export interface ItemDef {
   access: AccessDef[];
   /** Where it may be placed. */
   where: 'corridor' | 'any' | RoomType;
-  /** Stations have a staff position and a line of guests. */
+  /**
+   * Stations have a staff position and a line of guests. A group station has no staff position of its own: it is
+   * worked from the lead station in its room, whose member of staff serves every group station there at once.
+   */
   station?: {
     staff: Role;
-    goal: 'reception' | 'consult' | 'assess' | 'treat' | 'shop';
+    goal: 'reception' | 'consult' | 'assess' | 'treat' | 'shop' | 'lead';
     seconds: number;
     discipline?: Discipline;
+    group?: boolean;
   };
   inMenu?: boolean;
   /** Stars needed before it can be bought. */
@@ -142,6 +150,8 @@ export interface ItemDef {
   seatDrain?: number;
   /** How much noise it makes, carrying like decor does; below zero, it soothes the noise around it. */
   noise?: number;
+  /** How much noise it makes while a group session plays in its room, heard only outside the room. */
+  sessionNoise?: number;
   /** Degrees it warms (or, below zero, cools) the air around it. */
   heat?: number;
   /** A table with linens on it, soiled a little with each session until a Caretaker changes them. */
@@ -219,7 +229,12 @@ export type Modality =
   | 'usui'
   | 'crystal'
   | 'sound'
-  | 'chakra';
+  | 'chakra'
+  | 'distance'
+  | 'forks'
+  | 'gong'
+  | 'crystalbowls'
+  | 'overtone';
 
 export interface ModalityDef {
   id: Modality;
@@ -289,7 +304,9 @@ export type Visual =
   | 'thermometer'
   | 'apple'
   | 'mallet'
-  | 'blossom';
+  | 'blossom'
+  | 'worm'
+  | 'glass';
 
 /** What a guest can arrive suffering from. */
 export type ConditionId =
@@ -327,7 +344,13 @@ export type ConditionId =
   | 'cabin'
   | 'windfall'
   | 'croquet'
-  | 'blossom';
+  | 'blossom'
+  | 'outofbody'
+  | 'farout'
+  | 'earworm'
+  | 'badvibrations'
+  | 'glasshalf'
+  | 'monotone';
 
 export interface ConditionDef {
   id: ConditionId;

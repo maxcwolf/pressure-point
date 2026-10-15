@@ -15,7 +15,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     plot: SANDBOX_PLOT,
     startMoney: 30000,
     climate: { average: 66, swing: 6 },
-    disciplines: ['acupuncture', 'reiki'],
+    disciplines: ['acupuncture', 'reiki', 'sound'],
     mishap: 'power',
     goals: [
       [
@@ -136,11 +136,11 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     name: 'High Pines',
     place: 'A lodge up in the mountains',
     blurb:
-      'Cold all year, and snowed in now and then through the winter, so keep the place warm and the stones hot. Reiki opens at the second star.',
+      'Cold all year, and snowed in now and then through the winter, so keep the place warm and the stones hot. Sound healing opens at the first star, and reiki at the second.',
     plot: { x0: 6, x1: 25, y0: 5, y1: 16, door: [15, 16] },
     startMoney: 35000,
     climate: { average: 44, swing: 18 },
-    disciplines: ['acupuncture', 'reiki'],
+    disciplines: ['acupuncture', 'reiki', 'sound'],
     conditions: { frost: 3, coldfeet: 2.5, steam: 1.5, frozen: 3, wipeout: 2.5, cabin: 2.5 },
     snow: { chance: 0.3, days: 2 },
     scenery: 'mountain',
@@ -154,6 +154,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       ],
       [
         { kind: 'healed', count: 70 },
+        { kind: 'healed', count: 10, discipline: 'sound' },
         { kind: 'reputation', percent: 60 },
         { kind: 'wait', days: 2.5 },
       ],
@@ -170,11 +171,11 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     name: 'The Orchard Estate',
     place: 'A country resort among the apple orchards',
     blurb:
-      'Wealthy guests who pay handsomely and expect beautiful rooms, and a health inspector who calls twice as often. Acupuncture and reiki are open from the start.',
+      'Wealthy guests who pay handsomely and expect beautiful rooms, and a health inspector who calls twice as often. Acupuncture, reiki and sound healing are open from the start.',
     plot: { x0: 4, x1: 27, y0: 5, y1: 16, door: [15, 16] },
     startMoney: 45000,
     climate: { average: 62, swing: 16 },
-    disciplines: ['acupuncture', 'reiki'],
+    disciplines: ['acupuncture', 'reiki', 'sound'],
     conditions: { windfall: 3, croquet: 2.5, blossom: 2.5, neck: 1.5 },
     unlockedFrom: 2,
     picky: { fee: 1.5, expects: 2 },

@@ -42,6 +42,7 @@ import { feelNoise, itemNoise, noisePenalty } from './noise';
 import { breakDue } from './policy';
 import { hasRoom } from './progress';
 import { countVisit } from './records';
+import { leadOf, sessionPlaying, stationStaff, updateSession } from './sessions';
 import { expectedPrestige } from './standing';
 import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments';
 import { addWear } from './upkeep';
@@ -56,9 +57,10 @@ export function treatmentFee(s: GameState, fee: number, price: number): number {
 
 /** Lower is better. Guests steer toward tables that can actually deliver what they need. */
 export function stationScore(ctx: SimContext, it: Item, g: Guest) {
-  let score = it.queue.length + (it.serving ? 1 : 0) + (it.staffId ? 0 : 2.5);
+  const staff = stationStaff(ctx, it);
+  let score = it.queue.length + (it.serving ? 1 : 0) + (staff ? 0 : 2.5);
   if (ITEMS[it.type].station?.goal === 'treat') {
-    const problem = deliveryProblem(ctx, it, staffById(ctx, it.staffId), modalityOf(g));
+    const problem = deliveryProblem(ctx, it, staff, modalityOf(g));
     if (problem === 'unqualified') score += 6;
     else if (problem) score += 40;
   }
@@ -145,13 +147,19 @@ export function updateStations(ctx: SimContext, dt: number) {
   for (const it of ctx.s.items) {
     const def = ITEMS[it.type].station;
     if (!def) continue;
-    let staff = staffById(ctx, it.staffId);
+    // a group station is worked from its room's lead station, and has nobody posted at it
+    const lead = def.group ? leadOf(ctx, it) : undefined;
+    let staff = def.group ? stationStaff(ctx, it) : staffById(ctx, it.staffId);
     // someone posted elsewhere does not work this station, this step or any other
-    if (it.staffId && staff?.post !== it.id) {
+    if (!def.group && it.staffId && staff?.post !== it.id) {
       it.staffId = 0;
       staff = undefined;
     }
-    const ready = !!staff && staff.state === 'atPost' && ctx.world.usable(it);
+    if (def.goal === 'lead') {
+      updateSession(ctx, it, staff?.state === 'atPost' && ctx.world.usable(it) ? staff : undefined, dt);
+      continue;
+    }
+    const ready = !!staff && staff.state === 'atPost' && ctx.world.usable(it) && (!lead || ctx.world.usable(lead));
     let g = guestById(ctx, it.serving);
     if (it.serving && (g?.station !== it.id || (g.state !== 'called' && g.state !== 'served'))) {
       it.serving = 0;
@@ -168,6 +176,14 @@ export function updateStations(ctx: SimContext, dt: number) {
     if (staff && ready) {
       const served = g?.state === 'served' ? g : undefined;
       const mod = served && def.goal === 'treat' ? modalityOf(served) : null;
+      // on a mat, the session sets how busy the healer is, and the treatment only goes on while it plays
+      if (lead) {
+        if (served && sessionPlaying(lead.progress)) {
+          it.progress += dt / serviceSeconds(mod ? mod.seconds : def.seconds, staff);
+          if (it.progress >= 1) completeService(ctx, it, served, staff);
+        }
+        continue;
+      }
       staff.busy = !!served;
       staff.strain = mod ? mod.strain : 1;
       if (served) {

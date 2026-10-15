@@ -7,6 +7,7 @@ import type { Guest, Item } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { chanceText, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
+import { sessionNote } from '../../lib/sessions';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 
@@ -16,7 +17,7 @@ function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: nu
   const hud = useHud();
   const other = sim.shortestOtherLine(item);
   const chance = sim.chanceFor(g);
-  const staff = sim.staff(item.staffId);
+  const staff = sim.stationStaff(item);
   const def = MODALITIES[conditionOf(g.condition).modality];
   return (
     <li class="in-line">
@@ -82,9 +83,18 @@ export function StationInfo({ item }: { item: Item }) {
   const { sim } = useGame();
   const def = ITEMS[item.type].station;
   if (!def) return null;
-  const staff = sim.staff(item.staffId);
+  const staff = sim.stationStaff(item);
   const guest = sim.guest(item.serving);
   const line = item.queue.flatMap((id) => sim.guest(id) ?? []);
+  if (def.goal === 'lead') {
+    const session = sim.session(item);
+    return (
+      <>
+        <p class="status">{staff ? `Staffed by ${staff.name}` : `⚠️ Needs a ${ROLES[def.staff].name}`}</p>{' '}
+        <p class="sub">{sessionNote(session.lying, session.mats, session.playing)}</p>
+      </>
+    );
+  }
   return (
     <>
       <p class="status">{staff ? `Staffed by ${staff.name}` : `⚠️ Needs a ${ROLES[def.staff].name}`}</p>{' '}

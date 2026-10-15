@@ -62,6 +62,7 @@ import { checkOpening, checkStars, hasRoom, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
 import { monthSoFar } from './records';
 import { updateRival } from './rival';
+import { playingFor, servedAt, sessionState, stationStaff } from './sessions';
 import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
 import { type StandingPoints, standingPoints, updateStanding } from './standing';
 import { type Chance, successChance, updateStations } from './stations';
@@ -310,7 +311,7 @@ export class Sim {
    */
   chanceFor(g: Guest): Chance | null {
     const it = this.world.item(g.station);
-    const staff = it && this.staff(it.staffId);
+    const staff = it && stationStaff(this.ctx, it);
     if (g.goal !== 'treat' || !it || !staff || ITEMS[it.type].station?.goal !== 'treat') return null;
     return successChance(this.ctx, it, staff, g);
   }
@@ -576,6 +577,26 @@ export class Sim {
   /** Give a room a new shape, moving its door and windows with their walls. */
   resizeRoom(roomId: number, rect: Rect): boolean {
     return resizeRoom(this.ctx, roomId, rect);
+  }
+
+  /** Whoever works a station: posted at it, or for a mat, at the bowls in its room. */
+  stationStaff(it: Item): Staff | undefined {
+    return stationStaff(this.ctx, it);
+  }
+
+  /** The guest being seen at a station: its own, or at the bowls, the first lying on the mats it plays for. */
+  servedAt(it: Item): Guest | undefined {
+    return servedAt(this.ctx, it);
+  }
+
+  /** How the session at a lead station stands: mats taken, and whether it is playing. */
+  session(lead: Item): { lying: number; mats: number; playing: boolean } {
+    return sessionState(this.ctx, lead);
+  }
+
+  /** Whether the group session in a mat's room is playing. */
+  sessionPlaying(it: Item): boolean {
+    return playingFor(this.ctx, it);
   }
 
   /** The layout of a room and its furniture, to move or copy it. */

@@ -86,6 +86,13 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   }
   if (role === 'consultant') put(torso, rbox(0.08, 0.14, 0.03, 0.01), accent, 0.08, 0.26, 0.15);
   if (role === 'caretaker') put(torso, rbox(0.2, 0.16, 0.03, 0.01), accent, 0, 0.2, 0.155);
+  if (role === 'healer') {
+    // a shawl over one shoulder, and a string of beads
+    const shawl = put(torso, rbox(0.36, 0.08, 0.3, 0.03), accent, 0.02, 0.36, 0);
+    shawl.rotation.z = -0.35;
+    const beads = put(torso, torus(0.12, 0.016), mat(0x8a5a2c, 0.5), 0, 0.33, 0.04);
+    beads.rotation.x = Math.PI / 2 - 0.45;
+  }
   if (role === 'practitioner') {
     const chain = put(torso, torus(0.13, 0.012), mat(0xc9963f, 0.3), 0, 0.36, 0.03);
     chain.rotation.x = Math.PI / 2 - 0.5;
@@ -332,6 +339,32 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     }
     rig.orbit.position.y = 0.25;
     head.add(rig.orbit);
+  } else if (visual === 'worm') {
+    // a little pink worm going round and round the head, in one ear and out the other
+    rig.orbit = new THREE.Group();
+    const pink = mat(0xe98fa6, 0.6);
+    for (let i = 0; i < 5; i++) {
+      const a = i * 0.22;
+      const bit = put(
+        rig.orbit,
+        sph(0.03 - i * 0.003, 8),
+        pink,
+        Math.cos(a) * 0.27,
+        Math.sin(i * 1.3) * 0.02,
+        Math.sin(a) * 0.27,
+      );
+      bit.castShadow = false;
+    }
+    rig.orbit.position.y = 0.02;
+    head.add(rig.orbit);
+  } else if (visual === 'glass') {
+    // a glass, half empty, hanging over them like a cloud
+    const glass = new THREE.Group();
+    put(glass, cyl(0.06, 0.05, 0.14, 12), mat(0xe8f1f6, 0.1), 0, 0, 0).castShadow = false;
+    put(glass, cyl(0.052, 0.048, 0.06, 12), mat(0x6fb5e0, 0.2), 0, -0.035, 0).castShadow = false;
+    glass.position.y = 0.42;
+    head.add(glass);
+    rig.bob = glass;
   } else if (visual === 'gears') {
     // a cog turning over the head
     rig.orbit = new THREE.Group();

@@ -26,7 +26,7 @@ export const YEAR_MONTHS = 12;
 export const AWARD_SAMPLE = 20;
 
 /** The roles whose members can be Healer of the Year. */
-const HEALERS: readonly Role[] = ['therapist', 'acupuncturist', 'practitioner'];
+const HEALERS: readonly Role[] = ['therapist', 'acupuncturist', 'practitioner', 'healer'];
 
 /** A year's months added up: how guests' visits went, how long they waited, and the books. */
 export interface YearTotals {

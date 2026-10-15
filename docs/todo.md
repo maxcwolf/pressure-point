@@ -9,6 +9,7 @@ Tick an item off when it is done, with the commit or release it landed in.
 - [ ] **More PA announcer lines.** New filler lines for the announcer, recorded and run through the PA speaker effect like the twelve there are (`yarn announcer`), and recordings for the event lines that have none yet: opening day, staff wanted, seasons, snow, emergencies and stress outbreaks. Listed word for word under [Audio](#audio).
 - [x] **Rename the Janitor** to something that fits all they do now (cleaning, repairs, plants, stones, linens and laundry, and sage with the Smudging course). Now the **Caretaker**, which the role was already called in the code, so saved staff carry over; the Janitor of the Year award is now Caretaker of the Year, and saved trophies are renamed with it.
 - [ ] **Mishaps, a second pass.** A storm could flood a restroom, out of action until a Caretaker mops it, as [two-point-gaps.md](two-point-gaps.md) suggests. Not done in Phase 9.
+- [ ] **Show which way an item faces when placing it.** Items with a front and a back, such as desks, benches, the gong and the Singing Bowls, get a subtle marker on their front side while held, so it is clear which way they will face before they go down.
 - [ ] **A cheat console.** A console opened with a key, taking commands such as adding money, reputation or karma, earning a star, spawning guests or an emergency, unlocking everything, and skipping ahead in time. For testing and for fun; achievements could be withheld in a game where it has been used.
 
 ## Audio
@@ -26,6 +27,7 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [x] Massage Therapist needed at the Massage Suite.
   - [x] Acupuncturist needed at the Acupuncture Clinic.
   - [x] Reiki Practitioner needed at the Reiki Studio.
+  - [ ] Sound Healer needed at the Sound Bath Studio.
 - Seasons, at The Boardwalk (`SEASON_NEWS` in `src/core/sim/twists.ts`)
   - [ ] Winter is here. The promenade is empty, so watch the budget until spring.
   - [ ] Spring! The first day-trippers are back in town.

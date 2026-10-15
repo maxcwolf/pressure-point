@@ -29,8 +29,18 @@ function kernel(radius: number): Float64Array {
   return k;
 }
 
-/** Something spread from a spot into a grid: an amount, fading with distance out to a radius. */
-export type Spread = (grid: Float32Array, cx: number, cy: number, amount: number, radius: number) => void;
+/**
+ * Something spread from a spot into a grid: an amount, fading with distance out to a radius. `inside` is the share
+ * that carries within the spot's own room or corridor: all of it, unless it is only to be heard outside.
+ */
+export type Spread = (
+  grid: Float32Array,
+  cx: number,
+  cy: number,
+  amount: number,
+  radius: number,
+  inside?: number,
+) => void;
 
 /**
  * A way to spread something into a grid, held back by the walls of the rooms it passes out of and into: all of it
@@ -44,7 +54,7 @@ export function spreader(ctx: SimContext, leak: Leak): Spread {
     const room = world.room(at(world.zone, i));
     walls[i] = room ? leak(room) : 1;
   }
-  return (grid, cx, cy, amount, radius) => {
+  return (grid, cx, cy, amount, radius, inside = 1) => {
     if (!inBounds(cx, cy)) return;
     const from = world.zoneAt(cx, cy);
     const out = at(walls, tileIdx(cx, cy));
@@ -56,7 +66,7 @@ export function spreader(ctx: SimContext, leak: Leak): Spread {
         const share = at(k, (y - cy + radius) * side + x - cx + radius);
         if (share === 0) continue;
         const i = tileIdx(x, y);
-        const carry = at(world.zone, i) === from ? 1 : out * at(walls, i);
+        const carry = at(world.zone, i) === from ? inside : out * at(walls, i);
         grid[i] = at(grid, i) + amount * share * carry;
       }
     }

@@ -21,7 +21,15 @@ import {
   VIP_FIRST_DAY,
   VIP_GAP_DAYS,
 } from '../data';
-import { defaultPolicy, emptyTally, FIRST_CALL_DAY, FIRST_CHALLENGE_DAY, newRival, SAVE_VERSION } from './game';
+import {
+  defaultPolicy,
+  emptyTally,
+  FIRST_CALL_DAY,
+  FIRST_CHALLENGE_DAY,
+  newRival,
+  SAVE_VERSION,
+  SOLD_BOWLS,
+} from './game';
 import type {
   Candidate,
   CaseRecord,
@@ -138,6 +146,25 @@ type OldSave = Before<
 export const renamedAward = (id: string): AwardId =>
   (id === 'janitor-of-the-year' ? 'caretaker-of-the-year' : id) as AwardId;
 
+/**
+ * The sound bath moved out of reiki into a discipline of its own: Reiki Practitioners forget it, a course in it is
+ * called off, and Singing Bowls bought for a Reiki Studio are sold back at what they cost, since they now belong
+ * only in a Sound Bath Studio.
+ */
+function movedSoundBath(s: OldSave) {
+  for (const st of [...s.staff, ...s.candidates]) {
+    if (st.role !== 'practitioner') continue;
+    st.quals = (st.quals ?? []).filter((q) => q !== 'sound');
+  }
+  for (const st of s.staff) if (st.role === 'practitioner' && st.training?.course === 'sound') st.training = null;
+  /** The type of room a tile is in, if any. */
+  const roomAt = (x: number, y: number) => s.rooms.find((r) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
+  const stray = s.items.filter((it) => it.type === 'singing_bowls' && roomAt(it.x, it.y)?.type !== 'sound');
+  if (!stray.length) return;
+  s.items = s.items.filter((it) => !stray.includes(it));
+  s.money += stray.length * SOLD_BOWLS;
+}
+
 /** Bring a save from any earlier version up to date by filling in what it lacks. */
 export function upgradeSave(save: GameState) {
   const s: OldSave = save;
@@ -162,6 +189,7 @@ export function upgradeSave(save: GameState) {
     st.hunger ??= 0;
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
+  movedSoundBath(s);
   for (const it of s.items) {
     it.wear ??= 0;
     it.dirt ??= 0;

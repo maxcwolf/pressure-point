@@ -19,6 +19,7 @@ import { clamp } from '../util';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { feel } from './feelings';
+import { playingFor } from './sessions';
 import { gridAt, spreader } from './spread';
 
 /** How much of the noise outside a room gets in through its walls: more with each window, up to a point. */
@@ -30,16 +31,21 @@ export function guestNoise(g: Guest): number {
   return g.stressed ? STRESSED_NOISE : CROWD_NOISE;
 }
 
+/** Whether an item that sounds in a group session is sounding now: a session is playing in its room. */
+export const sessionHeard = (ctx: SimContext, it: Item) => playingFor(ctx, it);
+
 /** Work out afresh how noisy each tile is. */
 export function updateNoise(ctx: SimContext) {
   const grid = ctx.noise;
   grid.fill(0);
   const spread = spreader(ctx, noiseLeak);
   for (const it of ctx.s.items) {
-    const noise = ITEMS[it.type].noise;
-    if (!noise) continue;
+    const { noise, sessionNoise } = ITEMS[it.type];
     const [cx, cy] = itemCenter(it);
-    spread(grid, Math.floor(cx), Math.floor(cy), noise, NOISE_RADIUS);
+    if (noise) spread(grid, Math.floor(cx), Math.floor(cy), noise, NOISE_RADIUS);
+    // a gong is part of the treatment in its own room, and only noise to everyone else
+    if (sessionNoise && sessionHeard(ctx, it))
+      spread(grid, Math.floor(cx), Math.floor(cy), sessionNoise, NOISE_RADIUS, 0);
   }
   for (const g of ctx.s.guests) {
     const noise = guestNoise(g);

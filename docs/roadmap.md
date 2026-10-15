@@ -95,9 +95,9 @@ The outside world takes an interest.
 
 ## Sound Healing
 
-A fourth discipline, decided on 15 October 2026, built alongside Phase 10.
+A fourth discipline, decided on 15 October 2026, built alongside Phase 10. Done, as below.
 
-- **A Sound Bath Studio and a Sound Healer,** opening at High Pines: at its first star there, and at the second at The Orchard Estate.
+- **A Sound Bath Studio and a Sound Healer,** opening at High Pines at its first star there, and from the start at The Orchard Estate.
 - **Group sessions:** guests lie on mats while one healer plays for them all, so one healer serves several guests at once. The same machinery serves the Qi Gong Studio's classes later.
 - **Five techniques:** Singing Bowls (moved from reiki, where it was the Sound Bath), Tuning Forks, Gong Bath, Crystal Bowls and Overtone Chanting. Reiki gets **Distance Reiki** in its place.
 - **Noise both ways:** a gong carries to the rooms nearby, and a sound bath goes badly beside the arcade.

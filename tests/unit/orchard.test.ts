@@ -29,9 +29,10 @@ describe('The Orchard Estate', () => {
     expect(unlockedUpTo(s)).toBe(2);
     expect(unlocked(ctx, 'needling')).toBe(true);
     expect(unlocked(ctx, 'cranio')).toBe(true);
-    expect(unlocked(ctx, 'sound')).toBe(false);
+    expect(unlocked(ctx, 'sound'), 'sound healing opens at the first star').toBe(true);
+    expect(unlocked(ctx, 'distance')).toBe(false);
     s.stars = 3;
-    expect(unlocked(ctx, 'sound')).toBe(true);
+    expect(unlocked(ctx, 'distance')).toBe(true);
     expect(unlockedUpTo(newGame('willow')), 'elsewhere').toBe(0);
   });
 

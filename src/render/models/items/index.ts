@@ -16,12 +16,14 @@ import { buildBookcase } from './bookcase';
 import { buildCabinet } from './cabinet';
 import { buildCoffeeMachine } from './coffee-machine';
 import { buildConsultDesk } from './consult-desk';
+import { buildCrystalBowls } from './crystal-bowls';
 import { buildCrystalGrid } from './crystal-grid';
 import { buildCuppingCart } from './cupping-cart';
 import { buildDiffuser } from './diffuser';
 import { buildFireExtinguisher } from './fire-extinguisher';
 import { buildFireplace } from './fireplace';
 import { buildFountain } from './fountain';
+import { buildGong } from './gong';
 import { buildKoiPond } from './koi-pond';
 import { buildLinenHamper } from './linen-hamper';
 import { buildMagazineRack } from './magazine-rack';
@@ -44,6 +46,7 @@ import { buildSingingBowls } from './singing-bowls';
 import { buildSink } from './sink';
 import { buildSnackMachine } from './snack-machine';
 import { buildSofa } from './sofa';
+import { buildSoundMat } from './sound-mat';
 import { buildStatue } from './statue';
 import { buildStimUnit } from './stim-unit';
 import { buildStoneWarmer } from './stone-warmer';
@@ -88,6 +91,9 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   reiki_altar: buildReikiAltar,
   crystal_grid: buildCrystalGrid,
   singing_bowls: buildSingingBowls,
+  sound_mat: buildSoundMat,
+  gong: buildGong,
+  crystal_bowls: buildCrystalBowls,
   stone_warmer: buildStoneWarmer,
   stretch_rack: buildStretchRack,
   whiteboard: buildWhiteboard,

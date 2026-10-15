@@ -25,6 +25,7 @@ import { emit, type Subject } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { mishapAdvice } from './mishaps';
 import { allStars, hasItem, hasRoom, hasStaff } from './progress';
+import { stationStaff } from './sessions';
 import { fedUp, refreshmentFor, wants } from './staff-needs';
 import { aboutToQuit } from './staffing';
 import { enabled, unlocked } from './treatments';
@@ -112,7 +113,7 @@ function nudge(ctx: SimContext): string | Advice {
     const st = ITEMS[it.type].station;
     if (!st || !ctx.world.usable(it)) continue;
     const about: Subject = { kind: 'item', id: it.id };
-    if (it.queue.length >= 2 && !it.staffId)
+    if (it.queue.length >= 2 && !stationStaff(ctx, it))
       return {
         text: `Guests are lining up for a ${stationPlace(it)} with nobody staffing it. Hire another ${ROLES[st.staff].name}.`,
         about,
@@ -227,7 +228,7 @@ export const CARETAKER_WANTED = 'Caretaker needed. The corridors are getting gro
 export function contextAnnouncement(ctx: SimContext): string | null {
   for (const it of ctx.s.items) {
     const st = ITEMS[it.type].station;
-    if (st && ctx.world.usable(it) && it.queue.length >= 2 && !it.staffId) return staffWanted(it);
+    if (st && ctx.world.usable(it) && it.queue.length >= 2 && !stationStaff(ctx, it)) return staffWanted(it);
   }
   if (ctx.s.litter.length >= 4) return CARETAKER_WANTED;
   return null;

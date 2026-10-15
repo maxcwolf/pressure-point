@@ -120,8 +120,11 @@ describe('what it takes to offer a discipline', () => {
 });
 
 describe('what a star unlocks', () => {
-  it('lists the acupuncture clinic and its needling at star one', () => {
-    expect(roomsUnlockedAt(1, allOn)).toEqual([`${ROOMS.acupuncture.icon} Acupuncture Clinic`]);
+  it('lists the acupuncture clinic, the sound bath studio and needling at star one', () => {
+    expect(roomsUnlockedAt(1, allOn)).toEqual([
+      `${ROOMS.acupuncture.icon} Acupuncture Clinic`,
+      `${ROOMS.sound.icon} Sound Bath Studio`,
+    ]);
     expect(treatmentsUnlockedAt(1, allOn).join(' ')).toContain('Needling');
   });
 
@@ -189,8 +192,8 @@ describe('the title screen', () => {
 
   it('lights a badge for each discipline new games include, and dims those switched off', () => {
     const badges = titleBadges(allOn);
-    expect(badges.map((b) => b.on)).toEqual([true, true, true]);
-    expect(badges.at(-1)?.label).toBe('Reiki: open for business');
+    expect(badges.map((b) => b.on)).toEqual([true, true, true, true]);
+    expect(badges.at(-1)?.label).toBe('Sound healing: open for business');
     const off = titleBadges(massageOnly);
     expect(off[1]).toMatchObject({ on: false, label: 'Acupuncture: switched off in Settings' });
     // massage cannot be switched off, so its badge stays lit whatever is asked
@@ -224,9 +227,10 @@ describe('filtering the Items menu', () => {
 
   it("shows a room's own items and whatever can go anywhere, of the kind asked for", () => {
     const studio = filterItems(ITEM_MENU, 'reiki', 'all');
-    expect(studio).toEqual(expect.arrayContaining(['crystal_grid', 'singing_bowls', 'plant', 'statue']));
+    expect(studio).toEqual(expect.arrayContaining(['crystal_grid', 'plant', 'statue']));
     expect(studio).not.toContain('bench');
-    expect(filterItems(ITEM_MENU, 'reiki', 'equipment')).toEqual(['crystal_grid', 'singing_bowls']);
+    expect(filterItems(ITEM_MENU, 'reiki', 'equipment')).toEqual(['crystal_grid']);
+    expect(filterItems(ITEM_MENU, 'sound', 'equipment')).toEqual(['sound_mat', 'gong', 'crystal_bowls']);
     const corridorDecor = filterItems(ITEM_MENU, 'corridor', 'decor');
     expect(corridorDecor).toEqual(expect.arrayContaining(['fountain', 'statue']));
     expect(corridorDecor.every((t) => ['corridor', 'any'].includes(ITEMS[t].where))).toBe(true);

@@ -51,6 +51,16 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
     accent: 0x7a5aa8,
     discipline: 'reiki',
   },
+  healer: {
+    role: 'healer',
+    name: 'Sound Healer',
+    icon: '🔔',
+    desc: 'Plays for every guest on the mats of a Sound Bath Studio at once. Each one knows certain techniques; train them to add more.',
+    baseSalary: 1650,
+    uniform: 0x3f7f8c,
+    accent: 0xf2e6c8,
+    discipline: 'sound',
+  },
   caretaker: {
     role: 'caretaker',
     name: 'Caretaker',
@@ -68,6 +78,7 @@ export const ROLE_ORDER: readonly Role[] = [
   'therapist',
   'acupuncturist',
   'practitioner',
+  'healer',
   'caretaker',
 ];
 

@@ -50,6 +50,7 @@ import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaun
 import { goTo, halt, moveAlong } from './movement';
 import { breakDue } from './policy';
 import { hasItem } from './progress';
+import { matsOf } from './sessions';
 import { fedUp, goRefresh, growNeeds, refreshed, refreshSeconds, wants, wantsRefresh } from './staff-needs';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
@@ -321,6 +322,7 @@ export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
   return ctx.s.items.find(
     (it) =>
       ITEMS[it.type].station?.staff === st.role &&
+      !ITEMS[it.type].station?.group &&
       onDuty(st, stationDuty(it)) &&
       worksAt(ctx, st, it.x, it.y) &&
       !it.staffId &&
@@ -397,9 +399,13 @@ function findWork(ctx: SimContext, st: Staff) {
     let bestScore = -1e9;
     for (const it of s.items) {
       const def = ITEMS[it.type].station;
-      if (def?.staff !== st.role || it.staffId || !ctx.world.usable(it) || !onDuty(st, stationDuty(it))) continue;
+      // a group station has nobody posted at it: it is worked from its room's lead station
+      if (def?.staff !== st.role || def.group || it.staffId || !ctx.world.usable(it) || !onDuty(st, stationDuty(it)))
+        continue;
       if (!worksAt(ctx, st, it.x, it.y)) continue;
       let score = it.queue.length * 10 - Math.hypot(it.x - st.tx, it.y - st.ty);
+      // a lead station is as busy as the mats it serves
+      if (def.goal === 'lead') for (const m of matsOf(ctx, it)) score += (m.queue.length + (m.serving ? 1 : 0)) * 10;
       if (inPriorityRoom(ctx, it.x, it.y)) score += 1000;
       if (def.goal === 'treat') {
         for (const id of it.queue) {

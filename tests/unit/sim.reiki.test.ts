@@ -47,7 +47,7 @@ describe('offering reiki', () => {
     expect(watchArrivals(sim, 900).has('reiki')).toBe(true);
   });
 
-  it('is locked until the second star, with sound baths and chakra balancing at the third', () => {
+  it('is locked until the second star, with chakra balancing and distance reiki at the third', () => {
     const { sim, s } = openCenter(1);
     expect(ROOMS.reiki.unlock).toBe(2);
     s.stars = 1;
@@ -55,10 +55,10 @@ describe('offering reiki', () => {
     s.stars = 2;
     expect(sim.unlocked('usui')).toBe(true);
     expect(sim.unlocked('crystal')).toBe(true);
-    expect(sim.unlocked('sound')).toBe(false);
+    expect(sim.unlocked('distance')).toBe(false);
     expect(sim.unlocked('chakra')).toBe(false);
     s.stars = 3;
-    expect(sim.unlocked('sound')).toBe(true);
+    expect(sim.unlocked('distance')).toBe(true);
     expect(sim.unlocked('chakra')).toBe(true);
   });
 
@@ -104,7 +104,7 @@ describe('treating reiki guests', () => {
     s.stars = 3;
     addReiki(sim);
     const practitioner = hire(sim, 'practitioner');
-    practitioner.quals = ['usui', 'crystal', 'sound', 'chakra'];
+    practitioner.quals = ['usui', 'crystal', 'chakra', 'distance'];
     const table = s.items.find((i) => i.type === 'reiki_table')!;
     expect(sim.deliveryProblem(table, practitioner, MODALITIES.usui)).toBe('');
     expect(sim.deliveryProblem(table, practitioner, MODALITIES.chakra)).toBe('');
@@ -113,7 +113,7 @@ describe('treating reiki guests', () => {
     const { x, y, w, h } = LAYOUT.reiki.rect;
     expect(sim.placeItem('crystal_grid', x + w - 1, y + h - 1, 0)).not.toBeNull();
     expect(sim.deliveryProblem(table, practitioner, MODALITIES.crystal)).toBe('');
-    expect(sim.deliveryProblem(table, practitioner, MODALITIES.sound)).toBe('no-equipment');
+    expect(sim.deliveryProblem(table, practitioner, MODALITIES.distance), 'nothing needed at a distance').toBe('');
   });
 });
 
@@ -124,7 +124,7 @@ describe('reiki practitioners', () => {
     const practitioner = hire(sim, 'practitioner');
     expect(practitioner.quals).toContain('usui');
     practitioner.quals = ['usui'];
-    expect(treatmentCourses(sim.courses(practitioner))).toEqual(['crystal', 'sound', 'chakra']);
+    expect(treatmentCourses(sim.courses(practitioner))).toEqual(['crystal', 'chakra', 'distance']);
     expect(sim.train(practitioner.id, 'deep')).toBe(false);
   });
 
@@ -197,11 +197,10 @@ describe('a long session with all three disciplines', () => {
     hire(sim, 'consultant');
     hire(sim, 'acupuncturist');
     const practitioner = hire(sim, 'practitioner');
-    practitioner.quals = ['usui', 'crystal', 'sound', 'chakra'];
+    practitioner.quals = ['usui', 'crystal', 'chakra', 'distance'];
     therapist.quals = ['swedish', 'deep', 'sports', 'stone', 'cranio'];
     for (const [type, x, y] of [
       ['crystal_grid', 27, 16],
-      ['singing_bowls', 26, 16],
       ['bench', 10, 9],
       ['bench', 20, 9],
     ] as const)

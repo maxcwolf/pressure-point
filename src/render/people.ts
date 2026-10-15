@@ -70,7 +70,8 @@ export class PeopleLayer {
   /** Which treatment a busy practitioner is giving, so each modality can move differently. */
   private workStyle(c: Char): Modality | null {
     if (c.kind !== 'staff' || !c.busy || !ROLES[c.role].discipline) return null;
-    const guest = this.sim.guest(this.sim.world.item(c.post)?.serving ?? 0);
+    const post = this.sim.world.item(c.post);
+    const guest = post && this.sim.servedAt(post);
     return guest ? conditionOf(guest.condition).modality : null;
   }
 }

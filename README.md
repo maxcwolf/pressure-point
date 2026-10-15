@@ -4,7 +4,7 @@
 
 A healing-center management sim, in the spirit of the classic hospital tycoon games. Build treatment rooms, hire therapists, and keep your guests happy enough to come back.
 
-**Massage therapy**, **acupuncture** and **reiki** are open for business.
+**Massage therapy**, **acupuncture**, **reiki** and **sound healing** are open for business.
 
 ![A busy healing center](docs/assets/screenshot.png)
 
@@ -27,8 +27,8 @@ The browser version needs nothing installed and is always the same version as th
 1. **Willow Lane**, a small high-street unit. Massage only: the place to learn the ropes.
 2. **The Exchange**, downtown. Office workers with office ailments, arriving in rush hours when the office crowd comes in. Acupuncture opens here.
 3. **The Boardwalk**, a seaside town. Packed in summer and quiet in winter, with seaside ailments and sea air that is hard on equipment. Reiki opens here.
-4. **High Pines**, a lodge up in the mountains. Cold all year, so keep it heated, and snowed in now and then each winter, when nobody new can get up the road. A big freeze can stop the water. Mountain ailments, and Stone Warmers that cool fast in the cold.
-5. **The Orchard Estate**, a country resort among the apple orchards. Picky guests pay half as much again but expect beautiful treatment rooms, the health inspector calls twice as often, and each star asks for a higher standing. Acupuncture and reiki are open from the start.
+4. **High Pines**, a lodge up in the mountains. Cold all year, so keep it heated, and snowed in now and then each winter, when nobody new can get up the road. A big freeze can stop the water. Mountain ailments, and Stone Warmers that cool fast in the cold. Sound healing opens here.
+5. **The Orchard Estate**, a country resort among the apple orchards. Picky guests pay half as much again but expect beautiful treatment rooms, the health inspector calls twice as often, and each star asks for a higher standing. Acupuncture, reiki and sound healing are open from the start.
 
 Every campaign star earns **✨ karma**, and so do eight one-off **achievements**, like seeing an emergency through or healing 100 guests in one center. Spend karma in the **karma shop** (under Campaign on the title screen) or on a locked card in the Items menu. Each purchase stays unlocked in every center and the sandbox. Karma unlocks comfort and decor items early, before their star comes round, and four you can only get with karma: a **Massage Chair** that keeps a waiting guest patient, a **Bonsai**, a **Koi Pond** and a **Fireplace** that warms and soothes the room around it. The whole campaign earns enough karma to unlock all of them.
 
@@ -49,7 +49,7 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 11. Equipment **wears out** with use. A Caretaker services it; left alone it breaks down.
 12. The **Money** menu offers loans and lets you set prices. **Emergencies** bring a batch of guests to heal against the clock for a bonus.
 13. From the first star you can add **acupuncture**: build an **Acupuncture Clinic** and hire an **Acupuncturist**, and a second kind of guest starts arriving.
-14. From the second star you can add **reiki**: build a **Reiki Studio** and hire a **Reiki Practitioner** for a third.
+14. From the second star you can add **reiki**: build a **Reiki Studio** and hire a **Reiki Practitioner** for a third. At High Pines and The Orchard Estate, and in the sandbox, **sound healing** opens at the first star: build a **Sound Bath Studio** and hire a **Sound Healer**, who plays for every guest lying on the studio's mats at once.
 15. Click a built room to change it: add **windows**, **move its door**, or **resize** it by dragging a wall in or out. Extra floor costs $200 a tile, and floor given up refunds half. **Move** picks the room up, furniture and all, to put down somewhere else for free, and **Copy** builds as many copies as you click, at what building one would cost; R turns either. Switch on **Priority** to have staff fill it first. To keep someone to particular rooms, press **Assign to rooms** in their inspector and click the rooms.
 16. Click a desk or table to see its **line**: move guests up or down, over to another line, or **send them home**. A diagnosed guest's inspector shows the **chance** their treatment works.
 17. The **Policy** menu sets how sure a diagnosis must be before treatment, whether emergency guests go first, and when staff take breaks.
@@ -90,18 +90,28 @@ A diagnosis prescribes a treatment. It only works properly with someone qualifie
 
 **Reiki**, delivered in a Reiki Studio by Reiki Practitioners. The studio unlocks at star 2, and its guests only start arriving once you have built one:
 
-| Technique        | Unlocks | Needs                 | Character                                   |
-| ---------------- | ------- | --------------------- | ------------------------------------------- |
-| Usui Reiki       | Star 2  | Nothing               | Every practitioner knows it; easy on them   |
-| Crystal Reiki    | Star 2  | Course, Crystal Grid  | A step up in fee                            |
-| Sound Bath       | Star 3  | Course, Singing Bowls | Long, calm and well paid                    |
-| Chakra Balancing | Star 3  | Course                | The best paid, and the hardest to get right |
+| Technique        | Unlocks | Needs                | Character                                   |
+| ---------------- | ------- | -------------------- | ------------------------------------------- |
+| Usui Reiki       | Star 2  | Nothing              | Every practitioner knows it; easy on them   |
+| Crystal Reiki    | Star 2  | Course, Crystal Grid | A step up in fee                            |
+| Distance Reiki   | Star 3  | Course               | Well paid, and nobody can tell if it worked |
+| Chakra Balancing | Star 3  | Course               | The best paid, and the hardest to get right |
 
 ![A reiki practitioner laying crystals on a guest, with a line of guests showing the reiki conditions](docs/assets/reiki.png)
 
+**Sound healing**, delivered in a Sound Bath Studio by Sound Healers. The studio unlocks at star 1 where sound healing is open. Guests lie on mats, and the healer at the Singing Bowls plays for them all at once, starting when the mats fill or after a short wait. A Gong Bath carries to the rooms nearby:
+
+| Technique         | Unlocks | Needs                 | Character                                   |
+| ----------------- | ------- | --------------------- | ------------------------------------------- |
+| Singing Bowls     | Star 1  | Nothing               | Every healer knows it                       |
+| Tuning Forks      | Star 1  | Course                | Fiddly to get right                         |
+| Gong Bath         | Star 2  | Course, Gong          | Long, loud and hard on the healer           |
+| Crystal Bowls     | Star 2  | Course, Crystal Bowls | A step up in fee                            |
+| Overtone Chanting | Star 3  | Course                | The best paid, and the hardest to get right |
+
 ## Settings
 
-**Settings**, on the title screen and in the pause menu (☰), switches acupuncture and reiki on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Sound and music are there too.
+**Settings**, on the title screen and in the pause menu (☰), switches acupuncture, reiki and sound healing on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Sound and music are there too.
 
 ## Controls
 

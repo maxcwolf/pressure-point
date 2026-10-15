@@ -77,7 +77,12 @@ describe('treating acupuncture guests', () => {
     addAcupuncture(sim);
     addStaffRoom(sim);
     hire(sim, 'acupuncturist');
-    const treatedAt = { massage: new Set<string>(), acupuncture: new Set<string>(), reiki: new Set<string>() };
+    const treatedAt = {
+      massage: new Set<string>(),
+      acupuncture: new Set<string>(),
+      reiki: new Set<string>(),
+      sound: new Set<string>(),
+    };
     for (let i = 0; i < 1500; i++) {
       s.stats.healed = Math.min(s.stats.healed, 20);
       run(sim, 1);
@@ -369,7 +374,7 @@ describe('a long session with both disciplines', () => {
       ['bench', 20, 9],
     ] as const)
       expect(sim.placeItem(type, x, y, 0), type).not.toBeNull();
-    const healedBy = { massage: 0, acupuncture: 0, reiki: 0 };
+    const healedBy = { massage: 0, acupuncture: 0, reiki: 0, sound: 0 };
     const counted = new Set<number>();
     for (let second = 0; second < 3600; second++) {
       if (s.offer) sim.acceptEmergency();

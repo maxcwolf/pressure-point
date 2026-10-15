@@ -10,6 +10,7 @@ import {
   MAINTENANCE_SPEED,
   PROMOTION_SULK,
   RANK_XP,
+  ROLE_ORDER,
   STAMINA_DRAIN,
 } from '../../src/core/data';
 import { amandaAround, makeCandidate } from '../../src/core/people';
@@ -262,7 +263,7 @@ describe('the hiring pool', () => {
       updateApplicants(ctx);
     }
     expect(s.candidates.filter((c) => c.role === 'receptionist').length).toBe(3);
-    expect(s.candidates.length).toBe(6 * 3);
+    expect(s.candidates.length).toBe(ROLE_ORDER.length * 3);
   });
 
   it('lets an applicant be turned down', () => {

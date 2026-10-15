@@ -44,6 +44,34 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     bodyY = 0.06;
     armL = armR = -0.55;
     if (c.busy) armR = -1.15 + Math.sin(t * 6 + c.id) * 0.25;
+    if (c.busy && style === 'sound') {
+      // one hand steadying a bowl, the other circling its rim
+      armL = -0.95;
+      armR = -1.05 + Math.sin(t * 3 + c.id) * 0.14;
+      lean = 0.15;
+    } else if (c.busy && style === 'forks') {
+      // striking a fork on the knee, then holding it up to listen
+      const tap = Math.max(0, Math.sin(t * 4 + c.id));
+      armR = -1.5 + tap * 0.6;
+      armL = -0.7;
+      headZ = 0.15;
+    } else if (c.busy && style === 'gong') {
+      // a long slow backswing, then a soft stroke through
+      const swing = Math.sin(t * 1.6 + c.id);
+      armR = -1.75 + swing * 0.7;
+      armL = -0.6;
+      lean = 0.1 - swing * 0.12;
+    } else if (c.busy && style === 'crystalbowls') {
+      // both hands drawing slow circles round two rims
+      armL = -1.0 + Math.sin(t * 2 + c.id) * 0.12;
+      armR = -1.0 + Math.sin(t * 2 + c.id + Math.PI) * 0.12;
+      lean = 0.2;
+    } else if (c.busy && style === 'overtone') {
+      // hands in the lap, head tipped back, swaying a little on the long notes
+      armL = armR = -0.45;
+      headX = -0.35;
+      side = Math.sin(t * 0.8 + c.id) * 0.08;
+    }
     if (c.kind === 'staff' && c.state === 'training') {
       // head down, scribbling notes
       armR = -1.05 + Math.sin(t * 9 + c.id) * 0.08;
@@ -101,11 +129,12 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Mo
     lean = 0.24;
     armL = -1.25 + Math.sin(t * 0.6 + c.id) * 0.25;
     armR = -1.25 + Math.sin(t * 0.6 + c.id + 0.4) * 0.25;
-  } else if (c.busy && style === 'sound') {
-    // one hand holding the bowl, the other circling its rim
-    lean = 0.18;
-    armL = -1.05;
-    armR = -1.2 + Math.sin(t * 3 + c.id) * 0.12;
+  } else if (c.busy && style === 'distance') {
+    // one palm held out toward the guest, face turned away as if it is beneath them to look
+    armR = -1.45 + Math.sin(t * 0.7 + c.id) * 0.04;
+    armL = 0.05;
+    headZ = 0.75;
+    lean = -0.05;
   } else if (c.busy && style === 'swedish') {
     // long flowing strokes
     lean = 0.2;

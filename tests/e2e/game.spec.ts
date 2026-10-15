@@ -1770,7 +1770,7 @@ test.describe('reiki', () => {
     await game.menu('Treatments');
     await expect(page.locator('#menu')).toContainText('Delivered in the Reiki Studio');
     await expect(game.card('Usui Reiki')).toContainText('1 qualified');
-    await expect(game.card('Sound Bath')).toContainText('Unlocks at star 3');
+    await expect(game.card('Distance Reiki')).toContainText('Unlocks at star 3');
   });
 
   test('switching reiki off in Settings hides its studio, staff and equipment', async ({ game, page }) => {
@@ -1797,6 +1797,37 @@ test.describe('reiki', () => {
     await game.menu('Items');
     await expect(game.card('Crystal Grid')).toHaveCount(0);
     expect(await game.eval((pp) => pp.sim.enabled('reiki'))).toBe(false);
+  });
+});
+
+test.describe('sound healing', () => {
+  test('the studio is locked until the first star, then can be built and staffed', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.menu('Rooms');
+    await expect(game.card('Sound Bath Studio')).toContainText('Unlocks at star 1');
+
+    await game.eval((pp) => (pp.state.stars = 1));
+    await game.card('Sound Bath Studio').click();
+    await game.dragOutRoom(4, 4);
+    await game.clickWall('south');
+    await expect(page.locator('#hint')).toContainText('Place the Singing Bowls inside the room');
+    await game.placeHeld();
+    await game.placeHeld();
+    await game.placeHeld();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#toasts')).toContainText('Sound Bath Studio built!');
+    await page.keyboard.press('Escape');
+
+    await game.menu('Hire');
+    await page.locator('#menu .tab', { hasText: 'Sound Healer' }).click();
+    await expect(page.locator('#menu .quals').first()).toContainText('Singing Bowls');
+    await page.locator('#menu .card.cv').first().getByRole('button', { name: 'Hire' }).click();
+    await game.menu('Treatments');
+    await expect(page.locator('#menu')).toContainText('Delivered in the Sound Bath Studio');
+    await expect(game.card('Singing Bowls')).toContainText('1 qualified');
+    await expect(game.card('Gong Bath')).toContainText('Unlocks at star 2');
+    expect(game.errors).toEqual([]);
   });
 });
 

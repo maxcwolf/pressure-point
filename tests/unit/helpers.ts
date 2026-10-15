@@ -46,6 +46,7 @@ export const LAYOUT = {
   assess: { rect: { x: 19, y: 11, w: 4, h: 4 }, door: { x: 19, y: 12, dx: -1, dy: 0 } },
   acupuncture: { rect: { x: 24, y: 8, w: 4, h: 4 }, door: { x: 25, y: 11, dx: 0, dy: 1 } },
   reiki: { rect: { x: 24, y: 13, w: 4, h: 4 }, door: { x: 24, y: 15, dx: -1, dy: 0 } },
+  sound: { rect: { x: 10, y: 10, w: 4, h: 4 }, door: { x: 12, y: 13, dx: 0, dy: 1 } },
 } as const;
 
 /** Add a furnished Consultation Room at its standard spot. */
@@ -98,6 +99,15 @@ export function addReiki(sim: Sim) {
   return buildRoom(sim, 'reiki', LAYOUT.reiki.rect, LAYOUT.reiki.door, [
     ['reiki_table', 25, 13],
     ['reiki_altar', 27, 13],
+  ]);
+}
+
+/** Add a furnished Sound Bath Studio at its standard spot: the bowls, and two mats. */
+export function addSound(sim: Sim) {
+  return buildRoom(sim, 'sound', LAYOUT.sound.rect, LAYOUT.sound.door, [
+    ['sound_mat', 10, 10],
+    ['sound_mat', 12, 10],
+    ['singing_bowls', 11, 13, 2],
   ]);
 }
 
@@ -159,7 +169,8 @@ export function inconsistencies(sim: Sim): string[] {
     for (const id of it.queue) if (!sim.guest(id)) out.push(`${it.type} #${it.id} line holds #${id}, who has gone`);
     if (it.serving) {
       const g = sim.guest(it.serving);
-      if (g?.state === 'served' && !it.staffId) out.push(`${g.name} is on ${it.type} #${it.id} with nobody serving`);
+      if (g?.state === 'served' && !sim.stationStaff(it))
+        out.push(`${g.name} is on ${it.type} #${it.id} with nobody serving`);
     }
     if (it.staffId && sim.staff(it.staffId)?.post !== it.id) out.push(`${it.type} #${it.id} staffed by a stranger`);
   }

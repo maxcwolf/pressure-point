@@ -95,3 +95,6 @@ export const SEND_HOME_REP = 1;
 
 /** Share of guests and applicants who get a cameo name instead of a generated one. */
 export const CAMEO_CHANCE = 0.12;
+
+/** Seconds a group session waits for its mats to fill after the first guest lies down, before it starts anyway. */
+export const SESSION_WAIT = 8;
