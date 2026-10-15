@@ -41,7 +41,7 @@ Input goes the other way. Pointer and keyboard handlers in `src/app/` call the b
 
 ## Rendering (`src/render/`)
 
-`View` owns the Three.js renderer and composes one object per layer: floor, rooms, items, people, litter, overlays, camera and picking. Each layer keeps its own meshes in step with the game state. Models are built in code, one file per item in `models/items/`, from the shared shapes and materials in `models/parts.ts`. There are no art files.
+`View` owns the Three.js renderer and composes one object per layer: floor, rooms, items, people, litter, overlays, camera and picking. Each layer keeps its own meshes in step with the game state. Models are built in code, one file per item in `models/items/`, from the shared shapes and materials in `models/parts.ts`. There are no art files. Every part is a draw call, and a part that casts a shadow is a second one, so only parts big enough to show a shadow cast one: `trimShadows` turns it off for the rest of each item and person as it is built.
 
 ## Interface (`src/ui/`)
 

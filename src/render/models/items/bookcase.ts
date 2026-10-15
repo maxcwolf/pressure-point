@@ -28,6 +28,8 @@ export function buildBookcase(g: THREE.Group) {
         -0.24,
       );
       if ((i + shelf) % 6 === 5) book.rotation.z = -0.25;
+      // the case around the books already shades them
+      book.castShadow = false;
       x += w + 0.015;
     }
   }

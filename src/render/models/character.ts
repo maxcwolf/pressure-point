@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { type Role, ROLES, type Visual } from '../../core/data';
 import type { Look } from '../../core/state/types';
 import { owned } from '../disposal';
-import { cached, capsule, cyl, ico, mat, put, rbox, sph, torus } from './parts';
+import { cached, capsule, cyl, ico, mat, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
 
 export interface CharRig {
@@ -401,6 +401,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual): CharRi
     rig.sageTip = tip;
     rig.smoke = buildSmoke();
   }
+  trimShadows(group, look.scale);
   return rig;
 }
 

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 import type { Sim } from '../core/sim/sim';
 import { at } from '../core/util';
-import { mat, put, rbox } from './models/parts';
+import { mat, put, rbox, trimShadows } from './models/parts';
 import { hash } from './shared';
 
 export class LitterLayer {
@@ -34,6 +34,7 @@ export class LitterLayer {
         );
         m.rotation.y = hash(l.id, i + 5) * 3;
       }
+      trimShadows(g);
       g.position.set(l.x + 0.5, 0, l.y + 0.5);
       this.scene.add(g);
       this.litter.set(l.id, g);

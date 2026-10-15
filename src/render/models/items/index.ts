@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 
 import type { ItemType } from '../../../core/data';
+import { trimShadows } from '../parts';
 import { buildAcuTable } from './acu-table';
 import { buildAirConditioner } from './air-conditioner';
 import { buildAquarium } from './aquarium';
@@ -110,5 +111,6 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
 export function buildItem(type: ItemType): THREE.Group {
   const g = new THREE.Group();
   BUILDERS[type](g);
+  trimShadows(g);
   return g;
 }

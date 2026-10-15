@@ -56,7 +56,7 @@ export const torus = (r: number, t: number) => cached(`t${r}|${t}`, () => new TH
 export const capsule = (r: number, len: number) =>
   cached(`k${r}|${len}`, () => new THREE.CapsuleGeometry(r, len, 6, 14));
 
-/** Add a shadow-casting mesh to a parent at a position and return it. */
+/** Add a shadow-casting mesh to a parent at a position and return it. `trimShadows` later stops the small ones casting. */
 export function put(
   parent: THREE.Object3D,
   geo: THREE.BufferGeometry,
@@ -71,6 +71,29 @@ export function put(
   m.receiveShadow = true;
   parent.add(m);
   return m;
+}
+
+/**
+ * The smallest part that casts a shadow: one as big as a 20 cm cube (by the box around it), or half a meter long, like
+ * a leg or a pole. A smaller part's shadow is lost among those of the bigger parts around it, and every part that casts
+ * one is drawn twice a frame.
+ */
+export const SHADOW_MIN = { volume: 0.008, length: 0.5 };
+
+/** Is a part of this size, in meters, big enough to cast a shadow worth drawing? */
+export const castsShadow = (size: THREE.Vector3) =>
+  size.x * size.y * size.z >= SHADOW_MIN.volume || Math.max(size.x, size.y, size.z) >= SHADOW_MIN.length;
+
+/** Stop a model's small parts casting shadows, measuring each at the model's natural size (it is built this much bigger). */
+export function trimShadows(root: THREE.Object3D, scale = 1) {
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  const size = new THREE.Vector3();
+  root.traverse((o) => {
+    if (!(o instanceof THREE.Mesh) || !o.castShadow) return;
+    box.setFromObject(o, false).getSize(size);
+    if (!castsShadow(size.divideScalar(scale))) o.castShadow = false;
+  });
 }
 
 // see-through glass for cupping cups
