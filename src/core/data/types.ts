@@ -161,6 +161,11 @@ export interface ItemDef {
   linens?: boolean;
   /** It has a front and a back, so a marker shows which way it will face while it is being placed. */
   front?: boolean;
+  /**
+   * Treatment equipment that can be upgraded, up to `UPGRADE_LEVELS`, by a Caretaker with the Mechanics course: what
+   * the upgrades are priced against, each level a share of it (`UPGRADE_PRICE`).
+   */
+  upgrade?: number;
 }
 
 export interface RoleDef {
@@ -205,7 +210,7 @@ export interface TraitDef {
 }
 
 /** A course any member of staff (or any in some roles) can take, beyond the treatments of their discipline. */
-export type GeneralId = 'bedside' | 'motivation' | 'stamina' | 'service' | 'maintenance' | 'smudging';
+export type GeneralId = 'bedside' | 'motivation' | 'stamina' | 'service' | 'maintenance' | 'smudging' | 'mechanics';
 
 export interface GeneralDef {
   id: GeneralId;

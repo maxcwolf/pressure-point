@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Upgrade treatment equipment.** A treatment table, mat or the Posture Scanner can be upgraded three times from its inspector, a level for each star. Each level makes it wear out more slowly and its treatments work a little more often, and a brass plate on it shows a star for each. A Caretaker with the new **Mechanics** course installs an upgrade once it is bought, closing the station while they work.
+
 ## v0.20.0
 
 - **Decorate rooms.** A built room's inspector picks its floor and walls, for that room or every room of its kind, and new ones of that kind follow. Oak planks, slate, sage and sky are free; terrazzo, checkerboard, bamboo, a chakra rainbow, wood paneling, botanical wallpaper, tie-dye and a starry night floor and walls are unlocked with karma, in the karma shop or straight from the inspector. Copies, moves and templates keep a room's look.

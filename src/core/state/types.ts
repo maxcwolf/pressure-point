@@ -83,6 +83,10 @@ export interface Item {
   dirt: number;
   /** Caretaker currently heading over to deal with it. */
   claimedBy: number;
+  /** How many times treatment equipment has been upgraded, from 0 up to `UPGRADE_LEVELS`. */
+  level: number;
+  /** The next upgrade has been paid for and is waiting for a Mechanic to install it. */
+  upgradePaid: boolean;
 }
 
 export interface Look {
@@ -201,7 +205,7 @@ export interface Staff extends CharBase {
  * a hamper), the room someone clears of bad vibes, or the drink or snack someone goes to for themselves.
  */
 export interface Job {
-  kind: 'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh';
+  kind: 'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh' | 'install';
   id: number;
 }
 

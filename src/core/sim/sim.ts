@@ -86,6 +86,7 @@ import { courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
 import { deliveryProblem, enabled, modalityOf, offered, setDiscipline, unlocked } from './treatments';
 import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
+import { orderUpgrade } from './upgrades';
 import { decayItems } from './upkeep';
 import { fadeVibes } from './vibes';
 import { updateVisitor, updateVisits } from './visits';
@@ -626,6 +627,11 @@ export class Sim {
   /** Build a copy of a room at a spot, at what building it from scratch would cost. */
   copyRoom(roomId: number, placed: PlacedLayout): Room | null {
     return copyRoom(this.ctx, roomId, placed);
+  }
+
+  /** Pay for the next upgrade to a piece of treatment equipment, for a Mechanic to install. */
+  orderUpgrade(id: number): boolean {
+    return orderUpgrade(this.ctx, id);
   }
 
   /** Change a room's floor or walls, or those of every room of its kind. */

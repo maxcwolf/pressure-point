@@ -29,6 +29,7 @@ import { stationStaff } from './sessions';
 import { fedUp, refreshmentFor, wants } from './staff-needs';
 import { aboutToQuit } from './staffing';
 import { enabled, unlocked } from './treatments';
+import { hasMechanic } from './upgrades';
 import { discomfort, warmthAt } from './warmth';
 
 /** Make an announcement over the speakers every so often. */
@@ -102,6 +103,12 @@ function nudge(ctx: SimContext): string | Advice {
         ? `A ${ITEMS[broken.type].name} has broken down. Your Caretaker will get to it.`
         : `A ${ITEMS[broken.type].name} has broken down. Hire a Caretaker to repair it.`,
       about: { kind: 'item', id: broken.id },
+    };
+  const waiting = s.items.find((i) => i.upgradePaid);
+  if (waiting && !hasMechanic(s))
+    return {
+      text: `An upgrade for the ${ITEMS[waiting.type].name} is waiting. Send a Caretaker on the Mechanics course to install it.`,
+      about: { kind: 'item', id: waiting.id },
     };
   const comfort = comfortAdvice(ctx);
   if (comfort) return comfort;

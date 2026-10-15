@@ -9,13 +9,18 @@ import {
   MISHAPS,
   NOISE_NOTICE,
   STONE_USE,
+  UPGRADE_LEVELS,
   WEAR_REPAIR,
 } from '../../../core/data';
 import { money } from '../../../core/format';
+import { sellBack } from '../../../core/sim/building';
 import { calmness } from '../../../core/sim/noise';
+import { cannotUpgrade, upgradeCost } from '../../../core/sim/upgrades';
+import { unlockedUpTo } from '../../../core/state/game';
 import type { Item } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { stoppedLabel } from '../../lib/mishaps';
+import { installStatus, upgradeEffect, upgradeStars } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { StationInfo } from './StationInfo';
@@ -48,6 +53,38 @@ function Calm({ item: it }: { item: Item }) {
       Calm
       <Bar value={calmness(noise) * 100} class={noise >= NOISE_NOTICE ? 'bad' : 'blue'} />
     </label>
+  );
+}
+
+/** Treatment equipment's upgrades: its level and what it does, the next one to buy, and how one paid for is coming. */
+function Upgrades({ item: it }: { item: Item }) {
+  const { sim } = useGame();
+  const next = it.level + 1;
+  const why = cannotUpgrade(sim.s, it);
+  const status = installStatus(it, sim.s.staff);
+  return (
+    <div class="upgrades">
+      <p>
+        <b>{`Upgrades ${upgradeStars(it.level)}`}</b>
+      </p>
+      <p class="sub">{upgradeEffect(it.level)}</p>
+      {status && <p class="status">{status}</p>}
+      {it.level < UPGRADE_LEVELS && !it.upgradePaid && (
+        <Button
+          class="upgrade"
+          title={why || `${upgradeEffect(next)}. A Caretaker with the Mechanics course installs it.`}
+          locked={!!why}
+          quiet
+          onPress={() => {
+            sim.orderUpgrade(it.id);
+          }}
+        >
+          {next > unlockedUpTo(sim.s)
+            ? `⬆️ Level ${next} unlocks at star ${next}`
+            : `⬆️ Upgrade to level ${next} (${money(upgradeCost(it.type, next))})`}
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -90,6 +127,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
       {!!def.dirt && !def.linens && it.dirt >= DIRT_FILTHY && <p class="status">🪰 Filthy: needs a Caretaker</p>}
       {def.linens && <Linens item={it} />}
       {def.station?.goal === 'treat' && <Calm item={it} />}
+      {def.upgrade !== undefined && <Upgrades item={it} />}
       {it.type === 'linen_hamper' && (
         <label>
           {`Soiled linens: ${it.water} of ${HAMPER_SIZE} sets`}
@@ -114,7 +152,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
             tools.select(null);
           }}
         >
-          {`Sell for ${money(def.cost * 0.5)}`}
+          {`Sell for ${money(sellBack(it))}`}
         </Button>
       ) : (
         <p class="sub">Part of the room. Demolish the room to remove it.</p>

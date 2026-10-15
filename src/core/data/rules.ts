@@ -39,6 +39,17 @@ export const PRICE_MIN = 0.5;
 
 export const PRICE_MAX = 2;
 
+/** How many times a piece of treatment equipment can be upgraded. Each level unlocks at the star of the same number. */
+export const UPGRADE_LEVELS = 3;
+/** What each level costs, as a share of the equipment's upgrade price: the first, the second and the third. */
+export const UPGRADE_PRICE: readonly number[] = [0.5, 0.75, 1];
+/** How fast equipment wears at each level, from none to the top: a third more slowly, half, then two thirds. */
+export const UPGRADE_WEAR: readonly number[] = [1, 0.7, 0.5, 0.35];
+/** What each level adds to the chance of a treatment working there. */
+export const UPGRADE_SUCCESS = 0.03;
+/** How long a Mechanic takes to install an upgrade, in seconds of game time before their speed is counted. */
+export const INSTALL_SECONDS = 20;
+
 /** Caretakers start repairing equipment at this much wear; at 100 it is broken. */
 export const WEAR_REPAIR = 50;
 /** Caretakers start cleaning at this much grime. */

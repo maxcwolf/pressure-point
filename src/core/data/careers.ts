@@ -60,6 +60,15 @@ export const GENERAL_COURSES: Readonly<Record<GeneralId, GeneralDef>> = {
     days: 5,
     roles: ['caretaker'],
   },
+  mechanics: {
+    id: 'mechanics',
+    name: 'Mechanics',
+    icon: '⚙️',
+    desc: 'Installs the upgrades bought for treatment equipment.',
+    cost: 900,
+    days: 5,
+    roles: ['caretaker'],
+  },
   smudging: {
     id: 'smudging',
     name: 'Smudging',

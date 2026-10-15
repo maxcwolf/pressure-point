@@ -17,6 +17,7 @@ import { emit, toast } from './events';
 import { resetGuest } from './guests';
 import { repathAll } from './movement';
 import { staffIdle } from './staffing';
+import { upgradeSpent } from './upgrades';
 
 /** How an item is being placed: without charge, or as furniture for a particular room. */
 export interface PlaceOptions {
@@ -48,6 +49,8 @@ function newItem(ctx: SimContext, type: ItemType, x: number, y: number, rot: num
     wear: 0,
     dirt: 0,
     claimedBy: 0,
+    level: 0,
+    upgradePaid: false,
   };
 }
 
@@ -187,13 +190,14 @@ function removeItems(ctx: SimContext, gone: Item[]) {
   resetUsers(ctx, users);
 }
 
-/** What removing a room gives back: `refund` of whatever was paid for it, its extras and its windows. */
+/** What removing a room gives back: `refund` of whatever was paid for it, its extras, their upgrades and its windows. */
 export function roomRefund(ctx: SimContext, room: Room, refund: number) {
   // a blueprint has not been paid for yet, but any extras bought for it have
   let back = room.done ? ROOMS[room.type].cost * refund : 0;
   // the required furniture came free with the room, so only what is left over was bought
   const free = [...ROOMS[room.type].required];
   for (const it of itemsInRoom(ctx, room)) {
+    back += upgradeSpent(it) * refund;
     const at = free.indexOf(it.type);
     if (at >= 0) free.splice(at, 1);
     else back += ITEMS[it.type].cost * refund;
@@ -405,11 +409,16 @@ export function canSell(ctx: SimContext, it: Item): boolean {
   return itemsInRoom(ctx, room).filter((o) => o.type === it.type).length > 1;
 }
 
-/** Sell an item for half of what it cost. */
+/** What selling an item gives back: half of what it cost, its upgrades included. */
+export function sellBack(it: Item): number {
+  return Math.round((ITEMS[it.type].cost + upgradeSpent(it)) * 0.5);
+}
+
+/** Sell an item for half of what it cost, its upgrades included. */
 export function sellItem(ctx: SimContext, id: number) {
   const it = ctx.world.item(id);
   if (!it || !canSell(ctx, it)) return;
-  const back = Math.round(ITEMS[it.type].cost * 0.5);
+  const back = sellBack(it);
   removeItems(ctx, [it]);
   ctx.s.money += back;
   ctx.s.ledger.building -= back;

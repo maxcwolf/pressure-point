@@ -8,6 +8,7 @@ import {
   DIRT_CLEAN,
   DIRT_FILTHY,
   DISCOMFORT_MORALE,
+  INSTALL_SECONDS,
   ITEMS,
   LAUNDER_SECONDS,
   MAINTENANCE_SPEED,
@@ -54,6 +55,7 @@ import { isLeadStation, matsOf } from './sessions';
 import { fedUp, goRefresh, growNeeds, refreshed, refreshSeconds, wants, wantsRefresh } from './staff-needs';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
+import { installUpgrade } from './upgrades';
 import { clearVibes, roomToSmudge, smudgeSeconds, smudging, startSmudge, wander } from './vibes';
 import { discomfort, warmthAt } from './warmth';
 
@@ -312,6 +314,7 @@ export function caretakerSpeed(st: Staff): number {
 /** How long a Caretaker takes over a chore. */
 export function jobSeconds(kind: Job['kind'] | undefined): number {
   if (kind === 'repair') return 3.2;
+  if (kind === 'install') return INSTALL_SECONDS;
   if (kind === 'clean') return 2.4;
   if (kind === 'launder') return LAUNDER_SECONDS;
   return 1.6;
@@ -364,7 +367,9 @@ function findWork(ctx: SimContext, st: Staff) {
     for (const l of s.litter) if (!l.claimedBy) add('litter', l.id, l.x, l.y, 1);
     for (const p of s.items) {
       if (p.claimedBy) continue;
-      if (p.wear >= WEAR_REPAIR) add('repair', p.id, p.x, p.y, p.wear >= 100 ? 2 : 0);
+      // a Mechanic installs an upgrade waiting on equipment, which services it too
+      if (p.upgradePaid && hasGeneral(st, 'mechanics')) add('install', p.id, p.x, p.y, 1);
+      else if (p.wear >= WEAR_REPAIR) add('repair', p.id, p.x, p.y, p.wear >= 100 ? 2 : 0);
       // linens can only be changed with a hamper to take fresh ones from and put the used ones in
       else if (p.dirt >= DIRT_CLEAN && (!hasLinens(p) || hamperWithRoom(ctx)))
         add('clean', p.id, p.x, p.y, p.dirt >= DIRT_FILTHY ? 1 : 0);
@@ -569,6 +574,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
           break;
         }
         st.timer = jobSeconds(st.job?.kind) / caretakerSpeed(st);
+        if (st.job?.kind === 'install') say(st, '⚙️', 2);
         if (st.job && st.job.kind !== 'litter') {
           const p = ctx.world.item(st.job.id);
           if (p) st.facing = Math.atan2(p.x + 0.5 - st.x, p.y + 0.5 - st.y);
@@ -580,6 +586,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
         smudgeStep(ctx, st, dt);
         break;
       }
+      // the guest on a table is treated before a Mechanic starts work on it
+      if (st.job?.kind === 'install' && ctx.world.item(st.job.id)?.serving) break;
       st.timer -= dt;
       if (st.timer <= 0) {
         const job = st.job;
@@ -594,6 +602,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
           const p = ctx.world.item(job.id);
           if (p) {
             if (job.kind === 'repair') p.wear = 0;
+            else if (job.kind === 'install') installUpgrade(ctx, p);
             else if (job.kind === 'clean') {
               if (!hasLinens(p)) p.dirt = 0;
               else if (changeLinens(ctx, p)) say(st, '🧺', 2);

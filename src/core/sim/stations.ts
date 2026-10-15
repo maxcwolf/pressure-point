@@ -45,6 +45,7 @@ import { countVisit } from './records';
 import { leadOf, sessionPlaying, stationStaff, updateSession } from './sessions';
 import { expectedPrestige } from './standing';
 import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments';
+import { upgradeSuccess } from './upgrades';
 import { addWear } from './upkeep';
 import { addVibes, vibesAt, vibesPenalty } from './vibes';
 import { feelTemperature, warmthAt } from './warmth';
@@ -110,7 +111,7 @@ export interface Chance {
 
 /**
  * The chance a guest's treatment at this table works if this member of staff gives it now: better with skill, a
- * confident diagnosis and a prestigious room, worse for a hard technique, a tired therapist, a guest whose condition
+ * confident diagnosis, a prestigious room and upgraded equipment, worse for a hard technique, a tired therapist, a guest whose condition
  * has worsened, a room with bad vibes, noise or stale linens, and only a fraction of that without the right
  * training or equipment.
  */
@@ -121,7 +122,8 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
     0.56 +
       staff.skill * 0.09 +
       Math.min(1, g.diagnosis) * 0.15 +
-      prestigeBonus(ctx, it) -
+      prestigeBonus(ctx, it) +
+      upgradeSuccess(it.level) -
       mod.difficulty -
       (staff.energy < 15 ? 0.15 : 0) -
       conditionPenalty(g.health) -

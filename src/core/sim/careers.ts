@@ -151,6 +151,8 @@ export function jobDuty(kind: Job['kind'], it: Item | undefined): Duty | null {
   if (kind === 'smudge' || kind === 'refresh') return null;
   // laundering is part of keeping things clean
   if (kind === 'launder') return 'clean';
+  // installing upgrades is part of looking after equipment
+  if (kind === 'install') return 'repair';
   return kind;
 }
 

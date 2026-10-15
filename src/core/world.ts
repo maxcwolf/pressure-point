@@ -248,6 +248,8 @@ export class World {
   /** Corridor items always work; room items only once the room is finished. Broken items never do. */
   usable(it: Item): boolean {
     if (it.wear >= 100 || this.stoppedByMishap(it)) return false;
+    // a Mechanic is on the way to install an upgrade: the guest on it is finished with, and nobody else is called
+    if (it.upgradePaid && it.claimedBy && !it.serving) return false;
     const r = this.roomOfItem(it);
     return !r || r.done;
   }

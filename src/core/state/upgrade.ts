@@ -136,7 +136,7 @@ type OldSave = Before<
     | 'hunger'
   >[];
   candidates: Before<Candidate, 'quals'>[];
-  items: Before<Item, 'wear' | 'dirt'>[];
+  items: Before<Item, 'wear' | 'dirt' | 'level' | 'upgradePaid'>[];
   rooms: Before<Room, 'windows' | 'priority' | 'vibes' | 'claimedBy'>[];
   guests: Before<Guest, 'emergency' | 'placed' | 'feelings' | 'health' | 'stressed' | 'calmed'>[];
   ledger: OldLedger;
@@ -197,6 +197,8 @@ export function upgradeSave(save: GameState) {
   for (const it of s.items) {
     it.wear ??= 0;
     it.dirt ??= 0;
+    it.level ??= 0;
+    it.upgradePaid ??= false;
   }
   for (const r of s.rooms) {
     r.windows ??= [];

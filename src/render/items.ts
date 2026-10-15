@@ -11,6 +11,7 @@ import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
 import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
+import { upgradePlate } from './models/plate';
 
 /** Position and turn an item's model to match its tile and rotation. */
 export function placeItemModel(model: THREE.Object3D, type: ItemType, x: number, y: number, rot: number) {
@@ -94,12 +95,12 @@ export class ItemsLayer {
     return [...this.items.values()].map((i) => i.group);
   }
 
-  /** Build a model for any item that is new or has moved, and remove the ones that are gone. */
+  /** Build a model for any item that is new, has moved or been upgraded, and remove the ones that are gone. */
   sync() {
     const liveItems = new Set<number>();
     for (const it of this.sim.s.items) {
       liveItems.add(it.id);
-      const key = `${it.type},${it.x},${it.y},${it.rot}`;
+      const key = `${it.type},${it.x},${it.y},${it.rot},${it.level}`;
       if (this.items.get(it.id)?.key === key) continue;
       const old = this.items.get(it.id);
       if (old) {
@@ -107,6 +108,8 @@ export class ItemsLayer {
         disposeOwned(old.group);
       }
       const group = buildItem(it.type);
+      const plate = upgradePlate(it.type, it.level);
+      if (plate) group.add(plate);
       placeItemModel(group, it.type, it.x, it.y, it.rot);
       group.traverse((o) => (o.userData.itemId = it.id));
       this.scene.add(group);

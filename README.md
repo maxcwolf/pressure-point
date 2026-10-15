@@ -46,7 +46,7 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 8. A **Posture Lab** settles diagnoses the Consultant was unsure about, so fewer guests need a second consultation.
 9. **Decor** (salt lamps, statues, rugs, magazine racks) makes its surroundings nicer to wait in and raises a room's **prestige**, which lifts staff morale and results.
 10. Staff have **morale**. Underpaid or overworked staff ask for a raise, and quit if ignored for long.
-11. Equipment **wears out** with use. A Caretaker services it; left alone it breaks down.
+11. Equipment **wears out** with use. A Caretaker services it; left alone it breaks down. From the first star, **upgrade** a treatment table, mat or scanner from its inspector, up to a level for each star: it wears more slowly and its treatments work more often. A Caretaker with the **Mechanics** course installs each upgrade.
 12. The **Money** menu offers loans and lets you set prices. **Emergencies** bring a batch of guests to heal against the clock for a bonus.
 13. From the first star you can add **acupuncture**: build an **Acupuncture Clinic** and hire an **Acupuncturist**, and a second kind of guest starts arriving.
 14. From the second star you can add **reiki**: build a **Reiki Studio** and hire a **Reiki Practitioner** for a third. At High Pines and The Orchard Estate, and in the sandbox, **sound healing** opens at the first star: build a **Sound Bath Studio** and hire a **Sound Healer**, who plays for every guest lying on the studio's mats at once.

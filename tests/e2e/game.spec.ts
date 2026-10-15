@@ -464,6 +464,39 @@ test.describe('room blueprints', () => {
     expect(game.errors).toEqual([]);
   });
 
+  test('equipment is upgraded from its inspector, and a Mechanic installs it', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.state.stars = 1;
+    });
+    await game.settle();
+    await game.clickItem('massage_table');
+    const upgrades = page.locator('#inspector .upgrades');
+    await expect(upgrades).toContainText('Upgrades ☆☆☆');
+    const money = await game.eval((pp) => pp.state.money);
+    await upgrades.getByRole('button', { name: /Upgrade to level 1/ }).click();
+    await expect(upgrades).toContainText('Waiting for a Mechanic to install the upgrade');
+    expect(await game.eval((pp) => pp.state.money)).toBe(money - 1000);
+
+    // a Caretaker who has been on the Mechanics course comes to install it
+    await game.eval((pp) => {
+      const applicant = pp.state.candidates.find((c) => c.role === 'caretaker');
+      const caretaker = applicant && pp.sim.hire(applicant.id);
+      if (!caretaker) throw new Error('no Caretaker to hire');
+      caretaker.general.push('mechanics');
+      const table = pp.state.items.find((it) => it.type === 'massage_table');
+      pp.state.speed = 1;
+      for (let i = 0; i < 6000 && table?.level === 0; i++) pp.sim.tick(0.1);
+      pp.state.speed = 0;
+    });
+    await expect(upgrades).toContainText('Upgrades ★☆☆');
+    await expect(upgrades).toContainText('Wears 30% more slowly');
+    await expect(upgrades.getByRole('button', { name: /Level 2 unlocks at star 2/ })).toBeVisible();
+    expect(game.errors).toEqual([]);
+  });
+
   test('a built room can be resized by dragging one of its walls', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

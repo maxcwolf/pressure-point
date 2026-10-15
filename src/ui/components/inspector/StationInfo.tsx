@@ -8,6 +8,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import { chanceText, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
 import { sessionNote } from '../../lib/sessions';
+import { staffingStatus } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 
@@ -90,14 +91,14 @@ export function StationInfo({ item }: { item: Item }) {
     const session = sim.session(item);
     return (
       <>
-        <p class="status">{staff ? `Staffed by ${staff.name}` : `⚠️ Needs a ${ROLES[def.staff].name}`}</p>{' '}
+        <p class="status">{staffingStatus(item, staff, ROLES[def.staff].name)}</p>{' '}
         <p class="sub">{sessionNote(session.lying, session.mats, session.playing)}</p>
       </>
     );
   }
   return (
     <>
-      <p class="status">{staff ? `Staffed by ${staff.name}` : `⚠️ Needs a ${ROLES[def.staff].name}`}</p>{' '}
+      <p class="status">{staffingStatus(item, staff, ROLES[def.staff].name)}</p>{' '}
       <p class="sub">{`In line: ${item.queue.length}${guest ? ` · Seeing ${guest.name}` : ''}`}</p>
       {guest && <Bar value={item.progress * 100} class="blue" />}
       {line.length > 0 && (
