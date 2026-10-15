@@ -1,5 +1,6 @@
 // Working out which floor tiles to color for the tool in hand.
 
+import type { PlacedLayout } from '../../core/room-layout';
 import type { Room } from '../../core/state/types';
 import { footprint, type Rect } from '../../core/world';
 import {
@@ -53,4 +54,14 @@ export function itemTiles(
     markers.push({ x: sq.x, y: sq.y, icon: sq.icon });
   }
   return { tiles, markers };
+}
+
+/** A room about to be put down: its floor green if it fits there or red if not, with its furniture in blue. */
+export function layoutTiles(placed: PlacedLayout, fits: boolean): OverlayTile[] {
+  const furniture = new Set(placed.items.flatMap((it) => footprint(it).map(([x, y]) => `${x},${y}`)));
+  return rectTiles(placed.rect, fits ? OV_GOOD : OV_BAD).map(([x, y, code]) => [
+    x,
+    y,
+    furniture.has(`${x},${y}`) ? OV_BLUE : code,
+  ]);
 }

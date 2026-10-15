@@ -3,6 +3,7 @@
 import { ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from '../data';
 import { money } from '../format';
 import { carryWallSpot, carryWindows, resizeCost } from '../resize';
+import { copyCost, layoutOf, type PlacedLayout } from '../room-layout';
 import { sameSpot } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
 import { itemCenter, type Rect } from '../world';
@@ -28,6 +29,27 @@ function worldChanged(ctx: SimContext) {
   repathAll(ctx);
 }
 
+/** A brand-new item, not yet in the game. */
+function newItem(ctx: SimContext, type: ItemType, x: number, y: number, rot: number): Item {
+  return {
+    id: ctx.s.nextId++,
+    type,
+    x,
+    y,
+    rot,
+    users: ITEMS[type].access.map(() => 0),
+    queue: [],
+    serving: 0,
+    staffId: 0,
+    progress: 0,
+    // a hamper starts empty; everything else starts watered, or hot
+    water: type === 'linen_hamper' ? 0 : 100,
+    wear: 0,
+    dirt: 0,
+    claimedBy: 0,
+  };
+}
+
 /** Buy an item and put it down, if it fits and can be afforded. */
 export function placeItem(
   ctx: SimContext,
@@ -44,23 +66,7 @@ export function placeItem(
     emit(ctx, { type: 'sfx', name: 'error' });
     return null;
   }
-  const it: Item = {
-    id: ctx.s.nextId++,
-    type,
-    x,
-    y,
-    rot,
-    users: def.access.map(() => 0),
-    queue: [],
-    serving: 0,
-    staffId: 0,
-    progress: 0,
-    // a hamper starts empty; everything else starts watered, or hot
-    water: type === 'linen_hamper' ? 0 : 100,
-    wear: 0,
-    dirt: 0,
-    claimedBy: 0,
-  };
+  const it = newItem(ctx, type, x, y, rot);
   ctx.s.items.push(it);
   if (!opts.free) spend(ctx, def.cost, 'building');
   worldChanged(ctx);
@@ -294,6 +300,80 @@ export function resizeRoom(ctx: SimContext, roomId: number, r: Rect): boolean {
   worldChanged(ctx);
   emit(ctx, { type: 'sfx', name: 'build' });
   return true;
+}
+
+/** Keep only the windows that can go in a room where it now stands, and say how many could not. */
+function keepWindows(ctx: SimContext, room: Room, windows: readonly WallSpot[]): number {
+  room.windows = [];
+  ctx.world.rebuild(true);
+  for (const w of windows) if (ctx.world.windowValid(room, w).ok) room.windows.push({ ...w });
+  return windows.length - room.windows.length;
+}
+
+/**
+ * Pick a built room up, furniture and all, and put it down elsewhere, turned if wanted, for free. Everyone using it
+ * starts over, and a window that would now look into another room is refunded at half. False if it cannot go there.
+ */
+export function moveRoom(ctx: SimContext, roomId: number, placed: PlacedLayout): boolean {
+  const room = ctx.world.room(roomId);
+  if (!room?.done) return false;
+  const items = itemsInRoom(ctx, room);
+  if (items.length !== placed.items.length || !ctx.world.layoutValid(room.type, placed, room).ok) return false;
+  const users = usersOf(ctx, new Set(items.map((it) => it.id)));
+  Object.assign(room, placed.rect, { door: { ...placed.door } });
+  // the layout lists the furniture in the order the room's items were in
+  items.forEach((it, i) => Object.assign(it, placed.items[i]));
+  const lost = keepWindows(ctx, room, placed.windows);
+  refundWindows(ctx, lost);
+  worldChanged(ctx);
+  resetUsers(ctx, users);
+  emit(ctx, { type: 'sfx', name: 'build' });
+  return true;
+}
+
+/** Give back half the price of windows that had to go. */
+function refundWindows(ctx: SimContext, count: number) {
+  const back = count * Math.round(WINDOW_COST / 2);
+  if (back <= 0) return;
+  ctx.s.money += back;
+  ctx.s.ledger.building -= back;
+}
+
+/**
+ * Build a copy of a room, furniture, windows and all, at a spot. It costs what building it from scratch would, and
+ * opens at once. Returns the new room, or null if it cannot go there or cannot be afforded.
+ */
+export function copyRoom(ctx: SimContext, roomId: number, placed: PlacedLayout): Room | null {
+  const from = ctx.world.room(roomId);
+  if (!from?.done || !ctx.world.layoutValid(from.type, placed).ok) return null;
+  const cost = copyCost(layoutOf(from, itemsInRoom(ctx, from)));
+  if (ctx.s.money < cost) {
+    toast(ctx, `A copy of the ${ROOMS[from.type].name} costs ${money(cost)}. You can't afford it.`, 'bad');
+    emit(ctx, { type: 'sfx', name: 'error' });
+    return null;
+  }
+  const room: Room = {
+    id: ctx.s.nextId++,
+    type: from.type,
+    ...placed.rect,
+    door: { ...placed.door },
+    windows: [],
+    done: true,
+    priority: false,
+    vibes: 0,
+    claimedBy: 0,
+  };
+  ctx.s.rooms.push(room);
+  for (const it of placed.items) ctx.s.items.push(newItem(ctx, it.type, it.x, it.y, it.rot));
+  const lost = keepWindows(ctx, room, placed.windows);
+  spend(ctx, cost - lost * WINDOW_COST, 'building');
+  worldChanged(ctx);
+  toast(ctx, `${ROOMS[room.type].name} copied for ${money(cost - lost * WINDOW_COST)}.`, 'good', {
+    kind: 'room',
+    id: room.id,
+  });
+  emit(ctx, { type: 'sfx', name: 'build' });
+  return room;
 }
 
 /** Whether an item can be sold. A room has to keep one of each thing it requires. */

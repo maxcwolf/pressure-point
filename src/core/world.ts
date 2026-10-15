@@ -18,6 +18,7 @@ import {
 } from './data';
 import { byId } from './lookup';
 import { carryWallSpot, inRect, sameRect } from './resize';
+import type { PlacedLayout } from './room-layout';
 import type { GameState, Item, Room, Waypoint } from './state/types';
 import { at } from './util';
 
@@ -599,6 +600,48 @@ export class World {
             ? OK
             : no('That would block the way');
     Object.assign(room, before);
+    this.rebuild(true);
+    return check;
+  }
+
+  /**
+   * Can a room with this layout be put down here? Pass `moving` to judge it as if that room and its furniture had
+   * been lifted out first. The floor has to be free corridor inside the building, the door has to open onto clear
+   * corridor, and nobody and nothing may be cut off.
+   */
+  layoutValid(type: RoomType, placed: PlacedLayout, moving?: Room): Check {
+    const { rooms, items } = this.s;
+    const own = moving ? items.filter((it) => this.zoneAt(it.x, it.y) === moving.id) : [];
+    this.s.rooms = rooms.filter((r) => r !== moving);
+    this.s.items = items.filter((it) => !own.includes(it));
+    this.rebuild(true);
+    let check = this.roomRectValid(type, placed.rect);
+    const { door } = placed;
+    const ox = door.x + door.dx;
+    const oy = door.y + door.dy;
+    if (check.ok && (!this.inside(ox, oy) || this.zone[tileIdx(ox, oy)] !== Z_CORRIDOR))
+      check = no('The door must open onto a corridor');
+    else if (check.ok && this.blocked[tileIdx(ox, oy)]) check = no('Something is blocking the doorway');
+    if (check.ok) {
+      // try it: everyone and everything has to be reached with the room in its new place
+      const trial: Room = {
+        id: moving?.id ?? 2147483001,
+        type,
+        ...placed.rect,
+        door,
+        windows: [],
+        done: false,
+        priority: false,
+        vibes: 0,
+        claimedBy: 0,
+      };
+      this.s.rooms = [...this.s.rooms, trial];
+      this.s.items = [...this.s.items, ...placed.items.map((it) => ({ ...it, id: -1 }) as unknown as Item)];
+      this.rebuild(true);
+      if (!this.connected()) check = no('That would block the way');
+    }
+    this.s.rooms = rooms;
+    this.s.items = items;
     this.rebuild(true);
     return check;
   }

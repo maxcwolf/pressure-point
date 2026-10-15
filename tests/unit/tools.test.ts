@@ -2,25 +2,29 @@ import { describe, expect, it } from 'vitest';
 
 import { dragRect, itemSpot, tileOf } from '../../src/app/tools/geometry';
 import {
+  copyRoomHint,
   doorHint,
   dragHint,
   MOVE_DOOR_HINT,
   moveHint,
+  moveRoomHint,
   placeHint,
   planHint,
   WINDOW_HINT,
 } from '../../src/app/tools/hints';
-import { dragTiles, itemTiles, rectTiles } from '../../src/app/tools/overlay';
+import { dragTiles, itemTiles, layoutTiles, rectTiles } from '../../src/app/tools/overlay';
 import { heldItem, nextRequired, planStatus, quarterTurn } from '../../src/app/tools/plan';
 import { GUEST_ICON, isStaffRole, legend, STAFF_ICON, useSquares } from '../../src/app/tools/squares';
 import { Tools } from '../../src/app/tools/tools';
 import type { Tool } from '../../src/app/tools/types';
 import { ROLES } from '../../src/core/data';
 import { ROOMS } from '../../src/core/data';
+import { money } from '../../src/core/format';
+import { copyCost } from '../../src/core/room-layout';
 import type { Room } from '../../src/core/state/types';
 import { OV_BAD, OV_BLUE, OV_FREE, OV_GOOD, OV_GUEST, OV_STAFF } from '../../src/render/overlay-codes';
 import type { View } from '../../src/render/view';
-import { freshSim, LAYOUT, toasts } from './helpers';
+import { freshSim, LAYOUT, openCenter, toasts } from './helpers';
 
 const ROOM: Room = {
   id: 7,
@@ -238,5 +242,83 @@ describe('building a blueprint', () => {
     expect(room.done).toBe(false);
     expect(sim.s.money).toBe(ROOMS.consult.cost - 1);
     expect(toasts(sim.drain()).some((t) => t.includes("can't afford"))).toBe(true);
+  });
+});
+
+describe('moving and copying a room', () => {
+  /** Ignore a call to the scene. */
+  const nothing = () => undefined;
+  /** A center with its rooms built, and the build tools on it, where the cursor is wherever the pointer says. */
+  function withTools() {
+    const c = openCenter(1);
+    const view = {
+      selected: null,
+      setOverlay: nothing,
+      setMarkers: nothing,
+      setGhost: nothing,
+      setDoor: nothing,
+      /** The cursor is on the ground wherever the pointer says. */
+      groundAt: (x: number, y: number) => ({ x, y }),
+    };
+    const tools = new Tools(c.sim, view as unknown as View, nothing, nothing);
+    return { ...c, tools, view };
+  }
+
+  it('picks the room up, turns it with R, and puts it down where clicked, selected', () => {
+    const { sim, massage, tools, view } = withTools();
+    tools.startMoveRoom(massage.id);
+    expect(tools.hint).toContain('Moving the Massage Suite');
+    tools.rotate();
+    // a 4×4 room centered on the cursor has its corner two tiles up and left
+    tools.pointerMove(19, 7);
+    expect(tools.problem).toBe('');
+    tools.pointerUp(19, 7);
+    expect(massage).toMatchObject({ x: 17, y: 5 });
+    expect(massage.door.dx, 'turned: the door on the bottom wall is now on the left').toBe(-1);
+    expect(tools.tool.kind).toBe('none');
+    expect(view.selected).toEqual({ kind: 'room', id: massage.id });
+    expect(sim.world.zoneAt(11, 5)).toBe(0);
+  });
+
+  it('says why a room cannot go somewhere, and stays in hand', () => {
+    const { massage, consult, tools } = withTools();
+    tools.startMoveRoom(massage.id);
+    tools.pointerMove(consult.x + 2, consult.y + 2);
+    expect(tools.problem).toBe('Overlaps another room');
+    tools.pointerUp(consult.x + 2, consult.y + 2);
+    expect(tools.tool.kind).toBe('moveRoom');
+    expect(massage).toMatchObject({ x: 11, y: 5 });
+  });
+
+  it('keeps copying until put away, with the price in the hint', () => {
+    const { s, sim, massage, tools } = withTools();
+    tools.startMoveRoom(massage.id, true);
+    expect(tools.hint).toContain(money(copyCost(sim.roomLayout(massage))));
+    const rooms = s.rooms.length;
+    tools.pointerMove(19, 7);
+    tools.pointerUp(19, 7);
+    expect(s.rooms).toHaveLength(rooms + 1);
+    expect(tools.tool.kind).toBe('moveRoom');
+    tools.back();
+    expect(tools.tool.kind).toBe('none');
+  });
+
+  it('colors the floor where it would go, with its furniture in blue', () => {
+    const placed = {
+      rect: { x: 0, y: 0, w: 2, h: 1 },
+      door: { x: 0, y: 0, dx: 0, dy: -1 },
+      windows: [],
+      items: [{ type: 'plant' as const, x: 1, y: 0, rot: 0 }],
+    };
+    expect(layoutTiles(placed, true)).toEqual([
+      [0, 0, OV_GOOD],
+      [1, 0, OV_BLUE],
+    ]);
+    expect(layoutTiles(placed, false)[0]).toEqual([0, 0, OV_BAD]);
+  });
+
+  it('has hints for moving and for copying', () => {
+    expect(moveRoomHint('massage')).toContain('R turns it');
+    expect(copyRoomHint('massage', 3000)).toContain('$3,000 each');
   });
 });

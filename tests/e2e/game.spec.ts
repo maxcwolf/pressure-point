@@ -303,6 +303,54 @@ test.describe('room blueprints', () => {
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
   });
 
+  test('a built room can be picked up and moved, furniture and all, and copied', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    await game.clickRoom('massage');
+    await page.locator('#inspector').getByRole('button', { name: '✋ Move', exact: true }).click();
+    await expect(page.locator('#hint')).toContainText('Moving the Massage Suite');
+    /** The first free spot the suite fits, scanning the lot, and where on screen its middle is. */
+    const find = () =>
+      game.eval((pp) => {
+        const room = pp.state.rooms.find((r) => r.type === 'massage')!;
+        const layout = pp.sim.roomLayout(room);
+        /** The layout put down with its corner at a tile. */
+        const at = (x: number, y: number) => ({
+          rect: { x, y, w: layout.w, h: layout.h },
+          door: { ...layout.door, x: layout.door.x + x, y: layout.door.y + y },
+          windows: [],
+          items: layout.items.map((it) => ({ ...it, x: it.x + x, y: it.y + y })),
+        });
+        for (let y = 0; y < 30; y++)
+          for (let x = 0; x < 40; x++) {
+            if (Math.abs(x - room.x) < layout.w + 1 && Math.abs(y - room.y) < layout.h + 1) continue;
+            if (!pp.sim.world.layoutValid(room.type, at(x, y)).ok) continue;
+            const p = pp.view.project(x + layout.w / 2, y + layout.h / 2, 0);
+            return { x, y, screen: p, id: room.id };
+          }
+        throw new Error('nowhere for the suite to go');
+      });
+    const spot = await find();
+    await page.mouse.move(spot.screen.x, spot.screen.y, { steps: 4 });
+    await page.mouse.click(spot.screen.x, spot.screen.y);
+    const moved = await game.eval((pp, id) => pp.state.rooms.find((r) => r.id === id)!, spot.id);
+    expect(moved).toMatchObject({ x: spot.x, y: spot.y });
+    await expect(page.locator('#inspector')).toContainText('Massage Suite');
+
+    const rooms = await game.eval((pp) => pp.state.rooms.length);
+    await page.locator('#inspector').getByRole('button', { name: /Copy/ }).click();
+    await expect(page.locator('#hint')).toContainText('Copying the Massage Suite');
+    const copy = await find();
+    await page.mouse.move(copy.screen.x, copy.screen.y, { steps: 4 });
+    await page.mouse.click(copy.screen.x, copy.screen.y);
+    expect(await game.eval((pp) => pp.state.rooms.length)).toBe(rooms + 1);
+    await page.keyboard.press('Escape');
+    expect(await game.eval((pp) => pp.tools.tool.kind)).toBe('none');
+    expect(game.errors).toEqual([]);
+  });
+
   test('a built room can be resized by dragging one of its walls', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

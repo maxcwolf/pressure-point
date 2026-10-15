@@ -2,6 +2,7 @@
 
 import { ITEMS, MODALITIES, MODALITY_ORDER, NOISE_NOTICE, NOISE_PEACEFUL, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
+import { copyCost } from '../../../core/room-layout';
 import { roomLabels } from '../../../core/sim/assignments';
 import { tempFeel } from '../../../core/sim/warmth';
 import type { Item, Room } from '../../../core/state/types';
@@ -136,6 +137,25 @@ export function RoomInfo({ room }: { room: Room }) {
         }}
       >
         ↔️ Resize
+      </Button>{' '}
+      <Button
+        class="roommove"
+        title="Pick the room up, furniture and all, and put it down somewhere else. R turns it. Free."
+        onPress={() => {
+          tools.startMoveRoom(room.id);
+        }}
+      >
+        ✋ Move
+      </Button>{' '}
+      <Button
+        class="roomcopy"
+        title="Build copies of this room, furniture, windows and all, wherever you click. R turns them."
+        locked={sim.s.money < copyCost(sim.roomLayout(room))}
+        onPress={() => {
+          tools.startMoveRoom(room.id, true);
+        }}
+      >
+        {`📋 Copy (${money(copyCost(sim.roomLayout(room)))})`}
       </Button>{' '}
       <Button
         class="danger"

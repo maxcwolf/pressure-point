@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Move and copy rooms.** Press Move in a built room's inspector to pick it up, furniture, windows and all, and put it down somewhere else for free. Copy builds a copy wherever you click, finished and ready, for what building it from scratch would cost, and keeps going until you press Esc. R turns the room in hand either way.
+
 ## v0.17.0
 
 - **Mishaps.** Every few months something goes wrong, announced three days ahead in a notice at the top of the screen. Pay to prepare for it, or take your chances. Each center but Willow Lane has its own:

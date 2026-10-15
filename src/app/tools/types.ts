@@ -1,6 +1,7 @@
 // The shapes the build tools work with.
 
 import type { ItemType, RoomType } from '../../core/data';
+import type { Layout } from '../../core/room-layout';
 import type { Room } from '../../core/state/types';
 import type { Rect } from '../../core/world';
 import type { Edge } from './resize';
@@ -38,7 +39,9 @@ export type Tool =
   // dragging one of a built room's walls: `rect` is the shape it is being dragged to
   | { kind: 'resize'; roomId: number; edge: Edge | null; rect: Rect | null }
   // clicking rooms to add them to a member of staff's assignment, or take them away
-  | { kind: 'assign'; staffId: number };
+  | { kind: 'assign'; staffId: number }
+  // a built room picked up to move it, or to put down copies of it: `layout` is turned as R is pressed
+  | { kind: 'moveRoom'; roomId: number; layout: Layout; copy: boolean };
 
 /** The state of an open blueprint, for the panel that shows it. */
 export interface PlanStatus {

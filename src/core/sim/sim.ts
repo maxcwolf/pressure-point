@@ -15,6 +15,7 @@ import {
   type ModalityDef,
   type RoomType,
 } from '../data';
+import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import type { Char, GameState, Guest, Item, MonthRecord, Room, Staff, Visitor, WallSpot } from '../state/types';
 import type { Check, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
@@ -26,11 +27,14 @@ import type { PlaceOptions } from './building';
 import {
   canMoveItem,
   canSell,
+  copyRoom,
   createRoom,
   finishRoom,
+  itemsInRoom,
   missingItems,
   moveDoor,
   moveItem,
+  moveRoom,
   placeItem,
   removeRoom,
   resizeRoom,
@@ -572,5 +576,20 @@ export class Sim {
   /** Give a room a new shape, moving its door and windows with their walls. */
   resizeRoom(roomId: number, rect: Rect): boolean {
     return resizeRoom(this.ctx, roomId, rect);
+  }
+
+  /** The layout of a room and its furniture, to move or copy it. */
+  roomLayout(room: Room): Layout {
+    return layoutOf(room, itemsInRoom(this.ctx, room));
+  }
+
+  /** Pick a built room up, furniture and all, and put it down elsewhere. */
+  moveRoom(roomId: number, placed: PlacedLayout): boolean {
+    return moveRoom(this.ctx, roomId, placed);
+  }
+
+  /** Build a copy of a room at a spot, at what building it from scratch would cost. */
+  copyRoom(roomId: number, placed: PlacedLayout): Room | null {
+    return copyRoom(this.ctx, roomId, placed);
   }
 }

@@ -73,3 +73,13 @@ export function assignHint(name: string, rooms: number): string {
 export function assignProblem(role: Role, type: RoomType): string {
   return `There is no work for a ${ROLES[role].name} in a ${ROOMS[type].name}`;
 }
+
+/** The hint while a room is picked up to move it. */
+export function moveRoomHint(type: RoomType): string {
+  return `${ROOMS[type].icon} Moving the ${ROOMS[type].name} · click to put it down · R turns it · Esc cancels`;
+}
+
+/** The hint while putting down copies of a room, with what each costs. */
+export function copyRoomHint(type: RoomType, cost: number): string {
+  return `${ROOMS[type].icon} Copying the ${ROOMS[type].name} · ${money(cost)} each · click to build a copy · R turns it · Esc when done`;
+}

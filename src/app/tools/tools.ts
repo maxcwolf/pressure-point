@@ -12,6 +12,7 @@
 import { type ItemType, ROOMS, type RoomType } from '../../core/data';
 import { money } from '../../core/format';
 import { resizeCost, sameRect } from '../../core/resize';
+import { copyCost, cornerFor, type Layout, type PlacedLayout, placeLayout, turnLayout } from '../../core/room-layout';
 import { canWorkIn } from '../../core/sim/assignments';
 import type { SfxName } from '../../core/sim/events';
 import type { Sim } from '../../core/sim/sim';
@@ -25,17 +26,19 @@ import { dragRect, itemSpot, tileOf } from './geometry';
 import {
   assignHint,
   assignProblem,
+  copyRoomHint,
   doorHint,
   dragHint,
   MOVE_DOOR_HINT,
   moveHint,
+  moveRoomHint,
   placeHint,
   planHint,
   RESIZE_HINT,
   resizeHint,
   WINDOW_HINT,
 } from './hints';
-import { assignTiles, dragTiles, itemTiles, rectTiles } from './overlay';
+import { assignTiles, dragTiles, itemTiles, layoutTiles, rectTiles } from './overlay';
 import { heldItem, nextRequired, planStatus, quarterTurn } from './plan';
 import type { Edge } from './resize';
 import { dragEdge, edgeNear, edgeTiles } from './resize';
@@ -152,6 +155,21 @@ export class Tools {
     this.refresh();
   }
 
+  /** Pick a built room up to move it elsewhere, or to put down copies of it. */
+  startMoveRoom(roomId: number, copy = false) {
+    this.cancel();
+    const room = this.sim.world.room(roomId);
+    if (!room?.done) return;
+    this.tool = { kind: 'moveRoom', roomId, layout: this.sim.roomLayout(room), copy };
+    this.select(null);
+    this.refresh();
+  }
+
+  /** Where the room in hand would go, centered on the cursor. */
+  private placedRoom(t: { layout: Layout }): PlacedLayout | null {
+    return this.cursor ? placeLayout(t.layout, ...cornerFor(t.layout, this.cursor)) : null;
+  }
+
   /** Click rooms to assign a member of staff to them, with them kept selected meanwhile. */
   startAssign(staffId: number) {
     this.cancel();
@@ -221,9 +239,16 @@ export class Tools {
     } else this.cancel();
   }
 
-  /** Turn the item in hand a quarter turn. */
+  /** Turn the item, or the room, in hand a quarter turn. */
   rotate() {
-    const held = heldItem(this.tool);
+    const t = this.tool;
+    if (t.kind === 'moveRoom') {
+      t.layout = turnLayout(t.layout);
+      this.sfx('blip');
+      this.refresh();
+      return;
+    }
+    const held = heldItem(t);
     if (!held) return;
     held.rot = quarterTurn(held.rot);
     this.sfx('blip');
@@ -290,6 +315,8 @@ export class Tools {
       const room = this.roomUnderCursor();
       if (room && sim.assignRoom(t.staffId, room.id)) this.sfx('blip');
       else this.sfx('error');
+    } else if (t.kind === 'moveRoom') {
+      this.putRoomDown(t.roomId, t.copy);
     } else if (t.kind === 'resize') {
       // the wall is let go: the room takes the new shape if it can, and the tool stays for the next wall
       const room = sim.world.room(t.roomId);
@@ -330,6 +357,19 @@ export class Tools {
       }
     }
     this.refresh();
+  }
+
+  /** Put the room in hand down: moved, it is done with and selected; copied, the tool stays for another copy. */
+  private putRoomDown(roomId: number, copy: boolean) {
+    const t = this.tool;
+    const placed = t.kind === 'moveRoom' ? this.placedRoom(t) : null;
+    if (!placed) return;
+    if (copy) {
+      if (!this.sim.copyRoom(roomId, placed)) this.sfx('error');
+    } else if (this.sim.moveRoom(roomId, placed)) {
+      this.tool = { kind: 'none' };
+      this.select({ kind: 'room', id: roomId });
+    } else this.sfx('error');
   }
 
   /** Where the item in hand would go: its top-left tile, with the item centered on the cursor. */
@@ -440,6 +480,24 @@ export class Tools {
     drawing.tiles.push(...assignTiles(assigned, hover, workable));
   }
 
+  /** The room in hand: its floor where it would go, colored by whether it fits, with its furniture and door. */
+  private drawRoomMove(roomId: number, copy: boolean, drawing: Drawing) {
+    const t = this.tool;
+    const room = this.sim.world.room(roomId);
+    // demolished meanwhile: nothing left to move or copy
+    if (!room || t.kind !== 'moveRoom') {
+      this.tool = { kind: 'none' };
+      return;
+    }
+    this.hint = copy ? copyRoomHint(room.type, copyCost(t.layout)) : moveRoomHint(room.type);
+    const placed = this.placedRoom(t);
+    if (!placed) return;
+    const check = this.sim.world.layoutValid(room.type, placed, copy ? undefined : room);
+    this.problem = check.reason;
+    drawing.tiles.push(...layoutTiles(placed, check.ok));
+    this.view.setDoor({ door: placed.door, tone: check.ok ? 'ok' : 'bad' });
+  }
+
   /** Recompute overlays, ghost and hint for the current tool state. */
   refresh() {
     const t = this.tool;
@@ -472,6 +530,9 @@ export class Tools {
     } else if (t.kind === 'assign') {
       view.setGhost(null);
       this.drawAssign(t.staffId, drawing);
+    } else if (t.kind === 'moveRoom') {
+      view.setGhost(null);
+      this.drawRoomMove(t.roomId, t.copy, drawing);
     } else if (t.kind === 'resize') {
       view.setGhost(null);
       const room = world.room(t.roomId);
