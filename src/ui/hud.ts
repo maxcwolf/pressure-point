@@ -1,7 +1,7 @@
 // The interface's own state: which menu and dialog are open, and the messages on screen.
 // The components draw it; the rest of the app talks to it.
 
-import type { DecorKey, ItemType, Role } from '../core/data';
+import type { DecorKey, ItemType, LandSide, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { Template } from '../core/templates';
 import { loadTemplates } from '../storage/templates';
@@ -12,7 +12,7 @@ import type { OverlayMode } from './lib/overlays';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'policy' | 'stats';
 /** The tabs of the Money menu. */
-export type MoneyTab = 'books' | 'prices' | 'marketing' | 'loan';
+export type MoneyTab = 'books' | 'prices' | 'marketing' | 'loan' | 'land';
 
 /** The tabs of the Rooms menu. */
 export type RoomsTab = 'rooms' | 'templates';
@@ -58,6 +58,8 @@ export class HudState {
   statsTab: StatsTab = 'charts';
   /** The tab showing in the Money menu. */
   moneyTab: MoneyTab = 'books';
+  /** The plot of land the pointer is over in the Land tab, shown brighter on the ground. */
+  landPointedAt: LandSide | null = null;
   /** What the floor is colored by, if anything, and whether the list to choose from is open. */
   overlay: OverlayMode | null = null;
   overlayPicker = false;

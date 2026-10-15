@@ -131,3 +131,15 @@
 .condition-choices .chip.on {
   background: var(--gold);
 }
+
+.ledger.land {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.ledger.land h4 {
+  margin: 0;
+}

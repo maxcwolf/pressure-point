@@ -14,6 +14,7 @@ import type {
   GeneralId,
   GoalSpec,
   ItemType,
+  LandSide,
   MishapId,
   Modality,
   Offering,
@@ -697,4 +698,6 @@ export interface GameState {
   mushrooms: boolean;
   /** They were put away when the health inspector wrote ahead, to come back out once the inspection is over. */
   mushroomsStashed: boolean;
+  /** The plots of land bought next to the building, by side, in the order they were bought. */
+  land: LandSide[];
 }

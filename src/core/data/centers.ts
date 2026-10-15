@@ -103,6 +103,8 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb:
       'Packed in summer, half asleep in winter, and the sea air is hard on equipment. Reiki opens at the second star.',
     plot: { x0: 4, x1: 26, y0: 7, y1: 16, door: [14, 15] },
+    // the beach huts stand along the back of the lot
+    land: { back: 3 },
     startMoney: 30000,
     climate: { average: 66, swing: 22 },
     disciplines: ['acupuncture', 'reiki'],

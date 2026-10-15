@@ -9,13 +9,14 @@ import { at } from '../core/util';
 /** A floor tile and how good things are there, from 0 to 1. */
 export type HeatTile = [x: number, y: number, value: number];
 
-/** How values are colored: bad to good, or cold through just right to hot. */
-export type Palette = 'good' | 'temperature';
+/** How values are colored: bad to good, cold through just right to hot, or land for sale and the plot pointed at. */
+export type Palette = 'good' | 'temperature' | 'land';
 
 const BAD = new THREE.Color(0xe5484d);
 const MIDDLING = new THREE.Color(0xf5b83d);
 const GOOD = new THREE.Color(0x3fbf6f);
 const COLD = new THREE.Color(0x4a9fe0);
+const POINTED = new THREE.Color(0xfff3c4);
 
 /** The color for a value from 0 (bad) to 1 (good). */
 export function heatColor(value: number, out = new THREE.Color()): THREE.Color {
@@ -27,6 +28,11 @@ export function heatColor(value: number, out = new THREE.Color()): THREE.Color {
 export function tempColor(value: number, out = new THREE.Color()): THREE.Color {
   const v = Math.max(0, Math.min(1, value));
   return v < 0.5 ? out.lerpColors(COLD, GOOD, v * 2) : out.lerpColors(GOOD, BAD, (v - 0.5) * 2);
+}
+
+/** The color for land for sale: amber, or near white for the plot pointed at (1), to stand out from the lawn. */
+export function landColor(value: number, out = new THREE.Color()): THREE.Color {
+  return out.copy(value >= 1 ? POINTED : MIDDLING);
 }
 
 /** Tiles colored by how good things are on each, drawn just above the floor and under everything else. */
@@ -49,7 +55,7 @@ export class Heatmap {
 
   /** Color these tiles, or clear the layer. */
   set(tiles: readonly HeatTile[] | null, palette: Palette = 'good') {
-    const paint = palette === 'temperature' ? tempColor : heatColor;
+    const paint = palette === 'temperature' ? tempColor : palette === 'land' ? landColor : heatColor;
     const list = tiles ?? [];
     const n = Math.min(list.length, W * H);
     for (let i = 0; i < n; i++) {

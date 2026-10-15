@@ -317,6 +317,19 @@ test.describe('in a game', () => {
     await screens.shot('money-marketing');
   });
 
+  test('land for sale', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      pp.state.stars = 1;
+      pp.state.money = 100000;
+    });
+    await game.menu('Money');
+    await page.locator('#menu').getByRole('button', { name: /Land/ }).click();
+    // the plots are outlined on the ground a moment after the tab opens
+    await page.waitForTimeout(600);
+    await screens.shot('money-land');
+  });
+
   test('a house call on offer', async ({ screens, game }) => {
     await screens.play();
     await game.eval((pp) => {

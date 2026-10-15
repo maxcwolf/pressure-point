@@ -20,6 +20,21 @@ export interface Plot {
 /** The original lot: a big building across the middle. */
 export const SANDBOX_PLOT: Plot = { x0: 3, x1: 27, y0: 3, y1: 17, door: [14, 15] };
 
+/** The sides a building can grow on: never the front, which faces the street. */
+export type LandSide = 'west' | 'east' | 'back';
+export const LAND_SIDES: readonly LandSide[] = ['west', 'east', 'back'];
+
+/** How far a building can grow: its west wall's lowest x, its east wall's highest, and its back wall's lowest y. */
+export type LandLimits = Readonly<Record<LandSide, number>>;
+/** The edges of the lot, as far as any building can grow toward them. */
+export const LAND_LIMITS: LandLimits = { west: 1, east: W - 2, back: 1 };
+/** How many tiles deep a plot of land is, at most; the last plot on a side takes what is left, if that is not much more. */
+export const LAND_STEP = 4;
+/** What a tile of land costs. */
+export const LAND_TILE_PRICE = 250;
+/** The first star at which land comes up for sale. */
+export const LAND_STAR = 1;
+
 /** The row just outside the front door, where the path to the pavement starts. */
 export const outsideDoor = (p: Plot) => p.y1 + 1;
 

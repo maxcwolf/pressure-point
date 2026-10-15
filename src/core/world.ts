@@ -16,6 +16,7 @@ import {
   SIDEWALK_Y,
   W,
 } from './data';
+import { landLimits, plotWith } from './land';
 import { byId } from './lookup';
 import { carryWallSpot, inRect, sameRect } from './resize';
 import type { PlacedLayout } from './room-layout';
@@ -159,13 +160,12 @@ export class World {
   private spotsStamp = -1;
 
   constructor(public s: GameState) {
+    this.plot = centerOf(s).plot;
     this.rebuild();
   }
 
-  /** Where this game's building stands on its lot. */
-  get plot(): Plot {
-    return centerOf(this.s).plot;
-  }
+  /** Where this game's building stands on its lot, grown into any land bought, as of the last rebuild. */
+  plot: Plot;
 
   /** Whether a tile is inside the building. */
   inside(x: number, y: number): boolean {
@@ -184,7 +184,8 @@ export class World {
     blocked.fill(0);
     reserved.fill(0);
     doors.clear();
-    const plot = this.plot;
+    const plot = plotWith(centerOf(this.s).plot, this.s.land, landLimits(this.s));
+    this.plot = plot;
     const outside = outsideDoor(plot);
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {

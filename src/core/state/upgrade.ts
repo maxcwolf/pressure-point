@@ -89,6 +89,7 @@ type OldSave = Before<
   | 'policy'
   | 'mushrooms'
   | 'mushroomsStashed'
+  | 'land'
   | 'challenge'
   | 'nextChallenge'
   | 'challengesOn'
@@ -307,6 +308,7 @@ export function upgradeSave(save: GameState) {
       s.candidates.push(makeCandidate(save, 'instructor'));
   s.mushrooms ??= false;
   s.mushroomsStashed ??= false;
+  s.land ??= [];
   // a policy saved before the mushrooms has no word on putting them away
   const policy: Partial<Policy> = s.policy;
   policy.stashMushrooms ??= true;

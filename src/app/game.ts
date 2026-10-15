@@ -11,6 +11,7 @@ import { loadCampaign, recordGame } from '../storage/campaign';
 import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
+import { landSignSpots, landTiles } from '../ui/lib/land';
 import { heatTiles, overlayPalette } from '../ui/lib/overlays';
 import { trackMouse } from './edge';
 import { reloadInto } from './handoff';
@@ -124,9 +125,13 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     mouse: trackMouse(),
     refresh,
     save: autosaveNow,
-    /** Color the floor for the overlay showing, or clear it. */
+    /** Color the floor for the overlay showing, or the land for sale, or clear it. */
     overlay: () => {
-      view.setHeat(ui.overlay ? heatTiles(sim, ui.overlay) : null, overlayPalette(ui.overlay));
+      // the Land tab outlines the land for sale, over any overlay
+      const offers = ui.menu === 'finance' && ui.moneyTab === 'land' ? sim.landOffers() : null;
+      view.setLandSigns(offers && landSignSpots(offers));
+      if (offers) view.setHeat(landTiles(offers, ui.landPointedAt), 'land');
+      else view.setHeat(ui.overlay ? heatTiles(sim, ui.overlay) : null, overlayPalette(ui.overlay));
     },
   });
   window.addEventListener('beforeunload', save);
@@ -145,8 +150,28 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
 
   // a handle for the browser console and the end-to-end tests, in development builds only
   if (import.meta.env.DEV) {
-    const { x0, x1, y0, y1 } = sim.world.plot;
-    const data = { ITEMS, ROOMS, W, BX0: x0, BX1: x1, BY0: y0, BY1: y1 };
+    // the building's walls as they stand, after any land bought
+    const data = {
+      ITEMS,
+      ROOMS,
+      W,
+      /** The building's west wall. */
+      get BX0() {
+        return sim.world.plot.x0;
+      },
+      /** The building's east wall. */
+      get BX1() {
+        return sim.world.plot.x1;
+      },
+      /** The building's back wall. */
+      get BY0() {
+        return sim.world.plot.y0;
+      },
+      /** The building's front wall. */
+      get BY1() {
+        return sim.world.plot.y1;
+      },
+    };
     Object.assign(window, { pp: { sim, view, tools, ui, state, data, geo: { itemDims, accessTile } } });
   }
 }

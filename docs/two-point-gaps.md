@@ -42,7 +42,7 @@ So the gaps below are read in proportion: we have rooms built by dragging, doors
 
 ## The building
 
-**15. More land.** Two Point Hospital lets you buy extra plots, shown as construction sites around the hospital. Our building is fixed per center. Now that the plot lives in the game state, buying an adjoining plot is possible, though walls, scenery and pathing all assume one rectangle. _Large._ ([Twinfinite guide](https://twinfinite.net/guides/two-point-hospital-buy-more-buildings-how-to/))
+**15. More land.** Two Point Hospital lets you buy extra plots, shown as construction sites around the hospital. Done: from the first star, plots up to four tiles deep are for sale to the west, the east and the back, and the building, still a rectangle, grows into each. _Large._ ([Twinfinite guide](https://twinfinite.net/guides/two-point-hospital-buy-more-buildings-how-to/))
 
 **16. Moving, copying and templating rooms.** Two Point Hospital has all three: pick a built room up, furniture and all, to move or rotate it; copy and paste a room (added in 2018); and save rooms as templates (added in 2020). Campus has them too. We have resizing, door moves and windows. _Medium each._ ([wiki: Rooms](https://two-point-hospital.fandom.com/wiki/Rooms), [Changelist](https://two-point-hospital.fandom.com/wiki/Changelist), [templates blog](https://community.twopointcounty.com/two-point-studios/two-point-hospital/blogs/9-room-templates-deep-dive))
 

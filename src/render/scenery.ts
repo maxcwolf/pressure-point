@@ -1,5 +1,5 @@
-// The scenery that never changes: the lawn, the building's outer walls, the sign and the trees, pines in the snow, or
-// rows of apple trees.
+// The scenery: the lawn, the building's outer walls, the sign and the trees, pines in the snow, or rows of apple
+// trees. It changes only when the building grows into more land.
 // The windows in the outer walls do change, as rooms are built against them, so they are drawn with the rooms.
 
 import * as THREE from 'three';
@@ -17,13 +17,13 @@ import { H_LOW, hash, OUTER_HT, OUTER_T } from './shared';
 import { SIGN_HALF, SIGN_LEG, signSpot } from './sign';
 import { onStorefront } from './storefront';
 
-/** Build the scenery that never changes around a building on its plot, in its setting, and add it to the scene. */
+/** Build the scenery around a building on its plot, in its setting: the same until the building grows. */
 export function buildScenery(
-  scene: THREE.Scene,
   plot: Plot,
   setting: 'park' | 'seaside' | 'mountain' | 'orchard',
   colors: Setting,
-) {
+): THREE.Group {
+  const scene = new THREE.Group();
   const lawn = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({ color: colors.ground, roughness: 1 }),
@@ -109,13 +109,13 @@ export function buildScenery(
 
   if (setting === 'seaside') {
     scene.add(buildSeaside(plot));
-    return;
+    return scene;
   }
   if (setting === 'orchard') {
     // apple trees in rows, wherever the lawn is clear
     const rows = orchardRows(-6, W + 6, -6, H + 6).filter((p) => !keptClear(plot, Math.floor(p.x), Math.floor(p.z)));
     scene.add(buildOrchard(rows.map((p, i) => ({ ...p, seed: Math.floor(hash(i, 5) * 97) }))));
-    return;
+    return scene;
   }
 
   // trees wherever there is lawn, or snow
@@ -131,6 +131,7 @@ export function buildScenery(
     }
   }
   scene.add(setting === 'mountain' ? buildPines(trees) : buildForest(trees));
+  return scene;
 }
 
 /**

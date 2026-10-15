@@ -1377,6 +1377,39 @@ test.describe('the Items menu', () => {
   });
 });
 
+test.describe('more land', () => {
+  test('comes up for sale at the first star, and the building grows into it', async ({ game, page }) => {
+    await game.start();
+    await game.menu('Money');
+    const menu = page.locator('#menu');
+    await menu.getByRole('button', { name: /Land/ }).click();
+    await expect(menu).toContainText('comes up for sale at star 1');
+
+    await game.eval((pp) => {
+      pp.state.stars = 1;
+      pp.state.money = 100000;
+    });
+    // closed and opened again, to show the land now for sale
+    await game.menu('Money');
+    await game.menu('Money');
+    await expect(menu.locator('.ledger.land')).toHaveCount(3);
+    const before = await game.eval((pp) => pp.sim.world.plot.x1);
+    await menu
+      .locator('.ledger.land', { hasText: 'east' })
+      .getByRole('button', { name: /Buy for/ })
+      .click();
+    await expect(page.locator('#toasts')).toContainText('The land is yours');
+    expect(await game.eval((pp) => pp.sim.world.plot.x1)).toBeGreaterThan(before);
+    expect(await game.eval((pp) => pp.state.land)).toEqual(['east']);
+    // reloaded, the building is as big as it grew
+    await page.reload();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => pp.sim.world.plot.x1)).toBeGreaterThan(before);
+    expect(game.errors).toEqual([]);
+  });
+});
+
 test.describe('controls', () => {
   test('a key can be set to another in the settings, and the pause menu shows it', async ({ game, page }) => {
     await game.start();

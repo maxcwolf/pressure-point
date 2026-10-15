@@ -54,4 +54,21 @@ test.describe('the scene', () => {
     await game.settle();
     await expect(page).toHaveScreenshot('scene-decor.png');
   });
+
+  test('a building grown into the land on every side, with a room against its old wall', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      const { sim } = pp;
+      // against the old east wall, which comes down as the building grows past it
+      const room = sim.createRoom('staffroom', { x: 24, y: 6, w: 4, h: 4 }, { x: 24, y: 7, dx: -1, dy: 0 });
+      room.done = true;
+      pp.state.stars = 1;
+      pp.state.money = 100000;
+      for (const side of ['west', 'east', 'back'] as const) sim.buyLand(side);
+      pp.state.speed = 0;
+    });
+    await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-land.png');
+  });
 });

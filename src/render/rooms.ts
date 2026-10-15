@@ -12,7 +12,7 @@ import { mergeStill } from './models/merge';
 import { mat, put } from './models/parts';
 import { outerPanes } from './outer-walls';
 import { roomShape } from './room-walls';
-import { OUTER_PANE_H, OUTER_PANE_Y0 } from './shared';
+import { OUTER_PANE_H, OUTER_PANE_Y0, plotKey } from './shared';
 
 export class RoomsLayer {
   private rooms = new Map<number, { group: THREE.Group; key: string }>();
@@ -45,9 +45,11 @@ export class RoomsLayer {
   /** Rebuild any room that has changed, and remove the ones that are gone. */
   sync() {
     const liveRooms = new Set<number>();
+    // a room along the building's outer wall leaves that wall to it, until the building grows past
+    const plot = plotKey(this.sim.world.plot);
     for (const r of this.sim.s.rooms) {
       liveRooms.add(r.id);
-      const key = `${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done},${r.wall ?? ''},${r.windows.map((w) => `${w.x}.${w.y}.${w.dx}.${w.dy}`).join('|')}`;
+      const key = `${plot}|${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done},${r.wall ?? ''},${r.windows.map((w) => `${w.x}.${w.y}.${w.dx}.${w.dy}`).join('|')}`;
       const cur = this.rooms.get(r.id);
       if (cur?.key === key) continue;
       if (cur) this.dispose(cur.group);
@@ -67,7 +69,7 @@ export class RoomsLayer {
   private syncPanes() {
     const { plot } = this.sim.world;
     const panes = outerPanes(plot, this.sim.s.rooms);
-    const key = panes.map((p) => `${p.horizontal ? 'n' : 'w'}${p.a}`).join('|');
+    const key = `${plotKey(plot)}|${panes.map((p) => `${p.horizontal ? 'n' : 'w'}${p.a}`).join('|')}`;
     if (key === this.panesKey) return;
     this.panesKey = key;
     this.dispose(this.panes);

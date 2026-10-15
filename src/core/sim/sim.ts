@@ -11,12 +11,14 @@ import {
   type Duty,
   ITEMS,
   type ItemType,
+  type LandSide,
   type Modality,
   type ModalityDef,
   type Offering,
   type Priced,
   type RoomType,
 } from '../data';
+import type { LandOffer } from '../land';
 import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { offeringOn } from '../state/game';
 import type {
@@ -79,6 +81,7 @@ import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } fr
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
+import { buyLand, landForSale, landOffers } from './land';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
 import { askWard, canWard, prepareMishap, updateMishaps } from './mishaps';
 import { hasSupplier, setMushrooms } from './mushrooms';
@@ -458,7 +461,19 @@ export class Sim {
   /** Whether there is a Shaman to supply magic mushrooms for the Shop Counter. */
   mushroomSupplier(): boolean {
     return hasSupplier(this.ctx);
+  } /** The plots of land for sale next to the building. */
+  landOffers(): LandOffer[] {
+    return landOffers(this.ctx);
   }
+  /** Whether land is for sale yet. */
+  landForSale(): boolean {
+    return landForSale(this.s);
+  }
+  /** Buy the plot for sale on a side and grow the building into it. False if it cannot be bought. */
+  buyLand(side: LandSide): boolean {
+    return buyLand(this.ctx, side);
+  }
+
   /** Settle a failed inspection: pay the fine, or pay to make it go away. */
   settleInspection(payOff: boolean): boolean {
     return settleInspection(this.ctx, payOff);

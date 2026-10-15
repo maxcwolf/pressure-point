@@ -1,4 +1,4 @@
-// The Money menu: the books, prices (overall and per treatment), marketing, and the loan, a tab each.
+// The Money menu: the books, prices (overall and per treatment), marketing, the loan, and land, a tab each.
 
 import './MoneyMenu.css';
 
@@ -11,6 +11,7 @@ import type { MoneyTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
+import { LandTab } from './LandTab';
 import { MarketingTab } from './MarketingTab';
 import { TechniquePrices } from './TechniquePrices';
 
@@ -159,9 +160,10 @@ const TABS: readonly { id: MoneyTab; name: string }[] = [
   { id: 'prices', name: '🏷️ Prices' },
   { id: 'marketing', name: '📣 Marketing' },
   { id: 'loan', name: '🏦 Loan' },
+  { id: 'land', name: '🌳 Land' },
 ];
 
-/** A tab for the books, prices, marketing and the loan, and the one chosen. */
+/** A tab for the books, prices, marketing, the loan and land, and the one chosen. */
 export function MoneyMenu() {
   const hud = useHud();
   return (
@@ -184,6 +186,7 @@ export function MoneyMenu() {
       {hud.moneyTab === 'prices' && <Prices />}
       {hud.moneyTab === 'marketing' && <MarketingTab />}
       {hud.moneyTab === 'loan' && <Loan />}
+      {hud.moneyTab === 'land' && <LandTab />}
     </div>
   );
 }

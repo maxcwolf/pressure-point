@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **More land.** From the first star, the Money menu's new **Land** tab sells the plots next door: to the west, to the east and out the back, up to four tiles deep at a time. The plots for sale are outlined on the ground with For Sale signs, and the building grows into each one you buy, walls, windows and all. The front stays on the street.
+
 ## v0.24.0
 
 - **Magic mushrooms under the counter.** With a Shaman on the payroll, the Shop Counter's inspector has a switch to sell mushrooms on the quiet: some sales come with a bag from under the counter, worth much more. The Money menu counts them on their own line.

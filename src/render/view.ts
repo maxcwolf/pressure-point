@@ -8,6 +8,7 @@ import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
+import { LandSigns } from './land-signs';
 import { addLights, easeLights, lightLevel, type Lights, placeSun } from './lighting';
 import { LitterLayer } from './litter';
 import type { Marker, OverlayTile } from './overlay-codes';
@@ -18,6 +19,7 @@ import { RainLayer } from './rain';
 import { RoomsLayer } from './rooms';
 import { buildScenery } from './scenery';
 import { settingName, settingOf } from './setting';
+import { plotKey } from './shared';
 import { SnowfallLayer } from './snowfall';
 import { StorefrontLayer } from './storefront';
 import { VibesLayer } from './vibes';
@@ -29,6 +31,9 @@ export class View {
   private lights: Lights;
   /** The world as last drawn, so rooms and items are only rebuilt when something changes. */
   private worldVersion = -1;
+  /** The scenery around the building, and the plot it was built for, to build again when the building grows. */
+  private scenery: THREE.Group;
+  private sceneryPlot: string;
   private rig: CameraRig;
   private floor: Floor;
   private rooms: RoomsLayer;
@@ -41,6 +46,7 @@ export class View {
   private storefront: StorefrontLayer;
   private overlays: Overlays;
   private heat: Heatmap;
+  private landSigns: LandSigns;
   private picker: Picker;
   /**
    * Whether each frame is drawn. The browser tests that check behavior rather than pixels switch it off: everything
@@ -61,7 +67,9 @@ export class View {
     this.lights = addLights(this.scene);
 
     this.rig = new CameraRig(sim.world.plot);
-    buildScenery(this.scene, sim.world.plot, settingName(sim.s), settingOf(sim.s));
+    this.scenery = buildScenery(sim.world.plot, settingName(sim.s), settingOf(sim.s));
+    this.sceneryPlot = plotKey(sim.world.plot);
+    this.scene.add(this.scenery);
     this.floor = new Floor(this.scene, sim);
     this.rooms = new RoomsLayer(this.scene, sim);
     this.items = new ItemsLayer(this.scene, sim);
@@ -73,6 +81,7 @@ export class View {
     this.storefront = new StorefrontLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene);
+    this.landSigns = new LandSigns(this.scene);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
     /** Hand the people to the batches that draw them: the renderer calls this once everything is in place, just before it draws. */
     this.scene.onBeforeRender = () => this.people.gather();
@@ -96,11 +105,27 @@ export class View {
     this.rig.centerOn(x, y);
   }
 
+  /** Build the scenery again if the building has grown into more land since it was built. */
+  private growScenery() {
+    const plot = this.sim.world.plot;
+    const key = plotKey(plot);
+    if (key === this.sceneryPlot) return;
+    this.sceneryPlot = key;
+    this.scene.remove(this.scenery);
+    // the materials are shared, but each shape belongs to this scenery alone
+    this.scenery.traverse((o) => {
+      (o as Partial<THREE.Mesh>).geometry?.dispose();
+    });
+    this.scenery = buildScenery(plot, settingName(this.sim.s), settingOf(this.sim.s));
+    this.scene.add(this.scenery);
+  }
+
   /** Draw one frame, syncing the scene with the game first. */
   render(dt: number) {
     this.time += dt;
     if (this.worldVersion !== this.sim.world.version) {
       this.worldVersion = this.sim.world.version;
+      this.growScenery();
       this.floor.draw();
       this.rooms.sync();
       this.items.sync();
@@ -151,6 +176,11 @@ export class View {
   /** Color the floor for an information overlay, or clear it with null. */
   setHeat(tiles: readonly HeatTile[] | null, palette?: Palette) {
     this.heat.set(tiles, palette);
+  }
+
+  /** Stand For Sale signs on the land for sale, or take them down with null. */
+  setLandSigns(spots: readonly { x: number; z: number }[] | null) {
+    this.landSigns.set(spots);
   }
 
   /** Show colored tiles on the floor for the current tool. */

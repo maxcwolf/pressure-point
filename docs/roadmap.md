@@ -119,7 +119,7 @@ A fifth discipline, wanted on 15 October 2026, planned the same day and built in
 Max's order, from 15 October 2026, once the Shaman's third stage is done:
 
 1. **Game settings** [33]: key rebinding, edge scrolling and the autosave interval. Done: a Controls section in Settings, kept for every game on the computer. Keys are kept by where they sit on the keyboard, a key already in use swaps over, and Esc and the arrows are fixed. Edge scrolling is off to begin with. Autosave every 12 seconds, minute or 5 minutes, or only on leaving.
-2. **More land** [15]: buying the next plot over to grow the building.
+2. **More land** [15]: buying the next plot over to grow the building. Done: a Land tab in the Money menu from the first star, with plots up to four tiles deep to the west, the east and the back, at $250 a tile, outlined on the ground with For Sale signs. The building stays a rectangle and the map stays the same size, so each center grows to near the edge of its lot; the sandbox, already the biggest, has the least room left. The save version went up to 23, since an older version would not know the building had grown.
 3. **Difficulty presets:** Relaxed, Standard and Demanding.
 4. **Regulars** [44]: guests who come back, greeted by name, and grow loyal. The Shaman's vision quest waits on them.
 
@@ -135,7 +135,7 @@ Max's order, from 15 October 2026, once the Shaman's third stage is done:
 The two building tools put off from Phase 10.
 
 - **Camera rotation** [19]: turn in steps, with the walls facing the camera cut away.
-- **More land** [15]: buy an adjoining plot to grow the building. The largest piece of work left.
+- **More land** [15]: buy an adjoining plot to grow the building. Done (see Next, in order).
 
 ## Way down the line: a server
 
