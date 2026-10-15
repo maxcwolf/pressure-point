@@ -1101,6 +1101,63 @@ test.describe('staff careers', () => {
   });
 });
 
+test.describe('reading the center', () => {
+  test('the reputation figure opens what it is made of, and what guests are saying', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(300);
+    await game.eval((pp) => (pp.state.speed = 0));
+    // a star earned on the way is out of the way first
+    const keepHealing = page.getByRole('button', { name: 'Keep healing' });
+    if (await keepHealing.isVisible()) await keepHealing.click();
+    await page.locator('#stats .rep').click();
+    const menu = page.locator('#menu');
+    await expect(menu.getByRole('button', { name: /Reputation/ })).toHaveClass(/on/);
+    await expect(menu).toContainText('Word of mouth');
+    await expect(menu.locator('.reviews li').first()).toContainText('day');
+    await menu.getByRole('button', { name: /Casebook/ }).click();
+    await expect(menu.locator('.casebook tbody tr').first()).toBeVisible();
+    await menu.getByRole('button', { name: /Awards/ }).click();
+    await expect(menu).toContainText('Awards are handed out at the end of each year');
+  });
+
+  test("a guest's feelings show in their inspector", async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(60);
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      const g = pp.state.guests.find((x) => x.state !== 'leaving')!;
+      g.feelings = ['comfy', 'long-wait'];
+      pp.tools.select({ kind: 'guest', id: g.id });
+    });
+    const feelings = page.locator('#inspector .feelings');
+    await expect(feelings.locator('.good')).toContainText('A comfy seat');
+    await expect(feelings.locator('.bad')).toContainText('Waited far too long');
+  });
+
+  test('the floor can be colored by an overlay, with a key, and cleared again', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    await page
+      .locator('#sys')
+      .getByTitle(/Overlays/)
+      .click();
+    await page
+      .locator('#overlay-picker')
+      .getByRole('button', { name: /Surroundings/ })
+      .click();
+    await expect(page.locator('#overlay-picker')).toHaveCount(0);
+    await expect(page.locator('#overlay-key')).toContainText('Surroundings');
+    await expect.poll(() => game.eval((pp) => pp.ui.overlay)).toBe('decor');
+    await page
+      .locator('#overlay-key')
+      .getByTitle(/Stop coloring/)
+      .click();
+    await expect(page.locator('#overlay-key')).toHaveCount(0);
+  });
+});
+
 test.describe('goals along the way', () => {
   test('a member of staff sets a challenge, shown under the objectives until it is met', async ({ game, page }) => {
     await game.start();
@@ -1145,6 +1202,7 @@ test.describe('goals along the way', () => {
     await expect(dialog).toBeEmpty();
     expect(await game.eval((pp) => pp.state.speed)).toBe(1);
     await game.menu('Stats');
+    await page.locator('#menu').getByRole('button', { name: /Awards/ }).click();
     await page.locator('#menu').getByRole('button', { name: 'See the year 1 ceremony' }).click();
     await expect(dialog).toContainText('Year 1 awards');
   });

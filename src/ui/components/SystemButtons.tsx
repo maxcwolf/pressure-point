@@ -1,4 +1,4 @@
-// Top right: sound, music and the pause menu.
+// Top right: overlays, sound, music and the pause menu.
 
 import './SystemButtons.css';
 
@@ -6,12 +6,21 @@ import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { Button } from './common/Button';
 
-/** The sound, music and menu buttons. */
+/** The overlay, sound, music and menu buttons. */
 export function SystemButtons() {
   const hud = useHud();
   const { audio } = useGame();
   return (
     <div id="sys">
+      <Button
+        class={cx('round small', (hud.overlay !== null || hud.overlayPicker) && 'on')}
+        title="Overlays: color the floor by how things stand"
+        onPress={() => {
+          hud.overlayPicker = !hud.overlayPicker;
+        }}
+      >
+        🗺️
+      </Button>{' '}
       <Button
         class="round small"
         title="Sound effects"

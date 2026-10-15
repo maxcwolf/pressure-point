@@ -1,10 +1,11 @@
 // The monthly record: guests counted as they arrive and leave, and each month filed when its books close.
 
-import { MODALITIES } from '../data';
+import { DAY_SECONDS, MODALITIES, QUICK_DAYS } from '../data';
 import { conditionOf } from '../data';
 import { emptyTally } from '../state/game';
 import type { Guest, MonthRecord } from '../state/types';
 import type { SimContext } from './context';
+import { feel, writeReview } from './feelings';
 
 /** How many finished months are kept. */
 export const MONTHS_KEPT = 12;
@@ -18,11 +19,15 @@ export function countArrival(ctx: SimContext) {
   ctx.s.tally.arrived++;
 }
 
-/** Count how a guest's visit ended, how long they waited, and who healed them. */
+/** Count how a guest's visit ended, how long they waited, and who healed them; enter it in the casebook, and file their review. */
 export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
-  const { stats, tally } = ctx.s;
+  const { stats, tally, casebook } = ctx.s;
   stats[end]++;
   tally[end]++;
+  const record = (casebook[g.condition] ??= { healed: 0, failed: 0, stormed: 0, sent: 0, priced: 0 });
+  record[end]++;
+  if (end === 'healed' && g.waited < QUICK_DAYS * DAY_SECONDS) feel(g, 'quick');
+  writeReview(ctx, g, end);
   tally.waitTotal += g.waited;
   tally.waitCount++;
   if (end === 'healed') {

@@ -50,7 +50,7 @@ interface Handle {
     pointerDown(clientX: number, clientY: number): void;
     pointerMove(clientX: number, clientY: number): void;
   };
-  ui: { subscribe(listener: () => void): () => void; update(): void };
+  ui: { subscribe(listener: () => void): () => void; update(): void; overlay: string | null };
   data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };
   geo: {
     itemDims(type: string, rot: number): [number, number];

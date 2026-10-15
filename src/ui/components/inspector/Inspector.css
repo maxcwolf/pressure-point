@@ -164,3 +164,27 @@
   background: var(--cream);
   opacity: 1;
 }
+
+.insp .feelings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 5px;
+}
+
+.insp .feelings span {
+  font-size: 11.5px;
+  border-radius: 8px;
+  padding: 0 6px;
+  border: 1.5px solid;
+}
+
+.insp .feelings .good {
+  background: #e3f5e9;
+  border-color: #3fbf6f;
+}
+
+.insp .feelings .bad {
+  background: #fbe3e1;
+  border-color: #e5484d;
+}

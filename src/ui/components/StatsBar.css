@@ -118,3 +118,17 @@
   font-weight: 700;
   color: var(--red);
 }
+
+button.stat.rep {
+  background: none;
+  border: none;
+  border-right: 2px solid rgba(36, 56, 74, 0.15);
+  border-radius: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+button.stat.rep:hover {
+  background: #f6eedc;
+}

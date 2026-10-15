@@ -1,4 +1,5 @@
-// The Stats menu: a chart for each chosen figure, month by month, with a choice of which to show.
+// The Stats menu: charts of chosen figures month by month, the center's reputation and reviews, the casebook, and
+// the awards won.
 
 import './StatsMenu.css';
 
@@ -8,10 +9,13 @@ import { AWARDS } from '../../../core/data';
 import type { MonthRecord } from '../../../core/state/types';
 import { loadStatsView, saveStatsView } from '../../../storage/settings';
 import { useGame, useHud } from '../../hooks/use-hud';
+import type { StatsTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
 import { cx } from '../../lib/cx';
 import { formatMetric, type Metric, monthlyValues, offeredMetrics, shownMetrics, toggleMetric } from '../../lib/stats';
 import { Button } from '../common/Button';
+import { CasebookTab } from './CasebookTab';
+import { ReputationTab } from './ReputationTab';
 
 /** One figure: this month so far and last month, over a bar for each month kept. */
 function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRecord[] }) {
@@ -44,8 +48,43 @@ function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRe
   );
 }
 
-/** The chosen charts, and the list to choose them from. */
+/** The Stats menu's tabs, in order. */
+const TABS: readonly { id: StatsTab; name: string }[] = [
+  { id: 'charts', name: '📊 Charts' },
+  { id: 'reputation', name: '⭐ Reputation' },
+  { id: 'casebook', name: '📖 Casebook' },
+  { id: 'awards', name: '🏆 Awards' },
+];
+
+/** A tab for each part of the Stats menu, and the one chosen. */
 export function StatsMenu() {
+  const hud = useHud();
+  return (
+    <div class="panel menu stats-menu">
+      <h3>Stats</h3>
+      <div class="tabs">
+        {TABS.map((t) => (
+          <Button
+            key={t.id}
+            class={cx('tab', hud.statsTab === t.id && 'on')}
+            onPress={() => {
+              hud.statsTab = t.id;
+            }}
+          >
+            {t.name}
+          </Button>
+        ))}
+      </div>
+      {hud.statsTab === 'charts' && <Charts />}
+      {hud.statsTab === 'reputation' && <ReputationTab />}
+      {hud.statsTab === 'casebook' && <CasebookTab />}
+      {hud.statsTab === 'awards' && <Trophies />}
+    </div>
+  );
+}
+
+/** The chosen charts, and the list to choose them from. */
+function Charts() {
   const { sim } = useGame();
   const [chosen, setChosen] = useState(loadStatsView);
   const [choosing, setChoosing] = useState(false);
@@ -54,9 +93,9 @@ export function StatsMenu() {
   const months = [...sim.s.months, sim.monthSoFar()];
   const shown = shownMetrics(chosen, enabled);
   return (
-    <div class="panel menu stats-menu">
+    <>
       <div class="stats-head">
-        <h3>Stats</h3>
+        <p class="sub">Each chart runs from the oldest month kept, on the left, to this month so far.</p>
         <div class="btnrow">
           <Button
             class={cx('choose', choosing && 'go')}
@@ -93,9 +132,7 @@ export function StatsMenu() {
           <StatCard key={m.id} metric={m} months={months} />
         ))}
       </div>
-      <p class="sub">Each chart runs from the oldest month kept, on the left, to this month so far.</p>
-      <Trophies />
-    </div>
+    </>
   );
 }
 
@@ -106,7 +143,6 @@ function Trophies() {
   const { trophies, ceremony } = sim.s;
   return (
     <div class="trophies">
-      <h4>🏆 Awards</h4>
       {trophies.length ? (
         <ul>
           {trophies.map((t) => (

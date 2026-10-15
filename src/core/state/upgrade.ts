@@ -6,6 +6,7 @@ import {
   AWARDS,
   CHALLENGE_GAP_MIN,
   DISCIPLINES,
+  FEELINGS,
   type Modality,
   RANK_XP,
   type Role,
@@ -48,6 +49,8 @@ type OldSave = Before<
   | 'ceremony'
   | 'trophies'
   | 'nextApplicant'
+  | 'reviews'
+  | 'casebook'
 > & {
   stats: Before<Stats, 'priced' | 'sent' | 'healedBy' | 'emergencies' | 'lastQuit'>;
   tally?: Before<Tally, 'sent'>;
@@ -69,7 +72,7 @@ type OldSave = Before<
   candidates: Before<Candidate, 'quals'>[];
   items: Before<Item, 'wear' | 'dirt'>[];
   rooms: Before<Room, 'windows' | 'priority'>[];
-  guests: Before<Guest, 'emergency' | 'placed'>[];
+  guests: Before<Guest, 'emergency' | 'placed' | 'feelings'>[];
   ledger: OldLedger;
   lastLedger: OldLedger;
 };
@@ -104,6 +107,8 @@ export function upgradeSave(save: GameState) {
   for (const g of s.guests) {
     g.emergency ??= false;
     g.placed ??= false;
+    // a feeling from a newer version means nothing here
+    g.feelings = (g.feelings ?? []).filter((f) => Object.hasOwn(FEELINGS, f));
   }
   for (const l of [s.ledger, s.lastLedger]) {
     l.training ??= 0;
@@ -132,6 +137,8 @@ export function upgradeSave(save: GameState) {
   s.nextChallenge ??= Math.max(FIRST_CHALLENGE_DAY, s.day + CHALLENGE_GAP_MIN);
   s.challengesOn ??= true;
   s.nextApplicant ??= s.day + APPLICANT_DAYS;
+  s.reviews = (s.reviews ?? []).map((r) => ({ ...r, feelings: r.feelings.filter((f) => Object.hasOwn(FEELINGS, f)) }));
+  s.casebook ??= {};
   s.ceremony ??= null;
   // an award from a newer version means nothing here
   s.trophies = (s.trophies ?? []).filter((t) => Object.hasOwn(AWARDS, t.award));

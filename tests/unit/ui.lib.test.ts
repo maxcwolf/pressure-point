@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { type Discipline, ITEM_MENU, ITEMS, MODALITIES, ROOMS } from '../../src/core/data';
+import { cureShare, seen, starText } from '../../src/ui/lib/casebook';
 import {
   available,
   filterItems,
@@ -15,6 +16,7 @@ import { barHeights, CHART_HEIGHT } from '../../src/ui/lib/chart';
 import { cx } from '../../src/ui/lib/cx';
 import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
 import { offerTimeLeft, timeLeftLabel, wholeDaysLeft } from '../../src/ui/lib/emergency';
+import { pleasantness } from '../../src/ui/lib/overlays';
 import { placedFlags } from '../../src/ui/lib/plan';
 import { courseName, guestStatus, staffStatus } from '../../src/ui/lib/status';
 import { saveFacts, titleBadges } from '../../src/ui/lib/title';
@@ -233,5 +235,29 @@ describe('the time left on an emergency offer', () => {
     expect(wholeDaysLeft(days)).toBe(3);
     expect(wholeDaysLeft(2.5)).toBe(3);
     expect(wholeDaysLeft(-1)).toBe(0);
+  });
+});
+
+describe('the casebook', () => {
+  it('counts every way a visit ended, and the share of treatments that worked', () => {
+    const c = { healed: 6, failed: 2, stormed: 1, sent: 1, priced: 3 };
+    expect(seen(c)).toBe(13);
+    expect(cureShare(c)).toBe(75);
+    expect(cureShare({ ...c, healed: 0, failed: 0 })).toBeNull();
+  });
+
+  it('shows a review as filled and empty stars', () => {
+    expect(starText(3)).toBe('★★★☆☆');
+    expect(starText(5)).toBe('★★★★★');
+  });
+});
+
+describe('the overlays', () => {
+  it('rate a spot from how fast patience drains there', () => {
+    expect(pleasantness(1.12)).toBe(0.5);
+    expect(pleasantness(0.87)).toBeCloseTo(1);
+    expect(pleasantness(1.37)).toBeCloseTo(0);
+    expect(pleasantness(0.7)).toBe(1);
+    expect(pleasantness(1.4)).toBe(0);
   });
 });

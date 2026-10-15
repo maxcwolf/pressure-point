@@ -1,6 +1,6 @@
 // The inspector for a guest.
 
-import { conditionOf, MODALITIES } from '../../../core/data';
+import { conditionOf, FEELINGS, MODALITIES } from '../../../core/data';
 import { money } from '../../../core/format';
 import type { Guest } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
@@ -69,6 +69,16 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
         Bladder
         <Bar value={g.bladder} class="need" />
       </label>{' '}
+      {g.feelings.length > 0 && (
+        <>
+          <h4>How they feel</h4>
+          <div class="feelings">
+            {g.feelings.map((f) => (
+              <span key={f} class={FEELINGS[f].good ? 'good' : 'bad'}>{`${FEELINGS[f].icon} ${FEELINGS[f].text}`}</span>
+            ))}
+          </div>
+        </>
+      )}
       <p class="sub">{`Spent so far: ${money(g.spent)}`}</p>
       {g.state !== 'leaving' && (
         <Button

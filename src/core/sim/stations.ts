@@ -2,6 +2,7 @@
 
 import {
   ASSESS_FEE,
+  BARGAIN,
   BOTCH_FACTOR,
   conditionOf,
   CONSULT_FEE,
@@ -11,6 +12,7 @@ import {
   MODALITIES,
   modalityLabel,
   MOTIVATION_SPEED,
+  PRICEY,
   ROOMS,
   SERVICE_SPEED,
   STONE_USE,
@@ -28,6 +30,7 @@ import { accessIndex, findAccess, release } from './claims';
 import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce } from './events';
+import { feel } from './feelings';
 import { decide, leave } from './guests';
 import { goTo } from './movement';
 import { breakDue } from './policy';
@@ -182,6 +185,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   gainXp(ctx, staff, XP_PER_GUEST);
   // a grump sends guests on their way without much of a lift
   const grump = habitOf(staff, 'grump');
+  if (grump) feel(g, 'grump');
+  if (hasGeneral(staff, 'bedside')) feel(g, 'kind');
   g.patience = Math.min(100, g.patience + (grump ? 10 : 30));
   addWear(ctx, it);
   const nice = prestigeBonus(ctx, it);
@@ -204,6 +209,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       if (!g.emergency && random() < Math.max(0, (price - 1) * 0.35)) {
         g.outcome = 'stormed';
         g.goal = 'leave';
+        feel(g, 'pricey');
         countVisit(ctx, g, 'priced');
         changeRep(ctx, -1);
         say(g, '💸', 6);
@@ -230,6 +236,12 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const mod = MODALITIES[cond.modality];
     // the wrong hands or missing equipment: they try anyway, and it rarely works
     const { chance, problem } = successChance(ctx, it, staff, g);
+    if (problem === 'unqualified') feel(g, 'unqualified');
+    else if (problem) feel(g, 'no-kit');
+    const room = ctx.world.roomOfItem(it);
+    if (room && prestige(ctx, room) >= 4) feel(g, 'fine-room');
+    if (price >= PRICEY) feel(g, 'pricey');
+    else if (price <= BARGAIN) feel(g, 'bargain');
     if (!problem && mod.equipment === 'stone_warmer') {
       const zone = ctx.world.zoneAt(it.x, it.y);
       const warmer = ctx.s.items

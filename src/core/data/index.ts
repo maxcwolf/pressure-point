@@ -4,6 +4,7 @@ export * from './awards';
 export * from './careers';
 export * from './centers';
 export * from './conditions';
+export * from './feelings';
 export * from './items';
 export * from './karma';
 export * from './map';

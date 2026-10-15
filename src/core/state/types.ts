@@ -7,6 +7,7 @@ import type {
   ConditionId,
   Discipline,
   Duty,
+  FeelingId,
   GeneralId,
   GoalSpec,
   ItemType,
@@ -199,6 +200,8 @@ export interface Guest extends CharBase {
   emergency: boolean;
   /** Put in their line by the player, so they stay in it rather than look for a shorter one. */
   placed: boolean;
+  /** What they have felt about their visit so far, each once. */
+  feelings: FeelingId[];
 }
 
 export type Char = Staff | Guest;
@@ -337,6 +340,25 @@ export interface Ceremony {
   results: AwardResult[];
 }
 
+/** What a guest thought of their visit, written as they left. */
+export interface Review {
+  name: string;
+  /** One to five. */
+  stars: number;
+  text: string;
+  day: number;
+  feelings: FeelingId[];
+}
+
+/** How visits ended for guests with one condition. */
+export interface CaseRecord {
+  healed: number;
+  failed: number;
+  stormed: number;
+  sent: number;
+  priced: number;
+}
+
 /** An award won, for the trophy cabinet. */
 export interface Trophy {
   award: AwardId;
@@ -385,6 +407,10 @@ export interface GameState {
   options: Partial<Record<Discipline, boolean>>;
   /** Everything unlocked from the start, whatever the stars: a sandbox setting. */
   unlockAll: boolean;
+  /** The latest reviews, oldest first. */
+  reviews: Review[];
+  /** How visits ended, condition by condition. */
+  casebook: Partial<Record<ConditionId, CaseRecord>>;
   /** The game day the next job applicant turns up. */
   nextApplicant: number;
   /** The challenge a member of staff has set, if any, and the day the next may be set. */

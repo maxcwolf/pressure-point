@@ -1,0 +1,84 @@
+/* Styles for OverlayPicker. */
+
+#overlay-picker {
+  top: 66px;
+  right: 14px;
+  width: 270px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#overlay-picker h4 {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.overlay-choice {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+  background: #fff;
+  border: 2px solid rgba(36, 56, 74, 0.3);
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.overlay-choice.on {
+  border-color: var(--teal-dark);
+  background: #e6f6f3;
+}
+
+.overlay-choice i {
+  font-style: normal;
+  font-size: 18px;
+  text-align: center;
+}
+
+.overlay-choice small {
+  display: block;
+  font-weight: 400;
+  font-size: 11.5px;
+}
+
+#overlay-key {
+  top: 14px;
+  right: 232px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 40px 6px 12px;
+  font-size: 13px;
+}
+
+#overlay-key .scale {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#overlay-key .scale i {
+  width: 90px;
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #e5484d, #f5b83d, #3fbf6f);
+}
+
+#overlay-key .x {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+}
+
+@media (max-width: 720px) {
+  #overlay-key {
+    top: 64px;
+    right: 14px;
+  }
+}

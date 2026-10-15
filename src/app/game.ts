@@ -11,6 +11,7 @@ import { loadCampaign, recordGame } from '../storage/campaign';
 import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
+import { heatTiles } from '../ui/lib/overlays';
 import { reloadInto } from './handoff';
 import { bindKeyboard } from './keyboard';
 import { runLoop } from './loop';
@@ -114,7 +115,18 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
       refresh.request();
     },
   });
-  runLoop({ sim, view, ui, held, refresh, save: autosaveNow });
+  runLoop({
+    sim,
+    view,
+    ui,
+    held,
+    refresh,
+    save: autosaveNow,
+    /** Color the floor for the overlay showing, or clear it. */
+    overlay: () => {
+      view.setHeat(ui.overlay ? heatTiles(sim, ui.overlay) : null);
+    },
+  });
   window.addEventListener('beforeunload', save);
   window.addEventListener('pagehide', save);
   document.addEventListener('visibilitychange', saveIfHidden);

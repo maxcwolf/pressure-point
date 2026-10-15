@@ -6,6 +6,7 @@ import type { Sim } from '../core/sim/sim';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
+import { Heatmap, type HeatTile } from './heatmap';
 import { ItemsLayer } from './items';
 import { LitterLayer } from './litter';
 import type { Marker, OverlayTile } from './overlay-codes';
@@ -30,6 +31,7 @@ export class View {
   private people: PeopleLayer;
   private litter: LitterLayer;
   private overlays: Overlays;
+  private heat: Heatmap;
   private picker: Picker;
 
   constructor(
@@ -65,6 +67,7 @@ export class View {
     this.people = new PeopleLayer(this.scene, sim);
     this.litter = new LitterLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
+    this.heat = new Heatmap(this.scene);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
 
     this.resize();
@@ -129,6 +132,11 @@ export class View {
   }
 
   // ---- Build overlays --------------------------------------------------------
+
+  /** Color the floor for an information overlay, or clear it with null. */
+  setHeat(tiles: readonly HeatTile[] | null) {
+    this.heat.set(tiles);
+  }
 
   /** Show colored tiles on the floor for the current tool. */
   setOverlay(tiles: OverlayTile[]) {

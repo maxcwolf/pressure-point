@@ -357,6 +357,42 @@ export interface AwardDef {
   /** What winning it pays the center. */
   prize: number;
 }
+/** Something a guest feels about their visit. */
+export type FeelingId =
+  | 'healed'
+  | 'not-healed'
+  | 'sent-home'
+  | 'no-kit'
+  | 'unqualified'
+  | 'grump'
+  | 'kind'
+  | 'long-wait'
+  | 'quick'
+  | 'thirsty'
+  | 'hungry'
+  | 'bursting'
+  | 'filthy-toilet'
+  | 'litter'
+  | 'pleasant'
+  | 'comfy'
+  | 'refreshed'
+  | 'played'
+  | 'fine-room'
+  | 'pricey'
+  | 'bargain';
+/** A part of the center's reputation. */
+export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
+export interface FeelingDef {
+  id: FeelingId;
+  icon: string;
+  /** What it was, as their inspector lists it. */
+  text: string;
+  good: boolean;
+  /** The part of the center's reputation it speaks to. */
+  part: ReputationPart;
+  /** What they might write about it in a review. */
+  lines: readonly string[];
+}
 /** One objective toward a star. */
 export type GoalSpec =
   /** Heal this many guests in all, or with one discipline. */

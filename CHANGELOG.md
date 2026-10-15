@@ -2,6 +2,16 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Guest feelings:** guests notice what pleases and annoys them (a long wait, nothing to drink, a filthy toilet, litter, a lovely spot to wait, a comfy seat, an untrained practitioner, steep prices, a beautiful room) and their inspector lists it.
+- **Reviews and reputation in parts:** every guest leaves a star rating and a line about their visit. Click the reputation figure, or open Stats, to see the latest reviews and how the center does on results, experience, value, staff and word of mouth. The overall reputation works as before.
+- **A casebook:** a Stats tab showing every visit by condition, with how many were healed, not healed, stormed out, sent home or put off by the price, and the cure rate.
+- **Overlays:** the 🗺️ button at the top right colors the floor by how pleasant each spot is, guests' patience or needs, staff energy, or the upkeep of the furniture.
+- **The Stats menu has tabs:** Charts, Reputation, Casebook and Awards.
+- **Every announcement is now voiced,** with five new recordings, and three new familiar names among guests and applicants. Amanda Jablonsky now and then applies as a massage therapist.
+- **Fixed:** decor counted for nothing until a second of play had passed, so straight after loading a game, and all the while it was paused, the surroundings were treated as bare.
+
 ## v0.10.0
 
 - **Staff careers:** staff earn experience from the guests they see and the jobs they do, and rise through five ranks, from Trainee to Expert, in place of skill stars. When ready they wait on a card at the side for a promotion, which brings the raise they insist on; putting it off sours them. Each rank brings a qualification slot, and every slot must be filled by training before the next promotion.

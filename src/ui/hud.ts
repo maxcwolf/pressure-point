@@ -6,8 +6,12 @@ import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import { voiceFor } from '../voice';
 import type { GameHost } from './host';
 import type { ItemKind, Place } from './lib/catalog';
+import type { OverlayMode } from './lib/overlays';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'policy' | 'stats';
+/** The tabs of the Stats menu. */
+export type StatsTab = 'charts' | 'reputation' | 'casebook' | 'awards';
+
 export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards';
 
 /** A message that fades after a few seconds. */
@@ -38,6 +42,11 @@ export class HudState {
   menu: MenuId | null = null;
   /** The tab showing in the Hire menu. */
   hireRole: Role = 'receptionist';
+  /** The tab showing in the Stats menu. */
+  statsTab: StatsTab = 'charts';
+  /** What the floor is colored by, if anything, and whether the list to choose from is open. */
+  overlay: OverlayMode | null = null;
+  overlayPicker = false;
   /** What the Items menu is filtered to: a place and a kind of item. */
   itemPlace: Place = 'all';
   itemKind: ItemKind | 'all' = 'all';
@@ -94,10 +103,11 @@ export class HudState {
     this.menu = this.menu === id ? null : id;
   }
 
-  /** Close the open build menu. False if none was open. */
+  /** Close the open build menu, or the list of overlays. False if neither was open. */
   closeMenu(): boolean {
-    if (!this.menu) return false;
+    if (!this.menu && !this.overlayPicker) return false;
     this.menu = null;
+    this.overlayPicker = false;
     this.update();
     return true;
   }

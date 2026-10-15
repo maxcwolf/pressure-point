@@ -4,7 +4,7 @@ import './StatsBar.css';
 
 import { dateOf, money } from '../../core/format';
 import { netOf } from '../../core/sim/economy';
-import { useGame } from '../hooks/use-hud';
+import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
@@ -22,6 +22,7 @@ const SPEEDS: readonly { speed: number; label: string; title: string }[] = [
 /** The center's vital signs and the speed controls. */
 export function StatsBar() {
   const { sim } = useGame();
+  const hud = useHud();
   const s = sim.s;
   const date = dateOf(s.day);
   const season = sim.season();
@@ -33,11 +34,18 @@ export function StatsBar() {
         <b>{money(s.money)}</b>
         <small class={net < 0 ? 'neg' : 'pos'}>{`${net >= 0 ? '+' : ''}${money(net)} this month`}</small>
       </div>{' '}
-      <div class="stat" title="Reputation">
+      <Button
+        class="stat rep"
+        title="Reputation: click to see what it is made of, and what guests are saying"
+        onPress={() => {
+          hud.statsTab = 'reputation';
+          hud.menu = 'stats';
+        }}
+      >
         <i>⭐</i>
         <b>{`${s.reputation.toFixed(0)}%`}</b>
         <Bar value={s.reputation} class="thin gold" />
-      </div>{' '}
+      </Button>{' '}
       <div class="stat" title="Guests on site">
         <i>🧍</i>
         <b>{s.guests.length}</b>

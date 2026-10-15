@@ -2,6 +2,18 @@
 // pictures, and `yarn test:visual:update` to replace them after a change that is meant to be seen.
 import { test } from './fixtures';
 
+/** The emergency on offer in the pictures, lapsing eight days after the day given. */
+const OFFER = (day: number) => ({
+  condition: 'knotted' as const,
+  cause: 'A yoga retreat has gone badly wrong.',
+  total: 6,
+  target: 4,
+  healed: 0,
+  pending: 0,
+  reward: 3200,
+  deadline: day + 8,
+});
+
 test.describe('title screen', () => {
   test('with a game to continue', async ({ screens }) => {
     await screens.title();
@@ -172,25 +184,24 @@ test.describe('in a game', () => {
     await screens.shot('confirm-new-game');
   });
 
-  test('messages and an emergency on offer', async ({ screens, game, page }) => {
+  test('messages and an emergency on offer', async ({ screens, game }) => {
     await screens.play();
-    await game.eval((pp) => {
+    await game.eval((pp, offer) => {
       pp.sim.emit({ type: 'toast', text: 'A good thing happened.', kind: 'good' });
       pp.sim.emit({ type: 'toast', text: 'A bad thing happened.', kind: 'bad' });
       pp.sim.emit({ type: 'toast', text: 'Something happened.', kind: 'info' });
       pp.sim.emit({ type: 'announce', text: 'Testing the speakers. One, two.' });
-      pp.state.offer = {
-        condition: 'knotted',
-        cause: 'A yoga retreat has gone badly wrong.',
-        total: 6,
-        target: 4,
-        healed: 0,
-        pending: 0,
-        reward: 3200,
-        deadline: pp.state.day + 8,
-      };
-    });
+      pp.state.offer = { ...offer, deadline: pp.state.day + 8 };
+    }, OFFER(0));
     await screens.shot('messages');
+  });
+
+  // apart from the messages above, which fade after a few seconds whether or not the picture has been taken
+  test('an emergency offer put aside', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.eval((pp, offer) => {
+      pp.state.offer = { ...offer, deadline: pp.state.day + 8 };
+    }, OFFER(0));
     await page.locator('#offer').getByTitle('Decide later').click();
     await screens.shot('offer-aside');
   });
@@ -209,6 +220,54 @@ test.describe('in a game', () => {
     await screens.play();
     await game.eval((pp) => pp.sim.emit({ type: 'star', stars: 1 }));
     await screens.shot('star');
+  });
+
+  test('the Stats menu tabs', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      const lines: [number, string, string[]][] = [
+        [5, 'Walked in knotted, walked out new.', ['healed', 'pleasant', 'quick']],
+        [2, 'I aged a year in that waiting area.', ['healed', 'long-wait', 'thirsty']],
+        [4, 'Comfy seats.', ['healed', 'comfy']],
+        [1, 'Not sure my practitioner had done this before.', ['not-healed', 'unqualified', 'long-wait']],
+      ];
+      pp.state.reviews = lines.map(([stars, text, feelings], i) => ({
+        name: `Guest ${i + 1}`,
+        stars,
+        text,
+        day: 20 + i,
+        feelings: feelings as never,
+      }));
+      pp.state.casebook = {
+        slump: { healed: 9, failed: 2, stormed: 1, sent: 0, priced: 1 },
+        knotted: { healed: 1, failed: 3, stormed: 0, sent: 1, priced: 0 },
+      };
+    });
+    await game.menu('Stats');
+    await page
+      .locator('#menu')
+      .getByRole('button', { name: /Reputation/ })
+      .click();
+    await screens.shot('stats-reputation');
+    await page
+      .locator('#menu')
+      .getByRole('button', { name: /Casebook/ })
+      .click();
+    await screens.shot('stats-casebook');
+  });
+
+  test('the floor colored by an overlay', async ({ screens, page }) => {
+    await screens.play();
+    await page
+      .locator('#sys')
+      .getByTitle(/Overlays/)
+      .click();
+    await screens.shot('overlay-picker');
+    await page
+      .locator('#overlay-picker')
+      .getByRole('button', { name: /Surroundings/ })
+      .click();
+    await screens.shot('overlay-decor');
   });
 
   test('a staff challenge', async ({ screens, game }) => {

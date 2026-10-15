@@ -12,9 +12,11 @@ import {
   DISCIPLINES,
   FILTHY_PATIENCE,
   ITEMS,
+  LONG_WAIT_PATIENCE,
   MODALITIES,
   PLAY_PATIENCE,
   PLAY_RANGE,
+  PLEASANT_DRAIN,
   ROOMS,
   SEAT_DRAIN,
 } from '../data';
@@ -31,6 +33,7 @@ import { accessIndex, claim, findAccess, release } from './claims';
 import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce } from './events';
+import { feel } from './feelings';
 import { goTo, halt, moveAlong } from './movement';
 import { countArrival, countVisit } from './records';
 import { pickStation, removeFromStations, stationScore } from './stations';
@@ -87,6 +90,7 @@ export function spawnGuest(ctx: SimContext, condition?: ConditionId, emergency =
     waited: 0,
     emergency,
     placed: false,
+    feelings: [],
   };
   const [lx, ly] = lobbyTile(ctx.world.plot);
   if (!goTo(ctx, g, lx, ly)) return null;
@@ -260,8 +264,16 @@ function tryNeed(ctx: SimContext, g: Guest): boolean {
   return true;
 }
 
+/** What a waiting guest makes of where they are waiting: pleasant or grim, with a seat or without. */
+function noticeSurroundings(ctx: SimContext, g: Guest) {
+  if (drainFactor(ctx, g.tx, g.ty) <= PLEASANT_DRAIN) feel(g, 'pleasant');
+  if (g.pose === 'sit') feel(g, 'comfy');
+  if (ctx.s.litter.some((l) => Math.abs(l.x - g.tx) <= 2 && Math.abs(l.y - g.ty) <= 2)) feel(g, 'litter');
+}
+
 /** What a waiting guest reconsiders now and then: a better line, their needs, where to stand. */
 function waitingThink(ctx: SimContext, g: Guest) {
+  noticeSurroundings(ctx, g);
   const st = ctx.world.item(g.station);
   if (!st || !ctx.world.usable(st)) {
     removeFromStations(ctx, g);
@@ -332,6 +344,10 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     if (g.pose === 'sit') drain *= seatDrain(ctx, g);
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
     g.patience -= drain * dt;
+    if (g.patience < LONG_WAIT_PATIENCE) feel(g, 'long-wait');
+    if (g.thirst >= 100) feel(g, 'thirsty');
+    if (g.hunger >= 100) feel(g, 'hungry');
+    if (g.bladder >= 100) feel(g, 'bursting');
     g.waited += dt;
     if (g.patience <= 0) {
       stormOut(ctx, g);
@@ -383,7 +399,12 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
           const price = ITEMS[used.type].sale ?? 0;
           if (price > 0) earn(ctx, price, 'vending', g.x, g.y);
           addWear(ctx, used);
-          if (g.needKind === 'toilet' && used.dirt >= DIRT_FILTHY) say(g, '🤢');
+          if (g.needKind === 'toilet' && used.dirt >= DIRT_FILTHY) {
+            say(g, '🤢');
+            feel(g, 'filthy-toilet');
+          }
+          if (g.needKind === 'drink' || g.needKind === 'eat') feel(g, 'refreshed');
+          if (g.needKind === 'play') feel(g, 'played');
           g.patience = Math.max(0, Math.min(100, g.patience + needRelief(g.needKind, used.dirt)));
           used.dirt = dirtier(used.type, used.dirt);
         }

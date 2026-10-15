@@ -7,6 +7,8 @@ import type { Refresh } from './refresh';
 
 /** Seconds of play between autosaves. */
 const AUTOSAVE_EVERY = 12;
+/** Seconds between redraws of the floor overlay. */
+const OVERLAY_EVERY = 0.4;
 
 /** What the loop drives. */
 export interface LoopParts {
@@ -17,12 +19,15 @@ export interface LoopParts {
   held: ReadonlySet<string>;
   refresh: Refresh;
   save: () => void;
+  /** Redraw the floor overlay, if one is showing. */
+  overlay: () => void;
 }
 
 /** Run the game until the page goes away: move the camera, advance the game, draw it, refresh the interface. */
-export function runLoop({ sim, view, ui, held, refresh, save }: LoopParts) {
+export function runLoop({ sim, view, ui, held, refresh, save, overlay }: LoopParts) {
   let prev = performance.now();
   let sinceSave = 0;
+  let sinceOverlay = 0;
   /** One frame: advance the game, draw it and refresh the interface. */
   const frame = (now: number) => {
     const dt = Math.min(0.1, (now - prev) / 1000);
@@ -44,6 +49,11 @@ export function runLoop({ sim, view, ui, held, refresh, save }: LoopParts) {
       refresh.request();
     }
     if (refresh.due(dt)) ui.update();
+    sinceOverlay += dt;
+    if (sinceOverlay > OVERLAY_EVERY) {
+      sinceOverlay = 0;
+      overlay();
+    }
     sinceSave += dt;
     if (sinceSave > AUTOSAVE_EVERY) {
       sinceSave = 0;

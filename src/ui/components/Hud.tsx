@@ -16,6 +16,7 @@ import { Floaters } from './Floaters';
 import { Inspector } from './inspector/Inspector';
 import { Menu } from './menus/Menu';
 import { Objectives } from './Objectives';
+import { OverlayPicker } from './OverlayPicker';
 import { PlanPanel } from './PlanPanel';
 import { StatsBar } from './StatsBar';
 import { SystemButtons } from './SystemButtons';
@@ -37,6 +38,7 @@ export function Hud({ hud }: { hud: HudState }) {
       <Announcement />
       <EmergencyOffer />
       <SystemButtons />
+      <OverlayPicker />
       <Toasts />
       <Inspector />
       <ToolHint />
