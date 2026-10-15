@@ -2045,6 +2045,8 @@ test.describe('sound healing', () => {
     await expect(game.card('Sound Bath Studio')).toContainText('Unlocks at star 1');
 
     await game.eval((pp) => (pp.state.stars = 1));
+    // the menu stays open, so the card only unlocks once it redraws
+    await expect(game.card('Sound Bath Studio')).not.toContainText('Unlocks at star');
     await game.card('Sound Bath Studio').click();
     await game.dragOutRoom(4, 4);
     await game.clickWall('south');
@@ -2080,6 +2082,8 @@ test.describe('the shaman', () => {
     await expect(game.card('Ceremony Lodge')).toContainText('Unlocks at star 2');
 
     await game.eval((pp) => (pp.state.stars = 2));
+    // the menu stays open, so the card only unlocks once it redraws
+    await expect(game.card('Ceremony Lodge')).not.toContainText('Unlocks at star');
     await game.card('Ceremony Lodge').click();
     await game.dragOutRoom(4, 4);
     await game.clickWall('south');
@@ -2164,6 +2168,8 @@ test.describe('the qi gong studio', () => {
     await expect(game.card('Qi Gong Studio')).toContainText('Unlocks at star 2');
 
     await game.eval((pp) => (pp.state.stars = 2));
+    // the menu stays open, so the card only unlocks once it redraws: clicked before then, it is still locked
+    await expect(game.card('Qi Gong Studio')).not.toContainText('Unlocks at star');
     await game.card('Qi Gong Studio').click();
     await game.dragOutRoom(4, 4);
     await game.clickWall('south');
