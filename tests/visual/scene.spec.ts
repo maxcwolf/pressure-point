@@ -33,6 +33,21 @@ test.describe('the scene', () => {
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
     await game.settle();
     await expect(page).toHaveScreenshot('scene-windows.png');
+    // and from each of the other sides, with the walls facing the camera cut low and the ones across from it tall
+    for (const side of ['north-east', 'north-west', 'south-west']) {
+      await game.eval((pp) => pp.view.turnCamera(1));
+      // long enough for the camera to glide all the way round
+      await page.evaluate(
+        () =>
+          new Promise<void>((done) => {
+            let frames = 0;
+            /** Count a frame, and finish after enough. */
+            const tick = () => (++frames > 90 ? done() : requestAnimationFrame(tick));
+            tick();
+          }),
+      );
+      await expect(page).toHaveScreenshot(`scene-windows-${side}.png`);
+    }
   });
 
   test('rooms decorated with every floor and wall', async ({ game, page }) => {

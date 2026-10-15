@@ -7,6 +7,8 @@ export const ACTION_NAMES: Readonly<Record<KeyAction, string>> = {
   left: 'Move the camera left',
   down: 'Move the camera down',
   right: 'Move the camera right',
+  turnLeft: 'Turn the camera left',
+  turnRight: 'Turn the camera right',
   rotate: 'Rotate furniture',
   build: 'Build the room planned',
   pause: 'Pause',

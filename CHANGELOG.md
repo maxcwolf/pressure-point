@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Turn the camera.** Q and E, or the 🔄 button at the top right, turn the view round the building a quarter at a time, so you can see and build behind any wall. The walls facing the camera are cut low, and the ones across from it stand tall with their windows, whichever way you look. Q and E can be set to other keys in Settings.
+
 ## v0.25.0
 
 - **More land.** From the first star, the Money menu's new **Land** tab sells the plots next door: to the west, to the east and out the back, up to four tiles deep at a time. The plots for sale are outlined on the ground with For Sale signs, and the building grows into each one you buy, walls, windows and all. The front stays on the street.

@@ -2515,3 +2515,34 @@ test.describe('regulars', () => {
     expect(game.errors).toEqual([]);
   });
 });
+
+test.describe('turning the camera', () => {
+  test('turns a quarter at a time by key or button, and what is clicked is still what is under the cursor', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    expect(await game.eval((pp) => pp.view.turn)).toBe(0);
+    await page.keyboard.press('KeyE');
+    expect(await game.eval((pp) => pp.view.turn)).toBe(1);
+    await page.keyboard.press('KeyQ');
+    await page.keyboard.press('KeyQ');
+    expect(await game.eval((pp) => pp.view.turn)).toBe(3);
+    await page
+      .locator('#sys')
+      .getByTitle(/Turn the camera/)
+      .click();
+    await page
+      .locator('#sys')
+      .getByTitle(/Turn the camera/)
+      .click();
+    expect(await game.eval((pp) => pp.view.turn)).toBe(1);
+    // long enough for the camera to glide round
+    await game.settle();
+    await page.waitForTimeout(500);
+    await game.clickRoom('massage');
+    await expect(page.locator('#inspector')).toContainText('Massage Suite');
+    expect(game.errors).toEqual([]);
+  });
+});

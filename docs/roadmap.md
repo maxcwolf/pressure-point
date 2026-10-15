@@ -134,7 +134,7 @@ Max's order, from 15 October 2026, once the Shaman's third stage is done:
 
 The two building tools put off from Phase 10.
 
-- **Camera rotation** [19]: turn in steps, with the walls facing the camera cut away.
+- **Camera rotation** [19]: turn in steps, with the walls facing the camera cut away. Done: Q and E, or the 🔄 button, turn a quarter at a time. Which walls stand tall is worked out from the turn, for the rooms, the building's shell and its windows, and looking from the south-east the building is drawn exactly as before.
 - **More land** [15]: buy an adjoining plot to grow the building. Done (see Next, in order).
 
 ## Way down the line: a server

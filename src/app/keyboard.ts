@@ -10,6 +10,8 @@ export interface KeyboardTargets {
   state: GameState;
   tools: Tools;
   ui: HudState;
+  /** Turn the camera round a quarter at a time: 1 to the right, -1 to the left. */
+  turnCamera: (quarters: number) => void;
   /** Called after a key that may have changed what the interface shows. */
   onChange: () => void;
 }
@@ -51,7 +53,7 @@ export function typingIn(target: unknown): boolean {
 }
 
 /** Listen for the keyboard and return the set of keys currently held down. */
-export function bindKeyboard({ state, tools, ui, onChange }: KeyboardTargets): ReadonlySet<string> {
+export function bindKeyboard({ state, tools, ui, turnCamera, onChange }: KeyboardTargets): ReadonlySet<string> {
   const held = new Set<string>();
   window.addEventListener('keydown', (e) => {
     // Esc still backs out of a field, but every other key is typing
@@ -79,6 +81,8 @@ export function bindKeyboard({ state, tools, ui, onChange }: KeyboardTargets): R
     const action = actionFor(loadControls().keys, e.code);
     if (action === 'build') tools.planBuild();
     else if (action === 'rotate') tools.rotate();
+    else if (action === 'turnLeft') turnCamera(-1);
+    else if (action === 'turnRight') turnCamera(1);
     else if (action === 'pause') state.speed = state.speed === 0 ? 1 : 0;
     else if (action === 'speed1') state.speed = 1;
     else if (action === 'speed2') state.speed = 2;

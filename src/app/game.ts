@@ -112,6 +112,10 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     state,
     tools,
     ui,
+    /** Turn the camera round the building. */
+    turnCamera: (quarters) => {
+      view.turnCamera(quarters);
+    },
     /** Redraw the interface after a shortcut. */
     onChange: () => {
       refresh.request();

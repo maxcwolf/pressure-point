@@ -17,11 +17,12 @@ import { PeopleLayer } from './people';
 import { Picker, type Selection } from './picking';
 import { RainLayer } from './rain';
 import { RoomsLayer } from './rooms';
-import { buildScenery } from './scenery';
+import { buildScenery, buildShell } from './scenery';
 import { settingName, settingOf } from './setting';
 import { plotKey } from './shared';
 import { SnowfallLayer } from './snowfall';
 import { StorefrontLayer } from './storefront';
+import { nearSides, type Turn } from './turn';
 import { VibesLayer } from './vibes';
 
 export class View {
@@ -34,6 +35,9 @@ export class View {
   /** The scenery around the building, and the plot it was built for, to build again when the building grows. */
   private scenery: THREE.Group;
   private sceneryPlot: string;
+  /** The building's outer walls, and the plot and turn they were built for, to build again when either changes. */
+  private shell: THREE.Group;
+  private shellKey: string;
   private rig: CameraRig;
   private floor: Floor;
   private rooms: RoomsLayer;
@@ -70,6 +74,9 @@ export class View {
     this.scenery = buildScenery(sim.world.plot, settingName(sim.s), settingOf(sim.s));
     this.sceneryPlot = plotKey(sim.world.plot);
     this.scene.add(this.scenery);
+    this.shell = buildShell(sim.world.plot, nearSides(this.rig.turn));
+    this.shellKey = `${this.sceneryPlot}|${this.rig.turn}`;
+    this.scene.add(this.shell);
     this.floor = new Floor(this.scene, sim);
     this.rooms = new RoomsLayer(this.scene, sim);
     this.items = new ItemsLayer(this.scene, sim);
@@ -105,6 +112,33 @@ export class View {
     this.rig.centerOn(x, y);
   }
 
+  /** Turn the camera round the building a quarter at a time, 1 one way and -1 the other, cutting low the walls that then
+   * face it. */
+  turnCamera(quarters: number) {
+    this.rig.turnBy(quarters);
+    this.rooms.setTurn(this.rig.turn);
+    this.buildShell();
+  }
+
+  /** How far round the camera has been turned, in quarters. */
+  get turn(): Turn {
+    return this.rig.turn;
+  }
+
+  /** Build the building's outer walls again if the building has grown, or the camera turned, since they were built. */
+  private buildShell() {
+    const plot = this.sim.world.plot;
+    const key = `${plotKey(plot)}|${this.rig.turn}`;
+    if (key === this.shellKey) return;
+    this.shellKey = key;
+    this.scene.remove(this.shell);
+    this.shell.traverse((o) => {
+      (o as Partial<THREE.Mesh>).geometry?.dispose();
+    });
+    this.shell = buildShell(plot, nearSides(this.rig.turn));
+    this.scene.add(this.shell);
+  }
+
   /** Build the scenery again if the building has grown into more land since it was built. */
   private growScenery() {
     const plot = this.sim.world.plot;
@@ -126,6 +160,7 @@ export class View {
     if (this.worldVersion !== this.sim.world.version) {
       this.worldVersion = this.sim.world.version;
       this.growScenery();
+      this.buildShell();
       this.floor.draw();
       this.rooms.sync();
       this.items.sync();

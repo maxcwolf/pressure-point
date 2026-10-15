@@ -1,4 +1,5 @@
-// Rooms: their walls, painted or papered as chosen, windows, doors and signs, and the windows in the building's back walls that make way for them.
+// Rooms: their walls, painted or papered as chosen, windows, doors and signs, and the windows in the building's tall
+// outer walls that make way for them. Which walls stand tall depends on which way the camera has been turned.
 
 import * as THREE from 'three';
 
@@ -13,12 +14,15 @@ import { mat, put } from './models/parts';
 import { outerPanes } from './outer-walls';
 import { roomShape } from './room-walls';
 import { OUTER_PANE_H, OUTER_PANE_Y0, plotKey } from './shared';
+import { nearSides, type Turn } from './turn';
 
 export class RoomsLayer {
   private rooms = new Map<number, { group: THREE.Group; key: string }>();
   /** The building's own windows, and the rooms they were last laid out around. */
   private panes = new THREE.Group();
   private panesKey = '';
+  /** Which way the camera has been turned, so the walls facing it are cut low. */
+  private turn: Turn = 0;
   private paneGlass = mat(0xbfe6f5, 0.2, 0.25);
   private glass = new THREE.MeshStandardMaterial({
     color: 0xbfe6f5,
@@ -42,11 +46,19 @@ export class RoomsLayer {
     scene.add(this.panes);
   }
 
+  /** Cut the walls facing the camera low for a turn, rebuilding the rooms if it has changed. */
+  setTurn(turn: Turn) {
+    if (turn === this.turn) return;
+    this.turn = turn;
+    this.sync();
+  }
+
   /** Rebuild any room that has changed, and remove the ones that are gone. */
   sync() {
     const liveRooms = new Set<number>();
-    // a room along the building's outer wall leaves that wall to it, until the building grows past
-    const plot = plotKey(this.sim.world.plot);
+    // a room along the building's outer wall leaves that wall to it, until the building grows past, and every wall
+    // changes height as the camera turns
+    const plot = `${plotKey(this.sim.world.plot)}|${this.turn}`;
     for (const r of this.sim.s.rooms) {
       liveRooms.add(r.id);
       const key = `${plot}|${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done},${r.wall ?? ''},${r.windows.map((w) => `${w.x}.${w.y}.${w.dx}.${w.dy}`).join('|')}`;
@@ -65,11 +77,11 @@ export class RoomsLayer {
     this.syncPanes();
   }
 
-  /** Lay out the building's back-wall windows again if the rooms they make way for have changed. */
+  /** Lay out the building's own windows again if the rooms they make way for, or the walls standing tall, have changed. */
   private syncPanes() {
     const { plot } = this.sim.world;
-    const panes = outerPanes(plot, this.sim.s.rooms);
-    const key = `${plotKey(plot)}|${panes.map((p) => `${p.horizontal ? 'n' : 'w'}${p.a}`).join('|')}`;
+    const panes = outerPanes(plot, this.sim.s.rooms, nearSides(this.turn));
+    const key = `${plotKey(plot)}|${panes.map((p) => `${p.side}${p.a}`).join('|')}`;
     if (key === this.panesKey) return;
     this.panesKey = key;
     this.dispose(this.panes);
@@ -78,10 +90,15 @@ export class RoomsLayer {
       const len = p.b - p.a;
       const mid = (p.a + p.b) / 2;
       const y = OUTER_PANE_Y0 + OUTER_PANE_H / 2;
-      if (p.horizontal)
+      // on the inside face of the wall
+      if (p.side === 'north')
         put(this.panes, owned(new THREE.BoxGeometry(len, OUTER_PANE_H, 0.04)), this.paneGlass, mid, y, plot.y0 + 0.02);
-      else
+      else if (p.side === 'south')
+        put(this.panes, owned(new THREE.BoxGeometry(len, OUTER_PANE_H, 0.04)), this.paneGlass, mid, y, plot.y1 + 0.98);
+      else if (p.side === 'west')
         put(this.panes, owned(new THREE.BoxGeometry(0.04, OUTER_PANE_H, len)), this.paneGlass, plot.x0 + 0.02, y, mid);
+      else
+        put(this.panes, owned(new THREE.BoxGeometry(0.04, OUTER_PANE_H, len)), this.paneGlass, plot.x1 + 0.98, y, mid);
     }
     mergeStill(this.panes);
     this.scene.add(this.panes);
@@ -98,7 +115,7 @@ export class RoomsLayer {
       trim: plain ? this.blueprintMat : mat(def.trim, 0.6),
       glass: plain ? this.blueprintMat : this.glass,
     };
-    const { boxes, doorway } = roomShape(room, this.sim.world.plot);
+    const { boxes, doorway } = roomShape(room, this.sim.world.plot, nearSides(this.turn));
     for (const b of boxes) {
       const len = b.b - b.a;
       const geo = owned(

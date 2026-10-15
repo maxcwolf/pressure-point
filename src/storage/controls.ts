@@ -5,7 +5,18 @@ import { isRecord } from './json';
 
 /** What a key can be set to do. Esc is not among them: it always cancels, and opens the pause menu. */
 export type KeyAction =
-  'up' | 'down' | 'left' | 'right' | 'rotate' | 'build' | 'pause' | 'speed1' | 'speed2' | 'speed3';
+  | 'up'
+  | 'down'
+  | 'left'
+  | 'right'
+  | 'turnLeft'
+  | 'turnRight'
+  | 'rotate'
+  | 'build'
+  | 'pause'
+  | 'speed1'
+  | 'speed2'
+  | 'speed3';
 
 /** Every action a key can be set to, in the order the settings list them. */
 export const KEY_ACTIONS: readonly KeyAction[] = [
@@ -13,6 +24,8 @@ export const KEY_ACTIONS: readonly KeyAction[] = [
   'left',
   'down',
   'right',
+  'turnLeft',
+  'turnRight',
   'rotate',
   'build',
   'pause',
@@ -29,6 +42,8 @@ export const DEFAULT_KEYS: Readonly<KeyBindings> = {
   left: 'KeyA',
   down: 'KeyS',
   right: 'KeyD',
+  turnLeft: 'KeyQ',
+  turnRight: 'KeyE',
   rotate: 'KeyR',
   build: 'Enter',
   pause: 'Space',

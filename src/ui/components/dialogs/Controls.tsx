@@ -21,7 +21,7 @@ export function Controls() {
         camera
       </li>{' '}
       <li>
-        <kbd>Scroll</kbd> zoom
+        <kbd>Scroll</kbd> zoom · {k(keys.turnLeft)} {k(keys.turnRight)} turn the camera
       </li>{' '}
       <li>
         {k(keys.rotate)} rotate furniture · <kbd>Esc</kbd> / right click cancel · <kbd>Esc</kbd> again for this menu

@@ -4,6 +4,7 @@
 import type { Plot } from '../core/data';
 import type { Room } from '../core/state/types';
 import { H_LOW, H_TALL, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, WALL_T } from './shared';
+import { nearSides, type Sides } from './turn';
 
 /** What a box is made of: plain wall, the room's colored trim, or window glass. */
 export type WallMaterial = 'wall' | 'trim' | 'glass';
@@ -30,7 +31,7 @@ export interface Doorway {
   fixed: number;
   /** The tile along the wall the door is in. */
   at: number;
-  /** Whether this is one of the tall walls at the back, which get a door leaf. */
+  /** Whether this is one of the tall walls across from the camera, which get a door leaf. */
   tall: boolean;
   /** The height of the wall the door is in. */
   wallHeight: number;
@@ -53,7 +54,7 @@ interface Side {
   fixed: number;
   a: number;
   b: number;
-  /** The tall walls are at the back; the near ones are cut low so you can see in. */
+  /** The walls across the room from the camera stand tall; the ones facing it are cut low so you can see in. */
   tall: boolean;
   doorAt: number | null;
   windowsAt: number[];
@@ -149,21 +150,32 @@ function outerSideBoxes(side: Side): WallBox[] {
   return boxes;
 }
 
-/** Everything a room is built from: its four walls, with their windows and its door, in a building on a plot. */
-export function roomShape(room: Room, plot: Plot): RoomShape {
+/** The sides as they face the camera to begin with: tall at the north and west, low at the south and east. */
+const FIRST_VIEW = nearSides(0);
+
+/**
+ * Everything a room is built from: its four walls, with their windows and its door, in a building on a plot. The walls
+ * on the sides facing the camera are cut low so you can see in.
+ */
+export function roomShape(room: Room, plot: Plot, near: Sides = FIRST_VIEW): RoomShape {
   const T = WALL_T;
   const d = room.door;
   const outer = alongOuterWall(room, plot);
   /** Which tiles along one wall have a window. */
   const wins = (dx: number, dy: number) =>
     room.windows.filter((w) => w.dx === dx && w.dy === dy).map((w) => (dx ? w.y : w.x));
+  /**
+   * Where a side along the building's outer wall puts its windows: on the inside face of a tall wall, in the middle of
+   * a low one.
+   */
+  const outerAt = (face: number, out: number, tall: boolean) => (tall ? face : face + (out * OUTER_T) / 2);
   const sides: Side[] = [
     {
       horizontal: true,
-      fixed: outer.north ? plot.y0 : room.y + T / 2,
+      fixed: outer.north ? outerAt(plot.y0, -1, !near.north) : room.y + T / 2,
       a: room.x,
       b: room.x + room.w,
-      tall: true,
+      tall: !near.north,
       doorAt: d.dy === -1 ? d.x : null,
       windowsAt: wins(0, -1),
       inward: 1,
@@ -171,10 +183,10 @@ export function roomShape(room: Room, plot: Plot): RoomShape {
     },
     {
       horizontal: true,
-      fixed: outer.south ? plot.y1 + 1 + OUTER_T / 2 : room.y + room.h - T / 2,
+      fixed: outer.south ? outerAt(plot.y1 + 1, 1, !near.south) : room.y + room.h - T / 2,
       a: room.x,
       b: room.x + room.w,
-      tall: false,
+      tall: !near.south,
       doorAt: d.dy === 1 ? d.x : null,
       windowsAt: wins(0, 1),
       inward: -1,
@@ -182,10 +194,10 @@ export function roomShape(room: Room, plot: Plot): RoomShape {
     },
     {
       horizontal: false,
-      fixed: outer.west ? plot.x0 : room.x + T / 2,
+      fixed: outer.west ? outerAt(plot.x0, -1, !near.west) : room.x + T / 2,
       a: room.y,
       b: room.y + room.h,
-      tall: true,
+      tall: !near.west,
       doorAt: d.dx === -1 ? d.y : null,
       windowsAt: wins(-1, 0),
       inward: 1,
@@ -193,10 +205,10 @@ export function roomShape(room: Room, plot: Plot): RoomShape {
     },
     {
       horizontal: false,
-      fixed: outer.east ? plot.x1 + 1 + OUTER_T / 2 : room.x + room.w - T / 2,
+      fixed: outer.east ? outerAt(plot.x1 + 1, 1, !near.east) : room.x + room.w - T / 2,
       a: room.y,
       b: room.y + room.h,
-      tall: false,
+      tall: !near.east,
       doorAt: d.dx === 1 ? d.y : null,
       windowsAt: wins(1, 0),
       inward: -1,

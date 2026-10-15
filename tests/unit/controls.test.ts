@@ -38,8 +38,8 @@ describe('key bindings', () => {
   });
 
   it('move an action to a free key', () => {
-    const keys = rebind(DEFAULT_KEYS, 'rotate', 'KeyQ');
-    expect(keys.rotate).toBe('KeyQ');
+    const keys = rebind(DEFAULT_KEYS, 'rotate', 'KeyF');
+    expect(keys.rotate).toBe('KeyF');
     expect(actionFor(keys, 'KeyR')).toBeNull();
     expect(DEFAULT_KEYS.rotate, 'the defaults are left alone').toBe('KeyR');
   });
@@ -72,9 +72,9 @@ describe('the controls kept', () => {
 
   it('leave anything unusable at its default when read back', () => {
     expect(readControls('nonsense')).toEqual(defaultControls());
-    expect(readControls({ keys: { up: 'Escape', down: 7, rotate: 'KeyQ' }, edgeScroll: 'yes', autosave: 45 })).toEqual({
+    expect(readControls({ keys: { up: 'Escape', down: 7, rotate: 'KeyF' }, edgeScroll: 'yes', autosave: 45 })).toEqual({
       ...defaultControls(),
-      keys: { ...DEFAULT_KEYS, rotate: 'KeyQ' },
+      keys: { ...DEFAULT_KEYS, rotate: 'KeyF' },
     });
     // two actions saved on the same key cannot both keep it
     const keys = readControls({ keys: { up: 'KeyA', left: 'KeyA' } }).keys;

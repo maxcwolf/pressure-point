@@ -77,14 +77,17 @@ describe('keyboard shortcuts', () => {
     const ui = { blocking: false };
     /** Nothing to redraw. */
     const onChange = () => undefined;
-    const held = bindKeyboard({ state, tools: tools as never, ui: ui as never, onChange });
+    const turns: number[] = [];
+    /** Note a turn of the camera. */
+    const turnCamera = (quarters: number) => void turns.push(quarters);
+    const held = bindKeyboard({ state, tools: tools as never, ui: ui as never, turnCamera, onChange });
     /** Press (or keep holding) a key, with any modifiers. */
     const press = (key: string, extra: Partial<KeyboardEvent> = {}) =>
       win.dispatchEvent(Object.assign(new Event('keydown'), { key, repeat: false, ...extra }));
     /** Let go of a key. */
     const release = (key: string, extra: Partial<KeyboardEvent> = {}) =>
       win.dispatchEvent(Object.assign(new Event('keyup'), { key, ...extra }));
-    return { state, rotations, held, press, release };
+    return { state, rotations, turns, held, press, release };
   }
 
   it('pauses once for a held Space, however long the key repeats', () => {
@@ -116,6 +119,15 @@ describe('keyboard shortcuts', () => {
     // and the arrows, whatever the keys are set to
     press('ArrowUp', { code: 'ArrowUp' });
     expect(heldPan(held, DEFAULT_KEYS)).toEqual([-1, 1]);
+  });
+
+  it('turns the camera left with Q and right with E', () => {
+    const { turns, rotations, press } = setup();
+    press('q', { code: 'KeyQ' });
+    press('e', { code: 'KeyE' });
+    press('e', { code: 'KeyE' });
+    expect(turns).toEqual([-1, 1, 1]);
+    expect(rotations).toEqual([]);
   });
 
   it('acts on the keys as they are set, by where they sit', () => {

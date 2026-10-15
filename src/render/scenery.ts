@@ -1,6 +1,7 @@
-// The scenery: the lawn, the building's outer walls, the sign and the trees, pines in the snow, or rows of apple
-// trees. It changes only when the building grows into more land.
-// The windows in the outer walls do change, as rooms are built against them, so they are drawn with the rooms.
+// The scenery: the lawn, the sign and the trees, pines in the snow, or rows of apple trees, and apart from it the
+// building's outer walls. The scenery changes only when the building grows into more land; the walls change too as the
+// camera turns, since the ones facing it are cut low. The windows in the outer walls change as rooms are built against
+// them, so they are drawn with the rooms.
 
 import * as THREE from 'three';
 
@@ -16,6 +17,7 @@ import type { Setting } from './setting';
 import { H_LOW, hash, OUTER_HT, OUTER_T } from './shared';
 import { SIGN_HALF, SIGN_LEG, signSpot } from './sign';
 import { onStorefront } from './storefront';
+import type { Side, Sides } from './turn';
 
 /** Build the scenery around a building on its plot, in its setting: the same until the building grows. */
 export function buildScenery(
@@ -31,44 +33,6 @@ export function buildScenery(
   lawn.position.set(W / 2, -0.03, H / 2);
   lawn.receiveShadow = true;
   scene.add(lawn);
-
-  // outer shell: tall at the back, low at the front so you can see in
-  const shell = new THREE.Group();
-  const wall = mat(0xf7f1e5, 0.85);
-  const trim = mat(0x2fa8a0, 0.6);
-  const T = OUTER_T;
-  const x0 = plot.x0;
-  const x1 = plot.x1 + 1;
-  const z0 = plot.y0;
-  const z1 = plot.y1 + 1;
-  const HT = OUTER_HT;
-  /** Add a plain box to the outer shell. */
-  const box = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) =>
-    put(shell, new THREE.BoxGeometry(w, h, d), m, x, y, z);
-  box(x1 - x0 + T * 2, HT, T, (x0 + x1) / 2, HT / 2, z0 - T / 2, wall);
-  box(x1 - x0 + T * 2 + 0.06, 0.12, T + 0.08, (x0 + x1) / 2, HT + 0.06, z0 - T / 2, trim);
-  box(T, HT, z1 - z0 + T, x0 - T / 2, HT / 2, (z0 + z1) / 2 + T / 2, wall);
-  box(T + 0.08, 0.12, z1 - z0 + T + 0.06, x0 - T / 2, HT + 0.06, (z0 + z1) / 2 + T / 2, trim);
-  // the windows in the back walls make way for rooms built against them, so the rooms layer draws them
-  // low front walls with a gap for the entrance
-  const e0 = plot.door[0];
-  const e1 = plot.door[1] + 1;
-  for (const [a, b] of [
-    [x0, e0],
-    [e1, x1 + T],
-  ] as const) {
-    box(b - a, H_LOW + 0.05, T, (a + b) / 2, (H_LOW + 0.05) / 2, z1 + T / 2, wall);
-    box(b - a, 0.07, T + 0.06, (a + b) / 2, H_LOW + 0.085, z1 + T / 2, trim);
-  }
-  box(T, H_LOW + 0.05, z1 - z0, x1 + T / 2, (H_LOW + 0.05) / 2, (z0 + z1) / 2, wall);
-  box(T + 0.06, 0.07, z1 - z0, x1 + T / 2, H_LOW + 0.085, (z0 + z1) / 2, trim);
-  for (const x of [e0 - 0.16, e1 + 0.16]) {
-    put(shell, rbox(0.34, 1.5, 0.34, 0.05), wall, x, 0.75, z1 + T / 2);
-    put(shell, rbox(0.42, 0.1, 0.42, 0.04), trim, x, 1.52, z1 + T / 2);
-    put(shell, sph(0.17), mat(0xffe9a8, 0.3, 0.7), x, 1.72, z1 + T / 2);
-  }
-  mergeStill(shell);
-  scene.add(shell);
 
   // sign on the front lawn
   const sign = new THREE.Group();
@@ -175,4 +139,103 @@ function buildSeaside(plot: Plot): THREE.Group {
   }
   shore.add(buildBeach(huts, grass));
   return shore;
+}
+
+/** A wall of the building's shell, and the corners it takes in at either end. */
+interface ShellWall {
+  side: Side;
+  tall: boolean;
+  /** Whether it runs on over the corner at its start (north or west) and at its end (south or east). */
+  fromCorner: boolean;
+  toCorner: boolean;
+}
+
+/**
+ * The building's four outer walls, tall across from the camera and low on the sides facing it, and which takes in
+ * each corner: a tall wall before a low one, and along x before along z. Looking from the south-east, as the game
+ * always has, the north wall runs the whole width, the west wall takes the south-west corner and the low south wall
+ * the south-east one.
+ */
+export function shellWalls(near: Sides): ShellWall[] {
+  const order: Side[] = ['north', 'south', 'west', 'east'];
+  /** How strongly a wall claims a corner: a tall wall first, then along x. */
+  const rank = (side: Side) => (near[side] ? 2 : 0) + (side === 'west' || side === 'east' ? 1 : 0);
+  /** Which of two walls meeting at a corner takes it in. */
+  const owner = (a: Side, b: Side) => (rank(a) <= rank(b) ? a : b);
+  type Corner = 'nw' | 'ne' | 'sw' | 'se';
+  const corners: Record<Corner, Side> = {
+    nw: owner('north', 'west'),
+    ne: owner('north', 'east'),
+    sw: owner('south', 'west'),
+    se: owner('south', 'east'),
+  };
+  /** The corners at the start and end of each wall: west or north first. */
+  const ends: Record<Side, [Corner, Corner]> = {
+    north: ['nw', 'ne'],
+    south: ['sw', 'se'],
+    west: ['nw', 'sw'],
+    east: ['ne', 'se'],
+  };
+  return order.map((side) => {
+    const [from, to] = ends[side];
+    return { side, tall: !near[side], fromCorner: corners[from] === side, toCorner: corners[to] === side };
+  });
+}
+
+/** Build the building's outer walls on its plot: tall across from the camera, low facing it, with the entrance in front. */
+export function buildShell(plot: Plot, near: Sides): THREE.Group {
+  const shell = new THREE.Group();
+  const wall = mat(0xf7f1e5, 0.85);
+  const trim = mat(0x2fa8a0, 0.6);
+  const T = OUTER_T;
+  const x0 = plot.x0;
+  const x1 = plot.x1 + 1;
+  const z0 = plot.y0;
+  const z1 = plot.y1 + 1;
+  /** Add a plain box to the outer shell. */
+  const box = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) =>
+    put(shell, new THREE.BoxGeometry(w, h, d), m, x, y, z);
+  /** One stretch of a wall, from a to b along it, with its trim along the top. */
+  const stretch = (horizontal: boolean, at: number, a: number, b: number, tall: boolean) => {
+    const len = b - a;
+    const mid = (a + b) / 2;
+    if (tall) {
+      const HT = OUTER_HT;
+      if (horizontal) {
+        box(len, HT, T, mid, HT / 2, at, wall);
+        box(len + 0.06, 0.12, T + 0.08, mid, HT + 0.06, at, trim);
+      } else {
+        box(T, HT, len, at, HT / 2, mid, wall);
+        box(T + 0.08, 0.12, len + 0.06, at, HT + 0.06, mid, trim);
+      }
+    } else if (horizontal) {
+      box(len, H_LOW + 0.05, T, mid, (H_LOW + 0.05) / 2, at, wall);
+      box(len, 0.07, T + 0.06, mid, H_LOW + 0.085, at, trim);
+    } else {
+      box(T, H_LOW + 0.05, len, at, (H_LOW + 0.05) / 2, mid, wall);
+      box(T + 0.06, 0.07, len, at, H_LOW + 0.085, mid, trim);
+    }
+  };
+  // the entrance, in the front wall
+  const e0 = plot.door[0];
+  const e1 = plot.door[1] + 1;
+  for (const w of shellWalls(near)) {
+    const horizontal = w.side === 'north' || w.side === 'south';
+    const a = (horizontal ? x0 : z0) - (w.fromCorner ? T : 0);
+    const b = (horizontal ? x1 : z1) + (w.toCorner ? T : 0);
+    const at =
+      w.side === 'north' ? z0 - T / 2 : w.side === 'south' ? z1 + T / 2 : w.side === 'west' ? x0 - T / 2 : x1 + T / 2;
+    if (w.side !== 'south') stretch(horizontal, at, a, b, w.tall);
+    else {
+      stretch(true, at, a, e0, w.tall);
+      stretch(true, at, e1, b, w.tall);
+    }
+  }
+  for (const x of [e0 - 0.16, e1 + 0.16]) {
+    put(shell, rbox(0.34, 1.5, 0.34, 0.05), wall, x, 0.75, z1 + T / 2);
+    put(shell, rbox(0.42, 0.1, 0.42, 0.04), trim, x, 1.52, z1 + T / 2);
+    put(shell, sph(0.17), mat(0xffe9a8, 0.3, 0.7), x, 1.72, z1 + T / 2);
+  }
+  mergeStill(shell);
+  return shell;
 }

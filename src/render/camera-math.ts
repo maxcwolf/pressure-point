@@ -22,3 +22,12 @@ export function keepNearMap(x: number, z: number): [x: number, z: number] {
 export function tilesPerPixel(dist: number, fovDegrees: number, viewportHeight: number): number {
   return (2 * dist * Math.tan((fovDegrees * Math.PI) / 360)) / viewportHeight;
 }
+
+/** How far a turning camera goes toward the angle it is turning to each frame. */
+const TURN_GLIDE = 0.2;
+
+/** An angle a frame further on its way to another, arriving exactly once it is close enough. */
+export function glideAngle(angle: number, goal: number): number {
+  const next = angle + (goal - angle) * TURN_GLIDE;
+  return Math.abs(goal - next) < 0.002 ? goal : next;
+}

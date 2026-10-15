@@ -114,6 +114,7 @@ The **Controls** there are kept for every game on this computer: **edge scrollin
 | Left click        | Select, place, confirm                                |
 | Drag, or W A S D  | Move the camera                                       |
 | Scroll            | Zoom                                                  |
+| Q / E, or 🔄      | Turn the camera a quarter of the way round            |
 | R                 | Rotate furniture                                      |
 | Esc / right click | Cancel; Esc with nothing in hand opens the pause menu |
 | Space, 1 2 3      | Pause, game speed                                     |

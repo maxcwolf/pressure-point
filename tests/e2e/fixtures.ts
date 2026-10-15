@@ -38,6 +38,8 @@ interface Handle {
     pick(x: number, y: number): { kind: string; id: number } | null;
     dist: number;
     drawing: boolean;
+    turn: number;
+    turnCamera(quarters: number): void;
     renderer: { info: { render: { triangles: number } } };
   };
   tools: {
