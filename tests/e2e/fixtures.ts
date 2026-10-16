@@ -40,6 +40,7 @@ interface Handle {
     drawing: boolean;
     turn: number;
     turnCamera(quarters: number): void;
+    target: { set(x: number, y: number, z: number): void };
     renderer: { info: { render: { triangles: number } } };
   };
   tools: {
@@ -50,6 +51,7 @@ interface Handle {
     selected: { kind: string; id: number } | null;
     select(sel: { kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room'; id: number } | null): void;
     startResize(roomId: number): void;
+    startExpand(pointed?: string | null): void;
     pointerDown(clientX: number, clientY: number): void;
     pointerMove(clientX: number, clientY: number): void;
   };
@@ -68,6 +70,7 @@ interface Finders {
   guest(staying: boolean): Point & { id: number; name: string };
   roomFloor(type: string): Point & { id: number };
   lawn(): Point;
+  plot(id: string): Point;
   freePatch(w: number, h: number): { rect: Rect; from: Point; to: Point };
   wall(side: Side, want: WallWant): Point & { spot: WallSpot };
   held(inRoom: boolean): HeldSpot;
@@ -230,6 +233,20 @@ function installFinders() {
       }
       return fail('no lawn on screen');
     },
+    /** A point on the ground of a plot of land that is on screen. */
+    plot(id) {
+      const def =
+        pp()
+          .sim.landOffers()
+          .find((o) => o.def.id === id)?.def ?? fail(`there is no plot ${id}`);
+      for (const r of def.rects)
+        for (let y = r.y0; y <= r.y1; y++)
+          for (let x = r.x0; x <= r.x1; x++) {
+            const p = pp().view.project(x + 0.5, y + 0.5, 0);
+            if (onCanvas(p)) return p;
+          }
+      return fail(`no ground of ${id} on screen`);
+    },
     /** The first free patch of corridor this big, with the screen points to drag between. */
     freePatch(w, h) {
       const { W } = pp().data;
@@ -377,6 +394,14 @@ export class Game {
   /** Click the lawn. */
   async clickLawn() {
     await this.clickAt(await this.find('lawn'));
+  }
+  /** Hold the mouse over a plot of land. */
+  async hoverPlot(id: string) {
+    await this.hoverAt(await this.find('plot', id));
+  }
+  /** Click a plot of land. */
+  async clickPlot(id: string) {
+    await this.clickAt(await this.find('plot', id));
   }
 
   // ---- building -----------------------------------------------------------------

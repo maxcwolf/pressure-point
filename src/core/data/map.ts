@@ -25,6 +25,21 @@ export interface Land {
   rects: Rect[];
 }
 
+/** A plot of land a center sells next to its building, drawn for it. */
+export interface PlotDef {
+  id: string;
+  name: string;
+  /** What it is, in a few words. */
+  blurb: string;
+  /** The tiles it covers. Each plot shares a wall with the building, or with the plot it comes after. */
+  rects: readonly Rect[];
+  price: number;
+  /** The star that puts it up for sale: 0 for from the start. */
+  star: number;
+  /** A plot that has to be bought first, the one it adjoins. */
+  after?: string;
+}
+
 /** Where a center's building stands on its lot: the inside of its walls, inclusive, and the two tiles of its front door. */
 export interface Plot extends Rect {
   /** The front door's two tiles, along the front wall (row y1). */
@@ -33,21 +48,6 @@ export interface Plot extends Rect {
 
 /** The original lot: a big building across the middle. */
 export const SANDBOX_PLOT: Plot = { x0: 3, x1: 27, y0: 3, y1: 17, door: [14, 15] };
-
-/** The sides a building can grow on: never the front, which faces the street. */
-export type LandSide = 'west' | 'east' | 'back';
-export const LAND_SIDES: readonly LandSide[] = ['west', 'east', 'back'];
-
-/** How far a building can grow: its west wall's lowest x, its east wall's highest, and its back wall's lowest y. */
-export type LandLimits = Readonly<Record<LandSide, number>>;
-/** The edges of a lot so wide, as far as any building can grow toward them. */
-export const landLimitsFor = (width: number): LandLimits => ({ west: 1, east: width - 2, back: 1 });
-/** How many tiles deep a plot of land is, at most; the last plot on a side takes what is left, if that is not much more. */
-export const LAND_STEP = 4;
-/** What a tile of land costs. */
-export const LAND_TILE_PRICE = 250;
-/** The first star at which land comes up for sale. */
-export const LAND_STAR = 1;
 
 /** The row just outside the front door, where the path to the pavement starts. */
 export const outsideDoor = (p: Plot) => p.y1 + 1;

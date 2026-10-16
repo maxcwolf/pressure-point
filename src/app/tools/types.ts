@@ -43,7 +43,9 @@ export type Tool =
   // a built room picked up to move it, or to put down copies of it: `layout` is turned as R is pressed
   | { kind: 'moveRoom'; roomId: number; layout: Layout; copy: boolean }
   // a saved template, to put down rooms built from it: `layout` is turned as R is pressed
-  | { kind: 'template'; name: string; layout: Layout };
+  | { kind: 'template'; name: string; layout: Layout }
+  // buying land: the plot pointed at, if any
+  | { kind: 'expand'; pointed: string | null };
 
 /** The state of an open blueprint, for the panel that shows it. */
 export interface PlanStatus {

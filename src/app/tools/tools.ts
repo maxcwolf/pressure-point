@@ -9,8 +9,9 @@
 // This class holds the tool in hand and talks to the game and the scene. The working
 // out (geometry, hints, which tiles to color) lives in the small modules beside it.
 
-import { type ItemType, ROOMS, type RoomType } from '../../core/data';
+import { centerOf, type ItemType, ROOMS, type RoomType } from '../../core/data';
 import { money } from '../../core/format';
+import { plotAt } from '../../core/land';
 import { resizeCost, sameRect } from '../../core/resize';
 import { copyCost, cornerFor, type Layout, type PlacedLayout, placeLayout, turnLayout } from '../../core/room-layout';
 import { canWorkIn } from '../../core/sim/assignments';
@@ -22,6 +23,7 @@ import { type Rect, Z_CORRIDOR } from '../../core/world';
 import { type Marker, OV_BAD, OV_BLUE, OV_GOOD, type OverlayTile } from '../../render/overlay-codes';
 import type { Selection } from '../../render/picking';
 import type { View } from '../../render/view';
+import { expandHint, plotHeat } from '../../ui/lib/land';
 import { dragRect, itemSpot, tileOf } from './geometry';
 import {
   assignHint,
@@ -58,6 +60,8 @@ export class Tools {
   /** Why the current placement is invalid, if it is. */
   problem = '';
   private cursor: Point | null = null;
+  /** Ask whether to buy a plot of land, once one for sale is clicked with the Expand tool. */
+  askToBuy: (plotId: string) => void = () => undefined;
 
   constructor(
     private sim: Sim,
@@ -179,6 +183,21 @@ export class Tools {
     return this.cursor ? placeLayout(t.layout, ...cornerFor(t.layout, this.cursor)) : null;
   }
 
+  /** Point at the plots of land around the building to see what each costs, and click one for sale to buy it. */
+  startExpand(pointed: string | null = null) {
+    this.cancel();
+    this.tool = { kind: 'expand', pointed };
+    this.select(null);
+    this.refresh();
+  }
+
+  /** The plot of land under the cursor, if any. */
+  private plotUnderCursor(): string | null {
+    if (!this.cursor) return null;
+    const [x, y] = tileOf(this.cursor);
+    return plotAt(centerOf(this.sim.s).plots, x, y)?.id ?? null;
+  }
+
   /** Click rooms to assign a member of staff to them, with them kept selected meanwhile. */
   startAssign(staffId: number) {
     this.cancel();
@@ -273,6 +292,7 @@ export class Tools {
     }
     const room = t.kind === 'resize' ? this.sim.world.room(t.roomId) : undefined;
     if (t.kind === 'resize' && t.edge && room && this.cursor) t.rect = dragEdge(room, t.edge, this.cursor);
+    if (t.kind === 'expand') t.pointed = this.plotUnderCursor();
     if (this.active) this.refresh();
   }
 
@@ -330,6 +350,11 @@ export class Tools {
       // the tool stays for another
       const placed = this.placedRoom(t);
       if (placed && !sim.buildTemplate(t.name, t.layout, placed)) this.sfx('error');
+    } else if (t.kind === 'expand') {
+      t.pointed = this.plotUnderCursor();
+      const offer = sim.landOffers().find((o) => o.def.id === t.pointed);
+      if (offer?.state === 'open') this.askToBuy(offer.def.id);
+      else if (offer?.state === 'locked') this.sfx('error');
     } else if (t.kind === 'resize') {
       // the wall is let go: the room takes the new shape if it can, and the tool stays for the next wall
       const room = sim.world.room(t.roomId);
@@ -559,6 +584,13 @@ export class Tools {
       view.setGhost(null);
       const room = world.room(t.roomId);
       if (room) this.drawResize(room, t.edge, t.rect, drawing);
+    } else if (t.kind === 'expand') {
+      view.setGhost(null);
+      const offers = this.sim.landOffers();
+      const pointed = offers.find((o) => o.def.id === t.pointed);
+      this.hint = expandHint(pointed);
+      if (pointed?.state === 'locked') this.problem = pointed.why;
+      view.setHeat(plotHeat(offers, t.pointed), 'land');
     } else if (t.phase === 'drag') {
       view.setGhost(null);
       this.hint = dragHint(t.type, t.start ? t.rect : null);

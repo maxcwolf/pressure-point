@@ -1,6 +1,6 @@
 // Everything the model lab can show: every item, a guest with each condition, each role of staff, and the scenery.
 
-import type * as THREE from 'three';
+import * as THREE from 'three';
 
 import {
   AMANDA,
@@ -22,6 +22,7 @@ import type { Char, Look, VisitorKind } from '../core/state/types';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { buildBeach } from '../render/models/beach';
 import { buildCharacter, type CharRig } from '../render/models/character';
+import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
 import { partsOf } from '../render/models/parts';
 import { buildPines } from '../render/models/pine';
@@ -317,6 +318,22 @@ const SCENERY: Specimen[] = [
       shop.sale.visible = true;
       shop.root.rotation.y = SHOP_TURN;
       return { root: shop.root, animate: still, controls: [] };
+    },
+  },
+  {
+    id: 'scenery:for-sale',
+    group: 'Scenery',
+    name: 'For Sale boards',
+    footprint: [4, 1],
+    /** A board for a plot for sale, and one for a plot that comes up for sale at the second star. */
+    build: () => {
+      const root = new THREE.Group();
+      ['FOR SALE', '★ 2'].forEach((text, i) => {
+        const board = buildForSaleBoard(text);
+        board.position.x = (i - 0.5) * 2;
+        root.add(board);
+      });
+      return { root, animate: still, controls: [] };
     },
   },
   {

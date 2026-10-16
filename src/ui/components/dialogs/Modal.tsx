@@ -5,6 +5,7 @@ import type { ComponentChildren } from 'preact';
 import { useHud } from '../../hooks/use-hud';
 import type { DialogId } from '../../hud';
 import { AwardsDialog } from './AwardsDialog';
+import { BuyPlotDialog } from './BuyPlotDialog';
 import { ConfirmNewGame } from './ConfirmNewGame';
 import { KarmaDialog } from './KarmaDialog';
 import { PauseMenu } from './PauseMenu';
@@ -32,6 +33,8 @@ function contents(dialog: DialogId): ComponentChildren {
       return <AwardsDialog />;
     case 'visit':
       return <VisitDialog />;
+    case 'buy-plot':
+      return <BuyPlotDialog />;
   }
 }
 

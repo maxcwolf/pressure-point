@@ -11,7 +11,7 @@ import { loadCampaign, recordGame } from '../storage/campaign';
 import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
-import { landSignSpots, landTiles } from '../ui/lib/land';
+import { plotHeat } from '../ui/lib/land';
 import { heatTiles, overlayPalette } from '../ui/lib/overlays';
 import { trackMouse } from './edge';
 import { reloadInto } from './handoff';
@@ -107,6 +107,10 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
       }),
   });
 
+  /** Ask whether to buy a plot clicked with the Expand tool. */
+  tools.askToBuy = (plotId) => {
+    ui.askToBuy(plotId);
+  };
   bindPointer(canvas, { audio, tools, view, ui });
   const held = bindKeyboard({
     state,
@@ -129,12 +133,13 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     mouse: trackMouse(),
     refresh,
     save: autosaveNow,
-    /** Color the floor for the overlay showing, or the land for sale, or clear it. */
+    /** Color the floor for the overlay showing, or the land around the building, or clear it. */
     overlay: () => {
-      // the Land tab outlines the land for sale, over any overlay
-      const offers = ui.menu === 'finance' && ui.moneyTab === 'land' ? sim.landOffers() : null;
-      view.setLandSigns(offers && landSignSpots(offers));
-      if (offers) view.setHeat(landTiles(offers, ui.landPointedAt), 'land');
+      // the Expand tool colors the land itself, as the pointer moves
+      if (tools.tool.kind === 'expand') return;
+      // the Land tab outlines the plots, over any overlay
+      if (ui.menu === 'finance' && ui.moneyTab === 'land')
+        view.setHeat(plotHeat(sim.landOffers(), ui.landPointedAt), 'land');
       else view.setHeat(ui.overlay ? heatTiles(sim, ui.overlay) : null, overlayPalette(ui.overlay));
     },
   });

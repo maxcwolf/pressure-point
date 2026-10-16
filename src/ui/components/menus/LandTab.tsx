@@ -1,51 +1,55 @@
-// The Money menu's Land tab: the plots next to the building that are for sale, to grow it into.
+// The Money menu's Land tab: the center's plots of land, which are the game's, which are for sale and for how much, and
+// a way to go and look at each in the world, where the Expand tool buys it.
 
-import { LAND_STAR } from '../../../core/data';
 import { money } from '../../../core/format';
 import { useGame, useHud } from '../../hooks/use-hud';
-import { LAND_NAMES, landSize } from '../../lib/land';
+import { plotMiddle, plotSize } from '../../lib/land';
 import { Button } from '../common/Button';
 
-/** A card for each plot of land for sale, outlined on the ground while the tab is open. */
+/** A card for each of the center's plots, outlined on the ground while the tab is open. */
 export function LandTab() {
-  const { sim, audio } = useGame();
+  const { sim, tools, view } = useGame();
   const hud = useHud();
-  const s = sim.s;
-  if (!sim.landForSale())
-    return <p class="sub">{`Land next to the building comes up for sale at star ${LAND_STAR}.`}</p>;
   const offers = sim.landOffers();
+  if (!offers.length) return <p class="sub">There is no land for sale around this building.</p>;
   return (
     <>
       <p class="sub">
-        Grow the building into the land next door. The plots for sale are outlined on the ground. The front stays on the
-        street, so the building can grow to the sides and the back.
+        Grow the building into the land around it. Each plot has a For Sale board on it: press 🏡 Expand, or Show me
+        here, then click a plot to buy it.
       </p>
-      {offers.length === 0 && <p class="sub">The building fills its whole lot. There is no more land to buy.</p>}
       {offers.map((o) => (
         <div
-          key={o.side}
+          key={o.def.id}
           class="ledger land"
           onPointerEnter={() => {
-            hud.landPointedAt = o.side;
+            hud.landPointedAt = o.def.id;
           }}
           onPointerLeave={() => {
-            if (hud.landPointedAt === o.side) hud.landPointedAt = null;
+            if (hud.landPointedAt === o.def.id) hud.landPointedAt = null;
           }}
         >
           <span>
-            <h4>{LAND_NAMES[o.side]}</h4>
-            <span class="sub">{`${landSize(o)} of lawn`}</span>
+            <h4>{o.def.name}</h4>
+            <span class="sub">
+              {o.state === 'owned'
+                ? `${plotSize(o.def)} · yours`
+                : `${o.def.blurb} · ${plotSize(o.def)} · ${money(o.price)}${o.why ? ` · ${o.why}` : ''}`}
+            </span>
           </span>
-          <Button
-            quiet
-            locked={s.money < o.price}
-            onPress={() => {
-              if (sim.buyLand(o.side)) hud.landPointedAt = null;
-              else audio.play('error');
-            }}
-          >
-            {`Buy for ${money(o.price)}`}
-          </Button>
+          {o.state !== 'owned' && (
+            <Button
+              quiet
+              onPress={() => {
+                hud.landPointedAt = null;
+                hud.closeMenu();
+                tools.startExpand(o.def.id);
+                view.lookAt(...plotMiddle(o.def));
+              }}
+            >
+              Show me
+            </Button>
+          )}
         </div>
       ))}
     </>

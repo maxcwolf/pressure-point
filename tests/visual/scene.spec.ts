@@ -70,16 +70,32 @@ test.describe('the scene', () => {
     await expect(page).toHaveScreenshot('scene-decor.png');
   });
 
-  test('a building grown into the land on every side, with a room against its old wall', async ({ game, page }) => {
+  test('the plots of land around the building, with their boards, outlined by the Expand tool', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.tools.startExpand('east-wing');
+      // over the east wing and the garden block past it
+      pp.view.target.set(34, 0, 11);
+    });
+    await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-expand.png');
+  });
+
+  test('a building grown into every plot of land, with a room against its old wall', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => {
       const { sim } = pp;
       // against the old east wall, which comes down as the building grows past it
       const room = sim.createRoom('staffroom', { x: 24, y: 6, w: 4, h: 4 }, { x: 24, y: 7, dx: -1, dy: 0 });
       room.done = true;
-      pp.state.stars = 1;
-      pp.state.money = 100000;
-      for (const side of ['west', 'east', 'back'] as const) sim.buyLand(side);
+      pp.state.unlockAll = true;
+      pp.state.money = 1000000;
+      for (const o of sim.landOffers()) sim.buyPlot(o.def.id);
       pp.state.speed = 0;
     });
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });

@@ -1,33 +1,47 @@
-// How the land for sale is shown: named by side, sized in tiles, and outlined on the ground.
-import type { LandSide } from '../../core/data';
-import type { LandOffer } from '../../core/land';
+// How land is shown: a plot's size, its tiles outlined on the ground, the middle of it, and the hint as the Expand tool
+// points at it.
+
+import type { PlotDef } from '../../core/data';
+import { money } from '../../core/format';
+import { type PlotOffer, plotTiles } from '../../core/land';
 import type { HeatTile } from '../../render/heatmap';
 
-/** Where each side's plot is, as the Land tab names it. */
-export const LAND_NAMES: Readonly<Record<LandSide, string>> = {
-  west: 'Next door to the west',
-  east: 'Next door to the east',
-  back: 'Out the back',
-};
-
-/** How big a plot is, across by deep, in tiles. */
-export function landSize(o: Pick<LandOffer, 'x0' | 'x1' | 'y0' | 'y1'>): string {
-  const across = o.x1 - o.x0 + 1;
-  const deep = o.y1 - o.y0 + 1;
-  return `${across} × ${deep} tiles`;
+/** How big a plot is: across by deep, or in tiles for one that is not a plain rectangle. */
+export function plotSize(def: Pick<PlotDef, 'rects'>): string {
+  const [only] = def.rects;
+  if (def.rects.length === 1 && only) return `${only.x1 - only.x0 + 1} × ${only.y1 - only.y0 + 1} tiles`;
+  return `${plotTiles(def).length} tiles`;
 }
 
-/** The tiles of the plots for sale, to color on the ground: 1 for the one pointed at, 0 for the rest. */
-export function landTiles(offers: readonly LandOffer[], pointedAt: LandSide | null): HeatTile[] {
+/** How a plot not yet the game's is colored on the ground: brightest pointed at, dimmest while not for sale. */
+export const PLOT_POINTED = 1;
+export const PLOT_LOCKED = 0.5;
+export const PLOT_OPEN = 0;
+
+/** The tiles of the plots not yet the game's, to color on the ground, the one pointed at brightest. */
+export function plotHeat(offers: readonly PlotOffer[], pointedAt: string | null): HeatTile[] {
   const out: HeatTile[] = [];
   for (const o of offers) {
-    const value = o.side === pointedAt ? 1 : 0;
-    for (let y = o.y0; y <= o.y1; y++) for (let x = o.x0; x <= o.x1; x++) out.push([x, y, value]);
+    if (o.state === 'owned') continue;
+    const value = o.def.id === pointedAt ? PLOT_POINTED : o.state === 'locked' ? PLOT_LOCKED : PLOT_OPEN;
+    for (const [x, y] of plotTiles(o.def)) out.push([x, y, value]);
   }
   return out;
 }
 
-/** Where to stand a For Sale sign on each plot for sale: its middle. */
-export function landSignSpots(offers: readonly LandOffer[]): { x: number; z: number }[] {
-  return offers.map((o) => ({ x: (o.x0 + o.x1 + 1) / 2, z: (o.y0 + o.y1 + 1) / 2 }));
+/** The center of a plot, for the camera to glide to. */
+export function plotMiddle(def: Pick<PlotDef, 'rects'>): [x: number, y: number] {
+  const tiles = plotTiles(def);
+  const x = tiles.reduce((sum, [tx]) => sum + tx, 0) / tiles.length;
+  const y = tiles.reduce((sum, [, ty]) => sum + ty, 0) / tiles.length;
+  return [x + 0.5, y + 0.5];
+}
+
+/** The hint while the Expand tool is in hand: the plot pointed at and what it costs, or how to use the tool. */
+export function expandHint(o: PlotOffer | undefined): string {
+  if (!o) return '🏡 Expand · point at a plot of land to see what it costs · Esc when done';
+  const what = `🏡 ${o.def.name} · ${plotSize(o.def)}`;
+  if (o.state === 'owned') return `${what} · yours`;
+  if (o.state === 'locked') return `${what} · ${money(o.price)}`;
+  return `${what} · ${money(o.price)} · click to buy`;
 }

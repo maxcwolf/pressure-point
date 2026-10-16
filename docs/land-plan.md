@@ -175,6 +175,7 @@ Each phase ships on its own with everything green, in this order.
    - Plot data per center, opened by stars or campaign progress, priced by hand.
    - The Expand tool, For Sale boards and the confirmation dialog.
    - The Land tab retires.
+   - **Done.** Each center lists its plots in `CENTERS` (`PlotDef` in `core/data/map.ts`): two to four, each with a name, a blurb, its rectangles, a price and the star it opens at, and some only once another plot is the game's (`after`). The Exchange's wraps around a courtyard that stays outdoors. `plotOffers()` in `core/land.ts` says which are the game's, for sale or not yet, and prices a plot by its tiles the building has not already grown into, so old strips count. The 🏡 Expand button beside Rooms outlines the plots on the ground, names the one pointed at and its price, and a click asks to buy it (`BuyPlotDialog`). Every plot not yet the game's has a board on it: FOR SALE, the star it opens at, or SOON (`render/for-sale.ts`). The Land tab stays, as a list of the plots with Show me, which takes up Expand and glides the camera to the plot; a plot's own panel waits for phase 5, when it has progress and rooms to show.
 5. **Construction.** A fence and a few days' work before a plot can be used.
 6. **Separate buildings and the outdoors.** Entrances per building, paths, guests and staff walking outside, and weather on the way.
 7. **Later, Campus-style:** drawing your own building on a blank plot, paths, and outdoor items.

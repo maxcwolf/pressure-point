@@ -2,14 +2,15 @@
 
 import * as THREE from 'three';
 
+import { centerOf, type Rect } from '../core/data';
 import { footprintKey } from '../core/footprint';
 import type { Sim } from '../core/sim/sim';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
+import { ForSaleLayer } from './for-sale';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
-import { LandSigns } from './land-signs';
 import { addLights, easeLights, lightLevel, type Lights, placeSun } from './lighting';
 import { LitterLayer } from './litter';
 import type { Marker, OverlayTile } from './overlay-codes';
@@ -24,6 +25,9 @@ import { SnowfallLayer } from './snowfall';
 import { StorefrontLayer } from './storefront';
 import { nearSides, type Turn } from './turn';
 import { VibesLayer } from './vibes';
+
+/** Every rectangle of the center's plots of land, kept clear of trees whether bought or not. */
+const plotsOf = (sim: Sim): Rect[] => centerOf(sim.s).plots.flatMap((p) => p.rects);
 
 export class View {
   readonly renderer: THREE.WebGLRenderer;
@@ -50,7 +54,7 @@ export class View {
   private storefront: StorefrontLayer;
   private overlays: Overlays;
   private heat: Heatmap;
-  private landSigns: LandSigns;
+  private forSale: ForSaleLayer;
   private picker: Picker;
   /**
    * Whether each frame is drawn. The browser tests that check behavior rather than pixels switch it off: everything
@@ -71,7 +75,7 @@ export class View {
     this.lights = addLights(this.scene);
 
     this.rig = new CameraRig(sim.world.building, sim.world.w);
-    this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s), sim.world.w);
+    this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s), sim.world.w, plotsOf(sim));
     this.sceneryPlot = footprintKey(sim.world.building);
     this.scene.add(this.scenery);
     this.shell = buildShell(sim.world.building, nearSides(this.rig.turn));
@@ -88,7 +92,7 @@ export class View {
     this.storefront = new StorefrontLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
-    this.landSigns = new LandSigns(this.scene);
+    this.forSale = new ForSaleLayer(this.scene, sim);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
     /** Hand the people to the batches that draw them: the renderer calls this once everything is in place, just before it draws. */
     this.scene.onBeforeRender = () => this.people.gather();
@@ -150,7 +154,13 @@ export class View {
     this.scenery.traverse((o) => {
       (o as Partial<THREE.Mesh>).geometry?.dispose();
     });
-    this.scenery = buildScenery(fp, settingName(this.sim.s), settingOf(this.sim.s), this.sim.world.w);
+    this.scenery = buildScenery(
+      fp,
+      settingName(this.sim.s),
+      settingOf(this.sim.s),
+      this.sim.world.w,
+      plotsOf(this.sim),
+    );
     this.scene.add(this.scenery);
   }
 
@@ -171,6 +181,7 @@ export class View {
     this.snow.update(this.time);
     this.rain.update(this.time);
     this.storefront.update();
+    this.forSale.update();
     this.items.animate(this.time);
     this.overlays.updateRing(this.time);
     this.rig.update();
@@ -211,11 +222,6 @@ export class View {
   /** Color the floor for an information overlay, or clear it with null. */
   setHeat(tiles: readonly HeatTile[] | null, palette?: Palette) {
     this.heat.set(tiles, palette);
-  }
-
-  /** Stand For Sale signs on the land for sale, or take them down with null. */
-  setLandSigns(spots: readonly { x: number; z: number }[] | null) {
-    this.landSigns.set(spots);
   }
 
   /** Show colored tiles on the floor for the current tool. */

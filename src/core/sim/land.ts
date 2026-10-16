@@ -1,38 +1,26 @@
-// More land: buying the plot next door to grow the building into.
+// Land: buying the plots next door to grow the building into.
 
-import { LAND_SIDES, LAND_STAR, type LandSide } from '../data';
-import { landLimits, type LandOffer, nextPlot } from '../land';
-import { unlockedUpTo } from '../state/game';
-import type { GameState } from '../state/types';
+import { type PlotOffer, plotOffers } from '../land';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, toast } from './events';
 
-/** Whether land is for sale yet: from the first star. */
-export const landForSale = (s: GameState) => unlockedUpTo(s) >= LAND_STAR;
+/** Each of the center's plots as things stand: the game's, for sale and for how much, or not yet. */
+export const landOffers = (ctx: SimContext): PlotOffer[] => plotOffers(ctx.s, ctx.world.building);
 
-/** The plots for sale now, one per side with room for one. None before the first star. */
-export function landOffers(ctx: SimContext): LandOffer[] {
-  if (!landForSale(ctx.s)) return [];
-  const limits = landLimits(ctx.s);
-  // the land for sale runs the whole length of a side, so the building is still a rectangle
-  const { bounds, door } = ctx.world.building;
-  return LAND_SIDES.map((side) => nextPlot({ ...bounds, door }, side, limits)).filter((o) => o !== null);
-}
-
-/** Buy the plot for sale on a side and grow the building into it. False if none is for sale or it costs too much. */
-export function buyLand(ctx: SimContext, side: LandSide): boolean {
-  const offer = landOffers(ctx).find((o) => o.side === side);
-  if (!offer) return false;
+/** Buy a plot and grow the building into it. False if it is not for sale or costs too much. */
+export function buyPlot(ctx: SimContext, id: string): boolean {
+  const offer = landOffers(ctx).find((o) => o.def.id === id);
+  if (offer?.state !== 'open') return false;
   if (ctx.s.money < offer.price) {
     toast(ctx, 'Not enough money for that land.', 'bad');
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
   }
   spend(ctx, offer.price, 'building');
-  ctx.s.land.push({ plot: 'strip', rects: [{ x0: offer.x0, x1: offer.x1, y0: offer.y0, y1: offer.y1 }] });
+  ctx.s.land.push({ plot: id, rects: offer.def.rects.map((r) => ({ ...r })) });
   ctx.world.rebuild();
-  toast(ctx, 'The land is yours, and the building has grown into it.', 'good');
+  toast(ctx, `${offer.def.name} is yours, and the building has grown into it.`, 'good');
   emit(ctx, { type: 'sfx', name: 'build' });
   return true;
 }

@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 
-import { H, ROAD_Y, SIDEWALK_Y, TITLE_LINES } from '../core/data';
+import { H, type Rect, ROAD_Y, SIDEWALK_Y, TITLE_LINES } from '../core/data';
 import { doorstep, type Footprint, inRect } from '../core/footprint';
 import { must } from '../core/util';
 import { buildBeach } from './models/beach';
@@ -28,6 +28,8 @@ export function buildScenery(
   colors: Setting,
   /** How wide the lot is. */
   width: number,
+  /** The center's plots of land, kept clear for the building to grow into. */
+  plots: readonly Rect[] = [],
 ): THREE.Group {
   const scene = new THREE.Group();
   const lawn = new THREE.Mesh(
@@ -76,12 +78,14 @@ export function buildScenery(
   scene.add(sign);
 
   if (setting === 'seaside') {
-    scene.add(buildSeaside(fp, width));
+    scene.add(buildSeaside(fp, width, plots));
     return scene;
   }
   if (setting === 'orchard') {
     // apple trees in rows, wherever the lawn is clear
-    const rows = orchardRows(-6, width + 6, -6, H + 6).filter((p) => !keptClear(fp, Math.floor(p.x), Math.floor(p.z)));
+    const rows = orchardRows(-6, width + 6, -6, H + 6).filter(
+      (p) => !keptClear(fp, plots, Math.floor(p.x), Math.floor(p.z)),
+    );
     scene.add(buildOrchard(rows.map((p, i) => ({ ...p, seed: Math.floor(hash(i, 5) * 97) }))));
     return scene;
   }
@@ -90,7 +94,7 @@ export function buildScenery(
   const trees: TreeSpot[] = [];
   for (let y = -3; y < H + 2; y++) {
     for (let x = -4; x < width + 4; x++) {
-      if (keptClear(fp, x, y) || hash(x, y) > 0.2) continue;
+      if (keptClear(fp, plots, x, y) || hash(x, y) > 0.2) continue;
       trees.push({
         x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.5,
         z: y + 0.5 + (hash(x, y + 9) - 0.5) * 0.5,
@@ -103,18 +107,20 @@ export function buildScenery(
 }
 
 /**
- * Whether a tile is kept clear of scenery: the building and a margin round it, the street, the path to the door, and
- * the rival's storefront across the street.
+ * Whether a tile is kept clear of scenery: the building and its plots of land with a margin round them, the street,
+ * the path to the door, and the rival's storefront across the street.
  */
-function keptClear(fp: Footprint, x: number, y: number): boolean {
-  const nearBuilding = fp.rects.some((r) => inRect({ x0: r.x0 - 1, x1: r.x1 + 2, y0: r.y0 - 1, y1: r.y1 + 1 }, x, y));
+function keptClear(fp: Footprint, plots: readonly Rect[], x: number, y: number): boolean {
+  /** Whether the tile is on a rectangle or the margin round it. */
+  const near = (r: Rect) => inRect({ x0: r.x0 - 1, x1: r.x1 + 2, y0: r.y0 - 1, y1: r.y1 + 1 }, x, y);
+  const nearBuilding = fp.rects.some(near) || plots.some(near);
   const onRoad = y >= SIDEWALK_Y && y <= ROAD_Y[1];
   const nearPath = x >= fp.door[0] - 7 && x <= fp.door[1] + 3 && y > fp.front;
   return nearBuilding || onRoad || nearPath || onStorefront(fp, x, y);
 }
 
 /** The sea behind the lot, a row of beach huts along the shore, and dune grass on the sand. */
-function buildSeaside(fp: Footprint, width: number): THREE.Group {
+function buildSeaside(fp: Footprint, width: number, plots: readonly Rect[]): THREE.Group {
   const shore = new THREE.Group();
   const sea = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 200).rotateX(-Math.PI / 2),
@@ -133,7 +139,7 @@ function buildSeaside(fp: Footprint, width: number): THREE.Group {
   const grass: TreeSpot[] = [];
   for (let y = 2; y < H + 2; y++) {
     for (let x = -4; x < width + 4; x++) {
-      if (keptClear(fp, x, y) || hash(x, y) > 0.12) continue;
+      if (keptClear(fp, plots, x, y) || hash(x, y) > 0.12) continue;
       grass.push({
         x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.6,
         z: y + 0.5 + (hash(x, y + 9) - 0.5) * 0.6,

@@ -12,7 +12,6 @@ import {
   FIRST_OUTBREAK_DAY,
   INSPECTION_FIRST_DAY,
   type Land,
-  type LandSide,
   MISHAP_FIRST_DAY,
   MISHAP_GAP_DAYS,
   type Modality,
@@ -23,7 +22,7 @@ import {
   VIP_FIRST_DAY,
   VIP_GAP_DAYS,
 } from '../data';
-import { stripsBought } from '../land';
+import { type LandSide, stripsBought } from '../land';
 import { makeCandidate, settleSex } from '../people';
 import {
   defaultPolicy,

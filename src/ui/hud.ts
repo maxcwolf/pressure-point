@@ -1,7 +1,7 @@
 // The interface's own state: which menu and dialog are open, and the messages on screen.
 // The components draw it; the rest of the app talks to it.
 
-import type { DecorKey, ItemType, LandSide, Role } from '../core/data';
+import type { DecorKey, ItemType, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { Template } from '../core/templates';
 import { giveKarma } from '../storage/campaign';
@@ -21,7 +21,8 @@ export type RoomsTab = 'rooms' | 'templates';
 /** The tabs of the Stats menu. */
 export type StatsTab = 'charts' | 'reputation' | 'standing' | 'casebook' | 'regulars' | 'awards';
 
-export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards' | 'visit';
+export type DialogId =
+  'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards' | 'visit' | 'buy-plot';
 
 /** A message that fades after a few seconds. */
 export interface Toast {
@@ -70,7 +71,9 @@ export class HudState {
   /** The tab showing in the Money menu. */
   moneyTab: MoneyTab = 'books';
   /** The plot of land the pointer is over in the Land tab, shown brighter on the ground. */
-  landPointedAt: LandSide | null = null;
+  landPointedAt: string | null = null;
+  /** The plot of land asked about in the dialog to buy it. */
+  plotAsked: string | null = null;
   /** What the floor is colored by, if anything, and whether the list to choose from is open. */
   overlay: OverlayMode | null = null;
   overlayPicker = false;
@@ -184,6 +187,12 @@ export class HudState {
     this.host.tools.select(about);
     this.host.view.lookAt(spot[0], spot[1]);
     this.update();
+  }
+
+  /** Ask whether to buy a plot of land, in a dialog over the game. */
+  askToBuy(plotId: string) {
+    this.plotAsked = plotId;
+    this.open('buy-plot');
   }
 
   /** Open a dialog over the game, pausing it. */
