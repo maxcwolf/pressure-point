@@ -4,6 +4,7 @@
 import type { PlotDef } from '../../core/data';
 import { money } from '../../core/format';
 import { type PlotOffer, plotTiles } from '../../core/land';
+import type { Room } from '../../core/state/types';
 import type { HeatTile } from '../../render/heatmap';
 
 /** How big a plot is: across by deep, or in tiles for one that is not a plain rectangle. */
@@ -18,12 +19,13 @@ export const PLOT_POINTED = 1;
 export const PLOT_LOCKED = 0.5;
 export const PLOT_OPEN = 0;
 
-/** The tiles of the plots not yet the game's, to color on the ground, the one pointed at brightest. */
+/** The tiles of the plots not yet the game's, to color on the ground, and of the one pointed at, brightest. */
 export function plotHeat(offers: readonly PlotOffer[], pointedAt: string | null): HeatTile[] {
   const out: HeatTile[] = [];
   for (const o of offers) {
-    if (o.state === 'owned') continue;
-    const value = o.def.id === pointedAt ? PLOT_POINTED : o.state === 'locked' ? PLOT_LOCKED : PLOT_OPEN;
+    const pointed = o.def.id === pointedAt;
+    if (!pointed && (o.state === 'owned' || o.state === 'building')) continue;
+    const value = pointed ? PLOT_POINTED : o.state === 'locked' ? PLOT_LOCKED : PLOT_OPEN;
     for (const [x, y] of plotTiles(o.def)) out.push([x, y, value]);
   }
   return out;
@@ -37,11 +39,22 @@ export function plotMiddle(def: Pick<PlotDef, 'rects'>): [x: number, y: number] 
   return [x + 0.5, y + 0.5];
 }
 
+/** The rooms with any of their floor on a plot. */
+export function roomsOnPlot(rooms: readonly Room[], def: Pick<PlotDef, 'rects'>): Room[] {
+  return rooms.filter((r) =>
+    def.rects.some((p) => r.x <= p.x1 && r.x + r.w - 1 >= p.x0 && r.y <= p.y1 && r.y + r.h - 1 >= p.y0),
+  );
+}
+
+/** How long the builders have left on a plot, in words. */
+export const daysToGo = (days: number) => `${days} ${days === 1 ? 'day' : 'days'} to go`;
+
 /** The hint while the Expand tool is in hand: the plot pointed at and what it costs, or how to use the tool. */
 export function expandHint(o: PlotOffer | undefined): string {
   if (!o) return '🏡 Expand · point at a plot of land to see what it costs · Esc when done';
-  const what = `🏡 ${o.def.name} · ${plotSize(o.def)}`;
-  if (o.state === 'owned') return `${what} · yours`;
+  const what = `🏡 ${o.name} · ${plotSize(o.def)}`;
+  if (o.state === 'owned') return `${what} · yours · click to see it`;
+  if (o.state === 'building') return `${what} · 🚧 ${daysToGo(o.daysLeft)} · click to see it`;
   if (o.state === 'locked') return `${what} · ${money(o.price)}`;
   return `${what} · ${money(o.price)} · click to buy`;
 }

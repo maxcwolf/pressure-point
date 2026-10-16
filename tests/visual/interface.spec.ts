@@ -379,6 +379,19 @@ test.describe('in a game', () => {
     await screens.shot('money-land');
   });
 
+  test('a plot of land being built on, in the inspector', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      pp.state.money = 100000;
+      pp.sim.buyPlot('east-wing');
+      pp.sim.renamePlot('east-wing', 'Garden Wing');
+      // halfway through the builders' six days
+      pp.state.land[0]!.ready = pp.state.day + 3;
+      pp.tools.select({ kind: 'plot', id: 'east-wing' });
+    });
+    await screens.shot('inspector-plot');
+  });
+
   test('a house call on offer', async ({ screens, game }) => {
     await screens.play();
     await game.eval((pp) => {

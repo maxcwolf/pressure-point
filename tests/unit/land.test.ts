@@ -2,15 +2,26 @@
 // from the world, and the strips older saves bought along a side.
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, type PlotDef, type Rect, SIDEWALK_Y } from '../../src/core/data';
+import { CENTERS, DAY_SECONDS, type PlotDef, type Rect, SIDEWALK_Y } from '../../src/core/data';
 import { footprintOf, inRect } from '../../src/core/footprint';
-import { LAND_STEP, lotWidth, nextStrip, plotAt, plotOffers, plotTiles, stripRects } from '../../src/core/land';
+import {
+  buildDays,
+  LAND_STEP,
+  lotWidth,
+  nextStrip,
+  plotAt,
+  plotOffers,
+  plotTiles,
+  stripRects,
+} from '../../src/core/land';
+import { PLOT_NAME_MAX } from '../../src/core/sim/land';
 import { Sim } from '../../src/core/sim/sim';
 import { newGame } from '../../src/core/state/game';
+import type { Room } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { Z_CORRIDOR, Z_SCENERY } from '../../src/core/world';
-import { boardSpot, boardText } from '../../src/render/for-sale';
 import { landColor } from '../../src/render/heatmap';
+import { boardSpot, boardText, fenceRuns } from '../../src/render/land';
 import {
   expandHint,
   PLOT_LOCKED,
@@ -19,6 +30,7 @@ import {
   plotHeat,
   plotMiddle,
   plotSize,
+  roomsOnPlot,
 } from '../../src/ui/lib/land';
 import { buildRoom, freshSim, inconsistencies, openCenter, run, toasts } from './helpers';
 
@@ -27,6 +39,19 @@ function adjoins(a: readonly Rect[], b: readonly Rect[]): boolean {
   /** Whether a tile is in b. */
   const inB = (x: number, y: number) => b.some((r) => inRect(r, x, y));
   return plotTiles({ rects: a }).some(([x, y]) => inB(x + 1, y) || inB(x - 1, y) || inB(x, y + 1) || inB(x, y - 1));
+}
+
+/** Have the builders finish every plot they are at, as if the days had passed. */
+function finishWork(sim: Sim) {
+  for (const l of sim.s.land) if (l.ready !== undefined) l.ready = sim.s.day;
+  run(sim, 1.1);
+}
+
+/** Buy a plot and wait out the builders. */
+function buyAndBuild(sim: Sim, id: string): boolean {
+  const bought = sim.buyPlot(id);
+  finishWork(sim);
+  return bought;
 }
 
 /** Whether two sets of rectangles share a tile. */
@@ -69,7 +94,7 @@ describe("each center's plots of land", () => {
       s.unlockAll = true;
       s.money = 1e7;
       const sim = new Sim(s);
-      for (const p of center.plots) expect(sim.buyPlot(p.id), p.id).toBe(true);
+      for (const p of center.plots) expect(buyAndBuild(sim, p.id), p.id).toBe(true);
       expect(sim.landOffers().every((o) => o.state === 'owned')).toBe(true);
       expect(sim.world.connected()).toBe(true);
       for (const p of center.plots)
@@ -82,7 +107,7 @@ describe("each center's plots of land", () => {
     s.unlockAll = true;
     s.money = 1e6;
     const sim = new Sim(s);
-    expect(sim.buyPlot('courtyard-block')).toBe(true);
+    expect(buyAndBuild(sim, 'courtyard-block')).toBe(true);
     expect(sim.world.inside(15, 4)).toBe(false);
     expect(sim.world.zoneAt(15, 4)).toBe(Z_SCENERY);
     expect(sim.world.inside(15, 2)).toBe(true);
@@ -90,7 +115,7 @@ describe("each center's plots of land", () => {
 });
 
 describe('land for sale', () => {
-  it('opens as the stars come, a plot after another once that one is bought', () => {
+  it('opens as the stars come, a plot after another once that one is built on', () => {
     const sim = freshSim();
     /** Each plot's state, by id. */
     const state = () => Object.fromEntries(sim.landOffers().map((o) => [o.def.id, o.state]));
@@ -109,10 +134,15 @@ describe('land for sale', () => {
     sim.s.money = 1e6;
     expect(sim.buyPlot('garden-block')).toBe(false);
     expect(sim.buyPlot('east-wing')).toBe(true);
+    expect(state()['garden-block']).toBe('locked');
+    expect(sim.landOffers().find((o) => o.def.id === 'garden-block')?.why).toBe(
+      'Comes up for sale once work on the east wing is done',
+    );
+    finishWork(sim);
     expect(state()['garden-block']).toBe('open');
   });
 
-  it('grows the building into the plot, for its price, as corridor ready to build on', () => {
+  it('is fenced off for the builders first, then grown into, for its price, as corridor ready to build on', () => {
     const { sim, s } = openCenter(2);
     s.money = 50000;
     const offer = sim.landOffers().find((o) => o.def.id === 'east-wing');
@@ -121,10 +151,28 @@ describe('land for sale', () => {
     const building = s.ledger.building;
     expect(sim.world.zoneAt(rect.x0, rect.y0)).not.toBe(Z_CORRIDOR);
     sim.drain();
+    const x1 = sim.world.building.bounds.x1;
+    const day = s.day;
     expect(sim.buyPlot('east-wing')).toBe(true);
-    expect(toasts(sim.drain())).toContain('The east wing is yours, and the building has grown into it.');
+    expect(toasts(sim.drain())).toContain(
+      'The east wing is yours. The builders are at work on it, and will be done in 6 days.',
+    );
     expect(s.money).toBe(50000 - offer.price);
     expect(s.ledger.building - building).toBe(offer.price);
+    expect(s.land).toEqual([{ plot: 'east-wing', rects: [rect], ready: day + 6 }]);
+    // nothing changes until they are done: no one walks there, and nothing can be built there
+    expect(sim.world.building.bounds.x1).toBe(x1);
+    expect(sim.world.zoneAt(rect.x1, rect.y1)).toBe(Z_SCENERY);
+    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')).toMatchObject({ state: 'building', daysLeft: 6 });
+    expect(sim.buyPlot('east-wing'), 'bought already').toBe(false);
+    run(sim, 3 * DAY_SECONDS);
+    const halfway = sim.landOffers().find((o) => o.def.id === 'east-wing');
+    expect(halfway?.state).toBe('building');
+    expect(halfway?.progress).toBeCloseTo(0.5);
+    expect(sim.world.building.bounds.x1).toBe(x1);
+    sim.drain();
+    run(sim, 3 * DAY_SECONDS + 1);
+    expect(toasts(sim.drain())).toContain('Work on the east wing is done, and the building has grown into it.');
     expect(s.land).toEqual([{ plot: 'east-wing', rects: [rect] }]);
     expect(sim.world.building.bounds.x1).toBe(rect.x1);
     expect(sim.world.zoneAt(rect.x1, rect.y1)).toBe(Z_CORRIDOR);
@@ -144,12 +192,42 @@ describe('land for sale', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
-  it('can be bought while the game is paused', () => {
+  it('can be bought while the game is paused, though the builders wait for it to go on', () => {
     const sim = freshSim();
     sim.s.speed = 0;
     sim.s.money = 1e6;
     expect(sim.buyPlot('east-wing')).toBe(true);
+    for (let i = 0; i < 100; i++) sim.tick(0.1);
+    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.progress).toBe(0);
+    finishWork(sim);
     expect(sim.world.inside(30, 10)).toBe(true);
+  });
+
+  it('takes the builders three days, and longer for a big plot', () => {
+    expect(CENTERS.sandbox.plots.map((p) => [p.id, buildDays(p)])).toEqual([
+      ['east-wing', 6],
+      ['back-gallery', 3],
+      ['garden-block', 4],
+      ['west-annex', 3],
+    ]);
+  });
+
+  it("can be named once it is the game's, and given back its own name", () => {
+    const sim = freshSim();
+    sim.s.money = 1e6;
+    expect(sim.renamePlot('east-wing', 'Garden Wing'), 'not bought yet').toBe(false);
+    sim.buyPlot('east-wing');
+    expect(sim.renamePlot('east-wing', '  Garden Wing  ')).toBe(true);
+    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.name).toBe('Garden Wing');
+    sim.s.stars = 1;
+    expect(sim.landOffers().find((o) => o.def.id === 'garden-block')?.why).toBe(
+      'Comes up for sale once work on Garden Wing is done',
+    );
+    sim.renamePlot('east-wing', 'x'.repeat(PLOT_NAME_MAX + 10));
+    expect(sim.s.land[0]?.name).toHaveLength(PLOT_NAME_MAX);
+    sim.renamePlot('east-wing', ' ');
+    expect(sim.s.land[0]?.name).toBeUndefined();
+    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.name).toBe('The east wing');
   });
 
   it('cannot be bought without the money, and the plot stays for sale', () => {
@@ -258,13 +336,46 @@ describe('how land is shown', () => {
     expect(boardText(garden)).toBe('SOON');
     const annex = offers.find((o) => o.def.id === 'west-annex');
     expect(annex && boardText(annex)).toBe('★ 2');
+    expect(boardText({ ...wing, state: 'building' })).toBe('SOLD');
+  });
+
+  it('fences a plot being built on along every side but where it meets the building', () => {
+    // the east wing, x 28 to 35 and y 3 to 17, against the building's east wall at x 27
+    const runs = fenceRuns(wing.def, (x, y) => sim.world.inside(x, y));
+    expect(runs).toEqual([
+      { horizontal: true, line: 3, a: 28, b: 36 },
+      { horizontal: true, line: 18, a: 28, b: 36 },
+      { horizontal: false, line: 36, a: 3, b: 18 },
+    ]);
+    // a plot that is not a rectangle is fenced around its outline, each straight stretch as one run
+    const ell = fenceRuns(
+      {
+        rects: [
+          { x0: 0, x1: 1, y0: 0, y1: 0 },
+          { x0: 0, x1: 0, y0: 1, y1: 1 },
+        ],
+      },
+      () => false,
+    );
+    expect(ell).toHaveLength(6);
+    expect(ell.reduce((n, r) => n + r.b - r.a, 0)).toBe(8);
+  });
+
+  it('lists the rooms with any floor on a plot', () => {
+    /** A room three tiles square, its corner here. */
+    const room = (x: number, y: number) => ({ id: x, x, y, w: 3, h: 3 }) as Room;
+    const on = roomsOnPlot([room(24, 5), room(26, 5), room(29, 5), room(36, 5)], wing.def);
+    expect(on.map((r) => r.x)).toEqual([26, 29]);
   });
 
   it('says what the plot pointed at costs, and how to buy it', () => {
     expect(expandHint(undefined)).toMatch(/point at a plot/);
     expect(expandHint(wing)).toBe('🏡 The east wing · 8 × 15 tiles · $24,000 · click to buy');
     expect(expandHint(garden)).not.toMatch(/click to buy/);
-    expect(expandHint({ ...wing, state: 'owned' })).toBe('🏡 The east wing · 8 × 15 tiles · yours');
+    expect(expandHint({ ...wing, state: 'owned' })).toBe('🏡 The east wing · 8 × 15 tiles · yours · click to see it');
+    expect(expandHint({ ...wing, state: 'building', daysLeft: 1 })).toBe(
+      '🏡 The east wing · 8 × 15 tiles · 🚧 1 day to go · click to see it',
+    );
   });
 });
 

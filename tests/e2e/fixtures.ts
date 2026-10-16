@@ -49,7 +49,9 @@ interface Handle {
     problem: string;
     plan: { room: Room } | null;
     selected: { kind: string; id: number } | null;
-    select(sel: { kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room'; id: number } | null): void;
+    select(
+      sel: { kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room'; id: number } | { kind: 'plot'; id: string } | null,
+    ): void;
     startResize(roomId: number): void;
     startExpand(pointed?: string | null): void;
     pointerDown(clientX: number, clientY: number): void;

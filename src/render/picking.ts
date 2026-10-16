@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 
+import { plotAt } from '../core/land';
 import type { Sim } from '../core/sim/sim';
 import type { ItemsLayer } from './items';
 import type { PeopleLayer } from './people';
@@ -21,10 +22,11 @@ export function shown(o: THREE.Object3D | null): boolean {
   return true;
 }
 
-export interface Selection {
-  kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room';
-  id: number;
-}
+/** What the player has selected: a person, an item or a room by its number, or a plot of land by its id. */
+export type Selection =
+  | { kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room'; id: number }
+  /** A plot of land, by its id. */
+  | { kind: 'plot'; id: string };
 
 export class Picker {
   private raycaster = new THREE.Raycaster();
@@ -62,6 +64,11 @@ export class Picker {
     if (g) {
       const room = this.sim.world.roomAt(Math.floor(g.x), Math.floor(g.y));
       if (room) return { kind: 'room', id: room.id };
+      // a plot the builders are at, behind its fence: a finished one is the building's floor, and is picked with Expand
+      const site = this.sim
+        .landOffers()
+        .find((o) => o.state === 'building' && plotAt([o.def], Math.floor(g.x), Math.floor(g.y)));
+      if (site) return { kind: 'plot', id: site.def.id };
     }
     return null;
   }

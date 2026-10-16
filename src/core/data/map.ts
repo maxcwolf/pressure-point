@@ -23,6 +23,10 @@ export interface Land {
   plot: string;
   /** The tiles it covers, kept with it so the building keeps its shape whatever becomes of the plot. */
   rects: Rect[];
+  /** The game day the builders finish, while they are still at work: the building grows into it then. */
+  ready?: number;
+  /** What the player has named it, if they have. */
+  name?: string;
 }
 
 /** A plot of land a center sells next to its building, drawn for it. */

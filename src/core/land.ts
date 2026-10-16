@@ -9,21 +9,31 @@ import type { GameState } from './state/types';
 /** How wide a center's lot is. */
 export const lotWidth = (center: { width?: number }) => center.width ?? LOT_W;
 
-/** The rectangles of all the land bought, in the order it was bought. */
-export const landTiles = (s: Pick<GameState, 'land'>): Rect[] => s.land.flatMap((l) => l.rects);
+/** The rectangles of the land bought and built on, in the order it was bought: not those the builders are still at. */
+export const landTiles = (s: Pick<GameState, 'land'>): Rect[] =>
+  s.land.filter((l) => l.ready === undefined).flatMap((l) => l.rects);
 
-/** Whether a plot is the game's already, up for sale, or not for sale yet. */
-export type PlotState = 'owned' | 'open' | 'locked';
+/** Whether a plot is the game's already, being built on, up for sale, or not for sale yet. */
+export type PlotState = 'owned' | 'building' | 'open' | 'locked';
 
-/** A center's plot as things stand: whether it can be bought, and for how much. */
+/** A center's plot as things stand: whether it can be bought, and for how much, or how far along the work on it is. */
 export interface PlotOffer {
   def: PlotDef;
   state: PlotState;
+  /** Its name: the one it came with, or the one the player gave it once it was theirs. */
+  name: string;
   /** What it costs now: its price, less a share for any of its tiles the building has already grown into. */
   price: number;
   /** Why it is not for sale yet, while it is locked. */
   why: string;
+  /** How far along the work on it is, from 0 to 1: 1 once it is built on. */
+  progress: number;
+  /** Whole game days until the work on it is done, while it is being built on. */
+  daysLeft: number;
 }
+
+/** How many game days the builders take over a plot: three, and longer for a big one. */
+export const buildDays = (def: Pick<PlotDef, 'rects'>) => Math.max(3, Math.round(plotTiles(def).length / 20));
 
 /** Every tile of a plot, once each. */
 export function plotTiles(def: Pick<PlotDef, 'rects'>): [number, number][] {
@@ -47,28 +57,42 @@ export const nameInSentence = (name: string) => name.replace(/^The /, 'the ');
 const roundPrice = (n: number) => Math.round(n / 50) * 50;
 
 /**
- * Each of the center's plots: bought, or covered already by land bought as strips, it is the game's; otherwise it is
- * for sale from its star, once any plot it comes after is the game's, for its share of tiles still outside.
+ * Each of the center's plots: bought, or covered already by land bought as strips, it is the game's, once the builders
+ * are done; otherwise it is for sale from its star, once any plot it comes after is built on, for its share of tiles
+ * still outside.
  */
 export function plotOffers(s: GameState, building: Footprint): PlotOffer[] {
   const plots = centerOf(s).plots;
-  const owned = new Set<string>();
-  return plots.map((def) => {
+  const states = new Map<string, PlotState>();
+  return plots.map((def): PlotOffer => {
+    const land = s.land.find((l) => l.plot === def.id);
+    const name = land?.name ?? def.name;
     const tiles = plotTiles(def);
     const fresh = tiles.filter(([x, y]) => !inFootprint(building, x, y)).length;
-    if (fresh === 0 || s.land.some((l) => l.plot === def.id)) {
-      owned.add(def.id);
-      return { def, state: 'owned', price: 0, why: '' };
+    if (land?.ready !== undefined) {
+      states.set(def.id, 'building');
+      const daysLeft = Math.max(0, land.ready - s.day);
+      const progress = Math.min(1, Math.max(0, 1 - daysLeft / buildDays(def)));
+      return { def, state: 'building', name, price: 0, why: '', progress, daysLeft: Math.ceil(daysLeft) };
+    }
+    if (land || fresh === 0) {
+      states.set(def.id, 'owned');
+      return { def, state: 'owned', name, price: 0, why: '', progress: 1, daysLeft: 0 };
     }
     const price = roundPrice((def.price * fresh) / tiles.length);
     const after = def.after ? plots.find((p) => p.id === def.after) : undefined;
+    const afterName = after && nameInSentence(s.land.find((l) => l.plot === after.id)?.name ?? after.name);
     const why =
       unlockedUpTo(s) < def.star
         ? `Comes up for sale at star ${def.star}`
-        : after && !owned.has(after.id)
-          ? `Comes up for sale once ${nameInSentence(after.name)} is yours`
-          : '';
-    return { def, state: why ? 'locked' : 'open', price, why };
+        : after && states.get(after.id) === 'building'
+          ? `Comes up for sale once work on ${afterName} is done`
+          : after && states.get(after.id) !== 'owned'
+            ? `Comes up for sale once ${afterName} is yours`
+            : '';
+    const state = why ? 'locked' : 'open';
+    states.set(def.id, state);
+    return { def, state, name, price, why, progress: 0, daysLeft: 0 };
   });
 }
 

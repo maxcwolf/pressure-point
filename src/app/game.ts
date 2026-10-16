@@ -133,13 +133,23 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     mouse: trackMouse(),
     refresh,
     save: autosaveNow,
-    /** Color the floor for the overlay showing, or the land around the building, or clear it. */
+    /** Color the floor for the overlay showing, or the land around the building or a plot of it, or clear it. */
     overlay: () => {
       // the Expand tool colors the land itself, as the pointer moves
       if (tools.tool.kind === 'expand') return;
       // the Land tab outlines the plots, over any overlay
+      const sel = tools.selected;
       if (ui.menu === 'finance' && ui.moneyTab === 'land')
         view.setHeat(plotHeat(sim.landOffers(), ui.landPointedAt), 'land');
+      // a plot in the inspector is outlined on its own
+      else if (sel?.kind === 'plot')
+        view.setHeat(
+          plotHeat(
+            sim.landOffers().filter((o) => o.def.id === sel.id),
+            sel.id,
+          ),
+          'land',
+        );
       else view.setHeat(ui.overlay ? heatTiles(sim, ui.overlay) : null, overlayPalette(ui.overlay));
     },
   });

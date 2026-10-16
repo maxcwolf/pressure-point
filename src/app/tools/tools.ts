@@ -183,7 +183,7 @@ export class Tools {
     return this.cursor ? placeLayout(t.layout, ...cornerFor(t.layout, this.cursor)) : null;
   }
 
-  /** Point at the plots of land around the building to see what each costs, and click one for sale to buy it. */
+  /** Point at the plots of land around the building to see what each costs, and click one to buy it or see it. */
   startExpand(pointed: string | null = null) {
     this.cancel();
     this.tool = { kind: 'expand', pointed };
@@ -355,6 +355,12 @@ export class Tools {
       const offer = sim.landOffers().find((o) => o.def.id === t.pointed);
       if (offer?.state === 'open') this.askToBuy(offer.def.id);
       else if (offer?.state === 'locked') this.sfx('error');
+      else if (offer) {
+        // one of the game's: put the tool down to show it in the inspector
+        this.cancel();
+        this.select({ kind: 'plot', id: offer.def.id });
+        this.sfx('blip');
+      }
     } else if (t.kind === 'resize') {
       // the wall is let go: the room takes the new shape if it can, and the tool stays for the next wall
       const room = sim.world.room(t.roomId);

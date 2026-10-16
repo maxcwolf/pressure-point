@@ -86,6 +86,19 @@ test.describe('the scene', () => {
     await expect(page).toHaveScreenshot('scene-expand.png');
   });
 
+  test('a plot being built on: bare earth fenced off, with SOLD on its board', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.state.money = 100000;
+      pp.sim.buyPlot('east-wing');
+      pp.view.target.set(34, 0, 11);
+    });
+    await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-site.png');
+  });
+
   test('a building grown into every plot of land, with a room against its old wall', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => {
@@ -95,7 +108,12 @@ test.describe('the scene', () => {
       room.done = true;
       pp.state.unlockAll = true;
       pp.state.money = 1000000;
-      for (const o of sim.landOffers()) sim.buyPlot(o.def.id);
+      for (const o of sim.landOffers()) {
+        sim.buyPlot(o.def.id);
+        // the builders done at once
+        for (const l of pp.state.land) delete l.ready;
+        sim.world.rebuild();
+      }
       pp.state.speed = 0;
     });
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });

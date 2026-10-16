@@ -8,9 +8,9 @@ import type { Sim } from '../core/sim/sim';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
-import { ForSaleLayer } from './for-sale';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
+import { LandLayer } from './land';
 import { addLights, easeLights, lightLevel, type Lights, placeSun } from './lighting';
 import { LitterLayer } from './litter';
 import type { Marker, OverlayTile } from './overlay-codes';
@@ -54,7 +54,7 @@ export class View {
   private storefront: StorefrontLayer;
   private overlays: Overlays;
   private heat: Heatmap;
-  private forSale: ForSaleLayer;
+  private land: LandLayer;
   private picker: Picker;
   /**
    * Whether each frame is drawn. The browser tests that check behavior rather than pixels switch it off: everything
@@ -92,7 +92,7 @@ export class View {
     this.storefront = new StorefrontLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
-    this.forSale = new ForSaleLayer(this.scene, sim);
+    this.land = new LandLayer(this.scene, sim);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
     /** Hand the people to the batches that draw them: the renderer calls this once everything is in place, just before it draws. */
     this.scene.onBeforeRender = () => this.people.gather();
@@ -181,7 +181,7 @@ export class View {
     this.snow.update(this.time);
     this.rain.update(this.time);
     this.storefront.update();
-    this.forSale.update();
+    this.land.update();
     this.items.animate(this.time);
     this.overlays.updateRing(this.time);
     this.rig.update();

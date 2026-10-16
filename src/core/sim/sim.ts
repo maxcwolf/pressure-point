@@ -82,7 +82,7 @@ import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } fr
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
-import { buyPlot, landOffers } from './land';
+import { buyPlot, landOffers, renamePlot, updateLand } from './land';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
 import { askWard, canWard, prepareMishap, updateMishaps } from './mishaps';
 import { hasSupplier, setMushrooms } from './mushrooms';
@@ -185,6 +185,7 @@ export class Sim {
       updateStanding(ctx);
       updateRival(ctx);
       updateMishaps(ctx);
+      updateLand(ctx);
     }
     announce(ctx, dt);
     updateTwists(ctx, dt);
@@ -463,13 +464,17 @@ export class Sim {
   mushroomSupplier(): boolean {
     return hasSupplier(this.ctx);
   }
-  /** Each of the center's plots of land as things stand: the game's, for sale and for how much, or not yet. */
+  /** Each of the center's plots of land as things stand: the game's, being built on, for sale, or not yet. */
   landOffers(): PlotOffer[] {
     return landOffers(this.ctx);
   }
-  /** Buy a plot of land and grow the building into it. False if it cannot be bought. */
+  /** Buy a plot of land and set the builders to work on it. False if it cannot be bought. */
   buyPlot(id: string): boolean {
     return buyPlot(this.ctx, id);
+  }
+  /** Name a plot of the game's, or give it back its own name if the new one is blank. */
+  renamePlot(id: string, name: string): boolean {
+    return renamePlot(this.ctx, id, name);
   }
 
   /** Settle a failed inspection: pay the fine, or pay to make it go away. */
