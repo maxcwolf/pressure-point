@@ -12,6 +12,7 @@ import { desktop } from './desktop';
 import { startGame } from './game';
 import { takeHandoff } from './handoff';
 import { newGameCenter } from './start';
+import { updates } from './updates';
 
 /** Start up: open the game the last page asked for, or show the title screen until one is picked. */
 export async function boot() {
@@ -30,7 +31,7 @@ export async function boot() {
   let opened = open(what);
   while (!opened || opened === 'no-room') {
     if (opened === 'no-room') logger.warn('No room to keep the autosave, so the new game did not start');
-    what = await showTitle(audio, exit, opened === 'no-room' ? NO_ROOM : '');
+    what = await showTitle(audio, exit, updates, opened === 'no-room' ? NO_ROOM : '');
     audio.unlock();
     opened = open(what);
   }
@@ -40,7 +41,7 @@ export async function boot() {
     center: opened.center,
     day: Math.floor(opened.day),
   });
-  startGame({ canvas, audio, state: opened, exit });
+  startGame({ canvas, audio, state: opened, exit, updates });
 }
 
 /** Why a game was not opened, when keeping the one in the autosave would not fit in storage. */

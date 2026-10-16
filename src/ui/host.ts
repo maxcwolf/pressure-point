@@ -20,4 +20,16 @@ export interface GameHost {
   mainMenu: () => void;
   /** Quit the desktop app. Undefined in a browser, where there is nothing to quit. */
   exit: (() => void) | undefined;
+  /** A newer version of the desktop app. Undefined in a browser, which always plays the latest. */
+  update: UpdateOffer | undefined;
+}
+
+/** A newer version of the desktop app, downloaded in the background. */
+export interface UpdateOffer {
+  /** The version downloaded and waiting to be installed, or null while there is none. */
+  ready: () => string | null;
+  /** Call a function when one finishes downloading. Returns a way to stop. */
+  subscribe: (listener: () => void) => () => void;
+  /** Close the app, install the update and open the new version. */
+  install: () => void;
 }

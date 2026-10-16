@@ -10,6 +10,7 @@ import { latestSave, timeAgo } from '../../storage/saves';
 import { loadDisciplinePrefs } from '../../storage/settings';
 import { readThumb } from '../../storage/thumbnails';
 import { useRedraw } from '../hooks/use-redraw';
+import type { UpdateOffer } from '../host';
 import { cx } from '../lib/cx';
 import { saveFacts, titleBadges } from '../lib/title';
 import backdrop from '../theme/backdrop.jpg';
@@ -24,6 +25,8 @@ export interface TitleScreenProps {
   audio: Audio;
   /** Quit the desktop app. Undefined in a browser, where there is nothing to quit. */
   exit: (() => void) | undefined;
+  /** A newer version of the desktop app. Undefined in a browser, which always plays the latest. */
+  update: UpdateOffer | undefined;
   /** Something the player needs to know, such as why the game they picked did not start. */
   note?: string;
   /** Called with 'new' for a sandbox game, 'new:<center>' for a campaign one, or the id of a save to load. */
@@ -42,13 +45,16 @@ const PANEL_NAMES: Readonly<Record<Panel, string>> = {
 };
 
 /** The logo, the latest save and the ways into the game. */
-export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps) {
+export function TitleScreen({ audio, exit, update, note = '', onPick }: TitleScreenProps) {
   const redraw = useRedraw();
   /** The panel showing under the logo in place of the menu, if any. */
   const [showing, setShowing] = useState<Panel | null>(null);
   /** Panels that have been opened stay in place while hidden, so they keep what was typed into them. */
   const [opened, setOpened] = useState<readonly Panel[]>([]);
   const latest = latestSave();
+  // an update can finish downloading while the title screen is up
+  useEffect(() => update?.subscribe(redraw), [update, redraw]);
+  const updateVersion = update?.ready();
   /** Show a panel in place of the menu. */
   const open = (panel: Panel) => {
     setShowing(panel);
@@ -186,6 +192,11 @@ export function TitleScreen({ audio, exit, note = '', onPick }: TitleScreenProps
             >
               Settings
             </button>
+            {update && updateVersion && (
+              <button class="title-btn" title="Install it and open the game again" onClick={update.install}>
+                {`Update to v${updateVersion}`}
+              </button>
+            )}
             {exit && (
               <button class="title-btn" onClick={exit}>
                 Exit

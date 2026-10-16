@@ -22,7 +22,7 @@ export type RoomsTab = 'rooms' | 'templates';
 export type StatsTab = 'charts' | 'reputation' | 'standing' | 'casebook' | 'regulars' | 'awards';
 
 export type DialogId =
-  'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards' | 'visit' | 'buy-plot';
+  'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards' | 'visit' | 'buy-plot' | 'update';
 
 /** A message that fades after a few seconds. */
 export interface Toast {

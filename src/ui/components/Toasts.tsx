@@ -1,4 +1,4 @@
-// Right side: raise requests and promotions waiting on an answer, then messages that fade after a few seconds. One about someone
+// Right side: a downloaded update, raise requests and promotions waiting on an answer, then messages that fade after a few seconds. One about someone
 // or something takes you there when clicked.
 
 import './Toasts.css';
@@ -11,9 +11,22 @@ import { Button } from './common/Button';
 /** Raise requests and promotions still waiting, and the messages currently on screen. */
 export function Toasts() {
   const hud = useHud();
-  const { sim } = useGame();
+  const { sim, update } = useGame();
+  const version = update?.ready();
   return (
     <div id="toasts">
+      {version && (
+        <Button
+          key="update"
+          class="toast request link"
+          title="Restart to update"
+          onPress={() => {
+            hud.open('update');
+          }}
+        >
+          {`🎁 Version ${version} is ready to install`}
+        </Button>
+      )}
       {raiseRequests(sim.s.staff).map((st) => (
         <Button
           key={`raise-${st.id}`}

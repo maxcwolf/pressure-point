@@ -6,7 +6,7 @@ import type { Audio } from '../audio';
 import { FloaterLayer, Hud as HudView } from './components/Hud';
 import { TitleScreen } from './components/TitleScreen';
 import { byId } from './dom';
-import type { GameHost } from './host';
+import type { GameHost, UpdateOffer } from './host';
 import { HudState } from './hud';
 
 /** Draw the in-game interface for a game and return its state, which the rest of the app talks to. */
@@ -18,7 +18,12 @@ export function mountHud(host: GameHost): HudState {
 }
 
 /** Show the title screen, with a note if there is one, until the player picks 'new' or a save to load, and report which. */
-export function showTitle(audio: Audio, exit: (() => void) | undefined, note = ''): Promise<string> {
+export function showTitle(
+  audio: Audio,
+  exit: (() => void) | undefined,
+  update: UpdateOffer | undefined,
+  note = '',
+): Promise<string> {
   return new Promise((resolve) => {
     const el = document.createElement('div');
     el.id = 'title';
@@ -29,6 +34,6 @@ export function showTitle(audio: Audio, exit: (() => void) | undefined, note = '
       el.remove();
       resolve(what);
     };
-    render(<TitleScreen audio={audio} exit={exit} note={note} onPick={finish} />, el);
+    render(<TitleScreen audio={audio} exit={exit} update={update} note={note} onPick={finish} />, el);
   });
 }

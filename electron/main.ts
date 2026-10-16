@@ -4,6 +4,7 @@ import path from 'node:path';
 import { app, BrowserWindow, ipcMain, Menu, type MenuItemConstructorOptions, session, shell } from 'electron';
 
 import { QUIT_CHANNEL } from './api';
+import { startUpdates } from './updates';
 
 const isMac = process.platform === 'darwin';
 /** Set to the dev server's address to run the game from it instead of from the built files. */
@@ -109,6 +110,7 @@ void app.whenReady().then(() => {
   session.defaultSession.setPermissionCheckHandler(() => false);
   if (devDockIcon && isMac) app.dock?.setIcon(devDockIcon);
   createWindow();
+  startUpdates(devUrl);
 });
 
 // one window, one game: closing it (or choosing Exit in the game) quits on every platform

@@ -6,6 +6,7 @@ import path from 'node:path';
 
 import electronPath from 'electron';
 
+import { UPDATE_READY_CHANNEL } from '../../electron/api';
 import { expect, newGame, openPauseMenu, test } from './fixtures';
 
 test.describe('the desktop shell', () => {
@@ -68,7 +69,12 @@ test.describe('the desktop shell', () => {
     const api = await page.evaluate(() =>
       Object.fromEntries(Object.entries(window.desktop ?? {}).map(([key, value]) => [key, typeof value])),
     );
-    expect(api).toEqual({ platform: 'string', quit: 'function' });
+    expect(api).toEqual({
+      platform: 'string',
+      quit: 'function',
+      onUpdateReady: 'function',
+      installUpdate: 'function',
+    });
     expect(await page.evaluate(() => window.desktop?.platform)).toBe(process.platform);
   });
 
@@ -132,6 +138,27 @@ test.describe('leaving the desktop app', () => {
     await page.getByRole('button', { name: 'Main menu' }).click();
     await expect(page.locator('#title .title-logo')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+  });
+});
+
+test.describe('updates', () => {
+  test('a downloaded update is offered on the title screen and in a game', async ({ desktop }) => {
+    const { app, page } = await desktop.launch();
+    // a run from this folder never looks for updates, so say one has downloaded as the updater would
+    await app.evaluate(({ BrowserWindow }, channel) => {
+      BrowserWindow.getAllWindows()[0]?.webContents.send(channel, '9.9.9');
+    }, UPDATE_READY_CHANNEL);
+    await expect(page.getByRole('button', { name: 'Update to v9.9.9' })).toBeVisible();
+
+    await newGame(page);
+    const toast = page.locator('#toasts').getByRole('button', { name: 'Version 9.9.9 is ready to install' });
+    await toast.click();
+    await expect(page.getByRole('heading', { name: 'Version 9.9.9 is ready' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Restart now' })).toBeVisible();
+    // putting it off leaves the offer in place
+    await page.getByRole('button', { name: 'Keep playing' }).click();
+    await expect(page.getByRole('heading', { name: 'Version 9.9.9 is ready' })).toHaveCount(0);
+    await expect(toast).toBeVisible();
   });
 });
 

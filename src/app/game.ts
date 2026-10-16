@@ -11,6 +11,7 @@ import { loadCampaign, recordGame } from '../storage/campaign';
 import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
+import type { UpdateOffer } from '../ui/host';
 import { plotHeat } from '../ui/lib/land';
 import { heatTiles, overlayPalette } from '../ui/lib/overlays';
 import { trackMouse } from './edge';
@@ -28,10 +29,12 @@ export interface GameSetup {
   state: GameState;
   /** Quit the desktop app. Undefined in a browser, where there is nothing to quit. */
   exit: (() => void) | undefined;
+  /** A newer version of the desktop app. Undefined in a browser, which always plays the latest. */
+  updates: UpdateOffer | undefined;
 }
 
 /** Run a game: wire up the view, tools, interface, input and main loop. */
-export function startGame({ canvas, audio, state, exit }: GameSetup) {
+export function startGame({ canvas, audio, state, exit, updates }: GameSetup) {
   // achievements earned in other games are not earned again in this one
   if (state.center !== 'sandbox') state.achieved = withAchievements(state.achieved, loadCampaign().achieved);
   const sim = new Sim(state);
@@ -105,6 +108,19 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
         save();
         exit();
       }),
+    // restarting to update saves first, as Exit does
+    update: updates && {
+      ...updates,
+      /** Save, then restart into the new version. */
+      install: () => {
+        save();
+        updates.install();
+      },
+    },
+  });
+  // an update can finish downloading at any moment, and the toast offering it should show at once
+  updates?.subscribe(() => {
+    ui.update();
   });
 
   /** Ask whether to buy a plot clicked with the Expand tool. */

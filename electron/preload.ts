@@ -2,13 +2,32 @@
 // It hands the game a small, fixed set of things it may ask of the desktop app, and nothing else.
 import { contextBridge, ipcRenderer } from 'electron';
 
-import { type DesktopApi, QUIT_CHANNEL } from './api';
+import {
+  type DesktopApi,
+  QUIT_CHANNEL,
+  UPDATE_INSTALL_CHANNEL,
+  UPDATE_READY_CHANNEL,
+  UPDATE_VERSION_CHANNEL,
+} from './api';
 
 const api: DesktopApi = {
   platform: process.platform,
   /** Ask the desktop app to quit. */
   quit: () => {
     ipcRenderer.send(QUIT_CHANNEL);
+  },
+  /** Hear about a downloaded update: one that finished before this page loaded, then any that finishes later. */
+  onUpdateReady: (listener) => {
+    ipcRenderer.on(UPDATE_READY_CHANNEL, (_event, version: string) => {
+      listener(version);
+    });
+    void ipcRenderer.invoke(UPDATE_VERSION_CHANNEL).then((version: string | null) => {
+      if (version) listener(version);
+    });
+  },
+  /** Ask the desktop app to install the downloaded update. */
+  installUpdate: () => {
+    ipcRenderer.send(UPDATE_INSTALL_CHANNEL);
   },
 };
 

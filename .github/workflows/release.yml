@@ -85,9 +85,15 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: installers-${{ matrix.name }}
+          # the installers, then what installed apps update from: latest*.yml says which version is newest,
+          # the macOS app updates from the .zip, and the blockmaps let an update download only what changed
           path: |
             release/*.dmg
             release/*.exe
+            release/*.zip
+            release/*.zip.blockmap
+            release/*.exe.blockmap
+            release/latest*.yml
           if-no-files-found: error
           retention-days: 14
 

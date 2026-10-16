@@ -12,6 +12,7 @@ import { PauseMenu } from './PauseMenu';
 import { SavesDialog } from './SavesDialog';
 import { SettingsDialog } from './SettingsDialog';
 import { StarDialog } from './StarDialog';
+import { UpdateDialog } from './UpdateDialog';
 import { VisitDialog } from './VisitDialog';
 
 /** The contents of a dialog. */
@@ -35,6 +36,8 @@ function contents(dialog: DialogId): ComponentChildren {
       return <VisitDialog />;
     case 'buy-plot':
       return <BuyPlotDialog />;
+    case 'update':
+      return <UpdateDialog />;
   }
 }
 

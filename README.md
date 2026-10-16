@@ -94,7 +94,9 @@ Or get the desktop app from the [latest release](https://github.com/maxcwolf/pre
 - `mac-x64.dmg` for Intel Macs
 - `win-x64.exe` for Windows
 
-The apps are not signed yet, so your computer will ask before opening one the first time. On macOS, right-click the app and choose **Open**. On Windows, click **More info**, then **Run anyway**.
+The Mac app is signed and notarized by Apple, so it opens like any other. The Windows installer is not signed yet, so Windows asks before running it the first time: click **More info**, then **Run anyway**.
+
+The desktop app keeps itself up to date. It downloads each new version in the background and offers to restart for it, or installs it the next time you quit.
 
 The game saves itself every few seconds. The browser and the desktop app keep their own saves, and **Save or load**, in the pause menu, can export a game to a file and import it into the other.
 

@@ -21,7 +21,8 @@ for (const [name, entry] of Object.entries(entries)) {
         /** Name the bundle after its entry. */
         fileName: () => `${name}.cjs`,
       },
-      rolldownOptions: { external: ['electron', /^node:/] },
+      // electron-updater is a dependency, so electron-builder packs it into the app's node_modules to load from there
+      rolldownOptions: { external: ['electron', 'electron-updater', /^node:/] },
     },
   });
 }
