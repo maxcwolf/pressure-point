@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Better windows.** Every window has a proper frame, glazing bars, a ledge and glass that catches the light, and windows side by side join into one. The building has windows in all four walls, whichever way you turn the camera, and windows in walls cut low no longer stand up out of them like a fence.
+
 ## v0.27.6
 
 - **Five new items.** **Soundproof Panels** hush the noise around them, but add nothing to a room's looks. **Wind Chimes** make bad vibes fade four times as fast in their room. From the first star, a **Fortune Teller** tells bored guests their fortune, and now and then that they will be healed today, so they wait patiently. Also from the first star, a **Staff Fridge** feeds and waters staff on a break. From the second star, a **Kombucha Tap** earns more than tea, but once worn it fizzes over into a sticky puddle that slows guests down until a Caretaker mops it up.

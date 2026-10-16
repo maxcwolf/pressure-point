@@ -2,6 +2,7 @@
 // front door, and the straight runs of outer wall round its edge. Nothing here knows the size of the map.
 
 import type { Entrance, Plot, Rect, Side } from './data';
+import type { Room } from './state/types';
 
 export type { Entrance, Side } from './data';
 
@@ -214,4 +215,64 @@ export function wallCorners(fp: Footprint, runs: readonly WallRun[] = wallRuns(f
     }
   }
   return corners;
+}
+
+/** The entrances in a run of wall, as spans along it, from its start to its end. */
+export const entrancesIn = (fp: Footprint, run: WallRun) =>
+  fp.entrances
+    .map(entranceSpan)
+    .filter((d) => d.side === run.side && d.line === run.line && d.a >= run.a && d.b <= run.b)
+    .sort((d, e) => d.a - e.a);
+
+/** Whether a room stands against a run of outer wall somewhere between a and b along it. */
+export function standsAgainst(room: Pick<Room, 'x' | 'y' | 'w' | 'h'>, run: WallRun, a: number, b: number): boolean {
+  const { side, line } = run;
+  const touches =
+    side === 'north'
+      ? room.y === line
+      : side === 'south'
+        ? room.y + room.h === line
+        : side === 'west'
+          ? room.x === line
+          : room.x + room.w === line;
+  if (!touches) return false;
+  return run.horizontal ? room.x < b && room.x + room.w > a : room.y < b && room.y + room.h > a;
+}
+
+/** One of the building's own windows: the outer wall it is in, and the tiles along it that it spans. */
+export interface BuildingWindow {
+  side: Side;
+  /** True for the north and south walls, which run along x. */
+  horizontal: boolean;
+  /** Where the wall's inside face is, across it. */
+  line: number;
+  a: number;
+  b: number;
+}
+
+/** How many tiles wide each of the building's windows is, and how far apart they start along the wall. */
+export const BUILDING_WINDOW_W = 2;
+export const BUILDING_WINDOW_EVERY = 4;
+
+/**
+ * The building's own windows, in every outer wall, on whole tiles: two wide with two tiles of wall between, as many as
+ * fit a tile in from each end and centered along the wall, leaving out any where a room runs along the wall instead
+ * (it has windows of its own), and keeping a tile clear of each entrance and its pillars.
+ */
+export function buildingWindows(fp: Footprint, rooms: readonly Pick<Room, 'x' | 'y' | 'w' | 'h'>[]): BuildingWindow[] {
+  const out: BuildingWindow[] = [];
+  for (const run of wallRuns(fp)) {
+    const doors = entrancesIn(fp, run);
+    const count = Math.floor((run.b - run.a) / BUILDING_WINDOW_EVERY);
+    const used = count * BUILDING_WINDOW_EVERY - (BUILDING_WINDOW_EVERY - BUILDING_WINDOW_W);
+    const first = run.a + Math.floor((run.b - run.a - used) / 2);
+    for (let i = 0; i < count; i++) {
+      const a = first + i * BUILDING_WINDOW_EVERY;
+      const b = a + BUILDING_WINDOW_W;
+      if (rooms.some((r) => standsAgainst(r, run, a, b))) continue;
+      if (doors.some((d) => a < d.b + 1 && b > d.a - 1)) continue;
+      out.push({ side: run.side, horizontal: run.horizontal, line: run.line, a, b });
+    }
+  }
+  return out;
 }

@@ -1,22 +1,10 @@
 // The building's outer walls, worked out from the edges of its tiles: each straight run of wall, tall across from the
-// camera and low facing it, joined at the corners, with a gap for each entrance; and the windows in the tall ones,
-// which make way for any room built against them. Nothing here draws anything, so it can be tested without a renderer.
+// camera and low facing it, joined at the corners, with a gap for each entrance. Where its windows go is the game's to
+// say (`buildingWindows()` in core/footprint.ts). Nothing here draws anything, so it can be tested without a renderer.
 
-import { entranceSpan, type Footprint, wallCorners, type WallRun, wallRuns } from '../core/footprint';
-import type { Room } from '../core/state/types';
+import { entrancesIn, type Footprint, wallCorners, type WallRun, wallRuns } from '../core/footprint';
 import { OUTER_T } from './shared';
-import { nearSides, type Side, type Sides } from './turn';
-
-/** One of the building's windows: which outer wall it is in, and where it starts and ends along it. */
-export interface OuterPane {
-  side: Side;
-  /** True for the north and south walls, which run along x. */
-  horizontal: boolean;
-  /** Where the wall's inside face is, across it. */
-  line: number;
-  a: number;
-  b: number;
-}
+import type { Side, Sides } from './turn';
 
 /** A stretch of the building's outer wall to build, from a to b along it. */
 export interface ShellStretch {
@@ -28,54 +16,6 @@ export interface ShellStretch {
   at: number;
   a: number;
   b: number;
-}
-
-/** How wide each of the building's windows is, and how far apart they start. */
-const PANE_W = 1.5;
-const PANE_EVERY = 3;
-
-/** The entrances in a run of wall, as spans along it, from its start to its end. */
-const doorsIn = (fp: Footprint, run: WallRun) =>
-  fp.entrances
-    .map(entranceSpan)
-    .filter((d) => d.side === run.side && d.line === run.line && d.a >= run.a && d.b <= run.b)
-    .sort((d, e) => d.a - e.a);
-
-/** Whether a stretch of a run of wall takes in an entrance. */
-const atEntrance = (fp: Footprint, run: WallRun, a: number, b: number) =>
-  doorsIn(fp, run).some((d) => a < d.b && b > d.a);
-
-/** Whether a room stands against a run of outer wall somewhere between a and b along it. */
-function against(room: Room, run: WallRun, a: number, b: number): boolean {
-  const { side, line } = run;
-  const touches =
-    side === 'north'
-      ? room.y === line
-      : side === 'south'
-        ? room.y + room.h === line
-        : side === 'west'
-          ? room.x === line
-          : room.x + room.w === line;
-  if (!touches) return false;
-  return run.horizontal ? room.x < b && room.x + room.w > a : room.y < b && room.y + room.h > a;
-}
-
-/**
- * The building's windows in its tall outer walls, the ones not facing the camera, leaving out any where a room runs
- * along the wall instead, and the entrance in the front wall.
- */
-export function outerPanes(fp: Footprint, rooms: readonly Room[], near: Sides = nearSides(0)): OuterPane[] {
-  const panes: OuterPane[] = [];
-  for (const run of wallRuns(fp)) {
-    if (near[run.side]) continue;
-    for (let t = run.a + 2; t < run.b - 1; t += PANE_EVERY) {
-      const a = t - 0.25;
-      const b = a + PANE_W;
-      if (rooms.some((r) => against(r, run, a, b)) || atEntrance(fp, run, a, b)) continue;
-      panes.push({ side: run.side, horizontal: run.horizontal, line: run.line, a, b });
-    }
-  }
-  return panes;
 }
 
 /**
@@ -112,7 +52,7 @@ export function shellStretches(fp: Footprint, near: Sides): ShellStretch[] {
     };
     // the wall in stretches either side of each entrance in it
     let from = a;
-    for (const d of doorsIn(fp, run)) {
+    for (const d of entrancesIn(fp, run)) {
       out.push({ ...base, a: from, b: d.a });
       from = d.b;
     }

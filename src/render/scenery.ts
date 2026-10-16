@@ -16,7 +16,7 @@ import { buildPines } from './models/pine';
 import { buildForest, type TreeSpot } from './models/tree';
 import { shellStretches } from './outer-walls';
 import type { Setting } from './setting';
-import { H_LOW, hash, OUTER_HT, OUTER_T } from './shared';
+import { H_LOW, hash, OUTER_HT, OUTER_T, SHELL_TRIM } from './shared';
 import { SIGN_HALF, SIGN_LEG, signSpot } from './sign';
 import { onStorefront } from './storefront';
 import type { Sides } from './turn';
@@ -155,7 +155,7 @@ function buildSeaside(fp: Footprint, width: number, plots: readonly Rect[]): THR
 export function buildShell(fp: Footprint, near: Sides): THREE.Group {
   const shell = new THREE.Group();
   const wall = mat(0xf7f1e5, 0.85);
-  const trim = mat(0x2fa8a0, 0.6);
+  const trim = mat(SHELL_TRIM, 0.6);
   const T = OUTER_T;
   /** Add a plain box to the outer shell. */
   const box = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) =>

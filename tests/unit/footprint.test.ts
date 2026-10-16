@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { type Plot, type Rect, SANDBOX_PLOT } from '../../src/core/data';
 import {
+  buildingWindows,
   type Footprint,
   footprintOf,
   footprintTiles,
@@ -12,7 +13,7 @@ import {
   wallRuns,
 } from '../../src/core/footprint';
 import type { Room } from '../../src/core/state/types';
-import { outerPanes, type ShellStretch, shellStretches } from '../../src/render/outer-walls';
+import { type ShellStretch, shellStretches } from '../../src/render/outer-walls';
 import { roomShape } from '../../src/render/room-walls';
 import { OUTER_T, WALL_T } from '../../src/render/shared';
 import { nearSides, type Turn } from '../../src/render/turn';
@@ -135,8 +136,8 @@ describe("a building's outer walls, as built", () => {
     expect(wing?.b).toBeCloseTo(4 - OUTER_T);
   });
 
-  it('put windows in the tall walls of the wing too', () => {
-    const panes = outerPanes(SHAPES['an L']!, [], nearSides(0));
+  it('put windows in the walls of the wing too', () => {
+    const panes = buildingWindows(SHAPES['an L']!, []);
     expect(panes.some((p) => p.side === 'north' && p.line === 1)).toBe(true);
     expect(panes.some((p) => p.side === 'north' && p.line === 4)).toBe(true);
   });
@@ -167,12 +168,12 @@ describe('a room in the crook of an L', () => {
     expect(Math.min(...north.map((b) => b.a))).toBe(8);
     expect(Math.max(...north.map((b) => b.b))).toBe(11);
     // its window is in the outer wall, past the wing
-    const glass = boxes.find((b) => b.material === 'glass' && b.horizontal && b.a > 12 && b.a < 13);
-    expect(glass?.fixed).toBeCloseTo(3 + 0.02);
+    const glass = boxes.find((b) => b.material === 'pane' && b.horizontal && b.a > 12 && b.a < 13);
+    expect(glass?.fixed).toBeCloseTo(3 + 0.015);
   });
 
   it('keeps the building’s windows out of the outer wall it stands against', () => {
-    const panes = outerPanes(fp, [room], nearSides(0));
+    const panes = buildingWindows(fp, [room]);
     expect(panes.some((p) => p.side === 'north' && p.line === 3 && p.a < 13 && p.b > 11)).toBe(false);
   });
 });

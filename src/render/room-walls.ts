@@ -3,11 +3,15 @@
 
 import { type Footprint, inFootprint } from '../core/footprint';
 import type { Room } from '../core/state/types';
-import { H_LOW, H_TALL, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, WALL_T } from './shared';
+import { H_LOW, H_TALL, OUTER_LOW_TOP, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, WALL_T } from './shared';
 import { nearSides, type Sides } from './turn';
+import { windowBoxes, windowSpans } from './windows';
 
-/** What a box is made of: plain wall, the room's colored trim, or window glass. */
-export type WallMaterial = 'wall' | 'trim' | 'glass';
+/**
+ * What a box is made of: plain wall, the room's colored trim, see-through glass in a room's own walls, the clouded
+ * glass of a window in the building's wall, a window's white frame, or the building's teal trim.
+ */
+export type WallMaterial = 'wall' | 'trim' | 'glass' | 'pane' | 'frame' | 'shell';
 
 /** A box running along one wall. */
 export interface WallBox {
@@ -65,8 +69,7 @@ interface Side {
 
 /** One of a room's four walls, before it is split where it runs along the building's outer wall. */
 interface WallSpec extends Omit<Side, 'outer' | 'fixed'> {
-  /** Where the room's own wall stands, and where it goes along the outer wall: on the inside face of a tall outer wall,
-   * in the middle of a low one. */
+  /** Where the room's own wall stands, and where the middle of the outer wall is, for a stretch along it. */
   inner: number;
   outerFixed: number;
   /** The row (or column) of tiles just beyond the wall: where the outdoors is, if the outer wall stands in. */
@@ -100,7 +103,7 @@ function splitSide(spec: WallSpec, fp: Footprint): Side[] {
 /** Every box of one wall, with its door frame and windows. */
 function sideBoxes(side: Side): WallBox[] {
   if (side.outer) return outerSideBoxes(side);
-  const { horizontal, fixed, a, b, tall, doorAt, windowsAt } = side;
+  const { horizontal, fixed, a, b, tall, doorAt, windowsAt, inward } = side;
   const T = WALL_T;
   const hgt = tall ? H_TALL : H_LOW;
   const boxes: WallBox[] = [];
@@ -114,27 +117,43 @@ function sideBoxes(side: Side): WallBox[] {
     box(p, q, 0, hgt, T, 'wall');
     box(p, q, hgt, 0.07, T + 0.05, 'trim');
   };
+  const spans = windowSpans(windowsAt.filter((t) => t !== doorAt));
+  // the openings along the wall in order: the door's tile, and each run of windows side by side
+  const openings: [number, number][] = [
+    ...spans,
+    ...(doorAt !== null ? [[doorAt, doorAt + 1] as [number, number]] : []),
+  ];
+  openings.sort((x, y) => x[0] - y[0]);
   let runStart = a;
-  for (let t = a; t < b; t++) {
-    const isDoor = t === doorAt;
-    const isWindow = windowsAt.includes(t);
-    if (!isDoor && !isWindow) continue;
-    plain(runStart, t);
-    runStart = t + 1;
-    if (!isWindow) continue;
-    // A sill, a pane and a frame, at the same height in every wall. The near walls are cut low so you
-    // can see in, so there the window stands up out of the wall. Its sill clears the building's low
-    // outer wall, which would otherwise hide all but the top of a window at the edge of the building.
-    const paneTop = WINDOW_SILL + WINDOW_PANE;
-    box(t, t + 1, 0, WINDOW_SILL, T, 'wall');
-    box(t + 0.06, t + 0.94, WINDOW_SILL, WINDOW_PANE, 0.04, 'glass');
-    box(t, t + 1, WINDOW_SILL - 0.02, 0.05, T + 0.08, 'trim');
-    for (const p of [t, t + 0.94]) box(p, p + 0.06, WINDOW_SILL, WINDOW_PANE, T + 0.03, 'trim');
+  for (const [p, q] of openings) {
+    plain(runStart, p);
+    runStart = q;
+    if (p === doorAt) continue;
     if (tall) {
-      // the wall carries on over the window
-      box(t, t + 1, paneTop, hgt - paneTop, T, 'wall');
-      box(t, t + 1, hgt, 0.07, T + 0.05, 'trim');
-    } else box(t, t + 1, paneTop, 0.05, T + 0.03, 'trim');
+      // the wall below the window, and carrying on over it
+      const paneTop = WINDOW_SILL + WINDOW_PANE;
+      box(p, q, 0, WINDOW_SILL, T, 'wall');
+      box(p, q, paneTop, hgt - paneTop, T, 'wall');
+      box(p, q, hgt, 0.07, T + 0.05, 'trim');
+    } else box(p, q, 0, hgt, T, 'wall');
+    boxes.push(
+      ...windowBoxes({
+        horizontal,
+        fixed,
+        thick: T,
+        inward,
+        a: p,
+        b: q,
+        tall,
+        sill: WINDOW_SILL,
+        pane: WINDOW_PANE,
+        lowTop: hgt,
+        inset: true,
+        frame: 'trim',
+        ledge: 'trim',
+        glass: 'glass',
+      }),
+    );
   }
   plain(runStart, b);
   if (doorAt !== null) {
@@ -145,33 +164,29 @@ function sideBoxes(side: Side): WallBox[] {
 }
 
 /**
- * A side along the building's outer wall: no wall of the room's own, only its windows set into the outer wall.
- * At the back they sit in the tall wall at the building's own window height; at the front they stand on the low wall.
+ * A side along the building's outer wall: no wall of the room's own, only its windows, hung in the outer wall just as
+ * the building's own are, with the room's trim on their ledge. `fixed` is the middle of the outer wall.
  */
 function outerSideBoxes(side: Side): WallBox[] {
   const { horizontal, fixed, tall, windowsAt, inward } = side;
-  const boxes: WallBox[] = [];
-  /** Add a box running along the wall from p to q, standing off the wall's face by `off`. */
-  const box = (p: number, q: number, y0: number, h: number, thick: number, material: WallMaterial, off = 0) => {
-    boxes.push({ horizontal, fixed: fixed + off * inward, a: p, b: q, y0, h, thick, material });
-  };
-  for (const t of windowsAt) {
-    if (tall) {
-      const top = OUTER_PANE_Y0 + OUTER_PANE_H;
-      box(t + 0.06, t + 0.94, OUTER_PANE_Y0, OUTER_PANE_H, 0.04, 'glass', 0.02);
-      box(t, t + 1, OUTER_PANE_Y0 - 0.05, 0.05, 0.08, 'trim', 0.04);
-      box(t, t + 1, top, 0.05, 0.08, 'trim', 0.04);
-      for (const p of [t, t + 0.94]) box(p, p + 0.06, OUTER_PANE_Y0, OUTER_PANE_H, 0.08, 'trim', 0.04);
-    } else {
-      const paneTop = WINDOW_SILL + WINDOW_PANE;
-      box(t, t + 1, 0, WINDOW_SILL, OUTER_T, 'wall');
-      box(t + 0.06, t + 0.94, WINDOW_SILL, WINDOW_PANE, 0.04, 'glass');
-      box(t, t + 1, WINDOW_SILL - 0.02, 0.05, OUTER_T + 0.08, 'trim');
-      for (const p of [t, t + 0.94]) box(p, p + 0.06, WINDOW_SILL, WINDOW_PANE, OUTER_T + 0.03, 'trim');
-      box(t, t + 1, paneTop, 0.05, OUTER_T + 0.03, 'trim');
-    }
-  }
-  return boxes;
+  return windowSpans(windowsAt).flatMap(([a, b]) =>
+    windowBoxes({
+      horizontal,
+      fixed,
+      thick: OUTER_T,
+      inward,
+      a,
+      b,
+      tall,
+      sill: OUTER_PANE_Y0,
+      pane: OUTER_PANE_H,
+      lowTop: OUTER_LOW_TOP,
+      inset: false,
+      frame: 'frame',
+      ledge: 'trim',
+      glass: 'pane',
+    }),
+  );
 }
 
 /** The sides as they face the camera to begin with: tall at the north and west, low at the south and east. */
@@ -192,16 +207,13 @@ export function roomShape(room: Room, fp: Footprint, near: Sides = FIRST_VIEW): 
   /** Which tiles along one wall have a window. */
   const wins = (dx: number, dy: number) =>
     room.windows.filter((w) => w.dx === dx && w.dy === dy).map((w) => (dx ? w.y : w.x));
-  /**
-   * Where a side along the building's outer wall puts its windows: on the inside face of a tall wall, in the middle of
-   * a low one.
-   */
-  const outerAt = (face: number, out: number, tall: boolean) => (tall ? face : face + (out * OUTER_T) / 2);
+  /** The middle of the building's outer wall, which stands in for a side along it, from its inside face. */
+  const outerAt = (face: number, out: number) => face + (out * OUTER_T) / 2;
   const specs: WallSpec[] = [
     {
       horizontal: true,
       inner: top + T / 2,
-      outerFixed: outerAt(top, -1, !near.north),
+      outerFixed: outerAt(top, -1),
       beyond: top - 1,
       a: left,
       b: right,
@@ -213,7 +225,7 @@ export function roomShape(room: Room, fp: Footprint, near: Sides = FIRST_VIEW): 
     {
       horizontal: true,
       inner: bottom - T / 2,
-      outerFixed: outerAt(bottom, 1, !near.south),
+      outerFixed: outerAt(bottom, 1),
       beyond: bottom,
       a: left,
       b: right,
@@ -225,7 +237,7 @@ export function roomShape(room: Room, fp: Footprint, near: Sides = FIRST_VIEW): 
     {
       horizontal: false,
       inner: left + T / 2,
-      outerFixed: outerAt(left, -1, !near.west),
+      outerFixed: outerAt(left, -1),
       beyond: left - 1,
       a: top,
       b: bottom,
@@ -237,7 +249,7 @@ export function roomShape(room: Room, fp: Footprint, near: Sides = FIRST_VIEW): 
     {
       horizontal: false,
       inner: right - T / 2,
-      outerFixed: outerAt(right, 1, !near.east),
+      outerFixed: outerAt(right, 1),
       beyond: right,
       a: top,
       b: bottom,

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 
 import { ROOMS } from '../core/data';
-import { footprintKey } from '../core/footprint';
+import { buildingWindows, footprintKey } from '../core/footprint';
 import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { papered, paperUVs, wallMaterial } from './decor-paint';
@@ -12,10 +12,63 @@ import { disposeOwned, owned } from './disposal';
 import { emojiTexture } from './models/emoji';
 import { mergeStill } from './models/merge';
 import { mat, put } from './models/parts';
-import { outerPanes } from './outer-walls';
-import { roomShape } from './room-walls';
-import { OUTER_PANE_H, OUTER_PANE_Y0 } from './shared';
+import { roomShape, type WallBox, type WallMaterial } from './room-walls';
+import { OUTER_LOW_TOP, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, SHELL_TRIM } from './shared';
 import { nearSides, type Turn } from './turn';
+import { windowBoxes } from './windows';
+
+/**
+ * The look of window glass, shared by every pane: sky at the top fading deeper below, and a pale glint slanting
+ * across. Each pane shows it whole, so it costs nothing more to draw.
+ */
+function glassTexture(): THREE.DataTexture {
+  const W = 16;
+  const H = 16;
+  const data = new Uint8Array(W * H * 4);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const up = y / (H - 1);
+      // a band of glint running up and to the right, a little way in from the left
+      const glint = Math.max(0, 1 - Math.abs(x - y * 0.6 - 3) / 1.6) * 0.5;
+      const i = (y * W + x) * 4;
+      data[i] = Math.min(255, 150 + 80 * up + 90 * glint);
+      data[i + 1] = Math.min(255, 200 + 45 * up + 55 * glint);
+      data[i + 2] = Math.min(255, 225 + 25 * up + 30 * glint);
+      data[i + 3] = 255;
+    }
+  const tex = new THREE.DataTexture(data, W, H);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.magFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/** Make a mesh for each box of a wall. A finished room's plain wall boxes take its wallpaper, when it has one. */
+function addBoxes(
+  g: THREE.Group,
+  boxes: readonly WallBox[],
+  materials: Record<WallMaterial, THREE.Material>,
+  shadows: boolean,
+  paper = false,
+) {
+  for (const b of boxes) {
+    const len = b.b - b.a;
+    const geo = owned(
+      b.horizontal ? new THREE.BoxGeometry(len, b.h, b.thick) : new THREE.BoxGeometry(b.thick, b.h, len),
+    );
+    const mid = (b.a + b.b) / 2;
+    if (paper && b.material === 'wall') paperUVs(geo, b.horizontal, mid, b.y0 + b.h / 2);
+    const mesh = put(
+      g,
+      geo,
+      materials[b.material],
+      b.horizontal ? mid : b.fixed,
+      b.y0 + b.h / 2,
+      b.horizontal ? b.fixed : mid,
+    );
+    mesh.castShadow = shadows && b.material !== 'pane' && b.material !== 'glass';
+  }
+}
 
 export class RoomsLayer {
   private rooms = new Map<number, { group: THREE.Group; key: string }>();
@@ -24,15 +77,26 @@ export class RoomsLayer {
   private panesKey = '';
   /** Which way the camera has been turned, so the walls facing it are cut low. */
   private turn: Turn = 0;
-  private paneGlass = mat(0xbfe6f5, 0.2, 0.25);
+  private glassMap = glassTexture();
+  /** The glass in the building's wall, which there is nothing to see through to. */
+  private pane = new THREE.MeshStandardMaterial({
+    map: this.glassMap,
+    roughness: 0.15,
+    emissive: 0x9fd8ee,
+    emissiveIntensity: 0.18,
+  });
+  /** The glass in a room's own walls, which you can see through. */
   private glass = new THREE.MeshStandardMaterial({
-    color: 0xbfe6f5,
+    map: this.glassMap,
     transparent: true,
-    opacity: 0.5,
+    opacity: 0.55,
     roughness: 0.1,
     emissive: 0x9fd8ee,
-    emissiveIntensity: 0.25,
+    emissiveIntensity: 0.2,
   });
+  /** A window's white frame, and the building's teal trim on the ledges of its own windows. */
+  private frame = mat(0xfbfaf6, 0.5);
+  private shell = mat(SHELL_TRIM, 0.6);
   private blueprintMat = new THREE.MeshStandardMaterial({
     color: 0x6fb7ff,
     transparent: true,
@@ -78,27 +142,50 @@ export class RoomsLayer {
     this.syncPanes();
   }
 
-  /** Lay out the building's own windows again if the rooms they make way for, or the walls standing tall, have changed. */
+  /** Lay out the building's own windows again if the rooms they make way for, or the way the camera faces, have changed. */
   private syncPanes() {
     const { building } = this.sim.world;
-    const panes = outerPanes(building, this.sim.s.rooms, nearSides(this.turn));
-    const key = panes.map((p) => `${p.side}${p.line}.${p.a}`).join('|');
+    const near = nearSides(this.turn);
+    const windows = buildingWindows(building, this.sim.s.rooms);
+    const key = `${this.turn}|${windows.map((w) => `${w.side}${w.line}.${w.a}`).join('|')}`;
     if (key === this.panesKey) return;
     this.panesKey = key;
     this.dispose(this.panes);
     this.panes = new THREE.Group();
-    for (const p of panes) {
-      const len = p.b - p.a;
-      const mid = (p.a + p.b) / 2;
-      const y = OUTER_PANE_Y0 + OUTER_PANE_H / 2;
-      // on the inside face of the wall
-      const face = p.line + (p.side === 'north' || p.side === 'west' ? 0.02 : -0.02);
-      if (p.horizontal)
-        put(this.panes, owned(new THREE.BoxGeometry(len, OUTER_PANE_H, 0.04)), this.paneGlass, mid, y, face);
-      else put(this.panes, owned(new THREE.BoxGeometry(0.04, OUTER_PANE_H, len)), this.paneGlass, face, y, mid);
+    const materials = this.windowMaterials(this.shell);
+    for (const w of windows) {
+      const outward = w.side === 'south' || w.side === 'east' ? 1 : -1;
+      const boxes = windowBoxes({
+        horizontal: w.horizontal,
+        fixed: w.line + (outward * OUTER_T) / 2,
+        thick: OUTER_T,
+        inward: -outward,
+        a: w.a,
+        b: w.b,
+        tall: !near[w.side],
+        sill: OUTER_PANE_Y0,
+        pane: OUTER_PANE_H,
+        lowTop: OUTER_LOW_TOP,
+        inset: false,
+        frame: 'frame',
+        ledge: 'shell',
+        glass: 'pane',
+      });
+      addBoxes(this.panes, boxes, materials, true);
     }
     mergeStill(this.panes);
     this.scene.add(this.panes);
+  }
+
+  /** A blueprint is drawn all in see-through blue. */
+  private blueprintMaterials(): Record<WallMaterial, THREE.Material> {
+    const m = this.blueprintMat;
+    return { wall: m, trim: m, glass: m, pane: m, frame: m, shell: m };
+  }
+
+  /** Every material a wall is drawn in, with the room's trim (or the building's) for the rest. */
+  private windowMaterials(trim: THREE.Material, wall: THREE.Material = trim): Record<WallMaterial, THREE.Material> {
+    return { wall, trim, glass: this.glass, pane: this.pane, frame: this.frame, shell: this.shell };
   }
 
   /** Build a room's walls, windows, door and sign, in blueprint blue until it is finished. */
@@ -107,29 +194,11 @@ export class RoomsLayer {
     const def = ROOMS[room.type];
     const plain = !room.done;
     const wall = room.wall ?? 'standard';
-    const materials = {
-      wall: plain ? this.blueprintMat : wallMaterial(wall),
-      trim: plain ? this.blueprintMat : mat(def.trim, 0.6),
-      glass: plain ? this.blueprintMat : this.glass,
-    };
+    const materials = plain
+      ? this.blueprintMaterials()
+      : { ...this.windowMaterials(mat(def.trim, 0.6), wallMaterial(wall)) };
     const { boxes, doorway } = roomShape(room, this.sim.world.building, nearSides(this.turn));
-    for (const b of boxes) {
-      const len = b.b - b.a;
-      const geo = owned(
-        b.horizontal ? new THREE.BoxGeometry(len, b.h, b.thick) : new THREE.BoxGeometry(b.thick, b.h, len),
-      );
-      const mid = (b.a + b.b) / 2;
-      if (!plain && b.material === 'wall' && papered(wall)) paperUVs(geo, b.horizontal, mid, b.y0 + b.h / 2);
-      const mesh = put(
-        g,
-        geo,
-        materials[b.material],
-        b.horizontal ? mid : b.fixed,
-        b.y0 + b.h / 2,
-        b.horizontal ? b.fixed : mid,
-      );
-      mesh.castShadow = room.done;
-    }
+    addBoxes(g, boxes, materials, room.done, !plain && papered(wall));
     if (doorway) {
       const { horizontal, fixed, at, tall, wallHeight: hgt, inward } = doorway;
       if (tall) {

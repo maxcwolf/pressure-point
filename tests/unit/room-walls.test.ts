@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { SANDBOX_PLOT } from '../../src/core/data';
-import { footprintOf } from '../../src/core/footprint';
+import { buildingWindows, footprintOf } from '../../src/core/footprint';
 import type { Room, WallSpot } from '../../src/core/state/types';
-import { outerPanes } from '../../src/render/outer-walls';
 import { roomShape, type WallBox, WINDOW_PANE, WINDOW_SILL } from '../../src/render/room-walls';
-import { H_LOW, H_TALL, OUTER_LOW_TOP, OUTER_PANE_H, OUTER_PANE_Y0 } from '../../src/render/shared';
+import { H_LOW, H_TALL, OUTER_LOW_TOP, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T } from '../../src/render/shared';
 
 /** The sandbox's building, as it starts. */
 const BUILDING = footprintOf(SANDBOX_PLOT);
@@ -80,33 +79,37 @@ describe("a room's walls", () => {
 });
 
 describe('a window in a near wall', () => {
-  // The near walls are cut low so you can see into the room. A window there used to be a short pane
-  // standing on the low wall. At the edge of the building the outer wall hid all but the top of it.
-  it('stands at the same height as one in a far wall', () => {
-    const [far] = panes(room([NORTH]));
+  // The near walls are cut low so you can see into the room. A window there used to stand up out of the low wall, a
+  // tile high, like a fence. Now it is cut with its wall, and drawn as its cut section on top of it.
+  it('is cut with its wall, not standing up out of it', () => {
     for (const spot of [SOUTH, EAST]) {
-      const [near] = panes(room([spot]));
-      expect([near!.y0, near!.h]).toEqual([far!.y0, far!.h]);
+      const shape = roomShape(room([spot]), BUILDING);
+      const [pane] = shape.boxes.filter((b) => b.material === 'glass');
+      expect(pane!.y0).toBeCloseTo(H_LOW + 0.04);
+      const near = shape.boxes.filter(
+        (b) => b.a >= 11.9 && b.b <= 13.1 && (b.fixed > 13 || (!b.horizontal && b.fixed > 13)),
+      );
+      expect(Math.max(...near.map(top))).toBeLessThan(H_LOW + 0.12);
     }
   });
 
-  it("is clear of the building's low outer wall, so the whole pane shows from outside", () => {
-    for (const spot of [SOUTH, EAST]) {
-      const [pane] = panes(room([spot]));
-      expect(pane!.y0).toBeGreaterThanOrEqual(OUTER_LOW_TOP);
-    }
-  });
-
-  it('has a sill under the pane and a frame around it', () => {
+  it('has the wall run on under it, its frame on top, and a ledge either side', () => {
     const shape = roomShape(room([SOUTH]), BUILDING);
-    const [pane] = shape.boxes.filter((b) => b.material === 'glass');
-    const sill = shape.boxes.find((b) => b.material === 'wall' && b.a === 12 && b.b === 13 && b.fixed > 13);
-    expect(top(sill!)).toBeCloseTo(pane!.y0);
-    const frame = shape.boxes.filter((b) => b.material === 'trim' && b.a >= 12 && b.b <= 13 && b.fixed > 13);
-    // two posts, a rail under the pane and one over it
-    expect(frame.filter((b) => b.b - b.a < 0.1)).toHaveLength(2);
-    expect(frame.some((b) => b.y0 >= top(pane!) - 0.001)).toBe(true);
-    expect(frame.some((b) => top(b) <= pane!.y0 + 0.04 && b.b - b.a === 1)).toBe(true);
+    const under = shape.boxes.find((b) => b.material === 'wall' && b.a === 12 && b.b === 13 && b.fixed > 13);
+    expect(under).toMatchObject({ y0: 0, h: H_LOW });
+    const trim = shape.boxes.filter((b) => b.material === 'trim' && b.a >= 11.9 && b.b <= 13.1 && b.fixed > 13);
+    expect(trim.some((b) => b.y0 === H_LOW && b.a === 12 && b.b === 13)).toBe(true);
+    expect(trim.some((b) => b.thick > 0.2 && top(b) < H_LOW)).toBe(true);
+  });
+});
+
+describe('windows side by side', () => {
+  it('are one wide window, with a bar where they meet', () => {
+    const two = roomShape(room([NORTH, { ...NORTH, x: 12 }]), BUILDING).boxes;
+    const glass = two.filter((b) => b.material === 'glass');
+    expect(glass).toHaveLength(1);
+    expect(glass[0]).toMatchObject({ a: 11.06, b: 12.94 });
+    expect(two.some((b) => b.material === 'trim' && b.a < 12 && b.b > 12 && b.b - b.a < 0.05)).toBe(true);
   });
 });
 
@@ -161,33 +164,32 @@ describe('a room against the building', () => {
     expect(side(front, 'south').filter((b) => b.material === 'wall' && b.b - b.a !== 1)).toEqual([]);
   });
 
-  it("sets its windows there into the building's wall, at the building's own window height", () => {
-    const [north] = side(corner, 'north').filter((b) => b.material === 'glass');
-    expect(north).toMatchObject({ a: 4.06, y0: OUTER_PANE_Y0, h: OUTER_PANE_H });
-    expect(north!.b).toBeCloseTo(4.94);
+  it("hangs its windows there in the building's wall, just like the building's own", () => {
+    const north = side(corner, 'north');
+    const [pane] = north.filter((b) => b.material === 'pane');
+    expect(pane).toMatchObject({ a: 4.06, y0: OUTER_PANE_Y0, h: OUTER_PANE_H });
+    expect(pane!.b).toBeCloseTo(4.94);
     // on the inside face of the building's wall, not in a second wall in front of it
-    expect(north!.fixed).toBeCloseTo(SANDBOX_PLOT.y0 + 0.02);
-    const [west] = side(corner, 'west').filter((b) => b.material === 'glass');
-    expect(west!.fixed).toBeCloseTo(SANDBOX_PLOT.x0 + 0.02);
-    // at the front, in line with the building's low wall
-    const [south] = side(front, 'south').filter((b) => b.material === 'glass');
-    expect(south!.fixed).toBeGreaterThan(SANDBOX_PLOT.y1 + 1);
-    expect(south!.y0).toBe(WINDOW_SILL);
+    expect(pane!.fixed).toBeCloseTo(SANDBOX_PLOT.y0 + 0.015);
+    // a white frame, as the building's windows have, and the room's own trim on the ledge
+    expect(north.some((b) => b.material === 'frame')).toBe(true);
+    expect(north.some((b) => b.material === 'trim' && b.b - b.a > 1)).toBe(true);
+    const [west] = side(corner, 'west').filter((b) => b.material === 'pane');
+    expect(west!.fixed).toBeCloseTo(SANDBOX_PLOT.x0 + 0.015);
+    // at the front, cut low with the building's low wall, on top of it
+    const [south] = side(front, 'south').filter((b) => b.material === 'pane');
+    expect(south!.fixed).toBeCloseTo(SANDBOX_PLOT.y1 + 1 + OUTER_T / 2);
+    expect(south!.y0).toBeCloseTo(OUTER_LOW_TOP + 0.04);
   });
 
-  it("leaves the building's own windows out where it runs along the back walls", () => {
-    const all = outerPanes(BUILDING, []);
-    expect(all.filter((p) => p.horizontal).map((p) => p.a)).toEqual([
-      4.75, 7.75, 10.75, 13.75, 16.75, 19.75, 22.75, 25.75,
-    ]);
-    expect(all.filter((p) => !p.horizontal).map((p) => p.a)).toEqual([4.75, 7.75, 10.75, 13.75]);
-    const around = outerPanes(BUILDING, [corner, front]);
-    // the corner room covers 3 to 7 along both back walls, so the panes from 4.75 to 6.25 go
-    expect(around.filter((p) => p.horizontal).map((p) => p.a)).toEqual([
-      7.75, 10.75, 13.75, 16.75, 19.75, 22.75, 25.75,
-    ]);
-    expect(around.filter((p) => !p.horizontal).map((p) => p.a)).toEqual([7.75, 10.75, 13.75]);
+  it("leaves the building's own windows out where it runs along the outer walls", () => {
+    const all = buildingWindows(BUILDING, []);
+    const around = buildingWindows(BUILDING, [corner, front]);
+    // the corner room covers 3 to 7 along both back walls; the front room's stretch was already kept clear for the
+    // entrance beside it
+    const gone = all.filter((w) => !around.some((v) => v.side === w.side && v.a === w.a));
+    expect(gone.map((w) => `${w.side} ${w.a}`).sort()).toEqual(['north 4', 'west 5']);
     // a room inside the building, away from the walls, moves nothing
-    expect(outerPanes(BUILDING, [room()])).toEqual(all);
+    expect(buildingWindows(BUILDING, [room()])).toEqual(all);
   });
 });

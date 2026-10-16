@@ -14,6 +14,9 @@ export const OUTER_HT = 2.0;
 export const OUTER_PANE_Y0 = 0.925;
 export const OUTER_PANE_H = 0.75;
 
+/** The teal of the building's trim: the cap along its walls, and the ledges of its windows. */
+export const SHELL_TRIM = 0x2fa8a0;
+
 /** The top of the building's low front walls, trim included. Anything lower is hidden behind them from outside. */
 export const OUTER_LOW_TOP = H_LOW + 0.12;
 

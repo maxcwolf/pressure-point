@@ -133,7 +133,7 @@ Ten to buy and one earned, so the menu grows without crowding. The Television an
 
 Each ships on its own.
 
-1. **Better windows.** The shared window model, the cut-low rule, joining, and the building's windows moved into `core/`. The game plays exactly as before; only the pictures change.
+1. **Better windows.** The shared window model, the cut-low rule, joining, and the building's windows moved into `core/`. The game plays exactly as before; only the pictures change. **Done:** one window model (`render/windows.ts`) for every wall, a white frame with glazing bars, a ledge and gradient glass, cut low as a section on top of its wall; neighbours joined; the building's windows worked out in `core/footprint.ts` (`buildingWindows()`) and shown in every wall, whichever way the camera faces. They are now on whole tiles, two wide with two tiles of wall between, centered along each wall, rather than 1.5 wide every three tiles across tile edges, which would have left no free stretch of wall for corridor wall items.
 2. **Wall items, the machinery.** `mount: 'wall'`, wall faces, placing, the chip, moving, resizing, templates, saves. Three items to prove it: the Motivational Poster, the Landscape Painting and the Wall Clock.
 3. **The rest of the items.** The charts, the Television, the Tapestry, the Prayer Flags, the Living Wall and the Wall Fountain, and their effects and models.
 4. **Certificates.** One earned for each award at the year-end ceremony, hung from the awards dialog or the Items menu.
