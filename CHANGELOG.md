@@ -2,9 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.28.2
 
 - **Certificates of Excellence.** Every award won at the year-end ceremony earns a free certificate to hang on a wall for a little decor, from the awards or the Items menu. Each one says which award it was for, and taking one down lets you hang it somewhere else.
+- **Tooltips in the game's own style**, rather than the browser's.
+- **Fix:** the Massage Table's face cradle no longer pokes through the wall behind it.
 
 ## v0.28.1
 
