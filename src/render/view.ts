@@ -70,8 +70,8 @@ export class View {
 
     this.lights = addLights(this.scene);
 
-    this.rig = new CameraRig(sim.world.building);
-    this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s));
+    this.rig = new CameraRig(sim.world.building, sim.world.w);
+    this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s), sim.world.w);
     this.sceneryPlot = footprintKey(sim.world.building);
     this.scene.add(this.scenery);
     this.shell = buildShell(sim.world.building, nearSides(this.rig.turn));
@@ -87,7 +87,7 @@ export class View {
     this.rain = new RainLayer(this.scene, sim);
     this.storefront = new StorefrontLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
-    this.heat = new Heatmap(this.scene);
+    this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
     this.landSigns = new LandSigns(this.scene);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
     /** Hand the people to the batches that draw them: the renderer calls this once everything is in place, just before it draws. */
@@ -150,7 +150,7 @@ export class View {
     this.scenery.traverse((o) => {
       (o as Partial<THREE.Mesh>).geometry?.dispose();
     });
-    this.scenery = buildScenery(fp, settingName(this.sim.s), settingOf(this.sim.s));
+    this.scenery = buildScenery(fp, settingName(this.sim.s), settingOf(this.sim.s), this.sim.world.w);
     this.scene.add(this.scenery);
   }
 

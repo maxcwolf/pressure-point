@@ -31,7 +31,7 @@ import { randomLook, randomName, rollSex } from '../people';
 import { pick, random, rnd } from '../random';
 import type { GameState, Guest, Item, Need, Regular } from '../state/types';
 import { at } from '../util';
-import { accessPose, accessTile, itemCenter, rotVec, tileIdx, Z_CORRIDOR } from '../world';
+import { accessPose, accessTile, itemCenter, rotVec, Z_CORRIDOR } from '../world';
 import { drainFactor } from './ambience';
 import { hasGeneral } from './careers';
 import { lobbyTile, say, staffById, streetTile } from './chars';
@@ -211,8 +211,8 @@ function queueTile(ctx: SimContext, it: Item, n: number): [number, number] {
     const ny = y + dy;
     if (
       !ctx.world.inside(nx, ny) ||
-      ctx.world.zone[tileIdx(nx, ny)] !== Z_CORRIDOR ||
-      ctx.world.blocked[tileIdx(nx, ny)]
+      ctx.world.zone[ctx.world.idx(nx, ny)] !== Z_CORRIDOR ||
+      ctx.world.blocked[ctx.world.idx(nx, ny)]
     ) {
       const spots = ctx.world.standSpots(ax, ay, n + 6);
       return spots[Math.min(spots.length - 1, n + 2)] ?? [ax, ay];

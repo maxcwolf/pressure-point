@@ -80,9 +80,9 @@ export const defaultPolicy = (): Policy => ({
  * 11: noise, linens, temperature, staff needs, and the radiator, air conditioner and linen hamper. 12: High Pines,
  * its ailments and the Fireplace. 13: VIPs and the health inspector. 18: sound healing, and Distance Reiki in place
  * of the sound bath. 19: equipment upgrades and the Mechanics course. 20: the Recovery Lounge and its Recliner.
- * 21: Qi Gong classes, the Qi Gong Studio and its Instructor. 23: more land. 24: regulars, and the Vision Quest.
+ * 21: Qi Gong classes, the Qi Gong Studio and its Instructor. 23: more land. 24: regulars, and the Vision Quest. 25: land kept as the tiles it covers.
  */
-export const SAVE_VERSION = 24;
+export const SAVE_VERSION = 25;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

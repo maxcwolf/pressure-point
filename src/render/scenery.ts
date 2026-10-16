@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 
-import { H, ROAD_Y, SIDEWALK_Y, TITLE_LINES, W } from '../core/data';
+import { H, ROAD_Y, SIDEWALK_Y, TITLE_LINES } from '../core/data';
 import { doorstep, type Footprint, inRect } from '../core/footprint';
 import { must } from '../core/util';
 import { buildBeach } from './models/beach';
@@ -26,13 +26,15 @@ export function buildScenery(
   fp: Footprint,
   setting: 'park' | 'seaside' | 'mountain' | 'orchard',
   colors: Setting,
+  /** How wide the lot is. */
+  width: number,
 ): THREE.Group {
   const scene = new THREE.Group();
   const lawn = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({ color: colors.ground, roughness: 1 }),
   );
-  lawn.position.set(W / 2, -0.03, H / 2);
+  lawn.position.set(width / 2, -0.03, H / 2);
   lawn.receiveShadow = true;
   scene.add(lawn);
 
@@ -74,12 +76,12 @@ export function buildScenery(
   scene.add(sign);
 
   if (setting === 'seaside') {
-    scene.add(buildSeaside(fp));
+    scene.add(buildSeaside(fp, width));
     return scene;
   }
   if (setting === 'orchard') {
     // apple trees in rows, wherever the lawn is clear
-    const rows = orchardRows(-6, W + 6, -6, H + 6).filter((p) => !keptClear(fp, Math.floor(p.x), Math.floor(p.z)));
+    const rows = orchardRows(-6, width + 6, -6, H + 6).filter((p) => !keptClear(fp, Math.floor(p.x), Math.floor(p.z)));
     scene.add(buildOrchard(rows.map((p, i) => ({ ...p, seed: Math.floor(hash(i, 5) * 97) }))));
     return scene;
   }
@@ -87,7 +89,7 @@ export function buildScenery(
   // trees wherever there is lawn, or snow
   const trees: TreeSpot[] = [];
   for (let y = -3; y < H + 2; y++) {
-    for (let x = -4; x < W + 4; x++) {
+    for (let x = -4; x < width + 4; x++) {
       if (keptClear(fp, x, y) || hash(x, y) > 0.2) continue;
       trees.push({
         x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.5,
@@ -112,25 +114,25 @@ function keptClear(fp: Footprint, x: number, y: number): boolean {
 }
 
 /** The sea behind the lot, a row of beach huts along the shore, and dune grass on the sand. */
-function buildSeaside(fp: Footprint): THREE.Group {
+function buildSeaside(fp: Footprint, width: number): THREE.Group {
   const shore = new THREE.Group();
   const sea = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 200).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({ color: 0x4aa8c9, roughness: 0.25 }),
   );
-  sea.position.set(W / 2, -0.01, -2 - 100);
+  sea.position.set(width / 2, -0.01, -2 - 100);
   sea.receiveShadow = true;
   const foam = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 0.7).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({ color: 0xf4fbfc, roughness: 0.6 }),
   );
-  foam.position.set(W / 2, -0.005, -1.8);
+  foam.position.set(width / 2, -0.005, -1.8);
   shore.add(sea, foam);
   const huts: TreeSpot[] = [];
-  for (let x = -12; x < W + 12; x += 2) huts.push({ x: x + 0.5, z: 0.6, seed: Math.floor(hash(x, 3) * 97) });
+  for (let x = -12; x < width + 12; x += 2) huts.push({ x: x + 0.5, z: 0.6, seed: Math.floor(hash(x, 3) * 97) });
   const grass: TreeSpot[] = [];
   for (let y = 2; y < H + 2; y++) {
-    for (let x = -4; x < W + 4; x++) {
+    for (let x = -4; x < width + 4; x++) {
       if (keptClear(fp, x, y) || hash(x, y) > 0.12) continue;
       grass.push({
         x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.6,

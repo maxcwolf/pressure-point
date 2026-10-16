@@ -1,8 +1,11 @@
 // More land: the plots next to a building, buying them, and the building growing into them.
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, LAND_LIMITS, LAND_STEP, LAND_TILE_PRICE, type Plot } from '../../src/core/data';
+import { CENTERS, LAND_STEP, LAND_TILE_PRICE, landLimitsFor, LOT_W, type Plot } from '../../src/core/data';
+
+const LAND_LIMITS = landLimitsFor(LOT_W);
 import { grownBy, landLimits, nextPlot, plotWith, roomToGrow } from '../../src/core/land';
+import { Sim } from '../../src/core/sim/sim';
 import { newGame } from '../../src/core/state/game';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { Z_CORRIDOR } from '../../src/core/world';
@@ -78,7 +81,7 @@ describe('buying land', () => {
     expect(toasts(sim.drain())).toContain('The land is yours, and the building has grown into it.');
     expect(s.money).toBe(50000 - offer.price);
     expect(s.ledger.building - building).toBe(offer.price);
-    expect(s.land).toEqual(['east']);
+    expect(s.land).toEqual([{ plot: 'strip', rects: [{ x0: offer.x0, x1: offer.x1, y0: offer.y0, y1: offer.y1 }] }]);
     expect(sim.world.building.bounds.x1).toBe(offer.x1);
     expect(sim.world.zoneAt(offer.x1, offer.y1)).toBe(Z_CORRIDOR);
     // a room can go right up to the new wall, and guests can walk there
@@ -111,7 +114,7 @@ describe('buying land', () => {
     sim.s.stars = 1;
     sim.s.money = 1e6;
     while (sim.buyLand('east')) void 0;
-    expect(sim.world.building.bounds.x1).toBe(LAND_LIMITS.east);
+    expect(sim.world.building.bounds.x1).toBe(landLimits(sim.s).east);
     expect(sim.landOffers().map((o) => o.side)).toEqual(['west', 'back']);
   });
 
@@ -122,6 +125,22 @@ describe('buying land', () => {
     const s = old as unknown as ReturnType<typeof newGame>;
     upgradeSave(s);
     expect(s.land).toEqual([]);
+  });
+
+  it('keeps the exact shape it had in a save that kept only the sides bought', () => {
+    for (const center of ['sandbox', 'boardwalk'] as const) {
+      const sides = ['west', 'back', 'east', 'east', 'back', 'back'] as const;
+      const old = JSON.parse(JSON.stringify(newGame(center))) as Record<string, unknown>;
+      old.version = 24;
+      old.land = sides;
+      const s = old as unknown as ReturnType<typeof newGame>;
+      upgradeSave(s);
+      expect(s.land.every((l) => l.plot === 'strip' && l.rects.length === 1)).toBe(true);
+      // worked out on the 32-tile lot of the time, whatever size the lot is now
+      const limits = { west: 1, east: 30, back: 1, ...CENTERS[center].land };
+      const was = plotWith(CENTERS[center].plot, sides, limits);
+      expect(new Sim(s).world.building.bounds, center).toEqual({ x0: was.x0, x1: was.x1, y0: was.y0, y1: was.y1 });
+    }
   });
 });
 

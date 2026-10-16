@@ -70,7 +70,7 @@ export function updateWarmth(ctx: SimContext) {
 }
 
 /** How warm a tile is, in degrees Fahrenheit. */
-export const warmthAt = (ctx: SimContext, x: number, y: number) => gridAt(ctx.warmth, x, y, IDEAL_TEMP);
+export const warmthAt = (ctx: SimContext, x: number, y: number) => gridAt(ctx.world, ctx.warmth, x, y, IDEAL_TEMP);
 
 /** How uncomfortable a temperature is, from 0 anywhere near just right to 1 at its worst. */
 export const discomfort = (temp: number) => clamp((Math.abs(temp - IDEAL_TEMP) - COMFORT_BAND) / DISCOMFORT_SPAN, 0, 1);

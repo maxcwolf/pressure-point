@@ -12,20 +12,14 @@ import {
   ROOMS,
   type RoomType,
   SIDEWALK_Y,
-  W,
 } from './data';
 import { doorstep, type Footprint, footprintOf, inFootprint } from './footprint';
-import { landLimits, landRects } from './land';
+import { landTiles, lotWidth } from './land';
 import { byId } from './lookup';
 import { carryWallSpot, inRect, sameRect } from './resize';
 import type { PlacedLayout } from './room-layout';
 import type { GameState, Item, Room, Waypoint } from './state/types';
 import { at } from './util';
-
-/** A tile's position in the flat grid arrays. */
-export const tileIdx = (x: number, y: number) => y * W + x;
-/** Whether a tile is on the map. */
-export const inBounds = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H;
 
 /** Zone ids: -2 scenery (not walkable), -1 outdoors path, 0 corridor, >0 room id. */
 export const Z_SCENERY = -2;
@@ -144,9 +138,12 @@ const DIRS4 = DIRS8.slice(0, 4);
 const STAND_SEARCH = 160;
 
 export class World {
-  zone = new Int32Array(W * H);
-  blocked = new Uint8Array(W * H);
-  reserved = new Uint8Array(W * H);
+  /** How wide and deep the map is, in tiles: the center's lot. */
+  readonly w: number;
+  readonly h = H;
+  zone: Int32Array;
+  blocked: Uint8Array;
+  reserved: Uint8Array;
   doors = new Set<number>();
   /** Bumped on every rebuild so the renderer knows to resync. */
   version = 0;
@@ -157,24 +154,45 @@ export class World {
   private spotsStamp = -1;
 
   constructor(public s: GameState) {
+    this.w = lotWidth(centerOf(s));
+    const tiles = this.w * this.h;
+    this.zone = new Int32Array(tiles);
+    this.blocked = new Uint8Array(tiles);
+    this.reserved = new Uint8Array(tiles);
+    this.indoors = new Uint8Array(tiles);
+    this.g = new Float32Array(tiles);
+    this.f = new Float64Array(tiles);
+    this.came = new Int32Array(tiles);
+    this.state = new Uint8Array(tiles);
+    this.marked = new Uint32Array(tiles);
     this.building = footprintOf(centerOf(s).plot);
     this.rebuild();
+  }
+
+  /** A tile's position in the flat grid arrays. */
+  idx(x: number, y: number): number {
+    return y * this.w + x;
+  }
+
+  /** Whether a tile is on the map. */
+  onMap(x: number, y: number): boolean {
+    return x >= 0 && y >= 0 && x < this.w && y < this.h;
   }
 
   /** Where this game's building stands on its lot, grown into any land bought, as of the last rebuild. */
   building: Footprint;
   /** One byte a tile, 1 for the tiles inside the building, as of the last rebuild. */
-  indoors = new Uint8Array(W * H);
+  indoors: Uint8Array;
 
   /** Whether a tile is inside the building. */
   inside(x: number, y: number): boolean {
-    return inBounds(x, y) && this.indoors[tileIdx(x, y)] === 1;
+    return this.onMap(x, y) && this.indoors[this.idx(x, y)] === 1;
   }
 
   /** A key for the edge between two neighboring tiles. */
   private edgeKey(ax: number, ay: number, bx: number, by: number) {
-    if (ay === by) return tileIdx(Math.min(ax, bx), ay) * 2;
-    return tileIdx(ax, Math.min(ay, by)) * 2 + 1;
+    if (ay === by) return this.idx(Math.min(ax, bx), ay) * 2;
+    return this.idx(ax, Math.min(ay, by)) * 2 + 1;
   }
 
   /** Rebuild the zone, blocking, reserved and door grids from the game state. */
@@ -184,12 +202,12 @@ export class World {
     reserved.fill(0);
     doors.clear();
     const base = centerOf(this.s).plot;
-    const fp = footprintOf(base, landRects(base, this.s.land, landLimits(this.s)));
+    const fp = footprintOf(base, landTiles(this.s));
     this.building = fp;
     const outside = doorstep(fp);
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        const i = tileIdx(x, y);
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
+        const i = this.idx(x, y);
         indoors[i] = inFootprint(fp, x, y) ? 1 : 0;
         let z = Z_SCENERY;
         if (indoors[i]) z = Z_CORRIDOR;
@@ -200,22 +218,23 @@ export class World {
     }
     for (const x of fp.door) {
       doors.add(this.edgeKey(x, fp.front, x, outside));
-      reserved[tileIdx(x, fp.front)] = 1;
-      reserved[tileIdx(x, fp.front - 1)] = 1;
+      reserved[this.idx(x, fp.front)] = 1;
+      reserved[this.idx(x, fp.front - 1)] = 1;
     }
     for (const r of this.s.rooms) {
-      for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) zone[tileIdx(x, y)] = r.id;
+      for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) zone[this.idx(x, y)] = r.id;
       const ox = r.door.x + r.door.dx;
       const oy = r.door.y + r.door.dy;
       doors.add(this.edgeKey(r.door.x, r.door.y, ox, oy));
-      reserved[tileIdx(r.door.x, r.door.y)] = 1;
-      if (inBounds(ox, oy)) reserved[tileIdx(ox, oy)] = 1;
+      reserved[this.idx(r.door.x, r.door.y)] = 1;
+      if (this.onMap(ox, oy)) reserved[this.idx(ox, oy)] = 1;
     }
     for (const it of this.s.items) {
-      if (!ITEMS[it.type].walkable) for (const [x, y] of footprint(it)) if (inBounds(x, y)) blocked[tileIdx(x, y)] = 1;
+      if (!ITEMS[it.type].walkable)
+        for (const [x, y] of footprint(it)) if (this.onMap(x, y)) blocked[this.idx(x, y)] = 1;
       for (let i = 0; i < ITEMS[it.type].access.length; i++) {
         const [x, y] = accessTile(it, i);
-        if (inBounds(x, y)) reserved[tileIdx(x, y)] = 1;
+        if (this.onMap(x, y)) reserved[this.idx(x, y)] = 1;
       }
     }
     this.stamp++;
@@ -233,7 +252,7 @@ export class World {
   }
   /** The zone id of a tile. Anything off the map counts as scenery. */
   zoneAt(x: number, y: number) {
-    return inBounds(x, y) ? (this.zone[tileIdx(x, y)] ?? Z_SCENERY) : Z_SCENERY;
+    return this.onMap(x, y) ? (this.zone[this.idx(x, y)] ?? Z_SCENERY) : Z_SCENERY;
   }
   /** The room a tile is in, if any. */
   roomAt(x: number, y: number): Room | undefined {
@@ -263,30 +282,30 @@ export class World {
   }
   /** Whether a tile can be walked on. */
   walkable(x: number, y: number) {
-    if (!inBounds(x, y)) return false;
-    const i = tileIdx(x, y);
+    if (!this.onMap(x, y)) return false;
+    const i = this.idx(x, y);
     return this.zone[i] !== Z_SCENERY && !this.blocked[i];
   }
 
   /** Orthogonal step between adjacent tiles. */
   canStep(ax: number, ay: number, bx: number, by: number) {
     if (!this.walkable(bx, by)) return false;
-    return this.zone[tileIdx(ax, ay)] === this.zone[tileIdx(bx, by)] || this.doors.has(this.edgeKey(ax, ay, bx, by));
+    return this.zone[this.idx(ax, ay)] === this.zone[this.idx(bx, by)] || this.doors.has(this.edgeKey(ax, ay, bx, by));
   }
 
   // ---- Pathfinding ---------------------------------------------------------
-  private g = new Float32Array(W * H);
-  private f = new Float64Array(W * H);
-  private came = new Int32Array(W * H);
+  private g: Float32Array;
+  private f: Float64Array;
+  private came: Int32Array;
   /** 1 for a tile on the open list, 2 for one done with, in the search numbered in `marked`; else not yet seen. */
-  private state = new Uint8Array(W * H);
+  private state: Uint8Array;
   /** Which search last marked each tile, so a new search need not clear the marks of the last. */
-  private marked = new Uint32Array(W * H);
+  private marked: Uint32Array;
   private search = 0;
 
   /** A* over the tile grid. The start tile may itself be blocked. Returns tile-center waypoints. */
   findPath(sx: number, sy: number, gx: number, gy: number): Waypoint[] | null {
-    if (!inBounds(sx, sy) || !this.walkable(gx, gy)) return null;
+    if (!this.onMap(sx, sy) || !this.walkable(gx, gy)) return null;
     if (sx === gx && sy === gy) return [];
     // a single step to the next tile along is what the search would find, the shortest way there being that step
     if (Math.abs(gx - sx) + Math.abs(gy - sy) === 1 && this.canStep(sx, sy, gx, gy)) return [[gx + 0.5, gy + 0.5, 0]];
@@ -299,8 +318,8 @@ export class World {
       marked[i] = search;
       state[i] = v;
     };
-    const start = tileIdx(sx, sy);
-    const goal = tileIdx(gx, gy);
+    const start = this.idx(sx, sy);
+    const goal = this.idx(gx, gy);
     const open: number[] = [start];
     g[start] = 0;
     f[start] = 0;
@@ -321,13 +340,13 @@ export class World {
       open.pop();
       if (cur === goal) break;
       mark(cur, 2);
-      const cx = cur % W;
-      const cy = (cur - cx) / W;
+      const cx = cur % this.w;
+      const cy = (cur - cx) / this.w;
       for (const [dx, dy, cost] of DIRS8) {
         const nx = cx + dx;
         const ny = cy + dy;
-        if (!inBounds(nx, ny)) continue;
-        const n = tileIdx(nx, ny);
+        if (!this.onMap(nx, ny)) continue;
+        const n = this.idx(nx, ny);
         const seen = stateOf(n);
         if (seen === 2) continue;
         if (dx && dy) {
@@ -357,36 +376,36 @@ export class World {
     const path: Waypoint[] = [];
     let c = goal;
     while (c !== start) {
-      const x = c % W;
-      path.push([x + 0.5, (c - x) / W + 0.5, 0]);
+      const x = c % this.w;
+      path.push([x + 0.5, (c - x) / this.w + 0.5, 0]);
       c = at(came, c);
     }
     return path.reverse();
   }
 
   /** Tiles reachable on foot from a start tile, in breadth-first order. */
-  flood(sx: number, sy: number, limit = W * H): [number, number][] {
-    const seen = new Uint8Array(W * H);
+  flood(sx: number, sy: number, limit = this.w * this.h): [number, number][] {
+    const seen = new Uint8Array(this.w * this.h);
     const out: [number, number][] = [];
-    if (!inBounds(sx, sy)) return out;
+    if (!this.onMap(sx, sy)) return out;
     // a queue of tile indexes read from the front, as taking from the front of an array moves everything behind it
-    const queue = new Int32Array(W * H);
+    const queue = new Int32Array(this.w * this.h);
     let head = 0;
     let tail = 0;
-    queue[tail++] = tileIdx(sx, sy);
-    seen[tileIdx(sx, sy)] = 1;
+    queue[tail++] = this.idx(sx, sy);
+    seen[this.idx(sx, sy)] = 1;
     while (head < tail && out.length < limit) {
       const i = at(queue, head++);
-      const x = i % W;
-      const y = (i - x) / W;
+      const x = i % this.w;
+      const y = (i - x) / this.w;
       out.push([x, y]);
       for (const [dx, dy] of DIRS4) {
         const nx = x + dx;
         const ny = y + dy;
-        if (!inBounds(nx, ny) || seen[tileIdx(nx, ny)]) continue;
+        if (!this.onMap(nx, ny) || seen[this.idx(nx, ny)]) continue;
         if (!this.canStep(x, y, nx, ny)) continue;
-        seen[tileIdx(nx, ny)] = 1;
-        queue[tail++] = tileIdx(nx, ny);
+        seen[this.idx(nx, ny)] = 1;
+        queue[tail++] = this.idx(nx, ny);
       }
     }
     return out;
@@ -401,14 +420,14 @@ export class World {
       this.spots.clear();
       this.spotsStamp = this.stamp;
     }
-    if (!inBounds(x, y)) return [];
+    if (!this.onMap(x, y)) return [];
     // the search stops 160 tiles out, so asking for more than that finds the same
-    const key = tileIdx(x, y) * (STAND_SEARCH + 1) + Math.min(count, STAND_SEARCH);
+    const key = this.idx(x, y) * (STAND_SEARCH + 1) + Math.min(count, STAND_SEARCH);
     let found = this.spots.get(key);
     if (!found) {
       const z = this.zoneAt(x, y);
       found = this.flood(x, y, STAND_SEARCH)
-        .filter(([tx, ty]) => this.zone[tileIdx(tx, ty)] === z && !this.reserved[tileIdx(tx, ty)])
+        .filter(([tx, ty]) => this.zone[this.idx(tx, ty)] === z && !this.reserved[this.idx(tx, ty)])
         .slice(0, count);
       this.spots.set(key, found);
     }
@@ -417,11 +436,11 @@ export class World {
 
   /** Everything that needs reaching can be reached from the street. */
   connected(): boolean {
-    const seen = new Uint8Array(W * H);
-    for (const [x, y] of this.flood(0, SIDEWALK_Y)) seen[tileIdx(x, y)] = 1;
+    const seen = new Uint8Array(this.w * this.h);
+    for (const [x, y] of this.flood(0, SIDEWALK_Y)) seen[this.idx(x, y)] = 1;
     /** Whether a tile was reached from the street. */
-    const need = (x: number, y: number) => inBounds(x, y) && seen[tileIdx(x, y)] === 1;
-    if (!need(W - 1, SIDEWALK_Y)) return false;
+    const need = (x: number, y: number) => this.onMap(x, y) && seen[this.idx(x, y)] === 1;
+    if (!need(this.w - 1, SIDEWALK_Y)) return false;
     for (const x of this.building.door) if (!need(x, this.building.front - 1)) return false;
     for (const r of this.s.rooms) {
       if (!need(r.door.x, r.door.y) || !need(r.door.x + r.door.dx, r.door.y + r.door.dy)) return false;
@@ -450,7 +469,7 @@ export class World {
     let z: number | null = null;
     for (const [tx, ty] of tiles) {
       if (!this.inside(tx, ty)) return no('Must be inside the building');
-      const i = tileIdx(tx, ty);
+      const i = this.idx(tx, ty);
       if (def.walkable) {
         // rugs lie flat: fine under furniture and in doorways, but not on another rug
         if (this.s.items.some((o) => ITEMS[o.type].walkable && footprint(o).some(([ox, oy]) => ox === tx && oy === ty)))
@@ -472,7 +491,7 @@ export class World {
     }
     for (let i = 0; i < def.access.length; i++) {
       const [ax, ay] = accessTile(it, i);
-      if (!this.inside(ax, ay) || this.zone[tileIdx(ax, ay)] !== z || this.blocked[tileIdx(ax, ay)])
+      if (!this.inside(ax, ay) || this.zone[this.idx(ax, ay)] !== z || this.blocked[this.idx(ax, ay)])
         return no('Needs clear space to use it (R rotates)');
     }
     // trial placement to make sure nothing gets cut off
@@ -491,7 +510,7 @@ export class World {
     for (let y = r.y; y < r.y + r.h; y++) {
       for (let x = r.x; x < r.x + r.w; x++) {
         if (!this.inside(x, y)) return no('Must be inside the building');
-        const i = tileIdx(x, y);
+        const i = this.idx(x, y);
         if (this.zone[i] !== Z_CORRIDOR) return no('Overlaps another room');
         if (this.blocked[i]) return no('Something is in the way');
         if (this.reserved[i]) return no('Keep doorways and access spots clear');
@@ -533,12 +552,13 @@ export class World {
   doorValid(type: RoomType, r: Rect, door: Room['door'], replacing?: Room): Check {
     const ox = door.x + door.dx;
     const oy = door.y + door.dy;
-    if (!this.inside(ox, oy) || this.zone[tileIdx(ox, oy)] !== Z_CORRIDOR) return no('Doors must open onto a corridor');
-    if (this.blocked[tileIdx(ox, oy)]) return no('Something is blocking that doorway');
+    if (!this.inside(ox, oy) || this.zone[this.idx(ox, oy)] !== Z_CORRIDOR)
+      return no('Doors must open onto a corridor');
+    if (this.blocked[this.idx(ox, oy)]) return no('Something is blocking that doorway');
     if (replacing) {
       if (replacing.windows.some((w) => w.x === door.x && w.y === door.y && w.dx === door.dx && w.dy === door.dy))
         return no('There is a window there');
-      if (this.blocked[tileIdx(door.x, door.y)]) return no('Furniture is in the way inside the room');
+      if (this.blocked[this.idx(door.x, door.y)]) return no('Furniture is in the way inside the room');
     }
     const rooms = this.s.rooms;
     const trial: Room = {
@@ -570,12 +590,12 @@ export class World {
     if (sameRect(room, r)) return no('Drag a wall in or out');
     if (Math.min(r.w, r.h) < def.minShort || Math.max(r.w, r.h) < def.minLong)
       return no(`Too small: needs at least ${def.minShort}×${def.minLong}`);
-    const ownDoorway = tileIdx(room.door.x + room.door.dx, room.door.y + room.door.dy);
+    const ownDoorway = this.idx(room.door.x + room.door.dx, room.door.y + room.door.dy);
     for (let y = r.y; y < r.y + r.h; y++) {
       for (let x = r.x; x < r.x + r.w; x++) {
         if (inRect(room, x, y)) continue;
         if (!this.inside(x, y)) return no('Must be inside the building');
-        const i = tileIdx(x, y);
+        const i = this.idx(x, y);
         if (this.zone[i] !== Z_CORRIDOR) return no('Overlaps another room');
         if (this.blocked[i]) return no('Something is in the way');
         // the room's own doorway moves out of the way with the wall
@@ -605,9 +625,9 @@ export class World {
     const ox = door.x + door.dx;
     const oy = door.y + door.dy;
     const check =
-      !this.inside(ox, oy) || this.zone[tileIdx(ox, oy)] !== Z_CORRIDOR
+      !this.inside(ox, oy) || this.zone[this.idx(ox, oy)] !== Z_CORRIDOR
         ? no('The door must open onto a corridor')
-        : this.blocked[tileIdx(ox, oy)]
+        : this.blocked[this.idx(ox, oy)]
           ? no('Something is blocking the doorway')
           : this.connected()
             ? OK
@@ -632,9 +652,9 @@ export class World {
     const { door } = placed;
     const ox = door.x + door.dx;
     const oy = door.y + door.dy;
-    if (check.ok && (!this.inside(ox, oy) || this.zone[tileIdx(ox, oy)] !== Z_CORRIDOR))
+    if (check.ok && (!this.inside(ox, oy) || this.zone[this.idx(ox, oy)] !== Z_CORRIDOR))
       check = no('The door must open onto a corridor');
-    else if (check.ok && this.blocked[tileIdx(ox, oy)]) check = no('Something is blocking the doorway');
+    else if (check.ok && this.blocked[this.idx(ox, oy)]) check = no('Something is blocking the doorway');
     if (check.ok) {
       // try it: everyone and everything has to be reached with the room in its new place
       const trial: Room = {

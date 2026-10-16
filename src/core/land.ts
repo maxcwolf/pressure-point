@@ -2,12 +2,16 @@
 // stays a rectangle, so each plot runs the whole length of the side it is on.
 
 import {
+  type CenterId,
   centerOf,
-  LAND_LIMITS,
+  CENTERS,
+  type Land,
   LAND_STEP,
   LAND_TILE_PRICE,
   type LandLimits,
+  landLimitsFor,
   type LandSide,
+  LOT_W,
   type Plot,
   type Rect,
 } from './data';
@@ -25,8 +29,14 @@ export interface LandOffer {
   price: number;
 }
 
+/** How wide a center's lot is. */
+export const lotWidth = (center: { width?: number }) => center.width ?? LOT_W;
+
 /** How far the building can grow at this center. */
-export const landLimits = (s: GameState): LandLimits => ({ ...LAND_LIMITS, ...centerOf(s).land });
+export const landLimits = (s: GameState): LandLimits => {
+  const center = centerOf(s);
+  return { ...landLimitsFor(lotWidth(center)), ...center.land };
+};
 
 /** How many tiles of lawn there are between a side of the building and the edge of the lot. */
 export function roomToGrow(plot: Plot, side: LandSide, limits: LandLimits): number {
@@ -74,6 +84,22 @@ export function landRects(base: Plot, bought: readonly LandSide[], limits: LandL
     plot = grownBy(plot, offer);
   }
   return rects;
+}
+
+/** The rectangles of all the land bought, in the order it was bought. */
+export const landTiles = (s: Pick<GameState, 'land'>): Rect[] => s.land.flatMap((l) => l.rects);
+
+/** How far a building could grow on every lot up to save version 24, when every lot was 32 tiles wide. */
+const LIMITS_BEFORE_25: LandLimits = { west: 1, east: 30, back: 1 };
+
+/**
+ * The land in a save from before version 25, which kept only the sides bought, as the strips they were then: worked out
+ * on the lot as it was, so the building keeps its exact shape however the lot has grown since.
+ */
+export function stripsBought(center: CenterId, sides: readonly LandSide[]): Land[] {
+  const def = CENTERS[center];
+  const limits = { ...LIMITS_BEFORE_25, ...def.land };
+  return landRects(def.plot, sides, limits).map((r) => ({ plot: 'strip', rects: [r] }));
 }
 
 /** The building on its lot after the plots bought, in the order they were bought. */

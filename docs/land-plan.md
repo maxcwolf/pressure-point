@@ -108,7 +108,7 @@ My recommendations, each open to Max's call (see [Decisions to make](#decisions-
   - Write it as one `shiftSave(s, dx, dy)`.
   - Make a coordinate added later impossible to miss. Types don't exist at runtime, so a test can't walk them. Instead, give each saved type an exhaustive map of its fields to `'shift'` or `'keep'` (a `Record<keyof Room, …>` and so on), so a new field fails to compile until someone decides. Watch for the tuples: `Waypoint` is `[x, y, pose]`, and `Destination` is `[tx, ty, px, py, hasPose]`, whose last entry isn't a coordinate.
   - Test it on a save that has every kind of coordinate filled in.
-  - Prefer growing maps east and back only where that avoids a shift. It can't always be avoided.
+  - Prefer growing maps east, or out past the road, where that avoids a shift. It can't always be avoided.
 
 ### Drawing (`render/`)
 
@@ -170,6 +170,7 @@ Each phase ships on its own with everything green, in this order.
    - `W` and `H` become the center's, with `shiftSave` for any center whose origin moves.
    - The sandbox and the tighter campaign lots get room.
    - Until phase 4, the Land tab keeps selling strips, now with the new limits.
+   - **Done.** Lots grow east only, so no center's origin moved and no `shiftSave` was needed; it waits for the first center that grows west or back. Every lot keeps its depth (`H`, 24) and its street; each center sets its own width (`width` in `CENTERS`, 32 unless it says): the sandbox 44, The Boardwalk and The Orchard Estate 40, The Exchange and High Pines 36, Willow Lane 32. The `World` keeps its own `w` and `h`, with `idx()` and `onMap()` in place of `tileIdx()` and `inBounds()`. Land is saved as rectangles (`Land` in `core/data/map.ts`), and save version 25 turns the old sides into strips worked out on the 32-tile lot they were bought on (`stripsBought()`). No seeded test moved.
 4. **Hand-designed plots.**
    - Plot data per center, opened by stars or campaign progress, priced by hand.
    - The Expand tool, For Sale boards and the confirmation dialog.
@@ -187,7 +188,7 @@ Phases 1 to 4 deliver most of the Two Point Hospital experience: plots found and
 - **Construction time?** I recommend a few in-game days, with a fence. It can be left out if it feels like waiting for nothing.
 - **Selling land back?** I recommend no, unless one of the games does. It complicates everything for little play.
 - **Separate buildings in the first round, or only joined plots?** I recommend joined plots first (phase 4), then separate buildings (phase 6). Walking outdoors touches the most systems.
-- **How big should maps get, and which way?** It depends on frame rate: software WebGL in the tests and the draw-call budget. Measure with the sandbox first. Settle it before phase 3: growing west or back means shifting every old save, and growing east or out past the road doesn't. Phases 1 and 2 don't depend on any of these decisions.
+- **How big should maps get, and which way?** Settled in phase 3: east only, by 4 to 12 tiles. It depends on frame rate: software WebGL in the tests and the draw-call budget. Measure with the sandbox first. Settle it before phase 3: growing west or back means shifting every old save, and growing east or out past the road doesn't. Phases 1 and 2 don't depend on any of these decisions.
 
 ## Risks
 

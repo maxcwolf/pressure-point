@@ -7,12 +7,12 @@ import {
   ITEMS,
   LOAN_MAX,
   LOAN_STEP,
+  LOT_W,
   MODALITIES,
   PRICE_MAX,
   PRICE_MIN,
   SANDBOX_PLOT,
   SIDEWALK_Y,
-  W,
 } from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
 import { fairSalary } from '../../src/core/people';
@@ -441,7 +441,8 @@ describe('camera arithmetic', () => {
   it('lets the camera look a little past the edge of the map and no further', () => {
     expect(keepNearMap(10, 10)).toEqual([10, 10]);
     expect(keepNearMap(-50, 500)).toEqual([-2, H + 2]);
-    expect(keepNearMap(500, -50)).toEqual([W + 2, -2]);
+    expect(keepNearMap(500, -50)).toEqual([LOT_W + 2, -2]);
+    expect(keepNearMap(500, -50, 44)).toEqual([44 + 2, -2]);
   });
 
   it('covers more ground per pixel the farther out the camera is and the shorter the window', () => {

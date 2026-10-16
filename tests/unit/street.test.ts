@@ -2,8 +2,9 @@
 // grow from nothing and shrink away rather than pop in and out of sight.
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, SIDEWALK_Y, W } from '../../src/core/data';
+import { CENTERS, SIDEWALK_Y } from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
+import { lotWidth } from '../../src/core/land';
 import { streetEnds } from '../../src/core/sim/chars';
 import { streetFade } from '../../src/render/people';
 
@@ -12,7 +13,7 @@ describe('the ends of the street', () => {
     it(`are on the map at ${center.name}`, () => {
       for (const x of streetEnds(footprintOf(center.plot))) {
         expect(x).toBeGreaterThanOrEqual(0);
-        expect(x).toBeLessThan(W);
+        expect(x).toBeLessThan(lotWidth(center));
       }
     });
   }

@@ -13,6 +13,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     place: 'A big lot of your own',
     blurb: 'Build the center you want, at your own pace.',
     plot: SANDBOX_PLOT,
+    width: 44,
     startMoney: 30000,
     climate: { average: 66, swing: 6 },
     disciplines: ['acupuncture', 'reiki', 'sound', 'shaman'],
@@ -67,6 +68,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb:
       'Desk workers by the busload, arriving in waves when the office crowd comes in. Acupuncture opens at the first star.',
     plot: { x0: 5, x1: 25, y0: 6, y1: 17, door: [14, 15] },
+    width: 36,
     startMoney: 25000,
     climate: { average: 62, swing: 14 },
     disciplines: ['acupuncture'],
@@ -103,6 +105,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb:
       'Packed in summer, half asleep in winter, and the sea air is hard on equipment. Reiki opens at the second star.',
     plot: { x0: 4, x1: 26, y0: 7, y1: 16, door: [14, 15] },
+    width: 40,
     // the beach huts stand along the back of the lot
     land: { back: 3 },
     startMoney: 30000,
@@ -140,6 +143,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb:
       'Cold all year, and snowed in now and then through the winter, so keep the place warm and the stones hot. Sound healing opens at the first star, and reiki at the second.',
     plot: { x0: 6, x1: 25, y0: 5, y1: 16, door: [15, 16] },
+    width: 36,
     startMoney: 35000,
     climate: { average: 44, swing: 18 },
     disciplines: ['acupuncture', 'reiki', 'sound'],
@@ -175,6 +179,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb:
       'Wealthy guests who pay handsomely and expect beautiful rooms, and a health inspector who calls twice as often. Acupuncture, reiki, sound healing and a Shaman are open from the start.',
     plot: { x0: 4, x1: 27, y0: 5, y1: 16, door: [15, 16] },
+    width: 40,
     startMoney: 45000,
     climate: { average: 62, swing: 16 },
     disciplines: ['acupuncture', 'reiki', 'sound', 'shaman'],

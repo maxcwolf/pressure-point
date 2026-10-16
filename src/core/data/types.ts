@@ -577,6 +577,8 @@ export interface CenterDef {
   place: string;
   blurb: string;
   plot: Plot;
+  /** How wide its lot is, in tiles, where it is wider than the usual LOT_W. */
+  width?: number;
   startMoney: number;
   /** The objectives for each star in turn. */
   goals: readonly StarGoal[];

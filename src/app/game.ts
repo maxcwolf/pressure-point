@@ -2,7 +2,7 @@
 
 import type { Audio } from '../audio';
 import { withAchievements } from '../core/campaign';
-import { ITEMS, ROOMS, W } from '../core/data';
+import { ITEMS, ROOMS } from '../core/data';
 import { Sim } from '../core/sim/sim';
 import type { GameState } from '../core/state/types';
 import { accessTile, itemDims } from '../core/world';
@@ -158,7 +158,10 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     const data = {
       ITEMS,
       ROOMS,
-      W,
+      /** How wide the map is. */
+      get W() {
+        return sim.world.w;
+      },
       /** The building's west wall. */
       get BX0() {
         return sim.world.building.bounds.x0;

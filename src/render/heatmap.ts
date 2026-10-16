@@ -3,7 +3,6 @@
 
 import * as THREE from 'three';
 
-import { H, W } from '../core/data';
 import { at } from '../core/util';
 
 /** A floor tile and how good things are there, from 0 to 1. */
@@ -41,11 +40,15 @@ export class Heatmap {
   private color = new THREE.Color();
   private matrix = new THREE.Matrix4();
 
-  constructor(scene: THREE.Scene) {
+  constructor(
+    scene: THREE.Scene,
+    /** How many tiles the map has, and so the most it can color. */
+    private tiles: number,
+  ) {
     this.mesh = new THREE.InstancedMesh(
       new THREE.PlaneGeometry(0.96, 0.96).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.62, depthWrite: false }),
-      W * H,
+      tiles,
     );
     this.mesh.count = 0;
     this.mesh.frustumCulled = false;
@@ -57,7 +60,7 @@ export class Heatmap {
   set(tiles: readonly HeatTile[] | null, palette: Palette = 'good') {
     const paint = palette === 'temperature' ? tempColor : palette === 'land' ? landColor : heatColor;
     const list = tiles ?? [];
-    const n = Math.min(list.length, W * H);
+    const n = Math.min(list.length, this.tiles);
     for (let i = 0; i < n; i++) {
       const [x, y, v] = at(list, i);
       this.matrix.makeTranslation(x + 0.5, 0.02, y + 0.5);

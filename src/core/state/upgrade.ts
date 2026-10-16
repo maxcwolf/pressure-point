@@ -11,6 +11,8 @@ import {
   FEELINGS,
   FIRST_OUTBREAK_DAY,
   INSPECTION_FIRST_DAY,
+  type Land,
+  type LandSide,
   MISHAP_FIRST_DAY,
   MISHAP_GAP_DAYS,
   type Modality,
@@ -21,6 +23,7 @@ import {
   VIP_FIRST_DAY,
   VIP_GAP_DAYS,
 } from '../data';
+import { stripsBought } from '../land';
 import { makeCandidate, settleSex } from '../people';
 import {
   defaultPolicy,
@@ -314,7 +317,9 @@ export function upgradeSave(save: GameState) {
       s.candidates.push(makeCandidate(save, 'instructor'));
   s.mushrooms ??= false;
   s.mushroomsStashed ??= false;
-  s.land ??= [];
+  // up to version 24, land was kept as the sides bought, worked out on a lot that has since grown
+  const land: readonly unknown[] = s.land ?? [];
+  s.land = land.every((l) => typeof l === 'string') ? stripsBought(s.center, land as LandSide[]) : (land as Land[]);
   s.regulars ??= [];
   // a policy saved before the mushrooms has no word on putting them away
   const policy: Partial<Policy> = s.policy;

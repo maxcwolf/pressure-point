@@ -30,7 +30,7 @@ export function buyLand(ctx: SimContext, side: LandSide): boolean {
     return false;
   }
   spend(ctx, offer.price, 'building');
-  ctx.s.land.push(side);
+  ctx.s.land.push({ plot: 'strip', rects: [{ x0: offer.x0, x1: offer.x1, y0: offer.y0, y1: offer.y1 }] });
   ctx.world.rebuild();
   toast(ctx, 'The land is yours, and the building has grown into it.', 'good');
   emit(ctx, { type: 'sfx', name: 'build' });

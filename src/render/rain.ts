@@ -12,9 +12,9 @@ export const RAIN_FALL = 16;
 const STREAK = 0.55;
 const SLANT = 0.3;
 
-/** The two ends of a drop's streak at a moment, as x, y and z of its foot and then of its tail. */
-export function dropLine(i: number, t: number): [number, number, number, number, number, number] {
-  const p = flakeSpot(i);
+/** The two ends of a drop's streak at a moment over a map so wide, as x, y and z of its foot and then of its tail. */
+export function dropLine(i: number, t: number, width?: number): [number, number, number, number, number, number] {
+  const p = flakeSpot(i, width);
   const y = flakeHeight(p.start, t, RAIN_FALL);
   return [p.x, y, p.z, p.x - STREAK * SLANT, y + STREAK, p.z];
 }
@@ -46,7 +46,7 @@ export class RainLayer {
   update(t: number) {
     this.drops.visible = raining(this.sim);
     if (!this.drops.visible) return;
-    for (let i = 0; i < DROPS; i++) this.positions.set(dropLine(i, t), i * 6);
+    for (let i = 0; i < DROPS; i++) this.positions.set(dropLine(i, t, this.sim.world.w), i * 6);
     this.drops.geometry.getAttribute('position').needsUpdate = true;
   }
 }

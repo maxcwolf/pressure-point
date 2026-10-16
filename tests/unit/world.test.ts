@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ITEMS, SANDBOX_PLOT, SIDEWALK_Y, W } from '../../src/core/data';
+import { ITEMS, SANDBOX_PLOT, SIDEWALK_Y } from '../../src/core/data';
 import { accessPose, accessTile, footprint, frontOf, itemDims, rotPoint, rotVec } from '../../src/core/world';
 import { addConsult, addMassage, freshSim, hire, LAYOUT } from './helpers';
 
@@ -91,7 +91,7 @@ describe('pathfinding', () => {
     const { world } = freshSim();
     expect(world.findPath(0, SIDEWALK_Y, 1, 1)).toBeNull();
     // the only way in is the entrance, so every route to the far corner passes through it
-    const path = world.findPath(W - 1, SIDEWALK_Y, BX0, BY0)!;
+    const path = world.findPath(world.w - 1, SIDEWALK_Y, BX0, BY0)!;
     expect(path.some(([x, y]) => ENT_X.includes(Math.floor(x)) && Math.floor(y) === ENT_IN_Y)).toBe(true);
   });
 
@@ -131,7 +131,7 @@ describe('pathfinding', () => {
     };
     /** The shortest distance between two tiles, by a plain search of every way there. */
     const shortest = (sx: number, sy: number, gx: number, gy: number) => {
-      const dist = new Map<number, number>([[sy * W + sx, 0]]);
+      const dist = new Map<number, number>([[sy * world.w + sx, 0]]);
       const todo = [[sx, sy, 0]];
       while (todo.length) {
         todo.sort((a, b) => a[2]! - b[2]!);
@@ -156,8 +156,8 @@ describe('pathfinding', () => {
                 world.canStep(x!, ny, nx, ny)
               : world.canStep(x!, y!, nx, ny);
           const nd = d! + (dx && dy ? Math.SQRT2 : 1);
-          if (!ok || (dist.get(ny * W + nx) ?? Infinity) <= nd) continue;
-          dist.set(ny * W + nx, nd);
+          if (!ok || (dist.get(ny * world.w + nx) ?? Infinity) <= nd) continue;
+          dist.set(ny * world.w + nx, nd);
           todo.push([nx, ny, nd]);
         }
       }

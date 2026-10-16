@@ -1,10 +1,9 @@
 // Something that carries from a spot to the tiles around it, fading with distance and held back by the walls of the
 // rooms it passes out of and into: noise, and warmth or cool.
 
-import { H, W } from '../data';
 import type { Room } from '../state/types';
 import { at } from '../util';
-import { inBounds, tileIdx } from '../world';
+import type { World } from '../world';
 import type { SimContext } from './context';
 
 /** How much of what carries gets through a room's walls, from 0 (none) to 1 (all of it). */
@@ -49,23 +48,23 @@ export type Spread = (
  */
 export function spreader(ctx: SimContext, leak: Leak): Spread {
   const { world } = ctx;
-  const walls = new Float64Array(W * H);
-  for (let i = 0; i < W * H; i++) {
+  const walls = new Float64Array(world.w * world.h);
+  for (let i = 0; i < walls.length; i++) {
     const room = world.room(at(world.zone, i));
     walls[i] = room ? leak(room) : 1;
   }
   return (grid, cx, cy, amount, radius, inside = 1) => {
-    if (!inBounds(cx, cy)) return;
+    if (!world.onMap(cx, cy)) return;
     const from = world.zoneAt(cx, cy);
-    const out = at(walls, tileIdx(cx, cy));
+    const out = at(walls, world.idx(cx, cy));
     const k = kernel(radius);
     const side = radius * 2 + 1;
     for (let y = cy - radius; y <= cy + radius; y++) {
       for (let x = cx - radius; x <= cx + radius; x++) {
-        if (!inBounds(x, y)) continue;
+        if (!world.onMap(x, y)) continue;
         const share = at(k, (y - cy + radius) * side + x - cx + radius);
         if (share === 0) continue;
-        const i = tileIdx(x, y);
+        const i = world.idx(x, y);
         const carry = at(world.zone, i) === from ? inside : out * at(walls, i);
         grid[i] = at(grid, i) + amount * share * carry;
       }
@@ -74,5 +73,5 @@ export function spreader(ctx: SimContext, leak: Leak): Spread {
 }
 
 /** The value of a grid at a tile, or a fallback off the map. */
-export const gridAt = (grid: Float32Array, x: number, y: number, fallback = 0) =>
-  inBounds(x, y) ? at(grid, tileIdx(x, y)) : fallback;
+export const gridAt = (world: World, grid: Float32Array, x: number, y: number, fallback = 0) =>
+  world.onMap(x, y) ? at(grid, world.idx(x, y)) : fallback;

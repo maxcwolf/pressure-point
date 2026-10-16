@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { type CenterId, CENTERS, type GoalSpec, plotFits, SANDBOX_PLOT } from '../../src/core/data';
+import { lotWidth } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
 import { createContext, type SimContext } from '../../src/core/sim/context';
 import { averageWait, cureRate, objectiveFor } from '../../src/core/sim/goals';
@@ -24,7 +25,7 @@ const month = (fields: Partial<Tally>) => ({
 describe('the centers', () => {
   it('each have a building that fits its lot, and three stars of goals', () => {
     for (const c of Object.values(CENTERS)) {
-      expect(plotFits(c.plot), c.id).toBe(true);
+      expect(plotFits(c.plot, lotWidth(c)), c.id).toBe(true);
       expect(c.goals, c.id).toHaveLength(3);
       for (const star of c.goals) expect(star.length, c.id).toBeGreaterThan(0);
     }

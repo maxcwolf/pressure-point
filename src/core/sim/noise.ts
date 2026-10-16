@@ -54,7 +54,7 @@ export function updateNoise(ctx: SimContext) {
 }
 
 /** How noisy a tile is, never below silence. */
-export const noiseAt = (ctx: SimContext, x: number, y: number) => Math.max(0, gridAt(ctx.noise, x, y));
+export const noiseAt = (ctx: SimContext, x: number, y: number) => Math.max(0, gridAt(ctx.world, ctx.noise, x, y));
 
 /** How noisy it is at an item, from the middle of it. */
 export function itemNoise(ctx: SimContext, it: Item): number {

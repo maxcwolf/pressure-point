@@ -7,7 +7,7 @@ import { footprintTiles } from '../../core/footprint';
 import { calmness } from '../../core/sim/noise';
 import type { Sim } from '../../core/sim/sim';
 import { tempScale } from '../../core/sim/warmth';
-import { footprint, tileIdx } from '../../core/world';
+import { footprint } from '../../core/world';
 import type { HeatTile, Palette } from '../../render/heatmap';
 
 /** What the floor can be colored by. */
@@ -65,14 +65,14 @@ export function heatTiles(sim: Sim, mode: OverlayMode): HeatTile[] {
       // decor placed while the game is paused counts at once
       sim.refreshAmbience();
       for (const [x, y] of footprintTiles(w.building))
-        if (!w.blocked[tileIdx(x, y)]) out.push([x, y, pleasantness(sim.drainFactor(x, y))]);
+        if (!w.blocked[w.idx(x, y)]) out.push([x, y, pleasantness(sim.drainFactor(x, y))]);
       break;
     case 'calm':
     case 'temperature':
       // items placed while the game is paused count at once
       sim.refreshAmbience();
       for (const [x, y] of footprintTiles(w.building))
-        if (!w.blocked[tileIdx(x, y)])
+        if (!w.blocked[w.idx(x, y)])
           out.push([x, y, mode === 'calm' ? calmness(sim.noiseAt(x, y)) : tempScale(sim.warmthAt(x, y))]);
       break;
     case 'patience':

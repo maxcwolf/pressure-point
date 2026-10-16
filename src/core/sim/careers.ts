@@ -30,7 +30,7 @@ import { makeCandidate } from '../people';
 import { pick, random } from '../random';
 import type { GameState, Item, Job, Staff } from '../state/types';
 import { at } from '../util';
-import { tileIdx, Z_CORRIDOR } from '../world';
+import { Z_CORRIDOR } from '../world';
 import { say, staffById } from './chars';
 import type { SimContext } from './context';
 import { emit, tipOnce, toast } from './events';
@@ -222,7 +222,7 @@ export function updateHabits(ctx: SimContext) {
     const walking = !!st.path;
     if (walking && habitOf(st, 'litter') && random() < 0.04) {
       const { tx, ty } = st;
-      const corridor = ctx.world.zone[tileIdx(tx, ty)] === Z_CORRIDOR;
+      const corridor = ctx.world.zone[ctx.world.idx(tx, ty)] === Z_CORRIDOR;
       if (corridor && !s.litter.some((l) => l.x === tx && l.y === ty))
         s.litter.push({ id: s.nextId++, x: tx, y: ty, claimedBy: 0 });
     }

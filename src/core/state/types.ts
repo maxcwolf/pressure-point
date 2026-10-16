@@ -15,7 +15,7 @@ import type {
   GeneralId,
   GoalSpec,
   ItemType,
-  LandSide,
+  Land,
   MishapId,
   Modality,
   Offering,
@@ -718,8 +718,8 @@ export interface GameState {
   mushrooms: boolean;
   /** They were put away when the health inspector wrote ahead, to come back out once the inspection is over. */
   mushroomsStashed: boolean;
-  /** The plots of land bought next to the building, by side, in the order they were bought. */
-  land: LandSide[];
+  /** The land bought next to the building, in the order it was bought. */
+  land: Land[];
   /** Guests who come back every few weeks, whether here now or due. */
   regulars: Regular[];
   /** How hard the game is, setting by setting: a sandbox setting. One left out is as usual. */
