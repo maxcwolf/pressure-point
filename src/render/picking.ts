@@ -28,6 +28,15 @@ export type Selection =
   /** A plot of land, by its id. */
   | { kind: 'plot'; id: string };
 
+/**
+ * What a click selects from everything under the cursor: the first of them, or, when what is selected
+ * already is among them, the one after it, so clicking again on a stack steps through it and wraps round.
+ */
+export function nextPick(hits: readonly Selection[], current: Selection | null): Selection | null {
+  const i = current ? hits.findIndex((h) => h.kind === current.kind && h.id === current.id) : -1;
+  return hits[(i + 1) % hits.length] ?? null;
+}
+
 export class Picker {
   private raycaster = new THREE.Raycaster();
   private ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -53,24 +62,39 @@ export class Picker {
   }
   /** What is under the cursor: a person first, then an item, then a room. */
   pick(clientX: number, clientY: number): Selection | null {
+    return this.pickAll(clientX, clientY)[0] ?? null;
+  }
+  /**
+   * Everything under the cursor, so a click can step through a stack: the people nearest first, then the
+   * items nearest first. Only when there are neither is it the room, or a plot being built.
+   */
+  pickAll(clientX: number, clientY: number): Selection[] {
     this.setRay(clientX, clientY);
-    const hit = this.raycaster.intersectObjects(this.people.picks(), false).find((h) => shown(h.object));
-    const char = hit && pickData(hit.object);
-    if (char?.charKind && char.charId !== undefined) return { kind: char.charKind, id: char.charId };
-    const itemHit = this.raycaster.intersectObjects(this.items.models(), true).find((h) => shown(h.object));
-    const itemId = itemHit && pickData(itemHit.object).itemId;
-    if (itemId) return { kind: 'item', id: itemId };
+    const out: Selection[] = [];
+    /** Whether this person or item is in the list already. */
+    const has = (kind: Selection['kind'], id: number) => out.some((s) => s.kind === kind && s.id === id);
+    for (const hit of this.raycaster.intersectObjects(this.people.picks(), false)) {
+      const char = pickData(hit.object);
+      if (!shown(hit.object) || !char.charKind || char.charId === undefined || has(char.charKind, char.charId))
+        continue;
+      out.push({ kind: char.charKind, id: char.charId });
+    }
+    for (const hit of this.raycaster.intersectObjects(this.items.models(), true)) {
+      const itemId = pickData(hit.object).itemId;
+      if (shown(hit.object) && itemId && !has('item', itemId)) out.push({ kind: 'item', id: itemId });
+    }
+    if (out.length) return out;
     const g = this.groundAt(clientX, clientY);
     if (g) {
       const room = this.sim.world.roomAt(Math.floor(g.x), Math.floor(g.y));
-      if (room) return { kind: 'room', id: room.id };
+      if (room) return [{ kind: 'room', id: room.id }];
       // a plot the builders are at, behind its fence: a finished one is the building's floor, and is picked with Expand
       const site = this.sim
         .landOffers()
         .find((o) => o.state === 'building' && plotAt([o.def], Math.floor(g.x), Math.floor(g.y)));
-      if (site) return { kind: 'plot', id: site.def.id };
+      if (site) return [{ kind: 'plot', id: site.def.id }];
     }
-    return null;
+    return [];
   }
   /** Screen position of a point in the world. */
   project(x: number, y: number, h = 0): { x: number; y: number } {

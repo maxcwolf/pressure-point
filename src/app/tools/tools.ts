@@ -22,7 +22,7 @@ import { sameSpot } from '../../core/state/game';
 import type { Room, WallSpot } from '../../core/state/types';
 import { onWall, type Rect, Z_CORRIDOR } from '../../core/world';
 import { type Marker, OV_BAD, OV_BLUE, OV_GOOD, type OverlayTile } from '../../render/overlay-codes';
-import type { Selection } from '../../render/picking';
+import { nextPick, type Selection } from '../../render/picking';
 import type { View } from '../../render/view';
 import { expandHint, plotHeat } from '../../ui/lib/land';
 import { dragRect, itemSpot, tileOf } from './geometry';
@@ -341,7 +341,8 @@ export class Tools {
     const t = this.tool;
     const sim = this.sim;
     if (t.kind === 'none') {
-      this.select(this.view.pick(clientX, clientY));
+      // clicking again where something is selected steps on to whatever else is there
+      this.select(nextPick(this.view.pickAll(clientX, clientY), this.selected));
       if (this.selected) this.sfx('blip');
       return;
     }

@@ -112,6 +112,7 @@ The **Controls** there are kept for every game on this computer: **edge scrollin
 | Input             | Action                                                |
 | ----------------- | ----------------------------------------------------- |
 | Left click        | Select, place, confirm                                |
+| Click again       | Select the next person or item in the same spot       |
 | Drag, or W A S D  | Move the camera                                       |
 | Scroll            | Zoom                                                  |
 | Q / E, or 🔄      | Turn the camera a quarter of the way round            |

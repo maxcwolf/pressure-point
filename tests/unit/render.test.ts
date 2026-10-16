@@ -6,7 +6,7 @@ import { isOwned } from '../../src/render/disposal';
 import { ItemsLayer } from '../../src/render/items';
 import { mat, partsOf } from '../../src/render/models/parts';
 import type { PeopleLayer } from '../../src/render/people';
-import { Picker } from '../../src/render/picking';
+import { nextPick, Picker, type Selection } from '../../src/render/picking';
 import { RoomsLayer } from '../../src/render/rooms';
 import { openCenter } from './helpers';
 
@@ -111,6 +111,28 @@ describe('drawing items', () => {
     };
     const picked = new Picker(camera, people as unknown as PeopleLayer, items, sim).pick(720, 450);
     expect(picked).not.toEqual({ kind: 'item', id: table.id });
+  });
+});
+
+describe('clicking through a stack', () => {
+  const guest: Selection = { kind: 'guest', id: 3 };
+  const bed: Selection = { kind: 'item', id: 9 };
+  const lamp: Selection = { kind: 'item', id: 12 };
+
+  it('selects the nearest thing when nothing there is selected yet', () => {
+    expect(nextPick([guest, bed], null)).toEqual(guest);
+    expect(nextPick([guest, bed], { kind: 'item', id: 99 })).toEqual(guest);
+  });
+
+  it('steps on to the next thing each click, and back round to the first', () => {
+    expect(nextPick([guest, bed, lamp], guest)).toEqual(bed);
+    expect(nextPick([guest, bed, lamp], bed)).toEqual(lamp);
+    expect(nextPick([guest, bed, lamp], lamp)).toEqual(guest);
+  });
+
+  it('keeps a lone thing selected, and selects nothing where nothing is', () => {
+    expect(nextPick([bed], bed)).toEqual(bed);
+    expect(nextPick([], bed)).toBeNull();
   });
 });
 

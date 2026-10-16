@@ -285,6 +285,10 @@ export class View {
   pick(clientX: number, clientY: number): Selection | null {
     return this.picker.pick(clientX, clientY);
   }
+  /** Everything under the cursor, people then items nearest first, or else the room. */
+  pickAll(clientX: number, clientY: number): Selection[] {
+    return this.picker.pickAll(clientX, clientY);
+  }
 
   /** Screen position of a point in the world. */
   project(x: number, y: number, h = 0): { x: number; y: number } {
