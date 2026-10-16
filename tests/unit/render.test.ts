@@ -8,7 +8,7 @@ import { mat, partsOf } from '../../src/render/models/parts';
 import type { PeopleLayer } from '../../src/render/people';
 import { nextPick, Picker, type Selection } from '../../src/render/picking';
 import { RoomsLayer } from '../../src/render/rooms';
-import { openCenter } from './helpers';
+import { freshSim, openCenter } from './helpers';
 
 /** Does nothing, for every call the scene makes that a test has no use for. */
 const nothing = () => undefined;
@@ -111,6 +111,39 @@ describe('drawing items', () => {
     };
     const picked = new Picker(camera, people as unknown as PeopleLayer, items, sim).pick(720, 450);
     expect(picked).not.toEqual({ kind: 'item', id: table.id });
+  });
+
+  it('shows something hung on a wall cut low as a see-through ghost of itself, where it hangs', () => {
+    const sim = freshSim();
+    // on the building's back wall, which stands tall until the camera is turned round to look from behind it
+    const painting = sim.placeItem('landscape_painting', 6, 3, 0)!;
+    const items = new ItemsLayer(new THREE.Scene(), sim);
+    items.sync();
+    /** The painting's model, its parts, and where it is. */
+    const drawn = () => {
+      const model = items.models().find((m) => m.userData.itemId === painting.id)!;
+      const parts: THREE.Mesh[] = [];
+      model.traverse((o) => o instanceof THREE.Mesh && parts.push(o));
+      return { parts, at: model.position.clone(), turned: model.rotation.y };
+    };
+    const tall = drawn();
+    expect(tall.parts.every((p) => !(p.material as THREE.Material).transparent)).toBe(true);
+
+    items.setTurn(2);
+    const low = drawn();
+    expect(low.parts.length).toBe(tall.parts.length);
+    for (const p of low.parts) {
+      const m = p.material as THREE.Material;
+      expect(m.transparent).toBe(true);
+      expect(m.opacity).toBeLessThan(0.5);
+      expect(p.castShadow).toBe(false);
+    }
+    expect(low.at).toEqual(tall.at);
+    expect(low.turned).toBe(tall.turned);
+
+    // and solid again once its wall stands tall
+    items.setTurn(0);
+    expect(drawn().parts.every((p) => !(p.material as THREE.Material).transparent)).toBe(true);
   });
 });
 

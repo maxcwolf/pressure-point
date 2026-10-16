@@ -8,7 +8,7 @@ import type { Item } from '../core/state/types';
 import { itemCenter, onWall } from '../core/world';
 import { animateCeremony } from './ceremony';
 import { disposeOwned, owned } from './disposal';
-import { buildHungChip, hangPlace, placeHung } from './hung';
+import { ghostHung, hangPlace, placeHung } from './hung';
 import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
 import { soilLinens } from './models/linens';
@@ -126,7 +126,7 @@ export class ItemsLayer {
     return [...this.items.values()].map((i) => i.group);
   }
 
-  /** Turn the camera: what hangs on a wall shows as a chip on the walls now cut low, and its model on the rest. */
+  /** Turn the camera: what hangs on a wall shows as a ghost of itself on the walls now cut low, and solid on the rest. */
   setTurn(turn: Turn) {
     this.turn = turn;
     this.sync();
@@ -138,17 +138,15 @@ export class ItemsLayer {
     for (const it of this.sim.s.items) {
       liveItems.add(it.id);
       const hung = onWall(it.type) ? hangPlace(this.sim.world, it, this.turn) : null;
-      const key = `${it.type},${it.x},${it.y},${it.rot},${it.level},${it.pattern ?? ''},${hung ? `${hung.tall}${hung.thick}` : ''}`;
+      const key = `${it.type},${it.x},${it.y},${it.rot},${it.level},${it.pattern ?? ''},${hung ? hung.tall : ''}`;
       if (this.items.get(it.id)?.key === key) continue;
       const old = this.items.get(it.id);
       if (old) {
         this.scene.remove(old.group);
         disposeOwned(old.group);
       }
-      const group =
-        hung && !hung.tall
-          ? buildHungChip(it.type, hung)
-          : buildItem(it.type, { pattern: it.pattern, center: this.sim.s.center });
+      const model = buildItem(it.type, { pattern: it.pattern, center: this.sim.s.center });
+      const group = hung && !hung.tall ? ghostHung(model) : model;
       const plate = upgradePlate(it.type, it.level);
       if (plate) group.add(plate);
       if (hung) placeHung(group, hung);

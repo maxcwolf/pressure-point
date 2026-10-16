@@ -8,7 +8,7 @@ import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { at } from '../core/util';
 import { frontOf, itemCenter, itemDims, onWall } from '../core/world';
-import { buildHungChip, hangPlace, placeHung } from './hung';
+import { hangPlace, placeHung } from './hung';
 import { placeItemModel } from './items';
 import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
@@ -62,7 +62,7 @@ export class Overlays {
   private doorMarker: THREE.Mesh;
   private frontMarker: THREE.Mesh;
   private ring: THREE.Mesh;
-  /** How far round the camera is, which says whether a wall item's ghost shows as its model or its chip. */
+  /** How far round the camera is, which a wall item's preview is placed against its wall at. */
   turn: Turn = 0;
 
   constructor(
@@ -142,15 +142,12 @@ export class Overlays {
       this.ghost = null;
       return;
     }
-    // a rug is built afresh in each pattern, and something hung on a wall shows as a chip on a low wall
+    // a rug is built afresh in each pattern; the preview is see-through already, on a low wall as on a tall one
     const hung = onWall(spec.type) ? hangPlace(this.sim.world, spec, this.turn) : null;
-    const key = `${spec.type}:${spec.pattern ?? ''}:${hung ? `${hung.tall}${hung.thick}` : ''}`;
+    const key = `${spec.type}:${spec.pattern ?? ''}`;
     if (this.ghost?.key !== key) {
       if (this.ghost) this.scene.remove(this.ghost.group);
-      const group =
-        hung && !hung.tall
-          ? buildHungChip(spec.type, hung)
-          : buildItem(spec.type, { pattern: spec.pattern, center: this.sim.s.center });
+      const group = buildItem(spec.type, { pattern: spec.pattern, center: this.sim.s.center });
       group.traverse((o) => {
         if (o instanceof THREE.Mesh) {
           o.castShadow = false;

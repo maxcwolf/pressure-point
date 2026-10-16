@@ -1,14 +1,12 @@
 // Where something hung on a wall is drawn: against the face of its wall, facing out, as its model while the wall stands
-// tall and as a chip on top of the wall while it is cut low.
+// tall and as a see-through ghost of it, where it would hang, while the wall is cut low.
 
 import * as THREE from 'three';
 
-import { ITEMS, type ItemType } from '../core/data';
 import type { Item } from '../core/state/types';
 import { itemCenter, rotVec, wallSpotsOf, type World } from '../core/world';
-import { buildChip } from './models/items/wall';
-import { mergeStill } from './models/merge';
-import { H_LOW, OUTER_LOW_TOP, OUTER_T, WALL_T } from './shared';
+import { partsOf } from './models/parts';
+import { WALL_T } from './shared';
 import { nearSides, type Side, type Turn } from './turn';
 
 /** Where and how something hung on a wall is drawn. */
@@ -17,11 +15,8 @@ export interface HangPlace {
   x: number;
   z: number;
   rotY: number;
-  /** Whether its wall stands tall at this turn, so its model shows, or is cut low, so its chip does. */
+  /** Whether its wall stands tall at this turn, so its model shows, or is cut low, so its ghost does. */
   tall: boolean;
-  /** How thick its wall is, and how high the top of it is when cut low. */
-  thick: number;
-  lowTop: number;
 }
 
 /** The side of a room, or of the building, that a wall faced this way is on. */
@@ -42,35 +37,46 @@ export function hangPlace(world: World, it: Pick<Item, 'type' | 'x' | 'y' | 'rot
     z: cy - fy * (0.5 - depth),
     rotY: (-it.rot * Math.PI) / 2,
     tall: !nearSides(turn)[sideOf(-fx, -fy)],
-    thick: own ? WALL_T : OUTER_T,
-    lowTop: own ? H_LOW + 0.07 : OUTER_LOW_TOP,
   };
 }
 
-/** The color of each wall item's chip, picked from its model. */
-const CHIP_COLORS: Partial<Record<ItemType, number>> = {
-  motivational_poster: 0x7cc4e8,
-  landscape_painting: 0xc9a24a,
-  wall_clock: 0x8f5f38,
-  chakra_chart: 0x9b59b6,
-  meridian_poster: 0xc0392b,
-  television: 0x22252b,
-  tapestry: 0x8e3b46,
-  prayer_flags: 0xd8433f,
-  living_wall: 0x5f9e4a,
-  wall_fountain: 0x4a5058,
-  certificate: 0xd4a94a,
-};
+/** How see-through the ghost of something hung on a low wall is. */
+export const GHOST_OPACITY = 0.28;
 
-/** The chip shown on top of a low wall in place of something hung on it. */
-export function buildHungChip(type: ItemType, place: HangPlace): THREE.Group {
-  const g = new THREE.Group();
-  buildChip(g, CHIP_COLORS[type] ?? 0xb9834f, ITEMS[type].w, place.thick, place.lowTop);
-  mergeStill(g, `chip:${type}:${place.thick}`);
-  return g;
+// each shared material has one see-through twin, made once and kept, as the materials themselves are
+const ghosts = new Map<THREE.Material, THREE.Material>();
+
+/** The see-through twin of a material: the same color, faint, and drawn without hiding what is behind it. */
+function ghostOf<T extends THREE.Material>(m: T): T {
+  let g = ghosts.get(m);
+  if (!g) {
+    g = m.clone();
+    Object.assign(g, { transparent: true, opacity: GHOST_OPACITY, depthWrite: false });
+    ghosts.set(m, g);
+  }
+  return g as T;
 }
 
-/** Put a wall item's model, or its chip, against its wall. */
+/**
+ * Turn the model of something hung on a wall cut low into a ghost of itself, in place: still where it hangs and facing
+ * the way it faces, so it is plain which wall it is on, but faint, so the room shows through it. It casts no shadow,
+ * with no wall there to cast it on.
+ */
+export function ghostHung(model: THREE.Group): THREE.Group {
+  model.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const mesh = o as THREE.Mesh;
+    mesh.material = Array.isArray(mesh.material) ? mesh.material.map(ghostOf) : ghostOf(mesh.material);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+  });
+  // moss browns on the material the ghost now wears
+  const parts = partsOf(model);
+  if (parts.moss) parts.moss = ghostOf(parts.moss);
+  return model;
+}
+
+/** Put a wall item's model, or its ghost, against its wall. */
 export function placeHung(model: THREE.Object3D, place: HangPlace) {
   model.position.set(place.x, 0, place.z);
   model.rotation.y = place.rotY;
