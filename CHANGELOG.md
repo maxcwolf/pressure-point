@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.27.3
+
+- **Qi gong classes are announced at most once every two weeks,** instead of on every class day, and the announcer now has two lines for them.
+- **The desktop app reports its errors,** as the web version already does, so problems get found and fixed sooner. The reports never include your saves' names.
+
 ## v0.27.2
 
 - **The desktop app updates itself.** From this version on, it downloads each new version in the background, then offers to restart for it, or installs it the next time you quit. Your game is saved first. Coming from 0.27.1 or earlier? Download this one by hand, once.
