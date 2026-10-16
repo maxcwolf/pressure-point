@@ -1,6 +1,6 @@
 # Possible additions
 
-Ideas worth keeping that nobody has decided on yet. Nothing here is planned: an idea moves to [todo.md](todo.md) or [roadmap.md](roadmap.md) once it is chosen.
+Ideas worth keeping that nobody has decided on yet. Nothing here is planned: an idea moves to [todo.md](todo.md) or [roadmap.md](roadmap.md) once it is chosen. Ideas for new items have their own list, in [item-ideas.md](item-ideas.md).
 
 ## Rooms and treatments
 
