@@ -1,0 +1,73 @@
+/* Styles for Console. */
+
+#console {
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 560px));
+  min-width: 320px;
+  padding: 10px 12px;
+  animation: drop 0.2s ease-out;
+}
+
+.console-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 210px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.35;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.console-log li {
+  padding: 1px 0;
+  white-space: pre-wrap;
+}
+
+.console-log li.typed {
+  font-weight: 600;
+}
+
+.console-log li.typed::before {
+  content: '› ';
+  opacity: 0.55;
+}
+
+.console-log li.good {
+  color: #23805a;
+}
+
+.console-log li.bad {
+  color: var(--red);
+}
+
+.console-log li.hint {
+  opacity: 0.6;
+}
+
+.console-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  background: #fff;
+  border: 2px solid var(--navy);
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.console-line input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  color: inherit;
+}

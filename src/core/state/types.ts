@@ -711,6 +711,8 @@ export interface GameState {
   trophies: Trophy[];
   /** Campaign achievements earned already, in this game or an earlier one, so none is awarded twice. */
   achieved: AchievementId[];
+  /** A command has been used in the cheat console, so this game earns no achievements or campaign stars. */
+  cheated: boolean;
   seenTips: string[];
   /** Magic mushrooms are on sale under the Shop Counter, while there is a Shaman to supply them. */
   mushrooms: boolean;

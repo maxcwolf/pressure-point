@@ -66,6 +66,7 @@ import { fullyTrained, promote, reject, setDuty, updateApplicants, updateHabits 
 import { announceSweatLodge } from './ceremonies';
 import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
+import { type CheatResult, runCheat } from './cheats';
 import {
   admitClassgoers,
   announceClasses,
@@ -726,5 +727,29 @@ export class Sim {
     // a template kept from before the game changed may no longer make a room
     if (layoutProblem(layout)) return null;
     return buildLayout(this.ctx, layout, placed, { cost: `"${name}"`, built: `"${name}" built` });
+  }
+
+  // ---- Cheats ----------------------------------------------------------------
+
+  /** Run a line typed into the cheat console. */
+  cheat(line: string): CheatResult {
+    return runCheat(this.ctx, line, (days) => {
+      this.fastForward(days);
+    });
+  }
+
+  /**
+   * Play on for some days at once, as fast as the computer allows. Of what happened, only the messages and the dialogs
+   * are kept for the interface: a few weeks of sounds, banners and floating text all at once would only be noise.
+   */
+  fastForward(days: number) {
+    const { ctx } = this;
+    const before = ctx.events.length;
+    const end = this.s.day + days;
+    while (end - this.s.day > 1e-9) this.step(Math.min(0.05, (end - this.s.day) * DAY_SECONDS));
+    const kept = ctx.events
+      .slice(before)
+      .filter((e) => e.type !== 'sfx' && e.type !== 'announce' && e.type !== 'float');
+    ctx.events = [...ctx.events.slice(0, before), ...kept];
   }
 }

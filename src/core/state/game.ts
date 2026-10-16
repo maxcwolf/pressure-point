@@ -166,6 +166,7 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     ceremony: null,
     trophies: [],
     achieved: [],
+    cheated: false,
     mushrooms: false,
     mushroomsStashed: false,
     land: [],

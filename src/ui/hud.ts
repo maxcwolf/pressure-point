@@ -4,6 +4,7 @@
 import type { DecorKey, ItemType, LandSide, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { Template } from '../core/templates';
+import { giveKarma } from '../storage/campaign';
 import { loadTemplates } from '../storage/templates';
 import { voiceFor } from '../voice';
 import type { GameHost } from './host';
@@ -42,8 +43,18 @@ export interface Floater {
   y: number;
 }
 
+/** A line in the cheat console: a command typed in, or what came of it. */
+export interface ConsoleLine {
+  id: number;
+  text: string;
+  kind: 'typed' | 'good' | 'bad';
+}
+
 /** How many toasts are kept on screen at once. */
 const MAX_TOASTS = 4;
+
+/** How many lines the cheat console keeps. */
+const MAX_CONSOLE_LINES = 40;
 
 export class HudState {
   /** The build menu that is open, if any. */
@@ -85,6 +96,10 @@ export class HudState {
   toasts: Toast[] = [];
   floaters: Floater[] = [];
   announcement = '';
+  /** Whether the cheat console is open, what it has said so far, and the commands typed, oldest first. */
+  consoleOpen = false;
+  consoleLines: ConsoleLine[] = [];
+  consoleHistory: string[] = [];
 
   private listeners = new Set<() => void>();
   private nextId = 1;
@@ -125,6 +140,30 @@ export class HudState {
     // an open blueprint stays open while you fetch something from a menu
     this.host.tools.setAside();
     this.menu = this.menu === id ? null : id;
+  }
+
+  /** Open the cheat console, or close it if it is open. */
+  toggleConsole() {
+    this.consoleOpen = !this.consoleOpen;
+    this.update();
+  }
+
+  /** Run a command typed into the cheat console, and note it and what came of it. */
+  runCommand(line: string) {
+    const typed = line.trim();
+    if (!typed) return;
+    const result = this.host.sim.cheat(typed);
+    // karma belongs to the campaign, kept outside the game
+    if (result.karma) giveKarma(result.karma);
+    this.consoleHistory = [...this.consoleHistory.filter((h) => h !== typed), typed];
+    this.consoleLines = [
+      ...this.consoleLines,
+      { id: this.nextId++, text: typed, kind: 'typed' as const },
+      ...result.text
+        .split('\n')
+        .map((text) => ({ id: this.nextId++, text, kind: result.ok ? 'good' : 'bad' }) as const),
+    ].slice(-MAX_CONSOLE_LINES);
+    this.update();
   }
 
   /** Close the open build menu, or the list of overlays. False if neither was open. */

@@ -125,6 +125,28 @@ The pause menu (☰ or Esc) has **Main menu**, which saves and returns to the ti
 
 **📜 What’s new**, in the bottom right corner of the title screen, lists what changed in every version, newest first, with the one you are playing marked.
 
+## Cheat console
+
+For testing, or for fun. Switch on **Cheat console** at the bottom of **Settings**, and then **~** (the key under Esc) opens it in a game. Type a command and press Enter. The up and down arrows bring back commands you typed before, and Esc or ~ closes it. The console is off to begin with, and ~ does nothing until it is switched on. Two Point's games have no console of their own, so the commands follow Theme Hospital's cheats and what Two Point's trainers offer.
+
+| Command                      | What it does                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| `help`                       | List the commands                                                                    |
+| `money [amount]`             | Add money, $10,000 unless you say; a minus takes it away (`money -5k`)               |
+| `rep [points]`               | Add reputation, 10% unless you say                                                   |
+| `karma [amount]`             | Add karma to spend in any center, 10 unless you say                                  |
+| `star`                       | Earn the next star, prize and all                                                    |
+| `win`                        | Earn every star left in the center                                                   |
+| `staff`                      | Every member of staff at full energy and morale, fed and watered                     |
+| `happy`                      | Every guest at full patience, with no thirst, hunger or need for the restroom        |
+| `guests [count] [condition]` | Send in guests, 5 unless you say, with a condition if you name it (`guests 3 slump`) |
+| `emergency`                  | Offer an emergency now                                                               |
+| `outbreak`                   | Offer a stress outbreak now                                                          |
+| `unlock`                     | Unlock every room, item and treatment in this game                                   |
+| `skip [days]`                | Play on for up to 60 days at once, 1 unless you say                                  |
+
+A campaign game you use any command but `help` in earns no more achievements or stars for the campaign, and the console says so before you do. Karma added with `karma` is kept for the campaign all the same.
+
 ## Saved games
 
 The game autosaves every 12 seconds unless **Settings** says otherwise, and always as you leave it, in the browser and in the desktop app alike. **Save or load** in the pause menu (☰) keeps up to 20 named saves, and the title screen can load any of them. Starting a new game or loading a different one never destroys the game you were in: it moves to a "Previous game" slot.

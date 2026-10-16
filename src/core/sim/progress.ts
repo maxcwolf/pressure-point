@@ -37,14 +37,20 @@ export function checkStars(ctx: SimContext) {
   const s = ctx.s;
   if (!centerOf(s).goals[s.stars]) return;
   // exactly the objectives the player is shown, so nothing hidden holds a star back
-  if (objectives(ctx).every((o) => o.done)) {
-    s.stars++;
-    const grant = 5000 * s.stars;
-    s.money += grant;
-    s.ledger.bonus += grant;
-    emit(ctx, { type: 'star', stars: s.stars });
-    emit(ctx, { type: 'sfx', name: 'fanfare' });
-  }
+  if (objectives(ctx).every((o) => o.done)) awardStar(ctx);
+}
+
+/** Award the next star and its cash prize, whatever its goals. False if every star is already earned. */
+export function awardStar(ctx: SimContext): boolean {
+  const s = ctx.s;
+  if (!centerOf(s).goals[s.stars]) return false;
+  s.stars++;
+  const grant = 5000 * s.stars;
+  s.money += grant;
+  s.ledger.bonus += grant;
+  emit(ctx, { type: 'star', stars: s.stars });
+  emit(ctx, { type: 'sfx', name: 'fanfare' });
+  return true;
 }
 
 /** The goals for the next star and how far along each one is. */

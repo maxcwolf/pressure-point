@@ -86,6 +86,7 @@ type OldSave = Before<
   | 'center'
   | 'unlockAll'
   | 'achieved'
+  | 'cheated'
   | 'policy'
   | 'mushrooms'
   | 'mushroomsStashed'
@@ -306,6 +307,7 @@ export function upgradeSave(save: GameState) {
   s.unlockAll ??= false;
   // an achievement from a newer version means nothing here
   s.achieved = (s.achieved ?? []).filter((id) => Object.hasOwn(ACHIEVEMENTS, id));
+  s.cheated ??= false;
   // the Qi Gong Instructor came with version 21: a few apply straight away, as for any role in a new game
   if (s.version < 21)
     while (s.candidates.filter((c) => c.role === 'instructor').length < 3)

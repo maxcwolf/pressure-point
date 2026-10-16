@@ -1,5 +1,5 @@
-// The player's controls, kept for every game on this computer: which key does what, edge scrolling, and how often the
-// game autosaves. Keys are kept by where they sit on the keyboard (`KeyboardEvent.code`), so W, A, S and D pan on
+// The player's controls, kept for every game on this computer: which key does what, edge scrolling, how often the
+// game autosaves, and whether ~ opens the cheat console. Keys are kept by where they sit on the keyboard (`KeyboardEvent.code`), so W, A, S and D pan on
 // any layout.
 import { isRecord } from './json';
 
@@ -61,10 +61,20 @@ export interface ControlPrefs {
   edgeScroll: boolean;
   /** Seconds of play between autosaves, or 0 for only on leaving. */
   autosave: number;
+  /** Whether ~ opens the cheat console. Off until switched on at the bottom of the settings. */
+  console: boolean;
 }
 
 /** The controls a new player starts with. */
-export const defaultControls = (): ControlPrefs => ({ keys: { ...DEFAULT_KEYS }, edgeScroll: false, autosave: 12 });
+export const defaultControls = (): ControlPrefs => ({
+  keys: { ...DEFAULT_KEYS },
+  edgeScroll: false,
+  autosave: 12,
+  console: false,
+});
+
+/** The key that opens the cheat console, once it is switched on: the one with ` and ~ on it. */
+export const CONSOLE_KEY = 'Backquote';
 
 /** Keys that cannot be given an action: Esc, which always cancels, and the modifiers, which make chords. */
 const RESERVED = new Set([
@@ -112,6 +122,7 @@ export function readControls(raw: unknown): ControlPrefs {
   }
   if (typeof raw.edgeScroll === 'boolean') out.edgeScroll = raw.edgeScroll;
   if (typeof raw.autosave === 'number' && AUTOSAVE_CHOICES.includes(raw.autosave)) out.autosave = raw.autosave;
+  if (typeof raw.console === 'boolean') out.console = raw.console;
   return out;
 }
 

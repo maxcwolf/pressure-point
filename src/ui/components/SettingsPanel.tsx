@@ -6,6 +6,7 @@ import type { Audio } from '../../audio';
 import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
 import { disciplineHere } from '../../core/state/game';
+import { loadControls, saveControls } from '../../storage/controls';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
 import { ControlSettings } from './ControlSettings';
@@ -19,7 +20,7 @@ export interface SettingsPanelProps {
   onChange?: (() => void) | undefined;
 }
 
-/** Switches for which treatments are offered, the controls, and sound and music. */
+/** Switches for which treatments are offered, the controls, sound and music, and the cheat console. */
 export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
   const redraw = useRedraw();
   /** Whether a discipline is switched on, in this game or for new ones. */
@@ -98,6 +99,19 @@ export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
           on={audio.music}
           onToggle={flip(() => {
             audio.toggleMusic();
+          })}
+        />
+      </ul>
+      <h4>Cheats</h4>
+      <ul>
+        <SettingRow
+          icon="🪄"
+          name="Cheat console"
+          desc="Press ~ in a game to type in commands, such as money or win. A campaign game they are used in earns no more achievements or stars."
+          on={loadControls().console}
+          onToggle={flip(() => {
+            const prefs = loadControls();
+            saveControls({ ...prefs, console: !prefs.console });
           })}
         />
       </ul>

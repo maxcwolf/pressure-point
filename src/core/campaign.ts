@@ -25,11 +25,13 @@ export interface CampaignProgress {
   unlocked: ItemType[];
   /** Floors and walls unlocked for good with karma. */
   decor: DecorKey[];
+  /** Karma added in the cheat console, on top of what was earned. */
+  bonus: number;
 }
 
 /** A campaign with nothing earned yet. */
 export function freshCampaign(): CampaignProgress {
-  return { stars: {}, achieved: [], unlocked: [], decor: [] };
+  return { stars: {}, achieved: [], unlocked: [], decor: [], bonus: 0 };
 }
 
 /** Whether a campaign center can be played: the first always can, the rest once the one before has a star. */
@@ -57,9 +59,9 @@ export function nextCenter(id: CenterId): CenterId | undefined {
   return i < 0 ? undefined : CAMPAIGN[i + 1];
 }
 
-/** All the karma earned: some for every campaign star, and each achievement's own. */
+/** All the karma earned: some for every campaign star, each achievement's own, and any added in the cheat console. */
 export function karmaEarned(p: CampaignProgress): number {
-  let total = 0;
+  let total = p.bonus;
   for (const id of CAMPAIGN) total += (p.stars[id] ?? 0) * STAR_KARMA;
   for (const id of p.achieved) total += ACHIEVEMENTS[id].karma;
   return total;
