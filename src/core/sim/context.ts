@@ -20,6 +20,8 @@ export interface SimContext {
   readonly warmth: Float32Array;
   /** The announcer's latest lines, so none comes round again too soon. */
   readonly announced: string[];
+  /** The day a class was last announced as starting, if one has been since the game was loaded. */
+  classCalled?: number;
 }
 
 /** Set up the working data for a game. */

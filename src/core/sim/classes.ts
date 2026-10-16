@@ -5,6 +5,7 @@
 
 import {
   BOOK_AHEAD,
+  CLASS_CALL_GAP,
   CLASS_DAYS,
   CLASS_FEE,
   CLASS_INTEREST,
@@ -236,10 +237,16 @@ export function setClasses(ctx: SimContext, on: boolean) {
 export const CLASS_STARTING =
   'Qi Gong is starting in the studio. Come cultivate your inner energy, because your outer energy is frankly exhausting.';
 
-/** As a day begins, announce its class if a studio has one with anybody booked for it. */
+/**
+ * As a day begins, announce its class if a studio has one with anybody booked for it, and the last call was long
+ * enough ago.
+ */
 export function announceClasses(ctx: SimContext) {
   const today = Math.floor(ctx.s.day);
   if (!offeringOn(ctx.s, 'qigong') || !ctx.s.open) return;
-  if (studios(ctx).some((r) => classOn(r, today) && r.booked?.day === today && r.booked.count > 0))
+  if (ctx.classCalled !== undefined && today - ctx.classCalled < CLASS_CALL_GAP) return;
+  if (studios(ctx).some((r) => classOn(r, today) && r.booked?.day === today && r.booked.count > 0)) {
     emit(ctx, { type: 'announce', text: CLASS_STARTING });
+    ctx.classCalled = today;
+  }
 }

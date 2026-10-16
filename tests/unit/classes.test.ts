@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { CLASS_DAYS, CLASS_FEE, ITEMS, ROOMS } from '../../src/core/data';
+import { CLASS_CALL_GAP, CLASS_DAYS, CLASS_FEE, DAY_SECONDS, ITEMS, ROOMS } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import {
   CLASS_STARTING,
@@ -122,6 +122,22 @@ describe('a class in play', () => {
     sim.drain();
     runUntil(sim, () => s.day >= 4.01, 30);
     expect(sim.drain().some((e) => e.type === 'announce' && e.text === CLASS_STARTING)).toBe(true);
+  });
+
+  it('is announced only every so often, not for every class', () => {
+    const { sim, s } = studio();
+    const called: number[] = [];
+    runUntil(
+      sim,
+      () => {
+        if (sim.drain().some((e) => e.type === 'announce' && e.text === CLASS_STARTING)) called.push(Math.floor(s.day));
+        return s.day >= 2 + CLASS_CALL_GAP * 2.5;
+      },
+      DAY_SECONDS * CLASS_CALL_GAP * 3,
+    );
+    expect(called.length).toBeGreaterThan(1);
+    for (const [i, day] of called.slice(1).entries())
+      expect(day - (called[i] ?? 0)).toBeGreaterThanOrEqual(CLASS_CALL_GAP);
   });
 
   it('has the advisor ask for an Instructor while the studio has none', () => {

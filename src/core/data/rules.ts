@@ -69,6 +69,8 @@ export const CLASS_SECONDS = 10;
 export const CLASS_PATIENCE = 3;
 /** How many days before a class its places are booked and its class-goers set off. */
 export const BOOK_AHEAD = 2;
+/** Days at least between one call over the speakers that a class is starting and the next, so it is not heard every class. */
+export const CLASS_CALL_GAP = 14;
 /** How many class-goers a week each Practice Spot draws at 50% reputation, shared among the week's classes. */
 export const CLASS_INTEREST = 2.5;
 
