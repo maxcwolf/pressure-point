@@ -26,8 +26,10 @@ export function resizeHint(from: Rect, to: Rect, cost: number): string {
 }
 
 /** The hint for placing a new item. */
-export function placeHint(type: ItemType): string {
+export function placeHint(type: ItemType, left = 0): string {
   const def = ITEMS[type];
+  if (type === 'certificate')
+    return `${def.icon} ${def.name} · ${left} to hang · click a wall to hang it · Esc when done`;
   if (def.mount === 'wall')
     return `${def.icon} ${def.name} · ${money(def.cost)} each · click a wall to hang it · Esc when done`;
   return `${def.icon} ${def.name} · ${money(def.cost)} each · click to place · R rotates · Esc when done${legend(type)}`;

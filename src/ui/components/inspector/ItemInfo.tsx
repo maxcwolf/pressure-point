@@ -1,6 +1,7 @@
 // The inspector for an item.
 
 import {
+  AWARDS,
   DIRT_CLEAN,
   DIRT_FILTHY,
   HAMPER_SIZE,
@@ -100,6 +101,9 @@ export function ItemInfo({ item: it }: { item: Item }) {
     <>
       <h3>{`${def.icon} ${def.name}`}</h3>
       <p>{def.desc}</p>
+      {it.trophy && (
+        <p class="status">{`${AWARDS[it.trophy.award].icon} ${AWARDS[it.trophy.award].name}, year ${it.trophy.year}`}</p>
+      )}
       <StationInfo item={it} />
       {isWatered(it.type) && (
         <label>
@@ -164,7 +168,8 @@ export function ItemInfo({ item: it }: { item: Item }) {
             tools.select(null);
           }}
         >
-          {`Sell for ${money(sellBack(it))}`}
+          {/* a certificate is earned, so it comes down to be hung again rather than being sold */}
+          {it.type === 'certificate' ? 'Take down' : `Sell for ${money(sellBack(it))}`}
         </Button>
       ) : (
         <p class="sub">Part of the room. Demolish the room to remove it.</p>

@@ -1,5 +1,6 @@
 // Building: placing, moving and selling items, and creating, changing and removing rooms.
 
+import { certificatesLeft } from '../certificates';
 import { ITEMS, type ItemType, ROOM_TILE_COST, ROOMS, type RoomType, type RugPatternId, WINDOW_COST } from '../data';
 import { money } from '../format';
 import { carryWallSpot, carryWindows, resizeCost, resizeTiles } from '../resize';
@@ -43,8 +44,11 @@ function sweepCovered(ctx: SimContext) {
 
 /** A brand-new item, not yet in the game. */
 function newItem(ctx: SimContext, type: ItemType, x: number, y: number, rot: number, pattern?: RugPatternId): Item {
+  // a certificate is for the oldest award not yet hung
+  const trophy = type === 'certificate' ? certificatesLeft(ctx.s)[0] : undefined;
   return {
     ...(type === 'rug' && pattern && pattern !== 'kilim' && { pattern }),
+    ...(trophy && { trophy: { ...trophy } }),
     id: ctx.s.nextId++,
     type,
     x,
@@ -470,7 +474,9 @@ export function buildLayout(
     ...withDecor({}, layout),
   };
   ctx.s.rooms.push(room);
-  for (const it of placed.items) ctx.s.items.push(newItem(ctx, it.type, it.x, it.y, it.rot, it.pattern));
+  // a certificate is earned, not built: a copy of a room leaves its certificates behind
+  for (const it of placed.items.filter((i) => i.type !== 'certificate'))
+    ctx.s.items.push(newItem(ctx, it.type, it.x, it.y, it.rot, it.pattern));
   const lost = keepWindows(ctx, room, placed.windows);
   spend(ctx, cost - lost * WINDOW_COST, 'building');
   worldChanged(ctx);

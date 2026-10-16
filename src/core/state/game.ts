@@ -83,8 +83,9 @@ export const defaultPolicy = (): Policy => ({
  * 21: Qi Gong classes, the Qi Gong Studio and its Instructor. 23: more land. 24: regulars, and the Vision Quest. 25: land kept as the tiles it covers.
  * 26: wind chimes, the fortune teller, the kombucha tap, the staff fridge, soundproof panels and rug patterns.
  * 27: things hung on walls. 28: the rest of them.
+ * 29: certificates of excellence.
  */
-export const SAVE_VERSION = 28;
+export const SAVE_VERSION = 29;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

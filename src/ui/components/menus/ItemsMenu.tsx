@@ -1,6 +1,7 @@
 // The Items menu: furniture, equipment and decor, filtered by where it goes and what it is for.
 
 import { itemOpen } from '../../../core/campaign';
+import { certificatesLeft } from '../../../core/certificates';
 import { ITEM_MENU, ITEMS } from '../../../core/data';
 import { money } from '../../../core/format';
 import { unlockedUpTo } from '../../../core/state/game';
@@ -55,7 +56,9 @@ export function ItemsMenu() {
         <div class="cards small">
           {types.map((t) => {
             const it = ITEMS[t];
-            const locked = !itemOpen(it, unlockedUpTo(s), unlocked);
+            // a certificate is earned at the year-end awards, one for each award won
+            const earned = t === 'certificate' ? certificatesLeft(s).length : null;
+            const locked = earned === 0 || !itemOpen(it, unlockedUpTo(s), unlocked);
             // a locked item karma can unlock opens the offer to unlock it, rather than refusing outright
             const forKarma = locked && it.karma !== undefined;
             return (
@@ -76,9 +79,9 @@ export function ItemsMenu() {
               >
                 <i>{it.icon}</i>
                 <b>{it.name}</b>
-                <span class="cost">{money(it.cost)}</span>
+                <span class="cost">{earned === null ? money(it.cost) : `${earned} to hang`}</span>
                 <p>{it.desc}</p>
-                <em>{locked ? lockLabel(it) : placeLabel(it)}</em>
+                <em>{earned === 0 ? '🔒 Win an award' : locked ? lockLabel(it) : placeLabel(it)}</em>
               </Button>
             );
           })}

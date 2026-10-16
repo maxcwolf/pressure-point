@@ -470,6 +470,9 @@ test.describe('in a game', () => {
           { award: 'caretaker-of-the-year', won: false, note: 'No Caretaker to give it to' },
         ],
       };
+      // the trophies the ceremony hands over, each with a certificate to hang
+      for (const award of ['healing-hands', 'no-waiting', 'fair-prices', 'healer-of-the-year'] as const)
+        pp.state.trophies.push({ award, year: 2 });
       pp.sim.emit({ type: 'awards', year: 2 });
     });
     await screens.shot('awards');

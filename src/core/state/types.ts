@@ -117,6 +117,8 @@ export interface Item {
   upgradePaid: boolean;
   /** A rug's pattern, when it is not the original Kilim. */
   pattern?: RugPatternId;
+  /** The award a Certificate of Excellence was earned for. */
+  trophy?: Trophy;
 }
 
 export interface Look {

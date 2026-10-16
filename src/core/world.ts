@@ -1,6 +1,7 @@
 // Grid caches derived from the game state: zones, blocking, doors, plus
 // placement validation and pathfinding.
 
+import { certificatesLeft } from './certificates';
 import {
   centerOf,
   goesIn,
@@ -663,6 +664,8 @@ export class World {
   // ---- Placement validation ------------------------------------------------
   /** Can this item go here, facing this way? */
   canPlaceItem(type: ItemType, x: number, y: number, rot: number, roomId?: number): Check {
+    if (type === 'certificate' && !certificatesLeft(this.s).length)
+      return no('Win an award at the year-end ceremony to earn one');
     if (onWall(type)) return this.canHang(type, x, y, rot, roomId);
     const def = ITEMS[type];
     const it: Placed = { type, x, y, rot };

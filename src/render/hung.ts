@@ -59,6 +59,7 @@ const CHIP_COLORS: Partial<Record<ItemType, number>> = {
   prayer_flags: 0xd8433f,
   living_wall: 0x5f9e4a,
   wall_fountain: 0x4a5058,
+  certificate: 0xd4a94a,
 };
 
 /** The chip shown on top of a low wall in place of something hung on it. */

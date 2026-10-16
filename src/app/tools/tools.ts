@@ -9,6 +9,7 @@
 // This class holds the tool in hand and talks to the game and the scene. The working
 // out (geometry, hints, which tiles to color) lives in the small modules beside it.
 
+import { certificatesLeft } from '../../core/certificates';
 import { centerOf, type ItemType, ROOMS, type RoomType, type RugPatternId } from '../../core/data';
 import { money } from '../../core/format';
 import { plotAt } from '../../core/land';
@@ -593,7 +594,7 @@ export class Tools {
     if (t.kind === 'none') {
       view.setGhost(null);
     } else if (t.kind === 'item') {
-      this.hint = placeHint(t.type);
+      this.hint = placeHint(t.type, certificatesLeft(this.sim.s).length);
       this.drawItem(t, undefined, drawing);
     } else if (t.kind === 'move') {
       this.hint = moveHint(t.type);

@@ -2,6 +2,7 @@
 
 import './AwardsDialog.css';
 
+import { certificatesLeft } from '../../../core/certificates';
 import { AWARD_REP, AWARDS } from '../../../core/data';
 import { money } from '../../../core/format';
 import { useGame, useHud } from '../../hooks/use-hud';
@@ -12,7 +13,7 @@ import { Dialog } from './Dialog';
 /** Every award at the year's ceremony, won or missed, with how the center did and what the winners took home. */
 export function AwardsDialog() {
   const hud = useHud();
-  const { sim } = useGame();
+  const { sim, tools } = useGame();
   const ceremony = sim.s.ceremony;
   if (!ceremony) return null;
   const won = ceremony.results.filter((r) => r.won);
@@ -40,15 +41,30 @@ export function AwardsDialog() {
           );
         })}
       </ul>
-      <p class="sub">Trophies won go in a Trophy Cabinet, and are listed under Awards in the Stats menu.</p>
-      <Button
-        class="go"
-        onPress={() => {
-          hud.close();
-        }}
-      >
-        Back to work
-      </Button>
+      <p class="sub">
+        Trophies won go in a Trophy Cabinet, and are listed under Awards in the Stats menu. Each one earns a Certificate
+        of Excellence to hang on a wall, from here or the Items menu.
+      </p>
+      <div class="btnrow">
+        {certificatesLeft(sim.s).length > 0 && (
+          <Button
+            onPress={() => {
+              hud.close();
+              tools.startItem('certificate');
+            }}
+          >
+            📜 Hang a certificate
+          </Button>
+        )}
+        <Button
+          class="go"
+          onPress={() => {
+            hud.close();
+          }}
+        >
+          Back to work
+        </Button>
+      </div>
     </Dialog>
   );
 }

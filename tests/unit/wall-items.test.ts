@@ -2,6 +2,7 @@
 // each of them does.
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { certificatesLeft } from '../../src/core/certificates';
 import {
   CHART_BONUS,
   CLOCK_BREAK_BOOST,
@@ -343,5 +344,42 @@ describe('the rest of the things to hang', () => {
     hire(sim, 'caretaker');
     runUntil(sim, () => wall.water > 90, 300);
     expect(s.items).toContain(wall);
+  });
+});
+
+describe('certificates of excellence', () => {
+  it('are earned, one for each award won, each for its own award', () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    expect(hang(sim, 'certificate', BACK_WALL)).toBe('Win an award at the year-end ceremony to earn one');
+    sim.s.trophies.push({ award: 'busiest', year: 1 }, { award: 'healing-hands', year: 1 });
+    const money = sim.s.money;
+    const first = hang(sim, 'certificate', BACK_WALL) as Item;
+    const second = hang(sim, 'certificate', { x: 7, y: 3, rot: 0 }) as Item;
+    expect([first.trophy, second.trophy]).toEqual([
+      { award: 'busiest', year: 1 },
+      { award: 'healing-hands', year: 1 },
+    ]);
+    expect(sim.s.money).toBe(money);
+    expect(certificatesLeft(sim.s)).toEqual([]);
+    expect(hang(sim, 'certificate', { x: 10, y: 3, rot: 0 })).toBe('Win an award at the year-end ceremony to earn one');
+    // with every one hung, one can still be moved
+    expect(sim.moveItem(second.id, 10, 3, 0)).toBe(true);
+    // taken down, it can be hung again, for the same award
+    sim.sellItem(first.id);
+    expect(sim.s.money).toBe(money);
+    expect(certificatesLeft(sim.s)).toEqual([{ award: 'busiest', year: 1 }]);
+    expect(hang(sim, 'certificate', { x: 11, y: 3, rot: 0 })).toMatchObject({ trophy: { award: 'busiest' } });
+  });
+
+  it('stay behind when their room is copied', () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    sim.s.trophies.push({ award: 'busiest', year: 1 });
+    const room = addStaffRoom(sim);
+    hang(sim, 'certificate', { x: 19, y: 5, rot: 0 });
+    const copy = sim.copyRoom(room.id, placeLayout(sim.roomLayout(room), 17, 11));
+    expect(copy).toBeTruthy();
+    expect(sim.s.items.filter((it) => it.type === 'certificate')).toHaveLength(1);
   });
 });

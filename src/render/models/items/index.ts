@@ -16,6 +16,7 @@ import { buildBookcase } from './bookcase';
 import { buildBrewPot } from './brew-pot';
 import { buildCabinet } from './cabinet';
 import { buildCeremonyMat } from './ceremony-mat';
+import { buildCertificate } from './certificate';
 import { buildChakraChart } from './chakra-chart';
 import { buildCoffeeMachine } from './coffee-machine';
 import { buildConsultDesk } from './consult-desk';
@@ -167,6 +168,7 @@ const BUILDERS: Record<ItemType, (g: THREE.Group, look?: string) => void> = {
   prayer_flags: buildPrayerFlags,
   living_wall: buildLivingWall,
   wall_fountain: buildWallFountain,
+  certificate: buildCertificate,
 };
 
 /** How an item looks, where it comes in more than one look: a rug's pattern, and the center a painting is of. */

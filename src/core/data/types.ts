@@ -109,6 +109,7 @@ export type ItemType =
   | 'prayer_flags'
   | 'living_wall'
   | 'wall_fountain'
+  | 'certificate'
   | 'recliner'
   | 'instructor_mat'
   | 'practice_spot'

@@ -1142,6 +1142,20 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     decor: 5,
     noise: -3,
   },
+  certificate: {
+    type: 'certificate',
+    name: 'Certificate of Excellence',
+    icon: '📜',
+    desc: 'Earned, not bought: one for each award won at the year-end ceremony, framed for guests to see.',
+    cost: 0,
+    w: 1,
+    h: 1,
+    mount: 'wall',
+    where: 'any',
+    access: [],
+    inMenu: true,
+    decor: 2,
+  },
 };
 
 export const ITEM_MENU: readonly ItemType[] = [
@@ -1172,6 +1186,7 @@ export const ITEM_MENU: readonly ItemType[] = [
   'prayer_flags',
   'living_wall',
   'wall_fountain',
+  'certificate',
   'fire_extinguisher',
   'statue',
   'aquarium',
