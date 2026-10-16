@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { CLASS_CALL_GAP, CLASS_DAYS, CLASS_FEE, DAY_SECONDS, ITEMS, ROOMS } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import {
-  CLASS_STARTING,
+  CLASS_LINES,
   classDays,
   classOn,
   classSize,
@@ -121,23 +121,27 @@ describe('a class in play', () => {
     run(sim, 1);
     sim.drain();
     runUntil(sim, () => s.day >= 4.01, 30);
-    expect(sim.drain().some((e) => e.type === 'announce' && e.text === CLASS_STARTING)).toBe(true);
+    expect(sim.drain().some((e) => e.type === 'announce' && CLASS_LINES.includes(e.text))).toBe(true);
   });
 
-  it('is announced only every so often, not for every class', () => {
+  it('is announced only every so often, not for every class, taking turns with its lines', () => {
     const { sim, s } = studio();
-    const called: number[] = [];
+    const called: { day: number; text: string }[] = [];
     runUntil(
       sim,
       () => {
-        if (sim.drain().some((e) => e.type === 'announce' && e.text === CLASS_STARTING)) called.push(Math.floor(s.day));
+        for (const e of sim.drain())
+          if (e.type === 'announce' && CLASS_LINES.includes(e.text))
+            called.push({ day: Math.floor(s.day), text: e.text });
         return s.day >= 2 + CLASS_CALL_GAP * 2.5;
       },
       DAY_SECONDS * CLASS_CALL_GAP * 3,
     );
     expect(called.length).toBeGreaterThan(1);
-    for (const [i, day] of called.slice(1).entries())
-      expect(day - (called[i] ?? 0)).toBeGreaterThanOrEqual(CLASS_CALL_GAP);
+    for (const [i, call] of called.slice(1).entries()) {
+      expect(call.day - (called[i]?.day ?? 0)).toBeGreaterThanOrEqual(CLASS_CALL_GAP);
+      expect(call.text).not.toBe(called[i]?.text);
+    }
   });
 
   it('has the advisor ask for an Instructor while the studio has none', () => {

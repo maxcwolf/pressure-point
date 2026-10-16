@@ -22,6 +22,8 @@ export interface SimContext {
   readonly announced: string[];
   /** The day a class was last announced as starting, if one has been since the game was loaded. */
   classCalled?: number;
+  /** How many times a class has been announced since the game was loaded, to take turns with the lines. */
+  classCalls?: number;
 }
 
 /** Set up the working data for a game. */

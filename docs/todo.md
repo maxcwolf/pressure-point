@@ -38,8 +38,9 @@ Announcer lines that have no recording yet. A recording plays only when its text
   - [x] Qi Gong Instructor needed at the Qi Gong Studio.
   - [ ] Sound Healer needed at the Sound Bath Studio.
   - [ ] Shaman needed at the Ceremony Lodge.
-- A Qi Gong class (`CLASS_STARTING` in `src/core/sim/classes.ts`)
+- A Qi Gong class (`CLASS_LINES` in `src/core/sim/classes.ts`, taking turns, at most once every two weeks)
   - [x] Qi Gong is starting in the studio. Come cultivate your inner energy, because your outer energy is frankly exhausting.
+  - [x] Qi Gong is now starting. If you cannot feel the invisible ball of energy between your hands, please simulate one for the comfort of others.
 - The first Sweat Lodge (`SWEAT_LODGE_OPEN` in `src/core/sim/ceremonies.ts`)
   - [x] The sweat shop... I mean, sweat lodge, is now open.
 - Seasons, at The Boardwalk (`SEASON_NEWS` in `src/core/sim/twists.ts`)

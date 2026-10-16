@@ -26,6 +26,7 @@ import powerOut from './sounds/announcer/power-out.m4a';
 import powerOutSoon from './sounds/announcer/power-out-soon.m4a';
 import qiGongAtQiGong from './sounds/announcer/qi-gong-at-qi-gong.m4a';
 import qiGongStarting from './sounds/announcer/qi-gong-starting.m4a';
+import qiGongStarting2 from './sounds/announcer/qi-gong-starting-2.m4a';
 import receptionistAtReception from './sounds/announcer/receptionist-at-reception.m4a';
 import redAura from './sounds/announcer/red-aura.m4a';
 import reikiAtReiki from './sounds/announcer/reiki-at-reiki.m4a';
@@ -79,6 +80,8 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
   'Qi Gong Instructor needed at the Qi Gong Studio.': qiGongAtQiGong,
   'Qi Gong is starting in the studio. Come cultivate your inner energy, because your outer energy is frankly exhausting.':
     qiGongStarting,
+  'Qi Gong is now starting. If you cannot feel the invisible ball of energy between your hands, please simulate one for the comfort of others.':
+    qiGongStarting2,
   'Caretaker needed. The corridors are getting gross.': caretakerNeeded,
   'The power company will be working on the lines this week. Expect a power cut.': powerOutSoon,
   'The power is out. Anything with a plug is now a very expensive ornament.': powerOut,

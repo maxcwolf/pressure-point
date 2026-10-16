@@ -233,9 +233,14 @@ export function setClasses(ctx: SimContext, on: boolean) {
   if (!on) ctx.s.arrivals = [];
 }
 
-/** What the speakers say as a day with a class begins. */
-export const CLASS_STARTING =
-  'Qi Gong is starting in the studio. Come cultivate your inner energy, because your outer energy is frankly exhausting.';
+/** What the speakers say as a day with a class begins, one line and then the next. */
+export const CLASS_LINES: readonly string[] = [
+  'Qi Gong is starting in the studio. Come cultivate your inner energy, because your outer energy is frankly exhausting.',
+  'Qi Gong is now starting. If you cannot feel the invisible ball of energy between your hands, please simulate one for the comfort of others.',
+];
+
+/** The class line for the nth call since the game was loaded. */
+export const classLine = (n: number) => CLASS_LINES[n % CLASS_LINES.length] ?? '';
 
 /**
  * As a day begins, announce its class if a studio has one with anybody booked for it, and the last call was long
@@ -246,7 +251,8 @@ export function announceClasses(ctx: SimContext) {
   if (!offeringOn(ctx.s, 'qigong') || !ctx.s.open) return;
   if (ctx.classCalled !== undefined && today - ctx.classCalled < CLASS_CALL_GAP) return;
   if (studios(ctx).some((r) => classOn(r, today) && r.booked?.day === today && r.booked.count > 0)) {
-    emit(ctx, { type: 'announce', text: CLASS_STARTING });
+    emit(ctx, { type: 'announce', text: classLine(ctx.classCalls ?? 0) });
     ctx.classCalled = today;
+    ctx.classCalls = (ctx.classCalls ?? 0) + 1;
   }
 }
