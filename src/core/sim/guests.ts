@@ -49,6 +49,7 @@ import { arriveCarrying, carriedOut } from './outbreaks';
 import { countArrival, countVisit } from './records';
 import { updateRest } from './recovery';
 import { dueRegular, regularPatience, welcomeBack } from './regulars';
+import { soundDraw } from './sessions';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
 import { arrivalFactor, cutOff, impatience } from './twists';
@@ -155,11 +156,14 @@ export function rollCondition(ctx: SimContext): ConditionId {
   if (!pool.length)
     pool = CONDITIONS.filter((c) => conditionHere(c, ctx.s.center) && c.modality === DISCIPLINES.massage.base);
   const local = centerOf(ctx.s).conditions ?? {};
+  // a fine Sound Bath Studio gets talked about, and draws more of those who need it
+  const draw = soundDraw(ctx);
   const weights = pool.map(
     (c) =>
       (staff.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4) *
       (local[c.id] ?? 1) *
-      campaignBoost(ctx.s, c.id, CONDITION_BOOST),
+      campaignBoost(ctx.s, c.id, CONDITION_BOOST) *
+      (MODALITIES[c.modality].discipline === 'sound' ? draw : 1),
   );
   let roll = random() * weights.reduce((a, b) => a + b, 0);
   for (const [i, condition] of pool.entries()) {

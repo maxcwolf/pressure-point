@@ -97,7 +97,7 @@ import { checkOpening, checkStars, hasRoom, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
 import { monthSoFar } from './records';
 import { updateRival } from './rival';
-import { playingFor, servedAt, sessionState, stationStaff } from './sessions';
+import { playingFor, servedAt, sessionState, stationStaff, studioDraw } from './sessions';
 import { askSoul, canRetrieve } from './souls';
 import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
 import { type StandingPoints, standingPoints, updateStanding } from './standing';
@@ -319,6 +319,11 @@ export class Sim {
   /** A room's prestige, from one to five. */
   prestige(room: Room): number {
     return prestige(this.ctx, room);
+  }
+
+  /** How strongly a Sound Bath Studio draws guests who need sound healing, as a multiplier on how often they come. */
+  studioDraw(room: Room): number {
+    return studioDraw(this.ctx, room);
   }
 
   // ---- Treatments ------------------------------------------------------------

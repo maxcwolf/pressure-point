@@ -199,6 +199,11 @@ export const CAMEO_CHANCE = 0.12;
 
 /** Seconds a group session waits for its mats to fill after the first guest lies down, before it starts anyway. */
 export const SESSION_WAIT = 8;
+/**
+ * How much more often guests needing sound healing turn up, for a fine Sound Bath Studio: for each prestige star past
+ * the first, for a peaceful room, and for each mat past the two it needs, up to a limit.
+ */
+export const SOUND_DRAW = { star: 0.35, calm: 0.6, mat: 0.2, max: 3 } as const;
 
 /** Share of applicants for each role who are women: most of those at the desk and the tables, few caretakers. */
 export const WOMEN_APPLY: Readonly<Record<Role, number>> = {

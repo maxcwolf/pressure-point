@@ -2,10 +2,13 @@
 // The mats are stations without a staff position of their own; whoever works the room's lead station serves them.
 // A session waits a little for the mats to fill, then plays for everyone lying down.
 
-import { conditionOf, ITEMS, MODALITIES, SESSION_WAIT } from '../data';
-import type { Guest, Item, Staff } from '../state/types';
+import { conditionOf, ITEMS, MODALITIES, NOISE_NOTICE, NOISE_PEACEFUL, SESSION_WAIT, SOUND_DRAW } from '../data';
+import type { Guest, Item, Room, Staff } from '../state/types';
+import { clamp } from '../util';
+import { prestige } from './ambience';
 import { guestById, staffById } from './chars';
 import type { SimContext } from './context';
+import { itemNoise } from './noise';
 
 /** Whether an item is a group station, served from its room's lead station. */
 export const isGroupStation = (it: Item) => !!ITEMS[it.type].station?.group;
@@ -84,4 +87,33 @@ export function sessionState(ctx: SimContext, lead: Item): { lying: number; mats
   const mats = matsOf(ctx, lead);
   const lying = mats.filter((m) => guestById(ctx, m.serving)?.state === 'served').length;
   return { lying, mats: mats.length, playing: lying > 0 && sessionPlaying(lead.progress) };
+}
+
+/** How peaceful it is on a room's mats, from 0 where guests would call it noisy to 1 where they find it peaceful. */
+function matCalm(ctx: SimContext, mats: Item[]): number {
+  if (!mats.length) return 0;
+  const noise = mats.reduce((sum, m) => sum + itemNoise(ctx, m), 0) / mats.length;
+  return clamp((NOISE_NOTICE - noise) / (NOISE_NOTICE - NOISE_PEACEFUL), 0, 1);
+}
+
+/**
+ * How strongly a finished Sound Bath Studio draws guests who need sound healing, as a multiplier on how often they
+ * turn up: 1 for a plain one, more for a prestigious, peaceful room with mats to spare.
+ */
+export function studioDraw(ctx: SimContext, room: Room): number {
+  const lead = ctx.s.items.find((it) => isLeadStation(it) && ctx.world.roomOfItem(it) === room);
+  if (!lead) return 1;
+  const mats = matsOf(ctx, lead);
+  const draw =
+    1 +
+    SOUND_DRAW.star * (prestige(ctx, room) - 1) +
+    SOUND_DRAW.calm * matCalm(ctx, mats) +
+    SOUND_DRAW.mat * Math.max(0, mats.length - 2);
+  return Math.min(SOUND_DRAW.max, draw);
+}
+
+/** How strongly the center's best Sound Bath Studio draws guests who need sound healing. */
+export function soundDraw(ctx: SimContext): number {
+  const studios = ctx.s.rooms.filter((r) => r.done && r.type === 'sound');
+  return Math.max(1, ...studios.map((r) => studioDraw(ctx, r)));
 }

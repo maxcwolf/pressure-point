@@ -10,6 +10,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
+import { drawNote } from '../../lib/sessions';
 import { saveAsTemplate } from '../../templates';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -73,6 +74,13 @@ function BadVibes({ room }: { room: Room }) {
   );
 }
 
+/** How strongly a finished Sound Bath Studio draws guests who need sound healing. */
+function Draw({ room }: { room: Room }) {
+  const { sim } = useGame();
+  if (room.type !== 'sound' || !room.done) return null;
+  return <p class="sub">{drawNote(sim.studioDraw(room))}</p>;
+}
+
 /** The blessing a Shaman has left on a room, while it lasts. */
 function Blessing({ room }: { room: Room }) {
   const { sim } = useGame();
@@ -113,7 +121,7 @@ export function RoomInfo({ room }: { room: Room }) {
       <p class="sub">
         {`${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'} · Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.`}
       </p>{' '}
-      <Comfort room={room} /> <BadVibes room={room} /> <Blessing room={room} />{' '}
+      <Comfort room={room} /> <Draw room={room} /> <BadVibes room={room} /> <Blessing room={room} />{' '}
       {/* a studio's spots are summed up in its timetable rather than listed one by one */}
       {room.type !== 'qigong' && stations.map((i) => <StationInfo key={i.id} item={i} />)}
       {table && <CanDeliver table={table} />} {room.done && room.type === 'qigong' && <Timetable room={room} />}{' '}
