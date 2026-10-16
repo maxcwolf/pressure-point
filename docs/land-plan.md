@@ -1,10 +1,10 @@
 # More land, the Two Point way
 
-A plan for making buying land feel like it does in Two Point Hospital and Two Point Campus. The version shipped on 15 October 2026 (`core/land.ts`, the Money menu's Land tab) works, but it is a stopgap. This plan is for doing it properly, even where that means refactoring the game's model of the building, the renderer and the tests.
+A plan for making buying land feel like it does in Two Point Hospital and Two Point Campus. The first version, shipped in 0.25.0 on 15 October 2026, sold strips from the Money menu's Land tab: it worked, but it was a stopgap. This plan is for doing it properly, even where that means refactoring the game's model of the building, the renderer and the tests.
 
-The phases at the end are each meant to ship on their own, with all tests green. How far they have got is noted under each.
+The phases at the end are each meant to ship on their own, with all tests green. Phases 1 to 6 are done and shipped in 0.27.0; phase 7 is for later. How far each got is noted under it.
 
-## Where we are now
+## Where we started, in 0.26
 
 - **One rectangle per building.** `Plot` (`core/data/map.ts`) is `x0..x1, y0..y1` plus a two-tile front door. Every center has one, fixed in `core/data/centers.ts`.
 - **Land is strips.** `GameState.land` lists sides bought (`'west' | 'east' | 'back'`). `plotWith()` (`core/land.ts`) grows the rectangle by up to 4 tiles per purchase. The front never moves.
