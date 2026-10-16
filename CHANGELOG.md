@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.28.3
+
+- **Click again to pick what's underneath.** Where people and items overlap, clicking the same spot again selects the next one there, and round to the first again.
+
 ## v0.28.2
 
 - **Certificates of Excellence.** Every award won at the year-end ceremony earns a free certificate to hang on a wall for a little decor, from the awards or the Items menu. Each one says which award it was for, and taking one down lets you hang it somewhere else.
