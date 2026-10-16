@@ -297,11 +297,18 @@
   pointer-events: none;
 }
 
-/* the changelog, from the corner across from the version */
-.title-news {
+/* the changelog, from the corner across from the version, with a downloaded update offered above it */
+.title-corner {
   position: fixed;
   right: 14px;
   bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.title-news {
   border: 2.5px solid #fff;
   border-radius: 14px;
   background: rgba(44, 58, 78, 0.84);
@@ -318,4 +325,8 @@
 
 .title-news[hidden] {
   display: none;
+}
+
+.title-update {
+  border-color: var(--gold);
 }

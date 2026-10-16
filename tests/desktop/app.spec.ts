@@ -148,7 +148,15 @@ test.describe('updates', () => {
     await app.evaluate(({ BrowserWindow }, channel) => {
       BrowserWindow.getAllWindows()[0]?.webContents.send(channel, '9.9.9');
     }, UPDATE_READY_CHANNEL);
-    await expect(page.getByRole('button', { name: 'Update to v9.9.9' })).toBeVisible();
+    // the title screen asks before restarting, and Not now leaves the offer in place
+    const offer = page.getByRole('button', { name: 'Update to the latest version' });
+    await offer.click();
+    await expect(page.getByRole('heading', { name: 'Restart to update?' })).toBeVisible();
+    await expect(page.getByText('install version 9.9.9')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Restart and update' })).toBeVisible();
+    await page.getByRole('button', { name: 'Not now' }).click();
+    await expect(page.getByRole('heading', { name: 'Restart to update?' })).toHaveCount(0);
+    await expect(offer).toBeVisible();
 
     await newGame(page);
     const toast = page.locator('#toasts').getByRole('button', { name: 'Version 9.9.9 is ready to install' });

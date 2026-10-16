@@ -17,6 +17,7 @@ import backdrop from '../theme/backdrop.jpg';
 import logo from '../theme/logo.png';
 import { CampaignPanel } from './CampaignPanel';
 import { ChangelogPanel } from './ChangelogPanel';
+import { Dialog } from './dialogs/Dialog';
 import { SandboxPanel } from './SandboxPanel';
 import { SavesPanel } from './SavesPanel';
 import { SettingsPanel } from './SettingsPanel';
@@ -51,6 +52,8 @@ export function TitleScreen({ audio, exit, update, note = '', onPick }: TitleScr
   const [showing, setShowing] = useState<Panel | null>(null);
   /** Panels that have been opened stay in place while hidden, so they keep what was typed into them. */
   const [opened, setOpened] = useState<readonly Panel[]>([]);
+  /** Whether the player is being asked to restart for the downloaded update. */
+  const [askingToUpdate, setAskingToUpdate] = useState(false);
   const latest = latestSave();
   // an update can finish downloading while the title screen is up
   useEffect(() => update?.subscribe(redraw), [update, redraw]);
@@ -62,9 +65,11 @@ export function TitleScreen({ audio, exit, update, note = '', onPick }: TitleScr
   };
   // Esc goes back from a panel to the menu
   useEffect(() => {
-    /** Close the panel on Esc. */
+    /** Close the panel, or the question about updating, on Esc. */
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShowing(null);
+      if (e.key !== 'Escape') return;
+      setShowing(null);
+      setAskingToUpdate(false);
     };
     window.addEventListener('keydown', onKey);
     return () => {
@@ -192,11 +197,6 @@ export function TitleScreen({ audio, exit, update, note = '', onPick }: TitleScr
             >
               Settings
             </button>
-            {update && updateVersion && (
-              <button class="title-btn" title="Install it and open the game again" onClick={update.install}>
-                {`Update to v${updateVersion}`}
-              </button>
-            )}
             {exit && (
               <button class="title-btn" onClick={exit}>
                 Exit
@@ -227,15 +227,28 @@ export function TitleScreen({ audio, exit, update, note = '', onPick }: TitleScr
           </div>
         </div>
         <p class="title-version">{`v${__APP_VERSION__}`}</p>
-        <button
-          class="title-news"
-          hidden={showing === 'changes'}
-          onClick={() => {
-            open('changes');
-          }}
-        >
-          📜 What’s new
-        </button>
+        <div class="title-corner">
+          {update && updateVersion && (
+            <button
+              class="title-news title-update"
+              title={`Version ${updateVersion} has downloaded`}
+              onClick={() => {
+                setAskingToUpdate(true);
+              }}
+            >
+              🎁 Update to the latest version
+            </button>
+          )}
+          <button
+            class="title-news"
+            hidden={showing === 'changes'}
+            onClick={() => {
+              open('changes');
+            }}
+          >
+            📜 What’s new
+          </button>
+        </div>
         <div class="title-tray" hidden={!!showing}>
           {badges.map((b) => (
             <span key={b.label} class={cx('title-badge', !b.on && 'off')} title={b.label} aria-label={b.label}>
@@ -244,6 +257,25 @@ export function TitleScreen({ audio, exit, update, note = '', onPick }: TitleScr
           ))}
         </div>
       </div>
+      {askingToUpdate && update && updateVersion && (
+        <Dialog>
+          <h2>Restart to update?</h2>
+          <p>{`The game will close, install version ${updateVersion} and open again. Your saved games are kept.`}</p>{' '}
+          <p class="sub">Or not now: it installs by itself the next time you quit.</p>{' '}
+          <div class="btnrow">
+            <button
+              onClick={() => {
+                setAskingToUpdate(false);
+              }}
+            >
+              Not now
+            </button>
+            <button class="go" onClick={update.install}>
+              Restart and update
+            </button>
+          </div>
+        </Dialog>
+      )}
     </>
   );
 }
