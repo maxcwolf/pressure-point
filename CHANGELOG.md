@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.27.1
+
+- **What's New works in the Windows app,** listing every version. The same fault stopped the 0.26.0 and 0.27.0 installers, so this is the first since 0.25.0: open **What's New** on the title screen for everything in them, from turning the camera to land the Two Point way.
+
 ## v0.27.0
 
 - **Land, the Two Point way.** Every center has its own plots of land around the building, drawn for it, each with a For Sale board. Press **🏡 Expand**, beside Rooms, to see them outlined on the ground: point at one for its name, size and price, and click to buy it, even while paused. Plots open with stars, and some only once the plot beside them is built on. The Money menu's **Land** tab lists them all, with **Show me** to go and look.
