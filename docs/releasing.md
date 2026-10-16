@@ -33,6 +33,8 @@ The macOS app only accepts an update signed by the same team, so an ad hoc signe
 
 ## Error reports
 
-The web version reports its errors, and logs each game it opens, to the `pressure-point` project in Sentry (`src/app/sentry.ts`), tagged with the version as `pressure-point@1.2.3`. The dev server and the desktop app report nothing.
+The web version and the installed desktop app report their errors to the `pressure-point` project in Sentry (`src/app/sentry.ts`), tagged with the version as `pressure-point@1.2.3`. The environment says which: `production` for the published web version, `preview` for `yarn preview`, and `desktop` for an installed app, which is also tagged with its `platform`. The dev server, and the desktop app run from this folder or by its tests, report nothing.
 
-For the reports to show the real code rather than the minified bundle, add a Sentry organization auth token as the `SENTRY_AUTH_TOKEN` secret. The **Deploy web version** workflow then uploads the build's source maps to Sentry and deletes them before publishing. Without it the deploy still works, and the workflow warns that no source maps were uploaded.
+Besides errors nobody caught, the game logs each game it opens and any saved game that will not open or could not be written. Once a game is open, every report is tagged with its `center`. Save names are the player's own, so they never go into a report.
+
+For the reports to show the real code rather than the minified bundle, add a Sentry organization auth token as the `SENTRY_AUTH_TOKEN` secret. The **Deploy web version** and **Release** workflows then upload the build's source maps to Sentry and delete them before publishing. Without it both still work, and the web deploy warns that no source maps were uploaded.

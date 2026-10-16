@@ -51,6 +51,9 @@ jobs:
             echo "value=$(node -p "require('./package.json').version")-dev.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           fi
       - run: yarn build
+        env:
+          # uploads the source maps to Sentry so the installed app's error reports show the real code (vite.config.ts)
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       - name: Unit tests
         run: yarn test
       - name: Package

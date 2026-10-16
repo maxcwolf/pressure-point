@@ -3,6 +3,8 @@
 // Everything lives in localStorage, which both the browser and the desktop app
 // have. Saves can also be exported to a file and imported again, for backups
 // and for moving a game between the browser and the app.
+import { captureException, logger } from '@sentry/browser';
+
 import { type CenterId, CENTERS, CONDITIONS, DAYS_PER_MONTH, ITEMS, MODALITIES, ROLES, ROOMS } from '../core/data';
 import { SAVE_VERSION } from '../core/state/game';
 import type { GameState } from '../core/state/types';
@@ -109,15 +111,16 @@ function isGame(value: unknown): value is GameState {
   );
 }
 
-/** Turn stored text back into a game, or null if it is not one we can load. */
-function parseState(raw: string | null): GameState | null {
+/** Turn stored text back into a game, or null if it is not one we can load. Hands any error it hit to `onError`. */
+function parseState(raw: string | null, onError?: (err: unknown) => void): GameState | null {
   if (!raw) return null;
   try {
     const s: unknown = JSON.parse(raw);
     if (!isGame(s)) return null;
     upgradeSave(s);
     return s;
-  } catch {
+  } catch (err) {
+    onError?.(err);
     return null;
   }
 }
@@ -165,10 +168,34 @@ export function latestSave(): SaveInfo | null {
 /** Load a saved game by id, or null if it is missing or unreadable. */
 export function readSave(id: string): GameState | null {
   try {
-    return parseState(localStorage.getItem(slotKey(id)));
+    const raw = localStorage.getItem(slotKey(id));
+    let error: unknown;
+    const state = parseState(raw, (err) => {
+      error = err;
+    });
+    if (raw && !state) reportUnreadable(id, raw, error);
+    return state;
   } catch {
     return null;
   }
+}
+
+/** What kind of slot a save is in, for logs: a manual save's id says nothing useful. */
+const slotKind = (id: string) => (id === AUTOSAVE_ID || id === PREVIOUS_ID ? id : 'manual');
+
+/** The saves already reported as unreadable, since the game reads a save several times. */
+const reported = new Set<string>();
+
+/**
+ * Report a save that is there but will not open: a game the player has lost. An error means damaged text or a bug
+ * in bringing an older save up to date; without one, it is not a game this version knows.
+ */
+function reportUnreadable(id: string, raw: string, error: unknown) {
+  if (reported.has(id)) return;
+  reported.add(id);
+  const slot = slotKind(id);
+  if (error) captureException(error, { tags: { slot } });
+  else logger.warn('A saved game could not be opened', { slot, length: raw.length });
 }
 
 /**
@@ -184,8 +211,12 @@ export function writeSave(s: GameState, name: string, id?: string, now = Date.no
   try {
     localStorage.setItem(slotKey(slot), JSON.stringify(s));
     writeIndex([...index.filter((i) => i.id !== slot), info]);
-  } catch {
+  } catch (err) {
     // out of room: do not leave half a save behind
+    logger.warn('A game could not be saved', {
+      slot: slotKind(slot),
+      error: err instanceof Error ? err.name : String(err),
+    });
     if (!id) removeQuietly(slotKey(slot));
     return 'full';
   }

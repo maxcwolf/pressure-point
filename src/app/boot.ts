@@ -1,6 +1,6 @@
 // Starting up: from a blank page to a running game.
 
-import { logger } from '@sentry/browser';
+import { logger, setTag } from '@sentry/browser';
 
 import { Audio } from '../audio';
 import { newGame } from '../core/state/game';
@@ -36,11 +36,11 @@ export async function boot() {
     opened = open(what);
   }
   // the save's name is the player's own, so the log says only what kind of game it is
-  logger.info('Game opened', {
-    kind: what && newGameCenter(what) ? 'new' : 'saved',
-    center: opened.center,
-    day: Math.floor(opened.day),
-  });
+  const kind = what && newGameCenter(what) ? 'new' : 'saved';
+  logger.info('Game opened', { kind, center: opened.center, day: Math.floor(opened.day) });
+  // so every report from here on says which game it came from
+  setTag('center', opened.center);
+  setTag('game', kind);
   startGame({ canvas, audio, state: opened, exit, updates });
 }
 

@@ -10,7 +10,8 @@ const VERSION = (JSON.parse(readFileSync(new URL('./package.json', import.meta.u
 
 /**
  * The token that lets the build upload its source maps to Sentry, so error reports show the real code. Only the web
- * deploy (.github/workflows/pages.yml) has one; every other build makes no source maps and uploads nothing.
+ * deploy and the desktop release (.github/workflows/pages.yml and release.yml) have one; every other build makes no
+ * source maps and uploads nothing.
  */
 const SENTRY_AUTH_TOKEN = process.env.SENTRY_AUTH_TOKEN;
 
