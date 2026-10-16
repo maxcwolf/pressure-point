@@ -115,19 +115,32 @@ export class Bot {
     };
   }
 
+  /** The last month written up, and the stars seen so far, carried between calls to `play`. */
+  private lastMonth = 0;
+  private lastStars = 0;
+
   /** Play this many in-game days, deciding once a day. */
   play(days: number) {
+    this.playUntil(() => false, days);
+  }
+
+  /** Play a day at a time until a condition holds, or for at most so many days. True if the condition came. */
+  playUntil(done: (bot: Bot) => boolean, maxDays: number): boolean {
     const ticksPerDay = Math.round(DAY_SECONDS * 10);
     this.s.speed = 1;
-    let lastMonth = 0;
-    let lastStars = 0;
-    for (let d = 0; d < days; d++) {
+    let met = false;
+    for (let d = 0; d < maxDays; d++) {
+      if (done(this)) {
+        met = true;
+        break;
+      }
       this.decide();
       for (let i = 0; i < ticksPerDay; i++) {
         this.sim.tick(0.1);
         this.sim.drain();
       }
       this.log.lowestMoney = Math.min(this.log.lowestMoney, this.s.money);
+      this.log.peakLoan = Math.max(this.log.peakLoan, this.s.loan);
       const days = this.log.goalDays[this.s.stars];
       if (days)
         for (const o of this.sim.objectives()) {
@@ -135,22 +148,23 @@ export class Bot {
           if (!(key in days)) days[key] = null;
           if (o.done && days[key] === null) days[key] = Math.floor(this.s.day);
         }
-      this.log.peakLoan = Math.max(this.log.peakLoan, this.s.loan);
       if (this.s.open && this.log.openedDay === null) this.log.openedDay = Math.floor(this.s.day);
-      while (this.s.stars > lastStars) {
-        this.log.starDays[lastStars] = Math.floor(this.s.day);
-        lastStars++;
+      while (this.s.stars > this.lastStars) {
+        this.log.starDays[this.lastStars] = Math.floor(this.s.day);
+        this.lastStars++;
       }
       const month = Math.floor(this.s.day / DAYS_PER_MONTH);
-      if (month > lastMonth) {
-        lastMonth = month;
+      if (month > this.lastMonth) {
+        this.lastMonth = month;
         this.closeMonth(month);
       }
     }
+    met ||= done(this);
     this.log.openGoals = this.sim
       .objectives()
       .filter((o) => !o.done)
       .map((o) => o.label);
+    return met;
   }
 
   /** Write up the month just ended. */
@@ -241,6 +255,18 @@ export class Bot {
     } else if (s.loan > 0 && s.money > 25000 + this.wages()) this.sim.repay();
   }
 
+  /** The building's bounds, and its front door and the row inside it, in the shape the bot plans with. */
+  private plot() {
+    const b = this.sim.world.building;
+    return {
+      x0: b.bounds.x0,
+      x1: b.bounds.x1,
+      y0: b.bounds.y0,
+      y1: b.front,
+      door: b.door,
+    };
+  }
+
   /** Whether the bot can pay for something now, borrowing for it if the center is paying its way. */
   private afford(cost: number, reserve: number, borrow = false): boolean {
     const s = this.s;
@@ -304,7 +330,7 @@ export class Bot {
     const def = ROOMS[type];
     const extraCost = extras.reduce((a, t) => a + ITEMS[t].cost, 0);
     if (this.s.money < def.cost + extraCost + 500) return null;
-    const p = this.sim.world.plot;
+    const p = this.plot();
     const [w0, h0] = SIZE[type] ?? [def.minShort, def.minLong];
     const cands: { r: Rect; score: number }[] = [];
     const sizes: [number, number][] = [
@@ -346,17 +372,20 @@ export class Bot {
       }
       this.sim.removeRoom(room.id, 1);
     }
-    // out of room: buy the cheapest plot of land next door and try again
-    const offer = this.sim.landOffers().sort((a, b) => a.price - b.price)[0];
+    // out of room: buy the cheapest plot of land for sale, to build on once the builders are done
+    const building = this.sim.landOffers().some((o) => o.state === 'building');
+    const offer = this.sim
+      .landOffers()
+      .filter((o) => o.state === 'open')
+      .sort((a, b) => a.price - b.price)[0];
     if (
+      !building &&
       offer &&
       this.profit() > 0 &&
       this.afford(offer.price + def.cost + extraCost, 0, true) &&
-      this.sim.buyLand(offer.side)
-    ) {
-      this.note(`day ${Math.floor(this.s.day)}: bought land to the ${offer.side} for ${offer.price}`);
-      return this.buildRoom(type, extras);
-    }
+      this.sim.buyPlot(offer.def.id)
+    )
+      this.note(`day ${Math.floor(this.s.day)}: bought ${offer.name} for ${offer.price}`);
     this.note(`day ${Math.floor(this.s.day)}: could not fit a ${type}`);
     return null;
   }
@@ -389,7 +418,7 @@ export class Bot {
   /** Place an item in the corridor as near a spot as will take it. */
   placeNear(t: ItemType, cx: number, cy: number, where: 'corridor' | 'any' = 'corridor'): Item | null {
     if (this.s.money < ITEMS[t].cost) return null;
-    const p = this.sim.world.plot;
+    const p = this.plot();
     const spots: [number, number, number][] = [];
     for (let y = p.y0; y <= p.y1; y++)
       for (let x = p.x0; x <= p.x1; x++) {
@@ -408,7 +437,7 @@ export class Bot {
 
   /** Place an item in the lobby, by the entrance. */
   private placeNearEntrance(t: ItemType) {
-    const p = this.sim.world.plot;
+    const p = this.plot();
     return this.placeNear(t, (p.door[0] + p.door[1]) / 2, p.y1 - 3);
   }
 
@@ -477,7 +506,7 @@ export class Bot {
       const inside = this.s.items.some((i) => i.type === t && this.sim.world.zoneAt(i.x, i.y) === room.id);
       if (!inside && this.s.money > 2000) this.placeIn(room, t);
     }
-    const p = this.sim.world.plot;
+    const p = this.plot();
     const want = Math.ceil(((p.x1 - p.x0 + 1) * (p.y1 - p.y0 + 1)) / 60);
     const corridor = this.s.items.filter((i) => i.type === t && this.sim.world.zoneAt(i.x, i.y) === 0).length;
     if (corridor < want && this.s.money > 2000)
