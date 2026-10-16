@@ -85,12 +85,13 @@ These belong to one center, unlocked at its first star and available there only 
 These need more than an item, but would make items more fun across the board.
 
 **24. Wall items.** Two Point has a whole category of things that hang on walls, like posters, paintings, clocks and certificates, which add decor and character without taking up floor space. We have none: every item stands on a tile. A wall slot on each wall tile of a room, with a few items to hang:
+
 - **Framed Diploma** (from a qualification course, free, adds a little to the guests' trust in that therapist),
 - **Clock**, which makes guests lose patience a little faster when they can see it, but gets staff back from breaks sooner,
 - **Chakra Chart** and **Meridian Poster** for the treatment rooms,
 - **Landscape painting**, in a different subject for each center,
 - and the Motivational Poster from 17.
-_New code, medium to large_: placing on walls, drawing items on walls that turn with the camera, and walls cut low hiding what hangs on them.
+  _New code, medium to large_: placing on walls, drawing items on walls that turn with the camera, and walls cut low hiding what hangs on them.
 
 **25. Item gags.** Two Point items are worth watching because they do things: the vending machine eats a coin, a radiator clanks. A small animation per item, even just props moving, is to items what treatment gags ([two-point-gaps.md](two-point-gaps.md), item 31) are to rooms. Starting points: the Granola Dispenser shaking a stuck bar loose, the Gong shimmering after it's struck, the Fortune Teller's hands waving over the crystal ball, and the Koi in the pond following a guest along the edge. _Medium overall._
 

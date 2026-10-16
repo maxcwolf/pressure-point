@@ -5,6 +5,12 @@ import { slots, trained, xpToNext } from '../../core/sim/careers';
 import type { Sim } from '../../core/sim/sim';
 import type { CourseId, Guest, Staff } from '../../core/state/types';
 
+/** What a guest getting a drink is having, by what they are getting it from, other than a herbal tea. */
+const DRINKS: Readonly<Record<string, string>> = {
+  water_cooler: 'Getting a glass of water',
+  kombucha_tap: 'Pouring a kombucha',
+};
+
 /** What a class-goer is doing, in a few words. */
 function classgoerStatus(g: Guest, sim: Sim): string {
   const spot = sim.world.item(g.station);
@@ -69,9 +75,12 @@ export function guestStatus(g: Guest, sim: Sim): string {
     case 'toNeed':
     case 'need':
       if (g.needKind === 'toilet') return 'Answering a call of nature';
-      if (g.needKind === 'play') return 'Playing a round on the arcade';
+      if (g.needKind === 'play')
+        return sim.world.item(g.claimItem)?.type === 'fortune_teller'
+          ? 'Having their fortune told'
+          : 'Playing a round on the arcade';
       if (g.needKind === 'eat') return 'Getting a snack';
-      return sim.world.item(g.claimItem)?.type === 'water_cooler' ? 'Getting a glass of water' : 'Getting a herbal tea';
+      return DRINKS[sim.world.item(g.claimItem)?.type ?? ''] ?? 'Getting a herbal tea';
     case 'leaving':
       return g.outcome === 'healed'
         ? 'Going home healed'

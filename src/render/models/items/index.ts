@@ -25,10 +25,12 @@ import { buildDiffuser } from './diffuser';
 import { buildEmberBowl } from './ember-bowl';
 import { buildFireExtinguisher } from './fire-extinguisher';
 import { buildFireplace } from './fireplace';
+import { buildFortuneTeller } from './fortune-teller';
 import { buildFountain } from './fountain';
 import { buildGong } from './gong';
 import { buildInstructorMat } from './instructor-mat';
 import { buildKoiPond } from './koi-pond';
+import { buildKombuchaTap } from './kombucha-tap';
 import { buildLinenHamper } from './linen-hamper';
 import { buildMagazineRack } from './magazine-rack';
 import { buildMassageChair } from './massage-chair';
@@ -55,6 +57,8 @@ import { buildSink } from './sink';
 import { buildSnackMachine } from './snack-machine';
 import { buildSofa } from './sofa';
 import { buildSoundMat } from './sound-mat';
+import { buildSoundproofPanel } from './soundproof-panel';
+import { buildStaffFridge } from './staff-fridge';
 import { buildStatue } from './statue';
 import { buildStimUnit } from './stim-unit';
 import { buildStoneWarmer } from './stone-warmer';
@@ -67,6 +71,7 @@ import { buildTopiary } from './topiary';
 import { buildTrophyCabinet } from './trophy-cabinet';
 import { buildWaterCooler } from './water-cooler';
 import { buildWhiteboard } from './whiteboard';
+import { buildWindChimes } from './wind-chimes';
 
 /** What builds each item's model. Every item type has to have one. */
 const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
@@ -132,6 +137,11 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   topiary: buildTopiary,
   air_conditioner: buildAirConditioner,
   linen_hamper: buildLinenHamper,
+  soundproof_panel: buildSoundproofPanel,
+  wind_chimes: buildWindChimes,
+  fortune_teller: buildFortuneTeller,
+  kombucha_tap: buildKombuchaTap,
+  staff_fridge: buildStaffFridge,
 };
 
 /** Build an item in its local frame: origin at the footprint center, +z is the front. */

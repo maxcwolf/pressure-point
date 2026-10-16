@@ -82,7 +82,7 @@ export const defaultPolicy = (): Policy => ({
  * of the sound bath. 19: equipment upgrades and the Mechanics course. 20: the Recovery Lounge and its Recliner.
  * 21: Qi Gong classes, the Qi Gong Studio and its Instructor. 23: more land. 24: regulars, and the Vision Quest. 25: land kept as the tiles it covers.
  */
-export const SAVE_VERSION = 25;
+export const SAVE_VERSION = 26;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

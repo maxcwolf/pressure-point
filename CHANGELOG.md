@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Five new items.** **Soundproof Panels** hush the noise around them, but add nothing to a room's looks. **Wind Chimes** make bad vibes fade four times as fast in their room. From the first star, a **Fortune Teller** tells bored guests their fortune, and now and then that they will be healed today, so they wait patiently. Also from the first star, a **Staff Fridge** feeds and waters staff on a break. From the second star, a **Kombucha Tap** earns more than tea, but once worn it fizzes over into a sticky puddle that slows guests down until a Caretaker mops it up.
+
 ## v0.27.5
 
 - **Moving a Training Room no longer cancels a course.** Whoever was studying walks back to a desk and carries on where they left off, with nothing to pay again.

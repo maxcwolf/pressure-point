@@ -18,6 +18,8 @@ export const VIBES_PER_FAIL = 60;
 export const VIBES_PENALTY = 0.15;
 /** How fast bad vibes fade on their own, in points a second: a single failure's clears in about 25 days. */
 export const VIBES_FADE = 0.4;
+/** How many times faster bad vibes fade in a room with Wind Chimes in it. */
+export const CHIMES_FADE = 4;
 /** How much bad vibes lower the morale of staff working in the room. */
 export const VIBES_MORALE = 8;
 /** How long it takes to waft sage through a room and clear it. */

@@ -383,6 +383,8 @@ export interface Litter {
   x: number;
   y: number;
   claimedBy: number;
+  /** A puddle of kombucha rather than a wrapper: it slows whoever walks through it. */
+  puddle?: boolean;
 }
 
 export interface Candidate {

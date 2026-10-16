@@ -44,6 +44,7 @@ import { emit, tipOnce } from './events';
 import { feel } from './feelings';
 import { campaignBoost } from './marketing';
 import { goTo, halt, moveAlong } from './movement';
+import { fizzOver, puddleSlow, tellFortune } from './novelties';
 import { arriveCarrying, carriedOut } from './outbreaks';
 import { countArrival, countVisit } from './records';
 import { updateRest } from './recovery';
@@ -390,7 +391,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   g.bladder = Math.min(100, g.bladder + dt * 0.42);
   if (g.bubbleT > 0) g.bubbleT -= dt;
   const stiff = g.outcome !== 'healed' && conditionOf(g.condition).visual === 'stiff';
-  const arrived = moveAlong(g, dt, stiff ? 1.75 : 2.1);
+  const arrived = moveAlong(g, dt, (stiff ? 1.75 : 2.1) * puddleSlow(ctx, g));
   if (worsen(ctx, g, dt)) return;
 
   const waiting = g.state === 'toWait' || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
@@ -472,8 +473,10 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
             feel(g, 'filthy-toilet');
           }
           if (g.needKind === 'drink' || g.needKind === 'eat') feel(g, 'refreshed');
-          if (g.needKind === 'play') feel(g, 'played');
+          if (g.needKind === 'play' && used.type !== 'fortune_teller') feel(g, 'played');
           g.patience = Math.max(0, Math.min(100, g.patience + needRelief(g.needKind, used.dirt)));
+          if (used.type === 'fortune_teller') tellFortune(g);
+          if (used.type === 'kombucha_tap') fizzOver(ctx, used);
           used.dirt = dirtier(used.type, used.dirt);
         }
         if (g.needKind === 'drink') {

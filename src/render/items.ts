@@ -35,9 +35,9 @@ export interface ItemCondition {
   trophies: number;
 }
 
-/** Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke, blinking lights and grubby linens. */
+/** Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke, blinking lights, grubby linens and chimes. */
 export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: number) {
-  const { leaf, glow, ring, orb, puffs, led, cups, linens, heap, flames } = partsOf(model);
+  const { leaf, glow, ring, orb, puffs, led, cups, linens, heap, flames, chimes } = partsOf(model);
   if (leaf) {
     // a plant browns and droops as it dries out
     const k = Math.min(1, it.water / 40);
@@ -73,6 +73,11 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
   // each flame leaps and dies back on its own beat
   flames?.forEach((f, i) => {
     f.scale.y = 0.8 + Math.sin(t * (7 + i * 1.7) + i * 2 + it.id) * 0.2 + Math.sin(t * 13 + i) * 0.08;
+  });
+  // chimes sway in a breeze nobody else can feel, each tube a little out of step
+  chimes?.forEach((c, i) => {
+    c.rotation.z = Math.sin(t * 1.6 + i * 1.3 + it.id) * 0.12;
+    c.rotation.x = Math.sin(t * 1.1 + i * 0.7) * 0.08;
   });
 }
 

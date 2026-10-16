@@ -189,6 +189,8 @@ export interface ItemParts {
   heap?: THREE.Object3D;
   /** A fire's flames, which flicker. */
   flames?: THREE.Object3D[];
+  /** Wind chimes' tubes, which sway. */
+  chimes?: THREE.Object3D[];
   /**
    * What moves over the guest during a ceremony: a spirit animal that bobs, a dark cloud pulled out of them, steam that
    * rises off them, colors that swirl, and an eagle that circles.

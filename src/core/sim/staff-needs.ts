@@ -1,7 +1,9 @@
 // Staff get thirsty and hungry too, faster in the heat. Between jobs they go for a drink or a snack from whatever the
-// guests use, and an Espresso Machine in the Staff Room sees to their thirst on a break. Left wanting, they are fed up.
+// guests use, an Espresso Machine in the Staff Room sees to their thirst on a break, and a Staff Fridge to their thirst
+// and hunger both. Left wanting, they are fed up.
 
 import {
+  FRIDGE_REFRESH,
   HEAT_THIRST,
   ITEMS,
   REFRESH_SECONDS,
@@ -21,18 +23,29 @@ import { hotness, warmthAt } from './warmth';
 /** Whether this member of staff is somewhere their needs grow: in the building, not out on a call or going home. */
 const present = (st: Staff) => st.state !== 'away' && st.state !== 'toCall' && st.state !== 'leaving';
 
-/** Make staff thirstier and hungrier with time: thirstier in the heat. A drink on a break with an espresso to hand. */
-export function growNeeds(ctx: SimContext, st: Staff, dt: number, espresso: boolean) {
+/** What a Staff Room offers someone on a break there: an espresso, a fridge to help themselves from. */
+export interface BreakRoom {
+  espresso: boolean;
+  fridge: boolean;
+}
+
+/**
+ * Make staff thirstier and hungrier with time: thirstier in the heat. A drink on a break with an espresso to hand, and
+ * a drink and a bite with a fridge.
+ */
+export function growNeeds(ctx: SimContext, st: Staff, dt: number, room: BreakRoom) {
   if (!present(st)) return;
   const heat = hotness(warmthAt(ctx, st.tx, st.ty));
   st.thirst = Math.min(100, st.thirst + STAFF_THIRST * (1 + heat * HEAT_THIRST) * dt);
   st.hunger = Math.min(100, st.hunger + STAFF_HUNGER * dt);
-  if (st.state === 'onBreak' && espresso) st.thirst = Math.max(0, st.thirst - 20 * dt);
+  if (st.state === 'onBreak' && (room.espresso || room.fridge))
+    st.thirst = Math.max(0, st.thirst - FRIDGE_REFRESH * dt);
+  if (st.state === 'onBreak' && room.fridge) st.hunger = Math.max(0, st.hunger - FRIDGE_REFRESH * dt);
   if (st.thirst >= 100 || st.hunger >= 100)
     tipOnce(
       ctx,
       'staff-needs',
-      'Staff get thirsty and hungry too, and thirstier in the heat. Between jobs they use the same Water Coolers, Tea Stations and Snack Machines as guests, and an Espresso Machine in the Staff Room sees to their thirst on a break.',
+      'Staff get thirsty and hungry too, and thirstier in the heat. Between jobs they use the same Water Coolers, Tea Stations and Snack Machines as guests. An Espresso Machine in the Staff Room sees to their thirst on a break, and a Staff Fridge to their thirst and hunger.',
       'bad',
       { kind: 'staff', id: st.id },
     );

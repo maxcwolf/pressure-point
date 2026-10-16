@@ -141,6 +141,33 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'experience',
     lines: ['Beat my high score while I waited.'],
   },
+  fortune: {
+    id: 'fortune',
+    icon: '🔮',
+    text: 'Had their fortune told',
+    good: true,
+    part: 'experience',
+    lines: [
+      'The fortune machine said I would wait a little longer. It was right.',
+      'Got my fortune told in the corridor. A tall, dark massage table is in my future.',
+    ],
+  },
+  lucky: {
+    id: 'lucky',
+    icon: '🍀',
+    text: 'Was told they would be healed today',
+    good: true,
+    part: 'experience',
+    lines: ['The fortune teller said I would be healed today, so I waited.', 'It is all written in the stars.'],
+  },
+  puddle: {
+    id: 'puddle',
+    icon: '💦',
+    text: 'Stepped in a puddle of kombucha',
+    good: false,
+    part: 'experience',
+    lines: ['Sticky floors. My socks still smell of vinegar.', 'Someone should mop up the kombucha.'],
+  },
   'fine-room': {
     id: 'fine-room',
     icon: '✨',

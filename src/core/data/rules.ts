@@ -141,6 +141,15 @@ export const BORED_PATIENCE = 60;
 export const PLAY_RANGE = 12;
 /** How much patience a round on the arcade gives back. */
 export const PLAY_PATIENCE = 25;
+/** The chance a round on the Fortune Teller says the guest will be healed today, and leaves them fully patient. */
+export const LUCKY_FORTUNE = 0.15;
+/** How worn a Kombucha Tap is before it may fizz over, and the chance each time it is used then that it does. */
+export const FIZZ_WEAR = 60;
+export const FIZZ_CHANCE = 0.3;
+/** How fast someone walks across a puddle, against usual. */
+export const PUDDLE_SLOW = 0.55;
+/** How fast a Staff Fridge in the Staff Room sees to the thirst and hunger of staff on a break, in points a second. */
+export const FRIDGE_REFRESH = 20;
 /** How fast a seated guest loses patience against standing, unless the seat says otherwise. */
 export const SEAT_DRAIN = 0.6;
 

@@ -28,6 +28,9 @@ import { changeLinens, hamperWithRoom, linensPenalty, staleLinens, useLinens } f
 import { calmness, feelNoise, noiseLeak, noisePenalty } from '../../src/core/sim/noise';
 import { updateOutbreak } from '../../src/core/sim/outbreaks';
 import { growNeeds, wants } from '../../src/core/sim/staff-needs';
+
+/** A member of staff not on a break, or on one with nothing to eat or drink. */
+const NO_BREAK_ROOM = { espresso: false, fridge: false };
 import { moraleTarget } from '../../src/core/sim/staffing';
 import {
   discomfort,
@@ -229,14 +232,14 @@ describe('staff needs', () => {
   it('grow with time, and thirst faster in the heat', () => {
     const { s, therapist } = openCenter(1);
     const ctx = createContext(s);
-    growNeeds(ctx, therapist, 10, false);
+    growNeeds(ctx, therapist, 10, NO_BREAK_ROOM);
     const mild = therapist.thirst;
     expect(mild).toBeGreaterThan(0);
     expect(therapist.hunger).toBeGreaterThan(0);
     expect(wants(therapist)).toBeNull();
     therapist.thirst = 0;
     ctx.warmth.fill(IDEAL_TEMP + 30);
-    growNeeds(ctx, therapist, 10, false);
+    growNeeds(ctx, therapist, 10, NO_BREAK_ROOM);
     expect(therapist.thirst).toBeGreaterThan(mild * 1.5);
   });
 
@@ -256,8 +259,19 @@ describe('staff needs', () => {
     const ctx = createContext(s);
     therapist.thirst = 80;
     therapist.state = 'onBreak';
-    growNeeds(ctx, therapist, 2, true);
+    growNeeds(ctx, therapist, 2, { espresso: true, fridge: false });
     expect(therapist.thirst).toBeLessThan(80);
+  });
+
+  it('are seen to by a Staff Fridge on a break, hunger and thirst both', () => {
+    const { s, therapist } = openCenter(1);
+    const ctx = createContext(s);
+    therapist.thirst = 80;
+    therapist.hunger = 80;
+    therapist.state = 'onBreak';
+    growNeeds(ctx, therapist, 2, { espresso: false, fridge: true });
+    expect(therapist.thirst).toBeLessThan(80);
+    expect(therapist.hunger).toBeLessThan(80);
   });
 
   it('wear down morale when left unmet', () => {

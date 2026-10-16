@@ -56,6 +56,7 @@ import { breakDue } from './policy';
 import { hasItem } from './progress';
 import { isLeadStation, matsOf } from './sessions';
 import { reachSoul, soulStep, soulToRetrieve, startSoul } from './souls';
+import type { BreakRoom } from './staff-needs';
 import { fedUp, goRefresh, growNeeds, refreshed, refreshSeconds, wants, wantsRefresh } from './staff-needs';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
@@ -167,6 +168,16 @@ export function giveRaise(ctx: SimContext, id: number) {
 export function breakBoost(ctx: SimContext, st: Staff): number {
   const seat = ctx.world.item(st.claimItem);
   return seat && sameRoomCount(ctx, seat, 'coffee_machine') > 0 ? COFFEE_BREAK_BOOST : 1;
+}
+
+/** What the Staff Room someone is on a break in offers them to eat and drink. */
+function breakRoom(ctx: SimContext, st: Staff): BreakRoom {
+  const seat = st.state === 'onBreak' ? ctx.world.item(st.claimItem) : undefined;
+  if (!seat) return { espresso: false, fridge: false };
+  return {
+    espresso: sameRoomCount(ctx, seat, 'coffee_machine') > 0,
+    fridge: sameRoomCount(ctx, seat, 'staff_fridge') > 0,
+  };
 }
 
 /** How much faster than usual someone's course is going: quicker with bookcases in the Training Room. */
@@ -511,7 +522,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
 
   updateMorale(ctx, st, dt);
   if (st.state === 'leaving' && !ctx.s.staff.includes(st)) return;
-  growNeeds(ctx, st, dt, breakBoost(ctx, st) > 1);
+  growNeeds(ctx, st, dt, breakRoom(ctx, st));
   if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * 9 * breakBoost(ctx, st));
   else if (st.state !== 'leaving' && st.state !== 'training' && st.state !== 'away') {
     const rate = st.busy ? 0.42 * (st.strain || 1) : st.state === 'atPost' ? 0.14 : 0.2;

@@ -49,6 +49,8 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
       'arcade_machine',
       'coffee_machine',
       'snack_machine',
+      'fortune_teller',
+      'staff_fridge',
       'radiator',
       'air_conditioner',
     ],
@@ -91,7 +93,7 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
     days: 2,
     prepare: { cost: 900, label: 'Call pest control', effect: 'The wasps are seen off before they settle.' },
     harm: 'For two days nobody can get near the snacks, drinks or bins.',
-    stops: ['snack_machine', 'tea_station', 'coffee_machine', 'water_cooler', 'bin'],
+    stops: ['snack_machine', 'tea_station', 'kombucha_tap', 'coffee_machine', 'water_cooler', 'bin'],
     stopsWhat: 'the snacks, drinks and bins',
   },
 };
