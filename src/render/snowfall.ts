@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 
-import { H, W } from '../core/data';
+import { H, LOT_W } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import { hash } from './shared';
 
@@ -13,10 +13,10 @@ const FALL = 1.2;
 /** How far past the edges of the lot the snow reaches, in tiles. */
 const MARGIN = 6;
 
-/** Where a flake falls from: its spot over the ground, and how far through its fall it starts. */
-export function flakeSpot(i: number): { x: number; z: number; start: number } {
+/** Where a flake falls from over a map so wide: its spot over the ground, and how far through its fall it starts. */
+export function flakeSpot(i: number, width = LOT_W): { x: number; z: number; start: number } {
   return {
-    x: -MARGIN + hash(i, 1) * (W + MARGIN * 2),
+    x: -MARGIN + hash(i, 1) * (width + MARGIN * 2),
     z: -MARGIN + hash(i, 2) * (H + MARGIN * 2),
     start: hash(i, 3),
   };
@@ -30,13 +30,14 @@ export function flakeHeight(start: number, t: number, fall = FALL): number {
 
 export class SnowfallLayer {
   private flakes: THREE.Points;
-  private spots = Array.from({ length: FLAKES }, (_, i) => flakeSpot(i));
+  private spots: { x: number; z: number; start: number }[];
   private positions = new Float32Array(FLAKES * 3);
 
   constructor(
     scene: THREE.Scene,
     private sim: Sim,
   ) {
+    this.spots = Array.from({ length: FLAKES }, (_, i) => flakeSpot(i, sim.world.w));
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
     this.flakes = new THREE.Points(

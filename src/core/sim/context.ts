@@ -1,6 +1,6 @@
 // What every part of the simulation works on.
 
-import { H, IDEAL_TEMP, W } from '../data';
+import { IDEAL_TEMP } from '../data';
 import type { GameState } from '../state/types';
 import { World } from '../world';
 import type { SimEvent } from './events';
@@ -24,13 +24,15 @@ export interface SimContext {
 
 /** Set up the working data for a game. */
 export function createContext(s: GameState): SimContext {
+  const world = new World(s);
+  const tiles = world.w * world.h;
   return {
     s,
-    world: new World(s),
+    world,
     events: [],
-    attract: new Float32Array(W * H),
-    noise: new Float32Array(W * H),
-    warmth: new Float32Array(W * H).fill(IDEAL_TEMP),
+    attract: new Float32Array(tiles),
+    noise: new Float32Array(tiles),
+    warmth: new Float32Array(tiles).fill(IDEAL_TEMP),
     announced: [],
   };
 }

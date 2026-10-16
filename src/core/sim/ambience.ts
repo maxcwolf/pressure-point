@@ -3,21 +3,22 @@
 import { DECOR_RADIUS, DIRT_FILTHY, FILTHY_DECOR, ITEMS, ROOMS, WINDOW_MAX_BONUS } from '../data';
 import type { Item, Room } from '../state/types';
 import { at, clamp } from '../util';
-import { inBounds, itemCenter, tileIdx } from '../world';
+import { itemCenter } from '../world';
 import type { SimContext } from './context';
 
 /** Work out afresh how pleasant each tile is. */
 export function updateAmbience(ctx: SimContext) {
   const grid = ctx.attract;
+  const { world } = ctx;
   grid.fill(0);
   const R = DECOR_RADIUS;
   /** Add pleasantness around a tile, fading with distance. */
   const spread = (cx: number, cy: number, amount: number) => {
     for (let y = cy - R; y <= cy + R; y++) {
       for (let x = cx - R; x <= cx + R; x++) {
-        if (!inBounds(x, y)) continue;
+        if (!world.onMap(x, y)) continue;
         const d = Math.hypot(x - cx, y - cy);
-        const i = tileIdx(x, y);
+        const i = world.idx(x, y);
         if (d <= R) grid[i] = at(grid, i) + amount * (1 - d / (R + 1));
       }
     }
@@ -43,7 +44,7 @@ export function decorOf(it: Item): number {
 
 /** Patience drains slower in pleasant surroundings and faster in grim ones. */
 export function drainFactor(ctx: SimContext, x: number, y: number): number {
-  return clamp(1.12 - (inBounds(x, y) ? at(ctx.attract, tileIdx(x, y)) : 0) * 0.035, 0.7, 1.4);
+  return clamp(1.12 - (ctx.world.onMap(x, y) ? at(ctx.attract, ctx.world.idx(x, y)) : 0) * 0.035, 0.7, 1.4);
 }
 
 /** One to five, from how roomy and how nicely furnished a room is. */

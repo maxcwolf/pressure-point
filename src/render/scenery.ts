@@ -5,7 +5,8 @@
 
 import * as THREE from 'three';
 
-import { H, type Plot, ROAD_Y, SIDEWALK_Y, TITLE_LINES, W } from '../core/data';
+import { H, type Rect, ROAD_Y, SIDEWALK_Y, TITLE_LINES } from '../core/data';
+import { entranceSpan, type Footprint, inRect } from '../core/footprint';
 import { must } from '../core/util';
 import { buildBeach } from './models/beach';
 import { mergeStill } from './models/merge';
@@ -13,24 +14,29 @@ import { buildOrchard, orchardRows } from './models/orchard';
 import { cyl, mat, put, rbox, sph } from './models/parts';
 import { buildPines } from './models/pine';
 import { buildForest, type TreeSpot } from './models/tree';
+import { shellStretches } from './outer-walls';
 import type { Setting } from './setting';
 import { H_LOW, hash, OUTER_HT, OUTER_T } from './shared';
 import { SIGN_HALF, SIGN_LEG, signSpot } from './sign';
 import { onStorefront } from './storefront';
-import type { Side, Sides } from './turn';
+import type { Sides } from './turn';
 
-/** Build the scenery around a building on its plot, in its setting: the same until the building grows. */
+/** Build the scenery around a building, in its setting: the same until the building grows. */
 export function buildScenery(
-  plot: Plot,
+  fp: Footprint,
   setting: 'park' | 'seaside' | 'mountain' | 'orchard',
   colors: Setting,
+  /** How wide the lot is. */
+  width: number,
+  /** The center's plots of land, kept clear for the building to grow into. */
+  plots: readonly Rect[] = [],
 ): THREE.Group {
   const scene = new THREE.Group();
   const lawn = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({ color: colors.ground, roughness: 1 }),
   );
-  lawn.position.set(W / 2, -0.03, H / 2);
+  lawn.position.set(width / 2, -0.03, H / 2);
   lawn.receiveShadow = true;
   scene.add(lawn);
 
@@ -66,18 +72,20 @@ export function buildScenery(
   board.castShadow = true;
   sign.add(board);
   for (const x of [-SIGN_LEG, SIGN_LEG]) put(sign, cyl(0.07, 0.07, 0.9), mat(0x8f5f38), x, 0.45, 0);
-  const spot = signSpot(plot);
+  const spot = signSpot(fp);
   sign.position.set(spot.x, 0, spot.z);
   sign.rotation.y = spot.angle;
   scene.add(sign);
 
   if (setting === 'seaside') {
-    scene.add(buildSeaside(plot));
+    scene.add(buildSeaside(fp, width, plots));
     return scene;
   }
   if (setting === 'orchard') {
     // apple trees in rows, wherever the lawn is clear
-    const rows = orchardRows(-6, W + 6, -6, H + 6).filter((p) => !keptClear(plot, Math.floor(p.x), Math.floor(p.z)));
+    const rows = orchardRows(-6, width + 6, -6, H + 6).filter(
+      (p) => !keptClear(fp, plots, Math.floor(p.x), Math.floor(p.z)),
+    );
     scene.add(buildOrchard(rows.map((p, i) => ({ ...p, seed: Math.floor(hash(i, 5) * 97) }))));
     return scene;
   }
@@ -85,8 +93,8 @@ export function buildScenery(
   // trees wherever there is lawn, or snow
   const trees: TreeSpot[] = [];
   for (let y = -3; y < H + 2; y++) {
-    for (let x = -4; x < W + 4; x++) {
-      if (keptClear(plot, x, y) || hash(x, y) > 0.2) continue;
+    for (let x = -4; x < width + 4; x++) {
+      if (keptClear(fp, plots, x, y) || hash(x, y) > 0.2) continue;
       trees.push({
         x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.5,
         z: y + 0.5 + (hash(x, y + 9) - 0.5) * 0.5,
@@ -99,37 +107,39 @@ export function buildScenery(
 }
 
 /**
- * Whether a tile is kept clear of scenery: the building and a margin round it, the street, the path to the door, and
- * the rival's storefront across the street.
+ * Whether a tile is kept clear of scenery: the building and its plots of land with a margin round them, the street,
+ * the path to the door, and the rival's storefront across the street.
  */
-function keptClear(plot: Plot, x: number, y: number): boolean {
-  const inPlot = x >= plot.x0 - 1 && x <= plot.x1 + 2 && y >= plot.y0 - 1 && y <= plot.y1 + 1;
+function keptClear(fp: Footprint, plots: readonly Rect[], x: number, y: number): boolean {
+  /** Whether the tile is on a rectangle or the margin round it. */
+  const near = (r: Rect) => inRect({ x0: r.x0 - 1, x1: r.x1 + 2, y0: r.y0 - 1, y1: r.y1 + 1 }, x, y);
+  const nearBuilding = fp.rects.some(near) || plots.some(near);
   const onRoad = y >= SIDEWALK_Y && y <= ROAD_Y[1];
-  const nearPath = x >= plot.door[0] - 7 && x <= plot.door[1] + 3 && y > plot.y1;
-  return inPlot || onRoad || nearPath || onStorefront(plot, x, y);
+  const nearPath = x >= fp.door[0] - 7 && x <= fp.door[1] + 3 && y > fp.front;
+  return nearBuilding || onRoad || nearPath || onStorefront(fp, x, y);
 }
 
 /** The sea behind the lot, a row of beach huts along the shore, and dune grass on the sand. */
-function buildSeaside(plot: Plot): THREE.Group {
+function buildSeaside(fp: Footprint, width: number, plots: readonly Rect[]): THREE.Group {
   const shore = new THREE.Group();
   const sea = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 200).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({ color: 0x4aa8c9, roughness: 0.25 }),
   );
-  sea.position.set(W / 2, -0.01, -2 - 100);
+  sea.position.set(width / 2, -0.01, -2 - 100);
   sea.receiveShadow = true;
   const foam = new THREE.Mesh(
     new THREE.PlaneGeometry(400, 0.7).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({ color: 0xf4fbfc, roughness: 0.6 }),
   );
-  foam.position.set(W / 2, -0.005, -1.8);
+  foam.position.set(width / 2, -0.005, -1.8);
   shore.add(sea, foam);
   const huts: TreeSpot[] = [];
-  for (let x = -12; x < W + 12; x += 2) huts.push({ x: x + 0.5, z: 0.6, seed: Math.floor(hash(x, 3) * 97) });
+  for (let x = -12; x < width + 12; x += 2) huts.push({ x: x + 0.5, z: 0.6, seed: Math.floor(hash(x, 3) * 97) });
   const grass: TreeSpot[] = [];
   for (let y = 2; y < H + 2; y++) {
-    for (let x = -4; x < W + 4; x++) {
-      if (keptClear(plot, x, y) || hash(x, y) > 0.12) continue;
+    for (let x = -4; x < width + 4; x++) {
+      if (keptClear(fp, plots, x, y) || hash(x, y) > 0.12) continue;
       grass.push({
         x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.6,
         z: y + 0.5 + (hash(x, y + 9) - 0.5) * 0.6,
@@ -141,62 +151,16 @@ function buildSeaside(plot: Plot): THREE.Group {
   return shore;
 }
 
-/** A wall of the building's shell, and the corners it takes in at either end. */
-interface ShellWall {
-  side: Side;
-  tall: boolean;
-  /** Whether it runs on over the corner at its start (north or west) and at its end (south or east). */
-  fromCorner: boolean;
-  toCorner: boolean;
-}
-
-/**
- * The building's four outer walls, tall across from the camera and low on the sides facing it, and which takes in
- * each corner: a tall wall before a low one, and along x before along z. Looking from the south-east, as the game
- * always has, the north wall runs the whole width, the west wall takes the south-west corner and the low south wall
- * the south-east one.
- */
-export function shellWalls(near: Sides): ShellWall[] {
-  const order: Side[] = ['north', 'south', 'west', 'east'];
-  /** How strongly a wall claims a corner: a tall wall first, then along x. */
-  const rank = (side: Side) => (near[side] ? 2 : 0) + (side === 'west' || side === 'east' ? 1 : 0);
-  /** Which of two walls meeting at a corner takes it in. */
-  const owner = (a: Side, b: Side) => (rank(a) <= rank(b) ? a : b);
-  type Corner = 'nw' | 'ne' | 'sw' | 'se';
-  const corners: Record<Corner, Side> = {
-    nw: owner('north', 'west'),
-    ne: owner('north', 'east'),
-    sw: owner('south', 'west'),
-    se: owner('south', 'east'),
-  };
-  /** The corners at the start and end of each wall: west or north first. */
-  const ends: Record<Side, [Corner, Corner]> = {
-    north: ['nw', 'ne'],
-    south: ['sw', 'se'],
-    west: ['nw', 'sw'],
-    east: ['ne', 'se'],
-  };
-  return order.map((side) => {
-    const [from, to] = ends[side];
-    return { side, tall: !near[side], fromCorner: corners[from] === side, toCorner: corners[to] === side };
-  });
-}
-
-/** Build the building's outer walls on its plot: tall across from the camera, low facing it, with the entrance in front. */
-export function buildShell(plot: Plot, near: Sides): THREE.Group {
+/** Build the building's outer walls: tall across from the camera, low facing it, with a gap for each entrance. */
+export function buildShell(fp: Footprint, near: Sides): THREE.Group {
   const shell = new THREE.Group();
   const wall = mat(0xf7f1e5, 0.85);
   const trim = mat(0x2fa8a0, 0.6);
   const T = OUTER_T;
-  const x0 = plot.x0;
-  const x1 = plot.x1 + 1;
-  const z0 = plot.y0;
-  const z1 = plot.y1 + 1;
   /** Add a plain box to the outer shell. */
   const box = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) =>
     put(shell, new THREE.BoxGeometry(w, h, d), m, x, y, z);
-  /** One stretch of a wall, from a to b along it, with its trim along the top. */
-  const stretch = (horizontal: boolean, at: number, a: number, b: number, tall: boolean) => {
+  for (const { horizontal, at, a, b, tall } of shellStretches(fp, near)) {
     const len = b - a;
     const mid = (a + b) / 2;
     if (tall) {
@@ -215,26 +179,17 @@ export function buildShell(plot: Plot, near: Sides): THREE.Group {
       box(T, H_LOW + 0.05, len, at, (H_LOW + 0.05) / 2, mid, wall);
       box(T + 0.06, 0.07, len, at, H_LOW + 0.085, mid, trim);
     }
-  };
-  // the entrance, in the front wall
-  const e0 = plot.door[0];
-  const e1 = plot.door[1] + 1;
-  for (const w of shellWalls(near)) {
-    const horizontal = w.side === 'north' || w.side === 'south';
-    const a = (horizontal ? x0 : z0) - (w.fromCorner ? T : 0);
-    const b = (horizontal ? x1 : z1) + (w.toCorner ? T : 0);
-    const at =
-      w.side === 'north' ? z0 - T / 2 : w.side === 'south' ? z1 + T / 2 : w.side === 'west' ? x0 - T / 2 : x1 + T / 2;
-    if (w.side !== 'south') stretch(horizontal, at, a, b, w.tall);
-    else {
-      stretch(true, at, a, e0, w.tall);
-      stretch(true, at, e1, b, w.tall);
-    }
   }
-  for (const x of [e0 - 0.16, e1 + 0.16]) {
-    put(shell, rbox(0.34, 1.5, 0.34, 0.05), wall, x, 0.75, z1 + T / 2);
-    put(shell, rbox(0.42, 0.1, 0.42, 0.04), trim, x, 1.52, z1 + T / 2);
-    put(shell, sph(0.17), mat(0xffe9a8, 0.3, 0.7), x, 1.72, z1 + T / 2);
+  // the pillars either side of each entrance, lamps on top, in the middle of the wall
+  for (const e of fp.entrances) {
+    const { line, a, b } = entranceSpan(e);
+    const across = line + ((e.side === 'south' || e.side === 'east' ? 1 : -1) * T) / 2;
+    for (const along of [a - 0.16, b + 0.16]) {
+      const [x, z] = e.side === 'north' || e.side === 'south' ? [along, across] : [across, along];
+      put(shell, rbox(0.34, 1.5, 0.34, 0.05), wall, x, 0.75, z);
+      put(shell, rbox(0.42, 0.1, 0.42, 0.04), trim, x, 1.52, z);
+      put(shell, sph(0.17), mat(0xffe9a8, 0.3, 0.7), x, 1.72, z);
+    }
   }
   mergeStill(shell);
   return shell;

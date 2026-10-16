@@ -41,6 +41,7 @@ export function loadCampaign(): CampaignProgress {
     p.unlocked = known<ItemType>(raw.unlocked, ITEMS).filter((t) => ITEMS[t].karma !== undefined);
     const decor: unknown[] = Array.isArray(raw.decor) ? raw.decor : [];
     p.decor = KARMA_DECOR.filter((key: DecorKey) => decor.includes(key));
+    if (typeof raw.bonus === 'number' && Number.isInteger(raw.bonus) && raw.bonus > 0) p.bonus = raw.bonus;
     return p;
   } catch {
     return freshCampaign();
@@ -56,8 +57,12 @@ function saveCampaign(p: CampaignProgress) {
   }
 }
 
-/** Note what a game has earned for the campaign: its stars, if they beat the best there, and its achievements. */
+/**
+ * Note what a game has earned for the campaign: its stars, if they beat the best there, and its achievements. A game
+ * the cheat console has been used in earns nothing more for it.
+ */
 export function recordGame(s: GameState) {
+  if (s.cheated) return;
   const before = loadCampaign();
   const stars = withStars(before.stars, s.center, s.stars);
   const achieved = withAchievements(before.achieved, s.achieved);
@@ -81,4 +86,10 @@ export function buyDecorWithKarma(key: DecorKey): boolean {
   if (after === before) return false;
   saveCampaign(after);
   return true;
+}
+
+/** Add karma from the cheat console, to spend in any center. */
+export function giveKarma(n: number) {
+  const before = loadCampaign();
+  saveCampaign({ ...before, bonus: before.bonus + n });
 }

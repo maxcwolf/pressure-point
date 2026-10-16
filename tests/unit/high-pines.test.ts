@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { nextCenter } from '../../src/core/campaign';
-import { CENTERS, COLD_STONES, DAYS_PER_MONTH, H, IDEAL_TEMP, STONE_COOLING, W } from '../../src/core/data';
+import { CENTERS, COLD_STONES, DAYS_PER_MONTH, H, IDEAL_TEMP, LOT_W, STONE_COOLING } from '../../src/core/data';
 import type { Snowfall } from '../../src/core/data/types';
 import { setSeed } from '../../src/core/random';
 import { createContext } from '../../src/core/sim/context';
@@ -206,7 +206,7 @@ describe('falling snow', () => {
   it('spreads the flakes over the whole lot and a little past it', () => {
     const spots = Array.from({ length: 500 }, (_, i) => flakeSpot(i));
     expect(Math.min(...spots.map((p) => p.x))).toBeLessThan(0);
-    expect(Math.max(...spots.map((p) => p.x))).toBeGreaterThan(W);
+    expect(Math.max(...spots.map((p) => p.x))).toBeGreaterThan(LOT_W);
     expect(Math.min(...spots.map((p) => p.z))).toBeLessThan(0);
     expect(Math.max(...spots.map((p) => p.z))).toBeGreaterThan(H);
     expect(flakeSpot(7)).toEqual(flakeSpot(7));

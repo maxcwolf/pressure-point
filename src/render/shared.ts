@@ -1,7 +1,5 @@
 // Measurements and helpers the scene's layers share.
 
-import type { Plot } from '../core/data';
-
 /** How thick a room's walls are, in tiles. */
 export const WALL_T = 0.12;
 /** The height of the walls at the back of a room. */
@@ -24,6 +22,3 @@ export const hash = (x: number, y: number) => {
   const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
   return n - Math.floor(n);
 };
-
-/** A plot's walls as a key, so a layer can tell when the building has grown. */
-export const plotKey = (p: Plot) => `${p.x0},${p.x1},${p.y0},${p.y1}`;

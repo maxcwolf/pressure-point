@@ -45,6 +45,10 @@ describe('the changelog', () => {
     expect(releaseName('v0.2.0')).toBe('v0.2.0');
   });
 
+  it('reads the same with Windows line endings, as a Windows checkout has them', () => {
+    expect(parseChangelog(SAMPLE.replaceAll('\n', '\r\n'))).toEqual(parseChangelog(SAMPLE));
+  });
+
   it('splits a line into plain and bold runs', () => {
     expect(spans('**All** bold **and** not')).toEqual([
       { text: 'All', bold: true },

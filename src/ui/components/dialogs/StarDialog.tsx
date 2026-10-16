@@ -21,8 +21,10 @@ export function StarDialog() {
   const { sim } = useGame();
   const n = hud.star;
   const goals = centerOf(sim.s).goals;
+  // a game the cheat console has been used in earns the campaign nothing: no karma, and no center opened
+  const counts = !sim.s.cheated;
   // the first star in a campaign center opens the next one
-  const opens = n === 1 ? nextCenter(sim.s.center) : undefined;
+  const opens = n === 1 && counts ? nextCenter(sim.s.center) : undefined;
   /** Whether a discipline is switched on. */
   const enabled = sim.enabled.bind(sim);
   // with everything unlocked from the start, a star opens nothing new
@@ -30,7 +32,9 @@ export function StarDialog() {
   const treatments = sim.s.unlockAll ? [] : treatmentsUnlockedAt(n, enabled);
   // karma comes with a campaign star the first time it is earned; a replay that only matches the best earns none
   // (worked out once, as the dialog opens, since an autosave while it is open records the star)
-  const [karma] = useState(() => CAMPAIGN.includes(sim.s.center) && n > (loadCampaign().stars[sim.s.center] ?? 0));
+  const [karma] = useState(
+    () => counts && CAMPAIGN.includes(sim.s.center) && n > (loadCampaign().stars[sim.s.center] ?? 0),
+  );
   return (
     <Dialog>
       <div class="bigstars">
@@ -70,7 +74,9 @@ export function StarDialog() {
           ? 'New objectives are waiting in the top-left corner.'
           : sim.s.center === 'sandbox'
             ? 'You have mastered the lot. Every treatment is open to you.'
-            : `${centerOf(sim.s).name} is complete. Every star there is yours.`}
+            : counts
+              ? `${centerOf(sim.s).name} is complete. Every star there is yours.`
+              : 'Cheats were used in this game, so the campaign keeps none of its stars.'}
       </p>{' '}
       <Button
         class="go"

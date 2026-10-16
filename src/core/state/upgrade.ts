@@ -11,6 +11,7 @@ import {
   FEELINGS,
   FIRST_OUTBREAK_DAY,
   INSPECTION_FIRST_DAY,
+  type Land,
   MISHAP_FIRST_DAY,
   MISHAP_GAP_DAYS,
   type Modality,
@@ -21,6 +22,7 @@ import {
   VIP_FIRST_DAY,
   VIP_GAP_DAYS,
 } from '../data';
+import { type LandSide, stripsBought } from '../land';
 import { makeCandidate, settleSex } from '../people';
 import {
   defaultPolicy,
@@ -86,6 +88,7 @@ type OldSave = Before<
   | 'center'
   | 'unlockAll'
   | 'achieved'
+  | 'cheated'
   | 'policy'
   | 'mushrooms'
   | 'mushroomsStashed'
@@ -306,13 +309,16 @@ export function upgradeSave(save: GameState) {
   s.unlockAll ??= false;
   // an achievement from a newer version means nothing here
   s.achieved = (s.achieved ?? []).filter((id) => Object.hasOwn(ACHIEVEMENTS, id));
+  s.cheated ??= false;
   // the Qi Gong Instructor came with version 21: a few apply straight away, as for any role in a new game
   if (s.version < 21)
     while (s.candidates.filter((c) => c.role === 'instructor').length < 3)
       s.candidates.push(makeCandidate(save, 'instructor'));
   s.mushrooms ??= false;
   s.mushroomsStashed ??= false;
-  s.land ??= [];
+  // up to version 24, land was kept as the sides bought, worked out on a lot that has since grown
+  const land: readonly unknown[] = s.land ?? [];
+  s.land = land.every((l) => typeof l === 'string') ? stripsBought(s.center, land as LandSide[]) : (land as Land[]);
   s.regulars ??= [];
   // a policy saved before the mushrooms has no word on putting them away
   const policy: Partial<Policy> = s.policy;

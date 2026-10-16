@@ -37,7 +37,7 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 17. The **Policy** menu sets how sure a diagnosis must be before treatment, whether emergency guests go first, when staff take breaks, and, with a Shaman, whether the mushrooms are put away for the health inspector.
 18. A consultant can be kept to consultations or scans, and a Caretaker from any of their jobs, under **Duties** in their inspector. New applicants turn up every few days in the **Hire** menu, and can be turned down to make room.
 19. Click the **reputation** figure to see what guests are saying, and how the center does on results, experience, value and staff. The **🗺️** button at the top right colors the floor by how pleasant each spot is, guests' patience or needs, staff energy, or upkeep. The **Stats** menu also has a **casebook** of every visit by condition.
-20. From the first star, a **Shop Counter** sells books, crystals, oils and candles to guests on their way out; the better their visit, the likelier they are to buy. The **Money** menu sets each treatment's own **price**, runs **marketing** campaigns, and manages the loan. Now and then a **house call** is offered: send someone out for a day or more, for a fee that rises with their rank. Its **Land** tab sells the plots next to the building from the first star, to the west, to the east and out the back, outlined on the ground with For Sale signs. Each one bought grows the building into it, until it fills its lot.
+20. From the first star, a **Shop Counter** sells books, crystals, oils and candles to guests on their way out; the better their visit, the likelier they are to buy. The **Money** menu sets each treatment's own **price**, runs **marketing** campaigns, and manages the loan. Now and then a **house call** is offered: send someone out for a day or more, for a fee that rises with their rank. Beside **Rooms**, **🏡 Expand** outlines the plots of land around the building, each with a For Sale board; point at one to see its name and price, and click to buy it. Each center has its own plots, opening with stars, and some only once the plot beside them is built on. Some plots are buildings of their own, with their own door and a path from the pavement: guests and staff walk outside to reach them, and mind it in a storm or in bitter cold or heat. Once bought, a plot is fenced off for a few days while the builders are at work, and the building grows into it when they are done. Click a plot of yours to see it: name it, watch the work, and see the rooms on it. The Money menu's **Land** tab lists them all, with **Show me** to go and look.
 21. Now and then a member of staff sets a **challenge** with a deadline, shown under the objectives; meet it for a reward. Each year ends with an **awards ceremony**, and the trophies won fill a **Trophy Cabinet**.
 22. Guests' **condition** worsens while they wait, faster with some conditions; the worse it gets, the less likely the treatment is to work, and if it runs out they go home worse off. A failed treatment leaves **bad vibes** over its room, which fade slowly unless a Reiki Practitioner, or a Caretaker with the Smudging course, clears them sooner with a bundle of sage. From the second star, a **stress outbreak** may be offered: calm the guests you spot sweating and fidgeting before it spreads.
 23. Keep the place comfortable. Noise from arcades, pool tables, machines and crowds spoils treatments nearby, so keep the fun items away from the treatment rooms. Each session soils a table's linens: place a **Linen Hamper** so a Caretaker can change them. Winters are cold and summers can be hot: **Radiators** and **Air Conditioners** fix that, and the **🗺️** button has **Calm** and **Temperature** overlays. Staff get thirsty and hungry too, so keep drinks and snacks within reach.
@@ -124,6 +124,28 @@ These are the keys to begin with; any of them but Esc can be changed in **Settin
 The pause menu (☰ or Esc) has **Main menu**, which saves and returns to the title screen, and in the desktop app **Exit game**, which saves and quits. The title screen has **Exit** there too. The browser version has no Exit, because a browser tab cannot close itself.
 
 **📜 What’s new**, in the bottom right corner of the title screen, lists what changed in every version, newest first, with the one you are playing marked.
+
+## Cheat console
+
+For testing, or for fun. Switch on **Cheat console** at the bottom of **Settings**, and then **~** (the key under Esc) opens it in a game. Type a command and press Enter. The up and down arrows bring back commands you typed before, and Esc or ~ closes it. The console is off to begin with, and ~ does nothing until it is switched on. Two Point's games have no console of their own, so the commands follow Theme Hospital's cheats and what Two Point's trainers offer.
+
+| Command                      | What it does                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| `help`                       | List the commands                                                                    |
+| `money [amount]`             | Add money, $10,000 unless you say; a minus takes it away (`money -5k`)               |
+| `rep [points]`               | Add reputation, 10% unless you say                                                   |
+| `karma [amount]`             | Add karma to spend in any center, 10 unless you say                                  |
+| `star`                       | Earn the next star, prize and all                                                    |
+| `win`                        | Earn every star left in the center                                                   |
+| `staff`                      | Every member of staff at full energy and morale, fed and watered                     |
+| `happy`                      | Every guest at full patience, with no thirst, hunger or need for the restroom        |
+| `guests [count] [condition]` | Send in guests, 5 unless you say, with a condition if you name it (`guests 3 slump`) |
+| `emergency`                  | Offer an emergency now                                                               |
+| `outbreak`                   | Offer a stress outbreak now                                                          |
+| `unlock`                     | Unlock every room, item and treatment in this game                                   |
+| `skip [days]`                | Play on for up to 60 days at once, 1 unless you say                                  |
+
+A campaign game you use any command but `help` in earns no more achievements or stars for the campaign, and the console says so before you do. Karma added with `karma` is kept for the campaign all the same.
 
 ## Saved games
 

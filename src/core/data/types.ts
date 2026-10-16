@@ -1,6 +1,6 @@
 // The shapes of the game's content: what a room, an item, a role, a modality and a condition are.
 
-import type { LandLimits, Plot } from './map';
+import type { Plot, PlotDef } from './map';
 import type { MishapId } from './mishaps';
 
 export type RoomType =
@@ -516,6 +516,7 @@ export type FeelingId =
   | 'stale-linens'
   | 'too-cold'
   | 'too-hot'
+  | 'out-in-weather'
   | 'rested'
   | 'woozy'
   | 'class'
@@ -577,6 +578,8 @@ export interface CenterDef {
   place: string;
   blurb: string;
   plot: Plot;
+  /** How wide its lot is, in tiles, where it is wider than the usual LOT_W. */
+  width?: number;
   startMoney: number;
   /** The objectives for each star in turn. */
   goals: readonly StarGoal[];
@@ -596,8 +599,8 @@ export interface CenterDef {
   snow?: Snowfall;
   /** What surrounds the building: a park, the seaside, snowy mountains or apple orchards. */
   scenery?: 'park' | 'seaside' | 'mountain' | 'orchard';
-  /** How far the building can grow, where the lot is tighter than usual. */
-  land?: Partial<LandLimits>;
+  /** The plots of land it sells next to the building, in the order they come up for sale. */
+  plots: readonly PlotDef[];
   /** Treatments, rooms and items open from the start as though this many stars were already earned. */
   unlockedFrom?: number;
   /** Picky guests: how much more they pay for a treatment, and how many more stars of prestige they expect of its room. */

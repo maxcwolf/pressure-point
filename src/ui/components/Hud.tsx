@@ -10,6 +10,7 @@ import type { HudState } from '../hud';
 import { Advisor } from './Advisor';
 import { Announcement } from './Announcement';
 import { BuildButtons } from './BuildButtons';
+import { Console } from './Console';
 import { Modal } from './dialogs/Modal';
 import { EmergencyOffer } from './EmergencyOffer';
 import { Floaters } from './Floaters';
@@ -36,6 +37,7 @@ export function Hud({ hud }: { hud: HudState }) {
     <HudContext.Provider value={hud}>
       <Objectives />
       <Announcement />
+      <Console />
       <EmergencyOffer />
       <SystemButtons />
       <OverlayPicker />

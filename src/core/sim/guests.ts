@@ -31,7 +31,7 @@ import { randomLook, randomName, rollSex } from '../people';
 import { pick, random, rnd } from '../random';
 import type { GameState, Guest, Item, Need, Regular } from '../state/types';
 import { at } from '../util';
-import { accessPose, accessTile, itemCenter, rotVec, tileIdx, Z_CORRIDOR } from '../world';
+import { accessPose, accessTile, itemCenter, rotVec, Z_CORRIDOR } from '../world';
 import { drainFactor } from './ambience';
 import { hasGeneral } from './careers';
 import { lobbyTile, say, staffById, streetTile } from './chars';
@@ -98,7 +98,7 @@ export function spawnGuest(
   regular?: Regular,
 ): Guest | null {
   const s = ctx.s;
-  const [x, y] = streetTile();
+  const [x, y] = streetTile(ctx.world.building);
   const sex = regular ? regular.look.sex : rollSex(WOMEN_VISIT);
   const name = regular ? regular.name : randomName(sex);
   const look = regular ? { ...regular.look } : randomLook(sex);
@@ -129,7 +129,7 @@ export function spawnGuest(
     calmed: false,
     classDay,
   };
-  const [lx, ly] = lobbyTile(ctx.world.plot);
+  const [lx, ly] = lobbyTile(ctx.world.building);
   if (!goTo(ctx, g, lx, ly)) return null;
   s.guests.push(g);
   if (regular) welcomeBack(ctx, g, regular);
@@ -211,8 +211,8 @@ function queueTile(ctx: SimContext, it: Item, n: number): [number, number] {
     const ny = y + dy;
     if (
       !ctx.world.inside(nx, ny) ||
-      ctx.world.zone[tileIdx(nx, ny)] !== Z_CORRIDOR ||
-      ctx.world.blocked[tileIdx(nx, ny)]
+      ctx.world.zone[ctx.world.idx(nx, ny)] !== Z_CORRIDOR ||
+      ctx.world.blocked[ctx.world.idx(nx, ny)]
     ) {
       const spots = ctx.world.standSpots(ax, ay, n + 6);
       return spots[Math.min(spots.length - 1, n + 2)] ?? [ax, ay];
@@ -231,8 +231,8 @@ function waitAnchor(ctx: SimContext, g: Guest): [number, number] {
     if (room) return [room.door.x + room.door.dx, room.door.y + room.door.dy];
     return accessTile(st, accessIndex(st, 'guest'));
   }
-  const { door, y1 } = ctx.world.plot;
-  return [door[0], y1 - 3];
+  const { door, front } = ctx.world.building;
+  return [door[0], front - 3];
 }
 
 /** Send a guest to wait: in line at reception, otherwise on a nearby seat or standing spot. */
@@ -517,6 +517,6 @@ export function leave(ctx: SimContext, g: Guest) {
   removeFromStations(ctx, g);
   g.goal = 'leave';
   g.state = 'leaving';
-  const [x, y] = streetTile();
+  const [x, y] = streetTile(ctx.world.building);
   if (!goTo(ctx, g, x, y)) ctx.s.guests = ctx.s.guests.filter((q) => q !== g);
 }

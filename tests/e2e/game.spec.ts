@@ -1396,35 +1396,90 @@ test.describe('the Items menu', () => {
 });
 
 test.describe('more land', () => {
-  test('comes up for sale at the first star, and the building grows into it', async ({ game, page }) => {
+  test('is bought from the world: pointed at with the Expand tool, clicked, and confirmed', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.money = 100000;
+    });
+    const before = await game.eval((pp) => pp.sim.world.building.bounds.x1);
+    await page
+      .locator('#buildbtns')
+      .getByRole('button', { name: /Expand/ })
+      .click();
+    await expect(page.locator('#hint')).toContainText('point at a plot');
+    // one not for sale yet says when it will be
+    await game.hoverPlot('back-gallery');
+    await expect(page.locator('#hint')).toContainText('Comes up for sale at star 1');
+    await game.hoverPlot('east-wing');
+    await expect(page.locator('#hint')).toContainText('The east wing · 8 × 15 tiles · $24,000 · click to buy');
+    await game.clickPlot('east-wing');
+    const dialog = page.locator('.dialog');
+    await expect(dialog).toContainText('Buy the east wing?');
+    await expect(dialog).toContainText('The builders take 6 days, then the building grows into it');
+    // the game waits while the dialog is open
+    expect(await game.eval((pp) => pp.state.speed)).toBe(0);
+    await dialog.getByRole('button', { name: 'Buy for $24,000' }).click();
+    await expect(page.locator('#toasts')).toContainText('The east wing is yours. The builders are at work on it');
+    expect(await game.eval((pp) => pp.state.land.map((l) => l.plot))).toEqual(['east-wing']);
+    expect(await game.eval((pp) => pp.tools.tool.kind)).toBe('none');
+    // the building waits for the builders, even over a reload
+    expect(await game.eval((pp) => pp.sim.world.building.bounds.x1)).toBe(before);
+    await page.reload();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => pp.sim.world.building.bounds.x1)).toBe(before);
+    await game.fastForward(6 * 6);
+    expect(await game.eval((pp) => pp.sim.world.building.bounds.x1)).toBeGreaterThan(before);
+    await expect(page.locator('#toasts')).toContainText('Work on the east wing is done');
+    expect(game.errors).toEqual([]);
+  });
+
+  test('is fenced off while it is built on, and has a panel of its own to name it and see its rooms', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.money = 100000;
+      pp.sim.buyPlot('east-wing');
+    });
+    await game.settle();
+    // the site is picked from the ground, without the Expand tool
+    await game.clickPlot('east-wing');
+    const insp = page.locator('#inspector');
+    await expect(insp).toContainText('The builders are at work: done in 6 days');
+    const name = insp.getByRole('textbox', { name: 'Plot name' });
+    await name.fill('Garden Wing');
+    await name.press('Enter');
+    expect(await game.eval((pp) => pp.state.land[0]?.name)).toBe('Garden Wing');
+    await game.fastForward(6 * 6);
+    await expect(insp).toContainText('None yet');
+    await expect(page.locator('#toasts')).toContainText('Work on Garden Wing is done');
+    // built on, it is the building's floor, and is seen with the Expand tool
+    await game.eval((pp) => {
+      pp.tools.select(null);
+      pp.tools.startExpand();
+    });
+    await game.hoverPlot('east-wing');
+    await expect(page.locator('#hint')).toContainText('Garden Wing · 8 × 15 tiles · yours');
+    await game.clickPlot('east-wing');
+    await expect(name).toHaveValue('Garden Wing');
+    expect(game.errors).toEqual([]);
+  });
+
+  test('is listed in the Land tab, which shows each plot in the world', async ({ game, page }) => {
     await game.start();
     await game.menu('Money');
     const menu = page.locator('#menu');
     await menu.getByRole('button', { name: /Land/ }).click();
-    await expect(menu).toContainText('comes up for sale at star 1');
-
-    await game.eval((pp) => {
-      pp.state.stars = 1;
-      pp.state.money = 100000;
-    });
-    // closed and opened again, to show the land now for sale
-    await game.menu('Money');
-    await game.menu('Money');
-    await expect(menu.locator('.ledger.land')).toHaveCount(3);
-    const before = await game.eval((pp) => pp.sim.world.plot.x1);
-    await menu
-      .locator('.ledger.land', { hasText: 'east' })
-      .getByRole('button', { name: /Buy for/ })
-      .click();
-    await expect(page.locator('#toasts')).toContainText('The land is yours');
-    expect(await game.eval((pp) => pp.sim.world.plot.x1)).toBeGreaterThan(before);
-    expect(await game.eval((pp) => pp.state.land)).toEqual(['east']);
-    // reloaded, the building is as big as it grew
-    await page.reload();
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await page.waitForFunction(() => !!window.pp);
-    expect(await game.eval((pp) => pp.sim.world.plot.x1)).toBeGreaterThan(before);
-    expect(game.errors).toEqual([]);
+    await expect(menu.locator('.ledger.land')).toHaveCount(4);
+    await expect(menu).toContainText('Comes up for sale at star 1');
+    // By its heading: the garden block's card names the east wing too, as the plot it waits on
+    const eastWing = menu.locator('.ledger.land', { has: page.getByRole('heading', { name: 'The east wing' }) });
+    await eastWing.getByRole('button', { name: 'Show me' }).click();
+    await expect(menu.locator('.ledger.land')).toHaveCount(0);
+    expect(await game.eval((pp) => pp.tools.tool)).toEqual({ kind: 'expand', pointed: 'east-wing' });
+    await expect(page.locator('#hint')).toContainText('The east wing');
   });
 });
 

@@ -1,8 +1,8 @@
-// Bottom left: the round buttons that open the build menus.
+// Bottom left: the round buttons that open the build menus, and the one that takes up the Expand tool to buy land.
 
 import './BuildButtons.css';
 
-import { useHud } from '../hooks/use-hud';
+import { useGame, useHud } from '../hooks/use-hud';
 import type { MenuId } from '../hud';
 import { cx } from '../lib/cx';
 import { Button } from './common/Button';
@@ -18,12 +18,14 @@ const MENUS: readonly { id: MenuId; icon: string; label: string }[] = [
   { id: 'stats', icon: '📊', label: 'Stats' },
 ];
 
-/** One round button per build menu. */
+/** One round button per build menu, and Expand. */
 export function BuildButtons() {
   const hud = useHud();
+  const { tools } = useGame();
+  const expanding = tools.tool.kind === 'expand';
   return (
     <div id="buildbtns">
-      {MENUS.map((m) => (
+      {MENUS.map((m) => [
         <Button
           key={m.id}
           class={cx('round', hud.menu === m.id && 'on')}
@@ -33,8 +35,24 @@ export function BuildButtons() {
         >
           <i>{m.icon}</i>
           <span>{m.label}</span>
-        </Button>
-      ))}
+        </Button>,
+        // Expand goes beside Rooms, the other way to build
+        m.id === 'rooms' && (
+          <Button
+            key="expand"
+            class={cx('round', expanding && 'on')}
+            title="Buy the land around the building"
+            onPress={() => {
+              hud.closeMenu();
+              if (expanding) tools.cancel();
+              else tools.startExpand();
+            }}
+          >
+            <i>🏡</i>
+            <span>Expand</span>
+          </Button>
+        ),
+      ])}
     </div>
   );
 }

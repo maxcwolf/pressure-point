@@ -1,118 +1,317 @@
-// More land: the plots next to a building, buying them, and the building growing into them.
+// Land: the plots each center sells around its building, when they come up for sale and what they cost, buying them
+// from the world, and the strips older saves bought along a side.
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, LAND_LIMITS, LAND_STEP, LAND_TILE_PRICE, type Plot } from '../../src/core/data';
-import { grownBy, landLimits, nextPlot, plotWith, roomToGrow } from '../../src/core/land';
+import { CENTERS, DAY_SECONDS, type PlotDef, type Rect, SIDEWALK_Y } from '../../src/core/data';
+import { entranceSteps, footprintOf, footprintTiles, inRect } from '../../src/core/footprint';
+import {
+  buildDays,
+  LAND_STEP,
+  type LandSide,
+  lotWidth,
+  nextStrip,
+  plotAt,
+  plotOffers,
+  plotTiles,
+  stripRects,
+  stripsBought,
+} from '../../src/core/land';
+import { PLOT_NAME_MAX } from '../../src/core/sim/land';
+import { Sim } from '../../src/core/sim/sim';
 import { newGame } from '../../src/core/state/game';
+import type { Room } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { Z_CORRIDOR } from '../../src/core/world';
+import { Z_CORRIDOR, Z_SCENERY } from '../../src/core/world';
 import { landColor } from '../../src/render/heatmap';
-import { LAND_NAMES, landSignSpots, landSize, landTiles } from '../../src/ui/lib/land';
+import { boardSpot, boardText, fenceRuns } from '../../src/render/land';
+import {
+  afterBuying,
+  expandHint,
+  PLOT_LOCKED,
+  PLOT_OPEN,
+  PLOT_POINTED,
+  plotHeat,
+  plotMiddle,
+  plotSize,
+  roomsOnPlot,
+} from '../../src/ui/lib/land';
 import { buildRoom, freshSim, inconsistencies, openCenter, run, toasts } from './helpers';
 
-const PLOT: Plot = { x0: 7, x1: 22, y0: 8, y1: 17, door: [14, 15] };
+/** Whether two plots, or a plot and the building, share a wall: a tile of one next to a tile of the other. */
+function adjoins(a: readonly Rect[], b: readonly Rect[]): boolean {
+  /** Whether a tile is in b. */
+  const inB = (x: number, y: number) => b.some((r) => inRect(r, x, y));
+  return plotTiles({ rects: a }).some(([x, y]) => inB(x + 1, y) || inB(x - 1, y) || inB(x, y + 1) || inB(x, y - 1));
+}
 
-describe('the plots next to a building', () => {
-  it('are LAND_STEP deep, the last on a side taking what is left rather than leaving a sliver', () => {
-    const limits = { west: 1, east: 30, back: 1 };
-    expect(roomToGrow(PLOT, 'west', limits)).toBe(6);
-    expect(nextPlot(PLOT, 'west', limits)).toMatchObject({ x0: 3, x1: 6, y0: 8, y1: 17, depth: LAND_STEP });
-    expect(nextPlot({ ...PLOT, x0: 6 }, 'west', limits), 'five left').toMatchObject({ x0: 1, x1: 5, depth: 5 });
-    expect(nextPlot({ ...PLOT, x0: 3 }, 'west', limits), 'two left').toMatchObject({ x0: 1, x1: 2, depth: 2 });
-    expect(nextPlot({ ...PLOT, x0: 2 }, 'west', limits), 'a single tile is no plot').toBeNull();
-    expect(nextPlot(PLOT, 'east', limits)).toMatchObject({ x0: 23, x1: 26, y0: 8, y1: 17 });
-    expect(nextPlot(PLOT, 'back', limits)).toMatchObject({ x0: 7, x1: 22, y0: 4, y1: 7 });
-  });
+/** Have the builders finish every plot they are at, as if the days had passed. */
+function finishWork(sim: Sim) {
+  for (const l of sim.s.land) if (l.ready !== undefined) l.ready = sim.s.day;
+  run(sim, 1.1);
+}
 
-  it('cost the same for every tile', () => {
-    const offer = nextPlot(PLOT, 'west', LAND_LIMITS);
-    expect(offer?.price).toBe(4 * 10 * LAND_TILE_PRICE);
-  });
+/** Buy a plot and wait out the builders. */
+function buyAndBuild(sim: Sim, id: string): boolean {
+  const bought = sim.buyPlot(id);
+  finishWork(sim);
+  return bought;
+}
 
-  it('grow the building without moving its front or its door', () => {
-    const limits = LAND_LIMITS;
-    const grown = plotWith(PLOT, ['west', 'back', 'east', 'west'], limits);
-    expect(grown).toEqual({ x0: 1, x1: 26, y0: 4, y1: 17, door: [14, 15] });
-    const west = nextPlot(PLOT, 'west', limits);
-    expect(west && grownBy(PLOT, west)).toEqual({ ...PLOT, x0: 3 });
-    // a plot recorded with no room left for it, as a save could have, changes nothing
-    expect(plotWith({ ...PLOT, x0: 2 }, ['west'], limits)).toEqual({ ...PLOT, x0: 2 });
-  });
+/** Enough strips on every side to take a building as far as it could grow before centers had plots. */
+const EVERY_STRIP: readonly LandSide[] = (['west', 'east', 'back'] as const).flatMap((side) =>
+  Array<LandSide>(8).fill(side),
+);
 
-  it('stop short of the beach huts at The Boardwalk', () => {
-    const s = newGame('boardwalk');
-    expect(landLimits(s).back).toBe(3);
-    expect(landLimits(newGame('willow')).back).toBe(LAND_LIMITS.back);
-    expect(plotWith(CENTERS.boardwalk.plot, ['back', 'back', 'back'], landLimits(s)).y0).toBe(3);
-  });
+/** Whether two sets of rectangles share a tile. */
+const overlaps = (a: readonly Rect[], b: readonly Rect[]) =>
+  plotTiles({ rects: a }).some(([x, y]) => b.some((r) => inRect(r, x, y)));
 
-  it('leave room for every center to grow, the sandbox included', () => {
-    for (const c of Object.values(CENTERS)) {
-      const s = newGame(c.id);
-      const sides = (['west', 'east', 'back'] as const).filter((side) => nextPlot(c.plot, side, landLimits(s)));
-      expect(sides.length, c.id).toBeGreaterThanOrEqual(2);
-    }
+describe("each center's plots of land", () => {
+  for (const center of Object.values(CENTERS)) {
+    it(`fit the lot at ${center.name}, each joined to the building or standing apart with a path to it`, () => {
+      const width = lotWidth(center);
+      const base = center.plot;
+      const ids = center.plots.map((p) => p.id);
+      expect(center.plots.length).toBeGreaterThan(0);
+      expect(new Set(ids).size).toBe(ids.length);
+      center.plots.forEach((p: PlotDef, i) => {
+        expect(p.price, p.id).toBeGreaterThan(0);
+        expect(p.star, p.id).toBeGreaterThanOrEqual(0);
+        expect(p.star, p.id).toBeLessThanOrEqual(center.goals.length);
+        for (const r of p.rects) {
+          // on the lot, clear of the beach huts at The Boardwalk, and never in front of the building
+          expect(r.x0, p.id).toBeGreaterThanOrEqual(1);
+          expect(r.x1, p.id).toBeLessThanOrEqual(width - 2);
+          expect(r.y0, p.id).toBeGreaterThanOrEqual(center.id === 'boardwalk' ? 3 : 1);
+          expect(r.y1, p.id).toBeLessThanOrEqual(base.y1);
+          expect(r.y1, p.id).toBeLessThan(SIDEWALK_Y - 1);
+        }
+        expect(overlaps(p.rects, [base]), `${p.id} over the building`).toBe(false);
+        for (const q of center.plots.slice(0, i))
+          expect(overlaps(p.rects, q.rects), `${p.id} over ${q.id}`).toBe(false);
+        const after = p.after ? center.plots.slice(0, i).find((q) => q.id === p.after) : undefined;
+        if (p.after) expect(after, `${p.id} comes after ${p.after}`).toBeDefined();
+        if (after) expect(after.star).toBeLessThanOrEqual(p.star);
+        const others = center.plots.filter((q) => q !== p).flatMap((q) => q.rects);
+        if (!p.entrance) {
+          // it shares a wall with the building, or with the plot it comes after, which is listed before it
+          expect(p.path, `${p.id} has a path but no door`).toBeUndefined();
+          expect(adjoins(p.rects, after ? after.rects : [base]), `${p.id} joins the building`).toBe(true);
+          return;
+        }
+        // standing apart: touching nothing else built, its door in its wall, and paving from it out to the pavement
+        expect(adjoins(p.rects, [base, ...others]), `${p.id} stands apart`).toBe(false);
+        // even from a building grown as far as it could go in a save from before plots, which keeps its strips
+        const oldest = stripsBought(center.id, [...EVERY_STRIP]).flatMap((l) => l.rects);
+        expect(overlaps(p.rects, oldest) || adjoins(p.rects, oldest), `${p.id} stands apart from old strips`).toBe(
+          false,
+        );
+        expect(overlaps(p.path ?? [], oldest), `${p.id}'s path over old strips`).toBe(false);
+        const path = p.path ?? [];
+        for (const { inside, outside } of entranceSteps(p.entrance)) {
+          expect(
+            p.rects.some((r) => inRect(r, ...inside)),
+            `${p.id}'s door is in its wall`,
+          ).toBe(true);
+          expect(
+            path.some((r) => inRect(r, ...outside)),
+            `${p.id}'s path starts at its door`,
+          ).toBe(true);
+        }
+        expect(overlaps(path, [base, ...p.rects, ...others]), `${p.id}'s path over a building`).toBe(false);
+        for (const r of path) {
+          expect(r.x0, p.id).toBeGreaterThanOrEqual(0);
+          expect(r.x1, p.id).toBeLessThanOrEqual(width - 1);
+          expect(r.y1, p.id).toBeLessThan(SIDEWALK_Y);
+        }
+        expect(Math.max(...path.map((r) => r.y1)), `${p.id}'s path reaches the pavement`).toBe(SIDEWALK_Y - 1);
+      });
+    });
+
+    it(`can all be bought at ${center.name}, and everything is still reachable`, () => {
+      const s = newGame(center.id);
+      s.unlockAll = true;
+      s.money = 1e7;
+      const sim = new Sim(s);
+      for (const p of center.plots) expect(buyAndBuild(sim, p.id), p.id).toBe(true);
+      expect(sim.landOffers().every((o) => o.state === 'owned')).toBe(true);
+      expect(sim.world.connected()).toBe(true);
+      for (const p of center.plots)
+        for (const [x, y] of plotTiles(p)) expect(sim.world.zoneAt(x, y), `${p.id} at ${x},${y}`).toBe(Z_CORRIDOR);
+    });
+  }
+
+  it('keep the courtyard at The Exchange outdoors, walled in on every side', () => {
+    const s = newGame('exchange');
+    s.unlockAll = true;
+    s.money = 1e6;
+    const sim = new Sim(s);
+    expect(buyAndBuild(sim, 'courtyard-block')).toBe(true);
+    expect(sim.world.inside(15, 4)).toBe(false);
+    expect(sim.world.zoneAt(15, 4)).toBe(Z_SCENERY);
+    expect(sim.world.inside(15, 2)).toBe(true);
   });
 });
 
-describe('buying land', () => {
-  it('is for sale from the first star', () => {
+describe('land for sale', () => {
+  it('opens as the stars come, a plot after another once that one is built on', () => {
     const sim = freshSim();
-    expect(sim.landForSale()).toBe(false);
-    expect(sim.landOffers()).toEqual([]);
-    expect(sim.buyLand('east')).toBe(false);
+    /** Each plot's state, by id. */
+    const state = () => Object.fromEntries(sim.landOffers().map((o) => [o.def.id, o.state]));
+    expect(state()).toEqual({
+      'east-wing': 'open',
+      'back-gallery': 'locked',
+      'garden-block': 'locked',
+      'west-annex': 'locked',
+    });
+    expect(sim.landOffers().find((o) => o.def.id === 'back-gallery')?.why).toBe('Comes up for sale at star 1');
     sim.s.stars = 1;
-    expect(sim.landOffers().map((o) => o.side)).toEqual(['west', 'east', 'back']);
+    expect(state()['back-gallery']).toBe('open');
+    expect(sim.landOffers().find((o) => o.def.id === 'garden-block')?.why).toBe(
+      'Comes up for sale once the east wing is yours',
+    );
+    sim.s.money = 1e6;
+    expect(sim.buyPlot('garden-block')).toBe(false);
+    expect(sim.buyPlot('east-wing')).toBe(true);
+    expect(state()['garden-block']).toBe('locked');
+    expect(sim.landOffers().find((o) => o.def.id === 'garden-block')?.why).toBe(
+      'Comes up for sale once work on the east wing is done',
+    );
+    finishWork(sim);
+    expect(state()['garden-block']).toBe('open');
   });
 
-  it('grows the building into the plot, for its price, as corridor ready to build on', () => {
+  it('is fenced off for the builders first, then grown into, for its price, as corridor ready to build on', () => {
     const { sim, s } = openCenter(2);
-    s.stars = 1;
     s.money = 50000;
-    const offer = sim.landOffers().find((o) => o.side === 'east');
-    if (!offer) throw new Error('no land for sale on the east');
+    const offer = sim.landOffers().find((o) => o.def.id === 'east-wing');
+    const rect = offer?.def.rects[0];
+    if (!offer || !rect) throw new Error('no east wing');
     const building = s.ledger.building;
-    expect(sim.world.zoneAt(offer.x0, offer.y0)).not.toBe(Z_CORRIDOR);
+    expect(sim.world.zoneAt(rect.x0, rect.y0)).not.toBe(Z_CORRIDOR);
     sim.drain();
-    expect(sim.buyLand('east')).toBe(true);
-    expect(toasts(sim.drain())).toContain('The land is yours, and the building has grown into it.');
+    const x1 = sim.world.building.bounds.x1;
+    const day = s.day;
+    expect(sim.buyPlot('east-wing')).toBe(true);
+    expect(toasts(sim.drain())).toContain(
+      'The east wing is yours. The builders are at work on it, and will be done in 6 days.',
+    );
     expect(s.money).toBe(50000 - offer.price);
     expect(s.ledger.building - building).toBe(offer.price);
-    expect(s.land).toEqual(['east']);
-    expect(sim.world.plot.x1).toBe(offer.x1);
-    expect(sim.world.zoneAt(offer.x1, offer.y1)).toBe(Z_CORRIDOR);
+    expect(s.land).toEqual([{ plot: 'east-wing', rects: [rect], ready: day + 6 }]);
+    // nothing changes until they are done: no one walks there, and nothing can be built there
+    expect(sim.world.building.bounds.x1).toBe(x1);
+    expect(sim.world.zoneAt(rect.x1, rect.y1)).toBe(Z_SCENERY);
+    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')).toMatchObject({ state: 'building', daysLeft: 6 });
+    expect(sim.buyPlot('east-wing'), 'bought already').toBe(false);
+    run(sim, 3 * DAY_SECONDS);
+    const halfway = sim.landOffers().find((o) => o.def.id === 'east-wing');
+    expect(halfway?.state).toBe('building');
+    expect(halfway?.progress).toBeCloseTo(0.5);
+    expect(sim.world.building.bounds.x1).toBe(x1);
+    sim.drain();
+    run(sim, 3 * DAY_SECONDS + 1);
+    expect(toasts(sim.drain())).toContain('Work on the east wing is done, and the building has grown into it.');
+    expect(s.land).toEqual([{ plot: 'east-wing', rects: [rect] }]);
+    expect(sim.world.building.bounds.x1).toBe(rect.x1);
+    expect(sim.world.zoneAt(rect.x1, rect.y1)).toBe(Z_CORRIDOR);
+    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.state).toBe('owned');
+    expect(sim.buyPlot('east-wing'), 'bought already').toBe(false);
     // a room can go right up to the new wall, and guests can walk there
     const room = buildRoom(
       sim,
       'staffroom',
-      { x: offer.x1 - 2, y: 5, w: 3, h: 3 },
-      { x: offer.x1 - 1, y: 7, dx: 0, dy: 1 },
+      { x: rect.x1 - 2, y: 5, w: 3, h: 3 },
+      { x: rect.x1 - 1, y: 7, dx: 0, dy: 1 },
       [],
     );
-    expect(room.x + room.w - 1).toBe(offer.x1);
-    expect(sim.world.findPath(15, 16, offer.x1, offer.y1)).not.toBeNull();
+    expect(room.x + room.w - 1).toBe(rect.x1);
+    expect(sim.world.findPath(15, 16, rect.x1, rect.y1)).not.toBeNull();
     run(sim, 30);
     expect(inconsistencies(sim)).toEqual([]);
   });
 
-  it('cannot be bought without the money, and the plot stays for sale', () => {
+  it('can be bought while the game is paused, though the builders wait for it to go on', () => {
     const sim = freshSim();
-    sim.s.stars = 1;
-    sim.s.money = 100;
-    sim.drain();
-    expect(sim.buyLand('back')).toBe(false);
-    expect(toasts(sim.drain())).toContain('Not enough money for that land.');
-    expect(sim.s.land).toEqual([]);
-    expect(sim.landOffers().some((o) => o.side === 'back')).toBe(true);
+    sim.s.speed = 0;
+    sim.s.money = 1e6;
+    expect(sim.buyPlot('east-wing')).toBe(true);
+    for (let i = 0; i < 100; i++) sim.tick(0.1);
+    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.progress).toBe(0);
+    // going on again, the days pass and the builders finish
+    run(sim, 6 * DAY_SECONDS - 0.5);
+    expect(sim.world.inside(30, 10)).toBe(false);
+    run(sim, 1.5);
+    expect(sim.world.inside(30, 10)).toBe(true);
   });
 
-  it('runs out on a side once the building reaches the edge of its lot', () => {
+  it('takes the builders three days, and longer for a big plot', () => {
+    expect(CENTERS.sandbox.plots.map((p) => [p.id, buildDays(p)])).toEqual([
+      ['east-wing', 6],
+      ['back-gallery', 3],
+      ['garden-block', 3],
+      ['west-annex', 3],
+    ]);
+  });
+
+  it("can be named once it is the game's, and given back its own name", () => {
     const sim = freshSim();
-    sim.s.stars = 1;
     sim.s.money = 1e6;
-    while (sim.buyLand('east')) void 0;
-    expect(sim.world.plot.x1).toBe(LAND_LIMITS.east);
-    expect(sim.landOffers().map((o) => o.side)).toEqual(['west', 'back']);
+    expect(sim.renamePlot('east-wing', 'Garden Wing'), 'not bought yet').toBe(false);
+    sim.buyPlot('east-wing');
+    expect(sim.renamePlot('east-wing', '  Garden Wing  ')).toBe(true);
+    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.name).toBe('Garden Wing');
+    sim.s.stars = 1;
+    expect(sim.landOffers().find((o) => o.def.id === 'garden-block')?.why).toBe(
+      'Comes up for sale once work on Garden Wing is done',
+    );
+    sim.renamePlot('east-wing', 'x'.repeat(PLOT_NAME_MAX + 10));
+    expect(sim.s.land[0]?.name).toHaveLength(PLOT_NAME_MAX);
+    sim.renamePlot('east-wing', ' ');
+    expect(sim.s.land[0]?.name).toBeUndefined();
+    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.name).toBe('The east wing');
+  });
+
+  it('cannot be bought without the money, and the plot stays for sale', () => {
+    const sim = freshSim();
+    sim.s.money = 100;
+    sim.drain();
+    expect(sim.buyPlot('east-wing')).toBe(false);
+    expect(toasts(sim.drain())).toContain('Not enough money for that land.');
+    expect(sim.s.land).toEqual([]);
+    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.state).toBe('open');
+  });
+
+  it('costs only its share for the tiles not already bought as strips, to the nearest $50', () => {
+    const s = newGame('willow');
+    // the strip along the east wall an old save could have, x 23 to 26: 32 of the unit next door's 56 tiles
+    s.land = stripsBought('willow', ['east']);
+    s.unlockAll = true;
+    expect(s.land).toEqual([{ plot: 'strip', rects: [{ x0: 23, x1: 26, y0: 8, y1: 17 }] }]);
+    const unit = new Sim(s).landOffers().find((o) => o.def.id === 'unit-next-door');
+    expect(unit?.state).toBe('open');
+    // $12,000 for 24 of 56 tiles is $5,142.86
+    expect(unit?.price).toBe(5150);
+  });
+
+  it("is the game's already where old strips cover all of it, and can still be named", () => {
+    const s = newGame('orchard');
+    // the strip along the back an old save could have, y 1 to 4, right over the cider barn
+    s.land = stripsBought('orchard', ['back']);
+    s.unlockAll = true;
+    const sim = new Sim(s);
+    const barn = sim.landOffers().find((o) => o.def.id === 'cider-barn');
+    expect(barn).toMatchObject({ state: 'owned', price: 0 });
+    expect(sim.buyPlot('cider-barn')).toBe(false);
+    expect(sim.renamePlot('cider-barn', 'The Press House')).toBe(true);
+    expect(sim.landOffers().find((o) => o.def.id === 'cider-barn')).toMatchObject({
+      state: 'owned',
+      name: 'The Press House',
+    });
+    // noted with no tiles of its own: the strip still makes the building's shape
+    expect(s.land.at(-1)).toEqual({ plot: 'cider-barn', rects: [], name: 'The Press House' });
+    sim.world.rebuild();
+    expect(sim.world.building.rects).toHaveLength(2);
   });
 
   it('is kept in the save, and a save from before land was sold has none', () => {
@@ -123,24 +322,176 @@ describe('buying land', () => {
     upgradeSave(s);
     expect(s.land).toEqual([]);
   });
+
+  it('is kept in the save as it was, the builders still at work and the name it was given', () => {
+    const sim = freshSim();
+    sim.s.money = 1e6;
+    sim.s.stars = 1;
+    sim.buyPlot('east-wing');
+    sim.renamePlot('east-wing', 'Garden Wing');
+    finishWork(sim);
+    sim.buyPlot('garden-block');
+    const land = JSON.parse(JSON.stringify(sim.s.land)) as unknown;
+    const saved = JSON.parse(JSON.stringify(sim.s)) as ReturnType<typeof newGame>;
+    upgradeSave(saved);
+    expect(saved.land).toEqual(land);
+    expect(saved.land[1]).toMatchObject({ plot: 'garden-block', entrance: { side: 'south' } });
+    expect(saved.land[1]?.ready).toBeGreaterThan(saved.day);
+  });
 });
 
-describe('how land for sale is shown', () => {
-  const offer = { side: 'east' as const, x0: 23, x1: 25, y0: 8, y1: 9, depth: 3, price: 1500 };
+describe('strips, as land was sold up to version 0.26', () => {
+  const PLOT = { x0: 7, x1: 22, y0: 8, y1: 17, door: [14, 15] as const };
+  const limits = { west: 1, east: 30, back: 1 };
 
-  it('names each side and sizes a plot across by deep', () => {
-    expect(LAND_NAMES.back).toBe('Out the back');
-    expect(landSize(offer)).toBe('3 × 2 tiles');
+  it('were LAND_STEP deep, the last on a side taking what was left rather than leaving a sliver', () => {
+    expect(nextStrip(PLOT, 'west', limits)).toEqual({ x0: 3, x1: 6, y0: 8, y1: 17 });
+    expect(nextStrip({ ...PLOT, x0: 6 }, 'west', limits), 'five left').toMatchObject({ x0: 1, x1: 5 });
+    expect(nextStrip({ ...PLOT, x0: 3 }, 'west', limits), 'two left').toMatchObject({ x0: 1, x1: 2 });
+    expect(nextStrip({ ...PLOT, x0: 2 }, 'west', limits), 'a single tile is no strip').toBeNull();
+    expect(nextStrip(PLOT, 'east', limits)).toEqual({ x0: 23, x1: 26, y0: 8, y1: 17 });
+    expect(nextStrip(PLOT, 'back', limits)).toEqual({ x0: 7, x1: 22, y0: 4, y1: 7 });
+    expect(LAND_STEP).toBe(4);
   });
 
-  it('outlines every tile of each plot, the one pointed at in its own color', () => {
-    const tiles = landTiles([offer, { ...offer, side: 'west', x0: 3, x1: 3 }], 'east');
-    expect(tiles).toHaveLength(6 + 2);
-    expect(tiles.filter(([, , v]) => v === 1)).toHaveLength(6);
-    expect(landColor(1).getHex()).not.toBe(landColor(0).getHex());
+  it('grew the building a side at a time, without moving its front', () => {
+    // each strip as wide or as deep as the building had grown by then
+    expect(stripRects(PLOT, ['west', 'back', 'east', 'west'], limits)).toEqual([
+      { x0: 3, x1: 6, y0: 8, y1: 17 },
+      { x0: 3, x1: 22, y0: 4, y1: 7 },
+      { x0: 23, x1: 26, y0: 4, y1: 17 },
+      { x0: 1, x1: 2, y0: 4, y1: 17 },
+    ]);
+    // a strip recorded with no room left for it, as a save could have, adds nothing
+    expect(stripRects({ ...PLOT, x0: 2 }, ['west'], limits)).toEqual([]);
   });
 
-  it('stands a sign in the middle of each plot', () => {
-    expect(landSignSpots([offer])).toEqual([{ x: 24.5, z: 9 }]);
+  it('keep the exact shape they had in a save that kept only the sides bought', () => {
+    // worked out on the 32-tile lot of the time, east to x 30 whatever size the lot is now, and short of the beach
+    // huts at The Boardwalk; sides bought with no room left add nothing
+    const shapes = {
+      sandbox: [
+        { x0: 1, x1: 2, y0: 3, y1: 17 },
+        { x0: 1, x1: 27, y0: 1, y1: 2 },
+        { x0: 28, x1: 30, y0: 1, y1: 17 },
+      ],
+      boardwalk: [
+        { x0: 1, x1: 3, y0: 7, y1: 16 },
+        { x0: 1, x1: 26, y0: 3, y1: 6 },
+        { x0: 27, x1: 30, y0: 3, y1: 16 },
+      ],
+    };
+    for (const center of ['sandbox', 'boardwalk'] as const) {
+      const old = JSON.parse(JSON.stringify(newGame(center))) as Record<string, unknown>;
+      old.version = 24;
+      old.land = ['west', 'back', 'east', 'east', 'back', 'back'];
+      const s = old as unknown as ReturnType<typeof newGame>;
+      upgradeSave(s);
+      expect(s.land, center).toEqual(shapes[center].map((r) => ({ plot: 'strip', rects: [r] })));
+      const { plot } = CENTERS[center];
+      const tiles = footprintTiles(new Sim(s).world.building);
+      const area = [plot, ...shapes[center]].reduce((n, r) => n + (r.x1 - r.x0 + 1) * (r.y1 - r.y0 + 1), 0);
+      expect(tiles, center).toHaveLength(area);
+    }
+  });
+});
+
+describe('how land is shown', () => {
+  const sim = freshSim();
+  sim.s.stars = 1;
+  const offers = sim.landOffers();
+  const wing = offers.find((o) => o.def.id === 'east-wing');
+  const garden = offers.find((o) => o.def.id === 'garden-block');
+  if (!wing || !garden) throw new Error('missing plots');
+
+  it('sizes a plot across by deep, or in tiles when it is not a rectangle', () => {
+    expect(plotSize(wing.def)).toBe('8 × 15 tiles');
+    const courtyard = CENTERS.exchange.plots[0];
+    expect(courtyard && plotSize(courtyard)).toBe('56 tiles');
+  });
+
+  it('outlines every tile of the plots not yet bought, and their paths, the one pointed at brightest', () => {
+    const tiles = plotHeat(offers, 'east-wing');
+    expect(tiles.filter(([, , v]) => v === PLOT_POINTED)).toHaveLength(8 * 15);
+    expect(tiles.filter(([, , v]) => v === PLOT_LOCKED)).toHaveLength(plotTiles(garden.def).length + 2 * 2 + 2 * 12); // the pavilion, its path and the annex;
+    expect(tiles.filter(([, , v]) => v === PLOT_OPEN)).toHaveLength(15 * 2);
+    expect(new Set([PLOT_POINTED, PLOT_LOCKED, PLOT_OPEN].map((v) => landColor(v).getHex())).size).toBe(3);
+  });
+
+  it('finds the plot under a tile, and the middle of each', () => {
+    expect(plotAt(CENTERS.sandbox.plots, 30, 10)?.id).toBe('east-wing');
+    expect(plotAt(CENTERS.sandbox.plots, 15, 10)).toBeUndefined();
+    expect(plotMiddle(wing.def)).toEqual([32, 10.5]);
+  });
+
+  it('puts up a board on each plot, saying whether it is for sale', () => {
+    expect(boardSpot(wing.def)).toEqual({ x: 32, z: 10.5 });
+    expect(boardText(wing)).toBe('FOR SALE');
+    expect(boardText(garden)).toBe('SOON');
+    const annex = offers.find((o) => o.def.id === 'west-annex');
+    expect(annex && boardText(annex)).toBe('★ 2');
+    expect(boardText({ ...wing, state: 'building' })).toBe('SOLD');
+  });
+
+  it('fences a plot being built on along every side but where it meets the building', () => {
+    // the east wing, x 28 to 35 and y 3 to 17, against the building's east wall at x 27
+    const runs = fenceRuns(wing.def, (x, y) => sim.world.inside(x, y));
+    expect(runs).toEqual([
+      { horizontal: true, line: 3, a: 28, b: 36 },
+      { horizontal: true, line: 18, a: 28, b: 36 },
+      { horizontal: false, line: 36, a: 3, b: 18 },
+    ]);
+    // a plot that is not a rectangle is fenced around its outline, each straight stretch as one run
+    const ell = fenceRuns(
+      {
+        rects: [
+          { x0: 0, x1: 1, y0: 0, y1: 0 },
+          { x0: 0, x1: 0, y0: 1, y1: 1 },
+        ],
+      },
+      () => false,
+    );
+    expect(ell).toHaveLength(6);
+    expect(ell.reduce((n, r) => n + r.b - r.a, 0)).toBe(8);
+  });
+
+  it('lists the rooms with any floor on a plot', () => {
+    /** A room three tiles square, its corner here. */
+    const room = (x: number, y: number) => ({ id: x, x, y, w: 3, h: 3 }) as Room;
+    const on = roomsOnPlot([room(24, 5), room(26, 5), room(29, 5), room(36, 5)], wing.def);
+    expect(on.map((r) => r.x)).toEqual([26, 29]);
+  });
+
+  it('says what buying a plot sets going: the builders, then the building grown into it or one of its own', () => {
+    expect(afterBuying(wing.def)).toBe(
+      'The builders take 6 days, then the building grows into it, as corridor ready to build on.',
+    );
+    expect(afterBuying(garden.def)).toBe(
+      'The builders take 3 days over a building of its own, with its own door and a path from the pavement.',
+    );
+  });
+
+  it('says what the plot pointed at costs, and how to buy it', () => {
+    expect(expandHint(undefined)).toMatch(/point at a plot/);
+    expect(expandHint(wing)).toBe('🏡 The east wing · 8 × 15 tiles · $24,000 · click to buy');
+    expect(expandHint(garden)).not.toMatch(/click to buy/);
+    expect(expandHint({ ...wing, state: 'owned' })).toBe('🏡 The east wing · 8 × 15 tiles · yours · click to see it');
+    expect(expandHint({ ...wing, state: 'building', daysLeft: 1 })).toBe(
+      '🏡 The east wing · 8 × 15 tiles · 🚧 1 day to go · click to see it',
+    );
+  });
+});
+
+describe('plot offers', () => {
+  it('are worked out from the building as it stands', () => {
+    const s = newGame('willow');
+    s.stars = 3;
+    const offers = plotOffers(s, footprintOf(CENTERS.willow.plot));
+    expect(offers.map((o) => o.state)).toEqual(['open', 'open', 'open']);
+    expect(offers.map((o) => o.price)).toEqual(CENTERS.willow.plots.map((p) => p.price));
+    // a building grown over the unit next door, however it came to be, has it already
+    const [unit] = CENTERS.willow.plots;
+    const grown = plotOffers(s, footprintOf(CENTERS.willow.plot, unit?.rects));
+    expect(grown.map((o) => o.state)).toEqual(['owned', 'open', 'open']);
   });
 });

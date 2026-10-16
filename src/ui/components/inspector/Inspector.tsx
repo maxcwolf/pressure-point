@@ -9,11 +9,12 @@ import { usePop } from '../../hooks/use-pop';
 import { Button } from '../common/Button';
 import { GuestInfo } from './GuestInfo';
 import { ItemInfo } from './ItemInfo';
+import { PlotInfo } from './PlotInfo';
 import { RoomInfo } from './RoomInfo';
 import { StaffInfo } from './StaffInfo';
 import { VisitorInfo } from './VisitorInfo';
 
-/** The details of the selected guest, member of staff, visitor, item or room, if it still exists. */
+/** The details of the selected guest, member of staff, visitor, item, room or plot of land, if it still exists. */
 function useSelectionInfo(): ComponentChildren {
   const { sim, tools } = useGame();
   const sel = tools.selected;
@@ -34,6 +35,10 @@ function useSelectionInfo(): ComponentChildren {
   if (sel.kind === 'item') {
     const item = sim.world.item(sel.id);
     return item ? <ItemInfo item={item} /> : null;
+  }
+  if (sel.kind === 'plot') {
+    const offer = sim.landOffers().find((o) => o.def.id === sel.id);
+    return offer && (offer.state === 'owned' || offer.state === 'building') ? <PlotInfo offer={offer} /> : null;
   }
   const room = sim.world.room(sel.id);
   return room ? <RoomInfo room={room} /> : null;

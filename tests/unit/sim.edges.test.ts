@@ -67,8 +67,8 @@ describe('an emergency', () => {
     sim.acceptEmergency();
     const ctx = createContext(s);
     // nobody can get from the street to the lobby
-    const { door, y1 } = ctx.world.plot;
-    for (const x of door) s.items.push({ ...s.items[0]!, id: 90000 + x, type: 'plant', x, y: y1 - 1, rot: 0 });
+    const { door, front } = ctx.world.building;
+    for (const x of door) s.items.push({ ...s.items[0]!, id: 90000 + x, type: 'plant', x, y: front - 1, rot: 0 });
     ctx.world.rebuild();
     const pending = s.emergency!.pending;
     updateEmergency(ctx);

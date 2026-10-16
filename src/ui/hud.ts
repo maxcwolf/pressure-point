@@ -1,9 +1,10 @@
 // The interface's own state: which menu and dialog are open, and the messages on screen.
 // The components draw it; the rest of the app talks to it.
 
-import type { DecorKey, ItemType, LandSide, Role } from '../core/data';
+import type { DecorKey, ItemType, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { Template } from '../core/templates';
+import { giveKarma } from '../storage/campaign';
 import { loadTemplates } from '../storage/templates';
 import { voiceFor } from '../voice';
 import type { GameHost } from './host';
@@ -20,7 +21,8 @@ export type RoomsTab = 'rooms' | 'templates';
 /** The tabs of the Stats menu. */
 export type StatsTab = 'charts' | 'reputation' | 'standing' | 'casebook' | 'regulars' | 'awards';
 
-export type DialogId = 'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards' | 'visit';
+export type DialogId =
+  'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards' | 'visit' | 'buy-plot';
 
 /** A message that fades after a few seconds. */
 export interface Toast {
@@ -42,8 +44,18 @@ export interface Floater {
   y: number;
 }
 
+/** A line in the cheat console: a command typed in, or what came of it. */
+export interface ConsoleLine {
+  id: number;
+  text: string;
+  kind: 'typed' | 'good' | 'bad';
+}
+
 /** How many toasts are kept on screen at once. */
 const MAX_TOASTS = 4;
+
+/** How many lines the cheat console keeps. */
+const MAX_CONSOLE_LINES = 40;
 
 export class HudState {
   /** The build menu that is open, if any. */
@@ -59,7 +71,9 @@ export class HudState {
   /** The tab showing in the Money menu. */
   moneyTab: MoneyTab = 'books';
   /** The plot of land the pointer is over in the Land tab, shown brighter on the ground. */
-  landPointedAt: LandSide | null = null;
+  landPointedAt: string | null = null;
+  /** The plot of land asked about in the dialog to buy it. */
+  plotAsked: string | null = null;
   /** What the floor is colored by, if anything, and whether the list to choose from is open. */
   overlay: OverlayMode | null = null;
   overlayPicker = false;
@@ -85,6 +99,10 @@ export class HudState {
   toasts: Toast[] = [];
   floaters: Floater[] = [];
   announcement = '';
+  /** Whether the cheat console is open, what it has said so far, and the commands typed, oldest first. */
+  consoleOpen = false;
+  consoleLines: ConsoleLine[] = [];
+  consoleHistory: string[] = [];
 
   private listeners = new Set<() => void>();
   private nextId = 1;
@@ -127,6 +145,30 @@ export class HudState {
     this.menu = this.menu === id ? null : id;
   }
 
+  /** Open the cheat console, or close it if it is open. */
+  toggleConsole() {
+    this.consoleOpen = !this.consoleOpen;
+    this.update();
+  }
+
+  /** Run a command typed into the cheat console, and note it and what came of it. */
+  runCommand(line: string) {
+    const typed = line.trim();
+    if (!typed) return;
+    const result = this.host.sim.cheat(typed);
+    // karma belongs to the campaign, kept outside the game
+    if (result.karma) giveKarma(result.karma);
+    this.consoleHistory = [...this.consoleHistory.filter((h) => h !== typed), typed];
+    this.consoleLines = [
+      ...this.consoleLines,
+      { id: this.nextId++, text: typed, kind: 'typed' as const },
+      ...result.text
+        .split('\n')
+        .map((text) => ({ id: this.nextId++, text, kind: result.ok ? 'good' : 'bad' }) as const),
+    ].slice(-MAX_CONSOLE_LINES);
+    this.update();
+  }
+
   /** Close the open build menu, or the list of overlays. False if neither was open. */
   closeMenu(): boolean {
     if (!this.menu && !this.overlayPicker) return false;
@@ -145,6 +187,12 @@ export class HudState {
     this.host.tools.select(about);
     this.host.view.lookAt(spot[0], spot[1]);
     this.update();
+  }
+
+  /** Ask whether to buy a plot of land, in a dialog over the game. */
+  askToBuy(plotId: string) {
+    this.plotAsked = plotId;
+    this.open('buy-plot');
   }
 
   /** Open a dialog over the game, pausing it. */

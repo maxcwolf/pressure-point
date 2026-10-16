@@ -1,7 +1,7 @@
 // Where the sign on the front lawn stands: angled toward the street, between the building's front wall and the
 // pavement, clear of both. Nothing here draws anything, so it can be tested without a renderer.
 
-import { outsideDoor, type Plot } from '../core/data';
+import { doorstep, type Footprint } from '../core/footprint';
 
 /** Half the sign board's width, and how far out from its middle each leg stands. */
 export const SIGN_HALF = 1.6;
@@ -15,9 +15,9 @@ export interface SignSpot {
 }
 
 /** Where the sign stands for a building: left of the path to the door, turned a little toward the street. */
-export function signSpot(plot: Plot): SignSpot {
+export function signSpot(fp: Pick<Footprint, 'door' | 'front'>): SignSpot {
   // turned any further, the board would reach back into the front wall or out over the pavement
-  return { x: plot.door[0] - 4.2, z: outsideDoor(plot) + 1.1, angle: Math.PI / 8 };
+  return { x: fp.door[0] - 4.2, z: doorstep(fp) + 1.1, angle: Math.PI / 8 };
 }
 
 /** The points on the ground at a distance along the sign from its middle (negative is left), as turned. */

@@ -2,13 +2,15 @@
 
 import * as THREE from 'three';
 
+import { centerOf, type Rect } from '../core/data';
+import { footprintKey } from '../core/footprint';
 import type { Sim } from '../core/sim/sim';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
-import { LandSigns } from './land-signs';
+import { LandLayer } from './land';
 import { addLights, easeLights, lightLevel, type Lights, placeSun } from './lighting';
 import { LitterLayer } from './litter';
 import type { Marker, OverlayTile } from './overlay-codes';
@@ -19,11 +21,13 @@ import { RainLayer } from './rain';
 import { RoomsLayer } from './rooms';
 import { buildScenery, buildShell } from './scenery';
 import { settingName, settingOf } from './setting';
-import { plotKey } from './shared';
 import { SnowfallLayer } from './snowfall';
 import { StorefrontLayer } from './storefront';
 import { nearSides, type Turn } from './turn';
 import { VibesLayer } from './vibes';
+
+/** Every rectangle of the center's plots of land and the paths to them, kept clear of trees whether bought or not. */
+const plotsOf = (sim: Sim): Rect[] => centerOf(sim.s).plots.flatMap((p) => [...p.rects, ...(p.path ?? [])]);
 
 export class View {
   readonly renderer: THREE.WebGLRenderer;
@@ -32,10 +36,10 @@ export class View {
   private lights: Lights;
   /** The world as last drawn, so rooms and items are only rebuilt when something changes. */
   private worldVersion = -1;
-  /** The scenery around the building, and the plot it was built for, to build again when the building grows. */
+  /** The scenery around the building, and the building it was built for, to build again when the building grows. */
   private scenery: THREE.Group;
   private sceneryPlot: string;
-  /** The building's outer walls, and the plot and turn they were built for, to build again when either changes. */
+  /** The building's outer walls, and the building and turn they were built for, to build again when either changes. */
   private shell: THREE.Group;
   private shellKey: string;
   private rig: CameraRig;
@@ -50,7 +54,7 @@ export class View {
   private storefront: StorefrontLayer;
   private overlays: Overlays;
   private heat: Heatmap;
-  private landSigns: LandSigns;
+  private land: LandLayer;
   private picker: Picker;
   /**
    * Whether each frame is drawn. The browser tests that check behavior rather than pixels switch it off: everything
@@ -70,11 +74,11 @@ export class View {
 
     this.lights = addLights(this.scene);
 
-    this.rig = new CameraRig(sim.world.plot);
-    this.scenery = buildScenery(sim.world.plot, settingName(sim.s), settingOf(sim.s));
-    this.sceneryPlot = plotKey(sim.world.plot);
+    this.rig = new CameraRig(sim.world.building, sim.world.w);
+    this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s), sim.world.w, plotsOf(sim));
+    this.sceneryPlot = footprintKey(sim.world.building);
     this.scene.add(this.scenery);
-    this.shell = buildShell(sim.world.plot, nearSides(this.rig.turn));
+    this.shell = buildShell(sim.world.building, nearSides(this.rig.turn));
     this.shellKey = `${this.sceneryPlot}|${this.rig.turn}`;
     this.scene.add(this.shell);
     this.floor = new Floor(this.scene, sim);
@@ -87,8 +91,8 @@ export class View {
     this.rain = new RainLayer(this.scene, sim);
     this.storefront = new StorefrontLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
-    this.heat = new Heatmap(this.scene);
-    this.landSigns = new LandSigns(this.scene);
+    this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
+    this.land = new LandLayer(this.scene, sim);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
     /** Hand the people to the batches that draw them: the renderer calls this once everything is in place, just before it draws. */
     this.scene.onBeforeRender = () => this.people.gather();
@@ -127,22 +131,22 @@ export class View {
 
   /** Build the building's outer walls again if the building has grown, or the camera turned, since they were built. */
   private buildShell() {
-    const plot = this.sim.world.plot;
-    const key = `${plotKey(plot)}|${this.rig.turn}`;
+    const fp = this.sim.world.building;
+    const key = `${footprintKey(fp)}|${this.rig.turn}`;
     if (key === this.shellKey) return;
     this.shellKey = key;
     this.scene.remove(this.shell);
     this.shell.traverse((o) => {
       (o as Partial<THREE.Mesh>).geometry?.dispose();
     });
-    this.shell = buildShell(plot, nearSides(this.rig.turn));
+    this.shell = buildShell(fp, nearSides(this.rig.turn));
     this.scene.add(this.shell);
   }
 
   /** Build the scenery again if the building has grown into more land since it was built. */
   private growScenery() {
-    const plot = this.sim.world.plot;
-    const key = plotKey(plot);
+    const fp = this.sim.world.building;
+    const key = footprintKey(fp);
     if (key === this.sceneryPlot) return;
     this.sceneryPlot = key;
     this.scene.remove(this.scenery);
@@ -150,7 +154,13 @@ export class View {
     this.scenery.traverse((o) => {
       (o as Partial<THREE.Mesh>).geometry?.dispose();
     });
-    this.scenery = buildScenery(plot, settingName(this.sim.s), settingOf(this.sim.s));
+    this.scenery = buildScenery(
+      fp,
+      settingName(this.sim.s),
+      settingOf(this.sim.s),
+      this.sim.world.w,
+      plotsOf(this.sim),
+    );
     this.scene.add(this.scenery);
   }
 
@@ -171,6 +181,7 @@ export class View {
     this.snow.update(this.time);
     this.rain.update(this.time);
     this.storefront.update();
+    this.land.update();
     this.items.animate(this.time);
     this.overlays.updateRing(this.time);
     this.rig.update();
@@ -211,11 +222,6 @@ export class View {
   /** Color the floor for an information overlay, or clear it with null. */
   setHeat(tiles: readonly HeatTile[] | null, palette?: Palette) {
     this.heat.set(tiles, palette);
-  }
-
-  /** Stand For Sale signs on the land for sale, or take them down with null. */
-  setLandSigns(spots: readonly { x: number; z: number }[] | null) {
-    this.landSigns.set(spots);
   }
 
   /** Show colored tiles on the floor for the current tool. */

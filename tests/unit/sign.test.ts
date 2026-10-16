@@ -2,13 +2,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { CENTERS, SIDEWALK_Y } from '../../src/core/data';
+import { footprintOf } from '../../src/core/footprint';
 import { OUTER_T } from '../../src/render/shared';
 import { alongSign, SIGN_HALF, SIGN_LEG, signSpot } from '../../src/render/sign';
 
 describe('the sign out front', () => {
   for (const center of Object.values(CENTERS)) {
     it(`stands clear of the wall and the pavement at ${center.name}`, () => {
-      const spot = signSpot(center.plot);
+      const spot = signSpot(footprintOf(center.plot));
       // the outside face of the front wall, and the near edge of the pavement
       const wall = center.plot.y1 + 1 + OUTER_T;
       for (const d of [-SIGN_HALF, -SIGN_LEG, SIGN_LEG, SIGN_HALF]) {

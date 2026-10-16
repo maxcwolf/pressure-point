@@ -1,6 +1,7 @@
 // People in general, guests and staff alike: finding them, creating them and where they come and go.
 
-import { type Plot, SIDEWALK_Y, W } from '../data';
+import { SIDEWALK_Y } from '../data';
+import type { Footprint } from '../footprint';
 import { byId } from '../lookup';
 import { pick, random } from '../random';
 import type { Char, Guest, Look, Staff } from '../state/types';
@@ -54,12 +55,24 @@ export function say(c: Char, icon: string, seconds = 2.2) {
   c.bubbleT = seconds;
 }
 
-/** One end of the sidewalk, picked at random, where people arrive and leave. */
-export function streetTile(): [number, number] {
-  return [random() < 0.5 ? 0 : W - 1, SIDEWALK_Y];
+/**
+ * How far along the pavement from the front door people come from and go to, in tiles. It is the same on every lot,
+ * however wide, so how long everyone walks never depends on the size of the map.
+ */
+export const STREET_WALK = 14;
+
+/** Where people arrive and leave along the pavement: a set walk to the left of the front door, and to the right. */
+export function streetEnds(fp: Pick<Footprint, 'door'>): [left: number, right: number] {
+  return [fp.door[0] - STREET_WALK, fp.door[1] + STREET_WALK];
+}
+
+/** Where someone arrives or leaves, one way along the pavement or the other, picked at random. */
+export function streetTile(fp: Pick<Footprint, 'door'>): [number, number] {
+  const [left, right] = streetEnds(fp);
+  return [random() < 0.5 ? left : right, SIDEWALK_Y];
 }
 
 /** A tile just inside the front door, on one side or the other. */
-export function lobbyTile(plot: Plot): [number, number] {
-  return [pick(plot.door), plot.y1 - 1];
+export function lobbyTile(fp: Pick<Footprint, 'door' | 'front'>): [number, number] {
+  return [pick(fp.door), fp.front - 1];
 }

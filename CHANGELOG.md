@@ -2,6 +2,18 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.27.1
+
+- **What's New works in the Windows app,** listing every version. The same fault stopped the 0.26.0 and 0.27.0 installers, so this is the first since 0.25.0: open **What's New** on the title screen for everything in them, from turning the camera to land the Two Point way.
+
+## v0.27.0
+
+- **Land, the Two Point way.** Every center has its own plots of land around the building, drawn for it, each with a For Sale board. Press **🏡 Expand**, beside Rooms, to see them outlined on the ground: point at one for its name, size and price, and click to buy it, even while paused. Plots open with stars, and some only once the plot beside them is built on. The Money menu's **Land** tab lists them all, with **Show me** to go and look.
+- **Builders.** A plot you buy is fenced off for a few days while the builders are at work, then the building grows into it. Click a plot of yours for its own panel: the work's progress, the rooms on it, and a name you can change.
+- **Buildings of their own.** The sandbox's garden pavilion, The Boardwalk's ice-cream parlor and The Orchard Estate's orangery stand apart, each with its own door and a path from the pavement. Guests and staff walk outside to reach them, and mind it in a storm or in bitter cold or heat.
+- **Bigger lots.** Each lot is as wide as its center needs, the sandbox's widest of all, and people come and go along the pavement near the door rather than from the far ends of the street. Land bought as strips in earlier versions keeps its shape.
+- **A cheat console,** switched on at the bottom of Settings and opened with ~: money, reputation, karma, stars, guests, emergencies and more. A campaign game it is used in earns no more achievements or stars.
+
 ## v0.26.0
 
 - **Turn the camera.** Q and E, or the 🔄 button at the top right, turn the view round the building a quarter at a time, so you can see and build behind any wall. The walls facing the camera are cut low, and the ones across from it stand tall with their windows, whichever way you look. Q and E can be set to other keys in Settings.

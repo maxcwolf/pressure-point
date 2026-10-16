@@ -1,7 +1,7 @@
 // The shape of a room: every box that makes up its walls, windows and door frame.
 // Nothing here draws anything, so it can be tested without a renderer.
 
-import type { Plot } from '../core/data';
+import { type Footprint, inFootprint } from '../core/footprint';
 import type { Room } from '../core/state/types';
 import { H_LOW, H_TALL, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, WALL_T } from './shared';
 import { nearSides, type Sides } from './turn';
@@ -63,14 +63,38 @@ interface Side {
   outer: boolean;
 }
 
-/** Which of a room's sides run along the building's outer walls. */
-export function alongOuterWall(room: Room, plot: Plot) {
-  return {
-    north: room.y === plot.y0,
-    south: room.y + room.h - 1 === plot.y1,
-    west: room.x === plot.x0,
-    east: room.x + room.w - 1 === plot.x1,
-  };
+/** One of a room's four walls, before it is split where it runs along the building's outer wall. */
+interface WallSpec extends Omit<Side, 'outer' | 'fixed'> {
+  /** Where the room's own wall stands, and where it goes along the outer wall: on the inside face of a tall outer wall,
+   * in the middle of a low one. */
+  inner: number;
+  outerFixed: number;
+  /** The row (or column) of tiles just beyond the wall: where the outdoors is, if the outer wall stands in. */
+  beyond: number;
+}
+
+/** A room's wall split into the stretches along the building's outer wall and the stretches inside it. */
+function splitSide(spec: WallSpec, fp: Footprint): Side[] {
+  const { inner, outerFixed, beyond, ...side } = spec;
+  /** Whether the tile beyond the wall at a point along it is outdoors. */
+  const outside = (t: number) => !(spec.horizontal ? inFootprint(fp, t, beyond) : inFootprint(fp, beyond, t));
+  const out: Side[] = [];
+  let start = spec.a;
+  for (let t = spec.a + 1; t <= spec.b; t++) {
+    if (t < spec.b && outside(t) === outside(start)) continue;
+    const outer = outside(start);
+    out.push({
+      ...side,
+      a: start,
+      b: t,
+      fixed: outer ? outerFixed : inner,
+      doorAt: spec.doorAt !== null && spec.doorAt >= start && spec.doorAt < t ? spec.doorAt : null,
+      windowsAt: spec.windowsAt.filter((w) => w >= start && w < t),
+      outer,
+    });
+    start = t;
+  }
+  return out;
 }
 
 /** Every box of one wall, with its door frame and windows. */
@@ -154,13 +178,17 @@ function outerSideBoxes(side: Side): WallBox[] {
 const FIRST_VIEW = nearSides(0);
 
 /**
- * Everything a room is built from: its four walls, with their windows and its door, in a building on a plot. The walls
- * on the sides facing the camera are cut low so you can see in.
+ * Everything a room is built from: its four walls, with their windows and its door, in a building. The walls on the
+ * sides facing the camera are cut low so you can see in. Where a wall runs along the building's outer wall, the outer
+ * wall stands in for it, and only its windows are added.
  */
-export function roomShape(room: Room, plot: Plot, near: Sides = FIRST_VIEW): RoomShape {
+export function roomShape(room: Room, fp: Footprint, near: Sides = FIRST_VIEW): RoomShape {
   const T = WALL_T;
   const d = room.door;
-  const outer = alongOuterWall(room, plot);
+  const top = room.y;
+  const bottom = room.y + room.h;
+  const left = room.x;
+  const right = room.x + room.w;
   /** Which tiles along one wall have a window. */
   const wins = (dx: number, dy: number) =>
     room.windows.filter((w) => w.dx === dx && w.dy === dy).map((w) => (dx ? w.y : w.x));
@@ -169,52 +197,57 @@ export function roomShape(room: Room, plot: Plot, near: Sides = FIRST_VIEW): Roo
    * a low one.
    */
   const outerAt = (face: number, out: number, tall: boolean) => (tall ? face : face + (out * OUTER_T) / 2);
-  const sides: Side[] = [
+  const specs: WallSpec[] = [
     {
       horizontal: true,
-      fixed: outer.north ? outerAt(plot.y0, -1, !near.north) : room.y + T / 2,
-      a: room.x,
-      b: room.x + room.w,
+      inner: top + T / 2,
+      outerFixed: outerAt(top, -1, !near.north),
+      beyond: top - 1,
+      a: left,
+      b: right,
       tall: !near.north,
       doorAt: d.dy === -1 ? d.x : null,
       windowsAt: wins(0, -1),
       inward: 1,
-      outer: outer.north,
     },
     {
       horizontal: true,
-      fixed: outer.south ? outerAt(plot.y1 + 1, 1, !near.south) : room.y + room.h - T / 2,
-      a: room.x,
-      b: room.x + room.w,
+      inner: bottom - T / 2,
+      outerFixed: outerAt(bottom, 1, !near.south),
+      beyond: bottom,
+      a: left,
+      b: right,
       tall: !near.south,
       doorAt: d.dy === 1 ? d.x : null,
       windowsAt: wins(0, 1),
       inward: -1,
-      outer: outer.south,
     },
     {
       horizontal: false,
-      fixed: outer.west ? outerAt(plot.x0, -1, !near.west) : room.x + T / 2,
-      a: room.y,
-      b: room.y + room.h,
+      inner: left + T / 2,
+      outerFixed: outerAt(left, -1, !near.west),
+      beyond: left - 1,
+      a: top,
+      b: bottom,
       tall: !near.west,
       doorAt: d.dx === -1 ? d.y : null,
       windowsAt: wins(-1, 0),
       inward: 1,
-      outer: outer.west,
     },
     {
       horizontal: false,
-      fixed: outer.east ? outerAt(plot.x1 + 1, 1, !near.east) : room.x + room.w - T / 2,
-      a: room.y,
-      b: room.y + room.h,
+      inner: right - T / 2,
+      outerFixed: outerAt(right, 1, !near.east),
+      beyond: right,
+      a: top,
+      b: bottom,
       tall: !near.east,
       doorAt: d.dx === 1 ? d.y : null,
       windowsAt: wins(1, 0),
       inward: -1,
-      outer: outer.east,
     },
   ];
+  const sides = specs.flatMap((spec) => splitSide(spec, fp));
   const withDoor = sides.find((s) => s.doorAt !== null);
   return {
     boxes: sides.flatMap(sideBoxes),

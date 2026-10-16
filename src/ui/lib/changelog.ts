@@ -35,7 +35,8 @@ export function spans(line: string): Span[] {
 /** The changelog's sections in the order written, newest first, leaving out an empty Unreleased one. */
 export function parseChangelog(markdown: string): Release[] {
   const releases: Release[] = [];
-  for (const line of markdown.split('\n')) {
+  // a Windows checkout ends each line with \r\n, and `.` matches no \r
+  for (const line of markdown.split(/\r?\n/)) {
     const heading = /^## (.+)$/.exec(line);
     if (heading?.[1]) releases.push({ version: heading[1].trim(), notes: [] });
     const notes = releases.at(-1)?.notes;

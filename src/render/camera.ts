@@ -3,7 +3,8 @@
 
 import * as THREE from 'three';
 
-import type { Plot } from '../core/data';
+import { LOT_W } from '../core/data';
+import type { Footprint } from '../core/footprint';
 import { glideAngle, keepNearMap, tilesPerPixel, zoomedDist } from './camera-math';
 import { type Turn, turnAngle, turned } from './turn';
 
@@ -17,8 +18,13 @@ export class CameraRig {
   readonly camera = new THREE.PerspectiveCamera(30, 1, 1, 400);
   /** The point on the ground the camera looks at: to begin with, the middle of the building. */
   readonly target: THREE.Vector3;
-  constructor(plot: Plot) {
-    this.target = new THREE.Vector3((plot.x0 + plot.x1) / 2, 0, (plot.y0 + plot.y1) / 2 + 1.5);
+  constructor(
+    fp: Pick<Footprint, 'bounds'>,
+    /** How wide the map is, so the camera keeps near it. */
+    private width = LOT_W,
+  ) {
+    const { x0, x1, y0, y1 } = fp.bounds;
+    this.target = new THREE.Vector3((x0 + x1) / 2, 0, (y0 + y1) / 2 + 1.5);
   }
 
   /** How far back from the target the camera sits. */
@@ -39,7 +45,7 @@ export class CameraRig {
 
   /** Glide over to look at a point on the ground, closing in a little if the camera is far out. */
   centerOn(x: number, z: number) {
-    const [gx, gz] = keepNearMap(x, z);
+    const [gx, gz] = keepNearMap(x, z, this.width);
     this.goal = new THREE.Vector3(gx, 0, gz);
     this.dist = Math.min(this.dist, 26);
   }
@@ -57,7 +63,7 @@ export class CameraRig {
     const right = PAN_RIGHT.clone().applyAxisAngle(UPRIGHT, this.angle);
     const up = PAN_UP.clone().applyAxisAngle(UPRIGHT, this.angle);
     this.target.addScaledVector(right, dx).addScaledVector(up, dy);
-    [this.target.x, this.target.z] = keepNearMap(this.target.x, this.target.z);
+    [this.target.x, this.target.z] = keepNearMap(this.target.x, this.target.z, this.width);
   }
   /** Pan by a screen-space drag in pixels. */
   panPixels(dx: number, dy: number) {

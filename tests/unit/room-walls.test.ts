@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { SANDBOX_PLOT } from '../../src/core/data';
+import { footprintOf } from '../../src/core/footprint';
 import type { Room, WallSpot } from '../../src/core/state/types';
 import { outerPanes } from '../../src/render/outer-walls';
 import { roomShape, type WallBox, WINDOW_PANE, WINDOW_SILL } from '../../src/render/room-walls';
 import { H_LOW, H_TALL, OUTER_LOW_TOP, OUTER_PANE_H, OUTER_PANE_Y0 } from '../../src/render/shared';
+
+/** The sandbox's building, as it starts. */
+const BUILDING = footprintOf(SANDBOX_PLOT);
 
 /** A 4×4 room at 10,10 with its door in the south wall, and whatever windows are asked for. */
 function room(windows: WallSpot[] = [], door: WallSpot = { x: 11, y: 13, dx: 0, dy: 1 }): Room {
@@ -25,7 +29,7 @@ function room(windows: WallSpot[] = [], door: WallSpot = { x: 11, y: 13, dx: 0, 
 }
 
 /** The glass in a room's walls. */
-const panes = (r: Room) => roomShape(r, SANDBOX_PLOT).boxes.filter((b) => b.material === 'glass');
+const panes = (r: Room) => roomShape(r, BUILDING).boxes.filter((b) => b.material === 'glass');
 /** The top of a box. */
 const top = (b: WallBox) => b.y0 + b.h;
 
@@ -36,7 +40,7 @@ const EAST: WallSpot = { x: 13, y: 11, dx: 1, dy: 0 };
 
 describe("a room's walls", () => {
   it('are tall at the back and low at the front, so you can see in', () => {
-    const walls = roomShape(room(), SANDBOX_PLOT).boxes.filter((b) => b.material === 'wall');
+    const walls = roomShape(room(), BUILDING).boxes.filter((b) => b.material === 'wall');
     const north = walls.filter((b) => b.horizontal && b.fixed < 11);
     const south = walls.filter((b) => b.horizontal && b.fixed > 13);
     expect(north.map((b) => b.h)).toEqual([H_TALL]);
@@ -44,7 +48,7 @@ describe("a room's walls", () => {
   });
 
   it('leave a gap for the door, framed on both sides', () => {
-    const { boxes, doorway } = roomShape(room(), SANDBOX_PLOT);
+    const { boxes, doorway } = roomShape(room(), BUILDING);
     expect(doorway).toMatchObject({ horizontal: true, at: 11, tall: false, inward: -1 });
     const south = boxes.filter((b) => b.horizontal && b.fixed > 13 && b.material === 'wall');
     expect(south.map((b) => [b.a, b.b])).toEqual([
@@ -94,7 +98,7 @@ describe('a window in a near wall', () => {
   });
 
   it('has a sill under the pane and a frame around it', () => {
-    const shape = roomShape(room([SOUTH]), SANDBOX_PLOT);
+    const shape = roomShape(room([SOUTH]), BUILDING);
     const [pane] = shape.boxes.filter((b) => b.material === 'glass');
     const sill = shape.boxes.find((b) => b.material === 'wall' && b.a === 12 && b.b === 13 && b.fixed > 13);
     expect(top(sill!)).toBeCloseTo(pane!.y0);
@@ -143,7 +147,7 @@ describe('a room against the building', () => {
   /** The boxes of a room's walls on one side: north, south, west or east. */
   const side = (r: Room, which: 'north' | 'south' | 'west' | 'east') => {
     const horizontal = which === 'north' || which === 'south';
-    const { boxes } = roomShape(r, SANDBOX_PLOT);
+    const { boxes } = roomShape(r, BUILDING);
     const mid = horizontal ? r.y + r.h / 2 : r.x + r.w / 2;
     return boxes.filter(
       (b) => b.horizontal === horizontal && (which === 'north' || which === 'west' ? b.fixed < mid : b.fixed > mid),
@@ -172,18 +176,18 @@ describe('a room against the building', () => {
   });
 
   it("leaves the building's own windows out where it runs along the back walls", () => {
-    const all = outerPanes(SANDBOX_PLOT, []);
+    const all = outerPanes(BUILDING, []);
     expect(all.filter((p) => p.horizontal).map((p) => p.a)).toEqual([
       4.75, 7.75, 10.75, 13.75, 16.75, 19.75, 22.75, 25.75,
     ]);
     expect(all.filter((p) => !p.horizontal).map((p) => p.a)).toEqual([4.75, 7.75, 10.75, 13.75]);
-    const around = outerPanes(SANDBOX_PLOT, [corner, front]);
+    const around = outerPanes(BUILDING, [corner, front]);
     // the corner room covers 3 to 7 along both back walls, so the panes from 4.75 to 6.25 go
     expect(around.filter((p) => p.horizontal).map((p) => p.a)).toEqual([
       7.75, 10.75, 13.75, 16.75, 19.75, 22.75, 25.75,
     ]);
     expect(around.filter((p) => !p.horizontal).map((p) => p.a)).toEqual([7.75, 10.75, 13.75]);
     // a room inside the building, away from the walls, moves nothing
-    expect(outerPanes(SANDBOX_PLOT, [room()])).toEqual(all);
+    expect(outerPanes(BUILDING, [room()])).toEqual(all);
   });
 });

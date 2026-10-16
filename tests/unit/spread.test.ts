@@ -1,11 +1,9 @@
 // Spreading noise or warmth: the quick way, with each tile's walls worked out once, gives just what the plain way does.
 import { describe, expect, it } from 'vitest';
 
-import { H, W } from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
 import { noiseLeak } from '../../src/core/sim/noise';
 import { type Leak, spreader } from '../../src/core/sim/spread';
-import { inBounds, tileIdx } from '../../src/core/world';
 import { addRestroom, addStaffRoom, openCenter } from './helpers';
 
 /** Spread an amount around a spot the plain way, looking up the rooms on either side of the walls for every tile. */
@@ -18,18 +16,19 @@ function plainSpread(
   radius: number,
   leak: Leak,
 ) {
-  if (!inBounds(cx, cy)) return;
+  const { world } = ctx;
+  if (!world.onMap(cx, cy)) return;
   const from = ctx.world.zoneAt(cx, cy);
   for (let y = cy - radius; y <= cy + radius; y++)
     for (let x = cx - radius; x <= cx + radius; x++) {
-      if (!inBounds(x, y)) continue;
+      if (!world.onMap(x, y)) continue;
       const d = Math.hypot(x - cx, y - cy);
       if (d > radius) continue;
       const to = ctx.world.zoneAt(x, y);
       const a = ctx.world.room(from);
       const b = ctx.world.room(to);
       const carry = from === to ? 1 : (a ? leak(a) : 1) * (b ? leak(b) : 1);
-      const i = tileIdx(x, y);
+      const i = world.idx(x, y);
       grid[i] = grid[i]! + amount * (1 - d / (radius + 1)) * carry;
     }
 }
@@ -41,6 +40,7 @@ describe('spreading something through the building', () => {
     addRestroom(sim);
     for (const r of sim.s.rooms.slice(0, 2)) r.windows.push({ x: r.x + 1, y: r.y, dx: 0, dy: -1 });
     const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    const { w: W, h: H } = ctx.world;
     const quick = new Float32Array(W * H);
     const plain = new Float32Array(W * H);
     const spread = spreader(ctx, noiseLeak);

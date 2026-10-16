@@ -159,6 +159,7 @@ describe('the campaign kept between games', () => {
       achieved: ['called-in', 'century'],
       unlocked: [],
       decor: [],
+      bonus: 0,
     });
     expect(buyWithKarma('koi_pond')).toBe(true);
     expect(buyWithKarma('koi_pond')).toBe(false);

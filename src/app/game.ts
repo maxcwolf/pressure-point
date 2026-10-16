@@ -2,7 +2,7 @@
 
 import type { Audio } from '../audio';
 import { withAchievements } from '../core/campaign';
-import { ITEMS, ROOMS, W } from '../core/data';
+import { ITEMS, ROOMS } from '../core/data';
 import { Sim } from '../core/sim/sim';
 import type { GameState } from '../core/state/types';
 import { accessTile, itemDims } from '../core/world';
@@ -11,7 +11,7 @@ import { loadCampaign, recordGame } from '../storage/campaign';
 import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
-import { landSignSpots, landTiles } from '../ui/lib/land';
+import { plotHeat } from '../ui/lib/land';
 import { heatTiles, overlayPalette } from '../ui/lib/overlays';
 import { trackMouse } from './edge';
 import { reloadInto } from './handoff';
@@ -107,6 +107,10 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
       }),
   });
 
+  /** Ask whether to buy a plot clicked with the Expand tool. */
+  tools.askToBuy = (plotId) => {
+    ui.askToBuy(plotId);
+  };
   bindPointer(canvas, { audio, tools, view, ui });
   const held = bindKeyboard({
     state,
@@ -129,12 +133,23 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     mouse: trackMouse(),
     refresh,
     save: autosaveNow,
-    /** Color the floor for the overlay showing, or the land for sale, or clear it. */
+    /** Color the floor for the overlay showing, or the land around the building or a plot of it, or clear it. */
     overlay: () => {
-      // the Land tab outlines the land for sale, over any overlay
-      const offers = ui.menu === 'finance' && ui.moneyTab === 'land' ? sim.landOffers() : null;
-      view.setLandSigns(offers && landSignSpots(offers));
-      if (offers) view.setHeat(landTiles(offers, ui.landPointedAt), 'land');
+      // the Expand tool colors the land itself, as the pointer moves
+      if (tools.tool.kind === 'expand') return;
+      // the Land tab outlines the plots, over any overlay
+      const sel = tools.selected;
+      if (ui.menu === 'finance' && ui.moneyTab === 'land')
+        view.setHeat(plotHeat(sim.landOffers(), ui.landPointedAt), 'land');
+      // a plot in the inspector is outlined on its own
+      else if (sel?.kind === 'plot')
+        view.setHeat(
+          plotHeat(
+            sim.landOffers().filter((o) => o.def.id === sel.id),
+            sel.id,
+          ),
+          'land',
+        );
       else view.setHeat(ui.overlay ? heatTiles(sim, ui.overlay) : null, overlayPalette(ui.overlay));
     },
   });
@@ -158,22 +173,25 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
     const data = {
       ITEMS,
       ROOMS,
-      W,
+      /** How wide the map is. */
+      get W() {
+        return sim.world.w;
+      },
       /** The building's west wall. */
       get BX0() {
-        return sim.world.plot.x0;
+        return sim.world.building.bounds.x0;
       },
       /** The building's east wall. */
       get BX1() {
-        return sim.world.plot.x1;
+        return sim.world.building.bounds.x1;
       },
       /** The building's back wall. */
       get BY0() {
-        return sim.world.plot.y0;
+        return sim.world.building.bounds.y0;
       },
       /** The building's front wall. */
       get BY1() {
-        return sim.world.plot.y1;
+        return sim.world.building.bounds.y1;
       },
     };
     Object.assign(window, { pp: { sim, view, tools, ui, state, data, geo: { itemDims, accessTile } } });

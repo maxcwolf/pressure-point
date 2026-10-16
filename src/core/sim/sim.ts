@@ -11,7 +11,6 @@ import {
   type Duty,
   ITEMS,
   type ItemType,
-  type LandSide,
   type Modality,
   type ModalityDef,
   type Offering,
@@ -19,7 +18,7 @@ import {
   type RoomType,
 } from '../data';
 import { tuning } from '../difficulty';
-import type { LandOffer } from '../land';
+import type { PlotOffer } from '../land';
 import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { offeringOn } from '../state/game';
 import type {
@@ -66,6 +65,7 @@ import { fullyTrained, promote, reject, setDuty, updateApplicants, updateHabits 
 import { announceSweatLodge } from './ceremonies';
 import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
+import { type CheatResult, runCheat } from './cheats';
 import {
   admitClassgoers,
   announceClasses,
@@ -82,12 +82,13 @@ import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } fr
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { admitGuests, updateGuest } from './guests';
-import { buyLand, landForSale, landOffers } from './land';
+import { buyPlot, landOffers, renamePlot, updateLand } from './land';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
 import { askWard, canWard, prepareMishap, updateMishaps } from './mishaps';
 import { hasSupplier, setMushrooms } from './mushrooms';
 import { itemNoise, noiseAt, updateNoise } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
+import { updateOutdoors } from './outdoors';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
@@ -185,6 +186,8 @@ export class Sim {
       updateStanding(ctx);
       updateRival(ctx);
       updateMishaps(ctx);
+      updateLand(ctx);
+      updateOutdoors(ctx);
     }
     announce(ctx, dt);
     updateTwists(ctx, dt);
@@ -462,17 +465,18 @@ export class Sim {
   /** Whether there is a Shaman to supply magic mushrooms for the Shop Counter. */
   mushroomSupplier(): boolean {
     return hasSupplier(this.ctx);
-  } /** The plots of land for sale next to the building. */
-  landOffers(): LandOffer[] {
+  }
+  /** Each of the center's plots of land as things stand: the game's, being built on, for sale, or not yet. */
+  landOffers(): PlotOffer[] {
     return landOffers(this.ctx);
   }
-  /** Whether land is for sale yet. */
-  landForSale(): boolean {
-    return landForSale(this.s);
+  /** Buy a plot of land and set the builders to work on it. False if it cannot be bought. */
+  buyPlot(id: string): boolean {
+    return buyPlot(this.ctx, id);
   }
-  /** Buy the plot for sale on a side and grow the building into it. False if it cannot be bought. */
-  buyLand(side: LandSide): boolean {
-    return buyLand(this.ctx, side);
+  /** Name a plot of the game's, or give it back its own name if the new one is blank. */
+  renamePlot(id: string, name: string): boolean {
+    return renamePlot(this.ctx, id, name);
   }
 
   /** Settle a failed inspection: pay the fine, or pay to make it go away. */
@@ -726,5 +730,29 @@ export class Sim {
     // a template kept from before the game changed may no longer make a room
     if (layoutProblem(layout)) return null;
     return buildLayout(this.ctx, layout, placed, { cost: `"${name}"`, built: `"${name}" built` });
+  }
+
+  // ---- Cheats ----------------------------------------------------------------
+
+  /** Run a line typed into the cheat console. */
+  cheat(line: string): CheatResult {
+    return runCheat(this.ctx, line, (days) => {
+      this.fastForward(days);
+    });
+  }
+
+  /**
+   * Play on for some days at once, as fast as the computer allows. Of what happened, only the messages and the dialogs
+   * are kept for the interface: a few weeks of sounds, banners and floating text all at once would only be noise.
+   */
+  fastForward(days: number) {
+    const { ctx } = this;
+    const before = ctx.events.length;
+    const end = this.s.day + days;
+    while (end - this.s.day > 1e-9) this.step(Math.min(0.05, (end - this.s.day) * DAY_SECONDS));
+    const kept = ctx.events
+      .slice(before)
+      .filter((e) => e.type !== 'sfx' && e.type !== 'announce' && e.type !== 'float');
+    ctx.events = [...ctx.events.slice(0, before), ...kept];
   }
 }

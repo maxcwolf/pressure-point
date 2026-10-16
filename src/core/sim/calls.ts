@@ -91,7 +91,7 @@ export function acceptCall(ctx: SimContext, staffId: number): boolean {
     return false;
   }
   staffIdle(ctx, st);
-  const [x, y] = streetTile();
+  const [x, y] = streetTile(ctx.world.building);
   if (!goTo(ctx, st, x, y)) {
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
@@ -116,7 +116,7 @@ export function declineCall(ctx: SimContext) {
 export function returnFromCall(ctx: SimContext, st: Staff) {
   const call = st.call;
   if (!call) return;
-  const [x, y] = streetTile();
+  const [x, y] = streetTile(ctx.world.building);
   st.x = x + 0.5;
   st.y = y + 0.5;
   st.tx = x;
@@ -124,7 +124,7 @@ export function returnFromCall(ctx: SimContext, st: Staff) {
   st.state = 'arriving';
   st.energy = Math.max(0, st.energy - 25);
   gainXp(ctx, st, CALL_XP);
-  const [lx, ly] = lobbyTile(ctx.world.plot);
+  const [lx, ly] = lobbyTile(ctx.world.building);
   goTo(ctx, st, lx, ly);
   earn(ctx, call.fee, 'calls', x, y);
   toast(ctx, `${st.name} is back from ${call.client}: ${money(call.fee)} for the house call.`, 'good', {

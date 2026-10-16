@@ -143,3 +143,8 @@
 .ledger.land h4 {
   margin: 0;
 }
+
+.ledger.land button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}

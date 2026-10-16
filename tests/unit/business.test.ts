@@ -27,12 +27,19 @@ describe('prices per treatment', () => {
   });
 
   it('change what a treatment earns', () => {
-    /** Treatment income over a stretch of play, with Swedish at this price. */
+    /**
+     * Treatment income over a stretch of play, with Swedish at this price, added up over a few seeds: on any one, who
+     * happens to turn up can outweigh the price.
+     */
     const income = (level: number) => {
-      const { sim, s } = openCenter(2);
-      sim.setTechniquePrice('swedish', level);
-      run(sim, 400);
-      return s.ledger.treatment + s.lastLedger.treatment;
+      let total = 0;
+      for (const seed of [1, 2, 3]) {
+        const { sim, s } = openCenter(seed);
+        sim.setTechniquePrice('swedish', level);
+        run(sim, 400);
+        total += s.ledger.treatment + s.lastLedger.treatment;
+      }
+      return total;
     };
     expect(income(0.5)).toBeLessThan(income(1));
   });

@@ -70,16 +70,73 @@ test.describe('the scene', () => {
     await expect(page).toHaveScreenshot('scene-decor.png');
   });
 
-  test('a building grown into the land on every side, with a room against its old wall', async ({ game, page }) => {
+  test('the plots of land around the building, with their boards, outlined by the Expand tool', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.tools.startExpand('east-wing');
+      // over the east wing and the garden block past it
+      pp.view.target.set(34, 0, 11);
+    });
+    await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-expand.png');
+  });
+
+  test('a plot being built on: bare earth fenced off, with SOLD on its board', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.state.money = 100000;
+      pp.sim.buyPlot('east-wing');
+      pp.view.target.set(34, 0, 11);
+    });
+    await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-site.png');
+  });
+
+  test('a building standing apart, with its own door and a path out to the pavement', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      const { sim, state } = pp;
+      state.stars = 1;
+      state.money = 1000000;
+      for (const id of ['east-wing', 'garden-block']) {
+        sim.buyPlot(id);
+        // the builders done at once
+        for (const l of state.land) delete l.ready;
+        sim.world.rebuild();
+      }
+      const room = sim.createRoom('massage', { x: 39, y: 8, w: 4, h: 4 }, { x: 40, y: 11, dx: 0, dy: 1 });
+      sim.placeItem('massage_table', 40, 8, 0, { free: true, roomId: room.id });
+      sim.finishRoom(room);
+      state.speed = 0;
+      pp.view.target.set(37, 0, 13);
+    });
+    await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-apart.png');
+  });
+
+  test('a building grown into every plot of land, with a room against its old wall', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => {
       const { sim } = pp;
       // against the old east wall, which comes down as the building grows past it
       const room = sim.createRoom('staffroom', { x: 24, y: 6, w: 4, h: 4 }, { x: 24, y: 7, dx: -1, dy: 0 });
       room.done = true;
-      pp.state.stars = 1;
-      pp.state.money = 100000;
-      for (const side of ['west', 'east', 'back'] as const) sim.buyLand(side);
+      pp.state.unlockAll = true;
+      pp.state.money = 1000000;
+      for (const o of sim.landOffers()) {
+        sim.buyPlot(o.def.id);
+        // the builders done at once
+        for (const l of pp.state.land) delete l.ready;
+        sim.world.rebuild();
+      }
       pp.state.speed = 0;
     });
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });

@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 
-import { H, ROAD_Y, ROOMS, W } from '../core/data';
+import { H, ROAD_Y, ROOMS } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import { must } from '../core/util';
 import { Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
@@ -22,16 +22,17 @@ export class Floor {
     scene: THREE.Scene,
     private sim: Sim,
   ) {
-    this.canvas.width = W * TS;
+    const { w } = sim.world;
+    this.canvas.width = w * TS;
     this.canvas.height = H * TS;
     this.texture = new THREE.CanvasTexture(this.canvas);
     this.texture.colorSpace = THREE.SRGBColorSpace;
     this.texture.anisotropy = 8;
     const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(W, H).rotateX(-Math.PI / 2),
+      new THREE.PlaneGeometry(w, H).rotateX(-Math.PI / 2),
       new THREE.MeshStandardMaterial({ map: this.texture, roughness: 0.9 }),
     );
-    floor.position.set(W / 2, 0, H / 2);
+    floor.position.set(w / 2, 0, H / 2);
     floor.receiveShadow = true;
     scene.add(floor);
   }
@@ -41,8 +42,8 @@ export class Floor {
     const ctx = must(this.canvas.getContext('2d'), '2D canvas');
     const world = this.sim.world;
     const setting = settingOf(this.sim.s);
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
+    for (let y = 0; y < world.h; y++) {
+      for (let x = 0; x < world.w; x++) {
         const z = world.zoneAt(x, y);
         const px = x * TS;
         const py = y * TS;
@@ -137,14 +138,14 @@ export class Floor {
       }
     }
     // welcome mat
-    const { door, y1 } = world.plot;
+    const { door, front } = world.building;
     ctx.fillStyle = '#2fa8a0';
-    ctx.fillRect(door[0] * TS + 10, y1 * TS + 14, door.length * TS - 20, TS - 22);
+    ctx.fillRect(door[0] * TS + 10, front * TS + 14, door.length * TS - 20, TS - 22);
     ctx.fillStyle = '#fff8e8';
     ctx.font = '700 15px Fredoka, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('NAMASTE', (door[0] + door.length / 2) * TS, y1 * TS + TS / 2 + 4);
+    ctx.fillText('NAMASTE', (door[0] + door.length / 2) * TS, front * TS + TS / 2 + 4);
     // door thresholds
     for (const r of this.sim.s.rooms) {
       ctx.fillStyle = `#${ROOMS[r.type].trim.toString(16).padStart(6, '0')}`;

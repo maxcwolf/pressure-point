@@ -38,7 +38,8 @@ export const sessionHeard = (ctx: SimContext, it: Item) => playingFor(ctx, it);
 export function updateNoise(ctx: SimContext) {
   const grid = ctx.noise;
   grid.fill(0);
-  const spread = spreader(ctx, noiseLeak);
+  // the outer walls hold noise back as a room's do, between the buildings and out of doors
+  const spread = spreader(ctx, noiseLeak, WALL_DAMPING);
   for (const it of ctx.s.items) {
     const { noise, sessionNoise } = ITEMS[it.type];
     const [cx, cy] = itemCenter(it);
@@ -54,7 +55,7 @@ export function updateNoise(ctx: SimContext) {
 }
 
 /** How noisy a tile is, never below silence. */
-export const noiseAt = (ctx: SimContext, x: number, y: number) => Math.max(0, gridAt(ctx.noise, x, y));
+export const noiseAt = (ctx: SimContext, x: number, y: number) => Math.max(0, gridAt(ctx.world, ctx.noise, x, y));
 
 /** How noisy it is at an item, from the middle of it. */
 export function itemNoise(ctx: SimContext, it: Item): number {
