@@ -17,9 +17,6 @@ export const OUTER_PANE_H = 0.75;
 /** The teal of the building's trim: the cap along its walls, and the ledges of its windows. */
 export const SHELL_TRIM = 0x2fa8a0;
 
-/** The top of the building's low front walls, trim included. Anything lower is hidden behind them from outside. */
-export const OUTER_LOW_TOP = H_LOW + 0.12;
-
 /** Stable pseudo-random number from tile coordinates, so redraws do not shimmer. */
 export const hash = (x: number, y: number) => {
   const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;

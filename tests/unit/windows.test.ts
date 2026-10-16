@@ -1,4 +1,4 @@
-// The one window every wall uses: a frame, bars, a ledge and glass standing tall, and its cut section when low.
+// The one window every wall uses: a frame, bars, a ledge and glass standing tall, and a ghost of itself when low.
 import { describe, expect, it } from 'vitest';
 
 import { SANDBOX_PLOT } from '../../src/core/data';
@@ -16,7 +16,6 @@ const spec = (more: Partial<WindowSpec> = {}): WindowSpec => ({
   tall: true,
   sill: 0.42,
   pane: 0.56,
-  lowTop: 0.3,
   inset: true,
   frame: 'trim',
   ledge: 'trim',
@@ -55,13 +54,11 @@ describe('a window standing tall', () => {
 });
 
 describe('a window cut low', () => {
-  it('is drawn as its section on top of the wall, never standing up out of it', () => {
-    const boxes = windowBoxes(spec({ tall: false }));
-    expect(Math.max(...boxes.map(top))).toBeLessThan(0.3 + 0.11);
-    const glass = boxes.find((b) => b.material === 'glass');
-    expect(glass!.y0).toBeCloseTo(0.34);
-    // and the ledge just below the top, out both sides
-    expect(boxes.some((b) => top(b) < 0.3 && b.thick > 0.2)).toBe(true);
+  it('is the whole window where it would stand, every part of it a ghost', () => {
+    const tall = windowBoxes(spec());
+    const low = windowBoxes(spec({ tall: false }));
+    expect(low).toEqual(tall.map((b) => ({ ...b, ghost: true })));
+    expect(tall.every((b) => !b.ghost)).toBe(true);
   });
 });
 

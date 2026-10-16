@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import type { Item } from '../../src/core/state/types';
 import { isOwned } from '../../src/render/disposal';
+import { GHOST_OPACITY } from '../../src/render/hung';
 import { ItemsLayer } from '../../src/render/items';
 import { mat, partsOf } from '../../src/render/models/parts';
 import type { PeopleLayer } from '../../src/render/people';
@@ -199,6 +200,29 @@ describe('drawing rooms', () => {
     scene.traverse((o) => o instanceof THREE.Mesh && o.material === wall && walls++);
     expect(s.rooms.filter((r) => r.done).length).toBeGreaterThan(1);
     expect(walls).toBe(s.rooms.filter((r) => r.done).length);
+  });
+
+  it('joins the ghosts of the windows in its low walls into one part for each material', () => {
+    const { s, scene } = drawnRooms();
+    const rooms = s.rooms.filter((r) => r.done);
+    /** Every see-through ghost part in a group, and the materials they wear. */
+    const ghostsIn = (g: THREE.Object3D) => {
+      const parts: THREE.Mesh[] = [];
+      g.traverse((o) => {
+        if (o instanceof THREE.Mesh && (o.material as THREE.Material).opacity === GHOST_OPACITY) parts.push(o);
+      });
+      return parts;
+    };
+    let groups = 0;
+    for (const g of scene.children) {
+      const parts = ghostsIn(g);
+      if (!parts.length) continue;
+      groups++;
+      expect(parts.length).toBe(new Set(parts.map((p) => p.material)).size);
+      expect(parts.every((p) => !p.castShadow)).toBe(true);
+    }
+    // the east window of every room is in a low wall
+    expect(groups).toBeGreaterThanOrEqual(rooms.length);
   });
 
   it('frees every shape a room was drawn with once it is rebuilt or taken away', () => {

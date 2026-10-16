@@ -2,6 +2,7 @@
 // outer walls that make way for them. Which walls stand tall depends on which way the camera has been turned.
 
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 import { ROOMS } from '../core/data';
 import { footprintKey } from '../core/footprint';
@@ -9,11 +10,12 @@ import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { papered, paperUVs, wallMaterial } from './decor-paint';
 import { disposeOwned, owned } from './disposal';
+import { ghostOf } from './hung';
 import { emojiTexture } from './models/emoji';
 import { mergeStill } from './models/merge';
 import { mat, put } from './models/parts';
 import { roomShape, type WallBox, type WallMaterial } from './room-walls';
-import { OUTER_LOW_TOP, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, SHELL_TRIM } from './shared';
+import { OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, SHELL_TRIM } from './shared';
 import { nearSides, type Turn } from './turn';
 import { windowBoxes } from './windows';
 
@@ -43,7 +45,11 @@ function glassTexture(): THREE.DataTexture {
   return tex;
 }
 
-/** Make a mesh for each box of a wall. A finished room's plain wall boxes take its wallpaper, when it has one. */
+/**
+ * Make a mesh for each box of a wall. A finished room's plain wall boxes take its wallpaper, when it has one. The ghosts
+ * of windows in walls cut low are see-through, so they are never merged with the rest: they are joined here instead,
+ * into one mesh for each material, rather than costing a draw each.
+ */
 function addBoxes(
   g: THREE.Group,
   boxes: readonly WallBox[],
@@ -51,22 +57,25 @@ function addBoxes(
   shadows: boolean,
   paper = false,
 ) {
+  const ghosts = new Map<WallMaterial, THREE.BufferGeometry[]>();
   for (const b of boxes) {
     const len = b.b - b.a;
-    const geo = owned(
-      b.horizontal ? new THREE.BoxGeometry(len, b.h, b.thick) : new THREE.BoxGeometry(b.thick, b.h, len),
-    );
+    const geo = b.horizontal ? new THREE.BoxGeometry(len, b.h, b.thick) : new THREE.BoxGeometry(b.thick, b.h, len);
     const mid = (b.a + b.b) / 2;
-    if (paper && b.material === 'wall') paperUVs(geo, b.horizontal, mid, b.y0 + b.h / 2);
-    const mesh = put(
-      g,
-      geo,
-      materials[b.material],
-      b.horizontal ? mid : b.fixed,
-      b.y0 + b.h / 2,
-      b.horizontal ? b.fixed : mid,
-    );
+    const [x, y, z] = [b.horizontal ? mid : b.fixed, b.y0 + b.h / 2, b.horizontal ? b.fixed : mid];
+    if (b.ghost) {
+      ghosts.set(b.material, [...(ghosts.get(b.material) ?? []), geo.translate(x, y, z)]);
+      continue;
+    }
+    if (paper && b.material === 'wall') paperUVs(geo, b.horizontal, mid, y);
+    const mesh = put(g, owned(geo), materials[b.material], x, y, z);
     mesh.castShadow = shadows && b.material !== 'pane' && b.material !== 'glass';
+  }
+  for (const [material, parts] of ghosts) {
+    // every part is a plain box, so they always join; null only if they could not
+    const joined = mergeGeometries(parts, false) as THREE.BufferGeometry | null;
+    for (const part of parts) part.dispose();
+    if (joined) g.add(new THREE.Mesh(owned(joined), ghostOf(materials[material])));
   }
 }
 
@@ -155,26 +164,28 @@ export class RoomsLayer {
     this.dispose(this.panes);
     this.panes = new THREE.Group();
     const materials = this.windowMaterials(this.shell);
+    const boxes: WallBox[] = [];
     for (const w of windows) {
       const outward = w.side === 'south' || w.side === 'east' ? 1 : -1;
-      const boxes = windowBoxes({
-        horizontal: w.horizontal,
-        fixed: w.line + (outward * OUTER_T) / 2,
-        thick: OUTER_T,
-        inward: -outward,
-        a: w.a,
-        b: w.b,
-        tall: !near[w.side],
-        sill: OUTER_PANE_Y0,
-        pane: OUTER_PANE_H,
-        lowTop: OUTER_LOW_TOP,
-        inset: false,
-        frame: 'frame',
-        ledge: 'shell',
-        glass: 'pane',
-      });
-      addBoxes(this.panes, boxes, materials, true);
+      boxes.push(
+        ...windowBoxes({
+          horizontal: w.horizontal,
+          fixed: w.line + (outward * OUTER_T) / 2,
+          thick: OUTER_T,
+          inward: -outward,
+          a: w.a,
+          b: w.b,
+          tall: !near[w.side],
+          sill: OUTER_PANE_Y0,
+          pane: OUTER_PANE_H,
+          inset: false,
+          frame: 'frame',
+          ledge: 'shell',
+          glass: 'pane',
+        }),
+      );
     }
+    addBoxes(this.panes, boxes, materials, true);
     mergeStill(this.panes);
     this.scene.add(this.panes);
   }
