@@ -25,6 +25,7 @@ import type {
   RoomType,
   RugPatternId,
   Sex,
+  ThermostatSetting,
   TraitId,
   WallId,
 } from '../data';
@@ -117,6 +118,8 @@ export interface Item {
   upgradePaid: boolean;
   /** A rug's pattern, when it is not the original Kilim. */
   pattern?: RugPatternId;
+  /** How a heater or air conditioner's thermostat is set, when it is not on Auto. */
+  thermostat?: ThermostatSetting;
   /** The award a Certificate of Excellence was earned for. */
   trophy?: Trophy;
 }

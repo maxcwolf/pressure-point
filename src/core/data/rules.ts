@@ -166,7 +166,16 @@ export const TV_CALM = 0.8;
 /** How fast a seated guest loses patience against standing, unless the seat says otherwise. */
 export const SEAT_DRAIN = 0.6;
 
+/** How many tiles an item's decor reaches, unless the item says otherwise. */
 export const DECOR_RADIUS = 4;
+/** How much each point of pleasantness on a tile slows the patience of anyone waiting there, until it can slow no more. */
+export const DECOR_CALM = 0.035;
+/**
+ * How much more an item's good decor counts where it reaches, and how many tiles past its reach it would take to fade
+ * to nothing: it fades more gently than litter or grime, so it is still felt toward the edge of its reach.
+ */
+export const DECOR_BOOST = 1.2;
+export const DECOR_FADE = 2;
 /** How sure a diagnosis must be before treatment, unless the policy says otherwise, and the range it can be set in. */
 export const DIAGNOSIS_TARGET = 0.75;
 export const DIAGNOSIS_MIN = 0.5;

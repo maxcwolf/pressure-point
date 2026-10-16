@@ -34,3 +34,35 @@
   padding: 5px 12px;
   pointer-events: auto;
 }
+
+/* what an item in hand would change where it is about to go */
+.hintpill .effects {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin: 6px 0 1px;
+  padding: 0;
+}
+
+.hintpill .effects li {
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1.5px solid rgba(36, 56, 74, 0.35);
+  background: #fff;
+  border-radius: 9px;
+  padding: 1px 8px;
+}
+
+.hintpill .effects li.good {
+  background: #d8f1e2;
+  border-color: var(--green);
+  color: #1c6b49;
+}
+
+.hintpill .effects li.bad {
+  background: #fbe3e1;
+  border-color: var(--red);
+  color: #a8322b;
+}

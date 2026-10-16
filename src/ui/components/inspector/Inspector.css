@@ -357,3 +357,22 @@
 .insp button.day.on {
   background: var(--gold);
 }
+
+/* a heater or air conditioner's thermostat */
+.insp .thermostat {
+  margin-top: 8px;
+}
+
+.insp .thermostat .tabs {
+  margin: 3px 0 0;
+  gap: 4px;
+}
+
+.insp .thermostat .sub {
+  margin: 4px 0 0;
+}
+
+.insp button.every.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

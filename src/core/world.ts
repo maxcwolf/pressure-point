@@ -41,7 +41,8 @@ export const Z_OUTSIDE = -1;
 export const Z_CORRIDOR = 0;
 
 // ---- Item geometry ---------------------------------------------------------
-interface Placed {
+/** Where an item is, or would be: its type, its corner and how it is turned. */
+export interface Placed {
   type: ItemType;
   x: number;
   y: number;

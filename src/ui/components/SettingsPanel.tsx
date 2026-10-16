@@ -7,8 +7,11 @@ import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '
 import type { Sim } from '../../core/sim/sim';
 import { disciplineHere } from '../../core/state/game';
 import { loadControls, saveControls } from '../../storage/controls';
+import { ITEM_VIEWS, loadDisplay, saveDisplay } from '../../storage/display';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
+import { ITEM_VIEW_NAMES } from '../lib/item-stats';
+import { nextChoice } from '../lib/keys';
 import { ControlSettings } from './ControlSettings';
 import { SettingRow } from './SettingRow';
 
@@ -20,7 +23,7 @@ export interface SettingsPanelProps {
   onChange?: (() => void) | undefined;
 }
 
-/** Switches for which treatments are offered, the controls, sound and music, and the cheat console. */
+/** Switches for which treatments are offered, how items show their stats, the controls, sound and music, and the cheat console. */
 export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
   const redraw = useRedraw();
   /** Whether a discipline is switched on, in this game or for new ones. */
@@ -74,6 +77,35 @@ export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
           ? 'Switching a treatment off hides its room, staff and equipment and stops its guests arriving. Anything already built stays where it is.'
           : 'These choices apply to new games. A game in progress keeps its own, which you can change from its pause menu.'}
       </p>
+      <h4>Building</h4>
+      <ul>
+        <li>
+          <i>🏷️</i>
+          <div>
+            <b>Item stats</b>
+            <span>Where the Items menu shows what each item does: its decor, noise, warmth and upkeep.</span>
+          </div>{' '}
+          <button
+            class="choice item-view-choice"
+            onClick={flip(() => {
+              const prefs = loadDisplay();
+              saveDisplay({ ...prefs, itemView: nextChoice(ITEM_VIEWS, prefs.itemView) });
+            })}
+          >
+            {ITEM_VIEW_NAMES[loadDisplay().itemView]}
+          </button>
+        </li>
+        <SettingRow
+          icon="🔍"
+          name="Preview while placing"
+          desc="An item in hand shows what it would change where it is about to go, and colors the floor to match."
+          on={loadDisplay().placePreview}
+          onToggle={flip(() => {
+            const prefs = loadDisplay();
+            saveDisplay({ ...prefs, placePreview: !prefs.placePreview });
+          })}
+        />
+      </ul>
       <ControlSettings
         onChange={() => {
           audio.unlock();

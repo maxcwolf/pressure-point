@@ -221,10 +221,28 @@ describe('temperature', () => {
     expect(warmthAt(ctx, 13, 10)).toBe(IDEAL_TEMP);
   });
 
-  it('leaves a guest treated beside an air conditioner in winter feeling the cold', () => {
+  it('leaves a guest treated beside an air conditioner turned up high in winter feeling the cold', () => {
     const { sim, s } = openCenter(1);
-    expect(sim.placeItem('air_conditioner', 14, 7, 0)).toBeTruthy();
+    const ac = sim.placeItem('air_conditioner', 14, 7, 0)!;
+    sim.setThermostat(ac.id, 'high');
     runUntil(sim, () => s.guests.some((g) => g.feelings.includes('too-cold')), 300);
+  });
+
+  it('is left alone by an air conditioner on Auto in winter, and by a radiator on Auto in summer', () => {
+    const { sim, s } = openCenter(1);
+    const ctx = createContext(s);
+    s.day = midMonth(0);
+    updateWarmth(ctx);
+    const winter = warmthAt(ctx, 14, 8);
+    sim.placeItem('air_conditioner', 14, 7, 0);
+    updateWarmth(ctx);
+    expect(warmthAt(ctx, 14, 8)).toBeCloseTo(winter);
+    s.day = midMonth(6);
+    updateWarmth(ctx);
+    const summer = warmthAt(ctx, 13, 11);
+    sim.placeItem('radiator', 13, 10, 0);
+    updateWarmth(ctx);
+    expect(warmthAt(ctx, 13, 11)).toBeCloseTo(summer);
   });
 });
 

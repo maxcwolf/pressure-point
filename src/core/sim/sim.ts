@@ -17,6 +17,7 @@ import {
   type Priced,
   type RoomType,
   type RugPatternId,
+  type ThermostatSetting,
 } from '../data';
 import { tuning } from '../difficulty';
 import type { PlotOffer } from '../land';
@@ -35,7 +36,7 @@ import type {
   WallSpot,
 } from '../state/types';
 import { layoutProblem } from '../templates';
-import type { Check, Rect, World } from '../world';
+import type { Check, Placed, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce } from './advisor';
 import { drainFactor, prestige, updateAmbience } from './ambience';
@@ -60,6 +61,7 @@ import {
   roomRefund,
   sellItem,
   setRugPattern,
+  setThermostat,
   toggleWindow,
 } from './building';
 import { acceptCall, callFee, declineCall, updateCalls, whoCanGo } from './calls';
@@ -92,6 +94,7 @@ import { itemNoise, noiseAt, updateNoise } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { updateOutdoors } from './outdoors';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
+import { type PlacePreview, previewItem } from './preview';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
@@ -112,7 +115,7 @@ import { orderUpgrade } from './upgrades';
 import { decayItems } from './upkeep';
 import { fadeVibes } from './vibes';
 import { lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
-import { outdoorTemp, updateWarmth, warmthAt } from './warmth';
+import { outdoorTemp, thermostatShare, todayIndoors, updateWarmth, warmthAt } from './warmth';
 
 export class Sim {
   readonly world: World;
@@ -295,30 +298,42 @@ export class Sim {
     updateNoise(this.ctx);
     updateWarmth(this.ctx);
   }
-  /** How fast patience drains on a tile: slower in pleasant surroundings, faster in grim ones. */
-  drainFactor(x: number, y: number): number {
-    return drainFactor(this.ctx, x, y);
+  /**
+   * How fast patience drains on a tile: slower in pleasant surroundings, faster in grim ones. `extra` is pleasantness
+   * from an item not yet placed.
+   */
+  drainFactor(x: number, y: number, extra = 0): number {
+    return drainFactor(this.ctx, x, y, extra);
   }
-  /** How noisy a tile is: 0 is silent, and from NOISE_LOUD it is loud. */
-  noiseAt(x: number, y: number): number {
-    return noiseAt(this.ctx, x, y);
+  /** How noisy a tile is: 0 is silent, and from NOISE_LOUD it is loud. `extra` is noise from an item not yet placed. */
+  noiseAt(x: number, y: number, extra = 0): number {
+    return noiseAt(this.ctx, x, y, extra);
   }
-  /** How warm a tile is, in degrees Fahrenheit. */
-  warmthAt(x: number, y: number): number {
-    return warmthAt(this.ctx, x, y);
+  /** How warm a tile is, in degrees Fahrenheit. `extra` is warmth from an item not yet placed. */
+  warmthAt(x: number, y: number, extra = 0): number {
+    return warmthAt(this.ctx, x, y) + extra;
+  }
+  /** What an item would change if it were put down here, with the surroundings worked out afresh first. */
+  previewItem(placed: Placed): PlacePreview {
+    this.refreshAmbience();
+    return previewItem(this.ctx, placed);
   }
   /** How noisy it is at an item, such as a treatment table. */
   itemNoise(it: Item): number {
     return itemNoise(this.ctx, it);
+  }
+  /** How hard an item works for today's weather, from 0 (off) to 1 (flat out): less than flat out only with a thermostat. */
+  thermostatShare(it: Item): number {
+    return thermostatShare(it.type, it.thermostat, todayIndoors(this.ctx));
   }
   /** The temperature outside today. */
   outdoorTemp(): number {
     return outdoorTemp(centerOf(this.s).climate, this.s.day);
   }
 
-  /** A room's prestige, from one to five. */
-  prestige(room: Room): number {
-    return prestige(this.ctx, room);
+  /** A room's prestige, from one to five. `extra` is decor not yet placed in it. */
+  prestige(room: Room, extra = 0): number {
+    return prestige(this.ctx, room, extra);
   }
 
   /** How strongly a Sound Bath Studio draws guests who need sound healing, as a multiplier on how often they come. */
@@ -620,6 +635,11 @@ export class Sim {
   /** Change a rug's pattern. */
   setRugPattern(id: number, pattern: RugPatternId) {
     setRugPattern(this.ctx, id, pattern);
+  }
+
+  /** Set a heater or air conditioner's thermostat, or every one of its kind with `every`. */
+  setThermostat(id: number, setting: ThermostatSetting, every = false) {
+    setThermostat(this.ctx, id, setting, every);
   }
 
   /** Whether an item could be picked up and put down somewhere else. */

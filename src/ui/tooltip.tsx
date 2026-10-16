@@ -2,7 +2,7 @@
 
 import './tooltip.css';
 
-import { options, render, type VNode } from 'preact';
+import { type ComponentChild, options, render, type VNode } from 'preact';
 
 /** How long the pointer rests on something before its tooltip shows. */
 const DELAY = 380;
@@ -36,6 +36,26 @@ export function parseTip(text: string): { heading: string; body: string; keys: s
     body = words.charAt(0).toUpperCase() + words.slice(1);
   }
   return { heading, body, keys };
+}
+
+/** Draws a tooltip richer than words, from the value after its kind in `data-tip-rich="kind:value"`. */
+type RichTip = (value: string) => ComponentChild;
+const richTips = new Map<string, RichTip>();
+
+/**
+ * Draw the tooltip of an element marked `data-tip-rich="kind:value"` with this, rather than as its title's words. The
+ * element still needs a title, which a screen reader hears and which shows wherever nothing draws its kind.
+ */
+export function addRichTip(kind: string, draw: RichTip) {
+  richTips.set(kind, draw);
+}
+
+/** The rich tooltip for a `data-tip-rich` value, or null if nothing draws its kind. */
+function richTip(spec: string | undefined): ComponentChild {
+  if (!spec) return null;
+  const at = spec.indexOf(':');
+  const draw = at > 0 ? richTips.get(spec.slice(0, at)) : undefined;
+  return draw ? draw(spec.slice(at + 1)) : null;
 }
 
 /** What a tooltip says. */
@@ -109,9 +129,12 @@ export function installTooltips() {
       hide();
       return;
     }
-    if (target.dataset.tip !== text) {
-      text = target.dataset.tip;
-      render(<Tip text={text} />, tip);
+    const shows = target.dataset.tipRich ?? target.dataset.tip;
+    if (shows !== text) {
+      text = shows;
+      const rich = richTip(target.dataset.tipRich);
+      tip.classList.toggle('rich', !!rich);
+      render(rich ?? <Tip text={target.dataset.tip} />, tip);
     }
     const r = target.getBoundingClientRect();
     const w = tip.offsetWidth;

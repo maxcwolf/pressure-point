@@ -9,28 +9,33 @@ import type { SimContext } from './context';
 /** How much of what carries gets through a room's walls, from 0 (none) to 1 (all of it). */
 export type Leak = (room: Room) => number;
 
-/** How much of what spreads reaches each tile of the square around a spot, by radius: 0 beyond the radius itself. */
-const kernels = new Map<number, Float64Array>();
+/** How much of what spreads reaches each tile of the square around a spot, by radius and ease: 0 beyond the radius. */
+const kernels = new Map<string, Float64Array>();
 
-/** The share of what spreads from a spot that reaches each tile of the square around it, out to a radius. */
-function kernel(radius: number): Float64Array {
-  let k = kernels.get(radius);
+/**
+ * The share of what spreads from a spot that reaches each tile of the square around it, out to a radius. With an ease
+ * above 1 it holds up over the first few tiles and falls away toward the edge; at 1 it fades evenly.
+ */
+function kernel(radius: number, ease: number): Float64Array {
+  const key = `${radius}:${ease}`;
+  let k = kernels.get(key);
   if (!k) {
     const side = radius * 2 + 1;
     k = new Float64Array(side * side);
     for (let dy = -radius; dy <= radius; dy++)
       for (let dx = -radius; dx <= radius; dx++) {
         const d = Math.hypot(dx, dy);
-        k[(dy + radius) * side + dx + radius] = d > radius ? 0 : 1 - d / (radius + 1);
+        k[(dy + radius) * side + dx + radius] = d > radius ? 0 : 1 - (d / (radius + 1)) ** ease;
       }
-    kernels.set(radius, k);
+    kernels.set(key, k);
   }
   return k;
 }
 
 /**
  * Something spread from a spot into a grid: an amount, fading with distance out to a radius. `inside` is the share
- * that carries within the spot's own room or corridor: all of it, unless it is only to be heard outside.
+ * that carries within the spot's own room or corridor: all of it, unless it is only to be heard outside. `ease` is how
+ * gently it fades, as `kernel` takes it.
  */
 export type Spread = (
   grid: Float32Array,
@@ -39,6 +44,7 @@ export type Spread = (
   amount: number,
   radius: number,
   inside?: number,
+  ease?: number,
 ) => void;
 
 /**
@@ -54,12 +60,12 @@ export function spreader(ctx: SimContext, leak: Leak, outer = 1): Spread {
     const room = world.room(at(world.zone, i));
     walls[i] = room ? leak(room) : 1;
   }
-  return (grid, cx, cy, amount, radius, inside = 1) => {
+  return (grid, cx, cy, amount, radius, inside = 1, ease = 1) => {
     if (!world.onMap(cx, cy)) return;
     const from = world.zoneAt(cx, cy);
     const home = world.buildingAt(cx, cy);
     const out = at(walls, world.idx(cx, cy));
-    const k = kernel(radius);
+    const k = kernel(radius, ease);
     const side = radius * 2 + 1;
     for (let y = cy - radius; y <= cy + radius; y++) {
       for (let x = cx - radius; x <= cx + radius; x++) {

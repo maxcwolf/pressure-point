@@ -1,7 +1,16 @@
 // Building: placing, moving and selling items, and creating, changing and removing rooms.
 
 import { certificatesLeft } from '../certificates';
-import { ITEMS, type ItemType, ROOM_TILE_COST, ROOMS, type RoomType, type RugPatternId, WINDOW_COST } from '../data';
+import {
+  ITEMS,
+  type ItemType,
+  ROOM_TILE_COST,
+  ROOMS,
+  type RoomType,
+  type RugPatternId,
+  type ThermostatSetting,
+  WINDOW_COST,
+} from '../data';
 import { money } from '../format';
 import { carryWallSpot, carryWindows, resizeCost, resizeTiles } from '../resize';
 import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
@@ -101,6 +110,16 @@ export function setRugPattern(ctx: SimContext, id: number, pattern: RugPatternId
   else it.pattern = pattern;
   // nothing has moved, but the view has a rug to draw afresh
   ctx.world.version++;
+}
+
+/** Set a heater or air conditioner's thermostat, or with `every` the thermostat of every one of its kind. */
+export function setThermostat(ctx: SimContext, id: number, setting: ThermostatSetting, every = false) {
+  const it = ctx.world.item(id);
+  if (!it || !ITEMS[it.type].thermostat) return;
+  for (const one of every ? ctx.s.items.filter((x) => x.type === it.type) : [it]) {
+    if (setting === 'auto') delete one.thermostat;
+    else one.thermostat = setting;
+  }
 }
 
 /** Start a new room as a blueprint, not yet paid for. */

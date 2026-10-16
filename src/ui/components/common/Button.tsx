@@ -7,17 +7,27 @@ import { cx } from '../../lib/cx';
 
 export interface ButtonProps {
   class?: string;
-  title?: string;
+  title?: string | undefined;
   /** Shown but refused: pressing it only plays the error sound. */
   locked?: boolean;
   /** Skip the click sound, for actions that make a sound of their own. */
   quiet?: boolean;
+  /** A tooltip richer than its title's words, as `kind:value` for a drawer added with `addRichTip`. */
+  richTip?: string | undefined;
   onPress: () => void;
   children?: ComponentChildren;
 }
 
 /** A button that acts the moment it is pressed, clicks, and redraws the interface. */
-export function Button({ class: className, title, locked = false, quiet = false, onPress, children }: ButtonProps) {
+export function Button({
+  class: className,
+  title,
+  locked = false,
+  quiet = false,
+  richTip,
+  onPress,
+  children,
+}: ButtonProps) {
   const hud = useHud();
   /** Act on the left mouse button going down. */
   const press = (e: PointerEvent) => {
@@ -34,7 +44,7 @@ export function Button({ class: className, title, locked = false, quiet = false,
     hud.update();
   };
   return (
-    <button class={cx(className, locked && 'locked')} title={title} onPointerDown={press}>
+    <button class={cx(className, locked && 'locked')} title={title} data-tip-rich={richTip} onPointerDown={press}>
       {children}
     </button>
   );

@@ -1,6 +1,8 @@
 // How comfortable the building is: how calm or noisy, how fresh the linens on the tables, how warm or cold, and how
 // well fed and watered the staff.
 
+import type { ThermostatSetting } from './types';
+
 /** How far noise carries, in tiles. */
 export const NOISE_RADIUS = 5;
 /** Noise a guest makes just by being there, waiting or walking about, and a stressed one. */
@@ -35,8 +37,23 @@ export const COMFORT_BAND = 5;
 export const DISCOMFORT_SPAN = 12;
 /** How much of the difference between the weather outside and the ideal gets indoors. */
 export const INDOOR_PULL = 0.5;
-/** How far a radiator or air conditioner's warmth or cool reaches, in tiles. */
+/** How far warmth or cool reaches, in tiles, unless the item giving it off says otherwise. */
 export const HEAT_RADIUS = 4;
+/**
+ * How gently the warmth or cool of an item with a reach of its own fades: above 1, it holds up over the first few
+ * tiles and falls away toward the edge, where 1 would fade it evenly all the way.
+ */
+export const HEAT_EASE = 1.5;
+
+/** Each thermostat setting, in the order the inspector offers them: its name, and how hard it runs (null as needed). */
+export const THERMOSTAT: Readonly<Record<ThermostatSetting, { name: string; share: number | null }>> = {
+  auto: { name: 'Auto', share: null },
+  off: { name: 'Off', share: 0 },
+  low: { name: 'Low', share: 1 / 3 },
+  medium: { name: 'Medium', share: 2 / 3 },
+  high: { name: 'High', share: 1 },
+};
+export const THERMOSTAT_ORDER = Object.keys(THERMOSTAT) as ThermostatSetting[];
 /** How much of the warmth or cool outside a room gets through its walls. */
 export const HEAT_DAMPING = 0.5;
 /** Warmth given off by worn equipment, laboring away. */

@@ -12,6 +12,8 @@ import {
   NOISE_NOTICE,
   rugPattern,
   STONE_USE,
+  THERMOSTAT,
+  THERMOSTAT_ORDER,
   UPGRADE_LEVELS,
   WEAR_REPAIR,
 } from '../../../core/data';
@@ -22,6 +24,7 @@ import { cannotUpgrade, upgradeCost } from '../../../core/sim/upgrades';
 import { unlockedUpTo } from '../../../core/state/game';
 import type { Item } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
+import { cx } from '../../lib/cx';
 import { stoppedLabel } from '../../lib/mishaps';
 import { installStatus, upgradeEffect, upgradeStars } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
@@ -92,6 +95,64 @@ function Upgrades({ item: it }: { item: Item }) {
   );
 }
 
+/** How hard a share of full power is, as a percentage. */
+const pct = (share: number) => `${Math.round(share * 100)}%`;
+
+/** A heater or air conditioner's thermostat: its setting, how hard it is working, and setting every one of its kind alike. */
+function Thermostat({ item: it }: { item: Item }) {
+  const { sim } = useGame();
+  const def = ITEMS[it.type];
+  const setting = it.thermostat ?? 'auto';
+  const share = sim.thermostatShare(it);
+  const status = !sim.s.weatherOn
+    ? 'With the weather off, it is just right everywhere anyway'
+    : setting === 'off'
+      ? '💤 Switched off'
+      : setting !== 'auto'
+        ? `Working at ${pct(share)}, whatever the weather`
+        : share === 0
+          ? '💤 Off for now: the weather is nice'
+          : `Working at ${pct(share)} for the weather`;
+  const others = sim.s.items.filter((x) => x.type === it.type && x.id !== it.id);
+  const alike = others.every((x) => (x.thermostat ?? 'auto') === setting);
+  return (
+    <div class="thermostat">
+      <label>Thermostat</label>
+      <div class="tabs" aria-label="Thermostat">
+        {THERMOSTAT_ORDER.map((k) => (
+          <Button
+            key={k}
+            class={cx('tab', 'small', k === setting && 'on')}
+            title={
+              k === 'auto'
+                ? 'Auto: works only as hard as the weather calls for, and is off while it is nice'
+                : undefined
+            }
+            onPress={() => {
+              sim.setThermostat(it.id, k);
+            }}
+          >
+            {THERMOSTAT[k].name}
+          </Button>
+        ))}
+      </div>
+      <p class="sub">{status}</p>
+      {others.length > 0 && (
+        <Button
+          class="move every"
+          locked={alike}
+          title={alike ? `Every ${def.name} is already on ${THERMOSTAT[setting].name}` : undefined}
+          onPress={() => {
+            sim.setThermostat(it.id, setting, true);
+          }}
+        >
+          {`Set all ${others.length + 1} to ${THERMOSTAT[setting].name}`}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 /** An item's details and condition, with Move and Sell. */
 export function ItemInfo({ item: it }: { item: Item }) {
   const { sim, tools } = useGame();
@@ -135,6 +196,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
       {def.linens && <Linens item={it} />}
       {def.station?.goal === 'treat' && <Calm item={it} />}
       {def.upgrade !== undefined && <Upgrades item={it} />}
+      {def.thermostat && <Thermostat item={it} />}
       {it.type === 'linen_hamper' && (
         <label>
           {`Soiled linens: ${it.water} of ${HAMPER_SIZE} sets`}

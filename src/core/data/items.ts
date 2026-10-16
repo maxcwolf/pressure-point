@@ -39,6 +39,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     unlock: 1,
     decor: 1,
+    reach: 2,
     noise: 2,
   },
   consult_desk: {
@@ -170,6 +171,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 1,
+    reach: 2,
   },
   tea_station: {
     type: 'tea_station',
@@ -227,6 +229,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 4,
+    reach: 6,
     noise: -2,
   },
   stone_warmer: {
@@ -312,6 +315,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 2,
+    reach: 2,
   },
   diffuser: {
     type: 'diffuser',
@@ -325,6 +329,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 2,
+    reach: 5,
   },
   statue: {
     type: 'statue',
@@ -351,6 +356,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 3,
+    reach: 3,
     walkable: true,
   },
   magazine_rack: {
@@ -366,6 +372,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 3,
+    reach: 2,
   },
   acu_table: {
     type: 'acu_table',
@@ -568,6 +575,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 1,
+    reach: 2,
   },
   arcade_machine: {
     type: 'arcade_machine',
@@ -602,6 +610,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     unlock: 1,
     karma: 2,
     decor: 1,
+    reach: 2,
   },
   coffee_machine: {
     type: 'coffee_machine',
@@ -633,6 +642,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     unlock: 2,
     karma: 5,
     decor: 6,
+    reach: 5,
     noise: -1,
   },
   pool_table: {
@@ -679,6 +689,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     karma: 3,
     decor: 3,
+    reach: 3,
   },
   massage_chair: {
     type: 'massage_chair',
@@ -708,6 +719,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     karma: 6,
     decor: 8,
+    reach: 6,
     noise: -3,
   },
   radiator: {
@@ -722,6 +734,8 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     heat: 12,
+    heatReach: 5,
+    thermostat: true,
   },
   air_conditioner: {
     type: 'air_conditioner',
@@ -736,6 +750,8 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     heat: -12,
+    heatReach: 5,
+    thermostat: true,
     noise: 1,
     wear: 1,
   },
@@ -858,6 +874,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     unlock: 2,
     decor: 1,
+    reach: 2,
   },
   brew_pot: {
     type: 'brew_pot',
@@ -900,7 +917,10 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     karma: 6,
     decor: 5,
+    reach: 5,
     heat: 14,
+    heatReach: 5,
+    thermostat: true,
     noise: -1,
   },
   topiary: {
@@ -943,6 +963,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 2,
+    reach: 5,
     noise: 1,
   },
   fortune_teller: {
@@ -1020,6 +1041,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 3,
+    reach: 3,
   },
   wall_clock: {
     type: 'wall_clock',
@@ -1049,6 +1071,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     unlock: 1,
     decor: 1,
+    reach: 2,
   },
   meridian_poster: {
     type: 'meridian_poster',
@@ -1065,6 +1088,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     unlock: 1,
     decor: 1,
+    reach: 2,
   },
   television: {
     type: 'television',
@@ -1141,6 +1165,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     unlock: 3,
     decor: 5,
+    reach: 5,
     noise: -3,
   },
   certificate: {
@@ -1156,6 +1181,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     decor: 2,
+    reach: 2,
   },
 };
 

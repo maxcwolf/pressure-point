@@ -10,21 +10,23 @@ import {
   DISCOMFORT_NOTICE,
   DISCOMFORT_SPAN,
   HEAT_DAMPING,
+  HEAT_EASE,
   HEAT_RADIUS,
   IDEAL_TEMP,
   INDOOR_PULL,
   ITEMS,
   STONE_COOLING,
+  THERMOSTAT,
   WEAR_REPAIR,
   WORN_HEAT,
 } from '../data';
-import type { Climate } from '../data/types';
+import type { Climate, ItemType, ThermostatSetting } from '../data/types';
 import type { Guest, Item } from '../state/types';
 import { clamp } from '../util';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { feel } from './feelings';
-import { gridAt, spreader } from './spread';
+import { gridAt, type Spread, spreader } from './spread';
 
 /** The month of the year, with a fraction, when summer is at its hottest and winter at its coldest. */
 const MIDSUMMER = 6.5;
@@ -48,8 +50,32 @@ export function itemHeat(it: Item): number {
   return def.wear && it.wear >= WEAR_REPAIR && it.wear < 100 ? WORN_HEAT : 0;
 }
 
+/** The temperature indoors today with nothing to warm or cool it. */
+export const todayIndoors = (ctx: SimContext) => indoorTemp(outdoorTemp(centerOf(ctx.s).climate, ctx.s.day));
+
+/**
+ * How hard an item with a thermostat works, from 0 (off) to 1 (flat out), for a temperature indoors: at its setting's
+ * power, or on Auto as hard as it takes to bring its own spot to just right, and so off while the weather is nice.
+ * Anything without a thermostat always works flat out.
+ */
+export function thermostatShare(type: ItemType, setting: ThermostatSetting | undefined, indoors: number): number {
+  const { heat, thermostat } = ITEMS[type];
+  if (!thermostat || !heat) return 1;
+  return THERMOSTAT[setting ?? 'auto'].share ?? clamp((IDEAL_TEMP - indoors) / heat, 0, 1);
+}
+
 /** How much of the warmth or cool outside a room gets through its walls. */
-const heatLeak = () => HEAT_DAMPING;
+export const heatLeak = () => HEAT_DAMPING;
+
+/**
+ * Spread an item's warmth or cool from the middle of it: as far as its own reach and fading gently, for something made
+ * to heat or cool a room, or else over a few tiles and fading evenly.
+ */
+export function spreadHeat(grid: Float32Array, spread: Spread, type: ItemType, cx: number, cy: number, heat: number) {
+  const reach = ITEMS[type].heatReach;
+  if (reach) spread(grid, cx, cy, heat, reach, 1, HEAT_EASE);
+  else spread(grid, cx, cy, heat, HEAT_RADIUS);
+}
 
 /** Work out afresh how warm each tile is. With the weather switched off, everywhere is just right. */
 export function updateWarmth(ctx: SimContext) {
@@ -65,11 +91,11 @@ export function updateWarmth(ctx: SimContext) {
   for (let i = 0; i < grid.length; i++) grid[i] = indoors[i] ? indoor : outdoor;
   const spread = spreader(ctx, heatLeak, HEAT_DAMPING);
   for (const it of ctx.s.items) {
-    // a radiator in a power cut or a freeze gives off nothing
-    const heat = ctx.world.stoppedByMishap(it) ? 0 : itemHeat(it);
+    // a radiator in a power cut or a freeze gives off nothing, and one with a thermostat only what the weather calls for
+    const heat = ctx.world.stoppedByMishap(it) ? 0 : itemHeat(it) * thermostatShare(it.type, it.thermostat, indoor);
     if (!heat) continue;
     const [cx, cy] = itemCenter(it);
-    spread(grid, Math.floor(cx), Math.floor(cy), heat, HEAT_RADIUS);
+    spreadHeat(grid, spread, it.type, Math.floor(cx), Math.floor(cy), heat);
   }
 }
 

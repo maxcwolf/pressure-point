@@ -20,6 +20,9 @@ export type RoomType =
 /** Whether someone is a woman or a man: their hair and first name follow it. */
 export type Sex = 'female' | 'male';
 
+/** How a heater or air conditioner is set to run: as the weather calls for, off, or at a set power. */
+export type ThermostatSetting = 'auto' | 'off' | 'low' | 'medium' | 'high';
+
 export type Role =
   | 'receptionist'
   | 'consultant'
@@ -202,6 +205,11 @@ export interface ItemDef {
   karma?: number;
   /** How much nicer it makes its surroundings, and the room it is in. */
   decor?: number;
+  /**
+   * How many tiles its decor reaches, if not `DECOR_RADIUS`: a few for something small like a plant or a poster, a
+   * whole stretch for a centerpiece like a fountain.
+   */
+  reach?: number;
   /** People can walk over it, and furniture can stand on it. */
   walkable?: boolean;
   /** Wear added each time it is used. At 100 it breaks until a Caretaker repairs it. */
@@ -218,6 +226,17 @@ export interface ItemDef {
   sessionNoise?: number;
   /** Degrees it warms (or, below zero, cools) the air around it. */
   heat?: number;
+  /**
+   * How many tiles its warmth or cool reaches, if not `HEAT_RADIUS`, for something made to heat or cool a room: it
+   * fades gently over the first few tiles too (`HEAT_EASE`).
+   */
+  heatReach?: number;
+  /**
+   * It has a thermostat, set on each one (`ThermostatSetting`): on Auto a heater warms its spot no further than just
+   * right, and only while it is cool indoors, an air conditioner the other way round, and either is off while the
+   * weather is nice; or it is set to run low, medium or high whatever the weather, or switched off.
+   */
+  thermostat?: boolean;
   /** A table with linens on it, soiled a little with each session until a Caretaker changes them. */
   linens?: boolean;
   /** It has a front and a back, so a marker shows which way it will face while it is being placed. */

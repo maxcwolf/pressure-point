@@ -17,6 +17,7 @@ import { resizeCost, sameRect } from '../../core/resize';
 import { copyCost, cornerFor, type Layout, type PlacedLayout, placeLayout, turnLayout } from '../../core/room-layout';
 import { canWorkIn } from '../../core/sim/assignments';
 import type { SfxName } from '../../core/sim/events';
+import type { PlacePreview } from '../../core/sim/preview';
 import type { Sim } from '../../core/sim/sim';
 import { sameSpot } from '../../core/state/game';
 import type { Room, WallSpot } from '../../core/state/types';
@@ -24,6 +25,7 @@ import { onWall, type Rect, Z_CORRIDOR } from '../../core/world';
 import { type Marker, OV_BAD, OV_BLUE, OV_GOOD, type OverlayTile } from '../../render/overlay-codes';
 import { nextPick, type Selection } from '../../render/picking';
 import type { View } from '../../render/view';
+import { loadDisplay } from '../../storage/display';
 import { expandHint, plotHeat } from '../../ui/lib/land';
 import { dragRect, itemSpot, tileOf } from './geometry';
 import {
@@ -60,6 +62,10 @@ export class Tools {
   hint = '';
   /** Why the current placement is invalid, if it is. */
   problem = '';
+  /** What the new item in hand would change where it is about to go, while the preview is on and it fits there. */
+  preview: PlacePreview | null = null;
+  /** The last preview worked out, and where for, so moving within a tile does not work it out again. */
+  private lastPreview: { key: string; preview: PlacePreview } | null = null;
   /** The pattern the next rug put down will have, kept from one rug to the next. */
   rugPattern: RugPatternId = 'kilim';
   private cursor: Point | null = null;
@@ -498,6 +504,12 @@ export class Tools {
       drawing.markers.push(...markers);
     }
     this.problem = check.reason;
+    // what a new item would change, worked out once for each spot it is held over, and again once another is down
+    if (!moving && check.ok && loadDisplay().placePreview) {
+      const key = `${type}:${x},${y}:${rot}:${this.sim.s.items.length}`;
+      if (this.lastPreview?.key !== key) this.lastPreview = { key, preview: this.sim.previewItem(placed) };
+      this.preview = this.lastPreview.preview;
+    }
     // a rug being moved keeps its own pattern; a new one has the pattern picked for it
     const pattern = type === 'rug' ? (moving ? moving.pattern : this.rugPattern) : undefined;
     this.view.setGhost({ ...placed, ok: check.ok, pattern });
@@ -591,6 +603,7 @@ export class Tools {
     const drawing: Drawing = { tiles: [], markers: [] };
     this.problem = '';
     this.hint = '';
+    this.preview = null;
     view.setDoor(null);
     if (t.kind === 'none') {
       view.setGhost(null);

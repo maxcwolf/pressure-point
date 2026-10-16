@@ -3,6 +3,7 @@
 import type { Audio } from '../audio';
 import { withAchievements } from '../core/campaign';
 import { ITEMS, ROOMS } from '../core/data';
+import type { PlacePreview } from '../core/sim/preview';
 import { Sim } from '../core/sim/sim';
 import type { GameState } from '../core/state/types';
 import { accessTile, itemDims, wallSpotsOf } from '../core/world';
@@ -13,7 +14,7 @@ import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
 import type { UpdateOffer } from '../ui/host';
 import { plotHeat } from '../ui/lib/land';
-import { heatTiles, overlayPalette } from '../ui/lib/overlays';
+import { heatTiles, overlayPalette, previewMode } from '../ui/lib/overlays';
 import { trackMouse } from './edge';
 import { reloadInto } from './handoff';
 import { bindKeyboard } from './keyboard';
@@ -43,11 +44,17 @@ export function startGame({ canvas, audio, state, exit, updates }: GameSetup) {
 
   const view = new View(canvas, sim);
   const refresh = createRefresh();
+  /** The preview of an item in hand last drawn on the floor, so a new one is drawn at once, not at the next redraw. */
+  let previewDrawn: PlacePreview | null = null;
   const tools = new Tools(
     sim,
     view,
     () => {
       refresh.request();
+      if (tools.preview !== previewDrawn) {
+        previewDrawn = tools.preview;
+        drawOverlay();
+      }
     },
     (name) => audio.play(name),
   );
@@ -141,6 +148,35 @@ export function startGame({ canvas, audio, state, exit, updates }: GameSetup) {
       refresh.request();
     },
   });
+  /**
+   * Color the floor for an item in hand, as if it were down; or for the overlay showing, or the land around the building
+   * or a plot of it; or clear it.
+   */
+  function drawOverlay() {
+    // the Expand tool colors the land itself, as the pointer moves
+    if (tools.tool.kind === 'expand') return;
+    // an item in hand shows what it would change, over the overlay showing
+    const preview = tools.preview;
+    const mode = preview && previewMode(preview, ui.overlay);
+    if (preview && mode) {
+      view.setHeat(heatTiles(sim, mode, preview), overlayPalette(mode));
+      return;
+    }
+    // the Land tab outlines the plots, over any overlay
+    const sel = tools.selected;
+    if (ui.menu === 'finance' && ui.moneyTab === 'land')
+      view.setHeat(plotHeat(sim.landOffers(), ui.landPointedAt), 'land');
+    // a plot in the inspector is outlined on its own
+    else if (sel?.kind === 'plot')
+      view.setHeat(
+        plotHeat(
+          sim.landOffers().filter((o) => o.def.id === sel.id),
+          sel.id,
+        ),
+        'land',
+      );
+    else view.setHeat(ui.overlay ? heatTiles(sim, ui.overlay) : null, overlayPalette(ui.overlay));
+  }
   runLoop({
     sim,
     view,
@@ -149,25 +185,7 @@ export function startGame({ canvas, audio, state, exit, updates }: GameSetup) {
     mouse: trackMouse(),
     refresh,
     save: autosaveNow,
-    /** Color the floor for the overlay showing, or the land around the building or a plot of it, or clear it. */
-    overlay: () => {
-      // the Expand tool colors the land itself, as the pointer moves
-      if (tools.tool.kind === 'expand') return;
-      // the Land tab outlines the plots, over any overlay
-      const sel = tools.selected;
-      if (ui.menu === 'finance' && ui.moneyTab === 'land')
-        view.setHeat(plotHeat(sim.landOffers(), ui.landPointedAt), 'land');
-      // a plot in the inspector is outlined on its own
-      else if (sel?.kind === 'plot')
-        view.setHeat(
-          plotHeat(
-            sim.landOffers().filter((o) => o.def.id === sel.id),
-            sel.id,
-          ),
-          'land',
-        );
-      else view.setHeat(ui.overlay ? heatTiles(sim, ui.overlay) : null, overlayPalette(ui.overlay));
-    },
+    overlay: drawOverlay,
   });
   window.addEventListener('beforeunload', save);
   window.addEventListener('pagehide', save);
