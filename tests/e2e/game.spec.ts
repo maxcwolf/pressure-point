@@ -42,8 +42,8 @@ test.describe('starting out', () => {
 
   test('music and sound can be switched off on the title screen', async ({ game, page }) => {
     await page.goto('/');
-    const music = page.locator('#title').getByTitle('Music');
-    const sound = page.locator('#title').getByTitle('Sound effects');
+    const music = page.locator('#title').locator('[data-tip="Music"]');
+    const sound = page.locator('#title').locator('[data-tip="Sound effects"]');
     await expect(music).toHaveAttribute('aria-pressed', 'true');
     await music.click();
     await expect(music).toHaveAttribute('aria-pressed', 'false');
@@ -56,12 +56,12 @@ test.describe('starting out', () => {
     await page.getByRole('button', { name: 'Sandbox' }).click();
     await page.getByRole('button', { name: 'Start building' }).click();
     await page.waitForFunction(() => !!window.pp);
-    await expect(page.locator('#sys').getByTitle('Music')).toHaveClass(/off/);
-    await expect(page.locator('#sys').getByTitle('Sound effects')).toHaveText('🔇');
+    await expect(page.locator('#sys').locator('[data-tip="Music"]')).toHaveClass(/off/);
+    await expect(page.locator('#sys').locator('[data-tip="Sound effects"]')).toHaveText('🔇');
     await page.reload();
-    await expect(page.locator('#title').getByTitle('Music')).toHaveAttribute('aria-pressed', 'false');
-    await page.locator('#title').getByTitle('Music').click();
-    await expect(page.locator('#title').getByTitle('Music')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#title').locator('[data-tip="Music"]')).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('#title').locator('[data-tip="Music"]').click();
+    await expect(page.locator('#title').locator('[data-tip="Music"]')).toHaveAttribute('aria-pressed', 'true');
     expect(game.errors).toEqual([]);
   });
 
@@ -935,12 +935,12 @@ test.describe('running a center', () => {
     });
     const offer = page.locator('#offer');
     await expect(offer).toContainText('Offer lapses: 8 days left');
-    await offer.getByTitle('Decide later').click();
+    await offer.locator('[data-tip="Decide later"]').click();
     await expect(offer).toHaveText('🚨 Emergency on offer: 8 days left to decide');
     // the clock keeps running while it is put aside
     await game.eval((pp) => (pp.state.day += 5));
     await expect(offer).toContainText('3 days left to decide');
-    await offer.getByTitle('Show the emergency').click();
+    await offer.locator('[data-tip="Show the emergency"]').click();
     await offer.getByRole('button', { name: 'Accept' }).click();
     await expect(offer).toBeEmpty();
     await expect(page.locator('#objectives .emergency')).toContainText('days left');
@@ -1025,7 +1025,7 @@ test.describe('controls and saving', () => {
   test('the pause menu shows the controls and resumes at the old speed', async ({ game, page }) => {
     await game.start();
     await page.keyboard.press('2');
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await expect(page.locator('#modal')).toContainText('Pressure Point Institute');
     expect(await game.eval((pp) => pp.state.speed)).toBe(0);
     await page.getByRole('button', { name: 'Resume' }).click();
@@ -1128,7 +1128,7 @@ test.describe('leaving a game', () => {
       staff: pp.state.staff.length,
       money: pp.state.money,
     }));
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await page.getByRole('button', { name: 'Main menu' }).click();
     await expect(page.locator('#title .title-logo')).toBeVisible();
     await expect(page.locator('#title .save-card')).toContainText('Autosave');
@@ -1169,7 +1169,7 @@ test.describe('leaving a game', () => {
     await expect(page.getByRole('button', { name: 'Sandbox' })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Exit/ })).toHaveCount(0);
     await game.start();
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await expect(page.getByRole('button', { name: 'Main menu' })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Exit/ })).toHaveCount(0);
   });
@@ -1178,7 +1178,7 @@ test.describe('leaving a game', () => {
 test.describe('acupuncture and settings', () => {
   /** Open the pause menu and press one of its buttons. */
   const pauseMenu = async (page: Page, button: string) => {
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await page.getByRole('button', { name: button }).click();
   };
 
@@ -1273,7 +1273,7 @@ test.describe('acupuncture and settings', () => {
     await expect(page.getByRole('switch', { name: 'Acupuncture' })).toHaveAttribute('aria-checked', 'false');
     // the audio switches there stay in step with the ones in the corner
     await page.getByRole('switch', { name: 'Music' }).click();
-    await expect(page.locator('.title-sys').getByTitle('Music')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('.title-sys').locator('[data-tip="Music"]')).toHaveAttribute('aria-pressed', 'false');
 
     // the panel stands in for the menu until Back, or Esc
     await expect(page.getByRole('button', { name: 'Sandbox' })).toBeHidden();
@@ -1533,7 +1533,7 @@ test.describe('more land', () => {
 test.describe('controls', () => {
   test('a key can be set to another in the settings, and the pause menu shows it', async ({ game, page }) => {
     await game.start();
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await page.getByRole('button', { name: 'Settings' }).click();
     await page.getByRole('button', { name: 'Pause: Space' }).click();
     await expect(page.locator('#settings-panel')).toContainText('Press a key');
@@ -1754,10 +1754,7 @@ test.describe('reading the center', () => {
   test('the floor can be colored by an overlay, with a key, and cleared again', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
-    await page
-      .locator('#sys')
-      .getByTitle(/Overlays/)
-      .click();
+    await page.locator('#sys').locator('[data-tip^="Overlays"]').click();
     await page
       .locator('#overlay-picker')
       .getByRole('button', { name: /Surroundings/ })
@@ -1765,20 +1762,14 @@ test.describe('reading the center', () => {
     await expect(page.locator('#overlay-picker')).toHaveCount(0);
     await expect(page.locator('#overlay-key')).toContainText('Surroundings');
     await expect.poll(() => game.eval((pp) => pp.ui.overlay)).toBe('decor');
-    await page
-      .locator('#overlay-key')
-      .getByTitle(/Stop coloring/)
-      .click();
+    await page.locator('#overlay-key').locator('[data-tip^="Stop coloring"]').click();
     await expect(page.locator('#overlay-key')).toHaveCount(0);
   });
 
   test('the Temperature overlay keys its colors from cold to hot', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
-    await page
-      .locator('#sys')
-      .getByTitle(/Overlays/)
-      .click();
+    await page.locator('#sys').locator('[data-tip^="Overlays"]').click();
     await page
       .locator('#overlay-picker')
       .getByRole('button', { name: /Temperature/ })
@@ -1932,7 +1923,7 @@ test.describe('the campaign', () => {
     await expect(game.card('Acupuncture Clinic')).toHaveCount(0);
 
     await game.eval((pp) => (pp.state.stars = 1));
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await page.getByRole('button', { name: 'Main menu' }).click();
     await expect(page.locator('#title .save-card')).toContainText('Willow Lane');
     await page.getByRole('button', { name: 'Campaign' }).click();
@@ -2060,7 +2051,7 @@ test.describe('the sandbox', () => {
 
     // the next sandbox game, from the pause menu, is set up the same way
     await game.eval((pp) => Object.assign(window, { oldState: pp.state }));
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await page.locator('#modal').getByRole('button', { name: 'New game' }).click();
     await page.getByRole('button', { name: 'Start a new game' }).click();
     // a new game, however far it has got by the time anyone looks
@@ -2136,7 +2127,7 @@ test.describe('reiki', () => {
     await game.menu('Rooms');
     await expect(game.card('Reiki Studio')).toBeVisible();
 
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await page.getByRole('button', { name: 'Settings' }).click();
     const toggle = page.getByRole('switch', { name: 'Reiki' });
     await expect(toggle).toHaveAttribute('aria-checked', 'true');
@@ -2351,7 +2342,7 @@ test.describe('the recovery lounge', () => {
 test.describe('saved games', () => {
   /** Open the save and load screen from the pause menu. */
   const openSaves = async (page: Page) => {
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await page.getByRole('button', { name: 'Save or load' }).click();
   };
   test('warns when the game is also open in another tab, saving over this one', async ({ game, page }) => {
@@ -2504,7 +2495,7 @@ test.describe('saved games', () => {
   test('a new game is refused, not started, when there is no room to keep the old one', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => (pp.state.money = 12345));
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await page.getByRole('button', { name: 'Main menu' }).click();
     await page.getByRole('button', { name: 'Continue' }).waitFor();
     // no room for a Previous game copy
@@ -2601,7 +2592,7 @@ test.describe('saved games', () => {
   test('starting a new game keeps the old one as Previous game', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await page.getByRole('button', { name: 'New game' }).click();
     await expect(page.locator('#modal')).toContainText('moves to "Previous game"');
     await page.getByRole('button', { name: 'Start a new game' }).click();
@@ -2656,14 +2647,8 @@ test.describe('turning the camera', () => {
     await page.keyboard.press('KeyQ');
     await page.keyboard.press('KeyQ');
     expect(await game.eval((pp) => pp.view.turn)).toBe(3);
-    await page
-      .locator('#sys')
-      .getByTitle(/Turn the camera/)
-      .click();
-    await page
-      .locator('#sys')
-      .getByTitle(/Turn the camera/)
-      .click();
+    await page.locator('#sys').locator('[data-tip^="Turn the camera"]').click();
+    await page.locator('#sys').locator('[data-tip^="Turn the camera"]').click();
     expect(await game.eval((pp) => pp.view.turn)).toBe(1);
     // long enough for the camera to glide round
     await game.settle();

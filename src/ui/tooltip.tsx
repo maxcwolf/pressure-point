@@ -1,0 +1,177 @@
+// Tooltips: the words a control shows while the pointer rests on it, drawn in the game's own style rather than the browser's.
+
+import './tooltip.css';
+
+import { options, render, type VNode } from 'preact';
+
+/** How long the pointer rests on something before its tooltip shows. */
+const DELAY = 380;
+/** How soon after one tooltip goes that the next shows at once, so running along a row of buttons reads each straight off. */
+const GRACE = 300;
+/** The space between a tooltip and what it explains, and between a tooltip and the edge of the window. */
+const GAP = 10;
+const MARGIN = 8;
+
+/** Where a title starts with a short name, as in 'Overlays: color the floor', that name becomes the tooltip's heading. */
+const HEADING = /^([^.:]{1,32}): (.+)$/s;
+/** Where a title ends with the keys for it, as in 'Pause (Space)', the keys are drawn as keys. */
+const KEYS = /^(.+) \(([^()]{1,24})\)$/s;
+
+/** Split a title into a heading, the words and the keys that go with it. */
+export function parseTip(text: string): { heading: string; body: string; keys: string[] } {
+  let heading = '';
+  let body = text;
+  let keys: string[] = [];
+  const [, rest, named] = KEYS.exec(body) ?? [];
+  if (rest && named) {
+    const parts = named.split(/ and | or |, /);
+    if (parts.every((p) => p.length <= 7)) {
+      body = rest;
+      keys = parts;
+    }
+  }
+  const [, name, words] = HEADING.exec(body) ?? [];
+  if (name && words) {
+    heading = name;
+    body = words.charAt(0).toUpperCase() + words.slice(1);
+  }
+  return { heading, body, keys };
+}
+
+/** What a tooltip says. */
+function Tip({ text }: { text: string }) {
+  const { heading, body, keys } = parseTip(text);
+  return (
+    <>
+      {heading && <strong>{heading}</strong>}
+      {body}
+      {keys.map((key) => (
+        <kbd key={key}>{key}</kbd>
+      ))}
+    </>
+  );
+}
+
+/** Whether an element's children show any words, as far as a screen reader is concerned. */
+function hasWords(children: unknown): boolean {
+  if (Array.isArray(children)) return children.some(hasWords);
+  if (typeof children === 'number') return true;
+  if (typeof children === 'string') return children.trim() !== '';
+  if (!children || typeof children !== 'object' || !('type' in children)) return false;
+  const { type, props } = children as VNode<Record<string, unknown>>;
+  // a component may draw words of its own, so count it as words
+  if (typeof type !== 'string') return true;
+  return !props['aria-hidden'] && hasWords(props.children);
+}
+
+let installed = false;
+
+/** Draw every title on the page as one of the game's tooltips, from now on. */
+export function installTooltips() {
+  if (installed) return;
+  installed = true;
+
+  // Every element given a title keeps it as data-tip instead, so the browser draws no tooltip of its own. A screen reader
+  // still hears it as the browser would have it: as the element's name where it shows no words, or else as its description.
+  const nextVnode = options.vnode?.bind(options);
+  /** Move an element's title to data-tip. */
+  options.vnode = (vnode) => {
+    const props = vnode.props as Record<string, unknown>;
+    if (typeof vnode.type === 'string' && 'title' in props) {
+      const { title } = props;
+      delete props.title;
+      props['data-tip'] = title;
+      if (!props['aria-label'] && !hasWords(props.children)) props['aria-label'] = title;
+      else props['aria-description'] = title;
+    }
+    nextVnode?.(vnode);
+  };
+
+  const tip = document.createElement('div');
+  tip.id = 'tip';
+  // the element it explains already carries the same words for a screen reader, so this is for the eye alone
+  tip.setAttribute('aria-hidden', 'true');
+  tip.hidden = true;
+  document.body.appendChild(tip);
+
+  /** The element the pointer is resting on, whose tooltip is showing or about to. */
+  let target: HTMLElement | null = null;
+  /** An element clicked, whose tooltip stays away until the pointer leaves it. */
+  let dismissed: Element | null = null;
+  let text = '';
+  let timer = 0;
+  let frame = 0;
+  let lastShown = -Infinity;
+
+  /** Put the tooltip above what it explains, or below where there is no room above, and keep it in the window. */
+  const place = () => {
+    if (!target?.isConnected || !target.dataset.tip) {
+      hide();
+      return;
+    }
+    if (target.dataset.tip !== text) {
+      text = target.dataset.tip;
+      render(<Tip text={text} />, tip);
+    }
+    const r = target.getBoundingClientRect();
+    const w = tip.offsetWidth;
+    const h = tip.offsetHeight;
+    const below = r.top - GAP - h < MARGIN;
+    const centre = r.left + r.width / 2;
+    const x = Math.min(Math.max(centre - w / 2, MARGIN), innerWidth - MARGIN - w);
+    const y = below ? Math.min(r.bottom + GAP, innerHeight - MARGIN - h) : r.top - GAP - h;
+    tip.classList.toggle('below', below);
+    tip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+    tip.style.setProperty('--arrow-x', `${Math.round(Math.min(Math.max(centre - x, 14), w - 14))}px`);
+    frame = requestAnimationFrame(place);
+  };
+
+  /** Show the tooltip for what the pointer has rested on. */
+  const show = () => {
+    if (!target?.isConnected) return;
+    text = '';
+    tip.hidden = false;
+    place();
+  };
+
+  /** Take the tooltip away, and forget what it was for. */
+  function hide() {
+    clearTimeout(timer);
+    cancelAnimationFrame(frame);
+    if (!tip.hidden) {
+      tip.hidden = true;
+      lastShown = performance.now();
+    }
+    target = null;
+  }
+
+  document.addEventListener('pointerover', (e) => {
+    if (e.pointerType === 'touch') return;
+    const el = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-tip]') : null;
+    if (el === target) return;
+    hide();
+    if (el !== dismissed) dismissed = null;
+    if (!el?.dataset.tip || el === dismissed) return;
+    target = el;
+    timer = window.setTimeout(show, performance.now() - lastShown < GRACE ? 0 : DELAY);
+  });
+  document.addEventListener('pointerout', (e) => {
+    if (!e.relatedTarget) {
+      hide();
+      dismissed = null;
+    }
+  });
+  // a click puts the tooltip away like the browser's own, except on a locked button, where it says why nothing happened
+  document.addEventListener(
+    'pointerdown',
+    () => {
+      if (target?.classList.contains('locked')) return;
+      dismissed = target;
+      hide();
+    },
+    true,
+  );
+  document.addEventListener('wheel', hide, { passive: true });
+  document.addEventListener('keydown', hide);
+  window.addEventListener('blur', hide);
+}

@@ -8,6 +8,10 @@ import { TitleScreen } from './components/TitleScreen';
 import { byId } from './dom';
 import type { GameHost, UpdateOffer } from './host';
 import { HudState } from './hud';
+import { installTooltips } from './tooltip';
+
+// before anything is drawn, so every title becomes one of the game's tooltips
+installTooltips();
 
 /** Draw the in-game interface for a game and return its state, which the rest of the app talks to. */
 export function mountHud(host: GameHost): HudState {

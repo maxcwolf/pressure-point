@@ -69,5 +69,5 @@ export async function newGame(page: Page) {
 
 /** Open the pause menu. */
 export async function openPauseMenu(page: Page) {
-  await page.locator('#sys').getByTitle('Menu').click();
+  await page.locator('#sys').locator('[data-tip="Menu"]').click();
 }

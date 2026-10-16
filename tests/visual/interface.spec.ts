@@ -227,7 +227,7 @@ test.describe('in a game', () => {
 
   test('the pause menu and its dialogs', async ({ screens, page }) => {
     await screens.play();
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await screens.shot('pause');
     await page.getByRole('button', { name: 'Settings' }).click();
     await screens.shot('settings');
@@ -257,7 +257,7 @@ test.describe('in a game', () => {
     await game.eval((pp, offer) => {
       pp.state.offer = { ...offer, deadline: pp.state.day + 8 };
     }, OFFER(0));
-    await page.locator('#offer').getByTitle('Decide later').click();
+    await page.locator('#offer').locator('[data-tip="Decide later"]').click();
     await screens.shot('offer-aside');
   });
 
@@ -423,10 +423,7 @@ test.describe('in a game', () => {
 
   test('the floor colored by an overlay', async ({ screens, page }) => {
     await screens.play();
-    await page
-      .locator('#sys')
-      .getByTitle(/Overlays/)
-      .click();
+    await page.locator('#sys').locator('[data-tip^="Overlays"]').click();
     await screens.shot('overlay-picker');
     await page
       .locator('#overlay-picker')

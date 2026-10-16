@@ -118,7 +118,7 @@ test.describe('performance', () => {
       };
       for (let i = 0; i < 15; i++) saves.writeSave(pp.state, `Save ${i}`);
     });
-    await page.locator('#sys').getByTitle('Menu').click();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
     await page.getByRole('button', { name: 'Save or load' }).click();
     await expect(page.locator('.saves')).toBeVisible();
     // count every character read from storage while the dialog just sits there
