@@ -2,6 +2,8 @@
 
 Ideas for new items, drafted 16 October 2026. Nothing here is planned: an idea moves to [todo.md](todo.md) or [roadmap.md](roadmap.md) once it is chosen. Like [ideas.md](ideas.md), this is a list to pick from.
 
+**Chosen on 16 October 2026**, and moved to [todo.md](todo.md): Soundproof Panels (1), Wind Chimes (5), the Generator (7), placed outside only, the Fortune Teller Machine (10), the Kombucha Tap (11), the Staff Fridge (16) and wall hangings (24). The rest are still open.
+
 ## What makes a Two Point item fun
 
 Two Point's items are fun for a few reasons, and each idea below aims at one or more of them:
@@ -32,7 +34,7 @@ These fit systems already in the sim. Most are data only or need a small hook, s
 
 **6. Stress Ball Bowl** 🔴. A bowl of squishy stress balls on a stand. Corridor, $200, unlock 1. A stressed guest who passes squeezes one and calms down a little, and during a stress outbreak, stress spreads more slowly near it. Every so often a guest walks off with one, and the bowl runs out until a Receptionist refills it. A cheap answer to outbreaks that still needs looking after. _New code, small to medium._
 
-**7. Generator** 🔋. A bulky diesel generator, `where: 'any'`, 2×1, $2,800, `noise: 8`. Owned, it keeps the power on through every power cut without paying for a hired one each time, but it's loud and has to go somewhere. The first of the **mishap items**: something the player can buy once, ahead of time, instead of paying each time. Others in the same family: **Storm Shutters** on windows (The Boardwalk), **Pipe Lagging** as a room upgrade (High Pines) and a **Wasp Trap** (The Orchard Estate). _New code, small each_: a mishap checks for its item before it counts as unprepared.
+**7. Generator** 🔋. A bulky diesel generator, placed outdoors only (chosen on that condition), 2×1, $2,800, `noise: 8`. Owned, it keeps the power on through every power cut without paying for a hired one each time, but it's loud, so it goes outside, where the building's outer walls hold back its noise. Nothing can be placed outdoors yet, so it needs a first step of phase 7 of [land-plan.md](land-plan.md). The first of the **mishap items**: something the player can buy once, ahead of time, instead of paying each time. Others in the same family: **Storm Shutters** on windows (The Boardwalk), **Pipe Lagging** as a room upgrade (High Pines) and a **Wasp Trap** (The Orchard Estate). _New code, small each_: a mishap checks for its item before it counts as unprepared.
 
 **8. Fire Extinguisher, made to matter.** No new item: the inspector already wants one near every room. A broken or missing extinguisher next to a room could appear as a line in the inspector's report, and the Fire Extinguisher could wear a little each month until a Caretaker checks it. _New code, small._
 
@@ -96,12 +98,4 @@ _New code, medium to large_: placing on walls, drawing items on walls that turn 
 
 ## Where to start
 
-If a first batch were chosen, these give the most fun for the least work, and each one touches a different system:
-
-1. **Soundproof Panels** (1), data only, a calm-versus-prestige choice.
-2. **Kombucha Tap** (11), a drink that goes wrong in a way you can see.
-3. **Aura Photo Booth** (9), something to watch, a second shop, and new review lines.
-4. **Generator** and the other mishap items (7), so preparing for mishaps can be planned ahead.
-5. **One signature item per center** (19 to 23), so each center has something to build that the others don't.
-
-Wall items (24) and the cat (26) are the biggest jobs and the most character, best decided on before the rest of the art is planned.
+Chosen on 16 October 2026: see the top of this doc. Of what's left, the Aura Photo Booth (9) and one signature item per center (19 to 23) would add the most for the least work. The other mishap items in 7 fit best once the Generator has set the pattern, and the Motivational Poster (17) belongs with the wall hangings.

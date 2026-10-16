@@ -115,6 +115,18 @@ Announcer lines that have no recording yet. A recording plays only when its text
 - [x] **More room to grow in the sandbox.** Its lot is 44 tiles wide now, with room for 15 more tiles to the east (phase 3 of [land-plan.md](land-plan.md)).
 - [ ] **A really bad trip, now and then.** A tiny chance that a bad trip sends the guest running round the institute like a crazy person, freaking out the guests they pass (a bad feeling, a little lost patience, maybe a stress outbreak) until a member of staff calms them or they find the door. For after the Shaman's stages are done.
 
+## Chosen 16 October 2026
+
+New items picked from [item-ideas.md](item-ideas.md), where each is described in full.
+
+- [ ] **Soundproof Panels** (item 1). Cheap, ugly and quiet: `noise: -4` and no decor, so calm costs prestige.
+- [ ] **Wind Chimes** (item 5). Bad vibes in their room clear slowly on their own, and they tinkle a little, so they're no good beside a sound bath.
+- [ ] **Generator** (item 7), **placed outside only.** Loud, so it belongs outdoors, where the building's outer walls hold back its noise. Owned, it keeps the power on through every power cut. Nothing can be placed outdoors yet, so it needs a first step of phase 7 of [land-plan.md](land-plan.md): items with `where: 'outdoors'`, placed on the lot's own grounds, off the paths, with every entrance still reachable. Outdoor items, such as trees and benches, can follow the same way.
+- [ ] **Kombucha Tap** (item 11). A drink that earns more than tea, and when worn fizzes over into a puddle that slows and annoys guests until a Caretaker mops it up.
+- [ ] **Fortune Teller Machine** (item 10). A Zoltar-style `play` item that hands out fortunes in a speech bubble; now and then "You will be healed today" makes a guest more patient.
+- [ ] **Staff Fridge** (item 16). Staff see to thirst and hunger here on a break, for free, instead of queuing at the guests' drinks and snacks.
+- [ ] **Wall hangings** (item 24). A slot on each wall tile, and things to hang there: a framed diploma, a clock, chakra and meridian charts, a landscape painting for each center, and a motivational poster. Hung items turn with the camera, and are hidden when their wall is cut low.
+
 ## Roadmap
 
 The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two-point-gaps.md). Its decisions to make are still open.
