@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.27.5
+
+- **Moving a Training Room no longer cancels a course.** Whoever was studying walks back to a desk and carries on where they left off, with nothing to pay again.
+- **House calls are always paid.** Someone away on a call can no longer be sent on a course, which used to lose the fee.
+- **Treatments feel a power cut.** Stim Units and Stone Warmers stop with the power, or when broken, and the room says so.
+- **Fixes:** shrinking a room only refunds floor you bought by resizing it. Sending home a guest who was resting after treatment no longer counts their visit twice or costs reputation. A guest on a broken Sound Mat goes back to the line instead of lying there for good. A Sound Bath Studio can't be sold below its two mats. Litter under furniture is swept up, so Caretakers no longer get stuck on it. A prestige challenge is never met the moment it is set. Starting a new game keeps an autosave that won't open, rather than overwriting it.
+
 ## v0.27.4
 
 - **Updating asks first.** When a new version has downloaded, the title screen offers **Update to the latest version** above What's new, and checks before the game closes to install it. Choose **Not now** and it installs by itself the next time you quit.
