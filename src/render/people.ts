@@ -2,13 +2,27 @@
 
 import type * as THREE from 'three';
 
-import { conditionOf, ROLES } from '../core/data';
+import { conditionOf, ROLES, SIDEWALK_Y } from '../core/data';
+import { streetEnds } from '../core/sim/chars';
 import type { Sim } from '../core/sim/sim';
 import type { Char } from '../core/state/types';
 import { Crowd } from './crowd';
 import { disposeOwned } from './disposal';
 import { buildCharacter, type CharRig } from './models/character';
 import { poseChar, type WorkStyle } from './pose';
+
+/** Over how many tiles of pavement people grow from nothing, or shrink away, where they arrive and leave. */
+const FADE_TILES = 1;
+
+/**
+ * How big someone is drawn, from 0 to 1: on the pavement, they grow from nothing over the first tile from where people
+ * arrive, and shrink away over the last tile to where they leave, rather than popping in and out of sight there.
+ */
+export function streetFade(x: number, y: number, ends: readonly number[]): number {
+  if (Math.floor(y) !== SIDEWALK_Y) return 1;
+  const d = Math.min(...ends.map((e) => Math.abs(x - (e + 0.5))));
+  return Math.min(1, d / FADE_TILES);
+}
 
 export class PeopleLayer {
   private chars = new Map<number, CharRig>();
@@ -29,6 +43,7 @@ export class PeopleLayer {
   /** Give everyone a figure, pose them for this frame and remove those who have left. */
   update(t: number, dt: number) {
     const live = new Set<number>();
+    const ends = streetEnds(this.sim.world.building);
     for (const c of [...this.sim.s.guests, ...this.sim.s.staff, ...this.sim.s.visitors] as Char[]) {
       live.add(c.id);
       let rig = this.chars.get(c.id);
@@ -49,10 +64,14 @@ export class PeopleLayer {
       }
       // someone away on a house call is not here to be seen, or clicked
       const away = c.kind === 'staff' && c.state === 'away';
-      rig.group.visible = !away;
-      rig.pick.visible = !away;
-      if (away && rig.smoke) rig.smoke.visible = false;
-      if (!away) poseChar(rig, c, t, dt, this.workStyle(c));
+      const size = streetFade(c.x, c.y, ends);
+      const shown = !away && size > 0.02;
+      rig.group.visible = shown;
+      rig.pick.visible = shown;
+      if (!shown && rig.smoke) rig.smoke.visible = false;
+      if (!shown) continue;
+      poseChar(rig, c, t, dt, this.workStyle(c));
+      rig.group.scale.setScalar(size);
     }
     for (const [id, rig] of this.chars) {
       if (live.has(id)) continue;

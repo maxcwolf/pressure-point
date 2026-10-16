@@ -164,6 +164,7 @@ Each phase ships on its own with everything green, in this order.
    - Screenshots should not change. That is the test of the refactor.
    - **Done.** `core/footprint.ts` holds the footprint, its runs of wall and their corners, and `World.indoors` the mask. The scene's screenshots did not change.
 2. **Arrivals from near the entrance.** `streetTile()` stops depending on the map's width, people fade in and out or walk off, and the seeded tests are re-checked once.
+   - **Done.** People arrive and leave `STREET_WALK` (14) tiles along the pavement either side of the door (`streetEnds()` in `core/sim/chars.ts`), and grow from nothing or shrink away over the last tile (`streetFade()` in `render/people.ts`). One seeded test moved: half price earned more than full price on its one seed, as seed 7 already did before, so it now adds up three seeds.
 3. **Map size per center.**
    - Old saves' strips become legacy-strip rectangles first, worked out on the old map (see [State and saves](#the-building-model-core)).
    - `W` and `H` become the center's, with `shiftSave` for any center whose origin moves.

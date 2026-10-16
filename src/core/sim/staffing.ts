@@ -76,7 +76,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
   const s = ctx.s;
   const c = s.candidates.find((x) => x.id === candidateId);
   if (!c) return null;
-  const [x, y] = streetTile();
+  const [x, y] = streetTile(ctx.world.building);
   const st: Staff = {
     ...newChar(ctx, c.name, c.look, x, y),
     kind: 'staff',
@@ -125,7 +125,7 @@ export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poach
   st.raiseAsked = false;
   st.offer = 0;
   say(st, how === 'fired' ? '📦' : '😠', 6);
-  const [x, y] = streetTile();
+  const [x, y] = streetTile(ctx.world.building);
   if (!goTo(ctx, st, x, y)) ctx.s.staff = ctx.s.staff.filter((q) => q !== st);
   if (how === 'fired') {
     toast(ctx, `${st.name} has been let go.`, 'info');

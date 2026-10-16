@@ -20,7 +20,16 @@ import { setSeed } from '../../src/core/random';
 import { stationPlace } from '../../src/core/sim/advisor';
 import { decorOf, drainFactor, prestige, updateAmbience } from '../../src/core/sim/ambience';
 import { createRoom, finishRoom, itemsInRoom, placeItem, usersOf } from '../../src/core/sim/building';
-import { charById, guestById, lobbyTile, say, staffById, streetTile } from '../../src/core/sim/chars';
+import {
+  charById,
+  guestById,
+  lobbyTile,
+  say,
+  staffById,
+  STREET_WALK,
+  streetEnds,
+  streetTile,
+} from '../../src/core/sim/chars';
 import { accessIndex, claim, findAccess, release } from '../../src/core/sim/claims';
 import { createContext, type SimContext } from '../../src/core/sim/context';
 import { borrow, changeRep, earn, repay, setPrice, spend } from '../../src/core/sim/economy';
@@ -262,12 +271,18 @@ describe('people', () => {
     expect(charById(ctx, 0)).toBeUndefined();
   });
 
-  it('brings people in at either end of the sidewalk and sends them to the lobby', () => {
+  it('brings people in a set walk along the sidewalk from the door, either way, and sends them to the lobby', () => {
+    const building = footprintOf(SANDBOX_PLOT);
+    const [d0, d1] = SANDBOX_PLOT.door;
+    expect(streetEnds(building)).toEqual([d0 - STREET_WALK, d1 + STREET_WALK]);
+    // the same walk wherever the door is, however wide the lot
+    const moved = footprintOf({ ...SANDBOX_PLOT, door: [d0 + 3, d1 + 3] });
+    expect(streetEnds(moved)).toEqual([d0 + 3 - STREET_WALK, d1 + 3 + STREET_WALK]);
     for (let i = 0; i < 20; i++) {
-      const [x, y] = streetTile();
-      expect([0, W - 1]).toContain(x);
+      const [x, y] = streetTile(building);
+      expect(streetEnds(building)).toContain(x);
       expect(y).toBe(SIDEWALK_Y);
-      expect(SANDBOX_PLOT.door).toContain(lobbyTile(footprintOf(SANDBOX_PLOT))[0]);
+      expect(SANDBOX_PLOT.door).toContain(lobbyTile(building)[0]);
     }
   });
 

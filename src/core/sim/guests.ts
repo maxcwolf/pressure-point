@@ -98,7 +98,7 @@ export function spawnGuest(
   regular?: Regular,
 ): Guest | null {
   const s = ctx.s;
-  const [x, y] = streetTile();
+  const [x, y] = streetTile(ctx.world.building);
   const sex = regular ? regular.look.sex : rollSex(WOMEN_VISIT);
   const name = regular ? regular.name : randomName(sex);
   const look = regular ? { ...regular.look } : randomLook(sex);
@@ -517,6 +517,6 @@ export function leave(ctx: SimContext, g: Guest) {
   removeFromStations(ctx, g);
   g.goal = 'leave';
   g.state = 'leaving';
-  const [x, y] = streetTile();
+  const [x, y] = streetTile(ctx.world.building);
   if (!goTo(ctx, g, x, y)) ctx.s.guests = ctx.s.guests.filter((q) => q !== g);
 }
