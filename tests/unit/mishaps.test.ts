@@ -9,6 +9,8 @@ import {
   type MishapId,
   MISHAPS,
   mishapStopsType,
+  MODALITIES,
+  STONE_USE,
 } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import { createContext } from '../../src/core/sim/context';
@@ -25,6 +27,7 @@ import { arrivalFactor } from '../../src/core/sim/twists';
 import { newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
+import { deliveryNote } from '../../src/ui/lib/delivery';
 import { openCenter, runUntil, toasts } from './helpers';
 
 /** An open center with mishaps switched on, and a context on it. */
@@ -186,6 +189,45 @@ describe('the run of a mishap', () => {
     prepared.s.mishap = { ...dueToday(prepared.s.day, 'storm'), prepared: true };
     updateMishaps(prepared.ctx);
     expect(prepared.s.items.filter((it) => it.wear >= 100)).toEqual([]);
+  });
+});
+
+describe('treatments in a power cut', () => {
+  it('cannot use a Stone Warmer the power cut has stopped, unless a generator is hired', () => {
+    const { sim, s, therapist } = withMishaps();
+    therapist.quals = ['swedish', 'stone'];
+    const table = s.items.find((i) => i.type === 'massage_table')!;
+    const warmer = sim.placeItem('stone_warmer', 14, 6, 0)!;
+    expect(sim.deliveryProblem(table, therapist, MODALITIES.stone)).toBe('');
+    s.mishap = { ...newMishap(s.day, 'power'), started: true };
+    expect(sim.deliveryProblem(table, therapist, MODALITIES.stone)).toBe('out-of-action');
+    expect(deliveryNote('out-of-action', MODALITIES.stone, therapist.name)).toBe('Stone Warmer is out of action');
+    s.mishap.prepared = true;
+    expect(sim.deliveryProblem(table, therapist, MODALITIES.stone), 'a generator hired').toBe('');
+    s.mishap = null;
+    warmer.wear = 100;
+    expect(sim.deliveryProblem(table, therapist, MODALITIES.stone), 'broken').toBe('out-of-action');
+  });
+
+  it('does not draw heat from a stopped Stone Warmer, and the treatment goes badly', () => {
+    const { sim, s, therapist } = withMishaps();
+    s.stars = 2;
+    therapist.quals = ['swedish', 'stone'];
+    const warmer = sim.placeItem('stone_warmer', 14, 6, 0)!;
+    s.mishap = { ...newMishap(s.day, 'power'), started: true, ends: s.day + 99 };
+    const heat = warmer.water;
+    const failed = s.stats.failed;
+    runUntil(
+      sim,
+      () => {
+        for (const g of s.guests) if (g.diagnosis === 0) g.condition = 'steam';
+        return s.stats.failed > failed;
+      },
+      900,
+    );
+    // it cools as it would anyway, but no stones were taken from it
+    expect(heat - warmer.water).toBeLessThan(STONE_USE);
+    expect(toasts(sim.drain()).join(' ')).toContain('Stone Warmer was out of action');
   });
 });
 

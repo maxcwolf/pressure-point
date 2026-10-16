@@ -23,6 +23,8 @@ export function deliveryNote(problem: DeliveryProblem, def: ModalityDef, staffNa
       return `${staffName?.split(' ')[0] ?? 'Nobody'} is not qualified`;
     case 'no-equipment':
       return `needs a ${def.equipment ? ITEMS[def.equipment].name : ''}`;
+    case 'out-of-action':
+      return `${def.equipment ? ITEMS[def.equipment].name : 'equipment'} is out of action`;
     case 'cold':
       return 'stones are cold';
   }

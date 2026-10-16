@@ -173,7 +173,12 @@ function movedSoundBath(s: OldSave) {
     if (st.role !== 'practitioner') continue;
     st.quals = (st.quals ?? []).filter((q) => q !== 'sound');
   }
-  for (const st of s.staff) if (st.role === 'practitioner' && st.training?.course === 'sound') st.training = null;
+  for (const st of s.staff) {
+    if (st.role !== 'practitioner' || st.training?.course !== 'sound') continue;
+    // the course is called off, so its fee comes back, as it does for any course cut short
+    s.money += st.training.cost;
+    st.training = null;
+  }
   /** The type of room a tile is in, if any. */
   const roomAt = (x: number, y: number) => s.rooms.find((r) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
   const stray = s.items.filter((it) => it.type === 'singing_bowls' && roomAt(it.x, it.y)?.type !== 'sound');

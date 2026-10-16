@@ -18,7 +18,7 @@ import { toast } from './events';
 import { hasRoom } from './progress';
 
 /** Why a table cannot deliver a modality properly right now ('' when it can). */
-export type DeliveryProblem = '' | 'unqualified' | 'no-equipment' | 'cold';
+export type DeliveryProblem = '' | 'unqualified' | 'no-equipment' | 'out-of-action' | 'cold';
 
 /** Switched on for this game. */
 export function enabled(ctx: SimContext, d: Discipline) {
@@ -66,7 +66,10 @@ export function equipmentProblem(ctx: SimContext, table: Item, def: ModalityDef)
   const zone = ctx.world.zoneAt(table.x, table.y);
   const kit = ctx.s.items.filter((i) => i.type === def.equipment && ctx.world.zoneAt(i.x, i.y) === zone);
   if (!kit.length) return 'no-equipment';
-  if (def.equipment === 'stone_warmer' && kit.every((i) => i.water < STONE_USE)) return 'cold';
+  // there, but broken or stopped by a power cut
+  const working = kit.filter((i) => ctx.world.usable(i));
+  if (!working.length) return 'out-of-action';
+  if (def.equipment === 'stone_warmer' && working.every((i) => i.water < STONE_USE)) return 'cold';
   return '';
 }
 

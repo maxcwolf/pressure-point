@@ -13,6 +13,7 @@ import {
   DISCIPLINE_ORDER,
   DISCIPLINES,
   type GoalSpec,
+  type RoomType,
 } from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
@@ -52,10 +53,13 @@ export function challengeGoals(ctx: SimContext, days: number): GoalSpec[] {
     goals.push({ kind: 'healed', count: Math.max(4, Math.round(pace * days * 0.4)), discipline: pick(optional) });
   const rate = Math.max(0, ...[s.tally, s.months.at(-1)].map((t) => (t ? (cureRate(t) ?? 0) : 0)));
   if (rate < 90) goals.push({ kind: 'cureRate', percent: Math.min(90, Math.max(65, roundTo(rate + 5, 5))) });
-  const rooms = s.rooms.filter((r) => r.done && prestige(ctx, r) < 5);
-  if (rooms.length) {
-    const room = pick(rooms);
-    goals.push({ kind: 'prestige', room: room.type, level: prestige(ctx, room) + 1 });
+  // a step above the best room of its kind, since any one of them reaching the level meets the goal
+  const best = new Map<RoomType, number>();
+  for (const r of s.rooms) if (r.done) best.set(r.type, Math.max(best.get(r.type) ?? 0, prestige(ctx, r)));
+  const types = [...best].filter(([, level]) => level < 5);
+  if (types.length) {
+    const [room, level] = pick(types);
+    goals.push({ kind: 'prestige', room, level: level + 1 });
   }
   goals.push({ kind: 'noQuits', days: Math.round(days * 0.75) });
   if (s.stars >= 1) goals.push({ kind: 'emergencies', count: 1 });

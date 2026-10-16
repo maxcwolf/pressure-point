@@ -84,3 +84,32 @@ describe('a toilet in play', () => {
     runUntil(sim, () => loo.dirt === 0, 120);
   });
 });
+
+describe('litter something is put down on', () => {
+  const SPOTS = [
+    [22, 3],
+    [24, 3],
+    [26, 3],
+    [22, 6],
+  ] as const;
+
+  it('is swept up with the change, so a Caretaker is never left trying to reach it', () => {
+    const { sim, s } = openCenter(1);
+    for (const [x, y] of SPOTS) s.litter.push({ id: s.nextId++, x, y, claimedBy: 0 });
+    for (const [x, y] of SPOTS) expect(sim.placeItem('plant', x, y, 0), `plant at ${x},${y}`).toBeTruthy();
+    expect(s.litter).toEqual([]);
+    // and the Caretaker gets on with everything else
+    const dry = sim.placeItem('plant', 20, 12, 0)!;
+    dry.water = 10;
+    hire(sim, 'caretaker');
+    runUntil(sim, () => dry.water > 50, 300);
+  });
+
+  it('is swept up when furniture is moved onto it, and litter left in the open is not', () => {
+    const { sim, s } = openCenter(1);
+    const plant = sim.placeItem('plant', 22, 3, 0)!;
+    s.litter.push({ id: s.nextId++, x: 24, y: 3, claimedBy: 0 }, { id: s.nextId++, x: 26, y: 3, claimedBy: 0 });
+    expect(sim.moveItem(plant.id, 24, 3, 0)).toBe(true);
+    expect(s.litter.map((l) => [l.x, l.y])).toEqual([[26, 3]]);
+  });
+});

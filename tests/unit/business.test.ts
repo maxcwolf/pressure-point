@@ -6,10 +6,11 @@ import { callFee, canGo, makeCall, updateCalls } from '../../src/core/sim/calls'
 import { createContext } from '../../src/core/sim/context';
 import { netOf } from '../../src/core/sim/economy';
 import { campaignBoost, running, updateCampaigns } from '../../src/core/sim/marketing';
+import { repathAll } from '../../src/core/sim/movement';
 import { shopSpend } from '../../src/core/sim/stations';
 import { emptyLedger } from '../../src/core/state/game';
 import type { HouseCall } from '../../src/core/state/types';
-import { addAcupuncture, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
+import { addAcupuncture, addTraining, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
 
 describe('prices per treatment', () => {
   it('sit on top of the overall level, each in its own range', () => {
@@ -205,6 +206,43 @@ describe('a house call', () => {
     expect(s.ledger.calls).toBe(fee);
     expect(s.money).toBeGreaterThanOrEqual(money + fee - 1);
     runUntil(sim, () => therapist.state === 'atPost', 120);
+  });
+
+  it('cannot be cut short by sending someone who is away on one on a course, so the fee still comes', () => {
+    const { sim, s, therapist } = openCenter(1);
+    addTraining(sim);
+    runUntil(sim, () => therapist.state === 'atPost', 120);
+    s.callOffer = call(s.day, { days: 1 });
+    const fee = sim.callFee(therapist);
+    expect(sim.acceptCall(therapist.id)).toBe(true);
+    const course = sim.courses(therapist)[0]!;
+    expect(sim.trainBlocker(therapist, course), 'not while on the way out').toMatch(/house call/);
+    runUntil(sim, () => therapist.state === 'away', 60);
+    expect(sim.trainBlocker(therapist, course), 'nor while away').toMatch(/house call/);
+    expect(sim.train(therapist.id, course.id)).toBe(false);
+    expect(therapist.training).toBeNull();
+    runUntil(sim, () => therapist.state !== 'away', 60);
+    expect(therapist.call).toBeNull();
+    expect(s.ledger.calls).toBe(fee);
+  });
+
+  it('still goes ahead if the way out is lost on the way to the door', () => {
+    const { sim, s, therapist } = openCenter(1);
+    runUntil(sim, () => therapist.state === 'atPost', 120);
+    s.callOffer = call(s.day, { days: 1 });
+    const fee = sim.callFee(therapist);
+    expect(sim.acceptCall(therapist.id)).toBe(true);
+    // the layout changes under them and, for a moment, there is no way to the street
+    const ctx = createContext(s);
+    /** No way anywhere. */
+    ctx.world.findPath = () => null;
+    repathAll(ctx);
+    expect(therapist.state).toBe('away');
+    expect(therapist.call?.back).toBeCloseTo(s.day + 1, 5);
+    runUntil(sim, () => therapist.state !== 'away', 60);
+    expect(therapist.call).toBeNull();
+    expect(s.ledger.calls).toBe(fee);
+    expect(inconsistencies(sim)).toEqual([]);
   });
 
   it('cannot be accepted for someone who cannot go', () => {

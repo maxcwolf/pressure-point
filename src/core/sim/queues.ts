@@ -63,8 +63,8 @@ export function moveToStation(ctx: SimContext, guestId: number, stationId: numbe
 export function sendHome(ctx: SimContext, guestId: number): boolean {
   const g = guestById(ctx, guestId);
   if (!g || g.state === 'leaving') return false;
-  // their visit is over and counted already: they only came to the shop
-  if (g.goal === 'shop') {
+  // their visit is over and counted already: they are only shopping, or resting after a treatment
+  if (g.outcome || g.goal === 'shop') {
     leave(ctx, g);
     return true;
   }

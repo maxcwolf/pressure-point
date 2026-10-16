@@ -38,7 +38,7 @@ import type { SimContext } from './context';
 import { changeRep, earn, priceFor } from './economy';
 import { emit, tipOnce } from './events';
 import { feel, reviewStars } from './feelings';
-import { decide, leave } from './guests';
+import { decide, leave, resetGuest } from './guests';
 import { linensPenalty, useLinens } from './linens';
 import { goTo } from './movement';
 import { sellMushrooms } from './mushrooms';
@@ -187,6 +187,13 @@ export function updateStations(ctx: SimContext, dt: number) {
       it.serving = 0;
       g = undefined;
     }
+    // a mat or spot that breaks has nobody posted at it to step away and send its guest back to the line, so it does
+    if (def.group && g && !ctx.world.usable(it)) {
+      resetGuest(ctx, g);
+      it.serving = 0;
+      it.progress = 0;
+      g = undefined;
+    }
     if (it.queue.some((id) => guestById(ctx, id)?.station !== it.id))
       it.queue = it.queue.filter((id) => guestById(ctx, id)?.station === it.id);
     // tired staff finish with their current guest, then stop calling new ones so they can get away
@@ -329,7 +336,13 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     if (!problem && mod.equipment === 'stone_warmer') {
       const zone = ctx.world.zoneAt(it.x, it.y);
       const warmer = ctx.s.items
-        .filter((i) => i.type === 'stone_warmer' && ctx.world.zoneAt(i.x, i.y) === zone && i.water >= STONE_USE)
+        .filter(
+          (i) =>
+            i.type === 'stone_warmer' &&
+            ctx.world.zoneAt(i.x, i.y) === zone &&
+            i.water >= STONE_USE &&
+            ctx.world.usable(i),
+        )
         .sort((a, b) => b.water - a.water)[0];
       if (warmer) warmer.water -= STONE_USE;
     }
@@ -363,6 +376,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
         '': 'Still knotted!',
         unqualified: 'Not qualified!',
         'no-equipment': 'No equipment!',
+        'out-of-action': 'Equipment down!',
         cold: 'Cold stones!',
       }[problem];
       if (!isTrip(mod)) emit(ctx, { type: 'float', text: why, x: g.x, y: g.y, kind: 'bad' });
@@ -380,6 +394,13 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
           ctx,
           `botch-equipment-${mod.id}`,
           `${modalityLabel(mod.id)} needs a ${mod.equipment ? ITEMS[mod.equipment].name : 'piece of equipment'} in the same ${ROOMS[DISCIPLINES[mod.discipline].room].name} as the table.`,
+          'bad',
+        );
+      else if (problem === 'out-of-action')
+        tipOnce(
+          ctx,
+          `botch-down-${mod.id}`,
+          `The ${mod.equipment ? ITEMS[mod.equipment].name : 'equipment'} was out of action, so ${modalityLabel(mod.id)} went badly. A Caretaker repairs what is broken, and a generator keeps it going through a power cut.`,
           'bad',
         );
       else if (problem === 'cold')

@@ -39,6 +39,8 @@ export function courses(ctx: SimContext, st: Staff): Course[] {
 /** Why training cannot start ('' when it can). */
 export function trainBlocker(ctx: SimContext, st: Staff, course: Course): string {
   if (st.state === 'leaving') return 'They are leaving.';
+  // sending them off would leave the call never finished, and never paid for
+  if (st.state === 'toCall' || st.state === 'away') return 'They are out on a house call.';
   if (st.training) return 'Already on a course.';
   if (!slotFree(st)) return 'Every qualification slot is full. A promotion brings another.';
   if (!hasRoom(ctx, 'training')) return 'Build a Training Room first.';
@@ -72,6 +74,30 @@ export function train(ctx: SimContext, staffId: number, courseId: string): boole
   emit(ctx, { type: 'sfx', name: 'place' });
   toast(ctx, `${st.name} is off to study ${course.name}.`, 'info', { kind: 'staff', id: st.id });
   return true;
+}
+
+/**
+ * Send someone part-way through a course back to a Study Desk to carry on where they left off, as when the room or
+ * the desk they were at is moved. If no desk can be reached the course is dropped and its fee comes back.
+ */
+export function backToStudy(ctx: SimContext, st: Staff) {
+  const t = st.training;
+  // drop what they were doing without giving the fee back: the course is not over
+  st.training = null;
+  staffIdle(ctx, st);
+  st.training = t;
+  if (!t) return;
+  const desk = findAccess(ctx, 'study', st.tx, st.ty);
+  if (desk) {
+    claim(ctx, st, desk.item, desk.idx);
+    const [x, y] = accessTile(desk.item, desk.idx);
+    if (goTo(ctx, st, x, y, accessPose(desk.item, desk.idx))) {
+      st.state = 'toTrain';
+      return;
+    }
+    release(ctx, st);
+  }
+  staffIdle(ctx, st);
 }
 
 /** Finish a course: a new qualification, or (on a course begun before ranks) a rank up. */

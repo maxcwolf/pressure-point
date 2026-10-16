@@ -1,7 +1,7 @@
 // Resizing a built room: its walls move, its door and windows go with them, and the change is paid for.
 import { describe, expect, it } from 'vitest';
 
-import { ROOM_TILE_COST, WINDOW_COST } from '../../src/core/data';
+import { ROOM_TILE_COST, ROOMS, WINDOW_COST } from '../../src/core/data';
 import { carryWallSpot, resizeCost, tilesChanged } from '../../src/core/resize';
 import { addMassage, addStaffRoom, buildRoom, freshSim, inconsistencies, run } from './helpers';
 
@@ -27,7 +27,10 @@ describe('moving a wall', () => {
     const room = { x: 11, y: 5, w: 4, h: 4 };
     expect(tilesChanged(room, { x: 11, y: 5, w: 4, h: 5 })).toEqual({ added: 4, removed: 0 });
     expect(resizeCost(room, { x: 11, y: 5, w: 4, h: 5 })).toBe(4 * ROOM_TILE_COST);
-    expect(resizeCost(room, { x: 11, y: 5, w: 4, h: 3 })).toBe(-4 * (ROOM_TILE_COST / 2));
+    // only floor that was bought comes back
+    expect(resizeCost({ ...room, bought: 4 }, { x: 11, y: 5, w: 4, h: 3 })).toBe(-4 * (ROOM_TILE_COST / 2));
+    expect(resizeCost({ ...room, bought: 2 }, { x: 11, y: 5, w: 4, h: 3 })).toBe(-2 * (ROOM_TILE_COST / 2));
+    expect(resizeCost(room, { x: 11, y: 5, w: 4, h: 3 }), 'built that size, so none was bought').toBe(0);
     // a wall out on one side and in on another
     expect(tilesChanged(room, { x: 11, y: 6, w: 4, h: 4 })).toEqual({ added: 4, removed: 4 });
   });
@@ -102,7 +105,38 @@ describe('resizing a room', () => {
       { x: 19, y: 5, dx: 0, dy: -1 },
       { x: 20, y: 6, dx: 1, dy: 0 },
     ]);
-    expect(sim.s.money).toBe(money + 3 * (ROOM_TILE_COST / 2) + WINDOW_COST / 2);
+    // the floor given up came with the room, so only the window is refunded
+    expect(sim.s.money).toBe(money + WINDOW_COST / 2);
+  });
+
+  it('gives nothing back for floor a room was built with, so building big and shrinking pays nothing', () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    const start = sim.s.money;
+    const big = { x: 3, y: 3, w: 20, h: 13 };
+    const room = buildRoom(sim, 'staffroom', big, { x: 4, y: 15, dx: 0, dy: 1 }, [['sofa', 3, 3]]);
+    expect(sim.s.money).toBe(start - ROOMS.staffroom.cost);
+    expect(sim.resizeRoom(room.id, { ...big, w: 3 })).toBe(true);
+    expect(sim.s.money, 'no refund for floor that came free').toBe(start - ROOMS.staffroom.cost);
+    sim.removeRoom(room.id, 0.5);
+    expect(sim.s.money).toBeLessThanOrEqual(start);
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('refunds half of floor bought by resizing, whether it is given up by resizing or demolishing', () => {
+    const { sim, suite } = withSuite();
+    const money = sim.s.money;
+    expect(sim.resizeRoom(suite.id, { x: 11, y: 5, w: 4, h: 6 })).toBe(true);
+    expect(suite.bought).toBe(8);
+    // a wall moved across: the four tiles taken away were bought, the four added are bought now
+    expect(sim.resizeRoom(suite.id, { x: 11, y: 4, w: 4, h: 6 })).toBe(true);
+    expect(suite.bought).toBe(8);
+    expect(sim.s.money).toBe(money - 8 * ROOM_TILE_COST - 4 * ROOM_TILE_COST + 4 * (ROOM_TILE_COST / 2));
+    const before = sim.s.money;
+    const refund = sim.roomRefund(suite, 0.5);
+    expect(refund).toBe(ROOMS.massage.cost * 0.5 + 8 * ROOM_TILE_COST * 0.5);
+    sim.removeRoom(suite.id, 0.5);
+    expect(sim.s.money).toBe(before + refund);
   });
 
   it('is refused when the new floor cannot be paid for', () => {

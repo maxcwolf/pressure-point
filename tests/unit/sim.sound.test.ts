@@ -192,6 +192,49 @@ describe('the noise of a gong', () => {
   });
 });
 
+describe('selling a Sound Mat', () => {
+  it('is not allowed while the studio has only the two it requires, and is once it has a third', () => {
+    const { sim, s, studio, mats } = withStudio(1);
+    const money = s.money;
+    for (const m of mats) expect(sim.canSell(m)).toBe(false);
+    sim.sellItem(mats[0]!.id);
+    expect(s.items).toContain(mats[0]);
+    expect(s.money).toBe(money);
+    expect(sim.missingItems(studio)).toEqual([]);
+    // room for a third mat
+    expect(sim.resizeRoom(studio.id, { x: 9, y: 10, w: 5, h: 4 })).toBe(true);
+    const third = sim.placeItem('sound_mat', 9, 11, 0)!;
+    expect(third).toBeTruthy();
+    expect(sim.canSell(third)).toBe(true);
+    sim.sellItem(third.id);
+    expect(sim.missingItems(studio)).toEqual([]);
+    expect(sim.canSell(mats[0]!)).toBe(false);
+  });
+});
+
+describe('a broken Sound Mat', () => {
+  it('sends whoever is lying on it back to the line, rather than leave them there for good', () => {
+    const { sim, s, mats } = withStudio(1);
+    let on: Item | undefined;
+    for (let i = 0; i < 600 && !on; i++) {
+      playWith(sim, 'tune', 1);
+      on = mats.find((m) => sim.guest(m.serving)?.state === 'served');
+    }
+    expect(on, 'someone lay down on a mat').toBeTruthy();
+    const g = sim.guest(on!.serving)!;
+    // no Caretaker to mend it
+    expect(s.staff.some((st) => st.role === 'caretaker')).toBe(false);
+    on!.wear = 100;
+    run(sim, 1);
+    expect(on!.serving).toBe(0);
+    expect(g.state).not.toBe('served');
+    expect(g.station).not.toBe(on!.id);
+    expect(inconsistencies(sim)).toEqual([]);
+    // and in time their visit ends one way or another
+    runUntil(sim, () => !s.guests.includes(g) || g.state === 'leaving', 900);
+  });
+});
+
 describe('a save from before sound healing', () => {
   it('sells back Singing Bowls left in a Reiki Studio, and practitioners forget the sound bath', () => {
     const { sim, s } = openCenter(7);
@@ -207,6 +250,20 @@ describe('a save from before sound healing', () => {
     expect(old.items.some((i) => i.type === 'singing_bowls')).toBe(false);
     expect(old.money).toBe(money + SOLD_BOWLS);
     expect(old.staff.find((st) => st.id === practitioner.id)!.quals).toEqual(['usui']);
+  });
+
+  it('gives back the fee for a sound bath course a practitioner was part-way through', () => {
+    const { sim, s } = openCenter(7);
+    s.stars = 3;
+    addReiki(sim);
+    const practitioner = hire(sim, 'practitioner');
+    const old = JSON.parse(JSON.stringify(s)) as GameState;
+    const student = old.staff.find((st) => st.id === practitioner.id)!;
+    student.training = { course: 'sound', progress: 0.4, seconds: 600, cost: 750 };
+    const money = old.money;
+    upgradeSave(old);
+    expect(student.training).toBeNull();
+    expect(old.money).toBe(money + 750);
   });
 });
 

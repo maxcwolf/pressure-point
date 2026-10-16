@@ -212,6 +212,29 @@ describe('starting over', () => {
     expect(readSave(PREVIOUS_ID)!.money).toBe(222);
   });
 
+  it('sets aside an autosave it cannot open, rather than let the new game write over it', () => {
+    const later = JSON.stringify({ ...newGame(), version: SAVE_VERSION + 1 });
+    store.set('pressure-point-save-v1', later);
+    expect(readSave(AUTOSAVE_ID), 'from a later version').toBeNull();
+    expect(archiveAutosave(3000)).toBe(true);
+    autosave(newGame(), 4000);
+    expect(readSave(AUTOSAVE_ID)).not.toBeNull();
+    const kept = [...store].filter(([k, v]) => v === later && k !== 'pressure-point-save-v1');
+    expect(kept, 'the unreadable game is still there, under a key of its own').toHaveLength(1);
+    // and a second one is kept beside the first, not over it
+    store.set('pressure-point-save-v1', `${later} `);
+    expect(archiveAutosave(5000)).toBe(true);
+    expect([...store].filter(([, v]) => v.startsWith(later))).toHaveLength(2);
+  });
+
+  it('will not start a new game over an unreadable autosave it has no room to set aside', () => {
+    const later = JSON.stringify({ ...newGame(), version: SAVE_VERSION + 1 });
+    store.set('pressure-point-save-v1', later);
+    quota = later.length + 10;
+    expect(archiveAutosave(3000)).toBe(false);
+    expect(store.get('pressure-point-save-v1')).toBe(later);
+  });
+
   it('does not count the autosave or the previous game against the limit', () => {
     const s = newGame();
     autosave(s);

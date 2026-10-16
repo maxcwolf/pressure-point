@@ -17,7 +17,7 @@ import type { PlanSub } from './types';
 
 export const WINDOW_HINT = `🪟 Windows · ${money(WINDOW_COST)} each · click a wall to add one, or a window to remove it · Esc when done`;
 export const MOVE_DOOR_HINT = '🚪 Click a wall to move the door there · Esc cancels';
-export const RESIZE_HINT = `↔️ Drag a wall in or out · ${money(ROOM_TILE_COST)} a tile added, half back for a tile taken away · Esc when done`;
+export const RESIZE_HINT = `↔️ Drag a wall in or out · ${money(ROOM_TILE_COST)} a tile added, half back for added floor taken away · Esc when done`;
 
 /** The hint while a wall is being dragged: the room's size now and as dragged, and what that costs or gives back. */
 export function resizeHint(from: Rect, to: Rect, cost: number): string {

@@ -25,7 +25,7 @@ import { lobbyTile, say, staffById, streetTile } from './chars';
 import type { SimContext } from './context';
 import { earn, priceFor } from './economy';
 import { emit, tipOnce, toast } from './events';
-import { goTo } from './movement';
+import { goTo, halt } from './movement';
 import { staffIdle } from './staffing';
 import { offered, unlocked } from './treatments';
 
@@ -110,6 +110,13 @@ export function acceptCall(ctx: SimContext, staffId: number): boolean {
 /** Turn the house call on offer down. */
 export function declineCall(ctx: SimContext) {
   ctx.s.callOffer = null;
+}
+
+/** Someone on their way to a house call is out of the door: the days away count from now. */
+export function leaveForCall(ctx: SimContext, st: Staff) {
+  halt(st);
+  st.state = 'away';
+  if (st.call) st.call.back = ctx.s.day + st.call.days;
 }
 
 /** Bring someone back from a house call: in from the street, a little tired, paid, and the wiser for it. */

@@ -22,6 +22,8 @@ const FILE_FORMAT = 'pressure-point-save';
 // the autosave keeps the key of the original single save, so games from before save slots carry over
 const AUTOSAVE_KEY = 'pressure-point-save-v1';
 const INDEX_KEY = 'pressure-point-saves';
+/** Where an autosave that will not open is set aside when a new game starts, followed by when, for a later version. */
+const UNREADABLE_KEY = 'pressure-point-save-unreadable';
 
 /** Whether a storage key is the autosave's, as another tab or window writing it reports. */
 export function isAutosaveKey(key: string | null): boolean {
@@ -263,9 +265,30 @@ export function deleteSave(id: string) {
  */
 export function archiveAutosave(now = Date.now()): boolean {
   const old = readSave(AUTOSAVE_ID);
-  if (!old) return true;
+  if (!old) return keepUnreadable(now);
   if (typeof writeSave(old, `Previous game (${gameDate(old.day)})`, PREVIOUS_ID, now) === 'string') return false;
   copyThumb(AUTOSAVE_ID, PREVIOUS_ID);
+  deleteSave(AUTOSAVE_ID);
+  return true;
+}
+
+/**
+ * Set aside an autosave that is there but will not open, such as one from a later version, so the new game's first
+ * autosave does not write over it and a later version can still open it. False if there is no room to keep it.
+ */
+function keepUnreadable(now: number): boolean {
+  let raw: string | null;
+  try {
+    raw = localStorage.getItem(AUTOSAVE_KEY);
+  } catch {
+    return true;
+  }
+  if (!raw) return true;
+  try {
+    localStorage.setItem(`${UNREADABLE_KEY}:${now}`, raw);
+  } catch {
+    return false;
+  }
   deleteSave(AUTOSAVE_ID);
   return true;
 }

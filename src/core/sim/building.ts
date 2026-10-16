@@ -1,8 +1,8 @@
 // Building: placing, moving and selling items, and creating, changing and removing rooms.
 
-import { ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from '../data';
+import { ITEMS, type ItemType, ROOM_TILE_COST, ROOMS, type RoomType, WINDOW_COST } from '../data';
 import { money } from '../format';
-import { carryWallSpot, carryWindows, resizeCost } from '../resize';
+import { carryWallSpot, carryWindows, resizeCost, resizeTiles } from '../resize';
 import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { sameSpot } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
@@ -17,6 +17,7 @@ import { emit, toast } from './events';
 import { resetGuest } from './guests';
 import { repathAll } from './movement';
 import { staffIdle } from './staffing';
+import { backToStudy } from './training';
 import { upgradeSpent } from './upgrades';
 
 /** How an item is being placed: without charge, or as furniture for a particular room. */
@@ -28,7 +29,14 @@ export interface PlaceOptions {
 /** Rebuild the grids and reroute everyone after the layout changes. */
 function worldChanged(ctx: SimContext) {
   ctx.world.rebuild();
+  sweepCovered(ctx);
   repathAll(ctx);
+}
+
+/** Litter that something now stands on could never be reached to be cleared, so it goes with the change. */
+function sweepCovered(ctx: SimContext) {
+  if (ctx.s.litter.some((l) => !ctx.world.walkable(l.x, l.y)))
+    ctx.s.litter = ctx.s.litter.filter((l) => ctx.world.walkable(l.x, l.y));
 }
 
 /** A brand-new item, not yet in the game. */
@@ -148,6 +156,7 @@ export function moveItem(ctx: SimContext, id: number, x: number, y: number, rot:
   it.y = y;
   it.rot = rot;
   ctx.world.rebuild();
+  sweepCovered(ctx);
   resetUsers(ctx, users);
   emit(ctx, { type: 'sfx', name: 'place' });
   return true;
@@ -171,7 +180,10 @@ function resetUsers(ctx: SimContext, { guests, staff }: { guests: Guest[]; staff
   }
   for (const st of staff) {
     release(ctx, st);
-    if (st.state !== 'leaving') staffIdle(ctx, st);
+    // someone on a course carries on with it at a desk, if one can still be reached
+    if (st.state === 'leaving') continue;
+    if (st.training) backToStudy(ctx, st);
+    else staffIdle(ctx, st);
   }
   for (const it of ctx.s.items) {
     it.users = it.users.map((u) => (charById(ctx, u) ? u : 0));
@@ -202,6 +214,8 @@ export function roomRefund(ctx: SimContext, room: Room, refund: number) {
     if (at >= 0) free.splice(at, 1);
     else back += ITEMS[it.type].cost * refund;
   }
+  // floor bought by resizing it was paid for too
+  back += (room.bought ?? 0) * ROOM_TILE_COST * refund;
   return back + room.windows.length * WINDOW_COST * refund;
 }
 
@@ -294,7 +308,8 @@ export function resizeRoom(ctx: SimContext, roomId: number, r: Rect): boolean {
   }
   const windows = room.windows.length;
   const carried = carryWindows(room, r);
-  Object.assign(room, { x: r.x, y: r.y, w: r.w, h: r.h, door, windows: [] });
+  const { bought } = resizeTiles(room, r);
+  Object.assign(room, { x: r.x, y: r.y, w: r.w, h: r.h, door, windows: [], bought });
   ctx.world.rebuild(true);
   // only now can a window be judged against the room's new walls and its new neighbors
   for (const w of carried) if (ctx.world.windowValid(room, w).ok) room.windows.push(w);
@@ -400,13 +415,14 @@ export function buildLayout(
   return room;
 }
 
-/** Whether an item can be sold. A room has to keep one of each thing it requires. */
+/** Whether an item can be sold. A room has to keep as many of each thing as it requires. */
 export function canSell(ctx: SimContext, it: Item): boolean {
   const room = ctx.world.roomOfItem(it);
   if (!room) return true;
-  const def = ROOMS[room.type];
-  if (!def.required.includes(it.type)) return true;
-  return itemsInRoom(ctx, room).filter((o) => o.type === it.type).length > 1;
+  // a room that requires two of something, as a Sound Bath Studio does its mats, has to keep both
+  const needs = ROOMS[room.type].required.filter((t) => t === it.type).length;
+  if (!needs) return true;
+  return itemsInRoom(ctx, room).filter((o) => o.type === it.type).length > needs;
 }
 
 /** What selling an item gives back: half of what it cost, its upgrades included. */

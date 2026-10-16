@@ -38,10 +38,24 @@ export function tilesChanged(room: Rect, to: Rect): { added: number; removed: nu
   return { added, removed };
 }
 
-/** What a resize costs: the tiles added at full price, less half back for the tiles taken away. Negative is a refund. */
-export function resizeCost(room: Rect, to: Rect): number {
+/**
+ * The floor a resize pays for and gives back. A room costs the same at any size it is first built, so only floor
+ * bought since, by earlier resizes (`bought`) or by this one, comes back when it is taken away: otherwise building
+ * a room big and shrinking it would pay out for floor that was never paid for.
+ */
+export function resizeTiles(room: Rect & { bought?: number }, to: Rect) {
   const { added, removed } = tilesChanged(room, to);
-  return added * ROOM_TILE_COST - removed * (ROOM_TILE_COST / 2);
+  const refunded = Math.min(removed, (room.bought ?? 0) + added);
+  return { added, refunded, bought: (room.bought ?? 0) + added - refunded };
+}
+
+/**
+ * What a resize costs: the tiles added at full price, less half back for bought tiles taken away. Negative is a
+ * refund.
+ */
+export function resizeCost(room: Rect & { bought?: number }, to: Rect): number {
+  const { added, refunded } = resizeTiles(room, to);
+  return added * ROOM_TILE_COST - refunded * (ROOM_TILE_COST / 2);
 }
 
 /** The room's windows after a resize: carried along with their walls, less any whose stretch of wall is gone. */

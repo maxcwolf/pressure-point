@@ -2,6 +2,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { AWARD_ORDER, AWARDS, CHALLENGE_MORALE, DAYS_PER_MONTH } from '../../src/core/data';
+import { setSeed } from '../../src/core/random';
+import { placeLayout } from '../../src/core/room-layout';
+import { prestige } from '../../src/core/sim/ambience';
 import { holdAwards, judge, YEAR_MONTHS, yearTotals } from '../../src/core/sim/awards';
 import {
   challengeGoals,
@@ -29,6 +32,30 @@ function challenge(s: ReturnType<typeof withChallenges>['s'], goal: Challenge['g
   const st = s.staff[0]!;
   return { staffId: st.id, staffName: st.name, goal, from, set: s.day, deadline: s.day + 60, reward: 2000 };
 }
+
+describe('a prestige challenge', () => {
+  it('asks for more than the best room of its kind already has, so it is never met as soon as it is set', () => {
+    const { sim, s, massage } = withChallenges();
+    // a second Massage Suite, brighter than the first
+    const bright = sim.copyRoom(massage.id, placeLayout(sim.roomLayout(massage), 17, 5))!;
+    expect(sim.toggleWindow(bright.id, { x: 17, y: 6, dx: -1, dy: 0 })).toBe('added');
+    expect(sim.toggleWindow(bright.id, { x: 17, y: 7, dx: -1, dy: 0 })).toBe('added');
+    const ctx = createContext(s);
+    expect(prestige(ctx, bright)).toBeGreaterThan(prestige(ctx, massage));
+    let asked = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      setSeed(seed);
+      for (const goal of challengeGoals(ctx, 60)) {
+        if (goal.kind !== 'prestige') continue;
+        asked++;
+        expect(challengeObjective(ctx, challenge(s, goal)).done, `seed ${seed}: ${goal.room} ${goal.level}`).toBe(
+          false,
+        );
+      }
+    }
+    expect(asked, 'a prestige challenge came up').toBeGreaterThan(0);
+  });
+});
 
 describe('a staff challenge', () => {
   it('is only set once the center is open and has a few staff', () => {

@@ -47,6 +47,8 @@ export interface Room {
   vibes: number;
   /** Whoever is on their way to clear its bad vibes. */
   claimedBy: number;
+  /** Tiles of floor bought by resizing it, beyond what it was built with: only these are refunded when given up. */
+  bought?: number;
   /** How it is decorated, if not as standard. */
   floor?: FloorId;
   wall?: WallId;

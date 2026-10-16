@@ -39,7 +39,7 @@ import { accessPose, accessTile, footprint } from '../world';
 import { prestige } from './ambience';
 import { worksAt } from './assignments';
 import { sameRoomCount } from './building';
-import { returnFromCall } from './calls';
+import { leaveForCall, returnFromCall } from './calls';
 import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
 import { bless, clearingSeconds } from './ceremonies';
 import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
@@ -652,11 +652,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       }
       break;
     case 'toCall':
-      if (arrived || !st.path) {
-        st.state = 'away';
-        // the days away count from leaving the building, not from setting off across it
-        if (st.call) st.call.back = ctx.s.day + st.call.days;
-      }
+      // the days away count from leaving the building, not from setting off across it
+      if (arrived || !st.path) leaveForCall(ctx, st);
       break;
     case 'away':
       if (st.call && ctx.s.day >= st.call.back) returnFromCall(ctx, st);

@@ -95,6 +95,25 @@ describe('a guest after a hard treatment', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
+  it('can be sent home from the Recliner without the visit counting twice or costing reputation', () => {
+    const { sim, s, g } = knottedGuest(true);
+    runUntil(sim, () => g.state === 'toRest');
+    const outcome = g.outcome;
+    const stats = { ...s.stats };
+    const reviews = s.reviews.length;
+    const rep = s.reputation;
+    expect(sim.sendHome(g.id)).toBe(true);
+    expect(g.state).toBe('leaving');
+    expect(g.outcome, 'still the outcome they had').toBe(outcome);
+    expect(s.stats.sent).toBe(stats.sent);
+    expect(s.stats.healed).toBe(stats.healed);
+    expect(s.stats.failed).toBe(stats.failed);
+    expect(s.reviews).toHaveLength(reviews);
+    expect(s.reputation).toBe(rep);
+    expect(reclinerOf(sim).users[0]).toBe(0);
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
   it('goes home woozy with nowhere to rest, and the advisor suggests a lounge', () => {
     const { sim, g } = knottedGuest(false);
     sim.drain();

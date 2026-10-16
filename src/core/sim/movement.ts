@@ -3,9 +3,11 @@
 import type { Char, Waypoint } from '../state/types';
 import { clamp } from '../util';
 import type { PosePoint } from '../world';
+import { leaveForCall } from './calls';
 import type { SimContext } from './context';
 import { resetGuest } from './guests';
 import { staffIdle } from './staffing';
+import { backToStudy } from './training';
 import { nextRoom } from './visits';
 
 /** Turn an angle toward a target by at most `maxStep`, going the short way around. */
@@ -106,6 +108,10 @@ export function repathAll(ctx: SimContext) {
     else if (c.kind === 'visitor') nextRoom(ctx, c);
     // someone on their way out with no way out is simply gone, as when they are fired with nowhere to walk
     else if (c.state === 'leaving') ctx.s.staff = ctx.s.staff.filter((st) => st !== c);
+    // someone heading out on a house call has gone, as when the walk out runs out under them
+    else if (c.state === 'toCall') leaveForCall(ctx, c);
+    // someone on their way to a desk tries another way, or another desk, before giving up the course
+    else if (c.training) backToStudy(ctx, c);
     else staffIdle(ctx, c);
   }
 }
