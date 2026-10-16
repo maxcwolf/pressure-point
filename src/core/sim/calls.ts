@@ -124,7 +124,7 @@ export function returnFromCall(ctx: SimContext, st: Staff) {
   st.state = 'arriving';
   st.energy = Math.max(0, st.energy - 25);
   gainXp(ctx, st, CALL_XP);
-  const [lx, ly] = lobbyTile(ctx.world.plot);
+  const [lx, ly] = lobbyTile(ctx.world.building);
   goTo(ctx, st, lx, ly);
   earn(ctx, call.fee, 'calls', x, y);
   toast(ctx, `${st.name} is back from ${call.client}: ${money(call.fee)} for the house call.`, 'good', {

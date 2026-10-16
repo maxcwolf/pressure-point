@@ -4,14 +4,17 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { SANDBOX_PLOT } from '../../src/core/data';
+import { footprintOf } from '../../src/core/footprint';
 import type { Room } from '../../src/core/state/types';
 import { CameraRig } from '../../src/render/camera';
 import { glideAngle } from '../../src/render/camera-math';
-import { outerPanes } from '../../src/render/outer-walls';
+import { outerPanes, shellStretches } from '../../src/render/outer-walls';
 import { roomShape } from '../../src/render/room-walls';
-import { shellWalls } from '../../src/render/scenery';
 import { H_LOW, H_TALL, OUTER_T } from '../../src/render/shared';
 import { nearSides, type Side, type Turn, turned } from '../../src/render/turn';
+
+/** The sandbox's building, as it starts. */
+const BUILDING = footprintOf(SANDBOX_PLOT);
 
 const TURNS: readonly Turn[] = [0, 1, 2, 3];
 
@@ -58,7 +61,7 @@ describe("a room's walls, turned", () => {
     const r = { ...corner(), x: 10, y: 10, door: { x: 11, y: 13, dx: 0, dy: 1 }, windows: [] };
     for (const t of TURNS) {
       const near = nearSides(t);
-      const walls = roomShape(r, SANDBOX_PLOT, near).boxes.filter((b) => b.material === 'wall');
+      const walls = roomShape(r, BUILDING, near).boxes.filter((b) => b.material === 'wall');
       /** The height of the walls on one side. */
       const height = (side: Side) =>
         new Set(
@@ -73,14 +76,13 @@ describe("a room's walls, turned", () => {
   });
 
   it('give the door a leaf where its wall stands tall', () => {
-    expect(roomShape(corner(), SANDBOX_PLOT, nearSides(0)).doorway?.tall).toBe(false);
-    expect(roomShape(corner(), SANDBOX_PLOT, nearSides(2)).doorway?.tall).toBe(true);
+    expect(roomShape(corner(), BUILDING, nearSides(0)).doorway?.tall).toBe(false);
+    expect(roomShape(corner(), BUILDING, nearSides(2)).doorway?.tall).toBe(true);
   });
 
   it('set a window in the building’s outer wall on its inside face when tall, and in its middle when low', () => {
     /** Where the glass of the room's window in the north wall sits. */
-    const glassAt = (t: Turn) =>
-      roomShape(corner(), SANDBOX_PLOT, nearSides(t)).boxes.find((b) => b.material === 'glass');
+    const glassAt = (t: Turn) => roomShape(corner(), BUILDING, nearSides(t)).boxes.find((b) => b.material === 'glass');
     expect(glassAt(0)?.fixed).toBeCloseTo(SANDBOX_PLOT.y0 + 0.02);
     expect(glassAt(2)?.fixed).toBeCloseTo(SANDBOX_PLOT.y0 - OUTER_T / 2);
   });
@@ -90,7 +92,7 @@ describe("the building's own windows, turned", () => {
   it('are in the walls standing tall, and never in the entrance', () => {
     for (const t of TURNS) {
       const near = nearSides(t);
-      const panes = outerPanes(SANDBOX_PLOT, [], near);
+      const panes = outerPanes(BUILDING, [], near);
       expect(panes.length).toBeGreaterThan(0);
       expect(panes.every((p) => !near[p.side])).toBe(true);
       const [e0, e1] = SANDBOX_PLOT.door;
@@ -99,24 +101,27 @@ describe("the building's own windows, turned", () => {
   });
 
   it('are where they always were, looking from the south-east', () => {
-    expect(outerPanes(SANDBOX_PLOT, [])).toEqual(outerPanes(SANDBOX_PLOT, [], nearSides(0)));
-    expect(new Set(outerPanes(SANDBOX_PLOT, []).map((p) => p.side))).toEqual(new Set(['north', 'west']));
+    expect(outerPanes(BUILDING, [])).toEqual(outerPanes(BUILDING, [], nearSides(0)));
+    expect(new Set(outerPanes(BUILDING, []).map((p) => p.side))).toEqual(new Set(['north', 'west']));
   });
 });
 
 describe("the building's outer walls, turned", () => {
+  /** A number rounded to hundredths, to compare positions made by adding up wall thicknesses. */
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+
   it('take in each corner once, a tall wall before a low one', () => {
+    const { x0, x1, y0, y1 } = SANDBOX_PLOT;
     for (const t of TURNS) {
-      const walls = shellWalls(nearSides(t));
-      /**
-       * The walls that take in the corner where a horizontal and an upright wall meet: the horizontal one at its west or
-       * east end, the upright one at its north or south end.
-       */
+      const walls = shellStretches(BUILDING, nearSides(t));
+      /** The walls that run on past a corner, of the two that meet there. */
       const at = (h: 'north' | 'south', v: 'west' | 'east') =>
-        walls.filter(
-          (w) =>
-            (w.side === h && (v === 'west' ? w.fromCorner : w.toCorner)) ||
-            (w.side === v && (h === 'north' ? w.fromCorner : w.toCorner)),
+        walls.filter((w) =>
+          w.side === h
+            ? v === 'west'
+              ? w.a < x0
+              : w.b > x1 + 1
+            : w.side === v && (h === 'north' ? w.a < y0 : w.b > y1 + 1),
         );
       for (const [a, b] of [
         ['north', 'west'],
@@ -134,11 +139,15 @@ describe("the building's outer walls, turned", () => {
   });
 
   it('are laid out as they always were, looking from the south-east', () => {
-    expect(shellWalls(nearSides(0))).toEqual([
-      { side: 'north', tall: true, fromCorner: true, toCorner: true },
-      { side: 'south', tall: false, fromCorner: false, toCorner: true },
-      { side: 'west', tall: true, fromCorner: false, toCorner: true },
-      { side: 'east', tall: false, fromCorner: false, toCorner: false },
+    const T = OUTER_T;
+    const { x0, x1, y0, y1, door } = SANDBOX_PLOT;
+    const laid = shellStretches(BUILDING, nearSides(0)).map((w) => ({ ...w, at: r2(w.at), a: r2(w.a), b: r2(w.b) }));
+    expect(laid).toEqual([
+      { side: 'north', horizontal: true, tall: true, at: r2(y0 - T / 2), a: r2(x0 - T), b: r2(x1 + 1 + T) },
+      { side: 'south', horizontal: true, tall: false, at: r2(y1 + 1 + T / 2), a: x0, b: door[0] },
+      { side: 'south', horizontal: true, tall: false, at: r2(y1 + 1 + T / 2), a: door[1] + 1, b: r2(x1 + 1 + T) },
+      { side: 'west', horizontal: false, tall: true, at: r2(x0 - T / 2), a: y0, b: r2(y1 + 1 + T) },
+      { side: 'east', horizontal: false, tall: false, at: r2(x1 + 1 + T / 2), a: y0, b: y1 + 1 },
     ]);
   });
 });
@@ -153,7 +162,7 @@ describe('the camera, turned', () => {
   });
 
   it('looks from the side its turn says, and pans across and up the screen whichever way it faces', () => {
-    const rig = new CameraRig(SANDBOX_PLOT);
+    const rig = new CameraRig(BUILDING);
     for (const t of [1, 2, 3, 0] as const) {
       rig.turnBy(1);
       expect(rig.turn).toBe(t);

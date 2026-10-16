@@ -3,6 +3,7 @@
 // except temperature, which runs from cold through just right to hot.
 
 import { HAMPER_SIZE, ITEMS } from '../../core/data';
+import { footprintTiles } from '../../core/footprint';
 import { calmness } from '../../core/sim/noise';
 import type { Sim } from '../../core/sim/sim';
 import { tempScale } from '../../core/sim/warmth';
@@ -63,18 +64,16 @@ export function heatTiles(sim: Sim, mode: OverlayMode): HeatTile[] {
     case 'decor':
       // decor placed while the game is paused counts at once
       sim.refreshAmbience();
-      for (let y = w.plot.y0; y <= w.plot.y1; y++)
-        for (let x = w.plot.x0; x <= w.plot.x1; x++)
-          if (w.inside(x, y) && !w.blocked[tileIdx(x, y)]) out.push([x, y, pleasantness(sim.drainFactor(x, y))]);
+      for (const [x, y] of footprintTiles(w.building))
+        if (!w.blocked[tileIdx(x, y)]) out.push([x, y, pleasantness(sim.drainFactor(x, y))]);
       break;
     case 'calm':
     case 'temperature':
       // items placed while the game is paused count at once
       sim.refreshAmbience();
-      for (let y = w.plot.y0; y <= w.plot.y1; y++)
-        for (let x = w.plot.x0; x <= w.plot.x1; x++)
-          if (w.inside(x, y) && !w.blocked[tileIdx(x, y)])
-            out.push([x, y, mode === 'calm' ? calmness(sim.noiseAt(x, y)) : tempScale(sim.warmthAt(x, y))]);
+      for (const [x, y] of footprintTiles(w.building))
+        if (!w.blocked[tileIdx(x, y)])
+          out.push([x, y, mode === 'calm' ? calmness(sim.noiseAt(x, y)) : tempScale(sim.warmthAt(x, y))]);
       break;
     case 'patience':
       for (const g of s.guests) if (g.state !== 'leaving') out.push([g.tx, g.ty, unit(g.patience / 100)]);

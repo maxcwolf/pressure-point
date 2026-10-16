@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 
+import { footprintKey } from '../core/footprint';
 import type { Sim } from '../core/sim/sim';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
@@ -19,7 +20,6 @@ import { RainLayer } from './rain';
 import { RoomsLayer } from './rooms';
 import { buildScenery, buildShell } from './scenery';
 import { settingName, settingOf } from './setting';
-import { plotKey } from './shared';
 import { SnowfallLayer } from './snowfall';
 import { StorefrontLayer } from './storefront';
 import { nearSides, type Turn } from './turn';
@@ -32,10 +32,10 @@ export class View {
   private lights: Lights;
   /** The world as last drawn, so rooms and items are only rebuilt when something changes. */
   private worldVersion = -1;
-  /** The scenery around the building, and the plot it was built for, to build again when the building grows. */
+  /** The scenery around the building, and the building it was built for, to build again when the building grows. */
   private scenery: THREE.Group;
   private sceneryPlot: string;
-  /** The building's outer walls, and the plot and turn they were built for, to build again when either changes. */
+  /** The building's outer walls, and the building and turn they were built for, to build again when either changes. */
   private shell: THREE.Group;
   private shellKey: string;
   private rig: CameraRig;
@@ -70,11 +70,11 @@ export class View {
 
     this.lights = addLights(this.scene);
 
-    this.rig = new CameraRig(sim.world.plot);
-    this.scenery = buildScenery(sim.world.plot, settingName(sim.s), settingOf(sim.s));
-    this.sceneryPlot = plotKey(sim.world.plot);
+    this.rig = new CameraRig(sim.world.building);
+    this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s));
+    this.sceneryPlot = footprintKey(sim.world.building);
     this.scene.add(this.scenery);
-    this.shell = buildShell(sim.world.plot, nearSides(this.rig.turn));
+    this.shell = buildShell(sim.world.building, nearSides(this.rig.turn));
     this.shellKey = `${this.sceneryPlot}|${this.rig.turn}`;
     this.scene.add(this.shell);
     this.floor = new Floor(this.scene, sim);
@@ -127,22 +127,22 @@ export class View {
 
   /** Build the building's outer walls again if the building has grown, or the camera turned, since they were built. */
   private buildShell() {
-    const plot = this.sim.world.plot;
-    const key = `${plotKey(plot)}|${this.rig.turn}`;
+    const fp = this.sim.world.building;
+    const key = `${footprintKey(fp)}|${this.rig.turn}`;
     if (key === this.shellKey) return;
     this.shellKey = key;
     this.scene.remove(this.shell);
     this.shell.traverse((o) => {
       (o as Partial<THREE.Mesh>).geometry?.dispose();
     });
-    this.shell = buildShell(plot, nearSides(this.rig.turn));
+    this.shell = buildShell(fp, nearSides(this.rig.turn));
     this.scene.add(this.shell);
   }
 
   /** Build the scenery again if the building has grown into more land since it was built. */
   private growScenery() {
-    const plot = this.sim.world.plot;
-    const key = plotKey(plot);
+    const fp = this.sim.world.building;
+    const key = footprintKey(fp);
     if (key === this.sceneryPlot) return;
     this.sceneryPlot = key;
     this.scene.remove(this.scenery);
@@ -150,7 +150,7 @@ export class View {
     this.scenery.traverse((o) => {
       (o as Partial<THREE.Mesh>).geometry?.dispose();
     });
-    this.scenery = buildScenery(plot, settingName(this.sim.s), settingOf(this.sim.s));
+    this.scenery = buildScenery(fp, settingName(this.sim.s), settingOf(this.sim.s));
     this.scene.add(this.scenery);
   }
 

@@ -129,7 +129,7 @@ export function spawnGuest(
     calmed: false,
     classDay,
   };
-  const [lx, ly] = lobbyTile(ctx.world.plot);
+  const [lx, ly] = lobbyTile(ctx.world.building);
   if (!goTo(ctx, g, lx, ly)) return null;
   s.guests.push(g);
   if (regular) welcomeBack(ctx, g, regular);
@@ -231,8 +231,8 @@ function waitAnchor(ctx: SimContext, g: Guest): [number, number] {
     if (room) return [room.door.x + room.door.dx, room.door.y + room.door.dy];
     return accessTile(st, accessIndex(st, 'guest'));
   }
-  const { door, y1 } = ctx.world.plot;
-  return [door[0], y1 - 3];
+  const { door, front } = ctx.world.building;
+  return [door[0], front - 3];
 }
 
 /** Send a guest to wait: in line at reception, otherwise on a nearby seat or standing spot. */

@@ -79,7 +79,7 @@ describe('buying land', () => {
     expect(s.money).toBe(50000 - offer.price);
     expect(s.ledger.building - building).toBe(offer.price);
     expect(s.land).toEqual(['east']);
-    expect(sim.world.plot.x1).toBe(offer.x1);
+    expect(sim.world.building.bounds.x1).toBe(offer.x1);
     expect(sim.world.zoneAt(offer.x1, offer.y1)).toBe(Z_CORRIDOR);
     // a room can go right up to the new wall, and guests can walk there
     const room = buildRoom(
@@ -111,7 +111,7 @@ describe('buying land', () => {
     sim.s.stars = 1;
     sim.s.money = 1e6;
     while (sim.buyLand('east')) void 0;
-    expect(sim.world.plot.x1).toBe(LAND_LIMITS.east);
+    expect(sim.world.building.bounds.x1).toBe(LAND_LIMITS.east);
     expect(sim.landOffers().map((o) => o.side)).toEqual(['west', 'back']);
   });
 

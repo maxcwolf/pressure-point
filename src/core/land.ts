@@ -1,7 +1,16 @@
 // The plots of land next to a building, which it can grow into: on the west, the east or at the back. The building
 // stays a rectangle, so each plot runs the whole length of the side it is on.
 
-import { centerOf, LAND_LIMITS, LAND_STEP, LAND_TILE_PRICE, type LandLimits, type LandSide, type Plot } from './data';
+import {
+  centerOf,
+  LAND_LIMITS,
+  LAND_STEP,
+  LAND_TILE_PRICE,
+  type LandLimits,
+  type LandSide,
+  type Plot,
+  type Rect,
+} from './data';
 import type { GameState } from './state/types';
 
 /** A plot of land for sale: the side it is on, the tiles it covers, and what it costs. */
@@ -52,6 +61,19 @@ export function grownBy(plot: Plot, offer: Pick<LandOffer, 'x0' | 'x1' | 'y0' | 
     x1: Math.max(plot.x1, offer.x1),
     y0: Math.min(plot.y0, offer.y0),
   };
+}
+
+/** The plots bought, as rectangles, in the order they were bought: what the building grew into, a side at a time. */
+export function landRects(base: Plot, bought: readonly LandSide[], limits: LandLimits): Rect[] {
+  const rects: Rect[] = [];
+  let plot = base;
+  for (const side of bought) {
+    const offer = nextPlot(plot, side, limits);
+    if (!offer) continue;
+    rects.push({ x0: offer.x0, x1: offer.x1, y0: offer.y0, y1: offer.y1 });
+    plot = grownBy(plot, offer);
+  }
+  return rects;
 }
 
 /** The building on its lot after the plots bought, in the order they were bought. */

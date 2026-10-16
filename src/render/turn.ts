@@ -2,11 +2,12 @@
 // on the sides facing the camera are cut low so you can see in; the ones across the building stand tall.
 // Nothing here draws anything, so it can be tested without a renderer.
 
+import type { Side } from '../core/footprint';
+
+export type { Side };
+
 /** How far round the camera has been turned, in quarters: 0 looks from the south-east, as the game always has. */
 export type Turn = 0 | 1 | 2 | 3;
-
-/** The four sides of the building, or of a room. */
-export type Side = 'north' | 'south' | 'east' | 'west';
 
 /** For each side, whether it faces the camera. */
 export type Sides = Readonly<Record<Side, boolean>>;

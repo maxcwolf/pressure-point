@@ -2,7 +2,7 @@
 
 A plan for making buying land feel like it does in Two Point Hospital and Two Point Campus. The version shipped on 15 October 2026 (`core/land.ts`, the Money menu's Land tab) works, but it is a stopgap. This plan is for doing it properly, even where that means refactoring the game's model of the building, the renderer and the tests.
 
-Nothing here is built yet. The phases at the end are each meant to ship on their own, with all tests green.
+The phases at the end are each meant to ship on their own, with all tests green. How far they have got is noted under each.
 
 ## Where we are now
 
@@ -162,6 +162,7 @@ Each phase ships on its own with everything green, in this order.
    - Walls, windows and room walls come from edges, at every turn of the camera.
    - Floor and overlays loop over the footprint.
    - Screenshots should not change. That is the test of the refactor.
+   - **Done.** `core/footprint.ts` holds the footprint, its runs of wall and their corners, and `World.indoors` the mask. The scene's screenshots did not change.
 2. **Arrivals from near the entrance.** `streetTile()` stops depending on the map's width, people fade in and out or walk off, and the seeded tests are re-checked once.
 3. **Map size per center.**
    - Old saves' strips become legacy-strip rectangles first, worked out on the old map (see [State and saves](#the-building-model-core)).

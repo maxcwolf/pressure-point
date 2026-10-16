@@ -161,19 +161,19 @@ export function startGame({ canvas, audio, state, exit }: GameSetup) {
       W,
       /** The building's west wall. */
       get BX0() {
-        return sim.world.plot.x0;
+        return sim.world.building.bounds.x0;
       },
       /** The building's east wall. */
       get BX1() {
-        return sim.world.plot.x1;
+        return sim.world.building.bounds.x1;
       },
       /** The building's back wall. */
       get BY0() {
-        return sim.world.plot.y0;
+        return sim.world.building.bounds.y0;
       },
       /** The building's front wall. */
       get BY1() {
-        return sim.world.plot.y1;
+        return sim.world.building.bounds.y1;
       },
     };
     Object.assign(window, { pp: { sim, view, tools, ui, state, data, geo: { itemDims, accessTile } } });

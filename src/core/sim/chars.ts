@@ -1,6 +1,7 @@
 // People in general, guests and staff alike: finding them, creating them and where they come and go.
 
-import { type Plot, SIDEWALK_Y, W } from '../data';
+import { SIDEWALK_Y, W } from '../data';
+import type { Footprint } from '../footprint';
 import { byId } from '../lookup';
 import { pick, random } from '../random';
 import type { Char, Guest, Look, Staff } from '../state/types';
@@ -60,6 +61,6 @@ export function streetTile(): [number, number] {
 }
 
 /** A tile just inside the front door, on one side or the other. */
-export function lobbyTile(plot: Plot): [number, number] {
-  return [pick(plot.door), plot.y1 - 1];
+export function lobbyTile(fp: Pick<Footprint, 'door' | 'front'>): [number, number] {
+  return [pick(fp.door), fp.front - 1];
 }

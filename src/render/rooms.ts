@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 
 import { ROOMS } from '../core/data';
+import { footprintKey } from '../core/footprint';
 import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { papered, paperUVs, wallMaterial } from './decor-paint';
@@ -13,7 +14,7 @@ import { mergeStill } from './models/merge';
 import { mat, put } from './models/parts';
 import { outerPanes } from './outer-walls';
 import { roomShape } from './room-walls';
-import { OUTER_PANE_H, OUTER_PANE_Y0, plotKey } from './shared';
+import { OUTER_PANE_H, OUTER_PANE_Y0 } from './shared';
 import { nearSides, type Turn } from './turn';
 
 export class RoomsLayer {
@@ -58,10 +59,10 @@ export class RoomsLayer {
     const liveRooms = new Set<number>();
     // a room along the building's outer wall leaves that wall to it, until the building grows past, and every wall
     // changes height as the camera turns
-    const plot = `${plotKey(this.sim.world.plot)}|${this.turn}`;
+    const building = `${footprintKey(this.sim.world.building)}|${this.turn}`;
     for (const r of this.sim.s.rooms) {
       liveRooms.add(r.id);
-      const key = `${plot}|${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done},${r.wall ?? ''},${r.windows.map((w) => `${w.x}.${w.y}.${w.dx}.${w.dy}`).join('|')}`;
+      const key = `${building}|${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done},${r.wall ?? ''},${r.windows.map((w) => `${w.x}.${w.y}.${w.dx}.${w.dy}`).join('|')}`;
       const cur = this.rooms.get(r.id);
       if (cur?.key === key) continue;
       if (cur) this.dispose(cur.group);
@@ -79,9 +80,9 @@ export class RoomsLayer {
 
   /** Lay out the building's own windows again if the rooms they make way for, or the walls standing tall, have changed. */
   private syncPanes() {
-    const { plot } = this.sim.world;
-    const panes = outerPanes(plot, this.sim.s.rooms, nearSides(this.turn));
-    const key = `${plotKey(plot)}|${panes.map((p) => `${p.side}${p.a}`).join('|')}`;
+    const { building } = this.sim.world;
+    const panes = outerPanes(building, this.sim.s.rooms, nearSides(this.turn));
+    const key = panes.map((p) => `${p.side}${p.line}.${p.a}`).join('|');
     if (key === this.panesKey) return;
     this.panesKey = key;
     this.dispose(this.panes);
@@ -91,14 +92,10 @@ export class RoomsLayer {
       const mid = (p.a + p.b) / 2;
       const y = OUTER_PANE_Y0 + OUTER_PANE_H / 2;
       // on the inside face of the wall
-      if (p.side === 'north')
-        put(this.panes, owned(new THREE.BoxGeometry(len, OUTER_PANE_H, 0.04)), this.paneGlass, mid, y, plot.y0 + 0.02);
-      else if (p.side === 'south')
-        put(this.panes, owned(new THREE.BoxGeometry(len, OUTER_PANE_H, 0.04)), this.paneGlass, mid, y, plot.y1 + 0.98);
-      else if (p.side === 'west')
-        put(this.panes, owned(new THREE.BoxGeometry(0.04, OUTER_PANE_H, len)), this.paneGlass, plot.x0 + 0.02, y, mid);
-      else
-        put(this.panes, owned(new THREE.BoxGeometry(0.04, OUTER_PANE_H, len)), this.paneGlass, plot.x1 + 0.98, y, mid);
+      const face = p.line + (p.side === 'north' || p.side === 'west' ? 0.02 : -0.02);
+      if (p.horizontal)
+        put(this.panes, owned(new THREE.BoxGeometry(len, OUTER_PANE_H, 0.04)), this.paneGlass, mid, y, face);
+      else put(this.panes, owned(new THREE.BoxGeometry(0.04, OUTER_PANE_H, len)), this.paneGlass, face, y, mid);
     }
     mergeStill(this.panes);
     this.scene.add(this.panes);
@@ -115,7 +112,7 @@ export class RoomsLayer {
       trim: plain ? this.blueprintMat : mat(def.trim, 0.6),
       glass: plain ? this.blueprintMat : this.glass,
     };
-    const { boxes, doorway } = roomShape(room, this.sim.world.plot, nearSides(this.turn));
+    const { boxes, doorway } = roomShape(room, this.sim.world.building, nearSides(this.turn));
     for (const b of boxes) {
       const len = b.b - b.a;
       const geo = owned(

@@ -14,6 +14,7 @@ import {
   SIDEWALK_Y,
   W,
 } from '../../src/core/data';
+import { footprintOf } from '../../src/core/footprint';
 import { fairSalary } from '../../src/core/people';
 import { setSeed } from '../../src/core/random';
 import { stationPlace } from '../../src/core/sim/advisor';
@@ -266,7 +267,7 @@ describe('people', () => {
       const [x, y] = streetTile();
       expect([0, W - 1]).toContain(x);
       expect(y).toBe(SIDEWALK_Y);
-      expect(SANDBOX_PLOT.door).toContain(lobbyTile(SANDBOX_PLOT)[0]);
+      expect(SANDBOX_PLOT.door).toContain(lobbyTile(footprintOf(SANDBOX_PLOT))[0]);
     }
   });
 

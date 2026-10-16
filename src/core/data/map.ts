@@ -7,12 +7,16 @@ export const H = 24;
 export const SIDEWALK_Y = 20;
 export const ROAD_Y: readonly [number, number] = [21, 22];
 
-/** Where a center's building stands on its lot: the inside of its walls, inclusive, and the two tiles of its front door. */
-export interface Plot {
+/** A rectangle of tiles, inclusive at both ends. */
+export interface Rect {
   x0: number;
   x1: number;
   y0: number;
   y1: number;
+}
+
+/** Where a center's building stands on its lot: the inside of its walls, inclusive, and the two tiles of its front door. */
+export interface Plot extends Rect {
   /** The front door's two tiles, along the front wall (row y1). */
   door: readonly [number, number];
 }

@@ -8,15 +8,14 @@ import {
   type ItemType,
   MISHAPS,
   mishapStopsType,
-  outsideDoor,
-  type Plot,
   type Pose,
   ROOMS,
   type RoomType,
   SIDEWALK_Y,
   W,
 } from './data';
-import { landLimits, plotWith } from './land';
+import { doorstep, type Footprint, footprintOf, inFootprint } from './footprint';
+import { landLimits, landRects } from './land';
 import { byId } from './lookup';
 import { carryWallSpot, inRect, sameRect } from './resize';
 import type { PlacedLayout } from './room-layout';
@@ -27,8 +26,6 @@ import { at } from './util';
 export const tileIdx = (x: number, y: number) => y * W + x;
 /** Whether a tile is on the map. */
 export const inBounds = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H;
-/** Whether a tile is inside a building on its plot. */
-export const inPlot = (p: Plot, x: number, y: number) => x >= p.x0 && x <= p.x1 && y >= p.y0 && y <= p.y1;
 
 /** Zone ids: -2 scenery (not walkable), -1 outdoors path, 0 corridor, >0 room id. */
 export const Z_SCENERY = -2;
@@ -160,16 +157,18 @@ export class World {
   private spotsStamp = -1;
 
   constructor(public s: GameState) {
-    this.plot = centerOf(s).plot;
+    this.building = footprintOf(centerOf(s).plot);
     this.rebuild();
   }
 
   /** Where this game's building stands on its lot, grown into any land bought, as of the last rebuild. */
-  plot: Plot;
+  building: Footprint;
+  /** One byte a tile, 1 for the tiles inside the building, as of the last rebuild. */
+  indoors = new Uint8Array(W * H);
 
   /** Whether a tile is inside the building. */
   inside(x: number, y: number): boolean {
-    return inPlot(this.plot, x, y);
+    return inBounds(x, y) && this.indoors[tileIdx(x, y)] === 1;
   }
 
   /** A key for the edge between two neighboring tiles. */
@@ -180,26 +179,29 @@ export class World {
 
   /** Rebuild the zone, blocking, reserved and door grids from the game state. */
   rebuild(silent = false) {
-    const { zone, blocked, reserved, doors } = this;
+    const { zone, blocked, reserved, doors, indoors } = this;
     blocked.fill(0);
     reserved.fill(0);
     doors.clear();
-    const plot = plotWith(centerOf(this.s).plot, this.s.land, landLimits(this.s));
-    this.plot = plot;
-    const outside = outsideDoor(plot);
+    const base = centerOf(this.s).plot;
+    const fp = footprintOf(base, landRects(base, this.s.land, landLimits(this.s)));
+    this.building = fp;
+    const outside = doorstep(fp);
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
+        const i = tileIdx(x, y);
+        indoors[i] = inFootprint(fp, x, y) ? 1 : 0;
         let z = Z_SCENERY;
-        if (inPlot(plot, x, y)) z = Z_CORRIDOR;
+        if (indoors[i]) z = Z_CORRIDOR;
         else if (y === SIDEWALK_Y) z = Z_OUTSIDE;
-        else if (plot.door.includes(x) && y >= outside && y < SIDEWALK_Y) z = Z_OUTSIDE;
-        zone[tileIdx(x, y)] = z;
+        else if (fp.door.includes(x) && y >= outside && y < SIDEWALK_Y) z = Z_OUTSIDE;
+        zone[i] = z;
       }
     }
-    for (const x of plot.door) {
-      doors.add(this.edgeKey(x, plot.y1, x, outside));
-      reserved[tileIdx(x, plot.y1)] = 1;
-      reserved[tileIdx(x, plot.y1 - 1)] = 1;
+    for (const x of fp.door) {
+      doors.add(this.edgeKey(x, fp.front, x, outside));
+      reserved[tileIdx(x, fp.front)] = 1;
+      reserved[tileIdx(x, fp.front - 1)] = 1;
     }
     for (const r of this.s.rooms) {
       for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) zone[tileIdx(x, y)] = r.id;
@@ -420,7 +422,7 @@ export class World {
     /** Whether a tile was reached from the street. */
     const need = (x: number, y: number) => inBounds(x, y) && seen[tileIdx(x, y)] === 1;
     if (!need(W - 1, SIDEWALK_Y)) return false;
-    for (const x of this.plot.door) if (!need(x, this.plot.y1 - 1)) return false;
+    for (const x of this.building.door) if (!need(x, this.building.front - 1)) return false;
     for (const r of this.s.rooms) {
       if (!need(r.door.x, r.door.y) || !need(r.door.x + r.door.dx, r.door.y + r.door.dy)) return false;
     }

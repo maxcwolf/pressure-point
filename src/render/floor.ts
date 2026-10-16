@@ -137,14 +137,14 @@ export class Floor {
       }
     }
     // welcome mat
-    const { door, y1 } = world.plot;
+    const { door, front } = world.building;
     ctx.fillStyle = '#2fa8a0';
-    ctx.fillRect(door[0] * TS + 10, y1 * TS + 14, door.length * TS - 20, TS - 22);
+    ctx.fillRect(door[0] * TS + 10, front * TS + 14, door.length * TS - 20, TS - 22);
     ctx.fillStyle = '#fff8e8';
     ctx.font = '700 15px Fredoka, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('NAMASTE', (door[0] + door.length / 2) * TS, y1 * TS + TS / 2 + 4);
+    ctx.fillText('NAMASTE', (door[0] + door.length / 2) * TS, front * TS + TS / 2 + 4);
     // door thresholds
     for (const r of this.sim.s.rooms) {
       ctx.fillStyle = `#${ROOMS[r.type].trim.toString(16).padStart(6, '0')}`;

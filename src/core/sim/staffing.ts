@@ -106,7 +106,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     offer: 0,
     call: null,
   };
-  const [lx, ly] = lobbyTile(ctx.world.plot);
+  const [lx, ly] = lobbyTile(ctx.world.building);
   if (!goTo(ctx, st, lx, ly)) return null;
   s.staff.push(st);
   // their place in the pool fills again as new applicants turn up

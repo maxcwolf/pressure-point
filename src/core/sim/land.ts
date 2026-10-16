@@ -15,7 +15,9 @@ export const landForSale = (s: GameState) => unlockedUpTo(s) >= LAND_STAR;
 export function landOffers(ctx: SimContext): LandOffer[] {
   if (!landForSale(ctx.s)) return [];
   const limits = landLimits(ctx.s);
-  return LAND_SIDES.map((side) => nextPlot(ctx.world.plot, side, limits)).filter((o) => o !== null);
+  // the land for sale runs the whole length of a side, so the building is still a rectangle
+  const { bounds, door } = ctx.world.building;
+  return LAND_SIDES.map((side) => nextPlot({ ...bounds, door }, side, limits)).filter((o) => o !== null);
 }
 
 /** Buy the plot for sale on a side and grow the building into it. False if none is for sale or it costs too much. */
