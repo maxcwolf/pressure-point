@@ -2310,13 +2310,20 @@ test.describe('saved games', () => {
   test('warns when the game is also open in another tab, saving over this one', async ({ game, page }) => {
     await game.start();
     const other = await page.context().newPage();
-    await other.goto('/');
-    await other.getByRole('button', { name: 'Sandbox' }).click();
-    await other.getByRole('button', { name: 'Start building' }).click();
-    await other.waitForFunction(() => !!window.pp);
-    // opening the saves screen there saves that copy of the game
-    await openSaves(other);
-    await expect(page.locator('#toasts')).toContainText('also open in another tab or window');
+    // The warning comes once, the first time the other tab writes the autosave: as it starts its game, if this one has
+    // autosaved by then (it moves to "Previous game"), or else as it saves. It fades after a few seconds, which a slow
+    // machine can take to reach the saves screen, so watch for it from the start.
+    await Promise.all([
+      expect(page.locator('#toasts')).toContainText('also open in another tab or window', { timeout: 30_000 }),
+      (async () => {
+        await other.goto('/');
+        await other.getByRole('button', { name: 'Sandbox' }).click();
+        await other.getByRole('button', { name: 'Start building' }).click();
+        await other.waitForFunction(() => !!window.pp);
+        // opening the saves screen there saves that copy of the game
+        await openSaves(other);
+      })(),
+    ]);
     await other.close();
     expect(game.errors).toEqual([]);
   });
