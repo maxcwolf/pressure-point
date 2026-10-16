@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 
 import { H, type Rect, ROAD_Y, SIDEWALK_Y, TITLE_LINES } from '../core/data';
-import { doorstep, type Footprint, inRect } from '../core/footprint';
+import { entranceSpan, type Footprint, inRect } from '../core/footprint';
 import { must } from '../core/util';
 import { buildBeach } from './models/beach';
 import { mergeStill } from './models/merge';
@@ -151,7 +151,7 @@ function buildSeaside(fp: Footprint, width: number, plots: readonly Rect[]): THR
   return shore;
 }
 
-/** Build the building's outer walls: tall across from the camera, low facing it, with the entrance in front. */
+/** Build the building's outer walls: tall across from the camera, low facing it, with a gap for each entrance. */
 export function buildShell(fp: Footprint, near: Sides): THREE.Group {
   const shell = new THREE.Group();
   const wall = mat(0xf7f1e5, 0.85);
@@ -180,14 +180,16 @@ export function buildShell(fp: Footprint, near: Sides): THREE.Group {
       box(T + 0.06, 0.07, len, at, H_LOW + 0.085, mid, trim);
     }
   }
-  // the pillars either side of the entrance
-  const e0 = fp.door[0];
-  const e1 = fp.door[1] + 1;
-  const z1 = doorstep(fp);
-  for (const x of [e0 - 0.16, e1 + 0.16]) {
-    put(shell, rbox(0.34, 1.5, 0.34, 0.05), wall, x, 0.75, z1 + T / 2);
-    put(shell, rbox(0.42, 0.1, 0.42, 0.04), trim, x, 1.52, z1 + T / 2);
-    put(shell, sph(0.17), mat(0xffe9a8, 0.3, 0.7), x, 1.72, z1 + T / 2);
+  // the pillars either side of each entrance, lamps on top, in the middle of the wall
+  for (const e of fp.entrances) {
+    const { line, a, b } = entranceSpan(e);
+    const across = line + ((e.side === 'south' || e.side === 'east' ? 1 : -1) * T) / 2;
+    for (const along of [a - 0.16, b + 0.16]) {
+      const [x, z] = e.side === 'north' || e.side === 'south' ? [along, across] : [across, along];
+      put(shell, rbox(0.34, 1.5, 0.34, 0.05), wall, x, 0.75, z);
+      put(shell, rbox(0.42, 0.1, 0.42, 0.04), trim, x, 1.52, z);
+      put(shell, sph(0.17), mat(0xffe9a8, 0.3, 0.7), x, 1.72, z);
+    }
   }
   mergeStill(shell);
   return shell;

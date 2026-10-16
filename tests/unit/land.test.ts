@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { CENTERS, DAY_SECONDS, type PlotDef, type Rect, SIDEWALK_Y } from '../../src/core/data';
-import { footprintOf, inRect } from '../../src/core/footprint';
+import { entranceSteps, footprintOf, inRect } from '../../src/core/footprint';
 import {
   buildDays,
   LAND_STEP,
@@ -60,7 +60,7 @@ const overlaps = (a: readonly Rect[], b: readonly Rect[]) =>
 
 describe("each center's plots of land", () => {
   for (const center of Object.values(CENTERS)) {
-    it(`fit the lot at ${center.name}, each joined to the building`, () => {
+    it(`fit the lot at ${center.name}, each joined to the building or standing apart with a path to it`, () => {
       const width = lotWidth(center);
       const base = center.plot;
       const ids = center.plots.map((p) => p.id);
@@ -81,11 +81,36 @@ describe("each center's plots of land", () => {
         expect(overlaps(p.rects, [base]), `${p.id} over the building`).toBe(false);
         for (const q of center.plots.slice(0, i))
           expect(overlaps(p.rects, q.rects), `${p.id} over ${q.id}`).toBe(false);
-        // it shares a wall with the building, or with the plot it comes after, which is listed before it
         const after = p.after ? center.plots.slice(0, i).find((q) => q.id === p.after) : undefined;
         if (p.after) expect(after, `${p.id} comes after ${p.after}`).toBeDefined();
-        expect(adjoins(p.rects, after ? after.rects : [base]), `${p.id} joins the building`).toBe(true);
         if (after) expect(after.star).toBeLessThanOrEqual(p.star);
+        const others = center.plots.filter((q) => q !== p).flatMap((q) => q.rects);
+        if (!p.entrance) {
+          // it shares a wall with the building, or with the plot it comes after, which is listed before it
+          expect(p.path, `${p.id} has a path but no door`).toBeUndefined();
+          expect(adjoins(p.rects, after ? after.rects : [base]), `${p.id} joins the building`).toBe(true);
+          return;
+        }
+        // standing apart: touching nothing else built, its door in its wall, and paving from it out to the pavement
+        expect(adjoins(p.rects, [base, ...others]), `${p.id} stands apart`).toBe(false);
+        const path = p.path ?? [];
+        for (const { inside, outside } of entranceSteps(p.entrance)) {
+          expect(
+            p.rects.some((r) => inRect(r, ...inside)),
+            `${p.id}'s door is in its wall`,
+          ).toBe(true);
+          expect(
+            path.some((r) => inRect(r, ...outside)),
+            `${p.id}'s path starts at its door`,
+          ).toBe(true);
+        }
+        expect(overlaps(path, [base, ...p.rects, ...others]), `${p.id}'s path over a building`).toBe(false);
+        for (const r of path) {
+          expect(r.x0, p.id).toBeGreaterThanOrEqual(0);
+          expect(r.x1, p.id).toBeLessThanOrEqual(width - 1);
+          expect(r.y1, p.id).toBeLessThan(SIDEWALK_Y);
+        }
+        expect(Math.max(...path.map((r) => r.y1)), `${p.id}'s path reaches the pavement`).toBe(SIDEWALK_Y - 1);
       });
     });
 
@@ -207,7 +232,7 @@ describe('land for sale', () => {
     expect(CENTERS.sandbox.plots.map((p) => [p.id, buildDays(p)])).toEqual([
       ['east-wing', 6],
       ['back-gallery', 3],
-      ['garden-block', 4],
+      ['garden-block', 3],
       ['west-annex', 3],
     ]);
   });
@@ -316,10 +341,10 @@ describe('how land is shown', () => {
     expect(courtyard && plotSize(courtyard)).toBe('56 tiles');
   });
 
-  it('outlines every tile of the plots not yet bought, by whether they are for sale, the one pointed at brightest', () => {
+  it('outlines every tile of the plots not yet bought, and their paths, the one pointed at brightest', () => {
     const tiles = plotHeat(offers, 'east-wing');
     expect(tiles.filter(([, , v]) => v === PLOT_POINTED)).toHaveLength(8 * 15);
-    expect(tiles.filter(([, , v]) => v === PLOT_LOCKED)).toHaveLength(plotTiles(garden.def).length + 2 * 12);
+    expect(tiles.filter(([, , v]) => v === PLOT_LOCKED)).toHaveLength(plotTiles(garden.def).length + 2 * 2 + 2 * 12); // the pavilion, its path and the annex;
     expect(tiles.filter(([, , v]) => v === PLOT_OPEN)).toHaveLength(15 * 2);
     expect(new Set([PLOT_POINTED, PLOT_LOCKED, PLOT_OPEN].map((v) => landColor(v).getHex())).size).toBe(3);
   });

@@ -13,8 +13,8 @@ import {
   type RoomType,
   SIDEWALK_Y,
 } from './data';
-import { doorstep, type Footprint, footprintOf, inFootprint } from './footprint';
-import { landTiles, lotWidth } from './land';
+import { doorstep, entranceSteps, type Footprint, footprintOf, inFootprint, onPath } from './footprint';
+import { buildingsOf, lotWidth } from './land';
 import { byId } from './lookup';
 import { carryWallSpot, inRect, sameRect } from './resize';
 import type { PlacedLayout } from './room-layout';
@@ -160,6 +160,7 @@ export class World {
     this.blocked = new Uint8Array(tiles);
     this.reserved = new Uint8Array(tiles);
     this.indoors = new Uint8Array(tiles);
+    this.buildingNo = new Uint8Array(tiles);
     this.g = new Float32Array(tiles);
     this.f = new Float64Array(tiles);
     this.came = new Int32Array(tiles);
@@ -183,6 +184,13 @@ export class World {
   building: Footprint;
   /** One byte a tile, 1 for the tiles inside the building, as of the last rebuild. */
   indoors: Uint8Array;
+  /** Which building each tile is in: 0 outdoors, 1 the one with the front door, then 2, 3… those standing apart. */
+  buildingNo: Uint8Array;
+
+  /** Which building a tile is in: 0 outdoors or off the map, 1 the one with the front door, then the rest. */
+  buildingAt(x: number, y: number): number {
+    return this.onMap(x, y) ? at(this.buildingNo, this.idx(x, y)) : 0;
+  }
 
   /** Whether a tile is inside the building. */
   inside(x: number, y: number): boolean {
@@ -201,8 +209,7 @@ export class World {
     blocked.fill(0);
     reserved.fill(0);
     doors.clear();
-    const base = centerOf(this.s).plot;
-    const fp = footprintOf(base, landTiles(this.s));
+    const fp = buildingsOf(this.s);
     this.building = fp;
     const outside = doorstep(fp);
     for (let y = 0; y < this.h; y++) {
@@ -213,14 +220,21 @@ export class World {
         if (indoors[i]) z = Z_CORRIDOR;
         else if (y === SIDEWALK_Y) z = Z_OUTSIDE;
         else if (fp.door.includes(x) && y >= outside && y < SIDEWALK_Y) z = Z_OUTSIDE;
+        else if (onPath(fp, x, y)) z = Z_OUTSIDE;
         zone[i] = z;
       }
     }
-    for (const x of fp.door) {
-      doors.add(this.edgeKey(x, fp.front, x, outside));
-      reserved[this.idx(x, fp.front)] = 1;
-      reserved[this.idx(x, fp.front - 1)] = 1;
-    }
+    for (const e of fp.entrances)
+      for (const {
+        inside: [x, y],
+        outside: [ox, oy],
+      } of entranceSteps(e)) {
+        doors.add(this.edgeKey(x, y, ox, oy));
+        // the tile inside the door, and the next one in, are kept clear for the way through
+        reserved[this.idx(x, y)] = 1;
+        if (this.onMap(2 * x - ox, 2 * y - oy)) reserved[this.idx(2 * x - ox, 2 * y - oy)] = 1;
+      }
+    this.numberBuildings();
     for (const r of this.s.rooms) {
       for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) zone[this.idx(x, y)] = r.id;
       const ox = r.door.x + r.door.dx;
@@ -239,6 +253,39 @@ export class World {
     }
     this.stamp++;
     if (!silent) this.version++;
+  }
+
+  /** Number the buildings, each a run of tiles indoors: the one with the front door first, then the rest in turn. */
+  private numberBuildings() {
+    const { buildingNo, indoors } = this;
+    buildingNo.fill(0);
+    const { door, front } = this.building;
+    const starts = [this.idx(door[0], front), ...indoors.keys()];
+    let next = 1;
+    for (const start of starts) {
+      if (!indoors[start] || buildingNo[start]) continue;
+      const todo = [start];
+      buildingNo[start] = next;
+      while (todo.length) {
+        const i = todo.pop() ?? 0;
+        const x = i % this.w;
+        const y = (i - x) / this.w;
+        for (const [nx, ny] of [
+          [x + 1, y],
+          [x - 1, y],
+          [x, y + 1],
+          [x, y - 1],
+        ] as const) {
+          if (!this.onMap(nx, ny)) continue;
+          const n = this.idx(nx, ny);
+          if (indoors[n] && !buildingNo[n]) {
+            buildingNo[n] = next;
+            todo.push(n);
+          }
+        }
+      }
+      next++;
+    }
   }
 
   /** The room with this id, if there is one. */
@@ -441,7 +488,13 @@ export class World {
     /** Whether a tile was reached from the street. */
     const need = (x: number, y: number) => this.onMap(x, y) && seen[this.idx(x, y)] === 1;
     if (!need(this.w - 1, SIDEWALK_Y)) return false;
-    for (const x of this.building.door) if (!need(x, this.building.front - 1)) return false;
+    // through every door: to the tile just outside, and the one past the tile inside
+    for (const e of this.building.entrances)
+      for (const {
+        inside: [x, y],
+        outside: [ox, oy],
+      } of entranceSteps(e))
+        if (!need(ox, oy) || !need(2 * x - ox, 2 * y - oy)) return false;
     for (const r of this.s.rooms) {
       if (!need(r.door.x, r.door.y) || !need(r.door.x + r.door.dx, r.door.y + r.door.dy)) return false;
     }

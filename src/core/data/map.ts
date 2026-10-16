@@ -23,6 +23,9 @@ export interface Land {
   plot: string;
   /** The tiles it covers, kept with it so the building keeps its shape whatever becomes of the plot. */
   rects: Rect[];
+  /** Its door and the paving out to it, for a building of its own, kept with it like its tiles. */
+  entrance?: Entrance;
+  path?: Rect[];
   /** The game day the builders finish, while they are still at work: the building grows into it then. */
   ready?: number;
   /** What the player has named it, if they have. */
@@ -30,18 +33,36 @@ export interface Land {
 }
 
 /** A plot of land a center sells next to its building, drawn for it. */
+/** The four ways a wall can face, out of a building or a room. */
+export type Side = 'north' | 'south' | 'east' | 'west';
+
+/** A door in a building's outer wall, two tiles wide: the first of its tiles inside, and the way out through it. */
+export interface Entrance {
+  side: Side;
+  /** The first tile inside it; the second is the next along the wall, east of it or south of it. */
+  x: number;
+  y: number;
+}
+
 export interface PlotDef {
   id: string;
   name: string;
   /** What it is, in a few words. */
   blurb: string;
-  /** The tiles it covers. Each plot shares a wall with the building, or with the plot it comes after. */
+  /**
+   * The tiles it covers. Each plot shares a wall with the building, or with the plot it comes after, unless it stands
+   * apart as a building of its own, with an entrance.
+   */
   rects: readonly Rect[];
   price: number;
   /** The star that puts it up for sale: 0 for from the start. */
   star: number;
   /** A plot that has to be bought first, the one it adjoins. */
   after?: string;
+  /** The door of a plot that stands apart, as a building of its own. */
+  entrance?: Entrance;
+  /** The paving laid from its door to the pavement, or to other paving, once it is built. */
+  path?: readonly Rect[];
 }
 
 /** Where a center's building stands on its lot: the inside of its walls, inclusive, and the two tiles of its front door. */

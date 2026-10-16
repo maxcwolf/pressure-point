@@ -38,7 +38,8 @@ export const sessionHeard = (ctx: SimContext, it: Item) => playingFor(ctx, it);
 export function updateNoise(ctx: SimContext) {
   const grid = ctx.noise;
   grid.fill(0);
-  const spread = spreader(ctx, noiseLeak);
+  // the outer walls hold noise back as a room's do, between the buildings and out of doors
+  const spread = spreader(ctx, noiseLeak, WALL_DAMPING);
   for (const it of ctx.s.items) {
     const { noise, sessionNoise } = ITEMS[it.type];
     const [cx, cy] = itemCenter(it);

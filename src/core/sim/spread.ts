@@ -43,10 +43,11 @@ export type Spread = (
 
 /**
  * A way to spread something into a grid, held back by the walls of the rooms it passes out of and into: all of it
- * carries within one zone, and from one into another as much as both rooms' walls let through. What each tile's walls
- * let through is worked out once, so a spreader is for the rooms as they are now.
+ * carries within one zone of one building, and from one into another as much as both rooms' walls let through, and the
+ * outer walls too, out of a building or into another. What each tile's walls let through is worked out once, so a
+ * spreader is for the rooms as they are now.
  */
-export function spreader(ctx: SimContext, leak: Leak): Spread {
+export function spreader(ctx: SimContext, leak: Leak, outer = 1): Spread {
   const { world } = ctx;
   const walls = new Float64Array(world.w * world.h);
   for (let i = 0; i < walls.length; i++) {
@@ -56,6 +57,7 @@ export function spreader(ctx: SimContext, leak: Leak): Spread {
   return (grid, cx, cy, amount, radius, inside = 1) => {
     if (!world.onMap(cx, cy)) return;
     const from = world.zoneAt(cx, cy);
+    const home = world.buildingAt(cx, cy);
     const out = at(walls, world.idx(cx, cy));
     const k = kernel(radius);
     const side = radius * 2 + 1;
@@ -65,7 +67,9 @@ export function spreader(ctx: SimContext, leak: Leak): Spread {
         const share = at(k, (y - cy + radius) * side + x - cx + radius);
         if (share === 0) continue;
         const i = world.idx(x, y);
-        const carry = at(world.zone, i) === from ? inside : out * at(walls, i);
+        const sameBuilding = at(world.buildingNo, i) === home;
+        const carry =
+          sameBuilding && at(world.zone, i) === from ? inside : out * at(walls, i) * (sameBuilding ? 1 : outer);
         grid[i] = at(grid, i) + amount * share * carry;
       }
     }

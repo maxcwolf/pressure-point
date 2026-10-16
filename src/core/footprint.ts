@@ -1,12 +1,15 @@
 // The building as a set of tiles: the rectangles it is built from, the center's own and any land bought since, its
 // front door, and the straight runs of outer wall round its edge. Nothing here knows the size of the map.
 
-import type { Plot, Rect } from './data';
+import type { Entrance, Plot, Rect, Side } from './data';
 
-/** The four sides of the building, or of a room, by the way they face. */
-export type Side = 'north' | 'south' | 'east' | 'west';
+export type { Entrance, Side } from './data';
 
-/** Where a building stands: the tiles inside its outer walls, as rectangles, and its front door. */
+/**
+ * Where the buildings stand: the tiles inside their outer walls, as rectangles, their entrances, and the paving between
+ * them and the pavement. The center's own building has the front door; land bought either joins it or stands apart as a
+ * building of its own, with an entrance and a path.
+ */
 export interface Footprint {
   /** The rectangles it is built from: the center's own building first, then any land, in the order it was bought. */
   rects: readonly Rect[];
@@ -14,9 +17,55 @@ export interface Footprint {
   door: readonly [number, number];
   /** The row inside the front wall, where the front door is. */
   front: number;
+  /** Every door in the outer walls: the front door first, then those of the buildings standing apart. */
+  entrances: readonly Entrance[];
+  /** The paving from the doors of the buildings standing apart: outdoors, walked on. */
+  paths: readonly Rect[];
   /** The smallest rectangle round every tile of it. */
   bounds: Rect;
 }
+
+/** A door's way through the wall: a tile inside, and the tile just outside it. */
+export interface DoorStep {
+  inside: readonly [number, number];
+  outside: readonly [number, number];
+}
+
+/** Which way out from a tile each side faces, across and down the map. */
+const OUT: Readonly<Record<Side, readonly [number, number]>> = {
+  north: [0, -1],
+  south: [0, 1],
+  west: [-1, 0],
+  east: [1, 0],
+};
+
+/** The two steps through an entrance, one for each of its tiles. */
+export function entranceSteps(e: Entrance): DoorStep[] {
+  const [dx, dy] = OUT[e.side];
+  // along the wall: east for a north or south door, south for an east or west one
+  const [ax, ay] = dy ? [1, 0] : [0, 1];
+  return [0, 1].map((i) => {
+    const x = e.x + ax * i;
+    const y = e.y + ay * i;
+    return { inside: [x, y], outside: [x + dx, y + dy] };
+  });
+}
+
+/** Where an entrance is in its wall: the wall's line, as a run of wall has it, and from where to where along it. */
+export function entranceSpan(e: Entrance): { side: Side; line: number; a: number; b: number } {
+  const horizontal = e.side === 'north' || e.side === 'south';
+  const across = horizontal ? e.y : e.x;
+  const along = horizontal ? e.x : e.y;
+  const outward = e.side === 'south' || e.side === 'east' ? 1 : 0;
+  return { side: e.side, line: across + outward, a: along, b: along + 2 };
+}
+
+/** The center's front door, as an entrance in the south wall. */
+export const frontEntrance = (base: Pick<Plot, 'door' | 'y1'>): Entrance => ({
+  side: 'south',
+  x: base.door[0],
+  y: base.y1,
+});
 
 /** A straight run of the building's outer wall, along the edge between tiles inside and tiles outside. */
 export interface WallRun {
@@ -55,11 +104,28 @@ function boundsOf(rects: readonly Rect[]): Rect {
   };
 }
 
-/** A building from a center's own plot and the rectangles of land added to it. */
-export function footprintOf(base: Plot, more: readonly Rect[] = []): Footprint {
+/**
+ * A building from a center's own plot and the rectangles of land added to it, with the doors and paths of any that
+ * stand apart.
+ */
+export function footprintOf(
+  base: Plot,
+  more: readonly Rect[] = [],
+  apart: { entrances?: readonly Entrance[]; paths?: readonly Rect[] } = {},
+): Footprint {
   const rects = [{ x0: base.x0, x1: base.x1, y0: base.y0, y1: base.y1 }, ...more];
-  return { rects, door: base.door, front: base.y1, bounds: boundsOf(rects) };
+  return {
+    rects,
+    door: base.door,
+    front: base.y1,
+    entrances: [frontEntrance(base), ...(apart.entrances ?? [])],
+    paths: apart.paths ?? [],
+    bounds: boundsOf(rects),
+  };
 }
+
+/** Whether a tile is paving laid to a building standing apart. */
+export const onPath = (fp: Pick<Footprint, 'paths'>, x: number, y: number) => fp.paths.some((r) => inRect(r, x, y));
 
 /** Whether a tile is inside the building. */
 export function inFootprint(fp: Footprint, x: number, y: number): boolean {
@@ -80,16 +146,13 @@ export const footprintArea = (fp: Footprint) => footprintTiles(fp).length;
 /** The row just outside the front door, where the path to the pavement starts. */
 export const doorstep = (fp: Pick<Footprint, 'front'>) => fp.front + 1;
 
-/** The building's rectangles as a key, so a layer can tell when the building has changed. */
-export const footprintKey = (fp: Footprint) => fp.rects.map((r) => `${r.x0},${r.x1},${r.y0},${r.y1}`).join(';');
-
-/** Which way out from a tile each side faces, across and down the map. */
-const OUT: Readonly<Record<Side, readonly [number, number]>> = {
-  north: [0, -1],
-  south: [0, 1],
-  west: [-1, 0],
-  east: [1, 0],
-};
+/** The building's rectangles, doors and paths as a key, so a layer can tell when the building has changed. */
+export const footprintKey = (fp: Footprint) =>
+  [
+    fp.rects.map((r) => `${r.x0},${r.x1},${r.y0},${r.y1}`).join(';'),
+    fp.entrances.map((e) => `${e.side}${e.x},${e.y}`).join(';'),
+    fp.paths.map((r) => `${r.x0},${r.x1},${r.y0},${r.y1}`).join(';'),
+  ].join('|');
 
 /** The sides in the order their runs are listed. */
 const SIDES: readonly Side[] = ['north', 'south', 'west', 'east'];

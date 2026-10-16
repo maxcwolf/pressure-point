@@ -19,14 +19,17 @@ export const PLOT_POINTED = 1;
 export const PLOT_LOCKED = 0.5;
 export const PLOT_OPEN = 0;
 
-/** The tiles of the plots not yet the game's, to color on the ground, and of the one pointed at, brightest. */
+/**
+ * The tiles of the plots not yet the game's, to color on the ground, and of the one pointed at, brightest: with the
+ * path that comes with a building standing apart.
+ */
 export function plotHeat(offers: readonly PlotOffer[], pointedAt: string | null): HeatTile[] {
   const out: HeatTile[] = [];
   for (const o of offers) {
     const pointed = o.def.id === pointedAt;
     if (!pointed && (o.state === 'owned' || o.state === 'building')) continue;
     const value = pointed ? PLOT_POINTED : o.state === 'locked' ? PLOT_LOCKED : PLOT_OPEN;
-    for (const [x, y] of plotTiles(o.def)) out.push([x, y, value]);
+    for (const [x, y] of plotTiles({ rects: [...o.def.rects, ...(o.def.path ?? [])] })) out.push([x, y, value]);
   }
   return out;
 }

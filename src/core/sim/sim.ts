@@ -88,6 +88,7 @@ import { askWard, canWard, prepareMishap, updateMishaps } from './mishaps';
 import { hasSupplier, setMushrooms } from './mushrooms';
 import { itemNoise, noiseAt, updateNoise } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
+import { updateOutdoors } from './outdoors';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
@@ -186,6 +187,7 @@ export class Sim {
       updateRival(ctx);
       updateMishaps(ctx);
       updateLand(ctx);
+      updateOutdoors(ctx);
     }
     announce(ctx, dt);
     updateTwists(ctx, dt);

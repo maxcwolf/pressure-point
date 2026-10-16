@@ -58,8 +58,12 @@ export function updateWarmth(ctx: SimContext) {
     grid.fill(IDEAL_TEMP);
     return;
   }
-  grid.fill(indoorTemp(outdoorTemp(centerOf(ctx.s).climate, ctx.s.day)));
-  const spread = spreader(ctx, heatLeak);
+  // out of doors, the weather itself; inside, some of the way from just right toward it
+  const outdoor = outdoorTemp(centerOf(ctx.s).climate, ctx.s.day);
+  const indoor = indoorTemp(outdoor);
+  const { indoors } = ctx.world;
+  for (let i = 0; i < grid.length; i++) grid[i] = indoors[i] ? indoor : outdoor;
+  const spread = spreader(ctx, heatLeak, HEAT_DAMPING);
   for (const it of ctx.s.items) {
     // a radiator in a power cut or a freeze gives off nothing
     const heat = ctx.world.stoppedByMishap(it) ? 0 : itemHeat(it);

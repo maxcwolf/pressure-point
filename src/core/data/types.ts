@@ -516,6 +516,7 @@ export type FeelingId =
   | 'stale-linens'
   | 'too-cold'
   | 'too-hot'
+  | 'out-in-weather'
   | 'rested'
   | 'woozy'
   | 'class'

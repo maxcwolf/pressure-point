@@ -2,16 +2,30 @@
 // strips along a side that were sold before centers had plots of their own, as saves from then keep them.
 
 import { type CenterId, centerOf, CENTERS, type Land, LOT_W, type Plot, type PlotDef, type Rect } from './data';
-import { type Footprint, inFootprint } from './footprint';
+import { type Footprint, footprintOf, inFootprint } from './footprint';
 import { unlockedUpTo } from './state/game';
 import type { GameState } from './state/types';
 
 /** How wide a center's lot is. */
 export const lotWidth = (center: { width?: number }) => center.width ?? LOT_W;
 
-/** The rectangles of the land bought and built on, in the order it was bought: not those the builders are still at. */
-export const landTiles = (s: Pick<GameState, 'land'>): Rect[] =>
-  s.land.filter((l) => l.ready === undefined).flatMap((l) => l.rects);
+/** The land bought and built on, in the order it was bought: not the plots the builders are still at. */
+const builtOn = (s: Pick<GameState, 'land'>): Land[] => s.land.filter((l) => l.ready === undefined);
+
+/** The rectangles of the land bought and built on, in the order it was bought. */
+export const landTiles = (s: Pick<GameState, 'land'>): Rect[] => builtOn(s).flatMap((l) => l.rects);
+
+/**
+ * The center's buildings as they stand: its own, grown into the land built on next to it, and any standing apart, with
+ * their doors and the paving out to them.
+ */
+export function buildingsOf(s: Pick<GameState, 'land' | 'center'>): Footprint {
+  const land = builtOn(s);
+  return footprintOf(centerOf(s).plot, landTiles(s), {
+    entrances: land.flatMap((l) => (l.entrance ? [l.entrance] : [])),
+    paths: land.flatMap((l) => l.path ?? []),
+  });
+}
 
 /** Whether a plot is the game's already, being built on, up for sale, or not for sale yet. */
 export type PlotState = 'owned' | 'building' | 'open' | 'locked';

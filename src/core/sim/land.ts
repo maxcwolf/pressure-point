@@ -22,7 +22,13 @@ export function buyPlot(ctx: SimContext, id: string): boolean {
   }
   spend(ctx, offer.price, 'building');
   const days = buildDays(offer.def);
-  ctx.s.land.push({ plot: id, rects: offer.def.rects.map((r) => ({ ...r })), ready: ctx.s.day + days });
+  const { def } = offer;
+  ctx.s.land.push({
+    plot: id,
+    rects: def.rects.map((r) => ({ ...r })),
+    ...(def.entrance && { entrance: { ...def.entrance }, path: (def.path ?? []).map((r) => ({ ...r })) }),
+    ready: ctx.s.day + days,
+  });
   toast(ctx, `${offer.name} is yours. The builders are at work on it, and will be done in ${days} days.`, 'good');
   emit(ctx, { type: 'sfx', name: 'build' });
   return true;
@@ -35,7 +41,13 @@ export function updateLand(ctx: SimContext) {
   for (const l of done) delete l.ready;
   ctx.world.rebuild();
   for (const offer of landOffers(ctx).filter((o) => done.some((l) => l.plot === o.def.id)))
-    toast(ctx, `Work on ${nameInSentence(offer.name)} is done, and the building has grown into it.`, 'good');
+    toast(
+      ctx,
+      offer.def.entrance
+        ? `Work on ${nameInSentence(offer.name)} is done: it has a door of its own, and a path out to it.`
+        : `Work on ${nameInSentence(offer.name)} is done, and the building has grown into it.`,
+      'good',
+    );
   emit(ctx, { type: 'sfx', name: 'build' });
 }
 

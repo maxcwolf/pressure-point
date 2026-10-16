@@ -291,6 +291,17 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'experience',
     lines: ['Like waiting in a sauna, only without the benefits.', 'Sweltering. Open a window.'],
   },
+  'out-in-weather': {
+    id: 'out-in-weather',
+    icon: '🌧️',
+    text: 'Out in the weather',
+    good: false,
+    part: 'experience',
+    lines: [
+      'Had to go outside to get from one building to the next. In this weather?',
+      'Nobody mentioned the walk outdoors between the buildings.',
+    ],
+  },
 };
 
 /** The parts of a center's reputation, in the order they are shown. */

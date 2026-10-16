@@ -1,8 +1,8 @@
 // The building's outer walls, worked out from the edges of its tiles: each straight run of wall, tall across from the
-// camera and low facing it, joined at the corners, with the entrance in the front; and the windows in the tall ones,
+// camera and low facing it, joined at the corners, with a gap for each entrance; and the windows in the tall ones,
 // which make way for any room built against them. Nothing here draws anything, so it can be tested without a renderer.
 
-import { type Footprint, wallCorners, type WallRun, wallRuns } from '../core/footprint';
+import { entranceSpan, type Footprint, wallCorners, type WallRun, wallRuns } from '../core/footprint';
 import type { Room } from '../core/state/types';
 import { OUTER_T } from './shared';
 import { nearSides, type Side, type Sides } from './turn';
@@ -34,9 +34,16 @@ export interface ShellStretch {
 const PANE_W = 1.5;
 const PANE_EVERY = 3;
 
-/** Whether a stretch of a run of wall is the front entrance. */
+/** The entrances in a run of wall, as spans along it, from its start to its end. */
+const doorsIn = (fp: Footprint, run: WallRun) =>
+  fp.entrances
+    .map(entranceSpan)
+    .filter((d) => d.side === run.side && d.line === run.line && d.a >= run.a && d.b <= run.b)
+    .sort((d, e) => d.a - e.a);
+
+/** Whether a stretch of a run of wall takes in an entrance. */
 const atEntrance = (fp: Footprint, run: WallRun, a: number, b: number) =>
-  run.side === 'south' && run.line === fp.front + 1 && a < fp.door[1] + 1 && b > fp.door[0];
+  doorsIn(fp, run).some((d) => a < d.b && b > d.a);
 
 /** Whether a room stands against a run of outer wall somewhere between a and b along it. */
 function against(room: Room, run: WallRun, a: number, b: number): boolean {
@@ -103,9 +110,13 @@ export function shellStretches(fp: Footprint, near: Sides): ShellStretch[] {
       tall: !near[run.side],
       at: run.line + (outward * T) / 2,
     };
-    if (atEntrance(fp, run, a, b)) {
-      out.push({ ...base, a, b: fp.door[0] }, { ...base, a: fp.door[1] + 1, b });
-    } else out.push({ ...base, a, b });
+    // the wall in stretches either side of each entrance in it
+    let from = a;
+    for (const d of doorsIn(fp, run)) {
+      out.push({ ...base, a: from, b: d.a });
+      from = d.b;
+    }
+    out.push({ ...base, a: from, b });
   }
   return out;
 }

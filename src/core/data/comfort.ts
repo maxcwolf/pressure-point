@@ -49,6 +49,8 @@ export const HEAT_THIRST = 1;
 export const DISCOMFORT_MORALE = 10;
 /** Someone notices the cold or heat from this much discomfort. */
 export const DISCOMFORT_NOTICE = 0.3;
+/** How far from just right the weather can be, either way, before a walk outside between buildings is minded. */
+export const OUTDOOR_BAND = 15;
 /** How fast a Stone Warmer's stones cool, in points a second, and how many times faster still in the worst cold. */
 export const STONE_COOLING = 0.08;
 export const COLD_STONES = 3;

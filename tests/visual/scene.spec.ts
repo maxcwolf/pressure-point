@@ -99,6 +99,29 @@ test.describe('the scene', () => {
     await expect(page).toHaveScreenshot('scene-site.png');
   });
 
+  test('a building standing apart, with its own door and a path out to the pavement', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      const { sim, state } = pp;
+      state.stars = 1;
+      state.money = 1000000;
+      for (const id of ['east-wing', 'garden-block']) {
+        sim.buyPlot(id);
+        // the builders done at once
+        for (const l of state.land) delete l.ready;
+        sim.world.rebuild();
+      }
+      const room = sim.createRoom('massage', { x: 39, y: 8, w: 4, h: 4 }, { x: 40, y: 11, dx: 0, dy: 1 });
+      sim.placeItem('massage_table', 40, 8, 0, { free: true, roomId: room.id });
+      sim.finishRoom(room);
+      state.speed = 0;
+      pp.view.target.set(37, 0, 13);
+    });
+    await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-apart.png');
+  });
+
   test('a building grown into every plot of land, with a room against its old wall', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => {

@@ -26,8 +26,8 @@ import { StorefrontLayer } from './storefront';
 import { nearSides, type Turn } from './turn';
 import { VibesLayer } from './vibes';
 
-/** Every rectangle of the center's plots of land, kept clear of trees whether bought or not. */
-const plotsOf = (sim: Sim): Rect[] => centerOf(sim.s).plots.flatMap((p) => p.rects);
+/** Every rectangle of the center's plots of land and the paths to them, kept clear of trees whether bought or not. */
+const plotsOf = (sim: Sim): Rect[] => centerOf(sim.s).plots.flatMap((p) => [...p.rects, ...(p.path ?? [])]);
 
 export class View {
   readonly renderer: THREE.WebGLRenderer;
