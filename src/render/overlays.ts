@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 
-import type { ItemType } from '../core/data';
+import type { ItemType, RugPatternId } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { at } from '../core/util';
@@ -36,6 +36,8 @@ export interface GhostSpec {
   y: number;
   rot: number;
   ok: boolean;
+  /** A rug's pattern. */
+  pattern?: RugPatternId | undefined;
 }
 /** A highlight on one tile's worth of wall, for placing doors and windows. */
 export interface DoorSpec {
@@ -48,7 +50,7 @@ export class Overlays {
   /** What the player has selected, if anything. */
   selected: Selection | null = null;
   private overlay: THREE.InstancedMesh;
-  private ghost: { group: THREE.Group; type: ItemType } | null = null;
+  private ghost: { group: THREE.Group; key: string } | null = null;
   private ghostMats = {
     ok: new THREE.MeshBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.6, depthWrite: false }),
     bad: new THREE.MeshBasicMaterial({ color: 0xff5d5d, transparent: true, opacity: 0.6, depthWrite: false }),
@@ -136,9 +138,11 @@ export class Overlays {
       this.ghost = null;
       return;
     }
-    if (this.ghost?.type !== spec.type) {
+    // a rug is built afresh in each pattern
+    const key = `${spec.type}:${spec.pattern ?? ''}`;
+    if (this.ghost?.key !== key) {
       if (this.ghost) this.scene.remove(this.ghost.group);
-      const group = buildItem(spec.type);
+      const group = buildItem(spec.type, spec.pattern);
       group.traverse((o) => {
         if (o instanceof THREE.Mesh) {
           o.castShadow = false;
@@ -146,7 +150,7 @@ export class Overlays {
         }
       });
       this.scene.add(group);
-      this.ghost = { group, type: spec.type };
+      this.ghost = { group, key };
     }
     const m = spec.ok ? this.ghostMats.ok : this.ghostMats.bad;
     this.ghost.group.traverse((o) => {

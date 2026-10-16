@@ -1,0 +1,37 @@
+/* Styles for RugPatterns. */
+
+.rugpatterns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.rugswatches {
+  display: flex;
+  gap: 4px;
+}
+
+button.rugswatch {
+  width: 28px;
+  height: 28px;
+  padding: 2px;
+  border: 2px solid rgba(36, 56, 74, 0.35);
+  border-radius: 8px;
+  background: #fff;
+}
+
+button.rugswatch i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+}
+
+button.rugswatch.on {
+  border-color: var(--teal-dark);
+  box-shadow: 0 0 0 2px var(--teal);
+}

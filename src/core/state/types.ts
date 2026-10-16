@@ -23,6 +23,7 @@ import type {
   Priced,
   Role,
   RoomType,
+  RugPatternId,
   Sex,
   TraitId,
   WallId,
@@ -114,6 +115,8 @@ export interface Item {
   level: number;
   /** The next upgrade has been paid for and is waiting for a Mechanic to install it. */
   upgradePaid: boolean;
+  /** A rug's pattern, when it is not the original Kilim. */
+  pattern?: RugPatternId;
 }
 
 export interface Look {

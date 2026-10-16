@@ -12,6 +12,8 @@ import {
   type ItemType,
   ROOMS,
   type RoomType,
+  RUG_PATTERNS,
+  type RugPatternId,
   type WallId,
   WALLS,
 } from './data';
@@ -53,7 +55,8 @@ function readSpot(v: unknown): WallSpot | null {
 function readItem(v: unknown): LayoutItem | null {
   if (!isRecord(v) || typeof v.type !== 'string' || !(v.type in ITEMS)) return null;
   if (!isInt(v.x, 0, MAX_SIDE) || !isInt(v.y, 0, MAX_SIDE) || !isInt(v.rot, 0, 3)) return null;
-  return { type: v.type as ItemType, x: v.x, y: v.y, rot: v.rot };
+  const pattern = typeof v.pattern === 'string' && Object.hasOwn(RUG_PATTERNS, v.pattern) ? v.pattern : undefined;
+  return { type: v.type as ItemType, x: v.x, y: v.y, rot: v.rot, ...(pattern && { pattern: pattern as RugPatternId }) };
 }
 
 /**

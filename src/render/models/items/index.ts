@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 
-import type { ItemType } from '../../../core/data';
+import { type ItemType, rugPattern, type RugPatternId } from '../../../core/data';
 import { mergeStill } from '../merge';
 import { trimShadows } from '../parts';
 import { buildAcuTable } from './acu-table';
@@ -73,8 +73,8 @@ import { buildWaterCooler } from './water-cooler';
 import { buildWhiteboard } from './whiteboard';
 import { buildWindChimes } from './wind-chimes';
 
-/** What builds each item's model. Every item type has to have one. */
-const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
+/** What builds each item's model. Every item type has to have one. A rug is built in its pattern. */
+const BUILDERS: Record<ItemType, (g: THREE.Group, pattern?: RugPatternId) => void> = {
   reception_desk: buildReceptionDesk,
   shop_counter: buildShopCounter,
   consult_desk: buildConsultDesk,
@@ -144,11 +144,12 @@ const BUILDERS: Record<ItemType, (g: THREE.Group) => void> = {
   staff_fridge: buildStaffFridge,
 };
 
-/** Build an item in its local frame: origin at the footprint center, +z is the front. */
-export function buildItem(type: ItemType): THREE.Group {
+/** Build an item in its local frame: origin at the footprint center, +z is the front. A rug comes in its pattern. */
+export function buildItem(type: ItemType, pattern?: RugPatternId): THREE.Group {
   const g = new THREE.Group();
-  BUILDERS[type](g);
+  const look = type === 'rug' ? rugPattern(pattern) : undefined;
+  BUILDERS[type](g, look);
   trimShadows(g);
-  mergeStill(g, `item:${type}`);
+  mergeStill(g, look && look !== 'kilim' ? `item:${type}:${look}` : `item:${type}`);
   return g;
 }

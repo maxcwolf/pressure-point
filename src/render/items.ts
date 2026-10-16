@@ -106,14 +106,14 @@ export class ItemsLayer {
     const liveItems = new Set<number>();
     for (const it of this.sim.s.items) {
       liveItems.add(it.id);
-      const key = `${it.type},${it.x},${it.y},${it.rot},${it.level}`;
+      const key = `${it.type},${it.x},${it.y},${it.rot},${it.level},${it.pattern ?? ''}`;
       if (this.items.get(it.id)?.key === key) continue;
       const old = this.items.get(it.id);
       if (old) {
         this.scene.remove(old.group);
         disposeOwned(old.group);
       }
-      const group = buildItem(it.type);
+      const group = buildItem(it.type, it.pattern);
       const plate = upgradePlate(it.type, it.level);
       if (plate) group.add(plate);
       placeItemModel(group, it.type, it.x, it.y, it.rot);

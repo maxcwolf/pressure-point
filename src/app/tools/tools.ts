@@ -9,7 +9,7 @@
 // This class holds the tool in hand and talks to the game and the scene. The working
 // out (geometry, hints, which tiles to color) lives in the small modules beside it.
 
-import { centerOf, type ItemType, ROOMS, type RoomType } from '../../core/data';
+import { centerOf, type ItemType, ROOMS, type RoomType, type RugPatternId } from '../../core/data';
 import { money } from '../../core/format';
 import { plotAt } from '../../core/land';
 import { resizeCost, sameRect } from '../../core/resize';
@@ -59,6 +59,8 @@ export class Tools {
   hint = '';
   /** Why the current placement is invalid, if it is. */
   problem = '';
+  /** The pattern the next rug put down will have, kept from one rug to the next. */
+  rugPattern: RugPatternId = 'kilim';
   private cursor: Point | null = null;
   /** Ask whether to buy a plot of land, once one for sale is clicked with the Expand tool. */
   askToBuy: (plotId: string) => void = () => undefined;
@@ -103,6 +105,24 @@ export class Tools {
     this.tool = { kind: 'item', type, rot: 0 };
     this.select(null);
     this.refresh();
+  }
+
+  /** Whether a new rug is in hand, so its pattern can be picked before it goes down. */
+  get holdingRug(): boolean {
+    const t = this.tool;
+    if (t.kind === 'item') return t.type === 'rug';
+    return t.kind === 'room' && t.phase === 'plan' && t.sub?.kind === 'item' && t.sub.type === 'rug';
+  }
+
+  /** Choose the pattern for the rugs put down from now on. */
+  pickRugPattern(pattern: RugPatternId) {
+    this.rugPattern = pattern;
+    this.refresh();
+  }
+
+  /** What a new item of a type is put down with: a rug, its pattern. */
+  private looks(type: ItemType): { pattern?: RugPatternId } {
+    return type === 'rug' ? { pattern: this.rugPattern } : {};
   }
 
   /** Pick up an existing item to put it down somewhere else. */
@@ -325,7 +345,7 @@ export class Tools {
     }
     if (t.kind === 'item') {
       const spot = this.spotFor(t);
-      if (spot && sim.placeItem(t.type, spot[0], spot[1], t.rot)) this.onChange();
+      if (spot && sim.placeItem(t.type, spot[0], spot[1], t.rot, this.looks(t.type))) this.onChange();
       else if (spot) this.sfx('error');
     } else if (t.kind === 'move') {
       const spot = this.spotFor(t);
@@ -391,7 +411,7 @@ export class Tools {
       if (sub?.kind === 'item') {
         const spot = this.spotFor(sub);
         // required furniture is part of the room's price and has to go inside it; extras are bought as they are placed
-        const opts = sub.required ? { free: true, roomId: t.room.id } : {};
+        const opts = { ...(sub.required && { free: true, roomId: t.room.id }), ...this.looks(sub.type) };
         if (spot && sim.placeItem(sub.type, spot[0], spot[1], sub.rot, opts)) {
           if (sub.required) t.sub = nextRequired(sim.missingItems(t.room));
         } else if (spot) this.sfx('error');
@@ -464,7 +484,9 @@ export class Tools {
     drawing.tiles.push(...tiles);
     drawing.markers.push(...markers);
     this.problem = check.reason;
-    this.view.setGhost({ ...placed, ok: check.ok });
+    // a rug being moved keeps its own pattern; a new one has the pattern picked for it
+    const pattern = type === 'rug' ? (moving ? moving.pattern : this.rugPattern) : undefined;
+    this.view.setGhost({ ...placed, ok: check.ok, pattern });
   }
 
   /** Marker for the window tool on one room. */

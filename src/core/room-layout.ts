@@ -2,7 +2,7 @@
 // a room picks its layout up, turns it if wanted, and puts it down somewhere else. Plain functions of the layout, so
 // they can be tested without a game.
 
-import { ITEMS, type ItemType, ROOMS, type RoomType, WINDOW_COST } from './data';
+import { ITEMS, type ItemType, ROOMS, type RoomType, type RugPatternId, WINDOW_COST } from './data';
 import type { Item, Room, RoomDecor, WallSpot } from './state/types';
 import { itemDims, type Rect } from './world';
 
@@ -12,6 +12,8 @@ export interface LayoutItem {
   x: number;
   y: number;
   rot: number;
+  /** A rug's pattern, if it has one. */
+  pattern?: RugPatternId;
 }
 
 /** A room's shape, contents and look, measured from its top-left corner. */
@@ -43,7 +45,13 @@ export function layoutOf(room: Room, items: readonly Item[]): Layout {
     h: room.h,
     door: shift(room.door, -room.x, -room.y),
     windows: room.windows.map((w) => shift(w, -room.x, -room.y)),
-    items: items.map((it) => ({ type: it.type, x: it.x - room.x, y: it.y - room.y, rot: it.rot })),
+    items: items.map((it) => ({
+      type: it.type,
+      x: it.x - room.x,
+      y: it.y - room.y,
+      rot: it.rot,
+      ...(it.pattern && { pattern: it.pattern }),
+    })),
     ...(room.floor && { floor: room.floor }),
     ...(room.wall && { wall: room.wall }),
   };
@@ -65,7 +73,7 @@ export function turnLayout(l: Layout): Layout {
     windows: l.windows.map((w) => turnSpot(w, l.h)),
     items: l.items.map((it) => {
       const [, fh] = itemDims(it.type, it.rot);
-      return { type: it.type, x: l.h - it.y - fh, y: it.x, rot: (it.rot + 1) & 3 };
+      return { ...it, x: l.h - it.y - fh, y: it.x, rot: (it.rot + 1) & 3 };
     }),
   };
 }

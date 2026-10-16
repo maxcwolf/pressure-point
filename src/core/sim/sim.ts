@@ -16,6 +16,7 @@ import {
   type Offering,
   type Priced,
   type RoomType,
+  type RugPatternId,
 } from '../data';
 import { tuning } from '../difficulty';
 import type { PlotOffer } from '../land';
@@ -58,6 +59,7 @@ import {
   resizeRoom,
   roomRefund,
   sellItem,
+  setRugPattern,
   toggleWindow,
 } from './building';
 import { acceptCall, callFee, declineCall, updateCalls, whoCanGo } from './calls';
@@ -608,6 +610,11 @@ export class Sim {
   /** Buy an item and put it down. */
   placeItem(type: ItemType, x: number, y: number, rot: number, opts: PlaceOptions = {}): Item | null {
     return placeItem(this.ctx, type, x, y, rot, opts);
+  }
+
+  /** Change a rug's pattern. */
+  setRugPattern(id: number, pattern: RugPatternId) {
+    setRugPattern(this.ctx, id, pattern);
   }
 
   /** Whether an item could be picked up and put down somewhere else. */

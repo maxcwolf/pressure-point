@@ -8,6 +8,7 @@ import {
   LINENS_STALE,
   MISHAPS,
   NOISE_NOTICE,
+  rugPattern,
   STONE_USE,
   UPGRADE_LEVELS,
   WEAR_REPAIR,
@@ -23,6 +24,7 @@ import { stoppedLabel } from '../../lib/mishaps';
 import { installStatus, upgradeEffect, upgradeStars } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { RugPatterns } from '../common/RugPatterns';
 import { StationInfo } from './StationInfo';
 
 /** How fresh a table's linens are, and what changing them needs. */
@@ -133,6 +135,15 @@ export function ItemInfo({ item: it }: { item: Item }) {
           {`Soiled linens: ${it.water} of ${HAMPER_SIZE} sets`}
           <Bar value={(it.water / HAMPER_SIZE) * 100} class={it.water >= HAMPER_SIZE ? 'bad' : 'need'} />
         </label>
+      )}
+      {it.type === 'rug' && (
+        <RugPatterns
+          current={rugPattern(it.pattern)}
+          onPick={(id) => {
+            sim.setRugPattern(it.id, id);
+            tools.pickRugPattern(id);
+          }}
+        />
       )}
       {!!def.decor && <p class="sub">{`Decor: +${def.decor} to its surroundings`}</p>}
       <Button

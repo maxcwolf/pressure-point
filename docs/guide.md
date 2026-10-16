@@ -26,7 +26,7 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 6. Salaries come out at the end of each month. Hit the objectives to earn stars.
 7. Stars unlock new **massage modalities**. Build a **Training Room** and send therapists on courses to deliver them. Staff earn experience and rise through five **ranks**; each rank brings a qualification slot for a course, and a promotion comes with a raise.
 8. A **Posture Lab** settles diagnoses the Consultant was unsure about, so fewer guests need a second consultation.
-9. **Decor** (salt lamps, statues, rugs, magazine racks) makes its surroundings nicer to wait in and raises a room's **prestige**, which lifts staff morale and results.
+9. **Decor** (salt lamps, statues, rugs, magazine racks) makes its surroundings nicer to wait in and raises a room's **prestige**, which lifts staff morale and results. With a **Woven Rug** in hand, pick its pattern from the swatches under the hint before you put it down: Kilim, Ocean, Sunset, Forest, Lotus or Beach stripes. The next rug starts with the same pattern, and a rug's inspector changes it later, for free.
 10. Staff have **morale**. Underpaid or overworked staff ask for a raise, and quit if ignored for long.
 11. Equipment **wears out** with use. A Caretaker services it; left alone it breaks down. From the first star, **upgrade** a treatment table, mat or scanner from its inspector, up to a level for each star: it wears more slowly and its treatments work more often. A Caretaker with the **Mechanics** course installs each upgrade.
 12. The **Money** menu offers loans and lets you set prices. **Emergencies** bring a batch of guests to heal against the clock for a bonus.

@@ -27,3 +27,10 @@
   color: var(--red);
   font-weight: 600;
 }
+
+/* the patterns to pick from while a rug is in hand, which can be clicked though the hint cannot */
+.hintpill.rugpicker {
+  margin-top: 6px;
+  padding: 5px 12px;
+  pointer-events: auto;
+}

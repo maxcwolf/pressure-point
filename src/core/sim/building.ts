@@ -1,6 +1,6 @@
 // Building: placing, moving and selling items, and creating, changing and removing rooms.
 
-import { ITEMS, type ItemType, ROOM_TILE_COST, ROOMS, type RoomType, WINDOW_COST } from '../data';
+import { ITEMS, type ItemType, ROOM_TILE_COST, ROOMS, type RoomType, type RugPatternId, WINDOW_COST } from '../data';
 import { money } from '../format';
 import { carryWallSpot, carryWindows, resizeCost, resizeTiles } from '../resize';
 import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
@@ -24,6 +24,8 @@ import { upgradeSpent } from './upgrades';
 export interface PlaceOptions {
   free?: boolean;
   roomId?: number;
+  /** A rug's pattern. */
+  pattern?: RugPatternId;
 }
 
 /** Rebuild the grids and reroute everyone after the layout changes. */
@@ -40,8 +42,9 @@ function sweepCovered(ctx: SimContext) {
 }
 
 /** A brand-new item, not yet in the game. */
-function newItem(ctx: SimContext, type: ItemType, x: number, y: number, rot: number): Item {
+function newItem(ctx: SimContext, type: ItemType, x: number, y: number, rot: number, pattern?: RugPatternId): Item {
   return {
+    ...(type === 'rug' && pattern && pattern !== 'kilim' && { pattern }),
     id: ctx.s.nextId++,
     type,
     x,
@@ -78,12 +81,22 @@ export function placeItem(
     emit(ctx, { type: 'sfx', name: 'error' });
     return null;
   }
-  const it = newItem(ctx, type, x, y, rot);
+  const it = newItem(ctx, type, x, y, rot, opts.pattern);
   ctx.s.items.push(it);
   if (!opts.free) spend(ctx, def.cost, 'building');
   worldChanged(ctx);
   emit(ctx, { type: 'sfx', name: 'place' });
   return it;
+}
+
+/** Change a rug's pattern, for free: it is for looks alone. */
+export function setRugPattern(ctx: SimContext, id: number, pattern: RugPatternId) {
+  const it = ctx.world.item(id);
+  if (it?.type !== 'rug') return;
+  if (pattern === 'kilim') delete it.pattern;
+  else it.pattern = pattern;
+  // nothing has moved, but the view has a rug to draw afresh
+  ctx.world.version++;
 }
 
 /** Start a new room as a blueprint, not yet paid for. */
@@ -406,7 +419,7 @@ export function buildLayout(
     ...withDecor({}, layout),
   };
   ctx.s.rooms.push(room);
-  for (const it of placed.items) ctx.s.items.push(newItem(ctx, it.type, it.x, it.y, it.rot));
+  for (const it of placed.items) ctx.s.items.push(newItem(ctx, it.type, it.x, it.y, it.rot, it.pattern));
   const lost = keepWindows(ctx, room, placed.windows);
   spend(ctx, cost - lost * WINDOW_COST, 'building');
   worldChanged(ctx);
