@@ -10,7 +10,8 @@ Nothing here is built yet. The phases at the end are each meant to ship on their
 - **Land is strips.** `GameState.land` lists sides bought (`'west' | 'east' | 'back'`). `plotWith()` (`core/land.ts`) grows the rectangle by up to 4 tiles per purchase. The front never moves.
 - **Bought from a menu.** The Money menu's Land tab lists the strips with a price. While it is open, the strips are tinted on the ground with floating For Sale sprites (`render/land-signs.ts`).
 - **One fixed map.** The lot is 32 × 24 tiles for every center (`W`, `H` in `core/data/map.ts`). The street runs along the front at rows 20 to 22.
-- **People walk in from the ends of the street.** `streetTile()` (`core/sim/chars.ts`) starts every guest, member of staff and visitor at x = 0 or x = W − 1. So the map's width sets how long everyone walks, and so the pacing of every seeded test.
+- **People walk in from the ends of the street.** `streetTile()` (`core/sim/chars.ts`) starts every guest, member of staff and visitor at x = 0 or x = W − 1. People leave by walking back to one and are removed when they reach it. So the map's width sets how long everyone walks, and so the pacing of every seeded test.
+- **The camera turns.** It looks from any of four corners (`render/turn.ts`). The outer walls facing it are cut low and the ones across the building stand tall, so which walls are tall depends on the turn (`nearSides(turn)`, `shellWalls()` in `render/scenery.ts`).
 
 ## What Two Point does
 
@@ -85,6 +86,7 @@ My recommendations, each open to Max's call (see [Decisions to make](#decisions-
 - **State and saves.**
   - `GameState.land` becomes a list of plot ids, with construction in progress tracked per plot.
   - `upgradeSave` turns the old sides (`LandSide[]`) into equivalent rectangles: a "legacy strip" plot kind, so a building grown today keeps its exact shape.
+  - This has to happen in phase 3, before any map changes size, not in phase 4. `LAND_LIMITS.east` is `W - 2`, and the last strip on a side takes whatever room is left (`nextPlot()`). So if a map got wider while saves still held sides, a save that bought land to the east would grow by more tiles. Work the strips out with the old map size and the center's own limits (the Boardwalk's `land: { back: 3 }`), store them as rectangles, then shift them with the rest of the save.
   - The save version goes up again.
 - **Map size per center.**
   - `W` and `H` stop being constants and become the center's.
@@ -93,6 +95,7 @@ My recommendations, each open to Max's call (see [Decisions to make](#decisions-
   - Every grid array (`zone`, `blocked`, the pathfinder's buffers, and `ctx.attract`, `ctx.noise` and `ctx.warmth`) is sized from it.
 - **Arrivals that don't depend on the map's width.**
   - `streetTile()` starts people at a fixed distance along the sidewalk from the nearest entrance, not at the map's ends.
+  - That spot will usually be in plain view, partway along the sidewalk. Today people leaving vanish where they reach it, and arrivals pop up there. So arriving and leaving need a short fade, or a walk off the map that the sim doesn't count, so walking time stays independent of the map's width.
   - This must come before any map grows. It is the one change that moves every seeded test, so it should move them once, on its own.
 - **Growing the map at the back or the west moves the origin.**
   - Saves store absolute tile positions. A center whose map grows toward x < 0 or y < 0 needs every coordinate in an old save shifted:
@@ -102,18 +105,21 @@ My recommendations, each open to Max's call (see [Decisions to make](#decisions-
     - litter,
     - visitors,
     - queued spots.
-  - Write it as one `shiftSave(s, dx, dy)`. Pair it with a test that walks the `GameState` type's fields, so a coordinate added later can't be missed.
+  - Write it as one `shiftSave(s, dx, dy)`.
+  - Make a coordinate added later impossible to miss. Types don't exist at runtime, so a test can't walk them. Instead, give each saved type an exhaustive map of its fields to `'shift'` or `'keep'` (a `Record<keyof Room, …>` and so on), so a new field fails to compile until someone decides. Watch for the tuples: `Waypoint` is `[x, y, pose]`, and `Destination` is `[tx, ty, px, py, hasPose]`, whose last entry isn't a coordinate.
+  - Test it on a save that has every kind of coordinate filled in.
   - Prefer growing maps east and back only where that avoids a shift. It can't always be avoided.
 
 ### Drawing (`render/`)
 
 - **Outer walls from edges.**
   - `render/scenery.ts` builds the shell as four boxes from `x0..x1, y0..y1`. Instead, a pure function walks the footprint mask and returns wall segments: tile edges with inside on one side and outside on the other.
-  - Each segment is tall or low by which way it faces, the same cutaway rule as now: the back and west tall, the front and east low.
-  - Corners and T-junctions need joins.
-  - Test it as plain data, like `render/outer-walls.ts` is.
-- **Back windows** (`render/outer-walls.ts`) come from the tall segments rather than the two back walls.
-- **Room walls along the building's edge.** `alongOuterWall()` (`render/room-walls.ts`) compares a room with `x0`, `x1`, `y0` and `y1`. It should ask the edge set whether each side of the room lies on an outer wall.
+  - Each segment faces out one of four ways. It is low when that side faces the camera at the current turn (`nearSides(turn)`) and tall otherwise, the same cutaway rule as now. A wall facing away from the camera always has the building on the camera's side, so a tall one only ever hides the outdoors.
+  - Corners need joins. At an outside corner, keep `shellWalls()`'s rule for which wall runs on over it: a tall wall before a low one, and along x before along z. That's what keeps phase 1's screenshots unchanged at every turn. Inside corners (an L, or round a courtyard) are new, and need a rule of their own.
+  - Test it as plain data, like `render/outer-walls.ts` is, at all four turns.
+- **Windows in the tall walls** (`outerPanes()` in `render/outer-walls.ts`) come from the tall segments rather than the four sides. `render/rooms.ts` places each pane at `plot.x0`, `x1`, `y0` or `y1`, so it takes the segment's position instead.
+- **Room walls along the building's edge.** `alongOuterWall()` (`render/room-walls.ts`) compares a room with `x0`, `x1`, `y0` and `y1` and answers per side, as a `Record<Side, boolean>`. Once outer walls are segments, a room's side can lie partly along one, so it should answer per stretch of the room's side.
+- **What is keyed or placed from the rectangle.** `plotKey()` (`render/shared.ts`) tells layers when the building has grown, and becomes a key of the footprint. The center's sign (`signSpot()`, `render/sign.ts`) and the rival's storefront across the street (`storefrontSpot()`, `render/storefront.ts`) stand by `plot.door`, and need to keep to the main building's entrance once there are more.
 - **Floor, overlays and the heatmap** loop over `plot.x0..x1, y0..y1` in places (`ui/lib/overlays.ts`, `render/floor.ts`). They should loop over the footprint.
 - **Scenery.**
   - `keptClear()` keeps trees off the footprint, the plots for sale (until bought, when a fence replaces them), the paths and the street.
@@ -124,7 +130,7 @@ My recommendations, each open to Max's call (see [Decisions to make](#decisions-
 ### The interface (`ui/`, `app/tools/`)
 
 - **An Expand tool** in `app/tools/`, beside the build tools. Hovering picks a plot (a new kind in `render/picking.ts`), the ground shows its outline, and a tooltip gives its name, size, price and star. Clicking opens a confirmation dialog.
-- **Retire the Land tab**, or keep it as a list where clicking a plot glides the camera to it.
+- **Retire the Land tab**, or keep it as a list where clicking a plot glides the camera to it. The floating For Sale signs (`render/land-signs.ts`) and the heatmap's amber `'land'` palette (`render/heatmap.ts`) go with it, unless the Expand tool reuses the palette for its outlines.
 - **A plot's own panel** once bought: its name (renamable), its construction progress, and its rooms.
 
 ## Tests to refactor
@@ -153,22 +159,24 @@ Each phase ships on its own with everything green, in this order.
 
 1. **Footprints, no change in play.**
    - `Plot` becomes a footprint built from rectangles, and today's strips become rectangles in it.
-   - Walls, windows and room walls come from edges.
+   - Walls, windows and room walls come from edges, at every turn of the camera.
    - Floor and overlays loop over the footprint.
    - Screenshots should not change. That is the test of the refactor.
-2. **Arrivals from near the entrance.** `streetTile()` stops depending on the map's width, and the seeded tests are re-checked once.
+2. **Arrivals from near the entrance.** `streetTile()` stops depending on the map's width, people fade in and out or walk off, and the seeded tests are re-checked once.
 3. **Map size per center.**
+   - Old saves' strips become legacy-strip rectangles first, worked out on the old map (see [State and saves](#the-building-model-core)).
    - `W` and `H` become the center's, with `shiftSave` for any center whose origin moves.
    - The sandbox and the tighter campaign lots get room.
+   - Until phase 4, the Land tab keeps selling strips, now with the new limits.
 4. **Hand-designed plots.**
    - Plot data per center, opened by stars or campaign progress, priced by hand.
-   - The Expand tool, For Sale boards, the confirmation dialog, and legacy strips in old saves.
+   - The Expand tool, For Sale boards and the confirmation dialog.
    - The Land tab retires.
 5. **Construction.** A fence and a few days' work before a plot can be used.
 6. **Separate buildings and the outdoors.** Entrances per building, paths, guests and staff walking outside, and weather on the way.
 7. **Later, Campus-style:** drawing your own building on a blank plot, paths, and outdoor items.
 
-Phases 1 to 4 deliver the Two Point Hospital experience. Phases 5 to 7 reach toward Campus.
+Phases 1 to 4 deliver most of the Two Point Hospital experience: plots found and bought in the world. Hospital's plots are often separate buildings, though, and those wait for phase 6. Phases 5 to 7 reach toward Campus.
 
 ## Decisions to make
 
@@ -177,7 +185,7 @@ Phases 1 to 4 deliver the Two Point Hospital experience. Phases 5 to 7 reach tow
 - **Construction time?** I recommend a few in-game days, with a fence. It can be left out if it feels like waiting for nothing.
 - **Selling land back?** I recommend no, unless one of the games does. It complicates everything for little play.
 - **Separate buildings in the first round, or only joined plots?** I recommend joined plots first (phase 4), then separate buildings (phase 6). Walking outdoors touches the most systems.
-- **How big should maps get?** It depends on frame rate: software WebGL in the tests and the draw-call budget. Measure with the sandbox first.
+- **How big should maps get, and which way?** It depends on frame rate: software WebGL in the tests and the draw-call budget. Measure with the sandbox first. Settle it before phase 3: growing west or back means shifting every old save, and growing east or out past the road doesn't. Phases 1 and 2 don't depend on any of these decisions.
 
 ## Risks
 
