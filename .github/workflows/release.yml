@@ -122,6 +122,10 @@ jobs:
           # this version's section of CHANGELOG.md, then how to play and install
           node scripts/release-notes.mjs "$GITHUB_REF_NAME" > notes.md
           cat notes.md
+          # the installers again under names that stay the same from one release to the next, so the README can link
+          # straight to the latest (releases/latest/download/...); the updater goes by latest*.yml, not these
+          cp installers/*-mac-arm64.dmg installers/Pressure-Point-Institute-mac-arm64.dmg
+          cp installers/*-win-x64.exe installers/Pressure-Point-Institute-win-x64.exe
           gh release create "$GITHUB_REF_NAME" installers/* \
             --verify-tag \
             --title "$GITHUB_REF_NAME" \

@@ -9,7 +9,7 @@ git push origin v1.2.3
 
 The same tag also publishes the browser build to [GitHub Pages](https://maxcwolf.github.io/pressure-point/), so the web version always matches the installers. The **Deploy web version** workflow can be run by hand to publish any other branch or tag.
 
-The tag sets the version number in the installers. Running the **Release** workflow by hand from the Actions tab builds the installers as downloadable artifacts without publishing a release.
+The release also carries the Apple silicon `.dmg` and the Windows `.exe` again under names without the version (`Pressure-Point-Institute-mac-arm64.dmg`, `Pressure-Point-Institute-win-x64.exe`), so the README's download links, to `releases/latest/download/...`, always fetch the newest. The tag sets the version number in the installers. Running the **Release** workflow by hand from the Actions tab builds the installers as downloadable artifacts without publishing a release.
 
 Everything runs on GitHub-hosted machines, which are free for a public repository: `macos-latest` for the macOS `.dmg` files (Apple silicon and Intel), `windows-latest` for the Windows `.exe` installer, and `ubuntu-latest` for publishing and for CI on pushes and pull requests.
 

@@ -5,7 +5,11 @@
 <p align="center">
   <a href="https://maxcwolf.github.io/pressure-point/"><b>▶ Play in your browser</b></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/maxcwolf/pressure-point/releases/latest"><b>Download for Mac or Windows</b></a>
+  <a href="https://github.com/maxcwolf/pressure-point/releases/latest/download/Pressure-Point-Institute-mac-arm64.dmg"><b>Download for Mac (Apple silicon)</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/maxcwolf/pressure-point/releases/latest/download/Pressure-Point-Institute-win-x64.exe"><b>Download for Windows</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/maxcwolf/pressure-point/releases/latest">All downloads</a>
   &nbsp;·&nbsp;
   <a href="docs/guide.md">Player's guide</a>
   &nbsp;·&nbsp;
@@ -90,9 +94,9 @@ Whether in the campaign or the sandbox, four things grow as you play.
 
 Or get the desktop app from the [latest release](https://github.com/maxcwolf/pressure-point/releases/latest):
 
-- `mac-arm64.dmg` for Macs with Apple silicon (M1 and later)
-- `mac-x64.dmg` for Intel Macs
-- `win-x64.exe` for Windows
+- [Download for Mac](https://github.com/maxcwolf/pressure-point/releases/latest/download/Pressure-Point-Institute-mac-arm64.dmg) with Apple silicon (M1 and later)
+- `mac-x64.dmg` for Intel Macs, from the release
+- [Download for Windows](https://github.com/maxcwolf/pressure-point/releases/latest/download/Pressure-Point-Institute-win-x64.exe)
 
 The Mac app is signed and notarized by Apple, so it opens like any other. The Windows installer is not signed yet, so Windows asks before running it the first time: click **More info**, then **Run anyway**.
 
