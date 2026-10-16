@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.27.2
+
+- **The desktop app updates itself.** From this version on, it downloads each new version in the background, then offers to restart for it, or installs it the next time you quit. Your game is saved first. Coming from 0.27.1 or earlier? Download this one by hand, once.
+- **The Mac app is signed and notarized by Apple,** so it opens like any other app, with no right-click needed.
+
 ## v0.27.1
 
 - **What's New works in the Windows app,** listing every version. The same fault stopped the 0.26.0 and 0.27.0 installers, so this is the first since 0.25.0: open **What's New** on the title screen for everything in them, from turning the camera to land the Two Point way.
