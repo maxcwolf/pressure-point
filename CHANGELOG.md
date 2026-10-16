@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.28.5
+
+- **See what an item does before you buy it.** Point at a card in the Items menu for its decor, noise, warmth, earnings and upkeep. Settings › Building can show them in a side panel or on the cards instead.
+- **See what an item will change before you put it down.** With one in hand, the hint says what it would do to the surroundings, the room's prestige, the calm at nearby treatment tables and the temperature right there, and the floor is colored to match. It can be switched off in Settings › Building.
+- **Decor goes further, or less far.** Small things like a plant or a poster brighten a couple of tiles; centerpieces like the Zen Fountain and the Koi Pond a whole stretch. All good decor counts a little more, and fades more gently toward the edge of its reach.
+- **Thermostats.** Radiators, air conditioners and fireplaces reach further, and each has a thermostat in its inspector: **Auto** works only as hard as the weather calls for and is off while it's nice, or set Low, Medium, High or Off, on one or on every one of its kind.
+
 ## v0.28.4
 
 - **See what hangs on lowered walls.** Something hung on a wall that's cut low so you can see in now shows as a faint, see-through copy of itself where it hangs, facing the way it faces, instead of a small chip on top of the wall. You can still click it.
