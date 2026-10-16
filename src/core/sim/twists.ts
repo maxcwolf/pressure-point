@@ -61,8 +61,8 @@ export function cutOff(ctx: SimContext): boolean {
 
 /** How much faster than usual guests arrive at a moment: busier in rush hours and summers, quieter otherwise. */
 export function arrivalFactor(ctx: SimContext): number {
-  const { rush, seasons } = centerOf(ctx.s);
-  let factor = 1;
+  const { rush, seasons, arrivals } = centerOf(ctx.s);
+  let factor = arrivals ?? 1;
   if (rush) factor *= inRush(ctx.s.day) ? rush.peak : rush.lull;
   if (seasons) {
     const season = seasonOf(ctx.s.day);

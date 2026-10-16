@@ -618,6 +618,8 @@ export interface CenterDef {
   rush?: RushHours;
   /** Seasons: busier summers and quieter winters. */
   seasons?: Seasons;
+  /** How much more often than usual guests arrive here, all year round. */
+  arrivals?: number;
   /** How much faster than usual equipment wears out here. */
   wear?: number;
   /** House calls: how much more often than usual they are offered here, and who here asks for them. */

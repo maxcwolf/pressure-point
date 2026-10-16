@@ -270,6 +270,8 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     disciplines: ['acupuncture', 'reiki', 'sound'],
     conditions: { frost: 3, coldfeet: 2.5, steam: 1.5, frozen: 3, wipeout: 2.5, cabin: 2.5 },
     snow: { chance: 0.3, days: 2 },
+    // a little busier than the road up suggests, to make up for the days it is snowed in
+    arrivals: 1.05,
     scenery: 'mountain',
     mishap: 'freeze',
     calls: { often: 1, clients: ['the ski school', 'the Summit Hotel', 'the mountain rescue hut'] },

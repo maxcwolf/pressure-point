@@ -10,7 +10,15 @@ import { updateEmergency } from '../../src/core/sim/emergencies';
 import { drainEvents } from '../../src/core/sim/events';
 import { admitGuests, rollCondition } from '../../src/core/sim/guests';
 import { Sim } from '../../src/core/sim/sim';
-import { cutOff, dice, SNOW_GRACE_DAYS, SNOW_NEWS, snowedIn, updateTwists } from '../../src/core/sim/twists';
+import {
+  arrivalFactor,
+  cutOff,
+  dice,
+  SNOW_GRACE_DAYS,
+  SNOW_NEWS,
+  snowedIn,
+  updateTwists,
+} from '../../src/core/sim/twists';
 import { decayItems } from '../../src/core/sim/upkeep';
 import { discomfort, stoneCooling, updateWarmth, warmthAt } from '../../src/core/sim/warmth';
 import { disciplineOn, newGame } from '../../src/core/state/game';
@@ -31,6 +39,11 @@ describe('High Pines', () => {
     expect(nextCenter('highpines')).toBe('orchard');
     expect(disciplineOn(newGame('highpines'), 'reiki')).toBe(true);
     expect(disciplineOn(newGame('highpines'), 'acupuncture')).toBe(true);
+  });
+
+  it('draws guests a little more often than usual, to make up for its snowed-in spells', () => {
+    const usual = arrivalFactor(createContext(newGame('sandbox')));
+    expect(arrivalFactor(createContext(newGame('highpines')))).toBeCloseTo(usual * 1.05, 5);
   });
 
   it('rolls the same dice for the same number every time, spread between 0 and 1', () => {
