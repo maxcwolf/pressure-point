@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.27.4
+
+- **Updating asks first.** When a new version has downloaded, the title screen offers **Update to the latest version** above What's new, and checks before the game closes to install it. Choose **Not now** and it installs by itself the next time you quit.
+
 ## v0.27.3
 
 - **Qi gong classes are announced at most once every two weeks,** instead of on every class day, and the announcer now has two lines for them.
