@@ -3,12 +3,14 @@
 </p>
 
 <p align="center">
-  <a href="https://maxcwolf.github.io/pressure-point/"><b>▶ Play in your browser</b></a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/maxcwolf/pressure-point/releases/latest/download/Pressure-Point-Institute-mac-arm64.dmg"><b>Download for Mac (Apple silicon)</b></a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/maxcwolf/pressure-point/releases/latest/download/Pressure-Point-Institute-win-x64.exe"><b>Download for Windows</b></a>
-  &nbsp;·&nbsp;
+  <a href="https://maxcwolf.github.io/pressure-point/"><img src="docs/assets/play-web.png" alt="Play free in your browser" width="236" /></a>
+  &nbsp;
+  <a href="https://github.com/maxcwolf/pressure-point/releases/latest/download/Pressure-Point-Institute-mac-arm64.dmg"><img src="docs/assets/download-mac.png" alt="Download for Mac, Apple silicon" width="236" /></a>
+  &nbsp;
+  <a href="https://github.com/maxcwolf/pressure-point/releases/latest/download/Pressure-Point-Institute-win-x64.exe"><img src="docs/assets/download-windows.png" alt="Download for Windows" width="236" /></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/maxcwolf/pressure-point/releases/latest">All downloads</a>
   &nbsp;·&nbsp;
   <a href="docs/guide.md">Player's guide</a>

@@ -14,6 +14,7 @@
     "build:web": "vite build",
     "build:desktop": "node scripts/build-desktop.mjs",
     "brand": "node scripts/make-brand.mjs",
+    "buttons": "node scripts/make-buttons.mjs",
     "announcer": "node scripts/make-announcer.mjs",
     "postinstall": "husky",
     "typecheck": "tsc -b",

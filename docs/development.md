@@ -94,6 +94,7 @@ Before each commit, a second Husky hook runs ESLint and Prettier over the staged
 | `electron/main.ts`    | Desktop app: the main process, which opens the window and locks it down                                                                                         |
 | `electron/preload.ts` | Desktop app: hands the game the API in `electron/api.ts`, with the sandbox on                                                                                   |
 | `brand/`              | The app icon and the logo, drawn in code. `yarn brand` renders them to `build/` (with a rounded-square `icon-mac.png` for macOS), `public/` and `src/ui/theme/` |
+| `brand/buttons.mjs`   | The README's download buttons, in the game's style. `yarn buttons` renders them to `docs/assets/`                                                               |
 | `brand/announcer/`    | The announcer's clean recordings. `yarn announcer` (macOS) adds the speaker effect and writes them to `src/sounds/announcer/`                                   |
 
 Disciplines, modalities, conditions, courses and equipment are all defined in `src/core/data/`. Adding a discipline means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models/items/`. The simulation, menus and Settings pick it up from the data.
