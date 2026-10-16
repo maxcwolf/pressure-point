@@ -69,7 +69,11 @@ test.describe('title screen', () => {
   test('what is new', async ({ screens, page }) => {
     await screens.title();
     await page.getByRole('button', { name: 'What’s new' }).click();
-    // the oldest notes, which never change, unlike the newest
+    // the oldest notes, which never change, unlike the newest. The newer ones are taken out first: scrolled down past
+    // them, every release added at the top moved the picture by a fraction of a pixel.
+    await page.locator('#title-changes section').evaluateAll((sections) => {
+      for (const s of sections.slice(0, -4)) s.remove();
+    });
     await page.locator('#title-changes section').last().scrollIntoViewIfNeeded();
     await screens.shot('title-changelog');
   });
