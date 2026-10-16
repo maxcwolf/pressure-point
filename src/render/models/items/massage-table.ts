@@ -8,17 +8,18 @@ import { CREAM, cyl, mat, partsOf, put, rbox, sph, torus, WOOD, WOOD_DARK } from
 /** Build the Massage Table model. */
 export function buildMassageTable(g: THREE.Group) {
   for (const [x, z] of [
-    [-0.3, -0.75],
-    [0.3, -0.75],
+    [-0.3, -0.55],
+    [0.3, -0.55],
     [-0.3, 0.75],
     [0.3, 0.75],
   ])
     put(g, cyl(0.045, 0.045, 0.5), mat(WOOD_DARK), x, 0.25, z);
-  put(g, rbox(0.78, 0.06, 1.8, 0.03), mat(WOOD), 0, 0.5, 0);
-  put(g, rbox(0.74, 0.12, 1.76, 0.06), mat(CREAM), 0, 0.58, 0);
+  // shorter than the footprint at the head end, so the face cradle stays inside it
+  put(g, rbox(0.78, 0.06, 1.6, 0.03), mat(WOOD), 0, 0.5, 0.1);
+  put(g, rbox(0.74, 0.12, 1.56, 0.06), mat(CREAM), 0, 0.58, 0.1);
   const linens = linensMaterial(0xb9a1e0);
   put(g, rbox(0.76, 0.03, 0.6, 0.015), linens, 0, 0.645, 0.5);
-  const cradle = put(g, torus(0.13, 0.055), mat(CREAM), 0, 0.58, -1.0);
+  const cradle = put(g, torus(0.13, 0.055), mat(CREAM), 0, 0.58, -0.8);
   cradle.rotation.x = Math.PI / 2;
   // hot stones, shown along the guest's back during a Hot Stone session
   const stones = new THREE.Group();
