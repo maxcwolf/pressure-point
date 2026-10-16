@@ -125,7 +125,7 @@ New items picked from [item-ideas.md](item-ideas.md), where each is described in
 - [x] **Kombucha Tap** (item 11). A drink that earns more than tea, and when worn fizzes over into a puddle that slows and annoys guests until a Caretaker mops it up.
 - [x] **Fortune Teller Machine** (item 10). A Zoltar-style `play` item that hands out fortunes in a speech bubble; now and then "You will be healed today" makes a guest more patient.
 - [x] **Staff Fridge** (item 16). Staff see to thirst and hunger here on a break, for free, instead of queuing at the guests' drinks and snacks. Done for the five above: the Fortune Teller opens at the first star rather than for karma, since the campaign earns no more karma than its unlocks already take.
-- [ ] **Wall hangings** (item 24). A slot on each wall tile, and things to hang there: a framed diploma, a clock, chakra and meridian charts, a landscape painting for each center, and a motivational poster. Hung items turn with the camera, and are hidden when their wall is cut low.
+- [ ] **Wall hangings** (item 24). Planned in [wall-items-plan.md](wall-items-plan.md), with better windows on the outside walls first. A slot on each wall tile, and things to hang there: a framed diploma, a clock, chakra and meridian charts, a landscape painting for each center, and a motivational poster. Hung items turn with the camera, and are hidden when their wall is cut low.
 
 ## Requested 16 October 2026
 
