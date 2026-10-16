@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.28.4
+
+- **See what hangs on lowered walls.** Something hung on a wall that's cut low so you can see in now shows as a faint, see-through copy of itself where it hangs, facing the way it faces, instead of a small chip on top of the wall. You can still click it.
+- **A fine Sound Bath Studio draws a crowd.** A prestigious, peaceful studio with mats to spare brings in guests who need sound healing up to three times as often, and its info panel says how strongly it draws.
+- **High Pines** gets 5% more guests, to make up a little for the days it is snowed in.
+- **Fix:** the sound healer sits on her cushion instead of floating above it.
+
 ## v0.28.3
 
 - **Click again to pick what's underneath.** Where people and items overlap, clicking the same spot again selects the next one there, and round to the first again.
