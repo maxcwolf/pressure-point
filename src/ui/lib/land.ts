@@ -3,7 +3,7 @@
 
 import type { PlotDef } from '../../core/data';
 import { money } from '../../core/format';
-import { type PlotOffer, plotTiles } from '../../core/land';
+import { buildDays, type PlotOffer, plotTiles } from '../../core/land';
 import type { Room } from '../../core/state/types';
 import type { HeatTile } from '../../render/heatmap';
 
@@ -32,6 +32,14 @@ export function plotHeat(offers: readonly PlotOffer[], pointedAt: string | null)
     for (const [x, y] of plotTiles({ rects: [...o.def.rects, ...(o.def.path ?? [])] })) out.push([x, y, value]);
   }
   return out;
+}
+
+/** What buying a plot sets going: the builders' days on it, then the building grown into it, or one of its own. */
+export function afterBuying(def: Pick<PlotDef, 'rects' | 'entrance'>): string {
+  const days = `The builders take ${buildDays(def)} days`;
+  return def.entrance
+    ? `${days} over a building of its own, with its own door and a path from the pavement.`
+    : `${days}, then the building grows into it, as corridor ready to build on.`;
 }
 
 /** The center of a plot, for the camera to glide to. */

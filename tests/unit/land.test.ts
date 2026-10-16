@@ -3,16 +3,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { CENTERS, DAY_SECONDS, type PlotDef, type Rect, SIDEWALK_Y } from '../../src/core/data';
-import { entranceSteps, footprintOf, inRect } from '../../src/core/footprint';
+import { entranceSteps, footprintOf, footprintTiles, inRect } from '../../src/core/footprint';
 import {
   buildDays,
   LAND_STEP,
+  type LandSide,
   lotWidth,
   nextStrip,
   plotAt,
   plotOffers,
   plotTiles,
   stripRects,
+  stripsBought,
 } from '../../src/core/land';
 import { PLOT_NAME_MAX } from '../../src/core/sim/land';
 import { Sim } from '../../src/core/sim/sim';
@@ -23,6 +25,7 @@ import { Z_CORRIDOR, Z_SCENERY } from '../../src/core/world';
 import { landColor } from '../../src/render/heatmap';
 import { boardSpot, boardText, fenceRuns } from '../../src/render/land';
 import {
+  afterBuying,
   expandHint,
   PLOT_LOCKED,
   PLOT_OPEN,
@@ -53,6 +56,11 @@ function buyAndBuild(sim: Sim, id: string): boolean {
   finishWork(sim);
   return bought;
 }
+
+/** Enough strips on every side to take a building as far as it could grow before centers had plots. */
+const EVERY_STRIP: readonly LandSide[] = (['west', 'east', 'back'] as const).flatMap((side) =>
+  Array<LandSide>(8).fill(side),
+);
 
 /** Whether two sets of rectangles share a tile. */
 const overlaps = (a: readonly Rect[], b: readonly Rect[]) =>
@@ -93,6 +101,12 @@ describe("each center's plots of land", () => {
         }
         // standing apart: touching nothing else built, its door in its wall, and paving from it out to the pavement
         expect(adjoins(p.rects, [base, ...others]), `${p.id} stands apart`).toBe(false);
+        // even from a building grown as far as it could go in a save from before plots, which keeps its strips
+        const oldest = stripsBought(center.id, [...EVERY_STRIP]).flatMap((l) => l.rects);
+        expect(overlaps(p.rects, oldest) || adjoins(p.rects, oldest), `${p.id} stands apart from old strips`).toBe(
+          false,
+        );
+        expect(overlaps(p.path ?? [], oldest), `${p.id}'s path over old strips`).toBe(false);
         const path = p.path ?? [];
         for (const { inside, outside } of entranceSteps(p.entrance)) {
           expect(
@@ -224,7 +238,10 @@ describe('land for sale', () => {
     expect(sim.buyPlot('east-wing')).toBe(true);
     for (let i = 0; i < 100; i++) sim.tick(0.1);
     expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.progress).toBe(0);
-    finishWork(sim);
+    // going on again, the days pass and the builders finish
+    run(sim, 6 * DAY_SECONDS - 0.5);
+    expect(sim.world.inside(30, 10)).toBe(false);
+    run(sim, 1.5);
     expect(sim.world.inside(30, 10)).toBe(true);
   });
 
@@ -265,17 +282,36 @@ describe('land for sale', () => {
     expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.state).toBe('open');
   });
 
-  it('costs only its share for the tiles not already bought as strips, and nothing once they all are', () => {
-    const s = newGame('sandbox');
-    // a strip bought before plots, four tiles deep along the east wall, covering half of the east wing
-    s.land = [{ plot: 'strip', rects: [{ x0: 28, x1: 31, y0: 3, y1: 17 }] }];
+  it('costs only its share for the tiles not already bought as strips, to the nearest $50', () => {
+    const s = newGame('willow');
+    // the strip along the east wall an old save could have, x 23 to 26: 32 of the unit next door's 56 tiles
+    s.land = stripsBought('willow', ['east']);
+    s.unlockAll = true;
+    expect(s.land).toEqual([{ plot: 'strip', rects: [{ x0: 23, x1: 26, y0: 8, y1: 17 }] }]);
+    const unit = new Sim(s).landOffers().find((o) => o.def.id === 'unit-next-door');
+    expect(unit?.state).toBe('open');
+    // $12,000 for 24 of 56 tiles is $5,142.86
+    expect(unit?.price).toBe(5150);
+  });
+
+  it("is the game's already where old strips cover all of it, and can still be named", () => {
+    const s = newGame('orchard');
+    // the strip along the back an old save could have, y 1 to 4, right over the cider barn
+    s.land = stripsBought('orchard', ['back']);
+    s.unlockAll = true;
     const sim = new Sim(s);
-    const wing = sim.landOffers().find((o) => o.def.id === 'east-wing');
-    expect(wing?.state).toBe('open');
-    expect(wing?.price).toBe(12000);
-    s.land.push({ plot: 'strip', rects: [{ x0: 32, x1: 35, y0: 3, y1: 17 }] });
+    const barn = sim.landOffers().find((o) => o.def.id === 'cider-barn');
+    expect(barn).toMatchObject({ state: 'owned', price: 0 });
+    expect(sim.buyPlot('cider-barn')).toBe(false);
+    expect(sim.renamePlot('cider-barn', 'The Press House')).toBe(true);
+    expect(sim.landOffers().find((o) => o.def.id === 'cider-barn')).toMatchObject({
+      state: 'owned',
+      name: 'The Press House',
+    });
+    // noted with no tiles of its own: the strip still makes the building's shape
+    expect(s.land.at(-1)).toEqual({ plot: 'cider-barn', rects: [], name: 'The Press House' });
     sim.world.rebuild();
-    expect(sim.landOffers().find((o) => o.def.id === 'east-wing')?.state).toBe('owned');
+    expect(sim.world.building.rects).toHaveLength(2);
   });
 
   it('is kept in the save, and a save from before land was sold has none', () => {
@@ -285,6 +321,22 @@ describe('land for sale', () => {
     const s = old as unknown as ReturnType<typeof newGame>;
     upgradeSave(s);
     expect(s.land).toEqual([]);
+  });
+
+  it('is kept in the save as it was, the builders still at work and the name it was given', () => {
+    const sim = freshSim();
+    sim.s.money = 1e6;
+    sim.s.stars = 1;
+    sim.buyPlot('east-wing');
+    sim.renamePlot('east-wing', 'Garden Wing');
+    finishWork(sim);
+    sim.buyPlot('garden-block');
+    const land = JSON.parse(JSON.stringify(sim.s.land)) as unknown;
+    const saved = JSON.parse(JSON.stringify(sim.s)) as ReturnType<typeof newGame>;
+    upgradeSave(saved);
+    expect(saved.land).toEqual(land);
+    expect(saved.land[1]).toMatchObject({ plot: 'garden-block', entrance: { side: 'south' } });
+    expect(saved.land[1]?.ready).toBeGreaterThan(saved.day);
   });
 });
 
@@ -303,26 +355,43 @@ describe('strips, as land was sold up to version 0.26', () => {
   });
 
   it('grew the building a side at a time, without moving its front', () => {
-    const rects = stripRects(PLOT, ['west', 'back', 'east', 'west'], limits);
-    expect(footprintOf(PLOT, rects).bounds).toEqual({ x0: 1, x1: 26, y0: 4, y1: 17 });
+    // each strip as wide or as deep as the building had grown by then
+    expect(stripRects(PLOT, ['west', 'back', 'east', 'west'], limits)).toEqual([
+      { x0: 3, x1: 6, y0: 8, y1: 17 },
+      { x0: 3, x1: 22, y0: 4, y1: 7 },
+      { x0: 23, x1: 26, y0: 4, y1: 17 },
+      { x0: 1, x1: 2, y0: 4, y1: 17 },
+    ]);
     // a strip recorded with no room left for it, as a save could have, adds nothing
     expect(stripRects({ ...PLOT, x0: 2 }, ['west'], limits)).toEqual([]);
   });
 
   it('keep the exact shape they had in a save that kept only the sides bought', () => {
+    // worked out on the 32-tile lot of the time, east to x 30 whatever size the lot is now, and short of the beach
+    // huts at The Boardwalk; sides bought with no room left add nothing
+    const shapes = {
+      sandbox: [
+        { x0: 1, x1: 2, y0: 3, y1: 17 },
+        { x0: 1, x1: 27, y0: 1, y1: 2 },
+        { x0: 28, x1: 30, y0: 1, y1: 17 },
+      ],
+      boardwalk: [
+        { x0: 1, x1: 3, y0: 7, y1: 16 },
+        { x0: 1, x1: 26, y0: 3, y1: 6 },
+        { x0: 27, x1: 30, y0: 3, y1: 16 },
+      ],
+    };
     for (const center of ['sandbox', 'boardwalk'] as const) {
-      const sides = ['west', 'back', 'east', 'east', 'back', 'back'] as const;
       const old = JSON.parse(JSON.stringify(newGame(center))) as Record<string, unknown>;
       old.version = 24;
-      old.land = sides;
+      old.land = ['west', 'back', 'east', 'east', 'back', 'back'];
       const s = old as unknown as ReturnType<typeof newGame>;
       upgradeSave(s);
-      expect(s.land.every((l) => l.plot === 'strip' && l.rects.length === 1)).toBe(true);
-      // worked out on the 32-tile lot of the time, whatever size the lot is now, and short of the beach huts
-      const was = { west: 1, east: 30, back: center === 'boardwalk' ? 3 : 1 };
-      const bounds = footprintOf(CENTERS[center].plot, stripRects(CENTERS[center].plot, sides, was)).bounds;
-      expect(new Sim(s).world.building.bounds, center).toEqual(bounds);
-      if (center === 'boardwalk') expect(bounds.y0).toBe(3);
+      expect(s.land, center).toEqual(shapes[center].map((r) => ({ plot: 'strip', rects: [r] })));
+      const { plot } = CENTERS[center];
+      const tiles = footprintTiles(new Sim(s).world.building);
+      const area = [plot, ...shapes[center]].reduce((n, r) => n + (r.x1 - r.x0 + 1) * (r.y1 - r.y0 + 1), 0);
+      expect(tiles, center).toHaveLength(area);
     }
   });
 });
@@ -393,6 +462,15 @@ describe('how land is shown', () => {
     expect(on.map((r) => r.x)).toEqual([26, 29]);
   });
 
+  it('says what buying a plot sets going: the builders, then the building grown into it or one of its own', () => {
+    expect(afterBuying(wing.def)).toBe(
+      'The builders take 6 days, then the building grows into it, as corridor ready to build on.',
+    );
+    expect(afterBuying(garden.def)).toBe(
+      'The builders take 3 days over a building of its own, with its own door and a path from the pavement.',
+    );
+  });
+
   it('says what the plot pointed at costs, and how to buy it', () => {
     expect(expandHint(undefined)).toMatch(/point at a plot/);
     expect(expandHint(wing)).toBe('🏡 The east wing · 8 × 15 tiles · $24,000 · click to buy');
@@ -411,5 +489,9 @@ describe('plot offers', () => {
     const offers = plotOffers(s, footprintOf(CENTERS.willow.plot));
     expect(offers.map((o) => o.state)).toEqual(['open', 'open', 'open']);
     expect(offers.map((o) => o.price)).toEqual(CENTERS.willow.plots.map((p) => p.price));
+    // a building grown over the unit next door, however it came to be, has it already
+    const [unit] = CENTERS.willow.plots;
+    const grown = plotOffers(s, footprintOf(CENTERS.willow.plot, unit?.rects));
+    expect(grown.map((o) => o.state)).toEqual(['owned', 'open', 'open']);
   });
 });

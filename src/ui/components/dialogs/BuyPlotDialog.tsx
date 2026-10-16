@@ -3,7 +3,7 @@
 import { money } from '../../../core/format';
 import { nameInSentence } from '../../../core/land';
 import { useGame, useHud } from '../../hooks/use-hud';
-import { plotSize } from '../../lib/land';
+import { afterBuying, plotSize } from '../../lib/land';
 import { Button } from '../common/Button';
 import { Dialog } from './Dialog';
 
@@ -34,7 +34,7 @@ export function BuyPlotDialog() {
   return (
     <Dialog>
       <h2>{`Buy ${nameInSentence(def.name)}?`}</h2>
-      <p>{`${def.blurb}. ${plotSize(def)} for ${money(price)}. The building grows into it at once, as corridor ready to build on.`}</p>
+      <p>{`${def.blurb}. ${plotSize(def)} for ${money(price)}. ${afterBuying(def)}`}</p>
       {short && <p class="sub">{`You have ${money(sim.s.money)}.`}</p>}{' '}
       <div class="btnrow">
         <Button

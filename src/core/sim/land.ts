@@ -51,10 +51,17 @@ export function updateLand(ctx: SimContext) {
   emit(ctx, { type: 'sfx', name: 'build' });
 }
 
-/** Name a plot of the game's, or give it back the name it came with if the new one is blank. */
+/**
+ * Name a plot of the game's, or give it back the name it came with if the new one is blank. A plot the game has only
+ * because strips bought before plots cover it is noted as land of its own, with no tiles, to keep its name.
+ */
 export function renamePlot(ctx: SimContext, id: string, name: string): boolean {
-  const land = ctx.s.land.find((l) => l.plot === id);
-  if (!land) return false;
+  let land = ctx.s.land.find((l) => l.plot === id);
+  if (!land) {
+    if (landOffers(ctx).find((o) => o.def.id === id)?.state !== 'owned') return false;
+    land = { plot: id, rects: [] };
+    ctx.s.land.push(land);
+  }
   const trimmed = name.trim().slice(0, PLOT_NAME_MAX);
   if (trimmed) land.name = trimmed;
   else delete land.name;

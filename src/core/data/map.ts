@@ -21,7 +21,10 @@ export interface Rect {
 export interface Land {
   /** The plot's id, or 'strip' for a strip along a whole side, as land was sold before each center had its plots. */
   plot: string;
-  /** The tiles it covers, kept with it so the building keeps its shape whatever becomes of the plot. */
+  /**
+   * The tiles it covers, kept with it so the building keeps its shape whatever becomes of the plot: none for a plot
+   * that strips bought before plots already covered, noted only to keep the name it was given.
+   */
   rects: Rect[];
   /** Its door and the paving out to it, for a building of its own, kept with it like its tiles. */
   entrance?: Entrance;
@@ -32,7 +35,6 @@ export interface Land {
   name?: string;
 }
 
-/** A plot of land a center sells next to its building, drawn for it. */
 /** The four ways a wall can face, out of a building or a room. */
 export type Side = 'north' | 'south' | 'east' | 'west';
 
@@ -44,6 +46,7 @@ export interface Entrance {
   y: number;
 }
 
+/** A plot of land a center sells next to its building, drawn for it. */
 export interface PlotDef {
   id: string;
   name: string;

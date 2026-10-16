@@ -2,26 +2,27 @@
 // keep warmth and noise in, and the weather on the way.
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, SIDEWALK_Y } from '../../src/core/data';
+import { CENTERS, DAY_SECONDS, SIDEWALK_Y } from '../../src/core/data';
 import { entranceSpan, entranceSteps, footprintOf, onPath } from '../../src/core/footprint';
 import { buildingsOf } from '../../src/core/land';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { badWeather, updateOutdoors } from '../../src/core/sim/outdoors';
 import type { Sim } from '../../src/core/sim/sim';
 import { spreader } from '../../src/core/sim/spread';
-import { outdoorTemp, warmthAt } from '../../src/core/sim/warmth';
+import { indoorTemp, outdoorTemp, warmthAt } from '../../src/core/sim/warmth';
 import { Z_CORRIDOR, Z_OUTSIDE, Z_SCENERY } from '../../src/core/world';
 import { shellStretches } from '../../src/render/outer-walls';
 import { nearSides } from '../../src/render/turn';
-import { addConsult, buildRoom, freshSim, hire, inconsistencies, run, runUntil } from './helpers';
+import { addConsult, buildRoom, freshSim, hire, inconsistencies, run, runUntil, toasts } from './helpers';
 
-/** The sandbox with the east wing built on, and the garden pavilion across the path from it. */
-function withPavilion(): Sim {
+/** The sandbox with the east wing built on, and the garden pavilion past it: built too, or the builders still at it. */
+function withPavilion(finished = true): Sim {
   const sim = freshSim();
   sim.s.stars = 1;
   sim.s.money = 1e6;
   for (const id of ['east-wing', 'garden-block']) {
     expect(sim.buyPlot(id), id).toBe(true);
+    if (id === 'garden-block' && !finished) break;
     for (const l of sim.s.land) if (l.ready !== undefined) l.ready = sim.s.day;
     run(sim, 1.1);
   }
@@ -75,15 +76,22 @@ describe('the outer walls', () => {
 
 describe('a building standing apart', () => {
   it('has its own door and a path out to it, once the builders are done', () => {
-    const sim = freshSim();
-    sim.s.stars = 1;
-    sim.s.money = 1e6;
-    sim.buyPlot('east-wing');
-    // the path is not laid until the work is done
+    const sim = withPavilion(false);
+    // neither the door nor the path is there while the builders are at work
+    expect(sim.s.land[1]?.ready).toBeGreaterThan(sim.s.day);
+    expect(buildingsOf(sim.s).entrances).toHaveLength(1);
+    expect(buildingsOf(sim.s).paths).toEqual([]);
+    // however often the grids are worked out again meanwhile, as building a room does
+    sim.world.rebuild();
     expect(sim.world.zoneAt(39, 18)).toBe(Z_SCENERY);
-    const done = withPavilion();
-    const { world } = done;
-    expect(buildingsOf(done.s).entrances).toHaveLength(2);
+    expect(sim.world.zoneAt(40, 12)).toBe(Z_SCENERY);
+    sim.drain();
+    run(sim, 3 * DAY_SECONDS + 1);
+    expect(toasts(sim.drain())).toContain(
+      'Work on the garden pavilion is done: it has a door of its own, and a path out to it.',
+    );
+    const { world } = sim;
+    expect(buildingsOf(sim.s).entrances).toHaveLength(2);
     expect(world.zoneAt(39, 18)).toBe(Z_OUTSIDE);
     expect(world.zoneAt(40, 19)).toBe(Z_OUTSIDE);
     expect(world.zoneAt(40, 12)).toBe(Z_CORRIDOR);
@@ -122,13 +130,17 @@ describe('a building standing apart', () => {
     const ctx = (sim as unknown as { ctx: Parameters<typeof spreader>[0] }).ctx;
     // from just inside the pavilion's west wall: three tiles on inside it, and three tiles across the path in the wing
     spreader(ctx, () => 1, 0.5)(grid, 38, 15, 10, 4);
-    expect(grid[world.idx(35, 15)]).toBeCloseTo((grid[world.idx(41, 15)] ?? 0) * 0.5);
+    const within = grid[world.idx(41, 15)] ?? 0;
+    expect(within).toBeGreaterThan(0);
+    expect(grid[world.idx(35, 15)]).toBeCloseTo(within * 0.5);
     sim.s.weatherOn = true;
     sim.s.day = 0;
     run(sim, 1.1);
     const outside = outdoorTemp(CENTERS.sandbox.climate, sim.s.day);
-    expect(warmthAt(ctx, 39, 19)).toBeCloseTo(outside, 0);
-    expect(warmthAt(ctx, 30, 15)).not.toBeCloseTo(outside, 0);
+    // with nothing to warm or cool them: the weather itself out of doors, some of the way toward just right inside
+    expect(warmthAt(ctx, 39, 19)).toBeCloseTo(outside, 1);
+    expect(warmthAt(ctx, 40, 15)).toBeCloseTo(indoorTemp(outside), 1);
+    expect(indoorTemp(outside)).not.toBeCloseTo(outside, 0);
   });
 
   it('has guests treated in it, walking out and back along the path', () => {

@@ -1415,6 +1415,7 @@ test.describe('more land', () => {
     await game.clickPlot('east-wing');
     const dialog = page.locator('.dialog');
     await expect(dialog).toContainText('Buy the east wing?');
+    await expect(dialog).toContainText('The builders take 6 days, then the building grows into it');
     // the game waits while the dialog is open
     expect(await game.eval((pp) => pp.state.speed)).toBe(0);
     await dialog.getByRole('button', { name: 'Buy for $24,000' }).click();
