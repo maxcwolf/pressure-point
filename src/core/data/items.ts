@@ -1,6 +1,6 @@
 // Every item that can be placed: furniture, equipment and decor.
 
-import type { ItemDef, ItemType } from './types';
+import type { ItemDef, ItemType, RoomType } from './types';
 
 export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   reception_desk: {
@@ -1033,6 +1033,115 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
   },
+  chakra_chart: {
+    type: 'chakra_chart',
+    name: 'Chakra Chart',
+    icon: '🌈',
+    desc: 'Seven glowing wheels up a serene outline. Treatments in its room work a little more often, from one chart; nobody is sure where the eighth one went.',
+    cost: 250,
+    w: 1,
+    h: 1,
+    mount: 'wall',
+    where: 'reiki',
+    alsoIn: ['sound'],
+    access: [],
+    inMenu: true,
+    unlock: 1,
+    decor: 1,
+  },
+  meridian_poster: {
+    type: 'meridian_poster',
+    name: 'Meridian Poster',
+    icon: '🧍',
+    desc: 'Every line qi runs along, and the points on them, labeled in very small print. Treatments in its room work a little more often, from one poster.',
+    cost: 250,
+    w: 1,
+    h: 1,
+    mount: 'wall',
+    where: 'acupuncture',
+    alsoIn: ['massage'],
+    access: [],
+    inMenu: true,
+    unlock: 1,
+    decor: 1,
+  },
+  television: {
+    type: 'television',
+    name: 'Television',
+    icon: '📺',
+    desc: 'Nature documentaries on a loop. Guests waiting near it lose patience more slowly, but it is noisy, and in a power cut it is a black mirror.',
+    cost: 1200,
+    w: 1,
+    h: 1,
+    mount: 'wall',
+    where: 'corridor',
+    access: [],
+    inMenu: true,
+    unlock: 1,
+    noise: 3,
+  },
+  tapestry: {
+    type: 'tapestry',
+    name: 'Tapestry',
+    icon: '🧶',
+    desc: 'A woven mandala two tiles wide. Lovely to look at, and it soaks up a little noise.',
+    cost: 700,
+    w: 2,
+    h: 1,
+    mount: 'wall',
+    where: 'any',
+    access: [],
+    inMenu: true,
+    unlock: 2,
+    decor: 4,
+    noise: -1,
+  },
+  prayer_flags: {
+    type: 'prayer_flags',
+    name: 'Prayer Flags',
+    icon: '🎏',
+    desc: 'A string of bright flags two tiles wide, fluttering in a breeze that only they can feel.',
+    cost: 350,
+    w: 2,
+    h: 1,
+    mount: 'wall',
+    where: 'any',
+    access: [],
+    inMenu: true,
+    unlock: 1,
+    decor: 2,
+  },
+  living_wall: {
+    type: 'living_wall',
+    name: 'Living Wall',
+    icon: '🌿',
+    desc: 'A panel of ferns and moss. Very nice indeed, as long as a Caretaker keeps it watered; left dry, it browns and drags its surroundings down.',
+    cost: 1800,
+    w: 1,
+    h: 1,
+    mount: 'wall',
+    where: 'any',
+    access: [],
+    inMenu: true,
+    unlock: 2,
+    decor: 5,
+  },
+  wall_fountain: {
+    type: 'wall_fountain',
+    name: 'Wall Fountain',
+    icon: '💧',
+    desc: 'Water running down a slate panel. Very nice to look at, and it soothes the noise around it. It stops when the pipes freeze.',
+    cost: 2200,
+    w: 1,
+    h: 1,
+    mount: 'wall',
+    where: 'any',
+    access: [],
+    inMenu: true,
+    unlock: 3,
+    decor: 5,
+    noise: -3,
+  },
 };
 
 export const ITEM_MENU: readonly ItemType[] = [
@@ -1058,6 +1167,11 @@ export const ITEM_MENU: readonly ItemType[] = [
   'soundproof_panel',
   'landscape_painting',
   'wall_clock',
+  'television',
+  'tapestry',
+  'prayer_flags',
+  'living_wall',
+  'wall_fountain',
   'fire_extinguisher',
   'statue',
   'aquarium',
@@ -1077,11 +1191,13 @@ export const ITEM_MENU: readonly ItemType[] = [
   'study_desk',
   'bookcase',
   'stretch_rack',
+  'meridian_poster',
   'stone_warmer',
   'cupping_cart',
   'moxa_burner',
   'stim_unit',
   'crystal_grid',
+  'chakra_chart',
   'sound_mat',
   'gong',
   'crystal_bowls',
@@ -1092,3 +1208,17 @@ export const ITEM_MENU: readonly ItemType[] = [
   'mushroom_altar',
   'brew_pot',
 ];
+
+/** Whether an item is living, and dries out until a Caretaker waters it: a Potted Plant, or a Living Wall. */
+export const isWatered = (type: ItemType) => type === 'plant' || type === 'living_wall';
+
+/** Every kind of room an item may go in, for one that goes in rooms. */
+export function roomsFor(def: Pick<ItemDef, 'where' | 'alsoIn'>): RoomType[] {
+  if (def.where === 'corridor' || def.where === 'any') return [];
+  return [def.where, ...(def.alsoIn ?? [])];
+}
+
+/** Whether an item may go in a kind of room. */
+export function goesIn(def: Pick<ItemDef, 'where' | 'alsoIn'>, room: RoomType): boolean {
+  return def.where === 'any' || roomsFor(def).includes(room);
+}

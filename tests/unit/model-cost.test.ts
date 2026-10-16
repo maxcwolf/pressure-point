@@ -77,9 +77,10 @@ describe('the cost of drawing each model', () => {
     // about 1390 when this was written, 1540 after The Orchard Estate's guests, the Topiary and the rival's storefront,
     // 1730 after sound healing's guests, items and healer, 1930 with a receptionist in the lab for every hair style and
     // beard, 1780 before the still parts of items were merged, 2530 while every part of every model cast a shadow, and
-    // 2250 after the Shaman, the lodge's equipment and its guests, and 2351 with the five items chosen on 16 October 2026
+    // 2250 after the Shaman, the lodge's equipment and its guests, 2351 with the five items chosen on 16 October 2026, and
+    // 2522 with the ten things to hang on walls, each shown in the lab on a stretch of wall
     const heaviest = all.sort((a, b) => b.calls - a.calls).slice(0, 10);
-    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(2450);
+    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(2600);
   });
 
   it('only casts shadows from parts big enough to show one', async () => {

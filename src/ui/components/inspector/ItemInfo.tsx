@@ -4,6 +4,7 @@ import {
   DIRT_CLEAN,
   DIRT_FILTHY,
   HAMPER_SIZE,
+  isWatered,
   ITEMS,
   LINENS_STALE,
   MISHAPS,
@@ -100,7 +101,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
       <h3>{`${def.icon} ${def.name}`}</h3>
       <p>{def.desc}</p>
       <StationInfo item={it} />
-      {it.type === 'plant' && (
+      {isWatered(it.type) && (
         <label>
           Water
           <Bar value={it.water} class={it.water < 25 ? 'bad' : 'blue'} />

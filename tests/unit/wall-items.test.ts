@@ -1,18 +1,40 @@
-// Things hung on walls: where they can hang, what keeps out of their way, how they move with their room, and what the
-// first three do.
+// Things hung on walls: where they can hang, what keeps out of their way, how they move with their room, and what
+// each of them does.
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { CLOCK_BREAK_BOOST, CLOCK_DRAIN, ITEM_MENU, ITEMS, type ItemType, POSTER_MORALE } from '../../src/core/data';
+import {
+  CHART_BONUS,
+  CLOCK_BREAK_BOOST,
+  CLOCK_DRAIN,
+  ITEM_MENU,
+  ITEMS,
+  type ItemType,
+  MISHAPS,
+  POSTER_MORALE,
+  TV_CALM,
+} from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { resizeCost } from '../../src/core/resize';
 import { placeLayout, turnLayout } from '../../src/core/room-layout';
+import { decorOf } from '../../src/core/sim/ambience';
 import { createContext } from '../../src/core/sim/context';
 import { breakBoost, moraleTarget } from '../../src/core/sim/staffing';
-import { clockDrain } from '../../src/core/sim/wall-items';
+import { chartBonus, wallDrain } from '../../src/core/sim/wall-items';
 import type { Guest, Item, WallSpot } from '../../src/core/state/types';
 import { layoutProblem } from '../../src/core/templates';
 import { rotFacing, wallSpotsOf, Z_CORRIDOR } from '../../src/core/world';
-import { addStaffRoom, buildRoom, freshSim, hire, inconsistencies, openCenter, run, toasts } from './helpers';
+import {
+  addReiki,
+  addStaffRoom,
+  buildRoom,
+  freshSim,
+  hire,
+  inconsistencies,
+  openCenter,
+  run,
+  runUntil,
+  toasts,
+} from './helpers';
 
 const HUNG: ItemType[] = ['motivational_poster', 'landscape_painting', 'wall_clock'];
 
@@ -251,10 +273,75 @@ describe('the first things to hang', () => {
     expect(boost()).toBeCloseTo(rested * CLOCK_BREAK_BOOST);
 
     const guest = { tx: 8, ty: 4, x: 8.5, y: 4.5 } as Guest;
-    expect(clockDrain(createContext(s), guest)).toBe(1);
+    expect(wallDrain(createContext(s), guest)).toBe(1);
     hang(sim, 'wall_clock', BACK_WALL);
     expect(sim.world.zoneAt(8, 4)).toBe(Z_CORRIDOR);
-    expect(clockDrain(createContext(s), guest)).toBe(CLOCK_DRAIN);
-    expect(clockDrain(createContext(s), { tx: 20, ty: 14, x: 20.5, y: 14.5 } as Guest)).toBe(1);
+    expect(wallDrain(createContext(s), guest)).toBe(CLOCK_DRAIN);
+    expect(wallDrain(createContext(s), { tx: 20, ty: 14, x: 20.5, y: 14.5 } as Guest)).toBe(1);
+  });
+});
+
+describe('the rest of the things to hang', () => {
+  it('help treatments in their rooms with a chart, from one, in either of its rooms', () => {
+    const { sim, s, massage } = openCenter(2);
+    sim.s.stars = 3;
+    const reiki = addReiki(sim);
+    const table = s.items.find((it) => it.type === 'reiki_table')!;
+    const bed = s.items.find((it) => it.type === 'massage_table')!;
+    expect(chartBonus(createContext(s), table)).toBe(0);
+    expect(hang(sim, 'chakra_chart', { x: 26, y: 13, rot: 0 })).toMatchObject({ type: 'chakra_chart' });
+    expect(hang(sim, 'chakra_chart', { x: 27, y: 13, rot: 0 })).toMatchObject({ type: 'chakra_chart' });
+    expect(chartBonus(createContext(s), table)).toBe(CHART_BONUS);
+    expect(sim.world.zoneAt(26, 13)).toBe(reiki.id);
+    // a chakra chart is for Reiki and the Sound Bath, and a meridian poster for acupuncture and massage
+    expect(hang(sim, 'chakra_chart', { x: 13, y: 5, rot: 0 })).toBe(
+      'Goes inside a Reiki Studio or a Sound Bath Studio',
+    );
+    expect(hang(sim, 'meridian_poster', { x: 13, y: 5, rot: 0 })).toMatchObject({ type: 'meridian_poster' });
+    expect(sim.world.zoneAt(13, 5)).toBe(massage.id);
+    expect(chartBonus(createContext(s), bed)).toBe(CHART_BONUS);
+  });
+
+  it('calm the wait with a television, which a power cut stops, as the freeze stops a wall fountain', () => {
+    const { sim, s } = openCenter(2);
+    sim.s.stars = 3;
+    const guest = { tx: 8, ty: 4, x: 8.5, y: 4.5 } as Guest;
+    expect(hang(sim, 'television', BACK_WALL)).toMatchObject({ type: 'television' });
+    expect(wallDrain(createContext(s), guest)).toBe(TV_CALM);
+    expect(wallDrain(createContext(s), { tx: 20, ty: 14, x: 20.5, y: 14.5 } as Guest)).toBe(1);
+    expect(MISHAPS.power.stops).toContain('television');
+    expect(MISHAPS.freeze.stops).toContain('wall_fountain');
+    expect(hang(sim, 'television', { x: 13, y: 5, rot: 0 })).toBe('Goes in a corridor, not a room');
+  });
+
+  it('hang two tiles wide only on a straight free stretch of one wall', () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    sim.s.stars = 3;
+    addStaffRoom(sim);
+    // the back wall from 6 to 7 is clear; 8 has one of the building's windows
+    expect(hang(sim, 'tapestry', { x: 7, y: 3, rot: 0 })).toBe('There is a window there');
+    expect(sim.world.nearestWall('tapestry', 7, 3.1)).toEqual({ x: 6, y: 3, rot: 0 });
+    const tapestry = hang(sim, 'tapestry', { x: 6, y: 3, rot: 0 }) as Item;
+    expect(wallSpotsOf(tapestry)).toEqual([
+      { x: 6, y: 3, dx: 0, dy: -1 },
+      { x: 7, y: 3, dx: 0, dy: -1 },
+    ]);
+    expect(hang(sim, 'wall_clock', { x: 7, y: 3, rot: 0 })).toBe('The Tapestry hangs there');
+    // off the end of the Staff Room's back wall, where there is no wall
+    expect(hang(sim, 'prayer_flags', { x: 19, y: 5, rot: 0 })).toBe('Hang it on a wall');
+    expect(hang(sim, 'prayer_flags', { x: 18, y: 5, rot: 0 })).toMatchObject({ type: 'prayer_flags' });
+  });
+
+  it('need watering when living, and drag their surroundings down left dry', () => {
+    const { sim, s } = openCenter(2);
+    sim.s.stars = 3;
+    const wall = hang(sim, 'living_wall', BACK_WALL) as Item;
+    expect(decorOf(wall)).toBe(5);
+    wall.water = 10;
+    expect(decorOf(wall)).toBe(-1);
+    hire(sim, 'caretaker');
+    runUntil(sim, () => wall.water > 90, 300);
+    expect(s.items).toContain(wall);
   });
 });

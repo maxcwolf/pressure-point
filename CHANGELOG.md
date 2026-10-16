@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **More to hang on walls.** A **Chakra Chart** for the Reiki and Sound Bath studios and a **Meridian Poster** for acupuncture and massage each make treatments in their room work a little more often. A **Television** in a corridor keeps waiting guests patient, but it's noisy and a power cut turns it off. The two-tile **Tapestry** soaks up a little noise, the **Prayer Flags** flutter, the **Living Wall** needs a Caretaker to water it, and the **Wall Fountain** soothes the noise around it until the pipes freeze.
+
 ## v0.28.0
 
 - **Better windows.** Every window has a proper frame, glazing bars, a ledge and glass that catches the light, and windows side by side join into one. The building has windows in all four walls, whichever way you turn the camera, and windows in walls cut low no longer stand up out of them like a fence.

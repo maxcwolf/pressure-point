@@ -10,6 +10,7 @@ import {
   GENERAL_COURSES,
   GENERAL_ORDER,
   type GeneralId,
+  isWatered,
   ITEMS,
   MODALITIES,
   type Modality,
@@ -228,7 +229,7 @@ export function updateHabits(ctx: SimContext) {
     }
     if (habitOf(st, 'water')) {
       for (const it of s.items) {
-        if (it.type !== 'plant' || it.water >= 60 || Math.hypot(it.x + 0.5 - st.x, it.y + 0.5 - st.y) > 1.6) continue;
+        if (!isWatered(it.type) || it.water >= 60 || Math.hypot(it.x + 0.5 - st.x, it.y + 0.5 - st.y) > 1.6) continue;
         it.water = 100;
         say(st, '💧', 2);
       }

@@ -158,6 +158,11 @@ export const CLOCK_BREAK_BOOST = 1.25;
 /** How far a waiting guest can see a Wall Clock from, in tiles, and how much faster they lose patience watching it. */
 export const CLOCK_SIGHT = 6;
 export const CLOCK_DRAIN = 1.1;
+/** How much more often treatments work in a room with a Chakra Chart or a Meridian Poster on its wall. */
+export const CHART_BONUS = 0.02;
+/** How far waiting guests can watch a Television from, in tiles, and how fast they lose patience watching it. */
+export const TV_RANGE = 4;
+export const TV_CALM = 0.8;
 /** How fast a seated guest loses patience against standing, unless the seat says otherwise. */
 export const SEAT_DRAIN = 0.6;
 

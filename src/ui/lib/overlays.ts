@@ -2,7 +2,7 @@
 // the guests are, how fresh the staff, how well kept the furniture. Each tile gets a value from 0 (bad) to 1 (good),
 // except temperature, which runs from cold through just right to hot.
 
-import { HAMPER_SIZE, ITEMS } from '../../core/data';
+import { HAMPER_SIZE, isWatered, ITEMS } from '../../core/data';
 import { footprintTiles } from '../../core/footprint';
 import { calmness } from '../../core/sim/noise';
 import type { Sim } from '../../core/sim/sim';
@@ -91,7 +91,7 @@ export function heatTiles(sim: Sim, mode: OverlayMode): HeatTile[] {
         const parts: number[] = [];
         if (def.wear) parts.push(1 - it.wear / 100);
         if (def.dirt) parts.push(1 - it.dirt / 100);
-        if (it.type === 'plant' || it.type === 'stone_warmer') parts.push(it.water / 100);
+        if (isWatered(it.type) || it.type === 'stone_warmer') parts.push(it.water / 100);
         if (it.type === 'linen_hamper') parts.push(1 - it.water / HAMPER_SIZE);
         if (!parts.length) continue;
         const v = unit(Math.min(...parts));

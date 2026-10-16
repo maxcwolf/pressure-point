@@ -193,6 +193,10 @@ export interface ItemParts {
   chimes?: THREE.Object3D[];
   /** A clock's minute and hour hands, which turn. */
   hands?: THREE.Object3D[];
+  /** Prayer flags, which flutter. */
+  flags?: THREE.Object3D[];
+  /** A living wall's moss, which browns as it dries out, as a plant's leaves do. */
+  moss?: THREE.MeshStandardMaterial;
   /**
    * What moves over the guest during a ceremony: a spirit animal that bobs, a dark cloud pulled out of them, steam that
    * rises off them, colors that swirl, and an eagle that circles.

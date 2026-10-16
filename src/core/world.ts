@@ -3,6 +3,7 @@
 
 import {
   centerOf,
+  goesIn,
   H,
   ITEMS,
   type ItemType,
@@ -10,6 +11,7 @@ import {
   mishapStopsType,
   type Pose,
   ROOMS,
+  roomsFor,
   type RoomType,
   SIDEWALK_Y,
 } from './data';
@@ -389,9 +391,21 @@ export class World {
       return no('There is a window there');
     return OK;
   }
+  /** Can an item go in this zone: a corridor, or a kind of room it is for? */
+  private belongs(type: ItemType, z: number): Check {
+    const def = ITEMS[type];
+    if (def.where === 'corridor') return z === Z_CORRIDOR ? OK : no('Goes in a corridor, not a room');
+    if (def.where === 'any') return OK;
+    const room = z > 0 ? this.room(z) : undefined;
+    if (room && goesIn(def, room.type)) return OK;
+    return no(
+      `Goes inside ${roomsFor(def)
+        .map((r) => `a ${ROOMS[r].name}`)
+        .join(' or ')}`,
+    );
+  }
   /** Can a wall item hang here, facing this way? Every stretch of wall it covers has to be free, on one wall. */
   private canHang(type: ItemType, x: number, y: number, rot: number, roomId?: number): Check {
-    const def = ITEMS[type];
     let z: number | null = null;
     let outer: boolean | null = null;
     for (const spot of wallSpotsOf({ type, x, y, rot })) {
@@ -407,12 +421,7 @@ export class World {
     }
     if (z === null) return no('Invalid');
     if (roomId !== undefined && z !== roomId) return no('Hang it inside the new room');
-    if (def.where === 'corridor' && z !== Z_CORRIDOR) return no('Goes in a corridor, not a room');
-    if (def.where !== 'corridor' && def.where !== 'any') {
-      const room = z > 0 ? this.room(z) : undefined;
-      if (room?.type !== def.where) return no(`Goes inside a ${ROOMS[def.where].name}`);
-    }
-    return OK;
+    return this.belongs(type, z);
   }
   /**
    * Where a wall item would hang for a point on the ground: on the wall nearest it, within a tile or so, that it can
@@ -676,11 +685,8 @@ export class World {
     }
     if (z === null) return no('Invalid');
     if (roomId !== undefined && z !== roomId) return no('Place it inside the new room');
-    if (def.where === 'corridor' && z !== Z_CORRIDOR) return no('Goes in a corridor, not a room');
-    if (def.where !== 'corridor' && def.where !== 'any') {
-      const room = z > 0 ? this.room(z) : undefined;
-      if (room?.type !== def.where) return no(`Goes inside a ${ROOMS[def.where].name}`);
-    }
+    const belongs = this.belongs(type, z);
+    if (!belongs.ok) return belongs;
     for (let i = 0; i < def.access.length; i++) {
       const [ax, ay] = accessTile(it, i);
       if (!this.inside(ax, ay) || this.zone[this.idx(ax, ay)] !== z || this.blocked[this.idx(ax, ay)])

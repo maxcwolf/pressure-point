@@ -1,6 +1,6 @@
 // How pleasant the place is: decor, litter, grime and the prestige of each room.
 
-import { DECOR_RADIUS, DIRT_FILTHY, FILTHY_DECOR, ITEMS, ROOMS, WINDOW_MAX_BONUS } from '../data';
+import { DECOR_RADIUS, DIRT_FILTHY, FILTHY_DECOR, isWatered, ITEMS, ROOMS, WINDOW_MAX_BONUS } from '../data';
 import type { Item, Room } from '../state/types';
 import { at, clamp } from '../util';
 import { itemCenter } from '../world';
@@ -37,7 +37,7 @@ export function updateAmbience(ctx: SimContext) {
  * their harm on the table, not to the room.
  */
 export function decorOf(it: Item): number {
-  if (it.type === 'plant' && it.water <= 15) return -1;
+  if (isWatered(it.type) && it.water <= 15) return -1;
   if (it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens) return FILTHY_DECOR;
   return ITEMS[it.type].decor ?? 0;
 }

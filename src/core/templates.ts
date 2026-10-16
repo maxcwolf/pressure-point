@@ -8,6 +8,7 @@ import {
   DISCIPLINES,
   type FloorId,
   FLOORS,
+  goesIn,
   ITEMS,
   type ItemType,
   ROOMS,
@@ -109,7 +110,7 @@ export function layoutProblem(l: Layout): string {
   const hung = new Set<string>();
   for (const it of l.items) {
     const def = ITEMS[it.type];
-    if (def.where !== l.type && def.where !== 'any') return `The ${def.name} does not go in a ${room.name}`;
+    if (!goesIn(def, l.type)) return `The ${def.name} does not go in a ${room.name}`;
     if (def.mount === 'wall') {
       // on the room's own walls, clear of the door, the windows and each other
       for (const w of wallSpotsOf(it)) {

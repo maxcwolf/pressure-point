@@ -2,6 +2,7 @@
 
 import {
   DISCIPLINES,
+  goesIn,
   type ItemDef,
   ITEMS,
   type ItemType,
@@ -12,6 +13,7 @@ import {
   ROLES,
   ROOM_ORDER,
   ROOMS,
+  roomsFor,
   type RoomType,
 } from '../../core/data';
 
@@ -41,17 +43,21 @@ export function placeLabel(item: ItemDef): string {
   if (item.mount === 'wall') {
     if (item.where === 'corridor') return 'Corridor wall';
     if (item.where === 'any') return 'Any wall';
-    return `${ROOMS[item.where].name} wall`;
+    return `${roomsFor(item)
+      .map((r) => ROOMS[r].name)
+      .join(' or ')} wall`;
   }
   if (item.where === 'corridor') return 'Corridor';
   if (item.where === 'any') return 'Anywhere';
-  return ROOMS[item.where].name;
+  return roomsFor(item)
+    .map((r) => ROOMS[r].name)
+    .join(' or ');
 }
 
 /** Whether an item's home is on offer: corridor items always are, room items when their room's discipline is. */
 export function itemOffered(item: ItemDef, enabled: (d: Offering) => boolean): boolean {
   if (item.where === 'corridor' || item.where === 'any') return true;
-  return available(roomOffering(item.where), enabled);
+  return roomsFor(item).some((r) => available(roomOffering(r), enabled));
 }
 
 /** What an item is for, to filter the Items menu by. */
@@ -88,12 +94,12 @@ export type Place = 'all' | 'corridor' | RoomType;
 /** Whether an item can go in a place. Items that go anywhere fit every place. */
 export function fitsPlace(item: ItemDef, place: Place): boolean {
   if (place === 'all' || item.where === 'any') return true;
-  return item.where === place;
+  return place === 'corridor' ? item.where === 'corridor' : goesIn(item, place);
 }
 
 /** The places worth filtering by: everywhere, the corridors, and each room that has items of its own. */
 export function placeFilters(types: readonly ItemType[]): Place[] {
-  const rooms = ROOM_ORDER.filter((r) => types.some((t) => ITEMS[t].where === r));
+  const rooms = ROOM_ORDER.filter((r) => types.some((t) => roomsFor(ITEMS[t]).includes(r)));
   return ['all', 'corridor', ...rooms];
 }
 

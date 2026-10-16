@@ -16,6 +16,7 @@ import { buildBookcase } from './bookcase';
 import { buildBrewPot } from './brew-pot';
 import { buildCabinet } from './cabinet';
 import { buildCeremonyMat } from './ceremony-mat';
+import { buildChakraChart } from './chakra-chart';
 import { buildCoffeeMachine } from './coffee-machine';
 import { buildConsultDesk } from './consult-desk';
 import { buildCrystalBowls } from './crystal-bowls';
@@ -33,9 +34,11 @@ import { buildKoiPond } from './koi-pond';
 import { buildKombuchaTap } from './kombucha-tap';
 import { buildLandscapePainting } from './landscape-painting';
 import { buildLinenHamper } from './linen-hamper';
+import { buildLivingWall } from './living-wall';
 import { buildMagazineRack } from './magazine-rack';
 import { buildMassageChair } from './massage-chair';
 import { buildMassageTable } from './massage-table';
+import { buildMeridianPoster } from './meridian-poster';
 import { buildMotivationalPoster } from './motivational-poster';
 import { buildMoxaBurner } from './moxa-burner';
 import { buildMushroomAltar } from './mushroom-altar';
@@ -45,6 +48,7 @@ import { buildPlant } from './plant';
 import { buildPoolTable } from './pool-table';
 import { buildPostureScanner } from './posture-scanner';
 import { buildPracticeSpot } from './practice-spot';
+import { buildPrayerFlags } from './prayer-flags';
 import { buildRadiator } from './radiator';
 import { buildRattle } from './rattle';
 import { buildReceptionDesk } from './reception-desk';
@@ -67,11 +71,14 @@ import { buildStoneWarmer } from './stone-warmer';
 import { buildStretchRack } from './stretch-rack';
 import { buildStudyDesk } from './study-desk';
 import { buildSweatLodge } from './sweat-lodge';
+import { buildTapestry } from './tapestry';
 import { buildTeaStation } from './tea-station';
+import { buildTelevision } from './television';
 import { buildToilet } from './toilet';
 import { buildTopiary } from './topiary';
 import { buildTrophyCabinet } from './trophy-cabinet';
 import { buildWallClock } from './wall-clock';
+import { buildWallFountain } from './wall-fountain';
 import { buildWaterCooler } from './water-cooler';
 import { buildWhiteboard } from './whiteboard';
 import { buildWindChimes } from './wind-chimes';
@@ -153,6 +160,13 @@ const BUILDERS: Record<ItemType, (g: THREE.Group, look?: string) => void> = {
   /** A painting of the view at its center. */
   landscape_painting: (g, look) => buildLandscapePainting(g, look as CenterId),
   wall_clock: buildWallClock,
+  chakra_chart: buildChakraChart,
+  meridian_poster: buildMeridianPoster,
+  television: buildTelevision,
+  tapestry: buildTapestry,
+  prayer_flags: buildPrayerFlags,
+  living_wall: buildLivingWall,
+  wall_fountain: buildWallFountain,
 };
 
 /** How an item looks, where it comes in more than one look: a rug's pattern, and the center a painting is of. */

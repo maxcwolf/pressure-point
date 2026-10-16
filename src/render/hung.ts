@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 
-import type { ItemType } from '../core/data';
+import { ITEMS, type ItemType } from '../core/data';
 import type { Item } from '../core/state/types';
 import { itemCenter, rotVec, wallSpotsOf, type World } from '../core/world';
 import { buildChip } from './models/items/wall';
@@ -52,12 +52,19 @@ const CHIP_COLORS: Partial<Record<ItemType, number>> = {
   motivational_poster: 0x7cc4e8,
   landscape_painting: 0xc9a24a,
   wall_clock: 0x8f5f38,
+  chakra_chart: 0x9b59b6,
+  meridian_poster: 0xc0392b,
+  television: 0x22252b,
+  tapestry: 0x8e3b46,
+  prayer_flags: 0xd8433f,
+  living_wall: 0x5f9e4a,
+  wall_fountain: 0x4a5058,
 };
 
 /** The chip shown on top of a low wall in place of something hung on it. */
 export function buildHungChip(type: ItemType, place: HangPlace): THREE.Group {
   const g = new THREE.Group();
-  buildChip(g, CHIP_COLORS[type] ?? 0xb9834f, place.thick, place.lowTop);
+  buildChip(g, CHIP_COLORS[type] ?? 0xb9834f, ITEMS[type].w, place.thick, place.lowTop);
   mergeStill(g, `chip:${type}:${place.thick}`);
   return g;
 }

@@ -102,6 +102,13 @@ export type ItemType =
   | 'motivational_poster'
   | 'landscape_painting'
   | 'wall_clock'
+  | 'chakra_chart'
+  | 'meridian_poster'
+  | 'television'
+  | 'tapestry'
+  | 'prayer_flags'
+  | 'living_wall'
+  | 'wall_fountain'
   | 'recliner'
   | 'instructor_mat'
   | 'practice_spot'
@@ -165,6 +172,8 @@ export interface ItemDef {
   access: AccessDef[];
   /** Where it may be placed. */
   where: 'corridor' | 'any' | RoomType;
+  /** Other kinds of room it may go in too, for an item whose `where` is a room. */
+  alsoIn?: readonly RoomType[];
   /**
    * It hangs on a wall rather than standing on the floor. Its tiles are the floor in front of it, which it faces, so
    * it belongs to the room or corridor there; it blocks nothing, and is hung on the inside of a room's walls or the

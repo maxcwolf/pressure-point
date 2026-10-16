@@ -8,6 +8,7 @@ import {
   DISCIPLINES,
   DISCOMFORT_NOTICE,
   IDEAL_TEMP,
+  isWatered,
   ITEMS,
   MODALITIES,
   MODALITY_ORDER,
@@ -86,7 +87,7 @@ function nudge(ctx: SimContext): string | Advice {
     return 'Guests are crossing their legs. A Restroom would be a kindness.';
   if (s.litter.length >= 3 && !hasStaff(ctx, 'caretaker'))
     return 'Litter is piling up. Hire a Caretaker to keep the place clean.';
-  const wilting = s.items.find((i) => i.type === 'plant' && i.water < 20);
+  const wilting = s.items.find((i) => isWatered(i.type) && i.water < 20);
   if (wilting && !hasStaff(ctx, 'caretaker'))
     return { text: 'Your plants are wilting. A Caretaker will water them.', about: { kind: 'item', id: wilting.id } };
   const filthy = s.items.find((i) => i.dirt >= DIRT_FILTHY && !hasLinens(i));

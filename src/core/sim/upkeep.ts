@@ -1,6 +1,6 @@
 // Wear and tear: equipment wearing out, toilets getting grubby, plants drying and warm stones cooling.
 
-import { centerOf, ITEMS, type ItemType } from '../data';
+import { centerOf, isWatered, ITEMS, type ItemType } from '../data';
 import { tuning } from '../difficulty';
 import type { Item } from '../state/types';
 import { itemCenter } from '../world';
@@ -9,10 +9,10 @@ import { emit, toast } from './events';
 import { upgradeWear } from './upgrades';
 import { stoneCooling, warmthAt } from './warmth';
 
-/** Plants dry out and warm stones cool as time passes, the stones faster in a cold room. */
+/** Plants dry out and warm stones cool as time passes, the stones faster in a cold room. A Living Wall dries slower. */
 export function decayItems(ctx: SimContext, dt: number) {
   for (const it of ctx.s.items) {
-    if (it.type === 'plant') it.water = Math.max(0, it.water - dt * 0.3);
+    if (isWatered(it.type)) it.water = Math.max(0, it.water - dt * (it.type === 'living_wall' ? 0.2 : 0.3));
     else if (it.type === 'stone_warmer')
       it.water = Math.max(0, it.water - dt * stoneCooling(warmthAt(ctx, it.x, it.y)));
   }

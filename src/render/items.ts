@@ -37,22 +37,34 @@ export interface ItemCondition {
   trophies: number;
 }
 
+/** The green of a plant's leaves and of a living wall's moss when watered, as red, green and blue. */
+const LEAF = [0.34, 0.66, 0.35] as const;
+const MOSS = [0.37, 0.62, 0.29] as const;
+/** The brown they dry out to. */
+const DRY = [0.62, 0.5, 0.25] as const;
+
+/** The color of something living, from its own green when watered toward brown as it dries out. */
+function dryColor(water: number, green: readonly [number, number, number]): THREE.Color {
+  const k = Math.min(1, water / 40);
+  return new THREE.Color().setRGB(
+    green[0] * k + DRY[0] * (1 - k),
+    green[1] * k + DRY[1] * (1 - k),
+    green[2] * k + DRY[2] * (1 - k),
+    THREE.SRGBColorSpace,
+  );
+}
+
 /**
  * Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke, blinking lights, grubby linens, chimes and
- * a clock's hands.
+ * a clock's hands,
+ * fluttering flags and browning moss.
  */
 export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: number) {
-  const { leaf, glow, ring, orb, puffs, led, cups, linens, heap, flames, chimes, hands } = partsOf(model);
+  const { leaf, glow, ring, orb, puffs, led, cups, linens, heap, flames, chimes, hands, flags, moss } = partsOf(model);
   if (leaf) {
     // a plant browns and droops as it dries out
-    const k = Math.min(1, it.water / 40);
-    leaf.color.setRGB(
-      0.34 * k + 0.62 * (1 - k),
-      0.66 * k + 0.5 * (1 - k),
-      0.35 * k + 0.25 * (1 - k),
-      THREE.SRGBColorSpace,
-    );
-    model.scale.y = 0.82 + 0.18 * k;
+    leaf.color.copy(dryColor(it.water, LEAF));
+    model.scale.y = 0.82 + 0.18 * Math.min(1, it.water / 40);
   }
   if (glow) glow.emissiveIntensity = (it.water / 100) * 1.4;
   if (ring) {
@@ -86,6 +98,10 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
   });
   // a clock's hands go round faster than the real thing, so it can be seen to be going
   hands?.forEach((h, i) => (h.rotation.z = -(t + it.id * 7) * (i ? 0.01 : 0.12)));
+  // prayer flags lift and settle in turn, as a breeze runs along the string
+  flags?.forEach((f, i) => (f.rotation.x = -0.25 - Math.sin(t * 2.2 - i * 0.7 + it.id) * 0.2));
+  // a living wall browns as it dries out, as a plant does, but stays where it hangs
+  if (moss) moss.color.copy(dryColor(it.water, MOSS));
 }
 
 // every progress bar is drawn with the same few pieces, so a bar costs nothing to make or throw away
