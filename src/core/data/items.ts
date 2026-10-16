@@ -492,7 +492,8 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     h: 1,
     front: true,
     where: 'sound',
-    access: [{ role: 'staff', x: 0, y: 1, px: 0.5, py: 1.2, face: [0, -1], pose: 'sit' }],
+    // the healer sits on the cushion on the floor, not at chair height
+    access: [{ role: 'staff', x: 0, y: 1, px: 0.5, py: 1.2, face: [0, -1], pose: 'sit', h: -0.3 }],
     station: { staff: 'healer', goal: 'lead', seconds: 16, discipline: 'sound' },
   },
   sound_mat: {
