@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 
-import { type ItemType, rugPattern, type RugPatternId } from '../../../core/data';
+import { type CenterId, type ItemType, rugPattern, type RugPatternId } from '../../../core/data';
 import { mergeStill } from '../merge';
 import { trimShadows } from '../parts';
 import { buildAcuTable } from './acu-table';
@@ -31,10 +31,12 @@ import { buildGong } from './gong';
 import { buildInstructorMat } from './instructor-mat';
 import { buildKoiPond } from './koi-pond';
 import { buildKombuchaTap } from './kombucha-tap';
+import { buildLandscapePainting } from './landscape-painting';
 import { buildLinenHamper } from './linen-hamper';
 import { buildMagazineRack } from './magazine-rack';
 import { buildMassageChair } from './massage-chair';
 import { buildMassageTable } from './massage-table';
+import { buildMotivationalPoster } from './motivational-poster';
 import { buildMoxaBurner } from './moxa-burner';
 import { buildMushroomAltar } from './mushroom-altar';
 import { buildNeedleCabinet } from './needle-cabinet';
@@ -69,12 +71,16 @@ import { buildTeaStation } from './tea-station';
 import { buildToilet } from './toilet';
 import { buildTopiary } from './topiary';
 import { buildTrophyCabinet } from './trophy-cabinet';
+import { buildWallClock } from './wall-clock';
 import { buildWaterCooler } from './water-cooler';
 import { buildWhiteboard } from './whiteboard';
 import { buildWindChimes } from './wind-chimes';
 
-/** What builds each item's model. Every item type has to have one. A rug is built in its pattern. */
-const BUILDERS: Record<ItemType, (g: THREE.Group, pattern?: RugPatternId) => void> = {
+/**
+ * What builds each item's model. Every item type has to have one. A rug is built in its pattern, and a painting of the
+ * view at its center.
+ */
+const BUILDERS: Record<ItemType, (g: THREE.Group, look?: string) => void> = {
   reception_desk: buildReceptionDesk,
   shop_counter: buildShopCounter,
   consult_desk: buildConsultDesk,
@@ -94,7 +100,8 @@ const BUILDERS: Record<ItemType, (g: THREE.Group, pattern?: RugPatternId) => voi
   salt_lamp: buildSaltLamp,
   diffuser: buildDiffuser,
   statue: buildStatue,
-  rug: buildRug,
+  /** A rug in its pattern. */
+  rug: (g, look) => buildRug(g, look as RugPatternId),
   magazine_rack: buildMagazineRack,
   acu_table: buildAcuTable,
   needle_cabinet: buildNeedleCabinet,
@@ -142,12 +149,25 @@ const BUILDERS: Record<ItemType, (g: THREE.Group, pattern?: RugPatternId) => voi
   fortune_teller: buildFortuneTeller,
   kombucha_tap: buildKombuchaTap,
   staff_fridge: buildStaffFridge,
+  motivational_poster: buildMotivationalPoster,
+  /** A painting of the view at its center. */
+  landscape_painting: (g, look) => buildLandscapePainting(g, look as CenterId),
+  wall_clock: buildWallClock,
 };
 
-/** Build an item in its local frame: origin at the footprint center, +z is the front. A rug comes in its pattern. */
-export function buildItem(type: ItemType, pattern?: RugPatternId): THREE.Group {
+/** How an item looks, where it comes in more than one look: a rug's pattern, and the center a painting is of. */
+export interface ItemLook {
+  pattern?: RugPatternId | undefined;
+  center?: CenterId | undefined;
+}
+
+/**
+ * Build an item in its local frame: origin at the footprint center, +z is the front; for something hung on a wall,
+ * the wall's face is at z = 0. A rug comes in its pattern, and a painting shows the view at its center.
+ */
+export function buildItem(type: ItemType, { pattern, center }: ItemLook = {}): THREE.Group {
   const g = new THREE.Group();
-  const look = type === 'rug' ? rugPattern(pattern) : undefined;
+  const look = type === 'rug' ? rugPattern(pattern) : type === 'landscape_painting' ? (center ?? 'sandbox') : undefined;
   BUILDERS[type](g, look);
   trimShadows(g);
   mergeStill(g, look && look !== 'kilim' ? `item:${type}:${look}` : `item:${type}`);

@@ -53,6 +53,7 @@ import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf, offered, unlocked } from './treatments';
 import { arrivalFactor, cutOff, impatience } from './twists';
 import { addWear, dirtier } from './upkeep';
+import { clockDrain } from './wall-items';
 import { discomfort, feelTemperature, hotness, warmthAt } from './warmth';
 import { worsen } from './worsening';
 
@@ -406,6 +407,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     // a loyal regular is used to the wait
     drain *= regularPatience(ctx.s, g) * tuning(ctx.s, 'patience');
     drain *= 1 + discomfort(temp) * DISCOMFORT_DRAIN;
+    drain *= clockDrain(ctx, g);
     g.patience -= drain * dt;
     if (g.patience < LONG_WAIT_PATIENCE) feel(g, 'long-wait');
     if (g.thirst >= 100) feel(g, 'thirsty');

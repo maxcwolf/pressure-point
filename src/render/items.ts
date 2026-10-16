@@ -5,14 +5,16 @@ import * as THREE from 'three';
 import { DIRT_FILTHY, HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Item } from '../core/state/types';
-import { itemCenter } from '../core/world';
+import { itemCenter, onWall } from '../core/world';
 import { animateCeremony } from './ceremony';
 import { disposeOwned, owned } from './disposal';
+import { buildHungChip, hangPlace, placeHung } from './hung';
 import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
 import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
 import { upgradePlate } from './models/plate';
+import type { Turn } from './turn';
 
 /** Position and turn an item's model to match its tile and rotation. */
 export function placeItemModel(model: THREE.Object3D, type: ItemType, x: number, y: number, rot: number) {
@@ -35,9 +37,12 @@ export interface ItemCondition {
   trophies: number;
 }
 
-/** Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke, blinking lights, grubby linens and chimes. */
+/**
+ * Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke, blinking lights, grubby linens, chimes and
+ * a clock's hands.
+ */
 export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: number) {
-  const { leaf, glow, ring, orb, puffs, led, cups, linens, heap, flames, chimes } = partsOf(model);
+  const { leaf, glow, ring, orb, puffs, led, cups, linens, heap, flames, chimes, hands } = partsOf(model);
   if (leaf) {
     // a plant browns and droops as it dries out
     const k = Math.min(1, it.water / 40);
@@ -79,6 +84,8 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
     c.rotation.z = Math.sin(t * 1.6 + i * 1.3 + it.id) * 0.12;
     c.rotation.x = Math.sin(t * 1.1 + i * 0.7) * 0.08;
   });
+  // a clock's hands go round faster than the real thing, so it can be seen to be going
+  hands?.forEach((h, i) => (h.rotation.z = -(t + it.id * 7) * (i ? 0.01 : 0.12)));
 }
 
 // every progress bar is drawn with the same few pieces, so a bar costs nothing to make or throw away
@@ -90,6 +97,8 @@ const BAR_FILL_MAT = new THREE.MeshBasicMaterial({ color: 0x3ddc84 });
 export class ItemsLayer {
   private items = new Map<number, { group: THREE.Group; key: string }>();
   private bars = new Map<number, { group: THREE.Group; fill: THREE.Mesh }>();
+  /** How far round the camera is, which says which walls stand tall for what hangs on them. */
+  private turn: Turn = 0;
 
   constructor(
     private scene: THREE.Scene,
@@ -101,22 +110,33 @@ export class ItemsLayer {
     return [...this.items.values()].map((i) => i.group);
   }
 
+  /** Turn the camera: what hangs on a wall shows as a chip on the walls now cut low, and its model on the rest. */
+  setTurn(turn: Turn) {
+    this.turn = turn;
+    this.sync();
+  }
+
   /** Build a model for any item that is new, has moved or been upgraded, and remove the ones that are gone. */
   sync() {
     const liveItems = new Set<number>();
     for (const it of this.sim.s.items) {
       liveItems.add(it.id);
-      const key = `${it.type},${it.x},${it.y},${it.rot},${it.level},${it.pattern ?? ''}`;
+      const hung = onWall(it.type) ? hangPlace(this.sim.world, it, this.turn) : null;
+      const key = `${it.type},${it.x},${it.y},${it.rot},${it.level},${it.pattern ?? ''},${hung ? `${hung.tall}${hung.thick}` : ''}`;
       if (this.items.get(it.id)?.key === key) continue;
       const old = this.items.get(it.id);
       if (old) {
         this.scene.remove(old.group);
         disposeOwned(old.group);
       }
-      const group = buildItem(it.type, it.pattern);
+      const group =
+        hung && !hung.tall
+          ? buildHungChip(it.type, hung)
+          : buildItem(it.type, { pattern: it.pattern, center: this.sim.s.center });
       const plate = upgradePlate(it.type, it.level);
       if (plate) group.add(plate);
-      placeItemModel(group, it.type, it.x, it.y, it.rot);
+      if (hung) placeHung(group, hung);
+      else placeItemModel(group, it.type, it.x, it.y, it.rot);
       group.traverse((o) => (o.userData.itemId = it.id));
       this.scene.add(group);
       this.items.set(it.id, { group, key });

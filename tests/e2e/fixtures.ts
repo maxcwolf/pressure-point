@@ -40,6 +40,7 @@ interface Handle {
     drawing: boolean;
     turn: number;
     turnCamera(quarters: number): void;
+    lookAt(x: number, y: number): void;
     target: { set(x: number, y: number, z: number): void };
     renderer: { info: { render: { triangles: number } } };
   };
@@ -62,6 +63,7 @@ interface Handle {
   geo: {
     itemDims(type: string, rot: number): [number, number];
     accessTile(placed: { type: string; x: number; y: number; rot: number }, i: number): [number, number];
+    wallSpotsOf(placed: { type: string; x: number; y: number; rot: number }): WallSpot[];
   };
 }
 
@@ -100,6 +102,8 @@ function installFinders() {
     throw new Error(`e2e: ${what}`);
   };
   const SIDES = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] } as const;
+  /** Whether something hangs on a wall rather than standing on the floor. */
+  const onWall = (type: string) => (pp().data.ITEMS as Record<string, { mount?: string }>)[type]?.mount === 'wall';
 
   /** The room a wall click is about: the one being planned or edited, or the rectangle being given a door. */
   const currentRoom = (): { room?: Room; rect: Rect; type: string } => {
@@ -166,7 +170,11 @@ function installFinders() {
       for (let y = bounds.y; y < bounds.y + bounds.h; y++) {
         for (let x = bounds.x; x < bounds.x + bounds.w; x++) {
           if (!ok(x, y, rot).ok) continue;
-          const p = pp().view.project(x + w / 2, y + h / 2, 0);
+          // something hung on a wall is held just in front of the wall it would hang on
+          const [wall] = onWall(type) ? pp().geo.wallSpotsOf({ type, x, y, rot }) : [];
+          const p = wall
+            ? pp().view.project(wall.x + 0.5 + wall.dx * 0.4, wall.y + 0.5 + wall.dy * 0.4, 0)
+            : pp().view.project(x + w / 2, y + h / 2, 0);
           if (visible && !onCanvas(p)) continue;
           return { at: p, x, y, rot, turns, type };
         }
@@ -185,9 +193,14 @@ function installFinders() {
     item(type, nth) {
       const it = pp().state.items.filter((i) => i.type === type)[nth] ?? fail(`no ${type} #${nth} has been placed`);
       const [w, h] = pp().geo.itemDims(it.type, it.rot);
+      // something hung on a wall is on the wall, or on top of it while it is cut low
+      const [wall] = onWall(it.type) ? pp().geo.wallSpotsOf(it) : [];
+      const [cx, cy] = wall
+        ? [wall.x + 0.5 + wall.dx * 0.5, wall.y + 0.5 + wall.dy * 0.5]
+        : [it.x + w / 2, it.y + h / 2];
       // a point on the item itself that a click would actually select it from
       for (const height of [0.4, 0.15, 0.8]) {
-        const p = pp().view.project(it.x + w / 2, it.y + h / 2, height);
+        const p = pp().view.project(cx, cy, height);
         const hit = pp().view.pick(p.x, p.y);
         if (onCanvas(p) && hit?.kind === 'item' && hit.id === it.id) return { ...p, id: it.id };
       }

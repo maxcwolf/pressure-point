@@ -2,11 +2,15 @@
 // staff, each kind of visitor and the scenery. A change to a shared part shows up in every model that uses it.
 import { expect, type Page, test } from '@playwright/test';
 
-import { CONDITIONS, ITEMS, ROLE_ORDER } from '../../src/core/data';
+import { CENTERS, CONDITIONS, ITEMS, ROLE_ORDER } from '../../src/core/data';
 
 /** Every model the lab shows, by its id there. */
 const IDS = [
   ...Object.keys(ITEMS).map((type) => `item:${type}`),
+  // a painting of each center's view, the sandbox's being the painting's own
+  ...Object.keys(CENTERS)
+    .filter((c) => c !== 'sandbox')
+    .map((c) => `item:landscape_painting:${c}`),
   ...CONDITIONS.map((c) => `guest:${c.id}`),
   ...ROLE_ORDER.map((role) => `staff:${role}`),
   'staff:amanda',
@@ -41,7 +45,7 @@ test.describe('every model', () => {
   for (const id of IDS) {
     test(id, async ({ page }) => {
       await openLab(page, id);
-      await expect(page.locator('canvas.stage')).toHaveScreenshot(['models', `${id.replace(':', '-')}.png`]);
+      await expect(page.locator('canvas.stage')).toHaveScreenshot(['models', `${id.replaceAll(':', '-')}.png`]);
     });
   }
 });

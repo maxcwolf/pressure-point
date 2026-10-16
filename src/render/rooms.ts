@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 
 import { ROOMS } from '../core/data';
-import { buildingWindows, footprintKey } from '../core/footprint';
+import { footprintKey } from '../core/footprint';
 import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { papered, paperUVs, wallMaterial } from './decor-paint';
@@ -142,11 +142,13 @@ export class RoomsLayer {
     this.syncPanes();
   }
 
-  /** Lay out the building's own windows again if the rooms they make way for, or the way the camera faces, have changed. */
+  /**
+   * Lay out the building's own windows again if the rooms and wall items they make way for, or the way the camera
+   * faces, have changed.
+   */
   private syncPanes() {
-    const { building } = this.sim.world;
     const near = nearSides(this.turn);
-    const windows = buildingWindows(building, this.sim.s.rooms);
+    const windows = this.sim.world.buildingWindows();
     const key = `${this.turn}|${windows.map((w) => `${w.side}${w.line}.${w.a}`).join('|')}`;
     if (key === this.panesKey) return;
     this.panesKey = key;

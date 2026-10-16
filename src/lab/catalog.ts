@@ -4,6 +4,8 @@ import * as THREE from 'three';
 
 import {
   AMANDA,
+  type CenterId,
+  CENTERS,
   type ConditionDef,
   CONDITIONS,
   HAMPER_SIZE,
@@ -31,6 +33,7 @@ import { buildPines } from '../render/models/pine';
 import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
 import { poseChar } from '../render/pose';
+import { H_TALL, WALL_T } from '../render/shared';
 import { SHOP_TURN } from '../render/storefront';
 import { button, choice, type Control, type Option, range, toggle } from './controls';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from './people';
@@ -62,8 +65,26 @@ export interface Specimen {
 /** Nothing moves. */
 const still = () => undefined;
 
-/** An item, with sliders and switches for whichever moving parts its model has. */
-function itemSpecimen(type: ItemType): Specimen {
+/** A stretch of a room's wall, one tile deep, for something hung on a wall to be seen on. */
+function wallBehind(model: THREE.Group, w: number): THREE.Group {
+  const holder = new THREE.Group();
+  const wall = new THREE.Mesh(
+    new THREE.BoxGeometry(w, H_TALL, WALL_T),
+    new THREE.MeshStandardMaterial({ color: 0xece4d6, roughness: 0.9 }),
+  );
+  // the wall stands along the back of its tile, as a room's does, and the model hangs on its face
+  wall.position.set(0, H_TALL / 2, -0.5 + WALL_T / 2);
+  wall.receiveShadow = true;
+  model.position.z = -0.5 + WALL_T;
+  holder.add(wall, model);
+  return holder;
+}
+
+/**
+ * An item, with sliders and switches for whichever moving parts its model has. A painting can be of any center's
+ * view, and something hung on a wall is shown on one.
+ */
+function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
   const def = ITEMS[type];
   // a full trophy cabinet to begin with, so every cup is in the picture
   const st: ItemCondition & { session: string } = {
@@ -76,13 +97,13 @@ function itemSpecimen(type: ItemType): Specimen {
     session: '',
   };
   return {
-    id: `item:${type}`,
+    id: center ? `item:${type}:${center}` : `item:${type}`,
     group: 'Items',
-    name: def.name,
+    name: center ? `${def.name} (${CENTERS[center].name})` : def.name,
     footprint: [def.w, def.h],
     /** Build the item, with controls for the parts of it that move. */
     build() {
-      const root = buildItem(type);
+      const root = buildItem(type, { center });
       const parts = partsOf(root);
       const props = parts.session;
       const controls: Control[] = [];
@@ -104,7 +125,7 @@ function itemSpecimen(type: ItemType): Specimen {
         controls.push(choice('Session props', st, 'session', [['', 'None'], ...options]));
       }
       return {
-        root,
+        root: def.mount === 'wall' ? wallBehind(root, def.w) : root,
         controls,
         /** Move the item's parts as the game does, and lay out the props for the session picked. */
         animate(t) {
@@ -378,7 +399,13 @@ const SCENERY: Specimen[] = [
 
 /** Every specimen, grouped in the order the lab lists them. */
 export const CATALOG: readonly Specimen[] = [
-  ...(Object.keys(ITEMS) as ItemType[]).map(itemSpecimen).sort((a, b) => a.name.localeCompare(b.name)),
+  ...[
+    ...(Object.keys(ITEMS) as ItemType[]).map((type) => itemSpecimen(type)),
+    // each center's painting has its own view
+    ...(Object.keys(CENTERS) as CenterId[])
+      .filter((c) => c !== 'sandbox')
+      .map((c) => itemSpecimen('landscape_painting', c)),
+  ].sort((a, b) => a.name.localeCompare(b.name)),
   ...CONDITIONS.map(guestSpecimen),
   ...ROLE_ORDER.map((role) => staffSpecimen(role)),
   // the one member of staff with a look all her own

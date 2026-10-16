@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **Better windows.** Every window has a proper frame, glazing bars, a ledge and glass that catches the light, and windows side by side join into one. The building has windows in all four walls, whichever way you turn the camera, and windows in walls cut low no longer stand up out of them like a fence.
+- **Things to hang on walls.** The Items menu has a new **On the walls** filter. Hang a **Landscape Painting** of your center's own view anywhere for decor, a **Motivational Poster** in the Staff Room to lift everyone's morale, or a **Wall Clock** that hurries staff back from their breaks but makes waiting guests watch the minutes go by. They hang on the inside of a room's walls or the building's outer wall, take no floor space, and show as a small chip on top of a wall while it is cut low. They move with their room, and one left without a wall is sold back at half.
 
 ## v0.27.6
 

@@ -13,12 +13,23 @@ import {
   type RoomType,
   SIDEWALK_Y,
 } from './data';
-import { doorstep, entranceSteps, type Footprint, footprintOf, inFootprint, onPath } from './footprint';
+import {
+  type BuildingWindow,
+  buildingWindows,
+  doorstep,
+  entranceSteps,
+  type Footprint,
+  footprintOf,
+  inFootprint,
+  onPath,
+  spotInWall,
+} from './footprint';
 import { buildingsOf, lotWidth } from './land';
 import { byId } from './lookup';
 import { carryWallSpot, inRect, sameRect } from './resize';
 import type { PlacedLayout } from './room-layout';
-import type { GameState, Item, Room, Waypoint } from './state/types';
+import { sameSpot } from './state/game';
+import type { GameState, Item, Room, WallSpot, Waypoint } from './state/types';
 import { at } from './util';
 
 /** Zone ids: -2 scenery (not walkable), -1 outdoors path, 0 corridor, >0 room id. */
@@ -71,6 +82,23 @@ export function footprint(it: Placed): [number, number][] {
   const out: [number, number][] = [];
   for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) out.push([it.x + dx, it.y + dy]);
   return out;
+}
+/** Whether an item hangs on a wall rather than standing on the floor. */
+export const onWall = (type: ItemType) => ITEMS[type].mount === 'wall';
+/**
+ * The stretches of wall a wall item hangs on: each tile of floor in front of it, and the way out through the wall
+ * behind, which is the way it faces turned right round.
+ */
+export function wallSpotsOf(it: Placed): WallSpot[] {
+  const [dx, dy] = rotVec(it.rot, 0, -1);
+  return footprint(it).map(([x, y]) => ({ x, y, dx: dx || 0, dy: dy || 0 }));
+}
+/** Which way a wall item hung on a stretch of wall faces: out from the wall, the way R turns furniture. */
+export function rotFacing(spot: Pick<WallSpot, 'dx' | 'dy'>): number {
+  if (spot.dy < 0) return 0;
+  if (spot.dx > 0) return 1;
+  if (spot.dy > 0) return 2;
+  return 3;
 }
 /** The tile someone stands on to use one of an item's access spots. */
 export function accessTile(it: Placed, i: number): [number, number] {
@@ -152,6 +180,9 @@ export class World {
   /** Standing spots already worked out, by tile and count, while the grids stay as they were. */
   private spots = new Map<number, readonly [number, number][]>();
   private spotsStamp = -1;
+  /** The building's own windows, worked out once for each time the grids change. */
+  private panes: BuildingWindow[] = [];
+  private panesStamp = -1;
 
   constructor(public s: GameState) {
     this.w = lotWidth(centerOf(s));
@@ -244,6 +275,8 @@ export class World {
       if (this.onMap(ox, oy)) reserved[this.idx(ox, oy)] = 1;
     }
     for (const it of this.s.items) {
+      // something on a wall is out of everyone's way
+      if (onWall(it.type)) continue;
       if (!ITEMS[it.type].walkable)
         for (const [x, y] of footprint(it)) if (this.onMap(x, y)) blocked[this.idx(x, y)] = 1;
       for (let i = 0; i < ITEMS[it.type].access.length; i++) {
@@ -309,6 +342,111 @@ export class World {
   /** The item covering a tile, if any. */
   itemAt(x: number, y: number): Item | undefined {
     return this.s.items.find((it) => footprint(it).some(([fx, fy]) => fx === x && fy === y));
+  }
+  /** The building's own windows as things stand: none where a room runs along the wall, or something hangs on it. */
+  buildingWindows(): readonly BuildingWindow[] {
+    if (this.panesStamp !== this.stamp) {
+      const hung = this.s.items.filter((it) => onWall(it.type) && this.zoneAt(it.x, it.y) === Z_CORRIDOR);
+      this.panes = buildingWindows(this.building, this.s.rooms, hung.flatMap(wallSpotsOf));
+      this.panesStamp = this.stamp;
+    }
+    return this.panes;
+  }
+  /** What hangs on a stretch of wall, if anything. */
+  hungAt(spot: WallSpot): Item | undefined {
+    return this.s.items.find((it) => onWall(it.type) && wallSpotsOf(it).some((w) => sameSpot(w, spot)));
+  }
+  /**
+   * Can something hang on this stretch of wall, seen from the tile in front of it? Inside a room, on any of its walls
+   * but where its door or a window is. In a corridor, only on the building's outer wall, away from its windows and
+   * its entrances: the corridor side of a room's wall is never seen standing tall.
+   */
+  wallFace(spot: WallSpot): Check {
+    const { x, y, dx, dy } = spot;
+    if (!this.inside(x, y)) return no('Must be inside the building');
+    const ox = x + dx;
+    const oy = y + dy;
+    const z = this.zoneAt(x, y);
+    if (z > 0) {
+      const room = this.room(z);
+      if (!room || this.zoneAt(ox, oy) === z) return no('Hang it on a wall');
+      if (sameSpot(room.door, spot)) return no('The door is there');
+      if (room.windows.some((w) => sameSpot(w, spot))) return no('There is a window there');
+      return OK;
+    }
+    if (z !== Z_CORRIDOR) return no('Must be inside the building');
+    if (this.inside(ox, oy))
+      return no(
+        this.zoneAt(ox, oy) > 0 ? "Hang it inside the room, or on the building's outer wall" : 'Hang it on a wall',
+      );
+    // the entrance, and a tile either side of it for its pillars
+    const [ax, ay] = dx ? [0, 1] : [1, 0];
+    for (const k of [-1, 0, 1])
+      if (this.doors.has(this.edgeKey(x + ax * k, y + ay * k, ox + ax * k, oy + ay * k)))
+        return no('Too close to the entrance');
+    const { side, line, t } = spotInWall(spot);
+    if (this.buildingWindows().some((w) => w.side === side && w.line === line && t >= w.a && t < w.b))
+      return no('There is a window there');
+    return OK;
+  }
+  /** Can a wall item hang here, facing this way? Every stretch of wall it covers has to be free, on one wall. */
+  private canHang(type: ItemType, x: number, y: number, rot: number, roomId?: number): Check {
+    const def = ITEMS[type];
+    let z: number | null = null;
+    let outer: boolean | null = null;
+    for (const spot of wallSpotsOf({ type, x, y, rot })) {
+      const face = this.wallFace(spot);
+      if (!face.ok) return face;
+      const hung = this.hungAt(spot);
+      if (hung) return no(`The ${ITEMS[hung.type].name} hangs there`);
+      // one straight stretch of one wall: not round a corner, nor half on a room's wall and half on the building's
+      const here = this.zoneAt(spot.x, spot.y);
+      const out = !this.inside(spot.x + spot.dx, spot.y + spot.dy);
+      if (z === null) [z, outer] = [here, out];
+      else if (z !== here || outer !== out) return no('It has to hang on one stretch of wall');
+    }
+    if (z === null) return no('Invalid');
+    if (roomId !== undefined && z !== roomId) return no('Hang it inside the new room');
+    if (def.where === 'corridor' && z !== Z_CORRIDOR) return no('Goes in a corridor, not a room');
+    if (def.where !== 'corridor' && def.where !== 'any') {
+      const room = z > 0 ? this.room(z) : undefined;
+      if (room?.type !== def.where) return no(`Goes inside a ${ROOMS[def.where].name}`);
+    }
+    return OK;
+  }
+  /**
+   * Where a wall item would hang for a point on the ground: on the wall nearest it, within a tile or so, that it can
+   * hang on, centered on the point along the wall. Its top-left tile and the way it faces, or null if no wall is near.
+   */
+  nearestWall(type: ItemType, fx: number, fy: number): { x: number; y: number; rot: number } | null {
+    const w = ITEMS[type].w;
+    let best: { x: number; y: number; rot: number } | null = null;
+    let bestD = 1.25;
+    const tx = Math.floor(fx);
+    const ty = Math.floor(fy);
+    for (let y = ty - 1; y <= ty + 1; y++) {
+      for (let x = tx - 1; x <= tx + 1; x++) {
+        for (const [dx, dy] of DIRS4) {
+          const spot = { x, y, dx, dy };
+          if (!this.wallFace(spot).ok) continue;
+          // how far the point is from this stretch of wall
+          const ex = x + 0.5 + dx * 0.5;
+          const ey = y + 0.5 + dy * 0.5;
+          const d = dx
+            ? Math.hypot(fx - ex, Math.max(0, Math.abs(fy - ey) - 0.5))
+            : Math.hypot(Math.max(0, Math.abs(fx - ex) - 0.5), fy - ey);
+          if (d >= bestD) continue;
+          bestD = d;
+          const rot = rotFacing(spot);
+          // a wide item runs along the wall from its top-left tile, centered on the point
+          const shift = Math.floor((dx ? fy - y : fx - x) - w / 2 + 0.5);
+          best = dx
+            ? { x, y: y + Math.max(-(w - 1), Math.min(0, shift)), rot }
+            : { x: x + Math.max(-(w - 1), Math.min(0, shift)), y, rot };
+        }
+      }
+    }
+    return best;
   }
   /** The room an item is in, if any. */
   roomOfItem(it: Item): Room | undefined {
@@ -516,6 +654,7 @@ export class World {
   // ---- Placement validation ------------------------------------------------
   /** Can this item go here, facing this way? */
   canPlaceItem(type: ItemType, x: number, y: number, rot: number, roomId?: number): Check {
+    if (onWall(type)) return this.canHang(type, x, y, rot, roomId);
     const def = ITEMS[type];
     const it: Placed = { type, x, y, rot };
     const tiles = footprint(it);
@@ -573,6 +712,11 @@ export class World {
     const within = (x: number, y: number) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
     // things that can be walked over, like rugs, have to end up wholly on one side of the new walls
     for (const it of this.s.items) {
+      // something hung on the building's wall would end up inside the room
+      if (onWall(it.type)) {
+        if (footprint(it).some(([x, y]) => within(x, y))) return no(`Take the ${ITEMS[it.type].name} down first`);
+        continue;
+      }
       const tiles = footprint(it);
       const n = tiles.filter(([x, y]) => within(x, y)).length;
       if (n > 0 && n < tiles.length) return no('Something is in the way');
@@ -612,6 +756,8 @@ export class World {
       if (replacing.windows.some((w) => w.x === door.x && w.y === door.y && w.dx === door.dx && w.dy === door.dy))
         return no('There is a window there');
       if (this.blocked[this.idx(door.x, door.y)]) return no('Furniture is in the way inside the room');
+      const hung = this.hungAt(door);
+      if (hung) return no(`Take the ${ITEMS[hung.type].name} down first`);
     }
     const rooms = this.s.rooms;
     const trial: Room = {
@@ -656,7 +802,8 @@ export class World {
       }
     }
     const inside = this.s.items.filter((it) => this.zoneAt(it.x, it.y) === room.id);
-    for (const it of inside) {
+    // what hangs on the walls moves with them, or is sold if its stretch of wall is gone
+    for (const it of inside.filter((i) => !onWall(i.type))) {
       const spots = [...footprint(it)];
       for (let i = 0; i < ITEMS[it.type].access.length; i++) spots.push(accessTile(it, i));
       if (spots.some(([x, y]) => !inRect(r, x, y))) return no('The furniture has to stay inside: move it first');
@@ -664,7 +811,8 @@ export class World {
     // anything outside the room, like a rug, has to end up wholly on one side of the new walls
     for (const it of this.s.items) {
       if (inside.includes(it)) continue;
-      if (footprint(it).some(([x, y]) => inRect(r, x, y))) return no('Something is in the way');
+      if (footprint(it).some(([x, y]) => inRect(r, x, y)))
+        return no(onWall(it.type) ? `Take the ${ITEMS[it.type].name} down first` : 'Something is in the way');
     }
     for (const other of this.s.rooms)
       if (other !== room && other.windows.some((w) => inRect(r, w.x + w.dx, w.y + w.dy)))
@@ -741,6 +889,8 @@ export class World {
     if (!inside || !outside || Math.abs(spot.dx) + Math.abs(spot.dy) !== 1) return no("Windows go in the room's walls");
     const d = room.door;
     if (d.x === spot.x && d.y === spot.y && d.dx === spot.dx && d.dy === spot.dy) return no('The door is there');
+    const hung = this.hungAt(spot);
+    if (hung) return no(`Take the ${ITEMS[hung.type].name} down first`);
     // a window onto the room next door would just be a hole in two walls
     const beyond = this.zoneAt(ox, oy);
     if (beyond > 0 && beyond !== room.id) return no('Another room is on the other side');

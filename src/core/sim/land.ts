@@ -1,6 +1,7 @@
 // Land: buying the plots next door, the builders' days of work on each, and the building growing into it after.
 
 import { buildDays, nameInSentence, type PlotOffer, plotOffers } from '../land';
+import { takeDownLoose } from './building';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, toast } from './events';
@@ -40,6 +41,8 @@ export function updateLand(ctx: SimContext) {
   if (!done.length) return;
   for (const l of done) delete l.ready;
   ctx.world.rebuild();
+  // the building has grown past what was hung on its old outer wall
+  takeDownLoose(ctx);
   for (const offer of landOffers(ctx).filter((o) => done.some((l) => l.plot === o.def.id)))
     toast(
       ctx,

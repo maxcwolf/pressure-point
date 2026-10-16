@@ -7,12 +7,14 @@ import type { ItemType, RugPatternId } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { at } from '../core/util';
-import { frontOf, itemCenter, itemDims } from '../core/world';
+import { frontOf, itemCenter, itemDims, onWall } from '../core/world';
+import { buildHungChip, hangPlace, placeHung } from './hung';
 import { placeItemModel } from './items';
 import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
 import type { Marker, OverlayTile } from './overlay-codes';
 import type { Selection } from './picking';
+import type { Turn } from './turn';
 
 /** How far out from an item's front edge the arrow showing its front sits. */
 const FRONT_GAP = 0.2;
@@ -60,6 +62,8 @@ export class Overlays {
   private doorMarker: THREE.Mesh;
   private frontMarker: THREE.Mesh;
   private ring: THREE.Mesh;
+  /** How far round the camera is, which says whether a wall item's ghost shows as its model or its chip. */
+  turn: Turn = 0;
 
   constructor(
     private scene: THREE.Scene,
@@ -138,11 +142,15 @@ export class Overlays {
       this.ghost = null;
       return;
     }
-    // a rug is built afresh in each pattern
-    const key = `${spec.type}:${spec.pattern ?? ''}`;
+    // a rug is built afresh in each pattern, and something hung on a wall shows as a chip on a low wall
+    const hung = onWall(spec.type) ? hangPlace(this.sim.world, spec, this.turn) : null;
+    const key = `${spec.type}:${spec.pattern ?? ''}:${hung ? `${hung.tall}${hung.thick}` : ''}`;
     if (this.ghost?.key !== key) {
       if (this.ghost) this.scene.remove(this.ghost.group);
-      const group = buildItem(spec.type, spec.pattern);
+      const group =
+        hung && !hung.tall
+          ? buildHungChip(spec.type, hung)
+          : buildItem(spec.type, { pattern: spec.pattern, center: this.sim.s.center });
       group.traverse((o) => {
         if (o instanceof THREE.Mesh) {
           o.castShadow = false;
@@ -156,7 +164,8 @@ export class Overlays {
     this.ghost.group.traverse((o) => {
       if (o instanceof THREE.Mesh) o.material = m;
     });
-    placeItemModel(this.ghost.group, spec.type, spec.x, spec.y, spec.rot);
+    if (hung) placeHung(this.ghost.group, hung);
+    else placeItemModel(this.ghost.group, spec.type, spec.x, spec.y, spec.rot);
   }
 
   /** Icons floating over tiles, used to show who each square beside a piece of furniture is for. */

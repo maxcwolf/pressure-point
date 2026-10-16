@@ -28,12 +28,15 @@ export function resizeHint(from: Rect, to: Rect, cost: number): string {
 /** The hint for placing a new item. */
 export function placeHint(type: ItemType): string {
   const def = ITEMS[type];
+  if (def.mount === 'wall')
+    return `${def.icon} ${def.name} · ${money(def.cost)} each · click a wall to hang it · Esc when done`;
   return `${def.icon} ${def.name} · ${money(def.cost)} each · click to place · R rotates · Esc when done${legend(type)}`;
 }
 
 /** The hint for moving an item that is already placed. */
 export function moveHint(type: ItemType): string {
   const def = ITEMS[type];
+  if (def.mount === 'wall') return `${def.icon} Moving the ${def.name} · click a wall to hang it · Esc cancels`;
   return `${def.icon} Moving the ${def.name} · click to put it down · R rotates · Esc cancels${legend(type)}`;
 }
 

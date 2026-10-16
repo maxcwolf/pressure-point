@@ -121,6 +121,9 @@ export class View {
   turnCamera(quarters: number) {
     this.rig.turnBy(quarters);
     this.rooms.setTurn(this.rig.turn);
+    // what hangs on the walls now cut low shows as a chip, and on the walls now standing tall as itself
+    this.items.setTurn(this.rig.turn);
+    this.overlays.turn = this.rig.turn;
     this.buildShell();
   }
 

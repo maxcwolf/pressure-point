@@ -62,6 +62,7 @@ import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
 import { installUpgrade } from './upgrades';
 import { clearVibes, roomToSmudge, smudgeSeconds, smudging, startSmudge, wander } from './vibes';
+import { clockBreak, posterMorale } from './wall-items';
 import { discomfort, warmthAt } from './warmth';
 
 /** The four tiles beside a tile, for standing next to something. */
@@ -164,10 +165,11 @@ export function giveRaise(ctx: SimContext, id: number) {
   emit(ctx, { type: 'sfx', name: 'cash' });
 }
 
-/** How much faster than usual a member of staff on a break gets their energy back: quicker with an Espresso Machine in the room. */
+/** How much faster than usual a member of staff on a break gets their energy back: quicker with an Espresso Machine or a Wall Clock in the room. */
 export function breakBoost(ctx: SimContext, st: Staff): number {
   const seat = ctx.world.item(st.claimItem);
-  return seat && sameRoomCount(ctx, seat, 'coffee_machine') > 0 ? COFFEE_BREAK_BOOST : 1;
+  const coffee = seat && sameRoomCount(ctx, seat, 'coffee_machine') > 0 ? COFFEE_BREAK_BOOST : 1;
+  return coffee * clockBreak(ctx, st);
 }
 
 /** What the Staff Room someone is on a break in offers them to eat and drink. */
@@ -204,6 +206,7 @@ export function moraleTarget(ctx: SimContext, st: Staff): number {
   target -= discomfort(warmthAt(ctx, st.tx, st.ty)) * DISCOMFORT_MORALE;
   if (fedUp(st)) target -= STAFF_NEED_MORALE;
   if (hasItem(ctx, 'pool_table')) target += POOL_TABLE_MORALE;
+  target += posterMorale(ctx);
   if (ctx.s.litter.length > 6) target -= 6;
   if (st.promotion) target -= PROMOTION_SULK;
   if (cheeredUp(ctx.s, st)) target += CHEER_MORALE;

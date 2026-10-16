@@ -150,6 +150,14 @@ export const FIZZ_CHANCE = 0.3;
 export const PUDDLE_SLOW = 0.55;
 /** How fast a Staff Fridge in the Staff Room sees to the thirst and hunger of staff on a break, in points a second. */
 export const FRIDGE_REFRESH = 20;
+/** How much each Motivational Poster in a Staff Room lifts the morale everyone settles toward, and how many count. */
+export const POSTER_MORALE = 2;
+export const POSTER_MAX = 2;
+/** How much faster staff get their energy back on a break with a Wall Clock in the room: they keep an eye on it. */
+export const CLOCK_BREAK_BOOST = 1.25;
+/** How far a waiting guest can see a Wall Clock from, in tiles, and how much faster they lose patience watching it. */
+export const CLOCK_SIGHT = 6;
+export const CLOCK_DRAIN = 1.1;
 /** How fast a seated guest loses patience against standing, unless the seat says otherwise. */
 export const SEAT_DRAIN = 0.6;
 

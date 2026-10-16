@@ -19,7 +19,7 @@ import {
 } from './data';
 import type { Layout, LayoutItem } from './room-layout';
 import type { WallSpot } from './state/types';
-import { accessTile, footprint } from './world';
+import { accessTile, footprint, wallSpotsOf } from './world';
 
 /** A room's layout saved under a name. */
 export interface Template {
@@ -106,9 +106,20 @@ export function layoutProblem(l: Layout): string {
   if (!l.windows.every((w) => onWall(l, w)) || new Set(spots).size !== spots.length) return 'A window is misplaced';
   const solid = new Set<string>();
   const rugs = new Set<string>();
+  const hung = new Set<string>();
   for (const it of l.items) {
     const def = ITEMS[it.type];
     if (def.where !== l.type && def.where !== 'any') return `The ${def.name} does not go in a ${room.name}`;
+    if (def.mount === 'wall') {
+      // on the room's own walls, clear of the door, the windows and each other
+      for (const w of wallSpotsOf(it)) {
+        const key = `${w.x},${w.y},${w.dx},${w.dy}`;
+        if (!onWall(l, w) || spots.includes(key) || hung.has(key))
+          return `The ${def.name} is not on a free stretch of wall`;
+        hung.add(key);
+      }
+      continue;
+    }
     for (const [x, y] of footprint(it)) {
       if (x >= l.w || y >= l.h) return `The ${def.name} does not fit inside`;
       const tiles = def.walkable ? rugs : solid;

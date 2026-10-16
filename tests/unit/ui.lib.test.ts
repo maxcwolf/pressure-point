@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { ITEM_MENU, ITEMS, MODALITIES, type Offering, RANK_XP, ROOMS } from '../../src/core/data';
+import { ITEM_MENU, ITEMS, type ItemType, MODALITIES, type Offering, RANK_XP, ROOMS } from '../../src/core/data';
 import type { Job } from '../../src/core/state/types';
 import { cureShare, seen, starText } from '../../src/ui/lib/casebook';
 import {
   available,
   filterItems,
   hireableRoles,
+  ITEM_KINDS,
   itemKind,
   itemOffered,
   placeFilters,
@@ -67,6 +68,17 @@ describe('what the menus offer', () => {
     expect(placeLabel(ITEMS.bench)).toBe('Corridor');
     expect(placeLabel(ITEMS.plant)).toBe('Anywhere');
     expect(placeLabel(ITEMS.massage_table)).toBe('Massage Suite');
+    expect(placeLabel(ITEMS.wall_clock)).toBe('Any wall');
+    expect(placeLabel(ITEMS.motivational_poster)).toBe('Staff Room wall');
+  });
+
+  it('puts what hangs on a wall under On the walls', () => {
+    expect(['motivational_poster', 'landscape_painting', 'wall_clock'].map((t) => itemKind(t as ItemType))).toEqual([
+      'wall',
+      'wall',
+      'wall',
+    ]);
+    expect(ITEM_KINDS.at(-1)).toEqual({ id: 'wall', label: 'On the walls' });
   });
 
   it('hides the furniture of a discipline that is switched off', () => {

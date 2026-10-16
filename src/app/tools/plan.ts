@@ -2,7 +2,7 @@
 
 import type { ItemType } from '../../core/data';
 import type { Room } from '../../core/state/types';
-import type { PlanStatus, PlanSub, Tool } from './types';
+import type { HeldItem, PlanStatus, PlanSub, Tool } from './types';
 
 /** The next piece of required furniture to hand over, or nothing once it is all in. */
 export function nextRequired(missing: readonly ItemType[]): PlanSub {
@@ -21,7 +21,7 @@ export function planStatus(room: Room, missing: ItemType[], sub: PlanSub): PlanS
 }
 
 /** The item in hand that R would turn, if there is one. */
-export function heldItem(tool: Tool): { rot: number } | null {
+export function heldItem(tool: Tool): HeldItem | null {
   if (tool.kind === 'item' || tool.kind === 'move') return tool;
   if (tool.kind === 'room' && tool.phase === 'plan' && tool.sub?.kind === 'item') return tool.sub;
   return null;

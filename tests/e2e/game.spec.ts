@@ -1393,6 +1393,53 @@ test.describe('the Items menu', () => {
     await page.locator('#menu .tab', { hasText: 'Everything' }).click();
     await expect(game.card('Bench')).toBeVisible();
   });
+
+  test('hangs things on walls: a chip on the wall once it is cut low, to be clicked, moved and sold', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.menu('Items');
+    await page.locator('#menu .tab', { hasText: 'On the walls' }).click();
+    await expect(game.card('Bench')).toHaveCount(0);
+    await game.card('Wall Clock').click();
+    await expect(page.locator('#hint')).toContainText('click a wall to hang it');
+    const money = await game.eval((pp) => pp.state.money);
+    await game.placeHeld();
+    await page.keyboard.press('Escape');
+    expect(await game.eval((pp) => pp.state.items.filter((it) => it.type === 'wall_clock').length)).toBe(1);
+    expect(await game.eval((pp) => pp.state.money)).toBe(money - 150);
+    // it hangs on the back wall, nobody's way: the floor in front of it can still be walked on
+    const clock = await game.eval((pp) => pp.state.items.find((it) => it.type === 'wall_clock')!);
+    expect(await game.eval((pp, [x, y]) => pp.sim.world.walkable(x!, y!), [clock.x, clock.y])).toBe(true);
+    // in the middle of the view, clear of the panels
+    await game.eval((pp, [x, y]) => pp.view.lookAt(x! + 0.5, y! + 0.5), [clock.x, clock.y]);
+    // long enough for the camera to glide there
+    await game.settle();
+    await page.waitForTimeout(500);
+    await game.clickItem('wall_clock');
+    await expect(page.locator('#inspector')).toContainText('Wall Clock');
+    // turned round, its wall is cut low and it shows as a chip, which can still be clicked
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('KeyE');
+    await page.keyboard.press('KeyE');
+    await game.eval((pp, [x, y]) => pp.view.lookAt(x! + 0.5, y! + 0.5), [clock.x, clock.y]);
+    await game.settle();
+    await page.waitForTimeout(500);
+    await game.clickItem('wall_clock');
+    await expect(page.locator('#inspector')).toContainText('Wall Clock');
+    await page.locator('#inspector').getByRole('button', { name: 'Move' }).click();
+    await game.placeHeld();
+    const moved = await game.eval((pp) => pp.state.items.find((it) => it.type === 'wall_clock')!);
+    expect([moved.x, moved.y, moved.rot]).not.toEqual([clock.x, clock.y, clock.rot]);
+    await game.eval((pp, [x, y]) => pp.view.lookAt(x! + 0.5, y! + 0.5), [moved.x, moved.y]);
+    await game.settle();
+    await page.waitForTimeout(500);
+    await game.clickItem('wall_clock');
+    await page.locator('#inspector').getByRole('button', { name: /Sell/ }).click();
+    expect(await game.eval((pp) => pp.state.items.some((it) => it.type === 'wall_clock'))).toBe(false);
+    expect(game.errors).toEqual([]);
+  });
 });
 
 test.describe('more land', () => {

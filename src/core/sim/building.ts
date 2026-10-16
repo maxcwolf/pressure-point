@@ -6,7 +6,7 @@ import { carryWallSpot, carryWindows, resizeCost, resizeTiles } from '../resize'
 import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { sameSpot } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
-import { itemCenter, type Rect } from '../world';
+import { itemCenter, onWall, type Rect, wallSpotsOf } from '../world';
 import { forgetRoom } from './assignments';
 import { charById } from './chars';
 import { release } from './claims';
@@ -321,12 +321,14 @@ export function resizeRoom(ctx: SimContext, roomId: number, r: Rect): boolean {
   }
   const windows = room.windows.length;
   const carried = carryWindows(room, r);
+  const hung = itemsInRoom(ctx, room).filter((it) => onWall(it.type));
   const { bought } = resizeTiles(room, r);
   Object.assign(room, { x: r.x, y: r.y, w: r.w, h: r.h, door, windows: [], bought });
   ctx.world.rebuild(true);
   // only now can a window be judged against the room's new walls and its new neighbors
   for (const w of carried) if (ctx.world.windowValid(room, w).ok) room.windows.push(w);
-  const back = (windows - room.windows.length) * Math.round(WINDOW_COST / 2) - Math.min(cost, 0);
+  const sold = rehang(ctx, room, hung, r);
+  const back = (windows - room.windows.length) * Math.round(WINDOW_COST / 2) + sold - Math.min(cost, 0);
   if (cost > 0) spend(ctx, cost, 'building');
   if (back > 0) {
     ctx.s.money += back;
@@ -335,6 +337,55 @@ export function resizeRoom(ctx: SimContext, roomId: number, r: Rect): boolean {
   worldChanged(ctx);
   emit(ctx, { type: 'sfx', name: 'build' });
   return true;
+}
+
+/**
+ * Hang a room's wall items again once its walls have moved, each carried along with its wall as a window is, and take
+ * down any whose stretch of wall is gone or taken. Returns what those fetch when sold.
+ */
+function rehang(ctx: SimContext, room: Room, hung: readonly Item[], to: Rect): number {
+  const all = ctx.s.items;
+  ctx.s.items = all.filter((it) => !hung.includes(it));
+  const kept = new Set<Item>();
+  for (const it of hung) {
+    const [first] = wallSpotsOf(it);
+    const spot = first && carryWallSpot(first, to);
+    if (!spot || !ctx.world.canPlaceItem(it.type, spot.x, spot.y, it.rot, room.id).ok) continue;
+    it.x = spot.x;
+    it.y = spot.y;
+    ctx.s.items.push(it);
+    kept.add(it);
+  }
+  ctx.s.items = all;
+  return takeDown(
+    ctx,
+    hung.filter((it) => !kept.has(it)),
+  );
+}
+
+/** Take things down off the walls and sell them back, saying so. Returns what they fetched. */
+function takeDown(ctx: SimContext, gone: readonly Item[]): number {
+  if (!gone.length) return 0;
+  const back = gone.reduce((sum, it) => sum + sellBack(it), 0);
+  removeItems(ctx, [...gone]);
+  const [one] = gone;
+  toast(
+    ctx,
+    one && gone.length === 1
+      ? `The ${ITEMS[one.type].name} had no wall left to hang on, so it was sold for ${money(back)}.`
+      : `${gone.length} things had no wall left to hang on, so they were sold for ${money(back)}.`,
+    'info',
+  );
+  return back;
+}
+
+/** Take down and sell anything hung on a stretch of wall that is no longer there, as when the building grows over it. */
+export function takeDownLoose(ctx: SimContext) {
+  const loose = ctx.s.items.filter((it) => onWall(it.type) && wallSpotsOf(it).some((w) => !ctx.world.wallFace(w).ok));
+  const back = takeDown(ctx, loose);
+  if (back <= 0) return;
+  ctx.s.money += back;
+  ctx.s.ledger.building -= back;
 }
 
 /** Keep only the windows that can go in a room where it now stands, and say how many could not. */

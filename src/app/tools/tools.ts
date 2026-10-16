@@ -19,7 +19,7 @@ import type { SfxName } from '../../core/sim/events';
 import type { Sim } from '../../core/sim/sim';
 import { sameSpot } from '../../core/state/game';
 import type { Room, WallSpot } from '../../core/state/types';
-import { type Rect, Z_CORRIDOR } from '../../core/world';
+import { onWall, type Rect, Z_CORRIDOR } from '../../core/world';
 import { type Marker, OV_BAD, OV_BLUE, OV_GOOD, type OverlayTile } from '../../render/overlay-codes';
 import type { Selection } from '../../render/picking';
 import type { View } from '../../render/view';
@@ -297,7 +297,8 @@ export class Tools {
       return;
     }
     const held = heldItem(t);
-    if (!held) return;
+    // something hung on a wall faces out from it, whichever wall it is
+    if (!held || onWall(held.type)) return;
     held.rot = quarterTurn(held.rot);
     this.sfx('blip');
     this.refresh();
@@ -345,11 +346,11 @@ export class Tools {
     }
     if (t.kind === 'item') {
       const spot = this.spotFor(t);
-      if (spot && sim.placeItem(t.type, spot[0], spot[1], t.rot, this.looks(t.type))) this.onChange();
+      if (spot && sim.placeItem(t.type, spot.x, spot.y, spot.rot, this.looks(t.type))) this.onChange();
       else if (spot) this.sfx('error');
     } else if (t.kind === 'move') {
       const spot = this.spotFor(t);
-      if (spot && sim.moveItem(t.id, spot[0], spot[1], t.rot)) {
+      if (spot && sim.moveItem(t.id, spot.x, spot.y, spot.rot)) {
         this.tool = { kind: 'none' };
         this.select({ kind: 'item', id: t.id });
       } else if (spot) this.sfx('error');
@@ -412,7 +413,7 @@ export class Tools {
         const spot = this.spotFor(sub);
         // required furniture is part of the room's price and has to go inside it; extras are bought as they are placed
         const opts = { ...(sub.required && { free: true, roomId: t.room.id }), ...this.looks(sub.type) };
-        if (spot && sim.placeItem(sub.type, spot[0], spot[1], sub.rot, opts)) {
+        if (spot && sim.placeItem(sub.type, spot.x, spot.y, spot.rot, opts)) {
           if (sub.required) t.sub = nextRequired(sim.missingItems(t.room));
         } else if (spot) this.sfx('error');
       } else if (sub?.kind === 'window') this.clickWindow(t.room.id);
@@ -436,9 +437,15 @@ export class Tools {
     } else this.sfx('error');
   }
 
-  /** Where the item in hand would go: its top-left tile, with the item centered on the cursor. */
-  private spotFor(held: HeldItem) {
-    return this.cursor ? itemSpot(this.cursor, held.type, held.rot) : null;
+  /**
+   * Where the item in hand would go: its top-left tile, with the item centered on the cursor, and the way it faces. A
+   * wall item hangs on the wall nearest the cursor, facing out from it, or nowhere if no wall is near.
+   */
+  private spotFor(held: HeldItem): { x: number; y: number; rot: number } | null {
+    if (!this.cursor) return null;
+    if (onWall(held.type)) return this.sim.world.nearestWall(held.type, this.cursor.x, this.cursor.y);
+    const [x, y] = itemSpot(this.cursor, held.type, held.rot);
+    return { x, y, rot: held.rot };
   }
 
   /** The stretch of the room's wall nearest the cursor. */
@@ -472,17 +479,22 @@ export class Tools {
     const spot = this.spotFor(held);
     if (!spot) {
       this.view.setGhost(null);
+      if (onWall(held.type) && this.cursor) this.problem = 'Hang it on a wall';
       return;
     }
-    const { type, rot } = held;
+    const { type } = held;
+    const { x, y, rot } = spot;
     const moving = this.sim.world.item(movingId);
     const check = moving
-      ? this.sim.canMoveItem(moving, spot[0], spot[1], rot)
-      : this.sim.world.canPlaceItem(type, spot[0], spot[1], rot, roomId);
-    const placed = { type, x: spot[0], y: spot[1], rot };
-    const { tiles, markers } = itemTiles(placed, check.ok);
-    drawing.tiles.push(...tiles);
-    drawing.markers.push(...markers);
+      ? this.sim.canMoveItem(moving, x, y, rot)
+      : this.sim.world.canPlaceItem(type, x, y, rot, roomId);
+    const placed = { type, x, y, rot };
+    // something hung on a wall is shown by its ghost alone: it covers no floor
+    if (!onWall(type)) {
+      const { tiles, markers } = itemTiles(placed, check.ok);
+      drawing.tiles.push(...tiles);
+      drawing.markers.push(...markers);
+    }
     this.problem = check.reason;
     // a rug being moved keeps its own pattern; a new one has the pattern picked for it
     const pattern = type === 'rug' ? (moving ? moving.pattern : this.rugPattern) : undefined;

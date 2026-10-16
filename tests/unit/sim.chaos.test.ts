@@ -44,6 +44,9 @@ const EXTRAS: ItemType[] = [
   'bin',
   'water_cooler',
   'magazine_rack',
+  // hung on a wall, out of everyone's way, and carried along when rooms change shape
+  'wall_clock',
+  'landscape_painting',
 ];
 const ROLES: Role[] = ['receptionist', 'consultant', 'therapist', 'caretaker', 'acupuncturist', 'practitioner'];
 const ROOMS = [addConsult, addMassage, addStaffRoom, addRestroom, addTraining, addPostureLab, addAcupuncture, addReiki];

@@ -5,7 +5,7 @@ import { withAchievements } from '../core/campaign';
 import { ITEMS, ROOMS } from '../core/data';
 import { Sim } from '../core/sim/sim';
 import type { GameState } from '../core/state/types';
-import { accessTile, itemDims } from '../core/world';
+import { accessTile, itemDims, wallSpotsOf } from '../core/world';
 import { View } from '../render/view';
 import { loadCampaign, recordGame } from '../storage/campaign';
 import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
@@ -210,6 +210,6 @@ export function startGame({ canvas, audio, state, exit, updates }: GameSetup) {
         return sim.world.building.bounds.y1;
       },
     };
-    Object.assign(window, { pp: { sim, view, tools, ui, state, data, geo: { itemDims, accessTile } } });
+    Object.assign(window, { pp: { sim, view, tools, ui, state, data, geo: { itemDims, accessTile, wallSpotsOf } } });
   }
 }

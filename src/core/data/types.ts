@@ -99,6 +99,9 @@ export type ItemType =
   | 'fortune_teller'
   | 'kombucha_tap'
   | 'staff_fridge'
+  | 'motivational_poster'
+  | 'landscape_painting'
+  | 'wall_clock'
   | 'recliner'
   | 'instructor_mat'
   | 'practice_spot'
@@ -162,6 +165,12 @@ export interface ItemDef {
   access: AccessDef[];
   /** Where it may be placed. */
   where: 'corridor' | 'any' | RoomType;
+  /**
+   * It hangs on a wall rather than standing on the floor. Its tiles are the floor in front of it, which it faces, so
+   * it belongs to the room or corridor there; it blocks nothing, and is hung on the inside of a room's walls or the
+   * building's outer wall. It runs `w` tiles along the wall.
+   */
+  mount?: 'wall';
   /**
    * Stations have a staff position and a line of guests. A group station has no staff position of its own: it is
    * worked from the lead station in its room, whose member of staff serves every group station there at once.

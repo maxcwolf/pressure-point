@@ -2,7 +2,7 @@
 // front door, and the straight runs of outer wall round its edge. Nothing here knows the size of the map.
 
 import type { Entrance, Plot, Rect, Side } from './data';
-import type { Room } from './state/types';
+import type { Room, WallSpot } from './state/types';
 
 export type { Entrance, Side } from './data';
 
@@ -255,12 +255,27 @@ export const BUILDING_WINDOW_W = 2;
 export const BUILDING_WINDOW_EVERY = 4;
 
 /**
+ * Where a stretch of wall seen from the tile inside it is, as a run of wall has it: which side of the building it is
+ * on, the line of the wall's inside face, and the tile along it.
+ */
+export function spotInWall(s: WallSpot): { side: Side; line: number; t: number } {
+  if (s.dy) return { side: s.dy < 0 ? 'north' : 'south', line: s.y + (s.dy > 0 ? 1 : 0), t: s.x };
+  return { side: s.dx < 0 ? 'west' : 'east', line: s.x + (s.dx > 0 ? 1 : 0), t: s.y };
+}
+
+/**
  * The building's own windows, in every outer wall, on whole tiles: two wide with two tiles of wall between, as many as
  * fit a tile in from each end and centered along the wall, leaving out any where a room runs along the wall instead
- * (it has windows of its own), and keeping a tile clear of each entrance and its pillars.
+ * (it has windows of its own) or something hangs on the wall (`hung`, the stretches of wall it covers), and keeping a
+ * tile clear of each entrance and its pillars.
  */
-export function buildingWindows(fp: Footprint, rooms: readonly Pick<Room, 'x' | 'y' | 'w' | 'h'>[]): BuildingWindow[] {
+export function buildingWindows(
+  fp: Footprint,
+  rooms: readonly Pick<Room, 'x' | 'y' | 'w' | 'h'>[],
+  hung: readonly WallSpot[] = [],
+): BuildingWindow[] {
   const out: BuildingWindow[] = [];
+  const spots = hung.map(spotInWall);
   for (const run of wallRuns(fp)) {
     const doors = entrancesIn(fp, run);
     const count = Math.floor((run.b - run.a) / BUILDING_WINDOW_EVERY);
@@ -271,6 +286,7 @@ export function buildingWindows(fp: Footprint, rooms: readonly Pick<Room, 'x' | 
       const b = a + BUILDING_WINDOW_W;
       if (rooms.some((r) => standsAgainst(r, run, a, b))) continue;
       if (doors.some((d) => a < d.b + 1 && b > d.a - 1)) continue;
+      if (spots.some((h) => h.side === run.side && h.line === run.line && h.t >= a && h.t < b)) continue;
       out.push({ side: run.side, horizontal: run.horizontal, line: run.line, a, b });
     }
   }

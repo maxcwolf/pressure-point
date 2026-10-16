@@ -36,8 +36,13 @@ export function hireableRoles(stars: number, enabled: (d: Offering) => boolean):
   });
 }
 
-/** Where an item may be placed, in words. */
+/** Where an item may be placed, in words: on a wall too, for something hung on one. */
 export function placeLabel(item: ItemDef): string {
+  if (item.mount === 'wall') {
+    if (item.where === 'corridor') return 'Corridor wall';
+    if (item.where === 'any') return 'Any wall';
+    return `${ROOMS[item.where].name} wall`;
+  }
   if (item.where === 'corridor') return 'Corridor';
   if (item.where === 'any') return 'Anywhere';
   return ROOMS[item.where].name;
@@ -50,7 +55,7 @@ export function itemOffered(item: ItemDef, enabled: (d: Offering) => boolean): b
 }
 
 /** What an item is for, to filter the Items menu by. */
-export type ItemKind = 'equipment' | 'comfort' | 'decor' | 'staff';
+export type ItemKind = 'equipment' | 'comfort' | 'decor' | 'staff' | 'wall';
 
 /** The kinds of item, in the order the Items menu offers them. */
 export const ITEM_KINDS: readonly { id: ItemKind; label: string }[] = [
@@ -58,14 +63,19 @@ export const ITEM_KINDS: readonly { id: ItemKind; label: string }[] = [
   { id: 'comfort', label: 'Guest comforts' },
   { id: 'decor', label: 'Decor' },
   { id: 'staff', label: 'For staff' },
+  { id: 'wall', label: 'On the walls' },
 ];
 
 /** What guests use an item for, when they use it to sit, drink, eat, play or go. */
 const GUEST_USES = new Set(['seat', 'drink', 'eat', 'play', 'toilet']);
 
-/** What an item is for: a station or treatment equipment, a comfort for guests, decor, or something for staff. */
+/**
+ * What an item is for: something to hang on a wall, a station or treatment equipment, a comfort for guests, decor, or
+ * something for staff.
+ */
 export function itemKind(type: ItemType): ItemKind {
   const def = ITEMS[type];
+  if (def.mount === 'wall') return 'wall';
   if (def.station || Object.values(MODALITIES).some((m) => m.equipment === type)) return 'equipment';
   if (def.where === 'staffroom' || def.where === 'training') return 'staff';
   if (def.access.some((a) => GUEST_USES.has(a.role)) || type === 'bin') return 'comfort';
