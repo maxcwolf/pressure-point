@@ -35,9 +35,14 @@ jobs:
             args: --win --x64
     steps:
       - uses: actions/checkout@v7
+      # setup-node asks Yarn where its cache is, which without Corepack finds the runner's Yarn 1. Hosted runners
+      # come with Node, so Corepack can go first there; a self-hosted Mac keeps its own Yarn cache anyway.
+      - if: runner.environment == 'github-hosted'
+        run: corepack enable
       - uses: actions/setup-node@v7
         with:
           node-version: 22
+          cache: ${{ runner.environment == 'github-hosted' && 'yarn' || '' }}
       # after setup-node, so a self-hosted Mac needs nothing preinstalled
       - run: corepack enable
       - run: yarn install --immutable
