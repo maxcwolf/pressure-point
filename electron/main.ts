@@ -103,21 +103,19 @@ ipcMain.on(QUIT_CHANNEL, (event) => {
   // only the game's own page may ask, not a frame inside it
   if (event.senderFrame === event.sender.mainFrame) app.quit();
 });
-ipcMain.handle(
-  FULL_SCREEN_STATE_CHANNEL,
-  (event) => BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false,
-);
+ipcMain.handle(FULL_SCREEN_STATE_CHANNEL, (event) => {
+  if (event.senderFrame !== event.sender.mainFrame) return false;
+  return BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false;
+});
 ipcMain.on(FULL_SCREEN_SET_CHANNEL, (event, on: unknown) => {
   if (event.senderFrame !== event.sender.mainFrame || typeof on !== 'boolean') return;
   // saved once the window has got there, by the window's own events
   BrowserWindow.fromWebContents(event.sender)?.setFullScreen(on);
 });
 
-const gameMenu: MenuItemConstructorOptions[] = [
-  { role: 'togglefullscreen' },
-  { role: 'reload', label: 'Restart Renderer' },
-  { role: 'toggleDevTools' },
-];
+const gameMenu: MenuItemConstructorOptions[] = [{ role: 'togglefullscreen' }];
+// for working on the app; players restart the game from its own menus
+if (!app.isPackaged) gameMenu.push({ role: 'reload', label: 'Restart Renderer' }, { role: 'toggleDevTools' });
 if (!isMac) gameMenu.push({ type: 'separator' }, { role: 'quit' });
 
 const menu: MenuItemConstructorOptions[] = [{ label: 'Game', submenu: gameMenu }, { role: 'windowMenu' }];
