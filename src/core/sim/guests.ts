@@ -124,7 +124,9 @@ export function spawnGuest(
 ): Guest | null {
   const s = ctx.s;
   const way = classDay ? classEntrance(ctx) : undefined;
-  const [x, y] = way ? streetTileNear(ctx.world.building, way.x) : streetTile(ctx.world.building);
+  const [x, y] = way
+    ? streetTileNear(ctx.world.building, way.x, ctx.world.w)
+    : streetTile(ctx.world.building, ctx.world.w);
   const sex = regular ? regular.look.sex : rollSex(WOMEN_VISIT);
   const name = regular ? regular.name : randomName(sex);
   const look = regular ? { ...regular.look } : randomLook(sex);
@@ -539,6 +541,6 @@ export function leave(ctx: SimContext, g: Guest) {
   removeFromStations(ctx, g);
   g.goal = 'leave';
   g.state = 'leaving';
-  const [x, y] = streetTile(ctx.world.building);
+  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
   if (!goTo(ctx, g, x, y)) ctx.s.guests = ctx.s.guests.filter((q) => q !== g);
 }

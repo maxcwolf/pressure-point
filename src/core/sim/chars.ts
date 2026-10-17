@@ -61,20 +61,31 @@ export function say(c: Char, icon: string, seconds = 2.2) {
  */
 export const STREET_WALK = 14;
 
-/** Where people arrive and leave along the pavement: a set walk to the left of the front door, and to the right. */
-export function streetEnds(fp: Pick<Footprint, 'door'>): [left: number, right: number] {
-  return [fp.door[0] - STREET_WALK, fp.door[1] + STREET_WALK];
+/**
+ * Where people arrive and leave along the pavement: a set walk to the left of the front door, and to the right. A
+ * building standing apart has a way in of its own, so on its side the end lies a set walk past that too, or at the
+ * edge of the lot (`w` wide) if that comes first: never on the pavement between the buildings, where people walking
+ * from one to the other would be seen to shrink away and grow back.
+ */
+export function streetEnds(fp: Pick<Footprint, 'door' | 'entrances'>, w = Infinity): [left: number, right: number] {
+  let left = fp.door[0] - STREET_WALK;
+  let right = fp.door[1] + STREET_WALK;
+  for (const e of fp.entrances.slice(1)) {
+    if (e.x < fp.door[0]) left = Math.min(left, Math.max(0, e.x - STREET_WALK));
+    if (e.x > fp.door[1]) right = Math.max(right, Math.min(w - 1, e.x + STREET_WALK));
+  }
+  return [left, right];
 }
 
 /** Where someone arrives or leaves, one way along the pavement or the other, picked at random. */
-export function streetTile(fp: Pick<Footprint, 'door'>): [number, number] {
-  const [left, right] = streetEnds(fp);
+export function streetTile(fp: Pick<Footprint, 'door' | 'entrances'>, w = Infinity): [number, number] {
+  const [left, right] = streetEnds(fp, w);
   return [random() < 0.5 ? left : right, SIDEWALK_Y];
 }
 
 /** Where someone arrives who is heading for a way in at `x`: the end of the pavement nearer it. */
-export function streetTileNear(fp: Pick<Footprint, 'door'>, x: number): [number, number] {
-  const [left, right] = streetEnds(fp);
+export function streetTileNear(fp: Pick<Footprint, 'door' | 'entrances'>, x: number, w = Infinity): [number, number] {
+  const [left, right] = streetEnds(fp, w);
   return [Math.abs(x - left) <= Math.abs(x - right) ? left : right, SIDEWALK_Y];
 }
 

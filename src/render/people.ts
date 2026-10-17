@@ -43,7 +43,7 @@ export class PeopleLayer {
   /** Give everyone a figure, pose them for this frame and remove those who have left. */
   update(t: number, dt: number) {
     const live = new Set<number>();
-    const ends = streetEnds(this.sim.world.building);
+    const ends = streetEnds(this.sim.world.building, this.sim.world.w);
     for (const c of [...this.sim.s.guests, ...this.sim.s.staff, ...this.sim.s.visitors] as Char[]) {
       live.add(c.id);
       let rig = this.chars.get(c.id);

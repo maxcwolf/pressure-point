@@ -91,7 +91,7 @@ export function acceptCall(ctx: SimContext, staffId: number): boolean {
     return false;
   }
   staffIdle(ctx, st);
-  const [x, y] = streetTile(ctx.world.building);
+  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
   if (!goTo(ctx, st, x, y)) {
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
@@ -123,7 +123,7 @@ export function leaveForCall(ctx: SimContext, st: Staff) {
 export function returnFromCall(ctx: SimContext, st: Staff) {
   const call = st.call;
   if (!call) return;
-  const [x, y] = streetTile(ctx.world.building);
+  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
   st.x = x + 0.5;
   st.y = y + 0.5;
   st.tx = x;

@@ -46,8 +46,11 @@ describe('a Qi Gong Studio on land apart', () => {
     expect(own?.x).toBeGreaterThan(front?.x ?? 0);
     const g = spawnGuest(ctx, undefined, false, Math.floor(s.day) + 2);
     if (!g) throw new Error('no class-goer');
-    // from the end of the pavement nearer the orangery's own way in
-    expect(Math.abs(g.x - streetEnds(fp)[1])).toBeLessThan(1.5);
+    // from the end of the pavement nearer the orangery's own way in, which lies past it, at the edge of the lot
+    const end = streetEnds(fp, ctx.world.w)[1];
+    expect(end).toBe(ctx.world.w - 1);
+    expect(end).toBeGreaterThan(own?.x ?? Infinity);
+    expect(Math.abs(g.x - end)).toBeLessThan(1.5);
     const start = s.day;
     let byFrontDoor = false;
     runUntil(
