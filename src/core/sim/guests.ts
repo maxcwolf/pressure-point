@@ -34,7 +34,7 @@ import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import { missClass, missToast } from './classes';
 import type { SimContext } from './context';
-import { chooseCondition, offeringArrivals } from './demand';
+import { chooseCondition, demand, lineArrivals, offeringArrivals } from './demand';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
@@ -63,7 +63,10 @@ const GOAL_NAME = {
 
 const NEED_ICON = { drink: '🍵', eat: '🥜', toilet: '🚻', play: '🕹️' } as const;
 
-/** Bring in a new guest now and then, more often as the center's reputation grows. */
+/**
+ * Bring in a new guest now and then, more often as the center's reputation grows, and less often while long lines for
+ * treatment put guests off.
+ */
 export function admitGuests(ctx: SimContext, dt: number) {
   const s = ctx.s;
   // snowed in: nobody can get up the road until it is cleared
@@ -76,7 +79,11 @@ export function admitGuests(ctx: SimContext, dt: number) {
     spawnGuest(ctx, undefined, false, 0, regular);
   }
   s.spawnT =
-    ((30 - s.reputation * 0.2) * rnd(0.7, 1.3)) / arrivalFactor(ctx) / offeringArrivals(ctx) / tuning(s, 'arrivals');
+    ((30 - s.reputation * 0.2) * rnd(0.7, 1.3)) /
+    arrivalFactor(ctx) /
+    offeringArrivals(ctx) /
+    lineArrivals(demand(ctx)) /
+    tuning(s, 'arrivals');
 }
 
 /** How many guests the center lets in at once: more for every finished room, not counting blueprints. */

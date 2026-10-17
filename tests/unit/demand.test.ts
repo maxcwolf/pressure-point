@@ -7,6 +7,7 @@ import {
   DISCIPLINES,
   FOLLOWING,
   followingPull,
+  LINE_PUT_OFF,
   MODALITIES,
   OFFERING_ARRIVALS,
 } from '../../src/core/data';
@@ -18,6 +19,8 @@ import {
   fadeFollowing,
   followingOf,
   followVisit,
+  lineArrivals,
+  lineFactor,
   offeringArrivals,
   staffedDisciplines,
   UNTRAINED_PULL,
@@ -25,7 +28,15 @@ import {
 import { newGame } from '../../src/core/state/game';
 import type { GameState, Guest } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { demandAdvice, followingWord, offeringNote, popularityWord, times } from '../../src/ui/lib/demand';
+import {
+  demandAdvice,
+  followingWord,
+  lineNote,
+  lineWord,
+  offeringNote,
+  popularityWord,
+  times,
+} from '../../src/ui/lib/demand';
 import { addSound, hire, openCenter, runUntil } from './helpers';
 
 /** The game's own context, for calling the simulation directly. */
@@ -202,6 +213,45 @@ describe('how many guests arrive', () => {
   });
 });
 
+describe('a long line', () => {
+  it('puts nobody off up to three waiting for each place, then a tenth more for each, up to half', () => {
+    expect(lineFactor(0, 2)).toBe(1);
+    expect(lineFactor(6, 2)).toBe(1);
+    expect(lineFactor(8, 2)).toBeCloseTo(1 - LINE_PUT_OFF.each);
+    expect(lineFactor(100, 1)).toBe(1 - LINE_PUT_OFF.most);
+    // with nobody to see them, guests wait as if for one
+    expect(lineFactor(5, 0)).toBeCloseTo(0.8);
+  });
+
+  it('counts the guests waiting for a discipline and lowers its pull', () => {
+    const c = openCenter(1);
+    runUntil(c.sim, () => c.s.guests.length >= 1, 300);
+    const before = c.sim.demand().find((r) => r.discipline === 'massage')!;
+    expect(before.line).toMatchObject({ places: 1, factor: 1 });
+    // six guests waiting for the one therapist, as diagnosed guests do
+    const g = c.s.guests[0]!;
+    const massage = CONDITIONS.find((x) => MODALITIES[x.modality].discipline === 'massage')!;
+    for (let i = 0; i < 6; i++)
+      c.s.guests.push({ ...g, id: 9000 + i, goal: 'treat', state: 'waiting', condition: massage.id });
+    const row = c.sim.demand().find((r) => r.discipline === 'massage')!;
+    expect(row.line.waiting).toBeGreaterThanOrEqual(6);
+    expect(row.line.factor).toBeLessThan(1);
+    expect(row.pull).toBeCloseTo((before.pull * row.line.factor) / before.line.factor);
+  });
+
+  it('keeps those it puts off away altogether, so guests arrive less often', () => {
+    /** A discipline drawing so many guests before its line puts some off. */
+    const row = (pull: number, factor: number) =>
+      ({ pull: pull * factor, line: { waiting: 0, places: 1, factor } }) as DisciplineDemand;
+    expect(lineArrivals([])).toBe(1);
+    expect(lineArrivals([row(1, 1), row(1, 1)])).toBe(1);
+    // half of one of two equal disciplines put off: a quarter fewer guests in all
+    expect(lineArrivals([row(1, 1), row(1, 0.5)])).toBeCloseTo(0.75);
+    expect(lineNote(1)).toBeNull();
+    expect(lineNote(0.75)).toBe('Long lines for treatment are keeping 25% of new guests away.');
+  });
+});
+
 describe('the Guests panel', () => {
   const base: DisciplineDemand = {
     discipline: 'sound',
@@ -213,6 +263,7 @@ describe('the Guests panel', () => {
     trained: 3,
     training: 1,
     untrained: [],
+    line: { waiting: 0, places: 1, factor: 1 },
     flavour: 1,
     pull: 1.8,
     share: 0.3,
@@ -226,6 +277,16 @@ describe('the Guests panel', () => {
     expect(popularityWord(0.6)).toBe('Niche');
     expect(followingWord(5)).toBe('Barely known');
     expect(followingWord(75)).toBe('Talked about everywhere');
+  });
+
+  it('says how long a line is, and that it puts guests off before anything else', () => {
+    const long = { ...base, discipline: 'massage' as const, line: { waiting: 8, places: 2, factor: 0.9 } };
+    expect(lineWord(long)).toBe('8 waiting for 2 Massage Therapists');
+    expect(lineWord({ ...base, line: { waiting: 3, places: 4, factor: 1 } })).toBe('3 waiting for 4 mats');
+    expect(lineWord({ ...base, line: { waiting: 2, places: 0, factor: 1 } })).toBe('2 waiting');
+    expect(demandAdvice({ ...long, untrained: ['swedish'] })).toMatch(
+      /^The line for massage therapy is putting new guests off: 8 waiting for 2 Massage Therapists\./,
+    );
   });
 
   it('advises training first, then word of mouth, then the room, and nothing when all is well', () => {

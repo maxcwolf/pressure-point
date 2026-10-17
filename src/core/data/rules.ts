@@ -240,6 +240,12 @@ export const FOLLOWING = { start: 20, established: 40, heal: 5, fail: 3, walkout
  */
 export const OFFERING_ARRIVALS = 0.05;
 /**
+ * How a long line for a discipline's treatment puts new guests off it: nobody while there are up to `easy` guests
+ * waiting for each of its practitioners, then `each` fewer for every one more, and at most `most` fewer. Those put off
+ * do not come, so guests arrive less often too.
+ */
+export const LINE_PUT_OFF = { easy: 3, each: 0.1, most: 0.5 };
+/**
  * How a following multiplies how often guests come for a discipline: three quarters as often with none, up to 1.75×
  * at 100. Kept narrow, since the busiest discipline, with the most guests to heal, builds the biggest following.
  */

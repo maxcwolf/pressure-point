@@ -6,12 +6,14 @@ import {
   centerOf,
   CONDITION_BOOST,
   conditionHere,
+  conditionOf,
   CONDITIONS,
   DISCIPLINE_ORDER,
   DISCIPLINES,
   FOLLOWING,
   followingPull,
   ITEMS,
+  LINE_PUT_OFF,
   MODALITIES,
   NOISE_NOTICE,
   NOISE_PEACEFUL,
@@ -103,9 +105,38 @@ export interface DisciplineDemand {
   untrained: Modality[];
   /** How the center's local favourites and any campaign lift it, as a multiplier. */
   flavour: number;
+  /** Its line for treatment: guests waiting, how many they wait for, and how it puts new guests off, as a multiplier. */
+  line: Line;
   /** Its pull altogether, and its share of new guests. */
   pull: number;
   share: number;
+}
+
+/** A discipline's line for treatment, as a new guest hears of it. */
+export interface Line {
+  waiting: number;
+  /** The guests its practitioners can see at once: one each, or as many mats as a Sound Healer plays for. */
+  places: number;
+  factor: number;
+}
+
+/** How a line of so many guests for so many places puts new guests off, as a multiplier on its pull. */
+export function lineFactor(waiting: number, places: number): number {
+  const over = waiting / Math.max(1, places) - LINE_PUT_OFF.easy;
+  return 1 - clamp(over * LINE_PUT_OFF.each, 0, LINE_PUT_OFF.most);
+}
+
+/** The guests waiting to be treated in a discipline, and the places its practitioners on the payroll can see them at. */
+function lineFor(ctx: SimContext, d: Discipline): Line {
+  const waiting = ctx.s.guests.filter(
+    (g) =>
+      g.goal === 'treat' &&
+      (g.state === 'waiting' || g.state === 'toWait') &&
+      MODALITIES[conditionOf(g.condition).modality].discipline === d,
+  ).length;
+  const staff = ctx.s.staff.filter((st) => st.role === DISCIPLINES[d].role && st.state !== 'leaving').length;
+  const places = staff * (d === 'sound' ? matsUsable(ctx) : 1);
+  return { waiting, places, factor: lineFactor(waiting, places) };
 }
 
 /** A condition guests can come with now, and how often against the rest of its discipline. */
@@ -142,6 +173,7 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
     const weight = mine.reduce((sum, w) => sum + w.weight, 0) / mine.length;
     const training = mine.reduce((sum, w) => sum + (w.trained ? 1 : UNTRAINED_PULL), 0) / mine.length;
     const untrained = [...new Set(mine.filter((w) => !w.trained).map((w) => w.condition.modality))];
+    const line = lineFor(ctx, d);
     return [
       {
         discipline: d,
@@ -154,7 +186,8 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
         training,
         untrained,
         flavour: weight / training,
-        pull: popularity * followed * room.pull * weight,
+        line,
+        pull: popularity * followed * room.pull * weight * line.factor,
         share: 0,
       },
     ];
@@ -173,6 +206,15 @@ export const staffedDisciplines = (ctx: SimContext): Discipline[] =>
 /** How much more often guests arrive, for the disciplines the center offers: more for each one staffed past the first. */
 export const offeringArrivals = (ctx: SimContext) =>
   1 + OFFERING_ARRIVALS * Math.max(0, staffedDisciplines(ctx).length - 1);
+
+/**
+ * How often guests arrive against how often they would with no line putting anyone off, from 1 down: those put off a
+ * discipline by its line do not come at all, rather than come for another.
+ */
+export function lineArrivals(rows: readonly DisciplineDemand[]): number {
+  const unput = rows.reduce((sum, r) => sum + r.pull / r.line.factor, 0);
+  return unput > 0 ? rows.reduce((sum, r) => sum + r.pull, 0) / unput : 1;
+}
 
 /** Pick one of some weighted things, given a roll from 0 to 1. */
 function pickWeighted<T>(list: readonly T[], weight: (t: T) => number, roll: number): T | undefined {
