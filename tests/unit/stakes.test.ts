@@ -17,7 +17,7 @@ import { createContext } from '../../src/core/sim/context';
 import { reviewStars } from '../../src/core/sim/feelings';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { endOutbreak, spreadStress } from '../../src/core/sim/outbreaks';
-import { moraleTarget } from '../../src/core/sim/staffing';
+import { moraleTarget, wantsAway } from '../../src/core/sim/staffing';
 import { addVibes, canSmudge, fadeVibes, roomToSmudge, vibesPenalty } from '../../src/core/sim/vibes';
 import { conditionPenalty, worsening, worsenRate } from '../../src/core/sim/worsening';
 import { SAVE_VERSION } from '../../src/core/state/game';
@@ -163,6 +163,29 @@ describe('bad vibes', () => {
     expect(massage.claimedBy).toBe(0);
     expect(practitioner.job).toBeNull();
     expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('wait for a Reiki Practitioner to see the guests in their line, unless they are in their own room', () => {
+    const { sim, s, massage } = openCenter(1);
+    s.stars = 2;
+    const reiki = addReiki(sim);
+    const practitioner = hire(sim, 'practitioner');
+    runUntil(sim, () => practitioner.state === 'atPost' && s.guests.length > 0, 300);
+    const ctx = createContext(s);
+    const table = s.items.find((i) => i.id === practitioner.post)!;
+    table.serving = 0;
+    table.queue = [];
+    practitioner.energy = 100;
+    massage.vibes = 100;
+    expect(wantsAway(ctx, practitioner, table)).toBe(true);
+    const g = s.guests[0]!;
+    g.station = table.id;
+    g.state = 'waiting';
+    table.queue.push(g.id);
+    expect(wantsAway(ctx, practitioner, table)).toBe(false);
+    massage.vibes = 0;
+    reiki.vibes = 100;
+    expect(wantsAway(ctx, practitioner, table)).toBe(true);
   });
 
   it('are left alone by a Caretaker until they learn Smudging', () => {

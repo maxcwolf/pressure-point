@@ -17,6 +17,7 @@ import {
   NOISE_LOUD,
   NOISE_PENALTY,
   OUTBREAK_STARS,
+  STAFF_NEED_HOLD,
   STAFF_NEED_MORALE,
   WALL_DAMPING,
   WINDOW_LEAK,
@@ -31,7 +32,7 @@ import { growNeeds, wants } from '../../src/core/sim/staff-needs';
 
 /** A member of staff not on a break, or on one with nothing to eat or drink. */
 const NO_BREAK_ROOM = { espresso: false, fridge: false };
-import { moraleTarget } from '../../src/core/sim/staffing';
+import { moraleTarget, wantsAway } from '../../src/core/sim/staffing';
 import {
   discomfort,
   feelTemperature,
@@ -270,6 +271,29 @@ describe('staff needs', () => {
     runUntil(sim, () => therapist.thirst < 5, 200);
     runUntil(sim, () => therapist.state === 'atPost', 120);
     expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('wait while guests are in their line, until they are close to fed up', () => {
+    const { sim, s, therapist } = openCenter(1);
+    sim.placeItem('water_cooler', 16, 10, 0);
+    runUntil(sim, () => therapist.state === 'atPost' && s.guests.length > 0, 300);
+    const ctx = createContext(s);
+    const table = s.items.find((i) => i.id === therapist.post)!;
+    table.serving = 0;
+    table.queue = [];
+    therapist.energy = 100;
+    therapist.thirst = 70;
+    expect(wants(therapist)).toBe('drink');
+    expect(wantsAway(ctx, therapist, table)).toBe(true);
+    // someone waiting: they see to them first
+    const g = s.guests[0]!;
+    g.station = table.id;
+    g.state = 'waiting';
+    table.queue.push(g.id);
+    expect(wants(therapist, true)).toBeNull();
+    expect(wantsAway(ctx, therapist, table)).toBe(false);
+    therapist.thirst = STAFF_NEED_HOLD;
+    expect(wantsAway(ctx, therapist, table)).toBe(true);
   });
 
   it('are seen to by an espresso on a break', () => {

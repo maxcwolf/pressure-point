@@ -267,20 +267,32 @@ function inHand(ctx: SimContext, it: Item): boolean {
   return isLeadStation(it) && sessionState(ctx, it).playing;
 }
 
+/** Whether guests are waiting in a station's line to be called. */
+function lineWaiting(ctx: SimContext, it: Item): boolean {
+  return it.queue.some((id) => {
+    const g = guestById(ctx, id);
+    return g?.station === it.id && (g.state === 'waiting' || g.state === 'toWait');
+  });
+}
+
 /**
  * Whether a member of staff at their post is wanted elsewhere, as soon as they have nobody in hand: kept from its duty
  * or outside their rooms, a priority room short of someone, bad vibes to clear, a soul to retrieve or a mishap to ward
- * off, or a drink or a snack to be had.
+ * off, or a drink or a snack to be had. With guests waiting in their line, they see to them first: bad vibes can wait
+ * unless they are in this room, and a drink or a snack until they are close to fed up. Being sent elsewhere by the
+ * player, and emergencies, cannot wait.
  */
 function wantedElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
+  const line = lineWaiting(ctx, it);
+  const cloudy = roomToSmudge(ctx, st);
   return (
     !onDuty(st, stationDuty(it)) ||
     !worksAt(ctx, st, it.x, it.y) ||
     (!inPriorityRoom(ctx, it.x, it.y) && !!openPriorityPost(ctx, st)) ||
-    !!roomToSmudge(ctx, st) ||
+    (!!cloudy && (!line || cloudy === ctx.world.roomOfItem(it))) ||
     !!soulToRetrieve(ctx, st) ||
     wardWanted(ctx, st) ||
-    wantsRefresh(ctx, st)
+    wantsRefresh(ctx, st, line)
   );
 }
 

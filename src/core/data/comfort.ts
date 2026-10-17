@@ -77,6 +77,8 @@ export const STAFF_THIRST = 0.2;
 export const STAFF_HUNGER = 0.14;
 /** Staff go for a drink or a snack from here, when they are free. */
 export const STAFF_NEED_AT = 60;
+/** Staff with guests waiting in their line hold out for a drink or a snack until here, short of being fed up. */
+export const STAFF_NEED_HOLD = 90;
 /** A member of staff this thirsty or hungry is fed up: their morale settles this much lower. */
 export const STAFF_NEED_MORALE = 8;
 /** How far staff will walk for a drink or a snack, in tiles. */

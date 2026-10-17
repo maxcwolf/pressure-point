@@ -9,6 +9,7 @@ import {
   REFRESH_SECONDS,
   STAFF_HUNGER,
   STAFF_NEED_AT,
+  STAFF_NEED_HOLD,
   STAFF_NEED_RANGE,
   STAFF_THIRST,
 } from '../data';
@@ -51,9 +52,13 @@ export function growNeeds(ctx: SimContext, st: Staff, dt: number, room: BreakRoo
     );
 }
 
-/** What a member of staff wants most, if they want anything enough to go for it. */
-export function wants(st: Staff): 'drink' | 'eat' | null {
-  if (st.thirst < STAFF_NEED_AT && st.hunger < STAFF_NEED_AT) return null;
+/**
+ * What a member of staff wants most, if they want anything enough to go for it: from `STAFF_NEED_AT`, or, with guests
+ * waiting in their line, not until `STAFF_NEED_HOLD`.
+ */
+export function wants(st: Staff, holding = false): 'drink' | 'eat' | null {
+  const at = holding ? STAFF_NEED_HOLD : STAFF_NEED_AT;
+  if (st.thirst < at && st.hunger < at) return null;
   return st.thirst >= st.hunger ? 'drink' : 'eat';
 }
 
@@ -76,8 +81,8 @@ export function refreshmentFor(ctx: SimContext, st: Staff, want: AccessRole): It
 }
 
 /** Whether someone wants a drink or a snack enough to go for one, and there is one to be had. */
-export function wantsRefresh(ctx: SimContext, st: Staff): boolean {
-  const want = wants(st);
+export function wantsRefresh(ctx: SimContext, st: Staff, holding = false): boolean {
+  const want = wants(st, holding);
   return !!want && !!refreshmentFor(ctx, st, want);
 }
 
