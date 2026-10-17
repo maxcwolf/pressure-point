@@ -35,7 +35,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
       { role: 'staff', x: 0, y: -1, px: 1, py: -0.35, face: [0, 1], pose: 'stand' },
       { role: 'guest', x: 0, y: 1, px: 1, py: 1.4, face: [0, -1], pose: 'stand' },
     ],
-    station: { staff: 'receptionist', goal: 'shop', seconds: 4 },
+    station: { staff: 'receptionist', goal: 'shop', seconds: 2.5 },
     inMenu: true,
     unlock: 1,
     decor: 1,

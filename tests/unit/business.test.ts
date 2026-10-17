@@ -1,13 +1,21 @@
 // The business side: prices per treatment, the Shop Counter, marketing and house calls.
 import { describe, expect, it } from 'vitest';
 
-import { CALL_PER_DAY, CALL_RANK_BONUS, CAMPAIGNS, DAYS_PER_MONTH, SHOP_CHANCE, SHOP_SPEND } from '../../src/core/data';
+import {
+  CALL_PER_DAY,
+  CALL_RANK_BONUS,
+  CAMPAIGNS,
+  DAYS_PER_MONTH,
+  SHOP_CHANCE,
+  SHOP_LINE_SKIP,
+  SHOP_SPEND,
+} from '../../src/core/data';
 import { callFee, canGo, makeCall, updateCalls } from '../../src/core/sim/calls';
 import { createContext } from '../../src/core/sim/context';
 import { netOf } from '../../src/core/sim/economy';
 import { campaignBoost, running, updateCampaigns } from '../../src/core/sim/marketing';
 import { repathAll } from '../../src/core/sim/movement';
-import { shopSpend } from '../../src/core/sim/stations';
+import { shopSpend, wantsToShop } from '../../src/core/sim/stations';
 import { emptyLedger } from '../../src/core/state/game';
 import type { HouseCall } from '../../src/core/state/types';
 import { addAcupuncture, addTraining, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
@@ -70,6 +78,26 @@ describe('the Shop Counter', () => {
     // nobody who shops is counted twice
     const visits = s.stats.healed + s.stats.failed + s.stats.stormed + s.stats.sent + s.stats.priced;
     expect(s.reviews.length).toBeLessThanOrEqual(visits);
+  });
+
+  it('is passed by on the way out when every counter already has a line of five', () => {
+    const { sim, s } = openCenter(1);
+    s.stars = 1;
+    const counter = sim.placeItem('shop_counter', 18, 13, 0)!;
+    runUntil(sim, () => s.guests.length > 0, 300);
+    const ctx = createContext(s);
+    const g = s.guests[0]!;
+    // the happiest guest, who would nearly always stop
+    g.outcome = 'healed';
+    g.feelings = [];
+    /** How many of so many guests like this one would stop at the counter. */
+    const tries = (n: number) => Array.from({ length: n }, () => wantsToShop(ctx, g)).filter(Boolean).length;
+    expect(tries(40)).toBeGreaterThan(20);
+    counter.queue = [9001, 9002, 9003, 9004];
+    expect(tries(40)).toBeGreaterThan(20);
+    counter.queue.push(9005);
+    expect(SHOP_LINE_SKIP).toBe(5);
+    expect(tries(40)).toBe(0);
   });
 
   it('lets a shopper who gives up go quietly, their visit counted already', () => {
