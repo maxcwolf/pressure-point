@@ -300,6 +300,8 @@ export interface Guest extends CharBase {
   lowest?: number;
   diagnosis: number;
   consults: number;
+  /** Had a posture scan, which makes their treatment likelier to work. */
+  scanned?: boolean;
   outcome: Outcome | '';
   spent: number;
   hasWrapper: boolean;

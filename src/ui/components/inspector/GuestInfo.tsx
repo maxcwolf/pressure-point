@@ -1,6 +1,14 @@
 // The inspector for a guest.
 
-import { CLASS_FEE, conditionOf, FEELINGS, MODALITIES, POOR_CONDITION, WEEKDAYS } from '../../../core/data';
+import {
+  CLASS_FEE,
+  conditionOf,
+  FEELINGS,
+  MODALITIES,
+  POOR_CONDITION,
+  SCAN_SUCCESS,
+  WEEKDAYS,
+} from '../../../core/data';
 import { money } from '../../../core/format';
 import { weekday } from '../../../core/sim/classes';
 import { regularOf } from '../../../core/sim/regulars';
@@ -107,7 +115,9 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
           <QualChips quals={[c.modality]} />
         </>
       )}{' '}
-      {g.state !== 'leaving' && <ChanceLine guest={g} />} <p class="status">{guestStatus(g, sim)}</p>{' '}
+      {g.state !== 'leaving' && <ChanceLine guest={g} />}{' '}
+      {g.scanned && <p class="sub scanned">{`📐 Scanned: ${percent(SCAN_SUCCESS)} more chance of success`}</p>}{' '}
+      <p class="status">{guestStatus(g, sim)}</p>{' '}
       <label title="It worsens while they wait, faster with some conditions. The worse it gets, the less likely their treatment is to work, and if it runs out they go home worse off.">
         Condition
         <Bar value={g.health} class={g.health < POOR_CONDITION ? 'bad' : ''} />

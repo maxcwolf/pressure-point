@@ -20,7 +20,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
     type: 'assess',
     name: 'Posture Lab',
     icon: '📐',
-    desc: 'A scan settles any diagnosis the Consultant was unsure about. Needs a Wellness Consultant.',
+    desc: 'Scans the guests the Consultant was unsure about, for a little more than a second consultation. A scan adds 10% to the guest’s chance of success. Needs a Wellness Consultant.',
     cost: 5500,
     minShort: 3,
     minLong: 3,

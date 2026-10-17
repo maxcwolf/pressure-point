@@ -289,7 +289,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     type: 'posture_scanner',
     name: 'Posture Scanner',
     icon: '📐',
-    desc: 'Measures exactly how crooked a guest is, to two decimal places.',
+    desc: 'Measures exactly how crooked a guest is, to two decimal places, so their therapist knows just where to work. A scan adds 10% to the guest’s chance of success.',
     cost: 0,
     w: 2,
     h: 1,

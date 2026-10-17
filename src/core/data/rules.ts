@@ -22,7 +22,10 @@ export const STONE_USE = 25;
 export const BOTCH_FACTOR = 0.35;
 export const CONSULT_FEE = 200;
 
-export const ASSESS_FEE = 150;
+/** What a posture scan costs: a little more than a consultation. */
+export const ASSESS_FEE = 250;
+/** How much likelier a guest's treatment is to work once a posture scan has shown just where to work. */
+export const SCAN_SUCCESS = 0.1;
 export const WINDOW_COST = 150;
 /** What each tile added to a built room costs. Each tile taken away gives back half. */
 export const ROOM_TILE_COST = 200;

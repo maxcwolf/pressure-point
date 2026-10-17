@@ -4,6 +4,41 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 17 October 2026, after midnight: the Posture Lab
+
+Measured with `yarn balance` and `BOT=old yarn balance` from clean exports of 0.29.0 (`97e9de3`, with this bot copied in) and of `e6e4e86`: every campaign center at seeds 1 to 3, and High Pines at seeds 1 to 9, four years a game. Profit and waits are averaged from the second year on; months at a loss are of all 48. With the new extras off, the copied bot plays 0.29.0 move for move as its own bot does, and wherever nobody is sent for a scan, the two commits play the same games.
+
+### 21. The Posture Lab was a trap
+
+**Found:** a scan only sees guests whose first consultation left the diagnosis short of the policy's target, and it did nothing a second consultation did not: either gets any diagnosis past the usual 75%, the scan charged $150 against a consultation's $200, and the lab needs a Consultant of its own. Only a Consultant of rank 1 or 2 is ever unsure (a first look gives 0.4 + 0.13 a rank + up to 0.15), so in a center with rank 3 Consultants the lab sees nobody at all. The bot hires the best applicant, nearly always rank 3 or better: 0.29.0's bot built a lab in 8 of its 21 games, and scanned anyone in only 4 of them, 2 to 6 guests a month. To measure the lab where it is used, the bot learned two extras, off unless named (`BOT_ON=junior,lab`): **junior** hires the cheapest Consultant going (in the games looked at, they stayed at rank 1), and **lab** builds a Posture Lab once the center pays its way, when the Consultants are all rank 2 or below or more than three wait a Consultation Room. With both, about 10 guests a month are scanned. On 0.29.0, building the lab in such a center cost $4.5k a month against the same games without one (a junior center that never built a lab, 9 games), worse in 8 of 9.
+
+**Done:** a scanned guest's chance of success is 10% higher (`SCAN_SUCCESS` in `src/core/data/rules.ts`, a `scanned` flag on the guest set by the scan), and a scan costs $250 (`ASSESS_FEE`), a little more than a consultation. The Posture Lab and Posture Scanner say what a scan adds, the guest inspector shows "📐 Scanned" under the chance of success (which counts it), the tip on a second look mentions it, and the guide's step 8 says what the lab does and that it only sees the guests a junior Consultant is unsure about.
+
+The bonus was chosen on whether the lab pays for itself in a center that uses it. Lab against no lab in junior centers, 17 games (Willow Lane and High Pines, seeds 1 to 21, where the junior bot without the extra never built one):
+
+| Scan bonus | Profit a month, with the lab against without | Better with the lab |
+| ---------- | -------------------------------------------- | ------------------- |
+| 0.29.0     | −$4.5k (9 games)                             | 1 of 9              |
+| 5%         | −$1.2k (median −$2.2k)                       | 5 of 17             |
+| 8%         | −$1.2k (median −$1.9k)                       | 5 of 17             |
+| 10%        | +$0.1k (median −$1.0k)                       | 6 of 17             |
+
+It barely pays even at 10%. The lab's Consultant costs at least $1,700 a month, and about 10 scans a month bring back the extra $50 each and a tenth of a treatment fee ($900 to $2,500 before prices) each.
+
+Overall, 0.29.0 → `2c6b8d9`:
+
+| Bot                        | Third star    | Profit a month  | Months at a loss | Average wait, days | Success rate  |
+| -------------------------- | ------------- | --------------- | ---------------- | ------------------ | ------------- |
+| Good player (seeds 1–3)    | 14/15 → 14/15 | $19.1k → $20.0k | 13.3 → 12.4      | 9.0 → 9.1          | 84.3% → 84.8% |
+| Good player, High Pines ×9 | 7/9 → 7/9     | $7.7k → $9.1k   | 19.3 → 17.4      | 9.1 → 9.5          | 81.7% → 83.2% |
+| Cautious (seeds 1–3)       | 4/15 → 4/15   | $2.3k → $3.0k   | 23.7 → 22.5      | 7.9 → 8.3          | 79.6% → 81.2% |
+| Cautious, High Pines ×9    | 0/9 → 0/9     | $1.5k → $2.7k   | 23.6 → 21.6      | 7.3 → 7.8          | 78.7% → 81.4% |
+| Junior and a lab (1–3)     | 4/15 → 6/15   | $4.4k → $9.2k   | 23.3 → 17.1      | 15.1 → 14.9        | 78.0% → 83.5% |
+
+Only the games that scan anyone change: for the good player one Exchange seed and four High Pines seeds, for the cautious one High Pines seed. Willow Lane, the Boardwalk and the Orchard play the same games. The stars come as before for both bots, so the game is no easier where a good player hires senior Consultants. Junior Consultants with a lab still make less than half of what senior ones do ($9.2k against $20.0k a month).
+
+**Still open:** a lab is worth building only by a player who hires junior Consultants, and then only just. A player with rank 3 Consultants, or who trains their Consultants up, never sends anyone for a scan.
+
 ## 17 October 2026, after midnight: waits
 
 ### 20. Nothing said which stage held guests up, or why
