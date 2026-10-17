@@ -9,6 +9,7 @@ import { archiveAutosave, AUTOSAVE_ID, readSave } from '../storage/saves';
 import { loadDisciplinePrefs, loadSandbox } from '../storage/settings';
 import { showTitle } from '../ui';
 import { desktop } from './desktop';
+import { fullScreen } from './fullscreen';
 import { startGame } from './game';
 import { takeHandoff } from './handoff';
 import { newGameCenter } from './start';
@@ -31,7 +32,7 @@ export async function boot() {
   let opened = open(what);
   while (!opened || opened === 'no-room') {
     if (opened === 'no-room') logger.warn('No room to keep the autosave, so the new game did not start');
-    what = await showTitle(audio, exit, updates, opened === 'no-room' ? NO_ROOM : '');
+    what = await showTitle(audio, exit, updates, fullScreen, opened === 'no-room' ? NO_ROOM : '');
     audio.unlock();
     opened = open(what);
   }
@@ -41,7 +42,7 @@ export async function boot() {
   // so every report from here on says which game it came from
   setTag('center', opened.center);
   setTag('game', kind);
-  startGame({ canvas, audio, state: opened, exit, updates });
+  startGame({ canvas, audio, state: opened, exit, updates, fullScreen });
 }
 
 /** Why a game was not opened, when keeping the one in the autosave would not fit in storage. */

@@ -6,7 +6,7 @@ import type { Audio } from '../audio';
 import { FloaterLayer, Hud as HudView } from './components/Hud';
 import { TitleScreen } from './components/TitleScreen';
 import { byId } from './dom';
-import type { GameHost, UpdateOffer } from './host';
+import type { FullScreenSwitch, GameHost, UpdateOffer } from './host';
 import { HudState } from './hud';
 import { installTooltips } from './tooltip';
 
@@ -26,6 +26,7 @@ export function showTitle(
   audio: Audio,
   exit: (() => void) | undefined,
   update: UpdateOffer | undefined,
+  fullScreen: FullScreenSwitch | undefined,
   note = '',
 ): Promise<string> {
   return new Promise((resolve) => {
@@ -38,6 +39,9 @@ export function showTitle(
       el.remove();
       resolve(what);
     };
-    render(<TitleScreen audio={audio} exit={exit} update={update} note={note} onPick={finish} />, el);
+    render(
+      <TitleScreen audio={audio} exit={exit} update={update} fullScreen={fullScreen} note={note} onPick={finish} />,
+      el,
+    );
   });
 }

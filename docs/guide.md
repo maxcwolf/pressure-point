@@ -105,6 +105,8 @@ Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupunct
 
 **Settings**, on the title screen and in the pause menu (☰), switches acupuncture, reiki, sound healing, the Shaman and the Qi Gong classes on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Under **Building**, **Item stats** chooses where the Items menu shows what each item does: in the tooltip, in a side panel, or on the cards. **Preview while placing** switches off the hint and floor coloring that show what an item in hand would change. Sound and music are there too.
 
+In the desktop app, **Full screen** under **Display** fills the screen with the game, and the app opens the same way the next time. Leaving full screen any other way switches the setting off with it: the green button or Ctrl+Cmd+F on a Mac, F11 on Windows, or **Game › Toggle Full Screen** in the menu. The browser version has no such switch, and leaves full screen to the browser.
+
 The **Controls** there are kept for every game on this computer: **edge scrolling** (off to begin with), how often the game **autosaves** (every 12 seconds, every minute, every 5 minutes, or only on leaving), and the **keys**. Click a key and press the one you want in its place; a key already in use swaps over. The arrow keys always move the camera and Esc always cancels, whatever the keys are set to.
 
 ## Controls

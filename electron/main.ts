@@ -3,7 +3,8 @@ import path from 'node:path';
 
 import { app, BrowserWindow, ipcMain, Menu, type MenuItemConstructorOptions, session, shell } from 'electron';
 
-import { QUIT_CHANNEL } from './api';
+import { FULL_SCREEN_CHANGED_CHANNEL, FULL_SCREEN_SET_CHANNEL, FULL_SCREEN_STATE_CHANNEL, QUIT_CHANNEL } from './api';
+import { loadWindowPrefs, saveWindowPrefs } from './prefs';
 import { startUpdates } from './updates';
 
 const isMac = process.platform === 'darwin';
@@ -17,8 +18,12 @@ const devIcon = app.isPackaged ? undefined : path.join(__dirname, '..', 'build',
 /** The Dock's icon for a dev run: macOS has its own, a rounded square, or it shrinks the icon onto a gray tile. */
 const devDockIcon = app.isPackaged ? undefined : path.join(__dirname, '..', 'build', 'icon-mac.png');
 
-/** Open the game window and load the game into it. */
+/** Where the window's settings are kept, beside the game's saves. */
+const prefsFile = () => path.join(app.getPath('userData'), 'window.json');
+
+/** Open the game window, full screen if the player left it that way, and load the game into it. */
 function createWindow() {
+  const prefs = loadWindowPrefs(prefsFile());
   const win = new BrowserWindow({
     width: 1440,
     height: 900,
@@ -27,6 +32,8 @@ function createWindow() {
     backgroundColor: '#a8d8c8',
     title: 'Pressure Point Institute',
     ...(devIcon && { icon: devIcon }),
+    // only when true: on macOS, `fullscreen: false` takes away the green button and full screen with it
+    ...(prefs.fullScreen && { fullscreen: true }),
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -37,6 +44,25 @@ function createWindow() {
   });
   win.once('ready-to-show', () => {
     win.show();
+  });
+  // However the window fills the screen or leaves it (the game's setting, the menu, the green button or its keys),
+  // the next launch opens it the same way, and the game's setting follows. Not while it closes, which can take it
+  // out of full screen on the way.
+  let closing = false;
+  win.on('close', () => {
+    closing = true;
+  });
+  /** Remember whether the window fills the screen, and tell the game. */
+  const follow = (fullScreen: boolean) => {
+    if (closing) return;
+    saveWindowPrefs(prefsFile(), { fullScreen });
+    win.webContents.send(FULL_SCREEN_CHANGED_CHANNEL, fullScreen);
+  };
+  win.on('enter-full-screen', () => {
+    follow(true);
+  });
+  win.on('leave-full-screen', () => {
+    follow(false);
   });
 
   // The built game is loaded as a file on purpose: saved games are kept per address,
@@ -76,6 +102,15 @@ app.on('web-contents-created', (_event, contents) => {
 ipcMain.on(QUIT_CHANNEL, (event) => {
   // only the game's own page may ask, not a frame inside it
   if (event.senderFrame === event.sender.mainFrame) app.quit();
+});
+ipcMain.handle(
+  FULL_SCREEN_STATE_CHANNEL,
+  (event) => BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false,
+);
+ipcMain.on(FULL_SCREEN_SET_CHANNEL, (event, on: unknown) => {
+  if (event.senderFrame !== event.sender.mainFrame || typeof on !== 'boolean') return;
+  // saved once the window has got there, by the window's own events
+  BrowserWindow.fromWebContents(event.sender)?.setFullScreen(on);
 });
 
 const gameMenu: MenuItemConstructorOptions[] = [
