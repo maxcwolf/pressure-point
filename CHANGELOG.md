@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.2
+
+- **No more vanishing on the walk to the orangery.** At The Orchard, guests walking between the main building and a building of its own no longer shrink away halfway along the pavement and grow back. People now arrive and leave past the far building, at the edge of the lot.
+- **Shorter shop lines.** A guest on their way out passes the shop by if every Shop Counter already has five waiting, instead of joining a line that filled the building after a big Qi Gong class. A sale is also quicker, so each counter serves more guests.
+
 ## v0.30.1
 
 - **Posture scans are worth having.** A guest sent to the Posture Lab now has a 10% better chance of their treatment working, shown as "📐 Scanned" in their inspector, and a scan costs $250. The lab only sees guests a junior Consultant is unsure about, so it pays off with junior Consultants on staff.
