@@ -31,8 +31,8 @@ import { offered, unlocked } from './treatments';
 /** How often guests turn up with a condition nobody on the payroll is trained in, against one they are. */
 export const UNTRAINED_PULL = 0.4;
 
-/** A discipline's following, 0 to 100. */
-export const followingOf = (s: Pick<GameState, 'following'>, d: Discipline) => s.following[d] ?? 0;
+/** A discipline's following, 0 to 100: a little to begin with, from the word that the center now offers it. */
+export const followingOf = (s: Pick<GameState, 'following'>, d: Discipline) => s.following[d] ?? FOLLOWING.start;
 
 /** How peaceful it is where guests are treated in a room, from 0 where they would call it noisy to 1 for peaceful. */
 function roomCalm(ctx: SimContext, room: Room): number {
@@ -195,6 +195,7 @@ export function followVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
   const d = MODALITIES[CONDITIONS.find((c) => c.id === g.condition)?.modality ?? 'swedish'].discipline;
   const now = followingOf(ctx.s, d);
   const gaveUp = (end === 'stormed' || end === 'worse') && g.goal === 'treat';
+  if (end === 'healed' || end === 'failed') (ctx.practised ??= new Set()).add(d);
   const change =
     end === 'healed'
       ? FOLLOWING.heal * (1 - now / 100)
@@ -206,10 +207,14 @@ export function followVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
   if (change) ctx.s.following[d] = clamp(now + change, 0, 100);
 }
 
-/** As a day passes, every following fades a little: a month with nobody to talk about it loses a tenth. */
+/**
+ * As a day passes, the following of each discipline nobody was treated in that day fades a little: a month with nobody
+ * treated loses a twentieth. One practised keeps its following, for better or worse.
+ */
 export function fadeFollowing(ctx: SimContext) {
   for (const d of DISCIPLINE_ORDER) {
     const now = ctx.s.following[d];
-    if (now) ctx.s.following[d] = now * (1 - FOLLOWING.fade / 30);
+    if (now && !ctx.practised?.has(d)) ctx.s.following[d] = now * (1 - FOLLOWING.fade / 30);
   }
+  ctx.practised?.clear();
 }

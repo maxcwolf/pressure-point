@@ -1,6 +1,7 @@
 // What every part of the simulation works on.
 
 import { IDEAL_TEMP } from '../data';
+import type { Discipline } from '../data/types';
 import type { GameState } from '../state/types';
 import { World } from '../world';
 import type { SimEvent } from './events';
@@ -24,6 +25,8 @@ export interface SimContext {
   classCalled?: number;
   /** How many times a class has been announced since the game was loaded, to take turns with the lines. */
   classCalls?: number;
+  /** The disciplines someone has been treated in today, whose followings do not fade tonight. */
+  practised?: Set<Discipline>;
 }
 
 /** Set up the working data for a game. */

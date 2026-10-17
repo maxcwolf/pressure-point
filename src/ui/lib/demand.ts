@@ -66,4 +66,4 @@ export function demandAdvice(row: DisciplineDemand): string | null {
 
 /** How the shares are made, for the top of the panel. */
 export const DEMAND_INTRO =
-  'Each new guest picks a discipline by its pull, then a condition within it. Its pull is how popular it is, times its following, its finest room and how much of it your staff are trained for. A following grows with every guest healed, shrinks with every one let down, and fades slowly when nobody comes.';
+  'Each new guest picks a discipline by its pull, then a condition within it. Its pull is how popular it is, times its following, its finest room and how much of it your staff are trained for. A following grows with every guest healed, shrinks with every one let down, and fades slowly while nobody is treated. A discipline new to the center starts with a little; one that heals more guests than it fails grows.';

@@ -4,6 +4,16 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 16 October 2026, later: a review of the above
+
+A review of the changes below found four things worth fixing before they were merged.
+
+### 6. A following could only shrink
+
+**Found:** with 3 for a heal (less as the following grows) against 4 for a failure, a discipline had to heal 57% of its guests to grow at all from nothing, and 69% to hold 40; a Trainee heals about 55%. A following also faded every day, even on a day its practitioners were busy, so a new discipline started at 0 and mostly stayed there: the opposite of growing with results.
+
+**Done:** a heal adds 5 (less as the following grows), a failure takes 3 and a guest who gives up waiting for their treatment 2. A discipline now holds its own healing about 40% of its guests from nothing, 50% at 40 and 75% at 80, so a following settles where the practitioners' results put it: about 27 for a discipline healing 45% of its guests, about 80 for one healing 75%. A discipline new to the center starts at 20 rather than 0, from the word that it is on offer, and a following fades only on a day nobody was treated in it, by a twentieth a month. The Guests tab and the guide said it faded "when nobody comes" when it faded every day; they now say what it does.
+
 ## 16 October 2026: practitioners, demand and Qi Gong
 
 ### How it was measured
@@ -75,5 +85,5 @@ In the full center afterwards, shares were more even (massage 27 to 34%, the oth
 **Still open:**
 
 - **Demand still does not grow with the center** (audit finding 3), which matters more than how it is split: arrivals that rise with each staffed discipline and with treatment rooms built.
-- **The following's numbers need checking in a well-run center** with the playtest bot: whether 3 for a heal against 4 for a failure lets a discipline with a typical success rate grow, and how fast.
+- **The following's numbers need checking in a well-run center** with the playtest bot. They were retuned the same day (6, above), but only on paper.
 - **The Sound Healer** (4, above).

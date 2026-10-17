@@ -8,6 +8,7 @@ import {
   chooseCondition,
   type DisciplineDemand,
   fadeFollowing,
+  followingOf,
   followVisit,
   UNTRAINED_PULL,
 } from '../../src/core/sim/demand';
@@ -100,8 +101,9 @@ describe('a following', () => {
   it('grows with each guest healed, less as it grows, and shrinks with each let down', () => {
     const c = twoRooms();
     c.s.following = {};
+    expect(followingOf(c.s, 'sound')).toBe(FOLLOWING.start);
     followVisit(c.ctx, guestFor('sound'), 'healed');
-    expect(c.s.following.sound).toBe(FOLLOWING.heal);
+    expect(c.s.following.sound).toBeCloseTo(FOLLOWING.start + FOLLOWING.heal * (1 - FOLLOWING.start / 100), 5);
     c.s.following.sound = 50;
     followVisit(c.ctx, guestFor('sound'), 'healed');
     expect(c.s.following.sound).toBe(50 + FOLLOWING.heal / 2);
@@ -115,16 +117,39 @@ describe('a following', () => {
     expect(c.s.following.sound).toBe(50 + FOLLOWING.heal / 2 - FOLLOWING.fail - FOLLOWING.walkout);
   });
 
-  it('fades by a tenth over a month with nobody to talk about', () => {
+  it('fades by a twentieth over a month with nobody treated, and not on a day someone is', () => {
     const c = twoRooms();
-    c.s.following = { massage: 50 };
-    for (let day = 0; day < 30; day++) fadeFollowing(c.ctx);
+    c.s.following = { massage: 50, sound: 50 };
+    for (let day = 0; day < 30; day++) {
+      followVisit(c.ctx, guestFor('sound'), 'failed');
+      c.s.following.sound = 50;
+      fadeFollowing(c.ctx);
+    }
     expect(c.s.following.massage).toBeCloseTo(50 * (1 - FOLLOWING.fade / 30) ** 30, 5);
-    expect(c.s.following.massage).toBeCloseTo(45, 0);
+    expect(c.s.following.massage).toBeCloseTo(47.5, 0);
+    expect(c.s.following.sound).toBe(50);
+    // a guest who gave up before their treatment was not treated
+    followVisit(c.ctx, guestFor('sound'), 'stormed');
+    fadeFollowing(c.ctx);
+    expect(c.s.following.sound).toBeLessThan(50 - FOLLOWING.walkout);
   });
 
-  it('starts with massage known, and anything new from nothing', () => {
+  it('holds its own with fewer heals than failures from nothing, but needs more as it grows', () => {
+    /** Where a following goes after one guest healed and one failed, at some healing rate, over many guests. */
+    const settle = (rate: number, from: number) => {
+      const c = twoRooms();
+      c.s.following = { sound: from };
+      for (let i = 0; i < 400; i++) followVisit(c.ctx, guestFor('sound'), (i * rate) % 1 < rate ? 'healed' : 'failed');
+      return c.s.following.sound ?? 0;
+    };
+    expect(settle(0.45, 0)).toBeGreaterThan(5);
+    expect(settle(0.45, 80)).toBeLessThan(40);
+    expect(settle(0.75, 20)).toBeGreaterThan(60);
+  });
+
+  it('starts with massage known, and anything new with a little', () => {
     expect(newGame().following).toEqual({ massage: FOLLOWING.established });
+    expect(followingOf(newGame(), 'reiki')).toBe(FOLLOWING.start);
   });
 
   it('carries on in an older save as if every discipline it had a room for were known', () => {
@@ -136,12 +161,12 @@ describe('a following', () => {
     expect(s.following).toEqual({ massage: FOLLOWING.established, sound: FOLLOWING.established });
   });
 
-  it('grows in play as its guests are healed', () => {
+  it('is kept in play as its guests are treated', () => {
     const c = twoRooms();
     c.s.following = { massage: 40 };
     c.s.open = true;
     runUntil(c.sim, () => (c.s.stats.healedBy.sound ?? 0) > 0, 1500);
-    expect(c.s.following.sound ?? 0).toBeGreaterThan(0);
+    expect(c.s.following.sound).toBeDefined();
   });
 });
 

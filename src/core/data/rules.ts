@@ -218,11 +218,12 @@ export const SOUND_MATS: readonly number[] = [2, 2, 3, 3, 4];
  */
 export const ROOM_PULL = { star: 0.35, calm: 0.6, mat: 0.2, max: 3 } as const;
 /**
- * A discipline's following, from 0 (nobody has heard of it) to 100: where massage starts in a new game, what each guest
- * healed adds (less as it grows), what each failure or guest who gives up takes away, and how much of it fades in a
- * month with nobody to talk about.
+ * A discipline's following, from 0 (nobody has heard of it) to 100: where a discipline new to the center starts, and
+ * massage in a new game; what each guest healed adds (less as it grows), what each failure or guest who gives up takes
+ * away, and how much of it fades in a month with nobody treated. A discipline healing about 40% of its guests holds
+ * its own from nothing, 50% at 40 and 75% at 80.
  */
-export const FOLLOWING = { established: 40, heal: 3, fail: 4, walkout: 2, fade: 0.1 } as const;
+export const FOLLOWING = { start: 20, established: 40, heal: 5, fail: 3, walkout: 2, fade: 0.05 } as const;
 /** How a following multiplies how often guests come for a discipline: half as often with none, up to 2.5× at 100. */
 export const followingPull = (following: number) => 0.5 + following / 50;
 
