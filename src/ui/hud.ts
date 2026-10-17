@@ -22,7 +22,17 @@ export type RoomsTab = 'rooms' | 'templates';
 export type StatsTab = 'charts' | 'guests' | 'reputation' | 'standing' | 'casebook' | 'regulars' | 'awards';
 
 export type DialogId =
-  'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards' | 'visit' | 'buy-plot' | 'update';
+  | 'pause'
+  | 'settings'
+  | 'saves'
+  | 'confirm-new'
+  | 'confirm-fire'
+  | 'star'
+  | 'karma'
+  | 'awards'
+  | 'visit'
+  | 'buy-plot'
+  | 'update';
 
 /** A message that fades after a few seconds. */
 export interface Toast {
@@ -74,6 +84,8 @@ export class HudState {
   landPointedAt: string | null = null;
   /** The plot of land asked about in the dialog to buy it. */
   plotAsked: string | null = null;
+  /** The member of staff asked about in the dialog to let them go. */
+  fireAsked: number | null = null;
   /** What the floor is colored by, if anything, and whether the list to choose from is open. */
   overlay: OverlayMode | null = null;
   overlayPicker = false;
@@ -193,6 +205,12 @@ export class HudState {
   askToBuy(plotId: string) {
     this.plotAsked = plotId;
     this.open('buy-plot');
+  }
+
+  /** Ask whether to let a member of staff go, in a dialog over the game. */
+  askToFire(staffId: number) {
+    this.fireAsked = staffId;
+    this.open('confirm-fire');
   }
 
   /** Open a dialog over the game, pausing it. */

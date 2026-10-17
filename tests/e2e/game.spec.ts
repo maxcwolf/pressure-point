@@ -649,6 +649,41 @@ test.describe('staff', () => {
     await game.menu('Treatments');
     await expect(game.card('Deep Tissue')).toContainText('1 qualified');
   });
+
+  test('are let go only once the player says they are sure', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const name = await game.eval((pp) => {
+      pp.state.speed = 0;
+      const st = pp.state.staff.find((x) => x.role === 'consultant')!;
+      pp.tools.select({ kind: 'staff', id: st.id });
+      return st.name;
+    });
+    const insp = page.locator('#inspector');
+    const modal = page.locator('#modal');
+    /** Whether the consultant is on their way out. */
+    const leaving = () => game.eval((pp) => pp.state.staff.find((x) => x.role === 'consultant')?.state === 'leaving');
+
+    // Esc backs out, and so does keeping them on
+    await insp.getByRole('button', { name: 'Let go' }).click();
+    await expect(modal.locator('h2')).toHaveText(`Are you sure you want to fire ${name}?`);
+    await page.keyboard.press('Escape');
+    await expect(modal).toBeEmpty();
+    await insp.getByRole('button', { name: 'Let go' }).click();
+    await modal.getByRole('button', { name: 'Keep them on' }).click();
+    await expect(modal).toBeEmpty();
+    expect(await leaving()).toBe(false);
+    await expect(insp.locator('h3')).toHaveText(name);
+
+    await insp.getByRole('button', { name: 'Let go' }).click();
+    await modal.getByRole('button', { name: 'Let go' }).click();
+    await expect(modal).toBeEmpty();
+    await expect(page.locator('#toasts')).toContainText(`${name} has been let go.`);
+    await expect(insp).toBeEmpty();
+    expect(await game.eval((pp) => pp.state.staff.some((x) => x.role === 'consultant' && x.state !== 'leaving'))).toBe(
+      false,
+    );
+  });
 });
 
 test.describe('running a center', () => {
