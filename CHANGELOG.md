@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.7
+
+- **A quieter Qi Gong call at speed.** The announcement that a class is starting is now heard as often at 2x and 3x speed as at normal speed, instead of two or three times as often.
+- **A tidier Cancel course button.** It now sits under a Training heading with the staff inspector's other actions and looks like them.
+
 ## v0.30.6
 
 - **Cancel a course.** A member of staff on a course has a Cancel course button in their inspector. After you confirm, they go back to work and the whole fee is refunded. They don't gain the qualification.
