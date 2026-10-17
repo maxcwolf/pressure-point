@@ -37,10 +37,10 @@ import { hasGeneral } from './careers';
 import { lobbyTile, say, staffById, streetTile } from './chars';
 import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
-import { missClass } from './classes';
+import { missClass, missToast } from './classes';
 import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
-import { emit, tipOnce } from './events';
+import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
 import { campaignBoost } from './marketing';
 import { goTo, halt, moveAlong } from './movement';
@@ -344,7 +344,8 @@ function waitingThink(ctx: SimContext, g: Guest) {
     }
     // no class to go to after all
     if (g.goal === 'class') {
-      missClass(ctx, g);
+      missClass(ctx, g, 'no-spot');
+      toast(ctx, missToast(1, g.classDay, 'no-spot'), 'bad');
       return;
     }
     // no shop to buy anything in after all

@@ -60,8 +60,23 @@ export interface Room {
   booked?: ClassBooking;
   /** The day a Qi Gong Studio last started a class, so each class day has one class. */
   lastClass?: number;
+  /** A Qi Gong Studio's latest class days that passed without a class, and why, to tell its class-goers. */
+  missed?: MissedClass[];
   /** The day a Shaman's blessing on it runs out, once it has had one. */
   blessedUntil?: number;
+}
+
+/**
+ * Why a class-goer went home without a class: no Instructor on the payroll, the Instructor resting or otherwise away
+ * from the mat on the day, the class before still going, they got there after it ended, the day taken off the
+ * timetable, or no Practice Spot to use.
+ */
+export type ClassMiss = 'no-instructor' | 'break' | 'no-lead' | 'overran' | 'late' | 'off' | 'no-spot';
+
+/** A class day that passed without a class, and why. */
+export interface MissedClass {
+  day: number;
+  why: ClassMiss;
 }
 
 /** How a Qi Gong class filled up: its day, how many booked a place, and how many were turned away. */
@@ -298,6 +313,8 @@ export interface Guest extends CharBase {
   calmed: boolean;
   /** For a class-goer, the day of the Qi Gong class they came for; 0 for anyone come for a treatment. */
   classDay: number;
+  /** For a class-goer who went home without a class, why. */
+  missed?: ClassMiss;
   /** For a regular back for another visit, who they are among the regulars. */
   regular?: number;
 }

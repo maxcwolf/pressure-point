@@ -13,18 +13,19 @@ import {
   CLASS_PLACES,
   CLASS_SECONDS,
   ITEMS,
+  WEEKDAYS,
   XP_PER_GUEST,
 } from '../data';
 import { rnd } from '../random';
 import { offeringOn } from '../state/game';
-import type { Guest, Item, Room, Staff } from '../state/types';
+import type { ClassMiss, Guest, Item, Room, Staff } from '../state/types';
 import { at, clamp } from '../util';
 import { prestige } from './ambience';
 import { gainXp, habitOf, hasGeneral } from './careers';
 import { guestById, say } from './chars';
 import type { SimContext } from './context';
 import { changeRep, earn, priceFor } from './economy';
-import { emit, tipOnce } from './events';
+import { emit, tipOnce, toast } from './events';
 import { feel, writeReview } from './feelings';
 import { decide, leave, spawnGuest } from './guests';
 import { feelNoise, itemNoise } from './noise';
@@ -198,9 +199,10 @@ export function completeClass(ctx: SimContext, spot: Item, g: Guest, staff: Staf
   decide(ctx, g);
 }
 
-/** A class-goer whose class never happened gives up and goes home, and says so. */
-export function missClass(ctx: SimContext, g: Guest) {
+/** A class-goer whose class never happened gives up and goes home, and says so, and why. */
+export function missClass(ctx: SimContext, g: Guest, why: ClassMiss) {
   g.outcome = 'class';
+  g.missed = why;
   feel(g, 'no-class');
   writeReview(ctx, g, 'missed');
   changeRep(ctx, -1);
@@ -220,18 +222,96 @@ function finishClass(ctx: SimContext, lead: Item, staff: Staff) {
   if (held) ctx.s.stats.classes++;
 }
 
+/** How many missed class days a studio keeps, to tell the class-goers who waited for them why. */
+const MISSED_KEPT = 4;
+
+/**
+ * As a day begins, note any studio whose class day has just passed without a class, and why: the class before it
+ * still going, the Instructor resting or otherwise away from the mat, or nobody there in time to start one.
+ */
+export function noteMissedClasses(ctx: SimContext) {
+  const day = Math.floor(ctx.s.day) - 1;
+  if (!offeringOn(ctx.s, 'qigong')) return;
+  for (const room of studios(ctx)) {
+    if (!classOn(room, day) || room.lastClass === day) continue;
+    const lead = leadIn(ctx, room);
+    const staff = lead && stationStaff(ctx, lead);
+    const instructor = bestInstructor(ctx);
+    let why: ClassMiss = 'late';
+    if (lead?.progress) why = 'overran';
+    else if (!instructor) why = 'no-instructor';
+    else if (instructor.state === 'toBreak' || instructor.state === 'onBreak') why = 'break';
+    else if (staff?.state !== 'atPost') why = 'no-lead';
+    room.missed = [...(room.missed ?? []), { day, why }].slice(-MISSED_KEPT);
+  }
+}
+
+/** Why a class-goer's class never happened for them, from what became of their studio's class day. */
+function missReason(ctx: SimContext, g: Guest, room: Room | undefined): ClassMiss {
+  if (!bestInstructor(ctx)) return 'no-instructor';
+  if (!room) return 'no-spot';
+  if (!classOn(room, g.classDay)) return 'off';
+  return room.missed?.find((m) => m.day === g.classDay)?.why ?? 'late';
+}
+
+/** Why a class-goer went home without a class, in a few words. */
+export function missNote(why: ClassMiss): string {
+  switch (why) {
+    case 'no-instructor':
+      return 'there was no Instructor to lead the class';
+    case 'break':
+      return 'the Instructor was on a break';
+    case 'no-lead':
+      return 'the Instructor never came to the mat';
+    case 'overran':
+      return 'the class before was still going';
+    case 'late':
+      return 'they got there after the class';
+    case 'off':
+      return 'the class was taken off the timetable';
+    case 'no-spot':
+      return 'there was no Practice Spot to use';
+  }
+}
+
+/** What the player is told when class-goers booked for a day's class go home without one. */
+export function missToast(count: number, day: number, why: ClassMiss): string {
+  const who = count === 1 ? 'A class-goer' : `${count} class-goers`;
+  const when = `${WEEKDAYS[weekday(day)] ?? ''}’s class`;
+  const because = {
+    'no-instructor': `there is no Qi Gong Instructor to lead ${when}. Hire one.`,
+    break: `${when} never started, as the Instructor was worn out and on a break. A better Staff Room helps.`,
+    'no-lead': `${when} never started, as the Instructor was not at their mat.`,
+    overran: `${when} never started, as the class before it was still going.`,
+    late: `they got to the studio after ${when} had finished.`,
+    off: `${when} was taken off the timetable after they booked.`,
+    'no-spot': `there was no Practice Spot to use for ${when}.`,
+  }[why];
+  return `${who} went home disappointed: ${because}`;
+}
+
 /**
  * As a day begins, class-goers whose class day is long gone without a class give up and go home: no Instructor came,
- * or they never got to a spot. Anyone in a class going on now stays for the end of it.
+ * or they never got to a spot. Anyone in a class going on now stays for the end of it. The player is told why, once
+ * for each class and reason.
  */
 export function giveUp(ctx: SimContext) {
   const today = Math.floor(ctx.s.day);
+  const groups = new Map<string, { room: Room | undefined; day: number; why: ClassMiss; count: number }>();
   for (const g of [...ctx.s.guests]) {
     if (!g.classDay || g.goal !== 'class' || g.state === 'leaving' || today < g.classDay + CLASS_PATIENCE) continue;
-    const spot = g.state === 'served' ? ctx.world.item(g.station) : undefined;
-    if (spot && classPlaying(ctx, spot)) continue;
-    missClass(ctx, g);
+    const spot = ctx.world.item(g.station);
+    if (spot && g.state === 'served' && classPlaying(ctx, spot)) continue;
+    const room = (spot && ctx.world.roomOfItem(spot)) ?? studios(ctx)[0];
+    const why = missReason(ctx, g, room);
+    missClass(ctx, g, why);
+    const key = `${room?.id ?? 0}:${g.classDay}:${why}`;
+    const group = groups.get(key) ?? { room, day: g.classDay, why, count: 0 };
+    group.count++;
+    groups.set(key, group);
   }
+  for (const { room, day, why, count } of groups.values())
+    toast(ctx, missToast(count, day, why), 'bad', room && { kind: 'room', id: room.id });
 }
 
 /** Switch a day of the week on or off in a studio's timetable. False if there is no such studio. */

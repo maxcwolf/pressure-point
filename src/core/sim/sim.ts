@@ -78,6 +78,7 @@ import {
   classPlaces,
   classPlaying,
   giveUp,
+  noteMissedClasses,
   setClasses,
   toggleClassDay,
 } from './classes';
@@ -152,6 +153,7 @@ export class Sim {
     const prevDay = Math.floor(s.day);
     s.day += dt / DAY_SECONDS;
     if (Math.floor(s.day) !== prevDay) {
+      noteMissedClasses(ctx);
       giveUp(ctx);
       bookClasses(ctx);
       announceClasses(ctx);

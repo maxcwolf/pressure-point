@@ -2,6 +2,7 @@
 
 import { DISCIPLINES, GENERAL_COURSES, isGeneral, ITEMS, modalityLabel, ROOMS } from '../../core/data';
 import { slots, trained, xpToNext } from '../../core/sim/careers';
+import { missNote } from '../../core/sim/classes';
 import type { Sim } from '../../core/sim/sim';
 import type { CourseId, Guest, Staff } from '../../core/state/types';
 
@@ -22,7 +23,8 @@ function classgoerStatus(g: Guest, sim: Sim): string {
     case 'served':
       return spot && sim.classPlaying(spot) ? 'In the Qi Gong class' : 'On their Practice Spot, waiting for the class';
     case 'leaving':
-      if (g.feelings.includes('no-class')) return 'Going home: the class never happened';
+      if (g.feelings.includes('no-class'))
+        return g.missed ? `Going home without a class: ${missNote(g.missed)}` : 'Going home: the class never happened';
       return g.outcome === 'class' ? 'Going home after the class' : 'Leaving';
     default:
       return spot ? 'Waiting for a place in the class' : 'Looking for a Qi Gong Studio';
