@@ -5,6 +5,11 @@ import type { CampaignDef, CampaignKind } from './types';
 
 /** The chance a treated guest stops at the Shop Counter on the way out, by the stars they gave their visit. */
 export const SHOP_CHANCE: readonly number[] = [0, 0.05, 0.15, 0.35, 0.55, 0.75];
+/**
+ * A guest who would stop at the Shop Counter goes straight home instead if even its shortest line already has this many
+ * waiting: someone only buying a candle on the way out does not stand in a long line for it.
+ */
+export const SHOP_LINE_SKIP = 5;
 /** What they spend there, before a little either way, by the same stars. */
 export const SHOP_SPEND: readonly number[] = [0, 20, 30, 45, 70, 100];
 /** What they leave with, for the bubble over their head. */

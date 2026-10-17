@@ -286,6 +286,22 @@ describe('people', () => {
     }
   });
 
+  // at the Orchard the end of the pavement lay between the main building and the orangery, so anyone walking from one
+  // to the other shrank away there and grew back
+  it('puts the ends of the sidewalk past a building standing apart, as far as the edge of the lot', () => {
+    const [d0, d1] = SANDBOX_PLOT.door;
+    const east = { side: 'south' as const, x: d1 + 20, y: SANDBOX_PLOT.y1 };
+    const west = { side: 'south' as const, x: d0 - 18, y: SANDBOX_PLOT.y1 };
+    const apart = footprintOf(SANDBOX_PLOT, [], { entrances: [east] });
+    expect(streetEnds(apart, 100)).toEqual([d0 - STREET_WALK, east.x + STREET_WALK]);
+    expect(streetEnds(apart, d1 + 25)).toEqual([d0 - STREET_WALK, d1 + 24]);
+    const both = footprintOf(SANDBOX_PLOT, [], { entrances: [west, east] });
+    expect(streetEnds(both, 100)[0]).toBe(Math.max(0, west.x - STREET_WALK));
+    // one within the usual walk moves nothing
+    const near = footprintOf(SANDBOX_PLOT, [], { entrances: [{ ...east, x: d1 + 2 }] });
+    expect(streetEnds(near, 100)[1]).toBe(Math.max(d1 + STREET_WALK, d1 + 2 + STREET_WALK));
+  });
+
   it('shows a speech bubble for a while', () => {
     const st = recruit('receptionist');
     say(st, '💰', 5);

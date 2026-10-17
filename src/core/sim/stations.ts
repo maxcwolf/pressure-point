@@ -19,6 +19,7 @@ import {
   SERVICE_SPEED,
   SHOP_CHANCE,
   SHOP_ICONS,
+  SHOP_LINE_SKIP,
   SHOP_SPEND,
   STONE_USE,
   traitOf,
@@ -447,9 +448,14 @@ export function shopSpend(stars: number): number {
   return Math.round((at(SHOP_SPEND, clamp(stars, 0, SHOP_SPEND.length - 1)) * rnd(0.8, 1.2)) / 5) * 5;
 }
 
-/** Whether a treated guest stops at the Shop Counter on the way out: likelier the better their visit went. */
+/**
+ * Whether a treated guest stops at the Shop Counter on the way out: likelier the better their visit went, and not at
+ * all if every counter already has a line of `SHOP_LINE_SKIP`.
+ */
 export function wantsToShop(ctx: SimContext, g: Guest): boolean {
-  if (!ctx.s.items.some((i) => i.type === 'shop_counter' && ctx.world.usable(i))) return false;
+  const counters = ctx.s.items.filter((i) => i.type === 'shop_counter' && ctx.world.usable(i));
+  if (!counters.length) return false;
+  if (Math.min(...counters.map((i) => i.queue.length)) >= SHOP_LINE_SKIP) return false;
   return random() < at(SHOP_CHANCE, clamp(visitStars(g), 0, SHOP_CHANCE.length - 1));
 }
 

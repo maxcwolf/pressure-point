@@ -61,7 +61,7 @@ export const QIGONG_SETTING = {
 } as const;
 
 /** What a place in a Qi Gong class costs at standard prices. */
-export const CLASS_FEE = 120;
+export const CLASS_FEE = 130;
 /** The days of the week a new Qi Gong Studio holds classes: Monday, Wednesday and Friday. */
 export const CLASS_DAYS: readonly number[] = [0, 2, 4];
 /** The days of the week, from Monday, as the timetable shows them. */
@@ -76,8 +76,11 @@ export const BOOK_AHEAD = 2;
 export const CLASS_CALL_GAP = 14;
 /** How many class-goers a week each Practice Spot draws at 50% reputation, shared among the week's classes. */
 export const CLASS_INTEREST = 2.5;
-/** How many Practice Spots a Qi Gong Instructor can lead a class on, by rank from Trainee to Expert. */
-export const CLASS_PLACES: readonly number[] = [6, 8, 10, 13, 16];
+/**
+ * How many Practice Spots a Qi Gong Instructor can lead a class on, by rank from Trainee to Expert. Kept to 12 at most:
+ * a bigger class sent more guests into the center at once, to the shop and the restrooms, than it could cope with.
+ */
+export const CLASS_PLACES: readonly number[] = [6, 8, 9, 11, 12];
 
 /** How long a guest lies back in a Recovery Lounge after a treatment that leaves them needing a rest. */
 export const REST_SECONDS = 15;

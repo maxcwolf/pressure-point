@@ -4,11 +4,11 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
-## 17 October 2026, morning: the bot plays more like a good player
+## 17 October 2026, evening: the bot plays more like a good player
 
 Measured with `yarn balance` from `3d14f44` (0.30.1): every campaign center at seeds 1 to 6, four years a game, against the same bot before this change. Profit, waits, guests and reputation are averaged from the second year on; months at a loss are of all 48. With the new behaviours switched off (`BOT_OFF=clear,kit,emergencies,layout,mats,courses`) the bot plays all 30 games move for move as before.
 
-### 22. The good player left easy wins on the table, and twice wrecked a game
+### 23. The good player left easy wins on the table, and twice wrecked a game
 
 **Found:** watching the bot's games turned up things no good player would do, or fail to do:
 
@@ -63,6 +63,14 @@ The game it lost at High Pines (seed 2) never met the second star's 93% patience
 - **Qi Gong classes crowd out the treatment guests.** Class-goers arrive whatever the guest cap (14 and 5 a room), but count against it while they wait for their class and queue at the Shop Counter after it, and a new guest who finds the building full is not let in. At the Orchard, 50 guests were inside at a month's end with classes against 20 without, and treatment guests arrived 14.6 a month against 24. A class lets 13 or more out at once, nearly all to the Shop Counter, whose line reached 40 to 70 at Willow Lane before the bot learned to add counters. Classes earn $120 a head, and the guests they keep out $1,000 to $2,500, so even sized to the room left, a studio cost the bot money everywhere but Willow Lane.
 
 **Still open:** the bot's first star at High Pines comes a little later than before (6.2 months against 5.0), and its third later (28.5 against 24.6) in the games that earn it, as kit and upgrades come before the rooms that a long winter needs.
+
+## 17 October 2026, afternoon: smaller Qi Gong classes
+
+### 22. A class of 16 overwhelmed the center
+
+**Found** (in play, at the Orchard Estate): a class of 16 to 20 ends all at once, and up to three quarters of its class-goers head for the Shop Counter and the restrooms together, three times a week. The shop line reached 108, the class-goers filled the corridors and counted against the building's guest limit, keeping paying guests out.
+
+**Done:** an Instructor leads at most 12, from 6 as a Trainee: 6, 8, 9, 11 and 12 by rank (`CLASS_PLACES`, was 6, 8, 10, 13 and 16), so Trainees and Juniors are as before. A place costs $130 at standard prices (`CLASS_FEE`, was $120): an Expert's full class brings in $1,560 against $1,920, a fifth less, for a quarter fewer people in the building. Not measured with the bots, which rarely run a Qi Gong Studio to its full size; to be judged in play.
 
 ## 17 October 2026, after midnight: the Posture Lab
 

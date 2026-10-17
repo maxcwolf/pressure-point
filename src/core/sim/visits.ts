@@ -273,7 +273,7 @@ export function inspectionGap(s: GameState): number {
 
 /** Bring in the visitor who wrote ahead. False if they cannot get in yet. */
 function arrive(ctx: SimContext, notice: VisitNotice): boolean {
-  const [x, y] = streetTile(ctx.world.building);
+  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
   const v: Visitor = {
     // the name was a woman's or a man's, and the look that turns up follows it
     ...newChar(ctx, notice.name, randomLook(sexOfName(notice.name) ?? rollSex(WOMEN_VISIT)), x, y),
@@ -323,7 +323,7 @@ export function nextRoom(ctx: SimContext, v: Visitor): boolean {
     v.tour.shift();
   }
   v.state = 'leaving';
-  const [x, y] = streetTile(ctx.world.building);
+  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
   if (goTo(ctx, v, x, y)) return true;
   finishVisit(ctx, v);
   return false;
