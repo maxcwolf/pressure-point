@@ -120,6 +120,14 @@ export function bookClasses(ctx: SimContext) {
       );
     const interest = weeklyInterest(spots, s.reputation, instructor.skill);
     const size = classSize(interest, classDays(room).length, spots, rnd(0.8, 1.2));
+    if (size.turned > 0 && classDays(room).length < 7)
+      tipOnce(
+        ctx,
+        'class-full',
+        `${WEEKDAYS[weekday(day)] ?? ''}’s Qi Gong class is full, with ${size.turned} more turned away. Each week's class-goers are shared among its classes: switch on another class day in the studio to fit more in.`,
+        'info',
+        { kind: 'room', id: room.id },
+      );
     room.booked = { day, ...size };
     for (let i = 0; i < size.count; i++) s.arrivals.push({ at: today + rnd(0.05, 0.6), day });
   }
@@ -195,6 +203,7 @@ export function completeClass(ctx: SimContext, spot: Item, g: Guest, staff: Staf
   writeReview(ctx, g, 'class');
   changeRep(ctx, 0.5);
   say(g, '🙏', 5);
+  delete g.missed;
   g.goal = wantsToShop(ctx, g) ? 'shop' : 'leave';
   decide(ctx, g);
 }
@@ -210,16 +219,27 @@ export function missClass(ctx: SimContext, g: Guest, why: ClassMiss) {
   leave(ctx, g);
 }
 
-/** A class comes to its end: everyone on a spot has had it. */
+/**
+ * A class comes to its end: everyone on a spot has had it. If every spot was taken, anyone still waiting for one, for
+ * this class or an earlier one, missed it for want of a place.
+ */
 function finishClass(ctx: SimContext, lead: Item, staff: Staff) {
-  let held = false;
-  for (const spot of matsOf(ctx, lead)) {
+  const spots = matsOf(ctx, lead);
+  let held = 0;
+  for (const spot of spots) {
     const g = guestById(ctx, spot.serving);
     if (g?.state !== 'served' || !g.classDay) continue;
     completeClass(ctx, spot, g, staff);
-    held = true;
+    held++;
   }
   if (held) ctx.s.stats.classes++;
+  if (held < spots.length) return;
+  const today = Math.floor(ctx.s.day);
+  for (const spot of spots)
+    for (const id of spot.queue) {
+      const g = guestById(ctx, id);
+      if (g?.goal === 'class' && g.classDay && g.classDay <= today) g.missed = 'full';
+    }
 }
 
 /** How many missed class days a studio keeps, to tell the class-goers who waited for them why. */
@@ -251,7 +271,7 @@ function missReason(ctx: SimContext, g: Guest, room: Room | undefined): ClassMis
   if (!bestInstructor(ctx)) return 'no-instructor';
   if (!room) return 'no-spot';
   if (!classOn(room, g.classDay)) return 'off';
-  return room.missed?.find((m) => m.day === g.classDay)?.why ?? 'late';
+  return room.missed?.find((m) => m.day === g.classDay)?.why ?? (g.missed === 'full' ? 'full' : 'late');
 }
 
 /** Why a class-goer went home without a class, in a few words. */
@@ -271,6 +291,8 @@ export function missNote(why: ClassMiss): string {
       return 'the class was taken off the timetable';
     case 'no-spot':
       return 'there was no Practice Spot to use';
+    case 'full':
+      return 'every Practice Spot was taken';
   }
 }
 
@@ -286,6 +308,7 @@ export function missToast(count: number, day: number, why: ClassMiss): string {
     late: `they got to the studio after ${when} had finished.`,
     off: `${when} was taken off the timetable after they booked.`,
     'no-spot': `there was no Practice Spot to use for ${when}.`,
+    full: `every Practice Spot was taken by the time they got to ${when}. Another class day, or more spots, would fit them in.`,
   }[why];
   return `${who} went home disappointed: ${because}`;
 }

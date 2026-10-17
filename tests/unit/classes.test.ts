@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { CLASS_CALL_GAP, CLASS_DAYS, CLASS_FEE, DAY_SECONDS, ITEMS, ROOMS } from '../../src/core/data';
+import { CLASS_CALL_GAP, CLASS_DAYS, CLASS_FEE, CLASS_PATIENCE, DAY_SECONDS, ITEMS, ROOMS } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import {
   CLASS_LINES,
@@ -12,6 +12,7 @@ import {
   classOn,
   classPlaces,
   classSize,
+  giveUp,
   missNote,
   missToast,
   noteMissedClasses,
@@ -118,7 +119,9 @@ describe('how many an Instructor can lead', () => {
     run(sim, 1);
     expect(room.booked).toMatchObject({ day: 4, count: 6 });
     expect(room.booked?.turned).toBeGreaterThan(0);
-    expect(sim.drain().some((e) => e.type === 'toast' && e.text.includes('can lead a class of 6'))).toBe(true);
+    const told = toasts(sim.drain());
+    expect(told.some((t) => t.includes('can lead a class of 6'))).toBe(true);
+    expect(told.some((t) => t.includes('class is full') && t.includes('switch on another class day'))).toBe(true);
     expect(sim.classLeader()?.places).toBe(6);
     // an Expert leads every spot built
     if (teacher) teacher.skill = 5;
@@ -276,6 +279,28 @@ describe('a class in play', () => {
     expect(missToast(4, 7, 'overran')).toBe(
       '4 class-goers went home disappointed: Mon’s class never started, as the class before it was still going.',
     );
+    expect(missNote('full')).toBe('every Practice Spot was taken');
+    expect(missToast(2, 9, 'full')).toBe(
+      '2 class-goers went home disappointed: every Practice Spot was taken by the time they got to Wed’s class. Another class day, or more spots, would fit them in.',
+    );
+  });
+
+  it('tells class-goers left waiting when every spot was taken that the class was full', () => {
+    const { sim, s } = studio();
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    // Friday's class booked, and three more for it than that, more than its three spots
+    run(sim, 1);
+    for (let i = 0; i < 3; i++) spawnGuest(ctx, undefined, false, 4);
+    runUntil(sim, () => s.stats.classes > 0, 6 * DAY_SECONDS);
+    const left = s.guests.filter((g) => g.classDay === 4 && g.goal === 'class');
+    expect(left.length).toBeGreaterThan(0);
+    expect(left.every((g) => g.missed === 'full')).toBe(true);
+    // still waiting when they give up, three days on
+    s.day = 4 + CLASS_PATIENCE;
+    sim.drain();
+    giveUp(ctx);
+    expect(left[0] && guestStatus(left[0], sim)).toBe('Going home without a class: every Practice Spot was taken');
+    expect(toasts(sim.drain())).toContainEqual(expect.stringContaining('every Practice Spot was taken by the time'));
   });
 
   it('keeps the Instructor at the mat to the end, however tired, rather than send its class-goers back to the line', () => {

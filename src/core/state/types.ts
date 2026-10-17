@@ -69,9 +69,9 @@ export interface Room {
 /**
  * Why a class-goer went home without a class: no Instructor on the payroll, the Instructor resting or otherwise away
  * from the mat on the day, the class before still going, they got there after it ended, the day taken off the
- * timetable, or no Practice Spot to use.
+ * timetable, no Practice Spot to use, or every place in the class taken by others.
  */
-export type ClassMiss = 'no-instructor' | 'break' | 'no-lead' | 'overran' | 'late' | 'off' | 'no-spot';
+export type ClassMiss = 'no-instructor' | 'break' | 'no-lead' | 'overran' | 'late' | 'off' | 'no-spot' | 'full';
 
 /** A class day that passed without a class, and why. */
 export interface MissedClass {

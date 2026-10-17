@@ -20,6 +20,18 @@ A review of the changes below found four things worth fixing before they were me
 
 **Done:** it asks for the discipline's own share of the guests, from the same demand the Guests tab shows, with the same 20% stretch as the challenge for the whole center (at least 3).
 
+### 8. "They got there after the class" was really "the class was full"
+
+**Found:** every class-goer told they got to the studio after their class had finished had in fact been there all along, waiting behind a full class. A class is booked up to its spots, but class-goers who missed one class day wait up to three days for the next, so they and the next day's class-goers can outnumber the spots. Nothing told the player when more wanted a place than there were.
+
+**Done:** when a class ends with every spot taken, anyone still waiting for that class or an earlier one is told the class was full, and so is the player when they give up: "every Practice Spot was taken… Another class day, or more spots, would fit them in." A tip says the same the first time a class is booked full with class-goers turned away. In the walkout probe (3, above) all 15 of the "late" were full classes.
+
+### 9. A fine room counted for as much as a big following
+
+**Found:** a room could triple its discipline's pull (up to 3 with five stars, a quiet room and spare mats), as much as a following of 75. Paired with a following that only shrank (6), the room was the one thing a player could do about demand, and a lavish Sound Bath Studio could draw nearly twice the guests of a plain Massage Suite with the same following, though sound healing is the less popular.
+
+**Done:** a room can at most double its discipline's pull. Results, through the following, now count for more than the room.
+
 ## 16 October 2026: practitioners, demand and Qi Gong
 
 ### How it was measured
@@ -51,7 +63,7 @@ The harness was not kept. Once `chore/balance-audit` is merged, its playtest bot
 
 A new studio briefly held classes on Monday and Thursday instead, to space them out, but the shorter class alone is enough: the same probe on Monday and Thursday had 8% disappointed (27 of 342) and 1 class day in 13 skipped, and fewer class-goers in all (315 against 465). Changing the default would also have quietly moved every older save's studio to two classes a week. A new studio still holds classes on Monday, Wednesday and Friday.
 
-**Still open:** half of the 6% left are Instructors on a break that takes up the whole class day, and half got there after the class (often because every spot was taken); a worn-out Instructor's break runs about a day and a half. Letting them rest straight after a class instead of before one would help.
+**Still open:** half of the 6% left are Instructors on a break that takes up the whole class day, and half were left waiting because every spot was taken (8, above); a worn-out Instructor's break runs about a day and a half. Letting them rest straight after a class instead of before one would help.
 
 ### 4. What each practitioner earns when kept busy
 
@@ -81,7 +93,7 @@ Ranges are a bare room (prestige 3) and a dressed one (prestige 5). Five of the 
 
 - its **popularity**, a deliberate number on the discipline rather than an accident of how many conditions it has: massage 1, acupuncture 0.8, reiki 0.7, sound healing and shamanism 0.6;
 - its **following**, 0 to 100, as a multiplier from 0.5 to 2.5. It grows by 3 with each guest healed (less as it grows), falls by 4 with each failure and by 2 with each guest who gives up while waiting for the treatment, and fades by a tenth a month. Massage starts at 40 in a new game and anything new at 0, so a niche discipline starts quiet and grows with good results. Older saves start every discipline they have a room for at 40;
-- the pull of its **finest room**, for every treatment room now and not just the Sound Bath Studio: 1, plus 0.35 a prestige star past the first, plus up to 0.6 for quiet, plus 0.2 for each spare sound mat, up to 3;
+- the pull of its **finest room**, for every treatment room now and not just the Sound Bath Studio: 1, plus 0.35 a prestige star past the first, plus up to 0.6 for quiet, plus 0.2 for each spare sound mat, up to 3 (2 since: 9, above);
 - how much of it the staff are **trained** for (an untrained condition counts 0.4), and the center's local favourites, averaged over its conditions so the number of conditions no longer counts.
 
 The Stats menu has a new **Guests** tab showing each discipline's share of new guests, each factor with its multiplier, and the one thing that would draw the most more (training, word of mouth or the room). Every treatment room's inspector says how strongly it draws.

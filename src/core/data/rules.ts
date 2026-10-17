@@ -216,7 +216,7 @@ export const SOUND_MATS: readonly number[] = [2, 2, 3, 3, 4];
  * How much more often guests come for a discipline, for a fine room to have it in: for each prestige star past the
  * first, for a peaceful room, and in a Sound Bath Studio for each mat past the two it needs, up to a limit.
  */
-export const ROOM_PULL = { star: 0.35, calm: 0.6, mat: 0.2, max: 3 } as const;
+export const ROOM_PULL = { star: 0.35, calm: 0.6, mat: 0.2, max: 2 } as const;
 /**
  * A discipline's following, from 0 (nobody has heard of it) to 100: where a discipline new to the center starts, and
  * massage in a new game; what each guest healed adds (less as it grows), what each failure or guest who gives up takes
