@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.3
+
+- **Smaller Qi Gong classes.** An Instructor now leads at most 12, from 6 as a Trainee (6, 8, 9, 11 and 12 by rank), so a class ending no longer floods the shop and the restrooms. A place costs a little more, $130 at standard prices.
+
 ## v0.30.2
 
 - **No more vanishing on the walk to the orangery.** At The Orchard, guests walking between the main building and a building of its own no longer shrink away halfway along the pavement and grow back. People now arrive and leave past the far building, at the edge of the lot.
