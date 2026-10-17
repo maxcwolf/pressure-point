@@ -15,6 +15,7 @@ import {
   MOTIVATION_SPEED,
   PRICEY,
   ROOMS,
+  SCAN_SUCCESS,
   SERVICE_SPEED,
   SHOP_CHANCE,
   SHOP_ICONS,
@@ -119,7 +120,7 @@ export interface Chance {
 
 /**
  * The chance a guest's treatment at this table works if this member of staff gives it now: better with skill, a
- * confident diagnosis, a prestigious room and upgraded equipment, worse for a hard technique, a tired therapist, a guest
+ * confident diagnosis, a posture scan, a prestigious room and upgraded equipment, worse for a hard technique, a tired therapist, a guest
  * whose condition has worsened, a room with bad vibes, noise or stale linens, nowhere to rest afterwards if it needs
  * it, and only a fraction of that without the right training or equipment. A room a Shaman has blessed helps a
  * little, and so does a chart on the wall. For a psychedelic ceremony the room counts for twice as much, and so does an uncomfortable temperature.
@@ -138,6 +139,7 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
     0.56 +
       staff.skill * 0.09 +
       Math.min(1, g.diagnosis) * 0.15 +
+      (g.scanned ? SCAN_SUCCESS : 0) +
       setting.prestige +
       chartBonus(ctx, it) +
       blessBonus(ctx.world.roomOfItem(it), ctx.s.day) +
@@ -293,6 +295,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     g.consults++;
     const gain = def.goal === 'consult' ? 0.4 + staff.skill * 0.13 + rnd(0, 0.15) : 0.45 + staff.skill * 0.08;
     g.diagnosis = clamp(g.diagnosis + gain + nice, 0, 1);
+    // a scan shows the therapist just where to work
+    if (def.goal === 'assess') g.scanned = true;
     const fee = Math.round((def.goal === 'consult' ? CONSULT_FEE : ASSESS_FEE) * price);
     earn(ctx, fee, 'consult', g.x, g.y);
     g.spent += fee;
@@ -322,7 +326,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       tipOnce(
         ctx,
         'rediagnose',
-        'Some guests need more than one consultation before the diagnosis is certain. A skilled Consultant helps, and so does a Posture Lab.',
+        'Some guests need more than one consultation before the diagnosis is certain. A skilled Consultant is surer the first time, and a Posture Lab scans the unsure instead, which makes their treatment likelier to work.',
       );
     }
   } else {

@@ -1,6 +1,7 @@
 // The player's say in how the center is run: policy, guests' chances, lines, sending home and room priority.
 import { describe, expect, it } from 'vitest';
 
+import { SCAN_SUCCESS } from '../../src/core/data';
 import { createContext, type SimContext } from '../../src/core/sim/context';
 import { breakDue, changedPolicy, onBreak } from '../../src/core/sim/policy';
 import { inLine, sameKind } from '../../src/core/sim/queues';
@@ -139,6 +140,20 @@ describe("a guest's chance of success", () => {
     // and the interface asks for it through the guest
     table.staffId = therapist.id;
     expect(sim.chanceFor(g)?.chance).toBe(successChance(ctx, table, therapist, g).chance);
+  });
+
+  it('is higher after a posture scan', () => {
+    const { sim, s, table, therapist } = busyCenter();
+    const g = s.guests[0]!;
+    lineUp(table, [g]);
+    g.condition = 'slump';
+    g.diagnosis = 1;
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    const plain = successChance(ctx, table, therapist, g).chance;
+    // well short of the cap, so the whole bonus shows
+    expect(plain).toBeLessThan(0.98 - SCAN_SUCCESS);
+    g.scanned = true;
+    expect(successChance(ctx, table, therapist, g).chance).toBeCloseTo(plain + SCAN_SUCCESS);
   });
 
   it('is unknown until there is a diagnosis and someone at the table', () => {

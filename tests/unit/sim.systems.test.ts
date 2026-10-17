@@ -4,11 +4,14 @@ import {
   ASSESS_FEE,
   conditionOf,
   CONSULT_FEE,
+  ITEMS,
   LOAN_MAX,
   LOAN_RATE,
   LOAN_STEP,
   PRICE_MAX,
   PRICE_MIN,
+  ROOMS,
+  SCAN_SUCCESS,
 } from '../../src/core/data';
 import {
   addPostureLab,
@@ -253,6 +256,42 @@ describe('the Posture Lab', () => {
     expect(sentForScan).toBe(true);
     const fees = s.ledger.consult + s.lastLedger.consult;
     expect((fees - ASSESS_FEE) % 50).toBe(0);
+  });
+
+  it('charges a little more than a consultation, and marks the guest as scanned', () => {
+    const { sim, s, consultant } = openCenter(1);
+    consultant.skill = 1;
+    addPostureLab(sim);
+    expect(sim.setDuty(consultant.id, 'assess', false)).toBe(true);
+    const scanning = hire(sim, 'consultant');
+    expect(sim.setDuty(scanning.id, 'consult', false)).toBe(true);
+    /** All the consultation and scan fees so far. */
+    const fees = () => s.ledger.consult + s.lastLedger.consult;
+    let before = fees();
+    let charged = 0;
+    runUntil(
+      sim,
+      () => {
+        if (s.guests.some((g) => g.scanned)) {
+          charged = fees() - before;
+          return true;
+        }
+        before = fees();
+        return false;
+      },
+      900,
+    );
+    expect(ASSESS_FEE).toBeGreaterThan(CONSULT_FEE);
+    expect(charged).toBe(Math.round(ASSESS_FEE * s.priceLevel));
+    // a consultation alone never marks anyone
+    expect(s.guests.filter((g) => g.scanned).every((g) => g.consults >= 2)).toBe(true);
+  });
+
+  it('says what a scan is worth', () => {
+    const bonus = `${Math.round(SCAN_SUCCESS * 100)}%`;
+    expect(ROOMS.assess.desc).toContain(`adds ${bonus} to the guest’s chance of success`);
+    expect(ITEMS.posture_scanner.desc).toContain(`adds ${bonus} to the guest’s chance of success`);
+    expect(ROOMS.assess.desc).toContain('a little more than a second consultation');
   });
 
   it('is skipped when there is not one', () => {
