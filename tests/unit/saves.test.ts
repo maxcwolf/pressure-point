@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import type { SaveCopy } from '../../electron/api';
 import { setSeed } from '../../src/core/random';
 import { newGame, SAVE_VERSION } from '../../src/core/state/game';
 import {
@@ -17,6 +18,7 @@ import {
   PREVIOUS_ID,
   readSave,
   type SaveInfo,
+  startBackup,
   timeAgo,
   writeSave,
 } from '../../src/storage/saves';
@@ -26,14 +28,32 @@ import { openCenter, run } from './helpers';
 // a stand-in for the browser's storage, with an optional size limit
 const store = new Map<string, string>();
 let quota = Infinity;
+/** Which writes from now on fail, counting from 1, as a browser's can for want of room or a damaged profile. */
+let failing = new Set<number>();
+let writes = 0;
+/** The keys whose values were read. */
+let reads: string[] = [];
 beforeEach(() => {
   store.clear();
   quota = Infinity;
+  failing = new Set();
+  writes = 0;
+  reads = [];
   globalThis.localStorage = {
+    /** How many values are stored. */
+    get length() {
+      return store.size;
+    },
+    /** The key stored at a position, or null past the end. */
+    key: (i: number) => [...store.keys()][i] ?? null,
     /** Read a stored value, or null if there is none. */
-    getItem: (k: string) => store.get(k) ?? null,
-    /** Store a value, failing as a full browser does when over the size limit. */
+    getItem: (k: string) => {
+      reads.push(k);
+      return store.get(k) ?? null;
+    },
+    /** Store a value, failing as a full browser does when over the size limit, or when told to. */
     setItem: (k: string, v: string) => {
+      if (failing.has(++writes)) throw new DOMException('write failed', 'UnknownError');
       const size = [...store].reduce((n, [key, val]) => n + (key === k ? 0 : val.length), 0) + v.length;
       if (size > quota) throw new DOMException('quota exceeded', 'QuotaExceededError');
       store.set(k, v);
@@ -42,6 +62,12 @@ beforeEach(() => {
     removeItem: (k: string) => void store.delete(k),
   } as Storage;
 });
+
+/** Make the given writes from now on fail, counting from 1. */
+const failWrites = (...n: number[]) => {
+  writes = 0;
+  failing = new Set(n);
+};
 
 /** Play a standard center for a while and return its state. */
 const game = (seed = 1, seconds = 60) => {
@@ -181,6 +207,171 @@ describe('loading', () => {
     expect(listSaves()).toEqual([]);
     expect(typeof writeSave(game(), 'Fresh')).toBe('object');
     expect(listSaves()).toHaveLength(1);
+  });
+});
+
+describe('a save that fails partway', () => {
+  it('leaves an overwritten slot with its old game and entry together, whichever write fails', () => {
+    for (const fail of [1, 2]) {
+      store.clear();
+      const s = newGame();
+      s.money = 111;
+      const old = ok(writeSave(s, 'Old', undefined, 1000));
+      const before = new Map(store);
+      failWrites(fail);
+      s.money = 222;
+      expect(writeSave(s, 'New', old.id, 2000), `write ${fail} failing`).toBe('full');
+      expect(store, `write ${fail} failing`).toEqual(before);
+      expect(readSave(old.id)!.money).toBe(111);
+      expect(listSaves()).toEqual([old]);
+    }
+  });
+
+  it('keeps the last autosave and its time when the next one fails', () => {
+    const s = newGame();
+    s.money = 111;
+    autosave(s, 1000);
+    failWrites(2);
+    s.money = 222;
+    expect(autosave(s, 2000)).toBe(false);
+    expect(readSave(AUTOSAVE_ID)!.money).toBe(111);
+    expect(latestSave()!.savedAt).toBe(1000);
+    // and the next one that works saves as usual
+    expect(autosave(s, 3000)).toBe(true);
+    expect(readSave(AUTOSAVE_ID)!.money).toBe(222);
+    expect(latestSave()!.savedAt).toBe(3000);
+  });
+
+  it('leaves nothing of a new save behind, whichever write fails', () => {
+    const s = newGame();
+    const kept = ok(writeSave(s, 'Kept'));
+    for (const fail of [1, 2]) {
+      const before = new Map(store);
+      failWrites(fail);
+      expect(writeSave(s, 'Lost')).toBe('full');
+      expect(store).toEqual(before);
+      expect(listSaves()).toEqual([kept]);
+    }
+  });
+
+  it('never lists a game that is not there, or loses one, even if putting the list back fails too', () => {
+    const s = newGame();
+    s.money = 111;
+    const old = ok(writeSave(s, 'Old', undefined, 1000));
+    failWrites(2, 3);
+    expect(writeSave(s, 'Lost')).toBe('full');
+    expect(listSaves().map((i) => i.id)).toEqual([old.id]);
+    failWrites(2, 3);
+    s.money = 222;
+    expect(writeSave(s, 'New', old.id, 2000)).toBe('full');
+    expect(readSave(old.id)!.money).toBe(111);
+  });
+});
+
+describe('the cost of saving', () => {
+  it('an autosave reads only the list of saves, not every saved game', () => {
+    const s = game();
+    for (let i = 0; i < MAX_SAVES; i++) ok(writeSave(s, `Save ${i}`));
+    autosave(s);
+    archiveAutosave();
+    reads = [];
+    expect(autosave(s)).toBe(true);
+    expect(reads).toEqual(['pressure-point-saves']);
+  });
+
+  it('listing the saves reads only the list too', () => {
+    const s = game();
+    ok(writeSave(s, 'One'));
+    autosave(s);
+    reads = [];
+    expect(listSaves()).toHaveLength(2);
+    expect(reads).toEqual(['pressure-point-saves']);
+  });
+});
+
+describe('the backup', () => {
+  /** A backup kept in memory, as the desktop app keeps one in files. */
+  const fakeBackup = (copy: SaveCopy = { index: null, saves: {} }) => ({
+    copy,
+    /** Keep a copy of a save and the list. */
+    backupSave(id: string, text: string, index: string) {
+      copy.saves[id] = text;
+      copy.index = index;
+    },
+    /** Forget a save's copy, keeping the list. */
+    dropBackup(id: string, index: string) {
+      copy.saves = Object.fromEntries(Object.entries(copy.saves).filter(([key]) => key !== id));
+      copy.index = index;
+    },
+    /** Everything kept, as the files would give it back. */
+    readBackup: () => Promise.resolve(structuredClone(copy)),
+  });
+
+  it('keeps a copy of each save and of the list as they are written, and forgets deleted ones', async () => {
+    const b = fakeBackup();
+    await startBackup(b);
+    const s = game();
+    autosave(s, 1000);
+    const a = ok(writeSave(s, 'Kept', undefined, 2000));
+    const gone = ok(writeSave(s, 'Gone', undefined, 3000));
+    deleteSave(gone.id);
+    expect(b.copy.saves).toEqual({
+      [AUTOSAVE_ID]: store.get('pressure-point-save-v1'),
+      [a.id]: store.get(`pressure-point-save:${a.id}`),
+    });
+    expect(b.copy.index).toBe(store.get('pressure-point-saves'));
+  });
+
+  it('puts every save back when storage has lost them', async () => {
+    const b = fakeBackup();
+    await startBackup(b);
+    const s = game(2, 120);
+    autosave(s, 1000);
+    const named = ok(writeSave(s, 'Named', undefined, 2000));
+    const saves = listSaves();
+    store.clear();
+    await startBackup(fakeBackup(b.copy));
+    expect(listSaves()).toEqual(saves);
+    expect(readSave(named.id)).toEqual(JSON.parse(JSON.stringify(s)));
+    expect(readSave(AUTOSAVE_ID)).toEqual(JSON.parse(JSON.stringify(s)));
+  });
+
+  it('leaves storage that still has saves as it is', async () => {
+    const b = fakeBackup();
+    await startBackup(b);
+    const s = newGame();
+    ok(writeSave(s, 'Only in the backup'));
+    const copy = structuredClone(b.copy);
+    store.clear();
+    await startBackup(fakeBackup({ index: null, saves: {} }));
+    const here = ok(writeSave(s, 'Here'));
+    await startBackup(fakeBackup(copy));
+    expect(listSaves()).toEqual([here]);
+  });
+
+  it('copies the saves already in storage the first time it is used', async () => {
+    await startBackup(fakeBackup({ index: '[]', saves: {} }));
+    const s = newGame();
+    autosave(s, 1000);
+    const a = ok(writeSave(s, 'From before', undefined, 2000));
+    const b = fakeBackup();
+    await startBackup(b);
+    expect(Object.keys(b.copy.saves).sort()).toEqual([a.id, AUTOSAVE_ID].sort());
+    store.clear();
+    await startBackup(fakeBackup(b.copy));
+    expect(listSaves().map((i) => i.id)).toEqual([a.id, AUTOSAVE_ID]);
+  });
+
+  it('never stops the game saving when it fails', async () => {
+    /** A backup on a disk that has gone. */
+    const broken = () => {
+      throw new Error('no disk');
+    };
+    await startBackup({ backupSave: broken, dropBackup: broken, readBackup: broken });
+    const info = ok(writeSave(newGame(), 'Saved anyway'));
+    expect(autosave(newGame())).toBe(true);
+    deleteSave(info.id);
+    expect(listSaves().map((i) => i.id)).toEqual([AUTOSAVE_ID]);
   });
 });
 

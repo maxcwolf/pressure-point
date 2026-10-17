@@ -5,7 +5,7 @@ import { logger, setTag } from '@sentry/browser';
 import { Audio } from '../audio';
 import { newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
-import { archiveAutosave, AUTOSAVE_ID, readSave } from '../storage/saves';
+import { archiveAutosave, AUTOSAVE_ID, readSave, startBackup } from '../storage/saves';
 import { loadDisciplinePrefs, loadSandbox } from '../storage/settings';
 import { showTitle } from '../ui';
 import { desktop } from './desktop';
@@ -22,6 +22,8 @@ export async function boot() {
   // The desktop app can be quit, so there the game offers Exit.
   // A browser tab cannot close itself, so the web version leaves that to the browser.
   const exit = desktop?.quit;
+  // the desktop app keeps copies of the saves in files, and puts them back if the page's storage has lost them
+  if (desktop) await startBackup(desktop);
 
   // the lawn sign and welcome mat are drawn to canvas, so the font has to be ready first
   await Promise.all([document.fonts.load('700 20px Fredoka'), document.fonts.load('500 20px Fredoka')]).catch(() => {

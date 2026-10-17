@@ -1,7 +1,7 @@
 // The built desktop app, launched for real. The browser tests cover the game;
 // these cover the shell around it: the sandbox, the preload API, quitting and saving.
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import type { ElectronApplication } from '@playwright/test';
@@ -77,6 +77,9 @@ test.describe('the desktop shell', () => {
       installUpdate: 'function',
       onFullScreen: 'function',
       setFullScreen: 'function',
+      backupSave: 'function',
+      dropBackup: 'function',
+      readBackup: 'function',
     });
     expect(await page.evaluate(() => window.desktop?.platform)).toBe(process.platform);
   });
@@ -130,6 +133,26 @@ test.describe('leaving the desktop app', () => {
     await closed;
 
     const second = await desktop.launch();
+    await second.page.getByRole('button', { name: 'Continue' }).click();
+    await expect(second.page.locator('#stats')).toContainText('$30,000');
+  });
+
+  test('keeps the saves in files too, and puts them back when the page storage loses them', async ({ desktop }) => {
+    const first = await desktop.launch();
+    await newGame(first.page);
+    await openPauseMenu(first.page);
+    const closed = first.app.waitForEvent('close');
+    await first.page.getByRole('button', { name: 'Exit game' }).click();
+    await closed;
+    expect(readdirSync(path.join(desktop.profile, 'saved-games')).sort()).toEqual(['index.json', 'save-auto.json']);
+
+    // as if the player cleared the app's data, or its profile was damaged
+    const second = await desktop.launch();
+    await second.page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}');
+    });
+    await second.page.reload();
     await second.page.getByRole('button', { name: 'Continue' }).click();
     await expect(second.page.locator('#stats')).toContainText('$30,000');
   });

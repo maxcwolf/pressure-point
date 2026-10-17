@@ -3,7 +3,16 @@ import path from 'node:path';
 
 import { app, BrowserWindow, ipcMain, Menu, type MenuItemConstructorOptions, session, shell } from 'electron';
 
-import { FULL_SCREEN_CHANGED_CHANNEL, FULL_SCREEN_SET_CHANNEL, FULL_SCREEN_STATE_CHANNEL, QUIT_CHANNEL } from './api';
+import {
+  BACKUP_DROP_CHANNEL,
+  BACKUP_READ_CHANNEL,
+  BACKUP_SAVE_CHANNEL,
+  FULL_SCREEN_CHANGED_CHANNEL,
+  FULL_SCREEN_SET_CHANNEL,
+  FULL_SCREEN_STATE_CHANNEL,
+  QUIT_CHANNEL,
+} from './api';
+import { backupSave, dropBackup, readBackup } from './backup';
 import { loadWindowPrefs, saveWindowPrefs } from './prefs';
 import { startUpdates } from './updates';
 
@@ -152,3 +161,17 @@ void app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   app.quit();
 });
+
+// Copies of the saved games, in files beside the window settings, so they outlive the page's storage. Only the game's
+// own page may ask, not a frame inside it.
+/** Where the copies of the saved games are kept. */
+const backupDir = () => path.join(app.getPath('userData'), 'saved-games');
+ipcMain.on(BACKUP_SAVE_CHANNEL, (event, id: unknown, text: unknown, index: unknown) => {
+  if (event.senderFrame === event.sender.mainFrame) backupSave(backupDir(), id, text, index);
+});
+ipcMain.on(BACKUP_DROP_CHANNEL, (event, id: unknown, index: unknown) => {
+  if (event.senderFrame === event.sender.mainFrame) dropBackup(backupDir(), id, index);
+});
+ipcMain.handle(BACKUP_READ_CHANNEL, (event) =>
+  event.senderFrame === event.sender.mainFrame ? readBackup(backupDir()) : { index: null, saves: {} },
+);

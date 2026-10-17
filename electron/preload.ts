@@ -3,6 +3,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 import {
+  BACKUP_DROP_CHANNEL,
+  BACKUP_READ_CHANNEL,
+  BACKUP_SAVE_CHANNEL,
   type DesktopApi,
   FULL_SCREEN_CHANGED_CHANNEL,
   FULL_SCREEN_SET_CHANNEL,
@@ -45,6 +48,16 @@ const api: DesktopApi = {
   setFullScreen: (on) => {
     ipcRenderer.send(FULL_SCREEN_SET_CHANNEL, on);
   },
+  /** Hand the desktop app a saved game to keep a copy of. */
+  backupSave: (id, text, index) => {
+    ipcRenderer.send(BACKUP_SAVE_CHANNEL, id, text, index);
+  },
+  /** Tell the desktop app a save was deleted. */
+  dropBackup: (id, index) => {
+    ipcRenderer.send(BACKUP_DROP_CHANNEL, id, index);
+  },
+  /** Ask the desktop app for every copy it keeps. */
+  readBackup: () => ipcRenderer.invoke(BACKUP_READ_CHANNEL),
 };
 
 contextBridge.exposeInMainWorld('desktop', api);
