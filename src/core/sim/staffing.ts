@@ -46,6 +46,7 @@ import { bless, clearingSeconds } from './ceremonies';
 import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
 import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
+import { isClassLead } from './classes';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
@@ -256,6 +257,12 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   }
   if (st.unhappyT > QUIT_AFTER && !st.busy && !st.training) fire(ctx, st.id, 'quit');
 }
+
+/**
+ * Whether a member of staff at their post has someone in hand they must see to before they go: a guest being seen, or
+ * a Qi Gong class under way, which ends for everyone together and is not to be left halfway.
+ */
+const inHand = (it: Item) => !!it.serving || (isClassLead(it) && it.progress > 0);
 
 /** Step away from the station they were staffing. */
 function leavePost(ctx: SimContext, st: Staff) {
@@ -560,17 +567,17 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       const it = ctx.world.item(st.post);
       if (it?.staffId !== st.id || !ctx.world.usable(it)) staffIdle(ctx, st);
       // kept from this station's duty: off to find something else, once the guest in hand is seen to
-      else if (!it.serving && !onDuty(st, stationDuty(it))) staffIdle(ctx, st);
+      else if (!inHand(it) && !onDuty(st, stationDuty(it))) staffIdle(ctx, st);
       // the station is outside the rooms they have been assigned to
-      else if (!it.serving && !worksAt(ctx, st, it.x, it.y)) staffIdle(ctx, st);
+      else if (!inHand(it) && !worksAt(ctx, st, it.x, it.y)) staffIdle(ctx, st);
       // free to go, and a priority room is short of someone: off to work there instead
-      else if (!it.serving && !inPriorityRoom(ctx, it.x, it.y) && openPriorityPost(ctx, st)) staffIdle(ctx, st);
+      else if (!inHand(it) && !inPriorityRoom(ctx, it.x, it.y) && openPriorityPost(ctx, st)) staffIdle(ctx, st);
       // free to go, and a room has bad vibes that they know how to clear
-      else if (!it.serving && (roomToSmudge(ctx, st) || soulToRetrieve(ctx, st) || wardWanted(ctx, st)))
+      else if (!inHand(it) && (roomToSmudge(ctx, st) || soulToRetrieve(ctx, st) || wardWanted(ctx, st)))
         staffIdle(ctx, st);
       // free to go, and in want of a drink or a snack that is to be had
-      else if (!it.serving && wantsRefresh(ctx, st)) staffIdle(ctx, st);
-      else if (breakDue(ctx, st) && !it.serving) {
+      else if (!inHand(it) && wantsRefresh(ctx, st)) staffIdle(ctx, st);
+      else if (breakDue(ctx, st) && !inHand(it)) {
         st.timer -= dt;
         if (st.timer <= 0) {
           st.timer = 2;

@@ -25,7 +25,7 @@ import { bookingNote, weekNote } from '../../src/ui/lib/classes';
 import { offeredMetrics } from '../../src/ui/lib/stats';
 import { guestStatus } from '../../src/ui/lib/status';
 import { newRoomsText } from '../../src/ui/lib/unlocks';
-import { addQigong, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
+import { addQigong, addStaffRoom, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
 
 /** A center with a Qi Gong Studio, open at the second star, and an Instructor if asked for, just before a Wednesday. */
 function studio(instructor = true) {
@@ -166,6 +166,29 @@ describe('a class in play', () => {
     runUntil(sim, () => s.reviews.some((r) => r.feelings.includes('no-class')), 60);
     expect(s.stats.classes).toBe(0);
     expect(s.ledger.classes).toBe(0);
+  });
+
+  it('keeps the Instructor at the mat to the end, however tired, rather than send its class-goers back to the line', () => {
+    const { sim, s, teacher } = studio();
+    addStaffRoom(sim);
+    const mat = s.items.find((it) => it.type === 'instructor_mat');
+    run(sim, 1);
+    runUntil(sim, () => !!mat?.progress, 60);
+    const goers = s.guests.filter((g) => g.classDay && g.state === 'served');
+    expect(goers.length).toBeGreaterThan(0);
+    // worn out, and a Staff Room to rest in: once the class is over they may go, but not before
+    if (teacher) teacher.energy = 1;
+    runUntil(
+      sim,
+      () => {
+        if (mat?.progress) expect(teacher?.state).toBe('atPost');
+        return s.stats.classes > 0;
+      },
+      60,
+    );
+    expect(goers.every((g) => g.outcome === 'class' && !g.feelings.includes('no-class'))).toBe(true);
+    expect(s.stats.classgoers).toBeGreaterThanOrEqual(goers.length);
+    runUntil(sim, () => teacher?.state === 'toBreak' || teacher?.state === 'onBreak', 30);
   });
 
   it('stops being booked when the classes are switched off', () => {
