@@ -172,17 +172,6 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
           <Bar value={st.training.progress * 100} class="blue" />
         </label>
       )}{' '}
-      {st.training && !sim.cancelBlocker(st) && (
-        <Button
-          class="cancel-course"
-          quiet
-          onPress={() => {
-            hud.askToCancelCourse(st.id);
-          }}
-        >
-          Cancel course
-        </Button>
-      )}{' '}
       <label>
         Energy
         <Bar value={st.energy} class={st.energy < 20 ? 'bad' : 'energy'} />

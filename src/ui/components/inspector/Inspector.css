@@ -108,7 +108,8 @@
 }
 
 .insp button.raise,
-.insp button.move {
+.insp button.move,
+.insp button.cancel-course {
   border: 2.5px solid var(--navy);
   border-radius: 12px;
   padding: 5px 13px;
