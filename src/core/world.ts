@@ -708,11 +708,17 @@ export class World {
     }
     // trial placement to make sure nothing gets cut off
     const trial = { ...it, id: -1 } as unknown as Item;
-    this.s.items.push(trial);
-    this.rebuild(true);
-    const fine = this.connected();
-    this.s.items.pop();
-    this.rebuild(true);
+    const items = this.s.items;
+    let fine: boolean;
+    try {
+      this.s.items = [...items, trial];
+      this.rebuild(true);
+      fine = this.connected();
+    } finally {
+      // put things back as they were, however the check ended
+      this.s.items = items;
+      this.rebuild(true);
+    }
     return fine ? OK : no('That would block the way');
   }
 
@@ -791,11 +797,15 @@ export class World {
       vibes: 0,
       claimedBy: 0,
     };
-    this.s.rooms = [...rooms.filter((x) => x !== replacing), trial];
-    this.rebuild(true);
-    const fine = this.connected();
-    this.s.rooms = rooms;
-    this.rebuild(true);
+    let fine: boolean;
+    try {
+      this.s.rooms = [...rooms.filter((x) => x !== replacing), trial];
+      this.rebuild(true);
+      fine = this.connected();
+    } finally {
+      this.s.rooms = rooms;
+      this.rebuild(true);
+    }
     return fine ? OK : no('That would block the way');
   }
 
@@ -841,21 +851,22 @@ export class World {
     if (!door) return no('That would cut off the door: move it first');
     // try it: the door has to open onto corridor as things will be, and everyone and everything still be reached
     const before = { x: room.x, y: room.y, w: room.w, h: room.h, door: room.door };
-    Object.assign(room, r, { door });
-    this.rebuild(true);
     const ox = door.x + door.dx;
     const oy = door.y + door.dy;
-    const check =
-      !this.inside(ox, oy) || this.zone[this.idx(ox, oy)] !== Z_CORRIDOR
+    try {
+      Object.assign(room, r, { door });
+      this.rebuild(true);
+      return !this.inside(ox, oy) || this.zone[this.idx(ox, oy)] !== Z_CORRIDOR
         ? no('The door must open onto a corridor')
         : this.blocked[this.idx(ox, oy)]
           ? no('Something is blocking the doorway')
           : this.connected()
             ? OK
             : no('That would block the way');
-    Object.assign(room, before);
-    this.rebuild(true);
-    return check;
+    } finally {
+      Object.assign(room, before);
+      this.rebuild(true);
+    }
   }
 
   /**
@@ -866,9 +877,20 @@ export class World {
   layoutValid(type: RoomType, placed: PlacedLayout, moving?: Room): Check {
     const { rooms, items } = this.s;
     const own = moving ? items.filter((it) => this.zoneAt(it.x, it.y) === moving.id) : [];
-    this.s.rooms = rooms.filter((r) => r !== moving);
-    this.s.items = items.filter((it) => !own.includes(it));
-    this.rebuild(true);
+    try {
+      this.s.rooms = rooms.filter((r) => r !== moving);
+      this.s.items = items.filter((it) => !own.includes(it));
+      this.rebuild(true);
+      return this.layoutFits(type, placed, moving);
+    } finally {
+      this.s.rooms = rooms;
+      this.s.items = items;
+      this.rebuild(true);
+    }
+  }
+
+  /** `layoutValid` once the room being moved, and its furniture, have been lifted out. */
+  private layoutFits(type: RoomType, placed: PlacedLayout, moving?: Room): Check {
     let check = this.roomRectValid(type, placed.rect);
     const { door } = placed;
     const ox = door.x + door.dx;
@@ -894,9 +916,6 @@ export class World {
       this.rebuild(true);
       if (!this.connected()) check = no('That would block the way');
     }
-    this.s.rooms = rooms;
-    this.s.items = items;
-    this.rebuild(true);
     return check;
   }
 
