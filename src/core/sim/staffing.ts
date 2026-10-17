@@ -46,7 +46,7 @@ import { bless, clearingSeconds } from './ceremonies';
 import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
 import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
-import { isClassLead } from './classes';
+import { backForClass, isClassLead, restDue } from './classes';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
@@ -54,7 +54,6 @@ import { resetGuest } from './guests';
 import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaundering } from './linens';
 import { startWard, wardStep, wardWanted } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
-import { breakDue } from './policy';
 import { hasItem } from './progress';
 import { isLeadStation, matsOf } from './sessions';
 import { reachSoul, soulStep, soulToRetrieve, startSoul } from './souls';
@@ -329,6 +328,8 @@ function tryBreak(ctx: SimContext, st: Staff): boolean {
     return false;
   }
   st.state = 'toBreak';
+  // how long the walk there takes, as a guide to how long the walk back will
+  st.timer = 0;
   say(st, '😴');
   return true;
 }
@@ -371,7 +372,7 @@ export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
 
 /** Find something to do: a break if tired, then a job or a station to staff, or else a wander. */
 function findWork(ctx: SimContext, st: Staff) {
-  if (breakDue(ctx, st) && tryBreak(ctx, st)) return;
+  if (restDue(ctx, st) && tryBreak(ctx, st)) return;
   if (goRefresh(ctx, st)) return;
   const s = ctx.s;
   if (st.role === 'caretaker') {
@@ -577,7 +578,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
         staffIdle(ctx, st);
       // free to go, and in want of a drink or a snack that is to be had
       else if (!inHand(it) && wantsRefresh(ctx, st)) staffIdle(ctx, st);
-      else if (breakDue(ctx, st) && !inHand(it)) {
+      else if (restDue(ctx, st) && !inHand(it)) {
         st.timer -= dt;
         if (st.timer <= 0) {
           st.timer = 2;
@@ -593,11 +594,14 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       break;
     }
     case 'toBreak':
+      st.timer += dt;
       if (arrived) st.state = 'onBreak';
       else if (!st.path) staffIdle(ctx, st);
       break;
     case 'onBreak':
       if (st.energy >= 100 || !st.claimItem) staffIdle(ctx, st);
+      // an Instructor gets up in time to be back for their next class, rested enough
+      else if (st.role === 'instructor' && backForClass(ctx, st, st.timer)) staffIdle(ctx, st);
       break;
     case 'toJob':
       // a soul is retrieved from someone who may have moved on: follow them until close enough

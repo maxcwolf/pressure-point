@@ -4,18 +4,33 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { CLASS_CALL_GAP, CLASS_DAYS, CLASS_FEE, CLASS_PATIENCE, DAY_SECONDS, ITEMS, ROOMS } from '../../src/core/data';
+import {
+  BREAK_AT,
+  BREAK_EXHAUSTED,
+  CLASS_CALL_GAP,
+  CLASS_DAYS,
+  CLASS_FEE,
+  CLASS_PATIENCE,
+  DAY_SECONDS,
+  ITEMS,
+  REST_AHEAD,
+  REST_RETURN,
+  ROOMS,
+} from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import {
+  backForClass,
   CLASS_LINES,
   classDays,
   classOn,
   classPlaces,
   classSize,
+  daysToClass,
   giveUp,
   missNote,
   missToast,
   noteMissedClasses,
+  restDue,
   toggledDays,
   weekday,
   weeklyInterest,
@@ -279,6 +294,9 @@ describe('a class in play', () => {
     expect(missToast(4, 7, 'overran')).toBe(
       '4 class-goers went home disappointed: Mon’s class never started, as the class before it was still going.',
     );
+    expect(missToast(1, 2, 'break')).toBe(
+      'A class-goer went home disappointed: Wed’s class never started, as the Instructor was worn out and on a break. A Staff Room nearer the studio gets them back sooner.',
+    );
     expect(missNote('full')).toBe('every Practice Spot was taken');
     expect(missToast(2, 9, 'full')).toBe(
       '2 class-goers went home disappointed: every Practice Spot was taken by the time they got to Wed’s class. Another class day, or more spots, would fit them in.',
@@ -336,6 +354,96 @@ describe('a class in play', () => {
     delete room.booked;
     run(sim, 6);
     expect(room.booked).toBeUndefined();
+  });
+});
+
+describe("an Instructor's breaks", () => {
+  it('counts the days to the next class still to hold, today if it has not been held', () => {
+    const { sim, s, room } = studio();
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    // a Wednesday, its class not yet held; then held, with Friday's next
+    s.day = 2.3;
+    expect(daysToClass(ctx)).toBe(0);
+    room.lastClass = 2;
+    expect(daysToClass(ctx)).toBe(2);
+    // a Sunday, the day before Monday's
+    s.day = 6.5;
+    expect(daysToClass(ctx)).toBe(1);
+    // with the classes off, there is none
+    sim.setDiscipline('qigong', false);
+    expect(daysToClass(ctx)).toBe(Infinity);
+  });
+
+  it('holds off a break until the class is over, unless worn right out, and takes it early when the days allow', () => {
+    const { sim, s, room, teacher, therapist } = studio();
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    if (!teacher) throw new Error('no Instructor');
+    // Wednesday, the class still to come: tired, but not too tired to lead it
+    s.day = 2.3;
+    teacher.energy = BREAK_AT - 3;
+    expect(restDue(ctx, teacher)).toBe(false);
+    teacher.energy = BREAK_EXHAUSTED - 1;
+    expect(restDue(ctx, teacher)).toBe(true);
+    // anyone else takes their break as the policy says
+    therapist.energy = BREAK_AT - 3;
+    expect(restDue(ctx, therapist)).toBe(true);
+    // Saturday, Friday's class over and Monday's two days off: a break now, a little early
+    room.lastClass = 4;
+    s.day = 5.2;
+    teacher.energy = BREAK_AT + REST_AHEAD - 1;
+    expect(restDue(ctx, teacher)).toBe(true);
+    teacher.energy = BREAK_AT + REST_AHEAD + 1;
+    expect(restDue(ctx, teacher)).toBe(false);
+    // Sunday, with Monday's class tomorrow: too late to start one, unless worn right out
+    s.day = 6.2;
+    teacher.energy = BREAK_AT - 3;
+    expect(restDue(ctx, teacher)).toBe(false);
+    teacher.energy = BREAK_EXHAUSTED - 1;
+    expect(restDue(ctx, teacher)).toBe(true);
+  });
+
+  it('gets up in time to walk back for the next class, rested enough, or else rests in full', () => {
+    const { sim, s, room, teacher } = studio();
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    if (!teacher) throw new Error('no Instructor');
+    room.lastClass = 4;
+    // half a day's walk back, for Monday's class, which must start before Monday is over
+    const walk = DAY_SECONDS / 2;
+    const last = 8 - REST_RETURN - 0.5;
+    teacher.energy = BREAK_AT + REST_AHEAD;
+    s.day = last - 0.1;
+    expect(backForClass(ctx, teacher, walk)).toBe(true);
+    // not yet rested enough
+    teacher.energy = BREAK_AT + REST_AHEAD - 1;
+    expect(backForClass(ctx, teacher, walk)).toBe(false);
+    // too soon to go
+    teacher.energy = 60;
+    s.day = last - 1;
+    expect(backForClass(ctx, teacher, walk)).toBe(false);
+    // too late to make it anyway
+    s.day = last + 0.1;
+    expect(backForClass(ctx, teacher, walk)).toBe(false);
+  });
+
+  it('leads a class tired, calling its class-goers to their spots, and rests after it', () => {
+    const { sim, s, room, teacher } = studio();
+    addStaffRoom(sim);
+    if (!teacher) throw new Error('no Instructor');
+    run(sim, 1);
+    // tired enough for a break by the policy all the while, until Friday's class is over
+    runUntil(
+      sim,
+      () => {
+        teacher.energy = BREAK_AT - 2;
+        expect(teacher.state).not.toBe('toBreak');
+        return room.lastClass === 4 && !s.items.find((it) => it.type === 'instructor_mat')?.progress;
+      },
+      4 * DAY_SECONDS,
+    );
+    expect(s.stats.classgoers).toBeGreaterThan(0);
+    // and then straight to the Staff Room, with the weekend to rest in
+    runUntil(sim, () => teacher.state === 'toBreak', DAY_SECONDS);
+    expect(daysToClass((sim as unknown as { ctx: SimContext }).ctx)).toBeGreaterThanOrEqual(2);
   });
 });
 

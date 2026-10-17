@@ -4,6 +4,27 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 16 October 2026, evening: staff who leave a class or a session
+
+Measured with the walkout probe (3, below): six seeds of 70 days, Reception, a Consultation Room, a Massage Suite, a Qi Gong Studio with three Practice Spots, a Staff Room and an Instructor, reputation held at 70, counting the class-goers who went home disappointed by why. Since 70 days holds only one Instructor's break a seed, the same probe also ran over 24 seeds of 140 days, with the helpers' Staff Room (about a day's walk from the studio) and with one beside the studio.
+
+### 10. An Instructor's break cost a class
+
+**Found:** 15 of the 30 disappointed class-goers had an Instructor on a break, and every break skipped a class day. A worn-out Instructor's break is not just the day and a half on the sofa: with the walk to the Staff Room and back it took 3.7 days in the probe, and 2.4 with the Staff Room next to the studio, longer than the two or three days between Monday's, Wednesday's and Friday's classes. Staff break as soon as their energy falls below the policy's level, which for an Instructor was as often the day after a class (a Saturday or a Thursday) as any other, so the break ran through the next class day. Holding off a break on a class day alone changed nothing: no break in the probe started on one.
+
+Also, an Instructor below the policy's level stopped calling class-goers to the Practice Spots (the check that lets a tired Therapist finish their guest and go), so one held back from a break would stand at the mat with nobody to teach.
+
+**Done** (`restDue` and `backForClass` in `src/core/sim/classes.ts`):
+
+- an Instructor goes for a break only when the next class is at least two days off (`REST_GAP`: on the usual timetable, once Friday's is over), and then a little early, below 15 more energy than the policy's level (`REST_AHEAD`), so they are not worn down before the next chance. Until then they hold off, a class day's class included, unless their energy falls below 10 (`BREAK_EXHAUSTED`);
+- a resting Instructor gets up in time to walk back for the next class, taking the walk back to be as long as the walk there was, with half a day to spare to call the class-goers to their spots (`REST_RETURN`), once rested to where they would have rested early. If that moment has passed, they rest in full;
+- the Practice Spots call class-goers whenever the Instructor is not going for a break by these rules;
+- the message for a class missed to a break says a Staff Room nearer the studio gets the Instructor back sooner, rather than a better one.
+
+Disappointed class-goers in the probe went from 30 of 495 (6.1%: 15 on a break, 15 full) to 18 of 493 (3.7%: none on a break, 18 full). Over 24 seeds of 140 days, with the helpers' Staff Room, 6.9% to 5.9% (on a break 172 to 11, full 83 to 230) and class days skipped 144 to 132; with the Staff Room beside the studio, 4.6% to 1.3%, and class days skipped 114 to 66. Resting after any class rather than only before a two-day gap did worse (7.9% and 4.3%), and so did resting only 5 energy early (6.3% and 3.0%).
+
+**Still open:** with the Staff Room a day's walk from the studio, most breaks still cost a class, as the walk there and back takes most of the weekend. Its class-goers now mostly wait for the next class and find it full, which is why "full" rose.
+
 ## 16 October 2026, later: a review of the above
 
 A review of the changes below found four things worth fixing before they were merged.
@@ -63,7 +84,7 @@ The harness was not kept. Once `chore/balance-audit` is merged, its playtest bot
 
 A new studio briefly held classes on Monday and Thursday instead, to space them out, but the shorter class alone is enough: the same probe on Monday and Thursday had 8% disappointed (27 of 342) and 1 class day in 13 skipped, and fewer class-goers in all (315 against 465). Changing the default would also have quietly moved every older save's studio to two classes a week. A new studio still holds classes on Monday, Wednesday and Friday.
 
-**Still open:** half of the 6% left are Instructors on a break that takes up the whole class day, and half were left waiting because every spot was taken (8, above); a worn-out Instructor's break runs about a day and a half. Letting them rest straight after a class instead of before one would help.
+**Still open:** half of the 6% left were Instructors on a break that took up the whole class day, and half were left waiting because every spot was taken (8, above). Instructors now time their breaks around the classes (10, above), which leaves 3.7% disappointed, nearly all of them because the class was full.
 
 ### 4. What each practitioner earns when kept busy
 

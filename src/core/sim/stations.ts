@@ -33,7 +33,7 @@ import { gainXp, habitOf, hasGeneral } from './careers';
 import { badTrip, blessBonus, goodTrip, isTrip, settingPenalty } from './ceremonies';
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
-import { isClassLead, updateClass } from './classes';
+import { isClassLead, restDue, updateClass } from './classes';
 import type { SimContext } from './context';
 import { changeRep, earn, priceFor } from './economy';
 import { emit, tipOnce } from './events';
@@ -43,7 +43,6 @@ import { linensPenalty, useLinens } from './linens';
 import { goTo } from './movement';
 import { sellMushrooms } from './mushrooms';
 import { feelNoise, itemNoise, noisePenalty } from './noise';
-import { breakDue } from './policy';
 import { hasRoom } from './progress';
 import { countVisit } from './records';
 import { goRest, restPenalty, settleRest } from './recovery';
@@ -199,7 +198,7 @@ export function updateStations(ctx: SimContext, dt: number) {
     if (it.queue.some((id) => guestById(ctx, id)?.station !== it.id))
       it.queue = it.queue.filter((id) => guestById(ctx, id)?.station === it.id);
     // tired staff finish with their current guest, then stop calling new ones so they can get away
-    const wantsBreak = !!staff && breakDue(ctx, staff) && !!findAccess(ctx, 'rest', staff.tx, staff.ty);
+    const wantsBreak = !!staff && restDue(ctx, staff) && !!findAccess(ctx, 'rest', staff.tx, staff.ty);
     // a Sound Healer calls no more guests to the mats than they can play for
     const matsTaken = !!lead && !isClassLead(lead) && !!staff && matsFull(ctx, lead, staff);
     if (!it.serving && ready && !wantsBreak && !matsTaken) {
