@@ -55,7 +55,7 @@ import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaun
 import { startWard, wardStep, wardWanted } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
 import { hasItem } from './progress';
-import { isLeadStation, matsOf } from './sessions';
+import { isLeadStation, matsOf, sessionState } from './sessions';
 import { reachSoul, soulStep, soulToRetrieve, startSoul } from './souls';
 import type { BreakRoom } from './staff-needs';
 import { fedUp, goRefresh, growNeeds, refreshed, refreshSeconds, wants, wantsRefresh } from './staff-needs';
@@ -258,10 +258,39 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
 }
 
 /**
- * Whether a member of staff at their post has someone in hand they must see to before they go: a guest being seen, or
- * a Qi Gong class under way, which ends for everyone together and is not to be left halfway.
+ * Whether a member of staff at their post has someone in hand they must see to before they go: a guest being seen, a
+ * Qi Gong class under way, which ends for everyone together and is not to be left halfway, or a sound bath playing.
  */
-const inHand = (it: Item) => !!it.serving || (isClassLead(it) && it.progress > 0);
+function inHand(ctx: SimContext, it: Item): boolean {
+  if (it.serving) return true;
+  if (isClassLead(it)) return it.progress > 0;
+  return isLeadStation(it) && sessionState(ctx, it).playing;
+}
+
+/**
+ * Whether a member of staff at their post is wanted elsewhere, as soon as they have nobody in hand: kept from its duty
+ * or outside their rooms, a priority room short of someone, bad vibes to clear, a soul to retrieve or a mishap to ward
+ * off, or a drink or a snack to be had.
+ */
+function wantedElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
+  return (
+    !onDuty(st, stationDuty(it)) ||
+    !worksAt(ctx, st, it.x, it.y) ||
+    (!inPriorityRoom(ctx, it.x, it.y) && !!openPriorityPost(ctx, st)) ||
+    !!roomToSmudge(ctx, st) ||
+    !!soulToRetrieve(ctx, st) ||
+    wardWanted(ctx, st) ||
+    wantsRefresh(ctx, st)
+  );
+}
+
+/**
+ * Whether a member of staff at their post wants to be off once they have nobody in hand: wanted elsewhere, or due a
+ * break with somewhere to take it. A Sound Healer who does calls nobody more to the mats.
+ */
+export function wantsAway(ctx: SimContext, st: Staff, it: Item): boolean {
+  return wantedElsewhere(ctx, st, it) || (restDue(ctx, st) && !!findAccess(ctx, 'rest', st.tx, st.ty));
+}
 
 /** Step away from the station they were staffing. */
 function leavePost(ctx: SimContext, st: Staff) {
@@ -567,18 +596,9 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
     case 'atPost': {
       const it = ctx.world.item(st.post);
       if (it?.staffId !== st.id || !ctx.world.usable(it)) staffIdle(ctx, st);
-      // kept from this station's duty: off to find something else, once the guest in hand is seen to
-      else if (!inHand(it) && !onDuty(st, stationDuty(it))) staffIdle(ctx, st);
-      // the station is outside the rooms they have been assigned to
-      else if (!inHand(it) && !worksAt(ctx, st, it.x, it.y)) staffIdle(ctx, st);
-      // free to go, and a priority room is short of someone: off to work there instead
-      else if (!inHand(it) && !inPriorityRoom(ctx, it.x, it.y) && openPriorityPost(ctx, st)) staffIdle(ctx, st);
-      // free to go, and a room has bad vibes that they know how to clear
-      else if (!inHand(it) && (roomToSmudge(ctx, st) || soulToRetrieve(ctx, st) || wardWanted(ctx, st)))
-        staffIdle(ctx, st);
-      // free to go, and in want of a drink or a snack that is to be had
-      else if (!inHand(it) && wantsRefresh(ctx, st)) staffIdle(ctx, st);
-      else if (restDue(ctx, st) && !inHand(it)) {
+      // free to go, and wanted elsewhere: off to find something else, once whoever is in hand is seen to
+      else if (!inHand(ctx, it) && wantedElsewhere(ctx, st, it)) staffIdle(ctx, st);
+      else if (restDue(ctx, st) && !inHand(ctx, it)) {
         st.timer -= dt;
         if (st.timer <= 0) {
           st.timer = 2;

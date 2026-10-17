@@ -14,11 +14,18 @@ import {
 import { setSeed } from '../../src/core/random';
 import { contextAnnouncement } from '../../src/core/sim/advisor';
 import { prestige } from '../../src/core/sim/ambience';
-import { createContext } from '../../src/core/sim/context';
+import { createContext, type SimContext } from '../../src/core/sim/context';
 import { bestRoom, roomPull } from '../../src/core/sim/demand';
 import { rollCondition } from '../../src/core/sim/guests';
 import { noiseAt, updateNoise } from '../../src/core/sim/noise';
-import { leadOf, matsPlayed, sessionPlaying, sessionWait } from '../../src/core/sim/sessions';
+import {
+  leadOf,
+  matsPlayed,
+  sessionPlaying,
+  sessionState,
+  sessionWait,
+  updateSession,
+} from '../../src/core/sim/sessions';
 import type { Sim } from '../../src/core/sim/sim';
 import { SOLD_BOWLS } from '../../src/core/state/game';
 import type { GameState, Item } from '../../src/core/state/types';
@@ -28,6 +35,7 @@ import { matsNote, sessionNote } from '../../src/ui/lib/sessions';
 import {
   addReiki,
   addSound,
+  addStaffRoom,
   addTraining,
   hire,
   inconsistencies,
@@ -133,6 +141,77 @@ describe('treating guests on the mats', () => {
     sim.fire(healer.id);
     expect(lying(sim, mats)).toBe(0);
     expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('plays out the session already playing before going for a break, and calls nobody more to it', () => {
+    const { sim, s, healer, mats, bowls } = withStudio(1);
+    addStaffRoom(sim);
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    playWith(sim, 'tune', 1);
+    runUntil(
+      sim,
+      () => {
+        for (const g of s.guests) if (g.diagnosis === 0) g.condition = 'tune';
+        return healer.state === 'atPost' && sessionState(ctx, bowls).playing;
+      },
+      900,
+    );
+    const playing = mats.flatMap((m) => (sim.guest(m.serving)?.state === 'served' ? [m.serving] : []));
+    expect(playing.length).toBeGreaterThan(0);
+    // worn out mid-session, with a Staff Room to rest in
+    healer.energy = 1;
+    runUntil(
+      sim,
+      () => {
+        for (const m of mats) if (m.serving) expect(playing).toContain(m.serving);
+        if (playing.some((id) => sim.guest(id)?.state === 'served')) expect(healer.state).toBe('atPost');
+        return healer.state !== 'atPost';
+      },
+      120,
+    );
+    expect(healer.state).toBe('toBreak');
+    for (const id of playing) {
+      const g = sim.guest(id);
+      expect(g?.outcome === 'healed' || g?.outcome === 'failed' || !g).toBe(true);
+    }
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('plays out the session when moved to another room, then goes', () => {
+    const { sim, s, healer, mats, bowls, consult } = withStudio(2);
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    playWith(sim, 'tune', 1);
+    runUntil(
+      sim,
+      () => {
+        for (const g of s.guests) if (g.diagnosis === 0) g.condition = 'tune';
+        return healer.state === 'atPost' && sessionState(ctx, bowls).playing;
+      },
+      900,
+    );
+    const playing = mats.flatMap((m) => (sim.guest(m.serving)?.state === 'served' ? [m.serving] : []));
+    expect(playing.length).toBeGreaterThan(0);
+    healer.rooms = [consult.id];
+    runUntil(sim, () => healer.post !== bowls.id, 120);
+    // everyone lying down had their treatment, rather than go back to the line
+    for (const id of playing) {
+      const g = sim.guest(id);
+      expect(g?.outcome === 'healed' || g?.outcome === 'failed' || !g).toBe(true);
+    }
+  });
+
+  it('starts no new session once the healer wants to be off, but keeps one playing', () => {
+    const { sim, mats, bowls, healer } = withStudio(3);
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    playWith(sim, 'tune', 1);
+    runUntil(sim, () => lying(sim, mats) > 0, 900);
+    bowls.progress = SESSION_WAIT - 1;
+    updateSession(ctx, bowls, healer, 0.1, true);
+    expect(bowls.progress).toBe(0);
+    bowls.progress = SESSION_WAIT;
+    updateSession(ctx, bowls, healer, 0.1, true);
+    expect(sessionPlaying(bowls.progress)).toBe(true);
+    expect(healer.busy).toBe(true);
   });
 
   it('waits for the second mat before it starts, but not for long', () => {

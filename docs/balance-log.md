@@ -8,6 +8,12 @@ A month is 180 seconds of game time (30 days of 6 seconds).
 
 Measured with the walkout probe (3, below): six seeds of 70 days, Reception, a Consultation Room, a Massage Suite, a Qi Gong Studio with three Practice Spots, a Staff Room and an Instructor, reputation held at 70, counting the class-goers who went home disappointed by why. Since 70 days holds only one Instructor's break a seed, the same probe also ran over 24 seeds of 140 days, with the helpers' Staff Room (about a day's walk from the studio) and with one beside the studio.
 
+### 11. The Sound Healer walked off mid-session
+
+**Found:** the Singing Bowls never count as seeing anyone, so a healer left mid-session for a break, a drink or any other reason, and everyone lying on the mats went back to the line, part-treated. In the same probe with a Sound Bath Studio and a Sound Healer instead of the classes (every guest needing sound healing), the healer walked off 5 times in six seeds of 70 days, sending 6 guests back to the line, and 41 times in 24 seeds of 140 days, every time for a break, sending 57 back. Counting a session playing as someone in hand, as for the Instructor (1, below), held the healer to the end, but guests already on their way to a mat joined the session as it played and kept it going: the healer took on average 2 days to get away and up to 8.6.
+
+**Done:** a sound bath playing counts as someone in hand (`inHand` in `src/core/sim/staffing.ts`), so the healer stays to the end of it. Once they want to be off for any reason (`wantsAway`), the mats call nobody more, anyone still on the way to a mat goes back to the line, and a session still waiting for its mats to fill does not start (`updateSession` in `src/core/sim/sessions.ts`), so the healer plays out only the guests already lying down. Walk-offs went to none in both (5 and 41 before), with as many guests treated (144 against 145, and 1,240 against 1,247). A healer now takes on average 1.4 days to get away and at most 4.5, a tired healer's one treatment; before, 0.1 days.
+
 ### 10. An Instructor's break cost a class
 
 **Found:** 15 of the 30 disappointed class-goers had an Instructor on a break, and every break skipped a class day. A worn-out Instructor's break is not just the day and a half on the sofa: with the walk to the Staff Room and back it took 3.7 days in the probe, and 2.4 with the Staff Room next to the studio, longer than the two or three days between Monday's, Wednesday's and Friday's classes. Staff break as soon as their energy falls below the policy's level, which for an Instructor was as often the day after a class (a Saturday or a Thursday) as any other, so the break ran through the next class day. Holding off a break on a class day alone changed nothing: no break in the probe started on one.
@@ -68,7 +74,7 @@ The harness was not kept. Once `chore/balance-audit` is merged, its playtest bot
 
 **Found:** the Instructor's Mat never counts as seeing anyone (`serving` stays 0), so every reason staff may leave their post (a drink, a break, a priority room, smudging, a duty or room change) applied in the middle of a class. Leaving sent everyone on a Practice Spot back to the line, where they lost patience.
 
-**Done:** a class under way counts as someone in hand (`inHand` in `src/core/sim/staffing.ts`), so the Instructor stays to the end and goes after. The Sound Bath's healer can still walk off mid-session; that needs a different fix, since a session plays on as long as guests keep lying down.
+**Done:** a class under way counts as someone in hand (`inHand` in `src/core/sim/staffing.ts`), so the Instructor stays to the end and goes after. The Sound Bath's healer could still walk off mid-session, since a session plays on as long as guests keep lying down; they now play out the session and call nobody more to it (11, above).
 
 ### 2. Practice Spots had no limit
 
