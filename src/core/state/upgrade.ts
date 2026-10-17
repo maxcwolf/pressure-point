@@ -7,9 +7,11 @@ import {
   AWARDS,
   CALL_GAP_MIN,
   CHALLENGE_GAP_MIN,
+  type Discipline,
   DISCIPLINES,
   FEELINGS,
   FIRST_OUTBREAK_DAY,
+  FOLLOWING,
   INSPECTION_FIRST_DAY,
   type Land,
   MISHAP_FIRST_DAY,
@@ -78,6 +80,7 @@ type OldSave = Before<
     | 'months'
     | 'casebook'
   >,
+  | 'following'
   | 'announceT'
   | 'loan'
   | 'priceLevel'
@@ -300,6 +303,12 @@ export function upgradeSave(save: GameState) {
   s.reviews = (s.reviews ?? []).map((r) => ({ ...r, feelings: r.feelings.filter((f) => Object.hasOwn(FEELINGS, f)) }));
   s.casebook ??= {};
   for (const c of Object.values(s.casebook)) if (c) c.worse ??= 0;
+  // before followings, a center drew as if each discipline it had a room for were well known, so carry on that way
+  s.following ??= Object.fromEntries(
+    (Object.keys(DISCIPLINES) as Discipline[])
+      .filter((d) => d === 'massage' || s.rooms.some((r) => r.done && r.type === DISCIPLINES[d].room))
+      .map((d) => [d, FOLLOWING.established]),
+  );
   s.prices ??= {};
   s.arrivals ??= [];
   s.campaigns ??= [];

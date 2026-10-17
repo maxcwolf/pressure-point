@@ -1,0 +1,184 @@
+// Which discipline guests come for: popularity, following, the finest room and training, and what the panel says.
+import { describe, expect, it } from 'vitest';
+
+import { conditionOf, CONDITIONS, DISCIPLINES, FOLLOWING, followingPull, MODALITIES } from '../../src/core/data';
+import type { Discipline, Modality } from '../../src/core/data/types';
+import type { SimContext } from '../../src/core/sim/context';
+import {
+  chooseCondition,
+  type DisciplineDemand,
+  fadeFollowing,
+  followVisit,
+  UNTRAINED_PULL,
+} from '../../src/core/sim/demand';
+import { newGame } from '../../src/core/state/game';
+import type { GameState, Guest } from '../../src/core/state/types';
+import { upgradeSave } from '../../src/core/state/upgrade';
+import { demandAdvice, followingWord, popularityWord, times } from '../../src/ui/lib/demand';
+import { addSound, hire, openCenter, runUntil } from './helpers';
+
+/** The game's own context, for calling the simulation directly. */
+const ctxOf = (c: { sim: unknown }) => (c.sim as { ctx: SimContext }).ctx;
+/** Every technique of a discipline. */
+const modsOf = (d: Discipline) => (Object.keys(MODALITIES) as Modality[]).filter((m) => MODALITIES[m].discipline === d);
+
+/** A center with a Massage Suite and a Sound Bath Studio, everyone trained in everything, at the first star. */
+function twoRooms() {
+  const c = openCenter(1);
+  c.s.stars = 1;
+  addSound(c.sim);
+  const healer = hire(c.sim, 'healer');
+  c.therapist.quals = modsOf('massage');
+  healer.quals = modsOf('sound');
+  return { ...c, healer, ctx: ctxOf(c) };
+}
+
+/** One discipline's row of the demand. */
+const row = (rows: DisciplineDemand[], d: Discipline) => rows.find((r) => r.discipline === d);
+
+describe('which discipline guests come for', () => {
+  it('goes by popularity, all else equal', () => {
+    const c = twoRooms();
+    c.s.following = { massage: 40, sound: 40 };
+    const rows = c.sim.demand();
+    const massage = row(rows, 'massage');
+    const sound = row(rows, 'sound');
+    expect(massage && sound).toBeTruthy();
+    if (!massage || !sound) return;
+    // the rooms and the local favourites aside, it is popularity that tells them apart
+    /** Its pull without its room or the local favourites. */
+    const plain = (r: DisciplineDemand) => r.pull / r.room.pull / r.flavour;
+    expect(plain(sound) / plain(massage)).toBeCloseTo(DISCIPLINES.sound.popularity / DISCIPLINES.massage.popularity, 5);
+    expect(massage.share + sound.share).toBeCloseTo(1, 5);
+  });
+
+  it('comes more for a discipline with a bigger following', () => {
+    const c = twoRooms();
+    c.s.following = { massage: 40, sound: 0 };
+    const quiet = row(c.sim.demand(), 'sound')?.share ?? 0;
+    c.s.following.sound = 80;
+    const famous = row(c.sim.demand(), 'sound')?.share ?? 0;
+    expect(famous).toBeGreaterThan(quiet * 2);
+    expect(row(c.sim.demand(), 'sound')?.followed).toBe(followingPull(80));
+  });
+
+  it('comes less while nobody is trained in what guests want, and says what that is', () => {
+    const c = twoRooms();
+    const trained = row(c.sim.demand(), 'sound');
+    c.healer.quals = ['sound'];
+    const untrained = row(c.sim.demand(), 'sound');
+    expect(trained?.training).toBe(1);
+    expect(untrained?.training).toBeLessThan(1);
+    expect(untrained?.training).toBeGreaterThanOrEqual(UNTRAINED_PULL);
+    expect(untrained?.untrained).toEqual(['forks']);
+    expect(untrained?.share ?? 1).toBeLessThan(trained?.share ?? 0);
+  });
+
+  it('picks a discipline by its pull, then a condition within it', () => {
+    const c = twoRooms();
+    const first = chooseCondition(c.ctx, 0, 0);
+    const last = chooseCondition(c.ctx, 0.9999, 0.9999);
+    /** The discipline that treats a condition. */
+    const disciplineOf = (id: string) =>
+      MODALITIES[CONDITIONS.find((x) => x.id === id)?.modality ?? 'swedish'].discipline;
+    expect(disciplineOf(first)).toBe('massage');
+    expect(disciplineOf(last)).toBe('sound');
+  });
+
+  it('falls back to the plainest massage when nothing is on offer', () => {
+    const c = openCenter(1);
+    c.s.rooms = [];
+    expect(conditionOf(chooseCondition(ctxOf(c), 0.5, 0.5)).modality).toBe(DISCIPLINES.massage.base);
+  });
+});
+
+describe('a following', () => {
+  /** A guest come for a condition of a discipline, waiting for their treatment unless they are still on their way. */
+  const guestFor = (d: Discipline, goal: Guest['goal'] = 'treat') =>
+    ({ condition: CONDITIONS.find((x) => MODALITIES[x.modality].discipline === d)?.id, goal }) as Guest;
+
+  it('grows with each guest healed, less as it grows, and shrinks with each let down', () => {
+    const c = twoRooms();
+    c.s.following = {};
+    followVisit(c.ctx, guestFor('sound'), 'healed');
+    expect(c.s.following.sound).toBe(FOLLOWING.heal);
+    c.s.following.sound = 50;
+    followVisit(c.ctx, guestFor('sound'), 'healed');
+    expect(c.s.following.sound).toBe(50 + FOLLOWING.heal / 2);
+    followVisit(c.ctx, guestFor('sound'), 'failed');
+    expect(c.s.following.sound).toBe(50 + FOLLOWING.heal / 2 - FOLLOWING.fail);
+    followVisit(c.ctx, guestFor('sound'), 'stormed');
+    expect(c.s.following.sound).toBe(50 + FOLLOWING.heal / 2 - FOLLOWING.fail - FOLLOWING.walkout);
+    // a guest put off by the price, or fed up at the desk before their treatment, says nothing about the treatment
+    followVisit(c.ctx, guestFor('sound'), 'priced');
+    followVisit(c.ctx, guestFor('sound', 'reception'), 'stormed');
+    expect(c.s.following.sound).toBe(50 + FOLLOWING.heal / 2 - FOLLOWING.fail - FOLLOWING.walkout);
+  });
+
+  it('fades by a tenth over a month with nobody to talk about', () => {
+    const c = twoRooms();
+    c.s.following = { massage: 50 };
+    for (let day = 0; day < 30; day++) fadeFollowing(c.ctx);
+    expect(c.s.following.massage).toBeCloseTo(50 * (1 - FOLLOWING.fade / 30) ** 30, 5);
+    expect(c.s.following.massage).toBeCloseTo(45, 0);
+  });
+
+  it('starts with massage known, and anything new from nothing', () => {
+    expect(newGame().following).toEqual({ massage: FOLLOWING.established });
+  });
+
+  it('carries on in an older save as if every discipline it had a room for were known', () => {
+    const c = twoRooms();
+    const old = JSON.parse(JSON.stringify(c.s)) as Partial<GameState>;
+    delete old.following;
+    upgradeSave(old as GameState);
+    const s = old as GameState;
+    expect(s.following).toEqual({ massage: FOLLOWING.established, sound: FOLLOWING.established });
+  });
+
+  it('grows in play as its guests are healed', () => {
+    const c = twoRooms();
+    c.s.following = { massage: 40 };
+    c.s.open = true;
+    runUntil(c.sim, () => (c.s.stats.healedBy.sound ?? 0) > 0, 1500);
+    expect(c.s.following.sound ?? 0).toBeGreaterThan(0);
+  });
+});
+
+describe('the Guests panel', () => {
+  const base: DisciplineDemand = {
+    discipline: 'sound',
+    popularity: 0.6,
+    following: 50,
+    followed: 1.5,
+    room: { pull: 2 },
+    conditions: 3,
+    trained: 3,
+    training: 1,
+    untrained: [],
+    flavour: 1,
+    pull: 1.8,
+    share: 0.3,
+  };
+
+  it('puts multipliers and words to the factors', () => {
+    expect(times(1)).toBe('×1');
+    expect(times(1.25)).toBe('×1.25');
+    expect(times(0.6)).toBe('×0.6');
+    expect(popularityWord(1)).toBe('Everyday');
+    expect(popularityWord(0.6)).toBe('Niche');
+    expect(followingWord(5)).toBe('Barely known');
+    expect(followingWord(75)).toBe('Talked about everywhere');
+  });
+
+  it('advises training first, then word of mouth, then the room, and nothing when all is well', () => {
+    expect(demandAdvice({ ...base, untrained: ['forks'], trained: 2 })).toMatch(
+      /^Guests needing Tuning Forks mostly stay away/,
+    );
+    expect(demandAdvice({ ...base, following: 10 })).toMatch(/^Few have heard of sound healing here yet/);
+    expect(demandAdvice({ ...base, room: { pull: 1.1 } })).toMatch(
+      /^A finer, quieter Sound Bath Studio would draw more/,
+    );
+    expect(demandAdvice(base)).toBeNull();
+  });
+});

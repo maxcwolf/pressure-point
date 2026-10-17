@@ -84,6 +84,7 @@ import {
 } from './classes';
 import { createContext, type SimContext } from './context';
 import { decorateRoom } from './decor';
+import { demand, type DisciplineDemand, fadeFollowing, roomPull } from './demand';
 import { borrow, monthEnd, priceFor, repay, setPrice, setTechniquePrice } from './economy';
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
@@ -103,7 +104,7 @@ import { checkOpening, checkStars, hasRoom, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
 import { monthSoFar } from './records';
 import { updateRival } from './rival';
-import { playingFor, servedAt, sessionState, stationStaff, studioDraw } from './sessions';
+import { playingFor, servedAt, sessionState, stationStaff } from './sessions';
 import { askSoul, canRetrieve } from './souls';
 import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
 import { type StandingPoints, standingPoints, updateStanding } from './standing';
@@ -153,6 +154,7 @@ export class Sim {
     const prevDay = Math.floor(s.day);
     s.day += dt / DAY_SECONDS;
     if (Math.floor(s.day) !== prevDay) {
+      fadeFollowing(ctx);
       noteMissedClasses(ctx);
       giveUp(ctx);
       bookClasses(ctx);
@@ -340,9 +342,14 @@ export class Sim {
     return prestige(this.ctx, room, extra);
   }
 
-  /** How strongly a Sound Bath Studio draws guests who need sound healing, as a multiplier on how often they come. */
-  studioDraw(room: Room): number {
-    return studioDraw(this.ctx, room);
+  /** How strongly a treatment room draws guests to its discipline, as a multiplier on how often they come for it. */
+  roomPull(room: Room): number {
+    return roomPull(this.ctx, room);
+  }
+
+  /** Every discipline on offer, what draws guests to it, and its share of new guests. */
+  demand(): DisciplineDemand[] {
+    return demand(this.ctx);
   }
 
   // ---- Treatments ------------------------------------------------------------

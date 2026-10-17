@@ -7,22 +7,24 @@ import {
   conditionOf,
   MODALITIES,
   NOISE_NOTICE,
+  ROOM_PULL,
   ROOMS,
   SESSION_WAIT,
-  SOUND_DRAW,
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { contextAnnouncement } from '../../src/core/sim/advisor';
 import { prestige } from '../../src/core/sim/ambience';
 import { createContext } from '../../src/core/sim/context';
+import { bestRoom, roomPull } from '../../src/core/sim/demand';
 import { rollCondition } from '../../src/core/sim/guests';
 import { noiseAt, updateNoise } from '../../src/core/sim/noise';
-import { leadOf, sessionPlaying, sessionWait, soundDraw, studioDraw } from '../../src/core/sim/sessions';
+import { leadOf, sessionPlaying, sessionWait } from '../../src/core/sim/sessions';
 import type { Sim } from '../../src/core/sim/sim';
 import { SOLD_BOWLS } from '../../src/core/state/game';
 import type { GameState, Item } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { drawNote, sessionNote } from '../../src/ui/lib/sessions';
+import { pullNote } from '../../src/ui/lib/demand';
+import { sessionNote } from '../../src/ui/lib/sessions';
 import {
   addReiki,
   addSound,
@@ -207,38 +209,39 @@ describe('the noise of a gong', () => {
 describe('a fine Sound Bath Studio', () => {
   /** What a studio should draw, from its prestige, how peaceful its mats are, and how many there are. */
   const expected = (stars: number, calm: number, mats: number) =>
-    Math.min(SOUND_DRAW.max, 1 + SOUND_DRAW.star * (stars - 1) + SOUND_DRAW.calm * calm + SOUND_DRAW.mat * (mats - 2));
+    Math.min(ROOM_PULL.max, 1 + ROOM_PULL.star * (stars - 1) + ROOM_PULL.calm * calm + ROOM_PULL.mat * (mats - 2));
 
   it('draws more guests who need sound healing: for its prestige, its peace and its mats to spare', () => {
     const { sim, s, studio } = withStudio(1);
     let ctx = createContext(s);
     updateNoise(ctx);
-    const peaceful = studioDraw(ctx, studio);
+    const peaceful = roomPull(ctx, studio);
     expect(peaceful).toBeCloseTo(expected(prestige(ctx, studio), 1, 2), 5);
-    expect(soundDraw(ctx)).toBe(peaceful);
+    expect(bestRoom(ctx, 'sound')).toEqual({ room: studio, pull: peaceful });
     // noisy enough that guests on the mats would say so
     ctx.noise.fill(NOISE_NOTICE);
-    expect(studioDraw(ctx, studio)).toBeCloseTo(peaceful - SOUND_DRAW.calm, 5);
+    expect(roomPull(ctx, studio)).toBeCloseTo(peaceful - ROOM_PULL.calm, 5);
     // a third mat, in a room made bigger for it
     expect(sim.resizeRoom(studio.id, { x: 9, y: 10, w: 5, h: 4 })).toBe(true);
     expect(sim.placeItem('sound_mat', 9, 11, 0)).toBeTruthy();
     ctx = createContext(s);
     updateNoise(ctx);
-    expect(studioDraw(ctx, studio)).toBeCloseTo(expected(prestige(ctx, studio), 1, 3), 5);
+    expect(roomPull(ctx, studio)).toBeCloseTo(expected(prestige(ctx, studio), 1, 3), 5);
   });
 
   it('draws nobody extra without a finished studio', () => {
     const { s } = openCenter(1);
-    expect(soundDraw(createContext(s))).toBe(1);
+    expect(bestRoom(createContext(s), 'sound')).toEqual({ pull: 1 });
   });
 
   it('makes guests who need sound healing turn up more often', () => {
-    const { s } = withStudio(1);
-    /** The share of new guests who need sound healing, with this much noise all over. */
+    const { s, studio } = withStudio(1);
+    /** The share of new guests who need sound healing, with this much noise in the studio. */
     const share = (noise: number) => {
       setSeed(4);
       const ctx = createContext(s);
-      ctx.noise.fill(noise);
+      for (let y = studio.y; y < studio.y + studio.h; y++)
+        for (let x = studio.x; x < studio.x + studio.w; x++) ctx.noise[ctx.world.idx(x, y)] = noise;
       let hits = 0;
       for (let i = 0; i < 3000; i++) if (conditionOf(rollCondition(ctx)).modality === 'sound') hits++;
       return hits / 3000;
@@ -247,12 +250,13 @@ describe('a fine Sound Bath Studio', () => {
   });
 
   it('says in the inspector how strongly it draws', () => {
-    expect(drawNote(1)).toBe(
-      '🔔 A prestigious, peaceful studio with mats to spare draws more guests who need sound healing.',
+    expect(pullNote(1, 'sound')).toBe(
+      '🔔 A prestigious, peaceful room with mats to spare draws more guests who want sound healing.',
     );
-    expect(drawNote(2.24)).toBe(
+    expect(pullNote(2.24, 'sound')).toBe(
       '🔔 Draws 2.2× the usual guests for sound healing, for its prestige, its peace and its mats.',
     );
+    expect(pullNote(1.5, 'reiki')).toBe('✨ Draws 1.5× the usual guests for reiki, for its prestige and its peace.');
   });
 });
 

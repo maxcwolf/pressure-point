@@ -697,6 +697,8 @@ export interface GameState {
   reviews: Review[];
   /** How visits ended, condition by condition. */
   casebook: Partial<Record<ConditionId, CaseRecord>>;
+  /** Each discipline's following, 0 to 100: guests come for it more as it grows with the guests it heals. */
+  following: Partial<Record<Discipline, number>>;
   /** Each technique's own price against standard, on top of the overall level; absent is standard. */
   prices: Partial<Record<Priced, number>>;
   /** Class-goers on their way, booked for upcoming Qi Gong classes. */

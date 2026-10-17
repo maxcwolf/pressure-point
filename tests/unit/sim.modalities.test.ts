@@ -4,12 +4,18 @@ import { type ConditionId, conditionOf, DAY_SECONDS, MODALITIES, STONE_USE } fro
 import { createContext } from '../../src/core/sim/context';
 import type { Sim } from '../../src/core/sim/sim';
 import { graduate } from '../../src/core/sim/training';
-import { addRecovery, addTraining, hire, openCenter, run, runUntil } from './helpers';
+import { addRecovery, addStaffRoom, addTraining, hire, openCenter, run, runUntil } from './helpers';
 
 /** Play for a while, turning every arriving guest into one condition. */
 function playWithCondition(sim: Sim, condition: ConditionId, seconds: number) {
   for (let i = 0; i < seconds; i++) {
     for (const g of sim.s.guests) if (g.diagnosis === 0) g.condition = condition;
+    // and patient and holding up, so they wait for their treatment rather than storm out or worsen, and enough are
+    // treated to count on any seed
+    for (const g of sim.s.guests) {
+      g.patience = 100;
+      g.health = 100;
+    }
     // fresh linens throughout, so only the treatment's own odds count
     for (const it of sim.s.items) it.dirt = 0;
     run(sim, 1);
@@ -64,8 +70,9 @@ describe('unlocking modalities', () => {
       s.stars = 1;
       therapist.skill = 3;
       therapist.quals = qualified ? ['swedish', 'deep'] : ['swedish'];
-      // somewhere to rest after Deep Tissue, so only the therapist's training counts
+      // somewhere to rest after Deep Tissue, and for the therapist between guests, so only their training counts
       addRecovery(sim);
+      addStaffRoom(sim);
       playWithCondition(sim, 'knotted', 1500);
       return s.stats;
     };

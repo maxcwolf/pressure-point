@@ -15,6 +15,7 @@ import { cx } from '../../lib/cx';
 import { formatMetric, type Metric, monthlyValues, offeredMetrics, shownMetrics, toggleMetric } from '../../lib/stats';
 import { Button } from '../common/Button';
 import { CasebookTab } from './CasebookTab';
+import { GuestsTab } from './GuestsTab';
 import { RegularsTab } from './RegularsTab';
 import { ReputationTab } from './ReputationTab';
 import { StandingTab } from './StandingTab';
@@ -53,6 +54,7 @@ function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRe
 /** The Stats menu's tabs, in order. */
 const TABS: readonly { id: StatsTab; name: string }[] = [
   { id: 'charts', name: '📊 Charts' },
+  { id: 'guests', name: '🚶 Guests' },
   { id: 'reputation', name: '⭐ Reputation' },
   { id: 'standing', name: '🏛️ Standing' },
   { id: 'casebook', name: '📖 Casebook' },
@@ -80,6 +82,7 @@ export function StatsMenu() {
         ))}
       </div>
       {hud.statsTab === 'charts' && <Charts />}
+      {hud.statsTab === 'guests' && <GuestsTab />}
       {hud.statsTab === 'reputation' && <ReputationTab />}
       {hud.statsTab === 'standing' && <StandingTab />}
       {hud.statsTab === 'casebook' && <CasebookTab />}

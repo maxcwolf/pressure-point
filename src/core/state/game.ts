@@ -9,6 +9,7 @@ import {
   type Discipline,
   DISCIPLINES,
   FIRST_OUTBREAK_DAY,
+  FOLLOWING,
   INSPECTION_FIRST_DAY,
   MISHAP_FIRST_DAY,
   type Offering,
@@ -83,9 +84,9 @@ export const defaultPolicy = (): Policy => ({
  * 21: Qi Gong classes, the Qi Gong Studio and its Instructor. 23: more land. 24: regulars, and the Vision Quest. 25: land kept as the tiles it covers.
  * 26: wind chimes, the fortune teller, the kombucha tap, the staff fridge, soundproof panels and rug patterns.
  * 27: things hung on walls. 28: the rest of them.
- * 29: certificates of excellence.
+ * 29: certificates of excellence. 30: each discipline's following.
  */
-export const SAVE_VERSION = 29;
+export const SAVE_VERSION = 30;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -143,6 +144,7 @@ export function newGame(center: CenterId = 'sandbox'): GameState {
     unlockAll: false,
     reviews: [],
     casebook: {},
+    following: { massage: FOLLOWING.established },
     prices: {},
     arrivals: [],
     campaigns: [],

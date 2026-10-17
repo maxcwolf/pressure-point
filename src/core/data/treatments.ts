@@ -375,6 +375,7 @@ export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
     role: 'therapist',
     room: 'massage',
     base: 'swedish',
+    popularity: 1,
     optional: false,
   },
   acupuncture: {
@@ -385,6 +386,7 @@ export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
     role: 'acupuncturist',
     room: 'acupuncture',
     base: 'needling',
+    popularity: 0.8,
     optional: true,
   },
   reiki: {
@@ -395,6 +397,7 @@ export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
     role: 'practitioner',
     room: 'reiki',
     base: 'usui',
+    popularity: 0.7,
     optional: true,
   },
   sound: {
@@ -405,6 +408,7 @@ export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
     role: 'healer',
     room: 'sound',
     base: 'sound',
+    popularity: 0.6,
     optional: true,
   },
   shaman: {
@@ -415,6 +419,7 @@ export const DISCIPLINES: Readonly<Record<Discipline, DisciplineDef>> = {
     role: 'shaman',
     room: 'lodge',
     base: 'reading',
+    popularity: 0.6,
     optional: true,
   },
 };

@@ -1,6 +1,15 @@
 // The inspector for a room.
 
-import { ITEMS, MODALITIES, MODALITY_ORDER, NOISE_NOTICE, NOISE_PEACEFUL, ROOMS } from '../../../core/data';
+import {
+  DISCIPLINE_ORDER,
+  DISCIPLINES,
+  ITEMS,
+  MODALITIES,
+  MODALITY_ORDER,
+  NOISE_NOTICE,
+  NOISE_PEACEFUL,
+  ROOMS,
+} from '../../../core/data';
 import { money } from '../../../core/format';
 import { copyCost } from '../../../core/room-layout';
 import { roomLabels } from '../../../core/sim/assignments';
@@ -10,7 +19,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
-import { drawNote } from '../../lib/sessions';
+import { pullNote } from '../../lib/demand';
 import { saveAsTemplate } from '../../templates';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -74,11 +83,12 @@ function BadVibes({ room }: { room: Room }) {
   );
 }
 
-/** How strongly a finished Sound Bath Studio draws guests who need sound healing. */
+/** How strongly a finished treatment room draws guests to its discipline. */
 function Draw({ room }: { room: Room }) {
   const { sim } = useGame();
-  if (room.type !== 'sound' || !room.done) return null;
-  return <p class="sub">{drawNote(sim.studioDraw(room))}</p>;
+  const d = DISCIPLINE_ORDER.find((x) => DISCIPLINES[x].room === room.type);
+  if (!d || !room.done) return null;
+  return <p class="sub">{pullNote(sim.roomPull(room), d)}</p>;
 }
 
 /** The blessing a Shaman has left on a room, while it lasts. */

@@ -5,6 +5,7 @@ import { conditionOf } from '../data';
 import { emptyTally } from '../state/game';
 import type { Guest, MonthRecord } from '../state/types';
 import type { SimContext } from './context';
+import { followVisit } from './demand';
 import { feel, writeReview } from './feelings';
 
 /** How many finished months are kept. */
@@ -35,6 +36,7 @@ export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
   writeReview(ctx, g, end);
   tally.waitTotal += g.waited;
   tally.waitCount++;
+  followVisit(ctx, g, end);
   if (end === 'healed') {
     const d = MODALITIES[conditionOf(g.condition).modality].discipline;
     tally.healedBy[d] = (tally.healedBy[d] ?? 0) + 1;

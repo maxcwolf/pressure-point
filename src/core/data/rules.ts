@@ -211,10 +211,18 @@ export const CAMEO_CHANCE = 0.12;
 /** Seconds a group session waits for its mats to fill after the first guest lies down, before it starts anyway. */
 export const SESSION_WAIT = 8;
 /**
- * How much more often guests needing sound healing turn up, for a fine Sound Bath Studio: for each prestige star past
- * the first, for a peaceful room, and for each mat past the two it needs, up to a limit.
+ * How much more often guests come for a discipline, for a fine room to have it in: for each prestige star past the
+ * first, for a peaceful room, and in a Sound Bath Studio for each mat past the two it needs, up to a limit.
  */
-export const SOUND_DRAW = { star: 0.35, calm: 0.6, mat: 0.2, max: 3 } as const;
+export const ROOM_PULL = { star: 0.35, calm: 0.6, mat: 0.2, max: 3 } as const;
+/**
+ * A discipline's following, from 0 (nobody has heard of it) to 100: where massage starts in a new game, what each guest
+ * healed adds (less as it grows), what each failure or guest who gives up takes away, and how much of it fades in a
+ * month with nobody to talk about.
+ */
+export const FOLLOWING = { established: 40, heal: 3, fail: 4, walkout: 2, fade: 0.1 } as const;
+/** How a following multiplies how often guests come for a discipline: half as often with none, up to 2.5× at 100. */
+export const followingPull = (following: number) => 0.5 + following / 50;
 
 /** Share of applicants for each role who are women: most of those at the desk and the tables, few caretakers. */
 export const WOMEN_APPLY: Readonly<Record<Role, number>> = {

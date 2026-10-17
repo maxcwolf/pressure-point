@@ -367,6 +367,8 @@ export interface DisciplineDef {
   room: RoomType;
   /** The modality everyone in the role starts with. */
   base: Modality;
+  /** How often guests come for it against massage, before its following and its rooms count: niche ones less. */
+  popularity: number;
   /** Optional disciplines can be switched off in Settings. */
   optional: boolean;
 }

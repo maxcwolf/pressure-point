@@ -19,7 +19,7 @@ export type MoneyTab = 'books' | 'prices' | 'marketing' | 'loan' | 'land';
 export type RoomsTab = 'rooms' | 'templates';
 
 /** The tabs of the Stats menu. */
-export type StatsTab = 'charts' | 'reputation' | 'standing' | 'casebook' | 'regulars' | 'awards';
+export type StatsTab = 'charts' | 'guests' | 'reputation' | 'standing' | 'casebook' | 'regulars' | 'awards';
 
 export type DialogId =
   'pause' | 'settings' | 'saves' | 'confirm-new' | 'star' | 'karma' | 'awards' | 'visit' | 'buy-plot' | 'update';

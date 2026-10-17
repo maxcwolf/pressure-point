@@ -3,12 +3,8 @@
 import {
   BEDSIDE_PATIENCE,
   BORED_PATIENCE,
-  centerOf,
-  CONDITION_BOOST,
-  conditionHere,
   type ConditionId,
   conditionOf,
-  CONDITIONS,
   DIRT_FILTHY,
   DISCIPLINES,
   DISCOMFORT_DRAIN,
@@ -17,7 +13,6 @@ import {
   HEAT_THIRST,
   ITEMS,
   LONG_WAIT_PATIENCE,
-  MODALITIES,
   PLAY_PATIENCE,
   PLAY_RANGE,
   PLEASANT_DRAIN,
@@ -39,19 +34,18 @@ import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import { missClass, missToast } from './classes';
 import type { SimContext } from './context';
+import { chooseCondition } from './demand';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
-import { campaignBoost } from './marketing';
 import { goTo, halt, moveAlong } from './movement';
 import { fizzOver, puddleSlow, tellFortune } from './novelties';
 import { arriveCarrying, carriedOut } from './outbreaks';
 import { countArrival, countVisit } from './records';
 import { updateRest } from './recovery';
 import { dueRegular, regularPatience, welcomeBack } from './regulars';
-import { soundDraw } from './sessions';
 import { pickStation, removeFromStations, stationScore } from './stations';
-import { modalityOf, offered, unlocked } from './treatments';
+import { modalityOf } from './treatments';
 import { arrivalFactor, cutOff, impatience } from './twists';
 import { addWear, dirtier } from './upkeep';
 import { wallDrain } from './wall-items';
@@ -143,35 +137,11 @@ export function spawnGuest(
 }
 
 /**
- * Guests only arrive with conditions the center could treat: the modality is unlocked and
- * its discipline has a finished room. Ones nobody on the payroll is qualified for turn up
- * less often, so a new star or a new clinic is not an instant flood of failures.
+ * Guests only arrive with conditions the center could treat: the modality is unlocked and its discipline has a
+ * finished room. They choose a discipline by its pull (its popularity, following, finest room and training), then a
+ * condition within it, so a new star or a new clinic is not an instant flood of failures.
  */
-export function rollCondition(ctx: SimContext): ConditionId {
-  const staff = ctx.s.staff.filter((x) => x.state !== 'leaving');
-  let pool = CONDITIONS.filter(
-    (c) =>
-      conditionHere(c, ctx.s.center) && unlocked(ctx, c.modality) && offered(ctx, MODALITIES[c.modality].discipline),
-  );
-  if (!pool.length)
-    pool = CONDITIONS.filter((c) => conditionHere(c, ctx.s.center) && c.modality === DISCIPLINES.massage.base);
-  const local = centerOf(ctx.s).conditions ?? {};
-  // a fine Sound Bath Studio gets talked about, and draws more of those who need it
-  const draw = soundDraw(ctx);
-  const weights = pool.map(
-    (c) =>
-      (staff.some((t) => t.quals.includes(c.modality)) ? 1 : 0.4) *
-      (local[c.id] ?? 1) *
-      campaignBoost(ctx.s, c.id, CONDITION_BOOST) *
-      (MODALITIES[c.modality].discipline === 'sound' ? draw : 1),
-  );
-  let roll = random() * weights.reduce((a, b) => a + b, 0);
-  for (const [i, condition] of pool.entries()) {
-    roll -= at(weights, i);
-    if (roll <= 0) return condition.id;
-  }
-  return at(pool, 0).id;
-}
+export const rollCondition = (ctx: SimContext): ConditionId => chooseCondition(ctx, random(), random());
 
 /** Put a guest back to square one of their current goal. */
 export function resetGuest(ctx: SimContext, g: Guest) {

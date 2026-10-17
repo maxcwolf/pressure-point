@@ -1,7 +1,7 @@
 // The player's say in how the center is run: policy, guests' chances, lines, sending home and room priority.
 import { describe, expect, it } from 'vitest';
 
-import { createContext } from '../../src/core/sim/context';
+import { createContext, type SimContext } from '../../src/core/sim/context';
 import { breakDue, changedPolicy, onBreak } from '../../src/core/sim/policy';
 import { inLine, sameKind } from '../../src/core/sim/queues';
 import { nextInLine, successChance } from '../../src/core/sim/stations';
@@ -124,7 +124,8 @@ describe("a guest's chance of success", () => {
     lineUp(table, [g]);
     g.condition = 'slump';
     g.diagnosis = 0.8;
-    const ctx = createContext(s);
+    // the game's own context, whose world has the noise of the guests where they stand now
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
     const good = successChance(ctx, table, therapist, g);
     expect(good.problem).toBe('');
     expect(good.chance).toBeGreaterThan(0.3);
