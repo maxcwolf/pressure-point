@@ -1,6 +1,8 @@
 // Messages that know what they are about, so clicking one can take the player there.
 import { describe, expect, it } from 'vitest';
 
+import { bottleneckAdvice } from '../../src/core/sim/advisor';
+import type { SimContext } from '../../src/core/sim/context';
 import type { SimEvent, Subject } from '../../src/core/sim/events';
 import { raiseRequests } from '../../src/ui/lib/status';
 import { addStaffRoom, hire, LAYOUT, openCenter, run, runUntil } from './helpers';
@@ -59,18 +61,42 @@ describe("the advisor's nudges", () => {
     expect(raiseRequests(sim.s.staff)).toEqual([]);
   });
 
-  it('point at a broken item, and at a station with a line and nobody on it', () => {
+  it('point at a broken item', () => {
     const { sim, s } = openCenter(1);
     const table = s.items.find((i) => i.type === 'massage_table')!;
     table.wear = 100;
     expect(sim.adviceNote().text).toMatch(/broken down/);
     expect(sim.adviceNote().about).toEqual({ kind: 'item', id: table.id });
-    table.wear = 0;
-    // the therapist is on the payroll but away from the table
-    table.staffId = 0;
-    table.queue = [9001, 9002];
-    expect(sim.adviceNote().text).toMatch(/nobody staffing it/);
-    expect(sim.adviceNote().about).toEqual({ kind: 'item', id: table.id });
+  });
+
+  it('say which stage holds guests up, and why, pointing at its longest line', () => {
+    const { sim, s } = openCenter(1);
+    runUntil(sim, () => s.guests.length > 0, 300);
+    const table = s.items.find((i) => i.type === 'massage_table')!;
+    const g = s.guests[0]!;
+    table.serving = 0;
+    table.queue = [];
+    for (let i = 0; i < 4; i++) {
+      s.guests.push({ ...g, id: 9100 + i, station: table.id, state: 'waiting', goal: 'treat' });
+      table.queue.push(9100 + i);
+    }
+    // the therapist often away from the table
+    table.staffed = 0.4;
+    table.busy = 0.3;
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    expect(bottleneckAdvice(ctx)).toEqual({
+      text: 'Guests wait longest for the Massage Suite: 4 waiting for one Massage Table. It stood empty 60% of the last few days. Its Massage Therapist keeps being called away to breaks, courses or other work. Another Massage Therapist, or a Staff Room nearer by, would keep it going.',
+      about: { kind: 'item', id: table.id },
+    });
+    // at the table and flat out
+    table.staffed = 0.95;
+    table.busy = 0.9;
+    expect(bottleneckAdvice(ctx)?.text).toMatch(
+      /4 waiting for one Massage Table\. It has been busy 90% of the time\. Another Massage Table and a Massage Therapist/,
+    );
+    // three waiting is not yet a line worth a word
+    table.queue.pop();
+    expect(bottleneckAdvice(ctx)).toBeNull();
   });
 
   it('point at nothing when the advice is general', () => {

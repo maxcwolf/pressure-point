@@ -119,6 +119,9 @@ export interface Item {
   serving: number;
   staffId: number;
   progress: number;
+  /** How much of the time a station has had a guest called or in hand, and has stood staffed, over the last few days. */
+  busy?: number;
+  staffed?: number;
   /** A plant's water, a stone warmer's heat, or how many soiled sets of linens are in a hamper. */
   water: number;
   /** 0 is new, 100 is broken. */

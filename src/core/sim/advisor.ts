@@ -20,6 +20,7 @@ import {
 import { pickFresh, rnd } from '../random';
 import { offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
+import { BOTTLENECK, bottleneck } from './bottleneck';
 import type { SimContext } from './context';
 import { loanLimit } from './economy';
 import { emit, type Subject } from './events';
@@ -123,21 +124,56 @@ function nudge(ctx: SimContext): string | Advice {
   for (const it of s.items) {
     const st = ITEMS[it.type].station;
     if (!st || !ctx.world.usable(it)) continue;
-    const about: Subject = { kind: 'item', id: it.id };
-    if (it.queue.length >= 2 && !stationStaff(ctx, it))
+    // with nobody in the role at all; one away on a break or a course is for the bottleneck to explain
+    if (it.queue.length >= 2 && !stationStaff(ctx, it) && !hasStaff(ctx, st.staff))
       return {
-        text: `Guests are lining up for a ${stationPlace(it)} with nobody staffing it. Hire another ${ROLES[st.staff].name}.`,
-        about,
+        text: `Guests are lining up for a ${stationPlace(it)} with nobody staffing it. Hire a ${ROLES[st.staff].name}.`,
+        about: { kind: 'item', id: it.id },
       };
-    if (it.queue.length >= 6)
-      return { text: `The line for the ${stationPlace(it)} is getting long. Build another and staff it.`, about };
   }
+  const held = bottleneckAdvice(ctx);
+  if (held) return held;
   if (s.guests.length > 4 && !s.items.some((i) => i.type === 'bench'))
     return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
   if (s.guests.some((g) => g.thirst > 85) && !hasItem(ctx, 'tea_station'))
     return 'Guests are parched. A Herbal Tea Station would help, and it earns a little too.';
   if (allStars(ctx)) return 'Three stars! Every treatment is open to you. Keep the guests coming back.';
   return 'Looking good. Keep an eye on the objectives to earn your next star.';
+}
+
+/**
+ * Nudge about the stage of a visit holding guests up most, if one is: its line, and why it is slow, from how its
+ * stations have done over the last few days. Short-staffed, it needs someone there more; flat out, more stations.
+ */
+export function bottleneckAdvice(ctx: SimContext): Advice | null {
+  const stage = bottleneck(ctx);
+  if (!stage) return null;
+  const top = stage.stations.reduce((a, b) => (b.queue.length > a.queue.length ? b : a));
+  const def = ITEMS[top.type].station;
+  if (!def) return null;
+  const role = ROLES[def.staff].name;
+  const about: Subject = { kind: 'item', id: top.id };
+  const n = stage.stations.length;
+  const head = `Guests wait longest for the ${stationPlace(top)}: ${stage.waiting} waiting for ${n === 1 ? 'one' : n} ${ITEMS[top.type].name}${n === 1 ? '' : 's'}.`;
+  /** A share as a percentage. */
+  const pct = (x: number) => `${Math.round(x * 100)}%`;
+  if (stage.staffed < BOTTLENECK.staffed) {
+    const team = ctx.s.staff.filter((st) => st.role === def.staff && st.state !== 'leaving').length;
+    const why =
+      team < n
+        ? `There are more of them than ${role}s: hire another.`
+        : `${team === 1 ? `Its ${role} keeps` : `Its ${role}s keep`} being called away to breaks, courses or other work. Another ${role}, or a Staff Room nearer by, would keep it going.`;
+    return { text: `${head} It stood empty ${pct(1 - stage.staffed)} of the last few days. ${why}`, about };
+  }
+  if (stage.busy >= BOTTLENECK.flatOut)
+    return {
+      text: `${head} It has been busy ${pct(stage.busy)} of the time. Another ${ITEMS[top.type].name} and a ${role} to work it would move them along.`,
+      about,
+    };
+  return {
+    text: `${head} More skilled ${role}s work faster, or another ${ITEMS[top.type].name} would share the load.`,
+    about,
+  };
 }
 
 /** Nudge about stale linens, a building too cold or too hot, and staff with nothing to drink. */

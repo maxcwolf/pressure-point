@@ -6,6 +6,14 @@ A month is 180 seconds of game time (30 days of 6 seconds).
 
 ## 17 October 2026, after midnight: waits
 
+### 20. Nothing said which stage held guests up, or why
+
+**Found:** the advisor said "the line for the Massage Suite is getting long, build another" once six waited at one table, and "nobody staffing it, hire another" whenever a table with two waiting stood empty, even with its Massage Therapist only on a break. The breakdown behind 18 found the slow stage was often not the treatment (at Willow Lane, nearly half of all waiting was for the Consultation Room), and that a long line came as often from staff away from their table as from too few tables. Nothing in the game told those apart.
+
+**Done** (`src/core/sim/bottleneck.ts`): each station keeps how much of the last few days it had a guest called or in hand, and how much it stood staffed, each a share that drifts toward the present (`trackBusy`, called from `updateStations`). The advisor finds the stage of a visit (check-in, consultation, a scan, each discipline's treatment, the shop) with the most waiting for each station, once at least four wait and at least two for each (`bottleneck`), and says why (`bottleneckAdvice` in `src/core/sim/advisor.ts`): stood empty more than 30% of the time, with fewer staff than stations, hire; with enough, they are being called away, so another member of staff or a nearer Staff Room; busy 80% of the time or more, another station and someone to work it; otherwise, more skilled staff or another station. It points at the station with the longest line. "Nobody staffing it" now only comes when nobody in the role is on the payroll. Each station's inspector shows its two shares.
+
+Nothing here changes how the game plays: the playtest bot (which reads none of it) played Willow Lane and the Exchange move for move the same with it and without.
+
 ### 19. However long a line grew, as many guests came
 
 **Found:** how often guests arrive depended on reputation, marketing, the season and how many disciplines were on offer, never on how long they would wait. A center with far more guests than it could treat kept getting them, and the only check was guests storming out, which costs reputation and following after the harm is done. Nothing told the player early that a line was too long for its staff.

@@ -29,6 +29,7 @@ import type { GameState, Guest, Item, Staff } from '../state/types';
 import { at, clamp, must } from '../util';
 import { accessPose, accessTile } from '../world';
 import { prestige } from './ambience';
+import { trackBusy } from './bottleneck';
 import { gainXp, habitOf, hasGeneral } from './careers';
 import { badTrip, blessBonus, goodTrip, isTrip, settingPenalty } from './ceremonies';
 import { guestById, say, staffById } from './chars';
@@ -198,6 +199,7 @@ export function updateStations(ctx: SimContext, dt: number) {
     }
     if (it.queue.some((id) => guestById(ctx, id)?.station !== it.id))
       it.queue = it.queue.filter((id) => guestById(ctx, id)?.station === it.id);
+    trackBusy(it, !!it.serving, ready, dt);
     // tired staff finish with their current guest, then stop calling new ones so they can get away
     const wantsBreak = !!staff && restDue(ctx, staff) && !!findAccess(ctx, 'rest', staff.tx, staff.ty);
     // a Sound Healer who wants to be off plays out the session for those lying down, and nobody more joins it: anyone

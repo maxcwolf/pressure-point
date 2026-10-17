@@ -6,6 +6,7 @@ import { conditionOf, ITEMS, MODALITIES, ROLES } from '../../../core/data';
 import { matsPlayed } from '../../../core/sim/sessions';
 import type { Guest, Item } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { busyNote } from '../../lib/busy';
 import { mushroomNote, mushroomSwitch } from '../../lib/ceremonies';
 import { chanceText, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
@@ -89,6 +90,7 @@ export function StationInfo({ item }: { item: Item }) {
   const staff = sim.stationStaff(item);
   const guest = sim.guest(item.serving);
   const line = item.queue.flatMap((id) => sim.guest(id) ?? []);
+  const busy = busyNote(item);
   if (def.staff === 'instructor') {
     // a Qi Gong Studio's mat and spots: who leads the class, and who is on the spot
     return (
@@ -115,6 +117,7 @@ export function StationInfo({ item }: { item: Item }) {
       <p class="status">{staffingStatus(item, staff, ROLES[def.staff].name)}</p>{' '}
       <p class="sub">{`In line: ${item.queue.length}${guest ? ` · Seeing ${guest.name}` : ''}`}</p>
       {guest && <Bar value={item.progress * 100} class="blue" />}
+      {busy && <p class="sub">{busy}</p>}
       {line.length > 0 && (
         <ol class="line">
           {line.map((g, i) => (
