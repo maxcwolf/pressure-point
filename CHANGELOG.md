@@ -2,6 +2,14 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.29.0
+
+- **Guests come for what you do well.** Each new guest picks a discipline by how popular it is, its **following** (which grows with every guest it heals and shrinks with every one it lets down), its finest room and whether your staff are trained for it. A new discipline starts with a small following and grows as word gets round, and each discipline you staff past the first brings a few more guests in all. The Stats menu has a new **Guests** tab showing each discipline's share of new guests, and why.
+- **Practitioners by rank.** A Qi Gong Instructor leads a class of 6 as a Trainee, up to 16 as an Expert, and a Sound Healer plays for 2 mats as a Trainee, up to 4 as an Expert. Spots and mats past that stand empty until they're promoted.
+- **Classes that go ahead.** A Qi Gong class runs about a day, so one no longer runs into the next. The Instructor stays to the end of a class, rests after Friday's rather than just before Monday's, and is back in time. When class-goers go home disappointed, you're told why, including when every spot was taken.
+- **The Sound Healer plays out the session** for everyone lying down before going for a break, instead of walking off halfway.
+- **Fairer staff challenges.** A challenge to heal guests in one discipline asks for that discipline's share of the guests, not a fixed part of them all.
+
 ## v0.28.6
 
 - **See windows in lowered walls.** A window in a wall that's cut low so you can see in now shows as a faint, see-through copy of itself where it stands, like the things hung on walls, instead of a cut-off slice on top of the wall.
