@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.29.1
+
+- **Class-goers find a studio in a building of its own.** A Qi Gong Studio on land apart from the main building, like The Orchard's orangery, no longer has its class-goers walk to the main front door and all the way round, arriving after the class. They come along the pavement from the nearer end and go straight to it.
+
 ## v0.29.0
 
 - **Guests come for what you do well.** Each new guest picks a discipline by how popular it is, its **following** (which grows with every guest it heals and shrinks with every one it lets down), its finest room and whether your staff are trained for it. A new discipline starts with a small following and grows as word gets round, and each discipline you staff past the first brings a few more guests in all. The Stats menu has a new **Guests** tab showing each discipline's share of new guests, and why.
