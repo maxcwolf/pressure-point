@@ -79,11 +79,15 @@ export interface MissedClass {
   why: ClassMiss;
 }
 
-/** How a Qi Gong class filled up: its day, how many booked a place, and how many were turned away. */
+/**
+ * How a Qi Gong class filled up: its day, how many booked a place, and how many were turned away; or that nobody was
+ * booked, the Instructor being away from the studio as it was booked.
+ */
 export interface ClassBooking {
   day: number;
   count: number;
   turned: number;
+  away?: boolean;
 }
 
 /** A class-goer due to arrive: when, and the day of the class they booked. */
