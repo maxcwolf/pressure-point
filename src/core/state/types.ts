@@ -293,6 +293,8 @@ export interface Guest extends CharBase {
   hunger: number;
   bladder: number;
   patience: number;
+  /** The lowest their patience has fallen this visit: what the waiting cost them. Missing in saves from before it was kept. */
+  lowest?: number;
   diagnosis: number;
   consults: number;
   outcome: Outcome | '';
@@ -536,6 +538,8 @@ export interface Tally {
   /** Seconds spent waiting, summed over the guests who left this month, and how many they were. */
   waitTotal: number;
   waitCount: number;
+  /** The lowest each of those guests' patience fell during their visit, summed (0 to 100 each); missing from months before it was kept. */
+  patienceTotal?: number;
   /** Guests healed, by the discipline that healed them. */
   healedBy: Partial<Record<Discipline, number>>;
   /** Class-goers who came to a Qi Gong class. */

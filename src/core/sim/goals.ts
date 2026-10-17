@@ -1,6 +1,6 @@
 // The objectives for a star: what each kind of goal asks for, and how close the center is to it.
 
-import { DAY_SECONDS, DISCIPLINES, type GoalSpec, ROOMS } from '../data';
+import { DISCIPLINES, type GoalSpec, ROOMS } from '../data';
 import { money } from '../format';
 import type { Tally } from '../state/types';
 import { prestige } from './ambience';
@@ -14,7 +14,7 @@ export interface Objective {
   progress: number;
 }
 
-/** How many guests a month needs before its cure rate or average wait counts. */
+/** How many guests a month needs before its cure rate or patience counts. */
 export const MONTH_SAMPLE = 10;
 
 /** The month so far and the last finished month: the two a monthly goal can be met in. */
@@ -29,9 +29,13 @@ export function cureRate(t: Tally): number | null {
   return treated >= MONTH_SAMPLE ? (t.healed / treated) * 100 : null;
 }
 
-/** Average days waited in a month, or null if too few guests left to say. */
-export function averageWait(t: Tally): number | null {
-  return t.waitCount >= MONTH_SAMPLE ? t.waitTotal / t.waitCount / DAY_SECONDS : null;
+/**
+ * How much of their patience guests kept through their visits in a month, on average, from 0 to 100: the lowest each
+ * one's patience bar fell, so what the waiting cost them, and 0 for anyone who ran out. Null if too few guests left to
+ * say, or the month is from before it was kept.
+ */
+export function averagePatience(t: Tally): number | null {
+  return t.waitCount >= MONTH_SAMPLE && t.patienceTotal !== undefined ? t.patienceTotal / t.waitCount : null;
 }
 
 /** Days since anyone last quit, or since the game began if nobody ever has. */
@@ -77,15 +81,15 @@ export function objectiveFor(ctx: SimContext, goal: GoalSpec): Objective {
         progress: best / goal.percent,
       };
     }
-    case 'wait': {
-      const waits = recentMonths(ctx)
-        .map(averageWait)
-        .filter((w): w is number => w !== null);
-      const best = waits.length ? Math.min(...waits) : Infinity;
+    case 'patience': {
+      const kept = recentMonths(ctx)
+        .map(averagePatience)
+        .filter((p): p is number => p !== null);
+      const best = kept.length ? Math.max(...kept) : 0;
       return {
-        label: `Keep the average wait under ${goal.days} ${goal.days === 1 ? 'day' : 'days'} for a month`,
-        done: best <= goal.days,
-        progress: Number.isFinite(best) ? Math.min(1, goal.days / best) : 0,
+        label: `Guests keep ${goal.percent}% of their patience through the wait, on average, for a month`,
+        done: best >= goal.percent,
+        progress: Math.min(1, best / goal.percent),
       };
     }
     case 'emergencies':

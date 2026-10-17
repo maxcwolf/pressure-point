@@ -602,8 +602,8 @@ export type GoalSpec =
   | { kind: 'balance'; amount: number }
   /** Heal at least this share of the guests treated in a month (with at least a few treated). */
   | { kind: 'cureRate'; percent: number }
-  /** Keep the average wait in a month under this many days. */
-  | { kind: 'wait'; days: number }
+  /** Have guests keep at least this share of their patience through their visits, on average, in a month. */
+  | { kind: 'patience'; percent: number }
   /** See emergencies through to the end successfully. */
   | { kind: 'emergencies'; count: number }
   /** Have a finished room of this type at this prestige or better. */

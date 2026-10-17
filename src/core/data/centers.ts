@@ -168,7 +168,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       [
         { kind: 'healed', count: 15 },
         { kind: 'reputation', percent: 40 },
-        { kind: 'wait', days: 3 },
+        { kind: 'patience', percent: 90 },
       ],
       [
         { kind: 'healed', count: 45 },
@@ -229,7 +229,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       [
         { kind: 'healed', count: 70 },
         { kind: 'cureRate', percent: 75 },
-        { kind: 'wait', days: 2.5 },
+        { kind: 'patience', percent: 93 },
       ],
       [
         { kind: 'healed', count: 160 },
@@ -285,7 +285,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
         { kind: 'healed', count: 70 },
         { kind: 'healed', count: 10, discipline: 'sound' },
         { kind: 'reputation', percent: 60 },
-        { kind: 'wait', days: 2.5 },
+        { kind: 'patience', percent: 93 },
       ],
       [
         { kind: 'healed', count: 160 },

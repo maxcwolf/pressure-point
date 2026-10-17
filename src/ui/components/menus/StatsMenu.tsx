@@ -23,8 +23,9 @@ import { StandingTab } from './StandingTab';
 /** One figure: this month so far and last month, over a bar for each month kept. */
 function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRecord[] }) {
   const values = monthlyValues(metric, months);
-  const heights = barHeights(values);
-  const now = values.at(-1) ?? 0;
+  // a month with no figure stands as an empty bar
+  const heights = barHeights(values.map((v) => v ?? 0));
+  const now = values.at(-1) ?? null;
   const last = values.length > 1 ? values.at(-2) : undefined;
   return (
     <div class="stat-card" data-metric={metric.id}>
@@ -35,11 +36,11 @@ function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRe
       </span>
       <div class="chart small">
         {heights.map((height, i) => {
-          const value = values[i] ?? 0;
+          const value = values[i] ?? null;
           return (
             <i
               key={i}
-              class={cx(value < 0 && 'neg', i === heights.length - 1 && 'now')}
+              class={cx(value !== null && value < 0 && 'neg', i === heights.length - 1 && 'now')}
               style={{ height: `${height * 0.6}px` }}
               title={formatMetric(metric.unit, value)}
             />

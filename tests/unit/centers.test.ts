@@ -5,7 +5,7 @@ import { type CenterId, CENTERS, type GoalSpec, plotFits, SANDBOX_PLOT } from '.
 import { lotWidth } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
 import { createContext, type SimContext } from '../../src/core/sim/context';
-import { averageWait, cureRate, objectiveFor } from '../../src/core/sim/goals';
+import { averagePatience, cureRate, objectiveFor } from '../../src/core/sim/goals';
 import { Sim } from '../../src/core/sim/sim';
 import { emptyLedger, emptyTally, newGame } from '../../src/core/state/game';
 import type { GameState, Tally } from '../../src/core/state/types';
@@ -178,21 +178,26 @@ describe('each kind of goal', () => {
     expect(check({ kind: 'balance', amount: 50000 }).progress).toBe(0);
   });
 
-  it('judges the cure rate and the wait over this month or the last one, once enough guests count', () => {
+  it('judges the cure rate and the patience guests leave with over this month or the last one, once enough guests count', () => {
     expect(cureRate(emptyTally())).toBeNull();
     expect(cureRate({ ...emptyTally(), healed: 8, failed: 2 })).toBe(80);
-    expect(averageWait({ ...emptyTally(), waitCount: 10, waitTotal: 10 * 6 * 2 })).toBe(2);
+    expect(averagePatience({ ...emptyTally(), waitCount: 10, patienceTotal: 10 * 45 })).toBe(45);
+    expect(averagePatience({ ...emptyTally(), waitCount: 9, patienceTotal: 9 * 45 })).toBeNull();
+    // months from before patience was kept do not count
+    const before = { ...emptyTally(), waitCount: 10 };
+    delete before.patienceTotal;
+    expect(averagePatience(before)).toBeNull();
     ctx.s.tally = { ...emptyTally(), healed: 6, failed: 4 };
-    ctx.s.months = [month({ healed: 9, failed: 1, waitCount: 10, waitTotal: 10 * 6 * 3 })];
+    ctx.s.months = [month({ healed: 9, failed: 1, waitCount: 10, patienceTotal: 10 * 60 })];
     expect(check({ kind: 'cureRate', percent: 85 })).toMatchObject({ done: true });
     expect(check({ kind: 'cureRate', percent: 95 })).toMatchObject({ done: false });
-    expect(check({ kind: 'wait', days: 3 })).toMatchObject({
-      label: 'Keep the average wait under 3 days for a month',
+    expect(check({ kind: 'patience', percent: 50 })).toMatchObject({
+      label: 'Guests keep 50% of their patience through the wait, on average, for a month',
       done: true,
     });
-    expect(check({ kind: 'wait', days: 2 })).toMatchObject({ done: false, progress: 2 / 3 });
+    expect(check({ kind: 'patience', percent: 80 })).toMatchObject({ done: false, progress: 60 / 80 });
     ctx.s.months = [];
-    expect(check({ kind: 'wait', days: 2 })).toMatchObject({ done: false, progress: 0 });
+    expect(check({ kind: 'patience', percent: 80 })).toMatchObject({ done: false, progress: 0 });
   });
 
   it('counts emergencies seen through and days without anyone quitting', () => {

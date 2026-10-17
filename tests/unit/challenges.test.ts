@@ -182,13 +182,29 @@ describe('the year-end awards', () => {
     expect(t).toMatchObject({ healed: 12, failed: 3, arrived: 17, priced: 1, net: 2000 });
   });
 
+  it('count the patience guests kept only over the months that kept it', () => {
+    const before = month({ waitCount: 10 });
+    delete before.patienceTotal;
+    const t = yearTotals([before, month({ waitCount: 20, patienceTotal: 20 * 70 })]);
+    expect(t).toMatchObject({ waitCount: 30, patienceTotal: 1400, patienceCount: 20 });
+  });
+
   it('are judged against a bar that rises every year', () => {
     const { s } = withChallenges();
-    const t = yearTotals([month({ healed: 45, failed: 5, arrived: 60, waitTotal: 60 * 6, waitCount: 60 })]);
+    const t = yearTotals([
+      month({ healed: 45, failed: 5, arrived: 60, waitTotal: 60 * 6, waitCount: 60, patienceTotal: 60 * 90 }),
+    ]);
     expect(judge(s, 'busiest', 1, t)).toMatchObject({ won: true, note: '45 healed, 40 needed' });
     expect(judge(s, 'busiest', 2, t)).toMatchObject({ won: false, note: '45 healed, 50 needed' });
     expect(judge(s, 'healing-hands', 1, t)).toMatchObject({ won: true, note: '90% healed, 75% needed' });
-    expect(judge(s, 'no-waiting', 1, t)).toMatchObject({ won: true });
+    expect(judge(s, 'no-waiting', 1, t)).toMatchObject({
+      won: true,
+      note: 'Guests kept 90% of their patience, 90% needed',
+    });
+    expect(judge(s, 'no-waiting', 2, t)).toMatchObject({
+      won: false,
+      note: 'Guests kept 90% of their patience, 91% needed',
+    });
     expect(judge(s, 'fair-prices', 1, t)).toMatchObject({ won: true });
     // too few guests to say
     const quiet = yearTotals([month({ healed: 3, arrived: 4, waitCount: 4 })]);
@@ -209,7 +225,7 @@ describe('the year-end awards', () => {
   it('pay out for each won, fill the trophy cabinet, and start the year afresh', () => {
     const { ctx, s, therapist } = withChallenges();
     s.months = Array.from({ length: YEAR_MONTHS }, () =>
-      month({ healed: 5, failed: 0, arrived: 6, waitTotal: 6 * 6, waitCount: 6 }),
+      month({ healed: 5, failed: 0, arrived: 6, waitTotal: 6 * 6, waitCount: 6, patienceTotal: 6 * 90 }),
     );
     therapist.yearServed = 30;
     therapist.morale = 50;

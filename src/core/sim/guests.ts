@@ -134,6 +134,7 @@ export function spawnGuest(
     hunger: rnd(0, 40),
     bladder: rnd(0, 40),
     patience: 100,
+    lowest: 100,
     diagnosis: emergency ? 1 : 0,
     consults: 0,
     outcome: '',
@@ -417,6 +418,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     drain *= 1 + discomfort(temp) * DISCOMFORT_DRAIN;
     drain *= wallDrain(ctx, g);
     g.patience -= drain * dt;
+    g.lowest = Math.max(0, Math.min(g.lowest ?? 100, g.patience));
     if (g.patience < LONG_WAIT_PATIENCE) feel(g, 'long-wait');
     if (g.thirst >= 100) feel(g, 'thirsty');
     if (g.hunger >= 100) feel(g, 'hungry');

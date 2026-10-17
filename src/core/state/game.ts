@@ -34,6 +34,7 @@ export const emptyTally = (): Tally => ({
   sent: 0,
   worse: 0,
   waitTotal: 0,
+  patienceTotal: 0,
   waitCount: 0,
   healedBy: {},
   classgoers: 0,

@@ -36,6 +36,8 @@ export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
   writeReview(ctx, g, end);
   tally.waitTotal += g.waited;
   tally.waitCount++;
+  // a month begun before patience was kept goes without it, rather than count only some of its guests
+  if (tally.patienceTotal !== undefined) tally.patienceTotal += Math.max(0, Math.min(100, g.lowest ?? g.patience));
   followVisit(ctx, g, end);
   if (end === 'healed') {
     const d = MODALITIES[conditionOf(g.condition).modality].discipline;

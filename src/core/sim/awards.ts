@@ -6,7 +6,6 @@ import {
   AWARD_REP,
   type AwardId,
   AWARDS,
-  DAY_SECONDS,
   DAYS_PER_MONTH,
   RIVAL_NAME,
   type Role,
@@ -25,6 +24,9 @@ export const YEAR_MONTHS = 12;
 /** Guests or treatments a year needs before a share of them is judged. */
 export const AWARD_SAMPLE = 20;
 
+/** The patience guests must keep through their visits, on average, for No Waiting Around: in the first year, more each year after, and at most. */
+const PATIENCE_BAR = { first: 90, yearly: 1, most: 95 };
+
 /** The roles whose members can be Healer of the Year. */
 const HEALERS: readonly Role[] = ['therapist', 'acupuncturist', 'practitioner', 'healer', 'shaman'];
 
@@ -36,12 +38,25 @@ export interface YearTotals {
   priced: number;
   waitTotal: number;
   waitCount: number;
+  /** Patience left as guests went, summed, over the months that kept it, and how many guests those months had. */
+  patienceTotal: number;
+  patienceCount: number;
   net: number;
 }
 
 /** Add up a year's months. */
 export function yearTotals(months: readonly MonthRecord[]): YearTotals {
-  const t: YearTotals = { arrived: 0, healed: 0, failed: 0, priced: 0, waitTotal: 0, waitCount: 0, net: 0 };
+  const t: YearTotals = {
+    arrived: 0,
+    healed: 0,
+    failed: 0,
+    priced: 0,
+    waitTotal: 0,
+    waitCount: 0,
+    patienceTotal: 0,
+    patienceCount: 0,
+    net: 0,
+  };
   for (const m of months) {
     t.arrived += m.arrived;
     t.healed += m.healed;
@@ -49,6 +64,10 @@ export function yearTotals(months: readonly MonthRecord[]): YearTotals {
     t.priced += m.priced;
     t.waitTotal += m.waitTotal;
     t.waitCount += m.waitCount;
+    if (m.patienceTotal !== undefined) {
+      t.patienceTotal += m.patienceTotal;
+      t.patienceCount += m.waitCount;
+    }
     t.net += netOf(m.ledger);
   }
   return t;
@@ -96,11 +115,11 @@ export function judge(s: GameState, id: AwardId, year: number, t: YearTotals, co
       return result(t.healed >= bar, `${t.healed} healed, ${bar} needed`);
     }
     case 'no-waiting': {
-      const bar = Math.max(1, 2 - later * 0.2);
-      if (t.waitCount < AWARD_SAMPLE)
-        return result(false, `Too few guests to judge (${t.waitCount} of ${AWARD_SAMPLE})`);
-      const wait = t.waitTotal / t.waitCount / DAY_SECONDS;
-      return result(wait <= bar, `${wait.toFixed(1)} days on average, ${bar.toFixed(1)} at most`);
+      const bar = Math.min(PATIENCE_BAR.most, PATIENCE_BAR.first + later * PATIENCE_BAR.yearly);
+      if (t.patienceCount < AWARD_SAMPLE)
+        return result(false, `Too few guests to judge (${t.patienceCount} of ${AWARD_SAMPLE})`);
+      const kept = t.patienceTotal / t.patienceCount;
+      return result(kept >= bar, `Guests kept ${pct(kept)} of their patience, ${pct(bar)} needed`);
     }
     case 'fair-prices': {
       if (t.arrived < AWARD_SAMPLE) return result(false, `Too few guests to judge (${t.arrived} of ${AWARD_SAMPLE})`);

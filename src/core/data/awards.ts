@@ -15,7 +15,7 @@ export const AWARDS: Readonly<Record<AwardId, AwardDef>> = {
     id: 'no-waiting',
     name: 'No Waiting Around',
     icon: '⏱️',
-    desc: 'The shortest average wait',
+    desc: 'Guests kept the most patience through the wait',
     prize: 2000,
   },
   'fair-prices': {

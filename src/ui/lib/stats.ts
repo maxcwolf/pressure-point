@@ -1,12 +1,12 @@
 // The Stats menu's figures: what each one measures in a month, how to show it, and which are shown.
 
-import { DAY_SECONDS, type Discipline, DISCIPLINE_ORDER, DISCIPLINES, type Offering } from '../../core/data';
+import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES, type Offering } from '../../core/data';
 import { money } from '../../core/format';
 import { incomeOf, netOf } from '../../core/sim/economy';
 import type { MonthRecord } from '../../core/state/types';
 
-/** How a figure reads: a count of guests, an amount of money, days, or a percentage. */
-export type Unit = 'count' | 'money' | 'days' | 'percent';
+/** How a figure reads: a count of guests, an amount of money, or a percentage. */
+export type Unit = 'count' | 'money' | 'percent';
 
 /** Something the Stats menu can chart month by month. */
 export interface Metric {
@@ -29,7 +29,12 @@ export const METRICS: readonly Metric[] = [
   { id: 'priced', name: 'Put off by prices', desc: 'Heard what their treatment would cost and left.', unit: 'count' },
   { id: 'sent', name: 'Sent home', desc: 'Sent home untreated, by you.', unit: 'count' },
   { id: 'worse', name: 'Got worse', desc: 'Worsened while they waited, and gave up.', unit: 'count' },
-  { id: 'wait', name: 'Average wait', desc: 'Time spent waiting, per guest who left.', unit: 'days' },
+  {
+    id: 'patience',
+    name: 'Patience kept',
+    desc: 'How much of their patience guests kept through the wait, on average: the lowest each one fell to.',
+    unit: 'percent',
+  },
   ...DISCIPLINE_ORDER.map((d): Metric => ({
     id: `healed-${d}`,
     name: `Healed by ${DISCIPLINES[d].name.toLowerCase()}`,
@@ -53,12 +58,15 @@ export const METRICS: readonly Metric[] = [
 ];
 
 /** The figures shown until the player chooses their own. */
-export const DEFAULT_METRICS: readonly string[] = ['arrived', 'healed', 'priced', 'stormed', 'wait', 'net'];
+export const DEFAULT_METRICS: readonly string[] = ['arrived', 'healed', 'priced', 'stormed', 'patience', 'net'];
 
 /** Money coming in during a month. */
 
-/** A figure's value for one month. */
-export function metricValue(metric: Metric, m: MonthRecord): number {
+/**
+ * A figure's value for one month, or null if the month has none to show: the patience guests kept, in a month nobody
+ * left or from before it was kept.
+ */
+export function metricValue(metric: Metric, m: MonthRecord): number | null {
   if (metric.discipline) return m.healedBy[metric.discipline] ?? 0;
   switch (metric.id) {
     case 'arrived':
@@ -77,8 +85,8 @@ export function metricValue(metric: Metric, m: MonthRecord): number {
       return m.worse;
     case 'classgoers':
       return m.classgoers;
-    case 'wait':
-      return m.waitCount ? m.waitTotal / m.waitCount / DAY_SECONDS : 0;
+    case 'patience':
+      return m.waitCount && m.patienceTotal !== undefined ? m.patienceTotal / m.waitCount : null;
     case 'income':
       return incomeOf(m.ledger);
     case 'shop':
@@ -97,14 +105,14 @@ export function metricValue(metric: Metric, m: MonthRecord): number {
 }
 
 /** A figure month by month, oldest first, ending with this month so far. */
-export function monthlyValues(metric: Metric, months: readonly MonthRecord[]): number[] {
+export function monthlyValues(metric: Metric, months: readonly MonthRecord[]): (number | null)[] {
   return months.map((m) => metricValue(metric, m));
 }
 
-/** A figure's value, written out for a person: a count, an amount, days or a percentage. */
-export function formatMetric(unit: Unit, value: number): string {
+/** A figure's value, written out for a person: a count, an amount or a percentage, or a dash for none. */
+export function formatMetric(unit: Unit, value: number | null): string {
+  if (value === null) return '—';
   if (unit === 'money') return money(value);
-  if (unit === 'days') return `${value.toFixed(1)} ${value.toFixed(1) === '1.0' ? 'day' : 'days'}`;
   if (unit === 'percent') return `${Math.round(value)}%`;
   return String(Math.round(value));
 }
@@ -117,7 +125,9 @@ export function offeredMetrics(enabled: (d: Offering) => boolean): Metric[] {
 /** The figures to show, in menu order: the chosen ones still on offer, or the defaults if there are none. */
 export function shownMetrics(chosen: readonly string[], enabled: (d: Offering) => boolean): Metric[] {
   const offered = offeredMetrics(enabled);
-  const wanted = offered.filter((m) => chosen.includes(m.id));
+  // the average wait in days, as it was, is shown as the patience guests kept
+  const ids = chosen.map((id) => (id === 'wait' ? 'patience' : id));
+  const wanted = offered.filter((m) => ids.includes(m.id));
   return wanted.length ? wanted : offered.filter((m) => DEFAULT_METRICS.includes(m.id));
 }
 

@@ -4,6 +4,18 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 17 October 2026, after midnight: waits
+
+### 17. Waits read in days, when a treatment itself takes days
+
+**Found:** the wait goals and the No Waiting Around award counted the average wait in days ("Keep the average wait under 2.5 days for a month"), and the Stats menu charted it the same way. But a day is six seconds and one treatment takes one and a half to three days, so a center running well averaged 6 to 14 days, and the number meant nothing a player could see. What the player does see is each guest's patience bar. Patience as guests left was no good either: each stage seen to (check-in, consultation, treatment) gives back 30, so most guests leave with nearly all of it.
+
+**Done:** each guest keeps the lowest their patience falls during their visit (`lowest` in `src/core/state/types.ts`, updated in `src/core/sim/guests.ts`), and each month sums it (`patienceTotal`, counted in `countVisit`), 0 for anyone who storms out. The wait goals became "Guests keep N% of their patience through the wait, on average, for a month" (`{ kind: 'patience' }`, judged in `src/core/sim/goals.ts`), the Stats chart became **Patience kept**, and the award is judged on it (`PATIENCE_BAR` in `src/core/sim/awards.ts`). A month from an older save, or with nobody leaving, shows a dash rather than 0%, and a month already under way when a save is upgraded goes without it, rather than count only some of its guests. A saved choice of the old wait chart shows the new one.
+
+To keep each goal as hard as it was, both bots played every center for four years (seeds 1 to 3) on 0.29.1 with patience kept recorded. Month by month it follows the old average wait closely (correlation −0.88 to −0.97). Months under 3 days pass as often as months keeping 91%, and under 2.5 days as often as 92% to 94%; the first month each game met them came out the same at 87% to 89%, and at 93%. So the Exchange's first-star goal is 90%, and the Boardwalk's and High Pines' second-star goals are 93%. Neither bot ever won the old award in those games (2 days on average over a year at most, 0.2 less each year); on patience kept the best year came to 96%, most to 55% to 85%. Its bar is now 90%, a point more each year, at most 95%: hard, but winnable.
+
+Measured with both bots from clean copies of 0.29.1 and of 0.29.1 with this change (seeds 1 to 3, and 1 to 9 at High Pines for the good bot): Willow Lane and the Orchard Estate, which have no wait goal, play move for move the same. At the other three the stars come within about a month of 0.29.1: the good bot's second star at High Pines in 8 games of 9 both ways, its third in 6 against 7, and the old bot's stars the same.
+
 ## 17 October 2026: staff who leave a class or a session
 
 Measured with the walkout probe (3, below): six seeds of 70 days, Reception, a Consultation Room, a Massage Suite, a Qi Gong Studio with three Practice Spots, a Staff Room and an Instructor, reputation held at 70, counting the class-goers who went home disappointed by why. Since 70 days holds only one Instructor's break a seed, the same probe also ran over 24 seeds of 140 days, with the helpers' Staff Room (about a day's walk from the studio) and with one beside the studio.

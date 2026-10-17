@@ -48,6 +48,22 @@ describe('the monthly record', () => {
     expect(overall(s, 'healed')).toBe(stats.healed);
     expect([...s.months, s.tally].reduce((sum, m) => sum + (m.healedBy.massage ?? 0), 0)).toBe(stats.healed);
     expect(overall(s, 'waitCount')).toBe(stats.healed + stats.failed + stats.stormed + stats.priced);
+    // and how much patience each had left, between none and all of it
+    const left = [...s.months, s.tally].reduce((sum, m) => sum + (m.patienceTotal ?? 0), 0);
+    expect(left).toBeGreaterThan(0);
+    expect(left).toBeLessThanOrEqual(overall(s, 'waitCount') * 100);
+  });
+
+  it("keeps the lowest each guest's patience fell, which a lift afterwards does not undo", () => {
+    const { sim, s } = openCenter(1);
+    runUntil(sim, () => s.guests.some((g) => g.patience < 90), 600);
+    const g = s.guests.find((x) => x.patience < 90)!;
+    const low = g.lowest!;
+    expect(low).toBeLessThan(90);
+    expect(low).toBeCloseTo(g.patience, 0);
+    g.patience = 100;
+    run(sim, 0.5);
+    expect(g.lowest).toBe(low);
   });
 
   // guests who balked at prices used to be counted as having stormed out
@@ -103,28 +119,32 @@ describe('the figures', () => {
       priced: 2,
       waitTotal: 3 * DAY_SECONDS * 4,
       waitCount: 4,
+      patienceTotal: 4 * 45,
       healedBy: { reiki: 3 },
       ledger: { ...emptyLedger(), treatment: 5000, salaries: 3000 },
       reputation: 55,
     });
     expect(metricValue(metric('arrived'), m)).toBe(9);
     expect(metricValue(metric('priced'), m)).toBe(2);
-    expect(metricValue(metric('wait'), m)).toBe(3);
+    expect(metricValue(metric('patience'), m)).toBe(45);
     expect(metricValue(metric('healed-reiki'), m)).toBe(3);
     expect(metricValue(metric('healed-acupuncture'), m)).toBe(0);
     expect(metricValue(metric('income'), m)).toBe(5000);
     expect(metricValue(metric('costs'), m)).toBe(3000);
     expect(metricValue(metric('net'), m)).toBe(2000);
     expect(metricValue(metric('reputation'), m)).toBe(55);
-    expect(metricValue(metric('wait'), month({}))).toBe(0);
+    expect(metricValue(metric('patience'), month({}))).toBeNull();
+    // months from before patience was kept show nothing
+    const before = month({ waitCount: 4 });
+    delete before.patienceTotal;
+    expect(metricValue(metric('patience'), before)).toBeNull();
+    expect(formatMetric('percent', null)).toBe('—');
     expect(monthlyValues(metric('arrived'), [month({ arrived: 1 }), month({ arrived: 4 })])).toEqual([1, 4]);
   });
 
   it('are written for people', () => {
     expect(formatMetric('count', 4.4)).toBe('4');
     expect(formatMetric('money', -1500)).toBe('-$1,500');
-    expect(formatMetric('days', 1)).toBe('1.0 day');
-    expect(formatMetric('days', 2.25)).toBe('2.3 days');
     expect(formatMetric('percent', 61.6)).toBe('62%');
   });
 
@@ -139,12 +159,14 @@ describe('the figures', () => {
     expect(offeredMetrics(noReiki).some((m) => m.id === 'healed-reiki')).toBe(false);
     expect(shownMetrics(['healed-reiki'], noReiki).map((m) => m.id)).toEqual(defaults);
     expect(shownMetrics(['no-such-chart'], all).map((m) => m.id)).toEqual(defaults);
+    // the old average-wait chart, chosen in an earlier version, shows as patience left
+    expect(shownMetrics(['wait'], all).map((m) => m.id)).toEqual(['patience']);
   });
 
   it('can be chosen and put away, but never all at once', () => {
-    expect(toggleMetric(['net'], 'wait')).toEqual(['net', 'wait']);
-    expect(toggleMetric(['net', 'wait'], 'net')).toEqual(['wait']);
-    expect(toggleMetric(['wait'], 'wait')).toEqual(['wait']);
+    expect(toggleMetric(['net'], 'patience')).toEqual(['net', 'patience']);
+    expect(toggleMetric(['net', 'patience'], 'net')).toEqual(['patience']);
+    expect(toggleMetric(['patience'], 'patience')).toEqual(['patience']);
   });
 });
 

@@ -462,7 +462,7 @@ export class Bot {
       .filter((st) => !st.training)
       .sort((a, b) => this.sim.callFee(b) - this.sim.callFee(a))[0];
     // with nobody else in the role, only while the line is short and no goal asks for short waits
-    if (!who || (atWork.length < 2 && (this.waiting(role) > 2 || this.openGoal('wait')))) return;
+    if (!who || (atWork.length < 2 && (this.waiting(role) > 2 || this.openGoal('patience')))) return;
     const fee = this.sim.callFee(who);
     if (this.sim.acceptCall(who.id)) this.note(`day ${Math.floor(s.day)}: house call, ${call.days} days for ${fee}`);
   }
