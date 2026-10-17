@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.6
+
+- **Cancel a course.** A member of staff on a course has a Cancel course button in their inspector. After you confirm, they go back to work and the whole fee is refunded. They don't gain the qualification.
+
 ## v0.30.5
 
 - **Experts learn every treatment.** An Expert can now study any treatment of their discipline even with every qualification slot filled, so a Shaman, or anyone who took a general course on the way up, is no longer shut out of their last one. General courses still need a free slot.
