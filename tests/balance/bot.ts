@@ -49,13 +49,20 @@ export const BOT_FLAGS = [
   'calls',
   /** Move guests to a shorter line, and stagger breaks so a station is not left empty. */
   'lines',
+  /** Hire the cheapest Consultant going rather than the best: a junior one, who often needs a second look. */
+  'junior',
+  /** Build a Posture Lab when the consultants send many guests back for a second look: junior, or a long line. */
+  'lab',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
+/** Flags that are off unless `BOT_ON` names them, as a different way to play rather than better play. */
+const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab'];
 
 /**
  * The bot's flags from the environment. `BOT=old` plays as the bot did before it learned any of them; `BOT_OFF`
- * switches some off (`BOT_OFF=prices,calls`), and `BOT_ON` switches some on for the old bot.
+ * switches some off (`BOT_OFF=prices,calls`), and `BOT_ON` switches some on for the old bot, or the extras
+ * (`BOT_ON=junior,lab`), which are off unless named.
  */
 export function botFlags(env: Record<string, string | undefined> = process.env): BotFlags {
   /** The flags named in a comma-separated list, refusing any the bot does not know. */
@@ -71,7 +78,9 @@ export function botFlags(env: Record<string, string | undefined> = process.env):
   const all = (env.BOT ?? 'new') !== 'old';
   const off = list(env.BOT_OFF);
   const on = list(env.BOT_ON);
-  return Object.fromEntries(BOT_FLAGS.map((f) => [f, (all && !off.has(f)) || on.has(f)])) as BotFlags;
+  return Object.fromEntries(
+    BOT_FLAGS.map((f) => [f, (all && !BOT_EXTRAS.includes(f) && !off.has(f)) || on.has(f)]),
+  ) as BotFlags;
 }
 
 /** The highest price level the bot sets, and the most it adds on top for a discipline whose line runs long. */
@@ -131,6 +140,9 @@ export interface MonthLog {
   healedBy: Partial<Record<Discipline, number>>;
   /** The price level at the month's end. */
   price: number;
+  /** Whether there is a Posture Lab at the month's end, and the guests sent for a scan over the month. */
+  lab: boolean;
+  scans: number;
 }
 
 export interface Playtest {
@@ -191,6 +203,9 @@ export class Bot {
   private noFit: Partial<Record<RoomType, number>> = {};
   /** The discipline each guest in a treatment line is waiting for, as last seen. */
   private inLine = new Map<number, Discipline>();
+  /** The guests seen sent for a posture scan, and how many of them this month. */
+  private sentForScan = new Set<number>();
+  private scans = 0;
 
   constructor(
     readonly center: CenterId,
@@ -308,7 +323,11 @@ export class Bot {
       ),
       healedBy: { ...st.healedBy },
       price: s.priceLevel,
+      lab: this.sim.hasRoom('assess'),
+      scans: this.scans,
     });
+    this.scans = 0;
+    for (const id of this.sentForScan) if (!this.sim.guest(id)) this.sentForScan.delete(id);
     this.monthStart = {
       arrived: st.arrived,
       healed: st.healed,
@@ -511,6 +530,10 @@ export class Bot {
   private sampleTables() {
     const w = this.watch;
     for (const g of this.s.guests) {
+      if (g.goal === 'assess' && !this.sentForScan.has(g.id)) {
+        this.sentForScan.add(g.id);
+        this.scans++;
+      }
       const was = this.inLine.get(g.id);
       if (!g.outcome) {
         if (g.goal === 'treat') this.inLine.set(g.id, this.sim.modalityOf(g).discipline);
@@ -623,6 +646,7 @@ export class Bot {
     this.unlocks();
     this.train();
     this.grow();
+    if (this.flags.lab) this.buildLab();
     this.decorate();
     this.comforts();
   }
@@ -884,10 +908,11 @@ export class Bot {
 
   /** Hire the best applicant for a role the bot can afford to keep. */
   hire(role: Role): boolean {
+    const cheap = role === 'consultant' && this.flags.junior;
     const c = this.s.candidates
       .filter((x) => x.role === role)
-      // a player picks the best rank going, then the cheaper
-      .sort((a, b) => b.skill - a.skill || a.salary - b.salary)[0];
+      // a player picks the best rank going, then the cheaper, or (for a junior Consultant) just the cheapest
+      .sort((a, b) => (cheap ? a.salary - b.salary : b.skill - a.skill || a.salary - b.salary))[0];
     if (!c) return false;
     return !!this.sim.hire(c.id);
   }
@@ -1081,6 +1106,24 @@ export class Bot {
       if (g.goal !== 'treat') return false;
       return DISCIPLINES[this.sim.modalityOf(g).discipline].role === role;
     }).length;
+  }
+
+  /**
+   * A Posture Lab, once, when the consultants send many guests back for a second look: all of them rank 2 or below
+   * (a rank 3 Consultant is always sure enough the first time), or more than three waiting a Consultation Room. Only
+   * while the center pays its way and the bot is not saving, and with the money in hand.
+   */
+  private buildLab() {
+    if (this.sim.hasRoom('assess') || this.saving() !== null || this.profit() <= 0) return;
+    const consultants = this.staffOf('consultant');
+    const junior = consultants.length > 0 && consultants.every((x) => x.skill <= 2);
+    const long = this.waiting('consultant') > this.rooms('consult').length * 3;
+    if (!junior && !long) return;
+    if (!this.afford(ROOMS.assess.cost, this.wages() * 1.2 + 2000)) return;
+    if (this.buildRoom('assess')) {
+      this.note(`day ${Math.floor(this.s.day)}: a Posture Lab (${junior ? 'junior consultants' : 'a long line'})`);
+      this.hireToFill();
+    }
   }
 
   /** Build another room where a line is long and the money is there. */
