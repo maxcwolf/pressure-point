@@ -45,6 +45,9 @@ export interface MonthLog {
   wages: number;
   avgWaitDays: number | null;
   inside: number;
+  /** Each discipline's following at the month's end, where the game has them, and guests healed in each so far. */
+  following: Partial<Record<Discipline, number>>;
+  healedBy: Partial<Record<Discipline, number>>;
 }
 
 export interface Playtest {
@@ -196,6 +199,13 @@ export class Bot {
       wages: Math.round(l.salaries),
       avgWaitDays: wait === null ? null : Math.round(wait * 10) / 10,
       inside: s.guests.length,
+      following: Object.fromEntries(
+        Object.entries((s as { following?: Partial<Record<Discipline, number>> }).following ?? {}).map(([d, f]) => [
+          d,
+          Math.round(f),
+        ]),
+      ),
+      healedBy: { ...st.healedBy },
     });
     this.monthStart = {
       arrived: st.arrived,
