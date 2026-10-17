@@ -3,6 +3,7 @@
 // rebuilds the grid while nothing is being built, fails here instead of quietly slowing the game.
 import { describe, expect, it, vi } from 'vitest';
 
+import { placeLayout } from '../../src/core/room-layout';
 import type { SimContext } from '../../src/core/sim/context';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { addPostureLab, addRestroom, addStaffRoom, addTraining, hire, openCenter, run } from './helpers';
@@ -68,5 +69,28 @@ describe('the work a busy center takes', () => {
     // where to stand only changes when something is built, so it is worked out once for each spot in line: about
     // 37 a minute when this was written, and about 3300 while every guest worked theirs out afresh
     expect(flood.mock.calls.length / minutes).toBeLessThan(80);
+  });
+
+  it('asks the build checks the player hovers with without rebuilding the grid', () => {
+    const { sim, s, massage } = openCenter(1);
+    const { world } = sim;
+    const rebuild = vi.spyOn(world, 'rebuild');
+    const connected = vi.spyOn(world, 'connected');
+    const { version } = world;
+    const grow = { x: massage.x, y: massage.y, w: massage.w + 1, h: massage.h };
+    const checks = [
+      world.canPlaceItem('bench', 16, 9, 0),
+      world.doorValid('staffroom', { x: 17, y: 5, w: 3, h: 3 }, { x: 18, y: 7, dx: 0, dy: 1 }),
+      world.resizeValid(massage, grow),
+      world.layoutValid('massage', placeLayout(sim.roomLayout(massage), 17, 5), massage),
+      world.layoutValid('massage', placeLayout(sim.roomLayout(massage), 17, 5)),
+    ];
+    expect(checks.map((c) => c.ok)).toEqual([true, true, true, true, true]);
+    // each tried its change out on grids of its own: two rebuilds of the grid a check, three for moving a room,
+    // when they tried it on the game itself
+    expect(rebuild).not.toHaveBeenCalled();
+    expect(connected).toHaveBeenCalledTimes(checks.length);
+    expect(world.version).toBe(version);
+    expect(s.rooms).toContain(massage);
   });
 });
