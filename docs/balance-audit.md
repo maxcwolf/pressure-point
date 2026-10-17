@@ -10,7 +10,7 @@ Reading the code gives the rules; it does not say how they add up. So a **playte
 
 `yarn balance` runs it: every center, five seeds, four in-game years each. The runs are deterministic by seed, so a tuning change can be compared against the same games. All the figures below are medians over the five seeds unless they say otherwise.
 
-The bot's limits, so the figures are read fairly. It never fires anyone, so it rides out a loss-making winter with a full payroll. It does not save toward a money goal. It does not manage lines, prices, policy or marketing. A good human player will beat it everywhere; a new one will do worse. What matters is where it stalls, and why.
+The bot's limits, so the figures are read fairly (since lifted: see entry 13 in `docs/balance-log.md`, and `BOT=old` for the bot as it was here). It never fires anyone, so it rides out a loss-making winter with a full payroll. It does not save toward a money goal. It does not manage lines, prices, policy or marketing. A good human player will beat it everywhere; a new one will do worse. What matters is where it stalls, and why.
 
 ## The pace in numbers
 

@@ -4,6 +4,53 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 16 October 2026, late night: a playtest bot that plays like a good player
+
+### 13. The bot understated how easy the game is
+
+**Found:** the playtest bot never touched prices, marketing or policy, never let anyone go, never saved toward a money goal and built rooms whenever a line was long, so a good player beat it everywhere and its numbers made the game look harder than it is. Judging whether a change makes the game too easy needs a bot that plays well.
+
+**Done** (`tests/balance/bot.ts`, the bot only; no game rules changed). The bot now:
+
+- **sets prices** each month, a tenth at a time, between 1.0 and 1.4: up while fewer than one guest in ten is put off by them and reputation is comfortable (at least 45, and any reputation goal met), down when more are put off or reputation falls short of a goal or drops. A discipline whose line runs past three a room costs up to 30% more on top, so the guests who would wait and walk out are priced off instead;
+- **buys marketing** only where it can pay: word of mouth when a month of it could carry reputation to a goal, or the center has time to spare; a condition in the spotlight for a "heal so many with…" goal while that discipline has time to spare, or to send guests from a crowded discipline to an idle one; and a recruitment drive, holding out up to a week, when the only applicants for a practitioner are Trainees;
+- **lets practitioners go** just before payday when a discipline's tables were busy well under 70% of the time and the season ahead is no busier (never the last of a discipline), leaves the room empty, and takes someone back on when another room would pay;
+- **saves for an open money goal** once the rest of the star is met or the money is halfway there: no decor (unless a prestige goal asks for it), no land, no new discipline a goal does not need, no room that does not pay for itself within three months, and the loan paid down;
+- **builds a treatment room on the profit it is expected to make**: the guests who gave up waiting for that discipline last month, plus the line beyond one a room, times the busiest of the next three months' seasons, healed at the discipline's own rate and paying its fees, less a salary and the room's cost spread over a year. It keeps space for a discipline the next star opens, giving up a spot while the room is still a plan if it would leave none; and when a goal needs a room that will not fit and there is no land left to buy, it knocks down a spare room for half its cost back, as a player can, and builds in its place;
+- **takes house calls** when someone else in the role stays at work, or the line is short and no wait goal is open;
+- **evens out lines**, moving guests from a station with nobody at it or a much longer line to another of the same kind, and lets at most half of any role go on a break at once.
+
+Each can be switched off for a comparison: `BOT=old yarn balance` plays as the bot did before (checked to give the same games, move for move), and `BOT_OFF=prices,calls` switches single ones off (`BOT_FLAGS` in the bot). The month logs are as before, with the price level added.
+
+Measured with `yarn balance` at `a9dbef7` (5% arrivals a discipline, the narrower following), every campaign center, seeds 1 to 3, four years a game. Guests, healed, waits and profit are averaged from the second year on; months at a loss are of all 48:
+
+| Center             | Third star | Stars at month         | Guests a month | Healed a month | Average wait, days | Months at a loss | Profit a month  | Price level |
+| ------------------ | ---------- | ---------------------- | -------------- | -------------- | ------------------ | ---------------- | --------------- | ----------- |
+| Willow Lane        | 1/3 → 3/3  | 1, 15, 30 → 1, 4, 13   | 13.1 → 14.9    | 9.4 → 10.9     | 13.6 → 12.5        | 24.7 → 9.3       | $3.4k → $16.7k  | 1.00 → 1.32 |
+| The Exchange       | 2/3 → 3/3  | 9, 13, 29 → 13, 18, 20 | 18.6 → 14.3    | 15.3 → 10.8    | 6.0 → 7.5          | 17.3 → 10.3      | $4.9k → $17.9k  | 1.00 → 1.37 |
+| The Boardwalk      | 0/3 → 3/3  | 7, 14, – → 5, 13, 23   | 16.1 → 15.8    | 11.0 → 10.8    | 7.2 → 8.3          | 27.7 → 18.0      | −$2.8k → $5.5k  | 1.00 → 1.21 |
+| High Pines         | 0/3 → 3/3  | 22, 22, – → 7, 29, 42  | 17.0 → 15.3    | 12.8 → 10.5    | 4.6 → 9.3          | 24.0 → 19.0      | $1.0k → $6.5k   | 1.00 → 1.29 |
+| The Orchard Estate | 3/3 → 3/3  | 6, 25, 36 → 6, 14, 22  | 19.4 → 19.0    | 14.8 → 14.2    | 6.7 → 10.1         | 16.3 → 9.3       | $12.5k → $32.5k | 1.00 → 1.27 |
+
+Stars at month is the average month each star came in the games that earned it. The new bot earns the third star in all 15 games against 6, makes 2.5 to 7 times the profit where the old one made any, spends 5 to 15 fewer months at a loss, and does it with much the same staff. It sees and heals a few fewer guests: it plays for money, not for the most guests through the door. At The Exchange its first star comes later, as running thin at high prices keeps the average wait over 3 days for longer. At The Boardwalk and High Pines the Reiki Studio for the third star fitted only after knocking down a second Massage Suite (in four games of six), the building being full with all its land bought; the old bot never built one there, and one of its High Pines games ended $195k in debt.
+
+**What each behaviour is worth**, from the same games with one switched off, run before the bot learned to make space and with marketing as first tuned (three seeds, so a difference of a few thousand a month is within what the seeds alone do):
+
+- **Prices** count most and everywhere: without them profit falls by $3k to $10k a month at every center, and The Boardwalk's third star comes in one game of three. At 1.3 to 1.4 only about 2% of guests are put off, since regulars and emergencies never balk, and reputation per heal falls by a tenth.
+- **House calls** come next: $1,200 a day and up, against roughly $250 a day a practitioner earns in the center. Without them Willow Lane makes half as much.
+- **Saving** gets the money goals sooner (The Boardwalk's third star in three games of three, one without; High Pines loses money without it).
+- **Expansion on profit** helps where the old rule built too little (Willow Lane) but builds less than it should where seasons and the following swing (High Pines and The Boardwalk did better without it).
+- **Marketing**, **payroll** and **lines** are within the seeds' noise, or slightly costly. Word of mouth at $3,000 a month rarely pays for itself.
+
+**For the "too easy" question:** this bot is a fairer stand-in for a good player, and against the old one it finds the game much easier, mostly through prices and house calls, which cost a good player almost nothing. Its waits are longer than the old bot's (by up to 4.5 days at High Pines), as a player chasing money runs thin; so a good player will not find waiting guests the hardest thing to manage, but a cautious one may.
+
+**Noted, not changed (game rules):**
+
+- Raising prices to 1.4 costs very little: the put-off chance (35% of every tenth over 1.0) applies only to guests who are not regulars, and those are a small share in a settled center.
+- House calls pay several times what a practitioner earns in the center, for one to three days away.
+- Letting someone go has no cost, no notice and no severance, and a member of staff let go just before payday is not paid for the month they worked.
+- The Boardwalk and High Pines, with all their land, have too little room for a fifth treatment room in the bot's layout without knocking one down, as the audit found.
+
 ## 16 October 2026, night: toned down for release, against the released game
 
 The released 0.28.6 plays fair without being punishing, so it is the measure: the changes above should not make the game much easier than it. The playtest bot was run on 0.28.6 itself (its source, with the bot copied in) and on this branch, six seeds of every center each, four years a game. The bot is a cautious scripted player that never touches prices, marketing or policy and never lets anyone go, so a good player does better than either column; what counts is the difference between them.

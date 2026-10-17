@@ -1,6 +1,8 @@
 // Plays every campaign center with the playtest bot and reports the pace: when it opened, when each star came, and
 // the money, reputation, guests and waits month by month. Not a pass/fail test: run `yarn balance` before and after
-// a tuning change and compare. The full logs go to test-results/balance.json.
+// a tuning change and compare. The full logs go to test-results/balance.json. `BOT=old` plays as the bot did before
+// it learned prices, marketing, payroll, saving, expansion on profit, house calls and lines; `BOT_OFF=prices,calls`
+// switches single ones off (see `BOT_FLAGS` in bot.ts).
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 import { it } from 'vitest';
