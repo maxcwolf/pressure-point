@@ -653,11 +653,21 @@ export class World {
         if (!need(x, y)) return false;
       }
     }
-    // nobody already inside may be walled in (their own tile may be the one being built on)
+    /**
+     * Whether someone on a tile inside can get out to the street: from the tile itself, or if it is the one being
+     * built on, by stepping off it onto one that is reached, not through a wall.
+     */
+    const free = (x: number, y: number) =>
+      !this.inside(x, y) ||
+      (this.walkable(x, y)
+        ? need(x, y)
+        : DIRS4.some(([dx, dy]) => need(x + dx, y + dy) && this.canStep(x, y, x + dx, y + dy)));
+    // nobody already inside may be walled in, on the tile they stand on or the one they are stepping into, as they
+    // may already be partway across into it and set off again from there
     for (const c of [...this.s.guests, ...this.s.staff, ...this.s.visitors]) {
-      if (!this.inside(c.tx, c.ty)) continue;
-      const { tx: x, ty: y } = c;
-      if (!need(x, y) && !need(x + 1, y) && !need(x - 1, y) && !need(x, y + 1) && !need(x, y - 1)) return false;
+      if (!free(c.tx, c.ty)) return false;
+      const ahead = c.path?.[0];
+      if (ahead && !ahead[2] && !free(Math.floor(ahead[0]), Math.floor(ahead[1]))) return false;
     }
     return true;
   }

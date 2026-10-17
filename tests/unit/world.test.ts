@@ -235,6 +235,57 @@ describe('placing items', () => {
     expect(sim.world.canPlaceItem('plant', 20, row, 0).ok).toBe(true);
   });
 
+  it('will not build under someone stepping into a corner it would seal off', () => {
+    const sim = freshSim();
+    const caretaker = hire(sim, 'caretaker');
+    Object.assign(caretaker, { x: 14.5, y: 16.5, tx: 14, ty: 16, path: null, dest: null, state: 'idle', timer: 999 });
+    // a nook in the back corner, open only at (3,5)
+    for (const [x, y] of [
+      [5, 3],
+      [5, 4],
+      [4, 5],
+    ] as const)
+      expect(sim.placeItem('plant', x, y, 0), `plant at ${x},${y}`).not.toBeNull();
+    // on the gap, partway across into the nook: their tile is still the gap, but they will walk on into the nook
+    Object.assign(caretaker, { x: 3.5, y: 5.1, tx: 3, ty: 5, path: [[3.5, 4.5, 0]], dest: [3, 4, 0, 0, 0] });
+    expect(sim.world.canPlaceItem('plant', 3, 5, 0).reason).toMatch(/block the way/);
+    // standing on the gap, they just step off it the other way
+    Object.assign(caretaker, { x: 3.5, y: 5.5, path: null, dest: null });
+    expect(sim.placeItem('plant', 3, 5, 0)).not.toBeNull();
+    expect(sim.world.findPath(3, 5, ENT_X[0], ENT_IN_Y)).not.toBeNull();
+  });
+
+  it('will not build on the tile of someone who could only step off it through a wall', () => {
+    const sim = freshSim();
+    const caretaker = hire(sim, 'caretaker');
+    Object.assign(caretaker, { x: 14.5, y: 16.5, tx: 14, ty: 16, path: null, dest: null, state: 'idle', timer: 999 });
+    addConsult(sim);
+    // a one-tile nook against the Consultation Room's west wall, the room open on the far side of it
+    for (const [x, y] of [
+      [3, 6],
+      [4, 5],
+      [4, 7],
+    ] as const)
+      expect(sim.placeItem('plant', x, y, 0), `plant at ${x},${y}`).not.toBeNull();
+    Object.assign(caretaker, { x: 4.5, y: 6.5, tx: 4, ty: 6 });
+    expect(sim.world.walkable(5, 6)).toBe(true);
+    expect(sim.world.canPlaceItem('plant', 4, 6, 0).reason).toMatch(/block the way/);
+  });
+
+  it('will not put up a room that leaves someone in a stretch of corridor it cuts off', () => {
+    const sim = freshSim();
+    const caretaker = hire(sim, 'caretaker');
+    Object.assign(caretaker, { x: 3.5, y: 3.5, tx: 3, ty: 3, path: null, dest: null, state: 'idle', timer: 999 });
+    expect(sim.placeItem('plant', 3, 5, 0)).not.toBeNull();
+    // a Restroom along the back wall would leave the strip at x 3 open only into the room, through its wall
+    const rect = { x: 4, y: 3, w: 3, h: 2 };
+    const door = { x: 5, y: 4, dx: 0, dy: 1 };
+    expect(sim.world.doorValid('restroom', rect, door).reason).toMatch(/block the way/);
+    // with nobody in the strip, it is fine
+    Object.assign(caretaker, { x: 14.5, y: 16.5, tx: 14, ty: 16 });
+    expect(sim.world.doorValid('restroom', rect, door).ok).toBe(true);
+  });
+
   it('will not let furniture cut off a room door or a piece of furniture', () => {
     const sim = freshSim();
     const room = addConsult(sim);
