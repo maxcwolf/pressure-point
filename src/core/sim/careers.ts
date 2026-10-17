@@ -29,7 +29,7 @@ import { tuning } from '../difficulty';
 import { money } from '../format';
 import { makeCandidate } from '../people';
 import { pick, random } from '../random';
-import type { GameState, Item, Job, Staff } from '../state/types';
+import type { CourseId, GameState, Item, Job, Staff } from '../state/types';
 import { at } from '../util';
 import { Z_CORRIDOR } from '../world';
 import { say, staffById } from './chars';
@@ -54,6 +54,16 @@ export const slots = (st: Staff) => st.skill;
 
 /** Whether they have a free slot for another course. */
 export const slotFree = (st: Staff) => trained(st) < slots(st);
+
+/** Whether they are of the top rank, Expert. */
+export const expert = (st: Staff) => st.skill >= RANKS.length;
+
+/**
+ * Whether they have room for this course: a free slot, or, for an Expert, any treatment of their own discipline, so
+ * that an Expert can learn every one of them whatever general courses filled their slots on the way up.
+ */
+export const roomFor = (st: Staff, course: CourseId) =>
+  slotFree(st) || (expert(st) && Object.hasOwn(MODALITIES, course));
 
 /** Experience still needed to be ready for the next rank, or null at the top. */
 export function xpToNext(st: Staff): number | null {
@@ -83,6 +93,7 @@ export const generalToLearn = (st: Staff) => generalFor(st.role).filter((id) => 
 /**
  * Whether they are as qualified as they can be for now: every slot filled, or no course left to fill one with. A
  * consultant has only three courses, so as a Senior, with four slots, they would otherwise never be promoted again.
+ * An Expert, with no promotion to come, may still learn the treatments left to them.
  */
 export const fullyTrained = (ctx: SimContext, st: Staff) =>
   !slotFree(st) || (treatmentsToLearn(ctx, st).length === 0 && generalToLearn(st).length === 0);

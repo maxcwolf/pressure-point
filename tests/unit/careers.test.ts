@@ -7,10 +7,14 @@ import {
   APPLICANT_DAYS,
   BEDSIDE_PATIENCE,
   GENERAL_COURSES,
+  type GeneralId,
   MAINTENANCE_SPEED,
+  MODALITIES,
+  MODALITY_ORDER,
   PROMOTION_SULK,
   RANK_XP,
   ROLE_ORDER,
+  ROLES,
   STAMINA_DRAIN,
 } from '../../src/core/data';
 import { amandaAround, makeCandidate } from '../../src/core/people';
@@ -138,6 +142,39 @@ describe('ranks', () => {
     const course = sim.courses(therapist).find((c) => c.id === 'bedside')!;
     expect(sim.trainBlocker(therapist, course)).toMatch(/slot/);
     expect(sim.train(therapist.id, 'bedside')).toBe(false);
+  });
+
+  it('let an Expert of every discipline study its last treatment, though general courses filled their slots', () => {
+    const { sim, s } = openCenter(1);
+    s.unlockAll = true;
+    addTraining(sim);
+    const general: GeneralId[] = ['bedside', 'motivation', 'stamina'];
+    const roles = ROLE_ORDER.filter((r) => ROLES[r].discipline);
+    expect(roles).toEqual(['therapist', 'acupuncturist', 'practitioner', 'healer', 'shaman']);
+    for (const role of roles) {
+      const st = hire(sim, role);
+      const all = MODALITY_ORDER.filter((m) => MODALITIES[m].discipline === ROLES[role].discipline);
+      const last = all.at(-1)!;
+      st.quals = all.filter((m) => m !== last);
+      // every slot of the five filled: the treatments learned beyond the first, and general courses for the rest
+      st.general = general.slice(0, 5 - (st.quals.length - 1));
+      st.skill = 4;
+      const course = sim.courses(st).find((c) => c.id === last)!;
+      expect(course).toBeDefined();
+      // a Senior has a slot too few
+      expect(sim.trainBlocker(st, course)).toMatch(/A promotion brings another/);
+      st.skill = 5;
+      expect(slotFree(st)).toBe(false);
+      expect(sim.trainBlocker(st, course), role).toBe('');
+      // a general course still needs a free slot
+      const other = sim.courses(st).find((c) => !(c.id in MODALITIES));
+      if (other) expect(sim.trainBlocker(st, other)).toMatch(/As an Expert, they can still learn any treatment/);
+    }
+    // and one of them goes and learns it
+    const shaman = s.staff.find((st) => st.role === 'shaman')!;
+    expect(sim.train(shaman.id, 'quest')).toBe(true);
+    runUntil(sim, () => shaman.quals.includes('quest'), 600);
+    expect(sim.courses(shaman).filter((c) => c.id in MODALITIES)).toEqual([]);
   });
 });
 

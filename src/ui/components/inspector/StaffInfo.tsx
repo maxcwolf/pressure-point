@@ -3,14 +3,14 @@
 import { DUTIES, DUTY_NAMES, ROLES, traitOf } from '../../../core/data';
 import { money } from '../../../core/format';
 import { assignableRole, roomLabels } from '../../../core/sim/assignments';
-import { rankName, rankProgress, slots, trained, xpToNext } from '../../../core/sim/careers';
+import { rankName, rankProgress, xpToNext } from '../../../core/sim/careers';
 import { burntOut } from '../../../core/sim/souls';
 import type { Staff } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { soulNote } from '../../lib/souls';
 import { offerWarning } from '../../lib/standing';
-import { moraleLook, promotionNote, quitWarning, staffStatus } from '../../lib/status';
+import { moraleLook, promotionNote, quitWarning, slotNote, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { QualChips } from '../common/QualChips';
@@ -35,11 +35,7 @@ function Career({ staff: st }: { staff: Staff }) {
             : `Experience: enough for ${rankName(st.skill + 1)}`}
         <Bar value={rankProgress(st) * 100} class="blue" />
       </label>
-      {note ? (
-        <p class="status needs">{note}</p>
-      ) : (
-        <p class="sub">{`Qualification slots: ${trained(st)} of ${slots(st)} filled. Each promotion brings another.`}</p>
-      )}
+      {note ? <p class="status needs">{note}</p> : <p class="sub">{slotNote(st)}</p>}
       <QualChips quals={st.quals} general={st.general} />
       {st.promotion && st.state !== 'leaving' && (
         <Button

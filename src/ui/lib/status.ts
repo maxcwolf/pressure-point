@@ -1,7 +1,7 @@
 // Describing what people are up to, in a few words.
 
-import { DISCIPLINES, GENERAL_COURSES, isGeneral, ITEMS, modalityLabel, ROOMS } from '../../core/data';
-import { slots, trained, xpToNext } from '../../core/sim/careers';
+import { DISCIPLINES, GENERAL_COURSES, isGeneral, ITEMS, modalityLabel, ROLES, ROOMS } from '../../core/data';
+import { expert, slots, trained, xpToNext } from '../../core/sim/careers';
 import { missNote } from '../../core/sim/classes';
 import type { Sim } from '../../core/sim/sim';
 import type { CourseId, Guest, Staff } from '../../core/state/types';
@@ -191,4 +191,11 @@ export function promotionRequests(staff: readonly Staff[]): Staff[] {
 export function promotionNote(st: Staff, fullyTrained: boolean): string {
   if (st.promotion || xpToNext(st) !== 0 || fullyTrained) return '';
   return `To be promoted, fill every qualification slot (${trained(st)} of ${slots(st)} filled) with a course in a Training Room.`;
+}
+
+/** How many of their qualification slots are filled, and what more training can bring. */
+export function slotNote(st: Staff): string {
+  const filled = `Qualification slots: ${Math.min(trained(st), slots(st))} of ${slots(st)} filled.`;
+  if (!expert(st)) return `${filled} Each promotion brings another.`;
+  return ROLES[st.role].discipline ? `${filled} As an Expert, they can learn every treatment besides.` : filled;
 }

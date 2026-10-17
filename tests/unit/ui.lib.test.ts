@@ -20,7 +20,7 @@ import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
 import { offerTimeLeft, timeLeftLabel, wholeDaysLeft } from '../../src/ui/lib/emergency';
 import { pleasantness } from '../../src/ui/lib/overlays';
 import { placedFlags } from '../../src/ui/lib/plan';
-import { courseName, guestStatus, promotionNote, staffStatus } from '../../src/ui/lib/status';
+import { courseName, guestStatus, promotionNote, slotNote, staffStatus } from '../../src/ui/lib/status';
 import { saveFacts, titleBadges } from '../../src/ui/lib/title';
 import { newRoomsText, treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
 import { weatherNote } from '../../src/ui/lib/weather';
@@ -318,6 +318,23 @@ describe('what a promotion still needs', () => {
     expect(promotionNote(receptionist, true)).toBe('');
     receptionist.promotion = true;
     expect(promotionNote(receptionist, false)).toBe('');
+  });
+
+  it('counts the slots filled, and says an Expert can learn every treatment besides', () => {
+    const { receptionist, therapist } = openCenter(1);
+    therapist.skill = 3;
+    therapist.quals = ['swedish', 'deep'];
+    therapist.general = ['bedside'];
+    expect(slotNote(therapist)).toBe('Qualification slots: 2 of 3 filled. Each promotion brings another.');
+    therapist.skill = 5;
+    therapist.quals = ['swedish', 'deep', 'sports', 'stone', 'cranio'];
+    therapist.general = ['bedside', 'motivation', 'stamina'];
+    expect(slotNote(therapist)).toBe(
+      'Qualification slots: 5 of 5 filled. As an Expert, they can learn every treatment besides.',
+    );
+    receptionist.skill = 5;
+    receptionist.general = ['service'];
+    expect(slotNote(receptionist)).toBe('Qualification slots: 1 of 5 filled.');
   });
 });
 

@@ -4,6 +4,14 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 17 October 2026, late night: Experts learn every treatment
+
+### 25. An Expert could be shut out of their discipline's last treatment
+
+**Found:** qualification slots are one a rank, five for an Expert, and general courses take them as treatments do. A Shaman has five treatments to learn beyond Spirit Animal Reading, so one who had taken even one general course on the way up, often the only course there was while the stars had not yet opened the rest, could never learn the last. The same held, with a course or two more to spare, for every discipline: massage and sound have four to learn and three general courses besides, acupuncture and reiki three.
+
+**Done** (`roomFor` in `src/core/sim/careers.ts`): an Expert can take any treatment course of their discipline without a free slot. General courses still need one, and slots still have to be filled before each promotion below Expert. Each treatment learned adds 10% to what counts as their fair pay, as before, so an Expert who learns the rest is a little less content until given a raise. Not measured with the bot, which sends practitioners on treatment courses only and so never met this.
+
 ## 17 October 2026, night: Qi Gong classes that pay their way
 
 Measured with `BOT_ON=classes yarn balance` against `yarn balance` from `0405d9d` (0.30.3, with 12-place classes at $130) and the good bot of 23, at every campaign center, seeds 1 to 6, four years a game. Profit, reputation and guests are averaged from the second year on; months at a loss are of all 48. Games without classes play the same under the new rules, as nothing in them changes without a class-goer.
