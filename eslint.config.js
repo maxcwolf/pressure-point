@@ -13,23 +13,26 @@ const notInTheGame = {
   patterns: [{ group: ['node:*'], message: 'The game runs in a browser, where Node is not available.' }],
 };
 
-/** Rules for game core files at one depth: `leaves` matches an import path that climbs out of src/core. */
-function coreBoundary(files, leaves) {
+/** The parts of src/ other than the game core, as a relative import names them. */
+const outsideCore = ['app', 'audio', 'lab', 'main', 'render', 'sounds', 'storage', 'ui', 'voice'];
+
+/** A pattern for a relative import that climbs out of its folder, from any depth, into one of `parts` of src/. */
+function into(parts) {
+  return `^(\\.\\./)+(${parts.join('|')})(/|$)`;
+}
+
+/** Keeps `files` from importing `parts` of src/, or anything in `banned`, as well as what no game code may use. */
+function layerBoundary(files, parts, message, banned = { paths: [], patterns: [] }) {
   return {
     files: [files],
-    languageOptions: { globals: {} },
     rules: {
       'no-restricted-imports': [
         'error',
         {
-          paths: [...notInTheGame.paths, { name: 'three', message: 'The game core does not draw anything.' }],
-          patterns: [
-            ...notInTheGame.patterns,
-            { regex: leaves, message: 'The game core imports only from itself: no rendering, interface or app code.' },
-          ],
+          paths: [...notInTheGame.paths, ...banned.paths],
+          patterns: [...notInTheGame.patterns, ...banned.patterns, { regex: into(parts), message }],
         },
       ],
-      'no-restricted-globals': ['error', 'window', 'document', 'navigator', 'localStorage', 'sessionStorage'],
     },
   };
 }
@@ -121,8 +124,58 @@ export default tseslint.config(
   },
 
   // the game core is plain logic: no drawing, no interface, no browser. It imports only from itself.
-  coreBoundary('src/core/*.ts', '^\\.\\./'),
-  coreBoundary('src/core/*/*.ts', '^\\.\\./\\.\\./'),
+  layerBoundary(
+    'src/core/**/*.{ts,tsx}',
+    outsideCore,
+    'The game core imports only from itself: no rendering, interface or app code.',
+    {
+      paths: [
+        { name: 'three', message: 'The game core does not draw anything.' },
+        { name: 'preact', message: 'The game core has no interface.' },
+      ],
+      patterns: [{ group: ['preact/*'], message: 'The game core has no interface.' }],
+    },
+  ),
+  {
+    files: ['src/core/**/*.{ts,tsx}'],
+    languageOptions: { globals: {} },
+    rules: {
+      'no-restricted-globals': ['error', 'window', 'document', 'navigator', 'localStorage', 'sessionStorage'],
+    },
+  },
+
+  // drawing and saving sit on top of the game core: they import it and themselves, nothing else in the game
+  layerBoundary(
+    'src/render/**/*.{ts,tsx}',
+    outsideCore.filter((part) => part !== 'render'),
+    'Drawing imports only from the game core and itself: no interface, app, audio or storage code.',
+  ),
+  layerBoundary(
+    'src/storage/**/*.{ts,tsx}',
+    outsideCore.filter((part) => part !== 'storage'),
+    'Storage imports only from the game core and itself: no interface, app, audio or rendering code.',
+  ),
+
+  // components should not reach into the simulation's modules, only their types. A warning for now, so the places
+  // that still do show up. The typescript-eslint copy of the rule keeps it apart from the errors above, which
+  // would otherwise be overridden here, since a later config replaces a rule's options rather than adding to them.
+  {
+    files: ['src/ui/components/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'warn',
+        {
+          patterns: [
+            {
+              regex: '(^|/)core/sim/',
+              allowTypeImports: true,
+              message: 'Components should not call the simulation directly; import only its types here.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 
   // the desktop shell runs in Node
   { files: ['electron/**'], languageOptions: { globals: globals.node } },
