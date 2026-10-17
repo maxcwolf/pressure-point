@@ -146,23 +146,46 @@ export function backForClass(ctx: SimContext, st: Staff, walk: number): boolean 
   return left >= 0 && left < REST_LAST;
 }
 
+/** What takes an Instructor away from the studio for a while: a break, a course or a call, and the walk there. */
+const AWAY: readonly Staff['state'][] = ['toBreak', 'onBreak', 'toTrain', 'training', 'toCall', 'away'];
+
+/** Whether an Instructor is away from the studio for a while, as on a break. */
+export const instructorAway = (st: Staff) => AWAY.includes(st.state);
+
 /**
  * As a day begins, book the classes the day after tomorrow: each studio with a class then and an Instructor on the
  * payroll fills what places it can, and its class-goers set off at times through today, since days are short and the
  * walk in is long. Its places are its Practice Spots, as many as the Instructor's rank lets them lead: spots past that
- * stand empty and draw nobody.
+ * stand empty and draw nobody. Places are booked only while the Instructor is at their mat: from a studio far from
+ * the Staff Room, a break can keep them away for days, and class-goers left waiting for them go home disappointed.
+ * Nor are more booked than the classes still to come have places for, after the class-goers already waiting or on
+ * their way: anyone whose class never happened takes a place in the next one.
  */
 export function bookClasses(ctx: SimContext) {
   const s = ctx.s;
   const instructor = bestInstructor(ctx);
   if (!offeringOn(s, 'qigong') || !instructor) return;
   const today = Math.floor(s.day);
-  for (const room of studios(ctx)) {
-    const day = today + BOOK_AHEAD;
+  const day = today + BOOK_AHEAD;
+  const places = new Map(
+    studios(ctx).map((room) => [room, Math.min(spotsIn(ctx, room).length, classPlaces(instructor.skill))]),
+  );
+  let free = [...places].reduce((sum, [room, spots]) => sum + spots * classesThrough(ctx, room, today, day), 0);
+  free -= s.arrivals.length + s.guests.filter((g) => g.classDay && g.goal === 'class' && g.state !== 'leaving').length;
+  for (const [room, spots] of places) {
     if (!classOn(room, day)) continue;
-    const built = spotsIn(ctx, room).length;
-    const spots = Math.min(built, classPlaces(instructor.skill));
-    if (built > spots)
+    if (instructor.state !== 'atPost') {
+      room.booked = { day, count: 0, turned: 0, away: true };
+      tipOnce(
+        ctx,
+        'class-away',
+        `Nobody was booked for ${WEEKDAYS[weekday(day)] ?? ''}’s Qi Gong class, as ${instructor.name} was away from their mat. A Staff Room nearer the studio gets them back from a break sooner.`,
+        'info',
+        { kind: 'room', id: room.id },
+      );
+      continue;
+    }
+    if (spotsIn(ctx, room).length > spots)
       tipOnce(
         ctx,
         'class-places',
@@ -171,7 +194,8 @@ export function bookClasses(ctx: SimContext) {
         { kind: 'staff', id: instructor.id },
       );
     const interest = weeklyInterest(spots, s.reputation, instructor.skill);
-    const size = classSize(interest, classDays(room).length, spots, rnd(0.8, 1.2));
+    const size = classSize(interest, classDays(room).length, Math.max(0, Math.min(spots, free)), rnd(0.8, 1.2));
+    free -= size.count;
     if (size.turned > 0 && classDays(room).length < 7)
       tipOnce(
         ctx,
@@ -185,7 +209,17 @@ export function bookClasses(ctx: SimContext) {
   }
 }
 
-/** Send in the class-goers whose time has come. Any due while the center is closed or cut off stay away. */
+/** How many classes a studio has still to hold from today to a day, both included. */
+function classesThrough(ctx: SimContext, room: Room, today: number, day: number): number {
+  let n = classToCome(ctx, room, today) ? 1 : 0;
+  for (let d = today + 1; d <= day; d++) if (classOn(room, d)) n++;
+  return n;
+}
+
+/**
+ * Send in the class-goers whose time has come. Any due while the center is closed or cut off stay away, and so do any
+ * due while the Instructor is away, as on a break, since the studio tells them the class is off.
+ */
 export function admitClassgoers(ctx: SimContext) {
   const s = ctx.s;
   if (!s.arrivals.length) return;
@@ -193,6 +227,8 @@ export function admitClassgoers(ctx: SimContext) {
   if (!due.length) return;
   s.arrivals = s.arrivals.filter((a) => a.at > s.day);
   if (!s.open || cutOff(ctx)) return;
+  const instructor = bestInstructor(ctx);
+  if (instructor && instructorAway(instructor)) return;
   for (const a of due) spawnGuest(ctx, undefined, false, a.day);
 }
 
@@ -272,8 +308,9 @@ export function missClass(ctx: SimContext, g: Guest, why: ClassMiss) {
 }
 
 /**
- * A class comes to its end: everyone on a spot has had it. If every spot was taken, anyone still waiting for one, for
- * this class or an earlier one, missed it for want of a place.
+ * A class comes to its end: everyone on a spot has had it. Class-goers booked for it, or an earlier one, who are still
+ * on their way in are put down for the studio's next class, as the walk in can take longer than they set off ahead.
+ * If every spot was taken, anyone already waiting for one missed it for want of a place.
  */
 function finishClass(ctx: SimContext, lead: Item, staff: Staff) {
   const spots = matsOf(ctx, lead);
@@ -285,13 +322,31 @@ function finishClass(ctx: SimContext, lead: Item, staff: Staff) {
     held++;
   }
   if (held) ctx.s.stats.classes++;
-  if (held < spots.length) return;
   const today = Math.floor(ctx.s.day);
+  const room = ctx.world.roomOfItem(lead);
+  const next = room && nextClassDay(room, today);
+  if (next)
+    for (const spot of spots)
+      for (const id of [spot.serving, ...spot.queue]) {
+        const g = guestById(ctx, id);
+        if (g?.goal === 'class' && g.classDay && g.classDay <= today && ON_THE_WAY.includes(g.state)) g.classDay = next;
+      }
+  if (held < spots.length) return;
   for (const spot of spots)
     for (const id of spot.queue) {
       const g = guestById(ctx, id);
       if (g?.goal === 'class' && g.classDay && g.classDay <= today) g.missed = 'full';
     }
+}
+
+/** What a class-goer still on their way to the studio is doing: coming in, or walking to a spot or its line. */
+const ON_THE_WAY: readonly Guest['state'][] = ['enter', 'toWait', 'called'];
+
+/** A studio's next class day from today, today included if its class is still to hold; undefined if it holds none. */
+function nextClassDay(room: Room, today: number): number | undefined {
+  if (classOn(room, today) && room.lastClass !== today) return today;
+  for (let d = today + 1; d <= today + 7; d++) if (classOn(room, d)) return d;
+  return undefined;
 }
 
 /** How many missed class days a studio keeps, to tell the class-goers who waited for them why. */

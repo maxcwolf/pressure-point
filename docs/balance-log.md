@@ -4,6 +4,51 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 17 October 2026, night: Qi Gong classes that pay their way
+
+Measured with `BOT_ON=classes yarn balance` against `yarn balance` from `0405d9d` (0.30.3, with 12-place classes at $130) and the good bot of 23, at every campaign center, seeds 1 to 6, four years a game. Profit, reputation and guests are averaged from the second year on; months at a loss are of all 48. Games without classes play the same under the new rules, as nothing in them changes without a class-goer.
+
+### 24. Classes cost a good player money, and not for the reason thought
+
+**Found:** with classes, the bot made $4.9k a month less (23.5k against 28.4k), its reputation was 11 points lower and treatment guests came 16.1 a month against 18.6. In the 9 games of 30 where it built a studio, it was $15k a month less, 37 points of reputation lower, and 13.5 guests a month came against 21.6. It had been put down to class-goers counting against the guest limit, but that was hardly ever reached: those games held 34 guests on average against a limit of 75 or so, and letting class-goers off the limit alone changed nothing ($23.4k). Guests came less often because reputation fell, as it sets how often they arrive. Watching where it went (Orchard seed 4, three years): class-goers held their classes for +977 points of reputation all told, and those who **went home without a class** lost −1,839 (−1 each, against at most +0.5 for a class, and less at a good reputation). A third or more of class-goers missed their class, for three reasons:
+
+- **The Instructor was away, and classes were booked anyway.** Every break means a walk to the Staff Room and back, a drink or a snack, and a rest. From a studio far from it (at the Orchard, in the second building, round by the street) that took 8 to 11 days, and every class day meanwhile was booked as usual.
+- **The backlog never cleared.** Class-goers who missed a class stayed for the next one, but the next was booked full besides, so they stayed on until they gave up.
+- **Class-goers set off too late.** The walk in from the street to the studio took 4 days at the Exchange, and they set off two days ahead. A class starts as soon as one class-goer reaches a spot, and lasts most of a day, so the rest got there after it. Those booked for a Thursday or a Friday gave up over the weekend, before Monday's class.
+
+| Missed their class (of all booked) | Before | After |
+| ---------------------------------- | ------ | ----- |
+| The Orchard, seed 4                | 38%    | 16%   |
+| High Pines, seed 3                 | 43%    | 23%   |
+| Willow Lane, seed 1                | 31%    | 14%   |
+
+**Done** (`src/core/sim/classes.ts`, `src/core/sim/guests.ts`):
+
+- Places are booked only while the Instructor is at their mat, and class-goers due to set off while the Instructor is on a break, a course or a call stay at home (`bookClasses`, `admitClassgoers`, `instructorAway`). The studio's booking then reads "nobody booked, the Instructor being away from their mat", and a tip the first time says a Staff Room nearer the studio gets them back from a break sooner.
+- A class books only the places left in the classes still to come up to its day, once the class-goers already waiting or on their way are counted (`classesThrough`), so those left over from a class that never happened take the next one's places.
+- When a class ends, class-goers booked for it or an earlier one who are still on their way in are put down for the studio's next class (`finishClass`, `nextClassDay`). Those already waiting in line when every spot was taken still miss it as before.
+- Class-goers have places of their own, their Practice Spots, and no longer count against the guest limit (`guestsCounted`). It made no difference that could be measured here, but a class let out to the shop can no longer keep treatment guests out of a small center.
+
+The bot builds as many Practice Spots as its Instructor can lead, as class-goers no longer count against the limit (it sold spots while the building was nearly full, and built more only while there was room).
+
+| Center             | Third star       | Profit a month         | Reputation | Guests a month   |
+| ------------------ | ---------------- | ---------------------- | ---------- | ---------------- |
+| Willow Lane        | 6/6, 6/6, 6/6    | $17.5k, $20.2k, $20.2k | 65, 63, 65 | 14.6, 14.4, 14.7 |
+| The Exchange       | 6/6, 6/6, 6/6    | $24.8k, $19.8k, $24.6k | 94, 79, 89 | 18.0, 15.1, 16.5 |
+| The Boardwalk      | 4/6, 3/6, 4/6    | $11.1k, $10.1k, $12.7k | 63, 58, 62 | 16.9, 15.8, 16.4 |
+| High Pines         | 6/6, 6/6, 6/6    | $21.6k, $18.3k, $21.0k | 84, 76, 82 | 19.1, 17.5, 18.6 |
+| The Orchard Estate | 6/6, 6/6, 6/6    | $66.8k, $49.1k, $73.9k | 94, 67, 92 | 24.7, 18.0, 23.3 |
+| All                | 28, 27, 28 of 30 | $28.4k, $23.5k, $30.5k | 80, 69, 78 | 18.6, 16.1, 17.9 |
+
+Each cell is without classes, with classes before, and with classes now. Only 9 games build a studio (Willow Lane 1, the Exchange 1 and 2, the Boardwalk 6, High Pines 3, the Orchard 1, 4, 5 and 6); the other 21 play much as without classes, though in 5 of them the bot plays differently from the moment it first weighs up a studio, which moves their profit by as much as the seeds do (High Pines 5, $32.8k against $25.6k, without ever building one). In the 9, classes now earn more than no classes in 8, by $2.9k to $20.6k a month, and the Exchange's seed 2 makes $3.4k less ($23.2k against $26.6k, from $7.5k before). Their profit is $51.2k a month against $43.0k without classes and $27.9k before, and their months at a loss 6.3 against 6.8 and 7.7.
+
+What each rule added, all 30 games, profit a month with classes: $23.5k before; off the guest limit, $23.4k; booking only while the Instructor is at their mat, $28.7k; booking only the places left, $29.5k; putting latecomers down for the next class, $30.5k.
+
+**Still open:**
+
+- **A studio's reputation is still lower than without one** (83 against 89 in the 9 games): from 14% to 23% of class-goers still miss their class, nearly all while the Instructor is away. A break from a studio far from the Staff Room still takes days, and those already booked or waiting when it starts go home. A Staff Room beside the studio would mend it; the bot never builds one, nor keeps a day in the week free of classes for the Instructor to rest.
+- **Class-goers queue at the Shop Counter for days.** At High Pines some waited there 10 days after their class. They no longer keep anyone out, but they are still in the building.
+
 ## 17 October 2026, evening: the bot plays more like a good player
 
 Measured with `yarn balance` from `3d14f44` (0.30.1): every campaign center at seeds 1 to 6, four years a game, against the same bot before this change. Profit, waits, guests and reputation are averaged from the second year on; months at a loss are of all 48. With the new behaviours switched off (`BOT_OFF=clear,kit,emergencies,layout,mats,courses`) the bot plays all 30 games move for move as before.

@@ -9,6 +9,7 @@ import type { ClassBooking } from '../../core/state/types';
 export function bookingNote(b: ClassBooking | undefined, day: number): string {
   if (!b || b.day < Math.floor(day)) return 'Places for each class are booked two days before.';
   const when = b.day === Math.floor(day) ? 'Today’s class' : `${WEEKDAYS[weekday(b.day)] ?? ''}’s class`;
+  if (b.away) return `${when}: nobody booked, the Instructor being away from their mat`;
   if (!b.count) return `${when}: nobody booked`;
   const full = b.turned ? `, full, with ${b.turned} turned away` : '';
   return `${when}: ${b.count} booked${full}`;

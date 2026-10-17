@@ -74,7 +74,7 @@ export function admitGuests(ctx: SimContext, dt: number) {
   s.spawnT -= dt;
   if (s.spawnT > 0) return;
   // a regular due back takes the place of someone new
-  if (s.guests.length < guestCap(s)) {
+  if (guestsCounted(s) < guestCap(s)) {
     const regular = dueRegular(s);
     spawnGuest(ctx, undefined, false, 0, regular);
   }
@@ -90,6 +90,12 @@ export function admitGuests(ctx: SimContext, dt: number) {
 export function guestCap(s: GameState): number {
   return 14 + s.rooms.filter((r) => r.done).length * 5;
 }
+
+/**
+ * The guests counted against `guestCap`: those come for treatment. Class-goers have places of their own, their
+ * Practice Spots, so a class waiting to start, or let out to the shop, does not keep anyone come for treatment out.
+ */
+export const guestsCounted = (s: GameState): number => s.guests.filter((g) => !g.classDay).length;
 
 /**
  * The way in nearest a Qi Gong class's Practice Spots, for a class-goer to head for, if it is not the front door: a

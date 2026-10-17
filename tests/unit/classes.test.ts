@@ -18,7 +18,9 @@ import {
   ROOMS,
 } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
+import { accessIndex } from '../../src/core/sim/claims';
 import {
+  admitClassgoers,
   backForClass,
   CLASS_LINES,
   classDays,
@@ -36,16 +38,26 @@ import {
   weeklyInterest,
 } from '../../src/core/sim/classes';
 import type { SimContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
+import { admitGuests, guestCap, guestsCounted, spawnGuest } from '../../src/core/sim/guests';
 import { worsening } from '../../src/core/sim/worsening';
-import type { GameState, Guest } from '../../src/core/state/types';
+import type { GameState, Guest, Staff } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
+import { accessTile } from '../../src/core/world';
 import { hireableRoles, itemOffered } from '../../src/ui/lib/catalog';
 import { bookingNote, placesNote, weekNote } from '../../src/ui/lib/classes';
 import { offeredMetrics } from '../../src/ui/lib/stats';
 import { guestStatus } from '../../src/ui/lib/status';
 import { newRoomsText } from '../../src/ui/lib/unlocks';
 import { addQigong, addStaffRoom, hire, inconsistencies, openCenter, run, runUntil, toasts } from './helpers';
+
+/** Put an Instructor straight at their mat, as places in a class are booked only while they are there. */
+function toMat(s: GameState, st: Staff) {
+  const mat = s.items.find((it) => it.type === 'instructor_mat');
+  if (!mat) throw new Error('no Instructor’s Mat');
+  const [x, y] = accessTile(mat, accessIndex(mat, 'staff'));
+  Object.assign(st, { x: x + 0.5, y: y + 0.5, tx: x, ty: y, path: null, dest: null, state: 'atPost', post: mat.id });
+  mat.staffId = st.id;
+}
 
 /** A center with a Qi Gong Studio, open at the second star, and an Instructor if asked for, just before a Wednesday. */
 function studio(instructor = true) {
@@ -54,6 +66,7 @@ function studio(instructor = true) {
   s.stars = 2;
   const room = addQigong(sim);
   const teacher = instructor ? hire(sim, 'instructor') : undefined;
+  if (teacher) toMat(s, teacher);
   // day 0 is a Monday: as Wednesday begins, Friday's class is booked, two days ahead
   s.day = 1.98;
   return { ...center, room, teacher };
@@ -89,6 +102,9 @@ describe('the timetable', () => {
     expect(bookingNote({ day: 2, count: 3, turned: 0 }, 3.5)).toBe('Places for each class are booked two days before.');
     expect(bookingNote({ day: 4, count: 3, turned: 0 }, 2.5)).toBe('Fri’s class: 3 booked');
     expect(bookingNote({ day: 4, count: 6, turned: 2 }, 4.1)).toBe('Today’s class: 6 booked, full, with 2 turned away');
+    expect(bookingNote({ day: 4, count: 0, turned: 0, away: true }, 2.5)).toBe(
+      'Fri’s class: nobody booked, the Instructor being away from their mat',
+    );
     expect(bookingNote({ day: 4, count: 0, turned: 0 }, 4.1)).toBe('Today’s class: nobody booked');
   });
 });
@@ -183,6 +199,29 @@ describe('a class in play', () => {
     expect(s.stats.arrived).toBe(arrived);
   });
 
+  it('keeps nobody come for treatment out, however many class-goers are in the building', () => {
+    const { sim, s } = studio();
+    s.open = true;
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    for (let i = 0; i < guestCap(s); i++) spawnGuest(ctx, undefined, false, 4);
+    expect(s.guests.length).toBeGreaterThanOrEqual(guestCap(s));
+    expect(guestsCounted(s)).toBe(0);
+    s.spawnT = 0;
+    admitGuests(ctx, 0.1);
+    expect(s.guests.filter((g) => !g.classDay)).toHaveLength(1);
+    expect(guestsCounted(s)).toBe(1);
+  });
+
+  it('still lets nobody new in while the guests come for treatment fill the building', () => {
+    const { sim, s } = studio();
+    s.open = true;
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    while (guestsCounted(s) < guestCap(s)) spawnGuest(ctx);
+    s.spawnT = 0;
+    admitGuests(ctx, 0.1);
+    expect(guestsCounted(s)).toBe(guestCap(s));
+  });
+
   it('is announced as its day begins', () => {
     const { sim, s } = studio();
     run(sim, 1);
@@ -216,6 +255,47 @@ describe('a class in play', () => {
     expect(advice((sim as unknown as { ctx: SimContext }).ctx)).toBe(
       'Your Qi Gong Studio is ready for its first class. Hire a Qi Gong Instructor to lead it.',
     );
+  });
+
+  it('is not booked while the Instructor is away from their mat, and the player is told why', () => {
+    const { sim, s, room, teacher } = studio();
+    if (!teacher) throw new Error('no Instructor');
+    teacher.state = 'toPost';
+    run(sim, 1);
+    expect(room.booked).toEqual({ day: 4, count: 0, turned: 0, away: true });
+    expect(s.arrivals).toEqual([]);
+    expect(toasts(sim.drain()).some((t) => t.includes('as ' + teacher.name + ' was away from their mat'))).toBe(true);
+  });
+
+  it('keeps class-goers due to set off at home while the Instructor is on a break, and lets them come once back', () => {
+    const { sim, s, teacher } = studio();
+    if (!teacher) throw new Error('no Instructor');
+    s.open = true;
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    s.arrivals = [{ at: s.day, day: 4 }];
+    teacher.state = 'onBreak';
+    admitClassgoers(ctx);
+    expect(s.arrivals).toEqual([]);
+    expect(s.guests.some((g) => g.classDay)).toBe(false);
+    s.arrivals = [{ at: s.day, day: 4 }];
+    teacher.state = 'atPost';
+    admitClassgoers(ctx);
+    expect(s.guests.filter((g) => g.classDay)).toHaveLength(1);
+  });
+
+  it('books no more than the classes to come have places for, after the class-goers already waiting', () => {
+    const { sim, s, room, teacher } = studio();
+    if (!teacher) throw new Error('no Instructor');
+    s.open = true;
+    s.reputation = 100;
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    const spots = Math.min(s.items.filter((it) => it.type === 'practice_spot').length, classPlaces(teacher.skill));
+    // Wednesday's and Friday's classes have places for twice the spots, and more than Wednesday's class can take are
+    // already waiting for it: all but one place is spoken for
+    for (let i = 0; i < spots * 2 - 1; i++) spawnGuest(ctx, undefined, false, 2);
+    run(sim, 1);
+    expect(room.booked).toMatchObject({ day: 4, count: 1 });
+    expect(room.booked?.turned).toBeGreaterThan(0);
   });
 
   it('is not booked without an Instructor on the payroll', () => {
@@ -263,6 +343,7 @@ describe('a class in play', () => {
     const ctx = (sim as unknown as { ctx: SimContext }).ctx;
     const mat = s.items.find((it) => it.type === 'instructor_mat');
     // Friday is over, with no class and the Instructor not yet at the mat
+    if (teacher) teacher.state = 'toPost';
     s.day = 5;
     noteMissedClasses(ctx);
     expect(room.missed).toEqual([{ day: 4, why: 'no-lead' }]);
@@ -435,8 +516,10 @@ describe("an Instructor's breaks", () => {
       sim,
       () => {
         teacher.energy = BREAK_AT - 2;
-        expect(teacher.state).not.toBe('toBreak');
-        return room.lastClass === 4 && !s.items.find((it) => it.type === 'instructor_mat')?.progress;
+        const over = room.lastClass === 4 && !s.items.find((it) => it.type === 'instructor_mat')?.progress;
+        // they may set off the moment the class ends
+        if (!over) expect(teacher.state).not.toBe('toBreak');
+        return over;
       },
       4 * DAY_SECONDS,
     );
