@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.4
+
+- **Qi Gong classes keep their class-goers.** A third or more of class-goers used to miss their class, costing reputation, so a studio lost money. Places are now booked only while the Instructor is at their mat, latecomers are put down for the next class, and class-goers no longer count against the guest limit. A studio now pays its way.
+- **Nobody walled in.** Building an item, room or door can no longer seal someone into a pocket of the building they can't walk out of.
+- **Full screen that stays.** The desktop app has a Full screen switch under Settings › Display, and remembers it between launches.
+- **Ask before letting staff go.** Let go in the staff inspector now asks "Are you sure?" with their name first.
+
 ## v0.30.3
 
 - **Smaller Qi Gong classes.** An Instructor now leads at most 12, from 6 as a Trainee (6, 8, 9, 11 and 12 by rank), so a class ending no longer floods the shop and the restrooms. A place costs a little more, $130 at standard prices.
