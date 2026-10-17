@@ -48,7 +48,7 @@ import { hasRoom } from './progress';
 import { countVisit } from './records';
 import { goRest, restPenalty, settleRest } from './recovery';
 import { greeting, tipFor } from './regulars';
-import { leadOf, sessionPlaying, stationStaff, updateSession } from './sessions';
+import { leadOf, matsFull, sessionPlaying, stationStaff, updateSession } from './sessions';
 import { expectedPrestige } from './standing';
 import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments';
 import { upgradeSuccess } from './upgrades';
@@ -200,7 +200,9 @@ export function updateStations(ctx: SimContext, dt: number) {
       it.queue = it.queue.filter((id) => guestById(ctx, id)?.station === it.id);
     // tired staff finish with their current guest, then stop calling new ones so they can get away
     const wantsBreak = !!staff && breakDue(ctx, staff) && !!findAccess(ctx, 'rest', staff.tx, staff.ty);
-    if (!it.serving && ready && !wantsBreak) {
+    // a Sound Healer calls no more guests to the mats than they can play for
+    const matsTaken = !!lead && !isClassLead(lead) && !!staff && matsFull(ctx, lead, staff);
+    if (!it.serving && ready && !wantsBreak && !matsTaken) {
       const next = nextInLine(ctx, it);
       if (next) callGuest(ctx, it, next);
     }

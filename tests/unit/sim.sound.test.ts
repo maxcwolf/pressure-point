@@ -18,13 +18,13 @@ import { createContext } from '../../src/core/sim/context';
 import { bestRoom, roomPull } from '../../src/core/sim/demand';
 import { rollCondition } from '../../src/core/sim/guests';
 import { noiseAt, updateNoise } from '../../src/core/sim/noise';
-import { leadOf, sessionPlaying, sessionWait } from '../../src/core/sim/sessions';
+import { leadOf, matsPlayed, sessionPlaying, sessionWait } from '../../src/core/sim/sessions';
 import type { Sim } from '../../src/core/sim/sim';
 import { SOLD_BOWLS } from '../../src/core/state/game';
 import type { GameState, Item } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { pullNote } from '../../src/ui/lib/demand';
-import { sessionNote } from '../../src/ui/lib/sessions';
+import { matsNote, sessionNote } from '../../src/ui/lib/sessions';
 import {
   addReiki,
   addSound,
@@ -257,6 +257,67 @@ describe('a fine Sound Bath Studio', () => {
       '🔔 Draws 2.2× the usual guests for sound healing, for its prestige, its peace and its mats.',
     );
     expect(pullNote(1.5, 'reiki')).toBe('✨ Draws 1.5× the usual guests for reiki, for its prestige and its peace.');
+  });
+});
+
+describe('how many mats a Sound Healer plays for', () => {
+  /** A studio made bigger, with four mats. */
+  function fourMats() {
+    const c = withStudio(1);
+    expect(c.sim.resizeRoom(c.studio.id, { x: 9, y: 10, w: 5, h: 5 })).toBe(true);
+    for (let n = 0; n < 2; n++) {
+      const spot = [...Array(25).keys()].find(
+        (i) => !!c.sim.placeItem('sound_mat', 9 + (i % 5), 10 + Math.floor(i / 5), 0),
+      );
+      expect(spot).toBeDefined();
+    }
+    const mats = c.s.items.filter((i) => i.type === 'sound_mat');
+    expect(mats).toHaveLength(4);
+    return { ...c, mats };
+  }
+
+  it('rises with their rank, from 2 for a Trainee to 4 for an Expert', () => {
+    expect([1, 2, 3, 4, 5].map(matsPlayed)).toEqual([2, 2, 3, 3, 4]);
+    expect(matsPlayed(0)).toBe(2);
+    expect(matsPlayed(9)).toBe(4);
+  });
+
+  it('calls no more guests to the mats than they can play for', () => {
+    /** The most mats in use at once over a while, for a healer of a rank. */
+    const busiest = (rank: number) => {
+      const { sim, s, healer, mats } = fourMats();
+      healer.skill = rank;
+      healer.quals = ['sound', 'forks'];
+      s.open = true;
+      let most = 0;
+      playWith(sim, 'tune', 400, () => {
+        for (const g of s.guests) g.patience = 100;
+        most = Math.max(most, mats.filter((m) => m.serving).length);
+      });
+      return most;
+    };
+    // a Trainee fills the two they can play for and leaves the rest empty; an Expert uses more of them
+    expect(busiest(1)).toBe(2);
+    expect(busiest(5)).toBeGreaterThan(2);
+    expect(busiest(5)).toBeLessThanOrEqual(4);
+  });
+
+  it('draws for the spare mats they can use, and no more', () => {
+    const { s, studio, healer } = fourMats();
+    const ctx = createContext(s);
+    updateNoise(ctx);
+    healer.skill = 1;
+    const two = roomPull(ctx, studio);
+    healer.skill = 5;
+    expect(roomPull(ctx, studio)).toBeCloseTo(Math.min(ROOM_PULL.max, two + 2 * ROOM_PULL.mat), 5);
+  });
+
+  it('says so at the bowls', () => {
+    expect(matsNote(2, 2, 1)).toBe('Trainee Sound Healers play for up to 2 mats');
+    expect(matsNote(4, 3, 3)).toBe(
+      '⚠️ Only 3 of 4 mats are used. Experienced Sound Healers play for up to 3 mats: a more senior one plays for more',
+    );
+    expect(matsNote(6, 4, 5)).toBe('⚠️ Only 4 of 6 mats are used. Expert Sound Healers play for up to 4 mats');
   });
 });
 

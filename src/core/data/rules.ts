@@ -210,6 +210,8 @@ export const CAMEO_CHANCE = 0.12;
 
 /** Seconds a group session waits for its mats to fill after the first guest lies down, before it starts anyway. */
 export const SESSION_WAIT = 8;
+/** How many mats a Sound Healer can play for at once, by rank from Trainee to Expert. */
+export const SOUND_MATS: readonly number[] = [2, 2, 3, 3, 4];
 /**
  * How much more often guests come for a discipline, for a fine room to have it in: for each prestige star past the
  * first, for a peaceful room, and in a Sound Bath Studio for each mat past the two it needs, up to a limit.

@@ -3,12 +3,13 @@
 import './StationInfo.css';
 
 import { conditionOf, ITEMS, MODALITIES, ROLES } from '../../../core/data';
+import { matsPlayed } from '../../../core/sim/sessions';
 import type { Guest, Item } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { mushroomNote, mushroomSwitch } from '../../lib/ceremonies';
 import { chanceText, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
-import { sessionNote } from '../../lib/sessions';
+import { matsNote, sessionNote } from '../../lib/sessions';
 import { staffingStatus } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -105,6 +106,7 @@ export function StationInfo({ item }: { item: Item }) {
       <>
         <p class="status">{staffingStatus(item, staff, ROLES[def.staff].name)}</p>{' '}
         <p class="sub">{sessionNote(session.lying, session.mats, session.playing)}</p>
+        {staff && <p class="sub">{matsNote(session.mats, matsPlayed(staff.skill), staff.skill)}</p>}
       </>
     );
   }

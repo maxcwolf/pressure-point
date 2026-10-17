@@ -25,7 +25,7 @@ import type { SimContext } from './context';
 import { campaignBoost } from './marketing';
 import { itemNoise } from './noise';
 import type { VisitEnd } from './records';
-import { isGroupStation } from './sessions';
+import { isGroupStation, matsPlayed } from './sessions';
 import { offered, unlocked } from './treatments';
 
 /** How often guests turn up with a condition nobody on the payroll is trained in, against one they are. */
@@ -45,14 +45,23 @@ function roomCalm(ctx: SimContext, room: Room): number {
   return clamp((NOISE_NOTICE - noise) / (NOISE_NOTICE - NOISE_PEACEFUL), 0, 1);
 }
 
+/** How many mats the most senior Sound Healer on the payroll can play for: two with nobody yet. */
+function matsUsable(ctx: SimContext): number {
+  const healers = ctx.s.staff.filter((st) => st.role === DISCIPLINES.sound.role && st.state !== 'leaving');
+  return healers.length ? Math.max(...healers.map((st) => matsPlayed(st.skill))) : 2;
+}
+
 /**
  * How strongly a finished treatment room draws guests to its discipline, as a multiplier: 1 for a plain one, more for
- * a prestigious, peaceful room, and for a Sound Bath Studio with mats to spare.
+ * a prestigious, peaceful room, and for a Sound Bath Studio with mats to spare, as many as its healer can play for.
  */
 export function roomPull(ctx: SimContext, room: Room): number {
   const mats =
     room.type === 'sound'
-      ? ctx.s.items.filter((it) => isGroupStation(it) && ctx.world.roomOfItem(it) === room).length
+      ? Math.min(
+          ctx.s.items.filter((it) => isGroupStation(it) && ctx.world.roomOfItem(it) === room).length,
+          matsUsable(ctx),
+        )
       : 2;
   const pull =
     1 +

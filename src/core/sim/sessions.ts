@@ -2,10 +2,12 @@
 // The mats are stations without a staff position of their own; whoever works the room's lead station serves them.
 // A session waits a little for the mats to fill, then plays for everyone lying down.
 
-import { conditionOf, ITEMS, MODALITIES, SESSION_WAIT } from '../data';
+import { conditionOf, ITEMS, MODALITIES, SESSION_WAIT, SOUND_MATS } from '../data';
 import type { Guest, Item, Staff } from '../state/types';
+import { at, clamp } from '../util';
 import { guestById, staffById } from './chars';
 import type { SimContext } from './context';
+import { tipOnce } from './events';
 
 /** Whether an item is a group station, served from its room's lead station. */
 export const isGroupStation = (it: Item) => !!ITEMS[it.type].station?.group;
@@ -43,6 +45,13 @@ export function sessionWait(waited: number, lying: number, mats: number, dt: num
   return Math.min(SESSION_WAIT, waited + dt);
 }
 
+/** How many mats a Sound Healer of a rank can play for at once: a more senior one, more. */
+export const matsPlayed = (skill: number) => at(SOUND_MATS, clamp(Math.round(skill), 1, SOUND_MATS.length) - 1);
+
+/** Whether a healer already has as many guests on the mats, lying down or on their way, as they can play for. */
+export const matsFull = (ctx: SimContext, lead: Item, staff: Staff) =>
+  matsOf(ctx, lead).filter((m) => m.serving).length >= matsPlayed(staff.skill);
+
 /** Whether a session is playing, from how long it has waited. */
 export const sessionPlaying = (waited: number) => waited >= SESSION_WAIT;
 
@@ -62,8 +71,18 @@ export function updateSession(ctx: SimContext, lead: Item, staff: Staff | undefi
     const g = guestById(ctx, m.serving);
     return g?.state === 'served' ? [g] : [];
   });
-  lead.progress = staff ? sessionWait(lead.progress, lying.length, mats.length, dt) : 0;
+  // full once every mat the healer can play for is taken
+  const played = staff ? Math.min(mats.length, matsPlayed(staff.skill)) : mats.length;
+  lead.progress = staff ? sessionWait(lead.progress, lying.length, played, dt) : 0;
   if (!staff) return;
+  if (mats.length > played)
+    tipOnce(
+      ctx,
+      'sound-mats',
+      `${staff.name} can play for ${played} mats at once, so the rest stand empty. A more senior Sound Healer plays for more.`,
+      'info',
+      { kind: 'staff', id: staff.id },
+    );
   // anyone lying down keeps the healer at the bowls, waiting for the rest or playing
   staff.busy = lying.length > 0;
   staff.strain = lying.length ? Math.max(...lying.map((g) => MODALITIES[conditionOf(g.condition).modality].strain)) : 1;
