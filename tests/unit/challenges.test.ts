@@ -14,6 +14,7 @@ import {
   updateChallenge,
 } from '../../src/core/sim/challenges';
 import { createContext } from '../../src/core/sim/context';
+import { demand } from '../../src/core/sim/demand';
 import { drainEvents } from '../../src/core/sim/events';
 import { emptyLedger, emptyTally } from '../../src/core/state/game';
 import type { Challenge, MonthRecord } from '../../src/core/state/types';
@@ -81,6 +82,21 @@ describe('a staff challenge', () => {
     goals = challengeGoals(ctx, 90);
     expect(goals).toContainEqual(expect.objectContaining({ kind: 'healed', discipline: 'acupuncture' }));
     expect(goals).toContainEqual({ kind: 'emergencies', count: 1 });
+  });
+
+  it('asks a discipline for its own share of the guests healed, not a fixed part of them all', () => {
+    const { ctx, s, sim } = withChallenges();
+    s.stars = 1;
+    addAcupuncture(sim);
+    s.tally.healed = 10 * Math.max(1, s.day % DAYS_PER_MONTH);
+    const goals = challengeGoals(ctx, 90);
+    const all = goals.find((g) => g.kind === 'healed' && !g.discipline);
+    const mine = goals.find((g) => g.kind === 'healed' && g.discipline === 'acupuncture');
+    const share = demand(ctx).find((r) => r.discipline === 'acupuncture')?.share ?? 0;
+    expect(share).toBeGreaterThan(0);
+    expect(share).toBeLessThan(1);
+    expect(all?.kind === 'healed' && all.count).toBe(1080);
+    expect(mine?.kind === 'healed' && mine.count).toBe(Math.round(1080 * share));
   });
 
   it('counts guests healed since it was set, not before', () => {

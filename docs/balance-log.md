@@ -14,6 +14,12 @@ A review of the changes below found four things worth fixing before they were me
 
 **Done:** a heal adds 5 (less as the following grows), a failure takes 3 and a guest who gives up waiting for their treatment 2. A discipline now holds its own healing about 40% of its guests from nothing, 50% at 40 and 75% at 80, so a following settles where the practitioners' results put it: about 27 for a discipline healing 45% of its guests, about 80 for one healing 75%. A discipline new to the center starts at 20 rather than 0, from the word that it is on offer, and a following fades only on a day nobody was treated in it, by a twentieth a month. The Guests tab and the guide said it faded "when nobody comes" when it faded every day; they now say what it does.
 
+### 7. A staff challenge could ask a niche discipline for too many
+
+**Found:** a challenge to heal guests in one optional discipline asked for 40% of what the whole center heals in the time, whatever that discipline's share of the guests. With sound healing drawing perhaps 10%, it asked for four times what the Sound Healer would see.
+
+**Done:** it asks for the discipline's own share of the guests, from the same demand the Guests tab shows, with the same 20% stretch as the challenge for the whole center (at least 3).
+
 ## 16 October 2026: practitioners, demand and Qi Gong
 
 ### How it was measured

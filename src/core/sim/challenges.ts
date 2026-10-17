@@ -22,6 +22,7 @@ import type { Challenge, GameState } from '../state/types';
 import { prestige } from './ambience';
 import { staffById } from './chars';
 import type { SimContext } from './context';
+import { demand } from './demand';
 import { emit, tipOnce, toast } from './events';
 import { cureRate, daysWithoutQuits, type Objective, objectiveFor } from './goals';
 import { offered } from './treatments';
@@ -49,8 +50,12 @@ export function challengeGoals(ctx: SimContext, days: number): GoalSpec[] {
   const pace = healedPerDay(s);
   goals.push({ kind: 'healed', count: Math.max(5, Math.round(pace * days * 1.2)) });
   const optional = DISCIPLINE_ORDER.filter((d): d is Discipline => DISCIPLINES[d].optional && offered(ctx, d));
-  if (optional.length)
-    goals.push({ kind: 'healed', count: Math.max(4, Math.round(pace * days * 0.4)), discipline: pick(optional) });
+  if (optional.length) {
+    // a stretch on the discipline's own share of the guests, so a niche one is not asked for as many as massage
+    const discipline = pick(optional);
+    const share = demand(ctx).find((r) => r.discipline === discipline)?.share ?? 0;
+    goals.push({ kind: 'healed', count: Math.max(3, Math.round(pace * days * 1.2 * share)), discipline });
+  }
   const rate = Math.max(0, ...[s.tally, s.months.at(-1)].map((t) => (t ? (cureRate(t) ?? 0) : 0)));
   if (rate < 90) goals.push({ kind: 'cureRate', percent: Math.min(90, Math.max(65, roundTo(rate + 5, 5))) });
   // a step above the best room of its kind, since any one of them reaching the level meets the goal
