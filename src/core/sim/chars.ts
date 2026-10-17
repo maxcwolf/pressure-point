@@ -72,6 +72,12 @@ export function streetTile(fp: Pick<Footprint, 'door'>): [number, number] {
   return [random() < 0.5 ? left : right, SIDEWALK_Y];
 }
 
+/** Where someone arrives who is heading for a way in at `x`: the end of the pavement nearer it. */
+export function streetTileNear(fp: Pick<Footprint, 'door'>, x: number): [number, number] {
+  const [left, right] = streetEnds(fp);
+  return [Math.abs(x - left) <= Math.abs(x - right) ? left : right, SIDEWALK_Y];
+}
+
 /** A tile just inside the front door, on one side or the other. */
 export function lobbyTile(fp: Pick<Footprint, 'door' | 'front'>): [number, number] {
   return [pick(fp.door), fp.front - 1];

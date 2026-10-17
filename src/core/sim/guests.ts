@@ -29,7 +29,7 @@ import { at } from '../util';
 import { accessPose, accessTile, itemCenter, rotVec, Z_CORRIDOR } from '../world';
 import { drainFactor } from './ambience';
 import { hasGeneral } from './careers';
-import { lobbyTile, say, staffById, streetTile } from './chars';
+import { lobbyTile, say, staffById, streetTile, streetTileNear } from './chars';
 import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import { missClass, missToast } from './classes';
@@ -85,8 +85,28 @@ export function guestCap(s: GameState): number {
 }
 
 /**
+ * The way in nearest a Qi Gong class's Practice Spots, for a class-goer to head for, if it is not the front door: a
+ * studio built on land apart has an entrance of its own. Undefined if it is the front door, or there is no spot.
+ */
+function classEntrance(ctx: SimContext): { x: number; y: number } | undefined {
+  const spot = ctx.s.items.find((it) => ITEMS[it.type].station?.goal === 'class' && ctx.world.usable(it));
+  if (!spot) return undefined;
+  let best: { x: number; y: number } | undefined;
+  for (const e of ctx.world.building.entrances)
+    if (
+      !best ||
+      Math.abs(e.x - spot.x) + Math.abs(e.y - spot.y) < Math.abs(best.x - spot.x) + Math.abs(best.y - spot.y)
+    )
+      best = e;
+  // by the front door, they come along the pavement from either end, as everyone does
+  return best === ctx.world.building.entrances[0] ? undefined : best;
+}
+
+/**
  * Add a guest on the street and send them to the lobby: come for a treatment, or with a class day, for a Qi Gong class.
- * A regular comes back as themselves. Null if there is no way in for them.
+ * A class-goer comes along the pavement from the end nearer their studio's way in and goes straight to it, since a
+ * studio on land apart is a long way round by the lobby, and the walk could make them miss the class. A regular comes
+ * back as themselves. Null if there is no way in for them.
  */
 export function spawnGuest(
   ctx: SimContext,
@@ -96,7 +116,8 @@ export function spawnGuest(
   regular?: Regular,
 ): Guest | null {
   const s = ctx.s;
-  const [x, y] = streetTile(ctx.world.building);
+  const way = classDay ? classEntrance(ctx) : undefined;
+  const [x, y] = way ? streetTileNear(ctx.world.building, way.x) : streetTile(ctx.world.building);
   const sex = regular ? regular.look.sex : rollSex(WOMEN_VISIT);
   const name = regular ? regular.name : randomName(sex);
   const look = regular ? { ...regular.look } : randomLook(sex);
@@ -127,8 +148,19 @@ export function spawnGuest(
     calmed: false,
     classDay,
   };
-  const [lx, ly] = lobbyTile(ctx.world.building);
-  if (!goTo(ctx, g, lx, ly)) return null;
+  if (classDay) {
+    decide(ctx, g);
+    // no way to the studio from here after all: in by the lobby, to think again there
+    if (!g.path) {
+      removeFromStations(ctx, g);
+      g.station = 0;
+      g.state = 'enter';
+    }
+  }
+  if (g.state === 'enter') {
+    const [lx, ly] = lobbyTile(ctx.world.building);
+    if (!goTo(ctx, g, lx, ly)) return null;
+  }
   s.guests.push(g);
   if (regular) welcomeBack(ctx, g, regular);
   // a class-goer is counted when their class is done, not as a guest come for treatment
