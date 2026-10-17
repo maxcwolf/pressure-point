@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.0
+
+- **Waits you can read.** Goals about waiting now ask guests to keep a share of their **patience** through their visit, the lowest their patience bar falls, rather than an average wait in days. The Stats chart is now **Patience kept**, and the No Waiting Around award is judged on it. The targets are set to be as hard as before.
+- **Staff see their line first.** With guests waiting at their table, staff hold off on a drink or a snack until they're properly thirsty or hungry, and leave bad vibes in other rooms until the line is seen to. Waits are a little shorter and fewer guests storm out.
+- **Long lines put guests off.** Once more than three guests wait for each practitioner of a discipline, some new guests hear of it and stay away. The Stats › Guests tab shows each discipline's line and how many it keeps away.
+- **Find what's holding guests up.** When guests pile up, the advisor names the slowest stage (check-in, consultation or a treatment) and why: too few staff, staff called away, or a station busy nearly all the time. A desk or table's inspector shows how busy it's been and how often someone was at it.
+
 ## v0.29.1
 
 - **Class-goers find a studio in a building of its own.** A Qi Gong Studio on land apart from the main building, like The Orchard's orangery, no longer has its class-goers walk to the main front door and all the way round, arriving after the class. They come along the pavement from the nearer end and go straight to it.
