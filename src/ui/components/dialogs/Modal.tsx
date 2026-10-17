@@ -6,6 +6,7 @@ import { useHud } from '../../hooks/use-hud';
 import type { DialogId } from '../../hud';
 import { AwardsDialog } from './AwardsDialog';
 import { BuyPlotDialog } from './BuyPlotDialog';
+import { ConfirmCancelCourse } from './ConfirmCancelCourse';
 import { ConfirmFire } from './ConfirmFire';
 import { ConfirmNewGame } from './ConfirmNewGame';
 import { KarmaDialog } from './KarmaDialog';
@@ -29,6 +30,8 @@ function contents(dialog: DialogId): ComponentChildren {
       return <ConfirmNewGame />;
     case 'confirm-fire':
       return <ConfirmFire />;
+    case 'confirm-cancel-course':
+      return <ConfirmCancelCourse />;
     case 'star':
       return <StarDialog />;
     case 'karma':

@@ -684,6 +684,52 @@ test.describe('staff', () => {
       false,
     );
   });
+
+  test('have a course called off for the fee back only once the player says so', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const { name, money } = await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.state.stars = 1;
+      const st = pp.state.staff.find((x) => x.role === 'therapist')!;
+      st.quals = ['swedish'];
+      pp.tools.select({ kind: 'staff', id: st.id });
+      return { name: st.name, money: pp.state.money };
+    });
+    const insp = page.locator('#inspector');
+    const modal = page.locator('#modal');
+    await insp.locator('.course', { hasText: 'Deep Tissue' }).click();
+    const paid = await game.eval((pp) => pp.state.staff.find((x) => x.role === 'therapist')!.training!.cost);
+    expect(await game.eval((pp) => pp.state.money)).toBe(money - paid);
+    /** The course the therapist is on, if any. */
+    const course = () =>
+      game.eval((pp) => pp.state.staff.find((x) => x.role === 'therapist')!.training?.course ?? null);
+    const fee = `$${paid.toLocaleString('en-US')}`;
+
+    // Esc backs out, and so does keeping them training
+    await insp.getByRole('button', { name: 'Cancel course' }).click();
+    await expect(modal.locator('h2')).toHaveText(`Cancel ${name}'s Deep Tissue massage course?`);
+    await expect(modal).toContainText(`You'll get ${fee} back.`);
+    await page.keyboard.press('Escape');
+    await expect(modal).toBeEmpty();
+    expect(await course()).toBe('deep');
+    await insp.getByRole('button', { name: 'Cancel course' }).click();
+    await modal.getByRole('button', { name: 'Keep training' }).click();
+    await expect(modal).toBeEmpty();
+    expect(await course()).toBe('deep');
+
+    await insp.getByRole('button', { name: 'Cancel course' }).click();
+    await modal.getByRole('button', { name: 'Cancel course' }).click();
+    await expect(modal).toBeEmpty();
+    await expect(page.locator('#toasts')).toContainText(
+      `${name} has left the Deep Tissue massage course. ${fee} refunded.`,
+    );
+    expect(await course()).toBeNull();
+    expect(await game.eval((pp) => pp.state.money), 'the whole fee back').toBe(money);
+    await expect(insp).not.toContainText('Course progress');
+    await expect(insp.getByRole('button', { name: 'Cancel course' })).toHaveCount(0);
+    expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'therapist')!.quals)).not.toContain('deep');
+  });
 });
 
 test.describe('running a center', () => {

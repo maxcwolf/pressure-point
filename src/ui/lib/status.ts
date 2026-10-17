@@ -1,10 +1,13 @@
 // Describing what people are up to, in a few words.
 
-import { DISCIPLINES, GENERAL_COURSES, isGeneral, ITEMS, modalityLabel, ROLES, ROOMS } from '../../core/data';
+import { DISCIPLINES, ITEMS, ROLES, ROOMS } from '../../core/data';
 import { expert, slots, trained, xpToNext } from '../../core/sim/careers';
 import { missNote } from '../../core/sim/classes';
 import type { Sim } from '../../core/sim/sim';
-import type { CourseId, Guest, Staff } from '../../core/state/types';
+import { courseName } from '../../core/sim/training';
+import type { Guest, Staff } from '../../core/state/types';
+
+export { courseName };
 
 /** What a guest getting a drink is having, by what they are getting it from, other than a herbal tea. */
 const DRINKS: Readonly<Record<string, string>> = {
@@ -156,12 +159,6 @@ export function staffStatus(st: Staff, sim: Sim): string {
     case 'leaving':
       return 'Leaving for good';
   }
-}
-
-/** The display name of a training course. */
-export function courseName(id: CourseId) {
-  if (id === 'skill') return 'professional development';
-  return isGeneral(id) ? GENERAL_COURSES[id].name : modalityLabel(id);
 }
 
 /** How a morale bar is drawn: red once it is low enough to worry about. */

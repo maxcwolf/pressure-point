@@ -111,7 +111,7 @@ import { type StandingPoints, standingPoints, updateStanding } from './standing'
 import { type Chance, successChance, updateStations } from './stations';
 import { subjectSpot } from './subjects';
 import type { Course } from './training';
-import { courses, train, trainBlocker } from './training';
+import { cancelBlocker, cancelTraining, courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
 import { deliveryProblem, modalityOf, offered, setDiscipline, unlocked } from './treatments';
 import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
@@ -545,6 +545,16 @@ export class Sim {
   /** Send a member of staff on a course. */
   train(staffId: number, courseId: string): boolean {
     return train(this.ctx, staffId, courseId);
+  }
+
+  /** Why a member of staff's course cannot be called off. */
+  cancelBlocker(st: Staff): string {
+    return cancelBlocker(st);
+  }
+
+  /** Call a member of staff off their course, with the fee refunded. */
+  cancelTraining(staffId: number): boolean {
+    return cancelTraining(this.ctx, staffId);
   }
 
   // ---- Money -----------------------------------------------------------------

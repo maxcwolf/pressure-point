@@ -27,6 +27,7 @@ export type DialogId =
   | 'saves'
   | 'confirm-new'
   | 'confirm-fire'
+  | 'confirm-cancel-course'
   | 'star'
   | 'karma'
   | 'awards'
@@ -86,6 +87,8 @@ export class HudState {
   plotAsked: string | null = null;
   /** The member of staff asked about in the dialog to let them go. */
   fireAsked: number | null = null;
+  /** The member of staff asked about in the dialog to call off their course. */
+  cancelAsked: number | null = null;
   /** What the floor is colored by, if anything, and whether the list to choose from is open. */
   overlay: OverlayMode | null = null;
   overlayPicker = false;
@@ -211,6 +214,12 @@ export class HudState {
   askToFire(staffId: number) {
     this.fireAsked = staffId;
     this.open('confirm-fire');
+  }
+
+  /** Ask whether to call a member of staff off their course, in a dialog over the game. */
+  askToCancelCourse(staffId: number) {
+    this.cancelAsked = staffId;
+    this.open('confirm-cancel-course');
   }
 
   /** Open a dialog over the game, pausing it. */

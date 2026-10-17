@@ -1,6 +1,7 @@
 // Courses staff can take in a Training Room.
 
 import { DAY_SECONDS, GENERAL_COURSES, isGeneral, MODALITIES, modalityLabel, RANK_XP } from '../data';
+import { money } from '../format';
 import type { CourseId, Staff } from '../state/types';
 import { accessPose, accessTile } from '../world';
 import { expert, generalToLearn, offerPromotion, roomFor, treatmentsToLearn } from './careers';
@@ -21,6 +22,12 @@ export interface Course {
   desc: string;
   cost: number;
   days: number;
+}
+
+/** The display name of a training course. */
+export function courseName(id: CourseId) {
+  if (id === 'skill') return 'professional development';
+  return isGeneral(id) ? GENERAL_COURSES[id].name : modalityLabel(id);
 }
 
 /** Courses this member of staff could take right now. */
@@ -76,6 +83,35 @@ export function train(ctx: SimContext, staffId: number, courseId: string): boole
   say(st, '📚', 3);
   emit(ctx, { type: 'sfx', name: 'place' });
   toast(ctx, `${st.name} is off to study ${course.name}.`, 'info', { kind: 'staff', id: st.id });
+  return true;
+}
+
+/** Why a course cannot be called off ('' when it can). */
+export function cancelBlocker(st: Staff): string {
+  if (!st.training) return 'Not on a course.';
+  if (st.state === 'leaving') return 'They are leaving.';
+  return '';
+}
+
+/**
+ * Call a member of staff off the course they are on, before it is finished: the whole fee comes back, as it does when
+ * a course is cut short any other way, their desk is freed and they go back to work with no new qualification. False
+ * if they are not on one.
+ */
+export function cancelTraining(ctx: SimContext, staffId: number): boolean {
+  const st = staffById(ctx, staffId);
+  const t = st?.training;
+  if (!st || !t || cancelBlocker(st)) {
+    emit(ctx, { type: 'sfx', name: 'error' });
+    return false;
+  }
+  // dropping what they were doing hands the fee back, off this month's training costs, and frees the desk
+  staffIdle(ctx, st);
+  emit(ctx, { type: 'sfx', name: 'cash' });
+  toast(ctx, `${st.name} has left the ${courseName(t.course)} course. ${money(t.cost)} refunded.`, 'info', {
+    kind: 'staff',
+    id: st.id,
+  });
   return true;
 }
 
