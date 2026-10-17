@@ -21,6 +21,7 @@ import { advice } from '../../src/core/sim/advisor';
 import { accessIndex } from '../../src/core/sim/claims';
 import {
   admitClassgoers,
+  announceClasses,
   backForClass,
   CLASS_LINES,
   classDays,
@@ -248,6 +249,34 @@ describe('a class in play', () => {
       expect(call.day - (called[i]?.day ?? 0)).toBeGreaterThanOrEqual(CLASS_CALL_GAP);
       expect(call.text).not.toBe(called[i]?.text);
     }
+  });
+
+  it.each([2, 3])('is announced as seldom in real time at %ix speed as at normal speed', (speed) => {
+    const { sim, s } = studio();
+    const called: number[] = [];
+    let seconds = 0;
+    s.speed = speed;
+    while (seconds < DAY_SECONDS * CLASS_CALL_GAP * 3) {
+      sim.tick(0.1);
+      seconds += 0.1;
+      if (sim.drain().some((e) => e.type === 'announce' && CLASS_LINES.includes(e.text))) called.push(seconds);
+    }
+    expect(called.length).toBeGreaterThan(1);
+    for (const [i, at] of called.slice(1).entries())
+      expect(at - (called[i] ?? 0)).toBeGreaterThanOrEqual(DAY_SECONDS * CLASS_CALL_GAP - 0.5);
+  });
+
+  it('counts a day at fastest speed as a third of a day toward the next call', () => {
+    const { sim, s } = studio();
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    s.open = true;
+    ctx.classCallWait = 1;
+    s.speed = 3;
+    announceClasses(ctx);
+    expect(ctx.classCallWait).toBeCloseTo(2 / 3);
+    s.speed = 1;
+    announceClasses(ctx);
+    expect(ctx.classCallWait).toBe(0);
   });
 
   it('has the advisor ask for an Instructor while the studio has none', () => {

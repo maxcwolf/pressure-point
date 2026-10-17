@@ -21,8 +21,8 @@ export interface SimContext {
   readonly warmth: Float32Array;
   /** The announcer's latest lines, so none comes round again too soon. */
   readonly announced: string[];
-  /** The day a class was last announced as starting, if one has been since the game was loaded. */
-  classCalled?: number;
+  /** Days at normal speed until a class may be announced as starting again, counting a day at 3x speed as a third. */
+  classCallWait?: number;
   /** How many times a class has been announced since the game was loaded, to take turns with the lines. */
   classCalls?: number;
   /** The disciplines someone has been treated in today, whose followings do not fade tonight. */

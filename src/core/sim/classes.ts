@@ -469,15 +469,17 @@ export const classLine = (n: number) => CLASS_LINES[n % CLASS_LINES.length] ?? '
 
 /**
  * As a day begins, announce its class if a studio has one with anybody booked for it, and the last call was long
- * enough ago.
+ * enough ago. The gap is counted in days at normal speed, so the call is heard as often at every game speed: at
+ * fastest a day goes by in a third of the time, and counts a third of a day.
  */
 export function announceClasses(ctx: SimContext) {
   const today = Math.floor(ctx.s.day);
+  ctx.classCallWait = Math.max(0, (ctx.classCallWait ?? 0) - 1 / Math.max(1, ctx.s.speed));
   if (!offeringOn(ctx.s, 'qigong') || !ctx.s.open) return;
-  if (ctx.classCalled !== undefined && today - ctx.classCalled < CLASS_CALL_GAP) return;
+  if (ctx.classCallWait > 1e-9) return;
   if (studios(ctx).some((r) => classOn(r, today) && r.booked?.day === today && r.booked.count > 0)) {
     emit(ctx, { type: 'announce', text: classLine(ctx.classCalls ?? 0) });
-    ctx.classCalled = today;
+    ctx.classCallWait = CLASS_CALL_GAP;
     ctx.classCalls = (ctx.classCalls ?? 0) + 1;
   }
 }
