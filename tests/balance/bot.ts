@@ -3,14 +3,20 @@
 // gives raises when asked, and takes on emergencies. On top of that, each of which can be switched off (`BotFlags`)
 // to compare with the bot as it was: it sets prices by how many guests they put off, buys marketing when it pays,
 // lets practitioners go when they are not needed, saves toward a money goal, builds on the profit a room is expected
-// to make, takes house calls, and evens out lines.
+// to make, takes house calls, and evens out lines. And as a good player also does: it keeps the way clear, upgrades
+// the equipment, takes on only the emergencies it can see through, calms outbreaks, lays rooms out for their kit and
+// dresses them with windows first, fills a Sound Bath Studio's mats, runs Qi Gong classes, picks courses by what
+// guests need, and moves a guest who would get worse up their line.
 
+import { itemOpen } from '../../src/core/campaign';
 import {
   type CampaignKind,
   type CenterId,
   CENTERS,
+  CLASS_DAYS,
   conditionHere,
   type ConditionId,
+  conditionOf,
   CONDITIONS,
   DAY_SECONDS,
   DAYS_PER_MONTH,
@@ -18,20 +24,30 @@ import {
   type Discipline,
   DISCIPLINE_ORDER,
   DISCIPLINES,
+  EMERGENCY_DAYS,
   type GoalSpec,
   ITEMS,
   type ItemType,
   MODALITIES,
+  type Modality,
+  NOISE_NOTICE,
   type Role,
   ROOMS,
   type RoomType,
+  SIDEWALK_Y,
+  WINDOW_COST,
+  WINDOW_MAX_BONUS,
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
+import { guestCap } from '../../src/core/sim/guests';
+import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
 import { seasonOf } from '../../src/core/sim/twists';
-import { disciplineOn, newGame, unlockedUpTo } from '../../src/core/state/game';
-import type { GameState, Item, Room, WallSpot } from '../../src/core/state/types';
-import type { Rect } from '../../src/core/world';
+import { upgradeCost } from '../../src/core/sim/upgrades';
+import { worsenRate } from '../../src/core/sim/worsening';
+import { disciplineOn, newGame, offeringOn, unlockedUpTo } from '../../src/core/state/game';
+import type { Emergency, GameState, Guest, Item, Room, Staff, WallSpot } from '../../src/core/state/types';
+import { footprint, onWall, type Rect } from '../../src/core/world';
 
 /** What the bot does beyond building, staffing and training as it always has. */
 export const BOT_FLAGS = [
@@ -53,11 +69,42 @@ export const BOT_FLAGS = [
   'junior',
   /** Build a Posture Lab when the consultants send many guests back for a second look: junior, or a long line. */
   'lab',
+  /** Never put furniture down where someone stands, and free anyone walled in by selling what boxes them in. */
+  'clear',
+  /** Train a Caretaker in Mechanics and upgrade the treatment equipment; a chart on the wall; a Recliner for each. */
+  'kit',
+  /** Take on only the emergencies the staff can see through in time, and put their guests first while one runs. */
+  'emergencies',
+  /**
+   * Take on stress outbreaks and calm the guests seen sweating; have a Shaman ward off a mishap. An extra: it made no
+   * difference that could be told from the seeds.
+   */
+  'trouble',
+  /** Treatment rooms big enough for all their equipment, windows and space-saving decor first, decor sold for kit. */
+  'layout',
+  /** As many mats in a Sound Bath Studio as the healer plays for. */
+  'mats',
+  /**
+   * A Qi Gong Studio once it opens, with an Instructor, Practice Spots while the building has room for the class,
+   * classes every weekday, and more Shop Counters for the crowd let out. An extra: class-goers count against how many
+   * the building holds, and crowd out guests worth more for their treatment.
+   */
+  'classes',
+  /** Courses for the techniques guests come for most, that nobody else on the staff covers yet. */
+  'courses',
+  /**
+   * Move a guest who would get worse before their turn up their line, past guests who can spare the wait. An extra:
+   * it cost more patience than it saved.
+   */
+  'triage',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
-/** Flags that are off unless `BOT_ON` names them, as a different way to play rather than better play. */
-const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab'];
+/**
+ * Flags that are off unless `BOT_ON` names them: a different way to play rather than better play, or play that was
+ * measured and found to gain nothing.
+ */
+const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab', 'trouble', 'classes', 'triage'];
 
 /**
  * The bot's flags from the environment. `BOT=old` plays as the bot did before it learned any of them; `BOT_OFF`
@@ -181,7 +228,29 @@ const SIZE: Partial<Record<RoomType, [number, number]>> = {
   training: [3, 4],
   assess: [3, 3],
   recovery: [3, 4],
+  qigong: [5, 5],
 };
+
+/** The chart that helps treatments in a room of each kind. */
+const CHART_FOR: Partial<Record<RoomType, ItemType>> = {
+  massage: 'meridian_poster',
+  acupuncture: 'meridian_poster',
+  reiki: 'chakra_chart',
+  sound: 'chakra_chart',
+};
+/** Decor to dress a treatment room with, the most prestige for the money and the floor first. */
+const DRESS: readonly ItemType[] = [
+  'landscape_painting',
+  'tapestry',
+  'prayer_flags',
+  'rug',
+  'salt_lamp',
+  'diffuser',
+  'statue',
+  'plant',
+];
+/** Decor standing on a room's floor, the least prestige for the tile it takes first, to sell for equipment. */
+const FLOOR_DECOR: readonly ItemType[] = ['plant', 'diffuser', 'salt_lamp', 'statue'];
 
 export class Bot {
   readonly sim: Sim;
@@ -256,7 +325,10 @@ export class Bot {
       for (let i = 0; i < ticksPerDay; i++) {
         this.sim.tick(0.1);
         this.sim.drain();
-        if (i % 10 === 0) this.sampleTables();
+        if (i % 10 === 0) {
+          this.sampleTables();
+          if (this.flags.trouble) this.calmCarriers();
+        }
       }
       this.log.lowestMoney = Math.min(this.log.lowestMoney, this.s.money);
       this.log.peakLoan = Math.max(this.log.peakLoan, this.s.loan);
@@ -555,6 +627,8 @@ export class Bot {
   private sampleLines() {
     const w = this.watch;
     w.days++;
+    if (this.flags.classes)
+      this.crowded = this.s.guests.length >= guestCap(this.s) - 3 ? this.crowded + 1 : Math.floor(this.crowded * 0.8);
     for (const g of this.s.guests) {
       if (g.goal !== 'treat' || (g.state !== 'waiting' && g.state !== 'toWait')) continue;
       const d = this.sim.modalityOf(g).discipline;
@@ -631,6 +705,7 @@ export class Bot {
   /** Everything the bot looks at once a day. */
   private decide() {
     const s = this.s;
+    if (this.flags.clear) this.freeTrapped();
     this.keepStaffHappy();
     this.handleEvents();
     this.manageLoan();
@@ -640,12 +715,15 @@ export class Bot {
     }
     this.sampleLines();
     if (this.flags.lines) this.evenLines();
+    if (this.flags.triage) this.triage();
     if (this.flags.payroll) this.trimPayroll();
     this.hireToFill();
     this.basics();
     this.unlocks();
+    if (this.flags.kit) this.equip();
     this.train();
     this.grow();
+    if (this.flags.classes) this.classes();
     if (this.flags.lab) this.buildLab();
     this.decorate();
     this.comforts();
@@ -660,16 +738,33 @@ export class Bot {
     }
   }
 
-  /** Take on emergencies, turn down outbreaks and house calls, prepare for mishaps and pay any fine. */
+  /**
+   * Take on emergencies (with `emergencies`, only those the staff can see through, their guests first while one
+   * runs), turn down outbreaks (with `trouble`, take them on unless an emergency is running) and house calls, prepare
+   * for mishaps (with `trouble`, a Shaman's ward where there is one) and pay any fine.
+   */
   private handleEvents() {
     const s = this.s;
-    if (s.offer) this.sim.acceptEmergency();
-    if (s.outbreakOffer) this.sim.declineOutbreak();
+    if (s.offer) {
+      if (!this.flags.emergencies || this.canSeeThrough(s.offer)) this.sim.acceptEmergency();
+      else {
+        this.note(`day ${Math.floor(s.day)}: turned down an emergency (${s.offer.total} with ${s.offer.condition})`);
+        this.sim.declineEmergency();
+      }
+    }
+    if (this.flags.emergencies && s.policy.emergenciesFirst !== !!s.emergency)
+      this.sim.setPolicy({ emergenciesFirst: !!s.emergency });
+    if (s.outbreakOffer) {
+      if (this.flags.trouble && !s.emergency && !s.offer) this.sim.acceptOutbreak();
+      else this.sim.declineOutbreak();
+    }
     if (s.callOffer) {
       if (this.flags.calls) this.houseCall();
       else this.sim.declineCall();
     }
-    if (s.mishap && !s.mishap.started && !s.mishap.prepared) this.sim.prepareMishap();
+    const ward = this.flags.trouble && (!!s.mishap?.ward || this.sim.canWard());
+    if (ward && s.mishap && !s.mishap.ward) this.sim.askWard();
+    else if (!ward && s.mishap && !s.mishap.started && !s.mishap.prepared) this.sim.prepareMishap();
     if (s.visitReport?.bribe !== undefined) this.sim.settleInspection(false);
   }
 
@@ -871,6 +966,7 @@ export class Bot {
       }
     spots.sort((a, b) => a[3] - b[3]);
     for (const [x, y, rot] of spots) {
+      if (this.flags.clear && this.underfoot(t, x, y, rot)) continue;
       if (!this.sim.world.canPlaceItem(t, x, y, rot, room.id).ok) continue;
       const it = this.sim.placeItem(t, x, y, rot, { roomId: room.id });
       if (it) return it;
@@ -891,6 +987,7 @@ export class Bot {
     spots.sort((a, b) => a[2] - b[2]);
     for (const [x, y] of spots.slice(0, 120))
       for (let rot = 0; rot < 4; rot++) {
+        if (this.flags.clear && this.underfoot(t, x, y, rot)) continue;
         if (!this.sim.world.canPlaceItem(t, x, y, rot).ok) continue;
         const it = this.sim.placeItem(t, x, y, rot);
         if (it) return it;
@@ -966,6 +1063,8 @@ export class Bot {
       const rooms = this.rooms(def.room).length - (this.benched[def.room] ?? 0);
       if (this.staffOf(def.role).length < rooms) this.hirePractitioner(def.role);
     }
+    if (this.flags.classes && this.staffOf('instructor').length < this.rooms('qigong').length)
+      this.hirePractitioner('instructor');
     if (!this.s.open) return;
     const upkeep = this.s.items.filter(
       (i) => !!ITEMS[i.type].station || i.type === 'plant' || i.type === 'toilet',
@@ -1015,7 +1114,9 @@ export class Bot {
     const upTo = unlockedUpTo(s);
     const reserve = this.wages();
     // a Training Room as soon as anyone on the payroll is not trained in something guests now arrive needing
-    const untrained = s.staff.some((st) => this.sim.courses(st).some((c) => c.id in MODALITIES));
+    const untrained =
+      s.staff.some((st) => this.sim.courses(st).some((c) => c.id in MODALITIES)) ||
+      (this.flags.kit && upTo >= 1 && !this.mechanic());
     if (untrained && !this.sim.hasRoom('training') && this.afford(ROOMS.training.cost + 400, 0, true))
       this.buildRoom('training');
     for (const d of DISCIPLINE_ORDER) {
@@ -1027,12 +1128,25 @@ export class Bot {
         if (this.buildRoom(room) ?? (this.goalNeeds(d) && this.makeSpace(room))) this.hireToFill();
       }
     }
-    // equipment for every unlocked technique, in every room of its discipline
+    // equipment for every unlocked technique, in every room of its discipline; with `courses`, as soon as someone is
+    // trained in it, borrowing if need be, since without it every guest who needs it is botched
     for (const m of Object.values(MODALITIES)) {
       if (!m.equipment || !this.sim.unlocked(m.id)) continue;
+      const cost = ITEMS[m.equipment].cost;
+      const wanted = this.flags.courses && s.staff.some((st) => st.state !== 'leaving' && st.quals.includes(m.id));
       for (const room of this.rooms(TREAT_ROOM[m.discipline])) {
         const has = s.items.some((i) => i.type === m.equipment && this.sim.world.zoneAt(i.x, i.y) === room.id);
-        if (!has && s.money > ITEMS[m.equipment].cost + reserve) this.placeIn(room, m.equipment);
+        if (has) continue;
+        if (wanted ? this.afford(cost, 300, true) : s.money > cost + reserve) this.placeOrMakeRoom(room, m.equipment);
+      }
+    }
+    // a mat for every guest the best Sound Healer can play for
+    if (this.flags.mats) {
+      const skill = Math.max(0, ...this.staffOf(DISCIPLINES.sound.role).map((st) => st.skill));
+      for (const room of this.rooms('sound')) {
+        const mats = s.items.filter((i) => i.type === 'sound_mat' && this.sim.world.zoneAt(i.x, i.y) === room.id);
+        if (skill && mats.length < matsPlayed(skill) && s.money > ITEMS.sound_mat.cost + reserve)
+          this.placeOrMakeRoom(room, 'sound_mat');
       }
     }
     const restNeeded = Object.values(MODALITIES).some((m) => m.rest && this.sim.unlocked(m.id));
@@ -1082,12 +1196,21 @@ export class Bot {
     const reserve = 1000;
     const training = s.staff.filter((x) => x.training).length;
     if (training >= 1) return;
+    // a Caretaker who can install upgrades, once there are upgrades to install
+    if (this.flags.kit && unlockedUpTo(s) >= 1 && !this.mechanic()) {
+      const ct = this.staffOf('caretaker').find(
+        (st) => !st.training && this.sim.courses(st).some((c) => c.id === 'mechanics'),
+      );
+      if (ct && this.afford(900, reserve, true) && this.sim.train(ct.id, 'mechanics')) return;
+    }
     for (const st of s.staff) {
       if (st.state === 'leaving' || st.training || st.call) continue;
-      const course = this.sim
-        .courses(st)
-        .filter((c) => c.id in MODALITIES)
-        .sort((a, b) => a.cost - b.cost)[0];
+      const course = this.flags.courses
+        ? this.bestCourse(st)
+        : this.sim
+            .courses(st)
+            .filter((c) => c.id in MODALITIES)
+            .sort((a, b) => a.cost - b.cost)[0];
       if (!course || !this.afford(course.cost, reserve, true)) continue;
       // keep at least one of each discipline at work
       const role = this.staffOf(st.role);
@@ -1253,6 +1376,308 @@ export class Bot {
     return pay.length ? Math.min(...pay) : 2000;
   }
 
+  // ---- what a good player does besides -------------------------------------
+
+  /** Whether putting an item down here would cover a tile someone is standing on, and could wall them in. */
+  private underfoot(t: ItemType, x: number, y: number, rot: number): boolean {
+    if (onWall(t) || ITEMS[t].walkable) return false;
+    const tiles = footprint({ type: t, x, y, rot });
+    return [...this.s.guests, ...this.s.staff, ...this.s.visitors].some((c) =>
+      tiles.some(([tx, ty]) => tx === c.tx && ty === c.ty),
+    );
+  }
+
+  /**
+   * Anyone who cannot get out to the street, walled into a pocket of the building: sell the cheapest thing that boxes
+   * them in, one a day, as a player who spotted them would.
+   */
+  private freeTrapped() {
+    const w = this.sim.world;
+    const street = new Set(w.flood(0, SIDEWALK_Y).map(([x, y]) => w.idx(x, y)));
+    for (const c of [...this.s.staff, ...this.s.guests]) {
+      if (!w.inside(c.tx, c.ty) || !w.walkable(c.tx, c.ty) || street.has(w.idx(c.tx, c.ty))) continue;
+      const edge = new Set<number>();
+      for (const [x, y] of w.flood(c.tx, c.ty, 400))
+        for (const [nx, ny] of [
+          [x + 1, y],
+          [x - 1, y],
+          [x, y + 1],
+          [x, y - 1],
+        ] as const)
+          if (w.onMap(nx, ny)) edge.add(w.idx(nx, ny));
+      const wall = this.s.items
+        .filter(
+          (it) =>
+            !ITEMS[it.type].station &&
+            !onWall(it.type) &&
+            this.sim.canSell(it) &&
+            footprint(it).some(([x, y]) => edge.has(w.idx(x, y))),
+        )
+        .sort((a, b) => ITEMS[a.type].cost - ITEMS[b.type].cost)[0];
+      if (!wall) continue;
+      this.sim.sellItem(wall.id);
+      this.note(`day ${Math.floor(this.s.day)}: sold a ${wall.type} that walled someone in`);
+      return;
+    }
+  }
+
+  /** In a stress outbreak, a calming session for each guest seen sweating, while there are sessions left. */
+  private calmCarriers() {
+    const o = this.s.outbreak;
+    if (!o) return;
+    for (const g of this.s.guests) {
+      if (o.calms <= 0) return;
+      if (g.stressed && !g.calmed && g.state !== 'leaving') this.sim.calm(g.id);
+    }
+  }
+
+  /**
+   * Whether the staff can heal enough of an emergency's guests in time: practitioners trained in its technique, with
+   * its equipment in place, each giving it about half their time over the days it runs (less a few for the guests to
+   * arrive and be seen), at the chance their rank gives a guest who has waited a little.
+   */
+  private canSeeThrough(e: Emergency): boolean {
+    const mod = MODALITIES[conditionOf(e.condition).modality];
+    const able = this.staffOf(DISCIPLINES[mod.discipline].role).filter((st) => st.quals.includes(mod.id));
+    if (!able.length || (mod.equipment && !this.has(mod.equipment))) return false;
+    let healed = 0;
+    for (const st of able) {
+      const days = mod.seconds / DAY_SECONDS / (0.85 + st.skill * 0.05);
+      const chance = Math.min(0.95, Math.max(0.3, 0.6 + st.skill * 0.09 - mod.difficulty));
+      const places = mod.discipline === 'sound' ? matsPlayed(st.skill) : 1;
+      healed += ((EMERGENCY_DAYS - 6) / days) * places * chance * 0.5;
+    }
+    return healed >= e.target;
+  }
+
+  /**
+   * A guest whose condition would run out before their turn moves up their line, to the last place that gets them
+   * seen in time, one a line a day. Their turn comes after the treatments ahead of them, at the pace of whoever works
+   * the table.
+   */
+  private triage() {
+    for (const it of this.s.items) {
+      const def = ITEMS[it.type].station;
+      if (def?.goal !== 'treat' || def.group || it.queue.length < 2) continue;
+      const st = this.sim.stationStaff(it);
+      const speed = st ? 0.85 + st.skill * 0.05 : 0.5;
+      /** How long a guest's treatment takes here. */
+      const takes = (g: Guest) => this.sim.modalityOf(g).seconds / speed;
+      const line = it.queue.map((id) => this.sim.guest(id)).filter((g): g is Guest => !!g);
+      const served = this.sim.servedAt(it);
+      const before: number[] = [];
+      let wait = served ? takes(served) * (1 - it.progress) : 0;
+      for (const g of line) {
+        before.push(wait);
+        wait += takes(g);
+      }
+      /** How long until a guest's condition runs out. */
+      const left = (g: Guest) => g.health / worsenRate(g.condition);
+      for (const [p, g] of line.entries()) {
+        if (p === 0 || left(g) >= (before[p] ?? 0)) continue;
+        let q = p - 1;
+        while (q > 0 && (before[q] ?? 0) > left(g)) q--;
+        // only past guests who can spare the wait: patient still, and in no danger of getting worse themselves
+        const passed = line.slice(q, p);
+        const spare = passed.every((h, i) => h.patience >= 50 && left(h) > (before[q + i] ?? 0) + takes(g) * 2);
+        if (spare && this.sim.moveInLine(g.id, q - p)) break;
+      }
+    }
+  }
+
+  /** Whether a Caretaker on the payroll can install upgrades. */
+  private mechanic(): boolean {
+    return this.staffOf('caretaker').some((st) => st.general.includes('mechanics'));
+  }
+
+  /** Whether a room has an item of a type in it. */
+  private inRoom(room: Room, t: ItemType): boolean {
+    return this.s.items.some((i) => i.type === t && this.sim.world.zoneAt(i.x, i.y) === room.id);
+  }
+
+  /**
+   * Kit a good player buys once the first star opens it: a chart on the wall of every room it helps, a Recliner for
+   * every two practitioners trained in a technique that needs a rest, and, once a Caretaker can install them, the
+   * upgrades for the treatment equipment, the least upgraded and busiest first, one a day while the center pays its
+   * way and the bot is not saving.
+   */
+  private equip() {
+    const s = this.s;
+    const upTo = unlockedUpTo(s);
+    if (upTo < 1) return;
+    const reserve = this.wages() + 3000;
+    for (const room of s.rooms.filter((r) => r.done)) {
+      const chart = CHART_FOR[room.type];
+      if (chart && !this.inRoom(room, chart) && s.money > ITEMS[chart].cost + reserve) this.placeIn(room, chart);
+    }
+    const resting = s.staff.filter((st) => st.state !== 'leaving' && st.quals.some((q) => MODALITIES[q].rest)).length;
+    const lounge = this.rooms('recovery')[0];
+    if (lounge && this.count('recliner') < Math.ceil(resting / 2) && s.money > ITEMS.recliner.cost + reserve)
+      this.placeIn(lounge, 'recliner');
+    if (!this.mechanic() || this.saving() || this.profit() <= 0) return;
+    /** How busy the discipline an item serves was last month. */
+    const busy = (it: Item) => {
+      const d = ITEMS[it.type].station?.discipline;
+      return d ? (this.seen[d]?.busy ?? 0) : 0;
+    };
+    const next = s.items
+      .filter(
+        (it) =>
+          ITEMS[it.type].upgrade !== undefined &&
+          it.type !== 'posture_scanner' &&
+          !it.upgradePaid &&
+          it.level < Math.min(upTo, 3),
+      )
+      .sort((a, b) => a.level - b.level || busy(b) - busy(a))[0];
+    if (next && s.money > upgradeCost(next.type, next.level + 1) + reserve) this.sim.orderUpgrade(next.id);
+  }
+
+  /**
+   * A Qi Gong Studio once the second star opens it, while the center pays its way and the bot is not saving: classes
+   * bring guests of their own, who take nothing from the treatment rooms. Then as many Practice Spots as the
+   * Instructor can lead.
+   */
+  private classes() {
+    const s = this.s;
+    if (unlockedUpTo(s) < 2 || !offeringOn(s, 'qigong')) return;
+    const reserve = this.wages() * 0.8 + 2000;
+    if (!this.sim.hasRoom('qigong')) {
+      if (this.saving() || this.profit() <= 0 || !this.afford(ROOMS.qigong.cost + 3000, reserve)) return;
+      if (this.buildRoom('qigong')) {
+        this.note(`day ${Math.floor(s.day)}: a Qi Gong Studio`);
+        this.hireToFill();
+      }
+      return;
+    }
+    this.shops();
+    const places = this.sim.classLeader()?.places;
+    if (!places) return;
+    for (const room of this.rooms('qigong')) {
+      // a class every weekday rather than three a week: the week's class-goers are shared among its classes, so
+      // smaller crowds let out at once, and the weekend is left for the Instructor's rest
+      for (const day of [1, 3])
+        if (!(room.classDays ?? CLASS_DAYS).includes(day)) this.sim.toggleClassDay(room.id, day);
+      const spots = s.items.filter((i) => i.type === 'practice_spot' && this.sim.world.zoneAt(i.x, i.y) === room.id);
+      // class-goers count against how many the building holds, and a full building turns away guests worth far
+      // more for their treatment: a smaller class while it is often full, a bigger one only while there is room
+      const spare = spots.find((sp) => !sp.serving && this.sim.canSell(sp));
+      if (this.crowded > 4 && spare) {
+        this.sim.sellItem(spare.id);
+        this.crowded = 0;
+        this.note(`day ${Math.floor(s.day)}: a Practice Spot fewer, the building being full (${spots.length - 1})`);
+      } else if (
+        this.crowded === 0 &&
+        spots.length < places &&
+        s.guests.length < guestCap(s) - places &&
+        s.money > ITEMS.practice_spot.cost + reserve
+      )
+        this.placeIn(room, 'practice_spot');
+    }
+  }
+
+  /** Days lately the building has been full or nearly, so that guests are turned away: up by one, down by a fifth. */
+  private crowded = 0;
+
+  /**
+   * Another Shop Counter, and a Receptionist for it, whenever more than six wait at each, up to three: a class lets
+   * a crowd out at once, and those in line for the counter count against how many the building holds, so a long line
+   * there keeps new guests out altogether.
+   */
+  private shops() {
+    const s = this.s;
+    const counters = this.count('shop_counter');
+    if (!counters || counters >= 3) return;
+    const waiting = s.guests.filter((g) => g.goal === 'shop' && (g.state === 'waiting' || g.state === 'toWait'));
+    if (waiting.length <= counters * 5 || !this.afford(ITEMS.shop_counter.cost, 1000, true)) return;
+    if (this.placeNearEntrance('shop_counter')) {
+      this.note(`day ${Math.floor(s.day)}: another Shop Counter (${waiting.length} waiting)`);
+      this.hireToFill();
+    }
+  }
+
+  /**
+   * The course a good player picks for someone: the technique worth most to the center, by how often guests come
+   * needing it and what they pay and how hard it is to get right, and much more where nobody else on the staff is
+   * trained in it yet (guests needing a technique nobody knows come less often, and are botched when they do).
+   */
+  private bestCourse(st: Staff) {
+    const local = CENTERS[this.center].conditions ?? {};
+    /** What learning a technique is worth. */
+    const value = (m: Modality) => {
+      const covered = this.s.staff.some((o) => o !== st && o.state !== 'leaving' && o.quals.includes(m));
+      const worth = CONDITIONS.filter((c) => c.modality === m && conditionHere(c, this.s.center)).reduce(
+        (a, c) => a + (local[c.id] ?? 1) * c.fee,
+        0,
+      );
+      return worth * (0.9 - MODALITIES[m].difficulty) * (covered ? 0.35 : 1);
+    };
+    return this.sim
+      .courses(st)
+      .filter((c): c is typeof c & { id: Modality } => c.id in MODALITIES)
+      .sort((a, b) => value(b.id) - value(a.id) || a.cost - b.cost)[0];
+  }
+
+  /**
+   * Put a piece of equipment into a room; with `layout`, if it will not fit, push a wall out a tile where there is
+   * space for it, or failing that sell the room's floor decor a piece at a time, as a player would rather have the
+   * treatment than the statue.
+   */
+  private placeOrMakeRoom(room: Room, t: ItemType): Item | null {
+    const placed = this.placeIn(room, t);
+    if (placed || !this.flags.layout) return placed;
+    const { x, y, w, h } = room;
+    for (const r of [
+      { x, y, w: w + 1, h },
+      { x: x - 1, y, w: w + 1, h },
+      { x, y, w, h: h + 1 },
+      { x, y: y - 1, w, h: h + 1 },
+    ]) {
+      if (!this.sim.world.resizeValid(room, r).ok || !this.sim.resizeRoom(room.id, r)) continue;
+      const it = this.placeIn(room, t);
+      this.note(`day ${Math.floor(this.s.day)}: made a ${room.type} bigger for a ${t}`);
+      if (it) return it;
+    }
+    const decor = this.s.items
+      .filter((i) => FLOOR_DECOR.includes(i.type) && this.sim.world.zoneAt(i.x, i.y) === room.id)
+      .sort((a, b) => FLOOR_DECOR.indexOf(a.type) - FLOOR_DECOR.indexOf(b.type));
+    for (const d of decor) {
+      this.sim.sellItem(d.id);
+      const it = this.placeIn(room, t);
+      if (it) {
+        this.note(`day ${Math.floor(this.s.day)}: sold a ${d.type} to make space for a ${t}`);
+        return it;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Dress a treatment room as a good player would, the cheapest prestige first and keeping the floor for equipment:
+   * a window ($150 for half a star's worth, up to four, onto the street before the corridor, and onto the corridor
+   * only where the room is quiet), then a picture or a hanging on the wall, a rug (it lies under the furniture), and
+   * only then lamps and statues. One thing a day.
+   */
+  private dress(room: Room, reserve: number) {
+    const s = this.s;
+    const w = this.sim.world;
+    if (room.windows.length < WINDOW_MAX_BONUS && s.money > WINDOW_COST + reserve) {
+      const tables = s.items.filter((i) => ITEMS[i.type].station && w.zoneAt(i.x, i.y) === room.id);
+      const quiet = tables.every((t) => this.sim.itemNoise(t) < NOISE_NOTICE / 2);
+      const spots = perimeterDoors(room).filter(
+        (sp) =>
+          !room.windows.some((x) => x.x === sp.x && x.y === sp.y && x.dx === sp.dx && x.dy === sp.dy) &&
+          w.windowValid(room, sp).ok,
+      );
+      const spot = spots.find((sp) => !w.inside(sp.x + sp.dx, sp.y + sp.dy)) ?? (quiet ? spots[0] : undefined);
+      if (spot && this.sim.toggleWindow(room.id, spot) === 'added') return;
+    }
+    const upTo = unlockedUpTo(s);
+    for (const t of DRESS) {
+      if (!itemOpen(ITEMS[t], upTo, []) || s.money < ITEMS[t].cost + reserve) continue;
+      if (this.placeIn(room, t)) return;
+    }
+  }
+
   /** Decor in the treatment rooms until each is a star of prestige above what guests expect. */
   private decorate() {
     const s = this.s;
@@ -1265,6 +1690,12 @@ export class Bot {
     for (const room of treat) {
       if (this.saving() && wanted?.room !== room.type) continue;
       if (this.sim.prestige(room) >= target || s.money < reserve) continue;
+      // with a goal for patience, decor that stands on the floor, which cheers the corridor outside where guests wait
+      // as well as the room (decor carries through walls, and a window adds only to the room)
+      if (this.flags.layout && !this.openGoal('patience')) {
+        this.dress(room, reserve);
+        continue;
+      }
       for (const t of ['statue', 'salt_lamp', 'diffuser', 'plant'] as const) {
         if (s.money < ITEMS[t].cost + reserve) continue;
         if (this.placeIn(room, t)) break;
