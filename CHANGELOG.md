@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.5
+
+- **Experts learn every treatment.** An Expert can now study any treatment of their discipline even with every qualification slot filled, so a Shaman, or anyone who took a general course on the way up, is no longer shut out of their last one. General courses still need a free slot.
+
 ## v0.30.4
 
 - **Qi Gong classes keep their class-goers.** A third or more of class-goers used to miss their class, costing reputation, so a studio lost money. Places are now booked only while the Instructor is at their mat, latecomers are put down for the next class, and class-goers no longer count against the guest limit. A studio now pays its way.
