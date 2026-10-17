@@ -12,7 +12,7 @@ import { loadCampaign, recordGame } from '../storage/campaign';
 import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
-import type { UpdateOffer } from '../ui/host';
+import type { FullScreenSwitch, UpdateOffer } from '../ui/host';
 import { plotHeat } from '../ui/lib/land';
 import { heatTiles, overlayPalette, previewMode } from '../ui/lib/overlays';
 import { trackMouse } from './edge';
@@ -32,10 +32,12 @@ export interface GameSetup {
   exit: (() => void) | undefined;
   /** A newer version of the desktop app. Undefined in a browser, which always plays the latest. */
   updates: UpdateOffer | undefined;
+  /** Whether the desktop app's window fills the screen. Undefined in a browser. */
+  fullScreen: FullScreenSwitch | undefined;
 }
 
 /** Run a game: wire up the view, tools, interface, input and main loop. */
-export function startGame({ canvas, audio, state, exit, updates }: GameSetup) {
+export function startGame({ canvas, audio, state, exit, updates, fullScreen }: GameSetup) {
   // achievements earned in other games are not earned again in this one
   if (state.center !== 'sandbox') state.achieved = withAchievements(state.achieved, loadCampaign().achieved);
   const sim = new Sim(state);
@@ -124,6 +126,7 @@ export function startGame({ canvas, audio, state, exit, updates }: GameSetup) {
         updates.install();
       },
     },
+    fullScreen,
   });
   // an update can finish downloading at any moment, and the toast offering it should show at once
   updates?.subscribe(() => {

@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import type { ElectronApplication } from '@playwright/test';
 import electronPath from 'electron';
 
 import { UPDATE_READY_CHANNEL } from '../../electron/api';
@@ -74,6 +75,8 @@ test.describe('the desktop shell', () => {
       quit: 'function',
       onUpdateReady: 'function',
       installUpdate: 'function',
+      onFullScreen: 'function',
+      setFullScreen: 'function',
     });
     expect(await page.evaluate(() => window.desktop?.platform)).toBe(process.platform);
   });
@@ -138,6 +141,52 @@ test.describe('leaving the desktop app', () => {
     await page.getByRole('button', { name: 'Main menu' }).click();
     await expect(page.locator('#title .title-logo')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+  });
+});
+
+test.describe('full screen', () => {
+  /** Whether the app's window fills the screen. */
+  const isFullScreen = (app: ElectronApplication) =>
+    app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isFullScreen());
+
+  test('the setting fills the screen, and the next launch opens the same way', async ({ desktop }) => {
+    const first = await desktop.launch();
+    expect(await isFullScreen(first.app)).toBe(false);
+    await first.page.getByRole('button', { name: 'Settings' }).click();
+    const toggle = first.page.getByRole('switch', { name: 'Full screen' });
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await toggle.click();
+    await expect.poll(() => isFullScreen(first.app)).toBe(true);
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await first.app.close();
+
+    // in a game, the pause menu's settings agree
+    const second = await desktop.launch();
+    await expect.poll(() => isFullScreen(second.app)).toBe(true);
+    await newGame(second.page);
+    await openPauseMenu(second.page);
+    await second.page.getByRole('button', { name: 'Settings' }).click();
+    await expect(second.page.getByRole('switch', { name: 'Full screen' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('leaving full screen by the window itself switches the setting off for next time', async ({ desktop }) => {
+    const first = await desktop.launch();
+    await first.page.getByRole('button', { name: 'Settings' }).click();
+    const toggle = first.page.getByRole('switch', { name: 'Full screen' });
+    await toggle.click();
+    await expect.poll(() => isFullScreen(first.app)).toBe(true);
+    // as the green button, the menu or its keys would, without the game asking
+    await first.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setFullScreen(false));
+    await expect.poll(() => isFullScreen(first.app)).toBe(false);
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await first.app.close();
+
+    const second = await desktop.launch();
+    expect(await isFullScreen(second.app)).toBe(false);
+    // and the green button still offers full screen: Electron takes it away from a window opened with it set false
+    expect(await second.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isFullScreenable())).toBe(
+      true,
+    );
   });
 });
 

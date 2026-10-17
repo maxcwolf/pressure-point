@@ -10,6 +10,10 @@ export interface DesktopApi {
   onUpdateReady: (listener: (version: string) => void) => void;
   /** Close the app, install the downloaded update and open the new version. */
   installUpdate: () => void;
+  /** Call back with whether the window fills the screen: straight away, then whenever that changes. */
+  onFullScreen: (listener: (on: boolean) => void) => void;
+  /** Fill the screen with the window, or give it back its own window. Remembered for the next launch. */
+  setFullScreen: (on: boolean) => void;
 }
 
 /** The message the game sends to the main process to quit. */
@@ -20,3 +24,9 @@ export const UPDATE_VERSION_CHANNEL = 'update:version';
 export const UPDATE_READY_CHANNEL = 'update:ready';
 /** The game asks the main process to install the downloaded update. */
 export const UPDATE_INSTALL_CHANNEL = 'update:install';
+/** The game asks the main process whether the window fills the screen. */
+export const FULL_SCREEN_STATE_CHANNEL = 'window:full-screen';
+/** The main process tells the game the window has filled the screen or left it, however that came about. */
+export const FULL_SCREEN_CHANGED_CHANNEL = 'window:full-screen-changed';
+/** The game asks the main process to fill the screen with the window, or to leave it. */
+export const FULL_SCREEN_SET_CHANNEL = 'window:set-full-screen';

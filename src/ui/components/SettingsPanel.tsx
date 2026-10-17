@@ -2,6 +2,8 @@
 
 import './SettingsPanel.css';
 
+import { useEffect } from 'preact/hooks';
+
 import type { Audio } from '../../audio';
 import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
@@ -10,6 +12,7 @@ import { loadControls, saveControls } from '../../storage/controls';
 import { ITEM_VIEWS, loadDisplay, saveDisplay } from '../../storage/display';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
+import type { FullScreenSwitch } from '../host';
 import { ITEM_VIEW_NAMES } from '../lib/item-stats';
 import { nextChoice } from '../lib/keys';
 import { ControlSettings } from './ControlSettings';
@@ -19,13 +22,20 @@ export interface SettingsPanelProps {
   audio: Audio;
   /** The game in progress, if any. Without one, choices apply to the next new game. */
   sim?: Sim | undefined;
+  /** Whether the desktop app's window fills the screen. Undefined in a browser, where the switch is left out. */
+  fullScreen?: FullScreenSwitch | undefined;
   /** Called after any switch is flipped. */
   onChange?: (() => void) | undefined;
 }
 
-/** Switches for which treatments are offered, how items show their stats, the controls, sound and music, and the cheat console. */
-export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
+/**
+ * Switches for which treatments are offered, how items show their stats, the controls, full screen in the desktop app,
+ * sound and music, and the cheat console.
+ */
+export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPanelProps) {
   const redraw = useRedraw();
+  // the window can leave full screen by its own button or keys while the settings are open
+  useEffect(() => fullScreen?.subscribe(redraw), [fullScreen, redraw]);
   /** Whether a discipline is switched on, in this game or for new ones. */
   const isOn = (d: Discipline) => (sim ? sim.enabled(d) : loadDisciplinePrefs()[d] !== false);
   /** Flip a switch, click, and let everyone know. */
@@ -113,6 +123,22 @@ export function SettingsPanel({ audio, sim, onChange }: SettingsPanelProps) {
           onChange?.();
         }}
       />
+      {fullScreen && (
+        <>
+          <h4>Display</h4>
+          <ul>
+            <SettingRow
+              icon="🖥️"
+              name="Full screen"
+              desc="Fill the screen with the game. It opens the same way next time."
+              on={fullScreen.on()}
+              onToggle={flip(() => {
+                fullScreen.set(!fullScreen.on());
+              })}
+            />
+          </ul>
+        </>
+      )}
       <h4>Audio</h4>
       <ul>
         <SettingRow

@@ -4,6 +4,9 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 import {
   type DesktopApi,
+  FULL_SCREEN_CHANGED_CHANNEL,
+  FULL_SCREEN_SET_CHANNEL,
+  FULL_SCREEN_STATE_CHANNEL,
   QUIT_CHANNEL,
   UPDATE_INSTALL_CHANNEL,
   UPDATE_READY_CHANNEL,
@@ -28,6 +31,19 @@ const api: DesktopApi = {
   /** Ask the desktop app to install the downloaded update. */
   installUpdate: () => {
     ipcRenderer.send(UPDATE_INSTALL_CHANNEL);
+  },
+  /** Hear whether the window fills the screen: as it is now, then each time that changes. */
+  onFullScreen: (listener) => {
+    ipcRenderer.on(FULL_SCREEN_CHANGED_CHANNEL, (_event, on: boolean) => {
+      listener(on);
+    });
+    void ipcRenderer.invoke(FULL_SCREEN_STATE_CHANNEL).then((on: boolean) => {
+      listener(on);
+    });
+  },
+  /** Ask the desktop app to fill the screen with the window, or to leave it. */
+  setFullScreen: (on) => {
+    ipcRenderer.send(FULL_SCREEN_SET_CHANNEL, on);
   },
 };
 

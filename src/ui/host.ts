@@ -22,6 +22,8 @@ export interface GameHost {
   exit: (() => void) | undefined;
   /** A newer version of the desktop app. Undefined in a browser, which always plays the latest. */
   update: UpdateOffer | undefined;
+  /** Whether the desktop app's window fills the screen. Undefined in a browser, which has its own way. */
+  fullScreen: FullScreenSwitch | undefined;
 }
 
 /** A newer version of the desktop app, downloaded in the background. */
@@ -32,4 +34,14 @@ export interface UpdateOffer {
   subscribe: (listener: () => void) => () => void;
   /** Close the app, install the update and open the new version. */
   install: () => void;
+}
+
+/** Whether the desktop app's window fills the screen, which the app remembers for its next launch. */
+export interface FullScreenSwitch {
+  /** Whether it does now. */
+  on: () => boolean;
+  /** Fill the screen, or go back to a window. */
+  set: (on: boolean) => void;
+  /** Call a function whenever it fills the screen or leaves it, however that came about. Returns a way to stop. */
+  subscribe: (listener: () => void) => () => void;
 }
