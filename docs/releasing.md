@@ -7,7 +7,9 @@ git tag v1.2.3
 git push origin v1.2.3
 ```
 
-The same tag also publishes the browser build to [GitHub Pages](https://maxcwolf.github.io/pressure-point/), so the web version always matches the installers. The **Deploy web version** workflow can be run by hand to publish any other branch or tag.
+The tag must match the `version` in `package.json` (`v1.2.3` for `1.2.3`), because the installers take their version from the tag and the game shows the one in `package.json`; the workflow stops before building if they differ.
+
+Once the release is published, the same run publishes the browser build to [GitHub Pages](https://maxcwolf.github.io/pressure-point/), so the web version always matches the installers and never goes up for a release that failed. The **Deploy web version** workflow can be run by hand to publish any other branch or tag.
 
 The release also carries the Apple silicon `.dmg` and the Windows `.exe` again under names without the version (`Pressure-Point-Institute-mac-arm64.dmg`, `Pressure-Point-Institute-win-x64.exe`), so the README's download links, to `releases/latest/download/...`, always fetch the newest. The tag sets the version number in the installers. Running the **Release** workflow by hand from the Actions tab builds the installers as downloadable artifacts without publishing a release.
 

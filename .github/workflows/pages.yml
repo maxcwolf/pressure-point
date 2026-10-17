@@ -1,11 +1,11 @@
 name: Deploy web version
 
-# Publishes the browser build to GitHub Pages whenever a version is tagged,
-# so the web version always matches the installers on the Releases page.
+# Publishes the browser build to GitHub Pages. The Release workflow calls it
+# once a tagged release is published, so the web version always matches the
+# installers on the Releases page and never goes up if the release failed.
 # Run it by hand to publish whatever is on the chosen branch or tag.
 on:
-  push:
-    tags: ['v*']
+  workflow_call:
   workflow_dispatch:
 
 permissions:
