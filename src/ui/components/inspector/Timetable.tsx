@@ -4,7 +4,7 @@ import { ROLES, WEEKDAYS } from '../../../core/data';
 import { classDays } from '../../../core/sim/classes';
 import type { Room } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
-import { bookingNote, classNote, weekNote } from '../../lib/classes';
+import { bookingNote, classNote, placesNote, weekNote } from '../../lib/classes';
 import { cx } from '../../lib/cx';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -18,10 +18,12 @@ export function Timetable({ room }: { room: Room }) {
   const spots = inRoom.filter((i) => i.type === 'practice_spot');
   const standing = spots.filter((i) => sim.guest(i.serving)?.state === 'served').length;
   const staff = lead && sim.stationStaff(lead);
+  const leader = sim.classLeader();
   return (
     <div class="timetable">
       <p class="status">{staff ? `Led by ${staff.name}` : `⚠️ Needs a ${ROLES.instructor.name}`}</p>{' '}
       <p class="sub">{classNote(standing, spots.length, lead?.progress ?? 0)}</p>
+      {leader && <p class="sub">{placesNote(spots.length, leader.places, leader.staff.skill)}</p>}
       {!!lead?.progress && <Bar value={lead.progress * 100} class="blue" />}
       <p>
         <b>Timetable</b>

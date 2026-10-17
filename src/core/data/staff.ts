@@ -65,7 +65,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
     role: 'instructor',
     name: 'Qi Gong Instructor',
     icon: '🥋',
-    desc: 'Leads the classes in a Qi Gong Studio, on the days its timetable sets. The more skilled, the more who come.',
+    desc: 'Leads the classes in a Qi Gong Studio, on the days its timetable sets. The more skilled, the more who come, and the more Practice Spots they can lead: 6 for a Trainee, up to 16 for an Expert.',
     baseSalary: 1300,
     uniform: 0xc0473a,
     accent: 0xf2d27a,

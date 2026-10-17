@@ -10,6 +10,7 @@ import {
   CLASS_LINES,
   classDays,
   classOn,
+  classPlaces,
   classSize,
   toggledDays,
   weekday,
@@ -21,7 +22,7 @@ import { worsening } from '../../src/core/sim/worsening';
 import type { GameState, Guest } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { hireableRoles, itemOffered } from '../../src/ui/lib/catalog';
-import { bookingNote, weekNote } from '../../src/ui/lib/classes';
+import { bookingNote, placesNote, weekNote } from '../../src/ui/lib/classes';
 import { offeredMetrics } from '../../src/ui/lib/stats';
 import { guestStatus } from '../../src/ui/lib/status';
 import { newRoomsText } from '../../src/ui/lib/unlocks';
@@ -86,6 +87,51 @@ describe('how a class fills', () => {
     expect(classSize(12, 1, 6, 1)).toEqual({ count: 6, turned: 6 });
     expect(classSize(12, 6, 6, 1)).toEqual({ count: 2, turned: 0 });
     expect(classSize(12, 0, 6, 1)).toEqual({ count: 6, turned: 6 });
+  });
+});
+
+describe('how many an Instructor can lead', () => {
+  it('rises with their rank, from 6 for a Trainee to 16 for an Expert', () => {
+    expect([1, 2, 3, 4, 5].map(classPlaces)).toEqual([6, 8, 10, 13, 16]);
+    expect(classPlaces(0)).toBe(6);
+    expect(classPlaces(9)).toBe(16);
+  });
+
+  it('caps the places in a class, and the class-goers its spots draw, leaving the rest of the spots empty', () => {
+    const { sim, s, room, teacher } = studio();
+    for (const [x, y] of [
+      [8, 13],
+      [5, 14],
+      [6, 14],
+      [7, 14],
+      [8, 14],
+    ] as const)
+      sim.placeItem('practice_spot', x, y, 0);
+    expect(s.items.filter((it) => it.type === 'practice_spot')).toHaveLength(8);
+    // one class a week and the best reputation, so far more want a place than there are spots
+    room.classDays = [4];
+    s.reputation = 100;
+    if (teacher) teacher.skill = 1;
+    run(sim, 1);
+    expect(room.booked).toMatchObject({ day: 4, count: 6 });
+    expect(room.booked?.turned).toBeGreaterThan(0);
+    expect(sim.drain().some((e) => e.type === 'toast' && e.text.includes('can lead a class of 6'))).toBe(true);
+    expect(sim.classLeader()?.places).toBe(6);
+    // an Expert leads every spot built
+    if (teacher) teacher.skill = 5;
+    delete room.booked;
+    /** The booking as it stands, read afresh each time. */
+    const booked = () => room.booked;
+    runUntil(sim, () => booked()?.day === 11, 6 * DAY_SECONDS + 60);
+    expect(booked()?.count).toBe(8);
+  });
+
+  it('says so in the studio, with a nudge to promote while there is a rank above', () => {
+    expect(placesNote(3, 6, 1)).toBe('Trainee Instructors lead up to 6');
+    expect(placesNote(8, 6, 1)).toBe(
+      '⚠️ Only 6 of 8 spots are booked. Trainee Instructors lead up to 6: promote yours to fill more',
+    );
+    expect(placesNote(20, 16, 5)).toBe('⚠️ Only 16 of 20 spots are booked. Expert Instructors lead up to 16');
   });
 });
 

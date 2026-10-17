@@ -10,6 +10,7 @@ import {
   CLASS_FEE,
   CLASS_INTEREST,
   CLASS_PATIENCE,
+  CLASS_PLACES,
   CLASS_SECONDS,
   ITEMS,
   XP_PER_GUEST,
@@ -17,12 +18,13 @@ import {
 import { rnd } from '../random';
 import { offeringOn } from '../state/game';
 import type { Guest, Item, Room, Staff } from '../state/types';
+import { at, clamp } from '../util';
 import { prestige } from './ambience';
 import { gainXp, habitOf, hasGeneral } from './careers';
 import { guestById, say } from './chars';
 import type { SimContext } from './context';
 import { changeRep, earn, priceFor } from './economy';
-import { emit } from './events';
+import { emit, tipOnce } from './events';
 import { feel, writeReview } from './feelings';
 import { decide, leave, spawnGuest } from './guests';
 import { feelNoise, itemNoise } from './noise';
@@ -63,6 +65,9 @@ export function classSize(interest: number, perWeek: number, spots: number, roll
   return { count: Math.min(spots, want), turned: Math.max(0, want - spots) };
 }
 
+/** How many Practice Spots an Instructor of a rank can lead a class on: a more senior one leads a bigger class. */
+export const classPlaces = (skill: number) => at(CLASS_PLACES, clamp(Math.round(skill), 1, CLASS_PLACES.length) - 1);
+
 /** Whether an item is a Qi Gong Instructor's Mat, which leads a class rather than a sound bath. */
 export const isClassLead = (it: Item) => isLeadStation(it) && ITEMS[it.type].station?.staff === 'instructor';
 
@@ -82,7 +87,7 @@ const leadIn = (ctx: SimContext, room: Room) =>
 export const studios = (ctx: SimContext) => ctx.s.rooms.filter((r) => r.done && r.type === 'qigong');
 
 /** The most skilled Qi Gong Instructor on the payroll, if any. */
-function bestInstructor(ctx: SimContext): Staff | undefined {
+export function bestInstructor(ctx: SimContext): Staff | undefined {
   return ctx.s.staff
     .filter((st) => st.role === 'instructor' && st.state !== 'leaving')
     .sort((a, b) => b.skill - a.skill)[0];
@@ -91,7 +96,8 @@ function bestInstructor(ctx: SimContext): Staff | undefined {
 /**
  * As a day begins, book the classes the day after tomorrow: each studio with a class then and an Instructor on the
  * payroll fills what places it can, and its class-goers set off at times through today, since days are short and the
- * walk in is long.
+ * walk in is long. Its places are its Practice Spots, as many as the Instructor's rank lets them lead: spots past that
+ * stand empty and draw nobody.
  */
 export function bookClasses(ctx: SimContext) {
   const s = ctx.s;
@@ -101,7 +107,16 @@ export function bookClasses(ctx: SimContext) {
   for (const room of studios(ctx)) {
     const day = today + BOOK_AHEAD;
     if (!classOn(room, day)) continue;
-    const spots = spotsIn(ctx, room).length;
+    const built = spotsIn(ctx, room).length;
+    const spots = Math.min(built, classPlaces(instructor.skill));
+    if (built > spots)
+      tipOnce(
+        ctx,
+        'class-places',
+        `${instructor.name} can lead a class of ${spots}, so some Practice Spots stand empty. Promote them to lead more.`,
+        'info',
+        { kind: 'staff', id: instructor.id },
+      );
     const interest = weeklyInterest(spots, s.reputation, instructor.skill);
     const size = classSize(interest, classDays(room).length, spots, rnd(0.8, 1.2));
     room.booked = { day, ...size };

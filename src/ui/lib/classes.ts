@@ -1,6 +1,7 @@
 // What a Qi Gong Studio's inspector says about its classes.
 
-import { WEEKDAYS } from '../../core/data';
+import { RANKS, WEEKDAYS } from '../../core/data';
+import { rankName } from '../../core/sim/careers';
 import { weekday } from '../../core/sim/classes';
 import type { ClassBooking } from '../../core/state/types';
 
@@ -24,4 +25,15 @@ export function classNote(standing: number, spots: number, progress: number): st
   if (progress > 0) return `Class under way: ${standing} of ${spots} spots taken`;
   if (standing) return `${standing} of ${spots} spots taken, waiting for the class`;
   return `${spots} Practice ${spots === 1 ? 'Spot' : 'Spots'}, all free`;
+}
+
+/**
+ * How many of a studio's spots its Instructor can lead a class on, by their rank: any past that stand empty, until a
+ * promotion lets them lead more.
+ */
+export function placesNote(spots: number, places: number, rank: number): string {
+  const leads = `${rankName(rank)} Instructors lead up to ${places}`;
+  if (spots <= places) return leads;
+  const more = rank < RANKS.length ? ': promote yours to fill more' : '';
+  return `⚠️ Only ${places} of ${spots} spots are booked. ${leads}${more}`;
 }

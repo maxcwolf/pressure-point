@@ -73,6 +73,8 @@ export const BOOK_AHEAD = 2;
 export const CLASS_CALL_GAP = 14;
 /** How many class-goers a week each Practice Spot draws at 50% reputation, shared among the week's classes. */
 export const CLASS_INTEREST = 2.5;
+/** How many Practice Spots a Qi Gong Instructor can lead a class on, by rank from Trainee to Expert. */
+export const CLASS_PLACES: readonly number[] = [6, 8, 10, 13, 16];
 
 /** How long a guest lies back in a Recovery Lounge after a treatment that leaves them needing a rest. */
 export const REST_SECONDS = 15;

@@ -73,7 +73,9 @@ import { type CheatResult, runCheat } from './cheats';
 import {
   admitClassgoers,
   announceClasses,
+  bestInstructor,
   bookClasses,
+  classPlaces,
   classPlaying,
   giveUp,
   setClasses,
@@ -745,6 +747,12 @@ export class Sim {
   /** Whether a Qi Gong class is going on at a Practice Spot's studio now. */
   classPlaying(spot: Item): boolean {
     return classPlaying(this.ctx, spot);
+  }
+
+  /** The Instructor whose rank sets how many places each Qi Gong class has: the most skilled on the payroll, if any. */
+  classLeader(): { staff: Staff; places: number } | undefined {
+    const staff = bestInstructor(this.ctx);
+    return staff && { staff, places: classPlaces(staff.skill) };
   }
 
   /** Switch a day of the week on or off in a Qi Gong Studio's timetable. */
