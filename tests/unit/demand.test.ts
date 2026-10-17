@@ -69,7 +69,7 @@ describe('which discipline guests come for', () => {
     const quiet = row(c.sim.demand(), 'sound')?.share ?? 0;
     c.s.following.sound = 80;
     const famous = row(c.sim.demand(), 'sound')?.share ?? 0;
-    expect(famous).toBeGreaterThan(quiet * 2);
+    expect(famous).toBeGreaterThan(quiet * 1.5);
     expect(row(c.sim.demand(), 'sound')?.followed).toBe(followingPull(80));
   });
 

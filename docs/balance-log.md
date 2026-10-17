@@ -4,6 +4,34 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 16 October 2026, night: toned down for release, against the released game
+
+The released 0.28.6 plays fair without being punishing, so it is the measure: the changes above should not make the game much easier than it. The playtest bot was run on 0.28.6 itself (its source, with the bot copied in) and on this branch, six seeds of every center each, four years a game. The bot is a cautious scripted player that never touches prices, marketing or policy and never lets anyone go, so a good player does better than either column; what counts is the difference between them.
+
+### 11. The arrivals boost made the game too generous
+
+**Found:** at 10% a discipline (10, below), profits rose by $1.4k to $9.2k a month at every center that offers more than massage.
+
+**Done:** halved to 5%: a fifth discipline brings 20% more guests. Against the released game, averaged from the second year on:
+
+| Center             | Profit a month  | Months at a loss | Average wait, days | Third star |
+| ------------------ | --------------- | ---------------- | ------------------ | ---------- |
+| Willow Lane        | $4.6k → $5.6k   | 20.5 → 20.7      | 11.4 → 12.1        | 4/6 → 4/6  |
+| The Exchange       | $0.8k → $3.2k   | 27.3 → 21.3      | 4.5 → 5.3          | 2/6 → 4/6  |
+| The Boardwalk      | −$6.7k → −$1.3k | 34.2 → 24.8      | 6.5 → 7.3          | 0/6 → 1/6  |
+| High Pines         | −$0.2k → $0.1k  | 26.2 → 26.5      | 5.5 → 6.3          | 0/6 → 1/6  |
+| The Orchard Estate | $3.1k → $6.7k   | 27.3 → 22.5      | 6.4 → 7.9          | 1/6 → 3/6  |
+
+The branch is a little easier than the release, most at the centers where the bot lost money for most of the game (The Boardwalk lost $6.7k a month on 0.28.6), and about the same at Willow Lane and High Pines. The bot still spends 20 to 27 of its 48 months at a loss everywhere. Waits are up by half a day to a day and a half: guests waiting should not become the main thing to manage, so a faster walk to treatment is the next step before demand grows any further.
+
+### 12. A following widened the gap between disciplines
+
+**Found:** a review predicted it and the bot confirmed it. Massage's following climbed to 70 to 87 at every center, while the others mostly settled between 20 and 56. A following settles where a discipline's success rate puts it, and massage heals most reliably, while a niche discipline is idle most days, when followings fade. At up to 2.5×, a following of 87 drew twice what one of 32 did, on top of massage being the more popular.
+
+**Done:** a following now multiplies a discipline's pull from 0.75 with none to 1.75 at 100 (was 0.5 to 2.5), so 87 against 32 draws 1.5× rather than 2×. It only moves guests between disciplines, not how many come. In the bot's games afterwards (three seeds), the smaller disciplines healed more and built bigger followings: acupuncture at The Exchange 3.9 heals a month (was 2.8) and a following of 69 (was 56); The Orchard's acupuncture and reiki ended at 72 and 77 (were 46 and 46), sound healing at High Pines at 65 (was 37). Massage still leads, at 62 to 87. Profits moved by no more than the seeds do.
+
+**Still open:** walkouts take 2 from a following, so a discipline losing many guests to waiting can still grow. That was left as it is, since waiting should not become the main thing to manage; the walk to treatment is the better fix.
+
 ## 16 October 2026, evening: arrivals grow with what the center offers (a first step)
 
 ### 10. More disciplines brought no more guests
@@ -24,7 +52,7 @@ Measured with the playtest bot (`yarn balance`, every campaign center, three see
 
 Willow Lane, which only ever offers massage, is unchanged, as it should be. Everywhere else the extra guests are mostly healed, months at a loss fall by 2 to 8, and every center now makes money on average (High Pines lost $1.0k a month and The Boardwalk broke even before). The Orchard, which opens with the most disciplines, gains the most, and its second and third stars came in two games of three instead of one. Waits rose by a day or two, and by nearly five at The Orchard: the audit's other half of finding 3, a faster walk to treatment, is still to do.
 
-**Still open:** whether 10% feels right in play. The audit's 20% would roughly double these gains and the longer waits. Treatment rooms past one a discipline add nothing yet.
+**Still open:** whether 10% feels right in play (halved to 5% since: 11, above). The audit's 20% would roughly double these gains and the longer waits. Treatment rooms past one a discipline add nothing yet.
 
 ## 16 October 2026, later: a review of the above
 

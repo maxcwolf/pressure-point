@@ -226,11 +226,14 @@ export const ROOM_PULL = { star: 0.35, calm: 0.6, mat: 0.2, max: 2 } as const;
 export const FOLLOWING = { start: 20, established: 40, heal: 5, fail: 3, walkout: 2, fade: 0.05 } as const;
 /**
  * How many more guests arrive for each discipline past the first that the center offers with a room and a
- * practitioner on the payroll: a fifth discipline brings 40% more. Kept small to begin with, to be playtested.
+ * practitioner on the payroll: a fifth discipline brings 20% more. Kept small, so the game stays about as hard as it was.
  */
-export const OFFERING_ARRIVALS = 0.1;
-/** How a following multiplies how often guests come for a discipline: half as often with none, up to 2.5× at 100. */
-export const followingPull = (following: number) => 0.5 + following / 50;
+export const OFFERING_ARRIVALS = 0.05;
+/**
+ * How a following multiplies how often guests come for a discipline: three quarters as often with none, up to 1.75×
+ * at 100. Kept narrow, since the busiest discipline, with the most guests to heal, builds the biggest following.
+ */
+export const followingPull = (following: number) => 0.75 + following / 100;
 
 /** Share of applicants for each role who are women: most of those at the desk and the tables, few caretakers. */
 export const WOMEN_APPLY: Readonly<Record<Role, number>> = {
