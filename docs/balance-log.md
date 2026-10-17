@@ -12,23 +12,25 @@ The released 0.28.6 plays fair without being punishing, so it is the measure: th
 
 **Found:** at 10% a discipline (10, below), profits rose by $1.4k to $9.2k a month at every center that offers more than massage.
 
-**Done:** halved to 5%: a fifth discipline brings 20% more guests. Against the released game, averaged from the second year on:
+**Done:** halved to 5%: a fifth discipline brings 20% more guests. Against the released game, with the narrower following (12, below) as well, averaged from the second year on:
 
 | Center             | Profit a month  | Months at a loss | Average wait, days | Third star |
 | ------------------ | --------------- | ---------------- | ------------------ | ---------- |
 | Willow Lane        | $4.6k → $5.6k   | 20.5 → 20.7      | 11.4 → 12.1        | 4/6 → 4/6  |
-| The Exchange       | $0.8k → $3.2k   | 27.3 → 21.3      | 4.5 → 5.3          | 2/6 → 4/6  |
-| The Boardwalk      | −$6.7k → −$1.3k | 34.2 → 24.8      | 6.5 → 7.3          | 0/6 → 1/6  |
-| High Pines         | −$0.2k → $0.1k  | 26.2 → 26.5      | 5.5 → 6.3          | 0/6 → 1/6  |
-| The Orchard Estate | $3.1k → $6.7k   | 27.3 → 22.5      | 6.4 → 7.9          | 1/6 → 3/6  |
+| The Exchange       | $0.8k → $4.1k   | 27.3 → 19.0      | 4.5 → 6.2          | 2/6 → 4/6  |
+| The Boardwalk      | −$6.7k → −$2.7k | 34.2 → 28.7      | 6.5 → 6.4          | 0/6 → 0/6  |
+| High Pines         | −$0.2k → $1.8k  | 26.2 → 21.7      | 5.5 → 6.5          | 0/6 → 0/6  |
+| The Orchard Estate | $3.1k → $6.0k   | 27.3 → 23.7      | 6.4 → 6.8          | 1/6 → 3/6  |
 
-The branch is a little easier than the release, most at the centers where the bot lost money for most of the game (The Boardwalk lost $6.7k a month on 0.28.6), and about the same at Willow Lane and High Pines. The bot still spends 20 to 27 of its 48 months at a loss everywhere. Waits are up by half a day to a day and a half: guests waiting should not become the main thing to manage, so a faster walk to treatment is the next step before demand grows any further.
+The branch is a little easier than the release: $2k to $4k a month more where there is more than massage to offer, most where the bot lost money for most of the game (The Boardwalk lost $6.7k a month on 0.28.6, and still loses $2.7k). Willow Lane, which never gets the boost, is the same within the seeds. The bot still spends 19 to 29 of its 48 months at a loss everywhere. Not all of the difference is the boost: on three seeds with no boost at all, the branch already made about $5k a month more at The Exchange and The Boardwalk than the release, from reputation that holds higher. Waits are up by up to a day and a half: guests waiting should not become the main thing to manage, so a faster walk to treatment is the next step before demand grows any further.
+
+These runs played the bot from a clean copy of the branch; an earlier set was redone after another session started changing the bot in the same folder.
 
 ### 12. A following widened the gap between disciplines
 
 **Found:** a review predicted it and the bot confirmed it. Massage's following climbed to 70 to 87 at every center, while the others mostly settled between 20 and 56. A following settles where a discipline's success rate puts it, and massage heals most reliably, while a niche discipline is idle most days, when followings fade. At up to 2.5×, a following of 87 drew twice what one of 32 did, on top of massage being the more popular.
 
-**Done:** a following now multiplies a discipline's pull from 0.75 with none to 1.75 at 100 (was 0.5 to 2.5), so 87 against 32 draws 1.5× rather than 2×. It only moves guests between disciplines, not how many come. In the bot's games afterwards (three seeds), the smaller disciplines healed more and built bigger followings: acupuncture at The Exchange 3.9 heals a month (was 2.8) and a following of 69 (was 56); The Orchard's acupuncture and reiki ended at 72 and 77 (were 46 and 46), sound healing at High Pines at 65 (was 37). Massage still leads, at 62 to 87. Profits moved by no more than the seeds do.
+**Done:** a following now multiplies a discipline's pull from 0.75 with none to 1.75 at 100 (was 0.5 to 2.5), so 87 against 32 draws 1.5× rather than 2×. It only moves guests between disciplines, not how many come. In the bot's games afterwards (six seeds), the smaller disciplines healed more and built bigger followings: acupuncture at The Exchange 3.4 heals a month (was 2.8) and a following of 59 (was 56); The Orchard's acupuncture and reiki ended at 50 and 64 (both were 46); sound healing at High Pines at 58 (was 37). Massage still leads, at 68 to 85. Acupuncture at The Boardwalk still fades, to 13, for reasons the bot's logs do not show.
 
 **Still open:** walkouts take 2 from a following, so a discipline losing many guests to waiting can still grow. That was left as it is, since waiting should not become the main thing to manage; the walk to treatment is the better fix.
 
