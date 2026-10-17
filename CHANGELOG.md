@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.1
+
+- **Posture scans are worth having.** A guest sent to the Posture Lab now has a 10% better chance of their treatment working, shown as "📐 Scanned" in their inspector, and a scan costs $250. The lab only sees guests a junior Consultant is unsure about, so it pays off with junior Consultants on staff.
+
 ## v0.30.0
 
 - **Waits you can read.** Goals about waiting now ask guests to keep a share of their **patience** through their visit, the lowest their patience bar falls, rather than an average wait in days. The Stats chart is now **Patience kept**, and the No Waiting Around award is judged on it. The targets are set to be as hard as before.
