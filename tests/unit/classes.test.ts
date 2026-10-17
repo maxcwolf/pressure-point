@@ -110,10 +110,10 @@ describe('how a class fills', () => {
 });
 
 describe('how many an Instructor can lead', () => {
-  it('rises with their rank, from 6 for a Trainee to 16 for an Expert', () => {
-    expect([1, 2, 3, 4, 5].map(classPlaces)).toEqual([6, 8, 10, 13, 16]);
+  it('rises with their rank, from 6 for a Trainee to 12 for an Expert', () => {
+    expect([1, 2, 3, 4, 5].map(classPlaces)).toEqual([6, 8, 9, 11, 12]);
     expect(classPlaces(0)).toBe(6);
-    expect(classPlaces(9)).toBe(16);
+    expect(classPlaces(9)).toBe(12);
   });
 
   it('caps the places in a class, and the class-goers its spots draw, leaving the rest of the spots empty', () => {

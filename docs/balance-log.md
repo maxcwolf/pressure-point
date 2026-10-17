@@ -4,6 +4,14 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 17 October 2026, afternoon: smaller Qi Gong classes
+
+### 22. A class of 16 overwhelmed the center
+
+**Found** (in play, at the Orchard Estate): a class of 16 to 20 ends all at once, and up to three quarters of its class-goers head for the Shop Counter and the restrooms together, three times a week. The shop line reached 108, the class-goers filled the corridors and counted against the building's guest limit, keeping paying guests out.
+
+**Done:** an Instructor leads at most 12, from 6 as a Trainee: 6, 8, 9, 11 and 12 by rank (`CLASS_PLACES`, was 6, 8, 10, 13 and 16), so Trainees and Juniors are as before. A place costs $130 at standard prices (`CLASS_FEE`, was $120): an Expert's full class brings in $1,560 against $1,920, a fifth less, for a quarter fewer people in the building. Not measured with the bots, which rarely run a Qi Gong Studio to its full size; to be judged in play.
+
 ## 17 October 2026, after midnight: the Posture Lab
 
 Measured with `yarn balance` and `BOT=old yarn balance` from clean exports of 0.29.0 (`97e9de3`, with this bot copied in) and of `e6e4e86`: every campaign center at seeds 1 to 3, and High Pines at seeds 1 to 9, four years a game. Profit and waits are averaged from the second year on; months at a loss are of all 48. With the new extras off, the copied bot plays 0.29.0 move for move as its own bot does, and wherever nobody is sent for a scan, the two commits play the same games.
