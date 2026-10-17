@@ -13,7 +13,7 @@ import { tuning } from '../difficulty';
 import { money } from '../format';
 import { irnd, pick, rnd } from '../random';
 import type { SimContext } from './context';
-import { changeRep } from './economy';
+import { changeRep, earn } from './economy';
 import { emit, toast } from './events';
 import { spawnGuest } from './guests';
 import { offered, unlocked } from './treatments';
@@ -95,8 +95,7 @@ function endEmergency(ctx: SimContext) {
   if (!e) return;
   const name = conditionOf(e.condition).name;
   if (e.healed >= e.target) {
-    s.money += e.reward;
-    s.ledger.bonus += e.reward;
+    earn(ctx, e.reward, 'bonus');
     changeRep(ctx, 4);
     s.stats.emergencies++;
     toast(ctx, `Emergency handled: ${e.healed} cases of ${name} healed. ${money(e.reward)} bonus.`, 'good');

@@ -20,28 +20,39 @@ export function incomeOf(l: Ledger) {
   return l.consult + l.treatment + l.classes + l.vending + l.shop + l.mushrooms + l.calls + l.bonus;
 }
 
-/** Take in money, record it and show the amount floating up. */
-export function earn(
-  ctx: SimContext,
-  amount: number,
-  kind: 'consult' | 'treatment' | 'vending' | 'shop' | 'mushrooms' | 'calls' | 'classes',
-  x: number,
-  y: number,
-) {
+/** Where money comes in from, as the books keep it. */
+export type Income = 'consult' | 'treatment' | 'vending' | 'shop' | 'mushrooms' | 'calls' | 'classes' | 'bonus';
+
+/** Where money goes out to, as the books keep it. */
+export type Cost = 'salaries' | 'building' | 'training' | 'interest' | 'marketing' | 'fines';
+
+/**
+ * Take in money and record it. Given where it was taken, the amount floats up there, with the till's ring for a large
+ * sum; a prize or reward, which has no one place, comes in quietly.
+ */
+export function earn(ctx: SimContext, amount: number, kind: Income, x?: number, y?: number) {
   ctx.s.money += amount;
   ctx.s.ledger[kind] += amount;
+  if (x === undefined || y === undefined) return;
   emit(ctx, { type: 'float', text: `+${money(amount)}`, x, y, kind: 'good' });
   if (amount >= 100) emit(ctx, { type: 'sfx', name: 'cash' });
 }
 
 /** Pay out money and record it. */
-export function spend(
-  ctx: SimContext,
-  amount: number,
-  kind: 'salaries' | 'building' | 'training' | 'interest' | 'marketing' | 'fines',
-) {
+export function spend(ctx: SimContext, amount: number, kind: Cost) {
   ctx.s.money -= amount;
   ctx.s.ledger[kind] += amount;
+}
+
+/** Get back money paid out, as for something sold or a course cut short: it comes off what that cost this month. */
+export function recoup(ctx: SimContext, amount: number, kind: Cost) {
+  ctx.s.money += amount;
+  ctx.s.ledger[kind] -= amount;
+}
+
+/** Add money to the bank or take it away, off the books: the console's money cheat, which is no income or cost. */
+export function adjustMoney(ctx: SimContext, amount: number) {
+  ctx.s.money += amount;
 }
 
 /** Raise or lower reputation, kept between 0 and 100. */

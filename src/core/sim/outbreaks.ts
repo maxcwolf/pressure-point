@@ -19,7 +19,7 @@ import { irnd, pick, random, rnd } from '../random';
 import type { Guest, Outbreak } from '../state/types';
 import { guestById, say } from './chars';
 import type { SimContext } from './context';
-import { changeRep } from './economy';
+import { changeRep, earn } from './economy';
 import { emit, toast } from './events';
 import { feel } from './feelings';
 import { cutOff } from './twists';
@@ -158,8 +158,7 @@ export function endOutbreak(ctx: SimContext) {
   // whoever is still stressed when it ends counts as lost
   for (const g of s.guests) carriedOut(ctx, g);
   if (o.lost <= o.lostMax) {
-    s.money += o.reward;
-    s.ledger.bonus += o.reward;
+    earn(ctx, o.reward, 'bonus');
     changeRep(ctx, 3);
     toast(ctx, `Stress outbreak contained: only ${o.lost} left still stressed. ${money(o.reward)} bonus.`, 'good');
     emit(ctx, { type: 'sfx', name: 'fanfare' });

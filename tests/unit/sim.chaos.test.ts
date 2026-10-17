@@ -13,6 +13,7 @@ import {
   SANDBOX_PLOT,
 } from '../../src/core/data';
 import { irnd, pick, random } from '../../src/core/random';
+import { netOf } from '../../src/core/sim/economy';
 import type { Sim } from '../../src/core/sim/sim';
 import {
   addAcupuncture,
@@ -226,6 +227,21 @@ describe('a restless player', () => {
     // building comes up more often than tearing down, so there is a busy center to disrupt
     const names = Object.entries(MOVES).flatMap(([name]) => Array<string>(WEIGHTS[name] ?? 1).fill(name));
     const log: string[] = [];
+    // every dollar in or out goes through the books, bar the loan: what they cannot account for never changes
+    let ledger = s.ledger;
+    let closed = 0;
+    /** Money on hand less the loan, less the net of every month on the books since the start. */
+    const unaccounted = () => s.money - s.loan - closed - netOf(s.ledger);
+    let expected = unaccounted();
+    /** Check the bank against the books, carrying over a month closed since last time. */
+    const balanced = (when: string) => {
+      if (s.ledger !== ledger) {
+        expect(s.lastLedger, `one month at most closed ${when}`).toBe(ledger);
+        closed += netOf(ledger);
+        ledger = s.ledger;
+      }
+      expect(unaccounted(), `money off the books ${when}`).toBeCloseTo(expected, 2);
+    };
     for (let step = 0; step < 300; step++) {
       const name = pick(names);
       MOVES[name]!(sim);
@@ -233,8 +249,10 @@ describe('a restless player', () => {
       // the last few moves are what led here, should anything be wrong: checked straight after the move,
       // and again after some play, since a later move can tidy up the evidence
       expect(inconsistencies(sim), `straight after ${log.slice(-5).join(', ')}`).toEqual([]);
+      balanced(`straight after ${log.slice(-5).join(', ')}`);
       run(sim, 2 + random() * 20);
       expect(inconsistencies(sim), `playing on after ${log.slice(-5).join(', ')}`).toEqual([]);
+      balanced(`playing on after ${log.slice(-5).join(', ')}`);
       expect(Number.isFinite(s.money) && Number.isFinite(s.reputation)).toBe(true);
       for (const c of [...s.guests, ...s.staff, ...s.visitors]) expect(Number.isFinite(c.x + c.y), c.name).toBe(true);
       if (s.challenge) expect(Number.isFinite(sim.challengeObjective()!.progress)).toBe(true);
@@ -250,7 +268,9 @@ describe('a restless player', () => {
         expect(st.off.length < (DUTIES[st.role]?.length ?? 1), `${st.name} has a duty left`).toBe(true);
       }
       // a lot of money keeps the moves coming: being broke is not what this is testing
-      s.money = Math.max(s.money, 50_000);
+      const topUp = Math.max(0, 50_000 - s.money);
+      s.money += topUp;
+      expected += topUp;
       sim.drain();
     }
   });
