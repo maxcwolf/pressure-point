@@ -3,7 +3,7 @@
 
 import { type Footprint, inFootprint } from '../core/footprint';
 import type { Room } from '../core/state/types';
-import { H_LOW, H_TALL, OUTER_LOW_TOP, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, WALL_T } from './shared';
+import { H_LOW, H_TALL, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, WALL_T } from './shared';
 import { nearSides, type Sides } from './turn';
 import { windowBoxes, windowSpans } from './windows';
 
@@ -27,6 +27,8 @@ export interface WallBox {
   h: number;
   thick: number;
   material: WallMaterial;
+  /** Part of a window in a wall cut low, drawn as a see-through ghost of itself where it would stand. */
+  ghost?: boolean;
 }
 
 /** A door propped open into the room, and the sign over its doorway. */
@@ -147,7 +149,6 @@ function sideBoxes(side: Side): WallBox[] {
         tall,
         sill: WINDOW_SILL,
         pane: WINDOW_PANE,
-        lowTop: hgt,
         inset: true,
         frame: 'trim',
         ledge: 'trim',
@@ -180,7 +181,6 @@ function outerSideBoxes(side: Side): WallBox[] {
       tall,
       sill: OUTER_PANE_Y0,
       pane: OUTER_PANE_H,
-      lowTop: OUTER_LOW_TOP,
       inset: false,
       frame: 'frame',
       ledge: 'trim',

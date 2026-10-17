@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.28.6
+
+- **See windows in lowered walls.** A window in a wall that's cut low so you can see in now shows as a faint, see-through copy of itself where it stands, like the things hung on walls, instead of a cut-off slice on top of the wall.
+
 ## v0.28.5
 
 - **See what an item does before you buy it.** Point at a card in the Items menu for its decor, noise, warmth, earnings and upkeep. Settings › Building can show them in a side panel or on the cards instead.

@@ -47,7 +47,7 @@ export const GHOST_OPACITY = 0.28;
 const ghosts = new Map<THREE.Material, THREE.Material>();
 
 /** The see-through twin of a material: the same color, faint, and drawn without hiding what is behind it. */
-function ghostOf<T extends THREE.Material>(m: T): T {
+export function ghostOf<T extends THREE.Material>(m: T): T {
   let g = ghosts.get(m);
   if (!g) {
     g = m.clone();

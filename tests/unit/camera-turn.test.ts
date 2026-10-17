@@ -1,5 +1,5 @@
 // Turning the camera round the building a quarter at a time: the walls facing it are cut low and the ones across from
-// it stand tall, the building's own windows move to the tall walls, and panning still goes across and up the screen.
+// it stand tall, the windows in the low walls turn to ghosts of themselves, and panning still goes across and up the screen.
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 
@@ -81,11 +81,12 @@ describe("a room's walls, turned", () => {
     expect(roomShape(corner(), BUILDING, nearSides(2)).doorway?.tall).toBe(true);
   });
 
-  it('set a window in the building’s outer wall on its inside face when tall, and in its middle when low', () => {
-    /** Where the glass of the room's window in the north wall sits. */
+  it('set a window in the building’s outer wall on its inside face, solid when tall and a ghost when low', () => {
+    /** The glass of the room's window in the north wall. */
     const glassAt = (t: Turn) => roomShape(corner(), BUILDING, nearSides(t)).boxes.find((b) => b.material === 'pane');
-    expect(glassAt(0)?.fixed).toBeCloseTo(SANDBOX_PLOT.y0 + 0.015);
-    expect(glassAt(2)?.fixed).toBeCloseTo(SANDBOX_PLOT.y0 - OUTER_T / 2);
+    for (const t of [0, 2] as const) expect(glassAt(t)?.fixed).toBeCloseTo(SANDBOX_PLOT.y0 + 0.015);
+    expect(glassAt(0)?.ghost).toBe(false);
+    expect(glassAt(2)?.ghost).toBe(true);
   });
 });
 
@@ -97,7 +98,7 @@ describe("the building's own windows, turned", () => {
     expect(windows.some((w) => w.side === 'south' && w.a < e0 + 3 && w.b > e0 - 1)).toBe(false);
   });
 
-  it('stand tall in the walls across from the camera, and are cut low in the walls facing it', () => {
+  it('stand solid in the walls across from the camera, and as ghosts of themselves in the walls facing it', () => {
     const [north] = buildingWindows(BUILDING, []).filter((w) => w.side === 'north');
     for (const t of TURNS) {
       const near = nearSides(t);
@@ -111,15 +112,16 @@ describe("the building's own windows, turned", () => {
         tall: !near.north,
         sill: 0.9,
         pane: 0.75,
-        lowTop: 0.42,
         inset: false,
         frame: 'frame',
         ledge: 'shell',
         glass: 'pane',
       });
-      const tallest = Math.max(...boxes.map((b) => b.y0 + b.h));
-      if (near.north) expect(tallest, `turn ${t}`).toBeLessThan(0.6);
-      else expect(tallest, `turn ${t}`).toBeGreaterThan(1.5);
+      expect(Math.max(...boxes.map((b) => b.y0 + b.h)), `turn ${t}`).toBeGreaterThan(1.5);
+      expect(
+        boxes.every((b) => b.ghost === near.north),
+        `turn ${t}`,
+      ).toBe(true);
     }
   });
 });
