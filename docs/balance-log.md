@@ -4,6 +4,26 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 16 October 2026, after midnight: the release, as a good player finds it
+
+### 14. For a good player, this branch is about as hard as 0.28.6
+
+**Found:** the comparison in 11 used the old, cautious bot, and found this branch $2k to $4k a month more generous than the release. The new bot (13) plays like a good player, so it was run on both: 0.28.6 (its source with the new bot copied in) and this branch at `9c5d422`, from clean copies, seeds 1 to 3, four years a game, averaged from the second year on:
+
+| Center             | Third star | Profit a month  | Months at a loss | Average wait, days |
+| ------------------ | ---------- | --------------- | ---------------- | ------------------ |
+| Willow Lane        | 3/3 → 3/3  | $11.3k → $16.6k | 13.0 → 9.3       | 14.1 → 12.3        |
+| The Exchange       | 3/3 → 3/3  | $19.7k → $17.6k | 8.0 → 10.3       | 7.1 → 7.5          |
+| The Boardwalk      | 2/3 → 3/3  | $3.5k → $5.0k   | 20.7 → 18.0      | 9.5 → 8.3          |
+| High Pines         | 2/3 → 3/3  | $11.1k → $6.4k  | 16.7 → 19.0      | 9.3 → 9.3          |
+| The Orchard Estate | 3/3 → 3/3  | $31.2k → $31.7k | 7.7 → 9.3        | 8.1 → 10.1         |
+
+Profit goes up at two centers and down at two, by about as much as the seeds alone move it, and the stars come at much the same months. For a good player the branch is no easier than the release. What the old bot found was that the branch is kinder to a cautious player: demand that follows what the center can treat, and the arrivals boost, help most a player who does not chase prices and house calls.
+
+**Done:** nothing; the tuning stays as in 11 and 12.
+
+**Still open:** a good player finds both the release and the branch easy: the third star in 13 to 15 games of 15, at $5k to $32k a month. That comes from prices and house calls (13), which are as they were in 0.28.6, so it is a question for a later release, not this one.
+
 ## 16 October 2026, late night: a playtest bot that plays like a good player
 
 ### 13. The bot understated how easy the game is
