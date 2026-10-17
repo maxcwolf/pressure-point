@@ -6,7 +6,7 @@ import { assignableRole, roomLabels } from '../../../core/sim/assignments';
 import { rankName, rankProgress, slots, trained, xpToNext } from '../../../core/sim/careers';
 import { burntOut } from '../../../core/sim/souls';
 import type { Staff } from '../../../core/state/types';
-import { useGame } from '../../hooks/use-hud';
+import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { soulNote } from '../../lib/souls';
 import { offerWarning } from '../../lib/standing';
@@ -153,7 +153,8 @@ function Soul({ staff: st }: { staff: Staff }) {
 
 /** A member of staff's skills, mood and pay, with raises, training and letting them go. */
 export function StaffInfo({ staff: st }: { staff: Staff }) {
-  const { sim, tools } = useGame();
+  const hud = useHud();
+  const { sim } = useGame();
   const leaving = st.state === 'leaving';
   return (
     <>
@@ -213,8 +214,7 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
         <Button
           class="danger"
           onPress={() => {
-            sim.fire(st.id);
-            tools.select(null);
+            hud.askToFire(st.id);
           }}
         >
           Let go
