@@ -3,7 +3,7 @@
 import { SIDEWALK_Y } from '../data';
 import type { Footprint } from '../footprint';
 import { byId } from '../lookup';
-import { pick, random } from '../random';
+import { pick, random, type Rng } from '../random';
 import type { Char, Guest, Look, Staff } from '../state/types';
 import type { SimContext } from './context';
 
@@ -78,9 +78,9 @@ export function streetEnds(fp: Pick<Footprint, 'door' | 'entrances'>, w = Infini
 }
 
 /** Where someone arrives or leaves, one way along the pavement or the other, picked at random. */
-export function streetTile(fp: Pick<Footprint, 'door' | 'entrances'>, w = Infinity): [number, number] {
+export function streetTile(r: Rng, fp: Pick<Footprint, 'door' | 'entrances'>, w = Infinity): [number, number] {
   const [left, right] = streetEnds(fp, w);
-  return [random() < 0.5 ? left : right, SIDEWALK_Y];
+  return [random(r) < 0.5 ? left : right, SIDEWALK_Y];
 }
 
 /** Where someone arrives who is heading for a way in at `x`: the end of the pavement nearer it. */
@@ -90,6 +90,6 @@ export function streetTileNear(fp: Pick<Footprint, 'door' | 'entrances'>, x: num
 }
 
 /** A tile just inside the front door, on one side or the other. */
-export function lobbyTile(fp: Pick<Footprint, 'door' | 'front'>): [number, number] {
-  return [pick(fp.door), fp.front - 1];
+export function lobbyTile(r: Rng, fp: Pick<Footprint, 'door' | 'front'>): [number, number] {
+  return [pick(r, fp.door), fp.front - 1];
 }

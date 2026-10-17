@@ -38,7 +38,7 @@ export function updateOutbreak(ctx: SimContext) {
   if (o) {
     spreadStress(ctx);
     for (const g of s.guests)
-      if (g.stressed && g.state !== 'leaving' && g.bubbleT <= 0 && random() < 0.25) say(g, '😰', 1.5);
+      if (g.stressed && g.state !== 'leaving' && g.bubbleT <= 0 && random(s) < 0.25) say(g, '😰', 1.5);
     const carriers = s.guests.some((g) => g.stressed);
     if (s.day >= o.deadline || (o.pending === 0 && !carriers)) endOutbreak(ctx);
   } else if (
@@ -58,9 +58,9 @@ export function updateOutbreak(ctx: SimContext) {
 export function offerOutbreak(ctx: SimContext): boolean {
   const s = ctx.s;
   if (s.outbreakOffer || s.outbreak) return false;
-  const seed = irnd(2, 3 + Math.floor(s.stars / 2));
+  const seed = irnd(s, 2, 3 + Math.floor(s.stars / 2));
   s.outbreakOffer = {
-    cause: pick(OUTBREAK_CAUSES),
+    cause: pick(s, OUTBREAK_CAUSES),
     seed,
     calms: seed + SPARE_CALMS,
     lost: 0,
@@ -83,7 +83,7 @@ export function acceptOutbreak(ctx: SimContext) {
   const here = s.guests.filter(catchable);
   let left = o.seed;
   while (left > 0 && here.length) {
-    const g = here.splice(Math.floor(random() * here.length), 1)[0];
+    const g = here.splice(Math.floor(random(s) * here.length), 1)[0];
     if (g) g.stressed = true;
     left--;
   }
@@ -95,7 +95,7 @@ export function acceptOutbreak(ctx: SimContext) {
 /** Turn the outbreak down, and schedule the next. */
 export function declineOutbreak(ctx: SimContext) {
   ctx.s.outbreakOffer = null;
-  ctx.s.nextOutbreak = ctx.s.day + rnd(OUTBREAK_GAP_MIN, OUTBREAK_GAP_MAX) * tuning(ctx.s, 'trouble');
+  ctx.s.nextOutbreak = ctx.s.day + rnd(ctx.s, OUTBREAK_GAP_MIN, OUTBREAK_GAP_MAX) * tuning(ctx.s, 'trouble');
 }
 
 /** A newly arrived guest might bring the outbreak in with them, while it still has carriers to come. */
@@ -113,7 +113,7 @@ export function spreadStress(ctx: SimContext) {
   for (const c of carriers) {
     for (const g of guests) {
       if (!catchable(g) || !idle(g) || Math.hypot(g.x - c.x, g.y - c.y) > SPREAD_RANGE) continue;
-      if (random() < SPREAD_CHANCE) g.stressed = true;
+      if (random(ctx.s) < SPREAD_CHANCE) g.stressed = true;
     }
   }
 }
@@ -170,7 +170,7 @@ export function endOutbreak(ctx: SimContext) {
   }
   for (const g of s.guests) g.calmed = false;
   s.outbreak = null;
-  s.nextOutbreak = s.day + rnd(OUTBREAK_GAP_MIN, OUTBREAK_GAP_MAX) * tuning(s, 'trouble');
+  s.nextOutbreak = s.day + rnd(s, OUTBREAK_GAP_MIN, OUTBREAK_GAP_MAX) * tuning(s, 'trouble');
 }
 
 /** Days an outbreak has left, or its offer has left to decide on. */

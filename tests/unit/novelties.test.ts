@@ -16,6 +16,7 @@ import { setSeed } from '../../src/core/random';
 import { createContext } from '../../src/core/sim/context';
 import { fizzOver, inPuddle, puddleSlow, tellFortune } from '../../src/core/sim/novelties';
 import { fadeVibes } from '../../src/core/sim/vibes';
+import { newGame } from '../../src/core/state/game';
 import type { Guest } from '../../src/core/state/types';
 import { accessTile } from '../../src/core/world';
 import { addStaffRoom, hire, inconsistencies, LAYOUT, openCenter, run, runUntil } from './helpers';
@@ -88,7 +89,8 @@ describe('the fortune teller', () => {
 
   it('tells everyone a fortune, and a lucky few that they will be healed today', () => {
     const guests = Array.from({ length: 200 }, guest);
-    for (const g of guests) tellFortune(g);
+    const ctx = createContext(newGame());
+    for (const g of guests) tellFortune(ctx, g);
     expect(guests.every((g) => g.feelings.includes('fortune'))).toBe(true);
     const lucky = guests.filter((g) => g.feelings.includes('lucky'));
     expect(lucky.length).toBeGreaterThan(10);

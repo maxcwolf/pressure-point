@@ -44,7 +44,7 @@ function ratios(k: Knob, measure: (sim: Sim) => number) {
   const at = (difficulty: Difficulty) => {
     const sim = freshSim(5);
     sim.s.difficulty = difficulty;
-    setSeed(5);
+    setSeed(5, sim.s);
     return measure(sim);
   };
   const usual = at({});
@@ -150,7 +150,7 @@ describe('each setting', () => {
   it('pays staff less or more, to the nearest $10', () => {
     for (const level of ['easier', 'harder'] as const) {
       const s = gameWith('salaries', level);
-      setSeed(3);
+      setSeed(3, s);
       const c = makeCandidate(s, 'therapist');
       const fair = fairSalary(c.role, c.skill, c.traits, c.quals);
       expect(c.salary).toBe(Math.round((fair * KNOBS.salaries.factor[level]) / 10) * 10);

@@ -61,13 +61,13 @@ export function makeCall(ctx: SimContext): HouseCall | null {
       offered(ctx, d) && s.staff.some((st) => ROLES[st.role].discipline === d && st.state !== 'leaving'),
   );
   if (!disciplines.length) return null;
-  const discipline = pick(disciplines);
+  const discipline = pick(s, disciplines);
   const techniques = MODALITY_ORDER.filter((m) => MODALITIES[m].discipline === discipline && unlocked(ctx, m));
-  const asks = techniques.length > 1 && random() < 0.5 ? pick(techniques) : undefined;
+  const asks = techniques.length > 1 && random(s) < 0.5 ? pick(s, techniques) : undefined;
   const clients = [...CALL_CLIENTS, ...(centerOf(s).calls?.clients ?? [])];
   return {
-    client: pick(clients),
-    days: irnd(1, 3),
+    client: pick(s, clients),
+    days: irnd(s, 1, 3),
     perDay: CALL_PER_DAY,
     discipline,
     ...(asks && { modality: asks }),
@@ -91,7 +91,7 @@ export function acceptCall(ctx: SimContext, staffId: number): boolean {
     return false;
   }
   staffIdle(ctx, st);
-  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
+  const [x, y] = streetTile(s, ctx.world.building, ctx.world.w);
   if (!goTo(ctx, st, x, y)) {
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
@@ -123,7 +123,7 @@ export function leaveForCall(ctx: SimContext, st: Staff) {
 export function returnFromCall(ctx: SimContext, st: Staff) {
   const call = st.call;
   if (!call) return;
-  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
+  const [x, y] = streetTile(ctx.s, ctx.world.building, ctx.world.w);
   st.x = x + 0.5;
   st.y = y + 0.5;
   st.tx = x;
@@ -131,7 +131,7 @@ export function returnFromCall(ctx: SimContext, st: Staff) {
   st.state = 'arriving';
   st.energy = Math.max(0, st.energy - 25);
   gainXp(ctx, st, CALL_XP);
-  const [lx, ly] = lobbyTile(ctx.world.building);
+  const [lx, ly] = lobbyTile(ctx.s, ctx.world.building);
   goTo(ctx, st, lx, ly);
   earn(ctx, call.fee, 'calls', x, y);
   toast(ctx, `${st.name} is back from ${call.client}: ${money(call.fee)} for the house call.`, 'good', {
@@ -150,7 +150,7 @@ export function updateCalls(ctx: SimContext) {
   }
   if (s.callOffer || !s.open || s.day < s.nextCall) return;
   const often = centerOf(s).calls?.often ?? 1;
-  s.nextCall = s.day + (irnd(CALL_GAP_MIN, CALL_GAP_MAX) / often) * tuning(s, 'chances');
+  s.nextCall = s.day + (irnd(s, CALL_GAP_MIN, CALL_GAP_MAX) / often) * tuning(s, 'chances');
   const call = makeCall(ctx);
   if (!call) return;
   s.callOffer = call;

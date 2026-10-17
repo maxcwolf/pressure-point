@@ -20,7 +20,6 @@ import {
   QUIT_AFTER,
   QUIT_THINKING,
   QUIT_WARNING,
-  RANK_XP,
   RIVAL_NAME,
   ROLES,
   STAFF_NEED_MORALE,
@@ -34,6 +33,7 @@ import { tuning } from '../difficulty';
 import { money } from '../format';
 import { fairSalary, scalePay } from '../people';
 import { pick, random } from '../random';
+import { staffStart } from '../state/game';
 import type { Item, Job, Staff } from '../state/types';
 import { clamp, must } from '../util';
 import { accessPose, accessTile, footprint } from '../world';
@@ -79,7 +79,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
   const s = ctx.s;
   const c = s.candidates.find((x) => x.id === candidateId);
   if (!c) return null;
-  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
+  const [x, y] = streetTile(s, ctx.world.building, ctx.world.w);
   const st: Staff = {
     ...newChar(ctx, c.name, c.look, x, y),
     kind: 'staff',
@@ -88,28 +88,14 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     salary: c.salary,
     traits: c.traits,
     energy: 100,
-    thirst: 0,
-    hunger: 0,
     state: 'arriving',
     post: 0,
     job: null,
     served: 0,
     quals: [...c.quals],
-    training: null,
-    strain: 1,
-    morale: 75,
-    raiseAsked: false,
-    unhappyT: 0,
-    yearServed: 0,
-    xp: RANK_XP[c.skill - 1] ?? 0,
-    promotion: false,
-    general: [],
-    off: [],
-    rooms: [],
-    offer: 0,
-    call: null,
+    ...staffStart(c.skill),
   };
-  const [lx, ly] = lobbyTile(ctx.world.building);
+  const [lx, ly] = lobbyTile(s, ctx.world.building);
   if (!goTo(ctx, st, lx, ly)) return null;
   s.staff.push(st);
   // their place in the pool fills again as new applicants turn up
@@ -128,7 +114,7 @@ export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poach
   st.raiseAsked = false;
   st.offer = 0;
   say(st, how === 'fired' ? '📦' : '😠', 6);
-  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
+  const [x, y] = streetTile(ctx.s, ctx.world.building, ctx.world.w);
   if (!goTo(ctx, st, x, y)) ctx.s.staff = ctx.s.staff.filter((q) => q !== st);
   if (how === 'fired') {
     toast(ctx, `${st.name} has been let go.`, 'info');
@@ -519,15 +505,15 @@ function findWork(ctx: SimContext, st: Staff) {
     }
   }
   // nothing to do: amble about, inside their own rooms if they have been assigned some
-  if (st.state === 'idle' && random() < 0.25) {
+  if (st.state === 'idle' && random(s) < 0.25) {
     const own = st.rooms.map((id) => ctx.world.room(id)).filter((r) => r !== undefined);
     if (own.length) {
-      if (wander(ctx, st, pick(own))) st.state = 'wander';
+      if (wander(ctx, st, pick(s, own))) st.state = 'wander';
       return;
     }
     const spots = ctx.world.standSpots(st.tx, st.ty, 40);
     if (spots.length) {
-      const [x, y] = pick(spots);
+      const [x, y] = pick(s, spots);
       if (goTo(ctx, st, x, y)) st.state = 'wander';
     }
   }

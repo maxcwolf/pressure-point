@@ -20,6 +20,7 @@ import {
   ROLES,
 } from '../core/data';
 import { HAIR, randomLook } from '../core/people';
+import { newSeed, stream } from '../core/random';
 import type { Char, Look, VisitorKind } from '../core/state/types';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
@@ -64,6 +65,9 @@ export interface Specimen {
 
 /** Nothing moves. */
 const still = () => undefined;
+
+/** Where the shuffled looks come from: the lab has no game to draw from. */
+const looks = stream(newSeed());
 
 /** A stretch of a room's wall, one tile deep, for something hung on a wall to be seen on. */
 function wallBehind(model: THREE.Group, w: number): THREE.Group {
@@ -170,8 +174,8 @@ function personControls(st: PersonState, home = LAB_LOOK): Control[] {
   return [
     choice('Pose', st, 'pose', POSES),
     choice('Bubble', st, 'bubble', BUBBLES),
-    button('Shuffle as a woman', () => (st.look = { ...randomLook('female'), ...keep }), true),
-    button('Shuffle as a man', () => (st.look = { ...randomLook('male'), ...keep }), true),
+    button('Shuffle as a woman', () => (st.look = { ...randomLook(looks, 'female'), ...keep }), true),
+    button('Shuffle as a man', () => (st.look = { ...randomLook(looks, 'male'), ...keep }), true),
     button('Reset look', () => (st.look = { ...home }), true),
   ];
 }

@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { randomLook } from '../../src/core/people';
-import { setSeed } from '../../src/core/random';
+import { stream } from '../../src/core/random';
 import type { Specimen } from '../../src/lab/catalog';
 import { buildCharacter } from '../../src/render/models/character';
 import { castsShadow, cyl, put, rbox, sph, trimShadows } from '../../src/render/models/parts';
@@ -122,10 +122,10 @@ describe('trimming shadows', () => {
   });
 
   it.each([0.92, 1, 1.08])("leaves a person's shadow falling from their legs, body and head (scale %f)", (scale) => {
-    setSeed(1);
+    const r = stream(1);
     // a dozen looks, women and men, so every hairstyle and beard is in, with and without a uniform
     for (let i = 0; i < 12; i++) {
-      const look = { ...randomLook(i % 2 ? 'female' : 'male'), scale };
+      const look = { ...randomLook(r, i % 2 ? 'female' : 'male'), scale };
       const rig = buildCharacter(look, i % 3 ? undefined : i % 2 ? 'receptionist' : 'caretaker');
       /** Does any drawn part of this cast a shadow? */
       const casts = (o: THREE.Object3D) => {

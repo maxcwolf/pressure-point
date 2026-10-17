@@ -194,7 +194,7 @@ export function bookClasses(ctx: SimContext) {
         { kind: 'staff', id: instructor.id },
       );
     const interest = weeklyInterest(spots, s.reputation, instructor.skill);
-    const size = classSize(interest, classDays(room).length, Math.max(0, Math.min(spots, free)), rnd(0.8, 1.2));
+    const size = classSize(interest, classDays(room).length, Math.max(0, Math.min(spots, free)), rnd(s, 0.8, 1.2));
     free -= size.count;
     if (size.turned > 0 && classDays(room).length < 7)
       tipOnce(
@@ -205,7 +205,7 @@ export function bookClasses(ctx: SimContext) {
         { kind: 'room', id: room.id },
       );
     room.booked = { day, ...size };
-    for (let i = 0; i < size.count; i++) s.arrivals.push({ at: today + rnd(0.05, 0.6), day });
+    for (let i = 0; i < size.count; i++) s.arrivals.push({ at: today + rnd(s, 0.05, 0.6), day });
   }
 }
 

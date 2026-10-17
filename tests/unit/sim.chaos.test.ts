@@ -56,7 +56,7 @@ const MOVES: Record<string, (sim: Sim) => void> = {
   /** Build a room at its usual spot, tearing the blueprint up again if the spot is taken. */
   build: (sim) => {
     try {
-      pick(ROOMS)(sim);
+      pick(sim.s, ROOMS)(sim);
     } catch {
       // that spot is taken: the room is already there, or something is in the way
       for (const r of sim.s.rooms) if (!r.done) sim.removeRoom(r.id, 1);
@@ -64,41 +64,41 @@ const MOVES: Record<string, (sim: Sim) => void> = {
   },
   /** Knock down a room, guests and all. */
   demolish: (sim) => {
-    const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
+    const room = sim.s.rooms.length ? pick(sim.s, sim.s.rooms) : undefined;
     if (room) sim.removeRoom(room.id, 0.5);
   },
   /** Buy something and put it down somewhere. */
   place: (sim) => {
     // the reception desk first, if it has gone, so that guests keep coming
     if (!sim.s.items.some((i) => i.type === 'reception_desk')) sim.placeItem('reception_desk', 14, 13, 0);
-    else sim.placeItem(pick(EXTRAS), irnd(BX0, BX1), irnd(BY0, BY1), irnd(0, 3));
+    else sim.placeItem(pick(sim.s, EXTRAS), irnd(sim.s, BX0, BX1), irnd(sim.s, BY0, BY1), irnd(sim.s, 0, 3));
   },
   /** Sell something that can be sold. */
   sell: (sim) => {
-    const it = sim.s.items.length ? pick(sim.s.items) : undefined;
+    const it = sim.s.items.length ? pick(sim.s, sim.s.items) : undefined;
     if (it && sim.canSell(it)) sim.sellItem(it.id);
   },
   /** Pick something up and put it down somewhere else. */
   move: (sim) => {
-    const it = sim.s.items.length ? pick(sim.s.items) : undefined;
-    if (it) sim.moveItem(it.id, irnd(BX0, BX1), irnd(BY0, BY1), irnd(0, 3));
+    const it = sim.s.items.length ? pick(sim.s, sim.s.items) : undefined;
+    if (it) sim.moveItem(it.id, irnd(sim.s, BX0, BX1), irnd(sim.s, BY0, BY1), irnd(sim.s, 0, 3));
   },
   /** Take someone on. */
   hire: (sim) => {
-    const role = pick(ROLES);
+    const role = pick(sim.s, ROLES);
     const c = sim.s.candidates.find((x) => x.role === role);
     if (c) sim.hire(c.id);
   },
   /** Let someone go, whatever they are in the middle of. */
   fire: (sim) => {
-    const st = sim.s.staff.length ? pick(sim.s.staff) : undefined;
+    const st = sim.s.staff.length ? pick(sim.s, sim.s.staff) : undefined;
     if (st) sim.fire(st.id);
   },
   /** Send someone on a course, whatever they are in the middle of. */
   train: (sim) => {
-    const st = sim.s.staff.length ? pick(sim.s.staff) : undefined;
+    const st = sim.s.staff.length ? pick(sim.s, sim.s.staff) : undefined;
     const courses = st ? sim.courses(st) : [];
-    if (st && courses.length) sim.train(st.id, pick(courses).id);
+    if (st && courses.length) sim.train(st.id, pick(sim.s, courses).id);
   },
   /** Take on an emergency on offer. */
   emergency: (sim) => {
@@ -106,7 +106,7 @@ const MOVES: Record<string, (sim: Sim) => void> = {
   },
   /** Switch acupuncture or reiki on or off. */
   switch: (sim) => {
-    const d = pick(['acupuncture', 'reiki'] as const);
+    const d = pick(sim.s, ['acupuncture', 'reiki'] as const);
     sim.setDiscipline(d, !sim.enabled(d));
   },
   /** Give everyone who asked their raise. */
@@ -115,10 +115,10 @@ const MOVES: Record<string, (sim: Sim) => void> = {
   },
   /** Move a guest up or down their line, over to another, or home, whatever they are doing. */
   line: (sim) => {
-    const g = sim.s.guests.length ? pick(sim.s.guests) : undefined;
+    const g = sim.s.guests.length ? pick(sim.s, sim.s.guests) : undefined;
     if (!g) return;
-    const what = irnd(0, 2);
-    if (what === 0) sim.moveInLine(g.id, pick([-1, 1]));
+    const what = irnd(sim.s, 0, 2);
+    if (what === 0) sim.moveInLine(g.id, pick(sim.s, [-1, 1]));
     else if (what === 1) {
       const it = sim.world.item(g.station);
       const other = it && sim.shortestOtherLine(it);
@@ -128,10 +128,10 @@ const MOVES: Record<string, (sim: Sim) => void> = {
   /** Change the policy, anywhere in its range. */
   policy: (sim) => {
     sim.setPolicy({
-      diagnosis: 0.5 + random() * 0.45,
-      emergenciesFirst: random() < 0.5,
-      breakAt: irnd(10, 50),
-      breakLimit: { role: pick(ROLES), limit: irnd(0, 3) },
+      diagnosis: 0.5 + random(sim.s) * 0.45,
+      emergenciesFirst: random(sim.s) < 0.5,
+      breakAt: irnd(sim.s, 10, 50),
+      breakLimit: { role: pick(sim.s, ROLES), limit: irnd(sim.s, 0, 3) },
     });
   },
   /** Promote everyone who is ready. */
@@ -140,60 +140,60 @@ const MOVES: Record<string, (sim: Sim) => void> = {
   },
   /** Keep someone from one of their duties, or put them back on it. */
   duty: (sim) => {
-    const st = sim.s.staff.length ? pick(sim.s.staff) : undefined;
+    const st = sim.s.staff.length ? pick(sim.s, sim.s.staff) : undefined;
     const duties = st ? (DUTIES[st.role] ?? []) : [];
     if (st && duties.length) {
-      const d = pick(duties);
+      const d = pick(sim.s, duties);
       sim.setDuty(st.id, d, st.off.includes(d));
     }
   },
   /** Assign someone to a room or take it away, or now and then let them work anywhere again. */
   assign: (sim) => {
-    const st = sim.s.staff.length ? pick(sim.s.staff) : undefined;
-    const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
-    if (st && random() < 0.2) sim.clearRooms(st.id);
+    const st = sim.s.staff.length ? pick(sim.s, sim.s.staff) : undefined;
+    const room = sim.s.rooms.length ? pick(sim.s, sim.s.rooms) : undefined;
+    if (st && random(sim.s) < 0.2) sim.clearRooms(st.id);
     else if (st && room) sim.assignRoom(st.id, room.id);
   },
   /** Turn an applicant down. */
   reject: (sim) => {
-    const c = sim.s.candidates.length ? pick(sim.s.candidates) : undefined;
+    const c = sim.s.candidates.length ? pick(sim.s, sim.s.candidates) : undefined;
     if (c) sim.reject(c.id);
   },
   /** Price a treatment up or down. */
   price: (sim) => {
-    sim.setTechniquePrice(pick(['swedish', 'deep', 'needling', 'usui'] as const), 0.5 + random() * 1.5);
+    sim.setTechniquePrice(pick(sim.s, ['swedish', 'deep', 'needling', 'usui'] as const), 0.5 + random(sim.s) * 1.5);
   },
   /** Start a campaign, if one of its kind is not running. */
   market: (sim) => {
-    sim.startCampaign(pick(['word', 'condition', 'recruit'] as const), irnd(1, 3), 'slump');
+    sim.startCampaign(pick(sim.s, ['word', 'condition', 'recruit'] as const), irnd(sim.s, 1, 3), 'slump');
   },
   /** Send someone on the house call on offer, or offer one and turn it down. */
   call: (sim) => {
     const who = sim.whoCanGo();
-    if (who.length) sim.acceptCall(pick(who).id);
+    if (who.length) sim.acceptCall(pick(sim.s, who).id);
     else if (sim.s.callOffer) sim.declineCall();
     else sim.s.nextCall = sim.s.day;
   },
   /** Take on a stress outbreak, hand out a calming session, or bring one on. */
   outbreak: (sim) => {
-    const g = sim.s.guests.length ? pick(sim.s.guests) : undefined;
+    const g = sim.s.guests.length ? pick(sim.s, sim.s.guests) : undefined;
     if (sim.s.outbreakOffer) sim.acceptOutbreak();
     else if (sim.s.outbreak && g) sim.calm(g.id);
     else sim.offerOutbreak();
   },
   /** Leave bad vibes in a room, as a failed treatment would. */
   vibes: (sim) => {
-    const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
+    const room = sim.s.rooms.length ? pick(sim.s, sim.s.rooms) : undefined;
     if (room) room.vibes = 100;
   },
   /** Bring a guest to the brink of getting worse. */
   worsen: (sim) => {
-    const g = sim.s.guests.length ? pick(sim.s.guests) : undefined;
+    const g = sim.s.guests.length ? pick(sim.s, sim.s.guests) : undefined;
     if (g) g.health = Math.min(g.health, 2);
   },
   /** Make someone thirsty and hungry, or soil a table's linens, or fill a hamper. */
   comfort: (sim) => {
-    const st = sim.s.staff.length ? pick(sim.s.staff) : undefined;
+    const st = sim.s.staff.length ? pick(sim.s, sim.s.staff) : undefined;
     if (st) st.thirst = st.hunger = 95;
     for (const it of sim.s.items) {
       if (ITEMS[it.type].linens) it.dirt = 90;
@@ -206,7 +206,7 @@ const MOVES: Record<string, (sim: Sim) => void> = {
   },
   /** Put a room first, or back among the rest. */
   priority: (sim) => {
-    const room = sim.s.rooms.length ? pick(sim.s.rooms) : undefined;
+    const room = sim.s.rooms.length ? pick(sim.s, sim.s.rooms) : undefined;
     if (room) sim.setRoomPriority(room.id, !room.priority);
   },
 };
@@ -227,13 +227,13 @@ describe('a restless player', () => {
     const names = Object.entries(MOVES).flatMap(([name]) => Array<string>(WEIGHTS[name] ?? 1).fill(name));
     const log: string[] = [];
     for (let step = 0; step < 300; step++) {
-      const name = pick(names);
+      const name = pick(sim.s, names);
       MOVES[name]!(sim);
       log.push(name);
       // the last few moves are what led here, should anything be wrong: checked straight after the move,
       // and again after some play, since a later move can tidy up the evidence
       expect(inconsistencies(sim), `straight after ${log.slice(-5).join(', ')}`).toEqual([]);
-      run(sim, 2 + random() * 20);
+      run(sim, 2 + random(sim.s) * 20);
       expect(inconsistencies(sim), `playing on after ${log.slice(-5).join(', ')}`).toEqual([]);
       expect(Number.isFinite(s.money) && Number.isFinite(s.reputation)).toBe(true);
       for (const c of [...s.guests, ...s.staff, ...s.visitors]) expect(Number.isFinite(c.x + c.y), c.name).toBe(true);

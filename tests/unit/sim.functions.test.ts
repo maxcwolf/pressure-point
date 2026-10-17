@@ -279,10 +279,10 @@ describe('people', () => {
     const moved = footprintOf({ ...SANDBOX_PLOT, door: [d0 + 3, d1 + 3] });
     expect(streetEnds(moved)).toEqual([d0 + 3 - STREET_WALK, d1 + 3 + STREET_WALK]);
     for (let i = 0; i < 20; i++) {
-      const [x, y] = streetTile(building);
+      const [x, y] = streetTile(ctx.s, building);
       expect(streetEnds(building)).toContain(x);
       expect(y).toBe(SIDEWALK_Y);
-      expect(SANDBOX_PLOT.door).toContain(lobbyTile(building)[0]);
+      expect(SANDBOX_PLOT.door).toContain(lobbyTile(ctx.s, building)[0]);
     }
   });
 

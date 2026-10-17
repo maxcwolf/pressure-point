@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ANNOUNCEMENTS } from '../../src/core/data';
-import { pickFresh, setSeed } from '../../src/core/random';
+import { pickFresh, setSeed, stream } from '../../src/core/random';
 import { announce } from '../../src/core/sim/advisor';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
@@ -20,16 +20,16 @@ function closestRepeat(picks: readonly unknown[]): number {
 
 describe('picking without repeating', () => {
   it('holds back the latest half of the list, so at least that many others come between repeats', () => {
-    setSeed(3);
+    const r = stream(3);
     const recent: number[] = [];
     const list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    const picks = Array.from({ length: 200 }, () => pickFresh(list, recent));
+    const picks = Array.from({ length: 200 }, () => pickFresh(r, list, recent));
     expect(closestRepeat(picks)).toBeGreaterThanOrEqual(5);
     expect(new Set(picks).size).toBe(list.length);
   });
 
   it('still picks from a list too short to hold anything back', () => {
-    expect(pickFresh(['only'], [])).toBe('only');
+    expect(pickFresh(stream(1), ['only'], [])).toBe('only');
   });
 });
 

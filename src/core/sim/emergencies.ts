@@ -53,11 +53,11 @@ export function offerEmergency(ctx: SimContext): boolean {
     s.nextEmergency = s.day + 20;
     return false;
   }
-  const cond = pick(pool);
-  const total = irnd(4, 5 + s.stars * 2);
+  const cond = pick(s, pool);
+  const total = irnd(s, 4, 5 + s.stars * 2);
   s.offer = {
     condition: cond.id,
-    cause: pick(EMERGENCY_CAUSES),
+    cause: pick(s, EMERGENCY_CAUSES),
     total,
     target: Math.ceil(total * 0.6),
     healed: 0,
@@ -85,7 +85,7 @@ export function acceptEmergency(ctx: SimContext) {
 /** Turn the offer down and schedule the next one. */
 export function declineEmergency(ctx: SimContext) {
   ctx.s.offer = null;
-  ctx.s.nextEmergency = ctx.s.day + rnd(45, 75) * tuning(ctx.s, 'chances');
+  ctx.s.nextEmergency = ctx.s.day + rnd(ctx.s, 45, 75) * tuning(ctx.s, 'chances');
 }
 
 /** Wrap up the emergency with a bonus if enough were healed, or a hit to reputation if not. */
@@ -108,5 +108,5 @@ function endEmergency(ctx: SimContext) {
   }
   for (const g of s.guests) g.emergency = false;
   s.emergency = null;
-  s.nextEmergency = s.day + rnd(50, 80) * tuning(s, 'chances');
+  s.nextEmergency = s.day + rnd(s, 50, 80) * tuning(s, 'chances');
 }

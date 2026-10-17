@@ -81,7 +81,7 @@ export function startSmudge(ctx: SimContext, st: Staff, room: Room): boolean {
 export function wander(ctx: SimContext, st: Staff, room: Room): boolean {
   const floor = roomFloor(ctx, room).filter(([x, y]) => x !== st.tx || y !== st.ty);
   for (let tries = 0; tries < 4 && floor.length; tries++) {
-    const [x, y] = pick(floor);
+    const [x, y] = pick(ctx.s, floor);
     if (goTo(ctx, st, x, y)) return true;
   }
   return false;

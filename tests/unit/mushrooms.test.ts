@@ -164,7 +164,7 @@ describe('paying off the inspector', () => {
     let kept = 0;
     for (let seed = 1; seed <= 40; seed++) {
       const { sim, s } = failed(seed);
-      setSeed(seed);
+      setSeed(seed, s);
       const money = s.money;
       const rep = s.reputation;
       expect(sim.settleInspection(true)).toBe(true);

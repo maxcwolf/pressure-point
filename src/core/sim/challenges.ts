@@ -52,7 +52,7 @@ export function challengeGoals(ctx: SimContext, days: number): GoalSpec[] {
   const optional = DISCIPLINE_ORDER.filter((d): d is Discipline => DISCIPLINES[d].optional && offered(ctx, d));
   if (optional.length) {
     // a stretch on the discipline's own share of the guests, so a niche one is not asked for as many as massage
-    const discipline = pick(optional);
+    const discipline = pick(s, optional);
     const share = demand(ctx).find((r) => r.discipline === discipline)?.share ?? 0;
     goals.push({ kind: 'healed', count: Math.max(3, Math.round(pace * days * 1.2 * share)), discipline });
   }
@@ -63,7 +63,7 @@ export function challengeGoals(ctx: SimContext, days: number): GoalSpec[] {
   for (const r of s.rooms) if (r.done) best.set(r.type, Math.max(best.get(r.type) ?? 0, prestige(ctx, r)));
   const types = [...best].filter(([, level]) => level < 5);
   if (types.length) {
-    const [room, level] = pick(types);
+    const [room, level] = pick(s, types);
     goals.push({ kind: 'prestige', room, level: level + 1 });
   }
   goals.push({ kind: 'noQuits', days: Math.round(days * 0.75) });
@@ -77,9 +77,9 @@ export function proposeChallenge(ctx: SimContext): Challenge | null {
   const s = ctx.s;
   const staff = s.staff.filter((st) => st.state !== 'leaving' && st.state !== 'arriving');
   if (!s.open || staff.length < 2) return null;
-  const setter = pick(staff);
-  const days = irnd(CHALLENGE_DAYS_MIN, CHALLENGE_DAYS_MAX);
-  const goal = pick(challengeGoals(ctx, days));
+  const setter = pick(s, staff);
+  const days = irnd(s, CHALLENGE_DAYS_MIN, CHALLENGE_DAYS_MAX);
+  const goal = pick(s, challengeGoals(ctx, days));
   return {
     staffId: setter.id,
     staffName: setter.name,
@@ -166,5 +166,5 @@ export function updateChallenge(ctx: SimContext) {
     toast(ctx, `🎯 ${ch.staffName}'s challenge ran out of time. They are a little disappointed.`, 'bad', about);
   } else return;
   s.challenge = null;
-  s.nextChallenge = s.day + irnd(CHALLENGE_GAP_MIN, CHALLENGE_GAP_MAX) * tuning(s, 'chances');
+  s.nextChallenge = s.day + irnd(s, CHALLENGE_GAP_MIN, CHALLENGE_GAP_MAX) * tuning(s, 'chances');
 }

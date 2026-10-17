@@ -224,22 +224,22 @@ export function chooseTour(ctx: SimContext, visit: VisitorKind): number[] {
   const rooms = ctx.s.rooms.filter((r) => r.done).map((r) => r.id);
   // shuffled, so a VIP sees a different few each time
   for (let i = rooms.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
+    const j = Math.floor(random(ctx.s) * (i + 1));
     const a = rooms[i];
     const b = rooms[j];
     if (a === undefined || b === undefined) continue;
     rooms[i] = b;
     rooms[j] = a;
   }
-  return rooms.slice(0, visit === 'inspector' ? INSPECTOR_ROOMS : irnd(VIP_ROOMS[0], VIP_ROOMS[1]));
+  return rooms.slice(0, visit === 'inspector' ? INSPECTOR_ROOMS : irnd(ctx.s, VIP_ROOMS[0], VIP_ROOMS[1]));
 }
 
 /** What a visitor is called and what they care about, for a VIP or the inspector. */
 export function newNotice(ctx: SimContext, visit: VisitorKind): VisitNotice {
   const arrives = ctx.s.day + VISIT_NOTICE_DAYS;
-  const name = randomName(rollSex(WOMEN_VISIT));
+  const name = randomName(ctx.s, rollSex(ctx.s, WOMEN_VISIT));
   if (visit === 'inspector') return { visit, name, title: 'the health inspector', arrives };
-  const vip = pick(VIPS);
+  const vip = pick(ctx.s, VIPS);
   return { visit, name, title: vip.title, cares: vip.cares, arrives };
 }
 
@@ -267,16 +267,16 @@ function writeAhead(ctx: SimContext, visit: VisitorKind) {
 /** Days until the inspector calls again: sooner at a center where they call more often, or with more trouble set. */
 export function inspectionGap(s: GameState): number {
   return Math.round(
-    (irnd(INSPECTION_GAP_DAYS[0], INSPECTION_GAP_DAYS[1]) / (centerOf(s).inspections ?? 1)) * tuning(s, 'trouble'),
+    (irnd(s, INSPECTION_GAP_DAYS[0], INSPECTION_GAP_DAYS[1]) / (centerOf(s).inspections ?? 1)) * tuning(s, 'trouble'),
   );
 }
 
 /** Bring in the visitor who wrote ahead. False if they cannot get in yet. */
 function arrive(ctx: SimContext, notice: VisitNotice): boolean {
-  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
+  const [x, y] = streetTile(ctx.s, ctx.world.building, ctx.world.w);
   const v: Visitor = {
     // the name was a woman's or a man's, and the look that turns up follows it
-    ...newChar(ctx, notice.name, randomLook(sexOfName(notice.name) ?? rollSex(WOMEN_VISIT)), x, y),
+    ...newChar(ctx, notice.name, randomLook(ctx.s, sexOfName(notice.name) ?? rollSex(ctx.s, WOMEN_VISIT)), x, y),
     kind: 'visitor',
     visit: notice.visit,
     title: notice.title,
@@ -323,7 +323,7 @@ export function nextRoom(ctx: SimContext, v: Visitor): boolean {
     v.tour.shift();
   }
   v.state = 'leaving';
-  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
+  const [x, y] = streetTile(ctx.s, ctx.world.building, ctx.world.w);
   if (goTo(ctx, v, x, y)) return true;
   finishVisit(ctx, v);
   return false;
@@ -386,7 +386,7 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
   if (v.visit === 'inspector') {
     s.nextInspection = s.day + inspectionGap(s);
     inspectorGone(ctx);
-  } else s.nextVip = s.day + irnd(VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
+  } else s.nextVip = s.day + irnd(s, VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
   const good = result.outcome === 'delighted' || result.outcome === 'passed';
   emit(ctx, { type: 'sfx', name: good ? 'fanfare' : 'fail' });
   emit(ctx, { type: 'visit' });
@@ -422,7 +422,7 @@ export function settleInspection(ctx: SimContext, payOff: boolean): boolean {
   r.rep = 0;
   delete r.bribe;
   emit(ctx, { type: 'sfx', name: 'cash' });
-  if (random() < BRIBE_LEAK) {
+  if (random(s) < BRIBE_LEAK) {
     r.rep = -BRIBE_REP;
     changeRep(ctx, -BRIBE_REP);
     s.nextInspection = Math.min(s.nextInspection, s.day + BRIBE_RECHECK_DAYS);

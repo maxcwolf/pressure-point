@@ -39,7 +39,7 @@ import { layoutProblem } from '../templates';
 import type { Check, Placed, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce } from './advisor';
-import { drainFactor, prestige, updateAmbience } from './ambience';
+import { drainFactor, prestige } from './ambience';
 import { assignRoom, clearRooms } from './assignments';
 import { holdAwards, YEAR_MONTHS } from './awards';
 import type { PlaceOptions } from './building';
@@ -94,7 +94,7 @@ import { buyPlot, landOffers, renamePlot, updateLand } from './land';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
 import { askWard, canWard, prepareMishap, updateMishaps } from './mishaps';
 import { hasSupplier, setMushrooms } from './mushrooms';
-import { itemNoise, noiseAt, updateNoise } from './noise';
+import { itemNoise, noiseAt } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { updateOutdoors } from './outdoors';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
@@ -110,6 +110,7 @@ import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, up
 import { type StandingPoints, standingPoints, updateStanding } from './standing';
 import { type Chance, successChance, updateStations } from './stations';
 import { subjectSpot } from './subjects';
+import { checkSurroundings, restoreSurroundings } from './surroundings';
 import type { Course } from './training';
 import { cancelBlocker, cancelTraining, courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
@@ -119,19 +120,17 @@ import { orderUpgrade } from './upgrades';
 import { decayItems } from './upkeep';
 import { fadeVibes } from './vibes';
 import { lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
-import { outdoorTemp, thermostatShare, todayIndoors, updateWarmth, warmthAt } from './warmth';
+import { outdoorTemp, thermostatShare, todayIndoors, warmthAt } from './warmth';
 
 export class Sim {
   readonly world: World;
   private readonly ctx: SimContext;
-  /** Seconds until the next round of once-a-second checks. */
-  private slowT = 0;
 
   constructor(readonly s: GameState) {
     this.ctx = createContext(s);
     this.world = this.ctx.world;
-    // how pleasant each spot is counts from the start, not only once a second of play has passed
-    updateAmbience(this.ctx);
+    // the surroundings count from the start, not only once a second of play has passed
+    restoreSurroundings(this.ctx);
   }
 
   // ---- The clock -------------------------------------------------------------
@@ -178,12 +177,10 @@ export class Sim {
     fadeVibes(ctx, dt);
     announceSweatLodge(ctx);
 
-    this.slowT -= dt;
-    if (this.slowT <= 0) {
-      this.slowT = 1;
-      updateAmbience(ctx);
-      updateNoise(ctx);
-      updateWarmth(ctx);
+    s.slowT -= dt;
+    if (s.slowT <= 0) {
+      s.slowT = 1;
+      checkSurroundings(ctx);
       updateEmergency(ctx);
       updateOutbreak(ctx);
       checkStars(ctx);
@@ -300,9 +297,7 @@ export class Sim {
 
   /** Work out again how pleasant each spot is, for an overlay drawn while the game is paused. */
   refreshAmbience() {
-    updateAmbience(this.ctx);
-    updateNoise(this.ctx);
-    updateWarmth(this.ctx);
+    checkSurroundings(this.ctx);
   }
   /**
    * How fast patience drains on a tile: slower in pleasant surroundings, faster in grim ones. `extra` is pleasantness

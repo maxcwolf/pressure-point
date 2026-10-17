@@ -100,7 +100,7 @@ function updateSale(ctx: SimContext) {
   }
   if (r.saleUntil || s.day < r.nextSale) return;
   r.saleUntil = s.day + SALE_DAYS;
-  r.nextSale = r.saleUntil + irnd(SALE_GAP_DAYS[0], SALE_GAP_DAYS[1]);
+  r.nextSale = r.saleUntil + irnd(s, SALE_GAP_DAYS[0], SALE_GAP_DAYS[1]);
   toast(
     ctx,
     `🏪 ${RIVAL_NAME} is holding a sale: ${Math.round(SALE_DISCOUNT * 100)}% off for ${SALE_DAYS} days. Guests who think you charge too much will go there instead, unless you lower your prices in the Money menu.`,
@@ -123,7 +123,7 @@ function updatePoaching(ctx: SimContext) {
     }
   }
   if (s.day < s.rival.nextPoach) return;
-  s.rival.nextPoach = s.day + irnd(POACH_GAP_DAYS[0], POACH_GAP_DAYS[1]);
+  s.rival.nextPoach = s.day + irnd(s, POACH_GAP_DAYS[0], POACH_GAP_DAYS[1]);
   const st = poachTarget(s.staff);
   if (!st) return;
   st.offer = s.day + POACH_DAYS;

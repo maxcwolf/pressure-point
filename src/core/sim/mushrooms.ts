@@ -37,8 +37,8 @@ export const mushroomPrice = (roll: number) => Math.round((MUSHROOM_SALE * roll)
 
 /** Now and then, a guest at the Shop Counter buys mushrooms too, while they are on sale. What it came to, or 0. */
 export function sellMushrooms(ctx: SimContext, g: Guest): number {
-  if (!mushroomsOnSale(ctx) || random() >= MUSHROOM_CHANCE) return 0;
-  const amount = mushroomPrice(rnd(0.8, 1.2));
+  if (!mushroomsOnSale(ctx) || random(ctx.s) >= MUSHROOM_CHANCE) return 0;
+  const amount = mushroomPrice(rnd(ctx.s, 0.8, 1.2));
   earn(ctx, amount, 'mushrooms', g.x, g.y);
   g.spent += amount;
   return amount;
