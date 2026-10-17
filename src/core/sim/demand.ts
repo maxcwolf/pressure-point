@@ -15,6 +15,7 @@ import {
   MODALITIES,
   NOISE_NOTICE,
   NOISE_PEACEFUL,
+  OFFERING_ARRIVALS,
   ROOM_PULL,
 } from '../data';
 import type { ConditionDef, ConditionId, Discipline, Modality } from '../data/types';
@@ -162,6 +163,16 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
   for (const r of rows) r.share = total > 0 ? r.pull / total : 0;
   return rows;
 }
+
+/** The disciplines the center offers with a finished room and a practitioner on the payroll. */
+export const staffedDisciplines = (ctx: SimContext): Discipline[] =>
+  DISCIPLINE_ORDER.filter(
+    (d) => offered(ctx, d) && ctx.s.staff.some((st) => st.role === DISCIPLINES[d].role && st.state !== 'leaving'),
+  );
+
+/** How much more often guests arrive, for the disciplines the center offers: more for each one staffed past the first. */
+export const offeringArrivals = (ctx: SimContext) =>
+  1 + OFFERING_ARRIVALS * Math.max(0, staffedDisciplines(ctx).length - 1);
 
 /** Pick one of some weighted things, given a roll from 0 to 1. */
 function pickWeighted<T>(list: readonly T[], weight: (t: T) => number, roll: number): T | undefined {

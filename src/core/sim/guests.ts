@@ -34,7 +34,7 @@ import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import { missClass, missToast } from './classes';
 import type { SimContext } from './context';
-import { chooseCondition } from './demand';
+import { chooseCondition, offeringArrivals } from './demand';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
@@ -75,7 +75,8 @@ export function admitGuests(ctx: SimContext, dt: number) {
     const regular = dueRegular(s);
     spawnGuest(ctx, undefined, false, 0, regular);
   }
-  s.spawnT = ((30 - s.reputation * 0.2) * rnd(0.7, 1.3)) / arrivalFactor(ctx) / tuning(s, 'arrivals');
+  s.spawnT =
+    ((30 - s.reputation * 0.2) * rnd(0.7, 1.3)) / arrivalFactor(ctx) / offeringArrivals(ctx) / tuning(s, 'arrivals');
 }
 
 /** How many guests the center lets in at once: more for every finished room, not counting blueprints. */

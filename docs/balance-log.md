@@ -4,6 +4,28 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 16 October 2026, evening: arrivals grow with what the center offers (a first step)
+
+### 10. More disciplines brought no more guests
+
+**Found:** the audit's finding 3 and the still-open note on 5: guests arrive at a pace set by reputation, the center and its grade, and nothing the player builds raises it. A new discipline only split the same guests, while adding a salary and a room.
+
+**Done**, deliberately small so it can be playtested before it goes further: guests arrive 10% more often for each discipline past the first that has a finished room and a practitioner on the payroll (`OFFERING_ARRIVALS` in `src/core/data/rules.ts`, `offeringArrivals` in `src/core/sim/demand.ts`), so five disciplines bring 40% more. A room with nobody to work in it brings nobody. The Guests tab says how many disciplines are staffed and what that does to arrivals. The audit suggested 20% a discipline, and raising arrivals across the board made things worse in its experiment, so this starts at half that.
+
+Measured with the playtest bot (`yarn balance`, every campaign center, three seeds, four years), before and after, averaged from the second year on:
+
+| Center             | Guests a month | Healed a month | Average wait, days | Months at a loss | Profit a month |
+| ------------------ | -------------- | -------------- | ------------------ | ---------------- | -------------- |
+| Willow Lane        | 13.0 → 13.0    | 9.3 → 9.3      | 13.6 → 13.6        | 24.7 → 24.7      | $3.1k → $3.1k  |
+| The Exchange       | 16.8 → 19.4    | 14.1 → 15.7    | 5.7 → 6.9          | 19.3 → 17.7      | $4.7k → $6.5k  |
+| The Boardwalk      | 16.3 → 17.8    | 11.7 → 12.9    | 8.2 → 7.7          | 25.7 → 20.0      | $0.0k → $1.4k  |
+| High Pines         | 15.3 → 17.3    | 11.4 → 13.1    | 4.9 → 7.2          | 27.7 → 22.3      | −$1.0k → $1.7k |
+| The Orchard Estate | 14.2 → 20.8    | 10.0 → 15.4    | 6.1 → 10.9         | 26.7 → 18.3      | $5.7k → $14.9k |
+
+Willow Lane, which only ever offers massage, is unchanged, as it should be. Everywhere else the extra guests are mostly healed, months at a loss fall by 2 to 8, and every center now makes money on average (High Pines lost $1.0k a month and The Boardwalk broke even before). The Orchard, which opens with the most disciplines, gains the most, and its second and third stars came in two games of three instead of one. Waits rose by a day or two, and by nearly five at The Orchard: the audit's other half of finding 3, a faster walk to treatment, is still to do.
+
+**Still open:** whether 10% feels right in play. The audit's 20% would roughly double these gains and the longer waits. Treatment rooms past one a discipline add nothing yet.
+
 ## 16 October 2026, later: a review of the above
 
 A review of the changes below found four things worth fixing before they were merged.
@@ -102,6 +124,6 @@ In the full center afterwards, shares were more even (massage 27 to 34%, the oth
 
 **Still open:**
 
-- **Demand still does not grow with the center** (audit finding 3), which matters more than how it is split: arrivals that rise with each staffed discipline and with treatment rooms built.
+- **Demand still does not grow with the center** (audit finding 3), which matters more than how it is split: arrivals that rise with each staffed discipline and with treatment rooms built. A first step since: 10, above.
 - **The following's numbers need checking in a well-run center** with the playtest bot. They were retuned the same day (6, above), but only on paper.
 - **The Sound Healer** (4, above).

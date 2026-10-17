@@ -224,6 +224,11 @@ export const ROOM_PULL = { star: 0.35, calm: 0.6, mat: 0.2, max: 2 } as const;
  * its own from nothing, 50% at 40 and 75% at 80.
  */
 export const FOLLOWING = { start: 20, established: 40, heal: 5, fail: 3, walkout: 2, fade: 0.05 } as const;
+/**
+ * How many more guests arrive for each discipline past the first that the center offers with a room and a
+ * practitioner on the payroll: a fifth discipline brings 40% more. Kept small to begin with, to be playtested.
+ */
+export const OFFERING_ARRIVALS = 0.1;
 /** How a following multiplies how often guests come for a discipline: half as often with none, up to 2.5× at 100. */
 export const followingPull = (following: number) => 0.5 + following / 50;
 

@@ -1,7 +1,15 @@
 // Which discipline guests come for: popularity, following, the finest room and training, and what the panel says.
 import { describe, expect, it } from 'vitest';
 
-import { conditionOf, CONDITIONS, DISCIPLINES, FOLLOWING, followingPull, MODALITIES } from '../../src/core/data';
+import {
+  conditionOf,
+  CONDITIONS,
+  DISCIPLINES,
+  FOLLOWING,
+  followingPull,
+  MODALITIES,
+  OFFERING_ARRIVALS,
+} from '../../src/core/data';
 import type { Discipline, Modality } from '../../src/core/data/types';
 import type { SimContext } from '../../src/core/sim/context';
 import {
@@ -10,12 +18,14 @@ import {
   fadeFollowing,
   followingOf,
   followVisit,
+  offeringArrivals,
+  staffedDisciplines,
   UNTRAINED_PULL,
 } from '../../src/core/sim/demand';
 import { newGame } from '../../src/core/state/game';
 import type { GameState, Guest } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { demandAdvice, followingWord, popularityWord, times } from '../../src/ui/lib/demand';
+import { demandAdvice, followingWord, offeringNote, popularityWord, times } from '../../src/ui/lib/demand';
 import { addSound, hire, openCenter, runUntil } from './helpers';
 
 /** The game's own context, for calling the simulation directly. */
@@ -167,6 +177,28 @@ describe('a following', () => {
     c.s.open = true;
     runUntil(c.sim, () => (c.s.stats.healedBy.sound ?? 0) > 0, 1500);
     expect(c.s.following.sound).toBeDefined();
+  });
+});
+
+describe('how many guests arrive', () => {
+  it('rises with each discipline offered with a room and a practitioner, past the first', () => {
+    const c = twoRooms();
+    expect(staffedDisciplines(c.ctx)).toEqual(['massage', 'sound']);
+    expect(offeringArrivals(c.ctx)).toBeCloseTo(1 + OFFERING_ARRIVALS, 5);
+    expect(c.sim.offering()).toEqual({ staffed: 2, arrivals: offeringArrivals(c.ctx) });
+    // a room with nobody to work in it brings nobody
+    c.healer.state = 'leaving';
+    expect(staffedDisciplines(c.ctx)).toEqual(['massage']);
+    expect(offeringArrivals(c.ctx)).toBe(1);
+  });
+
+  it('says so in the panel', () => {
+    expect(offeringNote(1, 1)).toBe(
+      'Each discipline you add, with its room and a practitioner on the payroll, brings more guests in all.',
+    );
+    expect(offeringNote(3, 1.2)).toBe(
+      '3 disciplines with a room and a practitioner bring guests ×1.2 as often as one would.',
+    );
   });
 });
 

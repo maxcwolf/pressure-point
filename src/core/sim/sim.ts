@@ -84,7 +84,7 @@ import {
 } from './classes';
 import { createContext, type SimContext } from './context';
 import { decorateRoom } from './decor';
-import { demand, type DisciplineDemand, fadeFollowing, roomPull } from './demand';
+import { demand, type DisciplineDemand, fadeFollowing, offeringArrivals, roomPull, staffedDisciplines } from './demand';
 import { borrow, monthEnd, priceFor, repay, setPrice, setTechniquePrice } from './economy';
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
@@ -350,6 +350,11 @@ export class Sim {
   /** Every discipline on offer, what draws guests to it, and its share of new guests. */
   demand(): DisciplineDemand[] {
     return demand(this.ctx);
+  }
+
+  /** The disciplines offered with a room and a practitioner, and how much more often guests arrive for them. */
+  offering(): { staffed: number; arrivals: number } {
+    return { staffed: staffedDisciplines(this.ctx).length, arrivals: offeringArrivals(this.ctx) };
   }
 
   // ---- Treatments ------------------------------------------------------------
