@@ -5,6 +5,7 @@
 
 import {
   BOOK_AHEAD,
+  BREAK_EXHAUSTED,
   CLASS_CALL_GAP,
   CLASS_DAYS,
   CLASS_FEE,
@@ -12,7 +13,11 @@ import {
   CLASS_PATIENCE,
   CLASS_PLACES,
   CLASS_SECONDS,
+  DAY_SECONDS,
   ITEMS,
+  REST_AHEAD,
+  REST_GAP,
+  REST_RETURN,
   WEEKDAYS,
   XP_PER_GUEST,
 } from '../data';
@@ -29,6 +34,7 @@ import { emit, tipOnce, toast } from './events';
 import { feel, writeReview } from './feelings';
 import { decide, leave, spawnGuest } from './guests';
 import { feelNoise, itemNoise } from './noise';
+import { breakDue } from './policy';
 import { isGroupStation, isLeadStation, matsOf, stationStaff } from './sessions';
 import { expectedPrestige } from './standing';
 import { serviceSeconds, wantsToShop } from './stations';
@@ -92,6 +98,52 @@ export function bestInstructor(ctx: SimContext): Staff | undefined {
   return ctx.s.staff
     .filter((st) => st.role === 'instructor' && st.state !== 'leaving')
     .sort((a, b) => b.skill - a.skill)[0];
+}
+
+/** How long before the last moment to set off a resting Instructor may get up for their class, in days. */
+const REST_LAST = 0.25;
+
+/** Whether a studio has today's class still to hold: one under way, or a class day that has not had its class yet. */
+const classToCome = (ctx: SimContext, room: Room, today: number) =>
+  !!leadIn(ctx, room)?.progress || (classOn(room, today) && room.lastClass !== today);
+
+/** Days from today to the next class still to hold in any studio: 0 if today's is still to come, Infinity if none. */
+export function daysToClass(ctx: SimContext): number {
+  if (!offeringOn(ctx.s, 'qigong')) return Infinity;
+  const today = Math.floor(ctx.s.day);
+  let next = Infinity;
+  for (const room of studios(ctx)) {
+    if (classToCome(ctx, room, today)) return 0;
+    for (let d = 1; d <= 7 && d < next; d++) if (classOn(room, today + d)) next = d;
+  }
+  return next;
+}
+
+/**
+ * Whether a member of staff should go for a break now, as the policy says, but for an Instructor. A break, with the
+ * walk to the Staff Room and back, can take longer than the days between classes, so an Instructor rests straight
+ * after a class with the days to spare, a little early, rather than run down just before the next one. Until then
+ * they hold off, unless they are worn right out.
+ */
+export function restDue(ctx: SimContext, st: Staff): boolean {
+  if (st.role !== 'instructor') return breakDue(ctx, st);
+  const ahead = daysToClass(ctx);
+  const { breakAt } = ctx.s.policy;
+  if (ahead === Infinity) return breakDue(ctx, st);
+  if (ahead >= REST_GAP) return breakDue(ctx, st, breakAt + REST_AHEAD);
+  return breakDue(ctx, st, Math.min(breakAt, BREAK_EXHAUSTED));
+}
+
+/**
+ * Whether an Instructor on a break should get up now to be back for the next class: rested as far as they would rest
+ * early, and this the last moment to walk back in time, taking the walk back to be as long as the walk there was. If
+ * it is already too late, they rest in full.
+ */
+export function backForClass(ctx: SimContext, st: Staff, walk: number): boolean {
+  const ahead = daysToClass(ctx);
+  if (ahead === Infinity || st.energy < ctx.s.policy.breakAt + REST_AHEAD) return false;
+  const left = Math.floor(ctx.s.day) + ahead + 1 - ctx.s.day - REST_RETURN - walk / DAY_SECONDS;
+  return left >= 0 && left < REST_LAST;
 }
 
 /**
@@ -302,7 +354,7 @@ export function missToast(count: number, day: number, why: ClassMiss): string {
   const when = `${WEEKDAYS[weekday(day)] ?? ''}’s class`;
   const because = {
     'no-instructor': `there is no Qi Gong Instructor to lead ${when}. Hire one.`,
-    break: `${when} never started, as the Instructor was worn out and on a break. A better Staff Room helps.`,
+    break: `${when} never started, as the Instructor was worn out and on a break. A Staff Room nearer the studio gets them back sooner.`,
     'no-lead': `${when} never started, as the Instructor was not at their mat.`,
     overran: `${when} never started, as the class before it was still going.`,
     late: `they got to the studio after ${when} had finished.`,

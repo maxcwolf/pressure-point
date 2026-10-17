@@ -41,10 +41,13 @@ export function onBreak(s: GameState, role: Role): number {
   return s.staff.filter((st) => st.role === role && (st.state === 'toBreak' || st.state === 'onBreak')).length;
 }
 
-/** Whether a member of staff is tired enough for a break and the policy lets one more of their role take it. */
-export function breakDue(ctx: SimContext, st: Staff): boolean {
+/**
+ * Whether a member of staff is tired enough for a break and the policy lets one more of their role take it. Tired
+ * enough is below the energy the policy sets, or below `at` if given.
+ */
+export function breakDue(ctx: SimContext, st: Staff, at = ctx.s.policy.breakAt): boolean {
   const { policy } = ctx.s;
-  if (st.energy >= policy.breakAt) return false;
+  if (st.energy >= at) return false;
   const limit = policy.breakLimit[st.role];
   return !limit || onBreak(ctx.s, st.role) < limit;
 }

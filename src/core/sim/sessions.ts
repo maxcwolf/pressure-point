@@ -63,9 +63,10 @@ export function playingFor(ctx: SimContext, mat: Item): boolean {
 
 /**
  * Run a lead station's session for a step: how long it has waited, which keeps on the lead station's progress, and
- * whether the healer is busy and how hard on them it is, by the hardest technique anyone is having.
+ * whether the healer is busy and how hard on them it is, by the hardest technique anyone is having. A healer who wants
+ * to be off (`going`) plays out a session already playing, but starts no new one.
  */
-export function updateSession(ctx: SimContext, lead: Item, staff: Staff | undefined, dt: number) {
+export function updateSession(ctx: SimContext, lead: Item, staff: Staff | undefined, dt: number, going = false) {
   const mats = matsOf(ctx, lead);
   const lying = mats.flatMap((m) => {
     const g = guestById(ctx, m.serving);
@@ -73,7 +74,8 @@ export function updateSession(ctx: SimContext, lead: Item, staff: Staff | undefi
   });
   // full once every mat the healer can play for is taken
   const played = staff ? Math.min(mats.length, matsPlayed(staff.skill)) : mats.length;
-  lead.progress = staff ? sessionWait(lead.progress, lying.length, played, dt) : 0;
+  const starting = going && !sessionPlaying(lead.progress);
+  lead.progress = staff && !starting ? sessionWait(lead.progress, lying.length, played, dt) : 0;
   if (!staff) return;
   if (mats.length > played)
     tipOnce(

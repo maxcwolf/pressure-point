@@ -186,6 +186,16 @@ export const DIAGNOSIS_MAX = 0.95;
 export const BREAK_AT = 18;
 export const BREAK_AT_MIN = 10;
 export const BREAK_AT_MAX = 50;
+/**
+ * How an Instructor fits their breaks around the classes: they rest only when the next class is at least `REST_GAP`
+ * days off, and then a little early, at `REST_AHEAD` more energy than the policy says, unless they fall below
+ * `BREAK_EXHAUSTED` first. A resting Instructor gets up once rested that far, if it is the last chance to walk back and
+ * call the class-goers to their spots with `REST_RETURN` of the class day to spare.
+ */
+export const REST_GAP = 2;
+export const REST_AHEAD = 15;
+export const BREAK_EXHAUSTED = 10;
+export const REST_RETURN = 0.5;
 /** Days from a staff challenge being set to its deadline, at least and at most. */
 export const CHALLENGE_DAYS_MIN = 60;
 export const CHALLENGE_DAYS_MAX = 120;
