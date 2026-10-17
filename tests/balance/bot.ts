@@ -3,10 +3,10 @@
 // gives raises when asked, and takes on emergencies. On top of that, each of which can be switched off (`BotFlags`)
 // to compare with the bot as it was: it sets prices by how many guests they put off, buys marketing when it pays,
 // lets practitioners go when they are not needed, saves toward a money goal, builds on the profit a room is expected
-// to make, takes house calls, and evens out lines. And as a good player also does: it keeps the way clear, upgrades
-// the equipment, takes on only the emergencies it can see through, calms outbreaks, lays rooms out for their kit and
-// dresses them with windows first, fills a Sound Bath Studio's mats, runs Qi Gong classes, picks courses by what
-// guests need, and moves a guest who would get worse up their line.
+// to make, takes house calls, and evens out lines. And as a good player also does: it upgrades the equipment, takes
+// on only the emergencies it can see through, lays rooms out for their kit and dresses them with windows first, fills
+// a Sound Bath Studio's mats, runs Qi Gong classes and picks courses by what guests need. Some things it can also do
+// were measured and found to gain nothing, and are extras switched on with `BOT_ON` (see `BOT_EXTRAS`).
 
 import { itemOpen } from '../../src/core/campaign';
 import {
@@ -39,7 +39,6 @@ import {
   WINDOW_MAX_BONUS,
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
-import { guestCap } from '../../src/core/sim/guests';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
 import { seasonOf } from '../../src/core/sim/twists';
@@ -69,7 +68,10 @@ export const BOT_FLAGS = [
   'junior',
   /** Build a Posture Lab when the consultants send many guests back for a second look: junior, or a long line. */
   'lab',
-  /** Never put furniture down where someone stands, and free anyone walled in by selling what boxes them in. */
+  /**
+   * Never put furniture down where someone stands, and free anyone walled in by selling what boxes them in. An extra
+   * since the game itself stopped anything walling anyone in: it made no difference that could be told from the seeds.
+   */
   'clear',
   /** Train a Caretaker in Mechanics and upgrade the treatment equipment; a chart on the wall; a Recliner for each. */
   'kit',
@@ -85,9 +87,9 @@ export const BOT_FLAGS = [
   /** As many mats in a Sound Bath Studio as the healer plays for. */
   'mats',
   /**
-   * A Qi Gong Studio once it opens, with an Instructor, Practice Spots while the building has room for the class,
-   * classes every weekday, and more Shop Counters for the crowd let out. An extra: class-goers count against how many
-   * the building holds, and crowd out guests worth more for their treatment.
+   * A Qi Gong Studio once it opens, with an Instructor, as many Practice Spots as they can lead, classes every
+   * weekday, and more Shop Counters for the crowd let out. Classes cost the center more than they brought in until
+   * the rules for booking them changed (balance log, 24).
    */
   'classes',
   /** Courses for the techniques guests come for most, that nobody else on the staff covers yet. */
@@ -104,7 +106,7 @@ export type BotFlags = Record<BotFlag, boolean>;
  * Flags that are off unless `BOT_ON` names them: a different way to play rather than better play, or play that was
  * measured and found to gain nothing.
  */
-const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab', 'trouble', 'classes', 'triage'];
+const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab', 'clear', 'trouble', 'triage'];
 
 /**
  * The bot's flags from the environment. `BOT=old` plays as the bot did before it learned any of them; `BOT_OFF`
@@ -627,8 +629,6 @@ export class Bot {
   private sampleLines() {
     const w = this.watch;
     w.days++;
-    if (this.flags.classes)
-      this.crowded = this.s.guests.length >= guestCap(this.s) - 3 ? this.crowded + 1 : Math.floor(this.crowded * 0.8);
     for (const g of this.s.guests) {
       if (g.goal !== 'treat' || (g.state !== 'waiting' && g.state !== 'toWait')) continue;
       const d = this.sim.modalityOf(g).discipline;
@@ -1557,31 +1557,15 @@ export class Bot {
       // smaller crowds let out at once, and the weekend is left for the Instructor's rest
       for (const day of [1, 3])
         if (!(room.classDays ?? CLASS_DAYS).includes(day)) this.sim.toggleClassDay(room.id, day);
+      // class-goers have places of their own, so a class as big as the Instructor can lead keeps nobody out
       const spots = s.items.filter((i) => i.type === 'practice_spot' && this.sim.world.zoneAt(i.x, i.y) === room.id);
-      // class-goers count against how many the building holds, and a full building turns away guests worth far
-      // more for their treatment: a smaller class while it is often full, a bigger one only while there is room
-      const spare = spots.find((sp) => !sp.serving && this.sim.canSell(sp));
-      if (this.crowded > 4 && spare) {
-        this.sim.sellItem(spare.id);
-        this.crowded = 0;
-        this.note(`day ${Math.floor(s.day)}: a Practice Spot fewer, the building being full (${spots.length - 1})`);
-      } else if (
-        this.crowded === 0 &&
-        spots.length < places &&
-        s.guests.length < guestCap(s) - places &&
-        s.money > ITEMS.practice_spot.cost + reserve
-      )
-        this.placeIn(room, 'practice_spot');
+      if (spots.length < places && s.money > ITEMS.practice_spot.cost + reserve) this.placeIn(room, 'practice_spot');
     }
   }
 
-  /** Days lately the building has been full or nearly, so that guests are turned away: up by one, down by a fifth. */
-  private crowded = 0;
-
   /**
    * Another Shop Counter, and a Receptionist for it, whenever more than six wait at each, up to three: a class lets
-   * a crowd out at once, and those in line for the counter count against how many the building holds, so a long line
-   * there keeps new guests out altogether.
+   * a crowd out at once, and a long line puts treated guests off stopping at the counter.
    */
   private shops() {
     const s = this.s;

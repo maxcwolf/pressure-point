@@ -51,47 +51,48 @@ What each rule added, all 30 games, profit a month with classes: $23.5k before; 
 
 ## 17 October 2026, evening: the bot plays more like a good player
 
-Measured with `yarn balance` from `3d14f44` (0.30.1): every campaign center at seeds 1 to 6, four years a game, against the same bot before this change. Profit, waits, guests and reputation are averaged from the second year on; months at a loss are of all 48. With the new behaviours switched off (`BOT_OFF=clear,kit,emergencies,layout,mats,courses`) the bot plays all 30 games move for move as before.
+Measured with `yarn balance` from `1b6bc16` and this change (0.30.3, with the fix that stops anything walling a person in, `0569e49`, and the class rules of 24): every campaign center at seeds 1 to 6, four years a game, against the same bot with its new behaviours switched off (`BOT_OFF=kit,emergencies,layout,mats,classes,courses`), which on 0.30.1 played all 30 games move for move as the bot did before. Profit, waits, guests and reputation are averaged from the second year on; months at a loss are of all 48.
 
 ### 23. The good player left easy wins on the table, and twice wrecked a game
 
-**Found:** watching the bot's games turned up things no good player would do, or fail to do:
+**Found** (on 0.30.1): watching the bot's games turned up things no good player would do, or fail to do:
 
-- **It walled its own Caretaker in.** At the Orchard (seed 4) it put a plant down on the tile the only Caretaker stood on, sealing them into four tiles of corridor at 0 energy. Nobody repaired anything for two and a half years, the Massage and Acupuncture tables stayed broken, reputation sat near 0 and the game ended $240k in debt. The game's own check lets an item go on a person's tile as long as a tile next to it can be reached, which is how the pocket closed.
+- **It walled its own Caretaker in.** At the Orchard (seed 4) it put a plant down on the tile the only Caretaker stood on, sealing them into four tiles of corridor at 0 energy. Nobody repaired anything for two and a half years, the Massage and Acupuncture tables stayed broken, reputation sat near 0 and the game ended $240k in debt. The game's own check let an item go on a person's tile as long as a tile next to it could be reached, which is how the pocket closed. The game no longer allows it (`0569e49`: the tile a person stands on and the one they are stepping into must both reach the street).
 - **It never upgraded equipment** (+3% success a level, slower wear), never hung a chart (+2% for $250), and never trained a Caretaker in Mechanics to install upgrades.
 - **It took every emergency**, and lost about half of them (−4 reputation each), including ones nobody on the staff was trained for.
 - **A fifth to an eighth of treatments had no equipment.** Second and third treatment rooms went in at the smallest size, and a Stone Warmer or Stretch Rack then had nowhere to go. Equipment also waited on a cash reserve of a month's wages: once the bot chose courses by value (below), a poor High Pines center went months without the $600 rack while every Sports guest was botched at 20%, and its reputation fell to nothing.
 - **Decor went in the dearest way:** a $650 statue for 4 points of prestige, when a window is $150 for 1.5 points (up to four), and a rug or a picture costs no floor.
 - **A Sound Healer of rank 3 or 4 played to 2 mats**, the studio's starting pair, when they can play for 3 or 4.
 - **Courses went to the cheapest technique**, so every therapist learned the same one first.
+- **It never ran a Qi Gong Studio.**
 
 **Done** (`tests/balance/bot.ts`, the bot only; no game rules changed). Six new behaviours, on by default, each of which `BOT_OFF` switches off:
 
-- **clear:** never puts furniture on a tile someone stands on, and sells whatever walls anyone in;
 - **kit:** a Caretaker on the Mechanics course once the first star opens upgrades, then upgrades bought one a day (least upgraded and busiest first) while the center pays its way, a chart in every room it helps, and a Recliner for every two practitioners trained in a technique that needs a rest;
 - **emergencies:** takes on an emergency only if those trained in its technique, with its equipment in place, can heal enough in time at the chance their rank gives, and puts emergency guests first while one runs;
 - **layout:** when equipment will not fit, pushes a wall out a tile, or failing that sells floor decor to make space; dresses treatment rooms with windows first (onto the street, or onto a quiet corridor), then pictures, hangings and rugs, then lamps and statues. While a goal asks for patience, it dresses with floor decor as before, which cheers the corridor where guests wait through the walls as a window does not;
 - **mats:** a mat for every guest the best Sound Healer can play for;
+- **classes:** a Qi Gong Studio once the second star opens it, while the center pays its way, with an Instructor, as many Practice Spots as they lead, a class every weekday (the week's class-goers are shared among its classes, so smaller crowds let out at once), and up to three Shop Counters for the crowd;
 - **courses:** the course for the technique worth most, by how often guests come needing it, what they pay and how hard it is, and worth much more where nobody else is trained in it yet; equipment for a technique bought as soon as anyone is trained in it, borrowing if need be.
 
-Three more were tried and are extras, off unless `BOT_ON` names them, since they did not pay:
+Three more were tried and are extras, off unless `BOT_ON` names them, since they gained nothing:
 
+- **clear** (never put furniture on a tile someone stands on, and sell whatever walls anyone in): it saved the Orchard game above, but since the game stops anything walling anyone in, the bot does no better with it: 27 third stars of 30 with it against 28, and $0.7k a month more, which the seeds cannot tell from chance;
 - **trouble** (take on stress outbreaks and calm the carriers, a Shaman's ward against mishaps): no difference that could be told from the seeds;
-- **triage** (move a guest who would get worse before their turn up their line, past guests who can spare the wait): $2.6k a month less, as those passed lost more patience than it saved;
-- **classes** (a Qi Gong Studio with an Instructor, Practice Spots while the building has room, a class every weekday, more Shop Counters for the crowd let out): $8k a month less and 16 points of reputation lower, worse at four centers of five (below).
+- **triage** (move a guest who would get worse before their turn up their line, past guests who can spare the wait): $2.6k a month less, as those passed lost more patience than it saved.
 
 | Center             | Third star | Stars at month                      | Profit a month  | Months at a loss | Success rate  | Reputation | Guests a month |
 | ------------------ | ---------- | ----------------------------------- | --------------- | ---------------- | ------------- | ---------- | -------------- |
-| Willow Lane        | 6/6 → 6/6  | 0.9, 8.5, 14.5 → 0.9, 5.4, 12.1     | $16.8k → $20.8k | 12.0 → 8.7       | 83.1% → 92.9% | 71 → 74    | 15.4 → 16.0    |
-| The Exchange       | 6/6 → 6/6  | 13.5, 18.6, 20.6 → 13.7, 18.6, 19.6 | $19.2k → $25.0k | 8.0 → 7.5        | 84.4% → 90.5% | 87 → 94    | 16.4 → 18.1    |
-| The Boardwalk      | 6/6 → 6/6  | 4.7, 15.9, 25.5 → 4.7, 14.0, 19.9   | $7.7k → $16.6k  | 16.0 → 8.8       | 87.0% → 93.3% | 60 → 75    | 15.6 → 18.8    |
-| High Pines         | 4/6 → 5/6  | 5.0, 14.8, 24.6 → 6.2, 17.5, 28.5   | $15.9k → $19.5k | 12.5 → 10.8      | 84.4% → 87.9% | 76 → 82    | 18.2 → 18.6    |
-| The Orchard Estate | 5/6 → 6/6  | 8.4, 17.2, 25.3 → 5.8, 10.8, 16.2   | $24.6k → $66.6k | 15.8 → 5.8       | 86.4% → 95.1% | 63 → 95    | 17.7 → 24.6    |
-| All                | 27 → 29/30 | 6.5, 14.9, 21.8 → 6.2, 13.1, 18.9   | $16.8k → $29.7k | 12.9 → 8.3       | 85.0% → 92.1% | 71 → 84    | 16.7 → 19.2    |
+| Willow Lane        | 6/6 → 6/6  | 0.9, 6.3, 12.4 → 0.9, 5.9, 11.3     | $12.5k → $20.7k | 9.8 → 8.7        | 81.7% → 94.6% | 59 → 70    | 13.5 → 15.9    |
+| The Exchange       | 6/6 → 6/6  | 13.5, 18.2, 22.2 → 13.5, 18.1, 18.6 | $19.9k → $24.1k | 7.7 → 7.0        | 83.1% → 89.4% | 88 → 92    | 16.6 → 17.1    |
+| The Boardwalk      | 5/6 → 5/6  | 4.7, 15.2, 22.8 → 4.7, 13.7, 22.4   | $8.3k → $11.4k  | 15.2 → 12.3      | 86.0% → 92.7% | 60 → 64    | 16.2 → 15.8    |
+| High Pines         | 5/6 → 5/6  | 5.0, 12.1, 26.5 → 6.2, 19.2, 24.2   | $14.3k → $21.7k | 12.8 → 10.8      | 83.7% → 88.4% | 70 → 83    | 17.5 → 18.9    |
+| The Orchard Estate | 5/6 → 6/6  | 8.4, 17.3, 24.9 → 5.8, 10.1, 16.7   | $27.9k → $71.5k | 15.7 → 6.2       | 86.3% → 95.3% | 64 → 87    | 17.8 → 22.3    |
+| All                | 27 → 28/30 | 6.5, 13.7, 21.4 → 6.2, 13.4, 18.3   | $16.6k → $29.9k | 12.2 → 9.0       | 84.2% → 92.1% | 68 → 79    | 16.3 → 18.0    |
 
-The game it lost at High Pines (seed 2) never met the second star's 93% patience, as two of the old bot's six did not. The Orchard game ruined by the walled-in Caretaker earns all three stars, at $68k a month from the second year, and never falls below −$14k.
+Of the two games it loses, the Boardwalk's (seed 3) never meets the second star's 93% patience, as one of the old bot's did not, and High Pines' (seed 2) heals 9 of the 15 the third star asks with reiki. The old bot loses an Orchard game (seed 4) that the new one wins.
 
-**What each is worth**, from the same 30 games with one switched off (measured before `layout` learned to push walls out and to keep floor decor for a patience goal), against $29.9k a month and 30 third stars with all of them:
+**What each is worth**, from the same 30 games with one switched off. The first five were measured on 0.30.1 (before `layout` learned to push walls out and to keep floor decor for a patience goal, and with `clear` on and `classes` off), against $29.9k a month and 30 third stars with all of them; `classes` on the code measured above, against $29.9k and 28:
 
 | Off         | Third star | Profit a month | Success rate | Reputation |
 | ----------- | ---------- | -------------- | ------------ | ---------- |
@@ -100,14 +101,11 @@ The game it lost at High Pines (seed 2) never met the second star's 93% patience
 | layout      | 26/30      | $28.7k         | 90.8%        | 80         |
 | mats        | 28/30      | $26.9k         | 92.1%        | 77         |
 | courses     | 28/30      | $27.8k         | 92.2%        | 79         |
-| clear       | 30/30      | $27.6k         | 92.7%        | 80         |
+| classes     | 29/30      | $27.7k         | 91.9%        | 81         |
 
-**Noted, not changed (game rules):**
+Before the class rules of 24, `classes` cost the bot $8k a month and 16 points of reputation, and was an extra. That was first put down to class-goers counting against the guest limit; 24 found the cost was the reputation lost to class-goers who missed their class.
 
-- **An item can wall a person in.** `World.connected` lets an item go down while a person stands on its tile, so long as a tile beside them can be reached, and the pocket that leaves can close round them. A player could do the same by accident, and nothing would tell them why their Caretaker had stopped working.
-- **Qi Gong classes crowd out the treatment guests.** Class-goers arrive whatever the guest cap (14 and 5 a room), but count against it while they wait for their class and queue at the Shop Counter after it, and a new guest who finds the building full is not let in. At the Orchard, 50 guests were inside at a month's end with classes against 20 without, and treatment guests arrived 14.6 a month against 24. A class lets 13 or more out at once, nearly all to the Shop Counter, whose line reached 40 to 70 at Willow Lane before the bot learned to add counters. Classes earn $120 a head, and the guests they keep out $1,000 to $2,500, so even sized to the room left, a studio cost the bot money everywhere but Willow Lane.
-
-**Still open:** the bot's first star at High Pines comes a little later than before (6.2 months against 5.0), and its third later (28.5 against 24.6) in the games that earn it, as kit and upgrades come before the rooms that a long winter needs.
+**Still open:** at High Pines the first star comes a little later than before (6.2 months against 5.0) and the second much later (19.2 against 12.1), as kit and upgrades come before the rooms a long winter needs. A good player would also build a Staff Room beside a studio far from the first, and leave a weekday free of classes for the Instructor to rest (24, still open).
 
 ## 17 October 2026, afternoon: smaller Qi Gong classes
 

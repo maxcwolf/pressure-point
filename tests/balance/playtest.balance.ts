@@ -2,8 +2,8 @@
 // the money, reputation, guests and waits month by month. Not a pass/fail test: run `yarn balance` before and after
 // a tuning change and compare. The full logs go to test-results/balance.json. `BOT=old` plays as the bot did before
 // it learned prices, marketing, payroll, saving, expansion on profit, house calls, lines, the Posture Lab, upgrades,
-// emergencies it can see through, outbreaks, room layout, mats, classes, courses and triage;
-// `BOT_OFF=prices,calls` switches single ones off (see `BOT_FLAGS` in bot.ts).
+// emergencies it can see through, room layout, mats, classes and courses; `BOT_OFF=prices,calls` switches single ones
+// off, and `BOT_ON` switches on the extras (see `BOT_FLAGS` and `BOT_EXTRAS` in bot.ts).
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 import { it } from 'vitest';
