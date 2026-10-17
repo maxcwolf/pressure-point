@@ -59,8 +59,8 @@ export const QIGONG_SETTING = {
 
 /** What a place in a Qi Gong class costs at standard prices. */
 export const CLASS_FEE = 120;
-/** The days of the week a new Qi Gong Studio holds classes: Monday and Thursday, as far apart as two can be. */
-export const CLASS_DAYS: readonly number[] = [0, 3];
+/** The days of the week a new Qi Gong Studio holds classes: Monday, Wednesday and Friday. */
+export const CLASS_DAYS: readonly number[] = [0, 2, 4];
 /** The days of the week, from Monday, as the timetable shows them. */
 export const WEEKDAYS: readonly string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 /** How long a Qi Gong class lasts, in seconds of game time before the Instructor's pace is counted. */

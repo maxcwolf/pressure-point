@@ -38,16 +38,16 @@ function studio(instructor = true) {
   s.stars = 2;
   const room = addQigong(sim);
   const teacher = instructor ? hire(sim, 'instructor') : undefined;
-  // day 0 is a Monday: as Tuesday begins, Thursday's class is booked, two days ahead
-  s.day = 0.98;
+  // day 0 is a Monday: as Wednesday begins, Friday's class is booked, two days ahead
+  s.day = 1.98;
   return { ...center, room, teacher };
 }
 
 describe('the timetable', () => {
-  it('counts the week from Monday, and holds classes on Monday and Thursday to begin with', () => {
+  it('counts the week from Monday, and holds classes on Monday, Wednesday and Friday to begin with', () => {
     expect([0, 6, 7, 9.5].map(weekday)).toEqual([0, 6, 0, 2]);
     expect(classDays({})).toEqual(CLASS_DAYS);
-    expect([0, 1, 2, 3, 4, 5, 6].filter((d) => classOn({}, d))).toEqual([0, 3]);
+    expect([0, 1, 2, 3, 4, 5, 6].filter((d) => classOn({}, d))).toEqual([0, 2, 4]);
     expect(classOn({ classDays: [5] }, 12)).toBe(true);
   });
 
@@ -59,7 +59,7 @@ describe('the timetable', () => {
   it('is changed from the studio, and only a studio', () => {
     const { sim, room } = studio();
     expect(sim.toggleClassDay(room.id, 6)).toBe(true);
-    expect(room.classDays).toEqual([0, 3, 6]);
+    expect(room.classDays).toEqual([0, 2, 4, 6]);
     const massage = sim.s.rooms.find((r) => r.type === 'massage');
     expect(massage && sim.toggleClassDay(massage.id, 6)).toBe(false);
     expect(sim.toggleClassDay(room.id, 7)).toBe(false);
@@ -112,11 +112,11 @@ describe('how many an Instructor can lead', () => {
       sim.placeItem('practice_spot', x, y, 0);
     expect(s.items.filter((it) => it.type === 'practice_spot')).toHaveLength(8);
     // one class a week and the best reputation, so far more want a place than there are spots
-    room.classDays = [3];
+    room.classDays = [4];
     s.reputation = 100;
     if (teacher) teacher.skill = 1;
     run(sim, 1);
-    expect(room.booked).toMatchObject({ day: 3, count: 6 });
+    expect(room.booked).toMatchObject({ day: 4, count: 6 });
     expect(room.booked?.turned).toBeGreaterThan(0);
     expect(sim.drain().some((e) => e.type === 'toast' && e.text.includes('can lead a class of 6'))).toBe(true);
     expect(sim.classLeader()?.places).toBe(6);
@@ -125,7 +125,7 @@ describe('how many an Instructor can lead', () => {
     delete room.booked;
     /** The booking as it stands, read afresh each time. */
     const booked = () => room.booked;
-    runUntil(sim, () => booked()?.day === 10, 6 * DAY_SECONDS + 60);
+    runUntil(sim, () => booked()?.day === 11, 6 * DAY_SECONDS + 60);
     expect(booked()?.count).toBe(8);
   });
 
@@ -142,7 +142,7 @@ describe('a class in play', () => {
   it('is booked two days ahead, and its class-goers follow the Instructor through it, pay and review it', () => {
     const { sim, s, room } = studio();
     run(sim, 1);
-    expect(room.booked?.day).toBe(3);
+    expect(room.booked?.day).toBe(4);
     const booked = room.booked?.count ?? 0;
     expect(booked).toBeGreaterThan(0);
     expect(s.arrivals).toHaveLength(booked);
@@ -169,7 +169,7 @@ describe('a class in play', () => {
     const { sim, s } = studio();
     run(sim, 1);
     sim.drain();
-    runUntil(sim, () => s.day >= 3.01, 30);
+    runUntil(sim, () => s.day >= 4.01, 30);
     expect(sim.drain().some((e) => e.type === 'announce' && CLASS_LINES.includes(e.text))).toBe(true);
   });
 
@@ -219,7 +219,7 @@ describe('a class in play', () => {
     // the player is told why, once for all of them
     const told = toasts(sim.drain()).filter((t) => t.includes('went home disappointed'));
     expect(told).toHaveLength(1);
-    expect(told[0]).toMatch(/class-goers? went home disappointed: there is no Qi Gong Instructor to lead Thu’s class/);
+    expect(told[0]).toMatch(/class-goers? went home disappointed: there is no Qi Gong Instructor to lead Fri’s class/);
     const goer = s.guests.find((g) => g.classDay && g.missed);
     expect(goer?.missed).toBe('no-instructor');
     expect(goer && guestStatus(goer, sim)).toBe(
@@ -231,12 +231,12 @@ describe('a class in play', () => {
     const { sim, s, room } = studio();
     run(sim, 1);
     runUntil(sim, () => s.guests.some((g) => g.classDay), 60);
-    sim.toggleClassDay(room.id, 3);
+    sim.toggleClassDay(room.id, 4);
     sim.drain();
     runUntil(sim, () => s.guests.some((g) => g.missed), 6 * DAY_SECONDS);
     expect(s.guests.filter((g) => g.missed).every((g) => g.missed === 'off')).toBe(true);
     expect(toasts(sim.drain())).toContainEqual(
-      expect.stringMatching(/went home disappointed: Thu’s class was taken off the timetable after they booked\.$/),
+      expect.stringMatching(/went home disappointed: Fri’s class was taken off the timetable after they booked\.$/),
     );
   });
 
@@ -244,21 +244,21 @@ describe('a class in play', () => {
     const { sim, s, room, teacher } = studio();
     const ctx = (sim as unknown as { ctx: SimContext }).ctx;
     const mat = s.items.find((it) => it.type === 'instructor_mat');
-    // Thursday is over, with no class and the Instructor not yet at the mat
-    s.day = 4;
+    // Friday is over, with no class and the Instructor not yet at the mat
+    s.day = 5;
     noteMissedClasses(ctx);
-    expect(room.missed).toEqual([{ day: 3, why: 'no-lead' }]);
+    expect(room.missed).toEqual([{ day: 4, why: 'no-lead' }]);
     // Monday is over, with the class before it still going
     s.day = 8;
     if (mat) mat.progress = 0.5;
     noteMissedClasses(ctx);
     expect(room.missed?.at(-1)).toEqual({ day: 7, why: 'overran' });
-    // Thursday is over, with the Instructor worn out and resting
+    // Wednesday is over, with the Instructor worn out and resting
     if (mat) mat.progress = 0;
     if (teacher) teacher.state = 'onBreak';
-    s.day = 11;
+    s.day = 10;
     noteMissedClasses(ctx);
-    expect(room.missed?.at(-1)).toEqual({ day: 10, why: 'break' });
+    expect(room.missed?.at(-1)).toEqual({ day: 9, why: 'break' });
     // not a class day, or a class held: nothing to note
     s.day = 13;
     noteMissedClasses(ctx);
