@@ -30,6 +30,15 @@ const devDockIcon = app.isPackaged ? undefined : path.join(__dirname, '..', 'bui
 /** Where the window's settings are kept, beside the game's saves. */
 const prefsFile = () => path.join(app.getPath('userData'), 'window.json');
 
+/**
+ * Whether each window has been asked to fill the screen or leave it and has not yet said it got there. macOS drops the
+ * request, without a word, for a window whose app is not the active one (opened behind another app, or switched away
+ * from as it opened), and Electron then holds up every later request behind the lost one. So the window is only asked
+ * while it is focused, and again whenever it is focused until it gets there: after that, how it fills the screen or
+ * leaves it is up to the player.
+ */
+const fullScreenAsked = new WeakMap<BrowserWindow, boolean>();
+
 /** Open the game window, full screen if the player left it that way, and load the game into it. */
 function createWindow() {
   const prefs = loadWindowPrefs(prefsFile());
@@ -41,8 +50,8 @@ function createWindow() {
     backgroundColor: '#a8d8c8',
     title: 'Pressure Point Institute',
     ...(devIcon && { icon: devIcon }),
-    // only when true: on macOS, `fullscreen: false` takes away the green button and full screen with it
-    ...(prefs.fullScreen && { fullscreen: true }),
+    // Not `fullscreen`, which asks while the window is hidden and its app may not be active yet: macOS can drop that,
+    // and then hold up every later ask behind it. Full screen is asked for once the window is focused, below.
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -54,6 +63,12 @@ function createWindow() {
   win.once('ready-to-show', () => {
     win.show();
   });
+  // full screen if the player left it that way, as soon as it can be
+  if (prefs.fullScreen) fullScreenAsked.set(win, true);
+  win.on('focus', () => {
+    const asked = fullScreenAsked.get(win);
+    if (asked !== undefined && asked !== win.isFullScreen()) win.setFullScreen(asked);
+  });
   // However the window fills the screen or leaves it (the game's setting, the menu, the green button or its keys),
   // the next launch opens it the same way, and the game's setting follows. Not while it closes, which can take it
   // out of full screen on the way.
@@ -63,6 +78,7 @@ function createWindow() {
   });
   /** Remember whether the window fills the screen, and tell the game. */
   const follow = (fullScreen: boolean) => {
+    fullScreenAsked.delete(win);
     if (closing) return;
     saveWindowPrefs(prefsFile(), { fullScreen });
     win.webContents.send(FULL_SCREEN_CHANGED_CHANNEL, fullScreen);
@@ -114,12 +130,22 @@ ipcMain.on(QUIT_CHANNEL, (event) => {
 });
 ipcMain.handle(FULL_SCREEN_STATE_CHANNEL, (event) => {
   if (event.senderFrame !== event.sender.mainFrame) return false;
-  return BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false;
+  const win = BrowserWindow.fromWebContents(event.sender);
+  // what it has been asked for, as the game shows the player's choice at once
+  return win ? (fullScreenAsked.get(win) ?? win.isFullScreen()) : false;
 });
 ipcMain.on(FULL_SCREEN_SET_CHANNEL, (event, on: unknown) => {
   if (event.senderFrame !== event.sender.mainFrame || typeof on !== 'boolean') return;
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return;
+  // already there, so no event will say so, and nothing is left to ask for
+  if (on === win.isFullScreen()) {
+    fullScreenAsked.delete(win);
+    return;
+  }
   // saved once the window has got there, by the window's own events
-  BrowserWindow.fromWebContents(event.sender)?.setFullScreen(on);
+  fullScreenAsked.set(win, on);
+  if (win.isFocused()) win.setFullScreen(on);
 });
 
 const gameMenu: MenuItemConstructorOptions[] = [{ role: 'togglefullscreen' }];
