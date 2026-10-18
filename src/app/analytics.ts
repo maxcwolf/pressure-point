@@ -9,6 +9,7 @@ import { loadSharing, saveSharing } from '../storage/analytics';
 import { automated } from './automation';
 import { desktop } from './desktop';
 import { environment } from './environment';
+import { FrameStats } from './frames';
 import {
   feelProps,
   freshFeel,
@@ -31,8 +32,12 @@ const LOOK_EVERY = 1;
 const SUMMARY_EVERY = 300;
 /** Seconds before the same refusal is counted again, so a player trying a spot over and over counts once. */
 const REFUSED_EVERY = 60;
-/** Frames a second below which play feels slow. */
-const SLOW_FPS = 30;
+/** Seconds between sending the frame times gathered, as one histogram. */
+const METRICS_EVERY = 60;
+/** A gap longer than this between frames is the page put away or the computer asleep, not a frame the player saw. */
+const GAP_MS = 2000;
+/** Milliseconds after a game opens before its frames count: the first few are spent setting the scene up. */
+const WARM_UP_MS = 3000;
 
 const env = environment();
 /**
@@ -45,6 +50,7 @@ const playId = randomId();
  * or a bot driving even a published copy sends nothing.
  */
 const sends = (env === 'production' || env === 'desktop') && !automated(navigator);
+const platform = desktop ? desktop.platform : 'web';
 
 if (sends) {
   posthog.init(KEY, {
@@ -70,8 +76,15 @@ if (sends) {
     disable_external_dependency_loading: true,
     advanced_disable_flags: true,
     opt_out_capturing_by_default: !loadSharing(),
+    // frame times, gathered into a histogram and sent once a minute; nothing measured automatically
+    metrics: {
+      serviceName: 'pressure-point',
+      serviceVersion: __APP_VERSION__,
+      environment: env,
+      flushIntervalMs: METRICS_EVERY * 1000,
+    },
   });
-  posthog.register({ app_version: __APP_VERSION__, platform: desktop ? desktop.platform : 'web', play_id: playId });
+  posthog.register({ app_version: __APP_VERSION__, platform, play_id: playId });
 }
 
 /** Count something that happened in the game, if the player shares statistics. */
@@ -130,7 +143,8 @@ export function watchGame(sim: Sim) {
   const startedAt = performance.now();
   /** Seconds of play seen at each speed, 0 being paused. A hidden page is not playing, so it is not counted. */
   const atSpeed: Partial<Record<string, number>> = {};
-  const frames = countFrames();
+  const frames = watchFrames();
+  let peakGuests = s.guests.length;
   let sinceSummary = 0;
   /** The session so far. */
   const summary = (): PlayProps => ({
@@ -141,6 +155,8 @@ export function watchGame(sim: Sim) {
     seconds_at_speed: atSpeed,
     ...frames.props(),
     ...device(),
+    ...centerSize(s),
+    peak_guests: peakGuests,
   });
   setInterval(() => {
     const month = mark.month;
@@ -148,7 +164,8 @@ export function watchGame(sim: Sim) {
     mark = markOf(s);
     if (mark.month !== month) feel = freshFeel();
     if (document.visibilityState !== 'visible') return;
-    frames.look();
+    frames.second();
+    peakGuests = Math.max(peakGuests, s.guests.length);
     atSpeed[s.speed] = (atSpeed[s.speed] ?? 0) + LOOK_EVERY;
     if (s.speed > 0 && s.open) noteFeel(feel, s, sim.bottleneck()?.key, sim.advice());
     sinceSummary += LOOK_EVERY;
@@ -163,40 +180,44 @@ export function watchGame(sim: Sim) {
   });
   window.addEventListener('pagehide', () => {
     track('game_left', summary(), true);
+    if (sends) void posthog.metrics.flush('sendBeacon');
   });
 }
 
+/** How big the center is, which is what most of the work of drawing and running it grows with. */
+function centerSize(s: GameState): PlayProps {
+  return {
+    guests: s.guests.length,
+    staff: s.staff.filter((x) => x.state !== 'leaving').length,
+    items: s.items.length,
+    rooms: s.rooms.filter((r) => r.done).length,
+  };
+}
+
 /**
- * Count the frames drawn each second the page is seen, kept as how many seconds ran at each frame rate: the middle one,
- * and the share of seconds that felt slow.
+ * Time every frame drawn while the page is seen, for the session's summaries and, as a histogram by version and
+ * platform, for PostHog's metrics. A hidden page draws nothing, so the gap across it is not counted as a frame.
  */
-function countFrames() {
-  let frames = 0;
-  /** Seconds seen at each whole frame rate. */
-  const seconds = new Map<number, number>();
-  /** Count a frame, and ask for the next. */
-  const frame = () => {
-    frames++;
+function watchFrames() {
+  const stats = new FrameStats();
+  const attributes = { app_version: __APP_VERSION__, platform };
+  const from = performance.now() + WARM_UP_MS;
+  let last: number | undefined;
+  /** Time a frame, and ask for the next. */
+  const frame = (now: number) => {
+    const ms = last === undefined ? undefined : now - last;
+    last = now;
+    if (ms !== undefined && ms < GAP_MS && now >= from) {
+      stats.frame(ms);
+      if (sends && loadSharing()) posthog.metrics.histogram('frame.duration', ms, { unit: 'ms', attributes });
+    }
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
-  return {
-    /** A second has gone by: note how many frames it had. */
-    look() {
-      seconds.set(frames, (seconds.get(frames) ?? 0) + 1);
-      frames = 0;
-    },
-    /** The frame rate so far, for a summary. */
-    props(): PlayProps {
-      const sorted = [...seconds].sort(([a], [b]) => a - b);
-      const total = sorted.reduce((sum, [, n]) => sum + n, 0);
-      if (!total) return {};
-      let seen = 0;
-      const median = sorted.find(([, n]) => (seen += n) >= total / 2)?.[0] ?? 0;
-      const slow = sorted.filter(([fps]) => fps < SLOW_FPS).reduce((sum, [, n]) => sum + n, 0);
-      return { fps_median: median, fps_slow_share: Math.round((slow / total) * 100) / 100 };
-    },
-  };
+  document.addEventListener('visibilitychange', () => {
+    last = undefined;
+  });
+  return stats;
 }
 
 /** What the game is played on: the screen, the window, how sharp the display is, and the graphics chip. */

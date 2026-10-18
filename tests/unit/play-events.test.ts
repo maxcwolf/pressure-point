@@ -3,6 +3,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { automated } from '../../src/app/automation';
+import { FrameStats } from '../../src/app/frames';
 import { feelProps, freshFeel, gameProps, markOf, noteFeel, playEvents } from '../../src/app/play-events';
 import { DAYS_PER_MONTH } from '../../src/core/data';
 import type { Emergency, Outbreak, VisitReport } from '../../src/core/state/types';
@@ -288,5 +289,36 @@ describe('tests and bots', () => {
       'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36 Chrome-Lighthouse',
     ])
       expect(automated({ userAgent })).toBe(true);
+  });
+});
+
+describe('frame times', () => {
+  it('say nothing until a second has been seen', () => {
+    const stats = new FrameStats();
+    expect(stats.props()).toEqual({});
+    stats.frame(16);
+    expect(stats.props()).toEqual({});
+  });
+
+  it('give the frame rate, the frame times and the hitches', () => {
+    const stats = new FrameStats();
+    // two smooth seconds of 60 frames, then a slow one of 10 with a long stall
+    for (let i = 0; i < 120; i++) {
+      stats.frame(16.7);
+      if (i % 60 === 59) stats.second();
+    }
+    for (let i = 0; i < 9; i++) stats.frame(80);
+    stats.frame(400);
+    stats.second();
+    expect(stats.props()).toEqual({
+      fps_median: 60,
+      fps_slow_share: 0.33,
+      frame_ms_p50: 17,
+      frame_ms_p95: 80,
+      frame_ms_p99: 80,
+      hitches: 1,
+      hitches_per_minute: 20,
+      longest_frame_ms: 400,
+    });
   });
 });
