@@ -10,7 +10,7 @@
 // out (geometry, hints, which tiles to color) lives in the small modules beside it.
 
 import { certificatesLeft } from '../../core/certificates';
-import { centerOf, type ItemType, ROOMS, type RoomType, type RugPatternId } from '../../core/data';
+import { centerOf, ITEMS, type ItemType, ROOMS, type RoomType, type RugPatternId } from '../../core/data';
 import { money } from '../../core/format';
 import { plotAt } from '../../core/land';
 import { resizeCost, sameRect } from '../../core/resize';
@@ -150,6 +150,12 @@ export class Tools {
   private refuse(action: string, reason = this.problem) {
     this.sfx('error');
     this.refused?.(action, reason);
+  }
+
+  /** Why an item would not go down: the problem where it is held, or, where it fits, that it cannot be paid for. */
+  private placeProblem(type: ItemType, free = false): string {
+    if (this.problem) return this.problem;
+    return !free && this.sim.s.money < ITEMS[type].cost ? "Can't afford it" : '';
   }
 
   /** Whether a room can be paid for, saying so if not. */
@@ -366,7 +372,7 @@ export class Tools {
     if (t.kind === 'item') {
       const spot = this.spotFor(t);
       if (spot && sim.placeItem(t.type, spot.x, spot.y, spot.rot, this.looks(t.type))) this.onChange();
-      else if (spot) this.refuse('place_item');
+      else if (spot) this.refuse('place_item', this.placeProblem(t.type));
     } else if (t.kind === 'move') {
       const spot = this.spotFor(t);
       if (spot && sim.moveItem(t.id, spot.x, spot.y, spot.rot)) {
@@ -434,7 +440,7 @@ export class Tools {
         const opts = { ...(sub.required && { free: true, roomId: t.room.id }), ...this.looks(sub.type) };
         if (spot && sim.placeItem(sub.type, spot.x, spot.y, spot.rot, opts)) {
           if (sub.required) t.sub = nextRequired(sim.missingItems(t.room));
-        } else if (spot) this.refuse('place_item');
+        } else if (spot) this.refuse('place_item', this.placeProblem(sub.type, sub.required));
       } else if (sub?.kind === 'window') this.clickWindow(t.room.id);
       else if (sub?.kind === 'door') {
         if (this.clickDoor(t.room.id)) t.sub = null;

@@ -322,3 +322,37 @@ describe('moving and copying a room', () => {
     expect(copyRoomHint('massage', 3000)).toContain('$3,000 each');
   });
 });
+
+describe('refusals', () => {
+  /** Ignore a call to the scene. */
+  const nothing = () => undefined;
+
+  it('say an item that fits but cannot be paid for is refused for the money', () => {
+    const { sim } = openCenter(1);
+    const refusals: [string, string][] = [];
+    const view = {
+      selected: null,
+      setOverlay: nothing,
+      setMarkers: nothing,
+      setGhost: nothing,
+      setDoor: nothing,
+      /** The cursor is on the ground wherever the pointer says. */
+      groundAt: (x: number, y: number) => ({ x, y }),
+    };
+    const tools = new Tools(sim, view as unknown as View, nothing, nothing, (action, reason) =>
+      refusals.push([action, reason]),
+    );
+    tools.startItem('plant');
+    // the first spot where a plant fits
+    let spot: [number, number] | undefined;
+    for (let y = 0; y < sim.world.h && !spot; y++)
+      for (let x = 0; x < sim.world.w && !spot; x++) {
+        tools.pointerMove(x + 0.5, y + 0.5);
+        if (tools.problem === '') spot = [x + 0.5, y + 0.5];
+      }
+    expect(spot).toBeDefined();
+    sim.s.money = 0;
+    tools.pointerUp(...spot!);
+    expect(refusals).toEqual([['place_item', "Can't afford it"]]);
+  });
+});
