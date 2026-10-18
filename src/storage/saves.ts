@@ -2,9 +2,12 @@
 //
 // Everything lives in localStorage, which both the browser and the desktop app
 // have. Saves can also be exported to a file and imported again, for backups
-// and for moving a game between the browser and the app.
+// and for moving a game between the browser and the app. The desktop app also
+// keeps a copy of every save in files of its own, which come back should its
+// localStorage lose them (see `startBackup`).
 import { captureException, logger } from '@sentry/browser';
 
+import type { DesktopApi, SaveCopy } from '../../electron/api';
 import { type CenterId, CENTERS, CONDITIONS, DAYS_PER_MONTH, ITEMS, MODALITIES, ROLES, ROOMS } from '../core/data';
 import { SAVE_VERSION } from '../core/state/game';
 import type { GameState } from '../core/state/types';
@@ -127,23 +130,34 @@ function parseState(raw: string | null, onError?: (err: unknown) => void): GameS
   }
 }
 
-/** The stored list of saves, dropping any malformed entries. */
-function readIndex(): SaveInfo[] {
+/** A stored list of saves, dropping any malformed entries. */
+function parseIndex(raw: string | null): SaveInfo[] {
   try {
-    const list: unknown = JSON.parse(localStorage.getItem(INDEX_KEY) ?? '[]');
+    const list: unknown = JSON.parse(raw ?? '[]');
     return Array.isArray(list) ? list.filter((i): i is SaveInfo => isRecord(i) && typeof i.id === 'string') : [];
   } catch {
     return [];
   }
 }
-/** Store the list of saves. */
-function writeIndex(list: SaveInfo[]) {
-  localStorage.setItem(INDEX_KEY, JSON.stringify(list));
+/** The stored list of saves, dropping any malformed entries. */
+function readIndex(): SaveInfo[] {
+  return parseIndex(localStorage.getItem(INDEX_KEY));
+}
+
+/** The keys in storage, found without reading what is stored under them, which for a save is the whole game. */
+function storedKeys(): Set<string> {
+  const keys = new Set<string>();
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key !== null) keys.add(key);
+  }
+  return keys;
 }
 
 /** The entries whose data is still there, forgetting any that has gone missing. */
 function liveEntries(list: SaveInfo[]): SaveInfo[] {
-  return list.filter((i) => localStorage.getItem(slotKey(i.id)) !== null);
+  const keys = storedKeys();
+  return list.filter((i) => keys.has(slotKey(i.id)));
 }
 
 /** Every saved game, newest first. */
@@ -203,34 +217,60 @@ function reportUnreadable(id: string, raw: string, error: unknown) {
 /**
  * Store a game. With no id it goes into a new slot; with one it overwrites that slot.
  * Returns the slot's details, or why it could not be saved.
+ *
+ * The list goes first and the game second. A game is far bigger than its entry, so it is what runs out of room; when
+ * it does, storage still holds the old game, and the old list is put back beside it. Either way a slot and its entry
+ * agree: both as they were, or both new.
  */
 export function writeSave(s: GameState, name: string, id?: string, now = Date.now()): SaveInfo | SaveError {
-  const index = readIndexSafe();
+  let before: string | null;
+  let index: SaveInfo[];
+  try {
+    before = localStorage.getItem(INDEX_KEY);
+    index = liveEntries(parseIndex(before));
+  } catch {
+    return 'full';
+  }
   const manual = index.filter((i) => i.id !== AUTOSAVE_ID && i.id !== PREVIOUS_ID);
   if (!id && manual.length >= MAX_SAVES) return 'full';
   const slot = id ?? `${now.toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
   const info = summarize(slot, name.trim().slice(0, 60) || defaultSaveName(s), s, now);
+  let text: string;
+  let list: string;
   try {
-    localStorage.setItem(slotKey(slot), JSON.stringify(s));
-    writeIndex([...index.filter((i) => i.id !== slot), info]);
+    text = JSON.stringify(s);
+    list = JSON.stringify([...index.filter((i) => i.id !== slot), info]);
+    localStorage.setItem(INDEX_KEY, list);
+    try {
+      localStorage.setItem(slotKey(slot), text);
+    } catch (err) {
+      putBack(INDEX_KEY, before);
+      throw err;
+    }
   } catch (err) {
-    // out of room: do not leave half a save behind
     logger.warn('A game could not be saved', {
       slot: slotKind(slot),
       error: err instanceof Error ? err.name : String(err),
     });
-    if (!id) removeQuietly(slotKey(slot));
     return 'full';
   }
+  tellBackup((b) => {
+    b.backupSave(slot, text, list);
+  });
   return info;
 }
 
-/** The stored list of saves that still have their data, or an empty one if storage cannot be read. */
-function readIndexSafe(): SaveInfo[] {
+/**
+ * Put a stored value back as it was, ignoring any failure. Should putting the list back fail too, a new slot's entry
+ * names a game that is not there, which `liveEntries` forgets; an overwritten slot keeps its old game under the new
+ * entry, which is only its name and headline figures.
+ */
+function putBack(key: string, raw: string | null) {
   try {
-    return liveEntries(readIndex());
+    if (raw === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, raw);
   } catch {
-    return [];
+    // nothing more to do
   }
 }
 /** Remove a stored value, ignoring any failure. */
@@ -251,11 +291,17 @@ export function autosave(s: GameState, now = Date.now()): boolean {
 export function deleteSave(id: string) {
   removeQuietly(slotKey(id));
   dropThumb(id);
+  let list: string;
   try {
-    writeIndex(readIndex().filter((i) => i.id !== id));
+    list = JSON.stringify(readIndex().filter((i) => i.id !== id));
+    localStorage.setItem(INDEX_KEY, list);
   } catch {
-    // nothing more to do
+    // the entry has no game left, so the list forgets it anyway
+    return;
   }
+  tellBackup((b) => {
+    b.dropBackup(id, list);
+  });
 }
 
 /**
@@ -322,6 +368,82 @@ export function importSave(text: string, now = Date.now()): SaveInfo | SaveError
   if (!state) return 'invalid';
   const name = typeof file.name === 'string' && file.name.trim() ? file.name : defaultSaveName(state);
   return writeSave(state, name === 'Autosave' ? `Imported (${gameDate(state.day)})` : name, undefined, now);
+}
+
+/** Somewhere outside localStorage that keeps a copy of every save: the desktop app, in files. */
+export type SaveBackup = Pick<DesktopApi, 'backupSave' | 'dropBackup' | 'readBackup'>;
+
+let backup: SaveBackup | undefined;
+
+/** Hand the backup a change, if there is one. A backup that fails never stops the game saving. */
+function tellBackup(change: (b: SaveBackup) => void) {
+  if (!backup) return;
+  try {
+    change(backup);
+  } catch {
+    // the save itself is in localStorage
+  }
+}
+
+/** What a save's id may be: the ids this file makes are letters, digits and dashes. */
+const SAVE_ID = /^[a-z0-9-]{1,64}$/;
+
+/**
+ * Keep a copy of every save in a backup from now on. Should localStorage have lost every save (its data cleared,
+ * or a damaged profile), the copies are put back first. With no copies yet, as on the first run of a version that
+ * keeps them, the saves already in localStorage are copied.
+ */
+export async function startBackup(b: SaveBackup): Promise<void> {
+  backup = b;
+  let copy: SaveCopy;
+  try {
+    copy = await b.readBackup();
+  } catch {
+    return;
+  }
+  let keys: Set<string>;
+  try {
+    keys = storedKeys();
+  } catch {
+    return;
+  }
+  if (!keys.has(INDEX_KEY) && !keys.has(AUTOSAVE_KEY)) restore(copy);
+  else if (copy.index === null) copyAll();
+}
+
+/** Put the backup's saves into an empty localStorage. */
+function restore(copy: SaveCopy) {
+  if (copy.index === null) return;
+  const saves = Object.entries(copy.saves).filter(([id, text]) => SAVE_ID.test(id) && typeof text === 'string');
+  try {
+    for (const [id, text] of saves) localStorage.setItem(slotKey(id), text);
+    localStorage.setItem(INDEX_KEY, copy.index);
+  } catch (err) {
+    logger.warn('Saved games could not be restored from the backup', {
+      error: err instanceof Error ? err.name : String(err),
+    });
+    return;
+  }
+  logger.info('Saved games restored from the backup', { saves: saves.length });
+}
+
+/** Copy every save in localStorage to the backup. */
+function copyAll() {
+  const list = listSaves();
+  const index = JSON.stringify(list);
+  for (const { id } of list) {
+    let text: string | null;
+    try {
+      text = localStorage.getItem(slotKey(id));
+    } catch {
+      return;
+    }
+    if (text) {
+      tellBackup((b) => {
+        b.backupSave(id, text, index);
+      });
+    }
+  }
 }
 
 /** "just now", "5 minutes ago", "yesterday"... for the save list. */
