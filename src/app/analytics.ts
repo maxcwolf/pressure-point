@@ -84,7 +84,9 @@ if (sends) {
       flushIntervalMs: METRICS_EVERY * 1000,
     },
   });
-  posthog.register({ app_version: __APP_VERSION__, platform, play_id: playId });
+  // the environment marks a local build briefly allowed to send while checking the statistics (`preview`), so the
+  // project's test account filters can leave it out
+  posthog.register({ app_version: __APP_VERSION__, platform, play_id: playId, environment: env });
 }
 
 /** Count something that happened in the game, if the player shares statistics. */
