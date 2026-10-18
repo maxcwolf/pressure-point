@@ -1556,7 +1556,8 @@ test.describe('more land', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.waitForFunction(() => !!window.pp);
     expect(await game.eval((pp) => pp.sim.world.building.bounds.x1)).toBe(before);
-    await game.fastForward(6 * 6);
+    // six days, and a second more for the once-a-second check that sees the builders are done
+    await game.fastForward(6 * 6 + 1);
     expect(await game.eval((pp) => pp.sim.world.building.bounds.x1)).toBeGreaterThan(before);
     await expect(page.locator('#toasts')).toContainText('Work on the east wing is done');
     expect(game.errors).toEqual([]);
