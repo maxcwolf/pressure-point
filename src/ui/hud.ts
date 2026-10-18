@@ -1,6 +1,8 @@
 // The interface's own state: which menu and dialog are open, and the messages on screen.
 // The components draw it; the rest of the app talks to it.
 
+import { track } from '../app/analytics';
+import { gameProps } from '../app/play-events';
 import type { DecorKey, ItemType, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { Template } from '../core/templates';
@@ -158,6 +160,7 @@ export class HudState {
     // an open blueprint stays open while you fetch something from a menu
     this.host.tools.setAside();
     this.menu = this.menu === id ? null : id;
+    if (this.menu) track('menu_opened', { ...gameProps(this.host.sim.s), menu: id });
   }
 
   /** Open the cheat console, or close it if it is open. */

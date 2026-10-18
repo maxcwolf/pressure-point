@@ -53,6 +53,65 @@ describe('play events', () => {
     expect(names(playEvents(markOf(sim.s), sim.s))).not.toContain('month_ended');
   });
 
+  it("count a new player's firsts, and each kind of item the first time it goes down", () => {
+    const sim = freshSim();
+    let mark = markOf(sim.s);
+    addConsult(sim);
+    let events = playEvents(mark, sim.s);
+    expect(events.filter((e) => e.name === 'milestone_reached').map((e) => e.props.milestone)).toEqual(['first_item']);
+    const types = new Set(sim.s.items.map((i) => i.type));
+    expect(events.filter((e) => e.name === 'item_first_placed').map((e) => e.props.item)).toEqual([...types]);
+    // another room counts only the kinds of item not seen before, and no milestone again
+    mark = markOf(sim.s);
+    addMassage(sim);
+    events = playEvents(mark, sim.s);
+    expect(names(events)).not.toContain('milestone_reached');
+    const fresh = [...new Set(sim.s.items.map((i) => i.type))].filter((t) => !types.has(t));
+    expect(events.filter((e) => e.name === 'item_first_placed').map((e) => e.props.item)).toEqual(fresh);
+  });
+
+  it('count staff hired, and tell a quit from a firing', () => {
+    const sim = freshSim();
+    addConsult(sim);
+    let mark = markOf(sim.s);
+    const [a, b] = sim.s.candidates;
+    const first = sim.hire(a!.id)!;
+    const second = sim.hire(b!.id)!;
+    let events = playEvents(mark, sim.s);
+    expect(events.filter((e) => e.name === 'staff_hired').map((e) => e.props.role)).toEqual([first.role, second.role]);
+    expect(events.find((e) => e.name === 'milestone_reached')?.props.milestone).toBe('first_hire');
+
+    mark = markOf(sim.s);
+    sim.fire(first.id);
+    events = playEvents(mark, sim.s).filter((e) => e.name === 'staff_left');
+    expect(events.map((e) => e.props)).toMatchObject([{ role: first.role, reason: 'fired' }]);
+
+    // quitting is the game's doing: it marks them leaving and notes the day
+    mark = markOf(sim.s);
+    second.state = 'leaving';
+    sim.s.stats.lastQuit = sim.s.day + 0.5;
+    events = playEvents(mark, sim.s).filter((e) => e.name === 'staff_left');
+    expect(events.map((e) => e.props)).toMatchObject([{ role: second.role, reason: 'quit' }]);
+  });
+
+  it('count going into the red, loans, prices and marketing', () => {
+    const sim = freshSim();
+    let mark = markOf(sim.s);
+    expect(sim.borrow()).toBe(true);
+    sim.setPrice(sim.s.priceLevel + 0.1);
+    expect(sim.startCampaign('word', 2)).toBe(true);
+    const events = playEvents(mark, sim.s);
+    expect(events.find((e) => e.name === 'loan_changed')?.props).toMatchObject({ change: 'borrowed' });
+    expect(events.find((e) => e.name === 'price_changed')?.props).toMatchObject({ technique: 'all' });
+    expect(events.find((e) => e.name === 'marketing_started')?.props).toMatchObject({ kind: 'word', months: 2 });
+
+    mark = markOf(sim.s);
+    sim.s.money = -100;
+    expect(names(playEvents(mark, sim.s))).toEqual(['in_the_red']);
+    // still in the red a moment later is not news
+    expect(playEvents(markOf(sim.s), sim.s)).toEqual([]);
+  });
+
   it('never say what the player named the game', () => {
     const sim = freshSim();
     expect(Object.keys(gameProps(sim.s)).sort()).toEqual(['center', 'cheated', 'day', 'stars']);

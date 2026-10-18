@@ -1,5 +1,7 @@
 // Top center, under any emergency: a stress outbreak on offer, which can be put aside to decide on later.
 
+import { track } from '../../app/analytics';
+import { gameProps } from '../../app/play-events';
 import { OUTBREAK_DAYS } from '../../core/data';
 import { money } from '../../core/format';
 import { useGame, useHud } from '../hooks/use-hud';
@@ -59,6 +61,7 @@ export function OutbreakOffer() {
           class="go"
           onPress={() => {
             sim.acceptOutbreak();
+            track('offer_answered', { ...gameProps(sim.s), offer: 'outbreak', answer: 'accepted' });
           }}
         >
           Accept
@@ -66,6 +69,7 @@ export function OutbreakOffer() {
         <Button
           onPress={() => {
             sim.declineOutbreak();
+            track('offer_answered', { ...gameProps(sim.s), offer: 'outbreak', answer: 'declined' });
           }}
         >
           Decline

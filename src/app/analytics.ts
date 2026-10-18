@@ -65,14 +65,17 @@ export function setSharing(on: boolean) {
   else posthog.opt_out_capturing();
 }
 
-/** Count the moments in a game as they happen, and how long it was played as the page is left. */
+/** Count the moments in a game as they happen, and how long it was played, and at what speed, as the page is left. */
 export function watchGame(s: GameState) {
   let mark = markOf(s);
   const startDay = s.day;
   const startedAt = performance.now();
+  /** Seconds of play seen at each speed, 0 being paused. A hidden page is not playing, so it is not counted. */
+  const atSpeed: Partial<Record<string, number>> = {};
   setInterval(() => {
     for (const e of playEvents(mark, s)) track(e.name, e.props);
     mark = markOf(s);
+    if (document.visibilityState === 'visible') atSpeed[s.speed] = (atSpeed[s.speed] ?? 0) + LOOK_EVERY;
   }, LOOK_EVERY * 1000);
   // a beacon still goes out as the page closes
   window.addEventListener('pagehide', () => {
@@ -83,6 +86,7 @@ export function watchGame(s: GameState) {
         minutes: Math.round((performance.now() - startedAt) / 60_000),
         days_played: Math.floor(s.day - startDay),
         money: s.money,
+        seconds_at_speed: atSpeed,
       },
       true,
     );

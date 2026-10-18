@@ -2,6 +2,8 @@
 
 import './OverlayPicker.css';
 
+import { track } from '../../app/analytics';
+import { gameProps } from '../../app/play-events';
 import { useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { OVERLAYS } from '../lib/overlays';
@@ -23,6 +25,7 @@ export function OverlayPicker() {
             onPress={() => {
               hud.overlay = hud.overlay === o.id ? null : o.id;
               hud.overlayPicker = false;
+              if (hud.overlay) track('overlay_shown', { ...gameProps(hud.host.sim.s), overlay: o.id });
             }}
           >
             <i>{o.icon}</i>

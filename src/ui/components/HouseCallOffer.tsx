@@ -1,6 +1,8 @@
 // Top center, under any emergency: a house call on offer, with who could go and what each would earn, which can be
 // put aside to decide on later.
 
+import { track } from '../../app/analytics';
+import { gameProps } from '../../app/play-events';
 import { CALL_OFFER_DAYS } from '../../core/data';
 import { money } from '../../core/format';
 import { callWants } from '../../core/sim/calls';
@@ -61,6 +63,7 @@ export function HouseCallOffer() {
               class="go"
               onPress={() => {
                 sim.acceptCall(st.id);
+                track('offer_answered', { ...gameProps(sim.s), offer: 'house_call', answer: 'accepted' });
               }}
             >
               {`Send ${st.name} (${rankName(st.skill)}) · ${money(sim.callFee(st))}`}
@@ -79,6 +82,7 @@ export function HouseCallOffer() {
           class="danger"
           onPress={() => {
             sim.declineCall();
+            track('offer_answered', { ...gameProps(sim.s), offer: 'house_call', answer: 'declined' });
           }}
         >
           Decline
