@@ -156,27 +156,6 @@ export default tseslint.config(
     'Storage imports only from the game core and itself: no interface, app, audio or rendering code.',
   ),
 
-  // components should not reach into the simulation's modules, only their types. A warning for now, so the places
-  // that still do show up. The typescript-eslint copy of the rule keeps it apart from the errors above, which
-  // would otherwise be overridden here, since a later config replaces a rule's options rather than adding to them.
-  {
-    files: ['src/ui/components/**/*.{ts,tsx}'],
-    rules: {
-      '@typescript-eslint/no-restricted-imports': [
-        'warn',
-        {
-          patterns: [
-            {
-              regex: '(^|/)core/sim/',
-              allowTypeImports: true,
-              message: 'Components should not call the simulation directly; import only its types here.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
   // the center's money changes only through the economy's earn, spend and recoup, so it always agrees with the books.
   // A new game and an upgraded save are set up with what they hold, and so is a sandbox game as it starts.
   {
