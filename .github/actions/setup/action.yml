@@ -1,0 +1,32 @@
+name: Set up Node and Yarn
+description: Node 22, the project's Yarn through Corepack, Yarn's download cache, and the installed dependencies.
+
+# setup-node's own `cache: yarn` asks Yarn for its cache folder before Corepack can be enabled for the Node it
+# installs, so it finds whatever Yarn the runner has: on Windows that is a global Yarn 1, ahead in PATH of the
+# runner's own Node, where an earlier `corepack enable` would put Yarn 4. So Node comes first, then Corepack,
+# then Yarn's cache, kept by actions/cache.
+inputs:
+  cache:
+    description: Whether to keep Yarn's download cache between runs. A self-hosted runner keeps its own.
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 22
+    - shell: bash
+      run: corepack enable
+    - id: yarn-cache
+      if: inputs.cache == 'true'
+      shell: bash
+      run: echo "dir=$(yarn config get cacheFolder)" >> "$GITHUB_OUTPUT"
+    - if: inputs.cache == 'true'
+      uses: actions/cache@v6
+      with:
+        path: ${{ steps.yarn-cache.outputs.dir }}
+        key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+        restore-keys: yarn-${{ runner.os }}-
+    - shell: bash
+      run: yarn install --immutable

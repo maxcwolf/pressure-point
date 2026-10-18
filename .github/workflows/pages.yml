@@ -23,13 +23,7 @@ jobs:
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
     steps:
       - uses: actions/checkout@v7
-      # before setup-node, which asks Yarn where its cache is: without Corepack that finds the runner's Yarn 1
-      - run: corepack enable
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: yarn
-      - run: yarn install --immutable
+      - uses: ./.github/actions/setup
       # A missing secret only makes the error reports harder to read, so the deploy goes ahead with a warning.
       - name: Build
         env:
