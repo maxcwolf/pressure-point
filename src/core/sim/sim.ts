@@ -42,6 +42,7 @@ import { type Advice, advice, advise, announce } from './advisor';
 import { drainFactor, prestige } from './ambience';
 import { assignRoom, clearRooms } from './assignments';
 import { holdAwards, YEAR_MONTHS } from './awards';
+import { bottleneck, type Stage } from './bottleneck';
 import type { PlaceOptions } from './building';
 import {
   buildLayout,
@@ -258,6 +259,10 @@ export class Sim {
   /** The advisor's current nudge, with what it is about, if anything. */
   adviceNote(): Advice {
     return advise(this.ctx);
+  }
+  /** The stage of a visit holding guests up most, if any is. */
+  bottleneck(): Stage | undefined {
+    return bottleneck(this.ctx);
   }
   /** Days until a miserable member of staff walks out, or null while they are not on course to quit. */
   daysUntilQuit(st: Staff): number | null {

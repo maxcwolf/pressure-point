@@ -15,7 +15,7 @@ import { mountHud } from '../ui';
 import type { FullScreenSwitch, UpdateOffer } from '../ui/host';
 import { plotHeat } from '../ui/lib/land';
 import { heatTiles, overlayPalette, previewMode } from '../ui/lib/overlays';
-import { watchGame } from './analytics';
+import { refused, watchGame } from './analytics';
 import { trackMouse } from './edge';
 import { reloadInto } from './handoff';
 import { bindKeyboard } from './keyboard';
@@ -60,6 +60,7 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
       }
     },
     (name) => audio.play(name),
+    (action, reason) => refused(state, action, reason),
   );
   /** Whether the last autosave failed, so a run of failures is reported once. */
   let saveFailed = false;
@@ -191,7 +192,7 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     save: autosaveNow,
     overlay: drawOverlay,
   });
-  watchGame(state);
+  watchGame(sim);
   window.addEventListener('beforeunload', save);
   window.addEventListener('pagehide', save);
   document.addEventListener('visibilitychange', saveIfHidden);

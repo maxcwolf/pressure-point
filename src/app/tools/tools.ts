@@ -77,6 +77,8 @@ export class Tools {
     private view: View,
     private onChange: () => void,
     private sfx: (name: SfxName) => void,
+    /** Count something the player tried that was turned down, and why, in the play statistics. */
+    private refused?: (action: string, reason: string) => void,
   ) {}
 
   /** Whether a tool is in hand. */
@@ -141,6 +143,15 @@ export class Tools {
     this.refresh();
   }
 
+  /**
+   * Turn down what the player tried, with the error sound, and count it in the play statistics with why: the problem
+   * shown under the cursor, unless there is a better reason.
+   */
+  private refuse(action: string, reason = this.problem) {
+    this.sfx('error');
+    this.refused?.(action, reason);
+  }
+
   /** Whether a room can be paid for, saying so if not. */
   private affords(type: RoomType): boolean {
     const def = ROOMS[type];
@@ -150,7 +161,7 @@ export class Tools {
       text: `A ${def.name} costs ${money(def.cost)}. You can't afford it yet.`,
       kind: 'bad',
     });
-    this.sfx('error');
+    this.refuse('build_room', "Can't afford it");
     return false;
   }
 
@@ -355,13 +366,13 @@ export class Tools {
     if (t.kind === 'item') {
       const spot = this.spotFor(t);
       if (spot && sim.placeItem(t.type, spot.x, spot.y, spot.rot, this.looks(t.type))) this.onChange();
-      else if (spot) this.sfx('error');
+      else if (spot) this.refuse('place_item');
     } else if (t.kind === 'move') {
       const spot = this.spotFor(t);
       if (spot && sim.moveItem(t.id, spot.x, spot.y, spot.rot)) {
         this.tool = { kind: 'none' };
         this.select({ kind: 'item', id: t.id });
-      } else if (spot) this.sfx('error');
+      } else if (spot) this.refuse('move_item');
     } else if (t.kind === 'window') {
       this.clickWindow(t.roomId);
     } else if (t.kind === 'door') {
@@ -372,18 +383,18 @@ export class Tools {
     } else if (t.kind === 'assign') {
       const room = this.roomUnderCursor();
       if (room && sim.assignRoom(t.staffId, room.id)) this.sfx('blip');
-      else this.sfx('error');
+      else this.refuse('assign_room', room ? '' : 'Not on a room');
     } else if (t.kind === 'moveRoom') {
       this.putRoomDown(t.roomId, t.copy);
     } else if (t.kind === 'template') {
       // the tool stays for another
       const placed = this.placedRoom(t);
-      if (placed && !sim.buildTemplate(t.name, t.layout, placed)) this.sfx('error');
+      if (placed && !sim.buildTemplate(t.name, t.layout, placed)) this.refuse('build_template');
     } else if (t.kind === 'expand') {
       t.pointed = this.plotUnderCursor();
       const offer = sim.landOffers().find((o) => o.def.id === t.pointed);
       if (offer?.state === 'open') this.askToBuy(offer.def.id);
-      else if (offer?.state === 'locked') this.sfx('error');
+      else if (offer?.state === 'locked') this.refuse('buy_land', 'Locked');
       else if (offer) {
         // one of the game's: put the tool down to show it in the inspector
         this.cancel();
@@ -396,7 +407,7 @@ export class Tools {
       const rect = t.rect;
       t.edge = null;
       t.rect = null;
-      if (room && rect && !sameRect(room, rect) && !sim.resizeRoom(room.id, rect)) this.sfx('error');
+      if (room && rect && !sameRect(room, rect) && !sim.resizeRoom(room.id, rect)) this.refuse('resize_room');
     } else if (t.phase === 'drag') {
       const rect = t.rect;
       t.start = null;
@@ -404,7 +415,7 @@ export class Tools {
         this.tool = { kind: 'room', type: t.type, phase: 'door', rect };
         this.sfx('place');
       } else {
-        if (rect && rect.w * rect.h > 1) this.sfx('error');
+        if (rect && rect.w * rect.h > 1) this.refuse('draw_room');
         t.rect = null;
       }
     } else if (t.phase === 'door') {
@@ -414,7 +425,7 @@ export class Tools {
         const room = sim.createRoom(t.type, t.rect, door);
         // straight on to the first piece of required furniture
         this.tool = { kind: 'room', type: t.type, phase: 'plan', room, sub: nextRequired(sim.missingItems(room)) };
-      } else this.sfx('error');
+      } else this.refuse('place_door');
     } else {
       const sub = t.sub;
       if (sub?.kind === 'item') {
@@ -423,7 +434,7 @@ export class Tools {
         const opts = { ...(sub.required && { free: true, roomId: t.room.id }), ...this.looks(sub.type) };
         if (spot && sim.placeItem(sub.type, spot.x, spot.y, spot.rot, opts)) {
           if (sub.required) t.sub = nextRequired(sim.missingItems(t.room));
-        } else if (spot) this.sfx('error');
+        } else if (spot) this.refuse('place_item');
       } else if (sub?.kind === 'window') this.clickWindow(t.room.id);
       else if (sub?.kind === 'door') {
         if (this.clickDoor(t.room.id)) t.sub = null;
@@ -438,11 +449,11 @@ export class Tools {
     const placed = t.kind === 'moveRoom' ? this.placedRoom(t) : null;
     if (!placed) return;
     if (copy) {
-      if (!this.sim.copyRoom(roomId, placed)) this.sfx('error');
+      if (!this.sim.copyRoom(roomId, placed)) this.refuse('copy_room');
     } else if (this.sim.moveRoom(roomId, placed)) {
       this.tool = { kind: 'none' };
       this.select({ kind: 'room', id: roomId });
-    } else this.sfx('error');
+    } else this.refuse('move_room');
   }
 
   /**
@@ -464,14 +475,14 @@ export class Tools {
   private clickWindow(roomId: number) {
     const room = this.sim.world.room(roomId);
     const spot = room && this.wallSpot(room);
-    if (!room || !spot || !this.sim.toggleWindow(roomId, spot)) this.sfx('error');
+    if (!room || !spot || !this.sim.toggleWindow(roomId, spot)) this.refuse('window');
   }
   /** Move the door to the wall under the cursor. False if it cannot go there. */
   private clickDoor(roomId: number): boolean {
     const room = this.sim.world.room(roomId);
     const spot = room && this.wallSpot(room);
     if (room && spot && this.sim.moveDoor(roomId, spot)) return true;
-    this.sfx('error');
+    this.refuse('move_door');
     return false;
   }
 

@@ -3,8 +3,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { automated } from '../../src/app/automation';
-import { gameProps, markOf, playEvents } from '../../src/app/play-events';
+import { feelProps, freshFeel, gameProps, markOf, noteFeel, playEvents } from '../../src/app/play-events';
 import { DAYS_PER_MONTH } from '../../src/core/data';
+import type { Emergency, Outbreak, VisitReport } from '../../src/core/state/types';
 import { forgetSharing, loadSharing, saveSharing } from '../../src/storage/analytics';
 import { addConsult, addMassage, freshSim } from './helpers';
 
@@ -112,6 +113,113 @@ describe('play events', () => {
     expect(names(playEvents(mark, sim.s))).toEqual(['in_the_red']);
     // still in the red a moment later is not news
     expect(playEvents(markOf(sim.s), sim.s)).toEqual([]);
+  });
+
+  it('end a month with its books line by line, and how it felt', () => {
+    const sim = freshSim();
+    const mark = markOf(sim.s);
+    sim.fastForward(DAYS_PER_MONTH + 1);
+    const month = playEvents(mark, sim.s, { month: { bottleneck: 'consult' } }).find((e) => e.name === 'month_ended');
+    const ledger = sim.s.months.at(-1)!.ledger;
+    expect(month?.props).toMatchObject({ ledger_salaries: ledger.salaries, ledger_consult: ledger.consult });
+    expect(month?.props.bottleneck).toBe('consult');
+    expect(typeof month?.props.income).toBe('number');
+  });
+
+  it('feel a month out: where guests were held up most, what the advisor said, and how the staff were', () => {
+    const sim = freshSim();
+    addConsult(sim);
+    const st = sim.hire(sim.s.candidates[0]!.id)!;
+    st.morale = 60;
+    st.energy = 40;
+    st.state = 'idle';
+    const feel = freshFeel();
+    noteFeel(feel, sim.s, 'consult', `${st.name} is about to quit!`);
+    noteFeel(feel, sim.s, 'consult', `${st.name} is about to quit!`);
+    noteFeel(feel, sim.s, undefined, 'Build a Staff Room.');
+    expect(feelProps(feel)).toEqual({
+      bottleneck: 'consult',
+      bottleneck_share: 0.67,
+      // the same nudge reads the same whoever it is about
+      advice: '… is about to quit!',
+      morale: 60,
+      energy: 40,
+      idle_share: 1,
+    });
+    expect(feelProps(freshFeel())).toEqual({});
+  });
+
+  it('count an offer left to lapse, but not one the player answered', () => {
+    const sim = freshSim();
+    const offer: Emergency = {
+      condition: 'knotted',
+      cause: '',
+      total: 5,
+      target: 3,
+      healed: 0,
+      pending: 0,
+      reward: 100,
+      deadline: sim.s.day + 1,
+    };
+    sim.s.offer = offer;
+    let mark = markOf(sim.s);
+    sim.s.offer = null;
+    // gone before its time, and nobody said no: withdrawn
+    expect(playEvents(mark, sim.s).map((e) => e.props.answer)).toEqual(['withdrawn']);
+    sim.s.day = offer.deadline;
+    expect(playEvents(mark, sim.s).map((e) => e.props.answer)).toEqual(['lapsed']);
+    expect(playEvents(mark, sim.s, { answered: new Set<object>([offer]) })).toEqual([]);
+
+    sim.s.offer = offer;
+    mark = markOf(sim.s);
+    sim.acceptEmergency();
+    expect(playEvents(mark, sim.s, { answered: new Set<object>([offer]) })).toEqual([]);
+  });
+
+  it('count how emergencies and outbreaks end', () => {
+    const sim = freshSim();
+    const e: Emergency = {
+      condition: 'knotted',
+      cause: '',
+      total: 5,
+      target: 3,
+      healed: 3,
+      pending: 0,
+      reward: 100,
+      deadline: 99,
+    };
+    const o: Outbreak = { cause: '', seed: 2, calms: 0, lost: 4, lostMax: 2, reward: 100, pending: 0, deadline: 99 };
+    sim.s.emergency = e;
+    sim.s.outbreak = o;
+    const mark = markOf(sim.s);
+    sim.s.emergency = null;
+    sim.s.outbreak = null;
+    const events = playEvents(mark, sim.s);
+    expect(events.find((x) => x.name === 'emergency_ended')?.props).toMatchObject({ outcome: 'handled', healed: 3 });
+    expect(events.find((x) => x.name === 'outbreak_ended')?.props).toMatchObject({ outcome: 'escaped', lost: 4 });
+  });
+
+  it('count how visits end, and how a failed inspection is settled', () => {
+    const sim = freshSim();
+    const report: VisitReport = {
+      visit: 'inspector',
+      name: '',
+      title: '',
+      day: sim.s.day,
+      rooms: [],
+      score: 3,
+      outcome: 'failed',
+      money: -1000,
+      rep: -5,
+      bribe: 2000,
+    };
+    let mark = markOf(sim.s);
+    sim.s.visitReport = report;
+    expect(playEvents(mark, sim.s).map((e) => [e.name, e.props.outcome])).toEqual([['visit_ended', 'failed']]);
+    mark = markOf(sim.s);
+    sim.s.money = 5000;
+    expect(sim.settleInspection(true)).toBe(true);
+    expect(playEvents(mark, sim.s).find((e) => e.name === 'inspection_settled')?.props.how).toBe('paid_off');
   });
 
   it('never say what the player named the game', () => {

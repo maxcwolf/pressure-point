@@ -2,6 +2,7 @@
 
 import type { ComponentChildren } from 'preact';
 
+import { refused } from '../../../app/analytics';
 import { useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 
@@ -36,6 +37,8 @@ export function Button({
     const { audio } = hud.host;
     if (locked) {
       audio.play('error');
+      const button = e.currentTarget instanceof HTMLElement ? e.currentTarget.textContent : '';
+      refused(hud.host.sim.s, `button: ${plain(button)}`, plain(title ?? ''));
       return;
     }
     audio.unlock();
@@ -49,3 +52,11 @@ export function Button({
     </button>
   );
 }
+
+/** A button's words with any amounts left out, so the same button reads the same whatever it costs or counts. */
+const plain = (text: string) =>
+  text
+    .replace(/\$?\d[\d,.]*/g, '#')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);

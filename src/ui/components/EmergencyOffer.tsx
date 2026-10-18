@@ -2,8 +2,7 @@
 
 import './EmergencyOffer.css';
 
-import { track } from '../../app/analytics';
-import { gameProps } from '../../app/play-events';
+import { answerOffer } from '../../app/analytics';
 import { conditionOf, EMERGENCY_DAYS, modalityLabel } from '../../core/data';
 import { money } from '../../core/format';
 import { useGame, useHud } from '../hooks/use-hud';
@@ -81,16 +80,18 @@ function Emergency() {
           <Button
             class="go"
             onPress={() => {
+              const offer = sim.s.offer;
               sim.acceptEmergency();
-              track('offer_answered', { ...gameProps(sim.s), offer: 'emergency', answer: 'accepted' });
+              answerOffer(sim.s, offer, 'emergency', 'accepted');
             }}
           >
             Accept
           </Button>
           <Button
             onPress={() => {
+              const offer = sim.s.offer;
               sim.declineEmergency();
-              track('offer_answered', { ...gameProps(sim.s), offer: 'emergency', answer: 'declined' });
+              answerOffer(sim.s, offer, 'emergency', 'declined');
             }}
           >
             Decline

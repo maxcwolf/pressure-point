@@ -1,7 +1,6 @@
 // Top center, under any emergency: a stress outbreak on offer, which can be put aside to decide on later.
 
-import { track } from '../../app/analytics';
-import { gameProps } from '../../app/play-events';
+import { answerOffer } from '../../app/analytics';
 import { OUTBREAK_DAYS } from '../../core/data';
 import { money } from '../../core/format';
 import { useGame, useHud } from '../hooks/use-hud';
@@ -60,16 +59,18 @@ export function OutbreakOffer() {
         <Button
           class="go"
           onPress={() => {
+            const offer = sim.s.outbreakOffer;
             sim.acceptOutbreak();
-            track('offer_answered', { ...gameProps(sim.s), offer: 'outbreak', answer: 'accepted' });
+            answerOffer(sim.s, offer, 'outbreak', 'accepted');
           }}
         >
           Accept
         </Button>
         <Button
           onPress={() => {
+            const offer = sim.s.outbreakOffer;
             sim.declineOutbreak();
-            track('offer_answered', { ...gameProps(sim.s), offer: 'outbreak', answer: 'declined' });
+            answerOffer(sim.s, offer, 'outbreak', 'declined');
           }}
         >
           Decline
