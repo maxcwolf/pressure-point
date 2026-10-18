@@ -2413,7 +2413,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron@npm:^44.7.0":
+"electron@npm:44.7.0":
   version: 44.7.0
   resolution: "electron@npm:44.7.0"
   dependencies:
@@ -4340,7 +4340,7 @@ __metadata:
     "@sentry/vite-plugin": "npm:^5.4.1"
     "@types/node": "npm:^26.6.5"
     "@types/three": "npm:^0.186.0"
-    electron: "npm:^44.7.0"
+    electron: "npm:44.7.0"
     electron-builder: "npm:26.17.0"
     electron-updater: "npm:^6.8.10"
     eslint: "npm:^10.12.0"

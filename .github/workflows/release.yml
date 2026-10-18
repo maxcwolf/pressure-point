@@ -18,8 +18,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The installers take their version from the tag, but the game shows the one in package.json (vite.config.ts),
+  # so a tag that does not match would ship a game that names the wrong version. A manual run has no tag to check.
+  version:
+    name: Check the version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compare the tag with package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          expected=$(node -p "require('./package.json').version")
+          if [ "${GITHUB_REF_NAME#v}" != "$expected" ]; then
+            echo "::error::The tag $GITHUB_REF_NAME does not match version $expected in package.json"
+            exit 1
+          fi
+
   build:
     name: Build (${{ matrix.name }})
+    needs: version
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -35,9 +52,14 @@ jobs:
             args: --win --x64
     steps:
       - uses: actions/checkout@v7
+      # setup-node asks Yarn where its cache is, which without Corepack finds the runner's Yarn 1. Hosted runners
+      # come with Node, so Corepack can go first there; a self-hosted Mac keeps its own Yarn cache anyway.
+      - if: runner.environment == 'github-hosted'
+        run: corepack enable
       - uses: actions/setup-node@v7
         with:
           node-version: 22
+          cache: ${{ runner.environment == 'github-hosted' && 'yarn' || '' }}
       # after setup-node, so a self-hosted Mac needs nothing preinstalled
       - run: corepack enable
       - run: yarn install --immutable
@@ -130,3 +152,14 @@ jobs:
             --verify-tag \
             --title "$GITHUB_REF_NAME" \
             --notes-file notes.md
+
+  # the browser build goes up only once the release it matches is out
+  pages:
+    name: Deploy web version
+    needs: publish
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
+    secrets: inherit

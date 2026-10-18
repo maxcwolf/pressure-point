@@ -1,11 +1,11 @@
 name: Deploy web version
 
-# Publishes the browser build to GitHub Pages whenever a version is tagged,
-# so the web version always matches the installers on the Releases page.
+# Publishes the browser build to GitHub Pages. The Release workflow calls it
+# once a tagged release is published, so the web version always matches the
+# installers on the Releases page and never goes up if the release failed.
 # Run it by hand to publish whatever is on the chosen branch or tag.
 on:
-  push:
-    tags: ['v*']
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -23,10 +23,12 @@ jobs:
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
     steps:
       - uses: actions/checkout@v7
+      # before setup-node, which asks Yarn where its cache is: without Corepack that finds the runner's Yarn 1
+      - run: corepack enable
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - run: corepack enable
+          cache: yarn
       - run: yarn install --immutable
       # A missing secret only makes the error reports harder to read, so the deploy goes ahead with a warning.
       - name: Build
