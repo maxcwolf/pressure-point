@@ -151,6 +151,21 @@ export interface Check {
   reason: string;
 }
 const OK: Check = { ok: true, reason: '' };
+
+/** The grids a way through is worked out on: each tile's zone, what blocks it, what is kept clear, and the doors. */
+export interface Grid {
+  zone: Int32Array;
+  blocked: Uint8Array;
+  reserved: Uint8Array;
+  doors: Set<number>;
+}
+/** Where a room is, or would be, as far as the grids care: its floor, its door and its windows. */
+type RoomShape = Pick<Room, 'id' | 'x' | 'y' | 'w' | 'h' | 'door' | 'windows'>;
+/** A what-if for the build checks: the rooms and furniture as they would be, and the grids laid out from them. */
+export interface Trial extends Grid {
+  rooms: readonly RoomShape[];
+  items: readonly Placed[];
+}
 /** A failed check, with the reason why. */
 const no = (reason: string): Check => ({ ok: false, reason });
 
@@ -187,6 +202,10 @@ export class World {
   /** The building's own windows, worked out once for each time the grids change. */
   private panes: BuildingWindow[] = [];
   private panesStamp = -1;
+  /** The building alone, before any rooms or furniture: each tile's zone, the tiles kept clear and the doors in. */
+  private bare: { zone: Int32Array; reserved: Uint8Array; doors: number[] };
+  /** Grids to try a change out on without touching the game or the grids it plays on. */
+  private scratch: Grid;
 
   constructor(public s: GameState) {
     this.w = lotWidth(centerOf(s));
@@ -201,6 +220,13 @@ export class World {
     this.came = new Int32Array(tiles);
     this.state = new Uint8Array(tiles);
     this.marked = new Uint32Array(tiles);
+    this.bare = { zone: new Int32Array(tiles), reserved: new Uint8Array(tiles), doors: [] };
+    this.scratch = {
+      zone: new Int32Array(tiles),
+      blocked: new Uint8Array(tiles),
+      reserved: new Uint8Array(tiles),
+      doors: new Set(),
+    };
     this.building = footprintOf(centerOf(s).plot);
     this.rebuild();
   }
@@ -240,10 +266,10 @@ export class World {
 
   /** Rebuild the zone, blocking, reserved and door grids from the game state. */
   rebuild(silent = false) {
-    const { zone, blocked, reserved, doors, indoors } = this;
-    blocked.fill(0);
+    const { indoors } = this;
+    const { zone, reserved } = this.bare;
     reserved.fill(0);
-    doors.clear();
+    const doors: number[] = [];
     const fp = buildingsOf(this.s);
     this.building = fp;
     const outside = doorstep(fp);
@@ -264,13 +290,27 @@ export class World {
         inside: [x, y],
         outside: [ox, oy],
       } of entranceSteps(e)) {
-        doors.add(this.edgeKey(x, y, ox, oy));
+        doors.push(this.edgeKey(x, y, ox, oy));
         // the tile inside the door, and the next one in, are kept clear for the way through
         reserved[this.idx(x, y)] = 1;
         if (this.onMap(2 * x - ox, 2 * y - oy)) reserved[this.idx(2 * x - ox, 2 * y - oy)] = 1;
       }
+    this.bare.doors = doors;
     this.numberBuildings();
-    for (const r of this.s.rooms) {
+    this.lay(this, this.s.rooms, this.s.items);
+    this.stamp++;
+    if (!silent) this.version++;
+  }
+
+  /** Lay rooms and furniture over the building as it was at the last rebuild, filling in the grids `g`. */
+  private lay(g: Grid, rooms: readonly RoomShape[], items: readonly Placed[]) {
+    const { zone, blocked, reserved, doors } = g;
+    zone.set(this.bare.zone);
+    reserved.set(this.bare.reserved);
+    blocked.fill(0);
+    doors.clear();
+    for (const k of this.bare.doors) doors.add(k);
+    for (const r of rooms) {
       for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) zone[this.idx(x, y)] = r.id;
       const ox = r.door.x + r.door.dx;
       const oy = r.door.y + r.door.dy;
@@ -278,7 +318,7 @@ export class World {
       reserved[this.idx(r.door.x, r.door.y)] = 1;
       if (this.onMap(ox, oy)) reserved[this.idx(ox, oy)] = 1;
     }
-    for (const it of this.s.items) {
+    for (const it of items) {
       // something on a wall is out of everyone's way
       if (onWall(it.type)) continue;
       if (!ITEMS[it.type].walkable)
@@ -288,8 +328,27 @@ export class World {
         if (this.onMap(x, y)) reserved[this.idx(x, y)] = 1;
       }
     }
-    this.stamp++;
-    if (!silent) this.version++;
+  }
+
+  /**
+   * Try out the game with these rooms and this furniture, on grids of its own: the game, and the grids it plays on,
+   * are left alone. The answer is good until the next one is asked for, which reuses its grids.
+   */
+  private tryOut(rooms: readonly RoomShape[], items: readonly Placed[]): Trial {
+    this.lay(this.scratch, rooms, items);
+    return { ...this.scratch, rooms, items };
+  }
+
+  /** The game as it is, put as a what-if. */
+  private asIs(): Trial {
+    return {
+      zone: this.zone,
+      blocked: this.blocked,
+      reserved: this.reserved,
+      doors: this.doors,
+      rooms: this.s.rooms,
+      items: this.s.items,
+    };
   }
 
   /** Number the buildings, each a run of tiles indoors: the one with the front door first, then the rest in turn. */
@@ -476,17 +535,17 @@ export class World {
     const m = this.s.mishap;
     return !!m?.started && mishapStopsType(MISHAPS[m.kind], it.type, m.prepared);
   }
-  /** Whether a tile can be walked on. */
-  walkable(x: number, y: number) {
+  /** Whether a tile can be walked on: in the game as it is, or on the grids `g` of a what-if. */
+  walkable(x: number, y: number, g: Grid = this) {
     if (!this.onMap(x, y)) return false;
     const i = this.idx(x, y);
-    return this.zone[i] !== Z_SCENERY && !this.blocked[i];
+    return g.zone[i] !== Z_SCENERY && !g.blocked[i];
   }
 
-  /** Orthogonal step between adjacent tiles. */
-  canStep(ax: number, ay: number, bx: number, by: number) {
-    if (!this.walkable(bx, by)) return false;
-    return this.zone[this.idx(ax, ay)] === this.zone[this.idx(bx, by)] || this.doors.has(this.edgeKey(ax, ay, bx, by));
+  /** Orthogonal step between adjacent tiles, in the game as it is or on the grids `g` of a what-if. */
+  canStep(ax: number, ay: number, bx: number, by: number, g: Grid = this) {
+    if (!this.walkable(bx, by, g)) return false;
+    return g.zone[this.idx(ax, ay)] === g.zone[this.idx(bx, by)] || g.doors.has(this.edgeKey(ax, ay, bx, by));
   }
 
   // ---- Pathfinding ---------------------------------------------------------
@@ -579,8 +638,8 @@ export class World {
     return path.reverse();
   }
 
-  /** Tiles reachable on foot from a start tile, in breadth-first order. */
-  flood(sx: number, sy: number, limit = this.w * this.h): [number, number][] {
+  /** Tiles reachable on foot from a start tile, in breadth-first order, in the game or on the grids `g` of a what-if. */
+  flood(sx: number, sy: number, limit = this.w * this.h, g: Grid = this): [number, number][] {
     const seen = new Uint8Array(this.w * this.h);
     const out: [number, number][] = [];
     if (!this.onMap(sx, sy)) return out;
@@ -599,7 +658,7 @@ export class World {
         const nx = x + dx;
         const ny = y + dy;
         if (!this.onMap(nx, ny) || seen[this.idx(nx, ny)]) continue;
-        if (!this.canStep(x, y, nx, ny)) continue;
+        if (!this.canStep(x, y, nx, ny, g)) continue;
         seen[this.idx(nx, ny)] = 1;
         queue[tail++] = this.idx(nx, ny);
       }
@@ -630,10 +689,10 @@ export class World {
     return found;
   }
 
-  /** Everything that needs reaching can be reached from the street. */
-  connected(): boolean {
+  /** Everything that needs reaching can be reached from the street: in the game as it is, or in a what-if. */
+  connected(t: Trial = this.asIs()): boolean {
     const seen = new Uint8Array(this.w * this.h);
-    for (const [x, y] of this.flood(0, SIDEWALK_Y)) seen[this.idx(x, y)] = 1;
+    for (const [x, y] of this.flood(0, SIDEWALK_Y, undefined, t)) seen[this.idx(x, y)] = 1;
     /** Whether a tile was reached from the street. */
     const need = (x: number, y: number) => this.onMap(x, y) && seen[this.idx(x, y)] === 1;
     if (!need(this.w - 1, SIDEWALK_Y)) return false;
@@ -644,10 +703,10 @@ export class World {
         outside: [ox, oy],
       } of entranceSteps(e))
         if (!need(ox, oy) || !need(2 * x - ox, 2 * y - oy)) return false;
-    for (const r of this.s.rooms) {
+    for (const r of t.rooms) {
       if (!need(r.door.x, r.door.y) || !need(r.door.x + r.door.dx, r.door.y + r.door.dy)) return false;
     }
-    for (const it of this.s.items) {
+    for (const it of t.items) {
       for (let i = 0; i < ITEMS[it.type].access.length; i++) {
         const [x, y] = accessTile(it, i);
         if (!need(x, y)) return false;
@@ -659,9 +718,9 @@ export class World {
      */
     const free = (x: number, y: number) =>
       !this.inside(x, y) ||
-      (this.walkable(x, y)
+      (this.walkable(x, y, t)
         ? need(x, y)
-        : DIRS4.some(([dx, dy]) => need(x + dx, y + dy) && this.canStep(x, y, x + dx, y + dy)));
+        : DIRS4.some(([dx, dy]) => need(x + dx, y + dy) && this.canStep(x, y, x + dx, y + dy, t)));
     // nobody already inside may be walled in, on the tile they stand on or the one they are stepping into, as they
     // may already be partway across into it and set off again from there
     for (const c of [...this.s.guests, ...this.s.staff, ...this.s.visitors]) {
@@ -706,32 +765,26 @@ export class World {
       if (!this.inside(ax, ay) || this.zone[this.idx(ax, ay)] !== z || this.blocked[this.idx(ax, ay)])
         return no('Needs clear space to use it (R rotates)');
     }
-    // trial placement to make sure nothing gets cut off
-    const trial = { ...it, id: -1 } as unknown as Item;
-    this.s.items.push(trial);
-    this.rebuild(true);
-    const fine = this.connected();
-    this.s.items.pop();
-    this.rebuild(true);
-    return fine ? OK : no('That would block the way');
+    // try it out, to make sure nothing gets cut off
+    return this.connected(this.tryOut(this.s.rooms, [...this.s.items, it])) ? OK : no('That would block the way');
   }
 
-  /** Can a room of this type cover this rectangle? */
-  roomRectValid(type: RoomType, r: Rect): Check {
+  /** Can a room of this type cover this rectangle, in the game as it is or in a what-if? */
+  roomRectValid(type: RoomType, r: Rect, t: Trial = this.asIs()): Check {
     const def = ROOMS[type];
     for (let y = r.y; y < r.y + r.h; y++) {
       for (let x = r.x; x < r.x + r.w; x++) {
         if (!this.inside(x, y)) return no('Must be inside the building');
         const i = this.idx(x, y);
-        if (this.zone[i] !== Z_CORRIDOR) return no('Overlaps another room');
-        if (this.blocked[i]) return no('Something is in the way');
-        if (this.reserved[i]) return no('Keep doorways and access spots clear');
+        if (t.zone[i] !== Z_CORRIDOR) return no('Overlaps another room');
+        if (t.blocked[i]) return no('Something is in the way');
+        if (t.reserved[i]) return no('Keep doorways and access spots clear');
       }
     }
     /** Whether a tile is inside the new room. */
     const within = (x: number, y: number) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
     // things that can be walked over, like rugs, have to end up wholly on one side of the new walls
-    for (const it of this.s.items) {
+    for (const it of t.items) {
       // something hung on the building's wall would end up inside the room
       if (onWall(it.type)) {
         if (footprint(it).some(([x, y]) => within(x, y))) return no(`Take the ${ITEMS[it.type].name} down first`);
@@ -741,7 +794,7 @@ export class World {
       const n = tiles.filter(([x, y]) => within(x, y)).length;
       if (n > 0 && n < tiles.length) return no('Something is in the way');
     }
-    for (const room of this.s.rooms)
+    for (const room of t.rooms)
       if (room.windows.some((w) => within(w.x + w.dx, w.y + w.dy))) return no('A window is in the way');
     if (Math.min(r.w, r.h) < def.minShort || Math.max(r.w, r.h) < def.minLong)
       return no(`Too small: needs at least ${def.minShort}×${def.minLong}`);
@@ -764,9 +817,9 @@ export class World {
 
   /**
    * Can a room have its door here? Pass `replacing` when moving the door of a room
-   * that already exists, so it is judged as if that room had the new door.
+   * that already exists, so it is judged as if that room had the new door. Any kind of room is judged the same.
    */
-  doorValid(type: RoomType, r: Rect, door: Room['door'], replacing?: Room): Check {
+  doorValid(_type: RoomType, r: Rect, door: Room['door'], replacing?: Room): Check {
     const ox = door.x + door.dx;
     const oy = door.y + door.dy;
     if (!this.inside(ox, oy) || this.zone[this.idx(ox, oy)] !== Z_CORRIDOR)
@@ -779,24 +832,9 @@ export class World {
       const hung = this.hungAt(door);
       if (hung) return no(`Take the ${ITEMS[hung.type].name} down first`);
     }
-    const rooms = this.s.rooms;
-    const trial: Room = {
-      id: replacing?.id ?? 2147483000,
-      type,
-      ...r,
-      door,
-      windows: [],
-      done: false,
-      priority: false,
-      vibes: 0,
-      claimedBy: 0,
-    };
-    this.s.rooms = [...rooms.filter((x) => x !== replacing), trial];
-    this.rebuild(true);
-    const fine = this.connected();
-    this.s.rooms = rooms;
-    this.rebuild(true);
-    return fine ? OK : no('That would block the way');
+    const trial: RoomShape = { id: replacing?.id ?? 2147483000, x: r.x, y: r.y, w: r.w, h: r.h, door, windows: [] };
+    const rooms = [...this.s.rooms.filter((x) => x !== replacing), trial];
+    return this.connected(this.tryOut(rooms, this.s.items)) ? OK : no('That would block the way');
   }
 
   /**
@@ -840,22 +878,17 @@ export class World {
     const door = carryWallSpot(room.door, r);
     if (!door) return no('That would cut off the door: move it first');
     // try it: the door has to open onto corridor as things will be, and everyone and everything still be reached
-    const before = { x: room.x, y: room.y, w: room.w, h: room.h, door: room.door };
-    Object.assign(room, r, { door });
-    this.rebuild(true);
+    const resized: RoomShape = { id: room.id, x: r.x, y: r.y, w: r.w, h: r.h, door, windows: room.windows };
+    const t = this.tryOut(
+      this.s.rooms.map((x) => (x === room ? resized : x)),
+      this.s.items,
+    );
     const ox = door.x + door.dx;
     const oy = door.y + door.dy;
-    const check =
-      !this.inside(ox, oy) || this.zone[this.idx(ox, oy)] !== Z_CORRIDOR
-        ? no('The door must open onto a corridor')
-        : this.blocked[this.idx(ox, oy)]
-          ? no('Something is blocking the doorway')
-          : this.connected()
-            ? OK
-            : no('That would block the way');
-    Object.assign(room, before);
-    this.rebuild(true);
-    return check;
+    if (!this.inside(ox, oy) || t.zone[this.idx(ox, oy)] !== Z_CORRIDOR)
+      return no('The door must open onto a corridor');
+    if (t.blocked[this.idx(ox, oy)]) return no('Something is blocking the doorway');
+    return this.connected(t) ? OK : no('That would block the way');
   }
 
   /**
@@ -864,40 +897,24 @@ export class World {
    * corridor, and nobody and nothing may be cut off.
    */
   layoutValid(type: RoomType, placed: PlacedLayout, moving?: Room): Check {
-    const { rooms, items } = this.s;
-    const own = moving ? items.filter((it) => this.zoneAt(it.x, it.y) === moving.id) : [];
-    this.s.rooms = rooms.filter((r) => r !== moving);
-    this.s.items = items.filter((it) => !own.includes(it));
-    this.rebuild(true);
-    let check = this.roomRectValid(type, placed.rect);
+    // lift the room being moved, and its furniture, out first
+    const rooms = this.s.rooms.filter((r) => r !== moving);
+    const items = moving ? this.s.items.filter((it) => this.zoneAt(it.x, it.y) !== moving.id) : this.s.items;
+    const lifted = moving ? this.tryOut(rooms, items) : this.asIs();
+    const check = this.roomRectValid(type, placed.rect, lifted);
+    if (!check.ok) return check;
     const { door } = placed;
     const ox = door.x + door.dx;
     const oy = door.y + door.dy;
-    if (check.ok && (!this.inside(ox, oy) || this.zone[this.idx(ox, oy)] !== Z_CORRIDOR))
-      check = no('The door must open onto a corridor');
-    else if (check.ok && this.blocked[this.idx(ox, oy)]) check = no('Something is blocking the doorway');
-    if (check.ok) {
-      // try it: everyone and everything has to be reached with the room in its new place
-      const trial: Room = {
-        id: moving?.id ?? 2147483001,
-        type,
-        ...placed.rect,
-        door,
-        windows: [],
-        done: false,
-        priority: false,
-        vibes: 0,
-        claimedBy: 0,
-      };
-      this.s.rooms = [...this.s.rooms, trial];
-      this.s.items = [...this.s.items, ...placed.items.map((it) => ({ ...it, id: -1 }) as unknown as Item)];
-      this.rebuild(true);
-      if (!this.connected()) check = no('That would block the way');
-    }
-    this.s.rooms = rooms;
-    this.s.items = items;
-    this.rebuild(true);
-    return check;
+    if (!this.inside(ox, oy) || lifted.zone[this.idx(ox, oy)] !== Z_CORRIDOR)
+      return no('The door must open onto a corridor');
+    if (lifted.blocked[this.idx(ox, oy)]) return no('Something is blocking the doorway');
+    // try it: everyone and everything has to be reached with the room in its new place
+    const { x, y, w, h } = placed.rect;
+    const trial: RoomShape = { id: moving?.id ?? 2147483001, x, y, w, h, door, windows: [] };
+    return this.connected(this.tryOut([...rooms, trial], [...items, ...placed.items]))
+      ? OK
+      : no('That would block the way');
   }
 
   /** Can this stretch of a room's wall take a window? */
