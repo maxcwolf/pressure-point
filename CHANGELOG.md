@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.9
+
+- **Added gameplay analytics.** The game shares anonymous play statistics to help improve it. Switch them off under Settings › Privacy.
+
 ## v0.30.8
 
 - **Autosave every 5 minutes.** A new player's game now autosaves every 5 minutes rather than every 12 seconds, and still saves whenever you leave it, close the window or switch away. A choice already made in Settings is kept.
