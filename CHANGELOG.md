@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.10
+
+- **Performance statistics.** The anonymous play statistics now include how smoothly the game runs, to help find and fix slowdowns.
+
 ## v0.30.9
 
 - **Added gameplay analytics.** The game shares anonymous play statistics to help improve it. Switch them off under Settings › Privacy.
