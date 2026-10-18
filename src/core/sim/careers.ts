@@ -197,7 +197,10 @@ export function updateApplicants(ctx: SimContext) {
   /** How many are applying for a role. */
   const count = (r: Role) => s.candidates.filter((c) => c.role === r).length;
   const fewest = Math.min(...ROLE_ORDER.map(count));
-  const role = pick(ROLE_ORDER.filter((r) => count(r) === fewest));
+  const role = pick(
+    ctx.s,
+    ROLE_ORDER.filter((r) => count(r) === fewest),
+  );
   const theirs = s.candidates.filter((c) => c.role === role);
   if (theirs.length >= applicantCap(s)) s.candidates = s.candidates.filter((c) => c !== theirs[0]);
   s.candidates.push(makeCandidate(s, role));
@@ -232,7 +235,7 @@ export function updateHabits(ctx: SimContext) {
   for (const st of s.staff) {
     if (st.state === 'leaving' || st.state === 'arriving') continue;
     const walking = !!st.path;
-    if (walking && habitOf(st, 'litter') && random() < 0.04) {
+    if (walking && habitOf(st, 'litter') && random(s) < 0.04) {
       const { tx, ty } = st;
       const corridor = ctx.world.zone[ctx.world.idx(tx, ty)] === Z_CORRIDOR;
       if (corridor && !s.litter.some((l) => l.x === tx && l.y === ty))
@@ -245,7 +248,7 @@ export function updateHabits(ctx: SimContext) {
         say(st, '💧', 2);
       }
     }
-    if (habitOf(st, 'cheer') && st.bubbleT <= 0 && random() < 0.03) say(st, '😊', 2.5);
-    if (habitOf(st, 'grump') && st.state === 'atPost' && st.bubbleT <= 0 && random() < 0.03) say(st, '😒', 2.5);
+    if (habitOf(st, 'cheer') && st.bubbleT <= 0 && random(s) < 0.03) say(st, '😊', 2.5);
+    if (habitOf(st, 'grump') && st.state === 'atPost' && st.bubbleT <= 0 && random(s) < 0.03) say(st, '😒', 2.5);
   }
 }

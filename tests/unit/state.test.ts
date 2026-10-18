@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CAMEO_CHANCE, CAMEOS, MODALITIES, ROLE_ORDER, ROLES } from '../../src/core/data';
 import { fairSalary, randomName } from '../../src/core/people';
-import { random, setSeed } from '../../src/core/random';
+import { random, setSeed, stream } from '../../src/core/random';
 import { newGame, SAVE_VERSION } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
@@ -10,17 +10,17 @@ import { openCenter, run } from './helpers';
 
 describe('random numbers', () => {
   it('repeat exactly for the same seed', () => {
-    setSeed(42);
-    const a = [random(), random(), random()];
-    setSeed(42);
-    expect([random(), random(), random()]).toEqual(a);
+    const r = stream(42);
+    const a = [random(r), random(r), random(r)];
+    setSeed(42, r);
+    expect([random(r), random(r), random(r)]).toEqual(a);
     expect(a.every((n) => n >= 0 && n < 1)).toBe(true);
   });
 
   it('are roughly uniform', () => {
-    setSeed(7);
+    const r = stream(7);
     let sum = 0;
-    for (let i = 0; i < 5000; i++) sum += random();
+    for (let i = 0; i < 5000; i++) sum += random(r);
     expect(sum / 5000).toBeGreaterThan(0.47);
     expect(sum / 5000).toBeLessThan(0.53);
   });
@@ -28,10 +28,10 @@ describe('random numbers', () => {
 
 describe('names', () => {
   it('mix in the cameo names at about the configured rate', () => {
-    setSeed(3);
+    const r = stream(3);
     let cameos = 0;
     const names = CAMEOS.map((c) => c.name);
-    for (let i = 0; i < 3000; i++) if (names.includes(randomName(i % 2 ? 'female' : 'male'))) cameos++;
+    for (let i = 0; i < 3000; i++) if (names.includes(randomName(r, i % 2 ? 'female' : 'male'))) cameos++;
     expect(cameos / 3000).toBeGreaterThan(CAMEO_CHANCE * 0.7);
     expect(cameos / 3000).toBeLessThan(CAMEO_CHANCE * 1.3);
   });
@@ -99,6 +99,44 @@ describe('older saves', () => {
     expect(up.priceLevel).toBe(1);
     expect(up.ledger.interest).toBe(0);
     expect(up.nextEmergency).toBeGreaterThan(up.day);
+  });
+});
+
+describe('a save from before it was kept whole', () => {
+  it('fills in whatever it lacks as a new game would have it', () => {
+    setSeed(1);
+    const s = newGame();
+    // all that the first version kept
+    const kept = new Set([
+      ...['version', 'nextId', 'money', 'reputation', 'day', 'speed', 'open', 'stars', 'spawnT', 'seenTips'],
+      ...['rooms', 'items', 'staff', 'guests', 'litter', 'candidates', 'ledger', 'lastLedger', 'history', 'stats'],
+    ]);
+    const old: Record<string, unknown> = { ...structuredClone(s), version: 1 };
+    for (const k of Object.keys(old)) if (!kept.has(k)) Reflect.deleteProperty(old, k);
+    upgradeSave(old as unknown as GameState);
+    // all but its random numbers, which are its own
+    expect(typeof old.rng).toBe('number');
+    expect({ ...old, rng: s.rng }).toEqual(s);
+  });
+
+  it('plans what comes now and then from the day it has got to', () => {
+    const { sim, s } = openCenter(2);
+    run(sim, 30);
+    s.day = 200.5;
+    const old = JSON.parse(JSON.stringify(s)) as Record<string, any>;
+    old.version = 30;
+    for (const k of ['nextEmergency', 'nextOutbreak', 'nextCall', 'nextChallenge', 'nextVip', 'nextInspection'])
+      Reflect.deleteProperty(old, k);
+    for (const k of ['nextMishap', 'nextApplicant', 'rival', 'rng', 'practised', 'slowT', 'surroundings'])
+      Reflect.deleteProperty(old, k);
+    upgradeSave(old as GameState);
+    const up = old as GameState;
+    expect([up.nextEmergency, up.nextOutbreak, up.nextCall, up.nextChallenge]).toEqual([260.5, 270.5, 225.5, 230.5]);
+    expect([up.nextVip, up.nextInspection, up.nextMishap, up.nextApplicant]).toEqual([245.5, 260.5, 280.5, 204.5]);
+    expect(up.rival.opened).toBeNull();
+    expect(up.rival.nextSale).toBeGreaterThan(up.day);
+    expect([up.practised, up.slowT, up.surroundings]).toEqual([[], 0, null]);
+    expect(Number.isInteger(up.rng)).toBe(true);
   });
 });
 

@@ -113,7 +113,7 @@ describe('grades', () => {
     const s = newGame();
     /** The average skill of many applicants for this game. */
     const average = () => {
-      setSeed(5);
+      setSeed(5, s);
       let total = 0;
       for (let i = 0; i < 400; i++) total += makeCandidate(s, 'therapist').skill;
       return total / 400;

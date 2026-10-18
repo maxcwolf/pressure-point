@@ -79,7 +79,7 @@ export function admitGuests(ctx: SimContext, dt: number) {
     spawnGuest(ctx, undefined, false, 0, regular);
   }
   s.spawnT =
-    ((30 - s.reputation * 0.2) * rnd(0.7, 1.3)) /
+    ((30 - s.reputation * 0.2) * rnd(s, 0.7, 1.3)) /
     arrivalFactor(ctx) /
     offeringArrivals(ctx) /
     lineArrivals(demand(ctx)) /
@@ -132,10 +132,10 @@ export function spawnGuest(
   const way = classDay ? classEntrance(ctx) : undefined;
   const [x, y] = way
     ? streetTileNear(ctx.world.building, way.x, ctx.world.w)
-    : streetTile(ctx.world.building, ctx.world.w);
-  const sex = regular ? regular.look.sex : rollSex(WOMEN_VISIT);
-  const name = regular ? regular.name : randomName(sex);
-  const look = regular ? { ...regular.look } : randomLook(sex);
+    : streetTile(s, ctx.world.building, ctx.world.w);
+  const sex = regular ? regular.look.sex : rollSex(s, WOMEN_VISIT);
+  const name = regular ? regular.name : randomName(s, sex);
+  const look = regular ? { ...regular.look } : randomLook(s, sex);
   const g: Guest = {
     ...newChar(ctx, name, look, x, y),
     kind: 'guest',
@@ -145,9 +145,9 @@ export function spawnGuest(
     state: 'enter',
     station: 0,
     needKind: '',
-    thirst: rnd(0, 45),
-    hunger: rnd(0, 40),
-    bladder: rnd(0, 40),
+    thirst: rnd(s, 0, 45),
+    hunger: rnd(s, 0, 40),
+    bladder: rnd(s, 0, 40),
     patience: 100,
     lowest: 100,
     diagnosis: emergency ? 1 : 0,
@@ -174,7 +174,7 @@ export function spawnGuest(
     }
   }
   if (g.state === 'enter') {
-    const [lx, ly] = lobbyTile(ctx.world.building);
+    const [lx, ly] = lobbyTile(s, ctx.world.building);
     if (!goTo(ctx, g, lx, ly)) return null;
   }
   s.guests.push(g);
@@ -190,7 +190,7 @@ export function spawnGuest(
  * finished room. They choose a discipline by its pull (its popularity, following, finest room and training), then a
  * condition within it, so a new star or a new clinic is not an instant flood of failures.
  */
-export const rollCondition = (ctx: SimContext): ConditionId => chooseCondition(ctx, random(), random());
+export const rollCondition = (ctx: SimContext): ConditionId => chooseCondition(ctx, random(ctx.s), random(ctx.s));
 
 /** Put a guest back to square one of their current goal. */
 export function resetGuest(ctx: SimContext, g: Guest) {
@@ -282,7 +282,7 @@ export function goWait(ctx: SimContext, g: Guest) {
     if (!ok) {
       const spots = ctx.world.standSpots(ax, ay, 14);
       if (spots.length) {
-        const [sx, sy] = pick(spots);
+        const [sx, sy] = pick(ctx.s, spots);
         ok = goTo(ctx, g, sx, sy);
       }
     }
@@ -389,11 +389,11 @@ function waitingThink(ctx: SimContext, g: Guest) {
   }
   if (tryNeed(ctx, g)) return;
 
-  if (g.hasWrapper && random() < 0.2) {
+  if (g.hasWrapper && random(ctx.s) < 0.2) {
     g.hasWrapper = false;
     const nearBin = ctx.s.items.some((i) => i.type === 'bin' && Math.hypot(i.x - g.tx, i.y - g.ty) < 7);
     const clear = !ctx.s.litter.some((l) => l.x === g.tx && l.y === g.ty);
-    if (clear && random() < (nearBin ? 0.12 : 0.9))
+    if (clear && random(ctx.s) < (nearBin ? 0.12 : 0.9))
       ctx.s.litter.push({ id: ctx.s.nextId++, x: g.tx, y: g.ty, claimedBy: 0 });
   }
 
@@ -454,7 +454,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     case 'toWait':
       if (arrived || !g.path) {
         g.state = 'waiting';
-        g.timer = rnd(0.3, 1);
+        g.timer = rnd(ctx.s, 0.3, 1);
         const st = ctx.world.item(g.station);
         if (st && g.pose === 'stand') {
           const [cx, cy] = itemCenter(st);
@@ -502,7 +502,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
           if (g.needKind === 'drink' || g.needKind === 'eat') feel(g, 'refreshed');
           if (g.needKind === 'play' && used.type !== 'fortune_teller') feel(g, 'played');
           g.patience = Math.max(0, Math.min(100, g.patience + needRelief(g.needKind, used.dirt)));
-          if (used.type === 'fortune_teller') tellFortune(g);
+          if (used.type === 'fortune_teller') tellFortune(ctx, g);
           if (used.type === 'kombucha_tap') fizzOver(ctx, used);
           used.dirt = dirtier(used.type, used.dirt);
         }
@@ -547,6 +547,6 @@ export function leave(ctx: SimContext, g: Guest) {
   removeFromStations(ctx, g);
   g.goal = 'leave';
   g.state = 'leaving';
-  const [x, y] = streetTile(ctx.world.building, ctx.world.w);
+  const [x, y] = streetTile(ctx.s, ctx.world.building, ctx.world.w);
   if (!goTo(ctx, g, x, y)) ctx.s.guests = ctx.s.guests.filter((q) => q !== g);
 }

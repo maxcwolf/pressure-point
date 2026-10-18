@@ -39,9 +39,9 @@ export function announce(ctx: SimContext, dt: number) {
   const s = ctx.s;
   s.announceT -= dt;
   if (s.announceT > 0) return;
-  s.announceT = rnd(40, 70);
+  s.announceT = rnd(s, 40, 70);
   if (s.open)
-    emit(ctx, { type: 'announce', text: contextAnnouncement(ctx) ?? pickFresh(ANNOUNCEMENTS, ctx.announced) });
+    emit(ctx, { type: 'announce', text: contextAnnouncement(ctx) ?? pickFresh(s, ANNOUNCEMENTS, ctx.announced) });
 }
 
 /** One of the advisor's nudges, and what it is about when it is about someone or something in particular. */

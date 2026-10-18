@@ -14,7 +14,7 @@ import {
 import { money } from '../format';
 import { carryWallSpot, carryWindows, resizeCost, resizeTiles } from '../resize';
 import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
-import { sameSpot } from '../state/game';
+import { itemStart, roomStart, sameSpot } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
 import { itemCenter, onWall, type Rect, wallSpotsOf } from '../world';
 import { forgetRoom } from './assignments';
@@ -70,11 +70,7 @@ function newItem(ctx: SimContext, type: ItemType, x: number, y: number, rot: num
     progress: 0,
     // a hamper starts empty; everything else starts watered, or hot
     water: type === 'linen_hamper' ? 0 : 100,
-    wear: 0,
-    dirt: 0,
-    claimedBy: 0,
-    level: 0,
-    upgradePaid: false,
+    ...itemStart(),
   };
 }
 
@@ -132,11 +128,7 @@ export function createRoom(ctx: SimContext, type: RoomType, r: Rect, door: Room[
     w: r.w,
     h: r.h,
     door,
-    windows: [],
-    done: false,
-    priority: false,
-    vibes: 0,
-    claimedBy: 0,
+    ...roomStart(),
     // decorated as the last rooms of its kind were, if every room like them was given a look
     ...decorFor(ctx.s.roomDecor, type),
   };

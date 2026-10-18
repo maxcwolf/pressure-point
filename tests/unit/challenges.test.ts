@@ -45,7 +45,7 @@ describe('a prestige challenge', () => {
     expect(prestige(ctx, bright)).toBeGreaterThan(prestige(ctx, massage));
     let asked = 0;
     for (let seed = 1; seed <= 60; seed++) {
-      setSeed(seed);
+      setSeed(seed, ctx.s);
       for (const goal of challengeGoals(ctx, 60)) {
         if (goal.kind !== 'prestige') continue;
         asked++;

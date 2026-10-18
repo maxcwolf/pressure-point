@@ -40,7 +40,7 @@ export function setDiscipline(ctx: SimContext, d: Discipline, on: boolean) {
   if (forThis(s.emergency)) {
     for (const g of s.guests) g.emergency = false;
     s.emergency = null;
-    s.nextEmergency = s.day + rnd(50, 80);
+    s.nextEmergency = s.day + rnd(s, 50, 80);
     toast(ctx, `Emergency called off: ${DISCIPLINES[d].name} is switched off.`, 'info');
   }
 }

@@ -11,9 +11,9 @@ import { tipOnce } from './events';
 import { feel } from './feelings';
 
 /** Tell a guest their fortune: now and then that they will be healed today, which leaves them fully patient. */
-export function tellFortune(g: Guest) {
+export function tellFortune(ctx: SimContext, g: Guest) {
   feel(g, 'fortune');
-  if (random() >= LUCKY_FORTUNE) return;
+  if (random(ctx.s) >= LUCKY_FORTUNE) return;
   feel(g, 'lucky');
   g.patience = 100;
   say(g, '🍀', 3);
@@ -21,7 +21,7 @@ export function tellFortune(g: Guest) {
 
 /** A worn Kombucha Tap may fizz over as it is used, leaving a puddle where the guest stood. */
 export function fizzOver(ctx: SimContext, tap: Item) {
-  if (tap.wear < FIZZ_WEAR || random() >= FIZZ_CHANCE) return;
+  if (tap.wear < FIZZ_WEAR || random(ctx.s) >= FIZZ_CHANCE) return;
   const [x, y] = accessTile(tap, 0);
   if (ctx.s.litter.some((l) => l.x === x && l.y === y)) return;
   ctx.s.litter.push({ id: ctx.s.nextId++, x, y, claimedBy: 0, puddle: true });

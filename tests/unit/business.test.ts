@@ -10,6 +10,7 @@ import {
   SHOP_LINE_SKIP,
   SHOP_SPEND,
 } from '../../src/core/data';
+import { stream } from '../../src/core/random';
 import { callFee, canGo, makeCall, updateCalls } from '../../src/core/sim/calls';
 import { createContext } from '../../src/core/sim/context';
 import { netOf } from '../../src/core/sim/economy';
@@ -57,8 +58,9 @@ describe('prices per treatment', () => {
 describe('the Shop Counter', () => {
   it('takes more from guests who had a better visit', () => {
     expect(SHOP_CHANCE[5]).toBeGreaterThan(SHOP_CHANCE[2]!);
+    const r = stream(1);
     for (let stars = 1; stars <= 5; stars++) {
-      const spend = shopSpend(stars);
+      const spend = shopSpend(r, stars);
       expect(spend % 5).toBe(0);
       expect(spend).toBeGreaterThanOrEqual(SHOP_SPEND[stars]! * 0.8 - 5);
       expect(spend).toBeLessThanOrEqual(SHOP_SPEND[stars]! * 1.2 + 5);

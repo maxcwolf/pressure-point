@@ -248,7 +248,7 @@ export function followVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
   const d = MODALITIES[CONDITIONS.find((c) => c.id === g.condition)?.modality ?? 'swedish'].discipline;
   const now = followingOf(ctx.s, d);
   const gaveUp = (end === 'stormed' || end === 'worse') && g.goal === 'treat';
-  if (end === 'healed' || end === 'failed') (ctx.practised ??= new Set()).add(d);
+  if ((end === 'healed' || end === 'failed') && !ctx.s.practised.includes(d)) ctx.s.practised.push(d);
   const change =
     end === 'healed'
       ? FOLLOWING.heal * (1 - now / 100)
@@ -267,7 +267,7 @@ export function followVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
 export function fadeFollowing(ctx: SimContext) {
   for (const d of DISCIPLINE_ORDER) {
     const now = ctx.s.following[d];
-    if (now && !ctx.practised?.has(d)) ctx.s.following[d] = now * (1 - FOLLOWING.fade / 30);
+    if (now && !ctx.s.practised.includes(d)) ctx.s.following[d] = now * (1 - FOLLOWING.fade / 30);
   }
-  ctx.practised?.clear();
+  ctx.s.practised = [];
 }

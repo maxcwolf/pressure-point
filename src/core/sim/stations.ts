@@ -26,7 +26,7 @@ import {
   XP_PER_GUEST,
 } from '../data';
 import { tuning } from '../difficulty';
-import { random, rnd } from '../random';
+import { random, rnd, type Rng } from '../random';
 import type { GameState, Guest, Item, Staff } from '../state/types';
 import { at, clamp, must } from '../util';
 import { accessPose, accessTile } from '../world';
@@ -287,7 +287,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     if (g.regular) emit(ctx, { type: 'float', text: greeting(g.name), x: staff.x, y: staff.y, kind: 'good' });
     emit(ctx, { type: 'sfx', name: 'blip' });
   } else if (def.goal === 'shop') {
-    const amount = shopSpend(visitStars(g));
+    const amount = shopSpend(ctx.s, visitStars(g));
     earn(ctx, amount, 'shop', g.x, g.y);
     g.spent += amount;
     // and now and then, something from under the counter
@@ -296,7 +296,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     g.goal = 'leave';
   } else if (def.goal === 'consult' || def.goal === 'assess') {
     g.consults++;
-    const gain = def.goal === 'consult' ? 0.4 + staff.skill * 0.13 + rnd(0, 0.15) : 0.45 + staff.skill * 0.08;
+    const gain = def.goal === 'consult' ? 0.4 + staff.skill * 0.13 + rnd(ctx.s, 0, 0.15) : 0.45 + staff.skill * 0.08;
     g.diagnosis = clamp(g.diagnosis + gain + nice, 0, 1);
     // a scan shows the therapist just where to work
     if (def.goal === 'assess') g.scanned = true;
@@ -307,7 +307,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       g.goal = 'treat';
       say(g, '💡');
       // steep prices put some guests off once they hear what the treatment costs, though never a regular, who knows
-      if (!g.emergency && !g.regular && random() < Math.max(0, (treatPrice - 1) * 0.35)) {
+      if (!g.emergency && !g.regular && random(ctx.s) < Math.max(0, (treatPrice - 1) * 0.35)) {
         g.outcome = 'stormed';
         g.goal = 'leave';
         feel(g, 'pricey');
@@ -366,7 +366,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       if (warmer) warmer.water -= STONE_USE;
     }
     g.goal = 'leave';
-    if (random() < chance) {
+    if (random(ctx.s) < chance) {
       g.outcome = 'healed';
       // feeling better takes the stress out of them too
       g.stressed = false;
@@ -444,8 +444,8 @@ export const visitStars = (g: Guest) =>
   reviewStars(g.outcome === 'healed' || g.outcome === 'class' ? g.outcome : 'failed', g.feelings);
 
 /** What a guest spends at the Shop Counter, by the stars they gave their visit: a round number, a little either way. */
-export function shopSpend(stars: number): number {
-  return Math.round((at(SHOP_SPEND, clamp(stars, 0, SHOP_SPEND.length - 1)) * rnd(0.8, 1.2)) / 5) * 5;
+export function shopSpend(r: Rng, stars: number): number {
+  return Math.round((at(SHOP_SPEND, clamp(stars, 0, SHOP_SPEND.length - 1)) * rnd(r, 0.8, 1.2)) / 5) * 5;
 }
 
 /**
@@ -456,7 +456,7 @@ export function wantsToShop(ctx: SimContext, g: Guest): boolean {
   const counters = ctx.s.items.filter((i) => i.type === 'shop_counter' && ctx.world.usable(i));
   if (!counters.length) return false;
   if (Math.min(...counters.map((i) => i.queue.length)) >= SHOP_LINE_SKIP) return false;
-  return random() < at(SHOP_CHANCE, clamp(visitStars(g), 0, SHOP_CHANCE.length - 1));
+  return random(ctx.s) < at(SHOP_CHANCE, clamp(visitStars(g), 0, SHOP_CHANCE.length - 1));
 }
 
 /** Take a guest out of every line and off every station. */

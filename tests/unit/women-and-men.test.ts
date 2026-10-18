@@ -14,7 +14,7 @@ import {
   sexOfName,
   WOMEN_HAIR,
 } from '../../src/core/people';
-import { setSeed } from '../../src/core/random';
+import { setSeed, stream } from '../../src/core/random';
 import { createContext } from '../../src/core/sim/context';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { newGame } from '../../src/core/state/game';
@@ -27,9 +27,9 @@ const share = <T>(list: readonly T[], test: (x: T) => boolean) => list.filter(te
 
 describe('names', () => {
   it("are a woman's or a man's, cameos included, and tell which", () => {
-    setSeed(4);
+    const r = stream(4);
     for (const sex of ['female', 'male'] as const) {
-      for (let i = 0; i < 500; i++) expect(sexOfName(randomName(sex))).toBe(sex);
+      for (let i = 0; i < 500; i++) expect(sexOfName(randomName(r, sex))).toBe(sex);
     }
     for (const c of CAMEOS) expect(sexOfName(c.name)).toBe(c.sex);
     expect(sexOfName('Someone Unheard-of')).toBeUndefined();
@@ -42,9 +42,9 @@ describe('names', () => {
 
 describe('looks', () => {
   it('give women and men their own hair, and only men a moustache or a beard, half of them', () => {
-    setSeed(5);
-    const women = Array.from({ length: 2000 }, () => randomLook('female'));
-    const men = Array.from({ length: 2000 }, () => randomLook('male'));
+    const r = stream(5);
+    const women = Array.from({ length: 2000 }, () => randomLook(r, 'female'));
+    const men = Array.from({ length: 2000 }, () => randomLook(r, 'male'));
     for (const l of women) expect([l.sex, WOMEN_HAIR.includes(l.hairStyle), l.beard]).toEqual(['female', true, 0]);
     for (const l of men) expect([l.sex, MEN_HAIR.includes(l.hairStyle)]).toEqual(['male', true]);
     expect(share(men, (l) => l.beard > 0)).toBeCloseTo(0.5, 1);

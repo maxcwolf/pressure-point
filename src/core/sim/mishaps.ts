@@ -121,7 +121,7 @@ function startMishap(ctx: SimContext, m: Mishap) {
   emit(ctx, { type: 'sfx', name: 'error' });
   // a Shaman's ward holds, most of the time, as well as preparing would
   if (!m.prepared && m.ward === 'done') {
-    m.prepared = random() < WARD_CHANCE;
+    m.prepared = random(s) < WARD_CHANCE;
     toast(
       ctx,
       m.prepared
@@ -134,7 +134,7 @@ function startMishap(ctx: SimContext, m: Mishap) {
   // the wind breaks a few things as it starts
   const breakable = s.items.filter((it) => ITEMS[it.type].wear && it.wear < 100);
   for (let i = 0; i < (def.breaks ?? 0) && breakable.length; i++) {
-    const it = pick(breakable);
+    const it = pick(s, breakable);
     it.wear = 100;
     breakable.splice(breakable.indexOf(it), 1);
   }
@@ -149,7 +149,7 @@ function endMishap(ctx: SimContext) {
   if (!m) return;
   emit(ctx, { type: 'announce', text: MISHAPS[m.kind].end });
   s.mishap = null;
-  s.nextMishap = s.day + irnd(MISHAP_GAP_DAYS[0], MISHAP_GAP_DAYS[1]) * tuning(s, 'trouble');
+  s.nextMishap = s.day + irnd(s, MISHAP_GAP_DAYS[0], MISHAP_GAP_DAYS[1]) * tuning(s, 'trouble');
 }
 
 /** Announce a mishap when one is due, start it on its day, and end it when it is over. */

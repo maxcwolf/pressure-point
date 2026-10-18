@@ -768,4 +768,25 @@ export interface GameState {
   regulars: Regular[];
   /** How hard the game is, setting by setting: a sandbox setting. One left out is as usual. */
   difficulty: Difficulty;
+  /** Where the game's random numbers have got to, so a loaded game draws the ones it would have drawn anyway. */
+  rng: number;
+  /** The disciplines someone has been treated in today, whose followings do not fade tonight. */
+  practised: Discipline[];
+  /** Seconds of game time until the next round of once-a-second checks. */
+  slowT: number;
+  /**
+   * How pleasant, noisy and warm each tile was at the last once-a-second check, which everyone goes by until the next.
+   * Null before the first check.
+   */
+  surroundings: Surroundings | null;
+}
+
+/** A grid of figures, one for each tile, row by row, as the bytes of 32-bit floats in base64. */
+export type PackedGrid = string;
+
+/** How pleasant, noisy and warm each tile is, as the once-a-second checks last worked them out. */
+export interface Surroundings {
+  attract: PackedGrid;
+  noise: PackedGrid;
+  warmth: PackedGrid;
 }

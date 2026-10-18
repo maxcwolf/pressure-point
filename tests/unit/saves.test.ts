@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { setSeed } from '../../src/core/random';
+import { Sim } from '../../src/core/sim/sim';
 import { newGame, SAVE_VERSION } from '../../src/core/state/game';
 import {
   archiveAutosave,
@@ -181,6 +182,26 @@ describe('loading', () => {
     expect(listSaves()).toEqual([]);
     expect(typeof writeSave(game(), 'Fresh')).toBe('object');
     expect(listSaves()).toHaveLength(1);
+  });
+});
+
+describe('a game saved and loaded', () => {
+  it('goes on just as it would have had it never been saved', () => {
+    const { sim } = openCenter(3);
+    // partway through a day, and between the once-a-second checks
+    run(sim, 47.35);
+    expect(sim.s.guests.length).toBeGreaterThan(0);
+    expect(sim.s.practised).toEqual(['massage']);
+    expect(sim.s.slowT).toBeGreaterThan(0);
+    autosave(sim.s, 1000);
+    const loaded = new Sim(readSave(AUTOSAVE_ID)!);
+    // side by side, a tick each in turn, so if they drew on the same random numbers neither would get what it should
+    for (let i = 0; i < 1500; i++) {
+      sim.tick(0.1);
+      loaded.tick(0.1);
+    }
+    expect(sim.s.stats.healed).toBeGreaterThan(0);
+    expect(JSON.parse(JSON.stringify(loaded.s))).toEqual(JSON.parse(JSON.stringify(sim.s)));
   });
 });
 

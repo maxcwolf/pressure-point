@@ -317,7 +317,7 @@ describe('a fine Sound Bath Studio', () => {
     const { s, studio } = withStudio(1);
     /** The share of new guests who need sound healing, with this much noise in the studio. */
     const share = (noise: number) => {
-      setSeed(4);
+      setSeed(4, s);
       const ctx = createContext(s);
       for (let y = studio.y; y < studio.y + studio.h; y++)
         for (let x = studio.x; x < studio.x + studio.w; x++) ctx.noise[ctx.world.idx(x, y)] = noise;

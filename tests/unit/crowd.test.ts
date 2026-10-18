@@ -3,18 +3,18 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { randomLook } from '../../src/core/people';
-import { setSeed } from '../../src/core/random';
+import { stream } from '../../src/core/random';
 import { BATCHED, Crowd } from '../../src/render/crowd';
 import { buildCharacter, cureRig } from '../../src/render/models/character';
 import { mat, put, sph } from '../../src/render/models/parts';
 
 /** A scene of this many people, standing in a row, gathered into batches. */
 function crowd(people: number) {
-  setSeed(7);
+  const r = stream(7);
   const scene = new THREE.Scene();
   const batches = new Crowd(scene);
   const rigs = Array.from({ length: people }, (_, i) => {
-    const look = randomLook(i % 2 ? 'female' : 'male');
+    const look = randomLook(r, i % 2 ? 'female' : 'male');
     const rig = buildCharacter(look, undefined, i % 2 ? 'knot' : undefined);
     rig.group.position.set(i, 0, 0);
     scene.add(rig.group);

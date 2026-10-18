@@ -23,7 +23,7 @@ import {
   WOMEN_NAMES,
 } from './data';
 import { tuning } from './difficulty';
-import { pick, random, rnd } from './random';
+import { pick, random, rnd, type Rng } from './random';
 import type { Candidate, GameState, Look } from './state/types';
 import { clamp } from './util';
 
@@ -57,19 +57,19 @@ export const MEN_HAIR: readonly number[] = [HAIR.short, HAIR.bald, HAIR.curls];
 export const hairFor = (sex: Sex) => (sex === 'female' ? WOMEN_HAIR : MEN_HAIR);
 
 /** A woman, with this chance, or else a man. */
-export const rollSex = (womenShare: number): Sex => (random() < womenShare ? 'female' : 'male');
+export const rollSex = (r: Rng, womenShare: number): Sex => (random(r) < womenShare ? 'female' : 'male');
 
 /** A random appearance for a woman or a man: half of men have a moustache or a beard. */
-export function randomLook(sex: Sex): Look {
+export function randomLook(r: Rng, sex: Sex): Look {
   return {
-    skin: pick(SKINS),
-    hair: pick(HAIRS),
-    hairStyle: pick(hairFor(sex)),
-    top: pick(TOPS),
-    bottom: pick(BOTTOMS),
-    scale: rnd(0.92, 1.08),
+    skin: pick(r, SKINS),
+    hair: pick(r, HAIRS),
+    hairStyle: pick(r, hairFor(sex)),
+    top: pick(r, TOPS),
+    bottom: pick(r, BOTTOMS),
+    scale: rnd(r, 0.92, 1.08),
     sex,
-    beard: sex === 'male' && random() < 0.5 ? (random() < 0.4 ? 1 : 2) : 0,
+    beard: sex === 'male' && random(r) < 0.5 ? (random(r) < 0.4 ? 1 : 2) : 0,
   };
 }
 
@@ -79,10 +79,10 @@ const CAMEOS_BY_SEX: Readonly<Record<Sex, readonly string[]>> = {
 };
 
 /** A random name for a woman or a man, now and then a cameo. */
-export const randomName = (sex: Sex) =>
-  random() < CAMEO_CHANCE
-    ? pick(CAMEOS_BY_SEX[sex])
-    : `${pick(sex === 'female' ? WOMEN_NAMES : MEN_NAMES)} ${pick(LAST_NAMES)}`;
+export const randomName = (r: Rng, sex: Sex) =>
+  random(r) < CAMEO_CHANCE
+    ? pick(r, CAMEOS_BY_SEX[sex])
+    : `${pick(r, sex === 'female' ? WOMEN_NAMES : MEN_NAMES)} ${pick(r, LAST_NAMES)}`;
 
 /** Whether a name is a woman's or a man's, if it is one the game gives out. */
 export function sexOfName(name: string): Sex | undefined {
@@ -127,9 +127,9 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   // a recruitment drive brings in a better class of applicant
   const drive = s.campaigns.some((c) => c.kind === 'recruit') ? RECRUIT_SKILL : 0;
   // and a center standing higher, better still
-  const skill = clamp(Math.round(rnd(0.6, 3.4 + s.stars * 0.6 + s.grade * GRADE_APPLICANT_SKILL)) + drive, 1, 5);
+  const skill = clamp(Math.round(rnd(s, 0.6, 3.4 + s.stars * 0.6 + s.grade * GRADE_APPLICANT_SKILL)) + drive, 1, 5);
   const traits: TraitId[] = [];
-  if (random() < 0.65) traits.push(pick(TRAITS).id);
+  if (random(s) < 0.65) traits.push(pick(s, TRAITS).id);
   // practitioners all know their discipline's basic modality; a few arrive trained in something more
   const quals: Modality[] = [];
   const discipline = ROLES[role].discipline;
@@ -137,13 +137,13 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
     for (const m of MODALITY_ORDER) {
       const def = MODALITIES[m];
       if (def.discipline !== discipline) continue;
-      if (m === DISCIPLINES[discipline].base || (def.star <= s.stars && random() < 0.28)) quals.push(m);
+      if (m === DISCIPLINES[discipline].base || (def.star <= s.stars && random(s) < 0.28)) quals.push(m);
     }
   }
   // Amanda Jablonsky is decided first, so how often she turns up does not hang on how many therapists are women
-  const amanda = role === 'therapist' && !amandaAround(s) && random() < AMANDA.chance;
-  const sex = amanda ? AMANDA.sex : rollSex(WOMEN_APPLY[role]);
-  const look = randomLook(sex);
+  const amanda = role === 'therapist' && !amandaAround(s) && random(s) < AMANDA.chance;
+  const sex = amanda ? AMANDA.sex : rollSex(s, WOMEN_APPLY[role]);
+  const look = randomLook(s, sex);
   look.top = ROLES[role].uniform;
   if (amanda) {
     const best = Math.max(skill, AMANDA.minSkill);
@@ -161,7 +161,7 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
     };
   }
   const salary = scalePay(fairSalary(role, skill, traits, quals), tuning(s, 'salaries'));
-  return { id: s.nextId++, name: randomName(sex), role, skill, salary, traits, quals, look };
+  return { id: s.nextId++, name: randomName(s, sex), role, skill, salary, traits, quals, look };
 }
 
 /** A salary scaled up or down, to the nearest $10. Scaled by 1, a salary from `fairSalary` is unchanged. */
