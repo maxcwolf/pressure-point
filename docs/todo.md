@@ -157,7 +157,7 @@ From a review of the whole repo. The layering already holds (core imports nothin
 
 ### Later, or as the code is touched
 
-- [ ] **Split `World`** into the grid, pathfinding and the build rules (about 250 lines of them).
+- [ ] **Split `World`** into the grid, pathfinding and the build rules (about 250 lines of them). The build rules are now in `src/core/build-rules.ts` (`3fd17be`), with World passing calls through; the grid and pathfinding are still together.
 - [ ] **Gather the balance numbers.** About 150 bare numbers in `staffing.ts`, `guests.ts` and `stations.ts` belong with the others in `src/core/data/`.
 - [ ] **Item behavior from data.** 24 `type === 'x'` checks across 15 sim files (`stone_warmer` alone is in six), against the rule that adding an item means adding an entry.
 - [ ] **Untangle `staffing.ts`.** Most of the 18 two-way imports inside `src/core/sim/` go through it.
