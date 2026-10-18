@@ -133,6 +133,36 @@ New items picked from [item-ideas.md](item-ideas.md), where each is described in
 
 - [ ] **Maybe: no windows in the building's walls to begin with.** Today the building comes with its own windows, every few tiles along every outer wall, for looks alone. Down the line, perhaps start with bare walls, so every window is one the player has bought. Raised 16 October 2026, after the better windows.
 
+## Architecture, reviewed 17 October 2026
+
+From a review of the whole repo. The layering already holds (core imports nothing outside itself; render and storage import only core), so these are guardrails and a few risky spots, not a rewrite.
+
+### Now
+
+- [x] **Placement checks that leave the game alone.** `canPlaceItem`, `resizeValid` and `layoutValid` in `src/core/world.ts` try a change on the live game state, rebuild the grid, then undo it and rebuild again, with no `try/finally`: an exception part way leaves a corrupted game for the autosave to write. Restore state in `finally`, then check against a scratch copy of the grid so a check costs no rebuilds. Done in `b9a2da6` and `06ebe57`: `doorValid` had the same pattern and is fixed too; a check now does no rebuilds and takes about 18µs rather than 120 to 170.
+- [x] **Saves that replay.** The random seed is a module variable in `src/core/random.ts`, not saved, and `practised` (which followings fade overnight) lives in `SimContext` outside `GameState`, so loading a game changes what happens next. Keep both in the save. Done in `1704937` (save version 31): each game keeps its own random stream, and the once-a-second timer and the noise, warmth and pleasantness grids are saved too. A save is about 17 KB bigger for the grids; run-length coding them would win most of that back.
+- [x] **Release versions that match.** Installers take their version from the tag, but the game's `__APP_VERSION__` and the Sentry release come from `package.json`, and nothing checks the two agree. `pages.yml` also deploys the web build on a tag whether the release passed or not. Done in `48c5e4d`: a tag that differs from `package.json` fails the release, and the web build now deploys from the release workflow once the release is published.
+- [x] **Cache CI.** None of the nine jobs caches Yarn or the Playwright browsers. Done in `a987e9b`.
+- [x] **Lint every layer's boundary.** Only core has an import rule, and its glob misses a third folder level. Add rules for render and storage (core only), and warn when a component imports from `core/sim/*` rather than through `Sim`. Done in `d9a3f37`. The components rule warns 29 times in 19 files, left for **Components through `Sim`** below.
+- [x] **Electron tidy-ups.** Developer tools and reload are in the production menu, and the full-screen IPC handler doesn't check `senderFrame` as the others do. Done in `2b680dc`. Developer tools can still be opened with the shortcut; `webPreferences.devTools: !app.isPackaged` would close that too.
+- [x] **Electron's version.** `scripts/build-desktop.mjs` says it is pinned; `package.json` has `^44.7.0`. Pinned to 44.7.0 in `130f6bc`.
+
+### Soon
+
+- [x] **Route all money through `earn`/`spend`.** Around 16 places in core change `s.money` and the ledger directly (refunds, awards, emergencies, outbreaks, challenges, visits, staffing, cheats), partly because `earn` has no kind for a bonus. Then lint against new ones. Done in `163682a`: 14 places, through `earn(…, 'bonus')`, a new `recoup` for refunds, and `adjustMoney` for the money cheat alone. A lint rule stops new ones, and the chaos test checks the bank against the books.
+- [x] **Make autosave cheaper and safer.** Every autosave reads every slot's whole save just to see it exists (`liveEntries` in `src/storage/saves.ts`), and the slot and the index are written without keeping each other right. On desktop, saves live only in Chromium's localStorage: back them up to files in the app's data folder. Done in `512881b`: autosave reads only the list of saves, a failed write leaves the old save and its entry together, and desktop saves are copied to `saved-games/` in the app's data folder and restored from it when localStorage is empty. Thumbnails are not backed up.
+- [x] **One set of defaults for new and upgraded games.** `src/core/state/upgrade.ts` repeats about 120 of `newGame()`'s defaults with `??=`, and some disagree (`nextEmergency` is 75 in one, `day + 60` in the other). Done in `1704937`: `startingState()` is the one source for both.
+- [ ] **A tidier composition root.** `startGame` in `src/app/game.ts` uses `ui` in a callback before it is declared, patches `tools.askToBuy` on after the fact, and decides which overlay to draw from the menu's state.
+- [ ] **A home for `audio.ts` and `voice.ts`.** They sit loose in `src/`, and audio keeps its own localStorage key rather than going through `storage/`.
+
+### Later, or as the code is touched
+
+- [ ] **Split `World`** into the grid, pathfinding and the build rules (about 250 lines of them).
+- [ ] **Gather the balance numbers.** About 150 bare numbers in `staffing.ts`, `guests.ts` and `stations.ts` belong with the others in `src/core/data/`.
+- [ ] **Item behavior from data.** 24 `type === 'x'` checks across 15 sim files (`stone_warmer` alone is in six), against the rule that adding an item means adding an entry.
+- [ ] **Untangle `staffing.ts`.** Most of the 18 two-way imports inside `src/core/sim/` go through it.
+- [ ] **Components through `Sim`, not around it.** The interface reads `sim.s` and `sim.world` directly about 150 times. New and touched code asks `Sim` instead; a narrower port for the interface waits until the game settles.
+
 ## Roadmap
 
 The phases in [roadmap.md](roadmap.md), from the gaps in [two-point-gaps.md](two-point-gaps.md). Its decisions to make are still open.
