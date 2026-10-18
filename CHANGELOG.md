@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.11
+
+- **Tidier play statistics.** A small change behind the scenes to keep test copies of the game out of the statistics.
+
 ## v0.30.10
 
 - **Performance statistics.** The anonymous play statistics now include how smoothly the game runs, to help find and fix slowdowns.
