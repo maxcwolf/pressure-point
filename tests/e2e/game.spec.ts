@@ -1624,10 +1624,10 @@ test.describe('controls', () => {
     await page.getByRole('button', { name: 'Pause: Space' }).click();
     await page.keyboard.press('KeyP');
     await expect(page.getByRole('button', { name: 'Pause: P' })).toBeVisible();
-    await page.getByRole('button', { name: 'Every 12 seconds' }).click();
-    await expect(page.getByRole('button', { name: 'Every minute' })).toBeVisible();
+    await page.getByRole('button', { name: 'Every 5 minutes' }).click();
+    await expect(page.getByRole('button', { name: 'Only on leaving' })).toBeVisible();
     await page.getByRole('button', { name: 'Back' }).click();
-    await expect(page.locator('#modal')).toContainText('The game autosaves every minute.');
+    await expect(page.locator('#modal')).toContainText('The game saves when you leave it.');
     await expect(page.locator('#modal .keys')).toContainText('P pause');
     await page.getByRole('button', { name: 'Resume' }).click();
 
@@ -2599,6 +2599,8 @@ test.describe('saved games', () => {
   });
 
   test("takes the title screen's picture of the game on the way out, not at every autosave", async ({ game, page }) => {
+    // the shortest autosave interval, rather than the default five minutes
+    await page.addInitScript(() => localStorage.setItem('pressure-point-controls', JSON.stringify({ autosave: 12 })));
     await game.start();
     /** Whether the autosave has a picture. */
     const pictured = () => page.evaluate(() => localStorage.getItem('pressure-point-thumb:auto') !== null);

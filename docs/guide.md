@@ -107,7 +107,7 @@ Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupunct
 
 In the desktop app, **Full screen** under **Display** fills the screen with the game, and the app opens the same way the next time. Leaving full screen any other way switches the setting off with it: the green button or Ctrl+Cmd+F on a Mac, F11 on Windows, or **Game › Toggle Full Screen** in the menu. The browser version has no such switch, and leaves full screen to the browser.
 
-The **Controls** there are kept for every game on this computer: **edge scrolling** (off to begin with), how often the game **autosaves** (every 12 seconds, every minute, every 5 minutes, or only on leaving), and the **keys**. Click a key and press the one you want in its place; a key already in use swaps over. The arrow keys always move the camera and Esc always cancels, whatever the keys are set to.
+The **Controls** there are kept for every game on this computer: **edge scrolling** (off to begin with), how often the game **autosaves** (every 12 seconds, every minute, every 5 minutes to begin with, or only on leaving; it always saves as you leave), and the **keys**. Click a key and press the one you want in its place; a key already in use swaps over. The arrow keys always move the camera and Esc always cancels, whatever the keys are set to.
 
 ## Controls
 

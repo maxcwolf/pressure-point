@@ -134,6 +134,21 @@ test.describe('leaving the desktop app', () => {
     await expect(second.page.locator('#stats')).toContainText('$30,000');
   });
 
+  test('closing the window saves the game, since the regular autosave is minutes apart', async ({ desktop }) => {
+    const first = await desktop.launch();
+    await newGame(first.page);
+    const closed = first.app.waitForEvent('close');
+    // as the window's close button or Cmd+Q does
+    await first.app.evaluate(({ BrowserWindow }) => {
+      BrowserWindow.getAllWindows()[0]?.close();
+    });
+    await closed;
+
+    const second = await desktop.launch();
+    await second.page.getByRole('button', { name: 'Continue' }).click();
+    await expect(second.page.locator('#stats')).toContainText('$30,000');
+  });
+
   test('Main menu returns to the title screen without leaving the app', async ({ desktop }) => {
     const { page } = await desktop.launch();
     await newGame(page);

@@ -69,7 +69,8 @@ export interface ControlPrefs {
 export const defaultControls = (): ControlPrefs => ({
   keys: { ...DEFAULT_KEYS },
   edgeScroll: false,
-  autosave: 12,
+  // every five minutes: a save is tens of kilobytes, and the game is saved anyway as it is left or hidden
+  autosave: 300,
   console: false,
 });
 

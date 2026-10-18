@@ -60,8 +60,8 @@ describe('key bindings', () => {
 });
 
 describe('the controls kept', () => {
-  it('start with the default keys, no edge scrolling, an autosave every 12 seconds and no cheat console', () => {
-    expect(loadControls()).toEqual({ keys: DEFAULT_KEYS, edgeScroll: false, autosave: 12, console: false });
+  it('start with the default keys, no edge scrolling, an autosave every 5 minutes and no cheat console', () => {
+    expect(loadControls()).toEqual({ keys: DEFAULT_KEYS, edgeScroll: false, autosave: 300, console: false });
   });
 
   it('are kept for next time', () => {
