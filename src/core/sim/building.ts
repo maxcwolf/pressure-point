@@ -22,7 +22,7 @@ import { charById } from './chars';
 import { release } from './claims';
 import type { SimContext } from './context';
 import { decorFor, withDecor } from './decor';
-import { spend } from './economy';
+import { recoup, spend } from './economy';
 import { emit, toast } from './events';
 import { resetGuest } from './guests';
 import { repathAll } from './movement';
@@ -257,8 +257,7 @@ export function removeRoom(ctx: SimContext, roomId: number, refund: number) {
   forgetRoom(ctx, room.id);
   removeItems(ctx, items);
   if (back > 0) {
-    ctx.s.money += back;
-    ctx.s.ledger.building -= back;
+    recoup(ctx, back, 'building');
     if (room.done) toast(ctx, `${ROOMS[room.type].name} demolished. ${money(back)} recovered.`, 'info');
     emit(ctx, { type: 'sfx', name: 'sell' });
   }
@@ -288,8 +287,7 @@ export function toggleWindow(ctx: SimContext, roomId: number, spot: WallSpot): '
     room.windows.splice(at, 1);
     // a blueprint's windows come back in full; a built room's at half, like everything else
     const back = Math.round(WINDOW_COST * (room.done ? 0.5 : 1));
-    ctx.s.money += back;
-    ctx.s.ledger.building -= back;
+    recoup(ctx, back, 'building');
     ctx.world.version++;
     emit(ctx, { type: 'sfx', name: 'sell' });
     return 'removed';
@@ -346,8 +344,7 @@ export function resizeRoom(ctx: SimContext, roomId: number, r: Rect): boolean {
   const back = (windows - room.windows.length) * Math.round(WINDOW_COST / 2) + sold - Math.min(cost, 0);
   if (cost > 0) spend(ctx, cost, 'building');
   if (back > 0) {
-    ctx.s.money += back;
-    ctx.s.ledger.building -= back;
+    recoup(ctx, back, 'building');
   }
   worldChanged(ctx);
   emit(ctx, { type: 'sfx', name: 'build' });
@@ -399,8 +396,7 @@ export function takeDownLoose(ctx: SimContext) {
   const loose = ctx.s.items.filter((it) => onWall(it.type) && wallSpotsOf(it).some((w) => !ctx.world.wallFace(w).ok));
   const back = takeDown(ctx, loose);
   if (back <= 0) return;
-  ctx.s.money += back;
-  ctx.s.ledger.building -= back;
+  recoup(ctx, back, 'building');
 }
 
 /** Keep only the windows that can go in a room where it now stands, and say how many could not. */
@@ -436,8 +432,7 @@ export function moveRoom(ctx: SimContext, roomId: number, placed: PlacedLayout):
 function refundWindows(ctx: SimContext, count: number) {
   const back = count * Math.round(WINDOW_COST / 2);
   if (back <= 0) return;
-  ctx.s.money += back;
-  ctx.s.ledger.building -= back;
+  recoup(ctx, back, 'building');
 }
 
 /**
@@ -517,8 +512,7 @@ export function sellItem(ctx: SimContext, id: number) {
   if (!it || !canSell(ctx, it)) return;
   const back = sellBack(it);
   removeItems(ctx, [it]);
-  ctx.s.money += back;
-  ctx.s.ledger.building -= back;
+  recoup(ctx, back, 'building');
   emit(ctx, { type: 'sfx', name: 'sell' });
   const [cx, cy] = itemCenter(it);
   if (back > 0) emit(ctx, { type: 'float', text: `+${money(back)}`, x: cx, y: cy, kind: 'good' });

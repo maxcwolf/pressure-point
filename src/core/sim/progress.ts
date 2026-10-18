@@ -2,6 +2,7 @@
 
 import { centerOf, type ItemType, type Role, type RoomType } from '../data';
 import type { SimContext } from './context';
+import { earn } from './economy';
 import { emit, toast } from './events';
 import { type Objective, objectiveFor } from './goals';
 
@@ -46,8 +47,7 @@ export function awardStar(ctx: SimContext): boolean {
   if (!centerOf(s).goals[s.stars]) return false;
   s.stars++;
   const grant = 5000 * s.stars;
-  s.money += grant;
-  s.ledger.bonus += grant;
+  earn(ctx, grant, 'bonus');
   emit(ctx, { type: 'star', stars: s.stars });
   emit(ctx, { type: 'sfx', name: 'fanfare' });
   return true;

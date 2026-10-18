@@ -48,7 +48,7 @@ import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import { backForClass, isClassLead, restDue } from './classes';
 import type { SimContext } from './context';
-import { changeRep } from './economy';
+import { changeRep, recoup } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { resetGuest } from './guests';
 import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaundering } from './linens';
@@ -330,8 +330,7 @@ function dropJob(ctx: SimContext, st: Staff) {
 export function staffIdle(ctx: SimContext, st: Staff) {
   if (st.training) {
     // interrupted before finishing: the course fee comes back
-    ctx.s.money += st.training.cost;
-    ctx.s.ledger.training -= st.training.cost;
+    recoup(ctx, st.training.cost, 'training');
     st.training = null;
   }
   leavePost(ctx, st);

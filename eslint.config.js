@@ -177,6 +177,25 @@ export default tseslint.config(
     },
   },
 
+  // the center's money changes only through the economy's earn, spend and recoup, so it always agrees with the books.
+  // A new game and an upgraded save are set up with what they hold, and so is a sandbox game as it starts.
+  {
+    files: ['src/**'],
+    ignores: ['src/core/sim/economy.ts', 'src/core/state/game.ts', 'src/core/state/upgrade.ts', 'src/app/boot.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...['AssignmentExpression', 'UpdateExpression'].map((node) => {
+          const at = node === 'AssignmentExpression' ? 'left' : 'argument';
+          return {
+            selector: `${node}[${at}.property.name='money']:matches([${at}.object.name=/^(s|state|save)$/], [${at}.object.property.name='s'])`,
+            message: "Change the center's money with earn, spend or recoup in core/sim/economy.ts, so the books agree.",
+          };
+        }),
+      ],
+    },
+  },
+
   // the desktop shell runs in Node
   { files: ['electron/**'], languageOptions: { globals: globals.node } },
 

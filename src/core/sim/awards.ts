@@ -13,7 +13,7 @@ import {
 import { money } from '../format';
 import type { AwardResult, GameState, MonthRecord, Staff } from '../state/types';
 import type { SimContext } from './context';
-import { changeRep, netOf } from './economy';
+import { changeRep, earn, netOf } from './economy';
 import { emit } from './events';
 import { rivalOpen, rivalPoints } from './rival';
 import { standingPoints } from './standing';
@@ -179,8 +179,7 @@ export function holdAwards(ctx: SimContext, year: number) {
   for (const r of results) {
     if (!r.won) continue;
     const prize = AWARDS[r.award].prize;
-    s.money += prize;
-    s.ledger.bonus += prize;
+    earn(ctx, prize, 'bonus');
     changeRep(ctx, AWARD_REP);
     s.trophies.push({ award: r.award, year });
     const winner = s.staff.find((st) => st.name === r.winner);

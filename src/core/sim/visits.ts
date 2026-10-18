@@ -58,7 +58,7 @@ import { accessTile } from '../world';
 import { prestige } from './ambience';
 import { newChar, say, streetTile } from './chars';
 import type { SimContext } from './context';
-import { changeRep, spend } from './economy';
+import { changeRep, earn, spend } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { goTo, moveAlong } from './movement';
 import { counterVerdict, inspectorComing, inspectorGone, MUSHROOMS_FOUND } from './mushrooms';
@@ -376,8 +376,7 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
   const failed = v.visit === 'inspector' && result.outcome === 'failed';
   if (!failed) {
     if (result.money > 0) {
-      s.money += result.money;
-      s.ledger.bonus += result.money;
+      earn(ctx, result.money, 'bonus');
     }
     changeRep(ctx, result.rep);
   }

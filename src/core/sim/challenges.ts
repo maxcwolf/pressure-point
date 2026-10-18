@@ -23,6 +23,7 @@ import { prestige } from './ambience';
 import { staffById } from './chars';
 import type { SimContext } from './context';
 import { demand } from './demand';
+import { earn } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { cureRate, daysWithoutQuits, type Objective, objectiveFor } from './goals';
 import { offered } from './treatments';
@@ -150,8 +151,7 @@ export function updateChallenge(ctx: SimContext) {
   }
   const about = { kind: 'staff', id: ch.staffId } as const;
   if (challengeObjective(ctx, ch).done) {
-    s.money += ch.reward;
-    s.ledger.bonus += ch.reward;
+    earn(ctx, ch.reward, 'bonus');
     for (const st of s.staff) st.morale = Math.min(100, st.morale + CHALLENGE_MORALE);
     toast(
       ctx,

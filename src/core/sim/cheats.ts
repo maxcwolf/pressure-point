@@ -7,6 +7,7 @@ import { conditionHere, type ConditionId, CONDITIONS } from '../data';
 import { money } from '../format';
 import { clamp } from '../util';
 import type { SimContext } from './context';
+import { adjustMoney } from './economy';
 import { offerEmergency } from './emergencies';
 import { emit } from './events';
 import { spawnGuest } from './guests';
@@ -104,7 +105,7 @@ function run(ctx: SimContext, name: CheatName, args: string[], fastForward: (day
     case 'money': {
       const n = Math.round(amountOr(args[0], 10000));
       if (!Number.isFinite(n) || n === 0) return refused('Say how much, such as money 50000.');
-      s.money += n;
+      adjustMoney(ctx, n);
       emit(ctx, { type: 'sfx', name: 'cash' });
       return done(`${n > 0 ? 'Added' : 'Took away'} ${money(Math.abs(n))}. The bank now holds ${money(s.money)}.`);
     }
