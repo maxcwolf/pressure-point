@@ -856,6 +856,32 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@posthog/browser-common@npm:^0.9.5":
+  version: 0.9.5
+  resolution: "@posthog/browser-common@npm:0.9.5"
+  dependencies:
+    "@posthog/core": "npm:^1.59.1"
+    "@posthog/types": "npm:^1.416.0"
+  checksum: 10c0/98a2b234d3f3e5c69b946bdbca899e147ceaea1ec3511d99bd70201f754af1a30c1f9c7de5b84ce338c742314f119fcab37c5ab01fe1d9b7c60d58a6f0f6bb09
+  languageName: node
+  linkType: hard
+
+"@posthog/core@npm:^1.59.1":
+  version: 1.59.1
+  resolution: "@posthog/core@npm:1.59.1"
+  dependencies:
+    "@posthog/types": "npm:^1.416.0"
+  checksum: 10c0/4211baa00c9e06fea5c555a12a3d28c29d62933aa8575b625e3ecafd27e9b142b267c82a423ce7b306577e82350704e3d3b6ef658f970b8de449aab20f09272b
+  languageName: node
+  linkType: hard
+
+"@posthog/types@npm:^1.416.0":
+  version: 1.416.0
+  resolution: "@posthog/types@npm:1.416.0"
+  checksum: 10c0/d3227a4b6423a1ce69db9c8e74ada17a5c3fd8ba824b0e6ed496744d907859717a0d3ad162bde08d5908679916896e7a1c4f1793ea74c6e641cf08928fe80c4e
+  languageName: node
+  linkType: hard
+
 "@rolldown/binding-android-arm-eabi@npm:1.2.13":
   version: 1.2.13
   resolution: "@rolldown/binding-android-arm-eabi@npm:1.2.13"
@@ -1364,6 +1390,13 @@ __metadata:
     fflate: "npm:~0.8.3"
     meshoptimizer: "npm:~1.1.1"
   checksum: 10c0/e736f24d7540394918fb18195aea95055da760e050c8d8015fd47cc7dd1583cb53fa2198f815e9ccb3891f20237638c6ab1a6c5cc3e7bc1f4694424e1dc50177
+  languageName: node
+  linkType: hard
+
+"@types/trusted-types@npm:^2.0.7":
+  version: 2.0.7
+  resolution: "@types/trusted-types@npm:2.0.7"
+  checksum: 10c0/4c4855f10de7c6c135e0d32ce462419d8abbbc33713b31d294596c0cc34ae1fa6112a2f9da729c8f7a20707782b0d69da3b1f8df6645b0366d08825ca1522e0c
   languageName: node
   linkType: hard
 
@@ -2150,6 +2183,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"core-js@npm:^3.49.0":
+  version: 3.50.0
+  resolution: "core-js@npm:3.50.0"
+  checksum: 10c0/1bfcfb1dbdf45b0b1428a9fdcb03697d1fc52c7e9bc336f804a86ff2c2705a301dca7d9d6636d09d49d60298183273b9321681baeaf330c78db5393bc73f3f6a
+  languageName: node
+  linkType: hard
+
 "core-util-is@npm:~1.0.0":
   version: 1.0.3
   resolution: "core-util-is@npm:1.0.3"
@@ -2295,6 +2335,18 @@ __metadata:
     fs-extra: "npm:^10.1.0"
     js-yaml: "npm:^4.1.0"
   checksum: 10c0/23e202ef17b9a4cf8703f3db00a359b0028e08e1e7f3f15f33407712bb5504b902dda6141b9a20c2085b5e99a6dc088f89b4012189fe813a2eaebf363963daa8
+  languageName: node
+  linkType: hard
+
+"dompurify@npm:^3.4.13":
+  version: 3.4.17
+  resolution: "dompurify@npm:3.4.17"
+  dependencies:
+    "@types/trusted-types": "npm:^2.0.7"
+  dependenciesMeta:
+    "@types/trusted-types":
+      optional: true
+  checksum: 10c0/6a12251ef5e700fc91b6d96d33e9f8b5fd590c55276f632cf42d182c5808e9f48d5bef435ab26eac235dfcc05ed8fe95e1c8308dcc502bf1050e561f14d0361a
   languageName: node
   linkType: hard
 
@@ -2802,6 +2854,13 @@ __metadata:
     picomatch:
       optional: true
   checksum: 10c0/e345083c4306b3aed6cb8ec551e26c36bab5c511e99ea4576a16750ddc8d3240e63826cc624f5ae17ad4dc82e68a253213b60d556c11bfad064b7607847ed07f
+  languageName: node
+  linkType: hard
+
+"fflate@npm:^0.4.8":
+  version: 0.4.9
+  resolution: "fflate@npm:0.4.9"
+  checksum: 10c0/a74e599dc8592766d810e1af5c476627480132d1ded41bad3a8bff5ccebdaec048c0a3504f2578792b1fa26db5c2603473fb76e4983e76d0635f5cfc188f8613
   languageName: node
   linkType: hard
 
@@ -4308,6 +4367,44 @@ __metadata:
   languageName: node
   linkType: hard
 
+"posthog-js@npm:^1.438.12":
+  version: 1.438.12
+  resolution: "posthog-js@npm:1.438.12"
+  dependencies:
+    "@posthog/browser-common": "npm:^0.9.5"
+    "@posthog/core": "npm:^1.59.1"
+    "@posthog/types": "npm:^1.416.0"
+    core-js: "npm:^3.49.0"
+    dompurify: "npm:^3.4.13"
+    fflate: "npm:^0.4.8"
+    preact: "npm:^10.29.3"
+    query-selector-shadow-dom: "npm:^1.0.1"
+    web-vitals: "npm:^6.2.1"
+    web-vitals-soft-navs: "npm:web-vitals@6.2.1"
+  peerDependencies:
+    "@types/react": ">=16.8.0"
+    react: ">=16.8.0"
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    react:
+      optional: true
+  checksum: 10c0/2d207a8e3397ac4ce421c834558b99565700a40d091c3a54e80c17e9e177f51ab551adf80f56c2de0e77d59232cbc5b37af1fd3f99a26045574c44cb527489b6
+  languageName: node
+  linkType: hard
+
+"preact@npm:^10.29.3":
+  version: 10.29.8
+  resolution: "preact@npm:10.29.8"
+  peerDependencies:
+    preact-render-to-string: ">=5"
+  peerDependenciesMeta:
+    preact-render-to-string:
+      optional: true
+  checksum: 10c0/505460352139e0ce5b9c971b69d8d9f3b73ea0f316e3ff1c0b3db9a1abe206c9dff6ba385eb796253c38fcc08b5ade70cd8da3d9d6c9e9aec1a2fd59348253ae
+  languageName: node
+  linkType: hard
+
 "preact@npm:^11.0.1":
   version: 11.0.1
   resolution: "preact@npm:11.0.1"
@@ -4351,6 +4448,7 @@ __metadata:
     globals: "npm:^17.13.0"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^17.6.0"
+    posthog-js: "npm:^1.438.12"
     preact: "npm:^11.0.1"
     prettier: "npm:^3.9.10"
     three: "npm:^0.186.1"
@@ -4468,6 +4566,13 @@ __metadata:
   dependencies:
     hookified: "npm:^2.1.1"
   checksum: 10c0/4a39d45492c65a4b9795381acede1bd566028ce9764ead5b41d776b391a898bf0855dd2b59d724a6711fe253ba3cacf7c9a8832887cf9dc6d48a2c5e4997c82d
+  languageName: node
+  linkType: hard
+
+"query-selector-shadow-dom@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "query-selector-shadow-dom@npm:1.0.1"
+  checksum: 10c0/f36de03f170ff1da69c3eecfa7f8b01e450a46dd266c921e17f36076ec59862eee00179489f30cb17c118bb56e868436578c01ea66f671fb358750d6ae474125
   languageName: node
   linkType: hard
 
@@ -5306,7 +5411,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-vitals@npm:^6.2.3":
+"web-vitals-soft-navs@npm:web-vitals@6.2.1":
+  version: 6.2.1
+  resolution: "web-vitals@npm:6.2.1"
+  checksum: 10c0/6f5cfb5875f6164898ea1097067a8ab29ed6fbd9ad38ac7ea519c110bf1d38a441a5b1e38d18f3afd17c62f9aaa88b6bac3b719bd8e29660f6d939bc12640508
+  languageName: node
+  linkType: hard
+
+"web-vitals@npm:^6.2.1, web-vitals@npm:^6.2.3":
   version: 6.2.3
   resolution: "web-vitals@npm:6.2.3"
   checksum: 10c0/d7db74ab8503f069db0f697b1b1318670062616a1b46464abde98dc599ffbf71c0080f39bfe739ed122da12f6980fe882d471e86a78fedad61a4bfa1abffa32c

@@ -8,10 +8,12 @@ import type { GameState } from '../core/state/types';
 import { archiveAutosave, AUTOSAVE_ID, readSave, startBackup } from '../storage/saves';
 import { loadDisciplinePrefs, loadSandbox } from '../storage/settings';
 import { showTitle } from '../ui';
+import { track } from './analytics';
 import { desktop } from './desktop';
 import { fullScreen } from './fullscreen';
 import { startGame } from './game';
 import { takeHandoff } from './handoff';
+import { gameProps } from './play-events';
 import { newGameCenter } from './start';
 import { updates } from './updates';
 
@@ -41,6 +43,7 @@ export async function boot() {
   // the save's name is the player's own, so the log says only what kind of game it is
   const kind = what && newGameCenter(what) ? 'new' : 'saved';
   logger.info('Game opened', { kind, center: opened.center, day: Math.floor(opened.day) });
+  track('game_opened', { ...gameProps(opened), kind, difficulty: opened.difficulty });
   // so every report from here on says which game it came from
   setTag('center', opened.center);
   setTag('game', kind);

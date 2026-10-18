@@ -4,6 +4,7 @@ import './SettingsPanel.css';
 
 import { useEffect } from 'preact/hooks';
 
+import { setSharing, sharing, track } from '../../app/analytics';
 import type { Audio } from '../../audio';
 import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
@@ -30,7 +31,7 @@ export interface SettingsPanelProps {
 
 /**
  * Switches for which treatments are offered, how items show their stats, the controls, full screen in the desktop app,
- * sound and music, and the cheat console.
+ * sound and music, the cheat console and sharing play statistics.
  */
 export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPanelProps) {
   const redraw = useRedraw();
@@ -38,10 +39,11 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
   useEffect(() => fullScreen?.subscribe(redraw), [fullScreen, redraw]);
   /** Whether a discipline is switched on, in this game or for new ones. */
   const isOn = (d: Discipline) => (sim ? sim.enabled(d) : loadDisciplinePrefs()[d] !== false);
-  /** Flip a switch, click, and let everyone know. */
-  const flip = (change: () => void) => () => {
+  /** Flip a switch, click, count it in the play statistics, and let everyone know. */
+  const flip = (setting: string, change: () => boolean | string) => () => {
     audio.unlock();
-    change();
+    const value = change();
+    track('setting_changed', { setting, value });
     audio.play('blip');
     redraw();
     onChange?.();
@@ -61,11 +63,12 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
               desc={def.desc}
               on={isOn(d)}
               locked={def.optional ? '' : 'Always on'}
-              onToggle={flip(() => {
+              onToggle={flip(d, () => {
                 const on = !isOn(d);
                 // remembered for future games, and applied to this one if there is one
                 saveDisciplinePref(d, on);
                 sim?.setDiscipline(d, on);
+                return on;
               })}
             />
           );
@@ -75,10 +78,11 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           name={QIGONG_SETTING.name}
           desc={QIGONG_SETTING.desc}
           on={sim ? sim.enabled('qigong') : loadDisciplinePrefs().qigong !== false}
-          onToggle={flip(() => {
+          onToggle={flip('qigong', () => {
             const on = !(sim ? sim.enabled('qigong') : loadDisciplinePrefs().qigong !== false);
             saveDisciplinePref('qigong', on);
             sim?.setDiscipline('qigong', on);
+            return on;
           })}
         />
       </ul>
@@ -97,9 +101,11 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           </div>{' '}
           <button
             class="choice item-view-choice"
-            onClick={flip(() => {
+            onClick={flip('itemView', () => {
               const prefs = loadDisplay();
-              saveDisplay({ ...prefs, itemView: nextChoice(ITEM_VIEWS, prefs.itemView) });
+              const itemView = nextChoice(ITEM_VIEWS, prefs.itemView);
+              saveDisplay({ ...prefs, itemView });
+              return itemView;
             })}
           >
             {ITEM_VIEW_NAMES[loadDisplay().itemView]}
@@ -110,9 +116,10 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           name="Preview while placing"
           desc="An item in hand shows what it would change where it is about to go, and colors the floor to match."
           on={loadDisplay().placePreview}
-          onToggle={flip(() => {
+          onToggle={flip('placePreview', () => {
             const prefs = loadDisplay();
             saveDisplay({ ...prefs, placePreview: !prefs.placePreview });
+            return !prefs.placePreview;
           })}
         />
       </ul>
@@ -132,8 +139,10 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
               name="Full screen"
               desc="Fill the screen with the game. It opens the same way next time."
               on={fullScreen.on()}
-              onToggle={flip(() => {
-                fullScreen.set(!fullScreen.on());
+              onToggle={flip('fullScreen', () => {
+                const on = !fullScreen.on();
+                fullScreen.set(on);
+                return on;
               })}
             />
           </ul>
@@ -146,8 +155,9 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           name="Sound effects"
           desc="Clicks, chimes and the cash register."
           on={audio.sound}
-          onToggle={flip(() => {
+          onToggle={flip('sound', () => {
             audio.toggleSound();
+            return audio.sound;
           })}
         />
         <SettingRow
@@ -155,8 +165,9 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           name="Music"
           desc="The lounge loop in the background."
           on={audio.music}
-          onToggle={flip(() => {
+          onToggle={flip('music', () => {
             audio.toggleMusic();
+            return audio.music;
           })}
         />
       </ul>
@@ -167,9 +178,24 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           name="Cheat console"
           desc="Press ~ in a game to type in commands, such as money or win. A campaign game they are used in earns no more achievements or stars."
           on={loadControls().console}
-          onToggle={flip(() => {
+          onToggle={flip('console', () => {
             const prefs = loadControls();
             saveControls({ ...prefs, console: !prefs.console });
+            return !prefs.console;
+          })}
+        />
+      </ul>
+      <h4>Privacy</h4>
+      <ul>
+        <SettingRow
+          icon="📊"
+          name="Share play statistics"
+          desc="Send anonymous figures on how games go, such as the rooms built and how each month ends, to help improve the game. Never your saves or their names."
+          on={sharing()}
+          onToggle={flip('sharing', () => {
+            const on = !sharing();
+            setSharing(on);
+            return on;
           })}
         />
       </ul>
