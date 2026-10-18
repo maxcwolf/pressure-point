@@ -1,6 +1,8 @@
-// The play statistics: the moments in a game they count, and the player's choice to share them or not.
+// The play statistics: the moments in a game they count, the player's choice to share them or not, and the tests and
+// bots that never send them.
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { automated } from '../../src/app/automation';
 import { gameProps, markOf, playEvents } from '../../src/app/play-events';
 import { DAYS_PER_MONTH } from '../../src/core/data';
 import { forgetSharing, loadSharing, saveSharing } from '../../src/storage/analytics';
@@ -155,5 +157,28 @@ describe('sharing play statistics', () => {
     globalThis.localStorage = { getItem: missing, setItem: missing, removeItem: missing } as unknown as Storage;
     saveSharing(false);
     expect(loadSharing()).toBe(false);
+  });
+});
+
+describe('tests and bots', () => {
+  const PLAYER =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36';
+
+  it('are told apart from players', () => {
+    expect(automated({ userAgent: PLAYER })).toBe(false);
+    expect(automated({ webdriver: false, userAgent: PLAYER })).toBe(false);
+  });
+
+  it('include any browser under automation, as Playwright drives the browser and the desktop app', () => {
+    expect(automated({ webdriver: true, userAgent: PLAYER })).toBe(true);
+  });
+
+  it('include crawlers and headless browsers that name themselves', () => {
+    for (const userAgent of [
+      'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36 Chrome-Lighthouse',
+    ])
+      expect(automated({ userAgent })).toBe(true);
   });
 });
