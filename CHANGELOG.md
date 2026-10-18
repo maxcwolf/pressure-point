@@ -2,6 +2,14 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.8
+
+- **Autosave every 5 minutes.** A new player's game now autosaves every 5 minutes rather than every 12 seconds, and still saves whenever you leave it, close the window or switch away. A choice already made in Settings is kept.
+- **A loaded game carries on as it was.** Saving and loading no longer changes what happens next: the game's luck, the day's practice and the feel of each room are saved with it.
+- **Saves kept safe on desktop.** The app keeps a copy of every save in files of its own, and brings them back if its storage is ever lost. A save that fails partway leaves the last good one in place.
+- **Full screen on launch.** The app reliably reopens in full screen when you left it that way, even when it starts behind another window.
+- **Smoother building.** Checking where something can go while you hold it is about seven times quicker.
+
 ## v0.30.7
 
 - **A quieter Qi Gong call at speed.** The announcement that a class is starting is now heard as often at 2x and 3x speed as at normal speed, instead of two or three times as often.
