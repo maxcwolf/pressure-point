@@ -10,6 +10,7 @@ Tick an item off when it is done, with the commit or release it landed in.
 - **Which copies send.** Only the published web game (`production`) and the installed desktop app (`desktop`), as decided by `src/app/environment.ts`, which Sentry uses too. The dev server, `yarn preview`, the desktop app run from this folder and every test send nothing.
 - **Sharing is on until switched off.** Settings → Privacy → Share play statistics. Switching it off stores `off` under `pressure-point-analytics` (`src/storage/analytics.ts`) and stops PostHog capturing; switching it back on forgets the choice.
 - **Only the events the game sends.** The SDK is the `posthog-js/dist/module.no-external` build, with autocapture, page views, session recording, surveys, feature flags, heatmaps and exception capture all off, and nothing loaded from elsewhere. Players are a random id kept in local storage, with no person profiles (`person_profiles: 'never'`). The save's name, which is the player's own, is never sent.
+- **IP addresses are kept, for now.** Decided on 18 October 2026: the project stores them (`anonymize_ips` is off), which gives each event a country. To stop, turn on "Discard client IP data" under PostHog's Project settings; nothing in the game changes.
 - **The page allows it.** `index.html`'s content security policy lets the game connect to `https://us.i.posthog.com` and `https://us-assets.i.posthog.com`.
 - **Two kinds of event.** Most are found by comparing the game, once a second, with how it stood a second before (`src/app/play-events.ts`, run by `watchGame` in `src/app/analytics.ts`), so the game core knows nothing of them. Choices made only in the interface (offers, menus, overlays, settings) are counted where the player clicks.
 - **Tests.** `tests/unit/play-events.test.ts` covers every event found by comparison and the sharing switch.
@@ -46,7 +47,6 @@ Checked end to end on 18 October 2026: a local production build, briefly allowed
 
 ### In PostHog
 
-- [ ] **Discard IP addresses.** The project keeps them (`anonymize_ips` is off). Turn on "Discard client IP data" under Project settings, so no player's IP address is stored.
 - [ ] **A new-player funnel:** `game_opened` (new) → `milestone_reached` first_item → `doors_opened` → first_guest → first_heal → `star_earned` star 1. Where it drops is where new players get stuck.
 - [ ] **Retention:** players who come back for another `game_opened` a day and a week later.
 - [ ] **A dashboard of how games go:** money, reputation, guests lost by cause and wait times by month, broken down by center and difficulty; staff quits by role; who goes into the red, and when.
@@ -84,5 +84,5 @@ The numbers show where players stop, not why.
 ### Privacy and players
 
 - [ ] **Tell new players.** Say once, on the title screen or the first game, that anonymous play statistics are shared and where to switch them off, rather than relying on them finding the setting.
-- [ ] **A privacy note** in the README and beside the download buttons: what is sent (play statistics to PostHog, crash reports to Sentry), that neither has names or saves, and how to stop it.
+- [ ] **A privacy note** in the README and beside the download buttons: what is sent (play statistics to PostHog, crash reports to Sentry), that neither has names or saves, that PostHog keeps IP addresses while they are kept, and how to stop it.
 - [ ] **Session replay, if it is ever wanted.** It is off, and the content security policy and the no-external build would both have to change. Recordings of the canvas are of little use anyway: the game is drawn with WebGL, which replay does not capture well.
