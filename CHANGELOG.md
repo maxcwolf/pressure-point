@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.12
+
+- **Livelier, more detailed people.** Everyone now has knees and elbows, a face with eyes, brows and a smile, finer hair, and shoes with soles. They shift their weight as they walk, breathe and fidget while they wait, and lean into their work. Every uniform has been refitted to match.
+- **Items you can't afford.** The Items menu now refuses an item you can't afford and says how much more you need, and buttons that work no longer look faded.
+
 ## v0.30.11
 
 - **Tidier play statistics.** A small change behind the scenes to keep test copies of the game out of the statistics.
