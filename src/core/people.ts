@@ -127,7 +127,8 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   // a recruitment drive brings in a better class of applicant
   const drive = s.campaigns.some((c) => c.kind === 'recruit') ? RECRUIT_SKILL : 0;
   // and a center standing higher, better still
-  const skill = clamp(Math.round(rnd(s, 0.6, 3.4 + s.stars * 0.6 + s.grade * GRADE_APPLICANT_SKILL)) + drive, 1, 5);
+  const reach = 3.4 + s.stars * 0.6 + s.grade * GRADE_APPLICANT_SKILL;
+  const skill = clamp(Math.round(rnd(s, 0.6, reach)) + drive, 1, 5);
   const traits: TraitId[] = [];
   if (random(s) < 0.65) traits.push(pick(s, TRAITS).id);
   // practitioners all know their discipline's basic modality; a few arrive trained in something more
@@ -146,7 +147,8 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   const look = randomLook(s, sex);
   look.top = ROLES[role].uniform;
   if (amanda) {
-    const best = Math.max(skill, AMANDA.minSkill);
+    // she outranks the best the pool could offer right now, so she keeps pace as the center grows
+    const best = clamp(Math.round(reach) + drive + AMANDA.edge, AMANDA.minSkill, 5);
     const hers = [...AMANDA.quals];
     Object.assign(look, { hairStyle: AMANDA.hairStyle, hair: AMANDA.hair });
     return {

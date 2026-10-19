@@ -120,13 +120,15 @@ export const TRAITS: readonly TraitDef[] = [
 ];
 
 /**
- * A massage therapist who now and then applies: at least three stars, and trained in every massage technique but
+ * A massage therapist who now and then applies: at least three stars and one above the best of the other applicants, and trained in every massage technique but
  * Sports and Hot Stone. There is only ever one of her, and she wears her brown hair in a mohawk, a style no one else has.
  */
 export const AMANDA = {
   name: 'Amanda Jablonsky',
   chance: 0.05,
   minSkill: 3,
+  /** Stars above the best applicant the pool could produce at the time (at most five in all). */
+  edge: 1,
   quals: ['swedish', 'deep', 'cranio'],
   hairStyle: 5,
   /** Always brown. */

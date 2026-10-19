@@ -382,6 +382,16 @@ describe('a save from before staff careers', () => {
 });
 
 describe('Amanda Jablonsky', () => {
+  it('scales up with the center, outranking the other applicants', () => {
+    const s = newGame();
+    s.stars = 3;
+    s.candidates = [];
+    const pool = Array.from({ length: 3000 }, () => makeCandidate(s, 'therapist'));
+    const others = pool.filter((c) => c.name !== AMANDA.name).map((c) => c.skill);
+    const amanda = pool.find((c) => c.name === AMANDA.name);
+    expect(amanda?.skill).toBe(Math.min(5, Math.max(...others) + 1));
+  });
+
   it('applies now and then as a massage therapist of three stars or more, trained in all but Sports and Hot Stone', () => {
     const s = newGame();
     s.candidates = [];
