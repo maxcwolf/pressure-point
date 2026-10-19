@@ -59,7 +59,12 @@ function cost(root: THREE.Object3D) {
 /** Every model the lab shows, with what it costs to draw. */
 async function costs() {
   const { CATALOG } = await import('../../src/lab/catalog');
-  return CATALOG.map((sp: Specimen) => ({ id: sp.id, group: sp.group, ...cost(sp.build().root) }));
+  // a seated person is an item and a person shown together, each counted on its own already
+  return CATALOG.filter((sp) => sp.group !== 'Seated').map((sp: Specimen) => ({
+    id: sp.id,
+    group: sp.group,
+    ...cost(sp.build().root),
+  }));
 }
 
 describe('the cost of drawing each model', () => {
@@ -67,7 +72,7 @@ describe('the cost of drawing each model', () => {
     // the heaviest when this was written: a shop counter 23, a trophy cabinet 21, a guest 29, staff 23; people grew to a
     // guest 36, staff 32 and a visitor 33 when they were given knees, elbows, faces and finer hair (people in the game
     // are drawn in batches, so the figures for them here are what one person alone would cost)
-    const limit = { Items: 30, Guests: 38, Staff: 34, Visitors: 35, Scenery: 20 };
+    const limit = { Items: 30, Guests: 38, Staff: 34, Visitors: 35, Seated: 0, Scenery: 20 };
     const over = (await costs()).filter((m) => m.calls > limit[m.group]).map((m) => `${m.id}: ${m.calls}`);
     expect(over).toEqual([]);
   });

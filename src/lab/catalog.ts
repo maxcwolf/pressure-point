@@ -22,6 +22,8 @@ import {
 import { HAIR, randomLook } from '../core/people';
 import { newSeed, stream } from '../core/random';
 import type { Char, Look, VisitorKind } from '../core/state/types';
+import { must } from '../core/util';
+import { accessPose, itemCenter } from '../core/world';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
 import { buildBeach } from '../render/models/beach';
@@ -49,7 +51,7 @@ export interface Model {
   controls: Control[];
 }
 
-export type Group = 'Items' | 'Guests' | 'Staff' | 'Visitors' | 'Scenery';
+export type Group = 'Items' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Scenery';
 
 /** Something the lab can show. */
 export interface Specimen {
@@ -240,6 +242,52 @@ const LOOKS: readonly (readonly [key: string, label: string, look: Partial<Look>
   ['beard', 'a beard', { sex: 'male', hairStyle: HAIR.curls, beard: 2, skin: 0x8d5a3b, hair: 0x2b1d16 }],
 ];
 
+/** Which member of staff sits at each item they work at. */
+const SEATED_STAFF: Partial<Record<ItemType, Role>> = {
+  consult_desk: 'consultant',
+  singing_bowls: 'healer',
+  ceremony_mat: 'shaman',
+};
+
+/** Every place someone sits, by item and by who sits there, once each: the first such seat of each item. */
+export const SEATS: readonly (readonly [ItemType, number])[] = (Object.keys(ITEMS) as ItemType[]).flatMap((type) =>
+  ITEMS[type].access.flatMap((a, i, all) =>
+    a.pose === 'sit' && all.findIndex((b) => b.pose === 'sit' && b.role === a.role) === i ? [[type, i] as const] : [],
+  ),
+);
+
+/** An item with someone sitting at one of its seats, placed and posed as the game places and poses them, to see that
+ * they sit on it rather than in it: a member of staff at a seat they work at, or else a guest. */
+function seatedSpecimen(type: ItemType, i: number): Specimen {
+  const def = ITEMS[type];
+  const spot = must(def.access[i], `seat ${i} of ${type}`);
+  const staff = spot.role === 'staff' || spot.role === 'study';
+  const role = SEATED_STAFF[type] ?? 'therapist';
+  return {
+    id: `seated:${type}:${spot.role}`,
+    group: 'Seated',
+    name: `${def.name}, ${staff ? 'staff' : 'a guest'} seated`,
+    footprint: [def.w, def.h],
+    /** Build the item with the person on it. */
+    build() {
+      const placed = { type, x: 0, y: 0, rot: 0 };
+      const [cx, cy] = itemCenter(placed);
+      const at = accessPose(placed, i);
+      const rig = buildCharacter(LAB_LOOK, staff ? role : undefined);
+      const c: Char = staff ? demoStaff(LAB_LOOK, role) : demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
+      Object.assign(c, { x: at.x - cx, y: at.y - cy, facing: at.face, pose: at.pose, h: at.h });
+      const root = new THREE.Group();
+      root.add(buildItem(type, {}), rig.group);
+      return {
+        root,
+        controls: [],
+        /** Seat them. */
+        animate: (t, dt) => poseChar(rig, c, t, dt, null),
+      };
+    },
+  };
+}
+
 /** A member of staff in their uniform, working on any treatment their role gives. */
 function staffSpecimen(role: Role, named?: Named): Specimen {
   const home = named?.look ?? LAB_LOOK;
@@ -422,6 +470,7 @@ export const CATALOG: readonly Specimen[] = [
     staffSpecimen('receptionist', { id: `look-${key}`, name: `With ${label}`, look: { ...LAB_LOOK, ...look } }),
   ),
   ...(['vip', 'inspector'] as const).map(visitorSpecimen),
+  ...SEATS.map(([type, i]) => seatedSpecimen(type, i)),
   ...SCENERY,
 ];
 

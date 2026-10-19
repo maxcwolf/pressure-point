@@ -156,11 +156,14 @@ export const DARK = 0x3b3f4a;
 
 export const WHITE = 0xfbfaf6;
 
-/** Add a swivel chair to a group, with its back toward the given side. */
+/**
+ * Add a swivel chair to a group, with its back toward the given side. Its seat runs from the back to just behind a
+ * sitter's knees, so their legs hang clear of it.
+ */
 export function chair(g: THREE.Object3D, x: number, z: number, backSign: number, color: number) {
   put(g, cyl(0.04, 0.04, 0.32), mat(DARK), x, 0.16, z);
   put(g, cyl(0.2, 0.22, 0.04), mat(DARK), x, 0.02, z);
-  put(g, rbox(0.46, 0.1, 0.46, 0.04), mat(color), x, 0.36, z);
+  put(g, rbox(0.46, 0.1, 0.36, 0.04), mat(color), x, 0.36, z + backSign * 0.05);
   put(g, rbox(0.46, 0.5, 0.09, 0.04), mat(color), x, 0.66, z + backSign * 0.23);
 }
 

@@ -1,11 +1,39 @@
 // How a person is posed each frame: walking, sitting, lying down, working, and showing their symptoms.
 
+import * as THREE from 'three';
+
 import { type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
 import type { Char } from '../core/state/types';
 import { type CharRig, cureRig, type Joints } from './models/character';
 import { emojiTexture } from './models/emoji';
 import { driftSmoke } from './models/sage';
+
+/**
+ * A hip's rotation that points its thigh along `along` and turns it on its own length so the knee hinges about
+ * `hinge`, the shin swinging toward `hinge × along` as the knee bends.
+ */
+function hip(along: THREE.Vector3, hinge: THREE.Vector3) {
+  const d = along.normalize();
+  const h = hinge.addScaledVector(d, -hinge.dot(d)).normalize();
+  const swing = new THREE.Vector3().crossVectors(h, d);
+  return new THREE.Euler().setFromRotationMatrix(new THREE.Matrix4().makeBasis(h, d.clone().negate(), swing.negate()));
+}
+
+/**
+ * How people sit on the floor: below the height `floor`, rather than on a seat, they sit cross-legged. Each thigh points
+ * forward, out and down to a knee on the floor, turned outward so its knee hinges about the vertical, tipped forward so
+ * the foot lies down, and the shin folds in across the body, the right one bent a little less to cross in front.
+ */
+const SIT = {
+  floor: -0.1,
+  crossed: {
+    left: hip(new THREE.Vector3(-0.8, -0.42, 0.6), new THREE.Vector3(0, 1, 0.6)),
+    right: hip(new THREE.Vector3(0.8, -0.34, 0.6), new THREE.Vector3(0, -1, -0.6)),
+    kneeL: 2.5,
+    kneeR: 2.2,
+  },
+};
 
 /** Whether someone is walking a room with a bundle of sage, clearing it of bad vibes. */
 export const wafting = (c: Char) => c.kind === 'staff' && c.state === 'doingJob' && c.job?.kind === 'smudge';
@@ -34,6 +62,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
   let headZ = 0;
   /** Leaning to one side, for a guest who is off balance. */
   let side = 0;
+  /** Whether they sit on the floor rather than a seat. */
+  const onFloor = c.pose === 'sit' && c.h < SIT.floor;
   if (c.pose === 'walk') {
     const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : 0.62);
     legL = sw;
@@ -117,6 +147,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
       // head down, scribbling notes
       armR = -1.05 + Math.sin(t * 9 + c.id) * 0.08;
       headX = 0.32 + Math.sin(t * 0.7 + c.id) * 0.08;
+    }
+    if (onFloor) {
+      // cross-legged on the floor: thighs out to the sides, shins folded in front
+      legL = SIT.crossed.left.x;
+      legR = SIT.crossed.right.x;
     }
   } else if (c.pose === 'lie') {
     bodyRX = Math.PI / 2;
@@ -265,20 +300,23 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
   rig.head.rotation.z += (headZ - rig.head.rotation.z) * k;
   rig.legL.rotation.x += (legL - rig.legL.rotation.x) * k;
   rig.legR.rotation.x += (legR - rig.legR.rotation.x) * k;
+  rig.legL.rotation.y += ((onFloor ? SIT.crossed.left.y : 0) - rig.legL.rotation.y) * k;
+  rig.legR.rotation.y += ((onFloor ? SIT.crossed.right.y : 0) - rig.legR.rotation.y) * k;
   rig.armL.rotation.x += (armL - rig.armL.rotation.x) * k;
   rig.armR.rotation.x += (armR - rig.armR.rotation.x) * k;
   rig.armL.rotation.z += (-armOut + life.armInL - rig.armL.rotation.z) * k;
   rig.armR.rotation.z += (armOut - rig.armR.rotation.z) * k;
-  poseJoints(rig.joints, rig, c, t, k, { legL, legR, armL, armR, phase, visual, style }, life);
+  poseJoints(rig.joints, rig, c, t, k, { legL, legR, armL, armR, phase, visual, style, onFloor }, life);
   if (rig.band?.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
   if (visual === 'jitter' && c.pose !== 'lie') {
     // pins and needles: a constant fizzing shiver
     rig.body.position.x = Math.sin(t * 47 + c.id) * 0.012;
     rig.legL.rotation.z = Math.sin(t * 39 + c.id) * 0.07;
     rig.legR.rotation.z = Math.sin(t * 43 + c.id) * 0.07;
-  } else if (rig.visual === 'jitter') {
-    rig.body.position.x = 0;
-    rig.legL.rotation.z = rig.legR.rotation.z = 0;
+  } else {
+    if (rig.visual === 'jitter') rig.body.position.x = 0;
+    rig.legL.rotation.z += ((onFloor ? SIT.crossed.left.z : 0) - rig.legL.rotation.z) * k;
+    rig.legR.rotation.z += ((onFloor ? SIT.crossed.right.z : 0) - rig.legR.rotation.z) * k;
   }
   if (rig.bob && !rig.cured) {
     rig.bob.position.y = 0.4 + Math.sin(t * 2.2 + c.id) * 0.03;
@@ -338,6 +376,8 @@ interface Limbs {
   phase: number;
   visual: CharRig['visual'];
   style: WorkStyle;
+  /** Sitting cross-legged on the floor. */
+  onFloor: boolean;
 }
 
 /** How far an elbow bends for an arm raised this far: hanging, a little; reaching forward, more; straight overhead. */
@@ -349,7 +389,7 @@ export const elbowFor = (arm: number) => (arm < -2 ? -0.12 : -(0.2 + Math.min(1,
  * arms reach forward.
  */
 function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limbs: Limbs, life: Life) {
-  const { legL, legR, armL, armR, phase, visual, style } = limbs;
+  const { legL, legR, armL, armR, phase, visual, style, onFloor } = limbs;
   let kneeL = 0.04;
   let kneeR = 0.04;
   let twist = 0;
@@ -357,6 +397,9 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
     kneeL = 0.08 + Math.max(0, -Math.cos(phase)) * 0.95;
     kneeR = 0.08 + Math.max(0, Math.cos(phase)) * 0.95;
     twist = Math.sin(phase) * 0.14;
+  } else if (onFloor) {
+    kneeL = SIT.crossed.kneeL;
+    kneeR = SIT.crossed.kneeR;
   } else if (c.pose === 'sit') {
     kneeL = -legL;
     kneeR = -legR;
@@ -557,7 +600,7 @@ function liveliness(
   } else if (kind === 'tap') {
     life.kneeR += 0.22 * Math.max(0, Math.sin(t * 13)) * a;
     life.swayX -= 0.015 * a;
-  } else {
+  } else if (c.h >= SIT.floor) {
     life.kneeL += 0.3 * Math.sin(t * 3.2) * a;
     life.kneeR += 0.3 * Math.sin(t * 3.2 + Math.PI) * a;
   }

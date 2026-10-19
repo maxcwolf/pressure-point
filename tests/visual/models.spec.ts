@@ -17,6 +17,14 @@ const IDS = [
   ...['long', 'bob', 'ponytail', 'curls', 'short', 'bald', 'moustache', 'beard'].map((look) => `staff:look-${look}`),
   'visitor:vip',
   'visitor:inspector',
+  // someone sitting at each kind of seat, once for each who sits there
+  ...Object.entries(ITEMS).flatMap(([type, def]) =>
+    def.access.flatMap((a, i, all) =>
+      a.pose === 'sit' && all.findIndex((b) => b.pose === 'sit' && b.role === a.role) === i
+        ? [`seated:${type}:${a.role}`]
+        : [],
+    ),
+  ),
   'scenery:trees',
   'scenery:pines',
   'scenery:beach',
