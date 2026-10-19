@@ -524,6 +524,126 @@ export function detailShawl(torso: THREE.Group, cloth: THREE.Material, wood: THR
   put(torso, beads(), wood).name = 'beads';
 }
 
+/** How far out the front of the shirt is at a point across it and up it, plus `out`. */
+function shirtFront(x: number, y: number, out: number) {
+  const r = shirtRadius(y);
+  return r * SHIRT_DEEP * Math.sqrt(Math.max(0, 1 - (x / (r * SHIRT_WIDE)) ** 2)) + out;
+}
+
+/** A piece of cloth lying on the front of the shirt, `out` beyond it, its outline given by where each point of a grid
+ * across it (u) and up it (v), each 0 to 1, falls on the shirt. */
+function onFront(at: (u: number, v: number) => readonly [number, number], out: number, nu = 8, nv = 10) {
+  const positions: number[] = [];
+  const index: number[] = [];
+  for (let j = 0; j <= nv; j++)
+    for (let i = 0; i <= nu; i++) {
+      const [x, y] = at(i / nu, j / nv);
+      positions.push(x, y, shirtFront(x, y, out));
+    }
+  for (let j = 0; j < nv; j++)
+    for (let i = 0; i < nu; i++) {
+      const a = j * (nu + 1) + i;
+      const c = a + nu + 1;
+      index.push(a, a + 1, c, a + 1, c + 1, c);
+    }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(index);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** The tails of a long coat, from the waist to above the knee, falling a little wider than the shirt. */
+const coatTails = () =>
+  fuse('coat tails', () => [
+    lathe(
+      [
+        [0.168, -0.166],
+        [0.185, -0.172],
+        [0.181, -0.12],
+        [0.174, -0.06],
+        [0.168, 0],
+        [0.164, 0.03],
+      ],
+      SHIRT_WIDE,
+      0.93,
+      36,
+    ),
+  ]);
+
+/** Lengthen a shirt into a long coat, as a consultant's white coat. */
+export function detailCoat(torso: THREE.Group, cloth: THREE.Material) {
+  put(torso, coatTails(), cloth).name = 'coat';
+}
+
+/** The bib of a pair of overalls, over the front of the shirt. */
+const bib = () => fuse('bib', () => [onFront((u, v) => [-0.1 + 0.2 * u, 0.1 + 0.2 * v], 0.012)]);
+
+/** Dress a caretaker in the bib of their overalls. */
+export function detailBib(torso: THREE.Group, cloth: THREE.Material) {
+  put(torso, bib(), cloth).name = 'bib';
+}
+
+/** A fine chain hanging round the neck to a medallion on the chest. */
+const chain = () =>
+  fuse('chain', () => {
+    const points = Array.from({ length: 17 }, (_, i) => {
+      const a = (Math.PI / 2) * (-1 + i / 8);
+      const x = 0.09 * Math.sin(a);
+      const y = 0.46 - 0.17 * Math.cos(a);
+      return new THREE.Vector3(x, y, shirtFront(x, y, 0.008));
+    });
+    return [bare(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 48, 0.008, 6, false))];
+  });
+
+/** A round medallion lying on the chest. */
+const medallion = () =>
+  fuse('medallion', () => [place(ball(0.038, 14), [0, 0.27, shirtFront(0, 0.27, 0.012)], [0, 0, 0], [1, 1, 0.4])]);
+
+/** Hang a chain and a medallion on a practitioner. */
+export function detailMedallion(torso: THREE.Group, gold: THREE.Material, face: THREE.Material) {
+  put(torso, chain(), gold).name = 'chain';
+  put(torso, medallion(), face).name = 'medallion';
+}
+
+/** How wide a tie is at a height up it, from its point (0) to its knot (1). */
+const tieWidth = (v: number) => (v < 0.15 ? 0.02 * (v / 0.15) : v < 0.85 ? 0.02 - (0.009 * (v - 0.15)) / 0.7 : 0.016);
+
+/** The white front of a shirt showing in the V of a jacket, and a tie down it. */
+const shirtV = () =>
+  fuse('shirt front', () => [onFront((u, v) => [(-1 + 2 * u) * (0.004 + 0.08 * v), 0.3 + 0.165 * v], 0.009)]);
+/** A tie, from its point up to its knot under the collar. */
+const tie = () => fuse('tie', () => [onFront((u, v) => [(-1 + 2 * u) * tieWidth(v), 0.315 + 0.14 * v], 0.015, 4)]);
+
+/** Dress a visitor in a suit: a white shirt front in the V of the jacket, and a tie. */
+export function detailShirtFront(torso: THREE.Group, white: THREE.Material, dark: THREE.Material) {
+  put(torso, shirtV(), white).name = 'shirt front';
+  put(torso, tie(), dark).name = 'tie';
+}
+
+/** A cap's crown and its brim: a peaked cap, round and tall with a long brim, or a flat cap, low with a short one. */
+const cap = (kind: 'peaked' | 'flat') =>
+  fuse(`${kind} cap`, () => {
+    const crown = bare(
+      new THREE.SphereGeometry(kind === 'peaked' ? 0.242 : 0.246, 32, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+    );
+    const brim = bare(new THREE.CylinderGeometry(1, 1, 1, 24, 1, false, -Math.PI / 2, Math.PI));
+    return kind === 'peaked'
+      ? [
+          smooth(place(crown, [0, 0.085, -0.01], [0, 0, 0], [1, 0.72, 1.04])),
+          place(brim, [0, 0.092, 0.19], [0.12, 0, 0], [0.15, 0.018, 0.12]),
+        ]
+      : [
+          smooth(place(crown, [0, 0.08, 0.012], [0, 0, 0], [1, 0.7, 1.08])),
+          place(brim, [0, 0.088, 0.2], [0.2, 0, 0], [0.13, 0.016, 0.09]),
+        ];
+  });
+
+/** Put a cap on a head. */
+export function detailCap(head: THREE.Group, cloth: THREE.Material, kind: 'peaked' | 'flat') {
+  put(head, cap(kind), cloth).name = 'cap';
+}
+
 /** How far below the hip the knee is, and below the shoulder the elbow: where the shin and the forearm hinge. */
 export const KNEE = 0.18;
 export const ELBOW = 0.13;

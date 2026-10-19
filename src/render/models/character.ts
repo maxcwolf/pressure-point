@@ -6,10 +6,15 @@ import type { Look, VisitorKind } from '../../core/state/types';
 import { owned } from '../disposal';
 import {
   detailArm,
+  detailBib,
+  detailCap,
+  detailCoat,
   detailHead,
   detailLeg,
+  detailMedallion,
   detailPoncho,
   detailShawl,
+  detailShirtFront,
   detailTorso,
   ELBOW,
   GLASSES_OUT,
@@ -89,14 +94,16 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   torso.position.set(0, 0.42, 0);
   body.add(torso);
   detailTorso(torso, top, bottom);
-  if (role === 'consultant') put(torso, cyl(0.2, 0.22, 0.24, 14), top, 0, -0.04, 0);
+  // a long white coat
+  if (role === 'consultant') detailCoat(torso, top);
   if (role === 'acupuncturist') put(torso, rbox(0.09, 0.1, 0.03, 0.01), accent, -0.08, 0.26, 0.15);
   if (role === 'receptionist' || role === 'acupuncturist') {
     const scarf = put(torso, torus(0.11, 0.035), accent, 0, 0.42, 0);
     scarf.rotation.x = Math.PI / 2;
   }
   if (role === 'consultant') put(torso, rbox(0.08, 0.14, 0.03, 0.01), accent, 0.08, 0.26, 0.15);
-  if (role === 'caretaker') put(torso, rbox(0.2, 0.16, 0.03, 0.01), accent, 0, 0.2, 0.155);
+  // the bib of their overalls
+  if (role === 'caretaker') detailBib(torso, accent);
   // a shawl over one shoulder, and a string of beads
   if (role === 'healer') detailShawl(torso, accent, mat(0x8a5a2c, 0.5));
   if (role === 'therapist') {
@@ -114,11 +121,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   }
   // a woven poncho over the shoulders
   if (role === 'shaman') detailPoncho(torso, accent, mat(0x8a3b24, 0.85));
-  if (role === 'practitioner') {
-    const chain = put(torso, torus(0.13, 0.012), mat(0xc9963f, 0.3), 0, 0.36, 0.03);
-    chain.rotation.x = Math.PI / 2 - 0.5;
-    put(torso, sph(0.04, 10), accent, 0, 0.27, 0.17);
-  }
+  // a gold chain round the neck to a medallion
+  if (role === 'practitioner') detailMedallion(torso, mat(0xc9963f, 0.3), accent);
 
   /** Add an arm hinged at the shoulder, with its forearm and hand hinged at the elbow. */
   const makeArm = (x: number) => {
@@ -149,22 +153,18 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     const feather = put(head, rbox(0.05, 0.26, 0.012, 0.01), mat(0xf4f1ea, 0.8), 0.17, 0.16, -0.12);
     feather.rotation.set(-0.4, 0, -0.35);
   }
-  if (role === 'caretaker') {
-    put(head, cyl(0.2, 0.22, 0.1, 16), accent, 0, 0.18, 0);
-    put(head, rbox(0.3, 0.03, 0.2, 0.01), accent, 0, 0.14, 0.2);
-  }
+  if (role === 'caretaker') detailCap(head, accent, 'peaked');
   if (visitor === 'vip') {
-    // dark glasses, a white shirt collar and a gold pin on the lapel
+    // dark glasses, a white shirt and a tie in the V of the jacket, and a gold pin on the lapel
     const shades = mat(0x1d1f24, 0.2);
     for (const x of [-0.075, 0.075]) put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2 + GLASSES_OUT);
     put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205 + GLASSES_OUT);
-    put(torso, rbox(0.1, 0.12, 0.03, 0.01), mat(0xf4f1ea, 0.6), 0, 0.33, 0.15);
-    put(torso, sph(0.025, 8), mat(0xd9a93a, 0.3, 0.3), -0.09, 0.27, 0.165);
+    detailShirtFront(torso, mat(0xf4f1ea, 0.6), shades);
+    put(torso, sph(0.025, 8), mat(0xd9a93a, 0.3, 0.3), -0.1, 0.3, 0.13);
   }
   if (visitor === 'inspector') {
     // a flat cap, and a clipboard held at the ready
-    put(head, cyl(0.215, 0.225, 0.1, 16), mat(0x6b5b45, 0.85), 0, 0.2, -0.01);
-    put(head, rbox(0.24, 0.025, 0.14, 0.01), mat(0x6b5b45, 0.85), 0, 0.16, 0.17);
+    detailCap(head, mat(0x6b5b45, 0.85), 'flat');
     const board = put(holdR, rbox(0.17, 0.22, 0.02, 0.01), mat(0x8f6a45, 0.7), -0.02, -0.33 + handUp, 0.08);
     board.rotation.x = -0.9;
     put(board, rbox(0.13, 0.16, 0.01, 0.004), mat(0xf7f4ec, 0.6), 0, -0.01, 0.012);
