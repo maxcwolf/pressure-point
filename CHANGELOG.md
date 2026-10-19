@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.14
+
+- **Class-goers get their class.** Far fewer Qi Gong class-goers go home disappointed. With class-goers waiting, the Instructor holds off a drink or a snack instead of leaving the mat and sending everyone back to the line. Anyone in early for a later class no longer takes a spot from someone due before them, and anyone still in line when a class ends is booked into the next one. The walk in to the studio no longer wears on their patience.
+- **Calm a class-goer.** During a stress outbreak, a class-goer's inspector has the Calm button too.
+- **Amanda keeps pace.** When Amanda Jablonsky applies, she now always outranks the other applicants of the day.
+- **Smoother crowds.** People in the distance are drawn more cheaply, so a busy center runs more smoothly.
+
 ## v0.30.13
 
 - **Seats that fit.** People sitting on benches, sofas, chairs and toilets no longer have their legs pass through the seat, and staff sitting on the floor now sit properly cross-legged.
