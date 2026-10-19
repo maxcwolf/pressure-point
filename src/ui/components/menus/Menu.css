@@ -88,11 +88,19 @@ button.card:hover {
 }
 
 .card.poor {
-  opacity: 0.55;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .card.poor .cost {
   background: #f3b1ac;
+}
+
+/* how much more an item needs before it can be bought */
+.card em.short {
+  background: #fbe3e1;
+  color: #a8322b;
+  font-weight: 600;
 }
 
 .menu .sub {
@@ -103,6 +111,28 @@ button.card:hover {
   opacity: 0.5;
   filter: grayscale(0.6);
   cursor: not-allowed;
+}
+
+/* short of money rather than locked: the red of the price and the shortfall stay to see */
+.card.poor.locked {
+  opacity: 0.6;
+  filter: none;
+}
+
+/* locked, but karma unlocks it: pressing opens the offer */
+.card.locked.karma {
+  cursor: pointer;
+}
+
+/* still pressable while short of money: an item picked to read about beside the cards, and a template's own buttons */
+.items-detail .card.poor {
+  opacity: 1;
+  cursor: pointer;
+}
+
+.card.template.poor {
+  opacity: 1;
+  cursor: auto;
 }
 
 #menu {

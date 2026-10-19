@@ -193,12 +193,17 @@
   font-size: 12px;
   font-weight: 600;
   background: #fff;
-  opacity: 0.6;
 }
 
+/* a duty they are on, or the assigning under way: tinted, while one they are kept from stays plain but just as bright */
 .insp button.duty.on {
-  background: var(--cream);
-  opacity: 1;
+  background: #d8f1e2;
+}
+
+/* their only duty left, which cannot be taken away */
+.insp button.duty.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .insp .feelings {

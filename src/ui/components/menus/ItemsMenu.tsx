@@ -36,14 +36,18 @@ export function ItemsMenu() {
   const place = places.includes(hud.itemPlace) ? hud.itemPlace : 'all';
   const types = filterItems(offered, place, hud.itemKind);
   const { unlocked } = loadCampaign();
-  /** How an item stands: how many certificates there are to hang, whether it is locked, and whether karma unlocks it. */
+  /**
+   * How an item stands: how many certificates there are to hang, whether it is locked, whether karma unlocks it, and
+   * how much more money it needs, if it cannot be paid for.
+   */
   const standing = (t: ItemType) => {
     const it = ITEMS[t];
     // a certificate is earned at the year-end awards, one for each award won
     const earned = t === 'certificate' ? certificatesLeft(s).length : null;
     const locked = earned === 0 || !itemOpen(it, unlockedUpTo(s), unlocked);
+    const short = locked ? 0 : Math.max(0, it.cost - s.money);
     // a locked item karma can unlock opens the offer to unlock it, rather than refusing outright
-    return { earned, locked, forKarma: locked && it.karma !== undefined };
+    return { earned, locked, forKarma: locked && it.karma !== undefined, short };
   };
   /** Take an item in hand, or open the offer to unlock it with karma. */
   const choose = (t: ItemType) => {
@@ -63,20 +67,16 @@ export function ItemsMenu() {
     <div class="cards small">
       {types.map((t) => {
         const it = ITEMS[t];
-        const { earned, locked, forKarma } = standing(t);
+        const { earned, locked, forKarma, short } = standing(t);
         const stats = view === 'tooltip' ? statsText(t) : '';
         return (
           <Button
             key={t}
-            class={cx(
-              'card',
-              !locked && s.money < it.cost && 'poor',
-              forKarma && 'locked',
-              detail && t === shown && 'picked',
-            )}
-            title={stats || undefined}
+            class={cx('card', short > 0 && 'poor', forKarma && 'locked karma', detail && t === shown && 'picked')}
+            title={short ? "Can't afford it" : stats || undefined}
             richTip={stats ? `item:${t}` : undefined}
-            locked={locked && !forKarma && !detail}
+            // picking one to read about in the panel beside the cards is never refused, only placing it
+            locked={(short > 0 || (locked && !forKarma)) && !detail}
             onPress={() => {
               if (detail) setPicked(t);
               else choose(t);
@@ -87,7 +87,11 @@ export function ItemsMenu() {
             <span class="cost">{earned === null ? money(it.cost) : `${earned} to hang`}</span>
             {!detail && <p>{it.desc}</p>}
             {view === 'chips' && <ItemChips type={t} />}
-            <em>{earned === 0 ? '🔒 Win an award' : locked ? lockLabel(it) : placeLabel(it)}</em>
+            {short > 0 ? (
+              <em class="short">{`💸 Need ${money(short)} more`}</em>
+            ) : (
+              <em>{earned === 0 ? '🔒 Win an award' : locked ? lockLabel(it) : placeLabel(it)}</em>
+            )}
           </Button>
         );
       })}
@@ -138,7 +142,7 @@ export function ItemsMenu() {
   /** What the panel's button does for an item: place it, unlock it with karma, or say why it is locked. */
   function detailAction(t: ItemType) {
     const it = ITEMS[t];
-    const { earned, locked, forKarma } = standing(t);
+    const { earned, locked, forKarma, short } = standing(t);
     const label =
       earned === 0
         ? '🔒 Win an award'
@@ -146,12 +150,15 @@ export function ItemsMenu() {
           ? `${lockLabel(it)}: unlock it`
           : locked
             ? lockLabel(it)
-            : earned !== null
-              ? `Hang it · ${earned} to hang`
-              : `Place it · ${money(it.cost)}`;
+            : short > 0
+              ? `💸 Need ${money(short)} more`
+              : earned !== null
+                ? `Hang it · ${earned} to hang`
+                : `Place it · ${money(it.cost)}`;
     return {
       label,
-      locked: locked && !forKarma,
+      title: short > 0 ? "Can't afford it" : undefined,
+      locked: short > 0 || (locked && !forKarma),
       /** Place the item, or open the offer to unlock it. */
       onPress: () => {
         choose(t);

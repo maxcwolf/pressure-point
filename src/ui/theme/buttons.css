@@ -51,8 +51,20 @@
   color: var(--navy);
 }
 
+/* switched off, but still a button: greyed and struck through rather than faded */
 .round.small.off {
-  opacity: 0.55;
+  position: relative;
+  background: #d7d2c5;
+}
+
+.round.small.off::after {
+  content: '';
+  position: absolute;
+  width: 64%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--red);
+  transform: rotate(-45deg);
 }
 
 button.go,

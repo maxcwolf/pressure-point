@@ -101,6 +101,8 @@ function TwoWay({
 /** What the panel's button does for the item showing: place it, unlock it, or say why it cannot. */
 export interface DetailAction {
   label: string;
+  /** Why it is refused, if it is. */
+  title?: string | undefined;
   locked: boolean;
   onPress: () => void;
 }
@@ -153,7 +155,7 @@ export function ItemDetail({ type, where, action }: { type: ItemType; where: str
         </ul>
       )}
       <em>{where}</em>
-      <Button class="place" locked={action.locked} onPress={action.onPress}>
+      <Button class="place" title={action.title} locked={action.locked} onPress={action.onPress}>
         {action.label}
       </Button>
     </div>

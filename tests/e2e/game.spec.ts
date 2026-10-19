@@ -1475,6 +1475,24 @@ test.describe('the Items menu', () => {
     await expect(game.card('Bench')).toBeVisible();
   });
 
+  test('will not hand over an item that cannot be paid for, and says how much more it needs', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.state.money = 300;
+    });
+    await game.menu('Items');
+    const desk = game.card('Reception Desk');
+    await expect(desk).toHaveClass(/poor/);
+    await expect(desk).toContainText('Need $900 more');
+    await desk.click();
+    expect(await game.eval((pp) => pp.tools.tool.kind)).toBe('none');
+    await expect(page.locator('#menu .panel')).toBeVisible();
+  });
+
   test('hangs things on walls: a chip on the wall once it is cut low, to be clicked, moved and sold', async ({
     game,
     page,
