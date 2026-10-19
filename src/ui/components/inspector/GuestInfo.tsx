@@ -72,6 +72,7 @@ function ClassgoerInfo({ guest: g }: { guest: Guest }) {
       </label>{' '}
       <Feelings guest={g} />
       <p class="sub">{`Spent so far: ${money(g.spent)}`}</p>
+      <CalmButton guest={g} />
     </>
   );
 }
