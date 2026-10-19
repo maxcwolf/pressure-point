@@ -2,13 +2,31 @@
 // no glow) is drawn in one go, each in its own color, so a crowd costs the same few draw calls however big it gets.
 // The people keep their own meshes, posed as usual; once a batch draws a mesh, it moves to a layer the camera does
 // not look at. Anything else, such as a glowing symptom or a material of a person's own, is drawn as it always was.
+// Someone seen from afar is drawn with stand-ins for their parts that have fewer sides, where a shape has one: from
+// there, each of the full shape's sides would be finer than a pixel, and still cost as much to draw.
 
 import * as THREE from 'three';
 
-import { mat, plainRoughness } from './models/parts';
+import { farShape, mat, plainRoughness } from './models/parts';
 
 /** The layer a person's mesh moves to once a batch draws it. The camera only looks at layer 0. */
 export const BATCHED = 1;
+
+/**
+ * How few screen pixels to a meter someone may be drawn at before they are drawn with fewer sides: about where a person
+ * stands 130 pixels tall, and their head 40 pixels across.
+ */
+export const FAR_PIXELS_PER_METER = 100;
+
+/** Where the people are seen from: the camera, and how many pixels tall the picture is. */
+export interface Viewpoint {
+  camera: THREE.Camera;
+  height: number;
+}
+
+/** Where the camera is, and where a person is, worked out afresh each frame. */
+const eye = new THREE.Vector3();
+const at = new THREE.Vector3();
 
 /** One shape in one kind of material, drawn for every person who has it. */
 interface Batch {
@@ -30,11 +48,19 @@ export class Crowd {
     return this.batches.size;
   }
 
-  /** Gather the shown parts of these people into their batches, as posed now. Their world matrices must be up to date. */
-  gather(people: Iterable<THREE.Object3D>) {
+  /**
+   * Gather the shown parts of these people into their batches, as posed now, each with fewer sides if seen from afar
+   * from a viewpoint. Their world matrices must be up to date.
+   */
+  gather(people: Iterable<THREE.Object3D>, view?: Viewpoint) {
     for (const b of this.batches.values()) b.count = 0;
-    for (const person of people)
-      person.traverseVisible((o) => (o as Partial<THREE.Mesh>).isMesh && this.add(o as THREE.Mesh));
+    if (view) eye.setFromMatrixPosition(view.camera.matrixWorld);
+    for (const person of people) {
+      const far =
+        !!view &&
+        pixelsPerMeter(view, eye.distanceTo(at.setFromMatrixPosition(person.matrixWorld))) < FAR_PIXELS_PER_METER;
+      person.traverseVisible((o) => (o as Partial<THREE.Mesh>).isMesh && this.add(o as THREE.Mesh, far));
+    }
     for (const b of this.batches.values()) {
       b.mesh.count = b.count;
       b.mesh.visible = b.count > 0;
@@ -43,8 +69,8 @@ export class Crowd {
     }
   }
 
-  /** Draw a part in its batch, or leave it to draw itself if its material cannot be shared. */
-  private add(part: THREE.Mesh) {
+  /** Draw a part in its batch, with fewer sides if far, or leave it to draw itself if its material cannot be shared. */
+  private add(part: THREE.Mesh, far: boolean) {
     const material = part.material as THREE.Material;
     const rough = plainRoughness(material);
     if (rough === undefined) {
@@ -52,19 +78,20 @@ export class Crowd {
       return;
     }
     part.layers.set(BATCHED);
-    const key = `${part.geometry.id}|${rough}|${part.castShadow}|${part.receiveShadow}`;
+    const shape = far ? farShape(part.geometry) : part.geometry;
+    const key = `${shape.id}|${rough}|${part.castShadow}|${part.receiveShadow}`;
     let b = this.batches.get(key);
-    if (!b || b.count === b.colors.count) b = this.grow(key, part, rough, b);
+    if (!b || b.count === b.colors.count) b = this.grow(key, part, shape, rough, b);
     part.matrixWorld.toArray(b.mesh.instanceMatrix.array, b.count * 16);
     const { r, g, b: blue } = (material as THREE.MeshStandardMaterial).color;
     b.colors.setXYZ(b.count, r, g, blue);
     b.count++;
   }
 
-  /** Make a batch for a part, or a bigger one in place of one that is full, keeping what it holds so far. */
-  private grow(key: string, part: THREE.Mesh, rough: number, old?: Batch): Batch {
+  /** Make a batch for a part drawn as a shape, or a bigger one in place of one that is full, keeping what it holds so far. */
+  private grow(key: string, part: THREE.Mesh, shape: THREE.BufferGeometry, rough: number, old?: Batch): Batch {
     const room = Math.max(16, (old?.colors.count ?? 0) * 2);
-    const mesh = new THREE.InstancedMesh(part.geometry, mat(0xffffff, rough), room);
+    const mesh = new THREE.InstancedMesh(shape, mat(0xffffff, rough), room);
     const colors = new THREE.InstancedBufferAttribute(new Float32Array(room * 3), 3);
     mesh.instanceColor = colors;
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -84,4 +111,10 @@ export class Crowd {
     this.batches.set(key, b);
     return b;
   }
+}
+
+/** How many pixels a meter covers on screen at a distance from the camera, or plenty if it is not a perspective one. */
+function pixelsPerMeter({ camera, height }: Viewpoint, distance: number) {
+  if (!(camera instanceof THREE.PerspectiveCamera)) return Infinity;
+  return height / (2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
 }

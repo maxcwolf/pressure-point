@@ -26,6 +26,9 @@ import { StorefrontLayer } from './storefront';
 import { nearSides, type Turn } from './turn';
 import { VibesLayer } from './vibes';
 
+/** Room for the size of the picture the renderer draws, asked for each frame. */
+const drawn = new THREE.Vector2();
+
 /** Every rectangle of the center's plots of land and the paths to them, kept clear of trees whether bought or not. */
 const plotsOf = (sim: Sim): Rect[] => centerOf(sim.s).plots.flatMap((p) => [...p.rects, ...(p.path ?? [])]);
 
@@ -95,7 +98,8 @@ export class View {
     this.land = new LandLayer(this.scene, sim);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
     /** Hand the people to the batches that draw them: the renderer calls this once everything is in place, just before it draws. */
-    this.scene.onBeforeRender = () => this.people.gather();
+    this.scene.onBeforeRender = (renderer, _scene, camera) =>
+      this.people.gather({ camera, height: renderer.getDrawingBufferSize(drawn).y });
 
     this.resize();
     window.addEventListener('resize', () => this.resize());

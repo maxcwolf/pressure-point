@@ -6,7 +6,7 @@ import { conditionOf, ROLES, SIDEWALK_Y } from '../core/data';
 import { streetEnds } from '../core/sim/chars';
 import type { Sim } from '../core/sim/sim';
 import type { Char } from '../core/state/types';
-import { Crowd } from './crowd';
+import { Crowd, type Viewpoint } from './crowd';
 import { disposeOwned } from './disposal';
 import { buildCharacter, type CharRig } from './models/character';
 import { poseChar, type WorkStyle } from './pose';
@@ -82,9 +82,15 @@ export class PeopleLayer {
     }
   }
 
-  /** Hand everyone's parts, as posed for this frame, to the batches that draw them. Call once positions are final. */
-  gather() {
-    this.crowd.gather([...this.chars.values()].map((r) => r.group));
+  /**
+   * Hand everyone's parts, as posed for this frame, to the batches that draw them, as seen from a viewpoint. Call once
+   * positions are final.
+   */
+  gather(view: Viewpoint) {
+    this.crowd.gather(
+      [...this.chars.values()].map((r) => r.group),
+      view,
+    );
   }
 
   /**

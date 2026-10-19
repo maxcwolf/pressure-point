@@ -40,6 +40,18 @@ export function cached<T extends THREE.BufferGeometry>(key: string, make: () => 
   return g as T;
 }
 
+/** The shapes drawn in place of others when seen from afar, with fewer sides. */
+const farShapes = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
+
+/** Give a shape a stand-in with fewer sides, to be drawn in its place when seen from afar. Returns the shape. */
+export function withFar<T extends THREE.BufferGeometry>(shape: T, far: THREE.BufferGeometry): T {
+  farShapes.set(shape, far);
+  return shape;
+}
+
+/** What to draw in place of a shape seen from afar: its stand-in with fewer sides, or else the shape itself. */
+export const farShape = (shape: THREE.BufferGeometry) => farShapes.get(shape) ?? shape;
+
 /** A shared rounded box geometry. */
 export const rbox = (w: number, h: number, d: number, r = 0.05) =>
   cached(`b${w}|${h}|${d}|${r}`, () => new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2, h / 2, d / 2)));
