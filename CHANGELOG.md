@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.30.13
+
+- **Seats that fit.** People sitting on benches, sofas, chairs and toilets no longer have their legs pass through the seat, and staff sitting on the floor now sit properly cross-legged.
+- **A new Massage Chair.** The Massage Chair has been redesigned as a padded shell with a calf rest, shoulder wings and a remote on the arm.
+
 ## v0.30.12
 
 - **Livelier, more detailed people.** Everyone now has knees and elbows, a face with eyes, brows and a smile, finer hair, and shoes with soles. They shift their weight as they walk, breathe and fidget while they wait, and lean into their work. Every uniform has been refitted to match.
