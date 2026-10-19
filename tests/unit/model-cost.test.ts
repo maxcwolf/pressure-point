@@ -64,9 +64,10 @@ async function costs() {
 
 describe('the cost of drawing each model', () => {
   it('keeps every model within a few dozen draw calls', async () => {
-    // the heaviest when this was written: a shop counter 23, a trophy cabinet 21, a guest 29, staff 23 (people in the
-    // game are drawn in batches, so the figures for them here are what one person alone would cost)
-    const limit = { Items: 30, Guests: 32, Staff: 26, Visitors: 26, Scenery: 20 };
+    // the heaviest when this was written: a shop counter 23, a trophy cabinet 21, a guest 29, staff 23; people grew to a
+    // guest 36, staff 32 and a visitor 33 when they were given knees, elbows, faces and finer hair (people in the game
+    // are drawn in batches, so the figures for them here are what one person alone would cost)
+    const limit = { Items: 30, Guests: 38, Staff: 34, Visitors: 35, Scenery: 20 };
     const over = (await costs()).filter((m) => m.calls > limit[m.group]).map((m) => `${m.id}: ${m.calls}`);
     expect(over).toEqual([]);
   });
@@ -78,9 +79,10 @@ describe('the cost of drawing each model', () => {
     // 1730 after sound healing's guests, items and healer, 1930 with a receptionist in the lab for every hair style and
     // beard, 1780 before the still parts of items were merged, 2530 while every part of every model cast a shadow, and
     // 2250 after the Shaman, the lodge's equipment and its guests, 2351 with the five items chosen on 16 October 2026, and
-    // 2522 with the ten things to hang on walls, each shown in the lab on a stretch of wall
+    // 2522 with the ten things to hang on walls, each shown in the lab on a stretch of wall, and 3007 once people had
+    // knees, elbows, faces and finer hair
     const heaviest = all.sort((a, b) => b.calls - a.calls).slice(0, 10);
-    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(2600);
+    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(3100);
   });
 
   it('only casts shadows from parts big enough to show one', async () => {

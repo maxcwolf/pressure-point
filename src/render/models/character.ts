@@ -1,11 +1,10 @@
 // The little clay people: guests and staff, and what their symptoms look like.
 import * as THREE from 'three';
 
-import { AMANDA, type Role, ROLES, type Visual } from '../../core/data';
-import { HAIR } from '../../core/people';
+import { type Role, ROLES, type Visual } from '../../core/data';
 import type { Look, VisitorKind } from '../../core/state/types';
 import { owned } from '../disposal';
-import { buildMohawk } from './mohawk';
+import { detailArm, detailHead, detailLeg, detailTorso, ELBOW, GLASSES_OUT, KNEE } from './character-detail';
 import { cached, capsule, cyl, ico, joined, mat, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
 
@@ -35,10 +34,20 @@ export interface CharRig {
   sage?: THREE.Object3D;
   sageTip?: THREE.Object3D;
   smoke?: THREE.Group;
+  /** The shins and forearms, hinged at the knees and elbows. */
+  joints: Joints;
   visual: Visual | undefined;
   cured: boolean;
   scale: number;
   bubbleKey: string;
+}
+
+/** The shins and forearms of a person, hinged at the knees and elbows. */
+export interface Joints {
+  shinL: THREE.Group;
+  shinR: THREE.Group;
+  foreL: THREE.Group;
+  foreR: THREE.Group;
 }
 
 const pickMat = new THREE.MeshBasicMaterial({ visible: false });
@@ -62,24 +71,14 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const bottom = mat(role === 'caretaker' ? 0x5c6b33 : (clothes?.bottom ?? look.bottom), 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
 
-  /** Add a leg with its shoe, hinged at the hip. */
-  const makeLeg = (x: number) => {
-    const leg = new THREE.Group();
-    leg.position.set(x, 0.42, 0);
-    put(leg, cyl(0.078, 0.07, 0.36, 12), bottom, 0, -0.18, 0);
-    put(leg, rbox(0.15, 0.09, 0.24, 0.04), mat(0x3a302b), 0, -0.375, 0.035);
-    body.add(leg);
-    return leg;
-  };
-  const legL = makeLeg(-0.095);
-  const legR = makeLeg(0.095);
+  const { leg: legL, shin: shinL } = detailLeg(body, -0.095, bottom);
+  const { leg: legR, shin: shinR } = detailLeg(body, 0.095, bottom);
 
   // torso group pivots at the hips so slumps and leans bend in the right place
   const torso = new THREE.Group();
   torso.position.set(0, 0.42, 0);
   body.add(torso);
-  const chest = put(torso, capsule(0.17, 0.2), top, 0, 0.2, 0);
-  chest.scale.set(1.12, 1, 0.9);
+  detailTorso(torso, top, bottom);
   if (role === 'consultant') put(torso, cyl(0.2, 0.22, 0.24, 14), top, 0, -0.04, 0);
   if (role === 'acupuncturist') put(torso, rbox(0.09, 0.1, 0.03, 0.01), accent, -0.08, 0.26, 0.15);
   if (role === 'receptionist' || role === 'acupuncturist') {
@@ -118,71 +117,30 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     put(torso, sph(0.04, 10), accent, 0, 0.27, 0.17);
   }
 
-  /** Add an arm with its hand, hinged at the shoulder. */
+  /** Add an arm hinged at the shoulder, with its forearm and hand hinged at the elbow. */
   const makeArm = (x: number) => {
     const arm = new THREE.Group();
     arm.position.set(x, 0.37, 0);
-    if (role === 'therapist') {
-      // sleeves rolled up past the elbow, ready to work
-      const rolled = joined('rolled sleeve', [
-        [capsule(0.055, 0.06), 0, -0.07, 0],
-        [torus(0.05, 0.022), 0, -0.135, 0, Math.PI / 2],
-      ]);
-      put(arm, rolled, top);
-      put(arm, capsule(0.046, 0.09), skin, 0, -0.2, 0);
-    } else put(arm, capsule(0.055, 0.17), top, 0, -0.13, 0);
-    put(arm, sph(0.062, 10), skin, 0, -0.29, 0);
     torso.add(arm);
-    return arm;
+    // sleeves rolled up past the elbow for a therapist, ready to work
+    return { arm, fore: detailArm(arm, Math.sign(x), top, skin, role === 'therapist') };
   };
-  const armL = makeArm(-0.245);
-  const armR = makeArm(0.245);
+  const { arm: armL, fore: foreL } = makeArm(-0.245);
+  const { arm: armR, fore: foreR } = makeArm(0.245);
+  const joints: Joints = { shinL, shinR, foreL, foreR };
+  // what is held in the right hand hangs from the forearm, set as far up as the elbow is down, and what is worn on the
+  // lower leg hangs from the shin, as far up as the knee is down
+  const holdR = foreR;
+  const handUp = ELBOW;
+  const kneeUp = KNEE;
 
   const head = new THREE.Group();
   head.position.set(0, 0.64, 0);
   torso.add(head);
-  const headMesh = put(head, sph(0.215, 20), skin, 0, 0, 0);
-  for (const x of [-0.075, 0.075]) put(head, sph(0.027, 8), mat(0x2a2422, 0.3), x, 0.02, 0.19);
-  put(head, sph(0.03, 8), skin, 0, -0.035, 0.21);
   const hair = mat(look.hair, 0.85);
-  /** The shared half-sphere cap of hair. */
-  const cap = () => cached('haircap', () => new THREE.SphereGeometry(0.228, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52));
   // a hat needs short hair under it, or a woman's tied back low
   const hatted = role === 'caretaker' || visitor === 'inspector';
-  const style = hatted ? HAIR.short : look.hairStyle;
-  if (style === AMANDA.hairStyle) buildMohawk(head, look.skin, look.hair);
-  else if (style !== HAIR.bald) {
-    const c = put(head, cap(), hair, 0, 0.012, -0.018);
-    c.rotation.x = -0.28;
-  }
-  if (style === HAIR.bun) put(head, sph(0.1, 12), hair, 0, 0.22, -0.1);
-  if (style === HAIR.long) put(head, rbox(0.4, 0.34, 0.16, 0.07), hair, 0, -0.08, -0.15);
-  if (style === HAIR.curls) put(head, sph(0.25, 14), hair, 0, 0.06, -0.06);
-  // a bob: hair to the jaw at the sides and back, clear of the face
-  if (style === HAIR.bob) put(head, rbox(0.47, 0.26, 0.34, 0.1), hair, 0, -0.03, -0.05);
-  if (style === HAIR.ponytail) {
-    // tied high at the crown, arcing back and falling behind the head
-    put(head, sph(0.065, 10), hair, 0, 0.19, -0.15);
-    put(head, capsule(0.06, 0.08), hair, 0, 0.2, -0.25).rotation.x = -1.35;
-    put(head, capsule(0.055, 0.15), hair, 0, 0.08, -0.32).rotation.x = -0.2;
-  } else if (hatted && look.sex === 'female') {
-    // tied low under the hat, hanging down the back
-    put(head, sph(0.06, 10), hair, 0, 0.04, -0.22);
-    put(head, capsule(0.055, 0.2), hair, 0, -0.06, -0.27).rotation.x = 0.35;
-  }
-  if (look.sex === 'male' && look.beard) {
-    // a moustache, and with a beard, hair round the jaw from ear to ear below it
-    put(head, rbox(0.13, 0.035, 0.035, 0.015), hair, 0, -0.07, 0.205);
-    if (look.beard === 2)
-      put(
-        head,
-        cached('beard', () => new THREE.SphereGeometry(0.226, 16, 8, 0, Math.PI, Math.PI * 0.6, Math.PI * 0.32)),
-        hair,
-        0,
-        0,
-        0,
-      );
-  }
+  const headMesh = detailHead(head, look, skin, hair, hatted);
   if (role === 'shaman') {
     // a single feather tucked in behind one ear
     const feather = put(head, rbox(0.05, 0.26, 0.012, 0.01), mat(0xf4f1ea, 0.8), 0.17, 0.16, -0.12);
@@ -195,8 +153,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   if (visitor === 'vip') {
     // dark glasses, a white shirt collar and a gold pin on the lapel
     const shades = mat(0x1d1f24, 0.2);
-    for (const x of [-0.075, 0.075]) put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2);
-    put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205);
+    for (const x of [-0.075, 0.075]) put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2 + GLASSES_OUT);
+    put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205 + GLASSES_OUT);
     put(torso, rbox(0.1, 0.12, 0.03, 0.01), mat(0xf4f1ea, 0.6), 0, 0.33, 0.15);
     put(torso, sph(0.025, 8), mat(0xd9a93a, 0.3, 0.3), -0.09, 0.27, 0.165);
   }
@@ -204,7 +162,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     // a flat cap, and a clipboard held at the ready
     put(head, cyl(0.215, 0.225, 0.1, 16), mat(0x6b5b45, 0.85), 0, 0.2, -0.01);
     put(head, rbox(0.24, 0.025, 0.14, 0.01), mat(0x6b5b45, 0.85), 0, 0.16, 0.17);
-    const board = put(armR, rbox(0.17, 0.22, 0.02, 0.01), mat(0x8f6a45, 0.7), -0.02, -0.33, 0.08);
+    const board = put(holdR, rbox(0.17, 0.22, 0.02, 0.01), mat(0x8f6a45, 0.7), -0.02, -0.33 + handUp, 0.08);
     board.rotation.x = -0.9;
     put(board, rbox(0.13, 0.16, 0.01, 0.004), mat(0xf7f4ec, 0.6), 0, -0.01, 0.012);
   }
@@ -222,6 +180,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     pick: new THREE.Mesh(cyl(0.34, 0.34, 1.4, 8), pickMat),
     bubble: new THREE.Sprite(owned(new THREE.SpriteMaterial({ transparent: true, depthTest: false }))),
     props: [],
+    joints,
     visual,
     cured: false,
     scale: look.scale,
@@ -302,7 +261,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.props.push(neck);
   } else if (visual === 'coldfeet') {
     const ice = mat(0xcdeeff, 0.15, 0.25);
-    for (const leg of [legL, legR]) rig.props.push(put(leg, rbox(0.21, 0.15, 0.3, 0.03), ice, 0, -0.36, 0.035));
+    for (const leg of [shinL, shinR])
+      rig.props.push(put(leg, rbox(0.21, 0.15, 0.3, 0.03), ice, 0, -0.36 + kneeUp, 0.035));
   } else if (visual === 'blanket') {
     const wool = mat(0x4d7ea8, 0.95);
     rig.props.push(put(torso, rbox(0.52, 0.1, 0.38, 0.04), wool, 0, 0.4, -0.01));
@@ -467,8 +427,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     // lobster red, behind a pair of sunglasses
     headMesh.material = mat(0xe8604c, 0.6);
     const shades = mat(0x1d1f24, 0.2);
-    for (const x of [-0.075, 0.075]) rig.props.push(put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2));
-    rig.props.push(put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205));
+    for (const x of [-0.075, 0.075])
+      rig.props.push(put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2 + GLASSES_OUT));
+    rig.props.push(put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205 + GLASSES_OUT));
   } else if (visual === 'icicles') {
     // frozen blue, with snow settled on the shoulders and icicles hanging off the chin
     headMesh.material = mat(0xb9d7e8, 0.5);
@@ -487,8 +448,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   } else if (visual === 'cast') {
     // a plaster cast up one leg, signed by the ski school, and a sticking plaster on the forehead
     const plaster = mat(0xf7f4ec, 0.8);
-    rig.props.push(put(legR, rbox(0.15, 0.3, 0.17, 0.05), plaster, 0, -0.22, 0.01));
-    rig.props.push(put(legR, rbox(0.05, 0.03, 0.005, 0.005), mat(0x4a9fe0, 0.6), 0.02, -0.18, 0.096));
+    rig.props.push(put(shinR, rbox(0.15, 0.3, 0.17, 0.05), plaster, 0, -0.22 + kneeUp, 0.01));
+    rig.props.push(put(shinR, rbox(0.05, 0.03, 0.005, 0.005), mat(0x4a9fe0, 0.6), 0.02, -0.18 + kneeUp, 0.096));
     const strip = put(head, rbox(0.11, 0.035, 0.02, 0.008), mat(0xe8c39e, 0.7), 0.06, 0.11, 0.18);
     strip.rotation.set(-0.5, 0, 0.5);
     rig.props.push(strip);
@@ -517,8 +478,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   } else if (visual === 'mallet') {
     // still holding the croquet mallet
     const wood = mat(0x9b6b3f, 0.6);
-    const shaft = put(armR, cyl(0.016, 0.016, 0.62, 8), wood, 0, -0.42, 0.06);
-    const block = put(armR, cyl(0.05, 0.05, 0.2, 10), mat(0x3b6fb3, 0.5), 0, -0.73, 0.06);
+    const shaft = put(holdR, cyl(0.016, 0.016, 0.62, 8), wood, 0, -0.42 + handUp, 0.06);
+    const block = put(holdR, cyl(0.05, 0.05, 0.2, 10), mat(0x3b6fb3, 0.5), 0, -0.73 + handUp, 0.06);
     block.rotation.z = Math.PI / 2;
     rig.props.push(shaft, block);
   } else if (visual === 'blossom') {
@@ -614,9 +575,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     torso.add(rig.orbit);
   } else if (visual === 'leash') {
     // an empty leash, held out hopefully, with nothing on the end of it
-    const strap = put(armR, cyl(0.01, 0.01, 0.42, 6), mat(0xd9362f, 0.5), 0, -0.48, 0.08);
+    const strap = put(holdR, cyl(0.01, 0.01, 0.42, 6), mat(0xd9362f, 0.5), 0, -0.48 + handUp, 0.08);
     strap.rotation.x = 0.35;
-    const collar = put(armR, torus(0.06, 0.012), mat(0xd9362f, 0.5), 0, -0.68, 0.16);
+    const collar = put(holdR, torus(0.06, 0.012), mat(0xd9362f, 0.5), 0, -0.68 + handUp, 0.16);
     collar.rotation.x = Math.PI / 2;
     rig.props.push(strap, collar);
   } else if (visual === 'cactus') {
@@ -654,8 +615,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   if (role === 'practitioner' || role === 'caretaker') {
     const { bundle, tip } = buildSage();
-    bundle.position.set(0, -0.31, 0.03);
-    armR.add(bundle);
+    bundle.position.set(0, -0.31 + handUp, 0.03);
+    holdR.add(bundle);
     rig.sage = bundle;
     rig.sageTip = tip;
     rig.smoke = buildSmoke();

@@ -119,13 +119,16 @@ export const SHADOW_MIN = { volume: 0.008, length: 0.5 };
 export const castsShadow = (size: THREE.Vector3) =>
   size.x * size.y * size.z >= SHADOW_MIN.volume || Math.max(size.x, size.y, size.z) >= SHADOW_MIN.length;
 
-/** Stop a model's small parts casting shadows, measuring each at the model's natural size (it is built this much bigger). */
+/**
+ * Stop a model's small parts casting shadows, measuring each at the model's natural size (it is built this much bigger).
+ * A part marked `userData.shadow = 'always'` keeps its shadow: one of the pieces of something long, like a leg.
+ */
 export function trimShadows(root: THREE.Object3D, scale = 1) {
   root.updateMatrixWorld(true);
   const box = new THREE.Box3();
   const size = new THREE.Vector3();
   root.traverse((o) => {
-    if (!(o instanceof THREE.Mesh) || !o.castShadow) return;
+    if (!(o instanceof THREE.Mesh) || !o.castShadow || o.userData.shadow === 'always') return;
     box.setFromObject(o, false).getSize(size);
     if (!castsShadow(size.divideScalar(scale))) o.castShadow = false;
   });

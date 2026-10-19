@@ -3,7 +3,7 @@
 import { type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
 import type { Char } from '../core/state/types';
-import { type CharRig, cureRig } from './models/character';
+import { type CharRig, cureRig, type Joints } from './models/character';
 import { emojiTexture } from './models/emoji';
 import { driftSmoke } from './models/sage';
 
@@ -241,6 +241,19 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
     side = 0;
     if (visual === 'flex') armOut = 0.5;
   }
+  // people move with life: weight shifting, follow-through, breathing and fidgets, unless too stiff to
+  // only someone with their hands free (the inspector carries a clipboard) and no symptom to show fidgets with their
+  // arms
+  const handsFree = !visual && !(c.kind === 'visitor' && c.visit === 'inspector');
+  const life = visual !== 'stiff' ? liveliness(c, t, phase, style, smudging, armL, armR, handsFree) : NO_LIFE;
+  lean += life.lean;
+  side += life.side;
+  headX += life.headX;
+  headZ += life.headZ;
+  bodyY += life.bodyY;
+  armL += life.armL;
+  armR += life.armR;
+  armOut += life.armOut;
   const k = Math.min(1, dt * 14);
   const b = rig.body;
   b.rotation.x += (bodyRX - b.rotation.x) * k;
@@ -254,8 +267,9 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
   rig.legR.rotation.x += (legR - rig.legR.rotation.x) * k;
   rig.armL.rotation.x += (armL - rig.armL.rotation.x) * k;
   rig.armR.rotation.x += (armR - rig.armR.rotation.x) * k;
-  rig.armL.rotation.z += (-armOut - rig.armL.rotation.z) * k;
+  rig.armL.rotation.z += (-armOut + life.armInL - rig.armL.rotation.z) * k;
   rig.armR.rotation.z += (armOut - rig.armR.rotation.z) * k;
+  poseJoints(rig.joints, rig, c, t, k, { legL, legR, armL, armR, phase, visual, style }, life);
   if (rig.band?.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
   if (visual === 'jitter' && c.pose !== 'lie') {
     // pins and needles: a constant fizzing shiver
@@ -313,4 +327,239 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
     }
   }
   if (bubble) rig.bubble.position.y = (c.pose === 'lie' ? 1.0 : 1.72) + Math.sin(t * 3 + c.id) * 0.04;
+}
+
+/** How a person's limbs are posed this frame, from which the knees, elbows and waist follow. */
+interface Limbs {
+  legL: number;
+  legR: number;
+  armL: number;
+  armR: number;
+  phase: number;
+  visual: CharRig['visual'];
+  style: WorkStyle;
+}
+
+/** How far an elbow bends for an arm raised this far: hanging, a little; reaching forward, more; straight overhead. */
+export const elbowFor = (arm: number) => (arm < -2 ? -0.12 : -(0.2 + Math.min(1, Math.max(0, -arm - 0.3)) * 0.6));
+
+/**
+ * Pose the knees, elbows and waist of someone built with them, following their legs and arms: a knee bends as its leg
+ * swings through a step and the shoulders turn against the hips, shins hang down from a seat, and elbows bend as the
+ * arms reach forward.
+ */
+function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limbs: Limbs, life: Life) {
+  const { legL, legR, armL, armR, phase, visual, style } = limbs;
+  let kneeL = 0.04;
+  let kneeR = 0.04;
+  let twist = 0;
+  if (c.pose === 'walk') {
+    kneeL = 0.08 + Math.max(0, -Math.cos(phase)) * 0.95;
+    kneeR = 0.08 + Math.max(0, Math.cos(phase)) * 0.95;
+    twist = Math.sin(phase) * 0.14;
+  } else if (c.pose === 'sit') {
+    kneeL = -legL;
+    kneeR = -legR;
+  } else if (c.pose === 'lie') kneeL = kneeR = 0.03;
+  else if (style === 'qigong') kneeL = kneeR = 0.3 * (1 + Math.cos(t * 0.9)) * 0.5;
+  else if (c.busy) kneeL = kneeR = 0.12;
+  let elbowL = elbowFor(armL);
+  let elbowR = elbowFor(armR);
+  if (visual === 'stiff') {
+    kneeL = kneeR = 0;
+    elbowL = elbowR = 0;
+    twist = 0;
+  } else if (visual === 'flex' && c.pose !== 'lie') elbowL = elbowR = -1.5;
+  kneeL += life.kneeL;
+  kneeR += life.kneeR;
+  elbowL += life.elbowL;
+  elbowR += life.elbowR;
+  j.shinL.rotation.x += (kneeL - j.shinL.rotation.x) * k;
+  j.shinR.rotation.x += (kneeR - j.shinR.rotation.x) * k;
+  j.foreL.rotation.x += (elbowL - j.foreL.rotation.x) * k;
+  j.foreR.rotation.x += (elbowR - j.foreR.rotation.x) * k;
+  rig.torso.rotation.y += (twist - rig.torso.rotation.y) * k;
+  rig.head.rotation.y += (life.headYaw - rig.head.rotation.y) * k;
+  rig.body.rotation.y += (life.bodyYaw - rig.body.rotation.y) * k;
+  rig.body.position.x += (life.swayX - rig.body.position.x) * k;
+}
+
+/** What liveliness adds to a pose: turns in radians and shifts in meters, on top of what the pose sets. */
+interface Life {
+  lean: number;
+  side: number;
+  headX: number;
+  headZ: number;
+  /** The head turning to look one way or the other. */
+  headYaw: number;
+  bodyY: number;
+  /** The hips shifting sideways, over one foot or the other. */
+  swayX: number;
+  /** The hips turning, against the shoulders as they walk. */
+  bodyYaw: number;
+  armL: number;
+  armR: number;
+  armOut: number;
+  /** The left arm turning in across the body, to bring a watch in front. */
+  armInL: number;
+  kneeL: number;
+  kneeR: number;
+  elbowL: number;
+  elbowR: number;
+}
+
+/** No liveliness: for someone too stiff to move. */
+const NO_LIFE: Readonly<Life> = {
+  lean: 0,
+  side: 0,
+  headX: 0,
+  headZ: 0,
+  headYaw: 0,
+  bodyY: 0,
+  swayX: 0,
+  bodyYaw: 0,
+  armL: 0,
+  armR: 0,
+  armOut: 0,
+  armInL: 0,
+  kneeL: 0,
+  kneeR: 0,
+  elbowL: 0,
+  elbowR: 0,
+};
+
+/** A steady pseudo-random number from 0 to 1 for a number, the same every time. */
+const hash = (n: number) => {
+  const x = Math.sin(n * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+};
+
+/** The small things people do while they wait: standing, and sitting. */
+type Fidget = 'look' | 'watch' | 'stretch' | 'tap' | 'swing';
+const STANDING_FIDGETS: readonly (Fidget | null)[] = ['look', 'watch', 'look', 'stretch', 'tap', 'look', null];
+const SEATED_FIDGETS: readonly (Fidget | null)[] = ['look', 'watch', 'swing', 'swing', null];
+
+/** The fidgets that take over the arms. */
+const ARM_FIDGETS: ReadonlySet<Fidget> = new Set(['watch', 'stretch']);
+
+/** How often someone may fidget, and how long a fidget lasts, in seconds. */
+const FIDGET = { every: 5.5, lasts: 1.9 };
+
+/** What someone is fidgeting with now, if anything, how far into it they are (0 to 1, easing in and out), and which
+ * way they turn, from a steady roll for each person and stretch of time. */
+function fidgetAt(id: number, t: number, kinds: readonly (Fidget | null)[]) {
+  const s = t + id * 1.37;
+  const n = Math.floor(s / FIDGET.every);
+  const u = (s - n * FIDGET.every) / FIDGET.lasts;
+  const kind = kinds[Math.floor(hash(n * 7.1 + id * 3.3) * kinds.length)];
+  if (u >= 1 || !kind) return null;
+  return { kind, amount: Math.min(1, Math.sin(Math.PI * u) * 1.6), way: hash(n * 3.7 + id) < 0.5 ? -1 : 1 };
+}
+
+/** How fast each treatment's strokes go, in radians a second, matching the arms' rhythm in `poseChar`. */
+const RHYTHM: Partial<Record<Modality, number>> = {
+  swedish: 4.2,
+  deep: 3.2,
+  sports: 2.3,
+  stone: 2,
+  cupping: 2.4,
+  needling: 5.5,
+  electro: 3,
+  cranio: 1.1,
+  usui: 0.9,
+  crystal: 0.9,
+  chakra: 0.6,
+  moxa: 1.3,
+};
+
+/**
+ * The life a person built with knees and elbows moves with, on top of their pose. Walking, the hips shift over each
+ * foot as it takes the weight and turn against the shoulders, the step bounces, and the head and forearms trail a
+ * beat behind. Standing, they breathe, shift their weight from foot to foot with the other knee easing, and every so
+ * often fidget: a look round, a glance at a watch, a stretch, a tapping foot. Sitting, they
+ * breathe, swing their feet and look about. Working, they lean into each stroke and shift their weight in its rhythm,
+ * knees giving, head following the hands. `armL` and `armR` are the arms' turns as posed, which a fidget takes over;
+ * someone holding something or showing a symptom with their arms only looks round instead.
+ */
+function liveliness(
+  c: Char,
+  t: number,
+  phase: number,
+  style: WorkStyle,
+  smudging: boolean,
+  armL: number,
+  armR: number,
+  handsFree: boolean,
+): Life {
+  const life = { ...NO_LIFE };
+  if (c.pose === 'lie') return life;
+  const breath = Math.sin(t * 1.7 + c.id);
+  if (c.pose === 'walk') {
+    const cp = Math.cos(phase);
+    const sp = Math.sin(phase);
+    life.swayX = -cp * 0.022;
+    life.side = cp * 0.035;
+    life.bodyY = Math.abs(cp) * 0.012;
+    life.lean = 0.07;
+    life.headX = -0.03 + Math.sin(2 * phase + 0.9) * 0.035;
+    life.headYaw = -sp * 0.09;
+    life.bodyYaw = -sp * 0.06;
+    life.elbowL = -0.22 * (0.5 + 0.5 * Math.sin(phase + 2.2));
+    life.elbowR = -0.22 * (0.5 + 0.5 * Math.sin(phase + 2.2 + Math.PI));
+    life.armOut = 0.08;
+    return life;
+  }
+  // breathing, whatever else they are doing
+  life.lean = breath * 0.012;
+  life.bodyY = breath * 0.004;
+  life.headX = -breath * 0.012;
+  if (c.busy && c.pose === 'stand' && style !== 'qigong') {
+    const f = (style && RHYTHM[style]) ?? 7.5;
+    // gentle treatments barely move the body; brisk ones rock it
+    const push = Math.sin(t * f + c.id) * Math.min(1, f / 3);
+    life.swayX = push * 0.02;
+    life.lean += push * 0.05;
+    life.kneeL = life.kneeR = 0.05 * (1 + push);
+    life.bodyY -= 0.01 * (1 + push);
+    life.headYaw = push * 0.1;
+    life.headX += 0.04;
+    return life;
+  }
+  if (c.busy || smudging || style) return life;
+  const fidget = fidgetAt(c.id, t, c.pose === 'sit' ? SEATED_FIDGETS : STANDING_FIDGETS);
+  if (c.pose === 'stand') {
+    const w = Math.sin(t * 0.42 + c.id * 2.1);
+    life.swayX = w * 0.02;
+    life.side += w * 0.04;
+    life.kneeL = Math.max(0, w) * 0.16;
+    life.kneeR = Math.max(0, -w) * 0.16;
+    life.bodyY -= Math.abs(w) * 0.008;
+  }
+  if (!fidget) return life;
+  const { amount: a, way } = fidget;
+  const kind = handsFree || !ARM_FIDGETS.has(fidget.kind) ? fidget.kind : 'look';
+  if (kind === 'look') {
+    life.headYaw = way * 0.7 * a;
+    life.headX -= 0.05 * a;
+  } else if (kind === 'watch') {
+    // the forearm brought up level in front of the body, the wrist turned in to read it, and a look down at it
+    life.armL = (-0.45 - armL) * a;
+    life.elbowL = -1.25 * a;
+    life.armInL = 0.3 * a;
+    life.headX += 0.32 * a;
+    life.headYaw = -0.3 * a;
+  } else if (kind === 'stretch') {
+    life.armL = (-2.9 - armL) * a;
+    life.armR = (-2.9 - armR) * a;
+    life.lean -= 0.12 * a;
+    life.bodyY += 0.02 * a;
+    life.headX -= 0.2 * a;
+  } else if (kind === 'tap') {
+    life.kneeR += 0.22 * Math.max(0, Math.sin(t * 13)) * a;
+    life.swayX -= 0.015 * a;
+  } else {
+    life.kneeL += 0.3 * Math.sin(t * 3.2) * a;
+    life.kneeR += 0.3 * Math.sin(t * 3.2 + Math.PI) * a;
+  }
+  return life;
 }
