@@ -339,28 +339,39 @@ export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, 
 
 // The body: a shirt shaped to the chest and waist with a collar, trousers over the hips, and the legs and arms.
 
+/** The shirt's profile, [radius, height] from the hem to the collar, and how much wider and shallower it is than round. */
+const SHIRT: readonly (readonly [number, number])[] = [
+  [0.15, -0.085],
+  [0.166, -0.075],
+  [0.167, -0.05],
+  [0.16, 0.02],
+  [0.155, 0.09],
+  [0.162, 0.17],
+  [0.17, 0.26],
+  [0.17, 0.32],
+  [0.164, 0.37],
+  [0.146, 0.42],
+  [0.112, 0.458],
+  [0.075, 0.478],
+  [0, 0.482],
+];
+const SHIRT_WIDE = 1.12;
+const SHIRT_DEEP = 0.9;
+
+/** The shirt's radius at a height on the torso, before it is made wider and shallower. */
+function shirtRadius(y: number) {
+  for (let i = 1; i < SHIRT.length; i++) {
+    const [r0, y0] = must(SHIRT[i - 1], 'a point of the shirt');
+    const [r1, y1] = must(SHIRT[i], 'a point of the shirt');
+    if (y <= y1) return r0 + ((r1 - r0) * Math.max(0, y - y0)) / (y1 - y0);
+  }
+  return 0;
+}
+
 /** The shirt, from the hem to the collar, shaped to the chest and waist, as wide and deep as the uniforms are cut. */
 const shirt = () =>
   fuse('shirt', () => [
-    lathe(
-      [
-        [0.15, -0.085],
-        [0.166, -0.075],
-        [0.167, -0.05],
-        [0.16, 0.02],
-        [0.155, 0.09],
-        [0.162, 0.17],
-        [0.17, 0.26],
-        [0.17, 0.32],
-        [0.164, 0.37],
-        [0.146, 0.42],
-        [0.112, 0.458],
-        [0.075, 0.478],
-        [0, 0.482],
-      ],
-      1.12,
-      0.9,
-    ),
+    lathe(SHIRT, SHIRT_WIDE, SHIRT_DEEP),
     place(
       smooth(new THREE.TorusGeometry(0.078, 0.02, 10, 28)),
       [0, 0.468, 0.006],
@@ -396,6 +407,121 @@ export function detailTorso(torso: THREE.Group, top: THREE.Material, bottom: THR
   seat.name = 'trousers';
   // the seat of the trousers is under the shirt and between the legs, so its shadow is theirs
   seat.castShadow = false;
+}
+
+/**
+ * A shape lofted through ovals stacked up the body, bottom to top, each [height, half its width, half its depth]: wider
+ * than deep wherever it needs to be, as a lathe cannot. An oval with no width closes it in a point.
+ */
+function ovals(rings: readonly (readonly [number, number, number])[], seg = 40) {
+  const positions: number[] = [];
+  const index: number[] = [];
+  const starts: number[] = [];
+  for (const [y, a, b] of rings) {
+    starts.push(positions.length / 3);
+    if (a <= 0) positions.push(0, y, 0);
+    else
+      for (let i = 0; i < seg; i++) {
+        const t = (i / seg) * Math.PI * 2;
+        positions.push(a * Math.sin(t), y, b * Math.cos(t));
+      }
+  }
+  for (let r = 1; r < rings.length; r++) {
+    const lo = must(starts[r - 1], 'a ring');
+    const hi = must(starts[r], 'a ring');
+    const loPoint = must(rings[r - 1], 'a ring')[1] <= 0;
+    const hiPoint = must(rings[r], 'a ring')[1] <= 0;
+    for (let i = 0; i < seg; i++) {
+      const j = (i + 1) % seg;
+      if (loPoint) index.push(lo, hi + j, hi + i);
+      else if (hiPoint) index.push(lo + i, lo + j, hi);
+      else index.push(lo + i, lo + j, hi + i, lo + j, hi + j, hi + i);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(index);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** A woven poncho draped from the neck over the shoulders and hanging to the waist: close to the chest and back, and
+ * wide over the shoulders, covering the arms where they hinge. */
+const poncho = () =>
+  fuse('poncho', () => [
+    ovals([
+      [0.195, 0, 0],
+      [0.2, 0.3, 0.17],
+      [0.205, 0.33, 0.2],
+      [0.22, 0.337, 0.207],
+      [0.3, 0.332, 0.205],
+      [0.36, 0.326, 0.2],
+      [0.41, 0.312, 0.188],
+      [0.445, 0.26, 0.165],
+      [0.47, 0.165, 0.135],
+      [0.488, 0.11, 0.112],
+      [0.497, 0, 0],
+    ]),
+  ]);
+
+/** A band of another colour woven round the poncho above its hem. */
+const ponchoBand = () =>
+  fuse('poncho band', () => [
+    ovals([
+      [0.228, 0.336, 0.206],
+      [0.232, 0.341, 0.211],
+      [0.262, 0.34, 0.211],
+      [0.266, 0.336, 0.206],
+    ]),
+  ]);
+
+/** Dress a shaman in a poncho, in their colour with a band of another. */
+export function detailPoncho(torso: THREE.Group, cloth: THREE.Material, band: THREE.Material) {
+  put(torso, poncho(), cloth).name = 'poncho';
+  put(torso, ponchoBand(), band).name = 'poncho band';
+}
+
+/** A point on the shirt's surface, `out` beyond it, at a height and a turn round the body (0 at the front, a quarter
+ * turn at the +x side), with the shoulders rounded out to the shoulder balls. */
+function onShirt(turn: number, y: number, out: number, shoulder = 0) {
+  const r = Math.max(shirtRadius(y), shoulder);
+  return new THREE.Vector3((r * SHIRT_WIDE + out) * Math.sin(turn), y, (r * SHIRT_DEEP + out) * Math.cos(turn));
+}
+
+/** A shawl rolled into a soft band, worn over one shoulder: from the front of the hip on the other side, up across the
+ * chest, over the shoulder and down the back. */
+const shawl = () =>
+  fuse('shawl', () => {
+    const points: THREE.Vector3[] = [];
+    for (let i = 0; i <= 24; i++) {
+      const turn = Math.PI * (-0.15 + (1.3 * i) / 24);
+      const up = Math.sin(turn);
+      points.push(onShirt(turn, 0.25 + 0.21 * up, 0.03, 0.17 * THREE.MathUtils.smoothstep(up, 0.5, 0.9)));
+    }
+    const ends = [must(points[0], 'the front end of the shawl'), must(points.at(-1), 'the back end of the shawl')];
+    return [
+      bare(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 64, 0.032, 10, false)),
+      ...ends.map((at) => place(ball(0.032, 12), at.toArray())),
+    ];
+  });
+
+/** A string of wooden beads hanging round the neck and lying on the chest. */
+const beads = () =>
+  fuse('beads', () =>
+    Array.from({ length: 13 }, (_, i) => {
+      const u = -1 + i / 6;
+      const x = 0.1 * u;
+      const y = 0.45 - 0.13 * (1 - u * u);
+      const r = shirtRadius(y);
+      const z = r * SHIRT_DEEP * Math.sqrt(Math.max(0, 1 - (x / (r * SHIRT_WIDE)) ** 2)) + 0.014;
+      return place(ball(0.016, 8), [x, y, z]);
+    }),
+  );
+
+/** Dress a sound healer in a shawl over one shoulder, in their colour, and a string of beads. */
+export function detailShawl(torso: THREE.Group, cloth: THREE.Material, wood: THREE.Material) {
+  put(torso, shawl(), cloth).name = 'shawl';
+  put(torso, beads(), wood).name = 'beads';
 }
 
 /** How far below the hip the knee is, and below the shoulder the elbow: where the shin and the forearm hinge. */

@@ -4,7 +4,17 @@ import * as THREE from 'three';
 import { type Role, ROLES, type Visual } from '../../core/data';
 import type { Look, VisitorKind } from '../../core/state/types';
 import { owned } from '../disposal';
-import { detailArm, detailHead, detailLeg, detailTorso, ELBOW, GLASSES_OUT, KNEE } from './character-detail';
+import {
+  detailArm,
+  detailHead,
+  detailLeg,
+  detailPoncho,
+  detailShawl,
+  detailTorso,
+  ELBOW,
+  GLASSES_OUT,
+  KNEE,
+} from './character-detail';
 import { cached, capsule, cyl, ico, joined, mat, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
 
@@ -87,13 +97,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   }
   if (role === 'consultant') put(torso, rbox(0.08, 0.14, 0.03, 0.01), accent, 0.08, 0.26, 0.15);
   if (role === 'caretaker') put(torso, rbox(0.2, 0.16, 0.03, 0.01), accent, 0, 0.2, 0.155);
-  if (role === 'healer') {
-    // a shawl over one shoulder, and a string of beads
-    const shawl = put(torso, rbox(0.36, 0.08, 0.3, 0.03), accent, 0.02, 0.36, 0);
-    shawl.rotation.z = -0.35;
-    const beads = put(torso, torus(0.12, 0.016), mat(0x8a5a2c, 0.5), 0, 0.33, 0.04);
-    beads.rotation.x = Math.PI / 2 - 0.45;
-  }
+  // a shawl over one shoulder, and a string of beads
+  if (role === 'healer') detailShawl(torso, accent, mat(0x8a5a2c, 0.5));
   if (role === 'therapist') {
     // a belt round the waist, shaped to the body, with a pump bottle of massage oil clipped on at the hip
     const belt = put(torso, torus(0.172, 0.022), mat(0x5a3b28, 0.6), 0, 0.1, 0);
@@ -107,10 +112,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     ]);
     put(torso, pump, mat(0xf4f1ea, 0.4), 0.15, 0.13, 0.135);
   }
-  if (role === 'shaman') {
-    // a woven poncho over the shoulders
-    put(torso, rbox(0.5, 0.26, 0.4, 0.08), accent, 0, 0.36, 0).scale.set(1, 1, 0.95);
-  }
+  // a woven poncho over the shoulders
+  if (role === 'shaman') detailPoncho(torso, accent, mat(0x8a3b24, 0.85));
   if (role === 'practitioner') {
     const chain = put(torso, torus(0.13, 0.012), mat(0xc9963f, 0.3), 0, 0.36, 0.03);
     chain.rotation.x = Math.PI / 2 - 0.5;
