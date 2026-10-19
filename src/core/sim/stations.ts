@@ -36,7 +36,7 @@ import { gainXp, habitOf, hasGeneral } from './careers';
 import { badTrip, blessBonus, goodTrip, isTrip, settingPenalty } from './ceremonies';
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
-import { isClassLead, restDue, updateClass } from './classes';
+import { dueForSpot, isClassLead, restDue, updateClass } from './classes';
 import type { SimContext } from './context';
 import { changeRep, earn, priceFor } from './economy';
 import { emit, tipOnce } from './events';
@@ -160,11 +160,16 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
   return { chance: problem ? chance * BOTCH_FACTOR : chance, problem };
 }
 
-/** The guest a station calls next: the first waiting in line, or the first emergency if the policy puts them first. */
+/**
+ * The guest a station calls next: the first waiting in line, or the first emergency if the policy puts them first. A
+ * Practice Spot passes over anyone in early for a later class than its studio's next.
+ */
 export function nextInLine(ctx: SimContext, it: Item): Guest | undefined {
+  const spot = ITEMS[it.type].station?.goal === 'class';
   const waiting = it.queue
     .map((id) => guestById(ctx, id))
-    .filter((q): q is Guest => q?.state === 'waiting' || q?.state === 'toWait');
+    .filter((q): q is Guest => q?.state === 'waiting' || q?.state === 'toWait')
+    .filter((q) => !spot || dueForSpot(ctx, it, q));
   return (ctx.s.policy.emergenciesFirst ? waiting.find((q) => q.emergency) : undefined) ?? waiting[0];
 }
 

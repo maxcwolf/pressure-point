@@ -10,12 +10,12 @@ import {
   CLASS_CALL_GAP,
   CLASS_DAYS,
   CLASS_FEE,
-  CLASS_PATIENCE,
   DAY_SECONDS,
   ITEMS,
   REST_AHEAD,
   REST_RETURN,
   ROOMS,
+  STAFF_NEED_HOLD,
 } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import { accessIndex } from '../../src/core/sim/claims';
@@ -29,7 +29,7 @@ import {
   classPlaces,
   classSize,
   daysToClass,
-  giveUp,
+  dueForSpot,
   missNote,
   missToast,
   noteMissedClasses,
@@ -40,6 +40,7 @@ import {
 } from '../../src/core/sim/classes';
 import type { SimContext } from '../../src/core/sim/context';
 import { admitGuests, guestCap, guestsCounted, spawnGuest } from '../../src/core/sim/guests';
+import { wantsAway } from '../../src/core/sim/staffing';
 import { worsening } from '../../src/core/sim/worsening';
 import type { GameState, Guest, Staff } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
@@ -413,22 +414,72 @@ describe('a class in play', () => {
     );
   });
 
-  it('tells class-goers left waiting when every spot was taken that the class was full', () => {
+  it('puts class-goers left waiting when every spot was taken down for the next class, and they have it', () => {
     const { sim, s } = studio();
     const ctx = (sim as unknown as { ctx: SimContext }).ctx;
     // Friday's class booked, and three more for it than that, more than its three spots
     run(sim, 1);
     for (let i = 0; i < 3; i++) spawnGuest(ctx, undefined, false, 4);
     runUntil(sim, () => s.stats.classes > 0, 6 * DAY_SECONDS);
-    const left = s.guests.filter((g) => g.classDay === 4 && g.goal === 'class');
+    const left = s.guests.filter((g) => g.goal === 'class' && g.state !== 'leaving');
     expect(left.length).toBeGreaterThan(0);
-    expect(left.every((g) => g.missed === 'full')).toBe(true);
-    // still waiting when they give up, three days on
-    s.day = 4 + CLASS_PATIENCE;
-    sim.drain();
-    giveUp(ctx);
-    expect(left[0] && guestStatus(left[0], sim)).toBe('Going home without a class: every Practice Spot was taken');
-    expect(toasts(sim.drain())).toContainEqual(expect.stringContaining('every Practice Spot was taken by the time'));
+    // Monday's
+    expect(left.every((g) => g.classDay === 7 && !g.missed)).toBe(true);
+    runUntil(sim, () => s.stats.classes > 1, 6 * DAY_SECONDS);
+    expect(left.every((g) => g.outcome === 'class' && !g.missed)).toBe(true);
+  });
+
+  it('keeps class-goers in early for a later class off the spots while anyone for the class before is in line', () => {
+    const { sim, s, room } = studio();
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    const spot = s.items.find((it) => it.type === 'practice_spot');
+    if (!spot) throw new Error('no Practice Spot');
+    const monday = { classDay: 7 } as Guest;
+    // Friday morning, with Friday's class still to hold and nobody in for it: Monday's may take a free spot
+    s.day = 4.1;
+    expect(dueForSpot(ctx, spot, monday)).toBe(true);
+    // someone in line for Friday's comes first
+    const friday = spawnGuest(ctx, undefined, false, 4);
+    if (!friday) throw new Error('no class-goer');
+    expect(s.items.some((it) => it.queue.includes(friday.id))).toBe(true);
+    expect(dueForSpot(ctx, spot, friday)).toBe(true);
+    expect(dueForSpot(ctx, spot, monday)).toBe(false);
+    // once Friday's has been held, Monday's is next
+    room.lastClass = 4;
+    expect(dueForSpot(ctx, spot, monday)).toBe(true);
+    // anyone else at a spot is called as ever
+    expect(dueForSpot(ctx, spot, { classDay: 0 } as Guest)).toBe(true);
+  });
+
+  it('keeps the Instructor from a drink while class-goers wait at the studio, until close to fed up', () => {
+    const { sim, s, teacher } = studio();
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    if (!teacher) throw new Error('no Instructor');
+    const mat = s.items.find((it) => it.type === 'instructor_mat');
+    if (!mat) throw new Error('no Instructor’s Mat');
+    // a water cooler near the studio
+    const placed = [...Array(12).keys()].some((dy) =>
+      [...Array(12).keys()].some((dx) => !!sim.placeItem('water_cooler', 2 + dx, 6 + dy, 0)),
+    );
+    expect(placed).toBe(true);
+    teacher.energy = 100;
+    teacher.thirst = 70;
+    expect(wantsAway(ctx, teacher, mat)).toBe(true);
+    // a class-goer in line at a spot: the class comes first
+    const g = spawnGuest(ctx, undefined, false, 4);
+    if (!g) throw new Error('no class-goer');
+    expect(wantsAway(ctx, teacher, mat)).toBe(false);
+    teacher.thirst = STAFF_NEED_HOLD;
+    expect(wantsAway(ctx, teacher, mat)).toBe(true);
+  });
+
+  it('lets class-goers walk in without losing patience', () => {
+    const { sim } = studio();
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    const g = spawnGuest(ctx, undefined, false, 4);
+    if (!g) throw new Error('no class-goer');
+    runUntil(sim, () => g.state !== 'toWait' && g.state !== 'enter', 3 * DAY_SECONDS);
+    expect(g.lowest).toBe(100);
   });
 
   it('keeps the Instructor at the mat to the end, however tired, rather than send its class-goers back to the line', () => {

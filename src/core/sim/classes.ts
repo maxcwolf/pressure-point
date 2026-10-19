@@ -255,6 +255,24 @@ export function updateClass(ctx: SimContext, lead: Item, staff: Staff | undefine
   finishClass(ctx, lead, staff);
 }
 
+/**
+ * Whether a class-goer may be called to a Practice Spot now: their class is the studio's next one, or an earlier one,
+ * or nobody come for one of those is in line at the studio. Anyone in early for a later class waits, so as not to take
+ * the spot of someone come for the class before, but has a free spot rather than stand in line for a class with
+ * nobody else coming.
+ */
+export function dueForSpot(ctx: SimContext, spot: Item, g: Guest): boolean {
+  const room = ctx.world.roomOfItem(spot);
+  const next = room && nextClassDay(room, Math.floor(ctx.s.day));
+  if (!room || !g.classDay || next === undefined || g.classDay <= next) return true;
+  return !spotsIn(ctx, room).some((it) =>
+    it.queue.some((id) => {
+      const q = guestById(ctx, id);
+      return q?.goal === 'class' && !!q.classDay && q.classDay <= next;
+    }),
+  );
+}
+
 /** Whether a class is going on at a Practice Spot's studio now. */
 export function classPlaying(ctx: SimContext, spot: Item): boolean {
   const room = ctx.world.roomOfItem(spot);
@@ -309,8 +327,8 @@ export function missClass(ctx: SimContext, g: Guest, why: ClassMiss) {
 
 /**
  * A class comes to its end: everyone on a spot has had it. Class-goers booked for it, or an earlier one, who are still
- * on their way in are put down for the studio's next class, as the walk in can take longer than they set off ahead.
- * If every spot was taken, anyone already waiting for one missed it for want of a place.
+ * on their way in or in line for a spot are put down for the studio's next class, as the walk in can take longer than
+ * they set off ahead.
  */
 function finishClass(ctx: SimContext, lead: Item, staff: Staff) {
   const spots = matsOf(ctx, lead);
@@ -331,16 +349,10 @@ function finishClass(ctx: SimContext, lead: Item, staff: Staff) {
         const g = guestById(ctx, id);
         if (g?.goal === 'class' && g.classDay && g.classDay <= today && ON_THE_WAY.includes(g.state)) g.classDay = next;
       }
-  if (held < spots.length) return;
-  for (const spot of spots)
-    for (const id of spot.queue) {
-      const g = guestById(ctx, id);
-      if (g?.goal === 'class' && g.classDay && g.classDay <= today) g.missed = 'full';
-    }
 }
 
-/** What a class-goer still on their way to the studio is doing: coming in, or walking to a spot or its line. */
-const ON_THE_WAY: readonly Guest['state'][] = ['enter', 'toWait', 'called'];
+/** What a class-goer not yet on a spot is doing: coming in, walking to a spot or its line, or waiting in it. */
+const ON_THE_WAY: readonly Guest['state'][] = ['enter', 'toWait', 'waiting', 'called'];
 
 /** A studio's next class day from today, today included if its class is still to hold; undefined if it holds none. */
 function nextClassDay(room: Room, today: number): number | undefined {

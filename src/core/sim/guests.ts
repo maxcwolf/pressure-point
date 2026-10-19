@@ -419,7 +419,10 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   const arrived = moveAlong(g, dt, (stiff ? 1.75 : 2.1) * puddleSlow(ctx, g));
   if (worsen(ctx, g, dt)) return;
 
-  const waiting = g.state === 'toWait' || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
+  // a class-goer walking in to their class is on their way, not kept waiting: only a line wears on them
+  const walkingToClass = g.state === 'toWait' && g.goal === 'class';
+  const waiting =
+    (g.state === 'toWait' && !walkingToClass) || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
   if (waiting) {
     let drain = 0.85 * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);
     // the one they are waiting for has a good bedside manner

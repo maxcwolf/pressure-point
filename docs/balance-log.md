@@ -4,6 +4,23 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 19 October 2026: class-goers who get their class
+
+Measured with a probe that follows every class-goer the playtest bot's games bring in (when they set off, reach the studio, lose patience and leave, and why), and with `yarn balance`, at The Orchard Estate, seeds 1 to 8, two years a game, against main at `4a62c80`. The Orchard's studio stands on land apart, a long walk from the street, the Staff Room and the drinks, so it shows the trouble most.
+
+### 26. One class-goer in six went home without a class
+
+**Found:** 17% of class-goers left disappointed: 9% with the Instructor not at the mat, 4% having got there too late, 4% with the Instructor on a break. Four things, each made worse by a long walk:
+
+- The Instructor's Mat has no line of its own, as class-goers wait at the Practice Spots, so an Instructor never counted as having anyone waiting and went for a drink or a snack as soon as they wanted one, as staff with an empty line do. Leaving the mat sends everyone on a spot back to the line, and from the studio apart the drinks were most of a day away.
+- Class-goers set off two days ahead and most got in a day early, then stood on the spots as they came free, so the next class's class-goers, arriving for it, were left in line behind them.
+- Anyone still in line, not walking in, when a class ended was not put down for the next one, and three days on went home "too late".
+- The walk in from the street drained patience as a wait in line does: 8 points on average, 14 for those who later missed their class.
+
+**Done:** an Instructor with class-goers on the spots or in their lines holds off a drink or a snack until close to fed up, as other staff do with a line (`lineWaiting` in `src/core/sim/staffing.ts`). A spot calls a class-goer in early for a later class only while nobody for an earlier one is in line at the studio (`dueForSpot` in `src/core/sim/classes.ts`). Class-goers in line when a class ends are put down for the next, as those still walking in were. Walking in to a class no longer wears on patience; a line still does.
+
+**Result:** 93% of class-goers had their class, from 83%. Away from the mat 6% (from 13%), too late 1% (from 4%). 25% more classes were held. From the second year, profit rose $6.2k a month and reputation 4 points, with fewer guests storming out. The stars came as before, to within a game's luck: the third at 17.5 months on average against 17.2. The Sound Healer's Singing Bowls, which have the same blind spot, were left as they are: changing them changed every game at The Orchard from its first months, and wants measuring on its own.
+
 ## 17 October 2026, late night: Experts learn every treatment
 
 ### 25. An Expert could be shut out of their discipline's last treatment

@@ -253,8 +253,12 @@ function inHand(ctx: SimContext, it: Item): boolean {
   return isLeadStation(it) && sessionState(ctx, it).playing;
 }
 
-/** Whether guests are waiting in a station's line to be called. */
+/**
+ * Whether guests are waiting in a station's line to be called. At an Instructor's Mat they wait at the studio's
+ * Practice Spots: in their lines, or on them for the class to begin.
+ */
 function lineWaiting(ctx: SimContext, it: Item): boolean {
+  if (isClassLead(it)) return matsOf(ctx, it).some((m) => !!guestById(ctx, m.serving) || lineWaiting(ctx, m));
   return it.queue.some((id) => {
     const g = guestById(ctx, id);
     return g?.station === it.id && (g.state === 'waiting' || g.state === 'toWait');
