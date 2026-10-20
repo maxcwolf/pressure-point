@@ -206,7 +206,12 @@ export function upgradeSave(save: GameState) {
   }
   for (const l of [s.ledger, s.lastLedger, ...s.months.map((m) => m.ledger)]) fill(l, emptyLedger());
   fill(s.stats, emptyStats());
-  for (const t of [s.tally, ...s.months]) fill(t, emptyTally());
+  for (const t of [s.tally, ...s.months]) {
+    // patience was kept from version 0.30.0: a month with guests counted before then goes without, not at nothing
+    const unkept = t.patienceTotal === undefined && t.waitCount > 0;
+    fill(t, emptyTally());
+    if (unkept) delete (t as Tally).patienceTotal;
+  }
   // a policy saved before the mushrooms has no word on putting them away
   fill(s.policy, defaultPolicy());
   s.reviews = s.reviews.map((r) => ({ ...r, feelings: r.feelings.filter((f) => Object.hasOwn(FEELINGS, f)) }));

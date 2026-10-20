@@ -5,7 +5,10 @@ import { setSeed } from '../../src/core/random';
 import { checkAchievements } from '../../src/core/sim/achievements';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents, earnsForCampaign } from '../../src/core/sim/events';
-import { newGame } from '../../src/core/state/game';
+import { averagePatience } from '../../src/core/sim/goals';
+import { monthSoFar } from '../../src/core/sim/records';
+import { emptyTally, newGame } from '../../src/core/state/game';
+import { upgradeSave } from '../../src/core/state/upgrade';
 
 describe('karma from a star or an achievement', () => {
   it('is noted for the campaign as it is earned, not at the next autosave', () => {
@@ -16,5 +19,19 @@ describe('karma from a star or an achievement', () => {
     expect(drainEvents(ctx).filter(earnsForCampaign)).toEqual([{ type: 'achievement', id: 'century' }]);
     expect(earnsForCampaign({ type: 'star', stars: 1 })).toBe(true);
     expect(earnsForCampaign({ type: 'visit' })).toBe(false);
+  });
+});
+
+describe('months saved before patience was kept', () => {
+  it('stay without it after the save is brought up to date, rather than read as no patience kept at all', () => {
+    const old = newGame('willow');
+    const month = { ...monthSoFar(createContext(old)), waitCount: 30 };
+    delete month.patienceTotal;
+    old.months = [month];
+    old.tally = { ...emptyTally(), waitCount: 12 };
+    delete old.tally.patienceTotal;
+    upgradeSave(old);
+    expect(averagePatience(old.months[0]!)).toBeNull();
+    expect(old.tally.patienceTotal).toBeUndefined();
   });
 });
