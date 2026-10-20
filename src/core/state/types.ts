@@ -209,7 +209,13 @@ export interface Call {
   days: number;
   /** The game day they are back: counted from when they set off down the street. */
   back: number;
+  /**
+   * What it pays at standard prices, for the rank they went at, and what sets its price on the day they are back: the
+   * overall level, or the technique it asked for. A call taken before calls were priced on the way back has no
+   * `pricedBy`, and pays the fee fixed as it was taken.
+   */
   fee: number;
+  pricedBy?: Modality | 'level';
 }
 
 export interface Staff extends CharBase {

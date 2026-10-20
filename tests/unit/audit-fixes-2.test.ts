@@ -1,7 +1,7 @@
 // Fixes from the 20 October 2026 deep-dive audit, one test each, in the audit's order.
 import { describe, expect, it } from 'vitest';
 
-import type { Offering } from '../../src/core/data';
+import { CALL_PER_DAY, type Offering } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { checkAchievements } from '../../src/core/sim/achievements';
 import { createContext } from '../../src/core/sim/context';
@@ -11,7 +11,7 @@ import { monthSoFar } from '../../src/core/sim/records';
 import { emptyTally, newGame } from '../../src/core/state/game';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { templateLock } from '../../src/core/templates';
-import { addQigong, openCenter } from './helpers';
+import { addQigong, openCenter, runUntil } from './helpers';
 
 describe('karma from a star or an achievement', () => {
   it('is noted for the campaign as it is earned, not at the next autosave', () => {
@@ -51,5 +51,20 @@ describe('a Qi Gong Studio template', () => {
     /** Everything is on. */
     const allOn = () => true;
     expect(templateLock(studio, { upTo: Infinity, unlocked: [], enabled: allOn })).toBe('');
+  });
+});
+
+describe('a house call', () => {
+  it('is paid at the prices of the day they are back, not those of the moment it was taken', () => {
+    const { sim, s, therapist } = openCenter(1);
+    runUntil(sim, () => therapist.state === 'atPost', 120);
+    therapist.skill = 1;
+    s.callOffer = { client: 'A client', days: 1, perDay: CALL_PER_DAY, discipline: 'massage', deadline: s.day + 5 };
+    s.priceLevel = 2;
+    expect(sim.acceptCall(therapist.id)).toBe(true);
+    s.priceLevel = 0.5;
+    runUntil(sim, () => therapist.state === 'away', 60);
+    runUntil(sim, () => therapist.state !== 'away', 60);
+    expect(s.ledger.calls).toBe(Math.round(CALL_PER_DAY * 0.5));
   });
 });

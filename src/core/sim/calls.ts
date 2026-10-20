@@ -13,6 +13,7 @@ import {
   DISCIPLINE_ORDER,
   DISCIPLINES,
   MODALITIES,
+  type Modality,
   MODALITY_ORDER,
   ROLES,
 } from '../data';
@@ -37,9 +38,14 @@ export const CALL_XP = 3;
  * the overall level and, for a call that asks for a technique, that technique's own.
  */
 export function callFee(s: GameState, call: HouseCall, st: Staff): number {
-  const prices = call.modality ? priceFor(s, call.modality) : s.priceLevel;
-  return Math.round(call.perDay * call.days * (1 + CALL_RANK_BONUS * (st.skill - 1)) * prices);
+  return Math.round(callBase(call, st) * callPrices(s, call.modality ?? 'level'));
 }
+
+/** What a house call pays at standard prices if this member of staff goes. */
+const callBase = (call: HouseCall, st: Staff) => call.perDay * call.days * (1 + CALL_RANK_BONUS * (st.skill - 1));
+
+/** The prices a house call is paid at: the overall level, or a technique's own. */
+const callPrices = (s: GameState, by: Modality | 'level') => (by === 'level' ? s.priceLevel : priceFor(s, by));
 
 /** Whether this member of staff could go on a house call: in its discipline, trained in what it asks, and free. */
 export function canGo(st: Staff, call: HouseCall): boolean {
@@ -96,7 +102,14 @@ export function acceptCall(ctx: SimContext, staffId: number): boolean {
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
   }
-  st.call = { client: call.client, days: call.days, back: s.day + call.days, fee: callFee(s, call, st) };
+  // priced on the way back, so a price raised for the days away and dropped again is not paid for
+  st.call = {
+    client: call.client,
+    days: call.days,
+    back: s.day + call.days,
+    fee: callBase(call, st),
+    pricedBy: call.modality ?? 'level',
+  };
   st.state = 'toCall';
   say(st, '🧳', 3);
   s.callOffer = null;
@@ -140,8 +153,9 @@ export function returnFromCall(ctx: SimContext, st: Staff) {
     st.ty = ly;
     st.state = 'idle';
   }
-  earn(ctx, call.fee, 'calls', x, y);
-  toast(ctx, `${st.name} is back from ${call.client}: ${money(call.fee)} for the house call.`, 'good', {
+  const fee = call.pricedBy ? Math.round(call.fee * callPrices(ctx.s, call.pricedBy)) : call.fee;
+  earn(ctx, fee, 'calls', x, y);
+  toast(ctx, `${st.name} is back from ${call.client}: ${money(fee)} for the house call.`, 'good', {
     kind: 'staff',
     id: st.id,
   });
