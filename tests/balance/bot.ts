@@ -28,6 +28,7 @@ import {
   type GoalSpec,
   ITEMS,
   type ItemType,
+  LOAN_STEP,
   MODALITIES,
   type Modality,
   NOISE_NOTICE,
@@ -837,7 +838,9 @@ export class Bot {
     // (a first month's payroll is not on the books yet while the staff are still being taken on)
     if (s.loan + Math.max(wagesDue(s), FIRST_PAYROLL) > loanLimit(s)) return false;
     // and with the next payday still covered, since a payday the bank cannot meet is a loan, or the end
-    while (s.money < cost + Math.max(1000, wagesDue(s))) if (!this.sim.borrow()) return false;
+    while (s.money < cost + Math.max(1000, wagesDue(s))) {
+      if (s.loan + LOAN_STEP + Math.max(wagesDue(s), FIRST_PAYROLL) > loanLimit(s) || !this.sim.borrow()) return false;
+    }
     this.note(`day ${Math.floor(s.day)}: borrowed to build, loan now ${s.loan}`);
     return true;
   }
