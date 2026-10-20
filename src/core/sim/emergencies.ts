@@ -30,8 +30,8 @@ export function updateEmergency(ctx: SimContext) {
   if (s.offer && s.day >= s.offer.deadline) declineEmergency(ctx);
   const e = s.emergency;
   if (e) {
-    // arrivals trickle in, one a second; one who cannot get in tries again next second
-    if (e.pending > 0 && spawnGuest(ctx, e.condition, true)) e.pending--;
+    // arrivals trickle in, one a second; one who cannot get in, or up the road, tries again next second
+    if (e.pending > 0 && !cutOff(ctx) && spawnGuest(ctx, e.condition, true)) e.pending--;
     const stillHere = s.guests.some((g) => g.emergency);
     if (e.healed >= e.target || s.day >= e.deadline || (e.pending === 0 && !stillHere)) endEmergency(ctx);
   } else if (

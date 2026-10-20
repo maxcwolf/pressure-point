@@ -1,14 +1,16 @@
 // Fixes from the 20 October 2026 deep-dive audit, one test each, in the audit's order.
 import { describe, expect, it } from 'vitest';
 
-import { CALL_PER_DAY, type Offering } from '../../src/core/data';
+import { CALL_PER_DAY, CENTERS, type Offering } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { checkAchievements } from '../../src/core/sim/achievements';
 import { createContext } from '../../src/core/sim/context';
+import { updateEmergency } from '../../src/core/sim/emergencies';
 import { drainEvents, earnsForCampaign } from '../../src/core/sim/events';
 import { averagePatience } from '../../src/core/sim/goals';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { countVisit, monthSoFar } from '../../src/core/sim/records';
+import { snowedIn } from '../../src/core/sim/twists';
 import { emptyTally, newGame } from '../../src/core/state/game';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { templateLock } from '../../src/core/templates';
@@ -81,5 +83,31 @@ describe('a guest put off by the prices', () => {
     expect(s.tally.patienceTotal).toBe(0);
     countVisit(ctx, g, 'healed');
     expect(s.tally.waitCount).toBe(1);
+  });
+});
+
+describe('an emergency at a center snowed in', () => {
+  it('sends nobody up the road until it is open again', () => {
+    const { s } = openCenter(1);
+    s.center = 'highpines';
+    const snow = CENTERS.highpines.snow!;
+    let day = 0;
+    while (!snowedIn(day, snow)) day++;
+    s.day = day;
+    s.emergency = {
+      condition: 'knotted',
+      cause: 'A coach crash',
+      total: 4,
+      target: 3,
+      healed: 0,
+      pending: 4,
+      reward: 1000,
+      deadline: day + 5,
+    };
+    const ctx = createContext(s);
+    const guests = s.guests.length;
+    updateEmergency(ctx);
+    expect(s.guests).toHaveLength(guests);
+    expect(s.emergency.pending).toBe(4);
   });
 });
