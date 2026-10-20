@@ -552,7 +552,7 @@ export interface Tally {
   priced: number;
   sent: number;
   worse: number;
-  /** Seconds spent waiting, summed over the guests who left this month, and how many they were. */
+  /** Seconds spent waiting, summed over the guests who left this month, and how many they were: all but those put off by the prices. */
   waitTotal: number;
   waitCount: number;
   /** The lowest each of those guests' patience fell during their visit, summed (0 to 100 each); missing from months before it was kept. */

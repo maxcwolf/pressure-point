@@ -34,10 +34,13 @@ export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
   record[end]++;
   if (end === 'healed' && g.waited < QUICK_DAYS * DAY_SECONDS) feel(g, 'quick');
   writeReview(ctx, g, end);
-  tally.waitTotal += g.waited;
-  tally.waitCount++;
-  // a month begun before patience was kept goes without it, rather than count only some of its guests
-  if (tally.patienceTotal !== undefined) tally.patienceTotal += Math.max(0, Math.min(100, g.lowest ?? g.patience));
+  // a guest put off by the prices leaves straight after the consultation, before any wait for a treatment
+  if (end !== 'priced') {
+    tally.waitTotal += g.waited;
+    tally.waitCount++;
+    // a month begun before patience was kept goes without it, rather than count only some of its guests
+    if (tally.patienceTotal !== undefined) tally.patienceTotal += Math.max(0, Math.min(100, g.lowest ?? g.patience));
+  }
   followVisit(ctx, g, end);
   if (end === 'healed') {
     const d = MODALITIES[conditionOf(g.condition).modality].discipline;

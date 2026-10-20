@@ -7,7 +7,8 @@ import { checkAchievements } from '../../src/core/sim/achievements';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents, earnsForCampaign } from '../../src/core/sim/events';
 import { averagePatience } from '../../src/core/sim/goals';
-import { monthSoFar } from '../../src/core/sim/records';
+import { spawnGuest } from '../../src/core/sim/guests';
+import { countVisit, monthSoFar } from '../../src/core/sim/records';
 import { emptyTally, newGame } from '../../src/core/state/game';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { templateLock } from '../../src/core/templates';
@@ -66,5 +67,19 @@ describe('a house call', () => {
     runUntil(sim, () => therapist.state === 'away', 60);
     runUntil(sim, () => therapist.state !== 'away', 60);
     expect(s.ledger.calls).toBe(Math.round(CALL_PER_DAY * 0.5));
+  });
+});
+
+describe('a guest put off by the prices', () => {
+  it('is not counted among the waiters whose patience the month keeps', () => {
+    const { s } = openCenter(1);
+    const ctx = createContext(s);
+    const g = spawnGuest(ctx)!;
+    g.patience = 100;
+    countVisit(ctx, g, 'priced');
+    expect(s.tally.waitCount).toBe(0);
+    expect(s.tally.patienceTotal).toBe(0);
+    countVisit(ctx, g, 'healed');
+    expect(s.tally.waitCount).toBe(1);
   });
 });
