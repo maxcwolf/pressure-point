@@ -2,6 +2,19 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **No dialog lost.** A star, an award or a visit's report that arrives at the same moment as another now waits its turn instead of being lost, with a payday or a bankruptcy shown first. A failed inspection's choice between the fine and making it go away no longer closes on Esc, and is shown again after loading the game.
+- **Karma at once.** Karma from a star or an achievement can be spent in the karma shop straight away, not only after the next autosave.
+- **Previous game kept safe.** Opening "Previous game" keeps it saved from the start, rather than only from its first autosave.
+- **Older saves' patience.** Months from saves made before patience was kept no longer count as guests keeping none of it.
+- **Fairer goals and awards.** Guests put off by the prices no longer count toward the month's waits and patience. The Exchange's rush-hour tempers are short only during a rush. A visitor who could reach no room on their tour leaves no verdict.
+- **House calls at today's prices.** A house call is paid at the prices of the day the practitioner gets back, not those of the moment it was taken.
+- **Classes booked around a drink.** An Instructor off for a drink or a snack as a class is booked no longer empties it; only a break, course or house call that would keep them away past the class does.
+- **Rules that work as described.** No emergency guests arrive while High Pines is snowed in. Mushrooms put away for an inspector who never came are back on sale. At The Orchard Estate, land and upgrade levels open at their stars, not from the start. A Brisk Caretaker or Shaman works faster, and a Chatterbox slower. The nudge to fill a qualification slot comes at every rank. A Sound Healer's Bedside Manner helps guests waiting at the mats. Someone who cheers up before a Shaman comes can be helped again later. A heal's reputation goes by how patient the guest still was.
+- **Templates and rugs.** A Qi Gong Studio template is locked while classes are switched off, a template with too few of a required item cannot be built, and a moved or copied room's rug can no longer land on a rug in the corridor.
+- **Clearer numbers.** A guest's inspector shows what their treatment will cost at your prices, and the Staff menu leaves out staff who are leaving and shows what the next payday owes. The Instructor's and the inspector's descriptions now match what they do.
+
 ## v0.30.14
 
 - **Class-goers get their class.** Far fewer Qi Gong class-goers go home disappointed. With class-goers waiting, the Instructor holds off a drink or a snack instead of leaving the mat and sending everyone back to the line. Anyone in early for a later class no longer takes a spot from someone due before them, and anyone still in line when a class ends is booked into the next one. The walk in to the studio no longer wears on their patience.
