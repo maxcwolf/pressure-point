@@ -4,13 +4,13 @@
 import { itemOpen } from './campaign';
 import {
   type DecorKey,
-  type Discipline,
   DISCIPLINES,
   type FloorId,
   FLOORS,
   goesIn,
   ITEMS,
   type ItemType,
+  type Offering,
   ROOMS,
   type RoomType,
   RUG_PATTERNS,
@@ -220,11 +220,11 @@ export function describeLayout(l: Layout): string {
   return parts.join(', ');
 }
 
-/** What a game allows to be built: the stars earned, the items unlocked with karma, and the disciplines on. */
+/** What a game allows to be built: the stars earned, the items unlocked with karma, and the disciplines and classes on. */
 export interface Allowed {
   upTo: number;
   unlocked: readonly ItemType[];
-  enabled: (d: Discipline) => boolean;
+  enabled: (o: Offering) => boolean;
 }
 
 /**
@@ -235,8 +235,9 @@ export function templateLock(l: Layout, allowed: Allowed): string {
   const problem = layoutProblem(l);
   if (problem) return problem;
   const room = ROOMS[l.type];
-  if (room.discipline && !allowed.enabled(room.discipline))
-    return `${DISCIPLINES[room.discipline].name} is switched off`;
+  const offering = room.discipline ?? room.offering;
+  if (offering && !allowed.enabled(offering))
+    return `${offering === 'qigong' ? 'Qi Gong classes are' : `${DISCIPLINES[offering].name} is`} switched off`;
   if ((room.unlock ?? 0) > allowed.upTo) return `The ${room.name} unlocks at star ${room.unlock}`;
   const shut = l.items.find((it) => !itemOpen(ITEMS[it.type], allowed.upTo, allowed.unlocked));
   return shut ? `The ${ITEMS[shut.type].name} is still locked` : '';
