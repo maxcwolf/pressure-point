@@ -11,10 +11,11 @@ import { averagePatience } from '../../src/core/sim/goals';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { countVisit, monthSoFar } from '../../src/core/sim/records';
 import { snowedIn } from '../../src/core/sim/twists';
+import { updateVisits } from '../../src/core/sim/visits';
 import { emptyTally, newGame } from '../../src/core/state/game';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { templateLock } from '../../src/core/templates';
-import { addQigong, openCenter, runUntil } from './helpers';
+import { addQigong, hire, openCenter, runUntil } from './helpers';
 
 describe('karma from a star or an achievement', () => {
   it('is noted for the campaign as it is earned, not at the next autosave', () => {
@@ -109,5 +110,24 @@ describe('an emergency at a center snowed in', () => {
     updateEmergency(ctx);
     expect(s.guests).toHaveLength(guests);
     expect(s.emergency.pending).toBe(4);
+  });
+});
+
+describe('an inspection that cannot come', () => {
+  it('brings the mushrooms put away for it back out when it is given up on', () => {
+    const { sim, s } = openCenter(1);
+    hire(sim, 'shaman');
+    const ctx = createContext(s);
+    // no finished rooms, so there is nothing to show the inspector
+    for (const r of s.rooms) r.done = false;
+    s.open = true;
+    s.mushrooms = false;
+    s.mushroomsStashed = true;
+    s.visitNotice = { visit: 'inspector', name: 'Pat', title: 'the health inspector', arrives: 100 };
+    s.day = 104;
+    updateVisits(ctx);
+    expect(s.visitNotice).toBeNull();
+    expect(s.mushroomsStashed).toBe(false);
+    expect(s.mushrooms).toBe(true);
   });
 });

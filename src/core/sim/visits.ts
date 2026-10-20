@@ -302,6 +302,8 @@ function arrive(ctx: SimContext, notice: VisitNotice): boolean {
 /** Write ahead, or bring in whoever wrote, as the days come round. Run once a second. */
 export function updateVisits(ctx: SimContext) {
   const s = ctx.s;
+  // with no visits, there is no inspector to put the mushrooms away for
+  if (!s.visitsOn && s.mushroomsStashed) inspectorGone(ctx);
   if (!s.visitsOn || !s.open || s.visitors.length) return;
   const notice = s.visitNotice;
   if (notice) {
@@ -312,8 +314,11 @@ export function updateVisits(ctx: SimContext) {
       // put off, rather than the calendar waiting on them for good
       else if (s.day >= notice.arrives + STUCK_VISIT_DAYS) {
         s.visitNotice = null;
-        if (notice.visit === 'inspector') s.nextInspection = s.day + inspectionGap(s);
-        else s.nextVip = s.day + irnd(s, VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
+        if (notice.visit === 'inspector') {
+          s.nextInspection = s.day + inspectionGap(s);
+          // the mushrooms put away for them come back out
+          inspectorGone(ctx);
+        } else s.nextVip = s.day + irnd(s, VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
       }
     }
     return;
