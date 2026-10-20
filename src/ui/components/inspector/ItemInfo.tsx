@@ -21,7 +21,7 @@ import { money } from '../../../core/format';
 import { sellBack } from '../../../core/sim/building';
 import { calmness } from '../../../core/sim/noise';
 import { cannotUpgrade, upgradeCost } from '../../../core/sim/upgrades';
-import { unlockedUpTo } from '../../../core/state/game';
+import { starsEarned } from '../../../core/state/game';
 import type { Item } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
@@ -86,7 +86,7 @@ function Upgrades({ item: it }: { item: Item }) {
             sim.orderUpgrade(it.id);
           }}
         >
-          {next > unlockedUpTo(sim.s)
+          {next > starsEarned(sim.s)
             ? `⬆️ Level ${next} unlocks at star ${next}`
             : `⬆️ Upgrade to level ${next} (${money(upgradeCost(it.type, next))})`}
         </Button>

@@ -3,7 +3,7 @@
 
 import { type CenterId, centerOf, CENTERS, type Land, LOT_W, type Plot, type PlotDef, type Rect } from './data';
 import { type Footprint, footprintOf, inFootprint } from './footprint';
-import { unlockedUpTo } from './state/game';
+import { starsEarned } from './state/game';
 import type { GameState } from './state/types';
 
 /** How wide a center's lot is. */
@@ -97,7 +97,7 @@ export function plotOffers(s: GameState, building: Footprint): PlotOffer[] {
     const after = def.after ? plots.find((p) => p.id === def.after) : undefined;
     const afterName = after && nameInSentence(s.land.find((l) => l.plot === after.id)?.name ?? after.name);
     const why =
-      unlockedUpTo(s) < def.star
+      starsEarned(s) < def.star
         ? `Comes up for sale at star ${def.star}`
         : after && states.get(after.id) === 'building'
           ? `Comes up for sale once work on ${afterName} is done`

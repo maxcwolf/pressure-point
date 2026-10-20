@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { CALL_PER_DAY, CENTERS, type Offering } from '../../src/core/data';
+import { footprintOf } from '../../src/core/footprint';
+import { plotOffers } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
 import { checkAchievements } from '../../src/core/sim/achievements';
 import { createContext } from '../../src/core/sim/context';
@@ -11,8 +13,10 @@ import { averagePatience } from '../../src/core/sim/goals';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { countVisit, monthSoFar } from '../../src/core/sim/records';
 import { snowedIn } from '../../src/core/sim/twists';
+import { cannotUpgrade } from '../../src/core/sim/upgrades';
 import { updateVisits } from '../../src/core/sim/visits';
-import { emptyTally, newGame } from '../../src/core/state/game';
+import { emptyTally, newGame, unlockedUpTo } from '../../src/core/state/game';
+import type { Item } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { templateLock } from '../../src/core/templates';
 import { addQigong, hire, openCenter, runUntil } from './helpers';
@@ -129,5 +133,17 @@ describe('an inspection that cannot come', () => {
     expect(s.visitNotice).toBeNull();
     expect(s.mushroomsStashed).toBe(false);
     expect(s.mushrooms).toBe(true);
+  });
+});
+
+describe("the Orchard's head start", () => {
+  it('opens rooms and items early, but not land or upgrade levels before their stars', () => {
+    const s = newGame('orchard');
+    s.money = 1e6;
+    expect(unlockedUpTo(s)).toBe(2);
+    const barn = plotOffers(s, footprintOf(CENTERS.orchard.plot)).find((o) => o.def.id === 'cider-barn');
+    expect(barn?.why).toBe('Comes up for sale at star 2');
+    const table = { type: 'massage_table', level: 0, upgradePaid: false } as Item;
+    expect(cannotUpgrade(s, table)).toBe('Level 1 unlocks at star 1');
   });
 });

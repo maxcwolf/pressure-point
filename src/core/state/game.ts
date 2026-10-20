@@ -256,6 +256,14 @@ export function unlockedUpTo(s: GameState): number {
   return s.unlockAll ? Infinity : Math.max(s.stars, CENTERS[s.center].unlockedFrom ?? 0);
 }
 
+/**
+ * The star whose land and upgrade levels are open so far: the stars earned, or every one in a game with everything
+ * unlocked. A center's head start opens rooms, items and treatments, not these.
+ */
+export function starsEarned(s: GameState): number {
+  return s.unlockAll ? Infinity : s.stars;
+}
+
 /** Whether something Settings can switch off is on in this game: an optional discipline, or the Qi Gong classes. */
 export function offeringOn(s: GameState, o: Offering): boolean {
   return o === 'qigong' ? s.options.qigong !== false : disciplineOn(s, o);

@@ -3,7 +3,7 @@
 
 import { ITEMS, type ItemType, UPGRADE_LEVELS, UPGRADE_PRICE, UPGRADE_SUCCESS, UPGRADE_WEAR } from '../data';
 import { money } from '../format';
-import { unlockedUpTo } from '../state/game';
+import { starsEarned } from '../state/game';
 import type { GameState, Item } from '../state/types';
 import { hasGeneral } from './careers';
 import type { SimContext } from './context';
@@ -39,7 +39,7 @@ export function cannotUpgrade(s: GameState, it: Item): string {
   if (it.level >= UPGRADE_LEVELS) return 'Fully upgraded';
   if (it.upgradePaid) return 'An upgrade is waiting to be installed';
   const next = it.level + 1;
-  if (next > unlockedUpTo(s)) return `Level ${next} unlocks at star ${next}`;
+  if (next > starsEarned(s)) return `Level ${next} unlocks at star ${next}`;
   if (s.money < upgradeCost(it.type, next)) return 'Not enough money';
   return '';
 }
