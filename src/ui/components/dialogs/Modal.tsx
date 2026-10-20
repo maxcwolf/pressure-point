@@ -5,12 +5,14 @@ import type { ComponentChildren } from 'preact';
 import { useHud } from '../../hooks/use-hud';
 import type { DialogId } from '../../hud';
 import { AwardsDialog } from './AwardsDialog';
+import { BankruptDialog } from './BankruptDialog';
 import { BuyPlotDialog } from './BuyPlotDialog';
 import { ConfirmCancelCourse } from './ConfirmCancelCourse';
 import { ConfirmFire } from './ConfirmFire';
 import { ConfirmNewGame } from './ConfirmNewGame';
 import { KarmaDialog } from './KarmaDialog';
 import { PauseMenu } from './PauseMenu';
+import { PayrollDialog } from './PayrollDialog';
 import { SavesDialog } from './SavesDialog';
 import { SettingsDialog } from './SettingsDialog';
 import { StarDialog } from './StarDialog';
@@ -42,6 +44,10 @@ function contents(dialog: DialogId): ComponentChildren {
       return <VisitDialog />;
     case 'buy-plot':
       return <BuyPlotDialog />;
+    case 'payroll':
+      return <PayrollDialog />;
+    case 'bankrupt':
+      return <BankruptDialog />;
     case 'update':
       return <UpdateDialog />;
   }

@@ -757,6 +757,11 @@ export interface GameState {
   trophies: Trophy[];
   /** Campaign achievements earned already, in this game or an earlier one, so none is awarded twice. */
   achieved: AchievementId[];
+  /** Payday has come and the bank cannot cover the wages: the game waits while the player decides whether to borrow
+   * what they come to, or null when no payday is waiting. */
+  payrollDue: { wages: number; loan: number } | null;
+  /** The center is bankrupt and the game is lost. */
+  bankrupt: boolean;
   /** A command has been used in the cheat console, so this game earns no achievements or campaign stars. */
   cheated: boolean;
   seenTips: string[];

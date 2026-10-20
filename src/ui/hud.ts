@@ -35,6 +35,8 @@ export type DialogId =
   | 'awards'
   | 'visit'
   | 'buy-plot'
+  | 'payroll'
+  | 'bankrupt'
   | 'update';
 
 /** A message that fades after a few seconds. */
@@ -150,9 +152,18 @@ export class HudState {
     this.open('pause');
   }
 
+  /** Open the dialog a stopped game is waiting on, if it is: a payday to borrow for, or the center gone bankrupt. */
+  openPending() {
+    const s = this.host.sim.s;
+    if (s.bankrupt) {
+      if (this.dialog !== 'bankrupt') this.open('bankrupt');
+    } else if (s.payrollDue && this.dialog !== 'payroll') this.open('payroll');
+  }
+
   /** Close whatever dialog is open and carry on playing. */
   dismiss() {
-    if (this.dialog) this.close();
+    // a payday and a bankruptcy have to be answered
+    if (this.dialog && this.dialog !== 'payroll' && this.dialog !== 'bankrupt') this.close();
   }
 
   /** Open a build menu, or close it if it is the one already open. */

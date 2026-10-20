@@ -2,11 +2,11 @@
 // refunds in the right month's books, and a visit that cannot come not holding up the calendar.
 import { describe, expect, it } from 'vitest';
 
-import { DAYS_PER_MONTH, OVERDRAFT_RATE, PRICE_MAX, UNPAID_MORALE } from '../../src/core/data';
+import { DAYS_PER_MONTH, LOAN_RATE, LOAN_STEP, OVERDRAFT_RATE, PRICE_MAX } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
-import { monthEnd, recoup, spend } from '../../src/core/sim/economy';
+import { loanLimit, monthEnd, recoup, spend, warnPayday } from '../../src/core/sim/economy';
 import { updateVisits } from '../../src/core/sim/visits';
-import { hire, openCenter } from './helpers';
+import { hire, openCenter, run, toasts } from './helpers';
 
 /** A center with nobody on the payroll and no loan, so only what a test adds shows in the books. */
 function bare() {
@@ -73,28 +73,86 @@ describe('an overdraft', () => {
     monthEnd(ctx);
     expect(s.lastLedger.interest).toBe(0);
   });
+});
 
-  it('worries staff when a payday leaves the bank below zero', () => {
-    const { s, sim, ctx } = bare();
-    const st = hire(sim, 'therapist');
+describe('a payday the bank cannot cover', () => {
+  /** A center with one therapist owed a full month at $3,000, and this much in the bank. */
+  function short(money: number) {
+    const c = bare();
+    const st = hire(c.sim, 'therapist');
     st.salary = 3000;
-    s.day = 29.9;
-    s.money = 1000;
-    st.morale = 80;
+    c.s.day = DAYS_PER_MONTH;
+    c.s.money = money;
+    return { ...c, st };
+  }
+
+  it('stops the game and asks to borrow what is missing, in loan steps', () => {
+    const { s, sim, ctx } = short(500);
     monthEnd(ctx);
-    expect(s.money).toBeLessThan(0);
-    expect(st.morale).toBe(80 - UNPAID_MORALE);
+    expect(s.payrollDue).toEqual({ wages: 3000, loan: LOAN_STEP });
+    expect(s.bankrupt).toBe(false);
+    // nothing is paid, and no time passes, until it is answered
+    expect(s.money).toBe(500);
+    const day = s.day;
+    run(sim, 5);
+    expect(s.day).toBe(day);
   });
 
-  it('leaves staff easy when the wages are covered', () => {
-    const { s, sim, ctx } = bare();
-    const st = hire(sim, 'therapist');
-    st.salary = 3000;
-    s.day = 29.9;
-    s.money = 50_000;
-    st.morale = 80;
+  it('pays the wages and carries on when the loan is taken', () => {
+    const { s, sim, ctx } = short(500);
     monthEnd(ctx);
-    expect(st.morale).toBe(80);
+    expect(sim.takePayrollLoan()).toBe(true);
+    expect(s.payrollDue).toBeNull();
+    expect(s.loan).toBe(LOAN_STEP);
+    // and the month's interest on the new loan comes out of what is left
+    expect(s.money).toBe(500 + LOAN_STEP - 3000 - Math.round(LOAN_STEP * LOAN_RATE));
+    expect(s.lastLedger.salaries).toBe(3000);
+    expect(s.bankrupt).toBe(false);
+  });
+
+  it('loses the game when the loan is refused', () => {
+    const { s, sim, ctx } = short(500);
+    monthEnd(ctx);
+    expect(sim.refusePayrollLoan()).toBe(true);
+    expect(s.bankrupt).toBe(true);
+    expect(s.payrollDue).toBeNull();
+  });
+
+  it('loses the game at once when the bank would not lend enough', () => {
+    const { s, ctx } = short(500);
+    s.loan = loanLimit(s);
+    monthEnd(ctx);
+    expect(s.bankrupt).toBe(true);
+    expect(s.payrollDue).toBeNull();
+  });
+
+  it('pays as usual when the bank covers the wages', () => {
+    const { s, ctx } = short(3000);
+    monthEnd(ctx);
+    expect(s.payrollDue).toBeNull();
+    expect(s.money).toBe(0);
+  });
+
+  it('is warned of five days before, and not when the wages are covered', () => {
+    const { s, ctx } = short(500);
+    s.day = DAYS_PER_MONTH - 5;
+    const events = ctx.events;
+    events.length = 0;
+    warnPayday(ctx);
+    expect(toasts(events).join()).toContain('Payday in 5 days');
+    s.money = 100_000;
+    events.length = 0;
+    warnPayday(ctx);
+    expect(toasts(events)).toEqual([]);
+  });
+
+  it('stops time for good once bankrupt', () => {
+    const { s, sim, ctx } = short(500);
+    monthEnd(ctx);
+    sim.refusePayrollLoan();
+    const day = s.day;
+    run(sim, 5);
+    expect(s.day).toBe(day);
   });
 });
 

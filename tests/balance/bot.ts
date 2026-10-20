@@ -39,6 +39,7 @@ import {
   WINDOW_MAX_BONUS,
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
+import { loanLimit, wagesDue } from '../../src/core/sim/economy';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
 import { seasonOf } from '../../src/core/sim/twists';
@@ -254,6 +255,9 @@ const DRESS: readonly ItemType[] = [
 /** Decor standing on a room's floor, the least prestige for the tile it takes first, to sell for equipment. */
 const FLOOR_DECOR: readonly ItemType[] = ['plant', 'diffuser', 'salt_lamp', 'statue'];
 
+/** What the bot expects its first payroll to come to, before it has hired everyone. */
+const FIRST_PAYROLL = 20000;
+
 export class Bot {
   readonly sim: Sim;
   readonly s: GameState;
@@ -327,6 +331,15 @@ export class Bot {
       for (let i = 0; i < ticksPerDay; i++) {
         this.sim.tick(0.1);
         this.sim.drain();
+        // a payday the bank cannot cover is borrowed for, as the player would; a loan that is not there is bankruptcy
+        if (this.s.payrollDue) {
+          this.sim.takePayrollLoan();
+          this.note(`day ${Math.floor(this.s.day)}: borrowed to make payday, loan now ${this.s.loan}`);
+        }
+        if (this.s.bankrupt) {
+          this.note(`day ${Math.floor(this.s.day)}: BANKRUPT, loan ${this.s.loan}`);
+          return false;
+        }
         if (i % 10 === 0) {
           this.sampleTables();
           if (this.flags.trouble) this.calmCarriers();
@@ -771,7 +784,11 @@ export class Bot {
   /** Borrow when nearly broke, and pay the loan back when flush. */
   private manageLoan() {
     const s = this.s;
-    if (s.money < 1500) {
+    // the days before payday, with the wages not in the bank: borrow what they come to, rather than be asked
+    const nearPayday = Math.ceil((Math.floor(s.day / 30) + 1) * 30 - s.day) <= 5;
+    if (s.money < wagesDue(s) && nearPayday) this.sim.borrow();
+    // otherwise keep enough of the bank's limit back to borrow for the wages
+    if (s.money < 1500 && s.loan + wagesDue(s) <= loanLimit(s)) {
       if (this.sim.borrow()) this.note(`day ${Math.floor(s.day)}: borrowed, loan now ${s.loan}`);
     } else if (s.loan > 0 && s.money > 25000 + this.wages()) this.sim.repay();
     // saving toward a goal that counts the loan against the money, paying it off only saves the interest
@@ -816,7 +833,11 @@ export class Bot {
       ? last.ledger.consult + last.ledger.treatment + last.ledger.vending + last.ledger.shop - last.ledger.salaries
       : 0;
     if (s.months.length && operating < 0 && s.loan >= 25000) return false;
-    while (s.money < cost + 1000) if (!this.sim.borrow()) return false;
+    // keeping enough of the bank's limit back to borrow for a payday the takings might not meet
+    // (a first month's payroll is not on the books yet while the staff are still being taken on)
+    if (s.loan + Math.max(wagesDue(s), FIRST_PAYROLL) > loanLimit(s)) return false;
+    // and with the next payday still covered, since a payday the bank cannot meet is a loan, or the end
+    while (s.money < cost + Math.max(1000, wagesDue(s))) if (!this.sim.borrow()) return false;
     this.note(`day ${Math.floor(s.day)}: borrowed to build, loan now ${s.loan}`);
     return true;
   }

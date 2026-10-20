@@ -114,7 +114,7 @@ export const defaultPolicy = (): Policy => ({
  * 27: things hung on walls. 28: the rest of them.
  * 29: certificates of excellence. 30: each discipline's following. 31: the game's random numbers, the disciplines
  * practised today, and the surroundings as last checked, so a loaded game goes on just as it would have.
- * 32: the day each member of staff's pay is settled up to.
+ * 32: the day each member of staff's pay is settled up to, and a payday the bank cannot cover.
  */
 export const SAVE_VERSION = 32;
 
@@ -198,6 +198,8 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     ceremony: null,
     trophies: [],
     achieved: [],
+    payrollDue: null,
+    bankrupt: false,
     cheated: false,
     mushrooms: false,
     mushroomsStashed: false,

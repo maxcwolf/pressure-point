@@ -9,7 +9,6 @@ import {
   PRICE_MAX,
   PRICE_MIN,
   type Priced,
-  UNPAID_MORALE,
 } from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
@@ -100,26 +99,66 @@ export function payOff(ctx: SimContext, st: Staff) {
   if (owed > 0) spend(ctx, owed, 'salaries');
 }
 
-/** Pay salaries and loan interest, close the month's books and bring in new applicants. */
+/** Days before payday that the center is warned the wages will not be covered. */
+const PAYDAY_WARNING_DAYS = 5;
+
+/** The day the month now running ends and wages are due. */
+const paydayOf = (s: GameState) => (Math.floor(s.day / DAYS_PER_MONTH) + 1) * DAYS_PER_MONTH;
+
+/** What the next payday will come to, as things stand. */
+export function wagesDue(s: GameState): number {
+  const payday = paydayOf(s);
+  let total = 0;
+  for (const st of s.staff) {
+    if (st.state === 'leaving') continue;
+    total += Math.round((st.salary * clamp(Math.round(payday - st.paidTo), 0, DAYS_PER_MONTH)) / DAYS_PER_MONTH);
+  }
+  return total;
+}
+
+/** A few days before payday, say so if the bank will not cover the wages. Run as each day begins. */
+export function warnPayday(ctx: SimContext) {
+  const s = ctx.s;
+  if (Math.ceil(paydayOf(s) - s.day) !== PAYDAY_WARNING_DAYS) return;
+  const wages = wagesDue(s);
+  if (wages <= s.money) return;
+  toast(
+    ctx,
+    `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(wages)} in wages, and ${money(Math.max(0, s.money))} in the bank. Past that you will have to borrow, or you lose.`,
+    'bad',
+  );
+}
+
+/**
+ * Pay the wages and close the month's books. A bank that cannot cover them stops the game and asks to borrow the
+ * difference; if the bank would not lend that much, or the loan is refused, the center is bankrupt.
+ */
 export function monthEnd(ctx: SimContext) {
   const s = ctx.s;
   // those leaving were paid up to the day they went
   let wages = 0;
   for (const st of s.staff) if (st.state !== 'leaving') wages += settlePay(ctx, st);
-  if (wages > 0) {
-    spend(ctx, wages, 'salaries');
-    const short = s.money < 0;
-    toast(
-      ctx,
-      short
-        ? `Payday: ${money(wages)} in salaries, and the bank is in the red.`
-        : `Payday: ${money(wages)} in salaries.`,
-      short ? 'bad' : 'info',
-    );
-    emit(ctx, { type: 'sfx', name: 'payday' });
-    // staff who are paid out of an overdraft worry about their jobs
-    if (short) for (const st of s.staff) st.morale = Math.max(0, st.morale - UNPAID_MORALE);
+  if (wages <= 0 || wages <= s.money) {
+    payWages(ctx, wages);
+    finishMonth(ctx);
+    return;
   }
+  const loan = Math.ceil((wages - s.money) / LOAN_STEP) * LOAN_STEP;
+  if (s.loan + loan > loanLimit(s)) goBankrupt(ctx, wages);
+  else s.payrollDue = { wages, loan };
+}
+
+/** Pay out a payday's wages. */
+function payWages(ctx: SimContext, wages: number) {
+  if (wages <= 0) return;
+  spend(ctx, wages, 'salaries');
+  toast(ctx, `Payday: ${money(wages)} in salaries.`, 'info');
+  emit(ctx, { type: 'sfx', name: 'payday' });
+}
+
+/** Charge interest, file the month's books and start the next. */
+function finishMonth(ctx: SimContext) {
+  const s = ctx.s;
   const interest = Math.round(s.loan * LOAN_RATE) + Math.round(Math.max(0, -s.money) * OVERDRAFT_RATE);
   if (interest > 0) spend(ctx, interest, 'interest');
   closeMonth(ctx);
@@ -128,6 +167,37 @@ export function monthEnd(ctx: SimContext) {
   s.lastLedger = s.ledger;
   s.ledger = emptyLedger();
   if (s.money < 0) toast(ctx, 'You are in the red. Heal faster!', 'bad');
+}
+
+/** Take the loan that covers the wages waiting on payday, pay them and go on. False if none is waiting. */
+export function takePayrollLoan(ctx: SimContext): boolean {
+  const s = ctx.s;
+  const due = s.payrollDue;
+  if (!due) return false;
+  s.payrollDue = null;
+  s.loan += due.loan;
+  s.money += due.loan;
+  emit(ctx, { type: 'sfx', name: 'cash' });
+  toast(ctx, `Borrowed ${money(due.loan)} to cover the wages.`, 'info');
+  payWages(ctx, due.wages);
+  finishMonth(ctx);
+  return true;
+}
+
+/** Turn the loan down: with the wages unpaid, the center is bankrupt. False if no payday is waiting. */
+export function refusePayrollLoan(ctx: SimContext): boolean {
+  const due = ctx.s.payrollDue;
+  if (!due) return false;
+  goBankrupt(ctx, due.wages);
+  return true;
+}
+
+/** The wages cannot be paid: the staff walk out and the game is lost. */
+function goBankrupt(ctx: SimContext, wages: number) {
+  ctx.s.payrollDue = null;
+  ctx.s.bankrupt = true;
+  toast(ctx, `${money(wages)} in wages, and no way to pay them. The staff walk out.`, 'bad');
+  emit(ctx, { type: 'sfx', name: 'fail' });
 }
 
 /** Borrow one more step of the loan, if the limit allows. */

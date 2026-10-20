@@ -2367,6 +2367,51 @@ test.describe('magic mushrooms', () => {
   });
 });
 
+test.describe('a payday the bank cannot cover', () => {
+  /** Run up to the end of the month with the bank nearly empty, until the game stops for the question. */
+  async function toPayday(game: Game) {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.money = 500;
+      pp.state.loan = 0;
+      pp.state.day = 29.95;
+      pp.state.speed = 1;
+      for (let i = 0; i < 100 && !pp.state.payrollDue; i++) pp.sim.tick(0.1);
+    });
+    await game.settle();
+  }
+
+  test('asks to borrow the wages, and carries on once it is taken', async ({ game, page }) => {
+    await toPayday(game);
+    const modal = page.locator('#modal');
+    await expect(modal.locator('h2')).toContainText('Payday, and the bank is short');
+    // the game waits, and Esc does not back out of it
+    await page.keyboard.press('Escape');
+    await expect(modal.locator('h2')).toContainText('Payday, and the bank is short');
+    await modal.getByRole('button', { name: /^Borrow/ }).click();
+    await expect(modal.locator('h2')).toHaveCount(0);
+    expect(await game.eval((pp) => pp.state.payrollDue)).toBeNull();
+    expect(await game.eval((pp) => pp.state.loan)).toBeGreaterThan(0);
+    expect(game.errors).toEqual([]);
+  });
+
+  test('ends the game in bankruptcy when the loan is refused', async ({ game, page }) => {
+    await toPayday(game);
+    const modal = page.locator('#modal');
+    await modal.getByRole('button', { name: /Refuse and go bankrupt/ }).click();
+    await expect(modal.locator('h2')).toContainText('Bankrupt');
+    expect(await game.eval((pp) => pp.state.bankrupt)).toBe(true);
+    // and it stays that way: Esc does not close it, and time does not move
+    await page.keyboard.press('Escape');
+    await expect(modal.locator('h2')).toContainText('Bankrupt');
+    const day = await game.eval((pp) => pp.state.day);
+    await game.fastForward(3);
+    expect(await game.eval((pp) => pp.state.day)).toBe(day);
+    expect(game.errors).toEqual([]);
+  });
+});
+
 test.describe('the qi gong studio', () => {
   test('opens at the second star, is staffed by an Instructor, and keeps a weekly timetable', async ({
     game,

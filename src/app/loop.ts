@@ -49,6 +49,8 @@ export function runLoop({ sim, view, ui, held, mouse, refresh, save, overlay }: 
     }
 
     sim.tick(dt);
+    // a payday the bank cannot cover, or a bankruptcy, stops the game until it is answered
+    ui.openPending();
     view.render(dt);
     const events = sim.drain();
     if (events.length) {

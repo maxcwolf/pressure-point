@@ -86,7 +86,17 @@ import {
 import { createContext, type SimContext } from './context';
 import { decorateRoom } from './decor';
 import { demand, type DisciplineDemand, fadeFollowing, offeringArrivals, roomPull, staffedDisciplines } from './demand';
-import { borrow, monthEnd, priceFor, repay, setPrice, setTechniquePrice } from './economy';
+import {
+  borrow,
+  monthEnd,
+  priceFor,
+  refusePayrollLoan,
+  repay,
+  setPrice,
+  setTechniquePrice,
+  takePayrollLoan,
+  warnPayday,
+} from './economy';
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
@@ -136,6 +146,11 @@ export class Sim {
 
   // ---- The clock -------------------------------------------------------------
 
+  /** Whether the game stands still: a payday waits on a loan, or the center is bankrupt. */
+  private stopped(): boolean {
+    return !!this.s.payrollDue || this.s.bankrupt;
+  }
+
   /** Advance the game by a frame's worth of real time, at the game's current speed. */
   tick(dtReal: number) {
     let total = Math.min(dtReal, 0.1) * this.s.speed;
@@ -150,6 +165,8 @@ export class Sim {
   private step(dt: number) {
     const { ctx } = this;
     const { s } = ctx;
+    // the game stands still while a payday waits on a loan, and for good once the center is bankrupt
+    if (this.stopped()) return;
     const prevMonth = Math.floor(s.day / DAYS_PER_MONTH);
     const prevDay = Math.floor(s.day);
     s.day += dt / DAY_SECONDS;
@@ -160,11 +177,13 @@ export class Sim {
       bookClasses(ctx);
       announceClasses(ctx);
       lapseInspection(ctx);
+      warnPayday(ctx);
     }
     const month = Math.floor(s.day / DAYS_PER_MONTH);
     if (month !== prevMonth) {
       monthEnd(ctx);
-      if (month % YEAR_MONTHS === 0) holdAwards(ctx, month / YEAR_MONTHS);
+      // a payday waiting on a loan holds the year's awards up with it
+      if (!this.stopped() && month % YEAR_MONTHS === 0) holdAwards(ctx, month / YEAR_MONTHS);
     }
 
     checkOpening(ctx);
@@ -564,6 +583,19 @@ export class Sim {
     return borrow(this.ctx);
   }
 
+  /** Take the loan that covers a payday the bank could not, and carry on. */
+  takePayrollLoan(): boolean {
+    if (!takePayrollLoan(this.ctx)) return false;
+    const month = Math.floor(this.s.day / DAYS_PER_MONTH);
+    if (month % YEAR_MONTHS === 0) holdAwards(this.ctx, month / YEAR_MONTHS);
+    return true;
+  }
+
+  /** Refuse the loan a payday needs, which loses the game. */
+  refusePayrollLoan(): boolean {
+    return refusePayrollLoan(this.ctx);
+  }
+
   /** Pay one step of the loan back. */
   repay(): boolean {
     return repay(this.ctx);
@@ -813,7 +845,8 @@ export class Sim {
     const { ctx } = this;
     const before = ctx.events.length;
     const end = this.s.day + days;
-    while (end - this.s.day > 1e-9) this.step(Math.min(0.05, (end - this.s.day) * DAY_SECONDS));
+    while (end - this.s.day > 1e-9 && !this.s.payrollDue && !this.s.bankrupt)
+      this.step(Math.min(0.05, (end - this.s.day) * DAY_SECONDS));
     const kept = ctx.events
       .slice(before)
       .filter((e) => e.type !== 'sfx' && e.type !== 'announce' && e.type !== 'float');
