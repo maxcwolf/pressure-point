@@ -34,7 +34,17 @@ export function updateEmergency(ctx: SimContext) {
     if (e.pending > 0 && spawnGuest(ctx, e.condition, true)) e.pending--;
     const stillHere = s.guests.some((g) => g.emergency);
     if (e.healed >= e.target || s.day >= e.deadline || (e.pending === 0 && !stillHere)) endEmergency(ctx);
-  } else if (!s.offer && s.open && s.stars >= 1 && s.day >= s.nextEmergency && !cutOff(ctx)) offerEmergency(ctx);
+  } else if (
+    !s.offer &&
+    // one thing to decide on at a time: not while a stress outbreak is on offer or going on
+    !s.outbreakOffer &&
+    !s.outbreak &&
+    s.open &&
+    s.stars >= 1 &&
+    s.day >= s.nextEmergency &&
+    !cutOff(ctx)
+  )
+    offerEmergency(ctx);
 }
 
 /** Put an emergency on the table. Only conditions someone on the payroll can treat are offered. */

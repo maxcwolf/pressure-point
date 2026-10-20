@@ -2,11 +2,22 @@
 // refunds in the right month's books, and a visit that cannot come not holding up the calendar.
 import { describe, expect, it } from 'vitest';
 
-import { DAYS_PER_MONTH, LOAN_RATE, LOAN_STEP, OVERDRAFT_RATE, PRICE_MAX } from '../../src/core/data';
+import { DAYS_PER_MONTH, LOAN_RATE, LOAN_STEP, MODALITY_ORDER, OVERDRAFT_RATE, PRICE_MAX } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
-import { loanLimit, monthEnd, recoup, spend, warnPayday } from '../../src/core/sim/economy';
+import { averagePrice, loanLimit, monthEnd, recoup, spend, warnPayday } from '../../src/core/sim/economy';
+import { updateEmergency } from '../../src/core/sim/emergencies';
+import { campaignBlocker } from '../../src/core/sim/marketing';
+import { saleDraw, updateRival } from '../../src/core/sim/rival';
+import { reachSoul, retrieved } from '../../src/core/sim/souls';
+import { hasMechanic } from '../../src/core/sim/upgrades';
 import { updateVisits } from '../../src/core/sim/visits';
 import { hire, openCenter, run, toasts } from './helpers';
+
+/** A center as `openCenter` makes it, with the context made as well. */
+function bare2() {
+  const center = openCenter(1);
+  return { ...center, ctx: createContext(center.s) };
+}
 
 /** A center with nobody on the payroll and no loan, so only what a test adds shows in the books. */
 function bare() {
@@ -200,5 +211,89 @@ describe('a visitor who cannot get in', () => {
     updateVisits(ctx);
     expect(s.visitNotice).toBeNull();
     expect(s.nextVip).toBeGreaterThan(104);
+  });
+});
+
+describe('prices set to nonsense', () => {
+  it('are ignored, rather than turning every fee into NaN', () => {
+    const { sim, s } = openCenter(1);
+    sim.setPrice(1.3);
+    sim.setPrice(Number.NaN);
+    expect(s.priceLevel).toBe(1.3);
+    sim.setTechniquePrice('swedish', Number.NaN);
+    expect(s.prices).toEqual({});
+  });
+
+  it('and a campaign for part of a month or no number of months is refused', () => {
+    const { s } = openCenter(1);
+    expect(campaignBlocker(s, 'word', 1.5)).not.toBe('');
+    expect(campaignBlocker(s, 'word', Number.NaN)).not.toBe('');
+    expect(campaignBlocker(s, 'word', 1)).toBe('');
+  });
+});
+
+describe('the rival’s sale', () => {
+  it('draws on what treatments cost on average, not on the overall level alone', () => {
+    const { sim, s } = openCenter(1);
+    // half price overall, but every technique at double: treatments cost standard
+    sim.setPrice(0.5);
+    for (const m of MODALITY_ORDER) sim.setTechniquePrice(m, 2);
+    expect(saleDraw(s.priceLevel)).toBe(0);
+    expect(saleDraw(averagePrice(s))).toBeGreaterThan(0);
+  });
+
+  it('leaves no job offer hanging when the rival is switched off', () => {
+    const { s, ctx, therapist } = bare2();
+    therapist.offer = s.day + 5;
+    s.rivalOn = false;
+    updateRival(ctx);
+    expect(therapist.offer).toBe(0);
+  });
+});
+
+describe('one thing to decide on at a time', () => {
+  it('offers no emergency while a stress outbreak is on offer', () => {
+    const { sim, s, ctx } = bare();
+    s.stars = 1;
+    s.nextEmergency = 0;
+    s.open = true;
+    expect(sim.offerOutbreak()).toBe(true);
+    updateEmergency(ctx);
+    expect(s.offer).toBeNull();
+  });
+});
+
+describe('a Mechanic who is leaving', () => {
+  it('no longer counts as one, so an upgrade cannot be paid for with nobody to install it', () => {
+    const { sim, s } = bare();
+    const caretaker = hire(sim, 'caretaker');
+    caretaker.general.push('mechanics');
+    expect(hasMechanic(s)).toBe(true);
+    sim.fire(caretaker.id);
+    expect(hasMechanic(s)).toBe(false);
+  });
+});
+
+describe('a soul retrieval', () => {
+  it('is called off when the one asked for has cheered up since', () => {
+    const { sim, s, ctx } = bare();
+    const shaman = hire(sim, 'shaman');
+    const therapist = hire(sim, 'therapist');
+    therapist.morale = 20;
+    therapist.soulAsked = true;
+    shaman.job = { kind: 'soul', id: therapist.id };
+    therapist.morale = 90;
+    expect(reachSoul(ctx, shaman)).toBe(false);
+    expect(therapist.soulAsked).toBe(false);
+    expect(s.staff).toContain(therapist);
+  });
+
+  it('ends the unhappiness that had them on the way out', () => {
+    const { sim, ctx } = bare();
+    const shaman = hire(sim, 'shaman');
+    const therapist = hire(sim, 'therapist');
+    therapist.unhappyT = 100;
+    retrieved(ctx, shaman, therapist);
+    expect(therapist.unhappyT).toBe(0);
   });
 });

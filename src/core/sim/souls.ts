@@ -42,7 +42,7 @@ const goneTo = (ctx: SimContext, st: Staff) => ctx.s.staff.some((sh) => sh.job?.
 export function soulToRetrieve(ctx: SimContext, sh: Staff): Staff | undefined {
   if (sh.role !== 'shaman') return undefined;
   return ctx.s.staff
-    .filter((st) => st.soulAsked && st.id !== sh.id && here(st) && !goneTo(ctx, st))
+    .filter((st) => st.soulAsked && burntOut(st.morale) && st.id !== sh.id && here(st) && !goneTo(ctx, st))
     .sort((a, b) => Math.hypot(a.x - sh.x, a.y - sh.y) - Math.hypot(b.x - sh.x, b.y - sh.y))[0];
 }
 
@@ -77,6 +77,11 @@ export function startSoul(ctx: SimContext, sh: Staff, st: Staff): boolean {
 export function reachSoul(ctx: SimContext, sh: Staff): boolean {
   const st = sh.job?.kind === 'soul' ? staffById(ctx, sh.job.id) : undefined;
   if (!st || !here(st) || !st.soulAsked) return false;
+  // cheered up since they were asked for: nothing to retrieve
+  if (!burntOut(st.morale)) {
+    st.soulAsked = false;
+    return false;
+  }
   if (!within(sh, st)) return walkTo(ctx, sh, st);
   sh.state = 'doingJob';
   sh.busy = true;
@@ -101,6 +106,7 @@ export function soulStep(ctx: SimContext, sh: Staff, dt: number): boolean {
 export function retrieved(ctx: SimContext, sh: Staff, st: Staff) {
   st.morale = Math.min(100, st.morale + SOUL_LIFT);
   st.soulAsked = false;
+  st.unhappyT = 0;
   sh.energy = Math.max(0, sh.energy - SOUL_ENERGY);
   sh.yearServed++;
   gainXp(ctx, sh, XP_PER_JOB);

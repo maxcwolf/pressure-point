@@ -26,22 +26,25 @@ Each fix comes with a test that fails without it (`tests/unit/audit-fixes.test.t
 
 ## Done in this pass
 
-See the plan above. All six are in, with tests.
+See the plan above. All six are in, with tests, and so are these, from the to-do list, each with a test unless noted:
+
+- The rival's sale draw follows what treatments cost on average (`averagePrice`), not the overall level alone.
+- Price and campaign setters refuse NaN and, for campaigns, fractions of a month.
+- No emergency is offered while a stress outbreak is on offer or going on.
+- A Mechanic who is leaving no longer counts as one.
+- A Shaman no longer gets a blessing and XP for vibes that faded on their own (no test: `smudgeStep` is not exported).
+- A soul retrieval is called off when the one asked for has cheered up, and the unhappiness that had them on the way out ends when one is done.
+- A rival that is switched off leaves no job offer hanging.
+- Someone back from a house call whose way to the lobby is blocked is put in the lobby rather than left on the street (no test: needs a blocked entrance).
 
 ## To do
 
 ### Bugs and rule gaps
 
 - [ ] **Regulars and emergency guests never balk at a price,** however high. Now capped at 2× rather than 4×, but still no price-off check for them.
-- [ ] **The rival's sale draw ignores a technique's own price** (`src/core/sim/rival.ts:59`, `saleDraw(s.priceLevel)`). With the overall level at 0.5 and every technique at 2×, treatments cost standard but ZenMart draws nothing.
-- [ ] **Marketing and price setters accept NaN and fractions** (`marketing.ts:29`, `economy.ts` setters). Only reachable from the console or the API, but a NaN price level makes every fee NaN. Guard with `Number.isInteger` and `Number.isFinite`.
-- [ ] **An emergency offer can be made while a stress outbreak is on offer or running,** because only the outbreak checks for the other (`emergencies.ts:37`).
-- [ ] **A mechanic who is leaving still counts as a Mechanic** (`upgrades.ts:49`, `hasMechanic`), so an upgrade can be paid for with nobody to install it, and there is no refund path.
 - [ ] **Moving or selling a treatment table re-queues everyone waiting at it,** undoing any hand-ordering of the line and the emergency-first order (`building.ts:194`, `usersOf` and `resetUsers`).
-- [ ] **A Shaman still blesses a room and gains XP** if its vibes fade before they arrive (`staffing.ts:526`, `smudgeStep`).
-- [ ] **`askSoul`'s flag is never cleared** if morale recovers first, so the Shaman still goes and the lift is free (`souls.ts`).
 - [ ] **`upgradeSave` refunds a cancelled Sound course straight into `money`,** off the books, and runs on every load rather than only for old saves (`state/upgrade.ts`, `movedSoundBath`).
-- [ ] **A house call's return** ignores a failed walk to the lobby, so someone can end up idle on the street; `acceptCall` and `train` idle a member of staff before the walk that can fail (`calls.ts`, `training.ts`).
+- [ ] **`acceptCall` and `train` idle a member of staff before a walk that can fail,** dropping their post or guest with nothing started (`calls.ts`, `training.ts`).
 - [ ] **A failed `goTo` in `callGuest` sends a guest home with no outcome** (`stations.ts:263`), so the visit stats drift. No way to reach it found.
 - [ ] **A guest in the `served` state has no timeout** and does not worsen (`guests.ts`, `worsening.ts`). No way to reach it found.
 - [ ] **Staff retry only the single best unreachable post** (`staffing.ts:499`, `findWork`), so a post that becomes unreachable starves the others.
@@ -50,7 +53,6 @@ See the plan above. All six are in, with tests.
 - [ ] **Monthly goals can be met on a small sample early in a month** (`goals.ts`: 7 of 10 healed meets a 70% cure rate, with no minimum span). Awards use 20 guests and a full year.
 - [ ] **"Go 30 days without anyone quitting" is free** once day 30 comes if nobody has ever quit (`goals.ts:41`), and so is the 90-day achievement. Probably intended.
 - [ ] **A failed inspection's bribe** is at least $10,000 (`BRIBE_MIN`) against fines of $800 a problem, so it is rarely worth paying; and `settleInspection(false)` runs silently when a later visitor finishes (`visits.ts`).
-- [ ] **A rival poach offer freezes if the rival is switched off** (`rival.ts:142`), showing an expired offer that is never settled.
 - [ ] **The awards ceremony finds a winner by name** (`awards.ts:185`), so two staff with one name get the first match.
 
 ### Balance and gameplay

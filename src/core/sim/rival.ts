@@ -20,6 +20,7 @@ import { irnd } from '../random';
 import type { GameState, Staff } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
+import { averagePrice } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { fire } from './staffing';
 import { gradeFor } from './standing';
@@ -56,7 +57,7 @@ export function saleDraw(priceLevel: number): number {
 export function rivalDraw(s: GameState): number {
   if (!rivalOpen(s)) return 0;
   const lead = Math.max(0, rivalGrade(s) - s.grade) * RIVAL_LEAD_DRAW;
-  const sale = onSale(s) ? saleDraw(s.priceLevel) : 0;
+  const sale = onSale(s) ? saleDraw(averagePrice(s)) : 0;
   return Math.min(MAX_DRAW, lead + sale);
 }
 
@@ -139,7 +140,12 @@ function updatePoaching(ctx: SimContext) {
 /** The rival's day: opening, sales and offers to staff. Nothing while it is switched off or the center is shut. */
 export function updateRival(ctx: SimContext) {
   const s = ctx.s;
-  if (!s.rivalOn || !s.open) return;
+  if (!s.rivalOn) {
+    // with no rival there is nobody to take an offer from, so none is left hanging
+    for (const st of s.staff) st.offer = 0;
+    return;
+  }
+  if (!s.open) return;
   if (s.rival.opened === null) {
     if (s.day >= RIVAL_OPENS) openUp(ctx);
     return;

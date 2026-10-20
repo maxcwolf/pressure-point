@@ -26,7 +26,8 @@ export const campaignCost = (kind: CampaignKind, months: number) => CAMPAIGNS[ki
 /** Why a campaign cannot start ('' when it can). */
 export function campaignBlocker(s: GameState, kind: CampaignKind, months: number, condition?: ConditionId): string {
   if (running(s, kind)) return 'One is running already.';
-  if (months < 1 || months > CAMPAIGN_MONTHS_MAX) return `A campaign runs for one to ${CAMPAIGN_MONTHS_MAX} months.`;
+  if (!Number.isInteger(months) || months < 1 || months > CAMPAIGN_MONTHS_MAX)
+    return `A campaign runs for one to ${CAMPAIGN_MONTHS_MAX} months.`;
   if (kind === 'condition' && !condition) return 'Choose a condition first.';
   if (s.money < campaignCost(kind, months)) return 'Not enough money.';
   return '';

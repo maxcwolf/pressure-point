@@ -46,7 +46,7 @@ export function cannotUpgrade(s: GameState, it: Item): string {
 
 /** Whether there is a Caretaker on the payroll who can install upgrades. */
 export function hasMechanic(s: GameState): boolean {
-  return s.staff.some((st) => st.role === 'caretaker' && hasGeneral(st, 'mechanics'));
+  return s.staff.some((st) => st.role === 'caretaker' && st.state !== 'leaving' && hasGeneral(st, 'mechanics'));
 }
 
 /** Pay for the next upgrade to a piece of equipment, for a Mechanic to install. False if it cannot be upgraded now. */

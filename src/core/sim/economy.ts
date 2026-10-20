@@ -5,6 +5,7 @@ import {
   LOAN_MAX,
   LOAN_RATE,
   LOAN_STEP,
+  MODALITY_ORDER,
   OVERDRAFT_RATE,
   PRICE_MAX,
   PRICE_MIN,
@@ -226,8 +227,14 @@ export function priceFor(s: GameState, m: Priced): number {
   return clamp(s.priceLevel * (s.prices[m] ?? 1), PRICE_MIN, PRICE_MAX);
 }
 
+/** What treatments cost on average against standard, across every technique, for what draws on the center's prices as a whole. */
+export function averagePrice(s: GameState): number {
+  return MODALITY_ORDER.reduce((sum, m) => sum + priceFor(s, m), 0) / MODALITY_ORDER.length;
+}
+
 /** Set a technique's own price, against standard, on top of the overall level: rounded to a tenth, within limits. */
 export function setTechniquePrice(ctx: SimContext, m: Priced, level: number) {
+  if (!Number.isFinite(level)) return;
   const own = Math.round(clamp(level, PRICE_MIN, PRICE_MAX) * 10) / 10;
   const { [m]: _old, ...others } = ctx.s.prices;
   ctx.s.prices = own === 1 ? others : { ...others, [m]: own };
@@ -235,5 +242,6 @@ export function setTechniquePrice(ctx: SimContext, m: Priced, level: number) {
 
 /** Set the price level, rounded to a tenth and kept within its limits. */
 export function setPrice(ctx: SimContext, level: number) {
+  if (!Number.isFinite(level)) return;
   ctx.s.priceLevel = clamp(Math.round(level * 10) / 10, PRICE_MIN, PRICE_MAX);
 }

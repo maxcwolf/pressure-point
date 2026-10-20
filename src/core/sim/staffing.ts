@@ -544,7 +544,13 @@ function smudgeStep(ctx: SimContext, st: Staff, dt: number) {
     if (!st.path) wander(ctx, st, room);
     return;
   }
+  // vibes that faded on their own while the walk went on leave nothing to clear, bless or learn from
+  const cleared = room.vibes > 0;
   clearVibes(room);
+  if (!cleared) {
+    staffIdle(ctx, st);
+    return;
+  }
   // a Shaman leaves a blessing behind them
   const shaman = st.role === 'shaman';
   if (shaman) bless(room, ctx.s.day);
