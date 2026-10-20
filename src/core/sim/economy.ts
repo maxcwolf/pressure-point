@@ -152,11 +152,13 @@ export function monthEnd(ctx: SimContext) {
     s.payrollDue = { wages, loan, until: null };
     return;
   }
-  // the bank would not lend enough: a few days to find the money some other way
+  // the bank would not lend enough: a few days to find the money some other way, starting paused, since a few days
+  // pass in seconds and the warning could otherwise go by unseen
   s.payrollDue = { wages, loan: 0, until: s.day + PAYROLL_GRACE_DAYS };
+  s.speed = 0;
   toast(
     ctx,
-    `⚠️ Payday: ${money(wages)} in wages, ${money(Math.max(0, s.money))} in the bank, and the bank will not lend the rest. You have ${PAYROLL_GRACE_DAYS} days to find it: sell something, or earn it. Or the center is bankrupt.`,
+    `⚠️ Payday: ${money(wages)} in wages, ${money(Math.max(0, s.money))} in the bank, and the bank will not lend the rest. The game is paused. You have ${PAYROLL_GRACE_DAYS} days to find it: sell something, or earn it. Or the center is bankrupt.`,
     'bad',
   );
   emit(ctx, { type: 'sfx', name: 'error' });

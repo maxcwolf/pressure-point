@@ -333,10 +333,10 @@ export class Bot {
         this.sim.tick(0.1);
         this.sim.drain();
         // a payday the bank cannot cover is borrowed for, as the player would; a loan that is not there is bankruptcy
-        if (this.s.payrollDue) {
-          this.sim.takePayrollLoan();
+        if (this.s.payrollDue && this.sim.takePayrollLoan())
           this.note(`day ${Math.floor(this.s.day)}: borrowed to make payday, loan now ${this.s.loan}`);
-        }
+        // days to find wages the bank would not lend start paused: play on through them
+        if (this.s.payrollDue && this.s.payrollDue.until !== null) this.s.speed = 1;
         if (this.s.bankrupt) {
           this.note(`day ${Math.floor(this.s.day)}: BANKRUPT, loan ${this.s.loan}`);
           return false;

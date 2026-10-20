@@ -153,7 +153,9 @@ describe('a payday the bank cannot cover', () => {
     monthEnd(ctx);
     expect(s.payrollDue).toEqual({ wages: 3000, loan: 0, until: s.day + PAYROLL_GRACE_DAYS });
     expect(s.bankrupt).toBe(false);
-    // no dialog stops the game: time passes
+    // the days start paused, so the warning is not missed
+    expect(s.speed).toBe(0);
+    // but no dialog stops the game: once played on, time passes
     const day = s.day;
     run(sim, 5);
     expect(s.day).toBeGreaterThan(day);
