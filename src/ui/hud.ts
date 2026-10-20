@@ -157,7 +157,7 @@ export class HudState {
     const s = this.host.sim.s;
     if (s.bankrupt) {
       if (this.dialog !== 'bankrupt') this.open('bankrupt');
-    } else if (s.payrollDue && this.dialog !== 'payroll') this.open('payroll');
+    } else if (s.payrollDue?.until === null && this.dialog !== 'payroll') this.open('payroll');
   }
 
   /** Close whatever dialog is open and carry on playing. */

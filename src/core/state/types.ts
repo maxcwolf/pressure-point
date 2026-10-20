@@ -757,11 +757,14 @@ export interface GameState {
   trophies: Trophy[];
   /** Campaign achievements earned already, in this game or an earlier one, so none is awarded twice. */
   achieved: AchievementId[];
-  /** Payday has come and the bank cannot cover the wages: the game waits while the player decides whether to borrow
-   * what they come to, or null when no payday is waiting. */
-  payrollDue: { wages: number; loan: number } | null;
+  /** Payday has come and the bank cannot cover the wages. With `until` null, the game waits while the player decides
+   * whether to borrow `loan` to cover them; with a day, the bank would not lend enough and the player has until then
+   * to find the money some other way. Null when no payday is waiting. */
+  payrollDue: { wages: number; loan: number; until: number | null } | null;
   /** The center is bankrupt and the game is lost. */
   bankrupt: boolean;
+  /** Whether an unpaid payday can end the game: a sandbox setting. Off, the bank just goes into the red. */
+  bankruptcyOn: boolean;
   /** A command has been used in the cheat console, so this game earns no achievements or campaign stars. */
   cheated: boolean;
   seenTips: string[];

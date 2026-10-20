@@ -8,6 +8,7 @@ import {
   MODALITIES,
   MODALITY_ORDER,
   OVERDRAFT_RATE,
+  PAYROLL_GRACE_DAYS,
   PRICE_MAX,
   PRICE_MIN,
   type Priced,
@@ -121,7 +122,7 @@ export function wagesDue(s: GameState): number {
 /** A few days before payday, say so if the bank will not cover the wages. Run as each day begins. */
 export function warnPayday(ctx: SimContext) {
   const s = ctx.s;
-  if (Math.ceil(paydayOf(s) - s.day) !== PAYDAY_WARNING_DAYS) return;
+  if (!s.bankruptcyOn || Math.ceil(paydayOf(s) - s.day) !== PAYDAY_WARNING_DAYS) return;
   const wages = wagesDue(s);
   if (wages <= s.money) return;
   toast(
@@ -140,14 +141,51 @@ export function monthEnd(ctx: SimContext) {
   // those leaving were paid up to the day they went
   let wages = 0;
   for (const st of s.staff) if (st.state !== 'leaving') wages += settlePay(ctx, st);
-  if (wages <= 0 || wages <= s.money) {
+  // with bankruptcy switched off, the bank just goes into the red
+  if (wages <= 0 || wages <= s.money || !s.bankruptcyOn) {
     payWages(ctx, wages);
     finishMonth(ctx);
     return;
   }
-  const loan = Math.ceil((wages - s.money) / LOAN_STEP) * LOAN_STEP;
-  if (s.loan + loan > loanLimit(s)) goBankrupt(ctx, wages);
-  else s.payrollDue = { wages, loan };
+  const loan = loanFor(s, wages);
+  if (s.loan + loan <= loanLimit(s)) {
+    s.payrollDue = { wages, loan, until: null };
+    return;
+  }
+  // the bank would not lend enough: a few days to find the money some other way
+  s.payrollDue = { wages, loan: 0, until: s.day + PAYROLL_GRACE_DAYS };
+  toast(
+    ctx,
+    `⚠️ Payday: ${money(wages)} in wages, ${money(Math.max(0, s.money))} in the bank, and the bank will not lend the rest. You have ${PAYROLL_GRACE_DAYS} days to find it: sell something, or earn it. Or the center is bankrupt.`,
+    'bad',
+  );
+  emit(ctx, { type: 'sfx', name: 'error' });
+}
+
+/** The loan, in whole steps, that would cover wages from the money in the bank. */
+const loanFor = (s: GameState, wages: number) => Math.ceil((wages - s.money) / LOAN_STEP) * LOAN_STEP;
+
+/**
+ * Wages overdue because the bank would not lend enough: paid as soon as the money is there, put to the player as a
+ * loan if the bank would lend it after all, and bankruptcy if the days run out. True if the wages were paid.
+ */
+export function updatePayroll(ctx: SimContext): boolean {
+  const s = ctx.s;
+  const due = s.payrollDue;
+  if (!due) return false;
+  const until = due.until;
+  // a payday waiting on an answer about a loan is not this
+  if (until === null) return false;
+  if (s.money >= due.wages) {
+    s.payrollDue = null;
+    payWages(ctx, due.wages);
+    finishMonth(ctx);
+    return true;
+  }
+  const loan = loanFor(s, due.wages);
+  if (s.loan + loan <= loanLimit(s)) s.payrollDue = { wages: due.wages, loan, until: null };
+  else if (s.day >= until) goBankrupt(ctx, due.wages);
+  return false;
 }
 
 /** Pay out a payday's wages. */
@@ -175,7 +213,7 @@ function finishMonth(ctx: SimContext) {
 export function takePayrollLoan(ctx: SimContext): boolean {
   const s = ctx.s;
   const due = s.payrollDue;
-  if (!due) return false;
+  if (due?.until !== null) return false;
   s.payrollDue = null;
   s.loan += due.loan;
   s.money += due.loan;
@@ -189,7 +227,7 @@ export function takePayrollLoan(ctx: SimContext): boolean {
 /** Turn the loan down: with the wages unpaid, the center is bankrupt. False if no payday is waiting. */
 export function refusePayrollLoan(ctx: SimContext): boolean {
   const due = ctx.s.payrollDue;
-  if (!due) return false;
+  if (due?.until !== null) return false;
   goBankrupt(ctx, due.wages);
   return true;
 }

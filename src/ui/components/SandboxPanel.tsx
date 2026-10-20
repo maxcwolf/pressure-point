@@ -172,6 +172,17 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
             });
           }}
         />
+        <SettingRow
+          icon="🏦"
+          name="Bankruptcy"
+          desc="A payday the bank cannot cover asks you to borrow the wages, and if it cannot lend enough, gives you a few days to find them. Fail, and the game is lost. Off, the bank just goes into the red."
+          on={settings.bankruptcy}
+          onToggle={() => {
+            change(() => {
+              saveSandbox({ ...settings, bankruptcy: !settings.bankruptcy });
+            });
+          }}
+        />
       </ul>
       <button class="go start" onClick={onStart}>
         Start building

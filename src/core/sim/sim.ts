@@ -95,6 +95,7 @@ import {
   setPrice,
   setTechniquePrice,
   takePayrollLoan,
+  updatePayroll,
   warnPayday,
 } from './economy';
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
@@ -146,9 +147,9 @@ export class Sim {
 
   // ---- The clock -------------------------------------------------------------
 
-  /** Whether the game stands still: a payday waits on a loan, or the center is bankrupt. */
+  /** Whether the game stands still: a payday waits on the player's answer about a loan, or the center is bankrupt. */
   private stopped(): boolean {
-    return !!this.s.payrollDue || this.s.bankrupt;
+    return (!!this.s.payrollDue && this.s.payrollDue.until === null) || this.s.bankrupt;
   }
 
   /** Advance the game by a frame's worth of real time, at the game's current speed. */
@@ -183,7 +184,7 @@ export class Sim {
     if (month !== prevMonth) {
       monthEnd(ctx);
       // a payday waiting on a loan holds the year's awards up with it
-      if (!this.stopped() && month % YEAR_MONTHS === 0) holdAwards(ctx, month / YEAR_MONTHS);
+      if (!s.payrollDue && !this.stopped() && month % YEAR_MONTHS === 0) holdAwards(ctx, month / YEAR_MONTHS);
     }
 
     checkOpening(ctx);
@@ -216,6 +217,8 @@ export class Sim {
       updateMishaps(ctx);
       updateLand(ctx);
       updateOutdoors(ctx);
+      // wages overdue for want of a loan may be paid at last, which lets the year's awards through
+      if (updatePayroll(ctx)) this.holdYearAwards();
     }
     announce(ctx, dt);
     updateTwists(ctx, dt);
@@ -586,9 +589,14 @@ export class Sim {
   /** Take the loan that covers a payday the bank could not, and carry on. */
   takePayrollLoan(): boolean {
     if (!takePayrollLoan(this.ctx)) return false;
+    this.holdYearAwards();
+    return true;
+  }
+
+  /** Hold the year-end awards if the month just closed was the year's last. */
+  private holdYearAwards() {
     const month = Math.floor(this.s.day / DAYS_PER_MONTH);
     if (month % YEAR_MONTHS === 0) holdAwards(this.ctx, month / YEAR_MONTHS);
-    return true;
   }
 
   /** Refuse the loan a payday needs, which loses the game. */

@@ -15,6 +15,24 @@ import { useGame } from '../../hooks/use-hud';
 import { pricedFor } from '../../lib/casebook';
 import { Button } from '../common/Button';
 
+/** Why a price cannot go higher. */
+const TOP_NOTE = 'Overall level and this price together are at the highest a price can be.';
+
+/** Whether the overall level and a technique's own price together are as high as a price can go. */
+const atTop = (level: number, own: number) => own >= PRICE_MAX || level * own >= PRICE_MAX - 1e-6;
+
+/** A technique's own price, with what it comes to all told once the overall level is in, when that differs. */
+function PriceFigure({ own, total }: { own: number; total: number }) {
+  const all = Math.round(total * 100);
+  const mine = Math.round(own * 100);
+  return (
+    <b title={`${all}% of standard, all told`}>
+      {`${mine}%`}
+      {all !== mine && <small>{` → ${all}%`}</small>}
+    </b>
+  );
+}
+
 /** A row for each treatment on offer: its own price, what it comes to all told, and how many it has put off. */
 export function TechniquePrices() {
   const { sim } = useGame();
@@ -46,9 +64,10 @@ export function TechniquePrices() {
             >
               −
             </Button>
-            <b title={`${Math.round(sim.priceFor(m) * 100)}% of standard, all told`}>{`${Math.round(own * 100)}%`}</b>
+            <PriceFigure own={own} total={sim.priceFor(m)} />
             <Button
-              locked={own >= PRICE_MAX}
+              locked={atTop(s.priceLevel, own)}
+              title={atTop(s.priceLevel, own) ? TOP_NOTE : undefined}
               onPress={() => {
                 sim.setTechniquePrice(m, own + 0.1);
               }}
@@ -79,9 +98,10 @@ function ClassPrice() {
       >
         −
       </Button>
-      <b title={`${Math.round(sim.priceFor('qigong') * 100)}% of standard, all told`}>{`${Math.round(own * 100)}%`}</b>
+      <PriceFigure own={own} total={sim.priceFor('qigong')} />
       <Button
-        locked={own >= PRICE_MAX}
+        locked={atTop(sim.s.priceLevel, own)}
+        title={atTop(sim.s.priceLevel, own) ? TOP_NOTE : undefined}
         onPress={() => {
           sim.setTechniquePrice('qigong', own + 0.1);
         }}

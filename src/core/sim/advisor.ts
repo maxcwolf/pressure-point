@@ -17,6 +17,7 @@ import {
   ROOMS,
   STONE_USE,
 } from '../data';
+import { money } from '../format';
 import { pickFresh, rnd } from '../random';
 import { offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
@@ -97,6 +98,8 @@ function nudge(ctx: SimContext): string | Advice {
       text: 'The toilets are filthy and guests are noticing. Hire a Caretaker to clean them.',
       about: { kind: 'item', id: filthy.id },
     };
+  if (s.payrollDue && s.payrollDue.until !== null)
+    return `Wages of ${money(s.payrollDue.wages)} are overdue and the bank will not lend the rest. Sell something, or earn it, within ${Math.max(0, Math.ceil(s.payrollDue.until - s.day))} days.`;
   if (s.offer) return 'There is an emergency on offer at the top of the screen. Accept it only if you can cope.';
   const broken = s.items.find((i) => i.wear >= 100);
   if (broken)

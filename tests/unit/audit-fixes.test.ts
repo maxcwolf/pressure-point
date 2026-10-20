@@ -9,10 +9,19 @@ import {
   MODALITIES,
   MODALITY_ORDER,
   OVERDRAFT_RATE,
+  PAYROLL_GRACE_DAYS,
   PRICE_MAX,
 } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
-import { averagePrice, loanLimit, monthEnd, recoup, spend, warnPayday } from '../../src/core/sim/economy';
+import {
+  averagePrice,
+  loanLimit,
+  monthEnd,
+  recoup,
+  spend,
+  updatePayroll,
+  warnPayday,
+} from '../../src/core/sim/economy';
 import { updateEmergency } from '../../src/core/sim/emergencies';
 import { campaignBlocker } from '../../src/core/sim/marketing';
 import { saleDraw, updateRival } from '../../src/core/sim/rival';
@@ -109,7 +118,7 @@ describe('a payday the bank cannot cover', () => {
   it('stops the game and asks to borrow what is missing, in loan steps', () => {
     const { s, sim, ctx } = short(500);
     monthEnd(ctx);
-    expect(s.payrollDue).toEqual({ wages: 3000, loan: LOAN_STEP });
+    expect(s.payrollDue).toEqual({ wages: 3000, loan: LOAN_STEP, until: null });
     expect(s.bankrupt).toBe(false);
     // nothing is paid, and no time passes, until it is answered
     expect(s.money).toBe(500);
@@ -138,12 +147,60 @@ describe('a payday the bank cannot cover', () => {
     expect(s.payrollDue).toBeNull();
   });
 
-  it('loses the game at once when the bank would not lend enough', () => {
+  it('gives a few days to find the money when the bank would not lend enough, and the game goes on', () => {
+    const { s, sim, ctx } = short(500);
+    s.loan = loanLimit(s);
+    monthEnd(ctx);
+    expect(s.payrollDue).toEqual({ wages: 3000, loan: 0, until: s.day + PAYROLL_GRACE_DAYS });
+    expect(s.bankrupt).toBe(false);
+    // no dialog stops the game: time passes
+    const day = s.day;
+    run(sim, 5);
+    expect(s.day).toBeGreaterThan(day);
+  });
+
+  it('pays the wages as soon as the money is found within those days', () => {
     const { s, ctx } = short(500);
     s.loan = loanLimit(s);
     monthEnd(ctx);
+    s.money = 4000;
+    expect(updatePayroll(ctx)).toBe(true);
+    expect(s.payrollDue).toBeNull();
+    expect(s.money).toBe(1000 - Math.round(s.loan * LOAN_RATE));
+    expect(s.lastLedger.salaries).toBe(3000);
+  });
+
+  it('turns into a loan to accept if the bank would lend it after all', () => {
+    const { s, ctx } = short(500);
+    s.loan = loanLimit(s);
+    monthEnd(ctx);
+    s.loan = 0;
+    expect(updatePayroll(ctx)).toBe(false);
+    expect(s.payrollDue).toEqual({ wages: 3000, loan: LOAN_STEP, until: null });
+  });
+
+  it('loses the game when the days run out', () => {
+    const { s, ctx } = short(500);
+    s.loan = loanLimit(s);
+    monthEnd(ctx);
+    s.day += PAYROLL_GRACE_DAYS - 0.5;
+    updatePayroll(ctx);
+    expect(s.bankrupt).toBe(false);
+    s.day += 1;
+    updatePayroll(ctx);
     expect(s.bankrupt).toBe(true);
     expect(s.payrollDue).toBeNull();
+  });
+
+  it('is not enforced with bankruptcy switched off: the bank just goes into the red', () => {
+    const { s, ctx } = short(500);
+    s.bankruptcyOn = false;
+    s.loan = loanLimit(s);
+    monthEnd(ctx);
+    expect(s.payrollDue).toBeNull();
+    expect(s.bankrupt).toBe(false);
+    expect(s.money).toBeLessThan(0);
+    expect(s.lastLedger.salaries).toBe(3000);
   });
 
   it('pays as usual when the bank covers the wages', () => {

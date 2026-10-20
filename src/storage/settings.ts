@@ -51,13 +51,15 @@ export interface SandboxSettings {
   rival: boolean;
   /** Whether mishaps happen: power cuts, storms, freezes and wasps. */
   mishaps: boolean;
+  /** Whether wages the bank cannot cover end the game. */
+  bankruptcy: boolean;
   /** How hard the game is, setting by setting. One left out is as usual. */
   difficulty: Difficulty;
 }
 
 /**
  * The sandbox settings last chosen, or the defaults: the sandbox's usual money, unlocking as stars are earned, staff
- * challenges, stress outbreaks, weather, visits, a rival and mishaps, at the Standard difficulty.
+ * challenges, stress outbreaks, weather, visits, a rival, mishaps and bankruptcy, at the Standard difficulty.
  */
 export function loadSandbox(): SandboxSettings {
   const out: SandboxSettings = {
@@ -69,6 +71,7 @@ export function loadSandbox(): SandboxSettings {
     visits: true,
     rival: true,
     mishaps: true,
+    bankruptcy: true,
     difficulty: {},
   };
   try {
@@ -82,6 +85,7 @@ export function loadSandbox(): SandboxSettings {
     if (typeof raw.visits === 'boolean') out.visits = raw.visits;
     if (typeof raw.rival === 'boolean') out.rival = raw.rival;
     if (typeof raw.mishaps === 'boolean') out.mishaps = raw.mishaps;
+    if (typeof raw.bankruptcy === 'boolean') out.bankruptcy = raw.bankruptcy;
     out.difficulty = readDifficulty(raw.difficulty);
   } catch {
     // the defaults will do

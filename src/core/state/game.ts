@@ -200,6 +200,7 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     achieved: [],
     payrollDue: null,
     bankrupt: false,
+    bankruptcyOn: true,
     cheated: false,
     mushrooms: false,
     mushroomsStashed: false,

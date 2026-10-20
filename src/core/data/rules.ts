@@ -41,6 +41,9 @@ export const LOAN_RATE = 0.02;
 
 /** Interest charged each month on a bank balance below zero, which is dearer than a loan. */
 export const OVERDRAFT_RATE = 0.05;
+
+/** Days to find wages the bank would not lend, before the center is bankrupt. */
+export const PAYROLL_GRACE_DAYS = 3;
 export const PRICE_MIN = 0.5;
 
 export const PRICE_MAX = 2;
