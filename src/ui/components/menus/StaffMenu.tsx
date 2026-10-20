@@ -4,6 +4,7 @@ import './StaffMenu.css';
 
 import { ROLES } from '../../../core/data';
 import { money } from '../../../core/format';
+import { wagesDue } from '../../../core/sim/economy';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { moraleLook, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
@@ -14,7 +15,9 @@ export function StaffMenu() {
   const hud = useHud();
   const { sim } = useGame();
   const staff = sim.s.staff;
-  const payroll = staff.reduce((total, st) => total + st.salary, 0);
+  // a month of everyone staying on, and what the coming payday owes, by the days each has worked since they were paid
+  const payroll = staff.reduce((total, st) => total + (st.state === 'leaving' ? 0 : st.salary), 0);
+  const due = wagesDue(sim.s);
   return (
     <div class="panel menu">
       <h3>Your staff</h3>
@@ -52,7 +55,7 @@ export function StaffMenu() {
         <p class="sub">Nobody works here yet. Try the Hire menu.</p>
       )}
       <p class="sub">
-        Monthly payroll: <b>{money(payroll)}</b>
+        Monthly payroll: <b>{money(payroll)}</b> · due on payday: <b>{money(due)}</b>
       </p>
     </div>
   );

@@ -5,6 +5,7 @@ import {
   BEDSIDE_PATIENCE,
   CALL_PER_DAY,
   CENTERS,
+  CONDITIONS,
   INSPECTOR_ROOMS,
   ITEMS,
   type Offering,
@@ -29,6 +30,7 @@ import { spawnGuest, updateGuest } from '../../src/core/sim/guests';
 import { startWard } from '../../src/core/sim/mishaps';
 import { countVisit, monthSoFar } from '../../src/core/sim/records';
 import { caretakerSpeed } from '../../src/core/sim/staffing';
+import { guestFee } from '../../src/core/sim/stations';
 import { snowedIn } from '../../src/core/sim/twists';
 import { cannotUpgrade } from '../../src/core/sim/upgrades';
 import { finishVisit, updateVisits } from '../../src/core/sim/visits';
@@ -328,5 +330,17 @@ describe('words that say what the game does', () => {
     expect(offerEmergency(createContext(s))).toBe(false);
     expect(s.nextEmergency).toBeCloseTo(s.day + 20 * tuning(s, 'chances'));
     expect(tuning(s, 'chances')).not.toBe(1);
+  });
+});
+
+describe("the fee in a guest's inspector", () => {
+  it('is what they will pay at this center and its prices, not the standard fee', () => {
+    setSeed(1);
+    const s = newGame('orchard');
+    s.priceLevel = 1.5;
+    const g = { condition: CONDITIONS.find((c) => c.modality === 'swedish')!.id };
+    const standard = CONDITIONS.find((c) => c.id === g.condition)!.fee;
+    expect(guestFee(s, g)).toBe(Math.round(standard * 1.5 * (CENTERS.orchard.picky?.fee ?? 1)));
+    expect(guestFee(s, g)).toBeGreaterThan(standard);
   });
 });

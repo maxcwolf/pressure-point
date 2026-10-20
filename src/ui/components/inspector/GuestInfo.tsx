@@ -12,6 +12,7 @@ import {
 import { money } from '../../../core/format';
 import { weekday } from '../../../core/sim/classes';
 import { regularOf } from '../../../core/sim/regulars';
+import { guestFee } from '../../../core/sim/stations';
 import type { Guest } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { chanceText, percent, poorChance } from '../../lib/chance';
@@ -112,7 +113,7 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
       </p>{' '}
       {known && (
         <>
-          <p class="sub">{`Treatment: ${c.treatment} · ${money(c.fee)}`}</p>
+          <p class="sub">{`Treatment: ${c.treatment} · ${money(guestFee(sim.s, g))}`}</p>
           <QualChips quals={[c.modality]} />
         </>
       )}{' '}

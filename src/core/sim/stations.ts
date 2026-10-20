@@ -67,6 +67,13 @@ export function treatmentFee(s: GameState, fee: number, price: number): number {
   return Math.round(fee * price * (centerOf(s).picky?.fee ?? 1) * tuning(s, 'fees'));
 }
 
+/** What a guest pays if their treatment heals them: its fee at the center's prices, and a loyal regular's tip on top. */
+export function guestFee(s: GameState, g: Pick<Guest, 'condition' | 'regular'>): number {
+  const cond = conditionOf(g.condition);
+  const base = treatmentFee(s, cond.fee, priceFor(s, cond.modality));
+  return base + tipFor(s, g, base);
+}
+
 /** Lower is better. Guests steer toward tables that can actually deliver what they need. */
 export function stationScore(ctx: SimContext, it: Item, g: Guest) {
   const staff = stationStaff(ctx, it);
@@ -381,8 +388,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       if (isTrip(mod)) goodTrip(g);
       countVisit(ctx, g, 'healed');
       // and a loyal regular tips on top
-      const base = treatmentFee(ctx.s, cond.fee, treatPrice);
-      const fee = base + tipFor(ctx.s, g, base);
+      const fee = guestFee(ctx.s, g);
       earn(ctx, fee, 'treatment', g.x, g.y);
       g.spent += fee;
       // good value earns a better name than a steep bill does
