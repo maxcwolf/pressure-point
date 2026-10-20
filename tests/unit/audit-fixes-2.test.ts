@@ -1,7 +1,7 @@
 // Fixes from the 20 October 2026 deep-dive audit, one test each, in the audit's order.
 import { describe, expect, it } from 'vitest';
 
-import { CALL_PER_DAY, CENTERS, type Offering } from '../../src/core/data';
+import { CALL_PER_DAY, CENTERS, type Offering, SOUL_MORALE } from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
 import { plotOffers } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
@@ -19,7 +19,7 @@ import { emptyTally, newGame, unlockedUpTo } from '../../src/core/state/game';
 import type { Item } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { templateLock } from '../../src/core/templates';
-import { addQigong, hire, openCenter, runUntil } from './helpers';
+import { addQigong, hire, openCenter, run, runUntil } from './helpers';
 
 describe('karma from a star or an achievement', () => {
   it('is noted for the campaign as it is earned, not at the next autosave', () => {
@@ -145,5 +145,16 @@ describe("the Orchard's head start", () => {
     expect(barn?.why).toBe('Comes up for sale at star 2');
     const table = { type: 'massage_table', level: 0, upgradePaid: false } as Item;
     expect(cannotUpgrade(s, table)).toBe('Level 1 unlocks at star 1');
+  });
+});
+
+describe('someone asked for a soul retrieval', () => {
+  it('is no longer waiting on a Shaman once they cheer up before one comes', () => {
+    const { sim, therapist } = openCenter(1);
+    runUntil(sim, () => therapist.state === 'atPost', 120);
+    therapist.soulAsked = true;
+    therapist.morale = SOUL_MORALE + 20;
+    run(sim, 1);
+    expect(therapist.soulAsked).toBe(false);
   });
 });

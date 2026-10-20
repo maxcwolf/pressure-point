@@ -56,7 +56,7 @@ import { startWard, wardStep, wardWanted } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
 import { hasItem } from './progress';
 import { isLeadStation, matsOf, sessionState } from './sessions';
-import { reachSoul, soulStep, soulToRetrieve, startSoul } from './souls';
+import { burntOut, reachSoul, soulStep, soulToRetrieve, startSoul } from './souls';
 import type { BreakRoom } from './staff-needs';
 import { fedUp, goRefresh, growNeeds, refreshed, refreshSeconds, wants, wantsRefresh } from './staff-needs';
 import { graduate } from './training';
@@ -221,6 +221,8 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   const fair = fairPay(st, tuning(ctx.s, 'salaries'));
   const target = moraleTarget(ctx, st);
   st.morale = clamp(st.morale + (target - st.morale) * Math.min(1, dt * 0.03), 0, 100);
+  // cheered up before a Shaman could come: there is no soul to retrieve, and they can be asked for again if need be
+  if (st.soulAsked && !burntOut(st.morale)) st.soulAsked = false;
 
   if (!st.raiseAsked && st.salary < fair * 0.97 && st.morale < 56) {
     st.raiseAsked = true;
