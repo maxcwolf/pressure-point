@@ -295,6 +295,8 @@ export class HudState {
       else if (e.type === 'star') this.raise('star', e.stars);
       else if (e.type === 'awards') this.raise('awards');
       else if (e.type === 'visit') this.raise('visit');
+      // the app notes an achievement for the campaign; its toast says it
+      else if (e.type === 'achievement') continue;
       else this.float(e.text, e.kind, view.project(e.x, e.y, 1.6));
     }
   }

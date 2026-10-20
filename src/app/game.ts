@@ -190,6 +190,10 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     mouse: trackMouse(),
     refresh,
     save: autosaveNow,
+    /** Note a star or an achievement for the campaign as soon as it is earned. */
+    record: () => {
+      recordGame(state);
+    },
     overlay: drawOverlay,
   });
   watchGame(sim);

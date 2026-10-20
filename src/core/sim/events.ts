@@ -1,5 +1,7 @@
-import type { SimContext } from './context';
 // What the simulation tells the outside world: sounds, toasts, announcements and floating text.
+
+import type { AchievementId } from '../data';
+import type { SimContext } from './context';
 
 /** Whether a message is good news, bad news or neither. */
 export type Tone = 'good' | 'bad' | 'info';
@@ -21,7 +23,11 @@ export type SimEvent =
   | { type: 'announce'; text: string }
   | { type: 'star'; stars: number }
   | { type: 'awards'; year: number }
-  | { type: 'visit' };
+  | { type: 'visit' }
+  | { type: 'achievement'; id: AchievementId };
+
+/** Whether an event earns something for the campaign, which is noted at once so its karma can be spent straight away. */
+export const earnsForCampaign = (e: SimEvent): boolean => e.type === 'star' || e.type === 'achievement';
 
 /** Queue an event for the outside world. */
 export function emit(ctx: SimContext, e: SimEvent) {

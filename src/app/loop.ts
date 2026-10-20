@@ -1,5 +1,6 @@
 // The main loop: one pass per frame.
 
+import { earnsForCampaign } from '../core/sim/events';
 import type { Sim } from '../core/sim/sim';
 import type { View } from '../render/view';
 import { loadControls } from '../storage/controls';
@@ -22,12 +23,14 @@ export interface LoopParts {
   mouse: MouseSpot;
   refresh: Refresh;
   save: () => void;
+  /** Note what the game has earned for the campaign, such as a star's karma. */
+  record: () => void;
   /** Redraw the floor overlay, if one is showing. */
   overlay: () => void;
 }
 
 /** Run the game until the page goes away: move the camera, advance the game, draw it, refresh the interface. */
-export function runLoop({ sim, view, ui, held, mouse, refresh, save, overlay }: LoopParts) {
+export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, overlay }: LoopParts) {
   let prev = performance.now();
   let sinceSave = 0;
   let sinceOverlay = 0;
@@ -54,6 +57,8 @@ export function runLoop({ sim, view, ui, held, mouse, refresh, save, overlay }: 
     view.render(dt);
     const events = sim.drain();
     if (events.length) {
+      // karma from a star or an achievement can be spent at once, not only after the next autosave
+      if (events.some(earnsForCampaign)) record();
       ui.handle(events);
       refresh.request();
     }
