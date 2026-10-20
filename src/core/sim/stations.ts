@@ -279,6 +279,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   const grump = habitOf(staff, 'grump');
   if (grump) feel(g, 'grump');
   if (hasGeneral(staff, 'bedside')) feel(g, 'kind');
+  // how patient they still were, before the lift of being seen to, for what a heal does for the center's name
+  const kept = g.patience;
   g.patience = Math.min(100, g.patience + (grump ? 10 : 30));
   addWear(ctx, it);
   const nice = prestigeBonus(ctx, it);
@@ -384,7 +386,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       earn(ctx, fee, 'treatment', g.x, g.y);
       g.spent += fee;
       // good value earns a better name than a steep bill does
-      changeRep(ctx, (1.8 + g.patience / 100) * (1.25 - 0.25 * treatPrice) * (grump ? GRUMP_REP : 1));
+      changeRep(ctx, (1.8 + kept / 100) * (1.25 - 0.25 * treatPrice) * (grump ? GRUMP_REP : 1));
       if (g.emergency && ctx.s.emergency) ctx.s.emergency.healed++;
       say(g, '💖', 6);
       emit(ctx, { type: 'sfx', name: 'heal' });

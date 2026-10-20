@@ -272,3 +272,33 @@ describe('a template edited down', () => {
     expect(layoutProblem(studio)).toBe('');
   });
 });
+
+describe('the reputation a heal earns', () => {
+  it('goes by the patience the guest had left, not that plus the lift of being seen to', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const { sim, s, therapist } = openCenter(seed);
+      therapist.traits = [];
+      const table = s.items.find((it) => it.type === 'massage_table')!;
+      /** The guest on the table, if any. */
+      const served = () => sim.guest(table.serving);
+      runUntil(sim, () => served()?.state === 'served', 600);
+      const g = served()!;
+      /** What came of their visit, once it is over. */
+      const outcome = (): string => g.outcome;
+      s.priceLevel = 1;
+      s.prices = {};
+      s.reputation = 60;
+      g.patience = 0;
+      while (!outcome()) {
+        const rep = s.reputation;
+        run(sim, 0.05);
+        if (outcome() === 'healed') {
+          // a gain is tapered by the reputation already held
+          expect(s.reputation - rep).toBeCloseTo(1.8 * (1.15 - rep / 120), 5);
+          return;
+        }
+      }
+    }
+    throw new Error('no guest healed');
+  });
+});
