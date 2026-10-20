@@ -111,7 +111,8 @@ export function offerPromotion(ctx: SimContext, st: Staff) {
   if (!fullyTrained(ctx, st)) {
     tipOnce(
       ctx,
-      `slots-${st.id}`,
+      // once at each rank, as each wants another slot filled
+      `slots-${st.id}-${st.skill}`,
       `${st.name} has the experience for promotion, but must fill every qualification slot first. Send them on a course in a Training Room.`,
       'info',
       about,

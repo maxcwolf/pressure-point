@@ -1,11 +1,12 @@
 // Fixes from the 20 October 2026 deep-dive audit, one test each, in the audit's order.
 import { describe, expect, it } from 'vitest';
 
-import { CALL_PER_DAY, CENTERS, type Offering, SOUL_MORALE, WARD_SECONDS } from '../../src/core/data';
+import { CALL_PER_DAY, CENTERS, type Offering, RANK_XP, SOUL_MORALE, WARD_SECONDS } from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
 import { plotOffers } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
 import { checkAchievements } from '../../src/core/sim/achievements';
+import { gainXp } from '../../src/core/sim/careers';
 import { createContext } from '../../src/core/sim/context';
 import { updateEmergency } from '../../src/core/sim/emergencies';
 import { drainEvents, earnsForCampaign } from '../../src/core/sim/events';
@@ -173,5 +174,27 @@ describe('a Brisk Caretaker or Shaman', () => {
     shaman.traits = ['brisk'];
     startWard(shaman);
     expect(shaman.timer).toBeCloseTo(WARD_SECONDS / 1.2);
+  });
+});
+
+describe('the nudge to train someone for promotion', () => {
+  it('comes again at each rank, not only the first', () => {
+    const { s, therapist } = openCenter(1);
+    const ctx = createContext(s);
+    /** Whether the nudge was given. */
+    const nudged = () =>
+      drainEvents(ctx).some((e) => e.type === 'toast' && e.text.includes('fill every qualification slot'));
+    therapist.quals = ['swedish'];
+    therapist.general = [];
+    therapist.skill = 1;
+    therapist.xp = RANK_XP[1]!;
+    gainXp(ctx, therapist, 0);
+    expect(nudged()).toBe(true);
+    // promoted, with another slot to fill and the experience for the next rank
+    therapist.skill = 2;
+    therapist.general = ['bedside'];
+    therapist.xp = RANK_XP[2]!;
+    gainXp(ctx, therapist, 0);
+    expect(nudged()).toBe(true);
   });
 });
