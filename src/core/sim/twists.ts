@@ -82,9 +82,10 @@ const SEASON_NEWS: Record<Season, string> = {
   autumn: 'Autumn. The visitors are heading home.',
 };
 
-/** How much faster than usual waiting guests lose patience here. */
+/** How much faster than usual waiting guests lose patience here: faster during a rush, where a center has them. */
 export function impatience(ctx: SimContext): number {
-  return centerOf(ctx.s).rush?.impatience ?? 1;
+  const rush = centerOf(ctx.s).rush;
+  return rush && inRush(ctx.s.day) ? rush.impatience : 1;
 }
 
 /** What the speakers say as a snowed-in spell starts, and as the road opens again. */

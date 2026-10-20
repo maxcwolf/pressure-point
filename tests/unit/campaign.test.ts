@@ -164,9 +164,11 @@ describe('rush hours', () => {
     const { rush } = CENTERS.exchange;
     exchange.s.day = 3.5;
     expect(arrivalFactor(exchange)).toBe(rush?.peak);
+    expect(impatience(exchange)).toBe(rush?.impatience);
     exchange.s.day = 0.5;
     expect(arrivalFactor(exchange)).toBe(rush?.lull);
-    expect(impatience(exchange)).toBe(rush?.impatience);
+    // tempers are short only while the rush lasts
+    expect(impatience(exchange)).toBe(1);
     const sandbox = createContext(newGame());
     sandbox.s.day = 0.1;
     expect(arrivalFactor(sandbox)).toBe(1);
