@@ -323,6 +323,13 @@ export function layoutValid(world: World, type: RoomType, placed: PlacedLayout, 
   if (!world.inside(ox, oy) || lifted.zone[world.idx(ox, oy)] !== Z_CORRIDOR)
     return no('The door must open onto a corridor');
   if (lifted.blocked[world.idx(ox, oy)]) return no('Something is blocking the doorway');
+  // a rug lies flat on the floor, but not on another rug, such as one left in the corridor
+  const rugTiles = new Set(
+    items.filter((it) => ITEMS[it.type].walkable).flatMap((it) => footprint(it).map(([tx, ty]) => world.idx(tx, ty))),
+  );
+  const rugs = placed.items.filter((it) => ITEMS[it.type].walkable);
+  if (rugs.some((it) => footprint(it).some(([tx, ty]) => rugTiles.has(world.idx(tx, ty)))))
+    return no('There is already a rug here');
   // try it: everyone and everything has to be reached with the room in its new place
   const { x, y, w, h } = placed.rect;
   const trial: RoomShape = { id: moving?.id ?? 2147483001, x, y, w, h, door, windows: [] };

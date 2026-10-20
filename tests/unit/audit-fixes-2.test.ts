@@ -13,6 +13,7 @@ import {
 import { footprintOf } from '../../src/core/footprint';
 import { plotOffers } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
+import { placeLayout } from '../../src/core/room-layout';
 import { checkAchievements } from '../../src/core/sim/achievements';
 import { gainXp } from '../../src/core/sim/careers';
 import { createContext } from '../../src/core/sim/context';
@@ -245,5 +246,17 @@ describe('a Sound Healer with a good bedside manner', () => {
     const plain = lost();
     healer.general = ['bedside'];
     expect(lost()).toBeCloseTo(plain * BEDSIDE_PATIENCE, 5);
+  });
+});
+
+describe('moving a room with a rug', () => {
+  it('cannot put its rug down on a rug already lying in the corridor', () => {
+    const { sim, massage } = openCenter(1);
+    expect(sim.placeItem('rug', 11, 6, 0, { free: true, roomId: massage.id })).toBeTruthy();
+    // a rug on the free floor the room is moved onto, where the room's own rug would land on it
+    expect(sim.placeItem('rug', 17, 5, 0, { free: true })).toBeTruthy();
+    const placed = placeLayout(sim.roomLayout(massage), 17, 5);
+    expect(sim.world.layoutValid('massage', placed, massage).reason).toBe('There is already a rug here');
+    expect(sim.moveRoom(massage.id, placed)).toBe(false);
   });
 });
