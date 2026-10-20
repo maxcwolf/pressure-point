@@ -28,7 +28,7 @@ Each fix comes with a test that fails without it (`tests/unit/audit-fixes.test.t
 
 See the plan above. All six are in, with tests, and so are these, from the to-do list, each with a test unless noted:
 
-- The rival's sale draw follows what treatments cost on average (`averagePrice`), not the overall level alone.
+- The rival's sale draw follows what the techniques on offer cost on average (`averagePrice`: unlocked, in a discipline that is switched on), not the overall level alone.
 - Price and campaign setters refuse NaN and, for campaigns, fractions of a month.
 - No emergency is offered while a stress outbreak is on offer or going on.
 - A Mechanic who is leaving no longer counts as one.

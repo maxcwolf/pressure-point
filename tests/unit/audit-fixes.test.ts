@@ -2,7 +2,15 @@
 // refunds in the right month's books, and a visit that cannot come not holding up the calendar.
 import { describe, expect, it } from 'vitest';
 
-import { DAYS_PER_MONTH, LOAN_RATE, LOAN_STEP, MODALITY_ORDER, OVERDRAFT_RATE, PRICE_MAX } from '../../src/core/data';
+import {
+  DAYS_PER_MONTH,
+  LOAN_RATE,
+  LOAN_STEP,
+  MODALITIES,
+  MODALITY_ORDER,
+  OVERDRAFT_RATE,
+  PRICE_MAX,
+} from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
 import { averagePrice, loanLimit, monthEnd, recoup, spend, warnPayday } from '../../src/core/sim/economy';
 import { updateEmergency } from '../../src/core/sim/emergencies';
@@ -11,6 +19,7 @@ import { saleDraw, updateRival } from '../../src/core/sim/rival';
 import { reachSoul, retrieved } from '../../src/core/sim/souls';
 import { hasMechanic } from '../../src/core/sim/upgrades';
 import { updateVisits } from '../../src/core/sim/visits';
+import { disciplineOn, unlockedUpTo } from '../../src/core/state/game';
 import { hire, openCenter, run, toasts } from './helpers';
 
 /** A center as `openCenter` makes it, with the context made as well. */
@@ -233,12 +242,18 @@ describe('prices set to nonsense', () => {
 });
 
 describe('the rival’s sale', () => {
-  it('draws on what treatments cost on average, not on the overall level alone', () => {
+  it('draws on what the techniques on offer cost, not on the overall level alone', () => {
     const { sim, s } = openCenter(1);
-    // half price overall, but every technique at double: treatments cost standard
+    // half price overall, but every technique the player can see at double: treatments cost standard
     sim.setPrice(0.5);
-    for (const m of MODALITY_ORDER) sim.setTechniquePrice(m, 2);
+    const offered = MODALITY_ORDER.filter(
+      (m) => MODALITIES[m].star <= unlockedUpTo(s) && disciplineOn(s, MODALITIES[m].discipline),
+    );
+    expect(offered.length).toBeGreaterThan(0);
+    expect(offered.length).toBeLessThan(MODALITY_ORDER.length);
+    for (const m of offered) sim.setTechniquePrice(m, 2);
     expect(saleDraw(s.priceLevel)).toBe(0);
+    expect(averagePrice(s)).toBeCloseTo(1);
     expect(saleDraw(averagePrice(s))).toBeGreaterThan(0);
   });
 

@@ -5,6 +5,7 @@ import {
   LOAN_MAX,
   LOAN_RATE,
   LOAN_STEP,
+  MODALITIES,
   MODALITY_ORDER,
   OVERDRAFT_RATE,
   PRICE_MAX,
@@ -13,7 +14,7 @@ import {
 } from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
-import { emptyLedger } from '../state/game';
+import { disciplineOn, emptyLedger, unlockedUpTo } from '../state/game';
 import type { GameState, Ledger, Staff } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
@@ -227,9 +228,16 @@ export function priceFor(s: GameState, m: Priced): number {
   return clamp(s.priceLevel * (s.prices[m] ?? 1), PRICE_MIN, PRICE_MAX);
 }
 
-/** What treatments cost on average against standard, across every technique, for what draws on the center's prices as a whole. */
+/**
+ * What treatments cost on average against standard, across the techniques the center can offer: unlocked, and in a
+ * discipline that is switched on. Locked ones are left out, since the player cannot see or price them.
+ */
 export function averagePrice(s: GameState): number {
-  return MODALITY_ORDER.reduce((sum, m) => sum + priceFor(s, m), 0) / MODALITY_ORDER.length;
+  const offered = MODALITY_ORDER.filter(
+    (m) => MODALITIES[m].star <= unlockedUpTo(s) && disciplineOn(s, MODALITIES[m].discipline),
+  );
+  if (!offered.length) return s.priceLevel;
+  return offered.reduce((sum, m) => sum + priceFor(s, m), 0) / offered.length;
 }
 
 /** Set a technique's own price, against standard, on top of the overall level: rounded to a tenth, within limits. */
