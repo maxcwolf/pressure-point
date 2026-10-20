@@ -1,7 +1,7 @@
 // Fixes from the 20 October 2026 deep-dive audit, one test each, in the audit's order.
 import { describe, expect, it } from 'vitest';
 
-import { CALL_PER_DAY, CENTERS, type Offering, SOUL_MORALE } from '../../src/core/data';
+import { CALL_PER_DAY, CENTERS, type Offering, SOUL_MORALE, WARD_SECONDS } from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
 import { plotOffers } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
@@ -11,7 +11,9 @@ import { updateEmergency } from '../../src/core/sim/emergencies';
 import { drainEvents, earnsForCampaign } from '../../src/core/sim/events';
 import { averagePatience } from '../../src/core/sim/goals';
 import { spawnGuest } from '../../src/core/sim/guests';
+import { startWard } from '../../src/core/sim/mishaps';
 import { countVisit, monthSoFar } from '../../src/core/sim/records';
+import { caretakerSpeed } from '../../src/core/sim/staffing';
 import { snowedIn } from '../../src/core/sim/twists';
 import { cannotUpgrade } from '../../src/core/sim/upgrades';
 import { updateVisits } from '../../src/core/sim/visits';
@@ -156,5 +158,20 @@ describe('someone asked for a soul retrieval', () => {
     therapist.morale = SOUL_MORALE + 20;
     run(sim, 1);
     expect(therapist.soulAsked).toBe(false);
+  });
+});
+
+describe('a Brisk Caretaker or Shaman', () => {
+  it('works faster for it, and a Chatterbox slower', () => {
+    const { sim } = openCenter(1);
+    const caretaker = hire(sim, 'caretaker');
+    caretaker.traits = ['brisk'];
+    expect(caretakerSpeed(caretaker)).toBeCloseTo(1.2);
+    caretaker.traits = ['chatty'];
+    expect(caretakerSpeed(caretaker)).toBeCloseTo(0.85);
+    const shaman = hire(sim, 'shaman');
+    shaman.traits = ['brisk'];
+    startWard(shaman);
+    expect(shaman.timer).toBeCloseTo(WARD_SECONDS / 1.2);
   });
 });

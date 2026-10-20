@@ -144,3 +144,8 @@ export function traitOf(id: TraitId): TraitDef {
   if (!def) throw new Error(`unknown trait "${id}"`);
   return def;
 }
+
+/** How much faster than usual someone's quirks make them work: Brisk quicker, Chatterbox slower. */
+export function traitSpeed(traits: readonly TraitId[]): number {
+  return traits.reduce((speed, t) => speed * (traitOf(t).speed ?? 1), 1);
+}

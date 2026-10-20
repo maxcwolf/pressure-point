@@ -10,6 +10,7 @@ import {
   type MishapDef,
   type MishapId,
   MISHAPS,
+  traitSpeed,
   WARD_CHANCE,
   WARD_SECONDS,
 } from '../data';
@@ -198,7 +199,7 @@ export function startWard(st: Staff) {
   st.job = { kind: 'ward', id: 0 };
   st.state = 'doingJob';
   st.busy = true;
-  st.timer = WARD_SECONDS;
+  st.timer = WARD_SECONDS / traitSpeed(st.traits);
   say(st, '🪶', 3);
 }
 

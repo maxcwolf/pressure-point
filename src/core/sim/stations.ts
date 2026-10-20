@@ -22,7 +22,7 @@ import {
   SHOP_LINE_SKIP,
   SHOP_SPEND,
   STONE_USE,
-  traitOf,
+  traitSpeed,
   XP_PER_GUEST,
 } from '../data';
 import { tuning } from '../difficulty';
@@ -100,7 +100,7 @@ export function pickStation(ctx: SimContext, g: Guest): Item | null {
 /** How long a service takes this member of staff, given their skill, traits, courses, energy and morale. */
 export function serviceSeconds(base: number, st: Staff) {
   let speed = 0.85 + st.skill * 0.05;
-  for (const t of st.traits) speed *= traitOf(t).speed ?? 1;
+  speed *= traitSpeed(st.traits);
   if (hasGeneral(st, 'motivation')) speed *= MOTIVATION_SPEED;
   if (hasGeneral(st, 'service')) speed *= SERVICE_SPEED;
   if (st.energy < 15) speed *= 0.6;

@@ -26,6 +26,7 @@ import {
   STAFF_NEED_MORALE,
   STAMINA_DRAIN,
   traitOf,
+  traitSpeed,
   VIBES_MORALE,
   WEAR_REPAIR,
   XP_PER_JOB,
@@ -376,10 +377,15 @@ function tryBreak(ctx: SimContext, st: Staff): boolean {
   return true;
 }
 
-/** How much faster than usual a Caretaker gets through their jobs: quicker with Maintenance, and with Motivation. */
+/**
+ * How much faster than usual a Caretaker gets through their jobs: quicker with Maintenance, and with Motivation, and
+ * as their quirks make them.
+ */
 export function caretakerSpeed(st: Staff): number {
   return (
-    (hasGeneral(st, 'maintenance') ? MAINTENANCE_SPEED : 1) * (hasGeneral(st, 'motivation') ? MOTIVATION_SPEED : 1)
+    (hasGeneral(st, 'maintenance') ? MAINTENANCE_SPEED : 1) *
+    (hasGeneral(st, 'motivation') ? MOTIVATION_SPEED : 1) *
+    traitSpeed(st.traits)
   );
 }
 

@@ -1,7 +1,7 @@
 // Soul retrieval: a member of staff burnt out enough can be sent a Shaman, who walks over and brings their soul back,
 // lifting their morale a long way at some cost to the Shaman's own energy.
 
-import { SOUL_ENERGY, SOUL_LIFT, SOUL_MORALE, SOUL_SECONDS, XP_PER_JOB } from '../data';
+import { SOUL_ENERGY, SOUL_LIFT, SOUL_MORALE, SOUL_SECONDS, traitSpeed, XP_PER_JOB } from '../data';
 import type { Staff } from '../state/types';
 import { gainXp } from './careers';
 import { say, staffById } from './chars';
@@ -85,7 +85,7 @@ export function reachSoul(ctx: SimContext, sh: Staff): boolean {
   if (!within(sh, st)) return walkTo(ctx, sh, st);
   sh.state = 'doingJob';
   sh.busy = true;
-  sh.timer = SOUL_SECONDS;
+  sh.timer = SOUL_SECONDS / traitSpeed(sh.traits);
   sh.facing = Math.atan2(st.x - sh.x, st.y - sh.y);
   say(sh, '🪶', 2);
   return true;
