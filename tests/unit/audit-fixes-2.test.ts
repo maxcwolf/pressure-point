@@ -5,6 +5,7 @@ import {
   BEDSIDE_PATIENCE,
   CALL_PER_DAY,
   CENTERS,
+  ITEMS,
   type Offering,
   RANK_XP,
   SOUL_MORALE,
@@ -30,7 +31,7 @@ import { finishVisit, updateVisits } from '../../src/core/sim/visits';
 import { emptyTally, newGame, unlockedUpTo } from '../../src/core/state/game';
 import type { Item } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { templateLock } from '../../src/core/templates';
+import { layoutProblem, templateLock } from '../../src/core/templates';
 import { addQigong, addSound, hire, openCenter, run, runUntil } from './helpers';
 
 describe('karma from a star or an achievement', () => {
@@ -258,5 +259,16 @@ describe('moving a room with a rug', () => {
     const placed = placeLayout(sim.roomLayout(massage), 17, 5);
     expect(sim.world.layoutValid('massage', placed, massage).reason).toBe('There is already a rug here');
     expect(sim.moveRoom(massage.id, placed)).toBe(false);
+  });
+});
+
+describe('a template edited down', () => {
+  it('cannot build a room that needs two of something with only one', () => {
+    const { sim } = openCenter(1);
+    const studio = sim.roomLayout(addSound(sim));
+    const first = studio.items.findIndex((it) => it.type === 'sound_mat');
+    const oneMat = { ...studio, items: studio.items.filter((it, i) => it.type !== 'sound_mat' || i === first) };
+    expect(layoutProblem(oneMat)).toBe(`It needs a ${ITEMS.sound_mat.name}`);
+    expect(layoutProblem(studio)).toBe('');
   });
 });

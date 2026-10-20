@@ -133,8 +133,14 @@ export function layoutProblem(l: Layout): string {
   for (const it of l.items) ITEMS[it.type].access.forEach((_, i) => clear.push(accessTile(it, i)));
   for (const [x, y] of clear)
     if (x < 0 || y < 0 || x >= l.w || y >= l.h || solid.has(`${x},${y}`)) return 'Furniture is in the way';
-  const missing = room.required.find((t) => !l.items.some((it) => it.type === t));
-  return missing ? `It needs a ${ITEMS[missing].name}` : '';
+  // counted, as a room asking for two mats needs two
+  const have = l.items.map((it) => it.type);
+  for (const t of room.required) {
+    const at = have.indexOf(t);
+    if (at < 0) return `It needs a ${ITEMS[t].name}`;
+    have.splice(at, 1);
+  }
+  return '';
 }
 
 /** A name for a new template of a room, not already taken: the room's name, numbered after the first. */
