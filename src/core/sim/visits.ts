@@ -378,11 +378,19 @@ export function updateVisitor(ctx: SimContext, v: Visitor, dt: number) {
 
 /**
  * A visitor has gone: weigh up what they saw, pay out or fine, and write the report. The inspector glances at the Shop
- * Counter on the way out. A failed inspection waits to be settled: by the fine, or by making it go away.
+ * Counter on the way out. A failed inspection waits to be settled: by the fine, or by making it go away. A visitor
+ * who could reach no room on their tour has nothing to judge, and leaves no report.
  */
 export function finishVisit(ctx: SimContext, v: Visitor) {
   const s = ctx.s;
   s.visitors = s.visitors.filter((o) => o !== v);
+  if (v.visit === 'inspector') s.nextInspection = s.day + inspectionGap(s);
+  else s.nextVip = s.day + irnd(s, VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
+  if (!v.seen.length) {
+    toast(ctx, `${v.name} left without seeing a single room: every one on the tour was out of reach.`, 'info');
+    if (v.visit === 'inspector') inspectorGone(ctx);
+    return;
+  }
   // an earlier inspection still unsettled is settled by its fine before this one is written up
   settleInspection(ctx, false);
   if (v.visit === 'inspector') {
@@ -399,10 +407,8 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
   }
   s.visitReport = { visit: v.visit, name: v.name, title: v.title, day: s.day, rooms: v.seen, ...result };
   if (failed) s.visitReport.bribe = bribeFor(-result.money);
-  if (v.visit === 'inspector') {
-    s.nextInspection = s.day + inspectionGap(s);
-    inspectorGone(ctx);
-  } else s.nextVip = s.day + irnd(s, VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
+  // the mushrooms come back out only once the inspector has been past the counter
+  if (v.visit === 'inspector') inspectorGone(ctx);
   const good = result.outcome === 'delighted' || result.outcome === 'passed';
   emit(ctx, { type: 'sfx', name: good ? 'fanfare' : 'fail' });
   emit(ctx, { type: 'visit' });

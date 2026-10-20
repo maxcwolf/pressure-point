@@ -17,7 +17,7 @@ import { countVisit, monthSoFar } from '../../src/core/sim/records';
 import { caretakerSpeed } from '../../src/core/sim/staffing';
 import { snowedIn } from '../../src/core/sim/twists';
 import { cannotUpgrade } from '../../src/core/sim/upgrades';
-import { updateVisits } from '../../src/core/sim/visits';
+import { finishVisit, updateVisits } from '../../src/core/sim/visits';
 import { emptyTally, newGame, unlockedUpTo } from '../../src/core/state/game';
 import type { Item } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
@@ -196,5 +196,22 @@ describe('the nudge to train someone for promotion', () => {
     therapist.xp = RANK_XP[2]!;
     gainXp(ctx, therapist, 0);
     expect(nudged()).toBe(true);
+  });
+});
+
+describe('a visitor who reaches no room on their tour', () => {
+  it('gives no verdict on what they never saw, and the next visit is put off', () => {
+    const { sim, s } = openCenter(1);
+    s.stars = 1;
+    s.visitNotice = { visit: 'vip', name: 'Lee', title: 'a gadget reviewer', cares: 'equipment', arrives: s.day };
+    runUntil(sim, () => s.visitors.length > 0, 30);
+    const v = s.visitors[0]!;
+    const rep = s.reputation;
+    v.tour = [];
+    finishVisit(createContext(s), v);
+    expect(s.visitReport).toBeNull();
+    expect(s.reputation).toBe(rep);
+    expect(s.visitors).toEqual([]);
+    expect(s.nextVip).toBeGreaterThan(s.day);
   });
 });
