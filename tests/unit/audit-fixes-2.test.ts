@@ -1,7 +1,15 @@
 // Fixes from the 20 October 2026 deep-dive audit, one test each, in the audit's order.
 import { describe, expect, it } from 'vitest';
 
-import { CALL_PER_DAY, CENTERS, type Offering, RANK_XP, SOUL_MORALE, WARD_SECONDS } from '../../src/core/data';
+import {
+  BEDSIDE_PATIENCE,
+  CALL_PER_DAY,
+  CENTERS,
+  type Offering,
+  RANK_XP,
+  SOUL_MORALE,
+  WARD_SECONDS,
+} from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
 import { plotOffers } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
@@ -11,7 +19,7 @@ import { createContext } from '../../src/core/sim/context';
 import { updateEmergency } from '../../src/core/sim/emergencies';
 import { drainEvents, earnsForCampaign } from '../../src/core/sim/events';
 import { averagePatience } from '../../src/core/sim/goals';
-import { spawnGuest } from '../../src/core/sim/guests';
+import { spawnGuest, updateGuest } from '../../src/core/sim/guests';
 import { startWard } from '../../src/core/sim/mishaps';
 import { countVisit, monthSoFar } from '../../src/core/sim/records';
 import { caretakerSpeed } from '../../src/core/sim/staffing';
@@ -22,7 +30,7 @@ import { emptyTally, newGame, unlockedUpTo } from '../../src/core/state/game';
 import type { Item } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { templateLock } from '../../src/core/templates';
-import { addQigong, hire, openCenter, run, runUntil } from './helpers';
+import { addQigong, addSound, hire, openCenter, run, runUntil } from './helpers';
 
 describe('karma from a star or an achievement', () => {
   it('is noted for the campaign as it is earned, not at the next autosave', () => {
@@ -213,5 +221,29 @@ describe('a visitor who reaches no room on their tour', () => {
     expect(s.reputation).toBe(rep);
     expect(s.visitors).toEqual([]);
     expect(s.nextVip).toBeGreaterThan(s.day);
+  });
+});
+
+describe('a Sound Healer with a good bedside manner', () => {
+  it('keeps guests waiting for the mats patient too', () => {
+    const { sim, s } = openCenter(1);
+    s.stars = 1;
+    addSound(sim);
+    const healer = hire(sim, 'healer');
+    const bowls = s.items.find((i) => i.type === 'singing_bowls')!;
+    const mat = s.items.find((i) => i.type === 'sound_mat')!;
+    Object.assign(healer, { state: 'atPost', post: bowls.id, path: null });
+    bowls.staffId = healer.id;
+    const ctx = createContext(s);
+    /** What a guest waiting for the mat loses of their patience in a moment. */
+    const lost = () => {
+      const g = spawnGuest(ctx)!;
+      Object.assign(g, { state: 'waiting', station: mat.id, patience: 80, path: null });
+      updateGuest(ctx, g, 0.1);
+      return 80 - g.patience;
+    };
+    const plain = lost();
+    healer.general = ['bedside'];
+    expect(lost()).toBeCloseTo(plain * BEDSIDE_PATIENCE, 5);
   });
 });

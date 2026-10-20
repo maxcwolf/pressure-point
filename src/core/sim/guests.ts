@@ -29,7 +29,7 @@ import { at } from '../util';
 import { accessPose, accessTile, itemCenter, rotVec, Z_CORRIDOR } from '../world';
 import { drainFactor } from './ambience';
 import { hasGeneral } from './careers';
-import { lobbyTile, say, staffById, streetTile, streetTileNear } from './chars';
+import { lobbyTile, say, streetTile, streetTileNear } from './chars';
 import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import { missClass, missToast } from './classes';
@@ -44,6 +44,7 @@ import { arriveCarrying, carriedOut } from './outbreaks';
 import { countArrival, countVisit } from './records';
 import { updateRest } from './recovery';
 import { dueRegular, regularPatience, welcomeBack } from './regulars';
+import { stationStaff } from './sessions';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf } from './treatments';
 import { arrivalFactor, cutOff, impatience } from './twists';
@@ -425,9 +426,9 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     (g.state === 'toWait' && !walkingToClass) || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
   if (waiting) {
     let drain = 0.85 * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);
-    // the one they are waiting for has a good bedside manner
+    // the one they are waiting for has a good bedside manner: at a mat, the Sound Healer at the bowls
     const station = ctx.world.item(g.station);
-    if (station && hasGeneral(staffById(ctx, station.staffId), 'bedside')) drain *= BEDSIDE_PATIENCE;
+    if (station && hasGeneral(stationStaff(ctx, station), 'bedside')) drain *= BEDSIDE_PATIENCE;
     if (g.pose === 'sit') drain *= seatDrain(ctx, g);
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
     if (g.stressed) drain *= STRESS_DRAIN;
