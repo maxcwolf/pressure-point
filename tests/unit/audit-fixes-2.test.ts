@@ -5,20 +5,24 @@ import {
   BEDSIDE_PATIENCE,
   CALL_PER_DAY,
   CENTERS,
+  INSPECTOR_ROOMS,
   ITEMS,
   type Offering,
   RANK_XP,
+  ROLES,
   SOUL_MORALE,
   WARD_SECONDS,
 } from '../../src/core/data';
+import { tuning } from '../../src/core/difficulty';
 import { footprintOf } from '../../src/core/footprint';
 import { plotOffers } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
 import { placeLayout } from '../../src/core/room-layout';
 import { checkAchievements } from '../../src/core/sim/achievements';
 import { gainXp } from '../../src/core/sim/careers';
+import { classPlaces } from '../../src/core/sim/classes';
 import { createContext } from '../../src/core/sim/context';
-import { updateEmergency } from '../../src/core/sim/emergencies';
+import { offerEmergency, updateEmergency } from '../../src/core/sim/emergencies';
 import { drainEvents, earnsForCampaign } from '../../src/core/sim/events';
 import { averagePatience } from '../../src/core/sim/goals';
 import { spawnGuest, updateGuest } from '../../src/core/sim/guests';
@@ -32,7 +36,7 @@ import { emptyTally, newGame, unlockedUpTo } from '../../src/core/state/game';
 import type { Item } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { layoutProblem, templateLock } from '../../src/core/templates';
-import { addQigong, addSound, hire, openCenter, run, runUntil } from './helpers';
+import { addQigong, addSound, hire, openCenter, run, runUntil, toasts } from './helpers';
 
 describe('karma from a star or an achievement', () => {
   it('is noted for the campaign as it is earned, not at the next autosave', () => {
@@ -300,5 +304,29 @@ describe('the reputation a heal earns', () => {
       }
     }
     throw new Error('no guest healed');
+  });
+});
+
+describe('words that say what the game does', () => {
+  it('give the most an Expert Instructor leads as the rule has it', () => {
+    expect(ROLES.instructor.desc).toContain(`up to ${classPlaces(5)} for an Expert`);
+  });
+
+  it('say the inspector looks round a few rooms, not every one', () => {
+    const { s } = openCenter(1);
+    const ctx = createContext(s);
+    s.open = true;
+    s.nextInspection = s.day;
+    updateVisits(ctx);
+    expect(toasts(drainEvents(ctx))).toContainEqual(expect.stringContaining(`check up to ${INSPECTOR_ROOMS} rooms`));
+  });
+
+  it('put off an emergency with nobody to treat it as often as the setting for chances says', () => {
+    const { s } = openCenter(1);
+    s.staff = [];
+    s.difficulty = { chances: 'harder' };
+    expect(offerEmergency(createContext(s))).toBe(false);
+    expect(s.nextEmergency).toBeCloseTo(s.day + 20 * tuning(s, 'chances'));
+    expect(tuning(s, 'chances')).not.toBe(1);
   });
 });

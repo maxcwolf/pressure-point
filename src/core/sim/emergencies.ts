@@ -60,7 +60,7 @@ export function offerEmergency(ctx: SimContext): boolean {
       staff.some((t) => t.quals.includes(c.modality)),
   );
   if (!pool.length) {
-    s.nextEmergency = s.day + 20;
+    s.nextEmergency = s.day + 20 * tuning(s, 'chances');
     return false;
   }
   const cond = pick(s, pool);

@@ -1,6 +1,7 @@
 // Visitors who judge the center. A VIP writes ahead, tours a few rooms and judges them by their own tastes, leaving
 // a reward if delighted and a dent in the center's reputation if disappointed. The health inspector calls now and
-// then, ready or not, and checks every room for dirt, broken equipment and a Fire Extinguisher close by.
+// then, ready or not, and checks a few rooms at random, up to six, for dirt, broken equipment and a Fire Extinguisher
+// close by.
 
 import {
   type Aspect,
@@ -252,7 +253,11 @@ function writeAhead(ctx: SimContext, visit: VisitorKind) {
   ctx.s.visitNotice = notice;
   emit(ctx, { type: 'announce', text: VISIT_NEWS[visit] });
   if (visit === 'inspector') {
-    toast(ctx, `📋 The health inspector will call in ${VISIT_NOTICE_DAYS} days. They will check every room.`, 'info');
+    toast(
+      ctx,
+      `📋 The health inspector will call in ${VISIT_NOTICE_DAYS} days. They will check up to ${INSPECTOR_ROOMS} rooms, chosen at random.`,
+      'info',
+    );
     inspectorComing(ctx);
   } else
     toast(

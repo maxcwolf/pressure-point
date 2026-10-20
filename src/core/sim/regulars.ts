@@ -42,8 +42,8 @@ export const takesToPlace = (id: number, stars: number) => stars >= REGULAR_STAR
 /** How a visit changes a regular's loyalty, by the stars they gave it. */
 export const loyaltyChange = (stars: number) => LOYALTY_BY_STARS[clamp(Math.round(stars), 1, 5) - 1] ?? 0;
 
-/** Days until a regular comes back: somewhere in the usual gap, by who they are and how often they have been, and up to
- * half as long again for the most loyal. */
+/** Days until a regular comes back: somewhere in the usual gap, by who they are and how often they have been, and
+ * sooner the more loyal they are, down to half as long for the most loyal. */
 export function returnGap(r: Pick<Regular, 'id' | 'visits' | 'loyalty'>): number {
   const [least, most] = REGULAR_GAP_DAYS;
   const days = least + ((r.id * 7 + r.visits * 13) % (most - least + 1));

@@ -1,5 +1,6 @@
 // Staff roles and the quirks a member of staff can have.
 
+import { CLASS_PLACES } from './rules';
 import type { Role, RoleDef, TraitDef, TraitId } from './types';
 
 export const ROLES: Readonly<Record<Role, RoleDef>> = {
@@ -65,7 +66,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
     role: 'instructor',
     name: 'Qi Gong Instructor',
     icon: '🥋',
-    desc: 'Leads the classes in a Qi Gong Studio, on the days its timetable sets. The more skilled, the more who come, and the more Practice Spots they can lead: 6 for a Trainee, up to 16 for an Expert.',
+    desc: `Leads the classes in a Qi Gong Studio, on the days its timetable sets. The more skilled, the more who come, and the more Practice Spots they can lead: ${CLASS_PLACES[0]} for a Trainee, up to ${CLASS_PLACES.at(-1)} for an Expert.`,
     baseSalary: 1300,
     uniform: 0xc0473a,
     accent: 0xf2d27a,
