@@ -5,7 +5,7 @@ import { logger, setTag } from '@sentry/browser';
 import { Audio } from '../audio';
 import { newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
-import { archiveAutosave, AUTOSAVE_ID, readSave, startBackup } from '../storage/saves';
+import { AUTOSAVE_ID, openInAutosave, readSave, startBackup } from '../storage/saves';
 import { loadDisciplinePrefs, loadSandbox } from '../storage/settings';
 import { showTitle } from '../ui';
 import { track } from './analytics';
@@ -79,6 +79,6 @@ function open(what: string | null): GameState | 'no-room' | null {
     state.difficulty = difficulty;
   }
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
-  if (state && what !== AUTOSAVE_ID && !archiveAutosave()) return 'no-room';
+  if (state && what !== AUTOSAVE_ID && !openInAutosave(state)) return 'no-room';
   return state;
 }

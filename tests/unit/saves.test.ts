@@ -16,6 +16,7 @@ import {
   latestSave,
   listSaves,
   MAX_SAVES,
+  openInAutosave,
   PREVIOUS_ID,
   readSave,
   type SaveInfo,
@@ -406,6 +407,20 @@ describe('starting over', () => {
     expect(prev.id).toBe(PREVIOUS_ID);
     expect(prev.name).toContain('Previous game');
     expect(readSave(PREVIOUS_ID)!.stats).toEqual(s.stats);
+  });
+
+  it('keeps the previous game in storage once it is opened, and the game it swapped with as the previous one', () => {
+    setSeed(1);
+    const left = newGame();
+    left.money = 111;
+    autosave(left, 1000);
+    const earlier = newGame();
+    earlier.money = 222;
+    writeSave(earlier, 'Previous game', PREVIOUS_ID, 500);
+    const opened = readSave(PREVIOUS_ID)!;
+    expect(openInAutosave(opened, 2000)).toBe(true);
+    expect(readSave(AUTOSAVE_ID)!.money).toBe(222);
+    expect(readSave(PREVIOUS_ID)!.money).toBe(111);
   });
 
   it('keeps only one previous game, and does nothing without an autosave', () => {

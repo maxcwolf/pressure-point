@@ -319,6 +319,18 @@ export function archiveAutosave(now = Date.now()): boolean {
 }
 
 /**
+ * Called when a game opens that is not the one in the autosave: that one moves to "Previous game", and the game opened
+ * takes its place straight away, so it is kept from the start even when it was the previous game itself. False if
+ * there is no room to keep the old autosave, when the game must not open.
+ */
+export function openInAutosave(s: GameState, now = Date.now()): boolean {
+  if (!archiveAutosave(now)) return false;
+  // with no room for it, the game is saved at its first autosave, which says so
+  autosave(s, now);
+  return true;
+}
+
+/**
  * Set aside an autosave that is there but will not open, such as one from a later version, so the new game's first
  * autosave does not write over it and a later version can still open it. False if there is no room to keep it.
  */
