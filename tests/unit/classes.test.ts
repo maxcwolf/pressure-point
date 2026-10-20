@@ -22,6 +22,7 @@ import { accessIndex } from '../../src/core/sim/claims';
 import {
   admitClassgoers,
   announceClasses,
+  awayForClass,
   backForClass,
   CLASS_LINES,
   classDays,
@@ -287,10 +288,11 @@ describe('a class in play', () => {
     );
   });
 
-  it('is not booked while the Instructor is away from their mat, and the player is told why', () => {
+  it('is not booked while the Instructor is away past it, and the player is told why', () => {
     const { sim, s, room, teacher } = studio();
     if (!teacher) throw new Error('no Instructor');
-    teacher.state = 'toPost';
+    teacher.state = 'away';
+    teacher.call = { client: 'A client', days: 3, back: s.day + 3, fee: 0 };
     run(sim, 1);
     expect(room.booked).toEqual({ day: 4, count: 0, turned: 0, away: true });
     expect(s.arrivals).toEqual([]);
@@ -671,5 +673,30 @@ describe('an Instructor who leaves mid-class', () => {
     sim.fire(teacher.id);
     expect(mat.progress).toBe(0);
     expect(room.lastClass).toBeUndefined();
+  });
+});
+
+describe('booking a class', () => {
+  it('goes ahead while the Instructor is off for a drink, which is over long before the class', () => {
+    const { sim, room, teacher } = studio();
+    if (!teacher) throw new Error('no Instructor');
+    teacher.state = 'toJob';
+    teacher.job = { kind: 'refresh', id: 0 };
+    run(sim, 1);
+    expect(room.booked?.day).toBe(4);
+    expect(room.booked?.away).toBeUndefined();
+  });
+
+  it('waits for an Instructor on a break too long to be back in time', () => {
+    const { sim, teacher } = studio();
+    if (!teacher) throw new Error('no Instructor');
+    teacher.state = 'onBreak';
+    teacher.energy = 0;
+    // a Staff Room a long way off
+    teacher.timer = 3 * DAY_SECONDS;
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    expect(awayForClass(ctx, teacher, 4)).toBe(true);
+    teacher.timer = 1;
+    expect(awayForClass(ctx, teacher, 4)).toBe(false);
   });
 });

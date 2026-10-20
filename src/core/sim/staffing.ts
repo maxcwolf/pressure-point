@@ -3,6 +3,7 @@
 import {
   BOOKCASE_MAX,
   BOOKCASE_SPEEDUP,
+  BREAK_REST,
   COFFEE_BREAK_BOOST,
   DAY_SECONDS,
   DIRT_CLEAN,
@@ -582,7 +583,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
   updateMorale(ctx, st, dt);
   if (st.state === 'leaving' && !ctx.s.staff.includes(st)) return;
   growNeeds(ctx, st, dt, breakRoom(ctx, st));
-  if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * 9 * breakBoost(ctx, st));
+  if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * BREAK_REST * breakBoost(ctx, st));
   else if (st.state !== 'leaving' && st.state !== 'training' && st.state !== 'away') {
     const rate = st.busy ? 0.42 * (st.strain || 1) : st.state === 'atPost' ? 0.14 : 0.2;
     st.energy = Math.max(0, st.energy - rate * stamina * tuning(ctx.s, 'tiredness') * dt);

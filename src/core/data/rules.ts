@@ -211,6 +211,8 @@ export const REST_GAP = 2;
 export const REST_AHEAD = 15;
 export const BREAK_EXHAUSTED = 10;
 export const REST_RETURN = 0.5;
+/** The energy a break gives back each second, before a coffee machine or a clock speeds it. */
+export const BREAK_REST = 9;
 /** Days from a staff challenge being set to its deadline, at least and at most. */
 export const CHALLENGE_DAYS_MIN = 60;
 export const CHALLENGE_DAYS_MAX = 120;

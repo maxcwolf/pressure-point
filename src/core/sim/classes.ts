@@ -6,6 +6,7 @@
 import {
   BOOK_AHEAD,
   BREAK_EXHAUSTED,
+  BREAK_REST,
   CLASS_CALL_GAP,
   CLASS_DAYS,
   CLASS_FEE,
@@ -153,11 +154,28 @@ const AWAY: readonly Staff['state'][] = ['toBreak', 'onBreak', 'toTrain', 'train
 export const instructorAway = (st: Staff) => AWAY.includes(st.state);
 
 /**
+ * Whether an Instructor will still be away when a class day comes, too late to call its class-goers to their spots: on
+ * a house call or a course that lasts past it, or on a break they cannot be up from and back in time, rested as far
+ * as they may get up early for a class. A drink, a snack or a walk back to the mat is over long before.
+ */
+export function awayForClass(ctx: SimContext, st: Staff, day: number): boolean {
+  const s = ctx.s;
+  const due = day + 1 - REST_RETURN;
+  if (st.call) return st.call.back > due;
+  if (st.training) return s.day + ((1 - st.training.progress) * st.training.seconds) / DAY_SECONDS > due;
+  if (st.state !== 'toBreak' && st.state !== 'onBreak') return false;
+  const rest = Math.max(0, Math.min(100, s.policy.breakAt + REST_AHEAD) - st.energy) / BREAK_REST;
+  // the walk back is as long as the walk there, of which only so much is behind them on the way
+  const walk = st.state === 'toBreak' ? st.timer * 2 : st.timer;
+  return s.day + (rest + walk) / DAY_SECONDS > due;
+}
+
+/**
  * As a day begins, book the classes the day after tomorrow: each studio with a class then and an Instructor on the
  * payroll fills what places it can, and its class-goers set off at times through today, since days are short and the
  * walk in is long. Its places are its Practice Spots, as many as the Instructor's rank lets them lead: spots past that
- * stand empty and draw nobody. Places are booked only while the Instructor is at their mat: from a studio far from
- * the Staff Room, a break can keep them away for days, and class-goers left waiting for them go home disappointed.
+ * stand empty and draw nobody. Places are not booked while the Instructor is away for longer than that: from a studio
+ * far from the Staff Room, a break can keep them away for days, and class-goers left waiting go home disappointed.
  * Nor are more booked than the classes still to come have places for, after the class-goers already waiting or on
  * their way: anyone whose class never happened takes a place in the next one.
  */
@@ -174,7 +192,7 @@ export function bookClasses(ctx: SimContext) {
   free -= s.arrivals.length + s.guests.filter((g) => g.classDay && g.goal === 'class' && g.state !== 'leaving').length;
   for (const [room, spots] of places) {
     if (!classOn(room, day)) continue;
-    if (instructor.state !== 'atPost') {
+    if (awayForClass(ctx, instructor, day)) {
       room.booked = { day, count: 0, turned: 0, away: true };
       tipOnce(
         ctx,
