@@ -4,6 +4,7 @@ import {
   ACHIEVEMENTS,
   type AwardId,
   AWARDS,
+  DAYS_PER_MONTH,
   type Discipline,
   DISCIPLINES,
   FEELINGS,
@@ -100,6 +101,7 @@ type OldSave = Partial<Omit<GameState, Records>> &
       | 'morale'
       | 'raiseAsked'
       | 'unhappyT'
+      | 'paidTo'
       | 'yearServed'
       | 'xp'
       | 'promotion'
@@ -182,6 +184,8 @@ export function upgradeSave(save: GameState) {
     st.quals ??= baseQuals(st.role);
     // before ranks, skill was all there was: they start at the beginning of the rank it makes them
     fill(st, staffStart(st.skill));
+    // before pay was settled by the day, it was paid in whole months: they are owed from the start of this one
+    st.paidTo ??= Math.floor(s.day / DAYS_PER_MONTH) * DAYS_PER_MONTH;
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
   movedSoundBath(s);

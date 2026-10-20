@@ -1,10 +1,20 @@
 // Money and reputation: income, spending, payday, loans and prices.
 
-import { LOAN_MAX, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN, type Priced } from '../data';
+import {
+  DAYS_PER_MONTH,
+  LOAN_MAX,
+  LOAN_RATE,
+  LOAN_STEP,
+  OVERDRAFT_RATE,
+  PRICE_MAX,
+  PRICE_MIN,
+  type Priced,
+  UNPAID_MORALE,
+} from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
 import { emptyLedger } from '../state/game';
-import type { GameState, Ledger } from '../state/types';
+import type { GameState, Ledger, Staff } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
@@ -46,8 +56,13 @@ export function spend(ctx: SimContext, amount: number, kind: Cost) {
 
 /** Get back money paid out, as for something sold or a course cut short: it comes off what that cost this month. */
 export function recoup(ctx: SimContext, amount: number, kind: Cost) {
-  ctx.s.money += amount;
-  ctx.s.ledger[kind] -= amount;
+  const s = ctx.s;
+  s.money += amount;
+  // only this month's spending can be taken back out of this month's books: what was paid in an earlier month, and
+  // closed with it, comes back as income instead of a cost below zero
+  const back = Math.min(amount, Math.max(0, s.ledger[kind]));
+  s.ledger[kind] -= back;
+  s.ledger.bonus += amount - back;
 }
 
 /** Add money to the bank or take it away, off the books: the console's money cheat, which is no income or cost. */
@@ -66,16 +81,46 @@ export function changeRep(ctx: SimContext, delta: number) {
 /** The most the bank will lend: more or less than usual, as the difficulty sets, in whole steps. */
 export const loanLimit = (s: GameState) => Math.round((LOAN_MAX * tuning(s, 'loans')) / LOAN_STEP) * LOAN_STEP;
 
+/** What a member of staff has earned since they were last paid: a month's salary at most, in whole days. */
+export function owedPay(s: GameState, st: Staff): number {
+  const days = clamp(Math.round(s.day - st.paidTo), 0, DAYS_PER_MONTH);
+  return Math.round((st.salary * days) / DAYS_PER_MONTH);
+}
+
+/** Work out what a member of staff is owed up to today and mark them paid, leaving it to the caller to pay it. */
+function settlePay(ctx: SimContext, st: Staff): number {
+  const owed = owedPay(ctx.s, st);
+  st.paidTo = ctx.s.day;
+  return owed;
+}
+
+/** Pay a member of staff who is going what they have earned since payday, so leaving early costs no more than staying. */
+export function payOff(ctx: SimContext, st: Staff) {
+  const owed = settlePay(ctx, st);
+  if (owed > 0) spend(ctx, owed, 'salaries');
+}
+
 /** Pay salaries and loan interest, close the month's books and bring in new applicants. */
 export function monthEnd(ctx: SimContext) {
   const s = ctx.s;
-  const wages = s.staff.filter((x) => x.state !== 'leaving').reduce((a, x) => a + x.salary, 0);
+  // those leaving were paid up to the day they went
+  let wages = 0;
+  for (const st of s.staff) if (st.state !== 'leaving') wages += settlePay(ctx, st);
   if (wages > 0) {
     spend(ctx, wages, 'salaries');
-    toast(ctx, `Payday: ${money(wages)} in salaries.`, s.money < 0 ? 'bad' : 'info');
+    const short = s.money < 0;
+    toast(
+      ctx,
+      short
+        ? `Payday: ${money(wages)} in salaries, and the bank is in the red.`
+        : `Payday: ${money(wages)} in salaries.`,
+      short ? 'bad' : 'info',
+    );
     emit(ctx, { type: 'sfx', name: 'payday' });
+    // staff who are paid out of an overdraft worry about their jobs
+    if (short) for (const st of s.staff) st.morale = Math.max(0, st.morale - UNPAID_MORALE);
   }
-  const interest = Math.round(s.loan * LOAN_RATE);
+  const interest = Math.round(s.loan * LOAN_RATE) + Math.round(Math.max(0, -s.money) * OVERDRAFT_RATE);
   if (interest > 0) spend(ctx, interest, 'interest');
   closeMonth(ctx);
   s.history.push(netOf(s.ledger));
@@ -106,9 +151,9 @@ export function repay(ctx: SimContext): boolean {
   return true;
 }
 
-/** What a technique costs against standard: the overall price level, times its own. */
+/** What a technique costs against standard: the overall price level, times its own, kept within the same limits. */
 export function priceFor(s: GameState, m: Priced): number {
-  return s.priceLevel * (s.prices[m] ?? 1);
+  return clamp(s.priceLevel * (s.prices[m] ?? 1), PRICE_MIN, PRICE_MAX);
 }
 
 /** Set a technique's own price, against standard, on top of the overall level: rounded to a tenth, within limits. */

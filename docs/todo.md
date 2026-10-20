@@ -1,6 +1,6 @@
 # To do
 
-Work planned for the game itself. Bugs and risks found in the October 2026 audit are in [known-issues.md](known-issues.md), and ideas not yet decided on in [ideas.md](ideas.md).
+Work planned for the game itself. Bugs and risks found in the October 2026 audit are in [known-issues.md](known-issues.md), the gameplay audit of 19 October 2026 (with its own to-dos) is in [gameplay-audit.md](gameplay-audit.md), and ideas not yet decided on in [ideas.md](ideas.md).
 
 Tick an item off when it is done, with the commit or release it landed in.
 

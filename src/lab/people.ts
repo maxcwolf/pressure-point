@@ -78,6 +78,7 @@ export function demoStaff(look: Look, role: Role): Staff {
     role,
     skill: 3,
     salary: 0,
+    paidTo: 0,
     traits: [],
     energy: 100,
     thirst: 0,

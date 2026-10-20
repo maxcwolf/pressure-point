@@ -48,7 +48,7 @@ import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import { backForClass, isClassLead, restDue } from './classes';
 import type { SimContext } from './context';
-import { changeRep, recoup } from './economy';
+import { changeRep, payOff, recoup } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { resetGuest } from './guests';
 import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaundering } from './linens';
@@ -86,6 +86,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     role: c.role,
     skill: c.skill,
     salary: c.salary,
+    paidTo: s.day,
     traits: c.traits,
     energy: 100,
     state: 'arriving',
@@ -110,6 +111,8 @@ export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poach
   const st = staffById(ctx, id);
   if (!st || st.state === 'leaving') return;
   staffIdle(ctx, st);
+  // they are paid for the days they worked, and no more
+  payOff(ctx, st);
   st.state = 'leaving';
   st.raiseAsked = false;
   st.offer = 0;
@@ -302,6 +305,12 @@ function leavePost(ctx: SimContext, st: Staff) {
     // whoever they had called or were seeing goes back to the line, rather than wait on the table for nobody
     const g = guestById(ctx, it.serving);
     if (g) resetGuest(ctx, g);
+    // a class they were leading is called off, and can start again when someone is there to lead it
+    if (isClassLead(it) && it.progress > 0) {
+      it.progress = 0;
+      const room = ctx.world.roomOfItem(it);
+      if (room) delete room.lastClass;
+    }
     // and at the bowls, so does everyone lying on the mats they played for
     if (isLeadStation(it))
       for (const m of matsOf(ctx, it)) {

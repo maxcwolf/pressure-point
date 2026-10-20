@@ -232,6 +232,8 @@ export interface Staff extends CharBase {
   /** The house call they are on, if any. */
   call: Call | null;
   salary: number;
+  /** The day their pay is settled up to: payday pays from here, and leaving pays from here. */
+  paidTo: number;
   traits: TraitId[];
   energy: number;
   /** 0 to 100: how much they want a drink, and a snack, seen to between jobs. */

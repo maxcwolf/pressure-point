@@ -38,6 +38,12 @@ export const LOAN_MAX = 50000;
 
 /** Interest charged on the outstanding loan each month. */
 export const LOAN_RATE = 0.02;
+
+/** Interest charged each month on a bank balance below zero, which is dearer than a loan. */
+export const OVERDRAFT_RATE = 0.05;
+
+/** Morale every member of staff loses when a payday leaves the bank below zero. */
+export const UNPAID_MORALE = 10;
 export const PRICE_MIN = 0.5;
 
 export const PRICE_MAX = 2;

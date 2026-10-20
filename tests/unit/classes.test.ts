@@ -659,3 +659,17 @@ describe('a save from long before the classes', () => {
     expect(old.candidates.filter((c) => c.role === 'instructor')).toHaveLength(3);
   });
 });
+
+describe('an Instructor who leaves mid-class', () => {
+  it('calls the class off, so it can start again for the next one the same day', () => {
+    const { sim, s, room, teacher } = studio();
+    if (!teacher) throw new Error('no Instructor');
+    const mat = s.items.find((it) => it.type === 'instructor_mat');
+    if (!mat) throw new Error('no Instructor’s Mat');
+    mat.progress = 0.5;
+    room.lastClass = Math.floor(s.day);
+    sim.fire(teacher.id);
+    expect(mat.progress).toBe(0);
+    expect(room.lastClass).toBeUndefined();
+  });
+});

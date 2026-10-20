@@ -66,6 +66,9 @@ import { noiseAt } from './noise';
 import { cutOff } from './twists';
 import { discomfort, warmthAt } from './warmth';
 
+/** Days a visitor who cannot get in is waited for before the visit is put off. */
+const STUCK_VISIT_DAYS = 3;
+
 /** How a visitor rates each aspect of a room, from 0 (dreadful) to 1 (perfect). */
 export type AspectScores = Record<Aspect, number>;
 
@@ -303,7 +306,16 @@ export function updateVisits(ctx: SimContext) {
   const notice = s.visitNotice;
   if (notice) {
     // nobody gets up the road while the center is snowed in, so they come once it is open again
-    if (s.day >= notice.arrives && !cutOff(ctx) && arrive(ctx, notice)) s.visitNotice = null;
+    if (s.day >= notice.arrives && !cutOff(ctx)) {
+      if (arrive(ctx, notice)) s.visitNotice = null;
+      // nobody to show round, or no way to them, however long they are given: they cannot come, and the next visit is
+      // put off, rather than the calendar waiting on them for good
+      else if (s.day >= notice.arrives + STUCK_VISIT_DAYS) {
+        s.visitNotice = null;
+        if (notice.visit === 'inspector') s.nextInspection = s.day + inspectionGap(s);
+        else s.nextVip = s.day + irnd(s, VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
+      }
+    }
     return;
   }
   if (s.day >= s.nextInspection) writeAhead(ctx, 'inspector');
