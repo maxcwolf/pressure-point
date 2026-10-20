@@ -17,6 +17,7 @@ import {
 import { barHeights, CHART_HEIGHT } from '../../src/ui/lib/chart';
 import { cx } from '../../src/ui/lib/cx';
 import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
+import { mustAnswer, pendingDialog, raise } from '../../src/ui/lib/dialogs';
 import { offerTimeLeft, timeLeftLabel, wholeDaysLeft } from '../../src/ui/lib/emergency';
 import { pleasantness } from '../../src/ui/lib/overlays';
 import { placedFlags } from '../../src/ui/lib/plan';
@@ -35,6 +36,50 @@ describe('joining class names', () => {
   it('keeps what applies and drops the rest', () => {
     expect(cx('card', false, undefined, 'poor', null, '')).toBe('card poor');
     expect(cx()).toBe('');
+  });
+});
+
+describe('dialogs the game raises', () => {
+  const star = { id: 'star', star: 1 } as const;
+  const visit = { id: 'visit', star: 0 } as const;
+  const payroll = { id: 'payroll', star: 0 } as const;
+
+  it('shows the first of two raised in one frame and keeps the second for when it closes', () => {
+    const first = raise(null, [], visit);
+    expect(first).toEqual({ show: visit, line: [] });
+    expect(raise(visit, first.line, star)).toEqual({ show: null, line: [star] });
+  });
+
+  it('puts a payday in front of what is showing, which waits next, and does not raise one twice', () => {
+    expect(raise(star, [visit], payroll)).toEqual({ show: payroll, line: [star, visit] });
+    expect(raise(payroll, [star], payroll)).toEqual({ show: null, line: [star] });
+    expect(raise(visit, [star], { id: 'bankrupt', star: 0 })).toEqual({
+      show: { id: 'bankrupt', star: 0 },
+      line: [visit, star],
+    });
+  });
+
+  it("keeps a failed inspection's choice from Esc, and brings it back after a reload", () => {
+    const { s } = openCenter(1);
+    expect(pendingDialog(s)).toBeNull();
+    s.visitReport = {
+      visit: 'inspector',
+      name: 'I',
+      title: '',
+      day: 0,
+      rooms: [],
+      score: 3,
+      outcome: 'failed',
+      money: -2000,
+      rep: -3,
+      bribe: 4000,
+    };
+    expect(pendingDialog(s)).toBe('visit');
+    expect(mustAnswer('visit', s)).toBe(true);
+    delete s.visitReport.bribe;
+    expect(pendingDialog(s)).toBeNull();
+    expect(mustAnswer('visit', s)).toBe(false);
+    expect(mustAnswer('payroll', s)).toBe(true);
   });
 });
 

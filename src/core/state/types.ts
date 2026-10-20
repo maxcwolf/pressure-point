@@ -403,7 +403,7 @@ export interface VisitReport {
   rep: number;
   /**
    * For a failed inspection still to be settled: what it would take to make it go away. Paying the fine or the bribe
-   * settles it, and closing the report pays the fine.
+   * settles it, and its report stays until one is chosen.
    */
   bribe?: number;
 }

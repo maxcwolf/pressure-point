@@ -11,6 +11,7 @@ import { loadTemplates } from '../storage/templates';
 import { voiceFor } from '../voice';
 import type { GameHost } from './host';
 import type { ItemKind, Place } from './lib/catalog';
+import { mustAnswer, pendingDialog, raise, type Raised, stillDue } from './lib/dialogs';
 import type { OverlayMode } from './lib/overlays';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'policy' | 'stats';
@@ -128,6 +129,8 @@ export class HudState {
   private announceTimer = 0;
   /** The game speed to go back to when the dialog closes. */
   private pausedBy: number | null = null;
+  /** Dialogs the game raised while another was showing, to show in turn as each closes. */
+  private line: Raised[] = [];
 
   constructor(readonly host: GameHost) {}
 
@@ -152,18 +155,19 @@ export class HudState {
     this.open('pause');
   }
 
-  /** Open the dialog a stopped game is waiting on, if it is: a payday to borrow for, or the center gone bankrupt. */
+  /**
+   * Open the dialog a stopped game is waiting on, if it is: a payday to borrow for, the center gone bankrupt, or a
+   * failed inspection to settle.
+   */
   openPending() {
-    const s = this.host.sim.s;
-    if (s.bankrupt) {
-      if (this.dialog !== 'bankrupt') this.open('bankrupt');
-    } else if (s.payrollDue?.until === null && this.dialog !== 'payroll') this.open('payroll');
+    const pending = pendingDialog(this.host.sim.s);
+    if (pending) this.raise(pending);
   }
 
   /** Close whatever dialog is open and carry on playing. */
   dismiss() {
-    // a payday and a bankruptcy have to be answered
-    if (this.dialog && this.dialog !== 'payroll' && this.dialog !== 'bankrupt') this.close();
+    // a payday, a bankruptcy and a fine or its way out have to be answered
+    if (this.dialog && !mustAnswer(this.dialog, this.host.sim.s)) this.close();
   }
 
   /** Open a build menu, or close it if it is the one already open. */
@@ -245,14 +249,33 @@ export class HudState {
     this.update();
   }
 
-  /** Close the dialog and restore the game speed it paused. */
+  /** Close the dialog and show the next one waiting, or restore the game speed it paused. */
   close() {
     this.dialog = null;
+    const s = this.host.sim.s;
+    this.line = this.line.filter((d) => stillDue(d.id, s));
+    const next = this.line.shift();
+    if (next) {
+      this.star = next.star;
+      this.open(next.id);
+      return;
+    }
     if (this.pausedBy !== null) {
       this.host.sim.s.speed = this.pausedBy;
       this.pausedBy = null;
     }
     this.update();
+  }
+
+  /** Show a dialog the game raised, or keep it in line behind the one showing. */
+  private raise(id: DialogId, star = 0) {
+    const showing = this.dialog === null ? null : { id: this.dialog, star: this.dialog === 'star' ? this.star : 0 };
+    const { show, line } = raise(showing, this.line, { id, star });
+    this.line = line;
+    if (show) {
+      this.star = show.star;
+      this.open(show.id);
+    }
   }
 
   /** Pause the game, remembering the speed to return to. */
@@ -269,11 +292,9 @@ export class HudState {
       if (e.type === 'sfx') audio.play(e.name);
       else if (e.type === 'toast') this.toast(e.text, e.kind, e.about);
       else if (e.type === 'announce') this.announce(e.text);
-      else if (e.type === 'star') {
-        this.star = e.stars;
-        this.open('star');
-      } else if (e.type === 'awards') this.open('awards');
-      else if (e.type === 'visit') this.open('visit');
+      else if (e.type === 'star') this.raise('star', e.stars);
+      else if (e.type === 'awards') this.raise('awards');
+      else if (e.type === 'visit') this.raise('visit');
       else this.float(e.text, e.kind, view.project(e.x, e.y, 1.6));
     }
   }
