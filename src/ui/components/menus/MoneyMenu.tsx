@@ -11,6 +11,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import type { MoneyTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
 import { cx } from '../../lib/cx';
+import { incomeSources, incomeVerdict, shareWord } from '../../lib/income';
 import { Button } from '../common/Button';
 import { LandTab } from './LandTab';
 import { MarketingTab } from './MarketingTab';
@@ -55,6 +56,32 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
   );
 }
 
+/** Where the money comes from: each source's take this month and last, with its share of this month's income. */
+function IncomeSources() {
+  const { sim } = useGame();
+  const s = sim.s;
+  const rows = incomeSources(s.ledger, s.lastLedger);
+  const verdict = incomeVerdict(s.ledger);
+  return (
+    <div class="ledger sources">
+      <h4>Where the money comes from</h4>
+      <div class="head">
+        <span>Source</span>
+        <b>This month</b>
+        <b>Last month</b>
+      </div>
+      {rows.map((r) => (
+        <div key={r.id} class={cx('source', r.healing ? 'healing' : 'side')}>
+          <span>{r.name}</span>
+          <b>{`${money(r.now)} · ${shareWord(r.share)}`}</b>
+          <b>{money(r.last)}</b>
+        </div>
+      ))}
+      {verdict && <p class="sub">{verdict}</p>}
+    </div>
+  );
+}
+
 /** This month and last, the monthly net chart, and the running totals. */
 function Books() {
   const { sim } = useGame();
@@ -66,6 +93,7 @@ function Books() {
         <LedgerTable title="This month" ledger={s.ledger} />
         <LedgerTable title="Last month" ledger={s.lastLedger} />
       </div>
+      <IncomeSources />
       {heights.length > 0 && (
         <>
           <div class="chart">
