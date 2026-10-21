@@ -44,6 +44,12 @@ export class PeopleLayer {
   update(t: number, dt: number) {
     const live = new Set<number>();
     const ends = streetEnds(this.sim.world.building, this.sim.world.w);
+    // the front door, between its two tiles in the front wall, that a guest who is fed up with waiting turns toward
+    const {
+      door: [left, right],
+      front,
+    } = this.sim.world.building;
+    const door = { x: (left + right + 1) / 2, y: front + 1 };
     for (const c of [...this.sim.s.guests, ...this.sim.s.staff, ...this.sim.s.visitors] as Char[]) {
       live.add(c.id);
       let rig = this.chars.get(c.id);
@@ -70,7 +76,7 @@ export class PeopleLayer {
       rig.pick.visible = shown;
       if (!shown && rig.smoke) rig.smoke.visible = false;
       if (!shown) continue;
-      poseChar(rig, c, t, dt, this.workStyle(c));
+      poseChar(rig, c, t, dt, this.workStyle(c), door);
       rig.group.scale.setScalar(size);
     }
     for (const [id, rig] of this.chars) {
