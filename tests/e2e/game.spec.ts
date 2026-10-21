@@ -1579,9 +1579,8 @@ test.describe('the Items menu', () => {
     expect(await game.eval((pp, [x, y]) => pp.sim.world.walkable(x!, y!), [clock.x, clock.y])).toBe(true);
     // in the middle of the view, clear of the panels
     await game.eval((pp, [x, y]) => pp.view.lookAt(x! + 0.5, y! + 0.5), [clock.x, clock.y]);
-    // long enough for the camera to glide there
-    await game.settle();
-    await page.waitForTimeout(500);
+    // once the camera has glided there, or the clock slides out from under the click
+    await game.cameraStill();
     await game.clickItem('wall_clock');
     await expect(page.locator('#inspector')).toContainText('Wall Clock');
     // turned round, its wall is cut low and it shows as a chip, which can still be clicked
@@ -1589,8 +1588,7 @@ test.describe('the Items menu', () => {
     await page.keyboard.press('KeyE');
     await page.keyboard.press('KeyE');
     await game.eval((pp, [x, y]) => pp.view.lookAt(x! + 0.5, y! + 0.5), [clock.x, clock.y]);
-    await game.settle();
-    await page.waitForTimeout(500);
+    await game.cameraStill();
     await game.clickItem('wall_clock');
     await expect(page.locator('#inspector')).toContainText('Wall Clock');
     await page.locator('#inspector').getByRole('button', { name: 'Move' }).click();
@@ -1598,8 +1596,7 @@ test.describe('the Items menu', () => {
     const moved = await game.eval((pp) => pp.state.items.find((it) => it.type === 'wall_clock')!);
     expect([moved.x, moved.y, moved.rot]).not.toEqual([clock.x, clock.y, clock.rot]);
     await game.eval((pp, [x, y]) => pp.view.lookAt(x! + 0.5, y! + 0.5), [moved.x, moved.y]);
-    await game.settle();
-    await page.waitForTimeout(500);
+    await game.cameraStill();
     await game.clickItem('wall_clock');
     await page.locator('#inspector').getByRole('button', { name: /Sell/ }).click();
     expect(await game.eval((pp) => pp.state.items.some((it) => it.type === 'wall_clock'))).toBe(false);
@@ -2863,9 +2860,8 @@ test.describe('turning the camera', () => {
     await page.locator('#sys').locator('[data-tip^="Turn the camera"]').click();
     await page.locator('#sys').locator('[data-tip^="Turn the camera"]').click();
     expect(await game.eval((pp) => pp.view.turn)).toBe(1);
-    // long enough for the camera to glide round
-    await game.settle();
-    await page.waitForTimeout(500);
+    // once the camera has glided round
+    await game.cameraStill();
     await game.clickRoom('massage');
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
     expect(game.errors).toEqual([]);
