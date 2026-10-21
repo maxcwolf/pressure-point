@@ -23,6 +23,10 @@ export function paintFloorTile(
   y: number,
 ) {
   const alt = (x + y) % 2 === 0;
+  // strokes and specks are drawn to look right on a tile 48 pixels across, and grow with it
+  const k = size / 48;
+  /** A place across the tile, from a fraction of it, kept 4 pixels (at 48 a tile) in from either edge. */
+  const in4 = (f: number) => 4 * k + f * (size - 8 * k);
   /** Fill a rectangle of the tile, measured in fractions of it. */
   const rect = (color: string, fx: number, fy: number, fw: number, fh: number) => {
     ctx.fillStyle = color;
@@ -43,8 +47,8 @@ export function paintFloorTile(
       rect(hash(x, y) > 0.5 ? '#8a949e' : '#7f8a95', 0, 0, 1, 1);
       rect('rgba(30,40,50,0.08)', 0.15 + hash(y, x) * 0.4, 0.2 + hash(x + 3, y) * 0.4, 0.3, 0.12);
       ctx.strokeStyle = 'rgba(235,240,245,0.35)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(px + 1, py + 1, size - 2, size - 2);
+      ctx.lineWidth = 2 * k;
+      ctx.strokeRect(px + k, py + k, size - 2 * k, size - 2 * k);
       break;
     }
     case 'terrazzo': {
@@ -53,7 +57,8 @@ export function paintFloorTile(
         const r = hash(x * 7 + i, y * 13 - i);
         ctx.fillStyle = FLECKS[i % FLECKS.length] ?? '#888';
         ctx.beginPath();
-        ctx.arc(px + hash(x + i * 3, y) * size, py + hash(x, y + i * 5) * size, 1 + r * 1.6, 0, Math.PI * 2);
+        // kept a little in from the edges, so no fleck is cut in half where the next tile is painted over it
+        ctx.arc(px + in4(hash(x + i * 3, y)), py + in4(hash(x, y + i * 5)), (1 + r * 1.6) * k, 0, Math.PI * 2);
         ctx.fill();
       }
       break;
@@ -89,10 +94,10 @@ export function paintFloorTile(
       ctx.fillStyle = '#f3d27a';
       for (let i = 0; i < 3; i++) {
         if (hash(x + i * 11, y - i * 7) < 0.45) continue;
-        const sx = px + hash(x - i, y + i * 2) * size;
-        const sy = py + hash(x + i * 2, y - i) * size;
+        const sx = px + in4(hash(x - i, y + i * 2));
+        const sy = py + in4(hash(x + i * 2, y - i));
         ctx.beginPath();
-        ctx.arc(sx, sy, i === 0 ? 2.2 : 1.3, 0, Math.PI * 2);
+        ctx.arc(sx, sy, (i === 0 ? 2.2 : 1.3) * k, 0, Math.PI * 2);
         ctx.fill();
       }
       break;
