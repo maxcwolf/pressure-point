@@ -1,8 +1,12 @@
 // A picture of every model on its own, from the model lab: each item, a guest with each condition, each role of
-// staff, each kind of visitor and the scenery. A change to a shared part shows up in every model that uses it.
+// staff, each kind of visitor, how people look as they feel (a waiting guest's patience, a face, staff with nothing to
+// do) and the scenery. A change to a shared part shows up in every model that uses it.
 import { expect, type Page, test } from '@playwright/test';
 
 import { CENTERS, CONDITIONS, ITEMS, ROLE_ORDER } from '../../src/core/data';
+
+/** The faces people make, other than at ease, each seen close up. */
+const FACES = ['delighted', 'unhappy', 'wince'].map((face) => `face:${face}`);
 
 /** Every model the lab shows, by its id there. */
 const IDS = [
@@ -25,6 +29,10 @@ const IDS = [
         : [],
     ),
   ),
+  // a waiting guest's patience running out, standing and on a bench; a face, seen close up; staff passing the time
+  ...['restless', 'impatient', 'fed-up'].flatMap((mood) => [`mood:${mood}`, `mood:${mood}-seated`]),
+  ...FACES,
+  ...['stretch', 'look', 'watch'].map((act) => `idle:${act}`),
   'scenery:trees',
   'scenery:pines',
   'scenery:beach',
@@ -36,9 +44,9 @@ const IDS = [
 // a small window keeps the pictures small; the stage is what is left beside the list of models
 test.use({ viewport: { width: 900, height: 600 } });
 
-/** Open the lab on one model, held still, with only the stage in view. */
+/** Open the lab on one model, held still, with only the stage in view: a face close up, anything else whole. */
 async function openLab(page: Page, id: string) {
-  await page.goto(`/lab.html?model=${encodeURIComponent(id)}&still`);
+  await page.goto(`/lab.html?model=${encodeURIComponent(id)}&still${FACES.includes(id) ? '&view=head' : ''}`);
   await page.addStyleTag({ content: '.caption, .panel { display: none !important; }' });
   await page.waitForFunction(() => window.lab?.ready);
 }
