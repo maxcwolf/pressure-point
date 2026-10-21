@@ -379,6 +379,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
     handsFree,
     // arms held stiff, flexed or frozen by a symptom show it, whatever else
     armsFree: visual !== 'stiff' && visual !== 'flex' && visual !== 'frost',
+    rightHolds: visual === 'mallet' || visual === 'leash',
     idle: idleAct(c.id, t - rig.idleSince),
     mood: moodOf(c),
     toDoor: door ? wrap(Math.atan2(door.x - c.x, door.y - c.y) - c.facing) : 0,
@@ -544,6 +545,8 @@ interface Doing {
   handsFree: boolean;
   /** Their arms are free to fold or set on the hips, not held stiff, flexed or frozen by a symptom. */
   armsFree: boolean;
+  /** Their right hand holds what shows their symptom, so only the left arm is free. */
+  rightHolds: boolean;
   /** What they are doing to pass the time, with nothing to do. */
   idle: ReturnType<typeof idleAct>;
   mood: Mood;
@@ -797,40 +800,40 @@ function passTime(life: Life, c: Char, t: number, act: { kind: IdleAct; amount: 
   return life;
 }
 
-// The arms' turns for each way of holding them, worked out so the hands land where they should on this body: the
-// arms forward, out, the elbows' bend and how far it turns inward.
-
-/** Fold the arms across the chest, the left forearm over the right. */
-function foldArms(life: Life, { armL, armR, armOut }: Doing) {
-  life.armL += toward(armL, -0.72, 1);
-  life.armR += toward(armR, -0.72, 1);
-  life.armOut += toward(armOut, -0.26, 1);
-  life.elbowL += bendTo(-0.72, -1.15, 1);
-  life.elbowR += bendTo(-0.72, -0.9, 1);
-  life.bendL = 1;
-  life.bendR = 1.1;
+/**
+ * A way of holding the arms, worked out so the hands land where they should on this body: how far the arms turn
+ * forward and out, how far each elbow bends, and how far each bend turns inward from straight ahead.
+ */
+interface Hold {
+  arm: number;
+  out: number;
+  elbowL: number;
+  elbowR: number;
+  bendL: number;
+  bendR: number;
 }
 
-/** Set the hands on the hips, the elbows out. */
-function handsOnHips(life: Life, { armL, armR, armOut }: Doing) {
-  life.armL += toward(armL, 0.32, 1);
-  life.armR += toward(armR, 0.32, 1);
-  life.armOut += toward(armOut, 0.48, 1);
-  life.elbowL += bendTo(0.32, -1.25, 1);
-  life.elbowR += bendTo(0.32, -1.25, 1);
-  life.bendL = life.bendR = 1.1;
-}
+/** The arms folded across the chest, the left forearm over the right. */
+const FOLDED: Hold = { arm: -0.72, out: -0.26, elbowL: -1.15, elbowR: -0.9, bendL: 1, bendR: 1.1 };
+/** The hands on the hips, the elbows out. */
+const ON_HIPS: Hold = { arm: 0.32, out: 0.48, elbowL: -1.25, elbowR: -1.25, bendL: 1.1, bendR: 1.1 };
+/** The head in the hands, sitting, leaning on the elbows. */
+const HEAD_IN_HANDS: Hold = { arm: -1.08, out: -0.4, elbowL: -1.4, elbowR: -1.4, bendL: 0.4, bendR: 0.4 };
 
-/** Sit with the head in the hands, leaning on the elbows. */
-function headInHands(life: Life, { armL, armR, armOut }: Doing) {
-  life.lean += 0.38;
-  life.headX += 0.32;
-  life.armL += toward(armL, -1.08, 1);
-  life.armR += toward(armR, -1.08, 1);
-  life.armOut += toward(armOut, -0.4, 1);
-  life.elbowL += bendTo(-1.08, -1.4, 1);
-  life.elbowR += bendTo(-1.08, -1.4, 1);
-  life.bendL = life.bendR = 0.4;
+/** Hold the arms a way: both, or the left alone, the right being busy holding something. */
+function hold(life: Life, { armL, armR, armOut }: Doing, h: Hold, both: boolean) {
+  life.armL += toward(armL, h.arm, 1);
+  life.elbowL += bendTo(h.arm, h.elbowL, 1);
+  life.bendL = h.bendL;
+  if (!both) {
+    // the left arm turned out on its own, leaving the right where it is
+    life.armInL += armOut - h.out;
+    return;
+  }
+  life.armR += toward(armR, h.arm, 1);
+  life.armOut += toward(armOut, h.out, 1);
+  life.elbowR += bendTo(h.arm, h.elbowR, 1);
+  life.bendR = h.bendR;
 }
 
 /**
@@ -839,7 +842,7 @@ function headInHands(life: Life, { armL, armR, armOut }: Doing) {
  * door. Arms a symptom holds keep to it, and the rest still shows.
  */
 function showMood(life: Life, c: Char, t: number, doing: Doing) {
-  const { mood, armsFree, toDoor } = doing;
+  const { mood, armsFree, rightHolds, toDoor } = doing;
   if (c.pose === 'lie' || c.pose === 'walk' || mood === 'content') return life;
   const sitting = c.pose === 'sit';
   if (mood === 'restless') {
@@ -859,7 +862,8 @@ function showMood(life: Life, c: Char, t: number, doing: Doing) {
     return life;
   }
   if (mood === 'impatient') {
-    if (armsFree) foldArms(life, doing);
+    // someone holding something in their right hand sets the other on their hip, rather than fold one arm
+    if (armsFree) hold(life, doing, rightHolds ? ON_HIPS : FOLDED, !rightHolds);
     const tap = Math.max(0, Math.sin(t * 10 + c.id));
     life.headX += 0.06;
     life.headYaw = Math.sin(t * 0.6 + c.id) * 0.25;
@@ -879,12 +883,14 @@ function showMood(life: Life, c: Char, t: number, doing: Doing) {
   // fed up: turned toward the door as far as they can, shaking their head
   const shake = Math.sin(t * 2.4 + c.id) * 0.14;
   if (sitting && armsFree) {
-    headInHands(life, doing);
+    life.lean += 0.38;
+    life.headX += 0.32;
+    hold(life, doing, HEAD_IN_HANDS, !rightHolds);
     life.headYaw = shake;
     return life;
   }
   if (!sitting) {
-    if (armsFree) handsOnHips(life, doing);
+    if (armsFree) hold(life, doing, ON_HIPS, !rightHolds);
     life.bodyYaw = THREE.MathUtils.clamp(toDoor, -1.1, 1.1);
     // a long sigh now and then
     life.bodyY += Math.max(0, Math.sin(t * 0.9 + c.id)) * 0.012;
