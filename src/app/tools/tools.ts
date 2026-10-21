@@ -32,7 +32,7 @@ import {
   assignHint,
   assignProblem,
   copyRoomHint,
-  doorHint,
+  DOOR_HINT,
   dragHint,
   MOVE_DOOR_HINT,
   moveHint,
@@ -650,7 +650,7 @@ export class Tools {
       this.drawRoomMove(t.roomId, t.copy, drawing);
     } else if (t.kind === 'template') {
       view.setGhost(null);
-      this.hint = templateHint(t.name, t.layout.type, copyCost(t.layout));
+      this.hint = templateHint(t.name, copyCost(t.layout));
       this.drawLayout(t.layout, drawing);
     } else if (t.kind === 'resize') {
       view.setGhost(null);
@@ -676,7 +676,7 @@ export class Tools {
       }
     } else if (t.phase === 'door') {
       view.setGhost(null);
-      this.hint = doorHint(t.type);
+      this.hint = DOOR_HINT;
       drawing.tiles.push(...rectTiles(t.rect, OV_BLUE));
       if (this.cursor) {
         const door = world.nearestDoor(t.rect, this.cursor.x, this.cursor.y);

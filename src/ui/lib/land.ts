@@ -62,10 +62,10 @@ export const daysToGo = (days: number) => `${days} ${days === 1 ? 'day' : 'days'
 
 /** The hint while the Expand tool is in hand: the plot pointed at and what it costs, or how to use the tool. */
 export function expandHint(o: PlotOffer | undefined): string {
-  if (!o) return '🏡 Expand · point at a plot of land to see what it costs · Esc when done';
-  const what = `🏡 ${o.name} · ${plotSize(o.def)}`;
+  if (!o) return 'Expand · point at a plot of land to see what it costs · Esc when done';
+  const what = `${o.name} · ${plotSize(o.def)}`;
   if (o.state === 'owned') return `${what} · yours · click to see it`;
-  if (o.state === 'building') return `${what} · 🚧 ${daysToGo(o.daysLeft)} · click to see it`;
+  if (o.state === 'building') return `${what} · being built, ${daysToGo(o.daysLeft)} · click to see it`;
   if (o.state === 'locked') return `${what} · ${money(o.price)}`;
   return `${what} · ${money(o.price)} · click to buy`;
 }

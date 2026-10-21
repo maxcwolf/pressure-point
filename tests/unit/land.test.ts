@@ -473,11 +473,11 @@ describe('how land is shown', () => {
 
   it('says what the plot pointed at costs, and how to buy it', () => {
     expect(expandHint(undefined)).toMatch(/point at a plot/);
-    expect(expandHint(wing)).toBe('🏡 The east wing · 8 × 15 tiles · $24,000 · click to buy');
+    expect(expandHint(wing)).toBe('The east wing · 8 × 15 tiles · $24,000 · click to buy');
     expect(expandHint(garden)).not.toMatch(/click to buy/);
-    expect(expandHint({ ...wing, state: 'owned' })).toBe('🏡 The east wing · 8 × 15 tiles · yours · click to see it');
+    expect(expandHint({ ...wing, state: 'owned' })).toBe('The east wing · 8 × 15 tiles · yours · click to see it');
     expect(expandHint({ ...wing, state: 'building', daysLeft: 1 })).toBe(
-      '🏡 The east wing · 8 × 15 tiles · 🚧 1 day to go · click to see it',
+      'The east wing · 8 × 15 tiles · being built, 1 day to go · click to see it',
     );
   });
 });

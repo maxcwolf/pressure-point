@@ -42,8 +42,7 @@ export function useSquares(item: HeldItem & { x: number; y: number }): UseSquare
 export function legend(type: ItemType): string {
   const staffed = ITEMS[type].access.map((a) => isStaffRole(a.role));
   const parts = [];
-  const who = workedBy(type);
-  if (staffed.includes(true)) parts.push(`${who.icon} purple square: ${who.name}`);
-  if (staffed.includes(false)) parts.push(`${GUEST_ICON} orange square: guests`);
+  if (staffed.includes(true)) parts.push(`purple square: ${workedBy(type).name}`);
+  if (staffed.includes(false)) parts.push('orange square: guests');
   return parts.length ? ` · ${parts.join(' · ')}` : '';
 }

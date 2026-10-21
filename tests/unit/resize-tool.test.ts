@@ -50,7 +50,7 @@ describe('dragging a wall', () => {
 
   it('says what the new size costs or gives back', () => {
     expect(RESIZE_HINT).toMatch(/Drag a wall/);
-    expect(resizeHint(ROOM, { ...ROOM, w: 5 }, 600)).toBe('↔️ 4×3 → 5×3 · costs $600 · release to resize');
-    expect(resizeHint(ROOM, { ...ROOM, w: 3 }, -300)).toBe('↔️ 4×3 → 3×3 · gives back $300 · release to resize');
+    expect(resizeHint(ROOM, { ...ROOM, w: 5 }, 600)).toBe('4×3 → 5×3 · costs $600 · release to resize');
+    expect(resizeHint(ROOM, { ...ROOM, w: 3 }, -300)).toBe('4×3 → 3×3 · gives back $300 · release to resize');
   });
 });
