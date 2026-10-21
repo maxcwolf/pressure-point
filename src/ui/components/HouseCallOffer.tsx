@@ -10,6 +10,7 @@ import { useGame, useHud } from '../hooks/use-hud';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
+import { IconText } from './common/Icon';
 
 /** The house call on offer: in full, with a button for each who could go, or tucked away as a button. */
 export function HouseCallOffer() {
@@ -29,7 +30,9 @@ export function HouseCallOffer() {
           hud.callAside = null;
         }}
       >
-        <span>{`🧳 House call on offer: ${timeLeftLabel(left.days)} to decide`}</span>
+        <span>
+          <IconText id="bubble-house-call">{`House call on offer: ${timeLeftLabel(left.days)} to decide`}</IconText>
+        </span>
         {timer}
       </Button>
     );
@@ -45,7 +48,9 @@ export function HouseCallOffer() {
       >
         ✕
       </Button>
-      <h3>🧳 House call</h3>
+      <h3>
+        <IconText id="bubble-house-call">House call</IconText>
+      </h3>
       <p>
         {`${call.client.charAt(0).toUpperCase()}${call.client.slice(1)} would like a `}
         <b>{callWants(call)}</b>

@@ -20,6 +20,7 @@ import { regularTag } from '../../lib/regulars';
 import { guestStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { IconText, Line } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
 
 /** The chance a diagnosed guest's treatment works, if given now, or what it is waiting on. */
@@ -42,7 +43,12 @@ function CalmButton({ guest: g }: { guest: Guest }) {
   const { sim, audio } = useGame();
   const o = sim.s.outbreak;
   if (!o || g.state === 'leaving') return null;
-  if (g.calmed) return <p class="sub calmed">😌 Has had a calming session</p>;
+  if (g.calmed)
+    return (
+      <p class="sub calmed">
+        <IconText id="bubble-relieved">Has had a calming session</IconText>
+      </p>
+    );
   return (
     <Button
       class="go calm"
@@ -52,7 +58,7 @@ function CalmButton({ guest: g }: { guest: Guest }) {
         if (!sim.calm(g.id)) audio.play('error');
       }}
     >
-      {`😌 Calm them (${o.calms} left)`}
+      <IconText id="bubble-relieved">{`Calm them (${o.calms} left)`}</IconText>
     </Button>
   );
 }
@@ -63,7 +69,9 @@ function ClassgoerInfo({ guest: g }: { guest: Guest }) {
   return (
     <>
       <h3>{g.name}</h3>
-      <p class="tag">☯️ Class-goer</p>{' '}
+      <p class="tag">
+        <IconText id="room-qigong">Class-goer</IconText>
+      </p>{' '}
       <p>{`Here for ${WEEKDAYS[weekday(g.classDay)] ?? ''}’s Qi Gong class, at ${money(Math.round(CLASS_FEE * sim.priceFor('qigong')))} a place.`}</p>{' '}
       <p class="status">{guestStatus(g, sim)}</p>{' '}
       <label>
@@ -85,7 +93,9 @@ function Feelings({ guest: g }: { guest: Guest }) {
       <h4>How they feel</h4>
       <div class="feelings">
         {g.feelings.map((f) => (
-          <span key={f} class={FEELINGS[f].good ? 'good' : 'bad'}>{`${FEELINGS[f].icon} ${FEELINGS[f].text}`}</span>
+          <span key={f} class={FEELINGS[f].good ? 'good' : 'bad'}>
+            <IconText id={FEELINGS[f].icon}>{FEELINGS[f].text}</IconText>
+          </span>
         ))}
       </div>
     </>
@@ -104,7 +114,17 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
   return (
     <>
       <h3>{g.name}</h3>
-      <p class="tag">{g.emergency ? '🚨 Emergency guest' : regular ? regularTag(regular) : 'Guest'}</p>{' '}
+      <p class="tag">
+        <Line
+          line={
+            g.emergency
+              ? { icon: 'ui-emergency', text: 'Emergency guest' }
+              : regular
+                ? regularTag(regular)
+                : { text: 'Guest' }
+          }
+        />
+      </p>{' '}
       <p>
         <b>{known ? c.name : 'Undiagnosed'}</b>
         <br />
@@ -117,7 +137,11 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
         </>
       )}{' '}
       {g.state !== 'leaving' && <ChanceLine guest={g} />}{' '}
-      {g.scanned && <p class="sub scanned">{`📐 Scanned: ${percent(SCAN_SUCCESS)} more chance of success`}</p>}{' '}
+      {g.scanned && (
+        <p class="sub scanned">
+          <IconText id="item-posture-scanner">{`Scanned: ${percent(SCAN_SUCCESS)} more chance of success`}</IconText>
+        </p>
+      )}{' '}
       <p class="status">{guestStatus(g, sim)}</p>{' '}
       <label title="It worsens while they wait, faster with some conditions. The worse it gets, the less likely their treatment is to work, and if it runs out they go home worse off.">
         Condition
@@ -154,7 +178,7 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
             sim.sendHome(g.id);
           }}
         >
-          🏠 Send home
+          <IconText id="bubble-going-home">Send home</IconText>
         </Button>
       )}
     </>

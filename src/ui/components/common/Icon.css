@@ -7,3 +7,14 @@
   vertical-align: middle;
   pointer-events: none;
 }
+
+/* words with an icon before them: the icon keeps to the first line, and the words wrap beside it */
+.icon-text {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.35em;
+}
+
+.icon-text > .icon {
+  margin-top: -0.12em;
+}

@@ -188,21 +188,25 @@ describe('the upgrades in the inspector', () => {
     const it = { ...kit('massage_table', 0, true), id: 7, serving: 0 };
     const mechanic = { name: 'Hamish', job: { kind: 'install', id: 7 }, state: 'toJob' } as Staff;
     expect(installStatus({ ...it, upgradePaid: false }, [])).toBe('');
-    expect(installStatus(it, [])).toBe('⚙️ Waiting for a Mechanic to install the upgrade');
-    expect(installStatus(it, [mechanic])).toBe('⚙️ Hamish is on the way to install the upgrade');
+    expect(installStatus(it, [])).toBe('Waiting for a Mechanic to install the upgrade');
+    expect(installStatus(it, [mechanic])).toBe('Hamish is on the way to install the upgrade');
     const working = { ...mechanic, state: 'doingJob' } as Staff;
     expect(installStatus({ ...it, serving: 3 }, [working])).toBe(
-      '⚙️ Hamish will install the upgrade once this guest is done',
+      'Hamish will install the upgrade once this guest is done',
     );
-    expect(installStatus(it, [working])).toBe('⚙️ Hamish is installing the upgrade');
+    expect(installStatus(it, [working])).toBe('Hamish is installing the upgrade');
   });
 
   it('says a station is closed while an upgrade goes in, not that it needs staff', () => {
     const it = { ...kit('massage_table', 0, true), claimedBy: 5, serving: 0 };
-    expect(staffingStatus(it, undefined, 'Massage Therapist')).toBe('⚙️ Closed while an upgrade is installed');
-    expect(staffingStatus({ ...it, claimedBy: 0 }, undefined, 'Massage Therapist')).toBe(
-      '⚠️ Needs a Massage Therapist',
-    );
-    expect(staffingStatus(it, { name: 'Bea' } as Staff, 'Massage Therapist')).toBe('Staffed by Bea');
+    expect(staffingStatus(it, undefined, 'Massage Therapist')).toEqual({
+      icon: 'bubble-installing',
+      text: 'Closed while an upgrade is installed',
+    });
+    expect(staffingStatus({ ...it, claimedBy: 0 }, undefined, 'Massage Therapist')).toEqual({
+      icon: 'ui-warning',
+      text: 'Needs a Massage Therapist',
+    });
+    expect(staffingStatus(it, { name: 'Bea' } as Staff, 'Massage Therapist')).toEqual({ text: 'Staffed by Bea' });
   });
 });

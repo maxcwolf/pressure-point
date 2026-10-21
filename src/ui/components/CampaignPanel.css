@@ -119,11 +119,9 @@
   padding: 6px 10px;
 }
 
-.shop i,
-.feats i {
-  font-style: normal;
-  font-size: 22px;
-  text-align: center;
+.shop > li > .icon,
+.feats > li > .icon {
+  justify-self: center;
 }
 
 .shop b,

@@ -8,6 +8,7 @@ import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { drawNote, gradeEffects, gradeProgress, rivalOpening } from '../../lib/standing';
 import { Bar } from '../common/Bar';
+import { IconText } from '../common/Icon';
 
 /** The rival across the street: how it stands against the center, its sale, and what it has done so far. */
 function Rival() {
@@ -20,7 +21,9 @@ function Rival() {
   const most = Math.max(ours, theirs, 1);
   return (
     <div class="rival">
-      <h4>{`🏪 ${RIVAL_NAME}, across the street`}</h4>
+      <h4>
+        <IconText id="ui-rival">{`${RIVAL_NAME}, across the street`}</IconText>
+      </h4>
       <p class="sub">{rivalOpening(r.opened, s.rivalOn)}</p>
       {open && (
         <>
@@ -55,7 +58,9 @@ export function StandingTab() {
   const progress = gradeProgress(points.total, s.grade);
   return (
     <div class="standing">
-      <h4 class="grade-now">{`${here.icon} ${here.name}`}</h4>
+      <h4 class="grade-now">
+        <IconText id={here.icon}>{here.name}</IconText>
+      </h4>
       <p class="sub">
         Standing comes from the rooms built, how fine they are, and the staff and their ranks. A grade once reached is
         kept.
@@ -70,7 +75,9 @@ export function StandingTab() {
       <ol class="grades">
         {GRADES.map((g, i) => (
           <li key={g.name} class={cx(i <= s.grade && 'reached', i === s.grade && 'now')}>
-            <span>{`${g.icon} ${g.name}`}</span>
+            <span>
+              <IconText id={g.icon}>{g.name}</IconText>
+            </span>
             <small>{i === 0 ? 'Where everyone starts' : `${g.points} points`}</small>
           </li>
         ))}

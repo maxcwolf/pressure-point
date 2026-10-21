@@ -7,6 +7,7 @@ import { money } from '../../core/format';
 import { useGame } from '../hooks/use-hud';
 import { wholeDaysLeft } from '../lib/emergency';
 import { Bar } from './common/Bar';
+import { IconText } from './common/Icon';
 import { StarRow } from './common/Stars';
 
 /** The challenge a member of staff has set, if any: what it asks, how far along it is, and the days left. */
@@ -17,7 +18,9 @@ function ChallengeCard() {
   if (!ch || !o) return null;
   return (
     <div class="challenge">
-      <b>{`🎯 ${ch.staffName}'s challenge`}</b>{' '}
+      <b>
+        <IconText id="ui-target">{`${ch.staffName}'s challenge`}</IconText>
+      </b>{' '}
       <span>{`${o.label} · ${wholeDaysLeft(ch.deadline - sim.s.day)} days left · ${money(ch.reward)}`}</span>
       <Bar value={o.progress * 100} class="thin gold" />
     </div>
@@ -31,7 +34,9 @@ function OutbreakCard() {
   if (!o) return null;
   return (
     <div class="emergency outbreak">
-      <b>😰 Stress outbreak</b>{' '}
+      <b>
+        <IconText id="bubble-stressed">Stress outbreak</IconText>
+      </b>{' '}
       <span>
         {`${o.calms} calming session${o.calms === 1 ? '' : 's'} left · ${o.lost}/${o.lostMax} lost · ${wholeDaysLeft(o.deadline - sim.s.day)} days left`}
       </span>
@@ -76,7 +81,9 @@ export function Objectives() {
       <OutbreakCard />
       {emergency && (
         <div class="emergency">
-          <b>{`🚨 Emergency: ${conditionOf(emergency.condition).name}`}</b>{' '}
+          <b>
+            <IconText id="ui-emergency">{`Emergency: ${conditionOf(emergency.condition).name}`}</IconText>
+          </b>{' '}
           <span>
             {`${emergency.healed}/${emergency.target} healed · ${wholeDaysLeft(emergency.deadline - s.day)} days left`}
           </span>

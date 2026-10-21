@@ -11,6 +11,7 @@ import { useGame } from '../../hooks/use-hud';
 import { plotSize, roomsOnPlot } from '../../lib/land';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { IconText } from '../common/Icon';
 
 /** A bought plot: its name to change, the builders' progress while they are at work, then the rooms on it. */
 export function PlotInfo({ offer }: { offer: PlotOffer }) {
@@ -40,11 +41,15 @@ export function PlotInfo({ offer }: { offer: PlotOffer }) {
           }}
         />
       </h3>
-      <p class="tag">{offer.name === def.name ? `🏡 ${plotSize(def)}` : `🏡 ${def.name} · ${plotSize(def)}`}</p>
+      <p class="tag">
+        <IconText id="ui-expand">{offer.name === def.name ? plotSize(def) : `${def.name} · ${plotSize(def)}`}</IconText>
+      </p>
       {offer.state === 'building' ? (
         <>
           <p class="status">
-            {`🚧 The builders are at work: done in ${offer.daysLeft} ${offer.daysLeft === 1 ? 'day' : 'days'}`}
+            <IconText id="ui-building">
+              {`The builders are at work: done in ${offer.daysLeft} ${offer.daysLeft === 1 ? 'day' : 'days'}`}
+            </IconText>
           </p>
           <Bar value={offer.progress * 100} />
           <p class="sub">The building grows into it once they are done.</p>
@@ -61,7 +66,7 @@ export function PlotInfo({ offer }: { offer: PlotOffer }) {
                       tools.select({ kind: 'room', id: r.id });
                     }}
                   >
-                    {`${ROOMS[r.type].icon} ${labels.get(r.id) ?? ROOMS[r.type].name}`}
+                    <IconText id={ROOMS[r.type].icon}>{labels.get(r.id) ?? ROOMS[r.type].name}</IconText>
                   </Button>
                 </li>
               ))}

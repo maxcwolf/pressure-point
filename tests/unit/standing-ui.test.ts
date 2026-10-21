@@ -48,7 +48,7 @@ describe('the rival, in words', () => {
 
   it('warns how long someone has to be cheered up before taking its offer', () => {
     expect(offerWarning(5)).toBe(
-      `🏪 ${RIVAL_NAME} has offered them a job. Lift their morale above 35 within 5 days, or they will take it.`,
+      `${RIVAL_NAME} has offered them a job. Lift their morale above 35 within 5 days, or they will take it.`,
     );
     expect(offerWarning(1)).toContain('above 35 within 1 day,');
     expect(offerWarning(1.4)).toContain('above 35 within 2 days,');

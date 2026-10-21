@@ -93,7 +93,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
       <h4>Unlocks</h4>
       <ul>
         <SettingRow
-          icon="🔓"
+          icon="ui-unlock"
           name="Everything unlocked"
           desc="Every room, item and treatment from day one, instead of opening them up star by star."
           on={settings.unlockAll}
@@ -107,7 +107,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
       <h4>Events</h4>
       <ul>
         <SettingRow
-          icon="🎯"
+          icon="ui-target"
           name="Staff challenges"
           desc="Now and then a member of staff sets the center an objective with a deadline, for a reward."
           on={settings.challenges}
@@ -118,7 +118,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           }}
         />
         <SettingRow
-          icon="😰"
+          icon="bubble-stressed"
           name="Stress outbreaks"
           desc="From the second star, an outbreak of stress may be offered, to be calmed before it spreads."
           on={settings.outbreaks}
@@ -129,7 +129,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           }}
         />
         <SettingRow
-          icon="🌡️"
+          icon="overlay-temperature"
           name="Weather"
           desc="Cold winters and warm summers that radiators and air conditioners keep out. Off, it is always just right."
           on={settings.weather}
@@ -140,7 +140,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           }}
         />
         <SettingRow
-          icon="🕶️"
+          icon="ui-vip"
           name="VIPs and inspections"
           desc="VIPs who write ahead and judge a few rooms, and a health inspector who checks them all."
           on={settings.visits}
@@ -151,7 +151,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           }}
         />
         <SettingRow
-          icon="🏪"
+          icon="ui-rival"
           name="Rival center"
           desc="A franchise across the street that holds sales, hires away unhappy staff and competes for Center of the Year."
           on={settings.rival}
@@ -162,7 +162,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           }}
         />
         <SettingRow
-          icon="🚨"
+          icon="ui-emergency"
           name="Mishaps"
           desc="Power cuts, storms, freezes and wasps, each warned of a few days ahead."
           on={settings.mishaps}
@@ -173,7 +173,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           }}
         />
         <SettingRow
-          icon="🏦"
+          icon="ui-loan"
           name="Bankruptcy"
           desc="A payday the bank cannot cover asks you to borrow the wages, and if it cannot lend enough, gives you a few days to find them. Fail, and the game is lost. Off, the bank just goes into the red."
           on={settings.bankruptcy}

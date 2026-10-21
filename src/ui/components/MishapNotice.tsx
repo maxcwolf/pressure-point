@@ -7,6 +7,7 @@ import { useGame, useHud } from '../hooks/use-hud';
 import { mishapLine, noticeShare, preparedNote, startsIn } from '../lib/mishaps';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
+import { IconText } from './common/Icon';
 
 /** The mishap coming or under way: in full with Prepare while undecided, otherwise a line with its countdown. */
 export function MishapNotice() {
@@ -20,7 +21,9 @@ export function MishapNotice() {
   if (m.started)
     return (
       <div class="panel offer-pill mishap-pill on">
-        <span>{mishapLine(def, m, left)}</span>
+        <span>
+          <IconText id={def.icon}>{mishapLine(def, m, left)}</IconText>
+        </span>
       </div>
     );
   const timer = <Bar value={noticeShare(left) * 100} class={left < 1 ? 'thin bad' : 'thin need'} />;
@@ -33,13 +36,17 @@ export function MishapNotice() {
           hud.mishapAside = null;
         }}
       >
-        <span>{mishapLine(def, m, left)}</span>
+        <span>
+          <IconText id={def.icon}>{mishapLine(def, m, left)}</IconText>
+        </span>
         {timer}
       </Button>
     );
   return (
     <div class="panel offer mishap">
-      <h3>{`${def.icon} ${def.name} coming`}</h3>
+      <h3>
+        <IconText id={def.icon}>{`${def.name} coming`}</IconText>
+      </h3>
       <p>{def.harm}</p>
       <p class="sub">{preparedNote(def)}</p>
       <div class="time-left">
@@ -66,7 +73,7 @@ export function MishapNotice() {
               sim.askWard();
             }}
           >
-            🪶 Ward it off
+            <IconText id="discipline-shaman">Ward it off</IconText>
           </Button>
         )}
         <Button

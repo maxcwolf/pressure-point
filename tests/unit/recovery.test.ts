@@ -136,7 +136,15 @@ describe('a guest after a hard treatment', () => {
 describe('the Treatments menu', () => {
   it('says which treatments need a rest, and warns without a lounge', () => {
     expect(restNote(undefined, false)).toBeNull();
-    expect(restNote(true, true)).toEqual({ ok: true, text: '🛌 Rest after, in the Recovery Lounge' });
-    expect(restNote(true, false)).toEqual({ ok: false, text: '⚠️ Rest after: needs a Recovery Lounge' });
+    expect(restNote(true, true)).toEqual({
+      ok: true,
+      icon: 'room-recovery',
+      text: 'Rest after, in the Recovery Lounge',
+    });
+    expect(restNote(true, false)).toEqual({
+      ok: false,
+      icon: 'ui-warning',
+      text: 'Rest after: needs a Recovery Lounge',
+    });
   });
 });

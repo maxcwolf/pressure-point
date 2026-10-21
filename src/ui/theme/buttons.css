@@ -17,12 +17,6 @@
   transition: transform 0.08s;
 }
 
-.round i {
-  font-style: normal;
-  font-size: 26px;
-  line-height: 1.1;
-}
-
 .round span {
   font-size: 12.5px;
   font-weight: 600;

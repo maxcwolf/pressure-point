@@ -102,7 +102,7 @@ describe('an item in hand', () => {
     expect(arcade.map((e) => e.text)).toContain('Noisier at 1 treatment table');
     expect(arcade.find((e) => e.text.startsWith('Calm here'))?.tone).toBe('bad');
     const fountain = placeEffects(sim, sim.previewItem({ type: 'fountain', x: 13, y: 10, rot: 0 }));
-    expect(fountain.find((e) => e.icon === '🌿')?.tone).toBe('good');
+    expect(fountain.find((e) => e.icon === 'overlay-decor')?.tone).toBe('good');
   });
 
   it('keeps the overlay showing, if it is one an item changes, and colors it as if the item were down', () => {
@@ -175,7 +175,7 @@ describe('a heater in hand', () => {
   };
 
   it('warms its spot to just right in the cold, and says it would be off while the weather is nice', () => {
-    const winter = radiatorOn(midMonth(0)).find((e) => e.icon === '🌡️');
+    const winter = radiatorOn(midMonth(0)).find((e) => e.icon === 'overlay-temperature');
     expect(winter?.text).toMatch(/→ 71°F here, just right$/);
     expect(winter?.tone).toBe('good');
     expect(radiatorOn(midMonth(6)).map((e) => e.text)).toEqual(['Off for now: the weather is nice']);

@@ -6,6 +6,7 @@ import { missNote } from '../../core/sim/classes';
 import type { Sim } from '../../core/sim/sim';
 import { courseName } from '../../core/sim/training';
 import type { Guest, Staff } from '../../core/state/types';
+import type { IconLine } from './icon-line';
 
 export { courseName };
 
@@ -167,11 +168,13 @@ export function moraleLook(morale: number): string {
 }
 
 /** A warning about someone on course to quit, from the days they have left; empty while they are not. */
-export function quitWarning(days: number | null): string {
-  if (days === null) return '';
+export function quitWarning(days: number | null): IconLine | null {
+  if (days === null) return null;
   const left = Math.max(1, Math.ceil(days));
   const plural = left === 1 ? 'day' : 'days';
-  return days <= 2 ? `⚠️ About to quit: ${left} ${plural} left` : `😠 Miserable: will quit in ${left} ${plural}`;
+  return days <= 2
+    ? { icon: 'ui-warning', text: `About to quit: ${left} ${plural} left` }
+    : { icon: 'bubble-angry', text: `Miserable: will quit in ${left} ${plural}` };
 }
 
 /** The staff waiting on an answer about a raise, in payroll order. Anyone already on their way out is past asking. */

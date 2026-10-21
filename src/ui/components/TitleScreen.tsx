@@ -17,6 +17,7 @@ import backdrop from '../theme/backdrop.jpg';
 import logo from '../theme/logo.png';
 import { CampaignPanel } from './CampaignPanel';
 import { ChangelogPanel } from './ChangelogPanel';
+import { Icon, IconText } from './common/Icon';
 import { Dialog } from './dialogs/Dialog';
 import { SandboxPanel } from './SandboxPanel';
 import { SavesPanel } from './SavesPanel';
@@ -99,7 +100,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
             audio.toggleSound();
           })}
         >
-          {audio.sound ? '🔊' : '🔇'}
+          <Icon id={audio.sound ? 'ui-sound' : 'ui-mute'} size={22} />
         </button>{' '}
         <button
           class={cx('round small', !audio.music && 'off')}
@@ -109,7 +110,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
             audio.toggleMusic();
           })}
         >
-          🎵
+          <Icon id="ui-music" size={22} />
         </button>
       </div>
       <div class="title-stack">
@@ -140,11 +141,17 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
               <h2>{latest.name}</h2>
               {latest.center && latest.center !== 'sandbox' && <p class="center-name">{CENTERS[latest.center].name}</p>}
               <div class="save-card-body">
-                {picture ? <img class="save-thumb" src={picture} alt="" /> : <div class="save-thumb empty">💆</div>}
+                {picture ? (
+                  <img class="save-thumb" src={picture} alt="" />
+                ) : (
+                  <div class="save-thumb empty">
+                    <Icon id="ui-treatments" size={48} />
+                  </div>
+                )}
                 <ul>
                   {saveFacts(latest).map((f) => (
                     <li key={f.icon}>
-                      <i>{f.icon}</i>
+                      <Icon id={f.icon} size={20} />
                       {f.text}
                     </li>
                   ))}
@@ -238,7 +245,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
                 setAskingToUpdate(true);
               }}
             >
-              🎁 Update to the latest version
+              <IconText id="ui-update">Update to the latest version</IconText>
             </button>
           )}
           <button
@@ -248,13 +255,13 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
               open('changes');
             }}
           >
-            📜 What’s new
+            <IconText id="ui-news">What’s new</IconText>
           </button>
         </div>
         <div class="title-tray" hidden={!!showing}>
           {badges.map((b) => (
             <span key={b.label} class={cx('title-badge', !b.on && 'off')} title={b.label} aria-label={b.label}>
-              {b.icon}
+              <Icon id={b.icon} size="62%" />
             </span>
           ))}
         </div>

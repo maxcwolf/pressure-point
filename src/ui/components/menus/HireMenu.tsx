@@ -10,6 +10,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import { hireableRoles } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
+import { IconText } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
 import { Stars } from '../common/Stars';
 
@@ -33,7 +34,7 @@ export function HireMenu() {
               hud.hireRole = r;
             }}
           >
-            {`${ROLES[r].icon} ${ROLES[r].name}`}
+            <IconText id={ROLES[r].icon}>{ROLES[r].name}</IconText>
           </Button>
         ))}
       </div>

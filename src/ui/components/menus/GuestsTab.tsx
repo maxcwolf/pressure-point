@@ -16,6 +16,7 @@ import {
   trainingWord,
 } from '../../lib/demand';
 import { Bar } from '../common/Bar';
+import { IconText } from '../common/Icon';
 
 /** One thing that draws guests to a discipline: what it is, what it comes to, and how it multiplies the pull. */
 function Factor({ name, value, by, bar }: { name: string; value: string; by: number; bar?: number }) {
@@ -36,7 +37,9 @@ function Row({ row, healed }: { row: DisciplineDemand; healed: number }) {
   return (
     <div class="demand-row">
       <div class="demand-head">
-        <b>{`${def.icon} ${def.name}`}</b>
+        <b>
+          <IconText id={def.icon}>{def.name}</IconText>
+        </b>
         <Bar value={row.share * 100} class="blue" />
         <em>{`${Math.round(row.share * 100)}% of new guests`}</em>
       </div>

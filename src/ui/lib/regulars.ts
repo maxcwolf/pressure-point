@@ -3,6 +3,7 @@
 import { LOYALTY_NAMES } from '../../core/data';
 import { loyaltyLevel } from '../../core/sim/regulars';
 import type { Regular } from '../../core/state/types';
+import type { IconLine } from './icon-line';
 
 /** A number as a position: 1st, 2nd, 3rd, 4th, 11th, 21st. */
 export function ordinal(n: number): string {
@@ -12,10 +13,10 @@ export function ordinal(n: number): string {
 }
 
 /** A regular's tag: how loyal they are, and which visit this is. */
-export function regularTag(r: Pick<Regular, 'loyalty' | 'visits'>): string {
+export function regularTag(r: Pick<Regular, 'loyalty' | 'visits'>): IconLine {
   const level = loyaltyLevel(r.loyalty);
-  const who = level === 'regular' ? '👋 Regular' : `💛 ${LOYALTY_NAMES[level]} regular`;
-  return `${who}, on their ${ordinal(r.visits)} visit`;
+  const who = level === 'regular' ? 'Regular' : `${LOYALTY_NAMES[level]} regular`;
+  return { icon: level === 'regular' ? 'ui-regular' : 'ui-loyal', text: `${who}, on their ${ordinal(r.visits)} visit` };
 }
 
 /** When a regular is next in: here now, due back in so many days, or any time. */

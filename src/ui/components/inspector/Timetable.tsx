@@ -8,6 +8,7 @@ import { bookingNote, classNote, placesNote, weekNote } from '../../lib/classes'
 import { cx } from '../../lib/cx';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { IconText, Line } from '../common/Icon';
 
 /** Who leads a studio's classes, how its spots stand, the days it holds classes and how its next class is filling. */
 export function Timetable({ room }: { room: Room }) {
@@ -21,9 +22,15 @@ export function Timetable({ room }: { room: Room }) {
   const leader = sim.classLeader();
   return (
     <div class="timetable">
-      <p class="status">{staff ? `Led by ${staff.name}` : `⚠️ Needs a ${ROLES.instructor.name}`}</p>{' '}
+      <p class="status">
+        {staff ? `Led by ${staff.name}` : <IconText id="ui-warning">{`Needs a ${ROLES.instructor.name}`}</IconText>}
+      </p>{' '}
       <p class="sub">{classNote(standing, spots.length, lead?.progress ?? 0)}</p>
-      {leader && <p class="sub">{placesNote(spots.length, leader.places, leader.staff.skill)}</p>}
+      {leader && (
+        <p class="sub">
+          <Line line={placesNote(spots.length, leader.places, leader.staff.skill)} />
+        </p>
+      )}
       {!!lead?.progress && <Bar value={lead.progress * 100} class="blue" />}
       <p>
         <b>Timetable</b>

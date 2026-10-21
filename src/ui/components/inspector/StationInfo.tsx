@@ -14,6 +14,7 @@ import { matsNote, sessionNote } from '../../lib/sessions';
 import { staffingStatus } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { Icon, IconText, Line } from '../common/Icon';
 
 /** One guest in a station's line: who they are, how they are holding up, and buttons to move them or send them home. */
 function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: number }) {
@@ -32,7 +33,7 @@ function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: nu
           hud.show({ kind: 'guest', id: g.id });
         }}
       >
-        {`${index + 1}. ${g.emergency ? '🚨 ' : ''}${g.name}`}
+        <IconText id={g.emergency ? 'ui-emergency' : undefined}>{`${index + 1}. ${g.name}`}</IconText>
       </Button>
       <Bar value={g.patience} class={cx('patience', g.patience < 25 && 'bad')} />
       {chance && staff && (
@@ -75,7 +76,7 @@ function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: nu
             sim.sendHome(g.id);
           }}
         >
-          🏠
+          <Icon id="bubble-going-home" size="1.25em" />
         </Button>
       </span>
     </li>
@@ -95,7 +96,9 @@ export function StationInfo({ item }: { item: Item }) {
     // a Qi Gong Studio's mat and spots: who leads the class, and who is on the spot
     return (
       <>
-        <p class="status">{staffingStatus(item, staff, ROLES[def.staff].name)}</p>{' '}
+        <p class="status">
+          <Line line={staffingStatus(item, staff, ROLES[def.staff].name)} />
+        </p>{' '}
         {def.goal === 'class' && (
           <p class="sub">{guest ? `${guest.name} is on this spot` : 'Nobody is on this spot'}</p>
         )}
@@ -106,15 +109,23 @@ export function StationInfo({ item }: { item: Item }) {
     const session = sim.session(item);
     return (
       <>
-        <p class="status">{staffingStatus(item, staff, ROLES[def.staff].name)}</p>{' '}
+        <p class="status">
+          <Line line={staffingStatus(item, staff, ROLES[def.staff].name)} />
+        </p>{' '}
         <p class="sub">{sessionNote(session.lying, session.mats, session.playing)}</p>
-        {staff && <p class="sub">{matsNote(session.mats, matsPlayed(staff.skill), staff.skill)}</p>}
+        {staff && (
+          <p class="sub">
+            <Line line={matsNote(session.mats, matsPlayed(staff.skill), staff.skill)} />
+          </p>
+        )}
       </>
     );
   }
   return (
     <>
-      <p class="status">{staffingStatus(item, staff, ROLES[def.staff].name)}</p>{' '}
+      <p class="status">
+        <Line line={staffingStatus(item, staff, ROLES[def.staff].name)} />
+      </p>{' '}
       <p class="sub">{`In line: ${item.queue.length}${guest ? ` · Seeing ${guest.name}` : ''}`}</p>
       {guest && <Bar value={item.progress * 100} class="blue" />}
       {busy && <p class="sub">{busy}</p>}
@@ -143,7 +154,7 @@ function Mushrooms() {
           sim.setMushrooms(!s.mushrooms);
         }}
       >
-        {mushroomSwitch(s.mushrooms)}
+        <IconText id="bubble-mushroom">{mushroomSwitch(s.mushrooms)}</IconText>
       </Button>
       <p class="sub">{mushroomNote(s.mushrooms, s.mushroomsStashed)}</p>
     </>

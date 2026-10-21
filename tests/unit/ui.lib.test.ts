@@ -144,20 +144,20 @@ describe('what it takes to offer a discipline', () => {
 
 describe('what a star unlocks', () => {
   it('lists needling at star one', () => {
-    expect(treatmentsUnlockedAt(1, allOn).join(' ')).toContain('Needling');
+    expect(treatmentsUnlockedAt(1, allOn).map((t) => t.text)).toContain('Classic Needling');
   });
 
   it('says treatment rooms bring in new guests, and what any other room is for', () => {
     expect(newRoomsText(1, allOn)).toBe(
-      `${ROOMS.acupuncture.icon} Acupuncture Clinic, ${ROOMS.sound.icon} Sound Bath Studio. Build one and hire its staff to bring in a new kind of guest. ${ROOMS.recovery.icon} Recovery Lounge: ${ROOMS.recovery.desc}`,
+      `Acupuncture Clinic, Sound Bath Studio. Build one and hire its staff to bring in a new kind of guest. Recovery Lounge: ${ROOMS.recovery.desc}`,
     );
-    expect(newRoomsText(1, massageOnly)).toBe(`${ROOMS.recovery.icon} Recovery Lounge: ${ROOMS.recovery.desc}`);
+    expect(newRoomsText(1, massageOnly)).toBe(`Recovery Lounge: ${ROOMS.recovery.desc}`);
     expect(newRoomsText(3, allOn)).toBe('');
   });
 
   it('leaves out anything from a discipline that is switched off', () => {
     expect(newRoomsText(1, massageOnly)).not.toContain('Acupuncture');
-    expect(treatmentsUnlockedAt(1, massageOnly).join(' ')).not.toContain('Needling');
+    expect(treatmentsUnlockedAt(1, massageOnly).map((t) => t.text)).not.toContain('Classic Needling');
   });
 });
 

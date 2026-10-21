@@ -3,10 +3,13 @@
 import { ASPECT_NOTES, VIP_DELIGHTED, VIP_DISAPPOINTED } from '../../core/data';
 import { money } from '../../core/format';
 import type { RoomVerdict, Visitor, VisitReport } from '../../core/state/types';
+import type { IconLine } from './icon-line';
 
 /** The heading of a visit's report. */
-export function reportHeading(r: VisitReport): string {
-  return r.visit === 'inspector' ? '📋 The inspection' : `🕶️ ${r.name}'s visit`;
+export function reportHeading(r: VisitReport): IconLine {
+  return r.visit === 'inspector'
+    ? { icon: 'bubble-inspecting', text: 'The inspection' }
+    : { icon: 'ui-vip', text: `${r.name}'s visit` };
 }
 
 /** What a visit came to, in a sentence: the verdict, and what it brought in or cost. */

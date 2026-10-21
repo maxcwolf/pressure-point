@@ -15,6 +15,7 @@ import {
 import { useRedraw } from '../hooks/use-redraw';
 import { cx } from '../lib/cx';
 import { ACTION_NAMES, autosaveLabel, keyLabel, nextChoice } from '../lib/keys';
+import { Icon } from './common/Icon';
 import { SettingRow } from './SettingRow';
 
 export interface ControlSettingsProps {
@@ -61,7 +62,7 @@ export function ControlSettings({ onChange }: ControlSettingsProps) {
       <h4>Controls</h4>
       <ul>
         <SettingRow
-          icon="🧭"
+          icon="ui-compass"
           name="Edge scrolling"
           desc="Move the camera by holding the mouse at the edge of the screen."
           on={prefs.edgeScroll}
@@ -70,7 +71,7 @@ export function ControlSettings({ onChange }: ControlSettingsProps) {
           }}
         />
         <li>
-          <i>💾</i>
+          <Icon id="ui-save" size={26} />
           <div>
             <b>Autosave</b>
             <span>The game is always saved as you leave it, too.</span>

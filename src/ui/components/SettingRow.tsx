@@ -1,9 +1,11 @@
 // One row of the settings: a switch, or a label saying why it cannot be changed.
 
+import type { IconId } from '../../core/data';
 import { cx } from '../lib/cx';
+import { Icon } from './common/Icon';
 
 export interface SettingRowProps {
-  icon: string;
+  icon: IconId;
   name: string;
   desc: string;
   on: boolean;
@@ -16,7 +18,7 @@ export interface SettingRowProps {
 export function SettingRow({ icon, name, desc, on, locked = '', onToggle }: SettingRowProps) {
   return (
     <li class={locked ? 'locked' : ''}>
-      <i>{icon}</i>
+      <Icon id={icon} size={26} />
       <div>
         <b>{name}</b>
         <span>{desc}</span>

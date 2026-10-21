@@ -2,20 +2,22 @@
 
 import './BuildButtons.css';
 
+import type { IconId } from '../../core/data';
 import { useGame, useHud } from '../hooks/use-hud';
 import type { MenuId } from '../hud';
 import { cx } from '../lib/cx';
 import { Button } from './common/Button';
+import { Icon } from './common/Icon';
 
-const MENUS: readonly { id: MenuId; icon: string; label: string }[] = [
-  { id: 'rooms', icon: '🏗️', label: 'Rooms' },
-  { id: 'items', icon: '🪴', label: 'Items' },
-  { id: 'hire', icon: '🤝', label: 'Hire' },
-  { id: 'staff', icon: '👥', label: 'Staff' },
-  { id: 'treatments', icon: '💆', label: 'Treatments' },
-  { id: 'finance', icon: '💰', label: 'Money' },
-  { id: 'policy', icon: '📋', label: 'Policy' },
-  { id: 'stats', icon: '📊', label: 'Stats' },
+const MENUS: readonly { id: MenuId; icon: IconId; label: string }[] = [
+  { id: 'rooms', icon: 'ui-rooms', label: 'Rooms' },
+  { id: 'items', icon: 'ui-items', label: 'Items' },
+  { id: 'hire', icon: 'ui-hire', label: 'Hire' },
+  { id: 'staff', icon: 'ui-staff', label: 'Staff' },
+  { id: 'treatments', icon: 'ui-treatments', label: 'Treatments' },
+  { id: 'finance', icon: 'ui-money', label: 'Money' },
+  { id: 'policy', icon: 'ui-policy', label: 'Policy' },
+  { id: 'stats', icon: 'ui-stats', label: 'Stats' },
 ];
 
 /** One round button per build menu, and Expand. */
@@ -33,7 +35,7 @@ export function BuildButtons() {
             hud.toggleMenu(m.id);
           }}
         >
-          <i>{m.icon}</i>
+          <Icon id={m.icon} size={30} />
           <span>{m.label}</span>
         </Button>,
         // Expand goes beside Rooms, the other way to build
@@ -48,7 +50,7 @@ export function BuildButtons() {
               else tools.startExpand();
             }}
           >
-            <i>🏡</i>
+            <Icon id="ui-expand" size={30} />
             <span>Expand</span>
           </Button>
         ),

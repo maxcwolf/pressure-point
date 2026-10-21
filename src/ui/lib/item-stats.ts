@@ -1,7 +1,16 @@
 // What an item does, as the Items menu shows it before it is bought, and what one in hand would change where it is
 // about to go.
 
-import { HEAT_RADIUS, ITEMS, type ItemType, MODALITIES, NOISE_NOTICE, ROOMS, SEAT_DRAIN } from '../../core/data';
+import {
+  HEAT_RADIUS,
+  type IconId,
+  ITEMS,
+  type ItemType,
+  MODALITIES,
+  NOISE_NOTICE,
+  ROOMS,
+  SEAT_DRAIN,
+} from '../../core/data';
 import { money } from '../../core/format';
 import { decorReach } from '../../core/sim/ambience';
 import { calmness } from '../../core/sim/noise';
@@ -24,7 +33,7 @@ export type StatTone = 'decor' | 'calm' | 'loud' | 'warm' | 'cool' | 'earn' | 's
 /** One thing an item does, in a word or two for a card and in a sentence for a tooltip. */
 export interface ItemStat {
   id: 'decor' | 'noise' | 'session' | 'heat' | 'sale' | 'seat' | 'treatment' | 'upgrade' | 'wear' | 'dirt' | 'size';
-  icon: string;
+  icon: IconId;
   short: string;
   long: string;
   tone: StatTone;
@@ -48,7 +57,7 @@ export function itemStats(type: ItemType): ItemStat[] {
   if (def.decor)
     out.push({
       id: 'decor',
-      icon: '✨',
+      icon: 'overlay-decor',
       short: `Decor +${def.decor}`,
       long: `Decor +${def.decor}: makes everywhere within ${decorReach(type)} tiles nicer`,
       tone: 'decor',
@@ -56,7 +65,7 @@ export function itemStats(type: ItemType): ItemStat[] {
   if (def.noise && def.noise < 0)
     out.push({
       id: 'noise',
-      icon: '🤫',
+      icon: 'overlay-calm',
       short: `Soothes ${-def.noise}`,
       long: `Soothes the noise around it by ${-def.noise}`,
       tone: 'calm',
@@ -64,7 +73,7 @@ export function itemStats(type: ItemType): ItemStat[] {
   if (def.noise && def.noise > 0)
     out.push({
       id: 'noise',
-      icon: '🔊',
+      icon: 'ui-sound',
       short: `Noise ${def.noise}`,
       long: `Noise ${def.noise}: carries, and spoils treatments nearby`,
       tone: 'loud',
@@ -72,7 +81,7 @@ export function itemStats(type: ItemType): ItemStat[] {
   if (def.sessionNoise)
     out.push({
       id: 'session',
-      icon: '🔊',
+      icon: 'ui-sound',
       short: 'Loud in sessions',
       long: `Noise ${def.sessionNoise} while a session plays, heard outside its room`,
       tone: 'loud',
@@ -80,7 +89,7 @@ export function itemStats(type: ItemType): ItemStat[] {
   if (def.heat)
     out.push({
       id: 'heat',
-      icon: '🌡️',
+      icon: 'overlay-temperature',
       short: def.heat > 0 ? `Warms ${def.heat}°` : `Cools ${-def.heat}°`,
       long: `${def.heat > 0 ? 'Warms' : 'Cools'} the air by up to ${Math.abs(def.heat)}°F, within ${def.heatReach ?? HEAT_RADIUS} tiles${def.thermostat ? `, only while it is too ${def.heat > 0 ? 'cool' : 'warm'} indoors` : ''}`,
       tone: def.heat > 0 ? 'warm' : 'cool',
@@ -88,7 +97,7 @@ export function itemStats(type: ItemType): ItemStat[] {
   if (def.sale)
     out.push({
       id: 'sale',
-      icon: '💵',
+      icon: 'ui-money',
       short: `${money(def.sale)} a use`,
       long: `Earns ${money(def.sale)} each time a guest uses it`,
       tone: 'earn',
@@ -97,7 +106,7 @@ export function itemStats(type: ItemType): ItemStat[] {
     const times = tenths(1 / (def.seatDrain ?? SEAT_DRAIN));
     out.push({
       id: 'seat',
-      icon: '⏳',
+      icon: 'overlay-patience',
       short: `Patience ×${times}`,
       long: `Guests waiting in it lose patience ${times}× slower than standing`,
       tone: 'seat',
@@ -115,7 +124,7 @@ export function itemStats(type: ItemType): ItemStat[] {
   if (def.upgrade !== undefined)
     out.push({
       id: 'upgrade',
-      icon: '⬆️',
+      icon: 'ui-upgrade',
       short: 'Upgradable',
       long: 'A Caretaker with the Mechanics course can upgrade it',
       tone: 'plain',
@@ -124,7 +133,7 @@ export function itemStats(type: ItemType): ItemStat[] {
     const uses = Math.round(100 / def.wear);
     out.push({
       id: 'wear',
-      icon: '🔧',
+      icon: 'marker-broken',
       short: `Breaks in ~${uses}`,
       long: `Breaks after about ${uses} uses until a Caretaker repairs it`,
       tone: 'upkeep',
@@ -135,14 +144,14 @@ export function itemStats(type: ItemType): ItemStat[] {
       def.linens
         ? {
             id: 'dirt',
-            icon: '🧺',
+            icon: 'bubble-linens',
             short: 'Linens',
             long: 'Its linens need changing from a Linen Hamper',
             tone: 'upkeep',
           }
         : {
             id: 'dirt',
-            icon: '🧽',
+            icon: 'ui-clean',
             short: 'Gets dirty',
             long: 'Gets dirty with use until a Caretaker cleans it',
             tone: 'upkeep',
@@ -151,7 +160,7 @@ export function itemStats(type: ItemType): ItemStat[] {
   if (def.mount === 'wall' ? def.w > 1 : def.w * def.h > 1)
     out.push({
       id: 'size',
-      icon: '📐',
+      icon: 'ui-size',
       short: def.mount === 'wall' ? `${def.w} wide` : `${def.w}×${def.h}`,
       long: def.mount === 'wall' ? `Hangs ${def.w} tiles wide` : `Takes up ${def.w} × ${def.h} tiles`,
       tone: 'plain',
@@ -167,7 +176,7 @@ export function statsText(type: ItemType): string {
 
 /** Something an item in hand would change: better, worse, or just so. */
 export interface PlaceEffect {
-  icon: string;
+  icon: IconId;
   text: string;
   tone: 'good' | 'bad' | 'plain';
 }
@@ -188,7 +197,7 @@ export function placeEffects(sim: Sim, p: PlacePreview): PlaceEffect[] {
     const now = pleasantness(sim.drainFactor(x, y));
     const then = pleasantness(sim.drainFactor(x, y, p.decor[i] ?? 0));
     out.push({
-      icon: '🌿',
+      icon: 'overlay-decor',
       text: `Surroundings here ${pct(now)} → ${pct(then)}`,
       tone: toneOf(then > now, then < now),
     });
@@ -197,7 +206,7 @@ export function placeEffects(sim: Sim, p: PlacePreview): PlaceEffect[] {
   if (p.room && room) {
     const { before, after } = p.room;
     out.push({
-      icon: '👑',
+      icon: 'ui-prestige',
       text: `${ROOMS[room.type].name} prestige ${before} → ${after}`,
       tone: toneOf(after > before, after < before),
     });
@@ -205,20 +214,28 @@ export function placeEffects(sim: Sim, p: PlacePreview): PlaceEffect[] {
   if (p.noise) {
     const now = calmness(sim.noiseAt(x, y));
     const then = calmness(sim.noiseAt(x, y, p.noise[i] ?? 0));
-    out.push({ icon: '🤫', text: `Calm here ${pct(now)} → ${pct(then)}`, tone: toneOf(then > now, then < now) });
+    out.push({
+      icon: 'overlay-calm',
+      text: `Calm here ${pct(now)} → ${pct(then)}`,
+      tone: toneOf(then > now, then < now),
+    });
   } else if (ITEMS[p.placed.type].station?.goal === 'treat') {
     // a table minds the noise where it goes, though it makes none
     const noise = sim.noiseAt(x, y);
-    out.push({ icon: '🤫', text: `Calm here ${pct(calmness(noise))}`, tone: noise >= NOISE_NOTICE ? 'bad' : 'good' });
+    out.push({
+      icon: 'overlay-calm',
+      text: `Calm here ${pct(calmness(noise))}`,
+      tone: noise >= NOISE_NOTICE ? 'bad' : 'good',
+    });
   }
-  if (p.noisier) out.push({ icon: '🔊', text: `Noisier at ${tables(p.noisier)}`, tone: 'bad' });
-  if (p.calmer) out.push({ icon: '🤫', text: `Calmer at ${tables(p.calmer)}`, tone: 'good' });
-  if (p.resting) out.push({ icon: '💤', text: 'Off for now: the weather is nice', tone: 'plain' });
+  if (p.noisier) out.push({ icon: 'ui-sound', text: `Noisier at ${tables(p.noisier)}`, tone: 'bad' });
+  if (p.calmer) out.push({ icon: 'overlay-calm', text: `Calmer at ${tables(p.calmer)}`, tone: 'good' });
+  if (p.resting) out.push({ icon: 'bubble-break', text: 'Off for now: the weather is nice', tone: 'plain' });
   if (p.heat) {
     const now = sim.warmthAt(x, y);
     const then = sim.warmthAt(x, y, p.heat[i] ?? 0);
     out.push({
-      icon: '🌡️',
+      icon: 'overlay-temperature',
       text: `${Math.round(now)}°F → ${Math.round(then)}°F here, ${tempFeel(then).toLowerCase()}`,
       // worse only once it is too hot or too cold to be just right
       tone: toneOf(
