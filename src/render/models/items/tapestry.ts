@@ -8,7 +8,7 @@ import { HANG_Y } from './wall';
 /** Build the Tapestry model: a wide woven mandala hung from a wooden rod, two tiles across, fringed at the foot. */
 export function buildTapestry(g: THREE.Group) {
   const top = HANG_Y + 0.35;
-  put(g, cyl(0.02, 0.02, 1.6, 10), mat(WOOD_DARK, 0.6), 0, top + 0.03, 0.04).rotation.z = Math.PI / 2;
+  put(g, cyl(0.025, 0.025, 1.6, 12), mat(WOOD_DARK, 0.6), 0, top + 0.03, 0.04).rotation.z = Math.PI / 2;
   put(g, rbox(1.44, 0.74, 0.02, 0.01), mat(0x8e3b46, 0.97), 0, top - 0.37, 0.03);
   put(g, rbox(1.32, 0.62, 0.02, 0.01), mat(0xe9c46a, 0.97), 0, top - 0.37, 0.034);
   put(g, rbox(1.24, 0.54, 0.02, 0.01), mat(0x2a6f73, 0.97), 0, top - 0.37, 0.038);

@@ -9,7 +9,7 @@ function trophy(g: THREE.Object3D, x: number, y: number, size: number): THREE.Gr
   const cup = new THREE.Group();
   const gold = mat(0xf2c14e, 0.25, 0.45);
   put(cup, rbox(0.12 * size, 0.04, 0.12 * size, 0.01), mat(0x3b3f4a), x, y + 0.02, -0.24);
-  put(cup, cyl(0.015, 0.02, 0.08 * size), gold, x, y + 0.04 + 0.04 * size, -0.24);
+  put(cup, cyl(0.022, 0.028, 0.08 * size, 10), gold, x, y + 0.04 + 0.04 * size, -0.24);
   put(cup, cyl(0.07 * size, 0.035 * size, 0.12 * size), gold, x, y + 0.08 * size + 0.1 * size, -0.24);
   g.add(cup);
   return cup;

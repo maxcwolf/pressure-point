@@ -23,7 +23,7 @@ export function buildStretchRack(g: THREE.Group) {
     [0.85, 0xe5484d],
     [0.62, 0x3bb273],
   ] as [number, number][]) {
-    const band = put(g, torus(0.085, 0.018), mat(c), 0.42, y, 0);
+    const band = put(g, torus(0.085, 0.024), mat(c), 0.42, y, 0);
     band.rotation.y = Math.PI / 2;
   }
 }

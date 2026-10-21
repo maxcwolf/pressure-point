@@ -30,7 +30,7 @@ export function buildStimUnit(g: THREE.Group) {
     [-0.33, 0xe5484d],
     [0.33, 0x2a2a2e],
   ] as [number, number][]) {
-    const coil = put(g, torus(0.09, 0.014), mat(c), x, 0.55, 0.05);
+    const coil = put(g, torus(0.09, 0.022), mat(c), x, 0.55, 0.05);
     coil.rotation.y = Math.PI / 2;
   }
 }
