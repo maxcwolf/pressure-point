@@ -1291,7 +1291,8 @@ export class Bot {
       if ((def.unlock ?? 0) > unlockedUpTo(s) || this.saving() !== null || this.profit() <= 0) continue;
       const upkeep = ITEMS[machine].machine?.upkeep ?? 0;
       if (!this.afford(def.cost, this.wages() * 1.2 + upkeep * 3 + 2000)) continue;
-      if (this.buildRoom(type)) {
+      // a full center makes room for it as a player would, knocking down one of a room it has two or more of
+      if (this.buildRoom(type) ?? this.makeSpace(type)) {
         this.log.machines.push({
           room: type,
           day: Math.floor(s.day),
@@ -1309,17 +1310,37 @@ export class Bot {
   /** Send the best practitioner of a machine's discipline on its course, if nobody knows it or is learning it. */
   private trainOperator(machine: ItemType, discipline: Discipline) {
     const s = this.s;
-    if (!this.sim.hasRoom('training')) return;
+    // a machine is no use without someone trained to run it, so a Training Room comes first
+    if (!this.sim.hasRoom('training')) {
+      if (this.afford(ROOMS.training.cost + 400, 0, true) && (this.buildRoom('training') ?? this.makeSpace('training')))
+        this.note(`day ${Math.floor(s.day)}: a Training Room, for the ${ITEMS[machine].name}`);
+      return;
+    }
     const role = DISCIPLINES[discipline].role;
     for (const m of ITEMS[machine].machine?.performs ?? []) {
-      const staff = this.staffOf(role).filter((st) => st.state !== 'leaving');
+      const staff = this.staffOf(role);
       if (staff.some((st) => st.quals.includes(m) || st.training?.course === m)) continue;
-      const pick = staff.filter((st) => !st.training && !st.call).sort((a, b) => b.skill - a.skill)[0];
-      const course = pick && this.sim.courses(pick).find((c) => c.id === m);
-      if (pick && course && this.afford(course.cost, 1000, true) && this.sim.train(pick.id, m))
+      // the best practitioner with a qualification to spare, who is not away
+      const free = staff
+        .filter((st) => !st.training && !st.call && this.sim.courses(st).some((c) => c.id === m))
+        .sort((a, b) => b.skill - a.skill);
+      const pick = free[0];
+      if (!pick) {
+        // everyone's qualifications are full: take on someone new to run it, as a player would, now and then
+        if ((this.operatorHired[m] ?? -Infinity) + 10 <= s.day && this.hire(role)) {
+          this.operatorHired[m] = s.day;
+          this.note(`day ${Math.floor(s.day)}: hired a ${role} to run the ${ITEMS[machine].name}`);
+        }
+        continue;
+      }
+      const course = this.sim.courses(pick).find((c) => c.id === m);
+      if (course && this.afford(course.cost, 1000, true) && this.sim.train(pick.id, m))
         this.note(`day ${Math.floor(s.day)}: sent a ${role} on the ${MODALITIES[m].name} course`);
     }
   }
+
+  /** The day the bot last took someone on to run a machine, by its technique. */
+  private operatorHired: Partial<Record<Modality, number>> = {};
 
   /** The guests in each machine, and what they had spent when they went in, to count what it earns. */
   private inMachine = new Map<number, { room: RoomType; spent: number }>();
