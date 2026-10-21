@@ -1,10 +1,13 @@
 // The light everything is drawn in: a soft sky, light thrown back up off the ground around the building, and a warm
-// sun that casts shadows, dimmed in a power cut or a storm.
+// sun that casts shadows, warm in the morning and the evening, tinted with the season, and dimmed in a power cut or a
+// storm.
 
 import * as THREE from 'three';
 
-import type { Mishap } from '../core/state/types';
-import type { SettingLight } from './setting';
+import { seasonOf } from '../core/sim/twists';
+import type { GameState, Mishap } from '../core/state/types';
+import { type Daylight, daylightAt, NOON, SEASON_LIGHT, stormy, type Tint } from './daylight';
+import { LAWN, type Setting, type SettingLight, settingOf } from './setting';
 
 /** How bright the sky and the sun are as usual. */
 const SKY = 1.1;
@@ -30,10 +33,20 @@ const NORMAL_BIAS_TEXELS = 1.4;
 export const TONE_MAPPING = THREE.NeutralToneMapping;
 export const EXPOSURE = 1.1;
 
-/** The sky's light and the sun. */
+/** The sky's light and the sun, and in a game, how far a mishap has dimmed and grayed them so far. */
 export interface Lights {
   sky: THREE.HemisphereLight;
   sun: THREE.DirectionalLight;
+  /** How bright the light is against usual, easing toward a mishap's `lightLevel`. */
+  level: number;
+  /** How far storm clouds have grayed the light, easing from 0 to 1 as a storm comes on. */
+  gray: number;
+  /** How far the time of day strays from noon, easing toward the game speed's `dayDepth`. */
+  depth: number;
+  /** The scene they light, whose backdrop takes the ground's color. */
+  scene: THREE.Scene;
+  /** The setting, as it looks in the season, they were last colored for. */
+  setting?: Setting;
 }
 
 /** Light a scene with the game's sky and sun, and return them so the sun can follow the camera. */
@@ -45,7 +58,7 @@ export function addLights(scene: THREE.Scene, shadowReach = 26): Lights {
   sun.shadow.bias = -0.0004;
   fitShadow(sun, shadowReach);
   scene.add(sky, sun, sun.target);
-  return { sky, sun };
+  return { sky, sun, level: 1, gray: 0, depth: 1, scene };
 }
 
 /** Color the sky, the light off the ground and the sun for a setting. */
@@ -101,9 +114,55 @@ export function lightLevel(m: Mishap | null): number {
   return 1;
 }
 
-/** Ease the lights a step toward a level, so a power cut or a storm comes on and lifts gradually. */
-export function easeLights(lights: Lights, level: number, dt: number) {
+/** How far storm clouds gray the light while a mishap is under way: fully in a storm, not at all otherwise. */
+export const stormGray = (m: Mishap | null): number => (m?.started && m.kind === 'storm' ? 1 : 0);
+
+/**
+ * How far the time of day strays from noon at a game speed: in full at normal speed, less when the days fly past, so
+ * the light does not pulse.
+ */
+export const dayDepth = (speed: number) => (speed <= 1 ? 1 : speed === 2 ? 0.6 : 0.4);
+
+/**
+ * Light a game's scene for the moment: the time of day and the season on the setting's own light, a power cut or a
+ * storm easing in and out on top. Returns whether the ground has changed color with the season, so the floor's open
+ * ground is painted again to match the lawn.
+ */
+export function lightScene(lights: Lights, s: GameState, dt: number): boolean {
   const k = 1 - Math.exp(-EASE * dt);
-  lights.sky.intensity += (SKY * level - lights.sky.intensity) * k;
-  lights.sun.intensity += (SUN * level - lights.sun.intensity) * k;
+  lights.level += (lightLevel(s.mishap) - lights.level) * k;
+  lights.gray += (stormGray(s.mishap) - lights.gray) * k;
+  lights.depth += (dayDepth(s.speed) - lights.depth) * k;
+  return shine(lights, s, daylightAt(s.day, lights.depth));
+}
+
+/** Draw something in a game's scene by plain noon light, whatever the time, as for a save's picture. */
+export function atNoon(lights: Lights, s: GameState, draw: () => void) {
+  shine(lights, s, NOON);
+  draw();
+  shine(lights, s, daylightAt(s.day, lights.depth));
+}
+
+/** A color to work a tint out in, kept rather than made afresh each frame. */
+const scratch = new THREE.Color();
+
+/** Color a light from a setting's color and two tints on top. */
+const tinted = (color: THREE.Color, hex: number, a: Tint, b: Tint) =>
+  color.setHex(hex).multiply(scratch.setRGB(a[0] * b[0], a[1] * b[1], a[2] * b[2]));
+
+/** Put the light of a moment of the day on a game's scene, in its setting and season, as far as a mishap has dimmed it. */
+function shine(lights: Lights, s: GameState, day: Daylight): boolean {
+  const setting = settingOf(s);
+  const season = SEASON_LIGHT[seasonOf(s.day)];
+  const d = stormy(day, lights.gray);
+  tinted(lights.sky.color, setting.light.sky, season.sky, d.sky);
+  tinted(lights.sun.color, setting.light.sun, season.sun, d.sun);
+  lights.sky.groundColor.setHex(setting.light.bounce);
+  lights.sky.intensity = SKY * d.skyLevel * lights.level;
+  lights.sun.intensity = SUN * d.sunLevel * lights.level;
+  if (setting === lights.setting) return false;
+  lights.setting = setting;
+  LAWN.color.setHex(setting.ground);
+  if (lights.scene.background instanceof THREE.Color) lights.scene.background.setHex(setting.ground);
+  return true;
 }

@@ -12,16 +12,7 @@ import { HalosLayer } from './halos';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
 import { LandLayer } from './land';
-import {
-  addLights,
-  easeLights,
-  lightLevel,
-  type Lights,
-  lightSetting,
-  placeSun,
-  shadowReach,
-  toneMap,
-} from './lighting';
+import { addLights, atNoon, type Lights, lightScene, lightSetting, placeSun, shadowReach, toneMap } from './lighting';
 import { LitterLayer } from './litter';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type DoorSpec, type GhostSpec, Overlays } from './overlays';
@@ -209,7 +200,7 @@ export class View {
     this.overlays.updateRing(this.time);
     this.halos.update();
     this.rig.update();
-    easeLights(this.lights, lightLevel(this.sim.s.mishap), dt);
+    if (lightScene(this.lights, this.sim.s, dt)) this.floor.draw();
     placeSun(this.lights.sun, this.rig.target, shadowReach(this.rig.dist));
     if (this.drawing) this.renderer.render(this.scene, this.rig.camera);
     else {
@@ -221,8 +212,8 @@ export class View {
 
   /** A small JPEG of the view as it is now, for a save's picture on the title screen. */
   snapshot(width = 320, height = 200): string {
-    // drawn afresh so the picture is taken before the browser clears the canvas
-    this.renderer.render(this.scene, this.rig.camera);
+    // drawn afresh so the picture is taken before the browser clears the canvas, and at noon, whatever the hour
+    atNoon(this.lights, this.sim.s, () => this.renderer.render(this.scene, this.rig.camera));
     const out = Object.assign(document.createElement('canvas'), { width, height });
     const src = this.renderer.domElement;
     const { sx, sy, sw, sh } = coverCrop(src.width, src.height, width, height);

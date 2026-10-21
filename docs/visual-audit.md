@@ -101,7 +101,7 @@ Each stream below is scoped to its own files so several can run at once. Each sh
 | 5   | Room signs, doors, status lamp      | `render/rooms.ts`, `render/room-walls.ts`, new `models/sign-plaque.ts`                                                    | 1a (icons)                       | Medium |
 | 6   | People readability (done)           | `render/pose.ts`, `models/character-detail.ts` (expressions), idle staff, patience posture                                | none                             | Medium |
 | 7   | Gradual wear and effect cues (done) | `render/items.ts`, a few `models/items/*` (smoke, wobble, ripple parts)                                                   | none                             | Small  |
-| 8   | Day and season light                | `render/lighting.ts`, `render/scenery.ts`                                                                                 | 4                                | Small  |
+| 8   | Day and season light (done)         | `render/lighting.ts`, `render/scenery.ts`                                                                                 | 4                                | Small  |
 | 9   | Model polish pass                   | `models/items/*`, `models/tree.ts`, floor `TS` in `floor.ts`, split by family between two sessions                        | 4 (to judge under the new light) | Medium |
 
 **Stream 1a is done** (branch `claude/icon-set-d3485c`): 107 icons in `src/ui/icons/`, `yarn icons`, `<Icon id>` for the interface, `iconTexture(id, plain)` for the scene, and `/icons.html` to see them all; how to add one is in `architecture.md`. The overlay picker and the room signs use them already. The ids the later swaps should use:
