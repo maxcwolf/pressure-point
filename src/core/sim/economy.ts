@@ -12,6 +12,7 @@ import {
   PRICE_MAX,
   PRICE_MIN,
   type Priced,
+  REP_DAMPING,
 } from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
@@ -72,11 +73,30 @@ export function adjustMoney(ctx: SimContext, amount: number) {
   ctx.s.money += amount;
 }
 
-/** Raise or lower reputation, kept between 0 and 100. */
+/** How much of a gain lands at a reputation: all of it below the midpoint, less and less above, nothing at 100. */
+export function gainDamping(rep: number): number {
+  const { mid, top, gainAtTop } = REP_DAMPING;
+  if (rep <= mid) return 1;
+  if (rep <= top) return 1 - (1 - gainAtTop) * ((rep - mid) / (top - mid));
+  return gainAtTop * ((100 - rep) / (100 - top));
+}
+
+/** How much of a loss lands at a reputation: all of it above the midpoint, less and less below, nothing at 0. */
+export function lossDamping(rep: number): number {
+  const { mid, floor, lossAtFloor } = REP_DAMPING;
+  if (rep >= mid) return 1;
+  if (rep >= floor) return lossAtFloor + (1 - lossAtFloor) * ((rep - floor) / (mid - floor));
+  return lossAtFloor * (rep / floor);
+}
+
+/**
+ * Raise or lower reputation, kept between 0 and 100. A gain is damped as reputation climbs and a loss as it falls,
+ * both to nothing at the ends, and a gain comes faster or slower as the difficulty sets.
+ */
 export function changeRep(ctx: SimContext, delta: number) {
   const s = ctx.s;
-  // gains taper off as reputation climbs, and come faster or slower as the difficulty sets
-  if (delta > 0) delta *= (1.15 - s.reputation / 120) * tuning(s, 'reputation');
+  if (delta > 0) delta *= gainDamping(s.reputation) * tuning(s, 'reputation');
+  else delta *= lossDamping(s.reputation);
   s.reputation = clamp(s.reputation + delta, 0, 100);
 }
 

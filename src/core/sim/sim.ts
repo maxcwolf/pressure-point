@@ -133,6 +133,7 @@ import { decayItems } from './upkeep';
 import { fadeVibes } from './vibes';
 import { lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
 import { outdoorTemp, thermostatShare, todayIndoors, warmthAt } from './warmth';
+import { warnLine } from './worsening';
 
 export class Sim {
   readonly world: World;
@@ -180,6 +181,7 @@ export class Sim {
       lapseInspection(ctx);
       warnPayday(ctx);
       updateInsolvency(ctx);
+      warnLine(ctx);
     }
     const month = Math.floor(s.day / DAYS_PER_MONTH);
     if (month !== prevMonth) {

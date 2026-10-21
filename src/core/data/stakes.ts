@@ -12,6 +12,18 @@ export const POOR_CONDITION = 30;
 /** What a guest who leaves worse off costs the center's reputation: more than a failed treatment. */
 export const WORSE_REP = 6;
 
+/**
+ * How reputation changes are dampened toward the ends of the scale, in the shape Theme Hospital's open-source clone
+ * uses: below the midpoint a gain always lands in full, above it a loss does; a gain is damped as reputation climbs,
+ * to `gainAtTop` at the `top` mark and nothing at 100, and a loss is damped as it falls, to `lossAtFloor` at the
+ * `floor` mark and nothing at 0. So a good name is hard to keep perfect, and a center on its knees can climb back,
+ * while one that heals half its guests still sinks to the bottom.
+ */
+export const REP_DAMPING = { mid: 50, top: 90, gainAtTop: 0.4, floor: 10, lossAtFloor: 0.75 } as const;
+
+/** How far ahead, in days, the line is warned of guests whose condition is about to run out. */
+export const WORSE_AHEAD_DAYS = 5;
+
 /** How much a failed treatment adds to the bad vibes in its room, out of 100. */
 export const VIBES_PER_FAIL = 60;
 /** How much of the chance of success a room full of bad vibes takes away. */

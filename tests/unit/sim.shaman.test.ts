@@ -22,6 +22,7 @@ import {
   SWEAT_LODGE_OPEN,
 } from '../../src/core/sim/ceremonies';
 import type { SimContext } from '../../src/core/sim/context';
+import { lossDamping } from '../../src/core/sim/economy';
 import { Sim } from '../../src/core/sim/sim';
 import { successChance } from '../../src/core/sim/stations';
 import { newGame } from '../../src/core/state/game';
@@ -175,7 +176,7 @@ describe('set and setting', () => {
     sim.drain();
     badTrip(ctxOf(sim), g, mat);
     expect(g.feelings).toContain('bad-trip');
-    expect(s.reputation).toBeCloseTo(rep - BAD_TRIP_REP, 5);
+    expect(s.reputation).toBeCloseTo(rep - BAD_TRIP_REP * lossDamping(rep), 5);
     expect(lodge.vibes).toBeGreaterThan(0);
     expect(sim.drain().some((e) => e.type === 'float' && e.text === 'Bad trip!')).toBe(true);
   });

@@ -201,6 +201,7 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     payrollDue: null,
     insolvency: null,
     redSince: null,
+    lineWarned: -1,
     bankrupt: false,
     bankruptcyOn: true,
     cheated: false,

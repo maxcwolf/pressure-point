@@ -5,27 +5,40 @@ import { describe, expect, it } from 'vitest';
 import {
   CONDITION_DRAIN,
   CONDITION_PENALTY,
+  DAY_SECONDS,
+  DAYS_PER_MONTH,
   EMERGENCY_CONDITION,
   OUTBREAK_STARS,
+  REP_DAMPING,
   VIBES_FADE,
   VIBES_MORALE,
   VIBES_PENALTY,
   VIBES_PER_FAIL,
+  WORSE_AHEAD_DAYS,
   WORSE_REP,
 } from '../../src/core/data';
+import { advice } from '../../src/core/sim/advisor';
 import { createContext } from '../../src/core/sim/context';
+import { changeRep, gainDamping, lossDamping } from '../../src/core/sim/economy';
 import { reviewStars } from '../../src/core/sim/feelings';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { endOutbreak, spreadStress } from '../../src/core/sim/outbreaks';
 import { moraleTarget, wantsAway } from '../../src/core/sim/staffing';
 import { addVibes, canSmudge, fadeVibes, roomToSmudge, vibesPenalty } from '../../src/core/sim/vibes';
-import { conditionPenalty, worsening, worsenRate } from '../../src/core/sim/worsening';
+import {
+  conditionPenalty,
+  daysUntilWorse,
+  lineAtRisk,
+  warnLine,
+  worsening,
+  worsenRate,
+} from '../../src/core/sim/worsening';
 import { SAVE_VERSION } from '../../src/core/state/game';
 import type { GameState, Guest } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { puffAge } from '../../src/render/models/sage';
 import { wafting } from '../../src/render/pose';
-import { addReiki, addTraining, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
+import { addReiki, addTraining, hire, inconsistencies, openCenter, run, runUntil, toasts } from './helpers';
 
 /** A center with a guest in it, waiting in line. */
 function withGuest(seed = 1) {
@@ -37,7 +50,103 @@ function withGuest(seed = 1) {
   return { ...center, g };
 }
 
+describe('reputation', () => {
+  it('lands a gain in full below the midpoint, damped above it, and not at all at 100', () => {
+    const { mid, top, gainAtTop } = REP_DAMPING;
+    expect(gainDamping(0)).toBe(1);
+    expect(gainDamping(mid)).toBe(1);
+    expect(gainDamping((mid + top) / 2)).toBeCloseTo((1 + gainAtTop) / 2);
+    expect(gainDamping(top)).toBeCloseTo(gainAtTop);
+    expect(gainDamping(100)).toBe(0);
+  });
+
+  it('lands a loss in full above the midpoint, damped below it, and not at all at 0', () => {
+    const { mid, floor, lossAtFloor } = REP_DAMPING;
+    expect(lossDamping(100)).toBe(1);
+    expect(lossDamping(mid)).toBe(1);
+    expect(lossDamping((mid + floor) / 2)).toBeCloseTo((1 + lossAtFloor) / 2);
+    expect(lossDamping(floor)).toBeCloseTo(lossAtFloor);
+    expect(lossDamping(0)).toBe(0);
+  });
+
+  it('is changed by that much, within 0 and 100', () => {
+    const { s } = openCenter(1);
+    const ctx = createContext(s);
+    s.reputation = 30;
+    changeRep(ctx, 10);
+    expect(s.reputation).toBe(40);
+    changeRep(ctx, -10);
+    expect(s.reputation).toBeCloseTo(40 - 10 * lossDamping(40));
+    s.reputation = 80;
+    changeRep(ctx, 10);
+    expect(s.reputation).toBeCloseTo(80 + 10 * gainDamping(80));
+    changeRep(ctx, -10);
+    expect(s.reputation).toBeCloseTo(80 + 10 * gainDamping(80) - 10);
+    s.reputation = 1;
+    changeRep(ctx, -10);
+    expect(s.reputation).toBeCloseTo(1 - 10 * lossDamping(1));
+    expect(s.reputation).toBeGreaterThan(0);
+  });
+
+  it('holds a center healing six guests in ten off the floor, and lets one healing five sink to it', () => {
+    /** Where reputation settles for a center treating 15 guests a month at a cure rate, a tenth storming out. */
+    const settles = (cure: number) => {
+      const { s } = openCenter(1);
+      const ctx = createContext(s);
+      s.reputation = 30;
+      for (let m = 0; m < 36; m++)
+        for (let i = 0; i < 15; i++) {
+          changeRep(ctx, cure * 2.4);
+          changeRep(ctx, -(1 - cure) * 2.5);
+          changeRep(ctx, -0.1 * 3);
+        }
+      return s.reputation;
+    };
+    expect(settles(0.6)).toBeGreaterThan(40);
+    expect(settles(0.5)).toBeLessThan(15);
+    expect(settles(0.7)).toBeGreaterThan(70);
+    expect(settles(0.9)).toBeLessThan(100);
+  });
+});
+
 describe('a worsening condition', () => {
+  it('shows which guests in the line are about to cost reputation, the soonest first', () => {
+    const { s, g } = withGuest();
+    expect(lineAtRisk(s)).toEqual([]);
+    const soon = WORSE_AHEAD_DAYS * DAY_SECONDS * worsenRate(g.condition);
+    g.health = soon - 1;
+    expect(lineAtRisk(s)).toEqual([g]);
+    expect(daysUntilWorse(g)).toBeLessThan(WORSE_AHEAD_DAYS);
+    // a guest sooner to run out comes first, and one further off is not in it
+    const sooner = { ...structuredClone(g), id: s.nextId++, health: soon / 2 };
+    const later = { ...structuredClone(g), id: s.nextId++, health: soon * 3 };
+    s.guests.push(later, sooner);
+    expect(lineAtRisk(s).map((x) => x.id)).toEqual([sooner.id, g.id]);
+    expect(lineAtRisk(s, WORSE_AHEAD_DAYS * 4).map((x) => x.id)).toEqual([sooner.id, g.id, later.id]);
+  });
+
+  it('warns the first time each month the line is about to cost reputation, and the advisor counts them', () => {
+    const { s, g } = withGuest();
+    const ctx = createContext(s);
+    g.health = WORSE_AHEAD_DAYS * DAY_SECONDS * worsenRate(g.condition) - 1;
+    warnLine(ctx);
+    const said = toasts(ctx.events).join();
+    expect(said).toContain(`${g.name} has waited so long`);
+    expect(said).toContain(`−${WORSE_REP} reputation`);
+    expect(advice(ctx)).toContain(`${g.name} is within ${WORSE_AHEAD_DAYS} days of going home worse off`);
+    // a second guest the same month says nothing more
+    const other = { ...structuredClone(g), id: s.nextId++ };
+    s.guests.push(other);
+    ctx.events.length = 0;
+    warnLine(ctx);
+    expect(toasts(ctx.events)).toEqual([]);
+    expect(advice(ctx)).toContain('2 guests waiting are within');
+    // the next month, it is said again
+    s.day += DAYS_PER_MONTH;
+    warnLine(ctx);
+    expect(toasts(ctx.events).join()).toContain('2 guests have waited so long');
+  });
+
   it('worsens faster with some conditions than others', () => {
     expect(worsenRate('knotted')).toBe(CONDITION_DRAIN);
     expect(worsenRate('steam')).toBeGreaterThan(worsenRate('knotted'));

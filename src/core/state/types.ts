@@ -776,6 +776,8 @@ export interface GameState {
   insolvency: { until: number } | null;
   /** The day the bank went below zero, or null while it is not. */
   redSince: number | null;
+  /** The last month, counted from 0, in which the line was warned it was about to cost reputation; -1 for none yet. */
+  lineWarned: number;
   /** The center is bankrupt and the game is lost. */
   bankrupt: boolean;
   /** Whether an unpaid payday can end the game: a sandbox setting. Off, the bank just goes into the red. */

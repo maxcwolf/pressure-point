@@ -16,7 +16,10 @@ import {
   OVERDRAFT_RATE,
   ROLES,
   ROOMS,
+  SEND_HOME_REP,
   STONE_USE,
+  WORSE_AHEAD_DAYS,
+  WORSE_REP,
 } from '../data';
 import { money } from '../format';
 import { pickFresh, rnd } from '../random';
@@ -35,6 +38,7 @@ import { aboutToQuit } from './staffing';
 import { enabled, unlocked } from './treatments';
 import { hasMechanic } from './upgrades';
 import { discomfort, warmthAt } from './warmth';
+import { lineAtRisk } from './worsening';
 
 /** Make an announcement over the speakers every so often. */
 export function announce(ctx: SimContext, dt: number) {
@@ -83,6 +87,15 @@ function nudge(ctx: SimContext): string | Advice {
       text: `${quitting.name} is about to quit! Select them and give them a raise, or build a Staff Room so they can rest.`,
       about: { kind: 'staff', id: quitting.id },
     };
+  const atRisk = lineAtRisk(s);
+  const first = atRisk[0];
+  if (first) {
+    const who = atRisk.length === 1 ? `${first.name} is` : `${atRisk.length} guests waiting are`;
+    return {
+      text: `${who} within ${WORSE_AHEAD_DAYS} days of going home worse off, at −${WORSE_REP} reputation each. Move them up their line, or send them home for −${SEND_HOME_REP}.`,
+      about: { kind: 'guest', id: first.id },
+    };
+  }
   const tired = s.staff.some((x) => x.energy < 20);
   if (tired && !hasRoom(ctx, 'staffroom'))
     return 'Your staff members are worn out and working slowly. Build a Staff Room so they can take breaks.';

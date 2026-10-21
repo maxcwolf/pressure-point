@@ -23,6 +23,7 @@ import { checkAchievements } from '../../src/core/sim/achievements';
 import { gainXp } from '../../src/core/sim/careers';
 import { classPlaces } from '../../src/core/sim/classes';
 import { createContext } from '../../src/core/sim/context';
+import { gainDamping } from '../../src/core/sim/economy';
 import { offerEmergency, updateEmergency } from '../../src/core/sim/emergencies';
 import { drainEvents, earnsForCampaign } from '../../src/core/sim/events';
 import { averagePatience } from '../../src/core/sim/goals';
@@ -300,7 +301,7 @@ describe('the reputation a heal earns', () => {
         run(sim, 0.05);
         if (outcome() === 'healed') {
           // a gain is tapered by the reputation already held
-          expect(s.reputation - rep).toBeCloseTo(1.8 * (1.15 - rep / 120), 5);
+          expect(s.reputation - rep).toBeCloseTo(1.8 * gainDamping(rep), 5);
           return;
         }
       }
