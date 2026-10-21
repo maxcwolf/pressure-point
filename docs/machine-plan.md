@@ -18,6 +18,11 @@ Where it differs from the plan below:
   - Paid rides on the Carousel for bored guests.
   - Upgrade levels showing on the models.
 - **Bars and markers** sit higher over a machine, read from its model. Every other item's are where they were.
+- **Measured, 21 October 2026** (`yarn balance` with and without `BOT_ON=machines`, seeds 1 to 3, four years). Every machine treats its guests (a unit test plays each one), but none of them pays as priced. With no demand coupling yet, a machine's two ailments are a share of the guests its discipline already draws, so it heals a few a month at best:
+  - The Kneadmaster paid back its room and running costs by day 534 and day 770 on the two Willow Lane seeds it was built on, yet the center made $3,700 a month less on one of them, having knocked down a Massage Suite to fit it.
+  - The Pin Press healed 6 to 11 guests in two to three years and never paid back.
+  - The Great Alphorn healed one guest in two years at High Pines, and took that center from $28,500 a month to a small loss.
+  - The bot never built an Aura Wash. The Orchard Estate goes bankrupt on day 93 with or without machines, and on `main` too.
 - **The lab** has a Machines group: each machine with a guest inside, and controls for the stage, how far through the session, the fake failure, smoking and down.
 
 ## What comes first
