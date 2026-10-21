@@ -20,11 +20,12 @@ import type { GameState, Ledger, Staff } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
+import { machineBuilt, machineUpkeep } from './machines';
 import { closeMonth } from './records';
 
 /** A ledger's income minus its spending. */
 export function netOf(l: Ledger) {
-  return incomeOf(l) - l.salaries - l.building - l.training - l.interest - l.marketing - l.fines;
+  return incomeOf(l) - l.salaries - l.building - l.training - l.interest - l.marketing - l.fines - l.upkeep;
 }
 
 /** A ledger's income: fees, class places, sales over and under the counter, house calls and bonuses. */
@@ -36,7 +37,7 @@ export function incomeOf(l: Ledger) {
 export type Income = 'consult' | 'treatment' | 'vending' | 'shop' | 'mushrooms' | 'calls' | 'classes' | 'bonus';
 
 /** Where money goes out to, as the books keep it. */
-export type Cost = 'salaries' | 'building' | 'training' | 'interest' | 'marketing' | 'fines';
+export type Cost = 'salaries' | 'building' | 'training' | 'interest' | 'marketing' | 'fines' | 'upkeep';
 
 /**
  * Take in money and record it. Given where it was taken, the amount floats up there, with the till's ring for a large
@@ -124,10 +125,13 @@ export function warnPayday(ctx: SimContext) {
   const s = ctx.s;
   if (!s.bankruptcyOn || Math.ceil(paydayOf(s) - s.day) !== PAYDAY_WARNING_DAYS) return;
   const wages = wagesDue(s);
-  if (wages <= s.money) return;
+  // the machines' power and parts are paid on payday too, once the wages are
+  const upkeep = machineUpkeep(s);
+  if (wages + upkeep <= s.money) return;
+  const running = upkeep ? ` and ${money(upkeep)} to run the machines` : '';
   toast(
     ctx,
-    `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(wages)} in wages, and ${money(Math.max(0, s.money))} in the bank. Past that you will have to borrow, or you lose.`,
+    `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(wages)} in wages${running}, and ${money(Math.max(0, s.money))} in the bank. Past that you will have to borrow, or you lose.`,
     'bad',
   );
 }
@@ -198,9 +202,18 @@ function payWages(ctx: SimContext, wages: number) {
   emit(ctx, { type: 'sfx', name: 'payday' });
 }
 
-/** Charge interest, file the month's books and start the next. */
+/** Pay what the machines cost to run for the month, in power and parts. */
+function payUpkeep(ctx: SimContext) {
+  const upkeep = machineUpkeep(ctx.s);
+  if (upkeep <= 0) return;
+  spend(ctx, upkeep, 'upkeep');
+  toast(ctx, `The machines cost ${money(upkeep)} to run this month, in power and parts.`, 'info');
+}
+
+/** Pay the machines' running costs, charge interest, file the month's books and start the next. */
 function finishMonth(ctx: SimContext) {
   const s = ctx.s;
+  payUpkeep(ctx);
   const interest = Math.round(s.loan * LOAN_RATE) + Math.round(Math.max(0, -s.money) * OVERDRAFT_RATE);
   if (interest > 0) spend(ctx, interest, 'interest');
   closeMonth(ctx);
@@ -270,11 +283,12 @@ export function priceFor(s: GameState, m: Priced): number {
 
 /**
  * What treatments cost on average against standard, across the techniques the center can offer: unlocked, and in a
- * discipline that is switched on. Locked ones are left out, since the player cannot see or price them.
+ * discipline that is switched on, and a machine's own once its room is built. Locked ones are left out, since the
+ * player cannot see or price them.
  */
 export function averagePrice(s: GameState): number {
   const offered = MODALITY_ORDER.filter(
-    (m) => MODALITIES[m].star <= unlockedUpTo(s) && disciplineOn(s, MODALITIES[m].discipline),
+    (m) => MODALITIES[m].star <= unlockedUpTo(s) && disciplineOn(s, MODALITIES[m].discipline) && machineBuilt(s, m),
   );
   if (!offered.length) return s.priceLevel;
   return offered.reduce((sum, m) => sum + priceFor(s, m), 0) / offered.length;

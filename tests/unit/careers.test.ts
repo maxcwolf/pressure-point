@@ -153,7 +153,10 @@ describe('ranks', () => {
     expect(roles).toEqual(['therapist', 'acupuncturist', 'practitioner', 'healer', 'shaman']);
     for (const role of roles) {
       const st = hire(sim, role);
-      const all = MODALITY_ORDER.filter((m) => MODALITIES[m].discipline === ROLES[role].discipline);
+      // a machine's own technique is only learned once its room is built
+      const all = MODALITY_ORDER.filter(
+        (m) => MODALITIES[m].discipline === ROLES[role].discipline && !MODALITIES[m].machine,
+      );
       const last = all.at(-1)!;
       st.quals = all.filter((m) => m !== last);
       // every slot of the five filled: the treatments learned beyond the first, and general courses for the rest

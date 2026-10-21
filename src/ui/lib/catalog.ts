@@ -61,11 +61,12 @@ export function itemOffered(item: ItemDef, enabled: (d: Offering) => boolean): b
 }
 
 /** What an item is for, to filter the Items menu by. */
-export type ItemKind = 'equipment' | 'comfort' | 'decor' | 'staff' | 'wall';
+export type ItemKind = 'equipment' | 'machine' | 'comfort' | 'decor' | 'staff' | 'wall';
 
 /** The kinds of item, in the order the Items menu offers them. */
 export const ITEM_KINDS: readonly { id: ItemKind; label: string }[] = [
   { id: 'equipment', label: 'Desks and equipment' },
+  { id: 'machine', label: 'Machines' },
   { id: 'comfort', label: 'Guest comforts' },
   { id: 'decor', label: 'Decor' },
   { id: 'staff', label: 'For staff' },
@@ -76,12 +77,13 @@ export const ITEM_KINDS: readonly { id: ItemKind; label: string }[] = [
 const GUEST_USES = new Set(['seat', 'drink', 'eat', 'play', 'toilet']);
 
 /**
- * What an item is for: something to hang on a wall, a station or treatment equipment, a comfort for guests, decor, or
- * something for staff.
+ * What an item is for: something to hang on a wall, a treatment machine, a station or treatment equipment, a comfort
+ * for guests, decor, or something for staff.
  */
 export function itemKind(type: ItemType): ItemKind {
   const def = ITEMS[type];
   if (def.mount === 'wall') return 'wall';
+  if (def.machine) return 'machine';
   if (def.station || Object.values(MODALITIES).some((m) => m.equipment === type)) return 'equipment';
   if (def.where === 'staffroom' || def.where === 'training') return 'staff';
   if (def.access.some((a) => GUEST_USES.has(a.role)) || type === 'bin') return 'comfort';

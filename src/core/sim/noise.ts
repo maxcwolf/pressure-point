@@ -19,6 +19,7 @@ import { clamp } from '../util';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { feel } from './feelings';
+import { running } from './machines';
 import { playingFor } from './sessions';
 import { gridAt, spreader } from './spread';
 
@@ -47,6 +48,9 @@ export function updateNoise(ctx: SimContext) {
     // a gong is part of the treatment in its own room, and only noise to everyone else
     if (sessionNoise && sessionHeard(ctx, it))
       spread(grid, Math.floor(cx), Math.floor(cy), sessionNoise, NOISE_RADIUS, 0);
+    // and so is a machine with someone inside it
+    const runNoise = ITEMS[it.type].machine?.runNoise;
+    if (runNoise && running(it)) spread(grid, Math.floor(cx), Math.floor(cy), runNoise, NOISE_RADIUS, 0);
   }
   for (const g of ctx.s.guests) {
     const noise = guestNoise(g);

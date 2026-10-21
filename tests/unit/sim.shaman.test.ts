@@ -95,7 +95,10 @@ describe('offering the Shaman', () => {
   it('has guests possessed by a chicken, a goat and Brent', () => {
     const possessed = CONDITIONS.filter((c) => c.name.startsWith('Possessed by')).map((c) => c.name);
     expect(possessed).toEqual(['Possessed by a Chicken', 'Possessed by a Goat', 'Possessed by Brent']);
-    expect(CONDITIONS.filter((c) => MODALITIES[c.modality].discipline === 'shaman')).toHaveLength(9);
+    // and two more that only the Cider Press of Rebirth at The Orchard Estate cures
+    expect(
+      CONDITIONS.filter((c) => MODALITIES[c.modality].discipline === 'shaman' && !MODALITIES[c.modality].machine),
+    ).toHaveLength(9);
   });
 
   it('has Shamans who arrive knowing Spirit Animal Reading and train only in their own techniques', () => {

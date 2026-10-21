@@ -20,6 +20,7 @@ import {
   GLASSES_OUT,
   KNEE,
 } from './character-detail';
+import { machineSymptom } from './character-machines';
 import { cached, capsule, cyl, ico, joined, mat, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
 
@@ -614,7 +615,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     compass.scale.setScalar(1.5);
     head.add(compass);
     rig.bob = compass;
-  }
+  } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   if (role === 'practitioner' || role === 'caretaker') {
     const { bundle, tip } = buildSage();

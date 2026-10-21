@@ -29,6 +29,8 @@ export interface MishapDef {
   breaks?: number;
   /** The season it can only come in, if any. */
   winterOnly?: boolean;
+  /** Something that draws it: with one in the center, the next comes after only this share of the usual gap. */
+  drawnBy?: { item: ItemType; gap: number };
 }
 
 export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
@@ -41,7 +43,7 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
     end: 'The power is back. Please stop meditating by candlelight.',
     days: 1,
     prepare: { cost: 1500, label: 'Hire a generator', effect: 'A generator keeps everything running.' },
-    harm: 'For a day, nothing with a plug works: scanners, stim units, stone warmers, machines, radiators and air conditioning.',
+    harm: 'For a day, nothing with a plug works: scanners, stim units, stone warmers, treatment machines, vending machines, radiators and air conditioning.',
     stops: [
       'posture_scanner',
       'stim_unit',
@@ -54,6 +56,13 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
       'television',
       'radiator',
       'air_conditioner',
+      'kneadmaster',
+      'pin_press',
+      'aura_wash',
+      'wheel_of_rebirth',
+      'stone_kiln',
+      'octopus',
+      'fog_machine',
     ],
     stopsWhat: 'anything with a plug',
   },
@@ -66,9 +75,11 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
     end: 'The storm has passed. The seagulls are back, and so are the guests.',
     days: 2,
     prepare: { cost: 800, label: 'Board up the windows', effect: 'Nothing gets broken. Fewer guests come either way.' },
-    harm: 'For two days hardly anyone comes, and the wind breaks a few things as it starts.',
+    harm: 'For two days hardly anyone comes, the Aura Wash is shut, and the wind breaks a few things as it starts.',
     arrivals: 0.35,
     breaks: 3,
+    stops: ['aura_wash'],
+    stopsWhat: 'the Aura Wash',
   },
   freeze: {
     id: 'freeze',
@@ -96,6 +107,8 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
     harm: 'For two days nobody can get near the snacks, drinks or bins.',
     stops: ['snack_machine', 'tea_station', 'kombucha_tap', 'coffee_machine', 'water_cooler', 'bin'],
     stopsWhat: 'the snacks, drinks and bins',
+    // the barrels of cider from a Cider Press of Rebirth bring them back sooner
+    drawnBy: { item: 'cider_press', gap: 0.7 },
   },
 };
 

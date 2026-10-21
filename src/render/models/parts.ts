@@ -226,6 +226,12 @@ export interface ItemParts {
     swirls: THREE.Object3D[];
     circling: THREE.Object3D;
   };
+  /** A machine's moving parts, by name, which its gag moves (see `render/gags`). */
+  rig?: Record<string, THREE.Object3D>;
+  /** A machine's puffs and sprays, by name, which its gag sets going. */
+  emitters?: Record<string, THREE.Group>;
+  /** A machine's glow, which its gag brightens while it works. */
+  shine?: THREE.MeshStandardMaterial;
 }
 
 /** The changing parts of an item's model. */

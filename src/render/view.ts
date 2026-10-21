@@ -8,6 +8,7 @@ import type { Sim } from '../core/sim/sim';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
+import { GagClock } from './gags/clock';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
 import { LandLayer } from './land';
@@ -86,8 +87,10 @@ export class View {
     this.scene.add(this.shell);
     this.floor = new Floor(this.scene, sim);
     this.rooms = new RoomsLayer(this.scene, sim);
-    this.items = new ItemsLayer(this.scene, sim);
-    this.people = new PeopleLayer(this.scene, sim);
+    // the machines and the guests inside them read the same gags, so they keep in step
+    const gags = new GagClock();
+    this.items = new ItemsLayer(this.scene, sim, gags);
+    this.people = new PeopleLayer(this.scene, sim, gags);
     this.litter = new LitterLayer(this.scene, sim);
     this.vibes = new VibesLayer(this.scene, sim);
     this.snow = new SnowfallLayer(this.scene, sim);

@@ -218,6 +218,41 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
     armL = 0.05;
     headZ = 0.75;
     lean = -0.05;
+  } else if (c.busy && style === 'kneading') {
+    // jabbing at the console's buttons, then a hopeful thump on the side of it
+    headX = 0.3;
+    armL = -0.9;
+    armR = -1.0 + Math.max(0, Math.sin(t * 6 + c.id)) * 0.35;
+  } else if (c.busy && style === 'impression') {
+    // tapping the pin home with the little hammer, peering at it between taps
+    lean = 0.12;
+    headX = 0.1;
+    armL = -1.3;
+    armR = -1.7 + Math.abs(Math.sin(t * 7 + c.id)) * 0.7;
+  } else if (c.busy && style === 'aurawash') {
+    // one hand on the lever, the other waving the guest through
+    armL = -1.1;
+    armR = -1.6 + Math.sin(t * 2.5 + c.id) * 0.5;
+    headZ = 0.2;
+  } else if (c.busy && style === 'alphorn') {
+    // both hands up at the mouthpiece, leaning into one enormous breath
+    const breath = (Math.sin(t * 0.9 + c.id) + 1) / 2;
+    armL = armR = -2.1;
+    armOut = 0.15;
+    lean = -0.2 + breath * 0.3;
+    headX = -0.25 + breath * 0.25;
+  } else if (c.busy && style === 'pressing') {
+    // hauling the bar of the screw round, chanting
+    const turn = Math.sin(t * 1.6 + c.id);
+    lean = 0.2 + turn * 0.1;
+    armL = -2.3 + turn * 0.3;
+    armR = -2.3 - turn * 0.3;
+    headX = -0.2;
+  } else if (c.busy && style === 'rebirth') {
+    // leaning on the lever, then a cheerful wave as they come round
+    lean = 0.15;
+    armL = -0.8;
+    armR = -2.6 + Math.max(0, Math.sin(t * 2 + c.id)) * 0.6;
   } else if (c.busy && style === 'swedish') {
     // long flowing strokes
     lean = 0.2;
@@ -269,6 +304,24 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
     armOut = 0.2;
     side = Math.sin(t * 38 + c.id) * 0.025;
   } else if (visual === 'thermometer') headZ += Math.sin(t * 21 + c.id) * 0.04;
+  else if (visual === 'chairshape' && c.pose !== 'sit' && c.pose !== 'lie') {
+    // bent at the hips and knees, as if the chair were still there
+    lean += 0.3;
+    legL = legR = Math.min(legL, legR) - 0.7;
+    bodyY -= 0.12;
+  } else if (visual === 'bags' && c.pose !== 'lie') {
+    // leaning back against the weight of the shopping
+    lean -= 0.12;
+    armL = armR = 0.05;
+  } else if (visual === 'bluescreen' && c.pose !== 'lie') {
+    // frozen mid-sentence, one hand still raised to make a point
+    armR = -1.3;
+    headZ = 0.1;
+  } else if (visual === 'oldsoul' && c.pose !== 'lie') {
+    // stooped, as their grandfather was
+    lean += 0.25;
+    headX -= 0.15;
+  }
   if (c.pose === 'lie') {
     lean = 0;
     headX = 0;
@@ -280,7 +333,9 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
   // only someone with their hands free (the inspector carries a clipboard) and no symptom to show fidgets with their
   // arms
   const handsFree = !visual && !(c.kind === 'visitor' && c.visit === 'inspector');
-  const life = visual !== 'stiff' ? liveliness(c, t, phase, style, smudging, armL, armR, handsFree) : NO_LIFE;
+  // too stiff, or frozen like a crashed computer, to fidget
+  const frozen = visual === 'stiff' || visual === 'bluescreen';
+  const life = !frozen ? liveliness(c, t, phase, style, smudging, armL, armR, handsFree) : NO_LIFE;
   lean += life.lean;
   side += life.side;
   headX += life.headX;

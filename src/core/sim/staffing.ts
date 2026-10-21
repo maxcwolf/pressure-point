@@ -285,8 +285,30 @@ function wantedElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
     (!!cloudy && (!line || cloudy === ctx.world.roomOfItem(it))) ||
     !!soulToRetrieve(ctx, st) ||
     wardWanted(ctx, st) ||
-    wantsRefresh(ctx, st, line)
+    wantsRefresh(ctx, st, line) ||
+    (!line && lineElsewhere(ctx, st, it))
   );
+}
+
+/**
+ * Whether someone at a machine with nobody waiting for it is wanted at a station of theirs with a line and nobody
+ * posted: a machine's own guests are few, and the tables' line should not grow while they wait by it.
+ */
+function lineElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
+  if (!ITEMS[it.type].machine) return false;
+  return ctx.s.items.some((o) => {
+    const def = ITEMS[o.type].station;
+    return (
+      o !== it &&
+      def?.staff === st.role &&
+      !def.group &&
+      !o.staffId &&
+      ctx.world.usable(o) &&
+      worksAt(ctx, st, o.x, o.y) &&
+      // a Sound Healer's line is at the mats their instrument plays for
+      (def.goal === 'lead' ? matsOf(ctx, o).some((m) => lineWaiting(ctx, m)) : lineWaiting(ctx, o))
+    );
+  });
 }
 
 /**
@@ -694,8 +716,10 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
         else if (job) {
           const p = ctx.world.item(job.id);
           if (p) {
-            if (job.kind === 'repair') p.wear = 0;
-            else if (job.kind === 'install') installUpgrade(ctx, p);
+            if (job.kind === 'repair') {
+              p.wear = 0;
+              delete p.overloaded;
+            } else if (job.kind === 'install') installUpgrade(ctx, p);
             else if (job.kind === 'clean') {
               if (!hasLinens(p)) p.dirt = 0;
               else if (changeLinens(ctx, p)) say(st, '🧺', 2);

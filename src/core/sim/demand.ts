@@ -25,6 +25,7 @@ import type { GameState, Guest, Room } from '../state/types';
 import { at, clamp } from '../util';
 import { prestige } from './ambience';
 import type { SimContext } from './context';
+import { practicable } from './machines';
 import { campaignBoost } from './marketing';
 import { itemNoise } from './noise';
 import type { VisitEnd } from './records';
@@ -146,14 +147,20 @@ interface Weighted {
   trained: boolean;
 }
 
+/**
+ * Whether guests can be sent for a technique now: open, and its discipline offered with a finished room, or for one
+ * done only on a machine, that machine working.
+ */
+export function sentFor(ctx: SimContext, m: Modality): boolean {
+  if (MODALITIES[m].machine) return practicable(ctx, m);
+  return unlocked(ctx, m) && offered(ctx, MODALITIES[m].discipline);
+}
+
 /** The conditions guests could come with now, each with its weight within its discipline. */
 function conditionWeights(ctx: SimContext): Weighted[] {
   const staff = ctx.s.staff.filter((x) => x.state !== 'leaving');
   const local = centerOf(ctx.s).conditions ?? {};
-  return CONDITIONS.filter(
-    (c) =>
-      conditionHere(c, ctx.s.center) && unlocked(ctx, c.modality) && offered(ctx, MODALITIES[c.modality].discipline),
-  ).map((c) => {
+  return CONDITIONS.filter((c) => conditionHere(c, ctx.s.center) && sentFor(ctx, c.modality)).map((c) => {
     const trained = staff.some((t) => t.quals.includes(c.modality));
     const weight = (trained ? 1 : UNTRAINED_PULL) * (local[c.id] ?? 1) * campaignBoost(ctx.s, c.id, CONDITION_BOOST);
     return { condition: c, weight, trained };

@@ -252,6 +252,15 @@ describe('filtering the Items menu', () => {
     expect(corridorDecor.every((t) => ['corridor', 'any'].includes(ITEMS[t].where))).toBe(true);
     expect(filterItems(ITEM_MENU, 'all', 'all')).toEqual([...ITEM_MENU]);
     expect(filterItems(ITEM_MENU, 'restroom', 'staff')).toEqual([]);
+    // the big machines for techniques done on tables too have a kind of their own
+    expect(filterItems(ITEM_MENU, 'all', 'machine')).toEqual([
+      'stone_kiln',
+      'octopus',
+      'geode',
+      'big_gong',
+      'fog_machine',
+    ]);
+    expect(filterItems(ITEM_MENU, 'massage', 'machine')).toEqual(['stone_kiln']);
   });
 });
 

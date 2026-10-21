@@ -46,6 +46,8 @@ export const mishapOn = (s: GameState): MishapDef | undefined =>
 export function mishapStopping(s: GameState): MishapDef | undefined {
   const def = mishapOn(s);
   if (!def?.stops || s.mishap?.prepared) return undefined;
+  // with nothing here of the kinds it stops, such as a storm with no Aura Wash to shut, it has stopped nothing
+  if (!s.items.some((it) => def.stops?.includes(it.type))) return undefined;
   return def;
 }
 
@@ -147,9 +149,12 @@ function endMishap(ctx: SimContext) {
   const s = ctx.s;
   const m = s.mishap;
   if (!m) return;
-  emit(ctx, { type: 'announce', text: MISHAPS[m.kind].end });
+  const def = MISHAPS[m.kind];
+  emit(ctx, { type: 'announce', text: def.end });
   s.mishap = null;
-  s.nextMishap = s.day + irnd(s, MISHAP_GAP_DAYS[0], MISHAP_GAP_DAYS[1]) * tuning(s, 'trouble');
+  // something in the center that draws it brings the next one sooner
+  const drawn = def.drawnBy && s.items.some((it) => it.type === def.drawnBy?.item) ? def.drawnBy.gap : 1;
+  s.nextMishap = s.day + irnd(s, MISHAP_GAP_DAYS[0], MISHAP_GAP_DAYS[1]) * tuning(s, 'trouble') * drawn;
 }
 
 /** Announce a mishap when one is due, start it on its day, and end it when it is over. */

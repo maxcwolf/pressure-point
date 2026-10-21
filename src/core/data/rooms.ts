@@ -1,6 +1,6 @@
 // Every kind of room that can be built.
 
-import type { RoomDef, RoomType } from './types';
+import type { CenterId, ItemType, RoomDef, RoomType } from './types';
 
 export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   consult: {
@@ -167,6 +167,106 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
     floor: ['#c3d9a6', '#b7cf98'],
     trim: 0x5f9440,
   },
+  kneader: {
+    type: 'kneader',
+    name: 'Kneadmaster Suite',
+    icon: '💺',
+    desc: 'A room built round one enormous massage chair, for the Chair-Shaped and the Mall-Backed. Needs a Massage Therapist trained to run it, and a little power every month.',
+    cost: 15000,
+    minShort: 4,
+    minLong: 4,
+    required: ['kneadmaster'],
+    staff: 'therapist',
+    discipline: 'massage',
+    floor: ['#e6c9a6', '#dcbd98'],
+    trim: 0xc0603a,
+    unlock: 2,
+    only: ['willow', 'sandbox'],
+    opening: 'The Kneadmaster 9000 is now open. Please keep your hands inside the chair. It has plenty of its own.',
+  },
+  pinpress: {
+    type: 'pinpress',
+    name: 'Pin Press Room',
+    icon: '📌',
+    desc: 'Ten thousand blunt pins in a frame the size of a garage door, for guests who have frozen or checked out. Quick, and it needs the space. Needs an Acupuncturist trained to run it.',
+    cost: 20000,
+    minShort: 4,
+    minLong: 5,
+    required: ['pin_press'],
+    staff: 'acupuncturist',
+    discipline: 'acupuncture',
+    floor: ['#d3d8de', '#c8ced6'],
+    trim: 0x4a5a70,
+    unlock: 2,
+    only: ['exchange', 'sandbox'],
+    opening: 'The Pin Press is now open. Please press firmly, and only once.',
+  },
+  aurawash: {
+    type: 'aurawash',
+    name: 'Aura Wash',
+    icon: '🧽',
+    desc: 'A car wash for auras, in one end and out the other, for the salted and the washed up. Sea air is hard on it, and a storm stops it. Needs a Reiki Practitioner trained to run it.',
+    cost: 24000,
+    minShort: 4,
+    minLong: 6,
+    required: ['aura_wash'],
+    staff: 'practitioner',
+    discipline: 'reiki',
+    floor: ['#cde8ee', '#c0dfe6'],
+    trim: 0x2f8fb0,
+    unlock: 2,
+    only: ['boardwalk', 'sandbox'],
+    opening: 'The Aura Wash is now open. Please remove any loose chakras before entering.',
+  },
+  alphorn: {
+    type: 'alphorn',
+    name: 'Alphorn Hall',
+    icon: '📯',
+    desc: 'A long room for a very long horn, for guests who echo or are snowed in. Heard all over the building while it plays. Needs a Sound Healer trained to blow it.',
+    cost: 28000,
+    minShort: 3,
+    minLong: 7,
+    required: ['great_alphorn'],
+    staff: 'healer',
+    discipline: 'sound',
+    floor: ['#e3d7c2', '#d9ccb4'],
+    trim: 0x8a5a2e,
+    unlock: 2,
+    only: ['highpines', 'sandbox'],
+    opening: 'The Great Alphorn is now open. You will hear it. You will hear it again a moment later.',
+  },
+  cider: {
+    type: 'cider',
+    name: 'Press House',
+    icon: '🍏',
+    desc: 'A great oak cider press that squeezes the sour out of people. The cider goes to the guests, for kinder reviews, and the wasps come for it. Needs a Shaman trained to turn it.',
+    cost: 32000,
+    minShort: 4,
+    minLong: 5,
+    required: ['cider_press'],
+    staff: 'shaman',
+    discipline: 'shaman',
+    floor: ['#c9b48e', '#bfa982'],
+    trim: 0x6a4a24,
+    unlock: 2,
+    only: ['orchard', 'sandbox'],
+    opening: 'The Press House is now open. Bring us your bitterness. We are told it has a lovely finish.',
+  },
+  rebirth: {
+    type: 'rebirth',
+    name: 'Carousel of Rebirth',
+    icon: '🎠',
+    desc: 'A carousel that takes guests round each of their past lives and lets them off as themselves, for Old Souls and Past Life Hangovers. Bought with karma. Needs a Massage Therapist trained to run it, which is mostly pushing.',
+    cost: 45000,
+    minShort: 6,
+    minLong: 7,
+    required: ['wheel_of_rebirth'],
+    staff: 'therapist',
+    discipline: 'massage',
+    floor: ['#e8d0e0', '#dfc3d6'],
+    trim: 0xa04a8a,
+    opening: 'The Carousel of Rebirth is now open. Please remain seated until you are yourself.',
+  },
 };
 
 export const ROOM_ORDER: readonly RoomType[] = [
@@ -182,4 +282,18 @@ export const ROOM_ORDER: readonly RoomType[] = [
   'staffroom',
   'restroom',
   'training',
+  'kneader',
+  'pinpress',
+  'aurawash',
+  'alphorn',
+  'cider',
+  'rebirth',
 ];
+
+/** The room a treatment machine is the required item of, if it is a signature machine. */
+export function machineRoom(type: ItemType): RoomType | undefined {
+  return ROOM_ORDER.find((r) => ROOMS[r].required.includes(type));
+}
+
+/** Whether a room can be built at a center: anywhere, or one of the centers it belongs to. */
+export const roomHere = (def: Pick<RoomDef, 'only'>, center: CenterId) => !def.only || def.only.includes(center);
