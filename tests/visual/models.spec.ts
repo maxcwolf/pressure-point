@@ -35,6 +35,7 @@ const IDS = [
   ...['stretch', 'look', 'watch'].map((act) => `idle:${act}`),
   'scenery:trees',
   'scenery:pines',
+  'scenery:orchard',
   'scenery:beach',
   'scenery:storefront',
   'scenery:for-sale',

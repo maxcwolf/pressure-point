@@ -1,7 +1,7 @@
 // Pine trees for the mountains, with snow on their branches, drawn as a few instanced meshes.
 import * as THREE from 'three';
 
-import { cyl, mat } from './parts';
+import { cached, cyl, mat } from './parts';
 import type { TreeSpot } from './tree';
 
 const NEEDLE_COLORS = [0x2f6b4f, 0x3a7a55, 0x285e48] as const;
@@ -11,6 +11,22 @@ const TIERS = [
   [1.05, 0.55],
   [1.5, 0.38],
 ] as const;
+
+/**
+ * A tier of branches as a soft cone, one unit wide and tall about its middle like a cone's: turned on a lathe with a
+ * rounded lip and tip and smoothly shaded, so a pine is a stack of clay cones rather than a faceted one.
+ */
+const tier = () =>
+  cached('pine-tier', () => {
+    const pts = [new THREE.Vector2(0, -0.5), new THREE.Vector2(0.8, -0.5), new THREE.Vector2(0.97, -0.44)];
+    // up from the lip to the tip, a little full in the middle, ending in a round point
+    for (let i = 0; i <= 8; i++) {
+      const t = i / 8;
+      pts.push(new THREE.Vector2(Math.max(0, (1 - t) ** 1.15) * 0.98, -0.38 + t * 0.84));
+    }
+    pts.push(new THREE.Vector2(0, 0.5));
+    return new THREE.LatheGeometry(pts, 14);
+  });
 
 /** How tall a pine is, by its seed. */
 export const pineHeight = (seed: number) => 0.85 + (seed % 4) * 0.15;
@@ -52,12 +68,11 @@ export function buildPines(spots: readonly TreeSpot[]): THREE.Group {
     }
   }
   const forest = new THREE.Group();
-  forest.add(instanced(cyl(0.07, 0.1, 0.5, 8), mat(0x6b4a32, 0.9), trunks));
-  const cone = new THREE.ConeGeometry(1, 1, 8);
+  forest.add(instanced(cyl(0.07, 0.1, 0.5, 12), mat(0x6b4a32, 0.9), trunks));
+  const cone = tier();
   NEEDLE_COLORS.forEach((color, i) => {
     const tiers = needles[i] ?? [];
-    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.85, flatShading: true });
-    if (tiers.length) forest.add(instanced(cone, m, tiers));
+    if (tiers.length) forest.add(instanced(cone, mat(color, 0.78), tiers));
   });
   if (snow.length) forest.add(instanced(cone, mat(0xf4f8fb, 0.6), snow));
   return forest;
