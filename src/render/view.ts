@@ -55,7 +55,7 @@ export class View {
   private snow: SnowfallLayer;
   private rain: RainLayer;
   private storefront: StorefrontLayer;
-  private overlays: Overlays;
+  readonly overlays: Overlays;
   private heat: Heatmap;
   private land: LandLayer;
   private picker: Picker;
@@ -97,6 +97,7 @@ export class View {
     this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
     this.land = new LandLayer(this.scene, sim);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
+    this.overlays.find = this.picker.modelOf.bind(this.picker);
     /** Hand the people to the batches that draw them: the renderer calls this once everything is in place, just before it draws. */
     this.scene.onBeforeRender = (renderer, _scene, camera) =>
       this.people.gather({ camera, height: renderer.getDrawingBufferSize(drawn).y });
