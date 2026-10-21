@@ -11,7 +11,7 @@ import type { Room } from '../core/state/types';
 import { papered, paperUVs, wallMaterial } from './decor-paint';
 import { disposeOwned, owned } from './disposal';
 import { ghostOf } from './hung';
-import { emojiTexture } from './models/emoji';
+import { iconTexture } from './models/icons';
 import { mergeStill } from './models/merge';
 import { mat, put } from './models/parts';
 import { roomShape, type WallBox, type WallMaterial } from './room-walls';
@@ -235,8 +235,10 @@ export class RoomsLayer {
         }
         g.add(pivot);
       }
+      // the room's sign: its plate on its own, as a sign hangs, rather than in a speech bubble
+      const sign = iconTexture(`room-${room.type}`, true);
       const sprite = new THREE.Sprite(
-        owned(new THREE.SpriteMaterial({ map: emojiTexture(def.icon), transparent: true, depthTest: false })),
+        owned(new THREE.SpriteMaterial({ map: sign, transparent: true, depthTest: false })),
       );
       sprite.scale.setScalar(0.72);
       sprite.renderOrder = 9;

@@ -8,6 +8,7 @@ import { useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { OVERLAYS } from '../lib/overlays';
 import { Button } from './common/Button';
+import { Icon } from './common/Icon';
 
 /** The list of overlays while it is open, or the key to the overlay showing. */
 export function OverlayPicker() {
@@ -28,7 +29,9 @@ export function OverlayPicker() {
               if (hud.overlay) track('overlay_shown', { ...gameProps(hud.host.sim.s), overlay: o.id });
             }}
           >
-            <i>{o.icon}</i>
+            <i>
+              <Icon id={o.icon} size={24} />
+            </i>
             <span>
               {o.name}
               <small>{o.desc}</small>
@@ -52,7 +55,10 @@ export function OverlayPicker() {
   if (!showing) return null;
   return (
     <div id="overlay-key" class="panel">
-      <b>{`${showing.icon} ${showing.name}`}</b>
+      <b>
+        <Icon id={showing.icon} size={20} />
+        {showing.name}
+      </b>
       <span class={cx('scale', showing.palette)}>
         <small>{showing.ends?.[0] ?? 'Poor'}</small>
         <i />

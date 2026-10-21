@@ -2,7 +2,7 @@
 // the guests are, how fresh the staff, how well kept the furniture. Each tile gets a value from 0 (bad) to 1 (good),
 // except temperature, which runs from cold through just right to hot.
 
-import { HAMPER_SIZE, isWatered, ITEMS } from '../../core/data';
+import { HAMPER_SIZE, type IconId, isWatered, ITEMS } from '../../core/data';
 import { footprintTiles } from '../../core/footprint';
 import { calmness } from '../../core/sim/noise';
 import type { PlacePreview } from '../../core/sim/preview';
@@ -17,7 +17,7 @@ export type OverlayMode = 'decor' | 'calm' | 'temperature' | 'patience' | 'needs
 /** An overlay as the picker lists it, with what its colors mean when it is not simply poor to good. */
 export interface OverlayDef {
   id: OverlayMode;
-  icon: string;
+  icon: IconId;
   name: string;
   desc: string;
   palette?: Palette;
@@ -27,20 +27,25 @@ export interface OverlayDef {
 
 /** Each overlay, as the picker lists it, with what its colors mean. */
 export const OVERLAYS: readonly OverlayDef[] = [
-  { id: 'decor', icon: '🌿', name: 'Surroundings', desc: 'How pleasant each spot is to wait in.' },
-  { id: 'calm', icon: '🤫', name: 'Calm', desc: 'How quiet each spot is. Noise near a table spoils treatments.' },
+  { id: 'decor', icon: 'overlay-decor', name: 'Surroundings', desc: 'How pleasant each spot is to wait in.' },
+  {
+    id: 'calm',
+    icon: 'overlay-calm',
+    name: 'Calm',
+    desc: 'How quiet each spot is. Noise near a table spoils treatments.',
+  },
   {
     id: 'temperature',
-    icon: '🌡️',
+    icon: 'overlay-temperature',
     name: 'Temperature',
     desc: 'How warm each spot is: blue too cold, green just right, red too hot.',
     palette: 'temperature',
     ends: ['Cold', 'Hot'],
   },
-  { id: 'patience', icon: '⏳', name: 'Patience', desc: 'How patient each guest is.' },
-  { id: 'needs', icon: '🍵', name: 'Needs', desc: 'How thirsty, hungry or desperate each guest is.' },
-  { id: 'energy', icon: '⚡', name: 'Staff energy', desc: 'How fresh each member of staff is.' },
-  { id: 'upkeep', icon: '🔧', name: 'Upkeep', desc: 'How worn, dirty or dry each piece of furniture is.' },
+  { id: 'patience', icon: 'overlay-patience', name: 'Patience', desc: 'How patient each guest is.' },
+  { id: 'needs', icon: 'overlay-needs', name: 'Needs', desc: 'How thirsty, hungry or desperate each guest is.' },
+  { id: 'energy', icon: 'overlay-energy', name: 'Staff energy', desc: 'How fresh each member of staff is.' },
+  { id: 'upkeep', icon: 'overlay-upkeep', name: 'Upkeep', desc: 'How worn, dirty or dry each piece of furniture is.' },
 ];
 
 /** How an overlay's values are colored. */
