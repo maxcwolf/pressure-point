@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 
 import { at } from '../../../core/util';
-import { clay } from '../clay';
+import { soft } from '../clay';
 import { linensMaterial } from '../linens';
 import { capsule, cyl, mat, partsOf, put, sph, torus, WOOD } from '../parts';
 
@@ -28,12 +28,12 @@ export function buildReikiTable(g: THREE.Group) {
     [-0.3, 0.75],
     [0.3, 0.75],
   ])
-    put(g, clay(0.09, 0.5, 0.09), mat(WOOD), x, 0.25, z);
-  put(g, clay(0.8, 0.07, 1.82), mat(WOOD), 0, 0.5, 0);
-  put(g, clay(0.76, 0.14, 1.78), mat(0xc9b6e4, 0.85), 0, 0.59, 0);
+    put(g, soft(0.09, 0.5, 0.09), mat(WOOD), x, 0.25, z);
+  put(g, soft(0.8, 0.07, 1.82), mat(WOOD), 0, 0.5, 0);
+  put(g, soft(0.76, 0.14, 1.78), mat(0xc9b6e4, 0.85), 0, 0.59, 0);
   // a folded blanket over the foot, and a round pillow at the head
   const linens = linensMaterial(0x7a5aa8);
-  put(g, clay(0.78, 0.05, 0.5), linens, 0, 0.68, 0.6);
+  put(g, soft(0.78, 0.05, 0.5), linens, 0, 0.68, 0.6);
   const pillow = put(g, capsule(0.09, 0.36), mat(0xf5ecdb, 0.85), 0, 0.71, -0.72);
   pillow.rotation.z = Math.PI / 2;
 

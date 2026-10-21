@@ -2,14 +2,14 @@
 
 import type * as THREE from 'three';
 
-import { clay } from '../clay';
+import { soft } from '../clay';
 import { capsule, mat, put, sph } from '../parts';
 
 /** Build the Serenity Statue model: a stone figure sitting cross-legged on a plinth, hands in its lap. */
 export function buildStatue(g: THREE.Group) {
   const stone = mat(0xb9b2a4, 0.85);
-  put(g, clay(0.7, 0.16, 0.7), stone, 0, 0.08, 0);
-  put(g, clay(0.56, 0.08, 0.56), stone, 0, 0.2, 0);
+  put(g, soft(0.7, 0.16, 0.7), stone, 0, 0.08, 0);
+  put(g, soft(0.56, 0.08, 0.56), stone, 0, 0.2, 0);
   // the crossed legs, a wide soft roll, with a knee at each end
   put(g, capsule(0.12, 0.3), stone, 0, 0.33, 0.04).rotation.z = Math.PI / 2;
   for (const x of [-0.2, 0.2]) put(g, sph(0.12, 14), stone, x, 0.33, 0.1);

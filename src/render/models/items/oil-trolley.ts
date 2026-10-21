@@ -2,7 +2,7 @@
 
 import type * as THREE from 'three';
 
-import { clay, MEMBER } from '../clay';
+import { MEMBER_MIN, soft } from '../clay';
 import { capsule, CHROME, cyl, DARK, mat, put, sph, WHITE } from '../parts';
 
 /** The oils on the top shelf: amber and green glass, and a pink and a blue for the guest who wants a choice. */
@@ -17,11 +17,11 @@ export function buildOilTrolley(g: THREE.Group) {
     [-0.26, 0.18],
     [0.26, 0.18],
   ]) {
-    put(g, clay(MEMBER, 0.68, MEMBER), steel, x, 0.42, z);
+    put(g, soft(MEMBER_MIN, 0.68, MEMBER_MIN), steel, x, 0.42, z);
     put(g, sph(0.055, 12), mat(DARK), x, 0.055, z);
   }
-  put(g, clay(0.64, 0.05, 0.48), steel, 0, 0.3, 0);
-  put(g, clay(0.64, 0.05, 0.48), steel, 0, 0.74, 0);
+  put(g, soft(0.64, 0.05, 0.48), steel, 0, 0.3, 0);
+  put(g, soft(0.64, 0.05, 0.48), steel, 0, 0.74, 0);
   OILS.forEach((c, i) => {
     const x = -0.2 + i * 0.13;
     const z = -0.06 + (i % 2) * 0.12;

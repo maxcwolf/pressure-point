@@ -2,15 +2,15 @@
 
 import type * as THREE from 'three';
 
-import { clay, MEMBER } from '../clay';
+import { MEMBER_MIN, soft } from '../clay';
 import { capsule, cyl, mat, put, sph, WOOD_DARK } from '../parts';
 
 /** Build the Rattle and Feathers model. */
 export function buildRattle(g: THREE.Group) {
   const wood = mat(WOOD_DARK);
-  put(g, clay(0.5, 0.06, 0.4), wood, 0, 0.03, 0);
-  for (const x of [-0.18, 0.18]) put(g, clay(MEMBER, 0.5, MEMBER), wood, x, 0.3, -0.05);
-  put(g, clay(0.46, MEMBER, 0.08), wood, 0, 0.56, -0.05);
+  put(g, soft(0.5, 0.06, 0.4), wood, 0, 0.03, 0);
+  for (const x of [-0.18, 0.18]) put(g, soft(MEMBER_MIN, 0.5, MEMBER_MIN), wood, x, 0.3, -0.05);
+  put(g, soft(0.46, MEMBER_MIN, 0.08), wood, 0, 0.56, -0.05);
   // the gourd rattle, hanging from the bar
   const gourd = put(g, sph(0.11, 14), mat(0xc98a3a, 0.5), -0.06, 0.34, 0.02);
   gourd.scale.set(1, 1.2, 1);
