@@ -139,7 +139,12 @@ function signAt(room: Room, doorway: Doorway, board: THREE.Material): SignPlaque
 }
 
 /** The see-through blue every part of a blueprint is drawn in. */
-const BLUEPRINT = new THREE.MeshStandardMaterial({ color: 0x6fb7ff, transparent: true, opacity: 0.55, roughness: 0.6 });
+export const BLUEPRINT = new THREE.MeshStandardMaterial({
+  color: 0x6fb7ff,
+  transparent: true,
+  opacity: 0.55,
+  roughness: 0.6,
+});
 
 /**
  * Build a room's walls, windows, door and sign in a building, with the walls facing the camera cut low, in the

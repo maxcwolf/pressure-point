@@ -46,7 +46,7 @@ import { LAMP_STATES, type LampState, pulseLamps, setLamp } from '../render/mode
 import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
 import { type Door, type IdleAct, idleMoment, type Mood, PATIENCE_SIGNS, poseChar } from '../render/pose';
-import { buildRoom } from '../render/rooms';
+import { BLUEPRINT, buildRoom } from '../render/rooms';
 import { H_TALL, WALL_T } from '../render/shared';
 import { SHOP_TURN } from '../render/storefront';
 import { nearSides } from '../render/turn';
@@ -518,9 +518,6 @@ const LAMP_LABELS: Readonly<Record<LampState, string>> = {
   unfinished: 'Unfinished (grey)',
 };
 
-/** A blueprint's blue, as the game draws it. */
-const LAB_BLUEPRINT = new THREE.MeshStandardMaterial({ color: 0x6fb7ff, transparent: true, opacity: 0.55 });
-
 /** The building a room in the lab stands in: the sandbox's, with the room well inside it. */
 const LAB_BUILDING = footprintOf(SANDBOX_PLOT);
 
@@ -560,7 +557,7 @@ function doorSpecimen(): Specimen {
           claimedBy: 0,
         };
         const trim = mat(ROOMS[type].trim, 0.6);
-        const blue = LAB_BLUEPRINT;
+        const blue = BLUEPRINT;
         const materials = done
           ? { wall: wallMaterial('standard'), trim, glass: trim, pane: trim, frame: mat(0xfbfaf6, 0.5), shell: trim }
           : { wall: blue, trim: blue, glass: blue, pane: blue, frame: blue, shell: blue };
