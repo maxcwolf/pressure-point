@@ -15,7 +15,7 @@ import { cyl, mat, put, rbox, sph } from './models/parts';
 import { buildPines } from './models/pine';
 import { buildForest, type TreeSpot } from './models/tree';
 import { shellStretches } from './outer-walls';
-import type { Setting } from './setting';
+import { LAWN, type Setting } from './setting';
 import { H_LOW, hash, OUTER_HT, OUTER_T, SHELL_TRIM } from './shared';
 import { SIGN_HALF, SIGN_LEG, signSpot } from './sign';
 import { onStorefront } from './storefront';
@@ -32,10 +32,9 @@ export function buildScenery(
   plots: readonly Rect[] = [],
 ): THREE.Group {
   const scene = new THREE.Group();
-  const lawn = new THREE.Mesh(
-    new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: colors.ground, roughness: 1 }),
-  );
+  // one lawn material, which the light recolors as the seasons turn
+  LAWN.color.setHex(colors.ground);
+  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2), LAWN);
   lawn.position.set(width / 2, -0.03, H / 2);
   lawn.receiveShadow = true;
   scene.add(lawn);
