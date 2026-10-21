@@ -45,7 +45,7 @@ class NoImage {
   }
 }
 
-// the layers paint emoji onto canvases and load the icons' atlas, which Node cannot: stand-ins that draw nothing will do
+// the layers paint onto canvases and load the icons' atlas, which Node cannot: stand-ins that draw nothing will do
 beforeAll(() => {
   Object.assign(globalThis, {
     document: { createElement: canvas },
