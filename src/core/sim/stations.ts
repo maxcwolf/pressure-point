@@ -49,7 +49,7 @@ import { feelNoise, itemNoise, noisePenalty } from './noise';
 import { hasRoom } from './progress';
 import { countVisit } from './records';
 import { goRest, restPenalty, settleRest } from './recovery';
-import { greeting, tipFor } from './regulars';
+import { greeting, mindsPrice, tipFor } from './regulars';
 import { leadOf, matsFull, sessionPlaying, stationStaff, updateSession } from './sessions';
 import { wantsAway } from './staffing';
 import { expectedPrestige } from './standing';
@@ -321,8 +321,9 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       g.goal = 'treat';
       say(g, '💡');
       // steep prices put some guests off once they hear what the treatment costs, the more so the less the center's
-      // name is worth, though never a regular, who knows
-      if (!g.emergency && !g.regular && random(ctx.s) < putOffChance(treatPrice, ctx.s.reputation)) {
+      // name is worth: a new guest most, a plain regular half as much, a loyal one and an emergency not at all
+      const minds = mindsPrice(ctx.s, g);
+      if (minds > 0 && random(ctx.s) < minds * putOffChance(treatPrice, ctx.s.reputation)) {
         g.outcome = 'stormed';
         g.goal = 'leave';
         feel(g, 'pricey');

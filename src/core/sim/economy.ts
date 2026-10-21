@@ -507,9 +507,8 @@ function along(knots: readonly (readonly [number, number])[], x: number): number
 }
 
 /**
- * The chance a diagnosed guest balks at a treatment's price and leaves: gentle to 1.3 and steep past it, with a
- * better name forgiving a dearer price (`PRICE_PUT_OFF`). Regulars and emergency guests never balk; that is the
- * caller's to check.
+ * The chance a new guest balks at a treatment's price once diagnosed and leaves: gentle to 1.3 and steep past it, with
+ * a better name forgiving a dearer price (`PRICE_PUT_OFF`). How much a guest minds it is `mindsPrice`.
  */
 export function putOffChance(price: number, reputation: number): number {
   return along(PRICE_PUT_OFF.price, price - along(PRICE_PUT_OFF.reputation, reputation));

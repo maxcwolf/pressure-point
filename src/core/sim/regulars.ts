@@ -17,6 +17,7 @@ import {
   REGULAR_LOYALTY,
   REGULAR_ODDS,
   REGULAR_PATIENCE,
+  REGULAR_PUT_OFF,
   REGULAR_STARS,
   REGULARS_MAX,
   VISION_LOYALTY,
@@ -75,6 +76,17 @@ export function tipFor(s: GameState, g: Pick<Guest, 'regular'>, fee: number): nu
   const level = loyaltyLevel(r.loyalty);
   if (level === 'regular') return 0;
   return Math.round(fee * (level === 'devoted' ? DEVOTED_TIP : LOYAL_TIP));
+}
+
+/**
+ * How much a guest minds the price of their treatment, against a new guest: a plain regular half as much, and a loyal
+ * or devoted one, who knows what the center is worth, not at all. Nor does an emergency guest, who has no choice.
+ */
+export function mindsPrice(s: GameState, g: Pick<Guest, 'regular' | 'emergency'>): number {
+  if (g.emergency) return 0;
+  const r = regularOf(s, g);
+  if (!r) return 1;
+  return loyaltyLevel(r.loyalty) === 'regular' ? REGULAR_PUT_OFF : 0;
 }
 
 /** How Reception greets a regular: by their first name. */
