@@ -25,11 +25,12 @@ describe('the put-off curve', () => {
     expect(above).toBeGreaterThan(2 * below);
   });
 
-  it('puts no one off at standard prices from 50% reputation, nor below 85% of standard at any', () => {
-    expect(putOffChance(1, 50)).toBe(0);
-    expect(putOffChance(1, 100)).toBe(0);
-    expect(putOffChance(0.85, 0)).toBe(0);
-    expect(putOffChance(1, 20)).toBeGreaterThan(0);
+  it('puts no one off at standard prices or below, however poor the name', () => {
+    for (const rep of [0, 20, 50, 100]) {
+      expect(putOffChance(1, rep)).toBe(0);
+      expect(putOffChance(0.8, rep)).toBe(0);
+    }
+    expect(putOffChance(1.1, 0)).toBeGreaterThan(putOffChance(1.1, 50));
   });
 
   it('forgives a center with a good name 0.15 more, and one with a poor name 0.15 less', () => {

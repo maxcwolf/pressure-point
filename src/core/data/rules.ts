@@ -71,7 +71,8 @@ export const PRICE_MAX = 2;
  * mind the price in full. The knots are the targets for every diagnosed guest divided by that: gentle to 1.3 and steep
  * past it, about 1% at 1.1, 3% at 1.2, 5% at 1.3, 10% at 1.4 and 20% at 1.6 at 50% reputation. Half at 2 cannot be had
  * while loyal regulars are spared, so the top flattens toward nearly every new guest. A center at 90% is forgiven
- * 0.15 more on the price, one at 20% 0.15 less. Beyond the last knots the curve stays level. CorsixTH's price
+ * 0.15 more on the price, one at 20% 0.15 less, though at standard prices or below no one balks, however poor the
+ * name. Beyond the last knots the curve stays level. CorsixTH's price
  * distortion has the tolerated price rise with reputation the same way.
  */
 export const PRICE_PUT_OFF = {

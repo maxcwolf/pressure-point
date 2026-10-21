@@ -511,6 +511,8 @@ function along(knots: readonly (readonly [number, number])[], x: number): number
  * a better name forgiving a dearer price (`PRICE_PUT_OFF`). How much a guest minds it is `mindsPrice`.
  */
 export function putOffChance(price: number, reputation: number): number {
+  // standard prices put no one off, however poor the center's name: there is always a price that costs no guests
+  if (price <= 1) return 0;
   return along(PRICE_PUT_OFF.price, price - along(PRICE_PUT_OFF.reputation, reputation));
 }
 
