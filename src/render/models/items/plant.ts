@@ -23,5 +23,5 @@ export function buildPlant(g: THREE.Group) {
     [0.02, 0.64, -0.17, 0.16],
     [-0.03, 0.63, 0.17, 0.16],
   ];
-  for (const [x, y, z, r] of blobs) put(g, sph(r, 16), leaf, x, y, z);
+  for (const [x, y, z, r] of blobs) put(g, sph(r, 12), leaf, x, y, z);
 }

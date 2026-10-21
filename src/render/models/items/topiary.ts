@@ -18,5 +18,5 @@ export function buildTopiary(g: THREE.Group) {
     [0.86, 0.16],
     [1.06, 0.11],
   ] as const)
-    put(g, sph(r, 18), leaf, 0, y, 0);
+    put(g, sph(r, 12), leaf, 0, y, 0);
 }
