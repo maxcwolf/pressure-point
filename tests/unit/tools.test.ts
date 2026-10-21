@@ -14,7 +14,7 @@ import {
 } from '../../src/app/tools/hints';
 import { dragTiles, itemTiles, layoutTiles, rectTiles } from '../../src/app/tools/overlay';
 import { heldItem, nextRequired, planStatus, quarterTurn } from '../../src/app/tools/plan';
-import { GUEST_ICON, isStaffRole, legend, STAFF_ICON, useSquares } from '../../src/app/tools/squares';
+import { isStaffRole, legend, useSquares } from '../../src/app/tools/squares';
 import { Tools } from '../../src/app/tools/tools';
 import type { Tool } from '../../src/app/tools/types';
 import { ROOMS } from '../../src/core/data';
@@ -94,11 +94,9 @@ describe('the squares people use furniture from', () => {
   });
 
   it('explains the colors only for the kinds of square an item has, naming who works it', () => {
-    expect(legend('massage_table')).toBe(
-      ` · 💆 purple square: Massage Therapist · ${GUEST_ICON} orange square: guests`,
-    );
-    expect(legend('sofa')).toBe(` · ${STAFF_ICON} purple square: staff`);
-    expect(legend('bench')).toBe(` · ${GUEST_ICON} orange square: guests`);
+    expect(legend('massage_table')).toBe(' · purple square: Massage Therapist · orange square: guests');
+    expect(legend('sofa')).toBe(' · purple square: staff');
+    expect(legend('bench')).toBe(' · orange square: guests');
     expect(legend('plant')).toBe('');
   });
 });
