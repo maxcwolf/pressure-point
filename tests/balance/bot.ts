@@ -44,7 +44,7 @@ import { daysUntilBankrupt, loanLimit, projectedCashflow, wagesDue } from '../..
 import { INTAKE_CAP_MIN } from '../../src/core/sim/guests';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
-import { SEASON_AHEAD_DAYS, seasonOf } from '../../src/core/sim/twists';
+import { inRush, SEASON_AHEAD_DAYS, seasonOf } from '../../src/core/sim/twists';
 import { upgradeCost } from '../../src/core/sim/upgrades';
 import { worsenRate } from '../../src/core/sim/worsening';
 import { disciplineOn, newGame, offeringOn, unlockedUpTo } from '../../src/core/state/game';
@@ -132,12 +132,28 @@ export function botFlags(env: Record<string, string | undefined> = process.env):
     if (unknown.length) throw new Error(`Unknown bot flag ${unknown.join(', ')}: use ${BOT_FLAGS.join(', ')}`);
     return new Set(names);
   };
-  const all = (env.BOT ?? 'new') !== 'old';
+  const all = botMode(env) === 'new';
   const off = list(env.BOT_OFF);
   const on = list(env.BOT_ON);
   return Object.fromEntries(
     BOT_FLAGS.map((f) => [f, (all && !BOT_EXTRAS.includes(f) && !off.has(f)) || on.has(f)]),
   ) as BotFlags;
+}
+
+/**
+ * How the bot plays: as a good player (`new`), as it did before it learned its flags (`old`), or as a thoughtless
+ * baseline (`baseline`): the opening build and nothing on purpose after it, a room and someone to work it only once
+ * a line has formed, never a price changed, a call taken or a loan asked for, so the game is measured as a new
+ * player who reads nothing meets it.
+ */
+export type BotMode = 'new' | 'old' | 'baseline';
+
+/** The bot's mode from the environment (`BOT=old`, `BOT=baseline`): a good player unless told otherwise. */
+export function botMode(env: Record<string, string | undefined> = process.env): BotMode {
+  const mode = env.BOT ?? 'new';
+  if (mode !== 'new' && mode !== 'old' && mode !== 'baseline')
+    throw new Error(`Unknown BOT=${mode}: use new, old or baseline`);
+  return mode;
 }
 
 /** The highest price level the bot sets, and the most it adds on top for a discipline whose line runs long. */
@@ -219,6 +235,8 @@ export interface Playtest {
   peakLoan: number;
   /** For each star, the day each of its objectives was first met (null if never), by the objective's label. */
   goalDays: Record<string, number | null>[];
+  /** The first thing to go against the center once it was open: a twist's first blow or trouble, and the day. */
+  firstAdverse: { what: string; day: number } | null;
 }
 
 const TREAT_ROOM: Record<Discipline, RoomType> = {
@@ -283,6 +301,8 @@ export class Bot {
   /** Reputation when the bot last looked at its prices, and the month it last let anyone go. */
   private repAtReview = 0;
   private trimmedMonth = -1;
+  /** The day the bank last called the overdraft in on the bot, after which it builds and hires nothing for a month. */
+  private rescuedOn = -Infinity;
   /** The day the bot began waiting for a better applicant for a role. */
   private waitingToHire: Partial<Record<Role, number>> = {};
   /** The day until which the bot does not try again to fit a room of a type that did not fit. */
@@ -300,6 +320,7 @@ export class Bot {
     readonly seed = 1,
     difficulty: Difficulty = {},
     readonly flags: BotFlags = botFlags(),
+    readonly mode: BotMode = botMode(),
   ) {
     setSeed(seed);
     const s = newGame(center);
@@ -317,6 +338,7 @@ export class Bot {
       lowestMoney: s.money,
       peakLoan: 0,
       goalDays: CENTERS[center].goals.map(() => ({})),
+      firstAdverse: null,
     };
     this.watch = this.freshWatch();
   }
@@ -362,6 +384,7 @@ export class Bot {
           if (this.flags.trouble) this.calmCarriers();
         }
       }
+      this.noteAdverse();
       this.log.lowestMoney = Math.min(this.log.lowestMoney, this.s.money);
       this.log.peakLoan = Math.max(this.log.peakLoan, this.s.loan);
       this.repLow = Math.min(this.repLow, this.s.reputation);
@@ -389,6 +412,35 @@ export class Bot {
       .filter((o) => !o.done)
       .map((o) => o.label);
     return met;
+  }
+
+  /**
+   * The first thing to go against the center once it is open, for the log: its twist's first blow (a summer, a
+   * rush hour, a snowed-in spell), a stress outbreak, a mishap, a failed inspection, the rival opening, or someone
+   * quitting, whichever comes first.
+   */
+  private noteAdverse() {
+    const s = this.s;
+    if (this.log.firstAdverse || !s.open) return;
+    const what =
+      this.center === 'boardwalk' && seasonOf(s.day) === 'summer'
+        ? 'summer'
+        : this.center === 'exchange' && inRush(s.day)
+          ? 'rush hour'
+          : this.sim.snowedIn()
+            ? 'snowed in'
+            : s.outbreak
+              ? 'stress outbreak'
+              : s.mishap?.started
+                ? `mishap (${s.mishap.kind})`
+                : s.visitReport?.bribe !== undefined
+                  ? 'failed inspection'
+                  : s.rival.opened !== null
+                    ? 'rival opened'
+                    : s.stats.lastQuit >= 0
+                      ? 'someone quit'
+                      : null;
+    if (what) this.log.firstAdverse = { what, day: Math.floor(s.day) };
   }
 
   /** Write up the month just ended. */
@@ -611,6 +663,7 @@ export class Bot {
   private rescue() {
     const s = this.s;
     if (daysUntilBankrupt(s) === null) return;
+    this.rescuedOn = s.day;
     if (s.priceLevel < PRICE_TOP) {
       this.sim.setPrice(PRICE_TOP);
       this.note(`day ${Math.floor(s.day)}: the bank is calling the overdraft in: prices to ${PRICE_TOP}`);
@@ -798,6 +851,10 @@ export class Bot {
   /** Everything the bot looks at once a day. */
   private decide() {
     const s = this.s;
+    if (this.mode === 'baseline') {
+      this.decideThoughtless();
+      return;
+    }
     if (this.flags.clear) this.freeTrapped();
     this.keepStaffHappy();
     this.handleEvents();
@@ -822,6 +879,57 @@ export class Bot {
     if (this.flags.lab) this.buildLab();
     this.decorate();
     this.comforts();
+  }
+
+  /**
+   * The thoughtless baseline's day: the opening build, then raises and promotions when asked for (the game asks),
+   * every emergency taken and every house call and outbreak turned down, fines paid, nothing done about a mishap,
+   * the comforts the advisor asks for, heating when it is cold, a room (or a desk) and someone to work it only once a
+   * line has formed for it and the money is in the bank, with no reserve kept for the wages, and never a price
+   * changed, a course taken, a loan asked for, or anything built that a star unlocks.
+   */
+  private decideThoughtless() {
+    const s = this.s;
+    this.keepStaffHappy();
+    if (s.offer) this.sim.acceptEmergency();
+    if (s.outbreakOffer) this.sim.declineOutbreak();
+    if (s.callOffer) this.sim.declineCall();
+    if (s.visitReport?.bribe !== undefined) this.sim.settleInspection(false);
+    if (!s.open) {
+      this.buildOpening();
+      return;
+    }
+    this.sampleLines();
+    this.hireToFill();
+    this.basics();
+    this.growOnLines();
+  }
+
+  /**
+   * A desk, a consulting room or a treatment room, with someone to work it, wherever a line has formed for one, if
+   * its cost is in the bank: how a player who builds only when the guests are visibly piling up grows.
+   */
+  private growOnLines() {
+    const s = this.s;
+    const desks = this.count('reception_desk');
+    if (this.waiting('receptionist') > desks * 5 && s.money > ITEMS.reception_desk.cost) {
+      this.placeNearEntrance('reception_desk');
+      this.hireToFill();
+    }
+    const consults = this.rooms('consult').length;
+    if (this.waiting('consultant') > consults * 4 && s.money > ROOMS.consult.cost) {
+      this.buildRoom('consult');
+      this.hireToFill();
+    }
+    for (const d of DISCIPLINE_ORDER) {
+      const room = TREAT_ROOM[d];
+      const n = this.rooms(room).length;
+      if (!n) continue;
+      if (this.waiting(DISCIPLINES[d].role) > n * 3 && s.money > ROOMS[room].cost && this.buildRoom(room))
+        this.hireToFill();
+    }
+    const seats = this.count('bench') * 2;
+    if (s.guests.length > seats + 2 && s.money > 400) this.placeNearEntrance('bench');
   }
 
   /** Promotions, and raises for anyone asking, tempted away or about to quit. */
@@ -1403,6 +1511,8 @@ export class Bot {
    */
   private growOnProfit() {
     const s = this.s;
+    // a month after the bank called the overdraft in, nothing is added back: the books have to show a month in profit first
+    if (s.day - this.rescuedOn < DAYS_PER_MONTH) return;
     const reserve = this.wages() * 1.2 + 2000;
     const saving = this.saving();
     if (this.profit() > 0 && !saving) {

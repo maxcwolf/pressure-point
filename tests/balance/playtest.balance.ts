@@ -3,7 +3,9 @@
 // a tuning change and compare. The full logs go to test-results/balance.json. `BOT=old` plays as the bot did before
 // it learned prices, marketing, payroll, saving, expansion on profit, house calls, lines, the Posture Lab, upgrades,
 // emergencies it can see through, room layout, mats, classes and courses; `BOT_OFF=prices,calls` switches single ones
-// off, and `BOT_ON` switches on the extras (see `BOT_FLAGS` and `BOT_EXTRAS` in bot.ts).
+// off, and `BOT_ON` switches on the extras (see `BOT_FLAGS` and `BOT_EXTRAS` in bot.ts). `BOT=baseline` plays as a
+// thoughtless new player: the opening build, a room only once a line has formed, never a price changed or a call
+// taken (see `BotMode`).
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 import { it } from 'vitest';
