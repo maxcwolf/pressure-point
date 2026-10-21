@@ -31,6 +31,7 @@
     "test:perf": "playwright test --config playwright.perf.config.ts",
     "bench": "vitest run --config vitest.bench.config.ts",
     "balance": "vitest run --config vitest.balance.config.ts tests/balance/playtest.balance.ts",
+    "balance:report": "node --disable-warning=ExperimentalWarning scripts/balance-report.mjs",
     "preview": "vite preview",
     "app": "yarn build && electron .",
     "dist:mac": "yarn build && electron-builder --mac --arm64 --x64 -c.mac.identity=- -c.mac.hardenedRuntime=false",
