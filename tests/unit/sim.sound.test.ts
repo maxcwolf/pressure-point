@@ -158,12 +158,14 @@ describe('treating guests on the mats', () => {
     );
     const playing = mats.flatMap((m) => (sim.guest(m.serving)?.state === 'served' ? [m.serving] : []));
     expect(playing.length).toBeGreaterThan(0);
+    // and anyone already called to a mat before the healer tires, who was not called after
+    const called = mats.flatMap((m) => (m.serving ? [m.serving] : []));
     // worn out mid-session, with a Staff Room to rest in
     healer.energy = 1;
     runUntil(
       sim,
       () => {
-        for (const m of mats) if (m.serving) expect(playing).toContain(m.serving);
+        for (const m of mats) if (m.serving) expect(called).toContain(m.serving);
         if (playing.some((id) => sim.guest(id)?.state === 'served')) expect(healer.state).toBe('atPost');
         return healer.state !== 'atPost';
       },

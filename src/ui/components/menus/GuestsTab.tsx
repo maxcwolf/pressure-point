@@ -1,15 +1,17 @@
 // The Stats menu's Guests tab: which discipline new guests come for, and what draws them to each.
 
 import { centerOf, DISCIPLINES } from '../../../core/data';
-import { type DisciplineDemand, lineArrivals } from '../../../core/sim/demand';
+import type { DisciplineDemand } from '../../../core/sim/demand';
+import { guestsCounted } from '../../../core/sim/guests';
 import { useGame } from '../../hooks/use-hud';
 import {
+  capacityNote,
   DEMAND_INTRO,
   demandAdvice,
   followingWord,
-  lineNote,
+  limitNote,
   lineWord,
-  offeringNote,
+  paceNote,
   popularityWord,
   roomWord,
   times,
@@ -66,19 +68,26 @@ function Row({ row, healed }: { row: DisciplineDemand; healed: number }) {
 export function GuestsTab() {
   const { sim } = useGame();
   const rows = sim.demand().sort((a, b) => b.share - a.share);
-  const offering = sim.offering();
-  const away = lineNote(lineArrivals(rows));
+  const pace = sim.arrivalPace();
   const center = centerOf(sim.s);
+  const limit = {
+    building: sim.guestCap(),
+    own: sim.s.intakeCap,
+    inside: guestsCounted(sim.s),
+    away: sim.s.tally.turnedAway ?? 0,
+  };
+  const idle = capacityNote(pace.capacity);
   const season = seasonLine(sim.s.day, center);
   const rush = rushLine(sim.s.day, center);
   if (!rows.length) return <p class="sub">No treatment rooms yet: build one, and guests start arriving for it.</p>;
   return (
     <div class="demand">
       <p class="sub">{DEMAND_INTRO}</p>
-      <p class="sub">{offeringNote(offering.staffed, offering.arrivals)}</p>
+      <p class="sub">{paceNote(pace, sim.s.reputation, center)}</p>
+      <p class="sub">{limitNote(limit, pace.capacity)}</p>
+      {idle && <p class="sub">{idle}</p>}
       {season && <p class="sub seasons">{`🗓️ ${season}`}</p>}
       {rush && <p class="sub seasons">{`🗓️ ${rush}`}</p>}
-      {away && <p class="sub">{away}</p>}
       {rows.map((row) => (
         <Row key={row.discipline} row={row} healed={sim.s.tally.healedBy[row.discipline] ?? 0} />
       ))}

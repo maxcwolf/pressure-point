@@ -2,18 +2,23 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CAPACITY_ARRIVALS,
+  centerOf,
   conditionOf,
   CONDITIONS,
+  CONSULT_FEEDS,
   DISCIPLINES,
   FOLLOWING,
   followingPull,
+  GUEST_CAP,
   LINE_PUT_OFF,
   MODALITIES,
-  OFFERING_ARRIVALS,
 } from '../../src/core/data';
 import type { Discipline, Modality } from '../../src/core/data/types';
 import type { SimContext } from '../../src/core/sim/context';
 import {
+  capacity,
+  capacityArrivals,
   chooseCondition,
   type DisciplineDemand,
   fadeFollowing,
@@ -21,23 +26,24 @@ import {
   followVisit,
   lineArrivals,
   lineFactor,
-  offeringArrivals,
-  staffedDisciplines,
   UNTRAINED_PULL,
 } from '../../src/core/sim/demand';
+import { admitGuests, type ArrivalPace, guestCap, guestsCounted, spawnGuest } from '../../src/core/sim/guests';
 import { newGame } from '../../src/core/state/game';
 import type { GameState, Guest } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import {
+  capacityNote,
   demandAdvice,
   followingWord,
-  lineNote,
+  limitNote,
   lineWord,
-  offeringNote,
+  paceNote,
   popularityWord,
   times,
 } from '../../src/ui/lib/demand';
-import { addSound, hire, openCenter, runUntil } from './helpers';
+import { calendarTip } from '../../src/ui/lib/seasons';
+import { addAcupuncture, addReiki, addSound, hire, openCenter, runUntil } from './helpers';
 
 /** The game's own context, for calling the simulation directly. */
 const ctxOf = (c: { sim: unknown }) => (c.sim as { ctx: SimContext }).ctx;
@@ -54,6 +60,19 @@ function twoRooms() {
   healer.quals = modsOf('sound');
   return { ...c, healer, ctx: ctxOf(c) };
 }
+
+/** A second massage table in the Massage Suite, beside the first. */
+function addMassageTable(c: ReturnType<typeof twoRooms>) {
+  for (let y = 5; y <= 8; y++)
+    for (let x = 11; x <= 14; x++)
+      for (let rot = 0; rot < 4; rot++)
+        if (c.sim.world.canPlaceItem('massage_table', x, y, rot).ok && c.sim.placeItem('massage_table', x, y, rot))
+          return;
+  throw new Error('no room for a second table');
+}
+
+/** The guest limit's terms as calibrated in balance-log entry 37. */
+const CAP_NOW = { base: 4, station: 2, consult: 2 };
 
 /** One discipline's row of the demand. */
 const row = (rows: DisciplineDemand[], d: Discipline) => rows.find((r) => r.discipline === d);
@@ -192,23 +211,196 @@ describe('a following', () => {
 });
 
 describe('how many guests arrive', () => {
-  it('rises with each discipline offered with a room and a practitioner, past the first', () => {
+  it('rises with each staffed treatment station past the first, a table for each practitioner and the mats they play', () => {
     const c = twoRooms();
-    expect(staffedDisciplines(c.ctx)).toEqual(['massage', 'sound']);
-    expect(offeringArrivals(c.ctx)).toBeCloseTo(1 + OFFERING_ARRIVALS, 5);
-    expect(c.sim.offering()).toEqual({ staffed: 2, arrivals: offeringArrivals(c.ctx) });
+    // one table and its therapist, and a Sound Healer playing the studio's two mats
+    expect(capacity(c.ctx)).toEqual({
+      stations: 3,
+      by: { massage: 1, sound: 2 },
+      away: 0,
+      idle: 0,
+      consults: 1,
+      fed: 3,
+    });
+    expect(capacityArrivals(capacity(c.ctx))).toBeCloseTo(1.24, 5);
     // a room with nobody to work in it brings nobody
     c.healer.state = 'leaving';
-    expect(staffedDisciplines(c.ctx)).toEqual(['massage']);
-    expect(offeringArrivals(c.ctx)).toBe(1);
+    expect(capacity(c.ctx)).toMatchObject({ stations: 1, by: { massage: 1 }, idle: 2, fed: 1 });
+    expect(capacityArrivals(capacity(c.ctx))).toBe(1);
   });
 
-  it('says so in the panel', () => {
-    expect(offeringNote(1, 1)).toBe(
-      'Each discipline you add, with its room and a practitioner on the payroll, brings more guests in all.',
+  it('counts a second table only with a second practitioner to work it', () => {
+    const c = twoRooms();
+    addMassageTable(c);
+    expect(capacity(c.ctx)).toMatchObject({ stations: 3, idle: 1 });
+    hire(c.sim, 'therapist');
+    expect(capacity(c.ctx)).toMatchObject({ stations: 4, by: { massage: 2, sound: 2 }, idle: 0 });
+  });
+
+  it('leaves out a station while its practitioner is away on a course or a house call', () => {
+    const c = twoRooms();
+    c.therapist.state = 'training';
+    expect(capacity(c.ctx)).toMatchObject({ stations: 2, by: { sound: 2 }, away: 1, idle: 0 });
+    c.therapist.state = 'away';
+    expect(capacity(c.ctx)).toMatchObject({ stations: 2, away: 1 });
+    // a break is part of the work
+    c.therapist.state = 'onBreak';
+    expect(capacity(c.ctx)).toMatchObject({ stations: 3, away: 0 });
+  });
+
+  it('draws for no more stations than the Consultation Rooms can keep in guests', () => {
+    const c = twoRooms();
+    addMassageTable(c);
+    hire(c.sim, 'therapist');
+    addAcupuncture(c.sim);
+    hire(c.sim, 'acupuncturist');
+    addReiki(c.sim);
+    hire(c.sim, 'practitioner');
+    // four tables and the mats, and one Consultant: four stations' worth draw
+    expect(CONSULT_FEEDS).toBe(4);
+    expect(capacity(c.ctx)).toMatchObject({ stations: 6, consults: 1, fed: 4 });
+    expect(capacityArrivals(capacity(c.ctx))).toBeCloseTo(1.36, 5);
+    c.consultant.state = 'leaving';
+    expect(capacity(c.ctx)).toMatchObject({ stations: 6, consults: 0, fed: 0 });
+  });
+
+  it('draws six stations 1.6 times as often as one, and stops growing at 2.5 times', () => {
+    expect(capacityArrivals({ fed: 0 })).toBe(1);
+    expect(capacityArrivals({ fed: 1 })).toBe(1);
+    expect(capacityArrivals({ fed: 6 })).toBeCloseTo(1.6, 5);
+    expect(capacityArrivals({ fed: 14 })).toBeCloseTo(2.5, 5);
+    expect(capacityArrivals({ fed: 30 })).toBe(CAPACITY_ARRIVALS.most);
+  });
+
+  it('sets the pace guests arrive at, with reputation the base and the difficulty on top', () => {
+    const c = twoRooms();
+    c.s.reputation = 50;
+    c.s.open = true;
+    const pace = c.sim.arrivalPace();
+    // 20 seconds a guest at 50% reputation: 9 a month
+    expect(pace.base).toBeCloseTo(9, 5);
+    expect(pace.staffed).toBeCloseTo(1.24, 5);
+    const parts = pace.parts.center * pace.parts.time * pace.parts.grade * pace.parts.rival * pace.parts.mishap;
+    expect(pace.seconds).toBeCloseTo(20 / parts / 1.24 / pace.lines / pace.difficulty, 5);
+    expect(pace.perMonth).toBeCloseTo(180 / pace.seconds, 5);
+    // the next guest comes within three tenths either side of it
+    c.s.spawnT = 0;
+    admitGuests(c.ctx, 0.01);
+    expect(c.s.spawnT).toBeGreaterThanOrEqual(pace.seconds * 0.7 - 1e-9);
+    expect(c.s.spawnT).toBeLessThanOrEqual(pace.seconds * 1.3 + 1e-9);
+    // a harder setting slows the same center down
+    c.s.difficulty = { arrivals: 'harder' };
+    expect(c.sim.arrivalPace().seconds).toBeGreaterThan(pace.seconds);
+  });
+});
+
+describe('the guests let in at once', () => {
+  it('are a few, and more for each staffed treatment station and staffed Consultation Room', () => {
+    const c = twoRooms();
+    const { base, station, consult } = GUEST_CAP;
+    expect(GUEST_CAP).toEqual(CAP_NOW);
+    expect(guestCap(c.ctx)).toBe(base + station * 3 + consult * 1);
+    // a table nobody works lets nobody more in
+    addMassageTable(c);
+    expect(guestCap(c.ctx)).toBe(base + station * 3 + consult * 1);
+    // and with no Consultant, no station is kept in guests
+    c.consultant.state = 'leaving';
+    expect(guestCap(c.ctx)).toBe(base);
+  });
+
+  it('turn the rest away once the building is full, and count them', () => {
+    const c = twoRooms();
+    c.s.open = true;
+    const cap = guestCap(c.ctx);
+    while (guestsCounted(c.s) < cap) spawnGuest(c.ctx);
+    const away = c.s.tally.turnedAway ?? 0;
+    c.s.spawnT = 0;
+    admitGuests(c.ctx, 0.01);
+    expect(guestsCounted(c.s)).toBe(cap);
+    expect(c.s.tally.turnedAway).toBe(away + 1);
+  });
+});
+
+describe('the pace, in words', () => {
+  /** A center's pace: 28 a month at the Boardwalk in summer, with six staffed stations, unless told otherwise. */
+  const pace = (over: Partial<ArrivalPace> = {}): ArrivalPace => ({
+    base: 9,
+    parts: { center: 1, time: 1.9, grade: 1.1, rival: 1, mishap: 1 },
+    capacity: { stations: 6, by: { massage: 4, acupuncture: 2 }, away: 0, idle: 0, consults: 2, fed: 6 },
+    staffed: 1.6,
+    lines: 0.92,
+    difficulty: 1,
+    seconds: 180 / 28,
+    perMonth: 28,
+    ...over,
+  });
+  const boardwalk = centerOf(newGame('boardwalk'));
+  const { base, station, consult } = GUEST_CAP;
+
+  it('gives each factor with the count behind it', () => {
+    expect(paceNote(pace(), 50, boardwalk)).toBe(
+      'About 28 new guests a month: 9 at 50% reputation, ×1.6 for 6 staffed treatment stations, ×1.9 for the season, ×1.1 for its grade, less 8% kept away by long lines.',
     );
-    expect(offeringNote(3, 1.2)).toBe(
-      '3 disciplines with a room and a practitioner bring guests ×1.2 as often as one would.',
+    const plain = { center: 1, time: 1, grade: 1, rival: 1, mishap: 1 };
+    // one station, and what another would bring
+    expect(
+      paceNote(
+        pace({
+          capacity: { stations: 1, by: { massage: 1 }, away: 0, idle: 0, consults: 1, fed: 1 },
+          staffed: 1,
+          parts: plain,
+          lines: 1,
+          perMonth: 9,
+        }),
+        50,
+        boardwalk,
+      ),
+    ).toBe(
+      'About 9 new guests a month: 9 at 50% reputation, 1 staffed treatment station (each one more brings 12% more).',
+    );
+    // more stations than the consultations keep in guests
+    expect(
+      paceNote(
+        pace({
+          capacity: { stations: 7, by: {}, away: 0, idle: 0, consults: 1, fed: 4 },
+          staffed: 1.36,
+          parts: plain,
+          lines: 1,
+          perMonth: 12,
+        }),
+        40,
+        boardwalk,
+      ),
+    ).toBe(
+      'About 12 new guests a month: 9 at 40% reputation, ×1.36 for 4 of 7 staffed treatment stations (1 Consultation Room keeps only 4 in guests).',
+    );
+  });
+
+  it('names the stations that draw nobody, and why', () => {
+    expect(capacityNote(pace().capacity)).toBeNull();
+    expect(capacityNote({ stations: 7, by: {}, away: 1, idle: 2, consults: 1, fed: 4 })).toBe(
+      '3 staffed treatment stations draw nobody more: every guest is seen in a Consultation Room first, and each keeps only 4 stations in guests. Another would let them draw, and let more in at once. 2 treatment stations have nobody on the payroll to work them: a practitioner for each would bring guests more often and let more in at once. 1 treatment station stands idle while its practitioner is away on a course or a house call, and draws nobody until they are back.',
+    );
+  });
+
+  it('gives the limit, what it is made of, and who found it full, with the lever', () => {
+    const cap = pace().capacity;
+    const made = `${base}, and ${station} for each of 6 staffed treatment stations and ${consult} for each of 2 staffed Consultation Rooms`;
+    expect(limitNote({ building: 20, own: null, inside: 18, away: 0 }, cap)).toBe(
+      `The building lets in 20 guests at once: ${made}. 18 in now. Nobody has found it full this month.`,
+    );
+    expect(limitNote({ building: 20, own: 12, inside: 12, away: 5 }, cap)).toBe(
+      `The building lets in 20 guests at once: ${made}. 12 in now. Your own limit is 12. 5 guests found it full this month and went elsewhere, with their fees: another staffed treatment station lets in ${station} more, or raise your own limit.`,
+    );
+    // where the consultation holds the stations back, a Consultation Room is the lever
+    expect(
+      limitNote({ building: 14, own: null, inside: 14, away: 3 }, { ...cap, stations: 7, consults: 1, fed: 4 }),
+    ).toContain(`another staffed Consultation Room lets in ${consult + station * 3} more.`);
+  });
+
+  it("is in the date's hover as well", () => {
+    expect(calendarTip(10, boardwalk, { p: pace(), reputation: 50 })).toBe(
+      `Date and weather Winter: ×${boardwalk.seasons!.winter} the usual guests. Spring (×1) from day 1 of month 3, in 50 days. ${paceNote(pace(), 50, boardwalk)}`,
     );
   });
 });
@@ -247,8 +439,6 @@ describe('a long line', () => {
     expect(lineArrivals([row(1, 1), row(1, 1)])).toBe(1);
     // half of one of two equal disciplines put off: a quarter fewer guests in all
     expect(lineArrivals([row(1, 1), row(1, 0.5)])).toBeCloseTo(0.75);
-    expect(lineNote(1)).toBeNull();
-    expect(lineNote(0.75)).toBe('Long lines for treatment are keeping 25% of new guests away.');
   });
 });
 

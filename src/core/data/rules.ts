@@ -307,10 +307,22 @@ export const ROOM_PULL = { star: 0.35, calm: 0.6, mat: 0.2, max: 2 } as const;
  */
 export const FOLLOWING = { start: 20, established: 40, heal: 5, fail: 3, walkout: 2, fade: 0.05 } as const;
 /**
- * How many more guests arrive for each discipline past the first that the center offers with a room and a
- * practitioner on the payroll: a fifth discipline brings 20% more. Kept small, so the game stays about as hard as it was.
+ * How many more guests arrive for each staffed treatment station past the first (a table, or a mat a Sound Healer can
+ * play for, with someone in its role on the payroll and at work to work it), and the most it comes to: six staffed
+ * tables draw 1.6 times the guests of one, and the pace stops growing at 2.5 times, from 14 stations.
  */
-export const OFFERING_ARRIVALS = 0.05;
+export const CAPACITY_ARRIVALS = { each: 0.12, most: 2.5 } as const;
+/**
+ * How many treatment stations one staffed Consultation Room can keep in guests: every guest is seen there first, so
+ * stations past this many for each one draw nobody more, and count nothing toward the guests let in at once.
+ */
+export const CONSULT_FEEDS = 4;
+/**
+ * How many guests the building lets in at once, from what it can treat: `base`, and more for each staffed treatment
+ * station and each staffed consulting room. A center that has outgrown its tables turns the rest away rather than
+ * filling its corridors.
+ */
+export const GUEST_CAP = { base: 4, station: 2, consult: 2 } as const;
 /**
  * How a long line for a discipline's treatment puts new guests off it: nobody while there are up to `easy` guests
  * waiting for each of its practitioners, then `each` fewer for every one more, and at most `most` fewer. Those put off

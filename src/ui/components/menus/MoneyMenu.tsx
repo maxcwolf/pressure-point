@@ -4,15 +4,16 @@ import './MoneyMenu.css';
 
 import { LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../../../core/data';
 import { money } from '../../../core/format';
-import { loanLimit } from '../../../core/sim/economy';
+import { loanLimit, payrollOutlook } from '../../../core/sim/economy';
 import { netOf } from '../../../core/sim/economy';
-import { guestCap, INTAKE_CAP_MIN } from '../../../core/sim/guests';
+import { INTAKE_CAP_MIN } from '../../../core/sim/guests';
 import type { Ledger } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { MoneyTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
 import { cx } from '../../lib/cx';
 import { incomeSources, incomeVerdict, shareWord } from '../../lib/income';
+import { paydayBeside } from '../../lib/loan';
 import { BALK_WHO, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
 import { LandTab } from './LandTab';
@@ -159,7 +160,7 @@ function IntakeCap() {
   const { sim } = useGame();
   const s = sim.s;
   const cap = s.intakeCap;
-  const building = guestCap(s);
+  const building = sim.guestCap();
   return (
     <div class="ledger intake-cap">
       <h4>
@@ -206,12 +207,14 @@ function IntakeCap() {
 function Loan() {
   const { sim, audio } = useGame();
   const s = sim.s;
+  const payroll = payrollOutlook(s);
   return (
     <div class="ledger">
       <h4>{`Loan: ${money(s.loan)} of ${money(loanLimit(s))}`}</h4>
       <p class="sub">
         {`Costs ${(LOAN_RATE * 100).toFixed(0)}% interest a month, currently ${money(s.loan * LOAN_RATE)}.`}
       </p>
+      {payroll.wages > 0 && <p class="sub">{paydayBeside(payroll)}</p>}
       <div class="btnrow left">
         <Button
           quiet

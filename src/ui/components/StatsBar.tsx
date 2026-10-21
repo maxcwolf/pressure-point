@@ -55,7 +55,10 @@ export function StatsBar() {
         <b>{s.guests.length}</b>
         <small>{`${s.stats.healed} healed`}</small>
       </div>{' '}
-      <div class="stat date" title={calendarTip(s.day, centerOf(s))}>
+      <div
+        class="stat date"
+        title={calendarTip(s.day, centerOf(s), s.open ? { p: sim.arrivalPace(), reputation: s.reputation } : undefined)}
+      >
         <i>{SEASON_ICONS[season]}</i>
         <b>
           {`Day ${date.day}`}

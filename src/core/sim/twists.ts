@@ -60,19 +60,37 @@ export function cutOff(ctx: SimContext): boolean {
   return !!snow && snowedIn(ctx.s.day, snow);
 }
 
+/** What moves how often guests arrive at a moment, beyond reputation and what the center can treat, each a multiplier. */
+export interface ArrivalParts {
+  /** The center's own draw, the same all year. */
+  center: number;
+  /** The season or the rush hour: busier in rush hours and summers, quieter otherwise. */
+  time: number;
+  /** A center that stands higher draws more guests, the rival across the street draws some away, a storm keeps most at home. */
+  grade: number;
+  rival: number;
+  mishap: number;
+}
+
+/** How much faster than usual guests arrive at a moment, part by part. */
+export function arrivalParts(ctx: SimContext): ArrivalParts {
+  const { rush, seasons, arrivals } = centerOf(ctx.s);
+  let time = 1;
+  if (rush) time *= inRush(ctx.s.day) ? rush.peak : rush.lull;
+  if (seasons) time *= seasonFactor(seasonOf(ctx.s.day), seasons);
+  return {
+    center: arrivals ?? 1,
+    time,
+    grade: gradeArrivals(ctx.s.grade),
+    rival: 1 - rivalDraw(ctx.s),
+    mishap: mishapArrivals(ctx.s),
+  };
+}
+
 /** How much faster than usual guests arrive at a moment: busier in rush hours and summers, quieter otherwise. */
 export function arrivalFactor(ctx: SimContext): number {
-  const { rush, seasons, arrivals } = centerOf(ctx.s);
-  let factor = arrivals ?? 1;
-  if (rush) factor *= inRush(ctx.s.day) ? rush.peak : rush.lull;
-  if (seasons) {
-    const season = seasonOf(ctx.s.day);
-    if (season === 'summer') factor *= seasons.summer;
-    else if (season === 'winter') factor *= seasons.winter;
-  }
-  // a center that stands higher draws more guests, the rival across the street draws some away, and a storm keeps
-  // most at home
-  return factor * gradeArrivals(ctx.s.grade) * (1 - rivalDraw(ctx.s)) * mishapArrivals(ctx.s);
+  const p = arrivalParts(ctx);
+  return p.center * p.time * p.grade * p.rival * p.mishap;
 }
 
 /** How much busier than usual a season is, in a center with seasons. */

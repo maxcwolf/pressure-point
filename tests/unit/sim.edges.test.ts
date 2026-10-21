@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { DAY_SECONDS } from '../../src/core/data';
 import { canMoveItem } from '../../src/core/sim/building';
-import { createContext } from '../../src/core/sim/context';
+import { createContext, type SimContext } from '../../src/core/sim/context';
 import { updateEmergency } from '../../src/core/sim/emergencies';
 import { drainEvents } from '../../src/core/sim/events';
 import { guestCap } from '../../src/core/sim/guests';
@@ -77,11 +77,12 @@ describe('an emergency', () => {
 });
 
 describe('the number of guests let in', () => {
-  it('grows with finished rooms, not blueprints', () => {
-    const { sim, s } = openCenter(1);
-    const cap = guestCap(s);
+  it('grows with what the center can treat, not with blueprints or rooms that treat nobody', () => {
+    const { sim } = openCenter(1);
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    const cap = guestCap(ctx);
     sim.createRoom('staffroom', { x: 17, y: 5, w: 3, h: 3 }, { x: 18, y: 7, dx: 0, dy: 1 });
-    expect(guestCap(s)).toBe(cap);
+    expect(guestCap(ctx)).toBe(cap);
   });
 });
 

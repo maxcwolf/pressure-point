@@ -251,8 +251,8 @@ describe('a class in play', () => {
     const { sim, s } = studio();
     s.open = true;
     const ctx = (sim as unknown as { ctx: SimContext }).ctx;
-    for (let i = 0; i < guestCap(s); i++) spawnGuest(ctx, undefined, false, 4);
-    expect(s.guests.length).toBeGreaterThanOrEqual(guestCap(s));
+    for (let i = 0; i < guestCap(ctx); i++) spawnGuest(ctx, undefined, false, 4);
+    expect(s.guests.length).toBeGreaterThanOrEqual(guestCap(ctx));
     expect(guestsCounted(s)).toBe(0);
     s.spawnT = 0;
     admitGuests(ctx, 0.1);
@@ -264,10 +264,10 @@ describe('a class in play', () => {
     const { sim, s } = studio();
     s.open = true;
     const ctx = (sim as unknown as { ctx: SimContext }).ctx;
-    while (guestsCounted(s) < guestCap(s)) spawnGuest(ctx);
+    while (guestsCounted(s) < guestCap(ctx)) spawnGuest(ctx);
     s.spawnT = 0;
     admitGuests(ctx, 0.1);
-    expect(guestsCounted(s)).toBe(guestCap(s));
+    expect(guestsCounted(s)).toBe(guestCap(ctx));
   });
 
   it('is announced as its day begins', () => {
