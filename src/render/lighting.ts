@@ -7,8 +7,8 @@ import type { Mishap } from '../core/state/types';
 import type { SettingLight } from './setting';
 
 /** How bright the sky and the sun are as usual. */
-const SKY = 0.95;
-const SUN = 2.5;
+const SKY = 1.1;
+const SUN = 2.35;
 /** How bright the light is, against usual, in a power cut with no generator, and under storm clouds. */
 export const POWER_CUT_LIGHT = 0.5;
 export const STORM_LIGHT = 0.65;
