@@ -53,10 +53,10 @@ export function OverlayPicker() {
   return (
     <div id="overlay-key" class="panel">
       <b>{`${showing.icon} ${showing.name}`}</b>
-      <span class={cx('scale', showing.palette)}>
-        <small>{showing.ends?.[0] ?? 'Poor'}</small>
+      <span class={cx('scale', showing.key)} title={showing.desc}>
+        <small>{showing.ends[0]}</small>
         <i />
-        <small>{showing.ends?.[1] ?? 'Good'}</small>
+        <small>{showing.ends[1]}</small>
       </span>
       <Button
         class="x"
