@@ -34,6 +34,7 @@ import type { Expression } from '../render/models/character-detail';
 import { buildSite } from '../render/models/fence';
 import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
+import { buildOrchard } from '../render/models/orchard';
 import { partsOf } from '../render/models/parts';
 import { buildPines } from '../render/models/pine';
 import { buildStorefront } from '../render/models/storefront';
@@ -523,6 +524,18 @@ const SCENERY: Specimen[] = [
     /** Pines of every height and color. */
     build: () => ({
       root: buildPines([0, 1, 2, 3].map((seed) => ({ x: (seed - 1.5) * 1.3, z: 0, seed }))),
+      animate: still,
+      controls: [],
+    }),
+  },
+  {
+    id: 'scenery:orchard',
+    group: 'Scenery',
+    name: 'Apple trees',
+    footprint: [4, 1],
+    /** Apple trees of every size. */
+    build: () => ({
+      root: buildOrchard([0, 1, 2].map((seed) => ({ x: (seed - 1) * 1.5, z: 0, seed }))),
       animate: still,
       controls: [],
     }),

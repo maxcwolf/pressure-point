@@ -75,7 +75,7 @@ Keep as they are: the bad-vibes cloud (readable and funny), the floating money t
 **Improve, in this order.**
 
 1. **Materials and light before geometry.** Every surface is `MeshStandardMaterial` at one of a few roughnesses with no metalness, lit by one hemisphere and one sun, with no tone mapping. The result is chalky and even (look at the Posture Scanner). Add ACES tone mapping with a touch of exposure, tune the hemisphere's ground color to the setting (grass bounce in the park, sand at the seaside, blue-white in the snow), and let the sun's shadow reach follow the zoom so shadows are crisp close up. This touches `lighting.ts`, `view.ts` and `setting.ts` and changes every picture for the better. Done as stream 4, with neutral tone mapping in place of ACES (which grayed the cream floors): [before and after](assets/lighting-before-after.jpg), before on the left, of the screenshot fixture, the same zoomed in, and the sandbox in the snow and at the seaside.
-2. **One surface language.** Items and people are smooth and rounded; trees are faceted icosahedra. Both are fine styles, but they are two. Either round the trees or give the far background its own deliberately simpler look.
+2. **One surface language.** Items and people are smooth and rounded; trees are faceted icosahedra. Both are fine styles, but they are two. Either round the trees or give the far background its own deliberately simpler look. Done in stream 9: the park's trees, the pines and the orchard's apple trees are smooth clay shapes now.
 3. **Doors.** A door is a gap in the wall and a painted threshold. A frame in the room's trim color, with an arch or a half-open door, makes doors readable from any distance and gives the sign somewhere to hang.
 4. **Floor resolution.** 48 px a tile is coarse when zoomed in on the corridor checker. 64 px, plus a faint grout line and noise, costs little.
 5. **A scale guideline for items.** Some items are chunkier than others (the scanner's ring reads as a paddling pool). A short rule in `parts.ts` (minimum member thickness, standard corner radius, how tall a one-tile item may be) and a pass over the 81 models against it.
@@ -129,6 +129,29 @@ In the scene, speech bubbles take the bubble form and signs and markers the plai
 **Stream 1b is done** (branch `claude/ui-icons-60a1cc`): 218 more icons, 325 in all, in the families above, and no emoji is drawn in the interface as a signal. Every `icon` field in `core/data` is an `IconId`; sentences carry no glyph, and the component draws the icon beside the words (`<IconText>`, `<Line>`), toasts included. Left as they were, on purpose: the typographic marks drawn in the font rather than as emoji (★ ☆ for stars and ratings, ✔ ✗ ○ for done and missing, ✕ to close, ▲ ▼ ⇄ in a line, ← → and arrows on keys); the title screen keeps no emoji at all, since its save card's figures are signals and use `ui-reputation`, `ui-money`, `bubble-happy` and `ui-date`. The scene's own emoji (bubbles, `NEED_ICON`, `SHOP_ICONS`, the use-square markers) are stream 1c's.
 
 **Stream 1c is done** (branch `claude/scene-icons-834186`): nothing in the scene draws emoji any more, and `render/models/emoji.ts` is gone. The sim says bubbles by id (`say(c, 'bubble-happy')`, typed `BubbleId` on the `Char`), and save version 33 turns the emoji in an older save's bubbles into their ids, or clears one with none. The wrench and flies over items and the markers over an item's use squares draw plain; `STAFF_ICON`, `GUEST_ICON` and `workedBy` in `app/tools/squares.ts` name their ids, a station's being `role-<role>`, and the hint's legend of the squares is plain words. Every bubble and marker had an id already, so none was missing; the shop's five wares all show as `bubble-shopping`, where they were five different emoji, and `SHOP_ICONS` in `core/data/business.ts` is now unused (left for stream 1b, which owns the data tables).
+
+**Stream 9's first half is done** (branch `claude/model-polish-a-fc43c0`): the guideline at the top of `models/parts.ts`, with the helpers it needs (`MEMBER_MIN`, `TALL_MAX`, `corner`, `soft`, a lathe-turned `bowl` and a smoothed `blob`), and the items from the Acupuncture Table to the Mushroom Altar and the trees brought into line with it. No item gained a material, and every named part keeps its name and place. What changed:
+
+- Acupuncture Table: the bolster is a capsule, the frame takes the standard corners, and the session needles and wires are 2 cm across, up from 1.2.
+- Aquarium: the base and lid take the standard corners, and the weed is four leaning, round-tipped fronds in place of three six-sided sticks.
+- Mindfulness Arcade: 1.54 m tall, down from 1.66, with a capsule for a joystick.
+- Bonsai: smooth pads of leaves in place of faceted ones, a capsule for the side branch, a fuller trunk, and a pot with the standard corners.
+- Brew Pot: rounder pot and bucket, and a bucket handle 2.4 cm across, up from 1.6.
+- Ceremony Mat: the rolled blanket is a capsule, and the Shaman's cushion rounder.
+- Espresso Machine, Fireplace and Kombucha Tap: the big bodies take the standard corners (they were sharp for their size); rounder logs, flames and barrel.
+- Crystal Bowls: hollow bowls turned on a lathe, where solid white cylinders read as cakes.
+- Crystal Grid: six-sided crystal points, the middle one 38 cm tall, in place of needle-thin cones.
+- Cupping Cart: legs 6.4 cm across, up from 4, and the glass cups on a white cloth, so they read as glass rather than as stones.
+- Aroma Diffuser: a ceramic dome with a mouth for the scent, in place of a white cone.
+- Ember Bowl: a turned stone bowl whose rim stands proud of the bed of ash, in place of a faceted cylinder.
+- Fortune Teller: 1.6 m tall, down from 1.99; the mystic sits forward, where the top no longer hides their face from the game's camera, in a gilt window lit from behind, in place of hazy glass. Two fewer materials.
+- Gong: heavier posts and beam, a capsule beater with a bigger head, and cords 2.8 cm across, up from 2.
+- Magazine Rack: sides 6 cm thick, up from 5, with the standard corners.
+- Mushroom Altar: legs 6.5 cm across, and a capsule spout on the teapot.
+- Already within the guideline, so left as they were: Air Conditioner, Bench, Trash Can, Bookcase, Chart Cabinet, Certificate, Chakra Chart, Consultation Desk, Fire Extinguisher, Zen Fountain, Instructor's Mat, Koi Pond, Landscape Painting, Linen Hamper, Living Wall, Massage Chair, Massage Table, Meridian Poster, Motivational Poster and Moxa Burner.
+- Trees: the leaves of the park's trees and the apple trees are smoothly shaded blobs (`blob`, an icosahedron with its corners welded, so it shades round for the faceted one's 80 triangles), and a pine is a stack of soft cones turned on a lathe, open beneath where the camera never looks. They are still a few instanced meshes in all, now on shared shapes and materials, and cost about what they did: the screenshot fixture's park draws 80,000 triangles, against 72,000 before (spheres had taken it to 346,000, too many for software rendering). The lab shows the apple trees too.
+
+The Posture Scanner's ring and arch are left to the second half, whose file it is.
 
 **Waves.** Wave one: 1a, 2, 3, 4, 6, 7 at once (no shared files). Wave two, once 1a and 4 land: 1b, 1c, 5, 8, 9. Stream 1b touches `core/data/*`, so nothing else that edits the data tables should run beside it.
 

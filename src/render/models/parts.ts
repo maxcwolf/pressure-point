@@ -1,7 +1,31 @@
 // The building blocks every model is made from: shared shapes, materials and colors.
+//
+// How a model should look, so items, people and scenery read as one family of soft clay toys under the game's light.
+// People are about 1.1 m tall, and a room's back wall is 1.25 m (`H_TALL`).
+//
+// - Thickness. No structural member (a leg, post, pole, rail, frame or arch) is thinner than `MEMBER_MIN` across, and
+//   one taller than a person is at least `MEMBER_TALL`, so nothing reads as wire at the default zoom. Only details too small
+//   to carry weight (a needle, a cord, a handle) go thinner, and never below 0.02 m. Marks painted on a flat face
+//   (lettering, the lines of a chart) are paint, not members.
+// - Corners. A box's corners are rounded by `corner(w, h, d)`: three tenths of its thinnest side, from 1.2 to 8 cm.
+//   `soft` makes such a box. Cushions and pads may be plumper, up to half their thickness; go sharper only where an
+//   edge is the point (a picture frame's mitre, a blade).
+// - Height. A one-tile item stands no taller than `TALL_MAX`, a person and a half, and most stand at or under the back
+//   wall. A seat is about 0.37 m high, a table or treatment couch 0.5 to 0.75 m. Something on a wall hangs about
+//   `HANG_Y` and stays inside the wall.
+// - Capsule or cylinder. A member that ends in the air (a handle, beater, hose, bolster, branch or rail end) is a
+//   capsule, rounded like a person's limb. One that meets the floor or another part flush (a leg, post, pot, barrel,
+//   bowl or disc) is a cylinder or a rounded box. Cylinders over 0.2 m across take at least 16 sides.
+// - Shading. Every surface is smoothly shaded, foliage too: leaves are spheres, or `blob`s where there are hundreds.
+// - Color. The body is in the muted tones already here (the woods, cream, white, chrome, dark and lacquer, and soft
+//   pastels). A saturated color, or a glow, goes only on the part that says what the item is or does (the screen, the
+//   flame, the crystals, the button), and covers no more than about a fifth of what shows. Glow is for what gives light.
+// - Silhouette. From the game's camera, high and to the front, the outline alone says what the item is: the part that
+//   names it stands proud of the body (up, or out to the front), and is not a flat disc lying where a ring should stand.
+// - Cost. Reuse `mat` colors: every distinct material in an item is a draw call, so a polish adds none.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const matCache = new Map<string, THREE.MeshStandardMaterial>();
 /** The roughness of each shared material with no glow: these differ from one another only in color. */
@@ -88,6 +112,21 @@ export const farShape = (shape: THREE.BufferGeometry) => farShapes.get(shape) ??
 export const rbox = (w: number, h: number, d: number, r = 0.05) =>
   cached(`b${w}|${h}|${d}|${r}`, () => new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2, h / 2, d / 2)));
 
+/** The thinnest a structural member may be across, in meters (see the guideline at the top of this file). */
+export const MEMBER_MIN = 0.06;
+
+/** The thinnest a structural member taller than a person may be across, in meters. */
+export const MEMBER_TALL = 0.08;
+
+/** The tallest a one-tile item may stand, in meters: a person and a half. */
+export const TALL_MAX = 1.6;
+
+/** The standard corner radius for a rounded box of this size: three tenths of its thinnest side, from 1.2 to 8 cm. */
+export const corner = (w: number, h: number, d: number) => Math.min(0.08, Math.max(0.012, Math.min(w, h, d) * 0.3));
+
+/** A shared rounded box with the standard corner for its size. */
+export const soft = (w: number, h: number, d: number) => rbox(w, h, d, corner(w, h, d));
+
 /** A shared cylinder or cone geometry. */
 export const cyl = (rt: number, rb: number, h: number, seg = 18) =>
   cached(`c${rt}|${rb}|${h}|${seg}`, () => new THREE.CylinderGeometry(rt, rb, h, seg));
@@ -99,8 +138,44 @@ export const sph = (r: number, seg = 18) =>
 /** A shared icosahedron geometry. */
 export const ico = (r: number) => cached(`i${r}`, () => new THREE.IcosahedronGeometry(r, 1));
 
+/**
+ * A shared soft blob: an icosahedron with its corners welded and its normals smoothed, so it shades as round as a
+ * sphere for a fifth of the triangles. For things drawn by the hundred, such as the leaves of the trees.
+ */
+export const blob = (r: number) =>
+  cached(`o${r}`, () => {
+    const g = new THREE.IcosahedronGeometry(r, 1);
+    g.deleteAttribute('normal');
+    g.deleteAttribute('uv');
+    const soft = mergeVertices(g);
+    soft.computeVertexNormals();
+    return soft;
+  });
+
 /** A shared torus geometry. */
 export const torus = (r: number, t: number) => cached(`t${r}|${t}`, () => new THREE.TorusGeometry(r, t, 10, 24));
+
+/**
+ * A shared open bowl, turned on a lathe so its inside shades darker than its rim: `r` across the rim, `h` deep, with
+ * walls `t` thick, standing on its foot at y = 0.
+ */
+export const bowl = (r: number, h: number, t = 0.025, seg = 24) =>
+  cached(`w${r}|${h}|${t}|${seg}`, () => {
+    const foot = r * 0.55;
+    /** A point on a quarter curve from the foot (at 0) up to the rim (at 1), `inset` in from the outside. */
+    const curve = (i: number, inset: number) => {
+      const a = (i / 6) * (Math.PI / 2);
+      const x = foot - inset + (r - foot) * Math.sin(a);
+      return new THREE.Vector2(Math.max(0, x), inset + (h - inset) * (1 - Math.cos(a)));
+    };
+    const pts = [new THREE.Vector2(0, 0)];
+    for (let i = 0; i <= 6; i++) pts.push(curve(i, 0));
+    // over the rim, and back down the inside to the floor
+    pts.push(new THREE.Vector2(r - t / 2, h + t / 3));
+    for (let i = 6; i >= 0; i--) pts.push(curve(i, t));
+    pts.push(new THREE.Vector2(0, t));
+    return new THREE.LatheGeometry(pts, seg);
+  });
 
 /** A shared capsule geometry. */
 export const capsule = (r: number, len: number) =>
