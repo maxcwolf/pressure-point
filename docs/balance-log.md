@@ -8,6 +8,43 @@ A month is 180 seconds of game time (30 days of 6 seconds).
 
 The deep-dive audit ([deep-dive-audit.md](deep-dive-audit.md)) found the campaign's hard moments unfair rather than hard: a loss the player could not see coming, a reputation that only ever spirals, a summer with no lever against it, and goals that reward running empty. The rule for this pass, from [fair-challenge-research.md](fair-challenge-research.md): the game must not get easier; it must warn before it punishes, name the lever, and leave time for it to work. Each change below was measured with `yarn balance` (every campaign center, seeds 1 to 3, four years a game) before and after, on the audit's bug-fix branch at `435febd`. Stars at month are given seed by seed; profit a month is averaged from the second year on; months at a loss, the lowest reputation (sampled daily) and months below 15% are of all 48. The bot plays like a good player; a new player does worse everywhere.
 
+### 29. The seasons come with numbers, and a limit on guests at once
+
+**Found:** The Boardwalk's summer brought 1.9 times the guests with no warning but a line in the bottom bar as it started, and a center that could not grow in time had no lever against it: every summer put 30 to 40 guests into a 9- or 10-room center, the wait ran past 20 days, and a dozen guests a month went home worse off at −6 each (entry 28's seed 6 went from 96 to 6 in one month). The research asks for the surge to be announced with figures and for a throttle: a way to take fewer guests on purpose, at a cost the player can see. The summer stays at 1.9 and the winter at 0.5; the seasons are not softened.
+
+**Done** (`src/core/sim/twists.ts`, `src/core/sim/guests.ts`):
+
+- `seasonOutlook(s, season)` says what a season means in guests a month: last month's arrivals scaled by the season's factor against the one they came in under. A fortnight before each summer and winter (`SEASON_AHEAD_DAYS`, 14, a dozen days more than a hire or a room takes) the message says so with the numbers and names the levers (rooms, staff, a limit on guests at once; in winter, the wages to budget for), and each season starts with its numbers rather than a line.
+- An **intake cap** (`intakeCap`, set with `setIntakeCap`, read with `intakeLimit`, never below `INTAKE_CAP_MIN` of 4): the center lets in no more guests at once than the cap, below what the building takes. A guest who finds it full goes elsewhere, counted as `turnedAway` in the month and the game's stats (the Stats menu's "Found it full"), with their fee. A minimal control sits under the Money menu's Prices (−2, +2, no limit) until the interface session builds its own; the sim side is the rule.
+- The bot, as a good player, can be told to throttle (`BOT_ON=throttle`): from a fortnight before summer until autumn it caps intake at three guests per staffed treatment table, two per consulting room and three more, and counts the guests it turned away last month toward what a new room is worth, since a throttled center has no line to build on.
+
+**Result,** before (28) → after, the default bot: identical, every center, every seed. The messages change nothing the bot does, and the cap is off unless it is told to use it.
+
+| Center             | Stars at month (seed 1 · 2 · 3)                            | Profit a month               | Months at a loss    | Lowest reputation    | Months below 15%    |
+| ------------------ | ---------------------------------------------------------- | ---------------------------- | ------------------- | -------------------- | ------------------- |
+| Willow Lane        | 1.1/8.9/15.0 · 0.9/8.0/10.9 · 0.7/4.9/12.1 (unchanged)     | $17.2k to $22.9k (unchanged) | 6 to 12 (unchanged) | 3 to 7 (unchanged)   | 1 to 4 (unchanged)  |
+| The Exchange       | 12.0/21.6/21.6 · 8.7/12.2/14.9 · 7.7/11.8/16.8 (unchanged) | $27.2k to $29.8k (unchanged) | 7 to 8 (unchanged)  | 5 to 30 (unchanged)  | 0 to 2 (unchanged)  |
+| The Boardwalk      | 4.8/22.8/34.8 · 4.3/12.6/23.3 · 4.3/10.7/16.3 (unchanged)  | $12.0k to $38.2k (unchanged) | 4 to 9 (unchanged)  | 1 to 25 (unchanged)  | 0 to 5 (unchanged)  |
+| High Pines         | 4.9/10.1/16.1 · 4.6/13.8/27.6 · 3.7/8.3/27.7 (unchanged)   | $3.5k to $34.6k (unchanged)  | 7 to 21 (unchanged) | 0 to 30 (unchanged)  | 0 to 11 (unchanged) |
+| The Orchard Estate | 6.5/11.1/17.7 · 4.6/9.8/16.5 · 4.6/9.4/17.1 (unchanged)    | $50.2k to $80.8k (unchanged) | 3 to 6 (unchanged)  | 21 to 30 (unchanged) | 0 (unchanged)       |
+
+**The throttle, measured:** The Boardwalk, seeds 1 to 6, the bot without and with `throttle`:
+
+| Seed | Stars at month, no throttle → throttle | Profit a month  | Months at a loss | Lowest reputation | Months below 15% |
+| ---- | -------------------------------------- | --------------- | ---------------- | ----------------- | ---------------- |
+| 1    | 4.8/22.8/34.8 → 4.8/14.6/–             | $12.0k → $21.3k | 9 → 4            | 1 → 30            | 5 → 0            |
+| 2    | 4.3/12.6/23.3 → 4.3/14.9/22.9          | $15.2k → $10.9k | 8 → 10           | 25 → 9            | 0 → 2            |
+| 3    | 4.3/10.7/16.3 → 4.3/26.8/35.3          | $38.2k → $10.5k | 4 → 12           | 15 → 4            | 1 → 2            |
+| 4    | 4.0/14.5/19.3 → 4.0/–/–                | $14.6k → $8.5k  | 11 → 8           | 2 → 9             | 3 → 1            |
+| 5    | 4.2/12.8/18.0 → 4.2/13.7/21.7          | $17.8k → $32.7k | 6 → 6            | 26 → 22           | 0 → 0            |
+| 6    | 5.8/9.7/16.4 → 5.8/–/–                 | $17.8k → $6.9k  | 9 → 9            | 0 → 17            | 6 → 0            |
+
+The throttle does what it is for: no seed falls below 4 (without it, three of six fall to 0, 1 and 2), the months below 15% go from 15 in six games to 5, and the two games that collapsed hardest (seeds 1 and 6) keep their name all year. It is no free lunch, and in the bot's hands it costs growth: three of the six throttled games stay at 8 rooms for four years and never earn the third star (seed 4 not the second), and the six make $15,200 a month on average against $19,300, because the bot builds on lines and a capped center has none; the guests it turns away count toward a room, but a bot sure of its 8 rooms never spent on a ninth. A player told, a fortnight ahead, that 34 guests a month are coming against 19 can hire and build instead, which is the point of the numbers; the cap is for the summer the building cannot grow for, and a throttled center still carries a summer's wait (seed 6 throttled: 25 days in months 17 and 18 from 8 rooms, costing it 56 to 27 before the cap bit) when it is too small for its own winter.
+
+**Why a seed still reaches 0% without the throttle:** seed 6's month 19 brought 40 guests into a 10-room, 10-staff center with 40 inside at once; in month 20 the average wait reached 24 days, 14 guests went home worse (−84) and 9 stormed out (−27), and reputation fell from 96 to 6 in the month, then to 0.2 in month 21 as the backlog of 11 more worsened and 5 more walked. A month of 111 points of loss is more than the floor's damping (three quarters at 10%) can hold; that is the rule working as entry 28 says it should, a center that lets 25 guests a month end their visit badly deserves its 0, and the lever against it is now announced two weeks before, with the figures, and sits in the Money menu. Seed 1 does the same at months 20 and 44, from 23 and 20 arrivals a month into 9 and 11 rooms.
+
+**What the player can now see that they could not before:** a fortnight before each summer and winter, how many guests a month to expect against last month and what to do about it; each season's numbers as it starts; how many guests found the center full, by month and over the game; and a limit on guests at once they can set, with its cost in fees said plainly. `seasonOutlook`, `intakeLimit` and `setIntakeCap` are there for the interface's own control and a season panel.
+
 ### 28. Reputation is dampened toward both ends, and the line warns before it costs
 
 **Found:** gains tapered as reputation climbed (`1.15 − rep/120`, so +1.15 of each point at 0 and +0.32 at 100) and losses never did, so the scale had a ceiling and no floor: a center on a 60% cure rate with one guest in ten storming out settled at about 30 and one on 50% sank to 0, where every summer at The Boardwalk and every bad month at High Pines ended. And nothing said a line was about to cost reputation until a guest went home worse off at −6. The research's shape is CorsixTH's: below the midpoint every gain lands, above it every loss does, and each is damped toward its end of the scale.

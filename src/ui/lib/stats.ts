@@ -30,6 +30,12 @@ export const METRICS: readonly Metric[] = [
   { id: 'sent', name: 'Sent home', desc: 'Sent home untreated, by you.', unit: 'count' },
   { id: 'worse', name: 'Got worse', desc: 'Worsened while they waited, and gave up.', unit: 'count' },
   {
+    id: 'turnedAway',
+    name: 'Found it full',
+    desc: 'Would have come, but the center was full and they went elsewhere.',
+    unit: 'count',
+  },
+  {
     id: 'patience',
     name: 'Patience kept',
     desc: 'How much of their patience guests kept through the wait, on average: the lowest each one fell to.',
@@ -83,6 +89,8 @@ export function metricValue(metric: Metric, m: MonthRecord): number | null {
       return m.sent;
     case 'worse':
       return m.worse;
+    case 'turnedAway':
+      return m.turnedAway ?? null;
     case 'classgoers':
       return m.classgoers;
     case 'patience':

@@ -1,9 +1,10 @@
 // What makes a center different to run: rush hours, seasons and snowed-in spells.
 
 import { centerOf, DAY_SECONDS, DAYS_PER_MONTH } from '../data';
-import type { Snowfall } from '../data/types';
+import type { Seasons, Snowfall } from '../data/types';
+import type { GameState } from '../state/types';
 import type { SimContext } from './context';
-import { emit, tipOnce } from './events';
+import { emit, tipOnce, toast } from './events';
 import { mishapArrivals } from './mishaps';
 import { rivalDraw } from './rival';
 import { gradeArrivals } from './standing';
@@ -74,13 +75,69 @@ export function arrivalFactor(ctx: SimContext): number {
   return factor * gradeArrivals(ctx.s.grade) * (1 - rivalDraw(ctx.s)) * mishapArrivals(ctx.s);
 }
 
-/** What the speakers say as each season starts, in a center that has them. */
-const SEASON_NEWS: Record<Season, string> = {
-  winter: 'Winter is here. The promenade is empty, so watch the budget until spring.',
-  spring: 'Spring! The first day-trippers are back in town.',
-  summer: 'Summer at last, and the town is packed. Expect a crowd.',
-  autumn: 'Autumn. The visitors are heading home.',
-};
+/** How much busier than usual a season is, in a center with seasons. */
+export function seasonFactor(season: Season, seasons: Seasons): number {
+  return season === 'summer' ? seasons.summer : season === 'winter' ? seasons.winter : 1;
+}
+
+/** What a season will bring, in guests a month: how many came last month, and how many to expect at this season's pace. */
+export interface SeasonOutlook {
+  season: Season;
+  /** How much busier than usual the season is. */
+  factor: number;
+  /** Guests who came last month, and the month before, if there were months; or null in the first month. */
+  last: number | null;
+  /** About how many to expect a month this season, from last month's at the season's pace against last month's. */
+  expect: number | null;
+}
+
+/** What a season will bring, in guests a month, going by the month just finished. */
+export function seasonOutlook(s: GameState, season: Season): SeasonOutlook {
+  const seasons = centerOf(s).seasons ?? { summer: 1, winter: 1 };
+  const factor = seasonFactor(season, seasons);
+  const last = s.months.at(-1);
+  if (!last) return { season, factor, last: null, expect: null };
+  // the month just finished, at its own season's pace
+  const lastFactor = seasonFactor(seasonOf(s.day - DAYS_PER_MONTH), seasons);
+  return { season, factor, last: last.arrived, expect: Math.round((last.arrived * factor) / lastFactor) };
+}
+
+/** A season's pace in a few words: "about ×1.9 the usual guests". */
+const paceOf = (factor: number) => `about ×${factor} the usual guests`;
+
+/** The outlook in a few words, or nothing in the first month. */
+function expectOf(o: SeasonOutlook): string {
+  return o.last === null || o.expect === null ? '' : ` Last month ${o.last} came; expect about ${o.expect} a month.`;
+}
+
+/** What the speakers say as each season starts, in a center that has them, with the numbers. */
+export function seasonNews(s: GameState, season: Season): string {
+  const o = seasonOutlook(s, season);
+  switch (season) {
+    case 'winter':
+      return `Winter is here. The promenade is empty, ${paceOf(o.factor)} until spring.${expectOf(o)} Watch the budget.`;
+    case 'spring':
+      return `Spring! The first day-trippers are back in town.${expectOf(o)}`;
+    case 'summer':
+      return `Summer at last, and the town is packed: ${paceOf(o.factor)} until autumn.${expectOf(o)} Expect a crowd.`;
+    case 'autumn':
+      return `Autumn. The visitors are heading home.${expectOf(o)}`;
+  }
+}
+
+/** Days ahead of a summer or a winter that a center with seasons is told what is coming. */
+export const SEASON_AHEAD_DAYS = 14;
+
+/**
+ * A fortnight before a summer or a winter, what it will bring in numbers, and the levers: for a summer, rooms, staff,
+ * prices or a limit on guests at once; for a winter, the wages that will not shrink with it.
+ */
+export function seasonAhead(s: GameState, season: 'summer' | 'winter'): string {
+  const o = seasonOutlook(s, season);
+  if (season === 'summer')
+    return `☀️ Summer in ${SEASON_AHEAD_DAYS} days: ${paceOf(o.factor)} for three months.${expectOf(o)} The line grows to match, and guests who wait too long go home worse off: more rooms and staff, higher prices, or a limit on guests at once (Money menu, Prices), before it starts.`;
+  return `❄️ Winter in ${SEASON_AHEAD_DAYS} days: ${paceOf(o.factor)} for three months.${expectOf(o)} The wages stay as they are: let go anyone you can spare, or have the money put by.`;
+}
 
 /** How much faster than usual waiting guests lose patience here: faster during a rush, where a center has them. */
 export function impatience(ctx: SimContext): number {
@@ -108,7 +165,10 @@ export function updateTwists(ctx: SimContext, dt: number) {
       'Rush hour! The office crowd comes in waves: a couple of busy days in every six, when guests are less patient. The bottom bar shows when one is on.',
     );
   const season = seasonOf(s.day);
-  if (seasons && season !== seasonOf(before)) emit(ctx, { type: 'announce', text: SEASON_NEWS[season] });
+  if (seasons && season !== seasonOf(before)) emit(ctx, { type: 'announce', text: seasonNews(s, season) });
+  const ahead = seasonOf(s.day + SEASON_AHEAD_DAYS);
+  if (seasons && ahead !== seasonOf(before + SEASON_AHEAD_DAYS) && (ahead === 'summer' || ahead === 'winter'))
+    toast(ctx, seasonAhead(s, ahead), 'info');
   if (snow && snowedIn(s.day, snow) !== snowedIn(before, snow))
     emit(ctx, { type: 'announce', text: snowedIn(s.day, snow) ? SNOW_NEWS.start : SNOW_NEWS.end });
 }

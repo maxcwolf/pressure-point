@@ -6,6 +6,7 @@ import { LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../../../core/data';
 import { money } from '../../../core/format';
 import { loanLimit } from '../../../core/sim/economy';
 import { netOf } from '../../../core/sim/economy';
+import { guestCap, INTAKE_CAP_MIN } from '../../../core/sim/guests';
 import type { Ledger } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { MoneyTab } from '../../hud';
@@ -79,7 +80,7 @@ function Books() {
         </>
       )}{' '}
       <p class="sub">
-        {`Healed ${s.stats.healed} · Failed ${s.stats.failed} · Stormed out ${s.stats.stormed} · Put off by prices ${s.stats.priced} · Sent home ${s.stats.sent} · Got worse ${s.stats.worse} · Salaries are paid at the end of each month. More in Stats.`}
+        {`Healed ${s.stats.healed} · Failed ${s.stats.failed} · Stormed out ${s.stats.stormed} · Put off by prices ${s.stats.priced} · Sent home ${s.stats.sent} · Got worse ${s.stats.worse} · Found it full ${s.stats.turnedAway} · Salaries are paid at the end of each month. More in Stats.`}
       </p>
     </>
   );
@@ -117,7 +118,56 @@ function Prices() {
         </div>
       </div>
       <TechniquePrices />
+      <IntakeCap />
     </>
+  );
+}
+
+/** A limit of the player's own on guests at once, below what the building allows: a throttle for a busy season. */
+function IntakeCap() {
+  const { sim } = useGame();
+  const s = sim.s;
+  const cap = s.intakeCap;
+  const building = guestCap(s);
+  return (
+    <div class="ledger intake-cap">
+      <h4>
+        {cap === null
+          ? `Guests at once: no limit of your own (the building takes ${building})`
+          : `Guests at once: ${cap} of the ${building} the building takes`}
+      </h4>
+      <p class="sub">
+        Guests who find the center full go elsewhere, and their fees with them. A way to keep a summer's crowd to what
+        your tables can treat, so nobody waits long enough to go home worse off.
+      </p>
+      <div class="btnrow left">
+        <Button
+          locked={cap !== null && cap <= INTAKE_CAP_MIN}
+          onPress={() => {
+            sim.setIntakeCap((cap ?? building) - 2);
+          }}
+        >
+          −2
+        </Button>
+        <Button
+          locked={cap === null}
+          onPress={() => {
+            sim.setIntakeCap(cap === null ? null : cap + 2);
+          }}
+        >
+          +2
+        </Button>
+        <Button
+          quiet
+          locked={cap === null}
+          onPress={() => {
+            sim.setIntakeCap(null);
+          }}
+        >
+          No limit
+        </Button>
+      </div>
+    </div>
   );
 }
 

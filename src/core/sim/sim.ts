@@ -101,7 +101,7 @@ import {
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
-import { admitGuests, updateGuest } from './guests';
+import { admitGuests, intakeLimit, setIntakeCap, updateGuest } from './guests';
 import { buyPlot, landOffers, renamePlot, updateLand } from './land';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
 import { askWard, canWard, prepareMishap, updateMishaps } from './mishaps';
@@ -610,6 +610,16 @@ export class Sim {
   /** Pay one step of the loan back. */
   repay(): boolean {
     return repay(this.ctx);
+  }
+
+  /** Limit how many guests are let in at once, or lift the limit with null. */
+  setIntakeCap(cap: number | null) {
+    setIntakeCap(this.ctx, cap);
+  }
+
+  /** How many guests are let in at once: what the building allows, or the player's own limit if it is lower. */
+  intakeLimit(): number {
+    return intakeLimit(this.s);
   }
 
   /** Set the multiplier on every fee. */

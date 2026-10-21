@@ -41,9 +41,10 @@ import {
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { daysUntilBankrupt, loanLimit, projectedCashflow, wagesDue } from '../../src/core/sim/economy';
+import { INTAKE_CAP_MIN } from '../../src/core/sim/guests';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
-import { seasonOf } from '../../src/core/sim/twists';
+import { SEASON_AHEAD_DAYS, seasonOf } from '../../src/core/sim/twists';
 import { upgradeCost } from '../../src/core/sim/upgrades';
 import { worsenRate } from '../../src/core/sim/worsening';
 import { disciplineOn, newGame, offeringOn, unlockedUpTo } from '../../src/core/state/game';
@@ -101,6 +102,11 @@ export const BOT_FLAGS = [
    * it cost more patience than it saved.
    */
   'triage',
+  /**
+   * In a center with seasons, limit guests at once through the summer to what the staffed tables can treat, from the
+   * fortnight's warning until autumn. An extra, measured in balance log 29.
+   */
+  'throttle',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -108,7 +114,7 @@ export type BotFlags = Record<BotFlag, boolean>;
  * Flags that are off unless `BOT_ON` names them: a different way to play rather than better play, or play that was
  * measured and found to gain nothing.
  */
-const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab', 'clear', 'trouble', 'triage'];
+const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab', 'clear', 'trouble', 'triage', 'throttle'];
 
 /**
  * The bot's flags from the environment. `BOT=old` plays as the bot did before it learned any of them; `BOT_OFF`
@@ -178,6 +184,8 @@ export interface MonthLog {
   staff: number;
   rooms: number;
   arrived: number;
+  /** Guests who found the center full and went elsewhere. */
+  turnedAway: number;
   healed: number;
   failed: number;
   stormed: number;
@@ -403,6 +411,7 @@ export class Bot {
       staff: s.staff.filter((x) => x.state !== 'leaving').length,
       rooms: s.rooms.filter((r) => r.done).length,
       arrived: st.arrived - this.monthStart.arrived,
+      turnedAway: rec?.turnedAway ?? 0,
       healed: st.healed - this.monthStart.healed,
       failed: st.failed - this.monthStart.failed,
       stormed: st.stormed - this.monthStart.stormed,
@@ -562,6 +571,35 @@ export class Bot {
       this.note(
         `day ${Math.floor(s.day)}: let a ${def.role} go (busy ${Math.round(m.busy * 100)}%), saving ${go.salary}`,
       );
+    }
+  }
+
+  /**
+   * Through the summer, from the fortnight's warning: let in at once only as many guests as the staffed treatment
+   * tables can see to (three a table, plus two a consultation room and a few at the desk), so the line never runs to
+   * guests going home worse off; and lift the limit as autumn comes.
+   */
+  private throttle() {
+    const s = this.s;
+    if (!CENTERS[this.center].seasons) return;
+    const summer = seasonOf(s.day) === 'summer' || seasonOf(s.day + SEASON_AHEAD_DAYS) === 'summer';
+    if (!summer) {
+      if (s.intakeCap !== null) {
+        this.sim.setIntakeCap(null);
+        this.note(`day ${Math.floor(s.day)}: summer over, no limit on guests at once`);
+      }
+      return;
+    }
+    let tables = 0;
+    for (const it of s.items) {
+      const d = ITEMS[it.type].station;
+      if (d?.goal === 'treat' && this.sim.stationStaff(it))
+        tables += d.group ? matsPlayed(this.sim.stationStaff(it)?.skill ?? 1) : 1;
+    }
+    const cap = Math.max(INTAKE_CAP_MIN, tables * 3 + this.rooms('consult').length * 2 + 3);
+    if (s.intakeCap !== cap) {
+      this.sim.setIntakeCap(cap);
+      this.note(`day ${Math.floor(s.day)}: summer: ${cap} guests at once for ${tables} staffed tables`);
     }
   }
 
@@ -769,6 +807,7 @@ export class Bot {
       return;
     }
     this.sampleLines();
+    if (this.flags.throttle) this.throttle();
     if (this.flags.payroll) this.rescue();
     if (this.flags.lines) this.evenLines();
     if (this.flags.triage) this.triage();
@@ -1430,7 +1469,10 @@ export class Bot {
     if (!m) return 0;
     const def = DISCIPLINES[d];
     const rooms = Math.max(1, this.rooms(def.room).length - (this.benched[def.room] ?? 0));
-    const guests = (m.lost + Math.max(0, m.line - rooms)) * this.ahead(3);
+    // guests who found the center full last month would have come for this discipline by its share of treatments
+    const treated = DISCIPLINE_ORDER.reduce((a, x) => a + (this.seen[x]?.treated ?? 0), 0);
+    const full = (this.s.months.at(-1)?.turnedAway ?? 0) * (treated ? m.treated / treated : 0);
+    const guests = (m.lost + full + Math.max(0, m.line - rooms)) * this.ahead(3);
     const rate = m.treated >= 3 ? m.healed / m.treated : 0.6;
     const room = this.benched[def.room] ? 0 : ROOMS[def.room].cost / 12;
     return guests * rate * this.feeFor(d) - this.salaryFor(def.role) - room;

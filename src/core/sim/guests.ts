@@ -41,7 +41,7 @@ import { feel } from './feelings';
 import { goTo, halt, moveAlong } from './movement';
 import { fizzOver, puddleSlow, tellFortune } from './novelties';
 import { arriveCarrying, carriedOut } from './outbreaks';
-import { countArrival, countVisit } from './records';
+import { countArrival, countTurnedAway, countVisit } from './records';
 import { updateRest } from './recovery';
 import { dueRegular, regularPatience, welcomeBack } from './regulars';
 import { stationStaff } from './sessions';
@@ -74,11 +74,12 @@ export function admitGuests(ctx: SimContext, dt: number) {
   if (!s.open || cutOff(ctx)) return;
   s.spawnT -= dt;
   if (s.spawnT > 0) return;
-  // a regular due back takes the place of someone new
-  if (guestsCounted(s) < guestCap(s)) {
+  // a regular due back takes the place of someone new; a guest the building, or the player, has no room for goes
+  // elsewhere, and is counted, so the cost of a full center can be seen
+  if (guestsCounted(s) < intakeLimit(s)) {
     const regular = dueRegular(s);
     spawnGuest(ctx, undefined, false, 0, regular);
-  }
+  } else countTurnedAway(ctx);
   s.spawnT =
     ((30 - s.reputation * 0.2) * rnd(s, 0.7, 1.3)) /
     arrivalFactor(ctx) /
@@ -87,9 +88,26 @@ export function admitGuests(ctx: SimContext, dt: number) {
     tuning(s, 'arrivals');
 }
 
-/** How many guests the center lets in at once: more for every finished room, not counting blueprints. */
+/** How many guests the building lets in at once: more for every finished room, not counting blueprints. */
 export function guestCap(s: GameState): number {
   return 14 + s.rooms.filter((r) => r.done).length * 5;
+}
+
+/** The fewest guests at once the player can limit the center to. */
+export const INTAKE_CAP_MIN = 4;
+
+/** How many guests are let in at once: what the building allows, or the player's own limit if it is lower. */
+export function intakeLimit(s: GameState): number {
+  return Math.min(guestCap(s), s.intakeCap ?? Infinity);
+}
+
+/**
+ * Limit how many guests are let in at once, below what the building allows, or lift the limit with null: a throttle
+ * for a season the center cannot grow for. Guests who find the center full go elsewhere, so the fees are lost; the
+ * arrivals keep their pace, so lifting the limit brings the crowd straight back.
+ */
+export function setIntakeCap(ctx: SimContext, cap: number | null) {
+  ctx.s.intakeCap = cap === null || !Number.isFinite(cap) ? null : Math.max(INTAKE_CAP_MIN, Math.round(cap));
 }
 
 /**

@@ -532,6 +532,8 @@ export interface Stats {
   /** Got worse while they waited, and left. */
   worse: number;
   arrived: number;
+  /** Would have come, but found the center full: at the building's limit, or the player's own. */
+  turnedAway: number;
   /** Guests healed, by the discipline that healed them. */
   healedBy: Partial<Record<Discipline, number>>;
   /** Emergencies seen through successfully. */
@@ -546,6 +548,8 @@ export interface Stats {
 /** A month's count of guests: how many came, how each visit ended, and how long they waited. */
 export interface Tally {
   arrived: number;
+  /** Guests who would have come but found the center full; missing from months before it was counted. */
+  turnedAway?: number;
   healed: number;
   failed: number;
   stormed: number;
@@ -778,6 +782,8 @@ export interface GameState {
   redSince: number | null;
   /** The last month, counted from 0, in which the line was warned it was about to cost reputation; -1 for none yet. */
   lineWarned: number;
+  /** The most guests the player lets in at once, below what the building allows, or null for no limit of their own. */
+  intakeCap: number | null;
   /** The center is bankrupt and the game is lost. */
   bankrupt: boolean;
   /** Whether an unpaid payday can end the game: a sandbox setting. Off, the bank just goes into the red. */

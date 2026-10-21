@@ -34,6 +34,7 @@ export const sameSpot = (a: WallSpot, b: WallSpot) => a.x === b.x && a.y === b.y
 /** A month with nothing counted yet. */
 export const emptyTally = (): Tally => ({
   arrived: 0,
+  turnedAway: 0,
   healed: 0,
   failed: 0,
   stormed: 0,
@@ -49,6 +50,7 @@ export const emptyTally = (): Tally => ({
 
 /** The counts kept over a whole game, with nothing counted yet. */
 export const emptyStats = (): Stats => ({
+  turnedAway: 0,
   healed: 0,
   failed: 0,
   stormed: 0,
@@ -202,6 +204,7 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     insolvency: null,
     redSince: null,
     lineWarned: -1,
+    intakeCap: null,
     bankrupt: false,
     bankruptcyOn: true,
     cheated: false,

@@ -7,14 +7,25 @@ import { CAMPAIGN, type CenterId, CENTERS } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
-import { rollCondition } from '../../src/core/sim/guests';
+import { admitGuests, guestCap, guestsCounted, INTAKE_CAP_MIN, rollCondition } from '../../src/core/sim/guests';
+import { monthSoFar } from '../../src/core/sim/records';
 import { Sim } from '../../src/core/sim/sim';
-import { arrivalFactor, impatience, inRush, seasonOf, updateTwists } from '../../src/core/sim/twists';
+import {
+  arrivalFactor,
+  impatience,
+  inRush,
+  SEASON_AHEAD_DAYS,
+  seasonAhead,
+  seasonNews,
+  seasonOf,
+  seasonOutlook,
+  updateTwists,
+} from '../../src/core/sim/twists';
 import { addWear } from '../../src/core/sim/upkeep';
 import { disciplineHere, disciplineOn, newGame } from '../../src/core/state/game';
 import { loadCampaign, recordGame } from '../../src/storage/campaign';
 import { campaignCards } from '../../src/ui/lib/campaign';
-import { runUntil } from './helpers';
+import { openCenter, runUntil } from './helpers';
 
 describe('the campaign trail', () => {
   it('opens each center once the one before it has a star', () => {
@@ -241,15 +252,89 @@ describe('The Boardwalk', () => {
     expect(new Sim(newGame('boardwalk')).season()).toBe('winter');
   });
 
-  it('announces each season as it starts', () => {
+  it('announces each season as it starts, with the guests to expect against last month', () => {
     const ctx = createContext(newGame('boardwalk'));
+    const seasons = CENTERS.boardwalk.seasons!;
     ctx.s.open = true;
+    ctx.s.months = [{ ...monthSoFar(ctx), arrived: 20 }];
     ctx.s.day = 5 * 30 + 0.01;
     updateTwists(ctx, 0.1);
-    expect(drainEvents(ctx)).toEqual([{ type: 'announce', text: expect.stringContaining('Summer') }]);
+    expect(drainEvents(ctx)).toEqual([
+      {
+        type: 'announce',
+        text: expect.stringContaining(
+          `about ×${seasons.summer} the usual guests until autumn. Last month 20 came; expect about ${Math.round(20 * seasons.summer)} a month.`,
+        ),
+      },
+    ]);
     ctx.s.day += 1;
     updateTwists(ctx, 0.1);
     expect(drainEvents(ctx)).toEqual([]);
+    // autumn after a summer month: the pace comes down against the summer's
+    ctx.s.day = 8 * 30 + 0.01;
+    ctx.s.months = [{ ...monthSoFar(ctx), arrived: 38 }];
+    expect(seasonOutlook(ctx.s, 'autumn')).toEqual({
+      season: 'autumn',
+      factor: 1,
+      last: 38,
+      expect: Math.round(38 / seasons.summer),
+    });
+    // and in the first month there is nothing to go by
+    ctx.s.months = [];
+    expect(seasonOutlook(ctx.s, 'winter')).toEqual({
+      season: 'winter',
+      factor: seasons.winter,
+      last: null,
+      expect: null,
+    });
+    expect(seasonNews(ctx.s, 'winter')).not.toContain('expect about');
+  });
+
+  it('says a fortnight ahead what a summer or a winter will bring, in numbers, and names the levers', () => {
+    const ctx = createContext(newGame('boardwalk'));
+    const seasons = CENTERS.boardwalk.seasons!;
+    ctx.s.open = true;
+    ctx.s.months = [{ ...monthSoFar(ctx), arrived: 20 }];
+    ctx.s.day = 5 * 30 - SEASON_AHEAD_DAYS + 0.01;
+    updateTwists(ctx, 0.1);
+    const summer = drainEvents(ctx);
+    expect(summer).toHaveLength(1);
+    expect(summer[0]).toMatchObject({ type: 'toast' });
+    const text = JSON.stringify(summer[0]);
+    expect(text).toContain(`Summer in ${SEASON_AHEAD_DAYS} days`);
+    expect(text).toContain(`Last month 20 came; expect about ${Math.round(20 * seasons.summer)} a month.`);
+    expect(text).toContain('a limit on guests at once');
+    expect(seasonAhead(ctx.s, 'winter')).toContain('The wages stay as they are');
+    // and not for spring or autumn
+    ctx.s.day = 2 * 30 - SEASON_AHEAD_DAYS + 0.01;
+    updateTwists(ctx, 0.1);
+    expect(drainEvents(ctx)).toEqual([]);
+  });
+
+  it('lets the player limit guests at once below what the building takes, and lift the limit', () => {
+    const { sim, s } = openCenter(1);
+    const ctx = createContext(s);
+    expect(s.intakeCap).toBeNull();
+    expect(sim.intakeLimit()).toBe(guestCap(s));
+    sim.setIntakeCap(6);
+    expect(sim.intakeLimit()).toBe(6);
+    s.open = true;
+    for (let i = 0; i < 20; i++) {
+      s.spawnT = 0;
+      admitGuests(ctx, 0.1);
+    }
+    expect(guestsCounted(s)).toBe(6);
+    // and those who found it full are counted, as the cost of the limit
+    expect(s.stats.turnedAway).toBe(14);
+    expect(s.tally.turnedAway).toBe(14);
+    // no lower than a handful, and no higher than the building: the building's own limit still holds
+    sim.setIntakeCap(1);
+    expect(s.intakeCap).toBe(INTAKE_CAP_MIN);
+    sim.setIntakeCap(1000);
+    expect(sim.intakeLimit()).toBe(guestCap(s));
+    sim.setIntakeCap(null);
+    expect(s.intakeCap).toBeNull();
+    expect(sim.intakeLimit()).toBe(guestCap(s));
   });
 
   it('has its own seaside ailments, found nowhere else', () => {

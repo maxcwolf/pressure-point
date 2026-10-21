@@ -20,6 +20,12 @@ export function countArrival(ctx: SimContext) {
   ctx.s.tally.arrived++;
 }
 
+/** Count a guest who would have come but found the center full, and went elsewhere. */
+export function countTurnedAway(ctx: SimContext) {
+  ctx.s.stats.turnedAway++;
+  if (ctx.s.tally.turnedAway !== undefined) ctx.s.tally.turnedAway++;
+}
+
 /** Count how a guest's visit ended, how long they waited, and who healed them; enter it in the casebook, and file their review. */
 export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
   // a class-goer came for a class, not a treatment, so only their review counts
