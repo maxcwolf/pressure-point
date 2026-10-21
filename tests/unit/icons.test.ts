@@ -7,12 +7,15 @@ import { describe, expect, it } from 'vitest';
 
 import {
   type AtlasLayout,
+  atlasSvg,
   checkIcon,
   inScene,
   OUT_DIR,
   readIcons,
   sourceHash,
+  SPRITE_STROKE,
   spriteSheet,
+  thinned,
   VARIANTS,
 } from '../../scripts/icons.mjs';
 import { DISCIPLINES, ICON_IDS, ROLES, ROOMS, SCENE_ICON_IDS } from '../../src/core/data';
@@ -49,6 +52,16 @@ describe('what yarn icons builds', () => {
     expect(readFileSync(join(OUT_DIR, 'sprite.svg'), 'utf8')).toBe(spriteSheet(icons));
     expect([...ICON_IDS]).toEqual(icons.map((i) => i.id));
     expect([...SCENE_ICON_IDS]).toEqual(icons.map((i) => i.id).filter(inScene));
+  });
+
+  it('draws icons in the interface with lines a little thinner than in the scene', () => {
+    expect(SPRITE_STROKE).toBeCloseTo(2 / 2.25);
+    expect(thinned('<g stroke-width="2.25"><path stroke-width="7.9"/></g>')).toBe(
+      '<g stroke-width="2"><path stroke-width="7.02"/></g>',
+    );
+    const sheet = spriteSheet(icons);
+    expect(sheet).not.toContain('stroke-width="2.25"');
+    expect(atlasSvg(icons).svg).toContain('stroke-width="2.25"');
   });
 
   it('gives every icon the scene draws its own cells inside the atlas, on its own and in a bubble', () => {

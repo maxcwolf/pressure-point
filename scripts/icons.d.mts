@@ -32,6 +32,8 @@ export function inScene(id: string): boolean;
 export function readIcons(dir?: string): Icon[];
 export function checkIcon(id: string, svg: string): string[];
 export function innerOf(svg: string): string;
+export const SPRITE_STROKE: number;
+export function thinned(inner: string, scale?: number): string;
 export function spriteSheet(icons: readonly Icon[]): string;
 export function atlasLayout(ids: readonly string[], cell?: number, columns?: number): AtlasLayout;
 export function atlasSvg(icons: readonly Icon[]): { layout: AtlasLayout; svg: string };
