@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **Seasons and rush hours in numbers.** At The Boardwalk and The Exchange, the bottom bar's date and the Guests tab give this season's or rush hour's arrival multiplier, the next one's and the day it turns, and each season's announcement says how many guests a month to expect.
 - **Where the money comes from.** The Books tab breaks this month's and last month's income down by source, with each one's share, and says when side income rather than healing is carrying the center.
 - **Objectives show their numbers.** Click an objective for what counts behind it: heals and failures this month and last, the sample a monthly goal needs, the money and the loan behind a balance goal, a room's prestige terms, standing points by source, and how far each is from being met.
 - **Two warnings before a line costs reputation.** A toast names the line, the count and the levers as its first waiting guest's condition turns poor, and a louder one names each guest within two days of going home worse off, with the advisor on it too. Lines and the guest inspector show the days of condition left, and the floor can be colored by it.

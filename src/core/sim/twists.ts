@@ -1,7 +1,7 @@
 // What makes a center different to run: rush hours, seasons and snowed-in spells.
 
 import { centerOf, DAY_SECONDS, DAYS_PER_MONTH } from '../data';
-import type { Snowfall } from '../data/types';
+import type { RushHours, Seasons, Snowfall } from '../data/types';
 import type { SimContext } from './context';
 import { emit, tipOnce } from './events';
 import { mishapArrivals } from './mishaps';
@@ -74,6 +74,68 @@ export function arrivalFactor(ctx: SimContext): number {
   return factor * gradeArrivals(ctx.s.grade) * (1 - rivalDraw(ctx.s)) * mishapArrivals(ctx.s);
 }
 
+/** How much faster than usual guests arrive in a season, in a center with seasons. */
+export function seasonFactor(season: Season, seasons: Seasons): number {
+  return season === 'summer' ? seasons.summer : season === 'winter' ? seasons.winter : 1;
+}
+
+/** The season now and the one coming: their arrival multipliers, and the day the season turns. */
+export interface SeasonOutlook {
+  season: Season;
+  factor: number;
+  next: Season;
+  nextFactor: number;
+  /** The day the next season starts, and how many days off that is. */
+  turnsOn: number;
+  daysUntil: number;
+}
+
+/** Where the year stands for a center with seasons: this season's multiplier and the next, with the day it turns. */
+export function seasonOutlook(day: number, seasons: Seasons): SeasonOutlook {
+  const season = seasonOf(day);
+  let month = Math.floor(day / DAYS_PER_MONTH) + 1;
+  while (seasonOf(month * DAYS_PER_MONTH) === season) month++;
+  const turnsOn = month * DAYS_PER_MONTH;
+  const next = seasonOf(turnsOn);
+  return {
+    season,
+    factor: seasonFactor(season, seasons),
+    next,
+    nextFactor: seasonFactor(next, seasons),
+    turnsOn,
+    daysUntil: turnsOn - day,
+  };
+}
+
+/** Where the rush-hour cycle stands: whether one is on, how arrivals run now, and when it turns. */
+export interface RushOutlook {
+  on: boolean;
+  factor: number;
+  /** How arrivals will run once it turns, and the day it does, with how many days off that is. */
+  nextFactor: number;
+  turnsOn: number;
+  daysUntil: number;
+}
+
+/** Where the rush hours stand for a center that has them: on or off now, and when the next change comes. */
+export function rushOutlook(day: number, rush: RushHours): RushOutlook {
+  const on = inRush(day);
+  const cycle = Math.floor(day / RUSH_CYCLE_DAYS) * RUSH_CYCLE_DAYS;
+  const t = day - cycle;
+  const turnsOn = on
+    ? cycle + RUSH_START + RUSH_DAYS
+    : t < RUSH_START
+      ? cycle + RUSH_START
+      : cycle + RUSH_CYCLE_DAYS + RUSH_START;
+  return {
+    on,
+    factor: on ? rush.peak : rush.lull,
+    nextFactor: on ? rush.lull : rush.peak,
+    turnsOn,
+    daysUntil: turnsOn - day,
+  };
+}
+
 /** What the speakers say as each season starts, in a center that has them. */
 const SEASON_NEWS: Record<Season, string> = {
   winter: 'Winter is here. The promenade is empty, so watch the budget until spring.',
@@ -81,6 +143,26 @@ const SEASON_NEWS: Record<Season, string> = {
   summer: 'Summer at last, and the town is packed. Expect a crowd.',
   autumn: 'Autumn. The visitors are heading home.',
 };
+
+/**
+ * The season's announcement with its numbers: the arrival multiplier, and the guests to expect a month from last
+ * month's count, which was at the season before's pace.
+ */
+export function seasonNews(season: Season, seasons: Seasons, lastArrived?: number): string {
+  const factor = seasonFactor(season, seasons);
+  const before = seasonFactor(previousSeason(season), seasons);
+  const change = factor === 1 ? 'the usual number of guests' : `about ×${factor} the usual guests`;
+  const expect =
+    lastArrived === undefined
+      ? ''
+      : ` Last month ${lastArrived} came: expect about ${Math.round((lastArrived * factor) / before)} a month.`;
+  return `${SEASON_NEWS[season]} ${change.charAt(0).toUpperCase()}${change.slice(1)} until it turns.${expect}`;
+}
+
+/** The season before one. */
+export function previousSeason(season: Season): Season {
+  return season === 'winter' ? 'autumn' : season === 'spring' ? 'winter' : season === 'summer' ? 'spring' : 'summer';
+}
 
 /** How much faster than usual waiting guests lose patience here: faster during a rush, where a center has them. */
 export function impatience(ctx: SimContext): number {
@@ -108,7 +190,8 @@ export function updateTwists(ctx: SimContext, dt: number) {
       'Rush hour! The office crowd comes in waves: a couple of busy days in every six, when guests are less patient. The bottom bar shows when one is on.',
     );
   const season = seasonOf(s.day);
-  if (seasons && season !== seasonOf(before)) emit(ctx, { type: 'announce', text: SEASON_NEWS[season] });
+  if (seasons && season !== seasonOf(before))
+    emit(ctx, { type: 'announce', text: seasonNews(season, seasons, s.months.at(-1)?.arrived) });
   if (snow && snowedIn(s.day, snow) !== snowedIn(before, snow))
     emit(ctx, { type: 'announce', text: snowedIn(s.day, snow) ? SNOW_NEWS.start : SNOW_NEWS.end });
 }

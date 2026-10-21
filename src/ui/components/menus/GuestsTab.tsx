@@ -1,6 +1,6 @@
 // The Stats menu's Guests tab: which discipline new guests come for, and what draws them to each.
 
-import { DISCIPLINES } from '../../../core/data';
+import { centerOf, DISCIPLINES } from '../../../core/data';
 import { type DisciplineDemand, lineArrivals } from '../../../core/sim/demand';
 import { useGame } from '../../hooks/use-hud';
 import {
@@ -15,6 +15,7 @@ import {
   times,
   trainingWord,
 } from '../../lib/demand';
+import { rushLine, seasonLine } from '../../lib/seasons';
 import { Bar } from '../common/Bar';
 
 /** One thing that draws guests to a discipline: what it is, what it comes to, and how it multiplies the pull. */
@@ -67,11 +68,16 @@ export function GuestsTab() {
   const rows = sim.demand().sort((a, b) => b.share - a.share);
   const offering = sim.offering();
   const away = lineNote(lineArrivals(rows));
+  const center = centerOf(sim.s);
+  const season = seasonLine(sim.s.day, center);
+  const rush = rushLine(sim.s.day, center);
   if (!rows.length) return <p class="sub">No treatment rooms yet: build one, and guests start arriving for it.</p>;
   return (
     <div class="demand">
       <p class="sub">{DEMAND_INTRO}</p>
       <p class="sub">{offeringNote(offering.staffed, offering.arrivals)}</p>
+      {season && <p class="sub seasons">{`🗓️ ${season}`}</p>}
+      {rush && <p class="sub seasons">{`🗓️ ${rush}`}</p>}
       {away && <p class="sub">{away}</p>}
       {rows.map((row) => (
         <Row key={row.discipline} row={row} healed={sim.s.tally.healedBy[row.discipline] ?? 0} />

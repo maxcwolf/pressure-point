@@ -2,17 +2,18 @@
 
 import './StatsBar.css';
 
+import { centerOf } from '../../core/data';
 import { dateOf, money } from '../../core/format';
 import { netOf } from '../../core/sim/economy';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
+import { calendarTip, SEASON_NAMES } from '../lib/seasons';
 import { weatherNote } from '../lib/weather';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 
-/** The icon beside the date for each season, and its name. */
+/** The icon beside the date for each season. */
 const SEASON_ICONS = { winter: '❄️', spring: '🌱', summer: '☀️', autumn: '🍂' } as const;
-const SEASON_NAMES = { winter: 'Winter', spring: 'Spring', summer: 'Summer', autumn: 'Autumn' } as const;
 
 const SPEEDS: readonly { speed: number; label: string; title: string }[] = [
   { speed: 0, label: '⏸', title: 'Pause (Space)' },
@@ -54,7 +55,7 @@ export function StatsBar() {
         <b>{s.guests.length}</b>
         <small>{`${s.stats.healed} healed`}</small>
       </div>{' '}
-      <div class="stat date" title="Date and weather">
+      <div class="stat date" title={calendarTip(s.day, centerOf(s))}>
         <i>{SEASON_ICONS[season]}</i>
         <b>
           {`Day ${date.day}`}
