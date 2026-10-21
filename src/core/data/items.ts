@@ -788,7 +788,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     type: 'practice_spot',
     name: 'Practice Spot',
     icon: '🟩',
-    desc: 'A square of cork floor to stand on, a place in the class. An Instructor leads 6 to 16, more as they rise in rank. Turn it so the footprints face the Instructor’s Mat.',
+    desc: 'A square of cork floor to stand on, a place in the class: more spots hold more, not draw more. An Instructor leads 6 to 12, more as they rise in rank. Turn it so the footprints face the Instructor’s Mat.',
     cost: 300,
     w: 1,
     h: 1,

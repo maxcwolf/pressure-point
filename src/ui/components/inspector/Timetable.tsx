@@ -4,12 +4,15 @@ import { ROLES, WEEKDAYS } from '../../../core/data';
 import { classDays } from '../../../core/sim/classes';
 import type { Room } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
-import { bookingNote, classNote, placesNote, weekNote } from '../../lib/classes';
+import { bookingNote, classNote, demandNote, placesNote, weekNote } from '../../lib/classes';
 import { cx } from '../../lib/cx';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 
-/** Who leads a studio's classes, how its spots stand, the days it holds classes and how its next class is filling. */
+/**
+ * Who leads a studio's classes, how its spots stand, the days it holds classes, how many class-goers a week come for
+ * them and how its next class is filling.
+ */
 export function Timetable({ room }: { room: Room }) {
   const { sim } = useGame();
   const days = classDays(room);
@@ -42,7 +45,7 @@ export function Timetable({ room }: { room: Room }) {
           </Button>
         ))}
       </div>
-      <p class="sub">{weekNote(days)}</p>
+      <p class="sub">{leader && days.length ? demandNote(leader.interest, days.length) : weekNote(days)}</p>
       <p class="status">{bookingNote(room.booked, sim.s.day)}</p>
     </div>
   );

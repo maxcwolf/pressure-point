@@ -84,7 +84,7 @@ export function GuestsTab() {
       ))}
       {sim.enabled('qigong') && (
         <p class="sub">
-          Qi Gong classes draw class-goers of their own, on top of these, by the studio and its Instructor.
+          Qi Gong classes draw class-goers of their own, on top of these, by your reputation and the Instructor’s rank.
         </p>
       )}
     </div>

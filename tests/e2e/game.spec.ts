@@ -1727,7 +1727,7 @@ test.describe('the business side', () => {
       pp.state.callOffer = {
         client: 'the Grand Hotel',
         days: 2,
-        perDay: 1200,
+        perDay: 600,
         discipline: 'massage',
         deadline: pp.state.day + 6,
       };

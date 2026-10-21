@@ -47,7 +47,7 @@ import type { GameState, Guest, Staff } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { accessTile } from '../../src/core/world';
 import { hireableRoles, itemOffered } from '../../src/ui/lib/catalog';
-import { bookingNote, placesNote, weekNote } from '../../src/ui/lib/classes';
+import { bookingNote, demandNote, placesNote, weekNote } from '../../src/ui/lib/classes';
 import { offeredMetrics } from '../../src/ui/lib/stats';
 import { guestStatus } from '../../src/ui/lib/status';
 import { newRoomsText } from '../../src/ui/lib/unlocks';
@@ -110,14 +110,59 @@ describe('the timetable', () => {
     );
     expect(bookingNote({ day: 4, count: 0, turned: 0 }, 4.1)).toBe('Today’s class: nobody booked');
   });
+
+  it('says how many class-goers a week come at this reputation, and the class days they are shared among', () => {
+    expect(demandNote(21.2, 3)).toBe(
+      'About 21 class-goers a week come for classes at this reputation, shared among 3 class days',
+    );
+    expect(demandNote(13, 1)).toBe(
+      'About 13 class-goers a week come for classes at this reputation, all on its 1 class day',
+    );
+    expect(demandNote(13, 0)).toBe(
+      'About 13 class-goers a week come for classes at this reputation, once a class day is switched on',
+    );
+    const { sim, s, teacher } = studio();
+    s.reputation = 80;
+    if (teacher) teacher.skill = 5;
+    expect(sim.classLeader()?.interest).toBeCloseTo(weeklyInterest(80, 5));
+  });
 });
 
 describe('how a class fills', () => {
-  it('draws more for more Practice Spots, a better reputation and a more skilled Instructor', () => {
-    const base = weeklyInterest(4, 50, 2);
-    expect(weeklyInterest(6, 50, 2)).toBeGreaterThan(base);
-    expect(weeklyInterest(4, 80, 2)).toBeGreaterThan(base);
-    expect(weeklyInterest(4, 50, 4)).toBeGreaterThan(base);
+  it('draws more for a better reputation and a more skilled Instructor: about 21 a week at 80% for an Expert', () => {
+    const base = weeklyInterest(50, 2);
+    expect(weeklyInterest(80, 2)).toBeGreaterThan(base);
+    expect(weeklyInterest(50, 4)).toBeGreaterThan(base);
+    expect(Math.round(weeklyInterest(80, 5))).toBe(21);
+    expect(Math.round(weeklyInterest(100, 5))).toBe(25);
+  });
+
+  it('draws no more for more Practice Spots, which only let a class hold more', () => {
+    /** The class booked at a studio with this many spots, at a middling reputation, led by an Expert. */
+    const booked = (extra: (readonly [number, number])[]) => {
+      const { sim, s, room, teacher } = studio();
+      for (const [x, y] of extra) sim.placeItem('practice_spot', x, y, 0);
+      s.reputation = 30;
+      if (teacher) teacher.skill = 5;
+      run(sim, 1);
+      return { spots: s.items.filter((it) => it.type === 'practice_spot').length, booked: room.booked };
+    };
+    const few = booked([
+      [8, 13],
+      [5, 14],
+      [6, 14],
+    ]);
+    const many = booked([
+      [8, 13],
+      [5, 14],
+      [6, 14],
+      [7, 14],
+      [8, 14],
+    ]);
+    expect(many.spots).toBeGreaterThan(few.spots);
+    expect(few.booked?.turned).toBe(0);
+    expect(few.booked?.count).toBeLessThan(few.spots);
+    expect(many.booked).toEqual(few.booked);
   });
 
   it('shares the week’s interest among its classes, up to the places there are, turning the rest away', () => {

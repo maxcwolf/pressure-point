@@ -21,6 +21,16 @@ export function weekNote(days: readonly number[]): string {
   return `${days.length} ${days.length === 1 ? 'class' : 'classes'} a week, sharing the week’s class-goers`;
 }
 
+/**
+ * How many class-goers a week the studio draws at this reputation, and the class days they are shared among: its
+ * Practice Spots only cap how many each class can hold.
+ */
+export function demandNote(interest: number, days: number): string {
+  const come = `About ${Math.round(interest)} class-goers a week come for classes at this reputation`;
+  if (!days) return `${come}, once a class day is switched on`;
+  return days === 1 ? `${come}, all on its 1 class day` : `${come}, shared among ${days} class days`;
+}
+
 /** How a studio's spots stand: a class under way, class-goers waiting on their spots for one, or every spot free. */
 export function classNote(standing: number, spots: number, progress: number): string {
   if (progress > 0) return `Class under way: ${standing} of ${spots} spots taken`;

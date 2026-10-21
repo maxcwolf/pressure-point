@@ -6,6 +6,49 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 21 October 2026: side income in proportion
+
+Measured with `yarn balance` at `020cb42` (before) and `2a179ed` (after), every campaign center, seeds 1 to 6, four years a game, with `BOT_STYLE=good`, `hoarder` and `grower`. The bot's month log now records the finished treatment rooms and the Instructors on the payroll, so class income per Instructor and a treatment room's take are read from the same months. Year 4 is months 37 to 48, over the games not lost.
+
+### 36. A Qi Gong Studio and a house call pay about what the center does
+
+**Found:** entry 33 and the audit's recommendation 6. A class drew `spots × 2.5` class-goers a week, so every Practice Spot built added demand from a pool nothing limited: in the studio games, one Instructor brought in 1.0 to 3.6 times a treatment room's take (most near 1.65). House calls paid $1,200 a day at rank 1 and 25% more a rank, several times a practitioner's day at home, and were 7% to 22% of the good bot's year-4 income.
+
+**Done:**
+
+- `weeklyInterest(reputation, skill)` is `CLASS_WEEKLY × (0.4 + reputation/83) × (0.85 + 0.05 × skill)`, with `CLASS_WEEKLY` 14: 21 a week for an Expert at 80%, 25 at the top. Spots only cap a class in `classSize`, which is unchanged, as are the class-size and full-class tips, which still read right. The studio's inspector says "About 21 class-goers a week come for classes at this reputation, shared among 3 class days".
+- House calls pay `CALL_PER_DAY` $600 a day at rank 1 and `CALL_RANK_BONUS` 15% more a rank ($960 for an Expert). The day at home: fees run about $100 a second of table time (Swedish $850 to $900 for 9 seconds, Deep Tissue $1,100 to $1,150 for 11, the dearest massage $2,000 for 16), and a table treats about one guest in two days, so a practitioner earns $450 to $1,000 a day at standard prices; in the good bot's logs a treatment room takes $300 to $450 a day at price 1.4. The offer card says, beside each who could go, how many wait in their line and the days of condition the worst of them has left, with a ⚠️ when that is less than the days away.
+
+**Calibration** (class income a month per Instructor ÷ treatment income a month per treatment room, year 4, in the months with a studio; before → after at `CLASS_WEEKLY` 14):
+
+| Style   | Center        | Before                 | After                            |
+| ------- | ------------- | ---------------------- | -------------------------------- |
+| good    | The Boardwalk | 1.60, 1.69             | 1.09 ($10.1k / $9.3k)            |
+| good    | High Pines    | 3.58                   | no studio                        |
+| good    | The Orchard   | 1.68, 1.64, 1.04       | 0.86, 0.77, 1.49 ($6.7k / $4.5k) |
+| hoarder | Willow Lane   | 1.93 ($20.0k / $10.4k) | no studio                        |
+| hoarder | The Exchange  | 2.82                   | 2.69 ($13.0k / $4.8k)            |
+| hoarder | The Boardwalk | 2.00                   | no studio                        |
+| hoarder | High Pines    | 5.96, 1.55             | 1.49                             |
+| hoarder | The Orchard   | 1.70, 1.29, 1.33, 1.39 | 1.19, 0.85, 0.97                 |
+| grower  | studio games  | 2.93, 1.41, 2.02       | 1.41, 1.09, 0.89, 1.73           |
+
+Over the nine good and hoarder games with a studio after, an Instructor brings in $12.0k a month against $10.9k a treatment room: 1.10, the middle of the 0.8 to 1.3 band. The games outside it at the top are where the center's rooms take under $5k a month, not where classes pay more ($6.7k to $15.3k a month per Instructor everywhere). A lower `CLASS_WEEKLY` would move as many games out at the bottom (0.77 to 0.86) as it brought in at the top, so it stays at 14.
+
+**Result:**
+
+| Style   | House calls, share of year-4 income (Willow · Exchange · Boardwalk · High Pines · Orchard) | Year-4 profit a month at Willow Lane | Games lost  |
+| ------- | ------------------------------------------------------------------------------------------ | ------------------------------------ | ----------- |
+| good    | 13% · 22% · 12% · 10% · 7% → 7% · 9% · 6% · 4% · 3%                                        | $17.9k → $13.2k                      | 1 → 2 of 30 |
+| hoarder | 13% · 13% · 13% · 9% · 12% → 7% · 7% · 5% · 4% · 6%                                        | $25.7k → $9.0k                       | 5 → 7 of 30 |
+| grower  | 14% · 20% · 9% · 8% · 8% → 7% · 10% · 2% · 3% · 8%                                         | $15.4k → $13.1k                      | 8 → 9 of 30 |
+
+- House calls are under 10% of the good bot's year-4 income at every center.
+- The hoarder's year-4 money edge at Willow Lane is gone: $9.0k a month against the good bot's $13.2k (it was $25.7k against $17.9k).
+- The good bot's stars: over seeds 1 to 6, 83 reached before and after, 0.68 months later on average (Willow Lane 0.3 sooner, The Exchange 1.8 later, The Orchard 1.4 later). Over entry 31's seeds 1 to 3 alone, 2.0 months later and 41 stars against 45, from one game: The Orchard, seed 3, lost on day 100.
+
+**The losses.** None comes from classes: every game lost after has no studio. The Orchard's seed 3 is in the bank's ten-day countdown from day 90 in both runs; before, a two-day house call on day 94 paid $5,040 and cleared it, and now the same call pays $2,184. The hoarder's Willow Lane games end sooner (seeds 1 and 5 on days 761 and 641, from 1030 and 1060) and seed 2 is lost on day 1030 having never fitted a studio; the grower loses 5 of 6 at The Orchard (3 before). These are centers that were living on calls at twice a day's work. The loss is in sight (the countdown and the payday warnings come first), but a side income was what carried a player past them, and the next pass's demand work (section D) is where a center earns that back from its rooms.
+
 ## 21 October 2026, afternoon: prices that bite
 
 Measured with `yarn balance` (`BOT_STYLE=good`, `hoarder`, `grower`), seeds 1 to 3, four years, before (`integrate-audit` at `d1b3d02`) and after; The Boardwalk also over seeds 4 to 9 for the good bot. Profit a month is from month 13 on, over the games not lost; "mean star month" counts a star never earned as month 48.

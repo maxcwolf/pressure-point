@@ -27,8 +27,10 @@ import type { SimContext } from './context';
 import { earn, priceFor } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { goTo, halt } from './movement';
+import { stationStaff } from './sessions';
 import { staffIdle } from './staffing';
 import { offered, unlocked } from './treatments';
+import { conditionDays, worsening } from './worsening';
 
 /** Experience from a house call. */
 export const CALL_XP = 3;
@@ -52,6 +54,23 @@ export function canGo(st: Staff, call: HouseCall): boolean {
   if (ROLES[st.role].discipline !== call.discipline) return false;
   if (call.modality && !st.quals.includes(call.modality)) return false;
   return !['leaving', 'arriving', 'training', 'toTrain', 'toCall', 'away'].includes(st.state);
+}
+
+/** What a house call costs at home: the guests waiting in a practitioner's line, and the days the worst of them has. */
+export interface CallCost {
+  waiting: number;
+  worstDays: number | null;
+}
+
+/**
+ * What it costs at home if this member of staff goes on a house call: the guests waiting in the lines of the stations
+ * they work, whose conditions go on worsening while they are away, and how many days the worst of them has left.
+ */
+export function callCost(ctx: SimContext, st: Staff): CallCost {
+  const posts = ctx.s.items.filter((it) => it.queue.length && stationStaff(ctx, it) === st);
+  const waiting = ctx.s.guests.filter((g) => worsening(g) && posts.some((it) => it.queue.includes(g.id)));
+  const worst = waiting.length ? Math.min(...waiting.map(conditionDays)) : null;
+  return { waiting: waiting.length, worstDays: worst };
 }
 
 /** Who could go on the house call on offer. */
