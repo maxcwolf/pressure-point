@@ -1,5 +1,12 @@
 // Pictures of the 3D scene itself. Only scenes with nobody in them: people sway and blink, so they never hold still.
-import { expect, test } from '../e2e/fixtures';
+import { NOON_AT } from '../../src/render/daylight';
+import { expect, type Game, test } from '../e2e/fixtures';
+
+/** Hold the game at noon on the day it is, so the light is the same in every picture whenever the test stopped the clock. */
+const noon = (game: Game) =>
+  game.eval((pp, at) => {
+    pp.state.day = Math.floor(pp.state.day) + at;
+  }, NOON_AT);
 
 test.describe('the scene', () => {
   // the one picture of the scene, so the one place the screenshot tests draw it
@@ -30,6 +37,7 @@ test.describe('the scene', () => {
       sim.world.version++;
       pp.state.speed = 0;
     });
+    await noon(game);
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
     await game.settle();
     await expect(page).toHaveScreenshot('scene-windows.png');
@@ -65,6 +73,7 @@ test.describe('the scene', () => {
       });
       pp.state.speed = 0;
     });
+    await noon(game);
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
     await game.settle();
     await expect(page).toHaveScreenshot('scene-decor.png');
@@ -81,6 +90,7 @@ test.describe('the scene', () => {
       // over the east wing and the garden block past it
       pp.view.target.set(34, 0, 11);
     });
+    await noon(game);
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
     await game.settle();
     await expect(page).toHaveScreenshot('scene-expand.png');
@@ -94,6 +104,7 @@ test.describe('the scene', () => {
       pp.sim.buyPlot('east-wing');
       pp.view.target.set(34, 0, 11);
     });
+    await noon(game);
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
     await game.settle();
     await expect(page).toHaveScreenshot('scene-site.png');
@@ -117,6 +128,7 @@ test.describe('the scene', () => {
       state.speed = 0;
       pp.view.target.set(37, 0, 13);
     });
+    await noon(game);
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
     await game.settle();
     await expect(page).toHaveScreenshot('scene-apart.png');
@@ -139,6 +151,7 @@ test.describe('the scene', () => {
       }
       pp.state.speed = 0;
     });
+    await noon(game);
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
     await game.settle();
     await expect(page).toHaveScreenshot('scene-land.png');
