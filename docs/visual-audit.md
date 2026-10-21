@@ -1,0 +1,109 @@
+# Visual audit
+
+An audit of how the game looks and, more to the point, how well what it shows helps the player play. Made 21 October 2026 from the code in `src/render/` and `src/ui/`, the stored screenshots in `tests/visual/`, the README pictures, the model lab, and the game running on the dev server with the screenshot fixture loaded. Nothing here is built; the last section is a plan for building it in parallel sessions.
+
+## The short version
+
+- **The art direction is sound and worth protecting.** Clay people with real faces, rounded items built from a few shared shapes, one teal-and-cream brand that runs from the HUD to the building's trim, cut-away walls and a quarter-turn camera. The busy center in the README is a picture a player would show a friend.
+- **Emoji are the one place the direction breaks, and they should go.** They are drawn from whichever emoji font the player's system has, so the scene itself looks different on Windows, and in the HUD they clash with the clay style. They also carry too much gameplay meaning for a vocabulary this small and this ambiguous. Replace them with one in-house icon set used in both the interface and the 3D scene, starting with the thirty or so glyphs that carry gameplay signals.
+- **Floor overlays are the right idea with the wrong defaults.** The data behind them is good and the preview while placing an item is a genuinely good mechanic. But the neutral value paints the whole building warning-amber, the flat tiles hide the floors, and the people overlays color a tile the person is standing on. Rework them as a soft field for ambient modes and as halos on people for the people modes.
+- **The biggest gap is signals the sim knows and the scene never shows:** patience before it hits the alarm, idle or absent staff, a room with nobody to work it, equipment about to fail, the line for a room. These are the cues that let a player act in time, which is what "challenging but fair" asks for.
+- **Models need a materials and lighting pass more than they need remodeling.** One roughness, no tone mapping, no bounce light and a single shadow map make even good models look chalky. That is a two-file change with a large payoff.
+
+## What is there
+
+| Layer             | How it is drawn                                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Floor             | One canvas texture, 48 px a tile, repainted when the world changes, with a procedural pattern per room type and decor     |
+| Walls             | Boxes merged per material; tall at the back, 0.3 high at the front; trim color per room type; teal cap on the shell       |
+| Items             | 81 models built in code from `parts.ts` (rounded boxes, cylinders, spheres), merged, with named moving parts for effects  |
+| People            | One body with `look.scale`, nine role outfits, 50 symptom props, jointed limbs, eyes with a glint, brows and a mouth      |
+| Lighting          | One hemisphere light, one directional sun with a 2048 px PCF shadow map over a 52 m reach; dims for power cuts and storms |
+| Overlays          | Instanced tiles at 0.62 opacity in three palettes; build-tool tiles in six fixed colors; emoji sprites for markers        |
+| Signs and bubbles | Emoji rendered to a 128 px canvas, shown as sprites with depth test off                                                   |
+| Interface         | Preact, Fredoka, cream panels with a navy border and a drop shadow; emoji in every button, card, tab and hint             |
+
+## Findings
+
+### 1. Emoji as symbols
+
+**Where they are.** Roughly 400 emoji in the source: every item (81), room (12), role (9), treatment (30), feeling (40) and overlay has one; the HUD's eight build buttons and five system buttons; every tool hint; the stats bar; and in the scene, room signs over doors, speech bubbles, the wrench and flies over broken or filthy items, and the staff and guest markers over an item's use squares.
+
+**Why they should go.**
+
+- **They are not the same picture for every player.** `emoji.ts` draws them with Apple Color Emoji, Segoe UI Emoji or Noto Color Emoji, whichever the system has. The game ships a Windows installer, so half the players see flatter, differently shaped glyphs, and a Linux browser without a color emoji font shows boxes. Because the 3D signs and bubbles are rendered from the same fonts, the scene itself changes per platform, and the README's screenshots are a promise only Mac players get.
+- **They clash with the clay style.** Glossy, outlined, heavily shaded emoji sit on flat-shaded clay people and cream panels. It is the one place the art direction is not the game's own.
+- **They are ambiguous where it matters.** 💆 is the Massage Suite, the Massage Therapist, the Treatments button and the save thumbnail. 📚 is the Shop Counter, the Bookcase and the "in training" bubble. 🩺 is the Consultation Room and the Wellness Consultant. The two alarms a player most needs to tell apart, a guest about to walk out (💢) and a member of staff about to quit (⚠️), are two small red-and-yellow marks that read the same at default zoom. `🧑‍⚕️`, the staff marker, is a joined sequence that some fonts draw as two glyphs.
+- **They do not scale.** A 62 px glyph on a 128 px canvas on a 0.62 m sprite is crisp close up and mush at the zoom most play happens at.
+
+**What to do instead.** One in-house icon set: rounded, two-tone (navy outline, one fill per family: rooms teal, people orange, warnings red, money gold), drawn to match Fredoka's weight. Keep it as SVG in `src/ui/icons/`, with a build script that writes a sprite sheet for the DOM and a texture atlas for the scene, so every sign, bubble and marker is one draw call and looks the same on every platform. Emoji can stay in flavor text (reviews, the title screen's save card) where they are decoration, not signal.
+
+A cheaper half-measure would be to bundle Twemoji or Noto Color Emoji so everyone sees the same glyphs. That fixes the platform problem and nothing else; it is not recommended.
+
+**Order of replacement.** First the glyphs that carry gameplay signals, about thirty: the speech bubbles (💢 🤕 🚻 🍵 ⚠️ 💤 📚 😴 and the ones set by the sim), the item markers (🔧 🪰), the use-square markers, the room signs (12), the overlay picker (7) and the HUD buttons (13). Then the item, treatment and feeling icons, which are labels beside words and can wait.
+
+### 2. Floor overlays
+
+**What works.** Seven modes over data the sim already keeps, a key with named ends, and the preview that colors the floor by what an item in hand would change before it is put down. That preview teaches the decor, noise and warmth systems better than any text, and should be kept and made more visible.
+
+**What does not.**
+
+- **The neutral state is the alarm color.** `pleasantness()` maps a bare floor to 0.5, and `heatColor()` maps 0.5 to amber. Open the Surroundings overlay on a fresh center and the entire building is warning-orange with nothing wrong (seen live on the fixture). Players read amber as "fix this." Ambient modes should be diverging scales centered on neutral, and neutral should be nearly transparent, so only the deviations show: green around a plant, red around litter, blue by a cold window.
+- **Flat tiles hide the floor.** At 0.62 opacity every room's floor and pattern disappears under the overlay, and the 0.96 tile with a gap draws a grid that reads as tiles rather than a field. For decor, calm and temperature, paint one canvas at tile resolution with bilinear filtering, as the floor texture itself is drawn, so the overlay is a soft field and the room underneath stays legible. Keep the instanced tiles for the build tools, where a hard tile edge is the point.
+- **People modes color the wrong thing.** Patience, needs and energy color the tile the person is standing on, which the person then covers, and which they leave behind as they walk. Color the person instead: a ring at their feet, or a tint on the figure, as Two Point does. Then the overlay reads at any zoom and follows them.
+- **Upkeep duplicates the markers.** Broken and filthy items already carry a sprite; the upkeep overlay colors their footprint as well. Once wear has a gradual cue on the item (see 3), the overlay can be the detailed view and the marker the alarm.
+- **Two color systems.** The heatmap's greens and reds (`0x3fbf6f`, `0xe5484d`) are not the HUD's (`--green #3bb273`, `--red #e5564d`), and the build tools have six more. Pick the colors once, in `tokens.css`, and read them into the scene.
+
+### 3. Signals the scene should show and does not
+
+The sim keeps all of these; the scene shows them late, or only in an inspector.
+
+- **Patience before the alarm.** A guest shows nothing until patience drops under 25, then 💢. Give patience a gradient: arms folded, then a foot tapping, then head in hands, then looking at the door. A player who can see impatience building can add a bench in time. (`pose.ts` already has a per-state pose system to hang this on.)
+- **The line for a room.** Nothing marks who is waiting for which room. Footprints or dots on the floor outside the door, growing with the line, or guests actually standing in a row, make the bottleneck visible from across the building.
+- **Idle and absent staff.** A room with no one to work it looks exactly like a room with someone on a break. Give each room a status lamp on its sign (green working, amber nobody here, red broken item, grey unfinished) and give idle staff an idle (checking a watch, stretching) so they are easy to spot.
+- **Equipment about to fail.** Wear shows nothing until 100, then a wrench. Add a gradual cue from about 70: a wobble, a puff of smoke every few seconds, a dimmer light. Counterplay needs warning.
+- **Noise and warmth when the overlay is off.** A one-off ripple from the arcade or pool table when a guest uses it, and a shimmer over a radiator, teach the mechanics without the overlay, and tell the player which overlay to open.
+- **What is selected and what is under the pointer.** The selection ring sits on the floor and is hidden by furniture (the receptionist's ring is mostly behind the desk). Draw it over everything at lower opacity, or outline the figure, and add a small chevron above them. There is no hover feedback at all in the scene; a slight brighten on whatever a click would select is the single cheapest usability gain here.
+- **Time.** The sim has days and seasons; the light never changes. A gentle day cycle (warm at opening, neutral at noon, amber at closing) and a seasonal tint on the lawn tell the time without the HUD, and make the place feel lived in.
+
+Keep as they are: the bad-vibes cloud (readable and funny), the floating money text, the fade at the ends of the pavement, the item-in-hand preview, the door and front-arrow markers.
+
+### 4. Models
+
+**Keep.** The people are the best asset in the game: the glint in the eyes, the brows, the jointed walk, the nine outfits, and above all the symptom props. The chicken on the head is the game's signature and should set the bar: every prop at least head-sized or moving, so it reads at default zoom. The smaller ones (pins, static, frost) are worth a check at that zoom.
+
+**Improve, in this order.**
+
+1. **Materials and light before geometry.** Every surface is `MeshStandardMaterial` at one of a few roughnesses with no metalness, lit by one hemisphere and one sun, with no tone mapping. The result is chalky and even (look at the Posture Scanner). Add ACES tone mapping with a touch of exposure, tune the hemisphere's ground color to the setting (grass bounce in the park, sand at the seaside, blue-white in the snow), and let the sun's shadow reach follow the zoom so shadows are crisp close up. This touches `lighting.ts`, `view.ts` and `setting.ts` and changes every picture for the better.
+2. **One surface language.** Items and people are smooth and rounded; trees are faceted icosahedra. Both are fine styles, but they are two. Either round the trees or give the far background its own deliberately simpler look.
+3. **Doors.** A door is a gap in the wall and a painted threshold. A frame in the room's trim color, with an arch or a half-open door, makes doors readable from any distance and gives the sign somewhere to hang.
+4. **Floor resolution.** 48 px a tile is coarse when zoomed in on the corridor checker. 64 px, plus a faint grout line and noise, costs little.
+5. **A scale guideline for items.** Some items are chunkier than others (the scanner's ring reads as a paddling pool). A short rule in `parts.ts` (minimum member thickness, standard corner radius, how tall a one-tile item may be) and a pass over the 81 models against it.
+6. **Bodies and faces.** One body with a scale. Two or three silhouettes, a few more hair and accessory variants, and expressions tied to state (a frown as patience falls, the existing cured face) would let faces carry some of what bubbles carry now.
+7. **Treatment moments.** Per-modality work styles exist; a short cure effect (a sparkle burst, a knot untying, the chicken flying off) at the moment a treatment lands gives every success a payoff. Listed as gap 31 in `two-point-gaps.md`.
+
+### 5. Interface
+
+The HUD is consistent and charming, and its tooltips are better than the browser's. Three small things: the stats bar's date cell clips ("6°" is cut) at 1440 px; the bottom bar overlaps between 1240 and 1450 px (already in `known-issues.md`); and the tool hint is one long sentence of middle dots that would read faster as a row of chips (name, cost, keys, legend). The emoji in the buttons are covered by finding 1.
+
+## Plan for parallel sessions
+
+Each stream below is scoped to its own files so several can run at once. Each should branch locally from `main` (no pull requests on this project), keep the draw-call budget that `yarn test:perf` checks, update the stored pictures with `yarn test:visual:update` and look at every changed picture before committing, and add a line to `docs/architecture.md` where it changes how a layer works. Suggested model: `claude-opus-5-5` at medium effort, as asked for this plan.
+
+| #   | Stream                         | Files                                                                                                                     | Depends on                       | Size   |
+| --- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ------ |
+| 1a  | Icon set and pipeline          | new `src/ui/icons/*.svg`, `scripts/make-icons.mjs`, `src/ui/components/common/Icon.tsx`, `render/models/icons.ts` (atlas) | none                             | Large  |
+| 1b  | Icons in the interface         | `src/ui/components/**`, `core/data/*` icon fields become icon ids                                                         | 1a                               | Medium |
+| 1c  | Icons in the scene             | `render/models/emoji.ts` → atlas, `pose.ts` bubbles, `items.ts` markers, `rooms.ts` signs, `overlays.ts` markers          | 1a                               | Medium |
+| 2   | Overlay rework                 | `render/heatmap.ts`, `ui/lib/overlays.ts`, `OverlayPicker.*`, `app/game.ts` drawOverlay, a people-halo layer              | none                             | Medium |
+| 3   | Selection and hover            | `render/overlays.ts` (ring), `render/picking.ts`, `app/pointer.ts`                                                        | none                             | Small  |
+| 4   | Lighting and materials         | `render/lighting.ts`, `render/view.ts`, `render/setting.ts`, `models/parts.ts` (roughness)                                | none                             | Small  |
+| 5   | Room signs, doors, status lamp | `render/rooms.ts`, `render/room-walls.ts`, new `models/sign-plaque.ts`                                                    | 1a (icons)                       | Medium |
+| 6   | People readability             | `render/pose.ts`, `models/character-detail.ts` (expressions), idle staff, patience posture                                | none                             | Medium |
+| 7   | Gradual wear and effect cues   | `render/items.ts`, a few `models/items/*` (smoke, wobble, ripple parts)                                                   | none                             | Small  |
+| 8   | Day and season light           | `render/lighting.ts`, `render/scenery.ts`                                                                                 | 4                                | Small  |
+| 9   | Model polish pass              | `models/items/*`, `models/tree.ts`, floor `TS` in `floor.ts`, split by family between two sessions                        | 4 (to judge under the new light) | Medium |
+
+**Waves.** Wave one: 1a, 2, 3, 4, 6, 7 at once (no shared files). Wave two, once 1a and 4 land: 1b, 1c, 5, 8, 9. Stream 1b touches `core/data/*`, so nothing else that edits the data tables should run beside it.
+
+**Each brief should say** what done looks like in pictures: which stored screenshots change and why, and a before-and-after of the README's center shot.
