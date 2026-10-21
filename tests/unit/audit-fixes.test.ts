@@ -308,15 +308,14 @@ describe('a payday the bank cannot cover', () => {
     events.length = 0;
     warnPayday(ctx);
     expect(toasts(events).join()).toContain('Payday in 5 days: $3,000 in wages, and $500 in the bank.');
-    expect(toasts(events).join()).toContain('The bank will lend the rest');
-    expect(toasts(events).join()).toContain('it calls the overdraft in');
+    expect(toasts(events).join()).toContain('Payday is covered by borrowing: $2,500 short');
     // with the loan used up and the books in profit, the red would clear
     s.loan = loanLimit(s);
     s.ledger.treatment = 5000;
     events.length = 0;
     warnPayday(ctx);
-    expect(toasts(events).join()).toContain('The bank will lend no more');
-    expect(toasts(events).join()).toContain('so the red would clear');
+    expect(toasts(events).join()).toContain('the bank will lend no more: the rest goes into the red');
+    expect(toasts(events).join()).toContain('so the red clears');
     s.money = 100_000;
     events.length = 0;
     warnPayday(ctx);

@@ -5,8 +5,6 @@ import { describe, expect, it } from 'vitest';
 import {
   CONDITION_DRAIN,
   CONDITION_PENALTY,
-  DAY_SECONDS,
-  DAYS_PER_MONTH,
   EMERGENCY_CONDITION,
   OUTBREAK_STARS,
   REP_DAMPING,
@@ -14,10 +12,8 @@ import {
   VIBES_MORALE,
   VIBES_PENALTY,
   VIBES_PER_FAIL,
-  WORSE_AHEAD_DAYS,
   WORSE_REP,
 } from '../../src/core/data';
-import { advice } from '../../src/core/sim/advisor';
 import { createContext } from '../../src/core/sim/context';
 import { changeRep, gainDamping, lossDamping } from '../../src/core/sim/economy';
 import { reviewStars } from '../../src/core/sim/feelings';
@@ -25,20 +21,13 @@ import { spawnGuest } from '../../src/core/sim/guests';
 import { endOutbreak, spreadStress } from '../../src/core/sim/outbreaks';
 import { moraleTarget, wantsAway } from '../../src/core/sim/staffing';
 import { addVibes, canSmudge, fadeVibes, roomToSmudge, vibesPenalty } from '../../src/core/sim/vibes';
-import {
-  conditionPenalty,
-  daysUntilWorse,
-  lineAtRisk,
-  warnLine,
-  worsening,
-  worsenRate,
-} from '../../src/core/sim/worsening';
+import { conditionPenalty, worsening, worsenRate } from '../../src/core/sim/worsening';
 import { SAVE_VERSION } from '../../src/core/state/game';
 import type { GameState, Guest } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { puffAge } from '../../src/render/models/sage';
 import { wafting } from '../../src/render/pose';
-import { addReiki, addTraining, hire, inconsistencies, openCenter, run, runUntil, toasts } from './helpers';
+import { addReiki, addTraining, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
 
 /** A center with a guest in it, waiting in line. */
 function withGuest(seed = 1) {
@@ -110,43 +99,6 @@ describe('reputation', () => {
 });
 
 describe('a worsening condition', () => {
-  it('shows which guests in the line are about to cost reputation, the soonest first', () => {
-    const { s, g } = withGuest();
-    expect(lineAtRisk(s)).toEqual([]);
-    const soon = WORSE_AHEAD_DAYS * DAY_SECONDS * worsenRate(g.condition);
-    g.health = soon - 1;
-    expect(lineAtRisk(s)).toEqual([g]);
-    expect(daysUntilWorse(g)).toBeLessThan(WORSE_AHEAD_DAYS);
-    // a guest sooner to run out comes first, and one further off is not in it
-    const sooner = { ...structuredClone(g), id: s.nextId++, health: soon / 2 };
-    const later = { ...structuredClone(g), id: s.nextId++, health: soon * 3 };
-    s.guests.push(later, sooner);
-    expect(lineAtRisk(s).map((x) => x.id)).toEqual([sooner.id, g.id]);
-    expect(lineAtRisk(s, WORSE_AHEAD_DAYS * 4).map((x) => x.id)).toEqual([sooner.id, g.id, later.id]);
-  });
-
-  it('warns the first time each month the line is about to cost reputation, and the advisor counts them', () => {
-    const { s, g } = withGuest();
-    const ctx = createContext(s);
-    g.health = WORSE_AHEAD_DAYS * DAY_SECONDS * worsenRate(g.condition) - 1;
-    warnLine(ctx);
-    const said = toasts(ctx.events).join();
-    expect(said).toContain(`${g.name} has waited so long`);
-    expect(said).toContain(`−${WORSE_REP} reputation`);
-    expect(advice(ctx)).toContain(`${g.name} is within ${WORSE_AHEAD_DAYS} days of going home worse off`);
-    // a second guest the same month says nothing more
-    const other = { ...structuredClone(g), id: s.nextId++ };
-    s.guests.push(other);
-    ctx.events.length = 0;
-    warnLine(ctx);
-    expect(toasts(ctx.events)).toEqual([]);
-    expect(advice(ctx)).toContain('2 guests waiting are within');
-    // the next month, it is said again
-    s.day += DAYS_PER_MONTH;
-    warnLine(ctx);
-    expect(toasts(ctx.events).join()).toContain('2 guests have waited so long');
-  });
-
   it('worsens faster with some conditions than others', () => {
     expect(worsenRate('knotted')).toBe(CONDITION_DRAIN);
     expect(worsenRate('steam')).toBeGreaterThan(worsenRate('knotted'));

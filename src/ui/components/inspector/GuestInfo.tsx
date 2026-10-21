@@ -18,7 +18,7 @@ import { useGame } from '../../hooks/use-hud';
 import { chanceText, percent, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
 import { regularTag } from '../../lib/regulars';
-import { guestStatus } from '../../lib/status';
+import { conditionNote, guestStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { QualChips } from '../common/QualChips';
@@ -36,6 +36,13 @@ function ChanceLine({ guest: g }: { guest: Guest }) {
       {`Chance of success: ${chanceText(chance, def, staff.name)}`}
     </p>
   );
+}
+
+/** How long a waiting guest's condition has left, red once it is poor. */
+function ConditionLine({ guest: g }: { guest: Guest }) {
+  const note = conditionNote(g);
+  if (!note) return null;
+  return <p class={cx('sub', 'condition', note.poor && 'poor')}>{note.text}</p>;
 }
 
 /** During a stress outbreak, a calming session for this guest: wasted on one who was not stressed. */
@@ -124,6 +131,7 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
         Condition
         <Bar value={g.health} class={g.health < POOR_CONDITION ? 'bad' : ''} />
       </label>{' '}
+      <ConditionLine guest={g} />{' '}
       <label>
         Patience
         <Bar value={g.patience} class={g.patience < 25 ? 'bad' : ''} />

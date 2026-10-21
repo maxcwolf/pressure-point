@@ -1,6 +1,6 @@
 // What every part of the simulation works on.
 
-import { IDEAL_TEMP } from '../data';
+import { type Discipline, IDEAL_TEMP } from '../data';
 import type { GameState } from '../state/types';
 import { World } from '../world';
 import type { SimEvent } from './events';
@@ -28,6 +28,9 @@ export interface SimContext {
   classCallWait?: number;
   /** How many times a class has been announced since the game was loaded, to take turns with the lines. */
   classCalls?: number;
+  /** The lines warned about for a guest whose condition has turned poor, and the guests warned about by name. */
+  poorLines?: Set<Discipline | 'consult'>;
+  worseWarned?: Set<number>;
 }
 
 /** Set up the working data for a game. */

@@ -2,7 +2,7 @@
 
 A read of the code at 0.30.14 for bugs and gameplay problems, by three reviewers (staff, economy and events, treatment flow and the world) and one playtest-bot run (`yarn balance`, one seed per center, 48 months). Typecheck and all unit tests passed before any change. Nothing below was reproduced by hand in play: findings are from reading the code, and the balance numbers are from a single seed each, so read them as hints.
 
-[known-issues.md](known-issues.md) holds the earlier audit's open issues; this one adds to it.
+[known-issues.md](known-issues.md) holds the earlier audit's open issues; this one adds to it, and [deep-dive-audit.md](deep-dive-audit.md) (20 October) follows on from this one.
 
 ## Decisions
 

@@ -1,7 +1,7 @@
 // What makes a center different to run: rush hours, seasons and snowed-in spells.
 
 import { centerOf, DAY_SECONDS, DAYS_PER_MONTH } from '../data';
-import type { Seasons, Snowfall } from '../data/types';
+import type { RushHours, Seasons, Snowfall } from '../data/types';
 import type { GameState } from '../state/types';
 import type { SimContext } from './context';
 import { emit, tipOnce, toast } from './events';
@@ -137,6 +137,63 @@ export function seasonAhead(s: GameState, season: 'summer' | 'winter'): string {
   if (season === 'summer')
     return `☀️ Summer in ${SEASON_AHEAD_DAYS} days: ${paceOf(o.factor)} for three months.${expectOf(o)} The line grows to match, and guests who wait too long go home worse off: more rooms and staff, higher prices, or a limit on guests at once (Money menu, Prices), before it starts.`;
   return `❄️ Winter in ${SEASON_AHEAD_DAYS} days: ${paceOf(o.factor)} for three months.${expectOf(o)} The wages stay as they are: let go anyone you can spare, or have the money put by.`;
+}
+
+/** The season now and the one coming: their arrival multipliers, and the day the season turns. */
+export interface SeasonTurn {
+  season: Season;
+  factor: number;
+  next: Season;
+  nextFactor: number;
+  /** The day the next season starts, and how many days off that is. */
+  turnsOn: number;
+  daysUntil: number;
+}
+
+/** Where the year stands for a center with seasons: this season's multiplier and the next, with the day it turns. */
+export function seasonTurn(day: number, seasons: Seasons): SeasonTurn {
+  const season = seasonOf(day);
+  let month = Math.floor(day / DAYS_PER_MONTH) + 1;
+  while (seasonOf(month * DAYS_PER_MONTH) === season) month++;
+  const turnsOn = month * DAYS_PER_MONTH;
+  const next = seasonOf(turnsOn);
+  return {
+    season,
+    factor: seasonFactor(season, seasons),
+    next,
+    nextFactor: seasonFactor(next, seasons),
+    turnsOn,
+    daysUntil: turnsOn - day,
+  };
+}
+
+/** Where the rush-hour cycle stands: whether one is on, how arrivals run now, and when it turns. */
+export interface RushOutlook {
+  on: boolean;
+  factor: number;
+  /** How arrivals will run once it turns, and the day it does, with how many days off that is. */
+  nextFactor: number;
+  turnsOn: number;
+  daysUntil: number;
+}
+
+/** Where the rush hours stand for a center that has them: on or off now, and when the next change comes. */
+export function rushOutlook(day: number, rush: RushHours): RushOutlook {
+  const on = inRush(day);
+  const cycle = Math.floor(day / RUSH_CYCLE_DAYS) * RUSH_CYCLE_DAYS;
+  const t = day - cycle;
+  const turnsOn = on
+    ? cycle + RUSH_START + RUSH_DAYS
+    : t < RUSH_START
+      ? cycle + RUSH_START
+      : cycle + RUSH_CYCLE_DAYS + RUSH_START;
+  return {
+    on,
+    factor: on ? rush.peak : rush.lull,
+    nextFactor: on ? rush.lull : rush.peak,
+    turnsOn,
+    daysUntil: turnsOn - day,
+  };
 }
 
 /** How much faster than usual waiting guests lose patience here: faster during a rush, where a center has them. */

@@ -780,8 +780,8 @@ export interface GameState {
   insolvency: { until: number } | null;
   /** The day the bank went below zero, or null while it is not. */
   redSince: number | null;
-  /** The last month, counted from 0, in which the line was warned it was about to cost reputation; -1 for none yet. */
-  lineWarned: number;
+  /** The last month, counted from 0, in which payday was warned of ahead of time, so it is once a month. */
+  paydayWarned?: number;
   /** The most guests the player lets in at once, below what the building allows, or null for no limit of their own. */
   intakeCap: number | null;
   /** The center is bankrupt and the game is lost. */

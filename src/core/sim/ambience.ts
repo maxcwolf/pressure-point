@@ -77,13 +77,36 @@ export function drainFactor(ctx: SimContext, x: number, y: number, extra = 0): n
   return clamp(1.12 - (here + extra) * DECOR_CALM, 0.7, 1.4);
 }
 
+/** What a room's prestige is made of: points for floor beyond the smallest, decor, daylight and litter, and the score. */
+export interface PrestigeTerms {
+  size: number;
+  decor: number;
+  windows: number;
+  /** Points taken off for litter, as a positive number. */
+  litter: number;
+  score: number;
+  /** The prestige the score comes to, one to five. */
+  level: number;
+}
+
+/** How many points of score each star of prestige takes. */
+export const PRESTIGE_STEP = 3;
+
+/** The terms a room's prestige is made of. `extra` is decor not yet placed in it. */
+export function prestigeTerms(ctx: SimContext, room: Room, extra = 0): PrestigeTerms {
+  const def = ROOMS[room.type];
+  const size = (room.w * room.h - def.minShort * def.minLong) * 0.4;
+  let decor = extra;
+  for (const it of ctx.s.items) if (ctx.world.zoneAt(it.x, it.y) === room.id) decor += decorOf(it);
+  let litter = 0;
+  for (const l of ctx.s.litter) if (ctx.world.zoneAt(l.x, l.y) === room.id) litter += 2;
+  // daylight helps, up to a point
+  const windows = Math.min(room.windows.length, WINDOW_MAX_BONUS) * 1.5;
+  const score = size + decor + windows - litter;
+  return { size, decor, windows, litter, score, level: clamp(1 + Math.floor(score / PRESTIGE_STEP), 1, 5) };
+}
+
 /** One to five, from how roomy and how nicely furnished a room is. `extra` is decor not yet placed in it. */
 export function prestige(ctx: SimContext, room: Room, extra = 0): number {
-  const def = ROOMS[room.type];
-  let score = (room.w * room.h - def.minShort * def.minLong) * 0.4 + extra;
-  for (const it of ctx.s.items) if (ctx.world.zoneAt(it.x, it.y) === room.id) score += decorOf(it);
-  for (const l of ctx.s.litter) if (ctx.world.zoneAt(l.x, l.y) === room.id) score -= 2;
-  // daylight helps, up to a point
-  score += Math.min(room.windows.length, WINDOW_MAX_BONUS) * 1.5;
-  return clamp(1 + Math.floor(score / 3), 1, 5);
+  return prestigeTerms(ctx, room, extra).level;
 }

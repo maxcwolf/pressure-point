@@ -11,6 +11,7 @@ import { mushroomNote, mushroomSwitch } from '../../lib/ceremonies';
 import { chanceText, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
 import { matsNote, sessionNote } from '../../lib/sessions';
+import { conditionNote } from '../../lib/status';
 import { staffingStatus } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -23,6 +24,7 @@ function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: nu
   const chance = sim.chanceFor(g);
   const staff = sim.stationStaff(item);
   const def = MODALITIES[conditionOf(g.condition).modality];
+  const condition = conditionNote(g);
   return (
     <li class="in-line">
       <Button
@@ -38,6 +40,7 @@ function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: nu
       {chance && staff && (
         <span class={cx('odds', poorChance(chance) && 'poor')}>{`Chance ${chanceText(chance, def, staff.name)}`}</span>
       )}
+      {condition && <span class={cx('condition', condition.poor && 'poor')}>{condition.text}</span>}
       <span class="moves">
         <Button
           title="Up the line"

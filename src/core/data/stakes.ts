@@ -21,9 +21,6 @@ export const WORSE_REP = 6;
  */
 export const REP_DAMPING = { mid: 50, top: 90, gainAtTop: 0.4, floor: 10, lossAtFloor: 0.75 } as const;
 
-/** How far ahead, in days, the line is warned of guests whose condition is about to run out. */
-export const WORSE_AHEAD_DAYS = 5;
-
 /** How much a failed treatment adds to the bad vibes in its room, out of 100. */
 export const VIBES_PER_FAIL = 60;
 /** How much of the chance of success a room full of bad vibes takes away. */

@@ -1,10 +1,11 @@
 // Describing what people are up to, in a few words.
 
-import { DISCIPLINES, ITEMS, ROLES, ROOMS } from '../../core/data';
+import { DISCIPLINES, ITEMS, POOR_CONDITION, ROLES, ROOMS } from '../../core/data';
 import { expert, slots, trained, xpToNext } from '../../core/sim/careers';
 import { missNote } from '../../core/sim/classes';
 import type { Sim } from '../../core/sim/sim';
 import { courseName } from '../../core/sim/training';
+import { conditionDays, worsening } from '../../core/sim/worsening';
 import type { Guest, Staff } from '../../core/state/types';
 
 export { courseName };
@@ -195,4 +196,16 @@ export function slotNote(st: Staff): string {
   const filled = `Qualification slots: ${Math.min(trained(st), slots(st))} of ${slots(st)} filled.`;
   if (!expert(st)) return `${filled} Each promotion brings another.`;
   return ROLES[st.role].discipline ? `${filled} As an Expert, they can learn every treatment besides.` : filled;
+}
+
+/**
+ * How long a waiting guest's condition has left, in words, red when it is poor: "Condition: 12 days left", or
+ * "⚠️ Condition runs out in 2 days: goes home worse off". Nothing for a guest no longer worsening.
+ */
+export function conditionNote(g: Guest): { text: string; poor: boolean } | null {
+  if (!worsening(g)) return null;
+  const days = Math.max(1, Math.ceil(conditionDays(g)));
+  const word = `${days} day${days === 1 ? '' : 's'}`;
+  if (g.health < POOR_CONDITION) return { text: `⚠️ Condition runs out in ${word}: goes home worse off`, poor: true };
+  return { text: `Condition: ${word} left`, poor: false };
 }

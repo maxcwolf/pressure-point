@@ -122,11 +122,21 @@ export function payOff(ctx: SimContext, st: Staff) {
   if (owed > 0) spend(ctx, owed, 'salaries');
 }
 
-/** Days before payday that the center is warned the wages will not be covered. */
+/** Days before payday that the center is warned again if the bank alone will not cover the wages. */
 const PAYDAY_WARNING_DAYS = 5;
 
+/** The day the month now running began. */
+const monthStartOf = (s: GameState) => Math.floor(s.day / DAYS_PER_MONTH) * DAYS_PER_MONTH;
+
 /** The day the month now running ends and wages are due. */
-const paydayOf = (s: GameState) => (Math.floor(s.day / DAYS_PER_MONTH) + 1) * DAYS_PER_MONTH;
+export const paydayOf = (s: GameState) => monthStartOf(s) + DAYS_PER_MONTH;
+
+/** What the staff on the books, those leaving aside, are paid in a month. */
+export function monthlyPayroll(s: GameState): number {
+  let total = 0;
+  for (const st of s.staff) if (st.state !== 'leaving') total += st.salary;
+  return total;
+}
 
 /** What the next payday will come to, as things stand. */
 export function wagesDue(s: GameState): number {
@@ -136,13 +146,6 @@ export function wagesDue(s: GameState): number {
     if (st.state === 'leaving') continue;
     total += Math.round((st.salary * clamp(Math.round(payday - st.paidTo), 0, DAYS_PER_MONTH)) / DAYS_PER_MONTH);
   }
-  return total;
-}
-
-/** What the staff on the books, those leaving aside, are paid in a month. */
-export function monthlyPayroll(s: GameState): number {
-  let total = 0;
-  for (const st of s.staff) if (st.state !== 'leaving') total += st.salary;
   return total;
 }
 
@@ -209,27 +212,104 @@ function paceOf(s: GameState): string {
   return net < 0 ? `losing about ${money(-net)} a month` : `making about ${money(net)} a month`;
 }
 
+/** Whether the next payday is covered: by the bank and the month's takings, by borrowing on top, or not at all. */
+export type PayrollCover = 'yes' | 'borrowing' | 'no';
+
+/** How the next payday stands, as things are going. */
+export interface PayrollOutlook {
+  /** The wages due, and the days until they are. */
+  wages: number;
+  daysLeft: number;
+  /** In the bank now, what the pace brings in by payday, and the two together. */
+  money: number;
+  coming: number;
+  expected: number;
+  /** What would still be missing at payday, and the loan steps that would cover it. */
+  short: number;
+  borrow: number;
+  /** What the bank will still lend, and where the loan would stand after borrowing to cover the wages. */
+  loanRoom: number;
+  loanAfter: number;
+  /** The money the center is on course to make or lose in a month, which decides what the bank does with the red. */
+  net: number;
+  covered: PayrollCover;
+}
+
+/** How the next payday stands: what is due, what the bank and the pace will have by then, and the gap. */
+export function payrollOutlook(s: GameState): PayrollOutlook {
+  const wages = wagesDue(s);
+  const daysLeft = paydayOf(s) - s.day;
+  const flow = cashflow(s);
+  const coming = Math.round((flow.income * daysLeft) / DAYS_PER_MONTH);
+  const expected = s.money + coming;
+  const short = Math.max(0, wages - expected);
+  const borrow = short > 0 ? Math.ceil(short / LOAN_STEP) * LOAN_STEP : 0;
+  const room = loanRoom(s);
+  const covered: PayrollCover = short <= 0 ? 'yes' : borrow <= room ? 'borrowing' : 'no';
+  return {
+    wages,
+    daysLeft,
+    money: s.money,
+    coming,
+    expected,
+    short,
+    borrow,
+    loanRoom: room,
+    loanAfter: s.loan + Math.min(borrow, room),
+    net: flow.net,
+    covered,
+  };
+}
+
 /**
- * A few days before payday, say so if the bank will not cover the wages: what it will do (lend, or let the wages go
- * into the red), and if the red would be with the books losing money, that the bank would then call the overdraft in.
- * Run as each day begins.
+ * The payday verdict in a line: covered, covered by borrowing, or short past what the bank will lend, with what the
+ * bank then does: the wages go into the red, and with the books losing money it calls the overdraft in.
+ */
+export function payrollVerdict(o: PayrollOutlook): string {
+  if (o.covered === 'yes') {
+    const pace = o.coming > 0 ? ` and about ${money(o.coming)} more at this month's pace` : '';
+    return `Payday is covered: ${money(o.wages)} in wages against ${money(o.money)} in the bank${pace}.`;
+  }
+  if (o.covered === 'borrowing')
+    return `Payday is covered by borrowing: ${money(o.short)} short at this month's pace, so the loan will stand at ${money(o.loanAfter)}.`;
+  const lends = o.loanRoom > 0 ? `the bank will lend only ${money(o.loanRoom)} more` : 'the bank will lend no more';
+  const then =
+    o.net < 0
+      ? `, and with the books losing about ${money(-o.net)} a month the bank calls the overdraft in, with ${INSOLVENCY_DAYS} days to put one of the two right: prices up, or staff down`
+      : `; the books make about ${money(o.net)} a month, so the red clears`;
+  return `Payday needs ${money(o.short)} more than the bank and this month's pace will have, and ${lends}: the rest goes into the red at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month${then}.`;
+}
+
+/**
+ * Warn of a payday the center is not on course to cover: once, as soon as the pace first says so, and again five days
+ * before if the bank alone will not cover the wages, each with the numbers and what the bank will do. Quiet while
+ * payday is covered. Run as each day begins.
  */
 export function warnPayday(ctx: SimContext) {
   const s = ctx.s;
-  if (!s.bankruptcyOn || Math.ceil(paydayOf(s) - s.day) !== PAYDAY_WARNING_DAYS) return;
-  const wages = wagesDue(s);
-  if (wages <= s.money) return;
-  const head = `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(wages)} in wages, and ${money(s.money)} in the bank.`;
-  const lends = s.loan + loanFor(s, wages) <= loanLimit(s);
-  const red = money(s.money - wages);
-  const what = lends
-    ? `The bank will lend the rest, or the wages can go into the red, to ${red}, at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month.`
-    : `The bank will lend no more, so the wages go into the red, to ${red}, at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month.`;
-  const losing = projectedCashflow(s) < 0;
-  const then = losing
-    ? ` You are ${paceOf(s)}: in the red past what the bank will lend, with the books losing money, it calls the overdraft in, and you have ${INSOLVENCY_DAYS} days to put one of the two right. Prices up, or staff down.`
-    : ` You are ${paceOf(s)}, so the red would clear.`;
-  toast(ctx, `${head} ${what}${then}`, 'bad');
+  if (!s.bankruptcyOn) return;
+  const o = payrollOutlook(s);
+  if (o.wages <= 0) return;
+  const left = Math.ceil(o.daysLeft);
+  const month = Math.floor(s.day / DAYS_PER_MONTH);
+  if (left === PAYDAY_WARNING_DAYS) {
+    s.paydayWarned = month;
+    if (o.wages <= s.money) return;
+    const pace = o.coming > 0 ? `, with about ${money(o.coming)} more coming at this month's pace` : '';
+    toast(
+      ctx,
+      `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(o.wages)} in wages, and ${money(s.money)} in the bank${pace}. ${payrollVerdict(o)}`,
+      'bad',
+    );
+    return;
+  }
+  if (left < PAYDAY_WARNING_DAYS || o.covered === 'yes' || s.paydayWarned === month) return;
+  s.paydayWarned = month;
+  toast(
+    ctx,
+    `⚠️ Payday in ${left} days: ${money(o.wages)} in wages against ${money(s.money)} in the bank and about ${money(o.coming)} more at this month's pace. ${payrollVerdict(o)}`,
+    'bad',
+  );
 }
 
 /**
