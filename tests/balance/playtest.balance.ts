@@ -5,7 +5,8 @@
 // emergencies it can see through, room layout, mats, classes and courses; `BOT_OFF=prices,calls` switches single ones
 // off, and `BOT_ON` switches on the extras (see `BOT_FLAGS` and `BOT_EXTRAS` in bot.ts). `BOT=baseline` plays as a
 // thoughtless new player: the opening build, a room only once a line has formed, never a price changed or a call
-// taken (see `BotMode`).
+// taken (see `BotMode`). `BOT=advised` plays as the baseline and also does exactly what the game's toasts and advisor
+// say, so whether the warnings are actionable can be measured.
 //
 // Each center and seed is a run of its own, and the runs are spread over worker slots (`BALANCE_SLOTS`, by default one
 // fewer than the processor's cores; see vitest.balance.config.ts), each writing its log to test-results/balance-parts
