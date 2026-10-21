@@ -336,6 +336,9 @@ export interface MonthLog {
   grade: number;
   staff: number;
   rooms: number;
+  /** Finished treatment rooms (a discipline’s own), and Qi Gong Instructors on the payroll, at the month’s end; not in older logs. */
+  treatRooms?: number;
+  instructors?: number;
   arrived: number;
   /** Guests who found the center full and went elsewhere. */
   turnedAway: number;
@@ -670,6 +673,8 @@ export class Bot {
       grade: s.grade,
       staff: s.staff.filter((x) => x.state !== 'leaving').length,
       rooms: s.rooms.filter((r) => r.done).length,
+      treatRooms: s.rooms.filter((r) => r.done && ROOMS[r.type].discipline).length,
+      instructors: this.staffOf('instructor').length,
       arrived: st.arrived - this.monthStart.arrived,
       turnedAway: rec?.turnedAway ?? 0,
       healed: st.healed - this.monthStart.healed,
