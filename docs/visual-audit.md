@@ -96,7 +96,7 @@ Each stream below is scoped to its own files so several can run at once. Each sh
 | 1b  | Icons in the interface         | `src/ui/components/**`, `core/data/*` icon fields become icon ids                                                         | 1a                               | Medium |
 | 1c  | Icons in the scene             | `render/models/emoji.ts` → atlas, `pose.ts` bubbles, `items.ts` markers, `rooms.ts` signs, `overlays.ts` markers          | 1a                               | Medium |
 | 2   | Overlay rework                 | `render/heatmap.ts`, `ui/lib/overlays.ts`, `OverlayPicker.*`, `app/game.ts` drawOverlay, a people-halo layer              | none                             | Medium |
-| 3   | Selection and hover            | `render/overlays.ts` (ring), `render/picking.ts`, `app/pointer.ts`                                                        | none                             | Small  |
+| 3   | Selection and hover (done)     | `render/overlays.ts` (ring), `render/picking.ts`, `app/pointer.ts`                                                        | none                             | Small  |
 | 4   | Lighting and materials         | `render/lighting.ts`, `render/view.ts`, `render/setting.ts`, `models/parts.ts` (roughness)                                | none                             | Small  |
 | 5   | Room signs, doors, status lamp | `render/rooms.ts`, `render/room-walls.ts`, new `models/sign-plaque.ts`                                                    | 1a (icons)                       | Medium |
 | 6   | People readability             | `render/pose.ts`, `models/character-detail.ts` (expressions), idle staff, patience posture                                | none                             | Medium |
