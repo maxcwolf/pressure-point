@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 
-import { cached, cyl, mat, partsOf, put, rbox, sph, torus } from '../parts';
+import { cached, cyl, mat, partsOf, put, soft, sph, torus } from '../parts';
 
 /** Build the Sweat Lodge model. */
 export function buildSweatLodge(g: THREE.Group) {
@@ -26,7 +26,7 @@ export function buildSweatLodge(g: THREE.Group) {
     put(g, sph(0.09, 8), mat(0x8f857a, 0.95), Math.cos(a) * 0.92, 0.05, Math.sin(a) * 0.92);
   }
   // the door, a dark gap with a flap rolled up over it
-  put(g, rbox(0.42, 0.5, 0.06, 0.04), mat(0x1d1a17, 0.95), 0, 0.25, 0.84);
+  put(g, soft(0.42, 0.5, 0.06), mat(0x1d1a17, 0.95), 0, 0.25, 0.84);
   put(g, cyl(0.06, 0.06, 0.5, 10), mat(0xc96a3a, 0.9), 0, 0.53, 0.82).rotation.z = Math.PI / 2;
   // steam drifting out of the top
   const steam = new THREE.Group();

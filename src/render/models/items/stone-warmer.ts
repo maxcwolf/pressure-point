@@ -3,12 +3,12 @@
 import * as THREE from 'three';
 
 import { owned } from '../../disposal';
-import { CHROME, cyl, mat, partsOf, put, rbox, sph } from '../parts';
+import { CHROME, cyl, mat, partsOf, put, soft, sph } from '../parts';
 
 /** Build the Stone Warmer model. */
 export function buildStoneWarmer(g: THREE.Group) {
-  put(g, rbox(0.72, 0.5, 0.6, 0.06), mat(0x4a4f5a), 0, 0.25, 0);
-  put(g, rbox(0.78, 0.06, 0.66, 0.03), mat(CHROME, 0.35), 0, 0.53, 0);
+  put(g, soft(0.72, 0.5, 0.6), mat(0x5a606b), 0, 0.25, 0);
+  put(g, soft(0.78, 0.06, 0.66), mat(CHROME, 0.35), 0, 0.53, 0);
   put(g, cyl(0.27, 0.22, 0.22, 20), mat(0xb5714a, 0.4), 0, 0.67, 0);
   // each warmer owns its glow so it can cool independently
   const glow = owned(
