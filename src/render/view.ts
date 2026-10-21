@@ -8,6 +8,7 @@ import type { Sim } from '../core/sim/sim';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
+import { HalosLayer } from './halos';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
 import { LandLayer } from './land';
@@ -57,6 +58,8 @@ export class View {
   private storefront: StorefrontLayer;
   private overlays: Overlays;
   private heat: Heatmap;
+  /** Rings at people's feet for the people overlays. */
+  readonly halos: HalosLayer;
   private land: LandLayer;
   private picker: Picker;
   /**
@@ -95,6 +98,7 @@ export class View {
     this.storefront = new StorefrontLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
+    this.halos = new HalosLayer(this.scene, sim);
     this.land = new LandLayer(this.scene, sim);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
     /** Hand the people to the batches that draw them: the renderer calls this once everything is in place, just before it draws. */
@@ -191,6 +195,7 @@ export class View {
     this.land.update();
     this.items.animate(this.time);
     this.overlays.updateRing(this.time);
+    this.halos.update();
     this.rig.update();
     easeLights(this.lights, lightLevel(this.sim.s.mishap), dt);
     placeSun(this.lights.sun, this.rig.target);
