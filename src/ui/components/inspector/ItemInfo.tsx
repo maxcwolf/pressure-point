@@ -19,6 +19,7 @@ import {
 } from '../../../core/data';
 import { money } from '../../../core/format';
 import { sellBack } from '../../../core/sim/building';
+import { smoking } from '../../../core/sim/machines';
 import { calmness } from '../../../core/sim/noise';
 import { cannotUpgrade, upgradeCost } from '../../../core/sim/upgrades';
 import { unlockedUpTo } from '../../../core/state/game';
@@ -184,7 +185,14 @@ export function ItemInfo({ item: it }: { item: Item }) {
           <Bar value={100 - it.wear} class={it.wear >= WEAR_REPAIR ? 'bad' : ''} />
         </label>
       )}
-      {!!def.wear && it.wear >= 100 && <p class="status">🔧 Broken: needs a Caretaker</p>}
+      {!!def.wear && it.wear >= 100 && (
+        <p class="status">
+          {it.overloaded && def.machine?.overload
+            ? `💥 Overloaded: it ${def.machine.overload.mess}. Needs a Caretaker`
+            : '🔧 Broken: needs a Caretaker'}
+        </p>
+      )}
+      {smoking(it) && <p class="status">💨 Smoking: a Caretaker's repair now would stop it overloading</p>}
       {stoppedBy && <p class="status">{stoppedLabel(MISHAPS[stoppedBy.kind])}</p>}
       {!!def.dirt && !def.linens && (
         <label>

@@ -1,11 +1,12 @@
 // The Rooms menu: every kind of room that can be built, and the templates saved to build again.
 
-import { ROLES, ROOM_ORDER, ROOMS } from '../../../core/data';
+import { ITEMS, ROLES, ROOM_ORDER, roomHere, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
 import { unlockedUpTo } from '../../../core/state/game';
+import { loadCampaign } from '../../../storage/campaign';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { RoomsTab } from '../../hud';
-import { available, roomOffering } from '../../lib/catalog';
+import { available, machineCures, roomKarmaLock, roomOffering } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { TemplatesTab } from './TemplatesTab';
@@ -40,23 +41,40 @@ export function RoomsMenu() {
   );
 }
 
-/** A card per room type, locked until its star and dimmed when it cannot be afforded. */
+/**
+ * A card per room type that can be built at this center, locked until its star (or until karma unlocks its machine)
+ * and dimmed when it cannot be afforded. A machine room says what its machine cures and what it costs to run.
+ */
 function RoomCards() {
   const hud = useHud();
   const { sim, tools } = useGame();
   const s = sim.s;
-  const types = ROOM_ORDER.filter((t) => available(roomOffering(t), (d) => sim.enabled(d)));
+  const { unlocked } = loadCampaign();
+  const types = ROOM_ORDER.filter(
+    (t) => roomHere(ROOMS[t], s.center) && available(roomOffering(t), (d) => sim.enabled(d)),
+  );
   return (
     <div class="cards">
       {types.map((t) => {
         const r = ROOMS[t];
-        const locked = (r.unlock ?? 0) > unlockedUpTo(s);
+        const starred = (r.unlock ?? 0) > unlockedUpTo(s);
+        const forKarma = starred ? undefined : roomKarmaLock(t, unlockedUpTo(s), unlocked);
+        const locked = starred || forKarma !== undefined;
+        const cures = machineCures(t);
+        const upkeep = r.required.reduce((sum, i) => sum + (ITEMS[i].machine?.upkeep ?? 0), 0);
         return (
           <Button
             key={t}
             class={cx('card', !locked && s.money < r.cost && 'poor')}
-            locked={locked}
+            // a room karma can unlock opens the offer to unlock its machine, rather than refusing outright
+            locked={starred}
             onPress={() => {
+              if (forKarma) {
+                hud.karmaDecor = null;
+                hud.karmaItem = forKarma;
+                hud.open('karma');
+                return;
+              }
               hud.menu = null;
               tools.startRoom(t);
             }}
@@ -65,8 +83,15 @@ function RoomCards() {
             <b>{r.name}</b>
             <span class="cost">{money(r.cost)}</span>
             <p>{r.desc}</p>
-            {locked ? (
+            {cures.length > 0 && (
+              <p class="cures">
+                {`Cures ${cures.map((c) => `${c.name} (${money(c.fee)})`).join(' and ')}. Costs ${money(upkeep)} a month to run.`}
+              </p>
+            )}
+            {starred ? (
               <em>{`🔒 Unlocks at star ${r.unlock}`}</em>
+            ) : forKarma ? (
+              <em>{`🔒 Unlock the ${ITEMS[forKarma].name} with ${ITEMS[forKarma].karma ?? 0} karma`}</em>
             ) : (
               r.staff && <em>{`Needs: ${ROLES[r.staff].name}`}</em>
             )}

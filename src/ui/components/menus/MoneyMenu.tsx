@@ -42,6 +42,7 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
       <Line name="Bonuses and prizes" amount={ledger.bonus} />
       <Line name="Salaries" amount={ledger.salaries} cost />
       <Line name="Building" amount={ledger.building} cost />
+      {ledger.upkeep > 0 && <Line name="Machine upkeep" amount={ledger.upkeep} cost />}
       <Line name="Training" amount={ledger.training} cost />
       <Line name="Marketing" amount={ledger.marketing} cost />
       <Line name="Loan interest" amount={ledger.interest} cost />

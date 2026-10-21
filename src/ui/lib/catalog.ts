@@ -1,6 +1,9 @@
 // Deciding what the build and hire menus offer.
 
+import { itemOpen } from '../../core/campaign';
 import {
+  type ConditionDef,
+  CONDITIONS,
   DISCIPLINES,
   goesIn,
   type ItemDef,
@@ -16,6 +19,20 @@ import {
   roomsFor,
   type RoomType,
 } from '../../core/data';
+
+/** The ailments a machine room's machine cures, which no other room does. */
+export function machineCures(type: RoomType): ConditionDef[] {
+  const machines = ROOMS[type].required.filter((t) => ITEMS[t].machine);
+  return CONDITIONS.filter((c) => {
+    const machine = MODALITIES[c.modality].machine;
+    return machine !== undefined && machines.includes(machine);
+  });
+}
+
+/** The item that keeps a room locked until karma unlocks it, if one does: the Carousel of Rebirth's carousel. */
+export function roomKarmaLock(type: RoomType, upTo: number, unlocked: readonly ItemType[]): ItemType | undefined {
+  return ROOMS[type].required.find((t) => !itemOpen(ITEMS[t], upTo, unlocked));
+}
 
 /** Whether something tied to a discipline, or the Qi Gong classes, is on offer: anything tied to neither always is. */
 export function available(d: Offering | undefined, enabled: (d: Offering) => boolean): boolean {

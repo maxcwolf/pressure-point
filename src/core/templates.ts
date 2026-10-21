@@ -3,6 +3,8 @@
 
 import { itemOpen } from './campaign';
 import {
+  type CenterId,
+  CENTERS,
   type DecorKey,
   type Discipline,
   DISCIPLINES,
@@ -11,6 +13,7 @@ import {
   goesIn,
   ITEMS,
   type ItemType,
+  roomHere,
   ROOMS,
   type RoomType,
   RUG_PATTERNS,
@@ -220,11 +223,15 @@ export function describeLayout(l: Layout): string {
   return parts.join(', ');
 }
 
-/** What a game allows to be built: the stars earned, the items unlocked with karma, and the disciplines on. */
+/**
+ * What a game allows to be built: the stars earned, the items unlocked with karma, the disciplines on, and the center,
+ * for a room found at only some of them.
+ */
 export interface Allowed {
   upTo: number;
   unlocked: readonly ItemType[];
   enabled: (d: Discipline) => boolean;
+  center?: CenterId;
 }
 
 /**
@@ -235,6 +242,8 @@ export function templateLock(l: Layout, allowed: Allowed): string {
   const problem = layoutProblem(l);
   if (problem) return problem;
   const room = ROOMS[l.type];
+  if (allowed.center && !roomHere(room, allowed.center))
+    return `There is no ${room.name} at ${CENTERS[allowed.center].name}`;
   if (room.discipline && !allowed.enabled(room.discipline))
     return `${DISCIPLINES[room.discipline].name} is switched off`;
   if ((room.unlock ?? 0) > allowed.upTo) return `The ${room.name} unlocks at star ${room.unlock}`;
