@@ -41,6 +41,7 @@ interface Handle {
     turn: number;
     turnCamera(quarters: number): void;
     lookAt(x: number, y: number): void;
+    cameraStill: boolean;
     target: { set(x: number, y: number, z: number): void };
     renderer: { info: { render: { triangles: number } } };
     /** What a click would select now, and whether the marker over a selected person shows. */
@@ -492,6 +493,15 @@ export class Game {
   /** Wait until the scene on screen has caught up with the game state. */
   async settle() {
     await this.page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+  }
+
+  /**
+   * Wait until the camera has glided and turned as far as it was asked. It eases a little closer each frame, so how long
+   * that takes depends on how fast frames come, and a busy machine takes longer than any fixed wait.
+   */
+  async cameraStill() {
+    await this.page.waitForFunction(() => window.pp?.view.cameraStill);
+    await this.settle();
   }
 
   /** Skip ahead by this many seconds of normal-speed play. */

@@ -272,6 +272,11 @@ export class View {
     return this.rig.target;
   }
 
+  /** Whether the camera has finished gliding and turning. */
+  get cameraStill(): boolean {
+    return this.rig.still;
+  }
+
   /** Move the camera target across the ground. */
   pan(dx: number, dy: number) {
     this.rig.pan(dx, dy);
