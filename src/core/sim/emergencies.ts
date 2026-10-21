@@ -55,6 +55,8 @@ export function offerEmergency(ctx: SimContext): boolean {
   const pool = CONDITIONS.filter(
     (c) =>
       conditionHere(c, s.center) &&
+      // never a machine's own ailment: a busload stuck in the line of one machine, with no table to share it, is a cliff
+      !MODALITIES[c.modality].machine &&
       unlocked(ctx, c.modality) &&
       offered(ctx, MODALITIES[c.modality].discipline) &&
       staff.some((t) => t.quals.includes(c.modality)),

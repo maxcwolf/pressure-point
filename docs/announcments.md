@@ -6,7 +6,7 @@ When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-43 recorded, 27 still to record.
+43 recorded, 33 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
@@ -57,6 +57,15 @@ Key: ✅ recorded, ⬜ not recorded yet.
 ## The first Sweat Lodge (`SWEAT_LODGE_OPEN` in `src/core/sim/ceremonies.ts`)
 
 - ✅ The sweat shop... I mean, sweat lodge, is now open.
+
+## The first of each machine room (`opening` on each room in `src/core/data/rooms.ts`)
+
+- ⬜ The Kneadmaster 9000 is now open. Please keep your hands inside the chair. It has plenty of its own.
+- ⬜ The Pin Press is now open. Please press firmly, and only once.
+- ⬜ The Aura Wash is now open. Please remove any loose chakras before entering.
+- ⬜ The Great Alphorn is now open. You will hear it. You will hear it again a moment later.
+- ⬜ The Press House is now open. Bring us your bitterness. We are told it has a lovely finish.
+- ⬜ The Carousel of Rebirth is now open. Please remain seated until you are yourself.
 
 ## Seasons, at The Boardwalk (`SEASON_NEWS` in `src/core/sim/twists.ts`)
 

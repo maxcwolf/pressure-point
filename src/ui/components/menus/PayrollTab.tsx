@@ -68,6 +68,7 @@ export function PayrollTab() {
           <Figure name="Income a month at this pace" value={money(flow.income)} look="pos" />
           <Figure name="Wages on the books" value={money(-flow.wages)} look="neg" />
           <Figure name="Interest at a month's end" value={money(-flow.interest)} look="neg" />
+          {flow.upkeep > 0 && <Figure name="Running the machines" value={money(-flow.upkeep)} look="neg" />}
           <div class="total">
             <span>Net a month</span>
             <b class={sign(flow.net)}>{money(flow.net)}</b>

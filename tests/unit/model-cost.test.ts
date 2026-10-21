@@ -5,9 +5,10 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { ITEMS } from '../../src/core/data';
 import { randomLook } from '../../src/core/people';
 import { stream } from '../../src/core/random';
-import type { Specimen } from '../../src/lab/catalog';
+import type { Group, Specimen } from '../../src/lab/catalog';
 import { buildCharacter } from '../../src/render/models/character';
 import { castsShadow, cyl, put, rbox, sph, trimShadows } from '../../src/render/models/parts';
 
@@ -56,11 +57,17 @@ function cost(root: THREE.Object3D) {
   return { parts, casters, calls: parts + casters };
 }
 
+/** The lab's address is that of a treatment machine. */
+const machine = (id: string) =>
+  id.startsWith('item:') &&
+  (ITEMS as Partial<Record<string, { machine?: unknown }>>)[id.slice(5)]?.machine !== undefined;
+
 /** Every model the lab shows, with what it costs to draw. */
 async function costs() {
   const { CATALOG } = await import('../../src/lab/catalog');
   // a seated person is an item and a person shown together, each counted on its own already
-  return CATALOG.filter((sp) => sp.group !== 'Seated').map((sp: Specimen) => ({
+  // and a machine playing its gag is the machine and a guest, each counted on its own as well
+  return CATALOG.filter((sp) => sp.group !== 'Seated' && sp.group !== 'Machines').map((sp: Specimen) => ({
     id: sp.id,
     group: sp.group,
     ...cost(sp.build().root),
@@ -72,8 +79,12 @@ describe('the cost of drawing each model', () => {
     // the heaviest when this was written: a shop counter 23, a trophy cabinet 21, a guest 29, staff 23; people grew to a
     // guest 36, staff 32 and a visitor 33 when they were given knees, elbows, faces and finer hair (people in the game
     // are drawn in batches, so the figures for them here are what one person alone would cost)
-    const limit = { Items: 30, Guests: 38, Staff: 34, Visitors: 35, Seated: 0, Scenery: 20 };
-    const over = (await costs()).filter((m) => m.calls > limit[m.group]).map((m) => `${m.id}: ${m.calls}`);
+    const limit = { Items: 30, Machines: 0, Guests: 38, Staff: 34, Visitors: 35, Seated: 0, Scenery: 20 };
+    // a treatment machine is a room's centerpiece, with its moving parts kept apart to play its gag, and there are
+    // only a few of them in a game: the Kneadmaster 9000 was 36 when they were added
+    /** The most draw calls a model may take. */
+    const most = (m: { id: string; group: Group }) => (machine(m.id) ? 40 : limit[m.group]);
+    const over = (await costs()).filter((m) => m.calls > most(m)).map((m) => `${m.id}: ${m.calls}`);
     expect(over).toEqual([]);
   });
 
@@ -85,9 +96,10 @@ describe('the cost of drawing each model', () => {
     // beard, 1780 before the still parts of items were merged, 2530 while every part of every model cast a shadow, and
     // 2250 after the Shaman, the lodge's equipment and its guests, 2351 with the five items chosen on 16 October 2026, and
     // 2522 with the ten things to hang on walls, each shown in the lab on a stretch of wall, and 3007 once people had
-    // knees, elbows, faces and finer hair
+    // knees, elbows, faces and finer hair, and 3579 with the eleven treatment machines and the twelve guests only they
+    // cure
     const heaviest = all.sort((a, b) => b.calls - a.calls).slice(0, 10);
-    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(3100);
+    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(3700);
   });
 
   it('only casts shadows from parts big enough to show one', async () => {

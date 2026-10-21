@@ -106,6 +106,7 @@ import { drainEvents, emit } from './events';
 import { objectiveDetail } from './goals';
 import { admitGuests, type ArrivalPace, arrivalPace, guestCap, intakeLimit, setIntakeCap, updateGuest } from './guests';
 import { buyPlot, landOffers, renamePlot, updateLand } from './land';
+import { announceOpenings, machineBusy, machineUpkeep, practicable } from './machines';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
 import { askWard, canWard, prepareMishap, updateMishaps } from './mishaps';
 import { hasSupplier, setMushrooms } from './mushrooms';
@@ -202,6 +203,7 @@ export class Sim {
     decayItems(ctx, dt);
     fadeVibes(ctx, dt);
     announceSweatLodge(ctx);
+    announceOpenings(ctx);
 
     s.slowT -= dt;
     if (s.slowT <= 0) {
@@ -816,6 +818,21 @@ export class Sim {
   /** Whether the group session in a mat's room is playing. */
   sessionPlaying(it: Item): boolean {
     return playingFor(this.ctx, it);
+  }
+
+  /** Whether a machine is at work: someone inside it, or for one that helps a room's sessions, one going on there. */
+  machineBusy(it: Item): boolean {
+    return machineBusy(this.ctx, it);
+  }
+
+  /** Whether guests can be sent for a technique now: open, and for a machine's own, that machine working. */
+  practicable(m: Modality): boolean {
+    return practicable(this.ctx, m);
+  }
+
+  /** What every machine owned costs to run for a month. */
+  machineUpkeep(): number {
+    return machineUpkeep(this.s);
   }
 
   /** The layout of a room and its furniture, to move or copy it. */

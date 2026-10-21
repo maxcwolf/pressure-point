@@ -24,11 +24,12 @@ import type { GameState, Item, Ledger, Staff } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
+import { machineBuilt, machineUpkeep } from './machines';
 import { closeMonth } from './records';
 
 /** A ledger's income minus its spending. */
 export function netOf(l: Ledger) {
-  return incomeOf(l) - l.salaries - l.building - l.training - l.interest - l.marketing - l.fines;
+  return incomeOf(l) - l.salaries - l.building - l.training - l.interest - l.marketing - l.fines - l.upkeep;
 }
 
 /** A ledger's income: fees, class places, sales over and under the counter, house calls and bonuses. */
@@ -40,7 +41,7 @@ export function incomeOf(l: Ledger) {
 export type Income = 'consult' | 'treatment' | 'vending' | 'shop' | 'mushrooms' | 'calls' | 'classes' | 'bonus';
 
 /** Where money goes out to, as the books keep it. */
-export type Cost = 'salaries' | 'building' | 'training' | 'interest' | 'marketing' | 'fines';
+export type Cost = 'salaries' | 'building' | 'training' | 'interest' | 'marketing' | 'fines' | 'upkeep';
 
 /**
  * Take in money and record it. Given where it was taken, the amount floats up there, with the till's ring for a large
@@ -163,9 +164,10 @@ const monthThrough = (s: GameState) => (s.day - Math.floor(s.day / DAYS_PER_MONT
 export interface Cashflow {
   /** What a month brings in at the pace of the last month or so. */
   income: number;
-  /** The wages on the books for a month, and the interest a month's end charges. */
+  /** The wages on the books for a month, the interest a month's end charges, and what the machines cost to run. */
   wages: number;
   interest: number;
+  upkeep: number;
   net: number;
 }
 
@@ -183,7 +185,8 @@ export function cashflow(s: GameState): Cashflow {
     s.months.length > 0 ? (taken + incomeOf(s.lastLedger)) / (1 + through) : taken / Math.max(through, 0.25);
   const wages = monthlyPayroll(s);
   const interest = monthlyInterest(s);
-  return { income: Math.round(income), wages, interest, net: Math.round(income) - wages - interest };
+  const upkeep = machineUpkeep(s);
+  return { income: Math.round(income), wages, interest, upkeep, net: Math.round(income) - wages - interest - upkeep };
 }
 
 /** The money the center is on course to make or lose in a month, as things stand. */
@@ -283,13 +286,18 @@ export function countdownLever(s: GameState, days: number): string {
 export const cutFirst = (s: GameState) =>
   `Prices up or staff down first: ${letGoLine(s) ?? 'nobody is spare in a role with two, so prices up.'}`;
 
+/** What the machines cost to run, as the payday figures read it: nothing without machines. */
+const runningOf = (o: Pick<PayrollOutlook, 'upkeep'>) =>
+  o.upkeep > 0 ? ` and ${money(o.upkeep)} to run the machines` : '';
+
 /** Whether the next payday is covered: by the bank and the month's takings, by borrowing on top, or not at all. */
 export type PayrollCover = 'yes' | 'borrowing' | 'no';
 
 /** How the next payday stands, as things are going. */
 export interface PayrollOutlook {
-  /** The wages due, and the days until they are. */
+  /** The wages due, what the machines cost to run, paid with them, and the days until they are. */
   wages: number;
+  upkeep: number;
   daysLeft: number;
   /** In the bank now, what the pace brings in by payday, and the two together. */
   money: number;
@@ -309,16 +317,18 @@ export interface PayrollOutlook {
 /** How the next payday stands: what is due, what the bank and the pace will have by then, and the gap. */
 export function payrollOutlook(s: GameState): PayrollOutlook {
   const wages = wagesDue(s);
+  const upkeep = machineUpkeep(s);
   const daysLeft = paydayOf(s) - s.day;
   const flow = cashflow(s);
   const coming = Math.round((flow.income * daysLeft) / DAYS_PER_MONTH);
   const expected = s.money + coming;
-  const short = Math.max(0, wages - expected);
+  const short = Math.max(0, wages + upkeep - expected);
   const borrow = short > 0 ? Math.ceil(short / LOAN_STEP) * LOAN_STEP : 0;
   const room = loanRoom(s);
   const covered: PayrollCover = short <= 0 ? 'yes' : borrow <= room ? 'borrowing' : 'no';
   return {
     wages,
+    upkeep,
     daysLeft,
     money: s.money,
     coming,
@@ -339,7 +349,7 @@ export function payrollOutlook(s: GameState): PayrollOutlook {
 export function payrollVerdict(o: PayrollOutlook): string {
   if (o.covered === 'yes') {
     const pace = o.coming > 0 ? ` and about ${money(o.coming)} more at this month's pace` : '';
-    return `Payday is covered: ${money(o.wages)} in wages against ${money(o.money)} in the bank${pace}.`;
+    return `Payday is covered: ${money(o.wages)} in wages${runningOf(o)} against ${money(o.money)} in the bank${pace}.`;
   }
   if (o.covered === 'borrowing')
     return `Payday is covered by borrowing: ${money(o.short)} short at this month's pace, so the loan will stand at ${money(o.loanAfter)}.`;
@@ -365,11 +375,11 @@ export function warnPayday(ctx: SimContext) {
   const month = Math.floor(s.day / DAYS_PER_MONTH);
   if (left === PAYDAY_WARNING_DAYS) {
     s.paydayWarned = month;
-    if (o.wages <= s.money) return;
+    if (o.wages + o.upkeep <= s.money) return;
     const pace = o.coming > 0 ? `, with about ${money(o.coming)} more coming at this month's pace` : '';
     toast(
       ctx,
-      `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(o.wages)} in wages, and ${money(s.money)} in the bank${pace}. ${payrollVerdict(o)}`,
+      `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(o.wages)} in wages${runningOf(o)}, and ${money(s.money)} in the bank${pace}. ${payrollVerdict(o)}`,
       'bad',
     );
     return;
@@ -378,7 +388,7 @@ export function warnPayday(ctx: SimContext) {
   s.paydayWarned = month;
   toast(
     ctx,
-    `⚠️ Payday in ${left} days: ${money(o.wages)} in wages against ${money(s.money)} in the bank and about ${money(o.coming)} more at this month's pace. ${payrollVerdict(o)}`,
+    `⚠️ Payday in ${left} days: ${money(o.wages)} in wages${runningOf(o)} against ${money(s.money)} in the bank and about ${money(o.coming)} more at this month's pace. ${payrollVerdict(o)}`,
     'bad',
   );
 }
@@ -415,6 +425,14 @@ function payWages(ctx: SimContext, wages: number) {
   emit(ctx, { type: 'sfx', name: 'payday' });
 }
 
+/** Pay what the machines cost to run for the month, in power and parts. */
+function payUpkeep(ctx: SimContext) {
+  const upkeep = machineUpkeep(ctx.s);
+  if (upkeep <= 0) return;
+  spend(ctx, upkeep, 'upkeep');
+  toast(ctx, `The machines cost ${money(upkeep)} to run this month, in power and parts.`, 'info');
+}
+
 /**
  * Charge interest, file the month's books and start the next. Then, with bankruptcy on, the bank looks at the books:
  * a center in the red that is losing money has `INSOLVENCY_DAYS` to put one of the two right, and one in the red
@@ -422,6 +440,7 @@ function payWages(ctx: SimContext, wages: number) {
  */
 function finishMonth(ctx: SimContext) {
   const s = ctx.s;
+  payUpkeep(ctx);
   const interest = monthlyInterest(s);
   if (interest > 0) spend(ctx, interest, 'interest');
   closeMonth(ctx);
@@ -588,11 +607,12 @@ export function putOffChance(price: number, reputation: number): number {
 
 /**
  * What treatments cost on average against standard, across the techniques the center can offer: unlocked, and in a
- * discipline that is switched on. Locked ones are left out, since the player cannot see or price them.
+ * discipline that is switched on, and a machine's own once its room is built. Locked ones are left out, since the
+ * player cannot see or price them.
  */
 export function averagePrice(s: GameState): number {
   const offered = MODALITY_ORDER.filter(
-    (m) => MODALITIES[m].star <= unlockedUpTo(s) && disciplineOn(s, MODALITIES[m].discipline),
+    (m) => MODALITIES[m].star <= unlockedUpTo(s) && disciplineOn(s, MODALITIES[m].discipline) && machineBuilt(s, m),
   );
   if (!offered.length) return s.priceLevel;
   return offered.reduce((sum, m) => sum + priceFor(s, m), 0) / offered.length;

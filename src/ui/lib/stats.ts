@@ -56,7 +56,12 @@ export const METRICS: readonly Metric[] = [
     offering: 'qigong',
   },
   { id: 'income', name: 'Income', desc: 'Fees, sales, house calls and bonuses.', unit: 'money' },
-  { id: 'costs', name: 'Costs', desc: 'Salaries, building, training, marketing, interest and fines.', unit: 'money' },
+  {
+    id: 'costs',
+    name: 'Costs',
+    desc: 'Salaries, building, machine upkeep, training, marketing, interest and fines.',
+    unit: 'money',
+  },
   { id: 'shop', name: 'Shop sales', desc: 'Sales at the Shop Counter.', unit: 'money' },
   { id: 'net', name: 'Net', desc: 'Income less costs.', unit: 'money' },
   { id: 'reputation', name: 'Reputation', desc: 'At the end of the month.', unit: 'percent' },

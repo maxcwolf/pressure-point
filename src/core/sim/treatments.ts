@@ -4,6 +4,7 @@ import {
   conditionOf,
   type Discipline,
   DISCIPLINES,
+  ITEMS,
   MODALITIES,
   type Modality,
   type ModalityDef,
@@ -15,6 +16,7 @@ import { disciplineOn, unlockedUpTo } from '../state/game';
 import type { Emergency, Guest, Item, Staff } from '../state/types';
 import type { SimContext } from './context';
 import { toast } from './events';
+import { machineBuilt } from './machines';
 import { hasRoom } from './progress';
 
 /** Why a table cannot deliver a modality properly right now ('' when it can). */
@@ -50,9 +52,12 @@ export function offered(ctx: SimContext, d: Discipline) {
   return enabled(ctx, d) && hasRoom(ctx, DISCIPLINES[d].room);
 }
 
-/** Whether a modality is available: enough stars (or everything unlocked), and its discipline switched on. */
+/**
+ * Whether a modality is available: enough stars (or everything unlocked), its discipline switched on, and for one done
+ * only on a machine, that machine's room built.
+ */
 export function unlocked(ctx: SimContext, m: Modality) {
-  return unlockedUpTo(ctx.s) >= MODALITIES[m].star && enabled(ctx, MODALITIES[m].discipline);
+  return unlockedUpTo(ctx.s) >= MODALITIES[m].star && enabled(ctx, MODALITIES[m].discipline) && machineBuilt(ctx.s, m);
 }
 
 /** The modality that treats a guest's condition. */
@@ -73,14 +78,14 @@ export function equipmentProblem(ctx: SimContext, table: Item, def: ModalityDef)
   return '';
 }
 
-/** Can this table, with this therapist, deliver the modality properly? */
+/** Can this table, with this therapist, deliver the modality properly? A machine needs no equipment for its own work. */
 export function deliveryProblem(
   ctx: SimContext,
   table: Item,
   staff: Staff | undefined,
   def: ModalityDef,
 ): DeliveryProblem {
-  const kit = equipmentProblem(ctx, table, def);
+  const kit = ITEMS[table.type].machine?.performs.includes(def.id) ? '' : equipmentProblem(ctx, table, def);
   if (kit) return kit;
   if (staff && !staff.quals.includes(def.id)) return 'unqualified';
   return '';

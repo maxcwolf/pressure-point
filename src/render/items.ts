@@ -8,6 +8,10 @@ import type { Item } from '../core/state/types';
 import { itemCenter, onWall } from '../core/world';
 import { animateCeremony } from './ceremony';
 import { disposeOwned, owned } from './disposal';
+import { applyGag } from './gags/apply';
+import { gagFrame } from './gags/beats';
+import { GagClock } from './gags/clock';
+import { GAGS } from './gags/scripts';
 import { ghostHung, hangPlace, placeHung } from './hung';
 import { emojiTexture } from './models/emoji';
 import { buildItem } from './models/items';
@@ -110,8 +114,12 @@ const BAR_FILL = new THREE.BoxGeometry(1, 0.14, 0.07);
 const BAR_BACK_MAT = new THREE.MeshBasicMaterial({ color: 0x2f4858 });
 const BAR_FILL_MAT = new THREE.MeshBasicMaterial({ color: 0x3ddc84 });
 
+/** How high a progress bar sits over most stations, and the most a marker over an item bobs below it. */
+const BAR_Y = 2.1;
+const MARKER_Y = 1.9;
+
 export class ItemsLayer {
-  private items = new Map<number, { group: THREE.Group; key: string }>();
+  private items = new Map<number, { group: THREE.Group; key: string; top: number }>();
   private bars = new Map<number, { group: THREE.Group; fill: THREE.Mesh }>();
   /** How far round the camera is, which says which walls stand tall for what hangs on them. */
   private turn: Turn = 0;
@@ -119,6 +127,7 @@ export class ItemsLayer {
   constructor(
     private scene: THREE.Scene,
     private sim: Sim,
+    private gags: GagClock = new GagClock(),
   ) {}
 
   /** Every item's model, for picking. */
@@ -153,14 +162,21 @@ export class ItemsLayer {
       else placeItemModel(group, it.type, it.x, it.y, it.rot);
       group.traverse((o) => (o.userData.itemId = it.id));
       this.scene.add(group);
-      this.items.set(it.id, { group, key });
+      // a machine stands taller than anything else, so its bar and markers go over the top of it
+      const top = new THREE.Box3().setFromObject(model).max.y;
+      this.items.set(it.id, { group, key, top });
     }
     for (const [id, it] of this.items) {
       if (liveItems.has(id)) continue;
       this.scene.remove(it.group);
       disposeOwned(it.group);
       this.items.delete(id);
+      // and its bar, in case it was taken away mid-session
+      const bar = this.bars.get(id);
+      if (bar) this.scene.remove(bar.group);
+      this.bars.delete(id);
     }
+    this.gags.prune(liveItems);
   }
 
   /** Update what changes from frame to frame: effects, progress bars and markers for broken or filthy items. */
@@ -209,6 +225,16 @@ export class ItemsLayer {
       for (const [key, prop] of Object.entries(session)) prop.visible = key === showing;
     }
     if (ceremony) animateCeremony(ceremony, it.progress, t, it.id);
+    // a machine plays its gag, in step with the guest inside it
+    const script = GAGS[it.type];
+    const input = script && this.gags.input(this.sim, it, t);
+    if (script && input) applyGag(model, gagFrame(script, input), t);
+  }
+
+  /** How high over an item its bar and markers go: as usual, or clear of the top of a machine, which stands taller. */
+  private over(it: Item, usual: number): number {
+    if (!ITEMS[it.type].machine) return usual;
+    return Math.max(usual, (this.items.get(it.id)?.top ?? 0) + 0.35);
   }
 
   /** Bob a marker over an item that needs a Caretaker: a wrench when broken, flies when filthy. */
@@ -227,7 +253,7 @@ export class ItemsLayer {
     }
     if (sprite) {
       sprite.visible = show;
-      sprite.position.y = 1.9 + Math.sin(t * 4 + it.id) * 0.06;
+      sprite.position.y = this.over(it, MARKER_Y) + Math.sin(t * 4 + it.id) * 0.06;
     }
   }
 
@@ -241,7 +267,7 @@ export class ItemsLayer {
       group.add(back, fill);
       group.rotation.y = Math.PI / 4;
       const [cx, cy] = itemCenter(it);
-      group.position.set(cx, 2.1, cy);
+      group.position.set(cx, this.over(it, BAR_Y), cy);
       this.scene.add(group);
       bar = { group, fill };
       this.bars.set(it.id, bar);

@@ -8,7 +8,6 @@ import {
   DAY_SECONDS,
   DAYS_PER_MONTH,
   DIRT_FILTHY,
-  DISCIPLINES,
   DISCOMFORT_DRAIN,
   EMERGENCY_CONDITION,
   FILTHY_PATIENCE,
@@ -41,6 +40,7 @@ import { type Capacity, capacity, capacityArrivals, chooseCondition, demand, lin
 import { changeRep, earn } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
+import { roomForModality } from './machines';
 import { goTo, halt, moveAlong } from './movement';
 import { fizzOver, puddleSlow, tellFortune } from './novelties';
 import { arriveCarrying, carriedOut } from './outbreaks';
@@ -444,7 +444,7 @@ function waitingThink(ctx: SimContext, g: Guest) {
       return;
     }
     if (g.goal !== 'leave' && g.goal !== 'reception') {
-      const place = g.goal === 'treat' ? ROOMS[DISCIPLINES[modalityOf(g).discipline].room].name : GOAL_NAME[g.goal];
+      const place = g.goal === 'treat' ? ROOMS[roomForModality(modalityOf(g).id)].name : GOAL_NAME[g.goal];
       tipOnce(ctx, `missing-${place}`, `Guests are waiting for a ${place}, but there isn't a working one.`, 'bad');
     }
   } else {

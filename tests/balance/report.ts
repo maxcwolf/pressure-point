@@ -9,7 +9,8 @@ import type { IncomeBy, MonthLog, Playtest } from './bot';
  * A run as the report reads it. Logs written before the bot kept every adverse event, the warnings, the day of
  * bankruptcy and the income by source lack those, and the report makes do without them.
  */
-export type Run = Omit<Playtest, 'adverse' | 'warnings' | 'bankruptDay' | 'months'> & {
+export type Run = Omit<Playtest, 'adverse' | 'warnings' | 'bankruptDay' | 'machines' | 'months'> & {
+  machines?: Playtest['machines'];
   adverse?: Playtest['adverse'];
   warnings?: Playtest['warnings'];
   bankruptDay?: number | null;

@@ -5,9 +5,13 @@ import type * as THREE from 'three';
 import { conditionOf, ROLES, SIDEWALK_Y } from '../core/data';
 import { streetEnds } from '../core/sim/chars';
 import type { Sim } from '../core/sim/sim';
-import type { Char } from '../core/state/types';
+import type { Char, Guest } from '../core/state/types';
 import { Crowd, type Viewpoint } from './crowd';
 import { disposeOwned } from './disposal';
+import { applyGuestGag } from './gags/apply';
+import { gagFrame } from './gags/beats';
+import { GagClock } from './gags/clock';
+import { GAGS } from './gags/scripts';
 import { buildCharacter, type CharRig } from './models/character';
 import { poseChar, type WorkStyle } from './pose';
 
@@ -31,6 +35,7 @@ export class PeopleLayer {
   constructor(
     private scene: THREE.Scene,
     private sim: Sim,
+    private gags: GagClock = new GagClock(),
   ) {
     this.crowd = new Crowd(scene);
   }
@@ -72,6 +77,7 @@ export class PeopleLayer {
       if (!shown) continue;
       poseChar(rig, c, t, dt, this.workStyle(c));
       rig.group.scale.setScalar(size);
+      if (c.kind === 'guest') this.inMachine(rig, c, t);
     }
     for (const [id, rig] of this.chars) {
       if (live.has(id)) continue;
@@ -80,6 +86,18 @@ export class PeopleLayer {
       disposeOwned(rig.group);
       this.chars.delete(id);
     }
+  }
+
+  /** A guest inside a machine moves with its gag: carried round, squashed, hidden inside it, and so on. */
+  private inMachine(rig: CharRig, g: Guest, t: number) {
+    const it = g.state === 'served' || g.state === 'called' ? this.sim.world.item(g.station) : undefined;
+    const script = it && GAGS[it.type];
+    if (!it || !script) {
+      applyGuestGag(rig, {}, 0);
+      return;
+    }
+    const input = this.gags.input(this.sim, it, t);
+    applyGuestGag(rig, input ? gagFrame(script, input).guest : {}, it.rot);
   }
 
   /**

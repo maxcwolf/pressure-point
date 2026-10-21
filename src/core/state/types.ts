@@ -144,6 +144,8 @@ export interface Item {
   thermostat?: ThermostatSetting;
   /** The award a Certificate of Excellence was earned for. */
   trophy?: Trophy;
+  /** A treatment machine that overloaded, out of action until a Caretaker has repaired it. */
+  overloaded?: boolean;
 }
 
 export interface Look {
@@ -460,6 +462,8 @@ export interface Ledger {
   marketing: number;
   /** Fines, such as the health inspector's. */
   fines: number;
+  /** What treatment machines cost to run, in power and parts each month, and in repairs when they overload. */
+  upkeep: number;
   /** Fees for places in Qi Gong classes. */
   classes: number;
   /** Magic mushrooms sold under the Shop Counter. */

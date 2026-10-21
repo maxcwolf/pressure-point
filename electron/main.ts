@@ -12,7 +12,7 @@ import {
   FULL_SCREEN_STATE_CHANNEL,
   QUIT_CHANNEL,
 } from './api';
-import { backupSave, dropBackup, readBackup } from './backup';
+import { backupSave, backupsPending, backupsWritten, dropBackup, readBackup } from './backup';
 import { loadWindowPrefs, saveWindowPrefs } from './prefs';
 import { startUpdates } from './updates';
 
@@ -40,7 +40,7 @@ const prefsFile = () => path.join(app.getPath('userData'), 'window.json');
 const fullScreenAsked = new WeakMap<BrowserWindow, boolean>();
 
 /** Open the game window, full screen if the player left it that way, and load the game into it. */
-function createWindow() {
+function createWindow(): BrowserWindow {
   const prefs = loadWindowPrefs(prefsFile());
   const win = new BrowserWindow({
     width: 1440,
@@ -94,6 +94,7 @@ function createWindow() {
   // so serving it from anywhere else would hide every save a player already has.
   if (devUrl) void win.loadURL(devUrl);
   else void win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+  return win;
 }
 
 /** Whether two addresses are the same page, ignoring anything after `?` or `#`. */
@@ -177,8 +178,7 @@ void app.whenReady().then(() => {
   // and when it only asks whether it has one, the answer is no as well
   session.defaultSession.setPermissionCheckHandler(() => false);
   if (devDockIcon && isMac) app.dock?.setIcon(devDockIcon);
-  createWindow();
-  startUpdates(devUrl);
+  startUpdates(createWindow(), devUrl);
 });
 
 // one window, one game: closing it (or choosing Exit in the game) quits on every platform
@@ -199,3 +199,13 @@ ipcMain.on(BACKUP_DROP_CHANNEL, (event, id: unknown, index: unknown) => {
 ipcMain.handle(BACKUP_READ_CHANNEL, (event) =>
   event.senderFrame === event.sender.mainFrame ? readBackup(backupDir()) : { index: null, saves: {} },
 );
+// The copies are written in the background, and Exit game quits just after it saves: so the app holds off quitting
+// until they are all written, then quits again. Not at 'before-quit', which comes before the windows close, and the
+// game saves once more as its window closes.
+app.on('will-quit', (event) => {
+  if (!backupsPending()) return;
+  event.preventDefault();
+  void backupsWritten().then(() => {
+    app.quit();
+  });
+});

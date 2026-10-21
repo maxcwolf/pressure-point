@@ -9,7 +9,9 @@ import { buildAcuTable } from './acu-table';
 import { buildAirConditioner } from './air-conditioner';
 import { buildAquarium } from './aquarium';
 import { buildArcadeMachine } from './arcade-machine';
+import { buildAuraWash } from './aura-wash';
 import { buildBench } from './bench';
+import { buildBigGong } from './big-gong';
 import { buildBin } from './bin';
 import { buildBonsai } from './bonsai';
 import { buildBookcase } from './bookcase';
@@ -18,6 +20,7 @@ import { buildCabinet } from './cabinet';
 import { buildCeremonyMat } from './ceremony-mat';
 import { buildCertificate } from './certificate';
 import { buildChakraChart } from './chakra-chart';
+import { buildCiderPress } from './cider-press';
 import { buildCoffeeMachine } from './coffee-machine';
 import { buildConsultDesk } from './consult-desk';
 import { buildCrystalBowls } from './crystal-bowls';
@@ -27,10 +30,14 @@ import { buildDiffuser } from './diffuser';
 import { buildEmberBowl } from './ember-bowl';
 import { buildFireExtinguisher } from './fire-extinguisher';
 import { buildFireplace } from './fireplace';
+import { buildFogMachine } from './fog-machine';
 import { buildFortuneTeller } from './fortune-teller';
 import { buildFountain } from './fountain';
+import { buildGeode } from './geode';
 import { buildGong } from './gong';
+import { buildGreatAlphorn } from './great-alphorn';
 import { buildInstructorMat } from './instructor-mat';
+import { buildKneadmaster } from './kneadmaster';
 import { buildKoiPond } from './koi-pond';
 import { buildKombuchaTap } from './kombucha-tap';
 import { buildLandscapePainting } from './landscape-painting';
@@ -44,7 +51,9 @@ import { buildMotivationalPoster } from './motivational-poster';
 import { buildMoxaBurner } from './moxa-burner';
 import { buildMushroomAltar } from './mushroom-altar';
 import { buildNeedleCabinet } from './needle-cabinet';
+import { buildOctopus } from './octopus';
 import { buildOilTrolley } from './oil-trolley';
+import { buildPinPress } from './pin-press';
 import { buildPlant } from './plant';
 import { buildPoolTable } from './pool-table';
 import { buildPostureScanner } from './posture-scanner';
@@ -68,6 +77,7 @@ import { buildSoundproofPanel } from './soundproof-panel';
 import { buildStaffFridge } from './staff-fridge';
 import { buildStatue } from './statue';
 import { buildStimUnit } from './stim-unit';
+import { buildStoneKiln } from './stone-kiln';
 import { buildStoneWarmer } from './stone-warmer';
 import { buildStretchRack } from './stretch-rack';
 import { buildStudyDesk } from './study-desk';
@@ -81,6 +91,7 @@ import { buildTrophyCabinet } from './trophy-cabinet';
 import { buildWallClock } from './wall-clock';
 import { buildWallFountain } from './wall-fountain';
 import { buildWaterCooler } from './water-cooler';
+import { buildWheelOfRebirth } from './wheel-of-rebirth';
 import { buildWhiteboard } from './whiteboard';
 import { buildWindChimes } from './wind-chimes';
 
@@ -169,6 +180,17 @@ const BUILDERS: Record<ItemType, (g: THREE.Group, look?: string) => void> = {
   living_wall: buildLivingWall,
   wall_fountain: buildWallFountain,
   certificate: buildCertificate,
+  kneadmaster: buildKneadmaster,
+  pin_press: buildPinPress,
+  aura_wash: buildAuraWash,
+  great_alphorn: buildGreatAlphorn,
+  cider_press: buildCiderPress,
+  wheel_of_rebirth: buildWheelOfRebirth,
+  stone_kiln: buildStoneKiln,
+  octopus: buildOctopus,
+  geode: buildGeode,
+  big_gong: buildBigGong,
+  fog_machine: buildFogMachine,
 };
 
 /** How an item looks, where it comes in more than one look: a rug's pattern, and the center a painting is of. */

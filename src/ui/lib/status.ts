@@ -1,8 +1,9 @@
 // Describing what people are up to, in a few words.
 
-import { DISCIPLINES, ITEMS, POOR_CONDITION, ROLES, ROOMS } from '../../core/data';
+import { ITEMS, POOR_CONDITION, ROLES, ROOMS } from '../../core/data';
 import { expert, slots, trained, xpToNext } from '../../core/sim/careers';
 import { missNote } from '../../core/sim/classes';
+import { roomForModality } from '../../core/sim/machines';
 import type { Sim } from '../../core/sim/sim';
 import { courseName } from '../../core/sim/training';
 import { conditionDays, worsening } from '../../core/sim/worsening';
@@ -47,7 +48,7 @@ export function guestStatus(g: Guest, sim: Sim): string {
     case 'waiting':
       if (!st)
         return g.goal === 'treat'
-          ? `Waiting for a working ${ROOMS[DISCIPLINES[sim.modalityOf(g).discipline].room].name}`
+          ? `Waiting for a working ${ROOMS[roomForModality(sim.modalityOf(g).id)].name}`
           : g.goal === 'consult'
             ? 'Waiting for a Consultation Room to exist'
             : g.goal === 'assess'

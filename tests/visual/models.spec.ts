@@ -11,6 +11,8 @@ const IDS = [
   ...Object.keys(CENTERS)
     .filter((c) => c !== 'sandbox')
     .map((c) => `item:landscape_painting:${c}`),
+  // each machine playing its gag, with a guest inside it if it takes one
+  ...Object.entries(ITEMS).flatMap(([type, def]) => (def.machine ? [`machine:${type}`] : [])),
   ...CONDITIONS.map((c) => `guest:${c.id}`),
   ...ROLE_ORDER.map((role) => `staff:${role}`),
   'staff:amanda',

@@ -137,7 +137,8 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   if (discipline) {
     for (const m of MODALITY_ORDER) {
       const def = MODALITIES[m];
-      if (def.discipline !== discipline) continue;
+      // nobody arrives trained on a machine: its course is learned here, once it is built
+      if (def.discipline !== discipline || def.machine) continue;
       if (m === DISCIPLINES[discipline].base || (def.star <= s.stars && random(s) < 0.28)) quals.push(m);
     }
   }
