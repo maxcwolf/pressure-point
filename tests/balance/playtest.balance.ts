@@ -28,9 +28,21 @@ it('plays the campaign', () => {
       bot.play(DAYS);
       all.push(bot.log);
       const l = bot.log;
+      // what each month made on average once open, and the bank (less the loan) at the end of the fourth year
+      const open = l.months.filter((m) => m.month > 1);
+      const profit = open.length ? open.reduce((sum, m) => sum + m.income - m.spending, 0) / open.length : 0;
+      const m48 = l.months.find((m) => m.month === 48);
+      const bank = m48 ? `$${m48.money - m48.loan}` : '-';
+      const machines = l.machines.map(
+        (m) =>
+          `${m.room} day ${m.day}, ${m.healed} healed, earned $${m.earned} on $${m.cost} + $${Math.round(m.upkeep)} upkeep, ` +
+          `paid back ${m.paybackDay === null ? 'never' : `day ${m.paybackDay}`}`,
+      );
       process.stdout.write(
         `${center.padEnd(10)} seed ${seed}: opened day ${l.openedDay}, stars at months ${l.starDays.map(months).join(' ')}` +
-          `  lowest $${Math.round(l.lowestMoney)} peak loan $${l.peakLoan}  open: ${l.openGoals.join('; ')}\n`,
+          `  lowest $${Math.round(l.lowestMoney)} peak loan $${l.peakLoan}  profit/month $${Math.round(profit)}` +
+          `  bank at month 48 ${bank}  open: ${l.openGoals.join('; ')}\n` +
+          machines.map((m) => `           machine: ${m}\n`).join(''),
       );
     }
   }

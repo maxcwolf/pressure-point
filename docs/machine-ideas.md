@@ -100,7 +100,7 @@ The gag: the guest stands in the bell. The Sound Healer takes an enormous breath
 
 The gag: the guest climbs into the vat. The Shaman chants and turns the great screw, and the lid comes down. Dark purple juice runs out into the barrel. The lid lifts, and the guest springs up rosy as an apple. Now and then the juice runs gold: "Wrong vintage. That was their inheritance." They press again. Its barrels of Sour Grape Cider aren't sold. A guest is given a glass on the way out, and the estate's picky guests leave kinder reviews for it, which is reputation, not money. But the barrels bring the wasps a day sooner, a trade-off with the estate's own mishap.
 
-**6. Endgame: the Wheel of Rebirth** 🎠. Bought with karma, then open at every center. A reincarnation carousel, 5×5, in a room of at least 7×7 costing about $45,000. Worked by the Shaman at first, and by any practitioner once stations can take more than one kind of staff. It cures:
+**6. Endgame: the Wheel of Rebirth** 🎠. (Built as the Carousel of Rebirth, worked by a Massage Therapist: see [machine-plan.md](machine-plan.md#as-built).) Bought with karma, then open at every center. A reincarnation carousel, 5×5, in a room of at least 7×7 costing about $45,000. Worked by the Shaman at first, and by any practitioner once stations can take more than one kind of staff. It cures:
 
 - **Old Soul**, about $4,000: "Thirty-four years old. Complains about the price of bread in shillings."
 - **Past Life Hangover**, about $3,800: "Was a Tudor duke last time round and has not let it go."

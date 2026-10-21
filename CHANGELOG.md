@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Treatment machines.** Each campaign center now has a machine room of its own at its second star, from the Kneadmaster 9000 at Willow Lane to the Cider Press of Rebirth at The Orchard Estate. Each machine is the only cure for two new ailments, and the Carousel of Rebirth can be unlocked anywhere with karma. Five big machines can also take a table's place for treatments you already offer. Machines cost money every month to run, and a worn one smokes and can overload until a Caretaker sees to it.
+
 ## v0.30.14
 
 - **Class-goers get their class.** Far fewer Qi Gong class-goers go home disappointed. With class-goers waiting, the Instructor holds off a drink or a snack instead of leaving the mat and sending everyone back to the line. Anyone in early for a later class no longer takes a spot from someone due before them, and anyone still in line when a class ends is booked into the next one. The walk in to the studio no longer wears on their patience.

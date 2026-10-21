@@ -4,6 +4,22 @@ A plan, 21 October 2026, for big treatment machines: walk-in machines with an an
 
 Nothing here is chosen yet. The plan starts with the engine and one flagship machine, the Kneadmaster 9000 at Willow Lane, and then adds one center at a time.
 
+## As built
+
+All the phases below were built together on the `feat/treatment-machines` branch, ahead of the balance work in "What comes first", which is not in yet. Room prices, running costs and fees are first guesses kept as data, to be set again once that work is in. The bot builds machines only with `BOT_ON=machines`, so its pace without them is unchanged. Run `yarn balance` with and without it to compare profit a month and the bank at month 48, seed by seed.
+
+Where it differs from the plan below:
+
+- **The Wheel of Rebirth is the Carousel of Rebirth**, worked by a Massage Therapist trained in it, which is mostly pushing. `station.staff` was not widened, and every machine technique has a course.
+- **No plug tag.** The power cut lists the machines it stops alongside everything else, and the storm stops the Aura Wash. A mishap only says it has stopped something when one is built.
+- **By-products earn standing.** A guest the Cider Press heals goes away with a glass of cider, a feeling of its own that makes for a kinder review, and its barrels bring the wasps sooner (`drawnBy` on the mishap). Imprint art is not sold.
+- **Not built yet:**
+  - The Gong of Last Resort rattling the rooms next door.
+  - Paid rides on the Carousel for bored guests.
+  - Upgrade levels showing on the models.
+- **Bars and markers** sit higher over a machine, read from its model. Every other item's are where they were.
+- **The lab** has a Machines group: each machine with a guest inside, and controls for the stage, how far through the session, the fake failure, smoking and down.
+
 ## What comes first
 
 Two pieces of balance work go in before any machine, so the machines can be priced against them. They come from the review against the balance rework, which is written up in [machine-ideas.md](machine-ideas.md#against-the-balance).

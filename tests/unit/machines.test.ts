@@ -31,7 +31,7 @@ import { templateLock } from '../../src/core/templates';
 import { machineCures, roomKarmaLock } from '../../src/ui/lib/catalog';
 import { itemStats } from '../../src/ui/lib/item-stats';
 import { treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
-import { buildRoom, hire, inconsistencies, openCenter, run, runUntil, toasts } from './helpers';
+import { buildRoom, freshSim, hire, inconsistencies, openCenter, run, runUntil, toasts } from './helpers';
 
 /** Every discipline switched on. */
 const everything = () => true;
@@ -91,6 +91,38 @@ describe('the machines as data', () => {
 
   it('can each be upgraded when a guest is treated on it', () => {
     for (const t of STATIONS) expect(ITEMS[t].upgrade, t).toBeDefined();
+  });
+});
+
+describe('a machine room at its smallest', () => {
+  it('fits its machine, built either way round, with a door on any side', () => {
+    for (const type of ROOM_ORDER) {
+      const def = ROOMS[type];
+      const machine = def.required.find((t) => ITEMS[t].machine);
+      if (!machine) continue;
+      for (const [w, h] of [
+        [def.minShort, def.minLong],
+        [def.minLong, def.minShort],
+      ] as const) {
+        const rect = { x: 10, y: 4, w, h };
+        const doors = [
+          { x: rect.x + 1, y: rect.y + h - 1, dx: 0, dy: 1 },
+          { x: rect.x + w - 1, y: rect.y + 1, dx: 1, dy: 0 },
+          { x: rect.x, y: rect.y + 1, dx: -1, dy: 0 },
+        ];
+        for (const door of doors) {
+          const sim = freshSim(1);
+          const room = sim.createRoom(type, rect, door);
+          const world = ctxOf(sim).world;
+          let fits = false;
+          for (let rot = 0; rot < 4 && !fits; rot++)
+            for (let y = rect.y; y < rect.y + h && !fits; y++)
+              for (let x = rect.x; x < rect.x + w && !fits; x++)
+                fits = world.canPlaceItem(machine, x, y, rot, room.id).ok;
+          expect(fits, `${machine} in a ${w}×${h} ${def.name}, door ${door.dx},${door.dy}`).toBe(true);
+        }
+      }
+    }
   });
 });
 
