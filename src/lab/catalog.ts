@@ -19,12 +19,18 @@ import {
   type Role,
   ROLE_ORDER,
   ROLES,
+  ROOM_ORDER,
+  ROOMS,
+  type RoomType,
+  SANDBOX_PLOT,
 } from '../core/data';
+import { footprintOf } from '../core/footprint';
 import { HAIR, randomLook } from '../core/people';
 import { newSeed, stream } from '../core/random';
-import type { Char, Guest, Look, VisitorKind } from '../core/state/types';
+import type { Char, Guest, Look, Room, VisitorKind } from '../core/state/types';
 import { must } from '../core/util';
 import { accessPose, itemCenter } from '../core/world';
+import { wallMaterial } from '../render/decor-paint';
 import { NOISE_CUE, usedNoise } from '../render/item-cues';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
@@ -34,13 +40,16 @@ import type { Expression } from '../render/models/character-detail';
 import { buildSite } from '../render/models/fence';
 import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
-import { partsOf } from '../render/models/parts';
+import { mat, partsOf } from '../render/models/parts';
 import { buildPines } from '../render/models/pine';
+import { LAMP_STATES, type LampState, pulseLamps, setLamp } from '../render/models/sign-plaque';
 import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
 import { type Door, type IdleAct, idleMoment, type Mood, PATIENCE_SIGNS, poseChar } from '../render/pose';
+import { buildRoom } from '../render/rooms';
 import { H_TALL, WALL_T } from '../render/shared';
 import { SHOP_TURN } from '../render/storefront';
+import { nearSides } from '../render/turn';
 import { button, choice, type Control, type Option, range, toggle } from './controls';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from './people';
 
@@ -54,7 +63,7 @@ export interface Model {
   controls: Control[];
 }
 
-export type Group = 'Items' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Moods' | 'Scenery';
+export type Group = 'Items' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Moods' | 'Rooms' | 'Scenery';
 
 /** Something the lab can show. */
 export interface Specimen {
@@ -501,6 +510,101 @@ function visitorSpecimen(visit: VisitorKind): Specimen {
   };
 }
 
+/** What each state of a room's lamp means, as the lab lists them. */
+const LAMP_LABELS: Readonly<Record<LampState, string>> = {
+  working: 'Working (green)',
+  idle: 'Nobody to work it (amber)',
+  broken: 'Something broken (red)',
+  unfinished: 'Unfinished (grey)',
+};
+
+/** A blueprint's blue, as the game draws it. */
+const LAB_BLUEPRINT = new THREE.MeshStandardMaterial({ color: 0x6fb7ff, transparent: true, opacity: 0.55 });
+
+/** The building a room in the lab stands in: the sandbox's, with the room well inside it. */
+const LAB_BUILDING = footprintOf(SANDBOX_PLOT);
+
+/**
+ * A room's doorway and sign, on a room three tiles by two: its door in the north wall, which stands tall at the first
+ * turn of the camera, or in the south wall, which is cut low. Any type of room, with its lamp in any state; an
+ * unfinished room is a blueprint.
+ */
+function doorSpecimen(): Specimen {
+  const st = { type: 'massage' as string, lamp: 'working' as string, low: false };
+  return {
+    id: 'room:door',
+    group: 'Rooms',
+    name: 'A doorway and its sign',
+    footprint: [3, 2],
+    /** Build the room as set, again whenever a setting it is built with changes. */
+    build() {
+      const root = new THREE.Group();
+      let built = '';
+      let sign: ReturnType<typeof buildRoom>['sign'] = null;
+      /** Build the room afresh for the settings. */
+      const make = () => {
+        const type = st.type as RoomType;
+        const done = st.lamp !== 'unfinished';
+        const room: Room = {
+          id: 1,
+          type,
+          x: 10,
+          y: 10,
+          w: 3,
+          h: 2,
+          door: st.low ? { x: 11, y: 11, dx: 0, dy: 1 } : { x: 11, y: 10, dx: 0, dy: -1 },
+          windows: [],
+          done,
+          priority: false,
+          vibes: 0,
+          claimedBy: 0,
+        };
+        const trim = mat(ROOMS[type].trim, 0.6);
+        const blue = LAB_BLUEPRINT;
+        const materials = done
+          ? { wall: wallMaterial('standard'), trim, glass: trim, pane: trim, frame: mat(0xfbfaf6, 0.5), shell: trim }
+          : { wall: blue, trim: blue, glass: blue, pane: blue, frame: blue, shell: blue };
+        const drawn = buildRoom(room, LAB_BUILDING, nearSides(0), materials);
+        drawn.group.position.set(-11.5, 0, -11);
+        root.clear();
+        root.add(drawn.group);
+        sign = drawn.sign;
+      };
+      /** The settings the room was built with, to build it again when they change. */
+      const key = () => `${st.type}|${st.lamp === 'unfinished'}|${st.low}`;
+      built = key();
+      make();
+      return {
+        root,
+        controls: [
+          choice(
+            'Room',
+            st,
+            'type',
+            ROOM_ORDER.map((t): Option => [t, ROOMS[t].name]),
+          ),
+          choice(
+            'Lamp',
+            st,
+            'lamp',
+            LAMP_STATES.map((l): Option => [l, LAMP_LABELS[l]]),
+          ),
+          toggle('Door in a wall cut low', st, 'low'),
+        ],
+        /** Build the room again if it has been changed, and light and pulse its lamp. */
+        animate(t) {
+          if (key() !== built) {
+            built = key();
+            make();
+          }
+          if (sign) setLamp(sign, st.lamp as LampState);
+          pulseLamps(t);
+        },
+      };
+    },
+  };
+}
+
 /** Scenery that is drawn as a batch, shown with a few of each so the variety shows. */
 const SCENERY: Specimen[] = [
   {
@@ -622,6 +726,7 @@ export const CATALOG: readonly Specimen[] = [
   ]),
   ...FACES.map(faceSpecimen),
   ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
+  doorSpecimen(),
   ...SCENERY,
 ];
 
