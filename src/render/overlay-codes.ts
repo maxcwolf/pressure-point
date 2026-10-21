@@ -1,5 +1,7 @@
 // What the build tools ask the scene to draw over the floor.
 
+import type { SceneIconId } from '../core/data';
+
 /** A floor tile to color: x, y and one of the codes below. */
 export type OverlayTile = [x: number, y: number, code: number];
 
@@ -20,5 +22,5 @@ export const OV_GUEST = 5;
 export interface Marker {
   x: number;
   y: number;
-  icon: string;
+  icon: SceneIconId;
 }

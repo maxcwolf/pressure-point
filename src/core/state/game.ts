@@ -115,8 +115,9 @@ export const defaultPolicy = (): Policy => ({
  * 29: certificates of excellence. 30: each discipline's following. 31: the game's random numbers, the disciplines
  * practised today, and the surroundings as last checked, so a loaded game goes on just as it would have.
  * 32: the day each member of staff's pay is settled up to, and a payday the bank cannot cover.
+ * 33: speech bubbles held as the game's own icons rather than emoji.
  */
-export const SAVE_VERSION = 32;
+export const SAVE_VERSION = 33;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

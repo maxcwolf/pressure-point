@@ -308,7 +308,7 @@ export function completeClass(ctx: SimContext, spot: Item, g: Guest, staff: Staf
   ctx.s.tally.classgoers++;
   writeReview(ctx, g, 'class');
   changeRep(ctx, 0.5);
-  say(g, '🙏', 5);
+  say(g, 'bubble-thanks', 5);
   delete g.missed;
   g.goal = wantsToShop(ctx, g) ? 'shop' : 'leave';
   decide(ctx, g);
@@ -321,7 +321,7 @@ export function missClass(ctx: SimContext, g: Guest, why: ClassMiss) {
   feel(g, 'no-class');
   writeReview(ctx, g, 'missed');
   changeRep(ctx, -1);
-  say(g, '😞', 5);
+  say(g, 'bubble-disappointed', 5);
   leave(ctx, g);
 }
 

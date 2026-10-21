@@ -365,7 +365,7 @@ export function updateVisitor(ctx: SimContext, v: Visitor, dt: number) {
       if (arrived || !v.path) {
         v.state = 'looking';
         v.timer = LOOK_SECONDS;
-        say(v, v.visit === 'inspector' ? '📋' : '🧐', LOOK_SECONDS);
+        say(v, v.visit === 'inspector' ? 'bubble-inspecting' : 'bubble-looking', LOOK_SECONDS);
       }
       break;
     case 'looking': {
@@ -375,7 +375,15 @@ export function updateVisitor(ctx: SimContext, v: Visitor, dt: number) {
       if (room) {
         const seen = judgeRoom(ctx, v, room);
         v.seen.push(seen);
-        say(v, seen.score >= VIP_DELIGHTED ? '😊' : seen.score < VIP_DISAPPOINTED ? '😒' : '🤔', 2);
+        say(
+          v,
+          seen.score >= VIP_DELIGHTED
+            ? 'bubble-happy'
+            : seen.score < VIP_DISAPPOINTED
+              ? 'bubble-unhappy'
+              : 'bubble-unsure',
+          2,
+        );
       }
       nextRoom(ctx, v);
       break;

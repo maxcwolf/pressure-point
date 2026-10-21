@@ -61,7 +61,12 @@ const GOAL_NAME = {
   shop: 'Shop Counter',
 } as const;
 
-const NEED_ICON = { drink: '🍵', eat: '🥜', toilet: '🚻', play: '🕹️' } as const;
+const NEED_ICON = {
+  drink: 'bubble-thirsty',
+  eat: 'bubble-hungry',
+  toilet: 'bubble-restroom',
+  play: 'bubble-play',
+} as const;
 
 /**
  * Bring in a new guest now and then, more often as the center's reputation grows, and less often while long lines for
@@ -499,7 +504,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
           if (price > 0) earn(ctx, price, 'vending', g.x, g.y);
           addWear(ctx, used);
           if (g.needKind === 'toilet' && used.dirt >= DIRT_FILTHY) {
-            say(g, '🤢');
+            say(g, 'bubble-sick');
             feel(g, 'filthy-toilet');
           }
           if (g.needKind === 'drink' || g.needKind === 'eat') feel(g, 'refreshed');
@@ -532,7 +537,7 @@ function stormOut(ctx: SimContext, g: Guest) {
   g.outcome = 'stormed';
   countVisit(ctx, g, 'stormed');
   changeRep(ctx, -3);
-  say(g, '😤', 8);
+  say(g, 'bubble-annoyed', 8);
   emit(ctx, { type: 'float', text: 'Fed up!', x: g.x, y: g.y, kind: 'bad' });
   tipOnce(
     ctx,

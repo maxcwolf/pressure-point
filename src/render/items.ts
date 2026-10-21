@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 
+import type { SceneIconId } from '../core/data';
 import { DIRT_FILTHY, HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import { itemHeat } from '../core/sim/warmth';
@@ -11,7 +12,7 @@ import { animateCeremony } from './ceremony';
 import { disposeOwned, owned } from './disposal';
 import { ghostHung, hangPlace, placeHung } from './hung';
 import { animateCues, type CueCondition, NOISE_CUE, usedNoise, wearLight } from './item-cues';
-import { emojiTexture } from './models/emoji';
+import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
@@ -169,9 +170,9 @@ export class ItemsLayer {
       const model = this.items.get(it.id)?.group;
       if (!model) continue;
       this.effects(it, model, t);
-      this.marker(model, it, 'wrench', '🔧', it.wear >= 100, t);
+      this.marker(model, it, 'wrench', 'marker-broken', it.wear >= 100, t);
       // stale linens show on the table itself, not as flies over it
-      this.marker(model, it, 'flies', '🪰', it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens, t);
+      this.marker(model, it, 'flies', 'marker-filthy', it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens, t);
       if (it.serving && it.progress > 0) {
         busy.add(it.id);
         this.bar(it);
@@ -234,12 +235,19 @@ export class ItemsLayer {
   }
 
   /** Bob a marker over an item that needs a Caretaker: a wrench when broken, flies when filthy. */
-  private marker(model: THREE.Object3D, it: Item, key: 'wrench' | 'flies', emoji: string, show: boolean, t: number) {
+  private marker(
+    model: THREE.Object3D,
+    it: Item,
+    key: 'wrench' | 'flies',
+    icon: SceneIconId,
+    show: boolean,
+    t: number,
+  ) {
     const parts = partsOf(model);
     let sprite = parts[key];
     if (show && !sprite) {
       sprite = new THREE.Sprite(
-        owned(new THREE.SpriteMaterial({ map: emojiTexture(emoji), transparent: true, depthTest: false })),
+        owned(new THREE.SpriteMaterial({ map: iconTexture(icon, true), transparent: true, depthTest: false })),
       );
       sprite.scale.setScalar(0.7);
       sprite.renderOrder = 9;

@@ -216,7 +216,7 @@ export function startWard(st: Staff) {
   st.state = 'doingJob';
   st.busy = true;
   st.timer = WARD_SECONDS;
-  say(st, '🪶', 3);
+  say(st, 'bubble-feather', 3);
 }
 
 /** A ward goes on for a step. True when it is over: done, or no longer needed. */
