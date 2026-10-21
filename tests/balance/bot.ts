@@ -156,11 +156,144 @@ export function botMode(env: Record<string, string | undefined> = process.env): 
   return mode;
 }
 
-/** The highest price level the bot sets, and the most it adds on top for a discipline whose line runs long. */
-const PRICE_TOP = 1.4;
-const PREMIUM_TOP = 1.3;
-/** The share of guests put off by prices the bot aims for: a little under it, it charges more; well over, less. */
-const PUT_OFF = 0.1;
+/** A sum of money the bot keeps back before spending on something: so many months' wages and so many dollars more. */
+export interface Reserve {
+  k: number;
+  c: number;
+}
+
+/** What the bot keeps a reserve back for, each in its own method. */
+export const RESERVES = [
+  /** Word of mouth and a condition in the spotlight (`market`). */
+  'marketing',
+  /** A recruitment drive while holding out for a better applicant (`hirePractitioner`). */
+  'recruit',
+  /** The staff room, restroom, drinks and hamper any center needs (`basics`). */
+  'basics',
+  /** What a new star unlocks: its rooms (at half the reserve) and equipment (`unlocks`). */
+  'unlocks',
+  /** A course (`train`). */
+  'training',
+  /** Another room, desk, consulting room or Posture Lab (`grow`, `growOnProfit`, `buildLab`; rooms at half of it). */
+  'growth',
+  /** Charts, Recliners and equipment upgrades (`equip`). */
+  'kit',
+  /** A Qi Gong Studio and its Practice Spots (`classes`). */
+  'classes',
+  /** Decor in the treatment rooms (`decorate`). */
+  'decor',
+  /** Plants, drinks and toilets in the corridor (`comforts`). */
+  'comforts',
+] as const;
+export type ReservePurpose = (typeof RESERVES)[number];
+
+/**
+ * How the good bot plays where a player has a choice of temper rather than of skill: what it charges, what it keeps
+ * back, how far it borrows, how soon a new room must pay, and whether it markets. The same decisions, weighted
+ * differently (the persona idea of docs/research/balancing_methods.md), so the styles can be run over the same seeds
+ * and a style that always wins, or an income that always carries, can be seen. `BOT_STYLE` picks one.
+ */
+export interface Style {
+  /** The highest price level the bot sets, and the most it adds on top for a discipline whose line runs long. */
+  priceTop: number;
+  premiumTop: number;
+  /** The share of guests put off by prices the bot aims for: a little under it, it charges more; well over, less. */
+  putOff: number;
+  reserve: Record<ReservePurpose, Reserve>;
+  /**
+   * How far it borrows for what it buys: `payday`, never beyond what a payday forces (the bank's own loan at payday,
+   * nothing asked for); `build`, for what is worth borrowing for while the center pays its way, keeping back enough
+   * of the bank's limit for a payday; `limit`, for anything, up to the bank's limit, keeping only the next payday in
+   * hand.
+   */
+  borrow: 'payday' | 'build' | 'limit';
+  /** The loan is paid back once the money is over this. */
+  repay: Reserve;
+  /**
+   * The months a new treatment room must pay back its cost within: its cost is spread over them in `roomValue`, and
+   * a room is built only if it is still worth something after that. And how many months of that worth must cover the
+   * cost for the bot to borrow for it.
+   */
+  payback: number;
+  borrowPayback: number;
+  /** Whether it markets: `never`; `pays`, where it pays (see `market`); `always`, word of mouth whenever affordable. */
+  marketing: 'never' | 'pays' | 'always';
+}
+
+/** The good bot: as it has played since entry 23 of the balance log. */
+const GOOD: Style = {
+  priceTop: 1.4,
+  premiumTop: 1.3,
+  putOff: 0.1,
+  reserve: {
+    marketing: { k: 0.5, c: 2000 },
+    recruit: { k: 0.5, c: 1500 },
+    basics: { k: 0.5, c: 0 },
+    unlocks: { k: 1, c: 0 },
+    training: { k: 0, c: 1000 },
+    growth: { k: 1.2, c: 2000 },
+    kit: { k: 1, c: 3000 },
+    classes: { k: 0.8, c: 2000 },
+    decor: { k: 1, c: 3000 },
+    comforts: { k: 1, c: 2000 },
+  },
+  borrow: 'build',
+  repay: { k: 1, c: 25000 },
+  payback: 12,
+  borrowPayback: 6,
+  marketing: 'pays',
+};
+
+/** Every reserve's share of the wages set by a rule, the dollars on top left as the good bot keeps them. */
+const reserves = (k: (good: number) => number) =>
+  Object.fromEntries(RESERVES.map((p) => [p, { k: k(GOOD.reserve[p].k), c: GOOD.reserve[p].c }])) as Style['reserve'];
+
+/** The play styles `BOT_STYLE` picks from. */
+export const STYLES = {
+  good: GOOD,
+  /**
+   * Cautious and dear: never borrows beyond what payday forces, keeps two months' wages back for everything, prices
+   * to 1.6 aiming to put off one guest in five, builds only a room that pays back within a month, and never markets.
+   * The premium for a long line stays at 1.3: on top of 1.6 it already meets the game's ceiling of 2.
+   */
+  hoarder: {
+    ...GOOD,
+    priceTop: 1.6,
+    putOff: 0.2,
+    reserve: reserves((k) => Math.max(k, 2)),
+    borrow: 'payday',
+    repay: { k: 2, c: 0 },
+    payback: 1,
+    borrowPayback: 0,
+    marketing: 'never',
+  },
+  /**
+   * Bold and cheap: borrows to the bank's limit from the start, keeps half a month's wages back (a reserve the good
+   * bot keeps lower, the training one, is left lower), prices from 1 to 1.2 with no premium on top, builds whatever
+   * pays back, and runs word of mouth whenever it can pay for it. The brief's "pays back within six months" would be
+   * stricter than the good bot, which spreads a room's cost over a year (`payback` 12), so the grower spreads it
+   * over two years instead, and borrows for any room that is worth something after that.
+   */
+  grower: {
+    ...GOOD,
+    priceTop: 1.2,
+    premiumTop: 1,
+    reserve: reserves((k) => Math.min(k, 0.5)),
+    borrow: 'limit',
+    payback: 24,
+    borrowPayback: Infinity,
+    marketing: 'always',
+  },
+} satisfies Record<string, Style>;
+export type StyleName = keyof typeof STYLES;
+
+/** The bot's play style from the environment (`BOT_STYLE=hoarder`): the good bot unless told otherwise. */
+export function botStyle(env: Record<string, string | undefined> = process.env): Style {
+  const name = env.BOT_STYLE ?? 'good';
+  if (!(name in STYLES)) throw new Error(`Unknown BOT_STYLE=${name}: use ${Object.keys(STYLES).join(', ')}`);
+  return STYLES[name as StyleName];
+}
+
 /** The share of the time a discipline's staffed tables are kept busy that the bot staffs for. */
 const BUSY_TARGET = 0.7;
 
@@ -217,6 +350,8 @@ export interface MonthLog {
   healedBy: Partial<Record<Discipline, number>>;
   /** The price level at the month's end. */
   price: number;
+  /** The month's income by source, as the ledger splits it. */
+  sources: Record<'treatment' | 'consult' | 'classes' | 'calls' | 'shop' | 'vending' | 'mushrooms' | 'bonus', number>;
   /** Whether there is a Posture Lab at the month's end, and the guests sent for a scan over the month. */
   lab: boolean;
   scans: number;
@@ -321,6 +456,7 @@ export class Bot {
     difficulty: Difficulty = {},
     readonly flags: BotFlags = botFlags(),
     readonly mode: BotMode = botMode(),
+    readonly style: Style = botStyle(),
   ) {
     setSeed(seed);
     const s = newGame(center);
@@ -482,6 +618,16 @@ export class Bot {
       ),
       healedBy: { ...st.healedBy },
       price: s.priceLevel,
+      sources: {
+        treatment: Math.round(l.treatment),
+        consult: Math.round(l.consult),
+        classes: Math.round(l.classes),
+        calls: Math.round(l.calls),
+        shop: Math.round(l.shop),
+        vending: Math.round(l.vending),
+        mushrooms: Math.round(l.mushrooms),
+        bonus: Math.round(l.bonus),
+      },
       lab: this.sim.hasRoom('assess'),
       scans: this.scans,
     });
@@ -505,7 +651,7 @@ export class Bot {
   /** At each month's end: prices, and marketing. */
   private review() {
     if (this.flags.prices) this.setPrices();
-    if (this.flags.marketing) this.market();
+    if (this.markets()) this.market();
     this.repAtReview = this.s.reputation;
   }
 
@@ -524,9 +670,10 @@ export class Bot {
     const wanted = Math.max(this.openGoal('reputation')?.percent ?? 0, 0);
     const falling = s.reputation < this.repAtReview - 4;
     let level = s.priceLevel;
-    if (s.reputation < Math.max(wanted, 30) || putOff > PUT_OFF * 1.6 || (falling && s.reputation < 60)) level -= 0.1;
-    else if (putOff < PUT_OFF && s.reputation >= Math.max(wanted, 45) && !falling) level += 0.1;
-    level = Math.round(Math.min(PRICE_TOP, Math.max(1, level)) * 10) / 10;
+    if (s.reputation < Math.max(wanted, 30) || putOff > this.style.putOff * 1.6 || (falling && s.reputation < 60))
+      level -= 0.1;
+    else if (putOff < this.style.putOff && s.reputation >= Math.max(wanted, 45) && !falling) level += 0.1;
+    level = Math.round(Math.min(this.style.priceTop, Math.max(1, level)) * 10) / 10;
     if (level !== s.priceLevel) {
       this.sim.setPrice(level);
       this.note(`day ${Math.floor(s.day)}: prices to ${level} (${Math.round(putOff * 100)}% put off)`);
@@ -542,7 +689,7 @@ export class Bot {
       const now = s.prices[first.id] ?? 1;
       const perRoom = m.line / rooms;
       const own = perRoom > 3 ? now + 0.1 : perRoom < 1.5 ? now - 0.1 : now;
-      const next = Math.round(Math.min(PREMIUM_TOP, Math.max(1, own)) * 10) / 10;
+      const next = Math.round(Math.min(this.style.premiumTop, Math.max(1, own)) * 10) / 10;
       if (next === now) continue;
       for (const x of mods) this.sim.setTechniquePrice(x.id, next);
       this.note(`day ${Math.floor(s.day)}: ${d} at ${next} (line ${perRoom.toFixed(1)} a room)`);
@@ -557,7 +704,7 @@ export class Bot {
    */
   private market() {
     const s = this.s;
-    const reserve = this.wages() * 0.5 + 2000;
+    const reserve = this.reserve('marketing');
     const saving = this.saving();
     const repGoal = this.openGoal('reputation');
     const lines = DISCIPLINE_ORDER.map((d) => ({ d, m: this.seen[d] })).filter(
@@ -566,7 +713,8 @@ export class Bot {
     const idle = lines.length > 0 && lines.every((x) => (x.m.busy ?? 0) < 0.5 && x.m.lost === 0);
     const needRep =
       (!!repGoal && s.reputation < repGoal.percent + 2 && s.reputation >= repGoal.percent - 8) ||
-      (idle && s.reputation < 60 && this.profit() > 0 && !saving);
+      (idle && s.reputation < 60 && this.profit() > 0 && !saving) ||
+      this.style.marketing === 'always';
     if (needRep && !this.running('word') && s.money > 3000 + reserve)
       this.campaign('word', `reputation ${Math.round(s.reputation)}`);
     if (this.running('condition') || saving || s.money < 2000 + reserve) return;
@@ -664,9 +812,11 @@ export class Bot {
     const s = this.s;
     if (daysUntilBankrupt(s) === null) return;
     this.rescuedOn = s.day;
-    if (s.priceLevel < PRICE_TOP) {
-      this.sim.setPrice(PRICE_TOP);
-      this.note(`day ${Math.floor(s.day)}: the bank is calling the overdraft in: prices to ${PRICE_TOP}`);
+    // whatever the style, as dear as the good bot would go: a style's own prices are for a center not in danger
+    const top = Math.max(GOOD.priceTop, this.style.priceTop);
+    if (s.priceLevel < top) {
+      this.sim.setPrice(top);
+      this.note(`day ${Math.floor(s.day)}: the bank is calling the overdraft in: prices to ${top}`);
     }
     if (projectedCashflow(s) >= 0) return;
     const now = this.sumUp();
@@ -976,11 +1126,13 @@ export class Bot {
     const s = this.s;
     // the days before payday, with the wages not in the bank: borrow what they come to, rather than be asked
     const nearPayday = Math.ceil((Math.floor(s.day / 30) + 1) * 30 - s.day) <= 5;
-    if (s.money < wagesDue(s) && nearPayday) this.sim.borrow();
+    // (a style that borrows only what payday forces leaves it to the bank at payday)
+    const asks = this.style.borrow !== 'payday';
+    if (asks && s.money < wagesDue(s) && nearPayday) this.sim.borrow();
     // otherwise keep enough of the bank's limit back to borrow for the wages
-    if (s.money < 1500 && s.loan + wagesDue(s) <= loanLimit(s)) {
+    if (asks && s.money < 1500 && s.loan + wagesDue(s) <= loanLimit(s)) {
       if (this.sim.borrow()) this.note(`day ${Math.floor(s.day)}: borrowed, loan now ${s.loan}`);
-    } else if (s.loan > 0 && s.money > 25000 + this.wages()) this.sim.repay();
+    } else if (s.loan > 0 && s.money > this.reserve('repay')) this.sim.repay();
     // saving toward a goal that counts the loan against the money, paying it off only saves the interest
     else if (s.loan > 0 && this.saving() && s.money > 6000 + this.wages()) this.sim.repay();
   }
@@ -1017,18 +1169,20 @@ export class Bot {
   private afford(cost: number, reserve: number, borrow = false): boolean {
     const s = this.s;
     if (s.money >= cost + reserve) return true;
-    if (!borrow) return false;
+    const limit = this.style.borrow === 'limit';
+    if ((!borrow && !limit) || this.style.borrow === 'payday') return false;
     const last = s.months.at(-1);
     const operating = last
       ? last.ledger.consult + last.ledger.treatment + last.ledger.vending + last.ledger.shop - last.ledger.salaries
       : 0;
-    if (s.months.length && operating < 0 && s.loan >= 25000) return false;
+    if (!limit && s.months.length && operating < 0 && s.loan >= 25000) return false;
     // keeping enough of the bank's limit back to borrow for a payday the takings might not meet
-    // (a first month's payroll is not on the books yet while the staff are still being taken on)
-    if (s.loan + Math.max(wagesDue(s), FIRST_PAYROLL) > loanLimit(s)) return false;
+    // (a first month's payroll is not on the books yet while the staff are still being taken on); to the limit, none
+    const headroom = limit ? 0 : Math.max(wagesDue(s), FIRST_PAYROLL);
+    if (s.loan + headroom > loanLimit(s)) return false;
     // and with the next payday still covered, since a payday the bank cannot meet is a loan, or the end
     while (s.money < cost + Math.max(1000, wagesDue(s))) {
-      if (s.loan + LOAN_STEP + Math.max(wagesDue(s), FIRST_PAYROLL) > loanLimit(s) || !this.sim.borrow()) return false;
+      if (s.loan + LOAN_STEP + headroom > loanLimit(s) || !this.sim.borrow()) return false;
     }
     this.note(`day ${Math.floor(s.day)}: borrowed to build, loan now ${s.loan}`);
     return true;
@@ -1045,6 +1199,17 @@ export class Bot {
   /** The monthly payroll. */
   private wages() {
     return this.s.staff.filter((x) => x.state !== 'leaving').reduce((a, x) => a + x.salary, 0);
+  }
+
+  /** What the bot's style keeps back for something, or above which it pays the loan back, at today's wages. */
+  private reserve(what: ReservePurpose | 'repay') {
+    const r = what === 'repay' ? this.style.repay : this.style.reserve[what];
+    return this.wages() * r.k + r.c;
+  }
+
+  /** Whether the bot markets at all: the flag, and a style that does. */
+  private markets() {
+    return this.flags.marketing && this.style.marketing !== 'never';
   }
 
   /** Keep a line about something the bot did, up to a limit. */
@@ -1238,7 +1403,7 @@ export class Bot {
    */
   private hirePractitioner(role: Role) {
     const s = this.s;
-    if (!this.flags.marketing || !s.open) {
+    if (!this.markets() || !s.open) {
       this.hire(role);
       return;
     }
@@ -1248,7 +1413,7 @@ export class Bot {
       if (this.hire(role)) this.waitingToHire = { ...this.waitingToHire, [role]: undefined };
       return;
     }
-    if (!this.running('recruit') && s.money > 1500 + this.wages() * 0.5 && !this.saving())
+    if (!this.running('recruit') && s.money > this.reserve('recruit') && !this.saving())
       this.campaign('recruit', `hiring a ${role}`);
   }
 
@@ -1291,7 +1456,7 @@ export class Bot {
   /** The comforts any center needs once open. */
   private basics() {
     const s = this.s;
-    const reserve = this.wages() * 0.5;
+    const reserve = this.reserve('basics');
     if (!this.sim.hasRoom('staffroom') && s.money > 3000 + reserve) this.buildRoom('staffroom');
     if (!this.sim.hasRoom('restroom') && s.money > 3000 + reserve && s.day > 8) this.buildRoom('restroom');
     if (!this.has('tea_station') && s.money > 1500 + reserve) this.placeNearEntrance('tea_station');
@@ -1325,7 +1490,7 @@ export class Bot {
   private unlocks() {
     const s = this.s;
     const upTo = unlockedUpTo(s);
-    const reserve = this.wages();
+    const reserve = this.reserve('unlocks');
     // a Training Room as soon as anyone on the payroll is not trained in something guests now arrive needing
     const untrained =
       s.staff.some((st) => this.sim.courses(st).some((c) => c.id in MODALITIES)) ||
@@ -1406,7 +1571,7 @@ export class Bot {
   private train() {
     const s = this.s;
     if (!this.sim.hasRoom('training')) return;
-    const reserve = 1000;
+    const reserve = this.reserve('training');
     const training = s.staff.filter((x) => x.training).length;
     if (training >= 1) return;
     // a Caretaker who can install upgrades, once there are upgrades to install
@@ -1455,7 +1620,7 @@ export class Bot {
     const junior = consultants.length > 0 && consultants.every((x) => x.skill <= 2);
     const long = this.waiting('consultant') > this.rooms('consult').length * 3;
     if (!junior && !long) return;
-    if (!this.afford(ROOMS.assess.cost, this.wages() * 1.2 + 2000)) return;
+    if (!this.afford(ROOMS.assess.cost, this.reserve('growth'))) return;
     if (this.buildRoom('assess')) {
       this.note(`day ${Math.floor(this.s.day)}: a Posture Lab (${junior ? 'junior consultants' : 'a long line'})`);
       this.hireToFill();
@@ -1470,7 +1635,7 @@ export class Bot {
     }
     const s = this.s;
     if (this.profit() < 1500) return;
-    const reserve = this.wages() * 1.2 + 2000;
+    const reserve = this.reserve('growth');
     const desks = this.count('reception_desk');
     if (this.waiting('receptionist') > desks * 5 && s.money > 2500 + reserve) {
       this.placeNearEntrance('reception_desk');
@@ -1513,7 +1678,7 @@ export class Bot {
     const s = this.s;
     // a month after the bank called the overdraft in, nothing is added back: the books have to show a month in profit first
     if (s.day - this.rescuedOn < DAYS_PER_MONTH) return;
-    const reserve = this.wages() * 1.2 + 2000;
+    const reserve = this.reserve('growth');
     const saving = this.saving();
     if (this.profit() > 0 && !saving) {
       const desks = this.count('reception_desk');
@@ -1557,7 +1722,7 @@ export class Bot {
       }
       const cost = ROOMS[room].cost;
       if (saving && value * 3 < cost) continue;
-      if (!this.afford(cost + 1000, reserve * 0.5, value * 6 > cost)) continue;
+      if (!this.afford(cost + 1000, reserve * 0.5, value * this.style.borrowPayback > cost)) continue;
       // not where it would leave no space for a discipline still to come
       const keep = toCome.filter((t) => this.fits(t));
       if (this.buildRoom(room, [], keep)) {
@@ -1584,7 +1749,7 @@ export class Bot {
     const full = (this.s.months.at(-1)?.turnedAway ?? 0) * (treated ? m.treated / treated : 0);
     const guests = (m.lost + full + Math.max(0, m.line - rooms)) * this.ahead(3);
     const rate = m.treated >= 3 ? m.healed / m.treated : 0.6;
-    const room = this.benched[def.room] ? 0 : ROOMS[def.room].cost / 12;
+    const room = this.benched[def.room] ? 0 : ROOMS[def.room].cost / this.style.payback;
     return guests * rate * this.feeFor(d) - this.salaryFor(def.role) - room;
   }
 
@@ -1723,7 +1888,7 @@ export class Bot {
     const s = this.s;
     const upTo = unlockedUpTo(s);
     if (upTo < 1) return;
-    const reserve = this.wages() + 3000;
+    const reserve = this.reserve('kit');
     for (const room of s.rooms.filter((r) => r.done)) {
       const chart = CHART_FOR[room.type];
       if (chart && !this.inRoom(room, chart) && s.money > ITEMS[chart].cost + reserve) this.placeIn(room, chart);
@@ -1758,7 +1923,7 @@ export class Bot {
   private classes() {
     const s = this.s;
     if (unlockedUpTo(s) < 2 || !offeringOn(s, 'qigong')) return;
-    const reserve = this.wages() * 0.8 + 2000;
+    const reserve = this.reserve('classes');
     if (!this.sim.hasRoom('qigong')) {
       if (this.saving() || this.profit() <= 0 || !this.afford(ROOMS.qigong.cost + 3000, reserve)) return;
       if (this.buildRoom('qigong')) {
@@ -1883,7 +2048,7 @@ export class Bot {
   /** Decor in the treatment rooms until each is a star of prestige above what guests expect. */
   private decorate() {
     const s = this.s;
-    const reserve = this.wages() + 3000;
+    const reserve = this.reserve('decor');
     const picky = CENTERS[s.center].picky?.expects ?? 0;
     const target = Math.min(5, Math.max(3, 2 + picky + (s.grade >= 2 ? 1 : 0)));
     const treat = s.rooms.filter((r) => r.done && ROOMS[r.type].discipline);
@@ -1908,7 +2073,7 @@ export class Bot {
   /** Plants and a water cooler in the corridor as the place grows. */
   private comforts() {
     const s = this.s;
-    const reserve = this.wages() + 2000;
+    const reserve = this.reserve('comforts');
     const rooms = s.rooms.filter((r) => r.done).length;
     if (this.count('plant') < rooms && s.money > 500 + reserve && !this.saving()) {
       const room = s.rooms.filter((r) => r.done)[this.count('plant') % rooms];
