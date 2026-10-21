@@ -195,6 +195,45 @@ describe('a signature machine’s technique', () => {
   });
 });
 
+describe('every signature machine', () => {
+  for (const type of ROOM_ORDER) {
+    const def = ROOMS[type];
+    const machine = def.required.find((t) => ITEMS[t].machine);
+    if (!machine || !def.staff) continue;
+    const staffRole = def.staff;
+    it(`treats a guest in the ${def.name}`, () => {
+      const center = openCenter(4);
+      const { sim, s } = center;
+      s.stars = 3;
+      s.open = true;
+      // the room at its smallest, in the free space at the back of the building, with its machine wherever it fits
+      const world = ctxOf(sim).world;
+      const rect = { x: 17, y: 4, w: def.minShort, h: def.minLong };
+      const room = sim.createRoom(type, rect, { x: rect.x, y: rect.y + rect.h - 1, dx: 0, dy: 1 });
+      let placed = false;
+      for (let rot = 0; rot < 4 && !placed; rot++)
+        for (let y = rect.y; y < rect.y + rect.h && !placed; y++)
+          for (let x = rect.x; x < rect.x + rect.w && !placed; x++)
+            if (world.canPlaceItem(machine, x, y, rot, room.id).ok)
+              placed = !!sim.placeItem(machine, x, y, rot, { free: true, roomId: room.id });
+      expect(placed).toBe(true);
+      sim.finishRoom(room);
+      // an operator of its own, as the one Therapist on the tables wears out doing both
+      const operator = hire(sim, staffRole);
+      const performs = ITEMS[machine].machine?.performs ?? [];
+      operator.quals.push(...performs);
+      const condition = CONDITIONS.find((c) => performs.includes(c.modality));
+      if (!condition) throw new Error(`nothing for the ${machine} to cure`);
+      expect(sim.cheat(`guests 1 ${condition.id}`).ok).toBe(true);
+      const it = s.items.find((i) => i.type === machine);
+      if (!it) throw new Error(`no ${machine}`);
+      runUntil(sim, () => it.serving > 0, 900);
+      runUntil(sim, () => it.serving === 0, 300);
+      expect(inconsistencies(sim)).toEqual([]);
+    });
+  }
+});
+
 describe('running a machine', () => {
   it('costs its upkeep at the end of each month, in the books under its own line', () => {
     const { sim, s } = withKneader();
