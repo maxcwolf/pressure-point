@@ -70,8 +70,9 @@ describe("the advisor's nudges", () => {
   });
 
   it('say which stage holds guests up, and why, pointing at its longest line', () => {
-    const { sim, s } = openCenter(1);
+    const { sim, s, therapist } = openCenter(1);
     runUntil(sim, () => s.guests.length > 0, 300);
+    therapist.state = 'atPost';
     const table = s.items.find((i) => i.type === 'massage_table')!;
     const g = s.guests[0]!;
     table.serving = 0;
@@ -85,10 +86,11 @@ describe("the advisor's nudges", () => {
     table.busy = 0.3;
     const ctx = (sim as unknown as { ctx: SimContext }).ctx;
     expect(bottleneckAdvice(ctx)).toEqual({
-      text: 'Guests wait longest for the Massage Suite: 4 waiting for one Massage Table. It stood empty 60% of the last few days. Its Massage Therapist keeps being called away to breaks, courses or other work. Another Massage Therapist, or a Staff Room nearer by, would keep it going.',
+      text: 'Guests wait longest for the Massage Suite: 4 waiting for one Massage Table. It stood empty 60% of the last few days. Its Massage Therapist keeps being called away to breaks or other work. Build a Staff Room nearby, so their breaks are shorter.',
       about: { kind: 'item', id: table.id },
     });
-    // at the table and flat out
+    // at the table and flat out, with the books able to carry another
+    s.ledger.treatment = 100_000;
     table.staffed = 0.95;
     table.busy = 0.9;
     expect(bottleneckAdvice(ctx)?.text).toMatch(

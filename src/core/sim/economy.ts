@@ -1,8 +1,10 @@
 // Money and reputation: income, spending, payday, loans and prices.
 
+import type { Role } from '../data';
 import {
   DAYS_PER_MONTH,
   INSOLVENCY_DAYS,
+  ITEMS,
   LOAN_MAX,
   LOAN_RATE,
   LOAN_STEP,
@@ -17,7 +19,7 @@ import {
 import { tuning } from '../difficulty';
 import { money } from '../format';
 import { disciplineOn, emptyLedger, unlockedUpTo } from '../state/game';
-import type { GameState, Ledger, Staff } from '../state/types';
+import type { GameState, Item, Ledger, Staff } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
@@ -212,6 +214,74 @@ function paceOf(s: GameState): string {
   return net < 0 ? `losing about ${money(-net)} a month` : `making about ${money(net)} a month`;
 }
 
+/** A member of staff who could be let go, how busy their station has been, and where the books would stand without them. */
+export interface SpareHand {
+  staff: Staff;
+  /** Their station, if they have one, and how much of the last few days it was busy, from 0 to 1. */
+  station: Item | undefined;
+  busy: number;
+  /** The money the center would be on course to make or lose in a month without their wage. */
+  netAfter: number;
+}
+
+/** The roles that work a station, which a center can be short of or have one too many of. */
+const STATION_ROLES: ReadonlySet<Role> = new Set(Object.values(ITEMS).flatMap((d) => d.station?.staff ?? []));
+
+/** How idle a member of staff has been, for choosing who to let go: no station at all is idler than one that stood idle. */
+const idleRank = (h: { station: Item | undefined; busy: number }) => (h.station ? h.busy : -1);
+
+/**
+ * The member of staff whose going the center would miss least: in a role that works a station and has two or more on
+ * the books, the one whose station has been busy least over the last few days (no station at all counts as idle), the
+ * dearer of two as busy. Undefined if no such role has two.
+ */
+export function spareHand(s: GameState): SpareHand | undefined {
+  /** How many are on the books in a role. */
+  const team = (r: Role) => s.staff.filter((st) => st.role === r && st.state !== 'leaving').length;
+  const net = projectedCashflow(s);
+  let best: SpareHand | undefined;
+  for (const st of s.staff) {
+    if (st.state === 'leaving' || !STATION_ROLES.has(st.role) || team(st.role) < 2) continue;
+    const station = st.post ? s.items.find((i) => i.id === st.post) : undefined;
+    const busy = station?.busy ?? 0;
+    const r = idleRank({ station, busy });
+    if (!best || r < idleRank(best) || (r === idleRank(best) && st.salary > best.staff.salary))
+      best = { staff: st, station, busy, netAfter: net + st.salary };
+  }
+  return best;
+}
+
+/**
+ * Who to let go, in a sentence: their wage, how busy their station has been, and where the books would stand without
+ * them. Null if no role that works a station has two.
+ */
+export function letGoLine(s: GameState): string | null {
+  const h = spareHand(s);
+  if (!h) return null;
+  const where = h.station
+    ? `their ${ITEMS[h.station.type].name} busy ${Math.round(h.busy * 100)}% of the time`
+    : 'with no station of their own';
+  const after =
+    h.netAfter >= 0
+      ? `puts the books ${money(h.netAfter)} a month in profit`
+      : `cuts the loss to ${money(-h.netAfter)} a month`;
+  return `Letting ${h.staff.name} go (${money(h.staff.salary)} a month, ${where}) ${after}.`;
+}
+
+/**
+ * What works while the bank is calling the overdraft in, with `days` left: a price rise barely moves the pace the bank
+ * judges in that time, and a wage comes off at once. Who to let go, or, with nobody spare, the other way out.
+ */
+export function countdownLever(s: GameState, days: number): string {
+  const d = `${days} day${days === 1 ? '' : 's'}`;
+  const pace = `A price rise helps the months ahead, but the bank judges the takings over the last month or so, so it barely moves them in ${d}; a wage comes off at once.`;
+  return `${pace} ${letGoLine(s) ?? 'No role has two to let one go from, so the way out is the bank above zero: sell something, or earn it.'}`;
+}
+
+/** Putting the books right before borrowing, while they lose money: who to let go, or prices up with nobody spare. */
+export const cutFirst = (s: GameState) =>
+  `Prices up or staff down first: ${letGoLine(s) ?? 'nobody is spare in a role with two, so prices up.'}`;
+
 /** Whether the next payday is covered: by the bank and the month's takings, by borrowing on top, or not at all. */
 export type PayrollCover = 'yes' | 'borrowing' | 'no';
 
@@ -371,7 +441,7 @@ function finishMonth(ctx: SimContext) {
   toast(
     ctx,
     projectedCashflow(s) < 0
-      ? `${head}, and the bank will still lend ${money(loanRoom(s))}: borrow it from the Money menu, since once the loan is used up a payday in the red with the books losing money has the bank call the overdraft in.`
+      ? `${head}. ${cutFirst(s)} Then borrow what is left from the Money menu (the bank will still lend ${money(loanRoom(s))}): the loan buys time, but it uses the room the next payday needs, and once it is used up a payday in the red with the books losing money has the bank call the overdraft in.`
       : `${head}, so the bank is content for now: a payday in the red past what it will lend, with the books losing money, and it calls the overdraft in.`,
     'bad',
   );
@@ -388,7 +458,7 @@ function callInOverdraft(ctx: SimContext) {
   s.speed = 0;
   toast(
     ctx,
-    `⚠️ The bank is calling the overdraft in: you are ${money(-s.money)} in the red and ${paceOf(s)}. You have ${INSOLVENCY_DAYS} days to bring the bank back above zero (sell something, or earn it) or the books into profit (prices up, or staff down), or the center is bankrupt. The game is paused.`,
+    `⚠️ The bank is calling the overdraft in: you are ${money(-s.money)} in the red and ${paceOf(s)}. You have ${INSOLVENCY_DAYS} days to bring the bank back above zero (sell something, or earn it) or the books into profit, or the center is bankrupt. ${countdownLever(s, INSOLVENCY_DAYS)} The game is paused.`,
     'bad',
   );
   emit(ctx, { type: 'sfx', name: 'error' });
@@ -420,7 +490,7 @@ export function updateInsolvency(ctx: SimContext) {
   if (left === Math.floor(INSOLVENCY_DAYS / 2))
     toast(
       ctx,
-      `⚠️ ${left} days before the bank calls the overdraft in: ${money(-s.money)} in the red, ${paceOf(s)}. Get above zero or into profit.`,
+      `⚠️ ${left} days before the bank calls the overdraft in: ${money(-s.money)} in the red, ${paceOf(s)}. Get above zero or into profit. ${countdownLever(s, left)}`,
       'bad',
     );
   if (s.day >= due.until) goBankrupt(ctx);

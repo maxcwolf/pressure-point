@@ -1,5 +1,6 @@
 // The advisor: the next thing worth telling the player, and announcements over the speakers.
 
+import type { Role } from '../data';
 import {
   ANNOUNCEMENTS,
   conditionOf,
@@ -20,13 +21,21 @@ import {
   STONE_USE,
   WORSE_REP,
 } from '../data';
-import { money } from '../format';
+import { an, article, money } from '../format';
 import { pickFresh, rnd } from '../random';
 import { offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import { BOTTLENECK, bottleneck } from './bottleneck';
 import type { SimContext } from './context';
-import { cashflow, daysUntilBankrupt, loanLimit, projectedCashflow } from './economy';
+import {
+  cashflow,
+  countdownLever,
+  cutFirst,
+  daysUntilBankrupt,
+  loanLimit,
+  payrollOutlook,
+  projectedCashflow,
+} from './economy';
 import { emit, type Subject } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { mishapAdvice } from './mishaps';
@@ -115,15 +124,14 @@ function nudge(ctx: SimContext): string | Advice {
   const days = daysUntilBankrupt(s);
   if (days !== null) {
     const flow = cashflow(s);
-    return `The bank calls the overdraft in in ${Math.ceil(days)} days: ${money(-s.money)} in the red, and losing ${money(-flow.net)} a month (${money(flow.income)} coming in against ${money(flow.wages)} in wages and ${money(flow.interest)} interest). Get the bank above zero, or the books into profit: prices up, or staff down.`;
+    return `The bank calls the overdraft in in ${Math.ceil(days)} days: ${money(-s.money)} in the red, and losing ${money(-flow.net)} a month (${money(flow.income)} coming in against ${money(flow.wages)} in wages and ${money(flow.interest)} interest). Get the bank above zero, or the books into profit. ${countdownLever(s, Math.max(1, Math.ceil(days)))}`;
   }
   if (s.offer) return 'There is an emergency on offer at the top of the screen. Accept it only if you can cope.';
+  // with a Caretaker on the payroll, a breakdown waits below the money, the lines and comfort: it is in hand
   const broken = s.items.find((i) => i.wear >= 100);
-  if (broken)
+  if (broken && !hasStaff(ctx, 'caretaker'))
     return {
-      text: hasStaff(ctx, 'caretaker')
-        ? `A ${ITEMS[broken.type].name} has broken down. Your Caretaker will get to it.`
-        : `A ${ITEMS[broken.type].name} has broken down. Hire a Caretaker to repair it.`,
+      text: `${an(ITEMS[broken.type].name, true)} has broken down. Hire a Caretaker to repair it.`,
       about: { kind: 'item', id: broken.id },
     };
   const waiting = s.items.find((i) => i.upgradePaid);
@@ -137,10 +145,17 @@ function nudge(ctx: SimContext): string | Advice {
   const comfort = comfortAdvice(ctx);
   if (comfort) return comfort;
   // a raise request waits on a card of its own at the side of the screen, leaving the advisor for other things
-  if (s.money < 0 && s.loan < loanLimit(s))
-    return `You are ${money(-s.money)} in the red, which costs ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month and worries the staff. A loan from the Money menu is cheaper${projectedCashflow(s) < 0 ? `, and you are losing about ${money(-projectedCashflow(s))} a month: once the loan is used up, the bank calls the overdraft in` : ''}.`;
+  if (s.money < 0 && s.loan < loanLimit(s)) {
+    const red = `You are ${money(-s.money)} in the red, which costs ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month and worries the staff`;
+    // a loan while the books lose money only buys time, and spends the room the next payday needs
+    return projectedCashflow(s) < 0
+      ? `${red}, and you are losing about ${money(-projectedCashflow(s))} a month. ${cutFirst(s)} Then a loan from the Money menu is cheaper than the red for what is left, but it only buys time: once it is used up, the bank calls the overdraft in.`
+      : `${red}. A loan from the Money menu is cheaper.`;
+  }
   if (s.money < 0 && s.bankruptcyOn)
     return `You are ${money(-s.money)} in the red at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month, with the loan used up. You are making about ${money(projectedCashflow(s))} a month, so it will clear; a payday with the books losing money, and the bank calls the overdraft in.`;
+  const payday = paydayAdvice(ctx);
+  if (payday) return payday;
   const gap = modalityAdvice(ctx);
   if (gap) return gap;
   for (const it of s.items) {
@@ -155,6 +170,8 @@ function nudge(ctx: SimContext): string | Advice {
   }
   const held = bottleneckAdvice(ctx);
   if (held) return held;
+  const fix = repairAdvice(ctx);
+  if (fix) return fix;
   if (s.guests.length > 4 && !s.items.some((i) => i.type === 'bench'))
     return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
   if (s.guests.some((g) => g.thirst > 85) && !hasItem(ctx, 'tea_station'))
@@ -164,10 +181,49 @@ function nudge(ctx: SimContext): string | Advice {
 }
 
 /**
+ * Whether the center is short of money for the payday ahead: the bank calling the overdraft in, or the wages not
+ * covered at the pace by the bank alone. Growth waits while it is.
+ */
+export function moneyFirst(s: SimContext['s']): boolean {
+  if (s.insolvency) return true;
+  if (!s.bankruptcyOn) return false;
+  const o = payrollOutlook(s);
+  return o.wages > 0 && o.covered !== 'yes';
+}
+
+/** Nudge about a payday the bank and the pace will not cover: the money first, before any new staff or rooms. */
+function paydayAdvice(ctx: SimContext): string {
+  const s = ctx.s;
+  if (s.insolvency || !moneyFirst(s)) return '';
+  const o = payrollOutlook(s);
+  const left = Math.max(1, Math.ceil(o.daysLeft));
+  const when = `Payday in ${left} day${left === 1 ? '' : 's'}`;
+  const head =
+    o.covered === 'borrowing'
+      ? `${when} is covered only by borrowing, ${money(o.short)} short at this pace.`
+      : `${when} is ${money(o.short)} short, past what the bank will lend.`;
+  // short past the loan with the books losing money, the cut that works, by name. Not in the first month, whose pace
+  // is a few days' takings and says nothing yet about whether the books lose money
+  if (o.covered === 'no' && o.net < 0 && s.months.length > 0)
+    return `${head} No new staff or rooms until the takings cover the wages. The books are losing ${money(-o.net)} a month. ${cutFirst(s)}`;
+  return `${head} No new staff or rooms until the takings cover the wages.`;
+}
+
+/** What one more of a role would be paid: the cheapest applicant for it, or the role's standard pay. */
+export function newSalary(s: SimContext['s'], role: Role): number {
+  const asks = s.candidates.filter((c) => c.role === role).map((c) => c.salary);
+  return asks.length ? Math.min(...asks) : ROLES[role].baseSalary;
+}
+
+/**
  * Nudge about the stage of a visit holding guests up most, if one is: its line, and why it is slow, from how its
- * stations have done over the last few days. Short-staffed, it needs someone there more; flat out, more stations.
+ * stations have done over the last few days. Short-staffed, it needs someone there more; flat out, more stations. Each
+ * weighs the payroll first: a hire the books cannot carry at the pace, or that the bank cannot pay for, gives way to
+ * the lever that can. Nothing while the money for payday comes first.
  */
 export function bottleneckAdvice(ctx: SimContext): Advice | null {
+  const s = ctx.s;
+  if (moneyFirst(s)) return null;
   const stage = bottleneck(ctx);
   if (!stage) return null;
   const top = stage.stations.reduce((a, b) => (b.queue.length > a.queue.length ? b : a));
@@ -179,22 +235,72 @@ export function bottleneckAdvice(ctx: SimContext): Advice | null {
   const head = `Guests wait longest for the ${stationPlace(top)}: ${stage.waiting} waiting for ${n === 1 ? 'one' : n} ${ITEMS[top.type].name}${n === 1 ? '' : 's'}.`;
   /** A share as a percentage. */
   const pct = (x: number) => `${Math.round(x * 100)}%`;
+  // what one more of the role would leave the books making, and what it and its place would take from the bank
+  const salary = newSalary(s, def.staff);
+  const after = cashflow(s).net - salary;
+  const where = ITEMS[top.type].where;
+  const place = ITEMS[top.type].cost + (where === 'corridor' || where === 'any' ? 0 : ROOMS[where].cost);
+  const inRed = `Another ${role} would put the books ${money(-after)} a month in the red: raise prices, or wait for the pace to grow.`;
+  /** Too dear to build now: what it would take, and what the bank has. */
+  const saveUp = (cost: number) =>
+    `${cost === salary ? `A month's wage for another ${role}` : `Another ${ITEMS[top.type].name} with a month's wage for a ${role}`} comes to ${money(cost)}, and the bank has ${money(s.money)}: save up for it first.`;
   if (stage.staffed < BOTTLENECK.staffed) {
-    const team = ctx.s.staff.filter((st) => st.role === def.staff && st.state !== 'leaving').length;
-    const why =
-      team < n
-        ? `There are more of them than ${role}s: hire another.`
-        : `${team === 1 ? `Its ${role} keeps` : `Its ${role}s keep`} being called away to breaks, courses or other work. Another ${role}, or a Staff Room nearer by, would keep it going.`;
-    return { text: `${head} It stood empty ${pct(1 - stage.staffed)} of the last few days. ${why}`, about };
+    const crew = s.staff.filter((st) => st.role === def.staff && st.state !== 'leaving');
+    const team = crew.length;
+    const empty = `${head} It stood empty ${pct(1 - stage.staffed)} of the last few days.`;
+    // enough on the books, but one still on the way or out for days: that ends of itself, and a hire would outlast it
+    const coming = crew.filter((st) => st.state === 'arriving').length;
+    const out = crew.filter((st) => st.training !== null || st.call !== null).length;
+    if (team >= n && team - coming - out < n)
+      return {
+        text: `${empty} ${
+          coming
+            ? `A new ${role} is on the way, and will take it on when they arrive.`
+            : `${out === 1 ? `A ${role} is` : `${out} ${role}s are`} away on a course or a house call, and it will be staffed again when they are back.`
+        }`,
+        about,
+      };
+    // enough on the books, but away on breaks: shorter breaks keep it going, and cost no wage
+    if (team >= n)
+      return {
+        text: `${empty} ${team === 1 ? `Its ${role} keeps` : `Its ${role}s keep`} being called away to breaks or other work. ${
+          hasRoom(ctx, 'staffroom')
+            ? 'A Staff Room nearer by would keep it going.'
+            : 'Build a Staff Room nearby, so their breaks are shorter.'
+        }`,
+        about,
+      };
+    const fewer = `${empty} There are more of them than ${role}s`;
+    if (after < 0) return { text: `${fewer}. ${inRed}`, about };
+    if (s.money < salary) return { text: `${fewer}. ${saveUp(salary)}`, about };
+    return { text: `${fewer}: hire another.`, about };
   }
+  const grow = after >= 0 && s.money >= place + salary;
+  const short = after < 0 ? inRed : saveUp(place + salary);
   if (stage.busy >= BOTTLENECK.flatOut)
     return {
-      text: `${head} It has been busy ${pct(stage.busy)} of the time. Another ${ITEMS[top.type].name} and a ${role} to work it would move them along.`,
+      text: `${head} It has been busy ${pct(stage.busy)} of the time. ${grow ? `Another ${ITEMS[top.type].name} and a ${role} to work it would move them along.` : short}`,
       about,
     };
   return {
-    text: `${head} More skilled ${role}s work faster, or another ${ITEMS[top.type].name} would share the load.`,
+    text: `${head} More skilled ${role}s work faster${grow ? `, or another ${ITEMS[top.type].name} would share the load` : ''}.`,
     about,
+  };
+}
+
+/**
+ * Nudge about something broken that no Caretaker has taken on yet, with Caretakers on the payroll: one they are on
+ * the way to or repairing is in hand and goes unsaid.
+ */
+function repairAdvice(ctx: SimContext): Advice | null {
+  const s = ctx.s;
+  /** Whether a Caretaker is on the way to it or repairing it. */
+  const handled = (it: Item) => s.staff.some((st) => st.id === it.claimedBy && st.job?.id === it.id);
+  const broken = s.items.find((i) => i.wear >= 100 && !handled(i));
+  if (!broken) return null;
+  return {
+    text: `${an(ITEMS[broken.type].name, true)} has broken down. Your Caretaker will get to it, if repairs are among their duties and it is somewhere they work.`,
+    about: { kind: 'item', id: broken.id },
   };
 }
 
@@ -274,9 +380,6 @@ function modalityAdvice(ctx: SimContext): string | Advice {
   }
   return '';
 }
-
-/** "a" or "an", to go before a name. */
-export const article = (name: string) => (/^[AEIOU]/.test(name) ? 'an' : 'a');
 
 /** What to call the place a station is in: its room, or the item itself in a corridor. */
 export function stationPlace(it: Pick<Item, 'type'>): string {

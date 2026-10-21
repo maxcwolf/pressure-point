@@ -452,6 +452,8 @@ export class Bot {
 
   /** Treatment rooms per type the bot has let the practitioner go from, which it leaves empty until they are needed. */
   private benched: Partial<Record<RoomType, number>> = {};
+  /** Reception desks left without their own receptionist, by the advised bot letting one go as the game named them. */
+  private benchedDesks = 0;
   /** What the bot sees over the month under way, and what it saw over the last, by discipline. */
   private watch: Watch;
   private seen: Partial<Record<Discipline, DisciplineMonth>> = {};
@@ -1167,6 +1169,8 @@ export class Bot {
   private summerHeard = false;
   /** The day the advised bot last built for each stage the advisor named, so it sees what a build did first. */
   private grewStage: Partial<Record<string, number>> = {};
+  /** The day the advised bot last cut on the advisor's "staff down first", so a daily nudge is one cut, not one a day. */
+  private cutDay = -Infinity;
 
   /** Keep the toasts the advised bot reads; the other personas read none. */
   private hear(events: SimEvent[]) {
@@ -1230,8 +1234,11 @@ export class Bot {
       this.calledIn = null;
       return;
     }
-    if (text.startsWith('⚠️ You are') && text.includes('borrow it from the Money menu')) {
-      if (this.sim.borrow()) this.heed(text, `borrowed a step, loan now ${this.s.loan}`);
+    if (text.startsWith('⚠️ You are') && text.includes('borrow what is left from the Money menu')) {
+      // the books losing money: prices up or staff down first, then borrow for what is left
+      this.priceUp(text);
+      this.letGo(text);
+      if (this.s.money < 0 && this.sim.borrow()) this.heed(text, `borrowed a step, loan now ${this.s.loan}`);
       return;
     }
     if (
@@ -1256,11 +1263,25 @@ export class Bot {
       this.heedGuest(text, about.id);
       return;
     }
+    // the payday the advisor says is not covered, with the books losing money: the cut it names, now and then
+    if (text.startsWith('Payday in') && text.includes('Prices up or staff down first')) {
+      if (s.day - this.cutDay < BUSY_DAYS) return;
+      this.cutDay = s.day;
+      this.priceUp(text);
+      this.letGo(text);
+      return;
+    }
     if (text.startsWith('Guests wait longest for the ')) {
       this.heedBottleneck(text);
       return;
     }
-    if (text.includes('A loan from the Money menu is cheaper')) {
+    if (/a loan from the Money menu is cheaper/i.test(text)) {
+      // while the books lose money it says to cut first: once in the days the bot's own look back covers
+      if (text.includes('Prices up or staff down first') && s.day - this.cutDay >= BUSY_DAYS) {
+        this.cutDay = s.day;
+        this.priceUp(text);
+        this.letGo(text);
+      }
       if (this.sim.borrow()) this.heed(text, `borrowed a step, loan now ${s.loan}`);
       return;
     }
@@ -1287,9 +1308,10 @@ export class Bot {
   }
 
   /**
-   * The stage the advisor says holds guests up: hire for it when it says there are too few to staff it or they keep
-   * being called away; otherwise another of its room or desk, with someone to work it, when its cost is in the bank
-   * (a room let go of first). Once in the days the advisor looks back over, so it sees what the last step did.
+   * The stage the advisor says holds guests up, by the lever its words name: prices up when the books cannot carry
+   * another wage, a Staff Room when there is none and breaks keep its staff away, a hire when there are too few to
+   * staff it, or another of its room or desk, with someone to work it, when its cost is in the bank (a room let go of
+   * first). Nothing when it names none. Once in the days the advisor looks back over, so it sees what the last step did.
    */
   private heedBottleneck(text: string) {
     const s = this.s;
@@ -1297,11 +1319,25 @@ export class Bot {
     const top = stage?.stations[0];
     const def = top && ITEMS[top.type].station;
     if (!stage || !def || s.day - (this.grewStage[stage.key] ?? -Infinity) < BUSY_DAYS) return;
-    if (text.includes(': hire another.') || text.includes('being called away')) {
+    // the books cannot carry another: the lever it names instead
+    if (text.includes('a month in the red: raise prices')) {
+      this.grewStage[stage.key] = s.day;
+      this.priceUp(text);
+      return;
+    }
+    if (text.includes('Build a Staff Room nearby')) {
+      if (this.sim.hasRoom('staffroom') || s.money <= ROOMS.staffroom.cost) return;
+      this.grewStage[stage.key] = s.day;
+      if (this.buildRoom('staffroom')) this.heed(text, 'built a Staff Room');
+      return;
+    }
+    if (text.includes(': hire another.')) {
       this.grewStage[stage.key] = s.day;
       if (this.hire(def.staff)) this.heed(text, `hired a ${def.staff}`);
       return;
     }
+    // no other lever named: more skill, or saving up first
+    if (!text.includes('to work it would move them along') && !text.includes('would share the load')) return;
     const room: RoomType | null =
       stage.key === 'consult' || stage.key === 'assess'
         ? stage.key
@@ -1346,8 +1382,24 @@ export class Bot {
     this.heed(signal, `prices up to ${s.priceLevel.toFixed(1)}`);
   }
 
-  /** Let go the least busy practitioner in a role with two or more, as the game says to; never the last of one. */
+  /**
+   * Let go the member of staff the game names, or with nobody named the least busy practitioner in a role with two or
+   * more, as the game says to; never the last of one.
+   */
   private letGo(signal: string) {
+    // the one the game names, if it names someone
+    const named = /Letting (.+?) go \(/.exec(signal)?.[1];
+    const who = named && this.s.staff.find((st) => st.name === named && st.state !== 'leaving');
+    if (who) {
+      this.sim.fire(who.id);
+      // their room or desk left without them, so the thoughtless refill does not hire them back
+      const d = DISCIPLINE_ORDER.find((x) => DISCIPLINES[x].role === who.role);
+      if (d) this.benched[DISCIPLINES[d].room] = (this.benched[DISCIPLINES[d].room] ?? 0) + 1;
+      else if (who.role === 'consultant') this.benched.consult = (this.benched.consult ?? 0) + 1;
+      else if (who.role === 'receptionist') this.benchedDesks++;
+      this.heed(signal, `let ${who.name} go, a ${who.role}, saving ${who.salary}`);
+      return;
+    }
     const now = this.sumUp();
     const spare = DISCIPLINE_ORDER.flatMap((d) => {
       const staff = this.staffOf(DISCIPLINES[d].role).filter((st) => !st.training && !st.call && st.state !== 'away');
@@ -1712,8 +1764,8 @@ export class Bot {
   hireToFill() {
     // a Shop Counter needs its own receptionist, or it takes the only one away from the desk
     const desks = this.count('reception_desk') + (process.env.SHARE_DESK ? 0 : this.count('shop_counter'));
-    if (this.staffOf('receptionist').length < desks) this.hire('receptionist');
-    const consultRooms = this.rooms('consult').length + this.rooms('assess').length;
+    if (this.staffOf('receptionist').length < desks - this.benchedDesks) this.hire('receptionist');
+    const consultRooms = this.rooms('consult').length + this.rooms('assess').length - (this.benched.consult ?? 0);
     if (this.staffOf('consultant').length < consultRooms) this.hire('consultant');
     for (const d of DISCIPLINE_ORDER) {
       const def = DISCIPLINES[d];

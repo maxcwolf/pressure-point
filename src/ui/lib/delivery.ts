@@ -1,7 +1,7 @@
 // Explaining why a table can or cannot deliver a treatment.
 
 import { type Discipline, DISCIPLINES, ITEMS, type ModalityDef, ROLES, ROOMS } from '../../core/data';
-import { article } from '../../core/sim/advisor';
+import { article } from '../../core/format';
 import type { DeliveryProblem } from '../../core/sim/treatments';
 
 /** What it takes to offer a discipline: where it is delivered, when its room unlocks, or what to build and hire. */

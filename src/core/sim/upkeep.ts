@@ -2,6 +2,7 @@
 
 import { centerOf, isWatered, ITEMS, type ItemType } from '../data';
 import { tuning } from '../difficulty';
+import { an } from '../format';
 import type { Item } from '../state/types';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
@@ -30,10 +31,15 @@ export function addWear(ctx: SimContext, it: Item) {
   const [cx, cy] = itemCenter(it);
   emit(ctx, { type: 'float', text: 'Broken!', x: cx, y: cy, kind: 'bad' });
   emit(ctx, { type: 'sfx', name: 'fail' });
-  toast(ctx, `A ${ITEMS[it.type].name} has broken down. It is out of action until a Caretaker repairs it.`, 'bad', {
-    kind: 'item',
-    id: it.id,
-  });
+  toast(
+    ctx,
+    `${an(ITEMS[it.type].name, true)} has broken down. It is out of action until a Caretaker repairs it.`,
+    'bad',
+    {
+      kind: 'item',
+      id: it.id,
+    },
+  );
 }
 
 /** How grubby an item is after one more use. */
