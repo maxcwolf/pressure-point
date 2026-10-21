@@ -127,8 +127,10 @@ export function warnPayday(ctx: SimContext) {
   if (wages <= s.money) return;
   toast(
     ctx,
-    `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(wages)} in wages, and ${money(Math.max(0, s.money))} in the bank. Past that you will have to borrow, or you lose.`,
+    `Payday in ${PAYDAY_WARNING_DAYS} days: ${money(wages)} in wages, and ${money(Math.max(0, s.money))} in the bank. Past that you will have to borrow, or you lose.`,
     'bad',
+    undefined,
+    'ui-warning',
   );
 }
 
@@ -158,8 +160,10 @@ export function monthEnd(ctx: SimContext) {
   s.speed = 0;
   toast(
     ctx,
-    `⚠️ Payday: ${money(wages)} in wages, ${money(Math.max(0, s.money))} in the bank, and the bank will not lend the rest. The game is paused. You have ${PAYROLL_GRACE_DAYS} days to find it: sell something, or earn it. Or the center is bankrupt.`,
+    `Payday: ${money(wages)} in wages, ${money(Math.max(0, s.money))} in the bank, and the bank will not lend the rest. The game is paused. You have ${PAYROLL_GRACE_DAYS} days to find it: sell something, or earn it. Or the center is bankrupt.`,
     'bad',
+    undefined,
+    'ui-warning',
   );
   emit(ctx, { type: 'sfx', name: 'error' });
 }

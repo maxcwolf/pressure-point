@@ -60,7 +60,7 @@ export function daysInWords(days: number): string {
 export function mishapAdvice(s: GameState): string {
   const def = mishapStopping(s);
   if (!def) return '';
-  return `${def.icon} The ${def.name.toLowerCase()} has put ${def.stopsWhat ?? 'some things'} out of action. It will be over in ${daysInWords(mishapDaysLeft(s))}.`;
+  return `The ${def.name.toLowerCase()} has put ${def.stopsWhat ?? 'some things'} out of action. It will be over in ${daysInWords(mishapDaysLeft(s))}.`;
 }
 
 /** How many guests arrive while a mishap is under way, against usual. */
@@ -90,7 +90,7 @@ export function prepareMishap(ctx: SimContext): boolean {
   }
   spend(ctx, def.prepare.cost, 'building');
   m.prepared = true;
-  toast(ctx, `${def.icon} Prepared for the ${def.name.toLowerCase()}. ${def.prepare.effect}`, 'good');
+  toast(ctx, `Prepared for the ${def.name.toLowerCase()}. ${def.prepare.effect}`, 'good', undefined, def.icon);
   emit(ctx, { type: 'sfx', name: 'cash' });
   return true;
 }
@@ -102,8 +102,10 @@ function announceMishap(ctx: SimContext, kind: MishapId) {
   emit(ctx, { type: 'announce', text: def.warning });
   toast(
     ctx,
-    `${def.icon} ${def.name} in ${MISHAP_NOTICE_DAYS} days. ${def.harm} ${def.prepare.label} for ${money(def.prepare.cost)}?`,
+    `${def.name} in ${MISHAP_NOTICE_DAYS} days. ${def.harm} ${def.prepare.label} for ${money(def.prepare.cost)}?`,
     'bad',
+    undefined,
+    def.icon,
   );
   tipOnce(
     ctx,
@@ -125,11 +127,14 @@ function startMishap(ctx: SimContext, m: Mishap) {
     toast(
       ctx,
       m.prepared
-        ? `🪶 The ward held. ${def.prepare.effect}`
-        : `🪶 The ward did not hold against the ${def.name.toLowerCase()}.`,
+        ? `The ward held. ${def.prepare.effect}`
+        : `The ward did not hold against the ${def.name.toLowerCase()}.`,
       m.prepared ? 'good' : 'bad',
+      undefined,
+      'discipline-shaman',
     );
-  } else if (!m.prepared && m.ward === 'asked') toast(ctx, '🪶 The Shaman did not get to the ward in time.', 'bad');
+  } else if (!m.prepared && m.ward === 'asked')
+    toast(ctx, 'The Shaman did not get to the ward in time.', 'bad', undefined, 'discipline-shaman');
   if (m.prepared) return;
   // the wind breaks a few things as it starts
   const breakable = s.items.filter((it) => ITEMS[it.type].wear && it.wear < 100);
@@ -139,7 +144,13 @@ function startMishap(ctx: SimContext, m: Mishap) {
     breakable.splice(breakable.indexOf(it), 1);
   }
   if (def.breaks)
-    toast(ctx, `${def.icon} The ${def.name.toLowerCase()} has broken some equipment. A Caretaker can mend it.`, 'bad');
+    toast(
+      ctx,
+      `The ${def.name.toLowerCase()} has broken some equipment. A Caretaker can mend it.`,
+      'bad',
+      undefined,
+      def.icon,
+    );
 }
 
 /** End the mishap under way, and set when the next may come. */
@@ -182,7 +193,13 @@ export function canWard(s: GameState): boolean {
 export function askWard(ctx: SimContext): boolean {
   if (!canWard(ctx.s) || !ctx.s.mishap) return false;
   ctx.s.mishap.ward = 'asked';
-  toast(ctx, '🪶 A Shaman will ward off the mishap when they are free. Most wards hold.', 'info');
+  toast(
+    ctx,
+    'A Shaman will ward off the mishap when they are free. Most wards hold.',
+    'info',
+    undefined,
+    'discipline-shaman',
+  );
   return true;
 }
 
@@ -210,7 +227,13 @@ export function wardStep(ctx: SimContext, st: Staff, dt: number): boolean {
   if (st.timer > 0) return false;
   m.ward = 'done';
   const def = MISHAPS[m.kind];
-  toast(ctx, `🪶 ${st.name} has warded off the ${def.name.toLowerCase()}. It should hold.`, 'good');
+  toast(
+    ctx,
+    `${st.name} has warded off the ${def.name.toLowerCase()}. It should hold.`,
+    'good',
+    undefined,
+    'discipline-shaman',
+  );
   emit(ctx, { type: 'float', text: 'Warded', x: st.x, y: st.y, kind: 'good' });
   return true;
 }

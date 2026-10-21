@@ -52,8 +52,10 @@ export function startCampaign(ctx: SimContext, kind: CampaignKind, months: numbe
       : CAMPAIGNS[kind].name;
   toast(
     ctx,
-    `${CAMPAIGNS[kind].icon} ${what} is running for ${months} month${months === 1 ? '' : 's'} (${money(campaignCost(kind, months))}).`,
+    `${what} is running for ${months} month${months === 1 ? '' : 's'} (${money(campaignCost(kind, months))}).`,
     'good',
+    undefined,
+    CAMPAIGNS[kind].icon,
   );
   emit(ctx, { type: 'sfx', name: 'cash' });
   return true;
@@ -71,5 +73,6 @@ export function updateCampaigns(ctx: SimContext) {
   const ended = s.campaigns.filter((c) => s.day >= c.until);
   if (!ended.length) return;
   s.campaigns = s.campaigns.filter((c) => s.day < c.until);
-  for (const c of ended) toast(ctx, `${CAMPAIGNS[c.kind].icon} ${CAMPAIGNS[c.kind].name} has finished.`, 'info');
+  for (const c of ended)
+    toast(ctx, `${CAMPAIGNS[c.kind].name} has finished.`, 'info', undefined, CAMPAIGNS[c.kind].icon);
 }

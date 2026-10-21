@@ -118,7 +118,7 @@ function run(ctx: SimContext, name: CheatName, args: string[], fastForward: (day
     case 'karma': {
       const n = Math.round(amountOr(args[0], 10));
       if (!Number.isFinite(n) || n <= 0) return refused('Say how much karma to add, such as karma 10.');
-      return { ok: true, text: `+${n} ✨ karma to spend in any center.`, karma: n };
+      return { ok: true, text: `+${n} karma to spend in any center.`, karma: n };
     }
     case 'star':
       return awardStar(ctx) ? done(`Star ${s.stars} earned.`) : refused('Every star here is already earned.');

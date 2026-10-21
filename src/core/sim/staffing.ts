@@ -240,7 +240,7 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   }
   const alarm = QUIT_AFTER - QUIT_WARNING;
   if (before < alarm && st.unhappyT >= alarm) {
-    toast(ctx, `⚠️ ${st.name} will quit within two days. Give them a raise or a break, now.`, 'bad', about);
+    toast(ctx, `${st.name} will quit within two days. Give them a raise or a break, now.`, 'bad', about, 'ui-warning');
     emit(ctx, { type: 'sfx', name: 'error' });
   }
   if (st.unhappyT > QUIT_AFTER && !st.busy && !st.training) fire(ctx, st.id, 'quit');

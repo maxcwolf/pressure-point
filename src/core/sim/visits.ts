@@ -252,13 +252,21 @@ function writeAhead(ctx: SimContext, visit: VisitorKind) {
   ctx.s.visitNotice = notice;
   emit(ctx, { type: 'announce', text: VISIT_NEWS[visit] });
   if (visit === 'inspector') {
-    toast(ctx, `📋 The health inspector will call in ${VISIT_NOTICE_DAYS} days. They will check every room.`, 'info');
+    toast(
+      ctx,
+      `The health inspector will call in ${VISIT_NOTICE_DAYS} days. They will check every room.`,
+      'info',
+      undefined,
+      'bubble-inspecting',
+    );
     inspectorComing(ctx);
   } else
     toast(
       ctx,
-      `🕶️ ${notice.name}, ${notice.title}, is visiting in ${VISIT_NOTICE_DAYS} days, and cares most about ${ASPECT_NOTES[notice.cares ?? 'decor'].name}.`,
+      `${notice.name}, ${notice.title}, is visiting in ${VISIT_NOTICE_DAYS} days, and cares most about ${ASPECT_NOTES[notice.cares ?? 'decor'].name}.`,
       'info',
+      undefined,
+      'ui-vip',
     );
   tipOnce(
     ctx,
@@ -294,8 +302,15 @@ function arrive(ctx: SimContext, notice: VisitNotice): boolean {
     ctx.s.visitors = ctx.s.visitors.filter((o) => o !== v);
     return false;
   }
-  const who = notice.visit === 'inspector' ? '📋 The health inspector' : `🕶️ ${notice.name}`;
-  toast(ctx, `${who} has arrived, and is looking round.`, 'info', { kind: 'visitor', id: v.id });
+  const inspector = notice.visit === 'inspector';
+  const who = inspector ? 'The health inspector' : notice.name;
+  toast(
+    ctx,
+    `${who} has arrived, and is looking round.`,
+    'info',
+    { kind: 'visitor', id: v.id },
+    inspector ? 'bubble-inspecting' : 'ui-vip',
+  );
   return true;
 }
 
@@ -439,10 +454,12 @@ export function settleInspection(ctx: SimContext, payOff: boolean): boolean {
     s.nextInspection = Math.min(s.nextInspection, s.day + BRIBE_RECHECK_DAYS);
     toast(
       ctx,
-      '📰 Word got out that the inspector was paid off. They will be back soon, and they will look harder.',
+      'Word got out that the inspector was paid off. They will be back soon, and they will look harder.',
       'bad',
+      undefined,
+      'ui-news',
     );
-  } else toast(ctx, '📋 The inspector’s report seems to have been lost. How unfortunate.', 'good');
+  } else toast(ctx, 'The inspector’s report seems to have been lost. How unfortunate.', 'good', undefined, 'ui-bribe');
   return true;
 }
 

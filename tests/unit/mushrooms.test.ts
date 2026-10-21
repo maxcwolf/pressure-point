@@ -81,8 +81,8 @@ describe('mushrooms under the counter', () => {
   });
 
   it('say on the counter whether they are out, put away for the inspector, or could be', () => {
-    expect(mushroomSwitch(true)).toBe('🍄 Mushrooms under the counter: on sale');
-    expect(mushroomSwitch(false)).toBe('🍄 Mushrooms under the counter: put away');
+    expect(mushroomSwitch(true)).toBe('Mushrooms under the counter: on sale');
+    expect(mushroomSwitch(false)).toBe('Mushrooms under the counter: put away');
     expect(mushroomNote(false, true)).toMatch(/until the health inspector has been/);
     expect(mushroomNote(true, false)).toMatch(/big fine/);
   });
@@ -216,7 +216,7 @@ describe("a Shaman's ward", () => {
     expect(shaman?.job).toBeNull();
     sim.drain();
     runUntil(sim, () => !!s.mishap?.started, 300);
-    expect(toasts(sim.drain()).some((t) => t.startsWith('🪶 The ward'))).toBe(true);
+    expect(toasts(sim.drain()).some((t) => t.startsWith('The ward'))).toBe(true);
     expect(inconsistencies(sim)).toEqual([]);
   });
 
@@ -228,7 +228,7 @@ describe("a Shaman's ward", () => {
     sim.drain();
     run(sim, 0.1);
     expect(s.mishap.started).toBe(true);
-    expect(toasts(sim.drain())).toContain('🪶 The Shaman did not get to the ward in time.');
+    expect(toasts(sim.drain())).toContain('The Shaman did not get to the ward in time.');
   });
 
   it('cannot be asked without a Shaman', () => {

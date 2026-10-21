@@ -7,6 +7,7 @@ import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { promotionRequests, raiseRequests } from '../lib/status';
 import { Button } from './common/Button';
+import { IconText } from './common/Icon';
 
 /** Raise requests and promotions still waiting, and the messages currently on screen. */
 export function Toasts() {
@@ -24,7 +25,7 @@ export function Toasts() {
             hud.open('update');
           }}
         >
-          {`🎁 Version ${version} is ready to install`}
+          <IconText id="ui-update">{`Version ${version} is ready to install`}</IconText>
         </Button>
       )}
       {raiseRequests(sim.s.staff).map((st) => (
@@ -36,7 +37,7 @@ export function Toasts() {
             hud.show({ kind: 'staff', id: st.id });
           }}
         >
-          {`💸 ${st.name} wants a raise`}
+          <IconText id="bubble-raise">{`${st.name} wants a raise`}</IconText>
         </Button>
       ))}
       {promotionRequests(sim.s.staff).map((st) => (
@@ -48,12 +49,13 @@ export function Toasts() {
             hud.show({ kind: 'staff', id: st.id });
           }}
         >
-          {`⬆️ ${st.name} is ready for promotion`}
+          <IconText id="ui-upgrade">{`${st.name} is ready for promotion`}</IconText>
         </Button>
       ))}
       {hud.toasts.map((t) => {
         const about = t.about;
         const look = cx('toast', t.kind, t.leaving && 'out');
+        const body = t.icon ? <IconText id={t.icon}>{t.text}</IconText> : t.text;
         return about ? (
           <Button
             key={t.id}
@@ -63,11 +65,11 @@ export function Toasts() {
               hud.show(about);
             }}
           >
-            {t.text}
+            {body}
           </Button>
         ) : (
           <div key={t.id} class={look}>
-            {t.text}
+            {body}
           </div>
         );
       })}

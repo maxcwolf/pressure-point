@@ -84,7 +84,7 @@ export const greeting = (name: string) => `Welcome back, ${name.split(' ')[0] ??
 export function welcomeBack(ctx: SimContext, g: Guest, r: Regular) {
   g.regular = r.id;
   r.visits++;
-  emit(ctx, { type: 'float', text: '👋 Back again', x: g.x, y: g.y, kind: 'good' });
+  emit(ctx, { type: 'float', text: 'Back again', x: g.x, y: g.y, kind: 'good' });
 }
 
 /** Whether a guest's visit was a vision quest that worked. */
@@ -105,7 +105,7 @@ export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boo
     if (quest) r.loyalty = Math.max(r.loyalty, VISION_LOYALTY);
     if (r.loyalty <= 0) {
       s.regulars = s.regulars.filter((o) => o !== r);
-      toast(ctx, `💔 ${r.name} has had enough, and will not be coming back.`, 'bad');
+      toast(ctx, `${r.name} has had enough, and will not be coming back.`, 'bad', undefined, 'ui-heart-broken');
       return;
     }
     r.due = s.day + returnGap(r);
@@ -114,9 +114,11 @@ export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boo
       toast(
         ctx,
         after === 'devoted'
-          ? `💛 ${r.name} is devoted to the center now, and tips well.`
-          : `💛 ${r.name} has grown loyal: more patient, and they tip.`,
+          ? `${r.name} is devoted to the center now, and tips well.`
+          : `${r.name} has grown loyal: more patient, and they tip.`,
         'good',
+        undefined,
+        'ui-loyal',
       );
     return;
   }
@@ -131,7 +133,7 @@ export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boo
   };
   added.due = s.day + returnGap(added);
   s.regulars.push(added);
-  emit(ctx, { type: 'float', text: quest ? '🪶 Will be back' : 'Will be back', x: g.x, y: g.y, kind: 'good' });
+  emit(ctx, { type: 'float', text: 'Will be back', x: g.x, y: g.y, kind: 'good' });
   tipOnce(
     ctx,
     'regulars',

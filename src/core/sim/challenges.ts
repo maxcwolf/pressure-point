@@ -136,9 +136,10 @@ export function updateChallenge(ctx: SimContext) {
     const about = { kind: 'staff', id: next.staffId } as const;
     toast(
       ctx,
-      `🎯 ${next.staffName} has set the center a challenge: ${challengeTask(ctx, next)} within ${Math.round(next.deadline - next.set)} days.`,
+      `${next.staffName} has set the center a challenge: ${challengeTask(ctx, next)} within ${Math.round(next.deadline - next.set)} days.`,
       'info',
       about,
+      'ui-target',
     );
     tipOnce(
       ctx,
@@ -155,15 +156,22 @@ export function updateChallenge(ctx: SimContext) {
     for (const st of s.staff) st.morale = Math.min(100, st.morale + CHALLENGE_MORALE);
     toast(
       ctx,
-      `🎯 Challenge met! ${money(ch.reward)}, and ${ch.staffName} and everyone else are delighted.`,
+      `Challenge met! ${money(ch.reward)}, and ${ch.staffName} and everyone else are delighted.`,
       'good',
       about,
+      'ui-target',
     );
     emit(ctx, { type: 'sfx', name: 'fanfare' });
   } else if (s.day >= ch.deadline) {
     const setter = staffById(ctx, ch.staffId);
     if (setter) setter.morale = Math.max(0, setter.morale - CHALLENGE_SULK);
-    toast(ctx, `🎯 ${ch.staffName}'s challenge ran out of time. They are a little disappointed.`, 'bad', about);
+    toast(
+      ctx,
+      `${ch.staffName}'s challenge ran out of time. They are a little disappointed.`,
+      'bad',
+      about,
+      'ui-target',
+    );
   } else return;
   s.challenge = null;
   s.nextChallenge = s.day + irnd(s, CHALLENGE_GAP_MIN, CHALLENGE_GAP_MAX) * tuning(s, 'chances');

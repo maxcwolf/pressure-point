@@ -51,13 +51,20 @@ export function inspectorComing(ctx: SimContext) {
   if (s.policy.stashMushrooms) {
     s.mushrooms = false;
     s.mushroomsStashed = true;
-    toast(ctx, '🍄 The mushrooms are put away under the counter until the inspector has been.', 'info');
+    toast(
+      ctx,
+      'The mushrooms are put away under the counter until the inspector has been.',
+      'info',
+      undefined,
+      'bubble-mushroom',
+    );
   } else
     toast(
       ctx,
-      '🍄 The mushrooms are still on sale under the Shop Counter. Put them away before the inspector sees them.',
+      'The mushrooms are still on sale under the Shop Counter. Put them away before the inspector sees them.',
       'bad',
       { kind: 'item', id: s.items.find((it) => it.type === 'shop_counter')?.id ?? 0 },
+      'bubble-mushroom',
     );
 }
 
@@ -68,7 +75,13 @@ export function inspectorGone(ctx: SimContext) {
   s.mushroomsStashed = false;
   if (!hasSupplier(ctx)) return;
   s.mushrooms = true;
-  toast(ctx, '🍄 The inspector has gone, and the mushrooms are back under the counter.', 'info');
+  toast(
+    ctx,
+    'The inspector has gone, and the mushrooms are back under the counter.',
+    'info',
+    undefined,
+    'bubble-mushroom',
+  );
 }
 
 /** What the inspector makes of the Shop Counter on the way out: mushrooms found, or nothing worth a line. */

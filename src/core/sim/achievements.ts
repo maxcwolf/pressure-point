@@ -17,7 +17,7 @@ export function checkAchievements(ctx: SimContext) {
     const a = ACHIEVEMENTS[id];
     if (!objectiveFor(ctx, a.goal).done) continue;
     s.achieved.push(id);
-    toast(ctx, `${a.icon} Achievement: ${a.name}! +${a.karma} ✨ karma to spend in any center.`, 'good');
+    toast(ctx, `Achievement: ${a.name}! +${a.karma} karma to spend in any center.`, 'good', undefined, a.icon);
     emit(ctx, { type: 'sfx', name: 'fanfare' });
   }
 }
