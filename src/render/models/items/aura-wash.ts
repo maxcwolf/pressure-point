@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 
+import { owned } from '../../disposal';
 import { cyl, joined, mat, type Piece, put, rbox, sph } from '../parts';
 import { blob, puffs, rig, wornAndDown } from './machine-kit';
 
@@ -40,18 +41,30 @@ function gull(): THREE.Group {
 
 /** Build the Aura Wash. Guests come in at the front and leave at the back. */
 export function buildAuraWash(g: THREE.Group) {
-  // the two side walls, striped, and the roof between them
-  const walls = joined('aura-wash-walls', [
-    [rbox(0.1, 2.2, 3.9, 0.04), -0.95, 1.1, 0],
-    [rbox(0.1, 2.2, 3.9, 0.04), 0.95, 1.1, 0],
-    [rbox(2.0, 0.12, 3.9, 0.04), 0, 2.24, 0],
-  ]);
-  put(g, walls, mat(PANEL, 0.5));
+  // half walls either side, a post at each corner and a frame round the top, all open to the view, so the wash can
+  // be watched from anywhere, and a glass roof
+  const frame: Piece[] = [
+    [rbox(0.1, 1.1, 3.9, 0.04), -0.95, 0.55, 0],
+    [rbox(0.1, 1.1, 3.9, 0.04), 0.95, 0.55, 0],
+    [rbox(0.1, 0.12, 3.9, 0.04), -0.95, 2.24, 0],
+    [rbox(0.1, 0.12, 3.9, 0.04), 0.95, 2.24, 0],
+    [rbox(2.0, 0.12, 0.1, 0.04), 0, 2.24, -1.9],
+  ];
+  for (const x of [-0.95, 0.95]) for (const z of [-1.9, 1.9]) frame.push([rbox(0.12, 2.3, 0.12, 0.03), x, 1.15, z]);
+  put(g, joined('aura-wash-walls', frame), mat(PANEL, 0.5));
+  put(
+    g,
+    rbox(1.8, 0.03, 3.8, 0.01),
+    owned(new THREE.MeshStandardMaterial({ color: 0xbfe6f5, transparent: true, opacity: 0.25, roughness: 0.1 })),
+    0,
+    2.26,
+    0,
+  ).castShadow = false;
   put(
     g,
     joined('aura-wash-stripes', [
-      [rbox(0.11, 0.18, 3.92, 0.02), -0.95, 1.5, 0],
-      [rbox(0.11, 0.18, 3.92, 0.02), 0.95, 1.5, 0],
+      [rbox(0.11, 0.18, 3.92, 0.02), -0.95, 1.0, 0],
+      [rbox(0.11, 0.18, 3.92, 0.02), 0.95, 1.0, 0],
       [rbox(2.02, 0.32, 0.14, 0.04), 0, 2.4, 1.9],
     ]),
     mat(STRIPE, 0.5),

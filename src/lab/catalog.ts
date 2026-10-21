@@ -360,7 +360,8 @@ function machineSpecimen(type: ItemType): Specimen {
         ],
         /** Play the gag at the point in the session picked, or round and round. */
         animate(t, dt) {
-          if (st.play && st.stage === 'running') st.progress = ((t / 8) % 1) * 100;
+          // round and round from halfway, so a still picture catches the gag in full swing
+          if (st.play && st.stage === 'running') st.progress = ((0.5 + t / 8) % 1) * 100;
           const stage = st.stage as GagStage;
           const since = stage === 'outro' ? t % (script.outro + 1) : 0;
           const frame = gagFrame(script, {
