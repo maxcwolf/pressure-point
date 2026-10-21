@@ -767,6 +767,8 @@ export interface GameState {
    * whether to borrow `loan` to cover them; with a day, the bank would not lend enough and the player has until then
    * to find the money some other way. Null when no payday is waiting. */
   payrollDue: { wages: number; loan: number; until: number | null } | null;
+  /** The month (counting from 0) whose payday the player has been warned is not covered, so it is said once a month. */
+  paydayWarned?: number;
   /** The center is bankrupt and the game is lost. */
   bankrupt: boolean;
   /** Whether an unpaid payday can end the game: a sandbox setting. Off, the bank just goes into the red. */

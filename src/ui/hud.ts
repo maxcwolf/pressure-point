@@ -16,7 +16,7 @@ import type { OverlayMode } from './lib/overlays';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'policy' | 'stats';
 /** The tabs of the Money menu. */
-export type MoneyTab = 'books' | 'prices' | 'marketing' | 'loan' | 'land';
+export type MoneyTab = 'books' | 'payroll' | 'prices' | 'marketing' | 'loan' | 'land';
 
 /** The tabs of the Rooms menu. */
 export type RoomsTab = 'rooms' | 'templates';

@@ -148,3 +148,26 @@
   flex-shrink: 0;
   white-space: nowrap;
 }
+
+.ledger.verdict {
+  margin-bottom: 12px;
+}
+
+.ledger.verdict h4 {
+  margin-bottom: 0;
+}
+
+.ledger.verdict.ok {
+  border-color: #23805a;
+  background: #e6f4ec;
+}
+
+.ledger.verdict.warn {
+  border-color: var(--gold);
+  background: #fff6dc;
+}
+
+.ledger.verdict.bad {
+  border-color: var(--red);
+  background: #fbe3e1;
+}

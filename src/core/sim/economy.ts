@@ -102,11 +102,21 @@ export function payOff(ctx: SimContext, st: Staff) {
   if (owed > 0) spend(ctx, owed, 'salaries');
 }
 
-/** Days before payday that the center is warned the wages will not be covered. */
+/** Days before payday that the center is warned again if the bank alone will not cover the wages. */
 const PAYDAY_WARNING_DAYS = 5;
 
+/** The day the month now running began. */
+const monthStartOf = (s: GameState) => Math.floor(s.day / DAYS_PER_MONTH) * DAYS_PER_MONTH;
+
 /** The day the month now running ends and wages are due. */
-const paydayOf = (s: GameState) => (Math.floor(s.day / DAYS_PER_MONTH) + 1) * DAYS_PER_MONTH;
+export const paydayOf = (s: GameState) => monthStartOf(s) + DAYS_PER_MONTH;
+
+/** What the staff on the books, those leaving aside, are paid in a month. */
+export function monthlyPayroll(s: GameState): number {
+  let total = 0;
+  for (const st of s.staff) if (st.state !== 'leaving') total += st.salary;
+  return total;
+}
 
 /** What the next payday will come to, as things stand. */
 export function wagesDue(s: GameState): number {
@@ -119,15 +129,166 @@ export function wagesDue(s: GameState): number {
   return total;
 }
 
-/** A few days before payday, say so if the bank will not cover the wages. Run as each day begins. */
+/** How many days of a month must have gone before its own pace of income is trusted over last month's. */
+const PACE_DAYS = 2;
+
+/**
+ * This month's income at its pace so far, scaled to a whole month. The first day or two tell little, so until then
+ * last month's income stands in for it, where there was one.
+ */
+export function projectedIncome(s: GameState): number {
+  const gone = s.day - monthStartOf(s);
+  const last = s.months.at(-1);
+  if (gone < PACE_DAYS && last) return incomeOf(last.ledger);
+  return Math.round((incomeOf(s.ledger) / Math.max(gone, 1)) * DAYS_PER_MONTH);
+}
+
+/** Where this month's books are headed, at this month's pace. */
+export interface Cashflow {
+  /** Income so far, and what the month will bring at this pace. */
+  soFar: number;
+  income: number;
+  /** The wages due at payday, the interest the loan will cost then, and what else has been spent so far. */
+  wages: number;
+  interest: number;
+  spent: number;
+  /** The net the month is headed for: the income at this pace less all three. */
+  net: number;
+}
+
+/** Where this month's books are headed: the income at this month's pace, less wages, interest and the known costs. */
+export function projectedCashflow(s: GameState): Cashflow {
+  const l = s.ledger;
+  const soFar = incomeOf(l);
+  const income = projectedIncome(s);
+  const wages = wagesDue(s);
+  const interest = Math.round(s.loan * LOAN_RATE) + Math.round(Math.max(0, -s.money) * OVERDRAFT_RATE);
+  const spent = l.salaries + l.building + l.training + l.marketing + l.fines + l.interest;
+  return { soFar, income, wages, interest, spent, net: income - wages - interest - spent };
+}
+
+/** Whether the next payday is covered: by the bank and the month's takings, by borrowing on top, or not at all. */
+export type PayrollCover = 'yes' | 'borrowing' | 'no';
+
+/** How the next payday stands, as things are going. */
+export interface PayrollOutlook {
+  /** The wages due, and the days until they are. */
+  wages: number;
+  daysLeft: number;
+  /** In the bank now, what the month's pace brings in by payday, and the two together. */
+  money: number;
+  coming: number;
+  expected: number;
+  /** What would still be missing at payday, and the loan steps that would cover it. */
+  short: number;
+  borrow: number;
+  /** What the bank will still lend, and where the loan would stand after borrowing to cover the wages. */
+  loanRoom: number;
+  loanAfter: number;
+  covered: PayrollCover;
+}
+
+/** How the next payday stands: what is due, what the bank and this month's pace will have by then, and the gap. */
+export function payrollOutlook(s: GameState): PayrollOutlook {
+  const wages = wagesDue(s);
+  const daysLeft = paydayOf(s) - s.day;
+  const coming = Math.round((projectedIncome(s) * daysLeft) / DAYS_PER_MONTH);
+  const expected = s.money + coming;
+  const short = Math.max(0, wages - expected);
+  const borrow = short > 0 ? Math.ceil(short / LOAN_STEP) * LOAN_STEP : 0;
+  const loanRoom = Math.max(0, loanLimit(s) - s.loan);
+  const covered: PayrollCover = short <= 0 ? 'yes' : borrow <= loanRoom ? 'borrowing' : 'no';
+  return {
+    wages,
+    daysLeft,
+    money: s.money,
+    coming,
+    expected,
+    short,
+    borrow,
+    loanRoom,
+    loanAfter: s.loan + Math.min(borrow, loanRoom),
+    covered,
+  };
+}
+
+/** Days as they read in a warning: whole days, and never less than one. */
+const daysWord = (days: number) => {
+  const n = Math.max(1, Math.ceil(days));
+  return `${n} day${n === 1 ? '' : 's'}`;
+};
+
+/** The payday verdict in a line: covered, covered by borrowing, or short, and by how much. */
+export function payrollVerdict(o: PayrollOutlook): string {
+  if (o.covered === 'yes') {
+    const pace = o.coming > 0 ? ` and about ${money(o.coming)} more at this month's pace` : '';
+    return `Payday is covered: ${money(o.wages)} in wages against ${money(o.money)} in the bank${pace}.`;
+  }
+  if (o.covered === 'borrowing')
+    return `Payday is covered by borrowing: ${money(o.short)} short at this month's pace, so the loan will stand at ${money(o.loanAfter)}.`;
+  const ways =
+    o.loanRoom > 0 ? `borrow (the bank will lend ${money(o.loanRoom)} more), sell, or earn it` : 'sell, or earn it';
+  return `Payday needs ${money(o.short)} more: ${ways} in ${daysWord(o.daysLeft)}, or the center is bankrupt.`;
+}
+
+/**
+ * Days until the center runs out of road, as things stand: payday after payday at the wages on the books, with this
+ * month's pace of income coming in and the loan to fall back on, until one cannot be covered and the grace days run
+ * out. Null while that never comes within a year, or with bankruptcy switched off.
+ */
+export function daysUntilBankrupt(s: GameState): number | null {
+  if (!s.bankruptcyOn) return null;
+  const monthly = monthlyPayroll(s);
+  const income = projectedIncome(s);
+  const limit = loanLimit(s);
+  let cash = s.money;
+  let loan = s.loan;
+  // the payday coming is what is owed so far; after it, a whole month each time
+  let wages = wagesDue(s);
+  let coming = (income * (paydayOf(s) - s.day)) / DAYS_PER_MONTH;
+  for (let m = 0; m < 12; m++) {
+    cash += coming;
+    if (cash < wages) {
+      const need = Math.ceil((wages - cash) / LOAN_STEP) * LOAN_STEP;
+      if (loan + need > limit) return paydayOf(s) + m * DAYS_PER_MONTH - s.day + PAYROLL_GRACE_DAYS;
+      loan += need;
+      cash += need;
+    }
+    cash -= wages + Math.round(loan * LOAN_RATE);
+    wages = monthly;
+    coming = income;
+  }
+  return null;
+}
+
+/**
+ * Warn of a payday the center is not on course to cover: once, as soon as this month's pace first says so, and again
+ * five days before if the bank alone will not cover the wages, each with the numbers. Quiet while payday is covered.
+ * Run as each day begins.
+ */
 export function warnPayday(ctx: SimContext) {
   const s = ctx.s;
-  if (!s.bankruptcyOn || Math.ceil(paydayOf(s) - s.day) !== PAYDAY_WARNING_DAYS) return;
-  const wages = wagesDue(s);
-  if (wages <= s.money) return;
+  if (!s.bankruptcyOn) return;
+  const o = payrollOutlook(s);
+  if (o.wages <= 0) return;
+  const left = Math.ceil(o.daysLeft);
+  const month = Math.floor(s.day / DAYS_PER_MONTH);
+  if (left === PAYDAY_WARNING_DAYS) {
+    s.paydayWarned = month;
+    if (o.wages <= s.money) return;
+    const pace = o.coming > 0 ? `, with about ${money(o.coming)} more coming at this month's pace` : '';
+    toast(
+      ctx,
+      `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(o.wages)} in wages, and ${money(s.money)} in the bank${pace}. ${payrollVerdict(o)}`,
+      'bad',
+    );
+    return;
+  }
+  if (left < PAYDAY_WARNING_DAYS || o.covered === 'yes' || s.paydayWarned === month) return;
+  s.paydayWarned = month;
   toast(
     ctx,
-    `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(wages)} in wages, and ${money(Math.max(0, s.money))} in the bank. Past that you will have to borrow, or you lose.`,
+    `⚠️ Payday in ${left} days: ${money(o.wages)} in wages against ${money(s.money)} in the bank and about ${money(o.coming)} more at this month's pace. ${payrollVerdict(o)}`,
     'bad',
   );
 }

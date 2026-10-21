@@ -1,4 +1,4 @@
-// The Money menu: the books, prices (overall and per treatment), marketing, the loan, and land, a tab each.
+// The Money menu: the books, the payroll outlook, prices (overall and per treatment), marketing, the loan, and land, a tab each.
 
 import './MoneyMenu.css';
 
@@ -14,6 +14,7 @@ import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { LandTab } from './LandTab';
 import { MarketingTab } from './MarketingTab';
+import { PayrollTab } from './PayrollTab';
 import { TechniquePrices } from './TechniquePrices';
 
 /** A line of the books: income in green, spending in red. */
@@ -158,6 +159,7 @@ function Loan() {
 /** The Money menu's tabs, in order. */
 const TABS: readonly { id: MoneyTab; name: string }[] = [
   { id: 'books', name: '📒 Books' },
+  { id: 'payroll', name: '💵 Payroll' },
   { id: 'prices', name: '🏷️ Prices' },
   { id: 'marketing', name: '📣 Marketing' },
   { id: 'loan', name: '🏦 Loan' },
@@ -184,6 +186,7 @@ export function MoneyMenu() {
         ))}
       </div>
       {hud.moneyTab === 'books' && <Books />}
+      {hud.moneyTab === 'payroll' && <PayrollTab />}
       {hud.moneyTab === 'prices' && <Prices />}
       {hud.moneyTab === 'marketing' && <MarketingTab />}
       {hud.moneyTab === 'loan' && <Loan />}
