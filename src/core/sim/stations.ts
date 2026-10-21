@@ -38,7 +38,7 @@ import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
 import { dueForSpot, isClassLead, restDue, updateClass } from './classes';
 import type { SimContext } from './context';
-import { changeRep, earn, priceFor } from './economy';
+import { changeRep, earn, priceFor, putOffChance } from './economy';
 import { emit, tipOnce } from './events';
 import { feel, reviewStars } from './feelings';
 import { decide, leave, resetGuest } from './guests';
@@ -320,8 +320,9 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= 4) {
       g.goal = 'treat';
       say(g, '💡');
-      // steep prices put some guests off once they hear what the treatment costs, though never a regular, who knows
-      if (!g.emergency && !g.regular && random(ctx.s) < Math.max(0, (treatPrice - 1) * 0.35)) {
+      // steep prices put some guests off once they hear what the treatment costs, the more so the less the center's
+      // name is worth, though never a regular, who knows
+      if (!g.emergency && !g.regular && random(ctx.s) < putOffChance(treatPrice, ctx.s.reputation)) {
         g.outcome = 'stormed';
         g.goal = 'leave';
         feel(g, 'pricey');

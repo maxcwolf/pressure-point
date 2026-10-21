@@ -13,6 +13,7 @@ import { money } from '../../../core/format';
 import { unlockedUpTo } from '../../../core/state/game';
 import { useGame } from '../../hooks/use-hud';
 import { pricedFor } from '../../lib/casebook';
+import { balkShort, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
 
 /** Why a price cannot go higher. */
@@ -33,7 +34,10 @@ function PriceFigure({ own, total }: { own: number; total: number }) {
   );
 }
 
-/** A row for each treatment on offer: its own price, what it comes to all told, and how many it has put off. */
+/**
+ * A row for each treatment on offer: its own price, what it comes to all told, how many it has put off, and the share
+ * its price puts off now.
+ */
 export function TechniquePrices() {
   const { sim } = useGame();
   const s = sim.s;
@@ -52,10 +56,14 @@ export function TechniquePrices() {
       {techniques.map((m) => {
         const own = s.prices[m] ?? 1;
         const def = MODALITIES[m];
+        const total = sim.priceFor(m);
+        const balk = balkShort(total, s.reputation);
         return (
           <div key={m} class="technique-price">
             <span>{`${def.icon} ${def.name}`}</span>
-            <small>{`${pricedFor(s.casebook, m)} put off so far`}</small>
+            <small title={balkText(total, s.reputation)}>
+              {`${pricedFor(s.casebook, m)} put off so far${balk ? ` · ${balk}` : ''}`}
+            </small>
             <Button
               locked={own <= PRICE_MIN}
               onPress={() => {
@@ -64,7 +72,7 @@ export function TechniquePrices() {
             >
               −
             </Button>
-            <PriceFigure own={own} total={sim.priceFor(m)} />
+            <PriceFigure own={own} total={total} />
             <Button
               locked={atTop(s.priceLevel, own)}
               title={atTop(s.priceLevel, own) ? TOP_NOTE : undefined}
