@@ -1,5 +1,7 @@
 # Balance log
 
+How to run `yarn balance` and read its report, before and after a change: [balance-harness.md](balance-harness.md).
+
 What was found to be off in how the game plays, how it was measured, and what was done about it, newest first. The wider audit of the campaign's pace and difficulty, with its playtest bot, is `docs/balance-audit.md` on the `chore/balance-audit` branch (15 October 2026); entries here refer to its findings by number.
 
 A month is 180 seconds of game time (30 days of 6 seconds).
