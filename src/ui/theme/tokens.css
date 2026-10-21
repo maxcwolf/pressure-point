@@ -11,6 +11,11 @@
   --red: #e5564d;
   --green: #3bb273;
   --blue: #4a9fe0;
+  /* The overlays' colors, read into the scene too, so the floor and the key in the picker agree. */
+  --overlay-good: var(--green);
+  --overlay-fair: var(--gold);
+  --overlay-bad: var(--red);
+  --overlay-cold: var(--blue);
   --shadow: 0 5px 0 rgba(36, 56, 74, 0.32);
   --font: 'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif;
 }
