@@ -2,6 +2,8 @@
 // puts on the player, and any of them can then be set on its own. Each setting is easier, as usual, or harder, and
 // scales one of the numbers the game already uses. As usual, it scales by exactly 1, so changes nothing.
 
+import type { IconId } from './icon-ids';
+
 /** A pressure the difficulty can turn up or down. */
 export type Knob =
   | 'arrivals'
@@ -26,7 +28,7 @@ export const LEVELS: readonly Level[] = ['easier', 'usual', 'harder'];
  * each level. */
 export interface KnobDef {
   name: string;
-  icon: string;
+  icon: IconId;
   desc: string;
   factor: Readonly<Record<Level, number>>;
   words: Readonly<Record<Level, string>>;
@@ -35,7 +37,7 @@ export interface KnobDef {
 export const KNOBS: Readonly<Record<Knob, KnobDef>> = {
   arrivals: {
     name: 'Guests',
-    icon: '🚶',
+    icon: 'ui-guests',
     desc: 'How often guests arrive.',
     // divides the wait between arrivals
     factor: { easier: 1.25, usual: 1, harder: 0.8 },
@@ -43,14 +45,14 @@ export const KNOBS: Readonly<Record<Knob, KnobDef>> = {
   },
   patience: {
     name: 'Patience',
-    icon: '⏳',
+    icon: 'overlay-patience',
     desc: 'How fast guests lose patience waiting.',
     factor: { easier: 0.75, usual: 1, harder: 1.3 },
     words: { easier: 'Patient', usual: 'Usual', harder: 'Impatient' },
   },
   applicants: {
     name: 'Applicants',
-    icon: '📨',
+    icon: 'ui-applicants',
     desc: 'How often someone new applies for a job.',
     // multiplies the days between applicants
     factor: { easier: 0.6, usual: 1, harder: 1.5 },
@@ -58,42 +60,42 @@ export const KNOBS: Readonly<Record<Knob, KnobDef>> = {
   },
   wear: {
     name: 'Wear',
-    icon: '🔧',
+    icon: 'marker-broken',
     desc: 'How quickly equipment wears out with use.',
     factor: { easier: 0.7, usual: 1, harder: 1.4 },
     words: { easier: 'Slower', usual: 'Usual', harder: 'Faster' },
   },
   tiredness: {
     name: 'Tiredness',
-    icon: '🥱',
+    icon: 'bubble-exhausted',
     desc: 'How quickly staff tire as they work.',
     factor: { easier: 0.8, usual: 1, harder: 1.25 },
     words: { easier: 'Slower', usual: 'Usual', harder: 'Faster' },
   },
   salaries: {
     name: 'Salaries',
-    icon: '💵',
+    icon: 'ui-wages',
     desc: 'What staff ask to be paid.',
     factor: { easier: 0.85, usual: 1, harder: 1.2 },
     words: { easier: 'Lower', usual: 'Usual', harder: 'Higher' },
   },
   fees: {
     name: 'Fees',
-    icon: '💰',
+    icon: 'ui-money',
     desc: 'What a treatment brings in, at the same price level.',
     factor: { easier: 1.15, usual: 1, harder: 0.85 },
     words: { easier: 'Higher', usual: 'Usual', harder: 'Lower' },
   },
   loans: {
     name: 'Loans',
-    icon: '🏦',
+    icon: 'ui-loan',
     desc: 'How much the bank will lend.',
     factor: { easier: 1.5, usual: 1, harder: 0.5 },
     words: { easier: 'Higher', usual: 'Usual', harder: 'Lower' },
   },
   trouble: {
     name: 'Trouble',
-    icon: '⛈️',
+    icon: 'mishap-storm',
     desc: 'How often mishaps, stress outbreaks and the health inspector come.',
     // multiplies the days between them
     factor: { easier: 1.5, usual: 1, harder: 0.7 },
@@ -101,7 +103,7 @@ export const KNOBS: Readonly<Record<Knob, KnobDef>> = {
   },
   chances: {
     name: 'Emergencies',
-    icon: '🚨',
+    icon: 'ui-emergency',
     desc: 'How often emergencies, staff challenges and house calls are offered, each with a reward.',
     // multiplies the days between them
     factor: { easier: 0.75, usual: 1, harder: 1.3 },
@@ -109,7 +111,7 @@ export const KNOBS: Readonly<Record<Knob, KnobDef>> = {
   },
   reputation: {
     name: 'Reputation',
-    icon: '⭐',
+    icon: 'ui-reputation',
     desc: 'How quickly a good name is earned.',
     factor: { easier: 1.25, usual: 1, harder: 0.8 },
     words: { easier: 'Faster', usual: 'Usual', harder: 'Slower' },

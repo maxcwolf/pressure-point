@@ -6,7 +6,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   receptionist: {
     role: 'receptionist',
     name: 'Receptionist',
-    icon: '🛎️',
+    icon: 'role-receptionist',
     desc: 'Checks guests in at a Reception Desk.',
     baseSalary: 800,
     uniform: 0x2fa8a0,
@@ -15,7 +15,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   consultant: {
     role: 'consultant',
     name: 'Wellness Consultant',
-    icon: '🩺',
+    icon: 'role-consultant',
     desc: 'Diagnoses guests in a Consultation Room. Skill means fewer repeat visits.',
     baseSalary: 1700,
     uniform: 0xf4f1ea,
@@ -24,7 +24,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   therapist: {
     role: 'therapist',
     name: 'Massage Therapist',
-    icon: '💆',
+    icon: 'role-therapist',
     desc: 'Treats guests in a Massage Suite. Each one knows certain modalities; train them to add more.',
     baseSalary: 1400,
     uniform: 0xa784d6,
@@ -34,7 +34,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   acupuncturist: {
     role: 'acupuncturist',
     name: 'Acupuncturist',
-    icon: '📍',
+    icon: 'role-acupuncturist',
     desc: 'Treats guests in an Acupuncture Clinic. Each one knows certain techniques; train them to add more.',
     baseSalary: 1600,
     uniform: 0x3f9d7a,
@@ -44,7 +44,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   practitioner: {
     role: 'practitioner',
     name: 'Reiki Practitioner',
-    icon: '✨',
+    icon: 'role-practitioner',
     desc: 'Treats guests in a Reiki Studio. Each one knows certain techniques; train them to add more.',
     baseSalary: 1700,
     uniform: 0xece6f5,
@@ -54,7 +54,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   healer: {
     role: 'healer',
     name: 'Sound Healer',
-    icon: '🔔',
+    icon: 'role-healer',
     desc: 'Plays for the guests on the mats of a Sound Bath Studio all at once: 2 mats as a Trainee or Junior, 3 as Experienced or Senior, 4 as an Expert. Each one knows certain techniques; train them to add more.',
     baseSalary: 1650,
     uniform: 0x3f7f8c,
@@ -64,7 +64,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   instructor: {
     role: 'instructor',
     name: 'Qi Gong Instructor',
-    icon: '🥋',
+    icon: 'role-instructor',
     desc: 'Leads the classes in a Qi Gong Studio, on the days its timetable sets. The more skilled, the more who come, and the more Practice Spots they can lead: 6 for a Trainee, up to 16 for an Expert.',
     baseSalary: 1300,
     uniform: 0xc0473a,
@@ -74,7 +74,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   shaman: {
     role: 'shaman',
     name: 'Shaman',
-    icon: '🪶',
+    icon: 'role-shaman',
     desc: 'Treats guests one at a time in a Ceremony Lodge. Each one knows certain techniques; train them to add more.',
     baseSalary: 1900,
     uniform: 0x8a4b2a,
@@ -84,7 +84,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
   caretaker: {
     role: 'caretaker',
     name: 'Caretaker',
-    icon: '🧹',
+    icon: 'role-caretaker',
     desc: 'Clears litter, cleans toilets, changes and launders the linens, waters plants, reheats Stone Warmers and repairs worn equipment.',
     baseSalary: 600,
     uniform: 0x7d8f45,

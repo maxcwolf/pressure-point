@@ -1,19 +1,21 @@
 // The center's standing, and the rival across the street. A center climbs through grades from its rooms, how fine
 // they are, and its staff; a higher grade brings more guests and applicants, and guests who expect more.
 
+import type { IconId } from './icon-ids';
+
 /** One grade of standing: what it is called, and the points it takes. */
 export interface GradeDef {
   name: string;
-  icon: string;
+  icon: IconId;
   points: number;
 }
 
 export const GRADES: readonly GradeDef[] = [
-  { name: 'Back-Room Practice', icon: '🚪', points: 0 },
-  { name: 'Wellness Studio', icon: '🌱', points: 80 },
-  { name: 'Wellness Center', icon: '🌿', points: 180 },
-  { name: 'Healing Center', icon: '🌳', points: 320 },
-  { name: 'Healing Institute', icon: '🏛️', points: 500 },
+  { name: 'Back-Room Practice', icon: 'standing-practice', points: 0 },
+  { name: 'Wellness Studio', icon: 'standing-studio', points: 80 },
+  { name: 'Wellness Center', icon: 'standing-center', points: 180 },
+  { name: 'Healing Center', icon: 'standing-healing-center', points: 320 },
+  { name: 'Healing Institute', icon: 'standing-institute', points: 500 },
 ];
 
 /** Points for each finished room, and for each star of its prestige. */

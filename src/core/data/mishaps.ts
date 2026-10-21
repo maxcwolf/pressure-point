@@ -1,6 +1,7 @@
 // Mishaps: one for each center but Willow Lane. Each is announced a few days ahead, can be prepared for at a price,
 // and while it lasts takes some of the center out of action or keeps guests away.
 
+import type { IconId } from './icon-ids';
 import type { ItemType } from './types';
 
 export type MishapId = 'power' | 'storm' | 'freeze' | 'wasps';
@@ -9,7 +10,7 @@ export type MishapId = 'power' | 'storm' | 'freeze' | 'wasps';
 export interface MishapDef {
   id: MishapId;
   name: string;
-  icon: string;
+  icon: IconId;
   /** What the speakers say a few days before, as it starts, and as it ends. */
   warning: string;
   start: string;
@@ -35,7 +36,7 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
   power: {
     id: 'power',
     name: 'Power cut',
-    icon: '🔌',
+    icon: 'mishap-power',
     warning: 'The power company will be working on the lines this week. Expect a power cut.',
     start: 'The power is out. Anything with a plug is now a very expensive ornament.',
     end: 'The power is back. Please stop meditating by candlelight.',
@@ -60,7 +61,7 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
   storm: {
     id: 'storm',
     name: 'Storm',
-    icon: '⛈️',
+    icon: 'mishap-storm',
     warning: 'A storm is coming in off the sea later this week. Batten down the hatches.',
     start: 'The storm has arrived. Please keep away from the windows... and Brent.',
     end: 'The storm has passed. The seagulls are back, and so are the guests.',
@@ -73,7 +74,7 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
   freeze: {
     id: 'freeze',
     name: 'Big freeze',
-    icon: '🥶',
+    icon: 'mishap-freeze',
     warning: 'A big freeze is forecast later this week. The pipes are nervous.',
     start: 'The pipes have frozen. Please hold on, in every sense.',
     end: 'The pipes have thawed. Normal flushing is resumed.',
@@ -87,7 +88,7 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
   wasps: {
     id: 'wasps',
     name: 'Wasps',
-    icon: '🐝',
+    icon: 'mishap-wasps',
     warning: 'It is harvest week in the orchards, and the wasps have noticed.',
     start: 'Wasps have found the snacks. Please walk calmly and do not wave your arms.',
     end: 'The wasps have gone back to the orchards.',

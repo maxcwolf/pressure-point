@@ -1,6 +1,6 @@
 // Courses staff can take in a Training Room.
 
-import { DAY_SECONDS, GENERAL_COURSES, isGeneral, MODALITIES, modalityLabel, RANK_XP } from '../data';
+import { DAY_SECONDS, GENERAL_COURSES, type IconId, isGeneral, MODALITIES, modalityLabel, RANK_XP } from '../data';
 import { money } from '../format';
 import type { CourseId, Staff } from '../state/types';
 import { accessPose, accessTile } from '../world';
@@ -18,7 +18,7 @@ import { staffIdle } from './staffing';
 export interface Course {
   id: CourseId;
   name: string;
-  icon: string;
+  icon: IconId;
   desc: string;
   cost: number;
   days: number;

@@ -21,7 +21,7 @@ export const GENERAL_COURSES: Readonly<Record<GeneralId, GeneralDef>> = {
   bedside: {
     id: 'bedside',
     name: 'Bedside Manner',
-    icon: '🤗',
+    icon: 'course-bedside',
     desc: 'Guests waiting in their line lose patience a quarter more slowly.',
     cost: 900,
     days: 6,
@@ -29,7 +29,7 @@ export const GENERAL_COURSES: Readonly<Record<GeneralId, GeneralDef>> = {
   motivation: {
     id: 'motivation',
     name: 'Motivation',
-    icon: '🔥',
+    icon: 'course-motivation',
     desc: 'Works 15% faster at everything.',
     cost: 1200,
     days: 7,
@@ -37,7 +37,7 @@ export const GENERAL_COURSES: Readonly<Record<GeneralId, GeneralDef>> = {
   stamina: {
     id: 'stamina',
     name: 'Stamina Training',
-    icon: '🏋️',
+    icon: 'course-stamina',
     desc: 'Tires a quarter more slowly.',
     cost: 1000,
     days: 6,
@@ -45,7 +45,7 @@ export const GENERAL_COURSES: Readonly<Record<GeneralId, GeneralDef>> = {
   service: {
     id: 'service',
     name: 'Customer Service',
-    icon: '🛎️',
+    icon: 'course-service',
     desc: 'Checks guests in 30% faster.',
     cost: 700,
     days: 5,
@@ -54,7 +54,7 @@ export const GENERAL_COURSES: Readonly<Record<GeneralId, GeneralDef>> = {
   maintenance: {
     id: 'maintenance',
     name: 'Maintenance',
-    icon: '🔧',
+    icon: 'course-maintenance',
     desc: 'Repairs, cleans and tends things 40% faster.',
     cost: 800,
     days: 5,
@@ -63,7 +63,7 @@ export const GENERAL_COURSES: Readonly<Record<GeneralId, GeneralDef>> = {
   mechanics: {
     id: 'mechanics',
     name: 'Mechanics',
-    icon: '⚙️',
+    icon: 'course-mechanics',
     desc: 'Installs the upgrades bought for treatment equipment.',
     cost: 900,
     days: 5,
@@ -72,7 +72,7 @@ export const GENERAL_COURSES: Readonly<Record<GeneralId, GeneralDef>> = {
   smudging: {
     id: 'smudging',
     name: 'Smudging',
-    icon: '🌿',
+    icon: 'course-smudging',
     desc: 'Clears the bad vibes a failed treatment leaves behind, wafting burning sage through the room.',
     cost: 600,
     days: 4,

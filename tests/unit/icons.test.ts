@@ -34,7 +34,7 @@ describe('the icon drawings', () => {
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text id="a" fill="#123456">!</text></svg>';
     expect(checkIcon('Thing', bad)).toEqual([
       'its id should be lowercase words joined by hyphens',
-      'its id should start with one of bubble, marker, room, role, discipline, overlay, ui, season',
+      'its id should start with one of bubble, marker, room, role, discipline, overlay, ui, season, item, technique, course, feeling, award, achievement, mishap, standing',
       'its <svg> should have viewBox="0 0 32 32"',
       'no text: draw letters as shapes',
       'no ids',

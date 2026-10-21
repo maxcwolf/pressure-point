@@ -10,7 +10,7 @@ export const ACHIEVEMENTS: Readonly<Record<AchievementId, AchievementDef>> = {
   'called-in': {
     id: 'called-in',
     name: 'Called In',
-    icon: '🚑',
+    icon: 'achievement-called-in',
     desc: 'See an emergency through',
     goal: { kind: 'emergencies', count: 1 },
     karma: 2,
@@ -18,7 +18,7 @@ export const ACHIEVEMENTS: Readonly<Record<AchievementId, AchievementDef>> = {
   century: {
     id: 'century',
     name: 'Century',
-    icon: '💯',
+    icon: 'achievement-century',
     desc: 'Heal 100 guests in one center',
     goal: { kind: 'healed', count: 100 },
     karma: 3,
@@ -26,7 +26,7 @@ export const ACHIEVEMENTS: Readonly<Record<AchievementId, AchievementDef>> = {
   'talk-of-the-town': {
     id: 'talk-of-the-town',
     name: 'Talk of the Town',
-    icon: '📣',
+    icon: 'achievement-talk-of-the-town',
     desc: 'Reach 90% reputation',
     goal: { kind: 'reputation', percent: 90 },
     karma: 3,
@@ -34,7 +34,7 @@ export const ACHIEVEMENTS: Readonly<Record<AchievementId, AchievementDef>> = {
   'nest-egg': {
     id: 'nest-egg',
     name: 'Nest Egg',
-    icon: '🪺',
+    icon: 'achievement-nest-egg',
     desc: 'Have $60,000 in the bank',
     goal: { kind: 'balance', amount: 60000 },
     karma: 2,
@@ -42,7 +42,7 @@ export const ACHIEVEMENTS: Readonly<Record<AchievementId, AchievementDef>> = {
   showpiece: {
     id: 'showpiece',
     name: 'Showpiece',
-    icon: '🏛️',
+    icon: 'achievement-showpiece',
     desc: 'Have a Massage Suite of prestige 4',
     goal: { kind: 'prestige', room: 'massage', level: 4 },
     karma: 2,
@@ -50,7 +50,7 @@ export const ACHIEVEMENTS: Readonly<Record<AchievementId, AchievementDef>> = {
   'one-big-family': {
     id: 'one-big-family',
     name: 'One Big Family',
-    icon: '🤝',
+    icon: 'achievement-one-big-family',
     desc: 'Go 90 days without anyone quitting',
     goal: { kind: 'noQuits', days: 90 },
     karma: 2,
@@ -58,7 +58,7 @@ export const ACHIEVEMENTS: Readonly<Record<AchievementId, AchievementDef>> = {
   'pins-and-needles': {
     id: 'pins-and-needles',
     name: 'Pins and Needles',
-    icon: '📍',
+    icon: 'achievement-pins-and-needles',
     desc: 'Heal 25 guests with acupuncture',
     goal: { kind: 'healed', count: 25, discipline: 'acupuncture' },
     karma: 2,
@@ -66,7 +66,7 @@ export const ACHIEVEMENTS: Readonly<Record<AchievementId, AchievementDef>> = {
   'good-vibrations': {
     id: 'good-vibrations',
     name: 'Good Vibrations',
-    icon: '🔔',
+    icon: 'achievement-good-vibrations',
     desc: 'Heal 25 guests with reiki',
     goal: { kind: 'healed', count: 25, discipline: 'reiki' },
     karma: 2,

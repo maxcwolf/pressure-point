@@ -6,7 +6,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   reception_desk: {
     type: 'reception_desk',
     name: 'Reception Desk',
-    icon: '🛎️',
+    icon: 'item-reception-desk',
     desc: 'Guests check in here first. Needs a Receptionist.',
     cost: 1200,
     w: 3,
@@ -24,7 +24,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   shop_counter: {
     type: 'shop_counter',
     name: 'Shop Counter',
-    icon: '📚',
+    icon: 'item-shop-counter',
     desc: 'Books, crystals, oils and candles for guests to take home. Happy guests buy more. Needs a Receptionist.',
     cost: 2500,
     w: 2,
@@ -45,7 +45,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   consult_desk: {
     type: 'consult_desk',
     name: 'Consultation Desk',
-    icon: '🩺',
+    icon: 'item-consult-desk',
     desc: 'A desk, two chairs, and a computer that mostly plays whale song.',
     cost: 0,
     w: 2,
@@ -61,7 +61,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   cabinet: {
     type: 'cabinet',
     name: 'Chart Cabinet',
-    icon: '🗄️',
+    icon: 'item-cabinet',
     desc: 'Full of charts. Nobody has checked which side is up.',
     cost: 0,
     w: 1,
@@ -73,7 +73,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   massage_table: {
     type: 'massage_table',
     name: 'Massage Table',
-    icon: '💆',
+    icon: 'item-massage-table',
     desc: 'Face hole included at no extra charge.',
     cost: 0,
     w: 1,
@@ -92,7 +92,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   oil_trolley: {
     type: 'oil_trolley',
     name: 'Oil Cart',
-    icon: '🧴',
+    icon: 'item-oil-trolley',
     desc: 'Lavender, eucalyptus, and one unlabeled bottle everyone avoids.',
     cost: 0,
     w: 1,
@@ -103,7 +103,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   sofa: {
     type: 'sofa',
     name: 'Squishy Couch',
-    icon: '🛋️',
+    icon: 'item-sofa',
     desc: 'Staff members recharge here. Seats two.',
     cost: 600,
     w: 2,
@@ -119,7 +119,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   toilet: {
     type: 'toilet',
     name: 'Toilet Stall',
-    icon: '🚽',
+    icon: 'item-toilet',
     desc: 'One guest at a time, please. Gets grubby with use until a Caretaker cleans it.',
     cost: 500,
     w: 1,
@@ -134,7 +134,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   sink: {
     type: 'sink',
     name: 'Sink',
-    icon: '🚰',
+    icon: 'item-sink',
     desc: 'Mostly for show.',
     cost: 0,
     w: 1,
@@ -146,7 +146,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   bench: {
     type: 'bench',
     name: 'Bench',
-    icon: '🪑',
+    icon: 'item-bench',
     desc: 'Seated guests stay patient for longer. Seats two.',
     cost: 150,
     w: 2,
@@ -162,7 +162,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   plant: {
     type: 'plant',
     name: 'Potted Plant',
-    icon: '🪴',
+    icon: 'item-plant',
     desc: 'Makes its surroundings nicer. Needs watering by a Caretaker.',
     cost: 120,
     w: 1,
@@ -176,7 +176,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   tea_station: {
     type: 'tea_station',
     name: 'Herbal Tea Station',
-    icon: '🍵',
+    icon: 'item-tea-station',
     desc: 'Quenches thirst and earns a little money per cup.',
     cost: 800,
     w: 1,
@@ -192,7 +192,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   snack_machine: {
     type: 'snack_machine',
     name: 'Granola Dispenser',
-    icon: '🥜',
+    icon: 'item-snack-machine',
     desc: 'Feeds hungry guests for a fee. Wrappers end up on the floor.',
     cost: 1000,
     w: 1,
@@ -208,7 +208,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   bin: {
     type: 'bin',
     name: 'Trash Can',
-    icon: '🗑️',
+    icon: 'item-bin',
     desc: 'Guests near a trash can are far less likely to litter.',
     cost: 60,
     w: 1,
@@ -220,7 +220,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   fountain: {
     type: 'fountain',
     name: 'Zen Fountain',
-    icon: '⛲',
+    icon: 'item-fountain',
     desc: 'A soothing trickle. Makes a big stretch of corridor nicer.',
     cost: 900,
     w: 1,
@@ -235,7 +235,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   stone_warmer: {
     type: 'stone_warmer',
     name: 'Stone Warmer',
-    icon: '🪨',
+    icon: 'item-stone-warmer',
     desc: 'Heats basalt stones for Hot Stone massage. A Caretaker keeps it hot.',
     cost: 900,
     w: 1,
@@ -249,7 +249,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   stretch_rack: {
     type: 'stretch_rack',
     name: 'Stretch Rack',
-    icon: '🤸',
+    icon: 'item-stretch-rack',
     desc: 'Mats, bands and rollers. Needed for Sports massage.',
     cost: 600,
     w: 1,
@@ -263,7 +263,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   whiteboard: {
     type: 'whiteboard',
     name: 'Whiteboard',
-    icon: '🧑‍🏫',
+    icon: 'item-whiteboard',
     desc: 'Covered in diagrams of shoulders with arrows pointing at them.',
     cost: 0,
     w: 2,
@@ -275,7 +275,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   study_desk: {
     type: 'study_desk',
     name: 'Study Desk',
-    icon: '📚',
+    icon: 'item-study-desk',
     desc: 'One member of staff can train here at a time. Add more to train several at once.',
     cost: 400,
     w: 1,
@@ -288,7 +288,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   posture_scanner: {
     type: 'posture_scanner',
     name: 'Posture Scanner',
-    icon: '📐',
+    icon: 'item-posture-scanner',
     desc: 'Measures exactly how crooked a guest is, to two decimal places, so their therapist knows just where to work. A scan adds 10% to the guest’s chance of success.',
     cost: 0,
     w: 2,
@@ -306,7 +306,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   salt_lamp: {
     type: 'salt_lamp',
     name: 'Salt Lamp',
-    icon: '🧂',
+    icon: 'item-salt-lamp',
     desc: 'Glows reassuringly. Raises the prestige of the room it is in.',
     cost: 180,
     w: 1,
@@ -320,7 +320,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   diffuser: {
     type: 'diffuser',
     name: 'Aroma Diffuser',
-    icon: '💨',
+    icon: 'item-diffuser',
     desc: 'Puffs lavender at passers-by whether they asked or not.',
     cost: 240,
     w: 1,
@@ -334,7 +334,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   statue: {
     type: 'statue',
     name: 'Serenity Statue',
-    icon: '🗿',
+    icon: 'item-statue',
     desc: 'Calm, expensive, and heavier than it looks. A big prestige boost.',
     cost: 650,
     w: 1,
@@ -347,7 +347,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   rug: {
     type: 'rug',
     name: 'Woven Rug',
-    icon: '🧶',
+    icon: 'item-rug',
     desc: 'Ties the room together. Furniture can stand on it.',
     cost: 300,
     w: 2,
@@ -362,7 +362,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   magazine_rack: {
     type: 'magazine_rack',
     name: 'Magazine Rack',
-    icon: '📰',
+    icon: 'item-magazine-rack',
     desc: 'Three-year-old issues of Chakra Monthly. Keeps waiting guests occupied.',
     cost: 220,
     w: 1,
@@ -377,7 +377,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   acu_table: {
     type: 'acu_table',
     name: 'Acupuncture Table',
-    icon: '📍',
+    icon: 'item-acu-table',
     desc: 'Like a massage table, but everyone holds much stiller.',
     cost: 0,
     w: 1,
@@ -396,7 +396,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   needle_cabinet: {
     type: 'needle_cabinet',
     name: 'Needle Cabinet',
-    icon: '🗄️',
+    icon: 'item-needle-cabinet',
     desc: 'A hundred tiny drawers. Ninety-nine contain needles. Do not open the other one.',
     cost: 0,
     w: 1,
@@ -408,7 +408,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   cupping_cart: {
     type: 'cupping_cart',
     name: 'Cupping Cart',
-    icon: '⭕',
+    icon: 'item-cupping-cart',
     desc: 'A cart of glass cups. Needed for Cupping.',
     cost: 700,
     w: 1,
@@ -421,7 +421,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   moxa_burner: {
     type: 'moxa_burner',
     name: 'Moxa Burner',
-    icon: '🔥',
+    icon: 'item-moxa-burner',
     desc: 'Smolders gently and smells like a campfire in a tea shop. Needed for Moxibustion.',
     cost: 900,
     w: 1,
@@ -434,7 +434,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   stim_unit: {
     type: 'stim_unit',
     name: 'Stim Unit',
-    icon: '⚡',
+    icon: 'item-stim-unit',
     desc: 'Adds a mild current to the needles. Needed for Electroacupuncture.',
     cost: 1400,
     w: 1,
@@ -448,7 +448,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   reiki_table: {
     type: 'reiki_table',
     name: 'Reiki Table',
-    icon: '✨',
+    icon: 'item-reiki-table',
     desc: 'Well padded, with a soft blanket. Nobody has ever fallen asleep on it, officially.',
     cost: 0,
     w: 1,
@@ -467,7 +467,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   reiki_altar: {
     type: 'reiki_altar',
     name: 'Reiki Altar',
-    icon: '🕯️',
+    icon: 'item-reiki-altar',
     desc: 'Candles, a crystal and a framed photo of somebody important to the founder.',
     cost: 0,
     w: 1,
@@ -479,7 +479,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   crystal_grid: {
     type: 'crystal_grid',
     name: 'Crystal Grid',
-    icon: '💎',
+    icon: 'item-crystal-grid',
     desc: 'Quartz points set out in a careful pattern. Needed for Crystal Reiki.',
     cost: 1100,
     w: 1,
@@ -492,7 +492,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   singing_bowls: {
     type: 'singing_bowls',
     name: 'Singing Bowls',
-    icon: '🔔',
+    icon: 'item-singing-bowls',
     desc: 'Bronze bowls of every size, and a cushion behind them. The Sound Healer plays from here for the mats in the room, as many as their rank allows.',
     cost: 0,
     w: 1,
@@ -506,7 +506,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   sound_mat: {
     type: 'sound_mat',
     name: 'Sound Bath Mat',
-    icon: '🧘',
+    icon: 'item-sound-mat',
     desc: 'A thick mat, a bolster and an eye pillow. Each one is a guest the Sound Healer can play for at once: 2 to 4, more as they rise in rank.',
     cost: 600,
     w: 1,
@@ -523,7 +523,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   gong: {
     type: 'gong',
     name: 'Gong',
-    icon: '🥁',
+    icon: 'item-gong',
     desc: 'A great bronze gong on a wooden frame. Needed for a Gong Bath, and heard through the walls while it plays.',
     cost: 1600,
     w: 2,
@@ -537,7 +537,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   crystal_bowls: {
     type: 'crystal_bowls',
     name: 'Crystal Bowls',
-    icon: '🫧',
+    icon: 'item-crystal-bowls',
     desc: 'Frosted quartz bowls, each tuned to a note. Needed for Crystal Bowls.',
     cost: 1800,
     w: 1,
@@ -550,7 +550,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   water_cooler: {
     type: 'water_cooler',
     name: 'Water Cooler',
-    icon: '🚰',
+    icon: 'item-water-cooler',
     desc: 'Free water for thirsty guests. Cheaper than tea, but it earns nothing.',
     cost: 300,
     w: 1,
@@ -566,7 +566,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   fire_extinguisher: {
     type: 'fire_extinguisher',
     name: 'Fire Extinguisher',
-    icon: '🧯',
+    icon: 'item-fire-extinguisher',
     desc: 'Cheap and reassuring, and the health inspector wants to see one near every room. A small prestige boost.',
     cost: 80,
     w: 1,
@@ -580,7 +580,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   arcade_machine: {
     type: 'arcade_machine',
     name: 'Mindfulness Arcade',
-    icon: '🕹️',
+    icon: 'item-arcade-machine',
     desc: 'Bored guests play a round while they wait. Patience up, coins in.',
     cost: 1200,
     w: 1,
@@ -598,7 +598,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   bookcase: {
     type: 'bookcase',
     name: 'Bookcase',
-    icon: '📚',
+    icon: 'item-bookcase',
     desc: 'Courses in its Training Room go 20% faster for each bookcase, up to two.',
     cost: 500,
     w: 2,
@@ -615,7 +615,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   coffee_machine: {
     type: 'coffee_machine',
     name: 'Espresso Machine',
-    icon: '☕',
+    icon: 'item-coffee-machine',
     desc: 'Staff on a break in its Staff Room get their energy back half as fast again.',
     cost: 700,
     w: 1,
@@ -631,7 +631,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   aquarium: {
     type: 'aquarium',
     name: 'Aquarium',
-    icon: '🐠',
+    icon: 'item-aquarium',
     desc: 'A tank of extremely calm fish. A huge prestige boost.',
     cost: 2400,
     w: 2,
@@ -648,7 +648,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   pool_table: {
     type: 'pool_table',
     name: 'Pool Table',
-    icon: '🎱',
+    icon: 'item-pool-table',
     desc: 'Something to look forward to. With one in a Staff Room, everyone on the payroll is a little happier.',
     cost: 1600,
     w: 2,
@@ -663,7 +663,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   trophy_cabinet: {
     type: 'trophy_cabinet',
     name: 'Trophy Cabinet',
-    icon: '🏆',
+    icon: 'item-trophy-cabinet',
     desc: 'Shows off every award the center has won. A big prestige boost.',
     cost: 1800,
     w: 1,
@@ -679,7 +679,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   bonsai: {
     type: 'bonsai',
     name: 'Bonsai',
-    icon: '🌳',
+    icon: 'item-bonsai',
     desc: 'A very old, very small tree. Decor that never needs watering.',
     cost: 900,
     w: 1,
@@ -694,7 +694,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   massage_chair: {
     type: 'massage_chair',
     name: 'Massage Chair',
-    icon: '💺',
+    icon: 'item-massage-chair',
     desc: 'A guest waiting in it barely loses any patience at all.',
     cost: 1500,
     w: 1,
@@ -709,7 +709,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   koi_pond: {
     type: 'koi_pond',
     name: 'Koi Pond',
-    icon: '🎏',
+    icon: 'item-koi-pond',
     desc: 'Koi drifting in still water. A huge boost to everything around it.',
     cost: 3000,
     w: 2,
@@ -725,7 +725,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   radiator: {
     type: 'radiator',
     name: 'Radiator',
-    icon: '♨️',
+    icon: 'item-radiator',
     desc: 'Warms the air around it, and the room it is in most of all. Nobody heals in the cold.',
     cost: 300,
     w: 1,
@@ -740,7 +740,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   air_conditioner: {
     type: 'air_conditioner',
     name: 'Air Conditioner',
-    icon: '❄️',
+    icon: 'item-air-conditioner',
     desc: 'Cools the air around it, and the room it is in most of all. A hum, but a quiet one.',
     cost: 700,
     w: 1,
@@ -758,7 +758,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   recliner: {
     type: 'recliner',
     name: 'Recliner',
-    icon: '🛌',
+    icon: 'item-recliner',
     desc: 'A padded recliner and a soft blanket, for a guest to lie back on after a hard treatment. A Caretaker changes the blanket.',
     cost: 700,
     w: 1,
@@ -774,7 +774,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   instructor_mat: {
     type: 'instructor_mat',
     name: 'Instructor’s Mat',
-    icon: '🪷',
+    icon: 'item-instructor-mat',
     desc: 'Where the Qi Gong Instructor stands to lead a class, facing the Practice Spots.',
     cost: 0,
     w: 1,
@@ -787,7 +787,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   practice_spot: {
     type: 'practice_spot',
     name: 'Practice Spot',
-    icon: '🟩',
+    icon: 'item-practice-spot',
     desc: 'A square of cork floor to stand on, a place in the class. An Instructor leads 6 to 16, more as they rise in rank. Turn it so the footprints face the Instructor’s Mat.',
     cost: 300,
     w: 1,
@@ -802,7 +802,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   ceremony_mat: {
     type: 'ceremony_mat',
     name: 'Ceremony Mat',
-    icon: '🪶',
+    icon: 'item-ceremony-mat',
     desc: 'A woven mat and a blanket on the floor, with a cushion beside it for the Shaman. A Caretaker changes the blanket.',
     cost: 0,
     w: 1,
@@ -821,7 +821,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   ember_bowl: {
     type: 'ember_bowl',
     name: 'Ember Bowl',
-    icon: '🔥',
+    icon: 'item-ember-bowl',
     desc: 'A stone bowl of glowing embers that never quite goes out. Warms the lodge a little.',
     cost: 0,
     w: 1,
@@ -834,7 +834,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   rattle: {
     type: 'rattle',
     name: 'Rattle and Feathers',
-    icon: '🪶',
+    icon: 'item-rattle',
     desc: 'A gourd rattle and a fan of feathers on a little stand. Needed for Spiritual Extraction.',
     cost: 900,
     w: 1,
@@ -848,7 +848,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   sweat_lodge: {
     type: 'sweat_lodge',
     name: 'Sweat Lodge',
-    icon: '♨️',
+    icon: 'item-sweat-lodge',
     desc: 'A little domed hut of willow and blankets, with hot stones inside. Needed for a Sweat Lodge, and it heats the whole room.',
     cost: 2400,
     w: 2,
@@ -863,7 +863,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   mushroom_altar: {
     type: 'mushroom_altar',
     name: 'Mushroom Altar',
-    icon: '🍄',
+    icon: 'item-mushroom-altar',
     desc: 'A low table with a teapot, small cups and a jar of dried mushrooms. Needed for a Mushroom Ceremony.',
     cost: 1800,
     w: 1,
@@ -879,7 +879,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   brew_pot: {
     type: 'brew_pot',
     name: 'Brew Pot',
-    icon: '🫕',
+    icon: 'item-brew-pot',
     desc: 'A blackened pot of something bitter simmering on a low fire, and a bucket beside it. Needed for an Ayahuasca Ceremony.',
     cost: 2600,
     w: 1,
@@ -894,7 +894,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   linen_hamper: {
     type: 'linen_hamper',
     name: 'Linen Hamper',
-    icon: '🧺',
+    icon: 'item-linen-hamper',
     desc: 'Fresh linens for the treatment tables, and somewhere for the used ones to go. A Caretaker launders them when it fills.',
     cost: 250,
     w: 1,
@@ -906,7 +906,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   fireplace: {
     type: 'fireplace',
     name: 'Fireplace',
-    icon: '🔥',
+    icon: 'item-fireplace',
     desc: 'A crackling log fire. Warms the room, soothes the nerves and looks wonderful doing it.',
     cost: 2200,
     w: 2,
@@ -926,7 +926,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   topiary: {
     type: 'topiary',
     name: 'Topiary',
-    icon: '🌲',
+    icon: 'item-topiary',
     desc: 'A bay tree clipped into three perfect spheres, in a stone urn. The sort of thing a country estate has.',
     cost: 1500,
     w: 1,
@@ -940,7 +940,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   soundproof_panel: {
     type: 'soundproof_panel',
     name: 'Soundproof Panels',
-    icon: '🟫',
+    icon: 'item-soundproof-panel',
     desc: 'Foam panels in a frame. Hushes everything around it, and absorbs light and joy in equal measure.',
     cost: 350,
     w: 1,
@@ -954,7 +954,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   wind_chimes: {
     type: 'wind_chimes',
     name: 'Wind Chimes',
-    icon: '🎐',
+    icon: 'item-wind-chimes',
     desc: 'Bad vibes in its room clear four times as fast on their own. Tinkles whenever anyone walks past, or thinks about it.',
     cost: 450,
     w: 1,
@@ -969,7 +969,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   fortune_teller: {
     type: 'fortune_teller',
     name: 'Fortune Teller',
-    icon: '🔮',
+    icon: 'item-fortune-teller',
     desc: 'Bored guests have their fortune told while they wait. Now and then it says they will be healed today, and they believe it.',
     cost: 1400,
     w: 1,
@@ -986,7 +986,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   kombucha_tap: {
     type: 'kombucha_tap',
     name: 'Kombucha Tap',
-    icon: '🍶',
+    icon: 'item-kombucha-tap',
     desc: 'Earns more a glass than tea. Fizzes over when it is worn, and someone will have to mop that up. Alive, technically.',
     cost: 1100,
     w: 1,
@@ -1003,7 +1003,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   staff_fridge: {
     type: 'staff_fridge',
     name: 'Staff Fridge',
-    icon: '🧊',
+    icon: 'item-staff-fridge',
     desc: 'Staff on a break in its Staff Room help themselves to a drink and a bite. Covered in notes about whose yogurt is whose.',
     cost: 600,
     w: 1,
@@ -1018,7 +1018,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   motivational_poster: {
     type: 'motivational_poster',
     name: 'Motivational Poster',
-    icon: '🐱',
+    icon: 'item-motivational-poster',
     desc: 'A kitten clinging to a branch: "Hang in there". Hung in the Staff Room, it lifts every member of staff a little, from up to two.',
     cost: 80,
     w: 1,
@@ -1031,7 +1031,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   landscape_painting: {
     type: 'landscape_painting',
     name: 'Landscape Painting',
-    icon: '🏞️',
+    icon: 'item-landscape-painting',
     desc: 'A view of somewhere nearby, in oils, by a local artist who would like you to know it is for sale. Each center has its own.',
     cost: 400,
     w: 1,
@@ -1046,7 +1046,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   wall_clock: {
     type: 'wall_clock',
     name: 'Wall Clock',
-    icon: '🕰️',
+    icon: 'item-wall-clock',
     desc: 'Staff on a break in its room keep an eye on it and are back at work sooner. Guests waiting where they can see it lose patience a little faster: they can see how long it is taking.',
     cost: 150,
     w: 1,
@@ -1059,7 +1059,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   chakra_chart: {
     type: 'chakra_chart',
     name: 'Chakra Chart',
-    icon: '🌈',
+    icon: 'item-chakra-chart',
     desc: 'Seven glowing wheels up a serene outline. Treatments in its room work a little more often, from one chart; nobody is sure where the eighth one went.',
     cost: 250,
     w: 1,
@@ -1076,7 +1076,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   meridian_poster: {
     type: 'meridian_poster',
     name: 'Meridian Poster',
-    icon: '🧍',
+    icon: 'item-meridian-poster',
     desc: 'Every line qi runs along, and the points on them, labeled in very small print. Treatments in its room work a little more often, from one poster.',
     cost: 250,
     w: 1,
@@ -1093,7 +1093,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   television: {
     type: 'television',
     name: 'Television',
-    icon: '📺',
+    icon: 'item-television',
     desc: 'Nature documentaries on a loop. Guests waiting near it lose patience more slowly, but it is noisy, and in a power cut it is a black mirror.',
     cost: 1200,
     w: 1,
@@ -1108,7 +1108,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   tapestry: {
     type: 'tapestry',
     name: 'Tapestry',
-    icon: '🧶',
+    icon: 'item-tapestry',
     desc: 'A woven mandala two tiles wide. Lovely to look at, and it soaks up a little noise.',
     cost: 700,
     w: 2,
@@ -1124,7 +1124,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   prayer_flags: {
     type: 'prayer_flags',
     name: 'Prayer Flags',
-    icon: '🎏',
+    icon: 'item-prayer-flags',
     desc: 'A string of bright flags two tiles wide, fluttering in a breeze that only they can feel.',
     cost: 350,
     w: 2,
@@ -1139,7 +1139,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   living_wall: {
     type: 'living_wall',
     name: 'Living Wall',
-    icon: '🌿',
+    icon: 'item-living-wall',
     desc: 'A panel of ferns and moss. Very nice indeed, as long as a Caretaker keeps it watered; left dry, it browns and drags its surroundings down.',
     cost: 1800,
     w: 1,
@@ -1154,7 +1154,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   wall_fountain: {
     type: 'wall_fountain',
     name: 'Wall Fountain',
-    icon: '💧',
+    icon: 'item-wall-fountain',
     desc: 'Water running down a slate panel. Very nice to look at, and it soothes the noise around it. It stops when the pipes freeze.',
     cost: 2200,
     w: 1,
@@ -1171,7 +1171,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   certificate: {
     type: 'certificate',
     name: 'Certificate of Excellence',
-    icon: '📜',
+    icon: 'item-certificate',
     desc: 'Earned, not bought: one for each award won at the year-end ceremony, framed for guests to see.',
     cost: 0,
     w: 1,

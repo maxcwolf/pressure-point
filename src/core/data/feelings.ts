@@ -6,7 +6,7 @@ import type { FeelingDef, FeelingId } from './types';
 export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   healed: {
     id: 'healed',
-    icon: '💖',
+    icon: 'feeling-healed',
     text: 'Healed',
     good: true,
     part: 'results',
@@ -14,7 +14,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'not-healed': {
     id: 'not-healed',
-    icon: '💢',
+    icon: 'feeling-not-healed',
     text: 'The treatment did not work',
     good: false,
     part: 'results',
@@ -22,7 +22,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'sent-home': {
     id: 'sent-home',
-    icon: '🏠',
+    icon: 'feeling-sent-home',
     text: 'Sent home untreated',
     good: false,
     part: 'results',
@@ -30,7 +30,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'no-kit': {
     id: 'no-kit',
-    icon: '🧰',
+    icon: 'feeling-no-kit',
     text: 'The right equipment was not there',
     good: false,
     part: 'results',
@@ -38,7 +38,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   unqualified: {
     id: 'unqualified',
-    icon: '🤔',
+    icon: 'feeling-unqualified',
     text: 'Treated by someone not trained in it',
     good: false,
     part: 'staff',
@@ -46,7 +46,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   grump: {
     id: 'grump',
-    icon: '😒',
+    icon: 'feeling-grump',
     text: 'Seen by a grump',
     good: false,
     part: 'staff',
@@ -54,7 +54,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   kind: {
     id: 'kind',
-    icon: '🤗',
+    icon: 'feeling-kind',
     text: 'Seen by someone kind',
     good: true,
     part: 'staff',
@@ -62,7 +62,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'long-wait': {
     id: 'long-wait',
-    icon: '⏳',
+    icon: 'feeling-long-wait',
     text: 'Waited far too long',
     good: false,
     part: 'experience',
@@ -70,7 +70,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   quick: {
     id: 'quick',
-    icon: '⚡',
+    icon: 'feeling-quick',
     text: 'Seen quickly',
     good: true,
     part: 'experience',
@@ -78,7 +78,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   thirsty: {
     id: 'thirsty',
-    icon: '🥵',
+    icon: 'feeling-thirsty',
     text: 'Nothing to drink',
     good: false,
     part: 'experience',
@@ -86,7 +86,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   hungry: {
     id: 'hungry',
-    icon: '😫',
+    icon: 'feeling-hungry',
     text: 'Nothing to eat',
     good: false,
     part: 'experience',
@@ -94,7 +94,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   bursting: {
     id: 'bursting',
-    icon: '😖',
+    icon: 'feeling-bursting',
     text: 'Could not find a restroom',
     good: false,
     part: 'experience',
@@ -102,7 +102,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'filthy-toilet': {
     id: 'filthy-toilet',
-    icon: '🤢',
+    icon: 'feeling-filthy-toilet',
     text: 'Used a filthy toilet',
     good: false,
     part: 'experience',
@@ -110,7 +110,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   litter: {
     id: 'litter',
-    icon: '🗑️',
+    icon: 'feeling-litter',
     text: 'Litter everywhere',
     good: false,
     part: 'experience',
@@ -118,16 +118,23 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   pleasant: {
     id: 'pleasant',
-    icon: '🌿',
+    icon: 'feeling-pleasant',
     text: 'A lovely place to wait',
     good: true,
     part: 'experience',
     lines: ['Such a lovely place to wait.', 'Beautiful, calm waiting area.'],
   },
-  comfy: { id: 'comfy', icon: '🛋️', text: 'A comfy seat', good: true, part: 'experience', lines: ['Comfy seats.'] },
+  comfy: {
+    id: 'comfy',
+    icon: 'feeling-comfy',
+    text: 'A comfy seat',
+    good: true,
+    part: 'experience',
+    lines: ['Comfy seats.'],
+  },
   refreshed: {
     id: 'refreshed',
-    icon: '🍵',
+    icon: 'feeling-refreshed',
     text: 'Had a drink or a snack',
     good: true,
     part: 'experience',
@@ -135,7 +142,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   played: {
     id: 'played',
-    icon: '🕹️',
+    icon: 'feeling-played',
     text: 'Played a game while waiting',
     good: true,
     part: 'experience',
@@ -143,7 +150,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   fortune: {
     id: 'fortune',
-    icon: '🔮',
+    icon: 'feeling-fortune',
     text: 'Had their fortune told',
     good: true,
     part: 'experience',
@@ -154,7 +161,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   lucky: {
     id: 'lucky',
-    icon: '🍀',
+    icon: 'feeling-lucky',
     text: 'Was told they would be healed today',
     good: true,
     part: 'experience',
@@ -162,7 +169,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   puddle: {
     id: 'puddle',
-    icon: '💦',
+    icon: 'feeling-puddle',
     text: 'Stepped in a puddle of kombucha',
     good: false,
     part: 'experience',
@@ -170,7 +177,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'fine-room': {
     id: 'fine-room',
-    icon: '✨',
+    icon: 'feeling-fine-room',
     text: 'Treated in a beautiful room',
     good: true,
     part: 'experience',
@@ -178,7 +185,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   underwhelmed: {
     id: 'underwhelmed',
-    icon: '😒',
+    icon: 'feeling-underwhelmed',
     text: 'Treated in a room too plain for a place like this',
     good: false,
     part: 'experience',
@@ -186,7 +193,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   pricey: {
     id: 'pricey',
-    icon: '💸',
+    icon: 'feeling-pricey',
     text: 'The prices were steep',
     good: false,
     part: 'value',
@@ -194,7 +201,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   bargain: {
     id: 'bargain',
-    icon: '🏷️',
+    icon: 'feeling-bargain',
     text: 'Good value for money',
     good: true,
     part: 'value',
@@ -202,7 +209,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   worse: {
     id: 'worse',
-    icon: '🤕',
+    icon: 'feeling-worse',
     text: 'Got worse while waiting',
     good: false,
     part: 'results',
@@ -210,7 +217,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'bad-vibes': {
     id: 'bad-vibes',
-    icon: '☁️',
+    icon: 'feeling-bad-vibes',
     text: 'Treated in a room with bad vibes',
     good: false,
     part: 'experience',
@@ -218,7 +225,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   calmed: {
     id: 'calmed',
-    icon: '😌',
+    icon: 'feeling-calmed',
     text: 'Calmed down when it all got too much',
     good: true,
     part: 'staff',
@@ -226,7 +233,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   noisy: {
     id: 'noisy',
-    icon: '🔊',
+    icon: 'feeling-noisy',
     text: 'A noisy treatment room',
     good: false,
     part: 'experience',
@@ -234,7 +241,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   peaceful: {
     id: 'peaceful',
-    icon: '🤫',
+    icon: 'feeling-peaceful',
     text: 'A peaceful treatment room',
     good: true,
     part: 'experience',
@@ -242,7 +249,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'stale-linens': {
     id: 'stale-linens',
-    icon: '🧺',
+    icon: 'feeling-stale-linens',
     text: 'Stale linens on the table',
     good: false,
     part: 'experience',
@@ -250,7 +257,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'too-cold': {
     id: 'too-cold',
-    icon: '🥶',
+    icon: 'feeling-too-cold',
     text: 'Too cold',
     good: false,
     part: 'experience',
@@ -258,7 +265,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   rested: {
     id: 'rested',
-    icon: '🛌',
+    icon: 'feeling-rested',
     text: 'A lovely lie-down after',
     good: true,
     part: 'experience',
@@ -266,7 +273,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   class: {
     id: 'class',
-    icon: '☯️',
+    icon: 'feeling-class',
     text: 'Came for a Qi Gong class',
     good: true,
     part: 'results',
@@ -274,7 +281,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'no-class': {
     id: 'no-class',
-    icon: '😞',
+    icon: 'feeling-no-class',
     text: 'Came for a Qi Gong class that never happened',
     good: false,
     part: 'results',
@@ -282,7 +289,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'good-trip': {
     id: 'good-trip',
-    icon: '🌈',
+    icon: 'feeling-good-trip',
     text: 'Saw the universe, and it was lovely',
     good: true,
     part: 'experience',
@@ -293,7 +300,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'bad-trip': {
     id: 'bad-trip',
-    icon: '🌀',
+    icon: 'feeling-bad-trip',
     text: 'Had a bad trip',
     good: false,
     part: 'experience',
@@ -304,7 +311,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   woozy: {
     id: 'woozy',
-    icon: '😵‍💫',
+    icon: 'feeling-woozy',
     text: 'Sent straight out, still woozy',
     good: false,
     part: 'results',
@@ -312,7 +319,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'too-hot': {
     id: 'too-hot',
-    icon: '🥵',
+    icon: 'feeling-too-hot',
     text: 'Too hot',
     good: false,
     part: 'experience',
@@ -320,7 +327,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   'out-in-weather': {
     id: 'out-in-weather',
-    icon: '🌧️',
+    icon: 'feeling-out-in-weather',
     text: 'Out in the weather',
     good: false,
     part: 'experience',

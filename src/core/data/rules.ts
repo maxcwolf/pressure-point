@@ -61,7 +61,7 @@ export const INSTALL_SECONDS = 20;
 
 /** The Qi Gong classes as Settings shows them, to switch on or off like an optional discipline. */
 export const QIGONG_SETTING = {
-  icon: '☯️',
+  icon: 'technique-qigong',
   name: 'Qi Gong classes',
   desc: 'From the second star, a Qi Gong Studio holds weekly classes for guests who come in just for them.',
 } as const;

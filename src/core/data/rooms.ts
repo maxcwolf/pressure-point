@@ -6,7 +6,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   consult: {
     type: 'consult',
     name: 'Consultation Room',
-    icon: '🩺',
+    icon: 'room-consult',
     desc: 'Where a Wellness Consultant works out what on earth is wrong with people.',
     cost: 4000,
     minShort: 3,
@@ -19,7 +19,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   assess: {
     type: 'assess',
     name: 'Posture Lab',
-    icon: '📐',
+    icon: 'room-assess',
     desc: 'Scans the guests the Consultant was unsure about, for a little more than a second consultation. A scan adds 10% to the guest’s chance of success. Needs a Wellness Consultant.',
     cost: 5500,
     minShort: 3,
@@ -32,7 +32,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   massage: {
     type: 'massage',
     name: 'Massage Suite',
-    icon: '💆',
+    icon: 'room-massage',
     desc: 'Knots are untied, slumps are unslumped. Needs a Massage Therapist.',
     cost: 7000,
     minShort: 3,
@@ -46,7 +46,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   acupuncture: {
     type: 'acupuncture',
     name: 'Acupuncture Clinic',
-    icon: '📍',
+    icon: 'room-acupuncture',
     desc: 'Needles, cups and smoldering herbs for what massage cannot reach. Needs an Acupuncturist.',
     cost: 7500,
     minShort: 3,
@@ -61,7 +61,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   reiki: {
     type: 'reiki',
     name: 'Reiki Studio',
-    icon: '✨',
+    icon: 'room-reiki',
     desc: 'A calm room where hands hover, crystals glint and bowls hum. Needs a Reiki Practitioner.',
     cost: 9000,
     minShort: 3,
@@ -76,7 +76,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   sound: {
     type: 'sound',
     name: 'Sound Bath Studio',
-    icon: '🔔',
+    icon: 'room-sound',
     desc: 'Guests lie on mats while bowls hum and gongs shimmer. One Sound Healer plays for every mat at once.',
     cost: 9500,
     minShort: 3,
@@ -91,7 +91,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   recovery: {
     type: 'recovery',
     name: 'Recovery Lounge',
-    icon: '🛌',
+    icon: 'room-recovery',
     desc: 'Guests lie back here after the harder treatments. Without a free Recliner, those treatments work less often.',
     cost: 4000,
     minShort: 3,
@@ -104,7 +104,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   qigong: {
     type: 'qigong',
     name: 'Qi Gong Studio',
-    icon: '☯️',
+    icon: 'room-qigong',
     desc: 'Weekly classes of slow, flowing movement, for guests who come in just for them. Needs a Qi Gong Instructor.',
     cost: 8000,
     minShort: 4,
@@ -119,7 +119,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   lodge: {
     type: 'lodge',
     name: 'Ceremony Lodge',
-    icon: '🛖',
+    icon: 'room-lodge',
     desc: 'A dim, earthy room for one guest at a time on a Ceremony Mat. Ceremonies go best somewhere calm, clean and beautiful. Needs a Shaman.',
     cost: 11000,
     minShort: 3,
@@ -134,7 +134,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   staffroom: {
     type: 'staffroom',
     name: 'Staff Room',
-    icon: '☕',
+    icon: 'room-staffroom',
     desc: 'Tired staff members recover here. Without one they get slow, then grumpy.',
     cost: 3000,
     minShort: 3,
@@ -146,7 +146,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   restroom: {
     type: 'restroom',
     name: 'Restroom',
-    icon: '🚻',
+    icon: 'room-restroom',
     desc: 'All that herbal tea has to go somewhere.',
     cost: 2500,
     minShort: 2,
@@ -158,7 +158,7 @@ export const ROOMS: Readonly<Record<RoomType, RoomDef>> = {
   training: {
     type: 'training',
     name: 'Training Room',
-    icon: '🎓',
+    icon: 'room-training',
     desc: 'Staff members study here to learn new techniques or sharpen their skills.',
     cost: 4500,
     minShort: 3,
