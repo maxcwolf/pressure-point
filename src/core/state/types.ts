@@ -763,10 +763,19 @@ export interface GameState {
   trophies: Trophy[];
   /** Campaign achievements earned already, in this game or an earlier one, so none is awarded twice. */
   achieved: AchievementId[];
-  /** Payday has come and the bank cannot cover the wages. With `until` null, the game waits while the player decides
-   * whether to borrow `loan` to cover them; with a day, the bank would not lend enough and the player has until then
-   * to find the money some other way. Null when no payday is waiting. */
-  payrollDue: { wages: number; loan: number; until: number | null } | null;
+  /**
+   * Payday has come and the bank cannot cover the wages: the game waits while the player decides whether to borrow
+   * `loan` to cover them or pay them into the red, or, with `loan` 0, hears that the bank will lend no more and the
+   * wages go into the red. Null when no payday is waiting.
+   */
+  payrollDue: { wages: number; loan: number } | null;
+  /**
+   * The bank is calling the overdraft in: at the last payday the center was in the red and losing money, and unless
+   * one of the two is put right by `until` it is bankrupt. Null while the bank is content.
+   */
+  insolvency: { until: number } | null;
+  /** The day the bank went below zero, or null while it is not. */
+  redSince: number | null;
   /** The center is bankrupt and the game is lost. */
   bankrupt: boolean;
   /** Whether an unpaid payday can end the game: a sandbox setting. Off, the bank just goes into the red. */

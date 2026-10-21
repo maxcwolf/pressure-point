@@ -199,6 +199,8 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     trophies: [],
     achieved: [],
     payrollDue: null,
+    insolvency: null,
+    redSince: null,
     bankrupt: false,
     bankruptcyOn: true,
     cheated: false,

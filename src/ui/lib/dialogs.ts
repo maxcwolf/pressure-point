@@ -35,7 +35,7 @@ export function raise(
 /** The dialog a stopped game is waiting on, if it is: a bankruptcy, a payday to borrow for, or an inspection to settle. */
 export function pendingDialog(s: GameState): DialogId | null {
   if (s.bankrupt) return 'bankrupt';
-  if (s.payrollDue?.until === null) return 'payroll';
+  if (s.payrollDue) return 'payroll';
   if (s.visitReport?.bribe !== undefined) return 'visit';
   return null;
 }
@@ -47,7 +47,7 @@ export function mustAnswer(id: DialogId, s: GameState): boolean {
 
 /** Whether a dialog waiting in line still has something to show when its turn comes. */
 export function stillDue(id: DialogId, s: GameState): boolean {
-  if (id === 'payroll') return s.payrollDue?.until === null && !s.bankrupt;
+  if (id === 'payroll') return !!s.payrollDue && !s.bankrupt;
   if (id === 'visit') return s.visitReport !== null;
   return true;
 }

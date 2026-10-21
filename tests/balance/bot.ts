@@ -40,7 +40,7 @@ import {
   WINDOW_MAX_BONUS,
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
-import { loanLimit, wagesDue } from '../../src/core/sim/economy';
+import { daysUntilBankrupt, loanLimit, projectedCashflow, wagesDue } from '../../src/core/sim/economy';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
 import { seasonOf } from '../../src/core/sim/twists';
@@ -171,6 +171,8 @@ export interface MonthLog {
   money: number;
   loan: number;
   rep: number;
+  /** The lowest reputation seen over the month, sampled daily. */
+  repLow: number;
   stars: number;
   grade: number;
   staff: number;
@@ -282,6 +284,8 @@ export class Bot {
   /** The guests seen sent for a posture scan, and how many of them this month. */
   private sentForScan = new Set<number>();
   private scans = 0;
+  /** The lowest reputation seen so far this month. */
+  private repLow = Infinity;
 
   constructor(
     readonly center: CenterId,
@@ -332,11 +336,15 @@ export class Bot {
       for (let i = 0; i < ticksPerDay; i++) {
         this.sim.tick(0.1);
         this.sim.drain();
-        // a payday the bank cannot cover is borrowed for, as the player would; a loan that is not there is bankruptcy
-        if (this.s.payrollDue && this.sim.takePayrollLoan())
-          this.note(`day ${Math.floor(this.s.day)}: borrowed to make payday, loan now ${this.s.loan}`);
-        // days to find wages the bank would not lend start paused: play on through them
-        if (this.s.payrollDue && this.s.payrollDue.until !== null) this.s.speed = 1;
+        // a payday the bank cannot cover is borrowed for, as the player would, and past the loan paid into the red
+        if (this.s.payrollDue) {
+          if (this.sim.takePayrollLoan())
+            this.note(`day ${Math.floor(this.s.day)}: borrowed to make payday, loan now ${this.s.loan}`);
+          else if (this.sim.payIntoRed())
+            this.note(`day ${Math.floor(this.s.day)}: wages into the red, ${this.s.money}`);
+        }
+        // the days the bank gives to put the books right start paused: play on through them
+        if (this.s.insolvency) this.s.speed = 1;
         if (this.s.bankrupt) {
           this.note(`day ${Math.floor(this.s.day)}: BANKRUPT, loan ${this.s.loan}`);
           return false;
@@ -348,6 +356,7 @@ export class Bot {
       }
       this.log.lowestMoney = Math.min(this.log.lowestMoney, this.s.money);
       this.log.peakLoan = Math.max(this.log.peakLoan, this.s.loan);
+      this.repLow = Math.min(this.repLow, this.s.reputation);
       const days = this.log.goalDays[this.s.stars];
       if (days)
         for (const o of this.sim.objectives()) {
@@ -388,6 +397,7 @@ export class Bot {
       money: Math.round(s.money),
       loan: s.loan,
       rep: Math.round(s.reputation * 10) / 10,
+      repLow: Math.round(Math.min(this.repLow, s.reputation) * 10) / 10,
       stars: s.stars,
       grade: s.grade,
       staff: s.staff.filter((x) => x.state !== 'leaving').length,
@@ -415,6 +425,7 @@ export class Bot {
       scans: this.scans,
     });
     this.scans = 0;
+    this.repLow = Infinity;
     for (const id of this.sentForScan) if (!this.sim.guest(id)) this.sentForScan.delete(id);
     this.monthStart = {
       arrived: st.arrived,
@@ -552,6 +563,36 @@ export class Bot {
         `day ${Math.floor(s.day)}: let a ${def.role} go (busy ${Math.round(m.busy * 100)}%), saving ${go.salary}`,
       );
     }
+  }
+
+  /**
+   * While the bank is calling the overdraft in: prices to the top, and then, while the books still lose money, let go
+   * the practitioner doing least for their pay, one a day, never the last of a discipline, as a player with ten days
+   * to put the books right would.
+   */
+  private rescue() {
+    const s = this.s;
+    if (daysUntilBankrupt(s) === null) return;
+    if (s.priceLevel < PRICE_TOP) {
+      this.sim.setPrice(PRICE_TOP);
+      this.note(`day ${Math.floor(s.day)}: the bank is calling the overdraft in: prices to ${PRICE_TOP}`);
+    }
+    if (projectedCashflow(s) >= 0) return;
+    const now = this.sumUp();
+    const spare = DISCIPLINE_ORDER.flatMap((d) => {
+      const def = DISCIPLINES[d];
+      const staff = this.staffOf(def.role).filter((st) => !st.training && !st.call && st.state !== 'away');
+      if (staff.length < 2) return [];
+      const busy = now[d]?.busy ?? 0;
+      return staff.map((st) => ({ st, d, busy }));
+    });
+    const go = spare.sort((a, b) => a.busy - b.busy || a.st.skill - b.st.skill || b.st.salary - a.st.salary)[0];
+    if (!go) return;
+    this.sim.fire(go.st.id);
+    this.benched[DISCIPLINES[go.d].room] = (this.benched[DISCIPLINES[go.d].room] ?? 0) + 1;
+    this.note(
+      `day ${Math.floor(s.day)}: the bank is calling the overdraft in: let a ${go.st.role} go, saving ${go.st.salary}, books now ${projectedCashflow(s)} a month`,
+    );
   }
 
   /**
@@ -728,6 +769,7 @@ export class Bot {
       return;
     }
     this.sampleLines();
+    if (this.flags.payroll) this.rescue();
     if (this.flags.lines) this.evenLines();
     if (this.flags.triage) this.triage();
     if (this.flags.payroll) this.trimPayroll();

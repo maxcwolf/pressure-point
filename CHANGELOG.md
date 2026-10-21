@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **A bank that warns before it forecloses.** Wages the bank cannot cover now go into the red rather than ending the game: borrow, or pay them into the red at 5% a month, with the staff worrying and, after a month there, asking for raises to stay. The bank only calls the overdraft in from a center that is in the red past what it will still lend _and_ losing money at the pace of the last month or so, and then gives ten days to put one of the two right, with the numbers shown. The payday warning five days ahead says what the bank will do.
 - **No dialog lost.** A star, an award or a visit's report that arrives at the same moment as another now waits its turn instead of being lost, with a payday or a bankruptcy shown first. A failed inspection's choice between the fine and making it go away no longer closes on Esc, and is shown again after loading the game.
 - **Karma at once.** Karma from a star or an achievement can be spent in the karma shop straight away, not only after the next autosave.
 - **Previous game kept safe.** Opening "Previous game" keeps it saved from the start, rather than only from its first autosave.

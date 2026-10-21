@@ -2396,10 +2396,24 @@ test.describe('a payday the bank cannot cover', () => {
     expect(game.errors).toEqual([]);
   });
 
-  test('ends the game in bankruptcy when the loan is refused', async ({ game, page }) => {
+  test('pays the wages into the red when the loan is refused, and the bank calls it in from a center losing money', async ({
+    game,
+    page,
+  }) => {
     await toPayday(game);
     const modal = page.locator('#modal');
-    await modal.getByRole('button', { name: /Refuse and go bankrupt/ }).click();
+    await modal.getByRole('button', { name: /Pay into the red/ }).click();
+    await expect(modal.locator('h2')).toHaveCount(0);
+    expect(await game.eval((pp) => pp.state.money)).toBeLessThan(0);
+    expect(await game.eval((pp) => pp.state.bankrupt)).toBe(false);
+    // a center with no takings on the books is losing money, so the bank gives it ten days, and then calls it in
+    expect(await game.eval((pp) => pp.state.insolvency)).not.toBeNull();
+    await game.eval((pp) => {
+      pp.state.day = pp.state.insolvency!.until;
+      pp.state.speed = 1;
+      for (let i = 0; i < 20 && !pp.state.bankrupt; i++) pp.sim.tick(0.1);
+    });
+    await game.settle();
     await expect(modal.locator('h2')).toContainText('Bankrupt');
     expect(await game.eval((pp) => pp.state.bankrupt)).toBe(true);
     // and it stays that way: Esc does not close it, and time does not move

@@ -42,8 +42,20 @@ export const LOAN_RATE = 0.02;
 /** Interest charged each month on a bank balance below zero, which is dearer than a loan. */
 export const OVERDRAFT_RATE = 0.05;
 
-/** Days to find wages the bank would not lend, before the center is bankrupt. */
-export const PAYROLL_GRACE_DAYS = 3;
+/**
+ * How long the bank gives a center that is in the red and losing money to put one of the two right, before it calls the
+ * overdraft in and the center is bankrupt: ten days, a third of a month. Long enough for a price change or a leaver to
+ * show in the books, and for something to be sold; short enough that living there is no plan. Prison Architect gives
+ * a day; the three days this game gave to find unpaid wages passed in eighteen seconds.
+ */
+export const INSOLVENCY_DAYS = 10;
+
+/**
+ * How much lower staff morale settles while the bank is in the red, worried about their wages, and how much lower
+ * once it has been there a month, when they also ask for a raise to stay.
+ */
+export const RED_MORALE = 10;
+export const RED_MONTH_MORALE = 20;
 export const PRICE_MIN = 0.5;
 
 export const PRICE_MAX = 2;

@@ -1,4 +1,4 @@
-// The game lost: the wages could not be paid.
+// The game lost: the bank called the overdraft in.
 
 import { money } from '../../../core/format';
 import { useGame } from '../../hooks/use-hud';
@@ -12,8 +12,11 @@ export function BankruptDialog() {
   return (
     <Dialog>
       <h2>Bankrupt</h2>
-      <p>The wages could not be paid, and the staff have walked out. The Institute is closed.</p>
-      <p class="sub">{`${s.stats.healed} guests healed, with ${money(Math.max(0, s.money))} in the bank and ${money(s.loan)} owed.`}</p>{' '}
+      <p>
+        The center sat in the red with the books losing money, and the bank has called the overdraft in. The staff have
+        walked out, and the Institute is closed.
+      </p>
+      <p class="sub">{`${s.stats.healed} guests healed, ${money(-s.money)} in the red and ${money(s.loan)} owed.`}</p>{' '}
       <div class="btnrow">
         <Button class="go" onPress={newGame}>
           Start again

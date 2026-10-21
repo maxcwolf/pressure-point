@@ -2,13 +2,13 @@
 
 import {
   DAYS_PER_MONTH,
+  INSOLVENCY_DAYS,
   LOAN_MAX,
   LOAN_RATE,
   LOAN_STEP,
   MODALITIES,
   MODALITY_ORDER,
   OVERDRAFT_RATE,
-  PAYROLL_GRACE_DAYS,
   PRICE_MAX,
   PRICE_MIN,
   type Priced,
@@ -119,22 +119,103 @@ export function wagesDue(s: GameState): number {
   return total;
 }
 
-/** A few days before payday, say so if the bank will not cover the wages. Run as each day begins. */
+/** What the staff on the books, those leaving aside, are paid in a month. */
+export function monthlyPayroll(s: GameState): number {
+  let total = 0;
+  for (const st of s.staff) if (st.state !== 'leaving') total += st.salary;
+  return total;
+}
+
+/** The interest a month's end charges as things stand: on the loan, and on a bank below zero. */
+export const monthlyInterest = (s: GameState) =>
+  Math.round(s.loan * LOAN_RATE) + Math.round(Math.max(0, -s.money) * OVERDRAFT_RATE);
+
+/** How far through the month now running the game is, from 0 to 1. */
+const monthThrough = (s: GameState) => (s.day - Math.floor(s.day / DAYS_PER_MONTH) * DAYS_PER_MONTH) / DAYS_PER_MONTH;
+
+/** The money a center is on course to make or lose in a month: what comes in and what goes out, and the difference. */
+export interface Cashflow {
+  /** What a month brings in at the pace of the last month or so. */
+  income: number;
+  /** The wages on the books for a month, and the interest a month's end charges. */
+  wages: number;
+  interest: number;
+  net: number;
+}
+
+/**
+ * The money the center is on course to make or lose in a month, as things stand: what it has taken in over the last
+ * month or so (this month so far and the last finished one, over the days they cover), less the wages on the books
+ * and the interest. Building, training, marketing and fines are left out: a one-off outlay is not a losing business,
+ * and the bank judges the business.
+ */
+export function cashflow(s: GameState): Cashflow {
+  const through = monthThrough(s);
+  const taken = incomeOf(s.ledger);
+  // in the first month there is no last one to go by, and nothing to go by at all in its first week
+  const income =
+    s.months.length > 0 ? (taken + incomeOf(s.lastLedger)) / (1 + through) : taken / Math.max(through, 0.25);
+  const wages = monthlyPayroll(s);
+  const interest = monthlyInterest(s);
+  return { income: Math.round(income), wages, interest, net: Math.round(income) - wages - interest };
+}
+
+/** The money the center is on course to make or lose in a month, as things stand. */
+export const projectedCashflow = (s: GameState) => cashflow(s).net;
+
+/** Days until the bank calls the overdraft in and the center is bankrupt, or null while it is not on course to. */
+export function daysUntilBankrupt(s: GameState): number | null {
+  return s.insolvency ? Math.max(0, s.insolvency.until - s.day) : null;
+}
+
+/** How many days the bank has been in the red, or null while it is not. */
+export const daysInRed = (s: GameState) => (s.redSince === null ? null : Math.max(0, s.day - s.redSince));
+
+/** Whether the bank has been in the red for a month or more. */
+export const longInRed = (s: GameState) => (daysInRed(s) ?? -1) >= DAYS_PER_MONTH;
+
+/** What the bank would still lend: the loan's limit less what is owed. */
+export const loanRoom = (s: GameState) => Math.max(0, loanLimit(s) - s.loan);
+
+/**
+ * Whether the bank is about to call the overdraft in, or would if a payday came now: the center in the red deeper
+ * than the loan still to be had would clear and, at the pace of the last month or so, losing money.
+ */
+export const insolvent = (s: GameState) => s.money + loanRoom(s) < 0 && projectedCashflow(s) < 0;
+
+/** The pace of the books, in a few words: making or losing so much a month. */
+function paceOf(s: GameState): string {
+  const net = projectedCashflow(s);
+  return net < 0 ? `losing about ${money(-net)} a month` : `making about ${money(net)} a month`;
+}
+
+/**
+ * A few days before payday, say so if the bank will not cover the wages: what it will do (lend, or let the wages go
+ * into the red), and if the red would be with the books losing money, that the bank would then call the overdraft in.
+ * Run as each day begins.
+ */
 export function warnPayday(ctx: SimContext) {
   const s = ctx.s;
   if (!s.bankruptcyOn || Math.ceil(paydayOf(s) - s.day) !== PAYDAY_WARNING_DAYS) return;
   const wages = wagesDue(s);
   if (wages <= s.money) return;
-  toast(
-    ctx,
-    `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(wages)} in wages, and ${money(Math.max(0, s.money))} in the bank. Past that you will have to borrow, or you lose.`,
-    'bad',
-  );
+  const head = `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(wages)} in wages, and ${money(s.money)} in the bank.`;
+  const lends = s.loan + loanFor(s, wages) <= loanLimit(s);
+  const red = money(s.money - wages);
+  const what = lends
+    ? `The bank will lend the rest, or the wages can go into the red, to ${red}, at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month.`
+    : `The bank will lend no more, so the wages go into the red, to ${red}, at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month.`;
+  const losing = projectedCashflow(s) < 0;
+  const then = losing
+    ? ` You are ${paceOf(s)}: in the red past what the bank will lend, with the books losing money, it calls the overdraft in, and you have ${INSOLVENCY_DAYS} days to put one of the two right. Prices up, or staff down.`
+    : ` You are ${paceOf(s)}, so the red would clear.`;
+  toast(ctx, `${head} ${what}${then}`, 'bad');
 }
 
 /**
- * Pay the wages and close the month's books. A bank that cannot cover them stops the game and asks to borrow the
- * difference; if the bank would not lend that much, or the loan is refused, the center is bankrupt.
+ * Pay the wages and close the month's books. A bank that cannot cover them stops the game and says so: with a loan
+ * still to be had, to borrow the difference or pay the wages into the red; past the loan, that the wages go into the
+ * red. The center is bankrupt only if it then sits in the red with the books losing money for `INSOLVENCY_DAYS`.
  */
 export function monthEnd(ctx: SimContext) {
   const s = ctx.s;
@@ -148,47 +229,12 @@ export function monthEnd(ctx: SimContext) {
     return;
   }
   const loan = loanFor(s, wages);
-  if (s.loan + loan <= loanLimit(s)) {
-    s.payrollDue = { wages, loan, until: null };
-    return;
-  }
-  // the bank would not lend enough: a few days to find the money some other way, starting paused, since a few days
-  // pass in seconds and the warning could otherwise go by unseen
-  s.payrollDue = { wages, loan: 0, until: s.day + PAYROLL_GRACE_DAYS };
-  s.speed = 0;
-  toast(
-    ctx,
-    `⚠️ Payday: ${money(wages)} in wages, ${money(Math.max(0, s.money))} in the bank, and the bank will not lend the rest. The game is paused. You have ${PAYROLL_GRACE_DAYS} days to find it: sell something, or earn it. Or the center is bankrupt.`,
-    'bad',
-  );
+  s.payrollDue = { wages, loan: s.loan + loan <= loanLimit(s) ? loan : 0 };
   emit(ctx, { type: 'sfx', name: 'error' });
 }
 
 /** The loan, in whole steps, that would cover wages from the money in the bank. */
 const loanFor = (s: GameState, wages: number) => Math.ceil((wages - s.money) / LOAN_STEP) * LOAN_STEP;
-
-/**
- * Wages overdue because the bank would not lend enough: paid as soon as the money is there, put to the player as a
- * loan if the bank would lend it after all, and bankruptcy if the days run out. True if the wages were paid.
- */
-export function updatePayroll(ctx: SimContext): boolean {
-  const s = ctx.s;
-  const due = s.payrollDue;
-  if (!due) return false;
-  const until = due.until;
-  // a payday waiting on an answer about a loan is not this
-  if (until === null) return false;
-  if (s.money >= due.wages) {
-    s.payrollDue = null;
-    payWages(ctx, due.wages);
-    finishMonth(ctx);
-    return true;
-  }
-  const loan = loanFor(s, due.wages);
-  if (s.loan + loan <= loanLimit(s)) s.payrollDue = { wages: due.wages, loan, until: null };
-  else if (s.day >= until) goBankrupt(ctx, due.wages);
-  return false;
-}
 
 /** Pay out a payday's wages. */
 function payWages(ctx: SimContext, wages: number) {
@@ -198,24 +244,93 @@ function payWages(ctx: SimContext, wages: number) {
   emit(ctx, { type: 'sfx', name: 'payday' });
 }
 
-/** Charge interest, file the month's books and start the next. */
+/**
+ * Charge interest, file the month's books and start the next. Then, with bankruptcy on, the bank looks at the books:
+ * a center in the red that is losing money has `INSOLVENCY_DAYS` to put one of the two right, and one in the red
+ * that is making money is told what the red costs.
+ */
 function finishMonth(ctx: SimContext) {
   const s = ctx.s;
-  const interest = Math.round(s.loan * LOAN_RATE) + Math.round(Math.max(0, -s.money) * OVERDRAFT_RATE);
+  const interest = monthlyInterest(s);
   if (interest > 0) spend(ctx, interest, 'interest');
   closeMonth(ctx);
   s.history.push(netOf(s.ledger));
   if (s.history.length > 12) s.history.shift();
   s.lastLedger = s.ledger;
   s.ledger = emptyLedger();
-  if (s.money < 0) toast(ctx, 'You are in the red. Heal faster!', 'bad');
+  if (s.money >= 0) return;
+  if (!s.bankruptcyOn) {
+    toast(ctx, 'You are in the red. Heal faster!', 'bad');
+    return;
+  }
+  if (insolvent(s)) {
+    callInOverdraft(ctx);
+    return;
+  }
+  const head = `⚠️ You are ${money(-s.money)} in the red, at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month, and the staff are worried about their wages. You are ${paceOf(s)}`;
+  toast(
+    ctx,
+    projectedCashflow(s) < 0
+      ? `${head}, and the bank will still lend ${money(loanRoom(s))}: borrow it from the Money menu, since once the loan is used up a payday in the red with the books losing money has the bank call the overdraft in.`
+      : `${head}, so the bank is content for now: a payday in the red past what it will lend, with the books losing money, and it calls the overdraft in.`,
+    'bad',
+  );
+}
+
+/**
+ * The bank calls the overdraft in: the center has `INSOLVENCY_DAYS` to bring the bank back above zero or the books
+ * into profit, or it is bankrupt. The days start paused, since they pass in seconds and the warning could otherwise
+ * go by unseen.
+ */
+function callInOverdraft(ctx: SimContext) {
+  const s = ctx.s;
+  s.insolvency = { until: s.day + INSOLVENCY_DAYS };
+  s.speed = 0;
+  toast(
+    ctx,
+    `⚠️ The bank is calling the overdraft in: you are ${money(-s.money)} in the red and ${paceOf(s)}. You have ${INSOLVENCY_DAYS} days to bring the bank back above zero (sell something, or earn it) or the books into profit (prices up, or staff down), or the center is bankrupt. The game is paused.`,
+    'bad',
+  );
+  emit(ctx, { type: 'sfx', name: 'error' });
+}
+
+/**
+ * Each day: keep track of how long the bank has been in the red, and while the bank is calling the overdraft in, let
+ * the center off as soon as it is back above zero or the books are in profit, remind it halfway, and declare it
+ * bankrupt when the days run out with neither put right. Run as each day begins.
+ */
+export function updateInsolvency(ctx: SimContext) {
+  const s = ctx.s;
+  if (s.money < 0) s.redSince ??= s.day;
+  else s.redSince = null;
+  const due = s.insolvency;
+  if (!due) return;
+  if (!insolvent(s)) {
+    s.insolvency = null;
+    toast(
+      ctx,
+      s.money + loanRoom(s) >= 0
+        ? 'The bank is back within what it will carry, and the overdraft is no longer being called in.'
+        : `The books are back in profit, ${paceOf(s)}, and the bank is no longer calling the overdraft in. The red still costs ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month.`,
+      'good',
+    );
+    return;
+  }
+  const left = Math.ceil(due.until - s.day);
+  if (left === Math.floor(INSOLVENCY_DAYS / 2))
+    toast(
+      ctx,
+      `⚠️ ${left} days before the bank calls the overdraft in: ${money(-s.money)} in the red, ${paceOf(s)}. Get above zero or into profit.`,
+      'bad',
+    );
+  if (s.day >= due.until) goBankrupt(ctx);
 }
 
 /** Take the loan that covers the wages waiting on payday, pay them and go on. False if none is waiting. */
 export function takePayrollLoan(ctx: SimContext): boolean {
   const s = ctx.s;
   const due = s.payrollDue;
-  if (due?.until !== null) return false;
+  if (!due || due.loan <= 0) return false;
   s.payrollDue = null;
   s.loan += due.loan;
   s.money += due.loan;
@@ -226,19 +341,26 @@ export function takePayrollLoan(ctx: SimContext): boolean {
   return true;
 }
 
-/** Turn the loan down: with the wages unpaid, the center is bankrupt. False if no payday is waiting. */
-export function refusePayrollLoan(ctx: SimContext): boolean {
-  const due = ctx.s.payrollDue;
-  if (due?.until !== null) return false;
-  goBankrupt(ctx, due.wages);
+/**
+ * Pay the wages waiting on payday into the red, whether the bank's loan was turned down or it would lend no more.
+ * False if no payday is waiting.
+ */
+export function payIntoRed(ctx: SimContext): boolean {
+  const s = ctx.s;
+  const due = s.payrollDue;
+  if (!due) return false;
+  s.payrollDue = null;
+  payWages(ctx, due.wages);
+  finishMonth(ctx);
   return true;
 }
 
-/** The wages cannot be paid: the staff walk out and the game is lost. */
-function goBankrupt(ctx: SimContext, wages: number) {
-  ctx.s.payrollDue = null;
-  ctx.s.bankrupt = true;
-  toast(ctx, `${money(wages)} in wages, and no way to pay them. The staff walk out.`, 'bad');
+/** The bank has called the overdraft in: the staff walk out and the game is lost. */
+function goBankrupt(ctx: SimContext) {
+  const s = ctx.s;
+  s.insolvency = null;
+  s.bankrupt = true;
+  toast(ctx, `${money(-s.money)} in the red, and the bank has called it in. The staff walk out.`, 'bad');
   emit(ctx, { type: 'sfx', name: 'fail' });
 }
 

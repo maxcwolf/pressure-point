@@ -21,6 +21,8 @@ import {
   QUIT_AFTER,
   QUIT_THINKING,
   QUIT_WARNING,
+  RED_MONTH_MORALE,
+  RED_MORALE,
   RIVAL_NAME,
   ROLES,
   STAFF_NEED_MORALE,
@@ -50,7 +52,7 @@ import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import { backForClass, isClassLead, restDue } from './classes';
 import type { SimContext } from './context';
-import { changeRep, payOff, recoup } from './economy';
+import { changeRep, longInRed, payOff, recoup } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { resetGuest } from './guests';
 import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaundering } from './linens';
@@ -202,6 +204,8 @@ export function moraleTarget(ctx: SimContext, st: Staff): number {
   if (ctx.s.litter.length > 6) target -= 6;
   if (st.promotion) target -= PROMOTION_SULK;
   if (cheeredUp(ctx.s, st)) target += CHEER_MORALE;
+  // with the bank in the red they worry about their wages, and more so once it has been there a month
+  if (ctx.s.bankruptcyOn && ctx.s.money < 0) target -= longInRed(ctx.s) ? RED_MONTH_MORALE : RED_MORALE;
   return target;
 }
 
@@ -226,13 +230,21 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   // cheered up before a Shaman could come: there is no soul to retrieve, and they can be asked for again if need be
   if (st.soulAsked && !burntOut(st.morale)) st.soulAsked = false;
 
-  if (!st.raiseAsked && st.salary < fair * 0.97 && st.morale < 56) {
+  // the underpaid ask for a raise once unhappy; after a month with the bank in the red, so does anyone unhappy, to stay
+  const red = ctx.s.bankruptcyOn && ctx.s.money < 0 && longInRed(ctx.s);
+  if (!st.raiseAsked && (st.salary < fair * 0.97 || red) && st.morale < 56) {
     st.raiseAsked = true;
     say(st, '💰', 5);
-    toast(ctx, `${st.name} thinks they are worth ${money(fair)} a month and wants a raise.`, 'info', {
-      kind: 'staff',
-      id: st.id,
-    });
+    const about = { kind: 'staff', id: st.id } as const;
+    if (st.salary < fair * 0.97)
+      toast(ctx, `${st.name} thinks they are worth ${money(fair)} a month and wants a raise.`, 'info', about);
+    else
+      toast(
+        ctx,
+        `${st.name} has watched the bank sit in the red for a month, and wants a raise to ${money(raiseTo(st, tuning(ctx.s, 'salaries')))} to stay.`,
+        'bad',
+        about,
+      );
   }
   const before = st.unhappyT;
   if (st.morale < MISERABLE_MORALE) st.unhappyT += dt;

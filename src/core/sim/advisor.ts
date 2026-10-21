@@ -13,6 +13,7 @@ import {
   MODALITIES,
   MODALITY_ORDER,
   modalityLabel,
+  OVERDRAFT_RATE,
   ROLES,
   ROOMS,
   STONE_USE,
@@ -23,7 +24,7 @@ import { offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import { BOTTLENECK, bottleneck } from './bottleneck';
 import type { SimContext } from './context';
-import { loanLimit } from './economy';
+import { cashflow, daysUntilBankrupt, loanLimit, projectedCashflow } from './economy';
 import { emit, type Subject } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { mishapAdvice } from './mishaps';
@@ -98,8 +99,11 @@ function nudge(ctx: SimContext): string | Advice {
       text: 'The toilets are filthy and guests are noticing. Hire a Caretaker to clean them.',
       about: { kind: 'item', id: filthy.id },
     };
-  if (s.payrollDue && s.payrollDue.until !== null)
-    return `Wages of ${money(s.payrollDue.wages)} are overdue and the bank will not lend the rest. Sell something, or earn it, within ${Math.max(0, Math.ceil(s.payrollDue.until - s.day))} days.`;
+  const days = daysUntilBankrupt(s);
+  if (days !== null) {
+    const flow = cashflow(s);
+    return `The bank calls the overdraft in in ${Math.ceil(days)} days: ${money(-s.money)} in the red, and losing ${money(-flow.net)} a month (${money(flow.income)} coming in against ${money(flow.wages)} in wages and ${money(flow.interest)} interest). Get the bank above zero, or the books into profit: prices up, or staff down.`;
+  }
   if (s.offer) return 'There is an emergency on offer at the top of the screen. Accept it only if you can cope.';
   const broken = s.items.find((i) => i.wear >= 100);
   if (broken)
@@ -121,7 +125,9 @@ function nudge(ctx: SimContext): string | Advice {
   if (comfort) return comfort;
   // a raise request waits on a card of its own at the side of the screen, leaving the advisor for other things
   if (s.money < 0 && s.loan < loanLimit(s))
-    return 'You are in the red. A loan from the Money menu would tide you over.';
+    return `You are ${money(-s.money)} in the red, which costs ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month and worries the staff. A loan from the Money menu is cheaper${projectedCashflow(s) < 0 ? `, and you are losing about ${money(-projectedCashflow(s))} a month: once the loan is used up, the bank calls the overdraft in` : ''}.`;
+  if (s.money < 0 && s.bankruptcyOn)
+    return `You are ${money(-s.money)} in the red at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month, with the loan used up. You are making about ${money(projectedCashflow(s))} a month, so it will clear; a payday with the books losing money, and the bank calls the overdraft in.`;
   const gap = modalityAdvice(ctx);
   if (gap) return gap;
   for (const it of s.items) {

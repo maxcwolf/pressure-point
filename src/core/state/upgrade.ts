@@ -179,6 +179,9 @@ export function upgradeSave(save: GameState) {
   // own random numbers starts a stream of its own: first, since the applicants made below draw from that stream, and
   // are paid as the difficulty sets
   fill(s, startingState(s.center, s.day, s.rng ?? newSeed()));
+  // up to version 32, wages the bank would not lend for waited a few days to be found: they are put to the player
+  // again, to go into the red
+  if (s.payrollDue && 'until' in s.payrollDue) s.payrollDue = { wages: s.payrollDue.wages, loan: 0 };
   for (const st of s.staff) {
     // before massage modalities, everyone on the payroll knew Swedish and nothing else
     st.quals ??= baseQuals(st.role);
