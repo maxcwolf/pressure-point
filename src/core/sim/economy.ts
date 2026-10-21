@@ -13,6 +13,7 @@ import {
   OVERDRAFT_RATE,
   PRICE_MAX,
   PRICE_MIN,
+  PRICE_PUT_OFF,
   type Priced,
   REP_DAMPING,
 } from '../data';
@@ -558,6 +559,31 @@ export function repay(ctx: SimContext): boolean {
 /** What a technique costs against standard: the overall price level, times its own, kept within the same limits. */
 export function priceFor(s: GameState, m: Priced): number {
   return clamp(s.priceLevel * (s.prices[m] ?? 1), PRICE_MIN, PRICE_MAX);
+}
+
+/** The value of a curve given as knots joined by straight lines, level beyond the first and the last. */
+function along(knots: readonly (readonly [number, number])[], x: number): number {
+  const first = knots[0];
+  const last = knots.at(-1);
+  if (!first || !last) return 0;
+  if (x <= first[0]) return first[1];
+  if (x >= last[0]) return last[1];
+  let lo = first;
+  for (const hi of knots) {
+    if (x <= hi[0]) return lo[1] + ((hi[1] - lo[1]) * (x - lo[0])) / (hi[0] - lo[0]);
+    lo = hi;
+  }
+  return last[1];
+}
+
+/**
+ * The chance a new guest balks at a treatment's price once diagnosed and leaves: gentle to 1.3 and steep past it, with
+ * a better name forgiving a dearer price (`PRICE_PUT_OFF`). How much a guest minds it is `mindsPrice`.
+ */
+export function putOffChance(price: number, reputation: number): number {
+  // standard prices put no one off, however poor the center's name: there is always a price that costs no guests
+  if (price <= 1) return 0;
+  return along(PRICE_PUT_OFF.price, price - along(PRICE_PUT_OFF.reputation, reputation));
 }
 
 /**

@@ -61,6 +61,11 @@
   margin-top: 4px;
 }
 
+.ledger .balk {
+  font-size: 13px;
+  margin-top: 2px;
+}
+
 .money-menu .tabs {
   margin-bottom: 8px;
 }

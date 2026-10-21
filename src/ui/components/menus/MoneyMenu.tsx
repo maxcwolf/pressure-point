@@ -13,6 +13,7 @@ import type { MoneyTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
 import { cx } from '../../lib/cx';
 import { incomeSources, incomeVerdict, shareWord } from '../../lib/income';
+import { BALK_WHO, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
 import { LandTab } from './LandTab';
 import { MarketingTab } from './MarketingTab';
@@ -127,6 +128,7 @@ function Prices() {
         <p class="priced">
           {`Put off by prices: ${s.tally.priced} this month, ${s.months.at(-1)?.priced ?? 0} last month`}
         </p>
+        <p class="balk">{`${balkText(s.priceLevel, s.reputation)} ${BALK_WHO}`}</p>
         <div class="btnrow left">
           <Button
             locked={s.priceLevel <= PRICE_MIN}

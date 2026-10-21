@@ -60,6 +60,42 @@ export const PRICE_MIN = 0.5;
 
 export const PRICE_MAX = 2;
 
+/**
+ * The chance a new guest balks at the price of their treatment once diagnosed, and leaves, as knots joined by straight
+ * lines: `price`, the treatment's price against standard and the chance at 50% reputation; `reputation`, how far a
+ * center's name moves that curve along the price, a reputation and the price it adds. A plain regular minds the price
+ * half as much (`REGULAR_PUT_OFF`); loyal and devoted regulars and emergency guests never balk.
+ *
+ * Fitted to what the guests are, not to a formula (balance log entry 35): in the good bot's second year a diagnosed
+ * guest is new 26% of the time, a plain regular 6%, loyal or devoted 55% and an emergency 13%, so about 0.29 of them
+ * mind the price in full. The knots are the targets for every diagnosed guest divided by that: gentle to 1.3 and steep
+ * past it, about 1% at 1.1, 3% at 1.2, 5% at 1.3, 10% at 1.4 and 20% at 1.6 at 50% reputation. Half at 2 cannot be had
+ * while loyal regulars are spared, so the top flattens toward nearly every new guest. A center at 90% is forgiven
+ * 0.15 more on the price, one at 20% 0.15 less, though at standard prices or below no one balks, however poor the
+ * name. Beyond the last knots the curve stays level. CorsixTH's price
+ * distortion has the tolerated price rise with reputation the same way.
+ */
+export const PRICE_PUT_OFF = {
+  price: [
+    [1, 0],
+    [1.1, 0.03],
+    [1.2, 0.1],
+    [1.3, 0.17],
+    [1.4, 0.34],
+    [1.6, 0.68],
+    [2, 0.9],
+    [2.4, 0.95],
+  ],
+  reputation: [
+    [20, -0.15],
+    [50, 0],
+    [90, 0.15],
+  ],
+} as const satisfies Record<string, readonly (readonly [number, number])[]>;
+
+/** How much a plain regular minds the price against a new guest: half. Loyal and devoted regulars never balk. */
+export const REGULAR_PUT_OFF = 0.5;
+
 /** How many times a piece of treatment equipment can be upgraded. Each level unlocks at the star of the same number. */
 export const UPGRADE_LEVELS = 3;
 /** What each level costs, as a share of the equipment's upgrade price: the first, the second and the third. */
