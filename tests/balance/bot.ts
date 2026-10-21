@@ -41,6 +41,7 @@ import {
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { daysUntilBankrupt, loanLimit, projectedCashflow, wagesDue } from '../../src/core/sim/economy';
+import type { SimEvent } from '../../src/core/sim/events';
 import { INTAKE_CAP_MIN } from '../../src/core/sim/guests';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
@@ -220,6 +221,20 @@ export interface MonthLog {
   /** Whether there is a Posture Lab at the month's end, and the guests sent for a scan over the month. */
   lab: boolean;
   scans: number;
+  /** The month's income by source, from the ledger: treatments and consultations, and the side incomes. */
+  incomeBy: IncomeBy;
+}
+
+/** A month's income by where it came from, rounded to the dollar. */
+export interface IncomeBy {
+  treatment: number;
+  consult: number;
+  classes: number;
+  calls: number;
+  shop: number;
+  mushrooms: number;
+  vending: number;
+  bonus: number;
 }
 
 export interface Playtest {
@@ -237,6 +252,12 @@ export interface Playtest {
   goalDays: Record<string, number | null>[];
   /** The first thing to go against the center once it was open: a twist's first blow or trouble, and the day. */
   firstAdverse: { what: string; day: number } | null;
+  /** Every thing that went against the center once it was open, as it began: the kinds of `firstAdverse`, in order. */
+  adverse: { what: string; day: number }[];
+  /** The warnings the game gave: its 'bad' toasts, each cut to its first 60 characters, once a day each. */
+  warnings: { day: number; text: string }[];
+  /** The day the game ended in bankruptcy, or null if it did not. */
+  bankruptDay: number | null;
 }
 
 const TREAT_ROOM: Record<Discipline, RoomType> = {
@@ -339,6 +360,9 @@ export class Bot {
       peakLoan: 0,
       goalDays: CENTERS[center].goals.map(() => ({})),
       firstAdverse: null,
+      adverse: [],
+      warnings: [],
+      bankruptDay: null,
     };
     this.watch = this.freshWatch();
   }
@@ -365,7 +389,7 @@ export class Bot {
       this.decide();
       for (let i = 0; i < ticksPerDay; i++) {
         this.sim.tick(0.1);
-        this.sim.drain();
+        this.noteWarnings(this.sim.drain());
         // a payday the bank cannot cover is borrowed for, as the player would, and past the loan paid into the red
         if (this.s.payrollDue) {
           if (this.sim.takePayrollLoan())
@@ -377,6 +401,7 @@ export class Bot {
         if (this.s.insolvency) this.s.speed = 1;
         if (this.s.bankrupt) {
           this.note(`day ${Math.floor(this.s.day)}: BANKRUPT, loan ${this.s.loan}`);
+          this.log.bankruptDay = Math.floor(this.s.day);
           return false;
         }
         if (i % 10 === 0) {
@@ -420,6 +445,7 @@ export class Bot {
    * quitting, whichever comes first.
    */
   private noteAdverse() {
+    this.noteEveryAdverse();
     const s = this.s;
     if (this.log.firstAdverse || !s.open) return;
     const what =
@@ -441,6 +467,49 @@ export class Bot {
                       ? 'someone quit'
                       : null;
     if (what) this.log.firstAdverse = { what, day: Math.floor(s.day) };
+  }
+
+  /** The lasting adverse conditions seen yesterday, and the mishap, inspection report and quit already logged. */
+  private adverseOn = new Set<string>();
+  private adverseSeen: { mishap: unknown; report: unknown; quit: number } = { mishap: null, report: null, quit: -1 };
+
+  /** Log each adverse event as it begins: a condition that was not there yesterday, or a new mishap, report or quit. */
+  private noteEveryAdverse() {
+    const s = this.s;
+    if (!s.open) return;
+    const day = Math.floor(s.day);
+    const seen = this.adverseSeen;
+    const on = new Set<string>();
+    if (this.center === 'boardwalk' && seasonOf(s.day) === 'summer') on.add('summer');
+    if (this.center === 'exchange' && inRush(s.day)) on.add('rush hour');
+    if (this.sim.snowedIn()) on.add('snowed in');
+    if (s.outbreak) on.add('stress outbreak');
+    for (const what of on) if (!this.adverseOn.has(what)) this.log.adverse.push({ what, day });
+    this.adverseOn = on;
+    if (s.mishap?.started && s.mishap !== seen.mishap) {
+      seen.mishap = s.mishap;
+      this.log.adverse.push({ what: `mishap (${s.mishap.kind})`, day });
+    }
+    if (s.visitReport?.bribe !== undefined && s.visitReport !== seen.report) {
+      seen.report = s.visitReport;
+      this.log.adverse.push({ what: 'failed inspection', day });
+    }
+    if (s.rival.opened !== null && !this.log.adverse.some((a) => a.what === 'rival opened'))
+      this.log.adverse.push({ what: 'rival opened', day });
+    if (s.stats.lastQuit >= 0 && s.stats.lastQuit !== seen.quit) {
+      seen.quit = s.stats.lastQuit;
+      this.log.adverse.push({ what: 'someone quit', day });
+    }
+  }
+
+  /** Log the game's warnings among the events just drained, each text once a day. */
+  private noteWarnings(events: SimEvent[]) {
+    const day = Math.floor(this.s.day);
+    for (const e of events) {
+      if (e.type !== 'toast' || e.kind !== 'bad') continue;
+      const text = e.text.slice(0, 60);
+      if (!this.log.warnings.some((w) => w.day === day && w.text === text)) this.log.warnings.push({ day, text });
+    }
   }
 
   /** Write up the month just ended. */
@@ -484,6 +553,16 @@ export class Bot {
       price: s.priceLevel,
       lab: this.sim.hasRoom('assess'),
       scans: this.scans,
+      incomeBy: {
+        treatment: Math.round(l.treatment),
+        consult: Math.round(l.consult),
+        classes: Math.round(l.classes),
+        calls: Math.round(l.calls),
+        shop: Math.round(l.shop),
+        mushrooms: Math.round(l.mushrooms),
+        vending: Math.round(l.vending),
+        bonus: Math.round(l.bonus),
+      },
     });
     this.scans = 0;
     this.repLow = Infinity;
