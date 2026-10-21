@@ -36,9 +36,9 @@ const IDS = [
 // a small window keeps the pictures small; the stage is what is left beside the list of models
 test.use({ viewport: { width: 900, height: 600 } });
 
-/** Open the lab on one model, held still, with only the stage in view. */
-async function openLab(page: Page, id: string) {
-  await page.goto(`/lab.html?model=${encodeURIComponent(id)}&still`);
+/** Open the lab on one model, held still, with only the stage in view, and any of its settings given. */
+async function openLab(page: Page, id: string, settings = '') {
+  await page.goto(`/lab.html?model=${encodeURIComponent(id)}&still${settings}`);
   await page.addStyleTag({ content: '.caption, .panel { display: none !important; }' });
   await page.waitForFunction(() => window.lab?.ready);
 }
@@ -54,6 +54,30 @@ test.describe('every model', () => {
     test(id, async ({ page }) => {
       await openLab(page, id);
       await expect(page.locator('canvas.stage')).toHaveScreenshot(['models', `${id.replaceAll(':', '-')}.png`]);
+    });
+  }
+});
+
+/**
+ * Items showing what they are doing, as the scene shows it with no overlay open: a machine wearing out, one that has
+ * broken, a mat growing grimy, an arcade a guest is playing and a radiator heating. Each is held at the same moment.
+ */
+const STATES = [
+  ['item:snack_machine', 'worn', '&wear=85'],
+  ['item:arcade_machine', 'broken', '&wear=100'],
+  ['item:sound_mat', 'dirty', '&dirt=65'],
+  ['item:arcade_machine', 'played', '&inUse=1'],
+  ['item:radiator', 'heating', '&heating=1'],
+] as const;
+
+test.describe('items showing their state', () => {
+  for (const [id, state, settings] of STATES) {
+    test(`${id}, ${state}`, async ({ page }) => {
+      await openLab(page, id, settings);
+      await expect(page.locator('canvas.stage')).toHaveScreenshot([
+        'models',
+        `${id.replaceAll(':', '-')}-${state}.png`,
+      ]);
     });
   }
 });
