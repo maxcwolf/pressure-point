@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 import { at } from '../../../core/util';
 import { linensMaterial } from '../linens';
-import { CHROME, CREAM, cyl, GLASS, LACQUER, mat, partsOf, put, rbox, sph } from '../parts';
+import { capsule, CHROME, CREAM, cyl, GLASS, LACQUER, mat, partsOf, put, rbox, soft, sph } from '../parts';
 
 /** Build the Acupuncture Table model. */
 export function buildAcuTable(g: THREE.Group) {
@@ -14,18 +14,18 @@ export function buildAcuTable(g: THREE.Group) {
     [-0.3, 0.75],
     [0.3, 0.75],
   ])
-    put(g, rbox(0.09, 0.5, 0.09, 0.02), mat(LACQUER), x, 0.25, z);
-  put(g, rbox(0.8, 0.07, 1.82, 0.03), mat(LACQUER), 0, 0.5, 0);
+    put(g, soft(0.09, 0.5, 0.09), mat(LACQUER), x, 0.25, z);
+  put(g, soft(0.8, 0.07, 1.82), mat(LACQUER), 0, 0.5, 0);
   put(g, rbox(0.74, 0.12, 1.76, 0.06), mat(0x9ad0b8), 0, 0.58, 0);
   const linens = linensMaterial(CREAM);
   put(g, rbox(0.7, 0.03, 1.1, 0.015), linens, 0, 0.645, 0.2);
-  const bolster = put(g, cyl(0.09, 0.09, 0.6, 14), mat(0xb5523e), 0, 0.68, -0.72);
+  const bolster = put(g, capsule(0.09, 0.44), mat(0xb5523e), 0, 0.68, -0.72);
   bolster.rotation.z = Math.PI / 2;
   // what gets put on the guest's back, one set per technique
   /** Stand one needle with a colored tip at a spot. */
   const needle = (parent: THREE.Object3D, x: number, z: number, color: number) => {
-    put(parent, cyl(0.007, 0.007, 0.16, 5), mat(CHROME, 0.3), x, 1.0, z).castShadow = false;
-    put(parent, sph(0.02, 6), mat(color, 0.4), x, 1.08, z).castShadow = false;
+    put(parent, cyl(0.01, 0.01, 0.16, 6), mat(CHROME, 0.3), x, 1.0, z).castShadow = false;
+    put(parent, sph(0.024, 8), mat(color, 0.4), x, 1.08, z).castShadow = false;
   };
   const spots: [number, number][] = [
     [-0.07, -0.2],
@@ -57,7 +57,7 @@ export function buildAcuTable(g: THREE.Group) {
   const electro = new THREE.Group();
   spots.slice(0, 4).forEach(([x, z], i) => {
     needle(electro, x, z, i % 2 ? 0x2a2a2e : 0xe5484d);
-    const wire = put(electro, cyl(0.006, 0.006, 0.5, 5), mat(i % 2 ? 0x2a2a2e : 0xe5484d), x - 0.25, 1.1, z);
+    const wire = put(electro, cyl(0.01, 0.01, 0.5, 6), mat(i % 2 ? 0x2a2a2e : 0xe5484d), x - 0.25, 1.1, z);
     wire.rotation.z = Math.PI / 2 - 0.12;
     wire.castShadow = false;
   });

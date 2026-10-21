@@ -5,7 +5,7 @@ import * as THREE from 'three';
 
 import { at } from '../../../core/util';
 import { linensMaterial } from '../linens';
-import { cyl, mat, partsOf, put, rbox, sph } from '../parts';
+import { capsule, cyl, mat, partsOf, put, rbox, sph } from '../parts';
 
 /** The colors a psychedelic ceremony swirls in. */
 const TRIP_COLORS = [0xe5484d, 0xf2c14e, 0x3bb273, 0x4a9fe0, 0x9b6fd1, 0xf08ac0];
@@ -30,10 +30,10 @@ export function buildCeremonyMat(g: THREE.Group) {
   for (const z of [-0.82, 0.82]) put(g, rbox(0.8, 0.052, 0.08, 0.01), mat(0x8a3b2a, 0.9), 0, 0.027, z);
   const linens = linensMaterial(0xc96a3a);
   put(g, rbox(0.7, 0.04, 1.0, 0.02), linens, 0, 0.07, 0.36);
-  const pillow = put(g, cyl(0.08, 0.08, 0.56, 14), mat(0x3f6b5a, 0.9), 0, 0.1, -0.74);
+  const pillow = put(g, capsule(0.08, 0.42), mat(0x3f6b5a, 0.9), 0, 0.1, -0.74);
   pillow.rotation.z = Math.PI / 2;
   // the Shaman's cushion, beside the mat
-  put(g, cyl(0.2, 0.22, 0.08, 16), mat(0x8a4b2a, 0.9), -0.8, 0.04, 0);
+  put(g, cyl(0.2, 0.22, 0.09, 24), mat(0x8a4b2a, 0.9), -0.8, 0.045, 0);
 
   // a spirit animal, glowing softly over the guest while it is read
   const reading = new THREE.Group();
