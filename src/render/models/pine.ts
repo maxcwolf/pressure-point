@@ -18,14 +18,16 @@ const TIERS = [
  */
 const tier = () =>
   cached('pine-tier', () => {
-    const pts = [new THREE.Vector2(0, -0.5), new THREE.Vector2(0.8, -0.5), new THREE.Vector2(0.97, -0.44)];
-    // up from the lip to the tip, a little full in the middle, ending in a round point
-    for (let i = 0; i <= 8; i++) {
-      const t = i / 8;
-      pts.push(new THREE.Vector2(Math.max(0, (1 - t) ** 1.15) * 0.98, -0.38 + t * 0.84));
-    }
-    pts.push(new THREE.Vector2(0, 0.5));
-    return new THREE.LatheGeometry(pts, 14);
+    // the underside is never seen from the game's camera, so the tier is open beneath: from the lip up to a round tip
+    const pts = [
+      [0.86, -0.5],
+      [0.99, -0.42],
+      [0.62, -0.04],
+      [0.3, 0.28],
+      [0.09, 0.45],
+      [0, 0.5],
+    ].map(([x = 0, y = 0]) => new THREE.Vector2(x, y));
+    return new THREE.LatheGeometry(pts, 12);
   });
 
 /** How tall a pine is, by its seed. */
@@ -68,7 +70,7 @@ export function buildPines(spots: readonly TreeSpot[]): THREE.Group {
     }
   }
   const forest = new THREE.Group();
-  forest.add(instanced(cyl(0.07, 0.1, 0.5, 12), mat(0x6b4a32, 0.9), trunks));
+  forest.add(instanced(cyl(0.07, 0.1, 0.5, 16), mat(0x6b4a32, 0.9), trunks));
   const cone = tier();
   NEEDLE_COLORS.forEach((color, i) => {
     const tiers = needles[i] ?? [];

@@ -1,7 +1,7 @@
 // Trees for the lawn.
 import * as THREE from 'three';
 
-import { cyl, mat, sph } from './parts';
+import { blob, cyl, mat } from './parts';
 
 /** Where a tree stands on the ground, and the seed its height and color vary with. */
 export interface TreeSpot {
@@ -16,10 +16,9 @@ const LEAF_COLORS = [0x5fae5a, 0x4f9a55, 0x74b85c] as const;
  * trunk, and how big it is.
  */
 const BLOBS = [
-  [0, 0.45, 0, 0.62],
-  [0.36, 0.14, 0.1, 0.42],
-  [-0.32, 0.2, -0.14, 0.45],
-  [0.05, 0.12, 0.36, 0.36],
+  [0, 0.45, 0, 0.64],
+  [0.36, 0.14, 0.12, 0.44],
+  [-0.3, 0.18, -0.12, 0.46],
 ] as const;
 
 /** How tall a tree's trunk is. */
@@ -60,10 +59,10 @@ export function buildForest(spots: readonly TreeSpot[]): THREE.Group {
     }
   }
   const forest = new THREE.Group();
-  forest.add(instanced(cyl(0.09, 0.13, 1, 12), mat(0x7a5a3c, 0.9), trunks));
+  forest.add(instanced(cyl(0.09, 0.13, 1, 16), mat(0x7a5a3c, 0.9), trunks));
   LEAF_COLORS.forEach((color, i) => {
     const blobs = leaves[i] ?? [];
-    if (blobs.length) forest.add(instanced(sph(1, 16), mat(color, 0.78), blobs));
+    if (blobs.length) forest.add(instanced(blob(1), mat(color, 0.78), blobs));
   });
   return forest;
 }

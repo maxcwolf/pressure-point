@@ -16,7 +16,7 @@
 // - Capsule or cylinder. A member that ends in the air (a handle, beater, hose, bolster, branch or rail end) is a
 //   capsule, rounded like a person's limb. One that meets the floor or another part flush (a leg, post, pot, barrel,
 //   bowl or disc) is a cylinder or a rounded box. Cylinders over 0.2 m across take at least 16 sides.
-// - Shading. Every surface is smoothly shaded, foliage too: blobs of leaves are spheres, never faceted.
+// - Shading. Every surface is smoothly shaded, foliage too: leaves are spheres, or `blob`s where there are hundreds.
 // - Color. The body is in the muted tones already here (the woods, cream, white, chrome, dark and lacquer, and soft
 //   pastels). A saturated color, or a glow, goes only on the part that says what the item is or does (the screen, the
 //   flame, the crystals, the button), and covers no more than about a fifth of what shows. Glow is for what gives light.
@@ -25,7 +25,7 @@
 // - Cost. Reuse `mat` colors: every distinct material in an item is a draw call, so a polish adds none.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const matCache = new Map<string, THREE.MeshStandardMaterial>();
 /** The roughness of each shared material with no glow: these differ from one another only in color. */
@@ -134,6 +134,20 @@ export const sph = (r: number, seg = 18) =>
 
 /** A shared icosahedron geometry. */
 export const ico = (r: number) => cached(`i${r}`, () => new THREE.IcosahedronGeometry(r, 1));
+
+/**
+ * A shared soft blob: an icosahedron with its corners welded and its normals smoothed, so it shades as round as a
+ * sphere for a fifth of the triangles. For things drawn by the hundred, such as the leaves of the trees.
+ */
+export const blob = (r: number) =>
+  cached(`o${r}`, () => {
+    const g = new THREE.IcosahedronGeometry(r, 1);
+    g.deleteAttribute('normal');
+    g.deleteAttribute('uv');
+    const soft = mergeVertices(g);
+    soft.computeVertexNormals();
+    return soft;
+  });
 
 /** A shared torus geometry. */
 export const torus = (r: number, t: number) => cached(`t${r}|${t}`, () => new THREE.TorusGeometry(r, t, 10, 24));
