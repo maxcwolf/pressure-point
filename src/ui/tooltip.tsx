@@ -4,6 +4,8 @@ import './tooltip.css';
 
 import { type ComponentChild, options, render, type VNode } from 'preact';
 
+import { Icon } from './components/common/Icon';
+
 /** How long the pointer rests on something before its tooltip shows. */
 const DELAY = 380;
 /** How soon after one tooltip goes that the next shows at once, so running along a row of buttons reads each straight off. */
@@ -79,7 +81,8 @@ function hasWords(children: unknown): boolean {
   if (typeof children === 'string') return children.trim() !== '';
   if (!children || typeof children !== 'object' || !('type' in children)) return false;
   const { type, props } = children as VNode<Record<string, unknown>>;
-  // a component may draw words of its own, so count it as words
+  // an icon is words only when it is labeled; any other component may draw words of its own, so count it as words
+  if (type === Icon) return !!props.label;
   if (typeof type !== 'string') return true;
   return !props['aria-hidden'] && hasWords(props.children);
 }

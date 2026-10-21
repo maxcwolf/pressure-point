@@ -48,7 +48,7 @@ test.describe('starting out', () => {
     await music.click();
     await expect(music).toHaveAttribute('aria-pressed', 'false');
     await sound.click();
-    await expect(sound).toHaveText('🔇');
+    await expect(sound.locator('use')).toHaveAttribute('href', '#icon-ui-mute');
     expect(await page.evaluate(() => localStorage.getItem('pressure-point-audio'))).toBe(
       '{"sound":false,"music":false}',
     );
@@ -57,7 +57,10 @@ test.describe('starting out', () => {
     await page.getByRole('button', { name: 'Start building' }).click();
     await page.waitForFunction(() => !!window.pp);
     await expect(page.locator('#sys').locator('[data-tip="Music"]')).toHaveClass(/off/);
-    await expect(page.locator('#sys').locator('[data-tip="Sound effects"]')).toHaveText('🔇');
+    await expect(page.locator('#sys').locator('[data-tip="Sound effects"]').locator('use')).toHaveAttribute(
+      'href',
+      '#icon-ui-mute',
+    );
     await page.reload();
     await expect(page.locator('#title').locator('[data-tip="Music"]')).toHaveAttribute('aria-pressed', 'false');
     await page.locator('#title').locator('[data-tip="Music"]').click();
@@ -91,10 +94,10 @@ test.describe('starting out', () => {
     await game.start();
     await game.menu('Items');
     await expect(game.card('Water Cooler')).toContainText('Corridor');
-    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or ✨ 3 karma');
-    await expect(game.card('Aquarium')).toContainText('Star 2, or ✨ 5 karma');
-    await expect(game.card('Trophy Cabinet')).toContainText('Star 3, or ✨ 5 karma');
-    await expect(game.card('Koi Pond')).toContainText('🔒 ✨ 6 karma');
+    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or 3 karma');
+    await expect(game.card('Aquarium')).toContainText('Star 2, or 5 karma');
+    await expect(game.card('Trophy Cabinet')).toContainText('Star 3, or 5 karma');
+    await expect(game.card('Koi Pond')).toContainText('6 karma');
   });
 
   test('locked equipment cannot be picked before its star', async ({ game }) => {
@@ -328,7 +331,7 @@ test.describe('room blueprints', () => {
     await game.eval((pp) => (pp.state.speed = 0));
     await game.settle();
     await game.clickRoom('massage');
-    await page.locator('#inspector').getByRole('button', { name: '✋ Move', exact: true }).click();
+    await page.locator('#inspector').getByRole('button', { name: 'Move', exact: true }).click();
     await expect(page.locator('#hint')).toContainText('Moving the Massage Suite');
     /** The first free spot the suite fits, scanning the lot, and where on screen its middle is. */
     const find = () =>
@@ -833,7 +836,10 @@ test.describe('running a center', () => {
       ids[0],
       ids[2],
     ]);
-    await rows.nth(0).getByRole('button', { name: '🏠' }).click();
+    await rows
+      .nth(0)
+      .getByRole('button', { name: /^Send home untreated/ })
+      .click();
     await expect(rows).toHaveCount(2);
     expect(await game.eval((pp) => pp.state.stats.sent)).toBe(1);
   });
@@ -1017,7 +1023,7 @@ test.describe('running a center', () => {
     const offer = page.locator('#offer');
     await expect(offer).toContainText('Offer lapses: 8 days left');
     await offer.locator('[data-tip="Decide later"]').click();
-    await expect(offer).toHaveText('🚨 Emergency on offer: 8 days left to decide');
+    await expect(offer).toHaveText('Emergency on offer: 8 days left to decide');
     // the clock keeps running while it is put aside
     await game.eval((pp) => (pp.state.day += 5));
     await expect(offer).toContainText('3 days left to decide');
@@ -1074,7 +1080,7 @@ test.describe('controls and saving', () => {
     expect(await game.eval((pp) => pp.state.speed)).toBe(0);
     await page.keyboard.press('3');
     expect(await game.eval((pp) => pp.state.speed)).toBe(3);
-    await expect(page.locator('#stats .speed.on')).toHaveText('▶▶▶');
+    await expect(page.locator('#stats .speed.on')).toHaveAccessibleName(/Fastest/);
     await page.keyboard.press('1');
     await game.menu('Items');
     await game.card('Bench').click();
@@ -2158,11 +2164,11 @@ test.describe('the campaign', () => {
     );
     await page.getByRole('button', { name: 'Campaign' }).click();
     const panel = page.locator('#title-campaign');
-    await expect(panel.locator('.karma')).toHaveText('✨ 6 karma');
+    await expect(panel.locator('.karma')).toHaveText('6 karma');
     await panel.getByRole('tab', { name: 'Karma shop' }).click();
     await panel.locator('.shop li', { hasText: 'Bonsai' }).getByRole('button').click();
     await expect(panel.locator('.shop li', { hasText: 'Bonsai' })).toContainText('Unlocked');
-    await expect(panel.locator('.karma')).toHaveText('✨ 3 karma');
+    await expect(panel.locator('.karma')).toHaveText('3 karma');
     // the koi pond costs more than is left
     await expect(panel.locator('.shop li', { hasText: 'Koi Pond' }).getByRole('button')).toBeDisabled();
 
@@ -2171,10 +2177,10 @@ test.describe('the campaign', () => {
     await page.waitForFunction(() => !!window.pp);
     await game.menu('Items');
     await expect(game.card('Bonsai')).not.toHaveClass(/locked/);
-    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or ✨ 3 karma');
+    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or 3 karma');
     await game.card('Mindfulness Arcade').click();
     await expect(page.locator('#modal')).toContainText('Unlock the Mindfulness Arcade?');
-    await page.getByRole('button', { name: 'Unlock for ✨ 3 karma' }).click();
+    await page.getByRole('button', { name: 'Unlock for 3 karma' }).click();
     await expect(page.locator('#modal')).toBeEmpty();
     await expect(game.card('Mindfulness Arcade')).not.toHaveClass(/locked/);
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pressure-point-campaign')!).unlocked)).toEqual([
@@ -2405,7 +2411,7 @@ test.describe('magic mushrooms', () => {
 
     // left out on purpose, for the inspector to find
     await game.menu('Policy');
-    await page.locator('#menu').getByRole('button', { name: '🍄 Hide from inspector: on' }).click();
+    await page.locator('#menu').getByRole('button', { name: 'Hide from inspector: on' }).click();
     await expect(page.locator('#menu')).toContainText('Hide from inspector: off');
     await page.keyboard.press('Escape');
     await game.eval((pp) => {
