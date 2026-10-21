@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { disposeOwned } from '../render/disposal';
-import { addLights, placeSun } from '../render/lighting';
+import { addLights, type Lights, lightSetting, placeSun, toneMap } from '../render/lighting';
+import type { Setting } from '../render/setting';
 import type { Model } from './catalog';
 
 /** The way the game's camera looks down at the floor. */
@@ -32,6 +33,7 @@ export class Stage {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(30, 1, 0.1, 300);
   private orbit: OrbitControls;
+  private lights: Lights;
   private sun: THREE.DirectionalLight;
   /** Holds the model, its footprint and the person for scale, and turns them all together. */
   private pivot = new THREE.Group();
@@ -49,8 +51,10 @@ export class Stage {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    toneMap(this.renderer);
     // a small stage needs only a small shadow, which keeps it sharp
-    this.sun = addLights(this.scene, 8).sun;
+    this.lights = addLights(this.scene, 8);
+    this.sun = this.lights.sun;
 
     this.ground = new THREE.Mesh(
       new THREE.PlaneGeometry(GRID_REACH * 6, GRID_REACH * 6),
@@ -75,10 +79,11 @@ export class Stage {
     this.camera.updateProjectionMatrix();
   }
 
-  /** Color the ground and the sky behind it. */
-  setGround(color: number) {
-    this.ground.material.color.setHex(color);
-    this.scene.background = new THREE.Color(color);
+  /** Color the ground and the sky behind it, and light the stage as the setting is lit. */
+  setGround({ ground, light }: Setting) {
+    this.ground.material.color.setHex(ground);
+    this.scene.background = new THREE.Color(ground);
+    lightSetting(this.lights, light);
   }
 
   /** Put a model on the stage in place of the last one, on the tiles it covers. */

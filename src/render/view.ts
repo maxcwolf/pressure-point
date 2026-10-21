@@ -11,7 +11,16 @@ import { Floor } from './floor';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
 import { LandLayer } from './land';
-import { addLights, easeLights, lightLevel, type Lights, placeSun } from './lighting';
+import {
+  addLights,
+  easeLights,
+  lightLevel,
+  type Lights,
+  lightSetting,
+  placeSun,
+  shadowReach,
+  toneMap,
+} from './lighting';
 import { LitterLayer } from './litter';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type DoorSpec, type GhostSpec, Overlays } from './overlays';
@@ -73,9 +82,11 @@ export class View {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    toneMap(this.renderer);
     this.scene.background = new THREE.Color(settingOf(sim.s).ground);
 
     this.lights = addLights(this.scene);
+    lightSetting(this.lights, settingOf(sim.s).light);
 
     this.rig = new CameraRig(sim.world.building, sim.world.w);
     this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s), sim.world.w, plotsOf(sim));
@@ -193,7 +204,7 @@ export class View {
     this.overlays.updateRing(this.time);
     this.rig.update();
     easeLights(this.lights, lightLevel(this.sim.s.mishap), dt);
-    placeSun(this.lights.sun, this.rig.target);
+    placeSun(this.lights.sun, this.rig.target, shadowReach(this.rig.dist));
     if (this.drawing) this.renderer.render(this.scene, this.rig.camera);
     else {
       // what drawing would have done along the way, so clicks still find what is where
