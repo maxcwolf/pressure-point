@@ -90,19 +90,19 @@ The HUD is consistent and charming, and its tooltips are better than the browser
 
 Each stream below is scoped to its own files so several can run at once. Each should branch locally from `main` (no pull requests on this project), keep the draw-call budget that `yarn test:perf` checks, update the stored pictures with `yarn test:visual:update` and look at every changed picture before committing, and add a line to `docs/architecture.md` where it changes how a layer works. Suggested model: `claude-opus-5-5` at medium effort, as asked for this plan.
 
-| #   | Stream                         | Files                                                                                                                     | Depends on                       | Size   |
-| --- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ------ |
-| 1a  | Icon set and pipeline: done    | new `src/ui/icons/*.svg`, `scripts/make-icons.mjs`, `src/ui/components/common/Icon.tsx`, `render/models/icons.ts` (atlas) | none                             | Large  |
-| 1b  | Icons in the interface         | `src/ui/components/**`, `core/data/*` icon fields become icon ids                                                         | 1a                               | Medium |
-| 1c  | Icons in the scene             | `render/models/emoji.ts` → atlas, `pose.ts` bubbles, `items.ts` markers, `rooms.ts` signs, `overlays.ts` markers          | 1a                               | Medium |
-| 2   | Overlay rework (done)          | `render/heatmap.ts`, `ui/lib/overlays.ts`, `OverlayPicker.*`, `app/game.ts` drawOverlay, a people-halo layer              | none                             | Medium |
-| 3   | Selection and hover (done)     | `render/overlays.ts` (ring), `render/picking.ts`, `app/pointer.ts`                                                        | none                             | Small  |
-| 4   | Lighting and materials (done)  | `render/lighting.ts`, `render/view.ts`, `render/setting.ts`, `models/parts.ts` (roughness)                                | none                             | Small  |
-| 5   | Room signs, doors, status lamp | `render/rooms.ts`, `render/room-walls.ts`, new `models/sign-plaque.ts`                                                    | 1a (icons)                       | Medium |
-| 6   | People readability (done)      | `render/pose.ts`, `models/character-detail.ts` (expressions), idle staff, patience posture                                | none                             | Medium |
-| 7   | Gradual wear and effect cues   | `render/items.ts`, a few `models/items/*` (smoke, wobble, ripple parts)                                                   | none                             | Small  |
-| 8   | Day and season light           | `render/lighting.ts`, `render/scenery.ts`                                                                                 | 4                                | Small  |
-| 9   | Model polish pass              | `models/items/*`, `models/tree.ts`, floor `TS` in `floor.ts`, split by family between two sessions                        | 4 (to judge under the new light) | Medium |
+| #   | Stream                              | Files                                                                                                                     | Depends on                       | Size   |
+| --- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ------ |
+| 1a  | Icon set and pipeline: done         | new `src/ui/icons/*.svg`, `scripts/make-icons.mjs`, `src/ui/components/common/Icon.tsx`, `render/models/icons.ts` (atlas) | none                             | Large  |
+| 1b  | Icons in the interface              | `src/ui/components/**`, `core/data/*` icon fields become icon ids                                                         | 1a                               | Medium |
+| 1c  | Icons in the scene                  | `render/models/emoji.ts` → atlas, `pose.ts` bubbles, `items.ts` markers, `rooms.ts` signs, `overlays.ts` markers          | 1a                               | Medium |
+| 2   | Overlay rework (done)               | `render/heatmap.ts`, `ui/lib/overlays.ts`, `OverlayPicker.*`, `app/game.ts` drawOverlay, a people-halo layer              | none                             | Medium |
+| 3   | Selection and hover (done)          | `render/overlays.ts` (ring), `render/picking.ts`, `app/pointer.ts`                                                        | none                             | Small  |
+| 4   | Lighting and materials (done)       | `render/lighting.ts`, `render/view.ts`, `render/setting.ts`, `models/parts.ts` (roughness)                                | none                             | Small  |
+| 5   | Room signs, doors, status lamp      | `render/rooms.ts`, `render/room-walls.ts`, new `models/sign-plaque.ts`                                                    | 1a (icons)                       | Medium |
+| 6   | People readability (done)           | `render/pose.ts`, `models/character-detail.ts` (expressions), idle staff, patience posture                                | none                             | Medium |
+| 7   | Gradual wear and effect cues (done) | `render/items.ts`, a few `models/items/*` (smoke, wobble, ripple parts)                                                   | none                             | Small  |
+| 8   | Day and season light                | `render/lighting.ts`, `render/scenery.ts`                                                                                 | 4                                | Small  |
+| 9   | Model polish pass                   | `models/items/*`, `models/tree.ts`, floor `TS` in `floor.ts`, split by family between two sessions                        | 4 (to judge under the new light) | Medium |
 
 **Stream 1a is done** (branch `claude/icon-set-d3485c`): 107 icons in `src/ui/icons/`, `yarn icons`, `<Icon id>` for the interface, `iconTexture(id, plain)` for the scene, and `/icons.html` to see them all; how to add one is in `architecture.md`. The overlay picker and the room signs use them already. The ids the later swaps should use:
 

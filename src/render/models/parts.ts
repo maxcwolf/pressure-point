@@ -227,6 +227,12 @@ export interface ItemParts {
   puffs?: THREE.Group;
   /** A blinking light. */
   led?: THREE.MeshStandardMaterial;
+  /** A light that shines steadily: it flickers as the item wears out and goes dark when it breaks. */
+  lamp?: THREE.MeshStandardMaterial;
+  /** The main surface of something that gets dirty without linens to change, which grows grimy until it is cleaned. */
+  grime?: THREE.MeshStandardMaterial;
+  /** The cues of wear, noise and warmth, added the first time each is needed (see `render/item-cues.ts`). */
+  cues?: CueParts;
   /** The wrench shown over an item that has broken down. */
   wrench?: THREE.Sprite;
   /** The flies shown over an item that is filthy. */
@@ -258,6 +264,18 @@ export interface ItemParts {
     swirls: THREE.Object3D[];
     circling: THREE.Object3D;
   };
+}
+
+/** The parts of an item's cues of wear, noise and warmth, each added to its model the first time it is needed. */
+export interface CueParts {
+  /** The box the model's own parts fill, in its own frame, that the cues rise from and spread around. */
+  box: THREE.Box3;
+  /** Smoke from a worn or broken machine, or dust from a worn mat. */
+  smoke?: THREE.Group;
+  /** Ripples from something loud a guest is playing. */
+  ripple?: THREE.Group;
+  /** Wisps of warm or cool air. */
+  wisps?: THREE.Group;
 }
 
 /** The changing parts of an item's model. */
