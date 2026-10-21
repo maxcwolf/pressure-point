@@ -4,7 +4,7 @@
 // People are about 1.1 m tall, and a room's back wall is 1.25 m (`H_TALL`).
 //
 // - Thickness. No structural member (a leg, post, pole, rail, frame or arch) is thinner than `MEMBER_MIN` across, and
-//   one taller than a person is at least 0.08 m, so nothing reads as wire at the default zoom. Only details too small
+//   one taller than a person is at least `MEMBER_TALL`, so nothing reads as wire at the default zoom. Only details too small
 //   to carry weight (a needle, a cord, a handle) go thinner, and never below 0.02 m. Marks painted on a flat face
 //   (lettering, the lines of a chart) are paint, not members.
 // - Corners. A box's corners are rounded by `corner(w, h, d)`: three tenths of its thinnest side, from 1.2 to 8 cm.
@@ -114,6 +114,9 @@ export const rbox = (w: number, h: number, d: number, r = 0.05) =>
 
 /** The thinnest a structural member may be across, in meters (see the guideline at the top of this file). */
 export const MEMBER_MIN = 0.06;
+
+/** The thinnest a structural member taller than a person may be across, in meters. */
+export const MEMBER_TALL = 0.08;
 
 /** The tallest a one-tile item may stand, in meters: a person and a half. */
 export const TALL_MAX = 1.6;
