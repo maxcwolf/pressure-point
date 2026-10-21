@@ -7,16 +7,48 @@ const matCache = new Map<string, THREE.MeshStandardMaterial>();
 /** The roughness of each shared material with no glow: these differ from one another only in color. */
 const plain = new WeakMap<THREE.Material, number>();
 
-/** A shared material for a color, roughness and glow, made once and reused. */
-export function mat(color: number, rough = 0.72, emissive = 0): THREE.MeshStandardMaterial {
+/** How rough a painted surface is unless asked otherwise: satin, so rounded edges catch a soft highlight. */
+const PAINT = 0.62;
+/** How rough a color's surface is at most, whatever is asked: oiled wood has a soft shine, and lacquer a sharper one. */
+const polish = (color: number) => (color === WOOD || color === WOOD_DARK ? 0.55 : color === LACQUER ? 0.38 : 1);
+/** Roughnesses from here up are cloth, hair and felt, which take a pale sheen where the light grazes them. */
+const CLOTH = 0.8;
+/** Skin's roughness, as people's models ask for it: skin takes a faint warm sheen at its edges, as light through skin does. */
+const SKIN = 0.65;
+
+/**
+ * A shared material for a color, roughness and glow, made once and reused. Wood and lacquer are a little glossier than
+ * asked, and cloth and skin take a sheen, so each kind of surface takes the light its own way without any more
+ * materials than before. A material's recorded roughness, asked for in white, gives the same look, as the crowd
+ * needs.
+ */
+export function mat(color: number, rough = PAINT, emissive = 0): THREE.MeshStandardMaterial {
   const key = `${color}|${rough}|${emissive}`;
   let m = matCache.get(key);
   if (!m) {
-    m = new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0.02 });
+    const roughness = Math.min(rough, polish(color));
+    if (rough >= CLOTH) {
+      m = new THREE.MeshPhysicalMaterial({
+        roughness,
+        metalness: 0,
+        sheen: 1,
+        sheenColor: 0x4a4a4a,
+        sheenRoughness: 0.55,
+      });
+    } else if (rough === SKIN) {
+      m = new THREE.MeshPhysicalMaterial({
+        roughness,
+        metalness: 0,
+        sheen: 1,
+        sheenColor: 0x5c3428,
+        sheenRoughness: 0.45,
+      });
+    } else m = new THREE.MeshStandardMaterial({ roughness, metalness: 0 });
+    m.color.setHex(color);
     if (emissive) {
       m.emissive = new THREE.Color(color);
       m.emissiveIntensity = emissive;
-    } else plain.set(m, rough);
+    } else plain.set(m, roughness);
     matCache.set(key, m);
   }
   return m;

@@ -205,7 +205,7 @@ function step(by: number) {
 function applyView() {
   stage.setTilesVisible(view.tiles);
   stage.setWireframe(view.wireframe);
-  stage.setGround(SETTINGS[view.setting].ground);
+  stage.setGround(SETTINGS[view.setting]);
 }
 
 let showingPerson = false;
