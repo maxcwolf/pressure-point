@@ -24,6 +24,7 @@ import { newSeed, stream } from '../core/random';
 import type { Char, Look, VisitorKind } from '../core/state/types';
 import { must } from '../core/util';
 import { accessPose, itemCenter } from '../core/world';
+import { NOISE_CUE, usedNoise } from '../render/item-cues';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
 import { buildBeach } from '../render/models/beach';
@@ -93,14 +94,18 @@ function wallBehind(model: THREE.Group, w: number): THREE.Group {
 function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
   const def = ITEMS[type];
   // a full trophy cabinet to begin with, so every cup is in the picture
-  const st: ItemCondition & { session: string } = {
+  const st: ItemCondition & { session: string; heating: boolean } = {
     id: 1,
+    type,
     water: 100,
     dirt: 0,
+    wear: 0,
     scanning: false,
-    broken: false,
+    inUse: false,
+    running: 0,
     trophies: 99,
     session: '',
+    heating: false,
   };
   return {
     id: center ? `item:${type}:${center}` : `item:${type}`,
@@ -120,7 +125,11 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
         st.water = Math.min(st.water, HAMPER_SIZE / 2);
         controls.push(range('Linens in it', st, 'water', 0, HAMPER_SIZE));
       }
-      if (parts.ring) controls.push(toggle('Scanning', st, 'scanning'), toggle('Broken', st, 'broken'));
+      if (parts.grime) controls.push(range('Dirt', st, 'dirt'));
+      if (parts.ring) controls.push(toggle('Scanning', st, 'scanning'));
+      if (def.wear) controls.push(range('Wear', st, 'wear'));
+      if (usedNoise(type) >= NOISE_CUE) controls.push(toggle('A guest using it', st, 'inUse'));
+      if (def.heat) controls.push(toggle(def.heat > 0 ? 'Heating' : 'Cooling', st, 'heating'));
       if (parts.cups) {
         st.trophies = Math.min(st.trophies, parts.cups.length);
         controls.push(range('Trophies', st, 'trophies', 0, parts.cups.length));
@@ -135,6 +144,7 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
         controls,
         /** Move the item's parts as the game does, and lay out the props for the session picked. */
         animate(t) {
+          st.running = st.heating ? 1 : 0;
           animateItemParts(root, st, t);
           if (props) for (const [key, prop] of Object.entries(props)) prop.visible = key === st.session;
         },
