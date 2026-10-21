@@ -84,6 +84,12 @@
   font-size: 13px;
 }
 
+.call-who .call-cost {
+  display: block;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
 .offer .warn {
   color: #a8322b;
   font-weight: 600;

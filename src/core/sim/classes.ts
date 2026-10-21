@@ -10,10 +10,10 @@ import {
   CLASS_CALL_GAP,
   CLASS_DAYS,
   CLASS_FEE,
-  CLASS_INTEREST,
   CLASS_PATIENCE,
   CLASS_PLACES,
   CLASS_SECONDS,
+  CLASS_WEEKLY,
   DAY_SECONDS,
   ITEMS,
   REST_AHEAD,
@@ -57,11 +57,11 @@ export function toggledDays(days: readonly number[], day: number): number[] {
 }
 
 /**
- * How many class-goers a studio draws in a week: more for each Practice Spot, for a better reputation and for a more
- * skilled Instructor.
+ * How many class-goers a studio draws in a week: more for a better reputation and for a more skilled Instructor. Its
+ * Practice Spots only cap how many each class can hold.
  */
-export function weeklyInterest(spots: number, reputation: number, skill: number): number {
-  return spots * CLASS_INTEREST * (0.4 + reputation / 83) * (0.85 + skill * 0.05);
+export function weeklyInterest(reputation: number, skill: number): number {
+  return CLASS_WEEKLY * (0.4 + reputation / 83) * (0.85 + skill * 0.05);
 }
 
 /**
@@ -211,7 +211,7 @@ export function bookClasses(ctx: SimContext) {
         'info',
         { kind: 'staff', id: instructor.id },
       );
-    const interest = weeklyInterest(spots, s.reputation, instructor.skill);
+    const interest = weeklyInterest(s.reputation, instructor.skill);
     const size = classSize(interest, classDays(room).length, Math.max(0, Math.min(spots, free)), rnd(s, 0.8, 1.2));
     free -= size.count;
     if (size.turned > 0 && classDays(room).length < 7)

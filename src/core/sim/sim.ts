@@ -66,7 +66,7 @@ import {
   setThermostat,
   toggleWindow,
 } from './building';
-import { acceptCall, callFee, declineCall, updateCalls, whoCanGo } from './calls';
+import { acceptCall, type CallCost, callCost, callFee, declineCall, updateCalls, whoCanGo } from './calls';
 import { fullyTrained, promote, reject, setDuty, updateApplicants, updateHabits } from './careers';
 import { announceSweatLodge } from './ceremonies';
 import { challengeObjective, updateChallenge } from './challenges';
@@ -83,6 +83,7 @@ import {
   noteMissedClasses,
   setClasses,
   toggleClassDay,
+  weeklyInterest,
 } from './classes';
 import { createContext, type SimContext } from './context';
 import { decorateRoom } from './decor';
@@ -663,6 +664,10 @@ export class Sim {
   callFee(st: Staff): number {
     return this.s.callOffer ? callFee(this.s, this.s.callOffer, st) : 0;
   }
+  /** What it costs at home if this member of staff goes on a house call: who waits in their line, the worst's days. */
+  callCost(st: Staff): CallCost {
+    return callCost(this.ctx, st);
+  }
   /** Send someone on the house call on offer. */
   acceptCall(staffId: number): boolean {
     return acceptCall(this.ctx, staffId);
@@ -833,10 +838,19 @@ export class Sim {
     return classPlaying(this.ctx, spot);
   }
 
-  /** The Instructor whose rank sets how many places each Qi Gong class has: the most skilled on the payroll, if any. */
-  classLeader(): { staff: Staff; places: number } | undefined {
+  /**
+   * The Instructor whose rank sets how many places each Qi Gong class has: the most skilled on the payroll, if any,
+   * with those places and the class-goers a week their classes draw at this reputation.
+   */
+  classLeader(): { staff: Staff; places: number; interest: number } | undefined {
     const staff = bestInstructor(this.ctx);
-    return staff && { staff, places: classPlaces(staff.skill) };
+    return (
+      staff && {
+        staff,
+        places: classPlaces(staff.skill),
+        interest: weeklyInterest(this.s.reputation, staff.skill),
+      }
+    );
   }
 
   /** Switch a day of the week on or off in a Qi Gong Studio's timetable. */

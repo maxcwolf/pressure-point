@@ -1,5 +1,5 @@
-// Top center, under any emergency: a house call on offer, with who could go and what each would earn, which can be
-// put aside to decide on later.
+// Top center, under any emergency: a house call on offer, with who could go, what each would earn and who would wait
+// for them at home, which can be put aside to decide on later.
 
 import { answerOffer } from '../../app/analytics';
 import { CALL_OFFER_DAYS } from '../../core/data';
@@ -7,6 +7,7 @@ import { money } from '../../core/format';
 import { callWants } from '../../core/sim/calls';
 import { rankName } from '../../core/sim/careers';
 import { useGame, useHud } from '../hooks/use-hud';
+import { callCostNote } from '../lib/calls';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
@@ -52,7 +53,8 @@ export function HouseCallOffer() {
         {` to come to them for ${call.days} day${call.days === 1 ? '' : 's'}.`}
       </p>
       <p class="sub">
-        Whoever goes is away until they are back, and their station stands empty. A higher rank earns more.
+        Whoever goes is away until they are back, and their station stands empty while their line waits. A higher rank
+        earns more.
       </p>
       {who.length ? (
         <div class="call-who">
@@ -66,7 +68,8 @@ export function HouseCallOffer() {
                 answerOffer(sim.s, offer, 'house_call', 'accepted');
               }}
             >
-              {`Send ${st.name} (${rankName(st.skill)}) · ${money(sim.callFee(st))}`}
+              <span>{`Send ${st.name} (${rankName(st.skill)}) · ${money(sim.callFee(st))}`}</span>
+              <small class="call-cost">{callCostNote(sim.callCost(st), call.days)}</small>
             </Button>
           ))}
         </div>

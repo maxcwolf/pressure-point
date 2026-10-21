@@ -95,8 +95,12 @@ export const BOOK_AHEAD = 2;
  * heard every class. At a faster speed the gap is as long in real time, and so more days.
  */
 export const CLASS_CALL_GAP = 14;
-/** How many class-goers a week each Practice Spot draws at 50% reputation, shared among the week's classes. */
-export const CLASS_INTEREST = 2.5;
+/**
+ * How many class-goers a week a studio draws, before its reputation and its Instructor's rank are counted: about 13 at
+ * 50% reputation, 21 at 80% and 25 at the top, shared among the week's classes. More Practice Spots do not draw more;
+ * they only let a class hold more.
+ */
+export const CLASS_WEEKLY = 14;
 /**
  * How many Practice Spots a Qi Gong Instructor can lead a class on, by rank from Trainee to Expert. Kept to 12 at most:
  * a bigger class sent more guests into the center at once, to the shop and the restrooms, than it could cope with.
@@ -238,9 +242,12 @@ export const CHALLENGE_SULK = 10;
 export const CALL_GAP_MIN = 25;
 export const CALL_GAP_MAX = 45;
 export const CALL_OFFER_DAYS = 6;
-/** What a house call pays a day for someone of the first rank, and how much more for each rank above it. */
-export const CALL_PER_DAY = 1200;
-export const CALL_RANK_BONUS = 0.25;
+/**
+ * What a house call pays a day for someone of the first rank, and how much more for each rank above it: about what
+ * they would earn at home, where a table treats a guest in about two days at fees of $900 to $2,000.
+ */
+export const CALL_PER_DAY = 600;
+export const CALL_RANK_BONUS = 0.15;
 /** What sending a guest home costs in reputation: less than a failed treatment. */
 export const SEND_HOME_REP = 1;
 

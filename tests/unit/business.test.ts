@@ -5,7 +5,9 @@ import {
   CALL_PER_DAY,
   CALL_RANK_BONUS,
   CAMPAIGNS,
+  CONDITIONS,
   DAYS_PER_MONTH,
+  MODALITIES,
   SHOP_CHANCE,
   SHOP_LINE_SKIP,
   SHOP_SPEND,
@@ -17,8 +19,10 @@ import { netOf } from '../../src/core/sim/economy';
 import { campaignBoost, running, updateCampaigns } from '../../src/core/sim/marketing';
 import { repathAll } from '../../src/core/sim/movement';
 import { shopSpend, wantsToShop } from '../../src/core/sim/stations';
+import { conditionDays } from '../../src/core/sim/worsening';
 import { emptyLedger } from '../../src/core/state/game';
-import type { HouseCall } from '../../src/core/state/types';
+import type { Guest, HouseCall } from '../../src/core/state/types';
+import { callCostNote } from '../../src/ui/lib/calls';
 import { addAcupuncture, addTraining, hire, inconsistencies, openCenter, run, runUntil } from './helpers';
 
 describe('prices per treatment', () => {
@@ -184,6 +188,52 @@ describe('a house call', () => {
     expect(canGo(therapist, call(s.day, { modality: 'deep' }))).toBe(false);
     therapist.state = 'training';
     expect(canGo(therapist, call(s.day))).toBe(false);
+  });
+
+  it('pays about a day of what a practitioner earns at home, at every rank, not several', () => {
+    // a table treats about one guest in two days, at the fees massage is offered at
+    const fees = CONDITIONS.filter((c) => MODALITIES[c.modality].discipline === 'massage').map((c) => c.fee);
+    const { s, therapist } = openCenter(1);
+    for (const skill of [1, 2, 3, 4, 5]) {
+      therapist.skill = skill;
+      const day = callFee(s, call(s.day, { days: 1 }), therapist);
+      expect(day, `rank ${skill}`).toBeGreaterThanOrEqual(Math.min(...fees) / 2);
+      expect(day, `rank ${skill}`).toBeLessThanOrEqual(Math.max(...fees) / 2);
+    }
+  });
+
+  it('says what it costs at home: who waits in their line, and the days the worst of them has left', () => {
+    const { sim, s, therapist } = openCenter(1);
+    runUntil(sim, () => therapist.state === 'atPost' && s.guests.length > 1, 600);
+    const table = s.items.find((i) => i.id === therapist.post)!;
+    table.queue = [];
+    table.serving = 0;
+    expect(sim.callCost(therapist)).toEqual({ waiting: 0, worstDays: null });
+    const [a, b] = s.guests as [Guest, Guest];
+    for (const [g, health] of [
+      [a, 60],
+      [b, 20],
+    ] as const) {
+      Object.assign(g, { station: table.id, state: 'waiting', goal: 'treat', health });
+      table.queue.push(g.id);
+    }
+    const cost = sim.callCost(therapist);
+    expect(cost.waiting).toBe(2);
+    expect(cost.worstDays).toBeCloseTo(conditionDays(b));
+    expect(cost.worstDays).toBeLessThan(conditionDays(a));
+  });
+
+  it('puts what it costs at home on the offer, warning when the worst would not last the days away', () => {
+    expect(callCostNote({ waiting: 0, worstDays: null }, 2)).toBe('Nobody waiting in their line');
+    expect(callCostNote({ waiting: 3, worstDays: 2.6 }, 2)).toBe(
+      '3 waiting in their line, the worst with 2 days of condition left',
+    );
+    expect(callCostNote({ waiting: 1, worstDays: 1.4 }, 2)).toBe(
+      '⚠️ 1 waiting in their line, the worst with 1 day of condition left',
+    );
+    expect(callCostNote({ waiting: 2, worstDays: 0.5 }, 1)).toBe(
+      '⚠️ 2 waiting in their line, the worst with under a day of condition left',
+    );
   });
 
   it('charges what the center charges: the price level, and the price of the technique it asks for', () => {
