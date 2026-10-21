@@ -42,7 +42,7 @@ import {
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { BUSY_DAYS } from '../../src/core/sim/bottleneck';
-import { daysUntilBankrupt, loanLimit, projectedCashflow, wagesDue } from '../../src/core/sim/economy';
+import { daysUntilBankrupt, loanLimit, projectedCashflow, putOffChance, wagesDue } from '../../src/core/sim/economy';
 import type { SimEvent, Subject } from '../../src/core/sim/events';
 import { INTAKE_CAP_MIN } from '../../src/core/sim/guests';
 import { matsPlayed } from '../../src/core/sim/sessions';
@@ -300,6 +300,8 @@ export function botStyle(env: Record<string, string | undefined> = process.env):
 
 /** The share of the time a discipline's staffed tables are kept busy that the bot staffs for. */
 const BUSY_TARGET = 0.7;
+/** The share of diagnosed guests who are new, and so balk at the full chance (balance log 35: 26% new, 6% plain regulars). */
+const NEW_GUESTS = 0.3;
 
 /** What the bot sees over a month: lines and busy tables by discipline, sampled, and the casebook at its start. */
 interface Watch {
@@ -745,7 +747,10 @@ export class Bot {
     const s = this.s;
     const last = s.months.at(-1);
     if (!last) return;
-    const putOff = last.priced / Math.max(1, last.arrived);
+    // the share of all guests the price puts off, read from the Prices tab's chance rather than the month's count,
+    // which on a quiet month is two balks read as a quarter: the chance is per new guest, and about three guests in
+    // ten are new (the rest regulars and emergencies, who balk less or not at all)
+    const putOff = putOffChance(s.priceLevel, s.reputation) * NEW_GUESTS;
     const wanted = Math.max(this.openGoal('reputation')?.percent ?? 0, 0);
     const falling = s.reputation < this.repAtReview - 4;
     let level = s.priceLevel;

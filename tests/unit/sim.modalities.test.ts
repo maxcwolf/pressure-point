@@ -64,21 +64,29 @@ describe('unlocking modalities', () => {
   });
 
   it('makes unqualified treatment mostly fail and qualified treatment mostly work', () => {
-    /** Play a center where every guest has knots and return its stats. */
+    /**
+     * Play a center where every guest has knots, over three seeds so one seed's run of luck does not decide it, and
+     * return the healed and failed counts summed.
+     */
     const outcome = (qualified: boolean) => {
-      const { sim, s, therapist } = openCenter(11);
-      s.stars = 1;
-      therapist.skill = 3;
-      therapist.quals = qualified ? ['swedish', 'deep'] : ['swedish'];
-      // somewhere to rest after Deep Tissue, and for the therapist between guests, so only their training counts
-      addRecovery(sim);
-      addStaffRoom(sim);
-      playWithCondition(sim, 'knotted', 1500);
-      return s.stats;
+      const sum = { healed: 0, failed: 0 };
+      for (const seed of [11, 12, 13]) {
+        const { sim, s, therapist } = openCenter(seed);
+        s.stars = 1;
+        therapist.skill = 3;
+        therapist.quals = qualified ? ['swedish', 'deep'] : ['swedish'];
+        // somewhere to rest after Deep Tissue, and for the therapist between guests, so only their training counts
+        addRecovery(sim);
+        addStaffRoom(sim);
+        playWithCondition(sim, 'knotted', 1500);
+        sum.healed += s.stats.healed;
+        sum.failed += s.stats.failed;
+      }
+      return sum;
     };
     const bad = outcome(false);
     const good = outcome(true);
-    expect(bad.healed + bad.failed).toBeGreaterThan(8);
+    expect(bad.healed + bad.failed).toBeGreaterThan(24);
     expect(bad.failed).toBeGreaterThan(bad.healed);
     expect(good.healed).toBeGreaterThan(good.failed * 2);
   });
