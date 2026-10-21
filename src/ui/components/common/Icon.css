@@ -1,0 +1,9 @@
+/* Styles for Icon. */
+
+/* an icon sits in a line of words like a letter, and never takes the pointer from what it is on */
+.icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+  pointer-events: none;
+}

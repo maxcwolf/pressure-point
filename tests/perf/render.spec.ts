@@ -31,14 +31,18 @@ async function rendererInfo(page: Page) {
     const emoji = (await import(/* @vite-ignore */ `${location.origin}/src/render/models/emoji.ts`)) as {
       emojiTextures: () => number;
     };
+    const icons = (await import(/* @vite-ignore */ `${location.origin}/src/render/models/icons.ts`)) as {
+      iconTextures: () => number;
+    };
     const parts = (await import(/* @vite-ignore */ `${location.origin}/src/render/models/parts.ts`)) as {
       cachedShapes: () => number;
     };
     return {
       // shared shapes are made the first time something needs them and kept, like emoji
       geometries: info.memory.geometries - parts.cachedShapes(),
-      // emoji are drawn once each and kept, so a new one turning up late in a session is not a leak
-      textures: info.memory.textures - emoji.emojiTextures(),
+      // emoji are drawn once each and kept, so a new one turning up late in a session is not a leak, and so is the
+      // icons' atlas, the first time an icon is shown
+      textures: info.memory.textures - emoji.emojiTextures() - icons.iconTextures(),
       calls: info.render.calls,
       triangles: info.render.triangles,
       programs: info.programs?.length ?? 0,
