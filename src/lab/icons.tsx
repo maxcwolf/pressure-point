@@ -1,7 +1,7 @@
 // The icon sheet: a page for the dev server only, to judge the game's icons as a set. Open /icons.html. Every icon is
 // shown at the sizes the interface uses, and every icon the scene draws is shown as a sprite among clay people and
-// furniture, seen from the game's camera, so a glyph can be checked at the size a player sees it. Add &still to stop
-// everything moving, for pictures.
+// furniture, seen from the game's camera, so a glyph can be checked at the size a player sees it. Add ?still to stop
+// everything moving, for pictures, and &camera=close (or far) to start from another distance.
 import '@fontsource/fredoka/latin-400.css';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
@@ -31,7 +31,8 @@ declare global {
   }
 }
 
-const still = new URLSearchParams(location.search).has('still');
+const params = new URLSearchParams(location.search);
+const still = params.has('still');
 
 /** Each family of icons, with what it is for and how it is colored. */
 const FAMILIES: readonly (readonly [prefix: string, name: string, note: string])[] = [
@@ -48,6 +49,8 @@ const FAMILIES: readonly (readonly [prefix: string, name: string, note: string])
 /** How far the camera sits from what it looks at: as close as the game lets it, as it starts, and a long way out. */
 const DISTANCES = { close: 16, game: 41, far: 60 } as const;
 type Distance = keyof typeof DISTANCES;
+/** The distance the camera starts at: where the game starts, unless the address asks for another. */
+const startDistance = (Object.keys(DISTANCES) as Distance[]).find((d) => d === params.get('camera')) ?? 'game';
 
 /** Which way the scene shows its sprites: as the game is meant to, or all on their own, or all in bubbles. */
 type Variant = 'game' | 'plain' | 'bubble';
@@ -93,7 +96,7 @@ function personWith(id: SceneIconId, x: number, z: number, i: number) {
 /** The scene: every icon the scene draws, over people, walls, furniture and tiles, seen from the game's angle. */
 function Scene() {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [distance, setDistance] = useState<Distance>('game');
+  const [distance, setDistance] = useState<Distance>(startDistance);
   const [variant, setVariant] = useState<Variant>('game');
   const world = useRef<{ setView: (d: Distance, v: Variant) => void } | null>(null);
 
@@ -214,7 +217,7 @@ function Scene() {
     if (still) orbit.addEventListener('change', draw);
 
     void loadIcons().then(() => {
-      setView('game', 'game');
+      setView(startDistance, 'game');
       if (!still) frame = requestAnimationFrame(loop);
       window.iconSheet = { ready: true };
     });
