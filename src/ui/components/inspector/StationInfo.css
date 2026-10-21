@@ -15,7 +15,8 @@
   grid-template-areas:
     'who who'
     'patience moves'
-    'odds moves';
+    'odds moves'
+    'condition condition';
   align-items: center;
   column-gap: 6px;
   row-gap: 2px;
@@ -53,6 +54,16 @@
 }
 
 .insp .in-line .odds.poor {
+  color: #a8322b;
+  font-weight: 600;
+}
+
+.insp .in-line .condition {
+  grid-area: condition;
+  font-size: 11.5px;
+}
+
+.insp .in-line .condition.poor {
   color: #a8322b;
   font-weight: 600;
 }

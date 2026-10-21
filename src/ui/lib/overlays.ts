@@ -1,5 +1,5 @@
 // The overlays that color the floor by how something stands: how pleasant, quiet or warm it is, how patient or needy
-// the guests are, how fresh the staff, how well kept the furniture. Each tile gets a value from 0 (bad) to 1 (good),
+// the guests are, how much condition they have left, how fresh the staff, how well kept the furniture. Each tile gets a value from 0 (bad) to 1 (good),
 // except temperature, which runs from cold through just right to hot.
 
 import { HAMPER_SIZE, isWatered, ITEMS } from '../../core/data';
@@ -8,11 +8,12 @@ import { calmness } from '../../core/sim/noise';
 import type { PlacePreview } from '../../core/sim/preview';
 import type { Sim } from '../../core/sim/sim';
 import { tempScale } from '../../core/sim/warmth';
+import { worsening } from '../../core/sim/worsening';
 import { footprint } from '../../core/world';
 import type { HeatTile, Palette } from '../../render/heatmap';
 
 /** What the floor can be colored by. */
-export type OverlayMode = 'decor' | 'calm' | 'temperature' | 'patience' | 'needs' | 'energy' | 'upkeep';
+export type OverlayMode = 'decor' | 'calm' | 'temperature' | 'patience' | 'condition' | 'needs' | 'energy' | 'upkeep';
 
 /** An overlay as the picker lists it, with what its colors mean when it is not simply poor to good. */
 export interface OverlayDef {
@@ -38,6 +39,12 @@ export const OVERLAYS: readonly OverlayDef[] = [
     ends: ['Cold', 'Hot'],
   },
   { id: 'patience', icon: '⏳', name: 'Patience', desc: 'How patient each guest is.' },
+  {
+    id: 'condition',
+    icon: '🤕',
+    name: 'Condition',
+    desc: "How much of each waiting guest's condition is left before they go home worse off.",
+  },
   { id: 'needs', icon: '🍵', name: 'Needs', desc: 'How thirsty, hungry or desperate each guest is.' },
   { id: 'energy', icon: '⚡', name: 'Staff energy', desc: 'How fresh each member of staff is.' },
   { id: 'upkeep', icon: '🔧', name: 'Upkeep', desc: 'How worn, dirty or dry each piece of furniture is.' },
@@ -103,6 +110,9 @@ export function heatTiles(sim: Sim, mode: OverlayMode, preview: PlacePreview | n
       break;
     case 'patience':
       for (const g of s.guests) if (g.state !== 'leaving') out.push([g.tx, g.ty, unit(g.patience / 100)]);
+      break;
+    case 'condition':
+      for (const g of s.guests) if (worsening(g)) out.push([g.tx, g.ty, unit(g.health / 100)]);
       break;
     case 'needs':
       for (const g of s.guests)

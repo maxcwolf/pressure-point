@@ -133,6 +133,7 @@ import { decayItems } from './upkeep';
 import { fadeVibes } from './vibes';
 import { lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
 import { outdoorTemp, thermostatShare, todayIndoors, warmthAt } from './warmth';
+import { warnWorsening } from './worsening';
 
 export class Sim {
   readonly world: World;
@@ -217,6 +218,7 @@ export class Sim {
       updateMishaps(ctx);
       updateLand(ctx);
       updateOutdoors(ctx);
+      warnWorsening(ctx);
       // wages overdue for want of a loan may be paid at last, which lets the year's awards through
       if (updatePayroll(ctx)) this.holdYearAwards();
     }

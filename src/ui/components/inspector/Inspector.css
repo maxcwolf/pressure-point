@@ -166,8 +166,10 @@
   font-weight: 600;
 }
 
-.insp .chance.poor {
+.insp .chance.poor,
+.insp .condition.poor {
   color: #a8322b;
+  font-weight: 600;
 }
 
 .insp button.roompriority.on {
