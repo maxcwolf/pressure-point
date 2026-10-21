@@ -11,10 +11,12 @@
 /* words with an icon before them: the icon keeps to the first line, and the words wrap beside it */
 .icon-text {
   display: inline-flex;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 0.35em;
 }
 
+/* centered on the first line, whatever its height; the words, not the icon, set the line's baseline */
 .icon-text > .icon {
-  margin-top: -0.12em;
+  align-self: flex-start;
+  margin-top: calc((1lh - 1.3em) / 2);
 }
