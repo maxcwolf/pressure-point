@@ -44,6 +44,18 @@ const FAMILIES: readonly (readonly [prefix: string, name: string, note: string])
   ['overlay', 'Overlays', 'The floor overlays, for the picker and its key'],
   ['ui', 'Interface', 'The HUD: build and system buttons, the stats bar and the speeds'],
   ['season', 'Seasons', 'Beside the date'],
+  [
+    'item',
+    'Items',
+    'Each piece of furniture as the player places it: cream and sand, with one accent for what it is made of',
+  ],
+  ['technique', 'Treatments', 'Each technique a discipline teaches, in teal as its discipline'],
+  ['course', 'Courses', 'The general courses any member of staff can take, in orange as the people'],
+  ['feeling', 'Feelings', 'What guests felt about their visit: faces in orange, things as themselves'],
+  ['award', 'Awards', 'The year-end awards, on gold medals'],
+  ['achievement', 'Achievements', 'The campaign achievements, on badges'],
+  ['mishap', 'Mishaps', 'Power cuts, storms, freezes and wasps, in red'],
+  ['standing', 'Standing', 'The center’s grades, from a back room to an institute'],
 ];
 
 /** How far the camera sits from what it looks at: as close as the game lets it, as it starts, and a long way out. */

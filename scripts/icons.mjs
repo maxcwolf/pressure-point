@@ -29,7 +29,24 @@ export const PALETTE = {
  * The families an icon's id starts with. Rooms and places are teal, people and roles orange, warnings red and money
  * gold; the rest use whichever of those their subject calls for, on cream and sand.
  */
-export const FAMILIES = ['bubble', 'marker', 'room', 'role', 'discipline', 'overlay', 'ui', 'season'];
+export const FAMILIES = [
+  'bubble',
+  'marker',
+  'room',
+  'role',
+  'discipline',
+  'overlay',
+  'ui',
+  'season',
+  'item',
+  'technique',
+  'course',
+  'feeling',
+  'award',
+  'achievement',
+  'mishap',
+  'standing',
+];
 
 /** The families the 3D scene draws, which go into its atlas. The rest are for the interface alone. */
 export const SCENE_FAMILIES = ['bubble', 'marker', 'room', 'role'];
