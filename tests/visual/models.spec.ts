@@ -1,6 +1,6 @@
 // A picture of every model on its own, from the model lab: each item, a guest with each condition, each role of
 // staff, each kind of visitor, how people look as they feel (a waiting guest's patience, a face, staff with nothing to
-// do) and the scenery. A change to a shared part shows up in every model that uses it.
+// do), a room's doorway and sign, and the scenery. A change to a shared part shows up in every model that uses it.
 import { expect, type Page, test } from '@playwright/test';
 
 import { CENTERS, CONDITIONS, ITEMS, ROLE_ORDER } from '../../src/core/data';
@@ -33,6 +33,7 @@ const IDS = [
   ...['restless', 'impatient', 'fed-up'].flatMap((mood) => [`mood:${mood}`, `mood:${mood}-seated`]),
   ...FACES,
   ...['stretch', 'look', 'watch'].map((act) => `idle:${act}`),
+  'room:door',
   'scenery:trees',
   'scenery:pines',
   'scenery:beach',
@@ -88,6 +89,26 @@ test.describe('items showing their state', () => {
         'models',
         `${id.replaceAll(':', '-')}-${state}.png`,
       ]);
+    });
+  }
+});
+
+/**
+ * A room's doorway and sign with its lamp in each state, and in a wall cut low, where the sign stands on a post beside
+ * the door. Each is held at the same moment, so a pulsing lamp is caught at the same brightness every time.
+ */
+const SIGNS = [
+  ['idle', '&lamp=idle'],
+  ['broken', '&lamp=broken'],
+  ['unfinished', '&lamp=unfinished'],
+  ['low', '&low=1'],
+] as const;
+
+test.describe("a room's sign showing how the room is doing", () => {
+  for (const [state, settings] of SIGNS) {
+    test(`room:door, ${state}`, async ({ page }) => {
+      await openLab(page, 'room:door', settings);
+      await expect(page.locator('canvas.stage')).toHaveScreenshot(['models', `room-door-${state}.png`]);
     });
   }
 });
