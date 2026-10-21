@@ -33,6 +33,7 @@ import {
   type Modality,
   NOISE_NOTICE,
   type Role,
+  ROLES,
   ROOMS,
   type RoomType,
   SIDEWALK_Y,
@@ -40,7 +41,9 @@ import {
   WINDOW_MAX_BONUS,
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
+import { BUSY_DAYS } from '../../src/core/sim/bottleneck';
 import { daysUntilBankrupt, loanLimit, projectedCashflow, wagesDue } from '../../src/core/sim/economy';
+import type { SimEvent, Subject } from '../../src/core/sim/events';
 import { INTAKE_CAP_MIN } from '../../src/core/sim/guests';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
@@ -144,15 +147,16 @@ export function botFlags(env: Record<string, string | undefined> = process.env):
  * How the bot plays: as a good player (`new`), as it did before it learned its flags (`old`), or as a thoughtless
  * baseline (`baseline`): the opening build and nothing on purpose after it, a room and someone to work it only once
  * a line has formed, never a price changed, a call taken or a loan asked for, so the game is measured as a new
- * player who reads nothing meets it.
+ * player who reads nothing meets it. `advised` plays as the baseline and also does exactly what the game's toasts and
+ * advisor tell it, and nothing they do not, so the game is measured as a new player who reads it and does as it says.
  */
-export type BotMode = 'new' | 'old' | 'baseline';
+export type BotMode = 'new' | 'old' | 'baseline' | 'advised';
 
-/** The bot's mode from the environment (`BOT=old`, `BOT=baseline`): a good player unless told otherwise. */
+/** The bot's mode from the environment (`BOT=old`, `BOT=baseline`, `BOT=advised`): a good player unless told otherwise. */
 export function botMode(env: Record<string, string | undefined> = process.env): BotMode {
   const mode = env.BOT ?? 'new';
-  if (mode !== 'new' && mode !== 'old' && mode !== 'baseline')
-    throw new Error(`Unknown BOT=${mode}: use new, old or baseline`);
+  if (mode !== 'new' && mode !== 'old' && mode !== 'baseline' && mode !== 'advised')
+    throw new Error(`Unknown BOT=${mode}: use new, old, baseline or advised`);
   return mode;
 }
 
@@ -365,7 +369,7 @@ export class Bot {
       this.decide();
       for (let i = 0; i < ticksPerDay; i++) {
         this.sim.tick(0.1);
-        this.sim.drain();
+        this.hear(this.sim.drain());
         // a payday the bank cannot cover is borrowed for, as the player would, and past the loan paid into the red
         if (this.s.payrollDue) {
           if (this.sim.takePayrollLoan())
@@ -855,6 +859,10 @@ export class Bot {
       this.decideThoughtless();
       return;
     }
+    if (this.mode === 'advised') {
+      this.decideAdvised();
+      return;
+    }
     if (this.flags.clear) this.freeTrapped();
     this.keepStaffHappy();
     this.handleEvents();
@@ -930,6 +938,209 @@ export class Bot {
     }
     const seats = this.count('bench') * 2;
     if (s.guests.length > seats + 2 && s.money > 400) this.placeNearEntrance('bench');
+  }
+
+  // ---- the advised persona -----------------------------------------------------
+
+  /** The toasts heard since the advised bot last decided: the bad news and the plain news, and the bank letting off. */
+  private heard: { text: string; about?: Subject | undefined }[] = [];
+  /** What the bank last said while calling the overdraft in, until it says it is content; the summer notice heard. */
+  private calledIn: string | null = null;
+  private summerHeard = false;
+  /** The day the advised bot last built for each stage the advisor named, so it sees what a build did first. */
+  private grewStage: Partial<Record<string, number>> = {};
+
+  /** Keep the toasts the advised bot reads; the other personas read none. */
+  private hear(events: SimEvent[]) {
+    if (this.mode !== 'advised') return;
+    for (const e of events) {
+      if (e.type !== 'toast') continue;
+      if (e.kind === 'bad' || e.kind === 'info' || /no longer (being called|calling the overdraft)/.test(e.text))
+        this.heard.push({ text: e.text, about: e.about });
+    }
+  }
+
+  /** Note an action of the advised bot with the words that caused it, so the log shows the chain. */
+  private heed(signal: string, action: string) {
+    const said = signal.length > 70 ? `${signal.slice(0, 70)}…` : signal;
+    this.note(`day ${Math.floor(this.s.day)}: "${said}" → ${action}`);
+  }
+
+  /**
+   * The advised persona's day: everything the thoughtless baseline does, and then exactly what the game has said
+   * since yesterday (its toasts) and says now (the advisor), each mapped to the lever its words name and no more.
+   */
+  private decideAdvised() {
+    const s = this.s;
+    this.decideThoughtless();
+    const toasts = this.heard;
+    this.heard = [];
+    if (!s.open) return;
+    for (const t of toasts) this.heedToast(t.text, t.about);
+    const advice = this.sim.adviceNote();
+    // the bank's countdown, every day of it: from the advisor when it says so, or from what the bank last said
+    const countdown = advice.text.startsWith('The bank calls the overdraft in in') ? advice.text : this.calledIn;
+    if (countdown) {
+      this.priceUp(countdown);
+      if (countdown.includes('losing')) this.letGo(countdown);
+    }
+    if (this.summerHeard) {
+      this.throttle();
+      if (seasonOf(s.day) !== 'summer' && seasonOf(s.day + SEASON_AHEAD_DAYS) !== 'summer') this.summerHeard = false;
+    }
+    this.heedAdvice(advice.text, advice.about);
+  }
+
+  /** Act on one toast, by the words the game uses for it. */
+  private heedToast(text: string, about?: Subject) {
+    if (text.startsWith('⚠️ Payday in')) {
+      if (!text.includes("more than the bank and this month's pace will have")) return;
+      this.priceUp(text);
+      if (text.includes('with the books losing about')) this.letGo(text);
+      return;
+    }
+    if (
+      text.includes('The bank is calling the overdraft in') ||
+      text.includes('days before the bank calls the overdraft in')
+    ) {
+      if (!this.calledIn) this.heed(text, 'prices up and staff down every day until the bank is content');
+      this.calledIn = text;
+      return;
+    }
+    if (/no longer (being called|calling the overdraft)/.test(text)) {
+      if (this.calledIn) this.heed(text, 'the bank is content: stop');
+      this.calledIn = null;
+      return;
+    }
+    if (text.startsWith('⚠️ You are') && text.includes('borrow it from the Money menu')) {
+      if (this.sim.borrow()) this.heed(text, `borrowed a step, loan now ${this.s.loan}`);
+      return;
+    }
+    if (
+      about?.kind === 'guest' &&
+      (text.includes('getting worse: shorten the line') || text.includes('will go home worse off in about'))
+    ) {
+      this.heedGuest(text, about.id);
+      return;
+    }
+    if (text.startsWith('☀️ Summer in')) {
+      this.summerHeard = true;
+      this.heed(text, 'a limit on guests at once until autumn');
+      return;
+    }
+    if (text.startsWith('❄️ Winter in')) this.letGo(text);
+  }
+
+  /** Act on the advisor's nudge, by its words. */
+  private heedAdvice(text: string, about?: Subject) {
+    const s = this.s;
+    if (about?.kind === 'guest' && text.includes('goes home worse off in about')) {
+      this.heedGuest(text, about.id);
+      return;
+    }
+    if (text.startsWith('Guests wait longest for the ')) {
+      this.heedBottleneck(text);
+      return;
+    }
+    if (text.includes('A loan from the Money menu is cheaper')) {
+      if (this.sim.borrow()) this.heed(text, `borrowed a step, loan now ${s.loan}`);
+      return;
+    }
+    if (text.includes('Build a Staff Room') && !this.sim.hasRoom('staffroom') && s.money > ROOMS.staffroom.cost) {
+      if (this.buildRoom('staffroom')) this.heed(text, 'built a Staff Room');
+      return;
+    }
+    // the staff asks: someone the advisor says to hire, by the role's name
+    const asked = /Hire (?:a|an) ([A-Z][A-Za-z ]+?)(?: from| for| to|\.)/.exec(text)?.[1];
+    const role = asked && (Object.keys(ROLES) as Role[]).find((r) => ROLES[r].name === asked);
+    if (role && this.hire(role)) this.heed(text, `hired a ${role}`);
+  }
+
+  /** A guest the game warns about: to the front of their line, or home if they go home worse off in about a day. */
+  private heedGuest(text: string, id: number) {
+    const g = this.s.guests.find((x) => x.id === id);
+    if (!g) return;
+    if (/worse off in about 1 day(?!s)/.test(text)) {
+      if (this.sim.sendHome(id)) this.heed(text, `sent ${g.name} home`);
+      return;
+    }
+    const at = this.s.items.find((i) => i.id === g.station)?.queue.indexOf(id) ?? -1;
+    if (at > 0 && this.sim.moveInLine(id, -at)) this.heed(text, `moved ${g.name} up ${at} to the front`);
+  }
+
+  /**
+   * The stage the advisor says holds guests up: hire for it when it says there are too few to staff it or they keep
+   * being called away; otherwise another of its room or desk, with someone to work it, when its cost is in the bank
+   * (a room let go of first). Once in the days the advisor looks back over, so it sees what the last step did.
+   */
+  private heedBottleneck(text: string) {
+    const s = this.s;
+    const stage = this.sim.bottleneck();
+    const top = stage?.stations[0];
+    const def = top && ITEMS[top.type].station;
+    if (!stage || !def || s.day - (this.grewStage[stage.key] ?? -Infinity) < BUSY_DAYS) return;
+    if (text.includes(': hire another.') || text.includes('being called away')) {
+      this.grewStage[stage.key] = s.day;
+      if (this.hire(def.staff)) this.heed(text, `hired a ${def.staff}`);
+      return;
+    }
+    const room: RoomType | null =
+      stage.key === 'consult' || stage.key === 'assess'
+        ? stage.key
+        : stage.key in TREAT_ROOM
+          ? TREAT_ROOM[stage.key as Discipline]
+          : null;
+    if (stage.key === 'reception') {
+      if (s.money <= ITEMS.reception_desk.cost) return;
+      this.grewStage[stage.key] = s.day;
+      this.placeNearEntrance('reception_desk');
+      this.hireToFill();
+      this.heed(text, 'another Reception Desk and a receptionist');
+      return;
+    }
+    if (!room) {
+      this.heed(text, `no lever for the ${stage.key} stage`);
+      this.grewStage[stage.key] = s.day;
+      return;
+    }
+    if (this.benched[room]) {
+      this.benched[room]--;
+      this.grewStage[stage.key] = s.day;
+      this.hireToFill();
+      this.heed(text, `staffed a ${room} room let go of before`);
+      return;
+    }
+    if (s.money <= ROOMS[room].cost) return;
+    this.grewStage[stage.key] = s.day;
+    if (!this.buildRoom(room)) {
+      this.heed(text, `another ${room} room did not fit`);
+      return;
+    }
+    this.hireToFill();
+    this.heed(text, `built another ${room} room, money now ${Math.round(s.money)}`);
+  }
+
+  /** Prices up a step, to the bot's top at most. */
+  private priceUp(signal: string) {
+    const s = this.s;
+    if (s.priceLevel >= PRICE_TOP - 1e-9) return;
+    this.sim.setPrice(Math.min(PRICE_TOP, s.priceLevel + 0.1));
+    this.heed(signal, `prices up to ${s.priceLevel.toFixed(1)}`);
+  }
+
+  /** Let go the least busy practitioner in a role with two or more, as the game says to; never the last of one. */
+  private letGo(signal: string) {
+    const now = this.sumUp();
+    const spare = DISCIPLINE_ORDER.flatMap((d) => {
+      const staff = this.staffOf(DISCIPLINES[d].role).filter((st) => !st.training && !st.call && st.state !== 'away');
+      return staff.length < 2 ? [] : staff.map((st) => ({ st, d, busy: now[d]?.busy ?? 0 }));
+    });
+    const go = spare.sort((a, b) => a.busy - b.busy || a.st.skill - b.st.skill || b.st.salary - a.st.salary)[0];
+    if (!go) return;
+    this.sim.fire(go.st.id);
+    const room = DISCIPLINES[go.d].room;
+    this.benched[room] = (this.benched[room] ?? 0) + 1;
+    this.heed(signal, `let a ${go.st.role} go (busy ${Math.round(go.busy * 100)}%), saving ${go.st.salary}`);
   }
 
   /** Promotions, and raises for anyone asking, tempted away or about to quit. */
@@ -1049,7 +1260,7 @@ export class Bot {
 
   /** Keep a line about something the bot did, up to a limit. */
   private note(text: string) {
-    if (this.log.notes.length < 150) this.log.notes.push(text);
+    if (this.log.notes.length < (this.mode === 'advised' ? 3000 : 150)) this.log.notes.push(text);
   }
 
   // ---- building -------------------------------------------------------------

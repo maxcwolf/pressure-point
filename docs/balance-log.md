@@ -4,6 +4,68 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 21 October 2026: does a player who does what the game says survive?
+
+The research's test of the communication pass ([fair-challenge-research.md](fair-challenge-research.md)) is that a player who does what the game tells them survives. Measured with `yarn balance` on `integrate-audit` at `1a6de22`, every campaign center, seeds 1 to 3, four years, in the same terms as entry 31.
+
+### 32. An advised player beside the baseline: the warnings work, the advisor's growth advice does not
+
+**Found:** nothing measured whether the warnings and the advisor are actionable: entry 31 has a good player and a player who reads nothing, and no player who reads and does as told.
+
+**Done** (`tests/balance/bot.ts`): `BOT=advised yarn balance` plays as the thoughtless baseline and, on top, does exactly what the game's toasts (read from the events drained each tick) and `sim.adviceNote()` (once a day) say, by the words each uses, and nothing they do not:
+
+- a payday warning whose verdict is short past what the bank will lend: prices up 0.1 (to 1.4 at most), and if it says the books lose money, the least busy practitioner let go in a role with two or more;
+- the bank calling the overdraft in: the same every day of the countdown (from the advisor's countdown, or the bank's last toast when the advisor is saying something else) until the bank says it no longer is;
+- a line warning or the advisor's "goes home worse off" about a guest: that guest to the front of their line, or home if it says about 1 day;
+- the summer notice: the good bot's `throttle()` (three guests a staffed table, two a consulting room, three) until autumn; the winter notice: one spare practitioner let go;
+- the bottleneck advice: another of that room or desk, with someone to work it, when its cost is in the bank (a room let go of earlier is staffed first), or a hire when it says to hire another or that its staff keep being called away; at most once in the three days the advice looks back over;
+- "a loan is cheaper", and the month-end red toast's "borrow it from the Money menu": one loan step; "Build a Staff Room" and "Hire a …": that; the comfort asks as the baseline already answers them.
+
+Every action is noted with the words that caused it (`day 270: "The bank calls the overdraft in in 10 days: …" → let a therapist go`), with the note limit raised to 3,000 for this persona. The good bot's and the baseline's games are unchanged, star day for star day, from entry 31.
+
+**Result,** the thoughtless baseline, the advised persona and the good bot. Bankruptcies are of the three seeds, with the day:
+
+| Center             | Bot      | Stars at month (seed 1 · 2 · 3)                               | Profit a month     | Months at a loss | Lowest reputation | Months below 15% | Bankrupt           |
+| ------------------ | -------- | ------------------------------------------------------------- | ------------------ | ---------------- | ----------------- | ---------------- | ------------------ |
+| Willow Lane        | baseline | 3.1/–/– · 0.9/bankrupt day 581 · 0.7/–/–                      | −$5.9k to −$0.4k   | 12 to 32         | 7 to 30           | 0 to 4           | 1 (day 581)        |
+|                    | advised  | 3.1/bankrupt day 671 · 0.9/bankrupt day 281 · 0.7/–/–         | −$0.7k to −$0.0k\* | 7 to 32          | 17 to 30          | 0                | 2 (days 281, 671)  |
+|                    | good     | 1.1/8.9/15.0 · 0.9/8.0/10.9 · 0.7/4.9/12.1                    | $17.2k to $22.9k   | 6 to 12          | 3 to 7            | 1 to 4           | 0                  |
+| The Exchange       | baseline | 7.7/–/– · 6.9/–/– · 5.8/–/–                                   | $0.7k to $5.0k     | 10 to 23         | 30                | 0                | 0                  |
+|                    | advised  | 5.7/–/– · 6.7/–/– · 4.8/–/–                                   | $0.1k to $5.9k     | 11 to 26         | 30                | 0                | 0                  |
+|                    | good     | 15.7/19.4/25.6 · 8.6/12.6/15.2 · 3.8/8.2/13.7                 | $23.4k to $30.8k   | 6 to 8           | 30                | 0                | 0                  |
+| The Boardwalk      | baseline | 9.9/9.9/bankrupt day 1390 · 8.8/15.0/– · 3.9/bankrupt day 851 | −$3.0k to $0.7k    | 19 to 30         | 30                | 0                | 2 (days 851, 1390) |
+|                    | advised  | 18.9/19.3/bankrupt day 1001 · 8.8/9.8/– · 3.9/–/–             | −$2.5k to $2.6k    | 9 to 18          | 30                | 0                | 1 (day 1001)       |
+|                    | good     | 4.8/12.0/17.7 · 4.3/12.9/18.8 · 4.3/9.9/19.0                  | $13.7k to $29.3k   | 4 to 9           | 0 to 4            | 2 to 6           | 0                  |
+| High Pines         | baseline | 5.8/–/– · 6.7/–/– · 6.9/–/–                                   | −$1.4k to $1.7k    | 19 to 31         | 23 to 30          | 0                | 0                  |
+|                    | advised  | 8.9/–/– · 8.8/–/– · 46.8/–/–                                  | −$1.2k to $0.7k    | 20 to 28         | 23 to 30          | 0                | 0                  |
+|                    | good     | 4.9/10.1/16.1 · 4.6/12.9/27.9 · 3.7/8.2/27.2                  | $7.2k to $34.6k    | 7 to 15          | 2 to 30           | 0 to 9           | 0                  |
+| The Orchard Estate | baseline | –/–/– · –/–/– · –/–/–                                         | −$1.3k to −$0.6k   | 32 to 35         | 1 to 2            | 28 to 43         | 0                  |
+|                    | advised  | bankrupt day 1420 · –/–/– · –/–/–                             | −$1.4k to −$0.6k   | 32 to 36         | 1 to 2            | 28 to 43         | 1 (day 1420)       |
+|                    | good     | 6.5/11.1/17.7 · 4.6/9.8/16.5 · 4.6/9.4/17.1                   | $50.2k to $80.8k   | 3 to 6           | 21 to 30          | 0                | 0                  |
+
+\* Willow Lane's advised seeds 1 and 2 end in months 22 and 9, so their profit is of the few months from the second year they lasted (seed 2 has none).
+
+Guests sent home worse off, all three seeds together, baseline → advised: Willow Lane 4 → 0, The Exchange 6 → 2, The Boardwalk 5 → 6 (over 8 more months played), High Pines 9 → 0, The Orchard 0 → 0.
+
+**Per center, does the advised player do better than the baseline?**
+
+- **Willow Lane: no, worse.** Two games lost against one, and seed 2 lost in month 9 rather than month 19. The signal that failed is the bottleneck advice: in seed 2 it said a Massage Suite with 5 to 7 waiting needed another therapist (days 79 and 82) and a Consultation Room with 4 waiting needed another consultant, whose staff "keep being called away" (days 124 and 127), and the payroll went from $6.2k to $18.1k (the baseline's stays at $8.9k) against takings of $10k to $11k a month. The payday warning then said to let staff go, and the bot did, but only practitioners in a role with two, and the countdown that followed (day 270) ran out on day 281 with prices at 1.4 and three therapists let go in six days: the extra consultants are not practitioners and stayed. Seed 1 shows the two signals working against each other: from day 451 each payday warning has a therapist let go and, days later, the bottleneck advice has the empty Massage Suite staffed again (days 484 and 559), four times over until the bank calls the overdraft in on day 660. Seed 3, where the bottleneck spoke twice, does better than the baseline: 376 healed against 238, and no one sent home worse off.
+- **The Exchange: yes, a little.** The first star comes sooner in every seed (5.7, 6.7, 4.8 against 7.7, 6.9, 5.8), with no game lost either way and profit much the same; the bottleneck and line warnings spoke rarely (4 to 14 notes a game). Its second star needs acupuncture, and "Acupuncture is now available. Build an Acupuncture Clinic and hire an Acupuncturist" was the advisor's nudge on 2,345 of the 4,320 days of its three games: a lever outside this persona's list, so neither persona gets further.
+- **The Boardwalk: yes.** One game lost against two, months at a loss 9 to 18 against 19 to 30, and seed 3 plays out the four years (the baseline's is lost on day 851) with 463 healed against 229. The summer notice and the winter notice are the signals that helped: the limit on guests at once and a therapist let go before each winter. Seed 1 is lost sooner (day 1001 against 1390): the beach-facing wing bought on day 569 and the ice-cream parlor for $13,500 on day 950 (the baseline's own building, which both share) put the bank $17.8k into the red at a payday, past what the bank would lend, and $22k in the red with ten days is past either lever. On 2,098 of the 4,320 days of its three games the advisor said "A Air Conditioner has broken down. Your Caretaker will get to it", which sits above the bottleneck, loan and staff advice and stops them being given at all.
+- **High Pines: no, worse.** No game lost either way, but the first star at months 8.9, 8.8 and 46.8 against 5.8, 6.7 and 6.9. The bottleneck advice again: in seed 3 it had a second and a third Consultation Room built on lines of 4 (days 107 and 118), with two consultants and two therapists hired in the same fortnight, so the payroll went from $9.9k to $18.0k with 17 guests a month, and the star's $25,000 in the bank took three more years. It does heal more (581 against 289 in seed 3) and nobody goes home worse off.
+- **The Orchard Estate: no change.** Seeds 2 and 3 play as the baseline's to within a guest: the advisor never says anything this persona acts on (on every day it names a treatment nobody is qualified in, or acupuncture, and never the prestige these guests judge by). Seed 1 is lost on day 1420, a month before the end: the month-end red toast's "borrow it from the Money menu" had it take the last loan step at day 1380, so the next payday had no loan to cover it and went into the red with the books losing money; the baseline is one payday behind on the same road.
+
+**What this says about the communication:** the warnings are actionable and the advisor's growth advice is not. The line warnings did what they promised: guests sent home worse off fall from 24 to 8 over the campaign (in 632 months played against 660). The season notices are the reason the Boardwalk is better. The payday warning names the right levers but cannot be acted on in time once a payroll is twice the takings. The bottleneck advice is what loses games: at a line of 4 (`BOTTLENECK.line`) it asks for another room or another member of staff with no regard for whether the takings can carry them, and the payday warning then asks for the same staff to go.
+
+**Recommendations, for a later session (nothing changed here):**
+
+1. The bottleneck advice should weigh the payroll: when `cashflow(s).net` would not carry the hire's salary (or the room's practitioner) at the pace, say so ("another therapist would cost $1,750 a month you are not making: prices up first") rather than ask for the hire. And "keep being called away" with a role's staff at or above its stations should name the Staff Room before another hire.
+2. The overdraft countdown's "prices up" cannot work in ten days: the bank judges `cashflow`'s income pace, this month and last over the days they cover, so ten days at a higher price are a quarter of it, and a 40% rise lifts the pace by about a tenth. Staff down is the lever that works in time; the text should say so, or the bank should judge the price going forward.
+3. "Staff down" should name who: the persona let go only practitioners in a role with two, and the extra consultants the bottleneck advice had hired stayed. The countdown could name the least busy member of staff, as the bottleneck already names the station.
+4. A broken item the Caretaker never reaches (The Boardwalk's Air Conditioner, 2,098 days over three games) should drop below the advice it hides, or say why it is not being reached; and "A Air Conditioner" wants "An".
+5. The month-end red toast's "borrow it" should not be given while the books lose money: it spends the loan room the next payday needs, and moves the end a payday forward (The Orchard seed 1).
+6. A next persona could act on the advisor's training and new-discipline nudges too ("nobody is qualified … train", "Acupuncture is now available"), which are its most frequent nudge everywhere and the way to every second star, to see whether the advisor carries a player that far.
+
 ## 20 October 2026, night: challenging but fair
 
 The deep-dive audit ([deep-dive-audit.md](deep-dive-audit.md)) found the campaign's hard moments unfair rather than hard: a loss the player could not see coming, a reputation that only ever spirals, a summer with no lever against it, and goals that reward running empty. The rule for this pass, from [fair-challenge-research.md](fair-challenge-research.md): the game must not get easier; it must warn before it punishes, name the lever, and leave time for it to work. Each change below was measured with `yarn balance` (every campaign center, seeds 1 to 3, four years a game) before and after, on the audit's bug-fix branch at `435febd`. Stars at month are given seed by seed; profit a month is averaged from the second year on; months at a loss, the lowest reputation (sampled daily) and months below 15% are of all 48. The bot plays like a good player; a new player does worse everywhere.
