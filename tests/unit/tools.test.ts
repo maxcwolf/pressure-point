@@ -17,7 +17,6 @@ import { heldItem, nextRequired, planStatus, quarterTurn } from '../../src/app/t
 import { GUEST_ICON, isStaffRole, legend, STAFF_ICON, useSquares } from '../../src/app/tools/squares';
 import { Tools } from '../../src/app/tools/tools';
 import type { Tool } from '../../src/app/tools/types';
-import { ROLES } from '../../src/core/data';
 import { ROOMS } from '../../src/core/data';
 import { money } from '../../src/core/format';
 import { copyCost } from '../../src/core/room-layout';
@@ -157,9 +156,9 @@ describe('floor overlays', () => {
     expect(fits.tiles.filter((t) => t[2] === OV_STAFF)).toHaveLength(1);
     expect(fits.tiles.filter((t) => t[2] === OV_GUEST)).toHaveLength(1);
     // the staff square shows who works it: here, a massage therapist
-    expect(fits.markers.map((m) => m.icon).sort()).toEqual([GUEST_ICON, ROLES.therapist.icon].sort());
+    expect(fits.markers.map((m) => m.icon).sort()).toEqual(['marker-guest', 'role-therapist']);
     expect(itemTiles({ type: 'reception_desk', x: 10, y: 10, rot: 0 }, true).markers.map((m) => m.icon)).toContain(
-      ROLES.receptionist.icon,
+      'role-receptionist',
     );
     const blocked = itemTiles({ type: 'massage_table', x: 10, y: 10, rot: 0 }, false);
     expect(blocked.tiles.filter((t) => t[2] === OV_BAD).length).toBeGreaterThan(0);

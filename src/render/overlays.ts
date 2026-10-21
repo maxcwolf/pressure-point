@@ -11,7 +11,7 @@ import { at } from '../core/util';
 import { frontOf, itemCenter, itemDims, onWall } from '../core/world';
 import { hangPlace, placeHung } from './hung';
 import { placeItemModel } from './items';
-import { emojiTexture } from './models/emoji';
+import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type Selection, shown } from './picking';
@@ -262,7 +262,7 @@ export class Overlays {
       const m = list[i];
       sprite.visible = !!m;
       if (!m) return;
-      sprite.material.map = emojiTexture(m.icon);
+      sprite.material.map = iconTexture(m.icon, true);
       sprite.material.needsUpdate = true;
       sprite.position.set(m.x + 0.5, 1.15, m.y + 0.5);
     });

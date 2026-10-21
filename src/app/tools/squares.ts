@@ -1,11 +1,15 @@
 // The squares beside a piece of furniture that people use it from, and who each is for.
 
-import { type AccessRole, ITEMS, type ItemType, ROLES } from '../../core/data';
+import { type AccessRole, ITEMS, type ItemType, ROLES, type SceneIconId } from '../../core/data';
 import { accessTile } from '../../core/world';
 import type { HeldItem } from './types';
 
 export const STAFF_ICON = '🧑‍⚕️';
 export const GUEST_ICON = '🧍';
+/** The marker the scene floats over a square any member of staff uses an item from. */
+export const STAFF_MARKER: SceneIconId = 'marker-staff';
+/** The marker the scene floats over a square a guest uses an item from. */
+export const GUEST_MARKER: SceneIconId = 'marker-guest';
 
 /** The ways of using an item that belong to staff. Every other way belongs to guests. */
 const STAFF_ROLES: readonly AccessRole[] = ['staff', 'rest', 'study'];
@@ -16,17 +20,20 @@ export function isStaffRole(role: AccessRole): boolean {
 }
 
 /** Who works an item: the role that staffs it if it is a station, or any member of staff, with an icon for each. */
-export function workedBy(type: ItemType): { icon: string; name: string } {
+export function workedBy(type: ItemType): { icon: string; marker: SceneIconId; name: string } {
   const role = ITEMS[type].station?.staff;
-  return role ? { icon: ROLES[role].icon, name: ROLES[role].name } : { icon: STAFF_ICON, name: 'staff' };
+  return role
+    ? { icon: ROLES[role].icon, marker: `role-${role}`, name: ROLES[role].name }
+    : { icon: STAFF_ICON, marker: STAFF_MARKER, name: 'staff' };
 }
 
-/** A square someone uses an item from, and the icon for who. */
+/** A square someone uses an item from, and the icon for who: in words, and as the scene's marker over it. */
 export interface UseSquare {
   x: number;
   y: number;
   staff: boolean;
   icon: string;
+  marker: SceneIconId;
 }
 
 /** The squares an item would be used from if it were put down at a tile. */
@@ -34,7 +41,8 @@ export function useSquares(item: HeldItem & { x: number; y: number }): UseSquare
   return ITEMS[item.type].access.map((a, i) => {
     const [x, y] = accessTile(item, i);
     const staff = isStaffRole(a.role);
-    return { x, y, staff, icon: staff ? workedBy(item.type).icon : GUEST_ICON };
+    const who = staff ? workedBy(item.type) : { icon: GUEST_ICON, marker: GUEST_MARKER };
+    return { x, y, staff, icon: who.icon, marker: who.marker };
   });
 }
 

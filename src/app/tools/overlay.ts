@@ -51,7 +51,7 @@ export function itemTiles(
   const markers: Marker[] = [];
   for (const sq of useSquares(item)) {
     tiles.push([sq.x, sq.y, sq.staff ? OV_STAFF : OV_GUEST]);
-    markers.push({ x: sq.x, y: sq.y, icon: sq.icon });
+    markers.push({ x: sq.x, y: sq.y, icon: sq.marker });
   }
   return { tiles, markers };
 }
