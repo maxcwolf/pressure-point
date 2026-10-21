@@ -10,7 +10,7 @@ The game is TypeScript, with Three.js for the 3D scene, Preact for the interface
 yarn install
 yarn dev        # in the browser at http://localhost:5183
 yarn app        # as a desktop app (builds, then opens Electron)
-yarn lab        # the model lab, at http://localhost:5183/lab.html
+yarn lab        # the model lab, at http://localhost:5183/lab.html (and every icon at /icons.html)
 ```
 
 The model lab shows any model on its own: every item, a guest with each condition, each role of staff, and the scenery. Turn it about, check it against the tiles it covers and a person for scale, and try its moving parts, poses and session props. It reloads as you edit a model. Link straight to one with `lab.html?model=item:bench`, add `&still` to stop everything moving, and `&view=head` to start close in on a person's head (or `front`, `side`, `top`). The lab is for the dev server only: the build makes the game's page alone.
@@ -94,6 +94,7 @@ Before each commit, a second Husky hook runs ESLint and Prettier over the staged
 | `electron/main.ts`    | Desktop app: the main process, which opens the window and locks it down                                                                                         |
 | `electron/preload.ts` | Desktop app: hands the game the API in `electron/api.ts`, with the sandbox on                                                                                   |
 | `brand/`              | The app icon and the logo, drawn in code. `yarn brand` renders them to `build/` (with a rounded-square `icon-mac.png` for macOS), `public/` and `src/ui/theme/` |
+| `src/ui/icons/`       | The game's icons, one SVG each. `yarn icons` builds the sprite sheet, the atlas and the ids from them; `/icons.html` shows them all                             |
 | `brand/buttons.mjs`   | The README's download buttons, in the game's style. `yarn buttons` renders them to `docs/assets/`                                                               |
 | `brand/announcer/`    | The announcer's clean recordings. `yarn announcer` (macOS) adds the speaker effect and writes them to `src/sounds/announcer/`                                   |
 
