@@ -116,7 +116,7 @@ export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poach
   st.state = 'leaving';
   st.raiseAsked = false;
   st.offer = 0;
-  say(st, how === 'fired' ? '📦' : '😠', 6);
+  say(st, how === 'fired' ? 'bubble-fired' : 'bubble-angry', 6);
   const [x, y] = streetTile(ctx.s, ctx.world.building, ctx.world.w);
   if (!goTo(ctx, st, x, y)) ctx.s.staff = ctx.s.staff.filter((q) => q !== st);
   if (how === 'fired') {
@@ -151,7 +151,7 @@ export function giveRaise(ctx: SimContext, id: number) {
   st.morale = Math.min(100, st.morale + 22);
   st.raiseAsked = false;
   st.unhappyT = 0;
-  say(st, '😊', 4);
+  say(st, 'bubble-happy', 4);
   emit(ctx, { type: 'sfx', name: 'cash' });
 }
 
@@ -224,7 +224,7 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
 
   if (!st.raiseAsked && st.salary < fair * 0.97 && st.morale < 56) {
     st.raiseAsked = true;
-    say(st, '💰', 5);
+    say(st, 'bubble-raise', 5);
     toast(ctx, `${st.name} thinks they are worth ${money(fair)} a month and wants a raise.`, 'info', {
       kind: 'staff',
       id: st.id,
@@ -235,7 +235,7 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   else st.unhappyT = Math.max(0, st.unhappyT - dt);
   const about = { kind: 'staff', id: st.id } as const;
   if (before < QUIT_THINKING && st.unhappyT >= QUIT_THINKING) {
-    say(st, '😠', 6);
+    say(st, 'bubble-angry', 6);
     toast(ctx, `${st.name} is miserable and thinking of quitting.`, 'bad', about);
   }
   const alarm = QUIT_AFTER - QUIT_WARNING;
@@ -369,7 +369,7 @@ function tryBreak(ctx: SimContext, st: Staff): boolean {
   st.state = 'toBreak';
   // how long the walk there takes, as a guide to how long the walk back will
   st.timer = 0;
-  say(st, '😴');
+  say(st, 'bubble-break');
   return true;
 }
 
@@ -557,7 +557,7 @@ function smudgeStep(ctx: SimContext, st: Staff, dt: number) {
   st.job = null;
   st.yearServed++;
   gainXp(ctx, st, XP_PER_JOB);
-  say(st, '✨', 3);
+  say(st, 'bubble-sparkle', 3);
   emit(ctx, { type: 'float', text: shaman ? 'Cleared and blessed' : 'Vibes cleared', x: st.x, y: st.y, kind: 'good' });
   staffIdle(ctx, st);
 }
@@ -650,16 +650,16 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
         st.busy = true;
         if (st.job?.kind === 'smudge') {
           st.timer = clearingSeconds(st, smudgeSeconds(caretakerSpeed(st)));
-          say(st, '🌿', 2);
+          say(st, 'bubble-smudge', 2);
           break;
         }
         if (st.job?.kind === 'refresh') {
           st.timer = refreshSeconds();
-          say(st, wants(st) === 'eat' ? '🍪' : '🥤', 2);
+          say(st, wants(st) === 'eat' ? 'bubble-hungry' : 'bubble-thirsty', 2);
           break;
         }
         st.timer = jobSeconds(st.job?.kind) / caretakerSpeed(st);
-        if (st.job?.kind === 'install') say(st, '⚙️', 2);
+        if (st.job?.kind === 'install') say(st, 'bubble-installing', 2);
         if (st.job && st.job.kind !== 'litter') {
           const p = ctx.world.item(st.job.id);
           if (p) st.facing = Math.atan2(p.x + 0.5 - st.x, p.y + 0.5 - st.y);
@@ -698,7 +698,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
             else if (job.kind === 'install') installUpgrade(ctx, p);
             else if (job.kind === 'clean') {
               if (!hasLinens(p)) p.dirt = 0;
-              else if (changeLinens(ctx, p)) say(st, '🧺', 2);
+              else if (changeLinens(ctx, p)) say(st, 'bubble-linens', 2);
             } else if (job.kind === 'launder') launder(p);
             else p.water = 100;
             p.claimedBy = 0;

@@ -4,11 +4,11 @@ import * as THREE from 'three';
 
 import { type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
-import type { Char } from '../core/state/types';
+import type { BubbleId, Char } from '../core/state/types';
 import { must } from '../core/util';
 import { type CharRig, cureRig, type Joints } from './models/character';
 import { type Expression, showExpression } from './models/character-detail';
-import { emojiTexture } from './models/emoji';
+import { iconTexture } from './models/icons';
 import { driftSmoke } from './models/sage';
 
 /**
@@ -452,23 +452,23 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
   }
 
   // someone about to quit keeps a warning over their head until it is dealt with
-  let bubble = c.kind === 'staff' && aboutToQuit(c) ? '⚠️' : c.bubbleT > 0 ? c.bubble : '';
+  let bubble: BubbleId | '' = c.kind === 'staff' && aboutToQuit(c) ? 'bubble-quitting' : c.bubbleT > 0 ? c.bubble : '';
   if (!bubble && c.kind === 'guest') {
     const waiting = c.state === 'waiting' || c.state === 'toWait';
-    if (doing.mood === 'fedUp') bubble = '💢';
-    else if (waiting && !c.outcome && c.health < POOR_CONDITION) bubble = '🤕';
-    else if (waiting && c.bladder >= 95) bubble = '🚻';
-    else if (waiting && c.thirst >= 95) bubble = '🍵';
+    if (doing.mood === 'fedUp') bubble = 'bubble-impatient';
+    else if (waiting && !c.outcome && c.health < POOR_CONDITION) bubble = 'bubble-hurt';
+    else if (waiting && c.bladder >= 95) bubble = 'bubble-restroom';
+    else if (waiting && c.thirst >= 95) bubble = 'bubble-thirsty';
   } else if (!bubble && c.kind === 'staff') {
-    if (c.state === 'onBreak') bubble = '💤';
-    else if (c.state === 'training') bubble = '📚';
-    else if (c.energy < 15) bubble = '😴';
+    if (c.state === 'onBreak') bubble = 'bubble-break';
+    else if (c.state === 'training') bubble = 'bubble-training';
+    else if (c.energy < 15) bubble = 'bubble-exhausted';
   }
   if (bubble !== rig.bubbleKey) {
     rig.bubbleKey = bubble;
     rig.bubble.visible = !!bubble;
     if (bubble) {
-      rig.bubble.material.map = emojiTexture(bubble);
+      rig.bubble.material.map = iconTexture(bubble);
       rig.bubble.material.needsUpdate = true;
     }
   }

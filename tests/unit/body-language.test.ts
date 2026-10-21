@@ -27,28 +27,13 @@ function waiting(patience: number) {
   return g;
 }
 
-/** Does nothing, for every call a speech bubble makes to draw itself. */
-const nothing = () => undefined;
-/** A 2D context that accepts every call and does nothing. */
-const context = new Proxy(
-  {},
-  {
-    /** Whatever is asked for is a method that does nothing. */
-    get: () => nothing,
-  },
-);
-/** A canvas that draws nothing: Node has none to paint a speech bubble on. */
-function canvas() {
-  return {
-    width: 0,
-    height: 0,
-    /** The one context it has. */
-    getContext: () => context,
-  };
+/** A picture that never arrives, as the icons' atlas a speech bubble is drawn from is never loaded in Node. */
+class NoImage {
+  src = '';
 }
 
 beforeAll(() => {
-  Object.assign(globalThis, { document: { createElement: canvas } });
+  Object.assign(globalThis, { Image: NoImage });
 });
 
 /** Pose someone straight into their pose at a moment. */

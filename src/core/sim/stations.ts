@@ -18,7 +18,6 @@ import {
   SCAN_SUCCESS,
   SERVICE_SPEED,
   SHOP_CHANCE,
-  SHOP_ICONS,
   SHOP_LINE_SKIP,
   SHOP_SPEND,
   STONE_USE,
@@ -287,7 +286,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   const treatPrice = priceFor(ctx.s, conditionOf(g.condition).modality);
   if (def.goal === 'reception') {
     g.goal = 'consult';
-    say(g, '📋');
+    say(g, 'bubble-checkin');
     // a regular is greeted by name
     if (g.regular) emit(ctx, { type: 'float', text: greeting(g.name), x: staff.x, y: staff.y, kind: 'good' });
     emit(ctx, { type: 'sfx', name: 'blip' });
@@ -297,7 +296,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     g.spent += amount;
     // and now and then, something from under the counter
     const extra = sellMushrooms(ctx, g);
-    say(g, extra ? '🍄' : at(SHOP_ICONS, g.id % SHOP_ICONS.length), 4);
+    say(g, extra ? 'bubble-mushroom' : 'bubble-shopping', 4);
     g.goal = 'leave';
   } else if (def.goal === 'consult' || def.goal === 'assess') {
     g.consults++;
@@ -310,7 +309,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     g.spent += fee;
     if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= 4) {
       g.goal = 'treat';
-      say(g, '💡');
+      say(g, 'bubble-idea');
       // steep prices put some guests off once they hear what the treatment costs, though never a regular, who knows
       if (!g.emergency && !g.regular && random(ctx.s) < Math.max(0, (treatPrice - 1) * 0.35)) {
         g.outcome = 'stormed';
@@ -318,7 +317,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
         feel(g, 'pricey');
         countVisit(ctx, g, 'priced');
         changeRep(ctx, -1);
-        say(g, '💸', 6);
+        say(g, 'bubble-cant-afford', 6);
         emit(ctx, { type: 'float', text: 'Too pricey!', x: g.x, y: g.y, kind: 'bad' });
         tipOnce(
           ctx,
@@ -330,7 +329,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     } else {
       // unsure: a scan settles it if there is a Posture Lab, otherwise it is back to the Consultant
       g.goal = def.goal === 'consult' && hasRoom(ctx, 'assess') ? 'assess' : 'consult';
-      say(g, '❓');
+      say(g, 'bubble-question');
       tipOnce(
         ctx,
         'rediagnose',
@@ -386,7 +385,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       // good value earns a better name than a steep bill does
       changeRep(ctx, (1.8 + g.patience / 100) * (1.25 - 0.25 * treatPrice) * (grump ? GRUMP_REP : 1));
       if (g.emergency && ctx.s.emergency) ctx.s.emergency.healed++;
-      say(g, '💖', 6);
+      say(g, 'bubble-cured', 6);
       emit(ctx, { type: 'sfx', name: 'heal' });
     } else {
       g.outcome = 'failed';
@@ -395,7 +394,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       countVisit(ctx, g, 'failed');
       changeRep(ctx, -2.5);
       if (room) addVibes(ctx, room);
-      say(g, '💢', 6);
+      say(g, 'bubble-impatient', 6);
       const why = {
         '': 'Still knotted!',
         unqualified: 'Not qualified!',

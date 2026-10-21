@@ -4,7 +4,7 @@ import { SIDEWALK_Y } from '../data';
 import type { Footprint } from '../footprint';
 import { byId } from '../lookup';
 import { pick, random, type Rng } from '../random';
-import type { Char, Guest, Look, Staff } from '../state/types';
+import type { BubbleId, Char, Guest, Look, Staff } from '../state/types';
 import type { SimContext } from './context';
 
 /** The guest with this id, if there is one. */
@@ -41,7 +41,7 @@ export function newChar(ctx: SimContext, name: string, look: Look, x: number, y:
     endH: 0,
     endFace: 0,
     look,
-    bubble: '',
+    bubble: '' as const,
     bubbleT: 0,
     claimItem: 0,
     claimIdx: 0,
@@ -50,7 +50,7 @@ export function newChar(ctx: SimContext, name: string, look: Look, x: number, y:
 }
 
 /** Show a speech bubble over someone for a few seconds. */
-export function say(c: Char, icon: string, seconds = 2.2) {
+export function say(c: Char, icon: BubbleId, seconds = 2.2) {
   c.bubble = icon;
   c.bubbleT = seconds;
 }

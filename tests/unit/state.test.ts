@@ -166,3 +166,23 @@ describe('a save from before the policy', () => {
     expect(up.tally.sent).toBe(0);
   });
 });
+
+describe('a save from before speech bubbles were icons', () => {
+  it('turns each emoji into the icon that took its place, and lets go of one with none', () => {
+    const { sim, s } = openCenter(2);
+    run(sim, 300);
+    expect(s.guests.length).toBeGreaterThanOrEqual(2);
+    const old = JSON.parse(JSON.stringify(s)) as Record<string, any>;
+    old.version = 32;
+    const [first, second] = old.guests;
+    const [st] = old.staff;
+    Object.assign(first, { bubble: '🤕', bubbleT: 4 });
+    Object.assign(second, { bubble: '📋', bubbleT: 2 });
+    Object.assign(st, { bubble: '🦄', bubbleT: 3 });
+    upgradeSave(old as GameState);
+    const up = old as GameState;
+    expect([up.guests[0]?.bubble, up.guests[0]?.bubbleT]).toEqual(['bubble-hurt', 4]);
+    expect(up.guests[1]?.bubble).toBe('bubble-checkin');
+    expect([up.staff[0]?.bubble, up.staff[0]?.bubbleT]).toEqual(['', 0]);
+  });
+});

@@ -226,7 +226,7 @@ describe('prices', () => {
       run(sim, 900);
       return (
         toasts(sim.drain()).filter((t) => t.includes('balked at your prices')).length +
-        s.guests.filter((g) => g.bubble === '💸').length
+        s.guests.filter((g) => g.bubble === 'bubble-cant-afford').length
       );
     };
     expect(walkouts(1)).toBe(0);

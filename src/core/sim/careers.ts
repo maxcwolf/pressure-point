@@ -119,7 +119,7 @@ export function offerPromotion(ctx: SimContext, st: Staff) {
     return;
   }
   st.promotion = true;
-  say(st, '⬆️', 5);
+  say(st, 'bubble-promoted', 5);
   toast(ctx, `${st.name} is ready for promotion to ${rankName(st.skill + 1)}, with a raise to match.`, 'info', about);
 }
 
@@ -132,7 +132,7 @@ export function promote(ctx: SimContext, id: number): boolean {
   st.salary = Math.max(st.salary, fairPay(st, tuning(ctx.s, 'salaries')));
   st.raiseAsked = false;
   st.morale = Math.min(100, st.morale + PROMOTION_CHEER);
-  say(st, '🎉', 5);
+  say(st, 'bubble-celebrate', 5);
   emit(ctx, { type: 'sfx', name: 'cash' });
   toast(ctx, `${st.name} is now ${rankName(st.skill)}, on ${money(st.salary)} a month.`, 'good', {
     kind: 'staff',
@@ -245,10 +245,11 @@ export function updateHabits(ctx: SimContext) {
       for (const it of s.items) {
         if (!isWatered(it.type) || it.water >= 60 || Math.hypot(it.x + 0.5 - st.x, it.y + 0.5 - st.y) > 1.6) continue;
         it.water = 100;
-        say(st, '💧', 2);
+        say(st, 'bubble-watering', 2);
       }
     }
-    if (habitOf(st, 'cheer') && st.bubbleT <= 0 && random(s) < 0.03) say(st, '😊', 2.5);
-    if (habitOf(st, 'grump') && st.state === 'atPost' && st.bubbleT <= 0 && random(s) < 0.03) say(st, '😒', 2.5);
+    if (habitOf(st, 'cheer') && st.bubbleT <= 0 && random(s) < 0.03) say(st, 'bubble-happy', 2.5);
+    if (habitOf(st, 'grump') && st.state === 'atPost' && st.bubbleT <= 0 && random(s) < 0.03)
+      say(st, 'bubble-unhappy', 2.5);
   }
 }

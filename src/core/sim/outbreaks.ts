@@ -38,7 +38,7 @@ export function updateOutbreak(ctx: SimContext) {
   if (o) {
     spreadStress(ctx);
     for (const g of s.guests)
-      if (g.stressed && g.state !== 'leaving' && g.bubbleT <= 0 && random(s) < 0.25) say(g, '😰', 1.5);
+      if (g.stressed && g.state !== 'leaving' && g.bubbleT <= 0 && random(s) < 0.25) say(g, 'bubble-stressed', 1.5);
     const carriers = s.guests.some((g) => g.stressed);
     if (s.day >= o.deadline || (o.pending === 0 && !carriers)) endOutbreak(ctx);
   } else if (
@@ -129,7 +129,7 @@ export function calm(ctx: SimContext, guestId: number): CalmResult {
   o.calms--;
   g.calmed = true;
   if (!g.stressed) {
-    say(g, '🤷', 3);
+    say(g, 'bubble-shrug', 3);
     emit(ctx, { type: 'float', text: 'They were fine', x: g.x, y: g.y, kind: 'info' });
     emit(ctx, { type: 'sfx', name: 'error' });
     return 'wasted';
@@ -137,7 +137,7 @@ export function calm(ctx: SimContext, guestId: number): CalmResult {
   g.stressed = false;
   g.patience = Math.min(100, g.patience + 15);
   feel(g, 'calmed');
-  say(g, '😌', 4);
+  say(g, 'bubble-relieved', 4);
   emit(ctx, { type: 'float', text: 'Calmed', x: g.x, y: g.y, kind: 'good' });
   emit(ctx, { type: 'sfx', name: 'heal' });
   return 'calmed';

@@ -24,11 +24,15 @@ import type {
   Role,
   RoomType,
   RugPatternId,
+  SceneIconId,
   Sex,
   ThermostatSetting,
   TraitId,
   WallId,
 } from '../data';
+
+/** An icon that can show in a speech bubble over someone's head. */
+export type BubbleId = Extract<SceneIconId, `bubble-${string}`>;
 
 export interface Room {
   id: number;
@@ -179,7 +183,8 @@ interface CharBase {
   endH: number;
   endFace: number;
   look: Look;
-  bubble: string;
+  /** The speech bubble over their head, if any: one of the scene's bubble icons. */
+  bubble: BubbleId | '';
   bubbleT: number;
   /** Item access spot currently claimed (seat, facility, sofa). */
   claimItem: number;

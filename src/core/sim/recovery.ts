@@ -70,7 +70,7 @@ export function updateRest(g: Guest, dt: number, arrived: boolean): boolean {
     if (!arrived) return true;
     g.state = 'resting';
     g.timer = REST_SECONDS;
-    say(g, '😌', 4);
+    say(g, 'bubble-relieved', 4);
     return false;
   }
   g.timer -= dt;

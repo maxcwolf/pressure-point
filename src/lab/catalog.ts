@@ -22,7 +22,7 @@ import {
 } from '../core/data';
 import { HAIR, randomLook } from '../core/people';
 import { newSeed, stream } from '../core/random';
-import type { Char, Guest, Look, VisitorKind } from '../core/state/types';
+import type { BubbleId, Char, Guest, Look, VisitorKind } from '../core/state/types';
 import { must } from '../core/util';
 import { accessPose, itemCenter } from '../core/world';
 import { NOISE_CUE, usedNoise } from '../render/item-cues';
@@ -165,13 +165,13 @@ const POSES: readonly Option[] = [
 /** The speech bubbles people show, to check how they sit over a head. */
 const BUBBLES: readonly Option[] = [
   ['', 'None'],
-  ['💢', '💢 Fed up'],
-  ['🤕', '🤕 Getting worse'],
-  ['🚻', '🚻 Needs the toilet'],
-  ['🍵', '🍵 Thirsty'],
-  ['💤', '💤 On a break'],
-  ['📚', '📚 Training'],
-  ['😴', '😴 Worn out'],
+  ['bubble-impatient', 'Fed up'],
+  ['bubble-hurt', 'Getting worse'],
+  ['bubble-restroom', 'Needs the toilet'],
+  ['bubble-thirsty', 'Thirsty'],
+  ['bubble-break', 'On a break'],
+  ['bubble-training', 'Training'],
+  ['bubble-exhausted', 'Worn out'],
 ];
 
 /** How a waiting guest's patience can show, from content to fed up. */
@@ -199,7 +199,7 @@ const LAB_DOOR: Door = { x: 4, y: 1 };
 interface PersonState {
   look: Look;
   pose: Pose;
-  bubble: string;
+  bubble: BubbleId | '';
 }
 
 /** The settings every person has: their pose, a speech bubble and a new look. */

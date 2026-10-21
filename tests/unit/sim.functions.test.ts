@@ -304,8 +304,8 @@ describe('people', () => {
 
   it('shows a speech bubble for a while', () => {
     const st = recruit('receptionist');
-    say(st, '💰', 5);
-    expect([st.bubble, st.bubbleT]).toEqual(['💰', 5]);
+    say(st, 'bubble-raise', 5);
+    expect([st.bubble, st.bubbleT]).toEqual(['bubble-raise', 5]);
   });
 });
 
