@@ -32,9 +32,10 @@ function canvas() {
   };
 }
 
-// a few models paint onto canvases, which Node does not have: a canvas that draws nothing will do
+// a few models paint onto canvases, and a room's sign shows a picture of its icon, which Node does not have: a canvas
+// that draws nothing, and a picture that never arrives, will do
 beforeAll(() => {
-  Object.assign(globalThis, { document: { createElement: canvas } });
+  Object.assign(globalThis, { document: { createElement: canvas }, Image: Object });
 });
 
 /** Is this object drawn: shown itself, with every parent shown, and a material that is not hidden? */
@@ -73,7 +74,7 @@ describe('the cost of drawing each model', () => {
     // the heaviest when this was written: a shop counter 23, a trophy cabinet 21, a guest 29, staff 23; people grew to a
     // guest 36, staff 32 and a visitor 33 when they were given knees, elbows, faces and finer hair (people in the game
     // are drawn in batches, so the figures for them here are what one person alone would cost)
-    const limit = { Items: 30, Guests: 38, Staff: 34, Visitors: 35, Seated: 0, Moods: 0, Scenery: 20 };
+    const limit = { Items: 30, Guests: 38, Staff: 34, Visitors: 35, Seated: 0, Moods: 0, Rooms: 12, Scenery: 20 };
     const over = (await costs()).filter((m) => m.calls > limit[m.group]).map((m) => `${m.id}: ${m.calls}`);
     expect(over).toEqual([]);
   });

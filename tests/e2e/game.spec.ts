@@ -2877,3 +2877,39 @@ test.describe('turning the camera', () => {
     expect(game.errors).toEqual([]);
   });
 });
+
+test.describe('room signs', () => {
+  /** What the lamp on the sign of the room of this type shows. */
+  const lamp = (game: Game, type: string) =>
+    game.eval((pp, t) => pp.view.rooms.lampOf(pp.state.rooms.find((r) => r.type === t)!.id), type);
+
+  test("turn amber when a room's staff leave it, and red when its equipment breaks", async ({ game }) => {
+    await game.start();
+    await game.buildCenter();
+    // the therapist walks in from the street and takes up their post
+    await game.fastForward(40);
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    expect(await game.eval((pp) => pp.state.staff.find((s) => s.role === 'therapist')!.state)).toBe('atPost');
+    expect(await lamp(game, 'massage')).toBe('working');
+    // a room with no station to work is working once it is finished
+    expect(await lamp(game, 'training')).toBe('working');
+
+    await game.eval((pp) => pp.sim.fire(pp.state.staff.find((s) => s.role === 'therapist')!.id));
+    await game.settle();
+    expect(await lamp(game, 'massage')).toBe('idle');
+
+    await game.eval((pp) => (pp.state.items.find((it) => it.type === 'massage_table')!.wear = 100));
+    await game.settle();
+    expect(await lamp(game, 'massage')).toBe('broken');
+  });
+
+  test('stay grey while a room is still a blueprint', async ({ game }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.sim.createRoom('massage', { x: 11, y: 5, w: 4, h: 4 }, { x: 12, y: 8, dx: 0, dy: 1 });
+    });
+    await game.settle();
+    expect(await lamp(game, 'massage')).toBe('unfinished');
+  });
+});

@@ -7,6 +7,23 @@ export const H_TALL = 1.25;
 /** The height of the walls at the front, cut low so you can see in. */
 export const H_LOW = 0.3;
 
+/** How wide each side of a door's frame is, and how far the frame stands out from each face of its wall. */
+export const DOOR_JAMB = 0.1;
+export const DOOR_CASING = 0.05;
+/**
+ * The raised threshold across a doorway, over the one floor.ts paints there: in from each end of the tile, and how far
+ * it reaches into the room from the room's edge, in tiles (4 and 9 of the floor's 48 pixels a tile).
+ */
+export const THRESHOLD_INSET = 4 / 48;
+export const THRESHOLD_DEPTH = 9 / 48;
+/** How tall the threshold stands off the floor. */
+export const THRESHOLD_H = 0.025;
+
+/** A room's sign: how wide and tall its plaque is, and how high its post stands it over a wall cut low. */
+export const PLAQUE_W = 0.7;
+export const PLAQUE_H = 0.68;
+export const PLAQUE_LOW_BASE = 0.46;
+
 /** How thick the building's outer walls are, and how tall at the back. */
 export const OUTER_T = 0.28;
 export const OUTER_HT = 2.0;

@@ -3,7 +3,21 @@
 
 import { type Footprint, inFootprint } from '../core/footprint';
 import type { Room } from '../core/state/types';
-import { H_LOW, H_TALL, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, WALL_T } from './shared';
+import {
+  DOOR_CASING,
+  DOOR_JAMB,
+  H_LOW,
+  H_TALL,
+  OUTER_PANE_H,
+  OUTER_PANE_Y0,
+  OUTER_T,
+  PLAQUE_LOW_BASE,
+  PLAQUE_W,
+  THRESHOLD_DEPTH,
+  THRESHOLD_H,
+  THRESHOLD_INSET,
+  WALL_T,
+} from './shared';
 import { nearSides, type Sides } from './turn';
 import { windowBoxes, windowSpans } from './windows';
 
@@ -31,6 +45,16 @@ export interface WallBox {
   ghost?: boolean;
 }
 
+/** Where a room's sign stands along the wall its door is in. */
+export interface SignSpot {
+  /** The middle of the plaque along the wall. */
+  along: number;
+  /** The height of the plaque's bottom edge. */
+  base: number;
+  /** Whether it stands on a post, beside a doorway in a wall cut low, rather than on top of the door's frame. */
+  post: boolean;
+}
+
 /** A door propped open into the room, and the sign over its doorway. */
 export interface Doorway {
   horizontal: boolean;
@@ -43,6 +67,8 @@ export interface Doorway {
   wallHeight: number;
   /** Which way is into the room: 1 or -1. */
   inward: number;
+  /** Where the room's sign stands. */
+  sign: SignSpot;
 }
 
 export interface RoomShape {
@@ -157,11 +183,53 @@ function sideBoxes(side: Side): WallBox[] {
     );
   }
   plain(runStart, b);
-  if (doorAt !== null) {
-    for (const p of [doorAt, doorAt + 0.9]) box(p, p + 0.1, 0, hgt + 0.07, T + 0.07, 'trim');
-    if (tall) box(doorAt, doorAt + 1, hgt - 0.12, 0.19, T + 0.07, 'trim');
-  }
+  if (doorAt !== null) boxes.push(...doorFrame(side, doorAt, hgt));
   return boxes;
+}
+
+/**
+ * A door's frame in the room's trim, standing out from both faces of its wall: a jamb at each side, a head across the
+ * top of a tall wall (a wall cut low keeps only the stubs of its jambs), and a threshold across the floor, raised over
+ * the one the floor is painted with.
+ */
+function doorFrame(side: Side, doorAt: number, hgt: number): WallBox[] {
+  const { horizontal, fixed, tall, inward } = side;
+  const deep = WALL_T + 2 * DOOR_CASING;
+  /** A box of the frame along the wall from p to q. */
+  const part = (p: number, q: number, y0: number, h: number): WallBox => ({
+    horizontal,
+    fixed,
+    a: p,
+    b: q,
+    y0,
+    h,
+    thick: deep,
+    material: 'trim',
+  });
+  const frame = [doorAt, doorAt + 1 - DOOR_JAMB].map((p) => part(p, p + DOOR_JAMB, 0, hgt + 0.07));
+  if (tall) frame.push(part(doorAt, doorAt + 1, hgt - 0.12, 0.19));
+  // the painted threshold runs from the room's edge, the outer face of its wall, into the room
+  const edge = fixed - (inward * WALL_T) / 2;
+  frame.push({
+    ...part(doorAt + THRESHOLD_INSET, doorAt + 1 - THRESHOLD_INSET, 0, THRESHOLD_H),
+    fixed: edge + (inward * THRESHOLD_DEPTH) / 2,
+    thick: THRESHOLD_DEPTH,
+  });
+  return frame;
+}
+
+/**
+ * Where a room's sign stands: on top of its door's frame in a tall wall, where it is seen over the wall from either
+ * side; in a wall cut low, on a post beside the doorway, clear of whoever walks through it and of the room's corners.
+ */
+export function signSpot(side: Pick<Side, 'a' | 'b' | 'tall'>, doorAt: number): SignSpot {
+  const hgt = side.tall ? H_TALL : H_LOW;
+  if (side.tall) return { along: doorAt + 0.5, base: hgt + 0.09, post: false };
+  const half = PLAQUE_W / 2;
+  // beside the latch side if the wall carries on far enough there, before the corner's wall, else beside the hinges
+  const after = doorAt + 1 + half + 0.04;
+  const along = after + half + WALL_T <= side.b ? after : Math.max(side.a + WALL_T + half, doorAt - half - 0.04);
+  return { along, base: PLAQUE_LOW_BASE, post: true };
 }
 
 /**
@@ -272,6 +340,7 @@ export function roomShape(room: Room, fp: Footprint, near: Sides = FIRST_VIEW): 
             tall: withDoor.tall,
             wallHeight: withDoor.tall ? H_TALL : H_LOW,
             inward: withDoor.inward,
+            sign: signSpot(withDoor, withDoor.doorAt),
           }
         : null,
   };

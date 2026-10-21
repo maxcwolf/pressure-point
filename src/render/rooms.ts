@@ -5,18 +5,19 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 import { ROOMS } from '../core/data';
-import { footprintKey } from '../core/footprint';
+import { type Footprint, footprintKey } from '../core/footprint';
 import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { papered, paperUVs, wallMaterial } from './decor-paint';
 import { disposeOwned, owned } from './disposal';
 import { ghostOf } from './hung';
-import { iconTexture } from './models/icons';
 import { mergeStill } from './models/merge';
-import { mat, put } from './models/parts';
-import { roomShape, type WallBox, type WallMaterial } from './room-walls';
+import { mat, put, sph } from './models/parts';
+import { buildSignPlaque, type LampState, pulseLamps, setLamp, type SignPlaque } from './models/sign-plaque';
+import { lampStates } from './room-lamp';
+import { type Doorway, roomShape, type WallBox, type WallMaterial } from './room-walls';
 import { OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, SHELL_TRIM } from './shared';
-import { nearSides, type Turn } from './turn';
+import { nearSides, type Sides, type Turn } from './turn';
 import { windowBoxes } from './windows';
 
 /**
@@ -79,8 +80,108 @@ function addBoxes(
   }
 }
 
+/** How tall a door is, below the head of its frame, and how wide its leaf, which hangs inside the jambs. */
+const LEAF_GAP = 0.14;
+const LEAF_W = 0.78;
+/** How far a door stands open into its room: wide enough to see it is a door from any side. */
+const LEAF_OPEN = 1.15;
+
+/**
+ * A door's leaf, hinged at the origin and running along x: a pale panelled door in the room's trim, with a knob on
+ * each face, so it reads as a door from any side and any distance.
+ */
+function doorLeaf(height: number, body: THREE.Material, trim: THREE.Material, shadows: boolean): THREE.Group {
+  const pivot = new THREE.Group();
+  const T = 0.05;
+  const mid = LEAF_W / 2 + 0.01;
+  put(pivot, owned(new THREE.BoxGeometry(LEAF_W, height, T)), body, mid, height / 2, 0).castShadow = shadows;
+  const panelW = LEAF_W - 0.22;
+  const upper = owned(new THREE.BoxGeometry(panelW, height * 0.34, 0.014));
+  const lower = owned(new THREE.BoxGeometry(panelW, height * 0.3, 0.014));
+  // the panels and knobs share the walls' trim and its shadows, so they are drawn with it in the same call
+  const knob = sph(0.035, 10);
+  for (const out of [1, -1]) {
+    const z = out * (T / 2 + 0.005);
+    put(pivot, upper, trim, mid, height * 0.72, z).castShadow = shadows;
+    put(pivot, lower, trim, mid, height * 0.27, z).castShadow = shadows;
+    put(pivot, knob, trim, LEAF_W - 0.08, height * 0.48, out * (T / 2 + 0.025)).castShadow = shadows;
+  }
+  return pivot;
+}
+
+/** A door propped open into its room, hung inside the frame of a doorway in a tall wall. */
+function leafIn(doorway: Doorway, materials: Record<WallMaterial, THREE.Material>, shadows: boolean): THREE.Group {
+  const { horizontal, fixed, at, wallHeight, inward } = doorway;
+  const pivot = doorLeaf(wallHeight - LEAF_GAP, materials.frame, materials.trim, shadows);
+  if (horizontal) {
+    pivot.position.set(at + 0.1, 0, fixed);
+    pivot.rotation.y = -LEAF_OPEN * inward;
+  } else {
+    pivot.position.set(fixed, 0, at + 0.1);
+    pivot.rotation.y = -Math.PI / 2 + LEAF_OPEN * inward;
+  }
+  return pivot;
+}
+
+/** A room's sign, standing where its doorway puts it, its faces looking either way across the wall. */
+function signAt(room: Room, doorway: Doorway, board: THREE.Material): SignPlaque {
+  const { horizontal, fixed, sign: spot } = doorway;
+  // on a post, it stands on the top of the wall cut low beside the door
+  const post = spot.post ? spot.base - (doorway.wallHeight + 0.07) : 0;
+  const sign = buildSignPlaque(room.type, board, post);
+  const { root } = sign;
+  root.position.set(horizontal ? spot.along : fixed, spot.base, horizontal ? fixed : spot.along);
+  if (!horizontal) root.rotation.y = Math.PI / 2;
+  root.traverse((o) => {
+    if (o instanceof THREE.Mesh) o.castShadow &&= room.done;
+  });
+  return sign;
+}
+
+/** The see-through blue every part of a blueprint is drawn in. */
+export const BLUEPRINT = new THREE.MeshStandardMaterial({
+  color: 0x6fb7ff,
+  transparent: true,
+  opacity: 0.55,
+  roughness: 0.6,
+});
+
+/**
+ * Build a room's walls, windows, door and sign in a building, with the walls facing the camera cut low, in the
+ * materials given. A finished room's walls, trim, door and the board of its sign are then drawn in a call each; the
+ * glass, and a blueprint, are see-through and drawn part by part; the sign's lamp is left out, to change with the room.
+ */
+export function buildRoom(
+  room: Room,
+  fp: Footprint,
+  near: Sides,
+  materials: Record<WallMaterial, THREE.Material>,
+): { group: THREE.Group; sign: SignPlaque | null } {
+  const g = new THREE.Group();
+  const wall = room.wall ?? 'standard';
+  const { boxes, doorway } = roomShape(room, fp, near);
+  addBoxes(g, boxes, materials, room.done, room.done && papered(wall));
+  let sign: SignPlaque | null = null;
+  if (doorway) {
+    if (doorway.tall) g.add(leafIn(doorway, materials, room.done));
+    sign = signAt(room, doorway, materials.trim);
+    g.add(sign.root);
+  }
+  mergeStill(g);
+  return { group: g, sign };
+}
+
+/** A room as drawn: its group, what it was built from, and its sign, if it has a door to hang one by. */
+interface Drawn {
+  group: THREE.Group;
+  key: string;
+  sign: SignPlaque | null;
+}
+
 export class RoomsLayer {
-  private rooms = new Map<number, { group: THREE.Group; key: string }>();
+  private rooms = new Map<number, Drawn>();
+  /** What each room's lamp showed when last looked at, by room id. */
+  private lamps = new Map<number, LampState>();
   /** The building's own windows, and the rooms they were last laid out around. */
   private panes = new THREE.Group();
   private panesKey = '';
@@ -106,12 +207,6 @@ export class RoomsLayer {
   /** A window's white frame, and the building's teal trim on the ledges of its own windows. */
   private frame = mat(0xfbfaf6, 0.5);
   private shell = mat(SHELL_TRIM, 0.6);
-  private blueprintMat = new THREE.MeshStandardMaterial({
-    color: 0x6fb7ff,
-    transparent: true,
-    opacity: 0.55,
-    roughness: 0.6,
-  });
 
   constructor(
     private scene: THREE.Scene,
@@ -139,9 +234,12 @@ export class RoomsLayer {
       const cur = this.rooms.get(r.id);
       if (cur?.key === key) continue;
       if (cur) this.dispose(cur.group);
-      const group = this.build(r);
-      this.scene.add(group);
-      this.rooms.set(r.id, { group, key });
+      const drawn = this.build(r);
+      this.scene.add(drawn.group);
+      // a new sign starts as the lamp last showed, until the next frame looks again
+      const lamp = this.lamps.get(r.id);
+      if (drawn.sign && lamp) setLamp(drawn.sign, lamp);
+      this.rooms.set(r.id, { ...drawn, key });
     }
     for (const [id, r] of this.rooms) {
       if (liveRooms.has(id)) continue;
@@ -149,6 +247,24 @@ export class RoomsLayer {
       this.rooms.delete(id);
     }
     this.syncPanes();
+  }
+
+  /**
+   * Light each room's lamp for how it is doing this frame, and pulse those that want seeing to. Only the lamps change:
+   * nothing is rebuilt.
+   */
+  update(t: number) {
+    this.lamps = lampStates(this.sim);
+    for (const [id, drawn] of this.rooms) {
+      const lamp = this.lamps.get(id);
+      if (drawn.sign && lamp) setLamp(drawn.sign, lamp);
+    }
+    pulseLamps(t);
+  }
+
+  /** What a room's lamp shows, as last looked at. */
+  lampOf(roomId: number): LampState | undefined {
+    return this.lamps.get(roomId);
   }
 
   /**
@@ -192,7 +308,7 @@ export class RoomsLayer {
 
   /** A blueprint is drawn all in see-through blue. */
   private blueprintMaterials(): Record<WallMaterial, THREE.Material> {
-    const m = this.blueprintMat;
+    const m = BLUEPRINT;
     return { wall: m, trim: m, glass: m, pane: m, frame: m, shell: m };
   }
 
@@ -202,52 +318,12 @@ export class RoomsLayer {
   }
 
   /** Build a room's walls, windows, door and sign, in blueprint blue until it is finished. */
-  private build(room: Room): THREE.Group {
-    const g = new THREE.Group();
-    const def = ROOMS[room.type];
-    const plain = !room.done;
+  private build(room: Room): Omit<Drawn, 'key'> {
     const wall = room.wall ?? 'standard';
-    const materials = plain
-      ? this.blueprintMaterials()
-      : { ...this.windowMaterials(mat(def.trim, 0.6), wallMaterial(wall)) };
-    const { boxes, doorway } = roomShape(room, this.sim.world.building, nearSides(this.turn));
-    addBoxes(g, boxes, materials, room.done, !plain && papered(wall));
-    if (doorway) {
-      const { horizontal, fixed, at, tall, wallHeight: hgt, inward } = doorway;
-      if (tall) {
-        // door leaf, propped open into the room
-        const pivot = new THREE.Group();
-        const leaf = put(
-          pivot,
-          owned(new THREE.BoxGeometry(0.8, hgt - 0.14, 0.05)),
-          materials.trim,
-          0.4,
-          (hgt - 0.14) / 2,
-          0,
-        );
-        leaf.castShadow = room.done;
-        if (horizontal) {
-          pivot.position.set(at + 0.1, 0, fixed);
-          pivot.rotation.y = -1.3 * inward;
-        } else {
-          pivot.position.set(fixed, 0, at + 0.1);
-          pivot.rotation.y = -Math.PI / 2 + 1.3 * inward;
-        }
-        g.add(pivot);
-      }
-      // the room's sign: its plate on its own, as a sign hangs, rather than in a speech bubble
-      const sign = iconTexture(`room-${room.type}`, true);
-      const sprite = new THREE.Sprite(
-        owned(new THREE.SpriteMaterial({ map: sign, transparent: true, depthTest: false })),
-      );
-      sprite.scale.setScalar(0.72);
-      sprite.renderOrder = 9;
-      sprite.position.set(horizontal ? at + 0.5 : fixed, tall ? hgt + 0.55 : 1.0, horizontal ? fixed : at + 0.5);
-      g.add(sprite);
-    }
-    // a finished room's walls and trim are drawn in a call each; the glass, and a blueprint, are see-through and drawn pane by pane
-    mergeStill(g);
-    return g;
+    const materials = room.done
+      ? this.windowMaterials(mat(ROOMS[room.type].trim, 0.6), wallMaterial(wall))
+      : this.blueprintMaterials();
+    return buildRoom(room, this.sim.world.building, nearSides(this.turn), materials);
   }
 
   /** Take a group out of the scene and free its own shapes and sign. */

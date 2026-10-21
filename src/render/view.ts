@@ -48,7 +48,7 @@ export class View {
   private shellKey: string;
   private rig: CameraRig;
   private floor: Floor;
-  private rooms: RoomsLayer;
+  readonly rooms: RoomsLayer;
   private items: ItemsLayer;
   private people: PeopleLayer;
   private litter: LitterLayer;
@@ -191,6 +191,7 @@ export class View {
     }
     this.people.update(this.time, dt);
     this.litter.update();
+    this.rooms.update(this.time);
     this.vibes.update(this.time);
     this.snow.update(this.time);
     this.rain.update(this.time);
