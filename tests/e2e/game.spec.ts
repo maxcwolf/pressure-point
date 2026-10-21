@@ -1124,6 +1124,8 @@ test.describe('clicking', () => {
     await game.page.mouse.up();
     await game.settle();
   };
+  /** Move the mouse to a point. */
+  const moveTo = (game: Game, at: { x: number; y: number }) => game.page.mouse.move(at.x, at.y, { steps: 4 });
   /** The id of whatever is selected, or null. */
   const selectedId = (game: Game) => game.eval((pp) => pp.tools.selected?.id ?? null);
 
@@ -1140,6 +1142,70 @@ test.describe('clicking', () => {
       expect(await selectedId(game), `second click drifting ${drift}px`).toBe(fountain);
       await expect(page.locator('#inspector h3')).toContainText('Zen Fountain');
     }
+  });
+
+  test('what a click would select glows under the pointer, with a hand for the pointer', async ({ game, page }) => {
+    await game.start();
+    const bench = await game.give('bench');
+    /** What a click would select now, and the pointer the canvas shows. */
+    const hovered = () =>
+      game.eval((pp) => [pp.view.overlays.hovered?.id ?? null, document.getElementById('game')!.style.cursor]);
+    await moveTo(game, await game.itemPoint('bench'));
+    await expect.poll(hovered).toEqual([bench, 'pointer']);
+    // nothing on the lawn to click
+    await game.hoverLawn();
+    await expect.poll(hovered).toEqual([null, '']);
+    // leaving the canvas for the interface clears it
+    await moveTo(game, await game.itemPoint('bench'));
+    await expect.poll(hovered).toEqual([bench, 'pointer']);
+    const stats = (await page.locator('#stats').boundingBox())!;
+    await page.mouse.move(stats.x + 10, stats.y + 10, { steps: 4 });
+    await expect.poll(hovered).toEqual([null, '']);
+    // a tool in hand draws its own preview
+    await game.menu('Items');
+    await game.card('Potted Plant').click();
+    await moveTo(game, await game.itemPoint('bench'));
+    await game.settle();
+    await page.waitForTimeout(300);
+    expect(await hovered()).toEqual([null, '']);
+  });
+
+  test('a person selected behind an item shows a marker over them, drawn over everything', async ({ game }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(30);
+    // the receptionist works from behind the desk, which stands between them and the camera
+    const id = await game.eval((pp) => {
+      const st = pp.state.staff.find((s) => s.role === 'receptionist')!;
+      pp.tools.select({ kind: 'staff', id: st.id });
+      pp.view.lookAt(st.x, st.y);
+      return st.id;
+    });
+    await game.draw();
+    expect(await game.eval((pp) => [pp.tools.selected?.id, pp.view.overlays.markerShown])).toEqual([id, true]);
+    // the marker's gold shows over their head
+    const gold = await game.eval((pp) => {
+      const st = pp.state.staff.find((s) => s.role === 'receptionist')!;
+      const r = pp.view.renderer as unknown as {
+        render(scene: unknown, camera: unknown): void;
+        getContext(): WebGLRenderingContext;
+        getPixelRatio(): number;
+      };
+      const view = pp.view as unknown as { scene: unknown; rig: { camera: unknown } };
+      r.render(view.scene, view.rig.camera);
+      const gl = r.getContext();
+      const ratio = r.getPixelRatio();
+      const p = pp.view.project(st.x, st.y, 2.35);
+      const size = 24;
+      const px = new Uint8Array(size * size * 4);
+      const x = Math.round(p.x * ratio) - size / 2;
+      const y = gl.drawingBufferHeight - Math.round(p.y * ratio) - size / 2;
+      gl.readPixels(x, y, size, size, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      let n = 0;
+      for (let i = 0; i < px.length; i += 4) if (px[i]! > 180 && px[i + 1]! > 140 && px[i + 2]! < 90) n++;
+      return n;
+    });
+    expect(gold).toBeGreaterThan(10);
   });
 
   test('an item in hand is placed even when the click drifts a little', async ({ game }) => {

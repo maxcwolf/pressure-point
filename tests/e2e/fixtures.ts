@@ -43,6 +43,8 @@ interface Handle {
     lookAt(x: number, y: number): void;
     target: { set(x: number, y: number, z: number): void };
     renderer: { info: { render: { triangles: number } } };
+    /** What a click would select now, and whether the marker over a selected person shows. */
+    overlays: { hovered: { kind: string; id: number } | null; markerShown: boolean };
   };
   tools: {
     tool: any;
