@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { nextCenter } from '../../src/core/campaign';
-import { CENTERS, conditionHere, CONDITIONS, INSPECTION_GAP_DAYS, ITEMS } from '../../src/core/data';
+import { CENTERS, conditionHere, CONDITIONS, INSPECTION_GAP_DAYS, ITEMS, MODALITIES } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { createContext } from '../../src/core/sim/context';
 import { objectives } from '../../src/core/sim/progress';
@@ -61,9 +61,13 @@ describe('The Orchard Estate', () => {
     }
   });
 
-  it('has three ailments found only there', () => {
-    const local = CONDITIONS.filter((c) => c.only?.includes('orchard')).map((c) => c.id);
+  it('has three ailments found only there, and two more for the Cider Press of Rebirth once it is built', () => {
+    const local = CONDITIONS.filter((c) => c.only?.includes('orchard') && !MODALITIES[c.modality].machine).map(
+      (c) => c.id,
+    );
     expect(local).toEqual(['windfall', 'croquet', 'blossom']);
+    const pressed = CONDITIONS.filter((c) => c.only?.includes('orchard') && MODALITIES[c.modality].machine);
+    expect(pressed.map((c) => c.id)).toEqual(['sourgrapes', 'badapple']);
     for (const c of CONDITIONS.filter((c) => local.includes(c.id))) {
       expect(conditionHere(c, 'orchard')).toBe(true);
       expect(conditionHere(c, 'highpines')).toBe(false);

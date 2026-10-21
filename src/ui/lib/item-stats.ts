@@ -23,7 +23,21 @@ export type StatTone = 'decor' | 'calm' | 'loud' | 'warm' | 'cool' | 'earn' | 's
 
 /** One thing an item does, in a word or two for a card and in a sentence for a tooltip. */
 export interface ItemStat {
-  id: 'decor' | 'noise' | 'session' | 'heat' | 'sale' | 'seat' | 'treatment' | 'upgrade' | 'wear' | 'dirt' | 'size';
+  id:
+    | 'decor'
+    | 'noise'
+    | 'session'
+    | 'heat'
+    | 'sale'
+    | 'seat'
+    | 'treatment'
+    | 'machine'
+    | 'running'
+    | 'upgrade'
+    | 'wear'
+    | 'overload'
+    | 'dirt'
+    | 'size';
   icon: string;
   short: string;
   long: string;
@@ -112,6 +126,7 @@ export function itemStats(type: ItemType): ItemStat[] {
         long: `Needed for ${m.name} in its room`,
         tone: 'plain',
       });
+  out.push(...machineStats(type));
   if (def.upgrade !== undefined)
     out.push({
       id: 'upgrade',
@@ -155,6 +170,60 @@ export function itemStats(type: ItemType): ItemStat[] {
       short: def.mount === 'wall' ? `${def.w} wide` : `${def.w}×${def.h}`,
       long: def.mount === 'wall' ? `Hangs ${def.w} tiles wide` : `Takes up ${def.w} × ${def.h} tiles`,
       tone: 'plain',
+    });
+  return out;
+}
+
+/** A share above or below one, as a percentage faster, slower, likelier and so on. */
+const percent = (times: number) => `${Math.round(Math.abs(1 - times) * 100)}%`;
+
+/** What a treatment machine does that a table does not: what it does and how, what it costs to run, and how it fails. */
+function machineStats(type: ItemType): ItemStat[] {
+  const machine = ITEMS[type].machine;
+  if (!machine) return [];
+  const out: ItemStat[] = [];
+  const names = machine.performs.map((m) => MODALITIES[m].name).join(' and ');
+  const how: string[] = [];
+  if (machine.seconds && machine.seconds !== 1)
+    how.push(`sessions ${percent(machine.seconds)} ${machine.seconds < 1 ? 'quicker' : 'longer'}`);
+  if (machine.success) how.push(`${Math.round(machine.success * 100)}% likelier to work`);
+  if (machine.setting) how.push('every trip in its room has a perfect set and setting');
+  if (machine.boosts) how.push(`every session in its room ${percent(machine.boosts.seconds)} quicker`);
+  if (machine.beside) how.push(`better beside a ${ROOMS[machine.beside.room].name}`);
+  const own = MODALITIES[machine.performs[0] ?? 'swedish'].machine === type;
+  out.push({
+    id: 'machine',
+    icon: '⚙️',
+    short: own ? names : machine.boosts || machine.setting ? 'Helps its room' : `Does ${names}`,
+    long: own
+      ? `The only cure for what ${names} treats, worked by a trained operator${how.length ? `: ${how.join(', ')}` : ''}`
+      : `${machine.boosts || machine.setting ? 'Helps' : `Does ${names} in place of a table`}${how.length ? `: ${how.join(', ')}` : ''}`,
+    tone: 'plain',
+  });
+  out.push({
+    id: 'machine',
+    icon: '🔌',
+    short: `${money(machine.upkeep)} a month`,
+    long: `Costs ${money(machine.upkeep)} a month to keep running, paid with the wages`,
+    tone: 'upkeep',
+  });
+  if (machine.runNoise || machine.runHeat)
+    out.push({
+      id: 'running',
+      icon: machine.runNoise ? '🔊' : '🌡️',
+      short: machine.runNoise ? 'Loud running' : 'Hot running',
+      long: machine.runNoise
+        ? `Noise ${machine.runNoise} while it runs, heard all through the building`
+        : `Warms the room by ${machine.runHeat ?? 0}°F while it runs`,
+      tone: machine.runNoise ? 'loud' : 'warm',
+    });
+  if (machine.overload)
+    out.push({
+      id: 'overload',
+      icon: '💨',
+      short: 'Can overload',
+      long: `Smokes once ${machine.overload.from}% worn, and may then overload: out of action until a Caretaker sees to it, and ${money(machine.overload.bill)} for parts`,
+      tone: 'upkeep',
     });
   return out;
 }

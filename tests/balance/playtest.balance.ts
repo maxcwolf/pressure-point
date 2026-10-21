@@ -47,6 +47,11 @@ for (const { center, seed, index } of RUNS) {
       `${center.padEnd(10)} seed ${seed}: opened day ${l.openedDay}, stars at months ${l.starDays.map(months).join(' ')}` +
         `  lowest $${Math.round(l.lowestMoney)} peak loan $${l.peakLoan}  open: ${l.openGoals.join('; ')}\n`,
     );
+    for (const m of l.machines)
+      process.stdout.write(
+        `           machine: ${m.room} day ${m.day}, ${m.healed} healed, earned $${m.earned} on $${m.cost} + $${Math.round(m.upkeep)} upkeep, ` +
+          `paid back ${m.paybackDay === null ? 'never' : `day ${m.paybackDay}`}\n`,
+      );
     mkdirSync(PARTS, { recursive: true });
     writeFileSync(join(PARTS, `${index}.json`), JSON.stringify(l));
   });

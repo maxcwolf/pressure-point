@@ -3,6 +3,8 @@
 
 import { itemOpen } from './campaign';
 import {
+  type CenterId,
+  CENTERS,
   type DecorKey,
   DISCIPLINES,
   type FloorId,
@@ -11,6 +13,7 @@ import {
   ITEMS,
   type ItemType,
   type Offering,
+  roomHere,
   ROOMS,
   type RoomType,
   RUG_PATTERNS,
@@ -226,11 +229,15 @@ export function describeLayout(l: Layout): string {
   return parts.join(', ');
 }
 
-/** What a game allows to be built: the stars earned, the items unlocked with karma, and the disciplines and classes on. */
+/**
+ * What a game allows to be built: the stars earned, the items unlocked with karma, the disciplines and classes on,
+ * and the center, for a room found at only some of them.
+ */
 export interface Allowed {
   upTo: number;
   unlocked: readonly ItemType[];
   enabled: (o: Offering) => boolean;
+  center?: CenterId;
 }
 
 /**
@@ -241,6 +248,8 @@ export function templateLock(l: Layout, allowed: Allowed): string {
   const problem = layoutProblem(l);
   if (problem) return problem;
   const room = ROOMS[l.type];
+  if (allowed.center && !roomHere(room, allowed.center))
+    return `There is no ${room.name} at ${CENTERS[allowed.center].name}`;
   const offering = room.discipline ?? room.offering;
   if (offering && !allowed.enabled(offering))
     return `${offering === 'qigong' ? 'Qi Gong classes are' : `${DISCIPLINES[offering].name} is`} switched off`;

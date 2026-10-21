@@ -183,7 +183,7 @@ describe('a payday the bank cannot cover', () => {
     s.day = DAYS_PER_MONTH - 0.001;
     s.ledger.treatment = 6000;
     s.ledger.building = 50_000;
-    expect(cashflow(s)).toEqual({ income: 6000, wages: 3000, interest: 0, net: 3000 });
+    expect(cashflow(s)).toEqual({ income: 6000, wages: 3000, interest: 0, upkeep: 0, net: 3000 });
     // in the red, and with a loan, the interest counts against it
     s.money = -1000;
     s.loan = 10_000;

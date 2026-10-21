@@ -1,6 +1,9 @@
 // Deciding what the build and hire menus offer.
 
+import { itemOpen } from '../../core/campaign';
 import {
+  type ConditionDef,
+  CONDITIONS,
   DISCIPLINES,
   goesIn,
   type ItemDef,
@@ -16,6 +19,20 @@ import {
   roomsFor,
   type RoomType,
 } from '../../core/data';
+
+/** The ailments a machine room's machine cures, which no other room does. */
+export function machineCures(type: RoomType): ConditionDef[] {
+  const machines = ROOMS[type].required.filter((t) => ITEMS[t].machine);
+  return CONDITIONS.filter((c) => {
+    const machine = MODALITIES[c.modality].machine;
+    return machine !== undefined && machines.includes(machine);
+  });
+}
+
+/** The item that keeps a room locked until karma unlocks it, if one does: the Carousel of Rebirth's carousel. */
+export function roomKarmaLock(type: RoomType, upTo: number, unlocked: readonly ItemType[]): ItemType | undefined {
+  return ROOMS[type].required.find((t) => !itemOpen(ITEMS[t], upTo, unlocked));
+}
 
 /** Whether something tied to a discipline, or the Qi Gong classes, is on offer: anything tied to neither always is. */
 export function available(d: Offering | undefined, enabled: (d: Offering) => boolean): boolean {
@@ -61,11 +78,12 @@ export function itemOffered(item: ItemDef, enabled: (d: Offering) => boolean): b
 }
 
 /** What an item is for, to filter the Items menu by. */
-export type ItemKind = 'equipment' | 'comfort' | 'decor' | 'staff' | 'wall';
+export type ItemKind = 'equipment' | 'machine' | 'comfort' | 'decor' | 'staff' | 'wall';
 
 /** The kinds of item, in the order the Items menu offers them. */
 export const ITEM_KINDS: readonly { id: ItemKind; label: string }[] = [
   { id: 'equipment', label: 'Desks and equipment' },
+  { id: 'machine', label: 'Machines' },
   { id: 'comfort', label: 'Guest comforts' },
   { id: 'decor', label: 'Decor' },
   { id: 'staff', label: 'For staff' },
@@ -76,12 +94,13 @@ export const ITEM_KINDS: readonly { id: ItemKind; label: string }[] = [
 const GUEST_USES = new Set(['seat', 'drink', 'eat', 'play', 'toilet']);
 
 /**
- * What an item is for: something to hang on a wall, a station or treatment equipment, a comfort for guests, decor, or
- * something for staff.
+ * What an item is for: something to hang on a wall, a treatment machine, a station or treatment equipment, a comfort
+ * for guests, decor, or something for staff.
  */
 export function itemKind(type: ItemType): ItemKind {
   const def = ITEMS[type];
   if (def.mount === 'wall') return 'wall';
+  if (def.machine) return 'machine';
   if (def.station || Object.values(MODALITIES).some((m) => m.equipment === type)) return 'equipment';
   if (def.where === 'staffroom' || def.where === 'training') return 'staff';
   if (def.access.some((a) => GUEST_USES.has(a.role)) || type === 'bin') return 'comfort';

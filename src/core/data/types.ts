@@ -15,7 +15,13 @@ export type RoomType =
   | 'lodge'
   | 'staffroom'
   | 'restroom'
-  | 'training';
+  | 'training'
+  | 'kneader'
+  | 'pinpress'
+  | 'aurawash'
+  | 'alphorn'
+  | 'cider'
+  | 'rebirth';
 
 /** Whether someone is a woman or a man: their hair and first name follow it. */
 export type Sex = 'female' | 'male';
@@ -121,7 +127,18 @@ export type ItemType =
   | 'rattle'
   | 'sweat_lodge'
   | 'mushroom_altar'
-  | 'brew_pot';
+  | 'brew_pot'
+  | 'kneadmaster'
+  | 'pin_press'
+  | 'aura_wash'
+  | 'great_alphorn'
+  | 'cider_press'
+  | 'wheel_of_rebirth'
+  | 'stone_kiln'
+  | 'octopus'
+  | 'geode'
+  | 'big_gong'
+  | 'fog_machine';
 
 export interface RoomDef {
   type: RoomType;
@@ -142,10 +159,14 @@ export interface RoomDef {
   unlock?: number;
   /** Something other than a discipline that Settings can switch it off with. */
   offering?: 'qigong';
+  /** The only centers it can be built in, for a center's signature room. Absent means anywhere. */
+  only?: readonly CenterId[];
+  /** What the speakers say when the first one is finished, once a game. */
+  opening?: string;
 }
 
 export type AccessRole =
-  'staff' | 'guest' | 'seat' | 'rest' | 'recover' | 'toilet' | 'drink' | 'eat' | 'play' | 'study';
+  'staff' | 'guest' | 'exit' | 'seat' | 'rest' | 'recover' | 'toilet' | 'drink' | 'eat' | 'play' | 'study';
 
 export type Pose = 'stand' | 'walk' | 'sit' | 'lie';
 
@@ -246,6 +267,42 @@ export interface ItemDef {
    * the upgrades are priced against, each level a share of it (`UPGRADE_PRICE`).
    */
   upgrade?: number;
+  /** A treatment machine: what it does, and what it takes to run. */
+  machine?: MachineDef;
+}
+
+/**
+ * What a treatment machine does and costs to run. A signature machine is the one required item of its room, and the
+ * only place its own techniques are done; a machine for a technique done on tables too takes a table's place for it.
+ */
+export interface MachineDef {
+  /** The techniques it does, all of its station's discipline. */
+  performs: readonly Modality[];
+  /** Session length, times this. */
+  seconds?: number;
+  /** Added to the chance of a session working. */
+  success?: number;
+  /** How hard a session is on staff energy, times this. */
+  strain?: number;
+  /** What its power and parts cost each month, paid with the wages. */
+  upkeep: number;
+  /** Noise it makes only while someone is inside, heard outside its room. */
+  runNoise?: number;
+  /** Warmth it gives off only while someone is inside. */
+  runHeat?: number;
+  /**
+   * It smokes once worn past `from`, and then after each session may overload: out of action until a Caretaker sees
+   * to it, with a bill for parts, and a mess of its own, in a few words for the toast.
+   */
+  overload?: { from: number; chance: number; bill: number; mess: string };
+  /** A room next door it works better beside: faster, or likelier to work. */
+  beside?: { room: RoomType; seconds?: number; success?: number };
+  /** It helps every session in its room, rather than taking guests itself: sessions take this times as long. */
+  boosts?: { seconds: number };
+  /** Guests who leave it healed go away happier for something it gives them, a feeling of their own. */
+  gift?: FeelingId;
+  /** Trips in its room count the set and setting as perfect, whatever the room is like. */
+  setting?: boolean;
 }
 
 export interface RoleDef {
@@ -332,7 +389,13 @@ export type Modality =
   | 'sweat'
   | 'mushroom'
   | 'ayahuasca'
-  | 'quest';
+  | 'quest'
+  | 'kneading'
+  | 'impression'
+  | 'aurawash'
+  | 'alphorn'
+  | 'pressing'
+  | 'rebirth';
 
 export interface ModalityDef {
   id: Modality;
@@ -356,6 +419,8 @@ export interface ModalityDef {
   rest?: boolean;
   /** A psychedelic ceremony: the room's set and setting count double, and a failure is a bad trip. */
   trip?: boolean;
+  /** Done only on this machine, in its own room: never on a table, and never on a house call. */
+  machine?: ItemType;
 }
 
 export interface DisciplineDef {
@@ -418,7 +483,19 @@ export type Visual =
   | 'toxic'
   | 'leash'
   | 'cactus'
-  | 'bighead';
+  | 'bighead'
+  | 'chairshape'
+  | 'bags'
+  | 'bluescreen'
+  | 'beachhead'
+  | 'salt'
+  | 'seaweed'
+  | 'echo'
+  | 'snowcap'
+  | 'grapes'
+  | 'rotten'
+  | 'oldsoul'
+  | 'ruff';
 
 /** What a guest can arrive suffering from. */
 export type ConditionId =
@@ -471,7 +548,19 @@ export type ConditionId =
   | 'parched'
   | 'midlife'
   | 'ego'
-  | 'lost';
+  | 'lost'
+  | 'chairshaped'
+  | 'mallback'
+  | 'bluescreen'
+  | 'outofoffice'
+  | 'salted'
+  | 'washedup'
+  | 'echo'
+  | 'snowedin'
+  | 'sourgrapes'
+  | 'badapple'
+  | 'oldsoul'
+  | 'pastlife';
 
 export interface ConditionDef {
   id: ConditionId;
@@ -570,7 +659,8 @@ export type FeelingId =
   | 'class'
   | 'no-class'
   | 'good-trip'
-  | 'bad-trip';
+  | 'bad-trip'
+  | 'cider';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
 export interface FeelingDef {

@@ -29,11 +29,13 @@ import {
   ITEMS,
   type ItemType,
   LOAN_STEP,
+  machineRoom,
   MODALITIES,
   type Modality,
   NOISE_NOTICE,
   type Role,
   ROLES,
+  ROOM_ORDER,
   ROOMS,
   type RoomType,
   SIDEWALK_Y,
@@ -110,6 +112,12 @@ export const BOT_FLAGS = [
    * fortnight's warning until autumn. An extra, measured in balance log 29.
    */
   'throttle',
+  /**
+   * Build the center's own treatment machine once its star is earned and the center pays its way, and send a
+   * practitioner on its course. An extra for now, so the bot's pace stays as measured before the machines: compare
+   * `BOT_ON=machines` with the bot without them, seed by seed.
+   */
+  'machines',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -117,7 +125,7 @@ export type BotFlags = Record<BotFlag, boolean>;
  * Flags that are off unless `BOT_ON` names them: a different way to play rather than better play, or play that was
  * measured and found to gain nothing.
  */
-const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab', 'clear', 'trouble', 'triage', 'throttle'];
+const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab', 'clear', 'trouble', 'triage', 'throttle', 'machines'];
 
 /**
  * The bot's flags from the environment. `BOT=old` plays as the bot did before it learned any of them; `BOT_OFF`
@@ -378,6 +386,21 @@ export interface IncomeBy {
   bonus: number;
 }
 
+/** A treatment machine the bot built, and how it paid. */
+export interface MachineLog {
+  room: RoomType;
+  day: number;
+  /** What its room cost to build. */
+  cost: number;
+  /** Fees from the guests it healed, and how many. */
+  earned: number;
+  healed: number;
+  /** Its running costs and overload bills paid so far. */
+  upkeep: number;
+  /** The day its fees first covered its room and running costs, or null if they never have. */
+  paybackDay: number | null;
+}
+
 export interface Playtest {
   center: CenterId;
   seed: number;
@@ -399,6 +422,8 @@ export interface Playtest {
   warnings: { day: number; text: string }[];
   /** The day the game ended in bankruptcy, or null if it did not. */
   bankruptDay: number | null;
+  /** The treatment machines built, with the `machines` flag. */
+  machines: MachineLog[];
 }
 
 const TREAT_ROOM: Record<Discipline, RoomType> = {
@@ -507,6 +532,7 @@ export class Bot {
       adverse: [],
       warnings: [],
       bankruptDay: null,
+      machines: [],
     };
     this.watch = this.freshWatch();
   }
@@ -552,6 +578,7 @@ export class Bot {
         }
         if (i % 10 === 0) {
           this.sampleTables();
+          if (this.flags.machines) this.watchMachines();
           if (this.flags.trouble) this.calmCarriers();
         }
       }
@@ -664,7 +691,9 @@ export class Bot {
     const st = s.stats;
     const l = s.lastLedger;
     const income = l.consult + l.treatment + l.classes + l.vending + l.shop + l.mushrooms + l.calls + l.bonus;
-    const spending = l.salaries + l.building + l.training + l.interest + l.marketing + l.fines;
+    const spending = l.salaries + l.building + l.upkeep + l.training + l.interest + l.marketing + l.fines;
+    // the machines' running costs, shared out among them
+    for (const m of this.log.machines) m.upkeep += l.upkeep / this.log.machines.length;
     const rec = s.months.at(-1);
     const wait = rec?.waitCount ? rec.waitTotal / rec.waitCount / DAY_SECONDS : null;
     this.log.months.push({
@@ -1115,6 +1144,7 @@ export class Bot {
     this.grow();
     if (this.flags.classes) this.classes();
     if (this.flags.lab) this.buildLab();
+    if (this.flags.machines) this.machines();
     this.decorate();
     this.comforts();
   }
@@ -1935,6 +1965,98 @@ export class Bot {
       const role = this.staffOf(st.role);
       if (role.filter((x) => !x.training).length < 2 && this.waiting(st.role) > 4) continue;
       if (this.sim.train(st.id, course.id)) return;
+    }
+  }
+
+  /**
+   * The center's own machine room, once its star is earned, while the center pays its way and the bot is not saving,
+   * with the money for a few months' running in hand; and a practitioner sent on its course once it stands.
+   */
+  private machines() {
+    const s = this.s;
+    for (const type of ROOM_ORDER) {
+      const def = ROOMS[type];
+      const machine = def.required.find((t) => ITEMS[t].machine);
+      // the Carousel of Rebirth is for karma, which the bot does not spend
+      if (!machine || !def.only?.includes(s.center) || !def.discipline || !disciplineOn(s, def.discipline)) continue;
+      if (this.sim.hasRoom(type)) {
+        this.trainOperator(machine, def.discipline);
+        continue;
+      }
+      if ((def.unlock ?? 0) > unlockedUpTo(s) || this.saving() !== null || this.profit() <= 0) continue;
+      const upkeep = ITEMS[machine].machine?.upkeep ?? 0;
+      if (!this.afford(def.cost, this.wages() * 1.2 + upkeep * 3 + 2000)) continue;
+      // a full center makes room for it as a player would, knocking down one of a room it has two or more of
+      if (this.buildRoom(type) ?? this.makeSpace(type)) {
+        this.log.machines.push({
+          room: type,
+          day: Math.floor(s.day),
+          cost: def.cost,
+          earned: 0,
+          healed: 0,
+          upkeep: 0,
+          paybackDay: null,
+        });
+        this.note(`day ${Math.floor(s.day)}: built a ${def.name}`);
+      }
+    }
+  }
+
+  /** Send the best practitioner of a machine's discipline on its course, if nobody knows it or is learning it. */
+  private trainOperator(machine: ItemType, discipline: Discipline) {
+    const s = this.s;
+    // a machine is no use without someone trained to run it, so a Training Room comes first
+    if (!this.sim.hasRoom('training')) {
+      if (this.afford(ROOMS.training.cost + 400, 0, true) && (this.buildRoom('training') ?? this.makeSpace('training')))
+        this.note(`day ${Math.floor(s.day)}: a Training Room, for the ${ITEMS[machine].name}`);
+      return;
+    }
+    const role = DISCIPLINES[discipline].role;
+    for (const m of ITEMS[machine].machine?.performs ?? []) {
+      const staff = this.staffOf(role);
+      if (staff.some((st) => st.quals.includes(m) || st.training?.course === m)) continue;
+      // the best practitioner with a qualification to spare, who is not away
+      const free = staff
+        .filter((st) => !st.training && !st.call && this.sim.courses(st).some((c) => c.id === m))
+        .sort((a, b) => b.skill - a.skill);
+      const pick = free[0];
+      if (!pick) {
+        // everyone's qualifications are full: take on someone new to run it, as a player would, now and then
+        if ((this.operatorHired[m] ?? -Infinity) + 10 <= s.day && this.hire(role)) {
+          this.operatorHired[m] = s.day;
+          this.note(`day ${Math.floor(s.day)}: hired a ${role} to run the ${ITEMS[machine].name}`);
+        }
+        continue;
+      }
+      const course = this.sim.courses(pick).find((c) => c.id === m);
+      if (course && this.afford(course.cost, 1000, true) && this.sim.train(pick.id, m))
+        this.note(`day ${Math.floor(s.day)}: sent a ${role} on the ${MODALITIES[m].name} course`);
+    }
+  }
+
+  /** The day the bot last took someone on to run a machine, by its technique. */
+  private operatorHired: Partial<Record<Modality, number>> = {};
+
+  /** The guests in each machine, and what they had spent when they went in, to count what it earns. */
+  private inMachine = new Map<number, { room: RoomType; spent: number }>();
+
+  /** Note who is in each machine, and count what it earned from those who have come out healed. */
+  private watchMachines() {
+    const s = this.s;
+    for (const g of s.guests) {
+      const it = g.state === 'served' ? this.sim.world.item(g.station) : undefined;
+      const room = it && ITEMS[it.type].machine ? machineRoom(it.type) : undefined;
+      if (room && !this.inMachine.has(g.id)) this.inMachine.set(g.id, { room, spent: g.spent });
+    }
+    for (const [id, seen] of this.inMachine) {
+      const g = this.sim.guest(id);
+      if (g && !g.outcome) continue;
+      this.inMachine.delete(id);
+      const log = this.log.machines.find((m) => m.room === seen.room);
+      if (g?.outcome !== 'healed' || !log) continue;
+      log.earned += g.spent - seen.spent;
+      log.healed++;
+      if (log.paybackDay === null && log.earned >= log.cost + log.upkeep) log.paybackDay = Math.floor(s.day);
     }
   }
 

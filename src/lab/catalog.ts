@@ -21,9 +21,13 @@ import {
 } from '../core/data';
 import { HAIR, randomLook } from '../core/people';
 import { newSeed, stream } from '../core/random';
-import type { Char, Look, VisitorKind } from '../core/state/types';
+import type { Char, Guest, Look, VisitorKind } from '../core/state/types';
 import { must } from '../core/util';
 import { accessPose, itemCenter } from '../core/world';
+import { applyGag, applyGuestGag } from '../render/gags/apply';
+import { gagFrame } from '../render/gags/beats';
+import { GAGS } from '../render/gags/scripts';
+import type { GagStage } from '../render/gags/types';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
 import { buildBeach } from '../render/models/beach';
@@ -51,7 +55,7 @@ export interface Model {
   controls: Control[];
 }
 
-export type Group = 'Items' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Scenery';
+export type Group = 'Items' | 'Machines' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Scenery';
 
 /** Something the lab can show. */
 export interface Specimen {
@@ -288,6 +292,102 @@ function seatedSpecimen(type: ItemType, i: number): Specimen {
   };
 }
 
+/** The ailment a machine's guest is shown with: one its own technique cures. */
+function machineCondition(type: ItemType): ConditionDef {
+  const performs = ITEMS[type].machine?.performs;
+  const own = CONDITIONS.find((c) => MODALITIES[c.modality].machine === type);
+  return own ?? CONDITIONS.find((c) => performs?.includes(c.modality)) ?? must(CONDITIONS[0], 'a condition');
+}
+
+/**
+ * A machine playing its gag, with a guest inside it, and a slider to move through the session: so each beat, the
+ * fake failure, the cure and a breakdown can be looked at one at a time.
+ */
+function machineSpecimen(type: ItemType): Specimen {
+  const def = ITEMS[type];
+  const script = must(GAGS[type], `the gag of ${type}`);
+  const condition = machineCondition(type);
+  const st = {
+    stage: 'running' as string,
+    progress: 50,
+    play: true,
+    healed: true,
+    hiccup: false,
+    smoking: false,
+    down: false,
+    guest: def.station !== undefined,
+  };
+  return {
+    id: `machine:${type}`,
+    group: 'Machines',
+    name: def.name,
+    footprint: [def.w, def.h],
+    /** Build the machine, with a guest at its place inside if a guest is treated on it. */
+    build() {
+      const placed = { type, x: 0, y: 0, rot: 0 };
+      const [cx, cy] = itemCenter(placed);
+      const root = new THREE.Group();
+      const model = buildItem(type, {});
+      root.add(model);
+      const seat = def.access.findIndex((a) => a.role === 'guest');
+      let guest: { rig: CharRig; c: Guest } | null = null;
+      if (st.guest && seat >= 0) {
+        const at = accessPose(placed, seat);
+        const rig = buildCharacter(LAB_LOOK, undefined, condition.visual);
+        const c = demoGuest(LAB_LOOK, condition.id);
+        Object.assign(c, { x: at.x - cx, y: at.y - cy, facing: at.face, pose: at.pose, h: at.h });
+        root.add(rig.group);
+        guest = { rig, c };
+      }
+      const stages: Option[] = [
+        ['idle', 'Empty'],
+        ['approach', 'Guest on the way in'],
+        ['running', 'Session'],
+        ['outro', 'Just finished'],
+      ];
+      const item: ItemCondition = { id: 1, water: 100, dirt: 0, scanning: false, broken: false, trophies: 0 };
+      return {
+        root,
+        controls: [
+          choice('Stage', st, 'stage', stages),
+          range('Progress', st, 'progress'),
+          toggle('Play through', st, 'play'),
+          toggle('Worked', st, 'healed'),
+          toggle('Fake failure', st, 'hiccup'),
+          toggle('Smoking', st, 'smoking'),
+          toggle('Down', st, 'down'),
+          toggle('Guest inside', st, 'guest', true),
+        ],
+        /** Play the gag at the point in the session picked, or round and round. */
+        animate(t, dt) {
+          // round and round from halfway, so a still picture catches the gag in full swing
+          if (st.play && st.stage === 'running') st.progress = ((0.5 + t / 8) % 1) * 100;
+          const stage = st.stage as GagStage;
+          const since = stage === 'outro' ? t % (script.outro + 1) : 0;
+          const frame = gagFrame(script, {
+            stage,
+            progress: st.progress / 100,
+            since,
+            healed: st.healed,
+            hiccup: st.hiccup,
+            t,
+            smoking: st.smoking,
+            down: st.down,
+          });
+          animateItemParts(model, { ...item, broken: st.down }, t);
+          applyGag(model, frame, t);
+          if (!guest) return;
+          guest.c.outcome = stage === 'outro' && st.healed ? 'healed' : '';
+          poseChar(guest.rig, guest.c, t, dt, null);
+          // the guest is only inside while there is a session, or just after it
+          guest.rig.group.visible = stage === 'running' || stage === 'outro';
+          if (guest.rig.group.visible) applyGuestGag(guest.rig, stage === 'running' ? frame.guest : {}, 0);
+        },
+      };
+    },
+  };
+}
+
 /** A member of staff in their uniform, working on any treatment their role gives. */
 function staffSpecimen(role: Role, named?: Named): Specimen {
   const home = named?.look ?? LAB_LOOK;
@@ -458,6 +558,7 @@ export const CATALOG: readonly Specimen[] = [
       .filter((c) => c !== 'sandbox')
       .map((c) => itemSpecimen('landscape_painting', c)),
   ].sort((a, b) => a.name.localeCompare(b.name)),
+  ...(Object.keys(GAGS) as ItemType[]).map(machineSpecimen),
   ...CONDITIONS.map(guestSpecimen),
   ...ROLE_ORDER.map((role) => staffSpecimen(role)),
   // the one member of staff with a look all her own

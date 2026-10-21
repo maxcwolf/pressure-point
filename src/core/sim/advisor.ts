@@ -38,6 +38,7 @@ import {
 } from './economy';
 import { emit, type Subject } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
+import { roomForModality } from './machines';
 import { mishapAdvice } from './mishaps';
 import { allStars, hasItem, hasRoom, hasStaff } from './progress';
 import { stationStaff } from './sessions';
@@ -346,7 +347,7 @@ function modalityAdvice(ctx: SimContext): string | Advice {
     const wanted = s.guests.some((g) => g.goal === 'treat' && conditionOf(g.condition).modality === m);
     if (!wanted) continue;
     const role = ROLES[DISCIPLINES[def.discipline].role];
-    const room = ROOMS[DISCIPLINES[def.discipline].room];
+    const room = ROOMS[roomForModality(m)];
     const staff = s.staff.filter((x) => x.role === role.role && x.state !== 'leaving');
     const an = article(role.name);
     if (!staff.length) return `Guests need ${modalityLabel(m)}. Hire ${an} ${role.name} for your ${room.name}.`;

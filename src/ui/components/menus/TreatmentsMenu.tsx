@@ -14,8 +14,11 @@ import {
   MODALITIES,
   type Modality,
   MODALITY_ORDER,
+  roomHere,
+  ROOMS,
 } from '../../../core/data';
 import { money } from '../../../core/format';
+import { roomForModality } from '../../../core/sim/machines';
 import { unlockedUpTo } from '../../../core/state/game';
 import { useGame } from '../../hooks/use-hud';
 import { tripNote } from '../../lib/ceremonies';
@@ -56,8 +59,13 @@ function ModalityCard({ modality }: { modality: Modality }) {
       <b>{def.name}</b>
       <p>{def.desc}</p>
       <p class="treats">{`Treats: ${treats}`}</p>
+      {def.machine && <p class="treats">{`Done in the ${ROOMS[roomForModality(modality)].name}`}</p>}
       {locked ? (
-        <em>{`🔒 Unlocks at star ${def.star}`}</em>
+        <em>
+          {def.machine && def.star <= unlockedUpTo(s)
+            ? `🔒 Build a ${ROOMS[roomForModality(modality)].name} to offer it`
+            : `🔒 Unlocks at star ${def.star}`}
+        </em>
       ) : (
         <>
           <em class={qualified ? 'ok' : 'warn'}>{`${qualified ? '✔' : '⚠️'} ${qualified} qualified`}</em>{' '}
@@ -80,7 +88,9 @@ function DisciplineSection({ discipline }: { discipline: Discipline }) {
       <h4 class="section">{`${disc.icon} ${disc.name}`}</h4>
       <p class="sub">{note}</p>
       <div class="cards">
-        {MODALITY_ORDER.filter((m) => MODALITIES[m].discipline === discipline).map((m) => (
+        {MODALITY_ORDER.filter(
+          (m) => MODALITIES[m].discipline === discipline && roomHere(ROOMS[roomForModality(m)], sim.s.center),
+        ).map((m) => (
           <ModalityCard key={m} modality={m} />
         ))}
       </div>

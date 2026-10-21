@@ -40,8 +40,8 @@ describe('upgrade prices', () => {
     expect(upgradeCost('massage_table', UPGRADE_LEVELS + 1)).toBe(0);
   });
 
-  it('are only set for treatment equipment', () => {
-    const upgradable = Object.entries(ITEMS).flatMap(([type, def]) => (def.upgrade ? [type] : []));
+  it('are only set for treatment equipment and the machines', () => {
+    const upgradable = Object.entries(ITEMS).flatMap(([type, def]) => (def.upgrade && !def.machine ? [type] : []));
     expect(upgradable.sort()).toEqual([
       'acu_table',
       'ceremony_mat',
@@ -50,6 +50,9 @@ describe('upgrade prices', () => {
       'reiki_table',
       'sound_mat',
     ]);
+    // every machine a guest is treated on can be upgraded too
+    const machines = Object.entries(ITEMS).flatMap(([type, def]) => (def.machine && def.station ? [type] : []));
+    for (const type of machines) expect(ITEMS[type as keyof typeof ITEMS].upgrade).toBeDefined();
   });
 
   it('add up to everything paid, counting one waiting to be installed', () => {

@@ -46,6 +46,8 @@ export const indoorTemp = (outdoor: number) => IDEAL_TEMP + (outdoor - IDEAL_TEM
 /** The warmth (or, below zero, cool) an item gives off: its own, or a little from equipment wearing out. */
 export function itemHeat(it: Item): number {
   const def = ITEMS[it.type];
+  // a machine that runs hot warms the room only while someone is inside it
+  if (def.machine?.runHeat && it.serving && it.wear < 100) return def.machine.runHeat;
   if (def.heat) return it.wear >= 100 ? 0 : def.heat;
   return def.wear && it.wear >= WEAR_REPAIR && it.wear < 100 ? WORN_HEAT : 0;
 }

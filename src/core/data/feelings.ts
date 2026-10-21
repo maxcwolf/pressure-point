@@ -302,6 +302,17 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
       'Bad trip. The wallpaper said things I cannot repeat.',
     ],
   },
+  cider: {
+    id: 'cider',
+    icon: '🍏',
+    text: 'Was given a glass of cider on the way out',
+    good: true,
+    part: 'experience',
+    lines: [
+      'They squeezed the sour out of me and gave it back in a glass. Delicious.',
+      'Lovely cider. I try not to think about where it came from.',
+    ],
+  },
   woozy: {
     id: 'woozy',
     icon: '😵‍💫',

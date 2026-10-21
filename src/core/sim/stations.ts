@@ -7,7 +7,6 @@ import {
   centerOf,
   conditionOf,
   CONSULT_FEE,
-  DISCIPLINES,
   GRUMP_REP,
   ITEMS,
   MODALITIES,
@@ -43,6 +42,16 @@ import { emit, tipOnce } from './events';
 import { feel, reviewStars } from './feelings';
 import { decide, leave, resetGuest } from './guests';
 import { linensPenalty, useLinens } from './linens';
+import {
+  MACHINE_PULL,
+  machineSeconds,
+  machineStrain,
+  machineSuccess,
+  maybeOverload,
+  perfectSetting,
+  roomForModality,
+  treatsHere,
+} from './machines';
 import { goTo } from './movement';
 import { sellMushrooms } from './mushrooms';
 import { feelNoise, itemNoise, noisePenalty } from './noise';
@@ -82,6 +91,8 @@ export function stationScore(ctx: SimContext, it: Item, g: Guest) {
     const problem = deliveryProblem(ctx, it, staff, modalityOf(g));
     if (problem === 'unqualified') score += 6;
     else if (problem) score += 40;
+    // between a table and a machine doing the same work, the machine is quicker, so a tie goes to it
+    if (ITEMS[it.type].machine) score -= MACHINE_PULL;
   }
   return score;
 }
@@ -94,7 +105,7 @@ export function pickStation(ctx: SimContext, g: Guest): Item | null {
   for (const it of ctx.s.items) {
     const st = ITEMS[it.type].station;
     if (st?.goal !== goal || !ctx.world.usable(it)) continue;
-    if (goal === 'treat' && st.discipline !== modalityOf(g).discipline) continue;
+    if (goal === 'treat' && !treatsHere(it, modalityOf(g))) continue;
     const score = stationScore(ctx, it, g);
     if (score < bestScore) {
       bestScore = score;
@@ -152,14 +163,15 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
       setting.prestige +
       chartBonus(ctx, it) +
       blessBonus(ctx.world.roomOfItem(it), ctx.s.day) +
-      upgradeSuccess(it.level) -
+      upgradeSuccess(it.level) +
+      machineSuccess(ctx, it) -
       mod.difficulty -
       (staff.energy < 15 ? 0.15 : 0) -
       conditionPenalty(g.health) -
       setting.vibes -
       setting.noise -
       setting.linens -
-      settingPenalty(mod, setting) -
+      (perfectSetting(ctx, it) ? 0 : settingPenalty(mod, setting)) -
       restPenalty(ctx, g),
     0.3,
     0.98,
@@ -242,15 +254,15 @@ export function updateStations(ctx: SimContext, dt: number) {
       // on a mat, the session sets how busy the healer is, and the treatment only goes on while it plays
       if (lead) {
         if (served && sessionPlaying(lead.progress)) {
-          it.progress += dt / serviceSeconds(mod ? mod.seconds : def.seconds, staff);
+          it.progress += dt / (serviceSeconds(mod ? mod.seconds : def.seconds, staff) * machineSeconds(ctx, it));
           if (it.progress >= 1) completeService(ctx, it, served, staff);
         }
         continue;
       }
       staff.busy = !!served;
-      staff.strain = mod ? mod.strain : 1;
+      staff.strain = (mod ? mod.strain : 1) * machineStrain(it);
       if (served) {
-        it.progress += dt / serviceSeconds(mod ? mod.seconds : def.seconds, staff);
+        it.progress += dt / (serviceSeconds(mod ? mod.seconds : def.seconds, staff) * machineSeconds(ctx, it));
         if (it.progress >= 1) completeService(ctx, it, served, staff);
       }
     }
@@ -368,7 +380,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     useLinens(ctx, it, g);
     if (treatPrice >= PRICEY) feel(g, 'pricey');
     else if (treatPrice <= BARGAIN) feel(g, 'bargain');
-    if (!problem && mod.equipment === 'stone_warmer') {
+    // a machine heats its own stones
+    if (!problem && mod.equipment === 'stone_warmer' && !ITEMS[it.type].machine) {
       const zone = ctx.world.zoneAt(it.x, it.y);
       const warmer = ctx.s.items
         .filter(
@@ -396,6 +409,9 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       // good value earns a better name than a steep bill does
       changeRep(ctx, (1.8 + kept / 100) * (1.25 - 0.25 * treatPrice) * (grump ? GRUMP_REP : 1));
       if (g.emergency && ctx.s.emergency) ctx.s.emergency.healed++;
+      // and a machine may send them off with something, a glass of cider, say
+      const gift = ITEMS[it.type].machine?.gift;
+      if (gift) feel(g, gift);
       say(g, '💖', 6);
       emit(ctx, { type: 'sfx', name: 'heal' });
     } else {
@@ -427,7 +443,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
         tipOnce(
           ctx,
           `botch-equipment-${mod.id}`,
-          `${modalityLabel(mod.id)} needs a ${mod.equipment ? ITEMS[mod.equipment].name : 'piece of equipment'} in the same ${ROOMS[DISCIPLINES[mod.discipline].room].name} as the table.`,
+          `${modalityLabel(mod.id)} needs a ${mod.equipment ? ITEMS[mod.equipment].name : 'piece of equipment'} in the same ${ROOMS[roomForModality(mod.id)].name} as the table.`,
           'bad',
         );
       else if (problem === 'out-of-action')
@@ -449,9 +465,27 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     }
     // a good visit sends some home with something from the shop
     if (wantsToShop(ctx, g)) g.goal = 'shop';
+    // a machine guests walk through lets them out at the far end
+    walkThrough(it, g);
+    // a machine smoking with wear may overload now the guest is done with it
+    maybeOverload(ctx, it);
     if (rest && goRest(ctx, g, rest)) return;
   }
   decide(ctx, g);
+}
+
+/** Out at the far end of a machine guests walk through, ready to go on from there. */
+function walkThrough(it: Item, g: Guest) {
+  const i = accessIndex(it, 'exit');
+  if (i < 0) return;
+  const [tx, ty] = accessTile(it, i);
+  const pose = accessPose(it, i);
+  g.tx = tx;
+  g.ty = ty;
+  g.x = pose.x;
+  g.y = pose.y;
+  g.h = 0;
+  g.facing = pose.face;
 }
 
 /** The stars a treated guest, or a class-goer, gave their visit. */

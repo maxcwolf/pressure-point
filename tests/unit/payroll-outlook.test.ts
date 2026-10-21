@@ -55,7 +55,7 @@ describe('the pace of the books', () => {
     s.ledger.building = 400;
     s.loan = LOAN_STEP;
     const interest = Math.round(LOAN_STEP * LOAN_RATE);
-    expect(cashflow(s)).toEqual({ income: 3000, wages: 3000, interest, net: -interest });
+    expect(cashflow(s)).toEqual({ income: 3000, wages: 3000, interest, upkeep: 0, net: -interest });
     expect(monthlyPayroll(s)).toBe(3000);
   });
 });

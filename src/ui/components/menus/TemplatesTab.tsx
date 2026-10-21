@@ -101,7 +101,12 @@ export function TemplatesTab() {
   const hud = useHud();
   const { sim } = useGame();
   const campaign = loadCampaign();
-  const allowed = { upTo: unlockedUpTo(sim.s), unlocked: campaign.unlocked, enabled: sim.enabled.bind(sim) };
+  const allowed = {
+    upTo: unlockedUpTo(sim.s),
+    unlocked: campaign.unlocked,
+    enabled: sim.enabled.bind(sim),
+    center: sim.s.center,
+  };
   /** Whether a floor or wall can be used in this game. */
   const open = (key: DecorKey) => decorOpen(key, allowed.upTo, campaign.decor);
   /** Add the templates in a file the player picked. */
