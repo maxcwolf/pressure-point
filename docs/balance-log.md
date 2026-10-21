@@ -6,6 +6,89 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 21 October 2026: three ways to play the same seeds
+
+The research's two checks for a strategy that always wins ([balancing_methods.md](research/balancing_methods.md): Holmgård's personas, the same policy with different weights compared on survival curves, and Supercell's dominant-strategy detector, a population collapsing onto one choice) need more than one way to play. Measured with `yarn balance` on `integrate-audit` at `1a6de22`, every campaign center, seeds 1 to 6, four years a game. Stars at month are given seed by seed; profit a month is averaged from the second year on, over the games that were not lost; months at a loss, the lowest reputation (sampled daily) and months below 15% are of every game.
+
+### 33. No style always wins, but the price cap and a Qi Gong Studio always pay
+
+**Found:** every number in this log came from one way of playing well. The deep-dive audit's findings on late money, side income, demand that barely grows with the building, and a price sweet spot near the cap are claims about what the best play is. Only one style of play had been measured, so the claims could not be tested.
+
+**Done** (`tests/balance/bot.ts`): the good bot's tuning is one `Style` record, chosen by `BOT_STYLE`. The record holds the price cap, the long-line premium and the put-off target, a reserve of `wages × k + c` for each thing the bot spends on, how far it borrows (`payday`, `build`, `limit`), when it pays the loan back, how many months a new room's cost is spread over in `roomValue` and how many months of the room's worth must cover its cost before the bot borrows for it, and whether it markets. `decide()` is unchanged; the methods read `this.style`. Each month's log also records income by source (`incomeBy`, shared with the report).
+
+- `good` (the default) is the bot as it was. With `BOT_STYLE` unset (seeds 1 to 3) and with `BOT_STYLE=good` (seeds 1 to 6), every game plays out move for move as before, notes included; seeds 1 to 3 are entry 31's "after".
+- `hoarder` never borrows except when a payday forces it, keeps at least two months' wages in reserve for everything, raises prices up to 1.6 while fewer than one guest in five is put off, builds a room only when it pays back within a month, and never markets.
+- `grower` borrows up to the bank's limit for anything from day one, keeping only the next payday in hand. It keeps at most half a month's wages in reserve, prices from 1.0 to 1.2 with no long-line premium, and runs word of mouth whenever it can pay for it. Its rooms must pay back within two years, not the brief's six months, because six months would be stricter than the good bot's one year.
+- What all three styles share: the rescue when the bank calls the overdraft in still raises prices to at least 1.4, and growth (one room per discipline every two months, the line thresholds) is left as it was, so the styles differ in temper, not in skill.
+
+**Result** (the last column shows each game's loan at its peak and at the end, with ✗ for a game that was lost; prices are at months 12 and 24 and in the last month played, month 47, since the game ends before month 48 closes):
+
+| Center, style               | Stars at month (seed 1 · 2 · 3 · 4 · 5 · 6)                                                                            | Profit a month   | Months at a loss | Lowest reputation | Months below 15% | Bankrupt | Net worth at the end                 | Price level at months 12 / 24 / end                                               | Loan at its peak → at the end                       |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------- | ----------------- | ---------------- | -------- | ------------------------------------ | --------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Willow Lane, good           | 1.1/8.9/15.0 · 0.9/8.0/10.9 · 0.7/4.9/12.1 · 0.8/4.9/16.7 · 0.7/–/– · 0.8/–/–                                          | $5.5k to $22.9k  | 5 to 12          | 1 to 20           | 0 to 4           | 0 of 6   | $208.6k to $841.1k (mean $531.0k)    | 1.1/1.4/1.4 · 1.1/1.2/1.4 · 1.3/1.4/1.4 · 1/1.4/1.4 · 1.2/1.1/1.4 · 1/1/1.4       | 40k→0k · 30k→0k · 45k→0k · 45k→0k · 30k→0k · 30k→0k |
+| Willow Lane, hoarder        | 1.1/–/– bankrupt day 1030 · 2.4/6.0/17.7 · 0.9/15.8/15.8 · 0.8/18.8/18.8 · 0.7/–/– bankrupt day 1060 · 0.9/7.7/8.4     | $15.0k to $25.2k | 7 to 27          | 0 to 7            | 2 to 30          | 2 of 6   | $559.6k to $924.7k (mean $802.5k)    | – · 1/1.1/1.6 · 1.3/1.6/1.6 · 1/1.5/1.4 · – · 1.5/1.6/1.5                         | 50k→✗ · 0k→0k · 5k→0k · 0k→0k · 50k→✗ · 0k→0k       |
+| Willow Lane, grower         | 1.1/5.9/11.8 · 0.9/4.6/13.8 · 0.7/6.7/12.8 · 0.8/4.9/11.4 · 0.7/7.9/14.8 · 0.8/4.8/8.6                                 | $12.0k to $23.2k | 4 to 12          | 2 to 23           | 0 to 3           | 0 of 6   | $411.5k to $951.4k (mean $546.7k)    | 1.2/1.2/1.2 · 1.2/1/1.1 · 1.1/1.2/1 · 1.2/1.1/1.2 · 1.2/1.1/1.1 · 1.2/1.1/1.2     | 50k→0k · 50k→0k · 50k→0k · 50k→0k · 50k→0k · 50k→0k |
+| The Exchange, good          | 15.7/19.4/25.6 · 8.6/12.6/15.2 · 3.8/8.2/13.7 · 7.6/11.6/15.5 · 3.9/11.3/20.9 · 6.6/12.5/15.9                          | $18.9k to $32.6k | 4 to 8           | 24 to 30          | 0                | 0 of 6   | $656.8k to $1165.5k (mean $977.7k)   | 1.4/1.3/1.4 · 1.2/1.4/1.4 · 1.4/1.4/1.4 · 1.3/1.4/1.4 · 1.2/1.4/1.4 · 1/1.4/1.4   | 10k→0k · 20k→0k · 45k→0k · 15k→0k · 40k→0k · 35k→0k |
+| The Exchange, hoarder       | –/–/– bankrupt day 791 · 47.7/–/– · 11.7/17.1/21.2 · –/–/– bankrupt day 821 · 23.7/30.6/35.5 · –/–/– bankrupt day 641  | $13.5k to $29.8k | 5 to 25          | 29 to 30          | 0                | 3 of 6   | $530.5k to $1093.8k (mean $818.9k)   | – · 1.6/1.6/1.6 · 1.6/1.6/1.6 · – · 1.4/1.6/1.6 · –                               | 50k→✗ · 0k→0k · 0k→0k · 50k→✗ · 0k→0k · 50k→✗       |
+| The Exchange, grower        | 12.6/15.6/19.5 · 14.6/20.0/27.3 · 3.0/13.4/26.7 · 6.7/10.8/16.4 · 2.9/7.0/– bankrupt day 281 · 6.5/9.8/16.6            | $8.8k to $24.3k  | 6 to 13          | 1 to 30           | 0 to 6           | 1 of 6   | $268.8k to $914.9k (mean $688.7k)    | 1.2/1.2/1.2 · 1.2/1.1/1.2 · 1.1/1.1/1.2 · 1.2/1.2/1.2 · – · 1.2/1.2/1.2           | 15k→0k · 30k→0k · 50k→0k · 50k→0k · 50k→✗ · 50k→0k  |
+| The Boardwalk, good         | 4.8/12.0/17.7 · 4.3/12.9/18.8 · 4.3/9.9/19.0 · 4.0/38.0/– · 4.2/27.8/34.1 · 5.8/9.0/16.2                               | $2.7k to $29.3k  | 4 to 19          | 0 to 8            | 2 to 17          | 0 of 6   | $124.9k to $1121.6k (mean $657.2k)   | 1.4/1.4/1.4 · 1.4/1.3/1.4 · 1.4/1.3/1.3 · 1.2/1.1/1 · 1.3/1.3/1.3 · 1.4/1.4/1.4   | 30k→0k · 30k→0k · 30k→0k · 30k→0k · 30k→0k · 35k→0k |
+| The Boardwalk, hoarder      | 4.6/15.8/36.7 · 4.6/23.8/37.2 · 5.6/15.7/26.4 · 5.0/–/– · 10.4/26.9/46.8 · 4.4/–/–                                     | $4.0k to $15.1k  | 6 to 19          | 0 to 2            | 6 to 13          | 0 of 6   | $166.6k to $577.2k (mean $390.9k)    | 1.3/1/1 · 1.6/1.6/1.3 · 1.6/1/1 · 1.3/1.3/1.6 · 1.1/1.6/1.1 · 1/1.3/1.3           | 0k→0k · 0k→0k · 0k→0k · 0k→0k · 0k→0k · 0k→0k       |
+| The Boardwalk, grower       | 5.6/–/– bankrupt day 1001 · 4.7/–/– bankrupt day 791 · 4.5/25.9/38.8 · 7.0/11.8/22.2 · 3.9/22.9/35.2 · 4.5/–/–         | $0.8k to $12.7k  | 8 to 22          | 0 to 21           | 0 to 14          | 2 of 6   | −$18.2k to $449.1k (mean $141.6k)    | – · – · 1.4/1/1 · 1.2/1.1/1.2 · 1.1/1.2/1.2 · 1.2/1.2/1.1                         | 50k→✗ · 50k→✗ · 50k→40k · 50k→0k · 50k→0k · 50k→20k |
+| High Pines, good            | 4.9/10.1/16.1 · 4.6/12.9/27.9 · 3.7/8.2/27.2 · 4.1/8.6/20.6 · 4.0/–/– bankrupt day 281 · 5.6/10.2/18.3                 | $7.2k to $34.6k  | 5 to 15          | 2 to 30           | 0 to 9           | 1 of 6   | $294.2k to $1227.0k (mean $649.7k)   | 1.4/1.4/1.4 · 1.3/1.4/1 · 1.4/1.4/1.4 · 1.4/1.4/1.4 · – · 1.4/1.4/1.3             | 40k→0k · 30k→0k · 50k→0k · 40k→0k · 50k→✗ · 40k→0k  |
+| High Pines, hoarder         | 9.1/26.9/– · 4.5/15.0/25.2 · 5.0/26.9/33.4 · 3.9/20.9/28.1 · 4.1/22.8/28.8 · 4.3/10.7/18.6                             | $17.6k to $36.3k | 5 to 10          | 11 to 30          | 0 to 1           | 0 of 6   | $648.9k to $1357.3k (mean $1032.8k)  | 1/1.6/1.6 · 1.3/1.6/1.6 · 1.1/1.6/1.6 · 1.2/1.6/1.6 · 1.2/1.6/1.6 · 1.6/1.6/1.6   | 0k→0k · 0k→0k · 0k→0k · 25k→0k · 0k→0k · 0k→0k      |
+| High Pines, grower          | 4.4/7.7/20.3 · 4.9/8.0/– bankrupt day 311 · 3.9/–/– bankrupt day 190 · 4.3/–/– · 3.9/9.4/16.7 · 5.7/9.7/15.4           | $2.6k to $26.4k  | 4 to 23          | 12 to 30          | 0 to 1           | 2 of 6   | $56.8k to $943.7k (mean $536.1k)     | 1.2/1.2/1.2 · – · – · 1.1/1/1 · 1.1/1.2/1.1 · 1.2/1.2/1.2                         | 50k→0k · 50k→✗ · 50k→✗ · 50k→0k · 50k→0k · 50k→0k   |
+| The Orchard Estate, good    | 6.5/11.1/17.7 · 4.6/9.8/16.5 · 4.6/9.4/17.1 · 5.9/10.4/16.8 · 5.0/10.8/17.1 · 4.9/9.1/16.9                             | $50.2k to $80.8k | 3 to 6           | 21 to 30          | 0                | 0 of 6   | $1775.6k to $2897.5k (mean $2324.4k) | 1.4/1.4/1.4 · 1.3/1.4/1.4 · 1.4/1.4/1.4 · 1.4/1.4/1.4 · 1.4/1.4/1.4 · 1.4/1.4/1.4 | 50k→0k · 50k→0k · 50k→0k · 50k→0k · 50k→0k · 50k→0k |
+| The Orchard Estate, hoarder | 5.4/12.8/21.0 · 12.0/18.8/25.7 · 8.3/14.5/20.0 · 8.4/18.7/24.8 · –/–/– · –/–/–                                         | −$0.8k to $88.7k | 6 to 31          | 3 to 28           | 0 to 27          | 0 of 6   | −$36.7k to $3115.5k (mean $1625.1k)  | 1.5/1.6/1.6 · 1/1.5/1.6 · 1.3/1.6/1.6 · 1.1/1.1/1.6 · 1/1/1 · 1/1/1               | 0k→0k · 0k→0k · 5k→0k · 0k→0k · 25k→20k · 40k→40k   |
+| The Orchard Estate, grower  | –/–/– bankrupt day 130 · 4.1/10.3/18.5 · –/–/– bankrupt day 41 · –/–/– bankrupt day 41 · 3.6/10.7/16.6 · 4.6/11.9/20.0 | $42.0k to $46.0k | 1 to 6           | 11 to 30          | 0 to 1           | 3 of 6   | $1476.8k to $1584.3k (mean $1512.9k) | – · 1.2/1.2/1.2 · – · – · 1.1/1.2/1.2 · 1.2/1.2/1.2                               | 50k→✗ · 50k→0k · 50k→✗ · 50k→✗ · 50k→0k · 50k→0k    |
+
+**Is there a dominant strategy?** No. No style is never lost and richest everywhere. Taking the 30 center-and-seed pairs one at a time, the good bot ends with the most money in 16, the hoarder in 12 and the grower in 2. The good bot earns its stars soonest in 20, the grower in 8 and the hoarder in 2, and the good bot is both richest and fastest in 13. Games lost: the good bot 1 of 30 (High Pines, seed 5, day 281), the hoarder 5 (Willow Lane 2, The Exchange 3) and the grower 8 (The Orchard 3, The Boardwalk 2, High Pines 2, The Exchange 1). The good bot is the best all-rounder, not a dominant strategy: the hoarder ends richer at High Pines in five seeds of six, and at Willow Lane in four of the six seeds it survives. Every style has a center where it is the wrong one. That is the shape the research asks for. The losses are not all equally fair:
+
+- The hoarder's losses come slowly and in plain view. At The Exchange, seed 1, it stays at two treatment rooms and four staff, with four to seven guests a month, and borrows at ten paydays over twenty months, each with the five-day warning, before the end on day 791.
+- Three of the grower's are the cliff entry 27 was meant to remove. At The Orchard, seeds 3 and 4, it borrows the whole $50,000 on day 0, builds ten rooms, spends $113,000 in its first month and is lost on day 41. A player can do the same, and nothing at the moment of borrowing shows what the first payday will come to.
+
+**Does the hoarder match the good bot on stars?** No. Its third star comes later nearly everywhere:
+
+| Center        | Good bot, third star (month)      | Hoarder                                           |
+| ------------- | --------------------------------- | ------------------------------------------------- |
+| The Boardwalk | 16 to 19 (one seed 34, one never) | 26 to 47, and two seeds never reach a second      |
+| The Exchange  | 14 to 26                          | 21 and 36 in the two seeds that earn one          |
+| High Pines    | 16 to 28                          | 19 to 33                                          |
+| The Orchard   | 16 to 18                          | 20 to 26, with two seeds that earn no star at all |
+
+Willow Lane is mixed (8 to 19 against 11 to 17). So stars do need what the hoarder gives up: marketing, borrowing and building early. A one-month payback also did not stop it building in the end: by year 4 it has as many rooms as the good bot at Willow Lane (7.8 against 7.0) and High Pines (11.5 against 11.4), and fewer only at The Boardwalk (8.8 against 10.3) and The Orchard (10.0 against 13.0). The audit's demand-coupling finding holds for the money, though. Nobody is ever turned away in year 4, in any game. Across styles, a room more brings 1.5 to 2 more guests a month (The Exchange: 8.4, 9.0 and 9.6 rooms bring 14.4, 15.9 and 16.0 guests). Only The Orchard pays clearly for size (13 rooms, 21.8 guests; 10 rooms, 15.1 guests). The hoarder's smaller, dearer center makes more money in year 4 than the good bot at Willow Lane ($25.7k a month against $17.9k), The Exchange ($35.2k against $29.2k) and High Pines ($36.7k against $20.0k). So building buys stars sooner, and a small center buys more money.
+
+**How much of the income is side income, and does it win alone?** Classes and house calls as a share of all income in year 4, over the games not lost:
+
+| Style    | Willow Lane | The Exchange | The Boardwalk | High Pines | The Orchard |
+| -------- | ----------- | ------------ | ------------- | ---------- | ----------- |
+| Good bot | 14%         | 22%          | 22%           | 13%        | 16%         |
+| Hoarder  | 24%         | 30%          | 19%           | 19%        | 24%         |
+| Grower   | 23%         | 26%          | 10%           | 8%         | 15%         |
+
+Emergency rewards and prizes add another 4% to 17%. Side income is larger than the whole year-4 profit in only 9 of the 76 games not lost (5 at The Boardwalk). So no style wins on side income alone. But the hoarder's edge is side income:
+
+- At Willow Lane and The Exchange its year-4 profit beats the good bot's by $7.8k and $6.0k a month, against $6.2k and $6.0k more side income.
+- Most of that is the Qi Gong Studio. The good bot fills Willow Lane with treatment rooms and never fits one ("could not fit a qigong", month after month), so its class income there is 0%.
+- The hoarder, building less early, fits a studio in its second year. At seed 2 the studio brings in $16k to $22k a month against $9k to $24k from every treatment room together.
+
+A Qi Gong Studio is the best room in the game wherever it fits. The money one Instructor brings in is the audit's recommendation 6, confirmed.
+
+**Where do the price levels settle?** At whatever cap the style sets:
+
+- The good bot is at 1.4 in its last month in 25 of its 29 games.
+- The grower is at its 1.2 cap in nearly every month after the first year.
+- The hoarder is at 1.6 in every High Pines game, and elsewhere moves between 1.0 and 1.6 only because its reputation rules pull it down when reputation falls.
+
+No style's guests are put off enough to stop it. From the second year on, prices put off 1.6% to 5.8% of arrivals for the good bot, 3.4% to 5.9% at the hoarder's 1.6, and 1.1% to 3.4% for the grower. None reaches even the good bot's 10% target, let alone the hoarder's 20%. So the sweet spot is the cap because there is no sweet spot: between 1.0 and 1.6 a higher price costs nothing but reputation, and the reputation cost comes from results, not from the price.
+
+**What the game should change** (none of it changed here):
+
+- **Demand with the building** (audit recommendation 5): arrivals that rise with each staffed treatment room, and a guest limit that binds. Nobody turned away in four years means the building's size limits nothing. The test is a hoarder that falls behind the good bot in money at every center, not only at The Orchard, while a well-run small center still earns its stars.
+- **Side income** (recommendation 6): bring a Qi Gong Studio's take per Instructor down toward one treatment room's. Today it is the room that makes a cautious player rich, and the one a busy player never has room for. House calls, at 7% to 22% of income, are in line.
+- **Prices with a cost:** let the share of guests put off climb steeply above about 1.3, so 1.6 puts off one in five, not one in twenty. The Money menu already counts the guests put off this month and last, and each treatment's price row counts its own, so the lever and its cost would be in sight. This is harder for the player who sets the cap and forgets it, and fair, because the cost shows before it bites.
+- **The bank's loan before opening:** before lending, show what the first payday will come to beside the cash it leaves. A lender that hands out $50,000 on day 0 to a center lost 41 days later is a loss the player could not see coming. Do not lower the limit; the challenge stays and the warning comes first.
+- **Late money:** every style still ends with $0.4M to $3.1M. Recommendation 5 is the place to start, since money with more guests to spend it on is a goal; the audit's other sinks wait on that.
+
 ## 21 October 2026: does a player who does what the game says survive?
 
 The research's test of the communication pass ([fair-challenge-research.md](fair-challenge-research.md)) is that a player who does what the game tells them survives. Measured with `yarn balance` on `integrate-audit` at `1a6de22`, every campaign center, seeds 1 to 3, four years, in the same terms as entry 31.
