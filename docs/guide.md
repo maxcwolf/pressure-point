@@ -46,6 +46,14 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 26. Every few months a **mishap** is announced three days ahead: a power cut, a storm, a big freeze or wasps, depending on the center (Willow Lane has none). A notice at the top of the screen says what it will do, with a button to prepare for it at a price. With a Shaman here, **Ward it off** costs only their time and holds three times in four.
 27. Now and then a guest who enjoyed their visit becomes a **regular**: they come back every few weeks under their own name, and Reception greets them. Good visits make them **loyal** and then **devoted**: more patient, back sooner, never put off by prices, and tipping on top of the fee. A bad visit or two and they stop coming. The Stats menu lists them under **Regulars**, up to twelve at a time, and anyone a Shaman's **Vision Quest** heals comes back as a loyal one even past that.
 
+## Reading people
+
+Guests and staff show how they are doing before any bubble goes up, so you can see trouble coming from across the building.
+
+- **Waiting guests** grow more impatient in steps you can tell apart at a glance. Content, they stand at ease. Under 60 patience they turn **restless**, shifting from foot to foot and glancing about. Under 40 they are **impatient**: arms folded, a foot tapping, and a frown. Under 25 they are **fed up**: hands on hips and turned toward the front door, or sitting with their head in their hands, and the 💢 bubble goes up as the last warning before they leave. A restless crowd is the time to add benches, tea or another member of staff.
+- **Faces** follow how guests feel: a frown as their patience runs short, a wince when their condition is poor, and a big grin once they are healed.
+- **Staff with nothing to do** pass the time after a few seconds: a long stretch with both arms overhead, a slow look round with their hands behind their back, or a long look at their watch, and they stroll about with their arms barely swinging. Someone on a break or on a course keeps to it. A clinic full of stretching staff has more staff than guests.
+
 ## Treatments
 
 A diagnosis prescribes a treatment. It only works properly with someone qualified in it and, for some, equipment in the same room. An unqualified member of staff will still try, at about a third of the usual success rate. The **Treatments** menu shows what each one treats and whether you can deliver it. Any member of staff can also take a skill course.

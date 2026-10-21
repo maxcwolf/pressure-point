@@ -14,6 +14,7 @@ import {
   MODALITIES,
   type Modality,
   MODALITY_ORDER,
+  POOR_CONDITION,
   type Pose,
   type Role,
   ROLE_ORDER,
@@ -21,13 +22,14 @@ import {
 } from '../core/data';
 import { HAIR, randomLook } from '../core/people';
 import { newSeed, stream } from '../core/random';
-import type { Char, Look, VisitorKind } from '../core/state/types';
+import type { Char, Guest, Look, VisitorKind } from '../core/state/types';
 import { must } from '../core/util';
 import { accessPose, itemCenter } from '../core/world';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
 import { buildBeach } from '../render/models/beach';
 import { buildCharacter, type CharRig } from '../render/models/character';
+import type { Expression } from '../render/models/character-detail';
 import { buildSite } from '../render/models/fence';
 import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
@@ -35,7 +37,7 @@ import { partsOf } from '../render/models/parts';
 import { buildPines } from '../render/models/pine';
 import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
-import { poseChar } from '../render/pose';
+import { type Door, type IdleAct, idleMoment, type Mood, PATIENCE_SIGNS, poseChar } from '../render/pose';
 import { H_TALL, WALL_T } from '../render/shared';
 import { SHOP_TURN } from '../render/storefront';
 import { button, choice, type Control, type Option, range, toggle } from './controls';
@@ -51,7 +53,7 @@ export interface Model {
   controls: Control[];
 }
 
-export type Group = 'Items' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Scenery';
+export type Group = 'Items' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Moods' | 'Scenery';
 
 /** Something the lab can show. */
 export interface Specimen {
@@ -162,6 +164,27 @@ const BUBBLES: readonly Option[] = [
   ['😴', '😴 Worn out'],
 ];
 
+/** How a waiting guest's patience can show, from content to fed up. */
+const MOODS: readonly (readonly [Mood, string])[] = [
+  ['content', 'Content'],
+  ['restless', 'Restless'],
+  ['impatient', 'Impatient'],
+  ['fedUp', 'Fed up'],
+];
+
+/** A guest's patience a little way into a mood, or full for a content one. */
+const patienceFor = (mood: Mood) => (mood === 'content' ? 100 : PATIENCE_SIGNS[mood] - 5);
+
+/** What a member of staff with nothing to do can be doing to pass the time. */
+const IDLE_ACTS: readonly (readonly [IdleAct, string])[] = [
+  ['stretch', 'Stretching'],
+  ['look', 'Looking round'],
+  ['watch', 'Checking the time'],
+];
+
+/** Where the lab's front door is, off to one side of the stage, for a fed-up guest to turn toward. */
+const LAB_DOOR: Door = { x: 4, y: 1 };
+
 /** How a person on show is posed, kept between rebuilds. */
 interface PersonState {
   look: Look;
@@ -187,17 +210,25 @@ function posePerson(rig: CharRig, c: Char, st: PersonState, t: number, dt: numbe
   c.pose = st.pose;
   c.bubble = st.bubble;
   c.bubbleT = st.bubble ? 1 : 0;
-  poseChar(rig, c, t, dt, style);
+  poseChar(rig, c, t, dt, style, LAB_DOOR);
 }
 
-/** A guest showing a condition's symptom, or cured of it. */
+/** Set a guest waiting with their patience showing a mood, or being seen to and content. */
+function setMood(c: Guest, mood: Mood) {
+  c.state = mood === 'content' ? 'served' : 'waiting';
+  c.patience = patienceFor(mood);
+}
+
+/** A guest showing a condition's symptom, or cured of it, and waiting with their patience running out. */
 function guestSpecimen(def: ConditionDef): Specimen {
-  const st: PersonState & { healed: boolean; stressed: boolean } = {
+  const st: PersonState & { healed: boolean; stressed: boolean; mood: string; poorly: boolean } = {
     look: { ...LAB_LOOK },
     pose: 'stand',
     bubble: '',
     healed: false,
     stressed: false,
+    mood: 'content',
+    poorly: false,
   };
   return {
     id: `guest:${def.id}`,
@@ -212,10 +243,18 @@ function guestSpecimen(def: ConditionDef): Specimen {
       c.outcome = st.healed ? 'healed' : '';
       return {
         root: rig.group,
-        controls: [...personControls(st), toggle('Healed', st, 'healed', true), toggle('Stressed', st, 'stressed')],
+        controls: [
+          ...personControls(st),
+          choice('Waiting', st, 'mood', MOODS),
+          toggle('In poor condition', st, 'poorly'),
+          toggle('Healed', st, 'healed', true),
+          toggle('Stressed', st, 'stressed'),
+        ],
         /** Pose the guest. */
         animate(t, dt) {
           c.stressed = st.stressed;
+          c.health = st.poorly ? POOR_CONDITION - 10 : 100;
+          setMood(c, st.mood as Mood);
           posePerson(rig, c, st, t, dt);
         },
       };
@@ -291,17 +330,22 @@ function seatedSpecimen(type: ItemType, i: number): Specimen {
 /** A member of staff in their uniform, working on any treatment their role gives. */
 function staffSpecimen(role: Role, named?: Named): Specimen {
   const home = named?.look ?? LAB_LOOK;
-  const st: PersonState & { busy: boolean; style: string; smudging: boolean } = {
+  const st: PersonState & { busy: boolean; style: string; smudging: boolean; idle: string } = {
     look: { ...home },
     pose: 'stand',
     bubble: '',
     busy: false,
     style: '',
     smudging: false,
+    idle: '',
   };
   const discipline = ROLES[role].discipline;
   const styles = MODALITY_ORDER.filter((m) => discipline && MODALITIES[m].discipline === discipline);
-  const controls: Control[] = [...personControls(st, home), toggle('Working', st, 'busy')];
+  const controls: Control[] = [
+    ...personControls(st, home),
+    toggle('Working', st, 'busy'),
+    choice('With nothing to do', st, 'idle', [['', 'As in the game'], ...IDLE_ACTS]),
+  ];
   if (styles.length) {
     const options = styles.map((m): Option => [m, MODALITIES[m].name]);
     controls.push(choice('Treatment', st, 'style', [['', 'General'], ...options]));
@@ -325,7 +369,98 @@ function staffSpecimen(role: Role, named?: Named): Specimen {
           c.busy = st.busy;
           c.state = st.smudging ? 'doingJob' : 'atPost';
           c.job = st.smudging ? { kind: 'smudge', id: 0 } : null;
+          // in the game, someone with nothing to do starts passing the time after a while; here, at once if asked
+          if (st.idle) rig.idleSince = t - idleMoment(c.id, st.idle as IdleAct);
           posePerson(rig, c, st, t, dt, st.busy && st.style ? (st.style as Modality) : null);
+        },
+      };
+    },
+  };
+}
+
+/** A plain guest, waiting with their patience showing a mood: standing, or sitting on a bench as they would. */
+function moodSpecimen(mood: Mood, label: string, seated: boolean): Specimen {
+  const key = mood === 'fedUp' ? 'fed-up' : mood;
+  return {
+    id: `mood:${key}${seated ? '-seated' : ''}`,
+    group: 'Moods',
+    name: seated ? `${label}, seated` : label,
+    footprint: seated ? [ITEMS.bench.w, ITEMS.bench.h] : [1, 1],
+    /** Build the guest, and the bench they sit on. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK);
+      const c = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
+      setMood(c, mood);
+      const root = new THREE.Group();
+      root.add(rig.group);
+      if (seated) {
+        const placed = { type: 'bench' as const, x: 0, y: 0, rot: 0 };
+        const [cx, cy] = itemCenter(placed);
+        const at = accessPose(
+          placed,
+          ITEMS.bench.access.findIndex((a) => a.pose === 'sit'),
+        );
+        Object.assign(c, { x: at.x - cx, y: at.y - cy, facing: at.face, pose: at.pose, h: at.h });
+        root.add(buildItem('bench', {}));
+      }
+      /** Pose them, turning toward the lab's door if fed up. */
+      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null, LAB_DOOR);
+      return { root, controls: [], animate };
+    },
+  };
+}
+
+/** The faces a guest makes, other than at ease, and what the lab calls each. */
+const FACES: readonly (readonly [Exclude<Expression, 'neutral'>, string])[] = [
+  ['delighted', 'Delighted, healed'],
+  ['unhappy', 'Unhappy, running out of patience'],
+  ['wince', 'Wincing, in poor condition'],
+];
+
+/** Make a guest feel the way that shows on their face as an expression. */
+function feel(c: Guest, e: Expression) {
+  if (e === 'delighted') c.outcome = 'healed';
+  else if (e === 'unhappy') c.patience = PATIENCE_SIGNS.impatient - 5;
+  else if (e === 'wince') c.health = POOR_CONDITION - 10;
+}
+
+/** A plain guest making a face. */
+function faceSpecimen([key, name]: (typeof FACES)[number]): Specimen {
+  return {
+    id: `face:${key}`,
+    group: 'Moods',
+    name,
+    footprint: [1, 1],
+    /** Build the guest, feeling as they do. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK);
+      const c = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
+      feel(c, key);
+      /** Pose them. */
+      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null);
+      return { root: rig.group, controls: [], animate };
+    },
+  };
+}
+
+/** A receptionist with nothing to do, passing the time. */
+function idleSpecimen(act: IdleAct, label: string): Specimen {
+  return {
+    id: `idle:${act}`,
+    group: 'Moods',
+    name: `Nothing to do, ${label.toLowerCase()}`,
+    footprint: [1, 1],
+    /** Build them, idle for long enough to be in the middle of the act. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK, 'receptionist');
+      const c = demoStaff(LAB_LOOK, 'receptionist');
+      return {
+        root: rig.group,
+        controls: [],
+        /** Keep them in the middle of the act. */
+        animate(t, dt) {
+          rig.idleSince = t - idleMoment(c.id, act);
+          poseChar(rig, c, t, dt, null);
         },
       };
     },
@@ -471,6 +606,12 @@ export const CATALOG: readonly Specimen[] = [
   ),
   ...(['vip', 'inspector'] as const).map(visitorSpecimen),
   ...SEATS.map(([type, i]) => seatedSpecimen(type, i)),
+  ...MOODS.filter(([mood]) => mood !== 'content').flatMap(([mood, label]) => [
+    moodSpecimen(mood, label, false),
+    moodSpecimen(mood, label, true),
+  ]),
+  ...FACES.map(faceSpecimen),
+  ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
   ...SCENERY,
 ];
 

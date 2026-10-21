@@ -99,7 +99,7 @@ Each stream below is scoped to its own files so several can run at once. Each sh
 | 3   | Selection and hover (done)     | `render/overlays.ts` (ring), `render/picking.ts`, `app/pointer.ts`                                                        | none                             | Small  |
 | 4   | Lighting and materials (done)  | `render/lighting.ts`, `render/view.ts`, `render/setting.ts`, `models/parts.ts` (roughness)                                | none                             | Small  |
 | 5   | Room signs, doors, status lamp | `render/rooms.ts`, `render/room-walls.ts`, new `models/sign-plaque.ts`                                                    | 1a (icons)                       | Medium |
-| 6   | People readability             | `render/pose.ts`, `models/character-detail.ts` (expressions), idle staff, patience posture                                | none                             | Medium |
+| 6   | People readability (done)      | `render/pose.ts`, `models/character-detail.ts` (expressions), idle staff, patience posture                                | none                             | Medium |
 | 7   | Gradual wear and effect cues   | `render/items.ts`, a few `models/items/*` (smoke, wobble, ripple parts)                                                   | none                             | Small  |
 | 8   | Day and season light           | `render/lighting.ts`, `render/scenery.ts`                                                                                 | 4                                | Small  |
 | 9   | Model polish pass              | `models/items/*`, `models/tree.ts`, floor `TS` in `floor.ts`, split by family between two sessions                        | 4 (to judge under the new light) | Medium |
