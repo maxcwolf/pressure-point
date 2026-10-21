@@ -1,6 +1,6 @@
 // The objectives for a star: what each kind of goal asks for, and how close the center is to it.
 
-import { DISCIPLINES, type GoalSpec, ROOMS } from '../data';
+import { DAY_SECONDS, DISCIPLINES, type GoalSpec, ROOMS } from '../data';
 import { money } from '../format';
 import type { Tally } from '../state/types';
 import { prestige } from './ambience';
@@ -12,6 +12,8 @@ export interface Objective {
   label: string;
   done: boolean;
   progress: number;
+  /** The figures behind a goal judged over a month, for a closer look: this month so far, and the last. */
+  detail?: string;
 }
 
 /** How many guests a month needs before its cure rate or patience counts. */
@@ -23,11 +25,17 @@ function recentMonths(ctx: SimContext): Tally[] {
   return last ? [ctx.s.tally, last] : [ctx.s.tally];
 }
 
-/** Share of treatments that healed in a month, or null if too few were treated to say. */
+/**
+ * Share of a month's guests healed, among those treated and those sent home untreated, or null if too few to say.
+ * Sending a guest home counts against the rate, so culling the hard cases is no way to a cure-rate star.
+ */
 export function cureRate(t: Tally): number | null {
-  const treated = t.healed + t.failed;
-  return treated >= MONTH_SAMPLE ? (t.healed / treated) * 100 : null;
+  const judged = t.healed + t.failed + t.sent;
+  return judged >= MONTH_SAMPLE ? (t.healed / judged) * 100 : null;
 }
+
+/** How long the guests who left in a month waited, on average, in days: nothing if nobody left. */
+export const averageWaitDays = (t: Tally) => (t.waitCount ? t.waitTotal / t.waitCount / DAY_SECONDS : 0);
 
 /**
  * How much of their patience guests kept through their visits in a month, on average, from 0 to 100: the lowest each
@@ -36,6 +44,13 @@ export function cureRate(t: Tally): number | null {
  */
 export function averagePatience(t: Tally): number | null {
   return t.waitCount >= MONTH_SAMPLE && t.patienceTotal !== undefined ? t.patienceTotal / t.waitCount : null;
+}
+
+/** This month so far and the last, each in a few words, for a goal judged over a month. */
+function monthsDetail(months: Tally[], words: (t: Tally) => string): string {
+  const [now, last] = months;
+  if (!now) return '';
+  return `This month: ${words(now)}${last ? `. Last month: ${words(last)}` : ''}`;
 }
 
 /** Days since anyone last quit, or since the game began if nobody ever has. */
@@ -74,22 +89,38 @@ export function objectiveFor(ctx: SimContext, goal: GoalSpec): Objective {
       };
     }
     case 'cureRate': {
-      const best = Math.max(0, ...recentMonths(ctx).map((t) => cureRate(t) ?? 0));
+      const months = recentMonths(ctx);
+      const best = Math.max(0, ...months.map((t) => cureRate(t) ?? 0));
+      /** A month's rate, as the player reads it. */
+      const rateOf = (t: Tally) => {
+        const judged = t.healed + t.failed + t.sent;
+        const rate = cureRate(t);
+        return `${t.healed} of ${judged} (${judged < MONTH_SAMPLE ? `${MONTH_SAMPLE} needed` : `${Math.round(rate ?? 0)}%`})`;
+      };
       return {
-        label: `Heal ${goal.percent}% of treatments in a month`,
+        label: `Heal ${goal.percent}% of guests treated or sent home in a month`,
         done: best >= goal.percent,
         progress: best / goal.percent,
+        detail: monthsDetail(months, rateOf),
       };
     }
-    case 'patience': {
-      const kept = recentMonths(ctx)
-        .map(averagePatience)
-        .filter((p): p is number => p !== null);
-      const best = kept.length ? Math.max(...kept) : 0;
+    case 'monthHeals': {
+      const months = recentMonths(ctx);
+      /** How far a month gets: its heals toward the count, less for a wait past the days. */
+      const score = (t: Tally) => {
+        const wait = averageWaitDays(t);
+        const met = t.healed >= goal.count && wait <= goal.days;
+        return {
+          met,
+          progress: Math.min(1, t.healed / goal.count) * Math.min(1, goal.days / Math.max(wait, goal.days)),
+        };
+      };
+      const scores = months.map(score);
       return {
-        label: `Guests keep ${goal.percent}% of their patience through the wait, on average, for a month`,
-        done: best >= goal.percent,
-        progress: Math.min(1, best / goal.percent),
+        label: `Heal ${goal.count} guests in a month, waiting ${goal.days} days or less on average`,
+        done: scores.some((x) => x.met),
+        progress: Math.max(...scores.map((x) => x.progress)),
+        detail: monthsDetail(months, (t) => `${t.healed} healed, waiting ${averageWaitDays(t).toFixed(1)} days`),
       };
     }
     case 'emergencies':

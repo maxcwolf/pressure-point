@@ -648,7 +648,7 @@ export class Bot {
       .filter((st) => !st.training)
       .sort((a, b) => this.sim.callFee(b) - this.sim.callFee(a))[0];
     // with nobody else in the role, only while the line is short and no goal asks for short waits
-    if (!who || (atWork.length < 2 && (this.waiting(role) > 2 || this.openGoal('patience')))) return;
+    if (!who || (atWork.length < 2 && (this.waiting(role) > 2 || this.openGoal('monthHeals')))) return;
     const fee = this.sim.callFee(who);
     if (this.sim.acceptCall(who.id)) this.note(`day ${Math.floor(s.day)}: house call, ${call.days} days for ${fee}`);
   }
@@ -1784,7 +1784,7 @@ export class Bot {
       if (this.sim.prestige(room) >= target || s.money < reserve) continue;
       // with a goal for patience, decor that stands on the floor, which cheers the corridor outside where guests wait
       // as well as the room (decor carries through walls, and a window adds only to the room)
-      if (this.flags.layout && !this.openGoal('patience')) {
+      if (this.flags.layout && !this.openGoal('monthHeals')) {
         this.dress(room, reserve);
         continue;
       }

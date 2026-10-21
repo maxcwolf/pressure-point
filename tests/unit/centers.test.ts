@@ -1,7 +1,7 @@
 // Centers: each game is set in one, with its own building on the lot and its own goals for each star.
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { type CenterId, CENTERS, type GoalSpec, plotFits, SANDBOX_PLOT } from '../../src/core/data';
+import { type CenterId, CENTERS, DAY_SECONDS, type GoalSpec, plotFits, SANDBOX_PLOT } from '../../src/core/data';
 import { lotWidth } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
 import { createContext, type SimContext } from '../../src/core/sim/context';
@@ -178,9 +178,12 @@ describe('each kind of goal', () => {
     expect(check({ kind: 'balance', amount: 50000 }).progress).toBe(0);
   });
 
-  it('judges the cure rate and the patience guests leave with over this month or the last one, once enough guests count', () => {
+  it('judges the cure rate over this month or the last one, once enough guests count, with those sent home against it', () => {
     expect(cureRate(emptyTally())).toBeNull();
     expect(cureRate({ ...emptyTally(), healed: 8, failed: 2 })).toBe(80);
+    expect(cureRate({ ...emptyTally(), healed: 8, failed: 1, sent: 1 })).toBe(80);
+    expect(cureRate({ ...emptyTally(), healed: 8, failed: 0, sent: 8 })).toBe(50);
+    expect(cureRate({ ...emptyTally(), healed: 5, sent: 4 })).toBeNull();
     expect(averagePatience({ ...emptyTally(), waitCount: 10, patienceTotal: 10 * 45 })).toBe(45);
     expect(averagePatience({ ...emptyTally(), waitCount: 9, patienceTotal: 9 * 45 })).toBeNull();
     // months from before patience was kept do not count
@@ -189,15 +192,33 @@ describe('each kind of goal', () => {
     expect(averagePatience(before)).toBeNull();
     ctx.s.tally = { ...emptyTally(), healed: 6, failed: 4 };
     ctx.s.months = [month({ healed: 9, failed: 1, waitCount: 10, patienceTotal: 10 * 60 })];
-    expect(check({ kind: 'cureRate', percent: 85 })).toMatchObject({ done: true });
-    expect(check({ kind: 'cureRate', percent: 95 })).toMatchObject({ done: false });
-    expect(check({ kind: 'patience', percent: 50 })).toMatchObject({
-      label: 'Guests keep 50% of their patience through the wait, on average, for a month',
+    expect(check({ kind: 'cureRate', percent: 85 })).toMatchObject({
+      label: 'Heal 85% of guests treated or sent home in a month',
       done: true,
+      detail: 'This month: 6 of 10 (60%). Last month: 9 of 10 (90%)',
     });
-    expect(check({ kind: 'patience', percent: 80 })).toMatchObject({ done: false, progress: 60 / 80 });
-    ctx.s.months = [];
-    expect(check({ kind: 'patience', percent: 80 })).toMatchObject({ done: false, progress: 0 });
+    expect(check({ kind: 'cureRate', percent: 95 })).toMatchObject({ done: false });
+    // a month of sending the hard cases home is no way to the rate
+    ctx.s.months = [month({ healed: 9, failed: 1, sent: 5 })];
+    expect(check({ kind: 'cureRate', percent: 85 })).toMatchObject({ done: false });
+  });
+
+  it('asks for so many guests healed in a month who waited no longer than so many days on average', () => {
+    const goal: GoalSpec = { kind: 'monthHeals', count: 10, days: 5 };
+    ctx.s.tally = { ...emptyTally(), healed: 4, waitCount: 5, waitTotal: 5 * 2 * DAY_SECONDS };
+    expect(check(goal)).toEqual({
+      label: 'Heal 10 guests in a month, waiting 5 days or less on average',
+      done: false,
+      progress: 0.4,
+      detail: 'This month: 4 healed, waiting 2.0 days',
+    });
+    // a month with the heals but too long a wait falls short by the wait
+    ctx.s.months = [month({ healed: 12, waitCount: 12, waitTotal: 12 * 10 * DAY_SECONDS })];
+    expect(check(goal)).toMatchObject({ done: false, progress: 0.5 });
+    expect(check(goal).detail).toBe('This month: 4 healed, waiting 2.0 days. Last month: 12 healed, waiting 10.0 days');
+    // and one with both is met
+    ctx.s.months = [month({ healed: 12, waitCount: 14, waitTotal: 14 * 4 * DAY_SECONDS })];
+    expect(check(goal)).toMatchObject({ done: true, progress: 1 });
   });
 
   it('counts emergencies seen through and days without anyone quitting', () => {

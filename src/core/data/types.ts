@@ -600,10 +600,10 @@ export type GoalSpec =
   | { kind: 'healed'; count: number; discipline?: Discipline }
   | { kind: 'reputation'; percent: number }
   | { kind: 'balance'; amount: number }
-  /** Heal at least this share of the guests treated in a month (with at least a few treated). */
+  /** Heal at least this share of the guests treated or sent home in a month (with at least a few of them). */
   | { kind: 'cureRate'; percent: number }
-  /** Have guests keep at least this share of their patience through their visits, on average, in a month. */
-  | { kind: 'patience'; percent: number }
+  /** Heal at least this many guests in a month, with the guests who left that month waiting this long or less on average. */
+  | { kind: 'monthHeals'; count: number; days: number }
   /** See emergencies through to the end successfully. */
   | { kind: 'emergencies'; count: number }
   /** Have a finished room of this type at this prestige or better. */
