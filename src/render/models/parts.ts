@@ -5,9 +5,11 @@
 //
 // - Thickness. No structural member (a leg, post, pole, rail, frame or arch) is thinner than `MEMBER_MIN` across, and
 //   one taller than a person is at least 0.08 m, so nothing reads as wire at the default zoom. Only details too small
-//   to carry weight (a needle, a cord, lettering on a poster) go thinner, and never below 0.02 m.
+//   to carry weight (a needle, a cord, a handle) go thinner, and never below 0.02 m. Marks painted on a flat face
+//   (lettering, the lines of a chart) are paint, not members.
 // - Corners. A box's corners are rounded by `corner(w, h, d)`: three tenths of its thinnest side, from 1.2 to 8 cm.
-//   `soft` makes such a box. Go sharper only where an edge is the point (a picture frame's mitre, a blade).
+//   `soft` makes such a box. Cushions and pads may be plumper, up to half their thickness; go sharper only where an
+//   edge is the point (a picture frame's mitre, a blade).
 // - Height. A one-tile item stands no taller than `TALL_MAX`, a person and a half, and most stand at or under the back
 //   wall. A seat is about 0.37 m high, a table or treatment couch 0.5 to 0.75 m. Something on a wall hangs about
 //   `HANG_Y` and stays inside the wall.
@@ -135,6 +137,28 @@ export const ico = (r: number) => cached(`i${r}`, () => new THREE.IcosahedronGeo
 
 /** A shared torus geometry. */
 export const torus = (r: number, t: number) => cached(`t${r}|${t}`, () => new THREE.TorusGeometry(r, t, 10, 24));
+
+/**
+ * A shared open bowl, turned on a lathe so its inside shades darker than its rim: `r` across the rim, `h` deep, with
+ * walls `t` thick, standing on its foot at y = 0.
+ */
+export const bowl = (r: number, h: number, t = 0.025, seg = 24) =>
+  cached(`w${r}|${h}|${t}|${seg}`, () => {
+    const foot = r * 0.55;
+    /** A point on a quarter curve from the foot (at 0) up to the rim (at 1), `inset` in from the outside. */
+    const curve = (i: number, inset: number) => {
+      const a = (i / 6) * (Math.PI / 2);
+      const x = foot - inset + (r - foot) * Math.sin(a);
+      return new THREE.Vector2(Math.max(0, x), inset + (h - inset) * (1 - Math.cos(a)));
+    };
+    const pts = [new THREE.Vector2(0, 0)];
+    for (let i = 0; i <= 6; i++) pts.push(curve(i, 0));
+    // over the rim, and back down the inside to the floor
+    pts.push(new THREE.Vector2(r - t / 2, h + t / 3));
+    for (let i = 6; i >= 0; i--) pts.push(curve(i, t));
+    pts.push(new THREE.Vector2(0, t));
+    return new THREE.LatheGeometry(pts, seg);
+  });
 
 /** A shared capsule geometry. */
 export const capsule = (r: number, len: number) =>
