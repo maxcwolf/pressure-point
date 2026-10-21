@@ -9,6 +9,7 @@ import {
   DAYS_PER_MONTH,
   type Discipline,
   type Duty,
+  type GoalSpec,
   ITEMS,
   type ItemType,
   type Modality,
@@ -101,6 +102,7 @@ import {
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
+import { objectiveDetail } from './goals';
 import { admitGuests, updateGuest } from './guests';
 import { buyPlot, landOffers, renamePlot, updateLand } from './land';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
@@ -269,6 +271,10 @@ export class Sim {
   /** What stands between the center and its next star. */
   objectives(): Objective[] {
     return objectives(this.ctx);
+  }
+  /** The numbers behind one objective, a line each. */
+  objectiveDetail(goal: GoalSpec): string[] {
+    return objectiveDetail(this.ctx, goal);
   }
 
   /** Whether a finished room of this type exists. */

@@ -2,12 +2,48 @@
 
 import './Objectives.css';
 
-import { centerOf, conditionOf } from '../../core/data';
+import { useState } from 'preact/hooks';
+
+import { centerOf, conditionOf, type GoalSpec } from '../../core/data';
 import { money } from '../../core/format';
+import type { Objective } from '../../core/sim/goals';
 import { useGame } from '../hooks/use-hud';
+import { cx } from '../lib/cx';
 import { wholeDaysLeft } from '../lib/emergency';
 import { Bar } from './common/Bar';
+import { Button } from './common/Button';
 import { StarRow } from './common/Stars';
+
+/** One objective: its label and progress, and on a click the numbers behind it, a line each. */
+function ObjectiveRow({ objective: o, goal }: { objective: Objective; goal: GoalSpec | undefined }) {
+  const { sim } = useGame();
+  const [open, setOpen] = useState(false);
+  const detail = open && goal ? sim.objectiveDetail(goal) : null;
+  return (
+    <li class={cx(o.done && 'done', open && 'open')}>
+      <b>{o.done ? '✔' : '○'}</b>
+      <span>
+        <Button
+          class="objective"
+          title={open ? 'Hide the numbers behind this objective' : 'Show the numbers behind this objective'}
+          onPress={() => {
+            setOpen(!open);
+          }}
+        >
+          {o.label}
+        </Button>
+        <Bar value={o.progress * 100} class="thin" />
+        {detail && (
+          <ul class="detail">
+            {detail.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        )}
+      </span>
+    </li>
+  );
+}
 
 /** The challenge a member of staff has set, if any: what it asks, how far along it is, and the days left. */
 function ChallengeCard() {
@@ -56,15 +92,7 @@ export function Objectives() {
       </div>
       <ul>
         {objectives.length ? (
-          objectives.map((o) => (
-            <li key={o.label} class={o.done ? 'done' : ''}>
-              <b>{o.done ? '✔' : '○'}</b>
-              <span>
-                {o.label}
-                <Bar value={o.progress * 100} class="thin" />
-              </span>
-            </li>
-          ))
+          objectives.map((o, i) => <ObjectiveRow key={o.label} objective={o} goal={goals[s.stars]?.[i]} />)
         ) : (
           <li class="done">
             <b>✔</b>

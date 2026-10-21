@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **Objectives show their numbers.** Click an objective for what counts behind it: heals and failures this month and last, the sample a monthly goal needs, the money and the loan behind a balance goal, a room's prestige terms, standing points by source, and how far each is from being met.
 - **Two warnings before a line costs reputation.** A toast names the line, the count and the levers as its first waiting guest's condition turns poor, and a louder one names each guest within two days of going home worse off, with the advisor on it too. Lines and the guest inspector show the days of condition left, and the floor can be colored by it.
 - **Payday in plain sight.** The Money menu's new Payroll tab shows the wages due against the bank, the loan room and this month's projected net, with a verdict in a line. The payday warning comes as soon as the month's pace says payday is not covered, with the numbers, and again five days before.
 - **No dialog lost.** A star, an award or a visit's report that arrives at the same moment as another now waits its turn instead of being lost, with a payday or a bankruptcy shown first. A failed inspection's choice between the fine and making it go away no longer closes on Esc, and is shown again after loading the game.
