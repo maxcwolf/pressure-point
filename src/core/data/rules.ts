@@ -135,6 +135,8 @@ export const WARD_SECONDS = 8;
 
 /** Caretakers start repairing equipment at this much wear; at 100 it is broken. */
 export const WEAR_REPAIR = 50;
+/** Equipment shows its wear from here, with smoke, a shudder or a flickering light that grows until it breaks. */
+export const WEAR_WARN = 70;
 /** Caretakers start cleaning at this much grime. */
 export const DIRT_CLEAN = 40;
 /** From this much grime it is filthy: guests are put off and it spoils its surroundings. */

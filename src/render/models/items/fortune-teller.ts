@@ -1,7 +1,8 @@
 // The Fortune Teller model.
 
-import type * as THREE from 'three';
+import * as THREE from 'three';
 
+import { owned } from '../../disposal';
 import { GLASS, LACQUER, mat, partsOf, put, rbox, sph } from '../parts';
 
 /** Build the Fortune Teller model: a carnival cabinet with a turbaned mystic behind glass, hands over a crystal ball. */
@@ -23,9 +24,14 @@ export function buildFortuneTeller(g: THREE.Group) {
   for (const x of [-0.12, 0.12]) put(g, sph(0.04, 10), mat(0xd9a07a, 0.7), x, 1.0, -0.02);
   // the crystal ball, which glows and floats a little on its stand
   put(g, rbox(0.12, 0.04, 0.12, 0.02), gold, 0, 0.86, -0.02);
-  const ball = put(g, sph(0.09, 18), mat(0x9b7ae0, 0.15, 1.1), 0, 0.9, -0.02);
+  // each ball glows with its own light, so it can flicker as the booth wears and go dark when it breaks
+  const glow = owned(
+    new THREE.MeshStandardMaterial({ color: 0x9b7ae0, roughness: 0.15, emissive: 0x9b7ae0, emissiveIntensity: 1.1 }),
+  );
+  const ball = put(g, sph(0.09, 18), glow, 0, 0.9, -0.02);
   ball.castShadow = false;
   partsOf(g).orb = ball;
+  partsOf(g).lamp = glow;
   // the glass front, and the coin slot below it
   const glass = put(g, rbox(0.7, 0.9, 0.01, 0.004), GLASS, 0, 1.3, 0.24);
   glass.castShadow = false;
