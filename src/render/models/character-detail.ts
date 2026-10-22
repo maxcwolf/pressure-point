@@ -267,6 +267,39 @@ export function showEyes(face: Face, shut: boolean) {
   face.glints.visible = !shut;
 }
 
+/** How far in front of the eyes glasses sit, clear of them. */
+const LENS_OUT = GLASSES_OUT + 0.006;
+
+/** A shape's pieces, made round the origin, joined into one. */
+const joinPieces = (pieces: THREE.BufferGeometry[]) => must(mergeGeometries(pieces.map(indexed)), 'the pieces joined');
+
+/**
+ * A pair of glasses, round or square: a frame round each eye, turned as the eyes are, a bridge over the nose, and an
+ * arm back from each to the ear.
+ */
+const glasses = (style: number) =>
+  fuse(`glasses-${style}`, (n) => {
+    const z = faceZ(EYE.x, EYE.y) + LENS_OUT;
+    const frames = [-1, 1].map((s) => {
+      const lens =
+        style === 1
+          ? bare(new THREE.TorusGeometry(0.046, 0.0065, n(6), n(24)))
+          : joinPieces([
+              place(pill(0.0065, 0.064, n), [0, 0.034, 0], [0, 0, Math.PI / 2]),
+              place(pill(0.0065, 0.064, n), [0, -0.034, 0], [0, 0, Math.PI / 2]),
+              place(pill(0.0065, 0.05, n), [0.042, 0, 0]),
+              place(pill(0.0065, 0.05, n), [-0.042, 0, 0]),
+            ]);
+      return place(lens, [s * EYE.x, EYE.y, z], [0, s * 0.3, 0]);
+    });
+    const bridge = place(pill(0.005, 0.02, n), [0, EYE.y + 0.008, faceZ(0, EYE.y) + LENS_OUT], [0, 0, Math.PI / 2]);
+    // each arm from the outer rim back along the temple, just clear of the skin, into the hair
+    const arms = [-1, 1].map((s) =>
+      place(pill(0.005, 0.1, n), [s * 0.151, EYE.y + 0.006, 0.15], [Math.PI / 2, 0, s * 0.66]),
+    );
+    return [...frames, bridge, ...arms];
+  });
+
 /** A moustache: two short sweeps under the nose. */
 const moustache = () =>
   fuse('moustache', (n) =>
@@ -425,10 +458,15 @@ const lowTie = () =>
   ]);
 
 /**
- * Build the head: its shape, the face, and the hair in its style. Returns the head's skin, for symptoms to recolor, and
- * the face, at ease, for its expression to change.
+ * Build the head: its shape, the face, the hair in its style, and glasses if they wear them. Returns the head's skin,
+ * for symptoms to recolor, the face, at ease, for its expression to change, and the glasses, to take off for shades.
  */
 export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, hair: THREE.Material, hatted: boolean) {
+  // glasses round or square, in dark frames or tortoiseshell
+  const specs = look.glasses
+    ? put(head, glasses(look.glasses), look.glasses === 1 ? mat(0x2b2b30, 0.3) : mat(0x6b4a2a, 0.4))
+    : undefined;
+  if (specs) specs.name = 'glasses';
   // each part is named for what it is, so a skinned person can tell the eyes, brows, mouth and hair apart
   const headMesh = put(head, headShape(), skin);
   headMesh.name = 'head';
@@ -457,7 +495,7 @@ export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, 
     put(head, moustache(), hair).name = 'moustache';
     if (look.beard === 2) put(head, beard(), hair).name = 'beard';
   }
-  return { headMesh, face };
+  return { headMesh, face, glasses: specs };
 }
 
 // The body: a shirt shaped to the chest and waist with a collar, trousers over the hips, and the legs and arms.

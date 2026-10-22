@@ -58,6 +58,8 @@ export interface CharRig {
   joints: Joints;
   /** The mouth and brows, which change shape with how they feel. */
   face: Face;
+  /** Their glasses, if they wear them, taken off while a symptom or a visit has them in sunglasses. */
+  glasses?: THREE.Mesh;
   /** When they last found themselves with nothing to do, in the scene's seconds, or NaN while they have something. */
   idleSince: number;
   /** How far they have walked, in meters, which their stride is counted from, so their feet plant at any speed. */
@@ -170,7 +172,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const hair = mat(look.hair, 0.85);
   // a hat needs short hair under it, or a woman's tied back low
   const hatted = role === 'caretaker' || visitor === 'inspector';
-  const { headMesh, face } = detailHead(head, look, skin, hair, hatted);
+  const { headMesh, face, glasses } = detailHead(head, look, skin, hair, hatted);
+  // sunglasses go on in place of glasses
+  if (glasses) glasses.visible = visitor !== 'vip' && visual !== 'sunburn' && visual !== 'beachhead';
   if (role === 'shaman') {
     // a single feather tucked in behind one ear
     const feather = put(head, rbox(0.05, 0.26, 0.012, 0.01), mat(0xf4f1ea, 0.8), 0.17, 0.16, -0.12);
@@ -208,6 +212,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     props: [],
     joints,
     face,
+    ...(glasses ? { glasses } : {}),
     idleSince: NaN,
     walked: 0,
     lastX: NaN,
@@ -663,6 +668,8 @@ export function cureRig(rig: CharRig, look: Look) {
   if (rig.cured) return;
   rig.cured = true;
   for (const o of rig.props) o.visible = false;
+  // and the glasses back on, once the sunglasses are off
+  if (rig.glasses) rig.glasses.visible = true;
   rig.head.scale.set(1 / rig.wide, 1, 1 / rig.wide);
   rig.headMesh.material = mat(look.skin, 0.65);
 }

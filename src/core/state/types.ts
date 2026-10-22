@@ -168,6 +168,8 @@ export interface Look {
   beard: number;
   /** 0 slight, 1 average, 2 stocky; a number already in saves never changes meaning. */
   build: number;
+  /** 0 none, 1 round, 2 square; a number already in saves never changes meaning. */
+  glasses: number;
 }
 
 interface CharBase {

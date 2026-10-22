@@ -63,14 +63,14 @@ export const rollSex = (r: Rng, womenShare: number): Sex => (random(r) < womenSh
 const buildOf = (n: number) => [0, 1, 1, 2][n & 3] ?? 1;
 
 /**
- * What a look takes from the spare bits of the number its height was drawn from: its build. The height uses the top
+ * What a look takes from the spare bits of the number its height was drawn from: its build and its glasses. The height uses the top
  * bits, and these the bottom ones, so making someone up takes no more of the game's random numbers than it did, and a
  * seeded game runs as it always has.
  */
 function lookBits(height: number) {
   const bits = Math.floor(height * 2 ** 32) >>> 0;
-  // slight, average twice over, or stocky
-  return { build: buildOf(bits) };
+  // slight, average twice over, or stocky; and glasses on a quarter of people, round or square
+  return { build: buildOf(bits), glasses: ((bits >>> 2) & 3) === 0 ? 1 + ((bits >>> 4) & 1) : 0 };
 }
 
 /** A random appearance for a woman or a man: half of men have a moustache or a beard. */
@@ -87,11 +87,12 @@ export function randomLook(r: Rng, sex: Sex): Look {
 }
 
 /**
- * Give a look from before builds were told apart the fields it lacks, from the person's id rather than the game's
+ * Give a look from before builds and glasses the fields it lacks, from the person's id rather than the game's
  * random numbers, so loading a save changes nothing about what happens next.
  */
 export function settleLook(person: { id: number; look: Partial<Look> }) {
   person.look.build ??= [1, 0, 1, 2][person.id % 4] ?? 1;
+  person.look.glasses ??= person.id % 4 === 1 ? 1 + ((person.id >> 2) % 2) : 0;
 }
 
 const CAMEOS_BY_SEX: Readonly<Record<Sex, readonly string[]>> = {

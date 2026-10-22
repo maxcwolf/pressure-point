@@ -443,3 +443,20 @@ describe('blinking', () => {
     expect(rig.face.glints.visible).toBe(true);
   });
 });
+
+describe('glasses', () => {
+  /** Whether someone's glasses show. */
+  const on = (rig: CharRig) => !!rig.glasses?.visible;
+
+  it('are worn by those who wear them, and swapped for sunglasses while a symptom or a visit has them on', () => {
+    const look = { ...LAB_LOOK, glasses: 1 };
+    expect(on(buildCharacter(look))).toBe(true);
+    expect(buildCharacter(LAB_LOOK).glasses).toBeUndefined();
+    expect(on(buildCharacter(look, undefined, undefined, 'vip'))).toBe(false);
+    const burnt = buildCharacter(look, undefined, 'sunburn');
+    expect(on(burnt)).toBe(false);
+    // and back on once cured
+    poseChar(burnt, { ...demoGuest(look, 'stiff_neck' as never), outcome: 'healed' }, 0, 1, { style: null });
+    expect(on(burnt)).toBe(true);
+  });
+});
