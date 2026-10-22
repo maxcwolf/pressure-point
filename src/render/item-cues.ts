@@ -218,7 +218,90 @@ function animateRipples(model: THREE.Object3D, c: CueCondition, t: number) {
   });
 }
 
-/** Wisps of warm air rising off a heater, or cool air drifting out of the front of an air conditioner, while it runs. */
+/** The color of the heat rising off a heater. */
+const HEAT = 0xff8a3d;
+/** How big a line of rising heat is, in meters, and how many waves it shows along its length. */
+const HEAT_LINE = { w: 0.24, h: 0.52, waves: 1.25 };
+/** How many times a second the waves of rising heat travel a whole wave up their line, and how long each line lasts. */
+const HEAT_WAVE_SPEED = 0.9;
+const HEAT_LIFE = 2.4;
+
+/**
+ * One wave of a line of rising heat, from side to side and back as it goes up, as a picture that repeats up a sprite: a
+ * thick, soft-edged white stroke for the sprite to tint.
+ */
+function heatWaveTexture(): THREE.DataTexture {
+  const W = 32;
+  const H = 64;
+  const swing = W * 0.24;
+  const half = W * 0.15;
+  const data = new Uint8Array(W * H * 4);
+  for (let y = 0; y < H; y++) {
+    const a = ((y + 0.5) / H) * Math.PI * 2;
+    // how far the stroke is from the pixel, square to the stroke rather than straight across, where it slants
+    const slant = Math.hypot(1, ((swing * Math.PI * 2) / H) * Math.cos(a));
+    for (let x = 0; x < W; x++) {
+      const d = Math.abs(x + 0.5 - W / 2 - swing * Math.sin(a)) / slant;
+      data.set([255, 255, 255, Math.round(255 * clamp(half - d + 0.5, 0, 1))], (y * W + x) * 4);
+    }
+  }
+  const tex = new THREE.DataTexture(data, W, H);
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1, HEAT_LINE.waves);
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/**
+ * How much of a line of rising heat shows along its length, for an alpha map: nothing at either end, so it comes out of
+ * the air and melts back into it.
+ */
+function heatFadeTexture(): THREE.DataTexture {
+  const H = 64;
+  const data = new Uint8Array(H * 4);
+  for (let y = 0; y < H; y++) {
+    const v = (y + 0.5) / H;
+    const a = Math.round(255 * THREE.MathUtils.smoothstep(v, 0, 0.3) * (1 - THREE.MathUtils.smoothstep(v, 0.55, 1)));
+    data.set([a, a, a, 255], y * 4);
+  }
+  const tex = new THREE.DataTexture(data, 1, H);
+  tex.magFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  return tex;
+}
+let heatWave: THREE.DataTexture | null = null;
+let heatFade: THREE.DataTexture | null = null;
+
+/** A group of `n` wavy lines of rising heat, each fading on its own, added to a model and never picked. */
+function heatLines(model: THREE.Object3D, n: number): THREE.Group {
+  heatWave ??= heatWaveTexture();
+  heatFade ??= heatFadeTexture();
+  const group = new THREE.Group();
+  for (let i = 0; i < n; i++) {
+    const material = new THREE.SpriteMaterial({
+      map: heatWave,
+      alphaMap: heatFade,
+      color: HEAT,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    });
+    const line = new THREE.Sprite(owned(material));
+    /** Cues are not there to be clicked: a click goes to the item itself. */
+    line.raycast = () => undefined;
+    line.renderOrder = 2;
+    group.add(line);
+  }
+  model.add(group);
+  return group;
+}
+
+/**
+ * Wavy lines of heat rising off a heater, or wisps of cool air drifting out of the front of an air conditioner, while
+ * it runs.
+ */
 function animateWisps(model: THREE.Object3D, c: CueCondition, t: number) {
   const heat = ITEMS[c.type].heat ?? 0;
   const on = heat !== 0 && c.running > 0 && c.wear < 100;
@@ -229,19 +312,33 @@ function animateWisps(model: THREE.Object3D, c: CueCondition, t: number) {
   }
   const cool = heat < 0;
   const cues = cuesOf(model);
-  wisps = cues.wisps ??= cueGroup(model, sph(0.1, 8), 3, cool ? 0xa8dcff : 0xffa860);
+  wisps = cues.wisps ??= cool ? cueGroup(model, sph(0.1, 8), 3, 0xa8dcff) : heatLines(model, 3);
   wisps.visible = true;
   const { box } = cues;
   const width = box.max.x - box.min.x;
   const cx = (box.min.x + box.max.x) / 2;
   const cz = (box.min.z + box.max.z) / 2;
+  if (!cool) {
+    // each line climbs off the top as its waves run up it, swaying a little, and fades out as it goes
+    if (heatWave) heatWave.offset.y = -((t * HEAT_WAVE_SPEED) % 1);
+    wisps.children.forEach((w, i) => {
+      const f = burst(t + (i * HEAT_LIFE) / 3, HEAT_LIFE, HEAT_LIFE, c.id);
+      const x = cx + (i - 1) * width * 0.3 + Math.sin(t * 1.3 + i * 2.1) * 0.03;
+      w.position.set(x, box.max.y + HEAT_LINE.h * 0.4 + f * 0.3, cz);
+      w.scale.set(HEAT_LINE.w * (0.9 + 0.15 * Math.sin(t * 2.3 + i)), HEAT_LINE.h, 1);
+      (w as THREE.Sprite).material.opacity = Math.sin(f * Math.PI) * (0.65 + 0.3 * c.running);
+    });
+    return;
+  }
   wisps.children.forEach((w, i) => {
     const f = burst(t + (i * 2.4) / 3, 2.4, 2.4, c.id);
-    const x = cx + (i - 1) * width * 0.28 + Math.sin(t * 2 + i * 1.7) * 0.04;
-    // warm air climbs over the top; cool air spills out of the front and sinks
-    if (cool) w.position.set(x, box.max.y * 0.72 - f * 0.4, box.max.z + 0.05 + f * 0.55);
-    else w.position.set(x, box.max.y + 0.05 + f * 0.8, cz);
-    w.scale.set(1.1, cool ? 1.1 : 2.8, cool ? 2.6 : 1.1).multiplyScalar(0.8 + f * 0.6);
+    // cool air spills out of the front and sinks
+    w.position.set(
+      cx + (i - 1) * width * 0.28 + Math.sin(t * 2 + i * 1.7) * 0.04,
+      box.max.y * 0.72 - f * 0.4,
+      box.max.z + 0.05 + f * 0.55,
+    );
+    w.scale.set(1.1, 1.1, 2.6).multiplyScalar(0.8 + f * 0.6);
     fadeOf(w).opacity = Math.sin(f * Math.PI) * (0.3 + 0.3 * c.running);
   });
 }

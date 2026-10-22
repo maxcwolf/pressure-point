@@ -19,6 +19,7 @@ import { ghostHung, hangPlace, placeHung } from './hung';
 import { animateCues, type CueCondition, NOISE_CUE, usedNoise, wearLight } from './item-cues';
 import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
+import { SPILL_SPEED, spillRuns } from './models/items/fountain';
 import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
 import { upgradePlate } from './models/plate';
@@ -60,11 +61,13 @@ function dryColor(water: number, green: readonly [number, number, number]): THRE
 }
 
 /**
- * Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke, blinking lights, grubby linens, chimes and
- * a clock's hands, fluttering flags and browning moss; and the cues of wear, dirt, noise and warmth (see item-cues.ts).
+ * Wilting leaves, glowing stones, a sweeping scanner ring, a fountain's running water, drifting smoke, blinking lights,
+ * grubby linens, chimes and a clock's hands, fluttering flags and browning moss; and the cues of wear, dirt, noise and
+ * warmth (see item-cues.ts).
  */
 export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: number) {
-  const { leaf, glow, ring, orb, puffs, led, cups, linens, heap, flames, chimes, hands, flags, moss } = partsOf(model);
+  const { leaf, glow, ring, orb, spill, puffs, led, cups, linens, heap, flames, chimes, hands, flags, moss } =
+    partsOf(model);
   if (leaf) {
     // a plant browns and droops as it dries out
     leaf.color.copy(dryColor(it.water, LEAF));
@@ -76,6 +79,18 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
     ring.visible = it.wear < 100;
   }
   if (orb) orb.position.y = 0.9 + Math.sin(t * 3 + it.id) * 0.035;
+  if (spill) {
+    // bright runs go down the falling water, the foam where it lands churns, and rings spread from the orb to the rim
+    spillRuns().offset.y = (t * SPILL_SPEED) % 1;
+    const churn = Math.sin(t * 9 + it.id) * 0.5 + Math.sin(t * 13.7 + it.id * 2) * 0.5;
+    spill.foam.scale.set(1 + churn * 0.012, 0.45 + churn * 0.1, 1 + churn * 0.012);
+    (spill.foam.material as THREE.MeshBasicMaterial).opacity = 0.55 + churn * 0.12;
+    spill.rings.forEach((r, i) => {
+      const f = (((t * 0.7 + i / 2 + it.id * 0.37) % 1) + 1) % 1;
+      r.scale.setScalar(0.1 + f * 0.13);
+      (r.material as THREE.MeshBasicMaterial).opacity = 0.5 * Math.min(1, f * 5) * (1 - f);
+    });
+  }
   // drifting smoke or scent
   puffs?.children.forEach((p, i) => {
     const f = (t * 0.5 + i / 3 + it.id * 0.13) % 1;

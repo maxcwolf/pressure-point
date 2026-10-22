@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **A fountain that flows, and heat you can read.** The Zen Fountain's bowl spills over into its basin in running streams, and a heater that is on sends up wavy lines of heat.
+
 ## v0.32.0
 
 ### More room to grow

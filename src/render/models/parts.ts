@@ -296,6 +296,8 @@ export interface ItemParts {
   ring?: THREE.Mesh;
   /** A fountain's floating orb. */
   orb?: THREE.Mesh;
+  /** A fountain's running water: the sheet spilling over its bowl, the foam where it lands and the rings round its orb. */
+  spill?: { sheet: THREE.Mesh; foam: THREE.Mesh; rings: THREE.Mesh[] };
   /** Props laid on the guest during a session, keyed by the modality that uses them. */
   session?: Record<string, THREE.Object3D>;
   /** Drifting smoke or scent. */
