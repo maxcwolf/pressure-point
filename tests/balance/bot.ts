@@ -34,6 +34,7 @@ import {
   MODALITIES,
   type Modality,
   NOISE_NOTICE,
+  type PlotDef,
   type Role,
   ROLES,
   ROOM_ORDER,
@@ -120,6 +121,13 @@ export const BOT_FLAGS = [
    * without them, seed by seed.
    */
   'machines',
+  /**
+   * A plot more at each center, sized for its machine room, given by hand while the lots are too small for one
+   * (balance log 38): it comes up for sale at the second star, when the machines unlock. With `machines` the bot keeps
+   * it for the machine room until that is built; without, it builds on it as on any land. Compare
+   * `BOT_ON=land,machines` with `BOT_ON=land`.
+   */
+  'land',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -127,7 +135,7 @@ export type BotFlags = Record<BotFlag, boolean>;
  * Flags that are off unless `BOT_ON` names them: a different way to play rather than better play, or play that was
  * measured and found to gain nothing.
  */
-const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab', 'clear', 'trouble', 'triage', 'throttle', 'machines'];
+const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab', 'clear', 'trouble', 'triage', 'throttle', 'machines', 'land'];
 
 /**
  * The bot's flags from the environment. `BOT=old` plays as the bot did before it learned any of them; `BOT_OFF`
@@ -447,6 +455,69 @@ const TREAT_ROOM: Record<Discipline, RoomType> = {
   shaman: 'lodge',
 };
 
+/**
+ * The plot the `land` extra gives each center for its machine room, on ground none of its own plots covers, touching
+ * the building or one of its plots: about the size of the room and a corridor, at a second-star plot's price.
+ */
+export const MACHINE_LOTS: Partial<Record<CenterId, PlotDef>> = {
+  willow: {
+    id: 'machine-lot',
+    name: 'The yard',
+    blurb: 'Given by hand for the Kneadmaster Suite',
+    rects: [
+      { x0: 19, x1: 29, y0: 3, y1: 7 },
+      { x0: 23, x1: 29, y0: 8, y1: 9 },
+    ],
+    price: 12000,
+    star: 2,
+  },
+  exchange: {
+    id: 'machine-lot',
+    name: 'The loading bay',
+    blurb: 'Given by hand for the Pin Press Room',
+    rects: [{ x0: 26, x1: 33, y0: 1, y1: 7 }],
+    price: 12000,
+    star: 2,
+  },
+  boardwalk: {
+    id: 'machine-lot',
+    name: 'The alley',
+    blurb: 'Given by hand for the Aura Wash',
+    rects: [{ x0: 27, x1: 31, y0: 7, y1: 16 }],
+    price: 12000,
+    star: 2,
+  },
+  highpines: {
+    id: 'machine-lot',
+    name: 'The slope',
+    blurb: 'Given by hand for the Alphorn Hall',
+    rects: [
+      { x0: 18, x1: 33, y0: 1, y1: 4 },
+      { x0: 26, x1: 33, y0: 5, y1: 6 },
+    ],
+    price: 12000,
+    star: 2,
+  },
+  orchard: {
+    id: 'machine-lot',
+    name: 'The press yard',
+    blurb: 'Given by hand for the Press House',
+    rects: [
+      { x0: 20, x1: 31, y0: 1, y1: 4 },
+      { x0: 28, x1: 31, y0: 5, y1: 16 },
+    ],
+    price: 12000,
+    star: 2,
+  },
+};
+
+/** Give a center the plot for its machine room, once: the game's own plots are data, so this is for the bot alone. */
+export function giveMachineLot(center: CenterId) {
+  const lot = MACHINE_LOTS[center];
+  const plots = CENTERS[center].plots as PlotDef[];
+  if (lot && !plots.some((p) => p.id === lot.id)) plots.push(lot);
+}
+
 /** The size the bot builds each room at: roomy enough for a bit of decor. */
 const SIZE: Partial<Record<RoomType, [number, number]>> = {
   consult: [3, 4],
@@ -526,6 +597,7 @@ export class Bot {
     readonly style: Style = botStyle(),
   ) {
     setSeed(seed);
+    if (flags.land) giveMachineLot(center);
     const s = newGame(center);
     s.difficulty = difficulty;
     this.sim = new Sim(s);
@@ -1693,6 +1765,7 @@ export class Bot {
           const r = { x, y, w, h };
           // keep the lobby by the entrance clear
           if (y + h - 1 >= p.y1 - 3 && x <= doorX + 3 && x + w - 1 >= doorX - 3) continue;
+          if (this.keptForMachine(type, r)) continue;
           if (!this.sim.world.roomRectValid(type, r).ok) continue;
           const edge = Math.min(x - p.x0, p.x1 - (x + w - 1), y - p.y0, p.y1 - (y + h - 1));
           cands.push({
@@ -1712,6 +1785,17 @@ export class Bot {
       const door = doors.find((d) => this.sim.world.doorValid(type, r, d).ok);
       if (door) yield { r, door };
     }
+  }
+
+  /** Whether a spot is on the plot given for the machine room, kept for it from any other room until it is built. */
+  private keptForMachine(type: RoomType, r: Rect): boolean {
+    const lot = MACHINE_LOTS[this.center];
+    if (!lot || !this.flags.land || !this.flags.machines) return false;
+    const room = ROOM_ORDER.find(
+      (t) => ROOMS[t].only?.includes(this.center) && ROOMS[t].required.some((i) => ITEMS[i].machine),
+    );
+    if (!room || type === room || this.sim.hasRoom(room)) return false;
+    return lot.rects.some((q) => r.x <= q.x1 && r.x + r.w - 1 >= q.x0 && r.y <= q.y1 && r.y + r.h - 1 >= q.y0);
   }
 
   /** Whether a room of a type would fit somewhere now. */
