@@ -4,6 +4,7 @@ import {
   DISCIPLINE_ORDER,
   DISCIPLINES,
   ITEMS,
+  machineRoom,
   MODALITIES,
   MODALITY_ORDER,
   NOISE_NOTICE,
@@ -13,13 +14,14 @@ import {
 import { money } from '../../../core/format';
 import { copyCost } from '../../../core/room-layout';
 import { roomLabels } from '../../../core/sim/assignments';
+import { signatureMachine } from '../../../core/sim/machines';
 import { tempFeel } from '../../../core/sim/warmth';
 import type { Item, Room } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
-import { pullNote } from '../../lib/demand';
+import { machinePullNote, pullNote } from '../../lib/demand';
 import { saveAsTemplate } from '../../templates';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -87,14 +89,16 @@ function BadVibes({ room }: { room: Room }) {
   );
 }
 
-/** How strongly a finished treatment room draws guests to its discipline. */
+/** How strongly a finished treatment room draws guests to its discipline, or a machine room to its machine. */
 function Draw({ room }: { room: Room }) {
   const { sim } = useGame();
   const d = DISCIPLINE_ORDER.find((x) => DISCIPLINES[x].room === room.type);
-  if (!d || !room.done) return null;
+  const machine = ROOMS[room.type].required.find((t) => machineRoom(t) === room.type && signatureMachine(t));
+  if ((!d && !machine) || !room.done) return null;
+  const pull = sim.roomPull(room);
   return (
     <p class="sub">
-      <Line line={pullNote(sim.roomPull(room), d)} />
+      <Line line={machine ? machinePullNote(pull, machine) : pullNote(pull, d ?? 'massage')} />
     </p>
   );
 }

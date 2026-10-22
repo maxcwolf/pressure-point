@@ -12,7 +12,7 @@ import {
   ROLES,
   ROOMS,
 } from '../../core/data';
-import type { Discipline } from '../../core/data/types';
+import type { Discipline, ItemType } from '../../core/data/types';
 import type { Capacity, DisciplineDemand, MachineDemand } from '../../core/sim/demand';
 import { type ArrivalPace, staffedMachines } from '../../core/sim/guests';
 import type { IconLine } from './icon-line';
@@ -34,6 +34,14 @@ export function pullNote(pull: number, d: Discipline): IconLine {
     };
   const why = mats ? 'its prestige, its peace and its mats' : 'its prestige and its peace';
   return { icon, text: `Draws ${pull.toFixed(1)}× the usual guests for ${what(d)}, for ${why}.` };
+}
+
+/** A line on how strongly a signature machine's finished room draws guests for the machine's own ailments. */
+export function machinePullNote(pull: number, machine: ItemType): IconLine {
+  const { name, icon } = ITEMS[machine];
+  if (pull < 1.05)
+    return { icon, text: `A prestigious, peaceful room draws more guests for the ${name}’s own ailments.` };
+  return { icon, text: `Draws ${pull.toFixed(1)}× the usual guests for the ${name}, for its prestige and its peace.` };
 }
 
 /** How widely a discipline is wanted before anything the player does, in a word. */

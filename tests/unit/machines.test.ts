@@ -44,7 +44,7 @@ import type { Sim } from '../../src/core/sim/sim';
 import { unlocked } from '../../src/core/sim/treatments';
 import { templateLock } from '../../src/core/templates';
 import { machineCures, roomKarmaLock } from '../../src/ui/lib/catalog';
-import { capacityNote, paceNote } from '../../src/ui/lib/demand';
+import { capacityNote, machinePullNote, paceNote } from '../../src/ui/lib/demand';
 import { itemStats } from '../../src/ui/lib/item-stats';
 import { treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
 import { buildRoom, freshSim, hire, inconsistencies, openCenter, run, runUntil, toasts } from './helpers';
@@ -186,6 +186,13 @@ describe('a machine room and the guests it draws', () => {
     expect(note).toMatch(/^About \d+ new guests a month\. \d+ come for the treatment stations: /);
     expect(note).toMatch(
       /\d+ come for the Kneadmaster 9000’s own ailments: 45% of the center’s pace for the one with a Massage Therapist of its own to run it/,
+    );
+    // its room's inspector says how it draws, as a finest room does
+    expect(machinePullNote(1, 'kneadmaster').text).toBe(
+      'A prestigious, peaceful room draws more guests for the Kneadmaster 9000’s own ailments.',
+    );
+    expect(machinePullNote(1.43, 'kneadmaster').text).toBe(
+      'Draws 1.4× the usual guests for the Kneadmaster 9000, for its prestige and its peace.',
     );
     // with nobody of its own to run it, the Guests tab says what it needs
     const { sim: alone } = withKneader();
