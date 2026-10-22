@@ -2,32 +2,46 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.31.0
 
-- **Demand that grows with the building.** Guests come 12% more often for each staffed treatment station past the first (up to 2.5 times), for as many as your Consultation Rooms keep in guests, four each, where each discipline you offered added 5%; the building lets in 4 guests at once, and 2 more for each such station and each staffed Consultation Room, and turns the rest away. The Guests tab and the date's hover give the pace factor by factor and the limit with who found it full; the Loan tab shows the next payday's wages before you borrow.
-- **Advice you can afford to follow.** The advisor weighs the payroll before asking for staff or rooms, and asks for none while payday is not covered; in the bank's ten days it names who to let go, with their wage, since a price rise barely moves the pace in time; and it says to cut before borrowing while the books lose money.
-- **Prices that bite.** New guests balk at a treatment's price hardly at all up to 130% of standard and steeply past it, with a good reputation forgiving more; plain regulars now balk half as often, loyal ones never. The Prices tab shows the share who balk at each price before you set it.
-- **A bank that warns before it forecloses.** Wages the bank cannot cover now go into the red rather than ending the game: borrow, or pay them into the red at 5% a month, with the staff worrying and, after a month there, asking for raises to stay. The bank only calls the overdraft in from a center that is in the red past what it will still lend _and_ losing money at the pace of the last month or so, and then gives ten days to put one of the two right, with the numbers shown. The payday warning five days ahead says what the bank will do.
-- **A reputation with a floor and a ceiling.** Gains land in full below 50% and count less the higher reputation is, to nothing at 100%; losses land in full above 50% and count less the lower it is, to nothing at 0%. A struggling center can climb back, a perfect name takes keeping, and one that heals only half its guests still sinks. The per-event costs are unchanged.
-- **Seasons with numbers, and a throttle.** The Boardwalk's summers and winters are announced a fortnight ahead, with how many guests to expect a month against last month, and each season starts with its numbers. The Money menu's Prices tab can limit how many guests the center lets in at once, below what the building takes, so a summer's crowd can be kept to what the tables can treat at the cost of the fees of those turned away.
-- **Goals for treating guests promptly, not for running empty.** The three "guests keep so much of their patience" goals (The Exchange's first star, The Boardwalk's and High Pines' second) are now "heal so many guests in a month, waiting so many days or less on average", which a busy center earns by keeping up. A guest sent home untreated counts against a cure-rate goal like a failed treatment. The Exchange's "reach 70% reputation" moves to its second star, and its third asks for 20 guests healed with acupuncture, so its stars come one after another instead of two on the same day. Goals judged over a month carry their figures for this month and last.
-- **Seasons and rush hours in numbers.** At The Boardwalk and The Exchange, the bottom bar's date and the Guests tab give this season's or rush hour's arrival multiplier, the next one's and the day it turns, and each season's announcement says how many guests a month to expect.
-- **Where the money comes from.** The Books tab breaks this month's and last month's income down by source, with each one's share, and says when side income rather than healing is carrying the center.
-- **Side income in proportion.** Qi Gong class-goers come by your reputation and the Instructor's rank, not by how many Practice Spots you build, which now only set how many a class holds; the studio's inspector says how many come a week. House calls pay about a day's work at home ($600 a day at the first rank, 15% more a rank), and the offer says who waits in each practitioner's line and how long the worst of them has.
-- **Objectives show their numbers.** Click an objective for what counts behind it: heals and failures this month and last, the sample a monthly goal needs, the money and the loan behind a balance goal, a room's prestige terms, standing points by source, and how far each is from being met.
-- **Two warnings before a line costs reputation.** A toast names the line, the count and the levers as its first waiting guest's condition turns poor, and a louder one names each guest within two days of going home worse off, with the advisor on it too. Lines and the guest inspector show the days of condition left, and the floor can be colored by it.
-- **Payday in plain sight.** The Money menu's new Payroll tab shows the wages due against the bank, the loan room and this month's projected net, with a verdict in a line. The payday warning comes as soon as the month's pace says payday is not covered, with the numbers, and again five days before.
-- **No dialog lost.** A star, an award or a visit's report that arrives at the same moment as another now waits its turn instead of being lost, with a payday or a bankruptcy shown first. A failed inspection's choice between the fine and making it go away no longer closes on Esc, and is shown again after loading the game.
-- **Karma at once.** Karma from a star or an achievement can be spent in the karma shop straight away, not only after the next autosave.
-- **Previous game kept safe.** Opening "Previous game" keeps it saved from the start, rather than only from its first autosave.
-- **Older saves' patience.** Months from saves made before patience was kept no longer count as guests keeping none of it.
-- **Fairer goals and awards.** Guests put off by the prices no longer count toward the month's waits and patience. The Exchange's rush-hour tempers are short only during a rush. A visitor who could reach no room on their tour leaves no verdict.
-- **House calls at today's prices.** A house call is paid at the prices of the day the practitioner gets back, not those of the moment it was taken.
-- **Classes booked around a drink.** An Instructor off for a drink or a snack as a class is booked no longer empties it; only a break, course or house call that would keep them away past the class does.
-- **Rules that work as described.** No emergency guests arrive while High Pines is snowed in. Mushrooms put away for an inspector who never came are back on sale. At The Orchard Estate, land and upgrade levels open at their stars, not from the start. A Brisk Caretaker or Shaman works faster, and a Chatterbox slower. The nudge to fill a qualification slot comes at every rank. A Sound Healer's Bedside Manner helps guests waiting at the mats. Someone who cheers up before a Shaman comes can be helped again later. A heal's reputation goes by how patient the guest still was.
-- **Templates and rugs.** A Qi Gong Studio template is locked while classes are switched off, a template with too few of a required item cannot be built, and a moved or copied room's rug can no longer land on a rug in the corridor.
-- **Clearer numbers.** A guest's inspector shows what their treatment will cost at your prices, and the Staff menu leaves out staff who are leaving and shows what the next payday owes. The Instructor's and the inspector's descriptions now match what they do.
-- **Treatment machines.** Each campaign center now has a machine room of its own at its second star, from the Kneadmaster 9000 at Willow Lane to the Cider Press of Rebirth at The Orchard Estate. Each machine is the only cure for two new ailments, and the Carousel of Rebirth can be unlocked anywhere with karma. Five big machines can also take a table's place for treatments you already offer. Machines cost money every month to run, and a worn one smokes and can overload until a Caretaker sees to it.
+### A center that tells you where it stands
+
+- **A bank that warns before it forecloses.** A payday the bank can't cover stops the game: borrow the difference, or pay the wages into the red at 5% a month, with the staff worried and, after a month there, asking for raises. The bank calls the overdraft in only from a center in the red past what it will still lend _and_ losing money, and then gives ten days to put one of the two right, with the numbers shown. Bankruptcy can be switched off in a sandbox game.
+- **Payday in plain sight.** The Money menu's new Payroll tab shows the wages due against the bank, the loan room and this month's projected net. The payday warning comes as soon as the month's pace says payday is not covered, and again five days before. Wages are paid for the days worked since the last payday, so a new hire or a leaver costs only their days.
+- **Where the money comes from.** The Books tab breaks income down by source, this month against last, and says when side income rather than healing is carrying the center.
+- **Objectives show their numbers.** Click an objective for what counts behind it and how far it is from being met.
+- **Two warnings before a line costs reputation.** A toast names the line as its first guest's condition turns poor, and a louder one names each guest within two days of going home worse off. Lines and the guest inspector show the days of condition left, and a new Condition overlay colors the floor by it.
+- **Advice you can afford to follow.** The advisor weighs the payroll before asking for staff or rooms, asks for none while payday is not covered, and in the bank's ten days names who to let go.
+- **Seasons and rush hours in numbers.** At The Boardwalk and The Exchange, the date and the Guests tab give this season's or rush hour's pace and the next one's, and each season is announced a fortnight ahead with the guests to expect. The Prices tab can cap how many guests the center lets in at once.
+
+### Balance
+
+- **Demand that grows with the building.** Guests come more often for each staffed treatment station, as long as your Consultation Rooms can keep up, and the building lets in only so many at once, turning the rest away. The Guests tab breaks the pace and the limit down.
+- **Prices that bite.** New guests hardly balk up to 130% of standard and steeply past it, with a good reputation forgiving more; regulars balk less or never. The Prices tab shows who will balk before you set a price, and a treatment's price and the overall level together top out at twice standard.
+- **A reputation with a floor and a ceiling.** Gains count less the closer reputation is to 100%, and losses count less the closer it is to 0%, so a struggling center can climb back and a perfect name takes keeping.
+- **Goals for treating guests promptly.** The three "keep so much of their patience" goals now ask for so many guests healed in a month with a short average wait. A guest sent home untreated counts against a cure rate, and The Exchange's stars no longer land two on one day.
+- **Side income in proportion.** Qi Gong class-goers come by your reputation and the Instructor's rank, with Practice Spots only capping a class. House calls pay about a day's work at home, and the offer says who is waiting.
+
+### Treatment machines
+
+- **A machine room at every center.** From the second star, each campaign center has a signature machine room of its own, from the Kneadmaster 9000 at Willow Lane to the Cider Press of Rebirth at The Orchard Estate, each the only cure for two new ailments. The Carousel of Rebirth can be unlocked anywhere with karma, and five big machines can take a table's place for treatments you already offer. Machines cost money every month to run, and a worn one smokes and can overload until a Caretaker sees to it.
+
+### A new look
+
+- **The game's own icons.** Over 300 hand-drawn icons replace the emoji everywhere: the menus, buttons and messages, the speech bubbles, and the markers in the scene.
+- **Rooms you can read from the door.** Doors have frames and every room has a sign with its icon and a status lamp: green working, amber with nobody at a station, red with something broken, grey unfinished.
+- **People you can read.** Faces look unhappy, delighted or pained. Waiting guests grow restless, fold their arms and tap a foot as their patience runs down, and idle staff stretch, look round and check the time.
+- **Wear you can see.** Worn machines smoke and flicker, broken ones go dark, worn furniture shudders and broken furniture lists, toilets grow grimy, loud items ripple and heaters give off wisps.
+- **Light through the day and the year.** Mornings are warm, evenings amber, and each season tints the sky and the ground. Wood, lacquer, cloth and skin each take the light their own way, and shadows stay crisp at any zoom.
+- **Clearer selection and overlays.** What a click would select glows under the pointer, a selection shows through the furniture in front of it, and the ambient overlays are a soft field that stays clear where things are ordinary.
+- **Polished models.** Rounder, sturdier items, softer trees, plants and cushions, a seated statue, and floors that stay crisp fully zoomed in.
+
+### Fixes
+
+- **No dialog lost.** A star, an award or a report that arrives with another now waits its turn. A failed inspection's choice no longer closes on Esc and comes back after loading.
+- **Karma, saves and stars.** Karma from a star can be spent at once, "Previous game" is kept saved from the start, and The Orchard Estate's land and upgrades open at their stars.
+- **Rules that work as described.** Among others: no emergencies while High Pines is snowed in; brisk and chatterbox quirks work for Caretakers and Shamans; a Sound Healer's bedside manner reaches the mats; an Instructor off for a drink no longer empties a class; a house call is paid at the prices of the day it ends; and a visitor who can't get in is given up on after three days rather than holding up every later visit.
+- **A smaller, steadier desktop app.** The installed app is about 65 MB smaller, and its save copies are written without holding up the game.
 
 ## v0.30.14
 
