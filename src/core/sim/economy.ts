@@ -2,6 +2,7 @@
 
 import type { CenterDef, Discipline, Role, RoomType } from '../data';
 import {
+  CONSULT_FEEDS,
   DAYS_PER_MONTH,
   DISCIPLINES,
   FIRST_PAYDAYS,
@@ -462,14 +463,17 @@ export function openingCosts(c: CenterDef): OpeningCosts {
 
 /**
  * A center's opening in a line, for its card before it is played: the first month's wages and the rooms, against the
- * money to start with and the loan, so the first payday is in sight before anything is built.
+ * money to start with and the loan, so the first payday is in sight before anything is built. With more disciplines
+ * than one Consultation Room keeps in guests, it says so, and what a second would cost, as the game will once open.
  */
 export function openingLine(o: OpeningCosts): string {
   const staff =
     o.disciplines === 1
       ? `a Receptionist, a Wellness Consultant and a ${o.practitioner}`
       : `a Receptionist, a Wellness Consultant and a practitioner for each of its ${o.disciplines} disciplines`;
-  return `Opening with ${staff} costs ${money(o.wages)} a month in wages at a Trainee's pay and ${money(o.rooms)} for their rooms, against ${money(o.money)} to start and up to ${money(o.loan)} from the bank: ${money(o.money + o.loan - o.rooms)} left for the furniture and every payday until the takings cover the wages.`;
+  const line = `Opening with ${staff} costs ${money(o.wages)} a month in wages at a Trainee's pay and ${money(o.rooms)} for their rooms, against ${money(o.money)} to start and up to ${money(o.loan)} from the bank: ${money(o.money + o.loan - o.rooms)} left for the furniture and every payday until the takings cover the wages.`;
+  if (o.disciplines <= CONSULT_FEEDS) return line;
+  return `${line} One Consultation Room keeps only ${CONSULT_FEEDS} stations in guests, so the rest draw nobody until a second opens with a ${ROLES.consultant.name} of its own: ${money(ROOMS.consult.cost)} more, and ${money(ROLES.consultant.baseSalary)} a month.`;
 }
 
 /**
