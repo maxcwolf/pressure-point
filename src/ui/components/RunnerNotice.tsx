@@ -50,7 +50,7 @@ function RunnerPill({ guest: g, more }: { guest: Guest; more: number }) {
           </span>
         ) : sim.canCalm(g) && sent ? (
           <Button
-            title={sendTitle(sent.name)}
+            title={sendTitle(sent)}
             onPress={() => {
               if (!sim.calm(g.id)) audio.play('error');
             }}

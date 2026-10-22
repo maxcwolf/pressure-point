@@ -22,7 +22,7 @@ export const GENERAL_COURSES: Readonly<Record<GeneralId, GeneralDef>> = {
     id: 'bedside',
     name: 'Bedside Manner',
     icon: 'course-bedside',
-    desc: 'Guests waiting in their line lose patience a quarter more slowly.',
+    desc: 'Guests waiting in their line lose patience a quarter more slowly, and a guest on a really bad trip is talked down a quarter sooner.',
     cost: 900,
     days: 6,
   },

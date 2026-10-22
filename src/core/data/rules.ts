@@ -175,6 +175,10 @@ export const FREAK_PATIENCE = 10;
 export const FREAK_STRESS = 0.35;
 /** How long it takes a member of staff to calm them down, once they have caught up with them. */
 export const CALM_SECONDS = 2;
+/** A Shaman talks a runner down in this share of the time. */
+export const CALM_SHAMAN = 0.5;
+/** Bedside Manner takes this much off anyone's time talking a runner down. */
+export const CALM_BEDSIDE = 0.75;
 /** What a runner who finds the door costs in reputation, on top of the bad trip. */
 export const RUNAWAY_DOOR_REP = 1.5;
 /** Calmed within this many days of starting to run, they leave grateful and the center earns back a point of reputation. */

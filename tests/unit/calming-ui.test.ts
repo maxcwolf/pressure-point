@@ -2,8 +2,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { DAY_SECONDS, RUNAWAY_SECONDS } from '../../src/core/data';
-import type { Guest } from '../../src/core/state/types';
-import { daysToDoor, doorShare, RUNNER_PILLS, runnerLine, runnersShown, sendLabel } from '../../src/ui/lib/calming';
+import type { Guest, Staff } from '../../src/core/state/types';
+import {
+  daysToDoor,
+  doorShare,
+  RUNNER_PILLS,
+  runnerLine,
+  runnersShown,
+  sendLabel,
+  sendTitle,
+} from '../../src/ui/lib/calming';
 
 describe('the time a runner has before the door', () => {
   it('is said in whole days, a part day counting as one, and less than a day at the end', () => {
@@ -34,5 +42,20 @@ describe("the runner's pill", () => {
     expect(shown).toHaveLength(RUNNER_PILLS);
     expect(more).toBe(2);
     expect(runnersShown(runners.slice(0, 2)).more).toBe(0);
+  });
+});
+
+describe('who the pill sends', () => {
+  /** A member of staff of this role, with or without Bedside Manner. */
+  const staff = (role: Staff['role'], bedside = false) =>
+    ({ name: 'Priya', role, general: bedside ? ['bedside'] : [] }) as unknown as Staff;
+
+  it('says who and why: a Shaman is best, anyone else is nearest, and Bedside Manner helps', () => {
+    expect(sendTitle(staff('shaman'))).toBe(
+      'Priya (Shaman) is best for it: a Shaman talks them down in half the time.',
+    );
+    expect(sendTitle(staff('caretaker'))).toContain('Priya (Caretaker) is the nearest who is free to go.');
+    expect(sendTitle(staff('receptionist'))).toContain('nobody is in line at the desk');
+    expect(sendTitle(staff('caretaker', true))).toContain('Bedside Manner makes it quicker');
   });
 });

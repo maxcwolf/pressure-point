@@ -1,9 +1,21 @@
 // A really bad trip: now and then a guest whose ceremony failed runs round the institute, stopping here and there to
 // freak out, and freaks out the guests they pass: a bad feeling, a little lost patience, and in a stress outbreak, the
 // stress. It goes on until a member of staff the player sends calms them down, or they find the door.
+//
+// Who is sent, of those free to go, nearest first within each:
+//
+// | Order | Who                                                                 |
+// | ----- | ------------------------------------------------------------------- |
+// | 1     | a Shaman, whose whole discipline is set and setting                 |
+// | 2     | any other practitioner or an Instructor, between guests and on foot |
+// | 3     | a Caretaker                                                         |
+// | 4     | a practitioner or an Instructor standing at their post for a guest  |
+// | 5     | a Receptionist, and never one with a line at the desk               |
 
 import {
+  CALM_BEDSIDE,
   CALM_SECONDS,
+  CALM_SHAMAN,
   DAY_SECONDS,
   FREAK_PATIENCE,
   FREAK_RANGE,
@@ -18,7 +30,7 @@ import {
 } from '../data';
 import { pick, random, stream } from '../random';
 import type { Guest, Staff } from '../state/types';
-import { gainXp } from './careers';
+import { gainXp, hasGeneral } from './careers';
 import { guestById, say } from './chars';
 import { release } from './claims';
 import type { SimContext } from './context';
@@ -130,12 +142,36 @@ function free(ctx: SimContext, st: Staff): boolean {
   return st.state === 'idle' || st.state === 'wander' || st.state === 'toPost' || st.state === 'toJob';
 }
 
-/** The nearest member of staff who could be sent to calm a runner down, if any. */
+/** Whether a member of staff's post is a Reception Desk with someone in line at it. */
+function deskWithLine(ctx: SimContext, st: Staff): boolean {
+  const desk = st.post ? ctx.world.item(st.post) : undefined;
+  return desk?.type === 'reception_desk' && desk.queue.length > 0;
+}
+
+/** Where a member of staff free to go comes in the order of who is sent after a runner: lower first, or never. */
+function calmRank(ctx: SimContext, st: Staff): number {
+  if (st.role === 'shaman') return 1;
+  if (st.role === 'caretaker') return 3;
+  if (st.role === 'receptionist') return deskWithLine(ctx, st) ? Infinity : 5;
+  return st.state === 'atPost' ? 4 : 2;
+}
+
+/** Who would be sent to calm a runner down, if anyone could be: a Shaman first, then the order above, nearest first. */
 export function calmerFor(ctx: SimContext, g: Guest): Staff | undefined {
+  /** How far a member of staff is from the runner. */
+  const far = (st: Staff) => Math.hypot(st.x - g.x, st.y - g.y);
   return ctx.s.staff
     .filter((st) => free(ctx, st))
-    .sort((a, b) => Math.hypot(a.x - g.x, a.y - g.y) - Math.hypot(b.x - g.x, b.y - g.y))[0];
+    .map((st) => ({ st, rank: calmRank(ctx, st) }))
+    .filter((c) => c.rank < Infinity)
+    .sort((a, b) => a.rank - b.rank || far(a.st) - far(b.st))[0]?.st;
 }
+
+/** How long a member of staff takes to talk a runner down: half as long for a Shaman, and less with Bedside Manner. */
+export const calmSeconds = (st: Staff) =>
+  (CALM_SECONDS / traitSpeed(st.traits)) *
+  (st.role === 'shaman' ? CALM_SHAMAN : 1) *
+  (hasGeneral(st, 'bedside') ? CALM_BEDSIDE : 1);
 
 /** Whether someone can be sent to calm a guest down: they are running, nobody is on the way, and someone is free. */
 export function canCalm(ctx: SimContext, g: Guest): boolean {
@@ -154,7 +190,7 @@ function chase(ctx: SimContext, st: Staff, g: Guest): boolean {
   return goTo(ctx, st, g.tx, g.ty);
 }
 
-/** Send the nearest free member of staff to calm a runner down. False if nobody can go, or nobody can reach them. */
+/** Send someone free to calm a runner down, a Shaman first. False if nobody can go, or nobody can reach them. */
 export function sendToCalm(ctx: SimContext, guestId: number): boolean {
   const g = guestById(ctx, guestId);
   if (!g || !canCalm(ctx, g)) return false;
@@ -181,7 +217,7 @@ export function followRunner(ctx: SimContext, st: Staff, arrived: boolean): bool
     halt(g);
     st.state = 'doingJob';
     st.busy = true;
-    st.timer = CALM_SECONDS / traitSpeed(st.traits);
+    st.timer = calmSeconds(st);
     st.facing = Math.atan2(g.x - st.x, g.y - st.y);
     g.facing = Math.atan2(st.x - g.x, st.y - g.y);
     return true;

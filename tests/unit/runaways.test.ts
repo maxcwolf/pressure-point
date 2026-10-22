@@ -2,16 +2,25 @@
 // pass, until a member of staff sent to them calms them down or they find the door.
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, DAY_SECONDS, FREAK_PATIENCE, RUNAWAY_CHANCE, RUNAWAY_SECONDS } from '../../src/core/data';
+import {
+  CALM_BEDSIDE,
+  CALM_SECONDS,
+  CALM_SHAMAN,
+  CENTERS,
+  DAY_SECONDS,
+  FREAK_PATIENCE,
+  RUNAWAY_CHANCE,
+  RUNAWAY_SECONDS,
+} from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import { badTrip } from '../../src/core/sim/ceremonies';
 import type { SimContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { repathAll } from '../../src/core/sim/movement';
-import { calmerFor, rollRunaway, running, startRunning } from '../../src/core/sim/runaways';
+import { calmerFor, calmSeconds, rollRunaway, running, startRunning } from '../../src/core/sim/runaways';
 import type { Sim } from '../../src/core/sim/sim';
-import type { Guest } from '../../src/core/state/types';
+import type { Guest, Staff } from '../../src/core/state/types';
 import { guestStatus, staffStatus } from '../../src/ui/lib/status';
 import { addLodge, hire, inconsistencies, LAYOUT, openCenter, run, runUntil, toasts } from './helpers';
 
@@ -256,6 +265,58 @@ describe('calming a runner down', () => {
     const late = calmAfter(3.5);
     expect(late.gain).toBe(0);
     expect(late.float).toBe('Calmed');
+  });
+
+  it('sends a Shaman ahead of anyone nearer, then a practitioner, then a Caretaker', () => {
+    const c = withRunner();
+    c.s.stars = 3;
+    const caretaker = hire(c.sim, 'caretaker');
+    const shaman = hire(c.sim, 'shaman');
+    /** Put a member of staff this far from the runner, free and on foot. */
+    const put = (st: Staff, d: number) => {
+      Object.assign(st, { x: c.g.x + d, y: c.g.y, state: 'idle', busy: false, call: null });
+    };
+    for (const st of c.s.staff) st.state = 'away';
+    put(caretaker, 1);
+    put(c.therapist, 3);
+    put(shaman, 12);
+    expect(calmerFor(c.ctx, c.g)).toBe(shaman);
+    shaman.state = 'away';
+    expect(calmerFor(c.ctx, c.g)).toBe(c.therapist);
+    c.therapist.state = 'away';
+    expect(calmerFor(c.ctx, c.g)).toBe(caretaker);
+  });
+
+  it('never sends a Receptionist away from a line at the desk', () => {
+    const c = withRunner();
+    for (const st of c.s.staff) st.state = 'away';
+    const desk = c.s.items.find((i) => i.type === 'reception_desk')!;
+    Object.assign(c.receptionist, { state: 'atPost', post: desk.id, busy: false, x: c.g.x + 1, y: c.g.y });
+    desk.queue = [c.g.id + 1000];
+    expect(calmerFor(c.ctx, c.g)).toBeUndefined();
+    expect(c.sim.canCalm(c.g)).toBe(false);
+    desk.queue = [];
+    expect(calmerFor(c.ctx, c.g)).toBe(c.receptionist);
+  });
+
+  it('is quicker with a Shaman, and with Bedside Manner', () => {
+    /** How long the one member of staff left to send takes to talk the runner down, once they are there. */
+    const timed = (role: 'shaman' | 'caretaker', bedside = false) => {
+      const c = withRunner();
+      c.s.stars = 3;
+      const st = hire(c.sim, role);
+      for (const o of c.s.staff) if (o !== st) o.state = 'away';
+      Object.assign(st, { x: c.g.x + 1, y: c.g.y, state: 'idle', traits: [], general: bedside ? ['bedside'] : [] });
+      expect(c.sim.calm(c.g.id)).toBe('sent');
+      runUntil(c.sim, () => st.state === 'doingJob', 60);
+      // set as they get there, and a step's worth already gone
+      expect(st.timer).toBeLessThanOrEqual(calmSeconds(st));
+      expect(st.timer).toBeGreaterThan(calmSeconds(st) - 0.2);
+      return calmSeconds(st);
+    };
+    expect(timed('caretaker')).toBeCloseTo(CALM_SECONDS, 5);
+    expect(timed('shaman')).toBeCloseTo(CALM_SECONDS * CALM_SHAMAN, 5);
+    expect(timed('caretaker', true)).toBeCloseTo(CALM_SECONDS * CALM_BEDSIDE, 5);
   });
 
   it('cannot send anyone when everyone is busy or away', () => {

@@ -1,7 +1,8 @@
 // The words for a guest on a really bad trip being calmed down, and for the pill that shows while they run.
 
-import { DAY_SECONDS, RUNAWAY_SECONDS } from '../../core/data';
-import type { Guest } from '../../core/state/types';
+import { DAY_SECONDS, ROLES, RUNAWAY_SECONDS } from '../../core/data';
+import { hasGeneral } from '../../core/sim/careers';
+import type { Guest, Staff } from '../../core/state/types';
 import { clamp } from '../../core/util';
 import { wholeDaysLeft } from './emergency';
 
@@ -37,8 +38,14 @@ export function runnersShown(runners: readonly Guest[]): { shown: Guest[]; more:
 export const sendLabel = (name: string) => `Send ${name}`;
 
 /** Who would be sent after a runner, and why them. */
-export const sendTitle = (name: string) =>
-  `${name} is the nearest member of staff who is free: they go after them and talk them down.`;
+export function sendTitle(st: Staff): string {
+  const who = `${st.name} (${ROLES[st.role].name})`;
+  const bedside = hasGeneral(st, 'bedside') ? ' Their Bedside Manner makes it quicker still.' : '';
+  if (st.role === 'shaman') return `${who} is best for it: a Shaman talks them down in half the time.${bedside}`;
+  if (st.role === 'receptionist')
+    return `${who} is the only one free to go, and nobody is in line at the desk.${bedside}`;
+  return `${who} is the nearest who is free to go. A Shaman would talk them down in half the time.${bedside}`;
+}
 
 /** Why nobody can be sent after a runner. */
 export const NOBODY_FREE = 'Nobody is free to go: everyone is with a guest, or away.';

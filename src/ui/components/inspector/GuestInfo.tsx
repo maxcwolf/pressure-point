@@ -66,7 +66,7 @@ function CalmRunner({ guest: g }: { guest: Guest }) {
     <Button
       class="go calm"
       locked={!sent}
-      title={sent ? sendTitle(sent.name) : NOBODY_FREE}
+      title={sent ? sendTitle(sent) : NOBODY_FREE}
       onPress={() => {
         if (!sim.calm(g.id)) audio.play('error');
       }}
