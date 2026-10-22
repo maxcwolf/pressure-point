@@ -4,6 +4,7 @@ import type { Role } from '../data';
 import {
   ANNOUNCEMENTS,
   conditionOf,
+  CONSULT_FEEDS,
   DIRT_FILTHY,
   DISCIPLINE_ORDER,
   DISCIPLINES,
@@ -28,6 +29,7 @@ import { offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import { BOTTLENECK, bottleneck } from './bottleneck';
 import type { SimContext } from './context';
+import { capacity, unfedStations } from './demand';
 import {
   cashflow,
   countdownLever,
@@ -41,7 +43,7 @@ import {
   projectedCashflow,
   shortOfAMonth,
 } from './economy';
-import { emit, type Subject } from './events';
+import { emit, type Subject, tipOnce } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { roomForModality } from './machines';
 import { floodAdvice, mishapAdvice } from './mishaps';
@@ -191,12 +193,41 @@ function nudge(ctx: SimContext): string | Advice {
   if (held) return held;
   const fix = repairAdvice(ctx);
   if (fix) return fix;
+  const unfed = unfedAdvice(ctx);
+  if (unfed) return unfed;
   if (s.guests.length > 4 && !s.items.some((i) => i.type === 'bench'))
     return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
   if (s.guests.some((g) => g.thirst > 85) && !hasItem(ctx, 'tea_station'))
     return 'Guests are parched. A Herbal Tea Station would help, and it earns a little too.';
   if (allStars(ctx)) return 'Three stars! Every treatment is open to you. Keep the guests coming back.';
   return 'Looking good. Keep an eye on the objectives to earn your next star.';
+}
+
+/**
+ * Nudge about staffed treatment stations the Consultation Rooms cannot keep in guests, if there are any: they draw
+ * nobody and let nobody more in, and since every guest is seen in one first, another treatment room would draw nobody
+ * more either. What would: a Consultant for a room standing without one, or another Consultation Room.
+ */
+export function unfedAdvice(ctx: SimContext): string {
+  const s = ctx.s;
+  const c = capacity(ctx);
+  const unfed = unfedStations(c);
+  if (unfed <= 0 || !c.consults) return '';
+  const consultant = ROLES.consultant.name;
+  const rooms = s.rooms.filter((r) => r.type === 'consult' && r.done).length;
+  const fix =
+    rooms > c.consults
+      ? `A ${consultant} for the Consultation Room standing without one`
+      : `Another Consultation Room with a ${consultant}`;
+  const stations = unfed === 1 ? '1 staffed treatment station draws' : `${unfed} staffed treatment stations draw`;
+  return `${stations} no guests: every guest sees a ${consultant} first, and each Consultation Room keeps only ${CONSULT_FEEDS} stations in guests. ${fix} would let ${unfed === 1 ? 'it' : 'them'} draw, and let more in at once; another treatment room would draw nobody more.`;
+}
+
+/** Once a day: the first time staffed stations stand without guests the consultations can send them, say so. */
+export function warnUnfed(ctx: SimContext) {
+  if (!ctx.s.open) return;
+  const text = unfedAdvice(ctx);
+  if (text) tipOnce(ctx, 'unfed-stations', text, 'bad', undefined, 'ui-warning');
 }
 
 /**
