@@ -93,7 +93,7 @@ export const SEASON_LIGHT: Record<Season, { sky: Tint; sun: Tint }> = {
   winter: { sky: [0.95, 0.98, 1.05], sun: [0.97, 0.99, 1.04] },
 };
 
-/** A color the ground is drawn toward in a season, and how far: a lawn's, or bare sand's or snow's. */
+/** A color the ground is drawn toward in a season, and how far: a lawn's, bare sand's or paving's. */
 interface GroundShift {
   toward: number;
   by: number;
@@ -114,8 +114,26 @@ const SAND_SEASON: Record<Season, GroundShift> = {
   winter: { toward: 0xe8e4d6, by: 0.3 },
 };
 
-/** What the ground of a setting is: grass, sand or snow, which already looks like winter all year. */
-export type Ground = 'grass' | 'sand' | 'snow';
+/**
+ * And paving, which never greens or whitens: a little paler in summer's sun, and darker and wetter, autumn's a touch
+ * warm and winter's cool, through the rains.
+ */
+const PAVING_SEASON: Record<Season, GroundShift> = {
+  spring: { toward: 0xc2c1bb, by: 0 },
+  summer: { toward: 0xd8d2c4, by: 0.22 },
+  autumn: { toward: 0x8e8a82, by: 0.2 },
+  winter: { toward: 0x939ba3, by: 0.26 },
+};
+
+/** What the ground of a setting is: grass, sand, paving, or snow, which already looks like winter all year. */
+export type Ground = 'grass' | 'sand' | 'paving' | 'snow';
+
+/** How each kind of ground but snow shifts with the seasons. */
+const GROUND_SEASON: Record<Exclude<Ground, 'snow'>, Record<Season, GroundShift>> = {
+  grass: LAWN_SEASON,
+  sand: SAND_SEASON,
+  paving: PAVING_SEASON,
+};
 
 /** One channel of a color, 0 to 255. */
 const channel = (hex: number, shift: number) => (hex >> shift) & 0xff;
@@ -130,7 +148,7 @@ export function mixHex(a: number, b: number, t: number): number {
 /** A ground color as it looks in a season. */
 export function seasonGround(hex: number, ground: Ground, season: Season): number {
   if (ground === 'snow') return hex;
-  const { toward, by } = (ground === 'grass' ? LAWN_SEASON : SAND_SEASON)[season];
+  const { toward, by } = GROUND_SEASON[ground][season];
   return mixHex(hex, toward, by);
 }
 
