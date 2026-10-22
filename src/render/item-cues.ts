@@ -22,6 +22,7 @@ export const WEAR_LOOKS: Partial<Record<ItemType, WearLook>> = {
   air_conditioner: 'smoke',
   fortune_teller: 'smoke',
   water_cooler: 'smoke',
+  generator: 'smoke',
   massage_table: 'shudder',
   acu_table: 'shudder',
   reiki_table: 'shudder',

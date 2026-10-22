@@ -2,9 +2,10 @@
 
 import * as THREE from 'three';
 
-import { centerOf, type Rect } from '../core/data';
+import { centerOf, ITEMS, type Rect } from '../core/data';
 import { footprintKey } from '../core/footprint';
 import type { Sim } from '../core/sim/sim';
+import { itemDims } from '../core/world';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
@@ -34,6 +35,25 @@ const drawn = new THREE.Vector2();
 /** Every rectangle of the center's plots of land and the paths to them, kept clear of trees whether bought or not. */
 const plotsOf = (sim: Sim): Rect[] => centerOf(sim.s).plots.flatMap((p) => [...p.rects, ...(p.path ?? [])]);
 
+/** The tiles of everything standing out of doors, such as a generator, which no tree grows through either. */
+function outdoorsOf(sim: Sim): Rect[] {
+  return sim.s.items
+    .filter((it) => ITEMS[it.type].where === 'outdoors')
+    .map((it) => {
+      const [w, h] = itemDims(it.type, it.rot);
+      return { x0: it.x, x1: it.x + w - 1, y0: it.y, y1: it.y + h - 1 };
+    });
+}
+
+/** What the trees keep clear of, besides the building: the plots and the paths to them, and what stands outdoors. */
+const clearOf = (sim: Sim): Rect[] => [...plotsOf(sim), ...outdoorsOf(sim)];
+
+/** The building and what stands outdoors as a key, so the scenery is built again when either changes. */
+const sceneryKey = (sim: Sim) =>
+  `${footprintKey(sim.world.building)}|${outdoorsOf(sim)
+    .map((r) => `${r.x0},${r.y0},${r.x1},${r.y1}`)
+    .join(';')}`;
+
 export class View {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
@@ -41,7 +61,10 @@ export class View {
   private lights: Lights;
   /** The world as last drawn, so rooms and items are only rebuilt when something changes. */
   private worldVersion = -1;
-  /** The scenery around the building, and the building it was built for, to build again when the building grows. */
+  /**
+   * The scenery around the building, and the building and outdoor items it was built for, to build again when the
+   * building grows or something is put down outdoors.
+   */
   private scenery: THREE.Group;
   private sceneryPlot: string;
   /** The building's outer walls, and the building and turn they were built for, to build again when either changes. */
@@ -84,11 +107,11 @@ export class View {
     lightSetting(this.lights, settingOf(sim.s).light);
 
     this.rig = new CameraRig(sim.world.building, sim.world.w);
-    this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s), sim.world.w, plotsOf(sim));
-    this.sceneryPlot = footprintKey(sim.world.building);
+    this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s), sim.world.w, clearOf(sim));
+    this.sceneryPlot = sceneryKey(sim);
     this.scene.add(this.scenery);
     this.shell = buildShell(sim.world.building, nearSides(this.rig.turn));
-    this.shellKey = `${this.sceneryPlot}|${this.rig.turn}`;
+    this.shellKey = `${footprintKey(sim.world.building)}|${this.rig.turn}`;
     this.scene.add(this.shell);
     this.floor = new Floor(this.scene, sim);
     this.rooms = new RoomsLayer(this.scene, sim);
@@ -160,10 +183,10 @@ export class View {
     this.scene.add(this.shell);
   }
 
-  /** Build the scenery again if the building has grown into more land since it was built. */
+  /** Build the scenery again if the building has grown into more land, or something outdoors moved, since it was built. */
   private growScenery() {
     const fp = this.sim.world.building;
-    const key = footprintKey(fp);
+    const key = sceneryKey(this.sim);
     if (key === this.sceneryPlot) return;
     this.sceneryPlot = key;
     this.scene.remove(this.scenery);
@@ -176,7 +199,7 @@ export class View {
       settingName(this.sim.s),
       settingOf(this.sim.s),
       this.sim.world.w,
-      plotsOf(this.sim),
+      clearOf(this.sim),
     );
     this.scene.add(this.scenery);
   }

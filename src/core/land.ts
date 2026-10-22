@@ -115,6 +115,13 @@ export function plotAt(plots: readonly PlotDef[], x: number, y: number): PlotDef
   return plots.find((p) => p.rects.some((r) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1));
 }
 
+/** The plot whose land covers a tile, or whose path will be paved over it once it is built on, if any. */
+export function plotGroundAt(plots: readonly PlotDef[], x: number, y: number): PlotDef | undefined {
+  return (
+    plotAt(plots, x, y) ?? plots.find((p) => p.path?.some((r) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1))
+  );
+}
+
 // ---- Strips, as land was sold up to version 0.26 -----------------------------------------------------------------
 
 /** The sides a strip could be bought on: never the front, which faces the street. */

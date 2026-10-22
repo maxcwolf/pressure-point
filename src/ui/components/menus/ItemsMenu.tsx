@@ -5,7 +5,7 @@ import { useState } from 'preact/hooks';
 
 import { itemOpen } from '../../../core/campaign';
 import { certificatesLeft } from '../../../core/certificates';
-import { type IconId, ITEM_MENU, ITEMS, type ItemType } from '../../../core/data';
+import { centerOf, type IconId, ITEM_MENU, ITEMS, type ItemType } from '../../../core/data';
 import { money } from '../../../core/format';
 import { unlockedUpTo } from '../../../core/state/game';
 import { loadCampaign } from '../../../storage/campaign';
@@ -31,7 +31,9 @@ export function ItemsMenu() {
   /** The item picked to show in the panel beside the cards, when the stats are shown there. */
   const [picked, setPicked] = useState<ItemType | null>(null);
   const view = loadDisplay().itemView;
-  const offered = ITEM_MENU.filter((t) => itemOffered(ITEMS[t], (d) => sim.enabled(d)));
+  // something that keeps a mishap at bay is offered only where that mishap comes
+  const mishap = s.mishapsOn ? centerOf(s).mishap : undefined;
+  const offered = ITEM_MENU.filter((t) => itemOffered(ITEMS[t], (d) => sim.enabled(d), mishap));
   const places = placeFilters(offered);
   // a room switched off since it was chosen falls back to everywhere
   const place = places.includes(hud.itemPlace) ? hud.itemPlace : 'all';

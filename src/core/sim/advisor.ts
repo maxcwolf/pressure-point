@@ -240,7 +240,8 @@ export function bottleneckAdvice(ctx: SimContext): Advice | null {
   const salary = newSalary(s, def.staff);
   const after = cashflow(s).net - salary;
   const where = ITEMS[top.type].where;
-  const place = ITEMS[top.type].cost + (where === 'corridor' || where === 'any' ? 0 : ROOMS[where].cost);
+  const place =
+    ITEMS[top.type].cost + (where === 'corridor' || where === 'any' || where === 'outdoors' ? 0 : ROOMS[where].cost);
   const inRed = `Another ${role} would put the books ${money(-after)} a month in the red: raise prices, or wait for the pace to grow.`;
   /** Too dear to build now: what it would take, and what the bank has. */
   const saveUp = (cost: number) =>
@@ -385,7 +386,7 @@ function modalityAdvice(ctx: SimContext): string | Advice {
 /** What to call the place a station is in: its room, or the item itself in a corridor. */
 export function stationPlace(it: Pick<Item, 'type'>): string {
   const where = ITEMS[it.type].where;
-  return where === 'corridor' || where === 'any' ? ITEMS[it.type].name : ROOMS[where].name;
+  return where === 'corridor' || where === 'any' || where === 'outdoors' ? ITEMS[it.type].name : ROOMS[where].name;
 }
 
 /** What the speakers say when a station has a line and nobody working it. */

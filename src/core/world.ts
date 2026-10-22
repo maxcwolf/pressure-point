@@ -5,6 +5,7 @@ import * as rules from './build-rules';
 import {
   centerOf,
   H,
+  holdingOff,
   ITEMS,
   type ItemType,
   MISHAPS,
@@ -426,7 +427,10 @@ export class World {
   /** Whether the mishap under way has taken an item out of action, as a power cut does to anything with a plug. */
   stoppedByMishap(it: Item): boolean {
     const m = this.s.mishap;
-    return !!m?.started && mishapStopsType(MISHAPS[m.kind], it.type, m.prepared);
+    if (!m?.started) return false;
+    const def = MISHAPS[m.kind];
+    // a generator of the center's own keeps the power on while it works
+    return mishapStopsType(def, it.type, m.prepared) && !holdingOff(def, this.s.items);
   }
   /** Whether a tile can be walked on: in the game as it is, or on the grids `g` of a what-if. */
   walkable(x: number, y: number, g: Grid = this) {

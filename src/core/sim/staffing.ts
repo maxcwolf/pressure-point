@@ -496,11 +496,13 @@ function findWork(ctx: SimContext, st: Staff) {
       let ok = false;
       if (task.kind === 'litter') ok = goTo(ctx, st, task.x, task.y);
       else {
-        // stand next to the item, on whichever side can be reached
+        // stand next to the item, on whichever side can be reached, and on the same side of the building's walls
         const item = must(ctx.world.item(task.id), 'item to tend');
+        const indoors = ctx.world.inside(item.x, item.y);
         search: for (const [fx, fy] of footprint(item)) {
           for (const [dx, dy] of BESIDE) {
-            if (ctx.world.walkable(fx + dx, fy + dy) && goTo(ctx, st, fx + dx, fy + dy)) {
+            const [bx, by] = [fx + dx, fy + dy];
+            if (ctx.world.walkable(bx, by) && ctx.world.inside(bx, by) === indoors && goTo(ctx, st, bx, by)) {
               ok = true;
               break search;
             }

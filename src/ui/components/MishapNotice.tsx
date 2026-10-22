@@ -1,8 +1,8 @@
 // Top center, with the offers: a mishap coming, with what it will do and a button to prepare for it, or one under way.
 
-import { MISHAPS } from '../../core/data';
+import { ITEMS, MISHAPS } from '../../core/data';
 import { money } from '../../core/format';
-import { mishapDaysLeft } from '../../core/sim/mishaps';
+import { mishapDaysLeft, mishapHolder } from '../../core/sim/mishaps';
 import { useGame, useHud } from '../hooks/use-hud';
 import { mishapLine, noticeShare, preparedNote, startsIn } from '../lib/mishaps';
 import { Bar } from './common/Bar';
@@ -18,26 +18,35 @@ export function MishapNotice() {
   if (!m) return null;
   const def = MISHAPS[m.kind];
   const left = mishapDaysLeft(s);
+  // a generator of the center's own, standing and unbroken, sees it off without preparing
+  const held = mishapHolder(s);
+  const holder = held && ITEMS[held.type].name;
   if (m.started)
     return (
       <div class="panel offer-pill mishap-pill on">
         <span>
-          <IconText id={def.icon}>{mishapLine(def, m, left)}</IconText>
+          <IconText id={def.icon}>{mishapLine(def, m, left, holder)}</IconText>
         </span>
       </div>
     );
   const timer = <Bar value={noticeShare(left) * 100} class={left < 1 ? 'thin bad' : 'thin need'} />;
-  if (m.prepared || m.ward || hud.mishapAside === m.starts)
+  if (m.prepared || holder || m.ward || hud.mishapAside === m.starts)
     return (
       <Button
         class="panel offer-pill mishap-pill"
-        title={m.prepared ? def.prepare.effect : `Show the ${def.name.toLowerCase()}`}
+        title={
+          m.prepared
+            ? def.prepare.effect
+            : holder
+              ? `Your ${holder} will keep it at bay, as long as it does not break down`
+              : `Show the ${def.name.toLowerCase()}`
+        }
         onPress={() => {
           hud.mishapAside = null;
         }}
       >
         <span>
-          <IconText id={def.icon}>{mishapLine(def, m, left)}</IconText>
+          <IconText id={def.icon}>{mishapLine(def, m, left, holder)}</IconText>
         </span>
         {timer}
       </Button>

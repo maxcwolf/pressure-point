@@ -9,6 +9,8 @@ import {
   type ItemDef,
   ITEMS,
   type ItemType,
+  type MishapId,
+  MISHAPS,
   MODALITIES,
   type Offering,
   type Role,
@@ -66,14 +68,20 @@ export function placeLabel(item: ItemDef): string {
   }
   if (item.where === 'corridor') return 'Corridor';
   if (item.where === 'any') return 'Anywhere';
+  if (item.where === 'outdoors') return 'Outdoors';
   return roomsFor(item)
     .map((r) => ROOMS[r].name)
     .join(' or ');
 }
 
-/** Whether an item's home is on offer: corridor items always are, room items when their room's discipline is. */
-export function itemOffered(item: ItemDef, enabled: (d: Offering) => boolean): boolean {
-  if (item.where === 'corridor' || item.where === 'any') return true;
+/**
+ * Whether an item is on offer: one that keeps a mishap at bay only where that `mishap` comes, as a generator does a
+ * power cut; corridor and outdoor items always; room items when their room's discipline is.
+ */
+export function itemOffered(item: ItemDef, enabled: (d: Offering) => boolean, mishap?: MishapId): boolean {
+  const against = Object.values(MISHAPS).find((m) => m.heldOffBy === item.type);
+  if (against && against.id !== mishap) return false;
+  if (item.where === 'corridor' || item.where === 'any' || item.where === 'outdoors') return true;
   return roomsFor(item).some((r) => available(roomOffering(r), enabled));
 }
 
@@ -103,29 +111,34 @@ export function itemKind(type: ItemType): ItemKind {
   if (def.machine) return 'machine';
   if (def.station || Object.values(MODALITIES).some((m) => m.equipment === type)) return 'equipment';
   if (def.where === 'staffroom' || def.where === 'training') return 'staff';
+  if (def.where === 'outdoors') return 'equipment';
   if (def.access.some((a) => GUEST_USES.has(a.role)) || type === 'bin') return 'comfort';
   return def.decor ? 'decor' : 'comfort';
 }
 
-/** Where to look for items: everywhere, the corridors, or one kind of room. */
-export type Place = 'all' | 'corridor' | RoomType;
+/** Where to look for items: everywhere, the corridors, out of doors, or one kind of room. */
+export type Place = 'all' | 'corridor' | 'outdoors' | RoomType;
 
-/** Whether an item can go in a place. Items that go anywhere fit every place. */
+/** Whether an item can go in a place. Items that go anywhere indoors fit every place but out of doors. */
 export function fitsPlace(item: ItemDef, place: Place): boolean {
-  if (place === 'all' || item.where === 'any') return true;
+  if (place === 'all') return true;
+  if (place === 'outdoors' || item.where === 'outdoors') return item.where === place;
+  if (item.where === 'any') return true;
   return place === 'corridor' ? item.where === 'corridor' : goesIn(item, place);
 }
 
-/** The places worth filtering by: everywhere, the corridors, and each room that has items of its own. */
+/** The places worth filtering by: everywhere, the corridors, out of doors if anything goes there, and each room that has items of its own. */
 export function placeFilters(types: readonly ItemType[]): Place[] {
   const rooms = ROOM_ORDER.filter((r) => types.some((t) => roomsFor(ITEMS[t]).includes(r)));
-  return ['all', 'corridor', ...rooms];
+  const outdoors: Place[] = types.some((t) => ITEMS[t].where === 'outdoors') ? ['outdoors'] : [];
+  return ['all', 'corridor', ...outdoors, ...rooms];
 }
 
 /** What to call a place in the filter. */
 export function placeName(place: Place): string {
   if (place === 'all') return 'Everywhere';
   if (place === 'corridor') return 'Corridors';
+  if (place === 'outdoors') return 'Outdoors';
   return ROOMS[place].name;
 }
 

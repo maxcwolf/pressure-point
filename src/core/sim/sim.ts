@@ -133,7 +133,7 @@ import type { DeliveryProblem } from './treatments';
 import { deliveryProblem, modalityOf, offered, setDiscipline, unlocked } from './treatments';
 import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
 import { orderUpgrade } from './upgrades';
-import { decayItems } from './upkeep';
+import { decayItems, wearByTheDay } from './upkeep';
 import { fadeVibes } from './vibes';
 import { lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
 import { outdoorTemp, thermostatShare, todayIndoors, warmthAt } from './warmth';
@@ -185,6 +185,7 @@ export class Sim {
       lapseInspection(ctx);
       warnPayday(ctx);
       updateInsolvency(ctx);
+      wearByTheDay(ctx);
     }
     const month = Math.floor(s.day / DAYS_PER_MONTH);
     if (month !== prevMonth) {

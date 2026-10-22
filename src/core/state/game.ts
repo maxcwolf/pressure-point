@@ -121,8 +121,9 @@ export const defaultPolicy = (): Policy => ({
  * 33: the treatment machines, their rooms, ailments and techniques, and what they cost to keep running; or, saved by
  * the line of work that drew the icons, speech bubbles held as the game's own icons rather than emoji.
  * 34: the two 33s together, so a 33 save of either kind is brought up to both.
+ * 35: the Generator, the first item that stands outdoors.
  */
-export const SAVE_VERSION = 34;
+export const SAVE_VERSION = 35;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

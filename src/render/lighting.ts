@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 
+import { mishapHolder } from '../core/sim/mishaps';
 import { seasonOf } from '../core/sim/twists';
 import type { GameState, Mishap } from '../core/state/types';
 import { type Daylight, daylightAt, NOON, SEASON_LIGHT, stormy, type Tint } from './daylight';
@@ -106,10 +107,13 @@ export function placeSun(sun: THREE.DirectionalLight, target: THREE.Vector3, rea
   sun.target.position.copy(target);
 }
 
-/** How bright the light is against usual while a mishap is under way: dim in a power cut, gray in a storm. */
-export function lightLevel(m: Mishap | null): number {
+/**
+ * How bright the light is against usual while a mishap is under way: dim in a power cut, unless prepared for or `held`
+ * off by the center's own generator, and gray in a storm.
+ */
+export function lightLevel(m: Mishap | null, held = false): number {
   if (!m?.started) return 1;
-  if (m.kind === 'power' && !m.prepared) return POWER_CUT_LIGHT;
+  if (m.kind === 'power' && !m.prepared && !held) return POWER_CUT_LIGHT;
   if (m.kind === 'storm') return STORM_LIGHT;
   return 1;
 }
@@ -130,7 +134,7 @@ export const dayDepth = (speed: number) => (speed <= 1 ? 1 : speed === 2 ? 0.6 :
  */
 export function lightScene(lights: Lights, s: GameState, dt: number): boolean {
   const k = 1 - Math.exp(-EASE * dt);
-  lights.level += (lightLevel(s.mishap) - lights.level) * k;
+  lights.level += (lightLevel(s.mishap, !!mishapHolder(s)) - lights.level) * k;
   lights.gray += (stormGray(s.mishap) - lights.gray) * k;
   lights.depth += (dayDepth(s.speed) - lights.depth) * k;
   return shine(lights, s, daylightAt(s.day, lights.depth));
