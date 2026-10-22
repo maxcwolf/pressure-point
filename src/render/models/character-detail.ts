@@ -148,6 +148,14 @@ const eyes = () =>
     ),
   );
 
+/** Both eyes shut: a short dark line lying where each eye is, turned as the eyes are. */
+const eyesShut = () =>
+  fuse('eyes-shut', (n) =>
+    [-1, 1].map((s) =>
+      place(pill(0.006, 0.03, n), [s * EYE.x, EYE.y - 0.004, faceZ(EYE.x, EYE.y - 0.004)], [0, s * 0.3, Math.PI / 2]),
+    ),
+  );
+
 /** A glint of light in each eye, both on the same side, as if from one light. */
 const glints = () =>
   fuse('glints', (n) =>
@@ -218,11 +226,14 @@ const mouth = (e: Expression) =>
     return [place(arc(n, e === 'unhappy'), [0, y, faceZ(0, y) + 0.004], [0.42, 0, 0])];
   });
 
-/** The parts of a face that change with how someone feels, and the expression they show now. */
+/** The parts of a face that change with how someone feels, and the expression they show now, and whether the eyes are shut. */
 export interface Face {
   mouth: THREE.Mesh;
   brows: THREE.Mesh;
   expression: Expression;
+  eyes: THREE.Mesh;
+  glints: THREE.Mesh;
+  shut: boolean;
 }
 
 /**
@@ -234,6 +245,17 @@ export function showExpression(face: Face, e: Expression) {
   face.expression = e;
   face.mouth.geometry = mouth(e);
   face.brows.geometry = brows(e);
+}
+
+/**
+ * Open or shut a face's eyes, by giving them the shared shape of eyes open or shut, and hiding the glints while shut.
+ * Every face with its eyes shut shares the one shape, so the crowd draws them together.
+ */
+export function showEyes(face: Face, shut: boolean) {
+  if (face.shut === shut) return;
+  face.shut = shut;
+  face.eyes.geometry = shut ? eyesShut() : eyes();
+  face.glints.visible = !shut;
 }
 
 /** A moustache: two short sweeps under the nose. */
@@ -401,13 +423,16 @@ export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, 
   // each part is named for what it is, so a skinned person can tell the eyes, brows, mouth and hair apart
   const headMesh = put(head, headShape(), skin);
   headMesh.name = 'head';
-  put(head, eyes(), mat(0x1d1716, 0.2)).name = 'eyes';
-  put(head, glints(), mat(0xffffff, 0.3)).name = 'glints';
   const face: Face = {
     brows: put(head, brows('neutral'), hair),
     mouth: put(head, mouth('neutral'), mat(0x7a3a34, 0.55)),
     expression: 'neutral',
+    eyes: put(head, eyes(), mat(0x1d1716, 0.2)),
+    glints: put(head, glints(), mat(0xffffff, 0.3)),
+    shut: false,
   };
+  face.eyes.name = 'eyes';
+  face.glints.name = 'glints';
   face.brows.name = 'brows';
   face.mouth.name = 'mouth';
   const style = hatted ? HAIR.short : look.hairStyle;

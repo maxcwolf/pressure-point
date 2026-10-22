@@ -6,8 +6,8 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { CENTERS, CONDITIONS, ITEMS, ROLE_ORDER } from '../../src/core/data';
 
-/** The faces people make, other than at ease, each seen close up. */
-const FACES = ['delighted', 'unhappy', 'wince'].map((face) => `face:${face}`);
+/** The faces people make, other than at ease, and eyes shut, each seen close up. */
+const FACES = ['delighted', 'unhappy', 'wince', 'shut'].map((face) => `face:${face}`);
 
 /** Every model the lab shows, by its id there. */
 const IDS = [

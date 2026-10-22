@@ -43,7 +43,7 @@ import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
 import { buildBeach } from '../render/models/beach';
 import { buildCharacter, type CharRig } from '../render/models/character';
-import type { Expression } from '../render/models/character-detail';
+import { type Expression, showEyes } from '../render/models/character-detail';
 import { buildSite } from '../render/models/fence';
 import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
@@ -305,7 +305,7 @@ function setMood(c: Guest, mood: Mood) {
 
 /** A guest showing a condition's symptom, or cured of it, and waiting with their patience running out. */
 function guestSpecimen(def: ConditionDef): Specimen {
-  const st: PersonState & { healed: boolean; stressed: boolean; mood: string; poorly: boolean } = {
+  const st: PersonState & { healed: boolean; stressed: boolean; mood: string; poorly: boolean; shut: boolean } = {
     look: { ...LAB_LOOK },
     pose: 'stand',
     bubble: '',
@@ -314,6 +314,7 @@ function guestSpecimen(def: ConditionDef): Specimen {
     stressed: false,
     mood: 'content',
     poorly: false,
+    shut: false,
   };
   return {
     id: `guest:${def.id}`,
@@ -334,6 +335,7 @@ function guestSpecimen(def: ConditionDef): Specimen {
           toggle('In poor condition', st, 'poorly'),
           toggle('Healed', st, 'healed', true),
           toggle('Stressed', st, 'stressed'),
+          toggle('Eyes shut', st, 'shut'),
         ],
         /** Pose the guest. */
         animate(t, dt) {
@@ -341,6 +343,7 @@ function guestSpecimen(def: ConditionDef): Specimen {
           c.health = st.poorly ? POOR_CONDITION - 10 : 100;
           setMood(c, st.mood as Mood);
           posePerson(rig, c, st, t, dt);
+          if (st.shut) showEyes(rig.face, true);
         },
       };
     },
@@ -688,21 +691,22 @@ function runawaySpecimen(): Specimen {
   };
 }
 
-/** The faces a guest makes, other than at ease, and what the lab calls each. */
-const FACES: readonly (readonly [Exclude<Expression, 'neutral'>, string])[] = [
+/** The faces a guest makes, other than at ease, and what the lab calls each: each expression, and the eyes shut. */
+const FACES: readonly (readonly [Exclude<Expression, 'neutral'> | 'shut', string])[] = [
   ['delighted', 'Delighted, healed'],
   ['unhappy', 'Unhappy, running out of patience'],
   ['wince', 'Wincing, in poor condition'],
+  ['shut', 'Eyes shut, resting'],
 ];
 
 /** Make a guest feel the way that shows on their face as an expression. */
-function feel(c: Guest, e: Expression) {
+function feel(c: Guest, e: Expression | 'shut') {
   if (e === 'delighted') c.outcome = 'healed';
   else if (e === 'unhappy') c.patience = PATIENCE_SIGNS.impatient - 5;
   else if (e === 'wince') c.health = POOR_CONDITION - 10;
 }
 
-/** A plain guest making a face. */
+/** A plain guest making a face, or with their eyes shut. */
 function faceSpecimen([key, name]: (typeof FACES)[number]): Specimen {
   return {
     id: `face:${key}`,
@@ -714,8 +718,11 @@ function faceSpecimen([key, name]: (typeof FACES)[number]): Specimen {
       const rig = buildCharacter(LAB_LOOK);
       const c = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
       feel(c, key);
-      /** Pose them. */
-      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, { style: null });
+      /** Pose them, with their eyes shut if that is the face. */
+      const animate = (t: number, dt: number) => {
+        poseChar(rig, c, t, dt, { style: null });
+        if (key === 'shut') showEyes(rig.face, true);
+      };
       return { root: rig.group, controls: [], animate };
     },
   };

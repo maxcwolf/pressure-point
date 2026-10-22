@@ -8,7 +8,7 @@ import type { BubbleId, Char } from '../core/state/types';
 import { must } from '../core/util';
 import type { Act, Lying } from './acts';
 import { type CharRig, cureRig, type Joints } from './models/character';
-import { type Expression, showExpression } from './models/character-detail';
+import { type Expression, showExpression, showEyes } from './models/character-detail';
 import { buildHeld, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
 import { driftSmoke } from './models/sage';
@@ -150,6 +150,19 @@ const ACT_CYCLES: Partial<Record<Act, number>> = { drink: SIP, eat: SIP, litter:
  */
 export const PRONE_TURN = -1.45;
 
+/** How long a blink lasts, in seconds. */
+export const BLINK = 0.13;
+
+/**
+ * Whether someone is blinking at a moment: once every 3.2 to 5.4 seconds, each person at their own pace and time, so a
+ * crowd never blinks together.
+ */
+export function blinkAt(id: number, t: number) {
+  const period = 3.2 + hash(id) * 2.2;
+  const s = t + id * 0.73;
+  return ((s % period) + period) % period < BLINK;
+}
+
 /** How high a guest lying face down on a table lies, in meters, for the cheek and not the nose to meet it. */
 const PRONE_Y = 0.21;
 
@@ -228,6 +241,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   const healed = c.kind === 'guest' && c.outcome === 'healed';
   if (healed) cureRig(rig, c.look);
   showExpression(rig.face, expressionOf(c));
+  // resting on their back, on a table, a mat or a Recliner, the eyes are shut; anyone else blinks now and then
+  const asleep =
+    c.kind === 'guest' && c.pose === 'lie' && (c.state === 'resting' || (c.state === 'served' && cues.lie === 'back'));
+  showEyes(rig.face, asleep || blinkAt(c.id, t));
   const visual = healed ? undefined : rig.visual;
   const phase = rig.walked * STRIDE + c.id * 1.7;
   let legL = 0;

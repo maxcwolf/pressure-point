@@ -10,6 +10,8 @@ import { type Act, actOf, lyingAt } from '../../src/render/acts';
 import { buildCharacter, type CharRig } from '../../src/render/models/character';
 import {
   actMoment,
+  BLINK,
+  blinkAt,
   expressionOf,
   hasNothingToDo,
   IDLE,
@@ -388,5 +390,52 @@ describe('lying down', () => {
     poseChar(machine, lying(), 0, 1, { style: null });
     machine.group.updateMatrixWorld(true);
     expect(faceOf(machine).y).toBeLessThan(-0.9);
+  });
+});
+
+describe('blinking', () => {
+  it('comes now and then, for a moment, each person at their own time', () => {
+    for (const id of [1, 2, 7, 40]) {
+      let shut = 0;
+      let run = 0;
+      let longest = 0;
+      const step = 0.01;
+      for (let t = 0; t < 600; t += step) {
+        const b = blinkAt(id, t);
+        if (b) shut++;
+        run = b ? run + step : 0;
+        longest = Math.max(longest, run);
+      }
+      const share = (shut * step) / 600;
+      // a blink of BLINK seconds every 3.2 to 5.4 seconds
+      expect(share).toBeGreaterThan(BLINK / 5.5);
+      expect(share).toBeLessThan(BLINK / 3.1);
+      expect(longest).toBeLessThan(2);
+    }
+  });
+
+  it('never catches the lab with its eyes shut, so its pictures stay the same', () => {
+    expect(blinkAt(1, 0)).toBe(false);
+  });
+
+  it('shuts the eyes of a guest resting on their back, with shapes everyone shares', () => {
+    const rig = buildCharacter(LAB_LOOK);
+    const open = rig.face.eyes.geometry;
+    const g = {
+      ...demoGuest(LAB_LOOK, 'stiff_neck' as never),
+      pose: 'lie' as const,
+      h: 0.32,
+      state: 'resting' as const,
+    };
+    poseChar(rig, g, 0, 1, { style: null, lie: 'back' });
+    expect(rig.face.shut).toBe(true);
+    expect(rig.face.glints.visible).toBe(false);
+    const other = buildCharacter(LAB_LOOK);
+    poseChar(other, g, 0, 1, { style: null, lie: 'back' });
+    expect(other.face.eyes.geometry).toBe(rig.face.eyes.geometry);
+    // and open again once up
+    poseChar(rig, demoGuest(LAB_LOOK, 'stiff_neck' as never), 0, 1, { style: null });
+    expect(rig.face.eyes.geometry).toBe(open);
+    expect(rig.face.glints.visible).toBe(true);
   });
 });
