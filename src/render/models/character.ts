@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 
 import { type Role, ROLES, type Visual } from '../../core/data';
+import { SHOES } from '../../core/people';
 import type { Look, VisitorKind } from '../../core/state/types';
 import { owned } from '../disposal';
 import {
@@ -110,8 +111,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const bottom = mat(role === 'caretaker' ? 0x5c6b33 : (clothes?.bottom ?? look.bottom), 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
 
-  const { leg: legL, shin: shinL } = detailLeg(body, -0.095, bottom);
-  const { leg: legR, shin: shinR } = detailLeg(body, 0.095, bottom);
+  const shoes = mat(SHOES[look.shoes] ?? 0x3a302b, 0.5);
+  const { leg: legL, shin: shinL } = detailLeg(body, -0.095, bottom, shoes);
+  const { leg: legR, shin: shinR } = detailLeg(body, 0.095, bottom, shoes);
 
   // torso group pivots at the hips so slumps and leans bend in the right place
   const torso = new THREE.Group();

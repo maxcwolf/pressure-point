@@ -35,6 +35,9 @@ const TOPS = [
   0xe76f51, 0xf4a261, 0xe9c46a, 0x2a9d8f, 0x4d7ea8, 0xb56576, 0x8ab17d, 0x6d597a, 0xef8fa2, 0x5fa8d3, 0xf2f2f2,
 ];
 
+/** The colors shoes come in: the brown everyone wore before, black, tan and white. */
+export const SHOES = [0x3a302b, 0x1d1d22, 0x9b6b3f, 0xe8e4dc];
+
 const BOTTOMS = [0x3d405b, 0x5c4b3a, 0x2f4858, 0x6b705c, 0x7f5539, 0x4a4e69, 0x8d99ae];
 
 /** The hair styles, by the number a look keeps. A number already in saves never changes meaning. */
@@ -63,14 +66,18 @@ export const rollSex = (r: Rng, womenShare: number): Sex => (random(r) < womenSh
 const buildOf = (n: number) => [0, 1, 1, 2][n & 3] ?? 1;
 
 /**
- * What a look takes from the spare bits of the number its height was drawn from: its build and its glasses. The height uses the top
+ * What a look takes from the spare bits of the number its height was drawn from: its build, glasses and shoes. The height uses the top
  * bits, and these the bottom ones, so making someone up takes no more of the game's random numbers than it did, and a
  * seeded game runs as it always has.
  */
 function lookBits(height: number) {
   const bits = Math.floor(height * 2 ** 32) >>> 0;
-  // slight, average twice over, or stocky; and glasses on a quarter of people, round or square
-  return { build: buildOf(bits), glasses: ((bits >>> 2) & 3) === 0 ? 1 + ((bits >>> 4) & 1) : 0 };
+  // slight, average twice over, or stocky; glasses on a quarter of people, round or square; and any color of shoe
+  return {
+    build: buildOf(bits),
+    glasses: ((bits >>> 2) & 3) === 0 ? 1 + ((bits >>> 4) & 1) : 0,
+    shoes: (bits >>> 5) & 3,
+  };
 }
 
 /** A random appearance for a woman or a man: half of men have a moustache or a beard. */
@@ -87,12 +94,14 @@ export function randomLook(r: Rng, sex: Sex): Look {
 }
 
 /**
- * Give a look from before builds and glasses the fields it lacks, from the person's id rather than the game's
+ * Give a look from before builds, glasses and shoes the fields it lacks, from the person's id rather than the game's
  * random numbers, so loading a save changes nothing about what happens next.
  */
 export function settleLook(person: { id: number; look: Partial<Look> }) {
   person.look.build ??= [1, 0, 1, 2][person.id % 4] ?? 1;
   person.look.glasses ??= person.id % 4 === 1 ? 1 + ((person.id >> 2) % 2) : 0;
+  // everyone's shoes were brown, and stay so
+  person.look.shoes ??= 0;
 }
 
 const CAMEOS_BY_SEX: Readonly<Record<Sex, readonly string[]>> = {

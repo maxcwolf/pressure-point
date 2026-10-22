@@ -170,6 +170,8 @@ export interface Look {
   build: number;
   /** 0 none, 1 round, 2 square; a number already in saves never changes meaning. */
   glasses: number;
+  /** The color of their shoes, an index into `SHOES`; a number already in saves never changes meaning. */
+  shoes: number;
 }
 
 interface CharBase {

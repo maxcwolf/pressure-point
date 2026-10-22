@@ -34,6 +34,7 @@ const IDS = [
     'stocky',
     'glasses-round',
     'glasses-square',
+    'shoes',
   ].map((look) => `staff:look-${look}`),
   'visitor:vip',
   'visitor:inspector',

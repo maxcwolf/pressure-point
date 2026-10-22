@@ -867,7 +867,7 @@ const shoe = () =>
   ]);
 
 /** Build a leg hinged at the hip, with a shin and shoe hinged at the knee. */
-export function detailLeg(body: THREE.Group, x: number, bottom: THREE.Material) {
+export function detailLeg(body: THREE.Group, x: number, bottom: THREE.Material, shoes: THREE.Material) {
   const leg = new THREE.Group();
   leg.position.set(x, 0.42, 0);
   // a leg's shadow falls from its thigh and shin together, though each alone is too small to cast one
@@ -880,7 +880,7 @@ export function detailLeg(body: THREE.Group, x: number, bottom: THREE.Material) 
   const below = put(lower, shin(), bottom);
   below.name = 'trousers';
   below.userData.shadow = 'always';
-  put(lower, shoe(), mat(0x3a302b, 0.5)).name = 'shoe';
+  put(lower, shoe(), shoes).name = 'shoe';
   body.add(leg);
   return { leg, shin: lower };
 }

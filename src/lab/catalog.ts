@@ -357,7 +357,7 @@ interface Named {
   look: Look;
 }
 
-/** Every hair style, facial hair, build and pair of glasses, each on a receptionist, so a picture of each is kept. */
+/** Every hair style, facial hair, build and pair of glasses, and white shoes, each on a receptionist, to picture each. */
 const LOOKS: readonly (readonly [key: string, label: string, look: Partial<Look>])[] = [
   ['long', 'long hair', { hairStyle: HAIR.long }],
   ['bob', 'a bob', { hairStyle: HAIR.bob, hair: 0x8a5a2b }],
@@ -371,6 +371,7 @@ const LOOKS: readonly (readonly [key: string, label: string, look: Partial<Look>
   ['stocky', 'a stocky build', { sex: 'male', hairStyle: HAIR.short, build: 2, skin: 0xb97a55, hair: 0x2b1d16 }],
   ['glasses-round', 'round glasses', { glasses: 1 }],
   ['glasses-square', 'square glasses', { sex: 'male', hairStyle: HAIR.short, glasses: 2, hair: 0x8a5a2b }],
+  ['shoes', 'white shoes', { shoes: 3, hairStyle: HAIR.ponytail, hair: 0xd9a441 }],
 ];
 
 /** Which member of staff sits at each item they work at. */

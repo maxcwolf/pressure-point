@@ -1,6 +1,6 @@
 // Women and men: everyone is one or the other, and their first name, hair and facial hair follow it. Applicants for
 // the desk and the treatment tables are mostly women, caretakers mostly men, and guests half and half. And the rest of
-// a look: a build and glasses.
+// a look: a build, glasses and shoes.
 import { describe, expect, it } from 'vitest';
 
 import { AMANDA, CAMEOS, MEN_NAMES, ROLE_ORDER, WOMEN_APPLY, WOMEN_NAMES } from '../../src/core/data';
@@ -14,6 +14,7 @@ import {
   settleLook,
   settleSex,
   sexOfName,
+  SHOES,
   WOMEN_HAIR,
 } from '../../src/core/people';
 import { random, setSeed, stream } from '../../src/core/random';
@@ -196,6 +197,13 @@ describe('the rest of a look', () => {
     expect(new Set(looks.map((l) => l.glasses))).toEqual(new Set([0, 1, 2]));
   });
 
+  it('puts shoes on in any of four colors', () => {
+    const looks = many();
+    expect(new Set(looks.map((l) => l.shoes))).toEqual(new Set([0, 1, 2, 3]));
+    for (const shoes of [0, 1, 2, 3]) expect(share(looks, (l) => l.shoes === shoes)).toBeCloseTo(0.25, 1);
+    expect(SHOES).toHaveLength(4);
+  });
+
   it("takes no more of the game's random numbers than a look ever did", () => {
     for (const sex of ['female', 'male'] as const) {
       const r = stream(12);
@@ -221,6 +229,10 @@ describe('the rest of a look', () => {
       return p.look.glasses;
     });
     expect(glasses).toEqual([1, 0, 2, 1]);
+    // and the brown shoes everyone wore before
+    const shod = { id: 3, look: {} as Partial<Look> };
+    settleLook(shod);
+    expect(shod.look.shoes).toBe(0);
     const stocky = { id: 1, look: { build: 2 } as Partial<Look> };
     settleLook(stocky);
     expect(stocky.look.build).toBe(2);

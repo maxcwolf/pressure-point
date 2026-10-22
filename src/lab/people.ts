@@ -15,6 +15,7 @@ export const LAB_LOOK: Look = {
   beard: 0,
   build: 1,
   glasses: 0,
+  shoes: 0,
 };
 
 /** What every person has, standing still at the middle of the stage and facing the front. */

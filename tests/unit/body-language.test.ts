@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { ITEMS, POOR_CONDITION } from '../../src/core/data';
+import { SHOES } from '../../src/core/people';
 import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
 import { type Act, actOf, lyingAt } from '../../src/render/acts';
@@ -458,5 +459,22 @@ describe('glasses', () => {
     // and back on once cured
     poseChar(burnt, { ...demoGuest(look, 'stiff_neck' as never), outcome: 'healed' }, 0, 1, { style: null });
     expect(on(burnt)).toBe(true);
+  });
+});
+
+describe('shoes', () => {
+  it('come in the color of the look, sharing the shape everyone has', () => {
+    /** The material of someone's shoes, by part name. */
+    const shoes = (rig: CharRig) => {
+      const found: THREE.Mesh[] = [];
+      rig.group.traverse((o) => o.name === 'shoe' && found.push(o as THREE.Mesh));
+      return found;
+    };
+    const white = shoes(buildCharacter({ ...LAB_LOOK, shoes: 3 }));
+    const brown = shoes(buildCharacter(LAB_LOOK));
+    expect(white).toHaveLength(2);
+    expect((white[0]!.material as THREE.MeshStandardMaterial).color.getHex()).toBe(SHOES[3]);
+    expect((brown[0]!.material as THREE.MeshStandardMaterial).color.getHex()).toBe(SHOES[0]);
+    expect(white[0]!.geometry).toBe(brown[0]!.geometry);
   });
 });
