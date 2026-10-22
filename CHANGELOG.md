@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **Small fixes.** The bottom bar fits windows 1240 to 1540 pixels wide and shows the date whole at 1440, the tool hint reads as a row of chips, and the sign out front reads from behind.
+- **The machines in their own clothes.** Each treatment machine has an icon, a room sign and a treatment icon of its own, its model is polished to match the rest of the furniture, and an upgraded machine shows its stars on a brass plate, as the tables do.
 
 ## v0.31.0
 

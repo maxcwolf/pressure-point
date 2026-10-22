@@ -1186,7 +1186,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   kneadmaster: {
     type: 'kneadmaster',
     name: 'Kneadmaster 9000',
-    icon: 'item-massage-chair',
+    icon: 'item-kneadmaster',
     desc: 'Forty-eight hands, all of them firm. The manual is in a language nobody has identified. It smokes when it is worn, and can overload.',
     cost: 0,
     w: 3,
@@ -1212,7 +1212,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   pin_press: {
     type: 'pin_press',
     name: 'Pin Press',
-    icon: 'item-needle-cabinet',
+    icon: 'item-pin-press',
     desc: 'A pin-art desk toy the size of a garage door. The best outlines are framed and hung, which the room is the finer for. It smokes when it is worn, and can overload.',
     cost: 0,
     w: 3,
@@ -1238,7 +1238,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   aura_wash: {
     type: 'aura_wash',
     name: 'Aura Wash',
-    icon: 'item-reiki-altar',
+    icon: 'item-aura-wash',
     desc: 'Pre-soak, brushes made of hands, rinse and blow-dry. Guests go in one end and out the other. Sea air wears it, a storm stops it, and it can overload.',
     cost: 0,
     w: 2,
@@ -1264,7 +1264,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   great_alphorn: {
     type: 'great_alphorn',
     name: 'Great Alphorn',
-    icon: 'item-singing-bowls',
+    icon: 'item-great-alphorn',
     desc: 'Five tiles of horn. The guest stands in the bell. Very loud while it plays, all over the building, and it can overload.',
     cost: 0,
     w: 1,
@@ -1288,7 +1288,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   cider_press: {
     type: 'cider_press',
     name: 'Cider Press of Rebirth',
-    icon: 'item-brew-pot',
+    icon: 'item-cider-press',
     desc: 'A great oak press. The guest goes in sour and comes out rosy, with a glass of what was squeezed out of them. The barrels draw the wasps.',
     cost: 0,
     w: 3,
@@ -1314,7 +1314,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   wheel_of_rebirth: {
     type: 'wheel_of_rebirth',
     name: 'Carousel of Rebirth',
-    icon: 'item-fortune-teller',
+    icon: 'item-wheel-of-rebirth',
     desc: 'Round through every past life, and off as themselves. Plays a tune. Bought with karma, and open at every center once it is.',
     cost: 0,
     w: 5,
@@ -1341,7 +1341,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   stone_kiln: {
     type: 'stone_kiln',
     name: 'Hot Stone Kiln',
-    icon: 'item-stone-warmer',
+    icon: 'item-stone-kiln',
     desc: 'A pottery kiln with a warm slab in front. Hot Stone Therapy a quarter quicker, with no Stone Warmer to keep stocked, at the same fee. It heats the room while it works, burns gas every month, and wears twice as fast.',
     cost: 12000,
     w: 2,
@@ -1369,7 +1369,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   octopus: {
     type: 'octopus',
     name: 'The Octopus',
-    icon: 'item-cupping-cart',
+    icon: 'item-octopus',
     desc: 'Gentle, tireless, and does not like being called “it”. Cupping with eight arms, quicker, at the same fee. Now and then it keeps a cup, and the cups have to be bought again.',
     cost: 14000,
     w: 2,
@@ -1396,7 +1396,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   geode: {
     type: 'geode',
     name: 'The Geode',
-    icon: 'item-crystal-grid',
+    icon: 'item-geode',
     desc: 'A split amethyst geode big enough to stand in. Crystal Reiki inside it works more often, and it is handsome, but it is no quicker, and it takes the floor of a second table.',
     cost: 14000,
     w: 2,
@@ -1422,7 +1422,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   big_gong: {
     type: 'big_gong',
     name: 'Gong of Last Resort',
-    icon: 'item-gong',
+    icon: 'item-big-gong',
     desc: 'Struck once a session. Felt in the car park. Every session in its studio is a fifth shorter, but it carries much further than the little gong.',
     cost: 16000,
     w: 2,
@@ -1442,7 +1442,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
   fog_machine: {
     type: 'fog_machine',
     name: 'Spirit Fog Machine',
-    icon: 'item-diffuser',
+    icon: 'item-fog-machine',
     desc: 'A nightclub fog machine. Every trip in its lodge counts the set and setting as perfect, whatever the room is like. The smoke alarm reports a good trip.',
     cost: 5000,
     w: 1,
