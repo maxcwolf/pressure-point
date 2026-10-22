@@ -17,6 +17,7 @@ import { ICON_IDS, type IconId, SCENE_ICON_IDS, type SceneIconId } from '../core
 import type { Look } from '../core/state/types';
 import { addLights, placeSun } from '../render/lighting';
 import { buildCharacter } from '../render/models/character';
+import { showEyes } from '../render/models/character-detail';
 import { iconTexture, loadIcons } from '../render/models/icons';
 import { buildItem } from '../render/models/items';
 import { poseChar } from '../render/pose';
@@ -201,7 +202,11 @@ function Scene() {
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
       }
-      for (const p of people) poseChar(p.rig, p.c, t, 1, { style: null });
+      for (const p of people) {
+        poseChar(p.rig, p.c, t, 1, { style: null });
+        // eyes open, so nobody is ever caught mid-blink in a picture of the sheet
+        showEyes(p.rig.face, false);
+      }
       placeSun(sun, orbit.target.clone().setY(0));
       renderer.render(scene, camera);
     };
