@@ -10,6 +10,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **When to buy land.** In your first Willow Lane game, the advisor says at the first star what land has come up for sale and when to buy it (once the building has no room left for a treatment room, and not before), with a line on the "Getting ready" checklist for it. In any game, picking a room that fits nowhere in the building says so in the hint, and names the cheapest plot for sale, the one the builders are still at, or the star the next comes up at.
 - **The Posture Lab runs itself.** Its scanner needs no Consultant, only $250 a month to run and a Caretaker when it wears out, and a scan now makes the diagnosis certain, adding more to the chance of success on an upgraded scanner.
 - **Structural conditions.** Crick of the Neck, Text Neck, Croquet Back and Wipeout are in the spine and the joints: a Consultant can see them but not pin them down, so without a working Posture Lab their treatment is a best guess and less likely to work. The guest's inspector shows which guests are structural and which were treated on a guess.
+- **The Exchange looks downtown.** A paved plaza with street trees in planters, lamp posts, a crossing over the road and office blocks across the streets round it, in place of Willow Lane's lawn and woods; land for sale there is a gravel lot.
 
 ## v0.32.2
 
