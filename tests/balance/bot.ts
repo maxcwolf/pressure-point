@@ -53,7 +53,7 @@ import { Sim } from '../../src/core/sim/sim';
 import { inRush, SEASON_AHEAD_DAYS, seasonOf } from '../../src/core/sim/twists';
 import { upgradeCost } from '../../src/core/sim/upgrades';
 import { worsenRate } from '../../src/core/sim/worsening';
-import { disciplineOn, newGame, offeringOn, unlockedUpTo } from '../../src/core/state/game';
+import { disciplineOn, newGame, offeringOn, starsEarned, unlockedUpTo } from '../../src/core/state/game';
 import type { Emergency, GameState, Guest, Item, Room, Staff, WallSpot } from '../../src/core/state/types';
 import { footprint, onWall, type Rect } from '../../src/core/world';
 
@@ -2015,7 +2015,10 @@ export class Bot {
     }
   }
 
-  /** The center's machine rooms that are open and not built yet. */
+  /**
+   * The center's machine rooms not built yet whose star the center has earned: not merely open, as The Orchard's are
+   * from the day it opens, when the space is wanted for the opening.
+   */
   private machinesToCome(): RoomType[] {
     const s = this.s;
     return ROOM_ORDER.filter((type) => {
@@ -2025,7 +2028,7 @@ export class Bot {
         !!def.only?.includes(s.center) &&
         !!def.discipline &&
         disciplineOn(s, def.discipline) &&
-        (def.unlock ?? 0) <= unlockedUpTo(s) &&
+        (def.unlock ?? 0) <= starsEarned(s) &&
         !this.sim.hasRoom(type)
       );
     });
