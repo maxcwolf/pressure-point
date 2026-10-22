@@ -2,6 +2,12 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Floor is paid for however a room gets it.** Every tile dragged out past a room's smallest size costs $200 when it is built, as a resize does, and the hint shows the price as you drag. Floor paid for comes back at half when given up.
+- **A rival you can catch.** ZenMart grows only until it stands a quarter above you, so a center that keeps growing can overtake it. A delighted VIP, word of mouth and winning Center of the Year each knock it back, and the Standing tab shows its ceiling and what knocks it back.
+- **Standing earned by working.** A room counts fully only while someone on the payroll can work in it, staff count by rank, and every guest healed adds to it, so Restrooms and Trainees no longer buy a grade.
+
 ## v0.31.0
 
 ### A center that tells you where it stands
