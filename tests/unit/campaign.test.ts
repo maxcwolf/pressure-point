@@ -315,7 +315,7 @@ describe('The Boardwalk', () => {
     const { sim, s } = openCenter(1);
     const ctx = createContext(s);
     expect(s.intakeCap).toBeNull();
-    expect(sim.intakeLimit()).toBe(guestCap(s));
+    expect(sim.intakeLimit()).toBe(guestCap(ctx));
     sim.setIntakeCap(6);
     expect(sim.intakeLimit()).toBe(6);
     s.open = true;
@@ -331,10 +331,10 @@ describe('The Boardwalk', () => {
     sim.setIntakeCap(1);
     expect(s.intakeCap).toBe(INTAKE_CAP_MIN);
     sim.setIntakeCap(1000);
-    expect(sim.intakeLimit()).toBe(guestCap(s));
+    expect(sim.intakeLimit()).toBe(guestCap(ctx));
     sim.setIntakeCap(null);
     expect(s.intakeCap).toBeNull();
-    expect(sim.intakeLimit()).toBe(guestCap(s));
+    expect(sim.intakeLimit()).toBe(guestCap(ctx));
   });
 
   it('has its own seaside ailments, found nowhere else', () => {

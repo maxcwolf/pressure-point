@@ -1,8 +1,18 @@
 // What the game says about which discipline guests come for, and why: in a room's inspector and the Stats menu.
 
-import { DISCIPLINES, modalityLabel, ROLES, ROOMS } from '../../core/data';
+import {
+  CAPACITY_ARRIVALS,
+  type CenterDef,
+  CONSULT_FEEDS,
+  DISCIPLINES,
+  GUEST_CAP,
+  modalityLabel,
+  ROLES,
+  ROOMS,
+} from '../../core/data';
 import type { Discipline } from '../../core/data/types';
-import type { DisciplineDemand } from '../../core/sim/demand';
+import type { Capacity, DisciplineDemand } from '../../core/sim/demand';
+import type { ArrivalPace } from '../../core/sim/guests';
 import type { IconLine } from './icon-line';
 
 /** A multiplier as it reads, to two places at most: "×1.4", "×0.75", "×1". */
@@ -83,17 +93,103 @@ export function demandAdvice(row: DisciplineDemand): string | null {
   return null;
 }
 
-/** How many guests arrive for what the center offers: more for each discipline staffed past the first. */
-export function offeringNote(staffed: number, arrivals: number): string {
-  if (staffed <= 1)
-    return 'Each discipline you add, with its room and a practitioner on the payroll, brings more guests in all.';
-  return `${staffed} disciplines with a room and a practitioner bring guests ${times(arrivals)} as often as one would.`;
+/** A count of things as it reads: "1 station", "6 stations". */
+const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/** What the center can treat at once, as a phrase: "6 staffed treatment stations". */
+const stationsWord = (n: number) => count(n, 'staffed treatment station');
+
+/** The staffed stations that draw guests, as a phrase: "6 staffed treatment stations", or "4 of 7 …" when the consultations cannot keep them all in guests. */
+const fedWord = (c: Capacity) =>
+  c.fed < c.stations ? `${c.fed} of ${stationsWord(c.stations)}` : stationsWord(c.stations);
+
+/**
+ * How often guests arrive, factor by factor, with the counts behind each: "About 28 new guests a month: 9 at 50%
+ * reputation, ×1.6 for 6 staffed treatment stations, ×1.9 for the season, ×1.1 for its grade, less 8% kept away by
+ * long lines."
+ */
+export function paceNote(p: ArrivalPace, reputation: number, center: CenterDef): string {
+  const parts = [`${Math.round(p.base)} at ${Math.round(reputation)}% reputation`];
+  const c = p.capacity;
+  const more = `each one more brings ${Math.round(CAPACITY_ARRIVALS.each * 100)}% more`;
+  if (c.fed > 1) {
+    const fed =
+      c.fed < c.stations
+        ? ` (${count(c.consults, 'Consultation Room keeps', 'Consultation Rooms keep')} only ${c.fed} in guests)`
+        : '';
+    parts.push(`${times(p.staffed)} for ${fedWord(c)}${fed}`);
+  } else parts.push(`${fedWord(c)} (${more})`);
+  /** A factor, if it moves the pace at all. */
+  const by = (f: number, why: string) => {
+    if (Math.abs(f - 1) > 0.005) parts.push(`${times(f)} ${why}`);
+  };
+  by(p.parts.center, 'for this center');
+  by(p.parts.time, center.rush ? 'for the rush hour, or the lull between' : 'for the season');
+  by(p.parts.grade, 'for its grade');
+  by(p.parts.rival, 'with the rival across the street');
+  by(p.parts.mishap, 'while the mishap lasts');
+  by(p.difficulty, 'for the difficulty');
+  const away = Math.round((1 - p.lines) * 100);
+  if (away >= 1) parts.push(`less ${away}% kept away by long lines`);
+  return `About ${Math.round(p.perMonth)} new guests a month: ${parts.join(', ')}.`;
 }
 
-/** How many guests long lines keep away, for the top of the panel, or nothing if they keep nobody away. */
-export function lineNote(arrivals: number): string | null {
-  const away = Math.round((1 - arrivals) * 100);
-  return away >= 1 ? `Long lines for treatment are keeping ${away}% of new guests away.` : null;
+/**
+ * The treatment stations that draw nobody now, and why: more than the consultations can keep in guests, nobody on the
+ * payroll to work them, or a practitioner away on a course or a house call. Nothing if every station draws.
+ */
+export function capacityNote(c: Capacity): string | null {
+  const parts: string[] = [];
+  const unfed = c.stations - c.fed;
+  if (unfed)
+    parts.push(
+      `${count(unfed, 'staffed treatment station draws', 'staffed treatment stations draw')} nobody more: every guest is seen in a Consultation Room first, and each keeps only ${CONSULT_FEEDS} stations in guests. Another would let ${unfed === 1 ? 'it' : 'them'} draw, and let more in at once`,
+    );
+  if (c.idle)
+    parts.push(
+      `${count(c.idle, 'treatment station has', 'treatment stations have')} nobody on the payroll to work ${c.idle === 1 ? 'it' : 'them'}: a practitioner for each would bring guests more often and let more in at once`,
+    );
+  if (c.away)
+    parts.push(
+      `${count(c.away, 'treatment station stands', 'treatment stations stand')} idle while ${c.away === 1 ? 'its practitioner is' : 'their practitioners are'} away on a course or a house call, and draw${c.away === 1 ? 's' : ''} nobody until they are back`,
+    );
+  return parts.length ? `${parts.join('. ')}.` : null;
+}
+
+/** The building's limit on guests at once, what it is made of, and what it has cost this month. */
+export interface Limit {
+  /** What the building lets in, the player's own limit if any, and how many are in now. */
+  building: number;
+  own: number | null;
+  inside: number;
+  /** Guests who found the center full this month. */
+  away: number;
+}
+
+/** What would let more guests in at once, and how many: another staffed station, or a Consultation Room for those it cannot keep in guests. */
+function moreRoom(c: Capacity): string {
+  const unfed = c.stations - c.fed;
+  if (!unfed) return `another staffed treatment station lets in ${GUEST_CAP.station} more`;
+  const more = GUEST_CAP.consult + GUEST_CAP.station * Math.min(CONSULT_FEEDS, unfed);
+  return `another staffed Consultation Room lets in ${more} more`;
+}
+
+/**
+ * The limit on guests at once in words: "The building lets in 24 guests at once: 4, and 2 for each of 6 staffed
+ * treatment stations and 4 for each of 2 staffed Consultation Rooms. 21 in now. 5 guests found it full this month and
+ * went elsewhere, with their fees: another staffed treatment station lets in 2 more."
+ */
+export function limitNote(l: Limit, c: Capacity): string {
+  const rooms =
+    c.consults === 1
+      ? `${GUEST_CAP.consult} for the staffed Consultation Room`
+      : `${GUEST_CAP.consult} for each of ${count(c.consults, 'staffed Consultation Room')}`;
+  const made = `${GUEST_CAP.base}, and ${GUEST_CAP.station} for each of ${fedWord(c)} and ${rooms}`;
+  const own = l.own !== null && l.own < l.building ? ` Your own limit is ${l.own}.` : '';
+  const away = l.away
+    ? ` ${count(l.away, 'guest')} found it full this month and went elsewhere, with their fees: ${moreRoom(c)}${own ? ', or raise your own limit' : ''}.`
+    : ' Nobody has found it full this month.';
+  return `The building lets in ${count(l.building, 'guest')} at once: ${made}. ${l.inside} in now.${own}${away}`;
 }
 
 /** How the shares are made, for the top of the panel. */

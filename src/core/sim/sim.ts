@@ -87,7 +87,7 @@ import {
 } from './classes';
 import { createContext, type SimContext } from './context';
 import { decorateRoom } from './decor';
-import { demand, type DisciplineDemand, fadeFollowing, offeringArrivals, roomPull, staffedDisciplines } from './demand';
+import { demand, type DisciplineDemand, fadeFollowing, roomPull } from './demand';
 import {
   borrow,
   monthEnd,
@@ -104,7 +104,7 @@ import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } fr
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { objectiveDetail } from './goals';
-import { admitGuests, intakeLimit, setIntakeCap, updateGuest } from './guests';
+import { admitGuests, type ArrivalPace, arrivalPace, guestCap, intakeLimit, setIntakeCap, updateGuest } from './guests';
 import { buyPlot, landOffers, renamePlot, updateLand } from './land';
 import { announceOpenings, machineBusy, machineUpkeep, practicable } from './machines';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
@@ -385,9 +385,14 @@ export class Sim {
     return demand(this.ctx);
   }
 
-  /** The disciplines offered with a room and a practitioner, and how much more often guests arrive for them. */
-  offering(): { staffed: number; arrivals: number } {
-    return { staffed: staffedDisciplines(this.ctx).length, arrivals: offeringArrivals(this.ctx) };
+  /** How often guests arrive now, and each thing that moves the pace: reputation, what the center can treat, the lines. */
+  arrivalPace(): ArrivalPace {
+    return arrivalPace(this.ctx);
+  }
+
+  /** How many guests the building lets in at once, from its staffed treatment stations and consultations. */
+  guestCap(): number {
+    return guestCap(this.ctx);
   }
 
   // ---- Treatments ------------------------------------------------------------
@@ -629,7 +634,7 @@ export class Sim {
 
   /** How many guests are let in at once: what the building allows, or the player's own limit if it is lower. */
   intakeLimit(): number {
-    return intakeLimit(this.s);
+    return intakeLimit(this.ctx);
   }
 
   /** Set the multiplier on every fee. */

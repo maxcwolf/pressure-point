@@ -2,8 +2,9 @@
 
 import type { CenterDef } from '../../core/data';
 import { dateOf } from '../../core/format';
+import type { ArrivalPace } from '../../core/sim/guests';
 import { rushOutlook, type Season, seasonTurn } from '../../core/sim/twists';
-import { times } from './demand';
+import { paceNote, times } from './demand';
 
 /** A season's name, capitalized. */
 export const SEASON_NAMES: Readonly<Record<Season, string>> = {
@@ -48,8 +49,16 @@ export function rushLine(day: number, center: CenterDef): string | null {
   return `Between rush hours: ${times(o.factor)} the usual guests. The next starts ${inDays(o.daysUntil)}, at ${times(o.nextFactor)}.`;
 }
 
-/** What the bottom bar's date says on hover: the date and weather, and the seasons or rush hours where there are any. */
-export function calendarTip(day: number, center: CenterDef): string {
-  const lines = ['Date and weather', seasonLine(day, center), rushLine(day, center)].filter((l) => l !== null);
+/**
+ * What the bottom bar's date says on hover: the date and weather, the seasons or rush hours where there are any, and,
+ * given the pace guests arrive at now, how many a month that comes to, factor by factor.
+ */
+export function calendarTip(day: number, center: CenterDef, pace?: { p: ArrivalPace; reputation: number }): string {
+  const lines = [
+    'Date and weather',
+    seasonLine(day, center),
+    rushLine(day, center),
+    pace ? paceNote(pace.p, pace.reputation, center) : null,
+  ].filter((l) => l !== null);
   return lines.join(' ');
 }

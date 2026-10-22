@@ -15,6 +15,7 @@ import {
 } from '../../src/core/data';
 import type { Layout } from '../../src/core/room-layout';
 import type { SimContext } from '../../src/core/sim/context';
+import { capacity, capacityArrivals } from '../../src/core/sim/demand';
 import {
   machineBuilt,
   machineSeconds,
@@ -55,6 +56,21 @@ function withKneader() {
   center.s.open = true;
   return { ...center, suite, chair };
 }
+
+describe('a machine room and the guests it draws', () => {
+  it('counts as a staffed treatment station like a table, with nothing of its own', () => {
+    const { sim, chair } = withKneader();
+    const ctx = ctxOf(sim);
+    // a table and the Kneadmaster, with one Massage Therapist: one station, and one standing idle
+    expect(capacity(ctx)).toMatchObject({ stations: 1, by: { massage: 1 }, idle: 1 });
+    hire(sim, 'therapist');
+    expect(capacity(ctx)).toMatchObject({ stations: 2, by: { massage: 2 }, idle: 0 });
+    expect(capacityArrivals(capacity(ctx))).toBeCloseTo(1.12, 5);
+    // broken down, it draws nobody until it is put right
+    chair.wear = 100;
+    expect(capacity(ctx)).toMatchObject({ stations: 1 });
+  });
+});
 
 describe('the machines as data', () => {
   it('give every signature machine a room of its own, and its techniques to that machine alone', () => {

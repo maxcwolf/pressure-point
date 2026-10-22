@@ -5,10 +5,13 @@ import {
   BORED_PATIENCE,
   type ConditionId,
   conditionOf,
+  DAY_SECONDS,
+  DAYS_PER_MONTH,
   DIRT_FILTHY,
   DISCOMFORT_DRAIN,
   EMERGENCY_CONDITION,
   FILTHY_PATIENCE,
+  GUEST_CAP,
   HEAT_THIRST,
   ITEMS,
   LONG_WAIT_PATIENCE,
@@ -33,7 +36,7 @@ import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import { missClass, missToast } from './classes';
 import type { SimContext } from './context';
-import { chooseCondition, demand, lineArrivals, offeringArrivals } from './demand';
+import { type Capacity, capacity, capacityArrivals, chooseCondition, demand, lineArrivals } from './demand';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
@@ -47,7 +50,7 @@ import { dueRegular, regularPatience, welcomeBack } from './regulars';
 import { stationStaff } from './sessions';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf } from './treatments';
-import { arrivalFactor, cutOff, impatience } from './twists';
+import { type ArrivalParts, arrivalParts, cutOff, impatience } from './twists';
 import { addWear, dirtier } from './upkeep';
 import { wallDrain } from './wall-items';
 import { discomfort, feelTemperature, hotness, warmthAt } from './warmth';
@@ -69,9 +72,60 @@ const NEED_ICON = {
   play: 'bubble-play',
 } as const;
 
+/** How often guests arrive now, and why: each thing that moves the pace, as a multiplier on the one before. */
+export interface ArrivalPace {
+  /** Guests a month at this reputation alone, with nothing else moving the pace. */
+  base: number;
+  /** The center's twist, season or rush hour, grade, rival and any storm. */
+  parts: ArrivalParts;
+  /** What the center can treat at once, and how much more often guests arrive for it. */
+  capacity: Capacity;
+  staffed: number;
+  /** How often guests arrive against how often they would with no line putting anyone off, from 1 down. */
+  lines: number;
+  /** The difficulty's own multiplier. */
+  difficulty: number;
+  /** The seconds between one new guest and the next, on average, and the guests a month that comes to. */
+  seconds: number;
+  perMonth: number;
+}
+
+/** The game seconds in a month, for turning a pace into guests a month. */
+const MONTH = DAY_SECONDS * DAYS_PER_MONTH;
+
 /**
- * Bring in a new guest now and then, more often as the center's reputation grows, and less often while long lines for
- * treatment put guests off.
+ * How often guests arrive now: every `30 − 0.2 × reputation` seconds, more often for each staffed treatment station
+ * past the first, and as the center's twist, its season or rush hour and its grade say, less often while the rival
+ * draws some away or long lines put new guests off, and as the difficulty sets.
+ */
+export function arrivalPace(ctx: SimContext): ArrivalPace {
+  const s = ctx.s;
+  const parts = arrivalParts(ctx);
+  const cap = capacity(ctx);
+  const staffed = capacityArrivals(cap);
+  const lines = lineArrivals(demand(ctx));
+  const difficulty = tuning(s, 'arrivals');
+  const seconds =
+    (30 - s.reputation * 0.2) /
+    (parts.center * parts.time * parts.grade * parts.rival * parts.mishap) /
+    staffed /
+    lines /
+    difficulty;
+  return {
+    base: MONTH / (30 - s.reputation * 0.2),
+    parts,
+    capacity: cap,
+    staffed,
+    lines,
+    difficulty,
+    seconds,
+    perMonth: MONTH / seconds,
+  };
+}
+
+/**
+ * Bring in a new guest now and then, more often as the center's reputation grows and as it can treat more at once, and
+ * less often while long lines for treatment put guests off.
  */
 export function admitGuests(ctx: SimContext, dt: number) {
   const s = ctx.s;
@@ -81,29 +135,27 @@ export function admitGuests(ctx: SimContext, dt: number) {
   if (s.spawnT > 0) return;
   // a regular due back takes the place of someone new; a guest the building, or the player, has no room for goes
   // elsewhere, and is counted, so the cost of a full center can be seen
-  if (guestsCounted(s) < intakeLimit(s)) {
+  if (guestsCounted(s) < intakeLimit(ctx)) {
     const regular = dueRegular(s);
     spawnGuest(ctx, undefined, false, 0, regular);
   } else countTurnedAway(ctx);
-  s.spawnT =
-    ((30 - s.reputation * 0.2) * rnd(s, 0.7, 1.3)) /
-    arrivalFactor(ctx) /
-    offeringArrivals(ctx) /
-    lineArrivals(demand(ctx)) /
-    tuning(s, 'arrivals');
+  s.spawnT = arrivalPace(ctx).seconds * rnd(s, 0.7, 1.3);
 }
 
-/** How many guests the building lets in at once: more for every finished room, not counting blueprints. */
-export function guestCap(s: GameState): number {
-  return 14 + s.rooms.filter((r) => r.done).length * 5;
+/**
+ * How many guests the building lets in at once, from what it can treat: a few, and more for each staffed treatment
+ * station and each staffed Consultation Room. Tables nobody works, and rooms still blueprints, add nothing.
+ */
+export function guestCap(ctx: SimContext, cap: Capacity = capacity(ctx)): number {
+  return GUEST_CAP.base + GUEST_CAP.station * cap.fed + GUEST_CAP.consult * cap.consults;
 }
 
 /** The fewest guests at once the player can limit the center to. */
 export const INTAKE_CAP_MIN = 4;
 
 /** How many guests are let in at once: what the building allows, or the player's own limit if it is lower. */
-export function intakeLimit(s: GameState): number {
-  return Math.min(guestCap(s), s.intakeCap ?? Infinity);
+export function intakeLimit(ctx: SimContext): number {
+  return Math.min(guestCap(ctx), ctx.s.intakeCap ?? Infinity);
 }
 
 /**

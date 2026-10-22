@@ -11,6 +11,7 @@
 import { itemOpen } from '../../src/core/campaign';
 import {
   type CampaignKind,
+  CAPACITY_ARRIVALS,
   type CenterId,
   CENTERS,
   CLASS_DAYS,
@@ -349,6 +350,9 @@ export interface MonthLog {
   /** Finished treatment rooms (a discipline’s own), and Qi Gong Instructors on the payroll, at the month’s end; not in older logs. */
   treatRooms?: number;
   instructors?: number;
+  /** Staffed treatment stations and the building's limit on guests at once, at the month's end; not in older logs. */
+  stations?: number;
+  guestCap?: number;
   arrived: number;
   /** Guests who found the center full and went elsewhere. */
   turnedAway: number;
@@ -708,6 +712,8 @@ export class Bot {
       rooms: s.rooms.filter((r) => r.done).length,
       treatRooms: s.rooms.filter((r) => r.done && ROOMS[r.type].discipline).length,
       instructors: this.staffOf('instructor').length,
+      stations: this.sim.arrivalPace().capacity.stations,
+      guestCap: this.sim.guestCap(),
       arrived: st.arrived - this.monthStart.arrived,
       turnedAway: rec?.turnedAway ?? 0,
       healed: st.healed - this.monthStart.healed,
@@ -2150,7 +2156,10 @@ export class Bot {
         this.hireToFill();
       }
       const consults = this.rooms('consult').length;
-      if (this.waiting('consultant') > consults * 4 && this.afford(ROOMS.consult.cost, reserve * 0.5, true)) {
+      // a building at its limit keeps the line from growing to show it: guests turned away last month count toward
+      // another room too, while two or more wait for each consultation
+      const full = (this.s.months.at(-1)?.turnedAway ?? 0) >= 3 && this.waiting('consultant') >= consults * 2;
+      if ((this.waiting('consultant') > consults * 4 || full) && this.afford(ROOMS.consult.cost, reserve * 0.5, true)) {
         if (!this.sim.hasRoom('assess') && s.money > ROOMS.assess.cost + reserve) this.buildRoom('assess');
         else this.buildRoom('consult');
         this.hireToFill();
@@ -2198,7 +2207,8 @@ export class Bot {
 
   /**
    * What another staffed room for a discipline is expected to add a month: the guests it would see (those who gave up
-   * waiting for the treatment last month, and those waiting beyond one a room), as many as the coming season brings,
+   * waiting for the treatment last month, those waiting beyond one a room, its share of those who found the center
+   * full, and the guests a staffed station more draws in all), as many as the coming season brings,
    * healed at the rate the discipline heals and paying its fees, less a practitioner's pay and, for a new room, its
    * cost spread over a year.
    */
@@ -2210,7 +2220,11 @@ export class Bot {
     // guests who found the center full last month would have come for this discipline by its share of treatments
     const treated = DISCIPLINE_ORDER.reduce((a, x) => a + (this.seen[x]?.treated ?? 0), 0);
     const full = (this.s.months.at(-1)?.turnedAway ?? 0) * (treated ? m.treated / treated : 0);
-    const guests = (m.lost + full + Math.max(0, m.line - rooms)) * this.ahead(3);
+    // and a staffed station more draws guests more often in all, and lets more in at once
+    const last = this.s.months.at(-1);
+    const pace = this.sim.arrivalPace();
+    const drawn = last ? ((last.arrived + (last.turnedAway ?? 0)) * CAPACITY_ARRIVALS.each) / pace.staffed : 0;
+    const guests = (m.lost + full + drawn + Math.max(0, m.line - rooms)) * this.ahead(3);
     const rate = m.treated >= 3 ? m.healed / m.treated : 0.6;
     const room = this.benched[def.room] ? 0 : ROOMS[def.room].cost / this.style.payback;
     return guests * rate * this.feeFor(d) - this.salaryFor(def.role) - room;

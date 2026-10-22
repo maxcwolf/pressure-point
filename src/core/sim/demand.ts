@@ -3,11 +3,13 @@
 // a condition within it, the center's local favourites more often.
 
 import {
+  CAPACITY_ARRIVALS,
   centerOf,
   CONDITION_BOOST,
   conditionHere,
   conditionOf,
   CONDITIONS,
+  CONSULT_FEEDS,
   DISCIPLINE_ORDER,
   DISCIPLINES,
   FOLLOWING,
@@ -17,11 +19,10 @@ import {
   MODALITIES,
   NOISE_NOTICE,
   NOISE_PEACEFUL,
-  OFFERING_ARRIVALS,
   ROOM_PULL,
 } from '../data';
-import type { ConditionDef, ConditionId, Discipline, Modality } from '../data/types';
-import type { GameState, Guest, Room } from '../state/types';
+import type { ConditionDef, ConditionId, Discipline, Modality, Role } from '../data/types';
+import type { GameState, Guest, Item, Room, Staff } from '../state/types';
 import { at, clamp } from '../util';
 import { prestige } from './ambience';
 import type { SimContext } from './context';
@@ -204,15 +205,69 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
   return rows;
 }
 
-/** The disciplines the center offers with a finished room and a practitioner on the payroll. */
-export const staffedDisciplines = (ctx: SimContext): Discipline[] =>
-  DISCIPLINE_ORDER.filter(
-    (d) => offered(ctx, d) && ctx.s.staff.some((st) => st.role === DISCIPLINES[d].role && st.state !== 'leaving'),
-  );
+/**
+ * What the center can treat at once: its staffed treatment stations, in all and by discipline; those standing idle
+ * while their practitioner is away on a course or a house call, and those with nobody on the payroll to work them; and
+ * its staffed consultations.
+ */
+export interface Capacity {
+  stations: number;
+  by: Partial<Record<Discipline, number>>;
+  away: number;
+  idle: number;
+  consults: number;
+  /** The staffed stations the consultations can keep in guests, which are what draw them and let them in. */
+  fed: number;
+}
 
-/** How much more often guests arrive, for the disciplines the center offers: more for each one staffed past the first. */
-export const offeringArrivals = (ctx: SimContext) =>
-  1 + OFFERING_ARRIVALS * Math.max(0, staffedDisciplines(ctx).length - 1);
+/** Whether a station is there to work: in a finished room, or the corridor, and not broken. */
+const working = (ctx: SimContext, it: Item) => it.wear < 100 && (ctx.world.roomOfItem(it)?.done ?? true);
+
+/** Whether someone on the payroll is at work today: staying, and not away on a course or a house call. */
+const atWork = (st: Staff) => !['leaving', 'toTrain', 'training', 'toCall', 'away'].includes(st.state);
+
+/**
+ * What the center can treat at once. A treatment station counts while someone on the payroll and at work could work
+ * it: a table for each practitioner in its role, and a Sound Bath Studio's mats for as many as its healers play for.
+ * Six tables and two therapists are two stations, and one fewer while one of them is on a course. A Consultation Room
+ * counts once for each Consultant on the payroll.
+ */
+export function capacity(ctx: SimContext): Capacity {
+  /** Staff in a role who are staying, and those of them at work today. */
+  const staffIn = (role: Role) => ctx.s.staff.filter((st) => st.role === role && st.state !== 'leaving');
+  /** Working stations of a kind, of a discipline if one is given. */
+  const built = (goal: 'treat' | 'consult', d?: Discipline) =>
+    ctx.s.items.filter((it) => {
+      const st = ITEMS[it.type].station;
+      return st?.goal === goal && (!d || st.discipline === d) && working(ctx, it);
+    }).length;
+  const by: Partial<Record<Discipline, number>> = {};
+  let stations = 0;
+  let away = 0;
+  let idle = 0;
+  for (const d of DISCIPLINE_ORDER) {
+    const tables = built('treat', d);
+    if (!tables) continue;
+    const staff = staffIn(DISCIPLINES[d].role);
+    const each = d === 'sound' ? matsUsable(ctx) : 1;
+    const paid = Math.min(tables, staff.length * each);
+    const n = Math.min(tables, staff.filter(atWork).length * each);
+    if (n) by[d] = n;
+    stations += n;
+    away += paid - n;
+    idle += tables - paid;
+  }
+  // a Consultant's course or call shows in the line for consultations, not in the stations the rooms keep in guests
+  const consults = Math.min(built('consult'), staffIn('consultant').length);
+  return { stations, by, away, idle, consults, fed: Math.min(stations, CONSULT_FEEDS * consults) };
+}
+
+/**
+ * How much more often guests arrive for what the center can treat at once: more for each staffed station past the
+ * first that the consultations can keep in guests.
+ */
+export const capacityArrivals = (c: Pick<Capacity, 'fed'>) =>
+  Math.min(CAPACITY_ARRIVALS.most, 1 + CAPACITY_ARRIVALS.each * Math.max(0, c.fed - 1));
 
 /**
  * How often guests arrive against how often they would with no line putting anyone off, from 1 down: those put off a
