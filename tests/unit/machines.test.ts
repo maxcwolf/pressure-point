@@ -17,6 +17,7 @@ import {
   roomHere,
   ROOMS,
 } from '../../src/core/data';
+import { makeCandidate } from '../../src/core/people';
 import type { Layout } from '../../src/core/room-layout';
 import type { SimContext } from '../../src/core/sim/context';
 import {
@@ -89,7 +90,7 @@ describe('a machine room and the guests it draws', () => {
       stations: 0,
       by: {},
       idle: 1,
-      machines: [{ machine: 'kneadmaster', standing: 1, paid: 1, staffed: 1 }],
+      machines: [{ machine: 'kneadmaster', standing: 1, paid: 1, staffed: 1, fed: 1 }],
     });
     expect(machineDemand(ctx)[0]?.pull).toBeGreaterThan(0);
     // a second therapist works the table: the tables' pace is a station's, and the chair still draws its own
@@ -98,7 +99,7 @@ describe('a machine room and the guests it draws', () => {
     expect(capacityArrivals(capacity(ctx))).toBe(1);
     // with nobody in the role at all, it draws nobody
     for (const st of s.staff) if (st.role === 'therapist') st.state = 'leaving';
-    expect(capacity(ctx).machines).toEqual([{ machine: 'kneadmaster', standing: 1, paid: 0, staffed: 0 }]);
+    expect(capacity(ctx).machines).toEqual([{ machine: 'kneadmaster', standing: 1, paid: 0, staffed: 0, fed: 0 }]);
     expect(machineDemand(ctx)[0]?.pull).toBe(0);
     expect(sim.arrivalPace().perMonth).toBe(sim.arrivalPace().tables);
     // broken down, it draws nobody until it is put right
@@ -153,8 +154,40 @@ describe('a machine room and the guests it draws', () => {
     // both therapists away: the chair is paid for, but nobody is at work to run it
     second.state = 'training';
     therapist.state = 'toCall';
-    expect(capacity(ctx).machines).toEqual([{ machine: 'kneadmaster', standing: 1, paid: 1, staffed: 0 }]);
+    expect(capacity(ctx).machines).toEqual([{ machine: 'kneadmaster', standing: 1, paid: 1, staffed: 0, fed: 0 }]);
     expect(machineDemand(ctx)[0]?.pull).toBe(0);
+  });
+
+  it('is kept in guests by the Consultation Rooms before the tables, since its guests are seen there first', () => {
+    const { sim, ctx, s, consultant } = staffed();
+    // three more tables and therapists: four tables and the chair, for one Consultation Room that keeps four in guests
+    const room = sim.createRoom('massage', { x: 4, y: 10, w: 6, h: 6 }, { x: 9, y: 12, dx: 1, dy: 0 });
+    let tables = 0;
+    for (let y = 10; y < 16 && tables < 3; y++)
+      for (let x = 4; x < 10 && tables < 3; x++)
+        if (
+          sim.world.canPlaceItem('massage_table', x, y, 0, room.id).ok &&
+          sim.placeItem('massage_table', x, y, 0, { free: true, roomId: room.id })
+        )
+          tables++;
+    sim.finishRoom(room);
+    expect(tables).toBe(3);
+    for (let i = 0; i < 3; i++) {
+      s.candidates.push(makeCandidate(s, 'therapist'));
+      hire(sim, 'therapist');
+    }
+    expect(capacity(ctx)).toMatchObject({ stations: 4, consults: 1, fed: 3, machines: [{ staffed: 1, fed: 1 }] });
+    expect(guestCap(ctx)).toBe(GUEST_CAP.base + GUEST_CAP.station * 4 + GUEST_CAP.consult);
+    expect(capacityNote(sim.arrivalPace().capacity)).toContain(
+      'each keeps only 4 stations in guests, a signature machine first. Another would let it draw',
+    );
+    // with nobody to see them, nobody comes for it
+    consultant.state = 'leaving';
+    expect(capacity(ctx).machines[0]?.fed).toBe(0);
+    expect(machineDemand(ctx)[0]?.pull).toBe(0);
+    expect(capacityNote(sim.arrivalPace().capacity)).toContain(
+      'The Kneadmaster 9000 draws nobody for its own ailments: every guest is seen in a Consultation Room first',
+    );
   });
 
   it('keeps its ailments out of the tables’ guests: they come only for the machine', () => {

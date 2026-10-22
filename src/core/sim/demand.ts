@@ -254,6 +254,8 @@ export interface MachineCapacity {
   standing: number;
   paid: number;
   staffed: number;
+  /** Those of them the Consultation Rooms keep in guests, which are what draw them and let them in. */
+  fed: number;
 }
 
 /** Whether a station is there to work: in a finished room, or the corridor, and not broken. */
@@ -298,7 +300,7 @@ export function capacity(ctx: SimContext): Capacity {
     for (const it of own) {
       let m = machines.find((x) => x.machine === it.type);
       if (!m) {
-        m = { machine: it.type, standing: 0, paid: 0, staffed: 0 };
+        m = { machine: it.type, standing: 0, paid: 0, staffed: 0, fed: 0 };
         machines.push(m);
       }
       m.standing++;
@@ -322,7 +324,14 @@ export function capacity(ctx: SimContext): Capacity {
   }
   // a Consultant's course or call shows in the line for consultations, not in the stations the rooms keep in guests
   const consults = Math.min(built('consult'), staffIn('consultant').length);
-  return { stations, by, away, idle, consults, fed: Math.min(stations, CONSULT_FEEDS * consults), machines };
+  // every guest is seen in a Consultation Room first, a machine's as much as a table's: the machines are kept in
+  // guests first, and the tables with what is left
+  let feeds = CONSULT_FEEDS * consults;
+  for (const m of machines) {
+    m.fed = Math.min(m.staffed, feeds);
+    feeds -= m.fed;
+  }
+  return { stations, by, away, idle, consults, fed: Math.min(stations, feeds), machines };
 }
 
 /**
@@ -335,9 +344,10 @@ export const capacityArrivals = (c: Pick<Capacity, 'fed'>) =>
 /** What draws guests to a signature machine for its own ailments, and how many against the center's pace. */
 export interface MachineDemand {
   machine: ItemType;
-  /** How many stand, and how many of them a practitioner of its own is at work to run. */
+  /** How many stand, how many of them a practitioner of its own is at work to run, and how many of those draw. */
   standing: number;
   staffed: number;
+  fed: number;
   /** Its finest room's pull, and the room. */
   room: { room?: Room; pull: number };
   /** Its ailments guests can come with now, each with its weight, and how many someone on the payroll is trained for. */
@@ -376,13 +386,14 @@ export function machineDemand(ctx: SimContext, cap: Capacity = capacity(ctx)): M
         machine: m.machine,
         standing: m.standing,
         staffed: m.staffed,
+        fed: m.fed,
         room,
         conditions,
         trained: conditions.filter((w) => w.trained).length,
         training,
         flavour: weight / training,
         line,
-        pull: MACHINE_DRAW * m.staffed * room.pull * weight * line.factor,
+        pull: MACHINE_DRAW * m.fed * room.pull * weight * line.factor,
       },
     ];
   });

@@ -14,7 +14,7 @@ import {
 } from '../../core/data';
 import type { Discipline, ItemType } from '../../core/data/types';
 import type { Capacity, DisciplineDemand, MachineDemand } from '../../core/sim/demand';
-import { type ArrivalPace, staffedMachines } from '../../core/sim/guests';
+import { type ArrivalPace, fedMachines } from '../../core/sim/guests';
 import type { IconLine } from './icon-line';
 
 /** A multiplier as it reads, to two places at most: "×1.4", "×0.75", "×1". */
@@ -161,7 +161,7 @@ const operator = (m: MachineDemand) => {
 export function machineNote(m: MachineDemand, perMonth: number): string {
   const name = ITEMS[m.machine].name;
   const share = `${Math.round(MACHINE_DRAW * 100)}% of the center’s pace`;
-  const each = m.staffed === 1 ? 'the one' : `each of the ${m.staffed}`;
+  const each = m.fed === 1 ? 'the one' : `each of the ${m.fed}`;
   const parts = [`${share} for ${each} with a ${operator(m)} of its own to run it`];
   /** A factor, if it moves the draw at all. */
   const by = (f: number, why: string) => {
@@ -182,9 +182,10 @@ export function machineNote(m: MachineDemand, perMonth: number): string {
 export function capacityNote(c: Capacity): string | null {
   const parts: string[] = [];
   const unfed = c.stations - c.fed;
+  const machinesFirst = fedMachines(c) ? ', a signature machine first' : '';
   if (unfed)
     parts.push(
-      `${count(unfed, 'staffed treatment station draws', 'staffed treatment stations draw')} nobody more: every guest is seen in a Consultation Room first, and each keeps only ${CONSULT_FEEDS} stations in guests. Another would let ${unfed === 1 ? 'it' : 'them'} draw, and let more in at once`,
+      `${count(unfed, 'staffed treatment station draws', 'staffed treatment stations draw')} nobody more: every guest is seen in a Consultation Room first, and each keeps only ${CONSULT_FEEDS} stations in guests${machinesFirst}. Another would let ${unfed === 1 ? 'it' : 'them'} draw, and let more in at once`,
     );
   const machineFirst = c.machines.some((m) => m.paid > 0)
     ? ', since a signature machine takes its practitioner first'
@@ -206,6 +207,10 @@ export function capacityNote(c: Capacity): string | null {
       );
     else if (m.staffed < m.standing)
       parts.push(`The ${name} draws nobody while its ${role} is away on a course or a house call`);
+    else if (m.fed < m.staffed)
+      parts.push(
+        `The ${name} draws nobody for its own ailments: every guest is seen in a Consultation Room first, and yours have no time to spare for its guests. Another would let it draw`,
+      );
   }
   return parts.length ? `${parts.join('. ')}.` : null;
 }
@@ -238,7 +243,7 @@ export function limitNote(l: Limit, c: Capacity): string {
     c.consults === 1
       ? `${GUEST_CAP.consult} for the staffed Consultation Room`
       : `${GUEST_CAP.consult} for each of ${count(c.consults, 'staffed Consultation Room')}`;
-  const machines = staffedMachines(c);
+  const machines = fedMachines(c);
   const run = machines ? `, ${count(machines, 'signature machine')} with someone to run it` : '';
   const made = `${GUEST_CAP.base}, and ${GUEST_CAP.station} for each of ${fedWord(c)}${run} and ${rooms}`;
   const own = l.own !== null && l.own < l.building ? ` Your own limit is ${l.own}.` : '';

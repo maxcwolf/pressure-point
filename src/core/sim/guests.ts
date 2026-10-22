@@ -182,11 +182,11 @@ export function admitGuests(ctx: SimContext, dt: number) {
  * and rooms still blueprints, add nothing.
  */
 export function guestCap(ctx: SimContext, cap: Capacity = capacity(ctx)): number {
-  return GUEST_CAP.base + GUEST_CAP.station * (cap.fed + staffedMachines(cap)) + GUEST_CAP.consult * cap.consults;
+  return GUEST_CAP.base + GUEST_CAP.station * (cap.fed + fedMachines(cap)) + GUEST_CAP.consult * cap.consults;
 }
 
-/** The signature machines with a practitioner of their own at work to run them. */
-export const staffedMachines = (cap: Pick<Capacity, 'machines'>) => cap.machines.reduce((sum, m) => sum + m.staffed, 0);
+/** The signature machines with a practitioner of their own at work to run them, that the consultations keep in guests. */
+export const fedMachines = (cap: Pick<Capacity, 'machines'>) => cap.machines.reduce((sum, m) => sum + m.fed, 0);
 
 /** The fewest guests at once the player can limit the center to. */
 export const INTAKE_CAP_MIN = 4;
