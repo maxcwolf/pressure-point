@@ -6,6 +6,48 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 22 October 2026, later: the really bad trip as an event
+
+Measured with `yarn balance` on `claude/polish-pass-e4b7bd` at `0103b79` (the whole of piece A of [polish-pass.md](polish-pass.md), with the bot sending someone after every runner) against `main` at `f579737` with only the bot's runner count added (no game code changed, nobody calmed), at The Orchard Estate and the sandbox, the only places ceremonies run, four years a game, the good bot. Seeds 1 to 6, then 0 to 30 for enough runners to count (a seed list ending in a comma also played seed 0). A third run is `0103b79` with the bot's calming switched off, a player who never touches the pill, to measure the cost at the door on its own. Year 4 is months 37 to 48, over the games not lost; a mean star month counts a star never earned as month 48.
+
+### 43. A runner who costs something, a pill to send someone from, and a bot that does
+
+**Found:** [polish-pass.md](polish-pass.md) A. A runner who found the door cost nothing past the bad trip, the lever was three clicks away in the inspector, whoever was nearest went (a Receptionist with a line at the desk included), it was heard only as the error sound and seen only at each stop, it freaked out guests through walls, and the bot never calmed one, so the Orchard was measured with every runner left to find the door.
+
+**Done** (`src/core/sim/runaways.ts`, `src/core/data/rules.ts`, `src/ui/components/RunnerNotice.tsx`, `src/render/pose.ts`, `src/audio/audio.ts`, `tests/balance/bot.ts`):
+
+- **A stake.** Finding the door costs `RUNAWAY_DOOR_REP` (1.5) reputation on top of the bad trip and leaves a `ran-out` feeling; calmed within `RUNAWAY_SAVE_DAYS` (3) of starting to run, the center earns a point back ("Calmed in time").
+- **A pill.** One for each runner at the top of the screen, newest first, with the days to the door, a bar, and **Send** naming who goes; the inspector's button names them too.
+- **Who goes.** A free Shaman first, then another practitioner or an Instructor on foot, a Caretaker, one at their post, and a Receptionist only with nobody in line. A Shaman takes `CALM_SHAMAN` (0.5) of the time and Bedside Manner `CALM_BEDSIDE` (0.75).
+- **Seen and heard.** A yelp, one of two announcer lines, the stressed bubble the whole run, heads turning, a red ring in any view, and a first-time tip; freaking out only in the same room or corridor, and nobody on a table.
+- **The bot** calms every runner the moment anyone can go (`calmRunners`, every persona), and its month log counts `runners`: bad trips, runners, calmed, calmed within three days, days run before the calm, and those who found the door. The report prints them per center ("Really bad trips").
+
+**Result**, seeds 0 to 30 (31 games a center), before → after:
+
+| Center      | Bad trips | Ran (share of bad trips) | Calmed | Within 3 days | Days to calm | Found the door |
+| ----------- | --------- | ------------------------ | ------ | ------------- | ------------ | -------------- |
+| The Orchard | 96 → 101  | 15 (16%) → 13 (13%)      | 0 → 13 | 0 → 13 (100%) | – → 0.1      | 15 → 0         |
+| sandbox     | 65 → 62   | 4 (6%) → 3 (5%)          | 0 → 3  | 0 → 3 (100%)  | – → 0.1      | 4 → 0          |
+
+With the calming off (the cost at the door alone): The Orchard 9 runners of 91 bad trips, the sandbox 5 of 63, all 14 out of the door.
+
+| The Orchard, good bot             | Games lost | Mean star month | Third star | Year-4 profit a month | Cliffs |
+| --------------------------------- | ---------- | --------------- | ---------- | --------------------- | ------ |
+| entry 42, seeds 1 to 6            | 1 of 6     | 17.1            | 5 of 6     | $56.1k                |        |
+| `main` now, seeds 1 to 6          | 2 of 6     | 23.1            | 4 of 6     | $58.4k                |        |
+| after, seeds 1 to 6               | 2 of 6     | 23.1            | 4 of 6     | $61.3k                |        |
+| `main` now, seeds 0 to 30         | 12 of 31   | 25.4            | 19 of 31   | $63.5k                | 103    |
+| after, seeds 0 to 30              | 12 of 31   | 25.4            | 19 of 31   | $61.5k                | 109    |
+| after with nobody calmed, 0 to 30 | 12 of 31   | 25.4            | 19 of 31   | $62.6k                | 100    |
+
+**Read:**
+
+- **The rate is as the constant says.** 19 runners of 161 bad trips on `main`, 16 of 163 after and 14 of 154 with nobody calmed: 49 of 478, 10.3%, against `RUNAWAY_CHANCE` 0.1. The Orchard alone runs high on `main` (16%) and the sandbox low (6%); over this few they are one number.
+- **The bot calms every runner within three days**, 16 of 16, on average a tenth of a day after they start: the pill sends someone at once, and someone is nearly always free. So the bot never pays at the door, and earns the point back every time.
+- **The Orchard's stars do not move.** Seeds 1 to 6 earn every star on the same day as on `main` but seed 2's third, 0.9 months sooner; over 31 games the mean star month, the games lost and the third stars are the same. Against entry 42 the Orchard is a step behind on seeds 1 to 6, but `main` is too, the same amount: seed 5, which survived in entry 42, now goes bankrupt on day 130 on `main` with nobody running, from the merges since.
+- **Only games with a runner change at all,** 8 of the Orchard's 31 and 3 of the sandbox's; the rest match `main` month for month, since the roll is drawn aside from the game's stream. Once a runner is calmed rather than left to run, the game takes a different course, and those 8 move both ways: year-4 profit from −$30.8k (seed 30) to +$11.8k (seed 2) a month, −$2.0k on average over the 19 games not lost. The sandbox loses 25 of 31 against 26 (seed 27 survives, seed 17 goes sooner, seed 30 later). The Orchard's reputation cliffs go from 103 to 109, all in those 8 games (seed 14, whose lowest was 30%, falls to 6% in month 30, after its runner); with nobody calmed they are 100, so the cost at the door does not move the cliffs up.
+- **No number moved.** The cost at the door bites only a player who leaves a runner ten days, which the bot never does. With nobody calmed, the 14 who found the door cost 1.5 each, and the Orchard's year-4 profit ($62.6k) and cliffs (100) sit inside the spread between `main` and calming. Every lost game in all three runs was warned in its last 10 days.
+
 ## 22 October 2026: floor, standing and the rival
 
 Measured with `yarn balance` on `fair-standing` at `5267229` against `main` at `3507545` with the bot's month log extended to record standing, the rival's points and Center of the Year (no game code changed for the "before"), every campaign center, seeds 1 to 6, four years a game, with `BOT_STYLE=good`, `hoarder` and `grower` and `BOT=baseline`; The Orchard and Willow Lane also over seeds 1 to 12 for the good bot. Year 4 is months 37 to 48, over the games not lost; a mean star month counts a star never earned as month 48. The two other floor rules below were measured the same way on the branch before `5267229`, and the ablations with one change switched off in a scratch copy.
