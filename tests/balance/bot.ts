@@ -2227,6 +2227,8 @@ export class Bot {
         (ROOMS[TREAT_ROOM[d]].unlock ?? 0) <= upTo + 1 &&
         !this.sim.hasRoom(TREAT_ROOM[d]),
     ).map((d) => TREAT_ROOM[d]);
+    // and for a machine room the bot wanted and found no space for: the land it bought for it is not for more tables
+    for (const m of this.log.machines) if (m.site === 'skipped') toCome.push(m.room);
     for (const d of DISCIPLINE_ORDER) {
       const room = TREAT_ROOM[d];
       if (!this.rooms(room).length || month < (this.grewIn[d] ?? -9) + 2) continue;
