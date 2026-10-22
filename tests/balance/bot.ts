@@ -48,6 +48,7 @@ import { BUSY_DAYS } from '../../src/core/sim/bottleneck';
 import { daysUntilBankrupt, loanLimit, projectedCashflow, putOffChance, wagesDue } from '../../src/core/sim/economy';
 import type { SimEvent, Subject } from '../../src/core/sim/events';
 import { INTAKE_CAP_MIN } from '../../src/core/sim/guests';
+import { rivalPoints } from '../../src/core/sim/rival';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
 import { inRush, SEASON_AHEAD_DAYS, seasonOf } from '../../src/core/sim/twists';
@@ -346,6 +347,11 @@ export interface MonthLog {
   repLow: number;
   stars: number;
   grade: number;
+  /** The center's standing points and the rival's, at the month's end (0 for a rival not yet open); not in older logs. */
+  standing?: number;
+  rival?: number;
+  /** Center of the Year awards the center has won so far; not in older logs. */
+  coty?: number;
   staff: number;
   rooms: number;
   /** Finished treatment rooms (a discipline’s own), and Qi Gong Instructors on the payroll, at the month’s end; not in older logs. */
@@ -718,6 +724,9 @@ export class Bot {
       repLow: Math.round(Math.min(this.repLow, s.reputation) * 10) / 10,
       stars: s.stars,
       grade: s.grade,
+      standing: this.sim.standing().total,
+      rival: rivalPoints(s),
+      coty: s.trophies.filter((t) => t.award === 'center-of-the-year').length,
       staff: s.staff.filter((x) => x.state !== 'leaving').length,
       rooms: s.rooms.filter((r) => r.done).length,
       treatRooms: s.rooms.filter((r) => r.done && ROOMS[r.type].discipline).length,
