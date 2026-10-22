@@ -120,6 +120,12 @@ export const BOT_FLAGS = [
    * without them, seed by seed.
    */
   'machines',
+  /**
+   * Do as the advisor says with less than a month's wages in hand, as at The Orchard's opening: while it says so, hire
+   * nobody but into a role with nobody in it, send nobody on a course and turn house calls down. An extra, so the bot's
+   * opening stays as measured: compare `BOT_ON=opening` with the bot without it at The Orchard (balance log 39).
+   */
+  'opening',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -127,7 +133,16 @@ export type BotFlags = Record<BotFlag, boolean>;
  * Flags that are off unless `BOT_ON` names them: a different way to play rather than better play, or play that was
  * measured and found to gain nothing.
  */
-const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'lab', 'clear', 'trouble', 'triage', 'throttle', 'machines'];
+const BOT_EXTRAS: readonly BotFlag[] = [
+  'junior',
+  'lab',
+  'clear',
+  'trouble',
+  'triage',
+  'throttle',
+  'machines',
+  'opening',
+];
 
 /**
  * The bot's flags from the environment. `BOT=old` plays as the bot did before it learned any of them; `BOT_OFF`
@@ -1127,9 +1142,31 @@ export class Bot {
 
   // ---- what the bot does each day -------------------------------------------
 
+  /** Whether the advisor says the paydays can carry no more, for the advised bot and the `opening` extra. */
+  private holdHires = false;
+
+  /**
+   * Hear the advisor on a month's wages in hand, for the bots that heed it: while it says there is less, no hire but
+   * into an empty role, no course and no house call.
+   */
+  private heedInHand() {
+    const s = this.s;
+    if (this.mode !== 'advised' && !this.flags.opening) return;
+    const text = s.open ? this.sim.adviceNote().text : '';
+    const hold = text.startsWith('Hire nobody more, send nobody on a course');
+    if (hold !== this.holdHires)
+      this.note(
+        hold
+          ? `day ${Math.floor(s.day)}: "${text.slice(0, 70)}…" → no hires, courses or house calls`
+          : `day ${Math.floor(s.day)}: the advisor says something else: hires, courses and house calls again`,
+      );
+    this.holdHires = hold;
+  }
+
   /** Everything the bot looks at once a day. */
   private decide() {
     const s = this.s;
+    this.heedInHand();
     if (this.mode === 'baseline') {
       this.decideThoughtless();
       return;
@@ -1499,7 +1536,7 @@ export class Bot {
       else this.sim.declineOutbreak();
     }
     if (s.callOffer) {
-      if (this.flags.calls) this.houseCall();
+      if (this.flags.calls && !this.holdHires) this.houseCall();
       else this.sim.declineCall();
     }
     const ward = this.flags.trouble && (!!s.mishap?.ward || this.sim.canWard());
@@ -1776,6 +1813,8 @@ export class Bot {
 
   /** Hire the best applicant for a role the bot can afford to keep. */
   hire(role: Role): boolean {
+    // the advisor's "hire nobody more" with less than a month's wages in hand: only for a role with nobody in it
+    if (this.holdHires && this.staffOf(role).length) return false;
     const cheap = role === 'consultant' && this.flags.junior;
     const c = this.s.candidates
       .filter((x) => x.role === role)
@@ -1964,7 +2003,7 @@ export class Bot {
   /** Send treatment staff on the courses for what is unlocked, one at a time each, keeping a reserve. */
   private train() {
     const s = this.s;
-    if (!this.sim.hasRoom('training')) return;
+    if (!this.sim.hasRoom('training') || this.holdHires) return;
     const reserve = this.reserve('training');
     const training = s.staff.filter((x) => x.training).length;
     if (training >= 1) return;
