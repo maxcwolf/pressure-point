@@ -55,9 +55,9 @@ describe('what yarn icons builds', () => {
   });
 
   it('draws icons in the interface with lines a little thinner than in the scene', () => {
-    expect(SPRITE_STROKE).toBeCloseTo(2 / 2.25);
+    expect(SPRITE_STROKE).toBeCloseTo(1.8 / 2.25);
     expect(thinned('<g stroke-width="2.25"><path stroke-width="7.9"/></g>')).toBe(
-      '<g stroke-width="2"><path stroke-width="7.02"/></g>',
+      '<g stroke-width="1.8"><path stroke-width="6.32"/></g>',
     );
     const sheet = spriteSheet(icons);
     expect(sheet).not.toContain('stroke-width="2.25"');

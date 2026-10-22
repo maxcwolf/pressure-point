@@ -117,10 +117,10 @@ export function innerOf(svg) {
 
 /**
  * How much thinner the interface draws an icon's lines than the scene does. Beside words, at 16 to 24 pixels, the
- * drawings' 2.25-wide outline reads heavy; drawn at 2 it sits with the type. The scene's atlas keeps the full width,
+ * drawings' 2.25-wide outline reads heavy; drawn at 1.8 it sits with the type. The scene's atlas keeps the full width,
  * as its icons are seen from further off.
  */
-export const SPRITE_STROKE = 2 / 2.25;
+export const SPRITE_STROKE = 1.8 / 2.25;
 
 /** A drawing with every line's width scaled, for the sprite sheet. */
 export const thinned = (inner, scale = SPRITE_STROKE) =>

@@ -27,7 +27,7 @@ export const LAMP_COLOR: Readonly<Record<LampState, number>> = {
 };
 
 /** How brightly each state's lamp glows at rest; amber and red pulse about this. */
-const LAMP_GLOW: Readonly<Record<LampState, number>> = { working: 1.4, idle: 1.8, broken: 2.1, unfinished: 0.12 };
+const LAMP_GLOW: Readonly<Record<LampState, number>> = { working: 1.1, idle: 1.8, broken: 2.1, unfinished: 0.12 };
 
 /** How many times a second the amber and red lamps pulse: red a little quicker, as it is more pressing. */
 const PULSE_HZ: Readonly<Record<LampState, number>> = { working: 0, idle: 0.7, broken: 1.1, unfinished: 0 };
@@ -42,8 +42,11 @@ export function lampGlow(state: LampState, t: number): number {
 /** How big the lamp is, and the soft halo round it, which carries its color across the building. */
 const LAMP_R = 0.1;
 const HALO = 0.95;
-/** How strongly the halo shows at rest. */
-const HALO_OPACITY = 0.7;
+/**
+ * How strongly each state's halo shows at rest: green, the usual state of most rooms, is faint, so a building full of
+ * working rooms is not a building full of green blobs; amber and red, which want seeing to, show through.
+ */
+const HALO_OPACITY: Readonly<Record<LampState, number>> = { working: 0.3, idle: 0.7, broken: 0.7, unfinished: 0 };
 
 /** The lamp's glass for each state, shared by every lamp: one material each, however many rooms there are. */
 const lampMats = new Map<LampState, THREE.MeshStandardMaterial>();
@@ -88,7 +91,7 @@ function haloMaterial(state: LampState): THREE.SpriteMaterial {
       color: LAMP_COLOR[state],
       // laid over what is behind rather than added to it, which would wash out to white on the pale floors
       transparent: true,
-      opacity: HALO_OPACITY,
+      opacity: HALO_OPACITY[state],
       depthWrite: false,
     });
     haloMats.set(state, m);
@@ -99,7 +102,8 @@ function haloMaterial(state: LampState): THREE.SpriteMaterial {
 /** Brighten and dim every lamp and halo for a moment: the shared materials, so this is the same work for any number. */
 export function pulseLamps(t: number) {
   for (const [state, m] of lampMats) m.emissiveIntensity = lampGlow(state, t);
-  for (const [state, m] of haloMats) m.opacity = HALO_OPACITY * Math.min(1, lampGlow(state, t) / LAMP_GLOW[state]);
+  for (const [state, m] of haloMats)
+    m.opacity = HALO_OPACITY[state] * Math.min(1, lampGlow(state, t) / LAMP_GLOW[state]);
 }
 
 // each room type's icon, as a face of its plaque: one material for each, shared by every plaque of that type

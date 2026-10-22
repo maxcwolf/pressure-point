@@ -6,11 +6,11 @@
     <path d="M22.6 16.5V11.8" fill="none" stroke-width="7.7"/>
     <path d="M10.5 21.5L8.4 16.4" fill="none" stroke-width="7.9"/>
     <rect x="10.6" y="13.6" width="13.6" height="12" rx="4.5" fill="#24384a" stroke-width="4.5"/>
-    <path d="M12.6 15V9.5" fill="none" stroke="#2fa8a0" stroke-width="3.4"/>
-    <path d="M16 14.5V7.8" fill="none" stroke="#2fa8a0" stroke-width="3.4"/>
-    <path d="M19.4 15V9" fill="none" stroke="#2fa8a0" stroke-width="3.4"/>
-    <path d="M22.6 16.5V11.8" fill="none" stroke="#2fa8a0" stroke-width="3.2"/>
-    <path d="M10.5 21.5L8.4 16.4" fill="none" stroke="#2fa8a0" stroke-width="3.4"/>
+    <path d="M12.6 15V9.5" fill="none" stroke="#2fa8a0" stroke-width="2.6"/>
+    <path d="M16 14.5V7.8" fill="none" stroke="#2fa8a0" stroke-width="2.6"/>
+    <path d="M19.4 15V9" fill="none" stroke="#2fa8a0" stroke-width="2.6"/>
+    <path d="M22.6 16.5V11.8" fill="none" stroke="#2fa8a0" stroke-width="2.4"/>
+    <path d="M10.5 21.5L8.4 16.4" fill="none" stroke="#2fa8a0" stroke-width="2.6"/>
     <rect x="10.6" y="13.6" width="13.6" height="12" rx="4.5" fill="#2fa8a0" stroke="none"/>
     <path d="M6 9.5l-1.8-1.3M7 5.5l-1-1.8M26 9.5l1.8-1.3M25 5.5l1-1.8" fill="none" stroke-width="2"/>
   </g>
