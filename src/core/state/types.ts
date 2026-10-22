@@ -668,6 +668,8 @@ export interface Rival {
   /** Its standing points (0 until it opens), and the points the center has knocked off it so far. */
   points: number;
   knocked: number;
+  /** Whether it has stood above the center since it opened, so the day the center passes it can be told; not in older saves. */
+  led?: boolean;
 }
 
 export interface Ceremony {

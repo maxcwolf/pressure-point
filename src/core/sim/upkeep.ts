@@ -2,13 +2,14 @@
 
 import { centerOf, isWatered, ITEMS, type ItemType } from '../data';
 import { tuning } from '../difficulty';
-import { an } from '../format';
+import { an, money } from '../format';
 import type { Item } from '../state/types';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
+import { spend } from './economy';
 import { emit, toast } from './events';
 import { downNotice } from './machines';
-import { mishapHolder, mishapOn } from './mishaps';
+import { mishapCarrier } from './mishaps';
 import { upgradeWear } from './upgrades';
 import { stoneCooling, warmthAt } from './warmth';
 
@@ -42,14 +43,22 @@ export function addWear(ctx: SimContext, it: Item, wear = ITEMS[it.type].wear ??
 
 /**
  * A day's wear on what wears by the day rather than by the use: a generator standing by, and one carrying the center
- * through a mishap, which counts as a use.
+ * through a mishap, which counts as a use and burns a day's fuel.
  */
 export function wearByTheDay(ctx: SimContext) {
-  const holder = mishapOn(ctx.s) ? mishapHolder(ctx.s) : undefined;
+  const carrier = mishapCarrier(ctx.s);
   for (const it of ctx.s.items) {
-    const daily = ITEMS[it.type].dailyWear;
-    if (!daily) continue;
-    addWear(ctx, it, it === holder && !ctx.s.mishap?.prepared ? ITEMS[it.type].wear : daily);
+    const def = ITEMS[it.type];
+    if (!def.dailyWear) continue;
+    if (it !== carrier) {
+      addWear(ctx, it, def.dailyWear);
+      continue;
+    }
+    addWear(ctx, it, def.wear);
+    if (!def.dailyCost) continue;
+    spend(ctx, def.dailyCost, 'upkeep');
+    const [x, y] = itemCenter(it);
+    emit(ctx, { type: 'float', text: money(-def.dailyCost), x, y, kind: 'bad' });
   }
 }
 

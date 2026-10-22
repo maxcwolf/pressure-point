@@ -2,10 +2,11 @@
 
 import * as THREE from 'three';
 
-import { type Modality, POOR_CONDITION } from '../core/data';
+import { FREAK_RANGE, type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
 import type { BubbleId, Char } from '../core/state/types';
 import { must } from '../core/util';
+import { rattle, RATTLE_PEAK } from './item-cues';
 import { type CharRig, cureRig, type Joints } from './models/character';
 import { type Expression, showExpression } from './models/character-detail';
 import { iconTexture } from './models/icons';
@@ -127,11 +128,54 @@ export interface Door {
   y: number;
 }
 
+/** What the people layer works out once a frame about someone's surroundings, for their pose to react to. */
+export interface Around {
+  /** Where everyone running round on a really bad trip is, for anyone near to turn and look. */
+  runners?: readonly { id: number; x: number; y: number }[];
+  /** Whether the litter a Caretaker is cleaning up is flood water, which they mop. */
+  mopping?: boolean;
+  /** Whether the room they are in is rattled through the wall by the Gong of Last Resort, which they flinch at. */
+  rattled?: boolean;
+}
+
+/** How far the head dips at the height of each rattle from the Gong next door, and the share of that lying down. */
+const RATTLE_DIP = 0.12;
+const RATTLE_LYING = 1 / 3;
+
+/** How far someone's head dips this moment in a room the Gong rattles, in step with the furniture: none between strikes. */
+export const rattleDip = (c: Char, t: number) =>
+  ((RATTLE_DIP * Math.max(0, rattle(t, c.id))) / RATTLE_PEAK) * (c.pose === 'lie' ? RATTLE_LYING : 1);
+
+/** How near a runner comes for people to turn their heads to look, in tiles, and how far round they turn. */
+const RUNNER_LOOK = FREAK_RANGE + 1;
+const RUNNER_TURN = 0.6;
+
+/** How far to turn the head toward the nearest runner close by, if any is: none for a runner themselves, or anyone lying or on a table. */
+function lookAtRunner(c: Char, runners: Around['runners']): number | undefined {
+  if (!runners?.length || c.pose === 'lie' || c.state === 'served' || c.state === 'running') return undefined;
+  let near: { x: number; y: number } | undefined;
+  let best = RUNNER_LOOK;
+  for (const r of runners) {
+    const d = Math.hypot(r.x - c.x, r.y - c.y);
+    if (r.id !== c.id && d < best) [near, best] = [r, d];
+  }
+  if (!near) return undefined;
+  return THREE.MathUtils.clamp(wrap(Math.atan2(near.x - c.x, near.y - c.y) - c.facing), -RUNNER_TURN, RUNNER_TURN);
+}
+
 /**
  * Pose a person for this frame: position, limbs, face, symptom effects and speech bubble. A fed-up guest turns toward
- * the door, if there is one.
+ * the door, if there is one, and anyone near a guest on a really bad trip turns to look.
  */
-export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: WorkStyle, door?: Door) {
+export function poseChar(
+  rig: CharRig,
+  c: Char,
+  t: number,
+  dt: number,
+  style: WorkStyle,
+  door?: Door,
+  around: Around = {},
+) {
   rig.group.position.set(c.x, c.h, c.y);
   rig.group.rotation.y = c.facing;
   const healed = c.kind === 'guest' && c.outcome === 'healed';
@@ -353,6 +397,16 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
     armL = -1.2 + Math.sin(t * 7.5 + c.id) * 0.32;
     armR = -1.2 + Math.sin(t * 7.5 + c.id + Math.PI) * 0.32;
   }
+  const mopping = !!around.mopping && c.kind === 'staff' && c.state === 'doingJob' && c.job?.kind === 'litter';
+  if (mopping) {
+    // both hands on the mop, pushing it to and fro across the floor
+    const sweep = Math.sin(t * 2.6 + c.id);
+    lean = 0.18;
+    armR = -0.85 + sweep * 0.08;
+    armL = -0.95 - sweep * 0.08;
+    armOut = -0.75;
+    headX = 0.15;
+  }
   const smudging = wafting(c);
   if (smudging) {
     // the sage held up and swung in slow arcs, the other hand fanning the smoke along
@@ -427,6 +481,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
     side = 0;
     if (visual === 'flex') armOut = 0.5;
   }
+  // a strike of the Gong next door, felt through the wall
+  if (around.rattled) headX += rattleDip(c, t);
   // people move with life: weight shifting, follow-through, breathing and fidgets, unless too stiff to
   // only someone with their hands free (the inspector carries a clipboard) and no symptom to show fidgets with their
   // arms
@@ -456,6 +512,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
   headX += life.headX;
   headZ += life.headZ;
   bodyY += life.bodyY;
+  // the mop swept from side to side, the body turning with it
+  if (mopping) life.bodyYaw = Math.sin(t * 2.6 + c.id) * 0.3;
+  const look = lookAtRunner(c, around.runners);
+  if (look !== undefined) life.headYaw = look;
   armL += life.armL;
   armR += life.armR;
   armOut += life.armOut;
@@ -507,6 +567,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
     });
   }
 
+  if (rig.mop) rig.mop.visible = mopping;
   if (rig.sage && rig.sageTip && rig.smoke) {
     rig.sage.visible = smudging;
     if (smudging) rig.group.updateMatrixWorld(true);

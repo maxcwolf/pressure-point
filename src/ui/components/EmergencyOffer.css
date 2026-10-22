@@ -108,3 +108,41 @@
 .mishap-pill.on {
   background: #fff1dc;
 }
+
+.runner-pill {
+  border-color: #c2457a;
+  padding: 6px 12px 8px;
+}
+
+.runner-pill:hover {
+  transform: none;
+}
+
+.runner-pill .runner-show {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+}
+
+.runner-pill .runner-show:hover {
+  transform: translateY(-1px);
+}
+
+.runner-pill .btnrow {
+  margin-top: 4px;
+}
+
+.runner-pill .btnrow button {
+  font-size: 13.5px;
+  padding: 4px 12px;
+  margin-top: 2px;
+}
+
+.runner-pill .runner-note {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+}

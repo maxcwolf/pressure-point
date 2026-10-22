@@ -276,6 +276,33 @@ describe('the rival', () => {
     expect(standingPoints(ctx).total).toBeGreaterThan(rivalPoints(s));
   });
 
+  it('says once that it has stopped growing, and once that the center has passed it', () => {
+    const { s, ctx } = withRival();
+    s.rival.opened = 0;
+    s.rival.points = RIVAL_START_POINTS;
+    s.stats.healed = 1000;
+    drainEvents(ctx);
+    /** The tips said with the rival's icon over some days. */
+    const tips = (days: number) => {
+      rivalDays(ctx, days);
+      return drainEvents(ctx).flatMap((e) => (e.type === 'toast' && e.icon === 'ui-rival' ? [e.text] : []));
+    };
+    // it starts below the center, which is nothing to tell, and grows past it to its ceiling
+    const growing = tips(2000);
+    expect(growing.filter((t) => t.includes('has stopped growing'))).toHaveLength(1);
+    expect(growing.filter((t) => t.includes('has passed'))).toEqual([]);
+    expect(tips(10)).toEqual([]);
+    // the center grows past it
+    s.stats.healed += 4000;
+    expect(tips(1)).toEqual([`Your standing has passed ${RIVAL_NAME}'s. Center of the Year is yours to lose.`]);
+    // and only once: it gets ahead again, and is passed again, in silence
+    s.stats.healed = 1000;
+    tips(400);
+    expect(s.rival.points).toBeGreaterThan(standingPoints(ctx).total);
+    s.stats.healed += 4000;
+    expect(tips(1)).toEqual([]);
+  });
+
   it('loses ground while word of mouth runs, instead of growing', () => {
     const { s, ctx } = withRival();
     s.rival.opened = 0;

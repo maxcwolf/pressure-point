@@ -89,6 +89,28 @@ function updatePoints(ctx: SimContext) {
   if (course === 'losing') knock(ctx.s, RIVAL_WORD_FALL * step);
   else if (r.points < ceiling) r.points = Math.min(ceiling, r.points + RIVAL_GROWTH * step);
   else r.points = Math.max(ceiling, r.points - RIVAL_GROWTH * step);
+  if (course === 'ceiling')
+    tipOnce(
+      ctx,
+      'rival-ceiling',
+      `${RIVAL_NAME} has stopped growing: it cannot stand more than a quarter above you. Grow, and it grows; delight a VIP, and it slips.`,
+      'info',
+      undefined,
+      'ui-rival',
+    );
+  // the day the center passes it, once it has been ahead
+  if (ctx.s.seenTips.includes('rival-passed')) return;
+  const own = standingPoints(ctx).total;
+  if (r.points > own) r.led = true;
+  else if (r.led && own > r.points)
+    tipOnce(
+      ctx,
+      'rival-passed',
+      `Your standing has passed ${RIVAL_NAME}'s. Center of the Year is yours to lose.`,
+      'good',
+      undefined,
+      'ui-rival',
+    );
 }
 
 /** The rival's grade. */

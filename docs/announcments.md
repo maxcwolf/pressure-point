@@ -6,7 +6,7 @@ When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-43 recorded, 33 still to record.
+43 recorded, 35 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
@@ -95,6 +95,11 @@ Key: ✅ recorded, ⬜ not recorded yet.
 - ⬜ Stress outbreak! A wedding party has arrived, and the seating plan did not go well.
 - ⬜ Stress outbreak! The phone network went down for an hour.
 - ⬜ Stress outbreak! A yoga retreat let out early and nobody is speaking to each other.
+
+## A really bad trip (`RUNAWAY_LINES` in `src/core/sim/runaways.ts`, one or the other by the guest)
+
+- ⬜ Would the guest running through the lobby please note that the ceiling is not, in fact, melting.
+- ⬜ A reminder that the walls are load-bearing and cannot be reasoned with.
 
 ## Visits, as a visitor writes ahead (`VISIT_NEWS` in `src/core/data/visits.ts`)
 

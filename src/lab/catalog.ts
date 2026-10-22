@@ -113,7 +113,7 @@ function wallBehind(model: THREE.Group, w: number): THREE.Group {
 function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
   const def = ITEMS[type];
   // a full trophy cabinet to begin with, so every cup is in the picture
-  const st: ItemCondition & { session: string; heating: boolean; level: number } = {
+  const st: ItemCondition & { session: string; heating: boolean; chugging: boolean; level: number } = {
     id: 1,
     type,
     water: 100,
@@ -125,6 +125,7 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
     trophies: 99,
     session: '',
     heating: false,
+    chugging: false,
     level: 0,
   };
   return {
@@ -150,6 +151,7 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
       if (def.wear) controls.push(range('Wear', st, 'wear'));
       if (usedNoise(type) >= NOISE_CUE) controls.push(toggle('A guest using it', st, 'inUse'));
       if (def.heat) controls.push(toggle(def.heat > 0 ? 'Heating' : 'Cooling', st, 'heating'));
+      if (parts.exhaust) controls.push(toggle('Carrying the center', st, 'chugging'));
       if (parts.cups) {
         st.trophies = Math.min(st.trophies, parts.cups.length);
         controls.push(range('Trophies', st, 'trophies', 0, parts.cups.length));
@@ -167,7 +169,7 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
         controls,
         /** Move the item's parts as the game does, and lay out the props for the session picked. */
         animate(t) {
-          st.running = st.heating ? 1 : 0;
+          st.running = st.heating || st.chugging ? 1 : 0;
           animateItemParts(root, st, t);
           if (st.level !== plate.level) {
             if (plate.group) root.remove(plate.group);
@@ -571,6 +573,30 @@ function runawaySpecimen(): Specimen {
   };
 }
 
+/** A Caretaker mopping up the flood water a storm left in a restroom, over a puddle of it. */
+function moppingSpecimen(): Specimen {
+  return {
+    id: 'mood:mopping',
+    group: 'Moods',
+    name: 'Caretaker mopping up flood water',
+    footprint: [1, 1],
+    /** Build the Caretaker, mop in hand, and the water in front of them. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK, 'caretaker');
+      const c = demoStaff(LAB_LOOK, 'caretaker');
+      Object.assign(c, { state: 'doingJob', job: { kind: 'litter', id: 1 } });
+      const root = new THREE.Group();
+      root.add(rig.group);
+      const water = buildPuddle(1, true);
+      water.position.z = 0.6;
+      root.add(water);
+      /** Pose them, mopping. */
+      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null, undefined, { mopping: true });
+      return { root, controls: [], animate };
+    },
+  };
+}
+
 /** The faces a guest makes, other than at ease, and what the lab calls each. */
 const FACES: readonly (readonly [Exclude<Expression, 'neutral'>, string])[] = [
   ['delighted', 'Delighted, healed'],
@@ -895,6 +921,7 @@ export const CATALOG: readonly Specimen[] = [
   ...FACES.map(faceSpecimen),
   ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
   runawaySpecimen(),
+  moppingSpecimen(),
   doorSpecimen(),
   ...SCENERY,
 ];

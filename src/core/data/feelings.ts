@@ -148,6 +148,17 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'experience',
     lines: ['Beat my high score while I waited.'],
   },
+  'rebirth-ride': {
+    id: 'rebirth-ride',
+    icon: 'item-wheel-of-rebirth',
+    text: 'Had a ride on the Carousel of Rebirth',
+    good: true,
+    part: 'experience',
+    lines: [
+      'I rode the carousel. I was briefly a goat. Ten out of ten.',
+      'Went round three times as a seagull. Would go round again.',
+    ],
+  },
   fortune: {
     id: 'fortune',
     icon: 'feeling-fortune',
@@ -174,6 +185,25 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     good: false,
     part: 'experience',
     lines: ['Sticky floors. My socks still smell of vinegar.', 'Someone should mop up the kombucha.'],
+  },
+  'wet-feet': {
+    id: 'wet-feet',
+    icon: 'feeling-puddle',
+    text: 'Waded through a flooded restroom',
+    good: false,
+    part: 'experience',
+    lines: [
+      'The restroom was a rock pool. I did not ask for a rock pool.',
+      'I went in for a wee and came out with a tide table.',
+    ],
+  },
+  'no-restroom': {
+    id: 'no-restroom',
+    icon: 'feeling-bursting',
+    text: 'Found the restroom under water',
+    good: false,
+    part: 'experience',
+    lines: ['I held it. For two days. I am a changed person.'],
   },
   'fine-room': {
     id: 'fine-room',
@@ -319,6 +349,14 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
       'A man ran past me screaming that the ceiling was melting. Was that part of the treatment?',
       'Someone else was having a very bad time, and so, then, was I.',
     ],
+  },
+  'ran-out': {
+    id: 'ran-out',
+    icon: 'feeling-bad-trip',
+    text: 'Ran out of the institute still tripping',
+    good: false,
+    part: 'experience',
+    lines: ['I ran. Nobody came. The hedge was kind.', 'I left through what I am fairly sure was a wall.'],
   },
   cider: {
     id: 'cider',

@@ -55,6 +55,10 @@ export class PeopleLayer {
       front,
     } = this.sim.world.building;
     const door = { x: (left + right + 1) / 2, y: front + 1 };
+    // anyone on a really bad trip, whom everyone near turns to look at: hardly ever anyone
+    const around = { runners: this.sim.s.guests.filter((g) => g.state === 'running') };
+    // the rooms the Gong of Last Resort rattles through the wall this moment, whose people flinch: hardly ever any
+    const rattled = this.sim.rattledRooms();
     for (const c of [...this.sim.s.guests, ...this.sim.s.staff, ...this.sim.s.visitors] as Char[]) {
       live.add(c.id);
       let rig = this.chars.get(c.id);
@@ -81,7 +85,17 @@ export class PeopleLayer {
       rig.pick.visible = shown;
       if (!shown && rig.smoke) rig.smoke.visible = false;
       if (!shown) continue;
-      poseChar(rig, c, t, dt, this.workStyle(c), door);
+      const mopping = this.mopping(c);
+      const shook = rattled.size > 0 && rattled.has(this.sim.world.zoneAt(c.tx, c.ty));
+      poseChar(
+        rig,
+        c,
+        t,
+        dt,
+        this.workStyle(c),
+        door,
+        mopping || shook ? { ...around, mopping, rattled: shook } : around,
+      );
       rig.group.scale.setScalar(size);
       if (c.kind === 'guest') this.inMachine(rig, c, t);
     }
@@ -92,6 +106,13 @@ export class PeopleLayer {
       disposeOwned(rig.group);
       this.chars.delete(id);
     }
+  }
+
+  /** Whether a Caretaker is cleaning up flood water, which they mop rather than pick up. */
+  private mopping(c: Char): boolean {
+    if (c.kind !== 'staff' || c.role !== 'caretaker' || c.job?.kind !== 'litter') return false;
+    const id = c.job.id;
+    return !!this.sim.s.litter.find((l) => l.id === id)?.flood;
   }
 
   /**

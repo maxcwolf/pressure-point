@@ -148,6 +148,11 @@ export class View {
     this.rig.resize(w, h);
   }
 
+  /** The spot on the ground the camera is looking at, in tiles. */
+  focus(): [number, number] {
+    return [this.rig.target.x, this.rig.target.z];
+  }
+
   /** Glide the camera over to look at a spot on the ground. */
   lookAt(x: number, y: number) {
     this.rig.centerOn(x, y);
@@ -216,7 +221,7 @@ export class View {
       this.items.sync();
     }
     this.people.update(this.time, dt);
-    this.litter.update();
+    this.litter.update(this.time);
     this.rooms.update(this.time);
     this.vibes.update(this.time);
     this.snow.update(this.time);

@@ -4,24 +4,32 @@ import * as THREE from 'three';
 
 import type { Sim } from '../core/sim/sim';
 import { at } from '../core/util';
+import { disposeOwned } from './disposal';
 import { mat, put, rbox, trimShadows } from './models/parts';
-import { buildPuddle } from './models/puddle';
+import { buildPuddle, rippleFlood } from './models/puddle';
 import { hash } from './shared';
 
 export class LitterLayer {
-  private litter = new Map<number, THREE.Object3D>();
+  private litter = new Map<number, THREE.Group>();
 
   constructor(
     private scene: THREE.Scene,
     private sim: Sim,
   ) {}
 
-  /** Add a pile for each new piece of litter, or a puddle, and remove the ones that have been swept or mopped up. */
-  update() {
+  /**
+   * Add a pile for each new piece of litter, or a puddle, and remove the ones that have been swept or mopped up. Flood
+   * water moves.
+   */
+  update(t: number) {
     const liveLitter = new Set<number>();
     for (const l of this.sim.s.litter) {
       liveLitter.add(l.id);
-      if (this.litter.has(l.id)) continue;
+      const had = this.litter.get(l.id);
+      if (had) {
+        if (l.flood) rippleFlood(had, t, l.id);
+        continue;
+      }
       const g = l.puddle || l.flood ? buildPuddle(l.id, !!l.flood) : new THREE.Group();
       const colors = [0xe76f51, 0xe9c46a, 0x5fa8d3];
       if (!l.puddle && !l.flood)
@@ -44,6 +52,7 @@ export class LitterLayer {
     for (const [id, g] of this.litter) {
       if (liveLitter.has(id)) continue;
       this.scene.remove(g);
+      disposeOwned(g);
       this.litter.delete(id);
     }
   }

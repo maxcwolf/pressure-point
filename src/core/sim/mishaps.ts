@@ -49,6 +49,9 @@ export const mishapOn = (s: GameState): MishapDef | undefined =>
 /** The item here keeping the mishap coming or under way at bay, such as a generator through a power cut, if one is. */
 export const mishapHolder = (s: GameState) => (s.mishap ? holdingOff(MISHAPS[s.mishap.kind], s.items) : undefined);
 
+/** What is carrying the center through the mishap under way, such as a generator in a power cut: none once prepared for. */
+export const mishapCarrier = (s: GameState) => (mishapOn(s) && !s.mishap?.prepared ? mishapHolder(s) : undefined);
+
 /** Whether the mishap coming or under way is taken care of: prepared for, or kept at bay by something here. */
 export const mishapCovered = (s: GameState) => !!s.mishap && (s.mishap.prepared || !!mishapHolder(s));
 
@@ -213,7 +216,7 @@ export function floodRestroom(ctx: SimContext, def: MishapDef): Room | undefined
   if (!ctx.world.flooded(room)) return undefined;
   toast(
     ctx,
-    `The ${def.name.toLowerCase()} has flooded a restroom. It is out of action until a Caretaker mops it out.`,
+    `The ${def.name.toLowerCase()} has flooded a restroom. It is out of action until a Caretaker mops it out, and the guests will mind.`,
     'bad',
     { kind: 'room', id: room.id },
     def.icon,

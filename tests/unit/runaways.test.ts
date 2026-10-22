@@ -2,16 +2,27 @@
 // pass, until a member of staff sent to them calms them down or they find the door.
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, FREAK_PATIENCE, RUNAWAY_CHANCE, RUNAWAY_SECONDS } from '../../src/core/data';
+import {
+  CALM_BEDSIDE,
+  CALM_SECONDS,
+  CALM_SHAMAN,
+  CENTERS,
+  DAY_SECONDS,
+  FREAK_PATIENCE,
+  RUNAWAY_CHANCE,
+  RUNAWAY_SECONDS,
+} from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import { badTrip } from '../../src/core/sim/ceremonies';
 import type { SimContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { repathAll } from '../../src/core/sim/movement';
-import { calmerFor, rollRunaway, running, startRunning } from '../../src/core/sim/runaways';
+import { calmerFor, calmSeconds, rollRunaway, RUNAWAY_LINES, running, startRunning } from '../../src/core/sim/runaways';
 import type { Sim } from '../../src/core/sim/sim';
-import type { Guest } from '../../src/core/state/types';
+import type { Guest, Staff } from '../../src/core/state/types';
+import { Z_CORRIDOR } from '../../src/core/world';
+import { haloOf } from '../../src/render/halos';
 import { guestStatus, staffStatus } from '../../src/ui/lib/status';
 import { addLodge, hire, inconsistencies, LAYOUT, openCenter, run, runUntil, toasts } from './helpers';
 
@@ -44,6 +55,8 @@ function withRunner(seed = 1) {
 function beside(c: ReturnType<typeof withRunner>, other: Guest) {
   other.x = c.g.x + 0.5;
   other.y = c.g.y;
+  other.tx = c.g.tx;
+  other.ty = c.g.ty;
 }
 
 describe('a really bad trip', () => {
@@ -121,10 +134,25 @@ describe('a really bad trip', () => {
     expect(toasts(events).join(' ')).toContain(`${g.name} is having a really bad trip`);
     expect(events).toContainEqual(expect.objectContaining({ type: 'toast', about: { kind: 'guest', id: g.id } }));
     expect(guestStatus(g, c.sim)).toBe('Running round the institute on a really bad trip');
+    // heard as well as seen: a yelp, and a word from the announcer
+    expect(events).toContainEqual({ type: 'sfx', name: 'yelp' });
+    expect(events).toContainEqual({ type: 'announce', text: RUNAWAY_LINES[g.id % 2] });
     // out of every line, so nobody waits on them
     expect(c.s.items.some((it) => it.queue.includes(g.id) || it.serving === g.id)).toBe(false);
     // and the advisor points at them until someone is sent
     expect(advice(ctx)).toContain(`${g.name} is on a really bad trip`);
+  });
+
+  it('explains itself the first time, and only the first time', () => {
+    const c = withRunner();
+    const tip = 'One bad trip in ten runs.';
+    expect(toasts(drainEvents(c.ctx)).join(' ')).toContain(tip);
+    const other = spawnGuest(c.ctx)!;
+    other.runaway = RUNAWAY_SECONDS;
+    startRunning(c.ctx, other);
+    const said = toasts(drainEvents(c.ctx)).join(' ');
+    expect(said).toContain(`${other.name} is having a really bad trip`);
+    expect(said).not.toContain(tip);
   });
 
   it('runs about from spot to spot, faster than a walk, and stays consistent', () => {
@@ -132,6 +160,9 @@ describe('a really bad trip', () => {
     const from = { x: c.g.x, y: c.g.y };
     run(c.sim, 6);
     expect(running(c.g)).toBe(true);
+    // in a state all the while, not only where they stop
+    expect(c.g.bubble).toBe('bubble-stressed');
+    expect(c.g.bubbleT).toBeGreaterThan(RUNAWAY_SECONDS - 7);
     expect(Math.hypot(c.g.x - from.x, c.g.y - from.y)).toBeGreaterThan(1);
     expect(inconsistencies(c.sim)).toEqual([]);
   });
@@ -153,6 +184,31 @@ describe('a really bad trip', () => {
     expect(other.stressed).toBe(false);
   });
 
+  it('freaks out only those in the same room or corridor, and nobody on a table', () => {
+    const c = withRunner();
+    const { door } = LAYOUT.massage;
+    // the runner in the corridor below the Massage Suite, one guest across its wall and one beside them outside
+    const [cx, cy] = [door.x + 1, door.y + 1];
+    expect(c.ctx.world.zoneAt(cx, cy)).toBe(Z_CORRIDOR);
+    expect(c.ctx.world.zoneAt(cx, cy - 1)).not.toBe(Z_CORRIDOR);
+    /** Stand a guest on a tile. */
+    const stand = (g: Guest, x: number, y: number) => Object.assign(g, { x: x + 0.5, y: y + 0.5, tx: x, ty: y });
+    stand(c.g, cx, cy);
+    c.g.path = null;
+    c.g.timer = 99;
+    const inside = spawnGuest(c.ctx)!;
+    const outside = spawnGuest(c.ctx)!;
+    const onTable = spawnGuest(c.ctx)!;
+    stand(inside, cx, cy - 1);
+    stand(outside, cx + 1, cy);
+    stand(onTable, cx - 1, cy);
+    onTable.state = 'served';
+    c.sim.tick(0.01);
+    expect(inside.feelings).not.toContain('freaked');
+    expect(onTable.feelings).not.toContain('freaked');
+    expect(outside.feelings).toContain('freaked');
+  });
+
   it('passes on the stress of an outbreak going round to some of those they freak out', () => {
     const c = withRunner();
     c.sim.offerOutbreak();
@@ -170,13 +226,28 @@ describe('a really bad trip', () => {
     expect(stressed).toBeLessThan(crowd.length);
   });
 
-  it('ends when they find the door, still tripping', () => {
+  it("ends when they find the door, still tripping, and the center's name suffers", () => {
     const c = withRunner();
+    c.s.reputation = 40;
     c.g.runaway = 0.05;
     c.sim.tick(0.1);
     expect(c.g.state).toBe('leaving');
     expect(c.g.runaway).toBeUndefined();
+    expect(c.g.feelings).toContain('ran-out');
+    expect(c.g.bubble).toBe('bubble-going-home');
+    expect(c.s.reputation).toBeLessThan(40 - 1);
     expect(toasts(drainEvents(c.ctx)).join(' ')).toContain(`${c.g.name} found the door`);
+  });
+
+  it('is ringed in red at their feet from any view, a size up, over whatever an overlay says', () => {
+    const c = withRunner();
+    const other = spawnGuest(c.ctx)!;
+    expect(haloOf(c.g, null)).toEqual({ v: 0, scale: 1.2 });
+    expect(haloOf(other, null), 'nobody else, with no overlay').toBeNull();
+    /** An overlay that finds everyone doing well. */
+    const fine = () => 1;
+    expect(haloOf(c.g, fine)).toEqual({ v: 0, scale: 1.2 });
+    expect(haloOf(other, fine)).toEqual({ v: 1, scale: 1 });
   });
 
   it('cannot be sent home: they have to be calmed down first', () => {
@@ -229,6 +300,82 @@ describe('calming a runner down', () => {
     // and with their trip over, they head home calmly
     expect(c.g.state).toBe('leaving');
     expect(inconsistencies(c.sim)).toEqual([]);
+  });
+
+  it('earns a point back when calmed within three days, and nothing after', () => {
+    /** Calm a runner who has been running this many days, and say what it did to reputation and what floated up. */
+    const calmAfter = (days: number) => {
+      const c = withRunner();
+      c.sim.calm(c.g.id);
+      const sent = c.sim.calmerOf(c.g)!;
+      runUntil(c.sim, () => sent.state === 'doingJob', 60);
+      c.g.runaway = RUNAWAY_SECONDS - days * DAY_SECONDS;
+      c.s.reputation = 40;
+      sent.timer = 0.001;
+      drainEvents(c.ctx);
+      c.sim.tick(0.01);
+      expect(running(c.g)).toBe(false);
+      const float = drainEvents(c.ctx).find((e) => e.type === 'float');
+      return { gain: c.s.reputation - 40, float: float?.type === 'float' ? float.text : '' };
+    };
+    const soon = calmAfter(2.5);
+    expect(soon.gain).toBeGreaterThan(0.5);
+    expect(soon.float).toBe('Calmed in time');
+    const late = calmAfter(3.5);
+    expect(late.gain).toBe(0);
+    expect(late.float).toBe('Calmed');
+  });
+
+  it('sends a Shaman ahead of anyone nearer, then a practitioner, then a Caretaker', () => {
+    const c = withRunner();
+    c.s.stars = 3;
+    const caretaker = hire(c.sim, 'caretaker');
+    const shaman = hire(c.sim, 'shaman');
+    /** Put a member of staff this far from the runner, free and on foot. */
+    const put = (st: Staff, d: number) => {
+      Object.assign(st, { x: c.g.x + d, y: c.g.y, state: 'idle', busy: false, call: null });
+    };
+    for (const st of c.s.staff) st.state = 'away';
+    put(caretaker, 1);
+    put(c.therapist, 3);
+    put(shaman, 12);
+    expect(calmerFor(c.ctx, c.g)).toBe(shaman);
+    shaman.state = 'away';
+    expect(calmerFor(c.ctx, c.g)).toBe(c.therapist);
+    c.therapist.state = 'away';
+    expect(calmerFor(c.ctx, c.g)).toBe(caretaker);
+  });
+
+  it('never sends a Receptionist away from a line at the desk', () => {
+    const c = withRunner();
+    for (const st of c.s.staff) st.state = 'away';
+    const desk = c.s.items.find((i) => i.type === 'reception_desk')!;
+    Object.assign(c.receptionist, { state: 'atPost', post: desk.id, busy: false, x: c.g.x + 1, y: c.g.y });
+    desk.queue = [c.g.id + 1000];
+    expect(calmerFor(c.ctx, c.g)).toBeUndefined();
+    expect(c.sim.canCalm(c.g)).toBe(false);
+    desk.queue = [];
+    expect(calmerFor(c.ctx, c.g)).toBe(c.receptionist);
+  });
+
+  it('is quicker with a Shaman, and with Bedside Manner', () => {
+    /** How long the one member of staff left to send takes to talk the runner down, once they are there. */
+    const timed = (role: 'shaman' | 'caretaker', bedside = false) => {
+      const c = withRunner();
+      c.s.stars = 3;
+      const st = hire(c.sim, role);
+      for (const o of c.s.staff) if (o !== st) o.state = 'away';
+      Object.assign(st, { x: c.g.x + 1, y: c.g.y, state: 'idle', traits: [], general: bedside ? ['bedside'] : [] });
+      expect(c.sim.calm(c.g.id)).toBe('sent');
+      runUntil(c.sim, () => st.state === 'doingJob', 60);
+      // set as they get there, and a step's worth already gone
+      expect(st.timer).toBeLessThanOrEqual(calmSeconds(st));
+      expect(st.timer).toBeGreaterThan(calmSeconds(st) - 0.2);
+      return calmSeconds(st);
+    };
+    expect(timed('caretaker')).toBeCloseTo(CALM_SECONDS, 5);
+    expect(timed('shaman')).toBeCloseTo(CALM_SECONDS * CALM_SHAMAN, 5);
+    expect(timed('caretaker', true)).toBeCloseTo(CALM_SECONDS * CALM_BEDSIDE, 5);
   });
 
   it('cannot send anyone when everyone is busy or away', () => {

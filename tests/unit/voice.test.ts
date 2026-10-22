@@ -18,6 +18,7 @@ import { SWEAT_LODGE_OPEN } from '../../src/core/sim/ceremonies';
 import { CLASS_LINES } from '../../src/core/sim/classes';
 import { emergencyNews } from '../../src/core/sim/emergencies';
 import { OPENING_LINES, openingLine } from '../../src/core/sim/progress';
+import { RUNAWAY_LINES } from '../../src/core/sim/runaways';
 
 /** Every line the speakers can say that does not change from game to game. */
 function spokenLines(): string[] {
@@ -36,6 +37,7 @@ function spokenLines(): string[] {
     SWEAT_LODGE_OPEN,
     ...CLASS_LINES,
     ...OPENING_LINES,
+    ...RUNAWAY_LINES,
   ];
 }
 

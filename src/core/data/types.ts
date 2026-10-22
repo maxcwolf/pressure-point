@@ -242,6 +242,8 @@ export interface ItemDef {
   wear?: number;
   /** Wear added each day it stands, for something that wears whether or not anyone uses it, like a generator. */
   dailyWear?: number;
+  /** What a day carrying the center through a mishap costs in fuel, for something that runs on it, like a generator. */
+  dailyCost?: number;
   /** Grime added each time it is used, until a Caretaker cleans it. */
   dirt?: number;
   /** What a guest pays each time they use it, for drinks, snacks and games. */
@@ -650,9 +652,12 @@ export type FeelingId =
   | 'comfy'
   | 'refreshed'
   | 'played'
+  | 'rebirth-ride'
   | 'fortune'
   | 'lucky'
   | 'puddle'
+  | 'wet-feet'
+  | 'no-restroom'
   | 'fine-room'
   | 'underwhelmed'
   | 'pricey'
@@ -673,6 +678,7 @@ export type FeelingId =
   | 'good-trip'
   | 'bad-trip'
   | 'freaked'
+  | 'ran-out'
   | 'cider';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';

@@ -961,7 +961,7 @@ test.describe('running a center', () => {
     );
   });
 
-  test('a guest on a really bad trip is named in a toast, and calmed down by someone sent from their inspector', async ({
+  test('a guest on a really bad trip is named in a toast and a pill, and calmed down by someone sent from the pill', async ({
     game,
     page,
   }) => {
@@ -986,17 +986,23 @@ test.describe('running a center', () => {
       });
     }
     if (!name) throw new Error('nobody waited inside to send on a bad trip');
-    const toast = page
-      .locator('#toasts')
-      .getByRole('button', { name: new RegExp(`${name} is having a really bad trip`) });
-    await toast.click();
+    await expect(
+      page.locator('#toasts').getByRole('button', { name: new RegExp(`${name} is having a really bad trip`) }),
+    ).toBeVisible();
+    // the pill at the top says how long they have, and sends someone without opening anything
+    const pill = page.locator('#offer .runner-pill').filter({ hasText: name });
+    await expect(pill).toContainText(`${name} is on a really bad trip`);
+    await expect(pill).toContainText('days to the door');
+    await pill.getByRole('button', { name: /^Send / }).click();
+    await expect(pill).toContainText('to calm them down');
+    // and its body takes the player to them, where the inspector says the same
+    await pill.getByRole('button', { name: new RegExp(`${name} is on a really bad trip`) }).click();
     const inspector = page.locator('#inspector');
     await expect(inspector).toContainText(name);
     await expect(inspector).toContainText('Running round the institute on a really bad trip');
+    await expect(inspector).toContainText('to calm them down');
     // past listening: they cannot be sent home, only calmed down
     await expect(inspector.getByRole('button', { name: /Send home/ })).toHaveCount(0);
-    await inspector.getByRole('button', { name: /Calm them down/ }).click();
-    await expect(inspector).toContainText('to calm them down');
     // a second at a time, so they are caught still here, calmed and on their way
     /** Whether the guest of this name has been calmed down. */
     const calmed = (who: string) =>

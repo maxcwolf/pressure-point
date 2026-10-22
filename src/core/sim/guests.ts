@@ -437,7 +437,11 @@ function tryNeed(ctx: SimContext, g: Guest): boolean {
   if (!kind) return false;
   // a game is only worth a short walk
   const a = findAccess(ctx, kind, g.tx, g.ty, kind === 'play' ? PLAY_RANGE : undefined);
-  if (!a) return false;
+  if (!a) {
+    // nowhere to go because the restroom is under water: that, they will mention
+    if (kind === 'toilet' && ctx.s.rooms.some((r) => ctx.world.flooded(r))) feel(g, 'no-restroom');
+    return false;
+  }
   claim(ctx, g, a.item, a.idx);
   const [ax, ay] = accessTile(a.item, a.idx);
   if (!goTo(ctx, g, ax, ay, accessPose(a.item, a.idx))) {
@@ -621,7 +625,9 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
             feel(g, 'filthy-toilet');
           }
           if (g.needKind === 'drink' || g.needKind === 'eat') feel(g, 'refreshed');
-          if (g.needKind === 'play' && used.type !== 'fortune_teller') feel(g, 'played');
+          // a ride on the carousel is something to tell people about; a game is a game
+          if (g.needKind === 'play' && used.type === 'wheel_of_rebirth') feel(g, 'rebirth-ride');
+          else if (g.needKind === 'play' && used.type !== 'fortune_teller') feel(g, 'played');
           g.patience = Math.max(0, Math.min(100, g.patience + needRelief(g.needKind, used.dirt)));
           if (used.type === 'fortune_teller') tellFortune(ctx, g);
           if (used.type === 'kombucha_tap') fizzOver(ctx, used);

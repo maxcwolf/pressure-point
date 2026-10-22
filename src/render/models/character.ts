@@ -22,6 +22,7 @@ import {
   KNEE,
 } from './character-detail';
 import { machineSymptom } from './character-machines';
+import { buildMop } from './mop';
 import { cached, capsule, cyl, ico, joined, mat, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
 
@@ -51,6 +52,8 @@ export interface CharRig {
   sage?: THREE.Object3D;
   sageTip?: THREE.Object3D;
   smoke?: THREE.Group;
+  /** A mop held out in front, for a Caretaker mopping up flood water. */
+  mop?: THREE.Object3D;
   /** The shins and forearms, hinged at the knees and elbows. */
   joints: Joints;
   /** The mouth and brows, which change shape with how they feel. */
@@ -631,6 +634,14 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.sage = bundle;
     rig.sageTip = tip;
     rig.smoke = buildSmoke();
+  }
+  if (role === 'caretaker') {
+    // held out in front at the hands, slanting down and forward to the floor
+    const mop = buildMop();
+    mop.position.set(0, 0.3, 0.21);
+    mop.rotation.x = -0.81;
+    torso.add(mop);
+    rig.mop = mop;
   }
   trimShadows(group, look.scale);
   return rig;

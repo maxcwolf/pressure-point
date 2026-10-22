@@ -193,6 +193,10 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     save: () => {
       ui.warn(autosaveNow(false));
     },
+    /** Rumble as loud as a generator carrying the center sounds from here. */
+    rumble: (level) => {
+      audio.rumble(level);
+    },
     /** Note a star or an achievement for the campaign as soon as it is earned. */
     record: () => {
       recordGame(state);

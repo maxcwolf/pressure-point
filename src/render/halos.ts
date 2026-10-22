@@ -1,5 +1,6 @@
 // Rings at people's feet for the people overlays, colored by how each is doing and following them as they walk, so the
-// overlay marks the person rather than a tile they cover and leave behind.
+// overlay marks the person rather than a tile they cover and leave behind; and a red ring under a guest on a really bad
+// trip, overlay or not.
 
 import * as THREE from 'three';
 
@@ -14,6 +15,19 @@ export type HaloValue = (c: Guest | Staff) => number | null;
 
 /** How many rings there is room for at first; more is made when a crowd outgrows it. */
 const START = 64;
+
+/** How much bigger the ring under a guest on a really bad trip is than anyone else's. */
+const RUNNER_RING = 1.2;
+
+/**
+ * The ring someone gets: by how they are doing under an overlay, or none; and a guest on a really bad trip always one,
+ * bigger and in the bad color, over whatever the overlay says, so a runner can be found from any view.
+ */
+export function haloOf(c: Guest | Staff, value: HaloValue | null): { v: number; scale: number } | null {
+  if (c.kind === 'guest' && c.state === 'running') return { v: 0, scale: RUNNER_RING };
+  const v = value ? value(c) : null;
+  return v === null ? null : { v, scale: 1 };
+}
 
 export class HalosLayer {
   /** The rings as they show on the floor, and the same rings faintly through whatever stands over them. */
@@ -30,30 +44,34 @@ export class HalosLayer {
     [this.mesh, this.through] = this.build(START);
   }
 
-  /** Ring people by how they are doing, or clear the rings with null. */
+  /** Ring people by how they are doing, or clear the rings with null, leaving any runner's. */
   set(value: HaloValue | null) {
     this.value = value;
     if (!value) this.mesh.visible = this.through.visible = false;
   }
 
-  /** Put a ring at the feet of everyone the overlay covers, as they stand this frame. */
+  /** Put a ring at the feet of everyone the overlay covers, and of anyone on a really bad trip, as they stand this frame. */
   update() {
     const value = this.value;
-    if (!value) return;
     const s = this.sim.s;
+    // with no overlay open, only a runner is ringed, and hardly ever is anyone running
+    if (!value && !s.guests.some((g) => g.state === 'running')) {
+      this.mesh.visible = this.through.visible = false;
+      return;
+    }
     const ends = streetEnds(this.sim.world.building, this.sim.world.w);
     const people = [...s.guests, ...s.staff];
     if (people.length > this.mesh.instanceMatrix.count) this.grow(people.length);
     let n = 0;
     for (const c of people) {
       if (c.kind === 'staff' && c.state === 'away') continue;
-      const v = value(c);
-      if (v === null) continue;
-      const size = streetFade(c.x, c.y, ends);
+      const halo = haloOf(c, value);
+      if (!halo) continue;
+      const size = streetFade(c.x, c.y, ends) * halo.scale;
       if (size <= 0.02) continue;
       this.matrix.makeScale(size, 1, size).setPosition(c.x, c.h + 0.03, c.y);
       this.mesh.setMatrixAt(n, this.matrix);
-      this.mesh.setColorAt(n, conditionColor(v, this.color));
+      this.mesh.setColorAt(n, conditionColor(halo.v, this.color));
       n++;
     }
     this.mesh.count = this.through.count = n;
