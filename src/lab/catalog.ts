@@ -571,6 +571,30 @@ function runawaySpecimen(): Specimen {
   };
 }
 
+/** A Caretaker mopping up the flood water a storm left in a restroom, over a puddle of it. */
+function moppingSpecimen(): Specimen {
+  return {
+    id: 'mood:mopping',
+    group: 'Moods',
+    name: 'Caretaker mopping up flood water',
+    footprint: [1, 1],
+    /** Build the Caretaker, mop in hand, and the water in front of them. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK, 'caretaker');
+      const c = demoStaff(LAB_LOOK, 'caretaker');
+      Object.assign(c, { state: 'doingJob', job: { kind: 'litter', id: 1 } });
+      const root = new THREE.Group();
+      root.add(rig.group);
+      const water = buildPuddle(1, true);
+      water.position.z = 0.6;
+      root.add(water);
+      /** Pose them, mopping. */
+      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null, undefined, { mopping: true });
+      return { root, controls: [], animate };
+    },
+  };
+}
+
 /** The faces a guest makes, other than at ease, and what the lab calls each. */
 const FACES: readonly (readonly [Exclude<Expression, 'neutral'>, string])[] = [
   ['delighted', 'Delighted, healed'],
@@ -895,6 +919,7 @@ export const CATALOG: readonly Specimen[] = [
   ...FACES.map(faceSpecimen),
   ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
   runawaySpecimen(),
+  moppingSpecimen(),
   doorSpecimen(),
   ...SCENERY,
 ];

@@ -38,6 +38,8 @@ const IDS = [
   ...['stretch', 'look', 'watch'].map((act) => `idle:${act}`),
   // a guest on a really bad trip, running round
   'mood:runaway',
+  // a Caretaker mopping up a flooded restroom
+  'mood:mopping',
   'room:door',
   'scenery:puddles',
   'scenery:trees',

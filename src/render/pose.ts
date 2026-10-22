@@ -131,6 +131,8 @@ export interface Door {
 export interface Around {
   /** Where everyone running round on a really bad trip is, for anyone near to turn and look. */
   runners?: readonly { id: number; x: number; y: number }[];
+  /** Whether the litter a Caretaker is cleaning up is flood water, which they mop. */
+  mopping?: boolean;
 }
 
 /** How near a runner comes for people to turn their heads to look, in tiles, and how far round they turn. */
@@ -384,6 +386,16 @@ export function poseChar(
     armL = -1.2 + Math.sin(t * 7.5 + c.id) * 0.32;
     armR = -1.2 + Math.sin(t * 7.5 + c.id + Math.PI) * 0.32;
   }
+  const mopping = !!around.mopping && c.kind === 'staff' && c.state === 'doingJob' && c.job?.kind === 'litter';
+  if (mopping) {
+    // both hands on the mop, pushing it to and fro across the floor
+    const sweep = Math.sin(t * 2.6 + c.id);
+    lean = 0.18;
+    armR = -0.85 + sweep * 0.08;
+    armL = -0.95 - sweep * 0.08;
+    armOut = -0.75;
+    headX = 0.15;
+  }
   const smudging = wafting(c);
   if (smudging) {
     // the sage held up and swung in slow arcs, the other hand fanning the smoke along
@@ -487,6 +499,8 @@ export function poseChar(
   headX += life.headX;
   headZ += life.headZ;
   bodyY += life.bodyY;
+  // the mop swept from side to side, the body turning with it
+  if (mopping) life.bodyYaw = Math.sin(t * 2.6 + c.id) * 0.3;
   const look = lookAtRunner(c, around.runners);
   if (look !== undefined) life.headYaw = look;
   armL += life.armL;
@@ -540,6 +554,7 @@ export function poseChar(
     });
   }
 
+  if (rig.mop) rig.mop.visible = mopping;
   if (rig.sage && rig.sageTip && rig.smoke) {
     rig.sage.visible = smudging;
     if (smudging) rig.group.updateMatrixWorld(true);
