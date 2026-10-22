@@ -6,6 +6,67 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 22 October 2026: machines that draw guests of their own
+
+Measured with `yarn balance` on `machine-demand` at `d2a1cba` (the rule is the same from `198a456`), every campaign center, seeds 1 to 6, four years a game, good bot. Year 4 is months 37 to 48, over the games not lost. "Paid back" counts days from the day the machine was built to the day its fees first covered its room and its running costs so far.
+
+### 39. A signature machine's two ailments come only for it, at a pace of their own
+
+**Found:** entries 37 and 38. A machine's ailments were a share of the guests its discipline already drew, and its chair counted as one staffed station, so the Kneadmaster healed about 2 guests a month against a Massage Suite's 6 or 7, and the one game with one made $8.1k a month less.
+
+**Done** (`src/core/data/rules.ts`, `src/core/sim/demand.ts`, `src/core/sim/guests.ts`, the Guests tab, the date's hover, the machine room's inspector):
+
+- **Its own guests.** A signature machine's ailments are no longer among the conditions the tables' guests come with. Each machine that stands (not broken, overloaded, stopped by a mishap or in a blueprint) draws them on its own: `MACHINE_DRAW` (0.35) of what the center draws at its reputation, times the season or rush hour, the grade, the rival, a mishap and the difficulty, times its room's pull as a finest room's (`roomPull`: prestige and quiet), times `UNTRAINED_PULL` while nobody on the payroll knows its technique, times the center's favourites and any campaign for its ailments, and less for a line of its own. `arrivalPace` adds these to the tables' pace, and `admitGuests` rolls which kind of guest comes through the door only while a machine draws anyone, so a game without one rolls as it always has.
+- **A practitioner of its own, first.** `capacity` no longer counts a signature machine as a treatment station. A working machine takes a practitioner of its discipline before the tables do (`MachineCapacity`: standing, paid, staffed), so one built without hiring for it leaves a table standing instead. Tried first and not kept: the tables first. The bot hires one practitioner a room, so at High Pines its second Sound Healer went to the mats one healer cannot play for, and the Alphorn never had anyone (0 healed in 28 months on seed 2).
+- **Seen in a Consultation Room first.** A machine's guests count against the four stations each Consultation Room keeps in guests, before the tables (`fed`); it lets 2 more guests in at once when it draws, like a station.
+- **Its own line puts guests off sooner.** `MACHINE_LINE`: nobody minds one waiting, then a quarter fewer for each one more, at most three quarters. With a discipline's rule (three a practitioner), the Cider Press's guests stormed out 43 times against 94 healed at The Orchard (seed 1), and the tables' 22 times in 846.
+- **Said where the pace is.** The Guests tab and the date's hover: "About 16 new guests a month. 11 come for the treatment stations: … 5 come for the Kneadmaster 9000’s own ailments: 35% of the center’s pace for the one with a Massage Therapist of its own to run it, ×1.43 for the Kneadmaster Suite." The Guests tab also says when a machine draws nobody and why (nobody to run it, its practitioner away, no consultation to spare), and that an idle table's practitioner went to a machine. The machine room's inspector gives its pull, as a discipline's room does.
+- **A bot extra for land:** `BOT_ON=land` gives each center one plot more at the second star, $12,000, sized for its machine room (`MACHINE_LOTS` in `tests/balance/bot.ts`); with `machines` the bot keeps it, and the corridor in it, for the machine room until that is built. A stand-in for the plots the land session is adding (finding 1 in [next-pass.md](next-pass.md)). The Boardwalk's has a door of its own: without one the bot's rooms along the east wall left it reached only through the ice-cream parlor, a 66-tile walk that let the Aura Wash heal 3 guests in 15 months.
+- No price, fee or running cost changed.
+
+**Games without a machine are unchanged.** The default bot (no flag) matches `main` on all 30 games, every month. With `BOT_ON=machines` alone, 29 of 30 games match entry 38 to the month; the 30th is Willow Lane seed 3, the one game that fits a machine on today's lots.
+
+**On today's lots** (`BOT_ON=machines` against no flag): the bot still fits a machine in 1 game of 30, because the lots are full by the second star (entry 38). That Kneadmaster heals 4.6 guests a month (2.0 in entry 38) and pays back 74 days after it was built (248). The game makes $29.0k a month in year 4 against $37.2k, as before: its chair stands where the bot's third Massage Suite would.
+
+**Calibration** (`BOT_ON=land,machines` against `BOT_ON=land`, the same plot in both games; over the games where a machine was built):
+
+| Rule                                                          | Built | Healed a month: all (Kneadmaster, Pin Press, Aura Wash, Alphorn, Cider) | Paid back | Year-4 profit, with against without | Turned away a month | Reputation |
+| ------------------------------------------------------------- | ----- | ----------------------------------------------------------------------- | --------- | ----------------------------------- | ------------------- | ---------- |
+| 0.45, the tables first (the Boardwalk plot without its door)  | 16    | 3.9 (5.2, 5.9, 2.7, 1.8, 3.2)                                           | 13 of 16  | −$5.7k                              | +8.4                | −3.9       |
+| 0.25, the tables first                                        | 15    | 2.6 (3.4, 4.0, 1.8, 0.9, 2.3)                                           | 12 of 15  | −$6.7k                              | +2.5                | −5.3       |
+| 0.35, the machine first                                       | 15    | 4.0 (4.5, 5.7, 3.4, 2.8, 3.3)                                           | 15 of 15  | −$7.1k                              | +6.2                | −7.6       |
+| and seen in a Consultation Room first                         | 15    | 4.0 (4.5, 5.7, 3.4, 2.6, 3.3)                                           | 14 of 15  | −$6.0k                              | +6.8                | −5.1       |
+| and its own line puts guests off sooner                       | 15    | 3.8 (4.1, 5.6, 2.1, 3.0, 3.1)                                           | 14 of 15  | −$8.1k                              | +5.6                | −5.0       |
+| **as now: and the bot keeps corridor items off the plot too** | 19    | 4.4 (5.7, 6.6, 3.5, 3.8, 3.0)                                           | 19 of 19  | −$1.9k (median −$0.1k, 8 of 18 up)  | +5.4                | −3.6       |
+
+Until the last row, the bot bought the plot and then could not fit the machine on it in 14 games, because benches, plants and radiators had gone into its corridor; those games' differences are the plot standing empty. With the plot kept whole, the bot builds 19 machines in 29 games. A game in which the bot built no machine moves by −$6.1k to +$22.4k a month all the same (the reserved plot changes what it builds), so one game's difference is mostly noise.
+
+**Result** (as now, `BOT_ON=land,machines` against `BOT_ON=land`):
+
+| Machine (center)           | Built | Healed a month, seed by seed | Paid back, days after building | Earned while a guest is inside / room and running costs | Year-4 profit, with against without, seed by seed                             |
+| -------------------------- | ----- | ---------------------------- | ------------------------------ | ------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Kneadmaster (Willow Lane)  | 3 / 6 | 5.6, 4.3, 7.4                | 89, 92, 51                     | $1341.3k / $201.0k                                      | $45.1k / $38.5k · $29.3k / $37.3k · $53.8k / $31.1k: +$7.1k                   |
+| Pin Press (The Exchange)   | 3 / 6 | 6.7, 6.6, 6.4                | 127, 104, 60                   | $1620.9k / $254.0k                                      | $41.0k / $37.0k · $39.2k / $33.8k · $35.3k / $42.6k: +$0.7k                   |
+| Aura Wash (The Boardwalk)  | 6 / 6 | 2.3, 4.0, 2.0, 3.9, 3.7, 3.2 | 292, 154, 146, 140, 139, 207   | $1451.8k / $514.0k                                      | five games −$7.9k to +$5.1k: −$1.5k; seed 3 bankrupt on day 1001              |
+| Great Alphorn (High Pines) | 3 / 6 | 3.8, 3.8, 3.9                | 268, 131, 121                  | $1003.1k / $351.0k                                      | $29.9k / $28.8k · $24.1k / $12.0k · $7.3k / $7.5k: +$4.4k                     |
+| Cider Press (The Orchard)  | 4 / 5 | 2.7, 2.7, 3.1, 3.6           | 221, 156, 283, 150             | $1522.4k / $580.0k                                      | $32.1k / $39.0k · $58.8k / $45.3k · $4.3k / $37.5k · −$1.9k / $35.5k: −$16.0k |
+
+Year-4 profit a month by center, with against without: Willow Lane $32.2k against $28.9k, The Exchange $30.6k against $31.4k, The Boardwalk $18.6k against $18.9k (five games against six), High Pines $24.8k against $23.0k, The Orchard $30.1k against $38.4k. The first two stars come on the same days in every game (the machines come after them).
+
+**Read:**
+
+- **Does a machine room now draw guests of its own?** Yes. Every machine built pays back on its own books, 19 of 19, from 51 to 292 days after it was built. The Kneadmaster heals 5.7 guests a month (2 in entry 38) and the Pin Press 6.6, about what a Massage Suite heals. The slower machines heal 3 to 4.
+- **Is it worth building?** Where it has a plot of its own and the center is sound, about as much as the tables the same plot would hold. Willow Lane and High Pines make more with one, The Exchange and The Boardwalk the same, and the 18 games split 8 up and 10 down with a median of −$0.1k a month. It is not a free win: its running cost, its operator's wage and the guests its line turns away come out of what it earns.
+- **The Orchard loses with the Cider Press.** Two of its four games lose $33k to $37k a month. Seed 3 takes on 3.5 more staff ($12.9k a month in wages) and its reputation falls 34 points; seed 6's reputation falls 12. The Cider Press heals 3 a month there at about $4.6k a guest. This is the Orchard's own instability (finding 2 in [next-pass.md](next-pass.md)) as much as the machine, and The Orchard's game without a machine (seed 4) moves $22k a month by the plot alone.
+- **The one new bankruptcy** is The Boardwalk seed 3, on day 1001, against a game that survives without the machine: the Aura Wash, which a storm stops, healed 2 a month there, and the loss was warned 18 times in its last 30 days.
+- **Prices and running costs:** not changed. On its own books every machine earns 2.6 to 6.7 times its room and running costs, so the running costs are not what decides a center's month. Its practitioner's wage and the guests it turns away do.
+
+**Still open:**
+
+- **Land.** On today's lots the bot fits a machine in 1 game of 30. The numbers above are for a plot given by hand; the plots the land session adds should be measured the same way, with `BOT_ON=machines` against no flag.
+- **The building's limit.** With a machine, 5 more guests a month are turned away: its guests come into a center already at its limit, and it lets in only 2 more at once.
+- **Slow machines.** The Aura Wash, the Alphorn and the Cider Press heal 3 to 4 a month, about half the Kneadmaster's and the Pin Press's; a shorter session would bring them level, and is a price for the owner to set.
+
 ## 21 October 2026, late: machines as a station more
 
 Measured with `yarn balance` on `integrate-audit` at `e02faa5` with the bot changed as below, every campaign center, seeds 1 to 6, four years a game: `BOT_ON=machines` against the good bot without the flag. Year 4 is months 37 to 48, over the games not lost. No game rule or price changed. The bot without the flag plays exactly as before: the default `yarn balance` (seeds 1 to 3) matches `e02faa5` on all 15 runs, star days and every month.
