@@ -311,7 +311,7 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
   },
   cider: {
     id: 'cider',
-    icon: 'feeling-refreshed',
+    icon: 'feeling-cider',
     text: 'Was given a glass of cider on the way out',
     good: true,
     part: 'experience',
