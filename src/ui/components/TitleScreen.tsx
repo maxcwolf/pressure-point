@@ -12,7 +12,7 @@ import { readThumb } from '../../storage/thumbnails';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch, UpdateOffer } from '../host';
 import { cx } from '../lib/cx';
-import { saveFacts, titleBadges } from '../lib/title';
+import { saveFacts, titleBadges, updateNote } from '../lib/title';
 import backdrop from '../theme/backdrop.jpg';
 import logo from '../theme/logo.png';
 import { CampaignPanel } from './CampaignPanel';
@@ -58,9 +58,11 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
   /** Whether the player is being asked to restart for the downloaded update. */
   const [askingToUpdate, setAskingToUpdate] = useState(false);
   const latest = latestSave();
-  // an update can finish downloading while the title screen is up
+  // the look for an update goes on while the title screen is up, and can end in one finishing downloading
   useEffect(() => update?.subscribe(redraw), [update, redraw]);
   const updateVersion = update?.ready();
+  const updateStatus = update?.status();
+  const updateLine = updateStatus && updateNote(updateStatus);
   /** Show a panel in place of the menu. */
   const open = (panel: Panel) => {
     setShowing(panel);
@@ -247,6 +249,11 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
             >
               <IconText id="ui-update">Update to the latest version</IconText>
             </button>
+          )}
+          {updateLine && (
+            <p class={cx('title-update-note', updateStatus.state !== 'latest' && 'busy')} role="status">
+              <IconText id={updateLine.icon}>{updateLine.text}</IconText>
+            </p>
           )}
           <button
             class="title-news"

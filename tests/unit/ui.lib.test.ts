@@ -35,7 +35,7 @@ import { hintChips } from '../../src/ui/lib/hint-chips';
 import { pleasantness, quietness, upkeepShown } from '../../src/ui/lib/overlays';
 import { placedFlags } from '../../src/ui/lib/plan';
 import { courseName, guestStatus, promotionNote, slotNote, staffStatus } from '../../src/ui/lib/status';
-import { saveFacts, titleBadges } from '../../src/ui/lib/title';
+import { saveFacts, titleBadges, updateNote } from '../../src/ui/lib/title';
 import { newRoomsText, treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
 import { weatherNote } from '../../src/ui/lib/weather';
 import { hire, openCenter, run, runUntil } from './helpers';
@@ -272,6 +272,15 @@ describe('the title screen', () => {
     expect(off[1]).toMatchObject({ on: false, label: 'Acupuncture: switched off in Settings' });
     // massage cannot be switched off, so its badge stays lit whatever is asked
     expect(titleBadges(() => false)[0]?.on).toBe(true);
+  });
+
+  it('says how the look for an update is going, until one is ready to install', () => {
+    expect(updateNote({ state: 'checking' })?.text).toBe('Checking for updates…');
+    expect(updateNote({ state: 'downloading', version: '9.9.9' })?.text).toBe('Downloading version 9.9.9…');
+    expect(updateNote({ state: 'latest' })).toEqual({ icon: 'ui-up-to-date', text: 'You’re on the latest version' });
+    // a run that is not looking says nothing, and a downloaded update has its own button
+    expect(updateNote({ state: 'idle' })).toBeNull();
+    expect(updateNote({ state: 'ready', version: '9.9.9' })).toBeNull();
   });
 });
 

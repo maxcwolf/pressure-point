@@ -1,16 +1,19 @@
 // A newer version of the desktop app, downloaded in the background by the app itself. A browser always loads the
 // latest version, so there this is undefined.
+import type { UpdateStatus } from '../../electron/api';
 import type { UpdateOffer } from '../ui/host';
 import { desktop } from './desktop';
 
-/** The version downloaded, once there is one. */
-let ready: string | null = null;
+/** How far the app's look for an update has got. */
+let status: UpdateStatus = { state: 'idle' };
 const listeners = new Set<() => void>();
 
 export const updates: UpdateOffer | undefined = desktop && {
+  /** How far the look has got. */
+  status: () => status,
   /** The version downloaded, if any. */
-  ready: () => ready,
-  /** Hear when one finishes downloading. */
+  ready: () => (status.state === 'ready' ? status.version : null),
+  /** Hear when the look gets further. */
   subscribe: (listener) => {
     listeners.add(listener);
     return () => {
@@ -20,8 +23,7 @@ export const updates: UpdateOffer | undefined = desktop && {
   install: desktop.installUpdate,
 };
 
-desktop?.onUpdateReady((version) => {
-  if (version === ready) return;
-  ready = version;
+desktop?.onUpdateStatus((next) => {
+  status = next;
   for (const listener of listeners) listener();
 });

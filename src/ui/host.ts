@@ -1,5 +1,6 @@
 // What the interface needs from the game it is showing.
 
+import type { UpdateStatus } from '../../electron/api';
 import type { Tools } from '../app/tools/tools';
 import type { Audio } from '../audio/audio';
 import type { Sim } from '../core/sim/sim';
@@ -28,9 +29,11 @@ export interface GameHost {
 
 /** A newer version of the desktop app, downloaded in the background. */
 export interface UpdateOffer {
+  /** How far the look for one has got. */
+  status: () => UpdateStatus;
   /** The version downloaded and waiting to be installed, or null while there is none. */
   ready: () => string | null;
-  /** Call a function when one finishes downloading. Returns a way to stop. */
+  /** Call a function whenever the look gets further, such as when one finishes downloading. Returns a way to stop. */
   subscribe: (listener: () => void) => () => void;
   /** Close the app, install the update and open the new version. */
   install: () => void;

@@ -7,7 +7,7 @@ import path from 'node:path';
 import type { ElectronApplication } from '@playwright/test';
 import electronPath from 'electron';
 
-import { UPDATE_READY_CHANNEL } from '../../electron/api';
+import { UPDATE_STATUS_CHANGED_CHANNEL, type UpdateStatus } from '../../electron/api';
 import { expect, newGame, openPauseMenu, test } from './fixtures';
 
 test.describe('the desktop shell', () => {
@@ -73,7 +73,7 @@ test.describe('the desktop shell', () => {
     expect(api).toEqual({
       platform: 'string',
       quit: 'function',
-      onUpdateReady: 'function',
+      onUpdateStatus: 'function',
       installUpdate: 'function',
       onFullScreen: 'function',
       setFullScreen: 'function',
@@ -229,12 +229,35 @@ test.describe('full screen', () => {
 });
 
 test.describe('updates', () => {
+  /** Say how far the look for an update has got, as the updater would: a run from this folder never looks. */
+  const tell = (app: ElectronApplication, status: UpdateStatus) =>
+    app.evaluate(
+      ({ BrowserWindow }, [channel, sent]) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(channel, sent);
+      },
+      [UPDATE_STATUS_CHANGED_CHANNEL, status] as const,
+    );
+
+  test('the title screen says while it checks, then that this is the latest version', async ({ desktop }) => {
+    const { app, page } = await desktop.launch();
+    // a run from this folder is not looking, so says nothing
+    const note = page.locator('#title').getByRole('status');
+    await expect(note).toHaveCount(0);
+    await tell(app, { state: 'checking' });
+    await expect(note).toHaveText('Checking for updates…');
+    await tell(app, { state: 'latest' });
+    await expect(note).toHaveText('You’re on the latest version');
+    // a newer version says so while it downloads, then gives way to the button that installs it
+    await tell(app, { state: 'downloading', version: '9.9.9' });
+    await expect(note).toHaveText('Downloading version 9.9.9…');
+    await tell(app, { state: 'ready', version: '9.9.9' });
+    await expect(page.getByRole('button', { name: 'Update to the latest version' })).toBeVisible();
+    await expect(note).toHaveCount(0);
+  });
+
   test('a downloaded update is offered on the title screen and in a game', async ({ desktop }) => {
     const { app, page } = await desktop.launch();
-    // a run from this folder never looks for updates, so say one has downloaded as the updater would
-    await app.evaluate(({ BrowserWindow }, channel) => {
-      BrowserWindow.getAllWindows()[0]?.webContents.send(channel, '9.9.9');
-    }, UPDATE_READY_CHANNEL);
+    await tell(app, { state: 'ready', version: '9.9.9' });
     // the title screen asks before restarting, and Not now leaves the offer in place
     const offer = page.getByRole('button', { name: 'Update to the latest version' });
     await offer.click();

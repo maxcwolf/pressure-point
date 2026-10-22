@@ -7,13 +7,26 @@ export interface SaveCopy {
   saves: Record<string, string>;
 }
 
+/** How far the desktop app has got with looking for an update. */
+export type UpdateStatus =
+  /** Not looking: a run from this folder, or the last look failed, which is no concern of the player's. */
+  | { state: 'idle' }
+  /** About to ask GitHub for a newer release, or asking now. */
+  | { state: 'checking' }
+  /** There is none: this is the latest version. */
+  | { state: 'latest' }
+  /** A newer version is downloading. */
+  | { state: 'downloading'; version: string }
+  /** A newer version has downloaded and installs on restart. */
+  | { state: 'ready'; version: string };
+
 export interface DesktopApi {
   /** Node's name for the operating system: 'darwin', 'win32' or 'linux'. */
   readonly platform: string;
   /** Close the app. */
   quit: () => void;
-  /** Call back with the version of an update once it has downloaded, straight away if one already has. */
-  onUpdateReady: (listener: (version: string) => void) => void;
+  /** Call back with how far the look for an update has got: straight away, then whenever that changes. */
+  onUpdateStatus: (listener: (status: UpdateStatus) => void) => void;
   /** Close the app, install the downloaded update and open the new version. */
   installUpdate: () => void;
   /** Call back with whether the window fills the screen: straight away, then whenever that changes. */
@@ -30,10 +43,10 @@ export interface DesktopApi {
 
 /** The message the game sends to the main process to quit. */
 export const QUIT_CHANNEL = 'app:quit';
-/** The game asks the main process which update has downloaded, if any. */
-export const UPDATE_VERSION_CHANNEL = 'update:version';
-/** The main process tells the game an update has downloaded. */
-export const UPDATE_READY_CHANNEL = 'update:ready';
+/** The game asks the main process how far the look for an update has got. */
+export const UPDATE_STATUS_CHANNEL = 'update:status';
+/** The main process tells the game the look for an update has got further, such as to a downloaded update. */
+export const UPDATE_STATUS_CHANGED_CHANNEL = 'update:status-changed';
 /** The game asks the main process to install the downloaded update. */
 export const UPDATE_INSTALL_CHANNEL = 'update:install';
 /** The game asks the main process whether the window fills the screen. */

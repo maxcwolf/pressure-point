@@ -12,8 +12,9 @@ import {
   FULL_SCREEN_STATE_CHANNEL,
   QUIT_CHANNEL,
   UPDATE_INSTALL_CHANNEL,
-  UPDATE_READY_CHANNEL,
-  UPDATE_VERSION_CHANNEL,
+  UPDATE_STATUS_CHANGED_CHANNEL,
+  UPDATE_STATUS_CHANNEL,
+  type UpdateStatus,
 } from './api';
 
 const api: DesktopApi = {
@@ -22,13 +23,13 @@ const api: DesktopApi = {
   quit: () => {
     ipcRenderer.send(QUIT_CHANNEL);
   },
-  /** Hear about a downloaded update: one that finished before this page loaded, then any that finishes later. */
-  onUpdateReady: (listener) => {
-    ipcRenderer.on(UPDATE_READY_CHANNEL, (_event, version: string) => {
-      listener(version);
+  /** Hear how far the look for an update has got: as it is now, then each time it gets further. */
+  onUpdateStatus: (listener) => {
+    ipcRenderer.on(UPDATE_STATUS_CHANGED_CHANNEL, (_event, status: UpdateStatus) => {
+      listener(status);
     });
-    void ipcRenderer.invoke(UPDATE_VERSION_CHANNEL).then((version: string | null) => {
-      if (version) listener(version);
+    void ipcRenderer.invoke(UPDATE_STATUS_CHANNEL).then((status: UpdateStatus) => {
+      listener(status);
     });
   },
   /** Ask the desktop app to install the downloaded update. */
