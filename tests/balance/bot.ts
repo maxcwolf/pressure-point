@@ -1991,6 +1991,22 @@ export class Bot {
     }
   }
 
+  /** The center's machine rooms that are open and not built yet. */
+  private machinesToCome(): RoomType[] {
+    const s = this.s;
+    return ROOM_ORDER.filter((type) => {
+      const def = ROOMS[type];
+      return (
+        def.required.some((t) => ITEMS[t].machine) &&
+        !!def.only?.includes(s.center) &&
+        !!def.discipline &&
+        disciplineOn(s, def.discipline) &&
+        (def.unlock ?? 0) <= unlockedUpTo(s) &&
+        !this.sim.hasRoom(type)
+      );
+    });
+  }
+
   /**
    * The center's own machine room, once its star is earned, while the center pays its way and the bot is not saving,
    * with the money for a few months' running in hand; and a practitioner sent on its course once it stands. It is a
@@ -2227,8 +2243,9 @@ export class Bot {
         (ROOMS[TREAT_ROOM[d]].unlock ?? 0) <= upTo + 1 &&
         !this.sim.hasRoom(TREAT_ROOM[d]),
     ).map((d) => TREAT_ROOM[d]);
-    // and for a machine room the bot wanted and found no space for: the land it bought for it is not for more tables
-    for (const m of this.log.machines) if (m.site === 'skipped') toCome.push(m.room);
+    // and for the machine room its star has opened, from that star on: the land that comes with the star is not all
+    // for more tables
+    if (this.flags.machines) toCome.push(...this.machinesToCome());
     for (const d of DISCIPLINE_ORDER) {
       const room = TREAT_ROOM[d];
       if (!this.rooms(room).length || month < (this.grewIn[d] ?? -9) + 2) continue;
