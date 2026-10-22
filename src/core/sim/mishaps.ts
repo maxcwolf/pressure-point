@@ -3,6 +3,7 @@
 
 import {
   centerOf,
+  FLOOD_PUDDLES,
   ITEMS,
   MISHAP_GAP_DAYS,
   MISHAP_NOTICE_DAYS,
@@ -17,7 +18,7 @@ import {
 import { tuning } from '../difficulty';
 import { money } from '../format';
 import { irnd, pick, random } from '../random';
-import type { GameState, Mishap, Staff } from '../state/types';
+import type { GameState, Mishap, Room, Staff } from '../state/types';
 import { say } from './chars';
 import type { SimContext } from './context';
 import { spend } from './economy';
@@ -154,6 +155,53 @@ function startMishap(ctx: SimContext, m: Mishap) {
       undefined,
       def.icon,
     );
+  if (def.floods) floodRestroom(ctx, def);
+}
+
+/**
+ * The tiles of a room's floor a flood leaves puddles on: spread across the open floor, up to `FLOOD_PUDDLES` of them,
+ * where nothing stands and nothing lies already.
+ */
+export function floodTiles(ctx: SimContext, room: Room): [number, number][] {
+  const open: [number, number][] = [];
+  for (let y = room.y; y < room.y + room.h; y++)
+    for (let x = room.x; x < room.x + room.w; x++)
+      if (
+        ctx.world.roomAt(x, y) === room &&
+        ctx.world.walkable(x, y) &&
+        !ctx.s.litter.some((l) => l.x === x && l.y === y)
+      )
+        open.push([x, y]);
+  const n = Math.min(FLOOD_PUDDLES, open.length);
+  return Array.from({ length: n }, (_, i) => open[Math.floor(((i + 0.5) * open.length) / n)] ?? [room.x, room.y]);
+}
+
+/** Flood one of the finished restrooms, not flooded already: out of action until a Caretaker has mopped it out. */
+export function floodRestroom(ctx: SimContext, def: MishapDef): Room | undefined {
+  const s = ctx.s;
+  const dry = s.rooms.filter((r) => r.type === 'restroom' && r.done && !ctx.world.flooded(r));
+  if (!dry.length) return undefined;
+  const room = pick(s, dry);
+  for (const [x, y] of floodTiles(ctx, room)) s.litter.push({ id: s.nextId++, x, y, claimedBy: 0, flood: room.id });
+  // a restroom with no floor to flood stays dry
+  if (!ctx.world.flooded(room)) return undefined;
+  toast(
+    ctx,
+    `The ${def.name.toLowerCase()} has flooded a restroom. It is out of action until a Caretaker mops it out.`,
+    'bad',
+    { kind: 'room', id: room.id },
+    def.icon,
+  );
+  return room;
+}
+
+/** The advisor's line while a restroom is flooded: who will mop it out, or who to hire to. */
+export function floodAdvice(ctx: SimContext): string {
+  const s = ctx.s;
+  if (!s.rooms.some((r) => ctx.world.flooded(r))) return '';
+  return s.staff.some((st) => st.role === 'caretaker')
+    ? 'A restroom is flooded and out of action until a Caretaker mops it out.'
+    : 'A restroom is flooded and out of action. Hire a Caretaker to mop it out.';
 }
 
 /** End the mishap under way, and set when the next may come. */

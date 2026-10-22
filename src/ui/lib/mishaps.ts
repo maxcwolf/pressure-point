@@ -31,6 +31,9 @@ export function mishapLine(def: MishapDef, m: Mishap, daysLeft: number): string 
 export const preparedNote = (def: MishapDef) =>
   `Prepared, ${def.prepare.effect.charAt(0).toLowerCase()}${def.prepare.effect.slice(1)}`;
 
+/** What a restroom flooded by a storm, and each item in it, says about it until it is mopped out. */
+export const FLOODED_LABEL = 'Flooded: out of action until a Caretaker mops it out';
+
 /** What an item taken out of action by a mishap says about it. */
 export const stoppedLabel = (def: MishapDef) => `Out of action: ${def.name.toLowerCase()}`;
 

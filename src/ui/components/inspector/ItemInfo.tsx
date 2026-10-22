@@ -26,7 +26,7 @@ import { starsEarned } from '../../../core/state/game';
 import type { Item } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
-import { stoppedLabel } from '../../lib/mishaps';
+import { FLOODED_LABEL, stoppedLabel } from '../../lib/mishaps';
 import { installStatus, upgradeEffect, upgradeStars } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -172,6 +172,8 @@ export function ItemInfo({ item: it }: { item: Item }) {
   const { sim, tools } = useGame();
   const def = ITEMS[it.type];
   const stoppedBy = sim.world.stoppedByMishap(it) ? sim.s.mishap : null;
+  const room = sim.world.roomOfItem(it);
+  const flooded = !!room && sim.world.flooded(room);
   return (
     <>
       <h3>
@@ -221,6 +223,11 @@ export function ItemInfo({ item: it }: { item: Item }) {
       {stoppedBy && (
         <p class="status">
           <IconText id={MISHAPS[stoppedBy.kind].icon}>{stoppedLabel(MISHAPS[stoppedBy.kind])}</IconText>
+        </p>
+      )}
+      {flooded && (
+        <p class="status">
+          <IconText id="mishap-storm">{FLOODED_LABEL}</IconText>
         </p>
       )}
       {!!def.dirt && !def.linens && (

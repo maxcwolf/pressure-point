@@ -369,6 +369,14 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
   }
   // stressed in an outbreak: a nervous glance one way and the other
   if (c.kind === 'guest' && c.stressed && c.pose !== 'lie') headZ += Math.sin(t * 13 + c.id) * 0.12;
+  // on a really bad trip: arms flung up and waving, head whipping round at whatever they think they see
+  if (c.kind === 'guest' && c.state === 'running') {
+    armL = -2.7 + Math.sin(t * 11 + c.id) * 0.5;
+    armR = -2.7 + Math.sin(t * 11 + c.id + Math.PI) * 0.5;
+    armOut = 0.45;
+    headZ += Math.sin(t * 7 + c.id) * 0.35;
+    headX -= 0.2;
+  }
   if (visual === 'slump') {
     lean += 0.42;
     headX += 0.2;

@@ -47,6 +47,7 @@ import { buildItem } from '../render/models/items';
 import { buildOrchard } from '../render/models/orchard';
 import { mat, partsOf } from '../render/models/parts';
 import { buildPines } from '../render/models/pine';
+import { buildPuddle } from '../render/models/puddle';
 import { LAMP_STATES, type LampState, pulseLamps, setLamp } from '../render/models/sign-plaque';
 import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
@@ -540,6 +541,25 @@ function moodSpecimen(mood: Mood, label: string, seated: boolean): Specimen {
   };
 }
 
+/** A guest on a really bad trip, running on the spot with their arms waving over their head. */
+function runawaySpecimen(): Specimen {
+  return {
+    id: 'mood:runaway',
+    group: 'Moods',
+    name: 'On a really bad trip, running round',
+    footprint: [1, 1],
+    /** Build the guest, running. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK);
+      const c = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
+      Object.assign(c, { state: 'running', pose: 'walk', outcome: 'failed', bubble: 'bubble-stressed', bubbleT: 1e9 });
+      /** Pose them. */
+      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null);
+      return { root: rig.group, controls: [], animate };
+    },
+  };
+}
+
 /** The faces a guest makes, other than at ease, and what the lab calls each. */
 const FACES: readonly (readonly [Exclude<Expression, 'neutral'>, string])[] = [
   ['delighted', 'Delighted, healed'],
@@ -716,6 +736,22 @@ function doorSpecimen(): Specimen {
 /** Scenery that is drawn as a batch, shown with a few of each so the variety shows. */
 const SCENERY: Specimen[] = [
   {
+    id: 'scenery:puddles',
+    group: 'Scenery',
+    name: 'Puddles: kombucha, and a flooded restroom',
+    footprint: [3, 1],
+    /** A puddle of kombucha, and flood water from a storm beside it. */
+    build: () => {
+      const root = new THREE.Group();
+      const kombucha = buildPuddle(1);
+      kombucha.position.x = -0.8;
+      const flood = buildPuddle(2, true);
+      flood.position.x = 0.8;
+      root.add(kombucha, flood);
+      return { root, animate: still, controls: [] };
+    },
+  },
+  {
     id: 'scenery:trees',
     group: 'Scenery',
     name: 'Trees',
@@ -847,6 +883,7 @@ export const CATALOG: readonly Specimen[] = [
   ]),
   ...FACES.map(faceSpecimen),
   ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
+  runawaySpecimen(),
   doorSpecimen(),
   ...SCENERY,
 ];

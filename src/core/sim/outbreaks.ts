@@ -22,13 +22,14 @@ import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
 import { emit, toast } from './events';
 import { feel } from './feelings';
+import { running, sendToCalm } from './runaways';
 import { cutOff } from './twists';
 
 /** Whether a guest is waiting about, where stress can pass between them and the guests around them. */
 const idle = (g: Guest) => g.state === 'waiting' || g.state === 'toWait' || g.state === 'need' || g.state === 'toNeed';
 
 /** Whether a guest can still catch stress: here for treatment, and neither stressed nor calmed yet. */
-const catchable = (g: Guest) => !g.outcome && g.goal !== 'leave' && !g.stressed && !g.calmed;
+export const catchable = (g: Guest) => !g.outcome && g.goal !== 'leave' && !g.stressed && !g.calmed;
 
 /** Run the outbreak in progress, or offer a new one when it is time. */
 export function updateOutbreak(ctx: SimContext) {
@@ -118,13 +119,20 @@ export function spreadStress(ctx: SimContext) {
   }
 }
 
-/** What came of a calming session: a carrier calmed, one wasted on a guest who was fine, or none given. */
-export type CalmResult = 'calmed' | 'wasted' | '';
+/**
+ * What came of a calming session: a carrier calmed, one wasted on a guest who was fine, someone sent to a guest on a
+ * really bad trip, or nothing.
+ */
+export type CalmResult = 'calmed' | 'wasted' | 'sent' | '';
 
-/** Give a guest one of the outbreak's calming sessions. */
+/**
+ * Calm a guest down: one on a really bad trip has the nearest free member of staff sent to them; anyone else, in a
+ * stress outbreak, is given one of its calming sessions.
+ */
 export function calm(ctx: SimContext, guestId: number): CalmResult {
   const o = ctx.s.outbreak;
   const g = guestById(ctx, guestId);
+  if (g && running(g)) return sendToCalm(ctx, guestId) ? 'sent' : '';
   if (!o || o.calms <= 0 || !g || g.state === 'leaving' || g.calmed) return '';
   o.calms--;
   g.calmed = true;

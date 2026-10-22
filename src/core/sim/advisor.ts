@@ -39,8 +39,9 @@ import {
 import { emit, type Subject } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { roomForModality } from './machines';
-import { mishapAdvice } from './mishaps';
+import { floodAdvice, mishapAdvice } from './mishaps';
 import { allStars, hasItem, hasRoom, hasStaff } from './progress';
+import { calmerOf, running } from './runaways';
 import { stationStaff } from './sessions';
 import { fedUp, refreshmentFor, wants } from './staff-needs';
 import { aboutToQuit } from './staffing';
@@ -82,6 +83,15 @@ function nudge(ctx: SimContext): string | Advice {
   // while a mishap has things stopped, they are not missing, so say so rather than ask for them
   const mishap = mishapAdvice(s);
   if (mishap) return mishap;
+  const flood = floodAdvice(ctx);
+  if (flood) return flood;
+  // someone on a really bad trip, freaking out everyone they pass, and nobody sent to them yet
+  const runner = s.guests.find((g) => running(g) && !calmerOf(ctx, g));
+  if (runner)
+    return {
+      text: `${runner.name} is on a really bad trip, freaking out everyone they pass. Select them and calm them down.`,
+      about: { kind: 'guest', id: runner.id },
+    };
   if (!hasItem(ctx, 'reception_desk'))
     return 'Welcome! Open the Items menu and place a Reception Desk somewhere near the entrance.';
   if (!hasStaff(ctx, 'receptionist')) return 'A desk needs a face behind it. Hire a Receptionist from the Hire menu.';

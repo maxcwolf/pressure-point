@@ -162,7 +162,7 @@ export function stationDuty(it: Item): Duty | null {
 /** The duty a Caretaker's job is, if it is one they can be kept from. */
 export function jobDuty(kind: Job['kind'], it: Item | undefined): Duty | null {
   if (kind === 'water') return it?.type === 'stone_warmer' ? 'stones' : 'plants';
-  if (kind === 'smudge' || kind === 'refresh' || kind === 'soul' || kind === 'ward') return null;
+  if (kind === 'smudge' || kind === 'refresh' || kind === 'soul' || kind === 'ward' || kind === 'calm') return null;
   // laundering is part of keeping things clean
   if (kind === 'launder') return 'clean';
   // installing upgrades is part of looking after equipment

@@ -153,6 +153,20 @@ export const SETTING_WEIGHT = 2;
 export const TRIP_DISCOMFORT = 0.15;
 /** What a bad trip costs in reputation, on top of a failed treatment. */
 export const BAD_TRIP_REP = 1.5;
+/** The share of bad trips that are really bad: the guest runs round the institute freaking out everyone they pass. */
+export const RUNAWAY_CHANCE = 0.1;
+/** How long a guest on a really bad trip runs about before they find the door, in seconds: ten days. */
+export const RUNAWAY_SECONDS = 60;
+/** How fast they run, in tiles a second, and how long they stand and freak out wherever they stop. */
+export const RUNAWAY_SPEED = 3.2;
+export const RUNAWAY_PAUSE = 2.5;
+/** How close they come to someone to freak them out, in tiles, and the patience that costs them. */
+export const FREAK_RANGE = 1.5;
+export const FREAK_PATIENCE = 10;
+/** The chance someone they freak out catches the stress of an outbreak going round, if one is. */
+export const FREAK_STRESS = 0.35;
+/** How long it takes a member of staff to calm them down, once they have caught up with them. */
+export const CALM_SECONDS = 2;
 /** How many times faster a Shaman clears bad vibes than sage does. */
 export const SHAMAN_CLEARING = 2;
 /** How many days the blessing a Shaman leaves on a room they clear lasts. */

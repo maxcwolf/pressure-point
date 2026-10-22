@@ -1,10 +1,11 @@
-// Litter on the floor, and puddles of kombucha.
+// Litter on the floor, puddles of kombucha, and the sea water in a flooded restroom.
 
 import * as THREE from 'three';
 
 import type { Sim } from '../core/sim/sim';
 import { at } from '../core/util';
-import { cyl, mat, put, rbox, trimShadows } from './models/parts';
+import { mat, put, rbox, trimShadows } from './models/parts';
+import { buildPuddle } from './models/puddle';
 import { hash } from './shared';
 
 export class LitterLayer {
@@ -15,32 +16,15 @@ export class LitterLayer {
     private sim: Sim,
   ) {}
 
-  /** A puddle: a few overlapping pools of something amber and shiny, flat on the floor. */
-  private puddle(g: THREE.Group, id: number) {
-    const wet = mat(0xd9a441, 0.08);
-    for (let i = 0; i < 3; i++) {
-      const r = 0.16 + hash(id, i) * 0.12;
-      put(
-        g,
-        cyl(r, r, 0.01, 16),
-        wet,
-        (hash(id, i + 2) - 0.5) * 0.35,
-        0.006 + i * 0.001,
-        (hash(i + 2, id) - 0.5) * 0.35,
-      );
-    }
-  }
-
   /** Add a pile for each new piece of litter, or a puddle, and remove the ones that have been swept or mopped up. */
   update() {
     const liveLitter = new Set<number>();
     for (const l of this.sim.s.litter) {
       liveLitter.add(l.id);
       if (this.litter.has(l.id)) continue;
-      const g = new THREE.Group();
+      const g = l.puddle || l.flood ? buildPuddle(l.id, !!l.flood) : new THREE.Group();
       const colors = [0xe76f51, 0xe9c46a, 0x5fa8d3];
-      if (l.puddle) this.puddle(g, l.id);
-      else
+      if (!l.puddle && !l.flood)
         for (let i = 0; i < 3; i++) {
           const m = put(
             g,

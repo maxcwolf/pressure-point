@@ -961,6 +961,45 @@ test.describe('running a center', () => {
     );
   });
 
+  test('a guest on a really bad trip is named in a toast, and calmed down by someone sent from their inspector', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(60);
+    await game.eval((pp) => (pp.state.speed = 0));
+    // the console sends a waiting guest off on one, as a failed ceremony now and then does
+    const name = await game.eval((pp) => {
+      const r = pp.sim.cheat('badtrip');
+      if (!r.ok) throw new Error(r.text);
+      return pp.state.guests.find((g) => g.state === 'running')!.name;
+    });
+    const toast = page
+      .locator('#toasts')
+      .getByRole('button', { name: new RegExp(`${name} is having a really bad trip`) });
+    await toast.click();
+    const inspector = page.locator('#inspector');
+    await expect(inspector).toContainText(name);
+    await expect(inspector).toContainText('Running round the institute on a really bad trip');
+    // past listening: they cannot be sent home, only calmed down
+    await expect(inspector.getByRole('button', { name: /Send home/ })).toHaveCount(0);
+    await inspector.getByRole('button', { name: /Calm them down/ }).click();
+    await expect(inspector).toContainText('to calm them down');
+    // a second at a time, so they are caught still here, calmed and on their way
+    /** Whether the guest of this name has been calmed down. */
+    const calmed = (who: string) =>
+      game.eval((pp, n) => !!pp.state.guests.find((x) => x.name === n)?.feelings.includes('calmed'), who);
+    for (let i = 0; i < 60 && !(await calmed(name)); i++) await game.fastForward(1);
+    await expect(inspector).toContainText('Calmed down when it all got too much');
+    expect(
+      await game.eval((pp, who) => {
+        const g = pp.state.guests.find((x) => x.name === who)!;
+        return { running: g.state === 'running', calming: pp.state.staff.some((st) => st.job?.kind === 'calm') };
+      }, name),
+    ).toEqual({ running: false, calming: false });
+  });
+
   // the offer used to add "massage" to every technique, so an acupuncture emergency asked for "Cupping massage"
 
   test('a mishap is announced, can be prepared for from its notice, and shows while it lasts', async ({

@@ -103,7 +103,9 @@ export function repathAll(ctx: SimContext) {
     if (!d || !c.path) continue;
     const pp = d[4] ? { x: d[2], y: d[3], face: c.endFace, pose: c.endPose, h: c.endH } : undefined;
     if (goTo(ctx, c, d[0], d[1], pp)) continue;
-    if (c.kind === 'guest') resetGuest(ctx, c);
+    // someone on a really bad trip stops where they are, and runs on somewhere else
+    if (c.kind === 'guest' && c.state === 'running') halt(c);
+    else if (c.kind === 'guest') resetGuest(ctx, c);
     // a visitor who can no longer get to a room moves on to the next
     else if (c.kind === 'visitor') nextRoom(ctx, c);
     // someone on their way out with no way out is simply gone, as when they are fired with nowhere to walk

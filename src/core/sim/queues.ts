@@ -81,7 +81,8 @@ export function moveToStation(ctx: SimContext, guestId: number, stationId: numbe
 /** Send a guest home untreated: no fee for treatment, and a small knock to reputation. */
 export function sendHome(ctx: SimContext, guestId: number): boolean {
   const g = guestById(ctx, guestId);
-  if (!g || g.state === 'leaving') return false;
+  // someone on a really bad trip is past listening: they have to be calmed down first
+  if (!g || g.state === 'leaving' || g.state === 'running') return false;
   // their visit is over and counted already: they are only shopping, or resting after a treatment
   if (g.outcome || g.goal === 'shop') {
     leave(ctx, g);
