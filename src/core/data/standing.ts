@@ -23,7 +23,7 @@ export const GRADES: readonly GradeDef[] = [
  * Points for each finished room in use, where guests are seen, treated or taught and someone on the payroll can work,
  * and for each star of its prestige; and for any other room, a Restroom say, or a Massage Suite nobody can work in.
  */
-export const ROOM_POINTS = 12;
+export const ROOM_POINTS = 16;
 export const PRESTIGE_POINTS = 4;
 export const IDLE_ROOM_POINTS = 4;
 /** Points for each rank a member of staff holds, from 1 for a Trainee to 5 for an Expert. */

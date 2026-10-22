@@ -144,7 +144,7 @@ describe('the numbers behind a goal', () => {
     const { sim, therapist } = openCenter(1);
     sim.fire(therapist.id);
     expect(sim.objectiveDetail({ kind: 'grade', grade: 1 })[1]).toBe(
-      '1 room nobody on the payroll can work in counts only 4 points: staffing it adds at least 8',
+      '1 room nobody on the payroll can work in counts only 4 points: staffing it adds at least 12',
     );
   });
 

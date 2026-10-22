@@ -74,8 +74,8 @@ function rivalDays(ctx: ReturnType<typeof withRival>['ctx'], days: number) {
 
 describe('standing points', () => {
   it('come from each room in use and its prestige, from each member of staff by rank, and from heals', () => {
-    expect(roomPoints(1)).toBe(16);
-    expect(roomPoints(5)).toBe(32);
+    expect(roomPoints(1)).toBe(20);
+    expect(roomPoints(5)).toBe(36);
     expect(staffPoints(1), 'a Trainee').toBe(3);
     expect(staffPoints(5), 'an Expert').toBe(15);
     expect(healPoints(9)).toBe(1);
@@ -88,12 +88,12 @@ describe('standing points', () => {
     const before = standingPoints(ctx);
     expect(before.total).toBe(before.rooms + before.prestige + before.staff + before.heals);
     // the Consultation Room and the Massage Suite, each with someone to work in it
-    expect(before.rooms).toBe(24);
+    expect(before.rooms).toBe(32);
     expect(before).toMatchObject({ inUse: 2, idle: 0, unstaffed: 0 });
     sim.createRoom('restroom', LAYOUT.restroom.rect, LAYOUT.restroom.door);
-    expect(standingPoints(ctx).rooms, 'a blueprint').toBe(24);
+    expect(standingPoints(ctx).rooms, 'a blueprint').toBe(32);
     addStaffRoom(sim);
-    expect(standingPoints(ctx).rooms, 'a room nobody works in counts for less').toBe(28);
+    expect(standingPoints(ctx).rooms, 'a room nobody works in counts for less').toBe(36);
     sim.fire(consultant.id);
     expect(standingPoints(ctx).staff).toBe(before.staff - staffPoints(consultant.skill));
   });
@@ -106,11 +106,11 @@ describe('standing points', () => {
     sim.fire(therapist.id);
     const after = standingPoints(ctx);
     expect(after).toMatchObject({ inUse: 1, idle: 1, unstaffed: 1 });
-    expect(after.rooms).toBe(before.rooms - 8);
+    expect(after.rooms).toBe(before.rooms - 12);
     // and its prestige no longer counts
     expect(after.prestige).toBeLessThan(before.prestige);
     expect(idleNote(after)).toBe(
-      '1 room nobody on the payroll can work in counts only 4 points: staffing it adds at least 8',
+      '1 room nobody on the payroll can work in counts only 4 points: staffing it adds at least 12',
     );
   });
 
