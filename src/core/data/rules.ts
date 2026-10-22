@@ -320,7 +320,7 @@ export const CAPACITY_ARRIVALS = { each: 0.12, most: 2.5 } as const;
  * its own to run it, times its room's pull, and they are not among the guests the tables draw. A machine counts for
  * nothing toward the stations those draw.
  */
-export const MACHINE_DRAW = 0.25;
+export const MACHINE_DRAW = 0.35;
 /**
  * How many treatment stations one staffed Consultation Room can keep in guests: every guest is seen there first, so
  * stations past this many for each one draw nobody more, and count nothing toward the guests let in at once.

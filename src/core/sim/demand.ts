@@ -148,7 +148,7 @@ function lineFor(ctx: SimContext, d: Discipline, cap: Capacity): Line {
   const staff = ctx.s.staff.filter((st) => st.role === DISCIPLINES[d].role && st.state !== 'leaving').length;
   const machines = cap.machines.filter((m) => ITEMS[m.machine].station?.discipline === d);
   const running = machines.reduce((sum, m) => sum + m.paid, 0);
-  const places = staff * (d === 'sound' ? matsUsable(ctx) : 1) - running;
+  const places = Math.max(0, staff - running) * (d === 'sound' ? matsUsable(ctx) : 1);
   return { waiting, places, factor: lineFactor(waiting, places) };
 }
 
@@ -247,7 +247,7 @@ export interface Capacity {
 
 /**
  * A kind of signature machine the center has working: how many stand, how many have a practitioner of their own on the
- * payroll past those the discipline's tables keep busy, and how many of those are at work today.
+ * payroll, who runs it before working a table, and how many of those are at work today.
  */
 export interface MachineCapacity {
   machine: ItemType;
@@ -290,16 +290,11 @@ export function capacity(ctx: SimContext): Capacity {
     );
     if (!tables && !own.length) continue;
     const staff = staffIn(DISCIPLINES[d].role);
-    const each = d === 'sound' ? matsUsable(ctx) : 1;
-    const paid = Math.min(tables, staff.length * each);
-    const n = Math.min(tables, staff.filter(atWork).length * each);
-    if (n) by[d] = n;
-    stations += n;
-    away += paid - n;
-    idle += tables - paid;
-    // a machine needs a practitioner of its own, past those the tables keep busy
-    let freePaid = staff.length - Math.ceil(paid / each);
-    let freeAtWork = staff.filter(atWork).length - Math.ceil(n / each);
+    const working = staff.filter(atWork).length;
+    // each machine takes a practitioner of its own before the tables do, so building one without hiring for it
+    // leaves a table standing instead
+    let freePaid = staff.length;
+    let freeAtWork = working;
     for (const it of own) {
       let m = machines.find((x) => x.machine === it.type);
       if (!m) {
@@ -316,6 +311,14 @@ export function capacity(ctx: SimContext): Capacity {
         freeAtWork--;
       }
     }
+    if (!tables) continue;
+    const each = d === 'sound' ? matsUsable(ctx) : 1;
+    const paid = Math.min(tables, freePaid * each);
+    const n = Math.min(tables, freeAtWork * each);
+    if (n) by[d] = n;
+    stations += n;
+    away += paid - n;
+    idle += tables - paid;
   }
   // a Consultant's course or call shows in the line for consultations, not in the stations the rooms keep in guests
   const consults = Math.min(built('consult'), staffIn('consultant').length);

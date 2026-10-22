@@ -186,9 +186,12 @@ export function capacityNote(c: Capacity): string | null {
     parts.push(
       `${count(unfed, 'staffed treatment station draws', 'staffed treatment stations draw')} nobody more: every guest is seen in a Consultation Room first, and each keeps only ${CONSULT_FEEDS} stations in guests. Another would let ${unfed === 1 ? 'it' : 'them'} draw, and let more in at once`,
     );
+  const machineFirst = c.machines.some((m) => m.paid > 0)
+    ? ', since a signature machine takes its practitioner first'
+    : '';
   if (c.idle)
     parts.push(
-      `${count(c.idle, 'treatment station has', 'treatment stations have')} nobody on the payroll to work ${c.idle === 1 ? 'it' : 'them'}: a practitioner for each would bring guests more often and let more in at once`,
+      `${count(c.idle, 'treatment station has', 'treatment stations have')} nobody on the payroll to work ${c.idle === 1 ? 'it' : 'them'}${machineFirst}: a practitioner for each would bring guests more often and let more in at once`,
     );
   if (c.away)
     parts.push(
@@ -199,7 +202,7 @@ export function capacityNote(c: Capacity): string | null {
     const role = ROLES[DISCIPLINES[ITEMS[m.machine].station?.discipline ?? 'massage'].role].name;
     if (m.paid < m.standing)
       parts.push(
-        `The ${name} draws nobody for its own ailments: it needs a ${role} of its own, past those its discipline’s tables keep busy. One more on the payroll would bring its guests, and let more in at once`,
+        `The ${name} draws nobody for its own ailments: nobody on the payroll can run it. A ${role} would bring its guests, and let more in at once`,
       );
     else if (m.staffed < m.standing)
       parts.push(`The ${name} draws nobody while its ${role} is away on a course or a house call`);

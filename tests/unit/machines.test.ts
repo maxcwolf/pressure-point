@@ -81,24 +81,28 @@ describe('a machine room and the guests it draws', () => {
     return { ...center, second, ctx: ctxOf(center.sim) };
   }
 
-  it('is not a treatment station, and draws nobody without a practitioner of its own past the tables', () => {
-    const { sim, chair } = withKneader();
+  it('is not a treatment station, and takes a practitioner of its own before the tables do', () => {
+    const { sim, s, chair } = withKneader();
     const ctx = ctxOf(sim);
-    // a table and the Kneadmaster, with one Massage Therapist: the table is the station, and the chair stands idle
+    // a table and the Kneadmaster, with one Massage Therapist: the chair has them, and the table stands idle
     expect(capacity(ctx)).toMatchObject({
-      stations: 1,
-      by: { massage: 1 },
-      idle: 0,
-      machines: [{ machine: 'kneadmaster', standing: 1, paid: 0, staffed: 0 }],
+      stations: 0,
+      by: {},
+      idle: 1,
+      machines: [{ machine: 'kneadmaster', standing: 1, paid: 1, staffed: 1 }],
     });
-    expect(machineDemand(ctx).map((m) => m.pull)).toEqual([0]);
-    expect(sim.arrivalPace().perMonth).toBe(sim.arrivalPace().tables);
-    hire(sim, 'therapist');
-    // a second therapist runs the chair: the tables' pace is the same, and the chair draws guests of its own
-    expect(capacity(ctx)).toMatchObject({ stations: 1, machines: [{ standing: 1, paid: 1, staffed: 1 }] });
-    expect(capacityArrivals(capacity(ctx))).toBe(1);
     expect(machineDemand(ctx)[0]?.pull).toBeGreaterThan(0);
+    // a second therapist works the table: the tables' pace is a station's, and the chair still draws its own
+    hire(sim, 'therapist');
+    expect(capacity(ctx)).toMatchObject({ stations: 1, idle: 0, machines: [{ standing: 1, paid: 1, staffed: 1 }] });
+    expect(capacityArrivals(capacity(ctx))).toBe(1);
+    // with nobody in the role at all, it draws nobody
+    for (const st of s.staff) if (st.role === 'therapist') st.state = 'leaving';
+    expect(capacity(ctx).machines).toEqual([{ machine: 'kneadmaster', standing: 1, paid: 0, staffed: 0 }]);
+    expect(machineDemand(ctx)[0]?.pull).toBe(0);
+    expect(sim.arrivalPace().perMonth).toBe(sim.arrivalPace().tables);
     // broken down, it draws nobody until it is put right
+    for (const st of s.staff) if (st.role === 'therapist') st.state = 'atPost';
     chair.wear = 100;
     expect(capacity(ctx).machines).toEqual([]);
     expect(sim.arrivalPace().machines).toEqual([]);
@@ -139,14 +143,16 @@ describe('a machine room and the guests it draws', () => {
   });
 
   it('draws nobody while it is down, or while its practitioner is away', () => {
-    const { ctx, chair, second } = staffed();
+    const { ctx, chair, second, therapist } = staffed();
     expect(machineDemand(ctx)[0]?.pull).toBeGreaterThan(0);
     chair.overloaded = true;
     chair.wear = 100;
     expect(machineDemand(ctx)).toEqual([]);
     chair.overloaded = false;
     chair.wear = 0;
+    // both therapists away: the chair is paid for, but nobody is at work to run it
     second.state = 'training';
+    therapist.state = 'toCall';
     expect(capacity(ctx).machines).toEqual([{ machine: 'kneadmaster', standing: 1, paid: 1, staffed: 0 }]);
     expect(machineDemand(ctx)[0]?.pull).toBe(0);
   });
@@ -185,7 +191,7 @@ describe('a machine room and the guests it draws', () => {
     const note = paceNote(sim.arrivalPace(), s.reputation, centerOf(s));
     expect(note).toMatch(/^About \d+ new guests a month\. \d+ come for the treatment stations: /);
     expect(note).toMatch(
-      /\d+ come for the Kneadmaster 9000’s own ailments: 25% of the center’s pace for the one with a Massage Therapist of its own to run it/,
+      /\d+ come for the Kneadmaster 9000’s own ailments: 35% of the center’s pace for the one with a Massage Therapist of its own to run it/,
     );
     // its room's inspector says how it draws, as a finest room does
     expect(machinePullNote(1, 'kneadmaster').text).toBe(
@@ -194,10 +200,15 @@ describe('a machine room and the guests it draws', () => {
     expect(machinePullNote(1.43, 'kneadmaster').text).toBe(
       'Draws 1.4× the usual guests for the Kneadmaster 9000, for its prestige and its peace.',
     );
-    // with nobody of its own to run it, the Guests tab says what it needs
-    const { sim: alone } = withKneader();
-    expect(capacityNote(alone.arrivalPace().capacity)).toContain(
-      'The Kneadmaster 9000 draws nobody for its own ailments: it needs a Massage Therapist of its own',
+    // with one therapist, the chair takes them and the Guests tab says why the table stands idle
+    const { sim: one, s: oneState } = withKneader();
+    expect(capacityNote(one.arrivalPace().capacity)).toBe(
+      '1 treatment station has nobody on the payroll to work it, since a signature machine takes its practitioner first: a practitioner for each would bring guests more often and let more in at once.',
+    );
+    // and with nobody in the role, what the chair needs
+    for (const st of oneState.staff) if (st.role === 'therapist') st.state = 'leaving';
+    expect(capacityNote(one.arrivalPace().capacity)).toContain(
+      'The Kneadmaster 9000 draws nobody for its own ailments: nobody on the payroll can run it. A Massage Therapist would bring its guests',
     );
   });
 });

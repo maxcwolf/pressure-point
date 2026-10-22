@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Machines draw guests of their own.** A signature machine's two ailments now come only for it, at their own pace once it stands with a practitioner of its own to run it, more for a finer room, and the Guests tab and the date's hover say how many.
+
 ## v0.31.0
 
 ### A center that tells you where it stands
