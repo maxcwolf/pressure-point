@@ -140,6 +140,10 @@ describe('faces', () => {
     expect(expressionOf({ ...g, outcome: 'healed' })).toBe('delighted');
     expect(expressionOf({ ...g, outcome: 'stormed' })).toBe('unhappy');
     expect(expressionOf({ ...g, outcome: 'sent' })).toBe('neutral');
+    // frightened on a really bad trip or in an outbreak, unless healed
+    expect(expressionOf({ ...g, state: 'running', outcome: 'failed' })).toBe('scared');
+    expect(expressionOf({ ...g, stressed: true, patience: 10 })).toBe('scared');
+    expect(expressionOf({ ...g, stressed: true, outcome: 'healed' })).toBe('delighted');
     const st = demoStaff(LAB_LOOK, 'therapist');
     expect(expressionOf(st)).toBe('neutral');
     expect(expressionOf({ ...st, energy: 10 })).toBe('wince');

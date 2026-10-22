@@ -162,8 +162,11 @@ const glints = () =>
     [-1, 1].map((s) => place(ball(0.0045, n(8)), [s * EYE.x + 0.005, EYE.y + 0.009, faceZ(EYE.x, EYE.y) + 0.006])),
   );
 
-/** How someone looks: at ease, unhappy, delighted, or wincing in pain. Each is a shape of the mouth and of the brows. */
-export type Expression = 'neutral' | 'unhappy' | 'delighted' | 'wince';
+/**
+ * How someone looks: at ease, unhappy, delighted, wincing in pain, or frightened. Each is a shape of the mouth and of the
+ * brows.
+ */
+export type Expression = 'neutral' | 'unhappy' | 'delighted' | 'wince' | 'scared';
 
 /**
  * How each expression sets the brows: how high they sit, and how far their outer ends dip. Dipping a little is a
@@ -175,6 +178,8 @@ const BROWS: Readonly<Record<Expression, { y: number; dip: number }>> = {
   unhappy: { y: 0.072, dip: -0.4 },
   delighted: { y: 0.093, dip: 0.06 },
   wince: { y: 0.082, dip: 0.55 },
+  // raised high, the inner ends lifted, as a wince is but higher up
+  scared: { y: 0.096, dip: 0.5 },
 };
 
 /** Both eyebrows, lying along the brow, set for an expression. */
@@ -213,9 +218,13 @@ function grin(n: Sides) {
   return smooth(geo.scale(1.3, 1, 0.45));
 }
 
-/** The mouth for an expression: a soft closed smile, a frown, a wide grin, or a tight flat line. */
+/** The mouth for an expression: a soft closed smile, a frown, a wide grin, a tight flat line, or a small dark O. */
 const mouth = (e: Expression) =>
   fuse(`mouth-${e}`, (n) => {
+    if (e === 'scared') {
+      const y = MOUTH_Y - 0.004;
+      return [place(ball(0.024, n(14)), [0, y, faceZ(0, y) - 0.004], [0.3, 0, 0], [0.8, 1.15, 0.5])];
+    }
     if (e === 'delighted') {
       const y = MOUTH_Y + 0.008;
       return [place(grin(n), [0, y, faceZ(0, y) - 0.006], [0.35, 0, 0])];

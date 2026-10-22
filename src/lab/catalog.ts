@@ -696,6 +696,7 @@ const FACES: readonly (readonly [Exclude<Expression, 'neutral'> | 'shut', string
   ['delighted', 'Delighted, healed'],
   ['unhappy', 'Unhappy, running out of patience'],
   ['wince', 'Wincing, in poor condition'],
+  ['scared', 'Frightened, in an outbreak or on a bad trip'],
   ['shut', 'Eyes shut, resting'],
 ];
 
@@ -704,6 +705,7 @@ function feel(c: Guest, e: Expression | 'shut') {
   if (e === 'delighted') c.outcome = 'healed';
   else if (e === 'unhappy') c.patience = PATIENCE_SIGNS.impatient - 5;
   else if (e === 'wince') c.health = POOR_CONDITION - 10;
+  else if (e === 'scared') c.stressed = true;
 }
 
 /** A plain guest making a face, or with their eyes shut. */

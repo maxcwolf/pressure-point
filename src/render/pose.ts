@@ -69,12 +69,14 @@ export const moodOf = (c: Char): Mood =>
   c.kind === 'guest' && (c.state === 'waiting' || c.state === 'toWait') ? moodFor(c.patience) : 'content';
 
 /**
- * The face someone wears. A guest: delighted once healed and unhappy if they leave otherwise worse off, unhappy as
- * their patience runs short, wincing in poor condition. Staff: unhappy about to quit, wincing worn out. Else, at ease.
+ * The face someone wears. A guest: delighted once healed, frightened on a really bad trip or stressed in an outbreak,
+ * unhappy if they leave otherwise worse off or as their patience runs short, wincing in poor condition. Staff: unhappy
+ * about to quit, wincing worn out. Else, at ease.
  */
 export function expressionOf(c: Char): Expression {
   if (c.kind === 'guest') {
     if (c.outcome === 'healed') return 'delighted';
+    if (c.state === 'running' || c.stressed) return 'scared';
     if (c.outcome === 'stormed' || c.outcome === 'failed' || c.outcome === 'worse') return 'unhappy';
     if (c.patience < PATIENCE_SIGNS.impatient) return 'unhappy';
     if (!c.outcome && c.health < POOR_CONDITION) return 'wince';
