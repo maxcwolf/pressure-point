@@ -37,6 +37,41 @@
   background: var(--orange);
 }
 
+/* a button whose word is wider than the circle where it sits draws its own outline: the circle with a slight plate
+   round the word, as one path behind the icon and the word (ui/lib/weld.ts), in place of its border and shadow */
+.round.welded {
+  position: relative;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+.round.welded > .shape {
+  position: absolute;
+  z-index: 0;
+  overflow: visible;
+  pointer-events: none;
+  filter: drop-shadow(0 5px 0 rgba(36, 56, 74, 0.32));
+}
+.round.welded > .shape .fill {
+  fill: var(--teal);
+  stroke: var(--navy);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+.round.welded:hover > .shape .fill {
+  fill: #38bdb4;
+}
+.round.welded:active > .shape {
+  filter: drop-shadow(0 2px 0 rgba(36, 56, 74, 0.32));
+}
+.round.welded.on > .shape .fill {
+  fill: var(--orange);
+}
+.round.welded > .icon,
+.round.welded > span {
+  position: relative;
+  z-index: 1;
+}
 .round.small {
   width: 44px;
   height: 44px;

@@ -2,23 +2,66 @@
 
 import './BuildButtons.css';
 
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+
 import type { IconId } from '../../core/data';
 import { useGame, useHud } from '../hooks/use-hud';
 import type { MenuId } from '../hud';
 import { cx } from '../lib/cx';
+import { type WeldShape, weldShape } from '../lib/weld';
 import { Button } from './common/Button';
 import { Icon } from './common/Icon';
 
-const MENUS: readonly { id: MenuId; icon: IconId; label: string }[] = [
+const MENUS: readonly { id: MenuId; icon: IconId; label: string; welded?: boolean }[] = [
   { id: 'rooms', icon: 'ui-rooms', label: 'Rooms' },
   { id: 'items', icon: 'ui-items', label: 'Items' },
   { id: 'hire', icon: 'ui-hire', label: 'Hire' },
   { id: 'staff', icon: 'ui-staff', label: 'Staff' },
-  { id: 'treatments', icon: 'ui-treatments', label: 'Treatments' },
+  // the one word wider than the circle where it sits, so its button draws a plate round it
+  { id: 'treatments', icon: 'ui-treatments', label: 'Treatments', welded: true },
   { id: 'finance', icon: 'ui-money', label: 'Money' },
   { id: 'policy', icon: 'ui-policy', label: 'Policy' },
   { id: 'stats', icon: 'ui-stats', label: 'Stats' },
 ];
+
+/**
+ * The outline behind a welded button: its circle and a plate round its word as one path, drawn again whenever the
+ * button or the word changes size, as they do with the window.
+ */
+function Plate() {
+  const ref = useRef<SVGSVGElement>(null);
+  const [shape, setShape] = useState<WeldShape | null>(null);
+  useLayoutEffect(() => {
+    const svg = ref.current;
+    const button = svg?.parentElement;
+    const word = button?.querySelector('span');
+    if (!svg || !button || !word) return undefined;
+    /** Measure the button and its word, and draw the outline round them. */
+    const draw = () => {
+      setShape(
+        weldShape(button.offsetHeight, { top: word.offsetTop, width: word.offsetWidth, height: word.offsetHeight }),
+      );
+    };
+    draw();
+    const watch = new ResizeObserver(draw);
+    watch.observe(button);
+    watch.observe(word);
+    return () => {
+      watch.disconnect();
+    };
+  }, []);
+  return (
+    <svg
+      ref={ref}
+      class="shape"
+      aria-hidden="true"
+      viewBox={shape?.viewBox}
+      style={shape ? { width: shape.width, height: shape.height, left: shape.left, top: shape.top } : undefined}
+    >
+      {shape && <path class="fill" d={shape.d} />}
+    </svg>
+  );
+}
 
 /** One round button per build menu, and Expand. */
 export function BuildButtons() {
@@ -30,11 +73,12 @@ export function BuildButtons() {
       {MENUS.map((m) => [
         <Button
           key={m.id}
-          class={cx('round', hud.menu === m.id && 'on')}
+          class={cx('round', m.welded && 'welded', hud.menu === m.id && 'on')}
           onPress={() => {
             hud.toggleMenu(m.id);
           }}
         >
+          {m.welded && <Plate />}
           <Icon id={m.icon} size={30} />
           <span>{m.label}</span>
         </Button>,
