@@ -237,29 +237,37 @@ describe('noise and warmth', () => {
     }
   });
 
-  it('draws warm and cool air as wavy lines that face the camera, heat climbing and cool air sinking, each in turn', () => {
-    for (const [type, way] of [
-      ['radiator', 1],
-      ['air_conditioner', -1],
-    ] as const) {
+  it('draws heat as wavy lines climbing off the top, and cool air as wavy lines blowing out of the vents and up', () => {
+    for (const type of ['radiator', 'air_conditioner'] as const) {
+      const cool = type === 'air_conditioner';
       const model = buildItem(type);
+      const { max } = new THREE.Box3().setFromObject(model);
       /** The lines of moving air at a moment, as the item runs flat out. */
       const lines = (t: number) => {
         animateItemParts(model, condition(type, { running: 1 }), t);
-        return partsOf(model).cues!.wisps!.children as THREE.Sprite[];
+        return partsOf(model).cues!.wisps!.children as (THREE.Sprite | THREE.Mesh)[];
       };
       expect(lines(0).length, type).toBe(3);
+      // heat stands up to face the camera; cool air lies out from the front, where the camera sees it from above
       expect(
-        lines(0).every((l) => l instanceof THREE.Sprite),
+        lines(0).every((l) => l instanceof (cool ? THREE.Mesh : THREE.Sprite)),
         type,
       ).toBe(true);
       const moments = Array.from({ length: 48 }, (_, i) => i * 0.05);
-      const seen = moments.map((t) => lines(t).map((l) => ({ y: l.position.y, shows: l.material.opacity })));
-      // there is always air to see, and each line only ever goes its own way, but for starting again once
+      const seen = moments.map((t) =>
+        lines(t).map((l) => ({ y: l.position.y, z: l.position.z, shows: (l.material as THREE.Material).opacity })),
+      );
+      // there is always air to see, all of it from up by the top, never down by the floor
       for (const now of seen) expect(Math.max(...now.map((l) => l.shows)), type).toBeGreaterThan(0.5);
+      for (const now of seen) for (const l of now) expect(l.y, type).toBeGreaterThan(max.y * 0.7);
+      // and each line only ever climbs, or blows out from the front and up, but for starting again once
       for (let i = 0; i < 3; i++) {
-        const back = seen.slice(1).filter((now, k) => (now[i]!.y - seen[k]![i]!.y) * way < 0);
+        const back = seen.slice(1).filter((now, k) => {
+          const was = seen[k]![i]!;
+          return now[i]!.y < was.y || (cool && now[i]!.z < was.z);
+        });
         expect(back.length, `${type} line ${i}`).toBeLessThanOrEqual(1);
+        if (cool) expect(Math.min(...seen.map((now) => now[i]!.z)), `line ${i}`).toBeGreaterThanOrEqual(max.z - 0.01);
       }
     }
   });
