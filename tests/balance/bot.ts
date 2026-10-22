@@ -1668,6 +1668,7 @@ export class Bot {
     // a room that would not fit is not tried again for a few days (looking takes time)
     if (this.flags.expansion && (this.noFit[type] ?? 0) > this.s.day) return null;
     for (const { r, door } of this.roomSpots(type, small)) {
+      if (this.s.money < roomCost(type, r) + extraCost + 500) continue;
       const room = this.sim.createRoom(type, r, door);
       if (this.furnish(room, [...def.required, ...extras]) && keep.every((k) => this.fits(k))) {
         this.sim.finishRoom(room);
@@ -1700,14 +1701,19 @@ export class Bot {
   private *roomSpots(type: RoomType, small = false): Generator<{ r: Rect; door: WallSpot }> {
     const def = ROOMS[type];
     const p = this.plot();
-    const [w0, h0] = (small ? undefined : SIZE[type]) ?? [def.minShort, def.minLong];
+    const [w0, h0] = SIZE[type] ?? [def.minShort, def.minLong];
     const cands: { r: Rect; score: number }[] = [];
-    const sizes: [number, number][] = [
+    const own: [number, number][] = [
       [w0, h0],
       [h0, w0],
+    ];
+    const least: [number, number][] = [
       [def.minShort, def.minLong],
       [def.minLong, def.minShort],
     ];
+    // the smallest first when the floor past it is not to be paid for; its own size after, should its furniture not
+    // fit in the smallest
+    const sizes = small ? [...least, ...own] : [...own, ...least];
     const doorX = (p.door[0] + p.door[1]) / 2;
     for (const [i, [w, h]] of sizes.entries()) {
       for (let y = p.y0; y + h - 1 <= p.y1; y++) {
@@ -1727,7 +1733,10 @@ export class Bot {
     cands.sort((a, b) => a.score - b.score);
     const cx = (p.x0 + p.x1) / 2;
     const cy = (p.y0 + p.y1) / 2;
-    for (const { r } of cands.slice(0, 80)) {
+    // the best few of the first sizes; with the smallest first, the best few of the bot's own size as well
+    const first = cands.filter((c) => c.score < 1000).slice(0, 80);
+    const tried = small ? [...first, ...cands.filter((c) => c.score >= 1000).slice(0, 80)] : cands.slice(0, 80);
+    for (const { r } of tried) {
       const doors = perimeterDoors(r).sort(
         (a, b) => Math.hypot(a.x + a.dx - cx, a.y + a.dy - cy) - Math.hypot(b.x + b.dx - cx, b.y + b.dy - cy),
       );
