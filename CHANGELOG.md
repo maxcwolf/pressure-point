@@ -2,9 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.32.1
 
 - **A fountain that flows, and air you can read.** The Zen Fountain's bowl spills over into its basin in running streams, a heater that is on sends up wavy lines of heat, and an air conditioner blows cool ones out of its vents.
+- **Tidier feelings.** In a guest's inspector, each feeling shows as one chip, not a chip with smaller chips inside it.
 
 ## v0.32.0
 
