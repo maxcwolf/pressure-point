@@ -15,6 +15,16 @@ const SPOTS: Partial<Record<ItemType, { x: number; y: number; z: number; flat?: 
   posture_scanner: { x: -0.5, y: 0.3, z: 0.11 },
   // lying on the folded blanket at the foot of a mat
   sound_mat: { x: 0, y: 0.17, z: 0.76, flat: true },
+  // on a machine, somewhere that stays still while its gag plays, clear of where the guest and the staff stand
+  kneadmaster: { x: 0.8, y: 0.2, z: 1.0, flat: true },
+  pin_press: { x: 0.95, y: 0.15, z: 0.22 },
+  aura_wash: { x: 0.5, y: 2.4, z: 1.98 },
+  great_alphorn: { x: 0, y: 0.3, z: -1.31 },
+  cider_press: { x: 0, y: 0.45, z: 0.82 },
+  wheel_of_rebirth: { x: 0, y: 0.21, z: 2.19, flat: true },
+  stone_kiln: { x: 0, y: 0.98, z: -0.15 },
+  octopus: { x: 0, y: 0.68, z: -0.23 },
+  geode: { x: 0, y: 0.07, z: 0.85, flat: true },
 };
 
 const BRASS = 0xc9a227;

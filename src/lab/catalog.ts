@@ -23,6 +23,7 @@ import {
   ROOMS,
   type RoomType,
   SANDBOX_PLOT,
+  UPGRADE_LEVELS,
 } from '../core/data';
 import { footprintOf } from '../core/footprint';
 import { HAIR, randomLook } from '../core/people';
@@ -47,6 +48,7 @@ import { buildItem } from '../render/models/items';
 import { buildOrchard } from '../render/models/orchard';
 import { mat, partsOf } from '../render/models/parts';
 import { buildPines } from '../render/models/pine';
+import { upgradePlate } from '../render/models/plate';
 import { LAMP_STATES, type LampState, pulseLamps, setLamp } from '../render/models/sign-plaque';
 import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
@@ -110,7 +112,7 @@ function wallBehind(model: THREE.Group, w: number): THREE.Group {
 function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
   const def = ITEMS[type];
   // a full trophy cabinet to begin with, so every cup is in the picture
-  const st: ItemCondition & { session: string; heating: boolean } = {
+  const st: ItemCondition & { session: string; heating: boolean; level: number } = {
     id: 1,
     type,
     water: 100,
@@ -122,6 +124,7 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
     trophies: 99,
     session: '',
     heating: false,
+    level: 0,
   };
   return {
     id: center ? `item:${type}:${center}` : `item:${type}`,
@@ -150,6 +153,9 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
         st.trophies = Math.min(st.trophies, parts.cups.length);
         controls.push(range('Trophies', st, 'trophies', 0, parts.cups.length));
       }
+      // the plate showing how far it has been upgraded, put on afresh when the level changes, as the game does
+      let plate: { level: number; group: THREE.Group | null } = { level: 0, group: null };
+      if (def.upgrade) controls.push(range('Upgrade level', st, 'level', 0, UPGRADE_LEVELS));
       if (props) {
         const names = MODALITIES as Partial<Record<string, { name: string }>>;
         const options = Object.keys(props).map((k): Option => [k, names[k]?.name ?? k]);
@@ -162,6 +168,11 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
         animate(t) {
           st.running = st.heating ? 1 : 0;
           animateItemParts(root, st, t);
+          if (st.level !== plate.level) {
+            if (plate.group) root.remove(plate.group);
+            plate = { level: st.level, group: upgradePlate(type, st.level) };
+            if (plate.group) root.add(plate.group);
+          }
           if (props) for (const [key, prop] of Object.entries(props)) prop.visible = key === st.session;
         },
       };

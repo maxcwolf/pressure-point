@@ -84,6 +84,21 @@ const STATES = [
   ['item:radiator', 'heating', '&heating=1'],
 ] as const;
 
+/** Each machine upgraded as far as it goes, with its plate of stars, as the scene shows one a Mechanic has upgraded. */
+const UPGRADED = Object.entries(ITEMS).flatMap(([type, def]) => (def.machine && def.upgrade ? [`item:${type}`] : []));
+
+test.describe('machines upgraded', () => {
+  for (const id of UPGRADED) {
+    test(`${id}, upgraded`, async ({ page }) => {
+      await openLab(page, id, '&level=3');
+      await expect(page.locator('canvas.stage')).toHaveScreenshot([
+        'models',
+        `${id.replaceAll(':', '-')}-upgraded.png`,
+      ]);
+    });
+  }
+});
+
 test.describe('items showing their state', () => {
   for (const [id, state, settings] of STATES) {
     test(`${id}, ${state}`, async ({ page }) => {
