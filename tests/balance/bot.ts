@@ -44,6 +44,7 @@ import {
   WINDOW_MAX_BONUS,
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
+import { roomCost } from '../../src/core/resize';
 import { BUSY_DAYS } from '../../src/core/sim/bottleneck';
 import { daysUntilBankrupt, loanLimit, projectedCashflow, putOffChance, wagesDue } from '../../src/core/sim/economy';
 import type { SimEvent, Subject } from '../../src/core/sim/events';
@@ -468,6 +469,13 @@ const SIZE: Partial<Record<RoomType, [number, number]>> = {
   recovery: [3, 4],
   qigong: [5, 5],
 };
+
+/** What the bot pays for a room of a type at the size it builds it, floor beyond the smallest included. */
+function price(type: RoomType): number {
+  const def = ROOMS[type];
+  const [w, h] = SIZE[type] ?? [def.minShort, def.minLong];
+  return roomCost(type, { w, h });
+}
 
 /** The chart that helps treatments in a room of each kind. */
 const CHART_FOR: Partial<Record<RoomType, ItemType>> = {
@@ -1210,7 +1218,7 @@ export class Bot {
       this.hireToFill();
     }
     const consults = this.rooms('consult').length;
-    if (this.waiting('consultant') > consults * 4 && s.money > ROOMS.consult.cost) {
+    if (this.waiting('consultant') > consults * 4 && s.money > price('consult')) {
       this.buildRoom('consult');
       this.hireToFill();
     }
@@ -1218,8 +1226,7 @@ export class Bot {
       const room = TREAT_ROOM[d];
       const n = this.rooms(room).length;
       if (!n) continue;
-      if (this.waiting(DISCIPLINES[d].role) > n * 3 && s.money > ROOMS[room].cost && this.buildRoom(room))
-        this.hireToFill();
+      if (this.waiting(DISCIPLINES[d].role) > n * 3 && s.money > price(room) && this.buildRoom(room)) this.hireToFill();
     }
     const seats = this.count('bench') * 2;
     if (s.guests.length > seats + 2 && s.money > 400) this.placeNearEntrance('bench');
@@ -1350,7 +1357,7 @@ export class Bot {
       if (this.sim.borrow()) this.heed(text, `borrowed a step, loan now ${s.loan}`);
       return;
     }
-    if (text.includes('Build a Staff Room') && !this.sim.hasRoom('staffroom') && s.money > ROOMS.staffroom.cost) {
+    if (text.includes('Build a Staff Room') && !this.sim.hasRoom('staffroom') && s.money > price('staffroom')) {
       if (this.buildRoom('staffroom')) this.heed(text, 'built a Staff Room');
       return;
     }
@@ -1391,7 +1398,7 @@ export class Bot {
       return;
     }
     if (text.includes('Build a Staff Room nearby')) {
-      if (this.sim.hasRoom('staffroom') || s.money <= ROOMS.staffroom.cost) return;
+      if (this.sim.hasRoom('staffroom') || s.money <= price('staffroom')) return;
       this.grewStage[stage.key] = s.day;
       if (this.buildRoom('staffroom')) this.heed(text, 'built a Staff Room');
       return;
@@ -1429,7 +1436,7 @@ export class Bot {
       this.heed(text, `staffed a ${room} room let go of before`);
       return;
     }
-    if (s.money <= ROOMS[room].cost) return;
+    if (s.money <= price(room)) return;
     this.grewStage[stage.key] = s.day;
     if (!this.buildRoom(room)) {
       this.heed(text, `another ${room} room did not fit`);
@@ -1655,6 +1662,8 @@ export class Bot {
     // a room that would not fit is not tried again for a few days (looking takes time)
     if (this.flags.expansion && (this.noFit[type] ?? 0) > this.s.day) return null;
     for (const { r, door } of this.roomSpots(type)) {
+      // the roomier size only if its floor can be paid for too
+      if (this.s.money < roomCost(type, r) + extraCost + 500) continue;
       const room = this.sim.createRoom(type, r, door);
       if (this.furnish(room, [...def.required, ...extras]) && keep.every((k) => this.fits(k))) {
         this.sim.finishRoom(room);
@@ -1674,7 +1683,7 @@ export class Bot {
       offer &&
       !this.saving() &&
       this.profit() > 0 &&
-      this.afford(offer.price + def.cost + extraCost, 0, true) &&
+      this.afford(offer.price + price(type) + extraCost, 0, true) &&
       this.sim.buyPlot(offer.def.id)
     )
       this.note(`day ${Math.floor(this.s.day)}: bought ${offer.name} for ${offer.price}`);
@@ -1898,14 +1907,14 @@ export class Bot {
     const untrained =
       s.staff.some((st) => this.sim.courses(st).some((c) => c.id in MODALITIES)) ||
       (this.flags.kit && upTo >= 1 && !this.mechanic());
-    if (untrained && !this.sim.hasRoom('training') && this.afford(ROOMS.training.cost + 400, 0, true))
+    if (untrained && !this.sim.hasRoom('training') && this.afford(price('training') + 400, 0, true))
       this.buildRoom('training');
     for (const d of DISCIPLINE_ORDER) {
       if (d === 'massage' || !disciplineOn(s, d)) continue;
       const room = TREAT_ROOM[d];
       const unlock = ROOMS[room].unlock ?? 0;
       if (this.saving() && !this.goalNeeds(d)) continue;
-      if (upTo >= unlock && !this.sim.hasRoom(room) && this.afford(ROOMS[room].cost + 2000, reserve * 0.5, true)) {
+      if (upTo >= unlock && !this.sim.hasRoom(room) && this.afford(price(room) + 2000, reserve * 0.5, true)) {
         if (this.buildRoom(room) ?? (this.goalNeeds(d) && this.makeSpace(room))) this.hireToFill();
       }
     }
@@ -2067,7 +2076,7 @@ export class Bot {
     const s = this.s;
     // a machine is no use without someone trained to run it, so a Training Room comes first
     if (!this.sim.hasRoom('training')) {
-      if (this.afford(ROOMS.training.cost + 400, 0, true) && this.buildRoom('training'))
+      if (this.afford(price('training') + 400, 0, true) && this.buildRoom('training'))
         this.note(`day ${Math.floor(s.day)}: a Training Room, for the ${ITEMS[machine].name}`);
       return;
     }
@@ -2143,7 +2152,7 @@ export class Bot {
     const junior = consultants.length > 0 && consultants.every((x) => x.skill <= 2);
     const long = this.waiting('consultant') > this.rooms('consult').length * 3;
     if (!junior && !long) return;
-    if (!this.afford(ROOMS.assess.cost, this.reserve('growth'))) return;
+    if (!this.afford(price('assess'), this.reserve('growth'))) return;
     if (this.buildRoom('assess')) {
       this.note(`day ${Math.floor(this.s.day)}: a Posture Lab (${junior ? 'junior consultants' : 'a long line'})`);
       this.hireToFill();
@@ -2165,8 +2174,8 @@ export class Bot {
       this.hireToFill();
     }
     const consults = this.rooms('consult').length;
-    if (this.waiting('consultant') > consults * 4 && this.afford(ROOMS.consult.cost, reserve * 0.5, true)) {
-      if (!this.sim.hasRoom('assess') && s.money > ROOMS.assess.cost + reserve) this.buildRoom('assess');
+    if (this.waiting('consultant') > consults * 4 && this.afford(price('consult'), reserve * 0.5, true)) {
+      if (!this.sim.hasRoom('assess') && s.money > price('assess') + reserve) this.buildRoom('assess');
       else this.buildRoom('consult');
       this.hireToFill();
     }
@@ -2175,7 +2184,7 @@ export class Bot {
       const n = this.rooms(room).length;
       if (!n) continue;
       const role = DISCIPLINES[d].role;
-      if (this.waiting(role) > n * 3 && this.afford(ROOMS[room].cost, reserve * 0.5, true)) {
+      if (this.waiting(role) > n * 3 && this.afford(price(room), reserve * 0.5, true)) {
         if (this.buildRoom(room)) this.hireToFill();
       }
     }
@@ -2213,8 +2222,8 @@ export class Bot {
       // a building at its limit keeps the line from growing to show it: guests turned away last month count toward
       // another room too, while two or more wait for each consultation
       const full = (this.s.months.at(-1)?.turnedAway ?? 0) >= 3 && this.waiting('consultant') >= consults * 2;
-      if ((this.waiting('consultant') > consults * 4 || full) && this.afford(ROOMS.consult.cost, reserve * 0.5, true)) {
-        if (!this.sim.hasRoom('assess') && s.money > ROOMS.assess.cost + reserve) this.buildRoom('assess');
+      if ((this.waiting('consultant') > consults * 4 || full) && this.afford(price('consult'), reserve * 0.5, true)) {
+        if (!this.sim.hasRoom('assess') && s.money > price('assess') + reserve) this.buildRoom('assess');
         else this.buildRoom('consult');
         this.hireToFill();
       }
@@ -2246,7 +2255,7 @@ export class Bot {
         this.hireToFill();
         continue;
       }
-      const cost = ROOMS[room].cost;
+      const cost = price(room);
       if (saving && value * 3 < cost) continue;
       if (!this.afford(cost + 1000, reserve * 0.5, value * this.style.borrowPayback > cost)) continue;
       // not where it would leave no space for a discipline still to come
@@ -2280,7 +2289,7 @@ export class Bot {
     const drawn = last ? ((last.arrived + (last.turnedAway ?? 0)) * CAPACITY_ARRIVALS.each) / pace.staffed : 0;
     const guests = (m.lost + full + drawn + Math.max(0, m.line - rooms)) * this.ahead(3);
     const rate = m.treated >= 3 ? m.healed / m.treated : 0.6;
-    const room = this.benched[def.room] ? 0 : ROOMS[def.room].cost / this.style.payback;
+    const room = this.benched[def.room] ? 0 : price(def.room) / this.style.payback;
     return guests * rate * this.feeFor(d) - this.salaryFor(def.role) - room;
   }
 
@@ -2456,7 +2465,7 @@ export class Bot {
     if (unlockedUpTo(s) < 2 || !offeringOn(s, 'qigong')) return;
     const reserve = this.reserve('classes');
     if (!this.sim.hasRoom('qigong')) {
-      if (this.saving() || this.profit() <= 0 || !this.afford(ROOMS.qigong.cost + 3000, reserve)) return;
+      if (this.saving() || this.profit() <= 0 || !this.afford(price('qigong') + 3000, reserve)) return;
       if (this.buildRoom('qigong')) {
         this.note(`day ${Math.floor(s.day)}: a Qi Gong Studio`);
         this.hireToFill();

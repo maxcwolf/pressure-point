@@ -3,6 +3,7 @@
 // they can be tested without a game.
 
 import { ITEMS, type ItemType, ROOMS, type RoomType, type RugPatternId, WINDOW_COST } from './data';
+import { roomCost } from './resize';
 import type { Item, Room, RoomDecor, WallSpot } from './state/types';
 import { itemDims, type Rect } from './world';
 
@@ -93,7 +94,10 @@ export function cornerFor(l: Layout, at: { x: number; y: number }): [number, num
   return [Math.round(at.x - l.w / 2), Math.round(at.y - l.h / 2)];
 }
 
-/** What building a copy of a layout costs: the room, with its required furniture, then any extras and windows. */
+/**
+ * What building a copy of a layout costs: the room at its size, with its required furniture, then any extras and
+ * windows.
+ */
 export function copyCost(l: Layout): number {
   const free = [...ROOMS[l.type].required];
   let extras = 0;
@@ -102,5 +106,5 @@ export function copyCost(l: Layout): number {
     if (at >= 0) free.splice(at, 1);
     else extras += ITEMS[it.type].cost;
   }
-  return ROOMS[l.type].cost + extras + l.windows.length * WINDOW_COST;
+  return roomCost(l.type, l) + extras + l.windows.length * WINDOW_COST;
 }

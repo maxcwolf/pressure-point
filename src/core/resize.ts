@@ -1,9 +1,23 @@
-// Resizing a room: where its door and windows end up when its walls move, and what the change costs.
-// Plain functions of the room and the new rectangle, so they can be tested without a game.
+// A room's floor: what building it at a size costs, where its door and windows end up when its walls move, and what
+// the change costs. Plain functions of the room and the new rectangle, so they can be tested without a game.
 
-import { ROOM_TILE_COST } from './data';
+import { ROOM_TILE_COST, ROOMS, type RoomType } from './data';
 import type { Room, WallSpot } from './state/types';
 import type { Rect } from './world';
+
+/** The tiles of floor a room has beyond the smallest a room of its kind can be: what its prestige counts for size. */
+export function extraTiles(type: RoomType, size: { w: number; h: number }): number {
+  const def = ROOMS[type];
+  return Math.max(0, size.w * size.h - def.minShort * def.minLong);
+}
+
+/**
+ * What building a room at a size costs: its price, which comes with the smallest floor and its required furniture,
+ * and every tile beyond that at the price a resize charges, so a roomier room's prestige is paid for however it got
+ * its floor.
+ */
+export const roomCost = (type: RoomType, size: { w: number; h: number }) =>
+  ROOMS[type].cost + extraTiles(type, size) * ROOM_TILE_COST;
 
 /** Whether a tile is inside a rectangle. */
 export function inRect(r: Rect, x: number, y: number): boolean {
@@ -39,9 +53,9 @@ export function tilesChanged(room: Rect, to: Rect): { added: number; removed: nu
 }
 
 /**
- * The floor a resize pays for and gives back. A room costs the same at any size it is first built, so only floor
- * bought since, by earlier resizes (`bought`) or by this one, comes back when it is taken away: otherwise building
- * a room big and shrinking it would pay out for floor that was never paid for.
+ * The floor a resize pays for and gives back. Only floor paid for (`bought`: beyond the smallest when it was built,
+ * by earlier resizes, or by this one) comes back when it is taken away: a room built before floor was charged at
+ * build time kept its extra floor for nothing, and shrinking it pays nothing out for it.
  */
 export function resizeTiles(room: Rect & { bought?: number }, to: Rect) {
   const { added, removed } = tilesChanged(room, to);

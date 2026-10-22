@@ -12,7 +12,7 @@ import {
   WINDOW_COST,
 } from '../data';
 import { money } from '../format';
-import { carryWallSpot, carryWindows, resizeCost, resizeTiles } from '../resize';
+import { carryWallSpot, carryWindows, extraTiles, resizeCost, resizeTiles } from '../resize';
 import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { itemStart, roomStart, sameSpot } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
@@ -138,12 +138,32 @@ export function createRoom(ctx: SimContext, type: RoomType, r: Rect, door: Room[
   return room;
 }
 
-/** Turn a blueprint into a built room and pay for it. */
+/**
+ * What finishing a blueprint costs: the room's price, and the floor beyond the smallest at the price a resize charges.
+ * `tiles` is that floor, less any already paid for by resizing the blueprint.
+ */
+export function finishCost(room: Room): { cost: number; tiles: number } {
+  const tiles = Math.max(0, extraTiles(room.type, room) - (room.bought ?? 0));
+  return { cost: ROOMS[room.type].cost + tiles * ROOM_TILE_COST, tiles };
+}
+
+/** Turn a blueprint into a built room and pay for it, its floor beyond the smallest included. */
 export function finishRoom(ctx: SimContext, room: Room) {
+  const { cost, tiles } = finishCost(room);
   room.done = true;
-  spend(ctx, ROOMS[room.type].cost, 'building');
+  // floor paid for is given back as floor bought by resizing is, when the room is shrunk or sold
+  if (tiles) room.bought = (room.bought ?? 0) + tiles;
+  spend(ctx, cost, 'building');
   ctx.world.version++;
-  toast(ctx, `${ROOMS[room.type].name} built!`, 'good', { kind: 'room', id: room.id });
+  const name = ROOMS[room.type].name;
+  toast(
+    ctx,
+    tiles
+      ? `${name} built! ${money(cost)}, ${money(tiles * ROOM_TILE_COST)} of it for ${tiles} tiles of floor beyond the smallest.`
+      : `${name} built!`,
+    'good',
+    { kind: 'room', id: room.id },
+  );
   emit(ctx, { type: 'sfx', name: 'build' });
 }
 
@@ -477,6 +497,8 @@ export function buildLayout(
     priority: false,
     vibes: 0,
     claimedBy: 0,
+    // its floor beyond the smallest is paid for in the copy's cost, and comes back as floor bought by resizing does
+    ...(extraTiles(layout.type, layout) > 0 && { bought: extraTiles(layout.type, layout) }),
     ...withDecor({}, layout),
   };
   ctx.s.rooms.push(room);

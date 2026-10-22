@@ -41,11 +41,17 @@ export function moveHint(type: ItemType): string {
   return `Moving the ${def.name} · click to put it down · R rotates · Esc cancels${legend(type)}`;
 }
 
-/** The hint for dragging out a room: its minimum size, or its current size once the drag is under way. */
-export function dragHint(type: RoomType, dragged: Rect | null): string {
+/**
+ * The hint for dragging out a room: its minimum size and price, or once the drag is under way, its current size and
+ * what it costs at that size (`cost`), with the floor beyond the smallest.
+ */
+export function dragHint(type: RoomType, dragged: Rect | null, cost = 0): string {
   const def = ROOMS[type];
-  if (dragged) return `${def.name} · ${dragged.w}×${dragged.h} · release to confirm`;
-  return `${def.name} · drag out the floor (at least ${def.minShort}×${def.minLong}) · Esc cancels`;
+  if (dragged) {
+    const floor = cost > def.cost ? ` (${money(cost - def.cost)} of it for floor beyond the smallest)` : '';
+    return `${def.name} · ${dragged.w}×${dragged.h} · ${money(cost)}${floor} · release to confirm`;
+  }
+  return `${def.name} · drag out the floor (at least ${def.minShort}×${def.minLong}, ${money(def.cost)}; ${money(ROOM_TILE_COST)} a tile more) · Esc cancels`;
 }
 
 /** The hint for choosing where a new room's door goes. */

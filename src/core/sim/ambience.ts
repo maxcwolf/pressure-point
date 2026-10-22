@@ -10,9 +10,9 @@ import {
   isWatered,
   ITEMS,
   type ItemType,
-  ROOMS,
   WINDOW_MAX_BONUS,
 } from '../data';
+import { extraTiles } from '../resize';
 import type { Item, Room } from '../state/types';
 import { at, clamp } from '../util';
 import { itemCenter, type World } from '../world';
@@ -94,8 +94,7 @@ export const PRESTIGE_STEP = 3;
 
 /** The terms a room's prestige is made of. `extra` is decor not yet placed in it. */
 export function prestigeTerms(ctx: SimContext, room: Room, extra = 0): PrestigeTerms {
-  const def = ROOMS[room.type];
-  const size = (room.w * room.h - def.minShort * def.minLong) * 0.4;
+  const size = extraTiles(room.type, room) * 0.4;
   let decor = extra;
   for (const it of ctx.s.items) if (ctx.world.zoneAt(it.x, it.y) === room.id) decor += decorOf(it);
   let litter = 0;

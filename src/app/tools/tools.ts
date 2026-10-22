@@ -13,9 +13,10 @@ import { certificatesLeft } from '../../core/certificates';
 import { centerOf, ITEMS, type ItemType, ROOMS, type RoomType, type RugPatternId } from '../../core/data';
 import { money } from '../../core/format';
 import { plotAt } from '../../core/land';
-import { resizeCost, sameRect } from '../../core/resize';
+import { resizeCost, roomCost, sameRect } from '../../core/resize';
 import { copyCost, cornerFor, type Layout, type PlacedLayout, placeLayout, turnLayout } from '../../core/room-layout';
 import { canWorkIn } from '../../core/sim/assignments';
+import { finishCost } from '../../core/sim/building';
 import type { SfxName } from '../../core/sim/events';
 import type { PlacePreview } from '../../core/sim/preview';
 import type { Sim } from '../../core/sim/sim';
@@ -158,13 +159,13 @@ export class Tools {
     return !free && this.sim.s.money < ITEMS[type].cost ? "Can't afford it" : '';
   }
 
-  /** Whether a room can be paid for, saying so if not. */
-  private affords(type: RoomType): boolean {
+  /** Whether a room can be paid for, at the smallest or at what it costs as planned, saying so if not. */
+  private affords(type: RoomType, cost = ROOMS[type].cost): boolean {
     const def = ROOMS[type];
-    if (this.sim.s.money >= def.cost) return true;
+    if (this.sim.s.money >= cost) return true;
     this.sim.emit({
       type: 'toast',
-      text: `A ${def.name} costs ${money(def.cost)}. You can't afford it yet.`,
+      text: `A ${def.name} ${cost > def.cost ? 'this size ' : ''}costs ${money(cost)}. You can't afford it yet.`,
       kind: 'bad',
     });
     this.refuse('build_room', "Can't afford it");
@@ -277,7 +278,7 @@ export class Tools {
   planBuild(): boolean {
     const t = this.tool;
     if (t.kind !== 'room' || t.phase !== 'plan' || this.sim.missingItems(t.room).length) return false;
-    if (!this.affords(t.type)) return false;
+    if (!this.affords(t.type, finishCost(t.room).cost)) return false;
     this.sim.finishRoom(t.room);
     this.tool = { kind: 'none' };
     this.select({ kind: 'room', id: t.room.id });
@@ -665,7 +666,7 @@ export class Tools {
       view.setHeat(plotHeat(offers, t.pointed), 'land');
     } else if (t.phase === 'drag') {
       view.setGhost(null);
-      this.hint = dragHint(t.type, t.start ? t.rect : null);
+      this.hint = dragHint(t.type, t.start ? t.rect : null, t.rect ? roomCost(t.type, t.rect) : 0);
       if (t.rect) {
         const check = world.roomRectValid(t.type, t.rect);
         this.problem = check.reason;

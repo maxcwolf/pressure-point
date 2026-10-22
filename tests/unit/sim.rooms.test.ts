@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ITEMS, ROOMS, WINDOW_COST, WINDOW_MAX_BONUS } from '../../src/core/data';
+import { ITEMS, ROOM_TILE_COST, ROOMS, WINDOW_COST, WINDOW_MAX_BONUS } from '../../src/core/data';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { addConsult, addMassage, addStaffRoom, freshSim, LAYOUT, openCenter, run, runUntil } from './helpers';
@@ -94,7 +94,8 @@ describe('windows', () => {
     sim.toggleWindow(massage.id, EAST);
     const before = s.money;
     sim.removeRoom(massage.id, 0.5);
-    expect(s.money).toBe(before + ROOMS.massage.cost * 0.5 + WINDOW_COST);
+    // with the seven tiles a 4×4 suite was built with beyond its smallest, at half
+    expect(s.money).toBe(before + ROOMS.massage.cost * 0.5 + 7 * ROOM_TILE_COST * 0.5 + WINDOW_COST);
   });
 
   it('are added, empty, to rooms from older saves', () => {

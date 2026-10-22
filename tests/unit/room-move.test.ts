@@ -1,7 +1,7 @@
 // Moving and copying built rooms, furniture and all.
 import { describe, expect, it } from 'vitest';
 
-import { ROOMS, WINDOW_COST } from '../../src/core/data';
+import { ROOM_TILE_COST, ROOMS, WINDOW_COST } from '../../src/core/data';
 import { copyCost, placeLayout, turnLayout } from '../../src/core/room-layout';
 import { itemsInRoom } from '../../src/core/sim/building';
 import { createContext } from '../../src/core/sim/context';
@@ -67,7 +67,8 @@ describe('copying a room', () => {
     const { sim, s, massage } = openCenter(5);
     sim.toggleWindow(massage.id, { x: 11, y: 6, dx: -1, dy: 0 });
     const layout = sim.roomLayout(massage);
-    expect(copyCost(layout)).toBe(ROOMS.massage.cost + WINDOW_COST);
+    // a 4×4 suite, seven tiles past the smallest
+    expect(copyCost(layout)).toBe(ROOMS.massage.cost + 7 * ROOM_TILE_COST + WINDOW_COST);
     const money = s.money;
     const copy = sim.copyRoom(massage.id, placeLayout(layout, FREE.x, FREE.y))!;
     expect(copy).toBeTruthy();
@@ -80,6 +81,9 @@ describe('copying a room', () => {
     expect(items.every((i) => i.wear === 0)).toBe(true);
     expect(s.money).toBe(money - copyCost(layout));
     expect(massage).toMatchObject({ x: 11, y: 5 });
+    // and its floor comes back at half when it is sold, as the original's does
+    expect(copy.bought).toBe(7);
+    expect(sim.roomRefund(copy, 0.5)).toBe(sim.roomRefund(massage, 0.5));
   });
 
   it('cannot be built without the money, or where the room cannot go', () => {

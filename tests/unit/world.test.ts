@@ -374,7 +374,8 @@ describe('laying out rooms', () => {
     const room = addMassage(sim);
     const before = sim.s.money;
     sim.removeRoom(room.id, 0.5);
-    expect(sim.s.money).toBe(before + 3500);
+    // half the suite's $7,000, and half the $1,400 its seven tiles beyond the smallest cost
+    expect(sim.s.money).toBe(before + 3500 + 700);
     expect(sim.s.rooms).toHaveLength(0);
     expect(sim.s.items).toHaveLength(0);
   });

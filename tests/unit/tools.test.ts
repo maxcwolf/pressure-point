@@ -17,7 +17,7 @@ import { heldItem, nextRequired, planStatus, quarterTurn } from '../../src/app/t
 import { isStaffRole, legend, useSquares } from '../../src/app/tools/squares';
 import { Tools } from '../../src/app/tools/tools';
 import type { Tool } from '../../src/app/tools/types';
-import { ROOMS } from '../../src/core/data';
+import { ROOM_TILE_COST, ROOMS } from '../../src/core/data';
 import { money } from '../../src/core/format';
 import { copyCost } from '../../src/core/room-layout';
 import type { Room } from '../../src/core/state/types';
@@ -109,8 +109,19 @@ describe('hints', () => {
   });
 
   it('asks for a minimum size until the drag starts, then reports the size', () => {
-    expect(dragHint('massage', null)).toMatch(/Massage Suite · drag out the floor \(at least \d+×\d+\) · Esc cancels/);
-    expect(dragHint('massage', { x: 0, y: 0, w: 4, h: 5 })).toContain('Massage Suite · 4×5 · release to confirm');
+    expect(dragHint('massage', null)).toBe(
+      `Massage Suite · drag out the floor (at least 3×3, ${money(ROOMS.massage.cost)}; ${money(ROOM_TILE_COST)} a tile more) · Esc cancels`,
+    );
+  });
+
+  it('prices the room as it is dragged out, floor beyond the smallest included', () => {
+    const cost = ROOMS.massage.cost + 11 * ROOM_TILE_COST;
+    expect(dragHint('massage', { x: 0, y: 0, w: 4, h: 5 }, cost)).toBe(
+      `Massage Suite · 4×5 · ${money(cost)} (${money(11 * ROOM_TILE_COST)} of it for floor beyond the smallest) · release to confirm`,
+    );
+    expect(dragHint('massage', { x: 0, y: 0, w: 3, h: 3 }, ROOMS.massage.cost)).toBe(
+      `Massage Suite · 3×3 · ${money(ROOMS.massage.cost)} · release to confirm`,
+    );
     expect(DOOR_HINT).toContain('click a wall to place the door');
   });
 
@@ -228,7 +239,20 @@ describe('building a blueprint', () => {
     const before = sim.s.money;
     expect(tools.planBuild()).toBe(true);
     expect(room.done).toBe(true);
-    expect(sim.s.money).toBe(before - ROOMS.consult.cost);
+    // 4×4: seven tiles of floor beyond the smallest 3×3
+    expect(sim.s.money).toBe(before - ROOMS.consult.cost - 7 * ROOM_TILE_COST);
+    expect(room.bought).toBe(7);
+  });
+
+  it('refuses a room dragged out bigger than the money left covers, at what it costs that size', () => {
+    const { sim, room, tools } = openBlueprint();
+    sim.drain();
+    sim.s.money = ROOMS.consult.cost;
+    expect(tools.planBuild()).toBe(false);
+    expect(room.done).toBe(false);
+    expect(toasts(sim.drain())).toContain(
+      `A Consultation Room this size costs ${money(ROOMS.consult.cost + 7 * ROOM_TILE_COST)}. You can't afford it yet.`,
+    );
   });
 
   it('refuses to build once the money has been spent elsewhere, and says why', () => {
