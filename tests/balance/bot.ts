@@ -1655,15 +1655,16 @@ export class Bot {
 
   /**
    * Build a room of a type with its furniture and any extras, somewhere along the walls. A spot that would leave no
-   * space for a room of a type in `keep` is given up while the room is still a plan, as a player would. It is built at
-   * the bot's size when the money in hand pays for that floor too, and at its smallest otherwise: the bot borrows for
-   * a room at its smallest, never for the floor past it.
+   * space for a room of a type in `keep` is given up while the room is still a plan, as a player would. Floor past the
+   * smallest is a luxury: the bot borrows for a room at its smallest, never for the floor past it, and builds it at its
+   * own size only once the center has a month's takings behind it and the money in hand pays for the floor over and
+   * above what it keeps back to grow on.
    */
   buildRoom(type: RoomType, extras: ItemType[] = [], keep: RoomType[] = []): Room | null {
     const def = ROOMS[type];
     const extraCost = extras.reduce((a, t) => a + ITEMS[t].cost, 0);
     if (this.s.money < def.cost + extraCost + 500) return null;
-    const small = this.s.money < price(type) + extraCost + 500;
+    const small = !this.s.months.length || this.s.money < price(type) + extraCost + 500 + this.reserve('growth');
     // a room that would not fit is not tried again for a few days (looking takes time)
     if (this.flags.expansion && (this.noFit[type] ?? 0) > this.s.day) return null;
     for (const { r, door } of this.roomSpots(type, small)) {
