@@ -216,7 +216,7 @@ export class View {
       this.items.sync();
     }
     this.people.update(this.time, dt);
-    this.litter.update();
+    this.litter.update(this.time);
     this.rooms.update(this.time);
     this.vibes.update(this.time);
     this.snow.update(this.time);

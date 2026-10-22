@@ -8,7 +8,7 @@ import { advice } from '../../src/core/sim/advisor';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
 import { floodRestroom, floodTiles, newMishap, updateMishaps } from '../../src/core/sim/mishaps';
-import { buildPuddle } from '../../src/render/models/puddle';
+import { buildPuddle, rippleFlood } from '../../src/render/models/puddle';
 import { lampStates } from '../../src/render/room-lamp';
 import { staffStatus } from '../../src/ui/lib/status';
 import { addRestroom, hire, openCenter, run, runUntil, toasts } from './helpers';
@@ -147,11 +147,39 @@ describe('flood water, drawn', () => {
     expect(color.b).toBeGreaterThan(color.r);
   });
 
-  it('stays inside its tile, so none shows through a wall beside it', () => {
-    for (let id = 1; id < 50; id++)
-      for (const pool of buildPuddle(id, true).children as THREE.Mesh[]) {
-        const r = (pool.geometry as THREE.CylinderGeometry).parameters.radiusTop;
-        expect(Math.max(Math.abs(pool.position.x), Math.abs(pool.position.z)) + r).toBeLessThanOrEqual(0.5);
+  it('stays inside its tile, so none shows through a wall beside it, however far it has swollen', () => {
+    for (let id = 1; id < 50; id++) {
+      const g = buildPuddle(id, true);
+      for (const t of [0, 0.4, 0.8, 1.2, 1.6, 2, 2.4, 2.8, 3.2, 3.6, 4, 4.4]) {
+        rippleFlood(g, t, id);
+        for (const pool of g.children as THREE.Mesh[]) {
+          const r = (pool.geometry as THREE.CylinderGeometry).parameters.radiusTop * pool.scale.x;
+          expect(Math.max(Math.abs(pool.position.x), Math.abs(pool.position.z)) + r).toBeLessThanOrEqual(0.5);
+        }
       }
+    }
+  });
+
+  it('moves: a glow that wobbles and pools that swell a little, with no part more, starting still', () => {
+    const g = buildPuddle(3, true);
+    const pool = g.children[0] as THREE.Mesh;
+    const water = pool.material as THREE.MeshStandardMaterial;
+    expect(water.emissiveIntensity).toBe(0);
+    // one material for the whole puddle, its own
+    expect(g.children.every((m) => (m as THREE.Mesh).material === water)).toBe(true);
+    expect(buildPuddle(4, true).children[0]).not.toHaveProperty('material', water);
+    const glows = new Set<number>();
+    const sizes = new Set<number>();
+    for (let t = 0; t < 5; t += 0.25) {
+      rippleFlood(g, t, 3);
+      expect(water.emissiveIntensity).toBeGreaterThanOrEqual(0.05);
+      expect(water.emissiveIntensity).toBeLessThanOrEqual(0.15);
+      expect(Math.abs(pool.scale.x - 1)).toBeLessThanOrEqual(0.03);
+      glows.add(Math.round(water.emissiveIntensity * 100));
+      sizes.add(Math.round(pool.scale.x * 1000));
+    }
+    expect(glows.size).toBeGreaterThan(3);
+    expect(sizes.size).toBeGreaterThan(3);
+    expect(g.children).toHaveLength(4);
   });
 });
