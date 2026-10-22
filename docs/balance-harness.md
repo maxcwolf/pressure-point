@@ -29,7 +29,7 @@ The report runs on plain Node (22.18 or later). `scripts/balance-report.mjs` imp
 | `BOT_OFF`         | none                                 | Turns single behaviours of the good bot off, e.g. `prices,calls` (`BOT_FLAGS` in bot.ts) |
 | `BOT_ON`          | none                                 | Turns on the extras (`BOT_EXTRAS` in bot.ts)                                             |
 
-`BOT_ON=machines` builds the center's machine room as a station more, on free floor or on land bought for it, and never knocks a room down for it (nor for the Training Room its operator needs). Each game's `machines` records the site (`floor`, `expansion`, or `skipped` when nothing fitted) and the months it was put off.
+`BOT_ON=machines` builds the center's machine room as a station more, on free floor or on land bought for it, and never knocks a room down for it (nor for the Training Room its operator needs). From the star that opens the machine room until it stands, nothing else the bot builds may take the last spot it could go in: a spot where the room, its door and its machine really fit, tried as a plan and taken down again. Each game's `machines` records the site (`floor`, `expansion`, or `skipped` when nothing fitted) and the months it was put off.
 
 ## What a game's log holds
 

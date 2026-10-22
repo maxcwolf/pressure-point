@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **More land to grow into.** Every center, the sandbox too, has two more plots on a wider lot: at the second star a building of its own, big enough for the center's machine room beside the tables, and at the third more room joined to the building.
+
 ## v0.31.0
 
 ### A center that tells you where it stands
