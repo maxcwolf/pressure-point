@@ -79,7 +79,8 @@ describe('unlocking modalities', () => {
         // somewhere to rest after Deep Tissue, and for the therapist between guests, so only their training counts
         addRecovery(sim);
         addStaffRoom(sim);
-        playWithCondition(sim, 'knotted', 1500);
+        // each of these seeds has treated everyone it will by 750 seconds
+        playWithCondition(sim, 'knotted', 800);
         sum.healed += s.stats.healed;
         sum.failed += s.stats.failed;
       }
