@@ -5,6 +5,7 @@ import {
   CENTERS,
   type ConditionId,
   conditionOf,
+  ITEMS,
   MODALITIES,
   NOISE_NOTICE,
   ROOM_PULL,
@@ -79,6 +80,16 @@ describe('a group session', () => {
     expect(sessionWait(SESSION_WAIT, 1, 3, 0.1), 'once started, it plays on').toBe(SESSION_WAIT);
     expect(sessionWait(SESSION_WAIT, 0, 3, 0.1), 'over once the mats are empty').toBe(0);
     expect(sessionPlaying(SESSION_WAIT)).toBe(true);
+  });
+});
+
+describe("the Sound Healer's seat at the Singing Bowls", () => {
+  it('is the cushion on the floor, as low as the Shaman sits at the Ceremony Mat, not a chair', () => {
+    /** Where the one leading at an item sits. */
+    const seat = (type: 'singing_bowls' | 'ceremony_mat') =>
+      ITEMS[type].access.find((a) => a.role === 'staff' && a.pose === 'sit');
+    expect(seat('singing_bowls')?.h).toBeLessThan(0);
+    expect(seat('singing_bowls')?.h).toBe(seat('ceremony_mat')?.h);
   });
 });
 
