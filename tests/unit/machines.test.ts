@@ -10,6 +10,7 @@ import {
   ITEMS,
   type ItemType,
   MACHINE_DRAW,
+  MACHINE_LINE,
   machineRoom,
   MODALITIES,
   MODALITY_ORDER,
@@ -140,7 +141,12 @@ describe('a machine room and the guests it draws', () => {
     }
     const [row] = machineDemand(ctx);
     expect(row?.line).toMatchObject({ waiting: 8, places: 1 });
-    expect(row?.pull).toBeCloseTo(trained * lineFactor(8, 1), 5);
+    expect(row?.pull).toBeCloseTo(trained * lineFactor(8, 1, MACHINE_LINE), 5);
+    expect(row?.line.factor).toBeCloseTo(1 - MACHINE_LINE.most, 5);
+    // sooner than a discipline's line: one waiting puts nobody off, two put a quarter off
+    expect(lineFactor(1, 1, MACHINE_LINE)).toBe(1);
+    expect(lineFactor(2, 1, MACHINE_LINE)).toBeCloseTo(0.75, 5);
+    expect(lineFactor(2, 1)).toBe(1);
   });
 
   it('draws nobody while it is down, or while its practitioner is away', () => {

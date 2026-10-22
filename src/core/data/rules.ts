@@ -322,6 +322,11 @@ export const CAPACITY_ARRIVALS = { each: 0.12, most: 2.5 } as const;
  */
 export const MACHINE_DRAW = 0.35;
 /**
+ * How a signature machine's own line puts new guests off it: sooner than a discipline's, since one machine has no
+ * table to share its line with. Nobody minds one waiting, then `each` fewer for every one more, and at most `most`.
+ */
+export const MACHINE_LINE = { easy: 1, each: 0.25, most: 0.75 } as const;
+/**
  * How many treatment stations one staffed Consultation Room can keep in guests: every guest is seen there first, so
  * stations past this many for each one draw nobody more, and count nothing toward the guests let in at once.
  */

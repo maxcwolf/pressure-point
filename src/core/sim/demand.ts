@@ -18,6 +18,7 @@ import {
   type ItemType,
   LINE_PUT_OFF,
   MACHINE_DRAW,
+  MACHINE_LINE,
   machineRoom,
   MODALITIES,
   NOISE_NOTICE,
@@ -125,9 +126,13 @@ export interface Line {
 }
 
 /** How a line of so many guests for so many places puts new guests off, as a multiplier on its pull. */
-export function lineFactor(waiting: number, places: number): number {
-  const over = waiting / Math.max(1, places) - LINE_PUT_OFF.easy;
-  return 1 - clamp(over * LINE_PUT_OFF.each, 0, LINE_PUT_OFF.most);
+export function lineFactor(
+  waiting: number,
+  places: number,
+  rule: { easy: number; each: number; most: number } = LINE_PUT_OFF,
+): number {
+  const over = waiting / Math.max(1, places) - rule.easy;
+  return 1 - clamp(over * rule.each, 0, rule.most);
 }
 
 /** How many guests are waiting to be treated with a technique that passes a test. */
@@ -365,7 +370,8 @@ export interface MachineDemand {
 /**
  * The guests each signature machine draws for its own ailments, on top of those the tables draw: `MACHINE_DRAW` of
  * the center's pace for each one standing with a practitioner of its own at work to run it, times its finest room's
- * pull, held back while nobody is trained to run it and by a long line of its own. A machine that is down, or has
+ * pull, held back while nobody is trained to run it and by a line of its own, which puts guests off sooner than a
+ * discipline's. A machine that is down, or has
  * nobody of its own to run it, draws nobody.
  */
 export function machineDemand(ctx: SimContext, cap: Capacity = capacity(ctx)): MachineDemand[] {
@@ -380,7 +386,7 @@ export function machineDemand(ctx: SimContext, cap: Capacity = capacity(ctx)): M
     const weight = conditions.reduce((sum, w) => sum + w.weight, 0) / conditions.length;
     const training = conditions.reduce((sum, w) => sum + (w.trained ? 1 : UNTRAINED_PULL), 0) / conditions.length;
     const waiting = waitingFor(ctx, (x) => x.machine === m.machine);
-    const line = { waiting, places: m.staffed, factor: lineFactor(waiting, m.staffed) };
+    const line = { waiting, places: m.staffed, factor: lineFactor(waiting, m.staffed, MACHINE_LINE) };
     return [
       {
         machine: m.machine,
