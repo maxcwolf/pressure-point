@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **A Generator, out of doors.** The first thing that stands outside: on the grounds, by the pavement or a path, it keeps the power on through every power cut while it works, needs a Caretaker now and then, and is loud enough that the outer walls are welcome.
+
 ## v0.31.0
 
 ### A center that tells you where it stands

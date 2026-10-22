@@ -25,10 +25,10 @@ export function buildGenerator(g: THREE.Group) {
   const light = owned(new THREE.MeshStandardMaterial({ color: 0x7ee08f, emissive: 0x3bd06a, emissiveIntensity: 1.1 }));
   put(g, cyl(0.035, 0.035, 0.03), light, -0.42, 0.56, 0.38).rotation.x = Math.PI / 2;
   partsOf(g).lamp = light;
-  // a lightning bolt painted on the housing, in two strokes
+  // a lightning bolt painted on the housing: down to the left, across, and down to the left again
   const bolt = mat(0xf2c14e, 0.5);
-  put(g, rbox(0.05, 0.2, 0.02, 0.008), bolt, -0.03, 0.56, 0.36).rotation.z = -0.45;
-  put(g, rbox(0.05, 0.2, 0.02, 0.008), bolt, 0.03, 0.4, 0.36).rotation.z = -0.45;
+  for (const y of [0.6, 0.42]) put(g, rbox(0.045, 0.2, 0.02, 0.008), bolt, 0, y, 0.36).rotation.z = -0.56;
+  put(g, rbox(0.13, 0.045, 0.02, 0.008), bolt, 0.005, 0.51, 0.36);
   // the exhaust stack, up from the roof at the back, with its cap tipped over it
   put(g, cyl(0.07, 0.07, 0.42), mat(CHROME, 0.35), 0.66, 1.08, -0.2);
   put(g, capsule(0.075, 0.1), mat(DARK, 0.4), 0.66, 1.31, -0.2).rotation.z = Math.PI / 2;

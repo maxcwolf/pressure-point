@@ -96,6 +96,23 @@ test.describe('the scene', () => {
     await expect(page).toHaveScreenshot('scene-expand.png');
   });
 
+  test('a Generator on the front lawn, beside the pavement, with the trees kept clear of it', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.sim.placeItem('generator', 20, 19, 0);
+      pp.sim.placeItem('generator', 24, 19, 2);
+      pp.view.target.set(21, 0, 17);
+    });
+    await noon(game);
+    await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-generator.png');
+  });
+
   test('a plot being built on: bare earth fenced off, with SOLD on its board', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => {
