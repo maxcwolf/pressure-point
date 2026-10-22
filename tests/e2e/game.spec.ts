@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import type { Page } from '@playwright/test';
 
+import { LOAN_MAX } from '../../src/core/data/rules';
 import type { Layout } from '../../src/core/room-layout';
 import { expect, type Game, test } from './fixtures';
 
@@ -2437,17 +2438,17 @@ test.describe('magic mushrooms', () => {
 });
 
 test.describe('a payday the bank cannot cover', () => {
-  /** Run up to the end of the month with the bank nearly empty, until the game stops for the question. */
-  async function toPayday(game: Game) {
+  /** Run up to the end of the month with the bank nearly empty and so much owed, until the game stops for the question. */
+  async function toPayday(game: Game, loan = 0) {
     await game.start();
     await game.buildCenter();
-    await game.eval((pp) => {
+    await game.eval((pp, loan) => {
       pp.state.money = 500;
-      pp.state.loan = 0;
+      pp.state.loan = loan;
       pp.state.day = 29.95;
       pp.state.speed = 1;
       for (let i = 0; i < 100 && !pp.state.payrollDue; i++) pp.sim.tick(0.1);
-    });
+    }, loan);
     await game.settle();
   }
 
@@ -2465,17 +2466,30 @@ test.describe('a payday the bank cannot cover', () => {
     expect(game.errors).toEqual([]);
   });
 
-  test('pays the wages into the red when the loan is refused, and the bank calls it in from a center losing money', async ({
+  test('pays the wages into the red when the loan is refused, and the bank lets it be while it would still lend', async ({
     game,
     page,
   }) => {
     await toPayday(game);
     const modal = page.locator('#modal');
-    await modal.getByRole('button', { name: /Pay into the red/ }).click();
+    await modal.getByRole('button', { name: /^Pay into the red/ }).click();
+    await expect(modal.locator('h2')).toHaveCount(0);
+    expect(await game.eval((pp) => pp.state.money)).toBeLessThan(0);
+    expect(await game.eval((pp) => [pp.state.bankrupt, pp.state.insolvency])).toEqual([false, null]);
+    expect(game.errors).toEqual([]);
+  });
+
+  test('pays the wages into the red past the loan, and the bank calls it in from a center losing money', async ({
+    game,
+    page,
+  }) => {
+    await toPayday(game, LOAN_MAX);
+    const modal = page.locator('#modal');
+    await modal.getByRole('button', { name: 'Pay into the red and carry on' }).click();
     await expect(modal.locator('h2')).toHaveCount(0);
     expect(await game.eval((pp) => pp.state.money)).toBeLessThan(0);
     expect(await game.eval((pp) => pp.state.bankrupt)).toBe(false);
-    // a center with no takings on the books is losing money, so the bank gives it ten days, and then calls it in
+    // in the red past what the bank will lend, with no takings on the books, so the bank gives it ten days, and then calls it in
     expect(await game.eval((pp) => pp.state.insolvency)).not.toBeNull();
     await game.eval((pp) => {
       pp.state.day = pp.state.insolvency!.until;
@@ -2529,9 +2543,9 @@ test.describe('the qi gong studio', () => {
     await game.settle();
     await game.clickRoom('qigong');
     const timetable = page.locator('#inspector .timetable');
-    await expect(timetable).toContainText('3 classes a week');
+    await expect(timetable).toContainText('shared among 3 class days');
     await timetable.getByRole('button', { name: 'Sun', exact: true }).click();
-    await expect(timetable).toContainText('4 classes a week');
+    await expect(timetable).toContainText('shared among 4 class days');
     expect(await game.eval((pp) => pp.state.rooms.find((r) => r.type === 'qigong')?.classDays)).toEqual([0, 2, 4, 6]);
     expect(game.errors).toEqual([]);
   });
