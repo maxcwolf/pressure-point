@@ -8,7 +8,19 @@ export type Tone = 'good' | 'bad' | 'info';
 
 /** The sound effects the game can ask for. */
 export type SfxName =
-  'blip' | 'place' | 'error' | 'cash' | 'sell' | 'hire' | 'build' | 'heal' | 'fail' | 'payday' | 'announce' | 'fanfare';
+  | 'blip'
+  | 'place'
+  | 'error'
+  | 'cash'
+  | 'sell'
+  | 'hire'
+  | 'build'
+  | 'heal'
+  | 'fail'
+  | 'payday'
+  | 'announce'
+  | 'fanfare'
+  | 'yelp';
 
 /** What a message is about, so clicking it can take the player there. */
 export interface Subject {

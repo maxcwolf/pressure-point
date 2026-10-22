@@ -18,7 +18,7 @@ import type { SimContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { repathAll } from '../../src/core/sim/movement';
-import { calmerFor, calmSeconds, rollRunaway, running, startRunning } from '../../src/core/sim/runaways';
+import { calmerFor, calmSeconds, rollRunaway, RUNAWAY_LINES, running, startRunning } from '../../src/core/sim/runaways';
 import type { Sim } from '../../src/core/sim/sim';
 import type { Guest, Staff } from '../../src/core/state/types';
 import { guestStatus, staffStatus } from '../../src/ui/lib/status';
@@ -130,6 +130,9 @@ describe('a really bad trip', () => {
     expect(toasts(events).join(' ')).toContain(`${g.name} is having a really bad trip`);
     expect(events).toContainEqual(expect.objectContaining({ type: 'toast', about: { kind: 'guest', id: g.id } }));
     expect(guestStatus(g, c.sim)).toBe('Running round the institute on a really bad trip');
+    // heard as well as seen: a yelp, and a word from the announcer
+    expect(events).toContainEqual({ type: 'sfx', name: 'yelp' });
+    expect(events).toContainEqual({ type: 'announce', text: RUNAWAY_LINES[g.id % 2] });
     // out of every line, so nobody waits on them
     expect(c.s.items.some((it) => it.queue.includes(g.id) || it.serving === g.id)).toBe(false);
     // and the advisor points at them until someone is sent
@@ -141,6 +144,9 @@ describe('a really bad trip', () => {
     const from = { x: c.g.x, y: c.g.y };
     run(c.sim, 6);
     expect(running(c.g)).toBe(true);
+    // in a state all the while, not only where they stop
+    expect(c.g.bubble).toBe('bubble-stressed');
+    expect(c.g.bubbleT).toBeGreaterThan(RUNAWAY_SECONDS - 7);
     expect(Math.hypot(c.g.x - from.x, c.g.y - from.y)).toBeGreaterThan(1);
     expect(inconsistencies(c.sim)).toEqual([]);
   });
@@ -187,6 +193,7 @@ describe('a really bad trip', () => {
     expect(c.g.state).toBe('leaving');
     expect(c.g.runaway).toBeUndefined();
     expect(c.g.feelings).toContain('ran-out');
+    expect(c.g.bubble).toBe('bubble-going-home');
     expect(c.s.reputation).toBeLessThan(40 - 1);
     expect(toasts(drainEvents(c.ctx)).join(' ')).toContain(`${c.g.name} found the door`);
   });

@@ -59,6 +59,11 @@ const SFX: Record<SfxName, Note[]> = {
     [1047, 0.39, 0.5, 0.16, 'triangle'],
     [784, 0.39, 0.5, 0.08, 'sine'],
   ],
+  // a guest set off on a really bad trip: a startled cry, falling away
+  yelp: [
+    [520, 0, 0.1, 0.14, 'sawtooth'],
+    [380, 0.08, 0.16, 0.12, 'sawtooth'],
+  ],
 };
 
 // Dreamy four-chord loop: Fmaj7, Em7, Dm7, Cmaj7

@@ -30,6 +30,7 @@ import {
 } from '../data';
 import { pick, random, stream } from '../random';
 import type { Guest, Staff } from '../state/types';
+import { at } from '../util';
 import { gainXp, hasGeneral } from './careers';
 import { guestById, say } from './chars';
 import { release } from './claims';
@@ -43,6 +44,12 @@ import { catchable } from './outbreaks';
 import { within } from './souls';
 import { staffIdle } from './staffing';
 import { removeFromStations } from './stations';
+
+/** What the announcer says as a guest starts running, one or the other by who they are. */
+export const RUNAWAY_LINES = [
+  'Would the guest running through the lobby please note that the ceiling is not, in fact, melting.',
+  'A reminder that the walls are load-bearing and cannot be reasoned with.',
+] as const;
 
 /** Whether a guest is running round on a really bad trip. */
 export const running = (g: Guest) => g.state === 'running';
@@ -63,7 +70,8 @@ export function startRunning(ctx: SimContext, g: Guest) {
   halt(g);
   g.state = 'running';
   g.timer = 0;
-  say(g, 'bubble-stressed', RUNAWAY_PAUSE);
+  // in a state the whole time they run, so they stand out in a crowd
+  say(g, 'bubble-stressed', RUNAWAY_SECONDS);
   toast(
     ctx,
     `${g.name} is having a really bad trip, and is running round freaking everyone out. Select them and calm them down, or they will find the door and the center's name will suffer.`,
@@ -71,7 +79,8 @@ export function startRunning(ctx: SimContext, g: Guest) {
     { kind: 'guest', id: g.id },
     'feeling-bad-trip',
   );
-  emit(ctx, { type: 'sfx', name: 'error' });
+  emit(ctx, { type: 'sfx', name: 'yelp' });
+  emit(ctx, { type: 'announce', text: at(RUNAWAY_LINES, g.id % RUNAWAY_LINES.length) });
 }
 
 /** Somewhere else to run to: a spot out in the corridors, well away from where they are if there is one. */
@@ -115,10 +124,7 @@ export function runStep(ctx: SimContext, g: Guest, dt: number, arrived: boolean)
     foundDoor(ctx, g);
     return;
   }
-  if (arrived) {
-    g.timer = RUNAWAY_PAUSE;
-    say(g, 'bubble-stressed', RUNAWAY_PAUSE);
-  }
+  if (arrived) g.timer = RUNAWAY_PAUSE;
   if (g.path) return;
   g.timer -= dt;
   if (g.timer > 0) return;
@@ -130,6 +136,7 @@ export function runStep(ctx: SimContext, g: Guest, dt: number, arrived: boolean)
 function foundDoor(ctx: SimContext, g: Guest) {
   changeRep(ctx, -RUNAWAY_DOOR_REP);
   feel(g, 'ran-out');
+  say(g, 'bubble-going-home', 4);
   toast(ctx, `${g.name} found the door, and has gone home still tripping.`, 'bad', undefined, 'feeling-bad-trip');
   leave(ctx, g);
 }

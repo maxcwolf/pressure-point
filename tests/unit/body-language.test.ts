@@ -120,6 +120,23 @@ describe('the patience a waiting guest shows', () => {
     // the door is off to their left, and they turn that way
     expect(rig.body.rotation.y).toBeGreaterThan(0.5);
   });
+
+  it('turns the head of anyone near a guest on a really bad trip toward them, and nobody far off or lying down', () => {
+    /** How far round someone's head is turned, after posing them with a runner this far off to their left, or none. */
+    const turned = (c: Char, d?: number) => {
+      const rig = buildCharacter(LAB_LOOK);
+      const runners = d === undefined ? [] : [{ id: -1, x: c.x + d, y: c.y }];
+      poseChar(rig, c, 0, 1, null, undefined, { runners });
+      return rig.head.rotation.y;
+    };
+    const g = waiting(100);
+    expect(turned(g, 1.5)).toBeCloseTo(0.6);
+    expect(turned(g, -1.5)).toBeCloseTo(-0.6);
+    expect(turned(g, 6)).toBe(turned(g));
+    const lying = { ...g, state: 'served', pose: 'lie' } as const;
+    expect(turned(lying, 1.5)).toBe(turned(lying));
+    expect(turned(demoStaff(LAB_LOOK, 'therapist'), -1.5)).toBeCloseTo(-0.6);
+  });
 });
 
 describe('faces', () => {

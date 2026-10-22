@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 
-import { type Modality, POOR_CONDITION } from '../core/data';
+import { FREAK_RANGE, type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
 import type { BubbleId, Char } from '../core/state/types';
 import { must } from '../core/util';
@@ -127,11 +127,42 @@ export interface Door {
   y: number;
 }
 
+/** What the people layer works out once a frame about someone's surroundings, for their pose to react to. */
+export interface Around {
+  /** Where everyone running round on a really bad trip is, for anyone near to turn and look. */
+  runners?: readonly { id: number; x: number; y: number }[];
+}
+
+/** How near a runner comes for people to turn their heads to look, in tiles, and how far round they turn. */
+const RUNNER_LOOK = FREAK_RANGE + 1;
+const RUNNER_TURN = 0.6;
+
+/** How far to turn the head toward the nearest runner close by, if any is: none for a runner themselves, or anyone lying or on a table. */
+function lookAtRunner(c: Char, runners: Around['runners']): number | undefined {
+  if (!runners?.length || c.pose === 'lie' || c.state === 'served' || c.state === 'running') return undefined;
+  let near: { x: number; y: number } | undefined;
+  let best = RUNNER_LOOK;
+  for (const r of runners) {
+    const d = Math.hypot(r.x - c.x, r.y - c.y);
+    if (r.id !== c.id && d < best) [near, best] = [r, d];
+  }
+  if (!near) return undefined;
+  return THREE.MathUtils.clamp(wrap(Math.atan2(near.x - c.x, near.y - c.y) - c.facing), -RUNNER_TURN, RUNNER_TURN);
+}
+
 /**
  * Pose a person for this frame: position, limbs, face, symptom effects and speech bubble. A fed-up guest turns toward
- * the door, if there is one.
+ * the door, if there is one, and anyone near a guest on a really bad trip turns to look.
  */
-export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: WorkStyle, door?: Door) {
+export function poseChar(
+  rig: CharRig,
+  c: Char,
+  t: number,
+  dt: number,
+  style: WorkStyle,
+  door?: Door,
+  around: Around = {},
+) {
   rig.group.position.set(c.x, c.h, c.y);
   rig.group.rotation.y = c.facing;
   const healed = c.kind === 'guest' && c.outcome === 'healed';
@@ -456,6 +487,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
   headX += life.headX;
   headZ += life.headZ;
   bodyY += life.bodyY;
+  const look = lookAtRunner(c, around.runners);
+  if (look !== undefined) life.headYaw = look;
   armL += life.armL;
   armR += life.armR;
   armOut += life.armOut;

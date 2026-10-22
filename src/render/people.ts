@@ -55,6 +55,8 @@ export class PeopleLayer {
       front,
     } = this.sim.world.building;
     const door = { x: (left + right + 1) / 2, y: front + 1 };
+    // anyone on a really bad trip, whom everyone near turns to look at: hardly ever anyone
+    const around = { runners: this.sim.s.guests.filter((g) => g.state === 'running') };
     for (const c of [...this.sim.s.guests, ...this.sim.s.staff, ...this.sim.s.visitors] as Char[]) {
       live.add(c.id);
       let rig = this.chars.get(c.id);
@@ -81,7 +83,7 @@ export class PeopleLayer {
       rig.pick.visible = shown;
       if (!shown && rig.smoke) rig.smoke.visible = false;
       if (!shown) continue;
-      poseChar(rig, c, t, dt, this.workStyle(c), door);
+      poseChar(rig, c, t, dt, this.workStyle(c), door, around);
       rig.group.scale.setScalar(size);
       if (c.kind === 'guest') this.inMachine(rig, c, t);
     }
