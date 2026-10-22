@@ -218,7 +218,107 @@ function animateRipples(model: THREE.Object3D, c: CueCondition, t: number) {
   });
 }
 
-/** Wisps of warm air rising off a heater, or cool air drifting out of the front of an air conditioner, while it runs. */
+/** The color of the heat rising off a heater, and of the cool air blowing out of an air conditioner. */
+const WARM_AIR = 0xff8a3d;
+const COOL_AIR = 0x5ab8f0;
+/** How big a line of moving air is, in meters, and how many waves it shows along its length. */
+const AIR_LINE = { w: 0.24, h: 0.52, waves: 1.25 };
+/** How steeply cool air rises as it blows out of an air conditioner's vents, in radians above level. */
+const COOL_RISE = 0.45;
+/** How far a line of cool air drifts out from the vents over its life, in meters. */
+const COOL_DRIFT = 0.3;
+/** How high up the front of an air conditioner its vents are, as a share of its height. */
+const VENT_HEIGHT = 0.8;
+/** How many times a second the waves of moving air travel a whole wave along their line, and how long each line lasts. */
+const AIR_WAVE_SPEED = 0.9;
+const AIR_LIFE = 2.4;
+
+/**
+ * One wave of a line of moving air, from side to side and back as it goes along, as a picture that repeats along a
+ * line: a thick, soft-edged white stroke for the line to tint.
+ */
+function airWaveTexture(): THREE.DataTexture {
+  const W = 32;
+  const H = 64;
+  const swing = W * 0.24;
+  const half = W * 0.15;
+  const data = new Uint8Array(W * H * 4);
+  for (let y = 0; y < H; y++) {
+    const a = ((y + 0.5) / H) * Math.PI * 2;
+    // how far the stroke is from the pixel, square to the stroke rather than straight across, where it slants
+    const slant = Math.hypot(1, ((swing * Math.PI * 2) / H) * Math.cos(a));
+    for (let x = 0; x < W; x++) {
+      const d = Math.abs(x + 0.5 - W / 2 - swing * Math.sin(a)) / slant;
+      data.set([255, 255, 255, Math.round(255 * clamp(half - d + 0.5, 0, 1))], (y * W + x) * 4);
+    }
+  }
+  const tex = new THREE.DataTexture(data, W, H);
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1, AIR_LINE.waves);
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/**
+ * How much of a line of moving air shows along its length, for an alpha map: nothing at either end, so it comes out of
+ * the air where it starts and melts back into it where it ends.
+ */
+function airFadeTexture(): THREE.DataTexture {
+  const H = 64;
+  const data = new Uint8Array(H * 4);
+  for (let y = 0; y < H; y++) {
+    const v = (y + 0.5) / H;
+    const a = Math.round(255 * THREE.MathUtils.smoothstep(v, 0, 0.3) * (1 - THREE.MathUtils.smoothstep(v, 0.55, 1)));
+    data.set([a, a, a, 255], y * 4);
+  }
+  const tex = new THREE.DataTexture(data, 1, H);
+  tex.magFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  return tex;
+}
+let airWave: THREE.DataTexture | null = null;
+let airFade: THREE.DataTexture | null = null;
+
+/**
+ * A line of cool air blowing out of a vent: a flat ribbon starting at the vent and running out from the front, rising
+ * as it goes. It lies nearly level, so the camera, always looking down from above, sees its waves from every side.
+ */
+const coolLine = () =>
+  cached('cue-cool-line', () =>
+    new THREE.PlaneGeometry(AIR_LINE.w, AIR_LINE.h).translate(0, AIR_LINE.h / 2, 0).rotateX(Math.PI / 2 - COOL_RISE),
+  );
+
+/**
+ * A group of `n` wavy lines of moving air, each fading on its own, added to a model and never picked: warm air's lines
+ * stand up and face the camera as they rise, and cool air's lie out from the vents.
+ */
+function airLines(model: THREE.Object3D, n: number, cool: boolean): THREE.Group {
+  airWave ??= airWaveTexture();
+  airFade ??= airFadeTexture();
+  const look = { map: airWave, alphaMap: airFade, transparent: true, opacity: 0, depthWrite: false };
+  const group = new THREE.Group();
+  for (let i = 0; i < n; i++) {
+    const line = cool
+      ? new THREE.Mesh(
+          coolLine(),
+          owned(new THREE.MeshBasicMaterial({ ...look, color: COOL_AIR, side: THREE.DoubleSide })),
+        )
+      : new THREE.Sprite(owned(new THREE.SpriteMaterial({ ...look, color: WARM_AIR })));
+    /** Cues are not there to be clicked: a click goes to the item itself. */
+    line.raycast = () => undefined;
+    line.renderOrder = 2;
+    group.add(line);
+  }
+  model.add(group);
+  return group;
+}
+
+/**
+ * Wavy lines of heat rising off a heater, or of cool air blowing out of an air conditioner's vents and up into the room,
+ * while it runs.
+ */
 function animateWisps(model: THREE.Object3D, c: CueCondition, t: number) {
   const heat = ITEMS[c.type].heat ?? 0;
   const on = heat !== 0 && c.running > 0 && c.wear < 100;
@@ -229,20 +329,30 @@ function animateWisps(model: THREE.Object3D, c: CueCondition, t: number) {
   }
   const cool = heat < 0;
   const cues = cuesOf(model);
-  wisps = cues.wisps ??= cueGroup(model, sph(0.1, 8), 3, cool ? 0xa8dcff : 0xffa860);
+  wisps = cues.wisps ??= airLines(model, 3, cool);
   wisps.visible = true;
   const { box } = cues;
   const width = box.max.x - box.min.x;
   const cx = (box.min.x + box.max.x) / 2;
   const cz = (box.min.z + box.max.z) / 2;
+  // each line drifts along as its waves run along it, swaying a little, and fades out as it goes
+  if (airWave) airWave.offset.y = -((t * AIR_WAVE_SPEED) % 1);
   wisps.children.forEach((w, i) => {
-    const f = burst(t + (i * 2.4) / 3, 2.4, 2.4, c.id);
-    const x = cx + (i - 1) * width * 0.28 + Math.sin(t * 2 + i * 1.7) * 0.04;
-    // warm air climbs over the top; cool air spills out of the front and sinks
-    if (cool) w.position.set(x, box.max.y * 0.72 - f * 0.4, box.max.z + 0.05 + f * 0.55);
-    else w.position.set(x, box.max.y + 0.05 + f * 0.8, cz);
-    w.scale.set(1.1, cool ? 1.1 : 2.8, cool ? 2.6 : 1.1).multiplyScalar(0.8 + f * 0.6);
-    fadeOf(w).opacity = Math.sin(f * Math.PI) * (0.3 + 0.3 * c.running);
+    const f = burst(t + (i * AIR_LIFE) / 3, AIR_LIFE, AIR_LIFE, c.id);
+    const x = cx + (i - 1) * width * 0.3 + Math.sin(t * 1.3 + i * 2.1) * 0.03;
+    const breath = 0.9 + 0.15 * Math.sin(t * 2.3 + i);
+    if (cool) {
+      // out of the vents on the front, and up and away into the room
+      const out = f * COOL_DRIFT;
+      w.position.set(x, box.max.y * VENT_HEIGHT + out * Math.sin(COOL_RISE), box.max.z + out * Math.cos(COOL_RISE));
+      w.scale.set(breath, 1, 1);
+    } else {
+      // off the top, and up
+      w.position.set(x, box.max.y + AIR_LINE.h * 0.4 + f * 0.3, cz);
+      w.scale.set(AIR_LINE.w * breath, AIR_LINE.h, 1);
+    }
+    (w as THREE.Object3D & { material: THREE.Material }).material.opacity =
+      Math.sin(f * Math.PI) * (0.65 + 0.3 * c.running);
   });
 }
 

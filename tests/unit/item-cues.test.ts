@@ -1,5 +1,6 @@
 // The cues an item gives without an overlay: of wear before it breaks and a dead look once it has, of dirt, of noise
-// while a guest uses something loud, and of warmth or cool while a heater or air conditioner runs.
+// while a guest uses something loud, and of warmth or cool while a heater or air conditioner runs; and a fountain's
+// running water.
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -20,6 +21,7 @@ import {
 } from '../../src/render/item-cues';
 import { animateItemParts, type ItemCondition, ItemsLayer } from '../../src/render/items';
 import { buildItem } from '../../src/render/models/items';
+import { spillRuns } from '../../src/render/models/items/fountain';
 import { partsOf } from '../../src/render/models/parts';
 import { freshSim } from './helpers';
 
@@ -235,6 +237,41 @@ describe('noise and warmth', () => {
     }
   });
 
+  it('draws heat as wavy lines climbing off the top, and cool air as wavy lines blowing out of the vents and up', () => {
+    for (const type of ['radiator', 'air_conditioner'] as const) {
+      const cool = type === 'air_conditioner';
+      const model = buildItem(type);
+      const { max } = new THREE.Box3().setFromObject(model);
+      /** The lines of moving air at a moment, as the item runs flat out. */
+      const lines = (t: number) => {
+        animateItemParts(model, condition(type, { running: 1 }), t);
+        return partsOf(model).cues!.wisps!.children as (THREE.Sprite | THREE.Mesh)[];
+      };
+      expect(lines(0).length, type).toBe(3);
+      // heat stands up to face the camera; cool air lies out from the front, where the camera sees it from above
+      expect(
+        lines(0).every((l) => l instanceof (cool ? THREE.Mesh : THREE.Sprite)),
+        type,
+      ).toBe(true);
+      const moments = Array.from({ length: 48 }, (_, i) => i * 0.05);
+      const seen = moments.map((t) =>
+        lines(t).map((l) => ({ y: l.position.y, z: l.position.z, shows: (l.material as THREE.Material).opacity })),
+      );
+      // there is always air to see, all of it from up by the top, never down by the floor
+      for (const now of seen) expect(Math.max(...now.map((l) => l.shows)), type).toBeGreaterThan(0.5);
+      for (const now of seen) for (const l of now) expect(l.y, type).toBeGreaterThan(max.y * 0.7);
+      // and each line only ever climbs, or blows out from the front and up, but for starting again once
+      for (let i = 0; i < 3; i++) {
+        const back = seen.slice(1).filter((now, k) => {
+          const was = seen[k]![i]!;
+          return now[i]!.y < was.y || (cool && now[i]!.z < was.z);
+        });
+        expect(back.length, `${type} line ${i}`).toBeLessThanOrEqual(1);
+        if (cool) expect(Math.min(...seen.map((now) => now[i]!.z)), `line ${i}`).toBeGreaterThanOrEqual(max.z - 0.01);
+      }
+    }
+  });
+
   it('ripples over an arcade while a guest plays it, and wisps over a radiator while it heats, in the game', () => {
     const sim = freshSim();
     sim.s.money = 100_000;
@@ -259,5 +296,43 @@ describe('noise and warmth', () => {
     sim.s.weatherOn = false;
     items.animate(0);
     expect(partsOf(model(radiator.id)).cues?.wisps?.visible).toBe(false);
+  });
+});
+
+describe("a fountain's water", () => {
+  it('runs down from the bowl into the basin, and rings spread from the orb toward the rim as they fade', () => {
+    const model = shown('fountain');
+    const { sheet, rings } = partsOf(model).spill!;
+    /** How far the runs down every fountain's falling water have moved at a moment. */
+    const runsAt = (t: number) => {
+      animateItemParts(model, condition('fountain'), t);
+      return spillRuns().offset.y;
+    };
+    // the runs move toward the bottom of the sheet, where its texture starts
+    expect(runsAt(0.2)).toBeGreaterThan(runsAt(0.1));
+    sheet.geometry.computeBoundingBox();
+    expect(sheet.geometry.getAttribute('uv').getY(0)).toBe(0);
+    expect(sheet.geometry.getAttribute('position').getY(0)).toBeCloseTo(sheet.geometry.boundingBox!.min.y);
+    // a ring is wider and fainter a moment later, until it starts again round the orb
+    const ring = rings[0]!;
+    const moments = Array.from({ length: 30 }, (_, i) => i * 0.05);
+    const seen = moments.map((t) => {
+      animateItemParts(model, condition('fountain'), t);
+      return { r: ring.scale.x, shows: (ring.material as THREE.MeshBasicMaterial).opacity };
+    });
+    expect(seen.slice(1).filter((now, k) => now.r < seen[k]!.r).length).toBeLessThanOrEqual(1);
+    const widest = seen.reduce((a, b) => (b.r > a.r ? b : a));
+    expect(widest.shows).toBeLessThan(0.1);
+  });
+
+  it('is never clicked in place of the fountain, and casts no shadow', () => {
+    const model = buildItem('fountain');
+    const { sheet, foam, rings } = partsOf(model).spill!;
+    const water = new Set<THREE.Object3D>([sheet, foam, ...rings]);
+    const down = new THREE.Raycaster(new THREE.Vector3(0.27, 3, 0), new THREE.Vector3(0, -1, 0));
+    const hits = down.intersectObject(model, true);
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits.some((h) => water.has(h.object))).toBe(false);
+    for (const part of water) expect(part.castShadow).toBe(false);
   });
 });
