@@ -1790,8 +1790,11 @@ export class Bot {
     }
   }
 
-  /** Whether a spot is on the plot given for the machine room, kept for it from any other room until it is built. */
-  private keptForMachine(type: RoomType, r: Rect): boolean {
+  /**
+   * Whether a spot is on the plot given for the machine room, kept for it from any other room, or from anything placed
+   * in the corridor (no type), until it is built.
+   */
+  private keptForMachine(type: RoomType | undefined, r: Rect): boolean {
     const lot = MACHINE_LOTS[this.center];
     if (!lot || !this.flags.land || !this.flags.machines) return false;
     const room = ROOM_ORDER.find(
@@ -1846,6 +1849,9 @@ export class Bot {
     for (const [x, y] of spots.slice(0, 120))
       for (let rot = 0; rot < 4; rot++) {
         if (this.flags.clear && this.underfoot(t, x, y, rot)) continue;
+        const size = Math.max(ITEMS[t].w, ITEMS[t].h);
+        if (this.keptForMachine(undefined, { x: x - size + 1, y: y - size + 1, w: 2 * size - 1, h: 2 * size - 1 }))
+          continue;
         if (!this.sim.world.canPlaceItem(t, x, y, rot).ok) continue;
         const it = this.sim.placeItem(t, x, y, rot);
         if (it) return it;
