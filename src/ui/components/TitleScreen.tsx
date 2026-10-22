@@ -4,7 +4,7 @@ import './TitleScreen.css';
 
 import { useEffect, useState } from 'preact/hooks';
 
-import type { Audio } from '../../audio';
+import type { Audio } from '../../audio/audio';
 import { CENTERS, GAME_TITLE } from '../../core/data';
 import { latestSave, timeAgo } from '../../storage/saves';
 import { loadDisciplinePrefs } from '../../storage/settings';

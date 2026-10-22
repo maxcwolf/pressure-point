@@ -2,7 +2,7 @@
 
 import { logger, setTag } from '@sentry/browser';
 
-import { Audio } from '../audio';
+import { Audio } from '../audio/audio';
 import { newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { loadIcons } from '../render/models/icons';

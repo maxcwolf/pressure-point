@@ -1,6 +1,6 @@
 // A game in progress: the simulation, the view of it, the tools, the interface and the loop that runs them.
 
-import type { Audio } from '../audio';
+import type { Audio } from '../audio/audio';
 import { withAchievements } from '../core/campaign';
 import { ITEMS, ROOMS } from '../core/data';
 import type { PlacePreview } from '../core/sim/preview';
@@ -37,7 +37,10 @@ export interface GameSetup {
   fullScreen: FullScreenSwitch | undefined;
 }
 
-/** Run a game: wire up the view, tools, interface, input and main loop. */
+/**
+ * Run a game: wire up the view, tools, interface, input and main loop. Each part is built after what it needs, so none
+ * reaches for one not yet built: the tools and the saves report back to their callers rather than to the interface.
+ */
 export function startGame({ canvas, audio, state, exit, updates, fullScreen }: GameSetup) {
   // achievements earned in other games are not earned again in this one
   if (state.center !== 'sandbox') state.achieved = withAchievements(state.achieved, loadCampaign().achieved);
@@ -47,57 +50,52 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
 
   const view = new View(canvas, sim);
   const refresh = createRefresh();
-  /** The preview of an item in hand last drawn on the floor, so a new one is drawn at once, not at the next redraw. */
-  let previewDrawn: PlacePreview | null = null;
   const tools = new Tools(
     sim,
     view,
     () => {
       refresh.request();
-      if (tools.preview !== previewDrawn) {
-        previewDrawn = tools.preview;
-        drawOverlay();
-      }
     },
     (name) => audio.play(name),
     (action, reason) => refused(state, action, reason),
   );
+
   /** Whether the last autosave failed, so a run of failures is reported once. */
   let saveFailed = false;
-  /** Write the autosave. One that fails for want of room is reported, once, until a save works again. */
-  const autosaveNow = (): boolean => {
+  /**
+   * Write the autosave, with a picture of the view for the title screen if asked. One that fails for want of room comes
+   * back with a warning for the player, once, until a save works again.
+   */
+  const autosaveNow = (picture: boolean): string | null => {
     const ok = autosave(state);
     recordGame(state);
-    if (ok) saveFailed = false;
-    else if (!saveFailed) {
+    if (ok) {
+      saveFailed = false;
+      if (picture) storeThumb(AUTOSAVE_ID, view.snapshot());
+    } else if (!saveFailed) {
       saveFailed = true;
-      ui.toast('Your game could not be saved: storage is full. Delete or export some saved games to make room.', 'bad');
+      return 'Your game could not be saved: storage is full. Delete or export some saved games to make room.';
     }
-    return ok;
+    return null;
   };
   /**
-   * Write the autosave with a picture of the view for the title screen, as the game is left or hidden. The regular
-   * autosave goes without: drawing the picture stalls a frame, and only the last one before leaving is ever seen.
+   * Write the autosave with its picture, as the game is left or hidden. The regular autosave goes without: drawing the
+   * picture stalls a frame, and only the last one before leaving is ever seen.
    */
-  const save = () => {
-    if (autosaveNow()) storeThumb(AUTOSAVE_ID, view.snapshot());
-  };
-  /** Save as the page is hidden: phones and Safari may close a hidden page without warning, or without unloading it. */
-  const saveIfHidden = () => {
-    if (document.visibilityState === 'hidden') save();
-  };
-  /** Save, then stop saving on the way out, so the page that loads next finds this game as it was left. */
+  const save = () => autosaveNow(true);
+  // saving as the page goes away stops once the game is left on purpose, so the page that loads next finds it as it was
+  const leaving = new AbortController();
+  /** Save, then stop saving on the way out. */
   const saveAndStop = () => {
     save();
-    window.removeEventListener('beforeunload', save);
-    window.removeEventListener('pagehide', save);
-    document.removeEventListener('visibilitychange', saveIfHidden);
+    leaving.abort();
   };
   /** Leave this game for another one, keeping it up to date in the autosave first. */
   const leaveFor = (what: string) => {
     saveAndStop();
     reloadInto(what);
   };
+
   const ui = mountHud({
     sim,
     tools,
@@ -135,10 +133,6 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     ui.update();
   });
 
-  /** Ask whether to buy a plot clicked with the Expand tool. */
-  tools.askToBuy = (plotId) => {
-    ui.askToBuy(plotId);
-  };
   bindPointer(canvas, { audio, tools, view, ui });
   const held = bindKeyboard({
     state,
@@ -153,27 +147,30 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
       refresh.request();
     },
   });
+
+  /** The preview of an item in hand last drawn on the floor, so a new one is drawn at once, not at the next redraw. */
+  let previewDrawn: PlacePreview | null = null;
   /**
-   * Color the floor for an item in hand, as if it were down; or for the overlay showing, or the land around the building
-   * or a plot of it; or clear it.
+   * Color the floor for an item in hand, as if it were down; or for what the interface has it show, the overlay or the
+   * land around the building, or a plot of it; or clear it.
    */
-  function drawOverlay() {
+  const drawOverlay = () => {
+    previewDrawn = tools.preview;
+    const { overlay, land } = ui.floor;
     // the people overlays ring the people, whatever is on the floor
-    const ringed = ui.overlay;
-    view.halos.set(ringsPeople(ringed) ? (c) => personValue(ringed, c) : null);
+    view.halos.set(ringsPeople(overlay) ? (c) => personValue(overlay, c) : null);
     // the Expand tool colors the land itself, as the pointer moves
     if (tools.tool.kind === 'expand') return;
     // an item in hand shows what it would change, over the overlay showing
     const preview = tools.preview;
-    const mode = preview && previewMode(preview, ui.overlay);
+    const mode = preview && previewMode(preview, overlay);
     if (preview && mode) {
       view.setHeat(heatTiles(sim, mode, preview), overlayPalette(mode));
       return;
     }
     // the Land tab outlines the plots, over any overlay
     const sel = tools.selected;
-    if (ui.menu === 'finance' && ui.moneyTab === 'land')
-      view.setHeat(plotHeat(sim.landOffers(), ui.landPointedAt), 'land');
+    if (land) view.setHeat(plotHeat(sim.landOffers(), land.pointedAt), 'land');
     // a plot in the inspector is outlined on its own
     else if (sel?.kind === 'plot')
       view.setHeat(
@@ -183,12 +180,8 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
         ),
         'land',
       );
-    else
-      view.setHeat(
-        ui.overlay && !ringsPeople(ui.overlay) ? heatTiles(sim, ui.overlay) : null,
-        overlayPalette(ui.overlay),
-      );
-  }
+    else view.setHeat(overlay && !ringsPeople(overlay) ? heatTiles(sim, overlay) : null, overlayPalette(overlay));
+  };
   runLoop({
     sim,
     view,
@@ -196,17 +189,34 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     held,
     mouse: trackMouse(),
     refresh,
-    save: autosaveNow,
+    /** Write the regular autosave, saying so if it fails. */
+    save: () => {
+      ui.warn(autosaveNow(false));
+    },
     /** Note a star or an achievement for the campaign as soon as it is earned. */
     record: () => {
       recordGame(state);
     },
-    overlay: drawOverlay,
+    /** Redraw the floor overlay when it is due, or at once for a new preview of the item in hand. */
+    overlay: (due) => {
+      if (due || tools.preview !== previewDrawn) drawOverlay();
+    },
   });
   watchGame(sim);
-  window.addEventListener('beforeunload', save);
-  window.addEventListener('pagehide', save);
-  document.addEventListener('visibilitychange', saveIfHidden);
+  /** Save as the game is left or hidden, saying so if it fails. */
+  const saveOnTheWayOut = () => {
+    ui.warn(save());
+  };
+  window.addEventListener('beforeunload', saveOnTheWayOut, { signal: leaving.signal });
+  window.addEventListener('pagehide', saveOnTheWayOut, { signal: leaving.signal });
+  // phones and Safari may close a hidden page without warning, or without unloading it
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (document.visibilityState === 'hidden') saveOnTheWayOut();
+    },
+    { signal: leaving.signal },
+  );
   // another tab or window with the game open writes the same autosave, so the two save over each other: say so, once
   let warned = false;
   window.addEventListener('storage', (e) => {

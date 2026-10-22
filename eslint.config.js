@@ -14,7 +14,7 @@ const notInTheGame = {
 };
 
 /** The parts of src/ other than the game core, as a relative import names them. */
-const outsideCore = ['app', 'audio', 'lab', 'main', 'render', 'sounds', 'storage', 'ui', 'voice'];
+const outsideCore = ['app', 'audio', 'lab', 'main', 'render', 'sounds', 'storage', 'ui'];
 
 /**
  * A pattern for a relative import that climbs out of its folder, from any depth, into one of `parts` of src/, unless
@@ -164,6 +164,12 @@ export default tseslint.config(
     'src/storage/**/*.{ts,tsx}',
     outsideCore.filter((part) => part !== 'storage'),
     'Storage imports only from the game core and itself: no interface, app, audio or rendering code.',
+  ),
+  // sound sits on the game core as well: it plays the recordings, and keeps its switches through storage
+  layerBoundary(
+    'src/audio/**/*.{ts,tsx}',
+    outsideCore.filter((part) => !['audio', 'sounds', 'storage'].includes(part)),
+    'Sound imports only from the game core, storage, the recordings and itself: no interface, app or rendering code.',
   ),
 
   // the center's money changes only through the economy's earn, spend and recoup, so it always agrees with the books.

@@ -3,12 +3,12 @@
 
 import { track } from '../app/analytics';
 import { gameProps } from '../app/play-events';
+import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { Template } from '../core/templates';
 import { giveKarma } from '../storage/campaign';
 import { loadTemplates } from '../storage/templates';
-import { voiceFor } from '../voice';
 import type { GameHost } from './host';
 import type { ItemKind, Place } from './lib/catalog';
 import { mustAnswer, pendingDialog, raise, type Raised, stillDue } from './lib/dialogs';
@@ -39,6 +39,13 @@ export type DialogId =
   | 'payroll'
   | 'bankrupt'
   | 'update';
+
+/** What the interface has the floor show: the overlay chosen, and the plots of land while the Land tab is open. */
+export interface FloorShown {
+  overlay: OverlayMode | null;
+  /** The plots of land, with the one the pointer is over in the Land tab, or null while the tab is closed. */
+  land: { pointedAt: string | null } | null;
+}
 
 /** A message that fades after a few seconds. */
 export interface Toast {
@@ -147,6 +154,12 @@ export class HudState {
     for (const listener of this.listeners) listener();
   }
 
+  /** What the floor shows for the interface, which the game draws over whatever else is on it. */
+  get floor(): FloorShown {
+    const landTab = this.menu === 'finance' && this.moneyTab === 'land';
+    return { overlay: this.overlay, land: landTab ? { pointedAt: this.landPointedAt } : null };
+  }
+
   /** Whether a dialog is open and holding the game's input. */
   get blocking(): boolean {
     return this.dialog !== null;
@@ -246,7 +259,7 @@ export class HudState {
   open(dialog: DialogId) {
     this.pause();
     // the list of saved games should include the game as it is right now
-    if (dialog === 'saves') this.host.save();
+    if (dialog === 'saves') this.warn(this.host.save());
     this.dialog = dialog;
     this.update();
   }
@@ -323,6 +336,11 @@ export class HudState {
       this.update();
     }, 7000);
     this.update();
+  }
+
+  /** Show a warning, if there is one. */
+  warn(warning: string | null) {
+    if (warning) this.toast(warning, 'bad');
   }
 
   /** Show a banner announcement for a few seconds, with a chime, and the announcer's voice when it is recorded. */

@@ -69,8 +69,6 @@ export class Tools {
   /** The pattern the next rug put down will have, kept from one rug to the next. */
   rugPattern: RugPatternId = 'kilim';
   private cursor: Point | null = null;
-  /** Ask whether to buy a plot of land, once one for sale is clicked with the Expand tool. */
-  askToBuy: (plotId: string) => void = () => undefined;
 
   constructor(
     private sim: Sim,
@@ -358,16 +356,20 @@ export class Tools {
     }
   }
 
-  /** Left button released as a click (or at the end of dragging out a room). */
-  pointerUp(clientX: number, clientY: number) {
+  /**
+   * Left button released as a click (or at the end of dragging out a room). Returns the plot of land for sale clicked
+   * with the Expand tool, if one was, to ask whether to buy it.
+   */
+  pointerUp(clientX: number, clientY: number): string | null {
     this.cursor = this.view.groundAt(clientX, clientY);
     const t = this.tool;
     const sim = this.sim;
+    let toBuy: string | null = null;
     if (t.kind === 'none') {
       // clicking again where something is selected steps on to whatever else is there
       this.select(nextPick(this.view.pickAll(clientX, clientY), this.selected));
       if (this.selected) this.sfx('blip');
-      return;
+      return null;
     }
     if (t.kind === 'item') {
       const spot = this.spotFor(t);
@@ -399,7 +401,7 @@ export class Tools {
     } else if (t.kind === 'expand') {
       t.pointed = this.plotUnderCursor();
       const offer = sim.landOffers().find((o) => o.def.id === t.pointed);
-      if (offer?.state === 'open') this.askToBuy(offer.def.id);
+      if (offer?.state === 'open') toBuy = offer.def.id;
       else if (offer?.state === 'locked') this.refuse('buy_land', 'Locked');
       else if (offer) {
         // one of the game's: put the tool down to show it in the inspector
@@ -425,7 +427,7 @@ export class Tools {
         t.rect = null;
       }
     } else if (t.phase === 'door') {
-      if (!this.cursor) return;
+      if (!this.cursor) return null;
       const door = sim.world.nearestDoor(t.rect, this.cursor.x, this.cursor.y);
       if (sim.world.doorValid(t.type, t.rect, door).ok) {
         const room = sim.createRoom(t.type, t.rect, door);
@@ -447,6 +449,7 @@ export class Tools {
       }
     }
     this.refresh();
+    return toBuy;
   }
 
   /** Put the room in hand down: moved, it is done with and selected; copied, the tool stays for another copy. */

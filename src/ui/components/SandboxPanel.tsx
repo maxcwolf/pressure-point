@@ -3,7 +3,7 @@
 
 import './SandboxPanel.css';
 
-import type { Audio } from '../../audio';
+import type { Audio } from '../../audio/audio';
 import { DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING, SANDBOX_MONEY } from '../../core/data';
 import { money } from '../../core/format';
 import { loadDisciplinePrefs, loadSandbox, saveDisciplinePref, saveSandbox } from '../../storage/settings';

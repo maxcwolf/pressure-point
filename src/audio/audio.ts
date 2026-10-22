@@ -1,8 +1,8 @@
 // Tiny synthesized sound effects, a generative lounge loop, and the announcer's recorded lines.
 
-import type { SfxName } from './core/sim/events';
-import { at } from './core/util';
-import { isRecord } from './storage/json';
+import type { SfxName } from '../core/sim/events';
+import { at } from '../core/util';
+import { loadAudio, saveAudio } from '../storage/settings';
 
 type Note = [freq: number, start: number, dur: number, gain?: number, type?: OscillatorType];
 
@@ -87,19 +87,13 @@ export class Audio {
   /** The line the announcer is saying, or about to say. */
   private voice: HTMLAudioElement | null = null;
   private voiceTimer = 0;
-  sound = true;
-  music = true;
+  sound: boolean;
+  music: boolean;
 
   constructor() {
-    try {
-      const prefs: unknown = JSON.parse(localStorage.getItem('pressure-point-audio') ?? '{}');
-      if (isRecord(prefs)) {
-        if (typeof prefs.sound === 'boolean') this.sound = prefs.sound;
-        if (typeof prefs.music === 'boolean') this.music = prefs.music;
-      }
-    } catch {
-      // defaults are fine
-    }
+    const prefs = loadAudio();
+    this.sound = prefs.sound;
+    this.music = prefs.music;
   }
 
   /** Must be called from a user gesture before anything is audible. */
@@ -128,11 +122,7 @@ export class Audio {
 
   /** Remember the sound and music switches. */
   private save() {
-    try {
-      localStorage.setItem('pressure-point-audio', JSON.stringify({ sound: this.sound, music: this.music }));
-    } catch {
-      // ignore
-    }
+    saveAudio({ sound: this.sound, music: this.music });
   }
   /** Turn sound effects on or off. */
   toggleSound() {

@@ -2,7 +2,7 @@
 
 import { render } from 'preact';
 
-import type { Audio } from '../audio';
+import type { Audio } from '../audio/audio';
 import { FloaterLayer, Hud as HudView } from './components/Hud';
 import { TitleScreen } from './components/TitleScreen';
 import { byId } from './dom';
