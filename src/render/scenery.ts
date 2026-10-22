@@ -39,42 +39,7 @@ export function buildScenery(
   lawn.receiveShadow = true;
   scene.add(lawn);
 
-  // sign on the front lawn
-  const sign = new THREE.Group();
-  const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 160;
-  const ctx = must(c.getContext('2d'), '2D canvas');
-  ctx.fillStyle = '#2fa8a0';
-  ctx.fillRect(0, 0, 512, 160);
-  ctx.fillStyle = '#fff8e8';
-  ctx.fillRect(10, 10, 492, 140);
-  ctx.fillStyle = '#2f4858';
-  ctx.font = '700 62px Fredoka, "Arial Rounded MT Bold", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(`${TITLE_LINES[0]} ${TITLE_LINES[1]}`.toUpperCase(), 256, 66);
-  ctx.fillStyle = '#2fa8a0';
-  ctx.font = '600 34px Fredoka, "Arial Rounded MT Bold", sans-serif';
-  ctx.fillText(TITLE_LINES[2].toUpperCase().split('').join('\u200a'), 256, 120);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const board = new THREE.Mesh(new THREE.BoxGeometry(SIGN_HALF * 2, 1, 0.12), [
-    mat(0x2fa8a0),
-    mat(0x2fa8a0),
-    mat(0x2fa8a0),
-    mat(0x2fa8a0),
-    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }),
-    mat(0x2fa8a0),
-  ]);
-  board.position.y = 1.25;
-  board.castShadow = true;
-  sign.add(board);
-  for (const x of [-SIGN_LEG, SIGN_LEG]) put(sign, cyl(0.07, 0.07, 0.9), mat(0x8f5f38), x, 0.45, 0);
-  const spot = signSpot(fp);
-  sign.position.set(spot.x, 0, spot.z);
-  sign.rotation.y = spot.angle;
-  scene.add(sign);
+  scene.add(buildSign(fp));
 
   if (setting === 'seaside') {
     scene.add(buildSeaside(fp, width, plots));
@@ -103,6 +68,43 @@ export function buildScenery(
   }
   scene.add(setting === 'mountain' ? buildPines(trees) : buildForest(trees));
   return scene;
+}
+
+/** The sign on the front lawn, printed on both faces, so it reads from the north as well as from the street. */
+export function buildSign(fp: Footprint): THREE.Group {
+  const sign = new THREE.Group();
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 160;
+  const ctx = must(c.getContext('2d'), '2D canvas');
+  ctx.fillStyle = '#2fa8a0';
+  ctx.fillRect(0, 0, 512, 160);
+  ctx.fillStyle = '#fff8e8';
+  ctx.fillRect(10, 10, 492, 140);
+  ctx.fillStyle = '#2f4858';
+  ctx.font = '700 62px Fredoka, "Arial Rounded MT Bold", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${TITLE_LINES[0]} ${TITLE_LINES[1]}`.toUpperCase(), 256, 66);
+  ctx.fillStyle = '#2fa8a0';
+  ctx.font = '600 34px Fredoka, "Arial Rounded MT Bold", sans-serif';
+  ctx.fillText(TITLE_LINES[2].toUpperCase().split('').join('\u200a'), 256, 120);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 });
+  const edge = mat(0x2fa8a0);
+  // a box's faces in order: its ends, top and bottom, then front and back, each face reading the right way round
+  // from its own side, so the back can wear the same print as the front
+  const board = new THREE.Mesh(new THREE.BoxGeometry(SIGN_HALF * 2, 1, 0.12), [edge, edge, edge, edge, face, face]);
+  board.name = 'sign-board';
+  board.position.y = 1.25;
+  board.castShadow = true;
+  sign.add(board);
+  for (const x of [-SIGN_LEG, SIGN_LEG]) put(sign, cyl(0.07, 0.07, 0.9), mat(0x8f5f38), x, 0.45, 0);
+  const spot = signSpot(fp);
+  sign.position.set(spot.x, 0, spot.z);
+  sign.rotation.y = spot.angle;
+  return sign;
 }
 
 /**

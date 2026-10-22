@@ -1,6 +1,6 @@
 // A picture of every screen of the interface. Run `yarn test:visual` to compare with the stored
 // pictures, and `yarn test:visual:update` to replace them after a change that is meant to be seen.
-import { test } from './fixtures';
+import { expect, test } from './fixtures';
 
 /** The emergency on offer in the pictures, lapsing eight days after the day given. */
 const OFFER = (day: number) => ({
@@ -525,6 +525,18 @@ test.describe('in a game', () => {
       pp.sim.emit({ type: 'visit' });
     });
     await screens.shot('visit-report');
+  });
+});
+
+// between the narrow layout and room for everything, where the bottom bar once ran off the right of the window
+test.describe('in a window a little narrower than usual', () => {
+  test.use({ viewport: { width: 1300, height: 800 } });
+
+  test('the heads-up display, with every speed button in view', async ({ screens, page }) => {
+    await screens.play();
+    const fastest = await page.getByRole('button', { name: 'Fastest (3)' }).boundingBox();
+    expect(fastest!.x + fastest!.width).toBeLessThanOrEqual(1300);
+    await screens.shot('mid-hud');
   });
 });
 

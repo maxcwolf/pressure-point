@@ -1,8 +1,11 @@
-// The sign on the front lawn stands clear of the building's front wall and of the pavement, for every center.
-import { describe, expect, it } from 'vitest';
+// The sign on the front lawn stands clear of the building's front wall and of the pavement, for every center, and
+// reads from behind as well as from the street.
+import * as THREE from 'three';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { CENTERS, SIDEWALK_Y } from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
+import { buildSign } from '../../src/render/scenery';
 import { OUTER_T } from '../../src/render/shared';
 import { alongSign, SIGN_HALF, SIGN_LEG, signSpot } from '../../src/render/sign';
 
@@ -19,4 +22,39 @@ describe('the sign out front', () => {
       }
     });
   }
+});
+
+/** Does nothing, for every call the sign makes to draw on its canvas. */
+const nothing = () => undefined;
+/** A 2D context whose every method does nothing. */
+const context = new Proxy(
+  {},
+  {
+    /** Whatever is asked for is a method that does nothing. */
+    get: () => nothing,
+  },
+);
+/** A canvas that draws nothing. */
+function canvas() {
+  return {
+    /** The one context it has. */
+    getContext: () => context,
+  };
+}
+
+describe("the sign's back", () => {
+  // the sign is printed on a canvas, which Node has not got: one that draws nothing will do
+  beforeAll(() => {
+    Object.assign(globalThis, { document: { createElement: canvas } });
+  });
+
+  it('is printed like its front, not left plain, so the sign reads when the camera looks from the north', () => {
+    const sign = buildSign(footprintOf(CENTERS.willow.plot));
+    const board = sign.getObjectByName('sign-board') as THREE.Mesh;
+    const faces = board.material as THREE.MeshStandardMaterial[];
+    // a box's front and back are its fifth and sixth faces
+    const [front, back] = [faces[4], faces[5]];
+    expect(front?.map).toBeInstanceOf(THREE.CanvasTexture);
+    expect(back?.map).toBe(front?.map);
+  });
 });

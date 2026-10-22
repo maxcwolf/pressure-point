@@ -105,20 +105,20 @@ button.danger:hover,
   padding: 8px 20px;
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1540px) {
   .round {
     width: 66px;
     height: 66px;
   }
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1540px) {
   .round i {
     font-size: 22px;
   }
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1540px) {
   .round span {
     font-size: 11px;
   }

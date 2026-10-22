@@ -584,23 +584,23 @@ test.describe('room blueprints', () => {
 
     // the massage table is used from two sides: the therapist on one, the guest on the other
     const table = await game.hoverHeld();
-    await expect(page.locator('#hint')).toContainText('purple square: Massage Therapist');
-    await expect(page.locator('#hint')).toContainText('orange square: guests');
+    await expect(page.locator('#hint li.legend')).toHaveText(['Massage Therapist', 'guests']);
+    await expect(page.locator('#hint li.legend .square').first()).toHaveAttribute('aria-label', /^purple/);
     expect(await marked()).toEqual(await used(table));
     expect(await marked()).toHaveLength(2);
     await game.placeHeld();
     // the oil cart is not used by anyone, so it marks no squares and the hint says nothing about them
     await game.hoverHeld();
     expect(await marked()).toEqual([]);
-    await expect(page.locator('#hint')).not.toContainText('square');
+    await expect(page.locator('#hint li.legend')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
     // a bench is for guests only
     await game.menu('Items');
     await game.card('Bench').click();
     const bench = await game.hoverHeld();
-    await expect(page.locator('#hint')).toContainText('orange square: guests');
-    await expect(page.locator('#hint')).not.toContainText('staff');
+    await expect(page.locator('#hint li.legend')).toHaveText(['guests']);
+    await expect(page.locator('#hint li.legend .square')).toHaveAttribute('aria-label', /^orange/);
     expect(await marked()).toEqual(await used(bench));
   });
 });
@@ -1635,7 +1635,7 @@ test.describe('more land', () => {
     await game.hoverPlot('back-gallery');
     await expect(page.locator('#hint')).toContainText('Comes up for sale at star 1');
     await game.hoverPlot('east-wing');
-    await expect(page.locator('#hint')).toContainText('The east wing · 8 × 15 tiles · $24,000 · click to buy');
+    await expect(page.locator('#hint li')).toHaveText(['The east wing', '8 × 15 tiles', '$24,000', 'click to buy']);
     await game.clickPlot('east-wing');
     const dialog = page.locator('.dialog');
     await expect(dialog).toContainText('Buy the east wing?');
@@ -1686,7 +1686,7 @@ test.describe('more land', () => {
       pp.tools.startExpand();
     });
     await game.hoverPlot('east-wing');
-    await expect(page.locator('#hint')).toContainText('Garden Wing · 8 × 15 tiles · yours');
+    await expect(page.locator('#hint li')).toHaveText(['Garden Wing', '8 × 15 tiles', 'yours', 'click to see it']);
     await game.clickPlot('east-wing');
     await expect(name).toHaveValue('Garden Wing');
     expect(game.errors).toEqual([]);

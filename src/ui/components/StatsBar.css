@@ -10,6 +10,8 @@
   border-radius: 18px;
   box-shadow: var(--shadow);
   overflow: hidden;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .stat {
@@ -72,7 +74,14 @@
   color: #fff;
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1540px) {
+  .stat {
+    padding: 8px 10px;
+  }
+}
+
+/* with the round buttons smaller, everything fits in a row down to here, the date included */
+@media (max-width: 1430px) {
   .stat.date {
     display: none;
   }
@@ -81,6 +90,7 @@
 @media (max-width: 1100px) {
   #stats {
     align-self: stretch;
+    margin-left: 0;
     justify-content: space-between;
   }
 }
