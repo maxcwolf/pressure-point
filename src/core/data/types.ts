@@ -673,6 +673,7 @@ export type FeelingId =
   | 'good-trip'
   | 'bad-trip'
   | 'freaked'
+  | 'ran-out'
   | 'cider';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';

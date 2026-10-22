@@ -320,6 +320,14 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
       'Someone else was having a very bad time, and so, then, was I.',
     ],
   },
+  'ran-out': {
+    id: 'ran-out',
+    icon: 'feeling-bad-trip',
+    text: 'Ran out of the institute still tripping',
+    good: false,
+    part: 'experience',
+    lines: ['I ran. Nobody came. The hedge was kind.', 'I left through what I am fairly sure was a wall.'],
+  },
   cider: {
     id: 'cider',
     icon: 'feeling-cider',

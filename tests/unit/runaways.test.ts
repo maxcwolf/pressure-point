@@ -2,7 +2,7 @@
 // pass, until a member of staff sent to them calms them down or they find the door.
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, FREAK_PATIENCE, RUNAWAY_CHANCE, RUNAWAY_SECONDS } from '../../src/core/data';
+import { CENTERS, DAY_SECONDS, FREAK_PATIENCE, RUNAWAY_CHANCE, RUNAWAY_SECONDS } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import { badTrip } from '../../src/core/sim/ceremonies';
 import type { SimContext } from '../../src/core/sim/context';
@@ -170,12 +170,15 @@ describe('a really bad trip', () => {
     expect(stressed).toBeLessThan(crowd.length);
   });
 
-  it('ends when they find the door, still tripping', () => {
+  it("ends when they find the door, still tripping, and the center's name suffers", () => {
     const c = withRunner();
+    c.s.reputation = 40;
     c.g.runaway = 0.05;
     c.sim.tick(0.1);
     expect(c.g.state).toBe('leaving');
     expect(c.g.runaway).toBeUndefined();
+    expect(c.g.feelings).toContain('ran-out');
+    expect(c.s.reputation).toBeLessThan(40 - 1);
     expect(toasts(drainEvents(c.ctx)).join(' ')).toContain(`${c.g.name} found the door`);
   });
 
@@ -229,6 +232,30 @@ describe('calming a runner down', () => {
     // and with their trip over, they head home calmly
     expect(c.g.state).toBe('leaving');
     expect(inconsistencies(c.sim)).toEqual([]);
+  });
+
+  it('earns a point back when calmed within three days, and nothing after', () => {
+    /** Calm a runner who has been running this many days, and say what it did to reputation and what floated up. */
+    const calmAfter = (days: number) => {
+      const c = withRunner();
+      c.sim.calm(c.g.id);
+      const sent = c.sim.calmerOf(c.g)!;
+      runUntil(c.sim, () => sent.state === 'doingJob', 60);
+      c.g.runaway = RUNAWAY_SECONDS - days * DAY_SECONDS;
+      c.s.reputation = 40;
+      sent.timer = 0.001;
+      drainEvents(c.ctx);
+      c.sim.tick(0.01);
+      expect(running(c.g)).toBe(false);
+      const float = drainEvents(c.ctx).find((e) => e.type === 'float');
+      return { gain: c.s.reputation - 40, float: float?.type === 'float' ? float.text : '' };
+    };
+    const soon = calmAfter(2.5);
+    expect(soon.gain).toBeGreaterThan(0.5);
+    expect(soon.float).toBe('Calmed in time');
+    const late = calmAfter(3.5);
+    expect(late.gain).toBe(0);
+    expect(late.float).toBe('Calmed');
   });
 
   it('cannot send anyone when everyone is busy or away', () => {

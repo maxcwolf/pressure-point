@@ -4,11 +4,14 @@
 
 import {
   CALM_SECONDS,
+  DAY_SECONDS,
   FREAK_PATIENCE,
   FREAK_RANGE,
   FREAK_STRESS,
   RUNAWAY_CHANCE,
+  RUNAWAY_DOOR_REP,
   RUNAWAY_PAUSE,
+  RUNAWAY_SAVE_DAYS,
   RUNAWAY_SECONDS,
   traitSpeed,
   XP_PER_JOB,
@@ -19,6 +22,7 @@ import { gainXp } from './careers';
 import { guestById, say } from './chars';
 import { release } from './claims';
 import type { SimContext } from './context';
+import { changeRep } from './economy';
 import { emit, toast } from './events';
 import { feel } from './feelings';
 import { decide, leave } from './guests';
@@ -50,7 +54,7 @@ export function startRunning(ctx: SimContext, g: Guest) {
   say(g, 'bubble-stressed', RUNAWAY_PAUSE);
   toast(
     ctx,
-    `${g.name} is having a really bad trip, and is running round freaking everyone out. Select them and calm them down.`,
+    `${g.name} is having a really bad trip, and is running round freaking everyone out. Select them and calm them down, or they will find the door and the center's name will suffer.`,
     'bad',
     { kind: 'guest', id: g.id },
     'feeling-bad-trip',
@@ -110,8 +114,10 @@ export function runStep(ctx: SimContext, g: Guest, dt: number, arrived: boolean)
   if (!runOn(ctx, g)) g.timer = RUNAWAY_PAUSE;
 }
 
-/** They find the door at last, still on their trip, and go home. */
+/** They find the door at last, still on their trip, and go home: and the center's name suffers for it. */
 function foundDoor(ctx: SimContext, g: Guest) {
+  changeRep(ctx, -RUNAWAY_DOOR_REP);
+  feel(g, 'ran-out');
   toast(ctx, `${g.name} found the door, and has gone home still tripping.`, 'bad', undefined, 'feeling-bad-trip');
   leave(ctx, g);
 }
@@ -197,14 +203,19 @@ export function calmStep(ctx: SimContext, st: Staff, dt: number): boolean {
   return true;
 }
 
-/** A runner talked down: grateful for it, and on their way again, calmly. */
+/** Whether a runner has been running no longer than the days in which calming them earns the center's name back. */
+const inTime = (g: Guest) => RUNAWAY_SECONDS - (g.runaway ?? 0) <= RUNAWAY_SAVE_DAYS * DAY_SECONDS;
+
+/** A runner talked down: grateful for it, and on their way again, calmly. Soon enough, and the center earns a point. */
 function calmedDown(ctx: SimContext, st: Staff, g: Guest) {
+  const saved = inTime(g);
+  if (saved) changeRep(ctx, 1);
   delete g.runaway;
   feel(g, 'calmed');
   say(g, 'bubble-relieved', 4);
   st.yearServed++;
   gainXp(ctx, st, XP_PER_JOB);
-  emit(ctx, { type: 'float', text: 'Calmed', x: g.x, y: g.y, kind: 'good' });
+  emit(ctx, { type: 'float', text: saved ? 'Calmed in time' : 'Calmed', x: g.x, y: g.y, kind: 'good' });
   emit(ctx, { type: 'sfx', name: 'heal' });
   decide(ctx, g);
 }

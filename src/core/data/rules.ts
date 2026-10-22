@@ -175,6 +175,10 @@ export const FREAK_PATIENCE = 10;
 export const FREAK_STRESS = 0.35;
 /** How long it takes a member of staff to calm them down, once they have caught up with them. */
 export const CALM_SECONDS = 2;
+/** What a runner who finds the door costs in reputation, on top of the bad trip. */
+export const RUNAWAY_DOOR_REP = 1.5;
+/** Calmed within this many days of starting to run, they leave grateful and the center earns back a point of reputation. */
+export const RUNAWAY_SAVE_DAYS = 3;
 /** How many times faster a Shaman clears bad vibes than sage does. */
 export const SHAMAN_CLEARING = 2;
 /** How many days the blessing a Shaman leaves on a room they clear lasts. */
