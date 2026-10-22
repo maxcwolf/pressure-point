@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **The storm floods a restroom.** At The Boardwalk the storm now also floods a restroom as it starts, out of action with its lamp red until a Caretaker mops it out; boarding up and sandbagging, at the same $800 as before, stops it.
+- **A really bad trip, now and then.** A guest whose ceremony goes badly may run round the institute freaking out everyone they pass, until you send someone to calm them down from their inspector or they find the door.
+
 ## v0.31.0
 
 ### A center that tells you where it stands
