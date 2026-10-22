@@ -340,6 +340,13 @@ export function capacity(ctx: SimContext): Capacity {
 }
 
 /**
+ * The staffed treatment stations and signature machines the consultations cannot keep in guests: they draw nobody and
+ * let nobody more in until there is another Consultation Room, or a Consultant for one standing without.
+ */
+export const unfedStations = (c: Capacity) =>
+  c.stations - c.fed + c.machines.reduce((sum, m) => sum + m.staffed - m.fed, 0);
+
+/**
  * How much more often guests arrive for what the center can treat at once: more for each staffed station past the
  * first that the consultations can keep in guests.
  */

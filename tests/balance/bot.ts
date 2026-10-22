@@ -48,6 +48,7 @@ import {
 import { setSeed } from '../../src/core/random';
 import { roomCost } from '../../src/core/resize';
 import { BUSY_DAYS } from '../../src/core/sim/bottleneck';
+import { unfedStations } from '../../src/core/sim/demand';
 import { daysUntilBankrupt, loanLimit, projectedCashflow, putOffChance, wagesDue } from '../../src/core/sim/economy';
 import type { SimEvent, Subject } from '../../src/core/sim/events';
 import { INTAKE_CAP_MIN } from '../../src/core/sim/guests';
@@ -331,6 +332,8 @@ export function botStyle(env: Record<string, string | undefined> = process.env):
 const BUSY_TARGET = 0.7;
 /** The share of diagnosed guests who are new, and so balk at the full chance (balance log 35: 26% new, 6% plain regulars). */
 const NEW_GUESTS = 0.3;
+/** The game's words for staffed stations the consultations cannot keep in guests, in the advisor and its toast. */
+const UNFED = /staffed treatment stations? draws? no guests: every guest sees/;
 
 /** What the bot sees over a month: lines and busy tables by discipline, sampled, and the casebook at its start. */
 interface Watch {
@@ -1312,6 +1315,8 @@ export class Bot {
   private grewStage: Partial<Record<string, number>> = {};
   /** The day the advised bot last cut on the advisor's "staff down first", so a daily nudge is one cut, not one a day. */
   private cutDay = -Infinity;
+  /** The day the advised bot last acted on stations the consultations cannot keep in guests. */
+  private unfedDay = -Infinity;
 
   /** Keep the toasts the advised bot reads; the other personas read none. */
   private hear(events: SimEvent[]) {
@@ -1395,6 +1400,7 @@ export class Bot {
       return;
     }
     if (text.startsWith('❄️ Winter in')) this.letGo(text);
+    if (UNFED.test(text)) this.heedUnfed(text);
   }
 
   /** Act on the advisor's nudge, by its words. */
@@ -1416,6 +1422,10 @@ export class Bot {
       this.heedBottleneck(text);
       return;
     }
+    if (UNFED.test(text)) {
+      this.heedUnfed(text);
+      return;
+    }
     if (/a loan from the Money menu is cheaper/i.test(text)) {
       // while the books lose money it says to cut first: once in the days the bot's own look back covers
       if (text.includes('Prices up or staff down first') && s.day - this.cutDay >= BUSY_DAYS) {
@@ -1434,6 +1444,25 @@ export class Bot {
     const asked = /Hire (?:a|an) ([A-Z][A-Za-z ]+?)(?: from| for| to|\.)/.exec(text)?.[1];
     const role = asked && (Object.keys(ROLES) as Role[]).find((r) => ROLES[r].name === asked);
     if (role && this.hire(role)) this.heed(text, `hired a ${role}`);
+  }
+
+  /**
+   * Staffed stations the consultations cannot keep in guests: the Consultant for the room standing without one, or
+   * another Consultation Room with one, as the words say, once in the days the bot's own look back covers.
+   */
+  private heedUnfed(text: string) {
+    const s = this.s;
+    if (s.day - this.unfedDay < BUSY_DAYS) return;
+    this.unfedDay = s.day;
+    if (text.includes('standing without one')) {
+      if (this.hire('consultant')) this.heed(text, 'hired a consultant');
+      return;
+    }
+    if (s.money <= price('consult')) return;
+    if (this.buildRoom('consult')) {
+      this.hireToFill();
+      this.heed(text, `built another consult room, money now ${Math.round(s.money)}`);
+    } else this.heed(text, 'another consult room did not fit');
   }
 
   /** A guest the game warns about: to the front of their line, or home if they go home worse off in about a day. */
@@ -1723,9 +1752,11 @@ export class Bot {
   /**
    * Build a room of a type with its furniture and any extras, somewhere along the walls. A spot that would leave no
    * space for a room of a type in `keep` is given up while the room is still a plan, as a player would; with the
-   * machines on, so is one that would take the last spot of a machine room its star has opened.
+   * machines on, so is one that would take the last spot of a machine room its star has opened. Out of space, it buys
+   * the cheapest plot for sale; given what the room is `worth` a month, only a plot that worth pays back within the
+   * months a room is given to pay its way, and borrowing for it only within those it must cover a loan in.
    */
-  buildRoom(type: RoomType, extras: ItemType[] = [], keep: RoomType[] = []): Room | null {
+  buildRoom(type: RoomType, extras: ItemType[] = [], keep: RoomType[] = [], worth?: number): Room | null {
     const def = ROOMS[type];
     const extraCost = extras.reduce((a, t) => a + ITEMS[t].cost, 0);
     // the room at the size it builds it, any floor past what its price covers included
@@ -1751,12 +1782,15 @@ export class Bot {
       .landOffers()
       .filter((o) => o.state === 'open')
       .sort((a, b) => a.price - b.price)[0];
+    /** Whether the room's worth pays the plot back within some months, or there is no worth to weigh it by. */
+    const pays = (months: number) => worth === undefined || (offer !== undefined && worth * months >= offer.price);
     if (
       !building &&
       offer &&
       !this.saving() &&
       this.profit() > 0 &&
-      this.afford(offer.price + price(type) + extraCost, 0, true) &&
+      pays(this.style.payback) &&
+      this.afford(offer.price + price(type) + extraCost, 0, pays(this.style.borrowPayback)) &&
       this.sim.buyPlot(offer.def.id)
     )
       this.note(`day ${Math.floor(this.s.day)}: bought ${offer.name} for ${offer.price}`);
@@ -2034,8 +2068,9 @@ export class Bot {
       }
     }
     const restNeeded = Object.values(MODALITIES).some((m) => m.rest && this.sim.unlocked(m.id));
+    // where it fits: a Recovery Room is worth no plot of land of its own
     if (restNeeded && upTo >= 1 && !this.sim.hasRoom('recovery') && s.money > 6000 + reserve)
-      this.buildRoom('recovery');
+      this.buildRoom('recovery', [], [], 0);
     if (upTo >= 1 && !this.has('shop_counter') && s.money > 4000 + reserve) this.placeNearEntrance('shop_counter');
   }
 
@@ -2333,10 +2368,10 @@ export class Bot {
       }
       const consults = this.rooms('consult').length;
       // a building at its limit keeps the line from growing to show it: guests turned away last month count toward
-      // another room too, while two or more wait for each consultation, or while the consultations keep fewer stations
-      // in guests than are staffed, as the Guests tab says
+      // another room too while two or more wait for each consultation; and two or more staffed stations the
+      // consultations cannot keep in guests do, turned away or not, as the advisor says
       const turnedAway = (this.s.months.at(-1)?.turnedAway ?? 0) >= 3;
-      const full = turnedAway && (this.waiting('consultant') >= consults * 2 || this.consultBound());
+      const full = (turnedAway && this.waiting('consultant') >= consults * 2) || this.unfed() >= 2;
       if ((this.waiting('consultant') > consults * 4 || full) && this.afford(price('consult'), reserve * 0.5, true)) {
         if (!this.sim.hasRoom('assess') && s.money > price('assess') + reserve) this.buildRoom('assess');
         else this.buildRoom('consult');
@@ -2373,9 +2408,10 @@ export class Bot {
       const cost = price(room);
       if (saving && value * 3 < cost) continue;
       if (!this.afford(cost + 1000, reserve * 0.5, value * this.style.borrowPayback > cost)) continue;
-      // not where it would leave no space for a discipline still to come
-      const keep = toCome.filter((t) => this.keeps(t));
-      if (this.buildRoom(room, [], keep)) {
+      // not where it would leave no space for a discipline still to come, or, while the consultations cannot keep the
+      // stations in guests, for the Consultation Room that would
+      const keep = [...toCome, ...(this.consultBound() ? (['consult'] as const) : [])].filter((t) => this.keeps(t));
+      if (this.buildRoom(room, [], keep, value)) {
         this.grewIn[d] = month;
         this.note(`day ${Math.floor(s.day)}: another ${room}, worth ${Math.round(value)} a month`);
         this.hireToFill();
@@ -2414,6 +2450,11 @@ export class Bot {
   private consultBound(): boolean {
     const c = this.sim.arrivalPace().capacity;
     return c.fed < c.stations;
+  }
+
+  /** The staffed stations and machines the Consultation Rooms cannot keep in guests. */
+  private unfed(): number {
+    return unfedStations(this.sim.arrivalPace().capacity);
   }
 
   /** What the bot would expect to pay a new practitioner in a role: the cheapest applicant, or the cheapest on staff. */

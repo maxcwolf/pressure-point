@@ -39,7 +39,7 @@ import type {
 import { layoutProblem } from '../templates';
 import type { Check, Placed, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
-import { type Advice, advice, advise, announce } from './advisor';
+import { type Advice, advice, advise, announce, warnUnfed } from './advisor';
 import { drainFactor, prestige } from './ambience';
 import { assignRoom, clearRooms } from './assignments';
 import { holdAwards, YEAR_MONTHS } from './awards';
@@ -194,6 +194,7 @@ export class Sim {
       announceClasses(ctx);
       lapseInspection(ctx);
       warnPayday(ctx);
+      warnUnfed(ctx);
       updateInsolvency(ctx);
       wearByTheDay(ctx);
     }

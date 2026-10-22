@@ -7,6 +7,7 @@ import {
   conditionOf,
   CONDITIONS,
   CONSULT_FEEDS,
+  DAY_SECONDS,
   DISCIPLINES,
   FOLLOWING,
   followingPull,
@@ -15,6 +16,7 @@ import {
   MODALITIES,
 } from '../../src/core/data';
 import type { Discipline, Modality } from '../../src/core/data/types';
+import { unfedAdvice } from '../../src/core/sim/advisor';
 import type { SimContext } from '../../src/core/sim/context';
 import {
   capacity,
@@ -26,6 +28,7 @@ import {
   followVisit,
   lineArrivals,
   lineFactor,
+  unfedStations,
   UNTRAINED_PULL,
 } from '../../src/core/sim/demand';
 import { admitGuests, type ArrivalPace, guestCap, guestsCounted, spawnGuest } from '../../src/core/sim/guests';
@@ -43,7 +46,18 @@ import {
   times,
 } from '../../src/ui/lib/demand';
 import { calendarTip } from '../../src/ui/lib/seasons';
-import { addAcupuncture, addReiki, addSound, hire, openCenter, runUntil } from './helpers';
+import {
+  addAcupuncture,
+  addReiki,
+  addSound,
+  buildRoom,
+  hire,
+  LAYOUT,
+  openCenter,
+  run,
+  runUntil,
+  toasts,
+} from './helpers';
 
 /** The game's own context, for calling the simulation directly. */
 const ctxOf = (c: { sim: unknown }) => (c.sim as { ctx: SimContext }).ctx;
@@ -263,6 +277,58 @@ describe('how many guests arrive', () => {
     expect(capacityArrivals(capacity(c.ctx))).toBeCloseTo(1.36, 5);
     c.consultant.state = 'leaving';
     expect(capacity(c.ctx)).toMatchObject({ stations: 6, consults: 0, fed: 0 });
+  });
+
+  describe('and says so when they cannot', () => {
+    /** Six staffed stations and one Consultant, as above: two of them draw nobody. */
+    function sixStations() {
+      const c = twoRooms();
+      addMassageTable(c);
+      hire(c.sim, 'therapist');
+      addAcupuncture(c.sim);
+      hire(c.sim, 'acupuncturist');
+      addReiki(c.sim);
+      hire(c.sim, 'practitioner');
+      return c;
+    }
+
+    it('in the advisor: another Consultation Room would let them draw, and another treatment room would not', () => {
+      const c = sixStations();
+      expect(unfedStations(capacity(c.ctx))).toBe(2);
+      expect(unfedAdvice(c.ctx)).toBe(
+        '2 staffed treatment stations draw no guests: every guest sees a Wellness Consultant first, and each Consultation Room keeps only 4 stations in guests. Another Consultation Room with a Wellness Consultant would let them draw, and let more in at once; another treatment room would draw nobody more.',
+      );
+      expect(c.sim.advice()).toBe(unfedAdvice(c.ctx));
+    });
+
+    it('asking for a Consultant first for a Consultation Room standing without one', () => {
+      const c = sixStations();
+      buildRoom(c.sim, 'consult', LAYOUT.training.rect, LAYOUT.training.door, [
+        ['consult_desk', 6, 12],
+        ['cabinet', 5, 14],
+      ]);
+      expect(unfedAdvice(c.ctx)).toContain(
+        'A Wellness Consultant for the Consultation Room standing without one would let them draw',
+      );
+      hire(c.sim, 'consultant');
+      expect(unfedStations(capacity(c.ctx))).toBe(0);
+      expect(unfedAdvice(c.ctx)).toBe('');
+    });
+
+    it('and nothing while every staffed station draws', () => {
+      const c = twoRooms();
+      expect(unfedStations(capacity(c.ctx))).toBe(0);
+      expect(unfedAdvice(c.ctx)).toBe('');
+    });
+
+    it('in a toast, once, the first day it happens', () => {
+      const c = sixStations();
+      c.sim.drain();
+      run(c.sim, DAY_SECONDS * 1.1);
+      expect(toasts(c.sim.drain()).filter((t) => t.includes('draw no guests'))).toEqual([unfedAdvice(c.ctx)]);
+      run(c.sim, DAY_SECONDS * 2);
+      expect(toasts(c.sim.drain()).filter((t) => t.includes('draw no guests'))).toEqual([]);
+    });
   });
 
   it('draws six stations 1.6 times as often as one, and stops growing at 2.5 times', () => {

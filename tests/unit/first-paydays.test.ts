@@ -54,7 +54,7 @@ describe('what opening a center costs, on its card', () => {
       loan: LOAN_MAX,
     });
     expect(openingLine(o)).toBe(
-      "Opening with a Receptionist, a Wellness Consultant and a practitioner for each of its 5 disciplines costs $10,750 a month in wages at a Trainee's pay and $48,000 for their rooms, against $45,000 to start and up to $50,000 from the bank: $47,000 left for the furniture and every payday until the takings cover the wages.",
+      "Opening with a Receptionist, a Wellness Consultant and a practitioner for each of its 5 disciplines costs $10,750 a month in wages at a Trainee's pay and $48,000 for their rooms, against $45,000 to start and up to $50,000 from the bank: $47,000 left for the furniture and every payday until the takings cover the wages. One Consultation Room keeps only 4 stations in guests, so the rest draw nobody until a second opens with a Wellness Consultant of its own: $4,000 more, and $1,700 a month.",
     );
   });
 
@@ -64,6 +64,8 @@ describe('what opening a center costs, on its card', () => {
     expect(openingLine(o)).toMatch(
       /^Opening with a Receptionist, a Wellness Consultant and a Massage Therapist costs \$3,900 a month/,
     );
+    // and one Consultation Room keeps a single discipline's station in guests, so nothing more is said
+    expect(openingLine(o)).not.toContain('Consultation Room');
   });
 
   it('leaves out a discipline whose room opens only at a later star', () => {

@@ -6,6 +6,62 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 22 October 2026, night: High Pines and The Boardwalk, measured again
+
+Measured with `yarn balance`, the good bot, four years a game, seeds 1 to 72 a center read as two halves of 36 (the sample [balance-harness.md](balance-harness.md) "How many seeds a call needs" now asks for), profit a month averaged from month 13 on, each difference paired seed by seed with its standard error. The attribution runs were at `0306b41` and the merge commits named; the land and the fix at `main` `7dd9a55` and `fix/land-and-consults` `e71a963`, with the land's data alone reverted in scratch copies (`git diff 4d566cd 129d4e1 -- src/core/data/centers.ts`, applied in reverse: that merge changed no other game file).
+
+### 44. The land costs High Pines and The Boardwalk, through how the bot grows into it; standing does not
+
+**Found:** after the merges of 21 and 22 October, High Pines made $11.1k a month against 0.31.0's $16.9k (−$5.9k ±1.8k, both halves), with 11 games lost against 9 and 51 third stars against 59. Entry 42 had put it on the new standing weights, from runs that turned out to be the random stream reshuffled.
+
+**Done** (`src/core/sim/advisor.ts`, `src/core/sim/demand.ts`, `src/core/sim/economy.ts`, `tests/balance/bot.ts`):
+
+- **A warning when the consultations are the limit.** The advisor, and a toast the first day it happens, say how many staffed treatment stations draw no guests because every guest sees a Wellness Consultant first and each Consultation Room keeps only 4 stations in guests, and that another Consultation Room (or a Consultant for one standing without) would let them draw, where another treatment room would draw nobody more. The Guests tab said so already, but only to a player who opened it. The Orchard's campaign card says the same of its five-discipline opening, so the card and the first day agree.
+- **The bot buys land only for a room worth the plot,** when it knows the room's worth: a growth room only if its expected monthly worth pays the plot back within the style's payback months (borrowing for it only within the borrowing months), and a Recovery Room none. A center's first room of a discipline, and a Consultation Room, still buy the cheapest plot as before. With two or more stations unfed it builds another Consultation Room, turned away or not, and while any are it keeps space for one when growing treatment rooms. The advised bot acts on the new warning.
+
+**What moved High Pines,** paired, seeds 1 to 72 (each half in brackets):
+
+| Change                                                             | High Pines                | The Boardwalk             |
+| ------------------------------------------------------------------ | ------------------------- | ------------------------- |
+| The more-land merge, `4d566cd` → `129d4e1`                         | −$6.2k ±1.5k (−7.3, −5.1) | −$4.6k ±1.5k (seeds 1–36) |
+| Every merge after it, to `0306b41`                                 | +$0.3k ±1.6k              |                           |
+| The standing rule of entry 42 against the old one                  | −$1.5k ±1.4k (−4.8, +1.9) |                           |
+| The land's data alone, on `main`                                   | −$4.9k ±1.6k (−5.9, −3.8) | −$3.5k ±1.1k (−3.1, −3.9) |
+| The land's data alone, with this branch's bot                      | −$6.0k ±1.5k (−7.2, −4.8) | −$3.6k ±1.2k (−3.6, −3.5) |
+| The land's data alone, this bot valuing no waiting guests          | −$4.8k ±1.3k (−5.0, −4.7) | −$3.7k ±1.2k (−2.8, −4.6) |
+| The woodshed at the first star, at `0306b41`                       | +$2.9k ±1.5k (+5.7, +0.2) |                           |
+| No more guests for a higher grade (`GRADE_ARRIVALS` 0), seeds 1–36 | −$1.0k ±2.5k              |                           |
+
+Parts of the standing rule switched off one at a time, seeds 1 to 36: room points −$2.2k ±2.5k, staff points +$2.7k ±2.2k, prestige from every room +$2.9k ±2.2k, no heal points +$0.6k ±2.0k, the top grade expecting ★★ +$0.1k ±0.3k. None is outside two standard errors, and the whole old rule, +$4.8k over seeds 1 to 36, is −$1.9k over 37 to 72.
+
+**This branch against `main`,** every center, seeds 1 to 72:
+
+| Center        | Profit a month              | Games lost | Third stars |
+| ------------- | --------------------------- | ---------- | ----------- |
+| Willow Lane   | $27.9k → $27.4k (−0.5 ±1.2) | 4 → 3      | 69 → 69     |
+| The Exchange  | $19.0k → $19.5k (+0.5 ±1.0) | 4 → 4      | 68 → 68     |
+| The Boardwalk | $12.6k → $12.9k (+0.3 ±0.6) | 5 → 4      | 68 → 67     |
+| High Pines    | $11.1k → $11.9k (+0.8 ±1.4) | 11 → 13    | 51 → 50     |
+| The Orchard   | $33.7k → $36.8k (+3.2 ±2.2) | 29 → 27    | 43 → 45     |
+
+Without the new land, the same bot change is +$2.0k ±1.5k at High Pines and +$0.4k ±0.4k at The Boardwalk.
+
+**Read:**
+
+- **What sank High Pines is the land, as the bot plays it.** Its whole loss against 0.31.0 is the more-land merge, and the land's data alone, with the code otherwise as on `main`, costs it $4.9k a month and The Boardwalk $3.5k, in both halves. The standing weights do not: entry 42's reading came from six and then 36 seeds of a reshuffled stream.
+- **How:** with the land, High Pines' good bot runs 7.7 treatment rooms in months 25 to 36 against 5.5, 15.2 staff against 12.5, and buys 2.8 plots a game against 1.7: $8.8k a month more in wages for $6.7k more income and 3 more guests healed. The wider lots let it grow more Massage Suites, which it values at a median $3.2k a month (The Boardwalk $4.2k, a quarter of them over $10k), and the realized return is about $3k of income for $4k of wages a room. Once the lot is full of them, the first Reiki or Qi Gong room no longer fits and buys the $26,000 lift station.
+- **Does the fix change what the bot buys?** No. High Pines buys the lift station in 55 games of 72 against 53, The Boardwalk the bathing rooms in 68 against 69, and the treatment rooms do not fall: a growth room the bot values at $3k a month clears a $26,000 plot in a year, and most purchases now are for a discipline's first room, which the gate leaves alone. Leaving the waiting guests out of a room's worth changes nothing either. The bot overvalues a room more than any of these gates catch.
+- **Is the land neutral?** Not as the bot plays it, and this entry does not claim it is. The land is optional, so a player who leaves it alone plays the game without it, but the bot that stands in for a good player loses $3.5k to $6.0k a month with it at these two centers under every growth rule tried. Whether a player who grows only into rooms that pay comes out even needs a bot that does, which this is not.
+- **Is the warning actionable?** Not measured: the advised bot builds a room only once a line forms, so it is never short of consultations, and its 180 games are the same as on `main` to the month. It earns no third star anywhere and no second at The Exchange, High Pines or The Orchard, with or without the warning.
+- **The Orchard** loses 29 of 72 good-bot games on `main` and 27 here, against 4 of 12 on 0.31.0: the opening's cliff of entry 39 stands, at a sample big enough to say so.
+- **Guests underwhelmed:** on `main`, 5.5, 10.4 and 22.7 reviews in 100 say so in years 1 to 3 at High Pines, against 6.1, 3.9 and 5.6 under the old standing rule: with heals counting for good, centers reach the top grade, whose guests expect ★★★ rooms. It costs little profit (the top grade expecting ★★ moves it $0.1k), but it is a pressure the game does not explain.
+
+**Still open:**
+
+- **A bot that grows only into rooms that pay**, by the guests one more fed station really adds at the center's pace, less its practitioner's wage, measured with and without the land. Until then, no balance claim about the land.
+- **The Orchard's opening:** the owner's choice of entry 39, staging the disciplines or a loan in proportion to the center.
+- **Heal points that count for good**, and the underwhelmed reviews they bring at the top grade: a small item of its own, after the release.
+
 ## 22 October 2026, later: the really bad trip as an event
 
 Measured with `yarn balance` on `claude/polish-pass-e4b7bd` at `0103b79` (the whole of piece A of [polish-pass.md](polish-pass.md), with the bot sending someone after every runner) against `main` at `f579737` with only the bot's runner count added (no game code changed, nobody calmed), at The Orchard Estate and the sandbox, the only places ceremonies run, four years a game, the good bot. Seeds 1 to 6, then 0 to 30 for enough runners to count (a seed list ending in a comma also played seed 0). A third run is `0103b79` with the bot's calming switched off, a player who never touches the pill, to measure the cost at the door on its own. Year 4 is months 37 to 48, over the games not lost; a mean star month counts a star never earned as month 48.
@@ -115,6 +171,8 @@ Charging from the smallest made every 4×4 room, the bot's usual size, cost 15% 
 Games lost, as now against `main`, seed by seed: the good bot loses The Boardwalk seed 5 (day 671) and The Orchard seed 3 (day 161), and no longer The Orchard seed 5; over seeds 7 to 12 also Willow Lane seed 12 (day 281). The hoarder loses none it did not lose before, and no longer The Exchange seed 6, High Pines seed 6 and The Orchard seeds 1 and 5. The grower loses The Boardwalk seed 1, High Pines seed 4 and The Orchard seed 1, and no longer The Boardwalk seed 3, The Exchange seed 1 and High Pines seeds 1 and 5. The baseline swaps Willow Lane seed 3 for seed 5.
 
 **Read:**
+
+- **Corrected by [entry 44](#44-the-land-costs-high-pines-and-the-boardwalk-through-how-the-bot-grows-into-it-standing-does-not):** the falls at High Pines and The Boardwalk below are not the standing rule's. Over 72 seeds High Pines makes $1.5k ±1.4k a month less under it than under the old rule (−$4.8k over seeds 1 to 36, +$1.9k over 37 to 72), and no part of it switched off alone moves High Pines by more than two standard errors; what lowered both centers is the land of entry 40. The rise in underwhelmed reviews at the top grade is the standing rule's, and real.
 
 - **Stars no sooner:** the good bot's mean star month is 5.9 against 6.6 at Willow Lane and 10.9 against 11.7 at The Exchange, and later elsewhere: The Boardwalk 13.8 against 11.4, High Pines 17.4 against 13.8, The Orchard 17.1 against 16.6. Over seeds 1 to 12, Willow Lane 8.5 against 7.0 and The Orchard 24.4 against 23.3.
 - **The exploit is gone, and ordinary rooms cost what they did:** past 4×4 a Massage Suite pays $200 a tile for its 0.4 prestige points, $1,500 a star, against $650 for a statue's 4 points. Every size the bot builds is within what the price covers, so its rooms cost what they cost on `main`. Growing a room to 4×4 is now free where it cost $1,400 on `main`.
@@ -238,6 +296,8 @@ Measured with `yarn balance` on `main` at `7ac9574` (before) and `feat/more-land
 Year-4 profit a month with the machines against the same land without them: Willow Lane $27.1k against $38.8k, The Exchange $25.5k against $28.3k, The Boardwalk $21.4k against $19.3k, High Pines $26.6k against $23.8k, The Orchard $51.7k against $53.0k. Seed by seed, the four Willow Lane games with a Kneadmaster make $20.8k a month against $37.3k without, and the three Exchange games with a Pin Press make $23.6k against $26.9k. Both figures include the months the bot held space for a machine it could not yet afford.
 
 **Read:**
+
+- **Corrected by [entry 44](#44-the-land-costs-high-pines-and-the-boardwalk-through-how-the-bot-grows-into-it-standing-does-not):** over 72 seeds a center, the land's data alone costs High Pines $4.9k ±1.6k a month and The Boardwalk $3.5k ±1.1k as `main`'s bot plays it, in both halves of the seeds, and the bot's land gate of entry 44 does not change it. The six-seed figures below (−$3.0k and −$5.0k) had the direction right and the size inside the noise; "Is it easier? No" stands, and the land is not neutral as the bot plays it.
 
 - **Is there room to grow now?** Yes. The bot bought every second-star plot in all 30 games, a median of a month after the star, and 27 of the 30 third-star plots within six weeks of theirs. Every center runs more staffed stations in year 4 (1.0 to 2.6 more), and waits are as short or shorter everywhere.
 - **Is it easier?** No. Year-4 profit rises at Willow Lane (+$7.4k a month) and The Exchange (+$2.4k), falls at The Boardwalk (−$5.0k) and High Pines (−$3.0k), and holds at The Orchard. Third stars come later, the land and the bigger payroll taking the money the third star's goals ask for: The Exchange's by up to 5.6 months in five seeds, The Boardwalk's by 2.4 to 4.0 months in four, High Pines' by 2.8 to 10.3 months in three (sooner in two, and earned at month 22.8 in the seed that never earned it on `main`). The Boardwalk loses seed 1 on day 1001, a game `main` survives: the bot bought the bathing rooms ($17,500) a month after its second star and was in the red from month 14 to 23, then bought the arcade ($16,000) at its third star and was in the red from month 28 to the end. 20 warnings came in its last 30 days, so the loss was warned. Reputation cliffs rise from 84 to 116 across the 30 games, the most at High Pines and The Orchard: bigger centers with more guests at once have more to lose in a bad month. The lowest reputation in any game is 8 (Boardwalk seed 1), against 19 before.
