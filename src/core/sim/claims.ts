@@ -35,6 +35,8 @@ export function findAccess(
     const acc = ITEMS[it.type].access;
     for (const [i, spot] of acc.entries()) {
       if (spot.role !== role || it.users[i] || !ctx.world.usable(it)) continue;
+      // a ride on a machine waits while it treats someone, or has anyone in line for it
+      if (role === 'play' && (it.serving || it.queue.length)) continue;
       const [ax, ay] = accessTile(it, i);
       const d = Math.hypot(ax - x, ay - y);
       if (d < bestD) {

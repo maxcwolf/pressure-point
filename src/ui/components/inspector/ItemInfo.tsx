@@ -27,6 +27,7 @@ import type { Item } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { FLOODED_LABEL, stoppedLabel } from '../../lib/mishaps';
+import { rattledLine, rattleLine } from '../../lib/rattle';
 import { installStatus, upgradeEffect, upgradeStars } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -55,15 +56,54 @@ function Linens({ item: it }: { item: Item }) {
   );
 }
 
-/** How calm it is at a treatment table, where noise spoils results. */
+/** How calm it is at a treatment table, where noise spoils results, and what next door rattles its room. */
 function Calm({ item: it }: { item: Item }) {
   const { sim } = useGame();
   const noise = sim.itemNoise(it);
+  const room = sim.world.roomOfItem(it);
+  const rattled = room ? rattledLine(sim.rattlersBeside(room)) : '';
   return (
-    <label title="Noise from arcades, pool tables, machines and crowds carries, though a room's walls keep much of it out and windows let more in. Noise at a table lowers results.">
-      Calm
-      <Bar value={calmness(noise) * 100} class={noise >= NOISE_NOTICE ? 'bad' : 'blue'} />
-    </label>
+    <>
+      <label title="Noise from arcades, pool tables, machines and crowds carries, though a room's walls keep much of it out and windows let more in. Noise at a table lowers results.">
+        Calm
+        <Bar value={calmness(noise) * 100} class={noise >= NOISE_NOTICE ? 'bad' : 'blue'} />
+      </label>
+      {rattled && (
+        <p class="status">
+          <IconText id="ui-sound">{rattled}</IconText>
+        </p>
+      )}
+    </>
+  );
+}
+
+/** Rides on a machine for bored guests while it treats nobody, like the Carousel of Rebirth's: who is on, or the fare. */
+function Rides({ item: it }: { item: Item }) {
+  const { sim } = useGame();
+  const play = ITEMS[it.type].access.findIndex((a) => a.role === 'play');
+  const rider = sim.guest(it.users[play] ?? 0);
+  const fare = money(ITEMS[it.type].sale ?? 0);
+  const text =
+    rider?.state === 'need'
+      ? `${rider.name} is having a ride, for ${fare}`
+      : it.serving || it.queue.length
+        ? 'Rides wait while it has guests to treat'
+        : `Free for a ride: bored guests nearby pay ${fare}`;
+  return (
+    <p class="sub">
+      <IconText id="ui-money">{text}</IconText>
+    </p>
+  );
+}
+
+/** The rooms next door a machine like the Gong of Last Resort rattles while it plays, or is rattling now. */
+function Rattle({ item: it }: { item: Item }) {
+  const { sim } = useGame();
+  const { reach, now } = sim.rattles(it);
+  return (
+    <p class={reach.length ? 'status' : 'sub'}>
+      <IconText id="ui-sound">{rattleLine(reach, now)}</IconText>
+    </p>
   );
 }
 
@@ -243,6 +283,8 @@ export function ItemInfo({ item: it }: { item: Item }) {
       )}
       {def.linens && <Linens item={it} />}
       {def.station?.goal === 'treat' && <Calm item={it} />}
+      {!!def.machine?.rattle && <Rattle item={it} />}
+      {!!def.station && !!def.sale && <Rides item={it} />}
       {def.upgrade !== undefined && <Upgrades item={it} />}
       {def.thermostat && <Thermostat item={it} />}
       {it.type === 'linen_hamper' && (

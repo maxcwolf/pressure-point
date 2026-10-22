@@ -182,10 +182,11 @@ export class ItemsLayer {
   /** Update what changes from frame to frame: effects, progress bars and markers for broken or filthy items. */
   animate(t: number) {
     const busy = new Set<number>();
+    const rattled = this.sim.rattledRooms();
     for (const it of this.sim.s.items) {
       const model = this.items.get(it.id)?.group;
       if (!model) continue;
-      this.effects(it, model, t);
+      this.effects(it, model, t, rattled.size > 0 && rattled.has(this.sim.world.zoneAt(it.x, it.y)));
       this.marker(model, it, 'wrench', 'marker-broken', it.wear >= 100, t);
       // stale linens show on the table itself, not as flies over it
       this.marker(model, it, 'flies', 'marker-filthy', it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens, t);
@@ -201,8 +202,8 @@ export class ItemsLayer {
     }
   }
 
-  /** The touches particular to each kind of item, and the props laid on a guest during a session. */
-  private effects(it: Item, model: THREE.Object3D, t: number) {
+  /** The touches particular to each kind of item, and the props laid on a guest during a session, with its room rattled or not. */
+  private effects(it: Item, model: THREE.Object3D, t: number, rattled: boolean) {
     animateItemParts(
       model,
       {
@@ -214,6 +215,7 @@ export class ItemsLayer {
         scanning: it.serving > 0 && it.progress > 0,
         inUse: this.guestUsing(it),
         running: this.running(it),
+        rattled,
         trophies: this.sim.s.trophies.length,
       },
       t,

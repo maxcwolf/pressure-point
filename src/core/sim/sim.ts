@@ -106,7 +106,16 @@ import { drainEvents, emit } from './events';
 import { objectiveDetail } from './goals';
 import { admitGuests, type ArrivalPace, arrivalPace, guestCap, intakeLimit, setIntakeCap, updateGuest } from './guests';
 import { buyPlot, landOffers, renamePlot, updateLand } from './land';
-import { announceOpenings, machineBusy, machineUpkeep, practicable } from './machines';
+import {
+  announceOpenings,
+  machineBusy,
+  machineUpkeep,
+  practicable,
+  rattledRooms,
+  rattleReach,
+  rattlersBeside,
+  rattling,
+} from './machines';
 import { campaignBlocker, campaignCost, startCampaign, updateCampaigns } from './marketing';
 import { askWard, canWard, prepareMishap, updateMishaps } from './mishaps';
 import { hasSupplier, setMushrooms } from './mushrooms';
@@ -832,6 +841,21 @@ export class Sim {
   /** Whether a machine is at work: someone inside it, or for one that helps a room's sessions, one going on there. */
   machineBusy(it: Item): boolean {
     return machineBusy(this.ctx, it);
+  }
+
+  /** The rooms next door that a machine which rattles would shake while it plays, and those it is shaking now. */
+  rattles(it: Item): { reach: Room[]; now: Room[] } {
+    return { reach: rattleReach(this.ctx, it), now: rattling(this.ctx, it) };
+  }
+
+  /** The machines next door that rattle a room through its walls while they play. */
+  rattlersBeside(room: Room): Item[] {
+    return rattlersBeside(this.ctx, room);
+  }
+
+  /** The rooms being rattled now by a machine next door, by their ids. */
+  rattledRooms(): Set<number> {
+    return rattledRooms(this.ctx);
   }
 
   /** Whether guests can be sent for a technique now: open, and for a machine's own, that machine working. */

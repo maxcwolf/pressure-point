@@ -21,6 +21,8 @@ export interface GagInput {
   smoking: boolean;
   /** Broken down or overloaded. */
   down: boolean;
+  /** A bored guest is having a ride on it, not a treatment: running, with `progress` how far through the ride. */
+  ride?: boolean;
 }
 
 /** How a named part moves away from where it was built: added to its position and turn, times its size, and shown. */

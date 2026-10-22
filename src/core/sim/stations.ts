@@ -39,7 +39,7 @@ import type { SimContext } from './context';
 import { changeRep, earn, priceFor, putOffChance } from './economy';
 import { emit, tipOnce } from './events';
 import { feel, reviewStars } from './feelings';
-import { decide, leave, resetGuest } from './guests';
+import { decide, goWait, leave, resetGuest } from './guests';
 import { linensPenalty, useLinens } from './linens';
 import {
   MACHINE_PULL,
@@ -269,12 +269,24 @@ export function updateStations(ctx: SimContext, dt: number) {
   }
 }
 
+/**
+ * A guest due for treatment comes before a ride on the machine that treats them: whoever is riding it gets off at once,
+ * their ride cut short but paid for, and whoever was on the way to one goes back to wait.
+ */
+function endRide(ctx: SimContext, it: Item) {
+  const idx = accessIndex(it, 'play');
+  const rider = idx < 0 ? undefined : guestById(ctx, it.users[idx] ?? 0);
+  if (rider?.state === 'need') rider.timer = 0;
+  else if (rider) goWait(ctx, rider);
+}
+
 /** Call a guest out of the line to be served. */
 function callGuest(ctx: SimContext, it: Item, g: Guest) {
   it.queue = it.queue.filter((id) => id !== g.id);
   it.serving = g.id;
   it.progress = 0;
   release(ctx, g);
+  endRide(ctx, it);
   const ai = accessIndex(it, 'guest');
   const [ax, ay] = accessTile(it, ai);
   g.state = 'called';

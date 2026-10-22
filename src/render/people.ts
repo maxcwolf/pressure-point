@@ -94,9 +94,18 @@ export class PeopleLayer {
     }
   }
 
-  /** A guest inside a machine moves with its gag: carried round, squashed, hidden inside it, and so on. */
+  /**
+   * A guest inside a machine moves with its gag: carried round, squashed, hidden inside it, and so on. So does a bored
+   * guest having a ride on one.
+   */
   private inMachine(rig: CharRig, g: Guest, t: number) {
-    const it = g.state === 'served' || g.state === 'called' ? this.sim.world.item(g.station) : undefined;
+    const id =
+      g.state === 'served' || g.state === 'called'
+        ? g.station
+        : g.state === 'need' && g.needKind === 'play'
+          ? g.claimItem
+          : 0;
+    const it = id ? this.sim.world.item(id) : undefined;
     const script = it && GAGS[it.type];
     if (!it || !script) {
       applyGuestGag(rig, {}, 0);

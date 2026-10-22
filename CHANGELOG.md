@@ -11,6 +11,8 @@ Each release's notes are taken from its section here. Keep them short.
 - **The first paydays in sight.** Each campaign center's card gives what its opening costs in a month's wages and rooms against the money and the loan, and the Payroll tab weighs a month's wages against the bank and the loan left, with the advisor asking for no new hire, course or house call while there is less than a month in hand.
 - **More land to grow into.** Every center, the sandbox too, has two more plots on a wider lot: at the second star a building of its own, big enough for the center's machine room beside the tables, and at the third more room joined to the building.
 - **Machines draw guests of their own.** A signature machine's two ailments now come only for it, at their own pace once it stands with a practitioner of its own to run it, more for a finer room, and the Guests tab and the date's hover say how many.
+- **The Gong of Last Resort rattles the rooms next door** while it plays: noise through every shared wall, shown on its card and in the inspectors, so build its studio away from quiet rooms.
+- **Rides on the Carousel of Rebirth.** Bored guests pay $25 for a ride while it treats nobody, and get off for a guest due for rebirth.
 
 ## v0.31.0
 

@@ -1,6 +1,7 @@
 // The Carousel of Rebirth's gag: the carousel turns, faster and faster, three times round, and with each stretch of it
 // the guest rides as another of their past lives, in a ruff, a toga, as a goat and as a seagull, and hops off as
-// themselves. Now and then they come off still a goat. Down, it goes round on its own.
+// themselves. Now and then they come off still a goat. Down, it goes round on its own. A bored guest's ride, between
+// treatments, goes gently round with no past lives.
 
 import { RIDE_RADIUS } from '../../models/items/wheel-of-rebirth';
 import { ease, still, within, wobble } from '../beats';
@@ -24,6 +25,21 @@ export const WHEEL_OF_REBIRTH: GagScript = {
   frame(i) {
     const f = still();
     const { t } = i;
+    // a ride for a bored guest goes once gently round as themselves, with no past lives to see, and ends where it began
+    if (i.stage === 'running' && i.ride) {
+      const angle = Math.PI * 2 * ease(i.progress, 0, 1);
+      f.parts.deck = { ry: angle };
+      f.parts.canopy = { ry: angle };
+      for (let k = 0; k < 4; k++) f.parts[`horse${k}`] = { y: wobble(t, 0.12, 0.8, k * 1.6) };
+      f.guest = {
+        x: Math.sin(angle) * RIDE_RADIUS,
+        z: (Math.cos(angle) - 1) * RIDE_RADIUS,
+        spin: angle,
+        y: wobble(t, 0.12, 0.8),
+      };
+      f.emit.notes = 0.4;
+      return f;
+    }
     if (i.stage === 'running') {
       const p = i.progress;
       // round and round, speeding up then slowing, ending where they got on
