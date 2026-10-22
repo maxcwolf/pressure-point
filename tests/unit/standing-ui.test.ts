@@ -78,7 +78,7 @@ describe('where standing comes from, in words', () => {
 describe('the rival against its ceiling, and what to do about it', () => {
   it('says which way it is going and how far it can grow', () => {
     expect(rivalCourseLine('growing', 410)).toBe(
-      'Growing about 14 points a month, up to 25% more than your own standing: 410 points now.',
+      'Growing about 18 points a month, up to 25% more than your own standing: 410 points now.',
     );
     expect(rivalCourseLine('ceiling', 410)).toBe(
       'As big as it gets for now, at 25% more than your own standing: 410 points. It grows again as you do.',

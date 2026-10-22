@@ -480,7 +480,8 @@ describe('a save from before standing and the rival', () => {
     Reflect.deleteProperty(old.rival, 'knocked');
     upgradeSave(old as GameState);
     const up = old as GameState;
-    expect(up.rival.points).toBeCloseTo(RIVAL_START_POINTS + 400 * RIVAL_GROWTH, 5);
+    // the old rule's 0.45 a day
+    expect(up.rival.points).toBeCloseTo(RIVAL_START_POINTS + 400 * 0.45, 5);
     expect(up.rival.knocked).toBe(0);
   });
 });

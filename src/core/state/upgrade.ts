@@ -11,7 +11,6 @@ import {
   FOLLOWING,
   type Land,
   type Modality,
-  RIVAL_GROWTH,
   RIVAL_START_POINTS,
   type Role,
   ROLES,
@@ -284,10 +283,10 @@ export function upgradeSave(save: GameState) {
     fill(t, emptyTally());
     if (unkept) delete (t as Tally).patienceTotal;
   }
-  // before the rival kept its own points, they grew by the day without limit: it starts from there, and shrinks back
+  // before the rival kept its own points, they grew 0.45 a day without limit: it starts from there, and shrinks back
   // to its ceiling as it goes
   const rival: Before<GameState['rival'], 'points' | 'knocked'> = s.rival;
-  rival.points ??= rival.opened === null ? 0 : RIVAL_START_POINTS + Math.max(0, s.day - rival.opened) * RIVAL_GROWTH;
+  rival.points ??= rival.opened === null ? 0 : RIVAL_START_POINTS + Math.max(0, s.day - rival.opened) * 0.45;
   rival.knocked ??= 0;
   // a policy saved before the mushrooms has no word on putting them away
   fill(s.policy, defaultPolicy());

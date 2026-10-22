@@ -49,7 +49,7 @@ export const RIVAL_OPENS = 45;
  * started.
  */
 export const RIVAL_START_POINTS = 80;
-export const RIVAL_GROWTH = 0.45;
+export const RIVAL_GROWTH = 0.6;
 export const RIVAL_CEILING = 1.25;
 /**
  * What the center can do about it: each VIP delighted takes a share of its points off, word of mouth takes points off
