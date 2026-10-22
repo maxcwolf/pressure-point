@@ -20,6 +20,7 @@ export interface AtlasLayout {
 
 export const ICON_DIR: string;
 export const OUT_DIR: string;
+export const SMALL_DIR: string;
 export const IDS_FILE: string;
 export const PALETTE: Readonly<Record<string, string>>;
 export const FAMILIES: readonly string[];
@@ -30,11 +31,23 @@ export const VARIANTS: readonly Variant[];
 export function familyOf(id: string): string;
 export function inScene(id: string): boolean;
 export function readIcons(dir?: string): Icon[];
+/** The small drawings by id: what is in `SMALL_DIR`, or nothing when there is no such folder. */
+export type SmallIcons = Readonly<Record<string, string>>;
+export function readSmall(dir?: string): SmallIcons;
 export function checkIcon(id: string, svg: string): string[];
+export const SMALL_MIN_STROKE: number;
+export const SMALL_MIN_RADIUS: number;
+export function checkSmallIcon(id: string, svg: string, ids: readonly string[]): string[];
 export function innerOf(svg: string): string;
 export const SPRITE_STROKE: number;
 export function thinned(inner: string, scale?: number): string;
 export function spriteSheet(icons: readonly Icon[]): string;
+export const SMALL_STROKE: number;
+export function heavier(inner: string): string;
+export function whitened(inner: string): string;
+export function unmedalled(inner: string): string;
+export function madeSmall(id: string, inner: string, small: SmallIcons): string;
+export function smallSheet(icons: readonly Icon[], small?: SmallIcons): string;
 export function atlasLayout(ids: readonly string[], cell?: number, columns?: number): AtlasLayout;
-export function atlasSvg(icons: readonly Icon[]): { layout: AtlasLayout; svg: string };
-export function sourceHash(icons: readonly Icon[]): string;
+export function atlasSvg(icons: readonly Icon[], small?: SmallIcons): { layout: AtlasLayout; svg: string };
+export function sourceHash(icons: readonly Icon[], small?: SmallIcons): string;

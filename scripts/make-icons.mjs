@@ -1,5 +1,6 @@
-// Builds the game's icons from the drawings in src/ui/icons/: a sprite sheet the interface draws them from, a texture
-// atlas the scene draws them from with a map of where each sits in it, and the list of ids the code checks icons by.
+// Builds the game's icons from the drawings in src/ui/icons/: a sprite sheet the interface draws them from, a second
+// for 20 pixels and under, a texture atlas the scene draws them from with a map of where each sits in it, and the list
+// of ids the code checks icons by. An icon with a drawing in src/ui/icons/small/ is drawn from it where it is small.
 // Commit what it writes. It draws the atlas in a headless browser, as `yarn brand` does, and needs no network.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -7,10 +8,27 @@ import { join } from 'node:path';
 import { chromium } from '@playwright/test';
 import { format, resolveConfig } from 'prettier';
 
-import { atlasSvg, checkIcon, IDS_FILE, inScene, OUT_DIR, readIcons, sourceHash, spriteSheet } from './icons.mjs';
+import {
+  atlasSvg,
+  checkIcon,
+  checkSmallIcon,
+  IDS_FILE,
+  inScene,
+  OUT_DIR,
+  readIcons,
+  readSmall,
+  smallSheet,
+  sourceHash,
+  spriteSheet,
+} from './icons.mjs';
 
 const icons = readIcons();
-const problems = icons.flatMap(({ id, svg }) => checkIcon(id, svg).map((p) => `${id}.svg: ${p}`));
+const small = readSmall();
+const ids = icons.map(({ id }) => id);
+const problems = [
+  ...icons.flatMap(({ id, svg }) => checkIcon(id, svg).map((p) => `${id}.svg: ${p}`)),
+  ...Object.entries(small).flatMap(([id, svg]) => checkSmallIcon(id, svg, ids).map((p) => `small/${id}.svg: ${p}`)),
+];
 if (problems.length) {
   console.error(problems.join('\n'));
   process.exit(1);
@@ -24,8 +42,9 @@ async function writeFormatted(path, text) {
 
 mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(join(OUT_DIR, 'sprite.svg'), spriteSheet(icons));
+writeFileSync(join(OUT_DIR, 'sprite-small.svg'), smallSheet(icons, small));
 
-const { svg, layout } = atlasSvg(icons);
+const { svg, layout } = atlasSvg(icons, small);
 const browser = await chromium.launch();
 const page = await browser.newPage({ deviceScaleFactor: 1 });
 await page.setContent(`<body style="margin:0">${svg}</body>`);
@@ -34,10 +53,9 @@ await browser.close();
 
 await writeFormatted(
   join(OUT_DIR, 'atlas.json'),
-  JSON.stringify({ hash: sourceHash(icons), width: layout.width, height: layout.height, icons: layout.icons }),
+  JSON.stringify({ hash: sourceHash(icons, small), width: layout.width, height: layout.height, icons: layout.icons }),
 );
 
-const ids = icons.map(({ id }) => id);
 const scene = ids.filter(inScene);
 await writeFormatted(
   IDS_FILE,
@@ -58,4 +76,6 @@ export type SceneIconId = (typeof SCENE_ICON_IDS)[number];
 `,
 );
 
-console.log(`${ids.length} icons, ${scene.length} of them in the ${layout.width}×${layout.height} atlas`);
+console.log(
+  `${ids.length} icons, ${Object.keys(small).length} drawn small, ${scene.length} in the ${layout.width}×${layout.height} atlas`,
+);

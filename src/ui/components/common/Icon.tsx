@@ -1,4 +1,5 @@
-// The game's own icons, drawn from the sprite sheet that `yarn icons` builds from src/ui/icons/.
+// The game's own icons, drawn from the sprite sheets that `yarn icons` builds from src/ui/icons/: one for 20 pixels
+// and under, with heavier lines and simpler drawings where an icon has one, and one for everything bigger.
 
 import './Icon.css';
 
@@ -6,23 +7,33 @@ import type { ComponentChildren } from 'preact';
 
 import type { IconId } from '../../../core/data';
 import sprite from '../../icons/generated/sprite.svg?raw';
+import spriteSmall from '../../icons/generated/sprite-small.svg?raw';
 import type { IconLine } from '../../lib/icon-line';
 
 let mounted = false;
 
 /**
- * Put the sprite sheet on the page, once. It goes inline rather than being linked to, as the desktop app loads the
+ * Put both sprite sheets on the page, once. They go inline rather than being linked to, as the desktop app loads the
  * game from a file, and a page loaded that way cannot draw from another file's symbols.
  */
 function mountSprite() {
   if (mounted) return;
   mounted = true;
-  document.body.insertAdjacentHTML('afterbegin', sprite);
+  document.body.insertAdjacentHTML('afterbegin', sprite + spriteSmall);
 }
+
+/** The size, in pixels, at and under which an icon draws from the small sheet. */
+export const SMALL_SIZE = 20;
+
+/**
+ * Whether an icon this size draws from the small sheet: at 20 pixels or under, which a size given in ems (an icon
+ * beside words, 15 to 18 pixels) always is, while one given as a share of its box is a big button's and is not.
+ */
+export const isSmall = (size: number | string) => (typeof size === 'number' ? size <= SMALL_SIZE : size.endsWith('em'));
 
 /**
  * An icon, a square this many pixels across (or a length such as '1.25em', to match the words beside it), read out as
- * its label if it has one and passed over if not.
+ * its label if it has one and passed over if not. At 20 pixels and under it is the icon's small form.
  */
 export function Icon({
   id,
@@ -45,7 +56,7 @@ export function Icon({
       aria-label={label}
       aria-hidden={label ? undefined : true}
     >
-      <use href={`#icon-${id}`} />
+      <use href={`#icon-${isSmall(size) ? 'small-' : ''}${id}`} />
     </svg>
   );
 }

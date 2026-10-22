@@ -70,11 +70,13 @@ type Variant = 'game' | 'plain' | 'bubble';
 /** Whether an icon is meant to be drawn plain in the scene: a sign or a marker rather than something said. */
 const plainInGame = (id: SceneIconId) => !id.startsWith('bubble-');
 
-/** One card on the sheet: an icon at 24 pixels on cream and on a white row, and on a HUD button. */
+/** One card on the sheet: an icon at 12 and 16 pixels, at 24 on cream and on a white row, on a HUD button, and at 48. */
 function Card({ id }: { id: IconId }) {
   return (
     <figure class="card">
       <div class="sizes">
+        <Icon id={id} size={12} />
+        <Icon id={id} size={16} />
         <Icon id={id} size={24} />
         <span class="row">
           <Icon id={id} size={24} />
@@ -278,8 +280,9 @@ function Page() {
           <h1>Icons</h1>
           <p>
             {`${ICON_IDS.length} icons, ${SCENE_ICON_IDS.length} of them drawn in the scene. `}
-            Each card: 24 pixels on cream and on a white row, on a HUD button, and at 48 pixels. The drawings are in
-            src/ui/icons/; run <code>yarn icons</code> after changing one.
+            Each card: 12 and 16 pixels (the small sheet), 24 on cream and on a white row, on a HUD button, and 48. The
+            drawings are in src/ui/icons/, with simpler ones for small sizes in small/; run <code>yarn icons</code>{' '}
+            after changing one.
           </p>
           <a href="/lab.html">Model lab</a>
         </header>
