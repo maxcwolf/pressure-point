@@ -49,8 +49,12 @@ for (const { center, seed, index } of RUNS) {
     );
     for (const m of l.machines)
       process.stdout.write(
-        `           machine: ${m.room} day ${m.day}, ${m.healed} healed, earned $${m.earned} on $${m.cost} + $${Math.round(m.upkeep)} upkeep, ` +
-          `paid back ${m.paybackDay === null ? 'never' : `day ${m.paybackDay}`}\n`,
+        m.site === 'skipped'
+          ? `           machine: ${m.room} skipped from day ${m.day}, no space in ${m.skipped} months\n`
+          : `           machine: ${m.room} day ${m.day} on ${m.site === 'floor' ? 'free floor' : 'bought land'}` +
+              `${m.skipped ? ` after ${m.skipped} months skipped` : ''}, ${m.healed} healed, ` +
+              `earned $${m.earned} on $${m.cost} + $${Math.round(m.upkeep)} upkeep, ` +
+              `paid back ${m.paybackDay === null ? 'never' : `day ${m.paybackDay}`}\n`,
       );
     mkdirSync(PARTS, { recursive: true });
     writeFileSync(join(PARTS, `${index}.json`), JSON.stringify(l));

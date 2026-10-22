@@ -114,9 +114,10 @@ export const BOT_FLAGS = [
    */
   'throttle',
   /**
-   * Build the center's own treatment machine once its star is earned and the center pays its way, and send a
-   * practitioner on its course. An extra for now, so the bot's pace stays as measured before the machines: compare
-   * `BOT_ON=machines` with the bot without them, seed by seed.
+   * Build the center's own treatment machine once its star is earned and the center pays its way, as a station more:
+   * on free floor or on land bought for it, never in place of another room; and send a practitioner on its course. An
+   * extra for now, so the bot's pace stays as measured before the machines: compare `BOT_ON=machines` with the bot
+   * without them, seed by seed.
    */
   'machines',
 ] as const;
@@ -390,10 +391,18 @@ export interface IncomeBy {
   bonus: number;
 }
 
-/** A treatment machine the bot built, and how it paid. */
+/** A treatment machine the bot built, and how it paid; or one it wanted and found no space for. */
 export interface MachineLog {
   room: RoomType;
+  /** The day it was built, or, while it is skipped, the day it was first put off. */
   day: number;
+  /**
+   * Where its room went: on the floor the center had free, or on land bought once it would not fit; or nowhere yet,
+   * since nothing fitted without knocking a room down.
+   */
+  site: 'floor' | 'expansion' | 'skipped';
+  /** The months in which it was put off for want of space, before it was built (or since, if it never was). */
+  skipped: number;
   /** What its room cost to build. */
   cost: number;
   /** Fees from the guests it healed, and how many. */
@@ -696,8 +705,9 @@ export class Bot {
     const l = s.lastLedger;
     const income = l.consult + l.treatment + l.classes + l.vending + l.shop + l.mushrooms + l.calls + l.bonus;
     const spending = l.salaries + l.building + l.upkeep + l.training + l.interest + l.marketing + l.fines;
-    // the machines' running costs, shared out among them
-    for (const m of this.log.machines) m.upkeep += l.upkeep / this.log.machines.length;
+    // the machines' running costs, shared out among those built
+    const built = this.log.machines.filter((m) => m.site !== 'skipped');
+    for (const m of built) m.upkeep += l.upkeep / built.length;
     const rec = s.months.at(-1);
     const wait = rec?.waitCount ? rec.waitTotal / rec.waitCount / DAY_SECONDS : null;
     this.log.months.push({
@@ -1618,6 +1628,12 @@ export class Bot {
   private rooms(t: RoomType): Room[] {
     return this.s.rooms.filter((r) => r.type === t && r.done);
   }
+  /** The finished machine rooms of a discipline. */
+  private machineRooms(d: Discipline): Room[] {
+    return this.s.rooms.filter(
+      (r) => r.done && ROOMS[r.type].discipline === d && ROOMS[r.type].required.some((t) => ITEMS[t].machine),
+    );
+  }
 
   /**
    * Build a room of a type with its furniture and any extras, somewhere along the walls. A spot that would leave no
@@ -1815,7 +1831,8 @@ export class Bot {
     if (this.staffOf('consultant').length < consultRooms) this.hire('consultant');
     for (const d of DISCIPLINE_ORDER) {
       const def = DISCIPLINES[d];
-      const rooms = this.rooms(def.room).length - (this.benched[def.room] ?? 0);
+      // a machine room is a station more, so its chair takes no one from a table
+      const rooms = this.rooms(def.room).length - (this.benched[def.room] ?? 0) + this.machineRooms(d).length;
       if (this.staffOf(def.role).length < rooms) this.hirePractitioner(def.role);
     }
     if (this.flags.classes && this.staffOf('instructor').length < this.rooms('qigong').length)
@@ -1976,7 +1993,9 @@ export class Bot {
 
   /**
    * The center's own machine room, once its star is earned, while the center pays its way and the bot is not saving,
-   * with the money for a few months' running in hand; and a practitioner sent on its course once it stands.
+   * with the money for a few months' running in hand; and a practitioner sent on its course once it stands. It is a
+   * station more, so it goes on free floor or on land bought for it, never where a room was knocked down: when nothing
+   * fits, it waits for a month the bot can buy land.
    */
   private machines() {
     const s = this.s;
@@ -1992,28 +2011,54 @@ export class Bot {
       if ((def.unlock ?? 0) > unlockedUpTo(s) || this.saving() !== null || this.profit() <= 0) continue;
       const upkeep = ITEMS[machine].machine?.upkeep ?? 0;
       if (!this.afford(def.cost, this.wages() * 1.2 + upkeep * 3 + 2000)) continue;
-      // a full center makes room for it as a player would, knocking down one of a room it has two or more of
-      if (this.buildRoom(type) ?? this.makeSpace(type)) {
-        this.log.machines.push({
+      let log = this.log.machines.find((m) => m.room === type);
+      if (!log) {
+        log = {
           room: type,
           day: Math.floor(s.day),
+          site: 'skipped',
+          skipped: 0,
           cost: def.cost,
           earned: 0,
           healed: 0,
           upkeep: 0,
           paybackDay: null,
-        });
-        this.note(`day ${Math.floor(s.day)}: built a ${def.name}`);
+        };
+        this.log.machines.push(log);
+        this.landWhenWanted[type] = s.land.length;
       }
+      const room = this.buildRoom(type);
+      const month = Math.floor(s.day / DAYS_PER_MONTH);
+      if (!room) {
+        if (this.skippedIn[type] !== month) {
+          this.skippedIn[type] = month;
+          log.skipped++;
+        }
+        continue;
+      }
+      // on land bought since the bot first wanted it, it is an expansion; anywhere else, the floor was free
+      const bought = s.land.slice(this.landWhenWanted[type] ?? s.land.length).flatMap((l) => l.rects);
+      const onBought = bought.some(
+        (r) => room.x <= r.x1 && room.x + room.w - 1 >= r.x0 && room.y <= r.y1 && room.y + room.h - 1 >= r.y0,
+      );
+      log.site = onBought ? 'expansion' : 'floor';
+      log.day = Math.floor(s.day);
+      this.note(`day ${Math.floor(s.day)}: built a ${def.name}${onBought ? ', on the land bought for it' : ''}`);
+      this.hireToFill();
     }
   }
+
+  /** The number of plots bought when the bot first wanted each machine, to tell an expansion from free floor. */
+  private landWhenWanted: Partial<Record<RoomType, number>> = {};
+  /** The month each machine was last put off for want of space. */
+  private skippedIn: Partial<Record<RoomType, number>> = {};
 
   /** Send the best practitioner of a machine's discipline on its course, if nobody knows it or is learning it. */
   private trainOperator(machine: ItemType, discipline: Discipline) {
     const s = this.s;
     // a machine is no use without someone trained to run it, so a Training Room comes first
     if (!this.sim.hasRoom('training')) {
-      if (this.afford(ROOMS.training.cost + 400, 0, true) && (this.buildRoom('training') ?? this.makeSpace('training')))
+      if (this.afford(ROOMS.training.cost + 400, 0, true) && this.buildRoom('training'))
         this.note(`day ${Math.floor(s.day)}: a Training Room, for the ${ITEMS[machine].name}`);
       return;
     }
@@ -2058,7 +2103,7 @@ export class Bot {
       const g = this.sim.guest(id);
       if (g && !g.outcome) continue;
       this.inMachine.delete(id);
-      const log = this.log.machines.find((m) => m.room === seen.room);
+      const log = this.log.machines.find((m) => m.room === seen.room && m.site !== 'skipped');
       if (g?.outcome !== 'healed' || !log) continue;
       log.earned += g.spent - seen.spent;
       log.healed++;
