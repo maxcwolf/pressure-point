@@ -2,31 +2,48 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.32.0
+
+### More room to grow
+
+- **More land to grow into.** Every center, the sandbox too, has two more plots on a wider lot: at the second star a building of its own, big enough for the center's machine room beside the tables, and at the third more room joined to the building.
+- **Floor is paid for however a room gets it.** A room's price covers floor up to one tile more each way than its smallest, 4×4 for a 3×3 room, whether it is built that size or resized to it. Every tile past that costs $200, at build and on resize alike, the hint shows the price as you drag, and floor paid for comes back at half when given up.
+- **A Generator, out of doors.** The first thing that stands outside: on the grounds, by the pavement or a path, it keeps the power on through every power cut while it works, needs a Caretaker now and then, and is loud enough that the outer walls are welcome. It puffs, shudders and rumbles while it carries the center through a cut, at $150 a day in diesel.
+
+### Standing and the rival
+
+- **Standing earned by working.** A room counts fully only while someone on the payroll can work in it, staff count by rank, and every guest healed adds to it, so Restrooms and Trainees no longer buy a grade.
+- **A rival you can catch.** ZenMart grows only until it stands a quarter above you, so a center that keeps growing can overtake it. A delighted VIP, word of mouth and winning Center of the Year each knock it back, and the Standing tab shows its ceiling and what knocks it back.
+
+### Treatment machines
+
+- **Machines draw guests of their own.** A signature machine's two ailments now come only for it, at their own pace once it stands with a practitioner of its own to run it, more for a finer room, and the Guests tab and the date's hover say how many.
+- **The Gong of Last Resort rattles the rooms next door** while it plays: noise through every shared wall, shown on its card and in the inspectors, so build its studio away from quiet rooms.
+- **Rides on the Carousel of Rebirth.** Bored guests pay $25 for a ride while it treats nobody, and get off for a guest due for rebirth.
+- **The machines in their own clothes.** Each treatment machine has an icon, a room sign and a treatment icon of its own, its model is polished to match the rest of the furniture, and an upgraded machine shows its stars on a brass plate, as the tables do.
+
+### Warnings you can act on
 
 - **A word when the consultations are the limit.** The advisor, and a warning the first day it happens, say when staffed treatment stations draw no guests because every guest sees a Wellness Consultant first, and that another Consultation Room would let them draw where another treatment room would not. The Orchard Estate's card says so of its opening.
+- **The first paydays in sight.** Each campaign center's card gives what its opening costs in a month's wages and rooms against the money and the loan, and the Payroll tab weighs a month's wages against the bank and the loan left, with the advisor asking for no new hire, course or house call while there is less than a month in hand.
+
+### Events
+
+- **A really bad trip, now and then.** A guest whose ceremony goes badly may run round the institute freaking out everyone they pass. A runner yelps, the announcer has a word, heads turn as they pass and a red ring marks them in any view. A pill at the top counts the days to the door and sends someone in one click, a Shaman first; one who finds the door costs reputation, and one calmed within three days earns a point back.
+- **The storm floods a restroom.** At The Boardwalk the storm now also floods a restroom as it starts, out of action with its lamp red until a Caretaker mops it out; boarding up and sandbagging, at the same $800 as before, stops it. The water moves as a Caretaker mops it, and guests who wade through it or find the toilet under water say so in their reviews.
+
+### A livelier look
+
 - **A moment for every cure.** The chicken, the knot or the cloud shrinks away in a puff of sparkles and the guest hops once, grinning.
 - **More faces in the crowd.** People come slight, average or stocky, a quarter wear glasses, shoes come in four colors, and men have two more haircuts.
 - **Eyes that blink and shut.** People blink, rest with their eyes closed on a table or a Recliner, lie face down for a massage or needles, and look frightened on a bad trip or in an outbreak.
 - **People who do what they are doing.** Feet plant where they land at every speed, a receptionist types and nods, guests drink, snack, shop and play, and Caretakers stoop for litter, water the plants and crouch with a wrench.
-- **A really bad trip you can see and answer.** A runner yelps, the announcer has a word, heads turn as they pass and a red ring marks them in any view. A pill at the top counts the days to the door and sends someone in one click, a Shaman first; one who finds the door costs reputation, and one calmed within three days earns a point back.
-- **A flood you can see and feel.** A Caretaker mops it with a mop, the water moves, and guests who wade through it or find the toilet under water say so in their reviews.
-- **A Generator you can tell is working.** It puffs, shudders and rumbles while it carries the center through a cut, and each day of it costs $150 in diesel.
-- **Small things noticed.** Everyone in a room the Gong rattles flinches at each strike, a ride on the Carousel of Rebirth gets a review of its own, and a tip says when ZenMart stops growing and the day you pass it.
 - **Icons that read small.** Icons at 20 pixels and under, beside words and in the stats bar, draw with heavier lines and white fills from a second sprite sheet, and every speech bubble and marker has a simpler drawing of its own for small sizes, used in the scene too, so what a guest is saying can be told from where the game starts.
+- **Small things noticed.** Everyone in a room the Gong rattles flinches at each strike, a ride on the Carousel of Rebirth gets a review of its own, and a tip says when ZenMart stops growing and the day you pass it.
+
+### Fixes
+
 - **Small fixes.** The bottom bar fits windows 1240 to 1540 pixels wide and shows the date whole at 1440, the tool hint reads as a row of chips, the sign out front reads from behind, and the Treatments button's word sits in a slight plate welded to its circle instead of crossing the border.
-- **The machines in their own clothes.** Each treatment machine has an icon, a room sign and a treatment icon of its own, its model is polished to match the rest of the furniture, and an upgraded machine shows its stars on a brass plate, as the tables do.
-- **The storm floods a restroom.** At The Boardwalk the storm now also floods a restroom as it starts, out of action with its lamp red until a Caretaker mops it out; boarding up and sandbagging, at the same $800 as before, stops it.
-- **A really bad trip, now and then.** A guest whose ceremony goes badly may run round the institute freaking out everyone they pass, until you send someone to calm them down or they find the door.
-- **The first paydays in sight.** Each campaign center's card gives what its opening costs in a month's wages and rooms against the money and the loan, and the Payroll tab weighs a month's wages against the bank and the loan left, with the advisor asking for no new hire, course or house call while there is less than a month in hand.
-- **More land to grow into.** Every center, the sandbox too, has two more plots on a wider lot: at the second star a building of its own, big enough for the center's machine room beside the tables, and at the third more room joined to the building.
-- **Machines draw guests of their own.** A signature machine's two ailments now come only for it, at their own pace once it stands with a practitioner of its own to run it, more for a finer room, and the Guests tab and the date's hover say how many.
-- **The Gong of Last Resort rattles the rooms next door** while it plays: noise through every shared wall, shown on its card and in the inspectors, so build its studio away from quiet rooms.
-- **Rides on the Carousel of Rebirth.** Bored guests pay $25 for a ride while it treats nobody, and get off for a guest due for rebirth.
-- **A Generator, out of doors.** The first thing that stands outside: on the grounds, by the pavement or a path, it keeps the power on through every power cut while it works, needs a Caretaker now and then, and is loud enough that the outer walls are welcome.
-- **Floor is paid for however a room gets it.** A room's price covers floor up to one tile more each way than its smallest, 4×4 for a 3×3 room, whether it is built that size or resized to it. Every tile past that costs $200, at build and on resize alike, the hint shows the price as you drag, and floor paid for comes back at half when given up.
-- **A rival you can catch.** ZenMart grows only until it stands a quarter above you, so a center that keeps growing can overtake it. A delighted VIP, word of mouth and winning Center of the Year each knock it back, and the Standing tab shows its ceiling and what knocks it back.
-- **Standing earned by working.** A room counts fully only while someone on the payroll can work in it, staff count by rank, and every guest healed adds to it, so Restrooms and Trainees no longer buy a grade.
 
 ## v0.31.0
 
