@@ -15,7 +15,7 @@ import type { AwardResult, GameState, MonthRecord, Staff } from '../state/types'
 import type { SimContext } from './context';
 import { changeRep, earn, netOf } from './economy';
 import { emit } from './events';
-import { rivalOpen, rivalPoints } from './rival';
+import { awardSetback, rivalOpen, rivalPoints } from './rival';
 import { standingPoints } from './standing';
 
 /** Months in a year. */
@@ -175,7 +175,9 @@ export function holdAwards(ctx: SimContext, year: number) {
   const results = AWARD_ORDER.filter((id) => id !== 'center-of-the-year' || contest).map((id) =>
     judge(s, id, year, totals, contest),
   );
+  // the rival takes the award it beats the center to, and loses ground for the one it loses
   if (contest && !results.some((r) => r.award === 'center-of-the-year' && r.won)) s.rival.trophies++;
+  else if (contest) awardSetback(ctx);
   for (const r of results) {
     if (!r.won) continue;
     const prize = AWARDS[r.award].prize;

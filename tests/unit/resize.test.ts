@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ROOM_TILE_COST, ROOMS, WINDOW_COST } from '../../src/core/data';
-import { carryWallSpot, resizeCost, tilesChanged } from '../../src/core/resize';
+import { carryWallSpot, coveredTiles, paidTiles, resizeCost, tilesChanged } from '../../src/core/resize';
 import { addMassage, addStaffRoom, buildRoom, freshSim, inconsistencies, run } from './helpers';
 
 /** A game with plenty of money and a Massage Suite at 11,5 (4×4, door in the south wall at 12). */
@@ -23,16 +23,24 @@ describe('moving a wall', () => {
     expect(carryWallSpot(west, { x: 9, y: 7, w: 6, h: 3 })).toBeNull();
   });
 
-  it('charges for tiles added and gives half back for tiles taken away', () => {
-    const room = { x: 11, y: 5, w: 4, h: 4 };
+  it('charges for floor past what the price covers, and gives half back for floor paid for', () => {
+    // a Massage Suite's price covers 4×4, a tile more each way than its smallest 3×3
+    expect(coveredTiles('massage')).toBe(16);
+    expect(paidTiles('massage', { w: 4, h: 5 })).toBe(4);
+    const room = { type: 'massage' as const, x: 11, y: 5, w: 4, h: 4 };
     expect(tilesChanged(room, { x: 11, y: 5, w: 4, h: 5 })).toEqual({ added: 4, removed: 0 });
     expect(resizeCost(room, { x: 11, y: 5, w: 4, h: 5 })).toBe(4 * ROOM_TILE_COST);
+    expect(resizeCost({ ...room, w: 3, h: 3 }, room), 'up to 4×4 is in the price').toBe(0);
+    expect(resizeCost(room, { x: 11, y: 5, w: 4, h: 3 }), 'nothing was paid for, so nothing comes back').toBe(0);
     // only floor that was bought comes back
-    expect(resizeCost({ ...room, bought: 4 }, { x: 11, y: 5, w: 4, h: 3 })).toBe(-4 * (ROOM_TILE_COST / 2));
-    expect(resizeCost({ ...room, bought: 2 }, { x: 11, y: 5, w: 4, h: 3 })).toBe(-2 * (ROOM_TILE_COST / 2));
-    expect(resizeCost(room, { x: 11, y: 5, w: 4, h: 3 }), 'built that size, so none was bought').toBe(0);
-    // a wall out on one side and in on another
+    const longer = { ...room, h: 5 };
+    expect(resizeCost({ ...longer, bought: 4 }, { x: 11, y: 5, w: 4, h: 3 })).toBe(-4 * (ROOM_TILE_COST / 2));
+    expect(resizeCost({ ...longer, bought: 2 }, { x: 11, y: 5, w: 4, h: 3 })).toBe(-2 * (ROOM_TILE_COST / 2));
+    // a wall out on one side and in on another: the same floor, so no charge
     expect(tilesChanged(room, { x: 11, y: 6, w: 4, h: 4 })).toEqual({ added: 4, removed: 4 });
+    expect(resizeCost(longer, { x: 11, y: 6, w: 4, h: 5 })).toBe(0);
+    // a 5×5 built before floor was charged keeps its nine tiles past 4×4 for nothing, and pays only for more
+    expect(resizeCost({ ...room, w: 5, h: 5 }, { x: 11, y: 5, w: 5, h: 6 })).toBe(5 * ROOM_TILE_COST);
   });
 });
 
@@ -105,33 +113,58 @@ describe('resizing a room', () => {
       { x: 19, y: 5, dx: 0, dy: -1 },
       { x: 20, y: 6, dx: 1, dy: 0 },
     ]);
-    // the floor given up came with the room, so only the window is refunded
+    // a 5×3 is within the 4×4 a Staff Room's price covers, so no floor was paid for: only the window comes back, at half
     expect(sim.s.money).toBe(money + WINDOW_COST / 2);
   });
 
-  it('gives nothing back for floor a room was built with, so building big and shrinking pays nothing', () => {
+  it('charges for floor past what the price covers at build time, as a resize would, and gives half back for it', () => {
     const sim = freshSim();
     sim.s.money = 100_000;
     const start = sim.s.money;
     const big = { x: 3, y: 3, w: 20, h: 13 };
     const room = buildRoom(sim, 'staffroom', big, { x: 4, y: 15, dx: 0, dy: 1 }, [['sofa', 3, 3]]);
-    expect(sim.s.money).toBe(start - ROOMS.staffroom.cost);
+    // 260 tiles against the 16 of the 4×4 a Staff Room's price covers
+    expect(room.bought).toBe(244);
+    expect(sim.s.money).toBe(start - ROOMS.staffroom.cost - 244 * ROOM_TILE_COST);
+    // the same room built small and dragged out costs the same
+    const small = freshSim();
+    small.s.money = 100_000;
+    const grown = buildRoom(small, 'staffroom', { ...big, w: 3, h: 3 }, { x: 4, y: 5, dx: 0, dy: 1 }, [['sofa', 3, 3]]);
+    expect(small.resizeRoom(grown.id, big)).toBe(true);
+    expect(small.s.money).toBe(sim.s.money);
+    // shrunk to 3×13, 23 tiles past 4×4: 221 tiles paid for given up, half back
+    const built = sim.s.money;
     expect(sim.resizeRoom(room.id, { ...big, w: 3 })).toBe(true);
-    expect(sim.s.money, 'no refund for floor that came free').toBe(start - ROOMS.staffroom.cost);
+    expect(sim.s.money).toBe(built + 221 * (ROOM_TILE_COST / 2));
     sim.removeRoom(room.id, 0.5);
     expect(sim.s.money).toBeLessThanOrEqual(start);
     expect(inconsistencies(sim)).toEqual([]);
   });
 
+  it('gives nothing back for floor a room built before floor was charged came with', () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    const big = { x: 3, y: 3, w: 20, h: 13 };
+    const room = buildRoom(sim, 'staffroom', big, { x: 4, y: 15, dx: 0, dy: 1 }, [['sofa', 3, 3]]);
+    // as saved by a version that charged the same at any size
+    delete room.bought;
+    const money = sim.s.money;
+    expect(sim.resizeRoom(room.id, { ...big, w: 3 })).toBe(true);
+    expect(sim.s.money, 'no refund for floor that came free').toBe(money);
+    expect(sim.roomRefund(room, 0.5)).toBe(ROOMS.staffroom.cost * 0.5);
+  });
+
   it('refunds half of floor bought by resizing, whether it is given up by resizing or demolishing', () => {
     const { sim, suite } = withSuite();
     const money = sim.s.money;
+    // built 4×4, all of it in the price
+    expect(suite.bought).toBeUndefined();
     expect(sim.resizeRoom(suite.id, { x: 11, y: 5, w: 4, h: 6 })).toBe(true);
     expect(suite.bought).toBe(8);
-    // a wall moved across: the four tiles taken away were bought, the four added are bought now
+    // a wall moved across: the same floor, so nothing is bought or given back
     expect(sim.resizeRoom(suite.id, { x: 11, y: 4, w: 4, h: 6 })).toBe(true);
     expect(suite.bought).toBe(8);
-    expect(sim.s.money).toBe(money - 8 * ROOM_TILE_COST - 4 * ROOM_TILE_COST + 4 * (ROOM_TILE_COST / 2));
+    expect(sim.s.money).toBe(money - 8 * ROOM_TILE_COST);
     const before = sim.s.money;
     const refund = sim.roomRefund(suite, 0.5);
     expect(refund).toBe(ROOMS.massage.cost * 0.5 + 8 * ROOM_TILE_COST * 0.5);

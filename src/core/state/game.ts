@@ -299,5 +299,7 @@ export function newRival(day: number): Rival {
     nextPoach: opens + POACH_GAP_DAYS[0],
     poached: 0,
     trophies: 0,
+    points: 0,
+    knocked: 0,
   };
 }

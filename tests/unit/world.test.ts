@@ -374,6 +374,7 @@ describe('laying out rooms', () => {
     const room = addMassage(sim);
     const before = sim.s.money;
     sim.removeRoom(room.id, 0.5);
+    // half the suite's $7,000; a 4×4 suite paid for no floor
     expect(sim.s.money).toBe(before + 3500);
     expect(sim.s.rooms).toHaveLength(0);
     expect(sim.s.items).toHaveLength(0);

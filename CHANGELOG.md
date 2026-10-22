@@ -14,6 +14,9 @@ Each release's notes are taken from its section here. Keep them short.
 - **The Gong of Last Resort rattles the rooms next door** while it plays: noise through every shared wall, shown on its card and in the inspectors, so build its studio away from quiet rooms.
 - **Rides on the Carousel of Rebirth.** Bored guests pay $25 for a ride while it treats nobody, and get off for a guest due for rebirth.
 - **A Generator, out of doors.** The first thing that stands outside: on the grounds, by the pavement or a path, it keeps the power on through every power cut while it works, needs a Caretaker now and then, and is loud enough that the outer walls are welcome.
+- **Floor is paid for however a room gets it.** A room's price covers floor up to one tile more each way than its smallest, 4×4 for a 3×3 room, whether it is built that size or resized to it. Every tile past that costs $200, at build and on resize alike, the hint shows the price as you drag, and floor paid for comes back at half when given up.
+- **A rival you can catch.** ZenMart grows only until it stands a quarter above you, so a center that keeps growing can overtake it. A delighted VIP, word of mouth and winning Center of the Year each knock it back, and the Standing tab shows its ceiling and what knocks it back.
+- **Standing earned by working.** A room counts fully only while someone on the payroll can work in it, staff count by rank, and every guest healed adds to it, so Restrooms and Trainees no longer buy a grade.
 
 ## v0.31.0
 

@@ -12,13 +12,14 @@ import {
   WINDOW_COST,
 } from '../../core/data';
 import { money } from '../../core/format';
+import { coveredSize } from '../../core/resize';
 import type { Rect } from '../../core/world';
 import { legend } from './squares';
 import type { PlanSub, Tool } from './types';
 
 export const WINDOW_HINT = `Windows · ${money(WINDOW_COST)} each · click a wall to add one, or a window to remove it · Esc when done`;
 export const MOVE_DOOR_HINT = 'Click a wall to move the door there · Esc cancels';
-export const RESIZE_HINT = `Drag a wall in or out · ${money(ROOM_TILE_COST)} a tile added, half back for added floor taken away · Esc when done`;
+export const RESIZE_HINT = `Drag a wall in or out · free up to one tile more each way than the smallest, ${money(ROOM_TILE_COST)} a tile past that, half back when given up · Esc when done`;
 
 /** The hint while a wall is being dragged: the room's size now and as dragged, and what that costs or gives back. */
 export function resizeHint(from: Rect, to: Rect, cost: number): string {
@@ -43,11 +44,18 @@ export function moveHint(type: ItemType): string {
   return `Moving the ${def.name} · click to put it down · R rotates · Esc cancels${legend(type)}`;
 }
 
-/** The hint for dragging out a room: its minimum size, or its current size once the drag is under way. */
-export function dragHint(type: RoomType, dragged: Rect | null): string {
+/**
+ * The hint for dragging out a room: its minimum size, the size its price covers and the price, or once the drag is
+ * under way, its current size and what it costs at that size (`cost`), with the floor past what the price covers.
+ */
+export function dragHint(type: RoomType, dragged: Rect | null, cost = 0): string {
   const def = ROOMS[type];
-  if (dragged) return `${def.name} · ${dragged.w}×${dragged.h} · release to confirm`;
-  return `${def.name} · drag out the floor (at least ${def.minShort}×${def.minLong}) · Esc cancels`;
+  const covered = coveredSize(type);
+  if (dragged) {
+    const floor = cost > def.cost ? ` (${money(cost - def.cost)} of it for floor past ${covered})` : '';
+    return `${def.name} · ${dragged.w}×${dragged.h} · ${money(cost)}${floor} · release to confirm`;
+  }
+  return `${def.name} · drag out the floor (at least ${def.minShort}×${def.minLong}; ${money(def.cost)} up to ${covered}, ${money(ROOM_TILE_COST)} a tile past that) · Esc cancels`;
 }
 
 /** The hint for choosing where a new room's door goes. */

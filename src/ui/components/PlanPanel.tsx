@@ -4,6 +4,7 @@ import './PlanPanel.css';
 
 import { ITEMS, ROOMS, WINDOW_COST } from '../../core/data';
 import { money } from '../../core/format';
+import { finishCost } from '../../core/sim/building';
 import { useGame } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { placedFlags } from '../lib/plan';
@@ -20,6 +21,7 @@ export function PlanPanel() {
   const def = ROOMS[room.type];
   const placed = placedFlags(def.required, missing);
   const extras = room.windows.length * WINDOW_COST;
+  const { cost } = finishCost(room);
   /** Pick up windows or the door, or put them down again. */
   const hold = (what: 'window' | 'door') => {
     tools.planHold(holding === what ? '' : what);
@@ -29,7 +31,7 @@ export function PlanPanel() {
       <div class="panel plan">
         <h3>
           <IconText id={def.icon}>{`${def.name} blueprint`}</IconText>{' '}
-          <span class="cost">{`${money(def.cost)}${extras ? ` + ${money(extras)}` : ''}`}</span>
+          <span class="cost">{`${money(cost)}${extras ? ` + ${money(extras)}` : ''}`}</span>
         </h3>
         <div class="chips">
           <span class="chip done">✔ Door</span>

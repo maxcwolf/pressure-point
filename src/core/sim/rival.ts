@@ -1,16 +1,22 @@
-// The rival across the street: a franchise that opens a few weeks in, grows steadily, holds sales that draw away
-// guests who think the center charges too much, tries to hire away unhappy staff, and competes for Center of the Year.
+// The rival across the street: a franchise that opens a few weeks in, grows steadily up to a quarter more than the
+// center's own standing, holds sales that draw away guests who think the center charges too much, tries to hire away
+// unhappy staff, and competes for Center of the Year. A delighted VIP, word of mouth and the award itself knock it back.
 
 import {
+  DAY_SECONDS,
   POACH_DAYS,
   POACH_GAP_DAYS,
   POACH_MORALE,
+  RIVAL_AWARD_KNOCK,
+  RIVAL_CEILING,
   RIVAL_GROWTH,
   RIVAL_LEAD_DRAW,
   RIVAL_NAME,
   RIVAL_OPENS,
   RIVAL_SLOGAN,
   RIVAL_START_POINTS,
+  RIVAL_VIP_KNOCK,
+  RIVAL_WORD_FALL,
   SALE_DAYS,
   SALE_DISCOUNT,
   SALE_DRAW,
@@ -22,8 +28,9 @@ import { clamp } from '../util';
 import type { SimContext } from './context';
 import { averagePrice } from './economy';
 import { emit, tipOnce, toast } from './events';
+import { running } from './marketing';
 import { fire } from './staffing';
-import { gradeFor } from './standing';
+import { gradeFor, standingPoints } from './standing';
 
 /** The most guests the rival can draw away at once. */
 const MAX_DRAW = 0.6;
@@ -31,11 +38,57 @@ const MAX_DRAW = 0.6;
 /** Whether the rival is open and competing. */
 export const rivalOpen = (s: GameState) => s.rivalOn && s.rival.opened !== null;
 
-/** The rival's standing points, growing every day since it opened. */
-export function rivalPoints(s: GameState): number {
-  const opened = s.rival.opened;
-  if (opened === null) return 0;
-  return Math.round(RIVAL_START_POINTS + Math.max(0, s.day - opened) * RIVAL_GROWTH);
+/** The rival's standing points, or 0 before it opens. */
+export const rivalPoints = (s: GameState) => (s.rival.opened === null ? 0 : Math.round(s.rival.points));
+
+/** The most the rival grows to: a quarter more than the center's own standing, and never less than it started at. */
+export const rivalCeiling = (ctx: SimContext) =>
+  Math.max(RIVAL_START_POINTS, Math.round(standingPoints(ctx).total * RIVAL_CEILING));
+
+/** Where the rival is heading: growing toward its ceiling, held there, or losing ground to word of mouth. */
+export type RivalCourse = 'growing' | 'ceiling' | 'losing';
+
+/** Which way the rival is going, and its ceiling. */
+export function rivalCourse(ctx: SimContext): { course: RivalCourse; ceiling: number } {
+  const ceiling = rivalCeiling(ctx);
+  if (running(ctx.s, 'word')) return { course: 'losing', ceiling };
+  return { course: ctx.s.rival.points < ceiling ? 'growing' : 'ceiling', ceiling };
+}
+
+/** Take points off the rival, never below where it started, and count them. Returns the points taken off. */
+function knock(s: GameState, points: number): number {
+  const r = s.rival;
+  const off = Math.max(0, Math.min(points, r.points - RIVAL_START_POINTS));
+  r.points -= off;
+  r.knocked += off;
+  return off;
+}
+
+/** A setback for the rival from something the center did: a share of its points off, said in a toast. */
+function setBack(ctx: SimContext, share: number, why: string) {
+  if (!rivalOpen(ctx.s)) return;
+  const off = Math.round(knock(ctx.s, ctx.s.rival.points * share));
+  if (off > 0) toast(ctx, `${why} ${RIVAL_NAME} loses ${off} standing points.`, 'good', undefined, 'ui-rival');
+}
+
+/** A VIP left delighted: word gets round, at the rival's expense. */
+export const vipSetback = (ctx: SimContext) => {
+  setBack(ctx, RIVAL_VIP_KNOCK, 'A delighted VIP is telling everyone about you:');
+};
+
+/** The center won Center of the Year from the rival. */
+export const awardSetback = (ctx: SimContext) => {
+  setBack(ctx, RIVAL_AWARD_KNOCK, 'Center of the Year is yours:');
+};
+
+/** A second of the rival's growth: toward its ceiling, back down to it from above, or down while word of mouth runs. */
+function updatePoints(ctx: SimContext) {
+  const r = ctx.s.rival;
+  const step = 1 / DAY_SECONDS;
+  const { course, ceiling } = rivalCourse(ctx);
+  if (course === 'losing') knock(ctx.s, RIVAL_WORD_FALL * step);
+  else if (r.points < ceiling) r.points = Math.min(ceiling, r.points + RIVAL_GROWTH * step);
+  else r.points = Math.max(ceiling, r.points - RIVAL_GROWTH * step);
 }
 
 /** The rival's grade. */
@@ -77,11 +130,12 @@ export function offerDaysLeft(s: GameState, st: Staff): number | null {
 function openUp(ctx: SimContext) {
   const s = ctx.s;
   s.rival.opened = s.day;
+  s.rival.points = RIVAL_START_POINTS;
   s.rival.nextSale = s.day + SALE_GAP_DAYS[0];
   s.rival.nextPoach = s.day + POACH_GAP_DAYS[0];
   toast(
     ctx,
-    `A ${RIVAL_NAME} has opened across the street: "${RIVAL_SLOGAN}." It will hold sales, try to hire away unhappy staff, and compete for Center of the Year.`,
+    `A ${RIVAL_NAME} has opened across the street: "${RIVAL_SLOGAN}." It will grow until it stands a quarter above you, hold sales, try to hire away unhappy staff, and compete for Center of the Year.`,
     'bad',
     undefined,
     'ui-rival',
@@ -89,7 +143,7 @@ function openUp(ctx: SimContext) {
   tipOnce(
     ctx,
     'rival',
-    `Keep an eye on ${RIVAL_NAME} in the Stats menu, under Standing. Keep your staff happy, and your prices sharp while it has a sale on.`,
+    `Keep an eye on ${RIVAL_NAME} in the Stats menu, under Standing. Keep your staff happy, and your prices sharp while it has a sale on. Delighting a VIP, word of mouth and winning Center of the Year all knock it back.`,
   );
 }
 
@@ -155,6 +209,7 @@ export function updateRival(ctx: SimContext) {
     if (s.day >= RIVAL_OPENS) openUp(ctx);
     return;
   }
+  updatePoints(ctx);
   updateSale(ctx);
   updatePoaching(ctx);
 }

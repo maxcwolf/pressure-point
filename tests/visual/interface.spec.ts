@@ -322,6 +322,8 @@ test.describe('in a game', () => {
         nextPoach: 1e9,
         poached: 1,
         trophies: 0,
+        points: 80 + pp.state.day * 0.45,
+        knocked: 0,
       };
     });
     await page

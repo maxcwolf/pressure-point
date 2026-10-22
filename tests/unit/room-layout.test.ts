@@ -1,7 +1,7 @@
 // A room's layout: picked up, turned and put down, with everything in it turning together.
 import { describe, expect, it } from 'vitest';
 
-import { ITEMS, ROOMS, WINDOW_COST } from '../../src/core/data';
+import { ITEMS, ROOM_TILE_COST, ROOMS, WINDOW_COST } from '../../src/core/data';
 import { copyCost, cornerFor, type Layout, placeLayout, turnLayout } from '../../src/core/room-layout';
 import { accessTile, footprint } from '../../src/core/world';
 
@@ -65,8 +65,13 @@ describe('putting a layout down', () => {
 
 describe('what a copy costs', () => {
   it('is the room with its required furniture, then the extras and the windows', () => {
-    expect(copyCost(SUITE)).toBe(ROOMS.massage.cost + WINDOW_COST);
+    // 4×3, within the 4×4 a Massage Suite's price covers
+    const room = ROOMS.massage.cost;
+    expect(copyCost(SUITE)).toBe(room + WINDOW_COST);
     const extra: Layout = { ...SUITE, items: [...SUITE.items, { type: 'plant', x: 0, y: 0, rot: 0 }] };
-    expect(copyCost(extra)).toBe(ROOMS.massage.cost + WINDOW_COST + ITEMS.plant.cost);
+    expect(copyCost(extra)).toBe(room + WINDOW_COST + ITEMS.plant.cost);
+    expect(copyCost({ ...SUITE, w: 5, h: 4 }), 'floor past 4×4 at what a resize charges').toBe(
+      ROOMS.massage.cost + 4 * ROOM_TILE_COST + WINDOW_COST,
+    );
   });
 });

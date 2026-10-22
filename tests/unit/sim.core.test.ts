@@ -35,8 +35,10 @@ describe('opening the center', () => {
     const sim = freshSim();
     sim.placeItem('reception_desk', 14, 13, 0);
     addConsult(sim);
-    expect(sim.s.money).toBe(CENTERS.sandbox.startMoney - ITEMS.reception_desk.cost - ROOMS.consult.cost);
-    expect(sim.s.ledger.building).toBe(ITEMS.reception_desk.cost + ROOMS.consult.cost);
+    // a 4×4 Consultation Room, all of its floor in the price
+    const room = ROOMS.consult.cost;
+    expect(sim.s.money).toBe(CENTERS.sandbox.startMoney - ITEMS.reception_desk.cost - room);
+    expect(sim.s.ledger.building).toBe(ITEMS.reception_desk.cost + room);
   });
 });
 

@@ -64,6 +64,7 @@ import { emit, tipOnce, toast } from './events';
 import { goTo, moveAlong } from './movement';
 import { counterVerdict, inspectorComing, inspectorGone, MUSHROOMS_FOUND } from './mushrooms';
 import { noiseAt } from './noise';
+import { vipSetback } from './rival';
 import { cutOff } from './twists';
 import { discomfort, warmthAt } from './warmth';
 
@@ -429,6 +430,7 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
     }
     changeRep(ctx, result.rep);
   }
+  if (v.visit === 'vip' && result.outcome === 'delighted') vipSetback(ctx);
   s.visitReport = { visit: v.visit, name: v.name, title: v.title, day: s.day, rooms: v.seen, ...result };
   if (failed) s.visitReport.bribe = bribeFor(-result.money);
   // the mushrooms come back out only once the inspector has been past the counter
