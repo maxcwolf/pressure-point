@@ -44,6 +44,7 @@ import { fenceRuns } from '../render/land';
 import { buildBeach } from '../render/models/beach';
 import { buildCharacter, type CharRig, cureRig } from '../render/models/character';
 import { type Expression, showEyes } from '../render/models/character-detail';
+import { buildLamps, buildOffices, buildStreetTrees } from '../render/models/downtown';
 import { buildSite } from '../render/models/fence';
 import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
@@ -1062,6 +1063,22 @@ const SCENERY: Specimen[] = [
       animate: still,
       controls: [],
     }),
+  },
+  {
+    id: 'scenery:downtown',
+    group: 'Scenery',
+    name: 'Downtown: an office block, a street tree and a lamp',
+    footprint: [6, 4],
+    /** A low office block at the back, with a street tree in its planter and a lamp post along the kerb in front. */
+    build: () => {
+      const root = new THREE.Group();
+      root.add(
+        buildOffices([{ x: -0.6, z: -0.7, w: 4, d: 2.4, floors: 2, seed: 2 }]),
+        buildStreetTrees([{ x: 1.9, z: 1.3, seed: 1 }]),
+        buildLamps([{ x: -2.2, z: 1.5 }]),
+      );
+      return { root, animate: still, controls: [] };
+    },
   },
   {
     id: 'scenery:storefront',

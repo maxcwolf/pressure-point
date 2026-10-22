@@ -69,6 +69,7 @@ const IDS = [
   'scenery:pines',
   'scenery:orchard',
   'scenery:beach',
+  'scenery:downtown',
   'scenery:storefront',
   'scenery:for-sale',
   'scenery:site',
