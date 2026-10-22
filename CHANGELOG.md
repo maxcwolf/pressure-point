@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **A word when the consultations are the limit.** The advisor, and a warning the first day it happens, say when staffed treatment stations draw no guests because every guest sees a Wellness Consultant first, and that another Consultation Room would let them draw where another treatment room would not. The Orchard Estate's card says so of its opening.
 - **A moment for every cure.** The chicken, the knot or the cloud shrinks away in a puff of sparkles and the guest hops once, grinning.
 - **More faces in the crowd.** People come slight, average or stocky, a quarter wear glasses, shoes come in four colors, and men have two more haircuts.
 - **Eyes that blink and shut.** People blink, rest with their eyes closed on a table or a Recliner, lie face down for a massage or needles, and look frightened on a bad trip or in an outbreak.

@@ -70,3 +70,15 @@ Beyond the month-by-month figures (`months`), the star days, the open goals and 
 4. Compare seed by seed, not by the means. In the balance-log entry, copy the table and say what the slices show: a new bankruptcy, a cliff that appeared or went away, a loss without warning.
 
 Logs from before the richer fields existed still work as the "before" run. The report reads their bankruptcy from the bot's note and leaves out what they lack.
+
+## How many seeds a call needs
+
+A change to the game, even one that only moves the day a grade is crossed, sends every game down a different course from the first day it matters: the random stream is drawn in a different order from then on, so the same seed before and after is a different game, not the same game with one thing changed. A difference between two runs is the change plus that reshuffle, and at a few dozen seeds the reshuffle alone is as big as most changes.
+
+What it cost to learn (balance-log entry 44): at High Pines, single parts of the standing rule switched off one at a time moved the profit a month by up to two standard errors over seeds 1 to 36, in both directions, and the old standing rule as a whole, +$4.8k a month over seeds 1 to 36, was −$1.9k over seeds 37 to 72. Six seeds a center had cleared the merge that turned out to cost High Pines $5k a month.
+
+So, before a call is written into the balance log:
+
+1. **72 seeds a center** (`BALANCE_SEEDS=$(seq -s, 1 72)`), read as two halves of 36. A finding is one where both halves agree in sign; give the mean of the paired difference (same seed after minus before) with its standard error, and each half's. 720 games, every center, took 72 minutes at 7 slots with a second run beside it on the 16-core Mac (22 October 2026).
+2. **One change at a time, with the same bot on both sides.** To say what one part of a merge did, switch that part off in a scratch copy and leave everything else, the bot included, as it is. A merge that changes the game and the bot together has to be split before either can be blamed: the more-land merge carried bot changes too, and only the land's data reverted on the same code measured the land.
+3. **The merge gate is every center, not the average.** A center that loses more games, or earns a star later or never in more of them, blocks the merge until the entry explains it, whatever the profit says elsewhere. "Is it easier?" is one question of several: "is it still fair at each center?" is the one that blocks.
