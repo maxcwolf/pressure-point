@@ -31,6 +31,8 @@ The report runs on plain Node (22.18 or later). `scripts/balance-report.mjs` imp
 
 `BOT_ON=machines` builds the center's machine room as a station more, on free floor or on land bought for it, and never knocks a room down for it (nor for the Training Room its operator needs). Each game's `machines` records the site (`floor`, `expansion`, or `skipped` when nothing fitted) and the months it was put off.
 
+`BOT_ON=opening` has the good bot do as the advisor says about a month's wages in hand: while it says there is less, it hires nobody but into a role with nobody in it, sends nobody on a course and turns house calls down. The advised persona (`BOT=advised`) holds its hires the same way. Both note when the hold begins and ends.
+
 ## What a game's log holds
 
 Beyond the month-by-month figures (`months`), the star days, the open goals and the bot's notes, each log records:

@@ -2,6 +2,7 @@
 
 import { type CampaignStars, centerOpen } from '../../core/campaign';
 import { CAMPAIGN, type CenterId, CENTERS, DISCIPLINES } from '../../core/data';
+import { openingCosts, openingLine } from '../../core/sim/economy';
 
 /** One center on the campaign trail. */
 export interface CampaignCard {
@@ -9,6 +10,8 @@ export interface CampaignCard {
   name: string;
   place: string;
   blurb: string;
+  /** What opening it costs: the first month's wages and the rooms, against the money to start with and the loan. */
+  opening: string;
   /** Stars earned there, and how many there are. */
   earned: number;
   of: number;
@@ -29,6 +32,7 @@ export function campaignCards(stars: CampaignStars): CampaignCard[] {
       name: c.name,
       place: c.place,
       blurb: c.blurb,
+      opening: openingLine(openingCosts(c)),
       earned: stars[id] ?? 0,
       of: c.goals.length,
       open: centerOpen(stars, id),

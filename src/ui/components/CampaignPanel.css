@@ -69,6 +69,11 @@
   margin: 3px 0 6px;
 }
 
+.stop p.opening {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
 .stop .go {
   margin-top: 0;
 }

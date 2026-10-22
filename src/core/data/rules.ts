@@ -51,6 +51,14 @@ export const OVERDRAFT_RATE = 0.05;
 export const INSOLVENCY_DAYS = 10;
 
 /**
+ * The paydays a new center meets before its takings have a record: the opening's, through which the Payroll tab weighs
+ * a month's wages against the bank and the loan left whatever they hold. The Orchard Estate's opening, with every
+ * discipline built and staffed at once, is down to less than one payday in hand by the first, and the bank called the
+ * overdraft in at the third in 4 games of 12 (balance log 39).
+ */
+export const FIRST_PAYDAYS = 3;
+
+/**
  * How much lower staff morale settles while the bank is in the red, worried about their wages, and how much lower
  * once it has been there a month, when they also ask for a raise to stay.
  */

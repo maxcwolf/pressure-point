@@ -1,8 +1,10 @@
 // Money and reputation: income, spending, payday, loans and prices.
 
-import type { Role } from '../data';
+import type { CenterDef, Discipline, Role, RoomType } from '../data';
 import {
   DAYS_PER_MONTH,
+  DISCIPLINES,
+  FIRST_PAYDAYS,
   INSOLVENCY_DAYS,
   ITEMS,
   LOAN_MAX,
@@ -16,6 +18,8 @@ import {
   PRICE_PUT_OFF,
   type Priced,
   REP_DAMPING,
+  ROLES,
+  ROOMS,
 } from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
@@ -359,6 +363,113 @@ export function payrollVerdict(o: PayrollOutlook): string {
       ? `, and with the books losing about ${money(-o.net)} a month the bank calls the overdraft in, with ${INSOLVENCY_DAYS} days to put one of the two right: prices up, or staff down`
       : `; the books make about ${money(o.net)} a month, so the red clears`;
   return `Payday needs ${money(o.short)} more than the bank and this month's pace will have, and ${lends}: the rest goes into the red at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month${then}.`;
+}
+
+/** What the bank and the loan left hold against a month's wages, which the first paydays fall back on. */
+export interface PaydaysInHand {
+  /** A month's wages for the staff on the books, and what the machines cost to run, paid with them. */
+  wages: number;
+  upkeep: number;
+  /** In the bank, what the bank will still lend, and the two together. */
+  money: number;
+  loanRoom: number;
+  inHand: number;
+  /** How many months of wages the two would pay with nothing coming in. */
+  months: number;
+  /** Whether the center has yet to meet its first paydays, before its takings have a record. */
+  opening: boolean;
+}
+
+/** What the bank and the loan left hold against a month's wages, and how many months of them that pays. */
+export function paydaysInHand(s: GameState): PaydaysInHand {
+  const wages = monthlyPayroll(s);
+  const upkeep = machineUpkeep(s);
+  const room = loanRoom(s);
+  const inHand = s.money + room;
+  const month = wages + upkeep;
+  return {
+    wages,
+    upkeep,
+    money: s.money,
+    loanRoom: room,
+    inHand,
+    months: month > 0 ? Math.max(0, inHand) / month : Infinity,
+    opening: s.months.length < FIRST_PAYDAYS,
+  };
+}
+
+/**
+ * Whether the bank and the loan left hold less than a month's wages: past what the paydays can carry, since a month that
+ * heals few guests then leaves a payday in the red with the loan used up.
+ */
+export const shortOfAMonth = (h: PaydaysInHand) => h.wages > 0 && h.months < 1;
+
+/** How many paydays a sum in hand pays, in words: "less than one payday", "one payday", "3 paydays". */
+function paydaysWord(months: number): string {
+  const n = Math.floor(months);
+  if (n < 1) return 'less than one payday';
+  return n === 1 ? 'one payday' : `${n} paydays`;
+}
+
+/** The bank in a few words: so much in it, or so far in the red. */
+const bankOf = (m: number) => (m < 0 ? `the bank ${money(-m)} in the red` : `${money(m)} in the bank`);
+
+/**
+ * The wages a month against what is in hand, in a line: "$14,200 a month in wages, against $1,465 in the bank and
+ * $10,000 the bank will still lend: less than one payday in hand, with nothing coming in."
+ */
+export function inHandLine(h: PaydaysInHand): string {
+  const lend = h.loanRoom > 0 ? `${money(h.loanRoom)} the bank will still lend` : 'the loan used up';
+  return `${money(h.wages)} a month in wages${runningOf(h)}, against ${bankOf(h.money)} and ${lend}: ${paydaysWord(h.months)} in hand, with nothing coming in.`;
+}
+
+/** Disciplines, roles and rooms a center opens with: massage, and those of its own whose rooms are open from the start. */
+function openingOf(c: CenterDef) {
+  const from = c.unlockedFrom ?? 0;
+  const extras = c.disciplines.filter((d) => (ROOMS[DISCIPLINES[d].room].unlock ?? 0) <= from);
+  const disciplines: Discipline[] = ['massage', ...extras];
+  const roles: Role[] = ['receptionist', 'consultant', ...disciplines.map((d) => DISCIPLINES[d].role)];
+  const rooms: RoomType[] = ['consult', ...disciplines.map((d) => DISCIPLINES[d].room)];
+  return { disciplines, roles, rooms };
+}
+
+/** What a center's opening comes to before it takes a fee: the wages a month and the rooms, against what it has. */
+export interface OpeningCosts {
+  /** How many disciplines it opens with, and the practitioner for one when it is one. */
+  disciplines: number;
+  practitioner: string;
+  /** A month's wages for a Receptionist, a Wellness Consultant and a practitioner a discipline, all Trainees. */
+  wages: number;
+  /** The rooms for them, before their furniture. */
+  rooms: number;
+  /** The money to start with, and the most the bank lends. */
+  money: number;
+  loan: number;
+}
+
+/** What a center's opening comes to, with every discipline open from the start staffed at a Trainee's pay. */
+export function openingCosts(c: CenterDef): OpeningCosts {
+  const o = openingOf(c);
+  return {
+    disciplines: o.disciplines.length,
+    practitioner: ROLES[DISCIPLINES.massage.role].name,
+    wages: o.roles.reduce((sum, r) => sum + ROLES[r].baseSalary, 0),
+    rooms: o.rooms.reduce((sum, r) => sum + ROOMS[r].cost, 0),
+    money: c.startMoney,
+    loan: LOAN_MAX,
+  };
+}
+
+/**
+ * A center's opening in a line, for its card before it is played: the first month's wages and the rooms, against the
+ * money to start with and the loan, so the first payday is in sight before anything is built.
+ */
+export function openingLine(o: OpeningCosts): string {
+  const staff =
+    o.disciplines === 1
+      ? `a Receptionist, a Wellness Consultant and a ${o.practitioner}`
+      : `a Receptionist, a Wellness Consultant and a practitioner for each of its ${o.disciplines} disciplines`;
+  return `Opening with ${staff} costs ${money(o.wages)} a month in wages at a Trainee's pay and ${money(o.rooms)} for their rooms, against ${money(o.money)} to start and up to ${money(o.loan)} from the bank: ${money(o.money + o.loan - o.rooms)} left for the furniture and every payday until the takings cover the wages.`;
 }
 
 /**

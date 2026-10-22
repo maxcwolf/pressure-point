@@ -6,6 +6,50 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 21 October 2026, late night: the first paydays in sight
+
+Measured with `yarn balance` on `main` at `7ac9574` (before) and on this branch (after), The Orchard Estate, seeds 1 to 12, four years a game: the good bot, `BOT=advised`, and the good bot with the new `BOT_ON=opening`; and `BOT=advised` at every campaign center, seeds 1 to 3. Year 4 is months 37 to 48, over the games not lost. No game rule or price changed.
+
+### 39. The first payday shown before the build, and advice against what the paydays cannot carry
+
+**Found:** [next-pass.md](next-pass.md) open finding 2 and entry 37. The good bot loses 4 of 12 Orchard games the same way: the day-0 build (7 staff, $94,000 spent) takes the loan to $50,000 by month 2, a third month heals 0 to 2 guests while practitioners are away on courses and house calls, and the bank calls the overdraft in on day 100. Every loss was warned, but nothing said before the build that the opening the blurb offers costs more than the start and the loan can carry, and the advisor weighed only the next payday, not what is left behind it, so with that payday covered it went on to its training and growth nudges. After the build, every one of the 12 games has less than a month's wages in the bank and the loan left (seed 5: $1,465 and $10,000 against $14,200 a month).
+
+**Done** (`src/core/sim/economy.ts`, `src/core/sim/advisor.ts`, `src/core/data/rules.ts`, the campaign card, the Payroll tab, `tests/balance/bot.ts`):
+
+- **On each campaign card**, under the blurb, what the opening costs: "Opening with a Receptionist, a Wellness Consultant and a practitioner for each of its 5 disciplines costs $10,750 a month in wages at a Trainee's pay and $48,000 for their rooms, against $45,000 to start and up to $50,000 from the bank: $47,000 left for the furniture and every payday until the takings cover the wages." (`openingCosts`, `openingLine`; a discipline counts when its room is open from the start.)
+- **`paydaysInHand`**: a month's wages for the staff on the books (and the machines' running costs) against the bank and the loan left, and how many months that pays with nothing coming in. The Payroll tab shows it as "Months of wages in hand", and a line under the verdict through the first three paydays (`FIRST_PAYDAYS`), before the takings have a record, and whenever there is less than a month in hand, when the verdict turns amber: "The first paydays: $6,000 a month in wages, against $500 in the bank and $5,000 the bank will still lend: less than one payday in hand, with nothing coming in. 3 paydays come before the takings have a record, so what is hired, built or sent away before then is paid for out of this. That is past what the paydays can carry: …"
+- **The advisor** (`inHandAdvice`), with less than a month's wages in hand and bankruptcy on, above the payday nudge and every growth nudge: "Hire nobody more, send nobody on a course and turn house calls down until there is a month's wages in hand, $500 more: $6,000 a month in wages, against … Each adds a wage or leaves a station empty for days, and once the loan is used up a month that heals few guests has the bank call the overdraft in. 3 of the first paydays are still to come, before the takings have a record." Not while the bank is calling the overdraft in, nor when the next payday is short past what the bank lends: the payday nudge says that, with the cut.
+- **The bot:** the advised persona, and the good bot with the new extra `BOT_ON=opening`, do as that nudge says while it shows: no hire but into a role with nobody in it, no course, house calls turned down. The persona's other matches are unchanged; no toast it reads changed.
+- **Tried and not kept:** the advice only through the first three paydays (below), and the hold taken from the numbers rather than from the advisor's words.
+
+**Result,** The Orchard, seeds 1 to 12:
+
+| Bot                                               | Bankrupt (seed at day) before → after                                   | Year-4 profit a month |
+| ------------------------------------------------- | ----------------------------------------------------------------------- | --------------------- |
+| good                                              | 5, 8, 9, 10 at 100 (unchanged, every month the same)                    | $48.5k (unchanged)    |
+| advised                                           | 6 at 1420, 9 at 821, 11 at 1420 (unchanged, every month the same)       | (unchanged)           |
+| good, doing as the advice says (`BOT_ON=opening`) | 5, 8, 9, 10 at 100 → 1 at 161, 6 at 130, 8 at 100, 10 at 100, 11 at 190 | $48.5k → $43.7k       |
+
+What the heeding bot holds back, and for how long, with the hold taken straight from the numbers rather than the advisor's words:
+
+| Holds, while less than a month is in hand                            | Bankrupt (seed at day)                                       | Year-4 profit a month |
+| -------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------- |
+| hires, courses and house calls, through the first three paydays only | 2 at 130, 4 at 161, 5 at 190, 8 at 100, 10 at 100, 11 at 130 | $45.1k                |
+| hires, courses and house calls, for as long as it lasts              | 4 at 491, 6 at 161, 8 at 100, 10 at 100                      | $56.1k                |
+| courses and house calls                                              | 4 at 491, 6 at 161, 8 at 100, 10 at 100                      | $47.8k                |
+| hires and house calls                                                | 2 at 130, 8 at 100, 9 at 100, 10 at 100, 12 at 100           | $67.8k                |
+
+The advised persona at every center, seeds 1 to 3, is unchanged month for month against `main` (no game lost either way). The new nudge showed in five of the fifteen games (Willow Lane seed 2 the most) but never on a day the persona would have hired.
+
+**Read:**
+
+- **Does a player who does what the advice says get through the opening?** No more often than one who does not: 4 or 5 games of 12 lost in every variant, against 4. Following it saves seeds 5 and 9 and costs others: seeds 6 and 11 lose in month 4 to 6, after the bot sent its practitioners on courses again, and seed 1 on day 161.
+- **Seeds 8 and 10 are lost on day 100 whatever the advice says.** Once the day-0 build is done they have under a month in hand from the first payday, and month 3 heals 0 or 1 guests. Nothing in the first months saves them; only a smaller build would.
+- **A limit of three paydays made it worse** (6 lost): the advice went quiet in month 4 with the bank still empty, and the bot's courses then emptied the stations. So the nudge holds for as long as there is less than a month in hand.
+- **Holding courses matters, holding hires barely does** (the same four games lost with or without hires held). A course both costs and empties a station. But a course is also how a practitioner learns the techniques guests come for, and the bot that held them all botched treatments it was not trained for ("is not trained in Sports massage and botched …"), so holding courses is no clean win either.
+- **When it shows:** every game already had the payday toast on day 1 ("Payday in 29 days: $13,663 in wages …"). The new nudge first comes at the first payday or soon after (days 30 to 60), once the wages have left the bank. In the lost seeds 8 and 10 it showed only 3 times and once, under the guests about to go home worse off that fill the advisor. The Payroll tab keeps it in sight whatever the advisor is saying.
+- **What is left for the owner:** the campaign card is the one place the cliff shows before the build, and the bot builds the same opening every seed (entry 37, and the bot's blind spots), so it cannot say whether a player who reads the card opens leaner. The audit's lean opening (acupuncture only, the rest later) lost 2 of 3 too. The arithmetic is unchanged: $48,000 of rooms and $10,750 a month of Trainee wages against $95,000, with the loan limit the same at a $20,000 center as at this $45,000 one. Whether the bank lends a center in proportion to what it starts with, or whether The Orchard opens fewer disciplines, is the owner's call, and outside a communication pass.
+
 ## 21 October 2026, late: machines as a station more
 
 Measured with `yarn balance` on `integrate-audit` at `e02faa5` with the bot changed as below, every campaign center, seeds 1 to 6, four years a game: `BOT_ON=machines` against the good bot without the flag. Year 4 is months 37 to 48, over the games not lost. No game rule or price changed. The bot without the flag plays exactly as before: the default `yarn balance` (seeds 1 to 3) matches `e02faa5` on all 15 runs, star days and every month.

@@ -8,6 +8,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **The machines in their own clothes.** Each treatment machine has an icon, a room sign and a treatment icon of its own, its model is polished to match the rest of the furniture, and an upgraded machine shows its stars on a brass plate, as the tables do.
 - **The storm floods a restroom.** At The Boardwalk the storm now also floods a restroom as it starts, out of action with its lamp red until a Caretaker mops it out; boarding up and sandbagging, at the same $800 as before, stops it.
 - **A really bad trip, now and then.** A guest whose ceremony goes badly may run round the institute freaking out everyone they pass, until you send someone to calm them down from their inspector or they find the door.
+- **The first paydays in sight.** Each campaign center's card gives what its opening costs in a month's wages and rooms against the money and the loan, and the Payroll tab weighs a month's wages against the bank and the loan left, with the advisor asking for no new hire, course or house call while there is less than a month in hand.
 
 ## v0.31.0
 

@@ -1,16 +1,20 @@
 // The Money menu's Payroll tab: the next payday against the bank and the pace of the books, with a verdict in a line.
 
-import { INSOLVENCY_DAYS, OVERDRAFT_RATE } from '../../../core/data';
+import { FIRST_PAYDAYS, INSOLVENCY_DAYS, OVERDRAFT_RATE } from '../../../core/data';
 import { dateOf, money } from '../../../core/format';
 import {
   cashflow,
   daysUntilBankrupt,
   incomeOf,
+  inHandLine,
   loanLimit,
   netOf,
   paydayOf,
+  type PaydaysInHand,
+  paydaysInHand,
   payrollOutlook,
   payrollVerdict,
+  shortOfAMonth,
 } from '../../../core/sim/economy';
 import type { Ledger } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
@@ -37,11 +41,31 @@ export function runwayNote(days: number | null): string {
   return `The bank is calling the overdraft in: ${n} day${n === 1 ? '' : 's'} to get back above zero or into profit, or the center is bankrupt.`;
 }
 
+/**
+ * A month's wages against the bank and the loan left: through a new center's first paydays, with how many come before
+ * the takings have a record, and at any time with less than a month in hand, what to hold off. Empty otherwise.
+ */
+export function inHandNote(h: PaydaysInHand, left: number): string {
+  const short = shortOfAMonth(h);
+  if (!short && !(h.opening && h.wages > 0)) return '';
+  const head = h.opening ? 'The first paydays' : 'In hand';
+  const paydays = left === 1 ? 'One payday comes' : `${left} paydays come`;
+  const first = h.opening
+    ? ` ${paydays} before the takings have a record, so what is hired, built or sent away before then is paid for out of this.`
+    : '';
+  const hold = short
+    ? ' That is past what the paydays can carry: until there is a month in hand, hire nobody more, send nobody on a course and turn house calls down.'
+    : '';
+  return `${head}: ${inHandLine(h)}${first}${hold}`;
+}
+
 /** Wages due, the bank, the loan room, last month's net and the net a month at this pace, and whether payday is covered. */
 export function PayrollTab() {
   const { sim } = useGame();
   const s = sim.s;
   const o = payrollOutlook(s);
+  const h = paydaysInHand(s);
+  const note = inHandNote(h, FIRST_PAYDAYS - s.months.length);
   const flow = cashflow(s);
   const payday = dateOf(paydayOf(s));
   const lastNet = s.months.length ? netOf(s.lastLedger) : null;
@@ -49,9 +73,20 @@ export function PayrollTab() {
   const sign = (n: number) => (n >= 0 ? 'pos' : 'neg');
   return (
     <>
-      <div class={cx('ledger', 'verdict', o.covered === 'yes' ? 'ok' : o.covered === 'borrowing' ? 'warn' : 'bad')}>
+      <div
+        class={cx(
+          'ledger',
+          'verdict',
+          o.covered === 'no'
+            ? 'bad'
+            : o.covered === 'borrowing' || (s.bankruptcyOn && shortOfAMonth(h))
+              ? 'warn'
+              : 'ok',
+        )}
+      >
         <h4>{payrollVerdict(o)}</h4>
         {s.bankruptcyOn && <p class="sub">{runwayNote(daysUntilBankrupt(s))}</p>}
+        {s.bankruptcyOn && note && <p class="sub">{note}</p>}
       </div>
       <div class="ledgers">
         <div class="ledger">
@@ -61,6 +96,11 @@ export function PayrollTab() {
           <Figure name="Coming in by then, at this pace" value={money(o.coming)} look="pos" />
           <Figure name={`Loan room left of ${money(loanLimit(s))}`} value={money(o.loanRoom)} />
           {o.short > 0 && <Figure name="Short at payday" value={money(o.short)} look="neg" />}
+          <Figure
+            name="Months of wages in hand"
+            value={Number.isFinite(h.months) ? h.months.toFixed(1) : 'No wages yet'}
+            look={h.months < 1 ? 'neg' : undefined}
+          />
         </div>
         <div class="ledger">
           <h4>A month at this pace</h4>

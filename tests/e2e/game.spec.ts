@@ -2194,6 +2194,10 @@ test.describe('the campaign', () => {
     });
     await page.goto('/');
     await page.getByRole('button', { name: 'Campaign' }).click();
+    // the first month's wages and the rooms against the money and the loan, before anything is built
+    await expect(page.locator('#title-campaign .stop', { hasText: 'The Orchard Estate' })).toContainText(
+      "Opening with a Receptionist, a Wellness Consultant and a practitioner for each of its 5 disciplines costs $10,750 a month in wages at a Trainee's pay and $48,000 for their rooms",
+    );
     await page.getByRole('button', { name: 'Play The Orchard Estate' }).click();
     await page.waitForFunction(() => window.pp?.state.center === 'orchard');
     await expect(page.locator('#objectives')).toContainText('Rise to Wellness Studio');
@@ -2484,6 +2488,36 @@ test.describe('magic mushrooms', () => {
     await expect(modal.locator('h2')).toHaveCount(0);
     expect(await game.eval((pp) => pp.state.visitReport?.outcome)).toBe('paid off');
     expect((await game.eval((pp) => pp.state.ledger.fines)) - fines).toBeGreaterThanOrEqual(10000);
+    expect(game.errors).toEqual([]);
+  });
+});
+
+test.describe('the first paydays', () => {
+  test('the Payroll tab and the advisor weigh a month of wages against the bank and the loan left', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(1);
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      // $6,000 a month in wages against $5,500 in hand, with the takings so far bringing the next payday in reach
+      for (const st of pp.state.staff) st.salary = 2000;
+      pp.state.money = 500;
+      pp.state.loan = 45000;
+      pp.state.ledger.treatment = 2000;
+    });
+    await game.settle();
+    await expect(page.locator('#advisor')).toContainText(
+      "Hire nobody more, send nobody on a course and turn house calls down until there is a month's wages in hand, $500 more: $6,000 a month in wages, against $500 in the bank and $5,000 the bank will still lend: less than one payday in hand",
+    );
+    await game.menu('Money');
+    const menu = page.locator('#menu');
+    await menu.getByRole('button', { name: /Payroll/ }).click();
+    await expect(menu).toContainText('3 paydays come before the takings have a record');
+    await expect(menu).toContainText('That is past what the paydays can carry');
+    await expect(menu.locator('.ledger', { hasText: 'Months of wages in hand' })).toContainText('0.9');
     expect(game.errors).toEqual([]);
   });
 });
