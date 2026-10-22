@@ -64,6 +64,7 @@ interface Handle {
     pointerMove(clientX: number, clientY: number): void;
   };
   ui: { subscribe(listener: () => void): () => void; update(): void; overlay: string | null };
+  loop: { saveSoon(): void };
   data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };
   geo: {
     itemDims(type: string, rot: number): [number, number];
@@ -573,6 +574,9 @@ export interface GameOptions {
 /**
  * Switch drawing off in every game the page starts, the moment the game hands the tests its handle. Run in the page
  * before anything else, so it catches a reload or a new game as well as the first.
+ *
+ * A save's picture for the title screen is drawing too, and a whole frame of software WebGL, inside a click or on the
+ * way out, takes seconds on a busy machine; so it is a small blank picture instead.
  */
 function stopDrawing() {
   let handle: unknown;
@@ -580,9 +584,12 @@ function stopDrawing() {
     configurable: true,
     /** The game's handle. */
     get: () => handle,
-    /** Take the game's handle, switching its drawing off. */
-    set: (value: { view: { drawing: boolean } }) => {
+    /** Take the game's handle, switching its drawing and its pictures off. */
+    set: (value: { view: { drawing: boolean; snapshot: () => string } }) => {
       value.view.drawing = false;
+      /** A blank picture, at once. */
+      value.view.snapshot = () =>
+        Object.assign(document.createElement('canvas'), { width: 4, height: 4 }).toDataURL('image/jpeg');
       handle = value;
     },
   });

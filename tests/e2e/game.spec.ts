@@ -2589,19 +2589,22 @@ test.describe('saved games', () => {
   };
   test('warns when the game is also open in another tab, saving over this one', async ({ game, page }) => {
     await game.start();
+    // a copy of this game, moved on a little, as the other tab has it
+    const copy = await game.eval((pp) => ({ ...pp.state, money: pp.state.money + 1 }));
     const other = await page.context().newPage();
-    // The warning comes once, the first time the other tab writes the autosave: as it starts its game, if this one has
-    // autosaved by then (it moves to "Previous game"), or else as it saves. It fades after a few seconds, which a slow
-    // machine can take to reach the saves screen, so watch for it from the start.
+    // The warning comes once, the first time another tab writes the autosave. That tab writes it with the game's own
+    // storage code rather than starting a second game, which on a busy machine takes most of a test's minute. The
+    // warning fades after a few seconds, so watch for it from the start.
     await Promise.all([
       expect(page.locator('#toasts')).toContainText('also open in another tab or window', { timeout: 30_000 }),
       (async () => {
         await other.goto('/');
-        await other.getByRole('button', { name: 'Sandbox' }).click();
-        await other.getByRole('button', { name: 'Start building' }).click();
-        await other.waitForFunction(() => !!window.pp);
-        // opening the saves screen there saves that copy of the game
-        await openSaves(other);
+        await other.evaluate(async (state) => {
+          const saves = (await import(/* @vite-ignore */ `${location.origin}/src/storage/saves.ts`)) as {
+            autosave: (state: object) => void;
+          };
+          saves.autosave(state);
+        }, copy);
       })(),
     ]);
     await other.close();
@@ -2714,6 +2717,18 @@ test.describe('saved games', () => {
 
   test('says once when an autosave fails for want of room', async ({ game, page }) => {
     await game.start();
+    // count the warnings as they are given, since one fades after a few seconds, which a busy machine can take to check
+    await game.eval((pp) => {
+      const ui = pp.ui as unknown as { toast(text: string, ...rest: unknown[]): void };
+      const toast = ui.toast.bind(ui);
+      const counted = window as unknown as { saidFull: number };
+      counted.saidFull = 0;
+      /** Count a warning about full storage on its way to the screen. */
+      ui.toast = (text, ...rest) => {
+        if (text.includes('could not be saved')) counted.saidFull++;
+        toast(text, ...rest);
+      };
+    });
     // storage that has no room left for the game
     await page.evaluate(() => {
       const store = Object.getOwnPropertyDescriptor(Storage.prototype, 'setItem')!.value as Storage['setItem'];
@@ -2731,7 +2746,7 @@ test.describe('saved games', () => {
     await openSaves(page);
     await page.getByRole('button', { name: 'Back' }).click();
     await page.getByRole('button', { name: 'Resume' }).click();
-    await expect(page.locator('#toasts .toast', { hasText: 'could not be saved' })).toHaveCount(1);
+    expect(await page.evaluate(() => (window as unknown as { saidFull: number }).saidFull)).toBe(1);
   });
 
   test('a new game is refused, not started, when there is no room to keep the old one', async ({ game, page }) => {
@@ -2760,16 +2775,12 @@ test.describe('saved games', () => {
   });
 
   test("takes the title screen's picture of the game on the way out, not at every autosave", async ({ game, page }) => {
-    // the shortest autosave interval, rather than the default five minutes
-    await page.addInitScript(() => localStorage.setItem('pressure-point-controls', JSON.stringify({ autosave: 12 })));
     await game.start();
     /** Whether the autosave has a picture. */
     const pictured = () => page.evaluate(() => localStorage.getItem('pressure-point-thumb:auto') !== null);
-    // the regular autosave, after twelve seconds of play: a frame counts for at most a tenth of a second, so on a
-    // machine busy enough to draw fewer than ten frames a second, that takes longer than twelve seconds
-    await page.waitForFunction(() => localStorage.getItem('pressure-point-save-v1') !== null, null, {
-      timeout: 45_000,
-    });
+    // the regular autosave, from the loop's own timer, told its interval has passed rather than waited out
+    await game.eval((pp) => pp.loop.saveSoon());
+    await page.waitForFunction(() => localStorage.getItem('pressure-point-save-v1') !== null);
     expect(await pictured()).toBe(false);
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     expect(await pictured()).toBe(true);

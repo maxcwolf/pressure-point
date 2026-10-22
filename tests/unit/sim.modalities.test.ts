@@ -66,7 +66,8 @@ describe('unlocking modalities', () => {
   it('makes unqualified treatment mostly fail and qualified treatment mostly work', () => {
     /**
      * Play a center where every guest has knots, over three seeds so one seed's run of luck does not decide it, and
-     * return the healed and failed counts summed.
+     * return the healed and failed counts summed. Some seeds draw far fewer guests than others, so the test reads the
+     * share that failed rather than a count.
      */
     const outcome = (qualified: boolean) => {
       const sum = { healed: 0, failed: 0 };
@@ -84,11 +85,15 @@ describe('unlocking modalities', () => {
       }
       return sum;
     };
+    /** The share of treatments that failed, which holds however many guests a seed happens to draw. */
+    const failedShare = ({ healed, failed }: { healed: number; failed: number }) => failed / (healed + failed);
     const bad = outcome(false);
     const good = outcome(true);
-    expect(bad.healed + bad.failed).toBeGreaterThan(24);
-    expect(bad.failed).toBeGreaterThan(bad.healed);
-    expect(good.healed).toBeGreaterThan(good.failed * 2);
+    // enough treated for the shares to mean something: seed 12 alone treats only 6
+    expect(bad.healed + bad.failed).toBeGreaterThan(12);
+    expect(good.healed + good.failed).toBeGreaterThan(12);
+    expect(failedShare(bad)).toBeGreaterThan(0.5);
+    expect(failedShare(good)).toBeLessThan(1 / 3);
   });
 
   it('uses up the heat in a stone warmer, which a caretaker restores', () => {

@@ -189,7 +189,7 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
         overlayPalette(ui.overlay),
       );
   }
-  runLoop({
+  const loop = runLoop({
     sim,
     view,
     ui,
@@ -245,6 +245,8 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
         return sim.world.building.bounds.y1;
       },
     };
-    Object.assign(window, { pp: { sim, view, tools, ui, state, data, geo: { itemDims, accessTile, wallSpotsOf } } });
+    Object.assign(window, {
+      pp: { sim, view, tools, ui, loop, state, data, geo: { itemDims, accessTile, wallSpotsOf } },
+    });
   }
 }
