@@ -36,7 +36,7 @@ import { guestById, say } from './chars';
 import { release } from './claims';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
-import { emit, toast } from './events';
+import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
 import { decide, leave } from './guests';
 import { goTo, halt } from './movement';
@@ -78,6 +78,13 @@ export function startRunning(ctx: SimContext, g: Guest) {
     'bad',
     { kind: 'guest', id: g.id },
     'feeling-bad-trip',
+  );
+  tipOnce(
+    ctx,
+    'runaway',
+    "One bad trip in ten runs. They freak out everyone they pass, and if they find the door the center's name suffers. Send someone from the pill at the top: a Shaman is quickest.",
+    'info',
+    { kind: 'guest', id: g.id },
   );
   emit(ctx, { type: 'sfx', name: 'yelp' });
   emit(ctx, { type: 'announce', text: at(RUNAWAY_LINES, g.id % RUNAWAY_LINES.length) });

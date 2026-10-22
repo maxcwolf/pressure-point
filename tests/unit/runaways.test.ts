@@ -142,6 +142,18 @@ describe('a really bad trip', () => {
     expect(advice(ctx)).toContain(`${g.name} is on a really bad trip`);
   });
 
+  it('explains itself the first time, and only the first time', () => {
+    const c = withRunner();
+    const tip = 'One bad trip in ten runs.';
+    expect(toasts(drainEvents(c.ctx)).join(' ')).toContain(tip);
+    const other = spawnGuest(c.ctx)!;
+    other.runaway = RUNAWAY_SECONDS;
+    startRunning(c.ctx, other);
+    const said = toasts(drainEvents(c.ctx)).join(' ');
+    expect(said).toContain(`${other.name} is having a really bad trip`);
+    expect(said).not.toContain(tip);
+  });
+
   it('runs about from spot to spot, faster than a walk, and stays consistent', () => {
     const c = withRunner();
     const from = { x: c.g.x, y: c.g.y };
