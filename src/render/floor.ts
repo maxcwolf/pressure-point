@@ -1,14 +1,15 @@
 // The floor: one texture painted from the tile grid, with each room's flooring, as chosen or its own, the corridor,
-// paving and road.
+// paving and road, and the open ground: a lawn, sand or snow, or a plaza's slabs with gravel lots for sale among them.
 
 import * as THREE from 'three';
 
-import { H, ROAD_Y, ROOMS, type RoomType } from '../core/data';
+import { centerOf, H, ROAD_Y, ROOMS, type RoomType } from '../core/data';
+import { plotAt } from '../core/land';
 import type { Sim } from '../core/sim/sim';
 import { must } from '../core/util';
 import { Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
 import { paintFloorTile } from './decor-paint';
-import { settingOf } from './setting';
+import { type Setting, settingOf } from './setting';
 import { hash } from './shared';
 
 /** How many texture pixels a tile gets: enough to stay crisp fully zoomed in, and the widest lot under 4096 across. */
@@ -100,6 +101,54 @@ function paintPattern(ctx: CanvasRenderingContext2D, type: RoomType, px: number,
   return true;
 }
 
+/**
+ * Paint a tile of a plaza's paving: slabs two tiles long, each row set half a slab along from the last, each slab its
+ * own shade, with a few pale flecks and a joint along its top and at its start.
+ */
+function paintPaving(ctx: CanvasRenderingContext2D, setting: Setting, px: number, py: number, x: number, y: number) {
+  const starts = (x + y) % 2 === 0;
+  const slab = starts ? x : x - 1;
+  ctx.fillStyle = setting.tiles[hash(slab, y) > 0.5 ? 0 : 1];
+  ctx.fillRect(px, py, TS, TS);
+  ctx.fillStyle = setting.fleck;
+  for (let i = 0; i < 5; i++)
+    ctx.fillRect(px + hash(x + i, y) * (TS - 3 * K), py + hash(x, y + i * 3) * (TS - 3 * K), 2 * K, 2 * K);
+  ctx.fillStyle = 'rgba(70,68,62,0.3)';
+  ctx.fillRect(px, py, TS, 1.5 * K);
+  if (starts) ctx.fillRect(px, py, 1.5 * K, TS);
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.fillRect(px, py + 1.5 * K, TS, K);
+  if (starts) ctx.fillRect(px + 1.5 * K, py + 1.5 * K, K, TS - 1.5 * K);
+}
+
+/**
+ * Paint a tile of an empty lot, land still for sale on a paved plaza: gravel, speckled light and dark, with a curb of
+ * pale stone along each edge where the lot ends.
+ */
+function paintLot(
+  ctx: CanvasRenderingContext2D,
+  shades: readonly [string, string],
+  px: number,
+  py: number,
+  x: number,
+  y: number,
+  /** Whether the tile beside this one, so far across and down, is in the same lot. */
+  same: (dx: number, dy: number) => boolean,
+) {
+  ctx.fillStyle = shades[hash(x, y) > 0.5 ? 0 : 1];
+  ctx.fillRect(px, py, TS, TS);
+  for (let i = 0; i < 14; i++) {
+    ctx.fillStyle = i % 2 ? 'rgba(90,70,45,0.35)' : 'rgba(255,250,235,0.45)';
+    ctx.fillRect(px + hash(x + i, y - i) * (TS - 2 * K), py + hash(x - i * 5, y + i) * (TS - 2 * K), 2 * K, 2 * K);
+  }
+  const c = 4 * K;
+  ctx.fillStyle = '#dedad1';
+  if (!same(0, -1)) ctx.fillRect(px, py, TS, c);
+  if (!same(0, 1)) ctx.fillRect(px, py + TS - c, TS, c);
+  if (!same(-1, 0)) ctx.fillRect(px, py, c, TS);
+  if (!same(1, 0)) ctx.fillRect(px + TS - c, py, c, TS);
+}
+
 export class Floor {
   private canvas = document.createElement('canvas');
   private texture: THREE.CanvasTexture;
@@ -130,6 +179,10 @@ export class Floor {
     const ctx = must(this.canvas.getContext('2d'), '2D canvas');
     const world = this.sim.world;
     const setting = settingOf(this.sim.s);
+    const plots = centerOf(this.sim.s).plots;
+    const { door } = world.building;
+    /** Whether a road tile is on the crossing a paved plaza has from the path to the door over the street. */
+    const crossing = (x: number) => setting.kind === 'paving' && x >= door[0] - 1 && x <= door[1] + 1;
     /** Lay a tile of grain over a tile at (px, py), a different one from its neighbors'. */
     const grain = (px: number, py: number, x: number, y: number) =>
       ctx.drawImage(must(this.grains[Math.floor(hash(x, y) * GRAINS) % GRAINS], 'grain'), px, py);
@@ -171,7 +224,11 @@ export class Floor {
         } else if (y >= ROAD_Y[0] && y <= ROAD_Y[1]) {
           ctx.fillStyle = '#5d646e';
           ctx.fillRect(px, py, TS, TS);
-          if (y === ROAD_Y[0] && x % 2 === 0) {
+          if (crossing(x)) {
+            // stripes running along the street, a pace apart, to walk across
+            ctx.fillStyle = '#f2efe6';
+            for (let b = 4 * K; b < TS - 4 * K; b += 16 * K) ctx.fillRect(px, py + b, TS, 8 * K);
+          } else if (y === ROAD_Y[0] && x % 2 === 0) {
             ctx.fillStyle = '#f2e9c9';
             ctx.fillRect(px + 8 * K, py + TS - 3 * K, TS - 16 * K, 6 * K);
           }
@@ -181,7 +238,11 @@ export class Floor {
           ctx.strokeStyle = 'rgba(90,80,60,0.2)';
           ctx.lineWidth = K;
           ctx.strokeRect(px + K / 2, py + K / 2, TS - K, TS - K);
-        } else {
+        } else if (setting.plots && plotAt(plots, x, y)) {
+          const lot = plotAt(plots, x, y);
+          paintLot(ctx, setting.plots, px, py, x, y, (dx, dy) => plotAt(plots, x + dx, y + dy) === lot);
+        } else if (setting.kind === 'paving') paintPaving(ctx, setting, px, py, x, y);
+        else {
           ctx.fillStyle = setting.tiles[hash(x, y) > 0.5 ? 0 : 1];
           ctx.fillRect(px, py, TS, TS);
           ctx.fillStyle = setting.fleck;
@@ -191,7 +252,7 @@ export class Floor {
       }
     }
     // welcome mat
-    const { door, front } = world.building;
+    const { front } = world.building;
     ctx.fillStyle = '#2fa8a0';
     ctx.fillRect(door[0] * TS + 10 * K, front * TS + 14 * K, door.length * TS - 20 * K, TS - 22 * K);
     ctx.fillStyle = '#fff8e8';

@@ -769,8 +769,8 @@ export interface CenterDef {
   calls?: { often: number; clients: readonly string[] };
   /** Snowed-in spells in winter, when nobody can get up the road. */
   snow?: Snowfall;
-  /** What surrounds the building: a park, the seaside, snowy mountains or apple orchards. */
-  scenery?: 'park' | 'seaside' | 'mountain' | 'orchard';
+  /** What surrounds the building: a park, the seaside, snowy mountains, apple orchards or a downtown office park. */
+  scenery?: 'park' | 'seaside' | 'mountain' | 'orchard' | 'downtown';
   /** The plots of land it sells next to the building, in the order they come up for sale. */
   plots: readonly PlotDef[];
   /** Treatments, rooms and items open from the start as though this many stars were already earned. */
