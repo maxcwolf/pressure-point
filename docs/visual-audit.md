@@ -84,7 +84,7 @@ Keep as they are: the bad-vibes cloud (readable and funny), the floating money t
 
 ### 5. Interface
 
-The HUD is consistent and charming, and its tooltips are better than the browser's. Three small things: the stats bar's date cell clips ("6°" is cut) at 1440 px; the bottom bar overlaps between 1240 and 1450 px (already in `known-issues.md`); and the tool hint is one long sentence of middle dots that would read faster as a row of chips (name, cost, keys, legend). The emoji in the buttons are covered by finding 1.
+The HUD is consistent and charming, and its tooltips are better than the browser's. Three small things: the stats bar's date cell clips ("6°" is cut) at 1440 px; the bottom bar overlaps between 1240 and 1450 px (already in `known-issues.md`); and the tool hint is one long sentence of middle dots that would read faster as a row of chips (name, cost, keys, legend). The emoji in the buttons are covered by finding 1. All three are done: below 1540 pixels the round buttons and the stats cells are a little smaller and below 1430 the date makes way, so the bottom bar fits in one row with the date whole at 1440 (a screenshot at 1300 checks every speed button is in view), and if a long balance still leaves no room the stats bar moves up a row rather than squeezing a cell; the hint is a row of chips, the name with the icon of the tool in hand, then the cost, each key, and a swatch for each color of square.
 
 ## Plan for parallel sessions
 

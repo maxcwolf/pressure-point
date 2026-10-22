@@ -15,12 +15,6 @@ When one of these is fixed, add a test that fails without the fix, as for any bu
 - **`makes unqualified treatment mostly fail` still fails on seed 12.** Since 16 October 2026 its guests are kept patient and well and the therapist has a Staff Room (`tests/unit/sim.modalities.test.ts`), so 14 to 17 knotted guests are treated on seeds 11 and 13 to 16, well past the 9 it needs. Seed 12 draws fewer guests and treats only 6. Counting a share rather than a number would make it hold on that seed too.
 - **CI timing since the faster test pipeline is unchecked.** The local runs dropped from minutes to about a minute (`0c8b7ef`), with 2 workers on CI against 4 locally. Check a GitHub Actions run to see whether CI got the same speedup, and whether 2 workers is still right there.
 
-## Interface
-
-- **The Sound Healer sits at chair height over the Singing Bowls' floor cushion.** Their seat at the bowls has no height of its own (`h` in its access in `src/core/data/items.ts`), so they sit as if on an invisible chair. The Shaman's seat at the Ceremony Mat has `h: -0.3`, which puts them on their cushion; the same would fix the Sound Healer, with the screenshots that show them redone.
-
-- **The bottom bar cuts off the last speed button** on windows 1240 to 1450 pixels wide. Below 1240 the round buttons shrink and everything fits, and above 1450 there is room, but in between the bar is wider than the window. Lowering the `max-width: 1240px` breakpoint in the stylesheet to about 1450, or letting the bar wrap, would fix it. Add a screenshot test at 1300 pixels.
-
 ## Saves
 
 - **Versions 0.5.0 and earlier crash on a save from a newer version.** The current game refuses a newer save cleanly, but those old builds have no such check, so a save imported into one, or an autosave left when going back to one, crashes it at the title screen. This can't be fixed in a new build. It is only worth a line in the release notes if someone goes back to an old version.

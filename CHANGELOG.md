@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Small fixes.** The bottom bar fits windows 1240 to 1540 pixels wide and shows the date whole at 1440, the tool hint reads as a row of chips, and the sign out front reads from behind.
+
 ## v0.31.0
 
 ### A center that tells you where it stands
