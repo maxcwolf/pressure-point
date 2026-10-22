@@ -2202,8 +2202,10 @@ export class Bot {
       }
       const consults = this.rooms('consult').length;
       // a building at its limit keeps the line from growing to show it: guests turned away last month count toward
-      // another room too, while two or more wait for each consultation
-      const full = (this.s.months.at(-1)?.turnedAway ?? 0) >= 3 && this.waiting('consultant') >= consults * 2;
+      // another room too, while two or more wait for each consultation, or while the consultations keep fewer stations
+      // in guests than are staffed, as the Guests tab says
+      const turnedAway = (this.s.months.at(-1)?.turnedAway ?? 0) >= 3;
+      const full = turnedAway && (this.waiting('consultant') >= consults * 2 || this.consultBound());
       if ((this.waiting('consultant') > consults * 4 || full) && this.afford(ROOMS.consult.cost, reserve * 0.5, true)) {
         if (!this.sim.hasRoom('assess') && s.money > ROOMS.assess.cost + reserve) this.buildRoom('assess');
         else this.buildRoom('consult');
@@ -2264,15 +2266,23 @@ export class Bot {
     const rooms = Math.max(1, this.rooms(def.room).length - (this.benched[def.room] ?? 0));
     // guests who found the center full last month would have come for this discipline by its share of treatments
     const treated = DISCIPLINE_ORDER.reduce((a, x) => a + (this.seen[x]?.treated ?? 0), 0);
-    const full = (this.s.months.at(-1)?.turnedAway ?? 0) * (treated ? m.treated / treated : 0);
-    // and a staffed station more draws guests more often in all, and lets more in at once
+    // and a staffed station more draws guests more often in all, and lets more in at once: unless the consultations
+    // already keep fewer stations in guests than are staffed, when it draws and lets in nobody
+    const fed = !this.consultBound();
+    const full = fed ? (this.s.months.at(-1)?.turnedAway ?? 0) * (treated ? m.treated / treated : 0) : 0;
     const last = this.s.months.at(-1);
     const pace = this.sim.arrivalPace();
-    const drawn = last ? ((last.arrived + (last.turnedAway ?? 0)) * CAPACITY_ARRIVALS.each) / pace.staffed : 0;
+    const drawn = last && fed ? ((last.arrived + (last.turnedAway ?? 0)) * CAPACITY_ARRIVALS.each) / pace.staffed : 0;
     const guests = (m.lost + full + drawn + Math.max(0, m.line - rooms)) * this.ahead(3);
     const rate = m.treated >= 3 ? m.healed / m.treated : 0.6;
     const room = this.benched[def.room] ? 0 : ROOMS[def.room].cost / this.style.payback;
     return guests * rate * this.feeFor(d) - this.salaryFor(def.role) - room;
+  }
+
+  /** Whether the Consultation Rooms keep fewer treatment stations in guests than have someone staffed to work them. */
+  private consultBound(): boolean {
+    const c = this.sim.arrivalPace().capacity;
+    return c.fed < c.stations;
   }
 
   /** What the bot would expect to pay a new practitioner in a role: the cheapest applicant, or the cheapest on staff. */
