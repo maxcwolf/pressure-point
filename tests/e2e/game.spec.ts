@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import type { Page } from '@playwright/test';
 
-import { LOAN_MAX } from '../../src/core/data/rules';
+import { DAY_SECONDS, LOAN_MAX } from '../../src/core/data/rules';
 import type { Layout } from '../../src/core/room-layout';
 import { expect, type Game, test } from './fixtures';
 
@@ -1274,6 +1274,10 @@ test.describe('leaving a game', () => {
     game,
     page,
   }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await game.eval((pp) => (pp.state.speed = 0));
@@ -1446,6 +1450,8 @@ test.describe('acupuncture and settings', () => {
   });
 
   test('a saved game keeps its own choice', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await pauseMenu(page, 'Settings');
     await page.getByRole('switch', { name: 'Acupuncture' }).click();
@@ -1613,6 +1619,8 @@ test.describe('the Items menu', () => {
 
 test.describe('more land', () => {
   test('is bought from the world: pointed at with the Expand tool, clicked, and confirmed', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.eval((pp) => {
       pp.state.money = 100000;
@@ -2045,6 +2053,8 @@ test.describe('stats', () => {
   });
 
   test('the Stats menu charts chosen figures, and remembers the choice', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await game.fastForward(200);
@@ -2195,6 +2205,8 @@ test.describe('the campaign', () => {
 
 test.describe('the sandbox', () => {
   test('starts with the money, treatments and unlocks chosen for it', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
     await page.goto('/');
     await page.getByRole('button', { name: 'Sandbox' }).click();
@@ -2491,11 +2503,13 @@ test.describe('a payday the bank cannot cover', () => {
     expect(await game.eval((pp) => pp.state.bankrupt)).toBe(false);
     // in the red past what the bank will lend, with no takings on the books, so the bank gives it ten days, and then calls it in
     expect(await game.eval((pp) => pp.state.insolvency)).not.toBeNull();
-    await game.eval((pp) => {
+    // the bank looks as the next day begins, up to a day of play away: played here, not left to the running game, which
+    // a busy machine runs too slowly to get there before the dialog is looked for
+    await game.eval((pp, day) => {
       pp.state.day = pp.state.insolvency!.until;
       pp.state.speed = 1;
-      for (let i = 0; i < 20 && !pp.state.bankrupt; i++) pp.sim.tick(0.1);
-    });
+      for (let i = 0; i < (day + 1) * 10 && !pp.state.bankrupt; i++) pp.sim.tick(0.1);
+    }, DAY_SECONDS);
     await game.settle();
     await expect(modal.locator('h2')).toContainText('Bankrupt');
     expect(await game.eval((pp) => pp.state.bankrupt)).toBe(true);
@@ -2640,6 +2654,8 @@ test.describe('saved games', () => {
     }));
 
   test('the autosave brings a game back after a reload', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await game.fastForward(120);
@@ -2655,6 +2671,8 @@ test.describe('saved games', () => {
   });
 
   test('a named save can be made, then loaded from the title screen', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await game.fastForward(60);
@@ -2750,6 +2768,8 @@ test.describe('saved games', () => {
   });
 
   test('a new game is refused, not started, when there is no room to keep the old one', async ({ game, page }) => {
+    // starts a game three times, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.eval((pp) => (pp.state.money = 12345));
     await page.locator('#sys').locator('[data-tip="Menu"]').click();
@@ -2797,6 +2817,8 @@ test.describe('saved games', () => {
   });
 
   test('a save can be exported to a file and imported again', async ({ game, page }, testInfo) => {
+    // starts a game three times, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await game.fastForward(30);
@@ -2845,6 +2867,8 @@ test.describe('saved games', () => {
   });
 
   test('starting a new game keeps the old one as Previous game', async ({ game, page }) => {
+    // starts a game three times, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await page.locator('#sys').locator('[data-tip="Menu"]').click();
