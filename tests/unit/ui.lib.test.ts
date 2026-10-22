@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { placeHint, resizeHint } from '../../src/app/tools/hints';
 import {
   ITEM_MENU,
   ITEMS,
@@ -30,6 +31,7 @@ import { cx } from '../../src/ui/lib/cx';
 import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
 import { mustAnswer, pendingDialog, raise } from '../../src/ui/lib/dialogs';
 import { offerTimeLeft, timeLeftLabel, wholeDaysLeft } from '../../src/ui/lib/emergency';
+import { hintChips } from '../../src/ui/lib/hint-chips';
 import { pleasantness, quietness, upkeepShown } from '../../src/ui/lib/overlays';
 import { placedFlags } from '../../src/ui/lib/plan';
 import { courseName, guestStatus, promotionNote, slotNote, staffStatus } from '../../src/ui/lib/status';
@@ -443,5 +445,31 @@ describe('the weather beside the date', () => {
 
   it('says nothing with the weather switched off', () => {
     expect(weatherNote(28, false)).toBeNull();
+  });
+});
+
+describe('the tool hint as chips', () => {
+  it('leads with the name, then the cost, the keys and who the squares are for', () => {
+    expect(hintChips(placeHint('massage_table'))).toEqual([
+      { kind: 'name', text: 'Massage Table' },
+      { kind: 'cost', text: '$0 each' },
+      { kind: 'step', text: 'click to place' },
+      { kind: 'key', key: 'R', text: 'rotates' },
+      { kind: 'key', key: 'Esc', text: 'when done' },
+      { kind: 'legend', squares: 'staff', text: 'Massage Therapist' },
+      { kind: 'legend', squares: 'guest', text: 'guests' },
+    ]);
+  });
+
+  it('reads a price wherever it comes in a phrase', () => {
+    const chips = hintChips(resizeHint({ x: 0, y: 0, w: 3, h: 4 }, { x: 0, y: 0, w: 4, h: 4 }, 200));
+    expect(chips.map((c) => c.kind)).toEqual(['name', 'cost', 'step']);
+    expect(chips[1]?.text).toBe('costs $200');
+  });
+
+  it('makes one chip of a hint with no dots in it', () => {
+    expect(hintChips('Now click a wall to place the door')).toEqual([
+      { kind: 'name', text: 'Now click a wall to place the door' },
+    ]);
   });
 });
