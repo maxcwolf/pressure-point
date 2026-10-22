@@ -21,7 +21,9 @@ const IDS = [
   ...CONDITIONS.map((c) => `guest:${c.id}`),
   ...ROLE_ORDER.map((role) => `staff:${role}`),
   'staff:amanda',
-  ...['long', 'bob', 'ponytail', 'curls', 'short', 'bald', 'moustache', 'beard'].map((look) => `staff:look-${look}`),
+  ...['long', 'bob', 'ponytail', 'curls', 'short', 'bald', 'moustache', 'beard', 'slight', 'stocky'].map(
+    (look) => `staff:look-${look}`,
+  ),
   'visitor:vip',
   'visitor:inspector',
   // someone sitting at each kind of seat, once for each who sits there

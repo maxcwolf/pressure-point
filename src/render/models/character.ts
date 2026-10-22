@@ -69,6 +69,8 @@ export interface CharRig {
   visual: Visual | undefined;
   cured: boolean;
   scale: number;
+  /** How much wider and deeper than average their build makes them, which their head is spared. */
+  wide: number;
   bubbleKey: string;
 }
 
@@ -82,6 +84,9 @@ export interface Joints {
 
 const pickMat = new THREE.MeshBasicMaterial({ visible: false });
 
+/** How much wider and deeper each build is than average: slight, average and stocky. */
+const BUILD_WIDTH = [0.9, 1, 1.13];
+
 /** What a visitor wears: a VIP's dark suit, or the inspector's trench coat. */
 const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: number }>> = {
   vip: { top: 0x2b2f3a, bottom: 0x23262e },
@@ -92,7 +97,9 @@ const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: numbe
 export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor?: VisitorKind): CharRig {
   const group = new THREE.Group();
   const body = new THREE.Group();
-  body.scale.setScalar(look.scale);
+  // a build widens the body and everything on it, but not the head, so hats, glasses and props on it still fit
+  const wide = BUILD_WIDTH[look.build] ?? 1;
+  body.scale.set(look.scale * wide, look.scale, look.scale * wide);
   group.add(body);
   const skin = mat(look.skin, 0.65);
   const clothes = visitor && VISITOR_CLOTHES[visitor];
@@ -158,6 +165,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
 
   const head = new THREE.Group();
   head.position.set(0, 0.64, 0);
+  head.scale.set(1 / wide, 1, 1 / wide);
   torso.add(head);
   const hair = mat(look.hair, 0.85);
   // a hat needs short hair under it, or a woman's tied back low
@@ -208,6 +216,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     visual,
     cured: false,
     scale: look.scale,
+    wide,
     bubbleKey: '',
   };
   rig.pick.position.y = 0.7;
@@ -618,7 +627,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.props.push(pot);
   } else if (visual === 'bighead') {
     // a head swollen to half as big again, and a smug little crown on it
-    head.scale.setScalar(1.45);
+    head.scale.set(1.45 / wide, 1.45, 1.45 / wide);
     rig.props.push(put(head, cyl(0.1, 0.08, 0.07, 6), mat(0xd9a93a, 0.3, 0.2), 0, 0.24, 0));
   } else if (visual === 'compass') {
     // a compass floating over their head, its needle spinning round and never settling
@@ -654,6 +663,6 @@ export function cureRig(rig: CharRig, look: Look) {
   if (rig.cured) return;
   rig.cured = true;
   for (const o of rig.props) o.visible = false;
-  rig.head.scale.setScalar(1);
+  rig.head.scale.set(1 / rig.wide, 1, 1 / rig.wide);
   rig.headMesh.material = mat(look.skin, 0.65);
 }

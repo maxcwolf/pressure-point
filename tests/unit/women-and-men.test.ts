@@ -1,5 +1,6 @@
 // Women and men: everyone is one or the other, and their first name, hair and facial hair follow it. Applicants for
-// the desk and the treatment tables are mostly women, caretakers mostly men, and guests half and half.
+// the desk and the treatment tables are mostly women, caretakers mostly men, and guests half and half. And the rest of
+// a look: a build.
 import { describe, expect, it } from 'vitest';
 
 import { AMANDA, CAMEOS, MEN_NAMES, ROLE_ORDER, WOMEN_APPLY, WOMEN_NAMES } from '../../src/core/data';
@@ -10,11 +11,12 @@ import {
   MEN_HAIR,
   randomLook,
   randomName,
+  settleLook,
   settleSex,
   sexOfName,
   WOMEN_HAIR,
 } from '../../src/core/people';
-import { setSeed, stream } from '../../src/core/random';
+import { random, setSeed, stream } from '../../src/core/random';
 import { createContext } from '../../src/core/sim/context';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { newGame } from '../../src/core/state/game';
@@ -170,5 +172,53 @@ describe('a save from before women and men were told apart', () => {
       expect(hairFor(p.look.sex), p.name).toContain(p.look.hairStyle);
       expect(p.look.beard).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+describe('the rest of a look', () => {
+  /** Many looks, women's and men's. */
+  const many = () => {
+    const r = stream(11);
+    return Array.from({ length: 4000 }, (_, i) => randomLook(r, i % 2 ? 'female' : 'male'));
+  };
+
+  it('comes slight, average or stocky, average the most', () => {
+    const looks = many();
+    expect(new Set(looks.map((l) => l.build))).toEqual(new Set([0, 1, 2]));
+    expect(share(looks, (l) => l.build === 1)).toBeCloseTo(0.5, 1);
+    expect(share(looks, (l) => l.build === 0)).toBeCloseTo(0.25, 1);
+  });
+
+  it("takes no more of the game's random numbers than a look ever did", () => {
+    for (const sex of ['female', 'male'] as const) {
+      const r = stream(12);
+      const look = randomLook(r, sex);
+      const before = stream(12);
+      // skin, hair, style, top, bottom and height, and for a man whether he has a moustache or a beard, and which
+      const draws = 6 + (sex === 'male' ? (look.beard ? 2 : 1) : 0);
+      for (let i = 0; i < draws; i++) random(before);
+      expect(r.rng).toBe(before.rng);
+    }
+  });
+
+  it('is settled from the id for a save from before, and left alone once it has one', () => {
+    const builds = [0, 1, 2, 3].map((id) => {
+      const p = { id, look: {} as Partial<Look> };
+      settleLook(p);
+      return p.look.build;
+    });
+    expect(builds).toEqual([1, 0, 1, 2]);
+    const stocky = { id: 1, look: { build: 2 } as Partial<Look> };
+    settleLook(stocky);
+    expect(stocky.look.build).toBe(2);
+  });
+
+  it('settles a regular kept from before as well', () => {
+    const { s } = openCenter(1);
+    const look = { ...s.staff[0]!.look } as Partial<Look>;
+    delete look.build;
+    s.regulars = [{ id: 5, name: 'Some One', look: look as Look, visits: 1, loyalty: 50, due: 3 }];
+    upgradeSave(s);
+    expect(s.regulars[0]!.look.build).toBe(0);
   });
 });

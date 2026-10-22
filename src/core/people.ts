@@ -59,18 +59,39 @@ export const hairFor = (sex: Sex) => (sex === 'female' ? WOMEN_HAIR : MEN_HAIR);
 /** A woman, with this chance, or else a man. */
 export const rollSex = (r: Rng, womenShare: number): Sex => (random(r) < womenShare ? 'female' : 'male');
 
+/** A build from a number's lowest two bits: slight, average twice over, or stocky. */
+const buildOf = (n: number) => [0, 1, 1, 2][n & 3] ?? 1;
+
+/**
+ * What a look takes from the spare bits of the number its height was drawn from: its build. The height uses the top
+ * bits, and these the bottom ones, so making someone up takes no more of the game's random numbers than it did, and a
+ * seeded game runs as it always has.
+ */
+function lookBits(height: number) {
+  const bits = Math.floor(height * 2 ** 32) >>> 0;
+  // slight, average twice over, or stocky
+  return { build: buildOf(bits) };
+}
+
 /** A random appearance for a woman or a man: half of men have a moustache or a beard. */
 export function randomLook(r: Rng, sex: Sex): Look {
-  return {
-    skin: pick(r, SKINS),
-    hair: pick(r, HAIRS),
-    hairStyle: pick(r, hairFor(sex)),
-    top: pick(r, TOPS),
-    bottom: pick(r, BOTTOMS),
-    scale: rnd(r, 0.92, 1.08),
-    sex,
-    beard: sex === 'male' && random(r) < 0.5 ? (random(r) < 0.4 ? 1 : 2) : 0,
-  };
+  // drawn in the order they always were, so the game's random numbers fall the same way
+  const skin = pick(r, SKINS);
+  const hair = pick(r, HAIRS);
+  const hairStyle = pick(r, hairFor(sex));
+  const top = pick(r, TOPS);
+  const bottom = pick(r, BOTTOMS);
+  const height = random(r);
+  const beard = sex === 'male' && random(r) < 0.5 ? (random(r) < 0.4 ? 1 : 2) : 0;
+  return { skin, hair, hairStyle, top, bottom, scale: 0.92 + height * (1.08 - 0.92), sex, beard, ...lookBits(height) };
+}
+
+/**
+ * Give a look from before builds were told apart the fields it lacks, from the person's id rather than the game's
+ * random numbers, so loading a save changes nothing about what happens next.
+ */
+export function settleLook(person: { id: number; look: Partial<Look> }) {
+  person.look.build ??= [1, 0, 1, 2][person.id % 4] ?? 1;
 }
 
 const CAMEOS_BY_SEX: Readonly<Record<Sex, readonly string[]>> = {
@@ -101,7 +122,11 @@ export function sexOfName(name: string): Sex | undefined {
  * Jablonsky, whose save may be older than either, and the mohawk is taken from anyone else. Choices come from the id rather than the game's random
  * numbers, so loading a save changes nothing about what happens next.
  */
-export function settleSex(person: { id: number; name: string; look: Partial<Look> & Omit<Look, 'sex' | 'beard'> }) {
+export function settleSex(person: {
+  id: number;
+  name: string;
+  look: Partial<Look> & Omit<Look, 'sex' | 'beard' | 'build'>;
+}) {
   const { look } = person;
   look.beard ??= 0;
   look.sex ??=

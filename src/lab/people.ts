@@ -13,6 +13,7 @@ export const LAB_LOOK: Look = {
   scale: 1,
   sex: 'female',
   beard: 0,
+  build: 1,
 };
 
 /** What every person has, standing still at the middle of the stage and facing the front. */
