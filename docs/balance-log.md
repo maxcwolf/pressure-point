@@ -6,6 +6,48 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 21 October 2026, late: machines as a station more
+
+Measured with `yarn balance` on `integrate-audit` at `e02faa5` with the bot changed as below, every campaign center, seeds 1 to 6, four years a game: `BOT_ON=machines` against the good bot without the flag. Year 4 is months 37 to 48, over the games not lost. No game rule or price changed. The bot without the flag plays exactly as before: the default `yarn balance` (seeds 1 to 3) matches `e02faa5` on all 15 runs, star days and every month.
+
+### 38. The bot builds a machine room beside the tables, not in place of one
+
+**Found:** entry 37. With `BOT_ON=machines` the bot made room for a machine by knocking down a room it had two or more of, nearly always a Massage Suite, so the machine took a table's place and the center kept the same stations. In 14 of 30 games it knocked a room down and still could not fit the machine.
+
+**Done** (`tests/balance/bot.ts`, `tests/balance/playtest.balance.ts`):
+
+- The machine room goes on free floor, or on land the bot buys when it does not fit, the same way `buildRoom` places any room. When nothing fits, the machine is skipped that month and tried again later. The bot no longer calls `makeSpace` for a machine, nor for the Training Room its operator needs.
+- `hireToFill` counts a machine room as one more room of its discipline, so the chair gets its own practitioner and no table is left empty.
+- `MachineLog` records `site` (`floor`, `expansion` or `skipped`) and `skipped`, the months it was put off. A skipped machine is logged from the day it was first wanted, with nothing earned or spent. The game summary line says which.
+- A unit test (`tests/unit/bot-machines.test.ts`): on a Willow Lane where every plot is bought and every tile holds a staffed Massage Suite, the bot builds no machine, keeps all ten tables, and logs the Kneadmaster as skipped. The old bot knocks one down in the same test.
+- Tried and not kept: keeping space for the machine room in `growOnProfit` from the star before it unlocks, as the bot does for a discipline still to come. It built no more machines, because the floor is already full by then (below).
+
+**Result** (entry 37's figures, with the bot knocking rooms down, → now):
+
+| Machine (center)           | Built in     | Healed  | Earned while a guest is inside | Room and running costs | Paid back on its own books        |
+| -------------------------- | ------------ | ------- | ------------------------------ | ---------------------- | --------------------------------- |
+| Kneadmaster (Willow Lane)  | 5 → 1, floor | 69 → 74 | $190.8k → $204.2k              | $67.5k → $70.5k        | 5 of 5, day 510–880 → 1 of 1, 601 |
+| Pin Press (The Exchange)   | 3 → 0        | 24 → –  | $69.8k → –                     | $88.7k → –             | 1 of 3, day 1282 → –              |
+| Aura Wash (The Boardwalk)  | 2 → 0        | 19 → –  | $61.6k → –                     | $104.0k → –            | none → –                          |
+| Great Alphorn (High Pines) | 0 → 0        | –       | –                              | –                      | –                                 |
+| Cider Press (The Orchard)  | 1 → 0        | 7 → –   | $38.0k → –                     | $172.0k → –            | none → –                          |
+
+Year-4 profit a month, with the flag against without: Willow Lane $29.6k against $31.4k, The Exchange $25.9k against $25.9k, The Boardwalk $24.3k against $24.3k, High Pines $26.8k against $26.8k, The Orchard $53.1k against $53.1k (five games: seed 5 is lost on day 100 both ways, before any machine). The one game with a machine, Willow Lane seed 3, makes $29.1k against $37.2k, $8.1k a month less. Willow Lane seed 1 makes $2.7k less with no machine built: the plot the bot bought for the Kneadmaster on day 375 went to its own tables instead. Every other game is the same to the dollar.
+
+**Skipped:** 28 of 29 machines were never built (seed 5 at The Orchard never got far enough to want one). Every one was skipped because nothing fitted:
+
+- In every skipped game, the bot's last table that would not fit came 3 to 23 months before it wanted the machine (day 61 to 265, against day 287 to 926). The good bot fills its building with treatment rooms during the first star.
+- In 23 of the 28, every plot was already bought when the machine came due.
+- In the other 5, the bot bought the last plot for the machine on the day it wanted it, and still could not use it: Willow Lane seed 1 (the back room), The Exchange seed 1 (the annex), The Boardwalk seeds 2 and 6 (the ice-cream parlor) and High Pines seed 4 (the woodshed). At The Exchange and The Boardwalk, the bot's other rooms took the plot first: another Massage Suite and Acupuncture Room within two weeks, and a Reiki Room the goal asked for. At Willow Lane and High Pines, the plot had no spot the room fitted.
+- Machine rooms are bigger than a table's: 4×5 for the Pin Press and the Cider Press, 4×6 for the Aura Wash and 3×7 for the Great Alphorn, where the bot's treatment rooms are 4×4.
+
+**Read:**
+
+- **Do the machines make their center richer in the bot's hands?** No. Only one was built, and its center lost $8.1k a month.
+- **The Kneadmaster has a demand problem, not a price or upkeep one.** It pays back on its own books by day 601: $204.2k from 74 guests, about $2.8k each, against its $15,000 room and $1,500 a month to run, and it never overloaded. But it heals about 2 guests a month, where one of the same center's Massage Suites heals 6 or 7. Its Chair-Shaped and Mall Back guests come only once the room is built, and they come from the same arrivals as everyone else. The chair counts as one station, so it draws no more guests than the Massage Suite the bot builds on that spot the next day without the flag (2.67 to 2.92 staffed stations a month on average, with it or without). Most of the time the chair is empty. The center heals 15.8 guests a month in year 4 against 18.3, waits are 8.4 days against 6.3, and the running cost comes on top. Its price ($15,000) and upkeep ($1,500 a month, less than one guest's fee) are not what loses the money. A machine whose conditions are this rare costs the center the table it stands in for.
+- **The Pin Press, the Aura Wash, the Great Alphorn and the Cider Press were never built, so this pass cannot say whether their prices or upkeep are right.** Entry 37's figures for them come from games where they replaced a table: on its own books, the Pin Press paid back once in three games and the others never. Their running costs are $2,000 to $4,000 a month.
+- **What is left is a space problem in the game, not in the bot.** Every machine unlocks at the second star, and by then every center's building is full and every plot is bought. So the only way a player can have a machine is the one entry 37 measured: knock a table down for it. For the owner to decide: whether the machine star should come with land or floor to put the machine on, or whether a machine should be worth a table's place.
+
 ## 21 October 2026, night: demand that grows with the building
 
 Measured with `yarn balance` on the merged `integrate-audit` at `e15f8ba` (before) and `f8cbca1` (after), every campaign center, seeds 1 to 6, four years a game, with `BOT_STYLE=good`, `hoarder` and `grower` and `BOT=baseline`; The Orchard also over seeds 1 to 12 for the good bot and the baseline. The "before" is the merged tree, not entries 34 to 36's own before-runs. Taken again after the treatment machines were merged (`32c41cf` before, `3e16096` after), every number below came out the same to the dollar: the machines are built only with `BOT_ON=machines`. Year 4 is months 37 to 48 and "profit a month" months 13 to 48, over the games not lost; a mean star month counts a star never earned as month 48; waits are the month logs' average wait from month 13 on.
