@@ -201,7 +201,7 @@ function Scene() {
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
       }
-      for (const p of people) poseChar(p.rig, p.c, t, 1, null);
+      for (const p of people) poseChar(p.rig, p.c, t, 1, { style: null });
       placeSun(sun, orbit.target.clone().setY(0));
       renderer.render(scene, camera);
     };

@@ -3,9 +3,10 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { POOR_CONDITION } from '../../src/core/data';
+import { ITEMS, POOR_CONDITION } from '../../src/core/data';
 import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
+import { actOf } from '../../src/render/acts';
 import { buildCharacter, type CharRig } from '../../src/render/models/character';
 import {
   expressionOf,
@@ -41,7 +42,7 @@ beforeAll(() => {
 
 /** Pose someone straight into their pose at a moment. */
 function pose(rig: CharRig, c: Char, t = 0) {
-  poseChar(rig, c, t, 1, null);
+  poseChar(rig, c, t, 1, { style: null });
   rig.group.updateMatrixWorld(true);
 }
 
@@ -119,7 +120,7 @@ describe('the patience a waiting guest shows', () => {
 
   it('turns a fed-up guest toward the door', () => {
     const rig = buildCharacter(LAB_LOOK);
-    poseChar(rig, waiting(10), 0, 1, null, { x: 5, y: 0 });
+    poseChar(rig, waiting(10), 0, 1, { style: null, door: { x: 5, y: 0 } });
     // the door is off to their left, and they turn that way
     expect(rig.body.rotation.y).toBeGreaterThan(0.5);
   });
@@ -238,11 +239,46 @@ describe('the stride', () => {
   it('leans into a turn, the head leading', () => {
     const straight = buildCharacter(LAB_LOOK);
     const turning = buildCharacter(LAB_LOOK);
-    for (const rig of [straight, turning]) poseChar(rig, walker(0, 0), 0, 0.1, null);
-    poseChar(straight, walker(0, 0), 0.1, 0.1, null);
+    for (const rig of [straight, turning]) poseChar(rig, walker(0, 0), 0, 0.1, { style: null });
+    poseChar(straight, walker(0, 0), 0.1, 0.1, { style: null });
     // turning to the left, a radian in a tenth of a second
-    poseChar(turning, { ...walker(0, 0), facing: 1 }, 0.1, 0.1, null);
+    poseChar(turning, { ...walker(0, 0), facing: 1 }, 0.1, 0.1, { style: null });
     expect(turning.torso.rotation.z).toBeLessThan(straight.torso.rotation.z - 0.1);
     expect(turning.head.rotation.z).toBeLessThan(straight.head.rotation.z - 0.05);
+  });
+});
+
+describe('what someone is doing at an item', () => {
+  it('is a guest having a drink, a snack or a game at a machine, or shopping at a counter', () => {
+    const g = demoGuest(LAB_LOOK, 'stiff_neck' as never);
+    for (const need of ['drink', 'eat', 'play'] as const)
+      expect(actOf({ ...g, state: 'need', needKind: need, busy: true }, ITEMS.snack_machine)).toBe(need);
+    expect(actOf({ ...g, state: 'need', needKind: 'toilet' })).toBeUndefined();
+    expect(actOf({ ...g, state: 'served' }, ITEMS.shop_counter)).toBe('shop');
+    expect(actOf({ ...g, state: 'called' }, ITEMS.shop_counter)).toBe('shop');
+    expect(actOf({ ...g, state: 'served' }, ITEMS.reception_desk)).toBeUndefined();
+    expect(actOf({ ...g, state: 'waiting' }, ITEMS.shop_counter)).toBeUndefined();
+  });
+
+  it('is a receptionist checking someone in', () => {
+    const st = demoStaff(LAB_LOOK, 'receptionist');
+    expect(actOf({ ...st, busy: true }, ITEMS.reception_desk)).toBe('checkin');
+    expect(actOf(st, ITEMS.reception_desk)).toBeUndefined();
+    expect(actOf({ ...demoStaff(LAB_LOOK, 'therapist'), busy: true })).toBeUndefined();
+  });
+
+  it('is a member of staff on a chore, or getting a drink or a snack', () => {
+    const st = { ...demoStaff(LAB_LOOK, 'caretaker'), state: 'doingJob' as const, busy: true };
+    /** What they do on a job of a kind. */
+    const on = (kind: NonNullable<typeof st.job>['kind']) => actOf({ ...st, job: { kind, id: 1 } });
+    expect((['litter', 'clean', 'launder'] as const).map(on)).toEqual(['litter', 'litter', 'litter']);
+    expect(on('water')).toBe('water');
+    expect(on('repair')).toBe('repair');
+    expect(on('install')).toBe('repair');
+    expect(on('refresh')).toBe('drink');
+    expect(actOf({ ...st, job: { kind: 'refresh', id: 1 }, hunger: 90, thirst: 10 })).toBe('eat');
+    for (const kind of ['smudge', 'soul', 'ward', 'calm'] as const) expect(on(kind)).toBeUndefined();
+    // on the way there, not yet
+    expect(actOf({ ...st, state: 'toJob' as const, job: { kind: 'litter', id: 1 } })).toBeUndefined();
   });
 });

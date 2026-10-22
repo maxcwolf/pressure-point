@@ -263,7 +263,7 @@ function posePerson(rig: CharRig, c: Char, st: PersonState, t: number, dt: numbe
   c.bubble = st.bubble;
   c.bubbleT = st.bubble ? 1 : 0;
   if (c.pose === 'walk') walkOnTheSpot(rig, t, WALK_PACE);
-  poseChar(rig, c, t, dt, style, LAB_DOOR);
+  poseChar(rig, c, t, dt, { style, door: LAB_DOOR });
 }
 
 /** Set a guest waiting with their patience showing a mood, or being seen to and content. */
@@ -374,7 +374,7 @@ function seatedSpecimen(type: ItemType, i: number): Specimen {
         root,
         controls: [],
         /** Seat them. */
-        animate: (t, dt) => poseChar(rig, c, t, dt, null),
+        animate: (t, dt) => poseChar(rig, c, t, dt, { style: null }),
       };
     },
   };
@@ -476,7 +476,7 @@ function machineSpecimen(type: ItemType): Specimen {
           applyGag(model, frame, t);
           if (!guest) return;
           guest.c.outcome = stage === 'outro' && st.healed ? 'healed' : '';
-          poseChar(guest.rig, guest.c, t, dt, null);
+          poseChar(guest.rig, guest.c, t, dt, { style: null });
           // the guest is only inside while there is a session, or just after it
           guest.rig.group.visible = stage === 'running' || stage === 'outro';
           if (guest.rig.group.visible) applyGuestGag(guest.rig, stage === 'running' ? frame.guest : {}, 0);
@@ -563,7 +563,7 @@ function moodSpecimen(mood: Mood, label: string, seated: boolean): Specimen {
         root.add(buildItem('bench', {}));
       }
       /** Pose them, turning toward the lab's door if fed up. */
-      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null, LAB_DOOR);
+      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, { style: null, door: LAB_DOOR });
       return { root, controls: [], animate };
     },
   };
@@ -584,7 +584,7 @@ function runawaySpecimen(): Specimen {
       /** Pose them, running on the spot as fast as a runner goes. */
       const animate = (t: number, dt: number) => {
         walkOnTheSpot(rig, t, RUNAWAY_SPEED);
-        poseChar(rig, c, t, dt, null);
+        poseChar(rig, c, t, dt, { style: null });
       };
       return { root: rig.group, controls: [], animate };
     },
@@ -618,7 +618,7 @@ function faceSpecimen([key, name]: (typeof FACES)[number]): Specimen {
       const c = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
       feel(c, key);
       /** Pose them. */
-      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null);
+      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, { style: null });
       return { root: rig.group, controls: [], animate };
     },
   };
@@ -641,7 +641,7 @@ function idleSpecimen(act: IdleAct, label: string): Specimen {
         /** Keep them in the middle of the act. */
         animate(t, dt) {
           rig.idleSince = t - idleMoment(c.id, act);
-          poseChar(rig, c, t, dt, null);
+          poseChar(rig, c, t, dt, { style: null });
         },
       };
     },
@@ -924,6 +924,6 @@ export function scalePerson(): Model {
   const rig = buildCharacter(LAB_LOOK, 'receptionist');
   const c = demoStaff(LAB_LOOK, 'receptionist');
   /** Stand them at ease. */
-  const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null);
+  const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, { style: null });
   return { root: rig.group, animate, controls: [] };
 }

@@ -6,6 +6,7 @@ import { type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
 import type { BubbleId, Char } from '../core/state/types';
 import { must } from '../core/util';
+import type { Act } from './acts';
 import { type CharRig, cureRig, type Joints } from './models/character';
 import { type Expression, showExpression } from './models/character-detail';
 import { iconTexture } from './models/icons';
@@ -157,10 +158,22 @@ export interface Door {
 }
 
 /**
+ * What the people layer works out about someone from the world once a frame, for posing them: how they are working,
+ * where the front door is, what they are doing at the item they are at, and whether they lie face down.
+ */
+export interface Cues {
+  style: WorkStyle;
+  door?: Door;
+  act?: Act | undefined;
+  prone?: boolean;
+}
+
+/**
  * Pose a person for this frame: position, limbs, face, symptom effects and speech bubble. A fed-up guest turns toward
  * the door, if there is one.
  */
-export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: WorkStyle, door?: Door) {
+export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cues) {
+  const { style, door } = cues;
   rig.group.position.set(c.x, c.h, c.y);
   rig.group.rotation.y = c.facing;
   // the stride follows the ground covered, not the clock, so the feet plant where they land whatever the game's speed
