@@ -455,9 +455,9 @@ const TREAT_ROOM: Record<Discipline, RoomType> = {
 };
 
 /**
- * The size the bot builds each room at: roomy enough for a bit of decor. Floor past the smallest is paid for, and the
- * bot pays it rather than build smaller: a smaller Restroom or Training Room moves where the rooms after it go, and on
- * Willow Lane that walls off the one plot a second Massage Suite fits on.
+ * The size the bot builds each room at: roomy enough for a bit of decor, and within the floor a room's price covers (a
+ * tile more each way than its smallest), so none of it is paid for on top. A smaller Restroom or Training Room would
+ * move where the rooms after it go, and on Willow Lane that walls off the one plot a second Massage Suite fits on.
  */
 const SIZE: Partial<Record<RoomType, [number, number]>> = {
   consult: [3, 4],
@@ -474,7 +474,7 @@ const SIZE: Partial<Record<RoomType, [number, number]>> = {
   qigong: [5, 5],
 };
 
-/** What a room of a type costs at the size the bot builds it, floor beyond the smallest included. */
+/** What a room of a type costs at the size the bot builds it, any floor past what its price covers included. */
 function price(type: RoomType): number {
   const def = ROOMS[type];
   const [w, h] = SIZE[type] ?? [def.minShort, def.minLong];
@@ -1662,7 +1662,7 @@ export class Bot {
   buildRoom(type: RoomType, extras: ItemType[] = [], keep: RoomType[] = []): Room | null {
     const def = ROOMS[type];
     const extraCost = extras.reduce((a, t) => a + ITEMS[t].cost, 0);
-    // the room at the size it builds it, its floor beyond the smallest included
+    // the room at the size it builds it, any floor past what its price covers included
     if (this.s.money < price(type) + extraCost + 500) return null;
     // a room that would not fit is not tried again for a few days (looking takes time)
     if (this.flags.expansion && (this.noFit[type] ?? 0) > this.s.day) return null;

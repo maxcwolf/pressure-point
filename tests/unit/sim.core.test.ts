@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, ITEMS, ROOM_TILE_COST, ROOMS } from '../../src/core/data';
+import { CENTERS, ITEMS, ROOMS } from '../../src/core/data';
 import { netOf } from '../../src/core/sim/economy';
 import {
   addConsult,
@@ -35,8 +35,8 @@ describe('opening the center', () => {
     const sim = freshSim();
     sim.placeItem('reception_desk', 14, 13, 0);
     addConsult(sim);
-    // a 4×4 Consultation Room: seven tiles of floor beyond the smallest 3×3
-    const room = ROOMS.consult.cost + 7 * ROOM_TILE_COST;
+    // a 4×4 Consultation Room, all of its floor in the price
+    const room = ROOMS.consult.cost;
     expect(sim.s.money).toBe(CENTERS.sandbox.startMoney - ITEMS.reception_desk.cost - room);
     expect(sim.s.ledger.building).toBe(ITEMS.reception_desk.cost + room);
   });

@@ -65,13 +65,13 @@ describe('putting a layout down', () => {
 
 describe('what a copy costs', () => {
   it('is the room with its required furniture, then the extras and the windows', () => {
-    // 4×3: three tiles of floor beyond the smallest 3×3, at what a resize charges
-    const room = ROOMS.massage.cost + 3 * ROOM_TILE_COST;
+    // 4×3, within the 4×4 a Massage Suite's price covers
+    const room = ROOMS.massage.cost;
     expect(copyCost(SUITE)).toBe(room + WINDOW_COST);
     const extra: Layout = { ...SUITE, items: [...SUITE.items, { type: 'plant', x: 0, y: 0, rot: 0 }] };
     expect(copyCost(extra)).toBe(room + WINDOW_COST + ITEMS.plant.cost);
-    expect(copyCost({ ...SUITE, w: 3, h: 3 }), 'the smallest comes with the price').toBe(
-      ROOMS.massage.cost + WINDOW_COST,
+    expect(copyCost({ ...SUITE, w: 5, h: 4 }), 'floor past 4×4 at what a resize charges').toBe(
+      ROOMS.massage.cost + 4 * ROOM_TILE_COST + WINDOW_COST,
     );
   });
 });

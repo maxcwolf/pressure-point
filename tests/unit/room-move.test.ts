@@ -67,8 +67,8 @@ describe('copying a room', () => {
     const { sim, s, massage } = openCenter(5);
     sim.toggleWindow(massage.id, { x: 11, y: 6, dx: -1, dy: 0 });
     const layout = sim.roomLayout(massage);
-    // a 4×4 suite, seven tiles past the smallest
-    expect(copyCost(layout)).toBe(ROOMS.massage.cost + 7 * ROOM_TILE_COST + WINDOW_COST);
+    // a 4×4 suite, all of its floor in the price
+    expect(copyCost(layout)).toBe(ROOMS.massage.cost + WINDOW_COST);
     const money = s.money;
     const copy = sim.copyRoom(massage.id, placeLayout(layout, FREE.x, FREE.y))!;
     expect(copy).toBeTruthy();
@@ -81,8 +81,19 @@ describe('copying a room', () => {
     expect(items.every((i) => i.wear === 0)).toBe(true);
     expect(s.money).toBe(money - copyCost(layout));
     expect(massage).toMatchObject({ x: 11, y: 5 });
-    // and its floor comes back at half when it is sold, as the original's does
-    expect(copy.bought).toBe(7);
+    expect(copy.bought).toBeUndefined();
+    expect(sim.roomRefund(copy, 0.5)).toBe(sim.roomRefund(massage, 0.5));
+  });
+
+  it('charges for floor past what the price covers, and gives it back at half as the original does', () => {
+    const { sim, s, massage } = openCenter(5);
+    s.money = 100_000;
+    // a 4×5 suite, four tiles past the 4×4 its price covers
+    expect(sim.resizeRoom(massage.id, { ...massage, h: 5 })).toBe(true);
+    const layout = sim.roomLayout(massage);
+    expect(copyCost(layout)).toBe(ROOMS.massage.cost + 4 * ROOM_TILE_COST);
+    const copy = sim.copyRoom(massage.id, placeLayout(layout, FREE.x, FREE.y))!;
+    expect(copy.bought).toBe(4);
     expect(sim.roomRefund(copy, 0.5)).toBe(sim.roomRefund(massage, 0.5));
   });
 
