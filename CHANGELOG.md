@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **Icons that read small.** Icons at 20 pixels and under, beside words and in the stats bar, draw with heavier lines and white fills from a second sprite sheet, and every speech bubble and marker has a simpler drawing of its own for small sizes, used in the scene too, so what a guest is saying can be told from where the game starts.
 - **Small fixes.** The bottom bar fits windows 1240 to 1540 pixels wide and shows the date whole at 1440, the tool hint reads as a row of chips, and the sign out front reads from behind.
 - **The machines in their own clothes.** Each treatment machine has an icon, a room sign and a treatment icon of its own, its model is polished to match the rest of the furniture, and an upgraded machine shows its stars on a brass plate, as the tables do.
 - **The storm floods a restroom.** At The Boardwalk the storm now also floods a restroom as it starts, out of action with its lamp red until a Caretaker mops it out; boarding up and sandbagging, at the same $800 as before, stops it.

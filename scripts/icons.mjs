@@ -2,12 +2,14 @@
 // can check them: what an icon file may contain, which icons the scene needs, where each sits in the atlas, and a
 // fingerprint of the drawings that tells whether what was built from them is up to date.
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** Where the drawings are, and where what is built from them goes. */
 export const ICON_DIR = 'src/ui/icons';
 export const OUT_DIR = 'src/ui/icons/generated';
+/** Where an icon's small drawing goes, when it has one: simpler, with heavier lines, for 20 pixels and under. */
+export const SMALL_DIR = 'src/ui/icons/small';
 export const IDS_FILE = 'src/core/data/icon-ids.ts';
 
 /** The colors an icon may use: the palette in src/ui/theme/tokens.css, and white. */
@@ -69,6 +71,15 @@ export function readIcons(dir = ICON_DIR) {
     .map((f) => ({ id: f.slice(0, -4), svg: readFileSync(join(dir, f), 'utf8') }));
 }
 
+/**
+ * The small drawings, by id: the folder's contents when it is there, nothing when it is not. An icon with one draws
+ * from it at small sizes and in the scene; the rest are made small from their one drawing.
+ */
+export function readSmall(dir = SMALL_DIR) {
+  if (!existsSync(dir)) return {};
+  return Object.fromEntries(readIcons(dir).map(({ id, svg }) => [id, svg]));
+}
+
 /** What is wrong with a drawing, if anything, as a list of complaints. */
 export function checkIcon(id, svg) {
   const problems = [];
@@ -103,6 +114,31 @@ export function checkIcon(id, svg) {
   return problems;
 }
 
+/** The thinnest line and the smallest dot a small drawing may have, in units of its 32: about 1.4 and 2 pixels at 16. */
+export const SMALL_MIN_STROKE = 2.8;
+export const SMALL_MIN_RADIUS = 2;
+
+/**
+ * What is wrong with a small drawing: everything that is wrong with any drawing, and then that it must be of an icon
+ * there is, and that nothing in it is too fine to survive 16 pixels on a plain screen.
+ */
+export function checkSmallIcon(id, svg, ids) {
+  const problems = checkIcon(id, svg);
+  if (!ids.includes(id)) problems.push('there is no icon of that name to be the small drawing of');
+  for (const [, w] of svg.matchAll(/stroke-width="([\d.]+)"/g)) {
+    if (Number(w) < SMALL_MIN_STROKE)
+      problems.push(`a line ${w} wide is too thin for 16 pixels: ${SMALL_MIN_STROKE} at least`);
+  }
+  // a dot or an ellipse too small to see; a rectangle's rounded corners are not a feature and may be as tight as they like
+  for (const [element] of svg.matchAll(/<(?:circle|ellipse)\b[^>]*>/g)) {
+    for (const [, which, r] of element.matchAll(/\s(r|rx|ry)="([\d.]+)"/g)) {
+      if (Number(r) < SMALL_MIN_RADIUS)
+        problems.push(`${which}="${r}" is too small for 16 pixels: ${SMALL_MIN_RADIUS} at least`);
+    }
+  }
+  return problems;
+}
+
 /** The drawing inside an icon's <svg> element, with its comments and the space between elements taken out. */
 export function innerOf(svg) {
   return svg
@@ -116,9 +152,9 @@ export function innerOf(svg) {
 }
 
 /**
- * How much thinner the interface draws an icon's lines than the scene does. Beside words, at 16 to 24 pixels, the
+ * How much thinner the interface draws an icon's lines than the scene does, at the sizes above 20 pixels. There the
  * drawings' 2.25-wide outline reads heavy; drawn at 1.8 it sits with the type. The scene's atlas keeps the full width,
- * as its icons are seen from further off.
+ * as its icons are seen from further off, and the small sheet goes the other way (`SMALL_STROKE`).
  */
 export const SPRITE_STROKE = 1.8 / 2.25;
 
@@ -133,6 +169,57 @@ export const thinned = (inner, scale = SPRITE_STROKE) =>
 export function spriteSheet(icons) {
   const symbols = icons.map(
     ({ id, svg }) => `<symbol id="icon-${id}" viewBox="0 0 32 32">${thinned(innerOf(svg))}</symbol>`,
+  );
+  return `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="0" height="0" style="position:absolute">\n${symbols.join('\n')}\n</svg>\n`;
+}
+
+/**
+ * How much heavier the small sprite sheet draws an icon that has no small drawing. At 16 pixels on a plain screen the
+ * 2.25 outline is 1.1 pixels and the sprite's 1.8 is under one, so both smear to grey; 2.9 lands on a pixel and a half.
+ */
+export const SMALL_STROKE = 2.9 / 2.25;
+
+/**
+ * A drawing with its cream and sand swapped for white, for small sizes: on the cream interface those fills are told
+ * from the background by their outline alone, and at 16 pixels that is not enough.
+ */
+export const whitened = (inner) =>
+  inner.replace(/fill="#fff8ea"/g, 'fill="#ffffff"').replace(/fill="#f3e7cf"/g, 'fill="#ffffff"');
+
+/**
+ * An award without its medal, for small sizes: the gold disc goes, and the pictogram that sat at 86% inside it takes the
+ * whole square instead. A drawing with no such disc is left alone.
+ */
+export function unmedalled(inner) {
+  const without = inner.replace(/<circle cx="16" cy="16" r="13.5" fill="#f2c14e"\/>/, '');
+  if (without === inner) return inner;
+  return without.replace(
+    'translate(16 16) scale(0.86) translate(-16 -16)',
+    'translate(16 16) scale(1.08) translate(-16 -16)',
+  );
+}
+
+/**
+ * A drawing with its outlines made heavier for small sizes: every line under 3 wide, which is to say the outlines and
+ * details, and not the wide strokes some drawings lay under a narrower colored one as an outline of their own, which
+ * are heavy enough already and would swallow the color.
+ */
+export const heavier = (inner) =>
+  inner.replace(/stroke-width="([\d.]+)"/g, (m, w) =>
+    Number(w) < 3 ? `stroke-width="${Number((Number(w) * SMALL_STROKE).toFixed(2))}"` : m,
+  );
+
+/** An icon as the small sheet draws it: its small drawing as drawn, or its one drawing made heavier, whiter and unmedalled. */
+export const madeSmall = (id, inner, small) =>
+  small[id] ? innerOf(small[id]) : heavier(whitened(familyOf(id) === 'award' ? unmedalled(inner) : inner));
+
+/**
+ * The sprite sheet the interface draws icons from at 20 pixels and under: one symbol per icon, named `icon-small-` and
+ * its id, each as `madeSmall` has it.
+ */
+export function smallSheet(icons, small = {}) {
+  const symbols = icons.map(
+    ({ id, svg }) => `<symbol id="icon-small-${id}" viewBox="0 0 32 32">${madeSmall(id, innerOf(svg), small)}</symbol>`,
   );
   return `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="0" height="0" style="position:absolute">\n${symbols.join('\n')}\n</svg>\n`;
 }
@@ -169,8 +256,11 @@ const PLACING = {
   bubble: { x: 26, y: 18, size: 76, filter: '' },
 };
 
-/** The atlas as one SVG drawing, each icon drawn on its cells as `atlasLayout` lays them out. */
-export function atlasSvg(icons) {
+/**
+ * The atlas as one SVG drawing, each icon drawn on its cells as `atlasLayout` lays them out. An icon with a small
+ * drawing is drawn from it, as a sprite is seen at 13 to 30 pixels from where the game starts and further out.
+ */
+export function atlasSvg(icons, small = {}) {
   const scene = icons.filter(({ id }) => inScene(id));
   const layout = atlasLayout(scene.map(({ id }) => id));
   const cells = scene.flatMap(({ id, svg }) =>
@@ -178,7 +268,7 @@ export function atlasSvg(icons) {
       const at = layout.icons[id][variant];
       const p = PLACING[variant];
       const scale = p.size / 32;
-      const art = `<g transform="translate(${at.x + p.x} ${at.y + p.y}) scale(${scale})"${p.filter}>${innerOf(svg)}</g>`;
+      const art = `<g transform="translate(${at.x + p.x} ${at.y + p.y}) scale(${scale})"${p.filter}>${innerOf(small[id] ?? svg)}</g>`;
       return variant === 'bubble' ? `<g transform="translate(${at.x} ${at.y})">${BUBBLE}</g>${art}` : art;
     }),
   );
@@ -197,9 +287,10 @@ export function atlasSvg(icons) {
 }
 
 /** A fingerprint of everything built from the drawings, so the tests can tell when `yarn icons` is due. */
-export function sourceHash(icons) {
+export function sourceHash(icons, small = {}) {
   const hash = createHash('sha256');
-  hash.update(atlasSvg(icons).svg);
+  hash.update(atlasSvg(icons, small).svg);
   hash.update(spriteSheet(icons));
+  hash.update(smallSheet(icons, small));
   return hash.digest('hex').slice(0, 16);
 }
