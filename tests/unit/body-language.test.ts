@@ -17,6 +17,9 @@ import {
   moodOf,
   PATIENCE_SIGNS,
   poseChar,
+  stepOn,
+  STRIDE,
+  treadmill,
 } from '../../src/render/pose';
 
 /** A guest with nothing wrong with them to show, waiting with so much patience. */
@@ -187,5 +190,59 @@ describe('staff with nothing to do', () => {
     pose(rig, { ...st, state: 'onBreak' }, t + 0.1);
     expect(rig.armL.rotation.x).toBeGreaterThan(-0.5);
     expect(rig.idleSince).toBeNaN();
+  });
+});
+
+describe('the stride', () => {
+  /** A guest walking, at a spot on the floor. */
+  function walker(x: number, y: number) {
+    const g = demoGuest(LAB_LOOK, 'stiff_neck' as never);
+    return { ...g, pose: 'walk' as const, x, y };
+  }
+
+  it('follows the ground covered, so a step plants where it lands', () => {
+    const rig = buildCharacter(LAB_LOOK);
+    pose(rig, walker(0, 0));
+    const before = rig.legL.rotation.x;
+    // half a cycle on: the other leg forward
+    pose(rig, walker(Math.PI / STRIDE, 0));
+    expect(Math.sign(rig.legL.rotation.x)).toBe(-Math.sign(before));
+    expect(Math.abs(before)).toBeGreaterThan(0.3);
+  });
+
+  it('does not count a jump as a walk', () => {
+    const rig = buildCharacter(LAB_LOOK);
+    pose(rig, walker(0, 0));
+    const before = rig.legL.rotation.x;
+    pose(rig, walker(5, 0));
+    expect(rig.legL.rotation.x).toBeCloseTo(before);
+    expect(rig.walked).toBe(0);
+  });
+
+  it('counts nothing on the first frame', () => {
+    const rig = buildCharacter(LAB_LOOK);
+    stepOn(rig, 3, 4);
+    expect(rig.walked).toBe(0);
+    stepOn(rig, 3, 4.5);
+    expect(rig.walked).toBeCloseTo(0.5);
+  });
+
+  it('walks on the spot on a treadmill, for the lab', () => {
+    const rig = buildCharacter(LAB_LOOK);
+    treadmill(rig, 0.5, 2.1);
+    expect(rig.walked).toBeCloseTo(1.05);
+    treadmill(rig, 0, 2.1);
+    expect(rig.walked).toBeCloseTo(1.05);
+  });
+
+  it('leans into a turn, the head leading', () => {
+    const straight = buildCharacter(LAB_LOOK);
+    const turning = buildCharacter(LAB_LOOK);
+    for (const rig of [straight, turning]) poseChar(rig, walker(0, 0), 0, 0.1, null);
+    poseChar(straight, walker(0, 0), 0.1, 0.1, null);
+    // turning to the left, a radian in a tenth of a second
+    poseChar(turning, { ...walker(0, 0), facing: 1 }, 0.1, 0.1, null);
+    expect(turning.torso.rotation.z).toBeLessThan(straight.torso.rotation.z - 0.1);
+    expect(turning.head.rotation.z).toBeLessThan(straight.head.rotation.z - 0.05);
   });
 });

@@ -57,6 +57,12 @@ export interface CharRig {
   face: Face;
   /** When they last found themselves with nothing to do, in the scene's seconds, or NaN while they have something. */
   idleSince: number;
+  /** How far they have walked, in meters, which their stride is counted from, so their feet plant at any speed. */
+  walked: number;
+  /** Where they were last frame, and which way they faced, or NaN before their first. */
+  lastX: number;
+  lastY: number;
+  lastFacing: number;
   visual: Visual | undefined;
   cured: boolean;
   scale: number;
@@ -192,6 +198,10 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     joints,
     face,
     idleSince: NaN,
+    walked: 0,
+    lastX: NaN,
+    lastY: NaN,
+    lastFacing: NaN,
     visual,
     cured: false,
     scale: look.scale,

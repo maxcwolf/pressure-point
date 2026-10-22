@@ -22,6 +22,7 @@ import {
   ROOM_ORDER,
   ROOMS,
   type RoomType,
+  RUNAWAY_SPEED,
   SANDBOX_PLOT,
   UPGRADE_LEVELS,
 } from '../core/data';
@@ -53,7 +54,7 @@ import { buildPuddle } from '../render/models/puddle';
 import { LAMP_STATES, type LampState, pulseLamps, setLamp } from '../render/models/sign-plaque';
 import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
-import { type Door, type IdleAct, idleMoment, type Mood, PATIENCE_SIGNS, poseChar } from '../render/pose';
+import { type Door, type IdleAct, idleMoment, type Mood, PATIENCE_SIGNS, poseChar, treadmill } from '../render/pose';
 import { BLUEPRINT, buildRoom } from '../render/rooms';
 import { H_TALL, WALL_T } from '../render/shared';
 import { SHOP_TURN } from '../render/storefront';
@@ -241,11 +242,27 @@ function personControls(st: PersonState, home = LAB_LOOK): Control[] {
   ];
 }
 
+/** How fast someone walks in the lab, in meters a second, as a guest does in the game. */
+const WALK_PACE = 2.1;
+
+/** The lab's time when each person was last walked on the spot. */
+const walkedAt = new WeakMap<CharRig, number>();
+
+/**
+ * Walk someone on the spot at a pace, by the time gone since they were last walked: nobody in the lab goes anywhere,
+ * and the stride follows the ground covered. Held still, the lab's time stands still, and so do they.
+ */
+function walkOnTheSpot(rig: CharRig, t: number, pace: number) {
+  treadmill(rig, t - (walkedAt.get(rig) ?? t), pace);
+  walkedAt.set(rig, t);
+}
+
 /** Pose a person for this frame from the lab's settings. */
 function posePerson(rig: CharRig, c: Char, st: PersonState, t: number, dt: number, style: Modality | null = null) {
   c.pose = st.pose;
   c.bubble = st.bubble;
   c.bubbleT = st.bubble ? 1 : 0;
+  if (c.pose === 'walk') walkOnTheSpot(rig, t, WALK_PACE);
   poseChar(rig, c, t, dt, style, LAB_DOOR);
 }
 
@@ -564,8 +581,11 @@ function runawaySpecimen(): Specimen {
       const rig = buildCharacter(LAB_LOOK);
       const c = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
       Object.assign(c, { state: 'running', pose: 'walk', outcome: 'failed', bubble: 'bubble-stressed', bubbleT: 1e9 });
-      /** Pose them. */
-      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null);
+      /** Pose them, running on the spot as fast as a runner goes. */
+      const animate = (t: number, dt: number) => {
+        walkOnTheSpot(rig, t, RUNAWAY_SPEED);
+        poseChar(rig, c, t, dt, null);
+      };
       return { root: rig.group, controls: [], animate };
     },
   };

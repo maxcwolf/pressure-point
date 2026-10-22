@@ -121,6 +121,35 @@ export function idleMoment(id: number, kind: IdleAct) {
 /** An angle brought round to between -pi and pi. */
 const wrap = (a: number) => a - Math.PI * 2 * Math.round(a / (Math.PI * 2));
 
+/**
+ * How far round the legs' cycle goes for each meter walked, in radians: a full cycle of two steps every 1.3 m, about the
+ * 9.5 rad/s the walk had at 2.1 m/s.
+ */
+export const STRIDE = 4.8;
+
+/** How far someone may move in a frame and still have walked there, in meters: further, they were put there. */
+const TELEPORT = 2;
+
+/** How far a body leans into a turn for each radian a second it turns, and how fast a turn it leans for at most. */
+const TURN_LEAN = { body: 0.02, head: 0.01, most: 8 } as const;
+
+/**
+ * Count the ground someone has covered since last frame toward their stride, and note where they are. Someone placed
+ * somewhere new, arriving at the pavement's end or carried off by a machine, has not walked there.
+ */
+export function stepOn(rig: CharRig, x: number, y: number) {
+  const d = Math.hypot(x - rig.lastX, y - rig.lastY);
+  // NaN, before their first frame, is never a step
+  if (d <= TELEPORT) rig.walked += d;
+  rig.lastX = x;
+  rig.lastY = y;
+}
+
+/** Walk someone on the spot, for the model lab, where nobody goes anywhere: so far at a pace, in meters a second. */
+export function treadmill(rig: CharRig, dt: number, pace: number) {
+  rig.walked += pace * dt;
+}
+
 /** Where a fed-up guest looks: the front door, in tiles. */
 export interface Door {
   x: number;
@@ -134,11 +163,15 @@ export interface Door {
 export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: WorkStyle, door?: Door) {
   rig.group.position.set(c.x, c.h, c.y);
   rig.group.rotation.y = c.facing;
+  // the stride follows the ground covered, not the clock, so the feet plant where they land whatever the game's speed
+  stepOn(rig, c.x, c.y);
+  const turning = dt > 0 && !Number.isNaN(rig.lastFacing) ? wrap(c.facing - rig.lastFacing) / dt : 0;
+  rig.lastFacing = c.facing;
   const healed = c.kind === 'guest' && c.outcome === 'healed';
   if (healed) cureRig(rig, c.look);
   showExpression(rig.face, expressionOf(c));
   const visual = healed ? undefined : rig.visual;
-  const phase = t * 9.5 + c.id * 1.7;
+  const phase = rig.walked * STRIDE + c.id * 1.7;
   let legL = 0;
   let legR = 0;
   let armL = Math.sin(t * 1.6 + c.id) * 0.05;
@@ -162,6 +195,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
     armR = sw * 0.85;
     bodyY = Math.abs(Math.cos(phase)) * 0.04;
     if (healed) bodyY += Math.abs(Math.sin(phase * 0.5)) * 0.07;
+    // leaning into a corner, the head leading
+    const turn = THREE.MathUtils.clamp(turning, -TURN_LEAN.most, TURN_LEAN.most);
+    side -= turn * TURN_LEAN.body;
+    headZ -= turn * TURN_LEAN.head;
   } else if (c.pose === 'sit') {
     legL = legR = -Math.PI / 2 + 0.08;
     bodyY = 0.06;
