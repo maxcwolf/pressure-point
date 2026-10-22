@@ -59,6 +59,7 @@ import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaun
 import { startWard, wardStep, wardWanted } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
 import { hasItem } from './progress';
+import { calmStep, followRunner } from './runaways';
 import { isLeadStation, matsOf, sessionState } from './sessions';
 import { burntOut, reachSoul, soulStep, soulToRetrieve, startSoul } from './souls';
 import type { BreakRoom } from './staff-needs';
@@ -369,8 +370,8 @@ function dropJob(ctx: SimContext, st: Staff) {
       ? ctx.s.litter.find((x) => x.id === job.id)
       : job.kind === 'smudge'
         ? ctx.s.rooms.find((r) => r.id === job.id)
-        : // a soul retrieval is for a member of staff, and claims nothing
-          job.kind === 'soul' || job.kind === 'ward'
+        : // a soul retrieval is for a member of staff, and a runner is calmed wherever they are: neither claims anything
+          job.kind === 'soul' || job.kind === 'ward' || job.kind === 'calm'
           ? undefined
           : ctx.world.item(job.id);
   if (claimed?.claimedBy === st.id) claimed.claimedBy = 0;
@@ -476,7 +477,8 @@ function findWork(ctx: SimContext, st: Staff) {
       if (!worksAt(ctx, st, x, y)) return;
       tasks.push({ kind, id, x, y, urgency: urgency + (inPriorityRoom(ctx, x, y) ? 0.5 : 0) });
     };
-    for (const l of s.litter) if (!l.claimedBy) add('litter', l.id, l.x, l.y, 1);
+    // a flooded restroom is out of action until it is mopped out, as urgent as anything broken
+    for (const l of s.litter) if (!l.claimedBy) add('litter', l.id, l.x, l.y, l.flood ? 2 : 1);
     for (const p of s.items) {
       if (p.claimedBy) continue;
       // a Mechanic installs an upgrade waiting on equipment, which services it too
@@ -688,6 +690,11 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
         if ((arrived || !st.path) && !reachSoul(ctx, st)) staffIdle(ctx, st);
         break;
       }
+      // and a guest on a really bad trip runs on: chase them, and talk them down once close enough
+      if (st.job?.kind === 'calm') {
+        if (!followRunner(ctx, st, arrived)) staffIdle(ctx, st);
+        break;
+      }
       if (arrived) {
         st.state = 'doingJob';
         st.busy = true;
@@ -720,6 +727,10 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       }
       if (st.job?.kind === 'ward') {
         if (wardStep(ctx, st, dt)) staffIdle(ctx, st);
+        break;
+      }
+      if (st.job?.kind === 'calm') {
+        if (calmStep(ctx, st, dt)) staffIdle(ctx, st);
         break;
       }
       // the guest on a table is treated before a Mechanic starts work on it

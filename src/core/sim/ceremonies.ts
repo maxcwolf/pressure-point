@@ -17,6 +17,7 @@ import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { announceOnce, emit, tipOnce } from './events';
 import { feel } from './feelings';
+import { rollRunaway } from './runaways';
 import { addVibes } from './vibes';
 
 /** What a room is like for a treatment there: what it takes off the chance, what its prestige adds, and how uncomfortable its air. */
@@ -47,9 +48,13 @@ export function goodTrip(g: Guest) {
   feel(g, 'good-trip');
 }
 
-/** A guest whose ceremony failed has a bad trip: a worse review, a worse name, and bad vibes left all over the lodge. */
+/**
+ * A guest whose ceremony failed has a bad trip: a worse review, a worse name, and bad vibes left all over the lodge. Now
+ * and then it is a really bad one, and they run round the institute once they are off the mat.
+ */
 export function badTrip(ctx: SimContext, g: Guest, it: Item) {
   feel(g, 'bad-trip');
+  rollRunaway(ctx, g);
   changeRep(ctx, -BAD_TRIP_REP);
   const room = ctx.world.roomOfItem(it);
   if (room) addVibes(ctx, room);

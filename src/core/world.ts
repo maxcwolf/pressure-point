@@ -415,13 +415,17 @@ export class World {
   roomOfItem(it: Item): Room | undefined {
     return this.roomAt(it.x, it.y);
   }
-  /** Corridor items always work; room items only once the room is finished. Broken items never do. */
+  /** Corridor items always work; room items once the room is finished and not flooded. Broken items never do. */
   usable(it: Item): boolean {
     if (it.wear >= 100 || this.stoppedByMishap(it)) return false;
     // a Mechanic is on the way to install an upgrade: the guest on it is finished with, and nobody else is called
     if (it.upgradePaid && it.claimedBy && !it.serving) return false;
     const r = this.roomOfItem(it);
-    return !r || r.done;
+    return !r || (r.done && !this.flooded(r));
+  }
+  /** Whether a storm has flooded a room, and the water is not all mopped up yet. */
+  flooded(r: Room): boolean {
+    return this.s.litter.some((l) => l.flood === r.id);
   }
   /** Whether the mishap under way has taken an item out of action, as a power cut does to anything with a plug. */
   stoppedByMishap(it: Item): boolean {

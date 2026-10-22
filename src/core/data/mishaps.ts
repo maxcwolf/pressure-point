@@ -28,6 +28,8 @@ export interface MishapDef {
   arrivals?: number;
   /** Unprepared: how many items it breaks as it starts. */
   breaks?: number;
+  /** Unprepared: whether it floods a restroom as it starts, which is out of action until a Caretaker mops it out. */
+  floods?: boolean;
   /** The season it can only come in, if any. */
   winterOnly?: boolean;
   /** Something that draws it: with one in the center, the next comes after only this share of the usual gap. */
@@ -75,10 +77,15 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
     start: 'The storm has arrived. Please keep away from the windows... and Brent.',
     end: 'The storm has passed. The seagulls are back, and so are the guests.',
     days: 2,
-    prepare: { cost: 800, label: 'Board up the windows', effect: 'Nothing gets broken. Fewer guests come either way.' },
-    harm: 'For two days hardly anyone comes, the Aura Wash is shut, and the wind breaks a few things as it starts.',
+    prepare: {
+      cost: 800,
+      label: 'Board up and sandbag',
+      effect: 'Nothing gets broken or flooded. Fewer guests come either way.',
+    },
+    harm: 'For two days hardly anyone comes and the Aura Wash is shut. As it starts, the wind breaks a few things and the sea floods a restroom until a Caretaker mops it out.',
     arrivals: 0.35,
     breaks: 3,
+    floods: true,
     stops: ['aura_wash'],
     stopsWhat: 'the Aura Wash',
   },
@@ -119,6 +126,8 @@ export const MISHAP_FIRST_DAY = 75;
 export const MISHAP_GAP_DAYS: readonly [number, number] = [80, 140];
 /** Days until a mishap that is out of season is looked at again. */
 export const MISHAP_RETRY_DAYS = 10;
+/** How many puddles a flood leaves on a restroom's floor, each to be mopped up. */
+export const FLOOD_PUDDLES = 3;
 
 /** Whether a mishap, as it stands, takes items of this type out of action. */
 export function mishapStopsType(def: MishapDef, type: ItemType, prepared: boolean): boolean {

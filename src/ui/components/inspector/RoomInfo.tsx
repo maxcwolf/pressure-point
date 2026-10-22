@@ -20,6 +20,7 @@ import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
 import { pullNote } from '../../lib/demand';
+import { FLOODED_LABEL } from '../../lib/mishaps';
 import { saveAsTemplate } from '../../templates';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -110,6 +111,16 @@ function Blessing({ room }: { room: Room }) {
   ) : null;
 }
 
+/** A restroom a storm has flooded, until it is mopped out. */
+function Flooded({ room }: { room: Room }) {
+  const { sim } = useGame();
+  return sim.world.flooded(room) ? (
+    <p class="status flooded">
+      <IconText id="mishap-storm">{FLOODED_LABEL}</IconText>
+    </p>
+  ) : null;
+}
+
 /** How warm and how calm it is in the middle of a room. */
 function Comfort({ room }: { room: Room }) {
   const { sim } = useGame();
@@ -150,7 +161,7 @@ export function RoomInfo({ room }: { room: Room }) {
         {`${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'} · Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.`}
       </p>{' '}
       <Comfort room={room} /> <Draw room={room} /> <BadVibes room={room} /> <Blessing room={room} />{' '}
-      {/* a studio's spots are summed up in its timetable rather than listed one by one */}
+      <Flooded room={room} /> {/* a studio's spots are summed up in its timetable rather than listed one by one */}
       {room.type !== 'qigong' && stations.map((i) => <StationInfo key={i.id} item={i} />)}
       {table && <CanDeliver table={table} />} {room.done && room.type === 'qigong' && <Timetable room={room} />}{' '}
       {assigned.length > 0 && (

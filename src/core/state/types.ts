@@ -276,10 +276,12 @@ export interface Staff extends CharBase {
 
 /**
  * A chore: the litter or item a Caretaker sees to (changing a table's linens is cleaning it, and laundering is emptying
- * a hamper), the room someone clears of bad vibes, or the drink or snack someone goes to for themselves.
+ * a hamper), the room someone clears of bad vibes, the drink or snack someone goes to for themselves, or the guest on
+ * a really bad trip someone is sent to calm down.
  */
 export interface Job {
-  kind: 'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh' | 'install' | 'soul' | 'ward';
+  kind:
+    'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh' | 'install' | 'soul' | 'ward' | 'calm';
   id: number;
 }
 
@@ -302,7 +304,17 @@ export type Need = 'drink' | 'eat' | 'toilet' | 'play';
 export type Outcome = 'healed' | 'failed' | 'stormed' | 'sent' | 'worse' | 'class';
 
 export type GuestState =
-  'enter' | 'toWait' | 'waiting' | 'called' | 'served' | 'toRest' | 'resting' | 'toNeed' | 'need' | 'leaving';
+  | 'enter'
+  | 'toWait'
+  | 'waiting'
+  | 'called'
+  | 'served'
+  | 'toRest'
+  | 'resting'
+  | 'toNeed'
+  | 'need'
+  | 'running'
+  | 'leaving';
 
 export interface Guest extends CharBase {
   kind: 'guest';
@@ -337,6 +349,8 @@ export interface Guest extends CharBase {
   stressed: boolean;
   /** Given a calming session in an outbreak, so it cannot catch them. */
   calmed: boolean;
+  /** On a really bad trip, running round the institute: the seconds left before they find the door. */
+  runaway?: number;
   /** For a class-goer, the day of the Qi Gong class they came for; 0 for anyone come for a treatment. */
   classDay: number;
   /** For a class-goer who went home without a class, why. */
@@ -436,6 +450,8 @@ export interface Litter {
   claimedBy: number;
   /** A puddle of kombucha rather than a wrapper: it slows whoever walks through it. */
   puddle?: boolean;
+  /** Sea water from a storm, by the id of the restroom it flooded: the room is out of action until it is mopped up. */
+  flood?: number;
 }
 
 export interface Candidate {

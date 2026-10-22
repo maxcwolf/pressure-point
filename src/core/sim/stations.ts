@@ -58,6 +58,7 @@ import { hasRoom } from './progress';
 import { countVisit } from './records';
 import { goRest, restPenalty, settleRest } from './recovery';
 import { greeting, mindsPrice, tipFor } from './regulars';
+import { startRunning } from './runaways';
 import { leadOf, matsFull, sessionPlaying, stationStaff, updateSession } from './sessions';
 import { wantsAway } from './staffing';
 import { expectedPrestige } from './standing';
@@ -468,6 +469,11 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     walkThrough(it, g);
     // a machine smoking with wear may overload now the guest is done with it
     maybeOverload(ctx, it);
+    // a really bad trip sends them running round the institute rather than home
+    if (g.runaway && g.outcome === 'failed') {
+      startRunning(ctx, g);
+      return;
+    }
     if (rest && goRest(ctx, g, rest)) return;
   }
   decide(ctx, g);

@@ -89,6 +89,8 @@ export function guestStatus(g: Guest, sim: Sim): string {
           : 'Playing a round on the arcade';
       if (g.needKind === 'eat') return 'Getting a snack';
       return DRINKS[sim.world.item(g.claimItem)?.type ?? ''] ?? 'Getting a herbal tea';
+    case 'running':
+      return 'Running round the institute on a really bad trip';
     case 'leaving':
       return g.outcome === 'healed'
         ? 'Going home healed'
@@ -106,7 +108,12 @@ export function guestStatus(g: Guest, sim: Sim): string {
 function choreStatus(st: Staff, sim: Sim): string {
   const job = st.job;
   const it =
-    job && job.kind !== 'litter' && job.kind !== 'smudge' && job.kind !== 'soul' && job.kind !== 'ward'
+    job &&
+    job.kind !== 'litter' &&
+    job.kind !== 'smudge' &&
+    job.kind !== 'soul' &&
+    job.kind !== 'ward' &&
+    job.kind !== 'calm'
       ? sim.world.item(job.id)
       : undefined;
   switch (job?.kind) {
@@ -124,10 +131,14 @@ function choreStatus(st: Staff, sim: Sim): string {
       return 'Warding off the mishap coming';
     case 'soul':
       return `Retrieving ${sim.staff(job.id)?.name ?? 'someone'}’s soul`;
+    case 'calm':
+      return `${st.state === 'doingJob' ? 'Calming' : 'Going to calm'} ${sim.guest(job.id)?.name ?? 'someone'} down`;
     case 'refresh':
       return it?.type === 'snack_machine' ? 'Getting a snack' : 'Getting a drink';
     default:
-      return 'Clearing litter';
+      return st.job && sim.s.litter.find((l) => l.id === st.job?.id)?.flood
+        ? 'Mopping out a flooded restroom'
+        : 'Clearing litter';
   }
 }
 

@@ -3,7 +3,7 @@
 // follow Theme Hospital's cheats (money, win the level, an emergency, an epidemic) and what Two Point's trainers offer
 // (kudosh, maxed-out staff, no needs).
 
-import { conditionHere, type ConditionId, CONDITIONS } from '../data';
+import { conditionHere, type ConditionId, CONDITIONS, RUNAWAY_SECONDS } from '../data';
 import { money } from '../format';
 import { clamp } from '../util';
 import type { SimContext } from './context';
@@ -13,6 +13,7 @@ import { emit } from './events';
 import { spawnGuest } from './guests';
 import { offerOutbreak } from './outbreaks';
 import { awardStar } from './progress';
+import { startRunning } from './runaways';
 
 /** The commands the console takes. */
 export type CheatName =
@@ -27,6 +28,7 @@ export type CheatName =
   | 'guests'
   | 'emergency'
   | 'outbreak'
+  | 'badtrip'
   | 'unlock'
   | 'skip';
 
@@ -48,6 +50,7 @@ export const CHEATS: Readonly<Record<CheatName, CheatDef>> = {
   guests: { usage: 'guests [count] [condition]', desc: 'Send in guests, 5 unless you say, with any condition.' },
   emergency: { usage: 'emergency', desc: 'Offer an emergency now.' },
   outbreak: { usage: 'outbreak', desc: 'Offer a stress outbreak now.' },
+  badtrip: { usage: 'badtrip', desc: 'Send a guest running round on a really bad trip.' },
   unlock: { usage: 'unlock', desc: 'Unlock every room, item and treatment in this game.' },
   skip: { usage: 'skip [days]', desc: 'Play on for some days at once, 1 unless you say, up to 60.' },
 };
@@ -161,6 +164,16 @@ function run(ctx: SimContext, name: CheatName, args: string[], fastForward: (day
       return offerOutbreak(ctx)
         ? done('A stress outbreak is on offer.')
         : refused('There is already a stress outbreak on offer or under way.');
+    case 'badtrip': {
+      // anyone about the place, but not on a table or on their way to one, or on the way out
+      const g = s.guests.find(
+        (x) => !x.classDay && !['called', 'served', 'running', 'leaving'].includes(x.state) && !x.outcome,
+      );
+      if (!g) return refused('There is nobody about to send on a bad trip.');
+      g.runaway = RUNAWAY_SECONDS;
+      startRunning(ctx, g);
+      return done(`${g.name} is off on a really bad trip.`);
+    }
     case 'unlock':
       if (s.unlockAll) return refused('Everything is already unlocked.');
       s.unlockAll = true;

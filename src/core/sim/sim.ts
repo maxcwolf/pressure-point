@@ -120,6 +120,7 @@ import { checkOpening, checkStars, hasRoom, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
 import { monthSoFar } from './records';
 import { updateRival } from './rival';
+import { calmerOf, canCalm } from './runaways';
 import { playingFor, servedAt, sessionState, stationStaff } from './sessions';
 import { askSoul, canRetrieve } from './souls';
 import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
@@ -718,9 +719,17 @@ export class Sim {
     declineOutbreak(this.ctx);
   }
 
-  /** Give a guest one of the outbreak's calming sessions. */
+  /** Calm a guest down: send someone to one on a really bad trip, or give one an outbreak's calming session. */
   calm(guestId: number): CalmResult {
     return calm(this.ctx, guestId);
+  }
+  /** Whether someone can be sent to calm down a guest on a really bad trip. */
+  canCalm(g: Guest): boolean {
+    return canCalm(this.ctx, g);
+  }
+  /** The member of staff on the way to calm down a guest on a really bad trip, or with them, if anyone is. */
+  calmerOf(g: Guest): Staff | undefined {
+    return calmerOf(this.ctx, g);
   }
 
   // ---- Building --------------------------------------------------------------

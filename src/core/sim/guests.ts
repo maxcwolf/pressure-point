@@ -19,6 +19,7 @@ import {
   PLAY_RANGE,
   PLEASANT_DRAIN,
   ROOMS,
+  RUNAWAY_SPEED,
   SEAT_DRAIN,
   STRESS_DRAIN,
   WOMEN_VISIT,
@@ -47,6 +48,7 @@ import { arriveCarrying, carriedOut } from './outbreaks';
 import { countArrival, countTurnedAway, countVisit } from './records';
 import { updateRest } from './recovery';
 import { dueRegular, regularPatience, welcomeBack } from './regulars';
+import { runStep } from './runaways';
 import { stationStaff } from './sessions';
 import { pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf } from './treatments';
@@ -415,7 +417,7 @@ function noticeSurroundings(ctx: SimContext, g: Guest) {
   if (drainFactor(ctx, g.tx, g.ty) <= PLEASANT_DRAIN) feel(g, 'pleasant');
   if (g.pose === 'sit') feel(g, 'comfy');
   feelTemperature(g, warmthAt(ctx, g.tx, g.ty));
-  if (ctx.s.litter.some((l) => Math.abs(l.x - g.tx) <= 2 && Math.abs(l.y - g.ty) <= 2)) feel(g, 'litter');
+  if (ctx.s.litter.some((l) => !l.flood && Math.abs(l.x - g.tx) <= 2 && Math.abs(l.y - g.ty) <= 2)) feel(g, 'litter');
 }
 
 /** What a waiting guest reconsiders now and then: a better line, their needs, where to stand. */
@@ -492,7 +494,9 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   g.bladder = Math.min(100, g.bladder + dt * 0.42);
   if (g.bubbleT > 0) g.bubbleT -= dt;
   const stiff = g.outcome !== 'healed' && conditionOf(g.condition).visual === 'stiff';
-  const arrived = moveAlong(g, dt, (stiff ? 1.75 : 2.1) * puddleSlow(ctx, g));
+  // someone on a really bad trip runs
+  const pace = g.state === 'running' ? RUNAWAY_SPEED : stiff ? 1.75 : 2.1;
+  const arrived = moveAlong(g, dt, pace * puddleSlow(ctx, g));
   if (worsen(ctx, g, dt)) return;
 
   // a class-goer walking in to their class is on their way, not kept waiting: only a line wears on them
@@ -597,6 +601,9 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
         goWait(ctx, g);
       }
       break;
+    case 'running':
+      runStep(ctx, g, dt, arrived);
+      break;
     case 'leaving':
       if (arrived || !g.path) ctx.s.guests = ctx.s.guests.filter((x) => x !== g);
       break;
@@ -626,6 +633,7 @@ export function leave(ctx: SimContext, g: Guest) {
   removeFromStations(ctx, g);
   g.goal = 'leave';
   g.state = 'leaving';
+  delete g.runaway;
   const [x, y] = streetTile(ctx.s, ctx.world.building, ctx.world.w);
   if (!goTo(ctx, g, x, y)) ctx.s.guests = ctx.s.guests.filter((q) => q !== g);
 }

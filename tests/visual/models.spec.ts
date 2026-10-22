@@ -1,6 +1,7 @@
 // A picture of every model on its own, from the model lab: each item, a guest with each condition, each role of
 // staff, each kind of visitor, how people look as they feel (a waiting guest's patience, a face, staff with nothing to
-// do), a room's doorway and sign, and the scenery. A change to a shared part shows up in every model that uses it.
+// do, a guest on a really bad trip), a room's doorway and sign, and the scenery, puddles of kombucha and flood water
+// among it. A change to a shared part shows up in every model that uses it.
 import { expect, type Page, test } from '@playwright/test';
 
 import { CENTERS, CONDITIONS, ITEMS, ROLE_ORDER } from '../../src/core/data';
@@ -35,7 +36,10 @@ const IDS = [
   ...['restless', 'impatient', 'fed-up'].flatMap((mood) => [`mood:${mood}`, `mood:${mood}-seated`]),
   ...FACES,
   ...['stretch', 'look', 'watch'].map((act) => `idle:${act}`),
+  // a guest on a really bad trip, running round
+  'mood:runaway',
   'room:door',
+  'scenery:puddles',
   'scenery:trees',
   'scenery:pines',
   'scenery:orchard',

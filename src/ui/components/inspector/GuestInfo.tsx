@@ -15,6 +15,7 @@ import { regularOf } from '../../../core/sim/regulars';
 import { guestFee } from '../../../core/sim/stations';
 import type { Guest } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
+import { calmingNote } from '../../lib/calming';
 import { chanceText, percent, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
 import { regularTag } from '../../lib/regulars';
@@ -50,9 +51,42 @@ function ConditionLine({ guest: g }: { guest: Guest }) {
   );
 }
 
-/** During a stress outbreak, a calming session for this guest: wasted on one who was not stressed. */
+/** For a guest on a really bad trip, someone to send to calm them down, or who is on the way. */
+function CalmRunner({ guest: g }: { guest: Guest }) {
+  const { sim, audio } = useGame();
+  const calmer = sim.calmerOf(g);
+  if (calmer)
+    return (
+      <p class="sub calmed">
+        <IconText id="bubble-relieved">{calmingNote(calmer.name, calmer.state === 'doingJob')}</IconText>
+      </p>
+    );
+  const can = sim.canCalm(g);
+  return (
+    <Button
+      class="go calm"
+      locked={!can}
+      title={
+        can
+          ? 'The nearest member of staff who is free goes after them and talks them down.'
+          : 'Nobody is free to go: everyone is with a guest, or away.'
+      }
+      onPress={() => {
+        if (!sim.calm(g.id)) audio.play('error');
+      }}
+    >
+      <IconText id="bubble-relieved">Calm them down</IconText>
+    </Button>
+  );
+}
+
+/**
+ * During a stress outbreak, a calming session for this guest: wasted on one who was not stressed. A guest on a really
+ * bad trip has someone sent to them instead, outbreak or not.
+ */
 function CalmButton({ guest: g }: { guest: Guest }) {
   const { sim, audio } = useGame();
+  if (g.state === 'running') return <CalmRunner guest={g} />;
   const o = sim.s.outbreak;
   if (!o || g.state === 'leaving') return null;
   if (g.calmed)
@@ -183,7 +217,7 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
       <Feelings guest={g} />
       <p class="sub">{`Spent so far: ${money(g.spent)}`}</p>
       <CalmButton guest={g} />
-      {g.state !== 'leaving' && (
+      {g.state !== 'leaving' && g.state !== 'running' && (
         <Button
           class="danger sendhome"
           title="They leave without treatment: no fee, and a small knock to your reputation."
