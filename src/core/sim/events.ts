@@ -61,11 +61,18 @@ export function toast(ctx: SimContext, text: string, kind: Tone = 'info', about?
   emit(ctx, { type: 'toast', text, kind, ...(about && { about }), ...(icon && { icon }) });
 }
 
-/** Show a tip, but only the first time it comes up. */
-export function tipOnce(ctx: SimContext, id: string, text: string, kind: Tone = 'info', about?: Subject) {
+/** Show a tip, but only the first time it comes up, with an icon before it if one says what it is about. */
+export function tipOnce(
+  ctx: SimContext,
+  id: string,
+  text: string,
+  kind: Tone = 'info',
+  about?: Subject,
+  icon?: IconId,
+) {
   if (ctx.s.seenTips.includes(id)) return;
   ctx.s.seenTips.push(id);
-  toast(ctx, text, kind, about);
+  toast(ctx, text, kind, about, icon);
 }
 
 /** Say something over the speakers, but only the first time it comes up in a game. */
