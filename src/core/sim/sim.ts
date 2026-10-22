@@ -119,7 +119,7 @@ import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
 import { monthSoFar } from './records';
-import { updateRival } from './rival';
+import { type RivalCourse, rivalCourse, updateRival } from './rival';
 import { playingFor, servedAt, sessionState, stationStaff } from './sessions';
 import { askSoul, canRetrieve } from './souls';
 import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
@@ -563,6 +563,11 @@ export class Sim {
   /** The center's standing points as it is now, part by part. */
   standing(): StandingPoints {
     return standingPoints(this.ctx);
+  }
+
+  /** Which way the rival's standing is going, and the most it grows to. */
+  rivalCourse(): { course: RivalCourse; ceiling: number } {
+    return rivalCourse(this.ctx);
   }
 
   /** Whether a member of staff is as qualified as they can be for now, as a promotion needs. */

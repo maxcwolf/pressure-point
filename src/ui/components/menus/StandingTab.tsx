@@ -3,10 +3,18 @@
 import { GRADES, RIVAL_NAME, RIVAL_SLOGAN, SALE_DISCOUNT } from '../../../core/data';
 import { dateOf } from '../../../core/format';
 import { onSale, rivalDraw, rivalGrade, rivalPoints } from '../../../core/sim/rival';
-import { gradeDef } from '../../../core/sim/standing';
+import { gradeDef, idleNote } from '../../../core/sim/standing';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
-import { drawNote, gradeEffects, gradeProgress, rivalOpening } from '../../lib/standing';
+import {
+  counterplayLine,
+  drawNote,
+  gradeEffects,
+  gradeProgress,
+  rivalCourseLine,
+  rivalOpening,
+  standingLine,
+} from '../../lib/standing';
 import { Bar } from '../common/Bar';
 import { IconText } from '../common/Icon';
 
@@ -19,6 +27,7 @@ function Rival() {
   const ours = sim.standing().total;
   const theirs = rivalPoints(s);
   const most = Math.max(ours, theirs, 1);
+  const { course, ceiling } = sim.rivalCourse();
   return (
     <div class="rival">
       <h4>
@@ -36,6 +45,8 @@ function Rival() {
             <Bar value={(theirs / most) * 100} class="bad" />
             <em>{theirs}</em>
           </div>
+          <p class="sub">{rivalCourseLine(course, ceiling)}</p>
+          <p class="sub">{counterplayLine(r.knocked)}</p>
           <p class={cx('sub', onSale(s) && 'sale')}>
             {onSale(s)
               ? `Holding a sale: ${Math.round(SALE_DISCOUNT * 100)}% off until day ${dateOf(r.saleUntil).day} of month ${dateOf(r.saleUntil).month}. Lower your prices to keep your guests.`
@@ -62,8 +73,8 @@ export function StandingTab() {
         <IconText id={here.icon}>{here.name}</IconText>
       </h4>
       <p class="sub">
-        Standing comes from the rooms built, how fine they are, and the staff and their ranks. A grade once reached is
-        kept.
+        Standing comes from the rooms you work in and how fine they are, the staff and their ranks, and every guest
+        healed. A grade once reached is kept.
       </p>
       <label>
         {progress.next
@@ -71,7 +82,8 @@ export function StandingTab() {
           : `${points.total} points · the top grade`}
         <Bar value={progress.share * 100} class="gold" />
       </label>
-      <p class="sub">{`Rooms ${points.rooms} · Prestige ${points.prestige} · Staff ${points.staff}`}</p>
+      <p class="sub">{standingLine(points)}</p>
+      {idleNote(points) && <p class="sub">{`${idleNote(points)}.`}</p>}
       <ol class="grades">
         {GRADES.map((g, i) => (
           <li key={g.name} class={cx(i <= s.grade && 'reached', i === s.grade && 'now')}>

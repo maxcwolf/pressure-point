@@ -133,9 +133,19 @@ describe('the numbers behind a goal', () => {
     const { sim } = openCenter(1);
     const lines = sim.objectiveDetail({ kind: 'grade', grade: 1 });
     expect(lines[0]).toMatch(
-      /^Standing: rooms \d+, their prestige \d+, staff \d+: \d+ of 80 points for Wellness Studio$/,
+      /^Standing: rooms \d+, their prestige \d+, staff \d+, guests healed \d+: \d+ of 80 points for Wellness Studio$/,
     );
-    expect(lines[1]).toMatch(/^\d+ points to go: more rooms, finer rooms, or more and higher-ranked staff$/);
+    expect(lines[1]).toMatch(
+      /^\d+ points to go: more rooms in use, finer ones, higher-ranked staff, or more guests healed$/,
+    );
+  });
+
+  it('for a grade: what staffing a room nobody can work in would add', () => {
+    const { sim, therapist } = openCenter(1);
+    sim.fire(therapist.id);
+    expect(sim.objectiveDetail({ kind: 'grade', grade: 1 })[1]).toBe(
+      '1 room nobody on the payroll can work in counts only 4 points: staffing it adds at least 8',
+    );
   });
 
   it('for reputation, emergencies and quits: the figure against the target', () => {

@@ -2,7 +2,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { GRADES, RIVAL_NAME } from '../../src/core/data';
-import { drawNote, gradeEffects, gradeProgress, offerWarning, rivalOpening } from '../../src/ui/lib/standing';
+import {
+  counterplayLine,
+  drawNote,
+  gradeEffects,
+  gradeProgress,
+  offerWarning,
+  rivalCourseLine,
+  rivalOpening,
+  standingLine,
+} from '../../src/ui/lib/standing';
 
 describe('the climb to the next grade', () => {
   it('is measured from the grade reached to the next', () => {
@@ -53,5 +62,34 @@ describe('the rival, in words', () => {
     expect(offerWarning(1)).toContain('above 35 within 1 day,');
     expect(offerWarning(1.4)).toContain('above 35 within 2 days,');
     expect(offerWarning(0.6)).toContain('above 35 today,');
+  });
+});
+
+describe('where standing comes from, in words', () => {
+  it('names each source, and the rooms not in use when there are any', () => {
+    const p = { rooms: 28, prestige: 12, staff: 21, heals: 7, total: 68, inUse: 2, idle: 0, unstaffed: 0 };
+    expect(standingLine(p)).toBe('Rooms 28 · Prestige 12 · Staff 21 · Guests healed 7');
+    expect(standingLine({ ...p, idle: 1, inUse: 1 })).toBe(
+      'Rooms 28 (1 in use, 1 not) · Prestige 12 · Staff 21 · Guests healed 7',
+    );
+  });
+});
+
+describe('the rival against its ceiling, and what to do about it', () => {
+  it('says which way it is going and how far it can grow', () => {
+    expect(rivalCourseLine('growing', 410)).toBe(
+      'Growing about 14 points a month, up to 25% more than your own standing: 410 points now.',
+    );
+    expect(rivalCourseLine('ceiling', 410)).toBe(
+      'As big as it gets for now, at 25% more than your own standing: 410 points. It grows again as you do.',
+    );
+    expect(rivalCourseLine('losing', 410)).toBe('Losing about 15 points a month while your word of mouth runs.');
+  });
+
+  it('names the counterplay, and what it has done so far', () => {
+    const line =
+      'Each VIP you delight takes 8% off it, word of mouth takes about 15 points a month off it while it runs, and winning Center of the Year takes 25% off.';
+    expect(counterplayLine(0)).toBe(line);
+    expect(counterplayLine(42.4)).toBe(`${line} You have knocked 42 points off it so far.`);
   });
 });

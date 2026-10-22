@@ -6,7 +6,7 @@ import type { Tally } from '../state/types';
 import { prestige, PRESTIGE_STEP, prestigeTerms } from './ambience';
 import type { SimContext } from './context';
 import { projectedCashflow } from './economy';
-import { gradeDef, standingPoints } from './standing';
+import { gradeDef, idleNote, standingPoints } from './standing';
 
 /** One objective as the player sees it: what to do, whether it is done, and how far along it is (0 to 1). */
 export interface Objective {
@@ -302,12 +302,14 @@ export function objectiveDetail(ctx: SimContext, goal: GoalSpec): string[] {
       const want = gradeDef(goal.grade);
       const pts = standingPoints(ctx);
       const lines = [
-        `Standing: rooms ${pts.rooms}, their prestige ${pts.prestige}, staff ${pts.staff}: ${pts.total} of ${want.points} points for ${want.name}`,
+        `Standing: rooms ${pts.rooms}, their prestige ${pts.prestige}, staff ${pts.staff}, guests healed ${pts.heals}: ${pts.total} of ${want.points} points for ${want.name}`,
       ];
+      const idle = idleNote(pts);
+      if (idle) lines.push(idle);
       lines.push(
         s.grade >= goal.grade
           ? 'Met'
-          : `${want.points - pts.total} points to go: more rooms, finer rooms, or more and higher-ranked staff`,
+          : `${want.points - pts.total} points to go: more rooms in use, finer ones, higher-ranked staff, or more guests healed`,
       );
       return lines;
     }

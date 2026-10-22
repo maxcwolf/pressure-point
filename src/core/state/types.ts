@@ -53,7 +53,10 @@ export interface Room {
   vibes: number;
   /** Whoever is on their way to clear its bad vibes. */
   claimedBy: number;
-  /** Tiles of floor bought by resizing it, beyond what it was built with: only these are refunded when given up. */
+  /**
+   * Tiles of floor paid for beyond the smallest a room of its kind can be, when it was built and by resizing it since:
+   * only these are refunded when given up.
+   */
   bought?: number;
   /** How it is decorated, if not as standard. */
   floor?: FloorId;
@@ -646,6 +649,9 @@ export interface Rival {
   /** Staff it has hired away, and Center of the Year awards it has won. */
   poached: number;
   trophies: number;
+  /** Its standing points (0 until it opens), and the points the center has knocked off it so far. */
+  points: number;
+  knocked: number;
 }
 
 export interface Ceremony {
