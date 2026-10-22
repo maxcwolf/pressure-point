@@ -1,7 +1,7 @@
 // Pine trees for the mountains, with snow on their branches, drawn as a few instanced meshes.
 import * as THREE from 'three';
 
-import { cyl, mat } from './parts';
+import { cached, cyl, mat } from './parts';
 import type { TreeSpot } from './tree';
 
 const NEEDLE_COLORS = [0x2f6b4f, 0x3a7a55, 0x285e48] as const;
@@ -11,6 +11,24 @@ const TIERS = [
   [1.05, 0.55],
   [1.5, 0.38],
 ] as const;
+
+/**
+ * A tier of branches as a soft cone, one unit wide and tall about its middle like a cone's: turned on a lathe with a
+ * rounded lip and tip and smoothly shaded, so a pine is a stack of clay cones rather than a faceted one.
+ */
+const tier = () =>
+  cached('pine-tier', () => {
+    // the underside is never seen from the game's camera, so the tier is open beneath: from the lip up to a round tip
+    const pts = [
+      [0.86, -0.5],
+      [0.99, -0.42],
+      [0.62, -0.04],
+      [0.3, 0.28],
+      [0.09, 0.45],
+      [0, 0.5],
+    ].map(([x = 0, y = 0]) => new THREE.Vector2(x, y));
+    return new THREE.LatheGeometry(pts, 12);
+  });
 
 /** How tall a pine is, by its seed. */
 export const pineHeight = (seed: number) => 0.85 + (seed % 4) * 0.15;
@@ -52,12 +70,11 @@ export function buildPines(spots: readonly TreeSpot[]): THREE.Group {
     }
   }
   const forest = new THREE.Group();
-  forest.add(instanced(cyl(0.07, 0.1, 0.5, 8), mat(0x6b4a32, 0.9), trunks));
-  const cone = new THREE.ConeGeometry(1, 1, 8);
+  forest.add(instanced(cyl(0.07, 0.1, 0.5, 16), mat(0x6b4a32, 0.9), trunks));
+  const cone = tier();
   NEEDLE_COLORS.forEach((color, i) => {
     const tiers = needles[i] ?? [];
-    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.85, flatShading: true });
-    if (tiers.length) forest.add(instanced(cone, m, tiers));
+    if (tiers.length) forest.add(instanced(cone, mat(color, 0.78), tiers));
   });
   if (snow.length) forest.add(instanced(cone, mat(0xf4f8fb, 0.6), snow));
   return forest;

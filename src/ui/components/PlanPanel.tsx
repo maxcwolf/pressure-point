@@ -8,6 +8,7 @@ import { useGame } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { placedFlags } from '../lib/plan';
 import { Button } from './common/Button';
+import { IconText } from './common/Icon';
 import { Stars } from './common/Stars';
 
 /** The blueprint of the room being planned. */
@@ -27,7 +28,7 @@ export function PlanPanel() {
     <div id="plan">
       <div class="panel plan">
         <h3>
-          {`${def.icon} ${def.name} blueprint `}
+          <IconText id={def.icon}>{`${def.name} blueprint`}</IconText>{' '}
           <span class="cost">{`${money(def.cost)}${extras ? ` + ${money(extras)}` : ''}`}</span>
         </h3>
         <div class="chips">
@@ -43,7 +44,7 @@ export function PlanPanel() {
                   tools.startItem(type);
                 }}
               >
-                {`○ ${ITEMS[type].name}`}
+                <IconText id={ITEMS[type].icon}>{ITEMS[type].name}</IconText>
               </Button>
             ),
           )}
@@ -55,7 +56,7 @@ export function PlanPanel() {
               hold('window');
             }}
           >
-            {`🪟 Windows (${room.windows.length}) · ${money(WINDOW_COST)} each`}
+            <IconText id="ui-window">{`Windows (${room.windows.length}) · ${money(WINDOW_COST)} each`}</IconText>
           </Button>{' '}
           <Button
             class={cx('chip', holding === 'door' && 'on')}
@@ -63,7 +64,7 @@ export function PlanPanel() {
               hold('door');
             }}
           >
-            🚪 Move door
+            <IconText id="ui-door">Move door</IconText>
           </Button>
         </div>
         <p class="sub">

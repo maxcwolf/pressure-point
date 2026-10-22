@@ -9,6 +9,7 @@ export * from './conditions';
 export * from './decor';
 export * from './difficulty';
 export * from './feelings';
+export * from './icon-ids';
 export * from './items';
 export * from './karma';
 export * from './map';

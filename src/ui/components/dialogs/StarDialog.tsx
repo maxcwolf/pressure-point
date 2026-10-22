@@ -12,6 +12,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import { karmaText } from '../../lib/karma';
 import { newRoomsText, treatmentsUnlockedAt } from '../../lib/unlocks';
 import { Button } from '../common/Button';
+import { IconText } from '../common/Icon';
 import { StarRow } from '../common/Stars';
 import { Dialog } from './Dialog';
 
@@ -51,7 +52,13 @@ export function StarDialog() {
       {treatments.length > 0 && (
         <p class="unlock">
           <b>New treatments:</b>
-          {` ${treatments.join(', ')}.`}
+          {treatments.map((t, i) => (
+            <span key={t.text}>
+              {i ? ', ' : ' '}
+              <IconText id={t.icon}>{t.text}</IconText>
+            </span>
+          ))}
+          .
           <br />
           Guests who need them will start arriving. Train your staff in a Training Room and check the Treatments menu
           for equipment.
@@ -59,7 +66,9 @@ export function StarDialog() {
       )}{' '}
       {karma && (
         <p class="unlock">
-          <b>{`+${karmaText(STAR_KARMA)}`}</b>
+          <b>
+            <IconText id="ui-karma">{`+${karmaText(STAR_KARMA)}`}</IconText>
+          </b>
           {' to unlock items that stay unlocked in every center. Find them in the Items menu, or the karma shop.'}
         </p>
       )}{' '}

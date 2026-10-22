@@ -2,8 +2,10 @@
 
 import * as THREE from 'three';
 
+import type { SceneIconId } from '../core/data';
 import { DIRT_FILTHY, HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
 import type { Sim } from '../core/sim/sim';
+import { itemHeat } from '../core/sim/warmth';
 import type { Item } from '../core/state/types';
 import { itemCenter, onWall } from '../core/world';
 import { animateCeremony } from './ceremony';
@@ -13,7 +15,8 @@ import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
 import { ghostHung, hangPlace, placeHung } from './hung';
-import { emojiTexture } from './models/emoji';
+import { animateCues, type CueCondition, NOISE_CUE, usedNoise, wearLight } from './item-cues';
+import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
@@ -28,15 +31,12 @@ export function placeItemModel(model: THREE.Object3D, type: ItemType, x: number,
 }
 
 /**
- * What an item's moving parts follow: how watered or hot it is (or how full, for a hamper), how soiled its linens,
- * whether it is scanning, whether it has broken.
+ * What an item's moving parts follow: how watered or hot it is (or how full, for a hamper), how dirty it is or its
+ * linens, whether it is scanning, how worn, whether a guest is using it and how hard it is heating or cooling.
  */
-export interface ItemCondition {
-  id: number;
+export interface ItemCondition extends CueCondition {
   water: number;
-  dirt: number;
   scanning: boolean;
-  broken: boolean;
   /** How many trophies the center has won, each shown as a cup in a trophy cabinet. */
   trophies: number;
 }
@@ -60,8 +60,7 @@ function dryColor(water: number, green: readonly [number, number, number]): THRE
 
 /**
  * Wilting leaves, glowing stones, a sweeping scanner ring, drifting smoke, blinking lights, grubby linens, chimes and
- * a clock's hands,
- * fluttering flags and browning moss.
+ * a clock's hands, fluttering flags and browning moss; and the cues of wear, dirt, noise and warmth (see item-cues.ts).
  */
 export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: number) {
   const { leaf, glow, ring, orb, puffs, led, cups, linens, heap, flames, chimes, hands, flags, moss } = partsOf(model);
@@ -73,7 +72,7 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
   if (glow) glow.emissiveIntensity = (it.water / 100) * 1.4;
   if (ring) {
     ring.position.y = it.scanning ? 0.8 + Math.sin(t * 3.5) * 0.6 : 0.2;
-    ring.visible = !it.broken;
+    ring.visible = it.wear < 100;
   }
   if (orb) orb.position.y = 0.9 + Math.sin(t * 3 + it.id) * 0.035;
   // drifting smoke or scent
@@ -82,7 +81,7 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
     p.position.set(Math.sin(f * 5 + i) * 0.08, f * 0.6, 0);
     p.scale.setScalar(0.4 + f * 0.9);
   });
-  if (led) led.emissiveIntensity = Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1;
+  if (led) wearLight(led, it.wear, it.id, Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1, t);
   cups?.forEach((cup, i) => (cup.visible = i < it.trophies));
   if (linens) soilLinens(linens, it.dirt);
   if (heap) {
@@ -106,6 +105,7 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
   flags?.forEach((f, i) => (f.rotation.x = -0.25 - Math.sin(t * 2.2 - i * 0.7 + it.id) * 0.2));
   // a living wall browns as it dries out, as a plant does, but stays where it hangs
   if (moss) moss.color.copy(dryColor(it.water, MOSS));
+  animateCues(model, it, t);
 }
 
 // every progress bar is drawn with the same few pieces, so a bar costs nothing to make or throw away
@@ -186,9 +186,9 @@ export class ItemsLayer {
       const model = this.items.get(it.id)?.group;
       if (!model) continue;
       this.effects(it, model, t);
-      this.marker(model, it, 'wrench', '🔧', it.wear >= 100, t);
+      this.marker(model, it, 'wrench', 'marker-broken', it.wear >= 100, t);
       // stale linens show on the table itself, not as flies over it
-      this.marker(model, it, 'flies', '🪰', it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens, t);
+      this.marker(model, it, 'flies', 'marker-filthy', it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens, t);
       if (it.serving && it.progress > 0) {
         busy.add(it.id);
         this.bar(it);
@@ -207,10 +207,13 @@ export class ItemsLayer {
       model,
       {
         id: it.id,
+        type: it.type,
         water: it.water,
         dirt: it.dirt,
+        wear: it.wear,
         scanning: it.serving > 0 && it.progress > 0,
-        broken: it.wear >= 100,
+        inUse: this.guestUsing(it),
+        running: this.running(it),
         trophies: this.sim.s.trophies.length,
       },
       t,
@@ -237,13 +240,40 @@ export class ItemsLayer {
     return Math.max(usual, (this.items.get(it.id)?.top ?? 0) + 0.35);
   }
 
+  /**
+   * Whether a guest is using something loud: at its station or in one of its places, or, for something that sounds in
+   * a group session, while the session plays. Quiet things are not asked.
+   */
+  private guestUsing(it: Item): boolean {
+    if (usedNoise(it.type) < NOISE_CUE) return false;
+    if (ITEMS[it.type].sessionNoise) return this.sim.sessionPlaying(it);
+    if (it.serving && this.sim.guest(it.serving)) return true;
+    return it.users.some((id) => id > 0 && !!this.sim.guest(id));
+  }
+
+  /**
+   * How hard a heater or air conditioner is warming or cooling the air, from 0 to 1: not at all once broken, in a power
+   * cut or a freeze, or with the weather switched off, and on a thermostat only as hard as the weather calls for.
+   */
+  private running(it: Item): number {
+    if (!this.sim.s.weatherOn || !itemHeat(it) || this.sim.world.stoppedByMishap(it)) return 0;
+    return this.sim.thermostatShare(it);
+  }
+
   /** Bob a marker over an item that needs a Caretaker: a wrench when broken, flies when filthy. */
-  private marker(model: THREE.Object3D, it: Item, key: 'wrench' | 'flies', emoji: string, show: boolean, t: number) {
+  private marker(
+    model: THREE.Object3D,
+    it: Item,
+    key: 'wrench' | 'flies',
+    icon: SceneIconId,
+    show: boolean,
+    t: number,
+  ) {
     const parts = partsOf(model);
     let sprite = parts[key];
     if (show && !sprite) {
       sprite = new THREE.Sprite(
-        owned(new THREE.SpriteMaterial({ map: emojiTexture(emoji), transparent: true, depthTest: false })),
+        owned(new THREE.SpriteMaterial({ map: iconTexture(icon, true), transparent: true, depthTest: false })),
       );
       sprite.scale.setScalar(0.7);
       sprite.renderOrder = 9;

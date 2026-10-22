@@ -3,6 +3,7 @@
 import { type Difficulty, KNOB_ORDER, KNOBS, PRESET_ORDER, PRESETS } from '../../core/data';
 import { nextLevel, presetLevels, presetOf } from '../../core/difficulty';
 import { cx } from '../lib/cx';
+import { IconText } from './common/Icon';
 
 export interface DifficultySettingsProps {
   difficulty: Difficulty;
@@ -41,7 +42,9 @@ export function DifficultySettings({ difficulty, onChange }: DifficultySettingsP
           const level = difficulty[k] ?? 'usual';
           return (
             <li key={k} title={def.desc}>
-              <span>{`${def.icon} ${def.name}`}</span>
+              <span>
+                <IconText id={def.icon}>{def.name}</IconText>
+              </span>
               <button
                 class={cx('choice', 'level', level)}
                 aria-label={`${def.name}: ${def.words[level]}`}

@@ -3,17 +3,18 @@
 import './KarmaDialog.css';
 
 import { cannotBuy, cannotBuyDecor, karmaLeft } from '../../../core/campaign';
-import { decorDef, type DecorKey, decorLabel, ITEMS, type ItemType } from '../../../core/data';
+import { decorDef, type DecorKey, decorLabel, type IconId, ITEMS, type ItemType } from '../../../core/data';
 import { decorChange } from '../../../core/sim/decor';
 import { buyDecorWithKarma, buyWithKarma, loadCampaign } from '../../../storage/campaign';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { karmaText } from '../../lib/karma';
 import { Button } from '../common/Button';
+import { Icon, IconText } from '../common/Icon';
 import { Dialog } from './Dialog';
 
 /** What is on offer, in the dialog's words, and how to unlock it. */
 interface Offer {
-  icon: string;
+  icon: IconId;
   title: string;
   /** What unlocks it, and where it can be used once it is. */
   about: string;
@@ -41,7 +42,7 @@ function itemOffer(type: ItemType): Offer {
     price,
     /** Unlock the item. */
     buy: () => buyWithKarma(type),
-    done: `${def.icon} ${def.name} unlocked for good.`,
+    done: `${def.name} unlocked for good.`,
   };
 }
 
@@ -50,14 +51,14 @@ function decorOffer(key: DecorKey): Offer {
   const price = karmaText(decorDef(key).karma ?? 0);
   const label = decorLabel(key);
   return {
-    icon: '🎨',
+    icon: 'ui-paint',
     title: `Unlock ${label}?`,
     about: `Only karma unlocks it. It costs ${price}. Once unlocked, it can be used in every center and in the sandbox.`,
     short: cannotBuyDecor(loadCampaign(), key) === 'short',
     price,
     /** Unlock the floor or walls. */
     buy: () => buyDecorWithKarma(key),
-    done: `🎨 ${label.charAt(0).toUpperCase()}${label.slice(1)} unlocked for good.`,
+    done: `${label.charAt(0).toUpperCase()}${label.slice(1)} unlocked for good.`,
   };
 }
 
@@ -74,11 +75,13 @@ export function KarmaDialog() {
   };
   return (
     <Dialog>
-      <div class="bigicon">{offer.icon}</div>
+      <div class="bigicon">
+        <Icon id={offer.icon} size={60} />
+      </div>
       <h2>{offer.title}</h2>
       <p>{offer.about}</p>
       <p class="sub">
-        {`You have ${karmaText(karmaLeft(loadCampaign()))}. `}
+        <IconText id="ui-karma">{`You have ${karmaText(karmaLeft(loadCampaign()))}.`}</IconText>{' '}
         {offer.short ? 'Earn more with stars and achievements in the campaign.' : ''}
       </p>
       <div class="btnrow">
@@ -96,7 +99,7 @@ export function KarmaDialog() {
             onPress={() => {
               if (offer.buy()) {
                 hud.host.audio.play('cash');
-                hud.toast(offer.done, 'good');
+                hud.toast(offer.done, 'good', undefined, offer.icon);
                 putDown();
               }
               hud.close();

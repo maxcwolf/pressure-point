@@ -17,6 +17,7 @@ import {
   detailShirtFront,
   detailTorso,
   ELBOW,
+  type Face,
   GLASSES_OUT,
   KNEE,
 } from './character-detail';
@@ -52,6 +53,10 @@ export interface CharRig {
   smoke?: THREE.Group;
   /** The shins and forearms, hinged at the knees and elbows. */
   joints: Joints;
+  /** The mouth and brows, which change shape with how they feel. */
+  face: Face;
+  /** When they last found themselves with nothing to do, in the scene's seconds, or NaN while they have something. */
+  idleSince: number;
   visual: Visual | undefined;
   cured: boolean;
   scale: number;
@@ -148,7 +153,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const hair = mat(look.hair, 0.85);
   // a hat needs short hair under it, or a woman's tied back low
   const hatted = role === 'caretaker' || visitor === 'inspector';
-  const headMesh = detailHead(head, look, skin, hair, hatted);
+  const { headMesh, face } = detailHead(head, look, skin, hair, hatted);
   if (role === 'shaman') {
     // a single feather tucked in behind one ear
     const feather = put(head, rbox(0.05, 0.26, 0.012, 0.01), mat(0xf4f1ea, 0.8), 0.17, 0.16, -0.12);
@@ -185,6 +190,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     bubble: new THREE.Sprite(owned(new THREE.SpriteMaterial({ transparent: true, depthTest: false }))),
     props: [],
     joints,
+    face,
+    idleSince: NaN,
     visual,
     cured: false,
     scale: look.scale,

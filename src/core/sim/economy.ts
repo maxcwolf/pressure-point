@@ -379,8 +379,10 @@ export function warnPayday(ctx: SimContext) {
     const pace = o.coming > 0 ? `, with about ${money(o.coming)} more coming at this month's pace` : '';
     toast(
       ctx,
-      `⚠️ Payday in ${PAYDAY_WARNING_DAYS} days: ${money(o.wages)} in wages${runningOf(o)}, and ${money(s.money)} in the bank${pace}. ${payrollVerdict(o)}`,
+      `Payday in ${PAYDAY_WARNING_DAYS} days: ${money(o.wages)} in wages${runningOf(o)}, and ${money(s.money)} in the bank${pace}. ${payrollVerdict(o)}`,
       'bad',
+      undefined,
+      'ui-warning',
     );
     return;
   }
@@ -388,8 +390,10 @@ export function warnPayday(ctx: SimContext) {
   s.paydayWarned = month;
   toast(
     ctx,
-    `⚠️ Payday in ${left} days: ${money(o.wages)} in wages${runningOf(o)} against ${money(s.money)} in the bank and about ${money(o.coming)} more at this month's pace. ${payrollVerdict(o)}`,
+    `Payday in ${left} days: ${money(o.wages)} in wages${runningOf(o)} against ${money(s.money)} in the bank and about ${money(o.coming)} more at this month's pace. ${payrollVerdict(o)}`,
     'bad',
+    undefined,
+    'ui-warning',
   );
 }
 
@@ -457,13 +461,15 @@ function finishMonth(ctx: SimContext) {
     callInOverdraft(ctx);
     return;
   }
-  const head = `⚠️ You are ${money(-s.money)} in the red, at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month, and the staff are worried about their wages. You are ${paceOf(s)}`;
+  const head = `You are ${money(-s.money)} in the red, at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month, and the staff are worried about their wages. You are ${paceOf(s)}`;
   toast(
     ctx,
     projectedCashflow(s) < 0
       ? `${head}. ${cutFirst(s)} Then borrow what is left from the Money menu (the bank will still lend ${money(loanRoom(s))}): the loan buys time, but it uses the room the next payday needs, and once it is used up a payday in the red with the books losing money has the bank call the overdraft in.`
       : `${head}, so the bank is content for now: a payday in the red past what it will lend, with the books losing money, and it calls the overdraft in.`,
     'bad',
+    undefined,
+    'ui-warning',
   );
 }
 
@@ -478,8 +484,10 @@ function callInOverdraft(ctx: SimContext) {
   s.speed = 0;
   toast(
     ctx,
-    `⚠️ The bank is calling the overdraft in: you are ${money(-s.money)} in the red and ${paceOf(s)}. You have ${INSOLVENCY_DAYS} days to bring the bank back above zero (sell something, or earn it) or the books into profit, or the center is bankrupt. ${countdownLever(s, INSOLVENCY_DAYS)} The game is paused.`,
+    `The bank is calling the overdraft in: you are ${money(-s.money)} in the red and ${paceOf(s)}. You have ${INSOLVENCY_DAYS} days to bring the bank back above zero (sell something, or earn it) or the books into profit, or the center is bankrupt. ${countdownLever(s, INSOLVENCY_DAYS)} The game is paused.`,
     'bad',
+    undefined,
+    'ui-warning',
   );
   emit(ctx, { type: 'sfx', name: 'error' });
 }
@@ -510,8 +518,10 @@ export function updateInsolvency(ctx: SimContext) {
   if (left === Math.floor(INSOLVENCY_DAYS / 2))
     toast(
       ctx,
-      `⚠️ ${left} days before the bank calls the overdraft in: ${money(-s.money)} in the red, ${paceOf(s)}. Get above zero or into profit. ${countdownLever(s, left)}`,
+      `${left} days before the bank calls the overdraft in: ${money(-s.money)} in the red, ${paceOf(s)}. Get above zero or into profit. ${countdownLever(s, left)}`,
       'bad',
+      undefined,
+      'ui-warning',
     );
   if (s.day >= due.until) goBankrupt(ctx);
 }

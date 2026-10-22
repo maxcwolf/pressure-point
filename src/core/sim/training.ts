@@ -1,6 +1,6 @@
 // Courses staff can take in a Training Room.
 
-import { DAY_SECONDS, GENERAL_COURSES, isGeneral, MODALITIES, modalityLabel, RANK_XP } from '../data';
+import { DAY_SECONDS, GENERAL_COURSES, type IconId, isGeneral, MODALITIES, modalityLabel, RANK_XP } from '../data';
 import { money } from '../format';
 import type { CourseId, Staff } from '../state/types';
 import { accessPose, accessTile } from '../world';
@@ -18,7 +18,7 @@ import { staffIdle } from './staffing';
 export interface Course {
   id: CourseId;
   name: string;
-  icon: string;
+  icon: IconId;
   desc: string;
   cost: number;
   days: number;
@@ -80,7 +80,7 @@ export function train(ctx: SimContext, staffId: number, courseId: string): boole
   spend(ctx, course.cost, 'training');
   st.training = { course: course.id, progress: 0, seconds: course.days * DAY_SECONDS, cost: course.cost };
   st.state = 'toTrain';
-  say(st, '📚', 3);
+  say(st, 'bubble-training', 3);
   emit(ctx, { type: 'sfx', name: 'place' });
   toast(ctx, `${st.name} is off to study ${course.name}.`, 'info', { kind: 'staff', id: st.id });
   return true;
@@ -158,7 +158,7 @@ export function graduate(ctx: SimContext, st: Staff) {
   }
   st.training = null;
   staffIdle(ctx, st);
-  say(st, '🎓', 5);
+  say(st, 'bubble-graduated', 5);
   // being worth more now, they will soon ask to be paid more
   toast(ctx, `${st.name} ${what}.`, 'good', { kind: 'staff', id: st.id });
   emit(ctx, { type: 'sfx', name: 'build' });

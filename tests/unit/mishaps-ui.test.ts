@@ -24,13 +24,13 @@ describe('a mishap notice', () => {
 
   it('says in a line whether it is prepared for, and how long until it starts or ends', () => {
     const m = newMishap(10, 'power');
-    expect(mishapLine(MISHAPS.power, m, 2)).toBe('🔌 Power cut: starts in 2 days · not prepared');
+    expect(mishapLine(MISHAPS.power, m, 2)).toBe('Power cut: starts in 2 days · not prepared');
     m.prepared = true;
-    expect(mishapLine(MISHAPS.power, m, 2)).toBe('🔌 Power cut: starts in 2 days · prepared');
+    expect(mishapLine(MISHAPS.power, m, 2)).toBe('Power cut: starts in 2 days · prepared');
     m.started = true;
-    expect(mishapLine(MISHAPS.power, m, 0.5)).toBe('🔌 Power cut: less than a day left · prepared');
+    expect(mishapLine(MISHAPS.power, m, 0.5)).toBe('Power cut: less than a day left · prepared');
     m.prepared = false;
-    expect(mishapLine(MISHAPS.storm, { ...m, kind: 'storm' }, 2)).toBe('⛈️ Storm: 2 days left');
+    expect(mishapLine(MISHAPS.storm, { ...m, kind: 'storm' }, 2)).toBe('Storm: 2 days left');
   });
 
   it('says what preparing would do', () => {
@@ -41,16 +41,18 @@ describe('a mishap notice', () => {
     expect(kitNote('Stone Warmer', true, undefined)).toEqual({ ok: true, text: '✔ Stone Warmer installed' });
     expect(kitNote('Stone Warmer', false, MISHAPS.power)).toEqual({
       ok: false,
-      text: '🔌 Stone Warmer out of action: power cut',
+      icon: 'mishap-power',
+      text: 'Stone Warmer out of action: power cut',
     });
     expect(kitNote('Stone Warmer', false, undefined)).toEqual({
       ok: false,
-      text: '⚠️ Needs a Stone Warmer in the room',
+      icon: 'ui-warning',
+      text: 'Needs a Stone Warmer in the room',
     });
   });
 
   it('names the mishap on an item it has taken out of action', () => {
-    expect(stoppedLabel(MISHAPS.freeze)).toBe('🥶 Out of action: big freeze');
+    expect(stoppedLabel(MISHAPS.freeze)).toBe('Out of action: big freeze');
   });
 });
 

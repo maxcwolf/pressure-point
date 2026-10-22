@@ -9,6 +9,7 @@ import { useGame, useHud } from '../hooks/use-hud';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
+import { IconText } from './common/Icon';
 import { HouseCallOffer } from './HouseCallOffer';
 import { MishapNotice } from './MishapNotice';
 import { OutbreakOffer } from './OutbreakOffer';
@@ -44,7 +45,9 @@ function Emergency() {
             hud.offerAside = null;
           }}
         >
-          <span>{`🚨 Emergency on offer: ${timeLeftLabel(left.days)} to decide`}</span>
+          <span>
+            <IconText id="ui-emergency">{`Emergency on offer: ${timeLeftLabel(left.days)} to decide`}</IconText>
+          </span>
           {timer}
         </Button>
       </>
@@ -61,7 +64,9 @@ function Emergency() {
         >
           ✕
         </Button>
-        <h3>🚨 Emergency</h3>
+        <h3>
+          <IconText id="ui-emergency">Emergency</IconText>
+        </h3>
         <p>
           {`${offer.cause} `}
           <b>{`${offer.total} guests`}</b> with <b>{condition.name}</b>

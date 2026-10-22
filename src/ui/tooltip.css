@@ -99,3 +99,10 @@
     animation: none;
   }
 }
+
+/* an icon in the navy bubble sits on a cream chip, or its navy outline would vanish */
+#tip .icon {
+  background: var(--cream);
+  border-radius: 6px;
+  padding: 1.5px;
+}

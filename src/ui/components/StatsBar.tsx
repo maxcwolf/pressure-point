@@ -2,7 +2,7 @@
 
 import './StatsBar.css';
 
-import { centerOf } from '../../core/data';
+import { centerOf, type IconId } from '../../core/data';
 import { dateOf, money } from '../../core/format';
 import { netOf } from '../../core/sim/economy';
 import { useGame, useHud } from '../hooks/use-hud';
@@ -11,15 +11,21 @@ import { calendarTip, SEASON_NAMES } from '../lib/seasons';
 import { weatherNote } from '../lib/weather';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
+import { Icon } from './common/Icon';
 
 /** The icon beside the date for each season. */
-const SEASON_ICONS = { winter: '❄️', spring: '🌱', summer: '☀️', autumn: '🍂' } as const;
+const SEASON_ICONS = {
+  winter: 'season-winter',
+  spring: 'season-spring',
+  summer: 'season-summer',
+  autumn: 'season-autumn',
+} as const satisfies Record<string, IconId>;
 
-const SPEEDS: readonly { speed: number; label: string; title: string }[] = [
-  { speed: 0, label: '⏸', title: 'Pause (Space)' },
-  { speed: 1, label: '▶', title: 'Normal (1)' },
-  { speed: 2, label: '▶▶', title: 'Fast (2)' },
-  { speed: 3, label: '▶▶▶', title: 'Fastest (3)' },
+const SPEEDS: readonly { speed: number; icon: IconId; title: string }[] = [
+  { speed: 0, icon: 'ui-pause', title: 'Pause (Space)' },
+  { speed: 1, icon: 'ui-play', title: 'Normal (1)' },
+  { speed: 2, icon: 'ui-fast', title: 'Fast (2)' },
+  { speed: 3, icon: 'ui-fastest', title: 'Fastest (3)' },
 ];
 
 /** The center's vital signs and the speed controls. */
@@ -34,7 +40,7 @@ export function StatsBar() {
   return (
     <div id="stats">
       <div class={cx('stat money', s.money < 0 && 'neg')} title="Bank balance">
-        <i>💰</i>
+        <Icon id="ui-money" size={26} />
         <b>{money(s.money)}</b>
         <small class={net < 0 ? 'neg' : 'pos'}>{`${net >= 0 ? '+' : ''}${money(net)} this month`}</small>
       </div>{' '}
@@ -46,17 +52,17 @@ export function StatsBar() {
           hud.menu = 'stats';
         }}
       >
-        <i>⭐</i>
+        <Icon id="ui-reputation" size={26} />
         <b>{`${s.reputation.toFixed(0)}%`}</b>
         <Bar value={s.reputation} class="thin gold" />
       </Button>{' '}
       <div class="stat" title="Guests on site">
-        <i>🧍</i>
+        <Icon id="ui-guests" size={26} />
         <b>{s.guests.length}</b>
         <small>{`${s.stats.healed} healed`}</small>
       </div>{' '}
       <div class="stat date" title={calendarTip(s.day, centerOf(s))}>
-        <i>{SEASON_ICONS[season]}</i>
+        <Icon id={SEASON_ICONS[season]} size={26} />
         <b>
           {`Day ${date.day}`}
           {weather && (
@@ -85,7 +91,7 @@ export function StatsBar() {
               s.speed = sp.speed;
             }}
           >
-            {sp.label}
+            <Icon id={sp.icon} size={20} label={sp.title} />
           </Button>
         ))}
       </div>

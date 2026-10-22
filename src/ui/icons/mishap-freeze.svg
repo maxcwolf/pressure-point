@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <g stroke="#24384a" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="16" cy="16" r="13.5" fill="#e5564d"/>
+    <g transform="translate(16 16) scale(0.8) translate(-16 -16)">
+    <path d="M16 4.5V27.5M13 7L16 9.5L19 7M13 25L16 22.5L19 25" fill="none" stroke-width="6.2" transform="rotate(0 16 16)"/>
+    <path d="M16 4.5V27.5M13 7L16 9.5L19 7M13 25L16 22.5L19 25" fill="none" stroke-width="6.2" transform="rotate(60 16 16)"/>
+    <path d="M16 4.5V27.5M13 7L16 9.5L19 7M13 25L16 22.5L19 25" fill="none" stroke-width="6.2" transform="rotate(120 16 16)"/>
+    <path d="M16 4.5V27.5M13 7L16 9.5L19 7M13 25L16 22.5L19 25" fill="none" stroke="#ffffff" stroke-width="2.3" transform="rotate(0 16 16)"/>
+    <path d="M16 4.5V27.5M13 7L16 9.5L19 7M13 25L16 22.5L19 25" fill="none" stroke="#ffffff" stroke-width="2.3" transform="rotate(60 16 16)"/>
+    <path d="M16 4.5V27.5M13 7L16 9.5L19 7M13 25L16 22.5L19 25" fill="none" stroke="#ffffff" stroke-width="2.3" transform="rotate(120 16 16)"/>
+    </g>
+  </g>
+</svg>

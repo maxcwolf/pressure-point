@@ -7,6 +7,7 @@ import {
   ACHIEVEMENTS,
   decorDef,
   type DecorKey,
+  type IconId,
   type ItemDef,
   ITEMS,
   type ItemType,
@@ -14,22 +15,22 @@ import {
   KARMA_ITEMS,
 } from '../../core/data';
 
-/** Karma as the interface writes it. */
+/** Karma as the interface writes it, beside the karma icon. */
 export function karmaText(n: number): string {
-  return `✨ ${n} karma`;
+  return `${n} karma`;
 }
 
-/** The note on a locked item's card: the star that unlocks it, the karma that does, or both. */
+/** The note on a locked item's card, beside a lock: the star that unlocks it, the karma that does, or both. */
 export function lockLabel(def: ItemDef): string {
-  if (def.unlock !== undefined && def.karma !== undefined) return `🔒 Star ${def.unlock}, or ${karmaText(def.karma)}`;
-  if (def.karma !== undefined) return `🔒 ${karmaText(def.karma)}`;
-  return `🔒 Unlocks at star ${def.unlock ?? 0}`;
+  if (def.unlock !== undefined && def.karma !== undefined) return `Star ${def.unlock}, or ${karmaText(def.karma)}`;
+  if (def.karma !== undefined) return karmaText(def.karma);
+  return `Unlocks at star ${def.unlock ?? 0}`;
 }
 
 /** One item in the karma shop. */
 export interface ShopCard {
   type: ItemType;
-  icon: string;
+  icon: IconId;
   name: string;
   karma: number;
   /** The star that unlocks it in each game anyway, if one does. */
@@ -84,7 +85,7 @@ export function decorCards(p: CampaignProgress): DecorCard[] {
 /** One achievement, and whether it has been earned. */
 export interface AchievementCard {
   id: AchievementId;
-  icon: string;
+  icon: IconId;
   name: string;
   desc: string;
   karma: number;

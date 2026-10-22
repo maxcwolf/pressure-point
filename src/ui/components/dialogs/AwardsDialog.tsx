@@ -8,6 +8,7 @@ import { money } from '../../../core/format';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
+import { Icon, IconText } from '../common/Icon';
 import { Dialog } from './Dialog';
 
 /** Every award at the year's ceremony, won or missed, with how the center did and what the winners took home. */
@@ -20,7 +21,9 @@ export function AwardsDialog() {
   const prizes = won.reduce((sum, r) => sum + AWARDS[r.award].prize, 0);
   return (
     <Dialog wide>
-      <h2>{`🏆 Year ${ceremony.year} awards`}</h2>
+      <h2>
+        <IconText id="ui-trophy">{`Year ${ceremony.year} awards`}</IconText>
+      </h2>
       <p>
         {won.length
           ? `${won.length} of ${ceremony.results.length} won: ${money(prizes)} in prizes, and +${won.length * AWARD_REP}% reputation.`
@@ -31,7 +34,7 @@ export function AwardsDialog() {
           const def = AWARDS[r.award];
           return (
             <li key={r.award} class={cx(r.won ? 'won' : 'missed')}>
-              <i>{r.won ? def.icon : '·'}</i>
+              <Icon id={def.icon} size={28} />
               <span>
                 <b>{def.name}</b>
                 <small>{`${def.desc}. ${r.note}.`}</small>
@@ -53,7 +56,7 @@ export function AwardsDialog() {
               tools.startItem('certificate');
             }}
           >
-            📜 Hang a certificate
+            <IconText id="item-certificate">Hang a certificate</IconText>
           </Button>
         )}
         <Button

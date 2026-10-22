@@ -9,6 +9,7 @@ import type { RoomsTab } from '../../hud';
 import { available, machineCures, roomKarmaLock, roomOffering } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
+import { Icon, IconText } from '../common/Icon';
 import { TemplatesTab } from './TemplatesTab';
 
 /** The Rooms menu's tabs. */
@@ -79,7 +80,7 @@ function RoomCards() {
               tools.startRoom(t);
             }}
           >
-            <i>{r.icon}</i>
+            <Icon id={r.icon} size={34} />
             <b>{r.name}</b>
             <span class="cost">{money(r.cost)}</span>
             <p>{r.desc}</p>
@@ -89,9 +90,13 @@ function RoomCards() {
               </p>
             )}
             {starred ? (
-              <em>{`🔒 Unlocks at star ${r.unlock}`}</em>
+              <em>
+                <IconText id="ui-lock">{`Unlocks at star ${r.unlock}`}</IconText>
+              </em>
             ) : forKarma ? (
-              <em>{`🔒 Unlock the ${ITEMS[forKarma].name} with ${ITEMS[forKarma].karma ?? 0} karma`}</em>
+              <em>
+                <IconText id="ui-lock">{`Unlock the ${ITEMS[forKarma].name} with ${ITEMS[forKarma].karma ?? 0} karma`}</IconText>
+              </em>
             ) : (
               r.staff && <em>{`Needs: ${ROLES[r.staff].name}`}</em>
             )}

@@ -17,3 +17,10 @@
   animation: drop 0.35s ease-out;
   text-align: center;
 }
+
+/* an icon keeps its navy outline on the navy pill by sitting on a cream chip */
+.announce .icon {
+  background: var(--cream);
+  border-radius: 6px;
+  padding: 1.5px;
+}

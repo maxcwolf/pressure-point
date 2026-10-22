@@ -26,6 +26,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { keepTemplates } from '../../templates';
 import { Button } from '../common/Button';
+import { Icon, IconText } from '../common/Icon';
 
 /** A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. */
 function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key: DecorKey) => boolean }) {
@@ -38,7 +39,7 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
   const [draft, setDraft] = useState<string | null>(null);
   return (
     <div class={cx('card', 'template', !lock && sim.s.money < cost && 'poor')} data-template={t.name}>
-      <i>{room.icon}</i>
+      <Icon id={room.icon} size={34} />
       <span class="cost">{money(cost)}</span>
       <input
         class="tname"
@@ -57,7 +58,11 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
         }}
       />
       <p>{describeLayout(layout)}</p>
-      {lock && <em>{`🔒 ${lock}`}</em>}
+      {lock && (
+        <em>
+          <IconText id="ui-lock">{lock}</IconText>
+        </em>
+      )}
       <div class="template-actions">
         <Button
           class="build"

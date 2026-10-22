@@ -81,8 +81,10 @@ function openUp(ctx: SimContext) {
   s.rival.nextPoach = s.day + POACH_GAP_DAYS[0];
   toast(
     ctx,
-    `🏪 A ${RIVAL_NAME} has opened across the street: "${RIVAL_SLOGAN}." It will hold sales, try to hire away unhappy staff, and compete for Center of the Year.`,
+    `A ${RIVAL_NAME} has opened across the street: "${RIVAL_SLOGAN}." It will hold sales, try to hire away unhappy staff, and compete for Center of the Year.`,
     'bad',
+    undefined,
+    'ui-rival',
   );
   tipOnce(
     ctx,
@@ -97,15 +99,17 @@ function updateSale(ctx: SimContext) {
   const r = s.rival;
   if (r.saleUntil && s.day >= r.saleUntil) {
     r.saleUntil = 0;
-    toast(ctx, `🏪 ${RIVAL_NAME}'s sale is over.`, 'info');
+    toast(ctx, `${RIVAL_NAME}'s sale is over.`, 'info', undefined, 'ui-rival');
   }
   if (r.saleUntil || s.day < r.nextSale) return;
   r.saleUntil = s.day + SALE_DAYS;
   r.nextSale = r.saleUntil + irnd(s, SALE_GAP_DAYS[0], SALE_GAP_DAYS[1]);
   toast(
     ctx,
-    `🏪 ${RIVAL_NAME} is holding a sale: ${Math.round(SALE_DISCOUNT * 100)}% off for ${SALE_DAYS} days. Guests who think you charge too much will go there instead, unless you lower your prices in the Money menu.`,
+    `${RIVAL_NAME} is holding a sale: ${Math.round(SALE_DISCOUNT * 100)}% off for ${SALE_DAYS} days. Guests who think you charge too much will go there instead, unless you lower your prices in the Money menu.`,
     'bad',
+    undefined,
+    'ui-rival',
   );
 }
 
@@ -130,9 +134,10 @@ function updatePoaching(ctx: SimContext) {
   st.offer = s.day + POACH_DAYS;
   toast(
     ctx,
-    `⚠️ ${RIVAL_NAME} has offered ${st.name} a job. Lift their morale above ${POACH_MORALE} within ${POACH_DAYS} days, with a raise or a break, or they will take it.`,
+    `${RIVAL_NAME} has offered ${st.name} a job. Lift their morale above ${POACH_MORALE} within ${POACH_DAYS} days, with a raise or a break, or they will take it.`,
     'bad',
     { kind: 'staff', id: st.id },
+    'ui-warning',
   );
   emit(ctx, { type: 'sfx', name: 'error' });
 }

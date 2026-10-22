@@ -133,7 +133,7 @@ export function acceptCall(ctx: SimContext, staffId: number): boolean {
     pricedBy: call.modality ?? 'level',
   };
   st.state = 'toCall';
-  say(st, '🧳', 3);
+  say(st, 'bubble-house-call', 3);
   s.callOffer = null;
   toast(ctx, `${st.name} is off to ${call.client} for ${call.days} day${call.days === 1 ? '' : 's'}.`, 'info', {
     kind: 'staff',

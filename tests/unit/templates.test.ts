@@ -305,7 +305,7 @@ describe('building from a template', () => {
     const groundAt = (x: number, y: number) => ({ x, y });
     const tools = new Tools(sim, { ...view, groundAt } as unknown as View, nothing, nothing);
     tools.startTemplate('Suite', SUITE);
-    expect(tools.hint).toBe(templateHint('Suite', 'massage', copyCost(SUITE)));
+    expect(tools.hint).toBe(templateHint('Suite', copyCost(SUITE)));
     tools.rotate();
     expect(tools.tool).toMatchObject({ kind: 'template', layout: { w: 3, h: 4 } });
     const rooms = s.rooms.length;
@@ -320,7 +320,7 @@ describe('building from a template', () => {
   });
 
   it('words the hint with the name and price', () => {
-    expect(templateHint('Corner suite', 'massage', 3000)).toContain('Building "Corner suite" · $3,000 each');
+    expect(templateHint('Corner suite', 3000)).toContain('Building "Corner suite" · $3,000 each');
   });
 });
 

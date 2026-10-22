@@ -178,7 +178,9 @@ describe('a signature machine’s technique', () => {
   });
 
   it('is left out of the techniques a star unlocks, coming with its room instead', () => {
-    const named = treatmentsUnlockedAt(2, () => true).join(' ');
+    const named = treatmentsUnlockedAt(2, () => true)
+      .map((t) => t.text)
+      .join(' ');
     expect(named).not.toContain(MODALITIES.kneading.name);
   });
 
@@ -275,7 +277,7 @@ describe('running a machine', () => {
 
   it('tells a player what it does on its card', () => {
     const ids = itemStats('kneadmaster').map((x) => x.icon);
-    expect(ids).toEqual(expect.arrayContaining(['⚙️', '🔌', '💨']));
+    expect(ids).toEqual(expect.arrayContaining(['bubble-installing', 'ui-wages', 'ui-warning']));
     expect(itemStats('fog_machine').map((x) => x.short)).toContain('Helps its room');
   });
 });

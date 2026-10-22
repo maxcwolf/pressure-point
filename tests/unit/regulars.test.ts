@@ -120,7 +120,7 @@ describe('a regular’s loyalty', () => {
     afterVisit(ctxOf(sim), g, 5, true);
     expect(r.loyalty).toBe(LOYAL_AT - 5 + loyaltyChange(5));
     expect(r.due).toBe(40 + returnGap(r));
-    expect(toasts(drainEvents(ctxOf(sim)))).toEqual([`💛 ${r.name} has grown loyal: more patient, and they tip.`]);
+    expect(toasts(drainEvents(ctxOf(sim)))).toEqual([`${r.name} has grown loyal: more patient, and they tip.`]);
   });
 
   it('runs out after a bad visit or two, and they stop coming', () => {
@@ -131,7 +131,7 @@ describe('a regular’s loyalty', () => {
     g.regular = r.id;
     afterVisit(ctxOf(sim), g, 1, false);
     expect(sim.s.regulars).toHaveLength(0);
-    expect(toasts(drainEvents(ctxOf(sim)))).toEqual([`💔 ${r.name} has had enough, and will not be coming back.`]);
+    expect(toasts(drainEvents(ctxOf(sim)))).toEqual([`${r.name} has had enough, and will not be coming back.`]);
   });
 
   it('makes a loyal regular more patient, and a tipper', () => {
@@ -181,7 +181,7 @@ describe('a regular coming back', () => {
       for (const e of drainEvents(ctxOf(sim))) if (e.type === 'float') floats.push(e.text);
       return floats.includes('Welcome back, Margo!');
     });
-    expect(floats).toContain('👋 Back again');
+    expect(floats).toContain('Back again');
   });
 });
 
@@ -223,9 +223,15 @@ describe('the vision quest', () => {
 
 describe('a regular in the interface', () => {
   it('is tagged with their visits and loyalty', () => {
-    expect(regularTag(regular({ visits: 1 }))).toBe('👋 Regular, on their 1st visit');
-    expect(regularTag(regular({ visits: 3, loyalty: LOYAL_AT }))).toBe('💛 Loyal regular, on their 3rd visit');
-    expect(regularTag(regular({ visits: 12, loyalty: DEVOTED_AT }))).toBe('💛 Devoted regular, on their 12th visit');
+    expect(regularTag(regular({ visits: 1 }))).toEqual({ icon: 'ui-regular', text: 'Regular, on their 1st visit' });
+    expect(regularTag(regular({ visits: 3, loyalty: LOYAL_AT }))).toEqual({
+      icon: 'ui-loyal',
+      text: 'Loyal regular, on their 3rd visit',
+    });
+    expect(regularTag(regular({ visits: 12, loyalty: DEVOTED_AT }))).toEqual({
+      icon: 'ui-loyal',
+      text: 'Devoted regular, on their 12th visit',
+    });
   });
 
   it('says when they are due, or that they are here', () => {

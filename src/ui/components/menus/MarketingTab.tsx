@@ -18,6 +18,7 @@ import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { wholeDaysLeft } from '../../lib/emergency';
 import { Button } from '../common/Button';
+import { IconText } from '../common/Icon';
 
 /** One kind of campaign: what it does and costs, and either how long it has left or buttons to buy it. */
 function CampaignCard({ kind }: { kind: CampaignKind }) {
@@ -32,7 +33,9 @@ function CampaignCard({ kind }: { kind: CampaignKind }) {
   );
   return (
     <div class={cx('ledger', 'campaign', live && 'live')}>
-      <h4>{`${def.icon} ${def.name}`}</h4>
+      <h4>
+        <IconText id={def.icon}>{def.name}</IconText>
+      </h4>
       <p class="sub">{`${def.desc} ${money(def.perMonth)} a month.`}</p>
       {live ? (
         <p class="running">

@@ -18,7 +18,6 @@
   border: 3px solid var(--navy);
   display: grid;
   place-items: center;
-  font-size: 26px;
   box-shadow: var(--shadow);
 }
 

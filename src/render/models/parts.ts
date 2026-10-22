@@ -1,22 +1,78 @@
 // The building blocks every model is made from: shared shapes, materials and colors.
+//
+// How a model should look, so items, people and scenery read as one family of soft clay toys under the game's light.
+// People are about 1.1 m tall, and a room's back wall is 1.25 m (`H_TALL`).
+//
+// - Thickness. No structural member (a leg, post, pole, rail, frame or arch) is thinner than `MEMBER_MIN` across, and
+//   one taller than a person is at least `MEMBER_TALL`, so nothing reads as wire at the default zoom. Only details too small
+//   to carry weight (a needle, a cord, a handle) go thinner, and never below 0.02 m. Marks painted on a flat face
+//   (lettering, the lines of a chart) are paint, not members.
+// - Corners. A box's corners are rounded by `corner(w, h, d)`: three tenths of its thinnest side, from 1.2 to 8 cm.
+//   `soft` makes such a box. Cushions and pads may be plumper, up to half their thickness; go sharper only where an
+//   edge is the point (a picture frame's mitre, a blade).
+// - Height. A one-tile item stands no taller than `TALL_MAX`, a person and a half, and most stand at or under the back
+//   wall. A seat is about 0.37 m high, a table or treatment couch 0.5 to 0.75 m. Something on a wall hangs about
+//   `HANG_Y` and stays inside the wall.
+// - Capsule or cylinder. A member that ends in the air (a handle, beater, hose, bolster, branch or rail end) is a
+//   capsule, rounded like a person's limb. One that meets the floor or another part flush (a leg, post, pot, barrel,
+//   bowl or disc) is a cylinder or a rounded box. Cylinders over 0.2 m across take at least 16 sides.
+// - Shading. Every surface is smoothly shaded, foliage too: leaves are spheres, or `blob`s where there are hundreds.
+// - Color. The body is in the muted tones already here (the woods, cream, white, chrome, dark and lacquer, and soft
+//   pastels). A saturated color, or a glow, goes only on the part that says what the item is or does (the screen, the
+//   flame, the crystals, the button), and covers no more than about a fifth of what shows. Glow is for what gives light.
+// - Silhouette. From the game's camera, high and to the front, the outline alone says what the item is: the part that
+//   names it stands proud of the body (up, or out to the front), and is not a flat disc lying where a ring should stand.
+// - Cost. Reuse `mat` colors: every distinct material in an item is a draw call, so a polish adds none.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const matCache = new Map<string, THREE.MeshStandardMaterial>();
 /** The roughness of each shared material with no glow: these differ from one another only in color. */
 const plain = new WeakMap<THREE.Material, number>();
 
-/** A shared material for a color, roughness and glow, made once and reused. */
-export function mat(color: number, rough = 0.72, emissive = 0): THREE.MeshStandardMaterial {
+/** How rough a painted surface is unless asked otherwise: satin, so rounded edges catch a soft highlight. */
+const PAINT = 0.62;
+/** How rough a color's surface is at most, whatever is asked: oiled wood has a soft shine, and lacquer a sharper one. */
+const polish = (color: number) => (color === WOOD || color === WOOD_DARK ? 0.55 : color === LACQUER ? 0.38 : 1);
+/** Roughnesses from here up are cloth, hair and felt, which take a pale sheen where the light grazes them. */
+const CLOTH = 0.8;
+/** Skin's roughness, as people's models ask for it: skin takes a faint warm sheen at its edges, as light through skin does. */
+const SKIN = 0.65;
+
+/**
+ * A shared material for a color, roughness and glow, made once and reused. Wood and lacquer are a little glossier than
+ * asked, and cloth and skin take a sheen, so each kind of surface takes the light its own way without any more
+ * materials than before. A material's recorded roughness, asked for in white, gives the same look, as the crowd
+ * needs.
+ */
+export function mat(color: number, rough = PAINT, emissive = 0): THREE.MeshStandardMaterial {
   const key = `${color}|${rough}|${emissive}`;
   let m = matCache.get(key);
   if (!m) {
-    m = new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0.02 });
+    const roughness = Math.min(rough, polish(color));
+    if (rough >= CLOTH) {
+      m = new THREE.MeshPhysicalMaterial({
+        roughness,
+        metalness: 0,
+        sheen: 1,
+        sheenColor: 0x4a4a4a,
+        sheenRoughness: 0.55,
+      });
+    } else if (rough === SKIN) {
+      m = new THREE.MeshPhysicalMaterial({
+        roughness,
+        metalness: 0,
+        sheen: 1,
+        sheenColor: 0x5c3428,
+        sheenRoughness: 0.45,
+      });
+    } else m = new THREE.MeshStandardMaterial({ roughness, metalness: 0 });
+    m.color.setHex(color);
     if (emissive) {
       m.emissive = new THREE.Color(color);
       m.emissiveIntensity = emissive;
-    } else plain.set(m, rough);
+    } else plain.set(m, roughness);
     matCache.set(key, m);
   }
   return m;
@@ -56,6 +112,21 @@ export const farShape = (shape: THREE.BufferGeometry) => farShapes.get(shape) ??
 export const rbox = (w: number, h: number, d: number, r = 0.05) =>
   cached(`b${w}|${h}|${d}|${r}`, () => new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2, h / 2, d / 2)));
 
+/** The thinnest a structural member may be across, in meters (see the guideline at the top of this file). */
+export const MEMBER_MIN = 0.06;
+
+/** The thinnest a structural member taller than a person may be across, in meters. */
+export const MEMBER_TALL = 0.08;
+
+/** The tallest a one-tile item may stand, in meters: a person and a half. */
+export const TALL_MAX = 1.6;
+
+/** The standard corner radius for a rounded box of this size: three tenths of its thinnest side, from 1.2 to 8 cm. */
+export const corner = (w: number, h: number, d: number) => Math.min(0.08, Math.max(0.012, Math.min(w, h, d) * 0.3));
+
+/** A shared rounded box with the standard corner for its size. */
+export const soft = (w: number, h: number, d: number) => rbox(w, h, d, corner(w, h, d));
+
 /** A shared cylinder or cone geometry. */
 export const cyl = (rt: number, rb: number, h: number, seg = 18) =>
   cached(`c${rt}|${rb}|${h}|${seg}`, () => new THREE.CylinderGeometry(rt, rb, h, seg));
@@ -67,8 +138,44 @@ export const sph = (r: number, seg = 18) =>
 /** A shared icosahedron geometry. */
 export const ico = (r: number) => cached(`i${r}`, () => new THREE.IcosahedronGeometry(r, 1));
 
+/**
+ * A shared soft blob: an icosahedron with its corners welded and its normals smoothed, so it shades as round as a
+ * sphere for a fifth of the triangles. For things drawn by the hundred, such as the leaves of the trees.
+ */
+export const blob = (r: number) =>
+  cached(`o${r}`, () => {
+    const g = new THREE.IcosahedronGeometry(r, 1);
+    g.deleteAttribute('normal');
+    g.deleteAttribute('uv');
+    const soft = mergeVertices(g);
+    soft.computeVertexNormals();
+    return soft;
+  });
+
 /** A shared torus geometry. */
 export const torus = (r: number, t: number) => cached(`t${r}|${t}`, () => new THREE.TorusGeometry(r, t, 10, 24));
+
+/**
+ * A shared open bowl, turned on a lathe so its inside shades darker than its rim: `r` across the rim, `h` deep, with
+ * walls `t` thick, standing on its foot at y = 0.
+ */
+export const bowl = (r: number, h: number, t = 0.025, seg = 24) =>
+  cached(`w${r}|${h}|${t}|${seg}`, () => {
+    const foot = r * 0.55;
+    /** A point on a quarter curve from the foot (at 0) up to the rim (at 1), `inset` in from the outside. */
+    const curve = (i: number, inset: number) => {
+      const a = (i / 6) * (Math.PI / 2);
+      const x = foot - inset + (r - foot) * Math.sin(a);
+      return new THREE.Vector2(Math.max(0, x), inset + (h - inset) * (1 - Math.cos(a)));
+    };
+    const pts = [new THREE.Vector2(0, 0)];
+    for (let i = 0; i <= 6; i++) pts.push(curve(i, 0));
+    // over the rim, and back down the inside to the floor
+    pts.push(new THREE.Vector2(r - t / 2, h + t / 3));
+    for (let i = 6; i >= 0; i--) pts.push(curve(i, t));
+    pts.push(new THREE.Vector2(0, t));
+    return new THREE.LatheGeometry(pts, seg);
+  });
 
 /** A shared capsule geometry. */
 export const capsule = (r: number, len: number) =>
@@ -195,6 +302,12 @@ export interface ItemParts {
   puffs?: THREE.Group;
   /** A blinking light. */
   led?: THREE.MeshStandardMaterial;
+  /** A light that shines steadily: it flickers as the item wears out and goes dark when it breaks. */
+  lamp?: THREE.MeshStandardMaterial;
+  /** The main surface of something that gets dirty without linens to change, which grows grimy until it is cleaned. */
+  grime?: THREE.MeshStandardMaterial;
+  /** The cues of wear, noise and warmth, added the first time each is needed (see `render/item-cues.ts`). */
+  cues?: CueParts;
   /** The wrench shown over an item that has broken down. */
   wrench?: THREE.Sprite;
   /** The flies shown over an item that is filthy. */
@@ -232,6 +345,18 @@ export interface ItemParts {
   emitters?: Record<string, THREE.Group>;
   /** A machine's glow, which its gag brightens while it works. */
   shine?: THREE.MeshStandardMaterial;
+}
+
+/** The parts of an item's cues of wear, noise and warmth, each added to its model the first time it is needed. */
+export interface CueParts {
+  /** The box the model's own parts fill, in its own frame, that the cues rise from and spread around. */
+  box: THREE.Box3;
+  /** Smoke from a worn or broken machine, or dust from a worn mat. */
+  smoke?: THREE.Group;
+  /** Ripples from something loud a guest is playing. */
+  ripple?: THREE.Group;
+  /** Wisps of warm or cool air. */
+  wisps?: THREE.Group;
 }
 
 /** The changing parts of an item's model. */

@@ -83,9 +83,9 @@ describe('a locked item', () => {
   });
 
   it('says what unlocks it', () => {
-    expect(lockLabel(ITEMS.aquarium)).toBe('🔒 Star 2, or ✨ 5 karma');
-    expect(lockLabel(ITEMS.koi_pond)).toBe('🔒 ✨ 6 karma');
-    expect(lockLabel(ITEMS.moxa_burner)).toBe('🔒 Unlocks at star 2');
+    expect(lockLabel(ITEMS.aquarium)).toBe('Star 2, or 5 karma');
+    expect(lockLabel(ITEMS.koi_pond)).toBe('6 karma');
+    expect(lockLabel(ITEMS.moxa_burner)).toBe('Unlocks at star 2');
   });
 });
 
@@ -118,8 +118,8 @@ describe('achievements', () => {
     checkAchievements(ctx);
     expect(ctx.s.achieved).toEqual(['called-in', 'century']);
     expect(toasts(drainEvents(ctx))).toEqual([
-      '🚑 Achievement: Called In! +2 ✨ karma to spend in any center.',
-      '💯 Achievement: Century! +3 ✨ karma to spend in any center.',
+      'Achievement: Called In! +2 karma to spend in any center.',
+      'Achievement: Century! +3 karma to spend in any center.',
     ]);
     checkAchievements(ctx);
     expect(drainEvents(ctx)).toEqual([]);

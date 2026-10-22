@@ -2,11 +2,20 @@
 
 import './PolicyMenu.css';
 
-import { BREAK_AT_MAX, BREAK_AT_MIN, DIAGNOSIS_MAX, DIAGNOSIS_MIN, ROLE_ORDER, ROLES } from '../../../core/data';
+import {
+  BREAK_AT_MAX,
+  BREAK_AT_MIN,
+  DIAGNOSIS_MAX,
+  DIAGNOSIS_MIN,
+  type IconId,
+  ROLE_ORDER,
+  ROLES,
+} from '../../../core/data';
 import { useGame } from '../../hooks/use-hud';
 import { percent } from '../../lib/chance';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
+import { IconText } from '../common/Icon';
 
 /** The most of one role a break limit can be set to; above it, the limit is off. */
 const MAX_BREAK_LIMIT = 5;
@@ -14,6 +23,8 @@ const MAX_BREAK_LIMIT = 5;
 /** A setting with a value and a pair of buttons to step it down and up, its name above them or, inline, beside them. */
 function Stepper(props: {
   name: string;
+  /** An icon before the name. */
+  icon?: IconId;
   value: string;
   atMin: boolean;
   atMax: boolean;
@@ -22,7 +33,9 @@ function Stepper(props: {
 }) {
   return (
     <div class={cx('stepper', props.inline && 'inline')}>
-      <span>{props.name}</span>
+      <span>
+        <IconText id={props.icon}>{props.name}</IconText>
+      </span>
       <Button
         locked={props.atMin}
         onPress={() => {
@@ -77,7 +90,9 @@ export function PolicyMenu() {
               sim.setPolicy({ emergenciesFirst: !p.emergenciesFirst });
             }}
           >
-            {p.emergenciesFirst ? '🚨 Emergencies first: on' : '🚨 Emergencies first: off'}
+            <IconText id="ui-emergency">
+              {p.emergenciesFirst ? 'Emergencies first: on' : 'Emergencies first: off'}
+            </IconText>
           </Button>
           <p class="sub">Emergency guests are called ahead of everyone else in line, whatever their place in it.</p>
         </div>
@@ -90,7 +105,9 @@ export function PolicyMenu() {
                 sim.setPolicy({ stashMushrooms: !p.stashMushrooms });
               }}
             >
-              {p.stashMushrooms ? '🍄 Hide from inspector: on' : '🍄 Hide from inspector: off'}
+              <IconText id="bubble-mushroom">
+                {p.stashMushrooms ? 'Hide from inspector: on' : 'Hide from inspector: off'}
+              </IconText>
             </Button>
             <p class="sub">
               The mushrooms under the Shop Counter are put away as soon as the health inspector writes ahead, and come
@@ -117,7 +134,8 @@ export function PolicyMenu() {
               <Stepper
                 key={role}
                 inline
-                name={`${ROLES[role].icon} ${ROLES[role].name}s`}
+                name={`${ROLES[role].name}s`}
+                icon={ROLES[role].icon}
                 value={limit ? `${limit}` : 'Any'}
                 atMin={limit === 1}
                 atMax={!limit}

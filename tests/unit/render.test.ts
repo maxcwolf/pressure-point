@@ -36,11 +36,21 @@ function canvas() {
   };
 }
 
-// the layers paint emoji onto canvases, which Node does not have: a canvas that draws nothing will do
+/** A picture that never arrives, as the icons' atlas is never loaded in Node. */
+class NoImage {
+  src = '';
+  /** Say it is ready at once. */
+  decode() {
+    return Promise.resolve();
+  }
+}
+
+// the layers paint onto canvases and load the icons' atlas, which Node cannot: stand-ins that draw nothing will do
 beforeAll(() => {
   Object.assign(globalThis, {
     document: { createElement: canvas },
     window: { innerWidth: 1440, innerHeight: 900 },
+    Image: NoImage,
   });
 });
 

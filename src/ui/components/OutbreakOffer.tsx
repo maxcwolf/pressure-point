@@ -7,6 +7,7 @@ import { useGame, useHud } from '../hooks/use-hud';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
+import { IconText } from './common/Icon';
 
 /** The stress outbreak on offer: in full with Accept and Decline, or tucked away as a button showing the time left. */
 export function OutbreakOffer() {
@@ -25,7 +26,9 @@ export function OutbreakOffer() {
           hud.outbreakAside = null;
         }}
       >
-        <span>{`😰 Stress outbreak on offer: ${timeLeftLabel(left.days)} to decide`}</span>
+        <span>
+          <IconText id="bubble-stressed">{`Stress outbreak on offer: ${timeLeftLabel(left.days)} to decide`}</IconText>
+        </span>
         {timer}
       </Button>
     );
@@ -40,7 +43,9 @@ export function OutbreakOffer() {
       >
         ✕
       </Button>
-      <h3>😰 Stress outbreak</h3>
+      <h3>
+        <IconText id="bubble-stressed">Stress outbreak</IconText>
+      </h3>
       <p>
         {`${offer.cause} `}
         <b>{`${offer.seed} stressed guests`}</b>

@@ -1,6 +1,6 @@
 /* Styles for KarmaDialog. */
 
 .bigicon {
-  font-size: 52px;
-  line-height: 1.1;
+  display: flex;
+  justify-content: center;
 }

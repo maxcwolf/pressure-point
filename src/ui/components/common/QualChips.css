@@ -7,7 +7,7 @@
   margin: 3px 0 5px;
 }
 
-.quals span {
+.quals > span {
   font-size: 11.5px;
   font-weight: 500;
   background: #e4d9f7;
@@ -17,7 +17,7 @@
   white-space: nowrap;
 }
 
-.quals span.general {
+.quals > span.general {
   background: #fff6dc;
   border-color: var(--gold);
 }

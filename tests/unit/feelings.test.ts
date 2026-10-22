@@ -5,7 +5,7 @@ import { type FeelingId, FEELINGS, REVIEWS_KEPT } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
 import { feel, reputationParts, reviewStars, reviewText, writeReview } from '../../src/core/sim/feelings';
 import type { Review } from '../../src/core/state/types';
-import { heatTiles } from '../../src/ui/lib/overlays';
+import { heatTiles, personValue } from '../../src/ui/lib/overlays';
 import { openCenter, run, runUntil } from './helpers';
 
 /** A review with these feelings and stars. */
@@ -132,20 +132,31 @@ describe('the casebook', () => {
 });
 
 describe('the overlays', () => {
-  it('rate every spot inside the building, every guest, every member of staff and every piece of kept furniture', () => {
+  it('rate every spot inside the building and every piece of kept furniture, and ring every guest and member of staff', () => {
     const { sim, s, g } = withGuest();
     const decor = heatTiles(sim, 'decor');
     expect(decor.length).toBeGreaterThan(50);
     expect(decor.every(([x, y, v]) => sim.world.inside(x, y) && v >= 0 && v <= 1)).toBe(true);
+    // under the furniture too, so the field runs on beneath it
+    expect(decor.some(([x, y]) => sim.world.blocked[sim.world.idx(x, y)])).toBe(true);
+    // the people overlays ring the people, and leave the floor alone
+    expect(heatTiles(sim, 'patience')).toEqual([]);
     g.patience = 25;
-    expect(heatTiles(sim, 'patience')).toContainEqual([g.tx, g.ty, 0.25]);
+    expect(personValue('patience', g)).toBe(0.25);
     g.thirst = 80;
     g.hunger = 10;
     g.bladder = 10;
-    expect(heatTiles(sim, 'needs')).toContainEqual([g.tx, g.ty, expect.closeTo(0.2)]);
-    expect(heatTiles(sim, 'energy')).toHaveLength(s.staff.filter((st) => st.state !== 'leaving').length);
+    expect(personValue('needs', g)).toBeCloseTo(0.2);
+    expect(personValue('energy', g)).toBeNull();
+    const st = s.staff[0]!;
+    st.energy = 40;
+    expect(personValue('energy', st)).toBe(0.4);
+    expect(personValue('patience', st)).toBeNull();
+    g.state = 'leaving';
+    expect(personValue('patience', g)).toBeNull();
+    // well kept furniture is ordinary, drawn clear, and worn furniture falls below it
     const table = s.items.find((i) => i.type === 'massage_table')!;
     table.wear = 70;
-    expect(heatTiles(sim, 'upkeep')).toContainEqual([table.x, table.y, expect.closeTo(0.3)]);
+    expect(heatTiles(sim, 'upkeep')).toContainEqual([table.x, table.y, expect.closeTo(0.15)]);
   });
 });

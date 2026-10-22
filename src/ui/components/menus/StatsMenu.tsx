@@ -5,7 +5,7 @@ import './StatsMenu.css';
 
 import { useState } from 'preact/hooks';
 
-import { AWARDS } from '../../../core/data';
+import { AWARDS, type IconId } from '../../../core/data';
 import type { MonthRecord } from '../../../core/state/types';
 import { loadStatsView, saveStatsView } from '../../../storage/settings';
 import { useGame, useHud } from '../../hooks/use-hud';
@@ -14,6 +14,7 @@ import { barHeights } from '../../lib/chart';
 import { cx } from '../../lib/cx';
 import { formatMetric, type Metric, monthlyValues, offeredMetrics, shownMetrics, toggleMetric } from '../../lib/stats';
 import { Button } from '../common/Button';
+import { IconText } from '../common/Icon';
 import { CasebookTab } from './CasebookTab';
 import { GuestsTab } from './GuestsTab';
 import { RegularsTab } from './RegularsTab';
@@ -53,14 +54,14 @@ function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRe
 }
 
 /** The Stats menu's tabs, in order. */
-const TABS: readonly { id: StatsTab; name: string }[] = [
-  { id: 'charts', name: '📊 Charts' },
-  { id: 'guests', name: '🚶 Guests' },
-  { id: 'reputation', name: '⭐ Reputation' },
-  { id: 'standing', name: '🏛️ Standing' },
-  { id: 'casebook', name: '📖 Casebook' },
-  { id: 'regulars', name: '👋 Regulars' },
-  { id: 'awards', name: '🏆 Awards' },
+const TABS: readonly { id: StatsTab; icon: IconId; name: string }[] = [
+  { id: 'charts', icon: 'ui-stats', name: 'Charts' },
+  { id: 'guests', icon: 'ui-guests', name: 'Guests' },
+  { id: 'reputation', icon: 'ui-reputation', name: 'Reputation' },
+  { id: 'standing', icon: 'standing-institute', name: 'Standing' },
+  { id: 'casebook', icon: 'ui-casebook', name: 'Casebook' },
+  { id: 'regulars', icon: 'ui-regular', name: 'Regulars' },
+  { id: 'awards', icon: 'ui-trophy', name: 'Awards' },
 ];
 
 /** A tab for each part of the Stats menu, and the one chosen. */
@@ -78,7 +79,7 @@ export function StatsMenu() {
               hud.statsTab = t.id;
             }}
           >
-            {t.name}
+            <IconText id={t.icon}>{t.name}</IconText>
           </Button>
         ))}
       </div>
@@ -156,7 +157,9 @@ function Trophies() {
       {trophies.length ? (
         <ul>
           {trophies.map((t) => (
-            <li key={`${t.award}-${t.year}`}>{`${AWARDS[t.award].icon} ${AWARDS[t.award].name}, year ${t.year}`}</li>
+            <li key={`${t.award}-${t.year}`}>
+              <IconText id={AWARDS[t.award].icon}>{`${AWARDS[t.award].name}, year ${t.year}`}</IconText>
+            </li>
           ))}
         </ul>
       ) : (

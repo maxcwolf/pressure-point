@@ -2,28 +2,32 @@
 
 import type * as THREE from 'three';
 
-import { CHROME, cyl, DARK, mat, put, rbox, sph, WHITE } from '../parts';
+import { capsule, CHROME, cyl, DARK, mat, MEMBER_MIN, put, soft, sph, WHITE } from '../parts';
 
-/** Build the Oil Cart model. */
+/** The oils on the top shelf: amber and green glass, and a pink and a blue for the guest who wants a choice. */
+const OILS = [0xc98a3a, 0x6f9e6b, 0xd99ab0, 0x86b0cf];
+
+/** Build the Oil Cart model: two steel shelves on casters, oils on top and rolled towels below. */
 export function buildOilTrolley(g: THREE.Group) {
+  const steel = mat(CHROME, 0.35);
   for (const [x, z] of [
     [-0.26, -0.18],
     [0.26, -0.18],
     [-0.26, 0.18],
     [0.26, 0.18],
   ]) {
-    put(g, cyl(0.02, 0.02, 0.66), mat(CHROME, 0.35), x, 0.4, z);
-    put(g, sph(0.05, 10), mat(DARK), x, 0.05, z);
+    put(g, soft(MEMBER_MIN, 0.68, MEMBER_MIN), steel, x, 0.42, z);
+    put(g, sph(0.055, 12), mat(DARK), x, 0.055, z);
   }
-  put(g, rbox(0.62, 0.04, 0.46, 0.02), mat(CHROME, 0.35), 0, 0.3, 0);
-  put(g, rbox(0.62, 0.04, 0.46, 0.02), mat(CHROME, 0.35), 0, 0.72, 0);
-  const colors = [0xd98e3a, 0x6fae6b, 0xe58fb0, 0x7fb6d9];
-  colors.forEach((c, i) => {
-    put(g, cyl(0.05, 0.06, 0.2), mat(c, 0.35), -0.2 + i * 0.13, 0.84, -0.06 + (i % 2) * 0.12);
-    put(g, cyl(0.025, 0.025, 0.06), mat(DARK), -0.2 + i * 0.13, 0.97, -0.06 + (i % 2) * 0.12);
+  put(g, soft(0.64, 0.05, 0.48), steel, 0, 0.3, 0);
+  put(g, soft(0.64, 0.05, 0.48), steel, 0, 0.74, 0);
+  OILS.forEach((c, i) => {
+    const x = -0.2 + i * 0.13;
+    const z = -0.06 + (i % 2) * 0.12;
+    put(g, cyl(0.05, 0.06, 0.2, 14), mat(c, 0.35), x, 0.86, z);
+    put(g, cyl(0.025, 0.025, 0.06, 10), mat(DARK), x, 0.99, z);
   });
-  for (let i = 0; i < 3; i++) {
-    const towel = put(g, cyl(0.07, 0.07, 0.36), mat(WHITE), -0.16 + i * 0.16, 0.39, 0);
-    towel.rotation.x = Math.PI / 2;
-  }
+  // towels rolled up on the lower shelf
+  for (let i = 0; i < 3; i++)
+    put(g, capsule(0.07, 0.24), mat(WHITE, 0.85), -0.16 + i * 0.16, 0.395, 0).rotation.x = Math.PI / 2;
 }

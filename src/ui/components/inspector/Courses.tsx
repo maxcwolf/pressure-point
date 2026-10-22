@@ -6,6 +6,7 @@ import { money } from '../../../core/format';
 import type { Staff } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { Button } from '../common/Button';
+import { Icon } from '../common/Icon';
 
 /**
  * A button per course, locked when it cannot start, with the reason underneath; while they are on one, a button to
@@ -50,7 +51,7 @@ export function Courses({ staff: st }: { staff: Staff }) {
               sim.train(st.id, c.id);
             }}
           >
-            <i>{c.icon}</i>
+            <Icon id={c.icon} size={20} />
             <span>
               {c.name}
               <small>{`${c.days} days`}</small>

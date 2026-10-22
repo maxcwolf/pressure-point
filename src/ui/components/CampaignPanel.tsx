@@ -10,6 +10,7 @@ import { useRedraw } from '../hooks/use-redraw';
 import { campaignCards } from '../lib/campaign';
 import { cx } from '../lib/cx';
 import { achievementCards, decorCards, karmaText, shopCards } from '../lib/karma';
+import { Icon, IconText } from './common/Icon';
 import { StarRow } from './common/Stars';
 
 export interface CampaignPanelProps {
@@ -32,7 +33,9 @@ export function CampaignPanel({ onStart }: CampaignPanelProps) {
   const progress = loadCampaign();
   return (
     <div class="campaign">
-      <p class="karma">{karmaText(karmaLeft(progress))}</p>
+      <p class="karma">
+        <IconText id="ui-karma">{karmaText(karmaLeft(progress))}</IconText>
+      </p>
       <div class="tabs" role="tablist">
         {TABS.map((t) => (
           <button
@@ -63,7 +66,7 @@ function Centers({ onStart }: CampaignPanelProps) {
       <ol class="trail">
         {cards.map((c, i) => (
           <li key={c.id} class={cx('stop', !c.open && 'locked')}>
-            <span class="pin">{c.open ? i + 1 : '🔒'}</span>
+            <span class="pin">{c.open ? i + 1 : <Icon id="ui-lock" size={22} />}</span>
             <div class="about">
               <b>{c.name}</b>
               <span class="stars">
@@ -97,13 +100,13 @@ function Shop({ onBuy }: { onBuy: () => void }) {
   return (
     <>
       <p class="sub">
-        Every star in the campaign earns ✨ 2 karma, and each achievement some more. What it unlocks stays unlocked in
+        Every star in the campaign earns 2 karma, and each achievement some more. What it unlocks stays unlocked in
         every center and in the sandbox.
       </p>
       <ul class="shop">
         {shopCards(loadCampaign()).map((c) => (
           <li key={c.type} class={cx(c.state === 'owned' && 'owned')}>
-            <i>{c.icon}</i>
+            <Icon id={c.icon} size={28} />
             <div>
               <b>{c.name}</b>
               <small>{c.star === undefined ? 'Only with karma' : `Or reach star ${c.star} in each center`}</small>
@@ -119,7 +122,7 @@ function Shop({ onBuy }: { onBuy: () => void }) {
                   onBuy();
                 }}
               >
-                {karmaText(c.karma)}
+                <IconText id="ui-karma">{karmaText(c.karma)}</IconText>
               </button>
             )}
           </li>
@@ -145,7 +148,7 @@ function Shop({ onBuy }: { onBuy: () => void }) {
                   onBuy();
                 }}
               >
-                {karmaText(c.karma)}
+                <IconText id="ui-karma">{karmaText(c.karma)}</IconText>
               </button>
             )}
           </li>
@@ -163,12 +166,12 @@ function Achievements() {
       <ul class="feats">
         {achievementCards(loadCampaign()).map((a) => (
           <li key={a.id} class={cx(a.done && 'done')}>
-            <i>{a.done ? a.icon : '🔒'}</i>
+            <Icon id={a.done ? a.icon : 'ui-lock'} size={28} />
             <div>
               <b>{a.name}</b>
               <small>{a.desc}</small>
             </div>
-            <em>{a.done ? '✓' : karmaText(a.karma)}</em>
+            <em>{a.done ? '✓' : <IconText id="ui-karma">{karmaText(a.karma)}</IconText>}</em>
           </li>
         ))}
       </ul>

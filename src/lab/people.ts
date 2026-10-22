@@ -33,7 +33,7 @@ const base = (look: Look) => ({
   endH: 0,
   endFace: 0,
   look,
-  bubble: '',
+  bubble: '' as const,
   bubbleT: 0,
   claimItem: 0,
   claimIdx: 0,

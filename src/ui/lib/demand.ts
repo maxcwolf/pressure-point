@@ -3,6 +3,7 @@
 import { DISCIPLINES, modalityLabel, ROLES, ROOMS } from '../../core/data';
 import type { Discipline } from '../../core/data/types';
 import type { DisciplineDemand } from '../../core/sim/demand';
+import type { IconLine } from './icon-line';
 
 /** A multiplier as it reads, to two places at most: "×1.4", "×0.75", "×1". */
 export const times = (n: number) => `×${Number(n.toFixed(2))}`;
@@ -11,13 +12,16 @@ export const times = (n: number) => `×${Number(n.toFixed(2))}`;
 const what = (d: Discipline) => DISCIPLINES[d].name.toLowerCase();
 
 /** A line on how strongly a finished treatment room draws guests to its discipline. */
-export function pullNote(pull: number, d: Discipline): string {
+export function pullNote(pull: number, d: Discipline): IconLine {
   const icon = DISCIPLINES[d].icon;
   const mats = d === 'sound';
   if (pull < 1.05)
-    return `${icon} A prestigious, peaceful room${mats ? ' with mats to spare' : ''} draws more guests who want ${what(d)}.`;
+    return {
+      icon,
+      text: `A prestigious, peaceful room${mats ? ' with mats to spare' : ''} draws more guests who want ${what(d)}.`,
+    };
   const why = mats ? 'its prestige, its peace and its mats' : 'its prestige and its peace';
-  return `${icon} Draws ${pull.toFixed(1)}× the usual guests for ${what(d)}, for ${why}.`;
+  return { icon, text: `Draws ${pull.toFixed(1)}× the usual guests for ${what(d)}, for ${why}.` };
 }
 
 /** How widely a discipline is wanted before anything the player does, in a word. */

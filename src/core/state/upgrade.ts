@@ -30,8 +30,10 @@ import {
   startingState,
 } from './game';
 import type {
+  BubbleId,
   Candidate,
   CaseRecord,
+  Char,
   GameState,
   Guest,
   Item,
@@ -161,6 +163,71 @@ function movedSoundBath(s: OldSave) {
   s.money += stray.length * SOLD_BOWLS;
 }
 
+/** The emoji a speech bubble held before the icons, and the icon each became. */
+const BUBBLE_EMOJI: Readonly<Record<string, BubbleId>> = {
+  '⚠️': 'bubble-quitting',
+  '💢': 'bubble-impatient',
+  '🤕': 'bubble-hurt',
+  '🚻': 'bubble-restroom',
+  '🍵': 'bubble-thirsty',
+  '🥤': 'bubble-thirsty',
+  '🍪': 'bubble-hungry',
+  '🥜': 'bubble-hungry',
+  '🕹️': 'bubble-play',
+  '💤': 'bubble-break',
+  '😴': 'bubble-break',
+  '📚': 'bubble-training',
+  '🧳': 'bubble-house-call',
+  '🎓': 'bubble-graduated',
+  '📋': 'bubble-checkin',
+  '🧐': 'bubble-looking',
+  '😊': 'bubble-happy',
+  '😒': 'bubble-unhappy',
+  '🤔': 'bubble-unsure',
+  '😞': 'bubble-disappointed',
+  '😠': 'bubble-angry',
+  '😤': 'bubble-annoyed',
+  '😰': 'bubble-stressed',
+  '😌': 'bubble-relieved',
+  '🤢': 'bubble-sick',
+  '🤷': 'bubble-shrug',
+  '❓': 'bubble-question',
+  '💡': 'bubble-idea',
+  '💖': 'bubble-cured',
+  '🙏': 'bubble-thanks',
+  '🍀': 'bubble-lucky',
+  '💦': 'bubble-sweaty',
+  '🍄': 'bubble-mushroom',
+  '💎': 'bubble-shopping',
+  '🕯️': 'bubble-shopping',
+  '🧴': 'bubble-shopping',
+  '🔔': 'bubble-shopping',
+  '💸': 'bubble-cant-afford',
+  '📦': 'bubble-fired',
+  '💰': 'bubble-raise',
+  '✨': 'bubble-sparkle',
+  '🪶': 'bubble-feather',
+  '🌿': 'bubble-smudge',
+  '💧': 'bubble-watering',
+  '⚙️': 'bubble-installing',
+  '🧺': 'bubble-linens',
+  '⬆️': 'bubble-promoted',
+  '🎉': 'bubble-celebrate',
+  '🏠': 'bubble-going-home',
+};
+
+/**
+ * Up to version 32, and in a 33 with the machines, a speech bubble held an emoji: it becomes the icon that took its place, or goes if none did. The
+ * inspector's clipboard looks over the rooms; everyone else's is a guest's at reception.
+ */
+function iconBubble(c: Pick<Char, 'bubble' | 'bubbleT'>, inspector: boolean) {
+  const old: string = c.bubble;
+  if (!old || old.startsWith('bubble-')) return;
+  const id = old === '📋' && inspector ? 'bubble-inspecting' : BUBBLE_EMOJI[old];
+  c.bubble = id ?? '';
+  if (!id) c.bubbleT = 0;
+}
+
 /**
  * Bring a save from any earlier version up to date by filling in what it lacks: mostly what a game started on the day
  * it has got to would have, and for the records in it, what a new one starts with.
@@ -236,5 +303,10 @@ export function upgradeSave(save: GameState) {
   // and the Shaman with version 22
   if (s.version < 22)
     while (s.candidates.filter((c) => c.role === 'shaman').length < 3) s.candidates.push(makeCandidate(save, 'shaman'));
+  // a 33 saved with the machines still held emoji, and the icons' 33 is left as it is
+  if (s.version < 34) {
+    for (const c of [...s.staff, ...s.guests]) iconBubble(c, false);
+    for (const v of s.visitors) iconBubble(v, v.visit === 'inspector');
+  }
   s.version = SAVE_VERSION;
 }

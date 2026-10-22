@@ -109,7 +109,7 @@ export const INSTALL_SECONDS = 20;
 
 /** The Qi Gong classes as Settings shows them, to switch on or off like an optional discipline. */
 export const QIGONG_SETTING = {
-  icon: '☯️',
+  icon: 'technique-qigong',
   name: 'Qi Gong classes',
   desc: 'From the second star, a Qi Gong Studio holds weekly classes for guests who come in just for them.',
 } as const;
@@ -187,6 +187,8 @@ export const WARD_SECONDS = 8;
 
 /** Caretakers start repairing equipment at this much wear; at 100 it is broken. */
 export const WEAR_REPAIR = 50;
+/** Equipment shows its wear from here, with smoke, a shudder or a flickering light that grows until it breaks. */
+export const WEAR_WARN = 70;
 /** Caretakers start cleaning at this much grime. */
 export const DIRT_CLEAN = 40;
 /** From this much grime it is filthy: guests are put off and it spoils its surroundings. */

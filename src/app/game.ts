@@ -14,7 +14,7 @@ import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
 import type { FullScreenSwitch, UpdateOffer } from '../ui/host';
 import { plotHeat } from '../ui/lib/land';
-import { heatTiles, overlayPalette, previewMode } from '../ui/lib/overlays';
+import { heatTiles, overlayPalette, personValue, previewMode, ringsPeople } from '../ui/lib/overlays';
 import { refused, watchGame } from './analytics';
 import { trackMouse } from './edge';
 import { reloadInto } from './handoff';
@@ -158,6 +158,9 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
    * or a plot of it; or clear it.
    */
   function drawOverlay() {
+    // the people overlays ring the people, whatever is on the floor
+    const ringed = ui.overlay;
+    view.halos.set(ringsPeople(ringed) ? (c) => personValue(ringed, c) : null);
     // the Expand tool colors the land itself, as the pointer moves
     if (tools.tool.kind === 'expand') return;
     // an item in hand shows what it would change, over the overlay showing
@@ -180,7 +183,11 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
         ),
         'land',
       );
-    else view.setHeat(ui.overlay ? heatTiles(sim, ui.overlay) : null, overlayPalette(ui.overlay));
+    else
+      view.setHeat(
+        ui.overlay && !ringsPeople(ui.overlay) ? heatTiles(sim, ui.overlay) : null,
+        overlayPalette(ui.overlay),
+      );
   }
   runLoop({
     sim,

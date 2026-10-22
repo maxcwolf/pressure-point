@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <g stroke="#24384a" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24 3.5c2 .8 3.4 2.4 4 4.5M4 21c.5 2.3 2 4.2 4 5.2" fill="none" stroke-width="2.4"/>
+    <g transform="translate(16 16.5) rotate(-18) translate(-15.6 -15.8)">
+    <path d="M12.6 15V9.5" fill="none" stroke-width="7.9"/>
+    <path d="M16 14.5V7.8" fill="none" stroke-width="7.9"/>
+    <path d="M19.4 15V9" fill="none" stroke-width="7.9"/>
+    <path d="M22.6 16.5V11.8" fill="none" stroke-width="7.7"/>
+    <path d="M10.5 21.5L8.4 16.4" fill="none" stroke-width="7.9"/>
+    <rect x="10.6" y="13.6" width="13.6" height="12" rx="4.5" fill="#24384a" stroke-width="4.5"/>
+    <path d="M12.6 15V9.5" fill="none" stroke="#f08a4b" stroke-width="3.4"/>
+    <path d="M16 14.5V7.8" fill="none" stroke="#f08a4b" stroke-width="3.4"/>
+    <path d="M19.4 15V9" fill="none" stroke="#f08a4b" stroke-width="3.4"/>
+    <path d="M22.6 16.5V11.8" fill="none" stroke="#f08a4b" stroke-width="3.2"/>
+    <path d="M10.5 21.5L8.4 16.4" fill="none" stroke="#f08a4b" stroke-width="3.4"/>
+    <rect x="10.6" y="13.6" width="13.6" height="12" rx="4.5" fill="#f08a4b" stroke="none"/>
+    </g>
+  </g>
+</svg>

@@ -26,6 +26,7 @@ import { cx } from '../../lib/cx';
 import { disciplineNote } from '../../lib/delivery';
 import { kitNote } from '../../lib/mishaps';
 import { restNote } from '../../lib/recovery';
+import { Icon, IconText, Line } from '../common/Icon';
 
 /** What a modality treats, who can give it and whether its equipment is in. */
 function ModalityCard({ modality }: { modality: Modality }) {
@@ -55,22 +56,39 @@ function ModalityCard({ modality }: { modality: Modality }) {
   const trip = tripNote(def.trip);
   return (
     <div class={cx('card mod', locked && 'locked')}>
-      <i>{def.icon}</i>
+      <Icon id={def.icon} size={34} />
       <b>{def.name}</b>
       <p>{def.desc}</p>
       <p class="treats">{`Treats: ${treats}`}</p>
       {def.machine && <p class="treats">{`Done in the ${ROOMS[roomForModality(modality)].name}`}</p>}
       {locked ? (
         <em>
-          {def.machine && def.star <= unlockedUpTo(s)
-            ? `🔒 Build a ${ROOMS[roomForModality(modality)].name} to offer it`
-            : `🔒 Unlocks at star ${def.star}`}
+          <IconText id="ui-lock">
+            {def.machine && def.star <= unlockedUpTo(s)
+              ? `Build a ${ROOMS[roomForModality(modality)].name} to offer it`
+              : `Unlocks at star ${def.star}`}
+          </IconText>
         </em>
       ) : (
         <>
-          <em class={qualified ? 'ok' : 'warn'}>{`${qualified ? '✔' : '⚠️'} ${qualified} qualified`}</em>{' '}
-          {note && <em class={note.ok ? 'ok' : 'warn'}>{note.text}</em>}{' '}
-          {rest && <em class={rest.ok ? 'ok' : 'warn'}>{rest.text}</em>} {trip && <em>{trip}</em>}{' '}
+          <em class={qualified ? 'ok' : 'warn'}>
+            {qualified ? `✔ ${qualified} qualified` : <IconText id="ui-warning">0 qualified</IconText>}
+          </em>{' '}
+          {note && (
+            <em class={note.ok ? 'ok' : 'warn'}>
+              <Line line={note} />
+            </em>
+          )}{' '}
+          {rest && (
+            <em class={rest.ok ? 'ok' : 'warn'}>
+              <Line line={rest} />
+            </em>
+          )}{' '}
+          {trip && (
+            <em>
+              <Line line={trip} />
+            </em>
+          )}{' '}
           <em>{`${waiting} waiting · ${def.seconds}s session`}</em>
         </>
       )}
@@ -85,7 +103,9 @@ function DisciplineSection({ discipline }: { discipline: Discipline }) {
   const note = disciplineNote(discipline, sim.hasRoom(disc.room), unlockedUpTo(sim.s));
   return (
     <>
-      <h4 class="section">{`${disc.icon} ${disc.name}`}</h4>
+      <h4 class="section">
+        <IconText id={disc.icon}>{disc.name}</IconText>
+      </h4>
       <p class="sub">{note}</p>
       <div class="cards">
         {MODALITY_ORDER.filter(

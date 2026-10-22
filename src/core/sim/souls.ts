@@ -87,7 +87,7 @@ export function reachSoul(ctx: SimContext, sh: Staff): boolean {
   sh.busy = true;
   sh.timer = SOUL_SECONDS / traitSpeed(sh.traits);
   sh.facing = Math.atan2(st.x - sh.x, st.y - sh.y);
-  say(sh, '🪶', 2);
+  say(sh, 'bubble-feather', 2);
   return true;
 }
 
@@ -110,6 +110,6 @@ export function retrieved(ctx: SimContext, sh: Staff, st: Staff) {
   sh.energy = Math.max(0, sh.energy - SOUL_ENERGY);
   sh.yearServed++;
   gainXp(ctx, sh, XP_PER_JOB);
-  say(st, '✨', 4);
+  say(st, 'bubble-sparkle', 4);
   emit(ctx, { type: 'float', text: 'Soul retrieved', x: st.x, y: st.y, kind: 'good' });
 }

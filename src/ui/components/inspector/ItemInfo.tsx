@@ -30,6 +30,7 @@ import { stoppedLabel } from '../../lib/mishaps';
 import { installStatus, upgradeEffect, upgradeStars } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { IconText } from '../common/Icon';
 import { RugPatterns } from '../common/RugPatterns';
 import { StationInfo } from './StationInfo';
 
@@ -45,7 +46,9 @@ function Linens({ item: it }: { item: Item }) {
       </label>
       {it.dirt >= LINENS_STALE && (
         <p class="status">
-          {hamper ? '🧺 Stale linens: a Caretaker will change them' : '🧺 Stale linens: place a Linen Hamper'}
+          <IconText id="bubble-linens">
+            {hamper ? 'Stale linens: a Caretaker will change them' : 'Stale linens: place a Linen Hamper'}
+          </IconText>
         </p>
       )}
     </>
@@ -76,7 +79,11 @@ function Upgrades({ item: it }: { item: Item }) {
         <b>{`Upgrades ${upgradeStars(it.level)}`}</b>
       </p>
       <p class="sub">{upgradeEffect(it.level)}</p>
-      {status && <p class="status">{status}</p>}
+      {status && (
+        <p class="status">
+          <IconText id="bubble-installing">{status}</IconText>
+        </p>
+      )}
       {it.level < UPGRADE_LEVELS && !it.upgradePaid && (
         <Button
           class="upgrade"
@@ -87,9 +94,11 @@ function Upgrades({ item: it }: { item: Item }) {
             sim.orderUpgrade(it.id);
           }}
         >
-          {next > starsEarned(sim.s)
-            ? `⬆️ Level ${next} unlocks at star ${next}`
-            : `⬆️ Upgrade to level ${next} (${money(upgradeCost(it.type, next))})`}
+          <IconText id="ui-upgrade">
+            {next > starsEarned(sim.s)
+              ? `Level ${next} unlocks at star ${next}`
+              : `Upgrade to level ${next} (${money(upgradeCost(it.type, next))})`}
+          </IconText>
         </Button>
       )}
     </div>
@@ -108,12 +117,14 @@ function Thermostat({ item: it }: { item: Item }) {
   const status = !sim.s.weatherOn
     ? 'With the weather off, it is just right everywhere anyway'
     : setting === 'off'
-      ? '💤 Switched off'
+      ? 'Switched off'
       : setting !== 'auto'
         ? `Working at ${pct(share)}, whatever the weather`
         : share === 0
-          ? '💤 Off for now: the weather is nice'
+          ? 'Off for now: the weather is nice'
           : `Working at ${pct(share)} for the weather`;
+  // switched off, or idle while the weather is nice
+  const resting = sim.s.weatherOn && (setting === 'off' || (setting === 'auto' && share === 0));
   const others = sim.s.items.filter((x) => x.type === it.type && x.id !== it.id);
   const alike = others.every((x) => (x.thermostat ?? 'auto') === setting);
   return (
@@ -137,7 +148,9 @@ function Thermostat({ item: it }: { item: Item }) {
           </Button>
         ))}
       </div>
-      <p class="sub">{status}</p>
+      <p class="sub">
+        <IconText id={resting ? 'bubble-break' : undefined}>{status}</IconText>
+      </p>
       {others.length > 0 && (
         <Button
           class="move every"
@@ -161,10 +174,16 @@ export function ItemInfo({ item: it }: { item: Item }) {
   const stoppedBy = sim.world.stoppedByMishap(it) ? sim.s.mishap : null;
   return (
     <>
-      <h3>{`${def.icon} ${def.name}`}</h3>
+      <h3>
+        <IconText id={def.icon}>{def.name}</IconText>
+      </h3>
       <p>{def.desc}</p>
       {it.trophy && (
-        <p class="status">{`${AWARDS[it.trophy.award].icon} ${AWARDS[it.trophy.award].name}, year ${it.trophy.year}`}</p>
+        <p class="status">
+          <IconText
+            id={AWARDS[it.trophy.award].icon}
+          >{`${AWARDS[it.trophy.award].name}, year ${it.trophy.year}`}</IconText>
+        </p>
       )}
       <StationInfo item={it} />
       {isWatered(it.type) && (
@@ -187,20 +206,34 @@ export function ItemInfo({ item: it }: { item: Item }) {
       )}
       {!!def.wear && it.wear >= 100 && (
         <p class="status">
-          {it.overloaded && def.machine?.overload
-            ? `💥 Overloaded: it ${def.machine.overload.mess}. Needs a Caretaker`
-            : '🔧 Broken: needs a Caretaker'}
+          {it.overloaded && def.machine?.overload ? (
+            <IconText id="marker-broken">{`Overloaded: it ${def.machine.overload.mess}. Needs a Caretaker`}</IconText>
+          ) : (
+            <IconText id="marker-broken">Broken: needs a Caretaker</IconText>
+          )}
         </p>
       )}
-      {smoking(it) && <p class="status">💨 Smoking: a Caretaker's repair now would stop it overloading</p>}
-      {stoppedBy && <p class="status">{stoppedLabel(MISHAPS[stoppedBy.kind])}</p>}
+      {smoking(it) && (
+        <p class="status">
+          <IconText id="ui-warning">Smoking: a Caretaker's repair now would stop it overloading</IconText>
+        </p>
+      )}
+      {stoppedBy && (
+        <p class="status">
+          <IconText id={MISHAPS[stoppedBy.kind].icon}>{stoppedLabel(MISHAPS[stoppedBy.kind])}</IconText>
+        </p>
+      )}
       {!!def.dirt && !def.linens && (
         <label>
           Cleanliness
           <Bar value={100 - it.dirt} class={it.dirt >= DIRT_CLEAN ? 'bad' : 'blue'} />
         </label>
       )}
-      {!!def.dirt && !def.linens && it.dirt >= DIRT_FILTHY && <p class="status">🪰 Filthy: needs a Caretaker</p>}
+      {!!def.dirt && !def.linens && it.dirt >= DIRT_FILTHY && (
+        <p class="status">
+          <IconText id="marker-filthy">Filthy: needs a Caretaker</IconText>
+        </p>
+      )}
       {def.linens && <Linens item={it} />}
       {def.station?.goal === 'treat' && <Calm item={it} />}
       {def.upgrade !== undefined && <Upgrades item={it} />}

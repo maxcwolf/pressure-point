@@ -224,16 +224,18 @@ describe('a house call', () => {
   });
 
   it('puts what it costs at home on the offer, warning when the worst would not last the days away', () => {
-    expect(callCostNote({ waiting: 0, worstDays: null }, 2)).toBe('Nobody waiting in their line');
-    expect(callCostNote({ waiting: 3, worstDays: 2.6 }, 2)).toBe(
-      '3 waiting in their line, the worst with 2 days of condition left',
-    );
-    expect(callCostNote({ waiting: 1, worstDays: 1.4 }, 2)).toBe(
-      '⚠️ 1 waiting in their line, the worst with 1 day of condition left',
-    );
-    expect(callCostNote({ waiting: 2, worstDays: 0.5 }, 1)).toBe(
-      '⚠️ 2 waiting in their line, the worst with under a day of condition left',
-    );
+    expect(callCostNote({ waiting: 0, worstDays: null }, 2)).toEqual({ text: 'Nobody waiting in their line' });
+    expect(callCostNote({ waiting: 3, worstDays: 2.6 }, 2)).toEqual({
+      text: '3 waiting in their line, the worst with 2 days of condition left',
+    });
+    expect(callCostNote({ waiting: 1, worstDays: 1.4 }, 2)).toEqual({
+      icon: 'ui-warning',
+      text: '1 waiting in their line, the worst with 1 day of condition left',
+    });
+    expect(callCostNote({ waiting: 2, worstDays: 0.5 }, 1)).toEqual({
+      icon: 'ui-warning',
+      text: '2 waiting in their line, the worst with under a day of condition left',
+    });
   });
 
   it('charges what the center charges: the price level, and the price of the technique it asks for', () => {

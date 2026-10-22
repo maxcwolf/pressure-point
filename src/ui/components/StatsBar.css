@@ -22,9 +22,7 @@
   min-width: 96px;
 }
 
-.stat i {
-  font-style: normal;
-  font-size: 22px;
+.stat > .icon {
   grid-row: span 2;
 }
 

@@ -1,5 +1,6 @@
 // What is drawn over the scene for the player's benefit: tile highlights, the preview of an item being
-// placed and the way it faces, the door and window marker, floating icons and the ring around whatever is selected.
+// placed and the way it faces, the door and window marker, floating icons, the ring and marker on whatever is selected
+// and the glow on whatever a click would select.
 
 import * as THREE from 'three';
 
@@ -10,10 +11,10 @@ import { at } from '../core/util';
 import { frontOf, itemCenter, itemDims, onWall } from '../core/world';
 import { hangPlace, placeHung } from './hung';
 import { placeItemModel } from './items';
-import { emojiTexture } from './models/emoji';
+import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import type { Marker, OverlayTile } from './overlay-codes';
-import type { Selection } from './picking';
+import { type Selection, shown } from './picking';
 import type { Turn } from './turn';
 
 /** How far out from an item's front edge the arrow showing its front sits. */
@@ -29,6 +30,20 @@ function frontArrow(): THREE.BufferGeometry {
   shape.closePath();
   return new THREE.ShapeGeometry(shape).rotateX(Math.PI / 2);
 }
+
+/** How high over the floor the marker over a selected person floats, clear of a speech bubble (1.72, 0.62 across). */
+const MARKER_HEIGHT = 2.35;
+/** How high it floats over someone lying down, whose bubble sits at 1.0. */
+const MARKER_LYING = 1.6;
+
+/** A small chevron pointing down, wide side up, for the marker over a selected person. */
+function chevron(): THREE.BufferGeometry {
+  return new THREE.ConeGeometry(0.2, 0.36, 4).rotateX(Math.PI);
+}
+
+/** Whether a selection is a person. */
+const isPerson = (sel: Selection | null): sel is { kind: 'guest' | 'staff' | 'visitor'; id: number } =>
+  sel?.kind === 'guest' || sel?.kind === 'staff' || sel?.kind === 'visitor';
 
 const OVERLAY_COLORS = [0x3ddc84, 0xff5d5d, 0x4aa8ff, 0xffc93c, 0x9b6bff, 0xff8a3c].map((c) => new THREE.Color(c));
 
@@ -62,6 +77,31 @@ export class Overlays {
   private doorMarker: THREE.Mesh;
   private frontMarker: THREE.Mesh;
   private ring: THREE.Mesh;
+  /** The ring again, faint, drawn only where something stands between it and the camera. */
+  private ringBehind: THREE.Mesh;
+  /** The chevron bobbing over a selected person, drawn over everything. */
+  private marker: THREE.Mesh;
+  /** What a click would select now, which glows a little, or null. */
+  hovered: Selection | null = null;
+  /** The model a person or item is drawn with, which the view sets once its layers are made. */
+  find: (sel: Selection) => THREE.Object3D | undefined = () => undefined;
+  /** Copies of the hovered model's parts, drawn over them to brighten them, and the model they are of. */
+  private glow = new THREE.Group();
+  private glowOf: THREE.Object3D | undefined;
+  private glowMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.25,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    depthFunc: THREE.LessEqualDepth,
+    // drawn at the depth of the parts it covers, nudged toward the camera so they do not flicker through it
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -4,
+  });
+  /** A faint sheet over the floor of a hovered room. */
+  private roomGlow: THREE.Mesh;
   /** How far round the camera is, which a wall item's preview is placed against its wall at. */
   turn: Turn = 0;
 
@@ -106,6 +146,50 @@ export class Overlays {
     this.ring.visible = false;
     this.ring.renderOrder = 3;
     this.scene.add(this.ring);
+    // drawn only where the ring is further away than what is already drawn there, such as a desk in front of it
+    this.ringBehind = new THREE.Mesh(
+      this.ring.geometry,
+      new THREE.MeshBasicMaterial({
+        color: 0xffd23f,
+        transparent: true,
+        opacity: 0.4,
+        depthWrite: false,
+        depthFunc: THREE.GreaterDepth,
+      }),
+    );
+    this.ringBehind.renderOrder = 3;
+    this.ring.add(this.ringBehind);
+
+    this.marker = new THREE.Mesh(
+      chevron(),
+      new THREE.MeshStandardMaterial({
+        color: 0xffd23f,
+        emissive: 0x7a5c00,
+        roughness: 0.5,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+      }),
+    );
+    this.marker.visible = false;
+    // over the speech bubbles (10), which it floats above anyway
+    this.marker.renderOrder = 12;
+    this.scene.add(this.marker);
+
+    this.glow.renderOrder = 4;
+    this.scene.add(this.glow);
+    this.roomGlow = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15, depthWrite: false }),
+    );
+    this.roomGlow.visible = false;
+    this.roomGlow.renderOrder = 2;
+    this.scene.add(this.roomGlow);
+  }
+
+  /** Whether the marker over a selected person is showing. */
+  get markerShown(): boolean {
+    return this.marker.visible;
   }
 
   /** Show colored tiles on the floor for the current tool. */
@@ -178,7 +262,7 @@ export class Overlays {
       const m = list[i];
       sprite.visible = !!m;
       if (!m) return;
-      sprite.material.map = emojiTexture(m.icon);
+      sprite.material.map = iconTexture(m.icon, true);
       sprite.material.needsUpdate = true;
       sprite.position.set(m.x + 0.5, 1.15, m.y + 0.5);
     });
@@ -194,16 +278,24 @@ export class Overlays {
     this.doorMarker.rotation.y = d.dx ? Math.PI / 2 : 0;
   }
 
-  /** Put the ring around whatever is selected, pulsing gently around a person. */
+  /**
+   * Put the ring around whatever is selected, pulsing gently around a person with a chevron bobbing over them, and
+   * brighten whatever a click would select.
+   */
   updateRing(t: number) {
     const sel = this.selected;
     this.ring.visible = false;
-    if (sel && (sel.kind === 'guest' || sel.kind === 'staff' || sel.kind === 'visitor')) {
+    this.marker.visible = false;
+    if (sel && isPerson(sel)) {
       const c = this.sim.char(sel.id);
       if (c) {
         this.ring.visible = true;
         this.ring.position.set(c.x, 0.04, c.y);
         this.ring.scale.setScalar(1 + Math.sin(t * 5) * 0.06);
+        this.marker.visible = true;
+        const h = c.pose === 'lie' ? MARKER_LYING : MARKER_HEIGHT;
+        this.marker.position.set(c.x, h + Math.sin(t * 3) * 0.06, c.y);
+        this.marker.rotation.y = t * 1.5;
       }
     } else if (sel?.kind === 'item') {
       const it = this.sim.world.item(sel.id);
@@ -214,6 +306,39 @@ export class Overlays {
         this.ring.position.set(cx, 0.04, cy);
         this.ring.scale.setScalar(Math.max(w, h) * 1.25);
       }
+    }
+    this.updateGlow();
+  }
+
+  /** Brighten the person or item a click would select, or lay a faint sheet over the room's floor. */
+  private updateGlow() {
+    const hov = this.hovered;
+    const model = hov && (isPerson(hov) || hov.kind === 'item') ? this.find(hov) : undefined;
+    if (model !== this.glowOf) {
+      this.glowOf = model;
+      this.glow.clear();
+      model?.traverse((o) => {
+        const part = o as Partial<THREE.InstancedMesh> & THREE.Mesh;
+        if (!(o as Partial<THREE.Mesh>).isMesh || part.isInstancedMesh) return;
+        if (!(part.material as THREE.Material).visible) return;
+        const copy = new THREE.Mesh(part.geometry, this.glowMat);
+        copy.matrixAutoUpdate = false;
+        copy.frustumCulled = false;
+        // a person's parts are posed as the scene is drawn, so the copy takes up where the part is only then
+        /** Take up where the part is just as it is drawn. */
+        copy.onBeforeRender = function follow() {
+          this.matrixWorld.copy(part.matrixWorld);
+        };
+        copy.userData.part = part;
+        this.glow.add(copy);
+      });
+    }
+    for (const copy of this.glow.children) copy.visible = shown(copy.userData.part as THREE.Object3D);
+    const room = hov?.kind === 'room' ? this.sim.s.rooms.find((r) => r.id === hov.id) : undefined;
+    this.roomGlow.visible = !!room;
+    if (room) {
+      this.roomGlow.position.set(room.x + room.w / 2, 0.03, room.y + room.h / 2);
+      this.roomGlow.scale.set(room.w, 1, room.h);
     }
   }
 }

@@ -4,6 +4,7 @@ import { RANKS, WEEKDAYS } from '../../core/data';
 import { rankName } from '../../core/sim/careers';
 import { weekday } from '../../core/sim/classes';
 import type { ClassBooking } from '../../core/state/types';
+import type { IconLine } from './icon-line';
 
 /** The studio's next class as booked: today's or a later one, how many have a place, and how many found it full. */
 export function bookingNote(b: ClassBooking | undefined, day: number): string {
@@ -42,9 +43,9 @@ export function classNote(standing: number, spots: number, progress: number): st
  * How many of a studio's spots its Instructor can lead a class on, by their rank: any past that stand empty, until a
  * promotion lets them lead more.
  */
-export function placesNote(spots: number, places: number, rank: number): string {
+export function placesNote(spots: number, places: number, rank: number): IconLine {
   const leads = `${rankName(rank)} Instructors lead up to ${places}`;
-  if (spots <= places) return leads;
+  if (spots <= places) return { text: leads };
   const more = rank < RANKS.length ? ': promote yours to fill more' : '';
-  return `⚠️ Only ${places} of ${spots} spots are booked. ${leads}${more}`;
+  return { icon: 'ui-warning', text: `Only ${places} of ${spots} spots are booked. ${leads}${more}` };
 }

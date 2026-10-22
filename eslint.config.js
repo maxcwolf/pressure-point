@@ -16,13 +16,20 @@ const notInTheGame = {
 /** The parts of src/ other than the game core, as a relative import names them. */
 const outsideCore = ['app', 'audio', 'lab', 'main', 'render', 'sounds', 'storage', 'ui', 'voice'];
 
-/** A pattern for a relative import that climbs out of its folder, from any depth, into one of `parts` of src/. */
-function into(parts) {
-  return `^(\\.\\./)+(${parts.join('|')})(/|$)`;
+/**
+ * A pattern for a relative import that climbs out of its folder, from any depth, into one of `parts` of src/, unless
+ * it is into one of the folders in `except`.
+ */
+function into(parts, except = []) {
+  const allowed = except.map((path) => `(?!${path}/)`).join('');
+  return `^(\\.\\./)+${allowed}(${parts.join('|')})(/|$)`;
 }
 
-/** Keeps `files` from importing `parts` of src/, or anything in `banned`, as well as what no game code may use. */
-function layerBoundary(files, parts, message, banned = { paths: [], patterns: [] }) {
+/**
+ * Keeps `files` from importing `parts` of src/, or anything in `banned`, as well as what no game code may use. The
+ * folders in `except` are let through.
+ */
+function layerBoundary(files, parts, message, banned = { paths: [], patterns: [] }, except = []) {
   return {
     files: [files],
     rules: {
@@ -30,7 +37,7 @@ function layerBoundary(files, parts, message, banned = { paths: [], patterns: []
         'error',
         {
           paths: [...notInTheGame.paths, ...banned.paths],
-          patterns: [...notInTheGame.patterns, ...banned.patterns, { regex: into(parts), message }],
+          patterns: [...notInTheGame.patterns, ...banned.patterns, { regex: into(parts, except), message }],
         },
       ],
     },
@@ -145,10 +152,13 @@ export default tseslint.config(
   },
 
   // drawing and saving sit on top of the game core: they import it and themselves, nothing else in the game
+  // the one exception is the icons' atlas, which `yarn icons` builds beside the interface's sprite sheet
   layerBoundary(
     'src/render/**/*.{ts,tsx}',
     outsideCore.filter((part) => part !== 'render'),
     'Drawing imports only from the game core and itself: no interface, app, audio or storage code.',
+    undefined,
+    ['ui/icons/generated'],
   ),
   layerBoundary(
     'src/storage/**/*.{ts,tsx}',

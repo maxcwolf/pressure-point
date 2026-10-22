@@ -154,17 +154,31 @@ const glints = () =>
     [-1, 1].map((s) => place(ball(0.0045, n(8)), [s * EYE.x + 0.005, EYE.y + 0.009, faceZ(EYE.x, EYE.y) + 0.006])),
   );
 
-/** Both eyebrows, lying along the brow, the outer ends dipping a little for a friendly, open look (tilted the other
- * way, inner ends down, they scowl). */
-const brows = () =>
-  fuse('brows', (n) =>
+/** How someone looks: at ease, unhappy, delighted, or wincing in pain. Each is a shape of the mouth and of the brows. */
+export type Expression = 'neutral' | 'unhappy' | 'delighted' | 'wince';
+
+/**
+ * How each expression sets the brows: how high they sit, and how far their outer ends dip. Dipping a little is a
+ * friendly, open look; dipping a lot, the inner ends lifting, a pained one; tilted the other way, inner ends down, a
+ * scowl.
+ */
+const BROWS: Readonly<Record<Expression, { y: number; dip: number }>> = {
+  neutral: { y: 0.078, dip: 0.14 },
+  unhappy: { y: 0.072, dip: -0.4 },
+  delighted: { y: 0.093, dip: 0.06 },
+  wince: { y: 0.082, dip: 0.55 },
+};
+
+/** Both eyebrows, lying along the brow, set for an expression. */
+const brows = (e: Expression) =>
+  fuse(`brows-${e}`, (n) =>
     [-1, 1].map((s) => {
       const x = 0.072;
-      const y = 0.078;
+      const { y, dip } = BROWS[e];
       return place(
         pill(0.0095, 0.04, n),
         [s * x, y, faceZ(x, y) + 0.002],
-        [0, s * Math.atan2(x, faceZ(x, y)), s * -(Math.PI / 2 + 0.14)],
+        [0, s * Math.atan2(x, faceZ(x, y)), s * -(Math.PI / 2 + dip)],
       );
     }),
   );
@@ -172,15 +186,55 @@ const brows = () =>
 /** How wide an arc of a circle the mouth is: a short arc of a big circle, so it is a soft, shallow curve, not a grin. */
 const SMILE = { r: 0.05, arc: 0.9 };
 
-/** A soft, shallow closed smile. */
-const mouth = () =>
-  fuse('mouth', (n) => {
-    const curve = bare(new THREE.TorusGeometry(SMILE.r, 0.0068, n(8), n(14), SMILE.arc));
-    // turn the arc so its middle is at the bottom, then bring that middle to the origin, so it sits on the face
-    curve.rotateZ(-Math.PI / 2 - SMILE.arc / 2).translate(0, SMILE.r, 0);
-    const y = -0.088;
-    return [place(curve, [0, y, faceZ(0, y) + 0.004], [0.42, 0, 0])];
+/** How far down the face the mouth is. */
+const MOUTH_Y = -0.088;
+
+/** A soft, shallow curve, its middle at the origin: bowed down for a smile, or up for a frown. */
+function arc(n: Sides, frown: boolean) {
+  const curve = bare(new THREE.TorusGeometry(SMILE.r, 0.0068, n(8), n(14), SMILE.arc));
+  // turn the arc so its middle is at the bottom (the top for a frown), then bring that middle to the origin
+  if (frown) return curve.rotateZ(Math.PI / 2 - SMILE.arc / 2).translate(0, -SMILE.r, 0);
+  return curve.rotateZ(-Math.PI / 2 - SMILE.arc / 2).translate(0, SMILE.r, 0);
+}
+
+/** A wide open grin, flat along the top and round below. */
+function grin(n: Sides) {
+  const geo = ball(0.036, n(16));
+  const pos = geo.getAttribute('position');
+  for (let i = 0; i < pos.count; i++) if (pos.getY(i) > 0) pos.setY(i, pos.getY(i) * 0.15);
+  return smooth(geo.scale(1.3, 1, 0.45));
+}
+
+/** The mouth for an expression: a soft closed smile, a frown, a wide grin, or a tight flat line. */
+const mouth = (e: Expression) =>
+  fuse(`mouth-${e}`, (n) => {
+    if (e === 'delighted') {
+      const y = MOUTH_Y + 0.008;
+      return [place(grin(n), [0, y, faceZ(0, y) - 0.006], [0.35, 0, 0])];
+    }
+    if (e === 'wince')
+      return [place(pill(0.0072, 0.05, n), [0, MOUTH_Y, faceZ(0, MOUTH_Y) + 0.003], [0.42, 0, Math.PI / 2])];
+    const y = e === 'unhappy' ? MOUTH_Y - 0.008 : MOUTH_Y;
+    return [place(arc(n, e === 'unhappy'), [0, y, faceZ(0, y) + 0.004], [0.42, 0, 0])];
   });
+
+/** The parts of a face that change with how someone feels, and the expression they show now. */
+export interface Face {
+  mouth: THREE.Mesh;
+  brows: THREE.Mesh;
+  expression: Expression;
+}
+
+/**
+ * Give a face an expression, by giving its mouth and brows that expression's shapes. Every face with the same
+ * expression shares them, so the crowd still draws every mouth of one expression together.
+ */
+export function showExpression(face: Face, e: Expression) {
+  if (face.expression === e) return;
+  face.expression = e;
+  face.mouth.geometry = mouth(e);
+  face.brows.geometry = brows(e);
+}
 
 /** A moustache: two short sweeps under the nose. */
 const moustache = () =>
@@ -339,15 +393,23 @@ const lowTie = () =>
     place(tail(0.26, 0.058, n), [0, -0.08, -0.27], [-0.35, 0, 0]),
   ]);
 
-/** Build the head: its shape, the face, and the hair in its style. Returns the head's skin, for symptoms to recolor. */
+/**
+ * Build the head: its shape, the face, and the hair in its style. Returns the head's skin, for symptoms to recolor, and
+ * the face, at ease, for its expression to change.
+ */
 export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, hair: THREE.Material, hatted: boolean) {
   // each part is named for what it is, so a skinned person can tell the eyes, brows, mouth and hair apart
   const headMesh = put(head, headShape(), skin);
   headMesh.name = 'head';
   put(head, eyes(), mat(0x1d1716, 0.2)).name = 'eyes';
   put(head, glints(), mat(0xffffff, 0.3)).name = 'glints';
-  put(head, brows(), hair).name = 'brows';
-  put(head, mouth(), mat(0x7a3a34, 0.55)).name = 'mouth';
+  const face: Face = {
+    brows: put(head, brows('neutral'), hair),
+    mouth: put(head, mouth('neutral'), mat(0x7a3a34, 0.55)),
+    expression: 'neutral',
+  };
+  face.brows.name = 'brows';
+  face.mouth.name = 'mouth';
   const style = hatted ? HAIR.short : look.hairStyle;
   if (style === AMANDA.hairStyle) buildMohawk(head, look.skin, look.hair);
   else if (style === HAIR.short) put(head, hairCap('short', FALLS.short), hair, 0, 0.004, -0.004).name = 'hair';
@@ -361,7 +423,7 @@ export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, 
     put(head, moustache(), hair).name = 'moustache';
     if (look.beard === 2) put(head, beard(), hair).name = 'beard';
   }
-  return headMesh;
+  return { headMesh, face };
 }
 
 // The body: a shirt shaped to the chest and waist with a collar, trousers over the hips, and the legs and arms.
@@ -879,6 +941,8 @@ export function detailArm(arm: THREE.Group, side: number, top: THREE.Material, s
   if (rolled) put(arm, bareUpperArm(), skin).name = 'arm';
   const fore = new THREE.Group();
   fore.position.y = -ELBOW;
+  // turned on the upper arm first, then bent, so the elbow can bend inward across the body as well as forward
+  fore.rotation.order = 'YXZ';
   arm.add(fore);
   if (!rolled) put(fore, lowerSleeve(), top).name = 'sleeve';
   put(fore, hand(side, rolled), skin).name = 'hand';

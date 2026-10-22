@@ -48,7 +48,7 @@ test.describe('starting out', () => {
     await music.click();
     await expect(music).toHaveAttribute('aria-pressed', 'false');
     await sound.click();
-    await expect(sound).toHaveText('🔇');
+    await expect(sound.locator('use')).toHaveAttribute('href', '#icon-ui-mute');
     expect(await page.evaluate(() => localStorage.getItem('pressure-point-audio'))).toBe(
       '{"sound":false,"music":false}',
     );
@@ -57,7 +57,10 @@ test.describe('starting out', () => {
     await page.getByRole('button', { name: 'Start building' }).click();
     await page.waitForFunction(() => !!window.pp);
     await expect(page.locator('#sys').locator('[data-tip="Music"]')).toHaveClass(/off/);
-    await expect(page.locator('#sys').locator('[data-tip="Sound effects"]')).toHaveText('🔇');
+    await expect(page.locator('#sys').locator('[data-tip="Sound effects"]').locator('use')).toHaveAttribute(
+      'href',
+      '#icon-ui-mute',
+    );
     await page.reload();
     await expect(page.locator('#title').locator('[data-tip="Music"]')).toHaveAttribute('aria-pressed', 'false');
     await page.locator('#title').locator('[data-tip="Music"]').click();
@@ -91,10 +94,10 @@ test.describe('starting out', () => {
     await game.start();
     await game.menu('Items');
     await expect(game.card('Water Cooler')).toContainText('Corridor');
-    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or ✨ 3 karma');
-    await expect(game.card('Aquarium')).toContainText('Star 2, or ✨ 5 karma');
-    await expect(game.card('Trophy Cabinet')).toContainText('Star 3, or ✨ 5 karma');
-    await expect(game.card('Koi Pond')).toContainText('🔒 ✨ 6 karma');
+    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or 3 karma');
+    await expect(game.card('Aquarium')).toContainText('Star 2, or 5 karma');
+    await expect(game.card('Trophy Cabinet')).toContainText('Star 3, or 5 karma');
+    await expect(game.card('Koi Pond')).toContainText('6 karma');
   });
 
   test('locked equipment cannot be picked before its star', async ({ game }) => {
@@ -328,7 +331,7 @@ test.describe('room blueprints', () => {
     await game.eval((pp) => (pp.state.speed = 0));
     await game.settle();
     await game.clickRoom('massage');
-    await page.locator('#inspector').getByRole('button', { name: '✋ Move', exact: true }).click();
+    await page.locator('#inspector').getByRole('button', { name: 'Move', exact: true }).click();
     await expect(page.locator('#hint')).toContainText('Moving the Massage Suite');
     /** The first free spot the suite fits, scanning the lot, and where on screen its middle is. */
     const find = () =>
@@ -833,7 +836,10 @@ test.describe('running a center', () => {
       ids[0],
       ids[2],
     ]);
-    await rows.nth(0).getByRole('button', { name: '🏠' }).click();
+    await rows
+      .nth(0)
+      .getByRole('button', { name: /^Send home untreated/ })
+      .click();
     await expect(rows).toHaveCount(2);
     expect(await game.eval((pp) => pp.state.stats.sent)).toBe(1);
   });
@@ -1017,7 +1023,7 @@ test.describe('running a center', () => {
     const offer = page.locator('#offer');
     await expect(offer).toContainText('Offer lapses: 8 days left');
     await offer.locator('[data-tip="Decide later"]').click();
-    await expect(offer).toHaveText('🚨 Emergency on offer: 8 days left to decide');
+    await expect(offer).toHaveText('Emergency on offer: 8 days left to decide');
     // the clock keeps running while it is put aside
     await game.eval((pp) => (pp.state.day += 5));
     await expect(offer).toContainText('3 days left to decide');
@@ -1074,7 +1080,7 @@ test.describe('controls and saving', () => {
     expect(await game.eval((pp) => pp.state.speed)).toBe(0);
     await page.keyboard.press('3');
     expect(await game.eval((pp) => pp.state.speed)).toBe(3);
-    await expect(page.locator('#stats .speed.on')).toHaveText('▶▶▶');
+    await expect(page.locator('#stats .speed.on')).toHaveAccessibleName(/Fastest/);
     await page.keyboard.press('1');
     await game.menu('Items');
     await game.card('Bench').click();
@@ -1124,6 +1130,8 @@ test.describe('clicking', () => {
     await game.page.mouse.up();
     await game.settle();
   };
+  /** Move the mouse to a point. */
+  const moveTo = (game: Game, at: { x: number; y: number }) => game.page.mouse.move(at.x, at.y, { steps: 4 });
   /** The id of whatever is selected, or null. */
   const selectedId = (game: Game) => game.eval((pp) => pp.tools.selected?.id ?? null);
 
@@ -1140,6 +1148,70 @@ test.describe('clicking', () => {
       expect(await selectedId(game), `second click drifting ${drift}px`).toBe(fountain);
       await expect(page.locator('#inspector h3')).toContainText('Zen Fountain');
     }
+  });
+
+  test('what a click would select glows under the pointer, with a hand for the pointer', async ({ game, page }) => {
+    await game.start();
+    const bench = await game.give('bench');
+    /** What a click would select now, and the pointer the canvas shows. */
+    const hovered = () =>
+      game.eval((pp) => [pp.view.overlays.hovered?.id ?? null, document.getElementById('game')!.style.cursor]);
+    await moveTo(game, await game.itemPoint('bench'));
+    await expect.poll(hovered).toEqual([bench, 'pointer']);
+    // nothing on the lawn to click
+    await game.hoverLawn();
+    await expect.poll(hovered).toEqual([null, '']);
+    // leaving the canvas for the interface clears it
+    await moveTo(game, await game.itemPoint('bench'));
+    await expect.poll(hovered).toEqual([bench, 'pointer']);
+    const stats = (await page.locator('#stats').boundingBox())!;
+    await page.mouse.move(stats.x + 10, stats.y + 10, { steps: 4 });
+    await expect.poll(hovered).toEqual([null, '']);
+    // a tool in hand draws its own preview
+    await game.menu('Items');
+    await game.card('Potted Plant').click();
+    await moveTo(game, await game.itemPoint('bench'));
+    await game.settle();
+    await page.waitForTimeout(300);
+    expect(await hovered()).toEqual([null, '']);
+  });
+
+  test('a person selected behind an item shows a marker over them, drawn over everything', async ({ game }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.fastForward(30);
+    // the receptionist works from behind the desk, which stands between them and the camera
+    const id = await game.eval((pp) => {
+      const st = pp.state.staff.find((s) => s.role === 'receptionist')!;
+      pp.tools.select({ kind: 'staff', id: st.id });
+      pp.view.lookAt(st.x, st.y);
+      return st.id;
+    });
+    await game.draw();
+    expect(await game.eval((pp) => [pp.tools.selected?.id, pp.view.overlays.markerShown])).toEqual([id, true]);
+    // the marker's gold shows over their head
+    const gold = await game.eval((pp) => {
+      const st = pp.state.staff.find((s) => s.role === 'receptionist')!;
+      const r = pp.view.renderer as unknown as {
+        render(scene: unknown, camera: unknown): void;
+        getContext(): WebGLRenderingContext;
+        getPixelRatio(): number;
+      };
+      const view = pp.view as unknown as { scene: unknown; rig: { camera: unknown } };
+      r.render(view.scene, view.rig.camera);
+      const gl = r.getContext();
+      const ratio = r.getPixelRatio();
+      const p = pp.view.project(st.x, st.y, 2.35);
+      const size = 24;
+      const px = new Uint8Array(size * size * 4);
+      const x = Math.round(p.x * ratio) - size / 2;
+      const y = gl.drawingBufferHeight - Math.round(p.y * ratio) - size / 2;
+      gl.readPixels(x, y, size, size, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      let n = 0;
+      for (let i = 0; i < px.length; i += 4) if (px[i]! > 180 && px[i + 1]! > 140 && px[i + 2]! < 90) n++;
+      return n;
+    });
+    expect(gold).toBeGreaterThan(10);
   });
 
   test('an item in hand is placed even when the click drifts a little', async ({ game }) => {
@@ -1513,9 +1585,8 @@ test.describe('the Items menu', () => {
     expect(await game.eval((pp, [x, y]) => pp.sim.world.walkable(x!, y!), [clock.x, clock.y])).toBe(true);
     // in the middle of the view, clear of the panels
     await game.eval((pp, [x, y]) => pp.view.lookAt(x! + 0.5, y! + 0.5), [clock.x, clock.y]);
-    // long enough for the camera to glide there
-    await game.settle();
-    await page.waitForTimeout(500);
+    // once the camera has glided there, or the clock slides out from under the click
+    await game.cameraStill();
     await game.clickItem('wall_clock');
     await expect(page.locator('#inspector')).toContainText('Wall Clock');
     // turned round, its wall is cut low and it shows as a chip, which can still be clicked
@@ -1523,8 +1594,7 @@ test.describe('the Items menu', () => {
     await page.keyboard.press('KeyE');
     await page.keyboard.press('KeyE');
     await game.eval((pp, [x, y]) => pp.view.lookAt(x! + 0.5, y! + 0.5), [clock.x, clock.y]);
-    await game.settle();
-    await page.waitForTimeout(500);
+    await game.cameraStill();
     await game.clickItem('wall_clock');
     await expect(page.locator('#inspector')).toContainText('Wall Clock');
     await page.locator('#inspector').getByRole('button', { name: 'Move' }).click();
@@ -1532,8 +1602,7 @@ test.describe('the Items menu', () => {
     const moved = await game.eval((pp) => pp.state.items.find((it) => it.type === 'wall_clock')!);
     expect([moved.x, moved.y, moved.rot]).not.toEqual([clock.x, clock.y, clock.rot]);
     await game.eval((pp, [x, y]) => pp.view.lookAt(x! + 0.5, y! + 0.5), [moved.x, moved.y]);
-    await game.settle();
-    await page.waitForTimeout(500);
+    await game.cameraStill();
     await game.clickItem('wall_clock');
     await page.locator('#inspector').getByRole('button', { name: /Sell/ }).click();
     expect(await game.eval((pp) => pp.state.items.some((it) => it.type === 'wall_clock'))).toBe(false);
@@ -2092,11 +2161,11 @@ test.describe('the campaign', () => {
     );
     await page.getByRole('button', { name: 'Campaign' }).click();
     const panel = page.locator('#title-campaign');
-    await expect(panel.locator('.karma')).toHaveText('✨ 6 karma');
+    await expect(panel.locator('.karma')).toHaveText('6 karma');
     await panel.getByRole('tab', { name: 'Karma shop' }).click();
     await panel.locator('.shop li', { hasText: 'Bonsai' }).getByRole('button').click();
     await expect(panel.locator('.shop li', { hasText: 'Bonsai' })).toContainText('Unlocked');
-    await expect(panel.locator('.karma')).toHaveText('✨ 3 karma');
+    await expect(panel.locator('.karma')).toHaveText('3 karma');
     // the koi pond costs more than is left
     await expect(panel.locator('.shop li', { hasText: 'Koi Pond' }).getByRole('button')).toBeDisabled();
 
@@ -2105,10 +2174,10 @@ test.describe('the campaign', () => {
     await page.waitForFunction(() => !!window.pp);
     await game.menu('Items');
     await expect(game.card('Bonsai')).not.toHaveClass(/locked/);
-    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or ✨ 3 karma');
+    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or 3 karma');
     await game.card('Mindfulness Arcade').click();
     await expect(page.locator('#modal')).toContainText('Unlock the Mindfulness Arcade?');
-    await page.getByRole('button', { name: 'Unlock for ✨ 3 karma' }).click();
+    await page.getByRole('button', { name: 'Unlock for 3 karma' }).click();
     await expect(page.locator('#modal')).toBeEmpty();
     await expect(game.card('Mindfulness Arcade')).not.toHaveClass(/locked/);
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pressure-point-campaign')!).unlocked)).toEqual([
@@ -2339,7 +2408,7 @@ test.describe('magic mushrooms', () => {
 
     // left out on purpose, for the inspector to find
     await game.menu('Policy');
-    await page.locator('#menu').getByRole('button', { name: '🍄 Hide from inspector: on' }).click();
+    await page.locator('#menu').getByRole('button', { name: 'Hide from inspector: on' }).click();
     await expect(page.locator('#menu')).toContainText('Hide from inspector: off');
     await page.keyboard.press('Escape');
     await game.eval((pp) => {
@@ -2811,11 +2880,46 @@ test.describe('turning the camera', () => {
     await page.locator('#sys').locator('[data-tip^="Turn the camera"]').click();
     await page.locator('#sys').locator('[data-tip^="Turn the camera"]').click();
     expect(await game.eval((pp) => pp.view.turn)).toBe(1);
-    // long enough for the camera to glide round
-    await game.settle();
-    await page.waitForTimeout(500);
+    // once the camera has glided round
+    await game.cameraStill();
     await game.clickRoom('massage');
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
     expect(game.errors).toEqual([]);
+  });
+});
+
+test.describe('room signs', () => {
+  /** What the lamp on the sign of the room of this type shows. */
+  const lamp = (game: Game, type: string) =>
+    game.eval((pp, t) => pp.view.rooms.lampOf(pp.state.rooms.find((r) => r.type === t)!.id), type);
+
+  test("turn amber when a room's staff leave it, and red when its equipment breaks", async ({ game }) => {
+    await game.start();
+    await game.buildCenter();
+    // the therapist walks in from the street and takes up their post
+    await game.fastForward(40);
+    await game.eval((pp) => (pp.state.speed = 0));
+    await game.settle();
+    expect(await game.eval((pp) => pp.state.staff.find((s) => s.role === 'therapist')!.state)).toBe('atPost');
+    expect(await lamp(game, 'massage')).toBe('working');
+    // a room with no station to work is working once it is finished
+    expect(await lamp(game, 'training')).toBe('working');
+
+    await game.eval((pp) => pp.sim.fire(pp.state.staff.find((s) => s.role === 'therapist')!.id));
+    await game.settle();
+    expect(await lamp(game, 'massage')).toBe('idle');
+
+    await game.eval((pp) => (pp.state.items.find((it) => it.type === 'massage_table')!.wear = 100));
+    await game.settle();
+    expect(await lamp(game, 'massage')).toBe('broken');
+  });
+
+  test('stay grey while a room is still a blueprint', async ({ game }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.sim.createRoom('massage', { x: 11, y: 5, w: 4, h: 4 }, { x: 12, y: 8, dx: 0, dy: 1 });
+    });
+    await game.settle();
+    expect(await lamp(game, 'massage')).toBe('unfinished');
   });
 });

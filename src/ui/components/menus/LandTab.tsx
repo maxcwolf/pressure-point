@@ -10,7 +10,7 @@ import { Button } from '../common/Button';
 /** What a plot's card says under its name: how big it is and whether it is the game's, or what it costs. */
 function landLine(o: PlotOffer): string {
   if (o.state === 'owned') return `${plotSize(o.def)} · yours`;
-  if (o.state === 'building') return `${plotSize(o.def)} · 🚧 being built on, ${daysToGo(o.daysLeft)}`;
+  if (o.state === 'building') return `${plotSize(o.def)} · being built on, ${daysToGo(o.daysLeft)}`;
   return `${o.def.blurb} · ${plotSize(o.def)} · ${money(o.price)}${o.why ? ` · ${o.why}` : ''}`;
 }
 
@@ -23,8 +23,8 @@ export function LandTab() {
   return (
     <>
       <p class="sub">
-        Grow the building into the land around it. Each plot has a For Sale board on it: press 🏡 Expand, or Show me
-        here, then click a plot to buy it. The builders take a few days over each before the building grows into it.
+        Grow the building into the land around it. Each plot has a For Sale board on it: press Expand, or Show me here,
+        then click a plot to buy it. The builders take a few days over each before the building grows into it.
       </p>
       {offers.map((o) => (
         <div

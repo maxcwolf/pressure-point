@@ -13,6 +13,7 @@ import { offerWarning } from '../../lib/standing';
 import { moraleLook, promotionNote, quitWarning, slotNote, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { IconText, Line } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
 import { Stars } from '../common/Stars';
 import { Courses } from './Courses';
@@ -44,7 +45,7 @@ function Career({ staff: st }: { staff: Staff }) {
             sim.promote(st.id);
           }}
         >
-          {`⬆️ Promote to ${rankName(st.skill + 1)}`}
+          <IconText id="ui-upgrade">{`Promote to ${rankName(st.skill + 1)}`}</IconText>
         </Button>
       )}
     </>
@@ -106,7 +107,7 @@ function WorksIn({ staff: st }: { staff: Staff }) {
             else tools.startAssign(st.id);
           }}
         >
-          {assigning ? '✔ Done' : '📌 Assign to rooms'}
+          {assigning ? '✔ Done' : <IconText id="ui-pin">Assign to rooms</IconText>}
         </Button>
         {st.rooms.length > 0 && (
           <Button
@@ -141,10 +142,14 @@ function Soul({ staff: st }: { staff: Staff }) {
           sim.askSoul(st.id);
         }}
       >
-        🪶 Soul retrieval
+        <IconText id="discipline-shaman">Soul retrieval</IconText>
       </Button>
     );
-  return note ? <p class="sub">{note}</p> : null;
+  return note ? (
+    <p class="sub">
+      <IconText id={st.soulAsked ? 'discipline-shaman' : undefined}>{note}</IconText>
+    </p>
+  ) : null;
 }
 
 /** A member of staff's skills, mood and pay, with raises, training and letting them go. */
@@ -155,16 +160,23 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
   return (
     <>
       <h3>{st.name}</h3>
-      <p class="tag">{`${ROLES[st.role].icon} ${ROLES[st.role].name}`}</p> <Career staff={st} />
+      <p class="tag">
+        <IconText id={ROLES[st.role].icon}>{ROLES[st.role].name}</IconText>
+      </p>{' '}
+      <Career staff={st} />
       {st.traits.map((t) => (
         <em key={t}>{`${traitOf(t).name}: ${traitOf(t).desc}`}</em>
       ))}{' '}
       <p class="status">{staffStatus(st, sim)}</p>{' '}
       {st.offer > 0 && st.state !== 'leaving' && (
-        <p class="status quitting rival-offer">{offerWarning(st.offer - sim.s.day)}</p>
+        <p class="status quitting rival-offer">
+          <IconText id="ui-rival">{offerWarning(st.offer - sim.s.day)}</IconText>
+        </p>
       )}{' '}
       {sim.daysUntilQuit(st) !== null && (
-        <p class={cx('status', 'quitting', sim.aboutToQuit(st) && 'alarm')}>{quitWarning(sim.daysUntilQuit(st))}</p>
+        <p class={cx('status', 'quitting', sim.aboutToQuit(st) && 'alarm')}>
+          <Line line={quitWarning(sim.daysUntilQuit(st)) ?? { text: '' }} />
+        </p>
       )}{' '}
       {st.training && (
         <label>
@@ -200,7 +212,9 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
             sim.giveRaise(st.id);
           }}
         >
-          {`${st.raiseAsked ? '💰 Wants a raise: pay' : 'Raise to'} ${money(sim.raiseTo(st))}`}
+          <IconText id={st.raiseAsked ? 'bubble-raise' : undefined}>
+            {`${st.raiseAsked ? 'Wants a raise: pay' : 'Raise to'} ${money(sim.raiseTo(st))}`}
+          </IconText>
         </Button>
       )}{' '}
       <Duties staff={st} />

@@ -7,6 +7,7 @@ import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { keyLabel } from '../lib/keys';
 import { Button } from './common/Button';
+import { Icon } from './common/Icon';
 
 /** The turn, overlay, sound, music and menu buttons. */
 export function SystemButtons() {
@@ -22,7 +23,7 @@ export function SystemButtons() {
           view.turnCamera(1);
         }}
       >
-        🔄
+        <Icon id="ui-turn" size={22} />
       </Button>{' '}
       <Button
         class={cx('round small', (hud.overlay !== null || hud.overlayPicker) && 'on')}
@@ -31,7 +32,7 @@ export function SystemButtons() {
           hud.overlayPicker = !hud.overlayPicker;
         }}
       >
-        🗺️
+        <Icon id="ui-overlays" size={22} />
       </Button>{' '}
       <Button
         class="round small"
@@ -40,7 +41,7 @@ export function SystemButtons() {
           audio.toggleSound();
         }}
       >
-        {audio.sound ? '🔊' : '🔇'}
+        <Icon id={audio.sound ? 'ui-sound' : 'ui-mute'} size={22} />
       </Button>{' '}
       <Button
         class={cx('round small', !audio.music && 'off')}
@@ -49,7 +50,7 @@ export function SystemButtons() {
           audio.toggleMusic();
         }}
       >
-        🎵
+        <Icon id="ui-music" size={22} />
       </Button>{' '}
       <Button
         class="round small"
@@ -58,7 +59,7 @@ export function SystemButtons() {
           hud.open('pause');
         }}
       >
-        ☰
+        <Icon id="ui-menu" size={22} />
       </Button>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import './MoneyMenu.css';
 
-import { LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../../../core/data';
+import { type IconId, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../../../core/data';
 import { money } from '../../../core/format';
 import { loanLimit } from '../../../core/sim/economy';
 import { netOf } from '../../../core/sim/economy';
@@ -15,6 +15,7 @@ import { cx } from '../../lib/cx';
 import { incomeSources, incomeVerdict, shareWord } from '../../lib/income';
 import { BALK_WHO, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
+import { IconText } from '../common/Icon';
 import { LandTab } from './LandTab';
 import { MarketingTab } from './MarketingTab';
 import { PayrollTab } from './PayrollTab';
@@ -238,13 +239,13 @@ function Loan() {
 }
 
 /** The Money menu's tabs, in order. */
-const TABS: readonly { id: MoneyTab; name: string }[] = [
-  { id: 'books', name: '📒 Books' },
-  { id: 'payroll', name: '💵 Payroll' },
-  { id: 'prices', name: '🏷️ Prices' },
-  { id: 'marketing', name: '📣 Marketing' },
-  { id: 'loan', name: '🏦 Loan' },
-  { id: 'land', name: '🌳 Land' },
+const TABS: readonly { id: MoneyTab; icon: IconId; name: string }[] = [
+  { id: 'books', icon: 'ui-books', name: 'Books' },
+  { id: 'payroll', icon: 'ui-wages', name: 'Payroll' },
+  { id: 'prices', icon: 'ui-prices', name: 'Prices' },
+  { id: 'marketing', icon: 'ui-marketing', name: 'Marketing' },
+  { id: 'loan', icon: 'ui-loan', name: 'Loan' },
+  { id: 'land', icon: 'ui-expand', name: 'Land' },
 ];
 
 /** A tab for the books, prices, marketing, the loan and land, and the one chosen. */
@@ -262,7 +263,7 @@ export function MoneyMenu() {
               hud.moneyTab = t.id;
             }}
           >
-            {t.name}
+            <IconText id={t.icon}>{t.name}</IconText>
           </Button>
         ))}
       </div>

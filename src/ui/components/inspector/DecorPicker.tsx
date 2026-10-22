@@ -20,6 +20,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { karmaText } from '../../lib/karma';
 import { Button } from '../common/Button';
+import { Icon, IconText } from '../common/Icon';
 
 /** One row of swatches: the floors or the walls, the room's own picked out, the locked ones marked with their price. */
 function Swatches<Id extends string>({
@@ -61,7 +62,7 @@ function Swatches<Id extends string>({
               <i style={{ background: def.swatch }} />
               {locked && (
                 <span class="lock" aria-hidden="true">
-                  🔒
+                  <Icon id="ui-lock" size={12} />
                 </span>
               )}
             </Button>
@@ -118,7 +119,7 @@ export function DecorPicker({ room }: { room: Room }) {
           hud.toast(`Every ${name} now looks like this one, and new ones will too.`, 'good');
         }}
       >
-        {`🎨 Use for every ${name}`}
+        <IconText id="ui-paint">{`Use for every ${name}`}</IconText>
       </Button>
     </div>
   );

@@ -96,6 +96,12 @@ export class Picker {
     }
     return [];
   }
+  /** The model a person or item is drawn with, if they are in the scene. */
+  modelOf(sel: Selection): THREE.Object3D | undefined {
+    if (sel.kind === 'item') return this.items.models().find((m) => pickData(m).itemId === sel.id);
+    const pick = this.people.picks().find((p) => pickData(p).charId === sel.id && pickData(p).charKind === sel.kind);
+    return pick?.parent ?? undefined;
+  }
   /** Screen position of a point in the world. */
   project(x: number, y: number, h = 0): { x: number; y: number } {
     const v = new THREE.Vector3(x, h, y).project(this.camera);

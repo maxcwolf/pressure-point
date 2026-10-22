@@ -122,7 +122,7 @@ describe('the warnings before payday', () => {
     const { s, ctx } = center(500, 10);
     warnPayday(ctx);
     expect(toasts(ctx.events)).toEqual([
-      "⚠️ Payday in 20 days: $3,000 in wages against $500 in the bank and about $0 more at this month's pace. Payday is covered by borrowing: $2,500 short at this month's pace, so the loan will stand at $5,000.",
+      "Payday in 20 days: $3,000 in wages against $500 in the bank and about $0 more at this month's pace. Payday is covered by borrowing: $2,500 short at this month's pace, so the loan will stand at $5,000.",
     ]);
     expect(s.paydayWarned).toBe(0);
     ctx.events.length = 0;
@@ -154,7 +154,7 @@ describe('the warnings before payday', () => {
     s.ledger.treatment = 2500;
     warnPayday(ctx);
     expect(toasts(ctx.events)).toEqual([
-      "⚠️ Payday in 5 days: $3,000 in wages, and $500 in the bank, with about $500 more coming at this month's pace. Payday is covered by borrowing: $2,000 short at this month's pace, so the loan will stand at $5,000.",
+      "Payday in 5 days: $3,000 in wages, and $500 in the bank, with about $500 more coming at this month's pace. Payday is covered by borrowing: $2,000 short at this month's pace, so the loan will stand at $5,000.",
     ]);
     // but not when the bank covers them
     ctx.events.length = 0;

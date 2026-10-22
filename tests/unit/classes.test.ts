@@ -212,11 +212,15 @@ describe('how many an Instructor can lead', () => {
   });
 
   it('says so in the studio, with a nudge to promote while there is a rank above', () => {
-    expect(placesNote(3, 6, 1)).toBe('Trainee Instructors lead up to 6');
-    expect(placesNote(8, 6, 1)).toBe(
-      '⚠️ Only 6 of 8 spots are booked. Trainee Instructors lead up to 6: promote yours to fill more',
-    );
-    expect(placesNote(20, 16, 5)).toBe('⚠️ Only 16 of 20 spots are booked. Expert Instructors lead up to 16');
+    expect(placesNote(3, 6, 1)).toEqual({ text: 'Trainee Instructors lead up to 6' });
+    expect(placesNote(8, 6, 1)).toEqual({
+      icon: 'ui-warning',
+      text: 'Only 6 of 8 spots are booked. Trainee Instructors lead up to 6: promote yours to fill more',
+    });
+    expect(placesNote(20, 16, 5)).toEqual({
+      icon: 'ui-warning',
+      text: 'Only 16 of 20 spots are booked. Expert Instructors lead up to 16',
+    });
   });
 });
 

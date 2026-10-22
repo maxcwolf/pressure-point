@@ -15,6 +15,7 @@ import { useGame } from '../../hooks/use-hud';
 import { pricedFor } from '../../lib/casebook';
 import { balkShort, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
+import { IconText } from '../common/Icon';
 
 /** Why a price cannot go higher. */
 const TOP_NOTE = 'Overall level and this price together are at the highest a price can be.';
@@ -60,7 +61,9 @@ export function TechniquePrices() {
         const balk = balkShort(total, s.reputation);
         return (
           <div key={m} class="technique-price">
-            <span>{`${def.icon} ${def.name}`}</span>
+            <span>
+              <IconText id={def.icon}>{def.name}</IconText>
+            </span>
             <small title={balkText(total, s.reputation)}>
               {`${pricedFor(s.casebook, m)} put off so far${balk ? ` · ${balk}` : ''}`}
             </small>
@@ -96,7 +99,9 @@ function ClassPrice() {
   const own = sim.s.prices.qigong ?? 1;
   return (
     <div class="technique-price">
-      <span>{`☯️ Qi Gong class (${money(Math.round(CLASS_FEE * sim.priceFor('qigong')))})`}</span>
+      <span>
+        <IconText id="technique-qigong">{`Qi Gong class (${money(Math.round(CLASS_FEE * sim.priceFor('qigong')))})`}</IconText>
+      </span>
       <small>{`${sim.s.stats.classgoers} class-goers so far`}</small>
       <Button
         locked={own <= PRICE_MIN}

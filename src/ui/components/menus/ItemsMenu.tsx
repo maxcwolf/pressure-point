@@ -5,7 +5,7 @@ import { useState } from 'preact/hooks';
 
 import { itemOpen } from '../../../core/campaign';
 import { certificatesLeft } from '../../../core/certificates';
-import { ITEM_MENU, ITEMS, type ItemType } from '../../../core/data';
+import { type IconId, ITEM_MENU, ITEMS, type ItemType } from '../../../core/data';
 import { money } from '../../../core/format';
 import { unlockedUpTo } from '../../../core/state/game';
 import { loadCampaign } from '../../../storage/campaign';
@@ -17,6 +17,7 @@ import { statsText } from '../../lib/item-stats';
 import { lockLabel } from '../../lib/karma';
 import { addRichTip } from '../../tooltip';
 import { Button } from '../common/Button';
+import { Icon, IconText } from '../common/Icon';
 import { ItemChips, ItemDetail, ItemTip } from './ItemStats';
 
 // an item card's tooltip lists what the item does
@@ -82,15 +83,25 @@ export function ItemsMenu() {
               else choose(t);
             }}
           >
-            <i>{it.icon}</i>
+            <Icon id={it.icon} size={34} />
             <b>{it.name}</b>
             <span class="cost">{earned === null ? money(it.cost) : `${earned} to hang`}</span>
             {!detail && <p>{it.desc}</p>}
             {view === 'chips' && <ItemChips type={t} />}
             {short > 0 ? (
-              <em class="short">{`💸 Need ${money(short)} more`}</em>
+              <em class="short">
+                <IconText id="bubble-cant-afford">{`Need ${money(short)} more`}</IconText>
+              </em>
+            ) : earned === 0 ? (
+              <em>
+                <IconText id="ui-lock">Win an award</IconText>
+              </em>
+            ) : locked ? (
+              <em>
+                <IconText id="ui-lock">{lockLabel(it)}</IconText>
+              </em>
             ) : (
-              <em>{earned === 0 ? '🔒 Win an award' : locked ? lockLabel(it) : placeLabel(it)}</em>
+              <em>{placeLabel(it)}</em>
             )}
           </Button>
         );
@@ -145,18 +156,21 @@ export function ItemsMenu() {
     const { earned, locked, forKarma, short } = standing(t);
     const label =
       earned === 0
-        ? '🔒 Win an award'
+        ? 'Win an award'
         : forKarma
           ? `${lockLabel(it)}: unlock it`
           : locked
             ? lockLabel(it)
             : short > 0
-              ? `💸 Need ${money(short)} more`
+              ? `Need ${money(short)} more`
               : earned !== null
                 ? `Hang it · ${earned} to hang`
                 : `Place it · ${money(it.cost)}`;
+    const icon: IconId | undefined =
+      earned === 0 || forKarma || locked ? 'ui-lock' : short > 0 ? 'bubble-cant-afford' : undefined;
     return {
       label,
+      icon,
       title: short > 0 ? "Can't afford it" : undefined,
       locked: short > 0 || (locked && !forKarma),
       /** Place the item, or open the offer to unlock it. */

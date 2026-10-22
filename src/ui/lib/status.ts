@@ -8,6 +8,7 @@ import type { Sim } from '../../core/sim/sim';
 import { courseName } from '../../core/sim/training';
 import { conditionDays, worsening } from '../../core/sim/worsening';
 import type { Guest, Staff } from '../../core/state/types';
+import type { IconLine } from './icon-line';
 
 export { courseName };
 
@@ -169,11 +170,13 @@ export function moraleLook(morale: number): string {
 }
 
 /** A warning about someone on course to quit, from the days they have left; empty while they are not. */
-export function quitWarning(days: number | null): string {
-  if (days === null) return '';
+export function quitWarning(days: number | null): IconLine | null {
+  if (days === null) return null;
   const left = Math.max(1, Math.ceil(days));
   const plural = left === 1 ? 'day' : 'days';
-  return days <= 2 ? `⚠️ About to quit: ${left} ${plural} left` : `😠 Miserable: will quit in ${left} ${plural}`;
+  return days <= 2
+    ? { icon: 'ui-warning', text: `About to quit: ${left} ${plural} left` }
+    : { icon: 'bubble-angry', text: `Miserable: will quit in ${left} ${plural}` };
 }
 
 /** The staff waiting on an answer about a raise, in payroll order. Anyone already on their way out is past asking. */
@@ -201,12 +204,13 @@ export function slotNote(st: Staff): string {
 
 /**
  * How long a waiting guest's condition has left, in words, red when it is poor: "Condition: 12 days left", or
- * "⚠️ Condition runs out in 2 days: goes home worse off". Nothing for a guest no longer worsening.
+ * "Condition runs out in 2 days: goes home worse off", with a warning icon. Nothing for a guest no longer worsening.
  */
-export function conditionNote(g: Guest): { text: string; poor: boolean } | null {
+export function conditionNote(g: Guest): (IconLine & { poor: boolean }) | null {
   if (!worsening(g)) return null;
   const days = Math.max(1, Math.ceil(conditionDays(g)));
   const word = `${days} day${days === 1 ? '' : 's'}`;
-  if (g.health < POOR_CONDITION) return { text: `⚠️ Condition runs out in ${word}: goes home worse off`, poor: true };
+  if (g.health < POOR_CONDITION)
+    return { icon: 'ui-warning', text: `Condition runs out in ${word}: goes home worse off`, poor: true };
   return { text: `Condition: ${word} left`, poor: false };
 }

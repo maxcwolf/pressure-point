@@ -1,6 +1,6 @@
 // What the simulation tells the outside world: sounds, toasts, announcements and floating text.
 
-import type { AchievementId } from '../data';
+import type { AchievementId, IconId } from '../data';
 import type { SimContext } from './context';
 
 /** Whether a message is good news, bad news or neither. */
@@ -18,7 +18,7 @@ export interface Subject {
 
 export type SimEvent =
   | { type: 'float'; text: string; x: number; y: number; kind: Tone }
-  | { type: 'toast'; text: string; kind: Tone; about?: Subject }
+  | { type: 'toast'; text: string; kind: Tone; about?: Subject; icon?: IconId }
   | { type: 'sfx'; name: SfxName }
   | { type: 'announce'; text: string }
   | { type: 'star'; stars: number }
@@ -41,9 +41,12 @@ export function drainEvents(ctx: SimContext): SimEvent[] {
   return e;
 }
 
-/** Show the player a short message, optionally about someone or something they can be taken to. */
-export function toast(ctx: SimContext, text: string, kind: Tone = 'info', about?: Subject) {
-  emit(ctx, about ? { type: 'toast', text, kind, about } : { type: 'toast', text, kind });
+/**
+ * Show the player a short message, optionally about someone or something they can be taken to, and with an icon
+ * before it that says at a glance what it is about.
+ */
+export function toast(ctx: SimContext, text: string, kind: Tone = 'info', about?: Subject, icon?: IconId) {
+  emit(ctx, { type: 'toast', text, kind, ...(about && { about }), ...(icon && { icon }) });
 }
 
 /** Show a tip, but only the first time it comes up. */

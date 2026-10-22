@@ -75,6 +75,11 @@ export class CameraRig {
     this.dist = zoomedDist(this.dist, delta);
   }
 
+  /** Whether the camera has got where it was sent and turned as far as it was asked, so nothing on screen is sliding. */
+  get still(): boolean {
+    return !this.goal && this.angle === this.angleGoal;
+  }
+
   /** Move the camera to where the target, zoom and turn put it. */
   update() {
     if (this.goal) {

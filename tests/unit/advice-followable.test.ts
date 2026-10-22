@@ -290,7 +290,7 @@ describe('borrowing', () => {
     monthEnd(c.ctx);
     payIntoRed(c.ctx);
     expect(c.s.insolvency).toBeNull();
-    const red = toasts(c.ctx.events).find((t) => t.startsWith('⚠️ You are'))!;
+    const red = toasts(c.ctx.events).find((t) => t.startsWith('You are'))!;
     expect(red).not.toContain('borrow it from the Money menu');
     expect(red).toContain('Prices up or staff down first:');
     expect(red).toContain(

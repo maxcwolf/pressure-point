@@ -68,5 +68,5 @@ export function drawNote(draw: number): string {
 /** The warning on someone the rival has made an offer to. */
 export function offerWarning(daysLeft: number): string {
   const when = daysLeft < 1 ? 'today' : `within ${Math.ceil(daysLeft)} day${Math.ceil(daysLeft) === 1 ? '' : 's'}`;
-  return `🏪 ${RIVAL_NAME} has offered them a job. Lift their morale above ${POACH_MORALE} ${when}, or they will take it.`;
+  return `${RIVAL_NAME} has offered them a job. Lift their morale above ${POACH_MORALE} ${when}, or they will take it.`;
 }

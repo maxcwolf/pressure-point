@@ -135,8 +135,8 @@ export const SEASON_AHEAD_DAYS = 14;
 export function seasonAhead(s: GameState, season: 'summer' | 'winter'): string {
   const o = seasonOutlook(s, season);
   if (season === 'summer')
-    return `☀️ Summer in ${SEASON_AHEAD_DAYS} days: ${paceOf(o.factor)} for three months.${expectOf(o)} The line grows to match, and guests who wait too long go home worse off: more rooms and staff, higher prices, or a limit on guests at once (Money menu, Prices), before it starts.`;
-  return `❄️ Winter in ${SEASON_AHEAD_DAYS} days: ${paceOf(o.factor)} for three months.${expectOf(o)} The wages stay as they are: let go anyone you can spare, or have the money put by.`;
+    return `Summer in ${SEASON_AHEAD_DAYS} days: ${paceOf(o.factor)} for three months.${expectOf(o)} The line grows to match, and guests who wait too long go home worse off: more rooms and staff, higher prices, or a limit on guests at once (Money menu, Prices), before it starts.`;
+  return `Winter in ${SEASON_AHEAD_DAYS} days: ${paceOf(o.factor)} for three months.${expectOf(o)} The wages stay as they are: let go anyone you can spare, or have the money put by.`;
 }
 
 /** The season now and the one coming: their arrival multipliers, and the day the season turns. */
@@ -225,7 +225,7 @@ export function updateTwists(ctx: SimContext, dt: number) {
   if (seasons && season !== seasonOf(before)) emit(ctx, { type: 'announce', text: seasonNews(s, season) });
   const ahead = seasonOf(s.day + SEASON_AHEAD_DAYS);
   if (seasons && ahead !== seasonOf(before + SEASON_AHEAD_DAYS) && (ahead === 'summer' || ahead === 'winter'))
-    toast(ctx, seasonAhead(s, ahead), 'info');
+    toast(ctx, seasonAhead(s, ahead), 'info', undefined, `season-${ahead}`);
   if (snow && snowedIn(s.day, snow) !== snowedIn(before, snow))
     emit(ctx, { type: 'announce', text: snowedIn(s.day, snow) ? SNOW_NEWS.start : SNOW_NEWS.end });
 }

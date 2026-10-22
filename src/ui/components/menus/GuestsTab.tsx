@@ -17,6 +17,7 @@ import {
 } from '../../lib/demand';
 import { rushLine, seasonLine } from '../../lib/seasons';
 import { Bar } from '../common/Bar';
+import { IconText } from '../common/Icon';
 
 /** One thing that draws guests to a discipline: what it is, what it comes to, and how it multiplies the pull. */
 function Factor({ name, value, by, bar }: { name: string; value: string; by: number; bar?: number }) {
@@ -37,7 +38,9 @@ function Row({ row, healed }: { row: DisciplineDemand; healed: number }) {
   return (
     <div class="demand-row">
       <div class="demand-head">
-        <b>{`${def.icon} ${def.name}`}</b>
+        <b>
+          <IconText id={def.icon}>{def.name}</IconText>
+        </b>
         <Bar value={row.share * 100} class="blue" />
         <em>{`${Math.round(row.share * 100)}% of new guests`}</em>
       </div>
@@ -76,8 +79,16 @@ export function GuestsTab() {
     <div class="demand">
       <p class="sub">{DEMAND_INTRO}</p>
       <p class="sub">{offeringNote(offering.staffed, offering.arrivals)}</p>
-      {season && <p class="sub seasons">{`🗓️ ${season}`}</p>}
-      {rush && <p class="sub seasons">{`🗓️ ${rush}`}</p>}
+      {season && (
+        <p class="sub seasons">
+          <IconText id="ui-date">{season}</IconText>
+        </p>
+      )}
+      {rush && (
+        <p class="sub seasons">
+          <IconText id="ui-date">{rush}</IconText>
+        </p>
+      )}
       {away && <p class="sub">{away}</p>}
       {rows.map((row) => (
         <Row key={row.discipline} row={row} healed={sim.s.tally.healedBy[row.discipline] ?? 0} />

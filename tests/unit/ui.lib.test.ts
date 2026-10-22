@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { ITEM_MENU, ITEMS, type ItemType, MODALITIES, type Offering, RANK_XP, ROOMS } from '../../src/core/data';
+import {
+  ITEM_MENU,
+  ITEMS,
+  type ItemType,
+  MODALITIES,
+  NOISE_LOUD,
+  NOISE_PEACEFUL,
+  type Offering,
+  RANK_XP,
+  ROOMS,
+} from '../../src/core/data';
 import type { Job } from '../../src/core/state/types';
+import { fieldColor } from '../../src/render/heatmap';
 import { cureShare, seen, starText } from '../../src/ui/lib/casebook';
 import {
   available,
@@ -19,7 +30,7 @@ import { cx } from '../../src/ui/lib/cx';
 import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
 import { mustAnswer, pendingDialog, raise } from '../../src/ui/lib/dialogs';
 import { offerTimeLeft, timeLeftLabel, wholeDaysLeft } from '../../src/ui/lib/emergency';
-import { pleasantness } from '../../src/ui/lib/overlays';
+import { pleasantness, quietness, upkeepShown } from '../../src/ui/lib/overlays';
 import { placedFlags } from '../../src/ui/lib/plan';
 import { courseName, guestStatus, promotionNote, slotNote, staffStatus } from '../../src/ui/lib/status';
 import { saveFacts, titleBadges } from '../../src/ui/lib/title';
@@ -178,20 +189,20 @@ describe('what it takes to offer a discipline', () => {
 
 describe('what a star unlocks', () => {
   it('lists needling at star one', () => {
-    expect(treatmentsUnlockedAt(1, allOn).join(' ')).toContain('Needling');
+    expect(treatmentsUnlockedAt(1, allOn).map((t) => t.text)).toContain('Classic Needling');
   });
 
   it('says treatment rooms bring in new guests, and what any other room is for', () => {
     expect(newRoomsText(1, allOn)).toBe(
-      `${ROOMS.acupuncture.icon} Acupuncture Clinic, ${ROOMS.sound.icon} Sound Bath Studio. Build one and hire its staff to bring in a new kind of guest. ${ROOMS.recovery.icon} Recovery Lounge: ${ROOMS.recovery.desc}`,
+      `Acupuncture Clinic, Sound Bath Studio. Build one and hire its staff to bring in a new kind of guest. Recovery Lounge: ${ROOMS.recovery.desc}`,
     );
-    expect(newRoomsText(1, massageOnly)).toBe(`${ROOMS.recovery.icon} Recovery Lounge: ${ROOMS.recovery.desc}`);
+    expect(newRoomsText(1, massageOnly)).toBe(`Recovery Lounge: ${ROOMS.recovery.desc}`);
     expect(newRoomsText(3, allOn)).toBe('');
   });
 
   it('leaves out anything from a discipline that is switched off', () => {
     expect(newRoomsText(1, massageOnly)).not.toContain('Acupuncture');
-    expect(treatmentsUnlockedAt(1, massageOnly).join(' ')).not.toContain('Needling');
+    expect(treatmentsUnlockedAt(1, massageOnly).map((t) => t.text)).not.toContain('Classic Needling');
   });
 });
 
@@ -353,6 +364,32 @@ describe('the overlays', () => {
     expect(pleasantness(1.37)).toBeCloseTo(0);
     expect(pleasantness(0.7)).toBe(1);
     expect(pleasantness(1.4)).toBe(0);
+  });
+
+  it('call anything up to the peaceful mark ordinary, and fall to the bottom once it is loud', () => {
+    expect(quietness(0)).toBe(0.5);
+    expect(quietness(NOISE_PEACEFUL)).toBeCloseTo(0.5);
+    expect(quietness(3)).toBeLessThan(0.5);
+    expect(quietness(NOISE_LOUD)).toBe(0);
+  });
+
+  it('call well kept furniture ordinary and neglected furniture the worst', () => {
+    expect(upkeepShown(1)).toBe(0.5);
+    expect(upkeepShown(0)).toBe(0);
+  });
+
+  it('draw ordinary clear on the floor, and anything else stronger the further from ordinary it is', () => {
+    expect(fieldColor(0.5, 'good')[3]).toBe(0);
+    expect(fieldColor(0.5, 'temperature')[3]).toBe(0);
+    expect(fieldColor(0.6, 'good')[3]).toBeGreaterThan(0.2);
+    expect(fieldColor(1, 'good')[3]).toBeGreaterThan(fieldColor(0.6, 'good')[3]);
+    // better is green, worse red, cold blue
+    const [r, g] = fieldColor(1, 'good');
+    expect(g).toBeGreaterThan(r);
+    const [r0, g0] = fieldColor(0, 'good');
+    expect(r0).toBeGreaterThan(g0);
+    const [rc, , bc] = fieldColor(0, 'temperature');
+    expect(bc).toBeGreaterThan(rc);
   });
 });
 

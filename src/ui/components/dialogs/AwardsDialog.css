@@ -30,10 +30,9 @@
   opacity: 0.75;
 }
 
-.awards i {
-  font-style: normal;
-  font-size: 22px;
-  text-align: center;
+.awards li.missed .icon {
+  filter: grayscale(1);
+  opacity: 0.45;
 }
 
 .awards small {

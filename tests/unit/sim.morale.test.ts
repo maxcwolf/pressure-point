@@ -25,10 +25,10 @@ describe('the countdown to quitting', () => {
   });
 
   it('is described plainly, more urgently near the end', () => {
-    expect(quitWarning(null)).toBe('');
-    expect(quitWarning(6.2)).toBe('😠 Miserable: will quit in 7 days');
-    expect(quitWarning(1.5)).toBe('⚠️ About to quit: 2 days left');
-    expect(quitWarning(0.2)).toBe('⚠️ About to quit: 1 day left');
+    expect(quitWarning(null)).toBeNull();
+    expect(quitWarning(6.2)).toEqual({ icon: 'bubble-angry', text: 'Miserable: will quit in 7 days' });
+    expect(quitWarning(1.5)).toEqual({ icon: 'ui-warning', text: 'About to quit: 2 days left' });
+    expect(quitWarning(0.2)).toEqual({ icon: 'ui-warning', text: 'About to quit: 1 day left' });
   });
 
   it('turns the morale bar red when it is low', () => {

@@ -28,17 +28,18 @@ async function rendererInfo(page: Page) {
   return page.evaluate(async () => {
     const info = (window.pp!.view as unknown as { renderer: { info: RendererInfo } }).renderer.info;
     // the game's own module, as served by the dev server, so this is the very cache the game uses
-    const emoji = (await import(/* @vite-ignore */ `${location.origin}/src/render/models/emoji.ts`)) as {
-      emojiTextures: () => number;
+    const icons = (await import(/* @vite-ignore */ `${location.origin}/src/render/models/icons.ts`)) as {
+      iconTextures: () => number;
     };
     const parts = (await import(/* @vite-ignore */ `${location.origin}/src/render/models/parts.ts`)) as {
       cachedShapes: () => number;
     };
     return {
-      // shared shapes are made the first time something needs them and kept, like emoji
+      // shared shapes are made the first time something needs them and kept, like the icons' textures
       geometries: info.memory.geometries - parts.cachedShapes(),
-      // emoji are drawn once each and kept, so a new one turning up late in a session is not a leak
-      textures: info.memory.textures - emoji.emojiTextures(),
+      // the icons' atlas is put on the graphics card the first time an icon is shown and kept, so it turning up late in
+      // a session is not a leak
+      textures: info.memory.textures - icons.iconTextures(),
       calls: info.render.calls,
       triangles: info.render.triangles,
       programs: info.programs?.length ?? 0,
@@ -88,7 +89,7 @@ test.describe('performance', () => {
   test('keeps GPU memory level through a long, busy session', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
-    // warm up: everything that is drawn once and kept, such as each kind of model and emoji, is made now
+    // warm up: everything that is drawn once and kept, such as each kind of model and the icons' atlas, is made now
     await game.fastForward(120);
     // compared with the center emptied of guests each time, so what is measured is what lasts, not who is in
     await emptyOfGuests(game);

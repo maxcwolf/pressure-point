@@ -9,6 +9,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import { moraleLook, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { Icon, IconText } from '../common/Icon';
 
 /** A row per member of staff, with their energy and morale. Pressing one selects them and moves the camera there. */
 export function StaffMenu() {
@@ -41,8 +42,12 @@ export function StaffMenu() {
               hud.show({ kind: 'staff', id: st.id });
             }}
           >
-            <i>{ROLES[st.role].icon}</i>
-            <b>{`${sim.aboutToQuit(st) ? '⚠️ ' : st.raiseAsked ? '💰 ' : ''}${st.name}`}</b>
+            <Icon id={ROLES[st.role].icon} size={26} />
+            <b>
+              <IconText id={sim.aboutToQuit(st) ? 'ui-warning' : st.raiseAsked ? 'bubble-raise' : undefined}>
+                {st.name}
+              </IconText>
+            </b>
             <span>{staffStatus(st, sim)}</span>
             <span class="meters" title={`Energy ${Math.round(st.energy)}%, morale ${Math.round(st.morale)}%`}>
               <Bar value={st.energy} class="thin energy" />

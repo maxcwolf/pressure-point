@@ -3,7 +3,7 @@
 
 import { track } from '../app/analytics';
 import { gameProps } from '../app/play-events';
-import type { DecorKey, ItemType, Role } from '../core/data';
+import type { DecorKey, IconId, ItemType, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { Template } from '../core/templates';
 import { giveKarma } from '../storage/campaign';
@@ -47,6 +47,8 @@ export interface Toast {
   kind: Tone;
   /** Who or what it is about, if clicking it should take the player there. */
   about?: Subject;
+  /** The icon before it, if it has one. */
+  icon?: IconId;
   /** Fading out, about to be removed. */
   leaving: boolean;
 }
@@ -290,7 +292,7 @@ export class HudState {
     const { view, audio } = this.host;
     for (const e of events) {
       if (e.type === 'sfx') audio.play(e.name);
-      else if (e.type === 'toast') this.toast(e.text, e.kind, e.about);
+      else if (e.type === 'toast') this.toast(e.text, e.kind, e.about, e.icon);
       else if (e.type === 'announce') this.announce(e.text);
       else if (e.type === 'star') this.raise('star', e.stars);
       else if (e.type === 'awards') this.raise('awards');
@@ -302,8 +304,15 @@ export class HudState {
   }
 
   /** Show a message that fades after a few seconds. */
-  toast(text: string, kind: Tone = 'info', about?: Subject) {
-    const toast: Toast = { id: this.nextId++, text, kind, leaving: false, ...(about && { about }) };
+  toast(text: string, kind: Tone = 'info', about?: Subject, icon?: IconId) {
+    const toast: Toast = {
+      id: this.nextId++,
+      text,
+      kind,
+      leaving: false,
+      ...(about && { about }),
+      ...(icon && { icon }),
+    };
     this.toasts = [...this.toasts, toast].slice(-MAX_TOASTS);
     setTimeout(() => {
       toast.leaving = true;

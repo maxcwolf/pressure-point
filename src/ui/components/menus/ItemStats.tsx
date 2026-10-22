@@ -3,12 +3,13 @@
 
 import './ItemStats.css';
 
-import { HEAT_RADIUS, ITEMS, type ItemType } from '../../../core/data';
+import { HEAT_RADIUS, type IconId, ITEMS, type ItemType } from '../../../core/data';
 import { money } from '../../../core/format';
 import { decorReach } from '../../../core/sim/ambience';
 import { DECOR_MOST, HEAT_MOST, type ItemStat, itemStats, NOISE_MOST } from '../../lib/item-stats';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { Icon, IconText } from '../common/Icon';
 
 /** An item's stats as chips along the bottom of its card. */
 export function ItemChips({ type }: { type: ItemType }) {
@@ -17,7 +18,9 @@ export function ItemChips({ type }: { type: ItemType }) {
   return (
     <ul class="stat-chips">
       {stats.map((s) => (
-        <li key={s.id + s.short} class={s.tone}>{`${s.icon} ${s.short}`}</li>
+        <li key={s.id + s.short} class={s.tone}>
+          <IconText id={s.icon}>{s.short}</IconText>
+        </li>
       ))}
     </ul>
   );
@@ -47,11 +50,13 @@ export function ItemTip({ type }: { type: ItemType }) {
   const def = ITEMS[type];
   return (
     <div class="item-tip">
-      <strong>{`${def.icon} ${def.name}`}</strong>
+      <strong>
+        <IconText id={def.icon}>{def.name}</IconText>
+      </strong>
       <ul>
         {itemStats(type).map((s) => (
           <li key={s.id + s.short}>
-            <i>{s.icon}</i>
+            <Icon id={s.icon} size={18} />
             <span>
               {s.long}
               {scaleOf(type, s)}
@@ -101,6 +106,8 @@ function TwoWay({
 /** What the panel's button does for the item showing: place it, unlock it, or say why it cannot. */
 export interface DetailAction {
   label: string;
+  /** The icon before the label: a lock, or an empty purse. */
+  icon?: IconId | undefined;
   /** Why it is refused, if it is. */
   title?: string | undefined;
   locked: boolean;
@@ -117,7 +124,7 @@ export function ItemDetail({ type, where, action }: { type: ItemType; where: str
   return (
     <div class="item-detail">
       <div class="head">
-        <i>{def.icon}</i>
+        <Icon id={def.icon} size={44} />
         <div>
           <b>{def.name}</b>
           <span class="cost">{money(def.cost)}</span>
@@ -150,13 +157,15 @@ export function ItemDetail({ type, where, action }: { type: ItemType; where: str
       {facts.length > 0 && (
         <ul class="facts">
           {facts.map((s) => (
-            <li key={s.id + s.short}>{`${s.icon} ${s.long}`}</li>
+            <li key={s.id + s.short}>
+              <IconText id={s.icon}>{s.long}</IconText>
+            </li>
           ))}
         </ul>
       )}
       <em>{where}</em>
       <Button class="place" title={action.title} locked={action.locked} onPress={action.onPress}>
-        {action.label}
+        {action.icon ? <IconText id={action.icon}>{action.label}</IconText> : action.label}
       </Button>
     </div>
   );

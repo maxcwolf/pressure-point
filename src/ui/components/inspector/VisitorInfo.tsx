@@ -7,6 +7,7 @@ import type { Visitor } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { verdictTone, visitorLine, visitorStatus } from '../../lib/visits';
+import { IconText } from '../common/Icon';
 
 /** Who the visitor is, what they are doing, and what they have made of each room so far. */
 export function VisitorInfo({ visitor: v }: { visitor: Visitor }) {
@@ -15,7 +16,14 @@ export function VisitorInfo({ visitor: v }: { visitor: Visitor }) {
   return (
     <>
       <h3>{v.name}</h3>
-      <p class="tag">{v.visit === 'inspector' ? '📋 Health inspector' : '🌟 VIP'}</p> <p>{visitorLine(v)}</p>
+      <p class="tag">
+        {v.visit === 'inspector' ? (
+          <IconText id="bubble-inspecting">Health inspector</IconText>
+        ) : (
+          <IconText id="ui-vip">VIP</IconText>
+        )}
+      </p>{' '}
+      <p>{visitorLine(v)}</p>
       <p class="status">{visitorStatus(v, room && ROOMS[room.type].name)}</p>{' '}
       {v.seen.length > 0 && (
         <>

@@ -329,13 +329,18 @@ describe('a fine Sound Bath Studio', () => {
   });
 
   it('says in the inspector how strongly it draws', () => {
-    expect(pullNote(1, 'sound')).toBe(
-      '🔔 A prestigious, peaceful room with mats to spare draws more guests who want sound healing.',
-    );
-    expect(pullNote(2.24, 'sound')).toBe(
-      '🔔 Draws 2.2× the usual guests for sound healing, for its prestige, its peace and its mats.',
-    );
-    expect(pullNote(1.5, 'reiki')).toBe('✨ Draws 1.5× the usual guests for reiki, for its prestige and its peace.');
+    expect(pullNote(1, 'sound')).toEqual({
+      icon: 'discipline-sound',
+      text: 'A prestigious, peaceful room with mats to spare draws more guests who want sound healing.',
+    });
+    expect(pullNote(2.24, 'sound')).toEqual({
+      icon: 'discipline-sound',
+      text: 'Draws 2.2× the usual guests for sound healing, for its prestige, its peace and its mats.',
+    });
+    expect(pullNote(1.5, 'reiki')).toEqual({
+      icon: 'discipline-reiki',
+      text: 'Draws 1.5× the usual guests for reiki, for its prestige and its peace.',
+    });
   });
 });
 
@@ -392,11 +397,15 @@ describe('how many mats a Sound Healer plays for', () => {
   });
 
   it('says so at the bowls', () => {
-    expect(matsNote(2, 2, 1)).toBe('Trainee Sound Healers play for up to 2 mats');
-    expect(matsNote(4, 3, 3)).toBe(
-      '⚠️ Only 3 of 4 mats are used. Experienced Sound Healers play for up to 3 mats: a more senior one plays for more',
-    );
-    expect(matsNote(6, 4, 5)).toBe('⚠️ Only 4 of 6 mats are used. Expert Sound Healers play for up to 4 mats');
+    expect(matsNote(2, 2, 1)).toEqual({ text: 'Trainee Sound Healers play for up to 2 mats' });
+    expect(matsNote(4, 3, 3)).toEqual({
+      icon: 'ui-warning',
+      text: 'Only 3 of 4 mats are used. Experienced Sound Healers play for up to 3 mats: a more senior one plays for more',
+    });
+    expect(matsNote(6, 4, 5)).toEqual({
+      icon: 'ui-warning',
+      text: 'Only 4 of 6 mats are used. Expert Sound Healers play for up to 4 mats',
+    });
   });
 });
 

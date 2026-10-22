@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 
 import { owned } from '../../disposal';
-import { cyl, DARK, mat, partsOf, put, rbox, sph, WHITE } from '../parts';
+import { capsule, DARK, mat, partsOf, put, rbox, soft, sph, WHITE } from '../parts';
 
 /** The fish: where each swims and its color. */
 const FISH: readonly (readonly [x: number, y: number, z: number, color: number])[] = [
@@ -15,7 +15,7 @@ const FISH: readonly (readonly [x: number, y: number, z: number, color: number])
 
 /** Build the Aquarium model. */
 export function buildAquarium(g: THREE.Group) {
-  put(g, rbox(1.8, 0.6, 0.6, 0.04), mat(DARK), 0, 0.3, 0);
+  put(g, soft(1.8, 0.6, 0.6), mat(DARK), 0, 0.3, 0);
   // the water is see-through, so it gets a material of its own rather than a shared solid one
   const water = owned(
     new THREE.MeshStandardMaterial({
@@ -29,13 +29,15 @@ export function buildAquarium(g: THREE.Group) {
   );
   put(g, rbox(1.8, 0.78, 0.6, 0.03), water, 0, 0.99, 0).castShadow = false;
   put(g, rbox(1.74, 0.06, 0.54, 0.02), mat(0xe9d8a6, 0.9), 0, 0.64, 0);
-  put(g, rbox(1.84, 0.06, 0.64, 0.02), mat(DARK), 0, 1.43, 0);
-  for (const [x, h] of [
-    [-0.75, 0.4],
-    [0.7, 0.3],
-    [0.1, 0.22],
+  put(g, soft(1.84, 0.07, 0.64), mat(DARK), 0, 1.43, 0);
+  // fronds of weed, rounded at their tips, leaning a little in the water
+  for (const [x, h, lean] of [
+    [-0.75, 0.4, 0.12],
+    [-0.66, 0.26, -0.2],
+    [0.7, 0.3, -0.1],
+    [0.1, 0.22, 0.15],
   ] as const)
-    put(g, cyl(0.02, 0.03, h, 6), mat(0x4f9a55, 0.8), x, 0.67 + h / 2, -0.15);
+    put(g, capsule(0.035, h - 0.07), mat(0x4f9a55, 0.8), x, 0.67 + h / 2, -0.15).rotation.z = lean;
   for (const [x, y, z, color] of FISH) {
     const fish = put(g, sph(0.06, 10), mat(color, 0.4, 0.3), x, y, z);
     fish.scale.set(1.7, 1, 0.7);

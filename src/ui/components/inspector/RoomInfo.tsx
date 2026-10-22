@@ -23,6 +23,7 @@ import { pullNote } from '../../lib/demand';
 import { saveAsTemplate } from '../../templates';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { IconText, Line } from '../common/Icon';
 import { Stars } from '../common/Stars';
 import { DecorPicker } from './DecorPicker';
 import { StationInfo } from './StationInfo';
@@ -42,7 +43,8 @@ function CanDeliver({ table }: { table: Item }) {
         const why = deliveryNote(problem, def, staff?.name);
         return (
           <em key={m} class={problem ? 'warn' : 'ok'}>
-            {`${problem ? '✗' : '✔'} ${def.icon} ${def.name}`}
+            {`${problem ? '✗' : '✔'} `}
+            <IconText id={def.icon}>{def.name}</IconText>
             {why && (
               <>
                 {' '}
@@ -66,7 +68,9 @@ function BadVibes({ room }: { room: Room }) {
   );
   return (
     <div class="vibes">
-      <b>☁️ Bad vibes</b>
+      <b>
+        <IconText id="feeling-bad-vibes">Bad vibes</IconText>
+      </b>
       <Bar value={room.vibes} class="thin bad" />
       <p class="sub">
         {`A failed treatment left these behind. Treatments here work less often, and staff here are unsettled, until they fade or are cleared. ${
@@ -88,14 +92,22 @@ function Draw({ room }: { room: Room }) {
   const { sim } = useGame();
   const d = DISCIPLINE_ORDER.find((x) => DISCIPLINES[x].room === room.type);
   if (!d || !room.done) return null;
-  return <p class="sub">{pullNote(sim.roomPull(room), d)}</p>;
+  return (
+    <p class="sub">
+      <Line line={pullNote(sim.roomPull(room), d)} />
+    </p>
+  );
 }
 
 /** The blessing a Shaman has left on a room, while it lasts. */
 function Blessing({ room }: { room: Room }) {
   const { sim } = useGame();
   const note = blessingNote(room.blessedUntil, sim.s.day);
-  return note ? <p class="sub">{note}</p> : null;
+  return note ? (
+    <p class="sub">
+      <IconText id="ui-karma">{note}</IconText>
+    </p>
+  ) : null;
 }
 
 /** How warm and how calm it is in the middle of a room. */
@@ -107,7 +119,11 @@ function Comfort({ room }: { room: Room }) {
   const noise = sim.noiseAt(x, y);
   return (
     <p class="sub comfort">
-      {`🌡️ ${Math.round(temp)}°F, ${tempFeel(temp).toLowerCase()} · 🤫 ${noise >= NOISE_NOTICE ? 'Noisy' : noise <= NOISE_PEACEFUL ? 'Peaceful' : 'Fairly quiet'}`}
+      <IconText id="overlay-temperature">{`${Math.round(temp)}°F, ${tempFeel(temp).toLowerCase()}`}</IconText>
+      {' · '}
+      <IconText id="overlay-calm">
+        {noise >= NOISE_NOTICE ? 'Noisy' : noise <= NOISE_PEACEFUL ? 'Peaceful' : 'Fairly quiet'}
+      </IconText>
     </p>
   );
 }
@@ -122,7 +138,9 @@ export function RoomInfo({ room }: { room: Room }) {
   const assigned = sim.s.staff.filter((st) => st.rooms.includes(room.id));
   return (
     <>
-      <h3>{`${def.icon} ${roomLabels(sim.s.rooms).get(room.id) ?? def.name}`}</h3>
+      <h3>
+        <IconText id={def.icon}>{roomLabels(sim.s.rooms).get(room.id) ?? def.name}</IconText>
+      </h3>
       <p>{def.desc}</p>{' '}
       <p>
         {'Prestige '}
@@ -145,7 +163,7 @@ export function RoomInfo({ room }: { room: Room }) {
           sim.setRoomPriority(room.id, !room.priority);
         }}
       >
-        {room.priority ? '⭐ Priority: on' : '☆ Priority: off'}
+        <IconText id="ui-reputation">{room.priority ? 'Priority: on' : 'Priority: off'}</IconText>
       </Button>{' '}
       <Button
         class="roomwindows"
@@ -153,7 +171,7 @@ export function RoomInfo({ room }: { room: Room }) {
           tools.startWindows(room.id);
         }}
       >
-        🪟 Windows
+        <IconText id="ui-window">Windows</IconText>
       </Button>{' '}
       <Button
         class="roomdoor"
@@ -161,7 +179,7 @@ export function RoomInfo({ room }: { room: Room }) {
           tools.startMoveDoor(room.id);
         }}
       >
-        🚪 Move door
+        <IconText id="ui-door">Move door</IconText>
       </Button>{' '}
       <Button
         class="roomresize"
@@ -169,7 +187,7 @@ export function RoomInfo({ room }: { room: Room }) {
           tools.startResize(room.id);
         }}
       >
-        ↔️ Resize
+        <IconText id="ui-resize">Resize</IconText>
       </Button>{' '}
       <Button
         class="roommove"
@@ -178,7 +196,7 @@ export function RoomInfo({ room }: { room: Room }) {
           tools.startMoveRoom(room.id);
         }}
       >
-        ✋ Move
+        <IconText id="ui-move">Move</IconText>
       </Button>{' '}
       <Button
         class="roomcopy"
@@ -188,7 +206,7 @@ export function RoomInfo({ room }: { room: Room }) {
           tools.startMoveRoom(room.id, true);
         }}
       >
-        {`📋 Copy (${money(copyCost(sim.roomLayout(room)))})`}
+        <IconText id="ui-copy">{`Copy (${money(copyCost(sim.roomLayout(room)))})`}</IconText>
       </Button>{' '}
       <Button
         class="roomtemplate"
@@ -197,7 +215,7 @@ export function RoomInfo({ room }: { room: Room }) {
           saveAsTemplate(hud, sim.roomLayout(room));
         }}
       >
-        📐 Save as template
+        <IconText id="ui-template">Save as template</IconText>
       </Button>{' '}
       {room.done && <DecorPicker room={room} />}
       <Button

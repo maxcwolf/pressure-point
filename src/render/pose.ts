@@ -4,9 +4,11 @@ import * as THREE from 'three';
 
 import { type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
-import type { Char } from '../core/state/types';
+import type { BubbleId, Char } from '../core/state/types';
+import { must } from '../core/util';
 import { type CharRig, cureRig, type Joints } from './models/character';
-import { emojiTexture } from './models/emoji';
+import { type Expression, showExpression } from './models/character-detail';
+import { iconTexture } from './models/icons';
 import { driftSmoke } from './models/sage';
 
 /**
@@ -41,12 +43,100 @@ export const wafting = (c: Char) => c.kind === 'staff' && c.state === 'doingJob'
 /** How someone is working, so each kind of work moves differently: a treatment they are giving, or Qi Gong. */
 export type WorkStyle = Modality | 'qigong' | null;
 
-/** Pose a person for this frame: position, limbs, symptom effects and speech bubble. */
-export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: WorkStyle) {
+/**
+ * The patience under which a waiting guest shows each mood, so a player can see it running out in time to act. Above
+ * them all a guest is content. Restless, they shift their weight and glance about; impatient, they fold their arms and
+ * tap a foot; fed up, they stand with their hands on their hips (or sit with their head in their hands) turned toward
+ * the door, and the 💢 bubble goes up as the last alarm before they leave.
+ */
+export const PATIENCE_SIGNS = { restless: 60, impatient: 40, fedUp: 25 } as const;
+
+/** How a guest's patience shows in how they stand and sit. */
+export type Mood = 'content' | keyof typeof PATIENCE_SIGNS;
+
+/** The mood a waiting guest with this much patience is in. */
+export function moodFor(patience: number): Mood {
+  if (patience < PATIENCE_SIGNS.fedUp) return 'fedUp';
+  if (patience < PATIENCE_SIGNS.impatient) return 'impatient';
+  if (patience < PATIENCE_SIGNS.restless) return 'restless';
+  return 'content';
+}
+
+/** How someone's patience shows: a guest waiting for their turn, or on their way to wait, by it; anyone else, content. */
+export const moodOf = (c: Char): Mood =>
+  c.kind === 'guest' && (c.state === 'waiting' || c.state === 'toWait') ? moodFor(c.patience) : 'content';
+
+/**
+ * The face someone wears. A guest: delighted once healed and unhappy if they leave otherwise worse off, unhappy as
+ * their patience runs short, wincing in poor condition. Staff: unhappy about to quit, wincing worn out. Else, at ease.
+ */
+export function expressionOf(c: Char): Expression {
+  if (c.kind === 'guest') {
+    if (c.outcome === 'healed') return 'delighted';
+    if (c.outcome === 'stormed' || c.outcome === 'failed' || c.outcome === 'worse') return 'unhappy';
+    if (c.patience < PATIENCE_SIGNS.impatient) return 'unhappy';
+    if (!c.outcome && c.health < POOR_CONDITION) return 'wince';
+  } else if (c.kind === 'staff') {
+    if (aboutToQuit(c)) return 'unhappy';
+    if (c.energy < 15) return 'wince';
+  }
+  return 'neutral';
+}
+
+/**
+ * Whether a member of staff has nothing to do: at their post with no one to see, or standing or wandering about for
+ * want of work. Someone on a break or training has something to do.
+ */
+export const hasNothingToDo = (c: Char) =>
+  c.kind === 'staff' && !c.busy && (c.state === 'atPost' || c.state === 'idle' || c.state === 'wander');
+
+/** What a member of staff with nothing to do does to pass the time, each in turn. */
+export type IdleAct = 'stretch' | 'look' | 'watch';
+const IDLE_ACTS: readonly IdleAct[] = ['stretch', 'look', 'watch'];
+
+/** How long someone has had nothing to do before it shows, and how long each act lasts, in seconds. */
+export const IDLE = { after: 4, lasts: 3 } as const;
+
+/**
+ * What someone who has had nothing to do for so long is doing to pass the time, if it shows yet, and how far into it
+ * they are (0 to 1, easing in and out). Each starts on a different act, so a room of them are not all in step.
+ */
+export function idleAct(id: number, idleFor: number): { kind: IdleAct; amount: number } | null {
+  const s = idleFor - IDLE.after;
+  if (!(s >= 0)) return null;
+  const n = Math.floor(s / IDLE.lasts);
+  const u = s / IDLE.lasts - n;
+  return {
+    kind: must(IDLE_ACTS[(n + id) % IDLE_ACTS.length], 'an idle act'),
+    amount: Math.min(1, Math.sin(Math.PI * u) * 1.8),
+  };
+}
+
+/** How long someone must have had nothing to do to be in the middle of an act: for the model lab, to show each. */
+export function idleMoment(id: number, kind: IdleAct) {
+  const n = (IDLE_ACTS.indexOf(kind) - (id % IDLE_ACTS.length) + IDLE_ACTS.length) % IDLE_ACTS.length;
+  return IDLE.after + (n + 0.5) * IDLE.lasts;
+}
+
+/** An angle brought round to between -pi and pi. */
+const wrap = (a: number) => a - Math.PI * 2 * Math.round(a / (Math.PI * 2));
+
+/** Where a fed-up guest looks: the front door, in tiles. */
+export interface Door {
+  x: number;
+  y: number;
+}
+
+/**
+ * Pose a person for this frame: position, limbs, face, symptom effects and speech bubble. A fed-up guest turns toward
+ * the door, if there is one.
+ */
+export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: WorkStyle, door?: Door) {
   rig.group.position.set(c.x, c.h, c.y);
   rig.group.rotation.y = c.facing;
   const healed = c.kind === 'guest' && c.outcome === 'healed';
   if (healed) cureRig(rig, c.look);
+  showExpression(rig.face, expressionOf(c));
   const visual = healed ? undefined : rig.visual;
   const phase = t * 9.5 + c.id * 1.7;
   let legL = 0;
@@ -333,9 +423,26 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
   // only someone with their hands free (the inspector carries a clipboard) and no symptom to show fidgets with their
   // arms
   const handsFree = !visual && !(c.kind === 'visitor' && c.visit === 'inspector');
-  // too stiff, or frozen like a crashed computer, to fidget
+  // a member of staff left with nothing to do passes the time, once it has gone on a while
+  if (!hasNothingToDo(c)) rig.idleSince = NaN;
+  else if (Number.isNaN(rig.idleSince)) rig.idleSince = t;
+  const doing: Doing = {
+    style,
+    smudging,
+    handsFree,
+    // arms held stiff, flexed or frozen by a symptom show it, whatever else
+    armsFree: visual !== 'stiff' && visual !== 'flex' && visual !== 'frost' && visual !== 'bluescreen',
+    rightHolds: visual === 'mallet' || visual === 'leash',
+    idle: idleAct(c.id, t - rig.idleSince),
+    mood: moodOf(c),
+    toDoor: door ? wrap(Math.atan2(door.x - c.x, door.y - c.y) - c.facing) : 0,
+    armL,
+    armR,
+    armOut,
+  };
+  // too stiff, or frozen like a crashed computer, to move with life, they can still show their patience running out
   const frozen = visual === 'stiff' || visual === 'bluescreen';
-  const life = !frozen ? liveliness(c, t, phase, style, smudging, armL, armR, handsFree) : NO_LIFE;
+  const life = !frozen ? liveliness(c, t, phase, doing) : showMood({ ...NO_LIFE }, c, t, doing);
   lean += life.lean;
   side += life.side;
   headX += life.headX;
@@ -399,23 +506,23 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, style: Wo
   }
 
   // someone about to quit keeps a warning over their head until it is dealt with
-  let bubble = c.kind === 'staff' && aboutToQuit(c) ? '⚠️' : c.bubbleT > 0 ? c.bubble : '';
+  let bubble: BubbleId | '' = c.kind === 'staff' && aboutToQuit(c) ? 'bubble-quitting' : c.bubbleT > 0 ? c.bubble : '';
   if (!bubble && c.kind === 'guest') {
     const waiting = c.state === 'waiting' || c.state === 'toWait';
-    if (waiting && c.patience < 25) bubble = '💢';
-    else if (waiting && !c.outcome && c.health < POOR_CONDITION) bubble = '🤕';
-    else if (waiting && c.bladder >= 95) bubble = '🚻';
-    else if (waiting && c.thirst >= 95) bubble = '🍵';
+    if (doing.mood === 'fedUp') bubble = 'bubble-impatient';
+    else if (waiting && !c.outcome && c.health < POOR_CONDITION) bubble = 'bubble-hurt';
+    else if (waiting && c.bladder >= 95) bubble = 'bubble-restroom';
+    else if (waiting && c.thirst >= 95) bubble = 'bubble-thirsty';
   } else if (!bubble && c.kind === 'staff') {
-    if (c.state === 'onBreak') bubble = '💤';
-    else if (c.state === 'training') bubble = '📚';
-    else if (c.energy < 15) bubble = '😴';
+    if (c.state === 'onBreak') bubble = 'bubble-break';
+    else if (c.state === 'training') bubble = 'bubble-training';
+    else if (c.energy < 15) bubble = 'bubble-exhausted';
   }
   if (bubble !== rig.bubbleKey) {
     rig.bubbleKey = bubble;
     rig.bubble.visible = !!bubble;
     if (bubble) {
-      rig.bubble.material.map = emojiTexture(bubble);
+      rig.bubble.material.map = iconTexture(bubble);
       rig.bubble.material.needsUpdate = true;
     }
   }
@@ -480,6 +587,29 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
   rig.head.rotation.y += (life.headYaw - rig.head.rotation.y) * k;
   rig.body.rotation.y += (life.bodyYaw - rig.body.rotation.y) * k;
   rig.body.position.x += (life.swayX - rig.body.position.x) * k;
+  j.foreL.rotation.y += (life.bendL - j.foreL.rotation.y) * k;
+  j.foreR.rotation.y += (-life.bendR - j.foreR.rotation.y) * k;
+}
+
+/** What someone is doing, and how their arms are posed before any life is added: what their life moves with. */
+interface Doing {
+  style: WorkStyle;
+  smudging: boolean;
+  /** Their hands are free to fidget with, holding nothing and showing no symptom. */
+  handsFree: boolean;
+  /** Their arms are free to fold or set on the hips, not held stiff, flexed or frozen by a symptom. */
+  armsFree: boolean;
+  /** Their right hand holds what shows their symptom, so only the left arm is free. */
+  rightHolds: boolean;
+  /** What they are doing to pass the time, with nothing to do. */
+  idle: ReturnType<typeof idleAct>;
+  mood: Mood;
+  /** How far round the front door is from the way they face, in radians, the left being positive. */
+  toDoor: number;
+  /** The arms' turns as posed, forward and outward, which passing the time or a mood takes over. */
+  armL: number;
+  armR: number;
+  armOut: number;
 }
 
 /** What liveliness adds to a pose: turns in radians and shifts in meters, on top of what the pose sets. */
@@ -500,6 +630,9 @@ interface Life {
   armOut: number;
   /** The left arm turning in across the body, to bring a watch in front. */
   armInL: number;
+  /** Which way each elbow bends, turned inward from straight ahead: to cross the arms, or set the hands on the hips. */
+  bendL: number;
+  bendR: number;
   kneeL: number;
   kneeR: number;
   elbowL: number;
@@ -520,6 +653,8 @@ const NO_LIFE: Readonly<Life> = {
   armR: 0,
   armOut: 0,
   armInL: 0,
+  bendL: 0,
+  bendR: 0,
   kneeL: 0,
   kneeR: 0,
   elbowL: 0,
@@ -536,6 +671,9 @@ const hash = (n: number) => {
 type Fidget = 'look' | 'watch' | 'stretch' | 'tap' | 'swing';
 const STANDING_FIDGETS: readonly (Fidget | null)[] = ['look', 'watch', 'look', 'stretch', 'tap', 'look', null];
 const SEATED_FIDGETS: readonly (Fidget | null)[] = ['look', 'watch', 'swing', 'swing', null];
+/** What a restless guest fidgets with, and how much more often: an eye on the time, above all. */
+const RESTLESS_FIDGETS: readonly Fidget[] = ['watch', 'look', 'watch', 'tap'];
+const RESTLESS_EVERY = 3;
 
 /** The fidgets that take over the arms. */
 const ARM_FIDGETS: ReadonlySet<Fidget> = new Set(['watch', 'stretch']);
@@ -544,11 +682,11 @@ const ARM_FIDGETS: ReadonlySet<Fidget> = new Set(['watch', 'stretch']);
 const FIDGET = { every: 5.5, lasts: 1.9 };
 
 /** What someone is fidgeting with now, if anything, how far into it they are (0 to 1, easing in and out), and which
- * way they turn, from a steady roll for each person and stretch of time. */
-function fidgetAt(id: number, t: number, kinds: readonly (Fidget | null)[]) {
+ * way they turn, from a steady roll for each person and stretch of time, fidgeting as often as `every` seconds. */
+function fidgetAt(id: number, t: number, kinds: readonly (Fidget | null)[], every: number = FIDGET.every) {
   const s = t + id * 1.37;
-  const n = Math.floor(s / FIDGET.every);
-  const u = (s - n * FIDGET.every) / FIDGET.lasts;
+  const n = Math.floor(s / every);
+  const u = (s - n * every) / FIDGET.lasts;
   const kind = kinds[Math.floor(hash(n * 7.1 + id * 3.3) * kinds.length)];
   if (u >= 1 || !kind) return null;
   return { kind, amount: Math.min(1, Math.sin(Math.PI * u) * 1.6), way: hash(n * 3.7 + id) < 0.5 ? -1 : 1 };
@@ -576,19 +714,12 @@ const RHYTHM: Partial<Record<Modality, number>> = {
  * beat behind. Standing, they breathe, shift their weight from foot to foot with the other knee easing, and every so
  * often fidget: a look round, a glance at a watch, a stretch, a tapping foot. Sitting, they
  * breathe, swing their feet and look about. Working, they lean into each stroke and shift their weight in its rhythm,
- * knees giving, head following the hands. `armL` and `armR` are the arms' turns as posed, which a fidget takes over;
- * someone holding something or showing a symptom with their arms only looks round instead.
+ * knees giving, head following the hands. Someone holding something or showing a symptom only looks round instead of
+ * fidgeting with their hands. Someone with nothing to do passes the time, strolling about with their arms barely
+ * swinging, and a guest waiting shows how patient they are.
  */
-function liveliness(
-  c: Char,
-  t: number,
-  phase: number,
-  style: WorkStyle,
-  smudging: boolean,
-  armL: number,
-  armR: number,
-  handsFree: boolean,
-): Life {
+function liveliness(c: Char, t: number, phase: number, doing: Doing): Life {
+  const { style, smudging, armL, armR, handsFree } = doing;
   const life = { ...NO_LIFE };
   if (c.pose === 'lie') return life;
   const breath = Math.sin(t * 1.7 + c.id);
@@ -605,6 +736,12 @@ function liveliness(
     life.elbowL = -0.22 * (0.5 + 0.5 * Math.sin(phase + 2.2));
     life.elbowR = -0.22 * (0.5 + 0.5 * Math.sin(phase + 2.2 + Math.PI));
     life.armOut = 0.08;
+    if (doing.idle) {
+      // strolling, with nowhere to be: the arms barely swing, and they look about them
+      life.armL = -armL * 0.75;
+      life.armR = -armR * 0.75;
+      life.headYaw += Math.sin(t * 0.8 + c.id) * 0.45;
+    }
     return life;
   }
   // breathing, whatever else they are doing
@@ -624,7 +761,6 @@ function liveliness(
     return life;
   }
   if (c.busy || smudging || style) return life;
-  const fidget = fidgetAt(c.id, t, c.pose === 'sit' ? SEATED_FIDGETS : STANDING_FIDGETS);
   if (c.pose === 'stand') {
     const w = Math.sin(t * 0.42 + c.id * 2.1);
     life.swayX = w * 0.02;
@@ -633,6 +769,14 @@ function liveliness(
     life.kneeR = Math.max(0, -w) * 0.16;
     life.bodyY -= Math.abs(w) * 0.008;
   }
+  if (doing.idle) return passTime(life, c, t, doing.idle, doing);
+  if (doing.mood !== 'content') showMood(life, c, t, doing);
+  // a restless guest fidgets all the more; an impatient or fed-up one has gone past fidgeting
+  if (doing.mood !== 'content' && doing.mood !== 'restless') return life;
+  const fidget =
+    doing.mood === 'restless'
+      ? fidgetAt(c.id, t, RESTLESS_FIDGETS, RESTLESS_EVERY)
+      : fidgetAt(c.id, t, c.pose === 'sit' ? SEATED_FIDGETS : STANDING_FIDGETS);
   if (!fidget) return life;
   const { amount: a, way } = fidget;
   const kind = handsFree || !ARM_FIDGETS.has(fidget.kind) ? fidget.kind : 'look';
@@ -659,5 +803,153 @@ function liveliness(
     life.kneeL += 0.3 * Math.sin(t * 3.2) * a;
     life.kneeR += 0.3 * Math.sin(t * 3.2 + Math.PI) * a;
   }
+  return life;
+}
+
+/** What to add to a turn as posed to take it to another, by an amount from 0 to 1. */
+const toward = (posed: number, to: number, a: number) => (to - posed) * a;
+
+/** What to add to an elbow's bend, which follows its arm, to bend it so far once the arm is turned to `arm`, by an amount. */
+const bendTo = (arm: number, to: number, a: number) => (to - elbowFor(arm)) * a;
+
+/**
+ * Pass the time, with nothing to do, in ways big enough to see from across the building: a long stretch with both arms
+ * overhead, a slow look round with the hands behind the back, or a long look at a watch.
+ */
+function passTime(life: Life, c: Char, t: number, act: { kind: IdleAct; amount: number }, doing: Doing) {
+  const { armL, armR, armOut } = doing;
+  const a = act.amount;
+  if (act.kind === 'stretch') {
+    life.armL += toward(armL, -2.95, a);
+    life.armR += toward(armR, -2.95, a);
+    life.armOut += toward(armOut, 0.32, a);
+    life.elbowL += bendTo(-2.95, -0.04, a);
+    life.elbowR += bendTo(-2.95, -0.04, a);
+    life.lean -= 0.16 * a;
+    life.bodyY += 0.025 * a;
+    life.headX -= 0.3 * a;
+  } else if (act.kind === 'look') {
+    // hands clasped behind the back, rocking on the heels and looking slowly round the room
+    const sweep = Math.sin(t * 1.1 + c.id) * a;
+    life.armL += toward(armL, 0.56, a);
+    life.armR += toward(armR, 0.56, a);
+    life.armOut += toward(armOut, -0.16, a);
+    life.elbowL += bendTo(0.56, -0.6, a);
+    life.elbowR += bendTo(0.56, -0.6, a);
+    life.bendL = life.bendR = 2.1 * a;
+    life.headYaw = sweep * 0.6;
+    if (c.pose === 'stand') {
+      life.bodyYaw = sweep * 0.35;
+      life.lean += Math.sin(t * 3 + c.id) * 0.05 * a;
+      life.kneeL = life.kneeR = 0;
+    }
+  } else {
+    // the forearm brought up level in front of the body, the wrist turned in to read it, and a long look down at it
+    life.armL += toward(armL, -0.5, a);
+    life.elbowL += bendTo(-0.5, -1.45, a);
+    life.armInL = 0.3 * a;
+    life.headX += 0.36 * a;
+    life.headYaw = -0.32 * a;
+  }
+  return life;
+}
+
+/**
+ * A way of holding the arms, worked out so the hands land where they should on this body: how far the arms turn
+ * forward and out, how far each elbow bends, and how far each bend turns inward from straight ahead.
+ */
+interface Hold {
+  arm: number;
+  out: number;
+  elbowL: number;
+  elbowR: number;
+  bendL: number;
+  bendR: number;
+}
+
+/** The arms folded across the chest, the left forearm over the right. */
+const FOLDED: Hold = { arm: -0.72, out: -0.26, elbowL: -1.15, elbowR: -0.9, bendL: 1, bendR: 1.1 };
+/** The hands on the hips, the elbows out. */
+const ON_HIPS: Hold = { arm: 0.32, out: 0.48, elbowL: -1.25, elbowR: -1.25, bendL: 1.1, bendR: 1.1 };
+/** The head in the hands, sitting, leaning on the elbows. */
+const HEAD_IN_HANDS: Hold = { arm: -1.08, out: -0.4, elbowL: -1.4, elbowR: -1.4, bendL: 0.4, bendR: 0.4 };
+
+/** Hold the arms a way: both, or the left alone, the right being busy holding something. */
+function hold(life: Life, { armL, armR, armOut }: Doing, h: Hold, both: boolean) {
+  life.armL += toward(armL, h.arm, 1);
+  life.elbowL += bendTo(h.arm, h.elbowL, 1);
+  life.bendL = h.bendL;
+  if (!both) {
+    // the left arm turned out on its own, leaving the right where it is
+    life.armInL += armOut - h.out;
+    return;
+  }
+  life.armR += toward(armR, h.arm, 1);
+  life.armOut += toward(armOut, h.out, 1);
+  life.elbowR += bendTo(h.arm, h.elbowR, 1);
+  life.bendR = h.bendR;
+}
+
+/**
+ * Show a waiting guest's patience running out (see `PATIENCE_SIGNS`): restless, shifting their weight and glancing
+ * about; impatient, arms folded and a foot tapping; fed up, hands on hips (head in hands, sitting), turned toward the
+ * door. Arms a symptom holds keep to it, and the rest still shows.
+ */
+function showMood(life: Life, c: Char, t: number, doing: Doing) {
+  const { mood, armsFree, rightHolds, toDoor } = doing;
+  if (c.pose === 'lie' || c.pose === 'walk' || mood === 'content') return life;
+  const sitting = c.pose === 'sit';
+  if (mood === 'restless') {
+    // a quick glance one way down the room, a moment's look, and a glance the other way, and (in `liveliness`) many a
+    // look at the time
+    life.headYaw = Math.tanh(Math.sin(t * 1.3 + c.id) * 3) * 0.6;
+    life.headX -= 0.04;
+    if (sitting) life.kneeL += Math.sin(t * 11 + c.id) * 0.1;
+    else {
+      // shifting from foot to foot, quicker and further than at ease
+      const w = Math.sin(t * 1.2 + c.id * 2.1);
+      life.swayX = w * 0.032;
+      life.side = w * 0.07;
+      life.kneeL = Math.max(0, w) * 0.24;
+      life.kneeR = Math.max(0, -w) * 0.24;
+    }
+    return life;
+  }
+  if (mood === 'impatient') {
+    // someone holding something in their right hand sets the other on their hip, rather than fold one arm
+    if (armsFree) hold(life, doing, rightHolds ? ON_HIPS : FOLDED, !rightHolds);
+    const tap = Math.max(0, Math.sin(t * 10 + c.id));
+    life.headX += 0.06;
+    life.headYaw = Math.sin(t * 0.6 + c.id) * 0.25;
+    if (sitting) {
+      // sitting back, a foot tapping
+      life.lean -= 0.08;
+      life.kneeR -= 0.22 * tap;
+    } else {
+      // the weight on one foot, the other tapping
+      life.swayX = -0.02;
+      life.side = 0.04;
+      life.kneeL = 0;
+      life.kneeR = 0.12 + 0.2 * tap;
+    }
+    return life;
+  }
+  // fed up: turned toward the door as far as they can, shaking their head
+  const shake = Math.sin(t * 2.4 + c.id) * 0.14;
+  if (sitting && armsFree) {
+    life.lean += 0.38;
+    life.headX += 0.32;
+    hold(life, doing, HEAD_IN_HANDS, !rightHolds);
+    life.headYaw = shake;
+    return life;
+  }
+  if (!sitting) {
+    if (armsFree) hold(life, doing, ON_HIPS, !rightHolds);
+    life.bodyYaw = THREE.MathUtils.clamp(toDoor, -1.1, 1.1);
+    // a long sigh now and then
+    life.bodyY += Math.max(0, Math.sin(t * 0.9 + c.id)) * 0.012;
+  }
+  life.headYaw = THREE.MathUtils.clamp(toDoor - life.bodyYaw, -0.8, 0.8) + shake;
+  life.headX -= 0.1;
   return life;
 }

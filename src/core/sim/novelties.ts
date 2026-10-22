@@ -16,7 +16,7 @@ export function tellFortune(ctx: SimContext, g: Guest) {
   if (random(ctx.s) >= LUCKY_FORTUNE) return;
   feel(g, 'lucky');
   g.patience = 100;
-  say(g, '🍀', 3);
+  say(g, 'bubble-lucky', 3);
 }
 
 /** A worn Kombucha Tap may fizz over as it is used, leaving a puddle where the guest stood. */
@@ -43,7 +43,7 @@ export function puddleSlow(ctx: SimContext, g: Guest): number {
   if (!g.path || !inPuddle(ctx, g.tx, g.ty)) return 1;
   if (!g.feelings.includes('puddle')) {
     feel(g, 'puddle');
-    say(g, '💦');
+    say(g, 'bubble-sweaty');
   }
   return PUDDLE_SLOW;
 }

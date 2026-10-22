@@ -61,13 +61,13 @@ export function poorLineText(key: LineKey, poor: readonly Guest[]): string {
   const worst = poor.reduce((a, b) => (b.health < a.health ? b : a));
   const who =
     poor.length === 1 ? `${worst.name}, ${lineWords(key)}, is` : `${poor.length} guests ${lineWords(key)} are`;
-  return `⚠️ ${who} getting worse: shorten the line, move them up it, or send them home.`;
+  return `${who} getting worse: shorten the line, move them up it, or send them home.`;
 }
 
 /** The second warning: one guest is about to go home worse off, with what it costs and the way out. */
 export function worseSoonText(g: Guest): string {
   const days = Math.max(1, Math.ceil(conditionDays(g)));
-  return `🚨 ${g.name} will go home worse off in about ${days} day${days === 1 ? '' : 's'}, at −${WORSE_REP} reputation. Move them up their line, or send them home for −${SEND_HOME_REP}.`;
+  return `${g.name} will go home worse off in about ${days} day${days === 1 ? '' : 's'}, at −${WORSE_REP} reputation. Move them up their line, or send them home for −${SEND_HOME_REP}.`;
 }
 
 /**
@@ -91,14 +91,14 @@ export function warnWorsening(ctx: SimContext) {
     if (lines.has(key)) continue;
     lines.add(key);
     const worst = guests.reduce((a, b) => (b.health < a.health ? b : a));
-    toast(ctx, poorLineText(key, guests), 'bad', { kind: 'guest', id: worst.id });
+    toast(ctx, poorLineText(key, guests), 'bad', { kind: 'guest', id: worst.id }, 'ui-warning');
   }
   const soon = aboutToWorsen(s);
   for (const id of named) if (!soon.some((g) => g.id === id)) named.delete(id);
   for (const g of soon) {
     if (named.has(g.id)) continue;
     named.add(g.id);
-    toast(ctx, worseSoonText(g), 'bad', { kind: 'guest', id: g.id });
+    toast(ctx, worseSoonText(g), 'bad', { kind: 'guest', id: g.id }, 'ui-emergency');
     emit(ctx, { type: 'sfx', name: 'error' });
   }
 }
@@ -117,7 +117,7 @@ export function worseOff(ctx: SimContext, g: Guest) {
   g.outcome = 'worse';
   countVisit(ctx, g, 'worse');
   changeRep(ctx, -WORSE_REP);
-  say(g, '🤕', 8);
+  say(g, 'bubble-hurt', 8);
   emit(ctx, { type: 'float', text: 'Got worse!', x: g.x, y: g.y, kind: 'bad' });
   emit(ctx, { type: 'sfx', name: 'fail' });
   tipOnce(

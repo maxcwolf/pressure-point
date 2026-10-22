@@ -159,7 +159,11 @@
 .save-thumb.empty {
   display: grid;
   place-items: center;
-  font-size: 44px;
+}
+
+.save-thumb.empty .icon {
+  padding: 4px;
+  border-radius: 12px;
 }
 
 /* the facts in two columns, to keep the card short */
@@ -187,10 +191,16 @@
   grid-column: 1 / -1;
 }
 
-.save-card i {
-  font-style: normal;
-  display: inline-block;
-  width: 1.7em;
+/* icons on the dark panel sit on cream chips, or their navy outlines would vanish */
+.save-card .icon,
+.title-news .icon {
+  background: var(--cream);
+  border-radius: 6px;
+  padding: 1.5px;
+}
+
+.save-card li > .icon {
+  margin-right: 0.45em;
 }
 
 .save-card .saved-at {
@@ -264,8 +274,7 @@
   place-items: center;
   border-radius: 50%;
   border: 3px solid #fff;
-  background: var(--teal);
-  font-size: clamp(18px, 3.1vh, 28px);
+  background: var(--cream);
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
 }
 

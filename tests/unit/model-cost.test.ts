@@ -33,9 +33,10 @@ function canvas() {
   };
 }
 
-// a few models paint onto canvases, which Node does not have: a canvas that draws nothing will do
+// a few models paint onto canvases, and a room's sign shows a picture of its icon, which Node does not have: a canvas
+// that draws nothing, and a picture that never arrives, will do
 beforeAll(() => {
-  Object.assign(globalThis, { document: { createElement: canvas } });
+  Object.assign(globalThis, { document: { createElement: canvas }, Image: Object });
 });
 
 /** Is this object drawn: shown itself, with every parent shown, and a material that is not hidden? */
@@ -65,9 +66,11 @@ const machine = (id: string) =>
 /** Every model the lab shows, with what it costs to draw. */
 async function costs() {
   const { CATALOG } = await import('../../src/lab/catalog');
-  // a seated person is an item and a person shown together, each counted on its own already
-  // and a machine playing its gag is the machine and a guest, each counted on its own as well
-  return CATALOG.filter((sp) => sp.group !== 'Seated' && sp.group !== 'Machines').map((sp: Specimen) => ({
+  // a seated person is an item and a person shown together, and a mood a person shown again feeling otherwise, each
+  // counted on its own already, and a machine playing its gag is the machine and a guest, each counted on its own as well
+  /** Whether a group's models are counted here, rather than as the parts they are made of. */
+  const shown = (g: Group) => g !== 'Seated' && g !== 'Moods' && g !== 'Machines';
+  return CATALOG.filter((sp) => shown(sp.group)).map((sp: Specimen) => ({
     id: sp.id,
     group: sp.group,
     ...cost(sp.build().root),
@@ -79,7 +82,17 @@ describe('the cost of drawing each model', () => {
     // the heaviest when this was written: a shop counter 23, a trophy cabinet 21, a guest 29, staff 23; people grew to a
     // guest 36, staff 32 and a visitor 33 when they were given knees, elbows, faces and finer hair (people in the game
     // are drawn in batches, so the figures for them here are what one person alone would cost)
-    const limit = { Items: 30, Machines: 0, Guests: 38, Staff: 34, Visitors: 35, Seated: 0, Scenery: 20 };
+    const limit = {
+      Items: 30,
+      Machines: 0,
+      Guests: 38,
+      Staff: 34,
+      Visitors: 35,
+      Seated: 0,
+      Moods: 0,
+      Rooms: 12,
+      Scenery: 20,
+    };
     // a treatment machine is a room's centerpiece, with its moving parts kept apart to play its gag, and there are
     // only a few of them in a game: the Kneadmaster 9000 was 36 when they were added
     /** The most draw calls a model may take. */

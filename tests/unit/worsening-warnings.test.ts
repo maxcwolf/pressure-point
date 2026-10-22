@@ -15,7 +15,7 @@ import {
   worsenRate,
 } from '../../src/core/sim/worsening';
 import type { Guest } from '../../src/core/state/types';
-import { heatTiles } from '../../src/ui/lib/overlays';
+import { heatTiles, personValue, ringsPeople } from '../../src/ui/lib/overlays';
 import { conditionNote } from '../../src/ui/lib/status';
 import { openCenter, toasts } from './helpers';
 
@@ -59,7 +59,7 @@ describe('a line turning poor', () => {
     guests[1]!.health = 25;
     warnWorsening(ctx);
     expect(toasts(ctx.events)).toEqual([
-      '⚠️ 2 guests waiting for massage therapy are getting worse: shorten the line, move them up it, or send them home.',
+      '2 guests waiting for massage therapy are getting worse: shorten the line, move them up it, or send them home.',
     ]);
     expect(ctx.events.find((e) => e.type === 'toast')).toMatchObject({ about: { kind: 'guest', id: guests[0]!.id } });
     // a third turning poor in the same line is not news
@@ -73,7 +73,7 @@ describe('a line turning poor', () => {
     guests[2]!.health = 28;
     warnWorsening(ctx);
     expect(toasts(ctx.events)).toEqual([
-      `⚠️ ${guests[2]!.name}, waiting for massage therapy, is getting worse: shorten the line, move them up it, or send them home.`,
+      `${guests[2]!.name}, waiting for massage therapy, is getting worse: shorten the line, move them up it, or send them home.`,
     ]);
     s.guests.length = 0;
   });
@@ -106,7 +106,7 @@ describe('a guest about to go home worse off', () => {
     // the line's warning comes with it, since a condition that low is poor
     expect(said).toHaveLength(2);
     expect(said[1]).toBe(
-      `🚨 ${guests[1]!.name} will go home worse off in about 2 days, at −${WORSE_REP} reputation. Move them up their line, or send them home for −${SEND_HOME_REP}.`,
+      `${guests[1]!.name} will go home worse off in about 2 days, at −${WORSE_REP} reputation. Move them up their line, or send them home for −${SEND_HOME_REP}.`,
     );
     expect(ctx.events.some((e) => e.type === 'sfx' && e.name === 'error')).toBe(true);
     ctx.events.length = 0;
@@ -131,18 +131,21 @@ describe('condition remaining, on screen', () => {
     expect(conditionNote(g)).toEqual({ text: 'Condition: 12 days left', poor: false });
     g.health = 20;
     expect(conditionNote(g)).toEqual({
-      text: `⚠️ Condition runs out in ${Math.ceil(conditionDays(g))} days: goes home worse off`,
+      icon: 'ui-warning',
+      text: `Condition runs out in ${Math.ceil(conditionDays(g))} days: goes home worse off`,
       poor: true,
     });
     g.state = 'served';
     expect(conditionNote(g)).toBeNull();
   });
 
-  it('colors the floor under each waiting guest by what is left', () => {
+  it('rings each waiting guest by what is left, and leaves the floor alone', () => {
     const { sim, guests } = waiting(2);
     guests[0]!.health = 40;
     guests[1]!.state = 'served';
-    const tiles = heatTiles(sim, 'condition');
-    expect(tiles).toEqual([[guests[0]!.tx, guests[0]!.ty, 0.4]]);
+    expect(ringsPeople('condition')).toBe(true);
+    expect(heatTiles(sim, 'condition')).toEqual([]);
+    expect(personValue('condition', guests[0]!)).toBe(0.4);
+    expect(personValue('condition', guests[1]!)).toBeNull();
   });
 });

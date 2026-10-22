@@ -9,10 +9,11 @@ import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
 import { GagClock } from './gags/clock';
+import { HalosLayer } from './halos';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
 import { LandLayer } from './land';
-import { addLights, easeLights, lightLevel, type Lights, placeSun } from './lighting';
+import { addLights, atNoon, type Lights, lightScene, lightSetting, placeSun, shadowReach, toneMap } from './lighting';
 import { LitterLayer } from './litter';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type DoorSpec, type GhostSpec, Overlays } from './overlays';
@@ -48,7 +49,7 @@ export class View {
   private shellKey: string;
   private rig: CameraRig;
   private floor: Floor;
-  private rooms: RoomsLayer;
+  readonly rooms: RoomsLayer;
   private items: ItemsLayer;
   private people: PeopleLayer;
   private litter: LitterLayer;
@@ -56,8 +57,10 @@ export class View {
   private snow: SnowfallLayer;
   private rain: RainLayer;
   private storefront: StorefrontLayer;
-  private overlays: Overlays;
+  readonly overlays: Overlays;
   private heat: Heatmap;
+  /** Rings at people's feet for the people overlays. */
+  readonly halos: HalosLayer;
   private land: LandLayer;
   private picker: Picker;
   /**
@@ -74,9 +77,11 @@ export class View {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    toneMap(this.renderer);
     this.scene.background = new THREE.Color(settingOf(sim.s).ground);
 
     this.lights = addLights(this.scene);
+    lightSetting(this.lights, settingOf(sim.s).light);
 
     this.rig = new CameraRig(sim.world.building, sim.world.w);
     this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s), sim.world.w, plotsOf(sim));
@@ -98,8 +103,10 @@ export class View {
     this.storefront = new StorefrontLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
+    this.halos = new HalosLayer(this.scene, sim);
     this.land = new LandLayer(this.scene, sim);
     this.picker = new Picker(this.rig.camera, this.people, this.items, sim);
+    this.overlays.find = this.picker.modelOf.bind(this.picker);
     /** Hand the people to the batches that draw them: the renderer calls this once everything is in place, just before it draws. */
     this.scene.onBeforeRender = (renderer, _scene, camera) =>
       this.people.gather({ camera, height: renderer.getDrawingBufferSize(drawn).y });
@@ -187,6 +194,7 @@ export class View {
     }
     this.people.update(this.time, dt);
     this.litter.update();
+    this.rooms.update(this.time);
     this.vibes.update(this.time);
     this.snow.update(this.time);
     this.rain.update(this.time);
@@ -194,9 +202,10 @@ export class View {
     this.land.update();
     this.items.animate(this.time);
     this.overlays.updateRing(this.time);
+    this.halos.update();
     this.rig.update();
-    easeLights(this.lights, lightLevel(this.sim.s.mishap), dt);
-    placeSun(this.lights.sun, this.rig.target);
+    if (lightScene(this.lights, this.sim.s, dt)) this.floor.draw();
+    placeSun(this.lights.sun, this.rig.target, shadowReach(this.rig.dist));
     if (this.drawing) this.renderer.render(this.scene, this.rig.camera);
     else {
       // what drawing would have done along the way, so clicks still find what is where
@@ -207,8 +216,8 @@ export class View {
 
   /** A small JPEG of the view as it is now, for a save's picture on the title screen. */
   snapshot(width = 320, height = 200): string {
-    // drawn afresh so the picture is taken before the browser clears the canvas
-    this.renderer.render(this.scene, this.rig.camera);
+    // drawn afresh so the picture is taken before the browser clears the canvas, and at noon, whatever the hour
+    atNoon(this.lights, this.sim.s, () => this.renderer.render(this.scene, this.rig.camera));
     const out = Object.assign(document.createElement('canvas'), { width, height });
     const src = this.renderer.domElement;
     const { sx, sy, sw, sh } = coverCrop(src.width, src.height, width, height);
@@ -264,6 +273,11 @@ export class View {
   /** The point on the ground the camera looks at. */
   get target(): THREE.Vector3 {
     return this.rig.target;
+  }
+
+  /** Whether the camera has finished gliding and turning. */
+  get cameraStill(): boolean {
+    return this.rig.still;
   }
 
   /** Move the camera target across the ground. */

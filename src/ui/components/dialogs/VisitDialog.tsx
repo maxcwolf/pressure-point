@@ -7,6 +7,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { reportHeading, reportSummary, verdictTone } from '../../lib/visits';
 import { Button } from '../common/Button';
+import { IconText, Line } from '../common/Icon';
 import { Dialog } from './Dialog';
 
 /** How the last visit went: the verdict, and each room the visitor saw with what they made of it. */
@@ -17,7 +18,9 @@ export function VisitDialog() {
   if (!report) return null;
   return (
     <Dialog wide>
-      <h2>{reportHeading(report)}</h2>
+      <h2>
+        <Line line={reportHeading(report)} />
+      </h2>
       <p>{reportSummary(report)}</p>
       <ul class="visit-rooms">
         {report.rooms.map((r) => (
@@ -60,7 +63,7 @@ export function VisitDialog() {
               if (sim.settleInspection(true)) hud.close();
             }}
           >
-            {`💼 Make it go away (${money(report.bribe)})`}
+            <IconText id="ui-bribe">{`Make it go away (${money(report.bribe)})`}</IconText>
           </Button>
         </div>
       )}

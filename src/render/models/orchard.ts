@@ -1,7 +1,7 @@
 // Apple trees for the orchards, planted in rows and drawn as a few instanced meshes: trunks, leaves and apples.
 import * as THREE from 'three';
 
-import { cyl, mat } from './parts';
+import { blob, cyl, mat, sph } from './parts';
 import type { TreeSpot } from './tree';
 
 /** How many apples hang on each tree, and where on the canopy, as a turn round it and a height on it. */
@@ -67,9 +67,10 @@ export function buildOrchard(spots: readonly TreeSpot[]): THREE.Group {
     }
   }
   const orchard = new THREE.Group();
-  orchard.add(instanced(cyl(0.07, 0.1, 1, 8), mat(0x7a5a3c, 0.9), trunks));
-  orchard.add(instanced(new THREE.IcosahedronGeometry(1, 1), mat(0x5aa34f, 0.8), canopies));
-  const apple = instanced(new THREE.SphereGeometry(0.075, 8, 6), mat(0xd9362f, 0.45), apples);
+  orchard.add(instanced(cyl(0.07, 0.1, 1, 16), mat(0x7a5a3c, 0.9), trunks));
+  // a smooth round canopy, like the park's trees and the items' rounded shapes
+  orchard.add(instanced(blob(1), mat(0x5aa34f, 0.78), canopies));
+  const apple = instanced(sph(0.075, 8), mat(0xd9362f, 0.45), apples);
   // the apples are too small to cast a shadow worth drawing
   apple.castShadow = false;
   orchard.add(apple);

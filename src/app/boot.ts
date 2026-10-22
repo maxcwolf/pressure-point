@@ -5,6 +5,7 @@ import { logger, setTag } from '@sentry/browser';
 import { Audio } from '../audio';
 import { newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
+import { loadIcons } from '../render/models/icons';
 import { AUTOSAVE_ID, openInAutosave, readSave, startBackup } from '../storage/saves';
 import { loadDisciplinePrefs, loadSandbox } from '../storage/settings';
 import { showTitle } from '../ui';
@@ -27,8 +28,12 @@ export async function boot() {
   // the desktop app keeps copies of the saves in files, and puts them back if the page's storage has lost them
   if (desktop) await startBackup(desktop);
 
-  // the lawn sign and welcome mat are drawn to canvas, so the font has to be ready first
-  await Promise.all([document.fonts.load('700 20px Fredoka'), document.fonts.load('500 20px Fredoka')]).catch(() => {
+  // the lawn sign and welcome mat are drawn to canvas, so the font has to be ready first, and the icons' atlas too
+  await Promise.all([
+    document.fonts.load('700 20px Fredoka'),
+    document.fonts.load('500 20px Fredoka'),
+    loadIcons(),
+  ]).catch(() => {
     // the fallback font will do
   });
   // loading or restarting from inside a game reloads the page and leaves a note saying what to open

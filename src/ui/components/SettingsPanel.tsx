@@ -16,6 +16,7 @@ import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch } from '../host';
 import { ITEM_VIEW_NAMES } from '../lib/item-stats';
 import { nextChoice } from '../lib/keys';
+import { Icon } from './common/Icon';
 import { ControlSettings } from './ControlSettings';
 import { SettingRow } from './SettingRow';
 
@@ -94,7 +95,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
       <h4>Building</h4>
       <ul>
         <li>
-          <i>🏷️</i>
+          <Icon id="ui-prices" size={26} />
           <div>
             <b>Item stats</b>
             <span>Where the Items menu shows what each item does: its decor, noise, warmth and upkeep.</span>
@@ -112,7 +113,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           </button>
         </li>
         <SettingRow
-          icon="🔍"
+          icon="ui-zoom"
           name="Preview while placing"
           desc="An item in hand shows what it would change where it is about to go, and colors the floor to match."
           on={loadDisplay().placePreview}
@@ -135,7 +136,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           <h4>Display</h4>
           <ul>
             <SettingRow
-              icon="🖥️"
+              icon="ui-display"
               name="Full screen"
               desc="Fill the screen with the game. It opens the same way next time."
               on={fullScreen.on()}
@@ -151,7 +152,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
       <h4>Audio</h4>
       <ul>
         <SettingRow
-          icon="🔊"
+          icon="ui-sound"
           name="Sound effects"
           desc="Clicks, chimes and the cash register."
           on={audio.sound}
@@ -161,7 +162,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           })}
         />
         <SettingRow
-          icon="🎵"
+          icon="ui-music"
           name="Music"
           desc="The lounge loop in the background."
           on={audio.music}
@@ -174,7 +175,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
       <h4>Cheats</h4>
       <ul>
         <SettingRow
-          icon="🪄"
+          icon="ui-wand"
           name="Cheat console"
           desc="Press ~ in a game to type in commands, such as money or win. A campaign game they are used in earns no more achievements or stars."
           on={loadControls().console}
@@ -188,7 +189,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
       <h4>Privacy</h4>
       <ul>
         <SettingRow
-          icon="📊"
+          icon="ui-stats"
           name="Share play statistics"
           desc="Send anonymous figures on how games go, such as the rooms built and how each month ends, to help improve the game. Never your saves or their names."
           on={sharing()}

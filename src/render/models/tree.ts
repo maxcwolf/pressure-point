@@ -1,7 +1,7 @@
 // Trees for the lawn.
 import * as THREE from 'three';
 
-import { cyl, mat } from './parts';
+import { blob, cyl, mat } from './parts';
 
 /** Where a tree stands on the ground, and the seed its height and color vary with. */
 export interface TreeSpot {
@@ -11,11 +11,14 @@ export interface TreeSpot {
 }
 
 const LEAF_COLORS = [0x5fae5a, 0x4f9a55, 0x74b85c] as const;
-/** The blobs of leaves on every tree: where each sits above the top of the trunk, and how big it is. */
+/**
+ * The soft blobs of leaves on every tree, smooth like the items and people: where each sits above the top of the
+ * trunk, and how big it is.
+ */
 const BLOBS = [
-  [0, 0.45, 0, 0.62],
-  [0.35, 0.15, 0.1, 0.42],
-  [-0.3, 0.2, -0.15, 0.45],
+  [0, 0.45, 0, 0.64],
+  [0.36, 0.14, 0.12, 0.44],
+  [-0.3, 0.18, -0.12, 0.46],
 ] as const;
 
 /** How tall a tree's trunk is. */
@@ -46,21 +49,20 @@ export function buildForest(spots: readonly TreeSpot[]): THREE.Group {
     // the trunk is a cylinder one unit tall, stretched to this tree's height
     trunks.push(new THREE.Matrix4().compose(new THREE.Vector3(x, h / 2, z), none, new THREE.Vector3(1, h, 1)));
     for (const [bx, by, bz, r] of BLOBS) {
+      // each blob a little squashed, like a ball of clay set down
       const blob = new THREE.Matrix4().compose(
         new THREE.Vector3(x + bx, h + by, z + bz),
         none,
-        new THREE.Vector3(r, r, r),
+        new THREE.Vector3(r, r * 0.9, r),
       );
       leaves[seed % 3]?.push(blob);
     }
   }
   const forest = new THREE.Group();
-  forest.add(instanced(cyl(0.09, 0.13, 1, 8), mat(0x7a5a3c, 0.9), trunks));
-  const leaf = new THREE.IcosahedronGeometry(1, 1);
+  forest.add(instanced(cyl(0.09, 0.13, 1, 16), mat(0x7a5a3c, 0.9), trunks));
   LEAF_COLORS.forEach((color, i) => {
     const blobs = leaves[i] ?? [];
-    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.85, flatShading: true });
-    if (blobs.length) forest.add(instanced(leaf, m, blobs));
+    if (blobs.length) forest.add(instanced(blob(1), mat(color, 0.78), blobs));
   });
   return forest;
 }

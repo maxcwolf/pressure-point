@@ -1,5 +1,6 @@
 // The shapes of the game's content: what a room, an item, a role, a modality and a condition are.
 
+import type { IconId } from './icon-ids';
 import type { Plot, PlotDef } from './map';
 import type { MishapId } from './mishaps';
 
@@ -143,7 +144,7 @@ export type ItemType =
 export interface RoomDef {
   type: RoomType;
   name: string;
-  icon: string;
+  icon: IconId;
   desc: string;
   cost: number;
   /** Shorter side must be >= minShort, longer side >= minLong. */
@@ -189,7 +190,7 @@ export interface AccessDef {
 export interface ItemDef {
   type: ItemType;
   name: string;
-  icon: string;
+  icon: IconId;
   desc: string;
   cost: number;
   w: number;
@@ -308,7 +309,7 @@ export interface MachineDef {
 export interface RoleDef {
   role: Role;
   name: string;
-  icon: string;
+  icon: IconId;
   desc: string;
   baseSalary: number;
   uniform: number;
@@ -354,7 +355,7 @@ export type GeneralId = 'bedside' | 'motivation' | 'stamina' | 'service' | 'main
 export interface GeneralDef {
   id: GeneralId;
   name: string;
-  icon: string;
+  icon: IconId;
   desc: string;
   cost: number;
   days: number;
@@ -401,7 +402,7 @@ export interface ModalityDef {
   id: Modality;
   discipline: Discipline;
   name: string;
-  icon: string;
+  icon: IconId;
   desc: string;
   /** Stars needed before guests turn up wanting it. */
   star: number;
@@ -426,7 +427,7 @@ export interface ModalityDef {
 export interface DisciplineDef {
   id: Discipline;
   name: string;
-  icon: string;
+  icon: IconId;
   desc: string;
   role: Role;
   room: RoomType;
@@ -590,7 +591,7 @@ export type AchievementId =
 export interface AchievementDef {
   id: AchievementId;
   name: string;
-  icon: string;
+  icon: IconId;
   /** What it takes, in a few words. */
   desc: string;
   /** Done when this objective is met. */
@@ -612,7 +613,7 @@ export type AwardId =
 export interface AwardDef {
   id: AwardId;
   name: string;
-  icon: string;
+  icon: IconId;
   /** What it is for, in a few words. */
   desc: string;
   /** What winning it pays the center. */
@@ -665,7 +666,7 @@ export type FeelingId =
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
 export interface FeelingDef {
   id: FeelingId;
-  icon: string;
+  icon: IconId;
   /** What it was, as their inspector lists it. */
   text: string;
   good: boolean;
@@ -679,7 +680,7 @@ export type CampaignKind = 'word' | 'condition' | 'recruit';
 export interface CampaignDef {
   kind: CampaignKind;
   name: string;
-  icon: string;
+  icon: IconId;
   desc: string;
   /** What it costs for each month it runs. */
   perMonth: number;

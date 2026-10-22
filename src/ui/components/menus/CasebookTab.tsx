@@ -5,6 +5,7 @@ import type { CaseRecord } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cureShare, seen } from '../../lib/casebook';
 import { cx } from '../../lib/cx';
+import { IconText } from '../common/Icon';
 
 /** A row for each condition seen, most often seen first. */
 export function CasebookTab() {
@@ -34,7 +35,9 @@ export function CasebookTab() {
             const rate = cureShare(c);
             return (
               <tr key={id}>
-                <td>{`${MODALITIES[cond.modality].icon} ${cond.name}`}</td>
+                <td>
+                  <IconText id={MODALITIES[cond.modality].icon}>{cond.name}</IconText>
+                </td>
                 <td>{seen(c)}</td>
                 <td>{c.healed}</td>
                 <td>{c.failed}</td>

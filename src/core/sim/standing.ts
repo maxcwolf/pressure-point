@@ -75,8 +75,10 @@ export function updateStanding(ctx: SimContext) {
   emit(ctx, { type: 'announce', text: `We are now a ${g.name}. Thank you for bringing us your knots.` });
   toast(
     ctx,
-    `${g.icon} The center has risen to ${g.name}: more guests and better applicants, and guests who expect finer rooms.`,
+    `The center has risen to ${g.name}: more guests and better applicants, and guests who expect finer rooms.`,
     'good',
+    undefined,
+    g.icon,
   );
   emit(ctx, { type: 'sfx', name: 'fanfare' });
 }

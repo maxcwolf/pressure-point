@@ -90,7 +90,7 @@ export function sendHome(ctx: SimContext, guestId: number): boolean {
   g.outcome = 'sent';
   countVisit(ctx, g, 'sent');
   changeRep(ctx, -SEND_HOME_REP);
-  say(g, '🏠', 6);
+  say(g, 'bubble-going-home', 6);
   emit(ctx, { type: 'float', text: 'Sent home', x: g.x, y: g.y, kind: 'info' });
   leave(ctx, g);
   return true;

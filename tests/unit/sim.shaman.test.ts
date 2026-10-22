@@ -220,7 +220,10 @@ describe('the first Sweat Lodge', () => {
 
 describe('the Treatments menu', () => {
   it('warns that a psychedelic ceremony needs the right set and setting, and says nothing of other treatments', () => {
-    expect(tripNote(MODALITIES.mushroom.trip)).toBe('🌀 Set and setting: needs a calm, clean, beautiful lodge');
+    expect(tripNote(MODALITIES.mushroom.trip)).toEqual({
+      icon: 'feeling-good-trip',
+      text: 'Set and setting: needs a calm, clean, beautiful lodge',
+    });
     expect(tripNote(MODALITIES.sweat.trip)).toBeNull();
   });
 });
@@ -284,7 +287,7 @@ describe('clearing and blessing', () => {
     expect(blessBonus(room, 5)).toBe(BLESS_BONUS);
     expect(blessBonus(room, 11)).toBe(0);
     expect(blessingNote(10, 8.2)).toBe(
-      '✨ Blessed by a Shaman: treatments here work a little more often, for 2 more days',
+      'Blessed by a Shaman: treatments here work a little more often, for 2 more days',
     );
     expect(blessingNote(10, 9.5)).toMatch(/for 1 more day$/);
     expect(blessingNote(10, 10)).toBe('');
@@ -332,7 +335,7 @@ describe('soul retrieval', () => {
   });
 
   it('says who is coming, or that a Shaman could help', () => {
-    expect(soulNote(true, true, true)).toBe('🪶 A Shaman is seeing to their soul');
+    expect(soulNote(true, true, true)).toBe('A Shaman is seeing to their soul');
     expect(soulNote(false, true, false)).toBe('Burnt out: a Shaman could retrieve their soul');
     expect(soulNote(false, false, false)).toBe('');
   });
