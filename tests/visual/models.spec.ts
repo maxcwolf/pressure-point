@@ -40,6 +40,10 @@ const IDS = [
   'mood:runaway',
   // what people do at an item, a receptionist and a guest at a reception desk among them
   ...['checkin', 'drink', 'eat', 'play', 'shop', 'litter', 'water', 'repair'].map((act) => `act:${act}`),
+  // a guest lying on everything that is not a machine: face down on the tables, on their back elsewhere
+  ...Object.entries(ITEMS).flatMap(([type, def]) =>
+    !def.machine && def.access.some((a) => a.pose === 'lie') ? [`lying:${type}`] : [],
+  ),
   'room:door',
   'scenery:puddles',
   'scenery:trees',

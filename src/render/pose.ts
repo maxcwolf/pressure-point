@@ -6,7 +6,7 @@ import { type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
 import type { BubbleId, Char } from '../core/state/types';
 import { must } from '../core/util';
-import type { Act } from './acts';
+import type { Act, Lying } from './acts';
 import { type CharRig, cureRig, type Joints } from './models/character';
 import { type Expression, showExpression } from './models/character-detail';
 import { buildHeld, type HeldKind } from './models/held';
@@ -144,6 +144,18 @@ export const PICK = 1.8;
 /** The acts that go round in a cycle, and how long each takes. */
 const ACT_CYCLES: Partial<Record<Act, number>> = { drink: SIP, eat: SIP, litter: PICK };
 
+/**
+ * How far a guest lying face down on a table turns their head aside to rest on a cheek, in radians: away from the
+ * practitioner's side of the table, which turns it toward the game's camera, so the face shows.
+ */
+export const PRONE_TURN = -1.45;
+
+/** How high a guest lying face down on a table lies, in meters, for the cheek and not the nose to meet it. */
+const PRONE_Y = 0.21;
+
+/** How the arms of a guest lying on a table or a mat lie along their sides, turned forward from straight. */
+const LYING_ARMS = 0.12;
+
 /** How far a cup or a snack tips back toward the mouth at the height of a sip or a bite, from upright, in radians. */
 const SIP_TIP = 0.65;
 
@@ -190,13 +202,13 @@ export interface Door {
 
 /**
  * What the people layer works out about someone from the world once a frame, for posing them: how they are working,
- * where the front door is, what they are doing at the item they are at, and whether they lie face down.
+ * where the front door is, what they are doing at the item they are at, and how they lie on it.
  */
 export interface Cues {
   style: WorkStyle;
   door?: Door;
   act?: Act | undefined;
-  prone?: boolean;
+  lie?: Lying | undefined;
 }
 
 /**
@@ -328,9 +340,12 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     }
   } else if (c.pose === 'lie') {
     bodyRX = Math.PI / 2;
-    bodyY = 0.16;
+    // on a table face down, the cheek rests on it rather than the nose
+    bodyY = cues.lie === 'prone' ? PRONE_Y : 0.16;
     bodyZ = -0.6 * rig.scale;
-    armOut = 0.5;
+    // the arms down along the sides on a table or a mat, or out to the sides on a machine
+    armOut = cues.lie ? 0.14 : 0.5;
+    if (cues.lie) armL = armR = LYING_ARMS;
   } else if (act) {
     const a = actPose(act, c, t);
     ({ armL, armR, armOut, lean, headX, side, bodyY } = a);
@@ -547,6 +562,13 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   armL += life.armL;
   armR += life.armR;
   armOut += life.armOut;
+  if (c.pose === 'lie' && cues.lie) {
+    life.elbowL += bendTo(armL, -0.08, 1);
+    life.elbowR += bendTo(armR, -0.08, 1);
+    // face down, the face turned aside, away from whoever works on the back; on their back, the body turned over
+    if (cues.lie === 'prone') life.headYaw = PRONE_TURN;
+    else life.bodyYaw = Math.PI;
+  }
   if (act) actJoints(life, act, c, t, armL, armR);
   // what is held is kept at a tilt of its own, whatever the forearm holding it is doing
   const held = act && !doing.rightHolds ? HELD_FOR[act] : undefined;

@@ -6,7 +6,7 @@ import { conditionOf, type ItemDef, ITEMS, ROLES, SIDEWALK_Y } from '../core/dat
 import { streetEnds } from '../core/sim/chars';
 import type { Sim } from '../core/sim/sim';
 import type { Char, Guest } from '../core/state/types';
-import { actOf } from './acts';
+import { actOf, lyingAt } from './acts';
 import { Crowd, type Viewpoint } from './crowd';
 import { disposeOwned } from './disposal';
 import { applyGuestGag } from './gags/apply';
@@ -82,7 +82,8 @@ export class PeopleLayer {
       rig.pick.visible = shown;
       if (!shown && rig.smoke) rig.smoke.visible = false;
       if (!shown) continue;
-      poseChar(rig, c, t, dt, { style: this.workStyle(c), door, act: actOf(c, this.itemAt(c)), prone: false });
+      const at = this.itemAt(c);
+      poseChar(rig, c, t, dt, { style: this.workStyle(c), door, act: actOf(c, at), lie: lyingAt(c, at) });
       rig.group.scale.setScalar(size);
       if (c.kind === 'guest') this.inMachine(rig, c, t);
     }

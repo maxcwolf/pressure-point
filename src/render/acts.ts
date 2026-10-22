@@ -1,6 +1,6 @@
 // What someone is doing at an item, worked out once a frame by the people layer, so they can be posed doing it.
 
-import type { ItemDef } from '../core/data';
+import type { AccessDef, ItemDef } from '../core/data';
 import { wants } from '../core/sim/staff-needs';
 import type { Char } from '../core/state/types';
 
@@ -40,4 +40,17 @@ export function actOf(c: Char, at?: ItemDef): Act | undefined {
     default:
       return undefined;
   }
+}
+
+/** How someone lies on an item: face down with the face turned aside, or on their back. */
+export type Lying = NonNullable<AccessDef['lie']>;
+
+/**
+ * How a guest lying on an item lies there, as its spot says: face down on a massage or acupuncture table, on their back
+ * on a Reiki Table, a mat or a Recliner. Anyone else, or a guest on a machine, lies as they always have.
+ */
+export function lyingAt(c: Char, at?: ItemDef): Lying | undefined {
+  if (c.kind !== 'guest' || c.pose !== 'lie') return undefined;
+  if (c.state !== 'called' && c.state !== 'served' && c.state !== 'resting') return undefined;
+  return at?.access.find((a) => a.pose === 'lie')?.lie;
 }

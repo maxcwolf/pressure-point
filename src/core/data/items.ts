@@ -81,7 +81,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     where: 'massage',
     access: [
       { role: 'staff', x: -1, y: 1, px: -0.28, py: 1.0, face: [1, 0], pose: 'stand' },
-      { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.6 },
+      { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.6, lie: 'prone' },
     ],
     station: { staff: 'therapist', goal: 'treat', seconds: 10, discipline: 'massage' },
     wear: 6,
@@ -385,7 +385,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     where: 'acupuncture',
     access: [
       { role: 'staff', x: -1, y: 1, px: -0.28, py: 1.0, face: [1, 0], pose: 'stand' },
-      { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.6 },
+      { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.6, lie: 'prone' },
     ],
     station: { staff: 'acupuncturist', goal: 'treat', seconds: 10, discipline: 'acupuncture' },
     wear: 5,
@@ -456,7 +456,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     where: 'reiki',
     access: [
       { role: 'staff', x: -1, y: 1, px: -0.28, py: 1.0, face: [1, 0], pose: 'stand' },
-      { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.6 },
+      { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.6, lie: 'back' },
     ],
     station: { staff: 'practitioner', goal: 'treat', seconds: 11, discipline: 'reiki' },
     wear: 3,
@@ -512,7 +512,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     w: 1,
     h: 2,
     where: 'sound',
-    access: [{ role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.12 }],
+    access: [{ role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.12, lie: 'back' }],
     station: { staff: 'healer', goal: 'treat', seconds: 16, discipline: 'sound', group: true },
     inMenu: true,
     unlock: 1,
@@ -781,7 +781,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     w: 1,
     h: 2,
     where: 'recovery',
-    access: [{ role: 'recover', x: 1, y: 1, px: 0.5, py: 1.05, face: [0, -1], pose: 'lie', h: 0.32 }],
+    access: [{ role: 'recover', x: 1, y: 1, px: 0.5, py: 1.05, face: [0, -1], pose: 'lie', h: 0.32, lie: 'back' }],
     inMenu: true,
     unlock: 1,
     wear: 1,
@@ -827,7 +827,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     where: 'lodge',
     access: [
       { role: 'staff', x: -1, y: 1, px: -0.3, py: 1.0, face: [1, 0], pose: 'sit', h: -0.3 },
-      { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.12 },
+      { role: 'guest', x: 1, y: 1, px: 0.5, py: 1.0, face: [0, -1], pose: 'lie', h: 0.12, lie: 'back' },
     ],
     station: { staff: 'shaman', goal: 'treat', seconds: 12, discipline: 'shaman' },
     wear: 2,

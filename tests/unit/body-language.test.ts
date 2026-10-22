@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { ITEMS, POOR_CONDITION } from '../../src/core/data';
 import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
-import { type Act, actOf } from '../../src/render/acts';
+import { type Act, actOf, lyingAt } from '../../src/render/acts';
 import { buildCharacter, type CharRig } from '../../src/render/models/character';
 import {
   actMoment,
@@ -19,6 +19,7 @@ import {
   moodOf,
   PATIENCE_SIGNS,
   poseChar,
+  PRONE_TURN,
   SIP,
   stepOn,
   STRIDE,
@@ -345,5 +346,47 @@ describe('doing what they are doing', () => {
     const g = { ...demoGuest(LAB_LOOK, 'stiff_neck' as never), pose: 'walk' as const };
     poseChar(rig, g, actMoment('drink', 1), 1, { style: null, act: 'drink' });
     expect(rig.held).toBeUndefined();
+  });
+});
+
+describe('lying down', () => {
+  /** A guest lying on an item, being served there. */
+  const lying = () => ({ ...demoGuest(LAB_LOOK, 'stiff_neck' as never), pose: 'lie' as const, h: 0.6 });
+
+  /** Which way a face looks, out of the screen in the scene's terms. */
+  const faceOf = (rig: CharRig) =>
+    new THREE.Vector3(0, 0, 1).applyQuaternion(rig.head.getWorldQuaternion(new THREE.Quaternion()));
+
+  it('is face down on a massage or acupuncture table, and on the back elsewhere', () => {
+    expect(lyingAt(lying(), ITEMS.massage_table)).toBe('prone');
+    expect(lyingAt(lying(), ITEMS.acu_table)).toBe('prone');
+    expect(lyingAt(lying(), ITEMS.reiki_table)).toBe('back');
+    expect(lyingAt({ ...lying(), state: 'resting' }, ITEMS.recliner)).toBe('back');
+    // a machine lays them down its own way
+    expect(lyingAt(lying(), ITEMS.stone_kiln)).toBeUndefined();
+    // and someone on their way there is not lying yet
+    expect(lyingAt({ ...lying(), pose: 'walk' }, ITEMS.massage_table)).toBeUndefined();
+    expect(lyingAt(lying(), ITEMS.bench)).toBeUndefined();
+  });
+
+  it('turns the face aside, face down, so it shows', () => {
+    const rig = buildCharacter(LAB_LOOK);
+    poseChar(rig, lying(), 0, 1, { style: null, lie: 'prone' });
+    rig.group.updateMatrixWorld(true);
+    expect(rig.head.rotation.y).toBeCloseTo(PRONE_TURN);
+    expect(rig.body.rotation.x).toBeCloseTo(Math.PI / 2);
+    const face = faceOf(rig);
+    expect(Math.abs(face.y)).toBeLessThan(0.3);
+  });
+
+  it('lies on the back, face up, elsewhere', () => {
+    const rig = buildCharacter(LAB_LOOK);
+    poseChar(rig, lying(), 0, 1, { style: null, lie: 'back' });
+    rig.group.updateMatrixWorld(true);
+    expect(faceOf(rig).y).toBeGreaterThan(0.9);
+    const machine = buildCharacter(LAB_LOOK);
+    poseChar(machine, lying(), 0, 1, { style: null });
+    machine.group.updateMatrixWorld(true);
+    expect(faceOf(machine).y).toBeLessThan(-0.9);
   });
 });

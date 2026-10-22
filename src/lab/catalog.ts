@@ -83,7 +83,7 @@ export interface Model {
 }
 
 export type Group =
-  'Items' | 'Machines' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Moods' | 'Acts' | 'Rooms' | 'Scenery';
+  'Items' | 'Machines' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Moods' | 'Acts' | 'Lying' | 'Rooms' | 'Scenery';
 
 /** Something the lab can show. */
 export interface Specimen {
@@ -407,6 +407,70 @@ function seatedSpecimen(type: ItemType, i: number): Specimen {
         controls: [],
         /** Seat them. */
         animate: (t, dt) => poseChar(rig, c, t, dt, { style: null }),
+      };
+    },
+  };
+}
+
+/** Every item someone lies on that is not a machine, whose gag lays them down its own way. */
+export const BEDS: readonly ItemType[] = (Object.keys(ITEMS) as ItemType[]).filter(
+  (type) => !ITEMS[type].machine && ITEMS[type].access.some((a) => a.pose === 'lie'),
+);
+
+/** The treatment a practitioner gives at each table in the lab, working on the guest lying on it. */
+const BED_WORK: Partial<Record<ItemType, Modality>> = {
+  massage_table: 'swedish',
+  acu_table: 'needling',
+  reiki_table: 'usui',
+};
+
+/**
+ * A guest lying on an item as the game lays them there: face down on a massage or acupuncture table, with the
+ * practitioner working on them, or on their back, resting or being treated.
+ */
+function lyingSpecimen(type: ItemType): Specimen {
+  const def = ITEMS[type];
+  const style = BED_WORK[type] ?? null;
+  const role = def.station?.staff;
+  const spot = def.access.findIndex((a) => a.pose === 'lie');
+  const post = def.access.findIndex((a) => a.role === 'staff');
+  return {
+    id: `lying:${type}`,
+    group: 'Lying',
+    name: `${def.name}, a guest lying on it`,
+    footprint: [def.w, def.h],
+    /** Build the item with the guest on it, and whoever works on them. */
+    build() {
+      const placed = { type, x: 0, y: 0, rot: 0 };
+      const [cx, cy] = itemCenter(placed);
+      const root = new THREE.Group();
+      root.add(buildItem(type, {}));
+      /** Put someone at an access spot of the item, posed as it says. */
+      const place = (c: Char, i: number) => {
+        const at = accessPose(placed, i);
+        Object.assign(c, { x: at.x - cx, y: at.y - cy, facing: at.face, pose: at.pose, h: at.h });
+        return c;
+      };
+      const guest = buildCharacter(LAB_LOOK);
+      const g = place(demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id), spot);
+      // a guest on a Recliner is resting there, after a treatment
+      if (def.access[spot]?.role === 'recover') g.state = 'resting';
+      const lie = def.access[spot]?.lie;
+      root.add(guest.group);
+      let staff: { rig: CharRig; c: Char } | null = null;
+      if (style && role && post >= 0) {
+        const rig = buildCharacter(LAB_LOOK, role);
+        staff = { rig, c: place({ ...demoStaff(LAB_LOOK, role), id: 2, busy: true }, post) };
+        root.add(rig.group);
+      }
+      return {
+        root,
+        controls: [],
+        /** Lay them down, and have whoever works on them at it. */
+        animate(t, dt) {
+          poseChar(guest, g, t, dt, { style: null, lie });
+          if (staff) poseChar(staff.rig, staff.c, t, dt, { style });
+        },
       };
     },
   };
@@ -1026,6 +1090,7 @@ export const CATALOG: readonly Specimen[] = [
   ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
   runawaySpecimen(),
   ...ACTS.map(([act, label]) => actSpecimen(act, label)),
+  ...BEDS.map(lyingSpecimen),
   doorSpecimen(),
   ...SCENERY,
 ];
