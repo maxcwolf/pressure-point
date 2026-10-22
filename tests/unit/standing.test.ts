@@ -442,7 +442,7 @@ describe('Center of the Year', () => {
     expect(s.rival.points, 'winning costs the rival nothing').toBe(2000);
   });
 
-  it('knocks the rival back a quarter when the center wins it', () => {
+  it('knocks the rival back a tenth when the center wins it', () => {
     const { s, ctx } = withRival();
     s.rival.opened = 0;
     s.rival.points = 200;
@@ -451,7 +451,7 @@ describe('Center of the Year', () => {
     holdAwards(ctx, 1);
     expect(s.ceremony!.results.find((r) => r.award === 'center-of-the-year')?.won).toBe(true);
     expect(s.rival.points).toBe(200 * (1 - RIVAL_AWARD_KNOCK));
-    expect(toasts(drainEvents(ctx))).toContain(`Center of the Year is yours: ${RIVAL_NAME} loses 50 standing points.`);
+    expect(toasts(drainEvents(ctx))).toContain(`Center of the Year is yours: ${RIVAL_NAME} loses 20 standing points.`);
   });
 });
 

@@ -83,12 +83,12 @@ describe('the rival against its ceiling, and what to do about it', () => {
     expect(rivalCourseLine('ceiling', 410)).toBe(
       'As big as it gets for now, at 25% more than your own standing: 410 points. It grows again as you do.',
     );
-    expect(rivalCourseLine('losing', 410)).toBe('Losing about 15 points a month while your word of mouth runs.');
+    expect(rivalCourseLine('losing', 410)).toBe('Losing about 5 points a month while your word of mouth runs.');
   });
 
   it('names the counterplay, and what it has done so far', () => {
     const line =
-      'Each VIP you delight takes 8% off it, word of mouth takes about 15 points a month off it while it runs, and winning Center of the Year takes 25% off.';
+      'Each VIP you delight takes 5% off it, word of mouth stops it growing and takes about 5 points a month off it while it runs, and winning Center of the Year takes 10% off.';
     expect(counterplayLine(0)).toBe(line);
     expect(counterplayLine(42.4)).toBe(`${line} You have knocked 42 points off it so far.`);
   });

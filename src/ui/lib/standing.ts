@@ -89,7 +89,7 @@ const pct = (share: number) => `${Math.round(share * 100)}%`;
 /** What the center can do about the rival, and what it has done so far. */
 export function counterplayLine(knocked: number): string {
   const done = knocked >= 1 ? ` You have knocked ${Math.round(knocked)} points off it so far.` : '';
-  return `Each VIP you delight takes ${pct(RIVAL_VIP_KNOCK)} off it, word of mouth takes about ${Math.round(RIVAL_WORD_FALL * DAYS_PER_MONTH)} points a month off it while it runs, and winning Center of the Year takes ${pct(RIVAL_AWARD_KNOCK)} off.${done}`;
+  return `Each VIP you delight takes ${pct(RIVAL_VIP_KNOCK)} off it, word of mouth stops it growing and takes about ${Math.round(RIVAL_WORD_FALL * DAYS_PER_MONTH)} points a month off it while it runs, and winning Center of the Year takes ${pct(RIVAL_AWARD_KNOCK)} off.${done}`;
 }
 
 /** The share of guests the rival is drawing away, in words. */

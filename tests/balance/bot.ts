@@ -454,7 +454,11 @@ const TREAT_ROOM: Record<Discipline, RoomType> = {
   shaman: 'lodge',
 };
 
-/** The size the bot builds each room at: roomy enough for a bit of decor. */
+/**
+ * The size the bot builds each room at: a treatment room roomy enough for a bit of decor, and a Staff Room or Recovery
+ * Lounge for its seats, and a Consultation Room for its desk and cabinet. Floor past the smallest is paid for, so the
+ * rest are built at their smallest.
+ */
 const SIZE: Partial<Record<RoomType, [number, number]>> = {
   consult: [3, 4],
   massage: [4, 4],
@@ -463,9 +467,6 @@ const SIZE: Partial<Record<RoomType, [number, number]>> = {
   sound: [4, 4],
   lodge: [4, 5],
   staffroom: [3, 4],
-  restroom: [3, 3],
-  training: [3, 4],
-  assess: [3, 3],
   recovery: [3, 4],
   qigong: [5, 5],
 };
@@ -1653,17 +1654,17 @@ export class Bot {
 
   /**
    * Build a room of a type with its furniture and any extras, somewhere along the walls. A spot that would leave no
-   * space for a room of a type in `keep` is given up while the room is still a plan, as a player would.
+   * space for a room of a type in `keep` is given up while the room is still a plan, as a player would. `small` builds
+   * it at its smallest, for a player who can pay for the room but not the floor it would have at the bot's size.
    */
-  buildRoom(type: RoomType, extras: ItemType[] = [], keep: RoomType[] = []): Room | null {
+  buildRoom(type: RoomType, extras: ItemType[] = [], keep: RoomType[] = [], small = false): Room | null {
     const def = ROOMS[type];
     const extraCost = extras.reduce((a, t) => a + ITEMS[t].cost, 0);
-    if (this.s.money < def.cost + extraCost + 500) return null;
+    // the room at the size it builds it, its floor beyond the smallest included
+    if (this.s.money < (small ? def.cost : price(type)) + extraCost + 500) return null;
     // a room that would not fit is not tried again for a few days (looking takes time)
     if (this.flags.expansion && (this.noFit[type] ?? 0) > this.s.day) return null;
-    for (const { r, door } of this.roomSpots(type)) {
-      // the roomier size only if its floor can be paid for too
-      if (this.s.money < roomCost(type, r) + extraCost + 500) continue;
+    for (const { r, door } of this.roomSpots(type, small)) {
       const room = this.sim.createRoom(type, r, door);
       if (this.furnish(room, [...def.required, ...extras]) && keep.every((k) => this.fits(k))) {
         this.sim.finishRoom(room);
@@ -1693,10 +1694,10 @@ export class Bot {
   }
 
   /** Where a room of a type could go, the best first: a rectangle along the walls and the doorway nearest the middle. */
-  private *roomSpots(type: RoomType): Generator<{ r: Rect; door: WallSpot }> {
+  private *roomSpots(type: RoomType, small = false): Generator<{ r: Rect; door: WallSpot }> {
     const def = ROOMS[type];
     const p = this.plot();
-    const [w0, h0] = SIZE[type] ?? [def.minShort, def.minLong];
+    const [w0, h0] = (small ? undefined : SIZE[type]) ?? [def.minShort, def.minLong];
     const cands: { r: Rect; score: number }[] = [];
     const sizes: [number, number][] = [
       [w0, h0],
@@ -2255,12 +2256,17 @@ export class Bot {
         this.hireToFill();
         continue;
       }
-      const cost = price(room);
-      if (saving && value * 3 < cost) continue;
-      if (!this.afford(cost + 1000, reserve * 0.5, value * this.style.borrowPayback > cost)) continue;
+      const roomy = price(room);
+      const least = ROOMS[room].cost;
+      if (saving && value * 3 < least) continue;
+      // at the roomy size if that can be paid or borrowed for, as it pays for its floor; failing that, the smallest
+      /** Whether the room is worth borrowing for at a cost. */
+      const worth = (cost: number) => value * this.style.borrowPayback > cost;
+      const small = !this.afford(roomy + 1000, reserve * 0.5, worth(roomy));
+      if (small && (roomy === least || !this.afford(least + 1000, reserve * 0.5, worth(least)))) continue;
       // not where it would leave no space for a discipline still to come
       const keep = toCome.filter((t) => this.fits(t));
-      if (this.buildRoom(room, [], keep)) {
+      if (this.buildRoom(room, [], keep, small)) {
         this.grewIn[d] = month;
         this.note(`day ${Math.floor(s.day)}: another ${room}, worth ${Math.round(value)} a month`);
         this.hireToFill();

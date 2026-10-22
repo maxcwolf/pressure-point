@@ -55,9 +55,9 @@ export const RIVAL_CEILING = 1.25;
  * What the center can do about it: each VIP delighted takes a share of its points off, word of mouth takes points off
  * every day it runs (and it does not grow meanwhile), and winning Center of the Year takes a bigger share off.
  */
-export const RIVAL_VIP_KNOCK = 0.08;
-export const RIVAL_WORD_FALL = 0.5;
-export const RIVAL_AWARD_KNOCK = 0.25;
+export const RIVAL_VIP_KNOCK = 0.05;
+export const RIVAL_WORD_FALL = 0.15;
+export const RIVAL_AWARD_KNOCK = 0.1;
 
 /** Days between one of the rival's sales and the next, how long each lasts, and how much it takes off its prices. */
 export const SALE_GAP_DAYS: readonly [number, number] = [40, 80];
