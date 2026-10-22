@@ -166,14 +166,17 @@ describe("each center's plots of land", () => {
   });
 });
 
-/** The plot each center sells, opening with the star its treatment machines do, that a machine room fits on. */
+/**
+ * The plot each center sells for its treatment machine's room, opening with the machine's star: a building of its own,
+ * with its own door and path, so no room built along the main building's walls can ever cut it off.
+ */
 const MACHINE_PLOT: Record<CenterId, string> = {
-  sandbox: 'north-range',
+  sandbox: 'old-cinema',
   willow: 'old-bakery',
-  exchange: 'loading-bay',
-  boardwalk: 'arcade',
-  highpines: 'sauna',
-  orchard: 'apple-store',
+  exchange: 'corner-bank',
+  boardwalk: 'bathing-rooms',
+  highpines: 'lift-station',
+  orchard: 'stable-block',
 };
 
 /** The treatment machines' rooms a center can build. */
@@ -238,8 +241,9 @@ describe('room for a treatment machine', () => {
     for (const type of machineRoomsAt(center.id)) {
       it(`fits ${an(ROOMS[type].name)} on ${nameInSentence(plot?.name ?? '?')} at ${center.name}, opening with it`, () => {
         if (!plot) throw new Error(`no plot ${MACHINE_PLOT[center.id]}`);
-        // for sale from the star the machine is, in a building grown into every plot of land
+        // for sale from the star the machine is, with a way in of its own, in a building grown into every plot of land
         expect(plot.star).toBe(ROOMS[type].unlock);
+        expect(plot.entrance).toBeDefined();
         const s = newGame(center.id);
         s.unlockAll = true;
         s.money = 1e7;
@@ -288,8 +292,8 @@ describe('land for sale', () => {
       'back-gallery': 'locked',
       'garden-block': 'locked',
       'west-annex': 'locked',
-      'north-range': 'locked',
       'old-cinema': 'locked',
+      'north-range': 'locked',
     });
     expect(sim.landOffers().find((o) => o.def.id === 'back-gallery')?.why).toBe('Comes up for sale at star 1');
     sim.s.stars = 1;
@@ -378,8 +382,8 @@ describe('land for sale', () => {
       ['back-gallery', 3],
       ['garden-block', 3],
       ['west-annex', 3],
-      ['north-range', 3],
       ['old-cinema', 7],
+      ['north-range', 3],
     ]);
   });
 
@@ -542,7 +546,7 @@ describe('how land is shown', () => {
   it('outlines every tile of the plots not yet bought, and their paths, the one pointed at brightest', () => {
     const tiles = plotHeat(offers, 'east-wing');
     expect(tiles.filter(([, , v]) => v === PLOT_POINTED)).toHaveLength(8 * 15);
-    // the pavilion and its path, the annex, the north range, and the cinema and its path
+    // the pavilion and its path, the annex, the cinema and its path, and the north range
     expect(tiles.filter(([, , v]) => v === PLOT_LOCKED)).toHaveLength(
       plotTiles(garden.def).length + 2 * 2 + 2 * 12 + 7 * 6 + 10 * 14 + 2 * 2,
     );
@@ -619,8 +623,8 @@ describe('plot offers', () => {
     const s = newGame('willow');
     s.stars = 3;
     const offers = plotOffers(s, footprintOf(CENTERS.willow.plot));
-    // the bakery and the yard come once the unit next door is the game's
-    expect(offers.map((o) => o.state)).toEqual(['open', 'open', 'open', 'locked', 'locked']);
+    // the yard behind the unit comes once the unit next door is the game's
+    expect(offers.map((o) => o.state)).toEqual(['open', 'open', 'open', 'open', 'locked']);
     expect(offers.map((o) => o.price)).toEqual(CENTERS.willow.plots.map((p) => p.price));
     // a building grown over the unit next door, however it came to be, has it already
     const [unit] = CENTERS.willow.plots;
