@@ -166,6 +166,12 @@ export interface Look {
   sex: Sex;
   /** A man's facial hair: 0 none, 1 a moustache, 2 a beard. */
   beard: number;
+  /** 0 slight, 1 average, 2 stocky; a number already in saves never changes meaning. */
+  build: number;
+  /** 0 none, 1 round, 2 square; a number already in saves never changes meaning. */
+  glasses: number;
+  /** The color of their shoes, an index into `SHOES`; a number already in saves never changes meaning. */
+  shoes: number;
 }
 
 interface CharBase {

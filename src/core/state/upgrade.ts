@@ -16,7 +16,7 @@ import {
   ROLES,
 } from '../data';
 import { type LandSide, stripsBought } from '../land';
-import { makeCandidate, settleSex } from '../people';
+import { makeCandidate, settleLook, settleSex } from '../people';
 import { newSeed } from '../random';
 import {
   defaultPolicy,
@@ -263,6 +263,8 @@ export function upgradeSave(save: GameState) {
   // before women and men were told apart, a look had no sex, and any hair style went with any name; and Amanda
   // Jablonsky's mohawk came later than she did, so in an older save she may have an ordinary haircut
   for (const p of [...s.staff, ...s.candidates, ...s.guests, ...s.visitors]) settleSex(p);
+  // nor builds: each is given one from their id, a regular's look kept for their next visit as well
+  for (const p of [...s.staff, ...s.candidates, ...s.guests, ...s.visitors, ...s.regulars]) settleLook(p);
   for (const it of s.items) fill(it, itemStart());
   for (const r of s.rooms) fill(r, roomStart());
   for (const g of s.guests) {

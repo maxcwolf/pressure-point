@@ -22,6 +22,7 @@ import {
   ROOM_ORDER,
   ROOMS,
   type RoomType,
+  RUNAWAY_SPEED,
   SANDBOX_PLOT,
   UPGRADE_LEVELS,
 } from '../core/data';
@@ -31,6 +32,7 @@ import { newSeed, stream } from '../core/random';
 import type { BubbleId, Char, Guest, Look, Room, VisitorKind } from '../core/state/types';
 import { must } from '../core/util';
 import { accessPose, itemCenter } from '../core/world';
+import type { Act } from '../render/acts';
 import { wallMaterial } from '../render/decor-paint';
 import { applyGag, applyGuestGag } from '../render/gags/apply';
 import { gagFrame } from '../render/gags/beats';
@@ -40,8 +42,8 @@ import { NOISE_CUE, usedNoise } from '../render/item-cues';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
 import { buildBeach } from '../render/models/beach';
-import { buildCharacter, type CharRig } from '../render/models/character';
-import type { Expression } from '../render/models/character-detail';
+import { buildCharacter, type CharRig, cureRig } from '../render/models/character';
+import { type Expression, showEyes } from '../render/models/character-detail';
 import { buildSite } from '../render/models/fence';
 import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
@@ -53,7 +55,17 @@ import { buildPuddle } from '../render/models/puddle';
 import { LAMP_STATES, type LampState, pulseLamps, setLamp } from '../render/models/sign-plaque';
 import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
-import { type Door, type IdleAct, idleMoment, type Mood, PATIENCE_SIGNS, poseChar } from '../render/pose';
+import {
+  actMoment,
+  CURE,
+  type Door,
+  type IdleAct,
+  idleMoment,
+  type Mood,
+  PATIENCE_SIGNS,
+  poseChar,
+  treadmill,
+} from '../render/pose';
 import { BLUEPRINT, buildRoom } from '../render/rooms';
 import { H_TALL, WALL_T } from '../render/shared';
 import { SHOP_TURN } from '../render/storefront';
@@ -71,7 +83,8 @@ export interface Model {
   controls: Control[];
 }
 
-export type Group = 'Items' | 'Machines' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Moods' | 'Rooms' | 'Scenery';
+export type Group =
+  'Items' | 'Machines' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Moods' | 'Acts' | 'Lying' | 'Rooms' | 'Scenery';
 
 /** Something the lab can show. */
 export interface Specimen {
@@ -223,24 +236,59 @@ const IDLE_ACTS: readonly (readonly [IdleAct, string])[] = [
 /** Where the lab's front door is, off to one side of the stage, for a fed-up guest to turn toward. */
 const LAB_DOOR: Door = { x: 4, y: 1 };
 
+/** What a guest can be doing at an item, and what the lab calls each. */
+const GUEST_ACTS: readonly Option[] = [
+  ['drink', 'Having a drink'],
+  ['eat', 'Having a snack'],
+  ['play', 'Playing a game'],
+  ['shop', 'Shopping'],
+];
+
+/** What a member of staff can be doing at an item, and what the lab calls each. */
+const STAFF_ACTS: readonly Option[] = [
+  ['checkin', 'Checking someone in'],
+  ['litter', 'Picking up litter'],
+  ['water', 'Watering a plant'],
+  ['repair', 'Mending something'],
+  ['drink', 'Having a drink'],
+];
+
 /** How a person on show is posed, kept between rebuilds. */
 interface PersonState {
   look: Look;
   pose: Pose;
   bubble: BubbleId | '';
+  /** What they are doing at an item, standing, if anything. */
+  act: Act | '';
 }
 
-/** The settings every person has: their pose, a speech bubble and a new look. */
-function personControls(st: PersonState, home = LAB_LOOK): Control[] {
+/** The settings every person has: their pose, a speech bubble, what they are doing, and a new look. */
+function personControls(st: PersonState, home = LAB_LOOK, acts: readonly Option[] = []): Control[] {
   // someone set apart by their hair keeps it whatever else changes
   const keep = home === LAB_LOOK ? {} : { hairStyle: home.hairStyle, hair: home.hair };
   return [
     choice('Pose', st, 'pose', POSES),
     choice('Bubble', st, 'bubble', BUBBLES),
+    ...(acts.length ? [choice('Doing', st, 'act', [['', 'Nothing'], ...acts])] : []),
     button('Shuffle as a woman', () => (st.look = { ...randomLook(looks, 'female'), ...keep }), true),
     button('Shuffle as a man', () => (st.look = { ...randomLook(looks, 'male'), ...keep }), true),
     button('Reset look', () => (st.look = { ...home }), true),
   ];
+}
+
+/** How fast someone walks in the lab, in meters a second, as a guest does in the game. */
+const WALK_PACE = 2.1;
+
+/** The lab's time when each person was last walked on the spot. */
+const walkedAt = new WeakMap<CharRig, number>();
+
+/**
+ * Walk someone on the spot at a pace, by the time gone since they were last walked: nobody in the lab goes anywhere,
+ * and the stride follows the ground covered. Held still, the lab's time stands still, and so do they.
+ */
+function walkOnTheSpot(rig: CharRig, t: number, pace: number) {
+  treadmill(rig, t - (walkedAt.get(rig) ?? t), pace);
+  walkedAt.set(rig, t);
 }
 
 /** Pose a person for this frame from the lab's settings. */
@@ -248,7 +296,8 @@ function posePerson(rig: CharRig, c: Char, st: PersonState, t: number, dt: numbe
   c.pose = st.pose;
   c.bubble = st.bubble;
   c.bubbleT = st.bubble ? 1 : 0;
-  poseChar(rig, c, t, dt, style, LAB_DOOR);
+  if (c.pose === 'walk') walkOnTheSpot(rig, t, WALK_PACE);
+  poseChar(rig, c, t, dt, { style, door: LAB_DOOR, act: st.act || undefined });
 }
 
 /** Set a guest waiting with their patience showing a mood, or being seen to and content. */
@@ -259,14 +308,16 @@ function setMood(c: Guest, mood: Mood) {
 
 /** A guest showing a condition's symptom, or cured of it, and waiting with their patience running out. */
 function guestSpecimen(def: ConditionDef): Specimen {
-  const st: PersonState & { healed: boolean; stressed: boolean; mood: string; poorly: boolean } = {
+  const st: PersonState & { healed: boolean; stressed: boolean; mood: string; poorly: boolean; shut: boolean } = {
     look: { ...LAB_LOOK },
     pose: 'stand',
     bubble: '',
+    act: '',
     healed: false,
     stressed: false,
     mood: 'content',
     poorly: false,
+    shut: false,
   };
   return {
     id: `guest:${def.id}`,
@@ -282,11 +333,14 @@ function guestSpecimen(def: ConditionDef): Specimen {
       return {
         root: rig.group,
         controls: [
-          ...personControls(st),
+          ...personControls(st, LAB_LOOK, GUEST_ACTS),
           choice('Waiting', st, 'mood', MOODS),
           toggle('In poor condition', st, 'poorly'),
           toggle('Healed', st, 'healed', true),
+          // healed as the game heals them, so the symptom goes in a puff; Healed builds them afresh, already well
+          button('Cure now', () => (c.outcome = 'healed')),
           toggle('Stressed', st, 'stressed'),
+          toggle('Eyes shut', st, 'shut'),
         ],
         /** Pose the guest. */
         animate(t, dt) {
@@ -294,6 +348,7 @@ function guestSpecimen(def: ConditionDef): Specimen {
           c.health = st.poorly ? POOR_CONDITION - 10 : 100;
           setMood(c, st.mood as Mood);
           posePerson(rig, c, st, t, dt);
+          if (st.shut) showEyes(rig.face, true);
         },
       };
     },
@@ -307,7 +362,7 @@ interface Named {
   look: Look;
 }
 
-/** Every hair style and facial hair, each on a receptionist, so a picture of each is kept. */
+/** Every hair style, facial hair, build and pair of glasses, and white shoes, each on a receptionist, to picture each. */
 const LOOKS: readonly (readonly [key: string, label: string, look: Partial<Look>])[] = [
   ['long', 'long hair', { hairStyle: HAIR.long }],
   ['bob', 'a bob', { hairStyle: HAIR.bob, hair: 0x8a5a2b }],
@@ -317,6 +372,13 @@ const LOOKS: readonly (readonly [key: string, label: string, look: Partial<Look>
   ['bald', 'bald', { sex: 'male', hairStyle: HAIR.bald, skin: 0xd9a078 }],
   ['moustache', 'a moustache', { sex: 'male', hairStyle: HAIR.short, beard: 1, hair: 0x8c8c8c }],
   ['beard', 'a beard', { sex: 'male', hairStyle: HAIR.curls, beard: 2, skin: 0x8d5a3b, hair: 0x2b1d16 }],
+  ['quiff', 'a quiff', { sex: 'male', hairStyle: HAIR.quiff, hair: 0x2b1d16 }],
+  ['topknot', 'a top knot', { sex: 'male', hairStyle: HAIR.topknot, skin: 0xd9a078 }],
+  ['slight', 'a slight build', { build: 0 }],
+  ['stocky', 'a stocky build', { sex: 'male', hairStyle: HAIR.short, build: 2, skin: 0xb97a55, hair: 0x2b1d16 }],
+  ['glasses-round', 'round glasses', { glasses: 1 }],
+  ['glasses-square', 'square glasses', { sex: 'male', hairStyle: HAIR.short, glasses: 2, hair: 0x8a5a2b }],
+  ['shoes', 'white shoes', { shoes: 3, hairStyle: HAIR.ponytail, hair: 0xd9a441 }],
 ];
 
 /** Which member of staff sits at each item they work at. */
@@ -359,7 +421,71 @@ function seatedSpecimen(type: ItemType, i: number): Specimen {
         root,
         controls: [],
         /** Seat them. */
-        animate: (t, dt) => poseChar(rig, c, t, dt, null),
+        animate: (t, dt) => poseChar(rig, c, t, dt, { style: null }),
+      };
+    },
+  };
+}
+
+/** Every item someone lies on that is not a machine, whose gag lays them down its own way. */
+export const BEDS: readonly ItemType[] = (Object.keys(ITEMS) as ItemType[]).filter(
+  (type) => !ITEMS[type].machine && ITEMS[type].access.some((a) => a.pose === 'lie'),
+);
+
+/** The treatment a practitioner gives at each table in the lab, working on the guest lying on it. */
+const BED_WORK: Partial<Record<ItemType, Modality>> = {
+  massage_table: 'swedish',
+  acu_table: 'needling',
+  reiki_table: 'usui',
+};
+
+/**
+ * A guest lying on an item as the game lays them there: face down on a massage or acupuncture table, with the
+ * practitioner working on them, or on their back, resting or being treated.
+ */
+function lyingSpecimen(type: ItemType): Specimen {
+  const def = ITEMS[type];
+  const style = BED_WORK[type] ?? null;
+  const role = def.station?.staff;
+  const spot = def.access.findIndex((a) => a.pose === 'lie');
+  const post = def.access.findIndex((a) => a.role === 'staff');
+  return {
+    id: `lying:${type}`,
+    group: 'Lying',
+    name: `${def.name}, a guest lying on it`,
+    footprint: [def.w, def.h],
+    /** Build the item with the guest on it, and whoever works on them. */
+    build() {
+      const placed = { type, x: 0, y: 0, rot: 0 };
+      const [cx, cy] = itemCenter(placed);
+      const root = new THREE.Group();
+      root.add(buildItem(type, {}));
+      /** Put someone at an access spot of the item, posed as it says. */
+      const place = (c: Char, i: number) => {
+        const at = accessPose(placed, i);
+        Object.assign(c, { x: at.x - cx, y: at.y - cy, facing: at.face, pose: at.pose, h: at.h });
+        return c;
+      };
+      const guest = buildCharacter(LAB_LOOK);
+      const g = place(demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id), spot);
+      // a guest on a Recliner is resting there, after a treatment
+      if (def.access[spot]?.role === 'recover') g.state = 'resting';
+      const lie = def.access[spot]?.lie;
+      root.add(guest.group);
+      let staff: { rig: CharRig; c: Char } | null = null;
+      if (style && role && post >= 0) {
+        const rig = buildCharacter(LAB_LOOK, role);
+        staff = { rig, c: place({ ...demoStaff(LAB_LOOK, role), id: 2, busy: true }, post) };
+        root.add(rig.group);
+      }
+      return {
+        root,
+        controls: [],
+        /** Lay them down, and have whoever works on them at it. */
+        animate(t, dt) {
+          poseChar(guest, g, t, dt, { style: null, lie });
+          if (staff) poseChar(staff.rig, staff.c, t, dt, { style });
+        },
       };
     },
   };
@@ -461,7 +587,7 @@ function machineSpecimen(type: ItemType): Specimen {
           applyGag(model, frame, t);
           if (!guest) return;
           guest.c.outcome = stage === 'outro' && st.healed ? 'healed' : '';
-          poseChar(guest.rig, guest.c, t, dt, null);
+          poseChar(guest.rig, guest.c, t, dt, { style: null });
           // the guest is only inside while there is a session, or just after it
           guest.rig.group.visible = stage === 'running' || stage === 'outro';
           if (guest.rig.group.visible) applyGuestGag(guest.rig, stage === 'running' ? frame.guest : {}, 0);
@@ -478,6 +604,7 @@ function staffSpecimen(role: Role, named?: Named): Specimen {
     look: { ...home },
     pose: 'stand',
     bubble: '',
+    act: '',
     busy: false,
     style: '',
     smudging: false,
@@ -486,7 +613,7 @@ function staffSpecimen(role: Role, named?: Named): Specimen {
   const discipline = ROLES[role].discipline;
   const styles = MODALITY_ORDER.filter((m) => discipline && MODALITIES[m].discipline === discipline);
   const controls: Control[] = [
-    ...personControls(st, home),
+    ...personControls(st, home, STAFF_ACTS),
     toggle('Working', st, 'busy'),
     choice('With nothing to do', st, 'idle', [['', 'As in the game'], ...IDLE_ACTS]),
   ];
@@ -548,8 +675,34 @@ function moodSpecimen(mood: Mood, label: string, seated: boolean): Specimen {
         root.add(buildItem('bench', {}));
       }
       /** Pose them, turning toward the lab's door if fed up. */
-      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null, LAB_DOOR);
+      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, { style: null, door: LAB_DOOR });
       return { root, controls: [], animate };
+    },
+  };
+}
+
+/** A guest with a hen on their head, caught the moment they are healed, as it shrinks away in a puff of sparkles. */
+function curedSpecimen(): Specimen {
+  const condition = must(
+    CONDITIONS.find((d) => d.visual === 'chicken'),
+    'a condition with a hen',
+  );
+  return {
+    id: 'mood:cured',
+    group: 'Moods',
+    name: 'Healed, the symptom going in a puff',
+    footprint: [1, 1],
+    /** Build the guest, healed. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK, undefined, condition.visual);
+      const c = { ...demoGuest(LAB_LOOK, condition.id), outcome: 'healed' as const };
+      /** Hold them partway through the cure, two fifths of the way. */
+      const animate = (t: number, dt: number) => {
+        cureRig(rig, t - CURE * 0.4);
+        rig.curedAt = t - CURE * 0.4;
+        poseChar(rig, c, t, dt, { style: null });
+      };
+      return { root: rig.group, controls: [], animate };
     },
   };
 }
@@ -566,8 +719,11 @@ function runawaySpecimen(): Specimen {
       const rig = buildCharacter(LAB_LOOK);
       const c = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
       Object.assign(c, { state: 'running', pose: 'walk', outcome: 'failed', bubble: 'bubble-stressed', bubbleT: 1e9 });
-      /** Pose them. */
-      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null);
+      /** Pose them, running on the spot as fast as a runner goes. */
+      const animate = (t: number, dt: number) => {
+        walkOnTheSpot(rig, t, RUNAWAY_SPEED);
+        poseChar(rig, c, t, dt, { style: null });
+      };
       return { root: rig.group, controls: [], animate };
     },
   };
@@ -591,27 +747,30 @@ function moppingSpecimen(): Specimen {
       water.position.z = 0.6;
       root.add(water);
       /** Pose them, mopping. */
-      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null, undefined, { mopping: true });
+      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, { style: null, mopping: true });
       return { root, controls: [], animate };
     },
   };
 }
 
-/** The faces a guest makes, other than at ease, and what the lab calls each. */
-const FACES: readonly (readonly [Exclude<Expression, 'neutral'>, string])[] = [
+/** The faces a guest makes, other than at ease, and what the lab calls each: each expression, and the eyes shut. */
+const FACES: readonly (readonly [Exclude<Expression, 'neutral'> | 'shut', string])[] = [
   ['delighted', 'Delighted, healed'],
   ['unhappy', 'Unhappy, running out of patience'],
   ['wince', 'Wincing, in poor condition'],
+  ['scared', 'Frightened, in an outbreak or on a bad trip'],
+  ['shut', 'Eyes shut, resting'],
 ];
 
 /** Make a guest feel the way that shows on their face as an expression. */
-function feel(c: Guest, e: Expression) {
+function feel(c: Guest, e: Expression | 'shut') {
   if (e === 'delighted') c.outcome = 'healed';
   else if (e === 'unhappy') c.patience = PATIENCE_SIGNS.impatient - 5;
   else if (e === 'wince') c.health = POOR_CONDITION - 10;
+  else if (e === 'scared') c.stressed = true;
 }
 
-/** A plain guest making a face. */
+/** A plain guest making a face, or with their eyes shut. */
 function faceSpecimen([key, name]: (typeof FACES)[number]): Specimen {
   return {
     id: `face:${key}`,
@@ -623,8 +782,11 @@ function faceSpecimen([key, name]: (typeof FACES)[number]): Specimen {
       const rig = buildCharacter(LAB_LOOK);
       const c = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
       feel(c, key);
-      /** Pose them. */
-      const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null);
+      /** Pose them, with their eyes shut if that is the face. */
+      const animate = (t: number, dt: number) => {
+        poseChar(rig, c, t, dt, { style: null });
+        if (key === 'shut') showEyes(rig.face, true);
+      };
       return { root: rig.group, controls: [], animate };
     },
   };
@@ -647,7 +809,84 @@ function idleSpecimen(act: IdleAct, label: string): Specimen {
         /** Keep them in the middle of the act. */
         animate(t, dt) {
           rig.idleSince = t - idleMoment(c.id, act);
-          poseChar(rig, c, t, dt, null);
+          poseChar(rig, c, t, dt, { style: null });
+        },
+      };
+    },
+  };
+}
+
+/** Every act, and what the lab calls it. */
+const ACTS: readonly (readonly [Act, string])[] = [
+  ['checkin', 'A receptionist checking a guest in'],
+  ['drink', 'A guest having a drink'],
+  ['eat', 'A guest having a snack'],
+  ['play', 'A guest playing a game'],
+  ['shop', 'A guest shopping'],
+  ['litter', 'A Caretaker picking up litter'],
+  ['water', 'A Caretaker watering a plant'],
+  ['repair', 'A Caretaker mending something'],
+];
+
+/** Who does an act in the lab: a receptionist checking in, a Caretaker on a chore, or else a guest. */
+const actor = (act: Act): Role | undefined =>
+  act === 'checkin'
+    ? 'receptionist'
+    : act === 'litter' || act === 'water' || act === 'repair'
+      ? 'caretaker'
+      : undefined;
+
+/**
+ * Someone doing an act, caught at the height of it: a receptionist at a reception desk with a guest at it, or a
+ * Caretaker or a guest on their own.
+ */
+function actSpecimen(act: Act, label: string): Specimen {
+  const role = actor(act);
+  const desk = act === 'checkin';
+  return {
+    id: `act:${act}`,
+    group: 'Acts',
+    name: label,
+    footprint: desk ? [ITEMS.reception_desk.w, ITEMS.reception_desk.h] : [1, 1],
+    /** Build them, and the desk and the guest at it for checking in. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK, role);
+      const c: Char = role
+        ? { ...demoStaff(LAB_LOOK, role), busy: true }
+        : demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
+      const root = new THREE.Group();
+      root.add(rig.group);
+      let guest: { rig: CharRig; c: Guest } | null = null;
+      if (desk) {
+        const placed = { type: 'reception_desk' as const, x: 0, y: 0, rot: 0 };
+        const [cx, cy] = itemCenter(placed);
+        /** Stand someone at an access spot of the desk. */
+        const stand = (who: Char, i: number) => {
+          const at = accessPose(placed, i);
+          Object.assign(who, { x: at.x - cx, y: at.y - cy, facing: at.face, pose: at.pose, h: at.h });
+        };
+        stand(
+          c,
+          ITEMS.reception_desk.access.findIndex((a) => a.role === 'staff'),
+        );
+        const g = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
+        // the guest has a different face to the receptionist, so the two are told apart
+        g.id = 2;
+        stand(
+          g,
+          ITEMS.reception_desk.access.findIndex((a) => a.role === 'guest'),
+        );
+        guest = { rig: buildCharacter({ ...LAB_LOOK, hairStyle: HAIR.short, sex: 'male', top: 0xe9c46a }), c: g };
+        root.add(buildItem('reception_desk', {}), guest.rig.group);
+      }
+      const at = actMoment(act, c.id);
+      return {
+        root,
+        controls: [],
+        /** Keep them at the height of the act. */
+        animate(t, dt) {
+          poseChar(rig, c, t + at, dt, { style: null, act });
+          if (guest) poseChar(guest.rig, guest.c, t, dt, { style: null });
         },
       };
     },
@@ -656,7 +895,7 @@ function idleSpecimen(act: IdleAct, label: string): Specimen {
 
 /** A visitor dressed for the part: a VIP in a dark suit, or the inspector with a clipboard. */
 function visitorSpecimen(visit: VisitorKind): Specimen {
-  const st: PersonState = { look: { ...LAB_LOOK }, pose: 'stand', bubble: '' };
+  const st: PersonState = { look: { ...LAB_LOOK }, pose: 'stand', bubble: '', act: '' };
   return {
     id: `visitor:${visit}`,
     group: 'Visitors',
@@ -922,6 +1161,9 @@ export const CATALOG: readonly Specimen[] = [
   ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
   runawaySpecimen(),
   moppingSpecimen(),
+  curedSpecimen(),
+  ...ACTS.map(([act, label]) => actSpecimen(act, label)),
+  ...BEDS.map(lyingSpecimen),
   doorSpecimen(),
   ...SCENERY,
 ];
@@ -931,6 +1173,6 @@ export function scalePerson(): Model {
   const rig = buildCharacter(LAB_LOOK, 'receptionist');
   const c = demoStaff(LAB_LOOK, 'receptionist');
   /** Stand them at ease. */
-  const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, null);
+  const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, { style: null });
   return { root: rig.group, animate, controls: [] };
 }

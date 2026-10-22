@@ -6,8 +6,8 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { CENTERS, CONDITIONS, ITEMS, ROLE_ORDER } from '../../src/core/data';
 
-/** The faces people make, other than at ease, each seen close up. */
-const FACES = ['delighted', 'unhappy', 'wince'].map((face) => `face:${face}`);
+/** The faces people make, other than at ease, and eyes shut, each seen close up. */
+const FACES = ['delighted', 'unhappy', 'wince', 'scared', 'shut'].map((face) => `face:${face}`);
 
 /** Every model the lab shows, by its id there. */
 const IDS = [
@@ -21,7 +21,23 @@ const IDS = [
   ...CONDITIONS.map((c) => `guest:${c.id}`),
   ...ROLE_ORDER.map((role) => `staff:${role}`),
   'staff:amanda',
-  ...['long', 'bob', 'ponytail', 'curls', 'short', 'bald', 'moustache', 'beard'].map((look) => `staff:look-${look}`),
+  ...[
+    'long',
+    'bob',
+    'ponytail',
+    'curls',
+    'short',
+    'bald',
+    'moustache',
+    'beard',
+    'quiff',
+    'topknot',
+    'slight',
+    'stocky',
+    'glasses-round',
+    'glasses-square',
+    'shoes',
+  ].map((look) => `staff:look-${look}`),
   'visitor:vip',
   'visitor:inspector',
   // someone sitting at each kind of seat, once for each who sits there
@@ -36,10 +52,17 @@ const IDS = [
   ...['restless', 'impatient', 'fed-up'].flatMap((mood) => [`mood:${mood}`, `mood:${mood}-seated`]),
   ...FACES,
   ...['stretch', 'look', 'watch'].map((act) => `idle:${act}`),
-  // a guest on a really bad trip, running round
+  // a guest on a really bad trip, running round, and one healed, their symptom going in a puff
   'mood:runaway',
   // a Caretaker mopping up a flooded restroom
   'mood:mopping',
+  'mood:cured',
+  // what people do at an item, a receptionist and a guest at a reception desk among them
+  ...['checkin', 'drink', 'eat', 'play', 'shop', 'litter', 'water', 'repair'].map((act) => `act:${act}`),
+  // a guest lying on everything that is not a machine: face down on the tables, on their back elsewhere
+  ...Object.entries(ITEMS).flatMap(([type, def]) =>
+    !def.machine && def.access.some((a) => a.pose === 'lie') ? [`lying:${type}`] : [],
+  ),
   'room:door',
   'scenery:puddles',
   'scenery:trees',

@@ -186,6 +186,11 @@ export interface AccessDef {
   face: [number, number];
   pose: Pose;
   h?: number;
+  /**
+   * How they lie, when the pose is `lie`: face down on a table with the face turned aside (`prone`), or on their back
+   * (`back`). When not given, face down with the arms out, as a machine lays them for its gag.
+   */
+  lie?: 'prone' | 'back';
 }
 
 export interface ItemDef {

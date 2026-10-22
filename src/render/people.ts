@@ -2,10 +2,11 @@
 
 import type * as THREE from 'three';
 
-import { conditionOf, ROLES, SIDEWALK_Y } from '../core/data';
+import { conditionOf, type ItemDef, ITEMS, ROLES, SIDEWALK_Y } from '../core/data';
 import { streetEnds } from '../core/sim/chars';
 import type { Sim } from '../core/sim/sim';
 import type { Char, Guest } from '../core/state/types';
+import { actOf, lyingAt } from './acts';
 import { Crowd, type Viewpoint } from './crowd';
 import { disposeOwned } from './disposal';
 import { applyGuestGag } from './gags/apply';
@@ -56,7 +57,7 @@ export class PeopleLayer {
     } = this.sim.world.building;
     const door = { x: (left + right + 1) / 2, y: front + 1 };
     // anyone on a really bad trip, whom everyone near turns to look at: hardly ever anyone
-    const around = { runners: this.sim.s.guests.filter((g) => g.state === 'running') };
+    const runners = this.sim.s.guests.filter((g) => g.state === 'running');
     // the rooms the Gong of Last Resort rattles through the wall this moment, whose people flinch: hardly ever any
     const rattled = this.sim.rattledRooms();
     for (const c of [...this.sim.s.guests, ...this.sim.s.staff, ...this.sim.s.visitors] as Char[]) {
@@ -85,17 +86,16 @@ export class PeopleLayer {
       rig.pick.visible = shown;
       if (!shown && rig.smoke) rig.smoke.visible = false;
       if (!shown) continue;
-      const mopping = this.mopping(c);
-      const shook = rattled.size > 0 && rattled.has(this.sim.world.zoneAt(c.tx, c.ty));
-      poseChar(
-        rig,
-        c,
-        t,
-        dt,
-        this.workStyle(c),
+      const at = this.itemAt(c);
+      poseChar(rig, c, t, dt, {
+        style: this.workStyle(c),
         door,
-        mopping || shook ? { ...around, mopping, rattled: shook } : around,
-      );
+        act: actOf(c, at),
+        lie: lyingAt(c, at),
+        runners,
+        mopping: this.mopping(c),
+        rattled: rattled.size > 0 && rattled.has(this.sim.world.zoneAt(c.tx, c.ty)),
+      });
       rig.group.scale.setScalar(size);
       if (c.kind === 'guest') this.inMachine(rig, c, t);
     }
@@ -145,6 +145,16 @@ export class PeopleLayer {
       [...this.chars.values()].map((r) => r.group),
       view,
     );
+  }
+
+  /**
+   * The item someone is at, as far as what they do there goes: the machine a guest has gone to for a drink, a snack or
+   * a game, the station a guest is being served at, or a member of staff's post.
+   */
+  private itemAt(c: Char): ItemDef | undefined {
+    const id = c.kind === 'guest' ? (c.state === 'need' ? c.claimItem : c.station) : c.kind === 'staff' ? c.post : 0;
+    const it = id ? this.sim.world.item(id) : undefined;
+    return it && ITEMS[it.type];
   }
 
   /**

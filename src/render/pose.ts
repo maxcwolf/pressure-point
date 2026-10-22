@@ -6,10 +6,14 @@ import { FREAK_RANGE, type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
 import type { BubbleId, Char } from '../core/state/types';
 import { must } from '../core/util';
+import type { Act, Lying } from './acts';
 import { rattle, RATTLE_PEAK } from './item-cues';
-import { type CharRig, cureRig, type Joints } from './models/character';
-import { type Expression, showExpression } from './models/character-detail';
+import { buildBurst } from './models/burst';
+import { type CharRig, cureRig, endCure, type Joints } from './models/character';
+import { type Expression, showExpression, showEyes } from './models/character-detail';
+import { buildHeld, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
+import { mat } from './models/parts';
 import { driftSmoke } from './models/sage';
 
 /**
@@ -68,12 +72,14 @@ export const moodOf = (c: Char): Mood =>
   c.kind === 'guest' && (c.state === 'waiting' || c.state === 'toWait') ? moodFor(c.patience) : 'content';
 
 /**
- * The face someone wears. A guest: delighted once healed and unhappy if they leave otherwise worse off, unhappy as
- * their patience runs short, wincing in poor condition. Staff: unhappy about to quit, wincing worn out. Else, at ease.
+ * The face someone wears. A guest: delighted once healed, frightened on a really bad trip or stressed in an outbreak,
+ * unhappy if they leave otherwise worse off or as their patience runs short, wincing in poor condition. Staff: unhappy
+ * about to quit, wincing worn out. Else, at ease.
  */
 export function expressionOf(c: Char): Expression {
   if (c.kind === 'guest') {
     if (c.outcome === 'healed') return 'delighted';
+    if (c.state === 'running' || c.stressed) return 'scared';
     if (c.outcome === 'stormed' || c.outcome === 'failed' || c.outcome === 'worse') return 'unhappy';
     if (c.patience < PATIENCE_SIGNS.impatient) return 'unhappy';
     if (!c.outcome && c.health < POOR_CONDITION) return 'wince';
@@ -122,20 +128,128 @@ export function idleMoment(id: number, kind: IdleAct) {
 /** An angle brought round to between -pi and pi. */
 const wrap = (a: number) => a - Math.PI * 2 * Math.round(a / (Math.PI * 2));
 
+/**
+ * How far round the legs' cycle goes for each meter walked, in radians: a full cycle of two steps every 1.3 m, about the
+ * 9.5 rad/s the walk had at 2.1 m/s.
+ */
+export const STRIDE = 4.8;
+
+/** How far someone may move in a frame and still have walked there, in meters: further, they were put there. */
+const TELEPORT = 2;
+
+/** How far a body leans into a turn for each radian a second it turns, and how fast a turn it leans for at most. */
+const TURN_LEAN = { body: 0.02, head: 0.01, most: 8 } as const;
+
+/** How long a sip of a drink or a bite of a snack takes, hand up and down again, in seconds. */
+export const SIP = 2.4;
+
+/** How long it takes to stoop for a piece of litter, pick it up and straighten again, in seconds. */
+export const PICK = 1.8;
+
+/** The acts that go round in a cycle, and how long each takes. */
+const ACT_CYCLES: Partial<Record<Act, number>> = { drink: SIP, eat: SIP, litter: PICK };
+
+/**
+ * How far a guest lying face down on a table turns their head aside to rest on a cheek, in radians: away from the
+ * practitioner's side of the table, which turns it toward the game's camera, so the face shows.
+ */
+export const PRONE_TURN = -1.45;
+
+/** How long a healed guest's symptom takes to shrink away in a puff of sparkles, in seconds. */
+export const CURE = 0.8;
+
+/** How long the hop for joy as it goes lasts, in seconds. */
+const HOP = 0.5;
+
+/**
+ * Show a healed guest's symptom going, partway through: every prop shrinking away as it rises, a swollen head going
+ * down, the skin coming back at the half, and a ring of sparkles round the head bursting outward and turning. Once it
+ * has gone, put it away for good.
+ */
+function showCure(rig: CharRig, c: Char, t: number) {
+  const u = Math.max(0, (t - rig.curedAt) / CURE);
+  if (u >= 1) {
+    endCure(rig, c.look);
+    return;
+  }
+  rig.props.forEach((o, i) => {
+    const rest = rig.rest?.[i];
+    if (!rest) return;
+    o.scale.copy(rest.scale).multiplyScalar(Math.max(0.001, 1 - u));
+    o.position.y = rest.y + 0.25 * u;
+  });
+  if (rig.visual === 'bighead') {
+    const size = 1.45 - 0.45 * u;
+    rig.head.scale.set(size / rig.wide, size, size / rig.wide);
+  }
+  if (u > 0.5) rig.headMesh.material = mat(c.look.skin, 0.65);
+  rig.burst ??= buildBurst(rig.head);
+  rig.burst.visible = true;
+  rig.burst.scale.setScalar(0.3 + 1.5 * u);
+  rig.burst.rotation.y = u * 2.5;
+}
+
+/** How long a blink lasts, in seconds. */
+export const BLINK = 0.13;
+
+/**
+ * Whether someone is blinking at a moment: once every 3.2 to 5.4 seconds, each person at their own pace and time, so a
+ * crowd never blinks together.
+ */
+export function blinkAt(id: number, t: number) {
+  const period = 3.2 + hash(id) * 2.2;
+  const s = t + id * 0.73;
+  return ((s % period) + period) % period < BLINK;
+}
+
+/** How high a guest lying face down on a table lies, in meters, for the cheek and not the nose to meet it. */
+const PRONE_Y = 0.21;
+
+/** How the arms of a guest lying on a table or a mat lie along their sides, turned forward from straight. */
+const LYING_ARMS = 0.12;
+
+/** How far a cup or a snack tips back toward the mouth at the height of a sip or a bite, from upright, in radians. */
+const SIP_TIP = 0.65;
+
+/** What each act has in the right hand. */
+const HELD_FOR: Partial<Record<Act, HeldKind>> = { drink: 'cup', eat: 'snack', water: 'can', repair: 'wrench' };
+
+/** How far into an act's cycle someone is, from 0 to 1, each person at their own point in it. */
+const cycleOf = (act: Act, id: number, t: number) => {
+  const period = ACT_CYCLES[act] ?? 1;
+  return (((t / period + id * 0.37) % 1) + 1) % 1;
+};
+
+/** A moment at which someone is at the height of an act: the cup at their lips, or stooped for the litter. */
+export function actMoment(act: Act, id: number) {
+  const period = ACT_CYCLES[act];
+  return period ? period * ((((0.5 - id * 0.37) % 1) + 1) % 1) : 0;
+}
+
+/** How far a cycle at this point has someone into the act, from 0 to 1: all the way through its middle, eased at each end. */
+const peakOf = (u: number) => THREE.MathUtils.clamp((Math.sin(Math.PI * u) - 0.5) * 3, 0, 1);
+
+/**
+ * Count the ground someone has covered since last frame toward their stride, and note where they are. Someone placed
+ * somewhere new, arriving at the pavement's end or carried off by a machine, has not walked there.
+ */
+export function stepOn(rig: CharRig, x: number, y: number) {
+  const d = Math.hypot(x - rig.lastX, y - rig.lastY);
+  // NaN, before their first frame, is never a step
+  if (d <= TELEPORT) rig.walked += d;
+  rig.lastX = x;
+  rig.lastY = y;
+}
+
+/** Walk someone on the spot, for the model lab, where nobody goes anywhere: so far at a pace, in meters a second. */
+export function treadmill(rig: CharRig, dt: number, pace: number) {
+  rig.walked += pace * dt;
+}
+
 /** Where a fed-up guest looks: the front door, in tiles. */
 export interface Door {
   x: number;
   y: number;
-}
-
-/** What the people layer works out once a frame about someone's surroundings, for their pose to react to. */
-export interface Around {
-  /** Where everyone running round on a really bad trip is, for anyone near to turn and look. */
-  runners?: readonly { id: number; x: number; y: number }[];
-  /** Whether the litter a Caretaker is cleaning up is flood water, which they mop. */
-  mopping?: boolean;
-  /** Whether the room they are in is rattled through the wall by the Gong of Last Resort, which they flinch at. */
-  rattled?: boolean;
 }
 
 /** How far the head dips at the height of each rattle from the Gong next door, and the share of that lying down. */
@@ -151,7 +265,7 @@ const RUNNER_LOOK = FREAK_RANGE + 1;
 const RUNNER_TURN = 0.6;
 
 /** How far to turn the head toward the nearest runner close by, if any is: none for a runner themselves, or anyone lying or on a table. */
-function lookAtRunner(c: Char, runners: Around['runners']): number | undefined {
+function lookAtRunner(c: Char, runners: Cues['runners']): number | undefined {
   if (!runners?.length || c.pose === 'lie' || c.state === 'served' || c.state === 'running') return undefined;
   let near: { x: number; y: number } | undefined;
   let best = RUNNER_LOOK;
@@ -164,25 +278,49 @@ function lookAtRunner(c: Char, runners: Around['runners']): number | undefined {
 }
 
 /**
+ * What the people layer works out about someone from the world once a frame, for posing them: how they are working,
+ * where the front door is, what they are doing at the item they are at, how they lie on it, and what is going on
+ * around them that they react to.
+ */
+export interface Cues {
+  style: WorkStyle;
+  door?: Door;
+  act?: Act | undefined;
+  lie?: Lying | undefined;
+  /** Where everyone running round on a really bad trip is, for anyone near to turn and look. */
+  runners?: readonly { id: number; x: number; y: number }[];
+  /** Whether the litter a Caretaker is cleaning up is flood water, which they mop. */
+  mopping?: boolean;
+  /** Whether the room they are in is rattled through the wall by the Gong of Last Resort, which they flinch at. */
+  rattled?: boolean;
+}
+
+/**
  * Pose a person for this frame: position, limbs, face, symptom effects and speech bubble. A fed-up guest turns toward
  * the door, if there is one, and anyone near a guest on a really bad trip turns to look.
  */
-export function poseChar(
-  rig: CharRig,
-  c: Char,
-  t: number,
-  dt: number,
-  style: WorkStyle,
-  door?: Door,
-  around: Around = {},
-) {
+export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cues) {
+  const { style, door } = cues;
+  // an act is done standing at the item: on the way there, they walk, and a Caretaker mopping has a pose of their own
+  const act = c.pose === 'stand' && !cues.mopping ? cues.act : undefined;
   rig.group.position.set(c.x, c.h, c.y);
   rig.group.rotation.y = c.facing;
+  // the stride follows the ground covered, not the clock, so the feet plant where they land whatever the game's speed
+  stepOn(rig, c.x, c.y);
+  const first = Number.isNaN(rig.lastFacing);
+  const turning = dt > 0 && !first ? wrap(c.facing - rig.lastFacing) / dt : 0;
+  rig.lastFacing = c.facing;
   const healed = c.kind === 'guest' && c.outcome === 'healed';
-  if (healed) cureRig(rig, c.look);
+  // healed while in sight, the symptom goes in a puff; anyone seen first already healed, as from a save, is simply well
+  if (healed) cureRig(rig, first ? t - 2 * CURE : t);
+  const curing = healed && !rig.cured ? Math.max(0, t - rig.curedAt) : NaN;
   showExpression(rig.face, expressionOf(c));
+  // resting on their back, on a table, a mat or a Recliner, the eyes are shut; anyone else blinks now and then
+  const asleep =
+    c.kind === 'guest' && c.pose === 'lie' && (c.state === 'resting' || (c.state === 'served' && cues.lie === 'back'));
+  showEyes(rig.face, asleep || blinkAt(c.id, t));
   const visual = healed ? undefined : rig.visual;
-  const phase = t * 9.5 + c.id * 1.7;
+  const phase = rig.walked * STRIDE + c.id * 1.7;
   let legL = 0;
   let legR = 0;
   let armL = Math.sin(t * 1.6 + c.id) * 0.05;
@@ -205,7 +343,11 @@ export function poseChar(
     armL = -sw * 0.85;
     armR = sw * 0.85;
     bodyY = Math.abs(Math.cos(phase)) * 0.04;
-    if (healed) bodyY += Math.abs(Math.sin(phase * 0.5)) * 0.07;
+    if (healed && rig.cured) bodyY += Math.abs(Math.sin(phase * 0.5)) * 0.07;
+    // leaning into a corner, the head leading
+    const turn = THREE.MathUtils.clamp(turning, -TURN_LEAN.most, TURN_LEAN.most);
+    side -= turn * TURN_LEAN.body;
+    headZ -= turn * TURN_LEAN.head;
   } else if (c.pose === 'sit') {
     legL = legR = -Math.PI / 2 + 0.08;
     bodyY = 0.06;
@@ -289,9 +431,16 @@ export function poseChar(
     }
   } else if (c.pose === 'lie') {
     bodyRX = Math.PI / 2;
-    bodyY = 0.16;
+    // on a table face down, the cheek rests on it rather than the nose
+    bodyY = cues.lie === 'prone' ? PRONE_Y : 0.16;
     bodyZ = -0.6 * rig.scale;
-    armOut = 0.5;
+    // the arms down along the sides on a table or a mat, or out to the sides on a machine
+    armOut = cues.lie ? 0.14 : 0.5;
+    if (cues.lie) armL = armR = LYING_ARMS;
+  } else if (act) {
+    const a = actPose(act, c, t);
+    ({ armL, armR, armOut, lean, headX, side, bodyY } = a);
+    if (a.legs !== undefined) legL = legR = a.legs;
   } else if (style === 'qigong') {
     // lifting the sky: both arms rise slowly out and overhead, then float back down, knees softening as they fall
     const rise = (1 - Math.cos(t * 0.9)) / 2;
@@ -397,7 +546,7 @@ export function poseChar(
     armL = -1.2 + Math.sin(t * 7.5 + c.id) * 0.32;
     armR = -1.2 + Math.sin(t * 7.5 + c.id + Math.PI) * 0.32;
   }
-  const mopping = !!around.mopping && c.kind === 'staff' && c.state === 'doingJob' && c.job?.kind === 'litter';
+  const mopping = !!cues.mopping && c.kind === 'staff' && c.state === 'doingJob' && c.job?.kind === 'litter';
   if (mopping) {
     // both hands on the mop, pushing it to and fro across the floor
     const sweep = Math.sin(t * 2.6 + c.id);
@@ -474,6 +623,8 @@ export function poseChar(
     lean += 0.25;
     headX -= 0.15;
   }
+  // a hop for joy as the symptom goes
+  if (curing < HOP && c.pose !== 'lie') bodyY += Math.sin((Math.PI * curing) / HOP) * 0.1;
   if (c.pose === 'lie') {
     lean = 0;
     headX = 0;
@@ -482,7 +633,7 @@ export function poseChar(
     if (visual === 'flex') armOut = 0.5;
   }
   // a strike of the Gong next door, felt through the wall
-  if (around.rattled) headX += rattleDip(c, t);
+  if (cues.rattled) headX += rattleDip(c, t);
   // people move with life: weight shifting, follow-through, breathing and fidgets, unless too stiff to
   // only someone with their hands free (the inspector carries a clipboard) and no symptom to show fidgets with their
   // arms
@@ -497,6 +648,7 @@ export function poseChar(
     // arms held stiff, flexed or frozen by a symptom show it, whatever else
     armsFree: visual !== 'stiff' && visual !== 'flex' && visual !== 'frost' && visual !== 'bluescreen',
     rightHolds: visual === 'mallet' || visual === 'leash',
+    act,
     idle: idleAct(c.id, t - rig.idleSince),
     mood: moodOf(c),
     toDoor: door ? wrap(Math.atan2(door.x - c.x, door.y - c.y) - c.facing) : 0,
@@ -514,11 +666,22 @@ export function poseChar(
   bodyY += life.bodyY;
   // the mop swept from side to side, the body turning with it
   if (mopping) life.bodyYaw = Math.sin(t * 2.6 + c.id) * 0.3;
-  const look = lookAtRunner(c, around.runners);
+  const look = lookAtRunner(c, cues.runners);
   if (look !== undefined) life.headYaw = look;
   armL += life.armL;
   armR += life.armR;
   armOut += life.armOut;
+  if (c.pose === 'lie' && cues.lie) {
+    life.elbowL += bendTo(armL, -0.08, 1);
+    life.elbowR += bendTo(armR, -0.08, 1);
+    // face down, the face turned aside, away from whoever works on the back; on their back, the body turned over
+    if (cues.lie === 'prone') life.headYaw = PRONE_TURN;
+    else life.bodyYaw = Math.PI;
+  }
+  if (act) actJoints(life, act, c, t, armL, armR);
+  // what is held is kept at a tilt of its own, whatever the forearm holding it is doing
+  const held = act && !doing.rightHolds ? HELD_FOR[act] : undefined;
+  if (held || rig.held) holdFor(rig, held, heldTilt(act, c, t) - (armR + elbowFor(armR) + life.elbowR));
   const k = Math.min(1, dt * 14);
   const b = rig.body;
   b.rotation.x += (bodyRX - b.rotation.x) * k;
@@ -568,6 +731,8 @@ export function poseChar(
   }
 
   if (rig.mop) rig.mop.visible = mopping;
+  if (healed && !rig.cured) showCure(rig, c, t);
+
   if (rig.sage && rig.sageTip && rig.smoke) {
     rig.sage.visible = smudging;
     if (smudging) rig.group.updateMatrixWorld(true);
@@ -670,6 +835,8 @@ interface Doing {
   armsFree: boolean;
   /** Their right hand holds what shows their symptom, so only the left arm is free. */
   rightHolds: boolean;
+  /** What they are doing at the item they are at, which poses them alone. */
+  act: Act | undefined;
   /** What they are doing to pass the time, with nothing to do. */
   idle: ReturnType<typeof idleAct>;
   mood: Mood;
@@ -817,6 +984,8 @@ function liveliness(c: Char, t: number, phase: number, doing: Doing): Life {
   life.lean = breath * 0.012;
   life.bodyY = breath * 0.004;
   life.headX = -breath * 0.012;
+  // an act poses the whole body, and only breathes
+  if (doing.act) return life;
   if (c.busy && c.pose === 'stand' && style !== 'qigong') {
     const f = (style && RHYTHM[style]) ?? 7.5;
     // gentle treatments barely move the body; brisk ones rock it
@@ -873,6 +1042,124 @@ function liveliness(c: Char, t: number, phase: number, doing: Doing): Life {
     life.kneeR += 0.3 * Math.sin(t * 3.2 + Math.PI) * a;
   }
   return life;
+}
+
+/** How someone doing an act holds their body and arms: turns in radians, shifts in meters. */
+interface ActPose {
+  armL: number;
+  armR: number;
+  armOut: number;
+  lean: number;
+  headX: number;
+  side: number;
+  bodyY: number;
+  /** Both thighs swung forward, for a crouch. */
+  legs?: number;
+}
+
+/** The body and arms of someone doing an act, at a moment. */
+function actPose(act: Act, c: Char, t: number): ActPose {
+  const p: ActPose = { armL: 0, armR: 0, armOut: 0.06, lean: 0, headX: 0, side: 0, bodyY: 0 };
+  const u = peakOf(cycleOf(act, c.id, t));
+  if (act === 'checkin') {
+    // forearms level on the keyboard, head up to the guest with a nod now and then
+    p.armL = p.armR = -0.4;
+    p.headX = 0.05 + Math.max(0, Math.sin(t * 1.4 + c.id)) * 0.14;
+  } else if (act === 'drink' || act === 'eat') {
+    // the right hand up to the mouth and down again, the left hanging
+    p.armR = -0.7 + (-1.85 + 0.7) * u;
+    p.armL = 0.04;
+    p.headX = -0.12 * u + (act === 'eat' ? Math.sin(t * 9) * 0.02 * u : 0);
+  } else if (act === 'play') {
+    // both hands forward on the controls, swaying with the game
+    p.armL = p.armR = -1.15;
+    p.lean = 0.15;
+    p.headX = 0.2;
+    p.side = Math.sin(t * 2.6 + c.id) * 0.06;
+  } else if (act === 'shop') {
+    // one hand on the counter, the other pointing at something on the shelf
+    p.armR = -0.95;
+    p.armL = -2.0;
+  } else if (act === 'litter') {
+    // a stoop to the floor, knees giving and the right hand reaching straight down for the litter, the left out
+    // behind for balance; then straight again, the right arm forward for the toss into the sack
+    p.lean = 1.15 * u;
+    p.legs = -0.55 * u;
+    p.bodyY = -0.05 * u;
+    p.armR = -0.6 - 0.55 * u;
+    p.armL = -0.6 * u;
+  } else if (act === 'water') {
+    // the can held out over the plant
+    p.armR = -0.9;
+    p.lean = 0.15;
+    p.headX = 0.15;
+  } else {
+    // crouched on the heels, working at something low down, the other hand steadying on the knee
+    p.legs = -1.2;
+    p.bodyY = -0.18;
+    p.lean = 0.45;
+    p.headX = 0.25;
+    p.armR = -0.75;
+    p.armL = -0.3;
+  }
+  return p;
+}
+
+/** The elbows, wrists, knees and head of someone doing an act, on top of the arms as posed. */
+function actJoints(life: Life, act: Act, c: Char, t: number, armL: number, armR: number) {
+  const u = peakOf(cycleOf(act, c.id, t));
+  if (act === 'checkin') {
+    // the fingers going
+    life.elbowL += bendTo(armL, -1.15 + Math.sin(t * 11 + c.id) * 0.05, 1);
+    life.elbowR += bendTo(armR, -1.15 + Math.sin(t * 11 + c.id + 1.6) * 0.05, 1);
+    life.bendL = life.bendR = 0.3;
+  } else if (act === 'drink' || act === 'eat') {
+    // the forearm folding up and in, so the hand comes to the middle of the face
+    life.elbowR += bendTo(armR, -0.6 + (-1.05 + 0.6) * u, 1);
+    life.bendR = 0.85 * u;
+  } else if (act === 'play') {
+    // quick alternate jabs at the buttons
+    life.elbowL += bendTo(armL, -1.4 + Math.max(0, Math.sin(t * 10 + c.id)) * 0.18, 1);
+    life.elbowR += bendTo(armR, -1.4 + Math.max(0, Math.sin(t * 10 + c.id + Math.PI)) * 0.18, 1);
+  } else if (act === 'shop') {
+    life.elbowR += bendTo(armR, -1.2, 1);
+    life.elbowL += bendTo(armL, -0.2, 1);
+    life.armInL = -0.45;
+    // a look at the shelf, and back
+    life.headYaw = 0.5 * Math.max(0, Math.sin(t * 0.8 + c.id));
+  } else if (act === 'litter') {
+    life.kneeL = life.kneeR = 0.9 * u;
+    life.elbowR += bendTo(armR, -0.1, u);
+    life.elbowL += bendTo(armL, -0.1, u);
+  } else if (act === 'repair') {
+    life.kneeL = life.kneeR = 1.85;
+    life.elbowR += bendTo(armR, -0.6, 1);
+    life.elbowL += bendTo(armL, -0.9, 1);
+    // a twist of the wrench every half second
+    life.bendR = 0.2 + Math.sin(t * 4 + c.id) * 0.35;
+  }
+}
+
+/**
+ * How far forward from upright what someone holds for an act is tipped: a cup or a snack tipping back toward the mouth
+ * as it comes up, and a watering can tipping forward and back as it pours.
+ */
+function heldTilt(act: Act | undefined, c: Char, t: number) {
+  if (act === 'drink' || act === 'eat') return -SIP_TIP * peakOf(cycleOf(act, c.id, t));
+  if (act === 'water') return 0.3 + Math.sin(t * 1.2) * 0.25;
+  return 0;
+}
+
+/**
+ * Show what someone holds in their right hand for what they are doing, making it the first time, and nothing else.
+ * Anything but a wrench, which is held as a fist holds it, is turned in the hand by `turn` to keep its tilt.
+ */
+function holdFor(rig: CharRig, kind: HeldKind | undefined, turn: number) {
+  if (kind && !rig.held?.[kind]) (rig.held ??= {})[kind] = buildHeld(rig.joints.foreR, kind);
+  if (!rig.held) return;
+  for (const [k, o] of Object.entries(rig.held)) o.visible = k === kind;
+  const o = kind && kind !== 'wrench' ? rig.held[kind] : undefined;
+  if (o) o.rotation.x = turn;
 }
 
 /** What to add to a turn as posed to take it to another, by an amount from 0 to 1. */

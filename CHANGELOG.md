@@ -4,6 +4,10 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **A moment for every cure.** The chicken, the knot or the cloud shrinks away in a puff of sparkles and the guest hops once, grinning.
+- **More faces in the crowd.** People come slight, average or stocky, a quarter wear glasses, shoes come in four colors, and men have two more haircuts.
+- **Eyes that blink and shut.** People blink, rest with their eyes closed on a table or a Recliner, lie face down for a massage or needles, and look frightened on a bad trip or in an outbreak.
+- **People who do what they are doing.** Feet plant where they land at every speed, a receptionist types and nods, guests drink, snack, shop and play, and Caretakers stoop for litter, water the plants and crouch with a wrench.
 - **A really bad trip you can see and answer.** A runner yelps, the announcer has a word, heads turn as they pass and a red ring marks them in any view. A pill at the top counts the days to the door and sends someone in one click, a Shaman first; one who finds the door costs reputation, and one calmed within three days earns a point back.
 - **A flood you can see and feel.** A Caretaker mops it with a mop, the water moves, and guests who wade through it or find the toilet under water say so in their reviews.
 - **A Generator you can tell is working.** It puffs, shudders and rumbles while it carries the center through a cut, and each day of it costs $150 in diesel.

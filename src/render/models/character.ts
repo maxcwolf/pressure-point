@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 
 import { type Role, ROLES, type Visual } from '../../core/data';
+import { SHOES } from '../../core/people';
 import type { Look, VisitorKind } from '../../core/state/types';
 import { owned } from '../disposal';
 import {
@@ -22,6 +23,7 @@ import {
   KNEE,
 } from './character-detail';
 import { machineSymptom } from './character-machines';
+import type { HeldKind } from './held';
 import { buildMop } from './mop';
 import { cached, capsule, cyl, ico, joined, mat, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
@@ -54,15 +56,34 @@ export interface CharRig {
   smoke?: THREE.Group;
   /** A mop held out in front, for a Caretaker mopping up flood water. */
   mop?: THREE.Object3D;
+  /** What they hold in their right hand while doing something, each made the first time it is held. */
+  held?: Partial<Record<HeldKind, THREE.Object3D>>;
   /** The shins and forearms, hinged at the knees and elbows. */
   joints: Joints;
   /** The mouth and brows, which change shape with how they feel. */
   face: Face;
+  /** Their glasses, if they wear them, taken off while a symptom or a visit has them in sunglasses. */
+  glasses?: THREE.Mesh;
   /** When they last found themselves with nothing to do, in the scene's seconds, or NaN while they have something. */
   idleSince: number;
+  /** How far they have walked, in meters, which their stride is counted from, so their feet plant at any speed. */
+  walked: number;
+  /** Where they were last frame, and which way they faced, or NaN before their first. */
+  lastX: number;
+  lastY: number;
+  lastFacing: number;
   visual: Visual | undefined;
+  /** Whether their symptom has gone for good, once healed. */
   cured: boolean;
+  /** When they were healed, in the scene's seconds, or NaN before: their symptom goes in a puff for a moment after. */
+  curedAt: number;
+  /** How each symptom prop was built to stand, noted as the cure begins, to shrink it from and put it back as it was. */
+  rest?: { scale: THREE.Vector3; y: number }[];
+  /** A puff of sparkles round the head as the symptom goes, made the first time it is needed. */
+  burst?: THREE.Object3D;
   scale: number;
+  /** How much wider and deeper than average their build makes them, which their head is spared. */
+  wide: number;
   bubbleKey: string;
 }
 
@@ -76,6 +97,9 @@ export interface Joints {
 
 const pickMat = new THREE.MeshBasicMaterial({ visible: false });
 
+/** How much wider and deeper each build is than average: slight, average and stocky. */
+const BUILD_WIDTH = [0.9, 1, 1.13];
+
 /** What a visitor wears: a VIP's dark suit, or the inspector's trench coat. */
 const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: number }>> = {
   vip: { top: 0x2b2f3a, bottom: 0x23262e },
@@ -86,7 +110,9 @@ const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: numbe
 export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor?: VisitorKind): CharRig {
   const group = new THREE.Group();
   const body = new THREE.Group();
-  body.scale.setScalar(look.scale);
+  // a build widens the body and everything on it, but not the head, so hats, glasses and props on it still fit
+  const wide = BUILD_WIDTH[look.build] ?? 1;
+  body.scale.set(look.scale * wide, look.scale, look.scale * wide);
   group.add(body);
   const skin = mat(look.skin, 0.65);
   const clothes = visitor && VISITOR_CLOTHES[visitor];
@@ -95,8 +121,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const bottom = mat(role === 'caretaker' ? 0x5c6b33 : (clothes?.bottom ?? look.bottom), 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
 
-  const { leg: legL, shin: shinL } = detailLeg(body, -0.095, bottom);
-  const { leg: legR, shin: shinR } = detailLeg(body, 0.095, bottom);
+  const shoes = mat(SHOES[look.shoes] ?? 0x3a302b, 0.5);
+  const { leg: legL, shin: shinL } = detailLeg(body, -0.095, bottom, shoes);
+  const { leg: legR, shin: shinR } = detailLeg(body, 0.095, bottom, shoes);
 
   // torso group pivots at the hips so slumps and leans bend in the right place
   const torso = new THREE.Group();
@@ -152,11 +179,14 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
 
   const head = new THREE.Group();
   head.position.set(0, 0.64, 0);
+  head.scale.set(1 / wide, 1, 1 / wide);
   torso.add(head);
   const hair = mat(look.hair, 0.85);
   // a hat needs short hair under it, or a woman's tied back low
   const hatted = role === 'caretaker' || visitor === 'inspector';
-  const { headMesh, face } = detailHead(head, look, skin, hair, hatted);
+  const { headMesh, face, glasses } = detailHead(head, look, skin, hair, hatted);
+  // sunglasses go on in place of glasses
+  if (glasses) glasses.visible = visitor !== 'vip' && visual !== 'sunburn' && visual !== 'beachhead';
   if (role === 'shaman') {
     // a single feather tucked in behind one ear
     const feather = put(head, rbox(0.05, 0.26, 0.012, 0.01), mat(0xf4f1ea, 0.8), 0.17, 0.16, -0.12);
@@ -194,10 +224,17 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     props: [],
     joints,
     face,
+    ...(glasses ? { glasses } : {}),
     idleSince: NaN,
+    walked: 0,
+    lastX: NaN,
+    lastY: NaN,
+    lastFacing: NaN,
     visual,
     cured: false,
+    curedAt: NaN,
     scale: look.scale,
+    wide,
     bubbleKey: '',
   };
   rig.pick.position.y = 0.7;
@@ -608,7 +645,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.props.push(pot);
   } else if (visual === 'bighead') {
     // a head swollen to half as big again, and a smug little crown on it
-    head.scale.setScalar(1.45);
+    head.scale.set(1.45 / wide, 1.45, 1.45 / wide);
     rig.props.push(put(head, cyl(0.1, 0.08, 0.07, 6), mat(0xd9a93a, 0.3, 0.2), 0, 0.24, 0));
   } else if (visual === 'compass') {
     // a compass floating over their head, its needle spinning round and never settling
@@ -647,11 +684,28 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   return rig;
 }
 
-/** Undo the visible symptoms once a guest has been healed. */
-export function cureRig(rig: CharRig, look: Look) {
-  if (rig.cured) return;
+/** Begin a healed guest's cure at a moment: their symptom then shrinks away over the next few frames (see `poseChar`). */
+export function cureRig(rig: CharRig, t: number) {
+  if (!Number.isNaN(rig.curedAt)) return;
+  rig.curedAt = t;
+  rig.rest = rig.props.map((o) => ({ scale: o.scale.clone(), y: o.position.y }));
+}
+
+/**
+ * Put a healed guest's symptom away for good, once it has gone: every prop hidden and put back as it was built, so a
+ * model built again is right, the head and skin as they were, and glasses back on in place of sunglasses.
+ */
+export function endCure(rig: CharRig, look: Look) {
   rig.cured = true;
-  for (const o of rig.props) o.visible = false;
-  rig.head.scale.setScalar(1);
+  rig.props.forEach((o, i) => {
+    o.visible = false;
+    const rest = rig.rest?.[i];
+    if (!rest) return;
+    o.scale.copy(rest.scale);
+    o.position.y = rest.y;
+  });
+  if (rig.glasses) rig.glasses.visible = true;
+  rig.head.scale.set(1 / rig.wide, 1, 1 / rig.wide);
   rig.headMesh.material = mat(look.skin, 0.65);
+  if (rig.burst) rig.burst.visible = false;
 }

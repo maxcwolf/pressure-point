@@ -148,14 +148,25 @@ const eyes = () =>
     ),
   );
 
+/** Both eyes shut: a short dark line lying where each eye is, turned as the eyes are. */
+const eyesShut = () =>
+  fuse('eyes-shut', (n) =>
+    [-1, 1].map((s) =>
+      place(pill(0.006, 0.03, n), [s * EYE.x, EYE.y - 0.004, faceZ(EYE.x, EYE.y - 0.004)], [0, s * 0.3, Math.PI / 2]),
+    ),
+  );
+
 /** A glint of light in each eye, both on the same side, as if from one light. */
 const glints = () =>
   fuse('glints', (n) =>
     [-1, 1].map((s) => place(ball(0.0045, n(8)), [s * EYE.x + 0.005, EYE.y + 0.009, faceZ(EYE.x, EYE.y) + 0.006])),
   );
 
-/** How someone looks: at ease, unhappy, delighted, or wincing in pain. Each is a shape of the mouth and of the brows. */
-export type Expression = 'neutral' | 'unhappy' | 'delighted' | 'wince';
+/**
+ * How someone looks: at ease, unhappy, delighted, wincing in pain, or frightened. Each is a shape of the mouth and of the
+ * brows.
+ */
+export type Expression = 'neutral' | 'unhappy' | 'delighted' | 'wince' | 'scared';
 
 /**
  * How each expression sets the brows: how high they sit, and how far their outer ends dip. Dipping a little is a
@@ -167,6 +178,8 @@ const BROWS: Readonly<Record<Expression, { y: number; dip: number }>> = {
   unhappy: { y: 0.072, dip: -0.4 },
   delighted: { y: 0.093, dip: 0.06 },
   wince: { y: 0.082, dip: 0.55 },
+  // raised high, the inner ends lifted, as a wince is but higher up
+  scared: { y: 0.096, dip: 0.5 },
 };
 
 /** Both eyebrows, lying along the brow, set for an expression. */
@@ -205,9 +218,13 @@ function grin(n: Sides) {
   return smooth(geo.scale(1.3, 1, 0.45));
 }
 
-/** The mouth for an expression: a soft closed smile, a frown, a wide grin, or a tight flat line. */
+/** The mouth for an expression: a soft closed smile, a frown, a wide grin, a tight flat line, or a small dark O. */
 const mouth = (e: Expression) =>
   fuse(`mouth-${e}`, (n) => {
+    if (e === 'scared') {
+      const y = MOUTH_Y - 0.004;
+      return [place(ball(0.024, n(14)), [0, y, faceZ(0, y) - 0.004], [0.3, 0, 0], [0.8, 1.15, 0.5])];
+    }
     if (e === 'delighted') {
       const y = MOUTH_Y + 0.008;
       return [place(grin(n), [0, y, faceZ(0, y) - 0.006], [0.35, 0, 0])];
@@ -218,11 +235,14 @@ const mouth = (e: Expression) =>
     return [place(arc(n, e === 'unhappy'), [0, y, faceZ(0, y) + 0.004], [0.42, 0, 0])];
   });
 
-/** The parts of a face that change with how someone feels, and the expression they show now. */
+/** The parts of a face that change with how someone feels, and the expression they show now, and whether the eyes are shut. */
 export interface Face {
   mouth: THREE.Mesh;
   brows: THREE.Mesh;
   expression: Expression;
+  eyes: THREE.Mesh;
+  glints: THREE.Mesh;
+  shut: boolean;
 }
 
 /**
@@ -235,6 +255,50 @@ export function showExpression(face: Face, e: Expression) {
   face.mouth.geometry = mouth(e);
   face.brows.geometry = brows(e);
 }
+
+/**
+ * Open or shut a face's eyes, by giving them the shared shape of eyes open or shut, and hiding the glints while shut.
+ * Every face with its eyes shut shares the one shape, so the crowd draws them together.
+ */
+export function showEyes(face: Face, shut: boolean) {
+  if (face.shut === shut) return;
+  face.shut = shut;
+  face.eyes.geometry = shut ? eyesShut() : eyes();
+  face.glints.visible = !shut;
+}
+
+/** How far in front of the eyes glasses sit, clear of them. */
+const LENS_OUT = GLASSES_OUT + 0.006;
+
+/** A shape's pieces, made round the origin, joined into one. */
+const joinPieces = (pieces: THREE.BufferGeometry[]) => must(mergeGeometries(pieces.map(indexed)), 'the pieces joined');
+
+/**
+ * A pair of glasses, round or square: a frame round each eye, turned as the eyes are, a bridge over the nose, and an
+ * arm back from each to the ear.
+ */
+const glasses = (style: number) =>
+  fuse(`glasses-${style}`, (n) => {
+    const z = faceZ(EYE.x, EYE.y) + LENS_OUT;
+    const frames = [-1, 1].map((s) => {
+      const lens =
+        style === 1
+          ? bare(new THREE.TorusGeometry(0.046, 0.0065, n(6), n(24)))
+          : joinPieces([
+              place(pill(0.0065, 0.064, n), [0, 0.034, 0], [0, 0, Math.PI / 2]),
+              place(pill(0.0065, 0.064, n), [0, -0.034, 0], [0, 0, Math.PI / 2]),
+              place(pill(0.0065, 0.05, n), [0.042, 0, 0]),
+              place(pill(0.0065, 0.05, n), [-0.042, 0, 0]),
+            ]);
+      return place(lens, [s * EYE.x, EYE.y, z], [0, s * 0.3, 0]);
+    });
+    const bridge = place(pill(0.005, 0.02, n), [0, EYE.y + 0.008, faceZ(0, EYE.y) + LENS_OUT], [0, 0, Math.PI / 2]);
+    // each arm from the outer rim back along the temple, just clear of the skin, into the hair
+    const arms = [-1, 1].map((s) =>
+      place(pill(0.005, 0.1, n), [s * 0.151, EYE.y + 0.006, 0.15], [Math.PI / 2, 0, s * 0.66]),
+    );
+    return [...frames, bridge, ...arms];
+  });
 
 /** A moustache: two short sweeps under the nose. */
 const moustache = () =>
@@ -386,6 +450,18 @@ const ponytailHair = () =>
     place(tail(0.3, 0.064, n), [0, 0.06, -0.33], [0.15, 0, 0]),
   ]);
 
+/** A quiff: short hair, and a roll of it swept up and forward over the brow. */
+const quiffHair = () =>
+  fuse('quiff', (n) => [capOf(FALLS.short, n), place(pill(0.055, 0.1, n), [0, 0.2, 0.12], [0.5, 0, Math.PI / 2])]);
+
+/** A top knot: short hair, and a small knot high at the crown with a wrap round its foot. */
+const topknotHair = () =>
+  fuse('topknot', (n) => [
+    capOf(FALLS.short, n),
+    place(ball(0.062, n(14)), [0, 0.25, -0.03]),
+    place(bare(new THREE.TorusGeometry(0.045, 0.014, n(8), n(18))), [0, 0.215, -0.025], [Math.PI / 2, 0, 0]),
+  ]);
+
 /** Hair tied low under a hat, hanging down the back. */
 const lowTie = () =>
   fuse('lowtie', (n) => [
@@ -394,20 +470,28 @@ const lowTie = () =>
   ]);
 
 /**
- * Build the head: its shape, the face, and the hair in its style. Returns the head's skin, for symptoms to recolor, and
- * the face, at ease, for its expression to change.
+ * Build the head: its shape, the face, the hair in its style, and glasses if they wear them. Returns the head's skin,
+ * for symptoms to recolor, the face, at ease, for its expression to change, and the glasses, to take off for shades.
  */
 export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, hair: THREE.Material, hatted: boolean) {
+  // glasses round or square, in dark frames or tortoiseshell
+  const specs = look.glasses
+    ? put(head, glasses(look.glasses), look.glasses === 1 ? mat(0x2b2b30, 0.3) : mat(0x6b4a2a, 0.4))
+    : undefined;
+  if (specs) specs.name = 'glasses';
   // each part is named for what it is, so a skinned person can tell the eyes, brows, mouth and hair apart
   const headMesh = put(head, headShape(), skin);
   headMesh.name = 'head';
-  put(head, eyes(), mat(0x1d1716, 0.2)).name = 'eyes';
-  put(head, glints(), mat(0xffffff, 0.3)).name = 'glints';
   const face: Face = {
     brows: put(head, brows('neutral'), hair),
     mouth: put(head, mouth('neutral'), mat(0x7a3a34, 0.55)),
     expression: 'neutral',
+    eyes: put(head, eyes(), mat(0x1d1716, 0.2)),
+    glints: put(head, glints(), mat(0xffffff, 0.3)),
+    shut: false,
   };
+  face.eyes.name = 'eyes';
+  face.glints.name = 'glints';
   face.brows.name = 'brows';
   face.mouth.name = 'mouth';
   const style = hatted ? HAIR.short : look.hairStyle;
@@ -418,12 +502,14 @@ export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, 
   else if (style === HAIR.curls) put(head, curlyHair(), hair, 0, 0.004, -0.004).name = 'hair';
   else if (style === HAIR.bun) put(head, bunHair(), hair, 0, 0.004, -0.004).name = 'hair';
   else if (style === HAIR.ponytail) put(head, ponytailHair(), hair, 0, 0.004, -0.004).name = 'hair';
+  else if (style === HAIR.quiff) put(head, quiffHair(), hair, 0, 0.004, -0.004).name = 'hair';
+  else if (style === HAIR.topknot) put(head, topknotHair(), hair, 0, 0.004, -0.004).name = 'hair';
   if (hatted && look.sex === 'female') put(head, lowTie(), hair).name = 'hair';
   if (look.sex === 'male' && look.beard) {
     put(head, moustache(), hair).name = 'moustache';
     if (look.beard === 2) put(head, beard(), hair).name = 'beard';
   }
-  return { headMesh, face };
+  return { headMesh, face, glasses: specs };
 }
 
 // The body: a shirt shaped to the chest and waist with a collar, trousers over the hips, and the legs and arms.
@@ -795,7 +881,7 @@ const shoe = () =>
   ]);
 
 /** Build a leg hinged at the hip, with a shin and shoe hinged at the knee. */
-export function detailLeg(body: THREE.Group, x: number, bottom: THREE.Material) {
+export function detailLeg(body: THREE.Group, x: number, bottom: THREE.Material, shoes: THREE.Material) {
   const leg = new THREE.Group();
   leg.position.set(x, 0.42, 0);
   // a leg's shadow falls from its thigh and shin together, though each alone is too small to cast one
@@ -808,7 +894,7 @@ export function detailLeg(body: THREE.Group, x: number, bottom: THREE.Material) 
   const below = put(lower, shin(), bottom);
   below.name = 'trousers';
   below.userData.shadow = 'always';
-  put(lower, shoe(), mat(0x3a302b, 0.5)).name = 'shoe';
+  put(lower, shoe(), shoes).name = 'shoe';
   body.add(leg);
   return { leg, shin: lower };
 }

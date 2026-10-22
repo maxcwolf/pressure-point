@@ -69,7 +69,7 @@ async function costs() {
   // a seated person is an item and a person shown together, and a mood a person shown again feeling otherwise, each
   // counted on its own already, and a machine playing its gag is the machine and a guest, each counted on its own as well
   /** Whether a group's models are counted here, rather than as the parts they are made of. */
-  const shown = (g: Group) => g !== 'Seated' && g !== 'Moods' && g !== 'Machines';
+  const shown = (g: Group) => g !== 'Seated' && g !== 'Moods' && g !== 'Acts' && g !== 'Lying' && g !== 'Machines';
   return CATALOG.filter((sp) => shown(sp.group)).map((sp: Specimen) => ({
     id: sp.id,
     group: sp.group,
@@ -90,6 +90,8 @@ describe('the cost of drawing each model', () => {
       Visitors: 35,
       Seated: 0,
       Moods: 0,
+      Acts: 0,
+      Lying: 0,
       Rooms: 12,
       Scenery: 20,
     };
@@ -110,9 +112,10 @@ describe('the cost of drawing each model', () => {
     // 2250 after the Shaman, the lodge's equipment and its guests, 2351 with the five items chosen on 16 October 2026, and
     // 2522 with the ten things to hang on walls, each shown in the lab on a stretch of wall, and 3007 once people had
     // knees, elbows, faces and finer hair, and 3579 with the eleven treatment machines and the twelve guests only they
-    // cure
+    // cure, and 3798 with a receptionist in the lab for each build, each pair of glasses, white shoes and the two haircuts
+    // men were given on 22 October 2026
     const heaviest = all.sort((a, b) => b.calls - a.calls).slice(0, 10);
-    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(3700);
+    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(3850);
   });
 
   it('only casts shadows from parts big enough to show one', async () => {
