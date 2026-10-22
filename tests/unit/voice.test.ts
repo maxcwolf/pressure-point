@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { VOICE_LINES, voiceFor } from '../../src/audio/voice';
 import {
   ANNOUNCEMENTS,
   EMERGENCY_CAUSES,
@@ -17,7 +18,6 @@ import { SWEAT_LODGE_OPEN } from '../../src/core/sim/ceremonies';
 import { CLASS_LINES } from '../../src/core/sim/classes';
 import { emergencyNews } from '../../src/core/sim/emergencies';
 import { OPENING_LINES, openingLine } from '../../src/core/sim/progress';
-import { VOICE_LINES, voiceFor } from '../../src/voice';
 
 /** Every line the speakers can say that does not change from game to game. */
 function spokenLines(): string[] {

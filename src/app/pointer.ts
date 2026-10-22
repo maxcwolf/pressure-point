@@ -1,7 +1,7 @@
 // The mouse on the game canvas: clicking with a tool, dragging the camera and zooming, and showing what a click would
 // select.
 
-import type { Audio } from '../audio';
+import type { Audio } from '../audio/audio';
 import { nextPick } from '../render/picking';
 import type { View } from '../render/view';
 import type { HudState } from '../ui/hud';
@@ -83,7 +83,10 @@ export function bindPointer(canvas: HTMLCanvasElement, { audio, tools, view, ui 
     if (!d) return;
     const click = isClick(d.moved, performance.now() - d.at, Math.hypot(e.clientX - d.x, e.clientY - d.y));
     if (d.button === 0) {
-      if (click || draggingRoom()) tools.pointerUp(e.clientX, e.clientY);
+      if (click || draggingRoom()) {
+        const plot = tools.pointerUp(e.clientX, e.clientY);
+        if (plot) ui.askToBuy(plot);
+      }
     } else if (d.button === 2 && click) {
       if (tools.active) tools.back();
       else tools.select(null);

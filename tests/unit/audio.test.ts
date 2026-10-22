@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Audio } from '../../src/audio';
+import { Audio } from '../../src/audio/audio';
 
 /** How many notes the stand-in audio context has been asked to play. */
 let notes = 0;

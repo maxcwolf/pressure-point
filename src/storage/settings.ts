@@ -1,5 +1,5 @@
 // Player preferences that outlive any one game: which optional disciplines, and whether Qi Gong classes, new games start with,
-// how a sandbox game is set up, its difficulty among the rest, and the Stats menu's charts.
+// how a sandbox game is set up, its difficulty among the rest, the Stats menu's charts, and the sound and music switches.
 import { CENTERS, type Difficulty, DISCIPLINE_ORDER, DISCIPLINES, type Offering, SANDBOX_MONEY } from '../core/data';
 import { readDifficulty } from '../core/difficulty';
 import { isRecord } from './json';
@@ -120,5 +120,38 @@ export function saveStatsView(ids: readonly string[]) {
     localStorage.setItem(STATS_KEY, JSON.stringify(ids));
   } catch {
     // the choice still applies until the page closes
+  }
+}
+
+// the key the sound and music switches have always been kept under, so a player's choice carries over as it is
+const AUDIO_KEY = 'pressure-point-audio';
+
+/** Whether sound effects and music play. */
+export interface AudioPrefs {
+  sound: boolean;
+  music: boolean;
+}
+
+/** The sound and music switches as last set, or both on. */
+export function loadAudio(): AudioPrefs {
+  const out: AudioPrefs = { sound: true, music: true };
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(AUDIO_KEY) ?? '{}');
+    if (isRecord(raw)) {
+      if (typeof raw.sound === 'boolean') out.sound = raw.sound;
+      if (typeof raw.music === 'boolean') out.music = raw.music;
+    }
+  } catch {
+    // both on will do
+  }
+  return out;
+}
+
+/** Remember the sound and music switches, for this game and the next. */
+export function saveAudio(prefs: AudioPrefs) {
+  try {
+    localStorage.setItem(AUDIO_KEY, JSON.stringify({ sound: prefs.sound, music: prefs.music }));
+  } catch {
+    // the switches still apply until the page closes
   }
 }

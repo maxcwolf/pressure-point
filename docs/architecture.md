@@ -4,16 +4,19 @@ Pressure Point Institute is a browser game that also ships as a desktop app. The
 
 ## The layers
 
-| Folder         | What it is                                                             | May import from                  |
-| -------------- | ---------------------------------------------------------------------- | -------------------------------- |
-| `src/core/`    | The game itself: rules, state and content. No browser, no drawing.     | Nothing outside itself           |
-| `src/storage/` | Saved games and preferences, kept in the browser's storage.            | `core`                           |
-| `src/render/`  | The 3D picture of the game, in Three.js.                               | `core`                           |
-| `src/ui/`      | The interface over the picture, in Preact.                             | `core`, `storage`, and app types |
-| `src/app/`     | Startup, input, the build tools and the frame loop. Wires the rest up. | Everything above                 |
-| `electron/`    | The desktop app's main process and preload script.                     | Nothing in `src/`                |
+| Folder         | What it is                                                             | May import from                           |
+| -------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
+| `src/core/`    | The game itself: rules, state and content. No browser, no drawing.     | Nothing outside itself                    |
+| `src/storage/` | Saved games and preferences, kept in the browser's storage.            | `core`                                    |
+| `src/render/`  | The 3D picture of the game, in Three.js.                               | `core`                                    |
+| `src/audio/`   | Sound effects, music and the announcer's recordings (`src/sounds/`).   | `core`, `storage`                         |
+| `src/ui/`      | The interface over the picture, in Preact.                             | `core`, `storage`, `audio`, and app types |
+| `src/app/`     | Startup, input, the build tools and the frame loop. Wires the rest up. | Everything above                          |
+| `electron/`    | The desktop app's main process and preload script.                     | Nothing in `src/`                         |
 
-Dependencies point toward `core`. A lint rule and a separate TypeScript project (with no browser types) stop `core` importing anything outside itself, so the whole game can run in a unit test with no page and no renderer.
+Dependencies point toward `core`. A lint rule and a separate TypeScript project (with no browser types) stop `core` importing anything outside itself, so the whole game can run in a unit test with no page and no renderer. Lint rules hold `storage`, `render` and `audio` to the imports in the table too. Every preference kept between games, the sound and music switches among them, goes through `storage/`.
+
+`startGame` in `app/game.ts` is where a game is put together, each part after the parts it needs: the simulation, the view, the build tools, the saving, the interface, input, then the loop. Nothing built earlier reaches for a later part. The tools and the saves report back to whoever called them rather than to the interface: a plot of land clicked to buy comes back from `Tools.pointerUp` for the pointer to ask about, and a save that fails comes back as a warning for its caller to show. What the floor shows for the interface, the overlay chosen or the plots in the Land tab, comes from `HudState.floor`.
 
 ## One frame
 
@@ -21,7 +24,7 @@ Dependencies point toward `core`. A lint rule and a separate TypeScript project 
 
 1. Move the camera for any keys held down, or the mouse at the edge of the window if edge scrolling is on.
 2. `sim.tick(dt)` advances the game.
-3. `view.render(dt)` draws it.
+3. The floor overlay is redrawn if it is due, or the item in hand has a new preview, and `view.render(dt)` draws it all.
 4. `sim.drain()` hands over what happened (sounds, toasts, floating text) and the interface shows it.
 5. The interface redraws if something changed, or five times a second regardless.
 6. Autosave, every five minutes unless the player has chosen otherwise (`storage/controls.ts`). The game is also saved as it is left or hidden, whatever the choice.

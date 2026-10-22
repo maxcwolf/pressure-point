@@ -88,8 +88,8 @@ Before each commit, a second Husky hook runs ESLint and Prettier over the staged
 | `src/ui/lib/`         | The interface's decisions as small pure functions: what the menus offer, status text, chart sizing                                                              |
 | `src/ui/theme/`       | The palette, and the styles everything shares                                                                                                                   |
 | `src/ui/hud.ts`       | The interface's own state (open menu and dialog, messages), which the rest of the app talks to                                                                  |
-| `src/audio.ts`        | Synthesized sound effects and music, and the announcer's voice                                                                                                  |
-| `src/voice.ts`        | Which announcements have a recording, matched by their text                                                                                                     |
+| `src/audio/audio.ts`  | Synthesized sound effects and music, and the announcer's voice                                                                                                  |
+| `src/audio/voice.ts`  | Which announcements have a recording, matched by their text                                                                                                     |
 | `src/main.ts`         | The entry point                                                                                                                                                 |
 | `electron/main.ts`    | Desktop app: the main process, which opens the window and locks it down                                                                                         |
 | `electron/preload.ts` | Desktop app: hands the game the API in `electron/api.ts`, with the sandbox on                                                                                   |
@@ -100,7 +100,7 @@ Before each commit, a second Husky hook runs ESLint and Prettier over the staged
 
 Disciplines, modalities, conditions, courses and equipment are all defined in `src/core/data/`. Adding a discipline means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models/items/`. The simulation, menus and Settings pick it up from the data.
 
-To give an announcement a voice, put the recording in `brand/announcer/`, run `yarn announcer`, and add the clip to `VOICE_LINES` in `src/voice.ts` under the announcement's exact text. A test fails if that text is not one the game announces. The speaker effect (band, horn, drive and echoes) is in `scripts/pa-speaker.mjs`.
+To give an announcement a voice, put the recording in `brand/announcer/`, run `yarn announcer`, and add the clip to `VOICE_LINES` in `src/audio/voice.ts` under the announcement's exact text. A test fails if that text is not one the game announces. The speaker effect (band, horn, drive and echoes) is in `scripts/pa-speaker.mjs`.
 
 How the pieces fit together, and the conventions the code follows, are in [architecture.md](architecture.md).
 

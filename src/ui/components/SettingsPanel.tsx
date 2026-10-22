@@ -5,7 +5,7 @@ import './SettingsPanel.css';
 import { useEffect } from 'preact/hooks';
 
 import { setSharing, sharing, track } from '../../app/analytics';
-import type { Audio } from '../../audio';
+import type { Audio } from '../../audio/audio';
 import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
 import { disciplineHere } from '../../core/state/game';

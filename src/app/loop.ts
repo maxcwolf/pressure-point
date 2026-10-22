@@ -25,8 +25,8 @@ export interface LoopParts {
   save: () => void;
   /** Note what the game has earned for the campaign, such as a star's karma. */
   record: () => void;
-  /** Redraw the floor overlay, if one is showing. */
-  overlay: () => void;
+  /** Redraw the floor overlay if its regular redraw is `due`, or if what it shows has changed since. Called every frame. */
+  overlay: (due: boolean) => void;
 }
 
 /** Run the game until the page goes away: move the camera, advance the game, draw it, refresh the interface. */
@@ -54,6 +54,10 @@ export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, ove
     sim.tick(dt);
     // a payday the bank cannot cover, or a bankruptcy, stops the game until it is answered
     ui.openPending();
+    sinceOverlay += dt;
+    const overlayDue = sinceOverlay > OVERLAY_EVERY;
+    if (overlayDue) sinceOverlay = 0;
+    overlay(overlayDue);
     view.render(dt);
     const events = sim.drain();
     if (events.length) {
@@ -63,11 +67,6 @@ export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, ove
       refresh.request();
     }
     if (refresh.due(dt)) ui.update();
-    sinceOverlay += dt;
-    if (sinceOverlay > OVERLAY_EVERY) {
-      sinceOverlay = 0;
-      overlay();
-    }
     sinceSave += dt;
     // with autosaving set to only on leaving, the game is saved as it is left or hidden
     if (controls.autosave && sinceSave > controls.autosave) {

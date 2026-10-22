@@ -1,7 +1,7 @@
 // What the interface needs from the game it is showing.
 
 import type { Tools } from '../app/tools/tools';
-import type { Audio } from '../audio';
+import type { Audio } from '../audio/audio';
 import type { Sim } from '../core/sim/sim';
 import type { View } from '../render/view';
 
@@ -10,8 +10,8 @@ export interface GameHost {
   tools: Tools;
   view: View;
   audio: Audio;
-  /** Write the autosave now. */
-  save: () => void;
+  /** Write the autosave now. A warning for the player if it could not be written, the first time in a row it fails. */
+  save: () => string | null;
   /** Leave for a fresh game in the same center. */
   newGame: () => void;
   /** Leave for a saved game. */
