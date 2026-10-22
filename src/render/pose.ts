@@ -9,6 +9,7 @@ import { must } from '../core/util';
 import type { Act } from './acts';
 import { type CharRig, cureRig, type Joints } from './models/character';
 import { type Expression, showExpression } from './models/character-detail';
+import { buildHeld, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
 import { driftSmoke } from './models/sage';
 
@@ -134,6 +135,36 @@ const TELEPORT = 2;
 /** How far a body leans into a turn for each radian a second it turns, and how fast a turn it leans for at most. */
 const TURN_LEAN = { body: 0.02, head: 0.01, most: 8 } as const;
 
+/** How long a sip of a drink or a bite of a snack takes, hand up and down again, in seconds. */
+export const SIP = 2.4;
+
+/** How long it takes to stoop for a piece of litter, pick it up and straighten again, in seconds. */
+export const PICK = 1.8;
+
+/** The acts that go round in a cycle, and how long each takes. */
+const ACT_CYCLES: Partial<Record<Act, number>> = { drink: SIP, eat: SIP, litter: PICK };
+
+/** How far a cup or a snack tips back toward the mouth at the height of a sip or a bite, from upright, in radians. */
+const SIP_TIP = 0.65;
+
+/** What each act has in the right hand. */
+const HELD_FOR: Partial<Record<Act, HeldKind>> = { drink: 'cup', eat: 'snack', water: 'can', repair: 'wrench' };
+
+/** How far into an act's cycle someone is, from 0 to 1, each person at their own point in it. */
+const cycleOf = (act: Act, id: number, t: number) => {
+  const period = ACT_CYCLES[act] ?? 1;
+  return (((t / period + id * 0.37) % 1) + 1) % 1;
+};
+
+/** A moment at which someone is at the height of an act: the cup at their lips, or stooped for the litter. */
+export function actMoment(act: Act, id: number) {
+  const period = ACT_CYCLES[act];
+  return period ? period * ((((0.5 - id * 0.37) % 1) + 1) % 1) : 0;
+}
+
+/** How far a cycle at this point has someone into the act, from 0 to 1: all the way through its middle, eased at each end. */
+const peakOf = (u: number) => THREE.MathUtils.clamp((Math.sin(Math.PI * u) - 0.5) * 3, 0, 1);
+
 /**
  * Count the ground someone has covered since last frame toward their stride, and note where they are. Someone placed
  * somewhere new, arriving at the pavement's end or carried off by a machine, has not walked there.
@@ -174,6 +205,8 @@ export interface Cues {
  */
 export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cues) {
   const { style, door } = cues;
+  // an act is done standing at the item: on the way there, they walk
+  const act = c.pose === 'stand' ? cues.act : undefined;
   rig.group.position.set(c.x, c.h, c.y);
   rig.group.rotation.y = c.facing;
   // the stride follows the ground covered, not the clock, so the feet plant where they land whatever the game's speed
@@ -298,6 +331,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     bodyY = 0.16;
     bodyZ = -0.6 * rig.scale;
     armOut = 0.5;
+  } else if (act) {
+    const a = actPose(act, c, t);
+    ({ armL, armR, armOut, lean, headX, side, bodyY } = a);
+    if (a.legs !== undefined) legL = legR = a.legs;
   } else if (style === 'qigong') {
     // lifting the sky: both arms rise slowly out and overhead, then float back down, knees softening as they fall
     const rise = (1 - Math.cos(t * 0.9)) / 2;
@@ -491,6 +528,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     // arms held stiff, flexed or frozen by a symptom show it, whatever else
     armsFree: visual !== 'stiff' && visual !== 'flex' && visual !== 'frost' && visual !== 'bluescreen',
     rightHolds: visual === 'mallet' || visual === 'leash',
+    act,
     idle: idleAct(c.id, t - rig.idleSince),
     mood: moodOf(c),
     toDoor: door ? wrap(Math.atan2(door.x - c.x, door.y - c.y) - c.facing) : 0,
@@ -509,6 +547,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   armL += life.armL;
   armR += life.armR;
   armOut += life.armOut;
+  if (act) actJoints(life, act, c, t, armL, armR);
+  // what is held is kept at a tilt of its own, whatever the forearm holding it is doing
+  const held = act && !doing.rightHolds ? HELD_FOR[act] : undefined;
+  if (held || rig.held) holdFor(rig, held, heldTilt(act, c, t) - (armR + elbowFor(armR) + life.elbowR));
   const k = Math.min(1, dt * 14);
   const b = rig.body;
   b.rotation.x += (bodyRX - b.rotation.x) * k;
@@ -659,6 +701,8 @@ interface Doing {
   armsFree: boolean;
   /** Their right hand holds what shows their symptom, so only the left arm is free. */
   rightHolds: boolean;
+  /** What they are doing at the item they are at, which poses them alone. */
+  act: Act | undefined;
   /** What they are doing to pass the time, with nothing to do. */
   idle: ReturnType<typeof idleAct>;
   mood: Mood;
@@ -806,6 +850,8 @@ function liveliness(c: Char, t: number, phase: number, doing: Doing): Life {
   life.lean = breath * 0.012;
   life.bodyY = breath * 0.004;
   life.headX = -breath * 0.012;
+  // an act poses the whole body, and only breathes
+  if (doing.act) return life;
   if (c.busy && c.pose === 'stand' && style !== 'qigong') {
     const f = (style && RHYTHM[style]) ?? 7.5;
     // gentle treatments barely move the body; brisk ones rock it
@@ -862,6 +908,124 @@ function liveliness(c: Char, t: number, phase: number, doing: Doing): Life {
     life.kneeR += 0.3 * Math.sin(t * 3.2 + Math.PI) * a;
   }
   return life;
+}
+
+/** How someone doing an act holds their body and arms: turns in radians, shifts in meters. */
+interface ActPose {
+  armL: number;
+  armR: number;
+  armOut: number;
+  lean: number;
+  headX: number;
+  side: number;
+  bodyY: number;
+  /** Both thighs swung forward, for a crouch. */
+  legs?: number;
+}
+
+/** The body and arms of someone doing an act, at a moment. */
+function actPose(act: Act, c: Char, t: number): ActPose {
+  const p: ActPose = { armL: 0, armR: 0, armOut: 0.06, lean: 0, headX: 0, side: 0, bodyY: 0 };
+  const u = peakOf(cycleOf(act, c.id, t));
+  if (act === 'checkin') {
+    // forearms level on the keyboard, head up to the guest with a nod now and then
+    p.armL = p.armR = -0.4;
+    p.headX = 0.05 + Math.max(0, Math.sin(t * 1.4 + c.id)) * 0.14;
+  } else if (act === 'drink' || act === 'eat') {
+    // the right hand up to the mouth and down again, the left hanging
+    p.armR = -0.7 + (-1.85 + 0.7) * u;
+    p.armL = 0.04;
+    p.headX = -0.12 * u + (act === 'eat' ? Math.sin(t * 9) * 0.02 * u : 0);
+  } else if (act === 'play') {
+    // both hands forward on the controls, swaying with the game
+    p.armL = p.armR = -1.15;
+    p.lean = 0.15;
+    p.headX = 0.2;
+    p.side = Math.sin(t * 2.6 + c.id) * 0.06;
+  } else if (act === 'shop') {
+    // one hand on the counter, the other pointing at something on the shelf
+    p.armR = -0.95;
+    p.armL = -2.0;
+  } else if (act === 'litter') {
+    // a stoop to the floor, knees giving and the right hand reaching straight down for the litter, the left out
+    // behind for balance; then straight again, the right arm forward for the toss into the sack
+    p.lean = 1.15 * u;
+    p.legs = -0.55 * u;
+    p.bodyY = -0.05 * u;
+    p.armR = -0.6 - 0.55 * u;
+    p.armL = -0.6 * u;
+  } else if (act === 'water') {
+    // the can held out over the plant
+    p.armR = -0.9;
+    p.lean = 0.15;
+    p.headX = 0.15;
+  } else {
+    // crouched on the heels, working at something low down, the other hand steadying on the knee
+    p.legs = -1.2;
+    p.bodyY = -0.18;
+    p.lean = 0.45;
+    p.headX = 0.25;
+    p.armR = -0.75;
+    p.armL = -0.3;
+  }
+  return p;
+}
+
+/** The elbows, wrists, knees and head of someone doing an act, on top of the arms as posed. */
+function actJoints(life: Life, act: Act, c: Char, t: number, armL: number, armR: number) {
+  const u = peakOf(cycleOf(act, c.id, t));
+  if (act === 'checkin') {
+    // the fingers going
+    life.elbowL += bendTo(armL, -1.15 + Math.sin(t * 11 + c.id) * 0.05, 1);
+    life.elbowR += bendTo(armR, -1.15 + Math.sin(t * 11 + c.id + 1.6) * 0.05, 1);
+    life.bendL = life.bendR = 0.3;
+  } else if (act === 'drink' || act === 'eat') {
+    // the forearm folding up and in, so the hand comes to the middle of the face
+    life.elbowR += bendTo(armR, -0.6 + (-1.05 + 0.6) * u, 1);
+    life.bendR = 0.85 * u;
+  } else if (act === 'play') {
+    // quick alternate jabs at the buttons
+    life.elbowL += bendTo(armL, -1.4 + Math.max(0, Math.sin(t * 10 + c.id)) * 0.18, 1);
+    life.elbowR += bendTo(armR, -1.4 + Math.max(0, Math.sin(t * 10 + c.id + Math.PI)) * 0.18, 1);
+  } else if (act === 'shop') {
+    life.elbowR += bendTo(armR, -1.2, 1);
+    life.elbowL += bendTo(armL, -0.2, 1);
+    life.armInL = -0.45;
+    // a look at the shelf, and back
+    life.headYaw = 0.5 * Math.max(0, Math.sin(t * 0.8 + c.id));
+  } else if (act === 'litter') {
+    life.kneeL = life.kneeR = 0.9 * u;
+    life.elbowR += bendTo(armR, -0.1, u);
+    life.elbowL += bendTo(armL, -0.1, u);
+  } else if (act === 'repair') {
+    life.kneeL = life.kneeR = 1.85;
+    life.elbowR += bendTo(armR, -0.6, 1);
+    life.elbowL += bendTo(armL, -0.9, 1);
+    // a twist of the wrench every half second
+    life.bendR = 0.2 + Math.sin(t * 4 + c.id) * 0.35;
+  }
+}
+
+/**
+ * How far forward from upright what someone holds for an act is tipped: a cup or a snack tipping back toward the mouth
+ * as it comes up, and a watering can tipping forward and back as it pours.
+ */
+function heldTilt(act: Act | undefined, c: Char, t: number) {
+  if (act === 'drink' || act === 'eat') return -SIP_TIP * peakOf(cycleOf(act, c.id, t));
+  if (act === 'water') return 0.3 + Math.sin(t * 1.2) * 0.25;
+  return 0;
+}
+
+/**
+ * Show what someone holds in their right hand for what they are doing, making it the first time, and nothing else.
+ * Anything but a wrench, which is held as a fist holds it, is turned in the hand by `turn` to keep its tilt.
+ */
+function holdFor(rig: CharRig, kind: HeldKind | undefined, turn: number) {
+  if (kind && !rig.held?.[kind]) (rig.held ??= {})[kind] = buildHeld(rig.joints.foreR, kind);
+  if (!rig.held) return;
+  for (const [k, o] of Object.entries(rig.held)) o.visible = k === kind;
+  const o = kind && kind !== 'wrench' ? rig.held[kind] : undefined;
+  if (o) o.rotation.x = turn;
 }
 
 /** What to add to a turn as posed to take it to another, by an amount from 0 to 1. */

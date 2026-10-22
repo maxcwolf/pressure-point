@@ -6,9 +6,10 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { ITEMS, POOR_CONDITION } from '../../src/core/data';
 import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
-import { actOf } from '../../src/render/acts';
+import { type Act, actOf } from '../../src/render/acts';
 import { buildCharacter, type CharRig } from '../../src/render/models/character';
 import {
+  actMoment,
   expressionOf,
   hasNothingToDo,
   IDLE,
@@ -18,6 +19,7 @@ import {
   moodOf,
   PATIENCE_SIGNS,
   poseChar,
+  SIP,
   stepOn,
   STRIDE,
   treadmill,
@@ -280,5 +282,68 @@ describe('what someone is doing at an item', () => {
     for (const kind of ['smudge', 'soul', 'ward', 'calm'] as const) expect(on(kind)).toBeUndefined();
     // on the way there, not yet
     expect(actOf({ ...st, state: 'toJob' as const, job: { kind: 'litter', id: 1 } })).toBeUndefined();
+  });
+});
+
+describe('doing what they are doing', () => {
+  /** Someone doing an act, posed at the height of it, or at a moment. */
+  function doing(act: Act, t = actMoment(act, 1)) {
+    const staff = act === 'checkin' || act === 'litter' || act === 'water' || act === 'repair';
+    const rig = buildCharacter(LAB_LOOK, staff ? 'caretaker' : undefined);
+    const c: Char = staff
+      ? { ...demoStaff(LAB_LOOK, 'caretaker'), busy: true }
+      : demoGuest(LAB_LOOK, 'stiff_neck' as never);
+    poseChar(rig, c, t, 1, { style: null, act });
+    rig.group.updateMatrixWorld(true);
+    return { rig, c };
+  }
+
+  /** Where a hand is above the floor. */
+  const handHeight = (rig: CharRig) => rig.joints.foreR.localToWorld(new THREE.Vector3(0, -0.17, 0)).y;
+
+  it('brings a cup up to the mouth for a sip, and down again', () => {
+    const { rig, c } = doing('drink');
+    expect(hand(rig, 'R').y).toBeGreaterThan(0.5);
+    expect(rig.held?.cup?.visible).toBe(true);
+    poseChar(rig, c, actMoment('drink', 1) + SIP / 2, 1, { style: null, act: 'drink' });
+    rig.group.updateMatrixWorld(true);
+    expect(hand(rig, 'R').y).toBeLessThan(0.3);
+    // and put away once they are done
+    poseChar(rig, c, 0, 1, { style: null });
+    expect(rig.held?.cup?.visible).toBe(false);
+  });
+
+  it('stoops to the floor for litter', () => {
+    const { rig } = doing('litter');
+    expect(handHeight(rig)).toBeLessThan(0.3);
+    expect(rig.torso.rotation.x).toBeGreaterThan(0.9);
+    // the feet stay on the floor
+    for (const shin of [rig.joints.shinL, rig.joints.shinR])
+      expect(Math.abs(shin.localToWorld(new THREE.Vector3(0, -0.3, 0)).y)).toBeLessThan(0.1);
+  });
+
+  it('crouches to mend something, wrench in hand, feet on the floor', () => {
+    const { rig } = doing('repair');
+    expect(handHeight(rig)).toBeLessThan(0.45);
+    expect(rig.held?.wrench?.visible).toBe(true);
+    for (const shin of [rig.joints.shinL, rig.joints.shinR])
+      expect(Math.abs(shin.localToWorld(new THREE.Vector3(0, -0.3, 0)).y)).toBeLessThan(0.1);
+  });
+
+  it('types at reception without rocking', () => {
+    const rig = buildCharacter(LAB_LOOK, 'receptionist');
+    const c = { ...demoStaff(LAB_LOOK, 'receptionist'), busy: true };
+    for (let t = 0; t <= 1; t += 0.05) {
+      poseChar(rig, c, t, 0.05, { style: null, act: 'checkin' });
+      expect(Math.abs(rig.torso.rotation.x)).toBeLessThan(0.03);
+    }
+    expect(rig.held).toBeUndefined();
+  });
+
+  it('only does it standing at the item, not on the way there', () => {
+    const rig = buildCharacter(LAB_LOOK);
+    const g = { ...demoGuest(LAB_LOOK, 'stiff_neck' as never), pose: 'walk' as const };
+    poseChar(rig, g, actMoment('drink', 1), 1, { style: null, act: 'drink' });
+    expect(rig.held).toBeUndefined();
   });
 });

@@ -32,6 +32,7 @@ import { newSeed, stream } from '../core/random';
 import type { BubbleId, Char, Guest, Look, Room, VisitorKind } from '../core/state/types';
 import { must } from '../core/util';
 import { accessPose, itemCenter } from '../core/world';
+import type { Act } from '../render/acts';
 import { wallMaterial } from '../render/decor-paint';
 import { applyGag, applyGuestGag } from '../render/gags/apply';
 import { gagFrame } from '../render/gags/beats';
@@ -54,7 +55,16 @@ import { buildPuddle } from '../render/models/puddle';
 import { LAMP_STATES, type LampState, pulseLamps, setLamp } from '../render/models/sign-plaque';
 import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
-import { type Door, type IdleAct, idleMoment, type Mood, PATIENCE_SIGNS, poseChar, treadmill } from '../render/pose';
+import {
+  actMoment,
+  type Door,
+  type IdleAct,
+  idleMoment,
+  type Mood,
+  PATIENCE_SIGNS,
+  poseChar,
+  treadmill,
+} from '../render/pose';
 import { BLUEPRINT, buildRoom } from '../render/rooms';
 import { H_TALL, WALL_T } from '../render/shared';
 import { SHOP_TURN } from '../render/storefront';
@@ -72,7 +82,8 @@ export interface Model {
   controls: Control[];
 }
 
-export type Group = 'Items' | 'Machines' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Moods' | 'Rooms' | 'Scenery';
+export type Group =
+  'Items' | 'Machines' | 'Guests' | 'Staff' | 'Visitors' | 'Seated' | 'Moods' | 'Acts' | 'Rooms' | 'Scenery';
 
 /** Something the lab can show. */
 export interface Specimen {
@@ -222,20 +233,40 @@ const IDLE_ACTS: readonly (readonly [IdleAct, string])[] = [
 /** Where the lab's front door is, off to one side of the stage, for a fed-up guest to turn toward. */
 const LAB_DOOR: Door = { x: 4, y: 1 };
 
+/** What a guest can be doing at an item, and what the lab calls each. */
+const GUEST_ACTS: readonly Option[] = [
+  ['drink', 'Having a drink'],
+  ['eat', 'Having a snack'],
+  ['play', 'Playing a game'],
+  ['shop', 'Shopping'],
+];
+
+/** What a member of staff can be doing at an item, and what the lab calls each. */
+const STAFF_ACTS: readonly Option[] = [
+  ['checkin', 'Checking someone in'],
+  ['litter', 'Picking up litter'],
+  ['water', 'Watering a plant'],
+  ['repair', 'Mending something'],
+  ['drink', 'Having a drink'],
+];
+
 /** How a person on show is posed, kept between rebuilds. */
 interface PersonState {
   look: Look;
   pose: Pose;
   bubble: BubbleId | '';
+  /** What they are doing at an item, standing, if anything. */
+  act: Act | '';
 }
 
-/** The settings every person has: their pose, a speech bubble and a new look. */
-function personControls(st: PersonState, home = LAB_LOOK): Control[] {
+/** The settings every person has: their pose, a speech bubble, what they are doing, and a new look. */
+function personControls(st: PersonState, home = LAB_LOOK, acts: readonly Option[] = []): Control[] {
   // someone set apart by their hair keeps it whatever else changes
   const keep = home === LAB_LOOK ? {} : { hairStyle: home.hairStyle, hair: home.hair };
   return [
     choice('Pose', st, 'pose', POSES),
     choice('Bubble', st, 'bubble', BUBBLES),
+    ...(acts.length ? [choice('Doing', st, 'act', [['', 'Nothing'], ...acts])] : []),
     button('Shuffle as a woman', () => (st.look = { ...randomLook(looks, 'female'), ...keep }), true),
     button('Shuffle as a man', () => (st.look = { ...randomLook(looks, 'male'), ...keep }), true),
     button('Reset look', () => (st.look = { ...home }), true),
@@ -263,7 +294,7 @@ function posePerson(rig: CharRig, c: Char, st: PersonState, t: number, dt: numbe
   c.bubble = st.bubble;
   c.bubbleT = st.bubble ? 1 : 0;
   if (c.pose === 'walk') walkOnTheSpot(rig, t, WALK_PACE);
-  poseChar(rig, c, t, dt, { style, door: LAB_DOOR });
+  poseChar(rig, c, t, dt, { style, door: LAB_DOOR, act: st.act || undefined });
 }
 
 /** Set a guest waiting with their patience showing a mood, or being seen to and content. */
@@ -278,6 +309,7 @@ function guestSpecimen(def: ConditionDef): Specimen {
     look: { ...LAB_LOOK },
     pose: 'stand',
     bubble: '',
+    act: '',
     healed: false,
     stressed: false,
     mood: 'content',
@@ -297,7 +329,7 @@ function guestSpecimen(def: ConditionDef): Specimen {
       return {
         root: rig.group,
         controls: [
-          ...personControls(st),
+          ...personControls(st, LAB_LOOK, GUEST_ACTS),
           choice('Waiting', st, 'mood', MOODS),
           toggle('In poor condition', st, 'poorly'),
           toggle('Healed', st, 'healed', true),
@@ -493,6 +525,7 @@ function staffSpecimen(role: Role, named?: Named): Specimen {
     look: { ...home },
     pose: 'stand',
     bubble: '',
+    act: '',
     busy: false,
     style: '',
     smudging: false,
@@ -501,7 +534,7 @@ function staffSpecimen(role: Role, named?: Named): Specimen {
   const discipline = ROLES[role].discipline;
   const styles = MODALITY_ORDER.filter((m) => discipline && MODALITIES[m].discipline === discipline);
   const controls: Control[] = [
-    ...personControls(st, home),
+    ...personControls(st, home, STAFF_ACTS),
     toggle('Working', st, 'busy'),
     choice('With nothing to do', st, 'idle', [['', 'As in the game'], ...IDLE_ACTS]),
   ];
@@ -648,9 +681,86 @@ function idleSpecimen(act: IdleAct, label: string): Specimen {
   };
 }
 
+/** Every act, and what the lab calls it. */
+const ACTS: readonly (readonly [Act, string])[] = [
+  ['checkin', 'A receptionist checking a guest in'],
+  ['drink', 'A guest having a drink'],
+  ['eat', 'A guest having a snack'],
+  ['play', 'A guest playing a game'],
+  ['shop', 'A guest shopping'],
+  ['litter', 'A Caretaker picking up litter'],
+  ['water', 'A Caretaker watering a plant'],
+  ['repair', 'A Caretaker mending something'],
+];
+
+/** Who does an act in the lab: a receptionist checking in, a Caretaker on a chore, or else a guest. */
+const actor = (act: Act): Role | undefined =>
+  act === 'checkin'
+    ? 'receptionist'
+    : act === 'litter' || act === 'water' || act === 'repair'
+      ? 'caretaker'
+      : undefined;
+
+/**
+ * Someone doing an act, caught at the height of it: a receptionist at a reception desk with a guest at it, or a
+ * Caretaker or a guest on their own.
+ */
+function actSpecimen(act: Act, label: string): Specimen {
+  const role = actor(act);
+  const desk = act === 'checkin';
+  return {
+    id: `act:${act}`,
+    group: 'Acts',
+    name: label,
+    footprint: desk ? [ITEMS.reception_desk.w, ITEMS.reception_desk.h] : [1, 1],
+    /** Build them, and the desk and the guest at it for checking in. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK, role);
+      const c: Char = role
+        ? { ...demoStaff(LAB_LOOK, role), busy: true }
+        : demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
+      const root = new THREE.Group();
+      root.add(rig.group);
+      let guest: { rig: CharRig; c: Guest } | null = null;
+      if (desk) {
+        const placed = { type: 'reception_desk' as const, x: 0, y: 0, rot: 0 };
+        const [cx, cy] = itemCenter(placed);
+        /** Stand someone at an access spot of the desk. */
+        const stand = (who: Char, i: number) => {
+          const at = accessPose(placed, i);
+          Object.assign(who, { x: at.x - cx, y: at.y - cy, facing: at.face, pose: at.pose, h: at.h });
+        };
+        stand(
+          c,
+          ITEMS.reception_desk.access.findIndex((a) => a.role === 'staff'),
+        );
+        const g = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
+        // the guest has a different face to the receptionist, so the two are told apart
+        g.id = 2;
+        stand(
+          g,
+          ITEMS.reception_desk.access.findIndex((a) => a.role === 'guest'),
+        );
+        guest = { rig: buildCharacter({ ...LAB_LOOK, hairStyle: HAIR.short, sex: 'male', top: 0xe9c46a }), c: g };
+        root.add(buildItem('reception_desk', {}), guest.rig.group);
+      }
+      const at = actMoment(act, c.id);
+      return {
+        root,
+        controls: [],
+        /** Keep them at the height of the act. */
+        animate(t, dt) {
+          poseChar(rig, c, t + at, dt, { style: null, act });
+          if (guest) poseChar(guest.rig, guest.c, t, dt, { style: null });
+        },
+      };
+    },
+  };
+}
+
 /** A visitor dressed for the part: a VIP in a dark suit, or the inspector with a clipboard. */
 function visitorSpecimen(visit: VisitorKind): Specimen {
-  const st: PersonState = { look: { ...LAB_LOOK }, pose: 'stand', bubble: '' };
+  const st: PersonState = { look: { ...LAB_LOOK }, pose: 'stand', bubble: '', act: '' };
   return {
     id: `visitor:${visit}`,
     group: 'Visitors',
@@ -915,6 +1025,7 @@ export const CATALOG: readonly Specimen[] = [
   ...FACES.map(faceSpecimen),
   ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
   runawaySpecimen(),
+  ...ACTS.map(([act, label]) => actSpecimen(act, label)),
   doorSpecimen(),
   ...SCENERY,
 ];

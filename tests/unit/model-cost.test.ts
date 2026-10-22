@@ -69,7 +69,7 @@ async function costs() {
   // a seated person is an item and a person shown together, and a mood a person shown again feeling otherwise, each
   // counted on its own already, and a machine playing its gag is the machine and a guest, each counted on its own as well
   /** Whether a group's models are counted here, rather than as the parts they are made of. */
-  const shown = (g: Group) => g !== 'Seated' && g !== 'Moods' && g !== 'Machines';
+  const shown = (g: Group) => g !== 'Seated' && g !== 'Moods' && g !== 'Acts' && g !== 'Machines';
   return CATALOG.filter((sp) => shown(sp.group)).map((sp: Specimen) => ({
     id: sp.id,
     group: sp.group,
@@ -90,6 +90,7 @@ describe('the cost of drawing each model', () => {
       Visitors: 35,
       Seated: 0,
       Moods: 0,
+      Acts: 0,
       Rooms: 12,
       Scenery: 20,
     };

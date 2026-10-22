@@ -22,6 +22,7 @@ import {
   KNEE,
 } from './character-detail';
 import { machineSymptom } from './character-machines';
+import type { HeldKind } from './held';
 import { cached, capsule, cyl, ico, joined, mat, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
 
@@ -51,6 +52,8 @@ export interface CharRig {
   sage?: THREE.Object3D;
   sageTip?: THREE.Object3D;
   smoke?: THREE.Group;
+  /** What they hold in their right hand while doing something, each made the first time it is held. */
+  held?: Partial<Record<HeldKind, THREE.Object3D>>;
   /** The shins and forearms, hinged at the knees and elbows. */
   joints: Joints;
   /** The mouth and brows, which change shape with how they feel. */
