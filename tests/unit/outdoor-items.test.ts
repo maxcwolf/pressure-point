@@ -231,6 +231,29 @@ describe('the Generator', () => {
     expect(gen.wear / standing).toBeCloseTo(ITEMS.generator.wear! / ITEMS.generator.dailyWear!);
   });
 
+  it('burns $150 of diesel a day it carries the center, under upkeep, and nothing standing by', () => {
+    const sim = freshSim();
+    const s = sim.s;
+    sim.placeItem('generator', BY_PAVEMENT.x, BY_PAVEMENT.y, 0);
+    const ctx = createContext(s);
+    const money = s.money;
+    const upkeep = s.ledger.upkeep;
+    wearByTheDay(ctx);
+    expect(s.money, 'standing by').toBe(money);
+    s.mishap = { ...newMishap(s.day, 'power'), started: true };
+    drainEvents(ctx);
+    wearByTheDay(ctx);
+    expect(ITEMS.generator.dailyCost).toBe(150);
+    expect(s.money).toBe(money - 150);
+    expect(s.ledger.upkeep).toBe(upkeep + 150);
+    // seen on the lawn
+    expect(drainEvents(ctx)).toContainEqual(expect.objectContaining({ type: 'float', text: '-$150', kind: 'bad' }));
+    // prepared for, it never kicks in
+    s.mishap.prepared = true;
+    wearByTheDay(ctx);
+    expect(s.money).toBe(money - 150);
+  });
+
   it('lets the power go if it breaks down partway through', () => {
     const sim = freshSim();
     const radiator = sim.placeItem('radiator', 10, 12, 0)!;

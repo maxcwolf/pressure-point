@@ -34,7 +34,10 @@ function Line({ name, amount, cost = false }: { name: string; amount: number; co
 
 /** One month's income and costs. */
 function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
+  const { sim } = useGame();
   const net = netOf(ledger);
+  // a generator's diesel goes under the machines' upkeep
+  const upkeep = sim.s.items.some((it) => it.type === 'generator') ? 'Machines and the Generator' : 'Machine upkeep';
   return (
     <div class="ledger">
       <h4>{title}</h4>
@@ -48,7 +51,7 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
       <Line name="Bonuses and prizes" amount={ledger.bonus} />
       <Line name="Salaries" amount={ledger.salaries} cost />
       <Line name="Building" amount={ledger.building} cost />
-      {ledger.upkeep > 0 && <Line name="Machine upkeep" amount={ledger.upkeep} cost />}
+      {ledger.upkeep > 0 && <Line name={upkeep} amount={ledger.upkeep} cost />}
       <Line name="Training" amount={ledger.training} cost />
       <Line name="Marketing" amount={ledger.marketing} cost />
       <Line name="Loan interest" amount={ledger.interest} cost />

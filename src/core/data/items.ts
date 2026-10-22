@@ -759,7 +759,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     type: 'generator',
     name: 'Generator',
     icon: 'item-generator',
-    desc: "A diesel generator for the grounds. While it stands and works, power cuts are somebody else's problem. Far too loud for indoors: the outer walls keep most of the racket out. A Caretaker services it.",
+    desc: "A diesel generator for the grounds. While it stands and works, power cuts are somebody else's problem. Far too loud for indoors: the outer walls keep most of the racket out. A Caretaker services it. It costs $150 a day it runs.",
     cost: 2800,
     w: 2,
     h: 1,
@@ -771,6 +771,8 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     // a little each day from its weekly test runs, and a lot for each day it carries the center through a power cut
     dailyWear: 1,
     wear: 15,
+    // what a day carrying the center through a cut costs in diesel
+    dailyCost: 150,
   },
   recliner: {
     type: 'recliner',
