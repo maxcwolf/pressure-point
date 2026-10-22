@@ -15,7 +15,7 @@ import { regularOf } from '../../../core/sim/regulars';
 import { guestFee } from '../../../core/sim/stations';
 import type { Guest } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
-import { calmingNote } from '../../lib/calming';
+import { calmingNote, NOBODY_FREE, sendLabel, sendTitle } from '../../lib/calming';
 import { chanceText, percent, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
 import { regularTag } from '../../lib/regulars';
@@ -61,21 +61,17 @@ function CalmRunner({ guest: g }: { guest: Guest }) {
         <IconText id="bubble-relieved">{calmingNote(calmer.name, calmer.state === 'doingJob')}</IconText>
       </p>
     );
-  const can = sim.canCalm(g);
+  const sent = sim.canCalm(g) ? sim.calmerFor(g) : undefined;
   return (
     <Button
       class="go calm"
-      locked={!can}
-      title={
-        can
-          ? 'The nearest member of staff who is free goes after them and talks them down.'
-          : 'Nobody is free to go: everyone is with a guest, or away.'
-      }
+      locked={!sent}
+      title={sent ? sendTitle(sent.name) : NOBODY_FREE}
       onPress={() => {
         if (!sim.calm(g.id)) audio.play('error');
       }}
     >
-      <IconText id="bubble-relieved">Calm them down</IconText>
+      <IconText id="bubble-relieved">{sent ? `${sendLabel(sent.name)} to calm them down` : 'Calm them down'}</IconText>
     </Button>
   );
 }

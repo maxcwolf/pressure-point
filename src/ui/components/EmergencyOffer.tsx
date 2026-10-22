@@ -13,11 +13,16 @@ import { IconText } from './common/Icon';
 import { HouseCallOffer } from './HouseCallOffer';
 import { MishapNotice } from './MishapNotice';
 import { OutbreakOffer } from './OutbreakOffer';
+import { RunnerNotice } from './RunnerNotice';
 
-/** The offers waiting on an answer, an emergency and a stress outbreak over a house call, and any mishap, in one column. */
+/**
+ * The offers waiting on an answer, an emergency and a stress outbreak over a house call, and any mishap, in one column,
+ * under anyone running round on a really bad trip.
+ */
 export function EmergencyOffer() {
   return (
     <div id="offer">
+      <RunnerNotice />
       <Emergency />
       <OutbreakOffer />
       <HouseCallOffer />

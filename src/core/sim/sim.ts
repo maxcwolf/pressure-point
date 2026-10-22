@@ -129,7 +129,7 @@ import { checkOpening, checkStars, hasRoom, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
 import { monthSoFar } from './records';
 import { type RivalCourse, rivalCourse, updateRival } from './rival';
-import { calmerOf, canCalm } from './runaways';
+import { calmerFor, calmerOf, canCalm } from './runaways';
 import { playingFor, servedAt, sessionState, stationStaff } from './sessions';
 import { askSoul, canRetrieve } from './souls';
 import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
@@ -745,6 +745,10 @@ export class Sim {
   /** The member of staff on the way to calm down a guest on a really bad trip, or with them, if anyone is. */
   calmerOf(g: Guest): Staff | undefined {
     return calmerOf(this.ctx, g);
+  }
+  /** Who would be sent to calm down a guest on a really bad trip, if someone were sent now. */
+  calmerFor(g: Guest): Staff | undefined {
+    return calmerFor(this.ctx, g);
   }
 
   // ---- Building --------------------------------------------------------------
