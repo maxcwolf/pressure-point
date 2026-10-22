@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **The machines in their own clothes.** Each treatment machine has an icon, a room sign and a treatment icon of its own, its model is polished to match the rest of the furniture, and an upgraded machine shows its stars on a brass plate, as the tables do.
+
 ## v0.31.0
 
 ### A center that tells you where it stands
