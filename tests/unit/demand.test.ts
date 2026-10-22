@@ -221,6 +221,7 @@ describe('how many guests arrive', () => {
       idle: 0,
       consults: 1,
       fed: 3,
+      machines: [],
     });
     expect(capacityArrivals(capacity(c.ctx))).toBeCloseTo(1.24, 5);
     // a room with nobody to work in it brings nobody
@@ -326,10 +327,12 @@ describe('the pace, in words', () => {
   const pace = (over: Partial<ArrivalPace> = {}): ArrivalPace => ({
     base: 9,
     parts: { center: 1, time: 1.9, grade: 1.1, rival: 1, mishap: 1 },
-    capacity: { stations: 6, by: { massage: 4, acupuncture: 2 }, away: 0, idle: 0, consults: 2, fed: 6 },
+    capacity: { stations: 6, by: { massage: 4, acupuncture: 2 }, away: 0, idle: 0, consults: 2, fed: 6, machines: [] },
     staffed: 1.6,
     lines: 0.92,
     difficulty: 1,
+    tables: 28,
+    machines: [],
     seconds: 180 / 28,
     perMonth: 28,
     ...over,
@@ -346,7 +349,7 @@ describe('the pace, in words', () => {
     expect(
       paceNote(
         pace({
-          capacity: { stations: 1, by: { massage: 1 }, away: 0, idle: 0, consults: 1, fed: 1 },
+          capacity: { stations: 1, by: { massage: 1 }, away: 0, idle: 0, consults: 1, fed: 1, machines: [] },
           staffed: 1,
           parts: plain,
           lines: 1,
@@ -362,7 +365,7 @@ describe('the pace, in words', () => {
     expect(
       paceNote(
         pace({
-          capacity: { stations: 7, by: {}, away: 0, idle: 0, consults: 1, fed: 4 },
+          capacity: { stations: 7, by: {}, away: 0, idle: 0, consults: 1, fed: 4, machines: [] },
           staffed: 1.36,
           parts: plain,
           lines: 1,
@@ -378,7 +381,7 @@ describe('the pace, in words', () => {
 
   it('names the stations that draw nobody, and why', () => {
     expect(capacityNote(pace().capacity)).toBeNull();
-    expect(capacityNote({ stations: 7, by: {}, away: 1, idle: 2, consults: 1, fed: 4 })).toBe(
+    expect(capacityNote({ stations: 7, by: {}, away: 1, idle: 2, consults: 1, fed: 4, machines: [] })).toBe(
       '3 staffed treatment stations draw nobody more: every guest is seen in a Consultation Room first, and each keeps only 4 stations in guests. Another would let them draw, and let more in at once. 2 treatment stations have nobody on the payroll to work them: a practitioner for each would bring guests more often and let more in at once. 1 treatment station stands idle while its practitioner is away on a course or a house call, and draws nobody until they are back.',
     );
   });

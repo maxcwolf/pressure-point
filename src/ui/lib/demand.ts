@@ -6,13 +6,15 @@ import {
   CONSULT_FEEDS,
   DISCIPLINES,
   GUEST_CAP,
+  ITEMS,
+  MACHINE_DRAW,
   modalityLabel,
   ROLES,
   ROOMS,
 } from '../../core/data';
-import type { Discipline } from '../../core/data/types';
-import type { Capacity, DisciplineDemand } from '../../core/sim/demand';
-import type { ArrivalPace } from '../../core/sim/guests';
+import type { Discipline, ItemType } from '../../core/data/types';
+import type { Capacity, DisciplineDemand, MachineDemand } from '../../core/sim/demand';
+import { type ArrivalPace, fedMachines } from '../../core/sim/guests';
 import type { IconLine } from './icon-line';
 
 /** A multiplier as it reads, to two places at most: "×1.4", "×0.75", "×1". */
@@ -32,6 +34,14 @@ export function pullNote(pull: number, d: Discipline): IconLine {
     };
   const why = mats ? 'its prestige, its peace and its mats' : 'its prestige and its peace';
   return { icon, text: `Draws ${pull.toFixed(1)}× the usual guests for ${what(d)}, for ${why}.` };
+}
+
+/** A line on how strongly a signature machine's finished room draws guests for the machine's own ailments. */
+export function machinePullNote(pull: number, machine: ItemType): IconLine {
+  const { name, icon } = ITEMS[machine];
+  if (pull < 1.05)
+    return { icon, text: `A prestigious, peaceful room draws more guests for the ${name}’s own ailments.` };
+  return { icon, text: `Draws ${pull.toFixed(1)}× the usual guests for the ${name}, for its prestige and its peace.` };
 }
 
 /** How widely a discipline is wanted before anything the player does, in a word. */
@@ -131,7 +141,38 @@ export function paceNote(p: ArrivalPace, reputation: number, center: CenterDef):
   by(p.difficulty, 'for the difficulty');
   const away = Math.round((1 - p.lines) * 100);
   if (away >= 1) parts.push(`less ${away}% kept away by long lines`);
-  return `About ${Math.round(p.perMonth)} new guests a month: ${parts.join(', ')}.`;
+  const drawing = p.machines.filter((m) => m.perMonth > 0);
+  if (!drawing.length) return `About ${Math.round(p.perMonth)} new guests a month: ${parts.join(', ')}.`;
+  const tables = `${Math.round(p.tables)} come for the treatment stations: ${parts.join(', ')}.`;
+  const machines = drawing.map((m) => machineNote(m.demand, m.perMonth));
+  return [`About ${Math.round(p.perMonth)} new guests a month.`, tables, ...machines].join(' ');
+}
+
+/** Who runs a machine, as a phrase: "a Massage Therapist". */
+const operator = (m: MachineDemand) => {
+  const d = ITEMS[m.machine].station?.discipline ?? 'massage';
+  return ROLES[DISCIPLINES[d].role].name;
+};
+
+/**
+ * How many come for a signature machine's own ailments, and why: "6 come for the Kneadmaster 9000’s own ailments:
+ * 45% of the center’s pace for the one with a Massage Therapist of its own to run it, ×1.4 for the Kneadmaster Suite."
+ */
+export function machineNote(m: MachineDemand, perMonth: number): string {
+  const name = ITEMS[m.machine].name;
+  const share = `${Math.round(MACHINE_DRAW * 100)}% of the center’s pace`;
+  const each = m.fed === 1 ? 'the one' : `each of the ${m.fed}`;
+  const parts = [`${share} for ${each} with a ${operator(m)} of its own to run it`];
+  /** A factor, if it moves the draw at all. */
+  const by = (f: number, why: string) => {
+    if (Math.abs(f - 1) > 0.005) parts.push(`${times(f)} ${why}`);
+  };
+  by(m.room.pull, m.room.room ? `for the ${ROOMS[m.room.room.type].name}` : 'for its room');
+  by(m.training, 'while nobody is trained to run it');
+  by(m.flavour, 'for the local favourites');
+  const away = Math.round((1 - m.line.factor) * 100);
+  if (away >= 1) parts.push(`less ${away}% kept away by its line`);
+  return `${Math.round(perMonth)} come for the ${name}’s own ailments: ${parts.join(', ')}.`;
 }
 
 /**
@@ -141,18 +182,36 @@ export function paceNote(p: ArrivalPace, reputation: number, center: CenterDef):
 export function capacityNote(c: Capacity): string | null {
   const parts: string[] = [];
   const unfed = c.stations - c.fed;
+  const machinesFirst = fedMachines(c) ? ', a signature machine first' : '';
   if (unfed)
     parts.push(
-      `${count(unfed, 'staffed treatment station draws', 'staffed treatment stations draw')} nobody more: every guest is seen in a Consultation Room first, and each keeps only ${CONSULT_FEEDS} stations in guests. Another would let ${unfed === 1 ? 'it' : 'them'} draw, and let more in at once`,
+      `${count(unfed, 'staffed treatment station draws', 'staffed treatment stations draw')} nobody more: every guest is seen in a Consultation Room first, and each keeps only ${CONSULT_FEEDS} stations in guests${machinesFirst}. Another would let ${unfed === 1 ? 'it' : 'them'} draw, and let more in at once`,
     );
+  const machineFirst = c.machines.some((m) => m.paid > 0)
+    ? ', since a signature machine takes its practitioner first'
+    : '';
   if (c.idle)
     parts.push(
-      `${count(c.idle, 'treatment station has', 'treatment stations have')} nobody on the payroll to work ${c.idle === 1 ? 'it' : 'them'}: a practitioner for each would bring guests more often and let more in at once`,
+      `${count(c.idle, 'treatment station has', 'treatment stations have')} nobody on the payroll to work ${c.idle === 1 ? 'it' : 'them'}${machineFirst}: a practitioner for each would bring guests more often and let more in at once`,
     );
   if (c.away)
     parts.push(
       `${count(c.away, 'treatment station stands', 'treatment stations stand')} idle while ${c.away === 1 ? 'its practitioner is' : 'their practitioners are'} away on a course or a house call, and draw${c.away === 1 ? 's' : ''} nobody until they are back`,
     );
+  for (const m of c.machines) {
+    const name = ITEMS[m.machine].name;
+    const role = ROLES[DISCIPLINES[ITEMS[m.machine].station?.discipline ?? 'massage'].role].name;
+    if (m.paid < m.standing)
+      parts.push(
+        `The ${name} draws nobody for its own ailments: nobody on the payroll can run it. A ${role} would bring its guests, and let more in at once`,
+      );
+    else if (m.staffed < m.standing)
+      parts.push(`The ${name} draws nobody while its ${role} is away on a course or a house call`);
+    else if (m.fed < m.staffed)
+      parts.push(
+        `The ${name} draws nobody for its own ailments: every guest is seen in a Consultation Room first, and yours have no time to spare for its guests. Another would let it draw`,
+      );
+  }
   return parts.length ? `${parts.join('. ')}.` : null;
 }
 
@@ -184,7 +243,9 @@ export function limitNote(l: Limit, c: Capacity): string {
     c.consults === 1
       ? `${GUEST_CAP.consult} for the staffed Consultation Room`
       : `${GUEST_CAP.consult} for each of ${count(c.consults, 'staffed Consultation Room')}`;
-  const made = `${GUEST_CAP.base}, and ${GUEST_CAP.station} for each of ${fedWord(c)} and ${rooms}`;
+  const machines = fedMachines(c);
+  const run = machines ? `, ${count(machines, 'signature machine')} with someone to run it` : '';
+  const made = `${GUEST_CAP.base}, and ${GUEST_CAP.station} for each of ${fedWord(c)}${run} and ${rooms}`;
   const own = l.own !== null && l.own < l.building ? ` Your own limit is ${l.own}.` : '';
   const away = l.away
     ? ` ${count(l.away, 'guest')} found it full this month and went elsewhere, with their fees: ${moreRoom(c)}${own ? ', or raise your own limit' : ''}.`

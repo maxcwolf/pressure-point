@@ -37,7 +37,17 @@ import { newChar } from './chars';
 import { accessIndex, claim, findAccess, release } from './claims';
 import { missClass, missToast } from './classes';
 import type { SimContext } from './context';
-import { type Capacity, capacity, capacityArrivals, chooseCondition, demand, lineArrivals } from './demand';
+import {
+  type Capacity,
+  capacity,
+  capacityArrivals,
+  chooseCondition,
+  chooseMachineCondition,
+  demand,
+  lineArrivals,
+  type MachineDemand,
+  machineDemand,
+} from './demand';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
@@ -87,6 +97,9 @@ export interface ArrivalPace {
   lines: number;
   /** The difficulty's own multiplier. */
   difficulty: number;
+  /** The guests a month that come for the treatment stations, and for each signature machine's own ailments. */
+  tables: number;
+  machines: { demand: MachineDemand; perMonth: number }[];
   /** The seconds between one new guest and the next, on average, and the guests a month that comes to. */
   seconds: number;
   perMonth: number;
@@ -98,7 +111,8 @@ const MONTH = DAY_SECONDS * DAYS_PER_MONTH;
 /**
  * How often guests arrive now: every `30 − 0.2 × reputation` seconds, more often for each staffed treatment station
  * past the first, and as the center's twist, its season or rush hour and its grade say, less often while the rival
- * draws some away or long lines put new guests off, and as the difficulty sets.
+ * draws some away or long lines put new guests off, and as the difficulty sets. Each signature machine with someone to
+ * run it draws guests of its own on top, at a share of the same pace.
  */
 export function arrivalPace(ctx: SimContext): ArrivalPace {
   const s = ctx.s;
@@ -107,22 +121,41 @@ export function arrivalPace(ctx: SimContext): ArrivalPace {
   const staffed = capacityArrivals(cap);
   const lines = lineArrivals(demand(ctx));
   const difficulty = tuning(s, 'arrivals');
-  const seconds =
-    (30 - s.reputation * 0.2) /
-    (parts.center * parts.time * parts.grade * parts.rival * parts.mishap) /
-    staffed /
-    lines /
-    difficulty;
+  const pace = parts.center * parts.time * parts.grade * parts.rival * parts.mishap;
+  const between = (30 - s.reputation * 0.2) / pace / staffed / lines / difficulty;
+  const base = MONTH / (30 - s.reputation * 0.2);
+  const tables = MONTH / between;
+  const machines = machineDemand(ctx, cap).map((d) => ({ demand: d, perMonth: base * pace * difficulty * d.pull }));
+  const perMonth = machines.reduce((sum, m) => sum + m.perMonth, tables);
   return {
-    base: MONTH / (30 - s.reputation * 0.2),
+    base,
     parts,
     capacity: cap,
     staffed,
     lines,
     difficulty,
-    seconds,
-    perMonth: MONTH / seconds,
+    tables,
+    machines,
+    // worked out as it was before the machines while none draws anyone, to the last digit, so seeded games keep
+    seconds: perMonth > tables ? MONTH / perMonth : between,
+    perMonth,
   };
+}
+
+/**
+ * Who comes through the door next, given the pace: a guest for one of the signature machines' own ailments, by their
+ * share of the pace, or undefined for one come for the tables. Rolls only while a machine draws anyone, so a center
+ * without one rolls as it always has.
+ */
+function machineArrival(ctx: SimContext, pace: ArrivalPace): ConditionId | undefined {
+  const own = pace.machines.reduce((sum, m) => sum + m.perMonth, 0);
+  if (own <= 0) return undefined;
+  if (random(ctx.s) * pace.perMonth < pace.tables) return undefined;
+  return chooseMachineCondition(
+    pace.machines.map((m) => m.demand),
+    random(ctx.s),
+    random(ctx.s),
+  );
 }
 
 /**
@@ -138,19 +171,24 @@ export function admitGuests(ctx: SimContext, dt: number) {
   // a regular due back takes the place of someone new; a guest the building, or the player, has no room for goes
   // elsewhere, and is counted, so the cost of a full center can be seen
   if (guestsCounted(s) < intakeLimit(ctx)) {
-    const regular = dueRegular(s);
-    spawnGuest(ctx, undefined, false, 0, regular);
+    const forMachine = machineArrival(ctx, arrivalPace(ctx));
+    if (forMachine) spawnGuest(ctx, forMachine);
+    else spawnGuest(ctx, undefined, false, 0, dueRegular(s));
   } else countTurnedAway(ctx);
   s.spawnT = arrivalPace(ctx).seconds * rnd(s, 0.7, 1.3);
 }
 
 /**
  * How many guests the building lets in at once, from what it can treat: a few, and more for each staffed treatment
- * station and each staffed Consultation Room. Tables nobody works, and rooms still blueprints, add nothing.
+ * station, each signature machine with someone to run it, and each staffed Consultation Room. Tables nobody works,
+ * and rooms still blueprints, add nothing.
  */
 export function guestCap(ctx: SimContext, cap: Capacity = capacity(ctx)): number {
-  return GUEST_CAP.base + GUEST_CAP.station * cap.fed + GUEST_CAP.consult * cap.consults;
+  return GUEST_CAP.base + GUEST_CAP.station * (cap.fed + fedMachines(cap)) + GUEST_CAP.consult * cap.consults;
 }
+
+/** The signature machines with a practitioner of their own at work to run them, that the consultations keep in guests. */
+export const fedMachines = (cap: Pick<Capacity, 'machines'>) => cap.machines.reduce((sum, m) => sum + m.fed, 0);
 
 /** The fewest guests at once the player can limit the center to. */
 export const INTAKE_CAP_MIN = 4;

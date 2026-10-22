@@ -34,6 +34,10 @@ export function treatsHere(it: Pick<Item, 'type'>, mod: ModalityDef): boolean {
   return !mod.machine;
 }
 
+/** Whether a machine is a signature machine: the one place its own techniques are done, drawing guests of its own. */
+export const signatureMachine = (type: ItemType) =>
+  !!ITEMS[type].machine?.performs.some((m) => MODALITIES[m].machine === type);
+
 /** The kind of room a technique is done in: its machine's own room, or its discipline's. */
 export function roomForModality(m: Modality): RoomType {
   const machine = MODALITIES[m].machine;

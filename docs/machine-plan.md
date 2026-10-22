@@ -24,6 +24,7 @@ Where it differs from the plan below:
   - The Great Alphorn healed one guest in two years at High Pines, and took that center from $28,500 a month to a small loss.
   - The bot never built an Aura Wash. The Orchard Estate goes bankrupt on day 93 with or without machines, and on `main` too.
 - **Measured again with demand that follows capacity** (balance log 37): a machine room now draws guests as a staffed station. Over seeds 1 to 6 the Kneadmaster heals 69 guests and pays back on its own books on every seed, by day 510 to 880, and the Pin Press on one seed of three. Each center still makes less with a machine than without one ($7.0k a month on the seeds that built one), mostly because the bot knocks down a Massage Suite to fit it and runs the machine with that suite's therapist.
+- **Measured with demand of its own** (balance log 39): a signature machine's two ailments now come only for it, at 35% of the center's pace for each one with a practitioner of its own (who runs it before the tables), times its room's pull as a finest room's, and seen in a Consultation Room first. Games without a machine are unchanged. On a plot given by hand for it, every machine built pays back on its own books, 51 to 292 days after it was built; the Kneadmaster heals 5.7 guests a month and the Pin Press 6.6, about a Massage Suite, and the slower three 3 to 4. A center with one makes about what the same plot full of tables makes (median −$0.1k a month over 18 games), more at Willow Lane and High Pines and less at The Orchard. On today's lots the bot still fits one in 1 game of 30.
 - **The lab** has a Machines group: each machine with a guest inside, and controls for the stage, how far through the session, the fake failure, smoking and down.
 
 ## What comes first
@@ -167,7 +168,7 @@ All of it lives in `src/render/gags/`:
 - **Noise and heat while running:** `sessionHeard` (`core/sim/noise.ts`) becomes "a group session playing, or this machine running"; heat goes in `core/sim/warmth.ts`.
 - **Mishaps:** `stoppedByMishap` (`core/world.ts`) reads the plug.
 - **Which room does a technique:** `roomForModality` replaces `DISCIPLINES[d].room` in stations, the advisor, guests and the UI's status and demand.
-- **Arrivals:** nothing special. Once demand grows with every staffed treatment room (see "What comes first"), a machine room brings its share like any other room.
+- **Arrivals:** as built, a signature machine draws its own ailments on top of the tables' guests (`machineDemand`, `core/sim/demand.ts`), rather than counting as a staffed station: a station's share of the general pace brought it no more guests than the table it stood in place of (balance log 38 and 39).
 
 ## Menus and inspectors
 

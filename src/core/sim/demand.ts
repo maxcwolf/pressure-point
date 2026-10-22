@@ -15,18 +15,22 @@ import {
   FOLLOWING,
   followingPull,
   ITEMS,
+  type ItemType,
   LINE_PUT_OFF,
+  MACHINE_DRAW,
+  MACHINE_LINE,
+  machineRoom,
   MODALITIES,
   NOISE_NOTICE,
   NOISE_PEACEFUL,
   ROOM_PULL,
 } from '../data';
-import type { ConditionDef, ConditionId, Discipline, Modality, Role } from '../data/types';
+import type { ConditionDef, ConditionId, Discipline, Modality, ModalityDef, Role, RoomType } from '../data/types';
 import type { GameState, Guest, Item, Room, Staff } from '../state/types';
 import { at, clamp } from '../util';
 import { prestige } from './ambience';
 import type { SimContext } from './context';
-import { practicable } from './machines';
+import { practicable, signatureMachine } from './machines';
 import { campaignBoost } from './marketing';
 import { itemNoise } from './noise';
 import type { VisitEnd } from './records';
@@ -76,19 +80,18 @@ export function roomPull(ctx: SimContext, room: Room): number {
   return Math.min(ROOM_PULL.max, pull);
 }
 
-/** The finished rooms a discipline is practised in. */
-const roomsFor = (ctx: SimContext, d: Discipline) =>
-  ctx.s.rooms.filter((r) => r.done && r.type === DISCIPLINES[d].room);
-
-/** How strongly a discipline's finest room draws guests to it, and which room that is. */
-export function bestRoom(ctx: SimContext, d: Discipline): { room?: Room; pull: number } {
+/** The finest of some finished rooms of a kind, and how strongly it draws guests: 1 with none. */
+function finest(ctx: SimContext, type: RoomType): { room?: Room; pull: number } {
   let best: { room?: Room; pull: number } = { pull: 1 };
-  for (const room of roomsFor(ctx, d)) {
+  for (const room of ctx.s.rooms.filter((r) => r.done && r.type === type)) {
     const pull = roomPull(ctx, room);
     if (!best.room || pull > best.pull) best = { room, pull };
   }
   return best;
 }
+
+/** How strongly a discipline's finest room draws guests to it, and which room that is. */
+export const bestRoom = (ctx: SimContext, d: Discipline) => finest(ctx, DISCIPLINES[d].room);
 
 /** What draws guests to one discipline, and the share of new guests it gets. */
 export interface DisciplineDemand {
@@ -123,26 +126,39 @@ export interface Line {
 }
 
 /** How a line of so many guests for so many places puts new guests off, as a multiplier on its pull. */
-export function lineFactor(waiting: number, places: number): number {
-  const over = waiting / Math.max(1, places) - LINE_PUT_OFF.easy;
-  return 1 - clamp(over * LINE_PUT_OFF.each, 0, LINE_PUT_OFF.most);
+export function lineFactor(
+  waiting: number,
+  places: number,
+  rule: { easy: number; each: number; most: number } = LINE_PUT_OFF,
+): number {
+  const over = waiting / Math.max(1, places) - rule.easy;
+  return 1 - clamp(over * rule.each, 0, rule.most);
 }
 
-/** The guests waiting to be treated in a discipline, and the places its practitioners on the payroll can see them at. */
-function lineFor(ctx: SimContext, d: Discipline): Line {
-  const waiting = ctx.s.guests.filter(
+/** How many guests are waiting to be treated with a technique that passes a test. */
+const waitingFor = (ctx: SimContext, test: (m: ModalityDef) => boolean) =>
+  ctx.s.guests.filter(
     (g) =>
       g.goal === 'treat' &&
       (g.state === 'waiting' || g.state === 'toWait') &&
-      MODALITIES[conditionOf(g.condition).modality].discipline === d,
+      test(MODALITIES[conditionOf(g.condition).modality]),
   ).length;
+
+/**
+ * The guests waiting to be treated at a discipline's tables, and the places its practitioners on the payroll can see
+ * them at: those running a signature machine are at the machine, and its own line is the machine's.
+ */
+function lineFor(ctx: SimContext, d: Discipline, cap: Capacity): Line {
+  const waiting = waitingFor(ctx, (m) => m.discipline === d && !m.machine);
   const staff = ctx.s.staff.filter((st) => st.role === DISCIPLINES[d].role && st.state !== 'leaving').length;
-  const places = staff * (d === 'sound' ? matsUsable(ctx) : 1);
+  const machines = cap.machines.filter((m) => ITEMS[m.machine].station?.discipline === d);
+  const running = machines.reduce((sum, m) => sum + m.paid, 0);
+  const places = Math.max(0, staff - running) * (d === 'sound' ? matsUsable(ctx) : 1);
   return { waiting, places, factor: lineFactor(waiting, places) };
 }
 
 /** A condition guests can come with now, and how often against the rest of its discipline. */
-interface Weighted {
+export interface Weighted {
   condition: ConditionDef;
   weight: number;
   trained: boolean;
@@ -157,20 +173,33 @@ export function sentFor(ctx: SimContext, m: Modality): boolean {
   return unlocked(ctx, m) && offered(ctx, MODALITIES[m].discipline);
 }
 
-/** The conditions guests could come with now, each with its weight within its discipline. */
-function conditionWeights(ctx: SimContext): Weighted[] {
+/** Some conditions guests could come with now, each with its weight against the others. */
+function weighed(ctx: SimContext, conditions: readonly ConditionDef[]): Weighted[] {
   const staff = ctx.s.staff.filter((x) => x.state !== 'leaving');
   const local = centerOf(ctx.s).conditions ?? {};
-  return CONDITIONS.filter((c) => conditionHere(c, ctx.s.center) && sentFor(ctx, c.modality)).map((c) => {
-    const trained = staff.some((t) => t.quals.includes(c.modality));
-    const weight = (trained ? 1 : UNTRAINED_PULL) * (local[c.id] ?? 1) * campaignBoost(ctx.s, c.id, CONDITION_BOOST);
-    return { condition: c, weight, trained };
-  });
+  return conditions
+    .filter((c) => conditionHere(c, ctx.s.center) && sentFor(ctx, c.modality))
+    .map((c) => {
+      const trained = staff.some((t) => t.quals.includes(c.modality));
+      const weight = (trained ? 1 : UNTRAINED_PULL) * (local[c.id] ?? 1) * campaignBoost(ctx.s, c.id, CONDITION_BOOST);
+      return { condition: c, weight, trained };
+    });
 }
+
+/**
+ * The conditions guests could come with now for the tables, each with its weight within its discipline. A signature
+ * machine's own ailments are not among them: those guests come for the machine, as `machineDemand` says.
+ */
+const conditionWeights = (ctx: SimContext) =>
+  weighed(
+    ctx,
+    CONDITIONS.filter((c) => !MODALITIES[c.modality].machine),
+  );
 
 /** Every discipline the center offers now, what draws guests to it and its share of them, in the usual order. */
 export function demand(ctx: SimContext): DisciplineDemand[] {
   const weights = conditionWeights(ctx);
+  const cap = capacity(ctx);
   const rows = DISCIPLINE_ORDER.flatMap((d): DisciplineDemand[] => {
     const mine = weights.filter((w) => MODALITIES[w.condition.modality].discipline === d);
     if (!mine.length) return [];
@@ -181,7 +210,7 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
     const weight = mine.reduce((sum, w) => sum + w.weight, 0) / mine.length;
     const training = mine.reduce((sum, w) => sum + (w.trained ? 1 : UNTRAINED_PULL), 0) / mine.length;
     const untrained = [...new Set(mine.filter((w) => !w.trained).map((w) => w.condition.modality))];
-    const line = lineFor(ctx, d);
+    const line = lineFor(ctx, d, cap);
     return [
       {
         discipline: d,
@@ -207,8 +236,8 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
 
 /**
  * What the center can treat at once: its staffed treatment stations, in all and by discipline; those standing idle
- * while their practitioner is away on a course or a house call, and those with nobody on the payroll to work them; and
- * its staffed consultations.
+ * while their practitioner is away on a course or a house call, and those with nobody on the payroll to work them; its
+ * staffed consultations; and its signature machines, which draw guests of their own and are not among the stations.
  */
 export interface Capacity {
   stations: number;
@@ -217,6 +246,20 @@ export interface Capacity {
   idle: number;
   consults: number;
   /** The staffed stations the consultations can keep in guests, which are what draw them and let them in. */
+  fed: number;
+  machines: MachineCapacity[];
+}
+
+/**
+ * A kind of signature machine the center has working: how many stand, how many have a practitioner of their own on the
+ * payroll, who runs it before working a table, and how many of those are at work today.
+ */
+export interface MachineCapacity {
+  machine: ItemType;
+  standing: number;
+  paid: number;
+  staffed: number;
+  /** Those of them the Consultation Rooms keep in guests, which are what draw them and let them in. */
   fed: number;
 }
 
@@ -235,23 +278,50 @@ const atWork = (st: Staff) => !['leaving', 'toTrain', 'training', 'toCall', 'awa
 export function capacity(ctx: SimContext): Capacity {
   /** Staff in a role who are staying, and those of them at work today. */
   const staffIn = (role: Role) => ctx.s.staff.filter((st) => st.role === role && st.state !== 'leaving');
-  /** Working stations of a kind, of a discipline if one is given. */
+  /** Working stations of a kind, of a discipline if one is given, leaving out signature machines. */
   const built = (goal: 'treat' | 'consult', d?: Discipline) =>
     ctx.s.items.filter((it) => {
       const st = ITEMS[it.type].station;
-      return st?.goal === goal && (!d || st.discipline === d) && working(ctx, it);
+      return st?.goal === goal && (!d || st.discipline === d) && working(ctx, it) && !signatureMachine(it.type);
     }).length;
   const by: Partial<Record<Discipline, number>> = {};
+  const machines: MachineCapacity[] = [];
   let stations = 0;
   let away = 0;
   let idle = 0;
   for (const d of DISCIPLINE_ORDER) {
     const tables = built('treat', d);
-    if (!tables) continue;
+    // signature machines that can take a guest now: not broken, overloaded or stopped by a mishap
+    const own = ctx.s.items.filter(
+      (it) => ITEMS[it.type].station?.discipline === d && signatureMachine(it.type) && ctx.world.usable(it),
+    );
+    if (!tables && !own.length) continue;
     const staff = staffIn(DISCIPLINES[d].role);
+    const working = staff.filter(atWork).length;
+    // each machine takes a practitioner of its own before the tables do, so building one without hiring for it
+    // leaves a table standing instead
+    let freePaid = staff.length;
+    let freeAtWork = working;
+    for (const it of own) {
+      let m = machines.find((x) => x.machine === it.type);
+      if (!m) {
+        m = { machine: it.type, standing: 0, paid: 0, staffed: 0, fed: 0 };
+        machines.push(m);
+      }
+      m.standing++;
+      if (freePaid > 0) {
+        m.paid++;
+        freePaid--;
+      }
+      if (freeAtWork > 0) {
+        m.staffed++;
+        freeAtWork--;
+      }
+    }
+    if (!tables) continue;
     const each = d === 'sound' ? matsUsable(ctx) : 1;
-    const paid = Math.min(tables, staff.length * each);
-    const n = Math.min(tables, staff.filter(atWork).length * each);
+    const paid = Math.min(tables, freePaid * each);
+    const n = Math.min(tables, freeAtWork * each);
     if (n) by[d] = n;
     stations += n;
     away += paid - n;
@@ -259,7 +329,14 @@ export function capacity(ctx: SimContext): Capacity {
   }
   // a Consultant's course or call shows in the line for consultations, not in the stations the rooms keep in guests
   const consults = Math.min(built('consult'), staffIn('consultant').length);
-  return { stations, by, away, idle, consults, fed: Math.min(stations, CONSULT_FEEDS * consults) };
+  // every guest is seen in a Consultation Room first, a machine's as much as a table's: the machines are kept in
+  // guests first, and the tables with what is left
+  let feeds = CONSULT_FEEDS * consults;
+  for (const m of machines) {
+    m.fed = Math.min(m.staffed, feeds);
+    feeds -= m.fed;
+  }
+  return { stations, by, away, idle, consults, fed: Math.min(stations, feeds), machines };
 }
 
 /**
@@ -268,6 +345,82 @@ export function capacity(ctx: SimContext): Capacity {
  */
 export const capacityArrivals = (c: Pick<Capacity, 'fed'>) =>
   Math.min(CAPACITY_ARRIVALS.most, 1 + CAPACITY_ARRIVALS.each * Math.max(0, c.fed - 1));
+
+/** What draws guests to a signature machine for its own ailments, and how many against the center's pace. */
+export interface MachineDemand {
+  machine: ItemType;
+  /** How many stand, how many of them a practitioner of its own is at work to run, and how many of those draw. */
+  standing: number;
+  staffed: number;
+  fed: number;
+  /** Its finest room's pull, and the room. */
+  room: { room?: Room; pull: number };
+  /** Its ailments guests can come with now, each with its weight, and how many someone on the payroll is trained for. */
+  conditions: Weighted[];
+  trained: number;
+  /** How its training holds it back, and how the center's local favourites and any campaign lift it, as multipliers. */
+  training: number;
+  flavour: number;
+  /** Its own line, and how it puts new guests off. */
+  line: Line;
+  /** Its draw: the share of the guests a month the center draws at its reputation and pace that come for it. */
+  pull: number;
+}
+
+/**
+ * The guests each signature machine draws for its own ailments, on top of those the tables draw: `MACHINE_DRAW` of
+ * the center's pace for each one standing with a practitioner of its own at work to run it, times its finest room's
+ * pull, held back while nobody is trained to run it and by a line of its own, which puts guests off sooner than a
+ * discipline's. A machine that is down, or has
+ * nobody of its own to run it, draws nobody.
+ */
+export function machineDemand(ctx: SimContext, cap: Capacity = capacity(ctx)): MachineDemand[] {
+  return cap.machines.flatMap((m): MachineDemand[] => {
+    const performs = ITEMS[m.machine].machine?.performs ?? [];
+    const conditions = weighed(
+      ctx,
+      CONDITIONS.filter((c) => MODALITIES[c.modality].machine === m.machine && performs.includes(c.modality)),
+    );
+    if (!conditions.length) return [];
+    const room = finest(ctx, machineRoom(m.machine) ?? DISCIPLINES.massage.room);
+    const weight = conditions.reduce((sum, w) => sum + w.weight, 0) / conditions.length;
+    const training = conditions.reduce((sum, w) => sum + (w.trained ? 1 : UNTRAINED_PULL), 0) / conditions.length;
+    const waiting = waitingFor(ctx, (x) => x.machine === m.machine);
+    const line = { waiting, places: m.staffed, factor: lineFactor(waiting, m.staffed, MACHINE_LINE) };
+    return [
+      {
+        machine: m.machine,
+        standing: m.standing,
+        staffed: m.staffed,
+        fed: m.fed,
+        room,
+        conditions,
+        trained: conditions.filter((w) => w.trained).length,
+        training,
+        flavour: weight / training,
+        line,
+        pull: MACHINE_DRAW * m.fed * room.pull * weight * line.factor,
+      },
+    ];
+  });
+}
+
+/**
+ * The ailment a guest come for a machine has: a machine by its draw, then one of its ailments by its weight, from two
+ * rolls from 0 to 1. Undefined if no machine draws anyone.
+ */
+export function chooseMachineCondition(
+  rows: readonly MachineDemand[],
+  rollMachine: number,
+  rollCondition: number,
+): ConditionId | undefined {
+  const row = pickWeighted(
+    rows.filter((r) => r.pull > 0),
+    (r) => r.pull,
+    rollMachine,
+  );
+  return row && pickWeighted(row.conditions, (w) => w.weight, rollCondition)?.condition.id;
+}
 
 /**
  * How often guests arrive against how often they would with no line putting anyone off, from 1 down: those put off a
