@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **A moment for every cure.** The chicken, the knot or the cloud shrinks away in a puff of sparkles and the guest hops once, grinning.
 - **More faces in the crowd.** People come slight, average or stocky, a quarter wear glasses, shoes come in four colors, and men have two more haircuts.
 - **Eyes that blink and shut.** People blink, rest with their eyes closed on a table or a Recliner, lie face down for a massage or needles, and look frightened on a bad trip or in an outbreak.
 - **People who do what they are doing.** Feet plant where they land at every speed, a receptionist types and nods, guests drink, snack, shop and play, and Caretakers stoop for litter, water the plants and crouch with a wrench.

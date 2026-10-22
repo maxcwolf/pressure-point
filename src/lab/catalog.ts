@@ -42,7 +42,7 @@ import { NOISE_CUE, usedNoise } from '../render/item-cues';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
 import { buildBeach } from '../render/models/beach';
-import { buildCharacter, type CharRig } from '../render/models/character';
+import { buildCharacter, type CharRig, cureRig } from '../render/models/character';
 import { type Expression, showEyes } from '../render/models/character-detail';
 import { buildSite } from '../render/models/fence';
 import { buildForSaleBoard } from '../render/models/for-sale';
@@ -57,6 +57,7 @@ import { buildStorefront } from '../render/models/storefront';
 import { buildForest } from '../render/models/tree';
 import {
   actMoment,
+  CURE,
   type Door,
   type IdleAct,
   idleMoment,
@@ -334,6 +335,8 @@ function guestSpecimen(def: ConditionDef): Specimen {
           choice('Waiting', st, 'mood', MOODS),
           toggle('In poor condition', st, 'poorly'),
           toggle('Healed', st, 'healed', true),
+          // healed as the game heals them, so the symptom goes in a puff; Healed builds them afresh, already well
+          button('Cure now', () => (c.outcome = 'healed')),
           toggle('Stressed', st, 'stressed'),
           toggle('Eyes shut', st, 'shut'),
         ],
@@ -672,6 +675,32 @@ function moodSpecimen(mood: Mood, label: string, seated: boolean): Specimen {
       /** Pose them, turning toward the lab's door if fed up. */
       const animate = (t: number, dt: number) => poseChar(rig, c, t, dt, { style: null, door: LAB_DOOR });
       return { root, controls: [], animate };
+    },
+  };
+}
+
+/** A guest with a hen on their head, caught the moment they are healed, as it shrinks away in a puff of sparkles. */
+function curedSpecimen(): Specimen {
+  const condition = must(
+    CONDITIONS.find((d) => d.visual === 'chicken'),
+    'a condition with a hen',
+  );
+  return {
+    id: 'mood:cured',
+    group: 'Moods',
+    name: 'Healed, the symptom going in a puff',
+    footprint: [1, 1],
+    /** Build the guest, healed. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK, undefined, condition.visual);
+      const c = { ...demoGuest(LAB_LOOK, condition.id), outcome: 'healed' as const };
+      /** Hold them partway through the cure, two fifths of the way. */
+      const animate = (t: number, dt: number) => {
+        cureRig(rig, t - CURE * 0.4);
+        rig.curedAt = t - CURE * 0.4;
+        poseChar(rig, c, t, dt, { style: null });
+      };
+      return { root: rig.group, controls: [], animate };
     },
   };
 }
@@ -1105,6 +1134,7 @@ export const CATALOG: readonly Specimen[] = [
   ...FACES.map(faceSpecimen),
   ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
   runawaySpecimen(),
+  curedSpecimen(),
   ...ACTS.map(([act, label]) => actSpecimen(act, label)),
   ...BEDS.map(lyingSpecimen),
   doorSpecimen(),

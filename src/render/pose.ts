@@ -7,10 +7,12 @@ import { aboutToQuit } from '../core/sim/staffing';
 import type { BubbleId, Char } from '../core/state/types';
 import { must } from '../core/util';
 import type { Act, Lying } from './acts';
-import { type CharRig, cureRig, type Joints } from './models/character';
+import { buildBurst } from './models/burst';
+import { type CharRig, cureRig, endCure, type Joints } from './models/character';
 import { type Expression, showExpression, showEyes } from './models/character-detail';
 import { buildHeld, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
+import { mat } from './models/parts';
 import { driftSmoke } from './models/sage';
 
 /**
@@ -152,6 +154,40 @@ const ACT_CYCLES: Partial<Record<Act, number>> = { drink: SIP, eat: SIP, litter:
  */
 export const PRONE_TURN = -1.45;
 
+/** How long a healed guest's symptom takes to shrink away in a puff of sparkles, in seconds. */
+export const CURE = 0.8;
+
+/** How long the hop for joy as it goes lasts, in seconds. */
+const HOP = 0.5;
+
+/**
+ * Show a healed guest's symptom going, partway through: every prop shrinking away as it rises, a swollen head going
+ * down, the skin coming back at the half, and a ring of sparkles round the head bursting outward and turning. Once it
+ * has gone, put it away for good.
+ */
+function showCure(rig: CharRig, c: Char, t: number) {
+  const u = Math.max(0, (t - rig.curedAt) / CURE);
+  if (u >= 1) {
+    endCure(rig, c.look);
+    return;
+  }
+  rig.props.forEach((o, i) => {
+    const rest = rig.rest?.[i];
+    if (!rest) return;
+    o.scale.copy(rest.scale).multiplyScalar(Math.max(0.001, 1 - u));
+    o.position.y = rest.y + 0.25 * u;
+  });
+  if (rig.visual === 'bighead') {
+    const size = 1.45 - 0.45 * u;
+    rig.head.scale.set(size / rig.wide, size, size / rig.wide);
+  }
+  if (u > 0.5) rig.headMesh.material = mat(c.look.skin, 0.65);
+  rig.burst ??= buildBurst(rig.head);
+  rig.burst.visible = true;
+  rig.burst.scale.setScalar(0.3 + 1.5 * u);
+  rig.burst.rotation.y = u * 2.5;
+}
+
 /** How long a blink lasts, in seconds. */
 export const BLINK = 0.13;
 
@@ -238,10 +274,13 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   rig.group.rotation.y = c.facing;
   // the stride follows the ground covered, not the clock, so the feet plant where they land whatever the game's speed
   stepOn(rig, c.x, c.y);
-  const turning = dt > 0 && !Number.isNaN(rig.lastFacing) ? wrap(c.facing - rig.lastFacing) / dt : 0;
+  const first = Number.isNaN(rig.lastFacing);
+  const turning = dt > 0 && !first ? wrap(c.facing - rig.lastFacing) / dt : 0;
   rig.lastFacing = c.facing;
   const healed = c.kind === 'guest' && c.outcome === 'healed';
-  if (healed) cureRig(rig, c.look);
+  // healed while in sight, the symptom goes in a puff; anyone seen first already healed, as from a save, is simply well
+  if (healed) cureRig(rig, first ? t - 2 * CURE : t);
+  const curing = healed && !rig.cured ? Math.max(0, t - rig.curedAt) : NaN;
   showExpression(rig.face, expressionOf(c));
   // resting on their back, on a table, a mat or a Recliner, the eyes are shut; anyone else blinks now and then
   const asleep =
@@ -271,7 +310,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     armL = -sw * 0.85;
     armR = sw * 0.85;
     bodyY = Math.abs(Math.cos(phase)) * 0.04;
-    if (healed) bodyY += Math.abs(Math.sin(phase * 0.5)) * 0.07;
+    if (healed && rig.cured) bodyY += Math.abs(Math.sin(phase * 0.5)) * 0.07;
     // leaning into a corner, the head leading
     const turn = THREE.MathUtils.clamp(turning, -TURN_LEAN.most, TURN_LEAN.most);
     side -= turn * TURN_LEAN.body;
@@ -541,6 +580,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     lean += 0.25;
     headX -= 0.15;
   }
+  // a hop for joy as the symptom goes
+  if (curing < HOP && c.pose !== 'lie') bodyY += Math.sin((Math.PI * curing) / HOP) * 0.1;
   if (c.pose === 'lie') {
     lean = 0;
     headX = 0;
@@ -639,6 +680,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       p.visible = c.pose !== 'lie';
     });
   }
+
+  if (healed && !rig.cured) showCure(rig, c, t);
 
   if (rig.sage && rig.sageTip && rig.smoke) {
     rig.sage.visible = smudging;

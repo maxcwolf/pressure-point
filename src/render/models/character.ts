@@ -70,7 +70,14 @@ export interface CharRig {
   lastY: number;
   lastFacing: number;
   visual: Visual | undefined;
+  /** Whether their symptom has gone for good, once healed. */
   cured: boolean;
+  /** When they were healed, in the scene's seconds, or NaN before: their symptom goes in a puff for a moment after. */
+  curedAt: number;
+  /** How each symptom prop was built to stand, noted as the cure begins, to shrink it from and put it back as it was. */
+  rest?: { scale: THREE.Vector3; y: number }[];
+  /** A puff of sparkles round the head as the symptom goes, made the first time it is needed. */
+  burst?: THREE.Object3D;
   scale: number;
   /** How much wider and deeper than average their build makes them, which their head is spared. */
   wide: number;
@@ -222,6 +229,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     lastFacing: NaN,
     visual,
     cured: false,
+    curedAt: NaN,
     scale: look.scale,
     wide,
     bubbleKey: '',
@@ -665,13 +673,28 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   return rig;
 }
 
-/** Undo the visible symptoms once a guest has been healed. */
-export function cureRig(rig: CharRig, look: Look) {
-  if (rig.cured) return;
+/** Begin a healed guest's cure at a moment: their symptom then shrinks away over the next few frames (see `poseChar`). */
+export function cureRig(rig: CharRig, t: number) {
+  if (!Number.isNaN(rig.curedAt)) return;
+  rig.curedAt = t;
+  rig.rest = rig.props.map((o) => ({ scale: o.scale.clone(), y: o.position.y }));
+}
+
+/**
+ * Put a healed guest's symptom away for good, once it has gone: every prop hidden and put back as it was built, so a
+ * model built again is right, the head and skin as they were, and glasses back on in place of sunglasses.
+ */
+export function endCure(rig: CharRig, look: Look) {
   rig.cured = true;
-  for (const o of rig.props) o.visible = false;
-  // and the glasses back on, once the sunglasses are off
+  rig.props.forEach((o, i) => {
+    o.visible = false;
+    const rest = rig.rest?.[i];
+    if (!rest) return;
+    o.scale.copy(rest.scale);
+    o.position.y = rest.y;
+  });
   if (rig.glasses) rig.glasses.visible = true;
   rig.head.scale.set(1 / rig.wide, 1, 1 / rig.wide);
   rig.headMesh.material = mat(look.skin, 0.65);
+  if (rig.burst) rig.burst.visible = false;
 }

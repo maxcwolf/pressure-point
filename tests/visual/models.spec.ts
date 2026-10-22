@@ -52,8 +52,9 @@ const IDS = [
   ...['restless', 'impatient', 'fed-up'].flatMap((mood) => [`mood:${mood}`, `mood:${mood}-seated`]),
   ...FACES,
   ...['stretch', 'look', 'watch'].map((act) => `idle:${act}`),
-  // a guest on a really bad trip, running round
+  // a guest on a really bad trip, running round, and one healed, their symptom going in a puff
   'mood:runaway',
+  'mood:cured',
   // what people do at an item, a receptionist and a guest at a reception desk among them
   ...['checkin', 'drink', 'eat', 'play', 'shop', 'litter', 'water', 'repair'].map((act) => `act:${act}`),
   // a guest lying on everything that is not a machine: face down on the tables, on their back elsewhere

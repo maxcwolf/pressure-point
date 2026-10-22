@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { randomLook } from '../../src/core/people';
 import { stream } from '../../src/core/random';
 import { BATCHED, Crowd } from '../../src/render/crowd';
-import { buildCharacter, cureRig } from '../../src/render/models/character';
+import { buildCharacter, endCure } from '../../src/render/models/character';
 import { mat, put, sph } from '../../src/render/models/parts';
 
 /** A scene of this many people, standing in a row, gathered into batches. */
@@ -147,7 +147,7 @@ describe('people drawn in batches', () => {
   it('follows a change of material, such as a face back to its own color once healed', () => {
     const { scene, rigs, gather } = crowd(2);
     const { rig, look } = rigs[1]!;
-    cureRig(rig, look);
+    endCure(rig, look);
     gather();
     const skin = (rig.headMesh.material as THREE.MeshStandardMaterial).color;
     const m = new THREE.Matrix4();

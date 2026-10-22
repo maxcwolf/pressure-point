@@ -8,11 +8,12 @@ import { SHOES } from '../../src/core/people';
 import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
 import { type Act, actOf, lyingAt } from '../../src/render/acts';
-import { buildCharacter, type CharRig } from '../../src/render/models/character';
+import { buildCharacter, type CharRig, cureRig } from '../../src/render/models/character';
 import {
   actMoment,
   BLINK,
   blinkAt,
+  CURE,
   expressionOf,
   hasNothingToDo,
   IDLE,
@@ -476,5 +477,47 @@ describe('shoes', () => {
     expect((white[0]!.material as THREE.MeshStandardMaterial).color.getHex()).toBe(SHOES[3]);
     expect((brown[0]!.material as THREE.MeshStandardMaterial).color.getHex()).toBe(SHOES[0]);
     expect(white[0]!.geometry).toBe(brown[0]!.geometry);
+  });
+});
+
+describe('the moment of a cure', () => {
+  /** A guest with a hen on their head, seen before they are healed, and the same guest healed. */
+  function henned() {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'chicken');
+    const g = demoGuest(LAB_LOOK, 'stiff_neck' as never);
+    poseChar(rig, g, -1, 1, { style: null });
+    return { rig, healed: { ...g, outcome: 'healed' as const } };
+  }
+
+  it('shrinks the symptom away in a puff of sparkles, then puts it away', () => {
+    const { rig, healed } = henned();
+    const hen = rig.props[0]!;
+    const built = hen.scale.x;
+    cureRig(rig, 0);
+    poseChar(rig, healed, CURE / 2, 1, { style: null });
+    expect(hen.visible).toBe(true);
+    expect(hen.scale.x / built).toBeCloseTo(0.5);
+    expect(rig.burst?.visible).toBe(true);
+    poseChar(rig, healed, 1, 1, { style: null });
+    expect(hen.visible).toBe(false);
+    expect(hen.scale.x).toBe(built);
+    expect(rig.burst?.visible).toBe(false);
+    expect(rig.cured).toBe(true);
+  });
+
+  it('starts as they are healed in sight, with a hop', () => {
+    const { rig, healed } = henned();
+    poseChar(rig, healed, 5, 1, { style: null });
+    expect(rig.curedAt).toBe(5);
+    poseChar(rig, healed, 5.25, 1, { style: null });
+    expect(rig.body.position.y).toBeGreaterThan(0.08);
+  });
+
+  it('does not play for someone seen first already healed, as from a save', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'chicken');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'stiff_neck' as never), outcome: 'healed' }, 5, 1, { style: null });
+    expect(rig.cured).toBe(true);
+    expect(rig.props[0]!.visible).toBe(false);
+    expect(rig.burst).toBeUndefined();
   });
 });
