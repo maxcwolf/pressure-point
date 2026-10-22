@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { POOR_CONDITION } from '../../src/core/data';
 import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
+import { rattle } from '../../src/render/item-cues';
 import { buildCharacter, type CharRig } from '../../src/render/models/character';
 import {
   expressionOf,
@@ -17,6 +18,7 @@ import {
   moodOf,
   PATIENCE_SIGNS,
   poseChar,
+  rattleDip,
 } from '../../src/render/pose';
 
 /** A guest with nothing wrong with them to show, waiting with so much patience. */
@@ -136,6 +138,26 @@ describe('the patience a waiting guest shows', () => {
     const lying = { ...g, state: 'served', pose: 'lie' } as const;
     expect(turned(lying, 1.5)).toBe(turned(lying));
     expect(turned(demoStaff(LAB_LOOK, 'therapist'), -1.5)).toBeCloseTo(-0.6);
+  });
+});
+
+describe('the Gong of Last Resort, through the wall', () => {
+  it('dips the head of anyone in a rattled room on each strike, in step with the furniture, and less lying down', () => {
+    const g = waiting(100);
+    // find a moment in a strike, and one between
+    const ts = Array.from({ length: 400 }, (_, i) => i * 0.01);
+    const strike = ts.find((t) => rattle(t, g.id) > 0.015) ?? 0;
+    const still = ts.find((t) => rattle(t, g.id) === 0) ?? 0;
+    expect(rattleDip(g, strike)).toBeGreaterThan(0.06);
+    expect(rattleDip(g, still)).toBe(0);
+    expect(rattleDip({ ...g, pose: 'lie' }, strike)).toBeCloseTo(rattleDip(g, strike) / 3);
+    /** How far the head is bowed after posing them at a moment, rattled or not. */
+    const bowed = (rattled: boolean) => {
+      const rig = buildCharacter(LAB_LOOK);
+      poseChar(rig, g, strike, 1, null, undefined, { rattled });
+      return rig.head.rotation.x;
+    };
+    expect(bowed(true) - bowed(false)).toBeCloseTo(rattleDip(g, strike));
   });
 });
 

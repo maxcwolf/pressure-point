@@ -6,6 +6,7 @@ import { FREAK_RANGE, type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
 import type { BubbleId, Char } from '../core/state/types';
 import { must } from '../core/util';
+import { rattle, RATTLE_PEAK } from './item-cues';
 import { type CharRig, cureRig, type Joints } from './models/character';
 import { type Expression, showExpression } from './models/character-detail';
 import { iconTexture } from './models/icons';
@@ -133,7 +134,17 @@ export interface Around {
   runners?: readonly { id: number; x: number; y: number }[];
   /** Whether the litter a Caretaker is cleaning up is flood water, which they mop. */
   mopping?: boolean;
+  /** Whether the room they are in is rattled through the wall by the Gong of Last Resort, which they flinch at. */
+  rattled?: boolean;
 }
+
+/** How far the head dips at the height of each rattle from the Gong next door, and the share of that lying down. */
+const RATTLE_DIP = 0.12;
+const RATTLE_LYING = 1 / 3;
+
+/** How far someone's head dips this moment in a room the Gong rattles, in step with the furniture: none between strikes. */
+export const rattleDip = (c: Char, t: number) =>
+  ((RATTLE_DIP * Math.max(0, rattle(t, c.id))) / RATTLE_PEAK) * (c.pose === 'lie' ? RATTLE_LYING : 1);
 
 /** How near a runner comes for people to turn their heads to look, in tiles, and how far round they turn. */
 const RUNNER_LOOK = FREAK_RANGE + 1;
@@ -470,6 +481,8 @@ export function poseChar(
     side = 0;
     if (visual === 'flex') armOut = 0.5;
   }
+  // a strike of the Gong next door, felt through the wall
+  if (around.rattled) headX += rattleDip(c, t);
   // people move with life: weight shifting, follow-through, breathing and fidgets, unless too stiff to
   // only someone with their hands free (the inspector carries a clipboard) and no symptom to show fidgets with their
   // arms

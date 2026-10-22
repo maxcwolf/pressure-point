@@ -314,6 +314,8 @@ function animateLean(model: THREE.Object3D, c: CueCondition, t: number) {
   model.rotation.z = c.wear >= 100 ? BROKEN_LEAN : showsWear(c.wear) ? shudder(t, c.id, wearShown(c.wear)) : 0;
 }
 
+/** How far, in radians, something next door to a struck gong rocks at most, give or take its own build. */
+export const RATTLE_PEAK = 0.025;
 /** The stretch of each loop of a booster's gag, after the gong is struck, that the rooms next door rattle for. */
 const RATTLE_FROM = 0.18;
 const RATTLE_TO = 0.6;
@@ -326,7 +328,7 @@ export function rattle(t: number, id: number): number {
   const p = (((t / BOOST_LOOP) % 1) + 1) % 1;
   if (p < RATTLE_FROM || p > RATTLE_TO) return 0;
   const f = (p - RATTLE_FROM) / (RATTLE_TO - RATTLE_FROM);
-  return 0.025 * (0.7 + 0.6 * hash(id)) * Math.sin(f * Math.PI * 12 + id) * (1 - f);
+  return RATTLE_PEAK * (0.7 + 0.6 * hash(id)) * Math.sin(f * Math.PI * 12 + id) * (1 - f);
 }
 
 /**
