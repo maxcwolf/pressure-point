@@ -455,8 +455,9 @@ const TREAT_ROOM: Record<Discipline, RoomType> = {
 };
 
 /**
- * The size the bot builds each room at: roomy enough for a bit of decor. Floor past the smallest is paid for, so a
- * Restroom, a Training Room and a Posture Lab, which gain nothing from it, are built at their smallest.
+ * The size the bot builds each room at: roomy enough for a bit of decor. Floor past the smallest is paid for, and the
+ * bot pays it rather than build smaller: a smaller Restroom or Training Room moves where the rooms after it go, and on
+ * Willow Lane that walls off the one plot a second Massage Suite fits on.
  */
 const SIZE: Partial<Record<RoomType, [number, number]>> = {
   consult: [3, 4],
@@ -466,6 +467,9 @@ const SIZE: Partial<Record<RoomType, [number, number]>> = {
   sound: [4, 4],
   lodge: [4, 5],
   staffroom: [3, 4],
+  restroom: [3, 3],
+  training: [3, 4],
+  assess: [3, 3],
   recovery: [3, 4],
   qigong: [5, 5],
 };
