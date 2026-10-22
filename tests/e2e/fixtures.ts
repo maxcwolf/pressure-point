@@ -110,6 +110,9 @@ function installFinders() {
   const SIDES = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] } as const;
   /** Whether something hangs on a wall rather than standing on the floor. */
   const onWall = (type: string) => (pp().data.ITEMS as Record<string, { mount?: string }>)[type]?.mount === 'wall';
+  /** Whether something stands out of doors, on the grounds, rather than inside. */
+  const outdoors = (type: string) =>
+    (pp().data.ITEMS as Record<string, { where?: string }>)[type]?.where === 'outdoors';
 
   /** The room a wall click is about: the one being planned or edited, or the rectangle being given a door. */
   const currentRoom = (): { room?: Room; rect: Rect; type: string } => {
@@ -193,6 +196,9 @@ function installFinders() {
     const d = pp().data;
     return { x: d.BX0, y: d.BY0, w: d.BX1 - d.BX0 + 1, h: d.BY1 - d.BY0 + 1 };
   };
+  /** Where to look for a spot for an item: the whole lot for one that stands outdoors, else inside the building. */
+  const homeOf = (type: string): Rect =>
+    outdoors(type) ? { x: 0, y: 0, w: pp().sim.world.w, h: pp().sim.world.h } : building();
 
   window.find = {
     /** A clickable point on the nth placed item of a type. */
@@ -318,17 +324,19 @@ function installFinders() {
       }
       return fail(`nowhere suitable on the ${side} wall`);
     },
-    /** The first spot where what is in hand fits, in the blueprint's room or anywhere in the building. */
+    /** The first spot where what is in hand fits: in the blueprint's room, anywhere in the building, or outdoors. */
     held(inRoom) {
       const rules = heldRules();
-      const bounds = inRoom ? (rules.room ?? pp().tools.plan?.room ?? fail('no blueprint is open')) : building();
+      const bounds = inRoom
+        ? (rules.room ?? pp().tools.plan?.room ?? fail('no blueprint is open'))
+        : homeOf(rules.type);
       return firstFit(rules.type, rules.rot, bounds, rules.ok, true);
     },
     /** Place an item at the first spot it fits and return its id. */
     place(type) {
       // straight into the game, for setting a scene: no menus, but the same placement rules
       const world = pp().sim.world;
-      const spot = firstFit(type, 0, building(), (x, y, r) => world.canPlaceItem(type as never, x, y, r), true);
+      const spot = firstFit(type, 0, homeOf(type), (x, y, r) => world.canPlaceItem(type as never, x, y, r), true);
       const item = pp().sim.placeItem(type as never, spot.x, spot.y, spot.rot) ?? fail(`could not place a ${type}`);
       return item.id;
     },

@@ -1,6 +1,8 @@
 // Land: buying the plots next door, the builders' days of work on each, and the building growing into it after.
 
-import { buildDays, nameInSentence, type PlotOffer, plotOffers } from '../land';
+import { ITEMS } from '../data';
+import { buildDays, nameInSentence, plotGroundAt, type PlotOffer, plotOffers } from '../land';
+import { footprint } from '../world';
 import { takeDownLoose } from './building';
 import type { SimContext } from './context';
 import { spend } from './economy';
@@ -18,6 +20,17 @@ export function buyPlot(ctx: SimContext, id: string): boolean {
   if (offer?.state !== 'open') return false;
   if (ctx.s.money < offer.price) {
     toast(ctx, 'Not enough money for that land.', 'bad');
+    emit(ctx, { type: 'sfx', name: 'error' });
+    return false;
+  }
+  // nothing can stand on a plot before it is the game's, but a plot drawn since a save was made could reach under it
+  const inTheWay = ctx.s.items.find(
+    (it) =>
+      ITEMS[it.type].where === 'outdoors' &&
+      footprint(it).some(([x, y]) => plotGroundAt([offer.def], x, y) !== undefined),
+  );
+  if (inTheWay) {
+    toast(ctx, `Move the ${ITEMS[inTheWay.type].name} off that land first.`, 'bad', { kind: 'item', id: inTheWay.id });
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
   }

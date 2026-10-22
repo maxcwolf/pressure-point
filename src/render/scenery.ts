@@ -28,7 +28,7 @@ export function buildScenery(
   colors: Setting,
   /** How wide the lot is. */
   width: number,
-  /** The center's plots of land, kept clear for the building to grow into. */
+  /** The center's plots of land, kept clear for the building to grow into, and anything standing outdoors. */
   plots: readonly Rect[] = [],
 ): THREE.Group {
   const scene = new THREE.Group();

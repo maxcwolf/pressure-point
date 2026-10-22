@@ -8,6 +8,7 @@ import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
 import { downNotice } from './machines';
+import { mishapHolder, mishapOn } from './mishaps';
 import { upgradeWear } from './upgrades';
 import { stoneCooling, warmthAt } from './warmth';
 
@@ -20,10 +21,10 @@ export function decayItems(ctx: SimContext, dt: number) {
   }
 }
 
-/** Add wear to an item after a use. At full wear it breaks down. */
-export function addWear(ctx: SimContext, it: Item) {
+/** Add wear to an item after a use, or as much as `wear` would add. At full wear it breaks down. */
+export function addWear(ctx: SimContext, it: Item, wear = ITEMS[it.type].wear ?? 0) {
   // the sea air is hard on equipment, and upgraded equipment stands up to it better
-  const add = (ITEMS[it.type].wear ?? 0) * (centerOf(ctx.s).wear ?? 1) * upgradeWear(it.level) * tuning(ctx.s, 'wear');
+  const add = wear * (centerOf(ctx.s).wear ?? 1) * upgradeWear(it.level) * tuning(ctx.s, 'wear');
   if (!add || it.wear >= 100) return;
   it.wear = Math.min(100, it.wear + add);
   if (it.wear < 100) return;
@@ -37,6 +38,19 @@ export function addWear(ctx: SimContext, it: Item) {
     ? downNotice(ctx, it, 'has broken down')
     : `${an(ITEMS[it.type].name, true)} has broken down. It is out of action until a Caretaker repairs it.`;
   toast(ctx, text, 'bad', { kind: 'item', id: it.id });
+}
+
+/**
+ * A day's wear on what wears by the day rather than by the use: a generator standing by, and one carrying the center
+ * through a mishap, which counts as a use.
+ */
+export function wearByTheDay(ctx: SimContext) {
+  const holder = mishapOn(ctx.s) ? mishapHolder(ctx.s) : undefined;
+  for (const it of ctx.s.items) {
+    const daily = ITEMS[it.type].dailyWear;
+    if (!daily) continue;
+    addWear(ctx, it, it === holder && !ctx.s.mishap?.prepared ? ITEMS[it.type].wear : daily);
+  }
 }
 
 /** How grubby an item is after one more use. */

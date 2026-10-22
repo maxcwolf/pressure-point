@@ -2,7 +2,7 @@
 
 Ideas for new items, drafted 16 October 2026. Nothing here is planned: an idea moves to [todo.md](todo.md) or [roadmap.md](roadmap.md) once it is chosen. Like [ideas.md](ideas.md), this is a list to pick from.
 
-**Chosen on 16 October 2026**, and moved to [todo.md](todo.md): Soundproof Panels (1), Wind Chimes (5), the Generator (7), placed outside only, the Fortune Teller Machine (10), the Kombucha Tap (11), the Staff Fridge (16) and wall hangings (24). The rest are still open.
+**Chosen on 16 October 2026**, and moved to [todo.md](todo.md): Soundproof Panels (1), Wind Chimes (5), the Generator (7), placed outside only (done: the first item outdoors, and the first mishap item, `heldOffBy` on its mishap), the Fortune Teller Machine (10), the Kombucha Tap (11), the Staff Fridge (16) and wall hangings (24). The rest are still open.
 
 ## What makes a Two Point item fun
 

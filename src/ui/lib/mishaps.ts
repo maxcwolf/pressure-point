@@ -14,17 +14,25 @@ export const startsIn = (days: number) => `Starts in ${daysInWords(days)}`;
 /** How much of the notice is left before a mishap starts, as a share. */
 export const noticeShare = (days: number) => clamp(days / MISHAP_NOTICE_DAYS, 0, 1);
 
-/** How ready the center is for a mishap coming: prepared, warded by a Shaman or about to be, or not at all. */
-export function readiness(m: Pick<Mishap, 'prepared' | 'ward'>): string {
+/**
+ * How ready the center is for a mishap coming: prepared, kept at bay by something of its own (`holder`, by name),
+ * warded by a Shaman or about to be, or not at all.
+ */
+export function readiness(m: Pick<Mishap, 'prepared' | 'ward'>, holder?: string): string {
   if (m.prepared) return 'prepared';
+  if (holder) return `the ${holder} is ready`;
   if (m.ward === 'done') return 'warded';
   return m.ward ? 'a Shaman will ward it off' : 'not prepared';
 }
 
-/** The one line shown for a mishap once it is prepared for, warded, put aside, or under way. */
-export function mishapLine(def: MishapDef, m: Mishap, daysLeft: number): string {
-  if (m.started) return `${def.name}: ${timeLeftLabel(daysLeft)}${m.prepared ? ' · prepared' : ''}`;
-  return `${def.name}: ${startsIn(daysLeft).toLowerCase()} · ${readiness(m)}`;
+/**
+ * The one line shown for a mishap once it is prepared for, kept at bay by something of the center's own (`holder`, by
+ * name), warded, put aside, or under way.
+ */
+export function mishapLine(def: MishapDef, m: Mishap, daysLeft: number, holder?: string): string {
+  if (m.started)
+    return `${def.name}: ${timeLeftLabel(daysLeft)}${m.prepared ? ' · prepared' : holder ? ` · the ${holder} is on` : ''}`;
+  return `${def.name}: ${startsIn(daysLeft).toLowerCase()} · ${readiness(m, holder)}`;
 }
 
 /** What preparing for a mishap would do, for its notice. */

@@ -93,7 +93,7 @@ describe('the new items', () => {
     const corridor = { x: 12, y: 12, w: 8, h: 4 };
     for (const type of NEW_ITEMS) {
       const where = ITEMS[type].where;
-      if (where === 'corridor' || where === 'any') placeSomewhere(type, corridor);
+      if (where === 'corridor' || where === 'any' || where === 'outdoors') placeSomewhere(type, corridor);
       else {
         const room = roomOf(where);
         placeSomewhere(type, room, room.id);

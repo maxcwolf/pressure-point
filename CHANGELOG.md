@@ -13,6 +13,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Machines draw guests of their own.** A signature machine's two ailments now come only for it, at their own pace once it stands with a practitioner of its own to run it, more for a finer room, and the Guests tab and the date's hover say how many.
 - **The Gong of Last Resort rattles the rooms next door** while it plays: noise through every shared wall, shown on its card and in the inspectors, so build its studio away from quiet rooms.
 - **Rides on the Carousel of Rebirth.** Bored guests pay $25 for a ride while it treats nobody, and get off for a guest due for rebirth.
+- **A Generator, out of doors.** The first thing that stands outside: on the grounds, by the pavement or a path, it keeps the power on through every power cut while it works, needs a Caretaker now and then, and is loud enough that the outer walls are welcome.
 
 ## v0.31.0
 

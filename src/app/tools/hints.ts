@@ -31,6 +31,8 @@ export function placeHint(type: ItemType, left = 0): string {
   const def = ITEMS[type];
   if (type === 'certificate') return `${def.name} · ${left} to hang · click a wall to hang it · Esc when done`;
   if (def.mount === 'wall') return `${def.name} · ${money(def.cost)} each · click a wall to hang it · Esc when done`;
+  if (def.where === 'outdoors')
+    return `${def.name} · ${money(def.cost)} each · click the grounds beside a path or the pavement · R rotates · Esc when done${legend(type)}`;
   return `${def.name} · ${money(def.cost)} each · click to place · R rotates · Esc when done${legend(type)}`;
 }
 

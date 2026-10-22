@@ -34,6 +34,8 @@ export interface MishapDef {
   winterOnly?: boolean;
   /** Something that draws it: with one in the center, the next comes after only this share of the usual gap. */
   drawnBy?: { item: ItemType; gap: number };
+  /** Something bought once that keeps it at bay: while one stands here unbroken, it counts as prepared for. */
+  heldOffBy?: ItemType;
 }
 
 export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
@@ -68,6 +70,7 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
       'fog_machine',
     ],
     stopsWhat: 'anything with a plug',
+    heldOffBy: 'generator',
   },
   storm: {
     id: 'storm',
@@ -128,6 +131,11 @@ export const MISHAP_GAP_DAYS: readonly [number, number] = [80, 140];
 export const MISHAP_RETRY_DAYS = 10;
 /** How many puddles a flood leaves on a restroom's floor, each to be mopped up. */
 export const FLOOD_PUDDLES = 3;
+
+/** The item here holding a mishap off: one of the kind that does, not broken, or undefined if there is none. */
+export function holdingOff<T extends { type: ItemType; wear: number }>(def: MishapDef, items: readonly T[]) {
+  return def.heldOffBy ? items.find((it) => it.type === def.heldOffBy && it.wear < 100) : undefined;
+}
 
 /** Whether a mishap, as it stands, takes items of this type out of action. */
 export function mishapStopsType(def: MishapDef, type: ItemType, prepared: boolean): boolean {

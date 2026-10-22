@@ -4,6 +4,7 @@
 import {
   centerOf,
   FLOOD_PUDDLES,
+  holdingOff,
   ITEMS,
   MISHAP_GAP_DAYS,
   MISHAP_NOTICE_DAYS,
@@ -14,6 +15,7 @@ import {
   traitSpeed,
   WARD_CHANCE,
   WARD_SECONDS,
+  WEAR_REPAIR,
 } from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
@@ -44,10 +46,16 @@ export function newMishap(day: number, kind: MishapId): Mishap {
 export const mishapOn = (s: GameState): MishapDef | undefined =>
   s.mishap?.started ? MISHAPS[s.mishap.kind] : undefined;
 
+/** The item here keeping the mishap coming or under way at bay, such as a generator through a power cut, if one is. */
+export const mishapHolder = (s: GameState) => (s.mishap ? holdingOff(MISHAPS[s.mishap.kind], s.items) : undefined);
+
+/** Whether the mishap coming or under way is taken care of: prepared for, or kept at bay by something here. */
+export const mishapCovered = (s: GameState) => !!s.mishap && (s.mishap.prepared || !!mishapHolder(s));
+
 /** The mishap under way, if it has taken anything out of action as things stand. */
 export function mishapStopping(s: GameState): MishapDef | undefined {
   const def = mishapOn(s);
-  if (!def?.stops || s.mishap?.prepared) return undefined;
+  if (!def?.stops || mishapCovered(s)) return undefined;
   // with nothing here of the kinds it stops, such as a storm with no Aura Wash to shut, it has stopped nothing
   if (!s.items.some((it) => def.stops?.includes(it.type))) return undefined;
   return def;
@@ -104,13 +112,26 @@ function announceMishap(ctx: SimContext, kind: MishapId) {
   const def = MISHAPS[kind];
   ctx.s.mishap = newMishap(ctx.s.day, kind);
   emit(ctx, { type: 'announce', text: def.warning });
-  toast(
-    ctx,
-    `${def.name} in ${MISHAP_NOTICE_DAYS} days. ${def.harm} ${def.prepare.label} for ${money(def.prepare.cost)}?`,
-    'bad',
-    undefined,
-    def.icon,
-  );
+  const holder = mishapHolder(ctx.s);
+  if (holder) {
+    // one of the center's own will see it off, if it holds out
+    const name = ITEMS[holder.type].name;
+    const worn = holder.wear >= WEAR_REPAIR ? ` It is worn, so have a Caretaker see to it before then.` : '';
+    toast(
+      ctx,
+      `${def.name} in ${MISHAP_NOTICE_DAYS} days. Your ${name} will see you through.${worn}`,
+      worn ? 'bad' : 'info',
+      { kind: 'item', id: holder.id },
+      def.icon,
+    );
+  } else
+    toast(
+      ctx,
+      `${def.name} in ${MISHAP_NOTICE_DAYS} days. ${def.harm} ${def.prepare.label} for ${money(def.prepare.cost)}?`,
+      'bad',
+      undefined,
+      def.icon,
+    );
   tipOnce(
     ctx,
     'mishaps',
@@ -140,6 +161,11 @@ function startMishap(ctx: SimContext, m: Mishap) {
   } else if (!m.prepared && m.ward === 'asked')
     toast(ctx, 'The Shaman did not get to the ward in time.', 'bad', undefined, 'discipline-shaman');
   if (m.prepared) return;
+  const holder = mishapHolder(s);
+  if (holder) {
+    toast(ctx, `The ${ITEMS[holder.type].name} has kicked in.`, 'good', { kind: 'item', id: holder.id }, def.icon);
+    return;
+  }
   // the wind breaks a few things as it starts
   const breakable = s.items.filter((it) => ITEMS[it.type].wear && it.wear < 100);
   for (let i = 0; i < (def.breaks ?? 0) && breakable.length; i++) {

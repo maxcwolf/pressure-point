@@ -755,6 +755,23 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     noise: 1,
     wear: 1,
   },
+  generator: {
+    type: 'generator',
+    name: 'Generator',
+    icon: 'item-generator',
+    desc: "A diesel generator for the grounds. While it stands and works, power cuts are somebody else's problem. Far too loud for indoors: the outer walls keep most of the racket out. A Caretaker services it.",
+    cost: 2800,
+    w: 2,
+    h: 1,
+    front: true,
+    where: 'outdoors',
+    access: [],
+    inMenu: true,
+    noise: 8,
+    // a little each day from its weekly test runs, and a lot for each day it carries the center through a power cut
+    dailyWear: 1,
+    wear: 15,
+  },
   recliner: {
     type: 'recliner',
     name: 'Recliner',
@@ -1509,6 +1526,7 @@ export const ITEM_MENU: readonly ItemType[] = [
   'radiator',
   'fireplace',
   'air_conditioner',
+  'generator',
   'linen_hamper',
   'study_desk',
   'bookcase',
@@ -1541,7 +1559,7 @@ export const isWatered = (type: ItemType) => type === 'plant' || type === 'livin
 
 /** Every kind of room an item may go in, for one that goes in rooms. */
 export function roomsFor(def: Pick<ItemDef, 'where' | 'alsoIn'>): RoomType[] {
-  if (def.where === 'corridor' || def.where === 'any') return [];
+  if (def.where === 'corridor' || def.where === 'any' || def.where === 'outdoors') return [];
   return [def.where, ...(def.alsoIn ?? [])];
 }
 

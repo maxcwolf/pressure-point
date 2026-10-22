@@ -2,8 +2,20 @@
 // one reads the world's grids, and tries a change out on its scratch grids, without touching the game.
 
 import { certificatesLeft } from './certificates';
-import { goesIn, ITEMS, type ItemType, ROOMS, roomsFor, type RoomType } from './data';
-import { spotInWall } from './footprint';
+import {
+  centerOf,
+  goesIn,
+  isWatered,
+  type ItemDef,
+  ITEMS,
+  type ItemType,
+  ROOMS,
+  roomsFor,
+  type RoomType,
+  SIDEWALK_Y,
+} from './data';
+import { doorstep, entranceSteps, type Footprint, spotInWall } from './footprint';
+import { plotGroundAt } from './land';
 import { carryWallSpot, inRect, sameRect } from './resize';
 import type { PlacedLayout } from './room-layout';
 import { sameSpot } from './state/game';
@@ -22,6 +34,8 @@ import {
   wallSpotsOf,
   type World,
   Z_CORRIDOR,
+  Z_OUTSIDE,
+  Z_SCENERY,
 } from './world';
 
 const OK: Check = { ok: true, reason: '' };
@@ -75,6 +89,7 @@ export function belongs(world: World, type: ItemType, z: number): Check {
   const def = ITEMS[type];
   if (def.where === 'corridor') return z === Z_CORRIDOR ? OK : no('Goes in a corridor, not a room');
   if (def.where === 'any') return OK;
+  if (def.where === 'outdoors') return no('Goes outdoors, not inside');
   const room = z > 0 ? world.room(z) : undefined;
   if (room && goesIn(def, room.type)) return OK;
   return no(
@@ -144,12 +159,87 @@ export function nearestWall(
   return best;
 }
 
+/** How many rows along the back of every lot are its boundary, a hedge or the beach huts, rather than grounds. */
+export const BACK_ROWS = 2;
+
+/**
+ * Whether a tile is under the sign on the front lawn, which stands left of the path to the front door, in the two rows
+ * out from the front wall. `signSpot()` in render/sign.ts puts it there.
+ */
+export function underSign(fp: Pick<Footprint, 'door' | 'front'>, x: number, y: number): boolean {
+  const row = doorstep(fp);
+  return x >= fp.door[0] - 6 && x <= fp.door[0] - 3 && y >= row && y <= row + 1;
+}
+
+/** Whether a tile is just outside an entrance, either side of its path, where the lamps on its pillars stand. */
+export function besideEntrance(fp: Pick<Footprint, 'entrances'>, x: number, y: number): boolean {
+  return fp.entrances.some((e) => {
+    const [a, b] = entranceSteps(e).map((step) => step.outside);
+    if (!a || !b) return false;
+    const [ax, ay] = [b[0] - a[0], b[1] - a[1]];
+    return (x === a[0] - ax && y === a[1] - ay) || (x === b[0] + ax && y === b[1] + ay);
+  });
+}
+
+/**
+ * Is a tile part of the center's own grounds, where something can stand out of doors? Outside every building, on the
+ * lot clear of its edges, off the street and the paths, and on no plot, or the path to one, that is not the game's yet
+ * or that the builders are at; and not where the sign or an entrance's lamps stand.
+ */
+export function onGrounds(world: World, x: number, y: number): Check {
+  if (!world.onMap(x, y) || x < 1 || x > world.w - 2 || y < BACK_ROWS) return no('Keep it on your own grounds');
+  if (world.inside(x, y)) return no('Goes outdoors, not inside');
+  if (y >= SIDEWALK_Y) return no('Keep it off the street');
+  if (world.zoneAt(x, y) !== Z_SCENERY) return no('Keep it off the paths');
+  const { s } = world;
+  // a plot not yet built on is kept clear, and so is the path it will have
+  const plot = plotGroundAt(centerOf(s).plots, x, y);
+  if (plot)
+    return no(
+      s.land.some((l) => l.plot === plot.id && l.ready !== undefined)
+        ? 'The builders are at work there'
+        : 'That land is not yours yet',
+    );
+  if (underSign(world.building, x, y)) return no('The sign stands there');
+  if (besideEntrance(world.building, x, y)) return no('Too close to the entrance');
+  return OK;
+}
+
+/** Whether something needs a Caretaker now and then: it wears, gets grubby, or needs watering. */
+const tended = (def: ItemDef) => !!def.wear || !!def.dailyWear || !!def.dirt || isWatered(def.type);
+
+/**
+ * Can something that goes outdoors stand here? On the grounds, clear, used from a path or the pavement, and with one
+ * beside it if a Caretaker has to get to it: nobody walks on the grass.
+ */
+function canPlaceOutdoors(world: World, it: Placed): Check {
+  const { s } = world;
+  const def = ITEMS[it.type];
+  const tiles = footprint(it);
+  for (const [tx, ty] of tiles) {
+    const ground = onGrounds(world, tx, ty);
+    if (!ground.ok) return ground;
+    if (world.blocked[world.idx(tx, ty)]) return no('Something is in the way');
+  }
+  /** Whether a tile is paving someone can stand on. */
+  const paved = (x: number, y: number) => world.zoneAt(x, y) === Z_OUTSIDE && world.walkable(x, y);
+  for (let i = 0; i < def.access.length; i++) {
+    const [ax, ay] = accessTile(it, i);
+    if (!paved(ax, ay)) return no('Needs a path or the pavement to use it from (R rotates)');
+  }
+  if (tended(def) && !tiles.some(([tx, ty]) => DIRS4.some(([dx, dy]) => paved(tx + dx, ty + dy))))
+    return no('Needs a path or the pavement beside it, for a Caretaker');
+  return world.connected(world.tryOut(s.rooms, [...s.items, it])) ? OK : no('That would block the way');
+}
+
 /** Can this item go here, facing this way? */
 export function canPlaceItem(world: World, type: ItemType, x: number, y: number, rot: number, roomId?: number): Check {
   const { s } = world;
   if (type === 'certificate' && !certificatesLeft(s).length)
     return no('Win an award at the year-end ceremony to earn one');
   if (onWall(type)) return canHang(world, type, x, y, rot, roomId);
+  if (ITEMS[type].where === 'outdoors')
+    return roomId === undefined ? canPlaceOutdoors(world, { type, x, y, rot }) : no('Goes outdoors, not in a room');
   const def = ITEMS[type];
   const it: Placed = { type, x, y, rot };
   const tiles = footprint(it);

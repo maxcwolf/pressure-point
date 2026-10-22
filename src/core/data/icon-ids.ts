@@ -146,6 +146,7 @@ export const ICON_IDS = [
   'item-fog-machine',
   'item-fortune-teller',
   'item-fountain',
+  'item-generator',
   'item-geode',
   'item-gong',
   'item-great-alphorn',

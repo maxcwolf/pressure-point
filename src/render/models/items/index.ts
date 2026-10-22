@@ -33,6 +33,7 @@ import { buildFireplace } from './fireplace';
 import { buildFogMachine } from './fog-machine';
 import { buildFortuneTeller } from './fortune-teller';
 import { buildFountain } from './fountain';
+import { buildGenerator } from './generator';
 import { buildGeode } from './geode';
 import { buildGong } from './gong';
 import { buildGreatAlphorn } from './great-alphorn';
@@ -168,6 +169,7 @@ const BUILDERS: Record<ItemType, (g: THREE.Group, look?: string) => void> = {
   fortune_teller: buildFortuneTeller,
   kombucha_tap: buildKombuchaTap,
   staff_fridge: buildStaffFridge,
+  generator: buildGenerator,
   motivational_poster: buildMotivationalPoster,
   /** A painting of the view at its center. */
   landscape_painting: (g, look) => buildLandscapePainting(g, look as CenterId),

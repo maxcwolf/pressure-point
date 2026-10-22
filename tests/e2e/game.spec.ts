@@ -3045,3 +3045,46 @@ test.describe('room signs', () => {
     expect(await lamp(game, 'massage')).toBe('unfinished');
   });
 });
+
+test.describe('out of doors', () => {
+  test('a Generator is placed on the grounds from the Items menu, and keeps the power on through a cut', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.menu('Items');
+    await page.locator('#menu .tab', { hasText: 'Outdoors' }).click();
+    await expect(game.card('Generator')).toContainText('Outdoors');
+    await expect(game.card('Bench')).toHaveCount(0);
+    await game.card('Generator').click();
+    await expect(page.locator('#hint')).toContainText('beside a path or the pavement');
+    // inside the building is refused, and explained
+    const indoors = await game.eval((pp) => pp.view.project(20.5, 10.5, 0));
+    await page.mouse.move(indoors.x, indoors.y, { steps: 4 });
+    await expect(page.locator('#hint')).toContainText('Goes outdoors, not inside');
+    const to = await game.placeHeld();
+    await page.keyboard.press('Escape');
+    const placed = await game.eval((pp) => {
+      const gen = pp.state.items.find((i) => i.type === 'generator')!;
+      return { x: gen.x, y: gen.y, inside: pp.sim.world.inside(gen.x, gen.y), money: pp.state.money };
+    });
+    expect([placed.x, placed.y]).toEqual([to.x, to.y]);
+    expect(placed.inside).toBe(false);
+    expect(placed.money).toBe(30000 - 2800);
+    // it is picked like anything else, and its inspector offers to move and sell it
+    await game.settle();
+    await game.clickItem('generator');
+    await expect(page.locator('#inspector')).toContainText('Generator');
+    await expect(page.locator('#inspector').getByRole('button', { name: 'Move' })).toBeVisible();
+    // a power cut coming finds it ready, and it runs through the cut
+    await game.eval((pp) => {
+      const day = pp.state.day;
+      pp.state.mishap = { kind: 'power', starts: day + 3, ends: day + 4, prepared: false, started: false };
+    });
+    await expect(page.locator('.mishap-pill')).toContainText('Power cut: starts in 3 days · the Generator is ready');
+    await game.fastForward(3 * 6 + 1);
+    await expect(page.locator('.mishap-pill.on')).toContainText('the Generator is on');
+    expect(await game.eval((pp) => pp.state.mishap?.prepared)).toBe(false);
+    expect(game.errors).toEqual([]);
+  });
+});

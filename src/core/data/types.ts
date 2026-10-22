@@ -109,6 +109,7 @@ export type ItemType =
   | 'fortune_teller'
   | 'kombucha_tap'
   | 'staff_fridge'
+  | 'generator'
   | 'motivational_poster'
   | 'landscape_painting'
   | 'wall_clock'
@@ -196,8 +197,11 @@ export interface ItemDef {
   w: number;
   h: number;
   access: AccessDef[];
-  /** Where it may be placed. */
-  where: 'corridor' | 'any' | RoomType;
+  /**
+   * Where it may be placed: in a corridor, anywhere indoors, in a kind of room, or outdoors on the center's own grounds,
+   * off the paths and the street.
+   */
+  where: 'corridor' | 'any' | 'outdoors' | RoomType;
   /** Other kinds of room it may go in too, for an item whose `where` is a room. */
   alsoIn?: readonly RoomType[];
   /**
@@ -236,6 +240,8 @@ export interface ItemDef {
   walkable?: boolean;
   /** Wear added each time it is used. At 100 it breaks until a Caretaker repairs it. */
   wear?: number;
+  /** Wear added each day it stands, for something that wears whether or not anyone uses it, like a generator. */
+  dailyWear?: number;
   /** Grime added each time it is used, until a Caretaker cleans it. */
   dirt?: number;
   /** What a guest pays each time they use it, for drinks, snacks and games. */
