@@ -3,7 +3,7 @@
 // docs/fair-challenge-research.md (per-seed survival, the warning before each loss, reputation cliffs, spirals after
 // adverse events, and how much of the income is not treatments). Pure: no files, no game code, so that
 // scripts/balance-report.mjs can run it with Node's own type stripping. See docs/balance-harness.md.
-import type { IncomeBy, MonthLog, Playtest } from './bot';
+import type { IncomeBy, MonthLog, Playtest, RunnerLog } from './bot';
 
 /**
  * A run as the report reads it. Logs written before the bot kept every adverse event, the warnings, the day of
@@ -410,6 +410,55 @@ export function fairness(runs: Run[]): string {
   return out.join('\n');
 }
 
+// ---- really bad trips -------------------------------------------------------------
+
+/** One center's really bad trips over every seed and month: the bad trips, and how each run ended. */
+export function runnerTotals(runs: Run[]): RunnerLog | null {
+  const months = runs.flatMap((r) => r.months.map((m) => m.runners).filter((x) => x !== undefined));
+  if (!months.length) return null;
+  /** One count, summed over the months. */
+  const sum = (k: keyof RunnerLog) => months.reduce((a, m) => a + m[k], 0);
+  return {
+    badTrips: sum('badTrips'),
+    started: sum('started'),
+    calmed: sum('calmed'),
+    inTime: sum('inTime'),
+    calmDays: sum('calmDays'),
+    door: sum('door'),
+  };
+}
+
+/** The cells of one center's row of really bad trips, after the name. */
+function runnerCells(n: RunnerLog | null): string[] {
+  if (!n) return ['–', '–', '–', '–', '–', '–'];
+  return [
+    String(n.badTrips),
+    n.badTrips ? `${n.started} (${pct(n.started / n.badTrips)})` : String(n.started),
+    String(n.calmed),
+    n.calmed ? `${n.inTime} (${pct(n.inTime / n.calmed)})` : '0',
+    n.calmed ? (n.calmDays / n.calmed).toFixed(1) : '–',
+    String(n.door),
+  ];
+}
+
+/** Every center's really bad trips, before → after with a second run; empty if no run logged them. */
+export function runnerTable(after: Run[], before?: Run[]): string {
+  const old = new Map(byCenter(before ?? []));
+  const rows = byCenter(after)
+    .map(([center, rs]) => {
+      const now = runnerTotals(rs);
+      if (!now?.badTrips) return null;
+      const was = before ? runnerCells(runnerTotals(old.get(center) ?? [])) : null;
+      return [nameOf(center), ...runnerCells(now).map((c, i) => (was ? `${was[i] ?? '–'} → ${c}` : c))];
+    })
+    .filter((r) => r !== null);
+  if (!rows.length) return '';
+  return table(
+    ['Center', 'Bad trips', 'Ran (share of bad trips)', 'Calmed', 'Within 3 days', 'Days to calm', 'Found the door'],
+    rows,
+  );
+}
+
 /** The whole report: the table (before → after with a second run), then the fairness slices of the first. */
 export function report(after: Run[], before?: Run[]): string {
   const days = Math.max(...after.map((r) => r.months.length)) * DAYS_PER_MONTH;
@@ -423,6 +472,8 @@ export function report(after: Run[], before?: Run[]): string {
     out.push('\n### Before → after\n');
     out.push(compareTable(after, before));
   }
+  const runners = runnerTable(after, before);
+  if (runners) out.push(`\n### Really bad trips${before ? ', before → after' : ''}\n`, runners);
   out.push(`\n${fairness(after)}`);
   return out.join('\n');
 }

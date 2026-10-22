@@ -39,6 +39,8 @@ import {
   ROOM_ORDER,
   ROOMS,
   type RoomType,
+  RUNAWAY_SAVE_DAYS,
+  RUNAWAY_SECONDS,
   SIDEWALK_Y,
   WINDOW_COST,
   WINDOW_MAX_BONUS,
@@ -399,7 +401,24 @@ export interface MonthLog {
   scans: number;
   /** The month's income by source, from the ledger: treatments and consultations, and the side incomes. */
   incomeBy: IncomeBy;
+  /** The month's bad trips, and the really bad ones: how many ran, were calmed, in time, and found the door; not in older logs. */
+  runners?: RunnerLog;
 }
+
+/** A month's guests on a really bad trip, and the bad trips they came of. */
+export interface RunnerLog {
+  badTrips: number;
+  started: number;
+  calmed: number;
+  /** Calmed within `RUNAWAY_SAVE_DAYS` of starting to run. */
+  inTime: number;
+  /** Days run before being calmed, summed over those calmed. */
+  calmDays: number;
+  door: number;
+}
+
+/** A month with no bad trips. */
+const noRunners = (): RunnerLog => ({ badTrips: 0, started: 0, calmed: 0, inTime: 0, calmDays: 0, door: 0 });
 
 /** A month's income by where it came from, rounded to the dollar. */
 export interface IncomeBy {
@@ -547,6 +566,10 @@ export class Bot {
   /** The guests seen sent for a posture scan, and how many of them this month. */
   private sentForScan = new Set<number>();
   private scans = 0;
+  /** Guests seen after a bad trip; those seen running, with how long they had run when last seen; and this month's tally. */
+  private badTrips = new Set<number>();
+  private runners = new Map<number, { ran: number; wasCalmed: boolean }>();
+  private runnerMonth = noRunners();
   /** The lowest reputation seen so far this month. */
   private repLow = Infinity;
 
@@ -626,6 +649,9 @@ export class Bot {
           this.sampleTables();
           if (this.flags.machines) this.watchMachines();
           if (this.flags.trouble) this.calmCarriers();
+          // a runner's pill is at the top of the screen: any player sends someone
+          this.calmRunners();
+          this.watchRunners();
         }
       }
       this.noteAdverse();
@@ -782,6 +808,7 @@ export class Bot {
       price: s.priceLevel,
       lab: this.sim.hasRoom('assess'),
       scans: this.scans,
+      runners: this.runnerMonth,
       incomeBy: {
         treatment: Math.round(l.treatment),
         consult: Math.round(l.consult),
@@ -794,6 +821,7 @@ export class Bot {
       },
     });
     this.scans = 0;
+    this.runnerMonth = noRunners();
     this.repLow = Infinity;
     for (const id of this.sentForScan) if (!this.sim.guest(id)) this.sentForScan.delete(id);
     this.monthStart = {
@@ -2437,6 +2465,42 @@ export class Bot {
       this.note(`day ${Math.floor(this.s.day)}: sold a ${wall.type} that walled someone in`);
       return;
     }
+  }
+
+  /** Send someone after each guest on a really bad trip, as soon as anyone can go. */
+  private calmRunners() {
+    for (const g of this.s.guests) if (g.state === 'running' && this.sim.canCalm(g)) this.sim.calm(g.id);
+  }
+
+  /** Count the bad trips, the guests who ran, and how each run ended: calmed, and how soon, or out of the door. */
+  private watchRunners() {
+    const m = this.runnerMonth;
+    for (const g of this.s.guests) {
+      if (g.feelings.includes('bad-trip') && !this.badTrips.has(g.id)) {
+        this.badTrips.add(g.id);
+        m.badTrips++;
+      }
+      if (g.state !== 'running') continue;
+      const seen = this.runners.get(g.id);
+      if (!seen) m.started++;
+      // calmed in an outbreak before they ran, if they were: a run that ends with the clock out found the door
+      const wasCalmed = seen ? seen.wasCalmed : g.feelings.includes('calmed');
+      this.runners.set(g.id, { ran: RUNAWAY_SECONDS - (g.runaway ?? 0), wasCalmed });
+    }
+    for (const [id, { ran, wasCalmed }] of this.runners) {
+      const g = this.sim.guest(id);
+      if (g?.state === 'running') continue;
+      this.runners.delete(id);
+      if (!g?.feelings.includes('calmed') || (wasCalmed && ran > RUNAWAY_SECONDS - 1)) {
+        m.door++;
+        continue;
+      }
+      const days = ran / DAY_SECONDS;
+      m.calmed++;
+      m.calmDays += days;
+      if (days <= RUNAWAY_SAVE_DAYS) m.inTime++;
+    }
+    for (const id of this.badTrips) if (!this.sim.guest(id)) this.badTrips.delete(id);
   }
 
   /** In a stress outbreak, a calming session for each guest seen sweating, while there are sessions left. */

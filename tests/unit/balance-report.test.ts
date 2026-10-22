@@ -11,6 +11,8 @@ import {
   money,
   report,
   type Run,
+  runnerTable,
+  runnerTotals,
   sideShare,
   spirals,
   summaryTable,
@@ -197,5 +199,25 @@ describe('the balance report', () => {
     expect(report([{ ...BANKRUPT, warnings: [{ day: 125, text: 'Bankrupt' }] }])).toContain('**none** ⚠');
     expect(r).toContain('| Willow Lane | 2 | 1 of 2 |');
     expect(r).toContain('| Willow Lane | 20% · – | – · – | – · – |');
+  });
+
+  it('counts the really bad trips, how many ran, were calmed and how soon, and found the door', () => {
+    /** A month's really bad trips, the rest none. */
+    const trips = (o: Partial<NonNullable<Month['runners']>>) => ({
+      runners: { badTrips: 0, started: 0, calmed: 0, inTime: 0, calmDays: 0, door: 0, ...o },
+    });
+    const after = run(1, 3, {
+      1: trips({ badTrips: 10, started: 1, calmed: 1, inTime: 1, calmDays: 0.5 }),
+      2: trips({ badTrips: 10, started: 1, calmed: 1, calmDays: 3.5, door: 0 }),
+      3: trips({ badTrips: 0 }),
+    });
+    const before = run(1, 2, { 1: trips({ badTrips: 18, started: 2, door: 2 }) });
+    expect(runnerTotals([after])).toEqual({ badTrips: 20, started: 2, calmed: 2, inTime: 1, calmDays: 4, door: 0 });
+    expect(runnerTotals([SURVIVOR]), 'an older log').toBeNull();
+    expect(runnerTable([after], [before])).toContain(
+      '| Willow Lane | 18 → 20 | 2 (11%) → 2 (10%) | 0 → 2 | 0 → 1 (50%) | – → 2.0 | 2 → 0 |',
+    );
+    expect(runnerTable([SURVIVOR]), 'nothing to show').toBe('');
+    expect(report([after])).toContain('### Really bad trips');
   });
 });
