@@ -1689,7 +1689,7 @@ test.describe('more land', () => {
     await game.menu('Money');
     const menu = page.locator('#menu');
     await menu.getByRole('button', { name: /Land/ }).click();
-    await expect(menu.locator('.ledger.land')).toHaveCount(4);
+    await expect(menu.locator('.ledger.land')).toHaveCount(6);
     await expect(menu).toContainText('Comes up for sale at star 1');
     // By its heading: the garden block's card names the east wing too, as the plot it waits on
     const eastWing = menu.locator('.ledger.land', { has: page.getByRole('heading', { name: 'The east wing' }) });

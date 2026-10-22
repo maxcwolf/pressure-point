@@ -2,13 +2,26 @@
 // from the world, and the strips older saves bought along a side.
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, DAY_SECONDS, type PlotDef, type Rect, SIDEWALK_Y } from '../../src/core/data';
+import {
+  type CenterId,
+  CENTERS,
+  DAY_SECONDS,
+  ITEMS,
+  type PlotDef,
+  type Rect,
+  ROOM_ORDER,
+  ROOMS,
+  type RoomType,
+  SIDEWALK_Y,
+} from '../../src/core/data';
 import { entranceSteps, footprintOf, footprintTiles, inRect } from '../../src/core/footprint';
+import { an } from '../../src/core/format';
 import {
   buildDays,
   LAND_STEP,
   type LandSide,
   lotWidth,
+  nameInSentence,
   nextStrip,
   plotAt,
   plotOffers,
@@ -19,7 +32,7 @@ import {
 import { PLOT_NAME_MAX } from '../../src/core/sim/land';
 import { Sim } from '../../src/core/sim/sim';
 import { newGame } from '../../src/core/state/game';
-import type { Room } from '../../src/core/state/types';
+import type { Room, WallSpot } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { Z_CORRIDOR, Z_SCENERY } from '../../src/core/world';
 import { landColor } from '../../src/render/heatmap';
@@ -153,6 +166,118 @@ describe("each center's plots of land", () => {
   });
 });
 
+/** The plot each center sells, opening with the star its treatment machines do, that a machine room fits on. */
+const MACHINE_PLOT: Record<CenterId, string> = {
+  sandbox: 'north-range',
+  willow: 'old-bakery',
+  exchange: 'loading-bay',
+  boardwalk: 'arcade',
+  highpines: 'sauna',
+  orchard: 'apple-store',
+};
+
+/** The treatment machines' rooms a center can build. */
+const machineRoomsAt = (center: CenterId): RoomType[] =>
+  ROOM_ORDER.filter((t) => ROOMS[t].only?.includes(center) && ROOMS[t].required.some((i) => ITEMS[i].machine));
+
+/** Every doorway along a room's walls. */
+function doorways({ x, y, w, h }: { x: number; y: number; w: number; h: number }): WallSpot[] {
+  const out: WallSpot[] = [];
+  for (let i = 0; i < w; i++) out.push({ x: x + i, y, dx: 0, dy: -1 }, { x: x + i, y: y + h - 1, dx: 0, dy: 1 });
+  for (let j = 0; j < h; j++) out.push({ x, y: y + j, dx: -1, dy: 0 }, { x: x + w - 1, y: y + j, dx: 1, dy: 0 });
+  return out;
+}
+
+/**
+ * Build a room of a type at its smallest, wholly on a plot, with a doorway and its machine, as a player could: the
+ * first spot that takes it and leaves everything reachable. Null if nowhere on the plot does.
+ */
+function buildOnPlot(sim: Sim, type: RoomType, plot: PlotDef): Room | null {
+  const def = ROOMS[type];
+  const machine = def.required.find((t) => ITEMS[t].machine);
+  if (!machine) throw new Error(`${type} has no machine`);
+  const tiles = plotTiles(plot);
+  const on = new Set(tiles.map(([x, y]) => `${x},${y}`));
+  const xs = tiles.map(([x]) => x);
+  const ys = tiles.map(([, y]) => y);
+  for (const [w, h] of [
+    [def.minShort, def.minLong],
+    [def.minLong, def.minShort],
+  ] as const)
+    for (let y = Math.min(...ys); y + h - 1 <= Math.max(...ys); y++)
+      for (let x = Math.min(...xs); x + w - 1 <= Math.max(...xs); x++) {
+        const r = { x, y, w, h };
+        if (
+          !plotTiles({ rects: [{ x0: x, x1: x + w - 1, y0: y, y1: y + h - 1 }] }).every(([tx, ty]) =>
+            on.has(`${tx},${ty}`),
+          )
+        )
+          continue;
+        if (!sim.world.roomRectValid(type, r).ok) continue;
+        for (const door of doorways(r)) {
+          if (!sim.world.doorValid(type, r, door).ok) continue;
+          const room = sim.createRoom(type, r, door);
+          for (let rot = 0; rot < 4; rot++)
+            for (let ty = y; ty < y + h; ty++)
+              for (let tx = x; tx < x + w; tx++)
+                if (sim.placeItem(machine, tx, ty, rot, { free: true, roomId: room.id })) {
+                  sim.finishRoom(room);
+                  if (sim.world.connected()) return room;
+                  sim.removeRoom(room.id, 1);
+                  return null;
+                }
+          sim.removeRoom(room.id, 1);
+        }
+      }
+  return null;
+}
+
+describe('room for a treatment machine', () => {
+  for (const center of Object.values(CENTERS)) {
+    const plot = center.plots.find((p) => p.id === MACHINE_PLOT[center.id]);
+    for (const type of machineRoomsAt(center.id)) {
+      it(`fits ${an(ROOMS[type].name)} on ${nameInSentence(plot?.name ?? '?')} at ${center.name}, opening with it`, () => {
+        if (!plot) throw new Error(`no plot ${MACHINE_PLOT[center.id]}`);
+        // for sale from the star the machine is, in a building grown into every plot of land
+        expect(plot.star).toBe(ROOMS[type].unlock);
+        const s = newGame(center.id);
+        s.unlockAll = true;
+        s.money = 1e7;
+        const sim = new Sim(s);
+        for (const p of center.plots) expect(buyAndBuild(sim, p.id), p.id).toBe(true);
+        const room = buildOnPlot(sim, type, plot);
+        expect(room, `a ${type} on ${plot.id}`).not.toBeNull();
+        expect(room?.done).toBe(true);
+        expect(sim.world.connected()).toBe(true);
+        run(sim, 30);
+        expect(inconsistencies(sim)).toEqual([]);
+      });
+    }
+  }
+});
+
+describe('every entrance', () => {
+  for (const center of Object.values(CENTERS)) {
+    it(`can be reached at ${center.name} after each plot bought, in the order they open, and from an old save's strips`, () => {
+      for (const strips of [[], [...EVERY_STRIP]] as LandSide[][]) {
+        const s = newGame(center.id);
+        s.unlockAll = true;
+        s.money = 1e7;
+        s.land = stripsBought(center.id, strips);
+        const sim = new Sim(s);
+        expect(sim.world.connected(), 'before any').toBe(true);
+        for (const p of [...center.plots].sort((a, b) => a.star - b.star)) {
+          if (sim.landOffers().find((o) => o.def.id === p.id)?.state === 'owned') continue;
+          expect(buyAndBuild(sim, p.id), p.id).toBe(true);
+          expect(sim.world.connected(), `after ${p.id}`).toBe(true);
+          for (const e of sim.world.building.entrances)
+            expect(sim.world.findPath(0, SIDEWALK_Y, e.x, e.y), `${p.id}: the door at ${e.x},${e.y}`).not.toBeNull();
+        }
+      }
+    });
+  }
+});
+
 describe('land for sale', () => {
   it('opens as the stars come, a plot after another once that one is built on', () => {
     const sim = freshSim();
@@ -163,6 +288,8 @@ describe('land for sale', () => {
       'back-gallery': 'locked',
       'garden-block': 'locked',
       'west-annex': 'locked',
+      'north-range': 'locked',
+      'old-cinema': 'locked',
     });
     expect(sim.landOffers().find((o) => o.def.id === 'back-gallery')?.why).toBe('Comes up for sale at star 1');
     sim.s.stars = 1;
@@ -251,6 +378,8 @@ describe('land for sale', () => {
       ['back-gallery', 3],
       ['garden-block', 3],
       ['west-annex', 3],
+      ['north-range', 3],
+      ['old-cinema', 7],
     ]);
   });
 
@@ -413,7 +542,10 @@ describe('how land is shown', () => {
   it('outlines every tile of the plots not yet bought, and their paths, the one pointed at brightest', () => {
     const tiles = plotHeat(offers, 'east-wing');
     expect(tiles.filter(([, , v]) => v === PLOT_POINTED)).toHaveLength(8 * 15);
-    expect(tiles.filter(([, , v]) => v === PLOT_LOCKED)).toHaveLength(plotTiles(garden.def).length + 2 * 2 + 2 * 12); // the pavilion, its path and the annex;
+    // the pavilion and its path, the annex, the north range, and the cinema and its path
+    expect(tiles.filter(([, , v]) => v === PLOT_LOCKED)).toHaveLength(
+      plotTiles(garden.def).length + 2 * 2 + 2 * 12 + 7 * 6 + 10 * 14 + 2 * 2,
+    );
     expect(tiles.filter(([, , v]) => v === PLOT_OPEN)).toHaveLength(15 * 2);
     expect(new Set([PLOT_POINTED, PLOT_LOCKED, PLOT_OPEN].map((v) => landColor(v).getHex())).size).toBe(3);
   });
@@ -487,11 +619,12 @@ describe('plot offers', () => {
     const s = newGame('willow');
     s.stars = 3;
     const offers = plotOffers(s, footprintOf(CENTERS.willow.plot));
-    expect(offers.map((o) => o.state)).toEqual(['open', 'open', 'open']);
+    // the bakery and the yard come once the unit next door is the game's
+    expect(offers.map((o) => o.state)).toEqual(['open', 'open', 'open', 'locked', 'locked']);
     expect(offers.map((o) => o.price)).toEqual(CENTERS.willow.plots.map((p) => p.price));
     // a building grown over the unit next door, however it came to be, has it already
     const [unit] = CENTERS.willow.plots;
     const grown = plotOffers(s, footprintOf(CENTERS.willow.plot, unit?.rects));
-    expect(grown.map((o) => o.state)).toEqual(['owned', 'open', 'open']);
+    expect(grown.map((o) => o.state)).toEqual(['owned', 'open', 'open', 'open', 'open']);
   });
 });
