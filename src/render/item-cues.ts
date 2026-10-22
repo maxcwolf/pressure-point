@@ -102,7 +102,7 @@ export interface CueCondition {
   dirt: number;
   /** A guest is using it: at its station, or in one of its places. */
   inUse: boolean;
-  /** How hard it is warming or cooling the air, from 0 (off) to 1 (flat out). */
+  /** How hard it is running: warming or cooling the air, or carrying the center through a mishap, from 0 (off) to 1 (flat out). */
   running: number;
   /** Its room is being rattled through the wall by a machine next door, like the Gong of Last Resort as it plays. */
   rattled?: boolean;
@@ -246,6 +246,41 @@ function animateWisps(model: THREE.Object3D, c: CueCondition, t: number) {
   });
 }
 
+/** How often fumes puff from a running engine's exhaust, in seconds, and how high they rise. */
+const FUME_EVERY = 0.55;
+const FUME_RISE = 0.6;
+/** How fast and how far a running engine shudders: about eight times a second, by a hundredth of a radian. */
+const CHUG_HZ = 8;
+const CHUG = 0.01;
+/** The share of its light an engine standing by shows, against running. */
+const STANDBY_LIGHT = 1 / 3;
+
+/** Fumes puffing from an engine's exhaust while it runs, one after another, rising and spreading as they fade. */
+function animateFumes(model: THREE.Object3D, c: CueCondition, t: number) {
+  const from = partsOf(model).exhaust;
+  let fumes = partsOf(model).cues?.fumes;
+  if (!from || c.running <= 0 || c.wear >= 100) {
+    if (fumes) fumes.visible = false;
+    return;
+  }
+  fumes = cuesOf(model).fumes ??= cueGroup(model, sph(0.1, 8), 3, 0x5d6066);
+  fumes.visible = true;
+  fumes.children.forEach((p, i) => {
+    const f = burst(t + i * FUME_EVERY, FUME_EVERY * 3, FUME_EVERY * 3, c.id);
+    p.visible = f >= 0;
+    if (f < 0) return;
+    p.position.set(from.x + Math.sin(f * 3 + i) * 0.05 * f, from.y + f * FUME_RISE, from.z);
+    p.scale.setScalar(0.6 + f * 1.4);
+    fadeOf(p).opacity = 0.65 * (1 - f) * Math.min(1, f * 8);
+  });
+}
+
+/** Shudder an engine while it runs, and stand it still again when it stops. */
+function animateChug(model: THREE.Object3D, c: CueCondition, t: number) {
+  if (!partsOf(model).exhaust) return;
+  model.rotation.z = c.running > 0 && c.wear < 100 ? Math.sin(t * Math.PI * 2 * CHUG_HZ + c.id) * CHUG : 0;
+}
+
 /** The color a light goes when its item breaks: nearly black, whatever it was. */
 const DEAD = new THREE.Color(0x2b2e35);
 
@@ -305,15 +340,24 @@ function animateRattle(model: THREE.Object3D, c: CueCondition, leans: boolean, t
   model.rotation.z = (leans ? model.rotation.z : rest) + shake;
 }
 
-/** Show every cue an item gives: of its wear, its dirt, its noise and its warmth, and a rattle from next door. */
+/**
+ * Show every cue an item gives: of its wear, its dirt, its noise and its warmth, an engine running, and a rattle from
+ * next door.
+ */
 export function animateCues(model: THREE.Object3D, c: CueCondition, t: number) {
   const look = WEAR_LOOKS[c.type];
-  const { lamp, grime: dirty } = partsOf(model);
-  if (lamp) wearLight(lamp, c.wear, c.id, (lamp.userData.bright ??= lamp.emissiveIntensity) as number, t);
+  const { lamp, grime: dirty, exhaust } = partsOf(model);
+  if (lamp) {
+    const bright = (lamp.userData.bright ??= lamp.emissiveIntensity) as number;
+    // an engine's light is full on while it runs, and low while it stands by
+    wearLight(lamp, c.wear, c.id, exhaust && c.running <= 0 ? bright * STANDBY_LIGHT : bright, t);
+  }
   if (dirty) grime(dirty, c.dirt);
   if (look === 'shudder') animateLean(model, c, t);
+  animateChug(model, c, t);
   animateRattle(model, c, look === 'shudder', t);
   animateSmoke(model, c, look, t);
   animateRipples(model, c, t);
   animateWisps(model, c, t);
+  animateFumes(model, c, t);
 }

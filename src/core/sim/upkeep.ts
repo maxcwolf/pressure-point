@@ -8,7 +8,7 @@ import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
 import { downNotice } from './machines';
-import { mishapHolder, mishapOn } from './mishaps';
+import { mishapCarrier } from './mishaps';
 import { upgradeWear } from './upgrades';
 import { stoneCooling, warmthAt } from './warmth';
 
@@ -45,11 +45,11 @@ export function addWear(ctx: SimContext, it: Item, wear = ITEMS[it.type].wear ??
  * through a mishap, which counts as a use.
  */
 export function wearByTheDay(ctx: SimContext) {
-  const holder = mishapOn(ctx.s) ? mishapHolder(ctx.s) : undefined;
+  const carrier = mishapCarrier(ctx.s);
   for (const it of ctx.s.items) {
     const daily = ITEMS[it.type].dailyWear;
     if (!daily) continue;
-    addWear(ctx, it, it === holder && !ctx.s.mishap?.prepared ? ITEMS[it.type].wear : daily);
+    addWear(ctx, it, it === carrier ? ITEMS[it.type].wear : daily);
   }
 }
 

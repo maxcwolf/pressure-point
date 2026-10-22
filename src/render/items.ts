@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 import type { SceneIconId } from '../core/data';
 import { DIRT_FILTHY, HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
+import { mishapCarrier } from '../core/sim/mishaps';
 import type { Sim } from '../core/sim/sim';
 import { itemHeat } from '../core/sim/warmth';
 import type { Item } from '../core/state/types';
@@ -254,10 +255,12 @@ export class ItemsLayer {
   }
 
   /**
-   * How hard a heater or air conditioner is warming or cooling the air, from 0 to 1: not at all once broken, in a power
-   * cut or a freeze, or with the weather switched off, and on a thermostat only as hard as the weather calls for.
+   * How hard something is running, from 0 to 1: a generator flat out while it carries the center through a mishap; a
+   * heater or air conditioner not at all once broken, in a power cut or a freeze, or with the weather switched off, and
+   * on a thermostat only as hard as the weather calls for.
    */
   private running(it: Item): number {
+    if (it === mishapCarrier(this.sim.s)) return 1;
     if (!this.sim.s.weatherOn || !itemHeat(it) || this.sim.world.stoppedByMishap(it)) return 0;
     return this.sim.thermostatShare(it);
   }

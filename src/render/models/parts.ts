@@ -304,6 +304,8 @@ export interface ItemParts {
   led?: THREE.MeshStandardMaterial;
   /** A light that shines steadily: it flickers as the item wears out and goes dark when it breaks. */
   lamp?: THREE.MeshStandardMaterial;
+  /** Where an engine's exhaust lets out its fumes while it runs, in the model's own frame. */
+  exhaust?: THREE.Vector3;
   /** The main surface of something that gets dirty without linens to change, which grows grimy until it is cleaned. */
   grime?: THREE.MeshStandardMaterial;
   /** The cues of wear, noise and warmth, added the first time each is needed (see `render/item-cues.ts`). */
@@ -357,6 +359,8 @@ export interface CueParts {
   ripple?: THREE.Group;
   /** Wisps of warm or cool air. */
   wisps?: THREE.Group;
+  /** Fumes from an engine's exhaust while it runs. */
+  fumes?: THREE.Group;
 }
 
 /** The changing parts of an item's model. */

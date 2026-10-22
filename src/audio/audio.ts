@@ -81,6 +81,10 @@ const MUSIC_LEVEL = 0.5;
 const MUSIC_UNDER_VOICE = 0.12;
 /** How loud the announcer is. */
 const VOICE_LEVEL = 0.8;
+/** An engine's rumble: its note, the lowpass over it, and how loud it is at its loudest. */
+const RUMBLE_HZ = 55;
+const RUMBLE_LOWPASS = 180;
+const RUMBLE_LEVEL = 0.04;
 /** How long after the chime starts the announcer begins to speak, in milliseconds. */
 const VOICE_DELAY = 700;
 
@@ -92,6 +96,9 @@ export class Audio {
   /** The line the announcer is saying, or about to say. */
   private voice: HTMLAudioElement | null = null;
   private voiceTimer = 0;
+  /** The loudness an engine's rumble plays at, set while one runs nearby; started the first time it is wanted. */
+  private rumbleGain: GainNode | null = null;
+  private rumbleAt = 0;
   sound: boolean;
   music: boolean;
 
@@ -140,6 +147,30 @@ export class Audio {
     this.music = !this.music;
     if (this.ctx) this.musicGain.gain.setTargetAtTime(this.music ? MUSIC_LEVEL : 0, this.ctx.currentTime, 0.2);
     this.save();
+  }
+
+  /**
+   * Rumble like an engine running, this loud from 0 (silent) to 1: a low sawtooth under a lowpass, left running and
+   * faded in and out. Nothing while sound is off.
+   */
+  rumble(level: number) {
+    const ctx = this.ctx;
+    const want = this.sound ? level : 0;
+    if (!ctx || (!this.rumbleGain && want <= 0) || Math.abs(want - this.rumbleAt) < 0.01) return;
+    this.rumbleAt = want;
+    if (!this.rumbleGain) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.value = RUMBLE_HZ;
+      const low = ctx.createBiquadFilter();
+      low.type = 'lowpass';
+      low.frequency.value = RUMBLE_LOWPASS;
+      this.rumbleGain = ctx.createGain();
+      this.rumbleGain.gain.value = 0;
+      osc.connect(low).connect(this.rumbleGain).connect(this.master);
+      osc.start();
+    }
+    this.rumbleGain.gain.setTargetAtTime(want * RUMBLE_LEVEL, ctx.currentTime, 0.3);
   }
 
   /** Schedule a single note that fades in quickly and dies away. */

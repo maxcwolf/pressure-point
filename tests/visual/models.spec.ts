@@ -80,7 +80,7 @@ test.describe('every model', () => {
 
 /**
  * Items showing what they are doing, as the scene shows it with no overlay open: a machine wearing out, one that has
- * broken, a mat growing grimy, an arcade a guest is playing and a radiator heating. Each is held at the same moment.
+ * broken, a mat growing grimy, an arcade a guest is playing, a radiator heating and a generator carrying the center. Each is held at the same moment.
  */
 const STATES = [
   ['item:snack_machine', 'worn', '&wear=85'],
@@ -88,6 +88,7 @@ const STATES = [
   ['item:sound_mat', 'dirty', '&dirt=65'],
   ['item:arcade_machine', 'played', '&inUse=1'],
   ['item:radiator', 'heating', '&heating=1'],
+  ['item:generator', 'running', '&chugging=1'],
 ] as const;
 
 /** Each machine upgraded as far as it goes, with its plate of stars, as the scene shows one a Mechanic has upgraded. */

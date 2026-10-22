@@ -148,6 +148,11 @@ export class View {
     this.rig.resize(w, h);
   }
 
+  /** The spot on the ground the camera is looking at, in tiles. */
+  focus(): [number, number] {
+    return [this.rig.target.x, this.rig.target.z];
+  }
+
   /** Glide the camera over to look at a spot on the ground. */
   lookAt(x: number, y: number) {
     this.rig.centerOn(x, y);

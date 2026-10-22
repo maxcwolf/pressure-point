@@ -2,6 +2,7 @@
 // street, kept by a Caretaker from the paving beside it, and keeping the power on through a power cut.
 import { describe, expect, it } from 'vitest';
 
+import { RUMBLE_REACH, rumbleLevel } from '../../src/app/rumble';
 import { BACK_ROWS, onGrounds } from '../../src/core/build-rules';
 import { ITEMS, MISHAPS, SIDEWALK_Y } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
@@ -11,8 +12,11 @@ import { Sim } from '../../src/core/sim/sim';
 import { wearByTheDay } from '../../src/core/sim/upkeep';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { footprint } from '../../src/core/world';
+import { footprint, itemCenter } from '../../src/core/world';
+import { animateCues } from '../../src/render/item-cues';
 import { lightLevel, POWER_CUT_LIGHT } from '../../src/render/lighting';
+import { buildItem } from '../../src/render/models/items';
+import { partsOf } from '../../src/render/models/parts';
 import { signSpot } from '../../src/render/sign';
 import { itemOffered, placeFilters, placeLabel } from '../../src/ui/lib/catalog';
 import { mishapLine } from '../../src/ui/lib/mishaps';
@@ -246,5 +250,40 @@ describe('the Generator', () => {
     expect(mishapLine(MISHAPS.power, { ...m, started: true }, 0.5, 'Generator')).toBe(
       'Power cut: less than a day left · the Generator is on',
     );
+  });
+
+  it('rumbles only while it carries the center, louder the nearer the camera looks', () => {
+    const sim = freshSim();
+    const s = sim.s;
+    const gen = sim.placeItem('generator', BY_PAVEMENT.x, BY_PAVEMENT.y, 0)!;
+    const [x, y] = itemCenter(gen);
+    expect(rumbleLevel(s, x, y), 'no power cut').toBe(0);
+    s.mishap = newMishap(s.day, 'power');
+    expect(rumbleLevel(s, x, y), 'standing by for one').toBe(0);
+    s.mishap.started = true;
+    expect(rumbleLevel(s, x, y)).toBe(1);
+    expect(rumbleLevel(s, x + RUMBLE_REACH / 2, y)).toBeCloseTo(0.5);
+    expect(rumbleLevel(s, x, y - RUMBLE_REACH - 1), 'out of earshot').toBe(0);
+    s.mishap.prepared = true;
+    expect(rumbleLevel(s, x, y), 'prepared for, so it never kicked in').toBe(0);
+  });
+
+  it('puffs from its exhaust, shudders and lights up only while it runs', () => {
+    const model = buildItem('generator', {});
+    const lamp = partsOf(model).lamp!;
+    const bright = lamp.emissiveIntensity;
+    const cue = { id: 1, type: 'generator' as const, wear: 0, dirt: 0, inUse: false, running: 0 };
+    animateCues(model, cue, 1.03);
+    expect(partsOf(model).cues?.fumes?.visible ?? false).toBe(false);
+    expect(model.rotation.z).toBe(0);
+    expect(lamp.emissiveIntensity).toBeCloseTo(bright / 3);
+    animateCues(model, { ...cue, running: 1 }, 1.03);
+    expect(partsOf(model).cues?.fumes?.visible).toBe(true);
+    expect(Math.abs(model.rotation.z)).toBeGreaterThan(0);
+    expect(Math.abs(model.rotation.z)).toBeLessThanOrEqual(0.01);
+    expect(lamp.emissiveIntensity).toBeCloseTo(bright);
+    animateCues(model, cue, 2);
+    expect(partsOf(model).cues?.fumes?.visible).toBe(false);
+    expect(model.rotation.z).toBe(0);
   });
 });

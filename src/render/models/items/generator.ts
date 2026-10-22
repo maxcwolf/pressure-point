@@ -11,7 +11,8 @@ const LID = 0x8fa184;
 
 /**
  * Build the Generator model: a long sage housing on a dark skid, a louvered grille and a control panel with its
- * running light on the front, a lightning bolt between them, and the exhaust standing up from the roof.
+ * running light on the front, a lightning bolt between them, and the exhaust standing up from the roof, which puffs
+ * while it runs.
  */
 export function buildGenerator(g: THREE.Group) {
   put(g, rbox(1.84, 0.1, 0.8, 0.03), mat(DARK), 0, 0.05, 0);
@@ -32,6 +33,7 @@ export function buildGenerator(g: THREE.Group) {
   // the exhaust stack, up from the roof at the back, with its cap tipped over it
   put(g, cyl(0.07, 0.07, 0.42), mat(CHROME, 0.35), 0.66, 1.08, -0.2);
   put(g, capsule(0.075, 0.1), mat(DARK, 0.4), 0.66, 1.31, -0.2).rotation.z = Math.PI / 2;
+  partsOf(g).exhaust = new THREE.Vector3(0.66, 1.38, -0.2);
   // the filler cap on the roof
   put(g, cyl(0.08, 0.08, 0.06), mat(DARK, 0.4), -0.6, 0.92, -0.15);
 }
