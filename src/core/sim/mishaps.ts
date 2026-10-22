@@ -213,7 +213,7 @@ export function floodRestroom(ctx: SimContext, def: MishapDef): Room | undefined
   if (!ctx.world.flooded(room)) return undefined;
   toast(
     ctx,
-    `The ${def.name.toLowerCase()} has flooded a restroom. It is out of action until a Caretaker mops it out.`,
+    `The ${def.name.toLowerCase()} has flooded a restroom. It is out of action until a Caretaker mops it out, and the guests will mind.`,
     'bad',
     { kind: 'room', id: room.id },
     def.icon,

@@ -1,5 +1,6 @@
 // The Fortune Teller and the Kombucha Tap: a fortune told to a guest who plays, now and then a lucky one, and a tap
-// that fizzes over into a sticky puddle once it is worn, which slows anyone crossing it until a Caretaker mops it up.
+// that fizzes over into a sticky puddle once it is worn, which slows anyone crossing it until a Caretaker mops it up,
+// as the water in a flooded restroom does.
 
 import { FIZZ_CHANCE, FIZZ_WEAR, LUCKY_FORTUNE, PUDDLE_SLOW } from '../data';
 import { random } from '../random';
@@ -34,15 +35,20 @@ export function fizzOver(ctx: SimContext, tap: Item) {
   );
 }
 
-/** Whether someone is standing in a puddle. */
-export const inPuddle = (ctx: SimContext, x: number, y: number) =>
-  ctx.s.litter.some((l) => l.puddle && l.x === x && l.y === y);
+/** The puddle on a tile, if any: kombucha, or the water in a flooded restroom. */
+export const puddleAt = (ctx: SimContext, x: number, y: number) =>
+  ctx.s.litter.find((l) => (!!l.puddle || !!l.flood) && l.x === x && l.y === y);
 
-/** How fast a guest walks where they are: slowly through a puddle, which they notice. */
+/** Whether someone is standing in a puddle. */
+export const inPuddle = (ctx: SimContext, x: number, y: number) => !!puddleAt(ctx, x, y);
+
+/** How fast a guest walks where they are: slowly through a puddle or flood water, which they notice. */
 export function puddleSlow(ctx: SimContext, g: Guest): number {
-  if (!g.path || !inPuddle(ctx, g.tx, g.ty)) return 1;
-  if (!g.feelings.includes('puddle')) {
-    feel(g, 'puddle');
+  const wet = g.path ? puddleAt(ctx, g.tx, g.ty) : undefined;
+  if (!wet) return 1;
+  const feeling = wet.flood ? 'wet-feet' : 'puddle';
+  if (!g.feelings.includes(feeling)) {
+    feel(g, feeling);
     say(g, 'bubble-sweaty');
   }
   return PUDDLE_SLOW;

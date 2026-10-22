@@ -3,11 +3,13 @@
 import type * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 
-import { FLOOD_PUDDLES, MISHAP_NOTICE_DAYS, type MishapId, MISHAPS } from '../../src/core/data';
+import { FLOOD_PUDDLES, MISHAP_NOTICE_DAYS, type MishapId, MISHAPS, PUDDLE_SLOW } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
+import { spawnGuest } from '../../src/core/sim/guests';
 import { floodRestroom, floodTiles, newMishap, updateMishaps } from '../../src/core/sim/mishaps';
+import { puddleSlow } from '../../src/core/sim/novelties';
 import { buildPuddle, rippleFlood } from '../../src/render/models/puddle';
 import { lampStates } from '../../src/render/room-lamp';
 import { staffStatus } from '../../src/ui/lib/status';
@@ -123,6 +125,41 @@ describe('a flooded restroom', () => {
     const toilet = s.items.find((i) => i.type === 'toilet')!;
     expect(sim.world.usable(toilet)).toBe(true);
     expect(lampStates(sim).get(restroom.id)).toBe('working');
+  });
+
+  it('slows a guest who wades through it, who minds and says so', () => {
+    const c = withRestroom();
+    floodRestroom(c.ctx, MISHAPS.storm);
+    expect(toasts(drainEvents(c.ctx)).join(' ')).toContain('and the guests will mind');
+    const g = spawnGuest(c.ctx)!;
+    const [puddle] = water(c);
+    if (!puddle) throw new Error('no flood water');
+    Object.assign(g, { tx: puddle.x, ty: puddle.y, path: [[puddle.x + 0.5, puddle.y + 0.5, 0]] });
+    expect(puddleSlow(c.ctx, g)).toBe(PUDDLE_SLOW);
+    expect(g.feelings).toContain('wet-feet');
+    expect(g.feelings).not.toContain('puddle');
+    expect(g.bubble).toBe('bubble-sweaty');
+  });
+
+  it('leaves a guest who needs the toilet, with nowhere else to go, minding that too', () => {
+    const c = withRestroom();
+    const { sim, s } = c;
+    // nobody to see them, so they wait
+    sim.fire(c.consultant.id);
+    runUntil(sim, () => s.guests.some((g) => g.state === 'waiting'), 300);
+    floodRestroom(c.ctx, MISHAPS.storm);
+    const g = s.guests.find((x) => x.state === 'waiting')!;
+    g.bladder = 90;
+    runUntil(sim, () => g.feelings.includes('no-restroom'), 20);
+    expect(g.feelings).toContain('no-restroom');
+    // with no restroom at all, nothing is said of a flood
+    const dry = openCenter(2);
+    dry.sim.fire(dry.consultant.id);
+    runUntil(dry.sim, () => dry.s.guests.some((x) => x.state === 'waiting'), 300);
+    const h = dry.s.guests.find((x) => x.state === 'waiting')!;
+    h.bladder = 90;
+    run(dry.sim, 10);
+    expect(h.feelings).not.toContain('no-restroom');
   });
 
   it('has the advisor ask for a Caretaker when there is none to mop it out', () => {

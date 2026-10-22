@@ -653,6 +653,8 @@ export type FeelingId =
   | 'fortune'
   | 'lucky'
   | 'puddle'
+  | 'wet-feet'
+  | 'no-restroom'
   | 'fine-room'
   | 'underwhelmed'
   | 'pricey'
