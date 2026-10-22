@@ -652,6 +652,7 @@ export type FeelingId =
   | 'comfy'
   | 'refreshed'
   | 'played'
+  | 'rebirth-ride'
   | 'fortune'
   | 'lucky'
   | 'puddle'

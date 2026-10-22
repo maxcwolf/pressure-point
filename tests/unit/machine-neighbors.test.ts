@@ -263,8 +263,16 @@ describe('a ride on the Carousel of Rebirth', () => {
     runUntil(sim, () => g.state !== 'need', 30);
     expect(s.ledger.vending - before.vending).toBe(ITEMS.wheel_of_rebirth.sale);
     expect(g.patience).toBeGreaterThan(before.patience);
-    expect(g.feelings).toContain('played');
     expect(carousel.users[play]).toBe(0);
+  });
+
+  it('ends in a review line of its own, not a game played', () => {
+    const { sim, carousel, play } = withCarousel();
+    const g = boredBeside(sim, carousel, play);
+    runUntil(sim, () => g.state === 'need' && g.claimItem === carousel.id, 30);
+    runUntil(sim, () => g.state !== 'need', 30);
+    expect(g.feelings).toContain('rebirth-ride');
+    expect(g.feelings).not.toContain('played');
   });
 
   it('turns once round with the rider, as themselves, ending where they got on', () => {

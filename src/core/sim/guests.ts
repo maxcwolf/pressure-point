@@ -625,7 +625,9 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
             feel(g, 'filthy-toilet');
           }
           if (g.needKind === 'drink' || g.needKind === 'eat') feel(g, 'refreshed');
-          if (g.needKind === 'play' && used.type !== 'fortune_teller') feel(g, 'played');
+          // a ride on the carousel is something to tell people about; a game is a game
+          if (g.needKind === 'play' && used.type === 'wheel_of_rebirth') feel(g, 'rebirth-ride');
+          else if (g.needKind === 'play' && used.type !== 'fortune_teller') feel(g, 'played');
           g.patience = Math.max(0, Math.min(100, g.patience + needRelief(g.needKind, used.dirt)));
           if (used.type === 'fortune_teller') tellFortune(ctx, g);
           if (used.type === 'kombucha_tap') fizzOver(ctx, used);

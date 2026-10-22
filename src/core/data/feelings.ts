@@ -148,6 +148,17 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'experience',
     lines: ['Beat my high score while I waited.'],
   },
+  'rebirth-ride': {
+    id: 'rebirth-ride',
+    icon: 'item-wheel-of-rebirth',
+    text: 'Had a ride on the Carousel of Rebirth',
+    good: true,
+    part: 'experience',
+    lines: [
+      'I rode the carousel. I was briefly a goat. Ten out of ten.',
+      'Went round three times as a seagull. Would go round again.',
+    ],
+  },
   fortune: {
     id: 'fortune',
     icon: 'feeling-fortune',
