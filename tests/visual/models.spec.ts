@@ -30,6 +30,8 @@ const IDS = [
     'bald',
     'moustache',
     'beard',
+    'quiff',
+    'topknot',
     'slight',
     'stocky',
     'glasses-round',

@@ -450,6 +450,18 @@ const ponytailHair = () =>
     place(tail(0.3, 0.064, n), [0, 0.06, -0.33], [0.15, 0, 0]),
   ]);
 
+/** A quiff: short hair, and a roll of it swept up and forward over the brow. */
+const quiffHair = () =>
+  fuse('quiff', (n) => [capOf(FALLS.short, n), place(pill(0.055, 0.1, n), [0, 0.2, 0.12], [0.5, 0, Math.PI / 2])]);
+
+/** A top knot: short hair, and a small knot high at the crown with a wrap round its foot. */
+const topknotHair = () =>
+  fuse('topknot', (n) => [
+    capOf(FALLS.short, n),
+    place(ball(0.062, n(14)), [0, 0.25, -0.03]),
+    place(bare(new THREE.TorusGeometry(0.045, 0.014, n(8), n(18))), [0, 0.215, -0.025], [Math.PI / 2, 0, 0]),
+  ]);
+
 /** Hair tied low under a hat, hanging down the back. */
 const lowTie = () =>
   fuse('lowtie', (n) => [
@@ -490,6 +502,8 @@ export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, 
   else if (style === HAIR.curls) put(head, curlyHair(), hair, 0, 0.004, -0.004).name = 'hair';
   else if (style === HAIR.bun) put(head, bunHair(), hair, 0, 0.004, -0.004).name = 'hair';
   else if (style === HAIR.ponytail) put(head, ponytailHair(), hair, 0, 0.004, -0.004).name = 'hair';
+  else if (style === HAIR.quiff) put(head, quiffHair(), hair, 0, 0.004, -0.004).name = 'hair';
+  else if (style === HAIR.topknot) put(head, topknotHair(), hair, 0, 0.004, -0.004).name = 'hair';
   if (hatted && look.sex === 'female') put(head, lowTie(), hair).name = 'hair';
   if (look.sex === 'male' && look.beard) {
     put(head, moustache(), hair).name = 'moustache';

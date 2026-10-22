@@ -112,9 +112,10 @@ describe('the cost of drawing each model', () => {
     // 2250 after the Shaman, the lodge's equipment and its guests, 2351 with the five items chosen on 16 October 2026, and
     // 2522 with the ten things to hang on walls, each shown in the lab on a stretch of wall, and 3007 once people had
     // knees, elbows, faces and finer hair, and 3579 with the eleven treatment machines and the twelve guests only they
-    // cure, and 3714 with a receptionist in the lab for each build and each pair of glasses
+    // cure, and 3798 with a receptionist in the lab for each build, each pair of glasses, white shoes and the two haircuts
+    // men were given on 22 October 2026
     const heaviest = all.sort((a, b) => b.calls - a.calls).slice(0, 10);
-    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(3750);
+    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(3850);
   });
 
   it('only casts shadows from parts big enough to show one', async () => {

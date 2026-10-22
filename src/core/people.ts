@@ -50,11 +50,22 @@ export const HAIR = {
   mohawk: AMANDA.hairStyle,
   bob: 6,
   ponytail: 7,
+  quiff: 8,
+  topknot: 9,
 } as const;
 
 /** The hair styles women and men wear. Either may have big curls; the mohawk is Amanda Jablonsky's alone. */
 export const WOMEN_HAIR: readonly number[] = [HAIR.bun, HAIR.long, HAIR.curls, HAIR.bob, HAIR.ponytail];
-export const MEN_HAIR: readonly number[] = [HAIR.short, HAIR.bald, HAIR.curls];
+export const MEN_HAIR: readonly number[] = [HAIR.short, HAIR.bald, HAIR.curls, HAIR.quiff, HAIR.topknot];
+
+/**
+ * The styles a look from an older save is given in place of one its sex does not wear: those there were then, so a
+ * save settles as it always did, and the newer styles only come to people made up since.
+ */
+const SETTLED_HAIR: Readonly<Record<Sex, readonly number[]>> = {
+  female: WOMEN_HAIR,
+  male: [HAIR.short, HAIR.bald, HAIR.curls],
+};
 
 /** The hair styles someone of this sex wears. */
 export const hairFor = (sex: Sex) => (sex === 'female' ? WOMEN_HAIR : MEN_HAIR);
@@ -148,9 +159,10 @@ export function settleSex(person: {
         : person.id % 2
           ? 'female'
           : 'male');
-  const styles = hairFor(look.sex);
+  const styles = SETTLED_HAIR[look.sex];
   if (person.name === AMANDA.name) Object.assign(look, { hairStyle: AMANDA.hairStyle, hair: AMANDA.hair });
-  else if (!styles.includes(look.hairStyle)) look.hairStyle = styles[person.id % styles.length] ?? HAIR.short;
+  else if (!hairFor(look.sex).includes(look.hairStyle))
+    look.hairStyle = styles[person.id % styles.length] ?? HAIR.short;
 }
 
 /** Whether Amanda Jablonsky already works here or is applying. */

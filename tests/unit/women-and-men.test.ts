@@ -145,6 +145,18 @@ describe('a save from before women and men were told apart', () => {
     }
   });
 
+  it('never gives a man from an older save one of the haircuts that came later', () => {
+    for (let id = 0; id < 40; id++) {
+      const man = { id, name: 'Barnaby Kneadham', look: old(HAIR.bun) };
+      settleSex(man);
+      expect([HAIR.short, HAIR.bald, HAIR.curls]).toContain(man.look.hairStyle);
+    }
+    // and leaves a quiff a man already has alone
+    const quiffed = { id: 1, name: 'Barnaby Kneadham', look: { ...old(HAIR.quiff), sex: 'male' as const, beard: 0 } };
+    settleSex(quiffed);
+    expect(quiffed.look.hairStyle).toBe(HAIR.quiff);
+  });
+
   it('gives Amanda Jablonsky her brown mohawk, and takes the mohawk from anyone else', () => {
     const amanda = { id: 6, name: AMANDA.name, look: { ...old(HAIR.short), sex: 'female' as const, beard: 0 } };
     amanda.look.hair = 0xd9a441;

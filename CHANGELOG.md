@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **More faces in the crowd.** People come slight, average or stocky, a quarter wear glasses, shoes come in four colors, and men have two more haircuts.
 - **Eyes that blink and shut.** People blink, rest with their eyes closed on a table or a Recliner, lie face down for a massage or needles, and look frightened on a bad trip or in an outbreak.
 - **People who do what they are doing.** Feet plant where they land at every speed, a receptionist types and nods, guests drink, snack, shop and play, and Caretakers stoop for litter, water the plants and crouch with a wrench.
 - **Icons that read small.** Icons at 20 pixels and under, beside words and in the stats bar, draw with heavier lines and white fills from a second sprite sheet, and every speech bubble and marker has a simpler drawing of its own for small sizes, used in the scene too, so what a guest is saying can be told from where the game starts.

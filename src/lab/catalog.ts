@@ -367,6 +367,8 @@ const LOOKS: readonly (readonly [key: string, label: string, look: Partial<Look>
   ['bald', 'bald', { sex: 'male', hairStyle: HAIR.bald, skin: 0xd9a078 }],
   ['moustache', 'a moustache', { sex: 'male', hairStyle: HAIR.short, beard: 1, hair: 0x8c8c8c }],
   ['beard', 'a beard', { sex: 'male', hairStyle: HAIR.curls, beard: 2, skin: 0x8d5a3b, hair: 0x2b1d16 }],
+  ['quiff', 'a quiff', { sex: 'male', hairStyle: HAIR.quiff, hair: 0x2b1d16 }],
+  ['topknot', 'a top knot', { sex: 'male', hairStyle: HAIR.topknot, skin: 0xd9a078 }],
   ['slight', 'a slight build', { build: 0 }],
   ['stocky', 'a stocky build', { sex: 'male', hairStyle: HAIR.short, build: 2, skin: 0xb97a55, hair: 0x2b1d16 }],
   ['glasses-round', 'round glasses', { glasses: 1 }],
