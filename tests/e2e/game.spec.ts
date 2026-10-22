@@ -967,14 +967,25 @@ test.describe('running a center', () => {
   }) => {
     await game.start();
     await game.buildCenter();
-    await game.fastForward(60);
-    await game.eval((pp) => (pp.state.speed = 0));
-    // the console sends a waiting guest off on one, as a failed ceremony now and then does
-    const name = await game.eval((pp) => {
-      const r = pp.sim.cheat('badtrip');
-      if (!r.ok) throw new Error(r.text);
-      return pp.state.guests.find((g) => g.state === 'running')!.name;
-    });
+    // a few guests in at once, so some are waiting in the building rather than on a table
+    await game.fastForward(10);
+    expect(await game.eval((pp) => pp.sim.cheat('guests 4').ok)).toBe(true);
+    // the console sends a waiting guest off on one, as a failed ceremony now and then does: the first it would pick,
+    // once that one is inside, where the staff can get to them
+    let name: string | undefined;
+    for (let i = 0; i < 30 && !name; i++) {
+      await game.fastForward(2);
+      name = await game.eval((pp) => {
+        pp.state.speed = 0;
+        const g = pp.state.guests.find(
+          (x) => !x.classDay && !['called', 'served', 'running', 'leaving'].includes(x.state) && !x.outcome,
+        );
+        if (!g || !pp.sim.world.inside(Math.round(g.tx), Math.round(g.ty)) || !pp.sim.cheat('badtrip').ok)
+          return undefined;
+        return g.name;
+      });
+    }
+    if (!name) throw new Error('nobody waited inside to send on a bad trip');
     const toast = page
       .locator('#toasts')
       .getByRole('button', { name: new RegExp(`${name} is having a really bad trip`) });
