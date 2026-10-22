@@ -490,6 +490,8 @@ describe('a long session with sound healing', () => {
   it.each([1, 2])('stays healthy for half an hour of play (seed %i)', (seed) => {
     const { sim, s } = withStudio(seed);
     s.stars = 3;
+    // somewhere to rest, so the healer's morale holds and they are not lured away by the rival in the half hour
+    addStaffRoom(sim);
     let healed = 0;
     for (let second = 0; second < 1800; second++) {
       if (s.offer) sim.acceptEmergency();
