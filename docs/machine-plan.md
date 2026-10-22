@@ -23,6 +23,7 @@ Where it differs from the plan below:
   - The Pin Press healed 6 to 11 guests in two to three years and never paid back.
   - The Great Alphorn healed one guest in two years at High Pines, and took that center from $28,500 a month to a small loss.
   - The bot never built an Aura Wash. The Orchard Estate goes bankrupt on day 93 with or without machines, and on `main` too.
+- **Measured again with demand that follows capacity** (balance log 37): a machine room now draws guests as a staffed station. Over seeds 1 to 6 the Kneadmaster heals 69 guests and pays back on its own books on every seed, by day 510 to 880, and the Pin Press on one seed of three. Each center still makes less with a machine than without one ($7.0k a month on the seeds that built one), mostly because the bot knocks down a Massage Suite to fit it and runs the machine with that suite's therapist.
 - **The lab** has a Machines group: each machine with a guest inside, and controls for the stage, how far through the session, the fake failure, smoking and down.
 
 ## What comes first

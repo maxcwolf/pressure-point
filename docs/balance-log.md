@@ -8,7 +8,7 @@ A month is 180 seconds of game time (30 days of 6 seconds).
 
 ## 21 October 2026, night: demand that grows with the building
 
-Measured with `yarn balance` on the merged `integrate-audit` at `e15f8ba` (before) and `f8cbca1` (after), every campaign center, seeds 1 to 6, four years a game, with `BOT_STYLE=good`, `hoarder` and `grower` and `BOT=baseline`; The Orchard also over seeds 1 to 12 for the good bot and the baseline. The "before" is the merged tree, not entries 34 to 36's own before-runs. Year 4 is months 37 to 48 and "profit a month" months 13 to 48, over the games not lost; a mean star month counts a star never earned as month 48; waits are the month logs' average wait from month 13 on.
+Measured with `yarn balance` on the merged `integrate-audit` at `e15f8ba` (before) and `f8cbca1` (after), every campaign center, seeds 1 to 6, four years a game, with `BOT_STYLE=good`, `hoarder` and `grower` and `BOT=baseline`; The Orchard also over seeds 1 to 12 for the good bot and the baseline. The "before" is the merged tree, not entries 34 to 36's own before-runs. Taken again after the treatment machines were merged (`32c41cf` before, `3e16096` after), every number below came out the same to the dollar: the machines are built only with `BOT_ON=machines`. Year 4 is months 37 to 48 and "profit a month" months 13 to 48, over the games not lost; a mean star month counts a star never earned as month 48; waits are the month logs' average wait from month 13 on.
 
 ### 37. Arrivals rise with what the center can treat, and a limit on guests at once that binds
 
@@ -67,6 +67,23 @@ The brief's limit of 8 plus 4 a station still never binds (0.6 a month) and lets
 - **The baseline's months at a loss no worse than log 31's:** within log 31's range at all five centers for seeds 1 to 3 (The Orchard's 36 is the merged tree's, unchanged). Over six seeds it loses 4 games against 10 (The Boardwalk 5 → 0, Willow Lane 2 → 3: seeds 1 and 4, which grow a third table eight months sooner on the longer lines and then fail more treatments, with no guest ever turned away). Its cliffs rise from 54 to 83 windows of 1,209 to 1,273, still 7% of all three-month windows.
 
 **Fairness:** no game of any style is lost without a warning in its last 10 days. Losses: good bot 1 → 1, hoarder 12 → 11, grower 15 → 11, baseline 10 → 4. Side income shrinks where demand now pays: The Boardwalk's share at month 24 goes from 11% to 53% to 2% to 11%.
+
+**The treatment machines** (`BOT_ON=machines`, seeds 1 to 6, `32c41cf` → `3e16096`). A machine room is a staffed treatment station by the general rule, with no rule of its own: its chair counts once someone in its discipline is on the payroll and at work to run it (a unit test in `tests/unit/machines.test.ts`). Demand that follows capacity roughly doubles what the machines do, but none of them makes its center richer in the bot's hands:
+
+| Machine (center)           | Built in | Healed  | Earned while a guest is inside | Room and running costs | Paid back on its own books   |
+| -------------------------- | -------- | ------- | ------------------------------ | ---------------------- | ---------------------------- |
+| Kneadmaster (Willow Lane)  | 3 → 5    | 40 → 69 | $102.8k → $190.8k              | $59.5k → $67.5k        | 3 of 3 → 5 of 5, day 510–880 |
+| Pin Press (The Exchange)   | 5 → 3    | 15 → 24 | $46.0k → $69.8k                | $84.0k → $88.7k        | 0 of 5 → 1 of 3, day 1282    |
+| Aura Wash (The Boardwalk)  | 3 → 2    | 8 → 19  | $22.8k → $61.6k                | $89.0k → $104.0k       | none                         |
+| Great Alphorn (High Pines) | 4 → 0    | 9 → –   | $28.9k → –                     | $112.8k → –            | none                         |
+| Cider Press (The Orchard)  | 1 → 1    | 0 → 7   | $0 → $38.0k                    | $92.0k → $172.0k       | none                         |
+
+Year-4 profit a month with the machines against the good bot without them: Willow Lane $24.3k against $31.4k (was $12.1k against $13.4k), The Exchange $25.0k against $25.9k, The Boardwalk $19.0k against $24.3k, High Pines $21.9k against $26.8k, The Orchard $48.8k against $53.1k. Seed by seed, a game where the bot built a machine makes $7.0k a month less than the same seed without the flag (11 games; $6.9k over 16 before). So the Kneadmaster pays for itself but not for what it replaces, and the Pin Press barely pays for itself. Two things in the bot cost more than the machines' prices:
+
+- It makes room by knocking down a Massage Suite, so at Willow Lane the Kneadmaster takes the place of a table and its therapist moves to the chair: the center keeps the same staffed stations, the same pace and the same guest limit, and pays the running costs on top. Willow Lane seed 3 stays at 2 stations and a limit of 12 from day 353, where the good bot builds a third Massage Suite on day 354 and has 3 and 14.
+- In 14 of 30 games it knocked a room down and then could not fit the machine ("in vain" in the notes), $3.1k a month down on those seeds with no machine built.
+
+Tried and not kept: hiring a practitioner whenever the machine's discipline had more stations than staff. The machines heal more (Kneadmaster 75, Pin Press 28 and $5.4k short of paying back, Cider Press 17) but the centers gain only $1k to $2k a month (Willow Lane $26.2k, The Exchange $26.0k, The Boardwalk $19.8k), and at The Exchange it took on six acupuncturists one after another as the payroll rules let them go. The bot change belongs with the machines, not here.
 
 **Still open:** The Orchard's opening on the merged tree, for the good bot as much as the grower: the day-0 build puts the loan at its limit by month 2, and the bot's courses and house calls in month 3 leave lines with nobody to treat them. The Loan tab now shows the first payday before borrowing; the bot does not read it.
 
