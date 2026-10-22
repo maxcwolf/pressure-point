@@ -8,6 +8,7 @@ import {
   DISCIPLINE_ORDER,
   DISCIPLINES,
   DISCOMFORT_NOTICE,
+  FIRST_PAYDAYS,
   IDEAL_TEMP,
   isWatered,
   ITEMS,
@@ -32,9 +33,13 @@ import {
   countdownLever,
   cutFirst,
   daysUntilBankrupt,
+  incomeOf,
+  inHandLine,
   loanLimit,
+  paydaysInHand,
   payrollOutlook,
   projectedCashflow,
+  shortOfAMonth,
 } from './economy';
 import { emit, type Subject } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
@@ -155,6 +160,9 @@ function nudge(ctx: SimContext): string | Advice {
   }
   if (s.money < 0 && s.bankruptcyOn)
     return `You are ${money(-s.money)} in the red at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month, with the loan used up. You are making about ${money(projectedCashflow(s))} a month, so it will clear; a payday with the books losing money, and the bank calls the overdraft in.`;
+  // a month's wages in hand before the next payday alone: it says more, unless that payday is short past the loan
+  const inHand = inHandAdvice(ctx);
+  if (inHand) return inHand;
   const payday = paydayAdvice(ctx);
   if (payday) return payday;
   const gap = modalityAdvice(ctx);
@@ -208,6 +216,28 @@ function paydayAdvice(ctx: SimContext): string {
   if (o.covered === 'no' && o.net < 0 && s.months.length > 0)
     return `${head} No new staff or rooms until the takings cover the wages. The books are losing ${money(-o.net)} a month. ${cutFirst(s)}`;
   return `${head} No new staff or rooms until the takings cover the wages.`;
+}
+
+/**
+ * Nudge about less than a month's wages in the bank and the loan left, past what the paydays can carry, as at The
+ * Orchard Estate's opening. A hire adds a wage, and a course or a house call leaves a station empty for days, so it
+ * asks for none of them until there is a month in hand, with the numbers, and through the first paydays says how many
+ * are left before the takings have a record. Nothing once the next payday is short past what the bank will lend, which
+ * is the payday nudge's to say, with the cut.
+ */
+export function inHandAdvice(ctx: SimContext): string {
+  const s = ctx.s;
+  if (!s.bankruptcyOn || s.insolvency) return '';
+  if (moneyFirst(s) && payrollOutlook(s).covered === 'no') return '';
+  const h = paydaysInHand(s);
+  if (!shortOfAMonth(h)) return '';
+  const takings = s.months.length ? ` Last month took in ${money(incomeOf(s.lastLedger))}.` : '';
+  const short = h.wages + h.upkeep - h.inHand;
+  const left = FIRST_PAYDAYS - s.months.length;
+  const first = h.opening
+    ? ` ${left === 1 ? 'One of the first paydays is' : `${left} of the first paydays are`} still to come, before the takings have a record.`
+    : '';
+  return `Hire nobody more, send nobody on a course and turn house calls down until there is a month's wages in hand, ${money(short)} more: ${inHandLine(h)}${takings} Each adds a wage or leaves a station empty for days, and once the loan is used up a month that heals few guests has the bank call the overdraft in.${first}`;
 }
 
 /** What one more of a role would be paid: the cheapest applicant for it, or the role's standard pay. */

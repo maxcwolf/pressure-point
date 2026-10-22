@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **The first paydays in sight.** Each campaign center's card gives what its opening costs in a month's wages and rooms against the money and the loan, and the Payroll tab weighs a month's wages against the bank and the loan left, with the advisor asking for no new hire, course or house call while there is less than a month in hand.
+
 ## v0.31.0
 
 ### A center that tells you where it stands

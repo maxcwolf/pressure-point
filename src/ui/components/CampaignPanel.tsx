@@ -74,6 +74,7 @@ function Centers({ onStart }: CampaignPanelProps) {
               </span>
               <small>{c.place}</small>
               <p>{c.blurb}</p>
+              <p class="opening">{c.opening}</p>
               {c.open ? (
                 <button
                   class="go"
