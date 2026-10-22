@@ -182,7 +182,7 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
       );
     else view.setHeat(overlay && !ringsPeople(overlay) ? heatTiles(sim, overlay) : null, overlayPalette(overlay));
   };
-  runLoop({
+  const loop = runLoop({
     sim,
     view,
     ui,
@@ -255,6 +255,8 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
         return sim.world.building.bounds.y1;
       },
     };
-    Object.assign(window, { pp: { sim, view, tools, ui, state, data, geo: { itemDims, accessTile, wallSpotsOf } } });
+    Object.assign(window, {
+      pp: { sim, view, tools, ui, loop, state, data, geo: { itemDims, accessTile, wallSpotsOf } },
+    });
   }
 }

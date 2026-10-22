@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import type { Page } from '@playwright/test';
 
-import { LOAN_MAX } from '../../src/core/data/rules';
+import { DAY_SECONDS, LOAN_MAX } from '../../src/core/data/rules';
 import type { Layout } from '../../src/core/room-layout';
 import { expect, type Game, test } from './fixtures';
 
@@ -1274,6 +1274,10 @@ test.describe('leaving a game', () => {
     game,
     page,
   }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await game.eval((pp) => (pp.state.speed = 0));
@@ -1446,6 +1450,8 @@ test.describe('acupuncture and settings', () => {
   });
 
   test('a saved game keeps its own choice', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await pauseMenu(page, 'Settings');
     await page.getByRole('switch', { name: 'Acupuncture' }).click();
@@ -1613,6 +1619,8 @@ test.describe('the Items menu', () => {
 
 test.describe('more land', () => {
   test('is bought from the world: pointed at with the Expand tool, clicked, and confirmed', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.eval((pp) => {
       pp.state.money = 100000;
@@ -2045,6 +2053,8 @@ test.describe('stats', () => {
   });
 
   test('the Stats menu charts chosen figures, and remembers the choice', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await game.fastForward(200);
@@ -2195,6 +2205,8 @@ test.describe('the campaign', () => {
 
 test.describe('the sandbox', () => {
   test('starts with the money, treatments and unlocks chosen for it', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
     await page.goto('/');
     await page.getByRole('button', { name: 'Sandbox' }).click();
@@ -2491,11 +2503,13 @@ test.describe('a payday the bank cannot cover', () => {
     expect(await game.eval((pp) => pp.state.bankrupt)).toBe(false);
     // in the red past what the bank will lend, with no takings on the books, so the bank gives it ten days, and then calls it in
     expect(await game.eval((pp) => pp.state.insolvency)).not.toBeNull();
-    await game.eval((pp) => {
+    // the bank looks as the next day begins, up to a day of play away: played here, not left to the running game, which
+    // a busy machine runs too slowly to get there before the dialog is looked for
+    await game.eval((pp, day) => {
       pp.state.day = pp.state.insolvency!.until;
       pp.state.speed = 1;
-      for (let i = 0; i < 20 && !pp.state.bankrupt; i++) pp.sim.tick(0.1);
-    });
+      for (let i = 0; i < (day + 1) * 10 && !pp.state.bankrupt; i++) pp.sim.tick(0.1);
+    }, DAY_SECONDS);
     await game.settle();
     await expect(modal.locator('h2')).toContainText('Bankrupt');
     expect(await game.eval((pp) => pp.state.bankrupt)).toBe(true);
@@ -2589,19 +2603,22 @@ test.describe('saved games', () => {
   };
   test('warns when the game is also open in another tab, saving over this one', async ({ game, page }) => {
     await game.start();
+    // a copy of this game, moved on a little, as the other tab has it
+    const copy = await game.eval((pp) => ({ ...pp.state, money: pp.state.money + 1 }));
     const other = await page.context().newPage();
-    // The warning comes once, the first time the other tab writes the autosave: as it starts its game, if this one has
-    // autosaved by then (it moves to "Previous game"), or else as it saves. It fades after a few seconds, which a slow
-    // machine can take to reach the saves screen, so watch for it from the start.
+    // The warning comes once, the first time another tab writes the autosave. That tab writes it with the game's own
+    // storage code rather than starting a second game, which on a busy machine takes most of a test's minute. The
+    // warning fades after a few seconds, so watch for it from the start.
     await Promise.all([
       expect(page.locator('#toasts')).toContainText('also open in another tab or window', { timeout: 30_000 }),
       (async () => {
         await other.goto('/');
-        await other.getByRole('button', { name: 'Sandbox' }).click();
-        await other.getByRole('button', { name: 'Start building' }).click();
-        await other.waitForFunction(() => !!window.pp);
-        // opening the saves screen there saves that copy of the game
-        await openSaves(other);
+        await other.evaluate(async (state) => {
+          const saves = (await import(/* @vite-ignore */ `${location.origin}/src/storage/saves.ts`)) as {
+            autosave: (state: object) => void;
+          };
+          saves.autosave(state);
+        }, copy);
       })(),
     ]);
     await other.close();
@@ -2637,6 +2654,8 @@ test.describe('saved games', () => {
     }));
 
   test('the autosave brings a game back after a reload', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await game.fastForward(120);
@@ -2652,6 +2671,8 @@ test.describe('saved games', () => {
   });
 
   test('a named save can be made, then loaded from the title screen', async ({ game, page }) => {
+    // starts a game twice, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await game.fastForward(60);
@@ -2714,6 +2735,18 @@ test.describe('saved games', () => {
 
   test('says once when an autosave fails for want of room', async ({ game, page }) => {
     await game.start();
+    // count the warnings as they are given, since one fades after a few seconds, which a busy machine can take to check
+    await game.eval((pp) => {
+      const ui = pp.ui as unknown as { toast(text: string, ...rest: unknown[]): void };
+      const toast = ui.toast.bind(ui);
+      const counted = window as unknown as { saidFull: number };
+      counted.saidFull = 0;
+      /** Count a warning about full storage on its way to the screen. */
+      ui.toast = (text, ...rest) => {
+        if (text.includes('could not be saved')) counted.saidFull++;
+        toast(text, ...rest);
+      };
+    });
     // storage that has no room left for the game
     await page.evaluate(() => {
       const store = Object.getOwnPropertyDescriptor(Storage.prototype, 'setItem')!.value as Storage['setItem'];
@@ -2731,10 +2764,12 @@ test.describe('saved games', () => {
     await openSaves(page);
     await page.getByRole('button', { name: 'Back' }).click();
     await page.getByRole('button', { name: 'Resume' }).click();
-    await expect(page.locator('#toasts .toast', { hasText: 'could not be saved' })).toHaveCount(1);
+    expect(await page.evaluate(() => (window as unknown as { saidFull: number }).saidFull)).toBe(1);
   });
 
   test('a new game is refused, not started, when there is no room to keep the old one', async ({ game, page }) => {
+    // starts a game three times, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.eval((pp) => (pp.state.money = 12345));
     await page.locator('#sys').locator('[data-tip="Menu"]').click();
@@ -2760,16 +2795,12 @@ test.describe('saved games', () => {
   });
 
   test("takes the title screen's picture of the game on the way out, not at every autosave", async ({ game, page }) => {
-    // the shortest autosave interval, rather than the default five minutes
-    await page.addInitScript(() => localStorage.setItem('pressure-point-controls', JSON.stringify({ autosave: 12 })));
     await game.start();
     /** Whether the autosave has a picture. */
     const pictured = () => page.evaluate(() => localStorage.getItem('pressure-point-thumb:auto') !== null);
-    // the regular autosave, after twelve seconds of play: a frame counts for at most a tenth of a second, so on a
-    // machine busy enough to draw fewer than ten frames a second, that takes longer than twelve seconds
-    await page.waitForFunction(() => localStorage.getItem('pressure-point-save-v1') !== null, null, {
-      timeout: 45_000,
-    });
+    // the regular autosave, from the loop's own timer, told its interval has passed rather than waited out
+    await game.eval((pp) => pp.loop.saveSoon());
+    await page.waitForFunction(() => localStorage.getItem('pressure-point-save-v1') !== null);
     expect(await pictured()).toBe(false);
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     expect(await pictured()).toBe(true);
@@ -2786,6 +2817,8 @@ test.describe('saved games', () => {
   });
 
   test('a save can be exported to a file and imported again', async ({ game, page }, testInfo) => {
+    // starts a game three times, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await game.fastForward(30);
@@ -2834,6 +2867,8 @@ test.describe('saved games', () => {
   });
 
   test('starting a new game keeps the old one as Previous game', async ({ game, page }) => {
+    // starts a game three times, and a start can take half a minute on a busy machine
+    test.slow();
     await game.start();
     await game.buildCenter();
     await page.locator('#sys').locator('[data-tip="Menu"]').click();

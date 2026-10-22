@@ -29,8 +29,14 @@ export interface LoopParts {
   overlay: (due: boolean) => void;
 }
 
+/** What the running loop offers the end-to-end tests. */
+export interface Loop {
+  /** Write the regular autosave on the next frame, as if its interval had passed (unless it is set to only on leaving). */
+  saveSoon(): void;
+}
+
 /** Run the game until the page goes away: move the camera, advance the game, draw it, refresh the interface. */
-export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, overlay }: LoopParts) {
+export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, overlay }: LoopParts): Loop {
   let prev = performance.now();
   let sinceSave = 0;
   let sinceOverlay = 0;
@@ -76,4 +82,10 @@ export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, ove
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
+  return {
+    /** Save on the next frame. */
+    saveSoon: () => {
+      sinceSave = Infinity;
+    },
+  };
 }

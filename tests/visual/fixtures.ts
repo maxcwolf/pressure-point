@@ -33,6 +33,32 @@ async function seedStorage(page: Page) {
   );
 }
 
+/**
+ * Wait until no panel is popping in. A panel pops in a frame or two after it opens, and one that starts while the
+ * screenshot has animations stopped is caught on its first frame, shrunk and shifted; so the page has to stay clear for
+ * a few frames running. Endless animations, such as a lamp's pulse, do not count.
+ */
+async function stillPanels(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((done) => {
+        let clear = 0;
+        /** Count the frames in a row with nothing popping in, until there are enough. */
+        const check = () => {
+          const moving =
+            document.querySelector('.pop') !== null ||
+            document
+              .getAnimations()
+              .some((a) => a.playState === 'running' && a.effect?.getComputedTiming().iterations !== Infinity);
+          clear = moving ? 0 : clear + 1;
+          if (clear >= 3) done();
+          else requestAnimationFrame(check);
+        };
+        check();
+      }),
+  );
+}
+
 export interface Screens {
   /** Show the title screen, with the saved game ready to continue. */
   title(): Promise<void>;
@@ -79,6 +105,7 @@ export const test = base.extend<{ screens: Screens }>({
       /** Compare the whole page with the stored picture of this name. */
       shot: async (name) => {
         await game.settle();
+        await stillPanels(page);
         await expect(page).toHaveScreenshot(`${name}.png`);
       },
     });
