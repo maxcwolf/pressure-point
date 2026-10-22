@@ -484,6 +484,9 @@ export const MACHINE_LOTS: Partial<Record<CenterId, PlotDef>> = {
     name: 'The alley',
     blurb: 'Given by hand for the Aura Wash',
     rects: [{ x0: 27, x1: 31, y0: 7, y1: 16 }],
+    // a door of its own, since the rooms along the building's east wall can leave it reached only through the parlor
+    entrance: { side: 'south', x: 29, y: 16 },
+    path: [{ x0: 29, x1: 30, y0: 17, y1: 19 }],
     price: 12000,
     star: 2,
   },

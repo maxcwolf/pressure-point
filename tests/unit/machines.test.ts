@@ -185,7 +185,7 @@ describe('a machine room and the guests it draws', () => {
     const note = paceNote(sim.arrivalPace(), s.reputation, centerOf(s));
     expect(note).toMatch(/^About \d+ new guests a month\. \d+ come for the treatment stations: /);
     expect(note).toMatch(
-      /\d+ come for the Kneadmaster 9000’s own ailments: 45% of the center’s pace for the one with a Massage Therapist of its own to run it/,
+      /\d+ come for the Kneadmaster 9000’s own ailments: 25% of the center’s pace for the one with a Massage Therapist of its own to run it/,
     );
     // its room's inspector says how it draws, as a finest room does
     expect(machinePullNote(1, 'kneadmaster').text).toBe(
