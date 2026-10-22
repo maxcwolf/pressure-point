@@ -4,11 +4,15 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **A really bad trip you can see and answer.** A runner yelps, the announcer has a word, heads turn as they pass and a red ring marks them in any view. A pill at the top counts the days to the door and sends someone in one click, a Shaman first; one who finds the door costs reputation, and one calmed within three days earns a point back.
+- **A flood you can see and feel.** A Caretaker mops it with a mop, the water moves, and guests who wade through it or find the toilet under water say so in their reviews.
+- **A Generator you can tell is working.** It puffs, shudders and rumbles while it carries the center through a cut, and each day of it costs $150 in diesel.
+- **Small things noticed.** Everyone in a room the Gong rattles flinches at each strike, a ride on the Carousel of Rebirth gets a review of its own, and a tip says when ZenMart stops growing and the day you pass it.
 - **Icons that read small.** Icons at 20 pixels and under, beside words and in the stats bar, draw with heavier lines and white fills from a second sprite sheet, and every speech bubble and marker has a simpler drawing of its own for small sizes, used in the scene too, so what a guest is saying can be told from where the game starts.
 - **Small fixes.** The bottom bar fits windows 1240 to 1540 pixels wide and shows the date whole at 1440, the tool hint reads as a row of chips, and the sign out front reads from behind.
 - **The machines in their own clothes.** Each treatment machine has an icon, a room sign and a treatment icon of its own, its model is polished to match the rest of the furniture, and an upgraded machine shows its stars on a brass plate, as the tables do.
 - **The storm floods a restroom.** At The Boardwalk the storm now also floods a restroom as it starts, out of action with its lamp red until a Caretaker mops it out; boarding up and sandbagging, at the same $800 as before, stops it.
-- **A really bad trip, now and then.** A guest whose ceremony goes badly may run round the institute freaking out everyone they pass, until you send someone to calm them down from their inspector or they find the door.
+- **A really bad trip, now and then.** A guest whose ceremony goes badly may run round the institute freaking out everyone they pass, until you send someone to calm them down or they find the door.
 - **The first paydays in sight.** Each campaign center's card gives what its opening costs in a month's wages and rooms against the money and the loan, and the Payroll tab weighs a month's wages against the bank and the loan left, with the advisor asking for no new hire, course or house call while there is less than a month in hand.
 - **More land to grow into.** Every center, the sandbox too, has two more plots on a wider lot: at the second star a building of its own, big enough for the center's machine room beside the tables, and at the third more room joined to the building.
 - **Machines draw guests of their own.** A signature machine's two ailments now come only for it, at their own pace once it stands with a practitioner of its own to run it, more for a finer room, and the Guests tab and the date's hover say how many.
