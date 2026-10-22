@@ -6,13 +6,15 @@ import {
   CONSULT_FEEDS,
   DISCIPLINES,
   GUEST_CAP,
+  ITEMS,
+  MACHINE_DRAW,
   modalityLabel,
   ROLES,
   ROOMS,
 } from '../../core/data';
 import type { Discipline } from '../../core/data/types';
-import type { Capacity, DisciplineDemand } from '../../core/sim/demand';
-import type { ArrivalPace } from '../../core/sim/guests';
+import type { Capacity, DisciplineDemand, MachineDemand } from '../../core/sim/demand';
+import { type ArrivalPace, staffedMachines } from '../../core/sim/guests';
 import type { IconLine } from './icon-line';
 
 /** A multiplier as it reads, to two places at most: "×1.4", "×0.75", "×1". */
@@ -131,7 +133,38 @@ export function paceNote(p: ArrivalPace, reputation: number, center: CenterDef):
   by(p.difficulty, 'for the difficulty');
   const away = Math.round((1 - p.lines) * 100);
   if (away >= 1) parts.push(`less ${away}% kept away by long lines`);
-  return `About ${Math.round(p.perMonth)} new guests a month: ${parts.join(', ')}.`;
+  const drawing = p.machines.filter((m) => m.perMonth > 0);
+  if (!drawing.length) return `About ${Math.round(p.perMonth)} new guests a month: ${parts.join(', ')}.`;
+  const tables = `${Math.round(p.tables)} come for the treatment stations: ${parts.join(', ')}.`;
+  const machines = drawing.map((m) => machineNote(m.demand, m.perMonth));
+  return [`About ${Math.round(p.perMonth)} new guests a month.`, tables, ...machines].join(' ');
+}
+
+/** Who runs a machine, as a phrase: "a Massage Therapist". */
+const operator = (m: MachineDemand) => {
+  const d = ITEMS[m.machine].station?.discipline ?? 'massage';
+  return ROLES[DISCIPLINES[d].role].name;
+};
+
+/**
+ * How many come for a signature machine's own ailments, and why: "6 come for the Kneadmaster 9000’s own ailments:
+ * 45% of the center’s pace for the one with a Massage Therapist of its own to run it, ×1.4 for the Kneadmaster Suite."
+ */
+export function machineNote(m: MachineDemand, perMonth: number): string {
+  const name = ITEMS[m.machine].name;
+  const share = `${Math.round(MACHINE_DRAW * 100)}% of the center’s pace`;
+  const each = m.staffed === 1 ? 'the one' : `each of the ${m.staffed}`;
+  const parts = [`${share} for ${each} with a ${operator(m)} of its own to run it`];
+  /** A factor, if it moves the draw at all. */
+  const by = (f: number, why: string) => {
+    if (Math.abs(f - 1) > 0.005) parts.push(`${times(f)} ${why}`);
+  };
+  by(m.room.pull, m.room.room ? `for the ${ROOMS[m.room.room.type].name}` : 'for its room');
+  by(m.training, 'while nobody is trained to run it');
+  by(m.flavour, 'for the local favourites');
+  const away = Math.round((1 - m.line.factor) * 100);
+  if (away >= 1) parts.push(`less ${away}% kept away by its line`);
+  return `${Math.round(perMonth)} come for the ${name}’s own ailments: ${parts.join(', ')}.`;
 }
 
 /**
@@ -153,6 +186,16 @@ export function capacityNote(c: Capacity): string | null {
     parts.push(
       `${count(c.away, 'treatment station stands', 'treatment stations stand')} idle while ${c.away === 1 ? 'its practitioner is' : 'their practitioners are'} away on a course or a house call, and draw${c.away === 1 ? 's' : ''} nobody until they are back`,
     );
+  for (const m of c.machines) {
+    const name = ITEMS[m.machine].name;
+    const role = ROLES[DISCIPLINES[ITEMS[m.machine].station?.discipline ?? 'massage'].role].name;
+    if (m.paid < m.standing)
+      parts.push(
+        `The ${name} draws nobody for its own ailments: it needs a ${role} of its own, past those its discipline’s tables keep busy. One more on the payroll would bring its guests, and let more in at once`,
+      );
+    else if (m.staffed < m.standing)
+      parts.push(`The ${name} draws nobody while its ${role} is away on a course or a house call`);
+  }
   return parts.length ? `${parts.join('. ')}.` : null;
 }
 
@@ -184,7 +227,9 @@ export function limitNote(l: Limit, c: Capacity): string {
     c.consults === 1
       ? `${GUEST_CAP.consult} for the staffed Consultation Room`
       : `${GUEST_CAP.consult} for each of ${count(c.consults, 'staffed Consultation Room')}`;
-  const made = `${GUEST_CAP.base}, and ${GUEST_CAP.station} for each of ${fedWord(c)} and ${rooms}`;
+  const machines = staffedMachines(c);
+  const run = machines ? `, ${count(machines, 'signature machine')} with someone to run it` : '';
+  const made = `${GUEST_CAP.base}, and ${GUEST_CAP.station} for each of ${fedWord(c)}${run} and ${rooms}`;
   const own = l.own !== null && l.own < l.building ? ` Your own limit is ${l.own}.` : '';
   const away = l.away
     ? ` ${count(l.away, 'guest')} found it full this month and went elsewhere, with their fees: ${moreRoom(c)}${own ? ', or raise your own limit' : ''}.`

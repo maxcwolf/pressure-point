@@ -3,9 +3,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  centerOf,
+  conditionOf,
   CONDITIONS,
+  GUEST_CAP,
   ITEMS,
   type ItemType,
+  MACHINE_DRAW,
   machineRoom,
   MODALITIES,
   MODALITY_ORDER,
@@ -15,7 +19,17 @@ import {
 } from '../../src/core/data';
 import type { Layout } from '../../src/core/room-layout';
 import type { SimContext } from '../../src/core/sim/context';
-import { capacity, capacityArrivals } from '../../src/core/sim/demand';
+import {
+  capacity,
+  capacityArrivals,
+  chooseCondition,
+  chooseMachineCondition,
+  lineFactor,
+  machineDemand,
+  roomPull,
+  UNTRAINED_PULL,
+} from '../../src/core/sim/demand';
+import { admitGuests, guestCap, spawnGuest } from '../../src/core/sim/guests';
 import {
   machineBuilt,
   machineSeconds,
@@ -30,6 +44,7 @@ import type { Sim } from '../../src/core/sim/sim';
 import { unlocked } from '../../src/core/sim/treatments';
 import { templateLock } from '../../src/core/templates';
 import { machineCures, roomKarmaLock } from '../../src/ui/lib/catalog';
+import { capacityNote, paceNote } from '../../src/ui/lib/demand';
 import { itemStats } from '../../src/ui/lib/item-stats';
 import { treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
 import { buildRoom, freshSim, hire, inconsistencies, openCenter, run, runUntil, toasts } from './helpers';
@@ -58,17 +73,125 @@ function withKneader() {
 }
 
 describe('a machine room and the guests it draws', () => {
-  it('counts as a staffed treatment station like a table, with nothing of its own', () => {
+  /** A Kneadmaster center with a second Massage Therapist, so the chair has someone of its own to run it. */
+  function staffed() {
+    const center = withKneader();
+    const second = hire(center.sim, 'therapist');
+    center.s.reputation = 50;
+    return { ...center, second, ctx: ctxOf(center.sim) };
+  }
+
+  it('is not a treatment station, and draws nobody without a practitioner of its own past the tables', () => {
     const { sim, chair } = withKneader();
     const ctx = ctxOf(sim);
-    // a table and the Kneadmaster, with one Massage Therapist: one station, and one standing idle
-    expect(capacity(ctx)).toMatchObject({ stations: 1, by: { massage: 1 }, idle: 1 });
+    // a table and the Kneadmaster, with one Massage Therapist: the table is the station, and the chair stands idle
+    expect(capacity(ctx)).toMatchObject({
+      stations: 1,
+      by: { massage: 1 },
+      idle: 0,
+      machines: [{ machine: 'kneadmaster', standing: 1, paid: 0, staffed: 0 }],
+    });
+    expect(machineDemand(ctx).map((m) => m.pull)).toEqual([0]);
+    expect(sim.arrivalPace().perMonth).toBe(sim.arrivalPace().tables);
     hire(sim, 'therapist');
-    expect(capacity(ctx)).toMatchObject({ stations: 2, by: { massage: 2 }, idle: 0 });
-    expect(capacityArrivals(capacity(ctx))).toBeCloseTo(1.12, 5);
+    // a second therapist runs the chair: the tables' pace is the same, and the chair draws guests of its own
+    expect(capacity(ctx)).toMatchObject({ stations: 1, machines: [{ standing: 1, paid: 1, staffed: 1 }] });
+    expect(capacityArrivals(capacity(ctx))).toBe(1);
+    expect(machineDemand(ctx)[0]?.pull).toBeGreaterThan(0);
     // broken down, it draws nobody until it is put right
     chair.wear = 100;
-    expect(capacity(ctx)).toMatchObject({ stations: 1 });
+    expect(capacity(ctx).machines).toEqual([]);
+    expect(sim.arrivalPace().machines).toEqual([]);
+  });
+
+  it('draws its share of the center’s pace, times its room’s pull, on top of the tables', () => {
+    const { sim, ctx } = staffed();
+    const pace = sim.arrivalPace();
+    const [own] = pace.machines;
+    if (!own) throw new Error('the Kneadmaster draws nobody');
+    const parts = pace.parts.center * pace.parts.time * pace.parts.grade * pace.parts.rival * pace.parts.mishap;
+    expect(own.demand.room.room?.type).toBe('kneader');
+    expect(own.demand.pull).toBeCloseTo(MACHINE_DRAW * own.demand.room.pull * own.demand.flavour, 5);
+    expect(own.perMonth).toBeCloseTo(pace.base * parts * pace.difficulty * own.demand.pull, 5);
+    expect(pace.perMonth).toBeCloseTo(pace.tables + own.perMonth, 5);
+    expect(pace.seconds).toBeCloseTo(180 / pace.perMonth, 5);
+    // a finer room draws more, as a discipline's finest room does
+    expect(own.demand.room.pull).toBe(roomPull(ctx, own.demand.room.room as never));
+  });
+
+  it('draws fewer while nobody is trained to run it, and fewer still behind a long line of its own', () => {
+    const { ctx, therapist } = staffed();
+    const trained = machineDemand(ctx)[0]?.pull ?? 0;
+    therapist.quals = therapist.quals.filter((q) => q !== 'kneading');
+    expect(machineDemand(ctx)[0]?.pull).toBeCloseTo(trained * UNTRAINED_PULL, 5);
+    therapist.quals.push('kneading');
+    // eight waiting for its one chair: past the three nobody minds
+    for (let i = 0; i < 8; i++) {
+      const g = spawnGuest(ctx, 'chairshaped');
+      if (g) {
+        g.goal = 'treat';
+        g.state = 'waiting';
+      }
+    }
+    const [row] = machineDemand(ctx);
+    expect(row?.line).toMatchObject({ waiting: 8, places: 1 });
+    expect(row?.pull).toBeCloseTo(trained * lineFactor(8, 1), 5);
+  });
+
+  it('draws nobody while it is down, or while its practitioner is away', () => {
+    const { ctx, chair, second } = staffed();
+    expect(machineDemand(ctx)[0]?.pull).toBeGreaterThan(0);
+    chair.overloaded = true;
+    chair.wear = 100;
+    expect(machineDemand(ctx)).toEqual([]);
+    chair.overloaded = false;
+    chair.wear = 0;
+    second.state = 'training';
+    expect(capacity(ctx).machines).toEqual([{ machine: 'kneadmaster', standing: 1, paid: 1, staffed: 0 }]);
+    expect(machineDemand(ctx)[0]?.pull).toBe(0);
+  });
+
+  it('keeps its ailments out of the tables’ guests: they come only for the machine', () => {
+    const { ctx } = staffed();
+    const own = new Set(CONDITIONS.filter((c) => MODALITIES[c.modality].machine).map((c) => c.id));
+    for (let i = 0; i < 2000; i++) expect(own.has(chooseCondition(ctx, Math.random(), Math.random()))).toBe(false);
+    const rows = machineDemand(ctx);
+    for (let i = 0; i < 200; i++)
+      expect(['chairshaped', 'mallback']).toContain(chooseMachineCondition(rows, Math.random(), Math.random()));
+    expect(chooseMachineCondition([], 0.5, 0.5)).toBeUndefined();
+  });
+
+  it('brings its guests through the door at its share of the pace, and lets more in at once', () => {
+    const { sim, ctx, s } = staffed();
+    const pace = sim.arrivalPace();
+    const share = (pace.machines[0]?.perMonth ?? 0) / pace.perMonth;
+    expect(share).toBeGreaterThan(0.1);
+    expect(guestCap(ctx)).toBe(GUEST_CAP.base + GUEST_CAP.station * 2 + GUEST_CAP.consult);
+    let own = 0;
+    const n = 1500;
+    for (let i = 0; i < n; i++) {
+      s.guests = [];
+      s.spawnT = 0;
+      admitGuests(ctx, 0.01);
+      const g = s.guests.at(-1);
+      if (g && MODALITIES[conditionOf(g.condition).modality].machine === 'kneadmaster') own++;
+    }
+    expect(own / n).toBeGreaterThan(share - 0.05);
+    expect(own / n).toBeLessThan(share + 0.05);
+  });
+
+  it('says what it draws, and why, where the pace is broken down', () => {
+    const { sim, s } = staffed();
+    const note = paceNote(sim.arrivalPace(), s.reputation, centerOf(s));
+    expect(note).toMatch(/^About \d+ new guests a month\. \d+ come for the treatment stations: /);
+    expect(note).toMatch(
+      /\d+ come for the Kneadmaster 9000’s own ailments: 45% of the center’s pace for the one with a Massage Therapist of its own to run it/,
+    );
+    // with nobody of its own to run it, the Guests tab says what it needs
+    const { sim: alone } = withKneader();
+    expect(capacityNote(alone.arrivalPace().capacity)).toContain(
+      'The Kneadmaster 9000 draws nobody for its own ailments: it needs a Massage Therapist of its own',
+    );
   });
 });
 
@@ -330,5 +453,16 @@ describe('a game without machines', () => {
   it('never offers staff who already know a machine’s technique', () => {
     const { s } = openCenter(5);
     for (const c of s.candidates) for (const q of c.quals) expect(MODALITIES[q].machine, q).toBeUndefined();
+  });
+
+  it('draws guests at the pace it always has, to the last digit', () => {
+    const { sim, s } = openCenter(5);
+    s.open = true;
+    s.reputation = 40;
+    const pace = sim.arrivalPace();
+    const parts = pace.parts.center * pace.parts.time * pace.parts.grade * pace.parts.rival * pace.parts.mishap;
+    expect(pace.machines).toEqual([]);
+    expect(pace.seconds).toBe((30 - 40 * 0.2) / parts / pace.staffed / pace.lines / pace.difficulty);
+    expect(pace.perMonth).toBe(pace.tables);
   });
 });
