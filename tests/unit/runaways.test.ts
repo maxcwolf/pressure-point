@@ -21,6 +21,7 @@ import { repathAll } from '../../src/core/sim/movement';
 import { calmerFor, calmSeconds, rollRunaway, RUNAWAY_LINES, running, startRunning } from '../../src/core/sim/runaways';
 import type { Sim } from '../../src/core/sim/sim';
 import type { Guest, Staff } from '../../src/core/state/types';
+import { Z_CORRIDOR } from '../../src/core/world';
 import { guestStatus, staffStatus } from '../../src/ui/lib/status';
 import { addLodge, hire, inconsistencies, LAYOUT, openCenter, run, runUntil, toasts } from './helpers';
 
@@ -53,6 +54,8 @@ function withRunner(seed = 1) {
 function beside(c: ReturnType<typeof withRunner>, other: Guest) {
   other.x = c.g.x + 0.5;
   other.y = c.g.y;
+  other.tx = c.g.tx;
+  other.ty = c.g.ty;
 }
 
 describe('a really bad trip', () => {
@@ -166,6 +169,31 @@ describe('a really bad trip', () => {
     expect(other.patience, 'only once').toBeGreaterThan(after - 1);
     // and nobody catches stress with no outbreak going round
     expect(other.stressed).toBe(false);
+  });
+
+  it('freaks out only those in the same room or corridor, and nobody on a table', () => {
+    const c = withRunner();
+    const { door } = LAYOUT.massage;
+    // the runner in the corridor below the Massage Suite, one guest across its wall and one beside them outside
+    const [cx, cy] = [door.x + 1, door.y + 1];
+    expect(c.ctx.world.zoneAt(cx, cy)).toBe(Z_CORRIDOR);
+    expect(c.ctx.world.zoneAt(cx, cy - 1)).not.toBe(Z_CORRIDOR);
+    /** Stand a guest on a tile. */
+    const stand = (g: Guest, x: number, y: number) => Object.assign(g, { x: x + 0.5, y: y + 0.5, tx: x, ty: y });
+    stand(c.g, cx, cy);
+    c.g.path = null;
+    c.g.timer = 99;
+    const inside = spawnGuest(c.ctx)!;
+    const outside = spawnGuest(c.ctx)!;
+    const onTable = spawnGuest(c.ctx)!;
+    stand(inside, cx, cy - 1);
+    stand(outside, cx + 1, cy);
+    stand(onTable, cx - 1, cy);
+    onTable.state = 'served';
+    c.sim.tick(0.01);
+    expect(inside.feelings).not.toContain('freaked');
+    expect(onTable.feelings).not.toContain('freaked');
+    expect(outside.feelings).toContain('freaked');
   });
 
   it('passes on the stress of an outbreak going round to some of those they freak out', () => {

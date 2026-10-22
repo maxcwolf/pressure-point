@@ -96,11 +96,17 @@ function runOn(ctx: SimContext, g: Guest): boolean {
   return goTo(ctx, g, x, y);
 }
 
-/** Freak out whoever they come close to, each once: a bad feeling, some patience, and maybe the outbreak's stress. */
+/**
+ * Freak out whoever they come close to in the same room or corridor, each once: a bad feeling, some patience, and maybe
+ * the outbreak's stress. Nobody on a table, or through a wall.
+ */
 function freakOut(ctx: SimContext, g: Guest) {
   for (const o of ctx.s.guests) {
     if (o === g || running(o) || o.state === 'leaving' || o.feelings.includes('freaked')) continue;
     if (Math.hypot(o.x - g.x, o.y - g.y) > FREAK_RANGE) continue;
+    // only someone who can see them: in the same room or corridor, and not lying on a table
+    if (o.state === 'served' || o.state === 'called') continue;
+    if (ctx.world.zoneAt(o.tx, o.ty) !== ctx.world.zoneAt(g.tx, g.ty)) continue;
     feel(o, 'freaked');
     o.patience = Math.max(0, o.patience - FREAK_PATIENCE);
     say(o, 'bubble-sweaty', 2);
