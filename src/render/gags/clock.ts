@@ -2,9 +2,11 @@
 // the machine and the guest inside it keep in step.
 
 import { ITEMS } from '../../core/data';
+import { accessIndex } from '../../core/sim/claims';
 import { smoking } from '../../core/sim/machines';
 import type { Sim } from '../../core/sim/sim';
 import type { Item } from '../../core/state/types';
+import { clamp } from '../../core/util';
 import { hiccupOf } from './beats';
 import { GAGS } from './scripts';
 import type { GagInput } from './types';
@@ -19,7 +21,10 @@ interface Last {
 }
 
 /** How long a loop of a booster's gag takes, in seconds, while a session goes on in its room. */
-const BOOST_LOOP = 5;
+export const BOOST_LOOP = 5;
+
+/** How long a bored guest's ride lasts, in seconds of game time: as long as any game they play (`updateGuest`). */
+const RIDE_SECONDS = 3;
 
 export class GagClock {
   private last = new Map<number, Last>();
@@ -45,6 +50,13 @@ export class GagClock {
         progress: served ? Math.min(1, it.progress) : 0,
         hiccup,
       };
+    }
+    // a bored guest riding it while nobody is being treated
+    const play = accessIndex(it, 'play');
+    const rider = play < 0 ? undefined : sim.guest(it.users[play] ?? 0);
+    if (rider?.state === 'need') {
+      this.last.delete(it.id);
+      return { ...base, stage: 'running', progress: clamp(1 - rider.timer / RIDE_SECONDS, 0, 1), ride: true };
     }
     const rec = this.last.get(it.id);
     if (rec) {

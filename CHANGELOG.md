@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **The Gong of Last Resort rattles the rooms next door** while it plays: noise through every shared wall, shown on its card and in the inspectors, so build its studio away from quiet rooms.
+- **Rides on the Carousel of Rebirth.** Bored guests pay $25 for a ride while it treats nobody, and get off for a guest due for rebirth.
+
 ## v0.31.0
 
 ### A center that tells you where it stands

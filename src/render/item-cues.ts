@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { DIRT_FILTHY, ITEMS, type ItemType, NOISE_NOTICE, WEAR_WARN } from '../core/data';
 import { clamp } from '../core/util';
 import { owned } from './disposal';
+import { BOOST_LOOP } from './gags/clock';
 import { cached, type CueParts, partsOf, sph } from './models/parts';
 
 /** How an item shows its wear: a machine puffs smoke, furniture shudders, and a mat gives off dust. */
@@ -102,6 +103,8 @@ export interface CueCondition {
   inUse: boolean;
   /** How hard it is warming or cooling the air, from 0 (off) to 1 (flat out). */
   running: number;
+  /** Its room is being rattled through the wall by a machine next door, like the Gong of Last Resort as it plays. */
+  rattled?: boolean;
 }
 
 /** A see-through material for one puff, ring or wisp, so each can fade on its own. */
@@ -275,13 +278,40 @@ function animateLean(model: THREE.Object3D, c: CueCondition, t: number) {
   model.rotation.z = c.wear >= 100 ? BROKEN_LEAN : showsWear(c.wear) ? shudder(t, c.id, wearShown(c.wear)) : 0;
 }
 
-/** Show every cue an item gives: of its wear, its dirt, its noise and its warmth. */
+/** The stretch of each loop of a booster's gag, after the gong is struck, that the rooms next door rattle for. */
+const RATTLE_FROM = 0.18;
+const RATTLE_TO = 0.6;
+
+/**
+ * How far something next door to a struck gong rocks at a moment: a short rattle just after each strike, in step with
+ * the gong's own loop, and still between. Each item rocks a little harder or softer, and its own way.
+ */
+export function rattle(t: number, id: number): number {
+  const p = (((t / BOOST_LOOP) % 1) + 1) % 1;
+  if (p < RATTLE_FROM || p > RATTLE_TO) return 0;
+  const f = (p - RATTLE_FROM) / (RATTLE_TO - RATTLE_FROM);
+  return 0.025 * (0.7 + 0.6 * hash(id)) * Math.sin(f * Math.PI * 12 + id) * (1 - f);
+}
+
+/**
+ * Rock an item while its room is rattled, from however it stands: worn furniture's lean is set afresh each frame, so it
+ * rocks from that, and anything else from the tilt it had before it was first rattled.
+ */
+function animateRattle(model: THREE.Object3D, c: CueCondition, leans: boolean, t: number) {
+  if (!c.rattled && model.userData.restTilt === undefined) return;
+  const rest = (model.userData.restTilt ??= model.rotation.z) as number;
+  const shake = c.rattled ? rattle(t, c.id) : 0;
+  model.rotation.z = (leans ? model.rotation.z : rest) + shake;
+}
+
+/** Show every cue an item gives: of its wear, its dirt, its noise and its warmth, and a rattle from next door. */
 export function animateCues(model: THREE.Object3D, c: CueCondition, t: number) {
   const look = WEAR_LOOKS[c.type];
   const { lamp, grime: dirty } = partsOf(model);
   if (lamp) wearLight(lamp, c.wear, c.id, (lamp.userData.bright ??= lamp.emissiveIntensity) as number, t);
   if (dirty) grime(dirty, c.dirt);
   if (look === 'shudder') animateLean(model, c, t);
+  animateRattle(model, c, look === 'shudder', t);
   animateSmoke(model, c, look, t);
   animateRipples(model, c, t);
   animateWisps(model, c, t);

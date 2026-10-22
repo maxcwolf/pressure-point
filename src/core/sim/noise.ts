@@ -15,11 +15,11 @@ import {
   WINDOW_LEAK,
 } from '../data';
 import type { Guest, Item, Room } from '../state/types';
-import { clamp } from '../util';
+import { at, clamp } from '../util';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { feel } from './feelings';
-import { running } from './machines';
+import { rattling, running } from './machines';
 import { playingFor } from './sessions';
 import { gridAt, spreader } from './spread';
 
@@ -56,6 +56,31 @@ export function updateNoise(ctx: SimContext) {
     const noise = guestNoise(g);
     if (noise) spread(grid, g.tx, g.ty, noise, NOISE_RADIUS);
   }
+  for (const it of ctx.s.items) {
+    const rattle = ITEMS[it.type].machine?.rattle;
+    const home = rattle ? ctx.world.roomOfItem(it) : undefined;
+    if (!rattle || !home) continue;
+    for (const room of rattling(ctx, it)) rattleRoom(ctx, grid, room, home, rattle);
+  }
+}
+
+/**
+ * Shake noise through the wall a room shares with a rattling machine's own: as loud as the rattle along that wall, and
+ * fading across the room as noise fades over the tiles it carries.
+ */
+function rattleRoom(ctx: SimContext, grid: Float32Array, room: Room, from: Room, amount: number) {
+  const { world } = ctx;
+  for (let y = room.y; y < room.y + room.h; y++)
+    for (let x = room.x; x < room.x + room.w; x++) {
+      if (world.zoneAt(x, y) !== room.id) continue;
+      // how many tiles in from the shared wall: 1 beside it
+      const dx = Math.max(from.x - x, 0, x - (from.x + from.w - 1));
+      const dy = Math.max(from.y - y, 0, y - (from.y + from.h - 1));
+      const share = 1 - (Math.max(dx, dy) - 1) / (NOISE_RADIUS + 1);
+      if (share <= 0) continue;
+      const i = world.idx(x, y);
+      grid[i] = at(grid, i) + amount * share;
+    }
 }
 
 /** How noisy a tile is, never below silence. `extra` is noise not yet placed. */

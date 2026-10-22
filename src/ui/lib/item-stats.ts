@@ -42,6 +42,7 @@ export interface ItemStat {
     | 'treatment'
     | 'machine'
     | 'running'
+    | 'rattle'
     | 'upgrade'
     | 'wear'
     | 'overload'
@@ -112,8 +113,10 @@ export function itemStats(type: ItemType): ItemStat[] {
     out.push({
       id: 'sale',
       icon: 'ui-money',
-      short: `${money(def.sale)} a use`,
-      long: `Earns ${money(def.sale)} each time a guest uses it`,
+      short: def.station ? `${money(def.sale)} a ride` : `${money(def.sale)} a use`,
+      long: def.station
+        ? `Bored guests pay ${money(def.sale)} for a ride while nobody is being treated on it, and get off for a guest due for treatment`
+        : `Earns ${money(def.sale)} each time a guest uses it`,
       tone: 'earn',
     });
   if (def.access.some((a) => a.role === 'seat')) {
@@ -225,6 +228,14 @@ function machineStats(type: ItemType): ItemStat[] {
         ? `Noise ${machine.runNoise} while it runs, heard all through the building`
         : `Warms the room by ${machine.runHeat ?? 0}°F while it runs`,
       tone: machine.runNoise ? 'loud' : 'warm',
+    });
+  if (machine.rattle)
+    out.push({
+      id: 'rattle',
+      icon: 'ui-sound',
+      short: 'Rattles next door',
+      long: `Noise ${machine.rattle} through the walls of every room next door while a session plays: keep it away from rooms that need quiet`,
+      tone: 'loud',
     });
   if (machine.overload)
     out.push({

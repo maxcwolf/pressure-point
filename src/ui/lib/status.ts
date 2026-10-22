@@ -83,10 +83,12 @@ export function guestStatus(g: Guest, sim: Sim): string {
     case 'toNeed':
     case 'need':
       if (g.needKind === 'toilet') return 'Answering a call of nature';
-      if (g.needKind === 'play')
-        return sim.world.item(g.claimItem)?.type === 'fortune_teller'
-          ? 'Having their fortune told'
-          : 'Playing a round on the arcade';
+      if (g.needKind === 'play') {
+        const played = sim.world.item(g.claimItem);
+        if (played?.type === 'fortune_teller') return 'Having their fortune told';
+        if (played && ITEMS[played.type].station) return `Taking a ride on the ${ITEMS[played.type].name}`;
+        return 'Playing a round on the arcade';
+      }
       if (g.needKind === 'eat') return 'Getting a snack';
       return DRINKS[sim.world.item(g.claimItem)?.type ?? ''] ?? 'Getting a herbal tea';
     case 'leaving':

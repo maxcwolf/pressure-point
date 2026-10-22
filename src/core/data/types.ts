@@ -300,6 +300,11 @@ export interface MachineDef {
   beside?: { room: RoomType; seconds?: number; success?: number };
   /** It helps every session in its room, rather than taking guests itself: sessions take this times as long. */
   boosts?: { seconds: number };
+  /**
+   * Noise it shakes through the walls into every room next door while a session plays in its own: as loud as this
+   * along the shared wall, fading across the room.
+   */
+  rattle?: number;
   /** Guests who leave it healed go away happier for something it gives them, a feeling of their own. */
   gift?: FeelingId;
   /** Trips in its room count the set and setting as perfect, whatever the room is like. */
