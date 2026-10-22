@@ -1637,7 +1637,8 @@ export class Bot {
 
   /**
    * Build a room of a type with its furniture and any extras, somewhere along the walls. A spot that would leave no
-   * space for a room of a type in `keep` is given up while the room is still a plan, as a player would.
+   * space for a room of a type in `keep` is given up while the room is still a plan, as a player would; with the
+   * machines on, so is one that would take the last spot of a machine room its star has opened.
    */
   buildRoom(type: RoomType, extras: ItemType[] = [], keep: RoomType[] = []): Room | null {
     const def = ROOMS[type];
@@ -1645,9 +1646,13 @@ export class Bot {
     if (this.s.money < def.cost + extraCost + 500) return null;
     // a room that would not fit is not tried again for a few days (looking takes time)
     if (this.flags.expansion && (this.noFit[type] ?? 0) > this.s.day) return null;
+    const machine = def.required.some((t) => ITEMS[t].machine);
+    const kept = [...keep, ...(this.flags.machines && !machine ? this.machinesToCome() : [])].filter((k) =>
+      this.keeps(k),
+    );
     for (const { r, door } of this.roomSpots(type)) {
       const room = this.sim.createRoom(type, r, door);
-      if (this.furnish(room, [...def.required, ...extras]) && keep.every((k) => this.keeps(k))) {
+      if (this.furnish(room, [...def.required, ...extras]) && kept.every((k) => this.keeps(k))) {
         this.sim.finishRoom(room);
         this.placeNear('fire_extinguisher', room.door.x + room.door.dx, room.door.y + room.door.dy, 'corridor');
         return room;
@@ -2262,9 +2267,6 @@ export class Bot {
         (ROOMS[TREAT_ROOM[d]].unlock ?? 0) <= upTo + 1 &&
         !this.sim.hasRoom(TREAT_ROOM[d]),
     ).map((d) => TREAT_ROOM[d]);
-    // and for the machine room its star has opened, from that star on: the land that comes with the star is not all
-    // for more tables
-    if (this.flags.machines) toCome.push(...this.machinesToCome());
     for (const d of DISCIPLINE_ORDER) {
       const room = TREAT_ROOM[d];
       if (!this.rooms(room).length || month < (this.grewIn[d] ?? -9) + 2) continue;
@@ -2496,8 +2498,7 @@ export class Bot {
     const reserve = this.reserve('classes');
     if (!this.sim.hasRoom('qigong')) {
       if (this.saving() || this.profit() <= 0 || !this.afford(ROOMS.qigong.cost + 3000, reserve)) return;
-      const keep = this.flags.machines ? this.machinesToCome().filter((t) => this.keeps(t)) : [];
-      if (this.buildRoom('qigong', [], keep)) {
+      if (this.buildRoom('qigong')) {
         this.note(`day ${Math.floor(s.day)}: a Qi Gong Studio`);
         this.hireToFill();
       }
