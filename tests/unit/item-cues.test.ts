@@ -237,25 +237,31 @@ describe('noise and warmth', () => {
     }
   });
 
-  it('draws the warmth off a heater as wavy lines that face the camera, each climbing and fading in turn', () => {
-    const model = buildItem('radiator');
-    /** The lines of heat at a moment, as the radiator heats flat out. */
-    const lines = (t: number) => {
-      animateItemParts(model, condition('radiator', { running: 1 }), t);
-      return partsOf(model).cues!.wisps!.children as THREE.Sprite[];
-    };
-    expect(lines(0).length).toBe(3);
-    expect(lines(0).every((l) => l instanceof THREE.Sprite)).toBe(true);
-    const moments = Array.from({ length: 48 }, (_, i) => i * 0.05);
-    const seen = moments.map((t) => lines(t).map((l) => ({ y: l.position.y, shows: l.material.opacity })));
-    // there is always heat to see, and each line only ever climbs, but for starting again from the bottom once
-    for (const now of seen) expect(Math.max(...now.map((l) => l.shows))).toBeGreaterThan(0.5);
-    for (let i = 0; i < 3; i++) {
-      const drops = seen.slice(1).filter((now, k) => now[i]!.y < seen[k]![i]!.y);
-      expect(drops.length, `line ${i}`).toBeLessThanOrEqual(1);
+  it('draws warm and cool air as wavy lines that face the camera, heat climbing and cool air sinking, each in turn', () => {
+    for (const [type, way] of [
+      ['radiator', 1],
+      ['air_conditioner', -1],
+    ] as const) {
+      const model = buildItem(type);
+      /** The lines of moving air at a moment, as the item runs flat out. */
+      const lines = (t: number) => {
+        animateItemParts(model, condition(type, { running: 1 }), t);
+        return partsOf(model).cues!.wisps!.children as THREE.Sprite[];
+      };
+      expect(lines(0).length, type).toBe(3);
+      expect(
+        lines(0).every((l) => l instanceof THREE.Sprite),
+        type,
+      ).toBe(true);
+      const moments = Array.from({ length: 48 }, (_, i) => i * 0.05);
+      const seen = moments.map((t) => lines(t).map((l) => ({ y: l.position.y, shows: l.material.opacity })));
+      // there is always air to see, and each line only ever goes its own way, but for starting again once
+      for (const now of seen) expect(Math.max(...now.map((l) => l.shows)), type).toBeGreaterThan(0.5);
+      for (let i = 0; i < 3; i++) {
+        const back = seen.slice(1).filter((now, k) => (now[i]!.y - seen[k]![i]!.y) * way < 0);
+        expect(back.length, `${type} line ${i}`).toBeLessThanOrEqual(1);
+      }
     }
-    // cool air still drifts out of an air conditioner as wisps
-    expect(partsOf(shown('air_conditioner', { running: 1 })).cues!.wisps!.children[0]).toBeInstanceOf(THREE.Mesh);
   });
 
   it('ripples over an arcade while a guest plays it, and wisps over a radiator while it heats, in the game', () => {
