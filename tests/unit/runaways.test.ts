@@ -22,6 +22,7 @@ import { calmerFor, calmSeconds, rollRunaway, RUNAWAY_LINES, running, startRunni
 import type { Sim } from '../../src/core/sim/sim';
 import type { Guest, Staff } from '../../src/core/state/types';
 import { Z_CORRIDOR } from '../../src/core/world';
+import { haloOf } from '../../src/render/halos';
 import { guestStatus, staffStatus } from '../../src/ui/lib/status';
 import { addLodge, hire, inconsistencies, LAYOUT, openCenter, run, runUntil, toasts } from './helpers';
 
@@ -236,6 +237,17 @@ describe('a really bad trip', () => {
     expect(c.g.bubble).toBe('bubble-going-home');
     expect(c.s.reputation).toBeLessThan(40 - 1);
     expect(toasts(drainEvents(c.ctx)).join(' ')).toContain(`${c.g.name} found the door`);
+  });
+
+  it('is ringed in red at their feet from any view, a size up, over whatever an overlay says', () => {
+    const c = withRunner();
+    const other = spawnGuest(c.ctx)!;
+    expect(haloOf(c.g, null)).toEqual({ v: 0, scale: 1.2 });
+    expect(haloOf(other, null), 'nobody else, with no overlay').toBeNull();
+    /** An overlay that finds everyone doing well. */
+    const fine = () => 1;
+    expect(haloOf(c.g, fine)).toEqual({ v: 0, scale: 1.2 });
+    expect(haloOf(other, fine)).toEqual({ v: 1, scale: 1 });
   });
 
   it('cannot be sent home: they have to be calmed down first', () => {
