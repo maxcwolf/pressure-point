@@ -6,6 +6,70 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 22 October 2026, after midnight: more land
+
+Measured with `yarn balance` on `main` at `7ac9574` (before) and `feat/more-land` at `19da076` (after), every campaign center, seeds 1 to 6, four years a game, the good bot with and without `BOT_ON=machines`. Year 4 is months 37 to 48 and "profit a month" months 13 to 48, over the games not lost; a mean star month counts a star never earned as month 48. The bot changed with the land (below), so the land alone is also measured against `main` with the same bot (`main` plus the bot commits).
+
+### 40. Every lot wider, a building of its own for the machine room at the second star, and more at the third
+
+**Found:** entries 37 and 38, and the owner's call of 21 October that the lots are too small. In 28 of 30 games a new treatment room stopped fitting 3 to 23 months before the second star, in 23 of them with every plot bought, so the machines, which open at that star, could only stand where a table had been.
+
+**Done** (`src/core/data/centers.ts`, `tests/unit/land.test.ts`; [land-plan.md](land-plan.md) "Decisions to make" has the plots):
+
+- Every lot grows east, which moves no tile of an old save: Willow Lane 32 → 40 tiles, The Exchange and High Pines 36 → 44, The Boardwalk and The Orchard Estate 40 → 48, the sandbox 44 → 56.
+- Two plots more for each center, the sandbox too. At the second star there is a building of its own with a door and a path from the pavement, big enough for the center's machine room beside the tables: Willow Lane's old bakery, The Exchange's bank on the corner, The Boardwalk's bathing rooms, High Pines' old lift station, The Orchard's stable block, and the sandbox's old cinema, which takes any of its five machines. At the third star there is a plot joined to the building, out the back or beside it. They cost $260 to $375 a tile, more than the plots before them ($200 to $375), at $13,000 to $36,000 each.
+- Tested: each center's machine room is built at its smallest, with its machine, wholly on its plot in a building grown into every plot, and the plot has a door of its own. Every plot is bought in the order they open, on a new lot and over an old save's strips, and every entrance can still be reached after each.
+- First tried with the second-star plots joined to the building, as most plots are, and kept none of them: the bot buys a back plot and then cannot use it. Its rooms line the wall the plot shares with the building, the plot has no other way in, and nothing fits there, not a table and not the machine. In one Orchard game the bot bought the cider barn and the apple store at its second star, and five months later the Cider Press would not fit on either. A building of its own cannot be walled off that way.
+- A building standing apart now has the full 14 tiles of pavement past its door before people arrive or leave, where the lot's edge cut that short before, so walks along the pavement are a few tiles longer once one is built. One unit test's walk went from under 1.5 days to under 1.75 (`tests/unit/classes.route.test.ts`).
+
+**The bot** (`tests/balance/bot.ts`), because the land showed two things it did wrong:
+
+- It valued another treatment room for the guests a staffed station more draws and lets in, even while its Consultation Rooms already kept fewer stations in guests than were staffed, when the station draws nobody. With the room to build, The Orchard went from 8.4 staffed stations to 10.9 in year 4 with the same limit on guests, and its year-4 profit fell from $53.1k to $30.4k a month. Now such a room is worth only the guests already waiting for it, and the bot builds a Consultation Room when 3 or more guests were turned away while the consultations held stations back, as the Guests tab tells a player to. On `main` this changes only High Pines and The Orchard, and saves the Orchard game lost on day 100 (seed 5).
+- With `BOT_ON=machines`, from the second star the bot has earned (not merely the star the rooms open at, which at The Orchard is the day it opens) until the machine room stands, nothing it builds may take the last spot the room could go in. A spot counts only where the room, a door that is reached, and its machine really fit, tried as a plan and taken down again. Without the reservation the bot bought each machine building at its star and filled it with tables months before it could afford the machine.
+- Without `BOT_ON=machines` the bot plays the land exactly as it would any plot: the default run at `19da076` matches the one before the machine reservations, game for game.
+
+**Result,** the good bot without machines, `main` → this branch:
+
+| Center             | Stars at month (seed by seed)                                                                                                                                                                  | Profit a month                      | Months at a loss  | Lowest reputation    | Months below 15% | Bank at the end                           | Bankruptcies           |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ----------------- | -------------------- | ---------------- | ----------------------------------------- | ---------------------- |
+| Willow Lane        | 1.1/6.0/12.3 · 0.9/3.8/12.4 · 0.7/7.6/11.4 · 0.8/5.7/16.8 · 0.7/3.9/13.7 · 0.8/7.7/12.6 (unchanged)                                                                                            | $9.2k to $38.9k → $23.6k to $41.1k  | 5 to 18 → 6 to 11 | 22 to 30 (unchanged) | 0 (unchanged)    | $336.8k to $1404.1k → $854.8k to $1494.4k | none (unchanged)       |
+| The Exchange       | 7.9/12.9/16.1 · 2.8/10.9/24.3 · 6.5/11.2/15.6 · 7.0/11.6/17.6 · 6.6/10.3/14.0 · 6.4/11.7/17.8 → 7.9/12.9/19.0 · 2.8/10.9/24.3 · 6.5/11.2/17.8 · 7.0/11.6/17.9 · 6.6/10.3/19.6 · 6.4/11.7/20.8  | $12.2k to $36.7k → $10.0k to $26.9k | 5 to 14 → 7 to 16 | 30 → 25 to 30        | 0 (unchanged)    | $380.0k to $1310.6k → $328.0k to $1029.4k | none (unchanged)       |
+| The Boardwalk      | 5.7/11.8/22.7 · 4.8/9.6/14.2 · 4.8/9.7/16.5 · 4.5/8.5/14.9 · 4.8/8.6/16.4 · 4.6/19.5/24.3 → 5.7/11.8/25.1 · 4.8/9.6/18.2 · 4.8/9.7/19.6 · 4.5/8.5/14.8 · 4.8/8.6/19.0 · 4.6/19.5/24.9          | $6.4k to $28.2k → −$4.0k to $32.9k  | 5 to 15 → 5 to 18 | 30 → 8 to 30         | 0 → 0 to 1       | $231.6k to $1023.2k → −$42.3k to $1186.0k | none → seed 1 day 1001 |
+| High Pines         | 4.4/8.3/14.6 · 4.0/19.4/31.0 · 5.2/8.8/16.4 · 5.7/12.9/– · 3.9/6.7/11.8 · 7.7/13.9/26.2 → 4.4/8.3/17.4 · 4.0/11.6/17.0 · 5.2/8.8/26.7 · 5.7/10.6/22.8 · 3.9/8.8/15.5 · 7.7/13.9/24.7           | $11.4k to $33.5k → $10.9k to $29.1k | 4 to 15 → 8 to 15 | 20 to 30 → 30        | 0 (unchanged)    | $419.0k to $1328.2k → $335.9k to $967.6k  | none (unchanged)       |
+| The Orchard Estate | 4.2/11.9/18.1 · 4.6/9.6/15.5 · 5.3/9.9/15.7 · 4.9/8.9/13.8 · bankrupt day 100/–/– · 4.9/9.7/17.9 → 4.2/12.8/23.0 · 4.6/10.5/15.7 · 5.3/9.6/15.0 · 4.9/10.5/17.9 · 3.5/12.5/18.7 · 4.9/9.8/16.4 | $37.4k to $61.7k → $22.2k to $67.6k | 3 to 6 → 6 to 11  | 19 to 30 (unchanged) | 0 (unchanged)    | −$9.6k to $2234.5k → $732.5k to $2371.3k  | seed 5 day 100 → none  |
+
+| Center        | Year-4 profit a month: main · main with the bot changes · this branch | Staffed stations, year 4 | Wait, days  | Turned away a month, year 2 | Mean star month | Plots bought |
+| ------------- | --------------------------------------------------------------------- | ------------------------ | ----------- | --------------------------- | --------------- | ------------ |
+| Willow Lane   | $31.4k · $31.4k · $38.8k                                              | 3.0 → 4.1                | 8.8 → 7.3   | 4.9 → 6.6                   | 6.6 → 6.6       | 3.0 → 5.0    |
+| The Exchange  | $25.9k · $25.9k · $28.3k                                              | 4.2 → 6.8                | 8.5 → 6.7   | 5.6 → 6.2                   | 11.7 → 12.5     | 2.0 → 4.0    |
+| The Boardwalk | $24.3k · $24.3k · $19.3k (5 games)                                    | 5.4 → 6.4                | 7.3 → 7.3   | 8.7 → 8.9                   | 11.4 → 12.1     | 2.0 → 3.8    |
+| High Pines    | $26.8k · $28.0k · $23.8k                                              | 7.6 → 9.7                | 10.9 → 10.0 | 5.0 → 3.5                   | 13.8 → 12.1     | 1.8 → 3.7    |
+| The Orchard   | $53.1k (5 games) · $49.2k · $53.0k                                    | 8.4 → 10.1               | 11.7 → 11.6 | 5.6 → 7.3                   | 16.6 → 11.1     | 1.7 → 4.0    |
+
+**The machines** (`BOT_ON=machines`), entry 38's figures → this branch:
+
+| Machine (center)           | Built in   | Healed   | Earned while a guest is inside | Room and running costs | Paid back on its own books              |
+| -------------------------- | ---------- | -------- | ------------------------------ | ---------------------- | --------------------------------------- |
+| Kneadmaster (Willow Lane)  | 1 → 4 of 6 | 74 → 231 | $204.2k → $605.7k              | $70.5k → $223.5k       | 1 of 1, day 601 → 4 of 4, days 482–1279 |
+| Pin Press (The Exchange)   | 0 → 3 of 6 | – → 93   | – → $269.4k                    | – → $208.0k            | – → 3 of 3, days 1003–1317              |
+| Aura Wash (The Boardwalk)  | 0 → 1 of 5 | – → 5    | – → $15.9k                     | – → $56.5k             | – → none (built on day 1041)            |
+| Great Alphorn (High Pines) | 0 → 0 of 6 | –        | –                              | –                      | –                                       |
+| Cider Press (The Orchard)  | 0 → 0 of 6 | –        | –                              | –                      | –                                       |
+
+Year-4 profit a month with the machines against the same land without them: Willow Lane $27.1k against $38.8k, The Exchange $25.5k against $28.3k, The Boardwalk $21.4k against $19.3k, High Pines $26.6k against $23.8k, The Orchard $51.7k against $53.0k. Seed by seed, the four Willow Lane games with a Kneadmaster make $20.8k a month against $37.3k without, and the three Exchange games with a Pin Press make $23.6k against $26.9k. Both figures include the months the bot held space for a machine it could not yet afford.
+
+**Read:**
+
+- **Is there room to grow now?** Yes. The bot bought every second-star plot in all 30 games, a median of a month after the star, and 27 of the 30 third-star plots within six weeks of theirs. Every center runs more staffed stations in year 4 (1.0 to 2.6 more), and waits are as short or shorter everywhere.
+- **Is it easier?** No. Year-4 profit rises at Willow Lane (+$7.4k a month) and The Exchange (+$2.4k), falls at The Boardwalk (−$5.0k) and High Pines (−$3.0k), and holds at The Orchard. Third stars come later, the land and the bigger payroll taking the money the third star's goals ask for: The Exchange's by up to 5.6 months in five seeds, The Boardwalk's by 2.4 to 4.0 months in four, High Pines' by 2.8 to 10.3 months in three (sooner in two, and earned at month 22.8 in the seed that never earned it on `main`). The Boardwalk loses seed 1 on day 1001, a game `main` survives: the bot bought the bathing rooms ($17,500) a month after its second star and was in the red from month 14 to 23, then bought the arcade ($16,000) at its third star and was in the red from month 28 to the end. 20 warnings came in its last 30 days, so the loss was warned. Reputation cliffs rise from 84 to 116 across the 30 games, the most at High Pines and The Orchard: bigger centers with more guests at once have more to lose in a bad month. The lowest reputation in any game is 8 (Boardwalk seed 1), against 19 before.
+- **Does the bot now build machines?** Sometimes: 8 of 29 games against 1, and at Willow Lane and The Exchange in most games. The Great Alphorn and the Cider Press were never built. In those games the machine buildings were bought at the star and reserved, but by the time the bot could afford the room ($28,000 and $32,000, with a reserve of a month's wages and three months' running costs) nothing fitted. On an empty lift station or stable block the bot builds both rooms, so the most likely cause is the bot's free-standing items (benches, plants, vending machines), which it places along any corridor without the reservation. Not confirmed.
+- **Do the machines pay?** On their own books, yes: every Kneadmaster and Pin Press built paid back its room and running costs, the Pin Press only in the game's third or fourth year. The center, no: games with a Kneadmaster made $16.5k a month less, and games with a Pin Press $3.3k less. Entry 38's finding stands. A machine draws no guests of its own, so it heals 2 or 3 guests a month (the four Kneadmasters, 231 between them in 109 machine-months) while holding a practitioner and the floor a table would use. Land was not what held the machines back; demand is, and that is [next-pass.md](next-pass.md) "Open findings" 4.
+
+**Still open:**
+
+- The bot's free-standing items against a machine room's reservation, before the Great Alphorn and the Cider Press can be measured.
+- The third-star plots join the building through one wall, as every plot before this pass did, so a player who lines that wall with rooms cuts them off. The guide says to leave a corridor; nothing in the game warns of it yet.
+
 ## 21 October 2026, late night: the first paydays in sight
 
 Measured with `yarn balance` on `main` at `7ac9574` (before) and on this branch (after), The Orchard Estate, seeds 1 to 12, four years a game: the good bot, `BOT=advised`, and the good bot with the new `BOT_ON=opening`; and `BOT=advised` at every campaign center, seeds 1 to 3. Year 4 is months 37 to 48, over the games not lost. No game rule or price changed.

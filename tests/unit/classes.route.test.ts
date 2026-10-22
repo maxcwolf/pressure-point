@@ -61,9 +61,11 @@ describe('a Qi Gong Studio on land apart', () => {
       },
       6 * DAY_SECONDS,
     );
-    // never by way of the main building's front door, and there with a day to spare before their class
+    // never by way of the main building's front door, and there before the day of their class: from the edge of the
+    // lot, 13 tiles past the orangery's door, about a day and a half
     expect(byFrontDoor).toBe(false);
-    expect(s.day - start).toBeLessThan(1.5);
+    expect(s.day - start).toBeLessThan(1.75);
+    expect(s.day).toBeLessThan(Math.floor(start) + 2);
     const spot = ctx.world.item(g.station);
     expect(spot?.type).toBe('practice_spot');
   });

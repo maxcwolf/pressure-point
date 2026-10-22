@@ -13,7 +13,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     place: 'A big lot of your own',
     blurb: 'Build the center you want, at your own pace.',
     plot: SANDBOX_PLOT,
-    width: 44,
+    width: 56,
     plots: [
       {
         id: 'east-wing',
@@ -50,6 +50,26 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
         price: 6000,
         star: 2,
       },
+      {
+        id: 'old-cinema',
+        name: 'The old cinema',
+        blurb:
+          'A picture house of its own at the end of the street, with room for any machine and a path from the pavement',
+        rects: [{ x0: 45, x1: 54, y0: 4, y1: 17 }],
+        entrance: { side: 'south', x: 49, y: 17 },
+        path: [{ x0: 49, x1: 50, y0: 18, y1: 19 }],
+        price: 36000,
+        star: 2,
+      },
+      {
+        id: 'north-range',
+        name: 'The north range',
+        blurb: 'Old stables behind the garden, off the end of the east wing',
+        rects: [{ x0: 36, x1: 42, y0: 1, y1: 6 }],
+        price: 14000,
+        star: 3,
+        after: 'east-wing',
+      },
     ],
     startMoney: 30000,
     climate: { average: 66, swing: 6 },
@@ -78,6 +98,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     place: 'A small high-street unit',
     blurb: 'Where it all starts: one massage suite, a few loyal regulars, and a lot to learn.',
     plot: { x0: 7, x1: 22, y0: 8, y1: 17, door: [14, 15] },
+    width: 40,
     plots: [
       {
         id: 'unit-next-door',
@@ -102,6 +123,25 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
         rects: [{ x0: 2, x1: 6, y0: 11, y1: 17 }],
         price: 8000,
         star: 2,
+      },
+      {
+        id: 'old-bakery',
+        name: 'The old bakery',
+        blurb: 'Across the alley, a shop of its own with room for a big machine, and a path from the pavement',
+        rects: [{ x0: 32, x1: 38, y0: 8, y1: 17 }],
+        entrance: { side: 'south', x: 34, y: 17 },
+        path: [{ x0: 34, x1: 35, y0: 18, y1: 19 }],
+        price: 20000,
+        star: 2,
+      },
+      {
+        id: 'back-yard',
+        name: 'The yard behind the unit',
+        blurb: 'Bins and a bike shed, roofed over at last',
+        rects: [{ x0: 23, x1: 29, y0: 4, y1: 9 }],
+        price: 13000,
+        star: 3,
+        after: 'unit-next-door',
       },
     ],
     startMoney: 20000,
@@ -131,7 +171,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb:
       'Desk workers by the busload, arriving in waves when the office crowd comes in. Acupuncture opens at the first star.',
     plot: { x0: 5, x1: 25, y0: 6, y1: 17, door: [14, 15] },
-    width: 36,
+    width: 44,
     plots: [
       {
         id: 'courtyard-block',
@@ -152,6 +192,25 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
         rects: [{ x0: 26, x1: 33, y0: 8, y1: 17 }],
         price: 20000,
         star: 2,
+      },
+      {
+        id: 'corner-bank',
+        name: 'The bank on the corner',
+        blurb:
+          'A branch of its own past the annex, its vault long empty, big enough for a machine, with a path from the pavement',
+        rects: [{ x0: 35, x1: 41, y0: 6, y1: 17 }],
+        entrance: { side: 'south', x: 37, y: 17 },
+        path: [{ x0: 37, x1: 38, y0: 18, y1: 19 }],
+        price: 27000,
+        star: 2,
+      },
+      {
+        id: 'loading-bay',
+        name: 'The loading bay',
+        blurb: 'Where the vans came in round the back, behind the annex',
+        rects: [{ x0: 26, x1: 33, y0: 1, y1: 7 }],
+        price: 21000,
+        star: 3,
       },
     ],
     startMoney: 25000,
@@ -191,7 +250,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb:
       'Packed in summer, half asleep in winter, and the sea air is hard on equipment. Reiki opens at the second star.',
     plot: { x0: 4, x1: 26, y0: 7, y1: 16, door: [14, 15] },
-    width: 40,
+    width: 48,
     plots: [
       {
         id: 'beach-wing',
@@ -210,6 +269,25 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
         path: [{ x0: 34, x1: 35, y0: 17, y1: 19 }],
         price: 13500,
         star: 2,
+      },
+      {
+        id: 'bathing-rooms',
+        name: 'The bathing rooms',
+        blurb:
+          'The old seawater baths, a building of their own along the front with room for a machine, and a path from the pavement',
+        rects: [{ x0: 40, x1: 46, y0: 9, y1: 16 }],
+        entrance: { side: 'south', x: 42, y: 16 },
+        path: [{ x0: 42, x1: 43, y0: 17, y1: 19 }],
+        price: 17500,
+        star: 2,
+      },
+      {
+        id: 'arcade',
+        name: 'The amusement arcade',
+        blurb: 'A long, narrow hall of dead slot machines between the building and the parlor',
+        rects: [{ x0: 27, x1: 30, y0: 3, y1: 16 }],
+        price: 16000,
+        star: 3,
       },
     ],
     startMoney: 30000,
@@ -247,7 +325,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb:
       'Cold all year, and snowed in now and then through the winter, so keep the place warm and the stones hot. Sound healing opens at the first star, and reiki at the second.',
     plot: { x0: 6, x1: 25, y0: 5, y1: 16, door: [15, 16] },
-    width: 36,
+    width: 44,
     plots: [
       {
         id: 'ski-room',
@@ -264,6 +342,25 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
         rects: [{ x0: 10, x1: 17, y0: 1, y1: 4 }],
         price: 7000,
         star: 2,
+      },
+      {
+        id: 'lift-station',
+        name: 'The old lift station',
+        blurb:
+          'Where the chairlift used to start, a building of its own with room for a very long horn, and a path from the pavement',
+        rects: [{ x0: 35, x1: 41, y0: 5, y1: 16 }],
+        entrance: { side: 'south', x: 37, y: 16 },
+        path: [{ x0: 37, x1: 38, y0: 17, y1: 19 }],
+        price: 26000,
+        star: 2,
+      },
+      {
+        id: 'sauna',
+        name: 'The sauna',
+        blurb: 'A long cabin out the back, behind the ski room',
+        rects: [{ x0: 26, x1: 33, y0: 1, y1: 6 }],
+        price: 16000,
+        star: 3,
       },
     ],
     startMoney: 35000,
@@ -303,7 +400,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb:
       'Wealthy guests who pay handsomely and expect beautiful rooms, and a health inspector who calls twice as often. Acupuncture, reiki, sound healing and a Shaman are open from the start.',
     plot: { x0: 4, x1: 27, y0: 5, y1: 16, door: [15, 16] },
-    width: 40,
+    width: 48,
     plots: [
       {
         id: 'orangery',
@@ -322,6 +419,25 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
         rects: [{ x0: 8, x1: 19, y0: 1, y1: 4 }],
         price: 14000,
         star: 2,
+      },
+      {
+        id: 'stable-block',
+        name: 'The stable block',
+        blurb:
+          'A building of its own past the orangery, where the hunters were kept, with room for a press and a path from the pavement',
+        rects: [{ x0: 40, x1: 46, y0: 5, y1: 16 }],
+        entrance: { side: 'south', x: 42, y: 16 },
+        path: [{ x0: 42, x1: 43, y0: 17, y1: 19 }],
+        price: 27000,
+        star: 2,
+      },
+      {
+        id: 'apple-store',
+        name: 'The apple store',
+        blurb: 'Cool racks out the back, beside the cider barn',
+        rects: [{ x0: 20, x1: 30, y0: 1, y1: 4 }],
+        price: 16500,
+        star: 3,
       },
     ],
     startMoney: 45000,

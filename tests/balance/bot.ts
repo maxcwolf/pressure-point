@@ -53,7 +53,7 @@ import { Sim } from '../../src/core/sim/sim';
 import { inRush, SEASON_AHEAD_DAYS, seasonOf } from '../../src/core/sim/twists';
 import { upgradeCost } from '../../src/core/sim/upgrades';
 import { worsenRate } from '../../src/core/sim/worsening';
-import { disciplineOn, newGame, offeringOn, unlockedUpTo } from '../../src/core/state/game';
+import { disciplineOn, newGame, offeringOn, starsEarned, unlockedUpTo } from '../../src/core/state/game';
 import type { Emergency, GameState, Guest, Item, Room, Staff, WallSpot } from '../../src/core/state/types';
 import { footprint, onWall, type Rect } from '../../src/core/world';
 
@@ -1674,7 +1674,8 @@ export class Bot {
 
   /**
    * Build a room of a type with its furniture and any extras, somewhere along the walls. A spot that would leave no
-   * space for a room of a type in `keep` is given up while the room is still a plan, as a player would.
+   * space for a room of a type in `keep` is given up while the room is still a plan, as a player would; with the
+   * machines on, so is one that would take the last spot of a machine room its star has opened.
    */
   buildRoom(type: RoomType, extras: ItemType[] = [], keep: RoomType[] = []): Room | null {
     const def = ROOMS[type];
@@ -1682,9 +1683,13 @@ export class Bot {
     if (this.s.money < def.cost + extraCost + 500) return null;
     // a room that would not fit is not tried again for a few days (looking takes time)
     if (this.flags.expansion && (this.noFit[type] ?? 0) > this.s.day) return null;
+    const machine = def.required.some((t) => ITEMS[t].machine);
+    const kept = [...keep, ...(this.flags.machines && !machine ? this.machinesToCome() : [])].filter((k) =>
+      this.keeps(k),
+    );
     for (const { r, door } of this.roomSpots(type)) {
       const room = this.sim.createRoom(type, r, door);
-      if (this.furnish(room, [...def.required, ...extras]) && keep.every((k) => this.fits(k))) {
+      if (this.furnish(room, [...def.required, ...extras]) && kept.every((k) => this.keeps(k))) {
         this.sim.finishRoom(room);
         this.placeNear('fire_extinguisher', room.door.x + room.door.dx, room.door.y + room.door.dy, 'corridor');
         return room;
@@ -1754,6 +1759,25 @@ export class Bot {
   /** Whether a room of a type would fit somewhere now. */
   private fits(type: RoomType): boolean {
     return !this.roomSpots(type).next().done;
+  }
+
+  /**
+   * Whether space is still there for a room the bot means to build: anywhere its shape fits, or for a machine room,
+   * which is dear to get wrong, somewhere it could really be built, with a door that is reached and its machine in it,
+   * tried as a plan and taken down again.
+   */
+  private keeps(type: RoomType): boolean {
+    if (!ROOMS[type].required.some((t) => ITEMS[t].machine)) return this.fits(type);
+    const money = this.s.money;
+    for (const { r, door } of this.roomSpots(type)) {
+      if (!this.sim.world.doorValid(type, r, door).ok) continue;
+      const room = this.sim.createRoom(type, r, door);
+      const ok = this.furnish(room, ROOMS[type].required);
+      this.sim.removeRoom(room.id, 1);
+      this.s.money = money;
+      if (ok) return true;
+    }
+    return false;
   }
 
   /** Put furniture into a room, the biggest first. False if any of it will not fit. */
@@ -2031,6 +2055,25 @@ export class Bot {
   }
 
   /**
+   * The center's machine rooms not built yet whose star the center has earned: not merely open, as The Orchard's are
+   * from the day it opens, when the space is wanted for the opening.
+   */
+  private machinesToCome(): RoomType[] {
+    const s = this.s;
+    return ROOM_ORDER.filter((type) => {
+      const def = ROOMS[type];
+      return (
+        def.required.some((t) => ITEMS[t].machine) &&
+        !!def.only?.includes(s.center) &&
+        !!def.discipline &&
+        disciplineOn(s, def.discipline) &&
+        (def.unlock ?? 0) <= starsEarned(s) &&
+        !this.sim.hasRoom(type)
+      );
+    });
+  }
+
+  /**
    * The center's own machine room, once its star is earned, while the center pays its way and the bot is not saving,
    * with the money for a few months' running in hand; and a practitioner sent on its course once it stands. It is a
    * station more, so it goes on free floor or on land bought for it, never where a room was knocked down: when nothing
@@ -2241,8 +2284,10 @@ export class Bot {
       }
       const consults = this.rooms('consult').length;
       // a building at its limit keeps the line from growing to show it: guests turned away last month count toward
-      // another room too, while two or more wait for each consultation
-      const full = (this.s.months.at(-1)?.turnedAway ?? 0) >= 3 && this.waiting('consultant') >= consults * 2;
+      // another room too, while two or more wait for each consultation, or while the consultations keep fewer stations
+      // in guests than are staffed, as the Guests tab says
+      const turnedAway = (this.s.months.at(-1)?.turnedAway ?? 0) >= 3;
+      const full = turnedAway && (this.waiting('consultant') >= consults * 2 || this.consultBound());
       if ((this.waiting('consultant') > consults * 4 || full) && this.afford(ROOMS.consult.cost, reserve * 0.5, true)) {
         if (!this.sim.hasRoom('assess') && s.money > ROOMS.assess.cost + reserve) this.buildRoom('assess');
         else this.buildRoom('consult');
@@ -2280,7 +2325,7 @@ export class Bot {
       if (saving && value * 3 < cost) continue;
       if (!this.afford(cost + 1000, reserve * 0.5, value * this.style.borrowPayback > cost)) continue;
       // not where it would leave no space for a discipline still to come
-      const keep = toCome.filter((t) => this.fits(t));
+      const keep = toCome.filter((t) => this.keeps(t));
       if (this.buildRoom(room, [], keep)) {
         this.grewIn[d] = month;
         this.note(`day ${Math.floor(s.day)}: another ${room}, worth ${Math.round(value)} a month`);
@@ -2303,15 +2348,23 @@ export class Bot {
     const rooms = Math.max(1, this.rooms(def.room).length - (this.benched[def.room] ?? 0));
     // guests who found the center full last month would have come for this discipline by its share of treatments
     const treated = DISCIPLINE_ORDER.reduce((a, x) => a + (this.seen[x]?.treated ?? 0), 0);
-    const full = (this.s.months.at(-1)?.turnedAway ?? 0) * (treated ? m.treated / treated : 0);
-    // and a staffed station more draws guests more often in all, and lets more in at once
+    // and a staffed station more draws guests more often in all, and lets more in at once: unless the consultations
+    // already keep fewer stations in guests than are staffed, when it draws and lets in nobody
+    const fed = !this.consultBound();
+    const full = fed ? (this.s.months.at(-1)?.turnedAway ?? 0) * (treated ? m.treated / treated : 0) : 0;
     const last = this.s.months.at(-1);
     const pace = this.sim.arrivalPace();
-    const drawn = last ? ((last.arrived + (last.turnedAway ?? 0)) * CAPACITY_ARRIVALS.each) / pace.staffed : 0;
+    const drawn = last && fed ? ((last.arrived + (last.turnedAway ?? 0)) * CAPACITY_ARRIVALS.each) / pace.staffed : 0;
     const guests = (m.lost + full + drawn + Math.max(0, m.line - rooms)) * this.ahead(3);
     const rate = m.treated >= 3 ? m.healed / m.treated : 0.6;
     const room = this.benched[def.room] ? 0 : ROOMS[def.room].cost / this.style.payback;
     return guests * rate * this.feeFor(d) - this.salaryFor(def.role) - room;
+  }
+
+  /** Whether the Consultation Rooms keep fewer treatment stations in guests than have someone staffed to work them. */
+  private consultBound(): boolean {
+    const c = this.sim.arrivalPace().capacity;
+    return c.fed < c.stations;
   }
 
   /** What the bot would expect to pay a new practitioner in a role: the cheapest applicant, or the cheapest on staff. */
