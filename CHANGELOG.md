@@ -20,6 +20,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Mishaps show in the scene.** In a power cut the building goes dark while the sun still shines on the lot, and everything with a plug goes out; a freeze frosts the water with icicles hanging off it; wasps swarm over the snacks, drinks and bins.
 - **Progress bars from every side.** A treatment's bar faces the camera however it is turned.
 - **Weather stays outside.** Rain and snow no longer fall inside the building; snowflakes are round, rain falls in thin streaks, and flood water lies in bright pools with rings spreading over it.
+- **Willow Lane opens in spring.** A new game there starts in March, in mild weather with the trees in leaf, so a first game does not open in a bare winter. The other centers, and games already saved, keep their own calendars.
 - **Trees through the year, and a calmer day.** The park's trees turn gold in autumn and bare in winter, and the orchards blossom in spring; the light no longer pulses through each day at normal speed.
 
 ## v0.32.2

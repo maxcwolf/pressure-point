@@ -6,7 +6,7 @@ Everything the [README](../README.md) leaves out: how a center works, step by st
 
 **Campaign** takes you through a series of centers, each with its own building, guests, goals and quirks. Earn a center's first star to open the next:
 
-1. **Willow Lane**, a small high-street unit. Massage only: the place to learn the ropes.
+1. **Willow Lane**, a small high-street unit. Massage only: the place to learn the ropes. It opens as spring starts, in mild weather with the trees in leaf; the other centers open in January.
 2. **The Exchange**, downtown, on a paved plaza among the office blocks. Office workers with office ailments, arriving in rush hours when the office crowd comes in. Acupuncture opens here.
 3. **The Boardwalk**, a seaside town. Packed in summer (about twice the usual guests) and quiet in winter (about half), with seaside ailments and sea air that is hard on equipment. A fortnight before each summer and winter you are told what is coming, with the guests to expect a month against last month, and each season is announced with its numbers as it starts. Reiki opens here.
 4. **High Pines**, a lodge up in the mountains. Cold all year, so keep it heated, and snowed in now and then each winter, when nobody new can get up the road. A big freeze can stop the water. Mountain ailments, and Stone Warmers that cool fast in the cold. Sound healing opens here.
