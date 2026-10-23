@@ -262,7 +262,7 @@ export class Overlays {
       const m = list[i];
       sprite.visible = !!m;
       if (!m) return;
-      sprite.material.map = iconTexture(m.icon, true);
+      sprite.material.map = iconTexture(m.icon, 'square');
       sprite.material.needsUpdate = true;
       sprite.position.set(m.x + 0.5, 1.15, m.y + 0.5);
     });
