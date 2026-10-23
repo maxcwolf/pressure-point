@@ -6,6 +6,7 @@ import { gameProps } from '../app/play-events';
 import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
+import type { LessonId } from '../core/sim/lessons';
 import type { TutorialStep } from '../core/sim/tutorial';
 import type { Template } from '../core/templates';
 import { giveKarma } from '../storage/campaign';
@@ -43,7 +44,8 @@ export type DialogId =
   | 'buy-plot'
   | 'payroll'
   | 'bankrupt'
-  | 'update';
+  | 'update'
+  | 'lesson';
 
 /** What the interface has the floor show: the overlay chosen, and the plots of land while the Land tab is open. */
 export interface FloorShown {
@@ -131,6 +133,8 @@ export class HudState {
   dialog: DialogId | null = null;
   /** The star being celebrated while its dialog is open. */
   star = 0;
+  /** The tutorial's lesson raised last, shown in its dialog, and who it is about if anyone. */
+  lesson: { id: LessonId; about?: Subject } | null = null;
   /** The locked item asked about in the karma dialog. */
   karmaItem: ItemType | null = null;
   /** The locked floor or wall asked about in the karma dialog, and the room to put it in once unlocked. */
@@ -382,8 +386,16 @@ export class HudState {
       // the app notes an achievement for the campaign; its toast says it
       else if (e.type === 'achievement') continue;
       else if (e.type === 'tutorial') this.endTutorial(e.what, e.step);
+      else if (e.type === 'lesson') this.raiseLesson(e.id, e.about);
       else this.float(e.text, e.kind, view.project(e.x, e.y, 1.6));
     }
+  }
+
+  /** Show a lesson, in line behind any dialog showing, as a star is. */
+  private raiseLesson(id: LessonId, about?: Subject) {
+    this.lesson = { id, ...(about && { about }) };
+    track('lesson_shown', { ...gameProps(this.host.sim.s), lesson: id });
+    this.raise('lesson');
   }
 
   /**

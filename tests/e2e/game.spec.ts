@@ -2292,6 +2292,23 @@ test.describe('the tutorial', () => {
     await expect(page.locator('#advisor')).toContainText('Open the Items menu and place a Reception Desk');
     expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('false');
   });
+
+  test('a lesson opens over the game, paused, until it is read', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 1;
+      pp.sim.emit({ type: 'lesson', id: 'heal' });
+    });
+    const modal = page.locator('#modal');
+    await expect(modal).toContainText('Your first heal');
+    await expect(modal.locator('.lesson-strip li')).toHaveCount(3);
+    expect(await game.eval((pp) => pp.state.speed)).toBe(0);
+    // nobody to show for this one
+    await expect(modal.getByRole('button', { name: 'Show me' })).toHaveCount(0);
+    await modal.getByRole('button', { name: 'Got it' }).click();
+    await expect(modal).toBeEmpty();
+    expect(await game.eval((pp) => pp.state.speed)).toBe(1);
+  });
 });
 
 test.describe('the campaign', () => {

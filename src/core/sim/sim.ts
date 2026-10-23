@@ -106,6 +106,7 @@ import { drainEvents, emit } from './events';
 import { objectiveDetail } from './goals';
 import { admitGuests, type ArrivalPace, arrivalPace, guestCap, intakeLimit, setIntakeCap, updateGuest } from './guests';
 import { buyPlot, landOffers, renamePlot, updateLand } from './land';
+import { checkLessons } from './lessons';
 import {
   announceOpenings,
   machineBusy,
@@ -250,6 +251,7 @@ export class Sim {
       warnWorsening(ctx);
       warnTutorial(ctx);
       warnPrimer(ctx);
+      checkLessons(ctx);
       // wages overdue for want of a loan may be paid at last, which lets the year's awards through
     }
     announce(ctx, dt);
