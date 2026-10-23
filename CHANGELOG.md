@@ -8,6 +8,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Bubbles stay up long enough to read.** Every bubble pops in and shrinks away, and stays at least 1.4 seconds, so it can be read at speed 3. With reduced motion turned on in your system, bubbles neither pop nor pulse.
 - **Readable from where the game starts.** Speech bubbles and markers grow a little as the camera pulls back, up to half as big again, and their pictures fill more of the bubble.
 - **Icons told apart by shape.** Thirsty is a glass with a straw, a break a steaming mug, hungry a burger, thanks a flower, and filthy rising stink lines. A failed treatment shows a thumb down instead of the hourglass. The guest marker is a whole figure, and a staff square's marker sits on the square's purple.
+- **Faces in emoji yellow.** Every face, and the hands in the thumb down and the hush, are yellow instead of orange, so a face stands out in a red bubble as well as a white one.
 - **No towers of markers.** Neighbouring broken or filthy items share one marker, and a runner's red ring pulses.
 
 ## v0.33.2

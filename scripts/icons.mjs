@@ -21,6 +21,8 @@ export const PALETTE = {
   teal: '#2fa8a0',
   tealDark: '#23827c',
   orange: '#f08a4b',
+  // the yellow of a face or a hand, as an emoji's, so a face reads on red, white and cream alike
+  face: '#ffcc4d',
   gold: '#f2c14e',
   red: '#e5564d',
   green: '#3bb273',
