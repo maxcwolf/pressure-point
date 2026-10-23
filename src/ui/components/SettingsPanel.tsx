@@ -53,7 +53,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
   // the tutorial is Willow Lane's, so in a game there it is that game's switch; anywhere else, the next one's
   const willowLane = sim?.s.center === CAMPAIGN[0] ? sim : undefined;
   /** Whether the tutorial is on, in the Willow Lane game in progress or for the next one. */
-  const tutorialOn = () => (willowLane ? willowLane.s.tutorial : loadTutorialPref());
+  const tutorialOn = () => (willowLane ? willowLane.tutorialOn() : loadTutorialPref());
   return (
     <div class="settings">
       <h4>Help</h4>

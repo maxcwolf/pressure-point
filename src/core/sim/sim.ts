@@ -150,6 +150,7 @@ import {
   skipTutorial,
   type TutorialLine,
   tutorialLines,
+  tutorialOn,
   type TutorialStep,
   warnTutorial,
 } from './tutorial';
@@ -339,6 +340,10 @@ export class Sim {
   /** Skip the rest of the tutorial and the cards that explain things. */
   skipTutorial() {
     skipTutorial(this.ctx);
+  }
+  /** Whether the tutorial is on in this game: its steps, or the cards that explain things. */
+  tutorialOn(): boolean {
+    return tutorialOn(this.ctx);
   }
   /** Turn the tutorial, and the cards that explain things, on or off in this game. */
   setTutorial(on: boolean) {

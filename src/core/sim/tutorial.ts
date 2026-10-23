@@ -139,7 +139,11 @@ interface Step {
 
 /** Every step, the opening and then the heads-ups, with whether each is due and done; none while the tutorial is off. */
 function steps(ctx: SimContext): Step[] {
-  if (!ctx.s.tutorial) return [];
+  return ctx.s.tutorial ? chain(ctx) : [];
+}
+
+/** Every step, the opening and then the heads-ups, with whether each is due and done, whether the tutorial is on or not. */
+function chain(ctx: SimContext): Step[] {
   const opening = OPENING.map((o) => ({
     id: o.id,
     title: o.title,
@@ -181,10 +185,19 @@ export interface TutorialStep {
   about?: Subject;
 }
 
-/** The step in hand: the first not yet done that is due, or null while none is (or the tutorial is off). */
+/**
+ * Which step is in hand: the first not yet done that is due, except that the Benches wait behind a heads-up that is
+ * due, since a heads-up has trouble coming behind it and the Benches only make the wait kinder. -1 while none is.
+ */
+function inHand(all: readonly Step[]): number {
+  const live = all.flatMap((st, i) => (!st.done && st.due ? [i] : []));
+  return live.find((i) => all[i]?.id !== 'benches') ?? live[0] ?? -1;
+}
+
+/** The step in hand, or null while none is (or the tutorial is off). */
 export function currentStep(ctx: SimContext): TutorialStep | null {
   const all = steps(ctx);
-  const i = all.findIndex((st) => !st.done && st.due);
+  const i = inHand(all);
   const st = all[i];
   if (!st) return null;
   return {
@@ -215,13 +228,16 @@ export interface TutorialLine {
 /** The tutorial's list, while it is on: a line for every step. */
 export function tutorialLines(ctx: SimContext): TutorialLine[] {
   const all = steps(ctx);
-  const current = all.find((st) => !st.done && st.due);
-  return all.map((st) => ({ id: st.id, label: st.title, done: st.done, current: st === current }));
+  const current = inHand(all);
+  return all.map((st, i) => ({ id: st.id, label: st.title, done: st.done, current: i === current }));
 }
 
 /** The word the tutorial hands over with, once every step is done. */
 export const HANDOFF =
   "That's the basics. From here the advisor speaks up when something needs you, and the objectives at the top left earn your first star: click one for the numbers behind it.";
+
+/** The tip noted once the tutorial has handed over, which it does once a game at most. */
+export const HANDED_OVER_TIP = 'tutorial-done';
 
 /**
  * Once a second: hand over once every step is done, ending the tutorial for good in this game, and the heads-ups too
@@ -233,6 +249,8 @@ export function warnTutorial(ctx: SimContext) {
   const all = steps(ctx);
   if (!all.every((st) => st.done)) return;
   s.tutorial = false;
+  if (s.seenTips.includes(HANDED_OVER_TIP)) return;
+  s.seenTips.push(HANDED_OVER_TIP);
   if (s.primer && primerDone(ctx)) s.primer = false;
   toast(ctx, HANDOFF, 'good', undefined, 'ui-advisor');
   emit(ctx, { type: 'tutorial', what: 'done', step: all[all.length - 1]?.id ?? '' });
@@ -248,11 +266,18 @@ export function skipTutorial(ctx: SimContext) {
   emit(ctx, { type: 'tutorial', what: 'skipped', step });
 }
 
-/** Turn the tutorial, and the cards that explain things, on or off in the game in progress. */
+/**
+ * Turn the tutorial, and the cards that explain things, on or off in the game in progress. Turned on in a game that
+ * has handed over already, or has every step done, only the cards come back: there is nothing left to walk through.
+ */
 export function setTutorial(ctx: SimContext, on: boolean) {
-  ctx.s.tutorial = on;
-  ctx.s.lessons = on;
+  const s = ctx.s;
+  s.lessons = on;
+  s.tutorial = on && !s.seenTips.includes(HANDED_OVER_TIP) && !chain(ctx).every((st) => st.done);
 }
+
+/** Whether the tutorial is on in the game in progress: its steps, or the cards that explain things, or both. */
+export const tutorialOn = (ctx: SimContext) => ctx.s.tutorial || ctx.s.lessons;
 
 /** The camera has been moved and turned, which is looking around done. */
 export function noteLooked(ctx: SimContext) {

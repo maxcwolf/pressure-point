@@ -305,17 +305,15 @@ const PRIMER_SPENDS = new Set(['caretaker', 'smudging']);
 
 /**
  * Once a second: on a first go at the campaign, say each heads-up once as it starts to matter, and end them for good,
- * with a word to say so, once everything on the checklist is in place. While the tutorial is on its card says them, so
- * each is only noted as said, and the tutorial ends them with its own word.
+ * with a word to say so, once everything on the checklist is in place. While the tutorial is on, its card says the one
+ * that is its step in hand, which is only noted as said, and the tutorial ends them with its own word.
  */
 export function warnPrimer(ctx: SimContext) {
   const s = ctx.s;
   if (!s.primer || !s.open) return;
-  if (s.tutorial) {
-    for (const n of primerNotes(ctx)) if (!s.seenTips.includes(`primer-${n.id}`)) s.seenTips.push(`primer-${n.id}`);
-    return;
-  }
   if (primerDone(ctx)) {
+    // the tutorial's handoff ends them
+    if (s.tutorial) return;
     s.primer = false;
     toast(
       ctx,
@@ -327,7 +325,13 @@ export function warnPrimer(ctx: SimContext) {
     return;
   }
   const short = moneyFirst(s) || !!inHandAdvice(ctx);
+  const step = s.tutorial ? currentStep(ctx)?.id : undefined;
   for (const n of primerNotes(ctx)) {
+    // the tutorial's card says the one in hand; any other still has its word
+    if (n.id === step) {
+      if (!s.seenTips.includes(`primer-${n.id}`)) s.seenTips.push(`primer-${n.id}`);
+      continue;
+    }
     const text =
       short && PRIMER_SPENDS.has(n.id) ? `${n.text} Wait until there is a month's wages in hand, though.` : n.text;
     tipOnce(ctx, `primer-${n.id}`, text, 'info', n.about, 'ui-advisor');

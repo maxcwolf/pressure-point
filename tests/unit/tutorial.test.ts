@@ -176,6 +176,66 @@ describe('the tutorial', () => {
     expect(sim.tutorialLines()).toEqual([]);
   });
 
+  it('hands over once a game, and switched back on after that brings back only the lessons', () => {
+    const sim = tutorialGame();
+    walkOpening(sim);
+    placeBenches(sim);
+    hire(sim, 'caretaker').general.push('smudging');
+    addStaffRoom(sim);
+    run(sim, 1.5);
+    expect(toasts(sim.drain())).toContain(HANDOFF);
+    sim.setTutorial(false);
+    expect(sim.tutorialOn()).toBe(false);
+    sim.setTutorial(true);
+    expect(sim.s.tutorial).toBe(false);
+    expect(sim.s.lessons).toBe(true);
+    expect(sim.tutorialOn()).toBe(true);
+    run(sim, 5);
+    const events = sim.drain();
+    expect(toasts(events)).not.toContain(HANDOFF);
+    expect(events.filter((e) => e.type === 'tutorial')).toEqual([]);
+  });
+
+  it('switched back on with every step done already, brings back only the lessons', () => {
+    const sim = tutorialGame();
+    // a replay after a star, with no heads-ups to come
+    sim.s.primer = false;
+    sim.skipTutorial();
+    walkOpening(sim);
+    placeBenches(sim);
+    sim.drain();
+    sim.setTutorial(true);
+    expect(sim.s.tutorial).toBe(false);
+    expect(sim.s.lessons).toBe(true);
+    run(sim, 1.5);
+    expect(toasts(sim.drain())).not.toContain(HANDOFF);
+  });
+
+  it('puts a heads-up that is due ahead of the Benches, which wait for nothing more pressing', () => {
+    const sim = tutorialGame();
+    walkOpening(sim);
+    expect(stepOf(sim)).toBe('benches');
+    sim.s.stats.healed = 1;
+    expect(sim.tutorialStep()).toMatchObject({ id: 'caretaker', n: 9 });
+    expect(sim.tutorialLines().find((l) => l.current)?.id).toBe('caretaker');
+    hire(sim, 'caretaker').general.push('smudging');
+    expect(stepOf(sim)).toBe('benches');
+  });
+
+  it('still says a heads-up that is not the step in hand', () => {
+    const sim = tutorialGame();
+    walkOpening(sim);
+    sim.s.stats.healed = 1;
+    sim.drain();
+    run(sim, 1.5);
+    // the Caretaker is on the card, so it goes without a word of its own
+    expect(toasts(sim.drain()).filter((t) => t.includes('Hire a Caretaker'))).toEqual([]);
+    // tiring staff are not, so the Staff Room has its word
+    for (const st of sim.s.staff) st.energy = 10;
+    run(sim, 1.5);
+    expect(toasts(sim.drain())).toContainEqual(expect.stringMatching(/Build a Staff Room/));
+  });
+
   it('can be skipped, the cards that explain things with it, saying how to have it back', () => {
     const sim = tutorialGame();
     sim.noteLooked();
