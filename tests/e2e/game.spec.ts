@@ -1587,6 +1587,69 @@ test.describe('messages', () => {
     });
     await expect(card).toHaveCount(0);
   });
+
+  test('a message stays while the game is paused or the pointer is on it, and can be closed', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    const toast = page.locator('#toasts .messages .toast', { hasText: 'Mira joins the team.' });
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.sim.emit({ type: 'toast', text: 'Mira joins the team.', kind: 'info' });
+    });
+    await expect(toast).toBeVisible();
+    // a minute of frames, paused
+    await game.eval((pp) => pp.ui.tickToasts(60));
+    await expect(toast).toBeVisible();
+    await game.eval((pp) => (pp.state.speed = 1));
+    await toast.hover();
+    await game.eval((pp) => pp.ui.tickToasts(60));
+    await expect(toast).toBeVisible();
+    await page.mouse.move(400, 450);
+    await game.eval((pp) => pp.ui.tickToasts(60));
+    await expect(toast).toHaveCount(0);
+    // said twice, it shows once, counted; its close button takes it away
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.sim.emit({ type: 'toast', text: 'Mira joins the team.', kind: 'info' });
+      pp.sim.emit({ type: 'toast', text: 'Mira joins the team.', kind: 'info' });
+    });
+    await expect(toast).toContainText('×2');
+    await toast.locator('[data-tip="Dismiss"]').click();
+    await expect(toast).toHaveCount(0);
+  });
+
+  test('past the first few, messages pile up, open out, and are dismissed together once the player is sure', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      for (let i = 1; i <= 6; i++) pp.sim.emit({ type: 'toast', text: `Message ${i}`, kind: 'info' });
+    });
+    const messages = page.locator('#toasts .messages .toast');
+    const pile = page.locator('#toasts .pile');
+    await expect(messages).toHaveCount(4);
+    await expect(messages.first()).toContainText('Message 6');
+    await expect(pile).toContainText('2 more messages');
+    await pile.getByRole('button', { name: '2 more messages' }).click();
+    await expect(messages).toHaveCount(6);
+    await expect(messages.last()).toContainText('Message 1');
+    await page.keyboard.press('Escape');
+    await expect(messages).toHaveCount(4);
+    await pile.locator('[data-tip="Dismiss all messages"]').click();
+    const dialog = page.locator('.dialog');
+    await expect(dialog).toContainText('Dismiss all 6 messages?');
+    await dialog.getByRole('button', { name: 'Keep them' }).click();
+    await expect(messages).toHaveCount(4);
+    await pile.locator('[data-tip="Dismiss all messages"]').click();
+    await dialog.getByRole('button', { name: 'Dismiss all' }).click();
+    await expect(messages).toHaveCount(0);
+    await expect(pile).toHaveCount(0);
+    expect(await game.eval((pp) => pp.ui.toasts.length)).toBe(0);
+  });
 });
 
 test.describe('the Items menu', () => {

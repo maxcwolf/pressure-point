@@ -77,6 +77,8 @@ export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, ove
       ui.handle(events);
       refresh.request();
     }
+    // the messages on the right fade in their own time, which stands still while the game is paused
+    ui.tickToasts(dt);
     if (refresh.due(dt)) ui.update();
     sinceSave += dt;
     // with autosaving set to only on leaving, the game is saved as it is left or hidden

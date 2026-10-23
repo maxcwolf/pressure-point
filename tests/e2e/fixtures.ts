@@ -63,7 +63,15 @@ interface Handle {
     pointerDown(clientX: number, clientY: number): void;
     pointerMove(clientX: number, clientY: number): void;
   };
-  ui: { subscribe(listener: () => void): () => void; update(): void; overlay: string | null };
+  ui: {
+    subscribe(listener: () => void): () => void;
+    update(): void;
+    overlay: string | null;
+    /** The messages on the right, oldest first. */
+    toasts: { text: string; count: number }[];
+    /** Run the messages' clock for a frame of so many seconds. */
+    tickToasts(dt: number): void;
+  };
   loop: { saveSoon(): void };
   data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };
   geo: {

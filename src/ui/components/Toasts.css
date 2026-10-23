@@ -9,6 +9,27 @@
   gap: 8px;
 }
 
+#toasts .messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* opened out, the messages scroll in the room down to the bar at the bottom, over the inspector */
+#toasts.open {
+  z-index: 1;
+  bottom: calc(var(--bar-h) + 14px);
+}
+
+#toasts.open .messages {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  pointer-events: auto;
+  /* room for the last message's shadow */
+  padding-bottom: 5px;
+}
+
 .toast {
   background: var(--cream);
   border: 3px solid var(--navy);
@@ -38,7 +59,8 @@
   animation: none;
 }
 
-.toast.link {
+.toast.link,
+.toast .words.link {
   pointer-events: auto;
   text-align: left;
   font: inherit;
@@ -47,4 +69,104 @@
 
 .toast.out {
   opacity: 0;
+}
+
+/* a message: its words, then its close button at the right */
+.messages .toast,
+.pile .face {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 4px 0 0;
+  pointer-events: auto;
+}
+
+.toast .words {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 4px 8px 12px;
+}
+
+.toast button.words {
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+.toast .count {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: rgba(36, 56, 74, 0.1);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.toast .close {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-top: 5px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  font-size: 12px;
+  opacity: 0.45;
+}
+
+.toast .close:hover {
+  opacity: 1;
+  background: rgba(36, 56, 74, 0.08);
+}
+
+/* the messages past the first few: a pile of cards, the next ones down peeking out under its face in their colors */
+.pile {
+  position: relative;
+  flex: none;
+  margin-bottom: 14px;
+}
+
+.pile.open {
+  margin-bottom: 0;
+}
+
+.pile .sheet {
+  position: absolute;
+  inset: 7px 6px -7px;
+  background: var(--sand);
+  border: 3px solid var(--navy);
+  border-radius: 12px;
+}
+
+.pile .sheet.deep {
+  inset: 14px 12px -14px;
+  box-shadow: var(--shadow);
+}
+
+.pile .sheet.good {
+  background: var(--green);
+}
+
+.pile .sheet.bad {
+  background: var(--red);
+}
+
+.pile .sheet.info {
+  background: var(--blue);
+}
+
+.pile .face {
+  position: relative;
+  font-weight: 600;
+  animation: none;
+}
+
+/* the deepest sheet casts the pile's shadow */
+.pile:not(.open) .face {
+  box-shadow: none;
+}
+
+.pile .chevron {
+  margin-left: 6px;
+  opacity: 0.6;
 }
