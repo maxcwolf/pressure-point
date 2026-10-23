@@ -118,7 +118,10 @@ test.describe('in a game', () => {
     });
     await screens.play();
     await game.menu('Rooms');
-    await page.locator('#menu .tab', { hasText: 'Templates' }).click();
+    const templates = page.locator('#menu .tab', { hasText: 'Templates' });
+    await templates.click();
+    // the menu shrinks to the shorter tab, so the pointer follows its tab rather than resting on an objective's tooltip
+    await templates.hover();
     await screens.shot('menu-rooms-templates');
   });
 
