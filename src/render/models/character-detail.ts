@@ -841,6 +841,13 @@ export function detailCap(head: THREE.Group, cloth: THREE.Material, kind: 'peake
   put(head, cap(kind), cloth).name = 'cap';
 }
 
+/** How high the hips are, in meters before scaling. */
+export const HIP = 0.42;
+
+/** How far above where they lie the hips of someone lying on their back are, and above the seat of someone sitting, in meters. */
+export const BACK_Y = 0.16;
+export const SIT_Y = 0.06;
+
 /** How far below the hip the knee is, and below the shoulder the elbow: where the shin and the forearm hinge. */
 export const KNEE = 0.18;
 export const ELBOW = 0.13;
@@ -897,7 +904,7 @@ const shoe = () =>
 /** Build a leg hinged at the hip, with a shin and shoe hinged at the knee. */
 export function detailLeg(body: THREE.Group, x: number, bottom: THREE.Material, shoes: THREE.Material) {
   const leg = new THREE.Group();
-  leg.position.set(x, 0.42, 0);
+  leg.position.set(x, HIP, 0);
   // a leg's shadow falls from its thigh and shin together, though each alone is too small to cast one
   const upper = put(leg, thigh(), bottom);
   upper.name = 'trousers';

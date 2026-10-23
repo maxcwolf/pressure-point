@@ -10,7 +10,9 @@ import type { Lying } from '../../src/render/acts';
 import {
   APART,
   CLIMB_DOWN,
+  CLIMB_ON,
   CURE_HOLD,
+  EDGE,
   keepApart,
   newMotion,
   type Placed,
@@ -55,52 +57,86 @@ function run(g: Guest, frames: number, bed: Lying | undefined, m = newMotion(), 
 const biggestStep = (xs: number[]) => Math.max(...xs.slice(1).map((x, i) => Math.abs(x - xs[i]!)));
 
 describe('getting onto a table', () => {
-  it('climbs up over the last step rather than popping up at its end', () => {
+  /** Walk a guest onto the table at a speed of the game, and what was shown each frame, the climb's end and all. */
+  function climb(speed = 1, lie: Lying = 'prone') {
     const g = arriving();
-    const { shown } = run(g, 40, 'prone');
-    expect(g.pose).toBe('lie');
-    const heights = shown.map((s) => s.c.h);
-    expect(heights.at(-1)).toBeCloseTo(0.6);
-    expect(biggestStep(heights)).toBeLessThan(0.15);
-    // and lies down as they go, rather than all at once
-    expect(biggestStep(shown.map((s) => s.lying))).toBeLessThan(0.35);
-    expect(shown.at(-1)!.lying).toBe(1);
+    const m = newMotion();
+    const shown: Shown[] = [];
+    let lay = NaN;
+    for (let i = 0; i < 150; i++) {
+      moveAlong(g, DT * speed, PACE);
+      if (g.pose === 'lie' && Number.isNaN(lay)) lay = i * DT;
+      shown.push(showMotion(m, g, i * DT, DT, g.pose === 'lie' ? lie : undefined, lie));
+    }
+    return { g, shown, lay };
+  }
+
+  /** How far someone is shown from the spot they will lie on. */
+  const toSpot = (s: Shown) => Math.hypot(s.c.x - 0.5, s.c.y - 1.0);
+
+  it('walks up to the edge and stops there, never walking into the table', () => {
+    const { shown } = climb();
+    // the edge, partway along the last step, from the middle of the tile beside it to the spot
+    const edge = (1 - EDGE) * Math.hypot(1.5 - 0.5, 1.5 - 1.0);
+    for (const s of shown) if (s.c.h < 0.05 && s.lying < 0.5) expect(toSpot(s)).toBeGreaterThan(edge - 0.2);
   });
 
-  it('is up off the floor before reaching the table, never walking into it', () => {
-    const g = arriving();
-    const { shown } = run(g, 40, 'prone');
-    for (const s of shown) {
-      const toSpot = Math.hypot(s.c.x - 0.5, s.c.y - 1.0);
-      // the table's edge is half a meter from where they lie
-      if (toSpot < 0.5) expect(s.c.h).toBeGreaterThan(0.3);
-      if (s.c.pose === 'walk') expect(toSpot).toBeGreaterThan(0.5);
+  it('climbs on in the same time at every speed of the game', () => {
+    for (const speed of [1, 3]) {
+      const { shown, lay } = climb(speed);
+      const done = shown.findIndex(
+        (s, i) => i * DT > lay && s.lying === 1 && s.fours === 0 && s.hands === 0 && Math.abs(s.c.h - 0.6) < 0.01,
+      );
+      expect(done * DT - lay).toBeGreaterThan(CLIMB_ON.prone - 0.1);
+      expect(done * DT - lay).toBeLessThan(CLIMB_ON.prone + 0.2);
+    }
+  });
+
+  it('climbs up and lies down gradually, face down or onto the back, ending as the sim has them', () => {
+    for (const lie of ['prone', 'back'] as const) {
+      const { g, shown } = climb(1, lie);
+      expect(g.pose).toBe('lie');
+      // how high they are, and how far over, in steps, but for the moment they go from sitting to lying back, when how
+      // high they are drawn from changes with the pose and the hips stay where they sit
+      const rises = shown.map((s, i) => {
+        const was = shown[i - 1];
+        return s.c.pose === was?.c.pose && s.sat === was.sat ? Math.abs(s.c.h - was.c.h) : 0;
+      });
+      expect(Math.max(...rises)).toBeLessThan(0.15);
+      expect(biggestStep(shown.map((s) => s.lying))).toBeLessThan(0.35);
+      expect(biggestStep(shown.map((s) => s.fours))).toBeLessThan(0.35);
+      expect(biggestStep(shown.map((s) => s.hands))).toBeLessThan(0.35);
+      const last = shown.at(-1)!;
+      expect(last.c.h).toBeCloseTo(0.6);
+      expect([last.lying, last.fours, last.hands]).toEqual([1, 0, 0]);
+      expect(toSpot(last)).toBeLessThan(0.01);
     }
   });
 
   it('turns to lie the way the table says, gradually', () => {
-    const g = arriving();
-    const { shown } = run(g, 40, 'prone');
+    const { shown } = climb();
     const facings = shown.map((s) => s.c.facing);
     expect(Math.cos(facings.at(-1)! - Math.PI)).toBeCloseTo(1);
     expect(biggestStep(facings)).toBeLessThan(0.4);
   });
 
   it('takes as long as the sim takes, so nothing it counts changes', () => {
-    const shownGuest = arriving();
     const plain = arriving();
     let ticks = 0;
     while (!moveAlong(plain, DT, PACE)) ticks++;
-    const { shown } = run(shownGuest, ticks + 1, 'prone');
+    const shownGuest = arriving();
+    run(shownGuest, ticks + 1, 'prone');
     expect(shownGuest).toEqual(plain);
-    expect(shown.at(-1)!.c.pose).toBe('lie');
   });
 });
 
-/** A guest lying on a table, as the sim leaves them once they arrive, with the motion settled on them. */
-function lyingDown() {
+/** A guest lying on a table, being treated or resting, as the sim leaves them once they arrive, settled there. */
+function lyingDown(state: Guest['state'] = 'served') {
   const g = arriving();
-  const { m } = run(g, 40, 'prone');
+  const { m } = run(g, 119, 'prone');
+  // being treated, or resting, for a moment before they get up
+  g.state = state;
+  run(g, 1, 'prone', m, 119 * DT);
   return { g, m };
 }
 
@@ -126,7 +162,7 @@ describe('getting off a table', () => {
   it('climbs down along the first step rather than dropping through the table', () => {
     const { g, m } = lyingDown();
     getUp(g, false);
-    const { shown } = run(g, 30, undefined, m, 1);
+    const { shown } = run(g, 30, undefined, m, 2);
     const heights = shown.map((s) => s.c.h);
     expect(heights[0]).toBeGreaterThan(0.5);
     expect(heights.at(-1)).toBe(0);
@@ -140,7 +176,7 @@ describe('getting off a table', () => {
     const { g, m } = lyingDown();
     getUp(g, true);
     const held = Math.floor(CURE_HOLD / DT) - 1;
-    const { shown } = run(g, held, undefined, m, 1);
+    const { shown } = run(g, held, undefined, m, 2);
     for (const s of shown) {
       expect(s.c.pose).toBe('lie');
       expect(s.lying).toBe(1);
@@ -149,7 +185,7 @@ describe('getting off a table', () => {
     }
     // the sim went on as it does
     expect(g.x).toBeGreaterThan(2);
-    const after = run(g, Math.ceil((CLIMB_DOWN + 1) / DT), undefined, m, 1 + held * DT).shown;
+    const after = run(g, Math.ceil((CLIMB_DOWN + 1) / DT), undefined, m, 2 + held * DT).shown;
     const heights = after.map((s) => s.c.h);
     expect(biggestStep(heights)).toBeLessThan(0.15);
     // a hop for joy once down

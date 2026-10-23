@@ -115,7 +115,15 @@ export function climbSpecimen(type: ItemType): Specimen {
           last = into;
           const { shown } = play(into * round);
           const c = { ...shown.c, x: shown.c.x - cx, y: shown.c.y - cy };
-          poseChar(rig, c, t, dt, { style: null, lie: shown.lie, lying: shown.lying, up: shown.up });
+          poseChar(rig, c, t, dt, {
+            style: null,
+            lie: shown.lie,
+            lying: shown.lying,
+            up: shown.up,
+            fours: shown.fours,
+            hands: shown.hands,
+            sat: shown.sat,
+          });
         },
       };
     },

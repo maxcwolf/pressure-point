@@ -1,14 +1,16 @@
 // Where someone is shown, which can differ for a moment from where the sim has them. The sim moves people a step at a
 // time and changes how they stand all at once: on the tick a guest reaches a table they are lying on it, and on the
-// tick they get up they are standing on the floor. Shown, they climb on along the last step of the way there, and off
-// along the first step away, so nothing the sim counts changes; and a guest healed lying down stays there until the
-// puff of the cure is done, then catches up with where the sim has got to.
+// tick they get up they are standing on the floor. Shown, they walk up to its edge and climb on, in the same time at
+// any speed of the game, and climb off along the first step away, so nothing the sim counts changes; and a guest healed
+// lying down where they were treated stays there until the puff of the cure is done, then catches up with where the
+// sim has got to.
 
 import * as THREE from 'three';
 
 import { turnToward } from '../core/sim/movement';
 import type { Char } from '../core/state/types';
 import type { Lying } from './acts';
+import { BACK_Y, HIP, SIT_Y } from './models/character-detail';
 
 const { smoothstep, lerp } = THREE.MathUtils;
 
@@ -16,11 +18,20 @@ const { smoothstep, lerp } = THREE.MathUtils;
 export const TELEPORT = 2;
 
 /**
- * Where along the last step to a spot they lie on someone stops walking and climbs (as a share of the step, which runs
- * from the middle of the tile beside it to the middle of the spot, crossing its edge about halfway), how far along
- * they are up at the spot's height, and from where they lie down.
+ * Getting off a spot they lay on, along the first step away (as a share of the step, which runs from the spot to the
+ * middle of the tile beside it, crossing its edge about halfway): until how far along they are still lying down, until
+ * how far they are still at the spot's height, and from where they walk.
  */
 export const CLIMB = { from: 0.4, up: 0.62, lie: 0.45 } as const;
+
+/**
+ * Where along the last step to a spot they lie on someone stops, at the item's edge, as a share of the step from the
+ * middle of the tile beside it to the spot.
+ */
+export const EDGE = 0.28;
+
+/** How long climbing onto a spot takes, onto their back or face down, in seconds, whatever the game's speed. */
+export const CLIMB_ON = { back: 0.9, prone: 0.9 } as const;
 
 /** How long a guest healed lying down is held there, for the puff of the cure to be seen, in seconds. */
 export const CURE_HOLD = 0.95;
@@ -47,6 +58,17 @@ interface Spot {
   lie: Lying | undefined;
 }
 
+/** The edge of a spot someone has walked up to and waits at, to climb on once the sim has them there. */
+interface Edge {
+  x: number;
+  y: number;
+  /** The way they came at it, the way their front will face lying there, and how high it is. */
+  toward: number;
+  face: number;
+  h: number;
+  lie: Lying;
+}
+
 /** How someone is being shown moving, from one frame to the next. */
 export interface Motion {
   /** Where they are shown, how high and which way they face; NaN before their first frame. */
@@ -67,6 +89,9 @@ export interface Motion {
   trail: { x: number; y: number }[];
   /** When they were last down off a spot they were held at, in the scene's seconds, or NaN. */
   upAt: number;
+  /** The edge they stopped at to climb onto a spot, until they are on it, and when they started to climb, or NaN. */
+  edge: Edge | undefined;
+  climbAt: number;
   /** How far they are shown stepped aside from where they would be, to keep out of someone else, in meters. */
   aside: { x: number; y: number };
 }
@@ -84,19 +109,26 @@ export const newMotion = (): Motion => ({
   hold: NaN,
   trail: [],
   upAt: NaN,
+  edge: undefined,
+  climbAt: NaN,
   aside: { x: 0, y: 0 },
 });
 
 /**
  * How someone is shown this frame: the person as the sim has them, moved and turned to where they are shown; how they
- * lie, if they are shown lying; how far they are lying down, from 0 (upright) to 1, while they climb on or off; and how
- * long since they got down off a spot they were held at, in seconds, or NaN.
+ * lie, if they are shown lying; how far they are lying down, from 0 (upright) to 1, while they climb on or off; how
+ * long since they got down off a spot they were held at, in seconds, or NaN; and, climbing on face down, how far they
+ * are on all fours and how far their hands reach down to it, and onto their back, how far they lie back from sitting
+ * rather than from standing, each from 0 to 1.
  */
 export interface Shown {
   c: Char;
   lie: Lying | undefined;
   lying: number;
   up: number;
+  fours: number;
+  hands: number;
+  sat: number;
 }
 
 /** Turn an angle toward another by a share of the way, going the short way round. */
@@ -132,7 +164,7 @@ export function showMotion(
     Object.assign(m, { x: c.x, y: c.y, h: c.h, facing: frontOf(c.facing, c.pose, lie) });
     Object.assign(m, { off: undefined, hold: NaN, trail: [], aside: { x: 0, y: 0 } });
     m.spot = spotOf(c, lie);
-    return { c: { ...c }, lie, lying: c.pose === 'lie' ? 1 : 0, up: NaN };
+    return { c: { ...c }, lie, lying: c.pose === 'lie' ? 1 : 0, up: NaN, fours: 0, hands: 0, sat: 0 };
   }
   const spot = m.spot;
   if (spot && !atSpot(c, spot)) {
@@ -160,7 +192,15 @@ export function showMotion(
     m.x = c.x;
     m.y = c.y;
   }
-  const shown: Shown = { c: { ...c, x: m.x, y: m.y }, lie, lying: c.pose === 'lie' ? 1 : 0, up: t - m.upAt };
+  const shown: Shown = {
+    c: { ...c, x: m.x, y: m.y },
+    lie,
+    lying: c.pose === 'lie' ? 1 : 0,
+    up: t - m.upAt,
+    fours: 0,
+    hands: 0,
+    sat: 0,
+  };
   let h = c.h;
   let facing = frontOf(c.facing, c.pose, lie);
   let exact = false;
@@ -193,12 +233,29 @@ export function showMotion(
   } else if (!lagging) {
     const on = bed && climbOn(c, bed);
     if (on) {
-      shown.c.pose = on.u < CLIMB.from ? 'walk' : 'lie';
-      shown.lie = on.lie;
-      shown.lying = smoothstep(on.u, CLIMB.lie, 1);
-      h = c.endH * smoothstep(on.u, CLIMB.from, CLIMB.up);
-      facing = turnBy(on.toward, frontOf(c.endFace, 'lie', on.lie), smoothstep(on.u, CLIMB.from, 1));
-      exact = true;
+      // walking up to the item's edge, and waiting there for the sim to finish the step onto it
+      const ex = lerp(on.ax, on.sx, EDGE);
+      const ey = lerp(on.ay, on.sy, EDGE);
+      if (on.u >= EDGE) {
+        shown.c.x = m.x = ex;
+        shown.c.y = m.y = ey;
+        shown.c.pose = 'stand';
+      }
+      m.edge = { x: ex, y: ey, toward: on.toward, face: frontOf(c.endFace, 'lie', on.lie), h: c.endH, lie: on.lie };
+      m.climbAt = NaN;
+      facing = on.toward;
+      exact = on.u >= EDGE;
+    } else if (m.edge && m.spot && c.pose === 'lie') {
+      // on it, as the sim has them: climbing up from the edge
+      if (!Number.isFinite(m.climbAt)) m.climbAt = t;
+      const got = climbUp(shown, m.edge, m.spot, t - m.climbAt);
+      if (got) {
+        m.x = shown.c.x;
+        m.y = shown.c.y;
+        h = got.h;
+        facing = got.facing;
+        exact = true;
+      } else m.edge = undefined;
     }
   }
   if (lagging && !off) {
@@ -224,6 +281,72 @@ export function showMotion(
   return shown;
 }
 
+/**
+ * Climbing onto a spot from its edge, so far into it, in seconds. Onto their back: turn round at the edge, hop up to sit
+ * on it, then swing the legs up and lie back along it. Face down: lean forward with the hands on it, climb up onto it
+ * on all fours, then stretch out along it. How high they are and which way their front faces, or nothing once they are
+ * lying there.
+ */
+function climbUp(shown: Shown, e: Edge, spot: Spot, since: number): { h: number; facing: number } | undefined {
+  const back = e.lie === 'back';
+  const a = since / (back ? CLIMB_ON.back : CLIMB_ON.prone);
+  if (a >= 1) return undefined;
+  /** Put them so far from the edge to the spot. */
+  const at = (w: number) => {
+    shown.c.x = lerp(e.x, spot.x, w);
+    shown.c.y = lerp(e.y, spot.y, w);
+  };
+  if (back) {
+    const SIT = 0.45;
+    // sitting a little side on to the edge, already turning the way they will lie, so the thighs show
+    const perch = turnBy(e.toward + Math.PI, e.face, 0.35);
+    if (a < SIT) {
+      // round with their back to it, and up onto the edge, sitting with the hips where they will lie, the hips
+      // rising from where they are standing
+      const seat = e.h + BACK_Y - SIT_Y - HIP * shown.c.look.scale;
+      at(0.3 * smoothstep(a, 0.1, SIT));
+      shown.c.pose = a < 0.12 ? 'stand' : 'sit';
+      shown.lying = 0;
+      const h = a < 0.12 ? 0 : lerp(-SIT_Y, seat, smoothstep(a, 0.12, 0.32));
+      return { h, facing: turnBy(e.toward, perch, smoothstep(a, 0, 0.22)) };
+    }
+    // lying back from sitting, the legs swung up and round
+    const w = smoothstep(a, SIT, 1);
+    at(0.3 + 0.7 * w);
+    shown.c.pose = 'lie';
+    shown.lie = e.lie;
+    shown.lying = w;
+    shown.sat = 1;
+    return { h: e.h, facing: turnBy(perch, e.face, smoothstep(a, SIT, 0.85)) };
+  }
+  shown.c.pose = 'lie';
+  shown.lie = e.lie;
+  if (a < 0.3) {
+    // leaning over from the edge, the hands down on it
+    const w = smoothstep(a, 0, 0.3);
+    at(0.1 * w);
+    shown.lying = 0.5 * w;
+    shown.hands = w;
+    return { h: 0, facing: e.toward };
+  }
+  if (a < 0.6) {
+    // up onto it on all fours, a knee and then the other, the body level over the hands and knees
+    const w = smoothstep(a, 0.3, 0.6);
+    at(0.1 + 0.3 * w);
+    shown.lying = 0.5 + 0.5 * w;
+    shown.hands = 1;
+    shown.fours = w;
+    return { h: e.h * w, facing: e.toward };
+  }
+  // stretched out along it, the knees going back and the body down onto it, turning to lie the way it says
+  const w = smoothstep(a, 0.6, 1);
+  at(0.4 + 0.6 * w);
+  shown.lying = 1;
+  shown.hands = 1 - w;
+  shown.fours = 1 - w;
+  return { h: e.h, facing: turnBy(e.toward, e.face, w) };
+}
+
 /** The spot someone is lying or sitting at to be treated now, if they are. */
 function spotOf(c: Char, lie: Lying | undefined): Spot | undefined {
   if (c.pose === 'lie' && lie) return { x: c.x, y: c.y, h: c.h, facing: c.facing, pose: 'lie', lie };
@@ -239,7 +362,10 @@ const atSpot = (c: Char, s: Spot) => c.pose === s.pose && Math.hypot(c.x - s.x, 
  * How far along the last step to a spot they lie on someone is, from the middle of the tile beside it (0) to the spot
  * (1), the way they came at it, and how they will lie there; or nothing, if they are not on that step.
  */
-function climbOn(c: Char, lie: Lying): { u: number; toward: number; lie: Lying } | undefined {
+function climbOn(
+  c: Char,
+  lie: Lying,
+): { u: number; toward: number; lie: Lying; ax: number; ay: number; sx: number; sy: number } | undefined {
   const last = c.path?.length === 1 ? c.path[0] : undefined;
   if (!last?.[2] || c.endPose !== 'lie' || !c.dest) return undefined;
   const ax = c.dest[0] + 0.5;
@@ -247,7 +373,7 @@ function climbOn(c: Char, lie: Lying): { u: number; toward: number; lie: Lying }
   const span = Math.hypot(last[0] - ax, last[1] - ay);
   if (span < 0.05) return undefined;
   const u = 1 - Math.min(1, Math.hypot(last[0] - c.x, last[1] - c.y) / span);
-  return { u, toward: Math.atan2(last[0] - ax, last[1] - ay), lie };
+  return { u, toward: Math.atan2(last[0] - ax, last[1] - ay), lie, ax, ay, sx: last[0], sy: last[1] };
 }
 
 /**

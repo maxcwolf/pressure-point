@@ -23,7 +23,7 @@ import { prefersReducedMotion } from './camera-math';
 import { rattle, RATTLE_PEAK } from './item-cues';
 import { buildBurst, showBurst } from './models/burst';
 import { type CharRig, cureRig, endCure, type Joints } from './models/character';
-import { type Expression, showExpression, showEyes } from './models/character-detail';
+import { BACK_Y, type Expression, HIP, KNEE, showExpression, showEyes, SIT_Y } from './models/character-detail';
 import { buildHeld, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
 import { mat } from './models/parts';
@@ -329,6 +329,13 @@ export interface Cues {
   lying?: number;
   /** How long since a healed guest got down from where they were treated, in seconds: they hop for joy. */
   up?: number;
+  /**
+   * Climbing on face down, how far they are on all fours, and how far their hands reach down to it; climbing on onto
+   * their back, how far they lie back from sitting on it rather than from standing; each from 0 to 1.
+   */
+  fours?: number;
+  hands?: number;
+  sat?: number;
 }
 
 /**
@@ -389,7 +396,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     headZ -= turn * TURN_LEAN.head;
   } else if (c.pose === 'sit') {
     legL = legR = -Math.PI / 2 + 0.08;
-    bodyY = 0.06;
+    bodyY = SIT_Y;
     armL = armR = -0.55;
     if (c.busy) armR = -1.15 + Math.sin(t * 6 + c.id) * 0.25;
     if (c.busy && style === 'sound') {
@@ -472,11 +479,31 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     // tipped over as far as they have lain down: forward, face down, or back onto their back
     bodyRX = ((back ? -Math.PI : Math.PI) / 2) * lying;
     // on a table face down, the cheek rests on it rather than the nose
-    bodyY = (cues.lie === 'prone' ? PRONE_Y : 0.16) * lying;
+    bodyY = (cues.lie === 'prone' ? PRONE_Y : BACK_Y) * lying;
     bodyZ = (back ? 0.6 : -0.6) * rig.scale * lying;
     // the arms down along the sides on a table or a mat, or out to the sides on a machine
     armOut = cues.lie ? 0.14 : 0.5;
-    if (cues.lie) armL = armR = LYING_ARMS;
+    const tipped = (Math.PI / 2) * lying;
+    if (cues.lie === 'back') {
+      // lying back from sitting on it: the hips kept where they sit as the body tips back about them, the thighs
+      // along it, and the hands coming up from their sides
+      const sat = cues.sat ?? 0;
+      armL = armR = LYING_ARMS * (1 - sat * (1 - lying));
+      legL = legR = (tipped - Math.PI / 2) * sat;
+      bodyY = THREE.MathUtils.lerp(bodyY, BACK_Y - HIP * rig.scale * Math.cos(tipped), sat);
+      bodyZ = THREE.MathUtils.lerp(bodyZ, (HIP * Math.sin(tipped) + (0.6 - HIP) * lying) * rig.scale, sat);
+    } else if (cues.lie) {
+      // climbing on face down: bent over it with the hands down on it, and the legs straight down under them,
+      // standing and then kneeling up on it, however far over the body is tipped
+      const hands = cues.hands ?? 0;
+      armL = armR = THREE.MathUtils.lerp(LYING_ARMS, -tipped, hands);
+      legL = legR = -tipped * hands;
+      // the hips kept over where they stand, or kneel: the body tips over about the feet, so it is lifted and drawn
+      // back
+      const hipY = (HIP + (KNEE - HIP) * (cues.fours ?? 0)) * rig.scale;
+      bodyY = THREE.MathUtils.lerp(bodyY, hipY - HIP * rig.scale * Math.cos(tipped), hands);
+      bodyZ = THREE.MathUtils.lerp(bodyZ, -HIP * rig.scale * Math.sin(tipped), hands);
+    }
   } else if (act) {
     const a = actPose(act, c, t);
     ({ armL, armR, armOut, lean, headX, side, bodyY } = a);
@@ -750,7 +777,21 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   rig.armL.rotation.z += (-armOut + life.armInL - rig.armL.rotation.z) * k;
   rig.armR.rotation.z += (armOut - rig.armR.rotation.z) * k;
   const prone = c.pose === 'lie' && cues.lie === 'prone';
-  const limbs = { legL, legR, armL, armR, phase, visual, style, onFloor, lying, prone };
+  const limbs = {
+    legL,
+    legR,
+    armL,
+    armR,
+    phase,
+    visual,
+    style,
+    onFloor,
+    lying,
+    prone,
+    hands: cues.hands ?? 0,
+    fours: cues.fours ?? 0,
+    sat: cues.lie === 'back' ? (cues.sat ?? 0) : 0,
+  };
   poseJoints(rig.joints, rig, c, t, k, limbs, life);
   if (rig.band?.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
   if (visual === 'jitter' && c.pose !== 'lie') {
@@ -880,8 +921,14 @@ interface Limbs {
   onFloor: boolean;
   /** How far down someone lying is, climbing on or off where they lie. */
   lying: number;
-  /** Whether they lie face down. */
+  /**
+   * Whether they lie face down, and climbing on, how far they are bent over it on their hands and how far up on all
+   * fours, or how far they lie back from sitting.
+   */
   prone: boolean;
+  hands: number;
+  fours: number;
+  sat: number;
 }
 
 /** How far an elbow bends for an arm raised this far: hanging, a little; reaching forward, more; straight overhead. */
@@ -893,7 +940,7 @@ export const elbowFor = (arm: number) => (arm < -2 ? -0.12 : -(0.2 + Math.min(1,
  * arms reach forward.
  */
 function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limbs: Limbs, life: Life) {
-  const { legL, legR, armL, armR, phase, visual, style, onFloor, lying, prone } = limbs;
+  const { legL, legR, armL, armR, phase, visual, style, onFloor, lying, prone, hands, fours, sat } = limbs;
   let kneeL = 0.04;
   let kneeR = 0.04;
   let twist = 0;
@@ -910,7 +957,11 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
   } else if (c.pose === 'lie') {
     // the knees coming up partway down, climbing on or off where they lie; face down, bent a little over a bolster,
     // so the soles turn up
-    kneeL = kneeR = (prone ? PRONE_KNEES * lying : 0.03) + Math.sin(Math.PI * lying) * 0.9;
+    const lain = (prone ? PRONE_KNEES * lying : 0.03) + Math.sin(Math.PI * lying) * 0.9;
+    // face down, bent over it, standing straight, and then on all fours, the shins along it behind the knees; on
+    // their back, lying back from sitting on it, the shins swinging up from hanging down over its edge
+    const climbing = THREE.MathUtils.lerp(THREE.MathUtils.lerp(lain, 0, hands), Math.PI / 2, fours);
+    kneeL = kneeR = THREE.MathUtils.lerp(climbing, (Math.PI / 2 - 0.08) * (1 - lying), sat);
   } else if (style === 'qigong') kneeL = kneeR = 0.3 * (1 + Math.cos(t * 0.9)) * 0.5;
   else if (c.busy) kneeL = kneeR = 0.12;
   let elbowL = elbowFor(armL);
