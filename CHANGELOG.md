@@ -4,7 +4,11 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **A heads-up on your first go.** In your first Willow Lane game, the advisor says what the center will need before the trouble comes: a Caretaker once guests are being healed, Smudging once there is one, a Staff Room as staff tire. A "Getting ready" checklist under the objectives ticks them off.
+- **Why it keeps going wrong.** When the same thing goes wrong for guests three times for the same reason (a failed treatment, a guest fed up with waiting, one who got worse in line or balked at the price), a card says what was behind it, with the numbers from your game, and what helps, with a button to the fix.
 - **Who does what, at a glance.** The Staff menu shows the treatments each person knows, and the ones they are learning, under their name, and can be narrowed to those who know one treatment. In anyone's inspector, Compare puts them side by side with another member of staff.
+- **Messages you have time to read.** Each message stays long enough to read, waits while the game is paused or the pointer is on it, and can be closed. Past the newest four they pile up as a stack you can open, and a Display setting, Messages stay, keeps them longer or until closed.
+- **Rooms against a neighbor's windows.** A copied or moved room, or one built from a template, can now go where a window next door looks onto its floor: the window is taken out and sold back at half its price, and the hint says so first.
 
 ## v0.32.1
 

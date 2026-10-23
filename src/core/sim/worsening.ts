@@ -21,6 +21,7 @@ import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { leave } from './guests';
+import { noteWorse } from './harms';
 import { countVisit } from './records';
 
 /** How many points a second a condition worsens by while its guest waits. */
@@ -116,6 +117,7 @@ export function worsen(ctx: SimContext, g: Guest, dt: number): boolean {
 export function worseOff(ctx: SimContext, g: Guest) {
   g.outcome = 'worse';
   countVisit(ctx, g, 'worse');
+  noteWorse(ctx, g);
   changeRep(ctx, -WORSE_REP);
   say(g, 'bubble-hurt', 8);
   emit(ctx, { type: 'float', text: 'Got worse!', x: g.x, y: g.y, kind: 'bad' });

@@ -1,4 +1,5 @@
-// Bottom left: the advisor's current nudge. One about someone or something takes you there when clicked.
+// Bottom left: the advisor's current nudge, with a word over it saying what kind it is if it has one. One about
+// someone or something takes you there when clicked.
 
 import './Advisor.css';
 
@@ -11,7 +12,15 @@ export function Advisor() {
   const hud = useHud();
   const { sim, tools } = useGame();
   if (hud.menu || tools.plan) return <div id="advisor" />;
-  const { text, about } = sim.adviceNote();
+  const { text, about, label } = sim.adviceNote();
+  const body = label ? (
+    <>
+      <span class="kicker">{label}</span>
+      {text}
+    </>
+  ) : (
+    text
+  );
   return (
     <div id="advisor">
       <div class="face">
@@ -25,10 +34,10 @@ export function Advisor() {
             hud.show(about);
           }}
         >
-          {text}
+          {body}
         </Button>
       ) : (
-        <p class="note">{text}</p>
+        <p class="note">{body}</p>
       )}
     </div>
   );

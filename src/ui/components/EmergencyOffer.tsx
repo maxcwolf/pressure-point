@@ -10,14 +10,15 @@ import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
+import { HarmNotice } from './HarmNotice';
 import { HouseCallOffer } from './HouseCallOffer';
 import { MishapNotice } from './MishapNotice';
 import { OutbreakOffer } from './OutbreakOffer';
 import { RunnerNotice } from './RunnerNotice';
 
 /**
- * The offers waiting on an answer, an emergency and a stress outbreak over a house call, and any mishap, in one column,
- * under anyone running round on a really bad trip.
+ * The offers waiting on an answer, an emergency and a stress outbreak over a house call, any mishap, and why harm keeps
+ * coming to guests, in one column, under anyone running round on a really bad trip.
  */
 export function EmergencyOffer() {
   return (
@@ -27,6 +28,7 @@ export function EmergencyOffer() {
       <OutbreakOffer />
       <HouseCallOffer />
       <MishapNotice />
+      <HarmNotice />
     </div>
   );
 }
