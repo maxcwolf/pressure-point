@@ -34,7 +34,7 @@ import { at } from '../util';
 import { Z_CORRIDOR } from '../world';
 import { say, staffById } from './chars';
 import type { SimContext } from './context';
-import { emit, tipOnce, toast } from './events';
+import { emit, staffRequest, tipOnce, toast } from './events';
 import { running } from './marketing';
 import { fairPay } from './staffing';
 import { unlocked } from './treatments';
@@ -121,7 +121,13 @@ export function offerPromotion(ctx: SimContext, st: Staff) {
   }
   st.promotion = true;
   say(st, 'bubble-promoted', 5);
-  toast(ctx, `${st.name} is ready for promotion to ${rankName(st.skill + 1)}, with a raise to match.`, 'info', about);
+  staffRequest(
+    ctx,
+    st,
+    'promotion',
+    `${st.name} is ready for promotion to ${rankName(st.skill + 1)}, with a raise to match.`,
+    'info',
+  );
 }
 
 /** Promote a member of staff who is ready: a rank up, a new qualification slot, and the raise that comes with it. */

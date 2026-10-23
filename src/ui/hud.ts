@@ -5,7 +5,7 @@ import { track } from '../app/analytics';
 import { gameProps } from '../app/play-events';
 import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
-import type { SimEvent, Subject, Tone } from '../core/sim/events';
+import type { SimEvent, StaffRequest, Subject, Tone } from '../core/sim/events';
 import type { LessonId } from '../core/sim/lessons';
 import type { TutorialStep } from '../core/sim/tutorial';
 import type { Template } from '../core/templates';
@@ -157,6 +157,10 @@ export class HudState {
   toastsOpen = false;
   /** Whether the messages were opened out from the band over the inspector. */
   private toastsFromStrip = false;
+  /** What each member of staff asking for a raise or a promotion said when they asked, for the list under its card. */
+  readonly asked = new Map<number, string>();
+  /** The card whose list of the staff asking is open, if one is. */
+  requestsOpen: StaffRequest | null = null;
   /** Whether the pointer is over a message, which holds their clock while it is read. */
   toastsHeld = false;
   floaters: Floater[] = [];
@@ -410,6 +414,8 @@ export class HudState {
     const { view, audio } = this.host;
     for (const e of events) {
       if (e.type === 'sfx') audio.play(e.name);
+      // a raise or a promotion asked for waits on the card for everyone asking, which keeps what they said
+      else if (e.type === 'toast' && e.request && e.about) this.asked.set(e.about.id, e.text);
       else if (e.type === 'toast') this.toast(e.text, e.kind, e.about, e.icon);
       else if (e.type === 'announce') this.announce(e.text);
       else if (e.type === 'star') this.raise('star', e.stars);
@@ -478,6 +484,12 @@ export class HudState {
     this.toastsFromStrip = open && fromStrip;
     this.toastsOpen = open && (fromStrip || this.toasts.length > SHOWN);
     if (this.toastsOpen) spareMessages(this.toasts, loadDisplay().messages);
+    this.update();
+  }
+
+  /** Open the list of the staff asking for a raise or a promotion under its card, or close it. */
+  toggleRequests(which: StaffRequest) {
+    this.requestsOpen = this.requestsOpen === which ? null : which;
     this.update();
   }
 

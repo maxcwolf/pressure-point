@@ -78,6 +78,34 @@
   border-left-color: var(--blue);
 }
 
+/* the people asking on a card for several, in a list under it, each a click to them */
+.request-list {
+  margin: -4px 10px 0;
+  padding: 6px 4px;
+  list-style: none;
+  background: var(--cream);
+  border: 2px solid var(--navy);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  pointer-events: auto;
+}
+
+.request-list button {
+  display: block;
+  width: 100%;
+  padding: 3px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  text-align: left;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.request-list button:hover {
+  background: var(--sand);
+}
+
 .toast.request {
   border-left-color: var(--gold);
   animation: none;

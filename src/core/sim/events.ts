@@ -29,9 +29,12 @@ export interface Subject {
   id: number;
 }
 
+/** Something a member of staff asks for, which waits on a card of its own until it is answered. */
+export type StaffRequest = 'raise' | 'promotion';
+
 export type SimEvent =
   | { type: 'float'; text: string; x: number; y: number; kind: Tone }
-  | { type: 'toast'; text: string; kind: Tone; about?: Subject; icon?: IconId }
+  | { type: 'toast'; text: string; kind: Tone; about?: Subject; icon?: IconId; request?: StaffRequest }
   | { type: 'sfx'; name: SfxName }
   | { type: 'announce'; text: string }
   | { type: 'star'; stars: number }
@@ -64,6 +67,14 @@ export function drainEvents(ctx: SimContext): SimEvent[] {
  */
 export function toast(ctx: SimContext, text: string, kind: Tone = 'info', about?: Subject, icon?: IconId) {
   emit(ctx, { type: 'toast', text, kind, ...(about && { about }), ...(icon && { icon }) });
+}
+
+/**
+ * Say what a member of staff asks for: a raise or a promotion. The card for everyone asking says that much, so this is
+ * what they said in their own words, kept for it rather than shown as a message of its own.
+ */
+export function staffRequest(ctx: SimContext, st: { id: number }, request: StaffRequest, text: string, kind: Tone) {
+  emit(ctx, { type: 'toast', text, kind, about: { kind: 'staff', id: st.id }, request });
 }
 
 /** Show a tip, but only the first time it comes up, with an icon before it if one says what it is about. */
