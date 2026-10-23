@@ -67,6 +67,8 @@ export interface Motion {
   trail: { x: number; y: number }[];
   /** When they were last down off a spot they were held at, in the scene's seconds, or NaN. */
   upAt: number;
+  /** How far they are shown stepped aside from where they would be, to keep out of someone else, in meters. */
+  aside: { x: number; y: number };
 }
 
 /** A new motion, before the first frame. */
@@ -82,6 +84,7 @@ export const newMotion = (): Motion => ({
   hold: NaN,
   trail: [],
   upAt: NaN,
+  aside: { x: 0, y: 0 },
 });
 
 /**
@@ -127,7 +130,7 @@ export function showMotion(
   // seen for the first time, or put somewhere new: shown where they are
   if (!(step <= TELEPORT)) {
     Object.assign(m, { x: c.x, y: c.y, h: c.h, facing: frontOf(c.facing, c.pose, lie) });
-    Object.assign(m, { off: undefined, hold: NaN, trail: [] });
+    Object.assign(m, { off: undefined, hold: NaN, trail: [], aside: { x: 0, y: 0 } });
     m.spot = spotOf(c, lie);
     return { c: { ...c }, lie, lying: c.pose === 'lie' ? 1 : 0, up: NaN };
   }
@@ -269,4 +272,75 @@ function follow(m: Motion, c: Char, t: number, go: number) {
     }
   }
   if (!m.trail.length) m.hold = NaN;
+}
+
+/**
+ * How close two people come before they are shown stepping aside from each other, how far aside they step at most, and
+ * how quickly they ease there and back, each second. The sim walks people straight through each other; shown, they
+ * edge round, a little, without changing where the sim has them.
+ */
+export const APART = { near: 0.45, most: 0.25, ease: 6 } as const;
+
+/** How far ahead someone walking sees someone coming and starts to step aside, in meters, and how quickly, each second. */
+const PASSING = { near: 0.75, ease: 12 } as const;
+
+/** Someone shown this frame, for keeping people apart: where, and whether they step aside or stand their ground. */
+export interface Placed {
+  m: Motion;
+  c: Char;
+  /** Whether they keep where they are, lying, sitting or at work, others stepping round them. */
+  fixed: boolean;
+}
+
+/**
+ * Show people who come too close stepping aside from each other: anyone standing eases away from everyone within
+ * reach, the more the closer, up to a step, so two both free part by up to two; anyone walking steps to the side,
+ * sooner, the way that is already clear of them, so two meeting head on pass each other and two going the same way
+ * walk side by side. Moves
+ * each shown position by its step aside, from where the motion shows them, so it never adds up from one frame to the
+ * next.
+ */
+export function keepApart(people: readonly Placed[], dt: number) {
+  for (const a of people) {
+    let x = 0;
+    let y = 0;
+    const walking = a.c.pose === 'walk';
+    const near = walking ? PASSING.near : APART.near;
+    // the way to their right as they walk
+    const rx = Math.cos(a.c.facing);
+    const ry = -Math.sin(a.c.facing);
+    if (!a.fixed)
+      for (const b of people) {
+        if (b === a) continue;
+        const dx = a.c.x - b.c.x;
+        const dy = a.c.y - b.c.y;
+        const d = Math.hypot(dx, dy);
+        if (d >= near) continue;
+        const push = ((near - d) / near) * APART.most;
+        // right on top of each other: apart by who came first, to one side
+        let [ux, uy] = d > 1e-4 ? [dx / d, dy / d] : a.c.id < b.c.id ? [1, 0] : [-1, 0];
+        if (walking) {
+          // aside, not back or ahead: to whichever side they are on already; if neither, to the right of someone
+          // coming the other way, and to either side of someone going the same way, each their own
+          const across = ux * rx + uy * ry;
+          const same = b.c.pose === 'walk' && Math.cos(a.c.facing - b.c.facing) > 0;
+          const side = Math.abs(across) > 0.3 ? Math.sign(across) : same && a.c.id > b.c.id ? -1 : 1;
+          [ux, uy] = [rx * side, ry * side];
+        }
+        x += ux * push;
+        y += uy * push;
+      }
+    const far = Math.hypot(x, y);
+    if (far > APART.most) {
+      x *= APART.most / far;
+      y *= APART.most / far;
+    }
+    const ease = Math.min(1, dt * (walking ? PASSING.ease : APART.ease));
+    a.m.aside.x += (x - a.m.aside.x) * ease;
+    a.m.aside.y += (y - a.m.aside.y) * ease;
+  }
+  for (const a of people) {
+    a.c.x += a.m.aside.x;
+    a.c.y += a.m.aside.y;
+  }
 }

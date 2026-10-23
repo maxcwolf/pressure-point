@@ -7,7 +7,16 @@ import { moveAlong } from '../../src/core/sim/movement';
 import type { Guest } from '../../src/core/state/types';
 import { demoGuest, LAB_LOOK } from '../../src/lab/people';
 import type { Lying } from '../../src/render/acts';
-import { CLIMB_DOWN, CURE_HOLD, newMotion, showMotion, type Shown } from '../../src/render/motion';
+import {
+  APART,
+  CLIMB_DOWN,
+  CURE_HOLD,
+  keepApart,
+  newMotion,
+  type Placed,
+  showMotion,
+  type Shown,
+} from '../../src/render/motion';
 
 /** A frame at sixty a second, and how fast a guest walks, in meters a second. */
 const DT = 1 / 60;
@@ -174,5 +183,55 @@ describe('turning', () => {
     Object.assign(g, { x: 9, y: 9, facing: 2 });
     const s = showMotion(m, g, DT, DT, undefined, undefined);
     expect([s.c.x, s.c.y, s.c.facing]).toEqual([9, 9, 2]);
+  });
+});
+
+describe('keeping apart', () => {
+  /** Someone standing at a spot, shown there, free to step aside or not. */
+  const at = (id: number, x: number, y: number, fixed = false): Placed => ({
+    m: newMotion(),
+    c: { ...demoGuest(LAB_LOOK, 'stiff_neck' as never), id, pose: 'stand', x, y },
+    fixed,
+  });
+
+  /** Show people for a second where they stand, and where each is shown at the end of it. */
+  function settle(people: Placed[], frames = 60) {
+    let shown: { x: number; y: number }[] = [];
+    for (let i = 0; i < frames; i++) {
+      const now = people.map((p) => ({ ...p, c: { ...p.c } }));
+      keepApart(now, DT);
+      shown = now.map((p) => ({ x: p.c.x, y: p.c.y }));
+    }
+    return shown;
+  }
+
+  it('shows two people in the same place stepping aside from each other, a little', () => {
+    const [a, b] = settle([at(1, 5, 5), at(2, 5.05, 5)]);
+    expect(b!.x - a!.x).toBeGreaterThan(0.25);
+    expect(Math.abs(a!.x - 5)).toBeLessThanOrEqual(APART.most);
+    expect(Math.abs(b!.x - 5.05)).toBeLessThanOrEqual(APART.most);
+  });
+
+  it('steps round someone at work, lying or sitting, who keeps their place', () => {
+    const [still, free] = settle([at(1, 5, 5, true), at(2, 5, 5.2)]);
+    expect(still).toEqual({ x: 5, y: 5 });
+    expect(free!.y).toBeGreaterThan(5.3);
+  });
+
+  it('eases aside rather than jumping, and back once past', () => {
+    const people = [at(1, 5, 5, true), at(2, 5, 5.1)];
+    const first = settle(people, 1)[1]!;
+    expect(first.y - 5.1).toBeLessThan(0.05);
+    settle(people);
+    people[1]!.c.y = 7;
+    const back = settle(people)[1]!;
+    expect(back.y - 7).toBeLessThan(0.01);
+  });
+
+  it('leaves alone people who are not close', () => {
+    expect(settle([at(1, 5, 5), at(2, 5.5, 5)])).toEqual([
+      { x: 5, y: 5 },
+      { x: 5.5, y: 5 },
+    ]);
   });
 });

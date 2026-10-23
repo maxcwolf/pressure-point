@@ -14,7 +14,7 @@ import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
 import { buildCharacter, type CharRig } from './models/character';
-import { showMotion } from './motion';
+import { keepApart, type Placed, showMotion, type Shown } from './motion';
 import { poseChar, type WorkStyle } from './pose';
 
 /** Over how many tiles of pavement people grow from nothing, or shrink away, where they arrive and leave. */
@@ -61,6 +61,7 @@ export class PeopleLayer {
     const runners = this.sim.s.guests.filter((g) => g.state === 'running');
     // the rooms the Gong of Last Resort rattles through the wall this moment, whose people flinch: hardly ever any
     const rattled = this.sim.rattledRooms();
+    const placed: (Placed & { rig: CharRig; sim: Char; at: ItemDef | undefined; seen: Shown })[] = [];
     for (const c of [...this.sim.s.guests, ...this.sim.s.staff, ...this.sim.s.visitors] as Char[]) {
       live.add(c.id);
       let rig = this.chars.get(c.id);
@@ -84,9 +85,21 @@ export class PeopleLayer {
       const bed = c.kind === 'guest' ? at?.access.find((a) => a.pose === 'lie')?.lie : undefined;
       const seen = showMotion(rig.motion, c, t, dt, lyingAt(c, at), bed);
       // someone away on a house call is not here to be seen, or clicked
-      const away = c.kind === 'staff' && c.state === 'away';
+      if (c.kind === 'staff' && c.state === 'away') {
+        rig.group.visible = rig.pick.visible = false;
+        if (rig.smoke) rig.smoke.visible = false;
+        continue;
+      }
+      // lying, sitting, up off the floor or at work, they keep their place, and others step round them
+      const s = seen.c;
+      const working = c.kind === 'staff' ? c.busy : !!actOf(c, at);
+      const fixed = (s.pose !== 'walk' && s.pose !== 'stand') || s.h > 0.02 || seen.lying > 0 || working;
+      placed.push({ m: rig.motion, c: s, fixed, rig, sim: c, at, seen });
+    }
+    keepApart(placed, dt);
+    for (const { rig, sim: c, at, seen } of placed) {
       const size = streetFade(seen.c.x, seen.c.y, ends);
-      const shown = !away && size > 0.02;
+      const shown = size > 0.02;
       rig.group.visible = shown;
       rig.pick.visible = shown;
       if (!shown && rig.smoke) rig.smoke.visible = false;
