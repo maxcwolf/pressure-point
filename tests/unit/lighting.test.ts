@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildingsOf } from '../../src/core/land';
 import { newMishap } from '../../src/core/sim/mishaps';
+import { type Season, seasonOf } from '../../src/core/sim/twists';
 import { animateItemParts, type ItemCondition } from '../../src/render/items';
 import {
   addLights,
@@ -16,7 +17,9 @@ import {
   powerOut,
 } from '../../src/render/lighting';
 import { buildItem } from '../../src/render/models/items';
+import { buildOrchard } from '../../src/render/models/orchard';
 import { partsOf } from '../../src/render/models/parts';
+import { buildForest } from '../../src/render/models/tree';
 import { freshSim } from './helpers';
 
 /** A game's lights after long enough for any change to have eased all the way in. */
@@ -114,5 +117,52 @@ describe('the time of day', () => {
     expect(dayDepth(2)).toBeLessThan(dayDepth(1));
     expect(dayDepth(3)).toBeLessThan(dayDepth(2));
     expect(dayDepth(3)).toBeGreaterThan(0);
+  });
+});
+
+describe('the trees through the year', () => {
+  /** The colors of the leaves of a forest and an orchard, and whether its apples show, lit for a game on a day. */
+  function trees(day: number) {
+    const forest = buildForest([0, 1, 2].map((seed) => ({ x: seed * 2, z: 0, seed })));
+    const orchard = buildOrchard([{ x: 0, z: 0, seed: 1 }]);
+    const sim = freshSim();
+    sim.s.day = day;
+    lightScene(addLights(new THREE.Scene()), sim.s, 0.05);
+    /** The materials of a group's meshes, in order. */
+    const materials = (g: THREE.Group) =>
+      g.children.map((m) => (m as THREE.Mesh).material as THREE.MeshStandardMaterial);
+    const [, ...leaves] = materials(forest);
+    const [, canopy, apples] = materials(orchard);
+    return {
+      leaves: leaves.map((m) => m.color.getHex()),
+      canopy: canopy!.color.getHex(),
+      apples: apples!.visible,
+    };
+  }
+  /** The first day of the game in a season. */
+  const first = (season: Season) => {
+    let d = 0;
+    while (seasonOf(d) !== season) d++;
+    return d + 1;
+  };
+
+  it('turn the leaves gold in autumn and bare in winter, and the orchard to blossom in spring with no apples', () => {
+    const summer = trees(first('summer'));
+    const autumn = trees(first('autumn'));
+    const winter = trees(first('winter'));
+    const spring = trees(first('spring'));
+    expect(autumn.leaves).not.toEqual(summer.leaves);
+    expect(winter.leaves).not.toEqual(summer.leaves);
+    // autumn's are warmer than summer's: more red than green
+    /** How much redder than green a color is. */
+    const red = (hex: number) => new THREE.Color(hex).r - new THREE.Color(hex).g;
+    expect(Math.min(...autumn.leaves.map(red))).toBeGreaterThan(Math.max(...summer.leaves.map(red)));
+    expect(summer.apples).toBe(true);
+    expect(autumn.apples).toBe(true);
+    expect(spring.apples).toBe(false);
+    expect(winter.apples).toBe(false);
+    expect(spring.canopy).not.toBe(summer.canopy);
+    // and back in leaf the next summer
+    expect(trees(first('summer')).leaves).toEqual(summer.leaves);
   });
 });

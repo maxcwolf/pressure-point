@@ -12,6 +12,8 @@ import { mishapHolder } from '../core/sim/mishaps';
 import { seasonOf } from '../core/sim/twists';
 import type { GameState, Mishap } from '../core/state/types';
 import { type Daylight, daylightAt, NOON, SEASON_LIGHT, stormy, type Tint } from './daylight';
+import { orchardFor } from './models/orchard';
+import { leavesFor } from './models/tree';
 import { LAWN, type Setting, type SettingLight, settingOf } from './setting';
 
 /** How bright the sky and the sun are as usual. */
@@ -240,6 +242,9 @@ function shine(lights: Lights, s: GameState, day: Daylight): boolean {
   if (setting === lights.setting) return false;
   lights.setting = setting;
   LAWN.color.setHex(setting.ground);
+  // the trees turn with the lawn
+  leavesFor(seasonOf(s.day));
+  orchardFor(seasonOf(s.day));
   if (lights.scene.background instanceof THREE.Color) lights.scene.background.setHex(setting.ground);
   return true;
 }

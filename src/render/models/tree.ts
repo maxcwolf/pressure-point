@@ -1,6 +1,8 @@
-// Trees for the lawn.
+// Trees for the lawn, in leaf through the year: fresh in spring, full in summer, gold and rust in autumn, and bare
+// brown twigs in winter.
 import * as THREE from 'three';
 
+import type { Season } from '../../core/sim/twists';
 import { blob, cyl, mat } from './parts';
 
 /** Where a tree stands on the ground, and the seed its height and color vary with. */
@@ -10,7 +12,25 @@ export interface TreeSpot {
   seed: number;
 }
 
-const LEAF_COLORS = [0x5fae5a, 0x4f9a55, 0x74b85c] as const;
+/** The colors of the leaves in each season, three to a season so neighbouring trees differ. */
+export const LEAF_SEASONS: Readonly<Record<Season, readonly [number, number, number]>> = {
+  spring: [0x78c868, 0x66b860, 0x8fd078],
+  summer: [0x5fae5a, 0x4f9a55, 0x74b85c],
+  autumn: [0xcf8a3c, 0xc2a046, 0xae6038],
+  winter: [0x9c8e74, 0x8c7f68, 0xab9e84],
+};
+const LEAF_COLORS = LEAF_SEASONS.summer;
+
+/**
+ * The leaves of every tree, one material for each of the three colors, of their own rather than shared with anything
+ * else, so a change of season repaints every tree at once with nothing built again.
+ */
+const LEAVES = LEAF_COLORS.map((color) => new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0 }));
+
+/** Turn every tree's leaves to a season's colors. */
+export function leavesFor(season: Season) {
+  LEAF_SEASONS[season].forEach((color, i) => LEAVES[i]?.color.setHex(color));
+}
 /**
  * The soft blobs of leaves on every tree, smooth like the items and people: where each sits above the top of the
  * trunk, and how big it is.
@@ -60,9 +80,9 @@ export function buildForest(spots: readonly TreeSpot[]): THREE.Group {
   }
   const forest = new THREE.Group();
   forest.add(instanced(cyl(0.09, 0.13, 1, 16), mat(0x7a5a3c, 0.9), trunks));
-  LEAF_COLORS.forEach((color, i) => {
+  LEAVES.forEach((material, i) => {
     const blobs = leaves[i] ?? [];
-    if (blobs.length) forest.add(instanced(blob(1), mat(color, 0.78), blobs));
+    if (blobs.length) forest.add(instanced(blob(1), material, blobs));
   });
   return forest;
 }
