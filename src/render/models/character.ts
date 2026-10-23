@@ -76,11 +76,6 @@ export interface CharRig {
   walked: number;
   /** Where they are shown, which differs for a moment from where the sim has them as they climb on or off a table. */
   motion: Motion;
-  /** How far into walking they are, from 0 to 1, taken up as they set off and let go as they stop. */
-  walking: number;
-  /** The foot they have planted as they walk, if one is, and how far their hips have moved to one side over it. */
-  planted: 'left' | 'right' | undefined;
-  drift: number;
   /** Where they were last frame, and which way they faced, or NaN before their first. */
   lastX: number;
   lastY: number;
@@ -272,9 +267,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     idleSince: NaN,
     walked: 0,
     motion: newMotion(),
-    walking: 0,
-    planted: undefined,
-    drift: 0,
     lastX: NaN,
     lastY: NaN,
     lastFacing: NaN,
