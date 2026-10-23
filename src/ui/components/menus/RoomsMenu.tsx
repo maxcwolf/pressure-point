@@ -21,6 +21,7 @@ const TABS: readonly { id: RoomsTab; name: string }[] = [
 /** The kinds of room, and the templates saved, a tab each. */
 export function RoomsMenu() {
   const hud = useHud();
+  const guide = hud.guide();
   return (
     <div class="panel menu">
       <h3>Build a room</h3>
@@ -28,7 +29,7 @@ export function RoomsMenu() {
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx('tab', hud.roomsTab === t.id && 'on')}
+            class={cx('tab', hud.roomsTab === t.id && 'on', guide === `tab:${t.id}` && 'guide')}
             onPress={() => {
               hud.roomsTab = t.id;
             }}
@@ -51,6 +52,7 @@ function RoomCards() {
   const { sim, tools } = useGame();
   const s = sim.s;
   const { unlocked } = loadCampaign();
+  const guide = hud.guide();
   const types = ROOM_ORDER.filter(
     (t) => roomHere(ROOMS[t], s.center) && available(roomOffering(t), (d) => sim.enabled(d)),
   );
@@ -66,7 +68,7 @@ function RoomCards() {
         return (
           <Button
             key={t}
-            class={cx('card', !locked && s.money < r.cost && 'poor')}
+            class={cx('card', !locked && s.money < r.cost && 'poor', guide === `room:${t}` && 'guide')}
             // a room karma can unlock opens the offer to unlock its machine, rather than refusing outright
             locked={starred}
             onPress={() => {

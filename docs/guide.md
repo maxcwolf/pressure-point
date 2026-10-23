@@ -18,6 +18,16 @@ Every campaign star earns **✨ karma**, and so do eight one-off **achievements*
 
 ## How to play
 
+### Tutorial
+
+Your first Willow Lane game, before the campaign has any stars, starts with the **tutorial**. A card in the advisor's spot at the bottom left gives the step in hand (look around, place a Reception Desk, hire a Receptionist, build a Consultation Room and hire a Wellness Consultant, build a Massage Suite and hire a Massage Therapist, put down two Benches once guests are coming), and a pulsing gold ring marks what to click: the menu's button, then the tab or card in it, then the blueprint's **Build room** once a room is planned. **Show me** opens the menu the step wants. In a first game the center's next needs come as steps of their own as they start to matter (a Caretaker once guests are being healed, Smudging, a Staff Room as staff tire), ahead of the Benches if those are not down yet, and once all are done the advisor takes over. A **Tutorial** list under the objectives ticks off each step. Nothing is ever blocked: build in any order and the steps tick off as they are done, and a pressing nudge from the advisor (someone about to quit, a guest about to go home worse off) takes the card's place until it is seen to.
+
+The first time some things happen, a **lesson** card opens over the game, paused, with a strip of pictures and a few lines: your first guest walking in, your first heal, staff tiring, your first payday, a failed treatment, a guest storming out, and a raise request. Each comes once a game and never two in a day. **Show me** takes you to whoever it is about, and **Got it** carries on. The first star's dialog also says what a star opens and what karma is for.
+
+**Skip the tutorial** on the card turns off the steps and the lessons for that game. The tutorial switches itself off for the next Willow Lane game once you have been through it or skipped it; **Settings** and the switch on Willow Lane's card in the campaign turn it back on, for a replay as well.
+
+### Building your center
+
 1. Place a **Reception Desk** and hire a **Receptionist**.
 2. Build a **Consultation Room** (drag the floor, click a wall for the door, place the furniture) and hire a **Wellness Consultant**. A room's price covers floor up to one tile more each way than its smallest, 4×4 for most; every tile you drag out past that costs $200 more, as a resize would, and the hint says the price as you drag.
 3. Build a **Massage Suite** and hire a **Massage Therapist**. The center opens once all three exist.
@@ -112,7 +122,9 @@ Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupunct
 
 ## Settings
 
-**Settings**, on the title screen and in the pause menu (☰), switches acupuncture, reiki, sound healing, the Shaman and the Qi Gong classes on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Under **Building**, **Item stats** chooses where the Items menu shows what each item does: in the tooltip, in a side panel, or on the cards. **Preview while placing** switches off the hint and floor coloring that show what an item in hand would change. Sound and music are there too.
+**Settings**, on the title screen and in the pause menu (☰), has a **Tutorial** switch under **Help**: on, a new Willow Lane game walks through its opening and explains each thing the first time it happens (see [Tutorial](#tutorial)). Until you set it, it is on only while the campaign has no stars, and it turns itself off once you have been through the opening or skipped it. In a Willow Lane game it also starts or stops the tutorial in that game (once that game has been through the opening, only the lessons); anywhere else it is kept for the next Willow Lane game, as is the switch beside **Play** on Willow Lane's card in the campaign.
+
+It also switches acupuncture, reiki, sound healing, the Shaman and the Qi Gong classes on and off, each on its own. Switching one off hides its room, staff and equipment and stops its guests arriving, while anything already built stays where it is. The choice on the title screen applies to new games, and each saved game remembers its own. Under **Building**, **Item stats** chooses where the Items menu shows what each item does: in the tooltip, in a side panel, or on the cards. **Preview while placing** switches off the hint and floor coloring that show what an item in hand would change. Sound and music are there too.
 
 In the desktop app, **Full screen** under **Display** fills the screen with the game, and the app opens the same way the next time. Leaving full screen any other way switches the setting off with it: the green button or Ctrl+Cmd+F on a Mac, F11 on Windows, or **Game › Toggle Full Screen** in the menu. The browser version has no such switch, and leaves full screen to the browser.
 

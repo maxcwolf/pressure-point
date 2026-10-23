@@ -2263,6 +2263,99 @@ test.describe('stats', () => {
   });
 });
 
+test.describe('the tutorial', () => {
+  test('points a first Willow Lane game at what each step wants, and can be skipped', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    const card = page.locator('#advisor .tutorial-card');
+    await expect(card).toContainText('Tutorial · step 1 of');
+    await game.eval((pp) => {
+      pp.sim.noteLooked();
+    });
+    await expect(card).toContainText('step 2 of');
+    await expect(card).toContainText('Place a Reception Desk');
+    await expect(page.locator('#objectives')).toContainText('Tutorial · 1 of');
+    // the ring is on the Items button, then follows into the menu to the card wanted
+    const items = page.locator('#buildbtns').getByRole('button', { name: 'Items' });
+    await expect(items).toHaveClass(/guide/);
+    await game.menu('Items');
+    await expect(items).not.toHaveClass(/guide/);
+    await expect(game.card('Reception Desk')).toHaveClass(/guide/);
+    await expect(page.locator('#menu .guide')).toHaveCount(1);
+    await game.menu('Items');
+    await card.getByRole('button', { name: 'Skip the tutorial' }).click();
+    await expect(card).toHaveCount(0);
+    await expect(page.locator('.guide')).toHaveCount(0);
+    await expect(page.locator('#advisor')).toContainText('Open the Items menu and place a Reception Desk');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('off');
+  });
+
+  test('looking around is done once the camera has been moved and turned', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    const card = page.locator('#advisor .tutorial-card');
+    await expect(card).toContainText('Look around');
+    await page.keyboard.press('KeyE');
+    await expect(card).toContainText('Look around');
+    await page.keyboard.down('KeyD');
+    await expect(card).toContainText('Place a Reception Desk');
+    await page.keyboard.up('KeyD');
+  });
+
+  test('the switch on Willow Lane’s card, and the one in Settings, turn it off and on', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    const trail = page.locator('#title-campaign');
+    const card = trail.getByRole('switch', { name: 'Tutorial' });
+    await expect(card).toHaveAttribute('aria-checked', 'true');
+    await card.click();
+    await expect(card).toHaveAttribute('aria-checked', 'false');
+    await trail.getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => [pp.state.tutorial, pp.state.lessons])).toEqual([false, false]);
+    await expect(page.locator('#advisor .tutorial-card')).toHaveCount(0);
+    // switched on from the game's Settings, it starts there and then
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    const settings = page.getByRole('switch', { name: 'Tutorial' });
+    await expect(settings).toHaveAttribute('aria-checked', 'false');
+    await settings.click();
+    await expect(settings).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#advisor .tutorial-card')).toContainText('Tutorial · step 1 of');
+    expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('on');
+  });
+
+  test('a lesson opens over the game, paused, until it is read', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 1;
+      pp.sim.emit({ type: 'lesson', id: 'heal' });
+      pp.sim.emit({ type: 'lesson', id: 'payday' });
+    });
+    const modal = page.locator('#modal');
+    await expect(modal).toContainText('Your first heal');
+    await expect(modal.locator('.lesson-strip li')).toHaveCount(3);
+    expect(await game.eval((pp) => pp.state.speed)).toBe(0);
+    // nobody to show for this one
+    await expect(modal.getByRole('button', { name: 'Show me' })).toHaveCount(0);
+    await modal.getByRole('button', { name: 'Got it' }).click();
+    // one raised meanwhile waits its turn
+    await expect(modal).toContainText('Payday');
+    await modal.getByRole('button', { name: 'Got it' }).click();
+    await expect(modal).toBeEmpty();
+    expect(await game.eval((pp) => pp.state.speed)).toBe(1);
+  });
+});
+
 test.describe('the campaign', () => {
   test('starts at Willow Lane, and a star there opens The Exchange', async ({ game, page }) => {
     await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));

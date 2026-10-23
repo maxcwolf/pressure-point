@@ -72,6 +72,12 @@ export function StarDialog() {
           {' to unlock items that stay unlocked in every center. Find them in the Items menu, or the karma shop.'}
         </p>
       )}{' '}
+      {n === 1 && sim.s.lessons && (
+        <p>
+          Each star opens more for the center to grow into: the rooms, treatments and items this one brings are listed
+          here, ready in the Rooms and Items menus.
+        </p>
+      )}{' '}
       {opens && (
         <p class="unlock">
           <b>{`${CENTERS[opens].name} is open:`}</b>

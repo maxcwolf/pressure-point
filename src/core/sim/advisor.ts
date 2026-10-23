@@ -54,6 +54,7 @@ import { stationStaff } from './sessions';
 import { fedUp, refreshmentFor, wants } from './staff-needs';
 import { aboutToQuit } from './staffing';
 import { enabled, unlocked } from './treatments';
+import { currentStep, type TutorialStep, WALKTHROUGH_IDS } from './tutorial';
 import { hasMechanic } from './upgrades';
 import { discomfort, warmthAt } from './warmth';
 import { aboutToWorsen, conditionDays } from './worsening';
@@ -74,6 +75,13 @@ export interface Advice {
   about?: Subject;
   /** A word over the text saying what kind of nudge it is, such as a heads-up about what is coming. */
   label?: string;
+  /** The tutorial's step in hand, when the nudge is that step's card. */
+  step?: TutorialStep;
+}
+
+/** The tutorial's step in hand as the advisor's nudge, its card in place of the note. */
+function stepCard(step: TutorialStep): Advice {
+  return { text: step.text, label: 'Tutorial', step, ...(step.about && { about: step.about }) };
 }
 
 /** The advisor's current nudge, with what it is about. */
@@ -102,6 +110,9 @@ function nudge(ctx: SimContext): string | Advice {
       text: `${runner.name} is on a really bad trip, freaking out everyone they pass. Select them and calm them down.`,
       about: { kind: 'guest', id: runner.id },
     };
+  // the tutorial walks the opening a step at a time, pointing at what each wants, in place of the lines below
+  const step = s.tutorial ? currentStep(ctx) : null;
+  if (step && WALKTHROUGH_IDS.has(step.id)) return stepCard(step);
   if (!hasItem(ctx, 'reception_desk'))
     return 'Welcome! Open the Items menu and place a Reception Desk somewhere near the entrance.';
   if (!hasStaff(ctx, 'receptionist')) return 'A desk needs a face behind it. Hire a Receptionist from the Hire menu.';
@@ -192,8 +203,10 @@ function nudge(ctx: SimContext): string | Advice {
         about: { kind: 'item', id: it.id },
       };
   }
-  // on a first go at the campaign, what the center will need before long, ahead of a slow line or a repair in hand
-  const [ahead] = primerNotes(ctx);
+  // on a first go at the campaign, what the center will need before long, ahead of a slow line or a repair in hand;
+  // with the tutorial on, its step in hand once the center is open: the Benches, and those heads-ups as steps
+  if (step) return stepCard(step);
+  const [ahead] = s.tutorial ? [] : primerNotes(ctx);
   if (ahead) return { text: ahead.text, label: 'Coming up', ...(ahead.about && { about: ahead.about }) };
   const held = bottleneckAdvice(ctx);
   if (held) return held;
@@ -292,12 +305,15 @@ const PRIMER_SPENDS = new Set(['caretaker', 'smudging']);
 
 /**
  * Once a second: on a first go at the campaign, say each heads-up once as it starts to matter, and end them for good,
- * with a word to say so, once everything on the checklist is in place.
+ * with a word to say so, once everything on the checklist is in place. While the tutorial is on, its card says the one
+ * that is its step in hand, which is only noted as said, and the tutorial ends them with its own word.
  */
 export function warnPrimer(ctx: SimContext) {
   const s = ctx.s;
   if (!s.primer || !s.open) return;
   if (primerDone(ctx)) {
+    // the tutorial's handoff ends them
+    if (s.tutorial) return;
     s.primer = false;
     toast(
       ctx,
@@ -309,7 +325,13 @@ export function warnPrimer(ctx: SimContext) {
     return;
   }
   const short = moneyFirst(s) || !!inHandAdvice(ctx);
+  const step = s.tutorial ? currentStep(ctx)?.id : undefined;
   for (const n of primerNotes(ctx)) {
+    // the tutorial's card says the one in hand; any other still has its word
+    if (n.id === step) {
+      if (!s.seenTips.includes(`primer-${n.id}`)) s.seenTips.push(`primer-${n.id}`);
+      continue;
+    }
     const text =
       short && PRIMER_SPENDS.has(n.id) ? `${n.text} Wait until there is a month's wages in hand, though.` : n.text;
     tipOnce(ctx, primerTip(n.id), text, 'info', n.about, 'ui-advisor');

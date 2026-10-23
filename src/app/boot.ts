@@ -9,7 +9,7 @@ import type { GameState } from '../core/state/types';
 import { loadIcons } from '../render/models/icons';
 import { loadCampaign } from '../storage/campaign';
 import { AUTOSAVE_ID, openInAutosave, readSave, startBackup } from '../storage/saves';
-import { loadDisciplinePrefs, loadSandbox } from '../storage/settings';
+import { loadDisciplinePrefs, loadSandbox, loadTutorialPref } from '../storage/settings';
 import { showTitle } from '../ui';
 import { track } from './analytics';
 import { desktop } from './desktop';
@@ -87,6 +87,8 @@ function open(what: string | null): GameState | 'no-room' | null {
   }
   // a first go at the campaign's first center, with nothing earned yet, looks ahead to what it will soon need
   if (state && center === CAMPAIGN[0] && !Object.keys(loadCampaign().stars).length) state.primer = true;
+  // a new Willow Lane game is walked through its opening while the tutorial is on, the heads-ups among its steps
+  if (state && center === CAMPAIGN[0] && loadTutorialPref()) state.tutorial = state.lessons = true;
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
   if (state && what !== AUTOSAVE_ID && !openInAutosave(state)) return 'no-room';
   return state;

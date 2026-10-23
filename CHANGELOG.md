@@ -4,6 +4,9 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **A tutorial for your first game.** A new Willow Lane game walks you through its opening a step at a time: a card in the advisor's spot says what each step wants and why, a gold ring marks the button, tab or card to click, and a Tutorial list under the objectives keeps your place. After the opening it carries on through what the center will need next (a Caretaker, Smudging, a Staff Room), then hands over to the advisor. Skip it from the card at any time.
+- **Lessons as things first happen.** The first guest to walk in, the first heal, staff tiring, the first payday, a failed treatment, a guest storming out and a raise request each open a short card with pictures, once a game and never two in a day, with Show me to go to whoever it is about.
+- **Tutorial on and off.** Settings has a Tutorial switch under a new Help heading, and Willow Lane's card in the campaign has one beside Play. It is on by itself only before your first campaign star, and switches itself off once you have been through the opening, so a replay starts without it unless you turn it back on.
 - **When to buy land.** In your first Willow Lane game, the advisor says at the first star what land has come up for sale and when to buy it (once the building has no room left for a treatment room, and not before), with a line on the "Getting ready" checklist for it. In any game, picking a room that fits nowhere in the building says so in the hint, and names the cheapest plot for sale, the one the builders are still at, or the star the next comes up at.
 
 ## v0.32.2

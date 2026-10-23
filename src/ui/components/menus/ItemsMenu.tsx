@@ -66,6 +66,7 @@ export function ItemsMenu() {
   const detail = view === 'detail' && types.length > 0;
   // the item picked, or the first on show if it is not among them
   const shown = picked && types.includes(picked) ? picked : types[0];
+  const guide = hud.guide();
   const cards = (
     <div class="cards small">
       {types.map((t) => {
@@ -75,7 +76,13 @@ export function ItemsMenu() {
         return (
           <Button
             key={t}
-            class={cx('card', short > 0 && 'poor', forKarma && 'locked karma', detail && t === shown && 'picked')}
+            class={cx(
+              'card',
+              short > 0 && 'poor',
+              forKarma && 'locked karma',
+              detail && t === shown && 'picked',
+              guide === `item:${t}` && 'guide',
+            )}
             title={short ? "Can't afford it" : stats || undefined}
             richTip={stats ? `item:${t}` : undefined}
             // picking one to read about in the panel beside the cards is never refused, only placing it
@@ -117,7 +124,7 @@ export function ItemsMenu() {
         {places.map((p) => (
           <Button
             key={p}
-            class={cx('tab', place === p && 'on')}
+            class={cx('tab', place === p && 'on', p === 'all' && guide === 'filter:place' && 'guide')}
             onPress={() => {
               hud.itemPlace = p;
             }}
@@ -130,7 +137,12 @@ export function ItemsMenu() {
         {[{ id: 'all' as const, label: 'Everything' }, ...ITEM_KINDS].map((k) => (
           <Button
             key={k.id}
-            class={cx('tab', 'small', hud.itemKind === k.id && 'on')}
+            class={cx(
+              'tab',
+              'small',
+              hud.itemKind === k.id && 'on',
+              k.id === 'all' && guide === 'filter:kind' && 'guide',
+            )}
             onPress={() => {
               hud.itemKind = k.id;
             }}

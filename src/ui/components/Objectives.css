@@ -116,3 +116,16 @@
   padding: 2px 0;
   font-size: 13px;
 }
+
+#objectives .tutorial-list li.current {
+  font-weight: 600;
+}
+
+#objectives .tutorial-list li.ahead {
+  color: rgba(36, 56, 74, 0.5);
+}
+
+#objectives .tutorial-list .more {
+  font-size: 12px;
+  color: var(--teal-dark);
+}

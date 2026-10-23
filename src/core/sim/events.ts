@@ -2,6 +2,7 @@
 
 import type { AchievementId, IconId } from '../data';
 import type { SimContext } from './context';
+import type { LessonId } from './lessons';
 
 /** Whether a message is good news, bad news or neither. */
 export type Tone = 'good' | 'bad' | 'info';
@@ -36,7 +37,11 @@ export type SimEvent =
   | { type: 'star'; stars: number }
   | { type: 'awards'; year: number }
   | { type: 'visit' }
-  | { type: 'achievement'; id: AchievementId };
+  | { type: 'achievement'; id: AchievementId }
+  /** The tutorial ended in this game: done, or skipped at a step. */
+  | { type: 'tutorial'; what: 'done' | 'skipped'; step: string }
+  /** Something has happened for the first time that a lesson explains, about someone if it is. */
+  | { type: 'lesson'; id: LessonId; about?: Subject };
 
 /** Whether an event earns something for the campaign, which is noted at once so its karma can be spent straight away. */
 export const earnsForCampaign = (e: SimEvent): boolean => e.type === 'star' || e.type === 'achievement';

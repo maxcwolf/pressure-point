@@ -1,7 +1,9 @@
 // Player preferences that outlive any one game: which optional disciplines, and whether Qi Gong classes, new games start with,
-// how a sandbox game is set up, its difficulty among the rest, the Stats menu's charts, and the sound and music switches.
+// how a sandbox game is set up, its difficulty among the rest, the Stats menu's charts, the sound and music switches,
+// and whether a new Willow Lane game has the tutorial.
 import { CENTERS, type Difficulty, DISCIPLINE_ORDER, DISCIPLINES, type Offering, SANDBOX_MONEY } from '../core/data';
 import { readDifficulty } from '../core/difficulty';
+import { loadCampaign } from './campaign';
 import { isRecord } from './json';
 
 const KEY = 'pressure-point-settings';
@@ -153,5 +155,31 @@ export function saveAudio(prefs: AudioPrefs) {
     localStorage.setItem(AUDIO_KEY, JSON.stringify({ sound: prefs.sound, music: prefs.music }));
   } catch {
     // the switches still apply until the page closes
+  }
+}
+
+const TUTORIAL_KEY = 'pressure-point-tutorial';
+
+/**
+ * Whether a new Willow Lane game walks through its opening with the tutorial: as the player last set it, or until
+ * they have, only while the campaign has no stars yet, so a player who has played before is not walked through again.
+ */
+export function loadTutorialPref(): boolean {
+  try {
+    const set = localStorage.getItem(TUTORIAL_KEY);
+    if (set === 'on') return true;
+    if (set === 'off') return false;
+  } catch {
+    // as if unset
+  }
+  return !Object.keys(loadCampaign().stars).length;
+}
+
+/** Remember whether the next Willow Lane game has the tutorial, as the player set it or as it ended. */
+export function saveTutorialPref(on: boolean) {
+  try {
+    localStorage.setItem(TUTORIAL_KEY, on ? 'on' : 'off');
+  } catch {
+    // the switch still applies to the game in progress
   }
 }

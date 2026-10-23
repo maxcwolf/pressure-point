@@ -12,6 +12,7 @@ import { ConfirmDismissMessages } from './ConfirmDismissMessages';
 import { ConfirmFire } from './ConfirmFire';
 import { ConfirmNewGame } from './ConfirmNewGame';
 import { KarmaDialog } from './KarmaDialog';
+import { LessonDialog } from './LessonDialog';
 import { PauseMenu } from './PauseMenu';
 import { PayrollDialog } from './PayrollDialog';
 import { SavesDialog } from './SavesDialog';
@@ -53,6 +54,8 @@ function contents(dialog: DialogId): ComponentChildren {
       return <BankruptDialog />;
     case 'update':
       return <UpdateDialog />;
+    case 'lesson':
+      return <LessonDialog />;
   }
 }
 

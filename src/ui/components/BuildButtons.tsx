@@ -68,12 +68,13 @@ export function BuildButtons() {
   const hud = useHud();
   const { tools } = useGame();
   const expanding = tools.tool.kind === 'expand';
+  const guide = hud.guide();
   return (
     <div id="buildbtns">
       {MENUS.map((m) => [
         <Button
           key={m.id}
-          class={cx('round', m.welded && 'welded', hud.menu === m.id && 'on')}
+          class={cx('round', m.welded && 'welded', hud.menu === m.id && 'on', guide === `menu:${m.id}` && 'guide')}
           onPress={() => {
             hud.toggleMenu(m.id);
           }}

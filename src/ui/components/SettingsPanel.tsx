@@ -6,12 +6,12 @@ import { useEffect } from 'preact/hooks';
 
 import { setSharing, sharing, track } from '../../app/analytics';
 import type { Audio } from '../../audio/audio';
-import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '../../core/data';
+import { CAMPAIGN, type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
 import { disciplineHere } from '../../core/state/game';
 import { loadControls, saveControls } from '../../storage/controls';
 import { ITEM_VIEWS, loadDisplay, MESSAGE_TIMES, saveDisplay } from '../../storage/display';
-import { loadDisciplinePrefs, saveDisciplinePref } from '../../storage/settings';
+import { loadDisciplinePrefs, loadTutorialPref, saveDisciplinePref, saveTutorialPref } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch } from '../host';
 import { ITEM_VIEW_NAMES } from '../lib/item-stats';
@@ -32,7 +32,7 @@ export interface SettingsPanelProps {
 }
 
 /**
- * Switches for which treatments are offered, how items show their stats, the controls, how long messages stay, full
+ * Switches for the tutorial, which treatments are offered, how items show their stats, the controls, how long messages stay, full
  * screen in the desktop app, sound and music, the cheat console and sharing play statistics.
  */
 export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPanelProps) {
@@ -50,8 +50,27 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
     redraw();
     onChange?.();
   };
+  // the tutorial is Willow Lane's, so in a game there it is that game's switch; anywhere else, the next one's
+  const willowLane = sim?.s.center === CAMPAIGN[0] ? sim : undefined;
+  /** Whether the tutorial is on, in the Willow Lane game in progress or for the next one. */
+  const tutorialOn = () => (willowLane ? willowLane.tutorialOn() : loadTutorialPref());
   return (
     <div class="settings">
+      <h4>Help</h4>
+      <ul>
+        <SettingRow
+          icon="ui-advisor"
+          name="Tutorial"
+          desc="Walk a new Willow Lane game through its opening, pointing at what each step wants, and explain each thing the first time it happens. On by itself before your first campaign star, until the opening has been walked through once."
+          on={tutorialOn()}
+          onToggle={flip('tutorial', () => {
+            const on = !tutorialOn();
+            saveTutorialPref(on);
+            willowLane?.setTutorial(on);
+            return on;
+          })}
+        />
+      </ul>
       <h4>Treatments</h4>
       <ul>
         {/* in a game, only the treatments its center offers; for new games, all of them */}

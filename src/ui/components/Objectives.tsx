@@ -1,4 +1,5 @@
-// Top left: the objectives for the next star, what a first game will need soon, and the emergency in progress.
+// Top left: the objectives for the next star, the tutorial's steps or what a first game will need soon, and the
+// emergency in progress.
 
 import './Objectives.css';
 
@@ -7,6 +8,7 @@ import { useState } from 'preact/hooks';
 import { centerOf, conditionOf, type GoalSpec } from '../../core/data';
 import { money } from '../../core/format';
 import type { Objective } from '../../core/sim/goals';
+import type { TutorialLine } from '../../core/sim/tutorial';
 import { useGame } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { wholeDaysLeft } from '../lib/emergency';
@@ -101,6 +103,52 @@ function GettingReady() {
   );
 }
 
+/** How many steps to come the tutorial's list shows past the one in hand, until it is opened out. */
+const STEPS_AHEAD = 2;
+
+/**
+ * While the tutorial is on, its steps: those done ticked, the one in hand in bold and the rest grey. Folded, the count
+ * done in the heading stands for those done, under it the one in hand and the next couple; a click opens it all out,
+ * and another folds it again.
+ */
+function TutorialList() {
+  const { sim } = useGame();
+  const [open, setOpen] = useState(false);
+  const lines = sim.tutorialLines();
+  if (!lines.length) return null;
+  const done = lines.filter((l) => l.done).length;
+  // the steps to come after the one in hand, or after the last done while none is
+  const at = lines.findIndex((l) => l.current);
+  const ahead = lines.filter((l, i) => !l.done && !l.current && i > at).slice(0, STEPS_AHEAD);
+  /** Whether a line shows while the list is folded. */
+  const folded = (l: TutorialLine) => l.current || ahead.includes(l);
+  const shown = open ? lines : lines.filter(folded);
+  const more = lines.length - lines.filter(folded).length;
+  return (
+    <div class="getting-ready tutorial-list">
+      <h4>{`Tutorial · ${done} of ${lines.length} done`}</h4>
+      <ul>
+        {shown.map((l) => (
+          <li key={l.id} class={cx(l.done && 'done', l.current && 'current', !l.done && !l.current && 'ahead')}>
+            <b>{l.done ? '✔' : '○'}</b>
+            <span>{l.label}</span>
+          </li>
+        ))}
+      </ul>
+      {more > 0 && (
+        <Button
+          class="objective more"
+          onPress={() => {
+            setOpen(!open);
+          }}
+        >
+          {open ? 'Fewer' : `${more} more`}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 /** The objectives for the next star, with the staff challenge and the emergency in progress under them. */
 export function Objectives() {
   const { sim } = useGame();
@@ -125,7 +173,7 @@ export function Objectives() {
           </li>
         )}
       </ul>
-      <GettingReady />
+      {s.tutorial ? <TutorialList /> : <GettingReady />}
       <ChallengeCard />
       <OutbreakCard />
       {emergency && (

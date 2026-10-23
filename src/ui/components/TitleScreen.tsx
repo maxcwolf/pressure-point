@@ -215,7 +215,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
             )}
           </div>
           <div id="title-campaign" class="title-sub" hidden={showing !== 'campaign'}>
-            {opened.includes('campaign') && <CampaignPanel onStart={onPick} />}
+            {opened.includes('campaign') && <CampaignPanel onStart={onPick} audio={audio} />}
           </div>
           <div id="title-sandbox" class="title-sub" hidden={showing !== 'sandbox'}>
             {opened.includes('sandbox') && (

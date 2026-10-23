@@ -20,7 +20,9 @@ const STEPS = [
   { id: 'land', label: 'From the first star, see the land for sale with Expand' },
 ] as const;
 
-type StepId = (typeof STEPS)[number]['id'];
+/** A heads-up's id, which says what it is about. */
+export type PrimerStepId = (typeof STEPS)[number]['id'];
+type StepId = PrimerStepId;
 
 /** The id a step's heads-up is said once under, among the tips seen. */
 export const primerTip = (id: string) => `primer-${id}`;
@@ -118,7 +120,7 @@ function heads(ctx: SimContext, id: StepId): { text: string; about?: Subject } |
 
 /** A line on the checklist: what it asks, and whether it is in place. */
 export interface PrimerLine {
-  id: string;
+  id: StepId;
   label: string;
   done: boolean;
 }
@@ -131,7 +133,7 @@ export function primerLines(ctx: SimContext): PrimerLine[] {
 
 /** A heads-up: what it says, and who or what it is about, if anyone. */
 export interface PrimerNote {
-  id: string;
+  id: StepId;
   text: string;
   about?: Subject;
 }

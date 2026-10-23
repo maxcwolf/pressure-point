@@ -123,7 +123,8 @@ export const defaultPolicy = (): Policy => ({
  * 34: the two 33s together, so a 33 save of either kind is brought up to both.
  * 35: the Generator, the first item that stands outdoors.
  * 36: the first game's heads-ups, and the explanations of harm that keeps coming to guests.
- * 37: whether the land for sale has been looked over, for the first game's heads-up on land.
+ * 37: the tutorial and the cards that explain each thing the first time it happens, and whether the land for
+ *     sale has been looked over, for the first game's heads-up on land.
  */
 export const SAVE_VERSION = 37;
 
@@ -169,6 +170,9 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     seenTips: [],
     primer: false,
     sawPlots: false,
+    tutorial: false,
+    lessons: false,
+    lastLesson: -1,
     harms: {},
     harmNotes: [],
     loan: 0,

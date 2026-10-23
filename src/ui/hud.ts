@@ -6,12 +6,15 @@ import { gameProps } from '../app/play-events';
 import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
+import type { LessonId } from '../core/sim/lessons';
+import type { TutorialStep } from '../core/sim/tutorial';
 import type { Template } from '../core/templates';
 import { giveKarma } from '../storage/campaign';
 import { loadDisplay } from '../storage/display';
+import { saveTutorialPref } from '../storage/settings';
 import { loadTemplates } from '../storage/templates';
 import type { GameHost } from './host';
-import type { ItemKind, Place } from './lib/catalog';
+import { filterItems, type ItemKind, type Place } from './lib/catalog';
 import { mustAnswer, pendingDialog, raise, type Raised, stillDue } from './lib/dialogs';
 import { ageMessages, SHOWN, spareMessages, withMessage } from './lib/messages';
 import type { OverlayMode } from './lib/overlays';
@@ -41,13 +44,20 @@ export type DialogId =
   | 'buy-plot'
   | 'payroll'
   | 'bankrupt'
-  | 'update';
+  | 'update'
+  | 'lesson';
 
 /** What the interface has the floor show: the overlay chosen, and the plots of land while the Land tab is open. */
 export interface FloorShown {
   overlay: OverlayMode | null;
   /** The plots of land, with the one the pointer is over in the Land tab, or null while the tab is closed. */
   land: { pointedAt: string | null } | null;
+}
+
+/** A lesson as the game raised it: which, and who it is about if anyone. */
+export interface RaisedLesson {
+  id: LessonId;
+  about?: Subject;
 }
 
 /** A message on the right, which fades once it has been up long enough to read, or stays until dismissed. */
@@ -129,6 +139,10 @@ export class HudState {
   dialog: DialogId | null = null;
   /** The star being celebrated while its dialog is open. */
   star = 0;
+  /** The tutorial's lesson in its dialog, and who it is about if anyone. */
+  lesson: RaisedLesson | null = null;
+  /** Lessons raised while one was showing or waiting, to show in turn. */
+  private lessons: RaisedLesson[] = [];
   /** The locked item asked about in the karma dialog. */
   karmaItem: ItemType | null = null;
   /** The locked floor or wall asked about in the karma dialog, and the room to put it in once unlocked. */
@@ -240,6 +254,66 @@ export class HudState {
     return true;
   }
 
+  /**
+   * What the tutorial's ring is on, from its step in hand and what is open: the button of the menu the step wants, then
+   * the tab and card in it, then the blueprint's Build button once a room is planned. Nothing while the thing wanted is
+   * in hand, since the tool's hint says what to do with it, or while the advisor's card is not the tutorial's, such as
+   * when someone is about to quit.
+   */
+  guide(): string | null {
+    const want = this.host.sim.adviceNote().step?.want;
+    if (!want || want.kind === 'look') return null;
+    const { tools } = this.host;
+    const tool = tools.tool;
+    if (want.kind === 'item') {
+      if (tool.kind === 'item') return null;
+      if (this.menu !== 'items') return 'menu:items';
+      // a filter that hides the card wanted is undone first
+      if (!filterItems([want.type], this.itemPlace, 'all').length) return 'filter:place';
+      if (!filterItems([want.type], 'all', this.itemKind).length) return 'filter:kind';
+      return `item:${want.type}`;
+    }
+    if (want.kind === 'room') {
+      // dragging out the floor and placing the door have the hint to go by, and a ready blueprint wants building
+      if (tool.kind === 'room') return tools.plan?.ready ? 'plan:build' : null;
+      if (this.menu !== 'rooms') return 'menu:rooms';
+      return this.roomsTab === 'rooms' ? `room:${want.type}` : 'tab:rooms';
+    }
+    if (this.menu !== 'hire') return 'menu:hire';
+    return this.hireRole === want.role ? 'hire:first' : `role:${want.role}`;
+  }
+
+  /** Show the player what a tutorial step wants: open the menu it is in at the right tab, or take them to who it is about. */
+  showStep(step: TutorialStep) {
+    const want = step.want;
+    if (!want || want.kind === 'look') {
+      if (step.about) this.show(step.about);
+      return;
+    }
+    this.host.tools.setAside();
+    if (want.kind === 'item') {
+      // so the card wanted is among those on show
+      this.itemPlace = 'all';
+      this.itemKind = 'all';
+      this.menu = 'items';
+    } else if (want.kind === 'room') {
+      this.roomsTab = 'rooms';
+      this.menu = 'rooms';
+    } else {
+      this.hireRole = want.role;
+      this.menu = 'hire';
+    }
+    track('menu_opened', { ...gameProps(this.host.sim.s), menu: this.menu });
+    track('tutorial_show_me', { ...gameProps(this.host.sim.s), step: step.id });
+    this.update();
+  }
+
+  /** Skip the rest of the tutorial in this game. Its word to say so comes with the next frame's events. */
+  skipTutorial() {
+    this.host.sim.skipTutorial();
+    this.update();
+  }
+
   /** Take the player to what a message is about: select it, show its inspector and glide the camera over. */
   show(about: Subject) {
     const spot = this.host.sim.whereIs(about);
@@ -274,15 +348,22 @@ export class HudState {
     this.pause();
     // the list of saved games should include the game as it is right now
     if (dialog === 'saves') this.warn(this.host.save());
+    if (dialog === 'lesson') {
+      this.lesson = this.lessons.shift() ?? this.lesson;
+      if (this.lesson) track('lesson_shown', { ...gameProps(this.host.sim.s), lesson: this.lesson.id });
+    }
     this.dialog = dialog;
     this.update();
   }
 
   /** Close the dialog and show the next one waiting, or restore the game speed it paused. */
   close() {
+    const closing = this.dialog;
     this.dialog = null;
     const s = this.host.sim.s;
     this.line = this.line.filter((d) => stillDue(d.id, s));
+    // the next lesson waiting takes its turn behind whatever else is in line
+    if (closing === 'lesson' && this.lessons.length) this.line.push({ id: 'lesson', star: 0 });
     const next = this.line.shift();
     if (next) {
       this.star = next.star;
@@ -326,8 +407,25 @@ export class HudState {
       else if (e.type === 'visit') this.raise('visit');
       // the app notes an achievement for the campaign; its toast says it
       else if (e.type === 'achievement') continue;
+      else if (e.type === 'tutorial') this.endTutorial(e.what, e.step);
+      else if (e.type === 'lesson') this.raiseLesson(e.id, e.about);
       else this.float(e.text, e.kind, view.project(e.x, e.y, 1.6));
     }
+  }
+
+  /** Show a lesson, in line behind any dialog showing, as a star is, and behind any lesson showing or waiting. */
+  private raiseLesson(id: LessonId, about?: Subject) {
+    this.lessons.push({ id, ...(about && { about }) });
+    this.raise('lesson');
+  }
+
+  /**
+   * The tutorial has ended in this game, done or skipped: the next Willow Lane game starts without it, unless it is
+   * switched back on in Settings or on the campaign's card.
+   */
+  private endTutorial(what: 'done' | 'skipped', step: string) {
+    saveTutorialPref(false);
+    track(what === 'done' ? 'tutorial_done' : 'tutorial_skipped', { ...gameProps(this.host.sim.s), step });
   }
 
   /** Show a message at the top of the right side. One saying the same as one already there takes its place, counted. */
