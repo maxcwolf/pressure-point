@@ -694,12 +694,16 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   if (visual === 'slump') {
     lean += 0.42;
     headX += 0.2;
+  } else if (visual === 'neck' && c.pose !== 'lie') {
+    // staring down at the phone held up in front of them
+    headX += 0.6;
+    armR = -1.2;
   } else if (visual === 'neck') headX += 0.6;
   else if (visual === 'stiff') {
     armOut = 0.32;
     if (c.pose !== 'sit') armL = armR = 0;
   } else if (visual === 'crick') headZ = 0.55;
-  else if (visual === 'sway' && c.pose !== 'lie') side = Math.sin(t * 1.4 + c.id) * 0.16;
+  else if (visual === 'sway' && c.pose !== 'lie') side = Math.sin(t * 1.4 + c.id) * 0.26;
   else if (visual === 'tilt') {
     side = 0.24;
     headZ = -0.12;
@@ -731,8 +735,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     headZ = 0.1;
   } else if (visual === 'oldsoul' && c.pose !== 'lie') {
     // stooped, as their grandfather was
-    lean += 0.25;
-    headX -= 0.15;
+    lean += 0.4;
+    headX -= 0.25;
   }
   // a hop for joy as the symptom goes, or once down from where they lay while it went
   const hop = Number.isFinite(cues.up) ? (cues.up ?? NaN) : curing;
@@ -759,7 +763,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     handsFree,
     // arms held stiff, flexed or frozen by a symptom show it, whatever else
     armsFree: visual !== 'stiff' && visual !== 'flex' && visual !== 'frost' && visual !== 'bluescreen',
-    rightHolds: visual === 'mallet' || visual === 'leash',
+    rightHolds: visual === 'mallet' || visual === 'leash' || visual === 'neck',
     act,
     idle: idleAct(c.id, t - rig.idleSince),
     mood: moodOf(c),
@@ -820,9 +824,9 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   if (rig.band?.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
   if (visual === 'jitter' && c.pose !== 'lie') {
     // pins and needles: a constant fizzing shiver
-    rig.body.position.x = Math.sin(t * 47 + c.id) * 0.012;
-    rig.legL.rotation.z = Math.sin(t * 39 + c.id) * 0.07;
-    rig.legR.rotation.z = Math.sin(t * 43 + c.id) * 0.07;
+    rig.body.position.x = Math.sin(t * 47 + c.id) * 0.022;
+    rig.legL.rotation.z = Math.sin(t * 39 + c.id) * 0.1;
+    rig.legR.rotation.z = Math.sin(t * 43 + c.id) * 0.1;
   } else {
     if (rig.visual === 'jitter') rig.body.position.x = 0;
     // the leg of a planted foot leans against the hips swaying over it, so the foot stays put
@@ -833,7 +837,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     rig.legR.rotation.z += (legZR - rig.legR.rotation.z) * k;
   }
   if (rig.bob && !rig.cured) {
-    rig.bob.position.y = 0.4 + Math.sin(t * 2.2 + c.id) * 0.03;
+    rig.bob.position.y = rig.bobAt + Math.sin(t * 2.2 + c.id) * 0.03;
     rig.bob.visible = c.pose !== 'lie';
   }
   if (rig.blink) rig.blink.emissiveIntensity = Math.sin(t * 6 + c.id) > 0 ? 1.5 : 0.05;

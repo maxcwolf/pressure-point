@@ -6,9 +6,9 @@ import * as THREE from 'three';
 
 import type { Visual } from '../../core/data';
 import { owned } from '../disposal';
-import type { CharRig } from './character';
+import { type CharRig, PROP } from './character';
 import { detailCap } from './character-detail';
-import { capsule, cyl, mat, put, rbox, sph, torus } from './parts';
+import { capsule, cyl, joined, mat, put, rbox, sph, torus } from './parts';
 
 /** The parts of a person a symptom hangs from, and how far up the forearm the hand is. */
 export interface Body {
@@ -25,6 +25,12 @@ function props(rig: CharRig, ...parts: THREE.Object3D[]) {
     p.traverse((o) => (o.castShadow = false));
     rig.props.push(p);
   }
+}
+
+/** Draw a part bigger than life about where it is, to be seen from the game's usual distance (see `PROP`). */
+function big<T extends THREE.Object3D>(o: T, by = PROP): T {
+  o.scale.multiplyScalar(by);
+  return o;
 }
 
 /** Put a cap on a head and return it. */
@@ -45,8 +51,12 @@ function bag(color: number): THREE.Group {
 export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body) {
   const { head, torso } = b;
   if (visual === 'chairshape') {
-    // still bent to the shape of a chair, with its cushion stuck on behind
-    props(rig, put(torso, rbox(0.34, 0.08, 0.3, 0.03), mat(0x3a5a8a, 0.8), 0, -0.02, -0.18));
+    // still bent to the shape of a chair, its seat cushion and its back stuck on behind
+    const chair = joined('chair stuck on', [
+      [rbox(0.34, 0.08, 0.3, 0.03), 0, -0.02, 0],
+      [rbox(0.46, 0.62, 0.07, 0.03), 0, 0.3, -0.13],
+    ]);
+    props(rig, put(torso, chair, mat(0x3a5a8a, 0.8), 0, 0, -0.2));
   } else if (visual === 'bags') {
     // somebody else's shopping, a bag in each hand
     const right = bag(0xd9a93a);
@@ -62,9 +72,9 @@ export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body
     put(screen, rbox(0.26, 0.2, 0.02, 0.02), mat(0x2b5fd9, 0.4, 0.6), 0, 0, 0);
     for (const x of [-0.05, 0.05]) put(screen, rbox(0.02, 0.03, 0.01, 0.004), mat(0xffffff, 0.4, 0.6), x, 0.03, 0.012);
     put(screen, torus(0.04, 0.008), mat(0xffffff, 0.4, 0.6), 0, -0.05, 0.012).rotation.z = Math.PI;
-    screen.position.set(0, 0.02, 0.2);
+    screen.position.set(0, 0.02, 0.21);
     head.add(screen);
-    props(rig, screen);
+    props(rig, big(screen));
   } else if (visual === 'beachhead') {
     // a beach umbrella over the head, and sunglasses on, wherever they are
     const brolly = new THREE.Group();
@@ -85,7 +95,7 @@ export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body
       [-0.18, 0.46, 0.02, torso],
       [0.19, 0.45, -0.02, torso],
     ] as const)
-      props(rig, put(on, rbox(0.07, 0.04, 0.06, 0.01), salt, x, y, z));
+      props(rig, big(put(on, rbox(0.07, 0.04, 0.06, 0.01), salt, x, y, z), 1.9));
   } else if (visual === 'seaweed') {
     // draped in seaweed, over the head and down the shoulders
     const weed = mat(0x3f7a3a, 0.7);
@@ -94,22 +104,28 @@ export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body
       [0.08, -0.06, -0.3],
       [0.15, 0.08, -0.5],
     ] as const) {
-      const strand = put(head, capsule(0.025, 0.2), weed, x, 0.08, z);
+      const strand = put(head, capsule(0.035, 0.22), weed, x, 0.08, z);
       strand.rotation.z = r;
       props(rig, strand);
     }
-    for (const x of [-0.2, 0.2]) props(rig, put(torso, capsule(0.03, 0.18), weed, x, 0.38, 0.05));
+    for (const x of [-0.2, 0.2]) props(rig, put(torso, capsule(0.045, 0.2), weed, x, 0.38, 0.05));
+    // and a starfish stuck on top
+    const arms = Array.from({ length: 5 }, (_, i) => {
+      const a = (i / 5) * Math.PI * 2;
+      return [capsule(0.03, 0.07), Math.cos(a) * 0.055, 0, Math.sin(a) * 0.055, 0, -a, Math.PI / 2] as const;
+    });
+    props(rig, big(put(head, joined('starfish', arms), mat(0xf08a3c, 0.6), 0.03, 0.23, 0)));
   } else if (visual === 'echo') {
     // rings going out round the head, like the same words coming back
     rig.orbit = new THREE.Group();
     const ring = owned(
-      new THREE.MeshStandardMaterial({ color: 0x9fd6f0, transparent: true, opacity: 0.55, emissive: 0x9fd6f0 }),
+      new THREE.MeshStandardMaterial({ color: 0x9fd6f0, transparent: true, opacity: 0.75, emissive: 0x9fd6f0 }),
     );
     for (const [r, y] of [
       [0.3, 0],
-      [0.38, 0.02],
+      [0.42, 0.04],
     ] as const)
-      put(rig.orbit, torus(r, 0.012), ring, 0, y, 0).rotation.x = Math.PI / 2;
+      put(rig.orbit, torus(r, 0.03), ring, 0, y, 0).rotation.x = Math.PI / 2;
     rig.orbit.position.y = 0.05;
     head.add(rig.orbit);
   } else if (visual === 'snowcap') {
@@ -135,7 +151,7 @@ export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body
     put(bunch, cyl(0.006, 0.006, 0.06, 5), mat(0x6b4f33, 0.8), 0, 0.05, 0);
     bunch.position.y = 0.5;
     head.add(bunch);
-    rig.bob = bunch;
+    rig.bob = big(bunch);
   } else if (visual === 'rotten') {
     // a brown apple hanging over them, with a whiff coming off it
     const apple = new THREE.Group();
@@ -148,15 +164,15 @@ export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body
       put(apple, sph(0.035, 8), mat(0x8fbf4a, 0.9), x, y, 0);
     apple.position.y = 0.45;
     head.add(apple);
-    rig.bob = apple;
+    rig.bob = big(apple);
   } else if (visual === 'oldsoul') {
     // a flat cap and a walking stick, at thirty-four
-    const stick = put(b.holdR, cyl(0.015, 0.015, 0.72, 8), mat(0x6b4f33, 0.7), 0, -0.4 + b.handUp, 0.08);
+    const stick = put(b.holdR, cyl(0.025, 0.025, 0.72, 8), mat(0x6b4f33, 0.7), 0, -0.4 + b.handUp, 0.08);
     props(rig, stick, capOn(head, mat(0x6b6458, 0.9), 'flat'));
   } else if (visual === 'ruff') {
     // a Tudor ruff, and the bearing of a duke
     const ruff = put(torso, torus(0.15, 0.06), mat(0xffffff, 0.8), 0, 0.55, 0);
     ruff.rotation.x = Math.PI / 2;
-    props(rig, ruff);
+    props(rig, big(ruff, 1.4));
   }
 }
