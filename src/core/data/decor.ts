@@ -159,7 +159,8 @@ function rug(id: RugPatternId, name: string, colors: RugPatternDef['colors'], mo
 }
 
 export const RUG_PATTERNS: Readonly<Record<RugPatternId, RugPatternDef>> = {
-  kilim: rug('kilim', 'Kilim', [0xb5524a, 0xe9c46a, 0x2a9d8f, 0xf5ecdb], 'diamond'),
+  // the rug everyone starts with, in a classic kilim's dusty madder and ochre: muted, so it sits on any floor
+  kilim: rug('kilim', 'Kilim', [0x7d4038, 0xd4b27a, 0xb46a5c, 0xf3e7cf], 'diamond'),
   ocean: rug('ocean', 'Ocean', [0x264653, 0x5fa8d3, 0xcde8f2, 0x2a6f97], 'medallion'),
   sunset: rug('sunset', 'Sunset', [0x7a2e46, 0xe76f51, 0xf4a261, 0xf2e15e], 'medallion'),
   forest: rug('forest', 'Forest', [0x3f5f3a, 0x8fae6b, 0xe7dcc0, 0x3f7f45], 'diamond'),
