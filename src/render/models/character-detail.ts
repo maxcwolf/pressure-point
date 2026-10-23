@@ -23,6 +23,14 @@ type Sides = (full: number) => number;
 const ALL: Sides = (full) => full;
 /** About half, for someone seen from afar, whose every side in full would be finer than a pixel. */
 const FEW: Sides = (full) => Math.max(2, Math.round(full / 2));
+/** About a quarter, for someone seen from as far as the game is mostly played at, where a head is a few pixels across. */
+const TINY: Sides = (full) => Math.max(3, Math.round(full / 4));
+
+/** Each shape's stand-in with the fewest sides, for someone seen from furthest off. */
+const tinyShapes = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
+
+/** What to draw in place of a shape seen from furthest off: its stand-in with the fewest sides, if it has one. */
+export const tinyShape = (shape: THREE.BufferGeometry) => tinyShapes.get(shape);
 
 /** A fresh ball. */
 const ball = (r: number, seg: number) => bare(new THREE.SphereGeometry(r, seg, Math.ceil(seg * 0.7)));
@@ -63,16 +71,22 @@ const indexed = (geo: THREE.BufferGeometry) => {
 /**
  * Several fresh shapes joined into one, made once by key and shared, so together they cost a single part to draw. They
  * keep sharing their corners, so each corner is worked out once a frame rather than once for every triangle at it. The
- * shape is made twice, with all its sides and with fewer, the second to be drawn in its place when seen from afar.
+ * shape is made three times, with all its sides, with fewer and with fewer still, the others to be drawn in its place
+ * when seen from afar and from further.
  */
 const fuse = (key: string, make: (n: Sides) => THREE.BufferGeometry[]) =>
   cached(`hd-${key}`, () => {
     /** The shapes joined, with so many sides. */
     const join = (n: Sides) => must(mergeGeometries(make(n).map(indexed)), `the shapes of ${key} joined`);
-    return withFar(
+    const shape = withFar(
       join(ALL),
       cached(`hd-${key}-far`, () => join(FEW)),
     );
+    tinyShapes.set(
+      shape,
+      cached(`hd-${key}-tiny`, () => join(TINY)),
+    );
+    return shape;
   });
 
 /** A shape turned round the upright axis from a profile of [radius, height] pairs, bottom to top, squashed front to back. */

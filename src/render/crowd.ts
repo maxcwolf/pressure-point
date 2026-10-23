@@ -2,11 +2,13 @@
 // no glow) is drawn in one go, each in its own color, so a crowd costs the same few draw calls however big it gets.
 // The people keep their own meshes, posed as usual; once a batch draws a mesh, it moves to a layer the camera does
 // not look at. Anything else, such as a glowing symptom or a material of a person's own, is drawn as it always was.
-// Someone seen from afar is drawn with stand-ins for their parts that have fewer sides, where a shape has one: from
-// there, each of the full shape's sides would be finer than a pixel, and still cost as much to draw.
+// Someone seen from afar is drawn with stand-ins for their parts that have fewer sides, where a shape has one, and from
+// further still with fewer again: from there, each of the full shape's sides would be finer than a pixel, and still
+// cost as much to draw.
 
 import * as THREE from 'three';
 
+import { tinyShape } from './models/character-detail';
 import { farShape, mat, plainRoughness } from './models/parts';
 
 /** The layer a person's mesh moves to once a batch draws it. The camera only looks at layer 0. */
@@ -17,6 +19,16 @@ export const BATCHED = 1;
  * stands 130 pixels tall, and their head 40 pixels across.
  */
 export const FAR_PIXELS_PER_METER = 100;
+
+/**
+ * And how few before they are drawn with fewer sides still: about where their head is 25 pixels across, and so at the
+ * distance the game is mostly played at (about 41 pixels to a meter) and further. A head of ten sides that size is
+ * out of round by under a pixel.
+ */
+export const TINY_PIXELS_PER_METER = 60;
+
+/** How finely a person is drawn: in full, with fewer sides, or with fewest. */
+type Detail = 'full' | 'far' | 'tiny';
 
 /** Where the people are seen from: the camera, and how many pixels tall the picture is. */
 export interface Viewpoint {
@@ -56,10 +68,9 @@ export class Crowd {
     for (const b of this.batches.values()) b.count = 0;
     if (view) eye.setFromMatrixPosition(view.camera.matrixWorld);
     for (const person of people) {
-      const far =
-        !!view &&
-        pixelsPerMeter(view, eye.distanceTo(at.setFromMatrixPosition(person.matrixWorld))) < FAR_PIXELS_PER_METER;
-      person.traverseVisible((o) => (o as Partial<THREE.Mesh>).isMesh && this.add(o as THREE.Mesh, far));
+      const ppm = view ? pixelsPerMeter(view, eye.distanceTo(at.setFromMatrixPosition(person.matrixWorld))) : Infinity;
+      const detail: Detail = ppm < TINY_PIXELS_PER_METER ? 'tiny' : ppm < FAR_PIXELS_PER_METER ? 'far' : 'full';
+      person.traverseVisible((o) => (o as Partial<THREE.Mesh>).isMesh && this.add(o as THREE.Mesh, detail));
     }
     for (const b of this.batches.values()) {
       b.mesh.count = b.count;
@@ -70,7 +81,7 @@ export class Crowd {
   }
 
   /** Draw a part in its batch, with fewer sides if far, or leave it to draw itself if its material cannot be shared. */
-  private add(part: THREE.Mesh, far: boolean) {
+  private add(part: THREE.Mesh, detail: Detail) {
     const material = part.material as THREE.Material;
     const rough = plainRoughness(material);
     if (rough === undefined) {
@@ -78,7 +89,12 @@ export class Crowd {
       return;
     }
     part.layers.set(BATCHED);
-    const shape = far ? farShape(part.geometry) : part.geometry;
+    const shape =
+      detail === 'tiny'
+        ? (tinyShape(part.geometry) ?? farShape(part.geometry))
+        : detail === 'far'
+          ? farShape(part.geometry)
+          : part.geometry;
     const key = `${shape.id}|${rough}|${part.castShadow}|${part.receiveShadow}`;
     let b = this.batches.get(key);
     if (!b || b.count === b.colors.count) b = this.grow(key, part, shape, rough, b);
