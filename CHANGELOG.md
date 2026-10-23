@@ -4,6 +4,8 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **The Posture Lab runs itself.** Its scanner needs no Consultant, only $250 a month to run and a Caretaker when it wears out, and a scan now makes the diagnosis certain, adding more to the chance of success on an upgraded scanner.
+- **Structural conditions.** Crick of the Neck, Text Neck, Croquet Back and Wipeout are in the spine and the joints: a Consultant can see them but not pin them down, so without a working Posture Lab their treatment is a best guess and less likely to work. The guest's inspector shows which guests are structural and which were treated on a guess.
 - **Who does what, at a glance.** The Staff menu shows the treatments each person knows, and the ones they are learning, under their name, and can be narrowed to those who know one treatment. In anyone's inspector, Compare puts them side by side with another member of staff.
 
 ## v0.32.1

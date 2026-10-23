@@ -80,7 +80,10 @@ export const BOT_FLAGS = [
   'lines',
   /** Hire the cheapest Consultant going rather than the best: a junior one, who often needs a second look. */
   'junior',
-  /** Build a Posture Lab when the consultants send many guests back for a second look: junior, or a long line. */
+  /**
+   * Build a Posture Lab once the center pays its way and guests come in with structural conditions, which only a scan
+   * makes sure, or junior consultants send many back for a second look.
+   */
   'lab',
   /**
    * Never put furniture down where someone stands, and free anyone walled in by selling what boxes them in. An extra
@@ -138,16 +141,7 @@ export type BotFlags = Record<BotFlag, boolean>;
  * Flags that are off unless `BOT_ON` names them: a different way to play rather than better play, or play that was
  * measured and found to gain nothing.
  */
-const BOT_EXTRAS: readonly BotFlag[] = [
-  'junior',
-  'lab',
-  'clear',
-  'trouble',
-  'triage',
-  'throttle',
-  'machines',
-  'opening',
-];
+const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'clear', 'trouble', 'triage', 'throttle', 'machines', 'opening'];
 
 /**
  * The bot's flags from the environment. `BOT=old` plays as the bot did before it learned any of them; `BOT_OFF`
@@ -399,9 +393,13 @@ export interface MonthLog {
   healedBy: Partial<Record<Discipline, number>>;
   /** The price level at the month's end. */
   price: number;
-  /** Whether there is a Posture Lab at the month's end, and the guests sent for a scan over the month. */
+  /**
+   * Whether there is a Posture Lab at the month's end, the guests sent for a scan over the month, and those treated on a
+   * best guess at a structural condition.
+   */
   lab: boolean;
   scans: number;
+  guesses: number;
   /** The month's income by source, from the ledger: treatments and consultations, and the side incomes. */
   incomeBy: IncomeBy;
   /** The month's bad trips, and the really bad ones: how many ran, were calmed, in time, and found the door; not in older logs. */
@@ -569,6 +567,10 @@ export class Bot {
   /** The guests seen sent for a posture scan, and how many of them this month. */
   private sentForScan = new Set<number>();
   private scans = 0;
+  /** The guests seen treated on a best guess, how many of them this month, and how many in all. */
+  private guessedAt = new Set<number>();
+  private guesses = 0;
+  private guessesAll = 0;
   /** Guests seen after a bad trip; those seen running, with how long they had run when last seen; and this month's tally. */
   private badTrips = new Set<number>();
   private runners = new Map<number, { ran: number; wasCalmed: boolean }>();
@@ -811,6 +813,7 @@ export class Bot {
       price: s.priceLevel,
       lab: this.sim.hasRoom('assess'),
       scans: this.scans,
+      guesses: this.guesses,
       runners: this.runnerMonth,
       incomeBy: {
         treatment: Math.round(l.treatment),
@@ -824,9 +827,11 @@ export class Bot {
       },
     });
     this.scans = 0;
+    this.guesses = 0;
     this.runnerMonth = noRunners();
     this.repLow = Infinity;
     for (const id of this.sentForScan) if (!this.sim.guest(id)) this.sentForScan.delete(id);
+    for (const id of this.guessedAt) if (!this.sim.guest(id)) this.guessedAt.delete(id);
     this.monthStart = {
       arrived: st.arrived,
       healed: st.healed,
@@ -1099,6 +1104,11 @@ export class Bot {
       if (g.goal === 'assess' && !this.sentForScan.has(g.id)) {
         this.sentForScan.add(g.id);
         this.scans++;
+      }
+      if (g.guessed && !this.guessedAt.has(g.id)) {
+        this.guessedAt.add(g.id);
+        this.guesses++;
+        this.guessesAll++;
       }
       const was = this.inLine.get(g.id);
       if (!g.outcome) {
@@ -1503,7 +1513,7 @@ export class Bot {
     }
     if (text.includes(': hire another.')) {
       this.grewStage[stage.key] = s.day;
-      if (this.hire(def.staff)) this.heed(text, `hired a ${def.staff}`);
+      if (def.staff && this.hire(def.staff)) this.heed(text, `hired a ${def.staff}`);
       return;
     }
     // no other lever named: more skill, or saving up first
@@ -2283,27 +2293,28 @@ export class Bot {
     return s.guests.filter((g) => {
       if (g.state !== 'waiting' && g.state !== 'toWait') return false;
       if (role === 'receptionist') return g.goal === 'reception';
-      if (role === 'consultant') return g.goal === 'consult' || g.goal === 'assess';
+      if (role === 'consultant') return g.goal === 'consult';
       if (g.goal !== 'treat') return false;
       return DISCIPLINES[this.sim.modalityOf(g).discipline].role === role;
     }).length;
   }
 
   /**
-   * A Posture Lab, once, when the consultants send many guests back for a second look: all of them rank 2 or below
-   * (a rank 3 Consultant is always sure enough the first time), or more than three waiting a Consultation Room. Only
-   * while the center pays its way and the bot is not saving, and with the money in hand.
+   * A Posture Lab, once, when guests come in with structural conditions that only a scan makes sure (three treated on
+   * a best guess so far), or junior consultants send many guests back for a second look: all of them rank 2 or below
+   * (a rank 3 Consultant is always sure enough the first time). Only while the center pays its way and the bot is not
+   * saving, and with the money in hand. It runs itself, so nobody is hired for it.
    */
   private buildLab() {
     if (this.sim.hasRoom('assess') || this.saving() !== null || this.profit() <= 0) return;
     const consultants = this.staffOf('consultant');
     const junior = consultants.length > 0 && consultants.every((x) => x.skill <= 2);
-    const long = this.waiting('consultant') > this.rooms('consult').length * 3;
-    if (!junior && !long) return;
+    const guessing = this.guessesAll >= 3;
+    if (!junior && !guessing) return;
     if (!this.afford(price('assess'), this.reserve('growth'))) return;
     if (this.buildRoom('assess')) {
-      this.note(`day ${Math.floor(this.s.day)}: a Posture Lab (${junior ? 'junior consultants' : 'a long line'})`);
-      this.hireToFill();
+      const why = guessing ? 'structural conditions' : 'junior consultants';
+      this.note(`day ${Math.floor(this.s.day)}: a Posture Lab (${why})`);
     }
   }
 
@@ -2323,8 +2334,8 @@ export class Bot {
     }
     const consults = this.rooms('consult').length;
     if (this.waiting('consultant') > consults * 4 && this.afford(price('consult'), reserve * 0.5, true)) {
-      if (!this.sim.hasRoom('assess') && s.money > price('assess') + reserve) this.buildRoom('assess');
-      else this.buildRoom('consult');
+      // the Posture Lab runs itself and adds no Consultant, so a long line wants another Consultation Room
+      this.buildRoom('consult');
       this.hireToFill();
     }
     for (const d of DISCIPLINE_ORDER) {
@@ -2373,8 +2384,8 @@ export class Bot {
       const turnedAway = (this.s.months.at(-1)?.turnedAway ?? 0) >= 3;
       const full = (turnedAway && this.waiting('consultant') >= consults * 2) || this.unfed() >= 2;
       if ((this.waiting('consultant') > consults * 4 || full) && this.afford(price('consult'), reserve * 0.5, true)) {
-        if (!this.sim.hasRoom('assess') && s.money > price('assess') + reserve) this.buildRoom('assess');
-        else this.buildRoom('consult');
+        // the Posture Lab runs itself and adds no Consultant, so a long line wants another Consultation Room
+        this.buildRoom('consult');
         this.hireToFill();
       }
       const seats = this.count('bench') * 2;

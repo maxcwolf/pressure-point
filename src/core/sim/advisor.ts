@@ -181,7 +181,7 @@ function nudge(ctx: SimContext): string | Advice {
   if (gap) return gap;
   for (const it of s.items) {
     const st = ITEMS[it.type].station;
-    if (!st || !ctx.world.usable(it)) continue;
+    if (!st?.staff || !ctx.world.usable(it)) continue;
     // with nobody in the role at all; one away on a break or a course is for the bottleneck to explain
     if (it.queue.length >= 2 && !stationStaff(ctx, it) && !hasStaff(ctx, st.staff))
       return {
@@ -301,10 +301,13 @@ export function bottleneckAdvice(ctx: SimContext): Advice | null {
   const top = stage.stations.reduce((a, b) => (b.queue.length > a.queue.length ? b : a));
   const def = ITEMS[top.type].station;
   if (!def) return null;
-  const role = ROLES[def.staff].name;
   const about: Subject = { kind: 'item', id: top.id };
   const n = stage.stations.length;
   const head = `Guests wait longest for the ${stationPlace(top)}: ${stage.waiting} waiting for ${n === 1 ? 'one' : n} ${ITEMS[top.type].name}${n === 1 ? '' : 's'}.`;
+  // a station that runs itself has nobody to hire: only another of its room moves the line along
+  if (!def.staff)
+    return { text: `${head} It runs itself, so another ${stationPlace(top)} is what would share the load.`, about };
+  const role = ROLES[def.staff].name;
   /** A share as a percentage. */
   const pct = (x: number) => `${Math.round(x * 100)}%`;
   // what one more of the role would leave the books making, and what it and its place would take from the bank
@@ -463,7 +466,7 @@ export function stationPlace(it: Pick<Item, 'type'>): string {
 /** What the speakers say when a station has a line and nobody working it. */
 export function staffWanted(it: Pick<Item, 'type'>): string {
   const st = ITEMS[it.type].station;
-  return st ? `${ROLES[st.staff].name} needed at the ${stationPlace(it)}.` : '';
+  return st?.staff ? `${ROLES[st.staff].name} needed at the ${stationPlace(it)}.` : '';
 }
 
 /** What the speakers say when litter piles up. */

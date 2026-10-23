@@ -156,7 +156,7 @@ export const hasGeneral = (st: Staff | undefined, id: GeneralId) => !!st?.genera
 /** The duty a station is, for the roles that have a choice. */
 export function stationDuty(it: Item): Duty | null {
   const goal = ITEMS[it.type].station?.goal;
-  return goal === 'reception' || goal === 'shop' || goal === 'consult' || goal === 'assess' ? goal : null;
+  return goal === 'reception' || goal === 'shop' || goal === 'consult' ? goal : null;
 }
 
 /** The duty a Caretaker's job is, if it is one they can be kept from. */

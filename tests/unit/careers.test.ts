@@ -237,13 +237,14 @@ describe('general courses', () => {
 describe('duties', () => {
   it('keep a member of staff from some work, but never from all of it', () => {
     const { sim, consultant, receptionist } = openCenter(1);
-    expect(sim.setDuty(consultant.id, 'assess', false)).toBe(true);
-    expect(consultant.off).toEqual(['assess']);
+    expect(sim.setDuty(receptionist.id, 'shop', false)).toBe(true);
+    expect(receptionist.off).toEqual(['shop']);
+    expect(sim.setDuty(receptionist.id, 'reception', false)).toBe(false);
+    expect(sim.setDuty(receptionist.id, 'shop', true)).toBe(true);
+    expect(receptionist.off).toEqual([]);
+    // a consultant has nothing to choose between, the Posture Scanner running itself
     expect(sim.setDuty(consultant.id, 'consult', false)).toBe(false);
-    expect(sim.setDuty(consultant.id, 'assess', true)).toBe(true);
-    expect(consultant.off).toEqual([]);
-    // a receptionist has nothing to choose between
-    expect(sim.setDuty(receptionist.id, 'consult', false)).toBe(false);
+    expect(sim.setDuty(consultant.id, 'shop', false)).toBe(false);
   });
 
   it('keep a Caretaker from a kind of job', () => {
@@ -258,12 +259,12 @@ describe('duties', () => {
   });
 
   it('send someone kept from their station off to other work', () => {
-    const { sim, consultant } = openCenter(1);
-    runUntil(sim, () => consultant.state === 'atPost', 120);
-    sim.setDuty(consultant.id, 'assess', false);
-    // still at the consultation desk, which they are on
+    const { sim, receptionist } = openCenter(1);
+    runUntil(sim, () => receptionist.state === 'atPost', 120);
+    sim.setDuty(receptionist.id, 'shop', false);
+    // still at the front desk, which they are on
     run(sim, 2);
-    expect(consultant.post).not.toBe(0);
+    expect(receptionist.post).not.toBe(0);
     expect(inconsistencies(sim)).toEqual([]);
   });
 });

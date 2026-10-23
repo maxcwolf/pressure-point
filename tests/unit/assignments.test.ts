@@ -11,7 +11,18 @@ import type { GameState, Room } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { OV_BAD, OV_BLUE, OV_GOOD } from '../../src/render/overlay-codes';
 import type { View } from '../../src/render/view';
-import { addReiki, addRestroom, buildRoom, hire, inconsistencies, LAYOUT, openCenter, run, runUntil } from './helpers';
+import {
+  addPostureLab,
+  addReiki,
+  addRestroom,
+  buildRoom,
+  hire,
+  inconsistencies,
+  LAYOUT,
+  openCenter,
+  run,
+  runUntil,
+} from './helpers';
 
 /** A room of a kind, at a spot, for the functions that only look at its fields. */
 function room(id: number, type: Room['type'], x = 0, y = 0): Room {
@@ -58,7 +69,7 @@ describe('where someone may work', () => {
     expect(canWorkIn('therapist', 'massage')).toBe(true);
     expect(canWorkIn('therapist', 'reiki')).toBe(false);
     expect(canWorkIn('consultant', 'consult')).toBe(true);
-    expect(canWorkIn('consultant', 'assess')).toBe(true);
+    expect(canWorkIn('consultant', 'assess'), 'the Posture Scanner runs itself').toBe(false);
     expect(canWorkIn('consultant', 'massage')).toBe(false);
     expect(canWorkIn('practitioner', 'reiki')).toBe(true);
     expect(canWorkIn('caretaker', 'restroom')).toBe(true);
@@ -170,6 +181,22 @@ describe('a Reiki Practitioner assigned to rooms', () => {
     expect(roomToSmudge(ctx, practitioner)).toBeUndefined();
     reiki.vibes = 30;
     expect(roomToSmudge(ctx, practitioner)).toBe(reiki);
+  });
+});
+
+describe('a save from when a Consultant worked the Posture Scanner', () => {
+  it('frees whoever was posted there, and keeps nobody from scans', () => {
+    const { sim, s, consultant } = openCenter(1);
+    addPostureLab(sim);
+    const scanner = s.items.find((i) => i.type === 'posture_scanner')!;
+    const old = JSON.parse(JSON.stringify(s)) as Record<string, any>;
+    const was = old.staff.find((st: { id: number }) => st.id === consultant.id);
+    Object.assign(was, { post: scanner.id, state: 'atPost', busy: true, off: ['assess'] });
+    old.items.find((it: { id: number }) => it.id === scanner.id).staffId = consultant.id;
+    upgradeSave(old as GameState);
+    const st = (old as GameState).staff.find((x) => x.id === consultant.id)!;
+    expect(st).toMatchObject({ post: 0, state: 'idle', busy: false, off: [] });
+    expect((old as GameState).items.find((it) => it.id === scanner.id)!.staffId).toBe(0);
   });
 });
 

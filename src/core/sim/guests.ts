@@ -60,7 +60,7 @@ import { updateRest } from './recovery';
 import { dueRegular, regularPatience, welcomeBack } from './regulars';
 import { runStep } from './runaways';
 import { stationStaff } from './sessions';
-import { pickStation, removeFromStations, stationScore } from './stations';
+import { goOnGuess, pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf } from './treatments';
 import { type ArrivalParts, arrivalParts, cutOff, impatience } from './twists';
 import { addWear, dirtier } from './upkeep';
@@ -476,8 +476,10 @@ function waitingThink(ctx: SimContext, g: Guest) {
       goWait(ctx, g);
       return;
     }
+    // no scanner working after all: a structural condition is treated on a best guess, anyone else sees a Consultant
     if (g.goal === 'assess') {
-      g.goal = 'consult';
+      if (conditionOf(g.condition).structural) goOnGuess(ctx, g);
+      else g.goal = 'consult';
       decide(ctx, g);
       return;
     }

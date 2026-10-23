@@ -26,6 +26,10 @@ export const CONSULT_FEE = 200;
 export const ASSESS_FEE = 250;
 /** How much likelier a guest's treatment is to work once a posture scan has shown just where to work. */
 export const SCAN_SUCCESS = 0.1;
+/** How sure a consultation can be of a structural condition: only a posture scan makes it surer. */
+export const STRUCTURAL_SURE = 0.6;
+/** How much less likely a treatment is to work when it is a best guess at a structural condition nobody scanned. */
+export const GUESS_PENALTY = 0.05;
 export const WINDOW_COST = 150;
 /** What each tile added to a built room costs. Each tile taken away gives back half. */
 export const ROOM_TILE_COST = 200;

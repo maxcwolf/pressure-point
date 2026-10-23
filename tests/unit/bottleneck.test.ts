@@ -43,6 +43,9 @@ describe('the inspector', () => {
   it('says how a station has been doing, once it has been tracked', () => {
     expect(busyNote({})).toBeNull();
     expect(busyNote({ busy: 0.62, staffed: 0.9 })).toBe('Over the last few days: busy 62% of the time, staffed 90%');
+    expect(busyNote({ busy: 0.62, staffed: 0.9 }, true)).toBe(
+      'Over the last few days: busy 62% of the time, working 90%',
+    );
   });
 });
 

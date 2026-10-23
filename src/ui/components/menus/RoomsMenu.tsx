@@ -2,6 +2,7 @@
 
 import { ITEMS, ROLES, ROOM_ORDER, roomHere, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
+import { itemUpkeep } from '../../../core/sim/machines';
 import { unlockedUpTo } from '../../../core/state/game';
 import { loadCampaign } from '../../../storage/campaign';
 import { useGame, useHud } from '../../hooks/use-hud';
@@ -62,7 +63,7 @@ function RoomCards() {
         const forKarma = starred ? undefined : roomKarmaLock(t, unlockedUpTo(s), unlocked);
         const locked = starred || forKarma !== undefined;
         const cures = machineCures(t);
-        const upkeep = r.required.reduce((sum, i) => sum + (ITEMS[i].machine?.upkeep ?? 0), 0);
+        const upkeep = r.required.reduce((sum, i) => sum + itemUpkeep(i), 0);
         return (
           <Button
             key={t}

@@ -8,6 +8,7 @@ import {
   conditionOf,
   CONSULT_FEE,
   GRUMP_REP,
+  GUESS_PENALTY,
   ITEMS,
   MODALITIES,
   modalityLabel,
@@ -20,6 +21,7 @@ import {
   SHOP_LINE_SKIP,
   SHOP_SPEND,
   STONE_USE,
+  STRUCTURAL_SURE,
   traitSpeed,
   XP_PER_GUEST,
 } from '../data';
@@ -46,6 +48,7 @@ import {
   machineSeconds,
   machineStrain,
   machineSuccess,
+  machineWorking,
   maybeOverload,
   perfectSetting,
   roomForModality,
@@ -54,7 +57,6 @@ import {
 import { goTo } from './movement';
 import { sellMushrooms } from './mushrooms';
 import { feelNoise, itemNoise, noisePenalty } from './noise';
-import { hasRoom } from './progress';
 import { countVisit } from './records';
 import { goRest, restPenalty, settleRest } from './recovery';
 import { greeting, mindsPrice, tipFor } from './regulars';
@@ -86,7 +88,8 @@ export function guestFee(s: GameState, g: Pick<Guest, 'condition' | 'regular'>):
 /** Lower is better. Guests steer toward tables that can actually deliver what they need. */
 export function stationScore(ctx: SimContext, it: Item, g: Guest) {
   const staff = stationStaff(ctx, it);
-  let score = it.queue.length + (it.serving ? 1 : 0) + (staff ? 0 : 2.5);
+  // a station that runs itself is never short of someone to work it
+  let score = it.queue.length + (it.serving ? 1 : 0) + (staff || !ITEMS[it.type].station?.staff ? 0 : 2.5);
   if (ITEMS[it.type].station?.goal === 'treat') {
     const problem = deliveryProblem(ctx, it, staff, modalityOf(g));
     if (problem === 'unqualified') score += 6;
@@ -159,7 +162,8 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
     0.56 +
       staff.skill * 0.09 +
       Math.min(1, g.diagnosis) * 0.15 +
-      (g.scanned ? SCAN_SUCCESS : 0) +
+      (g.scanned ? SCAN_SUCCESS + upgradeSuccess(g.scanLevel ?? 0) : 0) -
+      (g.guessed ? GUESS_PENALTY : 0) +
       setting.prestige +
       chartBonus(ctx, it) +
       blessBonus(ctx.world.roomOfItem(it), ctx.s.day) +
@@ -197,6 +201,10 @@ export function updateStations(ctx: SimContext, dt: number) {
   for (const it of ctx.s.items) {
     const def = ITEMS[it.type].station;
     if (!def) continue;
+    if (!def.staff) {
+      updateSelfServe(ctx, it, dt);
+      continue;
+    }
     // a group station is worked from its room's lead station, and has nobody posted at it
     const lead = def.group ? leadOf(ctx, it) : undefined;
     let staff = def.group ? stationStaff(ctx, it) : staffById(ctx, it.staffId);
@@ -269,6 +277,99 @@ export function updateStations(ctx: SimContext, dt: number) {
   }
 }
 
+/** Run a station that needs nobody: it calls the next guest whenever it is working, and serves them at its own pace. */
+function updateSelfServe(ctx: SimContext, it: Item, dt: number) {
+  const def = must(ITEMS[it.type].station, 'station');
+  const ready = ctx.world.usable(it);
+  let g = guestById(ctx, it.serving);
+  if (it.serving && (g?.station !== it.id || (g.state !== 'called' && g.state !== 'served'))) {
+    it.serving = 0;
+    g = undefined;
+  }
+  // broken with someone on it, they go back to the line, to be sent elsewhere if it stays down
+  if (g && !ready) {
+    resetGuest(ctx, g);
+    it.serving = 0;
+    it.progress = 0;
+    g = undefined;
+  }
+  if (it.queue.some((id) => guestById(ctx, id)?.station !== it.id))
+    it.queue = it.queue.filter((id) => guestById(ctx, id)?.station === it.id);
+  trackBusy(it, !!it.serving, ready, dt);
+  if (!ready) return;
+  if (!it.serving) {
+    const next = nextInLine(ctx, it);
+    if (next) callGuest(ctx, it, next);
+  }
+  if (g?.state !== 'served') return;
+  it.progress += dt / (def.seconds * machineSeconds(ctx, it));
+  if (it.progress >= 1) completeScan(ctx, it, g);
+}
+
+/** Whether a guest can be sent for a posture scan now: a scanner is built and working. */
+export const canScan = (ctx: SimContext) => machineWorking(ctx, 'posture_scanner');
+
+/**
+ * Send a diagnosed guest for treatment. Steep prices put some off once they hear what the treatment costs, the more so
+ * the less the center's name is worth: a new guest most, a plain regular half as much, a loyal one and an emergency
+ * not at all.
+ */
+export function goForTreatment(ctx: SimContext, g: Guest) {
+  g.goal = 'treat';
+  say(g, 'bubble-idea');
+  const treatPrice = priceFor(ctx.s, conditionOf(g.condition).modality);
+  const minds = mindsPrice(ctx.s, g);
+  if (minds > 0 && random(ctx.s) < minds * putOffChance(treatPrice, ctx.s.reputation)) {
+    g.outcome = 'stormed';
+    g.goal = 'leave';
+    feel(g, 'pricey');
+    countVisit(ctx, g, 'priced');
+    changeRep(ctx, -1);
+    say(g, 'bubble-cant-afford', 6);
+    emit(ctx, { type: 'float', text: 'Too pricey!', x: g.x, y: g.y, kind: 'bad' });
+    tipOnce(
+      ctx,
+      'pricey',
+      'A guest balked at your prices and left. High prices earn more per guest but drive some away.',
+      'bad',
+    );
+  }
+}
+
+/**
+ * Send a guest with a structural condition for treatment on the Consultant's best guess, there being no scanner
+ * working to make it sure: it is less likely to work.
+ */
+export function goOnGuess(ctx: SimContext, g: Guest) {
+  g.guessed = true;
+  tipOnce(
+    ctx,
+    'structural-guess',
+    `${g.name} has a structural condition, which a Consultant can see but not pin down, so their treatment is a best guess and less likely to work. A Posture Lab scans them and makes it certain.`,
+    'bad',
+    { kind: 'guest', id: g.id },
+  );
+  goForTreatment(ctx, g);
+}
+
+/** Finish a posture scan: the diagnosis is certain, and the treatment likelier to work, the more so on an upgraded scanner. */
+function completeScan(ctx: SimContext, it: Item, g: Guest) {
+  it.serving = 0;
+  it.progress = 0;
+  g.patience = Math.min(100, g.patience + 30);
+  addWear(ctx, it);
+  g.consults++;
+  g.diagnosis = 1;
+  g.scanned = true;
+  g.scanLevel = it.level;
+  const fee = Math.round(ASSESS_FEE * ctx.s.priceLevel);
+  earn(ctx, fee, 'consult', g.x, g.y);
+  g.spent += fee;
+  emit(ctx, { type: 'sfx', name: 'blip' });
+  goForTreatment(ctx, g);
+  decide(ctx, g);
+}
+
 /**
  * A guest due for treatment comes before a ride on the machine that treats them: whoever is riding it gets off at once,
  * their ride cut short but paid for, and whoever was on the way to one goes back to wait.
@@ -332,39 +433,25 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const extra = sellMushrooms(ctx, g);
     say(g, extra ? 'bubble-mushroom' : 'bubble-shopping', 4);
     g.goal = 'leave';
-  } else if (def.goal === 'consult' || def.goal === 'assess') {
+  } else if (def.goal === 'consult') {
     g.consults++;
-    const gain = def.goal === 'consult' ? 0.4 + staff.skill * 0.13 + rnd(ctx.s, 0, 0.15) : 0.45 + staff.skill * 0.08;
-    g.diagnosis = clamp(g.diagnosis + gain + nice, 0, 1);
-    // a scan shows the therapist just where to work
-    if (def.goal === 'assess') g.scanned = true;
-    const fee = Math.round((def.goal === 'consult' ? CONSULT_FEE : ASSESS_FEE) * price);
+    // a structural condition is plain to see but not to pin down: a consultation gets no surer of it than this
+    const structural = !!conditionOf(g.condition).structural;
+    const gain = 0.4 + staff.skill * 0.13 + rnd(ctx.s, 0, 0.15);
+    g.diagnosis = clamp(g.diagnosis + gain + nice, 0, structural ? STRUCTURAL_SURE : 1);
+    const fee = Math.round(CONSULT_FEE * price);
     earn(ctx, fee, 'consult', g.x, g.y);
     g.spent += fee;
-    if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= 4) {
-      g.goal = 'treat';
-      say(g, 'bubble-idea');
-      // steep prices put some guests off once they hear what the treatment costs, the more so the less the center's
-      // name is worth: a new guest most, a plain regular half as much, a loyal one and an emergency not at all
-      const minds = mindsPrice(ctx.s, g);
-      if (minds > 0 && random(ctx.s) < minds * putOffChance(treatPrice, ctx.s.reputation)) {
-        g.outcome = 'stormed';
-        g.goal = 'leave';
-        feel(g, 'pricey');
-        countVisit(ctx, g, 'priced');
-        changeRep(ctx, -1);
-        say(g, 'bubble-cant-afford', 6);
-        emit(ctx, { type: 'float', text: 'Too pricey!', x: g.x, y: g.y, kind: 'bad' });
-        tipOnce(
-          ctx,
-          'pricey',
-          'A guest balked at your prices and left. High prices earn more per guest but drive some away.',
-          'bad',
-        );
-      }
-    } else {
-      // unsure: a scan settles it if there is a Posture Lab, otherwise it is back to the Consultant
-      g.goal = def.goal === 'consult' && hasRoom(ctx, 'assess') ? 'assess' : 'consult';
+    if (structural) {
+      // only a scan makes it sure, and without one working, the Consultant makes their best guess
+      if (canScan(ctx)) {
+        g.goal = 'assess';
+        say(g, 'bubble-question');
+      } else goOnGuess(ctx, g);
+    } else if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= 4) goForTreatment(ctx, g);
+    else {
+      // unsure: a scan settles it if there is a scanner working, otherwise it is back to the Consultant
+      g.goal = canScan(ctx) ? 'assess' : 'consult';
       say(g, 'bubble-question');
       tipOnce(
         ctx,
@@ -467,6 +554,13 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
         );
       else if (problem === 'cold')
         tipOnce(ctx, 'botch-cold', 'The massage stones were cold. A Caretaker keeps Stone Warmers hot.', 'bad');
+      else if (g.guessed)
+        tipOnce(
+          ctx,
+          'failed-guess',
+          `${g.name}'s treatment was a best guess at a structural condition, and it missed. A Posture Lab would have scanned them first.`,
+          'bad',
+        );
       else if (!isTrip(mod))
         tipOnce(
           ctx,

@@ -2,17 +2,26 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ASSESS_FEE,
+  type ConditionId,
   conditionOf,
+  CONDITIONS,
   CONSULT_FEE,
   ITEMS,
   LOAN_MAX,
   LOAN_RATE,
   LOAN_STEP,
+  MODALITIES,
   PRICE_MAX,
   PRICE_MIN,
   ROOMS,
   SCAN_SUCCESS,
+  STRUCTURAL_SURE,
 } from '../../src/core/data';
+import { createContext } from '../../src/core/sim/context';
+import { machineUpkeep } from '../../src/core/sim/machines';
+import type { Sim } from '../../src/core/sim/sim';
+import { inUse, standingPoints } from '../../src/core/sim/standing';
+import type { Guest } from '../../src/core/state/types';
 import {
   addPostureLab,
   addRestroom,
@@ -234,37 +243,43 @@ describe('prices', () => {
   });
 });
 
+/** A guest on their way to a first consultation, with a condition of the test's choosing. */
+function forConsultation(sim: Sim, condition: ConditionId): Guest {
+  const s = sim.s;
+  /** Checked in, and not yet seen by a Consultant. */
+  const due = (g: Guest) => g.goal === 'consult' && g.consults === 0;
+  runUntil(sim, () => s.guests.some(due), 300);
+  const g = s.guests.find(due)!;
+  g.condition = condition;
+  return g;
+}
+
 describe('the Posture Lab', () => {
-  it('takes guests the consultant was unsure about, and charges for the scan', () => {
+  it('runs itself: it scans the guests the consultant was unsure about, with nobody posted at it', () => {
     const { sim, s, consultant } = openCenter(1);
     consultant.skill = 1;
     addPostureLab(sim);
-    // an unsure consultant at the desk, and another kept to the scanner
-    expect(sim.setDuty(consultant.id, 'assess', false)).toBe(true);
-    const scanning = hire(sim, 'consultant');
-    expect(sim.setDuty(scanning.id, 'consult', false)).toBe(true);
     const scanner = s.items.find((i) => i.type === 'posture_scanner')!;
     let sentForScan = false;
     runUntil(
       sim,
       () => {
         sentForScan ||= s.guests.some((g) => g.goal === 'assess');
+        expect(scanner.staffId).toBe(0);
         return scanner.wear > 0;
       },
       900,
     );
     expect(sentForScan).toBe(true);
-    const fees = s.ledger.consult + s.lastLedger.consult;
-    expect((fees - ASSESS_FEE) % 50).toBe(0);
+    expect(s.staff.filter((st) => st.role === 'consultant')).toHaveLength(1);
+    expect(s.staff.some((st) => st.post === scanner.id)).toBe(false);
+    expect(inconsistencies(sim)).toEqual([]);
   });
 
-  it('charges a little more than a consultation, and marks the guest as scanned', () => {
+  it('charges a little more than a consultation, and makes the diagnosis certain', () => {
     const { sim, s, consultant } = openCenter(1);
     consultant.skill = 1;
     addPostureLab(sim);
-    expect(sim.setDuty(consultant.id, 'assess', false)).toBe(true);
-    const scanning = hire(sim, 'consultant');
-    expect(sim.setDuty(scanning.id, 'consult', false)).toBe(true);
     /** All the consultation and scan fees so far. */
     const fees = () => s.ledger.consult + s.lastLedger.consult;
     let before = fees();
@@ -283,15 +298,29 @@ describe('the Posture Lab', () => {
     );
     expect(ASSESS_FEE).toBeGreaterThan(CONSULT_FEE);
     expect(charged).toBe(Math.round(ASSESS_FEE * s.priceLevel));
+    const scanned = s.guests.filter((g) => g.scanned);
     // a consultation alone never marks anyone
-    expect(s.guests.filter((g) => g.scanned).every((g) => g.consults >= 2)).toBe(true);
+    expect(scanned.every((g) => g.consults >= 2)).toBe(true);
+    expect(scanned.every((g) => g.diagnosis === 1)).toBe(true);
   });
 
-  it('says what a scan is worth', () => {
+  it('says what a scan is worth, and that it runs itself', () => {
     const bonus = `${Math.round(SCAN_SUCCESS * 100)}%`;
     expect(ROOMS.assess.desc).toContain(`adds ${bonus} to the guest’s chance of success`);
     expect(ITEMS.posture_scanner.desc).toContain(`adds ${bonus} to the guest’s chance of success`);
     expect(ROOMS.assess.desc).toContain('a little more than a second consultation');
+    expect(ROOMS.assess.staff).toBeUndefined();
+    expect(ITEMS.posture_scanner.station?.staff).toBeUndefined();
+    expect(ITEMS.posture_scanner.upkeep).toBeGreaterThan(0);
+  });
+
+  it('costs its upkeep each month, and counts as in use with nobody to work it', () => {
+    const { sim, s } = openCenter(1);
+    const lab = addPostureLab(sim);
+    const ctx = createContext(s);
+    expect(machineUpkeep(s)).toBe(ITEMS.posture_scanner.upkeep);
+    expect(inUse(s, lab)).toBe(true);
+    expect(standingPoints(ctx).unstaffed).toBe(0);
   });
 
   it('is skipped when there is not one', () => {
@@ -305,15 +334,78 @@ describe('the Posture Lab', () => {
     expect(sentForScan).toBe(false);
   });
 
-  it('sends guests back to the consultant if the lab is demolished', () => {
+  it('sends guests back to the consultant if the lab is demolished, or a structural one on a best guess', () => {
     const { sim, s } = openCenter(1);
     const lab = addPostureLab(sim);
-    runUntil(sim, () => s.guests.length > 0, 120);
-    const g = s.guests[0]!;
-    Object.assign(g, { goal: 'assess', state: 'waiting', station: 0, timer: 0, path: null, dest: null });
+    runUntil(sim, () => s.guests.length > 1, 240);
+    const [g, h] = s.guests as [Guest, Guest];
+    for (const x of [g, h])
+      Object.assign(x, { goal: 'assess', state: 'waiting', station: 0, timer: 0, path: null, dest: null });
+    g.condition = 'band';
+    h.condition = 'crick';
     sim.removeRoom(lab.id, 0);
     run(sim, 2);
     expect(g.goal).toBe('consult');
+    expect(h.guessed).toBe(true);
+    expect(['treat', 'leave']).toContain(h.goal);
+  });
+
+  it('sends nobody to a broken scanner', () => {
+    const { sim, s, consultant } = openCenter(1);
+    consultant.skill = 1;
+    addPostureLab(sim);
+    const scanner = s.items.find((i) => i.type === 'posture_scanner')!;
+    scanner.wear = 100;
+    const g = forConsultation(sim, 'crick');
+    runUntil(sim, () => g.consults > 0, 300);
+    expect(g.goal).not.toBe('assess');
+    expect(g.guessed).toBe(true);
+  });
+});
+
+describe('a structural condition', () => {
+  it('is marked on a few conditions of the spine and joints', () => {
+    const structural = CONDITIONS.filter((c) => c.structural).map((c) => c.id);
+    expect(structural).toContain('crick');
+    // nothing a new center sees before its first star, while it has no money for a lab
+    expect(structural.every((id) => MODALITIES[conditionOf(id).modality].star >= 1)).toBe(true);
+    expect(structural.length).toBeGreaterThanOrEqual(3);
+    expect(structural.length).toBeLessThan(CONDITIONS.length / 4);
+  });
+
+  it('is never sure from a consultation alone, and goes for a scan if there is a lab', () => {
+    const { sim, consultant } = openCenter(1);
+    consultant.skill = 5;
+    addPostureLab(sim);
+    const g = forConsultation(sim, 'crick');
+    runUntil(sim, () => g.consults > 0, 300);
+    expect(g.diagnosis).toBeLessThanOrEqual(STRUCTURAL_SURE);
+    expect(g.goal).toBe('assess');
+    expect(g.guessed).toBeFalsy();
+    runUntil(sim, () => !!g.scanned, 300);
+    expect(g.diagnosis).toBe(1);
+  });
+
+  it('is treated on a best guess after one consultation if there is no lab, and says why', () => {
+    const { sim, s, consultant } = openCenter(1);
+    consultant.skill = 5;
+    const g = forConsultation(sim, 'neck');
+    sim.drain();
+    runUntil(sim, () => g.consults > 0, 300);
+    expect(g.consults).toBe(1);
+    expect(g.guessed).toBe(true);
+    expect(['treat', 'leave']).toContain(g.goal);
+    expect(toasts(sim.drain()).some((t) => t.includes('structural condition'))).toBe(true);
+    expect(s.seenTips).toContain('structural-guess');
+  });
+
+  it('is sure enough from one consultation of anything else, for a skilled consultant', () => {
+    const { sim, consultant } = openCenter(1);
+    consultant.skill = 5;
+    const g = forConsultation(sim, 'band');
+    runUntil(sim, () => g.consults > 0, 300);
+    expect(g.guessed).toBeFalsy();
+    expect(g.diagnosis).toBeGreaterThan(STRUCTURAL_SURE);
   });
 });
 

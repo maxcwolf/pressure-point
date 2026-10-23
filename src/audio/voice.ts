@@ -41,7 +41,6 @@ import sweatShopOpen from '../sounds/announcer/sweat-shop-open.m4a';
 import vipVisiting from '../sounds/announcer/vip-visiting.m4a';
 import welcomeSeekers from '../sounds/announcer/welcome-seekers.m4a';
 import wellnessAtConsultation from '../sounds/announcer/wellness-at-consultation.m4a';
-import wellnessAtPosture from '../sounds/announcer/wellness-at-posture.m4a';
 import whaleSong from '../sounds/announcer/whale-song.m4a';
 
 /** Each recorded announcement, by the exact text shown with it. */
@@ -73,7 +72,6 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
     healingCenterOpen4,
   'Receptionist needed at the Reception Desk.': receptionistAtReception,
   'Wellness Consultant needed at the Consultation Room.': wellnessAtConsultation,
-  'Wellness Consultant needed at the Posture Lab.': wellnessAtPosture,
   'Massage Therapist needed at the Massage Suite.': massageAtMassage,
   'Acupuncturist needed at the Acupuncture Clinic.': acupuncturistAtAcupuncture,
   'Reiki Practitioner needed at the Reiki Studio.': reikiAtReiki,

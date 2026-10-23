@@ -10,6 +10,7 @@ import {
   GRADES,
   HEALS_A_POINT,
   IDLE_ROOM_POINTS,
+  ITEMS,
   PRESTIGE_POINTS,
   RANK_POINTS,
   ROOM_POINTS,
@@ -46,10 +47,15 @@ export const staffPoints = (rank: number) => RANK_POINTS * rank;
 /** Points for the guests healed: a point for every few. */
 export const healPoints = (healed: number) => Math.floor(healed / HEALS_A_POINT);
 
-/** Whether a room is in use: one where staff see guests, with someone on the payroll who can work in it. */
+/**
+ * Whether a room is in use: one where staff see guests, with someone on the payroll who can work in it, or one whose
+ * equipment serves guests by itself.
+ */
 export function inUse(s: GameState, room: Room): boolean {
   const role = ROOMS[room.type].staff;
-  return room.done && !!role && s.staff.some((st) => st.role === role && st.state !== 'leaving');
+  if (!room.done) return false;
+  if (!role) return ROOMS[room.type].required.some((t) => ITEMS[t].station && !ITEMS[t].station.staff);
+  return s.staff.some((st) => st.role === role && st.state !== 'leaving');
 }
 
 /**
