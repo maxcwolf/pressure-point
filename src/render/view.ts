@@ -74,6 +74,11 @@ export class View {
   /** Whether the camera has been moved, and turned, since the game opened: gliding to show something counts as neither. */
   private panned = false;
   private turned = false;
+  /**
+   * The quarter turn the walls are cut low for, and what hangs on them placed by: the camera's, but only once it is
+   * halfway round, where the walls changing are side on to it.
+   */
+  private facing: Turn = 0;
   private floor: Floor;
   readonly rooms: RoomsLayer;
   private items: ItemsLayer;
@@ -113,8 +118,8 @@ export class View {
     this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s), sim.world.w, clearOf(sim));
     this.sceneryPlot = sceneryKey(sim);
     this.scene.add(this.scenery);
-    this.shell = buildShell(sim.world.building, nearSides(this.rig.turn));
-    this.shellKey = `${footprintKey(sim.world.building)}|${this.rig.turn}`;
+    this.shell = buildShell(sim.world.building, nearSides(this.facing));
+    this.shellKey = `${footprintKey(sim.world.building)}|${this.facing}`;
     this.scene.add(this.shell);
     this.floor = new Floor(this.scene, sim);
     this.rooms = new RoomsLayer(this.scene, sim);
@@ -162,14 +167,23 @@ export class View {
   }
 
   /** Turn the camera round the building a quarter at a time, 1 one way and -1 the other, cutting low the walls that then
-   * face it. */
+   * face it as it passes halfway. */
   turnCamera(quarters: number) {
     this.turned = true;
     this.rig.turnBy(quarters);
-    this.rooms.setTurn(this.rig.turn);
+    // a camera that cuts rather than glides is round already
+    this.faceWalls();
+  }
+
+  /** Cut low the walls facing the camera once it is halfway round to a new side, and stand the others tall. */
+  private faceWalls() {
+    const turn = this.rig.facing;
+    if (turn === this.facing) return;
+    this.facing = turn;
+    this.rooms.setTurn(turn);
     // what hangs on the walls now cut low shows as a ghost of itself, and on the walls now standing tall as itself
-    this.items.setTurn(this.rig.turn);
-    this.overlays.turn = this.rig.turn;
+    this.items.setTurn(turn);
+    this.overlays.turn = turn;
     this.buildShell();
   }
 
@@ -181,14 +195,14 @@ export class View {
   /** Build the building's outer walls again if the building has grown, or the camera turned, since they were built. */
   private buildShell() {
     const fp = this.sim.world.building;
-    const key = `${footprintKey(fp)}|${this.rig.turn}`;
+    const key = `${footprintKey(fp)}|${this.facing}`;
     if (key === this.shellKey) return;
     this.shellKey = key;
     this.scene.remove(this.shell);
     this.shell.traverse((o) => {
       (o as Partial<THREE.Mesh>).geometry?.dispose();
     });
-    this.shell = buildShell(fp, nearSides(this.rig.turn));
+    this.shell = buildShell(fp, nearSides(this.facing));
     this.scene.add(this.shell);
   }
 
@@ -235,7 +249,8 @@ export class View {
     this.items.animate(this.time);
     this.overlays.updateRing(this.time);
     this.halos.update();
-    this.rig.update();
+    this.rig.update(dt);
+    this.faceWalls();
     if (lightScene(this.lights, this.sim.s, dt)) this.floor.draw();
     placeSun(this.lights.sun, this.rig.target, shadowReach(this.rig.dist));
     if (this.drawing) this.renderer.render(this.scene, this.rig.camera);
@@ -329,9 +344,10 @@ export class View {
     return this.panned && this.turned;
   }
 
-  /** Zoom in or out by a fraction. */
-  zoom(delta: number) {
-    this.rig.zoom(delta);
+  /** Zoom in or out by a fraction, toward the spot on the ground under a point on screen if given one. */
+  zoom(delta: number, clientX?: number, clientY?: number) {
+    const spot = clientX === undefined || clientY === undefined ? null : this.groundAt(clientX, clientY);
+    this.rig.zoom(delta, spot ? { x: spot.x, z: spot.y } : undefined);
   }
 
   // ---- Picking ---------------------------------------------------------------

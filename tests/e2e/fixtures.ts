@@ -35,6 +35,7 @@ interface Handle {
   state: GameState;
   view: {
     project(x: number, y: number, h?: number): Point;
+    groundAt(x: number, y: number): Point | null;
     pick(x: number, y: number): { kind: string; id: number } | null;
     dist: number;
     drawing: boolean;

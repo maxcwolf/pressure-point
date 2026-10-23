@@ -174,10 +174,10 @@ describe("the building's outer walls, turned", () => {
 
 describe('the camera, turned', () => {
   it('glides round to its new side', () => {
-    expect(glideAngle(0, 1)).toBeGreaterThan(0);
-    expect(glideAngle(0, 1)).toBeLessThan(1);
+    expect(glideAngle(0, 1, 1 / 60)).toBeGreaterThan(0);
+    expect(glideAngle(0, 1, 1 / 60)).toBeLessThan(1);
     let angle = 0;
-    for (let i = 0; i < 100; i++) angle = glideAngle(angle, Math.PI / 2);
+    for (let i = 0; i < 100; i++) angle = glideAngle(angle, Math.PI / 2, 1 / 60);
     expect(angle).toBe(Math.PI / 2);
   });
 
@@ -186,7 +186,7 @@ describe('the camera, turned', () => {
     for (const t of [1, 2, 3, 0] as const) {
       rig.turnBy(1);
       expect(rig.turn).toBe(t);
-      for (let i = 0; i < 100; i++) rig.update();
+      for (let i = 0; i < 100; i++) rig.update(1 / 60);
       const near = nearSides(t);
       const from = rig.camera.position.clone().sub(rig.target);
       expect(from.x > 0, `east at turn ${t}`).toBe(near.east);

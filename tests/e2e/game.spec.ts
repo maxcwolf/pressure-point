@@ -1222,9 +1222,17 @@ test.describe('controls and saving', () => {
     await game.settle();
     expect(await spot()).toBeCloseTo(stopped, 0);
     const dist = await game.eval((pp) => pp.view.dist);
-    await page.mouse.move(700, 450);
+    // the wheel zooms toward the spot under the pointer, which stays where it is on screen
+    const pointer = { x: 1000, y: 300 };
+    const ground = await game.eval((pp, p) => pp.view.groundAt(p.x, p.y)!, pointer);
+    await page.mouse.move(pointer.x, pointer.y);
     await page.mouse.wheel(0, -400);
-    expect(await game.eval((pp) => pp.view.dist)).toBeLessThan(dist);
+    // easing in over a few frames
+    await expect.poll(() => game.eval((pp) => pp.view.dist)).toBeLessThan(dist);
+    await game.cameraStill();
+    const at = await game.eval((pp, g) => pp.view.project(g.x, g.y), ground);
+    expect(Math.abs(at.x - pointer.x)).toBeLessThan(2);
+    expect(Math.abs(at.y - pointer.y)).toBeLessThan(2);
   });
 
   test('the pause menu shows the controls and resumes at the old speed', async ({ game, page }) => {
@@ -3240,6 +3248,18 @@ test.describe('turning the camera', () => {
     await game.cameraStill();
     await game.clickRoom('massage');
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
+    expect(game.errors).toEqual([]);
+  });
+});
+
+test.describe('the camera for a player who asks for less motion', () => {
+  test('cuts round and over rather than gliding', async ({ game, page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await game.start();
+    await page.keyboard.press('KeyE');
+    expect(await game.eval((pp) => [pp.view.turn, pp.view.cameraStill])).toEqual([1, true]);
+    await game.eval((pp) => pp.view.lookAt(10, 10));
+    expect(await game.eval((pp) => pp.view.cameraStill)).toBe(true);
     expect(game.errors).toEqual([]);
   });
 });
