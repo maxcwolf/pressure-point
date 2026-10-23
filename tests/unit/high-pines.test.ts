@@ -22,8 +22,9 @@ import {
 import { decayItems } from '../../src/core/sim/upkeep';
 import { discomfort, stoneCooling, updateWarmth, warmthAt } from '../../src/core/sim/warmth';
 import { disciplineOn, newGame } from '../../src/core/state/game';
-import { flakeHeight, flakeSpot } from '../../src/render/snowfall';
-import { buildRoom, runUntil } from './helpers';
+import { dropLine } from '../../src/render/rain';
+import { flakeHeight, flakeSpot, indoorsOf } from '../../src/render/snowfall';
+import { buildRoom, freshSim, runUntil } from './helpers';
 
 const SNOW: Snowfall = CENTERS.highpines.snow ?? { chance: 0, days: 1 };
 
@@ -223,5 +224,17 @@ describe('falling snow', () => {
     expect(Math.min(...spots.map((p) => p.z))).toBeLessThan(0);
     expect(Math.max(...spots.map((p) => p.z))).toBeGreaterThan(H);
     expect(flakeSpot(7)).toEqual(flakeSpot(7));
+  });
+
+  it('never falls inside the building, whose rooms are drawn with no roof, and nor does the rain', () => {
+    const sim = freshSim();
+    const indoors = indoorsOf(sim);
+    const flakes = Array.from({ length: 2000 }, (_, i) => flakeSpot(i, sim.world.w, indoors));
+    expect(flakes.filter((p) => indoors(p.x, p.z))).toEqual([]);
+    // the rain's streaks run from their foot up and back along the wind; neither end is indoors
+    const drops = Array.from({ length: 1000 }, (_, i) => dropLine(i, 0.4, sim.world.w, indoors));
+    expect(drops.filter(([x0, , z0, x1, , z1]) => indoors(x0, z0) || indoors(x1, z1)).length).toBeLessThan(15);
+    // and without the building, some would
+    expect(Array.from({ length: 2000 }, (_, i) => flakeSpot(i, sim.world.w)).some((p) => indoors(p.x, p.z))).toBe(true);
   });
 });
