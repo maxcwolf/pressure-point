@@ -1,27 +1,32 @@
 // Warnings in the scene as a player sees them: from where the game starts (distance 41) on a plain 1x screen, not
-// zoomed in. A row of people saying alarms in red, needs in amber and small talk in white; the markers over the squares
-// furniture is used from, staff on purple and guests on their own; and markers over neighbouring broken and filthy
-// items. The clock is held, so people, bubbles and their pulse stand still for the picture.
+// zoomed in. A back row of people in trouble right now, in red, or with a need that will become trouble, in amber; a
+// front row saying the same sort of thing in white, as the game has them say it or they are already seeing to it; the
+// markers over the squares furniture is used from, staff on purple and guests on their own; and markers over
+// neighbouring broken and filthy items. The clock is held, so people, bubbles and their pulse stand still.
 import { NOON_AT } from '../../src/render/daylight';
 import { expect, test } from '../e2e/fixtures';
 
-/** What each person in the row says, left to right. */
-const SAYING = [
-  'bubble-quitting',
-  'bubble-impatient',
-  'bubble-hurt',
-  'bubble-restroom',
-  'bubble-thirsty',
-  'bubble-hungry',
-  'bubble-exhausted',
-  'bubble-break',
-  'bubble-training',
-  'bubble-shopping',
-  'bubble-happy',
-  'bubble-angry',
-  'bubble-sick',
-  'bubble-thanks',
-] as const;
+/** What each person in the rows is going through, back row then front, left to right, and anything they say. */
+const PEOPLE: readonly { staff?: true; is: Record<string, number | string>; says?: string }[] = [
+  // red: about to quit, fed up with waiting, getting worse while waiting
+  { staff: true, is: { morale: 0, unhappyT: 1e9 } },
+  { is: { state: 'waiting', patience: 10 } },
+  { is: { state: 'waiting', patience: 80, health: 20 } },
+  // amber: bursting or parched in the queue, worn out with no break coming
+  { is: { state: 'waiting', patience: 80, bladder: 96 } },
+  { is: { state: 'waiting', patience: 80, thirst: 96 } },
+  { staff: true, is: { energy: 10 } },
+  // a treatment that failed
+  { is: {}, says: 'bubble-failed' },
+  // white: gone home worse, on the way to the toilet, worn out on the way to a break, just eaten, and small talk
+  { is: {}, says: 'bubble-hurt' },
+  { is: { state: 'toNeed', bladder: 96 }, says: 'bubble-restroom' },
+  { staff: true, is: { energy: 10, state: 'toBreak' } },
+  { staff: true, is: {}, says: 'bubble-hungry' },
+  { is: {}, says: 'bubble-happy' },
+  { is: {}, says: 'bubble-sick' },
+  { is: {}, says: 'bubble-thanks' },
+];
 
 test.describe('alarms in the scene', () => {
   // the scene is the picture
@@ -64,7 +69,7 @@ test.describe('alarms in the scene', () => {
     // from here on the game's own frames stop, and the test draws its frames itself, each the same step
     await page.clock.pauseAt(Date.now() + 60_000);
     await page.evaluate(
-      async ([saying, x, y]) => {
+      async ([people, x, y]) => {
         const { demoGuest, demoStaff, LAB_LOOK } = await import(
           /* @vite-ignore */ `${location.origin}/src/lab/people.ts`
         );
@@ -74,13 +79,13 @@ test.describe('alarms in the scene', () => {
         };
         pp.view.time = 100;
         const tops = [0xe5564d, 0x7a6fbf, 0xf2c14e, 0x4a9fe0];
-        // alarms and needs in the back row, small talk in the front one
-        saying.forEach((bubble, i) => {
+        people.forEach(({ staff, is, says }, i) => {
           const look = { ...LAB_LOOK, top: tops[i % tops.length], sex: i % 2 ? 'male' : 'female' };
-          const c = i === 0 ? demoStaff(look, 'therapist') : demoGuest(look, 'knotted');
+          const c = staff ? demoStaff(look, 'therapist') : demoGuest(look, 'knotted');
           const at = { x: x - 5 + (i % 7) * 1.6, y: y - 2 + Math.floor(i / 7) * 2.5 };
-          Object.assign(c, { id: 9000 + i, ...at, h: 0, pose: 'stand', facing: Math.PI / 4, bubble, bubbleT: 1e9 });
-          (i === 0 ? pp.state.staff : pp.state.guests).push(c);
+          Object.assign(c, { id: 9000 + i, ...at, h: 0, pose: 'stand', facing: Math.PI / 4 }, is);
+          if (says) Object.assign(c, { bubble: says, bubbleT: 1e9 });
+          (staff ? pp.state.staff : pp.state.guests).push(c);
         });
         pp.view.setMarkers(
           ['role-therapist', 'role-receptionist', 'marker-staff', 'marker-guest'].map((icon, i) => ({
@@ -90,7 +95,7 @@ test.describe('alarms in the scene', () => {
           })),
         );
       },
-      [SAYING, box.x, box.y] as const,
+      [PEOPLE, box.x, box.y] as const,
     );
     // half a second of frames, every bubble popping in and settling, and only the last drawn, as drawing is slow in software
     await game.eval((pp) => {

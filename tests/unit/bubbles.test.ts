@@ -1,7 +1,8 @@
-// Warnings in the scene read at a glance: an alarm's bubble is red and pulses, a need's is amber, every bubble pops in
-// and shrinks away and stays long enough to read at any speed, a guest running out of patience says so now and then,
-// bubbles and markers keep a least size on screen as the camera pulls back, markers over neighbouring items do not
-// stack into towers, and a runner's ring pulses.
+// Warnings in the scene read at a glance: an alarm's bubble is red and pulses, a need's is amber, and only what is
+// happening to someone makes it so; every bubble pops in and shrinks away, unless less motion is asked for, and stays
+// long enough to read at any speed; a guest running out of patience says so now and then; bubbles and markers keep a
+// least size on screen as the camera pulls back, but never grow past half as big again; markers over neighbouring items
+// do not stack into towers; and a runner's ring pulses.
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -21,14 +22,13 @@ import {
   quiet,
   type Said,
   SHRINK_OUT,
-  toneOf,
 } from '../../src/render/bubbles';
 import { runnerPulse } from '../../src/render/halos';
 import { itemMarkers, markerOf } from '../../src/render/markers';
 import { buildCharacter, type CharRig } from '../../src/render/models/character';
-import { hasVariant, iconTexture } from '../../src/render/models/icons';
+import { iconTexture } from '../../src/render/models/icons';
 import { bubbleWanted, moodOf, poseChar } from '../../src/render/pose';
-import { BUBBLE_PX, floorScale, MARKER_PX, pixelsPerMeter, readable } from '../../src/render/readable';
+import { BUBBLE_PX, floorScale, MARKER_PX, MAX_GROWTH, pixelsPerMeter, readable } from '../../src/render/readable';
 
 /** A picture that never arrives, as the icons' atlas a speech bubble is drawn from is never loaded in Node. */
 class NoImage {
@@ -51,15 +51,26 @@ function waiting(patience: number) {
 const white = (id: Said['id']): Said => ({ id, tone: 'bubble' });
 
 describe('the color of a bubble', () => {
-  it('is red for trouble to act on now, amber for a need, and white for the rest', () => {
-    for (const id of ['bubble-quitting', 'bubble-impatient', 'bubble-hurt'] as const)
-      expect(toneOf(id), id).toBe('alarm');
-    for (const id of ['bubble-restroom', 'bubble-thirsty', 'bubble-hungry', 'bubble-exhausted'] as const)
-      expect(toneOf(id), id).toBe('need');
-    for (const id of ['bubble-happy', 'bubble-break', 'bubble-training', 'bubble-shopping'] as const)
-      expect(toneOf(id), id).toBe('bubble');
-    // patience running out is the one alarm with an amber stage before it
-    expect(hasVariant('bubble-impatient', 'need')).toBe(true);
+  it('goes with what is happening to someone, not with the icon: what the game has them say is white', () => {
+    // a guest who went home worse says so, but it is too late to act on
+    const home = demoGuest(LAB_LOOK, 'stiff_neck' as never);
+    say(home, 'bubble-hurt', 3);
+    expect(bubbleWanted(home, 0, moodOf(home))).toEqual(white('bubble-hurt'));
+    // a guest on their way to the toilet is seeing to it
+    const going = waiting(80);
+    going.state = 'toNeed';
+    going.bladder = 96;
+    expect(bubbleWanted(going, 0, moodOf(going))).toBeNull();
+    say(going, 'bubble-restroom', 3);
+    expect(bubbleWanted(going, 0, moodOf(going))).toEqual(white('bubble-restroom'));
+    // and so is a member of staff worn out on their way to a break, or one who has just eaten
+    const tired = demoStaff(LAB_LOOK, 'therapist');
+    tired.energy = 10;
+    tired.state = 'toBreak';
+    expect(bubbleWanted(tired, 0, moodOf(tired))).toEqual(white('bubble-exhausted'));
+    const fed = demoStaff(LAB_LOOK, 'therapist');
+    say(fed, 'bubble-hungry', 2);
+    expect(bubbleWanted(fed, 0, moodOf(fed))).toEqual(white('bubble-hungry'));
   });
 
   it('comes from its own cells of the atlas, and falls back to the white bubble where there is none', () => {
@@ -139,6 +150,12 @@ describe('a bubble coming and going', () => {
     expect(bubbleScale(shown, 13)).toBe(1);
   });
 
+  it('is simply there or not when less motion is asked for: no pop, no pulse, no shrink', () => {
+    const alarm = follow(quiet(), { id: 'bubble-quitting', tone: 'alarm' }, 10);
+    for (let t = 10; t < 12; t += 0.05) expect(bubbleScale(alarm, t, true)).toBe(1);
+    expect(bubbleScale({ ...alarm, gone: 12 }, 12, true)).toBe(0);
+  });
+
   it('pulses gently while it is an alarm, and holds still otherwise', () => {
     const alarm = follow(quiet(), { id: 'bubble-quitting', tone: 'alarm' }, 0);
     const sizes = Array.from({ length: 200 }, (_, i) => bubbleScale(alarm, 1 + i / 100));
@@ -194,9 +211,14 @@ describe('the least size of a bubble or marker on screen', () => {
     expect(BUBBLE_SIZE * start).toBeLessThan(BUBBLE_PX);
     expect(BUBBLE_SIZE * start * floorScale(BUBBLE_SIZE, start, BUBBLE_PX)).toBeCloseTo(BUBBLE_PX);
     expect(floorScale(BUBBLE_SIZE, pixelsPerMeter(30, 16, 900), BUBBLE_PX)).toBe(1);
-    // as far out as the game goes, still as big on screen
+  });
+
+  it('never grows a sprite past half as big again, so far out a bubble is no bigger than a head', () => {
+    // as far out as the game goes, a marker would need nearly twice its size to keep its least size
     const far = pixelsPerMeter(30, 78, 900);
-    expect(0.62 * far * floorScale(0.62, far, MARKER_PX)).toBeCloseTo(MARKER_PX);
+    expect(MARKER_PX / (0.62 * far)).toBeGreaterThan(MAX_GROWTH);
+    expect(floorScale(0.62, far, MARKER_PX)).toBe(MAX_GROWTH);
+    expect(floorScale(BUBBLE_SIZE, pixelsPerMeter(30, 41, 900), BUBBLE_PX)).toBeLessThan(MAX_GROWTH);
   });
 
   it('grows a sprite only while it is drawn', () => {
@@ -214,7 +236,7 @@ describe('the least size of a bubble or marker on screen', () => {
     const group = null as unknown as THREE.Group;
     sprite.onBeforeRender(renderer, scene, camera, sprite.geometry, sprite.material, group);
     const drawn = sprite.scale.x;
-    expect(drawn * pixelsPerMeter(30, 78, 900)).toBeCloseTo(MARKER_PX);
+    expect(drawn).toBeCloseTo(0.62 * MAX_GROWTH);
     expect(new THREE.Vector3().setFromMatrixScale(sprite.matrixWorld).x).toBeCloseTo(drawn);
     sprite.onAfterRender(renderer, scene, camera, sprite.geometry, sprite.material, group);
     expect(sprite.scale.x).toBeCloseTo(0.62);

@@ -3,7 +3,7 @@
 // a gentle pulse on an alarm; and a least time on screen, so a bubble said at speed 3 is still there to be read.
 
 import type { BubbleId } from '../core/state/types';
-import { hasVariant, type IconVariant } from './models/icons';
+import type { IconVariant } from './models/icons';
 
 /** How big a speech bubble is, in meters across, before anything keeps it readable from afar (see readable.ts). */
 export const BUBBLE_SIZE = 0.62;
@@ -34,15 +34,11 @@ export interface Said {
   tone: BubbleTone;
 }
 
-/** The usual color of an icon's bubble: red if the atlas has it as an alarm, amber as a need, white otherwise. */
-export function toneOf(id: BubbleId): BubbleTone {
-  if (hasVariant(id, 'alarm')) return 'alarm';
-  if (hasVariant(id, 'need')) return 'need';
-  return 'bubble';
-}
-
-/** An icon said in its usual color. */
-export const saying = (id: BubbleId): Said => ({ id, tone: toneOf(id) });
+/**
+ * An icon said in a bubble of a color: white unless the moment calls for red or amber. The color goes with what is
+ * happening to someone, not with the icon, so the same hourglass is white on someone already on their way.
+ */
+export const saying = (id: BubbleId, tone: BubbleTone = 'bubble'): Said => ({ id, tone });
 
 /**
  * How often, and for how long, a guest whose patience is running out shows it in an amber hourglass, in seconds: now
@@ -92,9 +88,13 @@ function overshoot(f: number) {
   return Math.max(0, 1 + (c + 1) * g * g * g + c * g * g);
 }
 
-/** How big a bubble shows at time `t`, as a share of its size: popping in, shrinking away, and pulsing if an alarm. */
-export function bubbleScale(shown: BubbleShown, t: number): number {
+/**
+ * How big a bubble shows at time `t`, as a share of its size: popping in, shrinking away, and pulsing if an alarm. Kept
+ * `still`, for a player who asks for less motion, it is there at its own size or not at all.
+ */
+export function bubbleScale(shown: BubbleShown, t: number, still = false): number {
   if (!shown.said) return 0;
+  if (still) return shown.gone === null ? 1 : 0;
   const age = t - shown.since;
   let s = age < POP_IN ? overshoot(Math.max(0, age) / POP_IN) : 1;
   if (shown.gone !== null) s *= Math.max(0, 1 - (t - shown.gone) / SHRINK_OUT);

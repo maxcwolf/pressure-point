@@ -19,6 +19,7 @@ import {
   type Said,
   saying,
 } from './bubbles';
+import { prefersReducedMotion } from './camera-math';
 import { rattle, RATTLE_PEAK } from './item-cues';
 import { buildBurst } from './models/burst';
 import { type CharRig, cureRig, endCure, type Joints } from './models/character';
@@ -756,28 +757,30 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
 
 /**
  * What someone has to say, in what color, before any bubble is held up for reading: first trouble a player should act
- * on now, in red (about to quit, fed up, getting worse while waiting), then whatever the game has them say, then needs
- * in amber (the toilet, a drink, worn out), then what staff are busy with, and last, now and then, an amber hourglass
- * from a guest running out of patience.
+ * on now, in red (about to quit, fed up, getting worse while waiting), then whatever the game has them say, in white,
+ * then needs in amber (bursting or parched while stuck waiting, worn out with no break coming), then what staff are
+ * busy with, and last, now and then, an amber hourglass from a guest running out of patience. Only what is happening
+ * to someone this moment turns a bubble red or amber: a guest on their way to the toilet, or a member of staff on their
+ * way to a break, is already seeing to it.
  */
 export function bubbleWanted(c: Char, t: number, mood: Mood): Said | null {
-  if (c.kind === 'staff' && aboutToQuit(c)) return saying('bubble-quitting');
+  if (c.kind === 'staff' && aboutToQuit(c)) return saying('bubble-quitting', 'alarm');
   const waiting = c.kind === 'guest' && (c.state === 'waiting' || c.state === 'toWait');
   if (c.kind === 'guest') {
-    if (mood === 'fedUp') return saying('bubble-impatient');
-    if (waiting && !c.outcome && c.health < POOR_CONDITION) return saying('bubble-hurt');
+    if (mood === 'fedUp') return saying('bubble-impatient', 'alarm');
+    if (waiting && !c.outcome && c.health < POOR_CONDITION) return saying('bubble-hurt', 'alarm');
   }
   if (c.bubbleT > 0 && c.bubble) return saying(c.bubble);
   if (c.kind === 'guest') {
-    if (waiting && c.bladder >= 95) return saying('bubble-restroom');
-    if (waiting && c.thirst >= 95) return saying('bubble-thirsty');
-    if (mood === 'impatient' && nudging(t, c.id)) return { id: 'bubble-impatient', tone: 'need' };
+    if (waiting && c.bladder >= 95) return saying('bubble-restroom', 'need');
+    if (waiting && c.thirst >= 95) return saying('bubble-thirsty', 'need');
+    if (mood === 'impatient' && nudging(t, c.id)) return saying('bubble-impatient', 'need');
     return null;
   }
   if (c.kind !== 'staff') return null;
   if (c.state === 'onBreak') return saying('bubble-break');
   if (c.state === 'training') return saying('bubble-training');
-  if (c.energy < 15) return saying('bubble-exhausted');
+  if (c.energy < 15) return saying('bubble-exhausted', c.state === 'toBreak' ? 'bubble' : 'need');
   return null;
 }
 
@@ -805,7 +808,8 @@ function poseBubble(rig: CharRig, c: Char, t: number, mood: Mood) {
     sprite.material.needsUpdate = true;
     sprite.center.set(0.5, BUBBLE_TAIL);
   }
-  const size = bubbleScale(shown, t);
+  // with less motion asked for, no pop, no shrink and no pulse
+  const size = bubbleScale(shown, t, prefersReducedMotion());
   sprite.visible = size > 0;
   sprite.scale.setScalar(BUBBLE_SIZE * size);
   sprite.position.y = (c.pose === 'lie' ? 0.72 : 1.44) + Math.sin(t * 3 + c.id) * 0.04;

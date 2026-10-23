@@ -1,6 +1,7 @@
 // Sprites that stay readable as the camera pulls back. A speech bubble or a marker has a size in the world, which is
 // right close up; from where the game starts on a plain screen it would be a 20-pixel smudge, and further out smaller
-// still. So each is drawn at least so many pixels across, whatever the distance, and at its own size when nearer.
+// still. So each is drawn at least so many pixels across, and at its own size when nearer, but never more than half as
+// big again as its own size: far out, a bubble bigger than a head would hide the people it is about.
 
 import * as THREE from 'three';
 
@@ -8,13 +9,19 @@ import * as THREE from 'three';
 export const BUBBLE_PX = 32;
 /** The least a marker's sprite covers, over furniture or the squares it is used from: its icon about 24 pixels. */
 export const MARKER_PX = 26;
+/** The most a sprite grows to stay readable, as a share of its own size. */
+export const MAX_GROWTH = 1.5;
 
 /** How many pixels a meter covers on screen this far from a camera with this field of view, in a picture this tall. */
 export const pixelsPerMeter = (fovDegrees: number, distance: number, height: number) =>
   height / (2 * distance * Math.tan(THREE.MathUtils.degToRad(fovDegrees / 2)));
 
-/** How much bigger than its size something `meters` across is drawn so that it covers at least `px` pixels. */
-export const floorScale = (meters: number, perMeter: number, px: number) => Math.max(1, px / (meters * perMeter));
+/**
+ * How much bigger than its size something `meters` across is drawn so that it covers at least `px` pixels, up to
+ * `MAX_GROWTH`.
+ */
+export const floorScale = (meters: number, perMeter: number, px: number) =>
+  Math.min(Math.max(1, px / (meters * perMeter)), MAX_GROWTH);
 
 const eye = new THREE.Vector3();
 const at = new THREE.Vector3();
