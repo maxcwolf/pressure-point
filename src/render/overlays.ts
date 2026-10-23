@@ -14,6 +14,7 @@ import { placeItemModel } from './items';
 import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import type { Marker, OverlayTile } from './overlay-codes';
+import { drawnAt } from './people';
 import { type Selection, shown } from './picking';
 import { MARKER_PX, readable } from './readable';
 import { WALL_T } from './shared';
@@ -35,8 +36,8 @@ function frontArrow(): THREE.BufferGeometry {
 
 /** How high over the floor the marker over a selected person floats, clear of a speech bubble (1.72, 0.62 across). */
 const MARKER_HEIGHT = 2.35;
-/** How high it floats over someone lying down, whose bubble sits at 1.0. */
-const MARKER_LYING = 1.6;
+/** How high it floats over someone lying down, over what they lie on, clear of their bubble, which sits 0.72 up. */
+const MARKER_LYING = 1.63;
 
 /** A small chevron pointing down, wide side up, for the marker over a selected person. */
 function chevron(): THREE.BufferGeometry {
@@ -379,11 +380,14 @@ export class Overlays {
       const c = this.sim.char(sel.id);
       if (c) {
         this.ring.visible = true;
-        this.ring.position.set(c.x, 0.04, c.y);
+        // under and over them as they are drawn, which can be a little way from where the sim has them
+        const d = drawnAt.get(c.id);
+        const [x, z] = d ? [d.x, d.z] : [c.x, c.y];
+        this.ring.position.set(x, 0.04, z);
         this.ring.scale.setScalar(1 + Math.sin(t * 5) * 0.06);
         this.marker.visible = true;
-        const h = c.pose === 'lie' ? MARKER_LYING : MARKER_HEIGHT;
-        this.marker.position.set(c.x, h + Math.sin(t * 3) * 0.06, c.y);
+        const h = (d?.y ?? c.h) + ((d ? d.lie : c.pose === 'lie') ? MARKER_LYING : MARKER_HEIGHT);
+        this.marker.position.set(x, h + Math.sin(t * 3) * 0.06, z);
         this.marker.rotation.y = t * 1.5;
       }
     } else if (sel?.kind === 'item') {

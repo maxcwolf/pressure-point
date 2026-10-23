@@ -21,6 +21,12 @@ import { poseChar, type WorkStyle } from './pose';
 const FADE_TILES = 1;
 
 /**
+ * Where each person on show is drawn this frame, by id, which can be a little way from where the sim has them as they
+ * climb on and off things or step aside: for the ring under someone selected and the halos, to stay under them.
+ */
+export const drawnAt = new Map<number, { x: number; y: number; z: number; lie: boolean }>();
+
+/**
  * How big someone is drawn, from 0 to 1: on the pavement, they grow from nothing over the first tile from where people
  * arrive, and shrink away over the last tile to where they leave, rather than popping in and out of sight there.
  */
@@ -103,7 +109,10 @@ export class PeopleLayer {
       rig.group.visible = shown;
       rig.pick.visible = shown;
       if (!shown && rig.smoke) rig.smoke.visible = false;
-      if (!shown) continue;
+      if (!shown) {
+        drawnAt.delete(c.id);
+        continue;
+      }
       poseChar(rig, seen.c, t, dt, {
         style: this.workStyle(c),
         door,
@@ -120,9 +129,12 @@ export class PeopleLayer {
       });
       rig.group.scale.setScalar(size);
       if (c.kind === 'guest') this.inMachine(rig, c, t);
+      const { x, y, z } = rig.group.position;
+      drawnAt.set(c.id, { x, y, z, lie: seen.c.pose === 'lie' });
     }
     for (const [id, rig] of this.chars) {
       if (live.has(id)) continue;
+      drawnAt.delete(id);
       this.scene.remove(rig.group);
       if (rig.smoke) this.scene.remove(rig.smoke);
       disposeOwned(rig.group);
