@@ -21,6 +21,7 @@ const TABS: readonly { id: RoomsTab; name: string }[] = [
 /** The kinds of room, and the templates saved, a tab each. */
 export function RoomsMenu() {
   const hud = useHud();
+  const guide = hud.guide();
   return (
     <div class="panel menu">
       <h3>Build a room</h3>
@@ -28,7 +29,7 @@ export function RoomsMenu() {
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx('tab', hud.roomsTab === t.id && 'on')}
+            class={cx('tab', hud.roomsTab === t.id && 'on', guide === `tab:${t.id}` && 'guide')}
             onPress={() => {
               hud.roomsTab = t.id;
             }}

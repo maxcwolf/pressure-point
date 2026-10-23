@@ -124,7 +124,7 @@ export function ItemsMenu() {
         {places.map((p) => (
           <Button
             key={p}
-            class={cx('tab', place === p && 'on')}
+            class={cx('tab', place === p && 'on', p === 'all' && guide === 'filter:place' && 'guide')}
             onPress={() => {
               hud.itemPlace = p;
             }}
@@ -137,7 +137,12 @@ export function ItemsMenu() {
         {[{ id: 'all' as const, label: 'Everything' }, ...ITEM_KINDS].map((k) => (
           <Button
             key={k.id}
-            class={cx('tab', 'small', hud.itemKind === k.id && 'on')}
+            class={cx(
+              'tab',
+              'small',
+              hud.itemKind === k.id && 'on',
+              k.id === 'all' && guide === 'filter:kind' && 'guide',
+            )}
             onPress={() => {
               hud.itemKind = k.id;
             }}

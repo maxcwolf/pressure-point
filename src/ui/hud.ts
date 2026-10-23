@@ -14,7 +14,7 @@ import { loadDisplay } from '../storage/display';
 import { saveTutorialPref } from '../storage/settings';
 import { loadTemplates } from '../storage/templates';
 import type { GameHost } from './host';
-import type { ItemKind, Place } from './lib/catalog';
+import { filterItems, type ItemKind, type Place } from './lib/catalog';
 import { mustAnswer, pendingDialog, raise, type Raised, stillDue } from './lib/dialogs';
 import { ageMessages, SHOWN, spareMessages, withMessage } from './lib/messages';
 import type { OverlayMode } from './lib/overlays';
@@ -249,21 +249,27 @@ export class HudState {
   /**
    * What the tutorial's ring is on, from its step in hand and what is open: the button of the menu the step wants, then
    * the tab and card in it, then the blueprint's Build button once a room is planned. Nothing while the thing wanted is
-   * in hand, since the tool's hint says what to do with it, or while there is no step to point for.
+   * in hand, since the tool's hint says what to do with it, or while the advisor's card is not the tutorial's, such as
+   * when someone is about to quit.
    */
   guide(): string | null {
-    const want = this.host.sim.tutorialStep()?.want;
+    const want = this.host.sim.adviceNote().step?.want;
     if (!want || want.kind === 'look') return null;
     const { tools } = this.host;
     const tool = tools.tool;
     if (want.kind === 'item') {
       if (tool.kind === 'item') return null;
-      return this.menu === 'items' ? `item:${want.type}` : 'menu:items';
+      if (this.menu !== 'items') return 'menu:items';
+      // a filter that hides the card wanted is undone first
+      if (!filterItems([want.type], this.itemPlace, 'all').length) return 'filter:place';
+      if (!filterItems([want.type], 'all', this.itemKind).length) return 'filter:kind';
+      return `item:${want.type}`;
     }
     if (want.kind === 'room') {
       // dragging out the floor and placing the door have the hint to go by, and a ready blueprint wants building
       if (tool.kind === 'room') return tools.plan?.ready ? 'plan:build' : null;
-      return this.menu === 'rooms' && this.roomsTab === 'rooms' ? `room:${want.type}` : 'menu:rooms';
+      if (this.menu !== 'rooms') return 'menu:rooms';
+      return this.roomsTab === 'rooms' ? `room:${want.type}` : 'tab:rooms';
     }
     if (this.menu !== 'hire') return 'menu:hire';
     return this.hireRole === want.role ? 'hire:first' : `role:${want.role}`;
@@ -293,10 +299,10 @@ export class HudState {
     this.update();
   }
 
-  /** Skip the rest of the tutorial in this game. */
+  /** Skip the rest of the tutorial in this game. Its word to say so comes with the next frame's events. */
   skipTutorial() {
     this.host.sim.skipTutorial();
-    this.handle(this.host.sim.drain());
+    this.update();
   }
 
   /** Take the player to what a message is about: select it, show its inspector and glide the camera over. */
