@@ -3,6 +3,7 @@
 // and whether a new Willow Lane game has the tutorial.
 import { CENTERS, type Difficulty, DISCIPLINE_ORDER, DISCIPLINES, type Offering, SANDBOX_MONEY } from '../core/data';
 import { readDifficulty } from '../core/difficulty';
+import { loadCampaign } from './campaign';
 import { isRecord } from './json';
 
 const KEY = 'pressure-point-settings';
@@ -159,20 +160,25 @@ export function saveAudio(prefs: AudioPrefs) {
 
 const TUTORIAL_KEY = 'pressure-point-tutorial';
 
-/** Whether a new Willow Lane game walks through its opening with the tutorial: on until it has been done once. */
+/**
+ * Whether a new Willow Lane game walks through its opening with the tutorial: as the player last set it, or until
+ * they have, only while the campaign has no stars yet, so a player who has played before is not walked through again.
+ */
 export function loadTutorialPref(): boolean {
   try {
-    const raw: unknown = JSON.parse(localStorage.getItem(TUTORIAL_KEY) ?? 'true');
-    return typeof raw === 'boolean' ? raw : true;
+    const set = localStorage.getItem(TUTORIAL_KEY);
+    if (set === 'on') return true;
+    if (set === 'off') return false;
   } catch {
-    return true;
+    // as if unset
   }
+  return !Object.keys(loadCampaign().stars).length;
 }
 
-/** Remember whether the next Willow Lane game has the tutorial. */
+/** Remember whether the next Willow Lane game has the tutorial, as the player set it or as it ended. */
 export function saveTutorialPref(on: boolean) {
   try {
-    localStorage.setItem(TUTORIAL_KEY, JSON.stringify(on));
+    localStorage.setItem(TUTORIAL_KEY, on ? 'on' : 'off');
   } catch {
     // the switch still applies to the game in progress
   }

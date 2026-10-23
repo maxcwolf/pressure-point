@@ -2290,7 +2290,7 @@ test.describe('the tutorial', () => {
     await expect(card).toHaveCount(0);
     await expect(page.locator('.guide')).toHaveCount(0);
     await expect(page.locator('#advisor')).toContainText('Open the Items menu and place a Reception Desk');
-    expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('false');
+    expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('off');
   });
 
   test('looking around is done once the camera has been moved and turned', async ({ page }) => {
@@ -2331,7 +2331,7 @@ test.describe('the tutorial', () => {
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
     await expect(page.locator('#advisor .tutorial-card')).toContainText('Tutorial · step 1 of');
-    expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('true');
+    expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('on');
   });
 
   test('a lesson opens over the game, paused, until it is read', async ({ game, page }) => {

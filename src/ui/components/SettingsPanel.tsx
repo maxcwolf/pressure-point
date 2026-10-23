@@ -61,7 +61,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
         <SettingRow
           icon="ui-advisor"
           name="Tutorial"
-          desc="Walk a new Willow Lane game through its opening, pointing at what each step wants, and explain each thing the first time it happens. On by itself until the opening has been walked through once."
+          desc="Walk a new Willow Lane game through its opening, pointing at what each step wants, and explain each thing the first time it happens. On by itself before your first campaign star, until the opening has been walked through once."
           on={tutorialOn()}
           onToggle={flip('tutorial', () => {
             const on = !tutorialOn();

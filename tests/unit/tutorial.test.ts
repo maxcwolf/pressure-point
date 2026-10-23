@@ -1,10 +1,11 @@
 // The tutorial walks a new Willow Lane game through its opening a step at a time, then the first game's heads-ups, and
 // hands over once all of it is done; it can be skipped, and stays away from any game it was not switched on for.
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { QUIT_AFTER } from '../../src/core/data';
 import type { Sim } from '../../src/core/sim/sim';
 import { HANDOFF, LOOK_DAYS } from '../../src/core/sim/tutorial';
+import { loadTutorialPref, saveTutorialPref } from '../../src/storage/settings';
 import {
   addConsult,
   addMassage,
@@ -280,5 +281,35 @@ describe('the tutorial', () => {
     expect(sim.aboutToQuit(therapist)).toBe(true);
     expect(sim.adviceNote().text).toMatch(/is about to quit/);
     expect(sim.adviceNote().step).toBeUndefined();
+  });
+});
+
+describe('the tutorial setting', () => {
+  // a stand-in for the browser's storage
+  const store = new Map<string, string>();
+  beforeEach(() => {
+    store.clear();
+    globalThis.localStorage = {
+      /** Read a stored value, or null if there is none. */
+      getItem: (k: string) => store.get(k) ?? null,
+      /** Store a value. */
+      setItem: (k: string, v: string) => void store.set(k, v),
+    } as Storage;
+  });
+
+  it('is on by itself only while the campaign has no stars', () => {
+    expect(loadTutorialPref()).toBe(true);
+    store.set('pressure-point-campaign', JSON.stringify({ stars: { willow: 1 } }));
+    expect(loadTutorialPref()).toBe(false);
+  });
+
+  it('is as the player set it, stars or not', () => {
+    store.set('pressure-point-campaign', JSON.stringify({ stars: { willow: 1 } }));
+    saveTutorialPref(true);
+    expect(store.get('pressure-point-tutorial')).toBe('on');
+    expect(loadTutorialPref()).toBe(true);
+    store.delete('pressure-point-campaign');
+    saveTutorialPref(false);
+    expect(loadTutorialPref()).toBe(false);
   });
 });
