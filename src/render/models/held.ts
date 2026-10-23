@@ -16,7 +16,7 @@ const GRIP = -0.31 + ELBOW;
  * How much bigger than life what is held is drawn: at the game's usual distance a guest stands 30-odd pixels tall, and
  * a cup of life size hides behind the hand holding it.
  */
-export const HELD_SIZE = 1.8;
+export const HELD_SIZE = 1.5;
 
 /** The one shape of each thing held, made the first time it is asked for. */
 function shapeOf(kind: HeldKind): THREE.BufferGeometry {
