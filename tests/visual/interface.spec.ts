@@ -163,6 +163,8 @@ test.describe('in a game', () => {
     );
     await page.locator('#inspector').getByRole('button', { name: 'Compare' }).click();
     await page.locator('#inspector button.pick').first().click();
+    // the click can scroll the inspector down to its pick first, and the picture is of its top
+    await page.locator('#inspector .panel').evaluate((panel) => panel.scrollTo(0, 0));
     await screens.shot('inspector-compare');
   });
 
