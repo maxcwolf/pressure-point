@@ -211,7 +211,7 @@ describe('blueprints', () => {
     expect(heldItem({ kind: 'none' })).toBeNull();
     expect(heldItem({ kind: 'window', roomId: 7 })).toBeNull();
     expect(heldItem({ kind: 'room', type: 'restroom', phase: 'plan', room: ROOM, sub: { kind: 'door' } })).toBeNull();
-    expect(heldItem({ kind: 'room', type: 'restroom', phase: 'drag', start: null, rect: null })).toBeNull();
+    expect(heldItem({ kind: 'room', type: 'restroom', phase: 'drag', start: null, rect: null, noFit: '' })).toBeNull();
   });
 
   it('turns through four quarter turns and back to the start', () => {

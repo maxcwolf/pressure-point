@@ -33,7 +33,37 @@ describe('the first game’s heads-ups', () => {
       { id: 'caretaker', label: 'Hire a Caretaker', done: false },
       { id: 'smudging', label: 'Train a Caretaker in Smudging', done: false },
       { id: 'staffroom', label: 'Build a Staff Room', done: false },
+      { id: 'land', label: 'From the first star, see the land for sale with Expand', done: false },
     ]);
+  });
+
+  it('say at the first star what land is for sale and when to buy it, ticked off once Expand is taken up', () => {
+    const { sim, s } = firstGame();
+    expect(sim.adviceNote().label).toBeUndefined();
+    s.stars = 1;
+    sim.drain();
+    run(sim, 1.5);
+    expect(toasts(sim.drain())).toContainEqual(
+      expect.stringMatching(
+        /^Your first star put the back gallery up for sale, for \$7,500\. Take up Expand, beside Rooms/,
+      ),
+    );
+    expect(sim.primerLines().find((l) => l.id === 'land')?.done).toBe(false);
+    sim.seePlots();
+    expect(sim.primerLines().find((l) => l.id === 'land')?.done).toBe(true);
+  });
+
+  it('still give the heads-up on land when the plots were looked at before the star', () => {
+    const { sim, s } = firstGame();
+    sim.seePlots();
+    expect(sim.primerLines().find((l) => l.id === 'land')?.done).toBe(false);
+    s.stars = 1;
+    sim.drain();
+    run(sim, 1.5);
+    expect(toasts(sim.drain())).toContainEqual(
+      expect.stringMatching(/^Your first star put the back gallery up for sale/),
+    );
+    expect(sim.primerLines().find((l) => l.id === 'land')?.done).toBe(true);
   });
 
   it('say a Caretaker will be needed once the first guest is healed, ahead of any litter', () => {
@@ -81,6 +111,8 @@ describe('the first game’s heads-ups', () => {
     const { sim, s } = firstGame();
     hire(sim, 'caretaker').general.push('smudging');
     addStaffRoom(sim);
+    s.stars = 1;
+    sim.seePlots();
     sim.drain();
     run(sim, 1.5);
     expect(s.primer).toBe(false);

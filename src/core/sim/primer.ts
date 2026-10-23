@@ -3,8 +3,11 @@
 
 import { GENERAL_COURSES, ROOMS } from '../data';
 import { money } from '../format';
+import { nameInSentence, type PlotOffer } from '../land';
+import { starsEarned } from '../state/game';
 import type { SimContext } from './context';
 import type { Subject } from './events';
+import { landOffers } from './land';
 import { hasItem, hasRoom, hasStaff } from './progress';
 import { canSmudge } from './vibes';
 
@@ -14,9 +17,20 @@ const STEPS = [
   { id: 'caretaker', label: 'Hire a Caretaker' },
   { id: 'smudging', label: 'Train a Caretaker in Smudging' },
   { id: 'staffroom', label: 'Build a Staff Room' },
+  { id: 'land', label: 'From the first star, see the land for sale with Expand' },
 ] as const;
 
 type StepId = (typeof STEPS)[number]['id'];
+
+/** The id a step's heads-up is said once under, among the tips seen. */
+export const primerTip = (id: string) => `primer-${id}`;
+
+/** The cheapest plot for sale, if any is. */
+function cheapestPlot(ctx: SimContext): PlotOffer | undefined {
+  return landOffers(ctx)
+    .filter((o) => o.state === 'open')
+    .sort((a, b) => a.price - b.price)[0];
+}
 
 /** Below this, someone on the staff is tiring, well before they are too worn out to work properly. */
 export const PRIMER_TIRING = 50;
@@ -33,6 +47,8 @@ function due(ctx: SimContext, id: StepId): boolean {
       return hasStaff(ctx, 'caretaker') || s.stats.failed >= 1;
     case 'staffroom':
       return s.staff.some((st) => st.state !== 'leaving' && st.energy < PRIMER_TIRING);
+    case 'land':
+      return starsEarned(s) >= 1 && cheapestPlot(ctx) !== undefined;
   }
 }
 
@@ -54,6 +70,9 @@ function done(ctx: SimContext, id: StepId): boolean {
       return ctx.s.staff.some((st) => st.state !== 'leaving' && canSmudge(st));
     case 'staffroom':
       return hasRoom(ctx, 'staffroom');
+    // once the heads-up has said when to buy: a look at the plots before the star does not tick it off
+    case 'land':
+      return ctx.s.sawPlots && ctx.s.seenTips.includes(primerTip('land'));
   }
 }
 
@@ -87,6 +106,13 @@ function heads(ctx: SimContext, id: StepId): { text: string; about?: Subject } |
       return {
         text: 'Your staff are starting to tire. Worn out, they work slowly, botch treatments and lose heart. Build a Staff Room so they can take their breaks.',
       };
+    case 'land': {
+      const plot = cheapestPlot(ctx);
+      if (!plot) return null;
+      return {
+        text: `Your first star put ${nameInSentence(plot.name)} up for sale, for ${money(plot.price)}. Take up Expand, beside Rooms, to see it on the ground. Buy land once the building has no room left for a treatment room, and not before: a plot earns nothing until rooms stand on it, and a month's wages in hand comes first.`,
+      };
+    }
   }
 }
 
