@@ -10,7 +10,7 @@ import { CameraRig } from '../../src/render/camera';
 import { glideAngle } from '../../src/render/camera-math';
 import { shellStretches } from '../../src/render/outer-walls';
 import { roomShape } from '../../src/render/room-walls';
-import { H_LOW, H_TALL, OUTER_T } from '../../src/render/shared';
+import { H_LOW, H_TALL, OUTER_PANE_Y0, OUTER_T } from '../../src/render/shared';
 import { nearSides, type Side, type Turn, turned } from '../../src/render/turn';
 import { windowBoxes } from '../../src/render/windows';
 
@@ -81,12 +81,14 @@ describe("a room's walls, turned", () => {
     expect(roomShape(corner(), BUILDING, nearSides(2)).doorway?.tall).toBe(true);
   });
 
-  it('set a window in the building’s outer wall on its inside face, solid when tall and a ghost when low', () => {
+  it('set a window in the building’s outer wall on its inside face when tall, and along the top of it when low', () => {
     /** The glass of the room's window in the north wall. */
     const glassAt = (t: Turn) => roomShape(corner(), BUILDING, nearSides(t)).boxes.find((b) => b.material === 'pane');
-    for (const t of [0, 2] as const) expect(glassAt(t)?.fixed).toBeCloseTo(SANDBOX_PLOT.y0 + 0.015);
-    expect(glassAt(0)?.ghost).toBe(false);
-    expect(glassAt(2)?.ghost).toBe(true);
+    expect(glassAt(0)?.fixed).toBeCloseTo(SANDBOX_PLOT.y0 + 0.015);
+    expect(glassAt(0)?.y0).toBe(OUTER_PANE_Y0);
+    expect(glassAt(2)?.fixed).toBeCloseTo(SANDBOX_PLOT.y0 - OUTER_T / 2);
+    expect(glassAt(2)?.y0).toBeCloseTo(H_LOW + 0.12);
+    expect(glassAt(2)?.ghost).toBeFalsy();
   });
 });
 
@@ -98,7 +100,7 @@ describe("the building's own windows, turned", () => {
     expect(windows.some((w) => w.side === 'south' && w.a < e0 + 3 && w.b > e0 - 1)).toBe(false);
   });
 
-  it('stand solid in the walls across from the camera, and as ghosts of themselves in the walls facing it', () => {
+  it('stand whole in the walls across from the camera, and cut with the walls facing it', () => {
     const [north] = buildingWindows(BUILDING, []).filter((w) => w.side === 'north');
     for (const t of TURNS) {
       const near = nearSides(t);
@@ -117,11 +119,10 @@ describe("the building's own windows, turned", () => {
         ledge: 'shell',
         glass: 'pane',
       });
-      expect(Math.max(...boxes.map((b) => b.y0 + b.h)), `turn ${t}`).toBeGreaterThan(1.5);
-      expect(
-        boxes.every((b) => b.ghost === near.north),
-        `turn ${t}`,
-      ).toBe(true);
+      const height = Math.max(...boxes.map((b) => b.y0 + b.h));
+      if (near.north) expect(height, `turn ${t}`).toBeLessThan(H_LOW + 0.2);
+      else expect(height, `turn ${t}`).toBeGreaterThan(1.5);
+      expect(boxes.some((b) => b.ghost)).toBe(false);
     }
   });
 });

@@ -1,9 +1,10 @@
-// The one window every wall uses: a frame, bars, a ledge and glass standing tall, and a ghost of itself when low.
+// The one window every wall uses: a frame, bars, a ledge and glass standing tall, and cut with its wall when low.
 import { describe, expect, it } from 'vitest';
 
 import { SANDBOX_PLOT } from '../../src/core/data';
 import { BUILDING_WINDOW_W, buildingWindows, footprintOf } from '../../src/core/footprint';
-import { windowBoxes, windowSpans, type WindowSpec } from '../../src/render/windows';
+import { H_LOW } from '../../src/render/shared';
+import { LOW_INLAY, windowBoxes, windowSpans, type WindowSpec } from '../../src/render/windows';
 
 /** A window in a room's wall along x at 5, one tile wide, standing tall, with whatever else is asked for. */
 const spec = (more: Partial<WindowSpec> = {}): WindowSpec => ({
@@ -54,11 +55,36 @@ describe('a window standing tall', () => {
 });
 
 describe('a window cut low', () => {
-  it('is the whole window where it would stand, every part of it a ghost', () => {
-    const tall = windowBoxes(spec());
-    const low = windowBoxes(spec({ tall: false }));
-    expect(low).toEqual(tall.map((b) => ({ ...b, ghost: true })));
-    expect(tall.every((b) => !b.ghost)).toBe(true);
+  // It used to be drawn whole, as a see-through ghost of itself 0.9 to 1.7 m up over a stub of wall a third of a meter
+  // high: along the front of the building it read as a glass fence, and washed out the people in the rooms behind it.
+  it('is cut with its wall, its glass set along the top of the stub and nothing standing over it', () => {
+    for (const [inset, stub] of [
+      [true, H_LOW],
+      [false, H_LOW + 0.12],
+    ] as const) {
+      const glass = inset ? 'glass' : 'pane';
+      const low = windowBoxes(spec({ tall: false, inset, thick: inset ? 0.12 : 0.28, glass }));
+      const inlay = inset ? LOW_INLAY.room : LOW_INLAY.building;
+      expect(inlay.y0, `inset ${inset}`).toBeCloseTo(stub);
+      for (const b of low) {
+        expect(b.y0, `inset ${inset}`).toBeGreaterThanOrEqual(stub - 1e-9);
+        expect(top(b), `inset ${inset}`).toBeLessThan(stub + 0.1);
+        expect(b.ghost, `inset ${inset}`).toBeFalsy();
+        // along the middle of the wall, not hung on one face of it
+        expect(b.fixed).toBe(5);
+      }
+      expect(low.filter((b) => b.material === glass)).toEqual([
+        expect.objectContaining({ a: 2.06, b: 2.94, y0: stub, h: inlay.h }),
+      ]);
+    }
+  });
+
+  it('keeps the ends of its frame and a bar at each join, standing a little proud of the glass', () => {
+    const low = windowBoxes(spec({ tall: false, b: 5 }));
+    const [glass] = low.filter((b) => b.material === 'glass');
+    const frame = low.filter((b) => b.material === 'trim');
+    expect(frame.map((b) => Math.round(((b.a + b.b) / 2) * 100) / 100)).toEqual([2.03, 4.97, 3, 4]);
+    for (const b of frame) expect(top(b)).toBeGreaterThan(top(glass!));
   });
 });
 
