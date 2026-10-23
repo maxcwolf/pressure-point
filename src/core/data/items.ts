@@ -772,16 +772,16 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     // what a day carrying the center through a cut costs in diesel
     dailyCost: 150,
   },
-  recliner: {
-    type: 'recliner',
-    name: 'Recliner',
-    icon: 'item-recliner',
-    desc: 'A padded recliner and a soft blanket, for a guest to lie back on after a hard treatment. A Caretaker changes the blanket.',
+  lounger: {
+    type: 'lounger',
+    name: 'Lounger',
+    icon: 'item-lounger',
+    desc: 'A padded lounger with its head end raised and a blanket over the foot, for a guest to lie back on after a hard treatment. A Caretaker changes the blanket.',
     cost: 700,
     w: 1,
     h: 2,
     where: 'recovery',
-    access: [{ role: 'recover', x: 1, y: 1, px: 0.5, py: 1.05, face: [0, -1], pose: 'lie', h: 0.32, lie: 'back' }],
+    access: [{ role: 'recover', x: 1, y: 1, px: 0.5, py: 1.05, face: [0, -1], pose: 'lie', h: 0.37, lie: 'back' }],
     inMenu: true,
     unlock: 1,
     wear: 1,
@@ -1541,7 +1541,7 @@ export const ITEM_MENU: readonly ItemType[] = [
   'sound_mat',
   'gong',
   'crystal_bowls',
-  'recliner',
+  'lounger',
   'practice_spot',
   'rattle',
   'sweat_lodge',
@@ -1553,6 +1553,9 @@ export const ITEM_MENU: readonly ItemType[] = [
   'big_gong',
   'fog_machine',
 ];
+
+/** An item's type now, for one saved under a type it has since been renamed from: the Recliner is the Lounger. */
+export const renamedItem = (type: string): string => (type === 'recliner' ? 'lounger' : type);
 
 /** Whether an item is living, and dries out until a Caretaker waters it: a Potted Plant, or a Living Wall. */
 export const isWatered = (type: ItemType) => type === 'plant' || type === 'living_wall';

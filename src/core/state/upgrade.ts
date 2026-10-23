@@ -9,8 +9,10 @@ import {
   DISCIPLINES,
   FEELINGS,
   FOLLOWING,
+  type ItemType,
   type Land,
   type Modality,
+  renamedItem,
   RIVAL_START_POINTS,
   type Role,
   ROLES,
@@ -265,7 +267,11 @@ export function upgradeSave(save: GameState) {
   for (const p of [...s.staff, ...s.candidates, ...s.guests, ...s.visitors]) settleSex(p);
   // nor builds: each is given one from their id, a regular's look kept for their next visit as well
   for (const p of [...s.staff, ...s.candidates, ...s.guests, ...s.visitors, ...s.regulars]) settleLook(p);
-  for (const it of s.items) fill(it, itemStart());
+  for (const it of s.items) {
+    // the Recliner was renamed the Lounger in version 38
+    it.type = renamedItem(it.type) as ItemType;
+    fill(it, itemStart());
+  }
   for (const r of s.rooms) fill(r, roomStart());
   for (const g of s.guests) {
     g.emergency ??= false;

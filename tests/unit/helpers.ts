@@ -115,9 +115,9 @@ export function addSound(sim: Sim) {
   ]);
 }
 
-/** Add a Recovery Lounge at its standard spot, with its one Recliner. */
+/** Add a Recovery Lounge at its standard spot, with its one Lounger. */
 export function addRecovery(sim: Sim) {
-  return buildRoom(sim, 'recovery', LAYOUT.recovery.rect, LAYOUT.recovery.door, [['recliner', 15, 9]]);
+  return buildRoom(sim, 'recovery', LAYOUT.recovery.rect, LAYOUT.recovery.door, [['lounger', 15, 9]]);
 }
 
 /** Add a Qi Gong Studio where the Training Room goes: the Instructor's Mat at the back, and three Practice Spots. */

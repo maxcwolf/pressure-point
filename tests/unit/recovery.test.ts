@@ -1,4 +1,4 @@
-// The Recovery Lounge: the harder treatments leave a guest needing a lie-down on a Recliner, or they work less often.
+// The Recovery Lounge: the harder treatments leave a guest needing a lie-down on a Lounger, or they work less often.
 import { describe, expect, it } from 'vitest';
 
 import { ITEMS, MODALITIES, NO_REST_PENALTY, ROOMS } from '../../src/core/data';
@@ -8,6 +8,7 @@ import { guestNoise } from '../../src/core/sim/noise';
 import { needsRest, restPenalty } from '../../src/core/sim/recovery';
 import type { Sim } from '../../src/core/sim/sim';
 import type { Guest } from '../../src/core/state/types';
+import { itemIdAt, lyingAt } from '../../src/render/acts';
 import { restNote } from '../../src/ui/lib/recovery';
 import { addRecovery, inconsistencies, openCenter, runUntil, toasts } from './helpers';
 
@@ -31,10 +32,10 @@ function knottedGuest(lounge: boolean) {
   return { ...center, g };
 }
 
-/** The Recliner in a sim. */
-const reclinerOf = (sim: Sim) => {
-  const it = sim.s.items.find((i) => i.type === 'recliner');
-  if (!it) throw new Error('no recliner');
+/** The Lounger in a sim. */
+const loungerOf = (sim: Sim) => {
+  const it = sim.s.items.find((i) => i.type === 'lounger');
+  if (!it) throw new Error('no lounger');
   return it;
 };
 
@@ -55,18 +56,18 @@ describe('treatments that need a rest', () => {
 });
 
 describe('the Recovery Lounge', () => {
-  it('opens at the first star with a Recliner, and has no staff', () => {
-    expect(ROOMS.recovery).toMatchObject({ unlock: 1, required: ['recliner'] });
+  it('opens at the first star with a Lounger, and has no staff', () => {
+    expect(ROOMS.recovery).toMatchObject({ unlock: 1, required: ['lounger'] });
     expect(ROOMS.recovery.staff).toBeUndefined();
-    expect(ITEMS.recliner).toMatchObject({ where: 'recovery', linens: true });
-    expect(ITEMS.recliner.access.map((a) => a.role)).toEqual(['recover']);
+    expect(ITEMS.lounger).toMatchObject({ where: 'recovery', linens: true });
+    expect(ITEMS.lounger.access.map((a) => a.role)).toEqual(['recover']);
   });
 
-  it('spares a treatment the penalty while a Recliner is free', () => {
+  it('spares a treatment the penalty while a Lounger is free', () => {
     const { sim, g } = knottedGuest(true);
     const ctx = ctxOf(sim);
     expect(restPenalty(ctx, g)).toBe(0);
-    reclinerOf(sim).users[0] = 999;
+    loungerOf(sim).users[0] = 999;
     expect(restPenalty(ctx, g)).toBe(NO_REST_PENALTY);
   });
 
@@ -79,23 +80,36 @@ describe('the Recovery Lounge', () => {
 });
 
 describe('a guest after a hard treatment', () => {
-  it('lies back on a Recliner for a while, glad of it, then goes home', () => {
+  it('lies back on a Lounger for a while, glad of it, then goes home', () => {
     const { sim, g } = knottedGuest(true);
-    const recliner = reclinerOf(sim);
+    const lounger = loungerOf(sim);
     runUntil(sim, () => g.state === 'toRest');
     expect(g.outcome).not.toBe('');
     expect(g.feelings).toContain('rested');
-    expect(recliner.users[0]).toBe(g.id);
-    expect(recliner.dirt).toBeGreaterThan(0);
+    expect(lounger.users[0]).toBe(g.id);
+    expect(lounger.dirt).toBeGreaterThan(0);
     runUntil(sim, () => g.state === 'resting');
     expect(g.pose).toBe('lie');
     expect(guestNoise(g)).toBe(0);
     runUntil(sim, () => g.state === 'leaving');
-    expect(recliner.users[0]).toBe(0);
+    expect(lounger.users[0]).toBe(0);
     expect(inconsistencies(sim)).toEqual([]);
   });
 
-  it('can be sent home from the Recliner without the visit counting twice or costing reputation', () => {
+  it('lies face down for the massage, then face up on the Lounger', () => {
+    const { sim, g } = knottedGuest(true);
+    /** How the guest lies on the item the scene finds them at. */
+    const lies = () => {
+      const it = sim.world.item(itemIdAt(g));
+      return it && lyingAt(g, ITEMS[it.type]);
+    };
+    runUntil(sim, () => g.state === 'served' && g.pose === 'lie');
+    expect(lies()).toBe('prone');
+    runUntil(sim, () => g.state === 'resting');
+    expect(lies()).toBe('back');
+  });
+
+  it('can be sent home from the Lounger without the visit counting twice or costing reputation', () => {
     const { sim, s, g } = knottedGuest(true);
     runUntil(sim, () => g.state === 'toRest');
     const outcome = g.outcome;
@@ -110,7 +124,7 @@ describe('a guest after a hard treatment', () => {
     expect(s.stats.failed).toBe(stats.failed);
     expect(s.reviews).toHaveLength(reviews);
     expect(s.reputation).toBe(rep);
-    expect(reclinerOf(sim).users[0]).toBe(0);
+    expect(loungerOf(sim).users[0]).toBe(0);
     expect(inconsistencies(sim)).toEqual([]);
   });
 
@@ -123,13 +137,13 @@ describe('a guest after a hard treatment', () => {
     expect(toasts(sim.drain()).join(' ')).toContain('Without a Recovery Lounge they go home woozy');
   });
 
-  it('goes home woozy when every Recliner is taken, and the advisor suggests more', () => {
+  it('goes home woozy when every Lounger is taken, and the advisor suggests more', () => {
     const { sim, g } = knottedGuest(true);
-    reclinerOf(sim).users[0] = 999;
+    loungerOf(sim).users[0] = 999;
     sim.drain();
     runUntil(sim, () => g.outcome !== '');
     expect(g.feelings).toContain('woozy');
-    expect(toasts(sim.drain()).join(' ')).toContain('Add more Recliners');
+    expect(toasts(sim.drain()).join(' ')).toContain('Add more Loungers');
   });
 });
 

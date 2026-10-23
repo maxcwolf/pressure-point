@@ -52,7 +52,7 @@ See the plan above. All six are in, with tests, and so are these, from the to-do
 - [ ] **A failed `goTo` in `callGuest` sends a guest home with no outcome** (`stations.ts:263`), so the visit stats drift. No way to reach it found.
 - [ ] **A guest in the `served` state has no timeout** and does not worsen (`guests.ts`, `worsening.ts`). No way to reach it found.
 - [ ] **Staff retry only the single best unreachable post** (`staffing.ts:499`, `findWork`), so a post that becomes unreachable starves the others.
-- [ ] **`settleRest` gives a "rested" feeling and soils a recliner before the walk to it can fail** (`recovery.ts`).
+- [ ] **`settleRest` gives a "rested" feeling and soils a Lounger before the walk to it can fail** (`recovery.ts`).
 - [ ] **The sim's build API trusts the UI** for money, `missingItems`, unlock stars and "room done" (`building.ts`, `upgrades.ts`). Reachable only through `window.pp` or the console.
 - [ ] **Monthly goals can be met on a small sample early in a month** (`goals.ts`: 7 of 10 healed meets a 70% cure rate, with no minimum span). Awards use 20 guests and a full year. Still so at 0.31.0: the cure rate now counts guests sent home, but 10 judged are still enough. The new month-heals goals are counts, so a short span is no shortcut there.
 - [ ] **"Go 30 days without anyone quitting" is free** once day 30 comes if nobody has ever quit (`goals.ts:41`), and so is the 90-day achievement. Probably intended.

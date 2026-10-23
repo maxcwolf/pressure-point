@@ -466,7 +466,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const mod = MODALITIES[cond.modality];
     // the wrong hands or missing equipment: they try anyway, and it rarely works
     const { chance, problem } = successChance(ctx, it, staff, g);
-    // the harder treatments need a lie-down after, if there is a Recliner free
+    // the harder treatments need a lie-down after, if there is a Lounger free
     const rest = settleRest(ctx, g);
     if (problem === 'unqualified') feel(g, 'unqualified');
     else if (problem) feel(g, 'no-kit');

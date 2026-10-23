@@ -469,7 +469,7 @@ function lyingSpecimen(type: ItemType): Specimen {
       };
       const guest = buildCharacter(LAB_LOOK);
       const g = place(demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id), spot);
-      // a guest on a Recliner is resting there, after a treatment
+      // a guest on a Lounger is resting there, after a treatment
       if (def.access[spot]?.role === 'recover') g.state = 'resting';
       const lie = def.access[spot]?.lie;
       root.add(guest.group);
