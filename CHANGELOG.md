@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.33.0
 
 - **A tutorial for your first game.** A new Willow Lane game walks you through its opening a step at a time: a card in the advisor's spot says what each step wants and why, a gold ring marks the button, tab or card to click, and a Tutorial list under the objectives keeps your place. The first thing bought says that everything comes out of the bank and that the Money menu lends, as a new center often needs for its first paydays. After the opening it carries on through what the center will need next (a Caretaker, Smudging, a Staff Room), saying on any step the bank alone could not take what it would leave and that the loan is cheaper than the red, then hands over to the advisor. Skip it from the card at any time.
 - **Lessons as things first happen.** The first guest to walk in, the first heal, staff tiring, the first payday, a failed treatment, a guest storming out and a raise request each open a short card with pictures, once a game and never two in a day, with Show me to go to whoever it is about.
