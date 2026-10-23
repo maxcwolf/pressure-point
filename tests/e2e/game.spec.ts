@@ -2367,8 +2367,15 @@ test.describe('the tutorial', () => {
       pp.sim.noteLooked();
     });
     await expect(card).toContainText('step 2 of');
-    await expect(card).toContainText('Place a Reception Desk');
+    await expect(card).toContainText('Pause the clock');
     await expect(page.locator('#objectives')).toContainText('Tutorial · 1 of');
+    // the ring is on the pause button, and pausing moves on to the desk
+    const pause = page.locator('#stats').getByRole('button', { name: 'Pause (Space)' });
+    await expect(pause).toHaveClass(/guide/);
+    await pause.click();
+    await expect(card).toContainText('step 3 of');
+    await expect(card).toContainText('Place a Reception Desk');
+    await expect(page.locator('#objectives')).toContainText('Tutorial · 2 of');
     // the ring is on the Items button, then follows into the menu to the card wanted
     const items = page.locator('#buildbtns').getByRole('button', { name: 'Items' });
     await expect(items).toHaveClass(/guide/);
@@ -2395,7 +2402,7 @@ test.describe('the tutorial', () => {
     await page.keyboard.press('KeyE');
     await expect(card).toContainText('Look around');
     await page.keyboard.down('KeyD');
-    await expect(card).toContainText('Place a Reception Desk');
+    await expect(card).toContainText('Pause the clock');
     await page.keyboard.up('KeyD');
   });
 
