@@ -7,6 +7,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
+  ALARMS,
+  atlasCell,
   type AtlasLayout,
   atlasSvg,
   checkIcon,
@@ -15,6 +17,7 @@ import {
   innerOf,
   inScene,
   madeSmall,
+  NEEDS,
   OUT_DIR,
   readIcons,
   readSmall,
@@ -24,8 +27,9 @@ import {
   SPRITE_STROKE,
   spriteSheet,
   thinned,
+  undiscked,
   unmedalled,
-  VARIANTS,
+  variantsOf,
   whitened,
 } from '../../scripts/icons.mjs';
 import { DISCIPLINES, ICON_IDS, ROLES, ROOMS, SCENE_ICON_IDS } from '../../src/core/data';
@@ -136,10 +140,10 @@ describe('what yarn icons builds', () => {
     expect(atlasSvg(icons, {}).svg).not.toContain(innerOf(small['bubble-happy'] ?? 'missing'));
   });
 
-  it('gives every icon the scene draws its own cells inside the atlas, on its own and in a bubble', () => {
+  it('gives every icon the scene draws its own cells inside the atlas, on its own, in a bubble and the rest', () => {
     const seen = new Set<string>();
     for (const id of SCENE_ICON_IDS) {
-      for (const variant of VARIANTS) {
+      for (const variant of variantsOf(id)) {
         const r = atlas.icons[id]?.[variant];
         expect(r, `${id} ${variant}`).toBeDefined();
         if (!r) continue;
@@ -151,6 +155,34 @@ describe('what yarn icons builds', () => {
       }
     }
     expect(Object.keys(atlas.icons).sort()).toEqual([...SCENE_ICON_IDS].sort());
+  });
+
+  it('draws alarms in red bubbles and needs in amber ones, for the bubbles they suit and no others', () => {
+    for (const id of SCENE_ICON_IDS) {
+      expect(!!atlas.icons[id]?.alarm, `${id} as an alarm`).toBe(ALARMS.includes(id));
+      expect(!!atlas.icons[id]?.need, `${id} as a need`).toBe(NEEDS.includes(id));
+    }
+    const at = { x: 0, y: 0, w: 128, h: 128 };
+    const sand = '<path fill="#e5564d"/><path fill="#ffffff"/>';
+    // red on red would vanish, so the drawing's red turns navy on an alarm; gold turns white on a need
+    expect(atlasCell('alarm', sand, at)).toContain('fill="#e5564d" stroke="#24384a"');
+    expect(atlasCell('alarm', sand, at)).toContain('<path fill="#24384a"/><path fill="#ffffff"/>');
+    expect(atlasCell('need', '<path fill="#f2c14e"/>', at)).toContain('<path fill="#ffffff"/>');
+    // an alarm is told apart by more than its red: a white badge with a "!" at its top right
+    expect(atlasCell('alarm', sand, at)).toContain('<path d="M104 13v12"');
+    expect(atlasCell('need', sand, at)).not.toContain('M104 13v12');
+  });
+
+  it('puts every role, and the staff marker, on a disc in the purple of the squares staff use', () => {
+    for (const id of SCENE_ICON_IDS.filter((i) => i.startsWith('role-') || i === 'marker-staff')) {
+      expect(atlas.icons[id]?.square, id).toBeDefined();
+    }
+    expect(atlas.icons['marker-guest']?.square).toBeUndefined();
+    // each role loses its own orange disc on the purple one, or its pictogram would sit on orange still
+    for (const { id, svg } of icons.filter((i) => i.id.startsWith('role-'))) {
+      expect(undiscked(innerOf(small[id] ?? svg)), id).not.toMatch(/r="13.5" fill="#f08a4b"/);
+    }
+    expect(atlasCell('square', '<path/>', { x: 0, y: 0, w: 128, h: 128 })).toContain('fill="#9b6bff"');
   });
 
   it('places a cell where the texture looks for it, counted from the bottom left', () => {

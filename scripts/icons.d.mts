@@ -10,12 +10,13 @@ export interface Rect {
   w: number;
   h: number;
 }
-export type Variant = 'plain' | 'bubble';
+export type Variant = 'plain' | 'bubble' | 'alarm' | 'need' | 'square';
 export interface AtlasLayout {
   width: number;
   height: number;
   cell: number;
-  icons: Record<string, Record<Variant, Rect>>;
+  /** Every icon on its own and in a bubble, and in the other ways only where `variantsOf` says. */
+  icons: Record<string, { plain: Rect; bubble: Rect } & Partial<Record<Variant, Rect>>>;
 }
 
 export const ICON_DIR: string;
@@ -48,6 +49,13 @@ export function whitened(inner: string): string;
 export function unmedalled(inner: string): string;
 export function madeSmall(id: string, inner: string, small: SmallIcons): string;
 export function smallSheet(icons: readonly Icon[], small?: SmallIcons): string;
+export const ALARMS: readonly string[];
+export const NEEDS: readonly string[];
+export function variantsOf(id: string): Variant[];
+export const STAFF_SQUARE: string;
+export function refilled(inner: string, swap: readonly [string, string]): string;
+export function undiscked(inner: string): string;
+export function atlasCell(variant: Variant, inner: string, at: Rect): string;
 export function atlasLayout(ids: readonly string[], cell?: number, columns?: number): AtlasLayout;
 export function atlasSvg(icons: readonly Icon[], small?: SmallIcons): { layout: AtlasLayout; svg: string };
 export function sourceHash(icons: readonly Icon[], small?: SmallIcons): string;
