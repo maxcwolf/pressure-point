@@ -139,8 +139,8 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           <div>
             <b>Messages stay</b>
             <span>
-              How long the messages on the right stay: long enough to read, twice that, or until you close them. Their
-              time stands still while the game is paused or the pointer is on one.
+              How long the messages on the right stay: long enough to read, twice that, or until you close them. A
+              message waits while the pointer is on it, though the game plays on, and while the game is paused.
             </span>
           </div>{' '}
           <button
