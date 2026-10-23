@@ -8,7 +8,7 @@ export const LAB_LOOK: Look = {
   skin: 0xeebf9e,
   hair: 0x4a2f1d,
   hairStyle: 1,
-  top: 0xe76f51,
+  top: 0x2a9d8f,
   bottom: 0x3d405b,
   scale: 1,
   sex: 'female',
