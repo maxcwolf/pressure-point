@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 
 import type { SceneIconId } from '../core/data';
-import { DIRT_FILTHY, HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
+import { HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
 import { mishapCarrier } from '../core/sim/mishaps';
 import type { Sim } from '../core/sim/sim';
 import { itemHeat } from '../core/sim/warmth';
@@ -17,6 +17,7 @@ import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
 import { ghostHung, hangPlace, placeHung } from './hung';
 import { animateCues, type CueCondition, NOISE_CUE, usedNoise, wearLight } from './item-cues';
+import { itemMarkers } from './markers';
 import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import { SPILL_SPEED, spillRuns } from './models/items/fountain';
@@ -200,13 +201,13 @@ export class ItemsLayer {
   animate(t: number) {
     const busy = new Set<number>();
     const rattled = this.sim.rattledRooms();
+    const marked = itemMarkers(this.sim.s.items);
     for (const it of this.sim.s.items) {
       const model = this.items.get(it.id)?.group;
       if (!model) continue;
       this.effects(it, model, t, rattled.size > 0 && rattled.has(this.sim.world.zoneAt(it.x, it.y)));
-      this.marker(model, it, 'wrench', 'marker-broken', it.wear >= 100, t);
-      // stale linens show on the table itself, not as flies over it
-      this.marker(model, it, 'flies', 'marker-filthy', it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens, t);
+      this.marker(model, it, 'wrench', 'marker-broken', marked.get(it.id) === 'marker-broken', t);
+      this.marker(model, it, 'flies', 'marker-filthy', marked.get(it.id) === 'marker-filthy', t);
       if (it.serving && it.progress > 0) {
         busy.add(it.id);
         this.bar(it);
