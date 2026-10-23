@@ -144,10 +144,11 @@ export function lightLevel(m: Mishap | null, held = false): number {
 export const stormGray = (m: Mishap | null): number => (m?.started && m.kind === 'storm' ? 1 : 0);
 
 /**
- * How far the time of day strays from noon at a game speed: in full at normal speed, less when the days fly past, so
- * the light does not pulse.
+ * How far the time of day strays from noon at a game speed: a touch at normal speed, where a day goes by in a few
+ * seconds and the full swing from morning to evening and back would pulse the whole picture, and less still when the
+ * days fly past.
  */
-export const dayDepth = (speed: number) => (speed <= 1 ? 1 : speed === 2 ? 0.6 : 0.4);
+export const dayDepth = (speed: number) => (speed <= 1 ? 0.25 : speed === 2 ? 0.18 : 0.12);
 
 /**
  * Light a game's scene for the moment: the time of day and the season on the setting's own light, a power cut or a

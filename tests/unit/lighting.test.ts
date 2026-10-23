@@ -6,7 +6,15 @@ import { describe, expect, it } from 'vitest';
 import { buildingsOf } from '../../src/core/land';
 import { newMishap } from '../../src/core/sim/mishaps';
 import { animateItemParts, type ItemCondition } from '../../src/render/items';
-import { addLights, lightScene, placeSun, POWER_CUT_LIGHT, POWER_CUT_SKY, powerOut } from '../../src/render/lighting';
+import {
+  addLights,
+  dayDepth,
+  lightScene,
+  placeSun,
+  POWER_CUT_LIGHT,
+  POWER_CUT_SKY,
+  powerOut,
+} from '../../src/render/lighting';
 import { buildItem } from '../../src/render/models/items';
 import { partsOf } from '../../src/render/models/parts';
 import { freshSim } from './helpers';
@@ -97,5 +105,14 @@ describe('a power cut', () => {
       return puff.material.color.getHSL({ h: 0, s: 0, l: 0 }).l;
     };
     expect(smoke(1)).toBeLessThan(smoke(0) * 0.6);
+  });
+});
+
+describe('the time of day', () => {
+  it('strays only a touch from noon at normal speed, where a day is a few seconds, and less as the days speed up', () => {
+    expect(dayDepth(1)).toBeLessThanOrEqual(0.3);
+    expect(dayDepth(2)).toBeLessThan(dayDepth(1));
+    expect(dayDepth(3)).toBeLessThan(dayDepth(2));
+    expect(dayDepth(3)).toBeGreaterThan(0);
   });
 });
