@@ -62,12 +62,14 @@ describe('the tutorial', () => {
     const lines = sim.tutorialLines();
     expect(lines.map((l) => l.id)).toEqual([
       'look',
+      'pause',
       'desk',
       'receptionist',
       'consult',
       'consultant',
       'massage',
       'therapist',
+      'play',
       'benches',
       'caretaker',
       'smudging',
@@ -85,7 +87,12 @@ describe('the tutorial', () => {
       step: { id: 'look', n: 1, of, want: { kind: 'look' } },
     });
     sim.noteLooked();
-    expect(sim.tutorialStep()).toMatchObject({ id: 'desk', n: 2, want: { kind: 'item', type: 'reception_desk' } });
+    expect(sim.tutorialStep()).toMatchObject({ id: 'pause', n: 2, want: { kind: 'pause' } });
+    sim.s.speed = 0;
+    expect(sim.tutorialStep()).toMatchObject({ id: 'desk', n: 3, want: { kind: 'item', type: 'reception_desk' } });
+    // the clock started again with nothing built asks to be paused again; with the desk down it does not
+    sim.s.speed = 1;
+    expect(stepOf(sim)).toBe('pause');
     sim.placeItem('reception_desk', 14, 13, 0);
     expect(sim.tutorialStep()).toMatchObject({ id: 'receptionist', want: { kind: 'hire', role: 'receptionist' } });
     hire(sim, 'receptionist');
@@ -98,25 +105,51 @@ describe('the tutorial', () => {
     expect(stepOf(sim)).toBe('therapist');
     expect(sim.adviceNote().step?.id).toBe('therapist');
     hire(sim, 'therapist');
-    // the Benches wait for the center to open
+    // the clock is running, so there is no asking to start it, and the Benches wait for the center to open
     expect(stepOf(sim)).toBeNull();
     run(sim, 1);
     expect(sim.s.open).toBe(true);
-    expect(sim.tutorialStep()).toMatchObject({ id: 'benches', n: 8, want: { kind: 'item', type: 'bench' } });
+    expect(sim.tutorialStep()).toMatchObject({ id: 'benches', n: 10, want: { kind: 'item', type: 'bench' } });
     sim.placeItem('bench', 20, 10, 0);
     expect(stepOf(sim)).toBe('benches');
     sim.placeItem('bench', 22, 10, 0);
     expect(
       sim
         .tutorialLines()
-        .slice(0, 8)
+        .slice(0, 10)
         .every((l) => l.done),
     ).toBe(true);
+  });
+
+  it('asks to start the clock once the opening is built and staffed, if it was paused', () => {
+    const sim = tutorialGame();
+    sim.noteLooked();
+    sim.s.speed = 0;
+    expect(stepOf(sim)).toBe('desk');
+    sim.placeItem('reception_desk', 14, 13, 0);
+    hire(sim, 'receptionist');
+    addConsult(sim);
+    hire(sim, 'consultant');
+    addMassage(sim);
+    // the clock is not asked for until the opening is staffed
+    expect(stepOf(sim)).toBe('therapist');
+    hire(sim, 'therapist');
+    expect(sim.tutorialStep()).toMatchObject({ id: 'play', n: 9, want: { kind: 'play' } });
+    // paused, the center stays shut and nobody arrives
+    for (let i = 0; i < 20; i++) sim.tick(0.1);
+    expect(sim.s.open).toBe(false);
+    expect(stepOf(sim)).toBe('play');
+    sim.s.speed = 1;
+    expect(stepOf(sim)).toBeNull();
+    run(sim, 1);
+    expect(sim.s.open).toBe(true);
+    expect(stepOf(sim)).toBe('benches');
   });
 
   it('says with the first thing bought that everything comes out of the bank, and that the bank lends', () => {
     const sim = tutorialGame();
     sim.noteLooked();
+    sim.s.speed = 0;
     const text = sim.tutorialStep()?.text ?? '';
     expect(text).toMatch(/comes out of the bank/);
     expect(text).toMatch(/lends up to \$50,000 at 2% a month/);
@@ -145,7 +178,7 @@ describe('the tutorial', () => {
     runUntil(sim, () => sim.s.day >= LOOK_DAYS - 0.01, 3000);
     expect(stepOf(sim)).toBe('look');
     run(sim, 1);
-    expect(stepOf(sim)).toBe('desk');
+    expect(stepOf(sim)).toBe('pause');
   });
 
   it('follows the opening with the heads-ups, each with its text and what it points at', () => {
@@ -157,7 +190,7 @@ describe('the tutorial', () => {
     sim.s.stats.healed = 1;
     expect(sim.tutorialStep()).toMatchObject({
       id: 'caretaker',
-      n: 9,
+      n: 11,
       title: 'Hire a Caretaker',
       text: expect.stringMatching(/Hire a Caretaker from the Hire menu/),
       want: { kind: 'hire', role: 'caretaker' },
@@ -254,7 +287,7 @@ describe('the tutorial', () => {
     walkOpening(sim);
     expect(stepOf(sim)).toBe('benches');
     sim.s.stats.healed = 1;
-    expect(sim.tutorialStep()).toMatchObject({ id: 'caretaker', n: 9 });
+    expect(sim.tutorialStep()).toMatchObject({ id: 'caretaker', n: 11 });
     expect(sim.tutorialLines().find((l) => l.current)?.id).toBe('caretaker');
     hire(sim, 'caretaker').general.push('smudging');
     expect(stepOf(sim)).toBe('benches');
@@ -283,7 +316,7 @@ describe('the tutorial', () => {
     expect(sim.s.lessons).toBe(false);
     const events = sim.drain();
     expect(toasts(events)).toEqual(['The tutorial is off. Settings turns it back on.']);
-    expect(events).toContainEqual({ type: 'tutorial', what: 'skipped', step: 'desk' });
+    expect(events).toContainEqual({ type: 'tutorial', what: 'skipped', step: 'pause' });
     expect(sim.adviceNote().step).toBeUndefined();
     expect(sim.adviceNote().text).toMatch(/^Welcome! Open the Items menu/);
     // the heads-ups of a first game carry on without it

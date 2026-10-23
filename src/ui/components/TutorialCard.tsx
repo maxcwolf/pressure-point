@@ -10,7 +10,9 @@ import { Button } from './common/Button';
 /** The card for a step, with Show me when there is a menu to open or someone to show. */
 export function TutorialCard({ step }: { step: TutorialStep }) {
   const hud = useHud();
-  const showable = (step.want !== undefined && step.want.kind !== 'look') || step.about !== undefined;
+  const want = step.want;
+  const opens = want !== undefined && want.kind !== 'look' && want.kind !== 'pause' && want.kind !== 'play';
+  const showable = opens || step.about !== undefined;
   return (
     <div class="note tutorial-card">
       <div class="top">
