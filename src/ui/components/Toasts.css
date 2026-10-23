@@ -1,9 +1,6 @@
 /* Styles for Toasts. */
 
 #toasts {
-  top: 70px;
-  right: 14px;
-  width: 290px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -17,8 +14,35 @@
 
 /* opened out, the messages scroll in the room down to the bar at the bottom, over the inspector */
 #toasts.open {
+  position: absolute;
+  inset: 0 0 14px;
   z-index: 1;
-  bottom: calc(var(--bar-h) + 14px);
+}
+
+/* over an open inspector, the newest two in a band of their own, each cut to two lines, and a count of the rest, so the
+   inspector keeps its place whatever comes in */
+#toasts.strip {
+  flex: none;
+  height: 170px;
+  overflow: hidden;
+}
+
+#toasts.strip .messages .words {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  padding-bottom: 0;
+  margin-bottom: 8px;
+}
+
+#toasts.strip .pile {
+  margin-bottom: 0;
+}
+
+#toasts.strip .warnings {
+  color: var(--red);
 }
 
 #toasts.open .messages {

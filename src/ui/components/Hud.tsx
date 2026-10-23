@@ -68,8 +68,11 @@ export function Hud({ hud }: { hud: HudState }) {
       <EmergencyOffer />
       <SystemButtons />
       <OverlayPicker />
-      <Toasts />
-      <Inspector />
+      {/* down the right: the messages, then the inspector, which keeps to its place as messages come and go */}
+      <div id="side">
+        <Toasts />
+        <Inspector />
+      </div>
       <ToolHint />
       <PlanPanel />
       <Menu />

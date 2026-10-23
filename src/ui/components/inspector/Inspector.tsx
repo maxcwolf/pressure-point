@@ -14,12 +14,20 @@ import { RoomInfo } from './RoomInfo';
 import { StaffInfo } from './StaffInfo';
 import { VisitorInfo } from './VisitorInfo';
 
+/**
+ * Whether the inspector is open on something. It steps aside while a tool is in hand, but stays for assigning someone
+ * to rooms, to show their rooms.
+ */
+export function inspecting({ tools }: ReturnType<typeof useGame>): boolean {
+  return tools.selected !== null && !(tools.active && tools.tool.kind !== 'assign');
+}
+
 /** The details of the selected guest, member of staff, visitor, item, room or plot of land, if it still exists. */
 function useSelectionInfo(): ComponentChildren {
-  const { sim, tools } = useGame();
+  const game = useGame();
+  const { sim, tools } = game;
   const sel = tools.selected;
-  // the inspector steps aside while a tool is in hand, but stays for assigning someone to rooms, to show their rooms
-  if (!sel || (tools.active && tools.tool.kind !== 'assign')) return null;
+  if (!sel || !inspecting(game)) return null;
   if (sel.kind === 'guest') {
     const guest = sim.guest(sel.id);
     return guest ? <GuestInfo guest={guest} /> : null;

@@ -155,6 +155,8 @@ export class HudState {
   toasts: Toast[] = [];
   /** Whether every message shows, the pile under the first few opened out. */
   toastsOpen = false;
+  /** Whether the messages were opened out from the band over the inspector. */
+  private toastsFromStrip = false;
   /** Whether the pointer is over a message, which holds their clock while it is read. */
   toastsHeld = false;
   floaters: Floater[] = [];
@@ -467,9 +469,14 @@ export class HudState {
     this.update();
   }
 
-  /** Open every message out, holding their clock while they are read, or fold the ones past the first few back up. */
-  openToasts(open: boolean) {
-    this.toastsOpen = open && this.toasts.length > SHOWN;
+  /**
+   * Open every message out, holding their clock while they are read, or fold the ones past the first few back up.
+   * `fromStrip` is for the band over the inspector, which shows fewer than the first few: they open out from it
+   * whatever their number, and stay open until folded or every one is dismissed.
+   */
+  openToasts(open: boolean, fromStrip = false) {
+    this.toastsFromStrip = open && fromStrip;
+    this.toastsOpen = open && (fromStrip || this.toasts.length > SHOWN);
     if (this.toastsOpen) spareMessages(this.toasts, loadDisplay().messages);
     this.update();
   }
@@ -491,7 +498,7 @@ export class HudState {
    * pointer was on has gone and the next one along says nothing until the pointer moves onto it.
    */
   private letGoOfToasts() {
-    if (this.toasts.length <= SHOWN) this.toastsOpen = false;
+    if (this.toasts.length <= (this.toastsFromStrip ? 0 : SHOWN)) this.toastsOpen = false;
     this.toastsHeld = false;
     this.update();
   }
