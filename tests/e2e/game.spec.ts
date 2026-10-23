@@ -1022,7 +1022,10 @@ test.describe('running a center', () => {
     await expect(inspector.locator('.rival-offer')).toContainText('ZenMart has offered them a job');
     await inspector.getByRole('button', { name: /Raise to/ }).click();
     await game.fastForward(2);
-    await expect(page.locator('#toasts')).toContainText("turned down ZenMart's offer");
+    // among the messages, though with the inspector open only the newest two show above it, the rest counted
+    await expect
+      .poll(() => game.eval((pp) => pp.ui.toasts.some((t) => t.text.includes("turned down ZenMart's offer"))))
+      .toBe(true);
     await expect(inspector.locator('.rival-offer')).toHaveCount(0);
     expect(await game.eval((pp) => pp.state.rival.poached)).toBe(0);
   });
