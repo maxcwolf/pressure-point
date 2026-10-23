@@ -2,8 +2,19 @@
 // advisor's spot and a ring on what it wants, then the first game's heads-ups as steps of their own, and a word to hand
 // over once all of it is done.
 
-import type { ItemType, Role, RoomType } from '../data';
+import {
+  GENERAL_COURSES,
+  type ItemType,
+  LOAN_RATE,
+  OVERDRAFT_RATE,
+  type Role,
+  ROLES,
+  ROOMS,
+  type RoomType,
+} from '../data';
+import { money } from '../format';
 import type { SimContext } from './context';
+import { loanLimit, monthlyPayroll } from './economy';
 import { emit, type Subject, toast } from './events';
 import { primerDone, primerLines, primerNotes, type PrimerStepId } from './primer';
 import { hasItem, hasRoom, hasStaff } from './progress';
@@ -12,12 +23,25 @@ import { hasItem, hasRoom, hasStaff } from './progress';
 export type Want =
   { kind: 'look' } | { kind: 'item'; type: ItemType } | { kind: 'room'; type: RoomType } | { kind: 'hire'; role: Role };
 
-/** A step of the opening: its line on the list, what its card says, and what it wants. */
+/** A step of the opening: its line on the list, what its card says (worked out from the game if need be), and what it wants. */
 interface Opening {
   id: OpeningId;
   title: string;
-  text: string;
+  text: string | ((ctx: SimContext) => string);
   want: Want;
+}
+
+/** A rate a month as a percentage. */
+function pct(rate: number): string {
+  return `${Math.round(rate * 100)}%`;
+}
+
+/**
+ * The word on money that goes with the first thing bought: everything comes out of the bank, which is not meant to
+ * stretch to everything at once, so the loan is there for the first paydays rather than a last resort.
+ */
+function moneyWord(ctx: SimContext): string {
+  return `It comes out of the bank in the bottom bar, as everything does. The bank is not meant to stretch to everything at once: the Money menu lends up to ${money(loanLimit(ctx.s))} at ${pct(LOAN_RATE)} a month, and a new center often borrows to get through its first paydays.`;
 }
 
 type OpeningId = 'look' | 'desk' | 'receptionist' | 'consult' | 'consultant' | 'massage' | 'therapist' | 'benches';
@@ -42,7 +66,9 @@ const OPENING: readonly Opening[] = [
   {
     id: 'desk',
     title: 'Place a Reception Desk',
-    text: 'Guests check in at a Reception Desk before anything else. Open the Items menu, pick the Reception Desk and place it near the entrance.',
+    /** The first thing bought, so the word on money goes with it. */
+    text: (ctx) =>
+      `Guests check in at a Reception Desk before anything else. Open the Items menu, pick the Reception Desk and place it near the entrance. ${moneyWord(ctx)}`,
     want: { kind: 'item', type: 'reception_desk' },
   },
   {
@@ -132,6 +158,37 @@ function headsWant(ctx: SimContext, id: PrimerStepId): Want | undefined {
   }
 }
 
+/** What a heads-up step would spend: once, and every month in a wage. */
+function headsSpend(ctx: SimContext, id: PrimerStepId): { cost: number; wage: number } {
+  switch (id) {
+    case 'caretaker':
+      return { cost: 0, wage: ROLES.caretaker.baseSalary };
+    case 'smudging':
+      return { cost: (hasRoom(ctx, 'training') ? 0 : ROOMS.training.cost) + GENERAL_COURSES.smudging.cost, wage: 0 };
+    case 'staffroom':
+      return { cost: ROOMS.staffroom.cost, wage: 0 };
+    case 'open':
+    case 'land':
+      return { cost: 0, wage: 0 };
+  }
+}
+
+/**
+ * The word that goes on a step that would leave the bank, on its own, with less than a month's wages: what it would
+ * leave, and that the loan is cheaper than the red. Nothing while the bank can take it.
+ */
+export function spendNote(ctx: SimContext, cost: number, wage: number): string {
+  const s = ctx.s;
+  const month = monthlyPayroll(s) + wage;
+  const after = s.money - cost;
+  if (after >= month) return '';
+  const leaves =
+    after < 0
+      ? `would put the bank ${money(-after)} in the red`
+      : `would leave ${money(after)} in the bank, less than a month's wages (${money(month)})`;
+  return ` This ${leaves}: a loan from the Money menu, at ${pct(LOAN_RATE)} a month, is cheaper than the red at ${pct(OVERDRAFT_RATE)}.`;
+}
+
 /** A step of the tutorial as it stands now. */
 interface Step {
   id: string;
@@ -154,22 +211,24 @@ function chain(ctx: SimContext): Step[] {
   const opening = OPENING.map((o) => ({
     id: o.id,
     title: o.title,
-    text: o.text,
+    text: typeof o.text === 'string' ? o.text : o.text(ctx),
     want: o.want,
     done: openingDone(ctx, o.id),
     due: openingDue(ctx, o.id),
   }));
-  // the heads-up for opening is the opening itself, walked through above
+  // the heads-up for opening is the opening itself, walked through above; the one on land comes at the first star,
+  // long after the rest, so it stays a heads-up of its own rather than hold the tutorial open until then
   const notes = primerNotes(ctx);
   const heads = primerLines(ctx)
-    .filter((l) => l.id !== 'open')
+    .filter((l) => l.id !== 'open' && l.id !== 'land')
     .map((l) => {
       const note = notes.find((n) => n.id === l.id);
       const want = headsWant(ctx, l.id);
+      const { cost, wage } = headsSpend(ctx, l.id);
       return {
         id: l.id,
         title: l.label,
-        text: note?.text ?? '',
+        text: note ? note.text + spendNote(ctx, cost, wage) : '',
         ...(want && { want }),
         ...(note?.about && { about: note.about }),
         done: l.done,
@@ -248,7 +307,8 @@ export const HANDED_OVER_TIP = 'tutorial-done';
 
 /**
  * Once a second: hand over once every step is done, ending the tutorial for good in this game, and the heads-ups too
- * if they are all in place, so they go without a word of their own.
+ * if they are all in place, so they go without a word of their own. The heads-up on land, which is no step, is left
+ * to come at the first star, and ends them then without a word, the handoff having said it.
  */
 export function warnTutorial(ctx: SimContext) {
   const s = ctx.s;
