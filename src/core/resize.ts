@@ -41,6 +41,9 @@ export function inRect(r: Rect, x: number, y: number): boolean {
   return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
 }
 
+/** Whether a room's window looks out onto a tile of a rectangle, as it would into a room put down there. */
+export const looksOnto = (w: WallSpot, r: Rect) => inRect(r, w.x + w.dx, w.y + w.dy);
+
 /** Whether two rectangles are the same. */
 export function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;

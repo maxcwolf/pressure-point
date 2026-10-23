@@ -86,19 +86,23 @@ export function assignProblem(role: Role, type: RoomType): string {
   return `There is no work for a ${ROLES[role].name} in a ${ROOMS[type].name}`;
 }
 
-/** The hint while a room is picked up to move it. */
-export function moveRoomHint(type: RoomType): string {
-  return `Moving the ${ROOMS[type].name} · click to put it down · R turns it · Esc cancels`;
+/** A phrase saying how many windows next door putting a room down where it is takes out, or nothing if none. */
+const takesOut = (windows: number) =>
+  windows ? ` · takes out ${windows === 1 ? 'a window' : `${windows} windows`} next door` : '';
+
+/** The hint while a room is picked up to move it, and the windows next door putting it down here takes out. */
+export function moveRoomHint(type: RoomType, windows = 0): string {
+  return `Moving the ${ROOMS[type].name}${takesOut(windows)} · click to put it down · R turns it · Esc cancels`;
 }
 
-/** The hint while putting down rooms from a template, with what each costs. */
-export function templateHint(name: string, cost: number): string {
-  return `Building "${name}" · ${money(cost)} each · click to build one · R turns it · Esc when done`;
+/** The hint while putting down rooms from a template, with what each costs, and the windows next door one takes out. */
+export function templateHint(name: string, cost: number, windows = 0): string {
+  return `Building "${name}" · ${money(cost)} each${takesOut(windows)} · click to build one · R turns it · Esc when done`;
 }
 
-/** The hint while putting down copies of a room, with what each costs. */
-export function copyRoomHint(type: RoomType, cost: number): string {
-  return `Copying the ${ROOMS[type].name} · ${money(cost)} each · click to build a copy · R turns it · Esc when done`;
+/** The hint while putting down copies of a room, with what each costs, and the windows next door one takes out. */
+export function copyRoomHint(type: RoomType, cost: number, windows = 0): string {
+  return `Copying the ${ROOMS[type].name} · ${money(cost)} each${takesOut(windows)} · click to build a copy · R turns it · Esc when done`;
 }
 
 /** The icon shown before the hint for the tool in hand: what is being placed, moved or built, or the job being done. */

@@ -602,18 +602,22 @@ export class Tools {
       this.tool = { kind: 'none' };
       return;
     }
-    this.hint = copy ? copyRoomHint(room.type, copyCost(t.layout)) : moveRoomHint(room.type);
-    this.drawLayout(t.layout, drawing, copy ? undefined : room);
+    const windows = this.drawLayout(t.layout, drawing, copy ? undefined : room);
+    this.hint = copy ? copyRoomHint(room.type, copyCost(t.layout), windows) : moveRoomHint(room.type, windows);
   }
 
-  /** A room about to be put down from a layout, colored by whether it fits, with its furniture and door. */
-  private drawLayout(layout: Layout, drawing: Drawing, moving?: Room) {
+  /**
+   * A room about to be put down from a layout, colored by whether it fits, with its furniture and door. Returns how
+   * many windows next door putting it down there would take out.
+   */
+  private drawLayout(layout: Layout, drawing: Drawing, moving?: Room): number {
     const placed = this.placedRoom({ layout });
-    if (!placed) return;
+    if (!placed) return 0;
     const check = this.sim.world.layoutValid(layout.type, placed, moving);
     this.problem = check.reason;
     drawing.tiles.push(...layoutTiles(placed, check.ok));
     this.view.setDoor({ door: placed.door, tone: check.ok ? 'ok' : 'bad' });
+    return check.ok ? this.sim.world.windowsOnto(placed.rect, moving).length : 0;
   }
 
   /** Recompute overlays, ghost and hint for the current tool state. */
@@ -654,8 +658,7 @@ export class Tools {
       this.drawRoomMove(t.roomId, t.copy, drawing);
     } else if (t.kind === 'template') {
       view.setGhost(null);
-      this.hint = templateHint(t.name, copyCost(t.layout));
-      this.drawLayout(t.layout, drawing);
+      this.hint = templateHint(t.name, copyCost(t.layout), this.drawLayout(t.layout, drawing));
     } else if (t.kind === 'resize') {
       view.setGhost(null);
       const room = world.room(t.roomId);
