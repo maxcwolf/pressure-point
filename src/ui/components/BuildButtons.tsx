@@ -50,14 +50,9 @@ function Plate() {
       watch.disconnect();
     };
   }, []);
+  // the drawing fills the button's box, its viewBox the same box, so nothing about its element's size can scale it
   return (
-    <svg
-      ref={ref}
-      class="shape"
-      aria-hidden="true"
-      viewBox={shape?.viewBox}
-      style={shape ? { width: shape.width, height: shape.height, left: shape.left, top: shape.top } : undefined}
-    >
+    <svg ref={ref} class="shape" aria-hidden="true" viewBox={shape?.viewBox}>
       {shape && <path class="fill" d={shape.d} />}
     </svg>
   );
