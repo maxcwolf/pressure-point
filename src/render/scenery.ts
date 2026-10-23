@@ -317,10 +317,18 @@ function buildSeaside(fp: Footprint, width: number, plots: readonly Rect[]): THR
   return shore;
 }
 
+/**
+ * The outer walls' paint. Its shadow is cast from the faces toward the sun: cast from the faces away from it, as a
+ * material's is by default, a wall's shadow starts on its inner face, just where that meets the floor and the wall
+ * across the corner, and the bias lets a hairline of sun through along both.
+ */
+const SHELL_WALL = mat(0xf7f1e5, 0.85).clone();
+SHELL_WALL.shadowSide = THREE.FrontSide;
+
 /** Build the building's outer walls: tall across from the camera, low facing it, with a gap for each entrance. */
 export function buildShell(fp: Footprint, near: Sides): THREE.Group {
   const shell = new THREE.Group();
-  const wall = mat(0xf7f1e5, 0.85);
+  const wall = SHELL_WALL;
   const trim = mat(SHELL_TRIM, 0.6);
   const T = OUTER_T;
   /** Add a plain box to the outer shell. */
