@@ -318,6 +318,24 @@ export function roomRectValid(
   return OK;
 }
 
+/**
+ * Whether a room of a type would fit anywhere in the building at its smallest, either way round, as things stand: the
+ * floor alone, before a door is chosen. Nowhere, and the room for it has to come from land, or from the rooms there are.
+ */
+export function roomFitsAnywhere(world: World, type: RoomType): boolean {
+  const def = ROOMS[type];
+  const t = world.asIs();
+  const b = world.building.bounds;
+  const ways: [number, number][] = [
+    [def.minShort, def.minLong],
+    [def.minLong, def.minShort],
+  ];
+  for (const [w, h] of ways)
+    for (let y = b.y0; y + h - 1 <= b.y1; y++)
+      for (let x = b.x0; x + w - 1 <= b.x1; x++) if (roomRectValid(world, type, { x, y, w, h }, t).ok) return true;
+  return false;
+}
+
 /** The doorway on the room edge nearest a ground position. */
 export function nearestDoor(r: Rect, fx: number, fy: number): Room['door'] {
   const cx = Math.max(r.x, Math.min(r.x + r.w - 1, Math.floor(fx)));

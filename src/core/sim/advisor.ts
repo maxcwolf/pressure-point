@@ -47,7 +47,7 @@ import { emit, type Subject, tipOnce, toast } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { roomForModality } from './machines';
 import { floodAdvice, mishapAdvice } from './mishaps';
-import { primerDone, primerNotes } from './primer';
+import { primerDone, primerNotes, primerTip } from './primer';
 import { allStars, hasItem, hasRoom, hasStaff } from './progress';
 import { calmerOf, running } from './runaways';
 import { stationStaff } from './sessions';
@@ -312,7 +312,7 @@ export function warnPrimer(ctx: SimContext) {
   for (const n of primerNotes(ctx)) {
     const text =
       short && PRIMER_SPENDS.has(n.id) ? `${n.text} Wait until there is a month's wages in hand, though.` : n.text;
-    tipOnce(ctx, `primer-${n.id}`, text, 'info', n.about, 'ui-advisor');
+    tipOnce(ctx, primerTip(n.id), text, 'info', n.about, 'ui-advisor');
   }
 }
 

@@ -12,6 +12,7 @@ import {
   WINDOW_COST,
 } from '../../core/data';
 import { money } from '../../core/format';
+import { nameInSentence, type PlotOffer } from '../../core/land';
 import { coveredSize } from '../../core/resize';
 import type { Rect } from '../../core/world';
 import { legend } from './squares';
@@ -56,6 +57,24 @@ export function dragHint(type: RoomType, dragged: Rect | null, cost = 0): string
     return `${def.name} · ${dragged.w}×${dragged.h} · ${money(cost)}${floor} · release to confirm`;
   }
   return `${def.name} · drag out the floor (at least ${def.minShort}×${def.minLong}; ${money(def.cost)} up to ${covered}, ${money(ROOM_TILE_COST)} a tile past that) · Esc cancels`;
+}
+
+/**
+ * Why a room fits nowhere in the building at its smallest, and where the room for it would come from: the cheapest plot
+ * for sale, the plot the builders are still at, the next plot to come up for sale, or the rooms there are once every
+ * plot is the game's. Said as the room is picked, and again as a drag of it is turned down.
+ */
+export function noFitHint(type: RoomType, offers: readonly PlotOffer[]): string {
+  const def = ROOMS[type];
+  const open = offers.filter((o) => o.state === 'open').sort((a, b) => a.price - b.price)[0];
+  const building = offers.find((o) => o.state === 'building');
+  const locked = offers.find((o) => o.state === 'locked');
+  const head = `Nowhere in the building fits a ${def.name} (at least ${def.minShort}×${def.minLong}).`;
+  if (open) return `${head} Expand, beside Rooms, sells ${nameInSentence(open.name)} for ${money(open.price)}.`;
+  if (building)
+    return `${head} The builders are still at work on ${nameInSentence(building.name)}, ${building.daysLeft} day${building.daysLeft === 1 ? '' : 's'} to go.`;
+  if (locked) return `${head} ${locked.name} ${locked.why.replace(/^Comes/, 'comes')}.`;
+  return `${head} Every plot is yours: move a room, make one smaller or knock one down to make space.`;
 }
 
 /** The hint for choosing where a new room's door goes. */

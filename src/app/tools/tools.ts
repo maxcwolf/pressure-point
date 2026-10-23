@@ -38,6 +38,7 @@ import {
   MOVE_DOOR_HINT,
   moveHint,
   moveRoomHint,
+  noFitHint,
   placeHint,
   planHint,
   RESIZE_HINT,
@@ -63,6 +64,8 @@ export class Tools {
   hint = '';
   /** Why the current placement is invalid, if it is. */
   problem = '';
+  /** Whether a drag turned down for a room that fits nowhere has said so already, since the room was picked. */
+  private noFitSaid = false;
   /** What the new item in hand would change where it is about to go, while the preview is on and it fits there. */
   preview: PlacePreview | null = null;
   /** The last preview worked out, and where for, so moving within a tile does not work it out again. */
@@ -170,11 +173,16 @@ export class Tools {
     return false;
   }
 
-  /** Start dragging out a new room, if it can be afforded. */
+  /**
+   * Start dragging out a new room, if it can be afforded. Where it fits nowhere at its smallest, the hint says so and
+   * where the room for it would come from, and a drag of it turned down says the same once.
+   */
   startRoom(type: RoomType) {
     this.cancel();
     if (!this.affords(type)) return;
-    this.tool = { kind: 'room', type, phase: 'drag', start: null, rect: null };
+    const noFit = this.sim.world.roomFitsAnywhere(type) ? '' : noFitHint(type, this.sim.landOffers());
+    this.tool = { kind: 'room', type, phase: 'drag', start: null, rect: null, noFit };
+    this.noFitSaid = false;
     this.select(null);
     this.refresh();
   }
@@ -230,6 +238,7 @@ export class Tools {
   startExpand(pointed: string | null = null) {
     this.cancel();
     this.tool = { kind: 'expand', pointed };
+    this.sim.seePlots();
     this.select(null);
     this.refresh();
   }
@@ -424,7 +433,13 @@ export class Tools {
         this.tool = { kind: 'room', type: t.type, phase: 'door', rect };
         this.sfx('place');
       } else {
-        if (rect && rect.w * rect.h > 1) this.refuse('draw_room');
+        if (rect && rect.w * rect.h > 1) {
+          if (t.noFit && !this.noFitSaid) {
+            this.noFitSaid = true;
+            sim.emit({ type: 'toast', text: t.noFit, kind: 'info', icon: 'ui-expand' });
+          }
+          this.refuse('draw_room');
+        }
         t.rect = null;
       }
     } else if (t.phase === 'door') {
@@ -672,7 +687,10 @@ export class Tools {
       view.setHeat(plotHeat(offers, t.pointed), 'land');
     } else if (t.phase === 'drag') {
       view.setGhost(null);
-      this.hint = dragHint(t.type, t.start ? t.rect : null, t.rect ? roomCost(t.type, t.rect) : 0);
+      this.hint =
+        t.noFit && !t.start
+          ? `${t.noFit} · Esc cancels`
+          : dragHint(t.type, t.start ? t.rect : null, t.rect ? roomCost(t.type, t.rect) : 0);
       if (t.rect) {
         const check = world.roomRectValid(t.type, t.rect);
         this.problem = check.reason;

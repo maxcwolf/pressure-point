@@ -568,6 +568,10 @@ export class Sim {
   landOffers(): PlotOffer[] {
     return landOffers(this.ctx);
   }
+  /** The land for sale has been looked over: the Expand tool is in hand. */
+  seePlots() {
+    this.s.sawPlots = true;
+  }
   /** Buy a plot of land and set the builders to work on it. False if it cannot be bought. */
   buyPlot(id: string): boolean {
     return buyPlot(this.ctx, id);

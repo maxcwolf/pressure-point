@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **When to buy land.** In your first Willow Lane game, the advisor says at the first star what land has come up for sale and when to buy it (once the building has no room left for a treatment room, and not before), with a line on the "Getting ready" checklist for it. In any game, picking a room that fits nowhere in the building says so in the hint, and names the cheapest plot for sale, the one the builders are still at, or the star the next comes up at.
+
 ## v0.32.2
 
 - **A heads-up on your first go.** In your first Willow Lane game, the advisor says what the center will need before the trouble comes: a Caretaker once guests are being healed, Smudging once there is one, a Staff Room as staff tire. A "Getting ready" checklist under the objectives ticks them off.

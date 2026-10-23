@@ -835,6 +835,11 @@ export interface GameState {
    * checklist under the objectives keeps it, until all of it is in place.
    */
   primer: boolean;
+  /**
+   * The land for sale has been looked over: Expand has been taken up, or a plot bought. With the first game's heads-up
+   * on land given, that ticks the land off its checklist.
+   */
+  sawPlots: boolean;
   /** How often guests have come to harm, by what and why ("failed:vibes"), and the explanations waiting to be read. */
   harms: Record<string, number>;
   harmNotes: HarmNote[];
