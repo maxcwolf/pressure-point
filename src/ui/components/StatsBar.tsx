@@ -3,11 +3,11 @@
 import './StatsBar.css';
 
 import { centerOf, type IconId } from '../../core/data';
-import { calendarDay, dateOf, money } from '../../core/format';
+import { dateOf, money } from '../../core/format';
 import { netOf } from '../../core/sim/economy';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
-import { calendarTip, SEASON_NAMES } from '../lib/seasons';
+import { calendarTip, shortDate } from '../lib/seasons';
 import { weatherNote } from '../lib/weather';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
@@ -65,8 +65,9 @@ export function StatsBar() {
       <div
         class="stat date"
         title={calendarTip(
-          calendarDay(s),
+          s.day,
           centerOf(s),
+          s.startMonth,
           s.open ? { p: sim.arrivalPace(), reputation: s.reputation } : undefined,
         )}
       >
@@ -79,13 +80,14 @@ export function StatsBar() {
             </span>
           )}
         </b>
+        {/* in a narrow window only a rush or the snow is said under the day: the season's icon and the hover say the rest */}
         <small>
           {sim.snowedIn() ? (
             <em class="rush">Snowed in</em>
           ) : sim.rushHour() ? (
             <em class="rush">Rush hour</em>
           ) : (
-            `${SEASON_NAMES[season]} · Month ${date.month}, Year ${date.year}`
+            <span class="when">{shortDate(s.day, season, s.startMonth)}</span>
           )}
         </small>
       </div>{' '}

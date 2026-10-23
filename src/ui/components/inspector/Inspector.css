@@ -109,8 +109,9 @@
   margin: 9px 0 4px;
 }
 
+/* as tall as the room between the system buttons at the top and the bar along the bottom */
 #inspector .panel {
-  max-height: calc(100vh - 260px);
+  max-height: calc(100vh - var(--bar-h) - 84px);
   overflow-y: auto;
 }
 

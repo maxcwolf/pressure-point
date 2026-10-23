@@ -80,9 +80,15 @@
   }
 }
 
-/* with the round buttons smaller, everything fits in a row down to here, the date included */
+/* below here the date keeps to a compact cell: the season's icon, the day and the temperature, and a rush or the snow
+   when one is on; the season, month and year are in its hover. If even that leaves no room, the stats bar moves up a
+   row, and whatever stands above it is kept clear by the bar's measured height */
 @media (max-width: 1430px) {
   .stat.date {
+    min-width: 0;
+  }
+
+  .stat.date .when {
     display: none;
   }
 }

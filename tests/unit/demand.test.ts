@@ -468,8 +468,8 @@ describe('the pace, in words', () => {
   });
 
   it("is in the date's hover as well", () => {
-    expect(calendarTip(10, boardwalk, { p: pace(), reputation: 50 })).toBe(
-      `Date and weather Winter: ×${boardwalk.seasons!.winter} the usual guests. Spring (×1) from day 1 of month 3, in 50 days. ${paceNote(pace(), 50, boardwalk)}`,
+    expect(calendarTip(10, boardwalk, 0, { p: pace(), reputation: 50 })).toBe(
+      `Day 11 of month 1, year 1: Winter: ×${boardwalk.seasons!.winter} the usual guests. Spring (×1) from day 1 of month 3, in 50 days. ${paceNote(pace(), 50, boardwalk)}`,
     );
   });
 });

@@ -207,6 +207,18 @@ test.describe('in a game', () => {
     });
   }
 
+  // a Year 2 summer with a six-figure balance, whose longer date and balance once moved the stats bar up a row and ran the
+  // inspector's last lines under it
+  test('the inspector late in the game', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      pp.state.day = 18 * 30 + 0.4;
+      pp.state.money = 392_247;
+      pp.tools.select({ kind: 'room', id: pp.state.rooms.find((r) => r.type === 'massage')!.id });
+    });
+    await screens.shot('inspector-late-game');
+  });
+
   test('an item in hand and a room blueprint', async ({ screens, game }) => {
     await screens.play();
     await game.menu('Items');
