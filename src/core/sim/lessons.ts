@@ -45,7 +45,7 @@ export const LESSONS: Readonly<Record<LessonId, Lesson>> = {
   },
   heal: {
     title: 'Your first heal',
-    intro: 'A guest has gone home healed. That is the whole idea.',
+    intro: 'A guest has been healed! Keep healing and earning stars by completing your objectives.',
     panels: [
       { icon: 'ui-money', label: 'Money', note: 'The bottom bar keeps the bank, and what came in today.' },
       {
