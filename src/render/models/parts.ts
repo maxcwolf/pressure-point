@@ -363,6 +363,12 @@ export interface CueParts {
   wisps?: THREE.Group;
   /** Fumes from an engine's exhaust while it runs. */
   fumes?: THREE.Group;
+  /** Wasps round something they have stopped. */
+  wasps?: THREE.Group;
+  /** Icicles hanging from something frozen. */
+  icicles?: THREE.Group;
+  /** The stopped look its parts are dressed in, if any: switched off, or frozen. */
+  dressed?: 'off' | 'frost' | undefined;
 }
 
 /** The changing parts of an item's model. */

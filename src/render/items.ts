@@ -16,7 +16,7 @@ import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
 import { ghostHung, hangPlace, placeHung } from './hung';
-import { animateCues, type CueCondition, NOISE_CUE, usedNoise, wearLight } from './item-cues';
+import { animateCues, type CueCondition, NOISE_CUE, STOP_LOOKS, usedNoise, wearLight } from './item-cues';
 import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import { SPILL_SPEED, spillRuns } from './models/items/fountain';
@@ -73,13 +73,15 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
     leaf.color.copy(dryColor(it.water, LEAF));
     model.scale.y = 0.82 + 0.18 * Math.min(1, it.water / 40);
   }
-  if (glow) glow.emissiveIntensity = (it.water / 100) * 1.4;
+  // a stone warmer cools with its water, and goes cold with the power off
+  if (glow) glow.emissiveIntensity = it.stopped === 'off' ? 0 : (it.water / 100) * 1.4;
   if (ring) {
     ring.position.y = it.scanning ? 0.8 + Math.sin(t * 3.5) * 0.6 : 0.2;
     ring.visible = it.wear < 100;
   }
   if (orb) orb.position.y = 0.9 + Math.sin(t * 3 + it.id) * 0.035;
-  if (spill) {
+  // frozen water stands still where it was
+  if (spill && it.stopped !== 'frost') {
     // bright runs go down the falling water, the foam where it lands churns, and rings spread from the orb to the rim
     spillRuns().offset.y = (t * SPILL_SPEED) % 1;
     const churn = Math.sin(t * 9 + it.id) * 0.5 + Math.sin(t * 13.7 + it.id * 2) * 0.5;
@@ -91,13 +93,14 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
       (r.material as THREE.MeshBasicMaterial).opacity = 0.5 * Math.min(1, f * 5) * (1 - f);
     });
   }
-  // drifting smoke or scent
+  // drifting smoke or scent, until a mishap stops it
+  if (puffs) puffs.visible = !it.stopped;
   puffs?.children.forEach((p, i) => {
     const f = (t * 0.5 + i / 3 + it.id * 0.13) % 1;
     p.position.set(Math.sin(f * 5 + i) * 0.08, f * 0.6, 0);
     p.scale.setScalar(0.4 + f * 0.9);
   });
-  if (led) wearLight(led, it.wear, it.id, Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1, t);
+  if (led) wearLight(led, it.wear, it.id, Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1, t, it.stopped === 'off');
   cups?.forEach((cup, i) => (cup.visible = i < it.trophies));
   if (linens) soilLinens(linens, it.dirt);
   if (heap) {
@@ -251,6 +254,7 @@ export class ItemsLayer {
         running: this.running(it),
         rattled,
         trophies: this.sim.s.trophies.length,
+        stopped: this.stopped(it),
       },
       t,
     );
@@ -268,6 +272,15 @@ export class ItemsLayer {
     const script = GAGS[it.type];
     const input = script && this.gags.input(this.sim, it, t);
     if (script && input) applyGag(model, gagFrame(script, input), t);
+    // a machine's glow goes out with the power
+    const { shine } = partsOf(model);
+    if (shine && this.stopped(it) === 'off') shine.emissiveIntensity = 0;
+  }
+
+  /** How the mishap under way shows on an item it has taken out of action, if it has. */
+  private stopped(it: Item) {
+    const m = this.sim.s.mishap;
+    return m && this.sim.world.stoppedByMishap(it) ? STOP_LOOKS[m.kind] : undefined;
   }
 
   /** How high over an item its bar and markers go: as usual, or clear of the top of a machine, which stands taller. */
