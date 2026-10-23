@@ -16,6 +16,7 @@ import {
   POWER_CUT_SKY,
   powerOut,
 } from '../../src/render/lighting';
+import { buildStreetTrees } from '../../src/render/models/downtown';
 import { buildItem } from '../../src/render/models/items';
 import { buildOrchard } from '../../src/render/models/orchard';
 import { partsOf } from '../../src/render/models/parts';
@@ -124,6 +125,7 @@ describe('the trees through the year', () => {
   /** The colors of the leaves of a forest and an orchard, and whether its apples show, lit for a game on a day. */
   function trees(day: number) {
     const forest = buildForest([0, 1, 2].map((seed) => ({ x: seed * 2, z: 0, seed })));
+    const street = buildStreetTrees([0, 1].map((seed) => ({ x: seed * 2, z: 0, seed })));
     const orchard = buildOrchard([{ x: 0, z: 0, seed: 1 }]);
     const sim = freshSim();
     sim.s.day = day;
@@ -133,8 +135,17 @@ describe('the trees through the year', () => {
       g.children.map((m) => (m as THREE.Mesh).material as THREE.MeshStandardMaterial);
     const [, ...leaves] = materials(forest);
     const [, canopy, apples] = materials(orchard);
+    /** Every color a group's meshes are drawn in. */
+    const colors = (g: THREE.Object3D) => {
+      const out = new Set<number>();
+      g.traverse((o) => {
+        if (o instanceof THREE.Mesh) out.add((o.material as THREE.MeshStandardMaterial).color.getHex());
+      });
+      return out;
+    };
     return {
       leaves: leaves.map((m) => m.color.getHex()),
+      street: colors(street),
       canopy: canopy!.color.getHex(),
       apples: apples!.visible,
     };
@@ -153,6 +164,9 @@ describe('the trees through the year', () => {
     const spring = trees(first('spring'));
     expect(autumn.leaves).not.toEqual(summer.leaves);
     expect(winter.leaves).not.toEqual(summer.leaves);
+    // the street trees downtown wear the park's leaves, so they turn with them
+    for (const t of [summer, autumn, winter])
+      expect(t.street.has(t.leaves[0]!) && t.street.has(t.leaves[2]!)).toBe(true);
     // autumn's are warmer than summer's: more red than green
     /** How much redder than green a color is. */
     const red = (hex: number) => new THREE.Color(hex).r - new THREE.Color(hex).g;

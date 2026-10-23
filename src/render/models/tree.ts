@@ -21,11 +21,16 @@ export const LEAF_SEASONS: Readonly<Record<Season, readonly [number, number, num
 };
 const LEAF_COLORS = LEAF_SEASONS.summer;
 
+/** Leaves of a color, in a material of their own. */
+const leaf = (color: number) => new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0 });
 /**
  * The leaves of every tree, one material for each of the three colors, of their own rather than shared with anything
  * else, so a change of season repaints every tree at once with nothing built again.
  */
-const LEAVES = LEAF_COLORS.map((color) => new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0 }));
+const LEAVES = [leaf(LEAF_COLORS[0]), leaf(LEAF_COLORS[1]), leaf(LEAF_COLORS[2])] as const;
+
+/** The leaves in one of the three colors, for trees built elsewhere, such as the street trees, to turn with the park's. */
+export const leafMaterial = (i: 0 | 1 | 2): THREE.MeshStandardMaterial => LEAVES[i];
 
 /** Turn every tree's leaves to a season's colors. */
 export function leavesFor(season: Season) {
