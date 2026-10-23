@@ -21,13 +21,17 @@ export function mountHud(host: GameHost): HudState {
   return hud;
 }
 
-/** Show the title screen, with a note if there is one, until the player picks 'new' or a save to load, and report which. */
+/**
+ * Show the title screen, with a note if there is one and the welcome to the alpha if it is due, until the player picks
+ * 'new' or a save to load, and report which.
+ */
 export function showTitle(
   audio: Audio,
   exit: (() => void) | undefined,
   update: UpdateOffer | undefined,
   fullScreen: FullScreenSwitch | undefined,
   note = '',
+  welcome = false,
 ): Promise<string> {
   return new Promise((resolve) => {
     const el = document.createElement('div');
@@ -40,7 +44,15 @@ export function showTitle(
       resolve(what);
     };
     render(
-      <TitleScreen audio={audio} exit={exit} update={update} fullScreen={fullScreen} note={note} onPick={finish} />,
+      <TitleScreen
+        audio={audio}
+        exit={exit}
+        update={update}
+        fullScreen={fullScreen}
+        note={note}
+        welcome={welcome}
+        onPick={finish}
+      />,
       el,
     );
   });

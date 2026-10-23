@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **When to buy land.** In your first Willow Lane game, the advisor says at the first star what land has come up for sale and when to buy it (once the building has no room left for a treatment room, and not before), with a line on the "Getting ready" checklist for it. In any game, picking a room that fits nowhere in the building says so in the hint, and names the cheapest plot for sale, the one the builders are still at, or the star the next comes up at.
+- **Tell us what you think.** The game is in alpha and changes every day, and a welcome on your first visit says so. Give feedback, in the corner of the title screen and in the pause menu, sends a bug, an idea or anything else straight to the developer, with an email to be answered at if you like.
 
 ## v0.32.2
 

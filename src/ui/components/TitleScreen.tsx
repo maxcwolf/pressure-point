@@ -9,6 +9,7 @@ import { CENTERS, GAME_TITLE } from '../../core/data';
 import { latestSave, timeAgo } from '../../storage/saves';
 import { loadDisciplinePrefs } from '../../storage/settings';
 import { readThumb } from '../../storage/thumbnails';
+import { saveWelcomeSeen } from '../../storage/welcome';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch, UpdateOffer } from '../host';
 import { cx } from '../lib/cx';
@@ -19,6 +20,7 @@ import { CampaignPanel } from './CampaignPanel';
 import { ChangelogPanel } from './ChangelogPanel';
 import { Icon, IconText } from './common/Icon';
 import { Dialog } from './dialogs/Dialog';
+import { FeedbackPanel } from './FeedbackPanel';
 import { SandboxPanel } from './SandboxPanel';
 import { SavesPanel } from './SavesPanel';
 import { SettingsPanel } from './SettingsPanel';
@@ -33,11 +35,13 @@ export interface TitleScreenProps {
   fullScreen: FullScreenSwitch | undefined;
   /** Something the player needs to know, such as why the game they picked did not start. */
   note?: string;
+  /** Whether to welcome the player to the alpha, which they see once. */
+  welcome?: boolean;
   /** Called with 'new' for a sandbox game, 'new:<center>' for a campaign one, or the id of a save to load. */
   onPick: (what: string) => void;
 }
 
-type Panel = 'campaign' | 'sandbox' | 'saves' | 'settings' | 'changes';
+type Panel = 'campaign' | 'sandbox' | 'saves' | 'settings' | 'changes' | 'feedback';
 
 /** The heading over each panel. */
 const PANEL_NAMES: Readonly<Record<Panel, string>> = {
@@ -46,10 +50,11 @@ const PANEL_NAMES: Readonly<Record<Panel, string>> = {
   saves: 'Load game',
   settings: 'Settings',
   changes: 'What’s new',
+  feedback: 'Give feedback',
 };
 
 /** The logo, the latest save and the ways into the game. */
-export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick }: TitleScreenProps) {
+export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcome = false, onPick }: TitleScreenProps) {
   const redraw = useRedraw();
   /** The panel showing under the logo in place of the menu, if any. */
   const [showing, setShowing] = useState<Panel | null>(null);
@@ -57,6 +62,8 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
   const [opened, setOpened] = useState<readonly Panel[]>([]);
   /** Whether the player is being asked to restart for the downloaded update. */
   const [askingToUpdate, setAskingToUpdate] = useState(false);
+  /** Whether the welcome to the alpha is up. */
+  const [welcoming, setWelcoming] = useState(welcome);
   const latest = latestSave();
   // the look for an update goes on while the title screen is up, and can end in one finishing downloading
   useEffect(() => update?.subscribe(redraw), [update, redraw]);
@@ -236,8 +243,13 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
           <div id="title-changes" class="title-sub" hidden={showing !== 'changes'}>
             {opened.includes('changes') && <ChangelogPanel />}
           </div>
+          <div id="title-feedback" class="title-sub" hidden={showing !== 'feedback'}>
+            {opened.includes('feedback') && <FeedbackPanel from={{ screen: 'title' }} />}
+          </div>
         </div>
-        <p class="title-version">{`v${__APP_VERSION__}`}</p>
+        <p class="title-version">
+          <span class="title-alpha">Alpha</span> {`v${__APP_VERSION__}`}
+        </p>
         <div class="title-corner">
           {update && updateVersion && (
             <button
@@ -257,6 +269,15 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
           )}
           <button
             class="title-news"
+            hidden={showing === 'feedback'}
+            onClick={() => {
+              open('feedback');
+            }}
+          >
+            Give feedback
+          </button>
+          <button
+            class="title-news"
             hidden={showing === 'changes'}
             onClick={() => {
               open('changes');
@@ -273,6 +294,28 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', onPick
           ))}
         </div>
       </div>
+      {welcoming && (
+        <Dialog>
+          <h2>Welcome to the alpha</h2>
+          <p>
+            {`${GAME_TITLE} is in alpha: it is still being built, and it changes every day. Expect new things to try, rough edges, and the odd bug.`}
+          </p>{' '}
+          <p class="sub">
+            Your feedback decides what comes next. Use Give feedback here, or in the pause menu during a game.
+          </p>{' '}
+          <div class="btnrow">
+            <button
+              class="go"
+              onClick={() => {
+                saveWelcomeSeen();
+                setWelcoming(false);
+              }}
+            >
+              Let’s play
+            </button>
+          </div>
+        </Dialog>
+      )}
       {askingToUpdate && update && updateVersion && (
         <Dialog>
           <h2>Restart to update?</h2>

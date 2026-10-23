@@ -11,6 +11,7 @@ import { ConfirmCancelCourse } from './ConfirmCancelCourse';
 import { ConfirmDismissMessages } from './ConfirmDismissMessages';
 import { ConfirmFire } from './ConfirmFire';
 import { ConfirmNewGame } from './ConfirmNewGame';
+import { FeedbackDialog } from './FeedbackDialog';
 import { KarmaDialog } from './KarmaDialog';
 import { PauseMenu } from './PauseMenu';
 import { PayrollDialog } from './PayrollDialog';
@@ -29,6 +30,8 @@ function contents(dialog: DialogId): ComponentChildren {
       return <SettingsDialog />;
     case 'saves':
       return <SavesDialog />;
+    case 'feedback':
+      return <FeedbackDialog />;
     case 'confirm-new':
       return <ConfirmNewGame />;
     case 'confirm-fire':

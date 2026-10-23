@@ -10,8 +10,10 @@ import { loadIcons } from '../render/models/icons';
 import { loadCampaign } from '../storage/campaign';
 import { AUTOSAVE_ID, openInAutosave, readSave, startBackup } from '../storage/saves';
 import { loadDisciplinePrefs, loadSandbox } from '../storage/settings';
+import { welcomeSeen } from '../storage/welcome';
 import { showTitle } from '../ui';
 import { track } from './analytics';
+import { automated } from './automation';
 import { desktop } from './desktop';
 import { fullScreen } from './fullscreen';
 import { startGame } from './game';
@@ -43,7 +45,9 @@ export async function boot() {
   let opened = open(what);
   while (!opened || opened === 'no-room') {
     if (opened === 'no-room') logger.warn('No room to keep the autosave, so the new game did not start');
-    what = await showTitle(audio, exit, updates, fullScreen, opened === 'no-room' ? NO_ROOM : '');
+    // a player is welcomed to the alpha once; a test or a bot is never welcomed, so the menu is there for it at once
+    const welcome = !welcomeSeen() && !automated(navigator);
+    what = await showTitle(audio, exit, updates, fullScreen, opened === 'no-room' ? NO_ROOM : '', welcome);
     audio.unlock();
     opened = open(what);
   }
