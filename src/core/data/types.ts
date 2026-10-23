@@ -368,6 +368,8 @@ export interface TraitDef {
   learn?: number;
   /** Something they do that can be seen: drop litter, put guests off, cheer colleagues, or water plants in passing. */
   habit?: 'litter' | 'grump' | 'cheer' | 'water';
+  /** Whether it costs you, in slower work, faster tiring, litter or put-off guests: shown red, where the rest show green. */
+  bad?: boolean;
 }
 
 /** A course any member of staff (or any in some roles) can take, beyond the treatments of their discipline. */

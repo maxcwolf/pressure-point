@@ -73,6 +73,17 @@ button.card:hover {
   opacity: 0.6;
 }
 
+/* an applicant's quirk: green where it helps, red where it costs */
+.card em.good {
+  background: #dff3e4;
+  color: #1d6a45;
+}
+
+.card em.bad {
+  background: #fbe3e1;
+  color: #a8322b;
+}
+
 .card .cost {
   position: absolute;
   top: 8px;

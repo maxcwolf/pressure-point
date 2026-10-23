@@ -42,10 +42,11 @@ export function HireMenu() {
       <p class="sub">
         {`${ROLES[role].desc} Up to ${applicantCap(s)} apply for each role at a time, more as stars are earned; a new applicant turns up every few days.`}
       </p>
-      <div class="cards">
+      {/* the tutorial rings the row, any of them being a hire: the choice is the player's to read off the cards */}
+      <div class={cx('cards', guide === 'hire:any' && 'guide')}>
         {s.candidates
           .filter((c) => c.role === role)
-          .map((c, i) => (
+          .map((c) => (
             <div key={c.id} class="card cv">
               <b>{c.name}</b>
               <span class="rank">
@@ -53,7 +54,11 @@ export function HireMenu() {
               </span>
               <QualChips quals={c.quals} />
               {c.traits.length ? (
-                c.traits.map((t) => <em key={t} title={traitOf(t).desc}>{`${traitOf(t).name}: ${traitOf(t).desc}`}</em>)
+                c.traits.map((t) => (
+                  <em key={t} class={traitOf(t).bad ? 'bad' : 'good'} title={traitOf(t).desc}>
+                    {`${traitOf(t).name}: ${traitOf(t).desc}`}
+                  </em>
+                ))
               ) : (
                 <em class="none">No notable quirks</em>
               )}{' '}
@@ -63,7 +68,7 @@ export function HireMenu() {
               </span>{' '}
               <div class="btnrow">
                 <Button
-                  class={cx('go', i === 0 && guide === 'hire:first' && 'guide')}
+                  class="go"
                   quiet
                   onPress={() => {
                     sim.hire(c.id);

@@ -89,7 +89,7 @@ const OPENING: readonly Opening[] = [
   {
     id: 'receptionist',
     title: 'Hire a Receptionist',
-    text: 'A desk needs a face behind it. Open the Hire menu and take on a Receptionist.',
+    text: "A desk needs a face behind it. Open the Hire menu and take on a Receptionist. Each applicant's card gives their rank, a star for each, their pay a month, and a quirk, green where it helps and red where it costs you. Any of them will do to open, and the lower the rank, the less they ask.",
     want: { kind: 'hire', role: 'receptionist' },
   },
   {
@@ -101,7 +101,7 @@ const OPENING: readonly Opening[] = [
   {
     id: 'consultant',
     title: 'Hire a Wellness Consultant',
-    text: 'The Consultation Room needs someone to run it. Hire a Wellness Consultant.',
+    text: 'The Consultation Room needs someone to run it. Hire a Wellness Consultant. The better their rank, the surer their diagnoses, so fewer guests come back for a second look: weigh that against the pay.',
     want: { kind: 'hire', role: 'consultant' },
   },
   {
@@ -113,7 +113,7 @@ const OPENING: readonly Opening[] = [
   {
     id: 'therapist',
     title: 'Hire a Massage Therapist',
-    text: 'Once the clock runs, the center opens and guests come. A Massage Therapist is who treats them in the Massage Suite: hire one before the first is through the consultation.',
+    text: 'Once the clock runs, the center opens and guests come. A Massage Therapist is who treats them in the Massage Suite: hire one before the first is through the consultation. Their card lists the treatments they know: every Therapist knows Swedish massage, which your first guests come for, and some arrive trained in more.',
     want: { kind: 'hire', role: 'therapist' },
   },
   {

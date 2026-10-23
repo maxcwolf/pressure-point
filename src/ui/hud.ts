@@ -284,7 +284,8 @@ export class HudState {
       return this.roomsTab === 'rooms' ? `room:${want.type}` : 'tab:rooms';
     }
     if (this.menu !== 'hire') return 'menu:hire';
-    return this.hireRole === want.role ? 'hire:first' : `role:${want.role}`;
+    // the row of applicants, not one of them: which to hire is the player's to read off the cards
+    return this.hireRole === want.role ? 'hire:any' : `role:${want.role}`;
   }
 
   /** Show the player what a tutorial step wants: open the menu it is in at the right tab, or take them to who it is about. */
