@@ -164,14 +164,14 @@ export const lessonTip = (id: LessonId) => `lesson-${id}`;
 export function checkLessons(ctx: SimContext) {
   const s = ctx.s;
   if (!s.lessons) return;
-  const today = Math.floor(s.day);
-  if (s.lastLesson >= today) return;
+  // a whole day since the last, not only a new date
+  if (s.day - s.lastLesson < 1) return;
   for (const id of LESSON_IDS) {
     if (s.seenTips.includes(lessonTip(id))) continue;
     const m = moment(ctx, id);
     if (!m) continue;
     s.seenTips.push(lessonTip(id));
-    s.lastLesson = today;
+    s.lastLesson = s.day;
     emit(ctx, { type: 'lesson', id, ...(m.about && { about: m.about }) });
     return;
   }

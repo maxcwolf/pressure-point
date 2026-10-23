@@ -2290,7 +2290,7 @@ test.describe('the tutorial', () => {
     await expect(card).toHaveCount(0);
     await expect(page.locator('.guide')).toHaveCount(0);
     await expect(page.locator('#advisor')).toContainText('Open the Items menu and place a Reception Desk');
-    expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('off');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('off');
   });
 
   test('looking around is done once the camera has been moved and turned', async ({ page }) => {
@@ -2339,6 +2339,7 @@ test.describe('the tutorial', () => {
     await game.eval((pp) => {
       pp.state.speed = 1;
       pp.sim.emit({ type: 'lesson', id: 'heal' });
+      pp.sim.emit({ type: 'lesson', id: 'payday' });
     });
     const modal = page.locator('#modal');
     await expect(modal).toContainText('Your first heal');
@@ -2346,6 +2347,9 @@ test.describe('the tutorial', () => {
     expect(await game.eval((pp) => pp.state.speed)).toBe(0);
     // nobody to show for this one
     await expect(modal.getByRole('button', { name: 'Show me' })).toHaveCount(0);
+    await modal.getByRole('button', { name: 'Got it' }).click();
+    // one raised meanwhile waits its turn
+    await expect(modal).toContainText('Payday');
     await modal.getByRole('button', { name: 'Got it' }).click();
     await expect(modal).toBeEmpty();
     expect(await game.eval((pp) => pp.state.speed)).toBe(1);

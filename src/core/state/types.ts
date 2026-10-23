@@ -842,7 +842,7 @@ export interface GameState {
   tutorial: boolean;
   /** Whether a card explains each thing the first time it happens, which outlasts the tutorial's steps. */
   lessons: boolean;
-  /** The day the last of those cards came up, so there is never more than one a day; -1 before any. */
+  /** When the last of those cards came up, in days, so there is a whole day between them; -1 before any. */
   lastLesson: number;
   /** How often guests have come to harm, by what and why ("failed:vibes"), and the explanations waiting to be read. */
   harms: Record<string, number>;

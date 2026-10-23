@@ -57,6 +57,22 @@ describe('the lessons', () => {
     expect(lessons(sim.drain())).toEqual([]);
   });
 
+  it('wait a whole day after the last, not only for a new date', () => {
+    const { sim, s } = lessonGame();
+    const ctx = ctxOf(sim);
+    s.day = 5.5;
+    s.stats.healed = 1;
+    checkLessons(ctx);
+    expect(lessons(sim.drain()).map((e) => e.id)).toEqual(['heal']);
+    s.stats.failed = 1;
+    s.day = 6;
+    checkLessons(ctx);
+    expect(lessons(sim.drain())).toEqual([]);
+    s.day = 6.5;
+    checkLessons(ctx);
+    expect(lessons(sim.drain()).map((e) => e.id)).toEqual(['failed']);
+  });
+
   it('are about whoever they happened to', () => {
     const { sim, s, therapist, receptionist } = lessonGame();
     const ctx = ctxOf(sim);

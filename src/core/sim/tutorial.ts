@@ -72,7 +72,7 @@ const OPENING: readonly Opening[] = [
   {
     id: 'therapist',
     title: 'Hire a Massage Therapist',
-    text: 'Once a Massage Therapist is on the books the center opens, and the first guests come in.',
+    text: 'The center is open and guests are on their way. A Massage Therapist is who treats them in the Massage Suite: hire one before the first is through the consultation.',
     want: { kind: 'hire', role: 'therapist' },
   },
   {

@@ -54,6 +54,12 @@ export interface FloorShown {
   land: { pointedAt: string | null } | null;
 }
 
+/** A lesson as the game raised it: which, and who it is about if anyone. */
+export interface RaisedLesson {
+  id: LessonId;
+  about?: Subject;
+}
+
 /** A message on the right, which fades once it has been up long enough to read, or stays until dismissed. */
 export interface Toast {
   id: number;
@@ -133,8 +139,10 @@ export class HudState {
   dialog: DialogId | null = null;
   /** The star being celebrated while its dialog is open. */
   star = 0;
-  /** The tutorial's lesson raised last, shown in its dialog, and who it is about if anyone. */
-  lesson: { id: LessonId; about?: Subject } | null = null;
+  /** The tutorial's lesson in its dialog, and who it is about if anyone. */
+  lesson: RaisedLesson | null = null;
+  /** Lessons raised while one was showing or waiting, to show in turn. */
+  private lessons: RaisedLesson[] = [];
   /** The locked item asked about in the karma dialog. */
   karmaItem: ItemType | null = null;
   /** The locked floor or wall asked about in the karma dialog, and the room to put it in once unlocked. */
@@ -296,6 +304,7 @@ export class HudState {
       this.menu = 'hire';
     }
     track('menu_opened', { ...gameProps(this.host.sim.s), menu: this.menu });
+    track('tutorial_show_me', { ...gameProps(this.host.sim.s), step: step.id });
     this.update();
   }
 
@@ -339,15 +348,22 @@ export class HudState {
     this.pause();
     // the list of saved games should include the game as it is right now
     if (dialog === 'saves') this.warn(this.host.save());
+    if (dialog === 'lesson') {
+      this.lesson = this.lessons.shift() ?? this.lesson;
+      if (this.lesson) track('lesson_shown', { ...gameProps(this.host.sim.s), lesson: this.lesson.id });
+    }
     this.dialog = dialog;
     this.update();
   }
 
   /** Close the dialog and show the next one waiting, or restore the game speed it paused. */
   close() {
+    const closing = this.dialog;
     this.dialog = null;
     const s = this.host.sim.s;
     this.line = this.line.filter((d) => stillDue(d.id, s));
+    // the next lesson waiting takes its turn behind whatever else is in line
+    if (closing === 'lesson' && this.lessons.length) this.line.push({ id: 'lesson', star: 0 });
     const next = this.line.shift();
     if (next) {
       this.star = next.star;
@@ -397,10 +413,9 @@ export class HudState {
     }
   }
 
-  /** Show a lesson, in line behind any dialog showing, as a star is. */
+  /** Show a lesson, in line behind any dialog showing, as a star is, and behind any lesson showing or waiting. */
   private raiseLesson(id: LessonId, about?: Subject) {
-    this.lesson = { id, ...(about && { about }) };
-    track('lesson_shown', { ...gameProps(this.host.sim.s), lesson: id });
+    this.lessons.push({ id, ...(about && { about }) });
     this.raise('lesson');
   }
 
