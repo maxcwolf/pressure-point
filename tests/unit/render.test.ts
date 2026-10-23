@@ -212,27 +212,15 @@ describe('drawing rooms', () => {
     expect(walls).toBe(s.rooms.filter((r) => r.done).length);
   });
 
-  it('joins the ghosts of the windows in its low walls into one part for each material', () => {
+  it('draws no see-through ghost of a window in its low walls, which stood in front of the people in the room', () => {
     const { s, scene } = drawnRooms();
-    const rooms = s.rooms.filter((r) => r.done);
-    /** Every see-through ghost part in a group, and the materials they wear. */
-    const ghostsIn = (g: THREE.Object3D) => {
-      const parts: THREE.Mesh[] = [];
-      g.traverse((o) => {
-        if (o instanceof THREE.Mesh && (o.material as THREE.Material).opacity === GHOST_OPACITY) parts.push(o);
-      });
-      return parts;
-    };
-    let groups = 0;
-    for (const g of scene.children) {
-      const parts = ghostsIn(g);
-      if (!parts.length) continue;
-      groups++;
-      expect(parts.length).toBe(new Set(parts.map((p) => p.material)).size);
-      expect(parts.every((p) => !p.castShadow)).toBe(true);
-    }
-    // the east window of every room is in a low wall
-    expect(groups).toBeGreaterThanOrEqual(rooms.length);
+    expect(s.rooms.filter((r) => r.done).length).toBeGreaterThan(1);
+    // the east window of every room is in a low wall: it is drawn, but as glass along the top of the wall
+    const ghosts: THREE.Mesh[] = [];
+    scene.traverse((o) => {
+      if (o instanceof THREE.Mesh && [o.material].flat().some((m) => m.opacity === GHOST_OPACITY)) ghosts.push(o);
+    });
+    expect(ghosts).toEqual([]);
   });
 
   it('frees every shape a room was drawn with once it is rebuilt or taken away', () => {
