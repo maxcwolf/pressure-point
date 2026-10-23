@@ -15,6 +15,7 @@ import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type Selection, shown } from './picking';
+import { MARKER_PX, readable } from './readable';
 import { WALL_T } from './shared';
 import { type Turn, turnAngle } from './turn';
 
@@ -339,7 +340,7 @@ export class Overlays {
   setMarkers(list: Marker[]) {
     while (this.markers.length < list.length) {
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
-      sprite.scale.setScalar(0.62);
+      readable(sprite, 0.62, MARKER_PX);
       sprite.renderOrder = 11;
       this.scene.add(sprite);
       this.markers.push(sprite);
@@ -348,7 +349,7 @@ export class Overlays {
       const m = list[i];
       sprite.visible = !!m;
       if (!m) return;
-      sprite.material.map = iconTexture(m.icon, true);
+      sprite.material.map = iconTexture(m.icon, 'square');
       sprite.material.needsUpdate = true;
       sprite.position.set(m.x + 0.5, 1.15, m.y + 0.5);
     });

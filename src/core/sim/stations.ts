@@ -524,7 +524,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       noteFailure(ctx, it, staff, g, problem);
       changeRep(ctx, -2.5);
       if (room) addVibes(ctx, room);
-      say(g, 'bubble-impatient', 6);
+      // a thumb down: not the hourglass of a guest about to walk out
+      say(g, 'bubble-failed', 6);
       const why = {
         '': 'Still knotted!',
         unqualified: 'Not qualified!',

@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 
 import type { SceneIconId } from '../core/data';
-import { DIRT_FILTHY, HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
+import { HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
 import { mishapCarrier, mishapHolder } from '../core/sim/mishaps';
 import type { Sim } from '../core/sim/sim';
 import { itemHeat } from '../core/sim/warmth';
@@ -18,12 +18,14 @@ import { GAGS } from './gags/scripts';
 import { ghostHung, hangPlace, placeHung } from './hung';
 import { animateCues, type CueCondition, NOISE_CUE, STOP_LOOKS, unlitShare, usedNoise, wearLight } from './item-cues';
 import { powerOut } from './lighting';
+import { itemMarkers } from './markers';
 import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import { SPILL_SPEED, spillRuns } from './models/items/fountain';
 import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
 import { upgradePlate } from './models/plate';
+import { MARKER_PX, readable } from './readable';
 import { type Turn, turnAngle } from './turn';
 
 /** Position and turn an item's model to match its tile and rotation. */
@@ -226,14 +228,14 @@ export class ItemsLayer {
     const busy = new Set<number>();
     const rattled = this.sim.rattledRooms();
     const dark = powerOut(this.sim.s.mishap, !!mishapHolder(this.sim.s));
+    const marked = itemMarkers(this.sim.s.items);
     for (const it of this.sim.s.items) {
       const model = this.items.get(it.id)?.group;
       if (!model) continue;
       const shade = dark && this.sim.world.inside(it.x, it.y) ? 1 : 0;
       this.effects(it, model, t, rattled.size > 0 && rattled.has(this.sim.world.zoneAt(it.x, it.y)), shade);
-      this.marker(model, it, 'wrench', 'marker-broken', it.wear >= 100, t);
-      // stale linens show on the table itself, not as flies over it
-      this.marker(model, it, 'flies', 'marker-filthy', it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens, t);
+      this.marker(model, it, 'wrench', 'marker-broken', marked.get(it.id) === 'marker-broken', t);
+      this.marker(model, it, 'flies', 'marker-filthy', marked.get(it.id) === 'marker-filthy', t);
       if (it.serving && it.progress > 0) {
         busy.add(it.id);
         this.bar(it);
@@ -337,7 +339,7 @@ export class ItemsLayer {
       sprite = new THREE.Sprite(
         owned(new THREE.SpriteMaterial({ map: iconTexture(icon, true), transparent: true, depthTest: false })),
       );
-      sprite.scale.setScalar(0.7);
+      readable(sprite, 0.7, MARKER_PX);
       sprite.renderOrder = 9;
       sprite.userData.itemId = it.id;
       model.add(sprite);
