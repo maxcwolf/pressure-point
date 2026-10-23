@@ -1683,7 +1683,8 @@ test.describe('messages', () => {
       return { name: st.name, x: st.x, y: st.y };
     });
     await game.eval((pp) => (pp.state.speed = 0));
-    await page.locator('#toasts .toast', { hasText: `${therapist.name} joins` }).click();
+    // by role as well as name, as two hires can draw the same name
+    await page.locator('#toasts .toast', { hasText: `${therapist.name} joins as a Massage Therapist` }).click();
     await expect(page.locator('#inspector')).toContainText(therapist.name);
     await expect
       .poll(async () => {
