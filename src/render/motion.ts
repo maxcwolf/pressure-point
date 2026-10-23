@@ -56,6 +56,8 @@ interface Spot {
   facing: number;
   pose: 'lie' | 'sit';
   lie: Lying | undefined;
+  /** Whether they were being treated there, rather than resting after it. */
+  served: boolean;
 }
 
 /** The edge of a spot someone has walked up to and waits at, to climb on once the sim has them there. */
@@ -172,7 +174,8 @@ export function showMotion(
     if (!m.off) {
       const next = c.path?.[0];
       m.off = next ? { x: next[0], y: next[1] } : { x: c.x, y: c.y };
-      if (c.kind === 'guest' && c.outcome === 'healed') {
+      // only someone healed where they were treated, not someone getting up from a Lounger after
+      if (c.kind === 'guest' && c.outcome === 'healed' && spot.served) {
         m.hold = t + CURE_HOLD;
         m.trail = [];
         m.x = spot.x;
@@ -349,9 +352,18 @@ function climbUp(shown: Shown, e: Edge, spot: Spot, since: number): { h: number;
 
 /** The spot someone is lying or sitting at to be treated now, if they are. */
 function spotOf(c: Char, lie: Lying | undefined): Spot | undefined {
-  if (c.pose === 'lie' && lie) return { x: c.x, y: c.y, h: c.h, facing: c.facing, pose: 'lie', lie };
+  if (c.pose === 'lie' && lie)
+    return {
+      x: c.x,
+      y: c.y,
+      h: c.h,
+      facing: c.facing,
+      pose: 'lie',
+      lie,
+      served: c.kind === 'guest' && c.state === 'served',
+    };
   if (c.kind === 'guest' && c.state === 'served' && c.pose === 'sit')
-    return { x: c.x, y: c.y, h: c.h, facing: c.facing, pose: 'sit', lie: undefined };
+    return { x: c.x, y: c.y, h: c.h, facing: c.facing, pose: 'sit', lie: undefined, served: true };
   return undefined;
 }
 

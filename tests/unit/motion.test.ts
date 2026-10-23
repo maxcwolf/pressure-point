@@ -197,6 +197,17 @@ describe('getting off a table', () => {
   });
 });
 
+describe('getting up after a rest', () => {
+  it('is not held lying down, healed or not, where they only rested', () => {
+    const { g, m } = lyingDown('resting');
+    getUp(g, true);
+    const { shown } = run(g, Math.ceil((CLIMB_DOWN + 0.2) / DT), undefined, m, 2);
+    // straight down off it, as anyone getting up does, with no hop
+    expect(shown.at(-1)!.c.h).toBe(0);
+    expect(shown.every((s) => !(s.up >= 0))).toBe(true);
+  });
+});
+
 describe('turning', () => {
   it('turns to face a seat over a few frames rather than at once', () => {
     const g: Guest = { ...demoGuest(LAB_LOOK, 'stiff_neck' as never), pose: 'stand', facing: 0 };
