@@ -6,7 +6,9 @@ import { SHOES } from '../../core/people';
 import type { Look, VisitorKind } from '../../core/state/types';
 import { BUBBLE_SIZE } from '../bubbles';
 import { owned } from '../disposal';
+import { type Motion, newMotion } from '../motion';
 import { BUBBLE_PX, readable } from '../readable';
+import type { Burst } from './burst';
 import {
   detailArm,
   detailBib,
@@ -70,6 +72,8 @@ export interface CharRig {
   idleSince: number;
   /** How far they have walked, in meters, which their stride is counted from, so their feet plant at any speed. */
   walked: number;
+  /** Where they are shown, which differs for a moment from where the sim has them as they climb on or off a table. */
+  motion: Motion;
   /** Where they were last frame, and which way they faced, or NaN before their first. */
   lastX: number;
   lastY: number;
@@ -81,8 +85,8 @@ export interface CharRig {
   curedAt: number;
   /** How each symptom prop was built to stand, noted as the cure begins, to shrink it from and put it back as it was. */
   rest?: { scale: THREE.Vector3; y: number }[];
-  /** A puff of sparkles round the head as the symptom goes, made the first time it is needed. */
-  burst?: THREE.Object3D;
+  /** A puff of sparkles round them as the symptom goes, made the first time it is needed. */
+  burst?: Burst;
   scale: number;
   /** How much wider and deeper than average their build makes them, which their head is spared. */
   wide: number;
@@ -229,6 +233,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     ...(glasses ? { glasses } : {}),
     idleSince: NaN,
     walked: 0,
+    motion: newMotion(),
     lastX: NaN,
     lastY: NaN,
     lastFacing: NaN,
@@ -709,5 +714,5 @@ export function endCure(rig: CharRig, look: Look) {
   if (rig.glasses) rig.glasses.visible = true;
   rig.head.scale.set(1 / rig.wide, 1, 1 / rig.wide);
   rig.headMesh.material = mat(look.skin, 0.65);
-  if (rig.burst) rig.burst.visible = false;
+  if (rig.burst) rig.burst.group.visible = false;
 }

@@ -71,6 +71,7 @@ import { BLUEPRINT, buildRoom } from '../render/rooms';
 import { H_TALL, WALL_T } from '../render/shared';
 import { SHOP_TURN } from '../render/storefront';
 import { nearSides } from '../render/turn';
+import { CLIMBS, climbSpecimen } from './climb';
 import { button, choice, type Control, type Option, range, toggle } from './controls';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from './people';
 
@@ -1183,6 +1184,7 @@ export const CATALOG: readonly Specimen[] = [
   curedSpecimen(),
   ...ACTS.map(([act, label]) => actSpecimen(act, label)),
   ...BEDS.map(lyingSpecimen),
+  ...CLIMBS.map(climbSpecimen),
   doorSpecimen(),
   ...SCENERY,
 ];

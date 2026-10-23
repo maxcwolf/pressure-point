@@ -21,7 +21,7 @@ import {
 } from './bubbles';
 import { prefersReducedMotion } from './camera-math';
 import { rattle, RATTLE_PEAK } from './item-cues';
-import { buildBurst } from './models/burst';
+import { buildBurst, showBurst } from './models/burst';
 import { type CharRig, cureRig, endCure, type Joints } from './models/character';
 import { type Expression, showExpression, showEyes } from './models/character-detail';
 import { buildHeld, type HeldKind } from './models/held';
@@ -171,13 +171,13 @@ export const PRONE_TURN = -1.45;
 /** How long a healed guest's symptom takes to shrink away in a puff of sparkles, in seconds. */
 export const CURE = 0.8;
 
-/** How long the hop for joy as it goes lasts, in seconds. */
-const HOP = 0.5;
+/** How long the hop for joy as it goes lasts, in seconds, and how high it goes, in meters. */
+export const HOP = { lasts: 0.55, high: 0.2 } as const;
 
 /**
  * Show a healed guest's symptom going, partway through: every prop shrinking away as it rises, a swollen head going
- * down, the skin coming back at the half, and a ring of sparkles round the head bursting outward and turning. Once it
- * has gone, put it away for good.
+ * down, the skin coming back at the half, and a puff of sparkles round them, about the head standing or the body lying,
+ * bursting outward with a bright ring. Once it has gone, put it away for good.
  */
 function showCure(rig: CharRig, c: Char, t: number) {
   const u = Math.max(0, (t - rig.curedAt) / CURE);
@@ -196,10 +196,8 @@ function showCure(rig: CharRig, c: Char, t: number) {
     rig.head.scale.set(size / rig.wide, size, size / rig.wide);
   }
   if (u > 0.5) rig.headMesh.material = mat(c.look.skin, 0.65);
-  rig.burst ??= buildBurst(rig.head);
-  rig.burst.visible = true;
-  rig.burst.scale.setScalar(0.3 + 1.5 * u);
-  rig.burst.rotation.y = u * 2.5;
+  rig.burst ??= buildBurst(rig.group);
+  showBurst(rig.burst, u, c.pose === 'lie' ? 0.3 : 1.3 * rig.scale);
 }
 
 /** How long a blink lasts, in seconds. */
@@ -306,6 +304,10 @@ export interface Cues {
   mopping?: boolean;
   /** Whether the room they are in is rattled through the wall by the Gong of Last Resort, which they flinch at. */
   rattled?: boolean;
+  /** How far down someone lying is, from 0 (upright) to 1, while they climb on or off where they lie: all the way if not said. */
+  lying?: number;
+  /** How long since a healed guest got down from where they were treated, in seconds: they hop for joy. */
+  up?: number;
 }
 
 /**
@@ -317,7 +319,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   // an act is done standing at the item: on the way there, they walk, and a Caretaker mopping has a pose of their own
   const act = c.pose === 'stand' && !cues.mopping ? cues.act : undefined;
   rig.group.position.set(c.x, c.h, c.y);
-  rig.group.rotation.y = c.facing;
+  // lying on their back, they have lain back, their front the way their feet point
+  const back = c.pose === 'lie' && cues.lie === 'back';
+  const lying = cues.lying ?? 1;
+  rig.group.rotation.y = c.facing + (back ? Math.PI : 0);
   // the stride follows the ground covered, not the clock, so the feet plant where they land whatever the game's speed
   stepOn(rig, c.x, c.y);
   const first = Number.isNaN(rig.lastFacing);
@@ -443,10 +448,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       legR = SIT.crossed.right.x;
     }
   } else if (c.pose === 'lie') {
-    bodyRX = Math.PI / 2;
+    // tipped over as far as they have lain down: forward, face down, or back onto their back
+    bodyRX = ((back ? -Math.PI : Math.PI) / 2) * lying;
     // on a table face down, the cheek rests on it rather than the nose
-    bodyY = cues.lie === 'prone' ? PRONE_Y : 0.16;
-    bodyZ = -0.6 * rig.scale;
+    bodyY = (cues.lie === 'prone' ? PRONE_Y : 0.16) * lying;
+    bodyZ = (back ? 0.6 : -0.6) * rig.scale * lying;
     // the arms down along the sides on a table or a mat, or out to the sides on a machine
     armOut = cues.lie ? 0.14 : 0.5;
     if (cues.lie) armL = armR = LYING_ARMS;
@@ -636,8 +642,9 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     lean += 0.25;
     headX -= 0.15;
   }
-  // a hop for joy as the symptom goes
-  if (curing < HOP && c.pose !== 'lie') bodyY += Math.sin((Math.PI * curing) / HOP) * 0.1;
+  // a hop for joy as the symptom goes, or once down from where they lay while it went
+  const hop = Number.isFinite(cues.up) ? (cues.up ?? NaN) : curing;
+  if (healed && hop < HOP.lasts && c.pose !== 'lie') bodyY += Math.sin((Math.PI * hop) / HOP.lasts) * HOP.high;
   if (c.pose === 'lie') {
     lean = 0;
     headX = 0;
@@ -687,9 +694,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   if (c.pose === 'lie' && cues.lie) {
     life.elbowL += bendTo(armL, -0.08, 1);
     life.elbowR += bendTo(armR, -0.08, 1);
-    // face down, the face turned aside, away from whoever works on the back; on their back, the body turned over
+    // face down, the face turned aside, away from whoever works on the back
     if (cues.lie === 'prone') life.headYaw = PRONE_TURN;
-    else life.bodyYaw = Math.PI;
   }
   if (act) actJoints(life, act, c, t, armL, armR);
   // what is held is kept at a tilt of its own, whatever the forearm holding it is doing
@@ -712,7 +718,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   rig.armR.rotation.x += (armR - rig.armR.rotation.x) * k;
   rig.armL.rotation.z += (-armOut + life.armInL - rig.armL.rotation.z) * k;
   rig.armR.rotation.z += (armOut - rig.armR.rotation.z) * k;
-  poseJoints(rig.joints, rig, c, t, k, { legL, legR, armL, armR, phase, visual, style, onFloor }, life);
+  poseJoints(rig.joints, rig, c, t, k, { legL, legR, armL, armR, phase, visual, style, onFloor, lying }, life);
   if (rig.band?.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
   if (visual === 'jitter' && c.pose !== 'lie') {
     // pins and needles: a constant fizzing shiver
@@ -826,6 +832,8 @@ interface Limbs {
   style: WorkStyle;
   /** Sitting cross-legged on the floor. */
   onFloor: boolean;
+  /** How far down someone lying is, climbing on or off where they lie. */
+  lying: number;
 }
 
 /** How far an elbow bends for an arm raised this far: hanging, a little; reaching forward, more; straight overhead. */
@@ -837,7 +845,7 @@ export const elbowFor = (arm: number) => (arm < -2 ? -0.12 : -(0.2 + Math.min(1,
  * arms reach forward.
  */
 function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limbs: Limbs, life: Life) {
-  const { legL, legR, armL, armR, phase, visual, style, onFloor } = limbs;
+  const { legL, legR, armL, armR, phase, visual, style, onFloor, lying } = limbs;
   let kneeL = 0.04;
   let kneeR = 0.04;
   let twist = 0;
@@ -851,8 +859,10 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
   } else if (c.pose === 'sit') {
     kneeL = -legL;
     kneeR = -legR;
-  } else if (c.pose === 'lie') kneeL = kneeR = 0.03;
-  else if (style === 'qigong') kneeL = kneeR = 0.3 * (1 + Math.cos(t * 0.9)) * 0.5;
+  } else if (c.pose === 'lie') {
+    // the knees coming up partway down, climbing on or off where they lie
+    kneeL = kneeR = 0.03 + Math.sin(Math.PI * lying) * 0.9;
+  } else if (style === 'qigong') kneeL = kneeR = 0.3 * (1 + Math.cos(t * 0.9)) * 0.5;
   else if (c.busy) kneeL = kneeR = 0.12;
   let elbowL = elbowFor(armL);
   let elbowR = elbowFor(armR);

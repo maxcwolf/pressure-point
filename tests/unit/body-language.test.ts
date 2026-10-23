@@ -536,11 +536,11 @@ describe('the moment of a cure', () => {
     poseChar(rig, healed, CURE / 2, 1, { style: null });
     expect(hen.visible).toBe(true);
     expect(hen.scale.x / built).toBeCloseTo(0.5);
-    expect(rig.burst?.visible).toBe(true);
+    expect(rig.burst?.group.visible).toBe(true);
     poseChar(rig, healed, 1, 1, { style: null });
     expect(hen.visible).toBe(false);
     expect(hen.scale.x).toBe(built);
-    expect(rig.burst?.visible).toBe(false);
+    expect(rig.burst?.group.visible).toBe(false);
     expect(rig.cured).toBe(true);
   });
 

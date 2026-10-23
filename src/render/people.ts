@@ -14,6 +14,7 @@ import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
 import { buildCharacter, type CharRig } from './models/character';
+import { showMotion } from './motion';
 import { poseChar, type WorkStyle } from './pose';
 
 /** Over how many tiles of pavement people grow from nothing, or shrink away, where they arrive and leave. */
@@ -78,20 +79,25 @@ export class PeopleLayer {
         if (rig.smoke) this.scene.add(rig.smoke);
         this.chars.set(c.id, rig);
       }
+      const at = this.itemAt(c);
+      // where they are shown, climbing on or off where they lie rather than popping there
+      const bed = c.kind === 'guest' ? at?.access.find((a) => a.pose === 'lie')?.lie : undefined;
+      const seen = showMotion(rig.motion, c, t, dt, lyingAt(c, at), bed);
       // someone away on a house call is not here to be seen, or clicked
       const away = c.kind === 'staff' && c.state === 'away';
-      const size = streetFade(c.x, c.y, ends);
+      const size = streetFade(seen.c.x, seen.c.y, ends);
       const shown = !away && size > 0.02;
       rig.group.visible = shown;
       rig.pick.visible = shown;
       if (!shown && rig.smoke) rig.smoke.visible = false;
       if (!shown) continue;
-      const at = this.itemAt(c);
-      poseChar(rig, c, t, dt, {
+      poseChar(rig, seen.c, t, dt, {
         style: this.workStyle(c),
         door,
         act: actOf(c, at),
-        lie: lyingAt(c, at),
+        lie: seen.lie,
+        lying: seen.lying,
+        up: seen.up,
         runners,
         mopping: this.mopping(c),
         rattled: rattled.size > 0 && rattled.has(this.sim.world.zoneAt(c.tx, c.ty)),
