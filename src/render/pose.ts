@@ -28,6 +28,7 @@ import { buildHeld, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
 import { mat } from './models/parts';
 import { driftSmoke } from './models/sage';
+import { buildFaceDown, showFaceDown } from './models/towel';
 
 /**
  * A hip's rotation that points its thigh along `along` and turns it on its own length so the knee hinges about
@@ -207,10 +208,10 @@ export const PICK = 1.8;
 const ACT_CYCLES: Partial<Record<Act, number>> = { drink: SIP, eat: SIP, litter: PICK };
 
 /**
- * How far a guest lying face down on a table turns their head aside to rest on a cheek, in radians: away from the
- * practitioner's side of the table, which turns it toward the game's camera, so the face shows.
+ * How far a guest lying face down on a table turns their head aside, in radians: only a little, away from the
+ * practitioner's side of the table, so from the game's camera the back of the head shows, as it should face down.
  */
-export const PRONE_TURN = -1.45;
+export const PRONE_TURN = -0.6;
 
 /** How long a healed guest's symptom takes to shrink away in a puff of sparkles, in seconds. */
 export const CURE = 0.8;
@@ -260,11 +261,14 @@ export function blinkAt(id: number, t: number) {
 /** How high a guest lying face down on a table lies, in meters, for the cheek and not the nose to meet it. */
 const PRONE_Y = 0.21;
 
+/** How far the knees of a guest lying face down bend, the shins resting up on a bolster, in radians. */
+const PRONE_KNEES = 0.6;
+
 /** How the arms of a guest lying on a table or a mat lie along their sides, turned forward from straight. */
 const LYING_ARMS = 0.12;
 
-/** How far a cup or a snack tips back toward the mouth at the height of a sip or a bite, from upright, in radians. */
-const SIP_TIP = 0.65;
+/** How far a cup tips up to the mouth at the height of a sip, and a snack toward it for a bite, in radians. */
+const SIP_TIP = { drink: 1.1, eat: 0.65 } as const;
 
 /** What each act has in the right hand. */
 const HELD_FOR: Partial<Record<Act, HeldKind>> = { drink: 'cup', eat: 'snack', water: 'can', repair: 'wrench' };
@@ -787,6 +791,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   armL += life.armL;
   armR += life.armR;
   armOut += life.armOut;
+  legR -= life.stamp;
   if (c.pose === 'lie' && cues.lie) {
     life.elbowL += bendTo(armL, -0.08, 1);
     life.elbowR += bendTo(armR, -0.08, 1);
@@ -819,7 +824,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   rig.armR.rotation.z += (armOut - rig.armR.rotation.z) * k;
   rig.planted = planted;
   if (!planted) rig.drift = 0;
-  const limbs = { legL, legR, armL, armR, phase, visual, style, onFloor, lying, stepKnees };
+  const prone = c.pose === 'lie' && cues.lie === 'prone';
+  const limbs = { legL, legR, armL, armR, phase, visual, style, onFloor, lying, prone, stepKnees };
   poseJoints(rig.joints, rig, c, t, k, limbs, life);
   if (rig.band?.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
   if (visual === 'jitter' && c.pose !== 'lie') {
@@ -857,6 +863,9 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
 
   if (rig.mop) rig.mop.visible = mopping;
   if (healed && !rig.cured) showCure(rig, c, t);
+  // a towel and the soles of the shoes up, face down
+  if (prone) rig.faceDown ??= buildFaceDown(rig.torso, [rig.joints.shinL, rig.joints.shinR]);
+  if (rig.faceDown) showFaceDown(rig.faceDown, prone);
 
   if (rig.sage && rig.sageTip && rig.smoke) {
     rig.sage.visible = smudging;
@@ -940,6 +949,8 @@ interface Limbs {
   onFloor: boolean;
   /** How far down someone lying is, climbing on or off where they lie. */
   lying: number;
+  /** Whether they lie face down. */
+  prone: boolean;
   /** How far each knee bends as they step, from 0 to 1, walking with their feet planted. */
   stepKnees: readonly [number, number] | undefined;
 }
@@ -953,7 +964,7 @@ export const elbowFor = (arm: number) => (arm < -2 ? -0.12 : -(0.2 + Math.min(1,
  * arms reach forward.
  */
 function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limbs: Limbs, life: Life) {
-  const { legL, legR, armL, armR, phase, visual, style, onFloor, lying, stepKnees } = limbs;
+  const { legL, legR, armL, armR, phase, visual, style, onFloor, lying, prone, stepKnees } = limbs;
   let kneeL = 0.04;
   let kneeR = 0.04;
   let twist = 0;
@@ -968,8 +979,9 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
     kneeL = -legL;
     kneeR = -legR;
   } else if (c.pose === 'lie') {
-    // the knees coming up partway down, climbing on or off where they lie
-    kneeL = kneeR = 0.03 + Math.sin(Math.PI * lying) * 0.9;
+    // the knees coming up partway down, climbing on or off where they lie; face down, bent a little over a bolster,
+    // so the soles turn up
+    kneeL = kneeR = (prone ? PRONE_KNEES * lying : 0.03) + Math.sin(Math.PI * lying) * 0.9;
   } else if (style === 'qigong') kneeL = kneeR = 0.3 * (1 + Math.cos(t * 0.9)) * 0.5;
   else if (c.busy) kneeL = kneeR = 0.12;
   let elbowL = elbowFor(armL);
@@ -1041,6 +1053,8 @@ interface Life {
   bendR: number;
   kneeL: number;
   kneeR: number;
+  /** The right thigh lifted forward, for a stamp of the foot. */
+  stamp: number;
   elbowL: number;
   elbowR: number;
 }
@@ -1063,6 +1077,7 @@ const NO_LIFE: Readonly<Life> = {
   bendR: 0,
   kneeL: 0,
   kneeR: 0,
+  stamp: 0,
   elbowL: 0,
   elbowR: 0,
 };
@@ -1233,11 +1248,17 @@ function actPose(act: Act, c: Char, t: number): ActPose {
     // forearms level on the keyboard, head up to the guest with a nod now and then
     p.armL = p.armR = -0.4;
     p.headX = 0.05 + Math.max(0, Math.sin(t * 1.4 + c.id)) * 0.14;
-  } else if (act === 'drink' || act === 'eat') {
-    // the right hand up to the mouth and down again, the left hanging
+  } else if (act === 'drink') {
+    // the cup up to the side of the mouth, the head tipping back to drink, the left hand hanging
     p.armR = -0.7 + (-1.85 + 0.7) * u;
     p.armL = 0.04;
-    p.headX = -0.12 * u + (act === 'eat' ? Math.sin(t * 9) * 0.02 * u : 0);
+    p.headX = -0.3 * u;
+  } else if (act === 'eat') {
+    // both hands up to the mouth for a big bite, head forward to it, chewing
+    p.armR = p.armL = -0.7 + (-1.75 + 0.7) * u;
+    p.headX = 0.1 * u + Math.sin(t * 9) * 0.04 * u;
+    p.lean = 0.08 * u;
+    p.armOut = 0.06 - 0.36 * u;
   } else if (act === 'play') {
     // both hands forward on the controls, swaying with the game
     p.armL = p.armR = -1.15;
@@ -1281,10 +1302,15 @@ function actJoints(life: Life, act: Act, c: Char, t: number, armL: number, armR:
     life.elbowL += bendTo(armL, -1.15 + Math.sin(t * 11 + c.id) * 0.05, 1);
     life.elbowR += bendTo(armR, -1.15 + Math.sin(t * 11 + c.id + 1.6) * 0.05, 1);
     life.bendL = life.bendR = 0.3;
-  } else if (act === 'drink' || act === 'eat') {
-    // the forearm folding up and in, so the hand comes to the middle of the face
+  } else if (act === 'drink') {
+    // the forearm folding up and a little in, so the cup comes to the side of the mouth
     life.elbowR += bendTo(armR, -0.6 + (-1.05 + 0.6) * u, 1);
-    life.bendR = 0.85 * u;
+    life.bendR = 0.45 * u;
+  } else if (act === 'eat') {
+    // both forearms folding up and in, the hands meeting at the mouth
+    life.elbowR += bendTo(armR, -0.6 + (-1.05 + 0.6) * u, 1);
+    life.elbowL += bendTo(armL, -0.6 + (-1.05 + 0.6) * u, 1);
+    life.bendR = life.bendL = 1.1 * u;
   } else if (act === 'play') {
     // quick alternate jabs at the buttons
     life.elbowL += bendTo(armL, -1.4 + Math.max(0, Math.sin(t * 10 + c.id)) * 0.18, 1);
@@ -1313,7 +1339,7 @@ function actJoints(life: Life, act: Act, c: Char, t: number, armL: number, armR:
  * as it comes up, and a watering can tipping forward and back as it pours.
  */
 function heldTilt(act: Act | undefined, c: Char, t: number) {
-  if (act === 'drink' || act === 'eat') return -SIP_TIP * peakOf(cycleOf(act, c.id, t));
+  if (act === 'drink' || act === 'eat') return -SIP_TIP[act] * peakOf(cycleOf(act, c.id, t));
   if (act === 'water') return 0.3 + Math.sin(t * 1.2) * 0.25;
   return 0;
 }
@@ -1391,8 +1417,8 @@ interface Hold {
   bendR: number;
 }
 
-/** The arms folded across the chest, the left forearm over the right. */
-const FOLDED: Hold = { arm: -0.72, out: -0.26, elbowL: -1.15, elbowR: -0.9, bendL: 1, bendR: 1.1 };
+/** The arms folded high across the chest, the left forearm over the right. */
+const FOLDED: Hold = { arm: -1.3, out: -0.2, elbowL: -0.8, elbowR: -0.8, bendL: 1.2, bendR: 1.3 };
 /** The hands on the hips, the elbows out. */
 const ON_HIPS: Hold = { arm: 0.32, out: 0.48, elbowL: -1.25, elbowR: -1.25, bendL: 1.1, bendR: 1.1 };
 /** The head in the hands, sitting, leaning on the elbows. */
@@ -1450,11 +1476,14 @@ function showMood(life: Life, c: Char, t: number, doing: Doing) {
       life.lean -= 0.08;
       life.kneeR -= 0.22 * tap;
     } else {
-      // the weight on one foot, the other tapping
+      // the weight on one foot, the other stamping, the knee coming right up: big enough to see across the building
+      const stamp = Math.max(0, Math.sin(t * 5 + c.id)) ** 2;
       life.swayX = -0.02;
-      life.side = 0.04;
+      life.side = 0.05;
+      life.lean -= 0.05;
       life.kneeL = 0;
-      life.kneeR = 0.12 + 0.2 * tap;
+      life.stamp = 0.4 * stamp;
+      life.kneeR = 0.12 + 0.8 * stamp;
     }
     return life;
   }

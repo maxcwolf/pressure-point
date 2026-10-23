@@ -12,6 +12,12 @@ export type HeldKind = 'cup' | 'snack' | 'can' | 'wrench';
 /** Where the hand grips, down the forearm from the elbow, as the sage bundle hangs. */
 const GRIP = -0.31 + ELBOW;
 
+/**
+ * How much bigger than life what is held is drawn: at the game's usual distance a guest stands 30-odd pixels tall, and
+ * a cup of life size hides behind the hand holding it.
+ */
+export const HELD_SIZE = 1.8;
+
 /** The one shape of each thing held, made the first time it is asked for. */
 function shapeOf(kind: HeldKind): THREE.BufferGeometry {
   switch (kind) {
@@ -46,11 +52,12 @@ function shapeOf(kind: HeldKind): THREE.BufferGeometry {
 }
 
 /** Each thing held: its color and roughness, and where it sits in the hand and how it is turned there. */
+// a white cup and a bright yellow wrapper, told apart at a glance, and a wrench painted orange as tools are
 const HELD: Readonly<Record<HeldKind, { color: number; rough: number; at: readonly number[] }>> = {
-  cup: { color: 0xf5ecdb, rough: 0.5, at: [0, 0.01, 0.05] },
-  snack: { color: 0xe5484d, rough: 0.45, at: [0, 0.01, 0.05] },
-  can: { color: 0x5a8a3f, rough: 0.45, at: [0, 0, 0.02] },
-  wrench: { color: 0x8c939c, rough: 0.35, at: [0, 0, 0.05, Math.PI / 2, 0, 0] },
+  cup: { color: 0xfaf6ee, rough: 0.5, at: [0, 0.01, 0.06] },
+  snack: { color: 0xf6c21c, rough: 0.45, at: [0, 0.01, 0.06] },
+  can: { color: 0x4f9a3a, rough: 0.45, at: [0, -0.02, 0.03] },
+  wrench: { color: 0xf0802a, rough: 0.35, at: [0, 0, 0.06, Math.PI / 2, 0, 0] },
 };
 
 /** Put something in a right hand, held by the forearm it hangs from: hidden, to be shown while it is used. */
@@ -59,6 +66,7 @@ export function buildHeld(fore: THREE.Object3D, kind: HeldKind): THREE.Mesh {
   const [x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0] = at;
   const held = put(fore, shapeOf(kind), mat(color, rough), x, GRIP + y, z);
   held.rotation.set(rx, ry, rz);
+  held.scale.setScalar(HELD_SIZE);
   held.castShadow = false;
   held.visible = false;
   return held;

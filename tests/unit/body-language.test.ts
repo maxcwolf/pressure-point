@@ -10,6 +10,7 @@ import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/peopl
 import { type Act, actOf, lyingAt } from '../../src/render/acts';
 import { rattle } from '../../src/render/item-cues';
 import { buildCharacter, type CharRig, cureRig } from '../../src/render/models/character';
+import { HELD_SIZE } from '../../src/render/models/held';
 import {
   actMoment,
   BLINK,
@@ -110,6 +111,19 @@ describe('the patience a waiting guest shows', () => {
       expect(Math.abs(h.z)).toBeLessThan(0.05);
       expect(h.y).toBeLessThan(0.2);
     }
+  });
+
+  it('stamps a foot when impatient, the knee coming right up, and folds the arms high', () => {
+    const g = waiting(30);
+    const rig = buildCharacter(LAB_LOOK);
+    // at the top of a stamp
+    pose(rig, g, (Math.PI / 2 - g.id) / 5 + Math.PI * 2);
+    const [left, right] = [rig.joints.shinL, rig.joints.shinR].map((s) =>
+      s.localToWorld(new THREE.Vector3(0, -0.3, 0)),
+    );
+    expect(rig.legR.rotation.x).toBeLessThan(-0.35);
+    expect(right!.y - left!.y).toBeGreaterThan(0.04);
+    for (const side of ['L', 'R'] as const) expect(hand(rig, side).y).toBeGreaterThan(0.32);
   });
 
   it('puts the head in the hands of a fed-up guest sitting down', () => {
@@ -375,6 +389,28 @@ describe('doing what they are doing', () => {
     expect(rig.held?.cup?.visible).toBe(false);
   });
 
+  it('holds the cup to the side of the mouth, the head tipped back, but takes a bite with both hands', () => {
+    const drink = doing('drink').rig;
+    const eat = doing('eat').rig;
+    // drinking, the left hand hangs and the head goes back; eating, both hands come up and the head goes forward
+    expect(hand(drink, 'L').y).toBeLessThan(0.1);
+    for (const side of ['L', 'R'] as const) {
+      expect(hand(eat, side).y).toBeGreaterThan(0.4);
+      expect(Math.abs(hand(eat, side).x)).toBeLessThan(0.08);
+    }
+    expect(drink.head.rotation.x).toBeLessThan(-0.2);
+    expect(eat.head.rotation.x).toBeGreaterThan(0);
+    // the cup off to the side of the face, the snack in the middle of it
+    expect(Math.abs(hand(drink, 'R').x)).toBeGreaterThan(0.15);
+  });
+
+  it('draws what is held big enough to see beside the hand holding it', () => {
+    for (const act of ['drink', 'eat', 'repair'] as const) {
+      const held = Object.values(doing(act).rig.held ?? {}).find((h) => h.visible);
+      expect(held?.scale.x).toBeCloseTo(HELD_SIZE);
+    }
+  });
+
   it('stoops to the floor for litter', () => {
     const { rig } = doing('litter');
     expect(handHeight(rig)).toBeLessThan(0.3);
@@ -430,14 +466,28 @@ describe('lying down', () => {
     expect(lyingAt(lying(), ITEMS.bench)).toBeUndefined();
   });
 
-  it('turns the face aside, face down, so it shows', () => {
+  it('reads as face down: the face only a little aside, a towel over the back and the soles turned up', () => {
     const rig = buildCharacter(LAB_LOOK);
     poseChar(rig, lying(), 0, 1, { style: null, lie: 'prone' });
     rig.group.updateMatrixWorld(true);
     expect(rig.head.rotation.y).toBeCloseTo(PRONE_TURN);
     expect(rig.body.rotation.x).toBeCloseTo(Math.PI / 2);
-    const face = faceOf(rig);
-    expect(Math.abs(face.y)).toBeLessThan(0.3);
+    // the face mostly down, so the back of the head shows from above
+    expect(faceOf(rig).y).toBeLessThan(-0.7);
+    expect(rig.faceDown?.towel.visible).toBe(true);
+    for (const sole of rig.faceDown?.soles ?? []) {
+      expect(sole.visible).toBe(true);
+      // turned up toward the sky, the shins up on a bolster
+      expect(
+        new THREE.Vector3(0, -1, 0).applyQuaternion(sole.getWorldQuaternion(new THREE.Quaternion())).y,
+      ).toBeGreaterThan(0.5);
+    }
+    // and put away when they get up, nor shown lying on the back
+    poseChar(rig, { ...lying(), pose: 'stand', h: 0 }, 0, 1, { style: null });
+    expect(rig.faceDown?.towel.visible).toBe(false);
+    const back = buildCharacter(LAB_LOOK);
+    poseChar(back, lying(), 0, 1, { style: null, lie: 'back' });
+    expect(back.faceDown).toBeUndefined();
   });
 
   it('lies on the back, face up, elsewhere', () => {
