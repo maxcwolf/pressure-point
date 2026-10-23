@@ -156,14 +156,22 @@ describe('a bubble over someone in the scene', () => {
     return { visible: rig.bubble.visible, map: rig.bubble.material.map, scale: rig.bubble.scale.x };
   }
 
-  it('shows a fed-up guest in red, from the moment it pops in', () => {
+  it('shows a fed-up guest in red, popping in as their patience runs out', () => {
     const rig = buildCharacter(LAB_LOOK);
-    const g = waiting(10);
+    const g = waiting(50);
+    expect(shown(rig, g, 4.9).visible).toBe(false);
+    g.patience = 10;
     expect(shown(rig, g, 5).scale).toBe(0);
     const later = shown(rig, g, 5 + 1);
     expect(later.visible).toBe(true);
     expect(later.map).toBe(iconTexture('bubble-impatient', 'alarm'));
     expect(later.scale).toBeGreaterThanOrEqual(BUBBLE_SIZE);
+  });
+
+  it('shows a bubble at once the first time someone is posed, as in a picture of them', () => {
+    const first = shown(buildCharacter(LAB_LOOK), waiting(10), 5);
+    expect(first.visible).toBe(true);
+    expect(first.scale).toBeGreaterThanOrEqual(BUBBLE_SIZE);
   });
 
   it('keeps a bubble said at speed 3 up for its least time, then lets it go', () => {

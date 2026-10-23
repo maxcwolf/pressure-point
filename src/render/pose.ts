@@ -14,6 +14,7 @@ import {
   type BubbleShown,
   follow,
   nudging,
+  POP_IN,
   quiet,
   type Said,
   saying,
@@ -782,12 +783,15 @@ export function bubbleWanted(c: Char, t: number, mood: Mood): Said | null {
 
 /**
  * Show someone's bubble over their head: popping in, held long enough to read, shrinking away, an alarm pulsing, from
- * the tip of its tail so it seems to come out of the head. A bubble nobody has said is left alone, as it is in the lab.
+ * the tip of its tail so it seems to come out of the head. A bubble nobody has said is left alone, as it is in the lab,
+ * and one already up the first time someone is posed shows at once.
  */
 function poseBubble(rig: CharRig, c: Char, t: number, mood: Mood) {
   const sprite = rig.bubble;
-  const before = (sprite.userData.shown as BubbleShown | undefined) ?? quiet();
-  const shown = follow(before, bubbleWanted(c, t, mood), t);
+  const kept = sprite.userData.shown as BubbleShown | undefined;
+  const before = kept ?? quiet();
+  // someone posed for the first time, as in a picture of them, has their bubble up already
+  const shown = follow(before, bubbleWanted(c, t, mood), kept ? t : t - POP_IN);
   sprite.userData.shown = shown;
   if (!shown.said) {
     if (before.said) sprite.visible = false;
