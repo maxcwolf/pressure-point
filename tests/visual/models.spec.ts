@@ -66,6 +66,8 @@ const IDS = [
   // a guest climbing onto a table, face down and on their back, partway up
   'climb:massage_table',
   'climb:reiki_table',
+  // a guest walking round corners
+  'walk:guest',
   'room:door',
   'scenery:puddles',
   'scenery:trees',
