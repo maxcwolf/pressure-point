@@ -393,12 +393,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     armL = armR = -0.55;
     if (c.busy) armR = -1.15 + Math.sin(t * 6 + c.id) * 0.25;
     if (c.busy && style === 'sound') {
-      // one hand steadying a bowl, the other circling its rim, round and out to the side, so it shows from behind too
+      // one hand steadying a bowl, the other circling its rim
       armL = -0.95;
       armR = -1.05 + Math.sin(t * 3 + c.id) * 0.14;
-      armOut = 0.3 + Math.cos(t * 3 + c.id) * 0.2;
       lean = 0.15;
-      side = Math.cos(t * 3 + c.id) * 0.05;
     } else if (c.busy && style === 'forks') {
       // striking a fork on the knee, then holding it up to listen
       const tap = Math.max(0, Math.sin(t * 4 + c.id));
@@ -406,13 +404,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       armL = -0.7;
       headZ = 0.15;
     } else if (c.busy && style === 'gong') {
-      // a long slow backswing out to the side, then a soft stroke through: out wide, so it shows from behind too
+      // a long slow backswing, then a soft stroke through
       const swing = Math.sin(t * 1.6 + c.id);
       armR = -1.75 + swing * 0.7;
       armL = -0.6;
-      armOut = 0.35 + swing * 0.3;
       lean = 0.1 - swing * 0.12;
-      side = swing * 0.08;
     } else if (c.busy && style === 'crystalbowls') {
       // both hands drawing slow circles round two rims
       armL = -1.0 + Math.sin(t * 2 + c.id) * 0.12;
@@ -446,7 +442,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       // swaying slowly with both hands held out, eyes on the ceiling
       armL = armR = -0.8;
       armOut = 0.45;
-      side = Math.sin(t * 0.9 + c.id) * MUSHROOM_SWAY;
+      side = Math.sin(t * 0.9 + c.id) * 0.12;
       headX = -0.2;
     } else if (c.busy && style === 'quest') {
       // eyes on the far distance, one hand shading them, the other pointing the way, turning slowly to look about
@@ -1045,9 +1041,6 @@ function fidgetAt(id: number, t: number, kinds: readonly (Fidget | null)[], ever
   if (u >= 1 || !kind) return null;
   return { kind, amount: Math.min(1, Math.sin(Math.PI * u) * 1.6), way: hash(n * 3.7 + id) < 0.5 ? -1 : 1 };
 }
-
-/** How far a Shaman sways side to side over a mushroom ceremony, in radians: enough to see from the usual distance. */
-const MUSHROOM_SWAY = 0.24;
 
 /**
  * How fast each treatment's strokes go, in radians a second, matching the arms' rhythm in `poseChar`: the body rocks

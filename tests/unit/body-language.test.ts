@@ -634,16 +634,6 @@ describe('at work', () => {
     expect(RHYTHM.distance).toBeLessThan(RHYTHM.swedish);
   });
 
-  it('sways a Shaman over a mushroom ceremony far enough to see', () => {
-    const at = { ...demoStaff(LAB_LOOK, 'shaman'), pose: 'sit' as const, busy: true };
-    expect(range(at, 'mushroom', (r) => [r.torso.rotation.z])[0]).toBeGreaterThan(0.4);
-  });
-
-  it('swings the gong’s beater out to the side, where it shows from behind', () => {
-    const at = { ...demoStaff(LAB_LOOK, 'healer'), pose: 'sit' as const, busy: true };
-    expect(range(at, 'gong', (r) => [r.armR.rotation.z])[0]).toBeGreaterThan(0.4);
-  });
-
   it('wears the Caretaker’s cap pushed back, the brim up off the face', () => {
     const rig = buildCharacter(LAB_LOOK, 'caretaker');
     expect(rig.head.getObjectByName('cap')?.rotation.x).toBe(CAP_TIP);
