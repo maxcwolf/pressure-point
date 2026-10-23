@@ -2,6 +2,13 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Alarms you can see coming.** Trouble to act on now goes up in a red bubble that pulses (about to quit, fed up, getting worse while waiting), a need in amber (the toilet, a drink, food, worn out), and a guest running out of patience shows an amber hourglass now and then before they are fed up. Every bubble pops in and shrinks away, and stays at least 1.4 seconds, so it can be read at speed 3.
+- **Readable from where the game starts.** Speech bubbles and markers keep a least size on screen as the camera pulls back, and their pictures fill more of the bubble.
+- **Icons told apart by shape.** The faces differ by more than the mouth (steam for angry, a thermometer for sick, crossed plasters for hurt, a thumb down for disappointed), thirsty is a glass with a straw, a break a steaming mug, hungry a burger, thanks a flower and filthy rising stink lines. The guest marker is a whole figure, and a staff square's marker sits on the square's purple.
+- **No towers of markers.** Neighbouring broken or filthy items share one marker, and a runner's red ring pulses.
+
 ## v0.32.1
 
 - **A fountain that flows, and air you can read.** The Zen Fountain's bowl spills over into its basin in running streams, a heater that is on sends up wavy lines of heat, and an air conditioner blows cool ones out of its vents.
