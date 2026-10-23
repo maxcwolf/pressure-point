@@ -21,6 +21,8 @@ export const PALETTE = {
   teal: '#2fa8a0',
   tealDark: '#23827c',
   orange: '#f08a4b',
+  // the yellow of a face or a hand, as an emoji's, so a face reads on red, white and cream alike
+  face: '#ffcc4d',
   gold: '#f2c14e',
   red: '#e5564d',
   green: '#3bb273',
@@ -224,15 +226,42 @@ export function smallSheet(icons, small = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="0" height="0" style="position:absolute">\n${symbols.join('\n')}\n</svg>\n`;
 }
 
-/** The ways the scene shows an icon: on its own, or in a white speech bubble. */
-export const VARIANTS = ['plain', 'bubble'];
+/**
+ * The ways the scene shows an icon: on its own, or in a white speech bubble; some bubbles also in red, as an alarm, or
+ * in amber, as a need; and a staff marker on the purple of the squares staff use furniture from.
+ */
+export const VARIANTS = ['plain', 'bubble', 'alarm', 'need', 'square'];
 
 /**
- * Where each of the scene's icons sits in the atlas, in pixels from its top left: a row of cells for each, the icon
- * on its own and then in its bubble, packed across in order of id.
+ * The bubbles that also come in red, for trouble a player should act on now: someone about to quit, a guest about to
+ * walk out, a guest getting worse while they wait.
+ */
+export const ALARMS = ['bubble-quitting', 'bubble-impatient', 'bubble-hurt'];
+
+/**
+ * The bubbles that also come in amber, for a need that will become trouble: a waiting guest bursting or parched, a
+ * member of staff worn out, and a guest running out of patience before they are fed up.
+ */
+export const NEEDS = ['bubble-restroom', 'bubble-thirsty', 'bubble-exhausted', 'bubble-impatient'];
+
+/** The ways an icon is shown in the scene: every icon on its own and in a bubble, and the others only where they apply. */
+export function variantsOf(id) {
+  return VARIANTS.filter(
+    (v) =>
+      v === 'plain' ||
+      v === 'bubble' ||
+      (v === 'alarm' && ALARMS.includes(id)) ||
+      (v === 'need' && NEEDS.includes(id)) ||
+      (v === 'square' && (familyOf(id) === 'role' || id === 'marker-staff')),
+  );
+}
+
+/**
+ * Where each of the scene's icons sits in the atlas, in pixels from its top left: a cell for each way it is shown, the
+ * icon on its own and then in its bubble and the rest, packed across in order of id.
  */
 export function atlasLayout(ids, cell = CELL, columns = ATLAS_COLUMNS) {
-  const cells = ids.flatMap((id) => VARIANTS.map((variant) => ({ id, variant })));
+  const cells = ids.flatMap((id) => variantsOf(id).map((variant) => ({ id, variant })));
   const rows = Math.ceil(cells.length / columns);
   const icons = {};
   cells.forEach(({ id, variant }, i) => {
@@ -242,19 +271,87 @@ export function atlasLayout(ids, cell = CELL, columns = ATLAS_COLUMNS) {
   return { width: Math.min(cells.length, columns) * cell, height: rows * cell, cell, icons };
 }
 
-/** The white speech bubble an icon can sit in, on a cell: a disc with a short tail at the bottom, outlined in navy. */
-const BUBBLE =
-  `<path d="M64 10a46 46 0 0 1 16 89.2L64 122 48 99.2A46 46 0 0 1 64 10z" fill="#ffffff" stroke="${PALETTE.navy}" ` +
+/** The purple of the squares staff use furniture from, as the scene's floor overlay draws them. */
+export const STAFF_SQUARE = '#9b6bff';
+
+/**
+ * The speech bubble an icon can sit in, on a cell, in a color: a disc with a short tail at the bottom, outlined in
+ * navy. It fills the cell, but for a few pixels round the edge, so the bubble is as big as the sprite lets it be.
+ */
+const BUBBLE = (fill) =>
+  `<path d="M64 5A50 50 0 0 1 81.1 102L64 122 46.9 102A50 50 0 0 1 64 5z" fill="${fill}" stroke="${PALETTE.navy}" ` +
   `stroke-width="6" stroke-linejoin="round"/>`;
 
 /**
- * How an icon is placed on its cell: on its own it fills the cell inside a white edge, like a sticker, so it reads
- * against any floor; in a bubble it sits in the bubble's disc.
+ * The white badge with a navy "!" on an alarm's upper right, so an alarm is told apart by its shape as well as its red,
+ * for players who can't tell red from amber.
+ */
+const BANG =
+  `<circle cx="104" cy="24" r="20" fill="${PALETTE.white}" stroke="${PALETTE.navy}" stroke-width="6"/>` +
+  `<path d="M104 13v12" stroke="${PALETTE.navy}" stroke-width="7" stroke-linecap="round"/>` +
+  `<circle cx="104" cy="34.5" r="3.8" fill="${PALETTE.navy}"/>`;
+
+/** The disc a staff marker sits on over a use square: purple as the square, outlined in navy inside a white edge. */
+const SQUARE_DISC =
+  `<circle cx="64" cy="64" r="58" fill="${PALETTE.white}"/>` +
+  `<circle cx="64" cy="64" r="52" fill="${STAFF_SQUARE}" stroke="${PALETTE.navy}" stroke-width="6"/>`;
+
+/**
+ * How an icon is placed on its cell, and what is drawn under it: on its own it fills the cell inside a white edge,
+ * like a sticker, so it reads against any floor; in a bubble it fills the bubble's disc, white for something said, red
+ * for an alarm, with a "!" badge, and amber for a need; as a staff marker it sits on the purple disc, without a disc of
+ * its own.
  */
 const PLACING = {
   plain: { x: 10, y: 10, size: 108, filter: ' filter="url(#sticker)"' },
-  bubble: { x: 26, y: 18, size: 76, filter: '' },
+  bubble: { x: 20, y: 11, size: 88, filter: '', under: BUBBLE(PALETTE.white) },
+  // on red, the drawing's red turns navy and the rest stays as drawn, so an hourglass's sand still shows; the whole
+  // bubble a little smaller, to leave room in the cell for its badge
+  alarm: {
+    x: 20,
+    y: 11,
+    size: 88,
+    filter: '',
+    under: BUBBLE(PALETTE.red),
+    recolor: [PALETTE.red, PALETTE.navy],
+    shrink: 0.88,
+    badge: BANG,
+  },
+  // on amber, the drawing's gold turns white, so nothing in it sinks into the bubble
+  need: { x: 20, y: 11, size: 88, filter: '', under: BUBBLE(PALETTE.gold), recolor: [PALETTE.gold, PALETTE.white] },
+  square: { x: 12, y: 12, size: 104, filter: '', under: SQUARE_DISC, undisc: true },
 };
+
+/** A drawing with one fill swapped for another, for a bubble of that color. */
+export const refilled = (inner, [from, to]) => inner.replaceAll(`fill="${from}"`, `fill="${to}"`);
+
+/**
+ * A role's drawing without its orange disc, its pictogram grown to fill the space, for a staff marker's purple disc. A
+ * drawing with no such disc is drawn smaller instead, to sit inside the purple one.
+ */
+export function undiscked(inner) {
+  const without = inner.replace(/<circle cx="16" cy="16" r="13.5" fill="#[0-9a-f]{6}"\/>/, '');
+  if (without === inner) return `<g transform="translate(16 16) scale(0.78) translate(-16 -16)">${inner}</g>`;
+  return without.replace(
+    'translate(16 16) scale(0.86) translate(-16 -16)',
+    'translate(16 16) scale(0.94) translate(-16 -16)',
+  );
+}
+
+/** One cell of the atlas: an icon's drawing placed as one of the ways it is shown, on whatever goes under it. */
+export function atlasCell(variant, inner, at) {
+  const p = PLACING[variant];
+  let art = p.recolor ? refilled(inner, p.recolor) : inner;
+  if (p.undisc) art = undiscked(art);
+  const placed = `<g transform="translate(${at.x + p.x} ${at.y + p.y}) scale(${p.size / 32})"${p.filter}>${art}</g>`;
+  let cell = p.under ? `<g transform="translate(${at.x} ${at.y})">${p.under}</g>${placed}` : placed;
+  if (p.shrink) {
+    const cx = at.x + 64;
+    const cy = at.y + 64;
+    cell = `<g transform="translate(${cx} ${cy}) scale(${p.shrink}) translate(${-cx} ${-cy})">${cell}</g>`;
+  }
+  return p.badge ? `${cell}<g transform="translate(${at.x} ${at.y})">${p.badge}</g>` : cell;
+}
 
 /**
  * The atlas as one SVG drawing, each icon drawn on its cells as `atlasLayout` lays them out. An icon with a small
@@ -264,13 +361,7 @@ export function atlasSvg(icons, small = {}) {
   const scene = icons.filter(({ id }) => inScene(id));
   const layout = atlasLayout(scene.map(({ id }) => id));
   const cells = scene.flatMap(({ id, svg }) =>
-    VARIANTS.map((variant) => {
-      const at = layout.icons[id][variant];
-      const p = PLACING[variant];
-      const scale = p.size / 32;
-      const art = `<g transform="translate(${at.x + p.x} ${at.y + p.y}) scale(${scale})"${p.filter}>${innerOf(small[id] ?? svg)}</g>`;
-      return variant === 'bubble' ? `<g transform="translate(${at.x} ${at.y})">${BUBBLE}</g>${art}` : art;
-    }),
+    variantsOf(id).map((variant) => atlasCell(variant, innerOf(small[id] ?? svg), layout.icons[id][variant])),
   );
   // the white edge round an icon on its own, grown out from its shape
   const sticker =

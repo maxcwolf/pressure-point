@@ -19,12 +19,18 @@ const START = 64;
 /** How much bigger the ring under a guest on a really bad trip is than anyone else's. */
 const RUNNER_RING = 1.2;
 
+/** How a runner's ring pulses at time `t`, in seconds, as a share of its size: as the ring round whoever is selected. */
+export const runnerPulse = (t: number) => 1 + Math.sin(t * 5) * 0.06;
+
+/** Whether someone is a guest on a really bad trip, running about. */
+const running = (c: Guest | Staff) => c.kind === 'guest' && c.state === 'running';
+
 /**
  * The ring someone gets: by how they are doing under an overlay, or none; and a guest on a really bad trip always one,
  * bigger and in the bad color, over whatever the overlay says, so a runner can be found from any view.
  */
 export function haloOf(c: Guest | Staff, value: HaloValue | null): { v: number; scale: number } | null {
-  if (c.kind === 'guest' && c.state === 'running') return { v: 0, scale: RUNNER_RING };
+  if (running(c)) return { v: 0, scale: RUNNER_RING };
   const v = value ? value(c) : null;
   return v === null ? null : { v, scale: 1 };
 }
@@ -50,8 +56,11 @@ export class HalosLayer {
     if (!value) this.mesh.visible = this.through.visible = false;
   }
 
-  /** Put a ring at the feet of everyone the overlay covers, and of anyone on a really bad trip, as they stand this frame. */
-  update() {
+  /**
+   * Put a ring at the feet of everyone the overlay covers, and of anyone on a really bad trip, as they stand this frame:
+   * a runner's pulsing, at time `t` in seconds.
+   */
+  update(t = performance.now() / 1000) {
     const value = this.value;
     const s = this.sim.s;
     // with no overlay open, only a runner is ringed, and hardly ever is anyone running
@@ -67,7 +76,7 @@ export class HalosLayer {
       if (c.kind === 'staff' && c.state === 'away') continue;
       const halo = haloOf(c, value);
       if (!halo) continue;
-      const size = streetFade(c.x, c.y, ends) * halo.scale;
+      const size = streetFade(c.x, c.y, ends) * halo.scale * (running(c) ? runnerPulse(t) : 1);
       if (size <= 0.02) continue;
       this.matrix.makeScale(size, 1, size).setPosition(c.x, c.h + 0.03, c.y);
       this.mesh.setMatrixAt(n, this.matrix);
