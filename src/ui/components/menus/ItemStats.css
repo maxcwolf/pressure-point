@@ -60,7 +60,7 @@
 
 /* ---- in the tooltip ---- */
 #tip.rich {
-  max-width: min(300px, calc(100vw - 16px));
+  max-width: min(300px, calc(var(--vw) - 16px));
 }
 
 .item-tip ul {
@@ -110,7 +110,7 @@
 
 /* ---- the panel beside the cards ---- */
 #menu:has(.items-detail) {
-  width: min(1040px, calc(100vw - 28px));
+  width: min(1040px, calc(var(--vw) - 28px));
 }
 
 .items-detail {

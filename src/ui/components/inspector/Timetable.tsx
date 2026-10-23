@@ -1,11 +1,14 @@
 // A Qi Gong Studio's timetable in its inspector: a button for each day of the week, and how the next class is filling.
 
 import { ROLES, WEEKDAYS } from '../../../core/data';
+import { an } from '../../../core/format';
 import { classDays } from '../../../core/sim/classes';
 import type { Room } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { bookingNote, classNote, demandNote, placesNote, weekNote } from '../../lib/classes';
 import { cx } from '../../lib/cx';
+import { meterPercent } from '../../lib/meters';
+import { statusClass } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText, Line } from '../common/Icon';
@@ -25,8 +28,8 @@ export function Timetable({ room }: { room: Room }) {
   const leader = sim.classLeader();
   return (
     <div class="timetable">
-      <p class="status">
-        {staff ? `Led by ${staff.name}` : <IconText id="ui-warning">{`Needs a ${ROLES.instructor.name}`}</IconText>}
+      <p class={statusClass(staff ? 'staffed' : 'unstaffed')}>
+        {staff ? `Led by ${staff.name}` : <IconText id="ui-warning">{`Needs ${an(ROLES.instructor.name)}`}</IconText>}
       </p>{' '}
       <p class="sub">{classNote(standing, spots.length, lead?.progress ?? 0)}</p>
       {leader && (
@@ -34,7 +37,7 @@ export function Timetable({ room }: { room: Room }) {
           <Line line={placesNote(spots.length, leader.places, leader.staff.skill)} />
         </p>
       )}
-      {!!lead?.progress && <Bar value={lead.progress * 100} class="blue" />}
+      {!!lead?.progress && <Bar value={lead.progress * 100} tone="blue" show={meterPercent(lead.progress * 100)} />}
       <p>
         <b>Timetable</b>
       </p>

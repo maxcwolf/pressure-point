@@ -81,8 +81,14 @@ describe('ranks', () => {
     therapist.general = ['bedside'];
     gainXp(ctx, therapist, 1);
     expect(therapist.promotion).toBe(true);
-    expect(drainEvents(ctx).some((e) => e.type === 'toast' && e.text.includes('ready for promotion to Junior'))).toBe(
-      true,
+    // said in their own words for the card for everyone ready, rather than as a message of its own
+    expect(drainEvents(ctx)).toContainEqual(
+      expect.objectContaining({
+        type: 'toast',
+        text: expect.stringContaining('ready for promotion to Junior'),
+        about: { kind: 'staff', id: therapist.id },
+        request: 'promotion',
+      }),
     );
   });
 

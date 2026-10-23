@@ -3,12 +3,17 @@
 #menu {
   left: 14px;
   bottom: 108px;
-  width: min(780px, calc(100vw - 28px));
+  width: min(780px, calc(var(--vw) - 28px));
 }
 
 .menu {
-  max-height: calc(100vh - 220px);
+  max-height: calc(var(--vh) - var(--bar-h) - 116px);
   overflow-y: auto;
+}
+
+#menu.leaving > .panel {
+  pointer-events: none;
+  animation: unpop 0.14s ease-in forwards;
 }
 
 #menu.pop > .panel {

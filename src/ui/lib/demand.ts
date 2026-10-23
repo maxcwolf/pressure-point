@@ -13,6 +13,7 @@ import {
   ROOMS,
 } from '../../core/data';
 import type { Discipline, ItemType } from '../../core/data/types';
+import { an } from '../../core/format';
 import type { Capacity, DisciplineDemand, MachineDemand } from '../../core/sim/demand';
 import { type ArrivalPace, fedMachines } from '../../core/sim/guests';
 import type { IconLine } from './icon-line';
@@ -151,7 +152,7 @@ export function paceNote(p: ArrivalPace, reputation: number, center: CenterDef):
 /** Who runs a machine, as a phrase: "a Massage Therapist". */
 const operator = (m: MachineDemand) => {
   const d = ITEMS[m.machine].station?.discipline ?? 'massage';
-  return ROLES[DISCIPLINES[d].role].name;
+  return an(ROLES[DISCIPLINES[d].role].name);
 };
 
 /**
@@ -162,7 +163,7 @@ export function machineNote(m: MachineDemand, perMonth: number): string {
   const name = ITEMS[m.machine].name;
   const share = `${Math.round(MACHINE_DRAW * 100)}% of the center’s pace`;
   const each = m.fed === 1 ? 'the one' : `each of the ${m.fed}`;
-  const parts = [`${share} for ${each} with a ${operator(m)} of its own to run it`];
+  const parts = [`${share} for ${each} with ${operator(m)} of its own to run it`];
   /** A factor, if it moves the draw at all. */
   const by = (f: number, why: string) => {
     if (Math.abs(f - 1) > 0.005) parts.push(`${times(f)} ${why}`);

@@ -119,7 +119,15 @@ describe('morale and pay', () => {
     therapist.salary = Math.round(fair * 0.8);
     sim.drain();
     runUntil(sim, () => therapist.raiseAsked, 300);
-    expect(toasts(sim.drain()).some((t) => t.includes('wants a raise'))).toBe(true);
+    // said in their own words for the card for everyone asking, rather than as a message of its own
+    expect(sim.drain()).toContainEqual(
+      expect.objectContaining({
+        type: 'toast',
+        text: expect.stringContaining('wants a raise'),
+        about: { kind: 'staff', id: therapist.id },
+        request: 'raise',
+      }),
+    );
     expect(sim.advice()).not.toMatch(/wants a raise/);
     const before = therapist.morale;
     sim.giveRaise(therapist.id);

@@ -53,7 +53,7 @@ import { accessIndex, claim, findAccess, release } from './claims';
 import { backForClass, isClassLead, restDue } from './classes';
 import type { SimContext } from './context';
 import { changeRep, longInRed, payOff, recoup } from './economy';
-import { emit, tipOnce, toast } from './events';
+import { emit, staffRequest, tipOnce, toast } from './events';
 import { resetGuest } from './guests';
 import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaundering } from './linens';
 import { startWard, wardStep, wardWanted } from './mishaps';
@@ -236,15 +236,21 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   if (!st.raiseAsked && (st.salary < fair * 0.97 || red) && st.morale < 56) {
     st.raiseAsked = true;
     say(st, 'bubble-raise', 5);
-    const about = { kind: 'staff', id: st.id } as const;
     if (st.salary < fair * 0.97)
-      toast(ctx, `${st.name} thinks they are worth ${money(fair)} a month and wants a raise.`, 'info', about);
-    else
-      toast(
+      staffRequest(
         ctx,
+        st,
+        'raise',
+        `${st.name} thinks they are worth ${money(fair)} a month and wants a raise.`,
+        'info',
+      );
+    else
+      staffRequest(
+        ctx,
+        st,
+        'raise',
         `${st.name} has watched the bank sit in the red for a month, and wants a raise to ${money(raiseTo(st, tuning(ctx.s, 'salaries')))} to stay.`,
         'bad',
-        about,
       );
   }
   const before = st.unhappyT;

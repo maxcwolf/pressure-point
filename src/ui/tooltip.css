@@ -7,7 +7,9 @@
   z-index: 100;
   pointer-events: none;
   width: max-content;
-  max-width: min(290px, calc(100vw - 16px));
+  /* drawn at the interface's size over the game (set as it shows), and at the usual size elsewhere */
+  zoom: var(--ui-scale);
+  max-width: min(290px, calc(100vw / var(--ui-scale) - 16px));
   padding: 7px 12px 8px;
   background: var(--navy);
   color: var(--cream);

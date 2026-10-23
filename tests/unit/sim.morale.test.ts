@@ -31,8 +31,9 @@ describe('the countdown to quitting', () => {
     expect(quitWarning(0.2)).toEqual({ icon: 'ui-warning', text: 'About to quit: 1 day left' });
   });
 
-  it('turns the morale bar red when it is low', () => {
-    expect(moraleLook(80)).toBe('gold');
+  it('turns the morale bar amber as it sags and red when it is low', () => {
+    expect(moraleLook(80)).toBe('good');
+    expect(moraleLook(40)).toBe('warn');
     expect(moraleLook(20)).toBe('bad');
   });
 });

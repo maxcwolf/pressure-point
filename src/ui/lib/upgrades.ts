@@ -1,6 +1,7 @@
 // What a machine's inspector says about its upgrades: its level, what that does, and how the next one is coming on.
 
 import { UPGRADE_LEVELS, UPGRADE_SUCCESS, UPGRADE_WEAR } from '../../core/data';
+import { an } from '../../core/format';
 import type { Item, Staff } from '../../core/state/types';
 import type { IconLine } from './icon-line';
 
@@ -23,7 +24,7 @@ export function staffingStatus(it: Item, staff: Staff | undefined, role: string 
   if (it.upgradePaid && it.claimedBy && !it.serving)
     return { icon: 'bubble-installing', text: 'Closed while an upgrade is installed' };
   // a station with no role runs itself
-  return role ? { icon: 'ui-warning', text: `Needs a ${role}` } : { text: 'Runs itself, with nobody to staff it' };
+  return role ? { icon: 'ui-warning', text: `Needs ${an(role)}` } : { text: 'Runs itself, with nobody to staff it' };
 }
 
 /** How an upgrade that has been paid for is coming on, or '' if none is: waiting, on the way, or being installed. */

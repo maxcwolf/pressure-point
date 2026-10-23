@@ -80,7 +80,7 @@ export function GuestsTab() {
     away: sim.s.tally.turnedAway ?? 0,
   };
   const idle = capacityNote(pace.capacity);
-  const season = seasonLine(sim.s.day, center);
+  const season = seasonLine(sim.s.day, center, sim.s.startMonth);
   const rush = rushLine(sim.s.day, center);
   if (!rows.length) return <p class="sub">No treatment rooms yet: build one, and guests start arriving for it.</p>;
   return (

@@ -10,8 +10,9 @@ import { CAMPAIGN, type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTIN
 import type { Sim } from '../../core/sim/sim';
 import { disciplineHere } from '../../core/state/game';
 import { loadControls, saveControls } from '../../storage/controls';
-import { ITEM_VIEWS, loadDisplay, MESSAGE_TIMES, saveDisplay } from '../../storage/display';
+import { ITEM_VIEWS, loadDisplay, MESSAGE_TIMES, saveDisplay, UI_SCALES } from '../../storage/display';
 import { loadDisciplinePrefs, loadTutorialPref, saveDisciplinePref, saveTutorialPref } from '../../storage/settings';
+import { applyDisplay } from '../display';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch } from '../host';
 import { ITEM_VIEW_NAMES } from '../lib/item-stats';
@@ -153,6 +154,28 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
       />
       <h4>Display</h4>
       <ul>
+        <li>
+          <Icon id="ui-size" size={26} />
+          <div>
+            <b>Interface size</b>
+            <span>
+              How big the panels, buttons and words in a game are drawn: larger for a big screen, or one seen from afar.
+            </span>
+          </div>{' '}
+          <button
+            class="choice ui-scale-choice"
+            aria-label="Interface size"
+            onClick={flip('uiScale', () => {
+              const prefs = loadDisplay();
+              const uiScale = nextChoice(UI_SCALES, prefs.uiScale);
+              saveDisplay({ ...prefs, uiScale });
+              applyDisplay();
+              return String(uiScale);
+            })}
+          >
+            {`${Math.round(loadDisplay().uiScale * 100)}%`}
+          </button>
+        </li>
         <li>
           <Icon id="ui-news" size={26} />
           <div>

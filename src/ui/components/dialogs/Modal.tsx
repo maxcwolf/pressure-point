@@ -2,8 +2,10 @@
 
 import type { ComponentChildren } from 'preact';
 
+import { Still, useExit } from '../../hooks/use-exit';
 import { useHud } from '../../hooks/use-hud';
 import type { DialogId } from '../../hud';
+import { cx } from '../../lib/cx';
 import { AwardsDialog } from './AwardsDialog';
 import { BankruptDialog } from './BankruptDialog';
 import { BuyPlotDialog } from './BuyPlotDialog';
@@ -62,8 +64,17 @@ function contents(dialog: DialogId): ComponentChildren {
   }
 }
 
-/** The open dialog, if any. */
+/** The open dialog, if any, and for a moment after it closes the last of it fading away, the game no longer dimmed. */
 export function Modal() {
   const { dialog } = useHud();
-  return <div id="modal">{dialog && contents(dialog)}</div>;
+  const { shown, leaving } = useExit(dialog);
+  return (
+    <div id="modal" class={cx(leaving && 'leaving')}>
+      {shown && (
+        <Still key={shown} still={leaving}>
+          {contents(shown)}
+        </Still>
+      )}
+    </div>
+  );
 }

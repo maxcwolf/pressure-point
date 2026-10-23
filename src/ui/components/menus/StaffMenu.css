@@ -57,8 +57,9 @@
   color: #6f55b8;
 }
 
+/* morale is green while it is fine, amber as it sags and red when low, like the bar in the inspector */
 .morale-key {
-  color: #b8860b;
+  color: var(--good);
 }
 
 .row small {

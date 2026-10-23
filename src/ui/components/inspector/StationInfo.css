@@ -44,8 +44,11 @@
 
 .insp .in-line .patience {
   grid-area: patience;
-  height: 6px;
   margin: 0;
+}
+
+.insp .in-line .patience .bar {
+  height: 6px;
 }
 
 .insp .in-line .odds {

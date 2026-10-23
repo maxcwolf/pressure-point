@@ -34,6 +34,14 @@ body {
   position: absolute;
 }
 
+/* the in-game interface drawn at the size chosen in the settings; a length in it that reads the window's size uses
+   var(--vw) and var(--vh), which are the window's size in the interface's own pixels */
+#ui {
+  zoom: var(--ui-scale);
+  --vw: calc(100vw / var(--ui-scale));
+  --vh: calc(100vh / var(--ui-scale));
+}
+
 button {
   font: inherit;
   color: inherit;
@@ -89,6 +97,20 @@ s {
   }
 }
 
+/* the way out of a panel or a dialog: pop played backwards */
+@keyframes unpop {
+  to {
+    transform: scale(0.94) translateY(8px);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeout {
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes slide {
   from {
     transform: translateX(30px);
@@ -103,17 +125,9 @@ s {
   }
 }
 
-@keyframes floatup {
-  0% {
+@keyframes fadein {
+  from {
     opacity: 0;
-    margin-top: 10px;
-  }
-  15% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    margin-top: -60px;
   }
 }
 
