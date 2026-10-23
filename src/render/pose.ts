@@ -884,9 +884,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
 
   if (rig.mop) rig.mop.visible = mopping;
   if (healed && !rig.cured) showCure(rig, c, t);
-  // a towel and the soles of the shoes up, face down
-  if (prone) rig.faceDown ??= buildFaceDown(rig.torso, [rig.joints.shinL, rig.joints.shinR]);
-  if (rig.faceDown) showFaceDown(rig.faceDown, prone);
+  // a towel and the soles of the shoes up, face down, once they are mostly down
+  const towel = prone && lying > 0.6;
+  if (towel) rig.faceDown ??= buildFaceDown(rig.torso, [rig.joints.shinL, rig.joints.shinR]);
+  if (rig.faceDown) showFaceDown(rig.faceDown, towel);
 
   if (rig.sage && rig.sageTip && rig.smoke) {
     rig.sage.visible = smudging;

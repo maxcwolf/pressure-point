@@ -124,8 +124,12 @@ export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body
     for (const [r, y] of [
       [0.3, 0],
       [0.42, 0.04],
-    ] as const)
-      put(rig.orbit, torus(r, 0.03), ring, 0, y, 0).rotation.x = Math.PI / 2;
+    ] as const) {
+      // light, cast no shadow: a ring of shadow on the floor would read as something lying there
+      const wave = put(rig.orbit, torus(r, 0.03), ring, 0, y, 0);
+      wave.rotation.x = Math.PI / 2;
+      wave.castShadow = false;
+    }
     rig.orbit.position.y = 0.05;
     head.add(rig.orbit);
   } else if (visual === 'snowcap') {
