@@ -4,9 +4,20 @@ import * as THREE from 'three';
 
 import { FREAK_RANGE, type Modality, POOR_CONDITION } from '../core/data';
 import { aboutToQuit } from '../core/sim/staffing';
-import type { BubbleId, Char } from '../core/state/types';
+import type { Char } from '../core/state/types';
 import { must } from '../core/util';
 import type { Act, Lying } from './acts';
+import {
+  BUBBLE_SIZE,
+  BUBBLE_TAIL,
+  bubbleScale,
+  type BubbleShown,
+  follow,
+  nudging,
+  quiet,
+  type Said,
+  saying,
+} from './bubbles';
 import { rattle, RATTLE_PEAK } from './item-cues';
 import { buildBurst } from './models/burst';
 import { type CharRig, cureRig, endCure, type Joints } from './models/character';
@@ -739,28 +750,61 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     driftSmoke(rig.smoke, rig.sageTip, t, smudging);
   }
 
-  // someone about to quit keeps a warning over their head until it is dealt with
-  let bubble: BubbleId | '' = c.kind === 'staff' && aboutToQuit(c) ? 'bubble-quitting' : c.bubbleT > 0 ? c.bubble : '';
-  if (!bubble && c.kind === 'guest') {
-    const waiting = c.state === 'waiting' || c.state === 'toWait';
-    if (doing.mood === 'fedUp') bubble = 'bubble-impatient';
-    else if (waiting && !c.outcome && c.health < POOR_CONDITION) bubble = 'bubble-hurt';
-    else if (waiting && c.bladder >= 95) bubble = 'bubble-restroom';
-    else if (waiting && c.thirst >= 95) bubble = 'bubble-thirsty';
-  } else if (!bubble && c.kind === 'staff') {
-    if (c.state === 'onBreak') bubble = 'bubble-break';
-    else if (c.state === 'training') bubble = 'bubble-training';
-    else if (c.energy < 15) bubble = 'bubble-exhausted';
+  poseBubble(rig, c, t, doing.mood);
+}
+
+/**
+ * What someone has to say, in what color, before any bubble is held up for reading: first trouble a player should act
+ * on now, in red (about to quit, fed up, getting worse while waiting), then whatever the game has them say, then needs
+ * in amber (the toilet, a drink, worn out), then what staff are busy with, and last, now and then, an amber hourglass
+ * from a guest running out of patience.
+ */
+export function bubbleWanted(c: Char, t: number, mood: Mood): Said | null {
+  if (c.kind === 'staff' && aboutToQuit(c)) return saying('bubble-quitting');
+  const waiting = c.kind === 'guest' && (c.state === 'waiting' || c.state === 'toWait');
+  if (c.kind === 'guest') {
+    if (mood === 'fedUp') return saying('bubble-impatient');
+    if (waiting && !c.outcome && c.health < POOR_CONDITION) return saying('bubble-hurt');
   }
-  if (bubble !== rig.bubbleKey) {
-    rig.bubbleKey = bubble;
-    rig.bubble.visible = !!bubble;
-    if (bubble) {
-      rig.bubble.material.map = iconTexture(bubble);
-      rig.bubble.material.needsUpdate = true;
-    }
+  if (c.bubbleT > 0 && c.bubble) return saying(c.bubble);
+  if (c.kind === 'guest') {
+    if (waiting && c.bladder >= 95) return saying('bubble-restroom');
+    if (waiting && c.thirst >= 95) return saying('bubble-thirsty');
+    if (mood === 'impatient' && nudging(t, c.id)) return { id: 'bubble-impatient', tone: 'need' };
+    return null;
   }
-  if (bubble) rig.bubble.position.y = (c.pose === 'lie' ? 1.0 : 1.72) + Math.sin(t * 3 + c.id) * 0.04;
+  if (c.kind !== 'staff') return null;
+  if (c.state === 'onBreak') return saying('bubble-break');
+  if (c.state === 'training') return saying('bubble-training');
+  if (c.energy < 15) return saying('bubble-exhausted');
+  return null;
+}
+
+/**
+ * Show someone's bubble over their head: popping in, held long enough to read, shrinking away, an alarm pulsing, from
+ * the tip of its tail so it seems to come out of the head. A bubble nobody has said is left alone, as it is in the lab.
+ */
+function poseBubble(rig: CharRig, c: Char, t: number, mood: Mood) {
+  const sprite = rig.bubble;
+  const before = (sprite.userData.shown as BubbleShown | undefined) ?? quiet();
+  const shown = follow(before, bubbleWanted(c, t, mood), t);
+  sprite.userData.shown = shown;
+  if (!shown.said) {
+    if (before.said) sprite.visible = false;
+    rig.bubbleKey = '';
+    return;
+  }
+  const key = `${shown.said.id}|${shown.said.tone}`;
+  if (key !== rig.bubbleKey) {
+    rig.bubbleKey = key;
+    sprite.material.map = iconTexture(shown.said.id, shown.said.tone);
+    sprite.material.needsUpdate = true;
+    sprite.center.set(0.5, BUBBLE_TAIL);
+  }
+  const size = bubbleScale(shown, t);
+  sprite.visible = size > 0;
+  sprite.scale.setScalar(BUBBLE_SIZE * size);
+  sprite.position.y = (c.pose === 'lie' ? 0.72 : 1.44) + Math.sin(t * 3 + c.id) * 0.04;
 }
 
 /** How a person's limbs are posed this frame, from which the knees, elbows and waist follow. */
