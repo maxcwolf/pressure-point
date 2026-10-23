@@ -25,6 +25,18 @@
   grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
 }
 
+/* ringed by the tutorial, a row shrinks to its cards, so the ring wraps them rather than the panel's whole width */
+.cards.guide {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.cards.guide > .card {
+  flex: 0 0 172px;
+}
+
 .card {
   position: relative;
   text-align: left;
@@ -71,6 +83,17 @@ button.card:hover {
 
 .card em.none {
   opacity: 0.6;
+}
+
+/* an applicant's quirk: green where it helps, red where it costs */
+.card em.good {
+  background: #dff3e4;
+  color: #1d6a45;
+}
+
+.card em.bad {
+  background: #fbe3e1;
+  color: #a8322b;
 }
 
 .card .cost {

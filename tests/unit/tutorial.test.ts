@@ -156,6 +156,21 @@ describe('the tutorial', () => {
     expect(text).toMatch(/borrows to get through its first paydays/);
   });
 
+  it('teaches the applicant cards on the hiring steps, leaving the choice to the player', () => {
+    const sim = tutorialGame();
+    sim.noteLooked();
+    sim.s.speed = 0;
+    sim.placeItem('reception_desk', 14, 13, 0);
+    expect(sim.tutorialStep()?.text).toMatch(/quirk, green where it helps and red where it costs you/);
+    expect(sim.tutorialStep()?.text).toMatch(/the lower the rank, the less they ask/);
+    hire(sim, 'receptionist');
+    addConsult(sim);
+    expect(sim.tutorialStep()?.text).toMatch(/The better their rank, the surer their diagnoses/);
+    hire(sim, 'consultant');
+    addMassage(sim);
+    expect(sim.tutorialStep()?.text).toMatch(/every Therapist knows Swedish massage/);
+  });
+
   it('says on a step the bank cannot take what it would leave, and that the loan is cheaper than the red', () => {
     const sim = tutorialGame();
     walkOpening(sim);

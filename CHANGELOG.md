@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **The tutorial stops the clock.** Its second step asks you to pause, ringing the pause button, so nothing happens while the opening is built, and once the desk, both rooms and all three hires are in it asks you to start the clock again, ringing play. A player who never pauses is not asked to start it.
+- **Hiring is your call.** On the tutorial's hiring steps the ring goes round the row of applicants, not one of them, and the card says how to read theirs: rank, pay a month and a quirk, a Consultant's rank meaning surer diagnoses, and every Therapist knowing Swedish massage. In the Hire menu a quirk now shows green where it helps and red where it costs you.
 
 ## v0.33.0
 
