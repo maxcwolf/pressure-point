@@ -23,7 +23,7 @@ import { SPILL_SPEED, spillRuns } from './models/items/fountain';
 import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
 import { upgradePlate } from './models/plate';
-import type { Turn } from './turn';
+import { type Turn, turnAngle } from './turn';
 
 /** Position and turn an item's model to match its tile and rotation. */
 export function placeItemModel(model: THREE.Object3D, type: ItemType, x: number, y: number, rot: number) {
@@ -130,6 +130,12 @@ const BAR_FILL = new THREE.BoxGeometry(1, 0.14, 0.07);
 const BAR_BACK_MAT = new THREE.MeshBasicMaterial({ color: 0x2f4858 });
 const BAR_FILL_MAT = new THREE.MeshBasicMaterial({ color: 0x3ddc84 });
 
+/**
+ * Which way a progress bar faces at a turn of the camera, about the upright: square to the camera, so it reads at its
+ * full width from every side and fills from the left.
+ */
+export const barAngle = (turn: Turn) => Math.PI / 4 + turnAngle(turn);
+
 /** How high a progress bar sits over most stations, and the most a marker over an item bobs below it. */
 const BAR_Y = 2.1;
 const MARKER_Y = 1.9;
@@ -151,9 +157,13 @@ export class ItemsLayer {
     return [...this.items.values()].map((i) => i.group);
   }
 
-  /** Turn the camera: what hangs on a wall shows as a ghost of itself on the walls now cut low, and solid on the rest. */
+  /**
+   * Turn the camera: what hangs on a wall shows as a ghost of itself on the walls now cut low, and solid on the rest,
+   * and the progress bars turn to face it.
+   */
   setTurn(turn: Turn) {
     this.turn = turn;
+    for (const bar of this.bars.values()) bar.group.rotation.y = barAngle(turn);
     this.sync();
   }
 
@@ -323,7 +333,7 @@ export class ItemsLayer {
       const back = new THREE.Mesh(BAR_BACK, BAR_BACK_MAT);
       const fill = new THREE.Mesh(BAR_FILL, BAR_FILL_MAT);
       group.add(back, fill);
-      group.rotation.y = Math.PI / 4;
+      group.rotation.y = barAngle(this.turn);
       const [cx, cy] = itemCenter(it);
       group.position.set(cx, this.over(it, BAR_Y), cy);
       this.scene.add(group);

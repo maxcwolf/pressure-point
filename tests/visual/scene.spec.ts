@@ -151,6 +151,39 @@ test.describe('the scene', () => {
     await expect(page).toHaveScreenshot('scene-apart.png');
   });
 
+  test('a treatment under way, its progress bar facing the camera turned to look from the north-east', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      const { sim, state } = pp;
+      const room = sim.createRoom('massage', { x: 12, y: 8, w: 4, h: 4 }, { x: 13, y: 11, dx: 0, dy: 1 });
+      const table = sim.placeItem('massage_table', 13, 8, 0, { free: true, roomId: room.id })!;
+      sim.finishRoom(room);
+      // a session two fifths of the way through, with nobody on the table, so nothing in the picture moves
+      table.serving = 1;
+      table.progress = 0.4;
+      state.speed = 0;
+      pp.view.turnCamera(1);
+      pp.view.target.set(14, 0, 10);
+    });
+    await noon(game);
+    await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
+    // long enough for the camera to glide all the way round
+    await page.evaluate(
+      () =>
+        new Promise<void>((done) => {
+          let frames = 0;
+          /** Count a frame, and finish after enough. */
+          const tick = () => (++frames > 90 ? done() : requestAnimationFrame(tick));
+          tick();
+        }),
+    );
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-progress-bar-turned.png');
+  });
+
   test('a building grown into every plot of land, with a room against its old wall', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => {

@@ -9,6 +9,7 @@ import { mat, partsOf } from '../../src/render/models/parts';
 import type { PeopleLayer } from '../../src/render/people';
 import { nextPick, Picker, type Selection } from '../../src/render/picking';
 import { RoomsLayer } from '../../src/render/rooms';
+import { type Turn, viewFrom } from '../../src/render/turn';
 import { freshSim, openCenter } from './helpers';
 
 /** Does nothing, for every call the scene makes that a test has no use for. */
@@ -97,6 +98,38 @@ describe('drawing items', () => {
     const afterOne = seen.size;
     for (let i = 0; i < 20; i++) session(items, table, seen, scene);
     expect(seen.size).toBe(afterOne);
+  });
+
+  it('turns a progress bar to face the camera from every side, the one showing as the camera turns and a new one', () => {
+    const { scene, items, table } = drawnCenter();
+    /** How squarely the bar over the table faces the camera at a turn: 1 head on, 0 edge on, below 0 from behind. */
+    const facing = (turn: Turn) => {
+      // the bar is the one thing in the scene with the green of a bar's fill
+      const bar = scene.children.find((o) =>
+        o.children.some(
+          (c) =>
+            c instanceof THREE.Mesh &&
+            c.material instanceof THREE.MeshBasicMaterial &&
+            c.material.color.getHex() === 0x3ddc84,
+        ),
+      )!;
+      const front = new THREE.Vector3(0, 0, 1).applyQuaternion(bar.quaternion);
+      const [x, z] = viewFrom(turn);
+      return front.dot(new THREE.Vector3(x, 0, z).normalize());
+    };
+    table.serving = 1;
+    table.progress = 0.5;
+    for (const turn of [0, 1, 2, 3] as const) {
+      items.setTurn(turn);
+      items.animate(0);
+      expect(facing(turn)).toBeCloseTo(1, 5);
+    }
+    // and one put up after the turn
+    table.serving = 0;
+    items.animate(0);
+    table.serving = 1;
+    items.animate(0);
+    expect(facing(3)).toBeCloseTo(1, 5);
   });
 
   it('does not let a hidden marker over a mended item catch clicks', () => {
