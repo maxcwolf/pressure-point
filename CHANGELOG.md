@@ -17,6 +17,10 @@ Each release's notes are taken from its section here. Keep them short.
 - **Things that read at a glance.** Pictures and clocks on the walls are half as big again, each with one bold shape; the Gong of Last Resort, the Spirit Fog Machine and the Kneadmaster each look like nothing else; the Aquarium shows its water and fish; and the shelves, the Trophy Cabinet, the Recliner, the Soundproof Panels, the Serenity Statue and the default rug no longer look like one another or shout. Upgrade plates show their stars from the usual zoom, and the receptionist has a screen in front of them.
 - **A calmer street.** ZenMart keeps its purple to its sign and awnings, under a plum roof on a paved forecourt, with snow on the roof in the mountains; the beach huts are soft pastel huts with their doors toward you; a window in a wall cut low is a strip of glass along the wall instead of a pane floating in front of the guests; and the welcome sign stands out by the pavement, clear of the room by the door.
 - **Tell us what you think.** The game is in alpha and changes every day, and a welcome on your first visit says so. Give feedback, in the corner of the title screen and in the pause menu, sends a bug, an idea or anything else straight to the developer, with an email to be answered at if you like.
+- **Mishaps show in the scene.** In a power cut the building goes dark while the sun still shines on the lot, and everything with a plug goes out; a freeze frosts the water with icicles hanging off it; wasps swarm over the snacks, drinks and bins.
+- **Progress bars from every side.** A treatment's bar faces the camera however it is turned.
+- **Weather stays outside.** Rain and snow no longer fall inside the building; snowflakes are round, rain falls in thin streaks, and flood water lies in bright pools with rings spreading over it.
+- **Trees through the year, and a calmer day.** The park's trees turn gold in autumn and bare in winter, and the orchards blossom in spring; the light no longer pulses through each day at normal speed.
 
 ## v0.32.2
 
