@@ -6,6 +6,7 @@
 // rest of an item's moving parts, each is worked out afresh from the time and the item's state, frame by frame.
 
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 import { DIRT_FILTHY, ITEMS, type ItemType, type MishapId, NOISE_NOTICE, WEAR_WARN } from '../core/data';
 import { clamp } from '../core/util';
@@ -577,8 +578,28 @@ const WASPS = 7;
 const WASP_REACH = 0.5;
 const WASP_RISE = 0.35;
 
-/** The shape of a wasp, a little fatter than long so it reads as a body: one for all of them. */
-const waspShape = () => cached('cue-wasp', () => new THREE.SphereGeometry(0.06, 8, 6).scale(1.5, 1, 1));
+/** How big a wasp is, in meters, and the colors of the swarm: mostly black, one in three gold, so it reads as wasps. */
+const WASP_SIZE = 0.4;
+const WASP_BLACK = new THREE.Color(0x2a2620);
+const WASP_GOLD = new THREE.Color(0xf2b705);
+
+/** A round dot, solid to its edge, for a wasp seen from far off. */
+function dotTexture(): THREE.DataTexture {
+  const N = 16;
+  const data = new Uint8Array(N * N * 4);
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      const inside = Math.hypot(x + 0.5 - N / 2, y + 0.5 - N / 2) < N / 2 - 0.5;
+      data.set([255, 255, 255, inside ? 255 : 0], (y * N + x) * 4);
+    }
+  const tex = new THREE.DataTexture(data, N, N);
+  tex.magFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/** What every wasp is drawn in: one material for every swarm. */
+let waspLook: THREE.PointsMaterial | null = null;
 
 /**
  * Where a wasp is at a moment, round the middle of what it buzzes about: each on its own looping path, darting quickly
@@ -594,6 +615,29 @@ export function waspAt(t: number, i: number, id: number): [x: number, y: number,
   ];
 }
 
+/** A swarm of wasps, as dots: one part, drawn at once, whatever their number. */
+function swarm(model: THREE.Object3D): THREE.Points {
+  const shape = owned(new THREE.BufferGeometry());
+  shape.setAttribute('position', new THREE.BufferAttribute(new Float32Array(WASPS * 3), 3));
+  const colors = new Float32Array(WASPS * 3);
+  for (let i = 0; i < WASPS; i++) (i % 3 === 1 ? WASP_GOLD : WASP_BLACK).toArray(colors, i * 3);
+  shape.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  waspLook ??= new THREE.PointsMaterial({
+    size: WASP_SIZE,
+    map: dotTexture(),
+    vertexColors: true,
+    alphaTest: 0.5,
+  });
+  const wasps = new THREE.Points(shape, waspLook);
+  /** Cues are not there to be clicked: a click goes to the item itself. */
+  wasps.raycast = () => undefined;
+  // they move every frame, so their bounds are never worked out
+  wasps.frustumCulled = false;
+  wasps.userData.cue = true;
+  model.add(wasps);
+  return wasps;
+}
+
 /** A swarm of wasps round the top of something they have stopped, black and gold and never still. */
 function animateWasps(model: THREE.Object3D, c: CueCondition, t: number) {
   let wasps = partsOf(model).cues?.wasps;
@@ -602,57 +646,58 @@ function animateWasps(model: THREE.Object3D, c: CueCondition, t: number) {
     return;
   }
   const cues = cuesOf(model);
-  if (!wasps) {
-    wasps = cues.wasps = cueGroup(model, waspShape(), WASPS, 0x2a2620);
-    wasps.children.forEach((w, i) => {
-      const m = fadeOf(w);
-      // one in three a gold one, so the swarm reads as wasps and not flies
-      if (i % 3 === 1) m.color.setHex(0xf2b705);
-      m.opacity = 1;
-      m.transparent = false;
-      m.depthWrite = true;
-    });
-  }
+  wasps = cues.wasps ??= swarm(model);
   wasps.visible = true;
   const { box } = cues;
   const cx = (box.min.x + box.max.x) / 2;
   const cz = (box.min.z + box.max.z) / 2;
-  wasps.children.forEach((w, i) => {
+  const at = wasps.geometry.getAttribute('position') as THREE.BufferAttribute;
+  for (let i = 0; i < WASPS; i++) {
     const [x, y, z] = waspAt(t, i, c.id);
-    w.position.set(cx + x, box.max.y + WASP_RISE + y, cz + z);
-    // facing the way it darts
-    w.rotation.y = Math.atan2(-Math.cos(t * 2 + i), Math.sin(t * 2 + i));
-  });
+    at.setXYZ(i, cx + x, box.max.y + WASP_RISE + y, cz + z);
+  }
+  at.needsUpdate = true;
 }
 
 /** How many icicles hang from the front of something frozen, and how long the longest is. */
 const ICICLES = 4;
 const ICICLE_LONG = 0.16;
 
-/** An icicle, its root at the top: one shape for all of them. */
-const icicleShape = () =>
-  cached('cue-icicle', () => new THREE.ConeGeometry(0.03, 1, 6).rotateX(Math.PI).translate(0, -0.5, 0));
+/** What every icicle is drawn in: one see-through ice for all of them. */
+let ice: THREE.MeshBasicMaterial | null = null;
+
+/** The icicles along the top front edge of a model's box, as one shape of its own, so they are drawn at once. */
+function icicles(model: THREE.Object3D, box: THREE.Box3, id: number): THREE.Mesh {
+  const width = box.max.x - box.min.x;
+  const each = Array.from({ length: ICICLES }, (_, i) =>
+    new THREE.ConeGeometry(0.03, 1, 6)
+      .rotateX(Math.PI)
+      .translate(0, -0.5, 0)
+      .scale(1, ICICLE_LONG * (0.55 + 0.45 * (((i * 7 + id) % 4) / 3)), 1)
+      .translate(box.min.x + width * ((i + 0.5) / ICICLES), box.max.y * 0.98, box.max.z),
+  );
+  const shape = mergeGeometries(each);
+  for (const g of each) g.dispose();
+  ice ??= new THREE.MeshBasicMaterial({ color: 0xd6efff, transparent: true, opacity: 0.9, depthWrite: false });
+  const m = new THREE.Mesh(owned(shape), ice);
+  /** Cues are not there to be clicked: a click goes to the item itself. */
+  m.raycast = () => undefined;
+  m.renderOrder = 2;
+  m.userData.cue = true;
+  model.add(m);
+  return m;
+}
 
 /** Icicles hanging from the top front edge of something frozen, so a freeze reads beside the frost on its parts. */
 function animateIcicles(model: THREE.Object3D, c: CueCondition) {
-  let icicles = partsOf(model).cues?.icicles;
+  let hung = partsOf(model).cues?.icicles;
   if (c.stopped !== 'frost') {
-    if (icicles) icicles.visible = false;
+    if (hung) hung.visible = false;
     return;
   }
   const cues = cuesOf(model);
-  if (!icicles) {
-    icicles = cues.icicles = cueGroup(model, icicleShape(), ICICLES, 0xd6efff);
-    const { box } = cues;
-    const width = box.max.x - box.min.x;
-    icicles.children.forEach((ice, i) => {
-      const m = fadeOf(ice);
-      m.opacity = 0.9;
-      ice.position.set(box.min.x + width * ((i + 0.5) / ICICLES), box.max.y * 0.98, box.max.z);
-      ice.scale.set(1, ICICLE_LONG * (0.55 + 0.45 * (((i * 7 + c.id) % 4) / 3)), 1);
-    });
-  }
-  icicles.visible = true;
+  hung = cues.icicles ??= icicles(model, cues.box, c.id);
+  hung.visible = true;
 }
 
 /**

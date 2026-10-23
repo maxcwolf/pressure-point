@@ -361,10 +361,12 @@ describe('a mishap on a model', () => {
     /** Where each wasp is at a moment. */
     const at = (t: number) => {
       animateItemParts(model, condition('bin', { stopped: 'wasps' }), t);
-      return wasps!.children.map((w) => w.position.clone());
+      const spots = wasps!.geometry.getAttribute('position');
+      return Array.from({ length: spots.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(spots, i));
     };
     const a = at(1);
     const b = at(1.1);
+    expect(a.length).toBeGreaterThan(4);
     a.forEach((p, i) => {
       // over the bin, and moving
       expect(p.y).toBeGreaterThan(box.max.y);
