@@ -1,12 +1,16 @@
 // The camera moving the same on every screen: its glides, turns and zooms take as long at 30 frames a second as at
 // 144, a jump to a spot eases its zoom along with it, the wheel zooms toward the pointer, and a player who asks for
-// less motion gets a cut.
+// less motion gets a cut. And the small motions that say a placement went in or was turned down.
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 
 import { SANDBOX_PLOT } from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
 import { CameraRig } from '../../src/render/camera';
+import { ItemsLayer } from '../../src/render/items';
+import { nudgeOffset } from '../../src/render/overlays';
+import { SETTLE_SECONDS, settleScale, Settling } from '../../src/render/settle';
+import { freshSim } from './helpers';
 
 /** The sandbox's building, as it starts. */
 const BUILDING = footprintOf(SANDBOX_PLOT);
@@ -157,5 +161,49 @@ describe('zooming with the wheel', () => {
     r.zoom(-0.25);
     expect(r.dist).toBeCloseTo(41 * 0.75, 5);
     expect(r.still).toBe(true);
+  });
+});
+
+describe('putting an item down', () => {
+  it('squashes it as it lands and puts it back to its own shape', () => {
+    expect(settleScale(0)).toEqual([1, 1]);
+    const [across, up] = settleScale(SETTLE_SECONDS / 2);
+    expect(up).toBeLessThan(0.9);
+    expect(across).toBeGreaterThan(1);
+    expect(settleScale(SETTLE_SECONDS)[1]).toBeCloseTo(1, 10);
+
+    const model = new THREE.Group();
+    model.scale.set(1, 0.9, 1);
+    const settling = new Settling();
+    settling.add(model);
+    settling.update(SETTLE_SECONDS / 2);
+    expect(model.scale.y).toBeLessThan(0.85);
+    for (let i = 0; i < 20; i++) settling.update(1 / 60);
+    expect(settling.count).toBe(0);
+    expect(model.scale.toArray()).toEqual([1, 0.9, 1]);
+  });
+
+  it('settles only what is new or moved, not what is built again where it was', () => {
+    const sim = freshSim();
+    const items = new ItemsLayer(new THREE.Scene(), sim);
+    items.sync();
+    const plant = sim.placeItem('plant', 6, 6, 0)!;
+    expect(items.sync()).toHaveLength(1);
+    // upgraded, it is built again, but it has not landed anywhere
+    plant.level = 2;
+    expect(items.sync()).toHaveLength(0);
+    expect(sim.moveItem(plant.id, 8, 6, 0)).toBe(true);
+    expect(items.sync()).toHaveLength(1);
+  });
+});
+
+describe('a click turned down', () => {
+  it('shakes the preview back and forth and puts it back', () => {
+    expect(nudgeOffset(-0.1)).toBe(0);
+    expect(nudgeOffset(0)).toBe(0);
+    const shakes = [0.02, 0.06, 0.1, 0.14].map(nudgeOffset);
+    expect(shakes.some((s) => s > 0.03)).toBe(true);
+    expect(shakes.some((s) => s < -0.03)).toBe(true);
+    expect(nudgeOffset(1)).toBe(0);
   });
 });

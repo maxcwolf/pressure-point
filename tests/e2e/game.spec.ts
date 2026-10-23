@@ -81,6 +81,26 @@ test.describe('starting out', () => {
     await expect(page.locator('#advisor')).toContainText('Hire a Receptionist');
   });
 
+  test('a placement keeps the next preview out of the way, and one that cannot be paid for shows red first', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.menu('Items');
+    await game.card('Potted Plant').click();
+    await game.placeHeld();
+    // the pointer has not moved: the next plant does not sit red on the one just put down
+    expect(await game.eval((pp) => pp.tools.problem)).toBe('');
+    await expect(page.locator('#hint b')).toHaveCount(0);
+    // and the price floats off it
+    await expect(page.locator('#floaters')).toContainText('-$120');
+    // with too little in the bank, the next is red before any click, saying why
+    await game.eval((pp) => (pp.state.money = 5));
+    await game.hoverHeld();
+    await expect(page.locator('#hint b')).toHaveText("Can't afford it");
+    expect(game.errors).toEqual([]);
+  });
+
   test('an invalid spot is refused and explained', async ({ game, page }) => {
     await game.start();
     await game.menu('Items');
@@ -89,6 +109,8 @@ test.describe('starting out', () => {
     await expect(page.locator('#hint')).toContainText('Must be inside the building');
     await game.clickLawn();
     expect(await game.eval((pp) => pp.state.items.length)).toBe(0);
+    // the reason pulses, so the click is seen to be turned down as well as heard
+    await expect(page.locator('#hint b.refused')).toHaveCount(1);
   });
 
   test('the newer items wait for their stars, or karma', async ({ game }) => {

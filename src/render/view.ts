@@ -24,6 +24,7 @@ import { RainLayer } from './rain';
 import { RoomsLayer } from './rooms';
 import { buildScenery, buildShell } from './scenery';
 import { settingName, settingOf } from './setting';
+import { Settling } from './settle';
 import { SnowfallLayer } from './snowfall';
 import { StorefrontLayer } from './storefront';
 import { nearSides, type Turn } from './turn';
@@ -79,6 +80,8 @@ export class View {
    * halfway round, where the walls changing are side on to it.
    */
   private facing: Turn = 0;
+  /** The items just put down, settling into place. */
+  private settling = new Settling();
   private floor: Floor;
   readonly rooms: RoomsLayer;
   private items: ItemsLayer;
@@ -231,12 +234,15 @@ export class View {
   render(dt: number) {
     this.time += dt;
     if (this.worldVersion !== this.sim.world.version) {
+      // what is there as the game loads is not being put down
+      const loading = this.worldVersion < 0;
       this.worldVersion = this.sim.world.version;
       this.growScenery();
       this.buildShell();
       this.floor.draw();
       this.rooms.sync();
-      this.items.sync();
+      const landed = this.items.sync();
+      if (!loading && !this.rig.reduceMotion()) for (const model of landed) this.settling.add(model);
     }
     this.people.update(this.time, dt);
     this.litter.update(this.time);
@@ -247,6 +253,7 @@ export class View {
     this.storefront.update();
     this.land.update();
     this.items.animate(this.time);
+    this.settling.update(dt);
     this.overlays.updateRing(this.time);
     this.halos.update();
     this.rig.update(dt);
@@ -348,6 +355,11 @@ export class View {
   zoom(delta: number, clientX?: number, clientY?: number) {
     const spot = clientX === undefined || clientY === undefined ? null : this.groundAt(clientX, clientY);
     this.rig.zoom(delta, spot ? { x: spot.x, z: spot.y } : undefined);
+  }
+
+  /** Give the preview of what is in hand a shake, as a click with it is turned down. */
+  nudge() {
+    if (!this.rig.reduceMotion()) this.overlays.nudge();
   }
 
   // ---- Picking ---------------------------------------------------------------

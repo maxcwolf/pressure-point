@@ -15,7 +15,7 @@ import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type Selection, shown } from './picking';
-import type { Turn } from './turn';
+import { type Turn, turnAngle } from './turn';
 
 /** How far out from an item's front edge the arrow showing its front sits. */
 const FRONT_GAP = 0.2;
@@ -39,6 +39,23 @@ const MARKER_LYING = 1.6;
 /** A small chevron pointing down, wide side up, for the marker over a selected person. */
 function chevron(): THREE.BufferGeometry {
   return new THREE.ConeGeometry(0.2, 0.36, 4).rotateX(Math.PI);
+}
+
+/** How long, in seconds, the preview of what is in hand shakes as a click with it is turned down, and how far. */
+const NUDGE_SECONDS = 0.24;
+const NUDGE_REACH = 0.12;
+/** Which way across the screen the preview shakes, before the camera is turned. */
+const SCREEN_RIGHT = new THREE.Vector3(1, 0, -1).normalize();
+const UPRIGHT = new THREE.Vector3(0, 1, 0);
+
+/**
+ * How far across the screen the preview of what is in hand is shaken `age` seconds into a refusal: back and forth,
+ * dying away.
+ */
+export function nudgeOffset(age: number): number {
+  if (age < 0 || age >= NUDGE_SECONDS) return 0;
+  const f = age / NUDGE_SECONDS;
+  return Math.sin(f * Math.PI * 6) * NUDGE_REACH * (1 - f);
 }
 
 /** Whether a selection is a person. */
@@ -66,6 +83,11 @@ export interface DoorSpec {
 export class Overlays {
   /** What the player has selected, if anything. */
   selected: Selection | null = null;
+  /** The preview of what is in hand, its tiles and its door, all shaken together when a click with it is turned down. */
+  private preview = new THREE.Group();
+  /** When the last refusal's shake started, on the scene's clock, and the time the scene was last drawn at. */
+  private nudgedAt = -Infinity;
+  private now = 0;
   private overlay: THREE.InstancedMesh;
   private ghost: { group: THREE.Group; key: string } | null = null;
   private ghostMats = {
@@ -118,11 +140,12 @@ export class Overlays {
     this.overlay.count = 0;
     this.overlay.frustumCulled = false;
     this.overlay.renderOrder = 2;
-    this.scene.add(this.overlay);
+    this.scene.add(this.preview);
+    this.preview.add(this.overlay);
 
     this.doorMarker = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.16), this.ghostMats.ok);
     this.doorMarker.visible = false;
-    this.scene.add(this.doorMarker);
+    this.preview.add(this.doorMarker);
 
     this.frontMarker = new THREE.Mesh(
       frontArrow(),
@@ -137,7 +160,7 @@ export class Overlays {
     );
     this.frontMarker.visible = false;
     this.frontMarker.renderOrder = 3;
-    this.scene.add(this.frontMarker);
+    this.preview.add(this.frontMarker);
 
     this.ring = new THREE.Mesh(
       new THREE.RingGeometry(0.4, 0.52, 40).rotateX(-Math.PI / 2),
@@ -187,6 +210,11 @@ export class Overlays {
     this.scene.add(this.roomGlow);
   }
 
+  /** Shake the preview of what is in hand, to show a click with it was turned down. */
+  nudge() {
+    this.nudgedAt = this.now;
+  }
+
   /** Whether the marker over a selected person is showing. */
   get markerShown(): boolean {
     return this.marker.visible;
@@ -222,7 +250,7 @@ export class Overlays {
       this.frontMarker.rotation.y = front.face;
     }
     if (!spec) {
-      if (this.ghost) this.scene.remove(this.ghost.group);
+      if (this.ghost) this.preview.remove(this.ghost.group);
       this.ghost = null;
       return;
     }
@@ -230,7 +258,7 @@ export class Overlays {
     const hung = onWall(spec.type) ? hangPlace(this.sim.world, spec, this.turn) : null;
     const key = `${spec.type}:${spec.pattern ?? ''}`;
     if (this.ghost?.key !== key) {
-      if (this.ghost) this.scene.remove(this.ghost.group);
+      if (this.ghost) this.preview.remove(this.ghost.group);
       const group = buildItem(spec.type, { pattern: spec.pattern, center: this.sim.s.center });
       group.traverse((o) => {
         if (o instanceof THREE.Mesh) {
@@ -238,7 +266,7 @@ export class Overlays {
           o.receiveShadow = false;
         }
       });
-      this.scene.add(group);
+      this.preview.add(group);
       this.ghost = { group, key };
     }
     const m = spec.ok ? this.ghostMats.ok : this.ghostMats.bad;
@@ -283,6 +311,7 @@ export class Overlays {
    * brighten whatever a click would select.
    */
   updateRing(t: number) {
+    this.now = t;
     const sel = this.selected;
     this.ring.visible = false;
     this.marker.visible = false;
@@ -307,7 +336,15 @@ export class Overlays {
         this.ring.scale.setScalar(Math.max(w, h) * 1.25);
       }
     }
+    this.shake(t);
     this.updateGlow();
+  }
+
+  /** Shake the preview across the screen while a refusal's shake lasts, and put it back after. */
+  private shake(t: number) {
+    const off = nudgeOffset(t - this.nudgedAt);
+    if (!off && this.preview.position.lengthSq() === 0) return;
+    this.preview.position.copy(SCREEN_RIGHT).applyAxisAngle(UPRIGHT, turnAngle(this.turn)).multiplyScalar(off);
   }
 
   /** Brighten the person or item a click would select, or lay a faint sheet over the room's floor. */

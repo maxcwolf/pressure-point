@@ -300,7 +300,14 @@ describe('building from a template', () => {
     const { sim, s } = openCenter(9);
     /** Ignore a call to the scene. */
     const nothing = () => undefined;
-    const view = { selected: null, setOverlay: nothing, setMarkers: nothing, setGhost: nothing, setDoor: nothing };
+    const view = {
+      selected: null,
+      setOverlay: nothing,
+      setMarkers: nothing,
+      setGhost: nothing,
+      setDoor: nothing,
+      nudge: nothing,
+    };
     /** The cursor is on the ground wherever the pointer says. */
     const groundAt = (x: number, y: number) => ({ x, y });
     const tools = new Tools(sim, { ...view, groundAt } as unknown as View, nothing, nothing);

@@ -92,7 +92,12 @@ export function placeItem(
   }
   const it = newItem(ctx, type, x, y, rot, opts.pattern);
   ctx.s.items.push(it);
-  if (!opts.free) spend(ctx, def.cost, 'building');
+  if (!opts.free) {
+    spend(ctx, def.cost, 'building');
+    // the price floats off it, as a refund does when it is sold
+    const [cx, cy] = itemCenter(it);
+    if (def.cost > 0) emit(ctx, { type: 'float', text: money(-def.cost), x: cx, y: cy, kind: 'bad' });
+  }
   worldChanged(ctx);
   emit(ctx, { type: 'sfx', name: 'place' });
   return it;
