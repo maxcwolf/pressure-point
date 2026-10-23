@@ -8,10 +8,12 @@ import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { Template } from '../core/templates';
 import { giveKarma } from '../storage/campaign';
+import { loadDisplay } from '../storage/display';
 import { loadTemplates } from '../storage/templates';
 import type { GameHost } from './host';
 import type { ItemKind, Place } from './lib/catalog';
 import { mustAnswer, pendingDialog, raise, type Raised, stillDue } from './lib/dialogs';
+import { ageMessages, SHOWN, spareMessages, withMessage } from './lib/messages';
 import type { OverlayMode } from './lib/overlays';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'policy' | 'stats';
@@ -31,6 +33,7 @@ export type DialogId =
   | 'confirm-new'
   | 'confirm-fire'
   | 'confirm-cancel-course'
+  | 'confirm-dismiss'
   | 'star'
   | 'karma'
   | 'awards'
@@ -47,7 +50,7 @@ export interface FloorShown {
   land: { pointedAt: string | null } | null;
 }
 
-/** A message that fades after a few seconds. */
+/** A message on the right, which fades once it has been up long enough to read, or stays until dismissed. */
 export interface Toast {
   id: number;
   text: string;
@@ -56,6 +59,10 @@ export interface Toast {
   about?: Subject;
   /** The icon before it, if it has one. */
   icon?: IconId;
+  /** How many times it has come up while on screen, shown once it is more than one. */
+  count: number;
+  /** Milliseconds it has been up while its clock ran. */
+  age: number;
   /** Fading out, about to be removed. */
   leaving: boolean;
 }
@@ -75,9 +82,6 @@ export interface ConsoleLine {
   text: string;
   kind: 'typed' | 'good' | 'bad';
 }
-
-/** How many toasts are kept on screen at once. */
-const MAX_TOASTS = 4;
 
 /** How many lines the cheat console keeps. */
 const MAX_CONSOLE_LINES = 40;
@@ -129,7 +133,12 @@ export class HudState {
   karmaItem: ItemType | null = null;
   /** The locked floor or wall asked about in the karma dialog, and the room to put it in once unlocked. */
   karmaDecor: { key: DecorKey; roomId: number } | null = null;
+  /** The messages on the right, oldest first. */
   toasts: Toast[] = [];
+  /** Whether every message shows, the pile under the first few opened out. */
+  toastsOpen = false;
+  /** Whether the pointer is over a message, which holds their clock while it is read. */
+  toastsHeld = false;
   floaters: Floater[] = [];
   announcement = '';
   /** Whether the cheat console is open, what it has said so far, and the commands typed, oldest first. */
@@ -221,11 +230,12 @@ export class HudState {
     this.update();
   }
 
-  /** Close the open build menu, or the list of overlays. False if neither was open. */
+  /** Close the open build menu, the list of overlays, or every message opened out. False if none was open. */
   closeMenu(): boolean {
-    if (!this.menu && !this.overlayPicker) return false;
+    if (!this.menu && !this.overlayPicker && !this.toastsOpen) return false;
     this.menu = null;
     this.overlayPicker = false;
+    this.toastsOpen = false;
     this.update();
     return true;
   }
@@ -320,25 +330,63 @@ export class HudState {
     }
   }
 
-  /** Show a message that fades after a few seconds. */
+  /** Show a message at the top of the right side. One saying the same as one already there takes its place, counted. */
   toast(text: string, kind: Tone = 'info', about?: Subject, icon?: IconId) {
-    const toast: Toast = {
+    this.toasts = withMessage(this.toasts, {
       id: this.nextId++,
       text,
       kind,
-      leaving: false,
       ...(about && { about }),
       ...(icon && { icon }),
-    };
-    this.toasts = [...this.toasts, toast].slice(-MAX_TOASTS);
-    setTimeout(() => {
-      toast.leaving = true;
-      this.update();
-    }, 6500);
-    setTimeout(() => {
-      this.toasts = this.toasts.filter((t) => t !== toast);
-      this.update();
-    }, 7000);
+    });
+    this.update();
+  }
+
+  /**
+   * Run the messages' clock for a frame of `dt` seconds, letting go of any whose time is up. It stands still while the
+   * game is paused, a dialog is open, the pointer is on a message or every message is opened out.
+   */
+  tickToasts(dt: number) {
+    if (!this.toasts.length || this.toastsHeld || this.toastsOpen || this.host.sim.s.speed === 0) return;
+    const { kept, changed } = ageMessages(this.toasts, dt * 1000, loadDisplay().messages);
+    this.toasts = kept;
+    if (changed) this.update();
+  }
+
+  /** Hold the messages' clock while the pointer is on one, bringing back any fading and leaving each a moment more. */
+  holdToasts(held: boolean) {
+    if (held === this.toastsHeld) return;
+    this.toastsHeld = held;
+    if (held) spareMessages(this.toasts, loadDisplay().messages);
+    this.update();
+  }
+
+  /** Open every message out, holding their clock while they are read, or fold the ones past the first few back up. */
+  openToasts(open: boolean) {
+    this.toastsOpen = open && this.toasts.length > SHOWN;
+    if (this.toastsOpen) spareMessages(this.toasts, loadDisplay().messages);
+    this.update();
+  }
+
+  /** Dismiss a message. */
+  dismissToast(id: number) {
+    this.toasts = this.toasts.filter((t) => t.id !== id);
+    this.letGoOfToasts();
+  }
+
+  /** Dismiss every message. */
+  dismissAllToasts() {
+    this.toasts = [];
+    this.letGoOfToasts();
+  }
+
+  /**
+   * After messages are dismissed: fold the rest up once they all fit, and let their clock run, since the message the
+   * pointer was on has gone and the next one along says nothing until the pointer moves onto it.
+   */
+  private letGoOfToasts() {
+    if (this.toasts.length <= SHOWN) this.toastsOpen = false;
+    this.toastsHeld = false;
     this.update();
   }
 

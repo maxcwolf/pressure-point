@@ -10,12 +10,13 @@ import { type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '
 import type { Sim } from '../../core/sim/sim';
 import { disciplineHere } from '../../core/state/game';
 import { loadControls, saveControls } from '../../storage/controls';
-import { ITEM_VIEWS, loadDisplay, saveDisplay } from '../../storage/display';
+import { ITEM_VIEWS, loadDisplay, MESSAGE_TIMES, saveDisplay } from '../../storage/display';
 import { loadDisciplinePrefs, saveDisciplinePref } from '../../storage/settings';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch } from '../host';
 import { ITEM_VIEW_NAMES } from '../lib/item-stats';
 import { nextChoice } from '../lib/keys';
+import { MESSAGE_TIME_NAMES } from '../lib/messages';
 import { Icon } from './common/Icon';
 import { ControlSettings } from './ControlSettings';
 import { SettingRow } from './SettingRow';
@@ -31,8 +32,8 @@ export interface SettingsPanelProps {
 }
 
 /**
- * Switches for which treatments are offered, how items show their stats, the controls, full screen in the desktop app,
- * sound and music, the cheat console and sharing play statistics.
+ * Switches for which treatments are offered, how items show their stats, the controls, how long messages stay, full
+ * screen in the desktop app, sound and music, the cheat console and sharing play statistics.
  */
 export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPanelProps) {
   const redraw = useRedraw();
@@ -131,24 +132,43 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           onChange?.();
         }}
       />
-      {fullScreen && (
-        <>
-          <h4>Display</h4>
-          <ul>
-            <SettingRow
-              icon="ui-display"
-              name="Full screen"
-              desc="Fill the screen with the game. It opens the same way next time."
-              on={fullScreen.on()}
-              onToggle={flip('fullScreen', () => {
-                const on = !fullScreen.on();
-                fullScreen.set(on);
-                return on;
-              })}
-            />
-          </ul>
-        </>
-      )}
+      <h4>Display</h4>
+      <ul>
+        <li>
+          <Icon id="ui-news" size={26} />
+          <div>
+            <b>Messages stay</b>
+            <span>
+              How long the messages on the right stay: long enough to read, twice that, or until you dismiss them. A
+              message waits while the pointer is on it, though the game plays on, and while the game is paused.
+            </span>
+          </div>{' '}
+          <button
+            class="choice message-time-choice"
+            onClick={flip('messages', () => {
+              const prefs = loadDisplay();
+              const messages = nextChoice(MESSAGE_TIMES, prefs.messages);
+              saveDisplay({ ...prefs, messages });
+              return messages;
+            })}
+          >
+            {MESSAGE_TIME_NAMES[loadDisplay().messages]}
+          </button>
+        </li>
+        {fullScreen && (
+          <SettingRow
+            icon="ui-display"
+            name="Full screen"
+            desc="Fill the screen with the game. It opens the same way next time."
+            on={fullScreen.on()}
+            onToggle={flip('fullScreen', () => {
+              const on = !fullScreen.on();
+              fullScreen.set(on);
+              return on;
+            })}
+          />
+        )}
+      </ul>
       <h4>Audio</h4>
       <ul>
         <SettingRow

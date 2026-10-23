@@ -261,6 +261,23 @@ test.describe('in a game', () => {
     await screens.shot('messages');
   });
 
+  test('messages piled up past the first few', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      // paused, the messages wait to be read
+      pp.state.speed = 0;
+      pp.sim.emit({ type: 'toast', text: 'Consultation Room built!', kind: 'good' });
+      pp.sim.emit({ type: 'toast', text: 'Your plants are wilting. A Caretaker will water them.', kind: 'bad' });
+      pp.sim.emit({ type: 'toast', text: 'Mira joins the team.', kind: 'info' });
+      pp.sim.emit({ type: 'toast', text: 'A guest left without being seen.', kind: 'bad' });
+      pp.sim.emit({ type: 'toast', text: 'Payday: $4,250 paid to 9 staff.', kind: 'info' });
+      pp.sim.emit({ type: 'toast', text: 'A VIP is visiting in 5 days.', kind: 'info' });
+      pp.sim.emit({ type: 'toast', text: 'A VIP is visiting in 5 days.', kind: 'info' });
+      pp.sim.emit({ type: 'toast', text: 'Massage Suite built!', kind: 'good' });
+    });
+    await screens.shot('messages-piled');
+  });
+
   // apart from the messages above, which fade after a few seconds whether or not the picture has been taken
   test('an emergency offer put aside', async ({ screens, game, page }) => {
     await screens.play();

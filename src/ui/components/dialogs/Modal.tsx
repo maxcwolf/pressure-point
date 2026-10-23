@@ -8,6 +8,7 @@ import { AwardsDialog } from './AwardsDialog';
 import { BankruptDialog } from './BankruptDialog';
 import { BuyPlotDialog } from './BuyPlotDialog';
 import { ConfirmCancelCourse } from './ConfirmCancelCourse';
+import { ConfirmDismissMessages } from './ConfirmDismissMessages';
 import { ConfirmFire } from './ConfirmFire';
 import { ConfirmNewGame } from './ConfirmNewGame';
 import { KarmaDialog } from './KarmaDialog';
@@ -34,6 +35,8 @@ function contents(dialog: DialogId): ComponentChildren {
       return <ConfirmFire />;
     case 'confirm-cancel-course':
       return <ConfirmCancelCourse />;
+    case 'confirm-dismiss':
+      return <ConfirmDismissMessages />;
     case 'star':
       return <StarDialog />;
     case 'karma':
