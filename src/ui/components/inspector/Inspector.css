@@ -387,6 +387,10 @@
   margin: 4px 0 0;
 }
 
+.insp button.temp-overlay.on {
+  background: var(--gold);
+}
+
 .insp button.every.locked {
   opacity: 0.5;
   cursor: not-allowed;

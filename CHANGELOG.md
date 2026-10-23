@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **The temperature overlay from a heater's inspector.** A Radiator, Air Conditioner or Fireplace has a Temperature overlay button under its thermostat, which colors the floor cold to hot and stays on once the inspector closes, until you turn it off there or at its key.
+
 ## v0.33.1
 
 - **The tutorial stops the clock.** Its second step asks you to pause, ringing the pause button, so nothing happens while the opening is built, and once the desk, both rooms and all three hires are in it asks you to start the clock again, ringing play. A player who never pauses is not asked to start it.
