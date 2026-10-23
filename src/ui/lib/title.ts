@@ -18,7 +18,7 @@ export function saveFacts(info: SaveInfo): Fact[] {
     { icon: 'ui-reputation', text: `${info.stars} ${info.stars === 1 ? 'star' : 'stars'}` },
     { icon: 'ui-money', text: money(info.money) },
     { icon: 'bubble-happy', text: `${info.healed} healed` },
-    { icon: 'ui-date', text: gameDate(info.day) },
+    { icon: 'ui-date', text: gameDate(info.day, info.startMonth) },
   ];
 }
 

@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 import { footprintKey } from '../core/footprint';
+import { calendarDay } from '../core/format';
 import { buildingsOf } from '../core/land';
 import { mishapHolder } from '../core/sim/mishaps';
 import { seasonOf } from '../core/sim/twists';
@@ -230,7 +231,7 @@ const tinted = (color: THREE.Color, hex: number, a: Tint, b: Tint) =>
 /** Put the light of a moment of the day on a game's scene, in its setting and season, as far as a mishap has dimmed it. */
 function shine(lights: Lights, s: GameState, day: Daylight): boolean {
   const setting = settingOf(s);
-  const season = SEASON_LIGHT[seasonOf(s.day)];
+  const season = SEASON_LIGHT[seasonOf(calendarDay(s))];
   const d = stormy(day, lights.gray);
   tinted(lights.sky.color, setting.light.sky, season.sky, d.sky);
   // the sky goes cooler as the power goes, the light of a building with its lights out
@@ -243,8 +244,8 @@ function shine(lights: Lights, s: GameState, day: Daylight): boolean {
   lights.setting = setting;
   LAWN.color.setHex(setting.ground);
   // the trees turn with the lawn
-  leavesFor(seasonOf(s.day));
-  orchardFor(seasonOf(s.day));
+  leavesFor(seasonOf(calendarDay(s)));
+  orchardFor(seasonOf(calendarDay(s)));
   if (lights.scene.background instanceof THREE.Color) lights.scene.background.setHex(setting.ground);
   return true;
 }

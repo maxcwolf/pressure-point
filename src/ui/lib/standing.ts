@@ -62,14 +62,14 @@ export function gradeEffects(grade: number): string[] {
   ];
 }
 
-/** When the rival is due to open, or has: a line for the Standing tab. */
-export function rivalOpening(opened: number | null, on: boolean): string {
+/** When the rival is due to open, or has, in a game that opened in `startMonth`: a line for the Standing tab. */
+export function rivalOpening(opened: number | null, on: boolean, startMonth = 0): string {
   if (!on) return 'There is no rival in this game.';
   if (opened === null) {
-    const d = dateOf(RIVAL_OPENS);
+    const d = dateOf(RIVAL_OPENS, startMonth);
     return `A ${RIVAL_NAME} is due to open across the street around day ${d.day} of month ${d.month}.`;
   }
-  const d = dateOf(opened);
+  const d = dateOf(opened, startMonth);
   return `Open across the street since day ${d.day} of month ${d.month}.`;
 }
 

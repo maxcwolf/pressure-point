@@ -2,6 +2,7 @@
 
 import { centerOf, DAY_SECONDS, DAYS_PER_MONTH } from '../data';
 import type { RushHours, Seasons, Snowfall } from '../data/types';
+import { calendarDay } from '../format';
 import type { GameState } from '../state/types';
 import type { SimContext } from './context';
 import { emit, tipOnce, toast } from './events';
@@ -42,22 +43,24 @@ export function dice(n: number): number {
   return ((h ^ (h >>> 13)) >>> 0) / 0x100000000;
 }
 
-/** A game starts in winter, so the road is kept clear for its first month, for the center to get open. */
+/** A game can start in winter, so the road is kept clear for its first month, for the center to get open. */
 export const SNOW_GRACE_DAYS = DAYS_PER_MONTH;
 
 /**
- * Whether a moment of the game falls in a snowed-in spell. Winter is cut into spells a few days long, and each is
- * snowed in or not by the luck of the draw, the same every time for the same spell.
+ * Whether a moment of the game, `day` days in, falls in a snowed-in spell, in a game that opened in `startMonth`.
+ * Winter is cut into spells a few days long, and each is snowed in or not by the luck of the draw, the same every time
+ * for the same spell.
  */
-export function snowedIn(day: number, snow: Snowfall): boolean {
-  if (day < SNOW_GRACE_DAYS || seasonOf(day) !== 'winter') return false;
-  return dice(Math.floor(day / snow.days)) < snow.chance;
+export function snowedIn(day: number, snow: Snowfall, startMonth = 0): boolean {
+  const date = day + startMonth * DAYS_PER_MONTH;
+  if (day < SNOW_GRACE_DAYS || seasonOf(date) !== 'winter') return false;
+  return dice(Math.floor(date / snow.days)) < snow.chance;
 }
 
 /** Whether the center is snowed in now, so nobody can get up the road to it. */
 export function cutOff(ctx: SimContext): boolean {
   const { snow } = centerOf(ctx.s);
-  return !!snow && snowedIn(ctx.s.day, snow);
+  return !!snow && snowedIn(ctx.s.day, snow, ctx.s.startMonth);
 }
 
 /** What moves how often guests arrive at a moment, beyond reputation and what the center can treat, each a multiplier. */
@@ -77,7 +80,7 @@ export function arrivalParts(ctx: SimContext): ArrivalParts {
   const { rush, seasons, arrivals } = centerOf(ctx.s);
   let time = 1;
   if (rush) time *= inRush(ctx.s.day) ? rush.peak : rush.lull;
-  if (seasons) time *= seasonFactor(seasonOf(ctx.s.day), seasons);
+  if (seasons) time *= seasonFactor(seasonOf(calendarDay(ctx.s)), seasons);
   return {
     center: arrivals ?? 1,
     time,
@@ -116,7 +119,7 @@ export function seasonOutlook(s: GameState, season: Season): SeasonOutlook {
   const last = s.months.at(-1);
   if (!last) return { season, factor, last: null, expect: null };
   // the month just finished, at its own season's pace
-  const lastFactor = seasonFactor(seasonOf(s.day - DAYS_PER_MONTH), seasons);
+  const lastFactor = seasonFactor(seasonOf(calendarDay(s, s.day - DAYS_PER_MONTH)), seasons);
   return { season, factor, last: last.arrived, expect: Math.round((last.arrived * factor) / lastFactor) };
 }
 
@@ -239,11 +242,14 @@ export function updateTwists(ctx: SimContext, dt: number) {
       'rush-hour',
       'Rush hour! The office crowd comes in waves: a couple of busy days in every six, when guests are less patient. The bottom bar shows when one is on.',
     );
-  const season = seasonOf(s.day);
-  if (seasons && season !== seasonOf(before)) emit(ctx, { type: 'announce', text: seasonNews(s, season) });
-  const ahead = seasonOf(s.day + SEASON_AHEAD_DAYS);
-  if (seasons && ahead !== seasonOf(before + SEASON_AHEAD_DAYS) && (ahead === 'summer' || ahead === 'winter'))
+  const now = calendarDay(s);
+  const then = calendarDay(s, before);
+  const season = seasonOf(now);
+  if (seasons && season !== seasonOf(then)) emit(ctx, { type: 'announce', text: seasonNews(s, season) });
+  const ahead = seasonOf(now + SEASON_AHEAD_DAYS);
+  if (seasons && ahead !== seasonOf(then + SEASON_AHEAD_DAYS) && (ahead === 'summer' || ahead === 'winter'))
     toast(ctx, seasonAhead(s, ahead), 'info', undefined, `season-${ahead}`);
-  if (snow && snowedIn(s.day, snow) !== snowedIn(before, snow))
-    emit(ctx, { type: 'announce', text: snowedIn(s.day, snow) ? SNOW_NEWS.start : SNOW_NEWS.end });
+  const snowed = snow && snowedIn(s.day, snow, s.startMonth);
+  if (snow && snowed !== snowedIn(before, snow, s.startMonth))
+    emit(ctx, { type: 'announce', text: snowed ? SNOW_NEWS.start : SNOW_NEWS.end });
 }

@@ -21,6 +21,7 @@ import {
   type ThermostatSetting,
 } from '../data';
 import { tuning } from '../difficulty';
+import { calendarDay } from '../format';
 import type { PlotOffer } from '../land';
 import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { offeringOn } from '../state/game';
@@ -382,7 +383,7 @@ export class Sim {
 
   /** The season now: every center has its weather through the year, if not always its crowds. */
   season(): Season {
-    return seasonOf(this.s.day);
+    return seasonOf(calendarDay(this.s));
   }
 
   /** This month so far, in the same shape as the finished months in `s.months`. */
@@ -431,7 +432,7 @@ export class Sim {
   }
   /** The temperature outside today. */
   outdoorTemp(): number {
-    return outdoorTemp(centerOf(this.s).climate, this.s.day);
+    return outdoorTemp(centerOf(this.s).climate, calendarDay(this.s));
   }
 
   /** A room's prestige, from one to five. `extra` is decor not yet placed in it. */
