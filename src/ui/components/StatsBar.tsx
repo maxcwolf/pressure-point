@@ -37,6 +37,7 @@ export function StatsBar() {
   const season = sim.season();
   const weather = weatherNote(sim.outdoorTemp(), s.weatherOn);
   const net = netOf(s.ledger);
+  const guide = hud.guide();
   return (
     <div id="stats">
       <div class={cx('stat money', s.money < 0 && 'neg')} title="Bank balance">
@@ -92,7 +93,7 @@ export function StatsBar() {
         {SPEEDS.map((sp) => (
           <Button
             key={sp.speed}
-            class={cx('speed', s.speed === sp.speed && 'on')}
+            class={cx('speed', s.speed === sp.speed && 'on', guide === `speed:${sp.speed}` && 'guide')}
             title={sp.title}
             onPress={() => {
               s.speed = sp.speed;

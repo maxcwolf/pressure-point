@@ -19,9 +19,17 @@ import { emit, type Subject, toast } from './events';
 import { primerDone, primerLines, primerNotes, type PrimerStepId } from './primer';
 import { hasItem, hasRoom, hasStaff } from './progress';
 
-/** What a step wants the player to do, which the interface rings: look around, or an item, room or hire. */
+/**
+ * What a step wants the player to do, which the interface rings: look around, stop or start the clock, or an item,
+ * room or hire.
+ */
 export type Want =
-  { kind: 'look' } | { kind: 'item'; type: ItemType } | { kind: 'room'; type: RoomType } | { kind: 'hire'; role: Role };
+  | { kind: 'look' }
+  | { kind: 'pause' }
+  | { kind: 'play' }
+  | { kind: 'item'; type: ItemType }
+  | { kind: 'room'; type: RoomType }
+  | { kind: 'hire'; role: Role };
 
 /** A step of the opening: its line on the list, what its card says (worked out from the game if need be), and what it wants. */
 interface Opening {
@@ -44,7 +52,8 @@ function moneyWord(ctx: SimContext): string {
   return `It comes out of the bank in the bottom bar, as everything does. The bank is not meant to stretch to everything at once: the Money menu lends up to ${money(loanLimit(ctx.s))} at ${pct(LOAN_RATE)} a month, and a new center often borrows to get through its first paydays.`;
 }
 
-type OpeningId = 'look' | 'desk' | 'receptionist' | 'consult' | 'consultant' | 'massage' | 'therapist' | 'benches';
+type OpeningId =
+  'look' | 'pause' | 'desk' | 'receptionist' | 'consult' | 'consultant' | 'massage' | 'therapist' | 'play' | 'benches';
 
 /** The game days after which looking around counts as done, whether or not the camera has been moved and turned. */
 export const LOOK_DAYS = 2;
@@ -60,8 +69,14 @@ const OPENING: readonly Opening[] = [
   {
     id: 'look',
     title: 'Look around',
-    text: 'This is your center. W, A, S and D or the edges of the screen move the camera, Q and E turn it, the mouse wheel zooms, and Space pauses. Move and turn it to have a look.',
+    text: 'This is your center. W, A, S and D or the edges of the screen move the camera, Q and E turn it, and the mouse wheel zooms. Move and turn it to have a look.',
     want: { kind: 'look' },
+  },
+  {
+    id: 'pause',
+    title: 'Pause the clock',
+    text: 'The clock at the bottom right is running. Press Space, or its pause button, to stop it while you set up: nothing happens, and nobody arrives, until you start it again.',
+    want: { kind: 'pause' },
   },
   {
     id: 'desk',
@@ -98,8 +113,14 @@ const OPENING: readonly Opening[] = [
   {
     id: 'therapist',
     title: 'Hire a Massage Therapist',
-    text: 'The center is open and guests are on their way. A Massage Therapist is who treats them in the Massage Suite: hire one before the first is through the consultation.',
+    text: 'Once the clock runs, the center opens and guests come. A Massage Therapist is who treats them in the Massage Suite: hire one before the first is through the consultation.',
     want: { kind: 'hire', role: 'therapist' },
+  },
+  {
+    id: 'play',
+    title: 'Start the clock',
+    text: 'Everything is in place. Press Space, or the play button at the bottom right, to start the clock: the center opens, and the first guests are on their way.',
+    want: { kind: 'play' },
   },
   {
     id: 'benches',
@@ -109,17 +130,47 @@ const OPENING: readonly Opening[] = [
   },
 ];
 
-/** Whether a step of the opening matters yet: all from the start, but the Benches once guests are coming in. */
-function openingDue(ctx: SimContext, id: OpeningId): boolean {
-  return id === 'benches' ? ctx.s.open : true;
+/** Whether the opening is built and staffed: the desk, the two rooms and the three hires. */
+function openingBuilt(ctx: SimContext): boolean {
+  return (
+    hasItem(ctx, 'reception_desk') &&
+    hasStaff(ctx, 'receptionist') &&
+    hasRoom(ctx, 'consult') &&
+    hasStaff(ctx, 'consultant') &&
+    hasRoom(ctx, 'massage') &&
+    hasStaff(ctx, 'therapist')
+  );
 }
 
-/** Whether a step of the opening is done. */
+/**
+ * Whether a step of the opening matters yet: all from the start, but starting the clock once the opening is built and
+ * staffed, and the Benches once guests are coming in.
+ */
+function openingDue(ctx: SimContext, id: OpeningId): boolean {
+  switch (id) {
+    case 'play':
+      return openingBuilt(ctx);
+    case 'benches':
+      return ctx.s.open;
+    default:
+      return true;
+  }
+}
+
+/**
+ * Whether a step of the opening is done. The clock counts as paused once the desk is down, the player having got on
+ * with it either way, and as started once the opening is built and it runs, so a player who never paused is not asked
+ * to start it.
+ */
 function openingDone(ctx: SimContext, id: OpeningId): boolean {
   const s = ctx.s;
   switch (id) {
     case 'look':
       return s.seenTips.includes(LOOKED_TIP) || s.day >= LOOK_DAYS;
+    case 'pause':
+      return s.speed === 0 || hasItem(ctx, 'reception_desk');
+    case 'play':
+      return openingBuilt(ctx) && s.speed > 0;
     case 'desk':
       return hasItem(ctx, 'reception_desk');
     case 'receptionist':

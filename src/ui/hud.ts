@@ -264,6 +264,9 @@ export class HudState {
   guide(): string | null {
     const want = this.host.sim.adviceNote().step?.want;
     if (!want || want.kind === 'look') return null;
+    // the clock's buttons, by the speed each sets
+    if (want.kind === 'pause') return 'speed:0';
+    if (want.kind === 'play') return 'speed:1';
     const { tools } = this.host;
     const tool = tools.tool;
     if (want.kind === 'item') {
@@ -287,7 +290,7 @@ export class HudState {
   /** Show the player what a tutorial step wants: open the menu it is in at the right tab, or take them to who it is about. */
   showStep(step: TutorialStep) {
     const want = step.want;
-    if (!want || want.kind === 'look') {
+    if (!want || want.kind === 'look' || want.kind === 'pause' || want.kind === 'play') {
       if (step.about) this.show(step.about);
       return;
     }
