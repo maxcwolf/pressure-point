@@ -2201,6 +2201,32 @@ test.describe('reading the center', () => {
     await expect(page.locator('#overlay-key .scale.temperature')).toContainText('Hot');
     await expect.poll(() => game.eval((pp) => pp.ui.overlay)).toBe('temperature');
   });
+
+  test("a radiator's inspector turns the Temperature overlay on, and it stays on once closed", async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    const radiator = await game.give('radiator');
+    const ac = await game.give('air_conditioner');
+    // selected directly: someone walking past would take a click meant for it
+    await game.eval((pp, id) => pp.tools.select({ kind: 'item', id }), radiator);
+    const toggle = page.locator('#inspector').getByRole('button', { name: /Temperature overlay/ });
+    await expect(toggle).toContainText('off');
+    await toggle.click();
+    await expect(toggle).toContainText('on');
+    await expect.poll(() => game.eval((pp) => pp.ui.overlay)).toBe('temperature');
+    await page.locator('#inspector .x').click();
+    await expect(page.locator('#inspector .panel')).toHaveCount(0);
+    await expect(page.locator('#overlay-key')).toContainText('Temperature');
+    // another heater or cooler shows it on, and turns it off
+    await game.eval((pp, id) => pp.tools.select({ kind: 'item', id }), ac);
+    await expect(toggle).toContainText('on');
+    await toggle.click();
+    await expect(toggle).toContainText('off');
+    await expect(page.locator('#overlay-key')).toHaveCount(0);
+  });
 });
 
 test.describe('comfort', () => {

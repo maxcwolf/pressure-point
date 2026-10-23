@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **The Recliner is the Lounger.** The Recovery Lounge's bed is back to the padded lounger of 0.30 without arms, now in dusty blue with its cushion in pads and a blanket folded over the foot, and resting guests lie on their backs on it, where after a massage or acupuncture they used to lie face down. Saved games and room templates keep theirs.
+- **The temperature overlay from a heater's inspector.** A Radiator, Air Conditioner or Fireplace has a Temperature overlay button under its thermostat, which colors the floor cold to hot and stays on once the inspector closes, until you turn it off there or at its key.
 
 ## v0.33.1
 
