@@ -8,6 +8,17 @@
   background: rgba(36, 56, 74, 0.45);
   pointer-events: auto;
   z-index: 20;
+  animation: fadein 0.2s ease-out;
+}
+
+/* a dialog on its way out: the game brightens again as the dialog shrinks away, and takes no more clicks */
+#modal.leaving .veil {
+  pointer-events: none;
+  animation: fadeout 0.14s ease-in forwards;
+}
+
+#modal.leaving .dialog {
+  animation: unpop 0.14s ease-in forwards;
 }
 
 .dialog {

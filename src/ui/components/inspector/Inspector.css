@@ -4,6 +4,11 @@
   animation: pop 0.16s ease-out;
 }
 
+#inspector.leaving > .panel {
+  pointer-events: none;
+  animation: unpop 0.14s ease-in forwards;
+}
+
 /* at the foot of the right-hand column, under the messages, scrolling within the room they leave */
 #inspector {
   margin-top: auto;

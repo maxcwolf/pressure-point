@@ -97,6 +97,20 @@ s {
   }
 }
 
+/* the way out of a panel or a dialog: pop played backwards */
+@keyframes unpop {
+  to {
+    transform: scale(0.94) translateY(8px);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeout {
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes slide {
   from {
     transform: translateX(30px);
@@ -114,20 +128,6 @@ s {
 @keyframes fadein {
   from {
     opacity: 0;
-  }
-}
-
-@keyframes floatup {
-  0% {
-    opacity: 0;
-    margin-top: 10px;
-  }
-  15% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    margin-top: -60px;
   }
 }
 

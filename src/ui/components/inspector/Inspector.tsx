@@ -4,8 +4,10 @@ import './Inspector.css';
 
 import type { ComponentChildren } from 'preact';
 
+import { Still, useExit } from '../../hooks/use-exit';
 import { useGame } from '../../hooks/use-hud';
 import { usePop } from '../../hooks/use-pop';
+import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { GuestInfo } from './GuestInfo';
 import { ItemInfo } from './ItemInfo';
@@ -52,25 +54,29 @@ function useSelectionInfo(): ComponentChildren {
   return room ? <RoomInfo room={room} /> : null;
 }
 
-/** The panel for whatever is selected, popping in when it opens. */
+/** The panel for whatever is selected, popping in when it opens and out when it closes. */
 export function Inspector() {
   const { tools } = useGame();
   const info = useSelectionInfo();
   const pop = usePop(info !== null);
+  // closed, the panel plays its way out as it last was
+  const { shown, leaving } = useExit(info);
   return (
-    <div id="inspector" class={pop}>
-      {info && (
-        <div class="panel insp">
-          <Button
-            class="x"
-            onPress={() => {
-              tools.select(null);
-            }}
-          >
-            ✕
-          </Button>
-          {info}
-        </div>
+    <div id="inspector" class={cx(pop, leaving && 'leaving')}>
+      {shown && (
+        <Still still={leaving}>
+          <div class="panel insp">
+            <Button
+              class="x"
+              onPress={() => {
+                tools.select(null);
+              }}
+            >
+              ✕
+            </Button>
+            {shown}
+          </div>
+        </Still>
       )}
     </div>
   );

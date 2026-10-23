@@ -5,6 +5,7 @@ import { track } from '../app/analytics';
 import { gameProps } from '../app/play-events';
 import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
+import { ANNOUNCEMENTS } from '../core/data';
 import type { SimEvent, StaffRequest, Subject, Tone } from '../core/sim/events';
 import type { LessonId } from '../core/sim/lessons';
 import type { TutorialStep } from '../core/sim/tutorial';
@@ -15,10 +16,17 @@ import { saveTutorialPref } from '../storage/settings';
 import { loadTemplates } from '../storage/templates';
 import type { GameHost } from './host';
 import { AdviceHold } from './lib/advice-hold';
+import { Announcer, type Shown } from './lib/announcements';
 import { filterItems, type ItemKind, type Place } from './lib/catalog';
 import { mustAnswer, pendingDialog, raise, type Raised, stillDue } from './lib/dialogs';
+import { addFloater, ageFloaters, amountOf, type Floater } from './lib/floaters';
 import { ageMessages, SHOWN, spareMessages, withMessage } from './lib/messages';
 import type { OverlayMode } from './lib/overlays';
+
+/** How often the banner looks to move on while a line is up, in milliseconds. */
+const ANNOUNCER_TICK = 250;
+
+export type { Floater } from './lib/floaters';
 
 export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'finance' | 'policy' | 'stats';
 /** The tabs of the Money menu. */
@@ -77,15 +85,6 @@ export interface Toast {
   age: number;
   /** Fading out, about to be removed. */
   leaving: boolean;
-}
-
-/** Text that drifts up from a point in the world, such as money earned. */
-export interface Floater {
-  id: number;
-  text: string;
-  kind: Tone;
-  x: number;
-  y: number;
 }
 
 /** A line in the cheat console: a command typed in, or what came of it. */
@@ -164,7 +163,9 @@ export class HudState {
   /** Whether the pointer is over a message, which holds their clock while it is read. */
   toastsHeld = false;
   floaters: Floater[] = [];
-  announcement = '';
+  /** The banner of announcements along the top, a line at a time. */
+  readonly announcer = new Announcer();
+  private announceTimer = 0;
   /** Whether the cheat console is open, what it has said so far, and the commands typed, oldest first. */
   consoleOpen = false;
   consoleLines: ConsoleLine[] = [];
@@ -172,7 +173,6 @@ export class HudState {
 
   private listeners = new Set<() => void>();
   private nextId = 1;
-  private announceTimer = 0;
   /** The game speed to go back to when the dialog closes. */
   private pausedBy: number | null = null;
   /** Dialogs the game raised while another was showing, to show in turn as each closes. */
@@ -411,7 +411,7 @@ export class HudState {
 
   /** React to game events: sounds, toasts, announcements, star awards, visit reports and floating text. */
   handle(events: SimEvent[]) {
-    const { view, audio } = this.host;
+    const { audio } = this.host;
     for (const e of events) {
       if (e.type === 'sfx') audio.play(e.name);
       // a raise or a promotion asked for waits on the card for everyone asking, which keeps what they said
@@ -425,7 +425,7 @@ export class HudState {
       else if (e.type === 'achievement') continue;
       else if (e.type === 'tutorial') this.endTutorial(e.what, e.step);
       else if (e.type === 'lesson') this.raiseLesson(e.id, e.about);
-      else this.float(e.text, e.kind, view.project(e.x, e.y, 1.6));
+      else this.float(e.text, e.kind, e.x, e.y);
     }
   }
 
@@ -520,28 +520,49 @@ export class HudState {
     if (warning) this.toast(warning, 'bad');
   }
 
-  /** Show a banner announcement for a few seconds, with a chime, and the announcer's voice when it is recorded. */
+  /**
+   * Put an announcement on the banner for a few seconds, or in line behind the one showing. A joke over the speakers
+   * while another line shows is let go.
+   */
   private announce(text: string) {
-    this.announcement = text;
-    this.host.audio.play('announce');
-    const voice = voiceFor(text);
-    if (voice) this.host.audio.speak(voice);
+    const flavor = (ANNOUNCEMENTS as readonly string[]).includes(text);
+    const shown = this.announcer.offer(text, flavor, performance.now() / 1000);
+    if (shown) this.speak(shown);
+    this.moveAnnouncerOn();
+  }
+
+  /** While a line is up, look in now and then for the next to take its place, or for the banner to clear. */
+  private moveAnnouncerOn() {
     clearTimeout(this.announceTimer);
+    if (!this.announcer.shown) return;
     this.announceTimer = window.setTimeout(() => {
-      this.announcement = '';
-      this.update();
-    }, 8000);
+      const { next, changed } = this.announcer.tick(performance.now() / 1000);
+      if (next) this.speak(next);
+      else if (changed) this.update();
+      this.moveAnnouncerOn();
+    }, ANNOUNCER_TICK);
+  }
+
+  /** Chime for a line as it goes up, with the announcer's voice when it is recorded. */
+  private speak(shown: Shown) {
+    this.host.audio.play('announce');
+    const voice = voiceFor(shown.text);
+    if (voice) this.host.audio.speak(voice);
     this.update();
   }
 
-  /** Show text drifting up from a point on screen. */
-  private float(text: string, kind: Tone, at: { x: number; y: number }) {
-    const floater: Floater = { id: this.nextId++, text, kind, x: at.x, y: at.y };
-    this.floaters = [...this.floaters, floater];
-    setTimeout(() => {
-      this.floaters = this.floaters.filter((f) => f !== floater);
-      this.update();
-    }, 1500);
+  /** Show text drifting up from a point in the world, added to money just shown beside it or stacked above it. */
+  private float(text: string, kind: Tone, x: number, y: number) {
+    const floater: Floater = { id: this.nextId++, text, kind, x, y, age: 0, amount: amountOf(text), row: 0 };
+    this.floaters = addFloater(this.floaters, floater);
     this.update();
+  }
+
+  /** Run the floating text on by `dt` seconds, dropping what has run its course. */
+  ageFloaters(dt: number) {
+    if (!this.floaters.length) return;
+    const before = this.floaters.length;
+    this.floaters = ageFloaters(this.floaters, dt);
+    if (this.floaters.length !== before) this.update();
   }
 }

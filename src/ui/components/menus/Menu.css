@@ -11,6 +11,11 @@
   overflow-y: auto;
 }
 
+#menu.leaving > .panel {
+  pointer-events: none;
+  animation: unpop 0.14s ease-in forwards;
+}
+
 #menu.pop > .panel {
   animation: pop 0.16s ease-out;
 }

@@ -4,9 +4,11 @@ import './Menu.css';
 
 import type { ComponentChildren } from 'preact';
 
+import { Still, useExit } from '../../hooks/use-exit';
 import { useHud } from '../../hooks/use-hud';
 import { usePop } from '../../hooks/use-pop';
 import type { MenuId } from '../../hud';
+import { cx } from '../../lib/cx';
 import { HireMenu } from './HireMenu';
 import { ItemsMenu } from './ItemsMenu';
 import { MoneyMenu } from './MoneyMenu';
@@ -38,13 +40,18 @@ function contents(menu: MenuId): ComponentChildren {
   }
 }
 
-/** Whichever build menu is open, popping in when it opens. */
+/** Whichever build menu is open, popping in when it opens and for a moment after it shuts shrinking away. */
 export function Menu() {
   const { menu } = useHud();
   const pop = usePop(menu !== null);
+  const { shown, leaving } = useExit(menu);
   return (
-    <div id="menu" class={pop}>
-      {menu && contents(menu)}
+    <div id="menu" class={cx(pop, leaving && 'leaving')}>
+      {shown && (
+        <Still key={shown} still={leaving}>
+          {contents(shown)}
+        </Still>
+      )}
     </div>
   );
 }
