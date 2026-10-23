@@ -142,10 +142,54 @@ export function idleMoment(id: number, kind: IdleAct) {
 const wrap = (a: number) => a - Math.PI * 2 * Math.round(a / (Math.PI * 2));
 
 /**
- * How far round the legs' cycle goes for each meter walked, in radians: a full cycle of two steps every 1.3 m, about the
- * 9.5 rad/s the walk had at 2.1 m/s.
+ * How far round the legs' cycle goes for each meter walked, in radians: a full cycle of two steps every 1.05 m, each
+ * step as long as a leg can reach with the foot kept on the floor, for these short legs.
  */
-export const STRIDE = 4.8;
+export const STRIDE = 6;
+
+/** How long a leg is, hip to sole, in meters, for someone of average height. */
+const LEG = 0.42;
+
+/** How far a leg swings either way from straight down as it walks, in radians: as far as a step reaches. */
+const SWING = Math.asin(Math.PI / STRIDE / 2 / LEG);
+
+/** How quickly someone's limbs take up the walk's cycle when they set off, and let it go as they stop, each second. */
+const SET_OFF = 12;
+
+/**
+ * How a leg is turned, forward of straight down being negative, at a point in the walk's cycle from 0 to 2 pi: for the
+ * first half the foot is planted, and the leg turns back over it just as fast as the body walks on, so the foot stays
+ * where it is; for the second half it swings forward again for the next step. And for a leg `leg` long, on a body
+ * `wide` times as wide and deep as average, how far the hip sits below where it stands, for the planted foot to stay on
+ * the floor; and how far its knee bends, from 0 to 1.
+ */
+export function stepOf(
+  q: number,
+  leg: number,
+  wide = 1,
+): { angle: number; planted: boolean; dip: number; knee: number } {
+  const half = Math.PI / STRIDE / 2;
+  const u = (((q / Math.PI) % 2) + 2) % 2;
+  if (u < 1) {
+    // a build wider or narrower than average reaches as far again or less, front to back
+    const angle = Math.asin(THREE.MathUtils.clamp(((u - 0.5) * 2 * half) / (leg * wide), -1, 1));
+    return { angle, planted: true, dip: leg * (1 - Math.cos(angle)), knee: 0 };
+  }
+  // swung forward on a curve that leaves the floor and meets it again moving as the planted foot moves, so the foot
+  // is still at both ends
+  const reach = Math.min(0.99, half / (leg * wide));
+  const back = Math.asin(reach);
+  const sweep = (2 * reach) / Math.sqrt(1 - reach * reach);
+  const v = u - 1;
+  const angle =
+    (2 * v ** 3 - 3 * v ** 2 + 1) * back +
+    (v ** 3 - 2 * v ** 2 + v) * sweep -
+    (-2 * v ** 3 + 3 * v ** 2) * back +
+    (v ** 3 - v ** 2) * sweep;
+  // the knee bending to lift the foot clear, and straightening again, gently at each end so the foot leaves the
+  // floor and meets it without a skid
+  return { angle, planted: false, dip: 0, knee: Math.sin(Math.PI * v) ** 2 };
+}
 
 /** How far someone may move in a frame and still have walked there, in meters: further, they were put there. */
 const TELEPORT = 2;
@@ -244,12 +288,38 @@ const peakOf = (u: number) => THREE.MathUtils.clamp((Math.sin(Math.PI * u) - 0.5
  * Count the ground someone has covered since last frame toward their stride, and note where they are. Someone placed
  * somewhere new, arriving at the pavement's end or carried off by a machine, has not walked there.
  */
-export function stepOn(rig: CharRig, x: number, y: number) {
-  const d = Math.hypot(x - rig.lastX, y - rig.lastY);
+export function stepOn(rig: CharRig, x: number, y: number, facing?: number) {
+  const dx = x - rig.lastX;
+  const dy = y - rig.lastY;
+  const d = Math.hypot(dx, dy);
   // NaN, before their first frame, is never a step
-  if (d <= TELEPORT) rig.walked += d;
+  if (d <= TELEPORT && facing === undefined) rig.walked += d;
+  else if (d <= TELEPORT && facing !== undefined) {
+    // facing a way they are not quite going, as they turn a corner, only the ground covered the way they face is a
+    // step: the rest moves the hips to one side over the planted foot
+    rig.walked += Math.abs(dx * Math.sin(facing) + dy * Math.cos(facing));
+    rig.drift += dx * Math.cos(facing) - dy * Math.sin(facing);
+  }
   rig.lastX = x;
   rig.lastY = y;
+}
+
+/** How far each hip is to the side of the middle of the body, in meters, for someone of average height and build. */
+const HIP = 0.095;
+
+/** How far the hips may move to one side over a planted foot before it is lifted for the next step, in meters. */
+const DRIFT = 0.18;
+
+/**
+ * Turn someone walking on their planted foot: as the body turns about its middle, the foot, out to one side and ahead
+ * or behind, would be swept round with it. Kept where it is, the hips swing over it instead.
+ */
+function pivotOn(rig: CharRig, turned: number) {
+  const left = rig.planted === 'left';
+  const leg = left ? rig.legL : rig.legR;
+  const across = rig.scale * rig.wide;
+  rig.drift -= LEG * across * Math.sin(leg.rotation.x) * turned;
+  rig.walked -= (left ? -HIP : HIP) * across * turned;
 }
 
 /** Walk someone on the spot, for the model lab, where nobody goes anywhere: so far at a pace, in meters a second. */
@@ -323,11 +393,14 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   const back = c.pose === 'lie' && cues.lie === 'back';
   const lying = cues.lying ?? 1;
   rig.group.rotation.y = c.facing + (back ? Math.PI : 0);
-  // the stride follows the ground covered, not the clock, so the feet plant where they land whatever the game's speed
-  stepOn(rig, c.x, c.y);
+  // the stride follows the ground covered, not the clock, so the feet plant where they land whatever the game's speed;
+  // setting off from standing, it starts where both legs hang straight, so they step straight off into it
+  if (c.pose === 'walk' && rig.walking < 0.05) rig.walked = -(c.id * 1.7) / STRIDE;
+  stepOn(rig, c.x, c.y, c.pose === 'walk' ? c.facing : undefined);
   const first = Number.isNaN(rig.lastFacing);
   const turning = dt > 0 && !first ? wrap(c.facing - rig.lastFacing) / dt : 0;
   rig.lastFacing = c.facing;
+  if (c.pose === 'walk' && rig.planted) pivotOn(rig, turning * dt);
   const healed = c.kind === 'guest' && c.outcome === 'healed';
   // healed while in sight, the symptom goes in a puff; anyone seen first already healed, as from a save, is simply well
   if (healed) cureRig(rig, first ? t - 2 * CURE : t);
@@ -354,13 +427,32 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   let side = 0;
   /** Whether they sit on the floor rather than a seat. */
   const onFloor = c.pose === 'sit' && c.h < SIT.floor;
+  /** The foot planted on the floor as they walk, if one is, and how far each knee bends to step. */
+  let planted: 'left' | 'right' | undefined;
+  let stepKnees: readonly [number, number] | undefined;
   if (c.pose === 'walk') {
-    const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : 0.62);
-    legL = sw;
-    legR = -sw;
+    const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : SWING);
     armL = -sw * 0.85;
     armR = sw * 0.85;
-    bodyY = Math.abs(Math.cos(phase)) * 0.04;
+    if (visual === 'stiff') {
+      // too stiff to step out, a shuffle
+      legL = sw;
+      legR = -sw;
+      bodyY = Math.abs(Math.cos(phase)) * 0.02;
+    } else {
+      // each foot planted in turn, the hips dipping as each step reaches out
+      const leg = LEG * rig.scale;
+      const left = stepOf(phase + Math.PI / 2, leg, rig.wide);
+      const right = stepOf(phase + (Math.PI * 3) / 2, leg, rig.wide);
+      legL = left.angle;
+      legR = right.angle;
+      bodyY = -(left.planted ? left.dip : right.dip);
+      planted = left.planted ? 'left' : 'right';
+      stepKnees = [left.knee, right.knee];
+    }
+    // a new foot down, under the hips where they are now
+    if (planted !== rig.planted) rig.drift = 0;
+    rig.drift = THREE.MathUtils.clamp(rig.drift, -DRIFT, DRIFT);
     if (healed && rig.cured) bodyY += Math.abs(Math.sin(phase * 0.5)) * 0.07;
     // leaning into a corner, the head leading
     const turn = THREE.MathUtils.clamp(turning, -TURN_LEAN.most, TURN_LEAN.most);
@@ -701,7 +793,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   // what is held is kept at a tilt of its own, whatever the forearm holding it is doing
   const held = act && !doing.rightHolds ? HELD_FOR[act] : undefined;
   if (held || rig.held) holdFor(rig, held, heldTilt(act, c, t) - (armR + elbowFor(armR) + life.elbowR));
-  const k = Math.min(1, dt * 14);
+  // every angle eases toward its pose, but the walk's cycle, taken up as they set off, is put on as it is: eased, it
+  // would fall behind the steps and the feet would slide
+  rig.walking += ((c.pose === 'walk' ? 1 : 0) - rig.walking) * Math.min(1, dt * SET_OFF);
+  const k = c.pose === 'walk' ? Math.max(Math.min(1, dt * 14), rig.walking) : Math.min(1, dt * 14);
   const b = rig.body;
   b.rotation.x += (bodyRX - b.rotation.x) * k;
   b.position.y += (bodyY - b.position.y) * k;
@@ -718,7 +813,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   rig.armR.rotation.x += (armR - rig.armR.rotation.x) * k;
   rig.armL.rotation.z += (-armOut + life.armInL - rig.armL.rotation.z) * k;
   rig.armR.rotation.z += (armOut - rig.armR.rotation.z) * k;
-  poseJoints(rig.joints, rig, c, t, k, { legL, legR, armL, armR, phase, visual, style, onFloor, lying }, life);
+  rig.planted = planted;
+  if (!planted) rig.drift = 0;
+  const limbs = { legL, legR, armL, armR, phase, visual, style, onFloor, lying, stepKnees };
+  poseJoints(rig.joints, rig, c, t, k, limbs, life);
   if (rig.band?.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
   if (visual === 'jitter' && c.pose !== 'lie') {
     // pins and needles: a constant fizzing shiver
@@ -727,8 +825,12 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     rig.legR.rotation.z = Math.sin(t * 43 + c.id) * 0.07;
   } else {
     if (rig.visual === 'jitter') rig.body.position.x = 0;
-    rig.legL.rotation.z += ((onFloor ? SIT.crossed.left.z : 0) - rig.legL.rotation.z) * k;
-    rig.legR.rotation.z += ((onFloor ? SIT.crossed.right.z : 0) - rig.legR.rotation.z) * k;
+    // the leg of a planted foot leans against the hips swaying over it, so the foot stays put
+    const steady = -Math.asin(THREE.MathUtils.clamp((life.swayX + rig.drift) / (LEG * rig.scale * rig.wide), -1, 1));
+    const legZL = onFloor ? SIT.crossed.left.z : planted === 'left' ? steady : 0;
+    const legZR = onFloor ? SIT.crossed.right.z : planted === 'right' ? steady : 0;
+    rig.legL.rotation.z += (legZL - rig.legL.rotation.z) * k;
+    rig.legR.rotation.z += (legZR - rig.legR.rotation.z) * k;
   }
   if (rig.bob && !rig.cured) {
     rig.bob.position.y = 0.4 + Math.sin(t * 2.2 + c.id) * 0.03;
@@ -834,6 +936,8 @@ interface Limbs {
   onFloor: boolean;
   /** How far down someone lying is, climbing on or off where they lie. */
   lying: number;
+  /** How far each knee bends as they step, from 0 to 1, walking with their feet planted. */
+  stepKnees: readonly [number, number] | undefined;
 }
 
 /** How far an elbow bends for an arm raised this far: hanging, a little; reaching forward, more; straight overhead. */
@@ -845,13 +949,13 @@ export const elbowFor = (arm: number) => (arm < -2 ? -0.12 : -(0.2 + Math.min(1,
  * arms reach forward.
  */
 function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limbs: Limbs, life: Life) {
-  const { legL, legR, armL, armR, phase, visual, style, onFloor, lying } = limbs;
+  const { legL, legR, armL, armR, phase, visual, style, onFloor, lying, stepKnees } = limbs;
   let kneeL = 0.04;
   let kneeR = 0.04;
   let twist = 0;
   if (c.pose === 'walk') {
-    kneeL = 0.08 + Math.max(0, -Math.cos(phase)) * 0.95;
-    kneeR = 0.08 + Math.max(0, Math.cos(phase)) * 0.95;
+    kneeL = 0.08 + (stepKnees ? stepKnees[0] : Math.max(0, -Math.cos(phase))) * 0.95;
+    kneeR = 0.08 + (stepKnees ? stepKnees[1] : Math.max(0, Math.cos(phase))) * 0.95;
     twist = Math.sin(phase) * 0.14;
   } else if (onFloor) {
     kneeL = SIT.crossed.kneeL;
@@ -921,7 +1025,7 @@ interface Life {
   bodyY: number;
   /** The hips shifting sideways, over one foot or the other. */
   swayX: number;
-  /** The hips turning, against the shoulders as they walk. */
+  /** The hips turning, to look round or toward the door. */
   bodyYaw: number;
   armL: number;
   armR: number;
@@ -1008,7 +1112,7 @@ const RHYTHM: Partial<Record<Modality, number>> = {
 
 /**
  * The life a person built with knees and elbows moves with, on top of their pose. Walking, the hips shift over each
- * foot as it takes the weight and turn against the shoulders, the step bounces, and the head and forearms trail a
+ * foot as it takes the weight, the shoulders turn against them, the step bounces, and the head and forearms trail a
  * beat behind. Standing, they breathe, shift their weight from foot to foot with the other knee easing, and every so
  * often fidget: a look round, a glance at a watch, a stretch, a tapping foot. Sitting, they
  * breathe, swing their feet and look about. Working, they lean into each stroke and shift their weight in its rhythm,
@@ -1026,11 +1130,9 @@ function liveliness(c: Char, t: number, phase: number, doing: Doing): Life {
     const sp = Math.sin(phase);
     life.swayX = -cp * 0.022;
     life.side = cp * 0.035;
-    life.bodyY = Math.abs(cp) * 0.012;
     life.lean = 0.07;
     life.headX = -0.03 + Math.sin(2 * phase + 0.9) * 0.035;
     life.headYaw = -sp * 0.09;
-    life.bodyYaw = -sp * 0.06;
     life.elbowL = -0.22 * (0.5 + 0.5 * Math.sin(phase + 2.2));
     life.elbowR = -0.22 * (0.5 + 0.5 * Math.sin(phase + 2.2 + Math.PI));
     life.armOut = 0.08;

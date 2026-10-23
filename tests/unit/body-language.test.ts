@@ -246,6 +246,7 @@ describe('staff with nothing to do', () => {
 
 describe('the stride', () => {
   /** A guest walking, at a spot on the floor. */
+  /** A guest walking the way they face, along y. */
   function walker(x: number, y: number) {
     const g = demoGuest(LAB_LOOK, 'stiff_neck' as never);
     return { ...g, pose: 'walk' as const, x, y };
@@ -254,9 +255,13 @@ describe('the stride', () => {
   it('follows the ground covered, so a step plants where it lands', () => {
     const rig = buildCharacter(LAB_LOOK);
     pose(rig, walker(0, 0));
+    // setting off, both legs hang straight, to step straight off
+    expect(rig.legL.rotation.x).toBeCloseTo(0);
+    expect(rig.legR.rotation.x).toBeCloseTo(0);
+    // a quarter of a cycle on, a leg is reaching; half a cycle further, the other way
+    pose(rig, walker(0, Math.PI / 2 / STRIDE));
     const before = rig.legL.rotation.x;
-    // half a cycle on: the other leg forward
-    pose(rig, walker(Math.PI / STRIDE, 0));
+    pose(rig, walker(0, (Math.PI * 1.5) / STRIDE));
     expect(Math.sign(rig.legL.rotation.x)).toBe(-Math.sign(before));
     expect(Math.abs(before)).toBeGreaterThan(0.3);
   });
@@ -264,10 +269,19 @@ describe('the stride', () => {
   it('does not count a jump as a walk', () => {
     const rig = buildCharacter(LAB_LOOK);
     pose(rig, walker(0, 0));
-    const before = rig.legL.rotation.x;
-    pose(rig, walker(5, 0));
+    pose(rig, walker(0, 0.3));
+    const [before, walked] = [rig.legL.rotation.x, rig.walked];
+    pose(rig, walker(0, 5));
     expect(rig.legL.rotation.x).toBeCloseTo(before);
-    expect(rig.walked).toBe(0);
+    expect(rig.walked).toBe(walked);
+  });
+
+  it('counts only the ground covered the way they face toward a step', () => {
+    const rig = buildCharacter(LAB_LOOK);
+    stepOn(rig, 0, 0, 0);
+    stepOn(rig, 0.3, 0.4, 0);
+    expect(rig.walked).toBeCloseTo(0.4);
+    expect(Math.abs(rig.drift)).toBeCloseTo(0.3);
   });
 
   it('counts nothing on the first frame', () => {
