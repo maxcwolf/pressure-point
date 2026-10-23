@@ -39,12 +39,14 @@ describe('the welded outline', () => {
     expect(d.match(/A 5 5 /g)).toHaveLength(2);
   });
 
-  it('is drawn where the word is, with room round it, and the word left where it was', () => {
+  it('is drawn where the word is, with room round it, in a viewBox that is the button itself', () => {
     const shape = weldShape(66, { top: 41, width: 57, height: 13 });
-    expect(shape.width).toBe(2 * (57 / 2 + PLATE_ROOM.x + 5));
-    expect(shape.left).toBe(33 - shape.width / 2);
-    expect(shape.top).toBe(33 - 38);
-    expect(shape.viewBox).toBe(`-${shape.width / 2} -38 ${shape.width} ${shape.height}`);
+    // the plate's bottom edge runs to its left end cap: the word's half width plus its room, less the stroke and the cap
+    const cap = 13 / 2 + PLATE_ROOM.y - 1.5;
+    const end = 57 / 2 + PLATE_ROOM.x - 1.5 - cap;
+    const bottom = 41 + 13 / 2 - 33 + cap;
+    expect(shape.d).toContain(`L -${end} ${bottom}`);
+    expect(shape.viewBox).toBe('-33 -33 66 66');
     expect(shape.d).toContain('A 3.5 3.5');
   });
 });
