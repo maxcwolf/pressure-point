@@ -51,6 +51,7 @@ import {
 import { changeRep, earn } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
+import { noteStormed } from './harms';
 import { roomForModality } from './machines';
 import { goTo, halt, moveAlong } from './movement';
 import { fizzOver, puddleSlow, tellFortune } from './novelties';
@@ -658,6 +659,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
 function stormOut(ctx: SimContext, g: Guest) {
   g.outcome = 'stormed';
   countVisit(ctx, g, 'stormed');
+  noteStormed(ctx, g);
   changeRep(ctx, -3);
   say(g, 'bubble-annoyed', 8);
   emit(ctx, { type: 'float', text: 'Fed up!', x: g.x, y: g.y, kind: 'bad' });

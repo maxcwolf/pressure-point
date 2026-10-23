@@ -830,6 +830,14 @@ export interface GameState {
   /** A command has been used in the cheat console, so this game earns no achievements or campaign stars. */
   cheated: boolean;
   seenTips: string[];
+  /**
+   * A first go at the campaign's first center: the advisor looks ahead to what the center will soon need, and a
+   * checklist under the objectives keeps it, until all of it is in place.
+   */
+  primer: boolean;
+  /** How often guests have come to harm, by what and why ("failed:vibes"), and the explanations waiting to be read. */
+  harms: Record<string, number>;
+  harmNotes: HarmNote[];
   /** Magic mushrooms are on sale under the Shop Counter, while there is a Shaman to supply them. */
   mushrooms: boolean;
   /** They were put away when the health inspector wrote ahead, to come back out once the inspection is over. */
@@ -851,6 +859,24 @@ export interface GameState {
    * Null before the first check.
    */
   surroundings: Surroundings | null;
+}
+
+/**
+ * Why the same harm keeps coming to guests, put once it has happened a few times for the same reason: what happened,
+ * what it cost, what is behind it in this game with what each part takes off, and what helps.
+ */
+export interface HarmNote {
+  /** The harm and its reason, as counted in `harms`. */
+  key: string;
+  title: string;
+  cost: string;
+  /** What is behind it, the main reason first, each with what it takes off if that is a number. */
+  causes: { label: string; amount?: string }[];
+  help: string;
+  /** Who or what to show, if one is at the heart of it. */
+  about?: { kind: 'guest' | 'staff' | 'item' | 'room'; id: number };
+  /** Where the fix is: hiring someone, or a menu with it in. */
+  fix?: { hire: Role } | { menu: 'rooms' | 'items' | 'prices' };
 }
 
 /** A grid of figures, one for each tile, row by row, as the bytes of 32-bit floats in base64. */

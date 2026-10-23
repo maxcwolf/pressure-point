@@ -43,10 +43,11 @@ import {
   projectedCashflow,
   shortOfAMonth,
 } from './economy';
-import { emit, type Subject, tipOnce } from './events';
+import { emit, type Subject, tipOnce, toast } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { roomForModality } from './machines';
 import { floodAdvice, mishapAdvice } from './mishaps';
+import { primerDone, primerNotes } from './primer';
 import { allStars, hasItem, hasRoom, hasStaff } from './progress';
 import { calmerOf, running } from './runaways';
 import { stationStaff } from './sessions';
@@ -71,6 +72,8 @@ export function announce(ctx: SimContext, dt: number) {
 export interface Advice {
   text: string;
   about?: Subject;
+  /** A word over the text saying what kind of nudge it is, such as a heads-up about what is coming. */
+  label?: string;
 }
 
 /** The advisor's current nudge, with what it is about. */
@@ -189,6 +192,9 @@ function nudge(ctx: SimContext): string | Advice {
         about: { kind: 'item', id: it.id },
       };
   }
+  // on a first go at the campaign, what the center will need before long, ahead of a slow line or a repair in hand
+  const [ahead] = primerNotes(ctx);
+  if (ahead) return { text: ahead.text, label: 'Coming up', ...(ahead.about && { about: ahead.about }) };
   const held = bottleneckAdvice(ctx);
   if (held) return held;
   const fix = repairAdvice(ctx);
@@ -279,6 +285,35 @@ export function inHandAdvice(ctx: SimContext): string {
     ? ` ${left === 1 ? 'One of the first paydays is' : `${left} of the first paydays are`} still to come, before the takings have a record.`
     : '';
   return `Hire nobody more, send nobody on a course and turn house calls down until there is a month's wages in hand, ${money(short)} more: ${inHandLine(h)}${takings} Each adds a wage or leaves a station empty for days, and once the loan is used up a month that heals few guests has the bank call the overdraft in.${first}`;
+}
+
+/** The heads-ups that ask for a wage or a course, which wait on a month's wages in hand as any hire does. */
+const PRIMER_SPENDS = new Set(['caretaker', 'smudging']);
+
+/**
+ * Once a second: on a first go at the campaign, say each heads-up once as it starts to matter, and end them for good,
+ * with a word to say so, once everything on the checklist is in place.
+ */
+export function warnPrimer(ctx: SimContext) {
+  const s = ctx.s;
+  if (!s.primer || !s.open) return;
+  if (primerDone(ctx)) {
+    s.primer = false;
+    toast(
+      ctx,
+      'Your center has everything it needs to get going. From here on the advisor speaks up when something needs you.',
+      'good',
+      undefined,
+      'ui-advisor',
+    );
+    return;
+  }
+  const short = moneyFirst(s) || !!inHandAdvice(ctx);
+  for (const n of primerNotes(ctx)) {
+    const text =
+      short && PRIMER_SPENDS.has(n.id) ? `${n.text} Wait until there is a month's wages in hand, though.` : n.text;
+    tipOnce(ctx, `primer-${n.id}`, text, 'info', n.about, 'ui-advisor');
+  }
 }
 
 /** What one more of a role would be paid: the cheapest applicant for it, or the role's standard pay. */

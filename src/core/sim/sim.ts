@@ -39,7 +39,7 @@ import type {
 import { layoutProblem } from '../templates';
 import type { Check, Placed, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
-import { type Advice, advice, advise, announce, warnUnfed } from './advisor';
+import { type Advice, advice, advise, announce, warnPrimer, warnUnfed } from './advisor';
 import { drainFactor, prestige } from './ambience';
 import { assignRoom, clearRooms } from './assignments';
 import { holdAwards, YEAR_MONTHS } from './awards';
@@ -124,6 +124,7 @@ import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, 
 import { updateOutdoors } from './outdoors';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import { type PlacePreview, previewItem } from './preview';
+import { type PrimerLine, primerLines } from './primer';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
@@ -237,6 +238,7 @@ export class Sim {
       updateLand(ctx);
       updateOutdoors(ctx);
       warnWorsening(ctx);
+      warnPrimer(ctx);
       // wages overdue for want of a loan may be paid at last, which lets the year's awards through
     }
     announce(ctx, dt);
@@ -304,6 +306,14 @@ export class Sim {
   /** The advisor's current nudge, with what it is about, if anything. */
   adviceNote(): Advice {
     return advise(this.ctx);
+  }
+  /** On a first go at the campaign, the checklist of what the center will need, each line ticked once in place. */
+  primerLines(): PrimerLine[] {
+    return primerLines(this.ctx);
+  }
+  /** Put away the explanation of harm to guests on show, for the next waiting to take its place. */
+  dismissHarm() {
+    this.s.harmNotes.shift();
   }
   /** The stage of a visit holding guests up most, if any is. */
   bottleneck(): Stage | undefined {

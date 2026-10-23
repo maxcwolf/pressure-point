@@ -2,6 +2,11 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **A heads-up on your first go.** In your first Willow Lane game, the advisor says what the center will need before the trouble comes: a Caretaker once guests are being healed, Smudging once there is one, a Staff Room as staff tire. A "Getting ready" checklist under the objectives ticks them off.
+- **Why it keeps going wrong.** When the same thing goes wrong for guests three times for the same reason (a failed treatment, a guest fed up with waiting, one who got worse in line or balked at the price), a card says what was behind it, with the numbers from your game, and what helps, with a button to the fix.
+
 ## v0.32.1
 
 - **A fountain that flows, and air you can read.** The Zen Fountain's bowl spills over into its basin in running streams, a heater that is on sends up wavy lines of heat, and an air conditioner blows cool ones out of its vents.

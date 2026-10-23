@@ -1,4 +1,4 @@
-// Top left: the objectives for the next star, and the emergency in progress.
+// Top left: the objectives for the next star, what a first game will need soon, and the emergency in progress.
 
 import './Objectives.css';
 
@@ -81,6 +81,26 @@ function OutbreakCard() {
   );
 }
 
+/** On a first go at the campaign, what the center will need soon, ticked off as each is in place. */
+function GettingReady() {
+  const { sim } = useGame();
+  const lines = sim.primerLines();
+  if (!lines.length) return null;
+  return (
+    <div class="getting-ready">
+      <h4>Getting ready</h4>
+      <ul>
+        {lines.map((l) => (
+          <li key={l.id} class={cx(l.done && 'done')}>
+            <b>{l.done ? '✔' : '○'}</b>
+            <span>{l.label}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** The objectives for the next star, with the staff challenge and the emergency in progress under them. */
 export function Objectives() {
   const { sim } = useGame();
@@ -105,6 +125,7 @@ export function Objectives() {
           </li>
         )}
       </ul>
+      <GettingReady />
       <ChallengeCard />
       <OutbreakCard />
       {emergency && (

@@ -40,6 +40,7 @@ import { changeRep, earn, priceFor, putOffChance } from './economy';
 import { emit, tipOnce } from './events';
 import { feel, reviewStars } from './feelings';
 import { decide, goWait, leave, resetGuest } from './guests';
+import { noteFailure, notePriced } from './harms';
 import { linensPenalty, useLinens } from './linens';
 import {
   MACHINE_PULL,
@@ -352,6 +353,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
         g.goal = 'leave';
         feel(g, 'pricey');
         countVisit(ctx, g, 'priced');
+        notePriced(ctx, g);
         changeRep(ctx, -1);
         say(g, 'bubble-cant-afford', 6);
         emit(ctx, { type: 'float', text: 'Too pricey!', x: g.x, y: g.y, kind: 'bad' });
@@ -431,6 +433,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       // a ceremony that fails is a bad trip, whatever went wrong, and that goes in their review too
       if (isTrip(mod)) badTrip(ctx, g, it);
       countVisit(ctx, g, 'failed');
+      // why it failed, before the failure's own bad vibes cloud the room
+      noteFailure(ctx, it, staff, g, problem);
       changeRep(ctx, -2.5);
       if (room) addVibes(ctx, room);
       say(g, 'bubble-impatient', 6);

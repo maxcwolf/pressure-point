@@ -3,9 +3,11 @@
 import { logger, setTag } from '@sentry/browser';
 
 import { Audio } from '../audio/audio';
+import { CAMPAIGN } from '../core/data';
 import { newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { loadIcons } from '../render/models/icons';
+import { loadCampaign } from '../storage/campaign';
 import { AUTOSAVE_ID, openInAutosave, readSave, startBackup } from '../storage/saves';
 import { loadDisciplinePrefs, loadSandbox } from '../storage/settings';
 import { showTitle } from '../ui';
@@ -83,6 +85,8 @@ function open(what: string | null): GameState | 'no-room' | null {
     state.bankruptcyOn = bankruptcy;
     state.difficulty = difficulty;
   }
+  // a first go at the campaign's first center, with nothing earned yet, looks ahead to what it will soon need
+  if (state && center === CAMPAIGN[0] && !Object.keys(loadCampaign().stars).length) state.primer = true;
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
   if (state && what !== AUTOSAVE_ID && !openInAutosave(state)) return 'no-room';
   return state;

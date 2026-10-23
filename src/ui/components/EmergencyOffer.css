@@ -146,3 +146,49 @@
   font-weight: 600;
   opacity: 0.85;
 }
+
+.offer.harm {
+  border-color: var(--red);
+  text-align: left;
+}
+
+.offer.harm h3 {
+  font-size: 15.5px;
+}
+
+.offer.harm .sub {
+  margin-top: 0;
+}
+
+.offer.harm .causes {
+  list-style: none;
+  padding: 6px 9px;
+  margin: 8px 0;
+  background: rgba(36, 56, 74, 0.06);
+  border-radius: 9px;
+  font-size: 13px;
+}
+
+.offer.harm .causes li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 1px 0;
+}
+
+.offer.harm .causes li:first-child {
+  font-weight: 600;
+}
+
+.offer.harm .causes b {
+  color: #a8322b;
+  white-space: nowrap;
+}
+
+.offer.harm .help {
+  font-size: 13.5px;
+}
+
+.offer.harm .btnrow {
+  justify-content: flex-start;
+}
