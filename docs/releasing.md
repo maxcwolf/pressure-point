@@ -27,7 +27,7 @@ All five are set, so macOS builds are signed and notarized; the Windows installe
 
 ## Updates
 
-The desktop app updates itself with `electron-updater` (`electron/updates.ts`). Once installed, it looks for a newer GitHub release at launch and every four hours, downloads it in the background, and the game offers to restart for it: a toast in a game, a button on the title screen. A player who ignores it gets the update the next time they quit.
+The desktop app updates itself with `electron-updater` (`electron/updates.ts`). Once installed, it looks for a newer GitHub release at launch, each time the player comes back to the title screen from a game, and every four hours, downloads it in the background, and the game offers to restart for it: a toast in a game, a button on the title screen. A player who ignores it gets the update the next time they quit.
 
 It reads `latest.yml` (Windows) and `latest-mac.yml` (macOS) from the newest release, so the workflow uploads those along with the `.zip` the macOS app updates from and the blockmaps that let it download only what changed. A release missing them is invisible to installed apps. Builds from manual runs are never published, so they are never offered.
 

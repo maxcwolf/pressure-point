@@ -20,6 +20,7 @@ export const updates: UpdateOffer | undefined = desktop && {
       listeners.delete(listener);
     };
   },
+  check: desktop.checkForUpdate,
   install: desktop.installUpdate,
 };
 

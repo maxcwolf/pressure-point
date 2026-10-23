@@ -29,6 +29,12 @@ export async function boot() {
   // The desktop app can be quit, so there the game offers Exit.
   // A browser tab cannot close itself, so the web version leaves that to the browser.
   const exit = desktop?.quit;
+  // loading or restarting from inside a game reloads the page and leaves a note saying what to open
+  let what = takeHandoff();
+  // Without one, this is a visit to the title screen, which looks for an update again: the first one since launch,
+  // or the one when the player comes back from a game. Asked before anything loads, the answer that it is checking
+  // is in by the time the title screen draws.
+  if (!what) updates?.check();
   // the desktop app keeps copies of the saves in files, and puts them back if the page's storage has lost them
   if (desktop) await startBackup(desktop);
 
@@ -40,8 +46,6 @@ export async function boot() {
   ]).catch(() => {
     // the fallback font will do
   });
-  // loading or restarting from inside a game reloads the page and leaves a note saying what to open
-  let what = takeHandoff();
   let opened = open(what);
   while (!opened || opened === 'no-room') {
     if (opened === 'no-room') logger.warn('No room to keep the autosave, so the new game did not start');
