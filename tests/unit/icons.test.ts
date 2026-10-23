@@ -168,6 +168,9 @@ describe('what yarn icons builds', () => {
     expect(atlasCell('alarm', sand, at)).toContain('fill="#e5564d" stroke="#24384a"');
     expect(atlasCell('alarm', sand, at)).toContain('<path fill="#24384a"/><path fill="#ffffff"/>');
     expect(atlasCell('need', '<path fill="#f2c14e"/>', at)).toContain('<path fill="#ffffff"/>');
+    // an alarm is told apart by more than its red: a white badge with a "!" at its top right
+    expect(atlasCell('alarm', sand, at)).toContain('<path d="M104 13v12"');
+    expect(atlasCell('need', sand, at)).not.toContain('M104 13v12');
   });
 
   it('puts every role, and the staff marker, on a disc in the purple of the squares staff use', () => {

@@ -237,10 +237,10 @@ export const VARIANTS = ['plain', 'bubble', 'alarm', 'need', 'square'];
 export const ALARMS = ['bubble-quitting', 'bubble-impatient', 'bubble-hurt'];
 
 /**
- * The bubbles that also come in amber, for a need that will become trouble: the body's needs, a member of staff worn
- * out, and a guest running out of patience before they are fed up.
+ * The bubbles that also come in amber, for a need that will become trouble: a waiting guest bursting or parched, a
+ * member of staff worn out, and a guest running out of patience before they are fed up.
  */
-export const NEEDS = ['bubble-restroom', 'bubble-thirsty', 'bubble-hungry', 'bubble-exhausted', 'bubble-impatient'];
+export const NEEDS = ['bubble-restroom', 'bubble-thirsty', 'bubble-exhausted', 'bubble-impatient'];
 
 /** The ways an icon is shown in the scene: every icon on its own and in a bubble, and the others only where they apply. */
 export function variantsOf(id) {
@@ -280,6 +280,15 @@ const BUBBLE = (fill) =>
   `<path d="M64 5A50 50 0 0 1 81.1 102L64 122 46.9 102A50 50 0 0 1 64 5z" fill="${fill}" stroke="${PALETTE.navy}" ` +
   `stroke-width="6" stroke-linejoin="round"/>`;
 
+/**
+ * The white badge with a navy "!" on an alarm's upper right, so an alarm is told apart by its shape as well as its red,
+ * for players who can't tell red from amber.
+ */
+const BANG =
+  `<circle cx="104" cy="24" r="20" fill="${PALETTE.white}" stroke="${PALETTE.navy}" stroke-width="6"/>` +
+  `<path d="M104 13v12" stroke="${PALETTE.navy}" stroke-width="7" stroke-linecap="round"/>` +
+  `<circle cx="104" cy="34.5" r="3.8" fill="${PALETTE.navy}"/>`;
+
 /** The disc a staff marker sits on over a use square: purple as the square, outlined in navy inside a white edge. */
 const SQUARE_DISC =
   `<circle cx="64" cy="64" r="58" fill="${PALETTE.white}"/>` +
@@ -288,13 +297,24 @@ const SQUARE_DISC =
 /**
  * How an icon is placed on its cell, and what is drawn under it: on its own it fills the cell inside a white edge,
  * like a sticker, so it reads against any floor; in a bubble it fills the bubble's disc, white for something said, red
- * for an alarm and amber for a need; as a staff marker it sits on the purple disc, without a disc of its own.
+ * for an alarm, with a "!" badge, and amber for a need; as a staff marker it sits on the purple disc, without a disc of
+ * its own.
  */
 const PLACING = {
   plain: { x: 10, y: 10, size: 108, filter: ' filter="url(#sticker)"' },
   bubble: { x: 20, y: 11, size: 88, filter: '', under: BUBBLE(PALETTE.white) },
-  // on red, the drawing's red turns navy and the rest stays as drawn, so an hourglass's sand still shows
-  alarm: { x: 20, y: 11, size: 88, filter: '', under: BUBBLE(PALETTE.red), recolor: [PALETTE.red, PALETTE.navy] },
+  // on red, the drawing's red turns navy and the rest stays as drawn, so an hourglass's sand still shows; the whole
+  // bubble a little smaller, to leave room in the cell for its badge
+  alarm: {
+    x: 20,
+    y: 11,
+    size: 88,
+    filter: '',
+    under: BUBBLE(PALETTE.red),
+    recolor: [PALETTE.red, PALETTE.navy],
+    shrink: 0.88,
+    badge: BANG,
+  },
   // on amber, the drawing's gold turns white, so nothing in it sinks into the bubble
   need: { x: 20, y: 11, size: 88, filter: '', under: BUBBLE(PALETTE.gold), recolor: [PALETTE.gold, PALETTE.white] },
   square: { x: 12, y: 12, size: 104, filter: '', under: SQUARE_DISC, undisc: true },
@@ -322,7 +342,13 @@ export function atlasCell(variant, inner, at) {
   let art = p.recolor ? refilled(inner, p.recolor) : inner;
   if (p.undisc) art = undiscked(art);
   const placed = `<g transform="translate(${at.x + p.x} ${at.y + p.y}) scale(${p.size / 32})"${p.filter}>${art}</g>`;
-  return p.under ? `<g transform="translate(${at.x} ${at.y})">${p.under}</g>${placed}` : placed;
+  let cell = p.under ? `<g transform="translate(${at.x} ${at.y})">${p.under}</g>${placed}` : placed;
+  if (p.shrink) {
+    const cx = at.x + 64;
+    const cy = at.y + 64;
+    cell = `<g transform="translate(${cx} ${cy}) scale(${p.shrink}) translate(${-cx} ${-cy})">${cell}</g>`;
+  }
+  return p.badge ? `${cell}<g transform="translate(${at.x} ${at.y})">${p.badge}</g>` : cell;
 }
 
 /**
