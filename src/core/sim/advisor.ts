@@ -27,7 +27,7 @@ import { an, article, money } from '../format';
 import { pickFresh, rnd } from '../random';
 import { offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
-import { BOTTLENECK, bottleneck } from './bottleneck';
+import { BOTTLENECK, bottleneck, type Stage, stages } from './bottleneck';
 import type { SimContext } from './context';
 import { capacity, unfedStations } from './demand';
 import {
@@ -69,10 +69,18 @@ export function announce(ctx: SimContext, dt: number) {
     emit(ctx, { type: 'announce', text: contextAnnouncement(ctx) ?? pickFresh(s, ANNOUNCEMENTS, ctx.announced) });
 }
 
+/**
+ * How pressing a nudge is: an alarm about something going wrong now, a step in setting the center up, or a tip. The
+ * interface holds a note on screen for a while, and lets only a more pressing one take its place sooner.
+ */
+export type AdviceLevel = 'alarm' | 'step' | 'tip';
+
 /** One of the advisor's nudges, and what it is about when it is about someone or something in particular. */
 export interface Advice {
   text: string;
   about?: Subject;
+  /** How pressing it is; a tip unless said. */
+  level?: AdviceLevel;
   /** A word over the text saying what kind of nudge it is, such as a heads-up about what is coming. */
   label?: string;
   /** The tutorial's step in hand, when the nudge is that step's card. */
@@ -84,11 +92,21 @@ function stepCard(step: TutorialStep): Advice {
   return { text: step.text, label: 'Tutorial', step, ...(step.about && { about: step.about }) };
 }
 
-/** The advisor's current nudge, with what it is about. */
+/** The advisor's current nudge, with what it is about and how pressing it is. */
 export function advise(ctx: SimContext): Advice {
   const n = nudge(ctx);
-  return typeof n === 'string' ? { text: n } : n;
+  return typeof n === 'string' ? { text: n, level: 'tip' } : { level: 'tip', ...n };
 }
+
+/** A nudge marked as pressing in some way. */
+const marked =
+  (level: AdviceLevel) =>
+  (n: string | Advice): Advice =>
+    typeof n === 'string' ? { text: n, level } : { ...n, level };
+/** A nudge about something going wrong now, which takes the place of any other note at once. */
+const alarm = marked('alarm');
+/** A nudge about the next thing to set up, which goes as soon as it is done. */
+const setup = marked('step');
 
 /** The advisor's current nudge, as text. */
 export function advice(ctx: SimContext): string {
@@ -100,42 +118,46 @@ function nudge(ctx: SimContext): string | Advice {
   const s = ctx.s;
   // while a mishap has things stopped, they are not missing, so say so rather than ask for them
   const mishap = mishapAdvice(s);
-  if (mishap) return mishap;
+  if (mishap) return alarm(mishap);
   const flood = floodAdvice(ctx);
-  if (flood) return flood;
+  if (flood) return alarm(flood);
   // someone on a really bad trip, freaking out everyone they pass, and nobody sent to them yet
   const runner = s.guests.find((g) => running(g) && !calmerOf(ctx, g));
   if (runner)
-    return {
+    return alarm({
       text: `${runner.name} is on a really bad trip, freaking out everyone they pass. Select them and calm them down.`,
       about: { kind: 'guest', id: runner.id },
-    };
+    });
   // the tutorial walks the opening a step at a time, pointing at what each wants, in place of the lines below
   const step = s.tutorial ? currentStep(ctx) : null;
   if (step && WALKTHROUGH_IDS.has(step.id)) return stepCard(step);
   if (!hasItem(ctx, 'reception_desk'))
-    return 'Welcome! Open the Items menu and place a Reception Desk somewhere near the entrance.';
-  if (!hasStaff(ctx, 'receptionist')) return 'A desk needs a face behind it. Hire a Receptionist from the Hire menu.';
+    return setup('Welcome! Open the Items menu and place a Reception Desk somewhere near the entrance.');
+  if (!hasStaff(ctx, 'receptionist'))
+    return setup('A desk needs a face behind it. Hire a Receptionist from the Hire menu.');
   if (!hasRoom(ctx, 'consult'))
-    return 'Guests need diagnosing. Pick a Consultation Room from the Rooms menu, drag out the floor, add a door, then place the furniture.';
-  if (!hasStaff(ctx, 'consultant')) return 'Hire a Wellness Consultant to run the Consultation Room.';
-  if (!hasRoom(ctx, 'massage')) return 'Now the main event: build a Massage Suite.';
-  if (!hasStaff(ctx, 'therapist')) return 'Hire a Massage Therapist and the knots will start untying themselves.';
+    return setup(
+      'Guests need diagnosing. Pick a Consultation Room from the Rooms menu, drag out the floor, add a door, then place the furniture.',
+    );
+  if (!hasStaff(ctx, 'consultant')) return setup('Hire a Wellness Consultant to run the Consultation Room.');
+  if (!hasRoom(ctx, 'massage')) return setup('Now the main event: build a Massage Suite.');
+  if (!hasStaff(ctx, 'therapist'))
+    return setup('Hire a Massage Therapist and the knots will start untying themselves.');
   const quitting = s.staff.find(aboutToQuit);
   if (quitting)
-    return {
+    return alarm({
       text: `${quitting.name} is about to quit! Select them and give them a raise, or build a Staff Room so they can rest.`,
       about: { kind: 'staff', id: quitting.id },
-    };
+    });
   // a guest about to go home worse off costs more than anything below, and the way out is in the player's hands
   const [worst, ...others] = aboutToWorsen(s);
   if (worst) {
     const days = Math.max(1, Math.ceil(conditionDays(worst)));
     const more = others.length ? `, and ${others.length} more ${others.length === 1 ? 'is' : 'are'} close behind` : '';
-    return {
+    return alarm({
       text: `${worst.name} goes home worse off in about ${days} day${days === 1 ? '' : 's'}${more}: −${WORSE_REP} reputation each. Move them up their line, or send them home for −${SEND_HOME_REP}.`,
       about: { kind: 'guest', id: worst.id },
-    };
+    });
   }
   const tired = s.staff.some((x) => x.energy < 20);
   if (tired && !hasRoom(ctx, 'staffroom'))
@@ -156,7 +178,9 @@ function nudge(ctx: SimContext): string | Advice {
   const days = daysUntilBankrupt(s);
   if (days !== null) {
     const flow = cashflow(s);
-    return `The bank calls the overdraft in in ${Math.ceil(days)} days: ${money(-s.money)} in the red, and losing ${money(-flow.net)} a month (${money(flow.income)} coming in against ${money(flow.wages)} in wages and ${money(flow.interest)} interest). Get the bank above zero, or the books into profit. ${countdownLever(s, Math.max(1, Math.ceil(days)))}`;
+    return alarm(
+      `The bank calls the overdraft in in ${Math.ceil(days)} days: ${money(-s.money)} in the red, and losing ${money(-flow.net)} a month (${money(flow.income)} coming in against ${money(flow.wages)} in wages and ${money(flow.interest)} interest). Get the bank above zero, or the books into profit. ${countdownLever(s, Math.max(1, Math.ceil(days)))}`,
+    );
   }
   if (s.offer) return 'There is an emergency on offer at the top of the screen. Accept it only if you can cope.';
   // with a Caretaker on the payroll, a breakdown waits below the money, the lines and comfort: it is in hand
@@ -180,17 +204,21 @@ function nudge(ctx: SimContext): string | Advice {
   if (s.money < 0 && s.loan < loanLimit(s)) {
     const red = `You are ${money(-s.money)} in the red, which costs ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month and worries the staff`;
     // a loan while the books lose money only buys time, and spends the room the next payday needs
-    return projectedCashflow(s) < 0
-      ? `${red}, and you are losing about ${money(-projectedCashflow(s))} a month. ${cutFirst(s)} Then a loan from the Money menu is cheaper than the red for what is left, but it only buys time: once it is used up, the bank calls the overdraft in.`
-      : `${red}. A loan from the Money menu is cheaper.`;
+    return alarm(
+      projectedCashflow(s) < 0
+        ? `${red}, and you are losing about ${money(-projectedCashflow(s))} a month. ${cutFirst(s)} Then a loan from the Money menu is cheaper than the red for what is left, but it only buys time: once it is used up, the bank calls the overdraft in.`
+        : `${red}. A loan from the Money menu is cheaper.`,
+    );
   }
   if (s.money < 0 && s.bankruptcyOn)
-    return `You are ${money(-s.money)} in the red at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month, with the loan used up. You are making about ${money(projectedCashflow(s))} a month, so it will clear; a payday with the books losing money, and the bank calls the overdraft in.`;
+    return alarm(
+      `You are ${money(-s.money)} in the red at ${(OVERDRAFT_RATE * 100).toFixed(0)}% a month, with the loan used up. You are making about ${money(projectedCashflow(s))} a month, so it will clear; a payday with the books losing money, and the bank calls the overdraft in.`,
+    );
   // a month's wages in hand before the next payday alone: it says more, unless that payday is short past the loan
   const inHand = inHandAdvice(ctx);
-  if (inHand) return inHand;
+  if (inHand) return alarm(inHand);
   const payday = paydayAdvice(ctx);
-  if (payday) return payday;
+  if (payday) return alarm(payday);
   const gap = modalityAdvice(ctx);
   if (gap) return gap;
   for (const it of s.items) {
@@ -345,6 +373,31 @@ export function newSalary(s: SimContext['s'], role: Role): number {
   return asks.length ? Math.min(...asks) : ROLES[role].baseSalary;
 }
 
+/** How far a named stage's line must fall, as a share of what named it, before the note about it lets go. */
+const BOTTLENECK_RELEASE = 0.5;
+
+/** The stage each game's advisor named last, so the note about a slow line does not come and go as it hovers. */
+const lastStage = new WeakMap<SimContext['s'], string>();
+
+/**
+ * The stage to name, with hysteresis: a line is named once it reaches the threshold, and stays named until it falls
+ * below half of it, even if another edges ahead, so the note does not switch on and off as a queue crosses the line.
+ */
+function steadyBottleneck(ctx: SimContext): Stage | undefined {
+  const found = bottleneck(ctx);
+  const key = lastStage.get(ctx.s);
+  const kept = key ? stages(ctx).find((st) => st.key === key) : undefined;
+  if (
+    kept &&
+    kept.waiting >= BOTTLENECK.line * BOTTLENECK_RELEASE &&
+    kept.waiting >= BOTTLENECK.each * kept.stations.length * BOTTLENECK_RELEASE
+  )
+    return kept;
+  if (found) lastStage.set(ctx.s, found.key);
+  else lastStage.delete(ctx.s);
+  return found;
+}
+
 /**
  * Nudge about the stage of a visit holding guests up most, if one is: its line, and why it is slow, from how its
  * stations have done over the last few days. Short-staffed, it needs someone there more; flat out, more stations. Each
@@ -354,7 +407,7 @@ export function newSalary(s: SimContext['s'], role: Role): number {
 export function bottleneckAdvice(ctx: SimContext): Advice | null {
   const s = ctx.s;
   if (moneyFirst(s)) return null;
-  const stage = bottleneck(ctx);
+  const stage = steadyBottleneck(ctx);
   if (!stage) return null;
   const top = stage.stations.reduce((a, b) => (b.queue.length > a.queue.length ? b : a));
   const def = ITEMS[top.type].station;

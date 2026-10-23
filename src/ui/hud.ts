@@ -14,6 +14,7 @@ import { loadDisplay } from '../storage/display';
 import { saveTutorialPref } from '../storage/settings';
 import { loadTemplates } from '../storage/templates';
 import type { GameHost } from './host';
+import { AdviceHold } from './lib/advice-hold';
 import { filterItems, type ItemKind, type Place } from './lib/catalog';
 import { mustAnswer, pendingDialog, raise, type Raised, stillDue } from './lib/dialogs';
 import { ageMessages, SHOWN, spareMessages, withMessage } from './lib/messages';
@@ -148,6 +149,8 @@ export class HudState {
   karmaItem: ItemType | null = null;
   /** The locked floor or wall asked about in the karma dialog, and the room to put it in once unlocked. */
   karmaDecor: { key: DecorKey; roomId: number } | null = null;
+  /** The advisor's note on screen, held long enough to read. */
+  readonly advice = new AdviceHold();
   /** The messages on the right, oldest first. */
   toasts: Toast[] = [];
   /** Whether every message shows, the pile under the first few opened out. */

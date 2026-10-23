@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **An advisor you can read.** A note stays up at least three and a half seconds rather than flipping between two several times a second, and a slow line is named once it reaches four guests and let go only once it is down to two, so the note does not come and go as a queue hovers. Something going wrong now, a money crisis among them, still takes over at once with a red edge. Each note's first sentence is in bold.
+
 ## v0.33.2
 
 - **The Recliner is the Lounger.** The Recovery Lounge's bed is back to the padded lounger of 0.30 without arms, now in dusty blue with its cushion in pads and a blanket folded over the foot, and resting guests lie on their backs on it, where after a massage or acupuncture they used to lie face down. Saved games and room templates keep theirs.

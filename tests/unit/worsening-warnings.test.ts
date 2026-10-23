@@ -116,6 +116,7 @@ describe('a guest about to go home worse off', () => {
     expect(advise(ctx)).toEqual({
       text: `${guests[1]!.name} goes home worse off in about 1 day: −${WORSE_REP} reputation each. Move them up their line, or send them home for −${SEND_HOME_REP}.`,
       about: { kind: 'guest', id: guests[1]!.id },
+      level: 'alarm',
     });
     daysLeft(guests[0]!, 1.8);
     expect(advise(ctx).text).toContain('and 1 more is close behind');

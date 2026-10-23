@@ -103,6 +103,12 @@ s {
   }
 }
 
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+}
+
 @keyframes floatup {
   0% {
     opacity: 0;

@@ -1,7 +1,7 @@
 // Messages that know what they are about, so clicking one can take the player there.
 import { describe, expect, it } from 'vitest';
 
-import { bottleneckAdvice } from '../../src/core/sim/advisor';
+import { advise, bottleneckAdvice } from '../../src/core/sim/advisor';
 import type { SimContext } from '../../src/core/sim/context';
 import type { SimEvent, Subject } from '../../src/core/sim/events';
 import { raiseRequests } from '../../src/ui/lib/status';
@@ -69,6 +69,16 @@ describe("the advisor's nudges", () => {
     expect(sim.adviceNote().about).toEqual({ kind: 'item', id: table.id });
   });
 
+  it('mark a money crisis as an alarm, which takes the place of any other note at once', () => {
+    const { sim, s } = openCenter(1);
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    expect(advise(ctx).level).not.toBe('alarm');
+    s.money = -5000;
+    s.loan = 0;
+    expect(advise(ctx).text).toMatch(/in the red/);
+    expect(advise(ctx).level).toBe('alarm');
+  });
+
   it('say which stage holds guests up, and why, pointing at its longest line', () => {
     const { sim, s, therapist } = openCenter(1);
     runUntil(sim, () => s.guests.length > 0, 300);
@@ -96,8 +106,15 @@ describe("the advisor's nudges", () => {
     expect(bottleneckAdvice(ctx)?.text).toMatch(
       /4 waiting for one Massage Table\. It has been busy 90% of the time\. Another Massage Table and a Massage Therapist/,
     );
-    // three waiting is not yet a line worth a word
+    // once named, the line stays named as it shortens, so the note does not come and go as it hovers round four
     table.queue.pop();
+    expect(bottleneckAdvice(ctx)?.text).toMatch(/3 waiting for one Massage Table/);
+    // and lets go once it is down to half of what named it
+    table.queue.pop();
+    table.queue.pop();
+    expect(bottleneckAdvice(ctx)).toBeNull();
+    // three waiting is not yet a line worth a word, as long as it was not one already
+    table.queue.push(9100, 9101);
     expect(bottleneckAdvice(ctx)).toBeNull();
   });
 
