@@ -591,6 +591,8 @@ function machineSpecimen(type: ItemType): Specimen {
           poseChar(guest.rig, guest.c, t, dt, { style: null });
           // the guest is only inside while there is a session, or just after it
           guest.rig.group.visible = stage === 'running' || stage === 'outro';
+          // squashed and stretched from their usual size each frame, as in the game, not from the last frame's size
+          guest.rig.group.scale.setScalar(1);
           if (guest.rig.group.visible) applyGuestGag(guest.rig, stage === 'running' ? frame.guest : {}, 0);
         },
       };
