@@ -1,7 +1,7 @@
 // Explaining why a table can or cannot deliver a treatment.
 
 import { type Discipline, DISCIPLINES, ITEMS, type ModalityDef, ROLES, ROOMS } from '../../core/data';
-import { article } from '../../core/format';
+import { an, article } from '../../core/format';
 import type { DeliveryProblem } from '../../core/sim/treatments';
 
 /** What it takes to offer a discipline: where it is delivered, when its room unlocks, or what to build and hire. */
@@ -22,7 +22,7 @@ export function deliveryNote(problem: DeliveryProblem, def: ModalityDef, staffNa
     case 'unqualified':
       return `${staffName?.split(' ')[0] ?? 'Nobody'} is not qualified`;
     case 'no-equipment':
-      return `needs a ${def.equipment ? ITEMS[def.equipment].name : ''}`;
+      return def.equipment ? `needs ${an(ITEMS[def.equipment].name)}` : 'needs its equipment';
     case 'out-of-action':
       return `${def.equipment ? ITEMS[def.equipment].name : 'equipment'} is out of action`;
     case 'cold':

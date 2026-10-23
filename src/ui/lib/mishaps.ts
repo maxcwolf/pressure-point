@@ -2,6 +2,7 @@
 
 import type { MishapDef } from '../../core/data';
 import { MISHAP_NOTICE_DAYS } from '../../core/data';
+import { an } from '../../core/format';
 import { daysInWords } from '../../core/sim/mishaps';
 import type { Mishap } from '../../core/state/types';
 import { clamp } from '../../core/util';
@@ -50,5 +51,5 @@ export function kitNote(name: string, working: boolean, stoppedBy: MishapDef | u
   if (working) return { ok: true, text: `✔ ${name} installed` };
   if (stoppedBy)
     return { ok: false, icon: stoppedBy.icon, text: `${name} out of action: ${stoppedBy.name.toLowerCase()}` };
-  return { ok: false, icon: 'ui-warning', text: `Needs a ${name} in the room` };
+  return { ok: false, icon: 'ui-warning', text: `Needs ${an(name)} in the room` };
 }

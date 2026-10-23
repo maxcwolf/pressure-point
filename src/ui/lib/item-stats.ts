@@ -11,7 +11,7 @@ import {
   ROOMS,
   SEAT_DRAIN,
 } from '../../core/data';
-import { money } from '../../core/format';
+import { an, money } from '../../core/format';
 import { decorReach } from '../../core/sim/ambience';
 import { calmness } from '../../core/sim/noise';
 import type { PlacePreview } from '../../core/sim/preview';
@@ -201,7 +201,7 @@ function machineStats(type: ItemType): ItemStat[] {
   if (machine.success) how.push(`${Math.round(machine.success * 100)}% likelier to work`);
   if (machine.setting) how.push('every trip in its room has a perfect set and setting');
   if (machine.boosts) how.push(`every session in its room ${percent(machine.boosts.seconds)} quicker`);
-  if (machine.beside) how.push(`better beside a ${ROOMS[machine.beside.room].name}`);
+  if (machine.beside) how.push(`better beside ${an(ROOMS[machine.beside.room].name)}`);
   const own = MODALITIES[machine.performs[0] ?? 'swedish'].machine === type;
   out.push({
     id: 'machine',

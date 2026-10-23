@@ -12,6 +12,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **A room's inspector starts with what needs doing.** Who staffs it, or that nobody does, and anything wrong come first, then its line, how busy it is and what it can deliver; the room's description, prestige and comfort follow, with what makes a room prestigious in the hover over its stars.
 - **Interface size.** A new Display setting draws the panels, buttons, words and tooltips in a game at 90% to 150% of their usual size, for a big screen or one seen from across the room. Everything still keeps within the window, the inspector scrolling where it runs out of room.
 - **Calmer motion.** Announcements take turns, so a joke over the speakers no longer cuts off news of an emergency. Something new in the column at the top, such as a guest on a bad trip, goes below an open offer instead of pushing its buttons out from under the pointer. Money floating up stays on its spot as the camera moves, and amounts earned together add up rather than piling into a smear. Panels, menus and dialogs shrink away when they close, and the dimming behind a dialog fades in and out.
+- **"An Acupuncturist".** The interface says "an" before a name that starts with a vowel, in a station's staffing, a room's missing equipment, a machine's demand, the Treatments menu and a house call offer.
 
 ## v0.33.2
 

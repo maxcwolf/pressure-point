@@ -1,6 +1,7 @@
 // A Qi Gong Studio's timetable in its inspector: a button for each day of the week, and how the next class is filling.
 
 import { ROLES, WEEKDAYS } from '../../../core/data';
+import { an } from '../../../core/format';
 import { classDays } from '../../../core/sim/classes';
 import type { Room } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
@@ -28,7 +29,7 @@ export function Timetable({ room }: { room: Room }) {
   return (
     <div class="timetable">
       <p class={statusClass(staff ? 'staffed' : 'unstaffed')}>
-        {staff ? `Led by ${staff.name}` : <IconText id="ui-warning">{`Needs a ${ROLES.instructor.name}`}</IconText>}
+        {staff ? `Led by ${staff.name}` : <IconText id="ui-warning">{`Needs ${an(ROLES.instructor.name)}`}</IconText>}
       </p>{' '}
       <p class="sub">{classNote(standing, spots.length, lead?.progress ?? 0)}</p>
       {leader && (
