@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Who does what, at a glance.** The Staff menu shows the treatments each person knows, and the ones they are learning, under their name, and can be narrowed to those who know one treatment. In anyone's inspector, Compare puts them side by side with another member of staff.
+
 ## v0.32.1
 
 - **A fountain that flows, and air you can read.** The Zen Fountain's bowl spills over into its basin in running streams, a heater that is on sends up wavy lines of heat, and an air conditioner blows cool ones out of its vents.
