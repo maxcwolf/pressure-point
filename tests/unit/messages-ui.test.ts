@@ -24,19 +24,19 @@ function said(...texts: string[]): Toast[] {
 }
 
 /** Run the messages' clock for `ms` milliseconds, a tenth of a second at a time as the frames would. */
-function run(messages: Toast[], ms: number, time: 'normal' | 'long' | 'closed' = 'normal'): Toast[] {
+function run(messages: Toast[], ms: number, time: 'normal' | 'long' | 'dismissed' = 'normal'): Toast[] {
   let list = messages;
   for (let left = ms; left > 0; left -= 100) list = ageMessages(list, Math.min(100, left), time).kept;
   return list;
 }
 
 describe('how long a message stays', () => {
-  it('is longer for more words, longer still for bad news, twice as long set to Long, and for ever until closed', () => {
+  it('is longer for more words, longer still for bad news, twice as long set to Long, and for ever until dismissed', () => {
     const long = 'The massage table in the Deep Tissue Suite has broken down. A Mechanic will fix it.';
     expect(messageLife(long, 'info', 'normal')).toBeGreaterThan(messageLife(SHORT, 'info', 'normal'));
     expect(messageLife(SHORT, 'bad', 'normal')).toBeGreaterThan(messageLife(SHORT, 'info', 'normal'));
     expect(messageLife(SHORT, 'info', 'long')).toBe(2 * messageLife(SHORT, 'info', 'normal'));
-    expect(messageLife(SHORT, 'good', 'closed')).toBe(Infinity);
+    expect(messageLife(SHORT, 'good', 'dismissed')).toBe(Infinity);
   });
 
   it('gives even the shortest message longer than the six and a half seconds every message used to get', () => {
@@ -59,8 +59,8 @@ describe('a message on the right', () => {
     expect(ageMessages(said(SHORT), 100, 'normal').changed).toBe(false);
   });
 
-  it('stays until closed when set to, and fades once the setting is changed back', () => {
-    const list = run(said(SHORT), 600_000, 'closed');
+  it('stays until dismissed when set to, and fades once the setting is changed back', () => {
+    const list = run(said(SHORT), 600_000, 'dismissed');
     expect(list).toHaveLength(1);
     expect(ageMessages(list, 100, 'normal').kept).toEqual([]);
   });

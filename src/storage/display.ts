@@ -8,11 +8,11 @@ export type ItemView = 'tooltip' | 'detail' | 'chips';
 /** Every item view, in the order the setting steps through them. */
 export const ITEM_VIEWS: readonly ItemView[] = ['tooltip', 'detail', 'chips'];
 
-/** How long the messages on the right stay: long enough to read, twice that, or until closed. */
-export type MessageTime = 'normal' | 'long' | 'closed';
+/** How long the messages on the right stay: long enough to read, twice that, or until dismissed. */
+export type MessageTime = 'normal' | 'long' | 'dismissed';
 
 /** Every message time, in the order the setting steps through them. */
-export const MESSAGE_TIMES: readonly MessageTime[] = ['normal', 'long', 'closed'];
+export const MESSAGE_TIMES: readonly MessageTime[] = ['normal', 'long', 'dismissed'];
 
 export interface DisplayPrefs {
   itemView: ItemView;

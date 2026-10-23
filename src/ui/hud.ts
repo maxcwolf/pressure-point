@@ -50,7 +50,7 @@ export interface FloorShown {
   land: { pointedAt: string | null } | null;
 }
 
-/** A message on the right, which fades once it has been up long enough to read, or stays until closed. */
+/** A message on the right, which fades once it has been up long enough to read, or stays until dismissed. */
 export interface Toast {
   id: number;
   text: string;
@@ -364,20 +364,20 @@ export class HudState {
     this.update();
   }
 
-  /** Close a message. */
+  /** Dismiss a message. */
   dismissToast(id: number) {
     this.toasts = this.toasts.filter((t) => t.id !== id);
     this.letGoOfToasts();
   }
 
-  /** Close every message. */
+  /** Dismiss every message. */
   dismissAllToasts() {
     this.toasts = [];
     this.letGoOfToasts();
   }
 
   /**
-   * After messages are closed: fold the rest up once they all fit, and let their clock run, since the message the
+   * After messages are dismissed: fold the rest up once they all fit, and let their clock run, since the message the
    * pointer was on has gone and the next one along says nothing until the pointer moves onto it.
    */
   private letGoOfToasts() {

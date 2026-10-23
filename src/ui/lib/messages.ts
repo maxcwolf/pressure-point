@@ -1,5 +1,5 @@
 // How long a message on the right stays: long enough to read its words, longer for bad news and with the setting at
-// Long, or until it is closed. Which messages show in full, and which wait in the pile under them.
+// Long, or until it is dismissed. Which messages show in full, and which wait in the pile under them.
 
 import type { Tone } from '../../core/sim/events';
 import type { MessageTime } from '../../storage/display';
@@ -26,12 +26,12 @@ export const KEPT = 50;
 export const MESSAGE_TIME_NAMES: Readonly<Record<MessageTime, string>> = {
   normal: 'Normal',
   long: 'Long',
-  closed: 'Until closed',
+  dismissed: 'Until dismissed',
 };
 
-/** How long a message stays, in milliseconds of the time its clock runs: for ever when set to stay until closed. */
+/** How long a message stays, in milliseconds of the time its clock runs: for ever when set to stay until dismissed. */
 export function messageLife(text: string, kind: Tone, time: MessageTime): number {
-  if (time === 'closed') return Infinity;
+  if (time === 'dismissed') return Infinity;
   const read = (BASE_MS + PER_LETTER_MS * text.length) * (kind === 'bad' ? BAD_STAYS : 1);
   return time === 'long' ? read * LONG_STAYS : read;
 }

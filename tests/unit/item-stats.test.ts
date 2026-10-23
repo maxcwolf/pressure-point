@@ -30,9 +30,9 @@ describe('the display settings', () => {
   });
 
   it('keep a choice, and ignore what they cannot use', () => {
-    saveDisplay({ itemView: 'chips', placePreview: false, messages: 'closed' });
+    saveDisplay({ itemView: 'chips', placePreview: false, messages: 'dismissed' });
     forgetDisplay();
-    expect(loadDisplay()).toEqual({ itemView: 'chips', placePreview: false, messages: 'closed' });
+    expect(loadDisplay()).toEqual({ itemView: 'chips', placePreview: false, messages: 'dismissed' });
     expect(readDisplay({ itemView: 'sideways', placePreview: 'yes', messages: 'forever' })).toEqual(defaultDisplay());
     expect(readDisplay(null)).toEqual(defaultDisplay());
   });
