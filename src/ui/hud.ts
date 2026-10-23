@@ -126,8 +126,11 @@ export class HudState {
   itemKind: ItemKind | 'all' = 'all';
   /** The treatment the Staff menu is narrowed to, showing only those who know it or are learning it. */
   staffKnows: Modality | null = null;
-  /** The member of staff being compared in the inspector, and the one they are compared with once chosen. */
-  compare: { staffId: number; withId: number | null } | null = null;
+  /**
+   * The member of staff being compared in the inspector, the one they are compared with once chosen, and whether the
+   * list to choose from shows everyone rather than only those in the same role.
+   */
+  compare: { staffId: number; withId: number | null; everyone: boolean } | null = null;
   /** The deadline of an emergency offer put aside to decide on later, which tells it from any later offer. */
   offerAside: number | null = null;
   /** The deadline of the house call put aside to decide on later, if it is. */

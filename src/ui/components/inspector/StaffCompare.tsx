@@ -78,6 +78,11 @@ function Table({ a, b }: { a: Staff; b: Staff }) {
   const quirks = (st: Staff) => (st.traits.length ? st.traits.map((t) => traitOf(t).name).join(', ') : '—');
   return (
     <table class="compare-table">
+      <colgroup>
+        <col class="label" />
+        <col />
+        <col />
+      </colgroup>
       <thead>
         <tr>
           <td />
@@ -166,8 +171,8 @@ function Table({ a, b }: { a: Staff; b: Staff }) {
 }
 
 /**
- * A button to compare a member of staff with another. Pressed, it lists the others to choose from, those in the same
- * role first; once one is chosen, the two show side by side.
+ * A button to compare a member of staff with another. Pressed, it lists the others in the same role to choose from, or
+ * everyone when asked or when no one else has that role; once one is chosen, the two show side by side.
  */
 export function StaffCompare({ staff: st }: { staff: Staff }) {
   const hud = useHud();
@@ -181,7 +186,7 @@ export function StaffCompare({ staff: st }: { staff: Staff }) {
       class={cx('duty', 'compare', open && 'on')}
       title={open ? 'Stop comparing' : 'Compare them with another member of staff'}
       onPress={() => {
-        hud.compare = open ? null : { staffId: st.id, withId: null };
+        hud.compare = open ? null : { staffId: st.id, withId: null, everyone: false };
       }}
     >
       {open ? '✔ Done comparing' : <IconText id="ui-staff">Compare</IconText>}
@@ -191,17 +196,19 @@ export function StaffCompare({ staff: st }: { staff: Staff }) {
   if (!other) {
     const sameRole = others.filter((o) => o.role === st.role);
     const rest = others.filter((o) => o.role !== st.role);
+    // with no one else in their role, there is no one but everyone to choose from
+    const everyone = open.everyone || !sameRole.length;
     return (
       <>
         {toggle}
         <div class="compare-pick">
           <h4>Compare with</h4>
-          {[...sameRole, ...rest].map((o) => (
+          {(everyone ? [...sameRole, ...rest] : sameRole).map((o) => (
             <Button
               key={o.id}
               class="pick"
               onPress={() => {
-                hud.compare = { staffId: st.id, withId: o.id };
+                hud.compare = { ...open, withId: o.id };
               }}
             >
               <Icon id={ROLES[o.role].icon} size={20} />
@@ -209,6 +216,19 @@ export function StaffCompare({ staff: st }: { staff: Staff }) {
               <Stars count={o.skill} />
             </Button>
           ))}
+          {sameRole.length > 0 && rest.length > 0 && (
+            <div class="duties">
+              <Button
+                class="duty"
+                title={everyone ? `Only other ${ROLES[st.role].name.toLowerCase()}s` : 'Staff in every role'}
+                onPress={() => {
+                  hud.compare = { ...open, everyone: !everyone };
+                }}
+              >
+                {everyone ? `Only ${ROLES[st.role].name.toLowerCase()}s` : 'Everyone'}
+              </Button>
+            </div>
+          )}
         </div>
       </>
     );
@@ -223,7 +243,7 @@ export function StaffCompare({ staff: st }: { staff: Staff }) {
             class="duty"
             title="Compare them with someone else"
             onPress={() => {
-              hud.compare = { staffId: st.id, withId: null };
+              hud.compare = { ...open, withId: null };
             }}
           >
             Someone else
@@ -232,7 +252,7 @@ export function StaffCompare({ staff: st }: { staff: Staff }) {
             class="duty"
             title={`Show ${other.name}, still compared with ${st.name}`}
             onPress={() => {
-              hud.compare = { staffId: other.id, withId: st.id };
+              hud.compare = { staffId: other.id, withId: st.id, everyone: open.everyone };
               // selected even when they are away on a house call, with nowhere for the camera to go
               tools.select({ kind: 'staff', id: other.id });
               hud.show({ kind: 'staff', id: other.id });

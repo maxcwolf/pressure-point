@@ -821,19 +821,26 @@ test.describe('staff', () => {
   test('can be compared side by side in the inspector', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
-    const { therapist, consultant } = await game.eval((pp) => {
+    const { therapist, consultant, second } = await game.eval((pp) => {
       pp.state.speed = 0;
       const t = pp.state.staff.find((x) => x.role === 'therapist')!;
       const c = pp.state.staff.find((x) => x.role === 'consultant')!;
+      const t2 = pp.sim.hire(pp.state.candidates.find((x) => x.role === 'therapist')!.id)!;
       t.quals = ['swedish'];
       t.served = 12;
       c.served = 30;
       pp.tools.select({ kind: 'staff', id: t.id });
-      return { therapist: t.name, consultant: c.name };
+      return { therapist: t.name, consultant: c.name, second: t2.name };
     });
     const insp = page.locator('#inspector');
     await insp.getByRole('button', { name: 'Compare' }).click();
-    await expect(insp.locator('.compare-pick button.pick')).toHaveCount(2);
+    // only the others in the same role, until everyone is asked for
+    const picks = insp.locator('.compare-pick button.pick');
+    await expect(picks).toHaveCount(1);
+    await expect(picks).toContainText(second);
+    await insp.getByRole('button', { name: 'Everyone' }).click();
+    await expect(picks).toHaveCount(3);
+    await expect(picks.first()).toContainText(second);
     await insp.locator('.compare-pick button.pick', { hasText: consultant }).click();
 
     const table = insp.locator('.compare-table');

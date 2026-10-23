@@ -37,11 +37,17 @@
   background: #f0fbf9;
 }
 
+/* set columns, so a long word or a full row of stars can never push the table out of its card */
 .compare-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 12px;
   margin-bottom: 6px;
+}
+
+.compare-table col.label {
+  width: 46%;
 }
 
 .compare-table th,
@@ -57,13 +63,21 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 80px;
 }
 
+/* a treatment's name too long for the column is broken at a soft hyphen if it has one, or hyphenated, or broken anywhere */
 .compare-table tbody th {
   font-weight: 500;
   opacity: 0.75;
-  width: 38%;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+
+/* five stars, small enough to fit their column */
+.compare-table .skill {
+  font-size: 10.5px;
+  letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .compare-table tbody tr + tr {

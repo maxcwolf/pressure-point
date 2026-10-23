@@ -117,7 +117,8 @@ export const MODALITIES: Readonly<Record<Modality, ModalityDef>> = {
   electro: {
     id: 'electro',
     discipline: 'acupuncture',
-    name: 'Electroacupuncture',
+    // a soft hyphen, unseen unless the word is broken there, as it is in a narrow column like the staff comparison
+    name: 'Electro\u00adacupuncture',
     icon: 'technique-electro',
     desc: 'Needles with a gentle current. Lucrative, and unforgiving of shaky hands.',
     star: 2,
