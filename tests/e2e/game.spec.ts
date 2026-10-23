@@ -2293,6 +2293,47 @@ test.describe('the tutorial', () => {
     expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('false');
   });
 
+  test('looking around is done once the camera has been moved and turned', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    const card = page.locator('#advisor .tutorial-card');
+    await expect(card).toContainText('Look around');
+    await page.keyboard.press('KeyE');
+    await expect(card).toContainText('Look around');
+    await page.keyboard.down('KeyD');
+    await expect(card).toContainText('Place a Reception Desk');
+    await page.keyboard.up('KeyD');
+  });
+
+  test('the switch on Willow Lane’s card, and the one in Settings, turn it off and on', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    const trail = page.locator('#title-campaign');
+    const card = trail.getByRole('switch', { name: 'Tutorial' });
+    await expect(card).toHaveAttribute('aria-checked', 'true');
+    await card.click();
+    await expect(card).toHaveAttribute('aria-checked', 'false');
+    await trail.getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => [pp.state.tutorial, pp.state.lessons])).toEqual([false, false]);
+    await expect(page.locator('#advisor .tutorial-card')).toHaveCount(0);
+    // switched on from the game's Settings, it starts there and then
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    const settings = page.getByRole('switch', { name: 'Tutorial' });
+    await expect(settings).toHaveAttribute('aria-checked', 'false');
+    await settings.click();
+    await expect(settings).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#advisor .tutorial-card')).toContainText('Tutorial · step 1 of');
+    expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('true');
+  });
+
   test('a lesson opens over the game, paused, until it is read', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => {

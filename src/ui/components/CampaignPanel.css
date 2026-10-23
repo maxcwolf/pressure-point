@@ -188,3 +188,18 @@
   border-radius: 7px;
   border: 2px solid rgba(36, 56, 74, 0.3);
 }
+
+.stop .play {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.tutorial-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}

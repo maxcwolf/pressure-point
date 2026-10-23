@@ -71,6 +71,9 @@ export class View {
   private shell: THREE.Group;
   private shellKey: string;
   private rig: CameraRig;
+  /** Whether the camera has been moved, and turned, since the game opened: gliding to show something counts as neither. */
+  private panned = false;
+  private turned = false;
   private floor: Floor;
   readonly rooms: RoomsLayer;
   private items: ItemsLayer;
@@ -161,6 +164,7 @@ export class View {
   /** Turn the camera round the building a quarter at a time, 1 one way and -1 the other, cutting low the walls that then
    * face it. */
   turnCamera(quarters: number) {
+    this.turned = true;
     this.rig.turnBy(quarters);
     this.rooms.setTurn(this.rig.turn);
     // what hangs on the walls now cut low shows as a ghost of itself, and on the walls now standing tall as itself
@@ -310,12 +314,19 @@ export class View {
 
   /** Move the camera target across the ground. */
   pan(dx: number, dy: number) {
+    this.panned = true;
     this.rig.pan(dx, dy);
   }
 
   /** Pan by a screen-space drag in pixels. */
   panPixels(dx: number, dy: number) {
+    this.panned = true;
     this.rig.panPixels(dx, dy);
+  }
+
+  /** Whether the player has moved the camera and turned it, which is the tutorial's first step: looking around. */
+  get looked(): boolean {
+    return this.panned && this.turned;
   }
 
   /** Zoom in or out by a fraction. */
