@@ -21,3 +21,10 @@
   background: #fff6dc;
   border-color: var(--gold);
 }
+
+/* the course they are on, not yet passed */
+.quals > span.learning {
+  background: #fff;
+  border-style: dashed;
+  opacity: 0.85;
+}

@@ -734,6 +734,67 @@ test.describe('staff', () => {
     await expect(insp.getByRole('button', { name: 'Cancel course' })).toHaveCount(0);
     expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'therapist')!.quals)).not.toContain('deep');
   });
+
+  test('show in the Staff menu what each one knows, narrowed to those who know a treatment', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const name = await game.eval((pp) => {
+      pp.state.speed = 0;
+      const st = pp.state.staff.find((x) => x.role === 'therapist')!;
+      st.quals = ['swedish', 'deep'];
+      return st.name;
+    });
+    await game.menu('Staff');
+    const rows = page.locator('#menu .row:not(.head)');
+    await expect(rows).toHaveCount(3);
+    await expect(rows.filter({ hasText: name }).locator('.knows .quals > span')).toHaveText(['Swedish', 'Deep Tissue']);
+    // those with no treatments say what they do instead
+    await expect(rows.locator('.knows')).toContainText(['Receptionist', 'Wellness Consultant', 'Swedish']);
+
+    const filters = page.locator('#menu .tabs.knows .tab');
+    await expect(filters).toHaveText(['Everyone', 'Swedish 1', 'Deep Tissue 1']);
+    await filters.filter({ hasText: 'Deep Tissue' }).click();
+    await expect(rows).toHaveCount(1);
+    await expect(rows).toContainText(name);
+    // pressed again, it lets go
+    await filters.filter({ hasText: 'Deep Tissue' }).click();
+    await expect(rows).toHaveCount(3);
+  });
+
+  test('can be compared side by side in the inspector', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const { therapist, consultant } = await game.eval((pp) => {
+      pp.state.speed = 0;
+      const t = pp.state.staff.find((x) => x.role === 'therapist')!;
+      const c = pp.state.staff.find((x) => x.role === 'consultant')!;
+      t.quals = ['swedish'];
+      t.served = 12;
+      c.served = 30;
+      pp.tools.select({ kind: 'staff', id: t.id });
+      return { therapist: t.name, consultant: c.name };
+    });
+    const insp = page.locator('#inspector');
+    await insp.getByRole('button', { name: 'Compare' }).click();
+    await expect(insp.locator('.compare-pick button.pick')).toHaveCount(2);
+    await insp.locator('.compare-pick button.pick', { hasText: consultant }).click();
+
+    const table = insp.locator('.compare-table');
+    await expect(table.locator('thead th')).toHaveText([therapist.split(' ')[0]!, consultant.split(' ')[0]!]);
+    await expect(table.locator('tr', { hasText: 'Role' })).toHaveCount(1);
+    const served = table.locator('tr', { hasText: 'Guests served' }).locator('td');
+    await expect(served).toHaveText(['12', '30']);
+    await expect(served.nth(1)).toHaveClass(/ahead/);
+    await expect(table.locator('tr', { hasText: 'Swedish' }).locator('td')).toHaveText(['✔', '—']);
+
+    // going to the other keeps the two compared, the other way round
+    await insp.getByRole('button', { name: /^Go to / }).click();
+    await expect(insp.locator('h3')).toHaveText(consultant);
+    await expect(table.locator('thead th')).toHaveText([consultant.split(' ')[0]!, therapist.split(' ')[0]!]);
+
+    await insp.getByRole('button', { name: 'Done comparing' }).click();
+    await expect(table).toHaveCount(0);
+  });
 });
 
 test.describe('running a center', () => {

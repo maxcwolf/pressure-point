@@ -153,6 +153,16 @@ test.describe('in a game', () => {
     });
   }
 
+  test('the inspector comparing two of the staff', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.eval((pp) =>
+      pp.tools.select({ kind: 'staff', id: pp.state.staff.find((s) => s.role === 'therapist')!.id }),
+    );
+    await page.locator('#inspector').getByRole('button', { name: 'Compare' }).click();
+    await page.locator('#inspector button.pick').first().click();
+    await screens.shot('inspector-compare');
+  });
+
   for (const type of ['massage_table', 'plant', 'bench'] as const) {
     test(`the inspector for a ${type}`, async ({ screens, game }) => {
       await screens.play();

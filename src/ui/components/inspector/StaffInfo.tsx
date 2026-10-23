@@ -17,6 +17,7 @@ import { IconText, Line } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
 import { Stars } from '../common/Stars';
 import { Courses } from './Courses';
+import { StaffCompare } from './StaffCompare';
 
 /** Their rank, how far they are toward the next, and the qualification slots they have filled. */
 function Career({ staff: st }: { staff: Staff }) {
@@ -163,6 +164,7 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
       <p class="tag">
         <IconText id={ROLES[st.role].icon}>{ROLES[st.role].name}</IconText>
       </p>{' '}
+      <StaffCompare staff={st} />
       <Career staff={st} />
       {st.traits.map((t) => (
         <em key={t}>{`${traitOf(t).name}: ${traitOf(t).desc}`}</em>

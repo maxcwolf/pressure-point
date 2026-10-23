@@ -2,12 +2,26 @@
 
 import './QualChips.css';
 
-import { GENERAL_COURSES, type GeneralId, MODALITIES, type Modality } from '../../../core/data';
+import { GENERAL_COURSES, type GeneralId, isGeneral, MODALITIES, type Modality } from '../../../core/data';
+import type { CourseId } from '../../../core/state/types';
 import { IconText } from './Icon';
 
-/** Chips naming the treatments someone is qualified in, and the general courses they have passed. */
-export function QualChips({ quals, general = [] }: { quals: readonly Modality[]; general?: readonly GeneralId[] }) {
-  if (!quals.length && !general.length) return null;
+/**
+ * Chips naming the treatments someone is qualified in, and the general courses they have passed, with a dashed one
+ * for the course they are on, if it teaches a treatment or a general course.
+ */
+export function QualChips({
+  quals,
+  general = [],
+  learning,
+}: {
+  quals: readonly Modality[];
+  general?: readonly GeneralId[];
+  learning?: CourseId | undefined;
+}) {
+  const course = learning === 'skill' ? undefined : learning;
+  if (!quals.length && !general.length && !course) return null;
+  const studied = course && (isGeneral(course) ? GENERAL_COURSES[course] : MODALITIES[course]);
   return (
     <div class="quals">
       {quals.map((m) => (
@@ -20,6 +34,11 @@ export function QualChips({ quals, general = [] }: { quals: readonly Modality[];
           <IconText id={GENERAL_COURSES[g].icon}>{GENERAL_COURSES[g].name}</IconText>
         </span>
       ))}
+      {studied && (
+        <span class="learning" title={`On the ${studied.name} course`}>
+          <IconText id={studied.icon}>{`Learning ${studied.name}`}</IconText>
+        </span>
+      )}
     </div>
   );
 }

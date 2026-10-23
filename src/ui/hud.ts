@@ -4,7 +4,7 @@
 import { track } from '../app/analytics';
 import { gameProps } from '../app/play-events';
 import { voiceFor } from '../audio/voice';
-import type { DecorKey, IconId, ItemType, Role } from '../core/data';
+import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
 import type { Template } from '../core/templates';
 import { giveKarma } from '../storage/campaign';
@@ -109,6 +109,10 @@ export class HudState {
   /** What the Items menu is filtered to: a place and a kind of item. */
   itemPlace: Place = 'all';
   itemKind: ItemKind | 'all' = 'all';
+  /** The treatment the Staff menu is narrowed to, showing only those who know it or are learning it. */
+  staffKnows: Modality | null = null;
+  /** The member of staff being compared in the inspector, and the one they are compared with once chosen. */
+  compare: { staffId: number; withId: number | null } | null = null;
   /** The deadline of an emergency offer put aside to decide on later, which tells it from any later offer. */
   offerAside: number | null = null;
   /** The deadline of the house call put aside to decide on later, if it is. */
