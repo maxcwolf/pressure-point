@@ -4,7 +4,7 @@
   left: 50%;
   transform: translateX(-50%);
   bottom: var(--bar-h);
-  width: min(520px, calc(100vw - 28px));
+  width: min(520px, calc(var(--vw) - 28px));
 }
 
 .plan h3 {

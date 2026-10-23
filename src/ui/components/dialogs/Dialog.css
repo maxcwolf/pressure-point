@@ -11,7 +11,7 @@
 }
 
 .dialog {
-  width: min(460px, calc(100vw - 40px));
+  width: min(460px, calc(var(--vw) - 40px));
   text-align: center;
   padding: 22px 26px 24px;
   animation: pop 0.2s ease-out;
@@ -29,8 +29,8 @@
 }
 
 .dialog.wide {
-  width: min(640px, calc(100vw - 40px));
-  max-height: calc(100vh - 40px);
+  width: min(640px, calc(var(--vw) - 40px));
+  max-height: calc(var(--vh) - 40px);
   overflow-y: auto;
 }
 

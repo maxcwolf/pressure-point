@@ -10,6 +10,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Warnings you can tell apart.** In the inspector, trouble now (about to quit, broken, stopped, flooded) is in dark red on light red, and what wants seeing to (an empty station, smoke, grime, stale linens, a rival's offer, misery, what a promotion needs) in brown on gold, where every line was cream on navy. Bars go green, then amber, then red, needs included, with their value beside them, and morale in the Staff menu follows the same colors. A member of staff's inspector says what they are doing and anything wrong first.
 - **One card for every raise, one for every promotion.** However many of the staff are asking, a single card says so ("Ines Crickmore and 2 more want a raise"), and pressing it lists them to pick from, each with what they said in its tooltip. Their asking no longer comes up as a message as well.
 - **A room's inspector starts with what needs doing.** Who staffs it, or that nobody does, and anything wrong come first, then its line, how busy it is and what it can deliver; the room's description, prestige and comfort follow, with what makes a room prestigious in the hover over its stars.
+- **Interface size.** A new Display setting draws the panels, buttons, words and tooltips in a game at 90% to 150% of their usual size, for a big screen or one seen from across the room. Everything still keeps within the window, the inspector scrolling where it runs out of room.
 
 ## v0.33.2
 

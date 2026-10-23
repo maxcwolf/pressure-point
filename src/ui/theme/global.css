@@ -34,6 +34,14 @@ body {
   position: absolute;
 }
 
+/* the in-game interface drawn at the size chosen in the settings; a length in it that reads the window's size uses
+   var(--vw) and var(--vh), which are the window's size in the interface's own pixels */
+#ui {
+  zoom: var(--ui-scale);
+  --vw: calc(100vw / var(--ui-scale));
+  --vh: calc(100vh / var(--ui-scale));
+}
+
 button {
   font: inherit;
   color: inherit;

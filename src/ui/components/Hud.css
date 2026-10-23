@@ -27,7 +27,7 @@
 
 @media (max-width: 720px) {
   #side {
-    width: min(290px, calc(100vw - 28px));
+    width: min(290px, calc(var(--vw) - 28px));
   }
 }
 

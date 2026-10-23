@@ -29,6 +29,11 @@
 
 :root {
   --bar-h: 104px;
+  /* how big the in-game interface is drawn, from the settings, and the window's size in the pixels it is drawn in:
+     the window's own outside the interface, and divided by the size within it (see #ui in global.css) */
+  --ui-scale: 1;
+  --vw: 100vw;
+  --vh: 100vh;
 }
 
 @media (max-width: 1100px) {

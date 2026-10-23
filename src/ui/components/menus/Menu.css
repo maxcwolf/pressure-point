@@ -3,11 +3,11 @@
 #menu {
   left: 14px;
   bottom: 108px;
-  width: min(780px, calc(100vw - 28px));
+  width: min(780px, calc(var(--vw) - 28px));
 }
 
 .menu {
-  max-height: calc(100vh - var(--bar-h) - 116px);
+  max-height: calc(var(--vh) - var(--bar-h) - 116px);
   overflow-y: auto;
 }
 
