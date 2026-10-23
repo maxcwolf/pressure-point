@@ -23,6 +23,7 @@ import { SPILL_SPEED, spillRuns } from './models/items/fountain';
 import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
 import { upgradePlate } from './models/plate';
+import { MARKER_PX, readable } from './readable';
 import type { Turn } from './turn';
 
 /** Position and turn an item's model to match its tile and rotation. */
@@ -295,7 +296,7 @@ export class ItemsLayer {
       sprite = new THREE.Sprite(
         owned(new THREE.SpriteMaterial({ map: iconTexture(icon, true), transparent: true, depthTest: false })),
       );
-      sprite.scale.setScalar(0.7);
+      readable(sprite, 0.7, MARKER_PX);
       sprite.renderOrder = 9;
       sprite.userData.itemId = it.id;
       model.add(sprite);

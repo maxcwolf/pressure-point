@@ -4,7 +4,9 @@ import * as THREE from 'three';
 import { type Role, ROLES, type Visual } from '../../core/data';
 import { SHOES } from '../../core/people';
 import type { Look, VisitorKind } from '../../core/state/types';
+import { BUBBLE_SIZE } from '../bubbles';
 import { owned } from '../disposal';
+import { BUBBLE_PX, readable } from '../readable';
 import {
   detailArm,
   detailBib,
@@ -239,7 +241,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   };
   rig.pick.position.y = 0.7;
   group.add(rig.pick);
-  rig.bubble.scale.setScalar(0.62);
+  readable(rig.bubble, BUBBLE_SIZE, BUBBLE_PX);
   rig.bubble.position.y = 1.72;
   rig.bubble.visible = false;
   rig.bubble.renderOrder = 10;

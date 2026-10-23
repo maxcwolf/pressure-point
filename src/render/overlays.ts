@@ -15,6 +15,7 @@ import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type Selection, shown } from './picking';
+import { MARKER_PX, readable } from './readable';
 import type { Turn } from './turn';
 
 /** How far out from an item's front edge the arrow showing its front sits. */
@@ -253,7 +254,7 @@ export class Overlays {
   setMarkers(list: Marker[]) {
     while (this.markers.length < list.length) {
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
-      sprite.scale.setScalar(0.62);
+      readable(sprite, 0.62, MARKER_PX);
       sprite.renderOrder = 11;
       this.scene.add(sprite);
       this.markers.push(sprite);
