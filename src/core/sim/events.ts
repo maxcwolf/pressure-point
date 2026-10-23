@@ -36,7 +36,9 @@ export type SimEvent =
   | { type: 'star'; stars: number }
   | { type: 'awards'; year: number }
   | { type: 'visit' }
-  | { type: 'achievement'; id: AchievementId };
+  | { type: 'achievement'; id: AchievementId }
+  /** The tutorial ended in this game: done, or skipped at a step. */
+  | { type: 'tutorial'; what: 'done' | 'skipped'; step: string };
 
 /** Whether an event earns something for the campaign, which is noted at once so its karma can be spent straight away. */
 export const earnsForCampaign = (e: SimEvent): boolean => e.type === 'star' || e.type === 'achievement';

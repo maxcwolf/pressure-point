@@ -6,9 +6,11 @@ import { gameProps } from '../app/play-events';
 import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
 import type { SimEvent, Subject, Tone } from '../core/sim/events';
+import type { TutorialStep } from '../core/sim/tutorial';
 import type { Template } from '../core/templates';
 import { giveKarma } from '../storage/campaign';
 import { loadDisplay } from '../storage/display';
+import { saveTutorialPref } from '../storage/settings';
 import { loadTemplates } from '../storage/templates';
 import type { GameHost } from './host';
 import type { ItemKind, Place } from './lib/catalog';
@@ -240,6 +242,59 @@ export class HudState {
     return true;
   }
 
+  /**
+   * What the tutorial's ring is on, from its step in hand and what is open: the button of the menu the step wants, then
+   * the tab and card in it, then the blueprint's Build button once a room is planned. Nothing while the thing wanted is
+   * in hand, since the tool's hint says what to do with it, or while there is no step to point for.
+   */
+  guide(): string | null {
+    const want = this.host.sim.tutorialStep()?.want;
+    if (!want || want.kind === 'look') return null;
+    const { tools } = this.host;
+    const tool = tools.tool;
+    if (want.kind === 'item') {
+      if (tool.kind === 'item') return null;
+      return this.menu === 'items' ? `item:${want.type}` : 'menu:items';
+    }
+    if (want.kind === 'room') {
+      // dragging out the floor and placing the door have the hint to go by, and a ready blueprint wants building
+      if (tool.kind === 'room') return tools.plan?.ready ? 'plan:build' : null;
+      return this.menu === 'rooms' && this.roomsTab === 'rooms' ? `room:${want.type}` : 'menu:rooms';
+    }
+    if (this.menu !== 'hire') return 'menu:hire';
+    return this.hireRole === want.role ? 'hire:first' : `role:${want.role}`;
+  }
+
+  /** Show the player what a tutorial step wants: open the menu it is in at the right tab, or take them to who it is about. */
+  showStep(step: TutorialStep) {
+    const want = step.want;
+    if (!want || want.kind === 'look') {
+      if (step.about) this.show(step.about);
+      return;
+    }
+    this.host.tools.setAside();
+    if (want.kind === 'item') {
+      // so the card wanted is among those on show
+      this.itemPlace = 'all';
+      this.itemKind = 'all';
+      this.menu = 'items';
+    } else if (want.kind === 'room') {
+      this.roomsTab = 'rooms';
+      this.menu = 'rooms';
+    } else {
+      this.hireRole = want.role;
+      this.menu = 'hire';
+    }
+    track('menu_opened', { ...gameProps(this.host.sim.s), menu: this.menu });
+    this.update();
+  }
+
+  /** Skip the rest of the tutorial in this game. */
+  skipTutorial() {
+    this.host.sim.skipTutorial();
+    this.handle(this.host.sim.drain());
+  }
+
   /** Take the player to what a message is about: select it, show its inspector and glide the camera over. */
   show(about: Subject) {
     const spot = this.host.sim.whereIs(about);
@@ -326,8 +381,18 @@ export class HudState {
       else if (e.type === 'visit') this.raise('visit');
       // the app notes an achievement for the campaign; its toast says it
       else if (e.type === 'achievement') continue;
+      else if (e.type === 'tutorial') this.endTutorial(e.what, e.step);
       else this.float(e.text, e.kind, view.project(e.x, e.y, 1.6));
     }
+  }
+
+  /**
+   * The tutorial has ended in this game, done or skipped: the next Willow Lane game starts without it, unless it is
+   * switched back on in Settings or on the campaign's card.
+   */
+  private endTutorial(what: 'done' | 'skipped', step: string) {
+    saveTutorialPref(false);
+    track(what === 'done' ? 'tutorial_done' : 'tutorial_skipped', { ...gameProps(this.host.sim.s), step });
   }
 
   /** Show a message at the top of the right side. One saying the same as one already there takes its place, counted. */

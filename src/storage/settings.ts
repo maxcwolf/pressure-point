@@ -1,5 +1,6 @@
 // Player preferences that outlive any one game: which optional disciplines, and whether Qi Gong classes, new games start with,
-// how a sandbox game is set up, its difficulty among the rest, the Stats menu's charts, and the sound and music switches.
+// how a sandbox game is set up, its difficulty among the rest, the Stats menu's charts, the sound and music switches,
+// and whether a new Willow Lane game has the tutorial.
 import { CENTERS, type Difficulty, DISCIPLINE_ORDER, DISCIPLINES, type Offering, SANDBOX_MONEY } from '../core/data';
 import { readDifficulty } from '../core/difficulty';
 import { isRecord } from './json';
@@ -153,5 +154,26 @@ export function saveAudio(prefs: AudioPrefs) {
     localStorage.setItem(AUDIO_KEY, JSON.stringify({ sound: prefs.sound, music: prefs.music }));
   } catch {
     // the switches still apply until the page closes
+  }
+}
+
+const TUTORIAL_KEY = 'pressure-point-tutorial';
+
+/** Whether a new Willow Lane game walks through its opening with the tutorial: on until it has been done once. */
+export function loadTutorialPref(): boolean {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(TUTORIAL_KEY) ?? 'true');
+    return typeof raw === 'boolean' ? raw : true;
+  } catch {
+    return true;
+  }
+}
+
+/** Remember whether the next Willow Lane game has the tutorial. */
+export function saveTutorialPref(on: boolean) {
+  try {
+    localStorage.setItem(TUTORIAL_KEY, JSON.stringify(on));
+  } catch {
+    // the switch still applies to the game in progress
   }
 }

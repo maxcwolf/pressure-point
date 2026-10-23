@@ -51,6 +51,7 @@ function RoomCards() {
   const { sim, tools } = useGame();
   const s = sim.s;
   const { unlocked } = loadCampaign();
+  const guide = hud.guide();
   const types = ROOM_ORDER.filter(
     (t) => roomHere(ROOMS[t], s.center) && available(roomOffering(t), (d) => sim.enabled(d)),
   );
@@ -66,7 +67,7 @@ function RoomCards() {
         return (
           <Button
             key={t}
-            class={cx('card', !locked && s.money < r.cost && 'poor')}
+            class={cx('card', !locked && s.money < r.cost && 'poor', guide === `room:${t}` && 'guide')}
             // a room karma can unlock opens the offer to unlock its machine, rather than refusing outright
             locked={starred}
             onPress={() => {

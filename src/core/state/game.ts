@@ -123,8 +123,9 @@ export const defaultPolicy = (): Policy => ({
  * 34: the two 33s together, so a 33 save of either kind is brought up to both.
  * 35: the Generator, the first item that stands outdoors.
  * 36: the first game's heads-ups, and the explanations of harm that keeps coming to guests.
+ * 37: the tutorial, and the cards that explain each thing the first time it happens.
  */
-export const SAVE_VERSION = 36;
+export const SAVE_VERSION = 37;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -167,6 +168,9 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     announceT: 25,
     seenTips: [],
     primer: false,
+    tutorial: false,
+    lessons: false,
+    lastLesson: -1,
     harms: {},
     harmNotes: [],
     loan: 0,

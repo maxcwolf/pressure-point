@@ -207,3 +207,23 @@ button.danger:hover,
 .filebtn:hover {
   background: #f0fbf9;
 }
+
+/* the tutorial's ring on what its step wants: a gold outline that breathes, drawn outside the button so nothing moves */
+.guide {
+  outline: 4px solid var(--gold);
+  outline-offset: 3px;
+  animation: guide 1.4s ease-in-out infinite;
+}
+
+@keyframes guide {
+  50% {
+    outline-offset: 7px;
+    outline-color: rgba(242, 193, 78, 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide {
+    animation: none;
+  }
+}

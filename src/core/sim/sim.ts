@@ -142,6 +142,16 @@ import type { Course } from './training';
 import { cancelBlocker, cancelTraining, courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
 import { deliveryProblem, modalityOf, offered, setDiscipline, unlocked } from './treatments';
+import {
+  currentStep,
+  noteLooked,
+  setTutorial,
+  skipTutorial,
+  type TutorialLine,
+  tutorialLines,
+  type TutorialStep,
+  warnTutorial,
+} from './tutorial';
 import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
 import { orderUpgrade } from './upgrades';
 import { decayItems, wearByTheDay } from './upkeep';
@@ -238,6 +248,7 @@ export class Sim {
       updateLand(ctx);
       updateOutdoors(ctx);
       warnWorsening(ctx);
+      warnTutorial(ctx);
       warnPrimer(ctx);
       // wages overdue for want of a loan may be paid at last, which lets the year's awards through
     }
@@ -310,6 +321,30 @@ export class Sim {
   /** On a first go at the campaign, the checklist of what the center will need, each line ticked once in place. */
   primerLines(): PrimerLine[] {
     return primerLines(this.ctx);
+  }
+  /** The tutorial's list, while it is on, each line ticked once done and the step in hand marked. */
+  tutorialLines(): TutorialLine[] {
+    return tutorialLines(this.ctx);
+  }
+  /** The tutorial's step in hand, if it is on and a step is. */
+  tutorialStep(): TutorialStep | null {
+    return currentStep(this.ctx);
+  }
+  /** The id of the tutorial's step in hand, or null. */
+  tutorialStepId(): string | null {
+    return currentStep(this.ctx)?.id ?? null;
+  }
+  /** Skip the rest of the tutorial and the cards that explain things. */
+  skipTutorial() {
+    skipTutorial(this.ctx);
+  }
+  /** Turn the tutorial, and the cards that explain things, on or off in this game. */
+  setTutorial(on: boolean) {
+    setTutorial(this.ctx, on);
+  }
+  /** The camera has been moved and turned, which is the tutorial's first step done. */
+  noteLooked() {
+    noteLooked(this.ctx);
   }
   /** Put away the explanation of harm to guests on show, for the next waiting to take its place. */
   dismissHarm() {

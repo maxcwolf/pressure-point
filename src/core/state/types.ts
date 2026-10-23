@@ -835,6 +835,15 @@ export interface GameState {
    * checklist under the objectives keeps it, until all of it is in place.
    */
   primer: boolean;
+  /**
+   * The tutorial: a new Willow Lane game walked through its opening a step at a time, with a card in the advisor's spot
+   * and a ring on what each step wants, and the first game's heads-ups after it, until all of it is done or skipped.
+   */
+  tutorial: boolean;
+  /** Whether a card explains each thing the first time it happens, which outlasts the tutorial's steps. */
+  lessons: boolean;
+  /** The day the last of those cards came up, so there is never more than one a day; -1 before any. */
+  lastLesson: number;
   /** How often guests have come to harm, by what and why ("failed:vibes"), and the explanations waiting to be read. */
   harms: Record<string, number>;
   harmNotes: HarmNote[];

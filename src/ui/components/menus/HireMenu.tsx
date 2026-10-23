@@ -22,6 +22,7 @@ export function HireMenu() {
   const roles = hireableRoles(unlockedUpTo(s), (d) => sim.enabled(d));
   // a role whose discipline has been switched off cannot stay selected
   const role = roles.includes(hud.hireRole) ? hud.hireRole : (roles[0] ?? hud.hireRole);
+  const guide = hud.guide();
   return (
     <div class="panel menu">
       <h3>Hire staff</h3>
@@ -29,7 +30,7 @@ export function HireMenu() {
         {roles.map((r) => (
           <Button
             key={r}
-            class={cx('tab', role === r && 'on')}
+            class={cx('tab', role === r && 'on', guide === `role:${r}` && 'guide')}
             onPress={() => {
               hud.hireRole = r;
             }}
@@ -44,7 +45,7 @@ export function HireMenu() {
       <div class="cards">
         {s.candidates
           .filter((c) => c.role === role)
-          .map((c) => (
+          .map((c, i) => (
             <div key={c.id} class="card cv">
               <b>{c.name}</b>
               <span class="rank">
@@ -62,7 +63,7 @@ export function HireMenu() {
               </span>{' '}
               <div class="btnrow">
                 <Button
-                  class="go"
+                  class={cx('go', i === 0 && guide === 'hire:first' && 'guide')}
                   quiet
                   onPress={() => {
                     sim.hire(c.id);

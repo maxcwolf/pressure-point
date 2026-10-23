@@ -2263,6 +2263,37 @@ test.describe('stats', () => {
   });
 });
 
+test.describe('the tutorial', () => {
+  test('points a first Willow Lane game at what each step wants, and can be skipped', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    const card = page.locator('#advisor .tutorial-card');
+    await expect(card).toContainText('Tutorial · step 1 of');
+    await game.eval((pp) => {
+      pp.sim.noteLooked();
+    });
+    await expect(card).toContainText('step 2 of');
+    await expect(card).toContainText('Place a Reception Desk');
+    await expect(page.locator('#objectives')).toContainText('Tutorial · 1 of');
+    // the ring is on the Items button, then follows into the menu to the card wanted
+    const items = page.locator('#buildbtns').getByRole('button', { name: 'Items' });
+    await expect(items).toHaveClass(/guide/);
+    await game.menu('Items');
+    await expect(items).not.toHaveClass(/guide/);
+    await expect(game.card('Reception Desk')).toHaveClass(/guide/);
+    await expect(page.locator('#menu .guide')).toHaveCount(1);
+    await game.menu('Items');
+    await card.getByRole('button', { name: 'Skip the tutorial' }).click();
+    await expect(card).toHaveCount(0);
+    await expect(page.locator('.guide')).toHaveCount(0);
+    await expect(page.locator('#advisor')).toContainText('Open the Items menu and place a Reception Desk');
+    expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('false');
+  });
+});
+
 test.describe('the campaign', () => {
   test('starts at Willow Lane, and a star there opens The Exchange', async ({ game, page }) => {
     await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
