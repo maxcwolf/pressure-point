@@ -3270,6 +3270,9 @@ test.describe('turning the camera', () => {
     await game.cameraStill();
     await game.clickRoom('massage');
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
+    // the room selected is outlined in gold on its floor
+    await game.settle();
+    expect(await game.eval((pp) => pp.view.overlays.outlineShown)).toBe(true);
     expect(game.errors).toEqual([]);
   });
 });

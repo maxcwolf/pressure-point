@@ -15,6 +15,7 @@ import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type Selection, shown } from './picking';
+import { WALL_T } from './shared';
 import { type Turn, turnAngle } from './turn';
 
 /** How far out from an item's front edge the arrow showing its front sits. */
@@ -56,6 +57,37 @@ export function nudgeOffset(age: number): number {
   if (age < 0 || age >= NUDGE_SECONDS) return 0;
   const f = age / NUDGE_SECONDS;
   return Math.sin(f * Math.PI * 6) * NUDGE_REACH * (1 - f);
+}
+
+/** How long the glow on whatever a click would select takes to fade in, in seconds, and how bright it gets. */
+const HOVER_FADE = 0.12;
+const ITEM_GLOW = 0.25;
+const ROOM_GLOW = 0.25;
+
+/** How far in from the edge of a selected room's floor its gold outline runs, just inside its walls, and how wide. */
+const OUTLINE_INSET = WALL_T + 0.04;
+const OUTLINE_WIDTH = 0.16;
+
+/** A flat frame on the floor round a rectangle, inset from its edges. */
+function outlineOf(w: number, h: number): THREE.BufferGeometry {
+  const [x0, y0, x1, y1] = [OUTLINE_INSET, OUTLINE_INSET, w - OUTLINE_INSET, h - OUTLINE_INSET];
+  const outer = new THREE.Shape([
+    new THREE.Vector2(x0, y0),
+    new THREE.Vector2(x1, y0),
+    new THREE.Vector2(x1, y1),
+    new THREE.Vector2(x0, y1),
+  ]);
+  const d = OUTLINE_WIDTH;
+  outer.holes.push(
+    new THREE.Path([
+      new THREE.Vector2(x0 + d, y0 + d),
+      new THREE.Vector2(x0 + d, y1 - d),
+      new THREE.Vector2(x1 - d, y1 - d),
+      new THREE.Vector2(x1 - d, y0 + d),
+    ]),
+  );
+  // laid flat with the shape's y running down the map, as the room's does
+  return new THREE.ShapeGeometry(outer).rotateX(Math.PI / 2);
 }
 
 /** Whether a selection is a person. */
@@ -124,6 +156,12 @@ export class Overlays {
   });
   /** A faint sheet over the floor of a hovered room. */
   private roomGlow: THREE.Mesh;
+  /** What was hovered as the glow last changed, and when, so a new glow fades in. */
+  private glowFor = '';
+  private glowSince = 0;
+  /** A gold outline round the floor of a selected room, and the size it was built for. */
+  private outline: THREE.Mesh;
+  private outlineSize = '';
   /** How far round the camera is, which a wall item's preview is placed against its wall at. */
   turn: Turn = 0;
 
@@ -203,11 +241,31 @@ export class Overlays {
     this.scene.add(this.glow);
     this.roomGlow = new THREE.Mesh(
       new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: ROOM_GLOW, depthWrite: false }),
     );
     this.roomGlow.visible = false;
     this.roomGlow.renderOrder = 2;
     this.scene.add(this.roomGlow);
+
+    this.outline = new THREE.Mesh(
+      new THREE.BufferGeometry(),
+      // the gold of the ring round a selected person or item
+      new THREE.MeshBasicMaterial({
+        color: 0xffd23f,
+        transparent: true,
+        opacity: 0.95,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    this.outline.visible = false;
+    this.outline.renderOrder = 3;
+    this.scene.add(this.outline);
+  }
+
+  /** Whether the outline round a selected room is showing. */
+  get outlineShown(): boolean {
+    return this.outline.visible;
   }
 
   /** Shake the preview of what is in hand, to show a click with it was turned down. */
@@ -315,6 +373,7 @@ export class Overlays {
     const sel = this.selected;
     this.ring.visible = false;
     this.marker.visible = false;
+    this.outline.visible = false;
     if (sel && isPerson(sel)) {
       const c = this.sim.char(sel.id);
       if (c) {
@@ -335,9 +394,24 @@ export class Overlays {
         this.ring.position.set(cx, 0.04, cy);
         this.ring.scale.setScalar(Math.max(w, h) * 1.25);
       }
+    } else if (sel?.kind === 'room') {
+      const room = this.sim.world.room(sel.id);
+      if (room) this.outlineRoom(room);
     }
     this.shake(t);
-    this.updateGlow();
+    this.updateGlow(t);
+  }
+
+  /** Lay the gold outline round a room's floor, built afresh for a room of another size. */
+  private outlineRoom(room: Room) {
+    const size = `${room.w}x${room.h}`;
+    if (size !== this.outlineSize) {
+      this.outlineSize = size;
+      this.outline.geometry.dispose();
+      this.outline.geometry = outlineOf(room.w, room.h);
+    }
+    this.outline.visible = true;
+    this.outline.position.set(room.x, 0.045, room.y);
   }
 
   /** Shake the preview across the screen while a refusal's shake lasts, and put it back after. */
@@ -347,9 +421,17 @@ export class Overlays {
     this.preview.position.copy(SCREEN_RIGHT).applyAxisAngle(UPRIGHT, turnAngle(this.turn)).multiplyScalar(off);
   }
 
-  /** Brighten the person or item a click would select, or lay a faint sheet over the room's floor. */
-  private updateGlow() {
+  /** Brighten the person or item a click would select, or lay a faint sheet over the room's floor, fading in. */
+  private updateGlow(t: number) {
     const hov = this.hovered;
+    const key = hov ? `${hov.kind}:${hov.id}` : '';
+    if (key !== this.glowFor) {
+      this.glowFor = key;
+      this.glowSince = t;
+    }
+    const fade = Math.min(1, (t - this.glowSince) / HOVER_FADE);
+    this.glowMat.opacity = ITEM_GLOW * fade;
+    (this.roomGlow.material as THREE.MeshBasicMaterial).opacity = ROOM_GLOW * fade;
     const model = hov && (isPerson(hov) || hov.kind === 'item') ? this.find(hov) : undefined;
     if (model !== this.glowOf) {
       this.glowOf = model;

@@ -103,8 +103,14 @@ export function landColor(value: number, out = new THREE.Color()): THREE.Color {
   return value >= 1 ? out.copy(POINTED) : value > 0 ? out.copy(NOT_YET) : out.set(overlayColors().fair);
 }
 
+/** How long an overlay takes to fade in once chosen, in seconds, and how strong its tiles of land are. */
+const FADE_SECONDS = 0.2;
+const TILE_OPACITY = 0.62;
+
 /** The overlays on the floor: a soft field for how things stand, and hard tiles for land, under everything else. */
 export class Heatmap {
+  /** How far the overlay has faded in, from 0 to 1. */
+  private shown = 1;
   /** Land, a tile at a time. */
   private tiles: THREE.InstancedMesh;
   /** The field, one pixel a tile, smoothed between them. */
@@ -122,7 +128,7 @@ export class Heatmap {
   ) {
     this.tiles = new THREE.InstancedMesh(
       new THREE.PlaneGeometry(0.96, 0.96).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.62, depthWrite: false, toneMapped: false }),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: TILE_OPACITY, depthWrite: false, toneMapped: false }),
       size,
     );
     this.tiles.count = 0;
@@ -152,13 +158,39 @@ export class Heatmap {
     scene.add(this.field);
   }
 
-  /** Color these tiles, or clear the overlay. */
+  /** Color these tiles, or clear the overlay. One coming up on a bare floor fades in. */
   set(tiles: readonly HeatTile[] | null, palette: Palette = 'good') {
+    const bare = !this.field.visible && !this.tiles.visible;
     this.field.visible = false;
     this.tiles.visible = false;
     if (!tiles) return;
     if (palette === 'land') this.setTiles(tiles);
     else this.setField(tiles, palette);
+    if (bare) this.fadeIn();
+  }
+
+  /** Fade the overlay in from nothing, as one is chosen. */
+  fadeIn() {
+    this.shown = 0;
+    this.fade();
+  }
+
+  /** How far the overlay has faded in, from 0 to 1. */
+  get opacity(): number {
+    return this.shown;
+  }
+
+  /** Fade the overlay a frame of `dt` seconds further in. */
+  update(dt: number) {
+    if (this.shown >= 1) return;
+    this.shown = Math.min(1, this.shown + dt / FADE_SECONDS);
+    this.fade();
+  }
+
+  /** Draw the overlay as far faded in as it has got. */
+  private fade() {
+    (this.field.material as THREE.MeshBasicMaterial).opacity = this.shown;
+    (this.tiles.material as THREE.MeshBasicMaterial).opacity = TILE_OPACITY * this.shown;
   }
 
   /** Paint the field from these tiles, clear everywhere else. */

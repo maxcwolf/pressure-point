@@ -254,6 +254,7 @@ export class View {
     this.land.update();
     this.items.animate(this.time);
     this.settling.update(dt);
+    this.heat.update(dt);
     this.overlays.updateRing(this.time);
     this.halos.update();
     this.rig.update(dt);
@@ -295,6 +296,11 @@ export class View {
   /** Color the floor for an information overlay, or clear it with null. */
   setHeat(tiles: readonly HeatTile[] | null, palette?: Palette) {
     this.heat.set(tiles, palette);
+  }
+
+  /** Fade the floor's overlay in from nothing, as another is chosen. */
+  fadeHeat() {
+    this.heat.fadeIn();
   }
 
   /** Show colored tiles on the floor for the current tool. */

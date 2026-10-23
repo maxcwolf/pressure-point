@@ -4,9 +4,10 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 
-import { SANDBOX_PLOT } from '../../src/core/data';
+import { H, SANDBOX_PLOT } from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
 import { CameraRig } from '../../src/render/camera';
+import { Heatmap } from '../../src/render/heatmap';
 import { ItemsLayer } from '../../src/render/items';
 import { nudgeOffset } from '../../src/render/overlays';
 import { SETTLE_SECONDS, settleScale, Settling } from '../../src/render/settle';
@@ -205,5 +206,21 @@ describe('a click turned down', () => {
     expect(shakes.some((s) => s > 0.03)).toBe(true);
     expect(shakes.some((s) => s < -0.03)).toBe(true);
     expect(nudgeOffset(1)).toBe(0);
+  });
+});
+
+describe('an overlay chosen', () => {
+  it('fades in from a bare floor, and is not faded again as it is redrawn', () => {
+    const heat = new Heatmap(new THREE.Scene(), 40 * H);
+    heat.set([[3, 3, 0.5]]);
+    expect(heat.opacity).toBe(0);
+    heat.update(0.1);
+    expect(heat.opacity).toBeGreaterThan(0.3);
+    expect(heat.opacity).toBeLessThan(1);
+    heat.update(0.2);
+    expect(heat.opacity).toBe(1);
+    // the regular redraw of the same overlay keeps it as it is
+    heat.set([[3, 3, 0.6]]);
+    expect(heat.opacity).toBe(1);
   });
 });
