@@ -94,7 +94,7 @@ export function StationInfo({ item }: { item: Item }) {
   const staff = sim.stationStaff(item);
   const guest = sim.guest(item.serving);
   const line = item.queue.flatMap((id) => sim.guest(id) ?? []);
-  const busy = busyNote(item);
+  const busy = busyNote(item, !def.staff);
   if (def.staff === 'instructor') {
     // a Qi Gong Studio's mat and spots: who leads the class, and who is on the spot
     return (
@@ -113,7 +113,7 @@ export function StationInfo({ item }: { item: Item }) {
     return (
       <>
         <p class="status">
-          <Line line={staffingStatus(item, staff, ROLES[def.staff].name)} />
+          <Line line={staffingStatus(item, staff, def.staff && ROLES[def.staff].name)} />
         </p>{' '}
         <p class="sub">{sessionNote(session.lying, session.mats, session.playing)}</p>
         {staff && (
@@ -127,7 +127,7 @@ export function StationInfo({ item }: { item: Item }) {
   return (
     <>
       <p class="status">
-        <Line line={staffingStatus(item, staff, ROLES[def.staff].name)} />
+        <Line line={staffingStatus(item, staff, def.staff && ROLES[def.staff].name)} />
       </p>{' '}
       <p class="sub">{`In line: ${item.queue.length}${guest ? ` · Seeing ${guest.name}` : ''}`}</p>
       {guest && <Bar value={item.progress * 100} class="blue" />}

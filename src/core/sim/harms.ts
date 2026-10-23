@@ -7,6 +7,7 @@ import {
   DAY_SECONDS,
   DISCIPLINES,
   DISCOMFORT_DRAIN,
+  GUESS_PENALTY,
   IDEAL_TEMP,
   ITEMS,
   MODALITIES,
@@ -91,6 +92,11 @@ export function failureCosts(ctx: SimContext, it: Item, staff: Staff, g: Guest):
       amount: weight > 1 ? discomfort(temp) * TRIP_DISCOMFORT : 0,
     },
     { cause: 'rest', label: 'Nowhere to lie down afterwards', amount: restPenalty(ctx, g) },
+    {
+      cause: 'guess',
+      label: 'A best guess at a structural condition, unscanned',
+      amount: g.guessed ? GUESS_PENALTY : 0,
+    },
     {
       cause: 'skill',
       label: `${staff.name} is ${an(rankName(staff.skill))}, not an Expert`,
@@ -240,6 +246,15 @@ function failureNote(
         about,
         fix: { menu: 'rooms' },
       };
+    case 'guess':
+      return {
+        ...base,
+        help: hasItem(ctx, 'posture_scanner')
+          ? 'A structural condition was treated on a best guess because the Posture Scanner was not working. A Caretaker repairs it when it wears out.'
+          : 'A Consultant can see a structural condition but not pin it down. A Posture Lab scans those guests, which makes the diagnosis certain and the treatment likelier to work.',
+        about,
+        ...(hasItem(ctx, 'posture_scanner') ? hireCaretaker : { fix: { menu: 'rooms' } }),
+      };
     default:
       return {
         ...base,
@@ -260,6 +275,7 @@ const CAUSE_WORDS: Readonly<Record<string, string>> = {
   worse: 'guests who had got worse',
   noise: 'noise in the room',
   linens: 'stale linens',
+  guess: 'a best guess at the diagnosis',
   temperature: 'the temperature off',
   rest: 'nowhere to rest after',
 };
@@ -331,6 +347,8 @@ function anotherStation(ctx: SimContext, g: Guest): string {
     return hasStaff(ctx, 'caretaker')
       ? `The ${ITEMS[station.type].name} needs mending: check repairs are among your Caretaker's duties`
       : `The ${ITEMS[station.type].name} needs mending, and a Caretaker repairs worn equipment`;
+  // one that runs itself needs nobody to work it, only another of its room
+  if (!def.staff) return `Another ${stationPlace(station)} would shorten the line`;
   return `Another ${ITEMS[station.type].name} and a ${ROLES[def.staff].name} to work it would shorten the line`;
 }
 

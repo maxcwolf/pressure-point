@@ -129,9 +129,12 @@ function boostersOrSetting(ctx: SimContext, it: Item): Item[] {
 /** Whether a machine is running: someone is inside it. */
 export const running = (it: Item) => !!ITEMS[it.type].machine && it.serving > 0;
 
+/** What a kind of equipment costs to run for a month: a treatment machine's, or that of one that runs itself. */
+export const itemUpkeep = (type: ItemType) => ITEMS[type].machine?.upkeep ?? ITEMS[type].upkeep ?? 0;
+
 /** What every machine owned costs to run for a month, in power and parts. */
 export function machineUpkeep(s: Pick<GameState, 'items'>): number {
-  return s.items.reduce((sum, it) => sum + (ITEMS[it.type].machine?.upkeep ?? 0), 0);
+  return s.items.reduce((sum, it) => sum + itemUpkeep(it.type), 0);
 }
 
 /** Whether a machine is worn enough to smoke, a warning that it may overload. */

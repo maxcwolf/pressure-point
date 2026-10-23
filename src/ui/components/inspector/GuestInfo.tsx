@@ -4,6 +4,7 @@ import {
   CLASS_FEE,
   conditionOf,
   FEELINGS,
+  GUESS_PENALTY,
   MODALITIES,
   POOR_CONDITION,
   SCAN_SUCCESS,
@@ -13,6 +14,7 @@ import { money } from '../../../core/format';
 import { weekday } from '../../../core/sim/classes';
 import { regularOf } from '../../../core/sim/regulars';
 import { guestFee } from '../../../core/sim/stations';
+import { upgradeSuccess } from '../../../core/sim/upgrades';
 import type { Guest } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { calmingNote, NOBODY_FREE, sendLabel, sendTitle } from '../../lib/calming';
@@ -150,8 +152,10 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
   if (g.classDay) return <ClassgoerInfo guest={g} />;
   const c = conditionOf(g.condition);
   const sure = sim.s.policy.diagnosis;
-  // the condition is a mystery until a consultation has settled it
+  // the condition is a mystery until a consultation has settled it, though a structural one shows that much first
   const known = g.goal === 'treat' || g.goal === 'leave';
+  const structural = !known && !!c.structural && g.consults > 0;
+  const unscannable = !!c.structural && !g.scanned;
   const regular = regularOf(sim.s, g);
   return (
     <>
@@ -168,9 +172,13 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
         />
       </p>{' '}
       <p>
-        <b>{known ? c.name : 'Undiagnosed'}</b>
+        <b>{known ? c.name : structural ? 'Something structural' : 'Undiagnosed'}</b>
         <br />
-        {known ? c.desc : 'Something is clearly wrong. A consultation will reveal what.'}
+        {known
+          ? c.desc
+          : structural
+            ? 'The Consultant can see it is in the spine or the joints, but only a posture scan will say just what.'
+            : 'Something is clearly wrong. A consultation will reveal what.'}
       </p>{' '}
       {known && (
         <>
@@ -181,7 +189,12 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
       {g.state !== 'leaving' && <ChanceLine guest={g} />}{' '}
       {g.scanned && (
         <p class="sub scanned">
-          <IconText id="item-posture-scanner">{`Scanned: ${percent(SCAN_SUCCESS)} more chance of success`}</IconText>
+          <IconText id="item-posture-scanner">{`Scanned: ${percent(SCAN_SUCCESS + upgradeSuccess(g.scanLevel ?? 0))} more chance of success`}</IconText>
+        </p>
+      )}{' '}
+      {g.guessed && (
+        <p class="sub guessed poor">
+          <IconText id="ui-warning">{`Best guess, not scanned: ${percent(GUESS_PENALTY)} less chance of success`}</IconText>
         </p>
       )}{' '}
       <p class="status">{guestStatus(g, sim)}</p>{' '}
@@ -195,7 +208,9 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
         <Bar value={g.patience} class={g.patience < 25 ? 'bad' : ''} />
       </label>{' '}
       <label>
-        {`Diagnosis (${percent(Math.min(g.diagnosis, 1))} sure, ${percent(sure)} needed)`}
+        {unscannable && g.consults > 0
+          ? `Diagnosis (${percent(Math.min(g.diagnosis, 1))} sure, only a scan makes it surer)`
+          : `Diagnosis (${percent(Math.min(g.diagnosis, 1))} sure, ${percent(sure)} needed)`}
         <Bar value={(g.diagnosis / sure) * 100} class="blue" />
       </label>{' '}
       <label>

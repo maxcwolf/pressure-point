@@ -2050,18 +2050,18 @@ test.describe('staff careers', () => {
     await expect(insp.getByRole('button', { name: /Promote/ })).toHaveCount(0);
   });
 
-  test('a consultant can be kept to one duty, but not from them all', async ({ game, page }) => {
+  test('a receptionist can be kept to one duty, but not from them all', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
     await game.eval((pp) => {
       pp.state.speed = 0;
-      pp.tools.select({ kind: 'staff', id: pp.state.staff.find((x) => x.role === 'consultant')!.id });
+      pp.tools.select({ kind: 'staff', id: pp.state.staff.find((x) => x.role === 'receptionist')!.id });
     });
     const insp = page.locator('#inspector');
-    await insp.getByRole('button', { name: /Posture Lab scans/ }).click();
-    await expect(insp.getByRole('button', { name: /Posture Lab scans/ })).toContainText('✗');
-    await insp.getByRole('button', { name: /Consultations/ }).click();
-    expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'consultant')!.off)).toEqual(['assess']);
+    await insp.getByRole('button', { name: /Shop Counter/ }).click();
+    await expect(insp.getByRole('button', { name: /Shop Counter/ })).toContainText('✗');
+    await insp.getByRole('button', { name: /Front desk/ }).click();
+    expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'receptionist')!.off)).toEqual(['shop']);
   });
 
   test('an applicant can be turned down', async ({ game, page }) => {

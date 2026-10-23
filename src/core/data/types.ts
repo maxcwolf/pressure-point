@@ -217,10 +217,11 @@ export interface ItemDef {
   mount?: 'wall';
   /**
    * Stations have a staff position and a line of guests. A group station has no staff position of its own: it is
-   * worked from the lead station in its room, whose member of staff serves every group station there at once.
+   * worked from the lead station in its room, whose member of staff serves every group station there at once. A
+   * station with no `staff` runs itself, and serves its line whenever it is working.
    */
   station?: {
-    staff: Role;
+    staff?: Role;
     goal: 'reception' | 'consult' | 'assess' | 'treat' | 'shop' | 'lead' | 'class';
     seconds: number;
     discipline?: Discipline;
@@ -283,6 +284,8 @@ export interface ItemDef {
   upgrade?: number;
   /** A treatment machine: what it does, and what it takes to run. */
   machine?: MachineDef;
+  /** What it costs to run each month, paid with the wages, for equipment that runs itself but is no treatment machine. */
+  upkeep?: number;
 }
 
 /**
@@ -382,7 +385,7 @@ export interface GeneralDef {
 }
 
 /** Something a member of staff can be kept to or kept from: a kind of station, or a kind of Caretaker's job. */
-export type Duty = 'reception' | 'shop' | 'consult' | 'assess' | 'litter' | 'clean' | 'repair' | 'plants' | 'stones';
+export type Duty = 'reception' | 'shop' | 'consult' | 'litter' | 'clean' | 'repair' | 'plants' | 'stones';
 
 export type Modality =
   | 'swedish'
@@ -593,6 +596,11 @@ export interface ConditionDef {
   only?: readonly CenterId[];
   /** How much faster than usual it worsens while they wait. Absent means the usual rate. */
   worsens?: number;
+  /**
+   * Something in the spine or the joints that a Consultant can tell is there but cannot pin down: only a posture scan
+   * makes the diagnosis sure, and without one the treatment is a best guess.
+   */
+  structural?: boolean;
 }
 
 export type AchievementId =

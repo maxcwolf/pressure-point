@@ -39,6 +39,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'deep',
     fee: 1150,
     visual: 'crick',
+    structural: true,
   },
   {
     id: 'stiff',
@@ -85,6 +86,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     modality: 'cranio',
     fee: 1900,
     visual: 'neck',
+    structural: true,
   },
   {
     id: 'dizzy',
@@ -433,6 +435,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     fee: 1450,
     visual: 'cast',
     only: ['highpines'],
+    structural: true,
   },
   {
     id: 'cabin',
@@ -465,6 +468,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     visual: 'mallet',
     only: ['orchard'],
     worsens: 1.2,
+    structural: true,
   },
   {
     id: 'blossom',

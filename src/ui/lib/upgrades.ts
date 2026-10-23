@@ -18,11 +18,12 @@ export function upgradeStars(level: number): string {
 }
 
 /** Who staffs a station, or why nobody does: it is closed while a Mechanic installs an upgrade, or it needs someone. */
-export function staffingStatus(it: Item, staff: Staff | undefined, role: string): IconLine {
+export function staffingStatus(it: Item, staff: Staff | undefined, role: string | undefined): IconLine {
   if (staff) return { text: `Staffed by ${staff.name}` };
   if (it.upgradePaid && it.claimedBy && !it.serving)
     return { icon: 'bubble-installing', text: 'Closed while an upgrade is installed' };
-  return { icon: 'ui-warning', text: `Needs a ${role}` };
+  // a station with no role runs itself
+  return role ? { icon: 'ui-warning', text: `Needs a ${role}` } : { text: 'Runs itself, with nobody to staff it' };
 }
 
 /** How an upgrade that has been paid for is coming on, or '' if none is: waiting, on the way, or being installed. */

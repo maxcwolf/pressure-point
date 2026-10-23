@@ -316,5 +316,26 @@ export function upgradeSave(save: GameState) {
     for (const c of [...s.staff, ...s.guests]) iconBubble(c, false);
     for (const v of s.visitors) iconBubble(v, v.visit === 'inspector');
   }
+  freeScanners(save);
   s.version = SAVE_VERSION;
+}
+
+/**
+ * A Consultant once worked the Posture Scanner, which now runs itself: whoever was posted at one goes back to finding
+ * work, and nobody is kept from scans any more. Nothing in a save from since then is touched.
+ */
+function freeScanners(s: GameState) {
+  const scanners = new Set(s.items.filter((it) => it.type === 'posture_scanner').map((it) => it.id));
+  for (const it of s.items) if (scanners.has(it.id)) it.staffId = 0;
+  for (const st of s.staff) {
+    st.off = st.off.filter((d) => (d as string) !== 'assess');
+    if (!scanners.has(st.post)) continue;
+    st.post = 0;
+    st.busy = false;
+    if (st.state === 'toPost' || st.state === 'atPost') {
+      st.state = 'idle';
+      st.path = null;
+      st.dest = null;
+    }
+  }
 }

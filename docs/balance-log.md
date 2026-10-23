@@ -6,6 +6,43 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 23 October 2026, after midnight: a Posture Lab that runs itself
+
+Measured with `yarn balance`, the good bot, four years a game, seeds 1 to 72 a center read as two halves of 36, profit a month averaged from month 13 on over the games that reached it, each difference paired seed by seed with its standard error (each half's mean in brackets). `main` at `db228ab` against `feat/posture-lab-machine` at `05a6ba7`, and that branch against itself with `BOT_OFF=lab`.
+
+### 45. The Posture Lab is worth a little, structural conditions cost nothing overall
+
+**Found:** entry 21 left the lab barely paying even in a junior center, its Consultant at $1,700 a month eating what about 10 scans a month brought in. A first draft of this change made Desk Slump structural too: half the guests a new center sees, before it can afford a lab. Over seeds 1 to 6 that took a third off the bot's profit (median $27.9k → $18.8k a month) and lost three more games, and softening the best guess alone barely moved it. Without Desk Slump, every structural condition comes with the first star or later.
+
+**Done** (`src/core/sim/stations.ts`, `src/core/data/conditions.ts`, `src/core/data/rules.ts`, `tests/balance/bot.ts`): the Posture Scanner serves its own line with nobody posted at it, for $250 a month (`upkeep` on the item) and a Caretaker's repairs, and a scan makes the diagnosis certain. Crick of the Neck, Text Neck, Croquet Back and Wipeout are structural: a consultation gets no surer of them than 60% (`STRUCTURAL_SURE`), and without a working scanner the guest is treated on a best guess, 5% less likely to work (`GUESS_PENALTY`). The bot builds the lab once three guests have been treated on a guess, or its Consultants are all junior, and no longer builds it in place of a Consultation Room for a long line (it adds no Consultant now). `lab` is no longer an extra.
+
+**This branch against `main`,** every center:
+
+| Center        | Profit a month                          | Games lost | Third stars |
+| ------------- | --------------------------------------- | ---------- | ----------- |
+| Willow Lane   | $28.2k → $29.1k (+1.3 ±1.4; +1.5, +1.0) | 3 → 3      | 70 → 67     |
+| The Exchange  | $19.8k → $19.5k (−0.3 ±1.3; −1.3, +0.7) | 4 → 5      | 69 → 68     |
+| The Boardwalk | $12.9k → $13.8k (+1.0 ±1.0; +2.0, −0.2) | 4 → 5      | 68 → 68     |
+| High Pines    | $12.6k → $12.2k (−0.6 ±1.6; +0.8, −2.1) | 13 → 14    | 51 → 55     |
+| The Orchard   | $58.9k → $58.1k (−1.1 ±2.3; −2.2, +0.1) | 28 → 29    | 45 → 44     |
+
+**The lab, on against off with the same bot:**
+
+| Center        | Profit a month         | Games lost | Guests on a best guess a month |
+| ------------- | ---------------------- | ---------- | ------------------------------ |
+| Willow Lane   | +0.6 ±1.0 (+0.1, +1.2) | 5 → 3      | 3.0 → 1.4                      |
+| The Exchange  | −2.2 ±1.1 (−3.8, −0.6) | 2 → 5      | 3.8 → 2.2                      |
+| The Boardwalk | +1.1 ±0.8 (+1.4, +0.9) | 7 → 5      | 1.2 → 0.8                      |
+| High Pines    | +0.5 ±1.2 (+0.8, +0.3) | 18 → 14    | 2.4 → 1.9                      |
+| The Orchard   | +0.4 ±1.5 (+1.7, −0.8) | 29 → 29    | 2.7 → 2.6                      |
+
+**Read:** against `main`, no center moves past its noise, and the halves disagree in sign everywhere but Willow Lane. The extra game lost at four centers is one in 72, inside the two or three games the lab on and off alone moves. The lab pays a little where it is built, and its scanner is never the bottleneck: 4 to 7 scans a month in the year after it opens, with shorter waits than without. It does little more because there are few structural guests to scan, 1 to 4 a month, and the bot fits a lab into fewer than half its games (34 of 72 at The Exchange, opened at a median of day 531). The Exchange is the exception, worse with the lab in both halves, and nothing found explains it yet.
+
+**Still open:**
+
+- **The Exchange with the lab.** Worse by $2.2k a month although its structural guests are the most common there.
+- **More structural guests,** if the lab is to be a building a center plans for rather than a small extra: more conditions, or a center that features them.
+
 ## 22 October 2026, night: High Pines and The Boardwalk, measured again
 
 Measured with `yarn balance`, the good bot, four years a game, seeds 1 to 72 a center read as two halves of 36 (the sample [balance-harness.md](balance-harness.md) "How many seeds a call needs" now asks for), profit a month averaged from month 13 on, each difference paired seed by seed with its standard error. The attribution runs were at `0306b41` and the merge commits named; the land and the fix at `main` `7dd9a55` and `fix/land-and-consults` `e71a963`, with the land's data alone reverted in scratch copies (`git diff 4d566cd 129d4e1 -- src/core/data/centers.ts`, applied in reverse: that merge changed no other game file).

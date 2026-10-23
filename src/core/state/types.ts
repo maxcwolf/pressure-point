@@ -342,6 +342,10 @@ export interface Guest extends CharBase {
   consults: number;
   /** Had a posture scan, which makes their treatment likelier to work. */
   scanned?: boolean;
+  /** The upgrade level of the scanner that scanned them, which adds to what the scan does. */
+  scanLevel?: number;
+  /** Sent for treatment on a best guess: a structural condition nobody could scan. */
+  guessed?: boolean;
   outcome: Outcome | '';
   spent: number;
   hasWrapper: boolean;

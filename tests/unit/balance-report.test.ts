@@ -61,6 +61,7 @@ function month(month: number, o: Partial<Month> = {}): Month {
     price: 1,
     lab: false,
     scans: 0,
+    guesses: 0,
     incomeBy: INCOME,
     ...o,
   };

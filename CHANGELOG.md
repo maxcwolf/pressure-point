@@ -8,6 +8,8 @@ Each release's notes are taken from its section here. Keep them short.
 - **Lessons as things first happen.** The first guest to walk in, the first heal, staff tiring, the first payday, a failed treatment, a guest storming out and a raise request each open a short card with pictures, once a game and never two in a day, with Show me to go to whoever it is about.
 - **Tutorial on and off.** Settings has a Tutorial switch under a new Help heading, and Willow Lane's card in the campaign has one beside Play. It is on by itself only before your first campaign star, and switches itself off once you have been through the opening, so a replay starts without it unless you turn it back on.
 - **When to buy land.** In your first Willow Lane game, the advisor says at the first star what land has come up for sale and when to buy it (once the building has no room left for a treatment room, and not before), with a line on the "Getting ready" checklist for it. In any game, picking a room that fits nowhere in the building says so in the hint, and names the cheapest plot for sale, the one the builders are still at, or the star the next comes up at.
+- **The Posture Lab runs itself.** Its scanner needs no Consultant, only $250 a month to run and a Caretaker when it wears out, and a scan now makes the diagnosis certain, adding more to the chance of success on an upgraded scanner.
+- **Structural conditions.** Crick of the Neck, Text Neck, Croquet Back and Wipeout are in the spine and the joints: a Consultant can see them but not pin them down, so without a working Posture Lab their treatment is a best guess and less likely to work. The guest's inspector shows which guests are structural and which were treated on a guess.
 
 ## v0.32.2
 

@@ -195,6 +195,22 @@ describe('harm that keeps coming to guests', () => {
     expect(failureCause('', costs)).toBe('odds');
   });
 
+  it('names a best guess at a structural condition, and points to a Posture Lab', () => {
+    const { sim, s, therapist } = openCenter(1);
+    runUntil(sim, () => s.guests.length > 0, 300);
+    const g = s.guests[0]!;
+    const table = s.items.find((i) => i.type === 'massage_table')!;
+    Object.assign(therapist, { energy: 100, skill: 5 });
+    Object.assign(g, { health: 100, diagnosis: 1, guessed: true });
+    const ctx = ctxOf(sim);
+    expect(failureCause('', failureCosts(ctx, table, therapist, g))).toBe('guess');
+    for (let i = 0; i < HARM_EXPLAIN; i++) noteFailure(ctx, table, therapist, g, '');
+    const note = s.harmNotes.find((n) => n.key === 'failed:guess');
+    expect(note?.title).toBe(`${HARM_EXPLAIN} treatments have failed with a best guess at the diagnosis`);
+    expect(note?.help).toMatch(/Posture Lab/);
+    expect(note?.fix).toEqual({ menu: 'rooms' });
+  });
+
   it('is counted every time a visit ends badly, so the counts match the records', () => {
     const { sim, s } = openCenter(3);
     run(sim, 900);
