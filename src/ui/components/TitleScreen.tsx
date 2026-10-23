@@ -298,7 +298,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
         <Dialog>
           <h2>Welcome to the alpha</h2>
           <p>
-            {`${GAME_TITLE} is in alpha: it is still being built, and it changes every day. Expect new things to try, rough edges, and the odd bug.`}
+            {`${GAME_TITLE} is in alpha: it is still being built, and it changes every day. Expect some rough edges and bugs.`}
           </p>{' '}
           <p class="sub">
             Your feedback decides what comes next. Use Give feedback here, or in the pause menu during a game.
