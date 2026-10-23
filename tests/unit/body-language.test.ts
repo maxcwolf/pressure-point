@@ -454,16 +454,16 @@ describe('lying down', () => {
     expect(lyingAt(lying(), ITEMS.bench)).toBeUndefined();
   });
 
-  it('reads as face down: the face only a little aside, a towel over the back and the soles turned up', () => {
+  it('reads as face down: the face into the table and the soles turned up', () => {
     const rig = buildCharacter(LAB_LOOK);
     poseChar(rig, lying(), 0, 1, { style: null, lie: 'prone' });
     rig.group.updateMatrixWorld(true);
     expect(rig.head.rotation.y).toBeCloseTo(PRONE_TURN);
     expect(rig.body.rotation.x).toBeCloseTo(Math.PI / 2);
-    // the face mostly down, so the back of the head shows from above
-    expect(faceOf(rig).y).toBeLessThan(-0.7);
-    expect(rig.faceDown?.towel.visible).toBe(true);
-    for (const sole of rig.faceDown?.soles ?? []) {
+    // the face down, so the back of the head shows from above
+    expect(faceOf(rig).y).toBeLessThan(-0.9);
+    expect(rig.soles).toHaveLength(2);
+    for (const sole of rig.soles ?? []) {
       expect(sole.visible).toBe(true);
       // turned up toward the sky, the shins up on a bolster
       expect(
@@ -472,10 +472,10 @@ describe('lying down', () => {
     }
     // and put away when they get up, nor shown lying on the back
     poseChar(rig, { ...lying(), pose: 'stand', h: 0 }, 0, 1, { style: null });
-    expect(rig.faceDown?.towel.visible).toBe(false);
+    for (const sole of rig.soles ?? []) expect(sole.visible).toBe(false);
     const back = buildCharacter(LAB_LOOK);
     poseChar(back, lying(), 0, 1, { style: null, lie: 'back' });
-    expect(back.faceDown).toBeUndefined();
+    expect(back.soles).toBeUndefined();
   });
 
   it('lies on the back, face up, elsewhere', () => {

@@ -28,7 +28,7 @@ import { buildHeld, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
 import { mat } from './models/parts';
 import { driftSmoke } from './models/sage';
-import { buildFaceDown, showFaceDown } from './models/towel';
+import { buildSoles } from './models/soles';
 
 /**
  * A hip's rotation that points its thigh along `along` and turns it on its own length so the knee hinges about
@@ -181,10 +181,10 @@ export const PICK = 1.8;
 const ACT_CYCLES: Partial<Record<Act, number>> = { drink: SIP, eat: SIP, litter: PICK };
 
 /**
- * How far a guest lying face down on a table turns their head aside, in radians: only a little, away from the
- * practitioner's side of the table, so from the game's camera the back of the head shows, as it should face down.
+ * How far a guest lying face down on a table turns their head aside, in radians: not at all, face down into the
+ * table, so from the game's camera the back of the head shows, as it should face down.
  */
-export const PRONE_TURN = -0.6;
+export const PRONE_TURN = 0;
 
 /** How long a healed guest's symptom takes to shrink away in a puff of sparkles, in seconds. */
 export const CURE = 0.8;
@@ -724,7 +724,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   if (c.pose === 'lie' && cues.lie) {
     life.elbowL += bendTo(armL, -0.08, 1);
     life.elbowR += bendTo(armR, -0.08, 1);
-    // face down, the face turned aside, away from whoever works on the back
+    // face down, into the table
     if (cues.lie === 'prone') life.headYaw = PRONE_TURN;
   }
   if (act) actJoints(life, act, c, t, armL, armR);
@@ -797,10 +797,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   }
   if (rig.mop) rig.mop.visible = mopping;
   if (healed && !rig.cured) showCure(rig, c, t);
-  // a towel and the soles of the shoes up, face down, once they are mostly down
-  const towel = prone && lying > 0.6;
-  if (towel) rig.faceDown ??= buildFaceDown(rig.torso, [rig.joints.shinL, rig.joints.shinR]);
-  if (rig.faceDown) showFaceDown(rig.faceDown, towel);
+  // the soles of the shoes turned up, face down, once they are mostly down
+  const soles = prone && lying > 0.6;
+  if (soles) rig.soles ??= buildSoles([rig.joints.shinL, rig.joints.shinR]);
+  for (const sole of rig.soles ?? []) sole.visible = soles;
 
   if (rig.sage && rig.sageTip && rig.smoke) {
     rig.sage.visible = smudging;

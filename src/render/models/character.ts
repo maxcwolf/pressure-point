@@ -31,7 +31,6 @@ import type { HeldKind } from './held';
 import { buildMop } from './mop';
 import { cached, capsule, cyl, ico, joined, mat, type Piece, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
-import type { FaceDown } from './towel';
 
 export interface CharRig {
   group: THREE.Group;
@@ -92,7 +91,7 @@ export interface CharRig {
   /** A puff of sparkles round them as the symptom goes, made the first time it is needed. */
   burst?: Burst;
   /** Pale soles turned up, shown while they lie face down, made the first time they do. */
-  faceDown?: FaceDown;
+  soles?: THREE.Mesh[];
   scale: number;
   /** How much wider and deeper than average their build makes them, which their head is spared. */
   wide: number;
