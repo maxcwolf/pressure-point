@@ -1,5 +1,5 @@
-// Where the sign on the front lawn stands: angled toward the street, between the building's front wall and the
-// pavement, clear of both. Nothing here draws anything, so it can be tested without a renderer.
+// Where the sign on the front lawn stands: out by the pavement, turned a little toward the camera, clear of the
+// building's front wall and of the pavement. Nothing here draws anything, so it can be tested without a renderer.
 
 import { doorstep, type Footprint } from '../core/footprint';
 
@@ -14,10 +14,14 @@ export interface SignSpot {
   angle: number;
 }
 
-/** Where the sign stands for a building: left of the path to the door, turned a little toward the street. */
+/**
+ * Where the sign stands for a building: left of the path to the door, out by the pavement, turned a little toward the
+ * camera. The board stands 1.75 m tall, and from the camera, high to the south-east, it hides the ground about 1.5 m
+ * north of its top edge: set back by the front wall, as it once was, it hid the front of the room by the door, so it
+ * stands as far out as it can, and turned only as far as keeps its far end clear of the pavement.
+ */
 export function signSpot(fp: Pick<Footprint, 'door' | 'front'>): SignSpot {
-  // turned any further, the board would reach back into the front wall or out over the pavement
-  return { x: fp.door[0] - 4.2, z: doorstep(fp) + 1.1, angle: Math.PI / 8 };
+  return { x: fp.door[0] - 4.2, z: doorstep(fp) + 1.5, angle: Math.PI / 16 };
 }
 
 /** The points on the ground at a distance along the sign from its middle (negative is left), as turned. */

@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { CENTERS, SIDEWALK_Y } from '../../src/core/data';
-import { footprintOf } from '../../src/core/footprint';
+import { doorstep, footprintOf } from '../../src/core/footprint';
+import { CameraRig } from '../../src/render/camera';
 import { buildSign } from '../../src/render/scenery';
 import { OUTER_T } from '../../src/render/shared';
 import { alongSign, SIGN_HALF, SIGN_LEG, signSpot } from '../../src/render/sign';
@@ -56,5 +57,34 @@ describe("the sign's back", () => {
     const [front, back] = [faces[4], faces[5]];
     expect(front?.map).toBeInstanceOf(THREE.CanvasTexture);
     expect(back?.map).toBe(front?.map);
+  });
+});
+
+describe('the sign, from the camera', () => {
+  beforeAll(() => {
+    Object.assign(globalThis, { document: { createElement: canvas } });
+  });
+
+  // It used to stand back by the front wall, and at the default camera its board hid the front tile of the room by
+  // the door and the people in it.
+  it('leaves the room by the door in sight over its board, hiding at most a sliver along the front wall', () => {
+    const rig = new CameraRig(footprintOf(CENTERS.willow.plot));
+    rig.update(1 / 60);
+    // the way the camera looks, and how far across the ground a point a meter up hides what is behind it
+    const look = rig.target.clone().sub(rig.camera.position).normalize();
+    const reach = Math.hypot(look.x, look.z) / -look.y;
+    const north = (reach * -look.z) / Math.hypot(look.x, look.z);
+    for (const center of Object.values(CENTERS)) {
+      const fp = footprintOf(center.plot);
+      const sign = buildSign(fp);
+      const board = sign.getObjectByName('sign-board') as THREE.Mesh;
+      const top = board.position.y + 0.5;
+      // the inside of the front wall, where the rooms by the door begin
+      const inside = doorstep(fp);
+      for (const d of [-SIGN_HALF, 0, SIGN_HALF]) {
+        const [, z] = alongSign(signSpot(fp), d);
+        expect(z - top * north, `${center.name}, ${d} along the sign`).toBeGreaterThan(inside - 0.3);
+      }
+    }
   });
 });
