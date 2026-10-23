@@ -62,6 +62,23 @@ export const wafting = (c: Char) => c.kind === 'staff' && c.state === 'doingJob'
 /** How someone is working, so each kind of work moves differently: a treatment they are giving, or Qi Gong. */
 export type WorkStyle = Modality | 'qigong' | null;
 
+/** The treatments given sitting down, beside a guest or across a room from them. */
+type SeatedWork =
+  | 'sound'
+  | 'forks'
+  | 'gong'
+  | 'crystalbowls'
+  | 'overtone'
+  | 'reading'
+  | 'extraction'
+  | 'sweat'
+  | 'mushroom'
+  | 'ayahuasca'
+  | 'quest';
+
+/** The treatments given standing, whose rhythm the body rocks with. */
+export type StandingWork = Exclude<Modality, SeatedWork>;
+
 /**
  * The patience under which a waiting guest shows each mood, so a player can see it running out in time to act. Above
  * them all a guest is content. Restless, they shift their weight and glance about; impatient, they fold their arms and
@@ -468,10 +485,12 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     armL = armR = -0.55;
     if (c.busy) armR = -1.15 + Math.sin(t * 6 + c.id) * 0.25;
     if (c.busy && style === 'sound') {
-      // one hand steadying a bowl, the other circling its rim
+      // one hand steadying a bowl, the other circling its rim, round and out to the side, so it shows from behind too
       armL = -0.95;
       armR = -1.05 + Math.sin(t * 3 + c.id) * 0.14;
+      armOut = 0.3 + Math.cos(t * 3 + c.id) * 0.2;
       lean = 0.15;
+      side = Math.cos(t * 3 + c.id) * 0.05;
     } else if (c.busy && style === 'forks') {
       // striking a fork on the knee, then holding it up to listen
       const tap = Math.max(0, Math.sin(t * 4 + c.id));
@@ -479,11 +498,13 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       armL = -0.7;
       headZ = 0.15;
     } else if (c.busy && style === 'gong') {
-      // a long slow backswing, then a soft stroke through
+      // a long slow backswing out to the side, then a soft stroke through: out wide, so it shows from behind too
       const swing = Math.sin(t * 1.6 + c.id);
       armR = -1.75 + swing * 0.7;
       armL = -0.6;
+      armOut = 0.35 + swing * 0.3;
       lean = 0.1 - swing * 0.12;
+      side = swing * 0.08;
     } else if (c.busy && style === 'crystalbowls') {
       // both hands drawing slow circles round two rims
       armL = -1.0 + Math.sin(t * 2 + c.id) * 0.12;
@@ -517,7 +538,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       // swaying slowly with both hands held out, eyes on the ceiling
       armL = armR = -0.8;
       armOut = 0.45;
-      side = Math.sin(t * 0.9 + c.id) * 0.12;
+      side = Math.sin(t * 0.9 + c.id) * MUSHROOM_SWAY;
       headX = -0.2;
     } else if (c.busy && style === 'quest') {
       // eyes on the far distance, one hand shading them, the other pointing the way, turning slowly to look about
@@ -1113,8 +1134,14 @@ function fidgetAt(id: number, t: number, kinds: readonly (Fidget | null)[], ever
   return { kind, amount: Math.min(1, Math.sin(Math.PI * u) * 1.6), way: hash(n * 3.7 + id) < 0.5 ? -1 : 1 };
 }
 
-/** How fast each treatment's strokes go, in radians a second, matching the arms' rhythm in `poseChar`. */
-const RHYTHM: Partial<Record<Modality, number>> = {
+/** How far a Shaman sways side to side over a mushroom ceremony, in radians: enough to see from the usual distance. */
+const MUSHROOM_SWAY = 0.24;
+
+/**
+ * How fast each treatment's strokes go, in radians a second, matching the arms' rhythm in `poseChar`: the body rocks
+ * with them standing, gently for slow work and briskly for quick.
+ */
+export const RHYTHM: Readonly<Record<StandingWork, number>> = {
   swedish: 4.2,
   deep: 3.2,
   sports: 2.3,
@@ -1127,6 +1154,13 @@ const RHYTHM: Partial<Record<Modality, number>> = {
   crystal: 0.9,
   chakra: 0.6,
   moxa: 1.3,
+  distance: 0.7,
+  kneading: 6,
+  impression: 7,
+  aurawash: 2.5,
+  alphorn: 0.9,
+  pressing: 1.6,
+  rebirth: 2,
 };
 
 /**
@@ -1170,7 +1204,7 @@ function liveliness(c: Char, t: number, phase: number, doing: Doing): Life {
   // an act poses the whole body, and only breathes
   if (doing.act) return life;
   if (c.busy && c.pose === 'stand' && style !== 'qigong') {
-    const f = (style && RHYTHM[style]) ?? 7.5;
+    const f = style && style in RHYTHM ? RHYTHM[style as StandingWork] : 7.5;
     // gentle treatments barely move the body; brisk ones rock it
     const push = Math.sin(t * f + c.id) * Math.min(1, f / 3);
     life.swayX = push * 0.02;

@@ -9,7 +9,7 @@ import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
 import { type Act, actOf, lyingAt } from '../../src/render/acts';
 import { rattle } from '../../src/render/item-cues';
-import { buildCharacter, type CharRig, cureRig } from '../../src/render/models/character';
+import { buildCharacter, CAP_TIP, type CharRig, cureRig } from '../../src/render/models/character';
 import { HELD_SIZE } from '../../src/render/models/held';
 import {
   actMoment,
@@ -27,10 +27,12 @@ import {
   poseChar,
   PRONE_TURN,
   rattleDip,
+  RHYTHM,
   SIP,
   stepOn,
   STRIDE,
   treadmill,
+  type WorkStyle,
 } from '../../src/render/pose';
 
 /** A guest with nothing wrong with them to show, waiting with so much patience. */
@@ -622,5 +624,43 @@ describe('the moment of a cure', () => {
     expect(rig.cured).toBe(true);
     expect(rig.props[0]!.visible).toBe(false);
     expect(rig.burst).toBeUndefined();
+  });
+});
+
+describe('at work', () => {
+  /** How far someone at work moves about over a few seconds: the most each of a few angles goes from one to another. */
+  function range(c: Char, style: WorkStyle, parts: (rig: CharRig) => number[]) {
+    const rig = buildCharacter(LAB_LOOK, c.kind === 'staff' ? c.role : undefined);
+    const seen: number[][] = [];
+    for (let t = 0; t < 8; t += 0.05) {
+      poseChar(rig, c, t, 0.05, { style });
+      seen.push(parts(rig));
+    }
+    return seen[0]!.map((_, i) => Math.max(...seen.map((s) => s[i]!)) - Math.min(...seen.map((s) => s[i]!)));
+  }
+
+  it('rocks gently over slow, aloof work and briskly over quick', () => {
+    const at = { ...demoStaff(LAB_LOOK, 'healer'), pose: 'stand' as const, busy: true };
+    const [aloof, brisk] = (['distance', 'kneading'] as const).map(
+      (style) => range(at, style, (r) => [r.torso.rotation.x])[0]!,
+    );
+    expect(aloof).toBeLessThan(brisk! / 2);
+    expect(RHYTHM.distance).toBeLessThan(RHYTHM.swedish);
+  });
+
+  it('sways a Shaman over a mushroom ceremony far enough to see', () => {
+    const at = { ...demoStaff(LAB_LOOK, 'shaman'), pose: 'sit' as const, busy: true };
+    expect(range(at, 'mushroom', (r) => [r.torso.rotation.z])[0]).toBeGreaterThan(0.4);
+  });
+
+  it('swings the gong’s beater out to the side, where it shows from behind', () => {
+    const at = { ...demoStaff(LAB_LOOK, 'healer'), pose: 'sit' as const, busy: true };
+    expect(range(at, 'gong', (r) => [r.armR.rotation.z])[0]).toBeGreaterThan(0.4);
+  });
+
+  it('wears the Caretaker’s cap pushed back, the brim up off the face', () => {
+    const rig = buildCharacter(LAB_LOOK, 'caretaker');
+    expect(rig.head.getObjectByName('cap')?.rotation.x).toBe(CAP_TIP);
+    expect(CAP_TIP).toBeLessThan(-0.2);
   });
 });

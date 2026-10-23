@@ -121,6 +121,9 @@ const BUILD_WIDTH = [0.9, 1, 1.13];
  */
 export const PROP = 1.6;
 
+/** How far back on the head the Caretaker wears their cap, in radians, the brim tipped up off the face. */
+export const CAP_TIP = -0.38;
+
 /** How far above the middle of the head its top is, in meters. */
 const HEAD_TOP = 0.22;
 
@@ -228,7 +231,12 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     const feather = put(head, rbox(0.05, 0.26, 0.012, 0.01), mat(0xf4f1ea, 0.8), 0.17, 0.16, -0.12);
     feather.rotation.set(-0.4, 0, -0.35);
   }
-  if (role === 'caretaker') detailCap(head, accent, 'peaked');
+  if (role === 'caretaker') {
+    // pushed back on the head, so from above the brim does not hide the face
+    detailCap(head, accent, 'peaked');
+    const cap = head.getObjectByName('cap');
+    if (cap) cap.rotation.x = CAP_TIP;
+  }
   if (visitor === 'vip') {
     // dark glasses, a white shirt and a tie in the V of the jacket, and a gold pin on the lapel
     const shades = mat(0x1d1f24, 0.2);
