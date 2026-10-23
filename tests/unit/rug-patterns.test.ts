@@ -24,6 +24,7 @@ function toolsFor(sim: ReturnType<typeof openCenter>['sim'], ghosts: (GhostSpec 
       ghosts.push(g);
     },
     setDoor: nothing,
+    nudge: nothing,
     /** The ground is wherever the pointer says. */
     groundAt(x: number, y: number) {
       return { x, y };

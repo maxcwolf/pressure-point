@@ -157,15 +157,21 @@ export class ItemsLayer {
     this.sync();
   }
 
-  /** Build a model for any item that is new, has moved or been upgraded, and remove the ones that are gone. */
-  sync() {
+  /**
+   * Build a model for any item that is new, has moved or been upgraded, and remove the ones that are gone. Returns the
+   * models of the items new or moved, which settle into place.
+   */
+  sync(): THREE.Group[] {
     const liveItems = new Set<number>();
+    const landed: THREE.Group[] = [];
     for (const it of this.sim.s.items) {
       liveItems.add(it.id);
       const hung = onWall(it.type) ? hangPlace(this.sim.world, it, this.turn) : null;
       const key = `${it.type},${it.x},${it.y},${it.rot},${it.level},${it.pattern ?? ''},${hung ? hung.tall : ''}`;
       if (this.items.get(it.id)?.key === key) continue;
       const old = this.items.get(it.id);
+      // built again where it was, upgraded or for a turn of the camera, it has not landed anywhere
+      const moved = !old?.key.startsWith(`${it.type},${it.x},${it.y},${it.rot},`);
       if (old) {
         this.scene.remove(old.group);
         disposeOwned(old.group);
@@ -181,6 +187,7 @@ export class ItemsLayer {
       // a machine stands taller than anything else, so its bar and markers go over the top of it
       const top = new THREE.Box3().setFromObject(model).max.y;
       this.items.set(it.id, { group, key, top });
+      if (moved) landed.push(group);
     }
     for (const [id, it] of this.items) {
       if (liveItems.has(id)) continue;
@@ -193,6 +200,7 @@ export class ItemsLayer {
       this.bars.delete(id);
     }
     this.gags.prune(liveItems);
+    return landed;
   }
 
   /** Update what changes from frame to frame: effects, progress bars and markers for broken or filthy items. */

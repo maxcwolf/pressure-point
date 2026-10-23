@@ -52,6 +52,15 @@ import type { Edge } from './resize';
 import { dragEdge, edgeNear, edgeTiles } from './resize';
 import type { HeldItem, PlanStatus, Point, Tool } from './types';
 
+/**
+ * How long after something goes down, in milliseconds, the preview of the next keeps out of the way, unless the pointer
+ * moves this many pixels first: it would sit red on top of what just went in.
+ */
+const LANDED_MS = 250;
+const LANDED_PX = 6;
+/** How long after a click is turned down the hint's problem line pulses, in milliseconds. */
+const REFUSED_MS = 600;
+
 /** What a refresh has worked out so far: the tiles and icons to draw over the floor. */
 interface Drawing {
   tiles: OverlayTile[];
@@ -73,6 +82,11 @@ export class Tools {
   /** The pattern the next rug put down will have, kept from one rug to the next. */
   rugPattern: RugPatternId = 'kilim';
   private cursor: Point | null = null;
+  /** Where on screen, and when, the last thing went down, while the preview of the next keeps out of the way. */
+  private landed: { x: number; y: number; at: number } | null = null;
+  /** How many clicks have been turned down, and when the last was, so the hint can pulse its problem line at each. */
+  refusals = 0;
+  private refusedAt = -Infinity;
 
   constructor(
     private sim: Sim,
@@ -106,6 +120,7 @@ export class Tools {
 
   /** Pick something to place. With a blueprint open it is added to the blueprint's session instead of replacing it. */
   startItem(type: ItemType) {
+    this.landed = null;
     const t = this.tool;
     if (t.kind === 'room' && t.phase === 'plan') {
       t.sub = { kind: 'item', type, rot: 0, required: this.sim.missingItems(t.room).includes(type) };
@@ -152,6 +167,29 @@ export class Tools {
   private refuse(action: string, reason = this.problem) {
     this.sfx('error');
     this.refused?.(action, reason);
+    // the preview shakes and the problem line pulses, so the click is seen to have been turned down as well as heard
+    this.refusals++;
+    this.refusedAt = performance.now();
+    this.view.nudge();
+  }
+
+  /** Whether a click was turned down a moment ago, while the hint's problem line pulses for it. */
+  get justRefused(): boolean {
+    return performance.now() - this.refusedAt < REFUSED_MS;
+  }
+
+  /**
+   * Something has just gone down where the pointer is: keep the preview of the next out of the way until the pointer
+   * moves off or a moment passes, so it does not sit red on top of what just went in.
+   */
+  private land(clientX: number, clientY: number) {
+    const landed = { x: clientX, y: clientY, at: performance.now() };
+    this.landed = landed;
+    setTimeout(() => {
+      if (this.landed !== landed) return;
+      this.landed = null;
+      this.refresh();
+    }, LANDED_MS);
   }
 
   /** Why an item would not go down: the problem where it is held, or, where it fits, that it cannot be paid for. */
@@ -275,6 +313,7 @@ export class Tools {
 
   /** In a blueprint: take up the door, the window tool, or nothing. */
   planHold(what: 'window' | 'door' | '') {
+    this.landed = null;
     const t = this.tool;
     if (t.kind !== 'room' || t.phase !== 'plan') return;
     t.sub = what ? { kind: what } : null;
@@ -295,6 +334,7 @@ export class Tools {
 
   /** Drop the current tool entirely. A blueprint is torn up and anything bought for it refunded. */
   cancel() {
+    this.landed = null;
     const t = this.tool;
     if (t.kind === 'room' && t.phase === 'plan') this.sim.removeRoom(t.room.id, 1);
     this.tool = { kind: 'none' };
@@ -321,6 +361,8 @@ export class Tools {
 
   /** Turn the item, or the room, in hand a quarter turn. */
   rotate() {
+    // turning it is looking at where it goes next
+    this.landed = null;
     const t = this.tool;
     if (t.kind === 'moveRoom' || t.kind === 'template') {
       t.layout = turnLayout(t.layout);
@@ -339,6 +381,8 @@ export class Tools {
   /** Track the cursor, stretching the room being dragged out. */
   pointerMove(clientX: number, clientY: number) {
     this.cursor = this.view.groundAt(clientX, clientY);
+    const landed = this.landed;
+    if (landed && Math.hypot(clientX - landed.x, clientY - landed.y) >= LANDED_PX) this.landed = null;
     const t = this.tool;
     if (t.kind === 'room' && t.phase === 'drag' && t.start && this.cursor) {
       t.rect = dragRect(t.start, tileOf(this.cursor));
@@ -383,7 +427,7 @@ export class Tools {
     }
     if (t.kind === 'item') {
       const spot = this.spotFor(t);
-      if (spot && sim.placeItem(t.type, spot.x, spot.y, spot.rot, this.looks(t.type))) this.onChange();
+      if (spot && sim.placeItem(t.type, spot.x, spot.y, spot.rot, this.looks(t.type))) this.land(clientX, clientY);
       else if (spot) this.refuse('place_item', this.placeProblem(t.type));
     } else if (t.kind === 'move') {
       const spot = this.spotFor(t);
@@ -403,11 +447,12 @@ export class Tools {
       if (room && sim.assignRoom(t.staffId, room.id)) this.sfx('blip');
       else this.refuse('assign_room', room ? '' : 'Not on a room');
     } else if (t.kind === 'moveRoom') {
-      this.putRoomDown(t.roomId, t.copy);
+      if (this.putRoomDown(t.roomId, t.copy) && t.copy) this.land(clientX, clientY);
     } else if (t.kind === 'template') {
       // the tool stays for another
       const placed = this.placedRoom(t);
-      if (placed && !sim.buildTemplate(t.name, t.layout, placed)) this.refuse('build_template');
+      if (placed && sim.buildTemplate(t.name, t.layout, placed)) this.land(clientX, clientY);
+      else if (placed) this.refuse('build_template');
     } else if (t.kind === 'expand') {
       t.pointed = this.plotUnderCursor();
       const offer = sim.landOffers().find((o) => o.def.id === t.pointed);
@@ -449,6 +494,7 @@ export class Tools {
         const room = sim.createRoom(t.type, t.rect, door);
         // straight on to the first piece of required furniture
         this.tool = { kind: 'room', type: t.type, phase: 'plan', room, sub: nextRequired(sim.missingItems(room)) };
+        this.land(clientX, clientY);
       } else this.refuse('place_door');
     } else {
       const sub = t.sub;
@@ -458,6 +504,7 @@ export class Tools {
         const opts = { ...(sub.required && { free: true, roomId: t.room.id }), ...this.looks(sub.type) };
         if (spot && sim.placeItem(sub.type, spot.x, spot.y, spot.rot, opts)) {
           if (sub.required) t.sub = nextRequired(sim.missingItems(t.room));
+          this.land(clientX, clientY);
         } else if (spot) this.refuse('place_item', this.placeProblem(sub.type, sub.required));
       } else if (sub?.kind === 'window') this.clickWindow(t.room.id);
       else if (sub?.kind === 'door') {
@@ -468,17 +515,23 @@ export class Tools {
     return toBuy;
   }
 
-  /** Put the room in hand down: moved, it is done with and selected; copied, the tool stays for another copy. */
-  private putRoomDown(roomId: number, copy: boolean) {
+  /**
+   * Put the room in hand down: moved, it is done with and selected; copied, the tool stays for another copy. Whether it
+   * went down.
+   */
+  private putRoomDown(roomId: number, copy: boolean): boolean {
     const t = this.tool;
     const placed = t.kind === 'moveRoom' ? this.placedRoom(t) : null;
-    if (!placed) return;
+    if (!placed) return false;
     if (copy) {
-      if (!this.sim.copyRoom(roomId, placed)) this.refuse('copy_room');
+      if (this.sim.copyRoom(roomId, placed)) return true;
+      this.refuse('copy_room');
     } else if (this.sim.moveRoom(roomId, placed)) {
       this.tool = { kind: 'none' };
       this.select({ kind: 'room', id: roomId });
+      return true;
     } else this.refuse('move_room');
+    return false;
   }
 
   /**
@@ -532,23 +585,28 @@ export class Tools {
     const check = moving
       ? this.sim.canMoveItem(moving, x, y, rot)
       : this.sim.world.canPlaceItem(type, x, y, rot, roomId);
+    // one being moved is paid for already, and required furniture, the only kind held for a room, is in its price
+    const free = !!moving || roomId !== undefined;
+    const affordable = free || this.sim.s.money >= ITEMS[type].cost;
+    const ok = check.ok && affordable;
     const placed = { type, x, y, rot };
     // something hung on a wall is shown by its ghost alone: it covers no floor
     if (!onWall(type)) {
-      const { tiles, markers } = itemTiles(placed, check.ok);
+      const { tiles, markers } = itemTiles(placed, ok);
       drawing.tiles.push(...tiles);
       drawing.markers.push(...markers);
     }
-    this.problem = check.reason;
+    // where it fits but the bank cannot pay for it, it shows red before the click, not only after
+    this.problem = check.reason || (affordable ? '' : "Can't afford it");
     // what a new item would change, worked out once for each spot it is held over, and again once another is down
-    if (!moving && check.ok && loadDisplay().placePreview) {
+    if (!moving && ok && loadDisplay().placePreview) {
       const key = `${type}:${x},${y}:${rot}:${this.sim.s.items.length}`;
       if (this.lastPreview?.key !== key) this.lastPreview = { key, preview: this.sim.previewItem(placed) };
       this.preview = this.lastPreview.preview;
     }
     // a rug being moved keeps its own pattern; a new one has the pattern picked for it
     const pattern = type === 'rug' ? (moving ? moving.pattern : this.rugPattern) : undefined;
-    this.view.setGhost({ ...placed, ok: check.ok, pattern });
+    this.view.setGhost({ ...placed, ok, pattern });
   }
 
   /** Marker for the window tool on one room. */
@@ -716,6 +774,15 @@ export class Tools {
       else if (sub.kind === 'item') this.drawItem(sub, sub.required ? t.room.id : undefined, drawing);
       else if (sub.kind === 'window') this.drawWindow(t.room);
       else this.drawDoor(t.room);
+    }
+    if (this.landed) {
+      // something has just gone down under the pointer: the next keeps out of the way rather than sit red on top of it
+      this.problem = '';
+      this.preview = null;
+      view.setGhost(null);
+      view.setDoor(null);
+      drawing.tiles = [];
+      drawing.markers = [];
     }
     view.setOverlay(drawing.tiles);
     view.setMarkers(drawing.markers);

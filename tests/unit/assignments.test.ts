@@ -242,6 +242,7 @@ describe('the assign tool', () => {
       setMarkers: nothing,
       setGhost: nothing,
       setDoor: nothing,
+      nudge: nothing,
       /** The point under the cursor: wherever the test has put it. */
       groundAt: () => ground,
     };

@@ -35,6 +35,7 @@ interface Handle {
   state: GameState;
   view: {
     project(x: number, y: number, h?: number): Point;
+    groundAt(x: number, y: number): Point | null;
     pick(x: number, y: number): { kind: string; id: number } | null;
     dist: number;
     drawing: boolean;
@@ -45,7 +46,7 @@ interface Handle {
     target: { set(x: number, y: number, z: number): void };
     renderer: { info: { render: { triangles: number } } };
     /** What a click would select now, and whether the marker over a selected person shows. */
-    overlays: { hovered: { kind: string; id: number } | null; markerShown: boolean };
+    overlays: { hovered: { kind: string; id: number } | null; markerShown: boolean; outlineShown: boolean };
     /** What each room's lamp shows. */
     rooms: { lampOf(roomId: number): string | undefined };
   };

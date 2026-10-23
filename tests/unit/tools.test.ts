@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { dragRect, itemSpot, tileOf } from '../../src/app/tools/geometry';
 import {
@@ -17,11 +17,12 @@ import { heldItem, nextRequired, planStatus, quarterTurn } from '../../src/app/t
 import { isStaffRole, legend, useSquares } from '../../src/app/tools/squares';
 import { Tools } from '../../src/app/tools/tools';
 import type { Tool } from '../../src/app/tools/types';
-import { ROOM_TILE_COST, ROOMS } from '../../src/core/data';
+import { ITEMS, ROOM_TILE_COST, ROOMS } from '../../src/core/data';
 import { money } from '../../src/core/format';
 import { copyCost } from '../../src/core/room-layout';
 import type { Room } from '../../src/core/state/types';
 import { OV_BAD, OV_BLUE, OV_FREE, OV_GOOD, OV_GUEST, OV_STAFF } from '../../src/render/overlay-codes';
+import type { GhostSpec } from '../../src/render/overlays';
 import type { View } from '../../src/render/view';
 import { freshSim, LAYOUT, openCenter, toasts } from './helpers';
 
@@ -231,7 +232,14 @@ describe('building a blueprint', () => {
     const room = sim.createRoom('consult', { ...LAYOUT.consult.rect, h: 5 }, LAYOUT.consult.door);
     sim.placeItem('consult_desk', 6, 6, 0, { free: true, roomId: room.id });
     sim.placeItem('cabinet', 5, 8, 0, { free: true, roomId: room.id });
-    const view = { selected: null, setOverlay: nothing, setMarkers: nothing, setGhost: nothing, setDoor: nothing };
+    const view = {
+      selected: null,
+      setOverlay: nothing,
+      setMarkers: nothing,
+      setGhost: nothing,
+      setDoor: nothing,
+      nudge: nothing,
+    };
     const tools = new Tools(sim, view as unknown as View, nothing, nothing);
     tools.tool = { kind: 'room', type: 'consult', phase: 'plan', room, sub: null };
     return { sim, room, tools };
@@ -280,6 +288,7 @@ describe('moving and copying a room', () => {
       setMarkers: nothing,
       setGhost: nothing,
       setDoor: nothing,
+      nudge: nothing,
       /** The cursor is on the ground wherever the pointer says. */
       groundAt: (x: number, y: number) => ({ x, y }),
     };
@@ -359,6 +368,7 @@ describe('refusals', () => {
       setMarkers: nothing,
       setGhost: nothing,
       setDoor: nothing,
+      nudge: nothing,
       /** The cursor is on the ground wherever the pointer says. */
       groundAt: (x: number, y: number) => ({ x, y }),
     };
@@ -377,5 +387,114 @@ describe('refusals', () => {
     sim.s.money = 0;
     tools.pointerUp(...spot!);
     expect(refusals).toEqual([['place_item', "Can't afford it"]]);
+  });
+});
+
+describe('putting things down', () => {
+  /** Ignore a call to the scene. */
+  const nothing = () => undefined;
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** A center with its rooms built and the build tools on it, keeping the last ghost shown and counting shakes. */
+  function withTools() {
+    const c = openCenter(1);
+    const seen = { ghost: null as GhostSpec | null, nudges: 0 };
+    const view = {
+      selected: null,
+      setOverlay: nothing,
+      setMarkers: nothing,
+      /** Keep the ghost shown, to look at after. */
+      setGhost: (g: GhostSpec | null) => {
+        seen.ghost = g;
+      },
+      setDoor: nothing,
+      /** Count a shake of the preview. */
+      nudge: () => {
+        seen.nudges++;
+      },
+      /** The cursor is on the ground wherever the pointer says. */
+      groundAt: (x: number, y: number) => ({ x, y }),
+    };
+    const tools = new Tools(c.sim, view as unknown as View, nothing, nothing);
+    return { ...c, tools, seen };
+  }
+
+  /** The first spot, as a point under the pointer, where a plant would fit. */
+  function plantSpot(tools: Tools, sim: ReturnType<typeof openCenter>['sim']): [number, number] {
+    for (let y = 0; y < sim.world.h; y++)
+      for (let x = 0; x < sim.world.w; x++) {
+        tools.pointerMove(x + 0.5, y + 0.5);
+        if (tools.problem === '') return [x + 0.5, y + 0.5];
+      }
+    throw new Error('nowhere for a plant');
+  }
+
+  it('keeps the next ghost out of the way until the pointer moves off, rather than show it red on what went in', () => {
+    const { sim, tools, seen } = withTools();
+    tools.startItem('plant');
+    const [x, y] = plantSpot(tools, sim);
+    tools.pointerUp(x, y);
+    expect(sim.s.items.filter((it) => it.type === 'plant')).toHaveLength(1);
+    // the pointer has not moved: no red ghost, no problem line
+    expect(seen.ghost).toBeNull();
+    expect(tools.problem).toBe('');
+    // nor once it has moved a pixel or two
+    tools.pointerMove(x + 0.5, y);
+    expect(seen.ghost).toBeNull();
+    // but moved off, it is back
+    tools.pointerMove(x + 7, y);
+    expect(seen.ghost).not.toBeNull();
+  });
+
+  it('brings the ghost back after a moment, where the pointer is still', () => {
+    vi.useFakeTimers();
+    const { sim, tools, seen } = withTools();
+    tools.startItem('plant');
+    const [x, y] = plantSpot(tools, sim);
+    tools.pointerUp(x, y);
+    expect(seen.ghost).toBeNull();
+    vi.advanceTimersByTime(300);
+    expect(seen.ghost).toMatchObject({ type: 'plant', ok: false });
+    expect(tools.problem).not.toBe('');
+  });
+
+  it('shakes the preview and pulses the problem line when a click is turned down', () => {
+    const { tools, seen } = withTools();
+    tools.startItem('plant');
+    // on the reception desk
+    tools.pointerMove(15.5, 13.5);
+    expect(tools.problem).not.toBe('');
+    expect(tools.justRefused).toBe(false);
+    tools.pointerUp(15.5, 13.5);
+    expect(seen.nudges).toBe(1);
+    expect(tools.refusals).toBe(1);
+    expect(tools.justRefused).toBe(true);
+  });
+
+  it('shows an item the bank cannot pay for red before the click, saying why', () => {
+    const { sim, tools, seen } = withTools();
+    tools.startItem('plant');
+    const [x, y] = plantSpot(tools, sim);
+    expect(seen.ghost?.ok).toBe(true);
+    sim.s.money = ITEMS.plant.cost - 1;
+    tools.pointerMove(x, y);
+    expect(seen.ghost?.ok).toBe(false);
+    expect(tools.problem).toBe("Can't afford it");
+  });
+
+  it('floats the price off a bought item, as a refund floats off a sold one', () => {
+    const { sim, tools } = withTools();
+    tools.startItem('plant');
+    const [x, y] = plantSpot(tools, sim);
+    sim.drain();
+    tools.pointerUp(x, y);
+    expect(sim.drain()).toContainEqual({ type: 'float', text: money(-ITEMS.plant.cost), x, y, kind: 'bad' });
+    // and nothing for furniture that comes in a room's price
+    tools.pointerMove(x + 7, y);
+    const [fx, fy] = plantSpot(tools, sim);
+    expect(sim.placeItem('plant', Math.floor(fx), Math.floor(fy), 0, { free: true })).toBeTruthy();
+    expect(sim.drain().some((e) => e.type === 'float')).toBe(false);
   });
 });

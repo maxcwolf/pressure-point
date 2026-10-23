@@ -81,6 +81,26 @@ test.describe('starting out', () => {
     await expect(page.locator('#advisor')).toContainText('Hire a Receptionist');
   });
 
+  test('a placement keeps the next preview out of the way, and one that cannot be paid for shows red first', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.menu('Items');
+    await game.card('Potted Plant').click();
+    await game.placeHeld();
+    // the pointer has not moved: the next plant does not sit red on the one just put down
+    expect(await game.eval((pp) => pp.tools.problem)).toBe('');
+    await expect(page.locator('#hint b')).toHaveCount(0);
+    // and the price floats off it
+    await expect(page.locator('#floaters')).toContainText('-$120');
+    // with too little in the bank, the next is red before any click, saying why
+    await game.eval((pp) => (pp.state.money = 5));
+    await game.hoverHeld();
+    await expect(page.locator('#hint b')).toHaveText("Can't afford it");
+    expect(game.errors).toEqual([]);
+  });
+
   test('an invalid spot is refused and explained', async ({ game, page }) => {
     await game.start();
     await game.menu('Items');
@@ -89,6 +109,8 @@ test.describe('starting out', () => {
     await expect(page.locator('#hint')).toContainText('Must be inside the building');
     await game.clickLawn();
     expect(await game.eval((pp) => pp.state.items.length)).toBe(0);
+    // the reason pulses, so the click is seen to be turned down as well as heard
+    await expect(page.locator('#hint b.refused')).toHaveCount(1);
   });
 
   test('the newer items wait for their stars, or karma', async ({ game }) => {
@@ -1222,9 +1244,17 @@ test.describe('controls and saving', () => {
     await game.settle();
     expect(await spot()).toBeCloseTo(stopped, 0);
     const dist = await game.eval((pp) => pp.view.dist);
-    await page.mouse.move(700, 450);
+    // the wheel zooms toward the spot under the pointer, which stays where it is on screen
+    const pointer = { x: 1000, y: 300 };
+    const ground = await game.eval((pp, p) => pp.view.groundAt(p.x, p.y)!, pointer);
+    await page.mouse.move(pointer.x, pointer.y);
     await page.mouse.wheel(0, -400);
-    expect(await game.eval((pp) => pp.view.dist)).toBeLessThan(dist);
+    // easing in over a few frames
+    await expect.poll(() => game.eval((pp) => pp.view.dist)).toBeLessThan(dist);
+    await game.cameraStill();
+    const at = await game.eval((pp, g) => pp.view.project(g.x, g.y), ground);
+    expect(Math.abs(at.x - pointer.x)).toBeLessThan(2);
+    expect(Math.abs(at.y - pointer.y)).toBeLessThan(2);
   });
 
   test('the pause menu shows the controls and resumes at the old speed', async ({ game, page }) => {
@@ -3240,6 +3270,21 @@ test.describe('turning the camera', () => {
     await game.cameraStill();
     await game.clickRoom('massage');
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
+    // the room selected is outlined in gold on its floor
+    await game.settle();
+    expect(await game.eval((pp) => pp.view.overlays.outlineShown)).toBe(true);
+    expect(game.errors).toEqual([]);
+  });
+});
+
+test.describe('the camera for a player who asks for less motion', () => {
+  test('cuts round and over rather than gliding', async ({ game, page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await game.start();
+    await page.keyboard.press('KeyE');
+    expect(await game.eval((pp) => [pp.view.turn, pp.view.cameraStill])).toEqual([1, true]);
+    await game.eval((pp) => pp.view.lookAt(10, 10));
+    expect(await game.eval((pp) => pp.view.cameraStill)).toBe(true);
     expect(game.errors).toEqual([]);
   });
 });
