@@ -4,7 +4,7 @@
   top: 64px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(560px, calc(100vw - 560px));
+  width: min(560px, calc(var(--vw) - 560px));
   min-width: 320px;
   padding: 10px 12px;
   animation: drop 0.2s ease-out;

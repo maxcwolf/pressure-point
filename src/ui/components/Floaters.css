@@ -1,15 +1,18 @@
 /* Styles for Floaters. */
 
+/* placed and faded every frame from its point in the world (Floaters.tsx); hidden until then */
 .floater {
   position: absolute;
-  transform: translate(-50%, -50%);
+  left: 0;
+  top: 0;
+  opacity: 0;
   font-weight: 700;
   font-size: 19px;
   color: #fff;
   -webkit-text-stroke: 4px var(--navy);
   paint-order: stroke fill;
-  animation: floatup 1.5s ease-out forwards;
   white-space: nowrap;
+  will-change: transform, opacity;
 }
 
 .floater.good {

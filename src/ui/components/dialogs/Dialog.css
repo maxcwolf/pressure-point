@@ -8,10 +8,21 @@
   background: rgba(36, 56, 74, 0.45);
   pointer-events: auto;
   z-index: 20;
+  animation: fadein 0.2s ease-out;
+}
+
+/* a dialog on its way out: the game brightens again as the dialog shrinks away, and takes no more clicks */
+#modal.leaving .veil {
+  pointer-events: none;
+  animation: fadeout 0.14s ease-in forwards;
+}
+
+#modal.leaving .dialog {
+  animation: unpop 0.14s ease-in forwards;
 }
 
 .dialog {
-  width: min(460px, calc(100vw - 40px));
+  width: min(460px, calc(var(--vw) - 40px));
   text-align: center;
   padding: 22px 26px 24px;
   animation: pop 0.2s ease-out;
@@ -29,8 +40,8 @@
 }
 
 .dialog.wide {
-  width: min(640px, calc(100vw - 40px));
-  max-height: calc(100vh - 40px);
+  width: min(640px, calc(var(--vw) - 40px));
+  max-height: calc(var(--vh) - 40px);
   overflow-y: auto;
 }
 

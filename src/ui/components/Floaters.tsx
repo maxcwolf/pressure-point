@@ -1,19 +1,58 @@
-// Text that drifts up from a point in the world, such as money earned.
+// Text that drifts up from a point in the world, such as money earned. It is drawn where that point is on screen every
+// frame, so it stays put in the world as the camera moves, and rises by `transform`, which costs no layout.
 
 import './Floaters.css';
 
+import { useEffect, useRef } from 'preact/hooks';
+
 import { useHud } from '../hooks/use-hud';
+import { FLOAT_LIFE } from '../lib/floaters';
+
+/** How high a floater rises over its life, and how far apart the rows of floaters close together are, in pixels. */
+const RISE = 60;
+const ROW = 24;
+/** How high above the ground the text starts, in meters. */
+const HEIGHT = 1.6;
 
 /** The floating text currently on screen. */
 export function Floaters() {
-  const { floaters } = useHud();
+  const hud = useHud();
+  const layer = useRef<HTMLDivElement>(null);
+  const any = hud.floaters.length > 0;
+  // a frame loop only while there is something floating: it stops once the last has gone, and starts with the next
+  useEffect(() => {
+    if (!any) return undefined;
+    let frame = 0;
+    let prev = performance.now();
+    /** Run the floaters on, and put each where its point is on screen now. */
+    const step = (now: number) => {
+      hud.ageFloaters(Math.min(0.1, (now - prev) / 1000));
+      prev = now;
+      const byId = new Map(hud.floaters.map((f) => [String(f.id), f]));
+      for (const el of layer.current?.children ?? []) {
+        const f = el instanceof HTMLElement ? byId.get(el.dataset.id ?? '') : undefined;
+        if (!f || !(el instanceof HTMLElement)) continue;
+        const at = hud.host.view.project(f.x, f.y, HEIGHT);
+        const t = f.age / FLOAT_LIFE;
+        const up = RISE * t + f.row * ROW;
+        el.style.transform = `translate(${at.x}px, ${at.y - up}px) translate(-50%, -50%)`;
+        el.style.opacity = String(Math.min(1, t / 0.15, (1 - t) / 0.35));
+      }
+      if (hud.floaters.length) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [hud, any]);
   return (
-    <>
-      {floaters.map((f) => (
-        <div key={f.id} class={`floater ${f.kind}`} style={{ left: `${f.x}px`, top: `${f.y}px` }}>
+    <div class="floaters" ref={layer}>
+      {hud.floaters.map((f) => (
+        // keyed by the floater, so one that money is added to keeps its place and just says more
+        <div key={f.id} data-id={f.id} class={`floater ${f.kind}`}>
           {f.text}
         </div>
       ))}
-    </>
+    </div>
   );
 }

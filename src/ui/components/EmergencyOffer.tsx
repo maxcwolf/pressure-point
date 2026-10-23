@@ -2,9 +2,12 @@
 
 import './EmergencyOffer.css';
 
+import { useRef } from 'preact/hooks';
+
 import { answerOffer } from '../../app/analytics';
 import { conditionOf, EMERGENCY_DAYS, modalityLabel } from '../../core/data';
 import { money } from '../../core/format';
+import type { Sim } from '../../core/sim/sim';
 import { useGame, useHud } from '../hooks/use-hud';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
@@ -16,19 +19,46 @@ import { MishapNotice } from './MishapNotice';
 import { OutbreakOffer } from './OutbreakOffer';
 import { RunnerNotice } from './RunnerNotice';
 
+/** What the column at the top can show, in the order they go when several are there at once. */
+const PARTS = {
+  runner: RunnerNotice,
+  emergency: Emergency,
+  outbreak: OutbreakOffer,
+  call: HouseCallOffer,
+  mishap: MishapNotice,
+  harm: HarmNotice,
+} as const;
+type Part = keyof typeof PARTS;
+
+/** Which parts of the column have something to show. */
+function present(s: Sim['s']): Part[] {
+  const there: Record<Part, boolean> = {
+    runner: s.guests.some((g) => g.state === 'running'),
+    emergency: s.offer !== null,
+    outbreak: s.outbreakOffer !== null,
+    call: s.callOffer !== null,
+    mishap: s.mishap !== null,
+    harm: s.harmNotes.length > 0,
+  };
+  return (Object.keys(PARTS) as Part[]).filter((p) => there[p]);
+}
+
 /**
- * The offers waiting on an answer, an emergency and a stress outbreak over a house call, any mishap, and why harm keeps
- * coming to guests, in one column, under anyone running round on a really bad trip.
+ * The offers waiting on an answer, an emergency, a stress outbreak and a house call, any mishap, why harm keeps coming
+ * to guests, and anyone running round on a really bad trip, in one column. Each new one goes below those already there,
+ * so nothing moves an open offer's buttons out from under the pointer.
  */
 export function EmergencyOffer() {
+  const { sim } = useGame();
+  const order = useRef<Part[]>([]);
+  const now = present(sim.s);
+  order.current = [...order.current.filter((p) => now.includes(p)), ...now.filter((p) => !order.current.includes(p))];
   return (
     <div id="offer">
-      <RunnerNotice />
-      <Emergency />
-      <OutbreakOffer />
-      <HouseCallOffer />
-      <MishapNotice />
-      <HarmNotice />
+      {order.current.map((p) => {
+        const Shown = PARTS[p];
+        return <Shown key={p} />;
+      })}
     </div>
   );
 }

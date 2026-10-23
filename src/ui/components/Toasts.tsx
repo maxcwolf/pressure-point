@@ -1,9 +1,13 @@
-// Right side: a downloaded update, raise requests and promotions waiting on an answer, then messages, newest first, that
+// Right side: a downloaded update, a card for the raises and one for the promotions waiting on an answer, then messages,
+// newest first, that
 // fade once there has been time to read them. Past the first few they pile up underneath, to open out or dismiss at
-// once. One about someone or something takes you there when clicked.
+// once. One about someone or something takes you there when clicked. While the inspector is open the newest two show
+// above it in a band of their own, the rest counted, so the inspector keeps its place.
 
 import './Toasts.css';
 
+import type { StaffRequest } from '../../core/sim/events';
+import type { Staff } from '../../core/state/types';
 import { useGame, useHud } from '../hooks/use-hud';
 import type { Toast } from '../hud';
 import { cx } from '../lib/cx';
@@ -11,14 +15,23 @@ import { pileUp } from '../lib/messages';
 import { promotionRequests, raiseRequests } from '../lib/status';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
+import { inspecting } from './inspector/Inspector';
+
+/** How many messages show above an open inspector. */
+const STRIP = 2;
 
 /** Raise requests and promotions still waiting, and the messages on screen with any piled under them. */
 export function Toasts() {
   const hud = useHud();
-  const { sim, update } = useGame();
+  const game = useGame();
+  const { sim, update } = game;
   const version = update?.ready();
   const { shown, piled } = pileUp(hud.toasts);
-  const open = hud.toastsOpen && piled.length > 0;
+  const open = hud.toastsOpen;
+  if (!open && inspecting(game)) {
+    const requests = [version, raiseRequests(sim.s.staff)[0], promotionRequests(sim.s.staff)[0]].filter(Boolean).length;
+    return <Strip newest={[...shown, ...piled]} requests={requests} />;
+  }
   return (
     <div id="toasts" class={cx(open && 'open')}>
       {version && (
@@ -33,37 +46,109 @@ export function Toasts() {
           <IconText id="ui-update">{`Version ${version} is ready to install`}</IconText>
         </Button>
       )}
-      {raiseRequests(sim.s.staff).map((st) => (
-        <Button
-          key={`raise-${st.id}`}
-          class="toast request link"
-          title="Show me"
-          onPress={() => {
-            hud.show({ kind: 'staff', id: st.id });
-          }}
-        >
-          <IconText id="bubble-raise">{`${st.name} wants a raise`}</IconText>
-        </Button>
-      ))}
-      {promotionRequests(sim.s.staff).map((st) => (
-        <Button
-          key={`promote-${st.id}`}
-          class="toast request link"
-          title="Show me"
-          onPress={() => {
-            hud.show({ kind: 'staff', id: st.id });
-          }}
-        >
-          <IconText id="ui-upgrade">{`${st.name} is ready for promotion`}</IconText>
-        </Button>
-      ))}
+      <RequestCard which="raise" staff={raiseRequests(sim.s.staff)} />
+      <RequestCard which="promotion" staff={promotionRequests(sim.s.staff)} />
       <div class="messages">
         {(open ? [...shown, ...piled] : shown).map((t) => (
           <Message key={t.id} toast={t} />
         ))}
       </div>
-      {piled.length > 0 && <Pile piled={piled} open={open} />}
+      {(open || piled.length > 0) && <Pile piled={piled} open={open} />}
     </div>
+  );
+}
+
+/**
+ * Over an open inspector: the newest two messages, and a count of the rest with the requests waiting, its warnings in
+ * red, that opens every one out when pressed.
+ */
+function Strip({ newest, requests }: { newest: Toast[]; requests: number }) {
+  const hud = useHud();
+  const hold = useHold();
+  const rest = newest.slice(STRIP);
+  const more = rest.length + requests;
+  const warnings = rest.filter((t) => t.kind === 'bad').length;
+  return (
+    <div id="toasts" class="strip">
+      <div class="messages">
+        {newest.slice(0, STRIP).map((t) => (
+          <Message key={t.id} toast={t} />
+        ))}
+      </div>
+      {more > 0 && (
+        <div class="pile" {...hold}>
+          <div class="toast face">
+            <Button
+              class="words link"
+              title="Show them all"
+              onPress={() => {
+                hud.openToasts(true, true);
+              }}
+            >
+              {`${more} more`}
+              {warnings > 0 && <b class="warnings">{` · ${warnings} ${warnings === 1 ? 'warning' : 'warnings'}`}</b>}
+              <span class="chevron">▾</span>
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** How each card for the staff asking for something reads, for one of them and for several. */
+const REQUEST_CARDS = {
+  raise: { icon: 'bubble-raise', one: 'wants a raise', many: 'want a raise' },
+  promotion: { icon: 'ui-upgrade', one: 'is ready for promotion', many: 'are ready for promotion' },
+} as const;
+
+/**
+ * One card for everyone asking for a raise, or for a promotion, which stays until each is answered: "Ines Crickmore and
+ * 2 more want a raise". For one, it takes you to them; for several, it opens a list of them under it to pick from, each
+ * with what they said in its tooltip.
+ */
+function RequestCard({ which, staff }: { which: StaffRequest; staff: readonly Staff[] }) {
+  const hud = useHud();
+  const [first] = staff;
+  if (!first) return null;
+  const { icon, one, many } = REQUEST_CARDS[which];
+  const open = hud.requestsOpen === which && staff.length > 1;
+  /** Take the player to someone asking. */
+  const show = (st: Staff) => {
+    hud.show({ kind: 'staff', id: st.id });
+  };
+  return (
+    <>
+      <Button
+        class={cx('toast request link', open && 'open')}
+        title={staff.length === 1 ? 'Show me' : open ? 'Hide the list' : 'Show who'}
+        onPress={() => {
+          if (staff.length === 1) show(first);
+          else hud.toggleRequests(which);
+        }}
+      >
+        <IconText id={icon}>
+          {staff.length === 1 ? `${first.name} ${one}` : `${first.name} and ${staff.length - 1} more ${many}`}
+        </IconText>
+      </Button>
+      {open && (
+        <ul class="request-list">
+          {staff.map((st) => (
+            <li key={st.id}>
+              <Button
+                class="link"
+                title={hud.asked.get(st.id) ?? `${st.name} ${one}`}
+                onPress={() => {
+                  show(st);
+                }}
+              >
+                {st.name}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 

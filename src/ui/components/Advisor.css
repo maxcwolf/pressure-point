@@ -32,6 +32,26 @@
   text-align: left;
 }
 
+/* a note about something going wrong now: a red edge down its left */
+#advisor .note.alarm {
+  border-left: 8px solid var(--red);
+}
+
+/* a new note fades in where the last one was */
+#advisor .words {
+  display: block;
+  animation: fadein 0.3s ease-out;
+}
+
+#advisor .words b {
+  font-weight: 600;
+}
+
+/* the rest of the note under its bold first sentence, all of it */
+#advisor .rest {
+  display: block;
+}
+
 #advisor .kicker {
   display: block;
   font-size: 11.5px;
@@ -52,7 +72,8 @@
   transform: translateY(-1px);
 }
 
-#advisor .note.link::after,
+/* on the note's last line, after its last word, not on a line of its own under the words */
+#advisor .note.link .words > :last-child::after,
 .toast.link::after {
   content: ' ›';
   font-weight: 700;

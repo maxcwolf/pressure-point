@@ -8,9 +8,10 @@ import { burntOut } from '../../../core/sim/souls';
 import type { Staff } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
+import { meterPercent, meterTone } from '../../lib/meters';
 import { soulNote } from '../../lib/souls';
 import { offerWarning } from '../../lib/standing';
-import { moraleLook, promotionNote, quitWarning, slotNote, staffStatus } from '../../lib/status';
+import { promotionNote, quitWarning, slotNote, staffStatus, statusClass } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText, Line } from '../common/Icon';
@@ -35,9 +36,9 @@ function Career({ staff: st }: { staff: Staff }) {
           : left > 0
             ? `Experience: ${Math.ceil(left)} more to ${rankName(st.skill + 1)}`
             : `Experience: enough for ${rankName(st.skill + 1)}`}
-        <Bar value={rankProgress(st) * 100} class="blue" />
+        <Bar value={rankProgress(st) * 100} tone="blue" show={meterPercent(rankProgress(st) * 100)} />
       </label>
-      {note ? <p class="status needs">{note}</p> : <p class="sub">{slotNote(st)}</p>}
+      {note ? <p class={statusClass('promotion', 'needs')}>{note}</p> : <p class="sub">{slotNote(st)}</p>}
       <QualChips quals={st.quals} general={st.general} />
       {st.promotion && st.state !== 'leaving' && (
         <Button
@@ -164,44 +165,45 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
       <p class="tag">
         <IconText id={ROLES[st.role].icon}>{ROLES[st.role].name}</IconText>
       </p>{' '}
+      {/* what they are doing, then anything wrong, before the rest */}
+      <p class={statusClass('doing')}>{staffStatus(st, sim)}</p>{' '}
+      {sim.daysUntilQuit(st) !== null && (
+        <p class={statusClass(sim.aboutToQuit(st) ? 'quitting' : 'miserable', 'quitting')}>
+          <Line line={quitWarning(sim.daysUntilQuit(st)) ?? { text: '' }} />
+        </p>
+      )}{' '}
+      {st.offer > 0 && st.state !== 'leaving' && (
+        <p class={statusClass('offer', 'rival-offer')}>
+          <IconText id="ui-rival">{offerWarning(st.offer - sim.s.day)}</IconText>
+        </p>
+      )}{' '}
       <StaffCompare staff={st} />
       <Career staff={st} />
       {st.traits.map((t) => (
         <em key={t}>{`${traitOf(t).name}: ${traitOf(t).desc}`}</em>
       ))}{' '}
-      <p class="status">{staffStatus(st, sim)}</p>{' '}
-      {st.offer > 0 && st.state !== 'leaving' && (
-        <p class="status quitting rival-offer">
-          <IconText id="ui-rival">{offerWarning(st.offer - sim.s.day)}</IconText>
-        </p>
-      )}{' '}
-      {sim.daysUntilQuit(st) !== null && (
-        <p class={cx('status', 'quitting', sim.aboutToQuit(st) && 'alarm')}>
-          <Line line={quitWarning(sim.daysUntilQuit(st)) ?? { text: '' }} />
-        </p>
-      )}{' '}
       {st.training && (
         <label>
           Course progress
-          <Bar value={st.training.progress * 100} class="blue" />
+          <Bar value={st.training.progress * 100} tone="blue" show={meterPercent(st.training.progress * 100)} />
         </label>
       )}{' '}
       <label>
         Energy
-        <Bar value={st.energy} class={st.energy < 20 ? 'bad' : 'energy'} />
+        <Bar value={st.energy} tone={meterTone('energy', st.energy)} show />
       </label>{' '}
       <label>
         Morale
-        <Bar value={st.morale} class={moraleLook(st.morale)} />
+        <Bar value={st.morale} tone={meterTone('morale', st.morale)} show />
       </label>{' '}
       <Soul staff={st} />
       <label title="Seen to between jobs at a Water Cooler or Tea Station, or by an Espresso Machine on a break.">
         Thirst
-        <Bar value={st.thirst} class={st.thirst >= 100 ? 'bad' : 'need'} />
+        <Bar value={st.thirst} tone={meterTone('need', st.thirst)} show />
       </label>{' '}
       <label title="Seen to between jobs at a Snack Machine.">
         Hunger
-        <Bar value={st.hunger} class={st.hunger >= 100 ? 'bad' : 'need'} />
+        <Bar value={st.hunger} tone={meterTone('need', st.hunger)} show />
       </label>{' '}
       <p class="sub">
         {`Salary ${money(st.salary)}/month (going rate ${money(sim.fairPay(st))}) · Guests served: ${st.served}`}

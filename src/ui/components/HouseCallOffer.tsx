@@ -3,7 +3,7 @@
 
 import { answerOffer } from '../../app/analytics';
 import { CALL_OFFER_DAYS } from '../../core/data';
-import { money } from '../../core/format';
+import { an, money } from '../../core/format';
 import { callWants } from '../../core/sim/calls';
 import { rankName } from '../../core/sim/careers';
 import { useGame, useHud } from '../hooks/use-hud';
@@ -81,7 +81,7 @@ export function HouseCallOffer() {
           ))}
         </div>
       ) : (
-        <p class="sub warn">{`Nobody here can go: it needs a ${callWants(call)} who is free.`}</p>
+        <p class="sub warn">{`Nobody here can go: it needs ${an(callWants(call))} who is free.`}</p>
       )}
       <div class="time-left">
         <span>{`Offer lapses: ${timeLeftLabel(left.days)}`}</span>

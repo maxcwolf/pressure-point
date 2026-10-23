@@ -4,10 +4,19 @@
   animation: pop 0.16s ease-out;
 }
 
+#inspector.leaving > .panel {
+  pointer-events: none;
+  animation: unpop 0.14s ease-in forwards;
+}
+
+/* at the foot of the right-hand column, under the messages, scrolling within the room they leave */
 #inspector {
-  right: 14px;
-  bottom: 104px;
+  margin-top: auto;
+  align-self: flex-end;
   width: 280px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .insp {
@@ -59,6 +68,10 @@
   font-size: 12px;
 }
 
+/*
+ * A status line, in the tone of what it says: plain news on navy, what wants seeing to in amber, trouble in red, good
+ * news in green. The light ones carry a stripe of their color down the left, to be told apart at a glance.
+ */
 .insp .status {
   background: var(--navy);
   color: var(--cream);
@@ -67,11 +80,39 @@
   font-weight: 500;
 }
 
-/* an icon keeps its navy outline on the navy line by sitting on a cream chip */
+.insp .status.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+  box-shadow: inset 4px 0 0 var(--gold);
+  padding-left: 11px;
+  font-weight: 600;
+}
+
+.insp .status.bad {
+  background: var(--bad-bg);
+  color: var(--bad);
+  box-shadow: inset 4px 0 0 var(--red);
+  padding-left: 11px;
+  font-weight: 600;
+}
+
+.insp .status.good {
+  background: var(--good-bg);
+  color: var(--good);
+  box-shadow: inset 4px 0 0 var(--green);
+  padding-left: 11px;
+  font-weight: 600;
+}
+
+/* an icon keeps its navy outline on the navy line by sitting on a cream chip; on a light line it needs none */
 .insp .status .icon {
   background: var(--cream);
   border-radius: 6px;
   padding: 1.5px;
+}
+
+.insp .status:is(.warn, .bad, .good) .icon {
+  background: none;
 }
 
 .insp label {
@@ -110,7 +151,7 @@
 }
 
 #inspector .panel {
-  max-height: calc(100vh - 260px);
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -132,10 +173,6 @@
   color: var(--navy);
 }
 
-#inspector {
-  bottom: var(--bar-h);
-}
-
 .insp button.roomwindows,
 .insp button.roomdoor,
 .insp button.roomresize,
@@ -151,22 +188,6 @@
   background: var(--cream);
   box-shadow: 0 3px 0 rgba(36, 56, 74, 0.3);
   margin-top: 6px;
-}
-
-.status.needs {
-  color: #8a5a12;
-  font-weight: 600;
-}
-
-.status.quitting {
-  color: #a8322b;
-  font-weight: 600;
-}
-
-.status.quitting.alarm {
-  background: #fbe3e1;
-  border-radius: 8px;
-  padding: 4px 8px;
 }
 
 .insp .chance {

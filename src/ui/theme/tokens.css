@@ -12,6 +12,13 @@
   --red: #e5564d;
   --green: #3bb273;
   --blue: #4a9fe0;
+  /* What a line or a bar says, in words dark enough to read on its light ground: fine, worth a look, or trouble. */
+  --good: #1c6b49;
+  --good-bg: #d8f1e2;
+  --warn: #7a4e0c;
+  --warn-bg: #fbedc6;
+  --bad: #a8322b;
+  --bad-bg: #fbe3e1;
   /* The overlays' colors, read into the scene too, so the floor and the key in the picker agree. */
   --overlay-good: var(--green);
   --overlay-fair: var(--gold);
@@ -23,6 +30,11 @@
 
 :root {
   --bar-h: 104px;
+  /* how big the in-game interface is drawn, from the settings, and the window's size in the pixels it is drawn in:
+     the window's own outside the interface, and divided by the size within it (see #ui in global.css) */
+  --ui-scale: 1;
+  --vw: 100vw;
+  --vh: 100vh;
 }
 
 @media (max-width: 1100px) {

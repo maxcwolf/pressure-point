@@ -7,7 +7,7 @@ import { drainEvents } from '../../src/core/sim/events';
 import { rushOutlook, seasonTurn, updateTwists } from '../../src/core/sim/twists';
 import { emptyTally } from '../../src/core/state/game';
 import { newGame } from '../../src/core/state/game';
-import { calendarTip, rushLine, seasonLine } from '../../src/ui/lib/seasons';
+import { calendarTip, fullDate, rushLine, seasonLine, shortDate } from '../../src/ui/lib/seasons';
 
 const boardwalk = centerOf(newGame('boardwalk'));
 const exchange = centerOf(newGame('exchange'));
@@ -40,10 +40,26 @@ describe('the season turn', () => {
     );
     expect(seasonLine(8 * DAYS_PER_MONTH - 0.5, boardwalk)).toContain('tomorrow.');
     expect(seasonLine(10, willow)).toBeNull();
-    expect(calendarTip(10, willow)).toBe('Date and weather');
+    expect(calendarTip(10, willow)).toBe('Day 11 of month 1, year 1: the date, and the weather outside.');
     expect(calendarTip(5 * DAYS_PER_MONTH + 10, boardwalk)).toBe(
-      `Date and weather Summer: ×${seasons.summer} the usual guests. Autumn (×1) from day 1 of month 9, in 80 days.`,
+      `Day 11 of month 6, year 1: Summer: ×${seasons.summer} the usual guests. Autumn (×1) from day 1 of month 9, in 80 days.`,
     );
+  });
+});
+
+describe('a game that opened later in the year', () => {
+  it('reads its date and seasons by the calendar, not by the days played', () => {
+    // a game opened in month 9 is in month 9 on its first day, and autumn there turns to winter with month 12; the
+    // year is the year of running the center, so it turns a year after opening, not in January
+    const start = 8;
+    expect(fullDate(0, start)).toBe('Day 1 of month 9, year 1');
+    expect(shortDate(0, 'autumn', start)).toBe('Autumn · M9 Y1');
+    expect(shortDate(5 * DAYS_PER_MONTH, 'winter', start)).toBe('Winter · M2 Y1');
+    expect(shortDate(12 * DAYS_PER_MONTH, 'autumn', start)).toBe('Autumn · M9 Y2');
+    expect(seasonLine(10, boardwalk, start)).toBe(
+      `Autumn: ×1 the usual guests. Winter (×${seasons.winter}) from day 1 of month 12, in 80 days.`,
+    );
+    expect(calendarTip(10, boardwalk, start)).toMatch(/^Day 11 of month 9, year 1: Autumn:/);
   });
 });
 
@@ -75,7 +91,7 @@ describe('the rush-hour outlook', () => {
       `Between rush hours: ×${rush.lull} the usual guests. The next starts in 2 days, at ×${rush.peak}.`,
     );
     expect(rushLine(1, boardwalk)).toBeNull();
-    expect(calendarTip(3.5, exchange)).toContain('Date and weather Rush hour:');
+    expect(calendarTip(3.5, exchange)).toContain('Day 4 of month 1, year 1: Rush hour:');
   });
 });
 

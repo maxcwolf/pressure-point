@@ -17,7 +17,7 @@ import {
   roomHere,
   ROOMS,
 } from '../../../core/data';
-import { money } from '../../../core/format';
+import { an, money } from '../../../core/format';
 import { roomForModality } from '../../../core/sim/machines';
 import { unlockedUpTo } from '../../../core/state/game';
 import { useGame } from '../../hooks/use-hud';
@@ -65,7 +65,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
         <em>
           <IconText id="ui-lock">
             {def.machine && def.star <= unlockedUpTo(s)
-              ? `Build a ${ROOMS[roomForModality(modality)].name} to offer it`
+              ? `Build ${an(ROOMS[roomForModality(modality)].name)} to offer it`
               : `Unlocks at star ${def.star}`}
           </IconText>
         </em>

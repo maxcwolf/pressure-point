@@ -4,7 +4,7 @@
   top: 66px;
   left: 50%;
   transform: translateX(-50%);
-  max-width: 70vw;
+  max-width: calc(var(--vw) * 0.7);
 }
 
 .hintpill {

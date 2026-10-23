@@ -6,7 +6,6 @@ import {
   FEELINGS,
   GUESS_PENALTY,
   MODALITIES,
-  POOR_CONDITION,
   SCAN_SUCCESS,
   WEEKDAYS,
 } from '../../../core/data';
@@ -20,8 +19,9 @@ import { useGame } from '../../hooks/use-hud';
 import { calmingNote, NOBODY_FREE, sendLabel, sendTitle } from '../../lib/calming';
 import { chanceText, percent, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
+import { meterTone } from '../../lib/meters';
 import { regularTag } from '../../lib/regulars';
-import { conditionNote, guestStatus } from '../../lib/status';
+import { conditionNote, guestStatus, statusClass } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText, Line } from '../common/Icon';
@@ -117,10 +117,10 @@ function ClassgoerInfo({ guest: g }: { guest: Guest }) {
         <IconText id="room-qigong">Class-goer</IconText>
       </p>{' '}
       <p>{`Here for ${WEEKDAYS[weekday(g.classDay)] ?? ''}’s Qi Gong class, at ${money(Math.round(CLASS_FEE * sim.priceFor('qigong')))} a place.`}</p>{' '}
-      <p class="status">{guestStatus(g, sim)}</p>{' '}
+      <p class={statusClass('doing')}>{guestStatus(g, sim)}</p>{' '}
       <label>
         Patience
-        <Bar value={g.patience} class={g.patience < 25 ? 'bad' : ''} />
+        <Bar value={g.patience} tone={meterTone('patience', g.patience)} show />
       </label>{' '}
       <Feelings guest={g} />
       <p class="sub">{`Spent so far: ${money(g.spent)}`}</p>
@@ -197,33 +197,33 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
           <IconText id="ui-warning">{`Best guess, not scanned: ${percent(GUESS_PENALTY)} less chance of success`}</IconText>
         </p>
       )}{' '}
-      <p class="status">{guestStatus(g, sim)}</p>{' '}
+      <p class={statusClass('doing')}>{guestStatus(g, sim)}</p>{' '}
       <label title="It worsens while they wait, faster with some conditions. The worse it gets, the less likely their treatment is to work, and if it runs out they go home worse off.">
         Condition
-        <Bar value={g.health} class={g.health < POOR_CONDITION ? 'bad' : ''} />
+        <Bar value={g.health} tone={meterTone('condition', g.health)} show />
       </label>{' '}
       <ConditionLine guest={g} />{' '}
       <label>
         Patience
-        <Bar value={g.patience} class={g.patience < 25 ? 'bad' : ''} />
+        <Bar value={g.patience} tone={meterTone('patience', g.patience)} show />
       </label>{' '}
       <label>
         {unscannable && g.consults > 0
           ? `Diagnosis (${percent(Math.min(g.diagnosis, 1))} sure, only a scan makes it surer)`
           : `Diagnosis (${percent(Math.min(g.diagnosis, 1))} sure, ${percent(sure)} needed)`}
-        <Bar value={(g.diagnosis / sure) * 100} class="blue" />
+        <Bar value={(g.diagnosis / sure) * 100} tone="blue" />
       </label>{' '}
       <label>
         Thirst
-        <Bar value={g.thirst} class="need" />
+        <Bar value={g.thirst} tone={meterTone('need', g.thirst)} show />
       </label>
       <label>
         Hunger
-        <Bar value={g.hunger} class="need" />
+        <Bar value={g.hunger} tone={meterTone('need', g.hunger)} show />
       </label>
       <label>
         Bladder
-        <Bar value={g.bladder} class="need" />
+        <Bar value={g.bladder} tone={meterTone('need', g.bladder)} show />
       </label>{' '}
       <Feelings guest={g} />
       <p class="sub">{`Spent so far: ${money(g.spent)}`}</p>

@@ -4,6 +4,7 @@ import './tooltip.css';
 
 import { type ComponentChild, options, render, type VNode } from 'preact';
 
+import { loadDisplay } from '../storage/display';
 import { Icon } from './components/common/Icon';
 
 /** How long the pointer rests on something before its tooltip shows. */
@@ -139,16 +140,22 @@ export function installTooltips() {
       tip.classList.toggle('rich', !!rich);
       render(rich ?? <Tip text={target.dataset.tip} />, tip);
     }
+    // over the game, drawn at the interface's size like what it explains; its place is worked out in the window's pixels
+    // and given in its own, which the size multiplies
+    const scale = target.closest('#ui') ? loadDisplay().uiScale : 1;
+    tip.style.setProperty('--ui-scale', String(scale));
     const r = target.getBoundingClientRect();
-    const w = tip.offsetWidth;
-    const h = tip.offsetHeight;
+    const { width: w, height: h } = tip.getBoundingClientRect();
     const below = r.top - GAP - h < MARGIN;
     const centre = r.left + r.width / 2;
     const x = Math.min(Math.max(centre - w / 2, MARGIN), innerWidth - MARGIN - w);
     const y = below ? Math.min(r.bottom + GAP, innerHeight - MARGIN - h) : r.top - GAP - h;
     tip.classList.toggle('below', below);
-    tip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
-    tip.style.setProperty('--arrow-x', `${Math.round(Math.min(Math.max(centre - x, 14), w - 14))}px`);
+    tip.style.transform = `translate(${Math.round(x / scale)}px, ${Math.round(y / scale)}px)`;
+    tip.style.setProperty(
+      '--arrow-x',
+      `${Math.round(Math.min(Math.max(centre - x, 14 * scale), w - 14 * scale) / scale)}px`,
+    );
     frame = requestAnimationFrame(place);
   };
 

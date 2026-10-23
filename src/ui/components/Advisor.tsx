@@ -1,9 +1,12 @@
-// Bottom left: the advisor's current nudge, with a word over it saying what kind it is if it has one. One about
-// someone or something takes you there when clicked. While the tutorial has a step in hand, its card instead.
+// Bottom left: the advisor's current nudge, held long enough to read, its first sentence bold and a word over it saying
+// what kind it is if it has one. One about someone or something takes you there when clicked. While the tutorial has
+// a step in hand, its card instead, which is never held.
 
 import './Advisor.css';
 
 import { useGame, useHud } from '../hooks/use-hud';
+import { headline } from '../lib/advice-hold';
+import { cx } from '../lib/cx';
 import { Button } from './common/Button';
 import { Icon } from './common/Icon';
 import { TutorialCard } from './TutorialCard';
@@ -13,7 +16,8 @@ export function Advisor() {
   const hud = useHud();
   const { sim, tools } = useGame();
   if (hud.menu || tools.plan) return <div id="advisor" />;
-  const { text, about, label, step } = sim.adviceNote();
+  const raw = sim.adviceNote();
+  const { step } = raw;
   if (step)
     return (
       <div id="advisor">
@@ -23,14 +27,18 @@ export function Advisor() {
         <TutorialCard step={step} />
       </div>
     );
-  const body = label ? (
-    <>
-      <span class="kicker">{label}</span>
-      {text}
-    </>
-  ) : (
-    text
+  const note = hud.advice.show(raw, performance.now() / 1000, (about) => sim.whereIs(about) !== null);
+  const { head, rest } = headline(note.text);
+  const { about } = note;
+  // keyed by the note, so a new one fades in while the box stays where it is
+  const body = (
+    <span key={note.id} class="words">
+      {note.label && <span class="kicker">{note.label}</span>}
+      <b>{head}</b>
+      {rest && <span class="rest">{rest}</span>}
+    </span>
   );
+  const look = cx('note', note.level === 'alarm' && 'alarm');
   return (
     <div id="advisor">
       <div class="face">
@@ -38,7 +46,7 @@ export function Advisor() {
       </div>
       {about ? (
         <Button
-          class="note link"
+          class={cx(look, 'link')}
           title="Show me"
           onPress={() => {
             hud.show(about);
@@ -47,7 +55,7 @@ export function Advisor() {
           {body}
         </Button>
       ) : (
-        <p class="note">{body}</p>
+        <p class={look}>{body}</p>
       )}
     </div>
   );
