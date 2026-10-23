@@ -16,7 +16,7 @@ import {
 } from './data';
 import { doorstep, entranceSteps, type Footprint, spotInWall } from './footprint';
 import { plotGroundAt } from './land';
-import { carryWallSpot, inRect, sameRect } from './resize';
+import { carryWallSpot, inRect, looksOnto, sameRect } from './resize';
 import type { PlacedLayout } from './room-layout';
 import { sameSpot } from './state/game';
 import type { Room, WallSpot } from './state/types';
@@ -272,8 +272,22 @@ export function canPlaceItem(world: World, type: ItemType, x: number, y: number,
   return world.connected(world.tryOut(s.rooms, [...s.items, it])) ? OK : no('That would block the way');
 }
 
-/** Can a room of this type cover this rectangle, in the game as it is or in a what-if? */
-export function roomRectValid(world: World, type: RoomType, r: Rect, t: Trial = world.asIs()): Check {
+/** The windows of the rooms next door, other than `moving`, that a room put down on this rectangle takes out. */
+export function windowsOnto(world: World, r: Rect, moving?: Room): WallSpot[] {
+  return world.s.rooms.filter((room) => room !== moving).flatMap((room) => room.windows.filter((w) => looksOnto(w, r)));
+}
+
+/**
+ * Can a room of this type cover this rectangle, in the game as it is or in a what-if? A window next door looking out
+ * onto it is in the way, unless `overWindows`: a room put down from a layout takes such windows out instead.
+ */
+export function roomRectValid(
+  world: World,
+  type: RoomType,
+  r: Rect,
+  t: Trial = world.asIs(),
+  overWindows = false,
+): Check {
   const def = ROOMS[type];
   for (let y = r.y; y < r.y + r.h; y++) {
     for (let x = r.x; x < r.x + r.w; x++) {
@@ -297,8 +311,8 @@ export function roomRectValid(world: World, type: RoomType, r: Rect, t: Trial = 
     const n = tiles.filter(([x, y]) => within(x, y)).length;
     if (n > 0 && n < tiles.length) return no('Something is in the way');
   }
-  for (const room of t.rooms)
-    if (room.windows.some((w) => within(w.x + w.dx, w.y + w.dy))) return no('A window is in the way');
+  if (!overWindows && t.rooms.some((room) => room.windows.some((w) => looksOnto(w, r))))
+    return no('A window is in the way');
   if (Math.min(r.w, r.h) < def.minShort || Math.max(r.w, r.h) < def.minLong)
     return no(`Too small: needs at least ${def.minShort}×${def.minLong}`);
   return OK;
@@ -377,8 +391,7 @@ export function resizeValid(world: World, room: Room, r: Rect): Check {
       return no(onWall(it.type) ? `Take the ${ITEMS[it.type].name} down first` : 'Something is in the way');
   }
   for (const other of s.rooms)
-    if (other !== room && other.windows.some((w) => inRect(r, w.x + w.dx, w.y + w.dy)))
-      return no('A window is in the way');
+    if (other !== room && other.windows.some((w) => looksOnto(w, r))) return no('A window is in the way');
   const door = carryWallSpot(room.door, r);
   if (!door) return no('That would cut off the door: move it first');
   // try it: the door has to open onto corridor as things will be, and everyone and everything still be reached
@@ -398,14 +411,15 @@ export function resizeValid(world: World, room: Room, r: Rect): Check {
 /**
  * Can a room with this layout be put down here? Pass `moving` to judge it as if that room and its furniture had
  * been lifted out first. The floor has to be free corridor inside the building, the door has to open onto clear
- * corridor, and nobody and nothing may be cut off.
+ * corridor, and nobody and nothing may be cut off. A window next door looking onto the floor is no bar: putting the
+ * room down takes it out.
  */
 export function layoutValid(world: World, type: RoomType, placed: PlacedLayout, moving?: Room): Check {
   // lift the room being moved, and its furniture, out first
   const rooms = world.s.rooms.filter((r) => r !== moving);
   const items = moving ? world.s.items.filter((it) => world.zoneAt(it.x, it.y) !== moving.id) : world.s.items;
   const lifted = moving ? world.tryOut(rooms, items) : world.asIs();
-  const check = roomRectValid(world, type, placed.rect, lifted);
+  const check = roomRectValid(world, type, placed.rect, lifted, true);
   if (!check.ok) return check;
   const { door } = placed;
   const ox = door.x + door.dx;
