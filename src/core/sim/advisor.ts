@@ -54,7 +54,7 @@ import { stationStaff } from './sessions';
 import { fedUp, refreshmentFor, wants } from './staff-needs';
 import { aboutToQuit } from './staffing';
 import { enabled, unlocked } from './treatments';
-import { currentStep, type TutorialStep, WALKTHROUGH_IDS } from './tutorial';
+import { currentStep, HANDED_OVER_TIP, type TutorialStep, WALKTHROUGH_IDS } from './tutorial';
 import { hasMechanic } from './upgrades';
 import { discomfort, warmthAt } from './warmth';
 import { aboutToWorsen, conditionDays } from './worsening';
@@ -312,9 +312,10 @@ export function warnPrimer(ctx: SimContext) {
   const s = ctx.s;
   if (!s.primer || !s.open) return;
   if (primerDone(ctx)) {
-    // the tutorial's handoff ends them
+    // the tutorial's handoff ends them, or has said its word already, with only the land left to come after it
     if (s.tutorial) return;
     s.primer = false;
+    if (s.seenTips.includes(HANDED_OVER_TIP)) return;
     toast(
       ctx,
       'Your center has everything it needs to get going. From here on the advisor speaks up when something needs you.',

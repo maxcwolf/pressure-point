@@ -72,7 +72,6 @@ describe('the tutorial', () => {
       'caretaker',
       'smudging',
       'staffroom',
-      'land',
     ]);
     expect(lines.filter((l) => l.current).map((l) => l.id)).toEqual(['look']);
     expect(lines.every((l) => !l.done)).toBe(true);
@@ -113,6 +112,32 @@ describe('the tutorial', () => {
         .slice(0, 8)
         .every((l) => l.done),
     ).toBe(true);
+  });
+
+  it('says with the first thing bought that everything comes out of the bank, and that the bank lends', () => {
+    const sim = tutorialGame();
+    sim.noteLooked();
+    const text = sim.tutorialStep()?.text ?? '';
+    expect(text).toMatch(/comes out of the bank/);
+    expect(text).toMatch(/lends up to \$50,000 at 2% a month/);
+    expect(text).toMatch(/borrows to get through its first paydays/);
+  });
+
+  it('says on a step the bank cannot take what it would leave, and that the loan is cheaper than the red', () => {
+    const sim = tutorialGame();
+    walkOpening(sim);
+    placeBenches(sim);
+    hire(sim, 'caretaker');
+    // flush: the Training Room and the course leave more than a month's wages
+    expect(sim.tutorialStep()?.text).not.toMatch(/Money menu/);
+    // thin: $5,100 for the room and the course would leave $900, less than a month's wages
+    sim.s.money = 6000;
+    expect(sim.tutorialStep()?.text).toMatch(
+      /This would leave \$900 in the bank, less than a month's wages \(\$\d,\d{3}\): a loan from the Money menu, at 2% a month, is cheaper than the red at 5%\.$/,
+    );
+    // short: the room alone is more than the bank holds
+    sim.s.money = 4000;
+    expect(sim.tutorialStep()?.text).toMatch(/This would put the bank \$1,100 in the red: a loan/);
   });
 
   it('counts looking around done after a couple of days, if the camera is never moved', () => {
@@ -164,26 +189,29 @@ describe('the tutorial', () => {
     expect(toasts(sim.drain()).filter((t) => t.includes('Hire a Caretaker'))).toEqual([]);
   });
 
-  it('hands over once, once every step is done, ending the heads-ups without their own word', () => {
+  it('hands over once, once every step is done, leaving the heads-up on land to come without a word of its own', () => {
     const sim = tutorialGame();
     walkOpening(sim);
     placeBenches(sim);
     hire(sim, 'caretaker').general.push('smudging');
     addStaffRoom(sim);
-    seeLand(sim);
     sim.drain();
     run(sim, 1.5);
     expect(sim.s.tutorial).toBe(false);
-    expect(sim.s.primer).toBe(false);
-    // the cards that explain things carry on
+    // the cards that explain things carry on, and so does the heads-up on land, due at the first star
     expect(sim.s.lessons).toBe(true);
+    expect(sim.s.primer).toBe(true);
     const events = sim.drain();
     expect(toasts(events)).toContain(HANDOFF);
-    expect(toasts(events)).not.toContainEqual(expect.stringMatching(/everything it needs to get going/));
-    expect(events).toContainEqual({ type: 'tutorial', what: 'done', step: 'land' });
+    expect(events).toContainEqual({ type: 'tutorial', what: 'done', step: 'staffroom' });
     run(sim, 5);
     expect(toasts(sim.drain())).not.toContain(HANDOFF);
     expect(sim.tutorialLines()).toEqual([]);
+    // the land seen to, the heads-ups end without the word the handoff has said
+    seeLand(sim);
+    run(sim, 1.5);
+    expect(sim.s.primer).toBe(false);
+    expect(toasts(sim.drain())).not.toContainEqual(expect.stringMatching(/everything it needs to get going/));
   });
 
   it('hands over once a game, and switched back on after that brings back only the lessons', () => {
@@ -192,7 +220,6 @@ describe('the tutorial', () => {
     placeBenches(sim);
     hire(sim, 'caretaker').general.push('smudging');
     addStaffRoom(sim);
-    seeLand(sim);
     run(sim, 1.5);
     expect(toasts(sim.drain())).toContain(HANDOFF);
     sim.setTutorial(false);
