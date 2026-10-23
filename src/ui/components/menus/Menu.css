@@ -25,6 +25,18 @@
   grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
 }
 
+/* ringed by the tutorial, a row shrinks to its cards, so the ring wraps them rather than the panel's whole width */
+.cards.guide {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.cards.guide > .card {
+  flex: 0 0 172px;
+}
+
 .card {
   position: relative;
   text-align: left;
