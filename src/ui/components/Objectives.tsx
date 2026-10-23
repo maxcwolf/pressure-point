@@ -107,8 +107,9 @@ function GettingReady() {
 const STEPS_AHEAD = 2;
 
 /**
- * While the tutorial is on, its steps: those done ticked, the one in hand in bold and the rest grey, folded to the
- * ones done, the one in hand and the next couple until opened out.
+ * While the tutorial is on, its steps: those done ticked, the one in hand in bold and the rest grey. Folded, the count
+ * done in the heading stands for those done, under it the one in hand and the next couple; a click opens it all out,
+ * and another folds it again.
  */
 function TutorialList() {
   const { sim } = useGame();
@@ -116,14 +117,13 @@ function TutorialList() {
   const lines = sim.tutorialLines();
   if (!lines.length) return null;
   const done = lines.filter((l) => l.done).length;
+  // the steps to come after the one in hand, or after the last done while none is
   const at = lines.findIndex((l) => l.current);
-  // with no step in hand, the next are those after the last done
-  const from = at >= 0 ? at + 1 : lines.findIndex((l) => !l.done);
+  const ahead = lines.filter((l, i) => !l.done && !l.current && i > at).slice(0, STEPS_AHEAD);
   /** Whether a line shows while the list is folded. */
-  const folded = (l: TutorialLine, i: number) =>
-    l.done || l.current || (from >= 0 && i >= from && i < from + STEPS_AHEAD);
+  const folded = (l: TutorialLine) => l.current || ahead.includes(l);
   const shown = open ? lines : lines.filter(folded);
-  const more = lines.length - shown.length;
+  const more = lines.length - lines.filter(folded).length;
   return (
     <div class="getting-ready tutorial-list">
       <h4>{`Tutorial · ${done} of ${lines.length} done`}</h4>
@@ -139,10 +139,10 @@ function TutorialList() {
         <Button
           class="objective more"
           onPress={() => {
-            setOpen(true);
+            setOpen(!open);
           }}
         >
-          {`${more} more`}
+          {open ? 'Fewer' : `${more} more`}
         </Button>
       )}
     </div>

@@ -16,7 +16,9 @@ const STEPS = [
   { id: 'staffroom', label: 'Build a Staff Room' },
 ] as const;
 
-type StepId = (typeof STEPS)[number]['id'];
+/** A heads-up's id, which says what it is about. */
+export type PrimerStepId = (typeof STEPS)[number]['id'];
+type StepId = PrimerStepId;
 
 /** Below this, someone on the staff is tiring, well before they are too worn out to work properly. */
 export const PRIMER_TIRING = 50;
@@ -92,7 +94,7 @@ function heads(ctx: SimContext, id: StepId): { text: string; about?: Subject } |
 
 /** A line on the checklist: what it asks, and whether it is in place. */
 export interface PrimerLine {
-  id: string;
+  id: StepId;
   label: string;
   done: boolean;
 }
@@ -105,7 +107,7 @@ export function primerLines(ctx: SimContext): PrimerLine[] {
 
 /** A heads-up: what it says, and who or what it is about, if anyone. */
 export interface PrimerNote {
-  id: string;
+  id: StepId;
   text: string;
   about?: Subject;
 }

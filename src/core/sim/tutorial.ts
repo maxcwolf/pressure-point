@@ -5,7 +5,7 @@
 import type { ItemType, Role, RoomType } from '../data';
 import type { SimContext } from './context';
 import { emit, type Subject, toast } from './events';
-import { primerDone, primerLines, primerNotes } from './primer';
+import { primerDone, primerLines, primerNotes, type PrimerStepId } from './primer';
 import { hasItem, hasRoom, hasStaff } from './progress';
 
 /** What a step wants the player to do, which the interface rings: look around, or an item, room or hire. */
@@ -111,17 +111,21 @@ function openingDone(ctx: SimContext, id: OpeningId): boolean {
   }
 }
 
-/** What a heads-up step wants rung, by its id: a hire or a room, or nothing for what has no one place to point at. */
-function headsWant(ctx: SimContext, id: string): Want | undefined {
+/**
+ * What a heads-up step wants rung, by its id: a hire or a room, or nothing for what has no one place to point at. Every
+ * heads-up has its case, as in primer.ts, so a new one is not left without a word on what it points at.
+ */
+function headsWant(ctx: SimContext, id: PrimerStepId): Want | undefined {
   switch (id) {
+    // walked through as the opening's own steps
+    case 'open':
+      return undefined;
     case 'caretaker':
       return { kind: 'hire', role: 'caretaker' };
     case 'smudging':
       return hasRoom(ctx, 'training') ? undefined : { kind: 'room', type: 'training' };
     case 'staffroom':
       return { kind: 'room', type: 'staffroom' };
-    default:
-      return undefined;
   }
 }
 

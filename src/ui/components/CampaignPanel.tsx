@@ -1,11 +1,11 @@
 // The campaign on the title screen: the trail of centers, the karma shop, and the achievements that earn karma.
 
 import './CampaignPanel.css';
-import './SettingsPanel.css';
 
 import { useState } from 'preact/hooks';
 
 import { track } from '../../app/analytics';
+import type { Audio } from '../../audio/audio';
 import { karmaLeft } from '../../core/campaign';
 import { CAMPAIGN } from '../../core/data';
 import { buyDecorWithKarma, buyWithKarma, loadCampaign } from '../../storage/campaign';
@@ -20,6 +20,8 @@ import { StarRow } from './common/Stars';
 export interface CampaignPanelProps {
   /** Start a new game in a center. */
   onStart: (center: string) => void;
+  /** For the click of a switch. */
+  audio: Audio;
 }
 
 type Tab = 'centers' | 'shop' | 'achievements';
@@ -31,7 +33,7 @@ const TABS: readonly { id: Tab; label: string }[] = [
 ];
 
 /** The campaign's tabs, under the karma there is to spend. */
-export function CampaignPanel({ onStart }: CampaignPanelProps) {
+export function CampaignPanel({ onStart, audio }: CampaignPanelProps) {
   const [tab, setTab] = useState<Tab>('centers');
   const redraw = useRedraw();
   const progress = loadCampaign();
@@ -55,7 +57,7 @@ export function CampaignPanel({ onStart }: CampaignPanelProps) {
           </button>
         ))}
       </div>
-      {tab === 'centers' && <Centers onStart={onStart} />}
+      {tab === 'centers' && <Centers onStart={onStart} audio={audio} />}
       {tab === 'shop' && <Shop onBuy={redraw} />}
       {tab === 'achievements' && <Achievements />}
     </div>
@@ -63,7 +65,7 @@ export function CampaignPanel({ onStart }: CampaignPanelProps) {
 }
 
 /** The switch on Willow Lane's card for whether its next game walks through the opening with the tutorial. */
-function TutorialSwitch() {
+function TutorialSwitch({ audio }: { audio: Audio }) {
   const redraw = useRedraw();
   const on = loadTutorialPref();
   return (
@@ -74,8 +76,10 @@ function TutorialSwitch() {
         aria-checked={on ? 'true' : 'false'}
         aria-label="Tutorial"
         onClick={() => {
+          audio.unlock();
           saveTutorialPref(!on);
           track('setting_changed', { setting: 'tutorial', value: !on });
+          audio.play('blip');
           redraw();
         }}
       >
@@ -87,7 +91,7 @@ function TutorialSwitch() {
 }
 
 /** A card per campaign center, joined by a trail, with Play on the ones that are open. */
-function Centers({ onStart }: CampaignPanelProps) {
+function Centers({ onStart, audio }: CampaignPanelProps) {
   const cards = campaignCards(loadCampaign().stars);
   return (
     <>
@@ -113,7 +117,7 @@ function Centers({ onStart }: CampaignPanelProps) {
                   >
                     {c.earned ? `Play ${c.name} again` : `Play ${c.name}`}
                   </button>
-                  {c.id === CAMPAIGN[0] && <TutorialSwitch />}
+                  {c.id === CAMPAIGN[0] && <TutorialSwitch audio={audio} />}
                 </div>
               ) : (
                 <p class="why">{c.locked}</p>

@@ -74,9 +74,8 @@ export function StarDialog() {
       )}{' '}
       {n === 1 && sim.s.lessons && (
         <p>
-          A star opens the rooms, treatments and items listed here, with new objectives for the next. Campaign stars
-          also earn karma, kept across every center, to unlock items for good from the Items menu or the karma shop on
-          the title screen.
+          Each star opens more for the center to grow into: the rooms, treatments and items this one brings are listed
+          here, ready in the Rooms and Items menus.
         </p>
       )}{' '}
       {opens && (
