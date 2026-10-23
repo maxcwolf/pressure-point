@@ -219,6 +219,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     conditions: { slump: 3, band: 2.5, crick: 2.5, neck: 3, steam: 2 },
     rush: { peak: 2.4, lull: 0.6, impatience: 1.25 },
     mishap: 'power',
+    scenery: 'downtown',
     calls: {
       often: 2,
       clients: ['the Exchange Tower', 'Halberd & Finch, solicitors', 'the trading floor on Mercer Street'],

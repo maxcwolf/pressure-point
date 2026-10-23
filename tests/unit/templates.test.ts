@@ -131,6 +131,11 @@ describe('reading a layout from a file', () => {
     expect(readLayout(JSON.parse(JSON.stringify(SUITE)))).toEqual(SUITE);
   });
 
+  it('reads a Recliner saved before it was renamed as the Lounger', () => {
+    const lounge = { ...SUITE, type: 'recovery', items: [{ type: 'recliner', x: 1, y: 0, rot: 0 }] };
+    expect(readLayout(lounge)?.items).toEqual([{ type: 'lounger', x: 1, y: 0, rot: 0 }]);
+  });
+
   it('refuses anything that is not a buildable layout', () => {
     for (const bad of [
       null,
@@ -300,7 +305,14 @@ describe('building from a template', () => {
     const { sim, s } = openCenter(9);
     /** Ignore a call to the scene. */
     const nothing = () => undefined;
-    const view = { selected: null, setOverlay: nothing, setMarkers: nothing, setGhost: nothing, setDoor: nothing };
+    const view = {
+      selected: null,
+      setOverlay: nothing,
+      setMarkers: nothing,
+      setGhost: nothing,
+      setDoor: nothing,
+      nudge: nothing,
+    };
     /** The cursor is on the ground wherever the pointer says. */
     const groundAt = (x: number, y: number) => ({ x, y });
     const tools = new Tools(sim, { ...view, groundAt } as unknown as View, nothing, nothing);

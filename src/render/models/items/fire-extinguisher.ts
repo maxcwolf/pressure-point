@@ -6,7 +6,8 @@ import { capsule, cyl, DARK, mat, put, rbox, sph } from '../parts';
 
 /** Build the Fire Extinguisher model. */
 export function buildFireExtinguisher(g: THREE.Group) {
-  const red = mat(0xd7263d, 0.4);
+  // a deep red, a step down from the alarm red of warnings, so a center's dozens of them do not read as alarms
+  const red = mat(0xa8433a, 0.45);
   put(g, cyl(0.13, 0.14, 0.05), mat(DARK), 0, 0.025, 0);
   put(g, cyl(0.1, 0.1, 0.5, 18), red, 0, 0.32, 0);
   put(g, sph(0.1, 16), red, 0, 0.57, 0);

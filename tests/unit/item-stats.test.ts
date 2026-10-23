@@ -25,15 +25,15 @@ beforeEach(() => {
 });
 
 describe('the display settings', () => {
-  it('start with stats in the tooltip and the preview while placing on', () => {
-    expect(loadDisplay()).toEqual({ itemView: 'tooltip', placePreview: true });
+  it('start with stats in the tooltip, the preview while placing on, and messages for as long as they take to read', () => {
+    expect(loadDisplay()).toEqual({ itemView: 'tooltip', placePreview: true, messages: 'normal' });
   });
 
   it('keep a choice, and ignore what they cannot use', () => {
-    saveDisplay({ itemView: 'chips', placePreview: false });
+    saveDisplay({ itemView: 'chips', placePreview: false, messages: 'dismissed' });
     forgetDisplay();
-    expect(loadDisplay()).toEqual({ itemView: 'chips', placePreview: false });
-    expect(readDisplay({ itemView: 'sideways', placePreview: 'yes' })).toEqual(defaultDisplay());
+    expect(loadDisplay()).toEqual({ itemView: 'chips', placePreview: false, messages: 'dismissed' });
+    expect(readDisplay({ itemView: 'sideways', placePreview: 'yes', messages: 'forever' })).toEqual(defaultDisplay());
     expect(readDisplay(null)).toEqual(defaultDisplay());
   });
 });

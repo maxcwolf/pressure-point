@@ -12,7 +12,7 @@ import {
   WINDOW_COST,
 } from '../data';
 import { money } from '../format';
-import { carryWallSpot, carryWindows, coveredSize, paidTiles, resizeCost, resizeTiles } from '../resize';
+import { carryWallSpot, carryWindows, coveredSize, looksOnto, paidTiles, resizeCost, resizeTiles } from '../resize';
 import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { itemStart, roomStart, sameSpot } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
@@ -92,7 +92,12 @@ export function placeItem(
   }
   const it = newItem(ctx, type, x, y, rot, opts.pattern);
   ctx.s.items.push(it);
-  if (!opts.free) spend(ctx, def.cost, 'building');
+  if (!opts.free) {
+    spend(ctx, def.cost, 'building');
+    // the price floats off it, as a refund does when it is sold
+    const [cx, cy] = itemCenter(it);
+    if (def.cost > 0) emit(ctx, { type: 'float', text: money(-def.cost), x: cx, y: cy, kind: 'bad' });
+  }
   worldChanged(ctx);
   emit(ctx, { type: 'sfx', name: 'place' });
   return it;
@@ -429,8 +434,39 @@ function keepWindows(ctx: SimContext, room: Room, windows: readonly WallSpot[]):
 }
 
 /**
+ * Take out the windows of the rooms next door that look onto where a room has been put down, and say so. Each gives
+ * back what taking it out by hand would: half its price, or all of it in a blueprint.
+ */
+function closeWindowsOnto(ctx: SimContext, room: Room) {
+  let n = 0;
+  let back = 0;
+  let from: Room | undefined;
+  for (const other of ctx.s.rooms) {
+    if (other === room) continue;
+    const kept = other.windows.filter((w) => !looksOnto(w, room));
+    const gone = other.windows.length - kept.length;
+    if (!gone) continue;
+    other.windows = kept;
+    n += gone;
+    back += gone * Math.round(WINDOW_COST * (other.done ? 0.5 : 1));
+    from = other;
+  }
+  if (!n || !from) return;
+  ctx.world.version++;
+  recoup(ctx, back, 'building');
+  toast(
+    ctx,
+    n === 1
+      ? `The ${ROOMS[from.type].name}'s window onto it was taken out and sold for ${money(back)}.`
+      : `${n} windows next door that looked onto it were taken out and sold for ${money(back)}.`,
+    'info',
+  );
+}
+
+/**
  * Pick a built room up, furniture and all, and put it down elsewhere, turned if wanted, for free. Everyone using it
- * starts over, and a window that would now look into another room is refunded at half. False if it cannot go there.
+ * starts over, and a window that would now look into another room, its own or one next door, is refunded at half.
+ * False if it cannot go there.
  */
 export function moveRoom(ctx: SimContext, roomId: number, placed: PlacedLayout): boolean {
   const room = ctx.world.room(roomId);
@@ -443,6 +479,7 @@ export function moveRoom(ctx: SimContext, roomId: number, placed: PlacedLayout):
   items.forEach((it, i) => Object.assign(it, placed.items[i]));
   const lost = keepWindows(ctx, room, placed.windows);
   refundWindows(ctx, lost);
+  closeWindowsOnto(ctx, room);
   worldChanged(ctx);
   resetUsers(ctx, users);
   emit(ctx, { type: 'sfx', name: 'build' });
@@ -458,7 +495,8 @@ function refundWindows(ctx: SimContext, count: number) {
 
 /**
  * Build a copy of a room, furniture, windows and all, at a spot. It costs what building it from scratch would, and
- * opens at once. Returns the new room, or null if it cannot go there or cannot be afforded.
+ * opens at once; any window next door that looks onto it is taken out. Returns the new room, or null if it cannot go
+ * there or cannot be afforded.
  */
 export function copyRoom(ctx: SimContext, roomId: number, placed: PlacedLayout): Room | null {
   const from = ctx.world.room(roomId);
@@ -508,8 +546,9 @@ export function buildLayout(
     ctx.s.items.push(newItem(ctx, it.type, it.x, it.y, it.rot, it.pattern));
   const lost = keepWindows(ctx, room, placed.windows);
   spend(ctx, cost - lost * WINDOW_COST, 'building');
-  worldChanged(ctx);
   toast(ctx, `${say.built} for ${money(cost - lost * WINDOW_COST)}.`, 'good', { kind: 'room', id: room.id });
+  closeWindowsOnto(ctx, room);
+  worldChanged(ctx);
   emit(ctx, { type: 'sfx', name: 'build' });
   return room;
 }

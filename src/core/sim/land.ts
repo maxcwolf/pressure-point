@@ -35,6 +35,7 @@ export function buyPlot(ctx: SimContext, id: string): boolean {
     return false;
   }
   spend(ctx, offer.price, 'building');
+  ctx.s.sawPlots = true;
   const days = buildDays(offer.def);
   const { def } = offer;
   ctx.s.land.push({

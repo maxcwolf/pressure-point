@@ -43,16 +43,18 @@ import {
   projectedCashflow,
   shortOfAMonth,
 } from './economy';
-import { emit, type Subject, tipOnce } from './events';
+import { emit, type Subject, tipOnce, toast } from './events';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { roomForModality } from './machines';
 import { floodAdvice, mishapAdvice } from './mishaps';
+import { primerDone, primerNotes, primerTip } from './primer';
 import { allStars, hasItem, hasRoom, hasStaff } from './progress';
 import { calmerOf, running } from './runaways';
 import { stationStaff } from './sessions';
 import { fedUp, refreshmentFor, wants } from './staff-needs';
 import { aboutToQuit } from './staffing';
 import { enabled, unlocked } from './treatments';
+import { currentStep, HANDED_OVER_TIP, type TutorialStep, WALKTHROUGH_IDS } from './tutorial';
 import { hasMechanic } from './upgrades';
 import { discomfort, warmthAt } from './warmth';
 import { aboutToWorsen, conditionDays } from './worsening';
@@ -71,6 +73,15 @@ export function announce(ctx: SimContext, dt: number) {
 export interface Advice {
   text: string;
   about?: Subject;
+  /** A word over the text saying what kind of nudge it is, such as a heads-up about what is coming. */
+  label?: string;
+  /** The tutorial's step in hand, when the nudge is that step's card. */
+  step?: TutorialStep;
+}
+
+/** The tutorial's step in hand as the advisor's nudge, its card in place of the note. */
+function stepCard(step: TutorialStep): Advice {
+  return { text: step.text, label: 'Tutorial', step, ...(step.about && { about: step.about }) };
 }
 
 /** The advisor's current nudge, with what it is about. */
@@ -99,6 +110,9 @@ function nudge(ctx: SimContext): string | Advice {
       text: `${runner.name} is on a really bad trip, freaking out everyone they pass. Select them and calm them down.`,
       about: { kind: 'guest', id: runner.id },
     };
+  // the tutorial walks the opening a step at a time, pointing at what each wants, in place of the lines below
+  const step = s.tutorial ? currentStep(ctx) : null;
+  if (step && WALKTHROUGH_IDS.has(step.id)) return stepCard(step);
   if (!hasItem(ctx, 'reception_desk'))
     return 'Welcome! Open the Items menu and place a Reception Desk somewhere near the entrance.';
   if (!hasStaff(ctx, 'receptionist')) return 'A desk needs a face behind it. Hire a Receptionist from the Hire menu.';
@@ -181,7 +195,7 @@ function nudge(ctx: SimContext): string | Advice {
   if (gap) return gap;
   for (const it of s.items) {
     const st = ITEMS[it.type].station;
-    if (!st || !ctx.world.usable(it)) continue;
+    if (!st?.staff || !ctx.world.usable(it)) continue;
     // with nobody in the role at all; one away on a break or a course is for the bottleneck to explain
     if (it.queue.length >= 2 && !stationStaff(ctx, it) && !hasStaff(ctx, st.staff))
       return {
@@ -189,6 +203,11 @@ function nudge(ctx: SimContext): string | Advice {
         about: { kind: 'item', id: it.id },
       };
   }
+  // on a first go at the campaign, what the center will need before long, ahead of a slow line or a repair in hand;
+  // with the tutorial on, its step in hand once the center is open: the Benches, and those heads-ups as steps
+  if (step) return stepCard(step);
+  const [ahead] = s.tutorial ? [] : primerNotes(ctx);
+  if (ahead) return { text: ahead.text, label: 'Coming up', ...(ahead.about && { about: ahead.about }) };
   const held = bottleneckAdvice(ctx);
   if (held) return held;
   const fix = repairAdvice(ctx);
@@ -281,6 +300,45 @@ export function inHandAdvice(ctx: SimContext): string {
   return `Hire nobody more, send nobody on a course and turn house calls down until there is a month's wages in hand, ${money(short)} more: ${inHandLine(h)}${takings} Each adds a wage or leaves a station empty for days, and once the loan is used up a month that heals few guests has the bank call the overdraft in.${first}`;
 }
 
+/** The heads-ups that ask for a wage or a course, which wait on a month's wages in hand as any hire does. */
+const PRIMER_SPENDS = new Set(['caretaker', 'smudging']);
+
+/**
+ * Once a second: on a first go at the campaign, say each heads-up once as it starts to matter, and end them for good,
+ * with a word to say so, once everything on the checklist is in place. While the tutorial is on, its card says the one
+ * that is its step in hand, which is only noted as said, and the tutorial ends them with its own word.
+ */
+export function warnPrimer(ctx: SimContext) {
+  const s = ctx.s;
+  if (!s.primer || !s.open) return;
+  if (primerDone(ctx)) {
+    // the tutorial's handoff ends them, or has said its word already, with only the land left to come after it
+    if (s.tutorial) return;
+    s.primer = false;
+    if (s.seenTips.includes(HANDED_OVER_TIP)) return;
+    toast(
+      ctx,
+      'Your center has everything it needs to get going. From here on the advisor speaks up when something needs you.',
+      'good',
+      undefined,
+      'ui-advisor',
+    );
+    return;
+  }
+  const short = moneyFirst(s) || !!inHandAdvice(ctx);
+  const step = s.tutorial ? currentStep(ctx)?.id : undefined;
+  for (const n of primerNotes(ctx)) {
+    // the tutorial's card says the one in hand; any other still has its word
+    if (n.id === step) {
+      if (!s.seenTips.includes(`primer-${n.id}`)) s.seenTips.push(`primer-${n.id}`);
+      continue;
+    }
+    const text =
+      short && PRIMER_SPENDS.has(n.id) ? `${n.text} Wait until there is a month's wages in hand, though.` : n.text;
+    tipOnce(ctx, primerTip(n.id), text, 'info', n.about, 'ui-advisor');
+  }
+}
+
 /** What one more of a role would be paid: the cheapest applicant for it, or the role's standard pay. */
 export function newSalary(s: SimContext['s'], role: Role): number {
   const asks = s.candidates.filter((c) => c.role === role).map((c) => c.salary);
@@ -301,10 +359,13 @@ export function bottleneckAdvice(ctx: SimContext): Advice | null {
   const top = stage.stations.reduce((a, b) => (b.queue.length > a.queue.length ? b : a));
   const def = ITEMS[top.type].station;
   if (!def) return null;
-  const role = ROLES[def.staff].name;
   const about: Subject = { kind: 'item', id: top.id };
   const n = stage.stations.length;
   const head = `Guests wait longest for the ${stationPlace(top)}: ${stage.waiting} waiting for ${n === 1 ? 'one' : n} ${ITEMS[top.type].name}${n === 1 ? '' : 's'}.`;
+  // a station that runs itself has nobody to hire: only another of its room moves the line along
+  if (!def.staff)
+    return { text: `${head} It runs itself, so another ${stationPlace(top)} is what would share the load.`, about };
+  const role = ROLES[def.staff].name;
   /** A share as a percentage. */
   const pct = (x: number) => `${Math.round(x * 100)}%`;
   // what one more of the role would leave the books making, and what it and its place would take from the bank
@@ -463,7 +524,7 @@ export function stationPlace(it: Pick<Item, 'type'>): string {
 /** What the speakers say when a station has a line and nobody working it. */
 export function staffWanted(it: Pick<Item, 'type'>): string {
   const st = ITEMS[it.type].station;
-  return st ? `${ROLES[st.staff].name} needed at the ${stationPlace(it)}.` : '';
+  return st?.staff ? `${ROLES[st.staff].name} needed at the ${stationPlace(it)}.` : '';
 }
 
 /** What the speakers say when litter piles up. */

@@ -1,7 +1,7 @@
 {
   "name": "pressure-point",
   "productName": "Pressure Point Institute",
-  "version": "0.32.1",
+  "version": "0.33.2",
   "description": "A healing-center management sim.",
   "license": "MIT",
   "private": true,

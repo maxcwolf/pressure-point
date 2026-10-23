@@ -50,14 +50,9 @@ function Plate() {
       watch.disconnect();
     };
   }, []);
+  // the drawing fills the button's box, its viewBox the same box, so nothing about its element's size can scale it
   return (
-    <svg
-      ref={ref}
-      class="shape"
-      aria-hidden="true"
-      viewBox={shape?.viewBox}
-      style={shape ? { width: shape.width, height: shape.height, left: shape.left, top: shape.top } : undefined}
-    >
+    <svg ref={ref} class="shape" aria-hidden="true" viewBox={shape?.viewBox}>
       {shape && <path class="fill" d={shape.d} />}
     </svg>
   );
@@ -68,12 +63,13 @@ export function BuildButtons() {
   const hud = useHud();
   const { tools } = useGame();
   const expanding = tools.tool.kind === 'expand';
+  const guide = hud.guide();
   return (
     <div id="buildbtns">
       {MENUS.map((m) => [
         <Button
           key={m.id}
-          class={cx('round', m.welded && 'welded', hud.menu === m.id && 'on')}
+          class={cx('round', m.welded && 'welded', hud.menu === m.id && 'on', guide === `menu:${m.id}` && 'guide')}
           onPress={() => {
             hud.toggleMenu(m.id);
           }}

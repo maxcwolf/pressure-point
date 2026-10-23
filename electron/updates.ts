@@ -1,10 +1,17 @@
 // Updates for the installed app: look for a newer release on GitHub, download it in the background, and install
 // it when the player restarts from the game's prompt or simply quits. The game hears how far each look has got, so
 // the title screen can say it is checking, and then that there is nothing newer or that an update is on its way.
+// It looks at launch, every so often after, and again each time the player comes back to the title screen.
 import { app, BrowserWindow, ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron';
 import type { AppUpdater } from 'electron-updater';
 
-import { UPDATE_INSTALL_CHANNEL, UPDATE_STATUS_CHANGED_CHANNEL, UPDATE_STATUS_CHANNEL, type UpdateStatus } from './api';
+import {
+  UPDATE_CHECK_CHANNEL,
+  UPDATE_INSTALL_CHANNEL,
+  UPDATE_STATUS_CHANGED_CHANNEL,
+  UPDATE_STATUS_CHANNEL,
+  type UpdateStatus,
+} from './api';
 
 /** How long after the window shows to look the first time, so the game opens before anything else happens. */
 const FIRST_CHECK_AFTER_MS = 5000;
@@ -74,6 +81,12 @@ export function startUpdates(win: BrowserWindow, devUrl: string | undefined) {
   ipcMain.on(UPDATE_INSTALL_CHANNEL, (event) => {
     // silently, then open the new version
     if (fromGame(event) && status.state === 'ready') updater?.quitAndInstall(true, true);
+  });
+  ipcMain.on(UPDATE_CHECK_CHANNEL, (event) => {
+    // until the updater has loaded, the first look is still to come; one under way, or one that has found a newer
+    // version, has nothing to add
+    const settled = status.state === 'latest' || status.state === 'idle';
+    if (fromGame(event) && updater && settled) check(updater);
   });
   if (!app.isPackaged || devUrl) return;
 

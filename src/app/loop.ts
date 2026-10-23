@@ -43,6 +43,8 @@ export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, ove
   let prev = performance.now();
   let sinceSave = 0;
   let sinceOverlay = 0;
+  /** Whether the tutorial has been told the camera was moved and turned. */
+  let looked = false;
   /** One frame: advance the game, draw it and refresh the interface. */
   const frame = (now: number) => {
     const dt = Math.min(0.1, (now - prev) / 1000);
@@ -61,6 +63,12 @@ export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, ove
     }
 
     sim.tick(dt);
+    // moving and turning the camera is the tutorial's first step done
+    if (!looked && sim.s.tutorial && view.looked) {
+      looked = true;
+      sim.noteLooked();
+      refresh.request();
+    }
     // a payday the bank cannot cover, or a bankruptcy, stops the game until it is answered
     ui.openPending();
     sinceOverlay += dt;
@@ -77,6 +85,8 @@ export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, ove
       ui.handle(events);
       refresh.request();
     }
+    // the messages on the right fade in their own time, which stands still while the game is paused
+    ui.tickToasts(dt);
     if (refresh.due(dt)) ui.update();
     sinceSave += dt;
     // with autosaving set to only on leaving, the game is saved as it is left or hidden

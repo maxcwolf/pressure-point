@@ -408,7 +408,7 @@ describe('lying down', () => {
     expect(lyingAt(lying(), ITEMS.massage_table)).toBe('prone');
     expect(lyingAt(lying(), ITEMS.acu_table)).toBe('prone');
     expect(lyingAt(lying(), ITEMS.reiki_table)).toBe('back');
-    expect(lyingAt({ ...lying(), state: 'resting' }, ITEMS.recliner)).toBe('back');
+    expect(lyingAt({ ...lying(), state: 'resting' }, ITEMS.lounger)).toBe('back');
     // a machine lays them down its own way
     expect(lyingAt(lying(), ITEMS.stone_kiln)).toBeUndefined();
     // and someone on their way there is not lying yet

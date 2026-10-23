@@ -3,13 +3,17 @@
 import { logger, setTag } from '@sentry/browser';
 
 import { Audio } from '../audio/audio';
+import { CAMPAIGN } from '../core/data';
 import { newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { loadIcons } from '../render/models/icons';
+import { loadCampaign } from '../storage/campaign';
 import { AUTOSAVE_ID, openInAutosave, readSave, startBackup } from '../storage/saves';
-import { loadDisciplinePrefs, loadSandbox } from '../storage/settings';
+import { loadDisciplinePrefs, loadSandbox, loadTutorialPref } from '../storage/settings';
+import { welcomeSeen } from '../storage/welcome';
 import { showTitle } from '../ui';
 import { track } from './analytics';
+import { automated } from './automation';
 import { desktop } from './desktop';
 import { fullScreen } from './fullscreen';
 import { startGame } from './game';
@@ -25,6 +29,12 @@ export async function boot() {
   // The desktop app can be quit, so there the game offers Exit.
   // A browser tab cannot close itself, so the web version leaves that to the browser.
   const exit = desktop?.quit;
+  // loading or restarting from inside a game reloads the page and leaves a note saying what to open
+  let what = takeHandoff();
+  // Without one, this is a visit to the title screen, which looks for an update again: the first one since launch,
+  // or the one when the player comes back from a game. Asked before anything loads, the answer that it is checking
+  // is in by the time the title screen draws.
+  if (!what) updates?.check();
   // the desktop app keeps copies of the saves in files, and puts them back if the page's storage has lost them
   if (desktop) await startBackup(desktop);
 
@@ -36,12 +46,12 @@ export async function boot() {
   ]).catch(() => {
     // the fallback font will do
   });
-  // loading or restarting from inside a game reloads the page and leaves a note saying what to open
-  let what = takeHandoff();
   let opened = open(what);
   while (!opened || opened === 'no-room') {
     if (opened === 'no-room') logger.warn('No room to keep the autosave, so the new game did not start');
-    what = await showTitle(audio, exit, updates, fullScreen, opened === 'no-room' ? NO_ROOM : '');
+    // a player is welcomed to the alpha once; a test or a bot is never welcomed, so the menu is there for it at once
+    const welcome = !welcomeSeen() && !automated(navigator);
+    what = await showTitle(audio, exit, updates, fullScreen, opened === 'no-room' ? NO_ROOM : '', welcome);
     audio.unlock();
     opened = open(what);
   }
@@ -83,6 +93,10 @@ function open(what: string | null): GameState | 'no-room' | null {
     state.bankruptcyOn = bankruptcy;
     state.difficulty = difficulty;
   }
+  // a first go at the campaign's first center, with nothing earned yet, looks ahead to what it will soon need
+  if (state && center === CAMPAIGN[0] && !Object.keys(loadCampaign().stars).length) state.primer = true;
+  // a new Willow Lane game is walked through its opening while the tutorial is on, the heads-ups among its steps
+  if (state && center === CAMPAIGN[0] && loadTutorialPref()) state.tutorial = state.lessons = true;
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
   if (state && what !== AUTOSAVE_ID && !openInAutosave(state)) return 'no-room';
   return state;

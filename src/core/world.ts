@@ -650,6 +650,10 @@ export class World {
   roomRectValid(type: RoomType, r: Rect, t?: Trial): Check {
     return rules.roomRectValid(this, type, r, t);
   }
+  /** Whether a room of a type would fit anywhere in the building at its smallest, as things stand. */
+  roomFitsAnywhere(type: RoomType): boolean {
+    return rules.roomFitsAnywhere(this, type);
+  }
   /** The doorway on the room edge nearest a ground position. */
   nearestDoor(r: Rect, fx: number, fy: number): Room['door'] {
     return rules.nearestDoor(r, fx, fy);
@@ -665,6 +669,10 @@ export class World {
   /** Can a room with this layout be put down here, or the room `moving` be moved here? */
   layoutValid(type: RoomType, placed: PlacedLayout, moving?: Room): Check {
     return rules.layoutValid(this, type, placed, moving);
+  }
+  /** The windows of the rooms next door, other than `moving`, that a room put down on this rectangle takes out. */
+  windowsOnto(r: Rect, moving?: Room): WallSpot[] {
+    return rules.windowsOnto(this, r, moving);
   }
   /** Can this stretch of a room's wall take a window? */
   windowValid(room: Room, spot: Room['door']): Check {

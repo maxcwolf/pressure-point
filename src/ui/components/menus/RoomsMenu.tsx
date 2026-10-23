@@ -2,6 +2,7 @@
 
 import { ITEMS, ROLES, ROOM_ORDER, roomHere, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
+import { itemUpkeep } from '../../../core/sim/machines';
 import { unlockedUpTo } from '../../../core/state/game';
 import { loadCampaign } from '../../../storage/campaign';
 import { useGame, useHud } from '../../hooks/use-hud';
@@ -21,6 +22,7 @@ const TABS: readonly { id: RoomsTab; name: string }[] = [
 /** The kinds of room, and the templates saved, a tab each. */
 export function RoomsMenu() {
   const hud = useHud();
+  const guide = hud.guide();
   return (
     <div class="panel menu">
       <h3>Build a room</h3>
@@ -28,7 +30,7 @@ export function RoomsMenu() {
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx('tab', hud.roomsTab === t.id && 'on')}
+            class={cx('tab', hud.roomsTab === t.id && 'on', guide === `tab:${t.id}` && 'guide')}
             onPress={() => {
               hud.roomsTab = t.id;
             }}
@@ -51,6 +53,7 @@ function RoomCards() {
   const { sim, tools } = useGame();
   const s = sim.s;
   const { unlocked } = loadCampaign();
+  const guide = hud.guide();
   const types = ROOM_ORDER.filter(
     (t) => roomHere(ROOMS[t], s.center) && available(roomOffering(t), (d) => sim.enabled(d)),
   );
@@ -62,11 +65,11 @@ function RoomCards() {
         const forKarma = starred ? undefined : roomKarmaLock(t, unlockedUpTo(s), unlocked);
         const locked = starred || forKarma !== undefined;
         const cures = machineCures(t);
-        const upkeep = r.required.reduce((sum, i) => sum + (ITEMS[i].machine?.upkeep ?? 0), 0);
+        const upkeep = r.required.reduce((sum, i) => sum + itemUpkeep(i), 0);
         return (
           <Button
             key={t}
-            class={cx('card', !locked && s.money < r.cost && 'poor')}
+            class={cx('card', !locked && s.money < r.cost && 'poor', guide === `room:${t}` && 'guide')}
             // a room karma can unlock opens the offer to unlock its machine, rather than refusing outright
             locked={starred}
             onPress={() => {

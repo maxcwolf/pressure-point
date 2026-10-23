@@ -1,17 +1,36 @@
-// Bottom left: the advisor's current nudge. One about someone or something takes you there when clicked.
+// Bottom left: the advisor's current nudge, with a word over it saying what kind it is if it has one. One about
+// someone or something takes you there when clicked. While the tutorial has a step in hand, its card instead.
 
 import './Advisor.css';
 
 import { useGame, useHud } from '../hooks/use-hud';
 import { Button } from './common/Button';
 import { Icon } from './common/Icon';
+import { TutorialCard } from './TutorialCard';
 
 /** The advisor, who steps aside while a build menu or a blueprint is open in the same spot. */
 export function Advisor() {
   const hud = useHud();
   const { sim, tools } = useGame();
   if (hud.menu || tools.plan) return <div id="advisor" />;
-  const { text, about } = sim.adviceNote();
+  const { text, about, label, step } = sim.adviceNote();
+  if (step)
+    return (
+      <div id="advisor">
+        <div class="face">
+          <Icon id="ui-advisor" size={36} />
+        </div>
+        <TutorialCard step={step} />
+      </div>
+    );
+  const body = label ? (
+    <>
+      <span class="kicker">{label}</span>
+      {text}
+    </>
+  ) : (
+    text
+  );
   return (
     <div id="advisor">
       <div class="face">
@@ -25,10 +44,10 @@ export function Advisor() {
             hud.show(about);
           }}
         >
-          {text}
+          {body}
         </Button>
       ) : (
-        <p class="note">{text}</p>
+        <p class="note">{body}</p>
       )}
     </div>
   );

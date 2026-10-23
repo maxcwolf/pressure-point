@@ -3,7 +3,7 @@
 import './StatsBar.css';
 
 import { centerOf, type IconId } from '../../core/data';
-import { dateOf, money } from '../../core/format';
+import { calendarDay, dateOf, money } from '../../core/format';
 import { netOf } from '../../core/sim/economy';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
@@ -33,10 +33,11 @@ export function StatsBar() {
   const { sim } = useGame();
   const hud = useHud();
   const s = sim.s;
-  const date = dateOf(s.day);
+  const date = dateOf(s.day, s.startMonth);
   const season = sim.season();
   const weather = weatherNote(sim.outdoorTemp(), s.weatherOn);
   const net = netOf(s.ledger);
+  const guide = hud.guide();
   return (
     <div id="stats">
       <div class={cx('stat money', s.money < 0 && 'neg')} title="Bank balance">
@@ -63,7 +64,11 @@ export function StatsBar() {
       </div>{' '}
       <div
         class="stat date"
-        title={calendarTip(s.day, centerOf(s), s.open ? { p: sim.arrivalPace(), reputation: s.reputation } : undefined)}
+        title={calendarTip(
+          calendarDay(s),
+          centerOf(s),
+          s.open ? { p: sim.arrivalPace(), reputation: s.reputation } : undefined,
+        )}
       >
         <Icon id={SEASON_ICONS[season]} size={26} />
         <b>
@@ -88,7 +93,7 @@ export function StatsBar() {
         {SPEEDS.map((sp) => (
           <Button
             key={sp.speed}
-            class={cx('speed', s.speed === sp.speed && 'on')}
+            class={cx('speed', s.speed === sp.speed && 'on', guide === `speed:${sp.speed}` && 'guide')}
             title={sp.title}
             onPress={() => {
               s.speed = sp.speed;

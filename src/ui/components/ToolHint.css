@@ -96,6 +96,30 @@
   font-weight: 600;
 }
 
+/* a click turned down pulses the reason, so it is seen as well as heard */
+.hintpill b.refused {
+  animation: hint-refused 0.4s ease-out;
+}
+
+@keyframes hint-refused {
+  30% {
+    transform: scale(1.12);
+  }
+}
+
+/* or, with less motion asked for, flashes it without moving */
+@media (prefers-reduced-motion: reduce) {
+  .hintpill b.refused {
+    animation: hint-refused-flash 0.4s ease-out;
+  }
+}
+
+@keyframes hint-refused-flash {
+  30% {
+    background: #fbe3e1;
+  }
+}
+
 /* the patterns to pick from while a rug is in hand, which can be clicked though the hint cannot */
 .hintpill.rugpicker {
   margin-top: 6px;

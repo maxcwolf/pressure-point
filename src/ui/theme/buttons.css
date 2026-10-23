@@ -47,6 +47,11 @@
 }
 .round.welded > .shape {
   position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
   z-index: 0;
   overflow: visible;
   pointer-events: none;
@@ -206,4 +211,59 @@ button.danger:hover,
 
 .filebtn:hover {
   background: #f0fbf9;
+}
+
+/* the tutorial's ring on what its step wants: a gold outline that breathes, drawn outside the button so nothing moves */
+.guide {
+  outline: 4px solid var(--gold);
+  outline-offset: 3px;
+  animation: guide 1.4s ease-in-out infinite;
+}
+
+@keyframes guide {
+  50% {
+    outline-offset: 7px;
+    outline-color: rgba(242, 193, 78, 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide {
+    animation: none;
+  }
+}
+
+/* an on and off switch, in the settings and on Willow Lane's card */
+.switch {
+  pointer-events: auto;
+  flex: none;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  border: 2.5px solid var(--navy);
+  background: #d7d2c5;
+  padding: 0;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.switch span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--navy);
+  opacity: 1 !important;
+  transition: left 0.15s;
+}
+
+.switch.on {
+  background: var(--green);
+}
+
+.switch.on span {
+  left: 24px;
 }

@@ -7,7 +7,7 @@ import path from 'node:path';
 import type { ElectronApplication } from '@playwright/test';
 import electronPath from 'electron';
 
-import { UPDATE_STATUS_CHANGED_CHANNEL, type UpdateStatus } from '../../electron/api';
+import { UPDATE_CHECK_CHANNEL, UPDATE_STATUS_CHANGED_CHANNEL, type UpdateStatus } from '../../electron/api';
 import { expect, newGame, openPauseMenu, test } from './fixtures';
 
 test.describe('the desktop shell', () => {
@@ -74,6 +74,7 @@ test.describe('the desktop shell', () => {
       platform: 'string',
       quit: 'function',
       onUpdateStatus: 'function',
+      checkForUpdate: 'function',
       installUpdate: 'function',
       onFullScreen: 'function',
       setFullScreen: 'function',
@@ -253,6 +254,38 @@ test.describe('updates', () => {
     await tell(app, { state: 'ready', version: '9.9.9' });
     await expect(page.getByRole('button', { name: 'Update to the latest version' })).toBeVisible();
     await expect(note).toHaveCount(0);
+  });
+
+  test('coming back to the title screen looks for an update again, and starting a game does not', async ({
+    desktop,
+  }) => {
+    const { app, page } = await desktop.launch();
+    // counted beside the app's own handler, which a run from this folder leaves with no updater to ask
+    await app.evaluate(({ ipcMain }, channel) => {
+      const seen = globalThis as { asked?: number };
+      seen.asked = 0;
+      ipcMain.on(channel, () => {
+        seen.asked = (seen.asked ?? 0) + 1;
+      });
+    }, UPDATE_CHECK_CHANNEL);
+    /** How many times the game has asked the app to look again. */
+    const asked = () => app.evaluate(() => (globalThis as { asked?: number }).asked);
+
+    await newGame(page);
+    await openPauseMenu(page);
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await expect.poll(asked).toBe(1);
+    // a new game from inside one reloads the page too, but straight into the game
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await openPauseMenu(page);
+    await page.getByRole('button', { name: 'New game' }).click();
+    await page.getByRole('button', { name: 'Start a new game' }).click();
+    await page.locator('#stats').waitFor();
+    await openPauseMenu(page);
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await expect.poll(asked).toBe(2);
   });
 
   test('a downloaded update is offered on the title screen and in a game', async ({ desktop }) => {

@@ -5,7 +5,7 @@ import './PlanPanel.css';
 import { ITEMS, ROOMS, WINDOW_COST } from '../../core/data';
 import { money } from '../../core/format';
 import { finishCost } from '../../core/sim/building';
-import { useGame } from '../hooks/use-hud';
+import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { placedFlags } from '../lib/plan';
 import { Button } from './common/Button';
@@ -15,6 +15,7 @@ import { Stars } from './common/Stars';
 /** The blueprint of the room being planned. */
 export function PlanPanel() {
   const { sim, tools } = useGame();
+  const hud = useHud();
   const plan = tools.plan;
   if (!plan) return <div id="plan" />;
   const { room, missing, holding, ready } = plan;
@@ -85,7 +86,7 @@ export function PlanPanel() {
             Cancel
           </Button>{' '}
           <Button
-            class="go"
+            class={cx('go', hud.guide() === 'plan:build' && 'guide')}
             locked={!ready}
             onPress={() => {
               tools.planBuild();

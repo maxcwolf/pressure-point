@@ -55,7 +55,11 @@ export function ToolHint() {
               </li>
             ))}
           </ul>
-          {tools.problem && <b>{tools.problem}</b>}
+          {tools.problem && (
+            <b key={tools.refusals} class={cx(tools.justRefused && 'refused')}>
+              {tools.problem}
+            </b>
+          )}
           {effects.length > 0 && (
             <ul class="effects">
               {effects.map((e) => (

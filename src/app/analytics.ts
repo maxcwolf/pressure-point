@@ -148,6 +148,8 @@ export function watchGame(sim: Sim) {
   const frames = watchFrames();
   let peakGuests = s.guests.length;
   let sinceSummary = 0;
+  /** How far along the tutorial has been counted, so each step is counted once as it is first reached. */
+  let furthest = 0;
   /** The session so far. */
   const summary = (): PlayProps => ({
     ...gameProps(s),
@@ -165,6 +167,12 @@ export function watchGame(sim: Sim) {
     for (const e of playEvents(mark, s, { answered, month: feelProps(feel) })) track(e.name, e.props);
     mark = markOf(s);
     if (mark.month !== month) feel = freshFeel();
+    // where first players get to in the tutorial, and where they stop; a step come undone is not counted again
+    const step = sim.tutorialStep();
+    if (step && step.n > furthest) {
+      furthest = step.n;
+      track('tutorial_step', { ...gameProps(s), step: step.id });
+    }
     if (document.visibilityState !== 'visible') return;
     frames.second();
     peakGuests = Math.max(peakGuests, s.guests.length);

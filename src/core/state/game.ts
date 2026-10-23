@@ -122,8 +122,12 @@ export const defaultPolicy = (): Policy => ({
  * the line of work that drew the icons, speech bubbles held as the game's own icons rather than emoji.
  * 34: the two 33s together, so a 33 save of either kind is brought up to both.
  * 35: the Generator, the first item that stands outdoors.
+ * 36: the first game's heads-ups, and the explanations of harm that keeps coming to guests.
+ * 37: the tutorial and the cards that explain each thing the first time it happens, and whether the land for
+ *     sale has been looked over, for the first game's heads-up on land.
+ * 38: the Recliner renamed the Lounger.
  */
-export const SAVE_VERSION = 35;
+export const SAVE_VERSION = 38;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -147,6 +151,7 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     money: CENTERS[center].startMoney,
     reputation: 30,
     day,
+    startMonth: 0,
     speed: 1,
     open: false,
     rooms: [],
@@ -165,6 +170,13 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     spawnT: 4,
     announceT: 25,
     seenTips: [],
+    primer: false,
+    sawPlots: false,
+    tutorial: false,
+    lessons: false,
+    lastLesson: -1,
+    harms: {},
+    harmNotes: [],
     loan: 0,
     priceLevel: 1,
     offer: null,
@@ -224,9 +236,16 @@ export function startingState(center: CenterId, day: number, seed: number): Game
   };
 }
 
+/**
+ * The month a new game opens in, for a center that does not open in January: Willow Lane, the first of the campaign,
+ * opens as spring starts, so a first game begins in mild weather with the trees in leaf.
+ */
+export const OPENING_MONTH: Partial<Record<CenterId, number>> = { willow: 2 };
+
 /** The state of a brand new game, in the sandbox unless a center is given. */
 export function newGame(center: CenterId = 'sandbox'): GameState {
   const s = startingState(center, 0, newSeed());
+  s.startMonth = OPENING_MONTH[center] ?? 0;
   refillCandidates(s);
   return s;
 }

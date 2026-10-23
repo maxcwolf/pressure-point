@@ -41,6 +41,41 @@ test.describe('starting out', () => {
     await expect(page.getByRole('button', { name: 'What’s new' })).toBeVisible();
   });
 
+  test('feedback can be written from the corner of the title screen', async ({ page }) => {
+    await page.goto('/');
+    // the version says the game is unfinished
+    await expect(page.locator('#title .title-version')).toContainText('Alpha');
+    await page.getByRole('button', { name: 'Give feedback' }).click();
+    const panel = page.locator('#title-feedback');
+    const send = panel.getByRole('button', { name: 'Send feedback' });
+    // nothing to send until something is written
+    await expect(send).toBeDisabled();
+    await panel.getByRole('textbox', { name: 'Your feedback' }).fill('The fountain is lovely');
+    await send.click();
+    // the dev server sends nothing, and says so, keeping what was written
+    await expect(panel.getByRole('alert')).toContainText('local build');
+    await expect(panel.getByRole('textbox', { name: 'Your feedback' })).toHaveValue('The fountain is lovely');
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+  });
+
+  test('feedback can be written from the pause menu, with keys going to the box and not the game', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Give feedback' }).click();
+    const box = page.locator('#modal').getByRole('textbox', { name: 'Your feedback' });
+    await box.click();
+    await page.keyboard.type('rooms built here');
+    await expect(box).toHaveValue('rooms built here');
+    await expect(page.locator('#modal')).toContainText('Give feedback');
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Save or load' })).toBeVisible();
+    expect(game.errors).toEqual([]);
+  });
+
   test('music and sound can be switched off on the title screen', async ({ game, page }) => {
     await page.goto('/');
     const music = page.locator('#title').locator('[data-tip="Music"]');
@@ -81,6 +116,26 @@ test.describe('starting out', () => {
     await expect(page.locator('#advisor')).toContainText('Hire a Receptionist');
   });
 
+  test('a placement keeps the next preview out of the way, and one that cannot be paid for shows red first', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.menu('Items');
+    await game.card('Potted Plant').click();
+    await game.placeHeld();
+    // the pointer has not moved: the next plant does not sit red on the one just put down
+    expect(await game.eval((pp) => pp.tools.problem)).toBe('');
+    await expect(page.locator('#hint b')).toHaveCount(0);
+    // and the price floats off it
+    await expect(page.locator('#floaters')).toContainText('-$120');
+    // with too little in the bank, the next is red before any click, saying why
+    await game.eval((pp) => (pp.state.money = 5));
+    await game.hoverHeld();
+    await expect(page.locator('#hint b')).toHaveText("Can't afford it");
+    expect(game.errors).toEqual([]);
+  });
+
   test('an invalid spot is refused and explained', async ({ game, page }) => {
     await game.start();
     await game.menu('Items');
@@ -89,6 +144,8 @@ test.describe('starting out', () => {
     await expect(page.locator('#hint')).toContainText('Must be inside the building');
     await game.clickLawn();
     expect(await game.eval((pp) => pp.state.items.length)).toBe(0);
+    // the reason pulses, so the click is seen to be turned down as well as heard
+    await expect(page.locator('#hint b.refused')).toHaveCount(1);
   });
 
   test('the newer items wait for their stars, or karma', async ({ game }) => {
@@ -734,6 +791,67 @@ test.describe('staff', () => {
     await expect(insp.getByRole('button', { name: 'Cancel course' })).toHaveCount(0);
     expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'therapist')!.quals)).not.toContain('deep');
   });
+
+  test('show in the Staff menu what each one knows, narrowed to those who know a treatment', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const name = await game.eval((pp) => {
+      pp.state.speed = 0;
+      const st = pp.state.staff.find((x) => x.role === 'therapist')!;
+      st.quals = ['swedish', 'deep'];
+      return st.name;
+    });
+    await game.menu('Staff');
+    const rows = page.locator('#menu .row:not(.head)');
+    await expect(rows).toHaveCount(3);
+    await expect(rows.filter({ hasText: name }).locator('.knows .quals > span')).toHaveText(['Swedish', 'Deep Tissue']);
+    // those with no treatments say what they do instead
+    await expect(rows.locator('.knows')).toContainText(['Receptionist', 'Wellness Consultant', 'Swedish']);
+
+    const filters = page.locator('#menu .tabs.knows .tab');
+    await expect(filters).toHaveText(['Everyone', 'Swedish 1', 'Deep Tissue 1']);
+    await filters.filter({ hasText: 'Deep Tissue' }).click();
+    await expect(rows).toHaveCount(1);
+    await expect(rows).toContainText(name);
+    // pressed again, it lets go
+    await filters.filter({ hasText: 'Deep Tissue' }).click();
+    await expect(rows).toHaveCount(3);
+  });
+
+  test('can be compared side by side in the inspector', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const { therapist, consultant } = await game.eval((pp) => {
+      pp.state.speed = 0;
+      const t = pp.state.staff.find((x) => x.role === 'therapist')!;
+      const c = pp.state.staff.find((x) => x.role === 'consultant')!;
+      t.quals = ['swedish'];
+      t.served = 12;
+      c.served = 30;
+      pp.tools.select({ kind: 'staff', id: t.id });
+      return { therapist: t.name, consultant: c.name };
+    });
+    const insp = page.locator('#inspector');
+    await insp.getByRole('button', { name: 'Compare' }).click();
+    await expect(insp.locator('.compare-pick button.pick')).toHaveCount(2);
+    await insp.locator('.compare-pick button.pick', { hasText: consultant }).click();
+
+    const table = insp.locator('.compare-table');
+    await expect(table.locator('thead th')).toHaveText([therapist.split(' ')[0]!, consultant.split(' ')[0]!]);
+    await expect(table.locator('tr', { hasText: 'Role' })).toHaveCount(1);
+    const served = table.locator('tr', { hasText: 'Guests served' }).locator('td');
+    await expect(served).toHaveText(['12', '30']);
+    await expect(served.nth(1)).toHaveClass(/ahead/);
+    await expect(table.locator('tr', { hasText: 'Swedish' }).locator('td')).toHaveText(['✔', '—']);
+
+    // going to the other keeps the two compared, the other way round
+    await insp.getByRole('button', { name: /^Go to / }).click();
+    await expect(insp.locator('h3')).toHaveText(consultant);
+    await expect(table.locator('thead th')).toHaveText([consultant.split(' ')[0]!, therapist.split(' ')[0]!]);
+
+    await insp.getByRole('button', { name: 'Done comparing' }).click();
+    await expect(table).toHaveCount(0);
+  });
 });
 
 test.describe('running a center', () => {
@@ -1161,9 +1279,17 @@ test.describe('controls and saving', () => {
     await game.settle();
     expect(await spot()).toBeCloseTo(stopped, 0);
     const dist = await game.eval((pp) => pp.view.dist);
-    await page.mouse.move(700, 450);
+    // the wheel zooms toward the spot under the pointer, which stays where it is on screen
+    const pointer = { x: 1000, y: 300 };
+    const ground = await game.eval((pp, p) => pp.view.groundAt(p.x, p.y)!, pointer);
+    await page.mouse.move(pointer.x, pointer.y);
     await page.mouse.wheel(0, -400);
-    expect(await game.eval((pp) => pp.view.dist)).toBeLessThan(dist);
+    // easing in over a few frames
+    await expect.poll(() => game.eval((pp) => pp.view.dist)).toBeLessThan(dist);
+    await game.cameraStill();
+    const at = await game.eval((pp, g) => pp.view.project(g.x, g.y), ground);
+    expect(Math.abs(at.x - pointer.x)).toBeLessThan(2);
+    expect(Math.abs(at.y - pointer.y)).toBeLessThan(2);
   });
 
   test('the pause menu shows the controls and resumes at the old speed', async ({ game, page }) => {
@@ -1494,7 +1620,7 @@ test.describe('acupuncture and settings', () => {
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Sandbox' }).click();
     await expect(page.locator('#title-sandbox')).toBeVisible();
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: '‹ Back', exact: true }).click();
     await page.getByRole('button', { name: 'Sandbox' }).click();
 
     await page.getByRole('button', { name: 'Start building' }).click();
@@ -1586,6 +1712,69 @@ test.describe('messages', () => {
       pp.state.staff.find((s) => s.role === 'consultant')!.raiseAsked = false;
     });
     await expect(card).toHaveCount(0);
+  });
+
+  test('a message stays while the game is paused or the pointer is on it, and can be closed', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    const toast = page.locator('#toasts .messages .toast', { hasText: 'Mira joins the team.' });
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.sim.emit({ type: 'toast', text: 'Mira joins the team.', kind: 'info' });
+    });
+    await expect(toast).toBeVisible();
+    // a minute of frames, paused
+    await game.eval((pp) => pp.ui.tickToasts(60));
+    await expect(toast).toBeVisible();
+    await game.eval((pp) => (pp.state.speed = 1));
+    await toast.hover();
+    await game.eval((pp) => pp.ui.tickToasts(60));
+    await expect(toast).toBeVisible();
+    await page.mouse.move(400, 450);
+    await game.eval((pp) => pp.ui.tickToasts(60));
+    await expect(toast).toHaveCount(0);
+    // said twice, it shows once, counted; its close button takes it away
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.sim.emit({ type: 'toast', text: 'Mira joins the team.', kind: 'info' });
+      pp.sim.emit({ type: 'toast', text: 'Mira joins the team.', kind: 'info' });
+    });
+    await expect(toast).toContainText('×2');
+    await toast.locator('[data-tip="Dismiss"]').click();
+    await expect(toast).toHaveCount(0);
+  });
+
+  test('past the first few, messages pile up, open out, and are dismissed together once the player is sure', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      for (let i = 1; i <= 6; i++) pp.sim.emit({ type: 'toast', text: `Message ${i}`, kind: 'info' });
+    });
+    const messages = page.locator('#toasts .messages .toast');
+    const pile = page.locator('#toasts .pile');
+    await expect(messages).toHaveCount(4);
+    await expect(messages.first()).toContainText('Message 6');
+    await expect(pile).toContainText('2 more messages');
+    await pile.getByRole('button', { name: '2 more messages' }).click();
+    await expect(messages).toHaveCount(6);
+    await expect(messages.last()).toContainText('Message 1');
+    await page.keyboard.press('Escape');
+    await expect(messages).toHaveCount(4);
+    await pile.locator('[data-tip="Dismiss all messages"]').click();
+    const dialog = page.locator('.dialog');
+    await expect(dialog).toContainText('Dismiss all 6 messages?');
+    await dialog.getByRole('button', { name: 'Keep them' }).click();
+    await expect(messages).toHaveCount(4);
+    await pile.locator('[data-tip="Dismiss all messages"]').click();
+    await dialog.getByRole('button', { name: 'Dismiss all' }).click();
+    await expect(messages).toHaveCount(0);
+    await expect(pile).toHaveCount(0);
+    expect(await game.eval((pp) => pp.ui.toasts.length)).toBe(0);
   });
 });
 
@@ -1926,18 +2115,18 @@ test.describe('staff careers', () => {
     await expect(insp.getByRole('button', { name: /Promote/ })).toHaveCount(0);
   });
 
-  test('a consultant can be kept to one duty, but not from them all', async ({ game, page }) => {
+  test('a receptionist can be kept to one duty, but not from them all', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
     await game.eval((pp) => {
       pp.state.speed = 0;
-      pp.tools.select({ kind: 'staff', id: pp.state.staff.find((x) => x.role === 'consultant')!.id });
+      pp.tools.select({ kind: 'staff', id: pp.state.staff.find((x) => x.role === 'receptionist')!.id });
     });
     const insp = page.locator('#inspector');
-    await insp.getByRole('button', { name: /Posture Lab scans/ }).click();
-    await expect(insp.getByRole('button', { name: /Posture Lab scans/ })).toContainText('✗');
-    await insp.getByRole('button', { name: /Consultations/ }).click();
-    expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'consultant')!.off)).toEqual(['assess']);
+    await insp.getByRole('button', { name: /Shop Counter/ }).click();
+    await expect(insp.getByRole('button', { name: /Shop Counter/ })).toContainText('✗');
+    await insp.getByRole('button', { name: /Front desk/ }).click();
+    expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'receptionist')!.off)).toEqual(['shop']);
   });
 
   test('an applicant can be turned down', async ({ game, page }) => {
@@ -2011,6 +2200,32 @@ test.describe('reading the center', () => {
     await expect(page.locator('#overlay-key .scale.temperature')).toContainText('Cold');
     await expect(page.locator('#overlay-key .scale.temperature')).toContainText('Hot');
     await expect.poll(() => game.eval((pp) => pp.ui.overlay)).toBe('temperature');
+  });
+
+  test("a radiator's inspector turns the Temperature overlay on, and it stays on once closed", async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    const radiator = await game.give('radiator');
+    const ac = await game.give('air_conditioner');
+    // selected directly: someone walking past would take a click meant for it
+    await game.eval((pp, id) => pp.tools.select({ kind: 'item', id }), radiator);
+    const toggle = page.locator('#inspector').getByRole('button', { name: /Temperature overlay/ });
+    await expect(toggle).toContainText('off');
+    await toggle.click();
+    await expect(toggle).toContainText('on');
+    await expect.poll(() => game.eval((pp) => pp.ui.overlay)).toBe('temperature');
+    await page.locator('#inspector .x').click();
+    await expect(page.locator('#inspector .panel')).toHaveCount(0);
+    await expect(page.locator('#overlay-key')).toContainText('Temperature');
+    // another heater or cooler shows it on, and turns it off
+    await game.eval((pp, id) => pp.tools.select({ kind: 'item', id }), ac);
+    await expect(toggle).toContainText('on');
+    await toggle.click();
+    await expect(toggle).toContainText('off');
+    await expect(page.locator('#overlay-key')).toHaveCount(0);
   });
 });
 
@@ -2136,6 +2351,99 @@ test.describe('stats', () => {
     await game.menu('Stats');
     await expect(page.locator('#menu .stat-card[data-metric="money"]')).toBeVisible();
     await expect(page.locator('#menu .stat-card[data-metric="stormed"]')).toHaveCount(0);
+  });
+});
+
+test.describe('the tutorial', () => {
+  test('points a first Willow Lane game at what each step wants, and can be skipped', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    const card = page.locator('#advisor .tutorial-card');
+    await expect(card).toContainText('Tutorial · step 1 of');
+    await game.eval((pp) => {
+      pp.sim.noteLooked();
+    });
+    await expect(card).toContainText('step 2 of');
+    await expect(card).toContainText('Place a Reception Desk');
+    await expect(page.locator('#objectives')).toContainText('Tutorial · 1 of');
+    // the ring is on the Items button, then follows into the menu to the card wanted
+    const items = page.locator('#buildbtns').getByRole('button', { name: 'Items' });
+    await expect(items).toHaveClass(/guide/);
+    await game.menu('Items');
+    await expect(items).not.toHaveClass(/guide/);
+    await expect(game.card('Reception Desk')).toHaveClass(/guide/);
+    await expect(page.locator('#menu .guide')).toHaveCount(1);
+    await game.menu('Items');
+    await card.getByRole('button', { name: 'Skip the tutorial' }).click();
+    await expect(card).toHaveCount(0);
+    await expect(page.locator('.guide')).toHaveCount(0);
+    await expect(page.locator('#advisor')).toContainText('Open the Items menu and place a Reception Desk');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('off');
+  });
+
+  test('looking around is done once the camera has been moved and turned', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    const card = page.locator('#advisor .tutorial-card');
+    await expect(card).toContainText('Look around');
+    await page.keyboard.press('KeyE');
+    await expect(card).toContainText('Look around');
+    await page.keyboard.down('KeyD');
+    await expect(card).toContainText('Place a Reception Desk');
+    await page.keyboard.up('KeyD');
+  });
+
+  test('the switch on Willow Lane’s card, and the one in Settings, turn it off and on', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    const trail = page.locator('#title-campaign');
+    const card = trail.getByRole('switch', { name: 'Tutorial' });
+    await expect(card).toHaveAttribute('aria-checked', 'true');
+    await card.click();
+    await expect(card).toHaveAttribute('aria-checked', 'false');
+    await trail.getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    expect(await game.eval((pp) => [pp.state.tutorial, pp.state.lessons])).toEqual([false, false]);
+    await expect(page.locator('#advisor .tutorial-card')).toHaveCount(0);
+    // switched on from the game's Settings, it starts there and then
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    const settings = page.getByRole('switch', { name: 'Tutorial' });
+    await expect(settings).toHaveAttribute('aria-checked', 'false');
+    await settings.click();
+    await expect(settings).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#advisor .tutorial-card')).toContainText('Tutorial · step 1 of');
+    expect(await page.evaluate(() => localStorage.getItem('pressure-point-tutorial'))).toBe('on');
+  });
+
+  test('a lesson opens over the game, paused, until it is read', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 1;
+      pp.sim.emit({ type: 'lesson', id: 'heal' });
+      pp.sim.emit({ type: 'lesson', id: 'payday' });
+    });
+    const modal = page.locator('#modal');
+    await expect(modal).toContainText('Your first heal');
+    await expect(modal.locator('.lesson-strip li')).toHaveCount(3);
+    expect(await game.eval((pp) => pp.state.speed)).toBe(0);
+    // nobody to show for this one
+    await expect(modal.getByRole('button', { name: 'Show me' })).toHaveCount(0);
+    await modal.getByRole('button', { name: 'Got it' }).click();
+    // one raised meanwhile waits its turn
+    await expect(modal).toContainText('Payday');
+    await modal.getByRole('button', { name: 'Got it' }).click();
+    await expect(modal).toBeEmpty();
+    expect(await game.eval((pp) => pp.state.speed)).toBe(1);
   });
 });
 
@@ -2673,7 +2981,7 @@ test.describe('the recovery lounge', () => {
     await game.card('Recovery Lounge').click();
     await game.dragOutRoom(3, 3);
     await game.clickWall('south');
-    await expect(page.locator('#hint')).toContainText('Place the Recliner inside the room');
+    await expect(page.locator('#hint')).toContainText('Place the Lounger inside the room');
     await game.placeHeld();
     await page.keyboard.press('Enter');
     await expect(page.locator('#toasts')).toContainText('Recovery Lounge built!');
@@ -3023,6 +3331,21 @@ test.describe('turning the camera', () => {
     await game.cameraStill();
     await game.clickRoom('massage');
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
+    // the room selected is outlined in gold on its floor
+    await game.settle();
+    expect(await game.eval((pp) => pp.view.overlays.outlineShown)).toBe(true);
+    expect(game.errors).toEqual([]);
+  });
+});
+
+test.describe('the camera for a player who asks for less motion', () => {
+  test('cuts round and over rather than gliding', async ({ game, page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await game.start();
+    await page.keyboard.press('KeyE');
+    expect(await game.eval((pp) => [pp.view.turn, pp.view.cameraStill])).toEqual([1, true]);
+    await game.eval((pp) => pp.view.lookAt(10, 10));
+    expect(await game.eval((pp) => pp.view.cameraStill)).toBe(true);
     expect(game.errors).toEqual([]);
   });
 });

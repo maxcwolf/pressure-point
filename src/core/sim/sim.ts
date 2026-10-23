@@ -21,6 +21,7 @@ import {
   type ThermostatSetting,
 } from '../data';
 import { tuning } from '../difficulty';
+import { calendarDay } from '../format';
 import type { PlotOffer } from '../land';
 import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { offeringOn } from '../state/game';
@@ -39,7 +40,7 @@ import type {
 import { layoutProblem } from '../templates';
 import type { Check, Placed, Rect, World } from '../world';
 import { checkAchievements } from './achievements';
-import { type Advice, advice, advise, announce, warnUnfed } from './advisor';
+import { type Advice, advice, advise, announce, warnPrimer, warnUnfed } from './advisor';
 import { drainFactor, prestige } from './ambience';
 import { assignRoom, clearRooms } from './assignments';
 import { holdAwards, YEAR_MONTHS } from './awards';
@@ -106,6 +107,7 @@ import { drainEvents, emit } from './events';
 import { objectiveDetail } from './goals';
 import { admitGuests, type ArrivalPace, arrivalPace, guestCap, intakeLimit, setIntakeCap, updateGuest } from './guests';
 import { buyPlot, landOffers, renamePlot, updateLand } from './land';
+import { checkLessons } from './lessons';
 import {
   announceOpenings,
   machineBusy,
@@ -124,6 +126,7 @@ import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, 
 import { updateOutdoors } from './outdoors';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import { type PlacePreview, previewItem } from './preview';
+import { type PrimerLine, primerLines } from './primer';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
@@ -141,6 +144,17 @@ import type { Course } from './training';
 import { cancelBlocker, cancelTraining, courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
 import { deliveryProblem, modalityOf, offered, setDiscipline, unlocked } from './treatments';
+import {
+  currentStep,
+  noteLooked,
+  setTutorial,
+  skipTutorial,
+  type TutorialLine,
+  tutorialLines,
+  tutorialOn,
+  type TutorialStep,
+  warnTutorial,
+} from './tutorial';
 import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
 import { orderUpgrade } from './upgrades';
 import { decayItems, wearByTheDay } from './upkeep';
@@ -237,6 +251,9 @@ export class Sim {
       updateLand(ctx);
       updateOutdoors(ctx);
       warnWorsening(ctx);
+      warnTutorial(ctx);
+      warnPrimer(ctx);
+      checkLessons(ctx);
       // wages overdue for want of a loan may be paid at last, which lets the year's awards through
     }
     announce(ctx, dt);
@@ -305,6 +322,42 @@ export class Sim {
   adviceNote(): Advice {
     return advise(this.ctx);
   }
+  /** On a first go at the campaign, the checklist of what the center will need, each line ticked once in place. */
+  primerLines(): PrimerLine[] {
+    return primerLines(this.ctx);
+  }
+  /** The tutorial's list, while it is on, each line ticked once done and the step in hand marked. */
+  tutorialLines(): TutorialLine[] {
+    return tutorialLines(this.ctx);
+  }
+  /** The tutorial's step in hand, if it is on and a step is. */
+  tutorialStep(): TutorialStep | null {
+    return currentStep(this.ctx);
+  }
+  /** The id of the tutorial's step in hand, or null. */
+  tutorialStepId(): string | null {
+    return currentStep(this.ctx)?.id ?? null;
+  }
+  /** Skip the rest of the tutorial and the cards that explain things. */
+  skipTutorial() {
+    skipTutorial(this.ctx);
+  }
+  /** Whether the tutorial is on in this game: its steps, or the cards that explain things. */
+  tutorialOn(): boolean {
+    return tutorialOn(this.ctx);
+  }
+  /** Turn the tutorial, and the cards that explain things, on or off in this game. */
+  setTutorial(on: boolean) {
+    setTutorial(this.ctx, on);
+  }
+  /** The camera has been moved and turned, which is the tutorial's first step done. */
+  noteLooked() {
+    noteLooked(this.ctx);
+  }
+  /** Put away the explanation of harm to guests on show, for the next waiting to take its place. */
+  dismissHarm() {
+    this.s.harmNotes.shift();
+  }
   /** The stage of a visit holding guests up most, if any is. */
   bottleneck(): Stage | undefined {
     return bottleneck(this.ctx);
@@ -330,7 +383,7 @@ export class Sim {
 
   /** The season now: every center has its weather through the year, if not always its crowds. */
   season(): Season {
-    return seasonOf(this.s.day);
+    return seasonOf(calendarDay(this.s));
   }
 
   /** This month so far, in the same shape as the finished months in `s.months`. */
@@ -379,7 +432,7 @@ export class Sim {
   }
   /** The temperature outside today. */
   outdoorTemp(): number {
-    return outdoorTemp(centerOf(this.s).climate, this.s.day);
+    return outdoorTemp(centerOf(this.s).climate, calendarDay(this.s));
   }
 
   /** A room's prestige, from one to five. `extra` is decor not yet placed in it. */
@@ -557,6 +610,10 @@ export class Sim {
   /** Each of the center's plots of land as things stand: the game's, being built on, for sale, or not yet. */
   landOffers(): PlotOffer[] {
     return landOffers(this.ctx);
+  }
+  /** The land for sale has been looked over: the Expand tool is in hand. */
+  seePlots() {
+    this.s.sawPlots = true;
   }
   /** Buy a plot of land and set the builders to work on it. False if it cannot be bought. */
   buyPlot(id: string): boolean {

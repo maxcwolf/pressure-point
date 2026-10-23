@@ -1,5 +1,5 @@
 // Shared setup for the simulation tests: seeded games and a standard little center.
-import { isGeneral, type ItemType, type Role, type RoomType } from '../../src/core/data';
+import { isGeneral, ITEMS, type ItemType, type Role, type RoomType } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import type { SimEvent } from '../../src/core/sim/events';
 import { Sim } from '../../src/core/sim/sim';
@@ -115,9 +115,9 @@ export function addSound(sim: Sim) {
   ]);
 }
 
-/** Add a Recovery Lounge at its standard spot, with its one Recliner. */
+/** Add a Recovery Lounge at its standard spot, with its one Lounger. */
 export function addRecovery(sim: Sim) {
-  return buildRoom(sim, 'recovery', LAYOUT.recovery.rect, LAYOUT.recovery.door, [['recliner', 15, 9]]);
+  return buildRoom(sim, 'recovery', LAYOUT.recovery.rect, LAYOUT.recovery.door, [['lounger', 15, 9]]);
 }
 
 /** Add a Qi Gong Studio where the Training Room goes: the Instructor's Mat at the back, and three Practice Spots. */
@@ -199,7 +199,7 @@ export function inconsistencies(sim: Sim): string[] {
     for (const id of it.queue) if (!sim.guest(id)) out.push(`${it.type} #${it.id} line holds #${id}, who has gone`);
     if (it.serving) {
       const g = sim.guest(it.serving);
-      if (g?.state === 'served' && !sim.stationStaff(it))
+      if (g?.state === 'served' && ITEMS[it.type].station?.staff && !sim.stationStaff(it))
         out.push(`${g.name} is on ${it.type} #${it.id} with nobody serving`);
     }
     if (it.staffId && sim.staff(it.staffId)?.post !== it.id) out.push(`${it.type} #${it.id} staffed by a stranger`);

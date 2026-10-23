@@ -1,7 +1,7 @@
 // The player's say in how the center is run: policy, guests' chances, lines, sending home and room priority.
 import { describe, expect, it } from 'vitest';
 
-import { SCAN_SUCCESS } from '../../src/core/data';
+import { GUESS_PENALTY, SCAN_SUCCESS, STRUCTURAL_SURE, UPGRADE_SUCCESS } from '../../src/core/data';
 import { createContext, type SimContext } from '../../src/core/sim/context';
 import { breakDue, changedPolicy, onBreak } from '../../src/core/sim/policy';
 import { inLine, sameKind } from '../../src/core/sim/queues';
@@ -154,6 +154,29 @@ describe("a guest's chance of success", () => {
     expect(plain).toBeLessThan(0.98 - SCAN_SUCCESS);
     g.scanned = true;
     expect(successChance(ctx, table, therapist, g).chance).toBeCloseTo(plain + SCAN_SUCCESS);
+  });
+
+  it('is higher still after a scan on an upgraded scanner', () => {
+    const { sim, s, table, therapist } = busyCenter();
+    const g = s.guests[0]!;
+    lineUp(table, [g]);
+    Object.assign(g, { condition: 'slump', diagnosis: 1, scanned: true, guessed: false });
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    const plain = successChance(ctx, table, therapist, g).chance;
+    g.scanLevel = 2;
+    expect(successChance(ctx, table, therapist, g).chance).toBeCloseTo(plain + 2 * UPGRADE_SUCCESS);
+  });
+
+  it('is lower for a best guess at a structural condition', () => {
+    const { sim, s, table, therapist } = busyCenter();
+    const g = s.guests[0]!;
+    lineUp(table, [g]);
+    Object.assign(g, { condition: 'slump', diagnosis: STRUCTURAL_SURE, guessed: false, scanned: false });
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    const plain = successChance(ctx, table, therapist, g).chance;
+    expect(plain).toBeGreaterThan(GUESS_PENALTY);
+    g.guessed = true;
+    expect(successChance(ctx, table, therapist, g).chance).toBeCloseTo(plain - GUESS_PENALTY);
   });
 
   it('is unknown until there is a diagnosis and someone at the table', () => {

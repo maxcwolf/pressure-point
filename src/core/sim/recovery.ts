@@ -1,5 +1,5 @@
-// The Recovery Lounge: after the harder treatments a guest lies back on a Recliner for a while before heading on.
-// With no free Recliner to go to, those treatments work less often and the guest leaves woozy.
+// The Recovery Lounge: after the harder treatments a guest lies back on a Lounger for a while before heading on.
+// With no free Lounger to go to, those treatments work less often and the guest leaves woozy.
 
 import { NO_REST_PENALTY, REST_SECONDS } from '../data';
 import type { Guest, Item } from '../state/types';
@@ -16,7 +16,7 @@ import { modalityOf } from './treatments';
 /** Whether a guest's treatment leaves them needing a rest afterwards. */
 export const needsRest = (g: Guest) => !!modalityOf(g).rest;
 
-/** The nearest free Recliner for a guest to rest on, if any. */
+/** The nearest free Lounger for a guest to rest on, if any. */
 export function restSpot(ctx: SimContext, g: Guest): { item: Item; idx: number } | null {
   return findAccess(ctx, 'recover', g.tx, g.ty);
 }
@@ -27,8 +27,8 @@ export function restPenalty(ctx: SimContext, g: Guest): number {
 }
 
 /**
- * How a guest who needs a rest feels about where they rest, as their treatment ends: glad of a Recliner, noticing its
- * blanket, or woozy with nowhere to lie down. Returns the Recliner they will rest on, if any.
+ * How a guest who needs a rest feels about where they rest, as their treatment ends: glad of a Lounger, noticing its
+ * blanket, or woozy with nowhere to lie down. Returns the Lounger they will rest on, if any.
  */
 export function settleRest(ctx: SimContext, g: Guest): { item: Item; idx: number } | null {
   if (!needsRest(g)) return null;
@@ -44,14 +44,14 @@ export function settleRest(ctx: SimContext, g: Guest): { item: Item; idx: number
     ctx,
     lounge ? 'recovery-full' : 'recovery-none',
     lounge
-      ? 'Every Recliner in the Recovery Lounge was taken, so a guest went home woozy and their treatment was less likely to work. Add more Recliners.'
+      ? 'Every Lounger in the Recovery Lounge was taken, so a guest went home woozy and their treatment was less likely to work. Add more Loungers.'
       : 'Some treatments leave guests needing a lie-down. Without a Recovery Lounge they go home woozy, and the treatment is less likely to work.',
     'bad',
   );
   return null;
 }
 
-/** Send a guest off to lie back on a Recliner. False if they cannot get there. */
+/** Send a guest off to lie back on a Lounger. False if they cannot get there. */
 export function goRest(ctx: SimContext, g: Guest, spot: { item: Item; idx: number }): boolean {
   claim(ctx, g, spot.item, spot.idx);
   const [x, y] = accessTile(spot.item, spot.idx);
@@ -63,7 +63,7 @@ export function goRest(ctx: SimContext, g: Guest, spot: { item: Item; idx: numbe
   return true;
 }
 
-/** Move a resting guest along: lying down once they reach their Recliner, and up again when rested. True when done. */
+/** Move a resting guest along: lying down once they reach their Lounger, and up again when rested. True when done. */
 export function updateRest(g: Guest, dt: number, arrived: boolean): boolean {
   if (g.state === 'toRest') {
     if (!arrived && g.path) return false;

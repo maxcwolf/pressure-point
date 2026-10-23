@@ -26,6 +26,10 @@ export const CONSULT_FEE = 200;
 export const ASSESS_FEE = 250;
 /** How much likelier a guest's treatment is to work once a posture scan has shown just where to work. */
 export const SCAN_SUCCESS = 0.1;
+/** How sure a consultation can be of a structural condition: only a posture scan makes it surer. */
+export const STRUCTURAL_SURE = 0.6;
+/** How much less likely a treatment is to work when it is a best guess at a structural condition nobody scanned. */
+export const GUESS_PENALTY = 0.05;
 export const WINDOW_COST = 150;
 /** What each tile added to a built room costs. Each tile taken away gives back half. */
 export const ROOM_TILE_COST = 200;
@@ -153,7 +157,7 @@ export const CLASS_PLACES: readonly number[] = [6, 8, 9, 11, 12];
 
 /** How long a guest lies back in a Recovery Lounge after a treatment that leaves them needing a rest. */
 export const REST_SECONDS = 15;
-/** Taken off the chance of such a treatment working when there is no free Recliner to rest on afterwards. */
+/** Taken off the chance of such a treatment working when there is no free Lounger to rest on afterwards. */
 export const NO_REST_PENALTY = 0.1;
 /** How many times over a psychedelic ceremony feels its room's set and setting: its vibes, noise, linens and prestige. */
 export const SETTING_WEIGHT = 2;

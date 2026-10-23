@@ -13,6 +13,7 @@ import {
   ITEMS,
   type ItemType,
   type Offering,
+  renamedItem,
   roomHere,
   ROOMS,
   type RoomType,
@@ -57,10 +58,13 @@ function readSpot(v: unknown): WallSpot | null {
 
 /** A piece of furniture read from a file, or null if it is not one. */
 function readItem(v: unknown): LayoutItem | null {
-  if (!isRecord(v) || typeof v.type !== 'string' || !(v.type in ITEMS)) return null;
+  if (!isRecord(v) || typeof v.type !== 'string') return null;
+  // a template saved before an item was renamed has it under its old name
+  const type = renamedItem(v.type);
+  if (!(type in ITEMS)) return null;
   if (!isInt(v.x, 0, MAX_SIDE) || !isInt(v.y, 0, MAX_SIDE) || !isInt(v.rot, 0, 3)) return null;
   const pattern = typeof v.pattern === 'string' && Object.hasOwn(RUG_PATTERNS, v.pattern) ? v.pattern : undefined;
-  return { type: v.type as ItemType, x: v.x, y: v.y, rot: v.rot, ...(pattern && { pattern: pattern as RugPatternId }) };
+  return { type: type as ItemType, x: v.x, y: v.y, rot: v.rot, ...(pattern && { pattern: pattern as RugPatternId }) };
 }
 
 /**

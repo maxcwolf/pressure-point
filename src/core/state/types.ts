@@ -342,6 +342,10 @@ export interface Guest extends CharBase {
   consults: number;
   /** Had a posture scan, which makes their treatment likelier to work. */
   scanned?: boolean;
+  /** The upgrade level of the scanner that scanned them, which adds to what the scan does. */
+  scanLevel?: number;
+  /** Sent for treatment on a best guess: a structural condition nobody could scan. */
+  guessed?: boolean;
   outcome: Outcome | '';
   spent: number;
   hasWrapper: boolean;
@@ -718,6 +722,11 @@ export interface GameState {
   reputation: number;
   /** Elapsed game days (fractional). */
   day: number;
+  /**
+   * The month of the year the game opened in, from 0 for January: the calendar (the season, the weather and the date
+   * shown) runs that many months ahead of the day count. 0 in a save from before games could open later in the year.
+   */
+  startMonth: number;
   speed: number;
   open: boolean;
   rooms: Room[];
@@ -830,6 +839,28 @@ export interface GameState {
   /** A command has been used in the cheat console, so this game earns no achievements or campaign stars. */
   cheated: boolean;
   seenTips: string[];
+  /**
+   * A first go at the campaign's first center: the advisor looks ahead to what the center will soon need, and a
+   * checklist under the objectives keeps it, until all of it is in place.
+   */
+  primer: boolean;
+  /**
+   * The land for sale has been looked over: Expand has been taken up, or a plot bought. With the first game's heads-up
+   * on land given, that ticks the land off its checklist.
+   */
+  sawPlots: boolean;
+  /**
+   * The tutorial: a new Willow Lane game walked through its opening a step at a time, with a card in the advisor's spot
+   * and a ring on what each step wants, and the first game's heads-ups after it, until all of it is done or skipped.
+   */
+  tutorial: boolean;
+  /** Whether a card explains each thing the first time it happens, which outlasts the tutorial's steps. */
+  lessons: boolean;
+  /** When the last of those cards came up, in days, so there is a whole day between them; -1 before any. */
+  lastLesson: number;
+  /** How often guests have come to harm, by what and why ("failed:vibes"), and the explanations waiting to be read. */
+  harms: Record<string, number>;
+  harmNotes: HarmNote[];
   /** Magic mushrooms are on sale under the Shop Counter, while there is a Shaman to supply them. */
   mushrooms: boolean;
   /** They were put away when the health inspector wrote ahead, to come back out once the inspection is over. */
@@ -851,6 +882,24 @@ export interface GameState {
    * Null before the first check.
    */
   surroundings: Surroundings | null;
+}
+
+/**
+ * Why the same harm keeps coming to guests, put once it has happened a few times for the same reason: what happened,
+ * what it cost, what is behind it in this game with what each part takes off, and what helps.
+ */
+export interface HarmNote {
+  /** The harm and its reason, as counted in `harms`. */
+  key: string;
+  title: string;
+  cost: string;
+  /** What is behind it, the main reason first, each with what it takes off if that is a number. */
+  causes: { label: string; amount?: string }[];
+  help: string;
+  /** Who or what to show, if one is at the heart of it. */
+  about?: { kind: 'guest' | 'staff' | 'item' | 'room'; id: number };
+  /** Where the fix is: hiring someone, or a menu with it in. */
+  fix?: { hire: Role } | { menu: 'rooms' | 'items' | 'prices' };
 }
 
 /** A grid of figures, one for each tile, row by row, as the bytes of 32-bit floats in base64. */

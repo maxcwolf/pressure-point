@@ -51,6 +51,7 @@ import {
 import { changeRep, earn } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
+import { noteStormed } from './harms';
 import { roomForModality } from './machines';
 import { goTo, halt, moveAlong } from './movement';
 import { fizzOver, puddleSlow, tellFortune } from './novelties';
@@ -60,7 +61,7 @@ import { updateRest } from './recovery';
 import { dueRegular, regularPatience, welcomeBack } from './regulars';
 import { runStep } from './runaways';
 import { stationStaff } from './sessions';
-import { pickStation, removeFromStations, stationScore } from './stations';
+import { goOnGuess, pickStation, removeFromStations, stationScore } from './stations';
 import { modalityOf } from './treatments';
 import { type ArrivalParts, arrivalParts, cutOff, impatience } from './twists';
 import { addWear, dirtier } from './upkeep';
@@ -476,8 +477,10 @@ function waitingThink(ctx: SimContext, g: Guest) {
       goWait(ctx, g);
       return;
     }
+    // no scanner working after all: a structural condition is treated on a best guess, anyone else sees a Consultant
     if (g.goal === 'assess') {
-      g.goal = 'consult';
+      if (conditionOf(g.condition).structural) goOnGuess(ctx, g);
+      else g.goal = 'consult';
       decide(ctx, g);
       return;
     }
@@ -658,6 +661,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
 function stormOut(ctx: SimContext, g: Guest) {
   g.outcome = 'stormed';
   countVisit(ctx, g, 'stormed');
+  noteStormed(ctx, g);
   changeRep(ctx, -3);
   say(g, 'bubble-annoyed', 8);
   emit(ctx, { type: 'float', text: 'Fed up!', x: g.x, y: g.y, kind: 'bad' });

@@ -8,7 +8,7 @@ import { Button } from '../common/Button';
 import { Controls } from './Controls';
 import { Dialog } from './Dialog';
 
-/** The controls, and the way to saves, settings, the main menu, a new game and the exit. */
+/** The controls, and the way to saves, settings, feedback, the main menu, a new game and the exit. */
 export function PauseMenu() {
   const hud = useHud();
   const { mainMenu, exit } = useGame();
@@ -38,6 +38,13 @@ export function PauseMenu() {
           }}
         >
           Settings
+        </Button>
+        <Button
+          onPress={() => {
+            hud.open('feedback');
+          }}
+        >
+          Give feedback
         </Button>
       </div>{' '}
       <div class="btnrow">

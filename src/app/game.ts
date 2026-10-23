@@ -14,7 +14,7 @@ import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
 import type { FullScreenSwitch, UpdateOffer } from '../ui/host';
 import { plotHeat } from '../ui/lib/land';
-import { heatTiles, overlayPalette, personValue, previewMode, ringsPeople } from '../ui/lib/overlays';
+import { heatTiles, type OverlayMode, overlayPalette, personValue, previewMode, ringsPeople } from '../ui/lib/overlays';
 import { refused, watchGame } from './analytics';
 import { trackMouse } from './edge';
 import { reloadInto } from './handoff';
@@ -150,6 +150,8 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
 
   /** The preview of an item in hand last drawn on the floor, so a new one is drawn at once, not at the next redraw. */
   let previewDrawn: PlacePreview | null = null;
+  /** The overlay chosen as the floor was last drawn, so another is drawn at once as it is chosen, and fades in. */
+  let overlayDrawn: OverlayMode | null = null;
   /**
    * Color the floor for an item in hand, as if it were down; or for what the interface has it show, the overlay or the
    * land around the building, or a plot of it; or clear it.
@@ -157,6 +159,8 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
   const drawOverlay = () => {
     previewDrawn = tools.preview;
     const { overlay, land } = ui.floor;
+    if (overlay !== overlayDrawn && overlay) view.fadeHeat();
+    overlayDrawn = overlay;
     // the people overlays ring the people, whatever is on the floor
     view.halos.set(ringsPeople(overlay) ? (c) => personValue(overlay, c) : null);
     // the Expand tool colors the land itself, as the pointer moves
@@ -201,9 +205,9 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     record: () => {
       recordGame(state);
     },
-    /** Redraw the floor overlay when it is due, or at once for a new preview of the item in hand. */
+    /** Redraw the floor overlay when it is due, or at once for a new preview of the item in hand or a new overlay. */
     overlay: (due) => {
-      if (due || tools.preview !== previewDrawn) drawOverlay();
+      if (due || tools.preview !== previewDrawn || ui.floor.overlay !== overlayDrawn) drawOverlay();
     },
   });
   watchGame(sim);

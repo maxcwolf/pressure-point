@@ -12,6 +12,7 @@ import {
   WINDOW_COST,
 } from '../../core/data';
 import { money } from '../../core/format';
+import { nameInSentence, type PlotOffer } from '../../core/land';
 import { coveredSize } from '../../core/resize';
 import type { Rect } from '../../core/world';
 import { legend } from './squares';
@@ -58,6 +59,24 @@ export function dragHint(type: RoomType, dragged: Rect | null, cost = 0): string
   return `${def.name} · drag out the floor (at least ${def.minShort}×${def.minLong}; ${money(def.cost)} up to ${covered}, ${money(ROOM_TILE_COST)} a tile past that) · Esc cancels`;
 }
 
+/**
+ * Why a room fits nowhere in the building at its smallest, and where the room for it would come from: the cheapest plot
+ * for sale, the plot the builders are still at, the next plot to come up for sale, or the rooms there are once every
+ * plot is the game's. Said as the room is picked, and again as a drag of it is turned down.
+ */
+export function noFitHint(type: RoomType, offers: readonly PlotOffer[]): string {
+  const def = ROOMS[type];
+  const open = offers.filter((o) => o.state === 'open').sort((a, b) => a.price - b.price)[0];
+  const building = offers.find((o) => o.state === 'building');
+  const locked = offers.find((o) => o.state === 'locked');
+  const head = `Nowhere in the building fits a ${def.name} (at least ${def.minShort}×${def.minLong}).`;
+  if (open) return `${head} Expand, beside Rooms, sells ${nameInSentence(open.name)} for ${money(open.price)}.`;
+  if (building)
+    return `${head} The builders are still at work on ${nameInSentence(building.name)}, ${building.daysLeft} day${building.daysLeft === 1 ? '' : 's'} to go.`;
+  if (locked) return `${head} ${locked.name} ${locked.why.replace(/^Comes/, 'comes')}.`;
+  return `${head} Every plot is yours: move a room, make one smaller or knock one down to make space.`;
+}
+
 /** The hint for choosing where a new room's door goes. */
 export const DOOR_HINT = 'Now click a wall to place the door · Esc cancels';
 
@@ -86,19 +105,23 @@ export function assignProblem(role: Role, type: RoomType): string {
   return `There is no work for a ${ROLES[role].name} in a ${ROOMS[type].name}`;
 }
 
-/** The hint while a room is picked up to move it. */
-export function moveRoomHint(type: RoomType): string {
-  return `Moving the ${ROOMS[type].name} · click to put it down · R turns it · Esc cancels`;
+/** A phrase saying how many windows next door putting a room down where it is takes out, or nothing if none. */
+const takesOut = (windows: number) =>
+  windows ? ` · takes out ${windows === 1 ? 'a window' : `${windows} windows`} next door` : '';
+
+/** The hint while a room is picked up to move it, and the windows next door putting it down here takes out. */
+export function moveRoomHint(type: RoomType, windows = 0): string {
+  return `Moving the ${ROOMS[type].name}${takesOut(windows)} · click to put it down · R turns it · Esc cancels`;
 }
 
-/** The hint while putting down rooms from a template, with what each costs. */
-export function templateHint(name: string, cost: number): string {
-  return `Building "${name}" · ${money(cost)} each · click to build one · R turns it · Esc when done`;
+/** The hint while putting down rooms from a template, with what each costs, and the windows next door one takes out. */
+export function templateHint(name: string, cost: number, windows = 0): string {
+  return `Building "${name}" · ${money(cost)} each${takesOut(windows)} · click to build one · R turns it · Esc when done`;
 }
 
-/** The hint while putting down copies of a room, with what each costs. */
-export function copyRoomHint(type: RoomType, cost: number): string {
-  return `Copying the ${ROOMS[type].name} · ${money(cost)} each · click to build a copy · R turns it · Esc when done`;
+/** The hint while putting down copies of a room, with what each costs, and the windows next door one takes out. */
+export function copyRoomHint(type: RoomType, cost: number, windows = 0): string {
+  return `Copying the ${ROOMS[type].name} · ${money(cost)} each${takesOut(windows)} · click to build a copy · R turns it · Esc when done`;
 }
 
 /** The icon shown before the hint for the tool in hand: what is being placed, moved or built, or the job being done. */

@@ -1,11 +1,14 @@
 // Moving and copying built rooms, furniture and all.
 import { describe, expect, it } from 'vitest';
 
+import { copyRoomHint, moveRoomHint, templateHint } from '../../src/app/tools/hints';
+import { Tools } from '../../src/app/tools/tools';
 import { ROOM_TILE_COST, ROOMS, WINDOW_COST } from '../../src/core/data';
 import { copyCost, placeLayout, turnLayout } from '../../src/core/room-layout';
 import { itemsInRoom } from '../../src/core/sim/building';
 import { createContext } from '../../src/core/sim/context';
-import { inconsistencies, openCenter, runUntil } from './helpers';
+import type { View } from '../../src/render/view';
+import { addStaffRoom, inconsistencies, openCenter, runUntil, toasts } from './helpers';
 
 /** Floor in the standard test center that nothing is built on: where the Staff Room and Restroom would go. */
 const FREE = { x: 17, y: 5 };
@@ -106,5 +109,80 @@ describe('copying a room', () => {
     expect(sim.copyRoom(massage.id, placeLayout(layout, FREE.x, FREE.y))).toBeNull();
     expect(s.rooms).toHaveLength(rooms);
     expect(s.money).toBe(100);
+  });
+});
+
+describe('putting a room down against windows next door', () => {
+  it('takes out a window that would look into a copy, for half its price back, and says so', () => {
+    const { sim, s, massage } = openCenter(7);
+    // on the suite's east wall, looking out onto the corridor where the copy goes
+    expect(sim.toggleWindow(massage.id, { x: 14, y: 6, dx: 1, dy: 0 })).toBe('added');
+    const layout = sim.roomLayout(massage);
+    const placed = placeLayout(layout, 15, 5);
+    expect(sim.world.roomRectValid('massage', placed.rect).reason, 'a room drawn there is still refused').toMatch(
+      /window/,
+    );
+    expect(sim.world.layoutValid('massage', placed).ok).toBe(true);
+    expect(sim.world.windowsOnto(placed.rect)).toEqual([{ x: 14, y: 6, dx: 1, dy: 0 }]);
+    const money = s.money;
+    sim.drain();
+    const copy = sim.copyRoom(massage.id, placed)!;
+    expect(copy).toBeTruthy();
+    expect(massage.windows).toEqual([]);
+    // the copy keeps its own window on its far wall, which looks onto corridor
+    expect(copy.windows).toEqual([{ x: 18, y: 6, dx: 1, dy: 0 }]);
+    expect(s.money).toBe(money - copyCost(layout) + Math.round(WINDOW_COST / 2));
+    expect(toasts(sim.drain())).toContain(
+      `The Massage Suite's window onto it was taken out and sold for $${Math.round(WINDOW_COST / 2)}.`,
+    );
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('takes out a window that would look into a moved room', () => {
+    const { sim, s, massage } = openCenter(8);
+    const staffroom = addStaffRoom(sim);
+    // on the Staff Room's west wall, looking onto the corridor the suite moves into
+    expect(sim.toggleWindow(staffroom.id, { x: 17, y: 6, dx: -1, dy: 0 })).toBe('added');
+    const placed = placeLayout(sim.roomLayout(massage), 13, 5);
+    expect(sim.world.windowsOnto(placed.rect, massage)).toHaveLength(1);
+    const money = s.money;
+    expect(sim.moveRoom(massage.id, placed)).toBe(true);
+    expect(massage.x).toBe(13);
+    expect(staffroom.windows).toEqual([]);
+    expect(s.money).toBe(money + Math.round(WINDOW_COST / 2));
+  });
+
+  it('leaves alone windows that look onto floor the room does not cover', () => {
+    const { sim, massage } = openCenter(9);
+    const staffroom = addStaffRoom(sim);
+    expect(sim.toggleWindow(staffroom.id, { x: 17, y: 6, dx: -1, dy: 0 })).toBe('added');
+    expect(sim.moveRoom(massage.id, placeLayout(sim.roomLayout(massage), 12, 5))).toBe(true);
+    expect(staffroom.windows).toHaveLength(1);
+  });
+
+  it('warns in the hint before the click', () => {
+    const { sim, massage } = openCenter(10);
+    expect(sim.toggleWindow(massage.id, { x: 14, y: 6, dx: 1, dy: 0 })).toBe('added');
+    /** Ignore a call to the scene. */
+    const nothing = () => undefined;
+    const view = { selected: null, setOverlay: nothing, setMarkers: nothing, setGhost: nothing, setDoor: nothing };
+    /** The cursor is on the ground wherever the pointer says. */
+    const groundAt = (x: number, y: number) => ({ x, y });
+    const tools = new Tools(sim, { ...view, groundAt } as unknown as View, nothing, nothing);
+    tools.startMoveRoom(massage.id, true);
+    // centered on the cursor: a 4×4 suite's corner goes two tiles up and left of it
+    tools.pointerMove(17, 7);
+    expect(tools.problem).toBe('');
+    expect(tools.hint).toBe(copyRoomHint('massage', copyCost(sim.roomLayout(massage)), 1));
+    expect(tools.hint).toContain('takes out a window next door');
+    // well clear of it, nothing is said
+    tools.pointerMove(19, 7);
+    expect(tools.hint).toBe(copyRoomHint('massage', copyCost(sim.roomLayout(massage))));
+  });
+
+  it('words the hints with the windows taken out', () => {
+    expect(moveRoomHint('massage', 2)).toContain('Moving the Massage Suite · takes out 2 windows next door ·');
+    expect(templateHint('Suite', 3000, 1)).toContain('$3,000 each · takes out a window next door ·');
+    expect(copyRoomHint('massage', 3000)).not.toContain('takes out');
   });
 });

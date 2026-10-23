@@ -187,6 +187,16 @@ describe('loading', () => {
     expect(loaded.staff.every((x) => x.morale === 75)).toBe(true);
   });
 
+  it('loads a save from before the Recliner was renamed, with the Lounger in its place', () => {
+    const old = JSON.parse(JSON.stringify(game())) as Record<string, any>;
+    old.version = 37;
+    old.items.push({ ...old.items[0], id: 99999, type: 'recliner' });
+    store.set('pressure-point-save-v1', JSON.stringify(old));
+    const loaded = readSave(AUTOSAVE_ID)!;
+    expect(loaded.items.find((it) => it.id === 99999)?.type).toBe('lounger');
+    expect(loaded.items.some((it) => (it.type as string) === 'recliner')).toBe(false);
+  });
+
   it('drops list entries whose data has gone missing', () => {
     const s = game();
     const a = ok(writeSave(s, 'Here'));

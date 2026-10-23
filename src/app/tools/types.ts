@@ -30,7 +30,8 @@ export type Tool =
   | { kind: 'none' }
   | { kind: 'item'; type: ItemType; rot: number }
   | { kind: 'move'; id: number; type: ItemType; rot: number }
-  | { kind: 'room'; type: RoomType; phase: 'drag'; start: Tile | null; rect: Rect | null }
+  // `noFit` says why the room fits nowhere in the building at its smallest, and where the room for it would come from
+  | { kind: 'room'; type: RoomType; phase: 'drag'; start: Tile | null; rect: Rect | null; noFit: string }
   | { kind: 'room'; type: RoomType; phase: 'door'; rect: Rect }
   | { kind: 'room'; type: RoomType; phase: 'plan'; room: Room; sub: PlanSub }
   // on a room that is already built

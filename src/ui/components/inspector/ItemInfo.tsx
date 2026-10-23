@@ -1,5 +1,7 @@
 // The inspector for an item.
 
+import { track } from '../../../app/analytics';
+import { gameProps } from '../../../app/play-events';
 import {
   AWARDS,
   DIRT_CLEAN,
@@ -24,7 +26,7 @@ import { calmness } from '../../../core/sim/noise';
 import { cannotUpgrade, upgradeCost } from '../../../core/sim/upgrades';
 import { starsEarned } from '../../../core/state/game';
 import type { Item } from '../../../core/state/types';
-import { useGame } from '../../hooks/use-hud';
+import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { FLOODED_LABEL, stoppedLabel } from '../../lib/mishaps';
 import { rattledLine, rattleLine } from '../../lib/rattle';
@@ -148,9 +150,14 @@ function Upgrades({ item: it }: { item: Item }) {
 /** How hard a share of full power is, as a percentage. */
 const pct = (share: number) => `${Math.round(share * 100)}%`;
 
-/** A heater or air conditioner's thermostat: its setting, how hard it is working, and setting every one of its kind alike. */
+/**
+ * A heater or air conditioner's thermostat: its setting, how hard it is working, setting every one of its kind alike,
+ * and the temperature overlay, which stays on once the inspector closes, until it is turned off here or at its key.
+ */
 function Thermostat({ item: it }: { item: Item }) {
+  const hud = useHud();
   const { sim } = useGame();
+  const overlaid = hud.overlay === 'temperature';
   const def = ITEMS[it.type];
   const setting = it.thermostat ?? 'auto';
   const share = sim.thermostatShare(it);
@@ -202,7 +209,20 @@ function Thermostat({ item: it }: { item: Item }) {
         >
           {`Set all ${others.length + 1} to ${THERMOSTAT[setting].name}`}
         </Button>
-      )}
+      )}{' '}
+      <Button
+        class={cx('move', 'temp-overlay', overlaid && 'on')}
+        title="Color the floor by temperature: blue too cold, red too hot, clear comfortable. It stays on until turned off."
+        onPress={() => {
+          hud.overlay = overlaid ? null : 'temperature';
+          hud.overlayPicker = false;
+          if (hud.overlay) track('overlay_shown', { ...gameProps(sim.s), overlay: 'temperature' });
+        }}
+      >
+        <IconText id="overlay-temperature">
+          {overlaid ? 'Temperature overlay: on' : 'Temperature overlay: off'}
+        </IconText>
+      </Button>
     </div>
   );
 }

@@ -49,7 +49,7 @@ export function ReputationTab() {
             .slice(-8)
             .reverse()
             .map((r, i) => {
-              const d = dateOf(r.day);
+              const d = dateOf(r.day, s.startMonth);
               return (
                 <li key={`${r.day}-${i}`}>
                   <span class="review-stars">{starText(r.stars)}</span>

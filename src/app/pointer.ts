@@ -103,7 +103,8 @@ export function bindPointer(canvas: HTMLCanvasElement, { audio, tools, view, ui 
     'wheel',
     (e) => {
       e.preventDefault();
-      view.zoom(Math.max(-0.25, Math.min(0.25, e.deltaY * 0.0015)));
+      // toward the spot under the pointer, which stays put as the camera closes in on it or backs away
+      view.zoom(Math.max(-0.25, Math.min(0.25, e.deltaY * 0.0015)), e.clientX, e.clientY);
     },
     { passive: false },
   );

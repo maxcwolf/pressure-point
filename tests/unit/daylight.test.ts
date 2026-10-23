@@ -89,6 +89,18 @@ describe('the seasons', () => {
     expect(Math.max(...winter) - Math.min(...winter)).toBeLessThan(Math.max(...rgb(lawn)) - Math.min(...rgb(lawn)));
   });
 
+  it('keep paving gray, a little darker and wetter in autumn and winter', () => {
+    const paving = SETTINGS.downtown.ground;
+    /** How far a color strays from gray: the spread between its channels. */
+    const spread = (hex: number) => Math.max(...rgb(hex)) - Math.min(...rgb(hex));
+    /** How light a color is: its channels together. */
+    const light = (hex: number) => rgb(hex).reduce((a, b) => a + b, 0);
+    for (const s of SEASONS) expect(spread(seasonGround(paving, 'paving', s)), s).toBeLessThan(16);
+    expect(light(seasonGround(paving, 'paving', 'autumn'))).toBeLessThan(light(paving) - 20);
+    expect(light(seasonGround(paving, 'paving', 'winter'))).toBeLessThan(light(paving) - 20);
+    expect(seasonGround(paving, 'paving', 'spring')).toBe(paving);
+  });
+
   it('leave snow as it is', () => {
     for (const s of SEASONS) expect(seasonGround(SETTINGS.mountain.ground, 'snow', s)).toBe(SETTINGS.mountain.ground);
   });

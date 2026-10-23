@@ -24,7 +24,7 @@ test.describe('title screen', () => {
     await screens.title();
     await page.getByRole('button', { name: 'Settings' }).click();
     await screens.shot('title-settings');
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: '‹ Back', exact: true }).click();
     await page.getByRole('button', { name: 'Load game' }).click();
     await screens.shot('title-saves');
   });
@@ -153,6 +153,16 @@ test.describe('in a game', () => {
     });
   }
 
+  test('the inspector comparing two of the staff', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.eval((pp) =>
+      pp.tools.select({ kind: 'staff', id: pp.state.staff.find((s) => s.role === 'therapist')!.id }),
+    );
+    await page.locator('#inspector').getByRole('button', { name: 'Compare' }).click();
+    await page.locator('#inspector button.pick').first().click();
+    await screens.shot('inspector-compare');
+  });
+
   for (const type of ['massage_table', 'plant', 'bench'] as const) {
     test(`the inspector for a ${type}`, async ({ screens, game }) => {
       await screens.play();
@@ -249,6 +259,23 @@ test.describe('in a game', () => {
       pp.state.offer = { ...offer, deadline: pp.state.day + 8 };
     }, OFFER(0));
     await screens.shot('messages');
+  });
+
+  test('messages piled up past the first few', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      // paused, the messages wait to be read
+      pp.state.speed = 0;
+      pp.sim.emit({ type: 'toast', text: 'Consultation Room built!', kind: 'good' });
+      pp.sim.emit({ type: 'toast', text: 'Your plants are wilting. A Caretaker will water them.', kind: 'bad' });
+      pp.sim.emit({ type: 'toast', text: 'Mira joins the team.', kind: 'info' });
+      pp.sim.emit({ type: 'toast', text: 'A guest left without being seen.', kind: 'bad' });
+      pp.sim.emit({ type: 'toast', text: 'Payday: $4,250 paid to 9 staff.', kind: 'info' });
+      pp.sim.emit({ type: 'toast', text: 'A VIP is visiting in 5 days.', kind: 'info' });
+      pp.sim.emit({ type: 'toast', text: 'A VIP is visiting in 5 days.', kind: 'info' });
+      pp.sim.emit({ type: 'toast', text: 'Massage Suite built!', kind: 'good' });
+    });
+    await screens.shot('messages-piled');
   });
 
   // apart from the messages above, which fade after a few seconds whether or not the picture has been taken

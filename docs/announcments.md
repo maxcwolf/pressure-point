@@ -6,7 +6,7 @@ When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-43 recorded, 35 still to record.
+42 recorded, 35 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
@@ -41,7 +41,6 @@ Key: ✅ recorded, ⬜ not recorded yet.
 - ✅ Receptionist needed at the Reception Desk.
 - ⬜ Receptionist needed at the Shop Counter.
 - ✅ Wellness Consultant needed at the Consultation Room.
-- ✅ Wellness Consultant needed at the Posture Lab.
 - ✅ Massage Therapist needed at the Massage Suite.
 - ✅ Acupuncturist needed at the Acupuncture Clinic.
 - ✅ Reiki Practitioner needed at the Reiki Studio.

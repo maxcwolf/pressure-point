@@ -102,18 +102,18 @@ export function weldPath(diameter: number, plate: Plate, stroke = 3, fillet = 4)
   return { d: d.join(' '), yMax: Math.max(Rc, yB) };
 }
 
-/** Where a welded button's drawing goes: the path, its viewBox, and its size and place within the button, in pixels. */
+/**
+ * A welded button's drawing: the path, and a viewBox that is the button's own box with the origin at its centre. The
+ * drawing fills the button exactly, so a pixel of the path is a pixel of the button whatever sizes the drawing's
+ * element, and what reaches past the circle (the plate's ends, its bottom) shows as overflow.
+ */
 export interface WeldShape {
   d: string;
   viewBox: string;
-  width: number;
-  height: number;
-  left: number;
-  top: number;
 }
 
 /** How much room the plate gives the word on each side and above and below, stroke included, in pixels. */
-export const PLATE_ROOM = { x: 7, y: 3 };
+export const PLATE_ROOM = { x: 5, y: 3 };
 
 /**
  * The drawing for a round button `diameter` across whose word's box sits `top` pixels down inside it, `width` by
@@ -131,18 +131,7 @@ export function weldShape(
   };
   // a fillet in proportion to the button, to the nearest half pixel, and never so tight it looks like a corner
   const fillet = Math.max(2.5, Math.round(diameter * 0.05 * 2) / 2);
-  const { d, yMax } = weldPath(diameter, plate, stroke, fillet);
-  // room for the stroke all round, and a little more below for the shadow
-  const vx = Math.max(diameter / 2, plate.hx) + stroke + 2;
-  const vy = diameter / 2 + stroke + 2;
-  const width = vx * 2;
-  const height = vy + yMax + stroke + 2;
-  return {
-    d,
-    viewBox: `${n(-vx)} ${n(-vy)} ${n(width)} ${n(height)}`,
-    width,
-    height,
-    left: diameter / 2 - vx,
-    top: diameter / 2 - vy,
-  };
+  const { d } = weldPath(diameter, plate, stroke, fillet);
+  const r = n(diameter / 2);
+  return { d, viewBox: `${-r} ${-r} ${n(diameter)} ${n(diameter)}` };
 }

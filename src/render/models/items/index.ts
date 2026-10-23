@@ -44,6 +44,7 @@ import { buildKombuchaTap } from './kombucha-tap';
 import { buildLandscapePainting } from './landscape-painting';
 import { buildLinenHamper } from './linen-hamper';
 import { buildLivingWall } from './living-wall';
+import { buildLounger } from './lounger';
 import { buildMagazineRack } from './magazine-rack';
 import { buildMassageChair } from './massage-chair';
 import { buildMassageTable } from './massage-table';
@@ -63,7 +64,6 @@ import { buildPrayerFlags } from './prayer-flags';
 import { buildRadiator } from './radiator';
 import { buildRattle } from './rattle';
 import { buildReceptionDesk } from './reception-desk';
-import { buildRecliner } from './recliner';
 import { buildReikiAltar } from './reiki-altar';
 import { buildReikiTable } from './reiki-table';
 import { buildRug } from './rug';
@@ -133,7 +133,7 @@ const BUILDERS: Record<ItemType, (g: THREE.Group, look?: string) => void> = {
   crystal_grid: buildCrystalGrid,
   singing_bowls: buildSingingBowls,
   sound_mat: buildSoundMat,
-  recliner: buildRecliner,
+  lounger: buildLounger,
   instructor_mat: buildInstructorMat,
   practice_spot: buildPracticeSpot,
   ceremony_mat: buildCeremonyMat,
