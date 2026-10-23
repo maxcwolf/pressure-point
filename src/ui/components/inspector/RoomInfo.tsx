@@ -144,7 +144,10 @@ function Comfort({ room }: { room: Room }) {
   );
 }
 
-/** A room's details, with its window, door and demolish buttons. */
+/**
+ * A room's details: first who staffs it and anything wrong, then its line and how busy it is, then what it can do, its
+ * prestige and comfort, and its buttons.
+ */
 export function RoomInfo({ room }: { room: Room }) {
   const hud = useHud();
   const { sim, tools } = useGame();
@@ -157,45 +160,41 @@ export function RoomInfo({ room }: { room: Room }) {
       <h3>
         <IconText id={def.icon}>{roomLabels(sim.s.rooms).get(room.id) ?? def.name}</IconText>
       </h3>
-      <p>{def.desc}</p>{' '}
-      <p>
-        {'Prestige '}
-        <Stars count={sim.prestige(room)} />
-      </p>{' '}
-      <p class="sub">
-        {`${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'} · Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.`}
-      </p>{' '}
-      <Comfort room={room} /> <Draw room={room} /> <BadVibes room={room} /> <Blessing room={room} />{' '}
       <Flooded room={room} /> {/* a studio's spots are summed up in its timetable rather than listed one by one */}
       {room.type !== 'qigong' && stations.map((i) => <StationInfo key={i.id} item={i} />)}
-      {table && <CanDeliver table={table} />} {room.done && room.type === 'qigong' && <Timetable room={room} />}{' '}
+      {room.done && room.type === 'qigong' && <Timetable room={room} />} <BadVibes room={room} />{' '}
       {assigned.length > 0 && (
         <p class="sub assigned">{`Assigned here: ${assigned.map((st) => st.name).join(', ')}`}</p>
       )}{' '}
+      {table && <CanDeliver table={table} />} <Draw room={room} /> <Blessing room={room} />
+      <p class="sub">{def.desc}</p>{' '}
+      <p title="Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.">
+        {'Prestige '}
+        <Stars count={sim.prestige(room)} />
+        <span class="sub">
+          {` · ${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'}`}
+        </span>
+      </p>{' '}
+      <Comfort room={room} /> {/* priority on a row of its own, then what can be done to the room */}
+      <div>
+        <Button
+          class={cx('roompriority', room.priority && 'on')}
+          title="Staff fill a priority room's stations first, and Caretakers see to it before anywhere else."
+          onPress={() => {
+            sim.setRoomPriority(room.id, !room.priority);
+          }}
+        >
+          <IconText id="ui-reputation">{room.priority ? 'Priority: on' : 'Priority: off'}</IconText>
+        </Button>
+      </div>
       <Button
-        class={cx('roompriority', room.priority && 'on')}
-        title="Staff fill a priority room's stations first, and Caretakers see to it before anywhere else."
+        class="roommove"
+        title="Pick the room up, furniture and all, and put it down somewhere else. R turns it. Free."
         onPress={() => {
-          sim.setRoomPriority(room.id, !room.priority);
+          tools.startMoveRoom(room.id);
         }}
       >
-        <IconText id="ui-reputation">{room.priority ? 'Priority: on' : 'Priority: off'}</IconText>
-      </Button>{' '}
-      <Button
-        class="roomwindows"
-        onPress={() => {
-          tools.startWindows(room.id);
-        }}
-      >
-        <IconText id="ui-window">Windows</IconText>
-      </Button>{' '}
-      <Button
-        class="roomdoor"
-        onPress={() => {
-          tools.startMoveDoor(room.id);
-        }}
-      >
-        <IconText id="ui-door">Move door</IconText>
+        <IconText id="ui-move">Move</IconText>
       </Button>{' '}
       <Button
         class="roomresize"
@@ -206,13 +205,20 @@ export function RoomInfo({ room }: { room: Room }) {
         <IconText id="ui-resize">Resize</IconText>
       </Button>{' '}
       <Button
-        class="roommove"
-        title="Pick the room up, furniture and all, and put it down somewhere else. R turns it. Free."
+        class="roomdoor"
         onPress={() => {
-          tools.startMoveRoom(room.id);
+          tools.startMoveDoor(room.id);
         }}
       >
-        <IconText id="ui-move">Move</IconText>
+        <IconText id="ui-door">Move door</IconText>
+      </Button>{' '}
+      <Button
+        class="roomwindows"
+        onPress={() => {
+          tools.startWindows(room.id);
+        }}
+      >
+        <IconText id="ui-window">Windows</IconText>
       </Button>{' '}
       <Button
         class="roomcopy"
