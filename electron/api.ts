@@ -27,6 +27,8 @@ export interface DesktopApi {
   quit: () => void;
   /** Call back with how far the look for an update has got: straight away, then whenever that changes. */
   onUpdateStatus: (listener: (status: UpdateStatus) => void) => void;
+  /** Look for an update again, unless a look is under way or has already found one. */
+  checkForUpdate: () => void;
   /** Close the app, install the downloaded update and open the new version. */
   installUpdate: () => void;
   /** Call back with whether the window fills the screen: straight away, then whenever that changes. */
@@ -47,6 +49,8 @@ export const QUIT_CHANNEL = 'app:quit';
 export const UPDATE_STATUS_CHANNEL = 'update:status';
 /** The main process tells the game the look for an update has got further, such as to a downloaded update. */
 export const UPDATE_STATUS_CHANGED_CHANNEL = 'update:status-changed';
+/** The game asks the main process to look for an update again, as each visit to the title screen does. */
+export const UPDATE_CHECK_CHANNEL = 'update:check';
 /** The game asks the main process to install the downloaded update. */
 export const UPDATE_INSTALL_CHANNEL = 'update:install';
 /** The game asks the main process whether the window fills the screen. */

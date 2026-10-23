@@ -35,6 +35,8 @@ export interface UpdateOffer {
   ready: () => string | null;
   /** Call a function whenever the look gets further, such as when one finishes downloading. Returns a way to stop. */
   subscribe: (listener: () => void) => () => void;
+  /** Look for one again now, unless a look is under way or has already found one. */
+  check: () => void;
   /** Close the app, install the update and open the new version. */
   install: () => void;
 }

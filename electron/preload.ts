@@ -11,6 +11,7 @@ import {
   FULL_SCREEN_SET_CHANNEL,
   FULL_SCREEN_STATE_CHANNEL,
   QUIT_CHANNEL,
+  UPDATE_CHECK_CHANNEL,
   UPDATE_INSTALL_CHANNEL,
   UPDATE_STATUS_CHANGED_CHANNEL,
   UPDATE_STATUS_CHANNEL,
@@ -31,6 +32,10 @@ const api: DesktopApi = {
     void ipcRenderer.invoke(UPDATE_STATUS_CHANNEL).then((status: UpdateStatus) => {
       listener(status);
     });
+  },
+  /** Ask the desktop app to look for an update again. */
+  checkForUpdate: () => {
+    ipcRenderer.send(UPDATE_CHECK_CHANNEL);
   },
   /** Ask the desktop app to install the downloaded update. */
   installUpdate: () => {
