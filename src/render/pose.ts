@@ -628,9 +628,9 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     lean += 0.42;
     headX += 0.2;
   } else if (visual === 'neck' && c.pose !== 'lie') {
-    // staring down at the phone held up in front of them
+    // staring down at the phone held in front of the chest
     headX += 0.6;
-    armR = -1.2;
+    armR = -0.45;
   } else if (visual === 'neck') headX += 0.6;
   else if (visual === 'stiff') {
     armOut = 0.32;
@@ -728,6 +728,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     if (cues.lie === 'prone') life.headYaw = PRONE_TURN;
   }
   if (act) actJoints(life, act, c, t, armL, armR);
+  if (visual === 'neck' && c.pose !== 'lie' && !act) {
+    // the forearm folded up and in, the phone lying in the hand in front of the chest
+    life.elbowR += bendTo(armR, -1.25, 1);
+    life.bendR = 0.55;
+  }
   // what is held is kept at a tilt of its own, whatever the forearm holding it is doing
   const held = act && !doing.rightHolds ? HELD_FOR[act] : undefined;
   if (held || rig.held) holdFor(rig, held, heldTilt(act, c, t) - (armR + elbowFor(armR) + life.elbowR));
@@ -781,6 +786,15 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     });
   }
 
+  if (rig.drips?.visible) {
+    rig.drips.children.forEach((d, i) => {
+      // each falls from the blanket's hem, quicker as it goes, and starts again
+      const f = (t * 1.3 + i * 0.37 + c.id * 0.1) % 1;
+      d.position.y = (d.userData.y as number) - f * f * 0.5;
+      d.scale.set(1 - 0.4 * f, 1.5, 1 - 0.4 * f);
+      d.visible = c.pose !== 'lie';
+    });
+  }
   if (rig.mop) rig.mop.visible = mopping;
   if (healed && !rig.cured) showCure(rig, c, t);
   // a towel and the soles of the shoes up, face down, once they are mostly down

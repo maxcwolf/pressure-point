@@ -49,6 +49,8 @@ export interface CharRig {
   steam?: THREE.Group;
   band?: THREE.Mesh;
   orbit?: THREE.Group;
+  /** Drops of water falling off a wet blanket, each from where it starts. */
+  drips?: THREE.Group;
   /** Something that hovers over the head and bobs gently, and how high it hovers. */
   bob?: THREE.Object3D;
   bobAt: number;
@@ -89,7 +91,7 @@ export interface CharRig {
   rest?: { scale: THREE.Vector3; y: number }[];
   /** A puff of sparkles round them as the symptom goes, made the first time it is needed. */
   burst?: Burst;
-  /** A towel and pale soles, shown while they lie face down, made the first time they do. */
+  /** Pale soles turned up, shown while they lie face down, made the first time they do. */
   faceDown?: FaceDown;
   scale: number;
   /** How much wider and deeper than average their build makes them, which their head is spared. */
@@ -110,27 +112,40 @@ const pickMat = new THREE.MeshBasicMaterial({ visible: false });
 /** How much wider and deeper each build is than average: slight, average and stocky. */
 const BUILD_WIDTH = [0.9, 1, 1.13];
 
-/**
- * How much bigger than life a symptom on the head or body is drawn: at the game's usual distance a guest stands 30-odd
- * pixels tall, and a prop of life size is a speck.
- */
-export const PROP = 1.6;
-
 /** How far back on the head the Caretaker wears their cap, in radians, the brim tipped up off the face. */
 export const CAP_TIP = -0.38;
 
-/** How far above the middle of the head its top is, in meters. */
-const HEAD_TOP = 0.22;
+/** How much bigger than life the hen is drawn, the game's signature, to be seen from its usual distance. */
+const HEN_SIZE = 1.7;
 
 /**
- * Draw a symptom's prop bigger, about where it is: one floating over the head raised as it grows, to stay clear of it.
- * Too small to cast a shadow worth drawing before, it casts none after.
+ * A ram's horn on one side of the head: rooted on top, curling back, down round the ear and forward again, thick at the
+ * root, thin at the tip, and ridged along its length.
  */
-function enlarge<T extends THREE.Object3D>(o: T, by = PROP): T {
-  o.scale.multiplyScalar(by);
-  if (o.position.y > HEAD_TOP && o.parent?.name === 'head') o.position.y = HEAD_TOP + (o.position.y - HEAD_TOP) * by;
-  o.traverse((part) => (part.castShadow = false));
-  return o;
+function ramHorn(side: number): THREE.BufferGeometry {
+  const points: THREE.Vector3[] = [];
+  for (let i = 0; i <= 24; i++) {
+    const u = i / 24;
+    const a = Math.PI / 2 + u * 1.75 * Math.PI;
+    const r = 0.13 * (1 - 0.55 * u);
+    const out = 0.13 + 0.11 * Math.min(1, u * 3);
+    points.push(new THREE.Vector3(side * out, 0.07 + r * Math.sin(a), -0.03 + r * Math.cos(a)));
+  }
+  const path = new THREE.CatmullRomCurve3(points);
+  const along = 48;
+  const round = 10;
+  const tube = new THREE.TubeGeometry(path, along, 0.055, round, false);
+  const at = tube.getAttribute('position');
+  const v = new THREE.Vector3();
+  for (let k = 0; k < at.count; k++) {
+    const u = Math.floor(k / (round + 1)) / along;
+    const middle = path.getPointAt(u);
+    const thick = (1 - 0.72 * u) * (1 + 0.07 * Math.sin(u * 44));
+    v.fromBufferAttribute(at, k).sub(middle).multiplyScalar(thick).add(middle);
+    at.setXYZ(k, v.x, v.y, v.z);
+  }
+  tube.computeVertexNormals();
+  return tube;
 }
 
 /** What a visitor wears: a VIP's dark suit, or the inspector's trench coat. */
@@ -211,7 +226,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const kneeUp = KNEE;
 
   const head = new THREE.Group();
-  head.name = 'head';
   head.position.set(0, 0.64, 0);
   head.scale.set(1 / wide, 1, 1 / wide);
   torso.add(head);
@@ -287,17 +301,13 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   group.add(rig.bubble);
 
   if (visual === 'knot') {
-    // a knot sitting up on the shoulder, where it shows from the front, the back and the side
-    rig.knot = enlarge(
-      put(
-        torso,
-        cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8)),
-        mat(0xd9584a, 0.5),
-        0.27,
-        0.52,
-        -0.02,
-      ),
-      1.45,
+    rig.knot = put(
+      torso,
+      cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8)),
+      mat(0xd9584a, 0.5),
+      0,
+      0.46,
+      -0.19,
     );
   } else if (visual === 'steam') {
     headMesh.material = mat(0xe8836f, 0.65);
@@ -306,7 +316,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       put(rig.steam, sph(0.06, 8), mat(0xffffff, 0.9, 0.3), (i - 1) * 0.12, 0, 0).castShadow = false;
     rig.steam.position.y = 0.3;
     head.add(rig.steam);
-    enlarge(rig.steam);
   } else if (visual === 'band') {
     rig.band = put(head, torus(0.226, 0.038), mat(0xe5484d, 0.4, 0.7), 0, 0.07, 0);
     rig.band.rotation.x = Math.PI / 2;
@@ -314,9 +323,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     for (const arm of [armL, armR]) rig.props.push(put(arm, sph(0.092, 12), top, 0, -0.1, 0.02));
   } else if (visual === 'frost') {
     const ice = mat(0xcdeeff, 0.15, 0.25);
-    rig.props.push(enlarge(put(torso, ico(0.135), ice, 0.21, 0.46, 0)));
+    rig.props.push(put(torso, ico(0.135), ice, 0.21, 0.4, 0));
     const icicle = put(torso, cyl(0.035, 0.001, 0.16, 6), ice, 0.3, 0.26, 0.02);
-    rig.props.push(enlarge(icicle), enlarge(put(torso, cyl(0.03, 0.001, 0.11, 6), ice, 0.2, 0.25, 0.1)));
+    rig.props.push(icicle, put(torso, cyl(0.03, 0.001, 0.11, 6), ice, 0.2, 0.25, 0.1));
   } else if (visual === 'dizzy') {
     rig.orbit = new THREE.Group();
     for (let i = 0; i < 3; i++) {
@@ -333,7 +342,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     }
     rig.orbit.position.y = 0.3;
     head.add(rig.orbit);
-    enlarge(rig.orbit);
   } else if (visual === 'cloud') {
     const cloud = new THREE.Group();
     for (const [x, y, r] of [
@@ -353,25 +361,62 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.orbit.position.y = 0.22;
     torso.add(rig.orbit);
   } else if (visual === 'cork') {
-    rig.props.push(enlarge(put(head, cyl(0.07, 0.09, 0.15, 12), mat(0xc9a56a, 0.95), 0, 0.26, 0)));
+    rig.props.push(put(head, cyl(0.07, 0.09, 0.15, 12), mat(0xc9a56a, 0.95), 0, 0.26, 0));
     const neck = put(head, torus(0.095, 0.025), mat(0x3f6b52, 0.3), 0, 0.2, 0);
     neck.rotation.x = Math.PI / 2;
-    rig.props.push(enlarge(neck));
+    rig.props.push(neck);
   } else if (visual === 'coldfeet') {
-    // each foot in a block of ice, bigger than a shoe so it shows past the legs
-    const ice = mat(0xdff4ff, 0.15, 0.35);
+    const ice = mat(0xcdeeff, 0.15, 0.25);
     for (const leg of [shinL, shinR])
-      rig.props.push(put(leg, rbox(0.27, 0.2, 0.38, 0.03), ice, 0, -0.34 + kneeUp, 0.04));
+      rig.props.push(put(leg, rbox(0.21, 0.15, 0.3, 0.03), ice, 0, -0.36 + kneeUp, 0.035));
   } else if (visual === 'blanket') {
-    const wool = mat(0x4d7ea8, 0.95);
-    rig.props.push(put(torso, rbox(0.52, 0.1, 0.38, 0.04), wool, 0, 0.4, -0.01));
-    for (const x of [-0.25, 0.25]) rig.props.push(put(torso, rbox(0.1, 0.3, 0.36, 0.04), wool, x, 0.26, -0.01));
-    for (const [x, y] of [
-      [-0.25, 0.08],
-      [0.25, 0.05],
-      [0.1, 0.02],
-    ])
-      rig.props.push(put(torso, sph(0.03, 8), mat(0x6ec6e6, 0.2), x, y, 0.12));
+    // a sodden wool blanket over the shoulders and down the back, striped and fringed at its hem, sagging, and dripping
+    const wool = mat(0x3c6a93, 0.35);
+    const stripe = mat(0xd9e4ec, 0.4);
+    // the wool in one shape and its stripes and fringe in another, so it costs a part or two to draw
+    const sheet: Piece[] = [];
+    const trim: Piece[] = [];
+    /** A row of fringe tassels along a hem, from one end to the other. */
+    const fringe = (x0: number, x1: number, y: number, z: number, n: number) => {
+      for (let i = 0; i < n; i++) trim.push([cyl(0.012, 0.008, 0.07, 5), x0 + ((x1 - x0) * i) / (n - 1), y, z]);
+    };
+    for (const side of [-1, 1]) {
+      // over each shoulder, sagging down off it
+      sheet.push([rbox(0.36, 0.1, 0.48, 0.045), side * 0.16, 0.44, -0.01, 0, 0, -side * 0.22]);
+      // down over the arm to the hip, hanging away from it, and a flap down the front, left open
+      sheet.push([rbox(0.07, 0.56, 0.46, 0.03), side * 0.34, 0.13, -0.01, 0, 0, side * 0.1]);
+      sheet.push([rbox(0.16, 0.52, 0.05, 0.02), side * 0.22, 0.16, 0.2]);
+      trim.push([rbox(0.165, 0.045, 0.055, 0.01), side * 0.22, -0.02, 0.2]);
+      fringe(side * 0.15, side * 0.29, -0.13, 0.2, 4);
+    }
+    sheet.push([rbox(0.68, 0.66, 0.06, 0.03), 0, 0.11, -0.22]);
+    // two folds where it sags down the back
+    for (const x of [-0.12, 0.14]) sheet.push([rbox(0.04, 0.5, 0.03, 0.012), x, 0.1, -0.24]);
+    trim.push([rbox(0.665, 0.045, 0.055, 0.01), 0, -0.04, -0.21], [rbox(0.665, 0.025, 0.055, 0.01), 0, 0.02, -0.21]);
+    fringe(-0.3, 0.3, -0.25, -0.21, 9);
+    rig.props.push(put(torso, joined('wet blanket', sheet), wool, 0, 0, 0));
+    const hem = put(torso, joined('wet blanket trim', trim), stripe, 0, 0, 0);
+    hem.castShadow = false;
+    rig.props.push(hem);
+    rig.drips = new THREE.Group();
+    const water = mat(0x8fd3ff, 0.1, 0.35);
+    for (const [x, y, z] of [
+      [-0.22, -0.18, 0.2],
+      [0.26, -0.17, 0.2],
+      [-0.25, -0.29, -0.21],
+      [0.05, -0.29, -0.21],
+      [0.27, -0.29, -0.22],
+      [-0.36, -0.16, 0.05],
+      [0.36, -0.16, -0.08],
+      [-0.08, -0.29, -0.2],
+    ] as const) {
+      const drop = put(rig.drips, sph(0.03, 8), water, x, y, z);
+      drop.scale.y = 1.5;
+      drop.castShadow = false;
+      drop.userData.y = y;
+    }
+    torso.add(rig.drips);
+    rig.props.push(rig.drips);
   } else if (visual === 'battery') {
     const cell = new THREE.Group();
     put(cell, rbox(0.26, 0.13, 0.09, 0.02), mat(0x2f3136, 0.6), 0, 0, 0).castShadow = false;
@@ -380,7 +425,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     put(cell, rbox(0.05, 0.09, 0.1, 0.01), rig.blink, -0.085, 0, 0).castShadow = false;
     cell.position.y = 0.4;
     head.add(cell);
-    rig.bob = enlarge(cell);
+    rig.bob = cell;
   } else if (visual === 'wires') {
     const tangle = new THREE.Group();
     const knot = cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8));
@@ -390,32 +435,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     second.rotation.set(1.2, 0.6, 0);
     tangle.position.y = 0.3;
     head.add(tangle);
-    rig.knot = enlarge(tangle) as unknown as THREE.Mesh;
+    rig.knot = tangle as unknown as THREE.Mesh;
   } else if (visual === 'pale') {
-    // gone pale, a wisp of their spirit drifting up out of them
     headMesh.material = mat(0xd3cfcb, 0.65);
-    const wisp = new THREE.Group();
-    const ghost = owned(
-      new THREE.MeshStandardMaterial({
-        color: 0xeaf2ff,
-        transparent: true,
-        opacity: 0.6,
-        emissive: 0xeaf2ff,
-        emissiveIntensity: 0.4,
-      }),
-    );
-    put(
-      wisp,
-      joined('wisp', [
-        [sph(0.08, 12), 0, 0.12, 0],
-        [capsule(0.07, 0.08), 0, 0, 0],
-        [cyl(0.001, 0.06, 0.12, 10), 0, -0.12, 0, Math.PI, 0, 0],
-      ]),
-      ghost,
-    ).castShadow = false;
-    wisp.position.y = 0.42;
-    head.add(wisp);
-    rig.bob = enlarge(wisp, 1.2);
   } else if (visual === 'static') {
     // hair standing on end, with a spark or two
     for (let i = 0; i < 7; i++) {
@@ -436,7 +458,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     }
     rig.orbit.position.y = 0.2;
     head.add(rig.orbit);
-    enlarge(rig.orbit);
   } else if (visual === 'shards') {
     // pieces of them, drifting round
     rig.orbit = new THREE.Group();
@@ -455,7 +476,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     }
     rig.orbit.position.y = 0.25;
     torso.add(rig.orbit);
-    for (const shard of rig.orbit.children) shard.scale.multiplyScalar(PROP);
   } else if (visual === 'bulb') {
     // a dim light bulb that keeps flickering
     const lamp = new THREE.Group();
@@ -464,7 +484,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     put(lamp, cyl(0.035, 0.035, 0.06, 10), mat(0x9aa4b0, 0.4), 0, -0.08, 0).castShadow = false;
     lamp.position.y = 0.42;
     head.add(lamp);
-    rig.bob = enlarge(lamp);
+    rig.bob = lamp;
   } else if (visual === 'notes') {
     // a few sour notes going round the head
     rig.orbit = new THREE.Group();
@@ -478,7 +498,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     }
     rig.orbit.position.y = 0.25;
     head.add(rig.orbit);
-    enlarge(rig.orbit);
   } else if (visual === 'worm') {
     // a little pink worm going round and round the head, in one ear and out the other
     rig.orbit = new THREE.Group();
@@ -497,7 +516,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     }
     rig.orbit.position.y = 0.02;
     head.add(rig.orbit);
-    enlarge(rig.orbit);
   } else if (visual === 'glass') {
     // a glass, half empty, hanging over them like a cloud
     const glass = new THREE.Group();
@@ -505,7 +523,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     put(glass, cyl(0.052, 0.048, 0.06, 12), mat(0x6fb5e0, 0.2), 0, -0.035, 0).castShadow = false;
     glass.position.y = 0.42;
     head.add(glass);
-    rig.bob = enlarge(glass);
+    rig.bob = glass;
   } else if (visual === 'gears') {
     // a cog turning over the head
     rig.orbit = new THREE.Group();
@@ -518,7 +536,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     }
     rig.orbit.position.y = 0.36;
     head.add(rig.orbit);
-    enlarge(rig.orbit);
   } else if (visual === 'chakra') {
     // seven glowing centers down the front, the third gone dark
     const colors = [0x9b6fd1, 0x5b5fc7, 0x4a9fe0, 0x3bb273, 0xf2c14e, 0xf08a4b, 0xe5484d];
@@ -526,11 +543,11 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       const blocked = i === 4;
       const dot = put(
         torso,
-        sph(0.042, 8),
+        sph(0.028, 8),
         mat(blocked ? 0x4a4a4a : color, 0.3, blocked ? 0 : 0.8),
         0,
-        0.5 - i * 0.075,
-        0.17,
+        0.46 - i * 0.065,
+        0.165,
       );
       dot.castShadow = false;
       rig.props.push(dot);
@@ -575,24 +592,16 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   } else if (visual === 'cast') {
     // a plaster cast up one leg, signed by the ski school, and a sticking plaster on the forehead
     const plaster = mat(0xf7f4ec, 0.8);
-    rig.props.push(put(shinR, rbox(0.19, 0.32, 0.21, 0.05), plaster, 0, -0.21 + kneeUp, 0.01));
-    rig.props.push(put(shinR, rbox(0.07, 0.04, 0.005, 0.005), mat(0x4a9fe0, 0.6), 0.02, -0.17 + kneeUp, 0.116));
+    rig.props.push(put(shinR, rbox(0.15, 0.3, 0.17, 0.05), plaster, 0, -0.22 + kneeUp, 0.01));
+    rig.props.push(put(shinR, rbox(0.05, 0.03, 0.005, 0.005), mat(0x4a9fe0, 0.6), 0.02, -0.18 + kneeUp, 0.096));
     const strip = put(head, rbox(0.11, 0.035, 0.02, 0.008), mat(0xe8c39e, 0.7), 0.06, 0.11, 0.18);
     strip.rotation.set(-0.5, 0, 0.5);
-    // and an arm in a sling across the chest
-    const sling = put(torso, rbox(0.26, 0.12, 0.06, 0.02), plaster, 0.04, 0.3, 0.17);
-    sling.rotation.z = 0.25;
-    rig.props.push(enlarge(strip, 1.3), enlarge(sling, 1));
+    rig.props.push(strip);
   } else if (visual === 'thermometer') {
     // a thermometer in the mouth, and flushed cheeks
-    const glass = put(head, cyl(0.018, 0.018, 0.26, 8), mat(0xf4f8fb, 0.2), 0.05, -0.09, 0.3);
+    const glass = put(head, cyl(0.011, 0.011, 0.2, 8), mat(0xf4f8fb, 0.2), 0.04, -0.09, 0.27);
     glass.rotation.set(Math.PI / 2 - 0.35, 0, -0.3);
-    rig.props.push(glass, put(head, sph(0.03, 8), mat(0xe5484d, 0.4, 0.4), 0.09, -0.05, 0.41));
-    // and a cold flannel folded over the forehead
-    const flannel = put(head, rbox(0.3, 0.05, 0.13, 0.02), mat(0xdcefff, 0.8), 0, 0.15, 0.1);
-    flannel.rotation.x = 0.5;
-    flannel.castShadow = false;
-    rig.props.push(flannel);
+    rig.props.push(glass, put(head, sph(0.016, 8), mat(0xe5484d, 0.4, 0.4), 0.075, -0.06, 0.355));
     for (const x of [-0.12, 0.12]) {
       const cheek = put(head, sph(0.045, 10), mat(0xf08a8a, 0.7), x, -0.04, 0.165);
       cheek.scale.z = 0.4;
@@ -637,8 +646,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       p.castShadow = false;
       rig.props.push(p);
     }
-    for (const p of rig.props) enlarge(p, 1.8);
-    const nose = put(head, sph(0.052, 10), mat(0xe5484d, 0.4), 0, -0.01, 0.22);
+    const nose = put(head, sph(0.04, 10), mat(0xe5484d, 0.4), 0, -0.01, 0.215);
     nose.castShadow = false;
     rig.props.push(nose);
   } else if (visual === 'chicken') {
@@ -652,18 +660,28 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     put(hen, sph(0.018, 6), mat(0xd9362f, 0.5), 0.14, 0.05, 0);
     put(hen, rbox(0.07, 0.09, 0.08, 0.02), white, -0.12, 0.05, 0).rotation.z = 0.5;
     for (const z of [-0.03, 0.03]) put(hen, sph(0.01, 6), mat(0x1d1f24, 0.3), 0.13, 0.095, z);
-    hen.position.y = 0.27;
     hen.rotation.y = -Math.PI / 2;
+    // bigger than life, and raised to sit on the head as big as it is; too small for a shadow worth drawing before,
+    // it casts none
+    hen.scale.setScalar(HEN_SIZE);
+    hen.position.y = 0.22 + 0.05 * HEN_SIZE;
+    for (const o of hen.children) o.castShadow = false;
     head.add(hen);
-    rig.props.push(enlarge(hen, 1.7));
+    rig.props.push(hen);
   } else if (visual === 'goat') {
-    // a pair of curling goat horns, and a little beard to go with them
-    const horn = mat(0xd9c9a8, 0.6);
-    for (const side of [-1, 1]) {
-      const h = put(head, torus(0.07, 0.025), horn, side * 0.13, 0.2, -0.02);
-      h.rotation.set(0, Math.PI / 2, side * 0.6);
-      rig.props.push(h);
-    }
+    // a ram's curling horns, one each side, and a little beard to go with them
+    const horn = mat(0xcbb48a, 0.7);
+    for (const side of [-1, 1])
+      rig.props.push(
+        put(
+          head,
+          cached(`ram horn ${side}`, () => ramHorn(side)),
+          horn,
+          0,
+          0,
+          0,
+        ),
+      );
     rig.props.push(put(head, cyl(0.04, 0.001, 0.12, 8), mat(0xf4f1ea, 0.8), 0, -0.24, 0.13));
   } else if (visual === 'brent') {
     // Brent: a small see-through man in a polo shirt and lanyard, hovering at their shoulder with a thumbs up
@@ -696,23 +714,23 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       new THREE.MeshStandardMaterial({
         color: 0x8fd16a,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.45,
         emissive: 0x6fb34a,
         emissiveIntensity: 0.4,
       }),
     );
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2;
-      put(rig.orbit, sph(0.13, 8), haze, Math.cos(a) * 0.34, Math.sin(i * 2.1) * 0.1, Math.sin(a) * 0.34).castShadow =
+      put(rig.orbit, sph(0.09, 8), haze, Math.cos(a) * 0.3, Math.sin(i * 2.1) * 0.08, Math.sin(a) * 0.3).castShadow =
         false;
     }
     rig.orbit.position.y = 0.3;
     torso.add(rig.orbit);
   } else if (visual === 'leash') {
     // an empty leash, held out hopefully, with nothing on the end of it
-    const strap = put(holdR, cyl(0.017, 0.017, 0.42, 6), mat(0xd9362f, 0.5), 0, -0.48 + handUp, 0.08);
+    const strap = put(holdR, cyl(0.01, 0.01, 0.42, 6), mat(0xd9362f, 0.5), 0, -0.48 + handUp, 0.08);
     strap.rotation.x = 0.35;
-    const collar = put(holdR, torus(0.1, 0.022), mat(0xd9362f, 0.5), 0, -0.7 + handUp, 0.18);
+    const collar = put(holdR, torus(0.06, 0.012), mat(0xd9362f, 0.5), 0, -0.68 + handUp, 0.16);
     collar.rotation.x = Math.PI / 2;
     rig.props.push(strap, collar);
   } else if (visual === 'cactus') {
@@ -743,18 +761,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     compass.add(rig.orbit);
     for (const o of [...compass.children, ...rig.orbit.children]) o.castShadow = false;
     // bobbing gently, and put away while they lie down
-    compass.position.y = 0.33;
+    compass.scale.setScalar(1.5);
     head.add(compass);
-    rig.bob = enlarge(compass, 2.2);
-  } else if (visual === 'slump') {
-    // a laptop clutched to the chest, still open, its screen lit
-    const laptop = new THREE.Group();
-    put(laptop, rbox(0.34, 0.03, 0.24, 0.015), mat(0xc9ccd2, 0.35), 0, 0, 0);
-    const lid = put(laptop, rbox(0.34, 0.22, 0.02, 0.015), mat(0x8fd3ff, 0.3, 0.8), 0, 0.1, -0.12);
-    lid.rotation.x = -0.25;
-    laptop.position.set(0, 0.2, 0.26);
-    torso.add(laptop);
-    rig.props.push(enlarge(laptop, 1));
+    rig.bob = compass;
   } else if (visual === 'neck') {
     // a phone held up in front of them, its screen lit, that they cannot look up from
     const phone = new THREE.Group();
@@ -765,48 +774,12 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       [rbox(0.11, 0.19, 0.006, 0.005), 0, 0, -0.012],
     ]);
     put(phone, glow, mat(0x8fd3ff, 0.3, 1.2), 0, 0, 0);
-    phone.position.set(0, -0.31 + handUp, 0.07);
-    phone.rotation.x = -1.1;
+    // lying on the hand, on the thumb's side, which faces up with the forearm raised, the screen tipped to the face
+    phone.position.set(0, -0.32 + handUp, 0.068);
+    phone.rotation.x = 0.45;
+    phone.name = 'phone';
     holdR.add(phone);
-    rig.props.push(enlarge(phone, 1));
-  } else if (visual === 'crick') {
-    // a flash of pain at the side of the neck
-    const pain = put(
-      torso,
-      joined('crick', [
-        [cached('pain star', () => new THREE.OctahedronGeometry(0.06)), 0, 0, 0, 0, 0, 0.6],
-        [cached('pain star', () => new THREE.OctahedronGeometry(0.06)), -0.06, 0.07, 0.02, 0.4, 0, 0],
-      ]),
-      mat(0xff4a3d, 0.4, 0.9),
-      -0.17,
-      0.62,
-      0.04,
-    );
-    rig.props.push(enlarge(pain, 1.8));
-  } else if (visual === 'tilt') {
-    // a spirit level over the head, its bubble off to one end
-    const level = new THREE.Group();
-    put(level, rbox(0.34, 0.07, 0.07, 0.015), mat(0xf2c14e, 0.5), 0, 0, 0);
-    put(level, sph(0.03, 10), mat(0x9be37a, 0.3, 0.6), 0.11, 0, 0.03);
-    level.position.y = 0.36;
-    level.rotation.z = -0.3;
-    head.add(level);
-    rig.props.push(enlarge(level, 1.3));
-  } else if (visual === 'sway') {
-    // gone green about the gills
-    headMesh.material = mat(0xb6cf8c, 0.65);
-  } else if (visual === 'jitter') {
-    // fizzing, with shake lines either side of them
-    const lines: Piece[] = [];
-    for (const side of [-1, 1])
-      for (const [y, tip] of [
-        [0.18, 0.35],
-        [0.36, -0.35],
-        [0.54, 0.35],
-      ] as const)
-        lines.push([rbox(0.035, 0.17, 0.035, 0.012), side * 0.36, y, 0, 0, 0, side * tip]);
-    const shake = put(torso, joined('shake lines', lines), mat(0xfff27a, 0.4, 1.2), 0, 0, 0);
-    rig.props.push(enlarge(shake, 1));
+    rig.props.push(phone);
   } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   if (rig.bob) rig.bobAt = rig.bob.position.y;
