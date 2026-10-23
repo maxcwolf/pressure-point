@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 import type { SceneIconId } from '../core/data';
 import { DIRT_FILTHY, HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
-import { mishapCarrier } from '../core/sim/mishaps';
+import { mishapCarrier, mishapHolder } from '../core/sim/mishaps';
 import type { Sim } from '../core/sim/sim';
 import { itemHeat } from '../core/sim/warmth';
 import type { Item } from '../core/state/types';
@@ -16,14 +16,15 @@ import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
 import { ghostHung, hangPlace, placeHung } from './hung';
-import { animateCues, type CueCondition, NOISE_CUE, usedNoise, wearLight } from './item-cues';
+import { animateCues, type CueCondition, NOISE_CUE, STOP_LOOKS, unlitShare, usedNoise, wearLight } from './item-cues';
+import { powerOut } from './lighting';
 import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import { SPILL_SPEED, spillRuns } from './models/items/fountain';
 import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
 import { upgradePlate } from './models/plate';
-import type { Turn } from './turn';
+import { type Turn, turnAngle } from './turn';
 
 /** Position and turn an item's model to match its tile and rotation. */
 export function placeItemModel(model: THREE.Object3D, type: ItemType, x: number, y: number, rot: number) {
@@ -73,31 +74,38 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
     leaf.color.copy(dryColor(it.water, LEAF));
     model.scale.y = 0.82 + 0.18 * Math.min(1, it.water / 40);
   }
-  if (glow) glow.emissiveIntensity = (it.water / 100) * 1.4;
+  // a stone warmer cools with its water, and goes cold with the power off
+  if (glow) glow.emissiveIntensity = it.stopped === 'off' ? 0 : (it.water / 100) * 1.4;
   if (ring) {
     ring.position.y = it.scanning ? 0.8 + Math.sin(t * 3.5) * 0.6 : 0.2;
     ring.visible = it.wear < 100;
   }
   if (orb) orb.position.y = 0.9 + Math.sin(t * 3 + it.id) * 0.035;
-  if (spill) {
+  // frozen water stands still where it was
+  if (spill && it.stopped !== 'frost') {
     // bright runs go down the falling water, the foam where it lands churns, and rings spread from the orb to the rim
     spillRuns().offset.y = (t * SPILL_SPEED) % 1;
     const churn = Math.sin(t * 9 + it.id) * 0.5 + Math.sin(t * 13.7 + it.id * 2) * 0.5;
     spill.foam.scale.set(1 + churn * 0.012, 0.45 + churn * 0.1, 1 + churn * 0.012);
+    // white froth, drawn without light, dims with the room in a power cut
+    const froth = unlitShare(it);
     (spill.foam.material as THREE.MeshBasicMaterial).opacity = 0.55 + churn * 0.12;
+    (spill.foam.material as THREE.MeshBasicMaterial).color.setScalar(froth);
     spill.rings.forEach((r, i) => {
       const f = (((t * 0.7 + i / 2 + it.id * 0.37) % 1) + 1) % 1;
       r.scale.setScalar(0.1 + f * 0.13);
       (r.material as THREE.MeshBasicMaterial).opacity = 0.5 * Math.min(1, f * 5) * (1 - f);
+      (r.material as THREE.MeshBasicMaterial).color.setScalar(froth);
     });
   }
-  // drifting smoke or scent
+  // drifting smoke or scent, until a mishap stops it
+  if (puffs) puffs.visible = !it.stopped;
   puffs?.children.forEach((p, i) => {
     const f = (t * 0.5 + i / 3 + it.id * 0.13) % 1;
     p.position.set(Math.sin(f * 5 + i) * 0.08, f * 0.6, 0);
     p.scale.setScalar(0.4 + f * 0.9);
   });
-  if (led) wearLight(led, it.wear, it.id, Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1, t);
+  if (led) wearLight(led, it.wear, it.id, Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1, t, it.stopped === 'off');
   cups?.forEach((cup, i) => (cup.visible = i < it.trophies));
   if (linens) soilLinens(linens, it.dirt);
   if (heap) {
@@ -130,6 +138,12 @@ const BAR_FILL = new THREE.BoxGeometry(1, 0.14, 0.07);
 const BAR_BACK_MAT = new THREE.MeshBasicMaterial({ color: 0x2f4858 });
 const BAR_FILL_MAT = new THREE.MeshBasicMaterial({ color: 0x3ddc84 });
 
+/**
+ * Which way a progress bar faces at a turn of the camera, about the upright: square to the camera, so it reads at its
+ * full width from every side and fills from the left.
+ */
+export const barAngle = (turn: Turn) => Math.PI / 4 + turnAngle(turn);
+
 /** How high a progress bar sits over most stations, and the most a marker over an item bobs below it. */
 const BAR_Y = 2.1;
 const MARKER_Y = 1.9;
@@ -151,9 +165,13 @@ export class ItemsLayer {
     return [...this.items.values()].map((i) => i.group);
   }
 
-  /** Turn the camera: what hangs on a wall shows as a ghost of itself on the walls now cut low, and solid on the rest. */
+  /**
+   * Turn the camera: what hangs on a wall shows as a ghost of itself on the walls now cut low, and solid on the rest,
+   * and the progress bars turn to face it.
+   */
   setTurn(turn: Turn) {
     this.turn = turn;
+    for (const bar of this.bars.values()) bar.group.rotation.y = barAngle(turn);
     this.sync();
   }
 
@@ -207,10 +225,12 @@ export class ItemsLayer {
   animate(t: number) {
     const busy = new Set<number>();
     const rattled = this.sim.rattledRooms();
+    const dark = powerOut(this.sim.s.mishap, !!mishapHolder(this.sim.s));
     for (const it of this.sim.s.items) {
       const model = this.items.get(it.id)?.group;
       if (!model) continue;
-      this.effects(it, model, t, rattled.size > 0 && rattled.has(this.sim.world.zoneAt(it.x, it.y)));
+      const shade = dark && this.sim.world.inside(it.x, it.y) ? 1 : 0;
+      this.effects(it, model, t, rattled.size > 0 && rattled.has(this.sim.world.zoneAt(it.x, it.y)), shade);
       this.marker(model, it, 'wrench', 'marker-broken', it.wear >= 100, t);
       // stale linens show on the table itself, not as flies over it
       this.marker(model, it, 'flies', 'marker-filthy', it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens, t);
@@ -226,8 +246,11 @@ export class ItemsLayer {
     }
   }
 
-  /** The touches particular to each kind of item, and the props laid on a guest during a session, with its room rattled or not. */
-  private effects(it: Item, model: THREE.Object3D, t: number, rattled: boolean) {
+  /**
+   * The touches particular to each kind of item, and the props laid on a guest during a session, with its room rattled
+   * or not, and as far in the dark of a power cut as it stands.
+   */
+  private effects(it: Item, model: THREE.Object3D, t: number, rattled: boolean, shade: number) {
     animateItemParts(
       model,
       {
@@ -241,6 +264,8 @@ export class ItemsLayer {
         running: this.running(it),
         rattled,
         trophies: this.sim.s.trophies.length,
+        stopped: this.stopped(it),
+        shade,
       },
       t,
     );
@@ -258,6 +283,15 @@ export class ItemsLayer {
     const script = GAGS[it.type];
     const input = script && this.gags.input(this.sim, it, t);
     if (script && input) applyGag(model, gagFrame(script, input), t);
+    // a machine's glow goes out with the power
+    const { shine } = partsOf(model);
+    if (shine && this.stopped(it) === 'off') shine.emissiveIntensity = 0;
+  }
+
+  /** How the mishap under way shows on an item it has taken out of action, if it has. */
+  private stopped(it: Item) {
+    const m = this.sim.s.mishap;
+    return m && this.sim.world.stoppedByMishap(it) ? STOP_LOOKS[m.kind] : undefined;
   }
 
   /** How high over an item its bar and markers go: as usual, or clear of the top of a machine, which stands taller. */
@@ -323,7 +357,7 @@ export class ItemsLayer {
       const back = new THREE.Mesh(BAR_BACK, BAR_BACK_MAT);
       const fill = new THREE.Mesh(BAR_FILL, BAR_FILL_MAT);
       group.add(back, fill);
-      group.rotation.y = Math.PI / 4;
+      group.rotation.y = barAngle(this.turn);
       const [cx, cy] = itemCenter(it);
       group.position.set(cx, this.over(it, BAR_Y), cy);
       this.scene.add(group);

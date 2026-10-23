@@ -21,6 +21,7 @@ import {
   WORN_HEAT,
 } from '../data';
 import type { Climate, ItemType, ThermostatSetting } from '../data/types';
+import { calendarDay } from '../format';
 import type { Guest, Item } from '../state/types';
 import { clamp } from '../util';
 import { itemCenter } from '../world';
@@ -53,7 +54,7 @@ export function itemHeat(it: Item): number {
 }
 
 /** The temperature indoors today with nothing to warm or cool it. */
-export const todayIndoors = (ctx: SimContext) => indoorTemp(outdoorTemp(centerOf(ctx.s).climate, ctx.s.day));
+export const todayIndoors = (ctx: SimContext) => indoorTemp(outdoorTemp(centerOf(ctx.s).climate, calendarDay(ctx.s)));
 
 /**
  * How hard an item with a thermostat works, from 0 (off) to 1 (flat out), for a temperature indoors: at its setting's
@@ -87,7 +88,7 @@ export function updateWarmth(ctx: SimContext) {
     return;
   }
   // out of doors, the weather itself; inside, some of the way from just right toward it
-  const outdoor = outdoorTemp(centerOf(ctx.s).climate, ctx.s.day);
+  const outdoor = outdoorTemp(centerOf(ctx.s).climate, calendarDay(ctx.s));
   const indoor = indoorTemp(outdoor);
   const { indoors } = ctx.world;
   for (let i = 0; i < grid.length; i++) grid[i] = indoors[i] ? indoor : outdoor;

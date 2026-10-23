@@ -1,14 +1,16 @@
 // What an item shows of what it is doing, with no overlay open: smoke, a shudder or a flickering light as it wears out
-// and a dead look once it breaks, grime as it gets dirty, ripples while a guest plays something loud, and wisps of warm
-// or cool air off a heater or an air conditioner. Each cue is a few small parts added to a model the first time it is
+// and a dead look once it breaks, grime as it gets dirty, ripples while a guest plays something loud, wisps of warm
+// or cool air off a heater or an air conditioner, and the mark of a mishap that has stopped it: its lights out in a
+// power cut, frost in a freeze, and wasps round it. Each cue is a few small parts added to a model the first time it is
 // needed, from shapes every model shares, and hidden the rest of the time, so a cue that is off draws nothing. Like the
 // rest of an item's moving parts, each is worked out afresh from the time and the item's state, frame by frame.
 
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-import { DIRT_FILTHY, ITEMS, type ItemType, NOISE_NOTICE, WEAR_WARN } from '../core/data';
+import { DIRT_FILTHY, ITEMS, type ItemType, type MishapId, NOISE_NOTICE, WEAR_WARN } from '../core/data';
 import { clamp } from '../core/util';
-import { owned } from './disposal';
+import { isOwned, owned } from './disposal';
 import { BOOST_LOOP } from './gags/clock';
 import { cached, type CueParts, partsOf, sph } from './models/parts';
 
@@ -106,7 +108,31 @@ export interface CueCondition {
   running: number;
   /** Its room is being rattled through the wall by a machine next door, like the Gong of Last Resort as it plays. */
   rattled?: boolean;
+  /** How a mishap that has taken it out of action shows on it, if one has. */
+  stopped?: StopLook | undefined;
+  /** How far it stands in the dark of a power cut, from 0 in the light to 1 inside the building with its lights out. */
+  shade?: number;
 }
+
+/**
+ * How bright a cue drawn without light (smoke, ripples, wisps) shows in the dark, against in the light: it dims with
+ * everything round it in a power cut, rather than glowing as if lit.
+ */
+const UNLIT_IN_SHADE = 0.45;
+
+/** The share of its own brightness a cue drawn without light shows, for how far it stands in the dark. */
+export const unlitShare = (c: Pick<CueCondition, 'shade'>) => 1 - (c.shade ?? 0) * (1 - UNLIT_IN_SHADE);
+
+/** How a mishap shows on what it has stopped: switched off at the plug, frozen solid, or swarmed by wasps. */
+export type StopLook = 'off' | 'frost' | 'wasps';
+
+/** How each mishap shows on the items it stops: a storm shuts the Aura Wash down, as a power cut does. */
+export const STOP_LOOKS: Readonly<Record<MishapId, StopLook>> = {
+  power: 'off',
+  storm: 'off',
+  freeze: 'frost',
+  wasps: 'wasps',
+};
 
 /** A see-through material for one puff, ring or wisp, so each can fade on its own. */
 const fade = (color: number) =>
@@ -146,6 +172,7 @@ function cueGroup(model: THREE.Object3D, shape: THREE.BufferGeometry, n: number,
     /** Cues are not there to be clicked: a click goes to the item itself. */
     m.raycast = () => undefined;
     m.renderOrder = 2;
+    m.userData.cue = true;
     group.add(m);
   }
   model.add(group);
@@ -181,7 +208,7 @@ function animateSmoke(model: THREE.Object3D, c: CueCondition, look: WearLook | u
   smoke.children.forEach((p, i) => {
     const f = dead ? burst(t + i * 0.6, every, every, c.id) : burst(t - i * 0.25, every, 1.6, c.id);
     const m = fadeOf(p);
-    m.color.setHex(color);
+    m.color.setHex(color).multiplyScalar(unlitShare(c));
     p.visible = f >= 0;
     if (f < 0) return;
     // dust spreads along the mat and settles; smoke climbs from the top and drifts
@@ -196,6 +223,9 @@ function animateSmoke(model: THREE.Object3D, c: CueCondition, look: WearLook | u
   });
 }
 
+/** The warm white of the ripples off something loud. */
+const RIPPLE = 0xfff4d6;
+
 /** Ripples spreading from something loud while a guest plays it, wider the louder it is. */
 function animateRipples(model: THREE.Object3D, c: CueCondition, t: number) {
   const noise = usedNoise(c.type);
@@ -206,7 +236,7 @@ function animateRipples(model: THREE.Object3D, c: CueCondition, t: number) {
     return;
   }
   const cues = cuesOf(model);
-  ripple = cues.ripple ??= cueGroup(model, ring(), 2, 0xfff4d6);
+  ripple = cues.ripple ??= cueGroup(model, ring(), 2, RIPPLE);
   ripple.visible = true;
   const { box } = cues;
   const from = Math.max(box.max.x - box.min.x, box.max.z - box.min.z) / 2;
@@ -215,6 +245,7 @@ function animateRipples(model: THREE.Object3D, c: CueCondition, t: number) {
     r.position.set((box.min.x + box.max.x) / 2, box.max.y * 0.55, (box.min.z + box.max.z) / 2);
     r.scale.setScalar(from + 0.1 + f * noise * 0.3);
     fadeOf(r).opacity = 0.6 * (1 - f) ** 1.5;
+    fadeOf(r).color.setHex(RIPPLE).multiplyScalar(unlitShare(c));
   });
 }
 
@@ -309,6 +340,7 @@ function airLines(model: THREE.Object3D, n: number, cool: boolean): THREE.Group 
     /** Cues are not there to be clicked: a click goes to the item itself. */
     line.raycast = () => undefined;
     line.renderOrder = 2;
+    line.userData.cue = true;
     group.add(line);
   }
   model.add(group);
@@ -351,8 +383,9 @@ function animateWisps(model: THREE.Object3D, c: CueCondition, t: number) {
       w.position.set(x, box.max.y + AIR_LINE.h * 0.4 + f * 0.3, cz);
       w.scale.set(AIR_LINE.w * breath, AIR_LINE.h, 1);
     }
-    (w as THREE.Object3D & { material: THREE.Material }).material.opacity =
-      Math.sin(f * Math.PI) * (0.65 + 0.3 * c.running);
+    const m = (w as THREE.Object3D & { material: THREE.MeshBasicMaterial | THREE.SpriteMaterial }).material;
+    m.opacity = Math.sin(f * Math.PI) * (0.65 + 0.3 * c.running);
+    m.color.setHex(cool ? COOL_AIR : WARM_AIR).multiplyScalar(unlitShare(c));
   });
 }
 
@@ -394,14 +427,25 @@ function animateChug(model: THREE.Object3D, c: CueCondition, t: number) {
 /** The color a light goes when its item breaks: nearly black, whatever it was. */
 const DEAD = new THREE.Color(0x2b2e35);
 
+/** How far toward dead a light switched off goes: dark, but not as black as a broken one. */
+const SWITCHED_OFF = 0.6;
+
 /**
  * A light on a worn item, at the brightness it would otherwise have: it flickers once the item shows its wear, and goes
- * dark when it breaks. It comes back as it was once repaired.
+ * dark when it breaks, or while it is switched `off`, as in a power cut. It comes back as it was once repaired or the
+ * power is back.
  */
-export function wearLight(m: THREE.MeshStandardMaterial, wear: number, id: number, bright: number, t: number) {
+export function wearLight(
+  m: THREE.MeshStandardMaterial,
+  wear: number,
+  id: number,
+  bright: number,
+  t: number,
+  off = false,
+) {
   const lit = (m.userData.lit ??= m.color.clone()) as THREE.Color;
-  if (wear >= 100) {
-    m.color.lerpColors(lit, DEAD, 0.85);
+  if (wear >= 100 || off) {
+    m.color.lerpColors(lit, DEAD, wear >= 100 ? 0.85 : SWITCHED_OFF);
     m.emissiveIntensity = 0;
     return;
   }
@@ -452,9 +496,213 @@ function animateRattle(model: THREE.Object3D, c: CueCondition, leans: boolean, t
   model.rotation.z = (leans ? model.rotation.z : rest) + shake;
 }
 
+/** The ice a frozen item is glazed toward, and how far: pale blue, glinting a little even in shade. */
+const ICE = new THREE.Color(0xa8d8ff);
+const ICE_BY = 0.55;
+const ICE_GLINT = 0.18;
+
+/** Glaze a material a model owns with ice, or take the ice off, once its color has been set for the frame. */
+function frost(m: THREE.MeshStandardMaterial, on: boolean) {
+  const glint = (m.userData.glint ??= { color: m.emissive.clone(), level: m.emissiveIntensity }) as {
+    color: THREE.Color;
+    level: number;
+  };
+  if (!on) {
+    m.emissive.copy(glint.color);
+    m.emissiveIntensity = glint.level;
+    return;
+  }
+  m.color.lerp(ICE, ICE_BY);
+  m.emissive.copy(ICE);
+  m.emissiveIntensity = ICE_GLINT;
+}
+
+/** Each material's look while stopped, made once from it: a shared material's is shared too. */
+const stoppedLooks = new WeakMap<THREE.Material, Partial<Record<'off' | 'frost', THREE.Material>>>();
+
 /**
- * Show every cue an item gives: of its wear, its dirt, its noise and its warmth, an engine running, and a rattle from
- * next door.
+ * A material as it looks on an item a mishap has stopped, or the material itself where it does not change: glazed with
+ * ice when frozen; with any glow switched off, and darker, when the power is off.
+ */
+function stoppedMaterial(m: THREE.Material, look: 'off' | 'frost'): THREE.Material {
+  const made = stoppedLooks.get(m)?.[look];
+  if (made) return made;
+  let out: THREE.Material = m;
+  if (look === 'off' && m instanceof THREE.MeshStandardMaterial && m.emissiveIntensity > 0 && m.emissive.getHex()) {
+    const dark = m.clone();
+    dark.emissiveIntensity = 0;
+    dark.color.multiplyScalar(0.55);
+    out = dark;
+  } else if (look === 'frost' && (m instanceof THREE.MeshStandardMaterial || m instanceof THREE.MeshBasicMaterial)) {
+    const iced = m.clone();
+    iced.color.lerp(ICE, ICE_BY);
+    if (iced instanceof THREE.MeshStandardMaterial) {
+      iced.emissive.copy(ICE);
+      iced.emissiveIntensity = ICE_GLINT;
+      iced.roughness = Math.min(iced.roughness, 0.3);
+    }
+    out = iced;
+  }
+  // a look made from a material one model alone owns belongs to that model too, and goes with it
+  if (out !== m && isOwned(m)) owned(out);
+  stoppedLooks.set(m, { ...stoppedLooks.get(m), [look]: out });
+  return out;
+}
+
+/** The materials of a model that its own parts change frame by frame, which a stop must leave to them. */
+function animatedMaterials(model: THREE.Object3D): Set<THREE.Material | undefined> {
+  const { leaf, glow, led, lamp, grime: dirty, linens, moss, shine } = partsOf(model);
+  return new Set([leaf, glow, led, lamp, dirty, linens, moss, shine]);
+}
+
+/**
+ * Dress a model for how a mishap has stopped it: each of its parts in its stopped material, or back in its own once
+ * the mishap is over. Only a change of look does any work, so this is free from frame to frame.
+ */
+export function dressStopped(model: THREE.Object3D, look: StopLook | undefined) {
+  const dressed = look === 'off' || look === 'frost' ? look : undefined;
+  const cues = cuesOf(model);
+  if (cues.dressed === dressed) return;
+  cues.dressed = dressed;
+  const keep = animatedMaterials(model);
+  model.traverse((o) => {
+    if (!(o instanceof THREE.Mesh) || o.userData.cue) return;
+    const own = (o.userData.asBuilt ??= o.material) as THREE.Material | THREE.Material[];
+    if (Array.isArray(own) || keep.has(own)) return;
+    o.material = dressed ? stoppedMaterial(own, dressed) : own;
+  });
+}
+
+/** How many wasps buzz round something they have stopped, how far out they fly and how high over its top. */
+const WASPS = 7;
+const WASP_REACH = 0.5;
+const WASP_RISE = 0.35;
+
+/** How big a wasp is, in meters, and the colors of the swarm: mostly black, one in three gold, so it reads as wasps. */
+const WASP_SIZE = 0.4;
+const WASP_BLACK = new THREE.Color(0x2a2620);
+const WASP_GOLD = new THREE.Color(0xf2b705);
+
+/** A round dot, solid to its edge, for a wasp seen from far off. */
+function dotTexture(): THREE.DataTexture {
+  const N = 16;
+  const data = new Uint8Array(N * N * 4);
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      const inside = Math.hypot(x + 0.5 - N / 2, y + 0.5 - N / 2) < N / 2 - 0.5;
+      data.set([255, 255, 255, inside ? 255 : 0], (y * N + x) * 4);
+    }
+  const tex = new THREE.DataTexture(data, N, N);
+  tex.magFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/** What every wasp is drawn in: one material for every swarm. */
+let waspLook: THREE.PointsMaterial | null = null;
+
+/**
+ * Where a wasp is at a moment, round the middle of what it buzzes about: each on its own looping path, darting quickly
+ * this way and that, so a swarm reads from far off by its jitter.
+ */
+export function waspAt(t: number, i: number, id: number): [x: number, y: number, z: number] {
+  const a = t * (2.1 + (i % 3) * 0.5) + i * 2.4 + id;
+  const b = t * (3.3 + (i % 2) * 0.9) + i * 1.3;
+  return [
+    Math.sin(a) * WASP_REACH * (0.6 + 0.4 * Math.sin(b * 0.7)),
+    Math.sin(b) * 0.12 + Math.sin(t * 23 + i * 5) * 0.025,
+    Math.cos(a * 1.3) * WASP_REACH * 0.7,
+  ];
+}
+
+/** A swarm of wasps, as dots: one part, drawn at once, whatever their number. */
+function swarm(model: THREE.Object3D): THREE.Points {
+  const shape = owned(new THREE.BufferGeometry());
+  shape.setAttribute('position', new THREE.BufferAttribute(new Float32Array(WASPS * 3), 3));
+  const colors = new Float32Array(WASPS * 3);
+  for (let i = 0; i < WASPS; i++) (i % 3 === 1 ? WASP_GOLD : WASP_BLACK).toArray(colors, i * 3);
+  shape.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  waspLook ??= new THREE.PointsMaterial({
+    size: WASP_SIZE,
+    map: dotTexture(),
+    vertexColors: true,
+    alphaTest: 0.5,
+  });
+  const wasps = new THREE.Points(shape, waspLook);
+  /** Cues are not there to be clicked: a click goes to the item itself. */
+  wasps.raycast = () => undefined;
+  // they move every frame, so their bounds are never worked out
+  wasps.frustumCulled = false;
+  wasps.userData.cue = true;
+  model.add(wasps);
+  return wasps;
+}
+
+/** A swarm of wasps round the top of something they have stopped, black and gold and never still. */
+function animateWasps(model: THREE.Object3D, c: CueCondition, t: number) {
+  let wasps = partsOf(model).cues?.wasps;
+  if (c.stopped !== 'wasps') {
+    if (wasps) wasps.visible = false;
+    return;
+  }
+  const cues = cuesOf(model);
+  wasps = cues.wasps ??= swarm(model);
+  wasps.visible = true;
+  const { box } = cues;
+  const cx = (box.min.x + box.max.x) / 2;
+  const cz = (box.min.z + box.max.z) / 2;
+  const at = wasps.geometry.getAttribute('position') as THREE.BufferAttribute;
+  for (let i = 0; i < WASPS; i++) {
+    const [x, y, z] = waspAt(t, i, c.id);
+    at.setXYZ(i, cx + x, box.max.y + WASP_RISE + y, cz + z);
+  }
+  at.needsUpdate = true;
+}
+
+/** How many icicles hang from the front of something frozen, and how long the longest is. */
+const ICICLES = 4;
+const ICICLE_LONG = 0.16;
+
+/** What every icicle is drawn in: one see-through ice for all of them. */
+let ice: THREE.MeshBasicMaterial | null = null;
+
+/** The icicles along the top front edge of a model's box, as one shape of its own, so they are drawn at once. */
+function icicles(model: THREE.Object3D, box: THREE.Box3, id: number): THREE.Mesh {
+  const width = box.max.x - box.min.x;
+  const each = Array.from({ length: ICICLES }, (_, i) =>
+    new THREE.ConeGeometry(0.03, 1, 6)
+      .rotateX(Math.PI)
+      .translate(0, -0.5, 0)
+      .scale(1, ICICLE_LONG * (0.55 + 0.45 * (((i * 7 + id) % 4) / 3)), 1)
+      .translate(box.min.x + width * ((i + 0.5) / ICICLES), box.max.y * 0.98, box.max.z),
+  );
+  const shape = mergeGeometries(each);
+  for (const g of each) g.dispose();
+  ice ??= new THREE.MeshBasicMaterial({ color: 0xd6efff, transparent: true, opacity: 0.9, depthWrite: false });
+  const m = new THREE.Mesh(owned(shape), ice);
+  /** Cues are not there to be clicked: a click goes to the item itself. */
+  m.raycast = () => undefined;
+  m.renderOrder = 2;
+  m.userData.cue = true;
+  model.add(m);
+  return m;
+}
+
+/** Icicles hanging from the top front edge of something frozen, so a freeze reads beside the frost on its parts. */
+function animateIcicles(model: THREE.Object3D, c: CueCondition) {
+  let hung = partsOf(model).cues?.icicles;
+  if (c.stopped !== 'frost') {
+    if (hung) hung.visible = false;
+    return;
+  }
+  const cues = cuesOf(model);
+  hung = cues.icicles ??= icicles(model, cues.box, c.id);
+  hung.visible = true;
+}
+
+/**
+ * Show every cue an item gives: of its wear, its dirt, its noise and its warmth, an engine running, a rattle from next
+ * door, and a mishap that has stopped it.
  */
 export function animateCues(model: THREE.Object3D, c: CueCondition, t: number) {
   const look = WEAR_LOOKS[c.type];
@@ -462,9 +710,14 @@ export function animateCues(model: THREE.Object3D, c: CueCondition, t: number) {
   if (lamp) {
     const bright = (lamp.userData.bright ??= lamp.emissiveIntensity) as number;
     // an engine's light is full on while it runs, and low while it stands by
-    wearLight(lamp, c.wear, c.id, exhaust && c.running <= 0 ? bright * STANDBY_LIGHT : bright, t);
+    wearLight(lamp, c.wear, c.id, exhaust && c.running <= 0 ? bright * STANDBY_LIGHT : bright, t, c.stopped === 'off');
   }
-  if (dirty) grime(dirty, c.dirt);
+  if (c.stopped || partsOf(model).cues) dressStopped(model, c.stopped);
+  if (dirty) {
+    grime(dirty, c.dirt);
+    // the grime is worked out afresh each frame, so the ice goes on over it
+    frost(dirty, c.stopped === 'frost');
+  }
   if (look === 'shudder') animateLean(model, c, t);
   animateChug(model, c, t);
   animateRattle(model, c, look === 'shudder', t);
@@ -472,4 +725,6 @@ export function animateCues(model: THREE.Object3D, c: CueCondition, t: number) {
   animateRipples(model, c, t);
   animateWisps(model, c, t);
   animateFumes(model, c, t);
+  animateWasps(model, c, t);
+  animateIcicles(model, c);
 }

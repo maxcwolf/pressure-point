@@ -6,7 +6,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 
 import { mergeStill } from './merge';
 import { blob, cached, corner, cyl, DARK, mat, put, sph } from './parts';
-import type { TreeSpot } from './tree';
+import { leafMaterial, type TreeSpot } from './tree';
 
 /** An office block: where its middle stands, how wide (along x) and deep (along z) it is, its floors and its seed. */
 export interface Block {
@@ -65,8 +65,8 @@ export function buildOffices(blocks: readonly Block[]): THREE.Group {
   return g;
 }
 
-/** The leaves' colors, the park's own, so the street trees share its materials. */
-const LEAF_COLORS = [0x5fae5a, 0x74b85c] as const;
+/** Which of the park's leaves the street trees wear, by their colors: the first and the third, so they turn with it. */
+const STREET_LEAVES = [0, 2] as const;
 
 /** Street trees: each a slim trunk with a tidy round crown, in a square planter of pale stone filled with earth. */
 export function buildStreetTrees(spots: readonly TreeSpot[]): THREE.Group {
@@ -79,7 +79,7 @@ export function buildStreetTrees(spots: readonly TreeSpot[]): THREE.Group {
     put(g, slab(0.7, 0.04, 0.7, 1), earth, x, 0.26, z).castShadow = false;
     const trunk = 1 + (seed % 3) * 0.12;
     put(g, cyl(0.07, 0.09, trunk, 12), bark, x, trunk / 2 + 0.2, z);
-    const leaves = mat(LEAF_COLORS[seed % LEAF_COLORS.length] ?? LEAF_COLORS[0], 0.78);
+    const leaves = leafMaterial(STREET_LEAVES[seed % STREET_LEAVES.length] ?? 0);
     put(g, blob(0.56), leaves, x, trunk + 0.62, z).scale.set(1, 1.12, 1);
     put(g, blob(0.34), leaves, x + 0.3, trunk + 0.35, z + 0.18);
   }

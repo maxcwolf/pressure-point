@@ -8,7 +8,8 @@
 import { captureException, logger } from '@sentry/browser';
 
 import type { DesktopApi, SaveCopy } from '../../electron/api';
-import { type CenterId, CENTERS, CONDITIONS, DAYS_PER_MONTH, ITEMS, MODALITIES, ROLES, ROOMS } from '../core/data';
+import { type CenterId, CENTERS, CONDITIONS, ITEMS, MODALITIES, ROLES, ROOMS } from '../core/data';
+import { dateOf } from '../core/format';
 import { SAVE_VERSION } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { upgradeSave } from '../core/state/upgrade';
@@ -47,17 +48,19 @@ export interface SaveInfo {
   healed: number;
   /** The center the game is set in; absent in entries written before there were centers, which were sandbox games. */
   center?: CenterId;
+  /** The month of the year the game opened in; absent in entries written before games could open later than January. */
+  startMonth?: number;
 }
 
 export type SaveError = 'invalid' | 'full';
 
-/** "Day 12, Month 3, Year 1" for a count of elapsed game days. */
-export function gameDate(day: number): string {
-  const d = Math.floor(day);
-  return `Day ${(d % DAYS_PER_MONTH) + 1}, Month ${(Math.floor(d / DAYS_PER_MONTH) % 12) + 1}, Year ${Math.floor(d / (DAYS_PER_MONTH * 12)) + 1}`;
+/** "Day 12, Month 3, Year 1" for a count of elapsed game days, in a game that opened in `startMonth`. */
+export function gameDate(day: number, startMonth = 0): string {
+  const d = dateOf(day, startMonth);
+  return `Day ${d.day}, Month ${d.month}, Year ${d.year}`;
 }
 /** The name a save gets when the player gives none: the game date. */
-export const defaultSaveName = (s: GameState) => gameDate(s.day);
+export const defaultSaveName = (s: GameState) => gameDate(s.day, s.startMonth);
 
 /** The list entry for a save: its name, time and headline figures. */
 function summarize(id: string, name: string, s: GameState, savedAt: number): SaveInfo {
@@ -70,6 +73,7 @@ function summarize(id: string, name: string, s: GameState, savedAt: number): Sav
     stars: s.stars,
     healed: s.stats.healed,
     center: s.center,
+    startMonth: s.startMonth,
   };
 }
 
@@ -312,7 +316,8 @@ export function deleteSave(id: string) {
 export function archiveAutosave(now = Date.now()): boolean {
   const old = readSave(AUTOSAVE_ID);
   if (!old) return keepUnreadable(now);
-  if (typeof writeSave(old, `Previous game (${gameDate(old.day)})`, PREVIOUS_ID, now) === 'string') return false;
+  if (typeof writeSave(old, `Previous game (${gameDate(old.day, old.startMonth)})`, PREVIOUS_ID, now) === 'string')
+    return false;
   copyThumb(AUTOSAVE_ID, PREVIOUS_ID);
   deleteSave(AUTOSAVE_ID);
   return true;
@@ -379,7 +384,12 @@ export function importSave(text: string, now = Date.now()): SaveInfo | SaveError
   const state = parseState(JSON.stringify(file.state ?? null));
   if (!state) return 'invalid';
   const name = typeof file.name === 'string' && file.name.trim() ? file.name : defaultSaveName(state);
-  return writeSave(state, name === 'Autosave' ? `Imported (${gameDate(state.day)})` : name, undefined, now);
+  return writeSave(
+    state,
+    name === 'Autosave' ? `Imported (${gameDate(state.day, state.startMonth)})` : name,
+    undefined,
+    now,
+  );
 }
 
 /** Somewhere outside localStorage that keeps a copy of every save: the desktop app, in files. */

@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 
 import { centerOf } from '../core/data';
+import { calendarDay } from '../core/format';
 import { type Season, seasonOf } from '../core/sim/twists';
 import type { GameState } from '../core/state/types';
 import { type Ground, seasonGround } from './daylight';
@@ -104,7 +105,7 @@ export function inSeason(name: keyof typeof SETTINGS, season: Season): Setting {
 }
 
 /** The colors of a game's setting, as it looks in the season. */
-export const settingOf = (s: GameState): Setting => inSeason(settingName(s), seasonOf(s.day));
+export const settingOf = (s: GameState): Setting => inSeason(settingName(s), seasonOf(calendarDay(s)));
 
 /**
  * The ground round the building, a lawn or whatever the setting has: one material the light can recolor with the season

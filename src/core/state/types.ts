@@ -722,6 +722,11 @@ export interface GameState {
   reputation: number;
   /** Elapsed game days (fractional). */
   day: number;
+  /**
+   * The month of the year the game opened in, from 0 for January: the calendar (the season, the weather and the date
+   * shown) runs that many months ahead of the day count. 0 in a save from before games could open later in the year.
+   */
+  startMonth: number;
   speed: number;
   open: boolean;
   rooms: Room[];

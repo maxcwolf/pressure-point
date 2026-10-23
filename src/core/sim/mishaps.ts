@@ -18,7 +18,7 @@ import {
   WEAR_REPAIR,
 } from '../data';
 import { tuning } from '../difficulty';
-import { money } from '../format';
+import { calendarDay, money } from '../format';
 import { irnd, pick, random } from '../random';
 import type { GameState, Mishap, Room, Staff } from '../state/types';
 import { say } from './chars';
@@ -32,7 +32,7 @@ export function chooseMishap(s: GameState): MishapId | null {
   const own = centerOf(s).mishap;
   if (!own) return null;
   // a freeze only comes in winter
-  if (MISHAPS[own].winterOnly && seasonOf(s.day) !== 'winter') return null;
+  if (MISHAPS[own].winterOnly && seasonOf(calendarDay(s)) !== 'winter') return null;
   return own;
 }
 

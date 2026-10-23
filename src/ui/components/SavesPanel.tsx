@@ -150,8 +150,8 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
               <div class="save-what">
                 <b>{s.name}</b>{' '}
                 <span>
-                  {gameDate(s.day)} · {money(s.money)} · {'★'.repeat(s.stars) || 'no stars'} · {s.healed} healed · saved{' '}
-                  {timeAgo(s.savedAt)}
+                  {gameDate(s.day, s.startMonth)} · {money(s.money)} · {'★'.repeat(s.stars) || 'no stars'} · {s.healed}{' '}
+                  healed · saved {timeAgo(s.savedAt)}
                 </span>
               </div>{' '}
               <div class="save-actions">

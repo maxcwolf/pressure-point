@@ -67,7 +67,7 @@ export function PayrollTab() {
   const h = paydaysInHand(s);
   const note = inHandNote(h, FIRST_PAYDAYS - s.months.length);
   const flow = cashflow(s);
-  const payday = dateOf(paydayOf(s));
+  const payday = dateOf(paydayOf(s), s.startMonth);
   const lastNet = s.months.length ? netOf(s.lastLedger) : null;
   /** Green for money in hand or coming in, red for money going out or missing. */
   const sign = (n: number) => (n >= 0 ? 'pos' : 'neg');

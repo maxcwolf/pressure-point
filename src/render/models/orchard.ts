@@ -1,6 +1,8 @@
-// Apple trees for the orchards, planted in rows and drawn as a few instanced meshes: trunks, leaves and apples.
+// Apple trees for the orchards, planted in rows and drawn as a few instanced meshes: trunks, leaves and apples; in
+// blossom in spring, green with red apples in summer, yellowing with the apples ripe in autumn, and bare in winter.
 import * as THREE from 'three';
 
+import type { Season } from '../../core/sim/twists';
 import { blob, cyl, mat, sph } from './parts';
 import type { TreeSpot } from './tree';
 
@@ -15,6 +17,32 @@ const APPLES = [
 /** The canopy's size, and how high it sits on its trunk. */
 const CANOPY = 0.6;
 const TRUNK = 0.75;
+
+/** How an orchard looks in each season: the color of its canopies, and whether its apples hang on them. */
+export const ORCHARD_SEASONS: Readonly<Record<Season, { canopy: number; apples: boolean }>> = {
+  spring: { canopy: 0xf0c4d4, apples: false },
+  summer: { canopy: 0x5aa34f, apples: true },
+  autumn: { canopy: 0xa9a443, apples: true },
+  winter: { canopy: 0x9c8e74, apples: false },
+};
+
+/**
+ * The canopies and apples of every orchard, materials of their own rather than shared, so a change of season repaints
+ * them all at once with nothing built again.
+ */
+const CANOPY_MAT = new THREE.MeshStandardMaterial({
+  color: ORCHARD_SEASONS.summer.canopy,
+  roughness: 0.78,
+  metalness: 0,
+});
+const APPLE_MAT = new THREE.MeshStandardMaterial({ color: 0xd9362f, roughness: 0.45, metalness: 0 });
+
+/** Turn every orchard to a season: its canopies' color, and its apples hung or gone. */
+export function orchardFor(season: Season) {
+  const look = ORCHARD_SEASONS[season];
+  CANOPY_MAT.color.setHex(look.canopy);
+  APPLE_MAT.visible = look.apples;
+}
 
 /** An instanced mesh holding one copy of a shape for each of these placements, casting and catching shadows. */
 function instanced(geo: THREE.BufferGeometry, material: THREE.Material, placements: readonly THREE.Matrix4[]) {
@@ -69,8 +97,8 @@ export function buildOrchard(spots: readonly TreeSpot[]): THREE.Group {
   const orchard = new THREE.Group();
   orchard.add(instanced(cyl(0.07, 0.1, 1, 16), mat(0x7a5a3c, 0.9), trunks));
   // a smooth round canopy, like the park's trees and the items' rounded shapes
-  orchard.add(instanced(blob(1), mat(0x5aa34f, 0.78), canopies));
-  const apple = instanced(sph(0.075, 8), mat(0xd9362f, 0.45), apples);
+  orchard.add(instanced(blob(1), CANOPY_MAT, canopies));
+  const apple = instanced(sph(0.075, 8), APPLE_MAT, apples);
   // the apples are too small to cast a shadow worth drawing
   apple.castShadow = false;
   orchard.add(apple);

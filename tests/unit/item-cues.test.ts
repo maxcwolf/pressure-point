@@ -299,6 +299,114 @@ describe('noise and warmth', () => {
   });
 });
 
+/** Every material a model is drawn in now, but its cues'. */
+function materialsOf(root: THREE.Object3D) {
+  const out: THREE.Material[] = [];
+  root.traverse((o) => {
+    if (o instanceof THREE.Mesh && !o.userData.cue) out.push(...[o.material as THREE.Material].flat());
+  });
+  return out;
+}
+
+/** The materials of a model that glow. */
+const glowing = (root: THREE.Object3D) =>
+  materialsOf(root).filter(
+    (m) => m instanceof THREE.MeshStandardMaterial && m.emissiveIntensity > 0 && m.emissive.getHex() !== 0,
+  );
+
+describe('a mishap on a model', () => {
+  it('switches off everything that glows on what a power cut stops, and switches it back on after', () => {
+    for (const type of ['snack_machine', 'stim_unit', 'stone_warmer', 'television', 'arcade_machine'] as const) {
+      const model = shown(type);
+      expect(glowing(model).length, type).toBeGreaterThan(0);
+      animateItemParts(model, condition(type, { stopped: 'off' }), 0);
+      expect(glowing(model), type).toEqual([]);
+      animateItemParts(model, condition(type), 0);
+      expect(glowing(model).length, type).toBeGreaterThan(0);
+    }
+  });
+
+  it('leaves the materials other models share alone, and gives every stopped model of a kind the same ones', () => {
+    const one = shown('television', { stopped: 'off' });
+    const two = shown('television', { stopped: 'off' });
+    const lit = shown('television');
+    expect(materialsOf(one)).toEqual(materialsOf(two));
+    expect(glowing(lit).length).toBeGreaterThan(0);
+  });
+
+  it('glazes what a freeze stops with ice, hangs icicles from it, and thaws it after', () => {
+    const model = shown('toilet');
+    const dry = materialsOf(model);
+    const colors = dry.map((m) => (m as THREE.MeshStandardMaterial).color.clone());
+    animateItemParts(model, condition('toilet', { stopped: 'frost' }), 0);
+    const iced = materialsOf(model);
+    expect(iced.length).toBe(dry.length);
+    iced.forEach((m, i) => {
+      // bluer than it was: a material of its own, or its own grimy surface glazed in place
+      const was = colors[i]!;
+      const now = (m as THREE.MeshStandardMaterial).color;
+      expect(now.b - now.r).toBeGreaterThan(was.b - was.r);
+    });
+    expect(partsOf(model).cues?.icicles?.visible).toBe(true);
+    animateItemParts(model, condition('toilet'), 0);
+    expect(materialsOf(model)).toEqual(dry);
+    expect(partsOf(model).cues?.icicles?.visible).toBe(false);
+  });
+
+  it('sends wasps buzzing round what they have stopped, never still, and away once they have gone', () => {
+    const model = shown('bin', { stopped: 'wasps' });
+    const wasps = partsOf(model).cues?.wasps;
+    expect(wasps?.visible).toBe(true);
+    const box = partsOf(model).cues!.box;
+    /** Where each wasp is at a moment. */
+    const at = (t: number) => {
+      animateItemParts(model, condition('bin', { stopped: 'wasps' }), t);
+      const spots = wasps!.geometry.getAttribute('position');
+      return Array.from({ length: spots.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(spots, i));
+    };
+    const a = at(1);
+    const b = at(1.1);
+    expect(a.length).toBeGreaterThan(4);
+    a.forEach((p, i) => {
+      // over the bin, and moving
+      expect(p.y).toBeGreaterThan(box.max.y);
+      expect(p.distanceTo(b[i]!)).toBeGreaterThan(0.02);
+    });
+    animateItemParts(model, condition('bin'), 2);
+    expect(wasps!.visible).toBe(false);
+    // a power cut or a freeze brings no wasps
+    expect(partsOf(shown('bin', { stopped: 'off' })).cues?.wasps).toBeUndefined();
+  });
+
+  it('shows on the items in the game the mishap under way has stopped, and only on those', () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    const snack = sim.placeItem('snack_machine', 6, 4, 0)!;
+    const bin = sim.placeItem('bin', 9, 4, 0)!;
+    const items = new ItemsLayer(new THREE.Scene(), sim);
+    items.sync();
+    /** The model drawn for an item. */
+    const model = (id: number) => items.models().find((m) => m.userData.itemId === id)!;
+    const lamp = partsOf(model(snack.id)).lamp!;
+    items.animate(0);
+    expect(lamp.emissiveIntensity).toBeGreaterThan(0);
+    const d = sim.s.day;
+    sim.s.mishap = { kind: 'power', starts: d - 0.1, ends: d + 1, prepared: false, started: true };
+    items.animate(0);
+    expect(lamp.emissiveIntensity).toBe(0);
+    expect(partsOf(model(bin.id)).cues?.wasps).toBeUndefined();
+    // prepared for, nothing is stopped
+    sim.s.mishap.prepared = true;
+    items.animate(0);
+    expect(lamp.emissiveIntensity).toBeGreaterThan(0);
+    sim.s.mishap = { kind: 'wasps', starts: d - 0.1, ends: d + 1, prepared: false, started: true };
+    items.animate(0);
+    expect(lamp.emissiveIntensity).toBeGreaterThan(0);
+    expect(partsOf(model(snack.id)).cues?.wasps?.visible).toBe(true);
+    expect(partsOf(model(bin.id)).cues?.wasps?.visible).toBe(true);
+  });
+});
+
 describe("a fountain's water", () => {
   it('runs down from the bowl into the basin, and rings spread from the orb toward the rim as they fade', () => {
     const model = shown('fountain');

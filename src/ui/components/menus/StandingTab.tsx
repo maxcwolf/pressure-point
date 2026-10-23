@@ -33,7 +33,7 @@ function Rival() {
       <h4>
         <IconText id="ui-rival">{`${RIVAL_NAME}, across the street`}</IconText>
       </h4>
-      <p class="sub">{rivalOpening(r.opened, s.rivalOn)}</p>
+      <p class="sub">{rivalOpening(r.opened, s.rivalOn, s.startMonth)}</p>
       {open && (
         <>
           <p class="sub slogan">{`“${RIVAL_SLOGAN}.” A ${gradeDef(rivalGrade(s)).name}.`}</p>
@@ -49,7 +49,7 @@ function Rival() {
           <p class="sub">{counterplayLine(r.knocked)}</p>
           <p class={cx('sub', onSale(s) && 'sale')}>
             {onSale(s)
-              ? `Holding a sale: ${Math.round(SALE_DISCOUNT * 100)}% off until day ${dateOf(r.saleUntil).day} of month ${dateOf(r.saleUntil).month}. Lower your prices to keep your guests.`
+              ? `Holding a sale: ${Math.round(SALE_DISCOUNT * 100)}% off until day ${dateOf(r.saleUntil, s.startMonth).day} of month ${dateOf(r.saleUntil, s.startMonth).month}. Lower your prices to keep your guests.`
               : 'No sale on.'}
           </p>
           <p class="sub">{drawNote(rivalDraw(s))}</p>

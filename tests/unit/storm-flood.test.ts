@@ -10,7 +10,7 @@ import { drainEvents } from '../../src/core/sim/events';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { floodRestroom, floodTiles, newMishap, updateMishaps } from '../../src/core/sim/mishaps';
 import { puddleSlow } from '../../src/core/sim/novelties';
-import { buildPuddle, rippleFlood } from '../../src/render/models/puddle';
+import { buildPuddle, floodParts, rippleFlood } from '../../src/render/models/puddle';
 import { lampStates } from '../../src/render/room-lamp';
 import { staffStatus } from '../../src/ui/lib/status';
 import { addRestroom, hire, openCenter, run, runUntil, toasts } from './helpers';
@@ -172,16 +172,19 @@ describe('a flooded restroom', () => {
 });
 
 describe('flood water, drawn', () => {
+  /** The pools of a puddle: of flood water, those that are not its rings; of anything else, every part. */
+  const poolsOf = (g: THREE.Group) => floodParts(g).pools ?? (g.children as THREE.Mesh[]);
   /** The radius of each pool in a puddle. */
-  const radii = (g: THREE.Group) =>
-    g.children.map((m) => ((m as THREE.Mesh).geometry as THREE.CylinderGeometry).parameters.radiusTop);
+  const radii = (g: THREE.Group) => poolsOf(g).map((m) => (m.geometry as THREE.CylinderGeometry).parameters.radiusTop);
 
   it('lies in wider pools than a puddle of kombucha, and is blue', () => {
     for (let id = 1; id < 20; id++)
       expect(Math.min(...radii(buildPuddle(id, true)))).toBeGreaterThan(Math.max(...radii(buildPuddle(id))));
-    const pool = buildPuddle(1, true).children[0] as THREE.Mesh;
+    const pool = poolsOf(buildPuddle(1, true))[0]!;
     const color = (pool.material as THREE.MeshStandardMaterial).color;
     expect(color.b).toBeGreaterThan(color.r);
+    // a light cyan, not a dark blue that reads as a rug
+    expect(color.getHSL({ h: 0, s: 0, l: 0 }).l).toBeGreaterThan(0.45);
   });
 
   it('stays inside its tile, so none shows through a wall beside it, however far it has swollen', () => {
@@ -189,34 +192,40 @@ describe('flood water, drawn', () => {
       const g = buildPuddle(id, true);
       for (const t of [0, 0.4, 0.8, 1.2, 1.6, 2, 2.4, 2.8, 3.2, 3.6, 4, 4.4]) {
         rippleFlood(g, t, id);
-        for (const pool of g.children as THREE.Mesh[]) {
+        for (const pool of poolsOf(g)) {
           const r = (pool.geometry as THREE.CylinderGeometry).parameters.radiusTop * pool.scale.x;
           expect(Math.max(Math.abs(pool.position.x), Math.abs(pool.position.z)) + r).toBeLessThanOrEqual(0.5);
         }
+        for (const ring of floodParts(g).rings ?? []) expect(ring.scale.x).toBeLessThanOrEqual(0.5);
       }
     }
   });
 
-  it('moves: a glow that wobbles and pools that swell a little, with no part more, starting still', () => {
+  it('moves: a glow that wobbles, pools that swell a little and rings that spread, with no part more, starting still', () => {
     const g = buildPuddle(3, true);
-    const pool = g.children[0] as THREE.Mesh;
+    const { pools = [], rings = [] } = floodParts(g);
+    const pool = pools[0]!;
     const water = pool.material as THREE.MeshStandardMaterial;
     expect(water.emissiveIntensity).toBe(0);
+    expect(rings.every((r) => !r.visible)).toBe(true);
     // one material for the whole puddle, its own
-    expect(g.children.every((m) => (m as THREE.Mesh).material === water)).toBe(true);
-    expect(buildPuddle(4, true).children[0]).not.toHaveProperty('material', water);
+    expect(pools.every((m) => m.material === water)).toBe(true);
+    expect(poolsOf(buildPuddle(4, true))[0]).not.toHaveProperty('material', water);
     const glows = new Set<number>();
     const sizes = new Set<number>();
+    const spread = new Set<number>();
     for (let t = 0; t < 5; t += 0.25) {
       rippleFlood(g, t, 3);
-      expect(water.emissiveIntensity).toBeGreaterThanOrEqual(0.05);
-      expect(water.emissiveIntensity).toBeLessThanOrEqual(0.15);
+      expect(water.emissiveIntensity).toBeGreaterThanOrEqual(0.2);
+      expect(water.emissiveIntensity).toBeLessThanOrEqual(0.4);
       expect(Math.abs(pool.scale.x - 1)).toBeLessThanOrEqual(0.03);
       glows.add(Math.round(water.emissiveIntensity * 100));
       sizes.add(Math.round(pool.scale.x * 1000));
+      spread.add(Math.round(rings[0]!.scale.x * 100));
     }
     expect(glows.size).toBeGreaterThan(3);
     expect(sizes.size).toBeGreaterThan(3);
-    expect(g.children).toHaveLength(4);
+    expect(spread.size).toBeGreaterThan(5);
+    expect(g.children).toHaveLength(pools.length + rings.length);
   });
 });
