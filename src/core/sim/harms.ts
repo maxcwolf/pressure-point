@@ -242,7 +242,7 @@ function failureNote(
     case 'rest':
       return {
         ...base,
-        help: 'This treatment needs a lie-down afterwards. A Recovery Lounge with a Recliner gives guests one.',
+        help: 'This treatment needs a lie-down afterwards. A Recovery Lounge with a Lounger gives guests one.',
         about,
         fix: { menu: 'rooms' },
       };

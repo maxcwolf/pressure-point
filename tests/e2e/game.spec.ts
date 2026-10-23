@@ -2955,7 +2955,7 @@ test.describe('the recovery lounge', () => {
     await game.card('Recovery Lounge').click();
     await game.dragOutRoom(3, 3);
     await game.clickWall('south');
-    await expect(page.locator('#hint')).toContainText('Place the Recliner inside the room');
+    await expect(page.locator('#hint')).toContainText('Place the Lounger inside the room');
     await game.placeHeld();
     await page.keyboard.press('Enter');
     await expect(page.locator('#toasts')).toContainText('Recovery Lounge built!');

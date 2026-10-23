@@ -6,7 +6,7 @@ import { conditionOf, type ItemDef, ITEMS, ROLES, SIDEWALK_Y } from '../core/dat
 import { streetEnds } from '../core/sim/chars';
 import type { Sim } from '../core/sim/sim';
 import type { Char, Guest } from '../core/state/types';
-import { actOf, lyingAt } from './acts';
+import { actOf, itemIdAt, lyingAt } from './acts';
 import { Crowd, type Viewpoint } from './crowd';
 import { disposeOwned } from './disposal';
 import { applyGuestGag } from './gags/apply';
@@ -149,10 +149,11 @@ export class PeopleLayer {
 
   /**
    * The item someone is at, as far as what they do there goes: the machine a guest has gone to for a drink, a snack or
-   * a game, the station a guest is being served at, or a member of staff's post.
+   * a game, the Lounger they rest on after a treatment, the station a guest is being served at, or a member of staff's
+   * post.
    */
   private itemAt(c: Char): ItemDef | undefined {
-    const id = c.kind === 'guest' ? (c.state === 'need' ? c.claimItem : c.station) : c.kind === 'staff' ? c.post : 0;
+    const id = itemIdAt(c);
     const it = id ? this.sim.world.item(id) : undefined;
     return it && ITEMS[it.type];
   }

@@ -42,12 +42,21 @@ export function actOf(c: Char, at?: ItemDef): Act | undefined {
   }
 }
 
+/**
+ * The id of the item someone is at, or 0: a guest getting a drink, a snack or a game, or resting after a treatment, is
+ * at the one they claimed, and any other guest at their station; a member of staff is at their post.
+ */
+export function itemIdAt(c: Char): number {
+  if (c.kind === 'guest') return c.state === 'need' || c.state === 'resting' ? c.claimItem : c.station;
+  return c.kind === 'staff' ? c.post : 0;
+}
+
 /** How someone lies on an item: face down with the face turned aside, or on their back. */
 export type Lying = NonNullable<AccessDef['lie']>;
 
 /**
  * How a guest lying on an item lies there, as its spot says: face down on a massage or acupuncture table, on their back
- * on a Reiki Table, a mat or a Recliner. Anyone else, or a guest on a machine, lies as they always have.
+ * on a Reiki Table, a mat or a Lounger. Anyone else, or a guest on a machine, lies as they always have.
  */
 export function lyingAt(c: Char, at?: ItemDef): Lying | undefined {
   if (c.kind !== 'guest' || c.pose !== 'lie') return undefined;

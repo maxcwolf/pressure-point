@@ -90,7 +90,7 @@ export const BOT_FLAGS = [
    * since the game itself stopped anything walling anyone in: it made no difference that could be told from the seeds.
    */
   'clear',
-  /** Train a Caretaker in Mechanics and upgrade the treatment equipment; a chart on the wall; a Recliner for each. */
+  /** Train a Caretaker in Mechanics and upgrade the treatment equipment; a chart on the wall; a Lounger for each. */
   'kit',
   /** Take on only the emergencies the staff can see through in time, and put their guests first while one runs. */
   'emergencies',
@@ -204,7 +204,7 @@ export const RESERVES = [
   'training',
   /** Another room, desk, consulting room or Posture Lab (`grow`, `growOnProfit`, `buildLab`; rooms at half of it). */
   'growth',
-  /** Charts, Recliners and equipment upgrades (`equip`). */
+  /** Charts, Loungers and equipment upgrades (`equip`). */
   'kit',
   /** A Qi Gong Studio and its Practice Spots (`classes`). */
   'classes',
@@ -2630,7 +2630,7 @@ export class Bot {
   }
 
   /**
-   * Kit a good player buys once the first star opens it: a chart on the wall of every room it helps, a Recliner for
+   * Kit a good player buys once the first star opens it: a chart on the wall of every room it helps, a Lounger for
    * every two practitioners trained in a technique that needs a rest, and, once a Caretaker can install them, the
    * upgrades for the treatment equipment, the least upgraded and busiest first, one a day while the center pays its
    * way and the bot is not saving.
@@ -2646,8 +2646,8 @@ export class Bot {
     }
     const resting = s.staff.filter((st) => st.state !== 'leaving' && st.quals.some((q) => MODALITIES[q].rest)).length;
     const lounge = this.rooms('recovery')[0];
-    if (lounge && this.count('recliner') < Math.ceil(resting / 2) && s.money > ITEMS.recliner.cost + reserve)
-      this.placeIn(lounge, 'recliner');
+    if (lounge && this.count('lounger') < Math.ceil(resting / 2) && s.money > ITEMS.lounger.cost + reserve)
+      this.placeIn(lounge, 'lounger');
     if (!this.mechanic() || this.saving() || this.profit() <= 0) return;
     /** How busy the discipline an item serves was last month. */
     const busy = (it: Item) => {

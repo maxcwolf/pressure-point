@@ -157,7 +157,7 @@ export const CLASS_PLACES: readonly number[] = [6, 8, 9, 11, 12];
 
 /** How long a guest lies back in a Recovery Lounge after a treatment that leaves them needing a rest. */
 export const REST_SECONDS = 15;
-/** Taken off the chance of such a treatment working when there is no free Recliner to rest on afterwards. */
+/** Taken off the chance of such a treatment working when there is no free Lounger to rest on afterwards. */
 export const NO_REST_PENALTY = 0.1;
 /** How many times over a psychedelic ceremony feels its room's set and setting: its vibes, noise, linens and prestige. */
 export const SETTING_WEIGHT = 2;

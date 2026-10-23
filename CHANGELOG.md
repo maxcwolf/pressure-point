@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **The Recliner is the Lounger.** The Recovery Lounge's bed is back to the padded lounger of 0.30 without arms, now in dusty blue with its cushion in pads and a blanket folded over the foot, and resting guests lie on their backs on it, where after a massage or acupuncture they used to lie face down. Saved games and room templates keep theirs.
+
 ## v0.33.1
 
 - **The tutorial stops the clock.** Its second step asks you to pause, ringing the pause button, so nothing happens while the opening is built, and once the desk, both rooms and all three hires are in it asks you to start the clock again, ringing play. A player who never pauses is not asked to start it.

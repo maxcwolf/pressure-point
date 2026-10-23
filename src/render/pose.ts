@@ -315,7 +315,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   if (healed) cureRig(rig, first ? t - 2 * CURE : t);
   const curing = healed && !rig.cured ? Math.max(0, t - rig.curedAt) : NaN;
   showExpression(rig.face, expressionOf(c));
-  // resting on their back, on a table, a mat or a Recliner, the eyes are shut; anyone else blinks now and then
+  // resting on their back, on a table, a mat or a Lounger, the eyes are shut; anyone else blinks now and then
   const asleep =
     c.kind === 'guest' && c.pose === 'lie' && (c.state === 'resting' || (c.state === 'served' && cues.lie === 'back'));
   showEyes(rig.face, asleep || blinkAt(c.id, t));

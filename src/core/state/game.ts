@@ -125,8 +125,9 @@ export const defaultPolicy = (): Policy => ({
  * 36: the first game's heads-ups, and the explanations of harm that keeps coming to guests.
  * 37: the tutorial and the cards that explain each thing the first time it happens, and whether the land for
  *     sale has been looked over, for the first game's heads-up on land.
+ * 38: the Recliner renamed the Lounger.
  */
-export const SAVE_VERSION = 37;
+export const SAVE_VERSION = 38;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

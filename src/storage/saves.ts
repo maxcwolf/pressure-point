@@ -8,7 +8,7 @@
 import { captureException, logger } from '@sentry/browser';
 
 import type { DesktopApi, SaveCopy } from '../../electron/api';
-import { type CenterId, CENTERS, CONDITIONS, ITEMS, MODALITIES, ROLES, ROOMS } from '../core/data';
+import { type CenterId, CENTERS, CONDITIONS, ITEMS, MODALITIES, renamedItem, ROLES, ROOMS } from '../core/data';
 import { dateOf } from '../core/format';
 import { SAVE_VERSION } from '../core/state/game';
 import type { GameState } from '../core/state/types';
@@ -82,7 +82,8 @@ const CONDITION_IDS = new Set<unknown>(CONDITIONS.map((c) => c.id));
 /** A test for whether a value names an entry in one of the content tables. */
 const keyOf = (table: object) => (id: unknown) => typeof id === 'string' && Object.hasOwn(table, id);
 const knownRoom = keyOf(ROOMS);
-const knownItem = keyOf(ITEMS);
+/** Whether an item's type is one this version knows, under its name now or one it has been renamed from. */
+const knownItem = (type: unknown) => typeof type === 'string' && Object.hasOwn(ITEMS, renamedItem(type));
 const knownRole = keyOf(ROLES);
 const knownModality = keyOf(MODALITIES);
 const knownCenter = keyOf(CENTERS);

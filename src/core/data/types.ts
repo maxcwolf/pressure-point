@@ -121,7 +121,7 @@ export type ItemType =
   | 'living_wall'
   | 'wall_fountain'
   | 'certificate'
-  | 'recliner'
+  | 'lounger'
   | 'instructor_mat'
   | 'practice_spot'
   | 'ceremony_mat'

@@ -29,7 +29,7 @@ export const WEAR_LOOKS: Partial<Record<ItemType, WearLook>> = {
   massage_table: 'shudder',
   acu_table: 'shudder',
   reiki_table: 'shudder',
-  recliner: 'shudder',
+  lounger: 'shudder',
   tea_station: 'shudder',
   kombucha_tap: 'shudder',
   sound_mat: 'dust',

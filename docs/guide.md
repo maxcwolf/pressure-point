@@ -61,7 +61,7 @@ The first time some things happen, a **lesson** card opens over the game, paused
 Guests and staff show how they are doing before any bubble goes up, so you can see trouble coming from across the building.
 
 - **Waiting guests** grow more impatient in steps you can tell apart at a glance. Content, they stand at ease. Under 60 patience they turn **restless**, shifting from foot to foot and glancing about. Under 40 they are **impatient**: arms folded, a foot tapping, and a frown. Under 25 they are **fed up**: hands on hips and turned toward the front door, or sitting with their head in their hands, and the 💢 bubble goes up as the last warning before they leave. A restless crowd is the time to add benches, tea or another member of staff.
-- **Faces** follow how guests feel: a frown as their patience runs short, a wince when their condition is poor, wide eyes and an open mouth when frightened on a bad trip or stressed in an outbreak, eyes closed resting on a Recliner or lying back for a treatment, and a big grin once they are healed, as the symptom shrinks away in a puff of sparkles.
+- **Faces** follow how guests feel: a frown as their patience runs short, a wince when their condition is poor, wide eyes and an open mouth when frightened on a bad trip or stressed in an outbreak, eyes closed resting on a Lounger or lying back for a treatment, and a big grin once they are healed, as the symptom shrinks away in a puff of sparkles.
 - **Staff with nothing to do** pass the time after a few seconds: a long stretch with both arms overhead, a slow look round with their hands behind their back, or a long look at their watch, and they stroll about with their arms barely swinging. Someone on a break or on a course keeps to it. A clinic full of stretching staff has more staff than guests.
 - **Rooms** carry a sign on their door with a lamp on top: **green** when someone is at work there (or, for a restroom or staff room, when it is finished and whole), **amber**, pulsing, when nobody is at its station, gone on a break, away or not yet hired, **red**, pulsing faster, when a station or something the room was built with is broken, and **grey** while it is still a blueprint.
 
@@ -69,7 +69,7 @@ Guests and staff show how they are doing before any bubble goes up, so you can s
 
 A diagnosis prescribes a treatment. It only works properly with someone qualified in it and, for some, equipment in the same room. An unqualified member of staff will still try, at about a third of the usual success rate. The **Treatments** menu shows what each one treats and whether you can deliver it. Any member of staff can also take a skill course.
 
-Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupuncture, Chakra Balancing and the Gong Bath) leave a guest needing a rest. From the first star, build a **Recovery Lounge** with a **Recliner** for each guest who might need one at once: they lie back on it for a while before heading home. With no free Recliner, those treatments work 10% less often and the guest goes home woozy.
+Six of the harder ones (Deep Tissue, Cranio-sacral, Moxibustion, Electroacupuncture, Chakra Balancing and the Gong Bath) leave a guest needing a rest. From the first star, build a **Recovery Lounge** with a **Lounger** for each guest who might need one at once: they lie back on it for a while before heading home. With no free Lounger, those treatments work 10% less often and the guest goes home woozy.
 
 **Massage**, delivered in a Massage Suite by Massage Therapists:
 
