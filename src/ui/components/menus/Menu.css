@@ -30,12 +30,14 @@
   grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
 }
 
-/* ringed by the tutorial, a row shrinks to its cards, so the ring wraps them rather than the panel's whole width */
+/* ringed by the tutorial, a row shrinks to its cards, so the ring wraps them rather than the panel's whole width,
+   and takes their corners, so the ring rounds with the cards it holds */
 .cards.guide {
   display: flex;
   flex-wrap: wrap;
   width: fit-content;
   max-width: 100%;
+  border-radius: 14px;
 }
 
 .cards.guide > .card {
