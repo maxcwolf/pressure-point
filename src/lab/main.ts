@@ -243,6 +243,7 @@ const VIEW_CONTROLS: Control[] = [
     ['park', 'Park'],
     ['seaside', 'Seaside'],
     ['mountain', 'Mountain'],
+    ['downtown', 'Downtown'],
   ]),
   ...(Object.keys(VIEWS) as ViewName[]).map((name) =>
     button(name === 'game' ? 'Game angle' : `${name.charAt(0).toUpperCase()}${name.slice(1)}`, () => stage.frame(name)),
