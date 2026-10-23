@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 import type { SceneIconId } from '../core/data';
 import { DIRT_FILTHY, HAMPER_SIZE, ITEMS, type ItemType } from '../core/data';
-import { mishapCarrier } from '../core/sim/mishaps';
+import { mishapCarrier, mishapHolder } from '../core/sim/mishaps';
 import type { Sim } from '../core/sim/sim';
 import { itemHeat } from '../core/sim/warmth';
 import type { Item } from '../core/state/types';
@@ -16,7 +16,8 @@ import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
 import { ghostHung, hangPlace, placeHung } from './hung';
-import { animateCues, type CueCondition, NOISE_CUE, STOP_LOOKS, usedNoise, wearLight } from './item-cues';
+import { animateCues, type CueCondition, NOISE_CUE, STOP_LOOKS, unlitShare, usedNoise, wearLight } from './item-cues';
+import { powerOut } from './lighting';
 import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import { SPILL_SPEED, spillRuns } from './models/items/fountain';
@@ -86,11 +87,15 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
     spillRuns().offset.y = (t * SPILL_SPEED) % 1;
     const churn = Math.sin(t * 9 + it.id) * 0.5 + Math.sin(t * 13.7 + it.id * 2) * 0.5;
     spill.foam.scale.set(1 + churn * 0.012, 0.45 + churn * 0.1, 1 + churn * 0.012);
+    // white froth, drawn without light, dims with the room in a power cut
+    const froth = unlitShare(it);
     (spill.foam.material as THREE.MeshBasicMaterial).opacity = 0.55 + churn * 0.12;
+    (spill.foam.material as THREE.MeshBasicMaterial).color.setScalar(froth);
     spill.rings.forEach((r, i) => {
       const f = (((t * 0.7 + i / 2 + it.id * 0.37) % 1) + 1) % 1;
       r.scale.setScalar(0.1 + f * 0.13);
       (r.material as THREE.MeshBasicMaterial).opacity = 0.5 * Math.min(1, f * 5) * (1 - f);
+      (r.material as THREE.MeshBasicMaterial).color.setScalar(froth);
     });
   }
   // drifting smoke or scent, until a mishap stops it
@@ -220,10 +225,12 @@ export class ItemsLayer {
   animate(t: number) {
     const busy = new Set<number>();
     const rattled = this.sim.rattledRooms();
+    const dark = powerOut(this.sim.s.mishap, !!mishapHolder(this.sim.s));
     for (const it of this.sim.s.items) {
       const model = this.items.get(it.id)?.group;
       if (!model) continue;
-      this.effects(it, model, t, rattled.size > 0 && rattled.has(this.sim.world.zoneAt(it.x, it.y)));
+      const shade = dark && this.sim.world.inside(it.x, it.y) ? 1 : 0;
+      this.effects(it, model, t, rattled.size > 0 && rattled.has(this.sim.world.zoneAt(it.x, it.y)), shade);
       this.marker(model, it, 'wrench', 'marker-broken', it.wear >= 100, t);
       // stale linens show on the table itself, not as flies over it
       this.marker(model, it, 'flies', 'marker-filthy', it.dirt >= DIRT_FILTHY && !ITEMS[it.type].linens, t);
@@ -239,8 +246,11 @@ export class ItemsLayer {
     }
   }
 
-  /** The touches particular to each kind of item, and the props laid on a guest during a session, with its room rattled or not. */
-  private effects(it: Item, model: THREE.Object3D, t: number, rattled: boolean) {
+  /**
+   * The touches particular to each kind of item, and the props laid on a guest during a session, with its room rattled
+   * or not, and as far in the dark of a power cut as it stands.
+   */
+  private effects(it: Item, model: THREE.Object3D, t: number, rattled: boolean, shade: number) {
     animateItemParts(
       model,
       {
@@ -255,6 +265,7 @@ export class ItemsLayer {
         rattled,
         trophies: this.sim.s.trophies.length,
         stopped: this.stopped(it),
+        shade,
       },
       t,
     );

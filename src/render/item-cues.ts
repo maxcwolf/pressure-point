@@ -109,7 +109,18 @@ export interface CueCondition {
   rattled?: boolean;
   /** How a mishap that has taken it out of action shows on it, if one has. */
   stopped?: StopLook | undefined;
+  /** How far it stands in the dark of a power cut, from 0 in the light to 1 inside the building with its lights out. */
+  shade?: number;
 }
+
+/**
+ * How bright a cue drawn without light (smoke, ripples, wisps) shows in the dark, against in the light: it dims with
+ * everything round it in a power cut, rather than glowing as if lit.
+ */
+const UNLIT_IN_SHADE = 0.45;
+
+/** The share of its own brightness a cue drawn without light shows, for how far it stands in the dark. */
+export const unlitShare = (c: Pick<CueCondition, 'shade'>) => 1 - (c.shade ?? 0) * (1 - UNLIT_IN_SHADE);
 
 /** How a mishap shows on what it has stopped: switched off at the plug, frozen solid, or swarmed by wasps. */
 export type StopLook = 'off' | 'frost' | 'wasps';
@@ -196,7 +207,7 @@ function animateSmoke(model: THREE.Object3D, c: CueCondition, look: WearLook | u
   smoke.children.forEach((p, i) => {
     const f = dead ? burst(t + i * 0.6, every, every, c.id) : burst(t - i * 0.25, every, 1.6, c.id);
     const m = fadeOf(p);
-    m.color.setHex(color);
+    m.color.setHex(color).multiplyScalar(unlitShare(c));
     p.visible = f >= 0;
     if (f < 0) return;
     // dust spreads along the mat and settles; smoke climbs from the top and drifts
@@ -211,6 +222,9 @@ function animateSmoke(model: THREE.Object3D, c: CueCondition, look: WearLook | u
   });
 }
 
+/** The warm white of the ripples off something loud. */
+const RIPPLE = 0xfff4d6;
+
 /** Ripples spreading from something loud while a guest plays it, wider the louder it is. */
 function animateRipples(model: THREE.Object3D, c: CueCondition, t: number) {
   const noise = usedNoise(c.type);
@@ -221,7 +235,7 @@ function animateRipples(model: THREE.Object3D, c: CueCondition, t: number) {
     return;
   }
   const cues = cuesOf(model);
-  ripple = cues.ripple ??= cueGroup(model, ring(), 2, 0xfff4d6);
+  ripple = cues.ripple ??= cueGroup(model, ring(), 2, RIPPLE);
   ripple.visible = true;
   const { box } = cues;
   const from = Math.max(box.max.x - box.min.x, box.max.z - box.min.z) / 2;
@@ -230,6 +244,7 @@ function animateRipples(model: THREE.Object3D, c: CueCondition, t: number) {
     r.position.set((box.min.x + box.max.x) / 2, box.max.y * 0.55, (box.min.z + box.max.z) / 2);
     r.scale.setScalar(from + 0.1 + f * noise * 0.3);
     fadeOf(r).opacity = 0.6 * (1 - f) ** 1.5;
+    fadeOf(r).color.setHex(RIPPLE).multiplyScalar(unlitShare(c));
   });
 }
 
@@ -367,8 +382,9 @@ function animateWisps(model: THREE.Object3D, c: CueCondition, t: number) {
       w.position.set(x, box.max.y + AIR_LINE.h * 0.4 + f * 0.3, cz);
       w.scale.set(AIR_LINE.w * breath, AIR_LINE.h, 1);
     }
-    (w as THREE.Object3D & { material: THREE.Material }).material.opacity =
-      Math.sin(f * Math.PI) * (0.65 + 0.3 * c.running);
+    const m = (w as THREE.Object3D & { material: THREE.MeshBasicMaterial | THREE.SpriteMaterial }).material;
+    m.opacity = Math.sin(f * Math.PI) * (0.65 + 0.3 * c.running);
+    m.color.setHex(cool ? COOL_AIR : WARM_AIR).multiplyScalar(unlitShare(c));
   });
 }
 
