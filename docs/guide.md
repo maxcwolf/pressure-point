@@ -137,13 +137,15 @@ The **Controls** there are kept for every game on this computer: **edge scrollin
 | Left click        | Select, place, confirm                                |
 | Click again       | Select the next person or item in the same spot       |
 | Drag, or W A S D  | Move the camera                                       |
-| Scroll            | Zoom                                                  |
+| Scroll            | Zoom toward the pointer                               |
 | Q / E, or 🔄      | Turn the camera a quarter of the way round            |
 | R                 | Rotate furniture                                      |
 | Esc / right click | Cancel; Esc with nothing in hand opens the pause menu |
 | Space, 1 2 3      | Pause, game speed                                     |
 
 These are the keys to begin with; any of them but Esc can be changed in **Settings**.
+
+With something in hand, its preview is green where it can go and red where it cannot, with the reason under the hint, "Can't afford it" included. What you put down settles in with a little bounce and its price floats off it, and the next one's preview waits until you move the pointer. A click that cannot be done shakes the preview and flashes the reason. A selected room is outlined in gold on its floor. If your computer is set to reduce motion, the camera cuts to where it is sent and round a turn rather than gliding.
 
 The pause menu (☰ or Esc) has **Main menu**, which saves and returns to the title screen, and in the desktop app **Exit game**, which saves and quits. The title screen has **Exit** there too. The browser version has no Exit, because a browser tab cannot close itself.
 

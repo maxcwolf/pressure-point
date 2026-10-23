@@ -11,6 +11,8 @@ Each release's notes are taken from its section here. Keep them short.
 - **The Posture Lab runs itself.** Its scanner needs no Consultant, only $250 a month to run and a Caretaker when it wears out, and a scan now makes the diagnosis certain, adding more to the chance of success on an upgraded scanner.
 - **Structural conditions.** Crick of the Neck, Text Neck, Croquet Back and Wipeout are in the spine and the joints: a Consultant can see them but not pin them down, so without a working Posture Lab their treatment is a best guess and less likely to work. The guest's inspector shows which guests are structural and which were treated on a guess.
 - **The Exchange looks downtown.** A paved plaza with street trees in planters, lamp posts, a crossing over the road and office blocks across the streets round it, in place of Willow Lane's lawn and woods; land for sale there is a gravel lot.
+- **Building that feels sure.** A new item settles in with a little squash and its price floats off it, and the next one's preview keeps out of the way until you move the pointer rather than sit red on top of it. An item you can't afford shows red, saying so, before you click, and a refused click shakes the preview and pulses the reason.
+- **A steadier camera.** Turning, gliding and zooming take as long on every screen. Jumping to someone eases the zoom in with the glide, the wheel zooms toward the pointer, the walls swap halfway through a turn, a selected room is outlined in gold, and a chosen overlay shows at once and fades in. With reduced motion asked for in your system, the camera cuts rather than glides.
 
 ## v0.32.2
 
