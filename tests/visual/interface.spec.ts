@@ -24,7 +24,7 @@ test.describe('title screen', () => {
     await screens.title();
     await page.getByRole('button', { name: 'Settings' }).click();
     await screens.shot('title-settings');
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: '‹ Back', exact: true }).click();
     await page.getByRole('button', { name: 'Load game' }).click();
     await screens.shot('title-saves');
   });

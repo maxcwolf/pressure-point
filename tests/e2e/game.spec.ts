@@ -41,6 +41,41 @@ test.describe('starting out', () => {
     await expect(page.getByRole('button', { name: 'What’s new' })).toBeVisible();
   });
 
+  test('feedback can be written from the corner of the title screen', async ({ page }) => {
+    await page.goto('/');
+    // the version says the game is unfinished
+    await expect(page.locator('#title .title-version')).toContainText('Alpha');
+    await page.getByRole('button', { name: 'Give feedback' }).click();
+    const panel = page.locator('#title-feedback');
+    const send = panel.getByRole('button', { name: 'Send feedback' });
+    // nothing to send until something is written
+    await expect(send).toBeDisabled();
+    await panel.getByRole('textbox', { name: 'Your feedback' }).fill('The fountain is lovely');
+    await send.click();
+    // the dev server sends nothing, and says so, keeping what was written
+    await expect(panel.getByRole('alert')).toContainText('local build');
+    await expect(panel.getByRole('textbox', { name: 'Your feedback' })).toHaveValue('The fountain is lovely');
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+  });
+
+  test('feedback can be written from the pause menu, with keys going to the box and not the game', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Give feedback' }).click();
+    const box = page.locator('#modal').getByRole('textbox', { name: 'Your feedback' });
+    await box.click();
+    await page.keyboard.type('rooms built here');
+    await expect(box).toHaveValue('rooms built here');
+    await expect(page.locator('#modal')).toContainText('Give feedback');
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Save or load' })).toBeVisible();
+    expect(game.errors).toEqual([]);
+  });
+
   test('music and sound can be switched off on the title screen', async ({ game, page }) => {
     await page.goto('/');
     const music = page.locator('#title').locator('[data-tip="Music"]');
@@ -1585,7 +1620,7 @@ test.describe('acupuncture and settings', () => {
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Sandbox' }).click();
     await expect(page.locator('#title-sandbox')).toBeVisible();
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: '‹ Back', exact: true }).click();
     await page.getByRole('button', { name: 'Sandbox' }).click();
 
     await page.getByRole('button', { name: 'Start building' }).click();

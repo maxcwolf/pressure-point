@@ -306,6 +306,20 @@
   pointer-events: none;
 }
 
+/* the game is unfinished, and says so beside its version */
+.title-alpha {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 1px 7px;
+  border-radius: 7px;
+  background: var(--gold);
+  color: var(--navy);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
 /* the changelog, from the corner across from the version, with a downloaded update offered above it */
 .title-corner {
   position: fixed;

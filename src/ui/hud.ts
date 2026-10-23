@@ -33,6 +33,7 @@ export type DialogId =
   | 'pause'
   | 'settings'
   | 'saves'
+  | 'feedback'
   | 'confirm-new'
   | 'confirm-fire'
   | 'confirm-cancel-course'
