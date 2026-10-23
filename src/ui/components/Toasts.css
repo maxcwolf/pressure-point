@@ -42,7 +42,7 @@
 }
 
 #toasts.strip .warnings {
-  color: var(--red);
+  color: var(--bad);
 }
 
 #toasts.open .messages {

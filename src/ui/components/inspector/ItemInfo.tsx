@@ -17,7 +17,6 @@ import {
   THERMOSTAT,
   THERMOSTAT_ORDER,
   UPGRADE_LEVELS,
-  WEAR_REPAIR,
 } from '../../../core/data';
 import { money } from '../../../core/format';
 import { sellBack } from '../../../core/sim/building';
@@ -28,8 +27,10 @@ import { starsEarned } from '../../../core/state/game';
 import type { Item } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
+import { meterTone } from '../../lib/meters';
 import { FLOODED_LABEL, stoppedLabel } from '../../lib/mishaps';
 import { rattledLine, rattleLine } from '../../lib/rattle';
+import { statusClass } from '../../lib/status';
 import { installStatus, upgradeEffect, upgradeStars } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -45,10 +46,10 @@ function Linens({ item: it }: { item: Item }) {
     <>
       <label title="Each session soils the linens a little. A Caretaker changes them from a Linen Hamper.">
         Linens
-        <Bar value={100 - it.dirt} class={it.dirt >= DIRT_CLEAN ? 'bad' : 'blue'} />
+        <Bar value={100 - it.dirt} tone={it.dirt >= DIRT_CLEAN ? 'bad' : 'blue'} show />
       </label>
       {it.dirt >= LINENS_STALE && (
-        <p class="status">
+        <p class={statusClass('stale')}>
           <IconText id="bubble-linens">
             {hamper ? 'Stale linens: a Caretaker will change them' : 'Stale linens: place a Linen Hamper'}
           </IconText>
@@ -68,10 +69,10 @@ function Calm({ item: it }: { item: Item }) {
     <>
       <label title="Noise from arcades, pool tables, machines and crowds carries, though a room's walls keep much of it out and windows let more in. Noise at a table lowers results.">
         Calm
-        <Bar value={calmness(noise) * 100} class={noise >= NOISE_NOTICE ? 'bad' : 'blue'} />
+        <Bar value={calmness(noise) * 100} tone={noise >= NOISE_NOTICE ? 'bad' : 'blue'} show />
       </label>
       {rattled && (
-        <p class="status">
+        <p class={statusClass('rattled')}>
           <IconText id="ui-sound">{rattled}</IconText>
         </p>
       )}
@@ -103,7 +104,7 @@ function Rattle({ item: it }: { item: Item }) {
   const { sim } = useGame();
   const { reach, now } = sim.rattles(it);
   return (
-    <p class={reach.length ? 'status' : 'sub'}>
+    <p class={reach.length ? statusClass('rattling') : 'sub'}>
       <IconText id="ui-sound">{rattleLine(reach, now)}</IconText>
     </p>
   );
@@ -122,7 +123,7 @@ function Upgrades({ item: it }: { item: Item }) {
       </p>
       <p class="sub">{upgradeEffect(it.level)}</p>
       {status && (
-        <p class="status">
+        <p class={statusClass('installing')}>
           <IconText id="bubble-installing">{status}</IconText>
         </p>
       )}
@@ -241,7 +242,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
       </h3>
       <p>{def.desc}</p>
       {it.trophy && (
-        <p class="status">
+        <p class={statusClass('award')}>
           <IconText
             id={AWARDS[it.trophy.award].icon}
           >{`${AWARDS[it.trophy.award].name}, year ${it.trophy.year}`}</IconText>
@@ -251,23 +252,23 @@ export function ItemInfo({ item: it }: { item: Item }) {
       {isWatered(it.type) && (
         <label>
           Water
-          <Bar value={it.water} class={it.water < 25 ? 'bad' : 'blue'} />
+          <Bar value={it.water} tone={it.water < 25 ? 'bad' : 'blue'} show />
         </label>
       )}
       {it.type === 'stone_warmer' && (
         <label>
           Heat
-          <Bar value={it.water} class={it.water < STONE_USE ? 'bad' : 'need'} />
+          <Bar value={it.water} tone={it.water < STONE_USE ? 'bad' : 'need'} show />
         </label>
       )}
       {!!def.wear && (
         <label>
           Condition
-          <Bar value={100 - it.wear} class={it.wear >= WEAR_REPAIR ? 'bad' : ''} />
+          <Bar value={100 - it.wear} tone={meterTone('wear', it.wear)} show />
         </label>
       )}
       {!!def.wear && it.wear >= 100 && (
-        <p class="status">
+        <p class={statusClass('broken')}>
           {it.overloaded && def.machine?.overload ? (
             <IconText id="marker-broken">{`Overloaded: it ${def.machine.overload.mess}. Needs a Caretaker`}</IconText>
           ) : (
@@ -276,28 +277,28 @@ export function ItemInfo({ item: it }: { item: Item }) {
         </p>
       )}
       {smoking(it) && (
-        <p class="status">
+        <p class={statusClass('smoking')}>
           <IconText id="ui-warning">Smoking: a Caretaker's repair now would stop it overloading</IconText>
         </p>
       )}
       {stoppedBy && (
-        <p class="status">
+        <p class={statusClass('stopped')}>
           <IconText id={MISHAPS[stoppedBy.kind].icon}>{stoppedLabel(MISHAPS[stoppedBy.kind])}</IconText>
         </p>
       )}
       {flooded && (
-        <p class="status">
+        <p class={statusClass('flooded', 'flooded')}>
           <IconText id="mishap-storm">{FLOODED_LABEL}</IconText>
         </p>
       )}
       {!!def.dirt && !def.linens && (
         <label>
           Cleanliness
-          <Bar value={100 - it.dirt} class={it.dirt >= DIRT_CLEAN ? 'bad' : 'blue'} />
+          <Bar value={100 - it.dirt} tone={it.dirt >= DIRT_CLEAN ? 'bad' : 'blue'} show />
         </label>
       )}
       {!!def.dirt && !def.linens && it.dirt >= DIRT_FILTHY && (
-        <p class="status">
+        <p class={statusClass('filthy')}>
           <IconText id="marker-filthy">Filthy: needs a Caretaker</IconText>
         </p>
       )}
@@ -310,7 +311,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
       {it.type === 'linen_hamper' && (
         <label>
           {`Soiled linens: ${it.water} of ${HAMPER_SIZE} sets`}
-          <Bar value={(it.water / HAMPER_SIZE) * 100} class={it.water >= HAMPER_SIZE ? 'bad' : 'need'} />
+          <Bar value={(it.water / HAMPER_SIZE) * 100} tone={it.water >= HAMPER_SIZE ? 'bad' : 'need'} />
         </label>
       )}
       {it.type === 'rug' && (

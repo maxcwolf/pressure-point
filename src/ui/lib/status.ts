@@ -8,7 +8,9 @@ import type { Sim } from '../../core/sim/sim';
 import { courseName } from '../../core/sim/training';
 import { conditionDays, worsening } from '../../core/sim/worsening';
 import type { Guest, Staff } from '../../core/state/types';
+import { cx } from './cx';
 import type { IconLine } from './icon-line';
+import { meterTone } from './meters';
 
 export { courseName };
 
@@ -177,9 +179,9 @@ export function staffStatus(st: Staff, sim: Sim): string {
   }
 }
 
-/** How a morale bar is drawn: red once it is low enough to worry about. */
+/** How a morale bar is drawn: green, then amber as it sags, and red once it is low enough to worry about. */
 export function moraleLook(morale: number): string {
-  return morale < 30 ? 'bad' : 'gold';
+  return meterTone('morale', morale);
 }
 
 /** A warning about someone on course to quit, from the days they have left; empty while they are not. */
@@ -226,4 +228,67 @@ export function conditionNote(g: Guest): (IconLine & { poor: boolean }) | null {
   if (g.health < POOR_CONDITION)
     return { icon: 'ui-warning', text: `Condition runs out in ${word}: goes home worse off`, poor: true };
   return { text: `Condition: ${word} left`, poor: false };
+}
+
+/** What a status line's look says: trouble, worth a look, plain news, or good news. */
+export type StatusTone = 'bad' | 'warn' | 'neutral' | 'good';
+
+/** The kinds of status line the inspector shows about someone or something. */
+export type StatusKind =
+  | 'doing'
+  | 'staffed'
+  | 'installing'
+  | 'award'
+  | 'rattling'
+  | 'unstaffed'
+  | 'smoking'
+  | 'filthy'
+  | 'stale'
+  | 'rattled'
+  | 'promotion'
+  | 'offer'
+  | 'miserable'
+  | 'quitting'
+  | 'broken'
+  | 'stopped'
+  | 'flooded';
+
+/**
+ * How each kind of status line looks. Trouble that is losing guests or staff now is red; what wants seeing to before it
+ * becomes trouble is amber; what someone is doing, and who staffs what, is plain news.
+ */
+const STATUS_TONES: Readonly<Record<StatusKind, StatusTone>> = {
+  doing: 'neutral',
+  staffed: 'neutral',
+  installing: 'neutral',
+  rattling: 'neutral',
+  award: 'good',
+  unstaffed: 'warn',
+  smoking: 'warn',
+  filthy: 'warn',
+  stale: 'warn',
+  rattled: 'warn',
+  promotion: 'warn',
+  offer: 'warn',
+  miserable: 'warn',
+  quitting: 'bad',
+  broken: 'bad',
+  stopped: 'bad',
+  flooded: 'bad',
+};
+
+/** The tone of a kind of status line. */
+export function statusTone(kind: StatusKind): StatusTone {
+  return STATUS_TONES[kind];
+}
+
+/** The classes for a status line of this kind: `status` and its tone, plus any of the caller's own. */
+export function statusClass(kind: StatusKind, ...more: (string | false | null | undefined)[]): string {
+  return cx('status', statusTone(kind), ...more);
+}
+
+/** The kind of a station's staffing line: staffed, closed for an upgrade, or wanting someone. */
+export function staffingKind(staffed: boolean, line: IconLine): StatusKind {
+  if (staffed) return 'staffed';
+  return line.icon === 'bubble-installing' ? 'installing' : 'unstaffed';
 }

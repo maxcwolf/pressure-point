@@ -11,6 +11,13 @@
   --red: #e5564d;
   --green: #3bb273;
   --blue: #4a9fe0;
+  /* What a line or a bar says, in words dark enough to read on its light ground: fine, worth a look, or trouble. */
+  --good: #1c6b49;
+  --good-bg: #d8f1e2;
+  --warn: #7a4e0c;
+  --warn-bg: #fbedc6;
+  --bad: #a8322b;
+  --bad-bg: #fbe3e1;
   /* The overlays' colors, read into the scene too, so the floor and the key in the picker agree. */
   --overlay-good: var(--green);
   --overlay-fair: var(--gold);

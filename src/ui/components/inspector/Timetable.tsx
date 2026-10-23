@@ -6,6 +6,8 @@ import type { Room } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { bookingNote, classNote, demandNote, placesNote, weekNote } from '../../lib/classes';
 import { cx } from '../../lib/cx';
+import { meterPercent } from '../../lib/meters';
+import { statusClass } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText, Line } from '../common/Icon';
@@ -25,7 +27,7 @@ export function Timetable({ room }: { room: Room }) {
   const leader = sim.classLeader();
   return (
     <div class="timetable">
-      <p class="status">
+      <p class={statusClass(staff ? 'staffed' : 'unstaffed')}>
         {staff ? `Led by ${staff.name}` : <IconText id="ui-warning">{`Needs a ${ROLES.instructor.name}`}</IconText>}
       </p>{' '}
       <p class="sub">{classNote(standing, spots.length, lead?.progress ?? 0)}</p>
@@ -34,7 +36,7 @@ export function Timetable({ room }: { room: Room }) {
           <Line line={placesNote(spots.length, leader.places, leader.staff.skill)} />
         </p>
       )}
-      {!!lead?.progress && <Bar value={lead.progress * 100} class="blue" />}
+      {!!lead?.progress && <Bar value={lead.progress * 100} tone="blue" show={meterPercent(lead.progress * 100)} />}
       <p>
         <b>Timetable</b>
       </p>

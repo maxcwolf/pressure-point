@@ -10,8 +10,9 @@ import { busyNote } from '../../lib/busy';
 import { mushroomNote, mushroomSwitch } from '../../lib/ceremonies';
 import { chanceText, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
+import { meterPercent, meterTone } from '../../lib/meters';
 import { matsNote, sessionNote } from '../../lib/sessions';
-import { conditionNote } from '../../lib/status';
+import { conditionNote, staffingKind, statusClass } from '../../lib/status';
 import { staffingStatus } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -37,7 +38,7 @@ function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: nu
       >
         <IconText id={g.emergency ? 'ui-emergency' : undefined}>{`${index + 1}. ${g.name}`}</IconText>
       </Button>
-      <Bar value={g.patience} class={cx('patience', g.patience < 25 && 'bad')} />
+      <Bar value={g.patience} class="patience" tone={meterTone('patience', g.patience)} show />
       {chance && staff && (
         <span class={cx('odds', poorChance(chance) && 'poor')}>{`Chance ${chanceText(chance, def, staff.name)}`}</span>
       )}
@@ -95,13 +96,17 @@ export function StationInfo({ item }: { item: Item }) {
   const guest = sim.guest(item.serving);
   const line = item.queue.flatMap((id) => sim.guest(id) ?? []);
   const busy = busyNote(item, !def.staff);
+  const staffing = staffingStatus(item, staff, def.staff && ROLES[def.staff].name);
+  const staffed = (
+    <p class={statusClass(staffingKind(!!staff, staffing))}>
+      <Line line={staffing} />
+    </p>
+  );
   if (def.staff === 'instructor') {
     // a Qi Gong Studio's mat and spots: who leads the class, and who is on the spot
     return (
       <>
-        <p class="status">
-          <Line line={staffingStatus(item, staff, ROLES[def.staff].name)} />
-        </p>{' '}
+        {staffed}{' '}
         {def.goal === 'class' && (
           <p class="sub">{guest ? `${guest.name} is on this spot` : 'Nobody is on this spot'}</p>
         )}
@@ -112,10 +117,7 @@ export function StationInfo({ item }: { item: Item }) {
     const session = sim.session(item);
     return (
       <>
-        <p class="status">
-          <Line line={staffingStatus(item, staff, def.staff && ROLES[def.staff].name)} />
-        </p>{' '}
-        <p class="sub">{sessionNote(session.lying, session.mats, session.playing)}</p>
+        {staffed} <p class="sub">{sessionNote(session.lying, session.mats, session.playing)}</p>
         {staff && (
           <p class="sub">
             <Line line={matsNote(session.mats, matsPlayed(staff.skill), staff.skill)} />
@@ -126,11 +128,8 @@ export function StationInfo({ item }: { item: Item }) {
   }
   return (
     <>
-      <p class="status">
-        <Line line={staffingStatus(item, staff, def.staff && ROLES[def.staff].name)} />
-      </p>{' '}
-      <p class="sub">{`In line: ${item.queue.length}${guest ? ` · Seeing ${guest.name}` : ''}`}</p>
-      {guest && <Bar value={item.progress * 100} class="blue" />}
+      {staffed} <p class="sub">{`In line: ${item.queue.length}${guest ? ` · Seeing ${guest.name}` : ''}`}</p>
+      {guest && <Bar value={item.progress * 100} tone="blue" show={meterPercent(item.progress * 100)} />}
       {busy && <p class="sub">{busy}</p>}
       {line.length > 0 && (
         <ol class="line">

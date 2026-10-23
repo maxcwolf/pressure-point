@@ -23,6 +23,7 @@ import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
 import { machinePullNote, pullNote } from '../../lib/demand';
 import { FLOODED_LABEL } from '../../lib/mishaps';
+import { statusClass } from '../../lib/status';
 import { saveAsTemplate } from '../../templates';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -119,7 +120,7 @@ function Blessing({ room }: { room: Room }) {
 function Flooded({ room }: { room: Room }) {
   const { sim } = useGame();
   return sim.world.flooded(room) ? (
-    <p class="status flooded">
+    <p class={statusClass('flooded', 'flooded')}>
       <IconText id="mishap-storm">{FLOODED_LABEL}</IconText>
     </p>
   ) : null;
