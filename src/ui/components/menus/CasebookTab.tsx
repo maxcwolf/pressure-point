@@ -1,20 +1,25 @@
 // The Stats menu's Casebook tab: how visits have ended, condition by condition.
 
-import { type ConditionId, conditionOf, MODALITIES } from '../../../core/data';
-import type { CaseRecord } from '../../../core/state/types';
-import { useGame } from '../../hooks/use-hud';
+import { conditionOf, MODALITIES } from '../../../core/data';
+import { useGame, useHud } from '../../hooks/use-hud';
 import { cureShare, seen } from '../../lib/casebook';
 import { cx } from '../../lib/cx';
+import { CASEBOOK_SORTS, type CaseRow, sorted } from '../../lib/sorts';
 import { IconText } from '../common/Icon';
+import { SortBy } from '../common/SortBy';
 
-/** A row for each condition seen, most often seen first. */
+/** A row for each condition seen, most often seen first or in the order picked. */
 export function CasebookTab() {
+  const hud = useHud();
   const { sim } = useGame();
-  const rows = (Object.entries(sim.s.casebook) as [ConditionId, CaseRecord][]).sort((a, b) => seen(b[1]) - seen(a[1]));
+  const rows = sorted(Object.entries(sim.s.casebook) as CaseRow[], CASEBOOK_SORTS, hud.sorts.casebook);
   if (!rows.length) return <p class="sub">Nobody has left yet. Each visit is entered here as the guest goes.</p>;
   return (
     <>
-      <p class="sub">Every visit since the center opened, by the condition the guest came in with.</p>
+      <div class="stats-head">
+        <p class="sub">Every visit since the center opened, by the condition the guest came in with.</p>
+        {rows.length > 1 && <SortBy list="casebook" orders={CASEBOOK_SORTS} />}
+      </div>
       <table class="casebook">
         <thead>
           <tr>

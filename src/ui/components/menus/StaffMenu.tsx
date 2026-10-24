@@ -8,11 +8,13 @@ import { wagesDue } from '../../../core/sim/economy';
 import type { Staff } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
+import { sorted, STAFF_SORTS } from '../../lib/sorts';
 import { moraleLook, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
+import { SortBy } from '../common/SortBy';
 
 /** Whether someone knows a treatment, or is on its course. */
 const knowsOrLearning = (st: Staff, m: Modality) => st.quals.includes(m) || st.training?.course === m;
@@ -54,7 +56,7 @@ function KnowsFilter({ staff, knows }: { staff: readonly Staff[]; knows: Modalit
 
 /**
  * A row per member of staff, with their energy, morale and the treatments they know, which the list can be narrowed
- * to. Pressing one selects them and moves the camera there.
+ * to, in the order picked. Pressing one selects them and moves the camera there.
  */
 export function StaffMenu() {
   const hud = useHud();
@@ -63,13 +65,16 @@ export function StaffMenu() {
   // a treatment nobody knows any more narrows the list to nobody, so it falls back to everyone
   const asked = hud.staffKnows;
   const knows = asked && staff.some((st) => knowsOrLearning(st, asked)) ? asked : null;
-  const shown = knows ? staff.filter((st) => knowsOrLearning(st, knows)) : staff;
+  const shown = sorted(knows ? staff.filter((st) => knowsOrLearning(st, knows)) : staff, STAFF_SORTS, hud.sorts.staff);
   // a month of everyone staying on, and what the coming payday owes, by the days each has worked since they were paid
   const payroll = staff.reduce((total, st) => total + (st.state === 'leaving' ? 0 : st.salary), 0);
   const due = wagesDue(sim.s);
   return (
     <div class="panel menu">
-      <h3>Your staff</h3>
+      <div class="menu-head">
+        <h3>Your staff</h3>
+        {staff.length > 1 && <SortBy list="staff" orders={STAFF_SORTS} />}
+      </div>
       <KnowsFilter staff={staff} knows={knows} />
       {staff.length > 0 && (
         <div class="row head" aria-hidden="true">

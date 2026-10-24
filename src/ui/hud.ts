@@ -22,6 +22,7 @@ import { mustAnswer, pendingDialog, raise, type Raised, stillDue } from './lib/d
 import { addFloater, ageFloaters, amountOf, type Floater } from './lib/floaters';
 import { ageMessages, SHOWN, spareMessages, withMessage } from './lib/messages';
 import type { OverlayMode } from './lib/overlays';
+import type { SortList } from './lib/sorts';
 
 /** How often the banner looks to move on while a line is up, in milliseconds. */
 const ANNOUNCER_TICK = 250;
@@ -126,6 +127,8 @@ export class HudState {
   itemKind: ItemKind | 'all' = 'all';
   /** The treatment the Staff menu is narrowed to, showing only those who know it or are learning it. */
   staffKnows: Modality | null = null;
+  /** The order picked for each list that can be sorted, by its id; a list with none picked is in its usual order. */
+  sorts: Partial<Record<SortList, string>> = {};
   /**
    * The member of staff being compared in the inspector, the one they are compared with once chosen, and whether the
    * list to choose from shows everyone rather than only those in the same role.

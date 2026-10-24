@@ -2,15 +2,18 @@
 
 import { LOYALTY_NAMES, REGULARS_MAX } from '../../../core/data';
 import { loyaltyLevel, regularHere } from '../../../core/sim/regulars';
-import { useGame } from '../../hooks/use-hud';
+import { useGame, useHud } from '../../hooks/use-hud';
 import { loyaltyNote } from '../../lib/regulars';
+import { REGULAR_SORTS, sorted } from '../../lib/sorts';
 import { Bar } from '../common/Bar';
+import { SortBy } from '../common/SortBy';
 
-/** A row for each regular, the most loyal first. */
+/** A row for each regular, the most loyal first or in the order picked. */
 export function RegularsTab() {
+  const hud = useHud();
   const { sim } = useGame();
   const s = sim.s;
-  const rows = [...s.regulars].sort((a, b) => b.loyalty - a.loyalty);
+  const rows = sorted(s.regulars, REGULAR_SORTS, hud.sorts.regulars);
   if (!rows.length)
     return (
       <p class="sub">
@@ -20,9 +23,12 @@ export function RegularsTab() {
     );
   return (
     <>
-      <p class="sub">
-        {`Guests who come back every few weeks, up to ${REGULARS_MAX} at a time. Good visits make them loyal: more patient, sooner back, and they tip. A bad visit or two and they stop coming.`}
-      </p>
+      <div class="stats-head">
+        <p class="sub">
+          {`Guests who come back every few weeks, up to ${REGULARS_MAX} at a time. Good visits make them loyal: more patient, sooner back, and they tip. A bad visit or two and they stop coming.`}
+        </p>
+        {rows.length > 1 && <SortBy list="regulars" orders={REGULAR_SORTS} />}
+      </div>
       <table class="casebook regulars">
         <thead>
           <tr>
