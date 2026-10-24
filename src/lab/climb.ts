@@ -24,8 +24,8 @@ const LIES_FOR = 2.5;
 const WALK = 1;
 const PAUSE = 1.2;
 
-/** The moment into the round a picture held still shows, in seconds: up on the table, lying down. */
-const STILL_AT = 1.08;
+/** The moment into the round a picture held still shows, in seconds: halfway up, kneeling on it or sitting on its edge. */
+const STILL_AT = 1.55;
 
 /** The tables someone climbs onto in the lab: one they lie on face down, and one on their back. */
 export const CLIMBS: readonly ItemType[] = ['massage_table', 'reiki_table'];
