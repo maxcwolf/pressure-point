@@ -2456,6 +2456,47 @@ test.describe('the tutorial', () => {
     await expect(modal).toBeEmpty();
     expect(await game.eval((pp) => pp.state.speed)).toBe(1);
   });
+
+  test('the lesson on money says what the bank holds, and Show me opens the Loan tab', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.sim.emit({ type: 'lesson', id: 'money' });
+    });
+    const modal = page.locator('#modal');
+    await expect(modal).toContainText('Money is tight');
+    await expect(modal).toContainText('The bank holds');
+    await expect(modal.locator('.lesson-strip li')).toHaveCount(4);
+    await modal.getByRole('button', { name: 'Show me' }).click();
+    await expect(modal).toBeEmpty();
+    await expect(page.locator('#menu')).toContainText('Loan: $0 of');
+  });
+
+  test('hiring the role a step asks for closes the Hire menu, and any other hire leaves it open', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.sim.setTutorial(true);
+      pp.sim.noteLooked();
+    });
+    await game.give('reception_desk');
+    const card = page.locator('#advisor .tutorial-card');
+    await expect(card).toContainText('Hire a Receptionist');
+    // a therapist is not what the step asks for
+    await game.menu('Hire');
+    await page.locator('#menu .tab', { hasText: 'Massage Therapist' }).click();
+    await page.locator('#menu .card.cv').first().getByRole('button', { name: 'Hire' }).click();
+    expect(await game.eval((pp) => pp.state.staff.map((s) => s.role))).toEqual(['therapist']);
+    const menu = page.locator('#menu h3', { hasText: 'Hire staff' });
+    await expect(menu).toHaveCount(1);
+    await page.locator('#menu .tab', { hasText: 'Receptionist' }).click();
+    await page.locator('#menu .card.cv').first().getByRole('button', { name: 'Hire' }).click();
+    await expect(menu).toHaveCount(0);
+    await expect(card).toContainText('Build a Consultation Room');
+  });
 });
 
 test.describe('the campaign', () => {

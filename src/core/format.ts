@@ -5,6 +5,9 @@ import { DAYS_PER_MONTH } from './data';
 /** A dollar amount as text, rounded to whole dollars. */
 export const money = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(Math.round(n)).toLocaleString('en-US')}`;
 
+/** A rate as a whole percentage: 0.05 is "5%". */
+export const pct = (rate: number) => `${Math.round(rate * 100)}%`;
+
 /** "a" or "an", to go before a name. */
 export const article = (name: string) => (/^[AEIOU]/.test(name) ? 'an' : 'a');
 

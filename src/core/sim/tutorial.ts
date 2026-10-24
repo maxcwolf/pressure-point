@@ -12,9 +12,9 @@ import {
   ROOMS,
   type RoomType,
 } from '../data';
-import { money } from '../format';
+import { money, pct } from '../format';
 import type { SimContext } from './context';
-import { loanLimit, monthlyPayroll } from './economy';
+import { monthlyPayroll } from './economy';
 import { emit, type Subject, toast } from './events';
 import { primerDone, primerLines, primerNotes, type PrimerStepId } from './primer';
 import { hasItem, hasRoom, hasStaff } from './progress';
@@ -37,19 +37,6 @@ interface Opening {
   title: string;
   text: string | ((ctx: SimContext) => string);
   want: Want;
-}
-
-/** A rate a month as a percentage. */
-function pct(rate: number): string {
-  return `${Math.round(rate * 100)}%`;
-}
-
-/**
- * The word on money that goes with the first thing bought: everything comes out of the bank, which is not meant to
- * stretch to everything at once, so the loan is there for the first paydays rather than a last resort.
- */
-function moneyWord(ctx: SimContext): string {
-  return `It comes out of the bank in the bottom bar, as everything does. The bank is not meant to stretch to everything at once: the Money menu lends up to ${money(loanLimit(ctx.s))} at ${pct(LOAN_RATE)} a month, and a new center often borrows to get through its first paydays.`;
 }
 
 type OpeningId =
@@ -81,9 +68,8 @@ const OPENING: readonly Opening[] = [
   {
     id: 'desk',
     title: 'Place a Reception Desk',
-    /** The first thing bought, so the word on money goes with it. */
-    text: (ctx) =>
-      `Guests check in at a Reception Desk before anything else. Open the Items menu, pick the Reception Desk and place it near the entrance. ${moneyWord(ctx)}`,
+    // the first thing bought, so it says where the money comes from; the rest of the word on money waits for its lesson
+    text: 'Guests check in at a Reception Desk before anything else. Open the Items menu, pick the Reception Desk and place it near the entrance. It comes out of the bank in the bottom bar, as everything does.',
     want: { kind: 'item', type: 'reception_desk' },
   },
   {
@@ -310,6 +296,10 @@ function inHand(all: readonly Step[]): number {
   const live = all.flatMap((st, i) => (!st.done && st.due ? [i] : []));
   return live.find((i) => all[i]?.id !== 'benches') ?? live[0] ?? -1;
 }
+
+/** Whether a step in hand asks for a hire of this role, which hiring one does. False with no step in hand. */
+export const wantsHire = (step: TutorialStep | null, role: Role) =>
+  step?.want?.kind === 'hire' && step.want.role === role;
 
 /** The step in hand, or null while none is (or the tutorial is off). */
 export function currentStep(ctx: SimContext): TutorialStep | null {

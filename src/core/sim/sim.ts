@@ -260,6 +260,14 @@ export class Sim {
     updateTwists(ctx, dt);
   }
 
+  /**
+   * After money is spent, which may leave the bank short: look for a lesson due then and there, since the clock
+   * is often paused while the player builds and the once-a-second look would not come until it runs.
+   */
+  private afterSpending() {
+    checkLessons(this.ctx);
+  }
+
   // ---- Events ----------------------------------------------------------------
 
   /** Queue something for the interface to show or play. */
@@ -536,7 +544,9 @@ export class Sim {
 
   /** Hire an applicant. */
   hire(candidateId: number): Staff | null {
-    return hire(this.ctx, candidateId);
+    const result = hire(this.ctx, candidateId);
+    this.afterSpending();
+    return result;
   }
 
   /** Let a member of staff go. */
@@ -585,6 +595,7 @@ export class Sim {
   /** Give a member of staff a raise. */
   giveRaise(id: number) {
     giveRaise(this.ctx, id);
+    this.afterSpending();
   }
 
   /** Prepare for the mishap coming, at its price. */
@@ -617,7 +628,9 @@ export class Sim {
   }
   /** Buy a plot of land and set the builders to work on it. False if it cannot be bought. */
   buyPlot(id: string): boolean {
-    return buyPlot(this.ctx, id);
+    const result = buyPlot(this.ctx, id);
+    this.afterSpending();
+    return result;
   }
   /** Name a plot of the game's, or give it back its own name if the new one is blank. */
   renamePlot(id: string, name: string): boolean {
@@ -656,7 +669,9 @@ export class Sim {
 
   /** Send a member of staff on a course. */
   train(staffId: number, courseId: string): boolean {
-    return train(this.ctx, staffId, courseId);
+    const result = train(this.ctx, staffId, courseId);
+    this.afterSpending();
+    return result;
   }
 
   /** Why a member of staff's course cannot be called off. */
@@ -698,7 +713,9 @@ export class Sim {
 
   /** Pay one step of the loan back. */
   repay(): boolean {
-    return repay(this.ctx);
+    const result = repay(this.ctx);
+    this.afterSpending();
+    return result;
   }
 
   /** Limit how many guests are let in at once, or lift the limit with null. */
@@ -734,7 +751,9 @@ export class Sim {
   }
   /** Pay for a campaign and start it. */
   startCampaign(kind: CampaignKind, months: number, condition?: ConditionId): boolean {
-    return startCampaign(this.ctx, kind, months, condition);
+    const result = startCampaign(this.ctx, kind, months, condition);
+    this.afterSpending();
+    return result;
   }
   // ---- House calls -----------------------------------------------------------
   /** Who could go on the house call on offer. */
@@ -813,7 +832,9 @@ export class Sim {
 
   /** Buy an item and put it down. */
   placeItem(type: ItemType, x: number, y: number, rot: number, opts: PlaceOptions = {}): Item | null {
-    return placeItem(this.ctx, type, x, y, rot, opts);
+    const result = placeItem(this.ctx, type, x, y, rot, opts);
+    this.afterSpending();
+    return result;
   }
 
   /** Change a rug's pattern. */
@@ -854,6 +875,7 @@ export class Sim {
   /** Build a blueprint and pay for it. */
   finishRoom(room: Room) {
     finishRoom(this.ctx, room);
+    this.afterSpending();
   }
 
   /** Remove a room, refunding a fraction of what it cost. */
@@ -948,12 +970,16 @@ export class Sim {
 
   /** Build a copy of a room at a spot, at what building it from scratch would cost. */
   copyRoom(roomId: number, placed: PlacedLayout): Room | null {
-    return copyRoom(this.ctx, roomId, placed);
+    const result = copyRoom(this.ctx, roomId, placed);
+    this.afterSpending();
+    return result;
   }
 
   /** Pay for the next upgrade to a piece of treatment equipment, for a Mechanic to install. */
   orderUpgrade(id: number): boolean {
-    return orderUpgrade(this.ctx, id);
+    const result = orderUpgrade(this.ctx, id);
+    this.afterSpending();
+    return result;
   }
 
   /** Whether a Qi Gong class is going on at a Practice Spot's studio now. */
@@ -990,7 +1016,9 @@ export class Sim {
   buildTemplate(name: string, layout: Layout, placed: PlacedLayout): Room | null {
     // a template kept from before the game changed may no longer make a room
     if (layoutProblem(layout)) return null;
-    return buildLayout(this.ctx, layout, placed, { cost: `"${name}"`, built: `"${name}" built` });
+    const result = buildLayout(this.ctx, layout, placed, { cost: `"${name}"`, built: `"${name}" built` });
+    this.afterSpending();
+    return result;
   }
 
   // ---- Cheats ----------------------------------------------------------------

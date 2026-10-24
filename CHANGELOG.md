@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Money when it matters.** The tutorial's word on the bank and the loan now comes as a card the first time the bank holds less than a month's wages, with what it holds, what payday takes and when, and a Show me that opens the Loan tab. The Reception Desk step just says that everything comes out of the bank. Hiring the role the tutorial asks for closes the Hire menu, so its next card is not hidden.
+
 ## v0.33.3
 
 - **Alarms you can see coming.** Only trouble happening right now turns a bubble red: someone about to quit, a guest fed up with waiting, a guest getting worse while they wait. Red bubbles pulse and carry a white "!" so they stand out without the color. A bubble turns amber for a need that will become trouble: a waiting guest bursting for the toilet or parched, or staff worn out with no break coming. A guest running out of patience shows an amber hourglass now and then before they are fed up. Everything else is white, including anyone already on their way to what they need.

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { QUIT_AFTER } from '../../src/core/data';
 import { primerTip } from '../../src/core/sim/primer';
 import type { Sim } from '../../src/core/sim/sim';
-import { HANDOFF, LOOK_DAYS } from '../../src/core/sim/tutorial';
+import { HANDOFF, LOOK_DAYS, wantsHire } from '../../src/core/sim/tutorial';
 import { loadTutorialPref, saveTutorialPref } from '../../src/storage/settings';
 import {
   addConsult,
@@ -146,14 +146,31 @@ describe('the tutorial', () => {
     expect(stepOf(sim)).toBe('benches');
   });
 
-  it('says with the first thing bought that everything comes out of the bank, and that the bank lends', () => {
+  it('says with the first thing bought that everything comes out of the bank, leaving the loan to its lesson', () => {
     const sim = tutorialGame();
     sim.noteLooked();
     sim.s.speed = 0;
     const text = sim.tutorialStep()?.text ?? '';
-    expect(text).toMatch(/comes out of the bank/);
-    expect(text).toMatch(/lends up to \$50,000 at 2% a month/);
-    expect(text).toMatch(/borrows to get through its first paydays/);
+    expect(text).toMatch(
+      /place it near the entrance\. It comes out of the bank in the bottom bar, as everything does\.$/,
+    );
+    expect(text).not.toMatch(/lends|loan|Money menu/);
+  });
+
+  it('asks for a hire only on a step that wants that role, which is when hiring closes the Hire menu', () => {
+    const sim = tutorialGame();
+    sim.noteLooked();
+    sim.s.speed = 0;
+    sim.placeItem('reception_desk', 14, 13, 0);
+    const step = sim.tutorialStep();
+    expect(step?.id).toBe('receptionist');
+    expect(wantsHire(step, 'receptionist')).toBe(true);
+    expect(wantsHire(step, 'consultant')).toBe(false);
+    // a step that wants a room, and none at all with the tutorial off
+    hire(sim, 'receptionist');
+    expect(wantsHire(sim.tutorialStep(), 'receptionist')).toBe(false);
+    sim.s.tutorial = false;
+    expect(wantsHire(sim.tutorialStep(), 'consultant')).toBe(false);
   });
 
   it('teaches the applicant cards on the hiring steps, leaving the choice to the player', () => {
