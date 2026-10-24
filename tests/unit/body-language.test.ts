@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { ITEMS, POOR_CONDITION } from '../../src/core/data';
+import { CONDITIONS, ITEMS, POOR_CONDITION } from '../../src/core/data';
 import { SHOES } from '../../src/core/people';
 import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
@@ -551,6 +551,15 @@ describe('glasses', () => {
     // and back on once cured
     poseChar(burnt, { ...demoGuest(look, 'stiff_neck' as never), outcome: 'healed' }, 0, 1, { style: null });
     expect(on(burnt)).toBe(true);
+  });
+});
+
+describe('symptoms over the head', () => {
+  it('hover clear of the head, every one that bobs there', () => {
+    for (const { visual } of CONDITIONS) {
+      const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      if (rig.bob) expect(rig.bobAt, visual).toBeGreaterThanOrEqual(0.3);
+    }
   });
 });
 

@@ -761,6 +761,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     for (const o of [...compass.children, ...rig.orbit.children]) o.castShadow = false;
     // bobbing gently, and put away while they lie down
     compass.scale.setScalar(1.5);
+    compass.position.y = 0.4;
     head.add(compass);
     rig.bob = compass;
   } else if (visual === 'neck') {
