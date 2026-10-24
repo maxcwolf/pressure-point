@@ -23,6 +23,14 @@ type Sides = (full: number) => number;
 const ALL: Sides = (full) => full;
 /** About half, for someone seen from afar, whose every side in full would be finer than a pixel. */
 const FEW: Sides = (full) => Math.max(2, Math.round(full / 2));
+/** About a quarter, for someone seen from as far as the game is mostly played at, where a head is a few pixels across. */
+const TINY: Sides = (full) => Math.max(3, Math.round(full / 4));
+
+/** Each shape's stand-in with the fewest sides, for someone seen from furthest off. */
+const tinyShapes = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
+
+/** What to draw in place of a shape seen from furthest off: its stand-in with the fewest sides, if it has one. */
+export const tinyShape = (shape: THREE.BufferGeometry) => tinyShapes.get(shape);
 
 /** A fresh ball. */
 const ball = (r: number, seg: number) => bare(new THREE.SphereGeometry(r, seg, Math.ceil(seg * 0.7)));
@@ -63,16 +71,22 @@ const indexed = (geo: THREE.BufferGeometry) => {
 /**
  * Several fresh shapes joined into one, made once by key and shared, so together they cost a single part to draw. They
  * keep sharing their corners, so each corner is worked out once a frame rather than once for every triangle at it. The
- * shape is made twice, with all its sides and with fewer, the second to be drawn in its place when seen from afar.
+ * shape is made three times, with all its sides, with fewer and with fewer still, the others to be drawn in its place
+ * when seen from afar and from further.
  */
 const fuse = (key: string, make: (n: Sides) => THREE.BufferGeometry[]) =>
   cached(`hd-${key}`, () => {
     /** The shapes joined, with so many sides. */
     const join = (n: Sides) => must(mergeGeometries(make(n).map(indexed)), `the shapes of ${key} joined`);
-    return withFar(
+    const shape = withFar(
       join(ALL),
       cached(`hd-${key}-far`, () => join(FEW)),
     );
+    tinyShapes.set(
+      shape,
+      cached(`hd-${key}-tiny`, () => join(TINY)),
+    );
+    return shape;
   });
 
 /** A shape turned round the upright axis from a profile of [radius, height] pairs, bottom to top, squashed front to back. */
@@ -827,6 +841,13 @@ export function detailCap(head: THREE.Group, cloth: THREE.Material, kind: 'peake
   put(head, cap(kind), cloth).name = 'cap';
 }
 
+/** How high the hips are, in meters before scaling. */
+export const HIP = 0.42;
+
+/** How far above where they lie the hips of someone lying on their back are, and above the seat of someone sitting, in meters. */
+export const BACK_Y = 0.16;
+export const SIT_Y = 0.06;
+
 /** How far below the hip the knee is, and below the shoulder the elbow: where the shin and the forearm hinge. */
 export const KNEE = 0.18;
 export const ELBOW = 0.13;
@@ -883,7 +904,7 @@ const shoe = () =>
 /** Build a leg hinged at the hip, with a shin and shoe hinged at the knee. */
 export function detailLeg(body: THREE.Group, x: number, bottom: THREE.Material, shoes: THREE.Material) {
   const leg = new THREE.Group();
-  leg.position.set(x, 0.42, 0);
+  leg.position.set(x, HIP, 0);
   // a leg's shadow falls from its thigh and shin together, though each alone is too small to cast one
   const upper = put(leg, thigh(), bottom);
   upper.name = 'trousers';

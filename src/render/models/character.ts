@@ -6,7 +6,9 @@ import { SHOES } from '../../core/people';
 import type { Look, VisitorKind } from '../../core/state/types';
 import { BUBBLE_SIZE } from '../bubbles';
 import { owned } from '../disposal';
+import { type Motion, newMotion } from '../motion';
 import { BUBBLE_PX, readable } from '../readable';
+import type { Burst } from './burst';
 import {
   detailArm,
   detailBib,
@@ -27,7 +29,7 @@ import {
 import { machineSymptom } from './character-machines';
 import type { HeldKind } from './held';
 import { buildMop } from './mop';
-import { cached, capsule, cyl, ico, joined, mat, put, rbox, sph, torus, trimShadows } from './parts';
+import { cached, capsule, cyl, ico, joined, mat, type Piece, put, rbox, sph, torus, trimShadows } from './parts';
 import { buildSage, buildSmoke } from './sage';
 
 export interface CharRig {
@@ -46,8 +48,11 @@ export interface CharRig {
   steam?: THREE.Group;
   band?: THREE.Mesh;
   orbit?: THREE.Group;
-  /** Something that hovers over the head and bobs gently. */
+  /** Drops of water falling off a wet blanket, each from where it starts. */
+  drips?: THREE.Group;
+  /** Something that hovers over the head and bobs gently, and how high it hovers. */
   bob?: THREE.Object3D;
+  bobAt: number;
   /** A material whose glow pulses. */
   blink?: THREE.MeshStandardMaterial;
   /** Everything that only exists to show the symptom, hidden once healed. */
@@ -70,6 +75,8 @@ export interface CharRig {
   idleSince: number;
   /** How far they have walked, in meters, which their stride is counted from, so their feet plant at any speed. */
   walked: number;
+  /** Where they are shown, which differs for a moment from where the sim has them as they climb on or off a table. */
+  motion: Motion;
   /** Where they were last frame, and which way they faced, or NaN before their first. */
   lastX: number;
   lastY: number;
@@ -81,8 +88,10 @@ export interface CharRig {
   curedAt: number;
   /** How each symptom prop was built to stand, noted as the cure begins, to shrink it from and put it back as it was. */
   rest?: { scale: THREE.Vector3; y: number }[];
-  /** A puff of sparkles round the head as the symptom goes, made the first time it is needed. */
-  burst?: THREE.Object3D;
+  /** A puff of sparkles round them as the symptom goes, made the first time it is needed. */
+  burst?: Burst;
+  /** Pale soles turned up, shown while they lie face down, made the first time they do. */
+  soles?: THREE.Mesh[];
   scale: number;
   /** How much wider and deeper than average their build makes them, which their head is spared. */
   wide: number;
@@ -101,6 +110,42 @@ const pickMat = new THREE.MeshBasicMaterial({ visible: false });
 
 /** How much wider and deeper each build is than average: slight, average and stocky. */
 const BUILD_WIDTH = [0.9, 1, 1.13];
+
+/** How far back on the head the Caretaker wears their cap, in radians, the brim tipped up off the face. */
+export const CAP_TIP = -0.38;
+
+/** How much bigger than life the hen is drawn, the game's signature, to be seen from its usual distance. */
+const HEN_SIZE = 1.7;
+
+/**
+ * A ram's horn on one side of the head: rooted on top, curling back, down round the ear and forward again, thick at the
+ * root, thin at the tip, and ridged along its length.
+ */
+function ramHorn(side: number): THREE.BufferGeometry {
+  const points: THREE.Vector3[] = [];
+  for (let i = 0; i <= 24; i++) {
+    const u = i / 24;
+    const a = Math.PI / 2 + u * 1.75 * Math.PI;
+    const r = 0.13 * (1 - 0.55 * u);
+    const out = 0.13 + 0.11 * Math.min(1, u * 3);
+    points.push(new THREE.Vector3(side * out, 0.07 + r * Math.sin(a), -0.03 + r * Math.cos(a)));
+  }
+  const path = new THREE.CatmullRomCurve3(points);
+  const along = 48;
+  const round = 10;
+  const tube = new THREE.TubeGeometry(path, along, 0.055, round, false);
+  const at = tube.getAttribute('position');
+  const v = new THREE.Vector3();
+  for (let k = 0; k < at.count; k++) {
+    const u = Math.floor(k / (round + 1)) / along;
+    const middle = path.getPointAt(u);
+    const thick = (1 - 0.72 * u) * (1 + 0.07 * Math.sin(u * 44));
+    v.fromBufferAttribute(at, k).sub(middle).multiplyScalar(thick).add(middle);
+    at.setXYZ(k, v.x, v.y, v.z);
+  }
+  tube.computeVertexNormals();
+  return tube;
+}
 
 /** What a visitor wears: a VIP's dark suit, or the inspector's trench coat. */
 const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: number }>> = {
@@ -194,7 +239,12 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     const feather = put(head, rbox(0.05, 0.26, 0.012, 0.01), mat(0xf4f1ea, 0.8), 0.17, 0.16, -0.12);
     feather.rotation.set(-0.4, 0, -0.35);
   }
-  if (role === 'caretaker') detailCap(head, accent, 'peaked');
+  if (role === 'caretaker') {
+    // pushed back on the head, so from above the brim does not hide the face
+    detailCap(head, accent, 'peaked');
+    const cap = head.getObjectByName('cap');
+    if (cap) cap.rotation.x = CAP_TIP;
+  }
   if (visitor === 'vip') {
     // dark glasses, a white shirt and a tie in the V of the jacket, and a gold pin on the lapel
     const shades = mat(0x1d1f24, 0.2);
@@ -229,6 +279,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     ...(glasses ? { glasses } : {}),
     idleSince: NaN,
     walked: 0,
+    motion: newMotion(),
     lastX: NaN,
     lastY: NaN,
     lastFacing: NaN,
@@ -238,6 +289,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     scale: look.scale,
     wide,
     bubbleKey: '',
+    bobAt: 0,
   };
   rig.pick.position.y = 0.7;
   group.add(rig.pick);
@@ -317,15 +369,53 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     for (const leg of [shinL, shinR])
       rig.props.push(put(leg, rbox(0.21, 0.15, 0.3, 0.03), ice, 0, -0.36 + kneeUp, 0.035));
   } else if (visual === 'blanket') {
-    const wool = mat(0x4d7ea8, 0.95);
-    rig.props.push(put(torso, rbox(0.52, 0.1, 0.38, 0.04), wool, 0, 0.4, -0.01));
-    for (const x of [-0.25, 0.25]) rig.props.push(put(torso, rbox(0.1, 0.3, 0.36, 0.04), wool, x, 0.26, -0.01));
-    for (const [x, y] of [
-      [-0.25, 0.08],
-      [0.25, 0.05],
-      [0.1, 0.02],
-    ])
-      rig.props.push(put(torso, sph(0.03, 8), mat(0x6ec6e6, 0.2), x, y, 0.12));
+    // a sodden wool blanket over the shoulders and down the back, striped and fringed at its hem, sagging, and dripping
+    const wool = mat(0x3c6a93, 0.35);
+    const stripe = mat(0xd9e4ec, 0.4);
+    // the wool in one shape and its stripes and fringe in another, so it costs a part or two to draw
+    const sheet: Piece[] = [];
+    const trim: Piece[] = [];
+    /** A row of fringe tassels along a hem, from one end to the other. */
+    const fringe = (x0: number, x1: number, y: number, z: number, n: number) => {
+      for (let i = 0; i < n; i++) trim.push([cyl(0.012, 0.008, 0.07, 5), x0 + ((x1 - x0) * i) / (n - 1), y, z]);
+    };
+    for (const side of [-1, 1]) {
+      // over each shoulder, sagging down off it
+      sheet.push([rbox(0.36, 0.1, 0.48, 0.045), side * 0.16, 0.44, -0.01, 0, 0, -side * 0.22]);
+      // down over the arm to the hip, hanging away from it, and a flap down the front, left open
+      sheet.push([rbox(0.07, 0.56, 0.46, 0.03), side * 0.34, 0.13, -0.01, 0, 0, side * 0.1]);
+      sheet.push([rbox(0.16, 0.52, 0.05, 0.02), side * 0.22, 0.16, 0.2]);
+      trim.push([rbox(0.165, 0.045, 0.055, 0.01), side * 0.22, -0.02, 0.2]);
+      fringe(side * 0.15, side * 0.29, -0.13, 0.2, 4);
+    }
+    sheet.push([rbox(0.68, 0.66, 0.06, 0.03), 0, 0.11, -0.22]);
+    // two folds where it sags down the back
+    for (const x of [-0.12, 0.14]) sheet.push([rbox(0.04, 0.5, 0.03, 0.012), x, 0.1, -0.24]);
+    trim.push([rbox(0.665, 0.045, 0.055, 0.01), 0, -0.04, -0.21], [rbox(0.665, 0.025, 0.055, 0.01), 0, 0.02, -0.21]);
+    fringe(-0.3, 0.3, -0.25, -0.21, 9);
+    rig.props.push(put(torso, joined('wet blanket', sheet), wool, 0, 0, 0));
+    const hem = put(torso, joined('wet blanket trim', trim), stripe, 0, 0, 0);
+    hem.castShadow = false;
+    rig.props.push(hem);
+    rig.drips = new THREE.Group();
+    const water = mat(0x8fd3ff, 0.1, 0.35);
+    for (const [x, y, z] of [
+      [-0.22, -0.18, 0.2],
+      [0.26, -0.17, 0.2],
+      [-0.25, -0.29, -0.21],
+      [0.05, -0.29, -0.21],
+      [0.27, -0.29, -0.22],
+      [-0.36, -0.16, 0.05],
+      [0.36, -0.16, -0.08],
+      [-0.08, -0.29, -0.2],
+    ] as const) {
+      const drop = put(rig.drips, sph(0.03, 8), water, x, y, z);
+      drop.scale.y = 1.5;
+      drop.castShadow = false;
+      drop.userData.y = y;
+    }
+    torso.add(rig.drips);
+    rig.props.push(rig.drips);
   } else if (visual === 'battery') {
     const cell = new THREE.Group();
     put(cell, rbox(0.26, 0.13, 0.09, 0.02), mat(0x2f3136, 0.6), 0, 0, 0).castShadow = false;
@@ -569,19 +659,28 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     put(hen, sph(0.018, 6), mat(0xd9362f, 0.5), 0.14, 0.05, 0);
     put(hen, rbox(0.07, 0.09, 0.08, 0.02), white, -0.12, 0.05, 0).rotation.z = 0.5;
     for (const z of [-0.03, 0.03]) put(hen, sph(0.01, 6), mat(0x1d1f24, 0.3), 0.13, 0.095, z);
-    hen.position.y = 0.27;
     hen.rotation.y = -Math.PI / 2;
+    // bigger than life, and raised to sit on the head as big as it is; too small for a shadow worth drawing before,
+    // it casts none
+    hen.scale.setScalar(HEN_SIZE);
+    hen.position.y = 0.22 + 0.05 * HEN_SIZE;
     for (const o of hen.children) o.castShadow = false;
     head.add(hen);
     rig.props.push(hen);
   } else if (visual === 'goat') {
-    // a pair of curling goat horns, and a little beard to go with them
-    const horn = mat(0xd9c9a8, 0.6);
-    for (const side of [-1, 1]) {
-      const h = put(head, torus(0.07, 0.025), horn, side * 0.13, 0.2, -0.02);
-      h.rotation.set(0, Math.PI / 2, side * 0.6);
-      rig.props.push(h);
-    }
+    // a ram's curling horns, one each side, and a little beard to go with them
+    const horn = mat(0xcbb48a, 0.7);
+    for (const side of [-1, 1])
+      rig.props.push(
+        put(
+          head,
+          cached(`ram horn ${side}`, () => ramHorn(side)),
+          horn,
+          0,
+          0,
+          0,
+        ),
+      );
     rig.props.push(put(head, cyl(0.04, 0.001, 0.12, 8), mat(0xf4f1ea, 0.8), 0, -0.24, 0.13));
   } else if (visual === 'brent') {
     // Brent: a small see-through man in a polo shirt and lanyard, hovering at their shoulder with a thumbs up
@@ -662,10 +761,28 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     for (const o of [...compass.children, ...rig.orbit.children]) o.castShadow = false;
     // bobbing gently, and put away while they lie down
     compass.scale.setScalar(1.5);
+    compass.position.y = 0.4;
     head.add(compass);
     rig.bob = compass;
+  } else if (visual === 'neck') {
+    // a phone held up in front of them, its screen lit, that they cannot look up from
+    const phone = new THREE.Group();
+    put(phone, rbox(0.13, 0.22, 0.02, 0.015), mat(0x1d1f24, 0.3), 0, 0, 0);
+    // lit on both faces, so it glows whichever way it is seen
+    const glow = joined('phone screens', [
+      [rbox(0.11, 0.19, 0.006, 0.005), 0, 0, 0.012],
+      [rbox(0.11, 0.19, 0.006, 0.005), 0, 0, -0.012],
+    ]);
+    put(phone, glow, mat(0x8fd3ff, 0.3, 1.2), 0, 0, 0);
+    // lying on the hand, on the thumb's side, which faces up with the forearm raised, the screen tipped to the face
+    phone.position.set(0, -0.32 + handUp, 0.068);
+    phone.rotation.x = 0.45;
+    phone.name = 'phone';
+    holdR.add(phone);
+    rig.props.push(phone);
   } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
+  if (rig.bob) rig.bobAt = rig.bob.position.y;
   if (role === 'practitioner' || role === 'caretaker') {
     const { bundle, tip } = buildSage();
     bundle.position.set(0, -0.31 + handUp, 0.03);
@@ -709,5 +826,5 @@ export function endCure(rig: CharRig, look: Look) {
   if (rig.glasses) rig.glasses.visible = true;
   rig.head.scale.set(1 / rig.wide, 1, 1 / rig.wide);
   rig.headMesh.material = mat(look.skin, 0.65);
-  if (rig.burst) rig.burst.visible = false;
+  if (rig.burst) rig.burst.group.visible = false;
 }

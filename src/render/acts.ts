@@ -43,11 +43,12 @@ export function actOf(c: Char, at?: ItemDef): Act | undefined {
 }
 
 /**
- * The id of the item someone is at, or 0: a guest getting a drink, a snack or a game, or resting after a treatment, is
- * at the one they claimed, and any other guest at their station; a member of staff is at their post.
+ * The id of the item someone is at, or 0: a guest getting a drink, a snack or a game, or going to rest or resting after
+ * a treatment, is at the one they claimed, and any other guest at their station; a member of staff is at their post.
  */
 export function itemIdAt(c: Char): number {
-  if (c.kind === 'guest') return c.state === 'need' || c.state === 'resting' ? c.claimItem : c.station;
+  if (c.kind === 'guest')
+    return c.state === 'need' || c.state === 'toRest' || c.state === 'resting' ? c.claimItem : c.station;
   return c.kind === 'staff' ? c.post : 0;
 }
 

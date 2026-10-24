@@ -8,7 +8,7 @@ import { streetEnds } from '../core/sim/chars';
 import type { Sim } from '../core/sim/sim';
 import type { Guest, Staff } from '../core/state/types';
 import { conditionColor } from './heatmap';
-import { streetFade } from './people';
+import { drawnAt, streetFade } from './people';
 
 /** How someone is doing, from 0 (badly) to 1 (well), or null to leave them unringed. */
 export type HaloValue = (c: Guest | Staff) => number | null;
@@ -78,7 +78,9 @@ export class HalosLayer {
       if (!halo) continue;
       const size = streetFade(c.x, c.y, ends) * halo.scale * (running(c) ? runnerPulse(t) : 1);
       if (size <= 0.02) continue;
-      this.matrix.makeScale(size, 1, size).setPosition(c.x, c.h + 0.03, c.y);
+      // under them as they are drawn, climbing on or off something or stepping aside
+      const d = drawnAt.get(c.id);
+      this.matrix.makeScale(size, 1, size).setPosition(d?.x ?? c.x, (d?.y ?? c.h) + 0.03, d?.z ?? c.y);
       this.mesh.setMatrixAt(n, this.matrix);
       this.mesh.setColorAt(n, conditionColor(halo.v, this.color));
       n++;

@@ -63,6 +63,13 @@ const IDS = [
   ...Object.entries(ITEMS).flatMap(([type, def]) =>
     !def.machine && def.access.some((a) => a.pose === 'lie') ? [`lying:${type}`] : [],
   ),
+  // a guest climbing onto a table, face down and on their back, partway up, and back off it, partway down
+  'climb:massage_table',
+  'climb:reiki_table',
+  'climb-off:massage_table',
+  'climb-off:reiki_table',
+  // a guest walking round corners
+  'walk:guest',
   'room:door',
   'scenery:puddles',
   'scenery:trees',

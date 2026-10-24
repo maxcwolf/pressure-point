@@ -89,7 +89,7 @@ describe('people drawn in batches', () => {
     expect(batches.reduce((sum, b) => sum + b.count, 0)).toBe(parts);
   });
 
-  it('draws someone seen from afar with fewer sides, part for part', () => {
+  it('draws someone seen from afar with fewer sides, and from further with fewer still, part for part', () => {
     const { scene, batches, rigs } = crowd(1);
     /** The parts and triangles the batches draw, with the camera this far away. */
     const seenFrom = (distance?: number) => {
@@ -110,10 +110,14 @@ describe('people drawn in batches', () => {
     };
     const full = seenFrom();
     const near = seenFrom(2);
-    const far = seenFrom(40);
+    // about 80 pixels to a meter, and then about 40, as at the distance the game is mostly played at
+    const far = seenFrom(15);
+    const furthest = seenFrom(29);
     expect(near).toEqual(full);
     expect(far.parts).toBe(full.parts);
     expect(far.triangles).toBeLessThan(full.triangles * 0.5);
+    expect(furthest.parts).toBe(full.parts);
+    expect(furthest.triangles).toBeLessThan(far.triangles * 0.5);
   });
 
   it('leaves a glowing part, or a material of its own, to draw itself', () => {

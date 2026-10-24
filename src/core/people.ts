@@ -31,9 +31,29 @@ const SKINS = [0xf6d2b8, 0xeebf9e, 0xd9a078, 0xb97a55, 0x8d5a3b, 0x6b4229, 0xf9d
 
 const HAIRS = [0x2b1d16, 0x4a2f1d, 0x8a5a2b, 0xd9a441, 0xb5422e, 0x8c8c8c, 0xe9e3d3, 0x6a4fb0, 0x2f7f7a];
 
+/**
+ * The colors guests' tops come in: none a uniform's, so a member of staff stands out in a crowd. As many as there
+ * always were, so making someone up takes the game's random numbers as it always did.
+ */
 const TOPS = [
-  0xe76f51, 0xf4a261, 0xe9c46a, 0x2a9d8f, 0x4d7ea8, 0xb56576, 0x8ab17d, 0x6d597a, 0xef8fa2, 0x5fa8d3, 0xf2f2f2,
+  0xe76f51, 0xf4a261, 0xe9c46a, 0xc8417f, 0x3a5fc8, 0xb56576, 0x6a3fa0, 0x6d597a, 0xef8fa2, 0x5fa8d3, 0xa8d14f,
 ];
+
+/**
+ * The tops guests wore that were too like a uniform, and what each became: the receptionist's teal, the healer's blue,
+ * the Caretaker's sage, and the white of the consultant's and practitioner's coats.
+ */
+const RETIRED_TOPS: ReadonlyMap<number, number> = new Map([
+  [0x2a9d8f, 0xc8417f],
+  [0x4d7ea8, 0x3a5fc8],
+  [0x8ab17d, 0x6a3fa0],
+  [0xf2f2f2, 0xa8d14f],
+]);
+
+/** Put a guest from an older save in the top a guest in that color would wear now, rather than a uniform's. */
+export function settleTop(look: Pick<Look, 'top'>) {
+  look.top = RETIRED_TOPS.get(look.top) ?? look.top;
+}
 
 /** The colors shoes come in: the brown everyone wore before, black, tan and white. */
 export const SHOES = [0x3a302b, 0x1d1d22, 0x9b6b3f, 0xe8e4dc];
