@@ -10,7 +10,7 @@ import { must } from '../core/util';
 import { accessPose, accessTile, itemCenter } from '../core/world';
 import { buildCharacter, type CharRig } from '../render/models/character';
 import { buildItem } from '../render/models/items';
-import { CLIMB_DOWN, CURE_HOLD, newMotion, showMotion, type Shown } from '../render/motion';
+import { CLIMB, CURE_HOLD, newMotion, showMotion, type Shown } from '../render/motion';
 import { poseChar } from '../render/pose';
 import type { Specimen } from './catalog';
 import { demoGuest, LAB_LOOK } from './people';
@@ -24,14 +24,20 @@ const LIES_FOR = 2.5;
 const WALK = 1;
 const PAUSE = 1.2;
 
-/** The moment into the round a picture held still shows, in seconds: halfway up, kneeling on it or sitting on its edge. */
+/**
+ * The moment into the round a picture held still shows, in seconds, getting on: halfway up, kneeling on it or sitting
+ * on its edge.
+ */
 const STILL_AT = 1.55;
 
 /** The tables someone climbs onto in the lab: one they lie on face down, and one on their back. */
 export const CLIMBS: readonly ItemType[] = ['massage_table', 'reiki_table'];
 
-/** A guest getting onto a table, lying there, and getting off it healed, in a loop. */
-export function climbSpecimen(type: ItemType): Specimen {
+/**
+ * A guest getting onto a table, lying there, and getting off it healed, in a loop: held still, halfway up, or halfway
+ * back down once the puff of the cure is done.
+ */
+export function climbSpecimen(type: ItemType, way: 'on' | 'off' = 'on'): Specimen {
   const def = ITEMS[type];
   const spot = def.access.findIndex((a) => a.pose === 'lie');
   const condition = must(
@@ -39,9 +45,9 @@ export function climbSpecimen(type: ItemType): Specimen {
     'a condition with a hen',
   );
   return {
-    id: `climb:${type}`,
+    id: way === 'on' ? `climb:${type}` : `climb-off:${type}`,
     group: 'Lying',
-    name: `${def.name}, getting on and off`,
+    name: way === 'on' ? `${def.name}, getting on and off` : `${def.name}, getting off`,
     footprint: [def.w, def.h],
     /** Build the table, and the guest, who goes round and round. */
     build() {
@@ -76,7 +82,7 @@ export function climbSpecimen(type: ItemType): Specimen {
        * Walk the guest through a round from its start to a moment, a sim step at a time, and how they are shown then;
        * and when the sim has them back where they started, healed.
        */
-      const play = (until: number): { shown: Shown; back: number } => {
+      const play = (until: number): { shown: Shown; lay: number; back: number } => {
         const g = start();
         const m = newMotion();
         let shown = showMotion(m, g, 0, STEP, undefined, lie);
@@ -95,10 +101,13 @@ export function climbSpecimen(type: ItemType): Specimen {
           }
           shown = showMotion(m, g, t, STEP, g.pose === 'lie' ? lie : undefined, lie);
         }
-        return { shown, back };
+        return { shown, lay, back };
       };
       // the round ends a little after they are back, once they have caught up and stood a moment
-      const round = play(Infinity).back + CURE_HOLD + CLIMB_DOWN + PAUSE;
+      const whole = play(Infinity);
+      const round = whole.back + CURE_HOLD + CLIMB.back + PAUSE;
+      // getting off, halfway down: once they have lain there, been held through the cure, and climbed down half way
+      const still = way === 'on' ? STILL_AT : whole.lay + LIES_FOR + CURE_HOLD + CLIMB[lie ?? 'prone'] / 2;
       let rig: CharRig | undefined;
       let last = Infinity;
       return {
@@ -106,7 +115,7 @@ export function climbSpecimen(type: ItemType): Specimen {
         controls: [],
         /** Show the guest where they are in the round now, a new guest, symptom and all, each time round. */
         animate(t, dt) {
-          const into = ((((t + STILL_AT) / round) % 1) + 1) % 1;
+          const into = ((((t + still) / round) % 1) + 1) % 1;
           if (!rig || into < last) {
             if (rig) root.remove(rig.group);
             rig = buildCharacter(LAB_LOOK, undefined, condition.visual);

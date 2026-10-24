@@ -9,8 +9,7 @@ import { demoGuest, LAB_LOOK } from '../../src/lab/people';
 import type { Lying } from '../../src/render/acts';
 import {
   APART,
-  CLIMB_DOWN,
-  CLIMB_ON,
+  CLIMB,
   CURE_HOLD,
   EDGE,
   keepApart,
@@ -87,8 +86,8 @@ describe('getting onto a table', () => {
       const done = shown.findIndex(
         (s, i) => i * DT > lay && s.lying === 1 && s.fours === 0 && s.hands === 0 && Math.abs(s.c.h - 0.6) < 0.01,
       );
-      expect(done * DT - lay).toBeGreaterThan(CLIMB_ON.prone - 0.1);
-      expect(done * DT - lay).toBeLessThan(CLIMB_ON.prone + 0.2);
+      expect(done * DT - lay).toBeGreaterThan(CLIMB.prone - 0.1);
+      expect(done * DT - lay).toBeLessThan(CLIMB.prone + 0.2);
     }
   });
 
@@ -131,12 +130,12 @@ describe('getting onto a table', () => {
 });
 
 /** A guest lying on a table, being treated or resting, as the sim leaves them once they arrive, settled there. */
-function lyingDown(state: Guest['state'] = 'served') {
+function lyingDown(state: Guest['state'] = 'served', lie: Lying = 'prone') {
   const g = arriving();
-  const { m } = run(g, 119, 'prone');
+  const { m } = run(g, 119, lie);
   // being treated, or resting, for a moment before they get up
   g.state = state;
-  run(g, 1, 'prone', m, 119 * DT);
+  run(g, 1, lie, m, 119 * DT);
   return { g, m };
 }
 
@@ -158,21 +157,67 @@ function getUp(g: Guest, healed: boolean) {
   });
 }
 
+/** Whether someone is shown down off a table, on their feet. */
+const onTheFloor = (s: Shown) => s.c.h < 0.01 && (s.c.pose === 'stand' || s.c.pose === 'walk');
+
 describe('getting off a table', () => {
-  it('climbs down along the first step rather than dropping through the table', () => {
-    const { g, m } = lyingDown();
-    getUp(g, false);
-    const { shown } = run(g, 30, undefined, m, 2);
-    const heights = shown.map((s) => s.c.h);
-    expect(heights[0]).toBeGreaterThan(0.5);
-    expect(heights.at(-1)).toBe(0);
-    expect(biggestStep(heights)).toBeLessThan(0.15);
-    expect(biggestStep(shown.map((s) => s.lying))).toBeLessThan(0.35);
-    // and keeps up with the sim
-    expect(Math.hypot(shown.at(-1)!.c.x - g.x, shown.at(-1)!.c.y - g.y)).toBeLessThan(0.01);
+  /** Get a guest up off the table at a speed of the game, and what was shown each frame, catching up and all. */
+  function getOff(speed: number, lie: Lying, healed = false) {
+    const { g, m } = lyingDown('served', lie);
+    getUp(g, healed);
+    const shown: Shown[] = [];
+    for (let i = 0; i < 240; i++) {
+      moveAlong(g, DT * speed, PACE);
+      shown.push(showMotion(m, g, 2 + i * DT, DT, undefined, undefined));
+    }
+    return { g, shown };
+  }
+
+  /** Where they climb down to: the table's edge, partway along the first step, from the spot to the tile beside it. */
+  const edge = (1 - EDGE) * Math.hypot(1.5 - 0.5, 1.5 - 1.0);
+
+  it('climbs down to the edge in the same time at every speed of the game, face down or off their back', () => {
+    for (const lie of ['prone', 'back'] as const)
+      for (const speed of [1, 3]) {
+        const { shown } = getOff(speed, lie);
+        const down = shown.findIndex(onTheFloor);
+        expect(down * DT, `${lie} at speed ${speed}`).toBeGreaterThan(CLIMB[lie] - 0.15);
+        expect(down * DT, `${lie} at speed ${speed}`).toBeLessThan(CLIMB[lie] + 0.1);
+        // at the edge, or a step on from it after the sim
+        expect(Math.abs(Math.hypot(shown[down]!.c.x - 0.5, shown[down]!.c.y - 1.0) - edge)).toBeLessThan(0.1);
+      }
   });
 
-  it('stays lying down while a healed guest’s symptom goes, then climbs down and catches up', () => {
+  it('is never shown standing up on the table', () => {
+    for (const lie of ['prone', 'back'] as const)
+      for (const speed of [1, 3])
+        for (const s of getOff(speed, lie).shown) {
+          if (s.c.h < 0.05) continue;
+          expect(s.c.pose, `${lie} at speed ${speed}`).not.toBe('stand');
+          expect(s.c.pose, `${lie} at speed ${speed}`).not.toBe('walk');
+          // lying, they are well down, on their hands or sitting up
+          if (s.c.pose === 'lie') expect(s.lying >= 0.4 || s.hands >= 0.5 || s.sat > 0).toBe(true);
+        }
+  });
+
+  it('climbs down gradually, then catches up with where the sim has them without a jump', () => {
+    for (const lie of ['prone', 'back'] as const)
+      for (const speed of [1, 3]) {
+        const { g, shown } = getOff(speed, lie);
+        const rises = shown.map((s, i) => {
+          const was = shown[i - 1];
+          return s.c.pose === was?.c.pose && s.sat === was.sat ? Math.abs(s.c.h - was.c.h) : 0;
+        });
+        expect(Math.max(...rises)).toBeLessThan(0.15);
+        expect(biggestStep(shown.map((s) => s.lying))).toBeLessThan(0.35);
+        const moves = shown.slice(1).map((s, i) => Math.hypot(s.c.x - shown[i]!.c.x, s.c.y - shown[i]!.c.y));
+        expect(Math.max(...moves)).toBeLessThan(0.3);
+        const last = shown.at(-1)!;
+        expect(Math.hypot(last.c.x - g.x, last.c.y - g.y)).toBeLessThan(0.01);
+      }
+  });
+
+  it('stays lying down while a healed guest’s symptom goes, then climbs down, hops and catches up', () => {
     const { g, m } = lyingDown();
     getUp(g, true);
     const held = Math.floor(CURE_HOLD / DT) - 1;
@@ -185,10 +230,11 @@ describe('getting off a table', () => {
     }
     // the sim went on as it does
     expect(g.x).toBeGreaterThan(2);
-    const after = run(g, Math.ceil((CLIMB_DOWN + 1) / DT), undefined, m, 2 + held * DT).shown;
-    const heights = after.map((s) => s.c.h);
-    expect(biggestStep(heights)).toBeLessThan(0.15);
-    // a hop for joy once down
+    const after = run(g, Math.ceil((CLIMB.prone + 2) / DT), undefined, m, 2 + held * DT).shown;
+    const down = after.findIndex(onTheFloor);
+    expect(down * DT).toBeGreaterThan(CLIMB.prone - 0.1);
+    // a hop for joy once down, and not before
+    expect(after.slice(0, down).every((s) => !(s.up >= 0))).toBe(true);
     expect(after.some((s) => s.up >= 0 && s.up < 0.5)).toBe(true);
     // and then they are shown where the sim has them
     const last = after.at(-1)!;
@@ -201,9 +247,9 @@ describe('getting up after a rest', () => {
   it('is not held lying down, healed or not, where they only rested', () => {
     const { g, m } = lyingDown('resting');
     getUp(g, true);
-    const { shown } = run(g, Math.ceil((CLIMB_DOWN + 0.2) / DT), undefined, m, 2);
+    const { shown } = run(g, Math.ceil((CLIMB.prone + 0.05) / DT), undefined, m, 2);
     // straight down off it, as anyone getting up does, with no hop
-    expect(shown.at(-1)!.c.h).toBe(0);
+    expect(onTheFloor(shown.at(-1)!)).toBe(true);
     expect(shown.every((s) => !(s.up >= 0))).toBe(true);
   });
 });

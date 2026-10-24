@@ -1,9 +1,8 @@
 // Where someone is shown, which can differ for a moment from where the sim has them. The sim moves people a step at a
 // time and changes how they stand all at once: on the tick a guest reaches a table they are lying on it, and on the
-// tick they get up they are standing on the floor. Shown, they walk up to its edge and climb on, in the same time at
-// any speed of the game, and climb off along the first step away, so nothing the sim counts changes; and a guest healed
-// lying down where they were treated stays there until the puff of the cure is done, then catches up with where the
-// sim has got to.
+// tick they get up they are standing on the floor. Shown, they walk up to its edge and climb on, and climb back off to
+// its edge, in the same time at any speed of the game, then catch up with where the sim has got to, so nothing the sim
+// counts changes; and a guest healed where they were treated stays there first while the puff of the cure plays.
 
 import * as THREE from 'three';
 
@@ -18,26 +17,19 @@ const { smoothstep, lerp } = THREE.MathUtils;
 export const TELEPORT = 2;
 
 /**
- * Getting off a spot they lay on, along the first step away (as a share of the step, which runs from the spot to the
- * middle of the tile beside it, crossing its edge about halfway): until how far along they are still lying down, until
- * how far they are still at the spot's height, and from where they walk.
- */
-export const CLIMB = { from: 0.4, up: 0.62, lie: 0.45 } as const;
-
-/**
  * Where along the last step to a spot they lie on someone stops, at the item's edge, as a share of the step from the
  * middle of the tile beside it to the spot.
  */
 export const EDGE = 0.28;
 
-/** How long climbing onto a spot takes, onto their back or face down, in seconds, whatever the game's speed. */
-export const CLIMB_ON = { back: 0.9, prone: 0.9 } as const;
+/**
+ * How long climbing onto a spot takes, onto their back or face down, and climbing back off it, in seconds, whatever
+ * the game's speed.
+ */
+export const CLIMB = { back: 0.9, prone: 0.9 } as const;
 
 /** How long a guest healed lying down is held there, for the puff of the cure to be seen, in seconds. */
 export const CURE_HOLD = 0.95;
-
-/** How long someone held back takes to climb down, in seconds, whatever the game's speed. */
-export const CLIMB_DOWN = 0.45;
 
 /** How much faster than the sim someone held back catches up, and how fast at least, in meters a second. */
 const CATCH = { times: 2.5, least: 2.5 } as const;
@@ -83,10 +75,15 @@ export interface Motion {
   simY: number;
   /** The spot they were last seen lying or sitting at to be treated, until they are off it. */
   spot: Spot | undefined;
-  /** The first point the sim walked them to from the spot, which they climb down to. */
+  /** The first point the sim walked them to from the spot, the way they get off it. */
   off: { x: number; y: number } | undefined;
-  /** Until when, in the scene's seconds, they are held at the spot; NaN if they are not. */
+  /**
+   * Until when, in the scene's seconds, they are held at the spot, NaN if they are not; until when they are climbing
+   * down off it; and whether they were healed there, so they hop for joy once down.
+   */
   hold: number;
+  down: number;
+  cured: boolean;
   /** Where the sim has walked them since they were held, which they follow to catch up. */
   trail: { x: number; y: number }[];
   /** When they were last down off a spot they were held at, in the scene's seconds, or NaN. */
@@ -109,6 +106,8 @@ export const newMotion = (): Motion => ({
   spot: undefined,
   off: undefined,
   hold: NaN,
+  down: NaN,
+  cured: false,
   trail: [],
   upAt: NaN,
   edge: undefined,
@@ -164,19 +163,21 @@ export function showMotion(
   // seen for the first time, or put somewhere new: shown where they are
   if (!(step <= TELEPORT)) {
     Object.assign(m, { x: c.x, y: c.y, h: c.h, facing: frontOf(c.facing, c.pose, lie) });
-    Object.assign(m, { off: undefined, hold: NaN, trail: [], aside: { x: 0, y: 0 } });
+    Object.assign(m, { off: undefined, hold: NaN, down: NaN, trail: [], aside: { x: 0, y: 0 } });
     m.spot = spotOf(c, lie);
     return { c: { ...c }, lie, lying: c.pose === 'lie' ? 1 : 0, up: NaN, fours: 0, hands: 0, sat: 0 };
   }
   const spot = m.spot;
   if (spot && !atSpot(c, spot)) {
-    // getting up: down to the first point the sim walks them to, held there first if the sim healed them just now
+    // getting up: held there while the sim walks on, through the puff of a cure if the sim healed them just now where
+    // they were treated, not on a Lounger after, and climbing down off whatever they lay on
     if (!m.off) {
       const next = c.path?.[0];
       m.off = next ? { x: next[0], y: next[1] } : { x: c.x, y: c.y };
-      // only someone healed where they were treated, not someone getting up from a Lounger after
-      if (c.kind === 'guest' && c.outcome === 'healed' && spot.served) {
-        m.hold = t + CURE_HOLD;
+      m.cured = c.kind === 'guest' && c.outcome === 'healed' && spot.served;
+      if (m.cured || spot.pose === 'lie') {
+        m.hold = t + (m.cured ? CURE_HOLD : 0);
+        m.down = m.hold + (spot.pose === 'lie' ? CLIMB[spot.lie ?? 'prone'] : 0);
         m.trail = [];
         m.x = spot.x;
         m.y = spot.y;
@@ -187,53 +188,51 @@ export function showMotion(
     m.off = undefined;
   }
   const lagging = Number.isFinite(m.hold);
-  if (lagging) {
-    // climbing down at a pace of their own, then hurrying after the sim
-    const down = m.spot && m.off && Math.hypot(m.off.x - m.spot.x, m.off.y - m.spot.y);
-    follow(m, c, t, down ? (down / CLIMB_DOWN) * dt : Math.max(step * CATCH.times, CATCH.least * dt));
-  } else {
-    m.x = c.x;
-    m.y = c.y;
-  }
-  const shown: Shown = {
-    c: { ...c, x: m.x, y: m.y },
-    lie,
-    lying: c.pose === 'lie' ? 1 : 0,
-    up: t - m.upAt,
-    fours: 0,
-    hands: 0,
-    sat: 0,
-  };
+  const shown: Shown = { c: { ...c }, lie, lying: c.pose === 'lie' ? 1 : 0, up: NaN, fours: 0, hands: 0, sat: 0 };
   let h = c.h;
   let facing = frontOf(c.facing, c.pose, lie);
   let exact = false;
   const off = m.spot && m.off ? m.spot : undefined;
   if (off && m.off) {
-    // climbing down off the spot, along the way to the first point, once any hold is over
-    const span = Math.hypot(m.off.x - off.x, m.off.y - off.y);
-    const w = span > 0.05 ? Math.min(1, Math.hypot(m.x - off.x, m.y - off.y) / span) : 1;
-    const still = t < m.hold;
-    if (off.pose === 'lie' && w < 1) {
-      shown.c.pose = 'lie';
-      shown.lie = off.lie;
-      shown.lying = 1 - smoothstep(w, 0, 1 - CLIMB.lie);
-      if (shown.lying <= 0) shown.c.pose = w < 1 - CLIMB.from ? 'stand' : 'walk';
-      h = off.h * (1 - smoothstep(w, 1 - CLIMB.up, 1 - CLIMB.from));
-      const away = Math.atan2(m.off.x - off.x, m.off.y - off.y);
-      facing = turnBy(frontOf(off.facing, 'lie', off.lie), away, smoothstep(w, 0, 1 - CLIMB.from));
+    if (off.pose === 'lie' && t < m.down) {
+      // lying there through any hold, then the climb onto it played backwards, down to its edge
+      const e = edgeOf(off, m.off);
+      const got = climbPose(shown, e, off, t < m.hold ? 1 : 1 - (t - m.hold) / CLIMB[e.lie], true);
+      m.x = shown.c.x;
+      m.y = shown.c.y;
+      h = got.h;
+      facing = got.facing;
       exact = true;
-    } else if (still) {
+    } else if (t < m.hold) {
       // held sitting where they were treated
       shown.c.pose = 'sit';
       h = off.h;
       facing = off.facing;
       exact = true;
     } else {
-      if (lagging) m.upAt = t;
+      // down, standing at its edge, or up off the seat, to walk on after the sim from there
+      if (off.pose === 'lie') {
+        const e = edgeOf(off, m.off);
+        m.x = e.x;
+        m.y = e.y;
+        // not back to where the sim had them between the spot and its edge
+        const behind = Math.hypot(e.x - off.x, e.y - off.y) + 1e-3;
+        while (m.trail[0] && Math.hypot(m.trail[0].x - off.x, m.trail[0].y - off.y) < behind) m.trail.shift();
+      }
+      if (m.cured) m.upAt = t;
       m.spot = undefined;
       m.off = undefined;
     }
-  } else if (!lagging) {
+  }
+  if (lagging) follow(m, c, !m.off, Math.max(step * CATCH.times, CATCH.least * dt));
+  else {
+    m.x = c.x;
+    m.y = c.y;
+  }
+  shown.c.x = m.x;
+  shown.c.y = m.y;
+  shown.up = t - m.upAt;
+  if (!off && !lagging) {
     const on = bed && climbOn(c, bed);
     if (on) {
       // walking up to the item's edge, and waiting there for the sim to finish the step onto it
@@ -251,8 +250,9 @@ export function showMotion(
     } else if (m.edge && m.spot && c.pose === 'lie') {
       // on it, as the sim has them: climbing up from the edge
       if (!Number.isFinite(m.climbAt)) m.climbAt = t;
-      const got = climbUp(shown, m.edge, m.spot, t - m.climbAt);
-      if (got) {
+      const a = (t - m.climbAt) / CLIMB[m.edge.lie];
+      if (a < 1) {
+        const got = climbPose(shown, m.edge, m.spot, a, false);
         m.x = shown.c.x;
         m.y = shown.c.y;
         h = got.h;
@@ -261,7 +261,7 @@ export function showMotion(
       } else m.edge = undefined;
     }
   }
-  if (lagging && !off) {
+  if (lagging && !m.off) {
     // catching up, walking the way the sim went
     const next = m.trail[0] ?? c;
     if (Math.hypot(next.x - m.x, next.y - m.y) > 0.01) facing = Math.atan2(next.x - m.x, next.y - m.y);
@@ -285,15 +285,14 @@ export function showMotion(
 }
 
 /**
- * Climbing onto a spot from its edge, so far into it, in seconds. Onto their back: turn round at the edge, hop up to sit
- * on it, then swing the legs up and lie back along it. Face down: lean forward with the hands on it, climb up onto it
- * on all fours, then stretch out along it. How high they are and which way their front faces, or nothing once they are
- * lying there.
+ * Someone so far through climbing onto a spot from its edge, from 0 (standing at the edge) to 1 (lying there). Onto
+ * their back: turn round at the edge, hop up to sit on it, then swing the legs up and lie back along it. Face down:
+ * lean forward with the hands on it, climb up onto it on all fours, then stretch out along it. Getting off, it plays
+ * backwards, but someone standing up off its edge stays facing away from it. How high they are and which way their
+ * front faces.
  */
-function climbUp(shown: Shown, e: Edge, spot: Spot, since: number): { h: number; facing: number } | undefined {
+function climbPose(shown: Shown, e: Edge, spot: Spot, a: number, off: boolean): { h: number; facing: number } {
   const back = e.lie === 'back';
-  const a = since / (back ? CLIMB_ON.back : CLIMB_ON.prone);
-  if (a >= 1) return undefined;
   /** Put them so far from the edge to the spot. */
   const at = (w: number) => {
     shown.c.x = lerp(e.x, spot.x, w);
@@ -311,7 +310,7 @@ function climbUp(shown: Shown, e: Edge, spot: Spot, since: number): { h: number;
       shown.c.pose = a < 0.12 ? 'stand' : 'sit';
       shown.lying = 0;
       const h = a < 0.12 ? 0 : lerp(-SIT_Y, seat, smoothstep(a, 0.12, 0.32));
-      return { h, facing: turnBy(e.toward, perch, smoothstep(a, 0, 0.22)) };
+      return { h, facing: off ? perch : turnBy(e.toward, perch, smoothstep(a, 0, 0.22)) };
     }
     // lying back from sitting, the legs swung up and round
     const w = smoothstep(a, SIT, 1);
@@ -367,6 +366,18 @@ function spotOf(c: Char, lie: Lying | undefined): Spot | undefined {
   return undefined;
 }
 
+/** The edge of a spot they lay on, from the first point the sim walked them to off it. */
+function edgeOf(s: Spot, from: { x: number; y: number }): Edge {
+  return {
+    x: lerp(from.x, s.x, EDGE),
+    y: lerp(from.y, s.y, EDGE),
+    toward: Math.atan2(s.x - from.x, s.y - from.y),
+    face: frontOf(s.facing, 'lie', s.lie),
+    h: s.h,
+    lie: s.lie ?? 'prone',
+  };
+}
+
 /** Whether someone is still at a spot, as they were put there. */
 const atSpot = (c: Char, s: Spot) => c.pose === s.pose && Math.hypot(c.x - s.x, c.y - s.y) < 0.01;
 
@@ -389,13 +400,13 @@ function climbOn(
 }
 
 /**
- * Note where the sim has walked someone held back, and once the hold is over, walk them on after it so far, until they
+ * Note where the sim has walked someone held back, and once they are free to, walk them on after it so far, until they
  * are back where it has them.
  */
-function follow(m: Motion, c: Char, t: number, go: number) {
+function follow(m: Motion, c: Char, free: boolean, go: number) {
   const tail = m.trail.at(-1);
   if (!tail || Math.hypot(c.x - tail.x, c.y - tail.y) > 0.01) m.trail.push({ x: c.x, y: c.y });
-  if (t < m.hold) return;
+  if (!free) return;
   for (let next = m.trail[0]; next && go > 0; next = m.trail[0]) {
     const d = Math.hypot(next.x - m.x, next.y - m.y);
     if (d <= go) {
