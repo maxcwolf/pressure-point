@@ -1,12 +1,15 @@
 // The tutorial's lessons come the first time each thing happens, once a game each and never two in a day, about whoever
-// it happened to, and not at all with the lessons off.
+// it happened to, and not at all with the lessons off. The one on money comes as the bank first runs short of a payday,
+// the clock paused or not.
 import { describe, expect, it } from 'vitest';
 
+import { DAYS_PER_MONTH } from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
+import { monthlyPayroll } from '../../src/core/sim/economy';
 import type { SimEvent } from '../../src/core/sim/events';
-import { checkLessons, LESSON_IDS, LESSONS, lessonTip } from '../../src/core/sim/lessons';
+import { checkLessons, LESSON_IDS, lessonCard, LESSONS, lessonTip } from '../../src/core/sim/lessons';
 import type { Sim } from '../../src/core/sim/sim';
-import { openCenter, run, runUntil } from './helpers';
+import { addConsult, freshSim, hire, openCenter, run, runUntil } from './helpers';
 
 /** The simulation's own context, for the functions that take it. */
 const ctxOf = (sim: Sim) => (sim as unknown as { ctx: SimContext }).ctx;
@@ -23,13 +26,17 @@ function lessonGame() {
 
 describe('the lessons', () => {
   it('each have a title, a few pictures and something to say', () => {
+    const { s } = lessonGame();
     for (const id of LESSON_IDS) {
       const l = LESSONS[id];
       expect(l.title).not.toBe('');
       expect(l.panels.length).toBeGreaterThanOrEqual(2);
       expect(l.panels.length).toBeLessThanOrEqual(4);
-      // the game's voice: no em-dashes
+      // the game's voice: no em-dashes, in the lines worked out from the game as well
       expect(JSON.stringify(l)).not.toMatch(/—/);
+      const card = lessonCard(id, s);
+      expect(card.intro).not.toBe('');
+      expect(JSON.stringify(card)).not.toMatch(/—/);
     }
   });
 
@@ -39,12 +46,16 @@ describe('the lessons', () => {
     s.stats.healed = 1;
     s.stats.failed = 1;
     s.stats.stormed = 1;
+    s.money = 0;
     checkLessons(ctx);
     expect(lessons(sim.drain())).toEqual([{ type: 'lesson', id: 'heal' }]);
     expect(s.seenTips).toContain(lessonTip('heal'));
     // not a second the same day
     checkLessons(ctx);
     expect(lessons(sim.drain())).toEqual([]);
+    s.day += 1;
+    checkLessons(ctx);
+    expect(lessons(sim.drain())).toEqual([{ type: 'lesson', id: 'money' }]);
     s.day += 1;
     checkLessons(ctx);
     expect(lessons(sim.drain())).toEqual([{ type: 'lesson', id: 'failed' }]);
@@ -128,5 +139,95 @@ describe('the lessons', () => {
     s.stats.healed = 1;
     run(sim, 30);
     expect(lessons(sim.drain())).toEqual([]);
+  });
+});
+
+describe('the lesson on money', () => {
+  it('is due once the bank holds less than a month of wages and running, and only with a payroll to pay', () => {
+    // nobody on the books: an empty bank is no squeeze
+    const empty = freshSim();
+    empty.s.lessons = true;
+    empty.s.money = 0;
+    checkLessons(ctxOf(empty));
+    expect(lessons(empty.drain())).toEqual([]);
+    const { sim, s } = lessonGame();
+    const ctx = ctxOf(sim);
+    s.money = monthlyPayroll(s);
+    checkLessons(ctx);
+    expect(lessons(sim.drain())).toEqual([]);
+    s.money -= 1;
+    checkLessons(ctx);
+    expect(lessons(sim.drain())).toEqual([{ type: 'lesson', id: 'money' }]);
+    // once a game: the bank going lower still says nothing more
+    s.money = -5000;
+    s.day += 1;
+    checkLessons(ctx);
+    expect(lessons(sim.drain())).toEqual([]);
+  });
+
+  it('waits a day behind Payday when both come at once, Payday saying what the red is first', () => {
+    const { sim, s } = lessonGame();
+    const ctx = ctxOf(sim);
+    runUntil(sim, () => s.months.length >= 1, 400);
+    // whatever came before payday is out of the way
+    s.seenTips = s.seenTips.filter((t) => t !== lessonTip('payday') && t !== lessonTip('money'));
+    s.lastLesson = -1;
+    sim.drain();
+    s.money = 0;
+    s.speed = 0;
+    checkLessons(ctx);
+    expect(lessons(sim.drain()).map((e) => e.id)).toEqual(['payday']);
+    s.day += 1;
+    checkLessons(ctx);
+    expect(lessons(sim.drain()).map((e) => e.id)).toEqual(['money']);
+  });
+
+  it('comes with the hire or the room that squeezes the bank, with the clock paused and no tick', () => {
+    const sim = freshSim();
+    const s = sim.s;
+    s.tutorial = s.lessons = true;
+    s.speed = 0;
+    s.money = 5000;
+    // a month of wages is still in the bank after the first hire
+    const receptionist = hire(sim, 'receptionist');
+    expect(s.money).toBeGreaterThanOrEqual(receptionist.salary);
+    expect(lessons(sim.drain())).toEqual([]);
+    // the room leaves less than that
+    s.money = receptionist.salary + 3000;
+    addConsult(sim);
+    expect(s.day).toBe(0);
+    expect(lessons(sim.drain())).toEqual([{ type: 'lesson', id: 'money' }]);
+    // nothing raised twice, from the next purchase or the next tick
+    hire(sim, 'consultant');
+    run(sim, 2);
+    expect(lessons(sim.drain()).filter((e) => e.id === 'money')).toEqual([]);
+  });
+
+  it('comes with a hire alone, the clock paused', () => {
+    const sim = freshSim();
+    const s = sim.s;
+    s.lessons = true;
+    s.speed = 0;
+    s.money = 300;
+    hire(sim, 'receptionist');
+    expect(lessons(sim.drain())).toEqual([{ type: 'lesson', id: 'money' }]);
+  });
+
+  it('says what the bank holds against the next payday, and what the bank lends', () => {
+    const { s } = lessonGame();
+    s.money = 1234;
+    s.day = 3.4;
+    const card = lessonCard('money', s);
+    expect(card.title).toBe('Money is tight');
+    expect(card.intro).toMatch(/^The bank holds \$1,234, and payday takes \$[\d,]+ in 27 days\.$/);
+    expect(card.panels.map((p) => p.label)).toEqual(['The bank', 'Payday', 'The red', 'A loan']);
+    expect(card.panels[2]?.note).toBe('Below zero the bank charges 5% a month, and the staff start to worry.');
+    expect(card.panels[3]?.note).toBe('Borrow up to $50,000 in $5,000 steps at 2% a month: cheaper than the red.');
+    expect(card.showMe).toEqual({ menu: 'finance', moneyTab: 'loan' });
+    // a day out, and on the day itself
+    s.day = DAYS_PER_MONTH - 1;
+    expect(lessonCard('money', s).intro).toMatch(/ in 1 day\.$/);
+    s.day = DAYS_PER_MONTH - 0.2;
+    expect(lessonCard('money', s).intro).toMatch(/ today\.$/);
   });
 });

@@ -1,10 +1,10 @@
 // The tutorial's lesson for something that has just happened for the first time: a strip of pictures with a line
-// each, a closing word, and Show me when it is about someone.
+// each, a closing word, and Show me when it is about someone or points at a menu.
 
 import './LessonDialog.css';
 
-import { LESSONS } from '../../../core/sim/lessons';
-import { useHud } from '../../hooks/use-hud';
+import { lessonCard } from '../../../core/sim/lessons';
+import { useGame, useHud } from '../../hooks/use-hud';
 import { Button } from '../common/Button';
 import { Icon } from '../common/Icon';
 import { Dialog } from './Dialog';
@@ -12,10 +12,13 @@ import { Dialog } from './Dialog';
 /** The lesson raised last. */
 export function LessonDialog() {
   const hud = useHud();
+  const { sim } = useGame();
   const raised = hud.lesson;
   if (!raised) return null;
-  const lesson = LESSONS[raised.id];
-  const about = raised.about;
+  // worked out as it is shown, the game paused under it, so the numbers on it are the bank's as it stands
+  const lesson = lessonCard(raised.id, sim.s);
+  // someone to go to, or a menu to open
+  const showsMe = !!raised.about || !!lesson.showMe;
   return (
     <Dialog wide>
       <p class="lesson-kicker">Tutorial</p>
@@ -34,11 +37,10 @@ export function LessonDialog() {
       </ol>
       <p>{lesson.body}</p>
       <div class="btnrow">
-        {about && (
+        {showsMe && (
           <Button
             onPress={() => {
-              hud.close();
-              hud.show(about);
+              hud.showLesson(raised);
             }}
           >
             Show me

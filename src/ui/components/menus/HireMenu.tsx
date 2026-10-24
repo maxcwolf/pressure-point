@@ -5,6 +5,7 @@ import './HireMenu.css';
 import { ROLES, traitOf } from '../../../core/data';
 import { money } from '../../../core/format';
 import { applicantCap, rankName } from '../../../core/sim/careers';
+import { wantsHire } from '../../../core/sim/tutorial';
 import { unlockedUpTo } from '../../../core/state/game';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { hireableRoles } from '../../lib/catalog';
@@ -71,7 +72,10 @@ export function HireMenu() {
                   class="go"
                   quiet
                   onPress={() => {
-                    sim.hire(c.id);
+                    // the step changes once the hire is done, so what it asked is read before
+                    const asked = wantsHire(sim.tutorialStep(), c.role);
+                    // the hire the tutorial asked for is done: out of the way of its next card
+                    if (sim.hire(c.id) && asked) hud.closeMenu();
                   }}
                 >
                   Hire

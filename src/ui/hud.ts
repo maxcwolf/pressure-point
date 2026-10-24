@@ -7,7 +7,7 @@ import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
 import { ANNOUNCEMENTS } from '../core/data';
 import type { SimEvent, StaffRequest, Subject, Tone } from '../core/sim/events';
-import type { LessonId } from '../core/sim/lessons';
+import { type LessonId, LESSONS } from '../core/sim/lessons';
 import type { TutorialStep } from '../core/sim/tutorial';
 import type { Template } from '../core/templates';
 import { giveKarma } from '../storage/campaign';
@@ -322,6 +322,26 @@ export class HudState {
     }
     track('menu_opened', { ...gameProps(this.host.sim.s), menu: this.menu });
     track('tutorial_show_me', { ...gameProps(this.host.sim.s), step: step.id });
+    this.update();
+  }
+
+  /**
+   * Show the player what a lesson is about, closing its card: take them to who it happened to, or open the menu it
+   * points at, at the tab it names.
+   */
+  showLesson(raised: RaisedLesson) {
+    this.close();
+    track('lesson_show_me', { ...gameProps(this.host.sim.s), lesson: raised.id });
+    if (raised.about) {
+      this.show(raised.about);
+      return;
+    }
+    const showMe = LESSONS[raised.id].showMe;
+    if (!showMe) return;
+    this.host.tools.setAside();
+    this.moneyTab = showMe.moneyTab;
+    this.menu = showMe.menu;
+    track('menu_opened', { ...gameProps(this.host.sim.s), menu: this.menu });
     this.update();
   }
 
