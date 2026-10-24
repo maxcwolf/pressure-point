@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.33.4
 
 - **Money when it matters.** The tutorial's word on the bank and the loan now comes as a card the first time the bank holds less than a month's wages, with what it holds, what payday takes and when, and a Show me that opens the Loan tab. The Reception Desk step just says that everything comes out of the bank. Hiring the role the tutorial asks for closes the Hire menu, so its next card is not hidden.
 - **Room signs stay in sight.** A sign beside a door in a wall cut low no longer hides behind the tall wall of a room just beyond it: it moves to the other side of the door, or, with no clear wall on either side, such as a door at the end of its wall, stands up over that wall.
@@ -15,6 +15,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Lighter crowds.** People seen from the usual distance cost about 60% fewer triangles to draw.
 - **Icons as clear small as large.** An icon's lines are as heavy as the pixels of the screen it really has call for, so nothing small turns into a navy blot or smears grey, and nothing jumps lighter at 22 pixels; each comes out at whole pixels, and on a sharp screen a small icon keeps its full drawing. Five roles, seven rooms and the busiest small menu icons have simpler drawings of their own, and the scene's icons lose their dark fringe.
 - **Icons that each say one thing.** The Recovery Lounge is a recliner, not a second massage bed; the Condition overlay has its own heart, and the calm and upkeep overlays a color that shows on the picker's white card; the loan is a note with a coin, the casebook a book under a magnifier, the institute's standing a pagoda, the center of the year a house with a star, and turning the view a floor tile with an arrow, none of them now sharing a picture with something else.
+- **Tidier panels.** Comparing two members of staff keeps inside its card, and lists others in the same role first, with an Everyone button for the rest. The overlay key sits beside the system buttons, as tall as they are, and the tutorial's ring round the applicants has their cards' rounded corners.
 
 ## v0.33.3
 
