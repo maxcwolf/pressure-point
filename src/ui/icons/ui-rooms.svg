@@ -3,6 +3,6 @@
     <path d="M4 20.5L16 27l12-6.5L16 14z" fill="#f08a4b"/>
     <path d="M4 20.5V10.5L16 4v10z" fill="#fff8ea"/>
     <path d="M16 14V4l12 6.5v10z" fill="#fff8ea"/>
-    <path d="M20.5 18.6v-5.2l3.5 1.9v5.2z" fill="#24384a" stroke-width="1.4"/>
+    <path d="M20.5 18.6v-5.2l3.5 1.9v5.2z" fill="#24384a" stroke-width="1.6"/>
   </g>
 </svg>

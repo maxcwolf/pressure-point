@@ -13,6 +13,8 @@ Each release's notes are taken from its section here. Keep them short.
 - **Out of each other's way.** People step aside rather than walking through each other, and the ring under someone selected stays under them as they climb on and off.
 - **Guests out of uniform.** No guest wears a top in a staff uniform's color any more, in new games or old saves.
 - **Lighter crowds.** People seen from the usual distance cost about 60% fewer triangles to draw.
+- **Icons as clear small as large.** An icon's lines are as heavy as the pixels of the screen it really has call for, so nothing small turns into a navy blot or smears grey, and nothing jumps lighter at 22 pixels; each comes out at whole pixels, and on a sharp screen a small icon keeps its full drawing. Five roles, seven rooms and the busiest small menu icons have simpler drawings of their own, and the scene's icons lose their dark fringe.
+- **Icons that each say one thing.** The Recovery Lounge is a recliner, not a second massage bed; the Condition overlay has its own heart, and the calm and upkeep overlays a color that shows on the picker's white card; the loan is a note with a coin, the casebook a book under a magnifier, the institute's standing a pagoda, the center of the year a house with a star, and turning the view a floor tile with an arrow, none of them now sharing a picture with something else.
 
 ## v0.33.3
 
