@@ -43,12 +43,15 @@ jobs:
         env:
           FROM: ${{ github.event.pull_request.base.sha || github.event.before }}
           TO: ${{ github.event.pull_request.head.sha || github.sha }}
-        # a brand-new branch has no "before", so then only the latest commit is checked
+        # a brand-new branch has no "before", so then only the latest commit is checked;
+        # a force push leaves "before" outside the clone, so then everything since the last release is
         run: |
           if [ -z "$FROM" ] || [ "$FROM" = 0000000000000000000000000000000000000000 ]; then
             yarn commitlint --last
-          else
+          elif git cat-file -e "$FROM^{commit}" 2>/dev/null; then
             yarn commitlint --from "$FROM" --to "$TO"
+          else
+            yarn commitlint --from "$(git describe --tags --abbrev=0 "$TO")" --to "$TO"
           fi
 
   # the real game in a headless browser, split across machines so the slow part runs side by side
