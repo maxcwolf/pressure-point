@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.33.5
 
 - **Willow Lane's high street.** The road and its pavements run on past Willow Lane's lot, with hedges on a low brick wall along the pavement and lamp posts further down the street, so the first center stands on a street rather than in a field. The way in to the door stays clear.
 
