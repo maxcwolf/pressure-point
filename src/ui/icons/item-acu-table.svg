@@ -2,9 +2,9 @@
   <g stroke="#24384a" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
     <path d="M7 17V27M25 17V27" fill="none"/>
     <path d="M14 13V6.8M18.5 13V5.6M23 13V6.8" fill="none" stroke-width="1.8"/>
-    <circle cx="14" cy="5.8" r="1.5" fill="#f2c14e" stroke-width="1.4"/>
-    <circle cx="18.5" cy="4.6" r="1.5" fill="#f2c14e" stroke-width="1.4"/>
-    <circle cx="23" cy="5.8" r="1.5" fill="#f2c14e" stroke-width="1.4"/>
+    <circle cx="14" cy="5.8" r="1.5" fill="#f2c14e" stroke-width="1.6"/>
+    <circle cx="18.5" cy="4.6" r="1.5" fill="#f2c14e" stroke-width="1.6"/>
+    <circle cx="23" cy="5.8" r="1.5" fill="#f2c14e" stroke-width="1.6"/>
     <rect x="3.5" y="13" width="25" height="5" rx="1.6" fill="#fff8ea"/>
     <rect x="4.5" y="8.8" width="6.5" height="4.2" rx="2.1" fill="#e5564d"/>
   </g>

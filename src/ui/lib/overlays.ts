@@ -72,7 +72,7 @@ export const OVERLAYS: readonly OverlayDef[] = [
   },
   {
     id: 'condition',
-    icon: 'bubble-hurt',
+    icon: 'overlay-condition',
     name: 'Condition',
     desc: 'A ring round each waiting guest: how much of their condition is left before they go home worse off, green plenty, red little.',
     key: 'condition',

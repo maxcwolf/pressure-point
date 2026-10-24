@@ -4,6 +4,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { crc32, deflateSync } from 'node:zlib';
 
 /** Where the drawings are, and where what is built from them goes. */
 export const ICON_DIR = 'src/ui/icons';
@@ -55,12 +56,36 @@ export const FAMILIES = [
 /** The families the 3D scene draws, which go into its atlas. The rest are for the interface alone. */
 export const SCENE_FAMILIES = ['bubble', 'marker', 'room', 'role'];
 
-/** How big each icon's cell in the atlas is, in pixels, and how many cells go across it. */
+/**
+ * How big each icon's cell in the atlas is, in pixels, how many cells go across it, and how much empty atlas lies
+ * between two cells: the graphics card shrinks the atlas by halves for an icon seen small, and without a gutter a
+ * cell's edge would take in its neighbour's ink once shrunk to an eighth.
+ */
 export const CELL = 128;
 export const ATLAS_COLUMNS = 16;
+export const GUTTER = 16;
 
 /** The family an icon belongs to, from the start of its id. */
 export const familyOf = (id) => id.split('-')[0];
+
+/**
+ * The families every icon of which has a small drawing, which the scene and the small sheet draw it from. Their small
+ * drawings keep to `checkSmallIcon`'s stricter rules, so the lints of line and ink (`checkLines`, `checkInk`) leave
+ * their large drawings be.
+ */
+export const DRAWN_SMALL_FAMILIES = ['bubble', 'marker'];
+
+/**
+ * The drawings kept as they are though a lint finds fault with them, with the lints (`line`, `ink`) they are spared:
+ * each was picked as drawn, and redrawing it to pass would change its picture.
+ */
+export const SPARED = {
+  // an hourglass, kept as it was: the outline of its sand is 1.5
+  'feeling-long-wait': ['line'],
+};
+
+/** Whether a lint, of line or of ink, looks at a drawing. */
+export const linted = (id, lint) => !DRAWN_SMALL_FAMILIES.includes(familyOf(id)) && !SPARED[id]?.includes(lint);
 
 /** Whether the scene draws an icon, and so whether it goes into the atlas. */
 export const inScene = (id) => SCENE_FAMILIES.includes(familyOf(id));
@@ -98,6 +123,7 @@ export function checkIcon(id, svg) {
   for (const [pattern, why] of [
     [/<text\b/, 'no text: draw letters as shapes'],
     [/<(image|style|script|foreignObject)\b/, 'no images, styles or scripts'],
+    [/\sstyle=/, "no styles: the sprite sheets set the lines' width with one"],
     [
       /<(defs|linearGradient|radialGradient|filter|mask|clipPath|pattern|use)\b/,
       'flat shapes only, no gradients or references',
@@ -113,6 +139,85 @@ export function checkIcon(id, svg) {
     if (color === 'none' || allowed.has(color.toLowerCase())) continue;
     problems.push(`${color} is not in the palette`);
   }
+  if (linted(id, 'line')) problems.push(...checkLines(svg));
+  return problems;
+}
+
+/** The thinnest navy line a drawing may have, in units of its 32, after any scaling: 1.3 pixels at 24. */
+export const MIN_LINE = 1.6;
+
+/** How much a transform scales what it holds, as the square root of its area's change. */
+function scaleOf(transform) {
+  let k = 1;
+  for (const [, fn, args] of transform.matchAll(/(\w+)\(([^)]*)\)/g)) {
+    const n = args
+      .split(/[\s,]+/)
+      .filter(Boolean)
+      .map(Number);
+    if (fn === 'scale') k *= Math.sqrt(Math.abs((n[0] ?? 1) * (n[1] ?? n[0] ?? 1)));
+    else if (fn === 'matrix') k *= Math.sqrt(Math.abs((n[0] ?? 1) * (n[3] ?? 1) - (n[1] ?? 0) * (n[2] ?? 0)));
+  }
+  return k;
+}
+
+/**
+ * Every line a drawing strokes: its color and how wide it comes out, in units of the 32, with the width and color
+ * each shape takes from the groups round it and the scaling of their transforms.
+ */
+export function linesOf(svg) {
+  const lines = [];
+  const stack = [{ stroke: 'none', width: 1, scale: 1 }];
+  for (const [, close, tag, attrs, selfClosing] of svg.matchAll(/<(\/?)(\w+)([^>]*?)(\/?)>/g)) {
+    if (close) {
+      stack.pop();
+      continue;
+    }
+    const outer = stack[stack.length - 1];
+    /** The value of one of the element's attributes, if it has it. */
+    const attr = (name) => new RegExp(`\\s${name}="([^"]*)"`).exec(attrs)?.[1];
+    const here = {
+      stroke: attr('stroke') ?? outer.stroke,
+      width: attr('stroke-width') !== undefined ? Number(attr('stroke-width')) : outer.width,
+      scale: outer.scale * scaleOf(attr('transform') ?? ''),
+    };
+    if (/^(path|rect|circle|ellipse|line|polyline|polygon)$/.test(tag) && here.stroke !== 'none')
+      lines.push({ color: here.stroke, width: Number((here.width * here.scale).toFixed(2)) });
+    if (!selfClosing) stack.push(here);
+  }
+  return lines;
+}
+
+/**
+ * What is wrong with how a drawing is drawn, as against what it may contain: a navy line under `MIN_LINE`, which the
+ * interface draws at 4/5 and a plain screen smears to a grey hairline.
+ */
+export function checkLines(svg) {
+  const thinnest = Math.min(
+    ...linesOf(svg)
+      .filter((l) => l.color === PALETTE.navy)
+      .map((l) => l.width),
+  );
+  return thinnest < MIN_LINE ? [`a navy line ${thinnest} wide is a hairline: ${MIN_LINE} at least`] : [];
+}
+
+/**
+ * How big a drawing's ink may be on its 32-unit square: at least 23 across, so it looks as big as the icons beside it
+ * (most are 25 to 29), and clear of every edge by half a unit, so its outline is not cut off.
+ */
+export const MIN_INK = 23;
+export const MIN_MARGIN = 0.5;
+
+/**
+ * What is wrong with where a drawing's ink lies, given the box round it as `yarn icons` measured it: left, top, right
+ * and bottom, in units of the 32.
+ */
+export function checkInk([left, top, right, bottom]) {
+  const problems = [];
+  const across = Math.max(right - left, bottom - top);
+  if (across < MIN_INK) problems.push(`its ink is ${across.toFixed(1)} across, which looks small: ${MIN_INK} at least`);
+  const margin = Math.min(left, top, 32 - right, 32 - bottom);
+  if (margin < MIN_MARGIN)
+    problems.push(`its ink comes ${margin.toFixed(1)} from the edge, which cuts its outline: ${MIN_MARGIN} at least`);
   return problems;
 }
 
@@ -154,30 +259,48 @@ export function innerOf(svg) {
 }
 
 /**
- * How much thinner the interface draws an icon's lines than the scene does, at the sizes above 20 pixels. There the
- * drawings' 2.25-wide outline reads heavy; drawn at 1.8 it sits with the type. The scene's atlas keeps the full width,
- * as its icons are seen from further off, and the small sheet goes the other way (`SMALL_STROKE`).
+ * How much thinner the interface draws an icon's lines than the scene does, where it has room: the drawings'
+ * 2.25-wide outline reads heavy at 24 pixels and over, and drawn at 1.8 it sits with the type. The scene's atlas keeps
+ * the full width, as its icons are seen from further off.
  */
 export const SPRITE_STROKE = 1.8 / 2.25;
 
-/** A drawing with every line's width scaled, for the sprite sheet. */
-export const thinned = (inner, scale = SPRITE_STROKE) =>
-  inner.replace(/stroke-width="([\d.]+)"/g, (_, w) => `stroke-width="${Number((Number(w) * scale).toFixed(2))}"`);
+/**
+ * Lines this wide and wider are not outlines but the wide strokes some drawings lay under a narrower colored one, as
+ * an outline of their own. They are never drawn heavier than drawn, which would swallow the color.
+ */
+export const WIDE_STROKE = 3;
 
 /**
- * The sprite sheet the interface draws icons from: one symbol per icon, each named `icon-` and its id, its lines a
- * little thinner than drawn.
+ * A drawing whose lines take their width from the size it comes out at: each is its drawn width times
+ * `--icon-line`, which `Icon` sets from how many pixels the icon has (`lineScale`), so a line is about a pixel and a
+ * half at 16 pixels on a plain screen and 4/5 of drawn at 24 and over, with no step between. A wide stroke is drawn no
+ * heavier than drawn. Without `--icon-line` the lines are drawn at `fallback` of their width.
+ */
+export const sized = (inner, fallback = SPRITE_STROKE) => {
+  const k = Number(fallback.toFixed(2));
+  return inner.replace(/stroke-width="([\d.]+)"/g, (_, w) =>
+    Number(w) < WIDE_STROKE
+      ? `style="stroke-width:calc(${w} * var(--icon-line, ${k}))"`
+      : `style="stroke-width:calc(${w} * min(var(--icon-line, ${k}), 1))"`,
+  );
+};
+
+/**
+ * The sprite sheet the interface draws icons from: one symbol per icon, each named `icon-` and its id, its lines as
+ * wide as the size it comes out at calls for (`sized`).
  */
 export function spriteSheet(icons) {
   const symbols = icons.map(
-    ({ id, svg }) => `<symbol id="icon-${id}" viewBox="0 0 32 32">${thinned(innerOf(svg))}</symbol>`,
+    ({ id, svg }) => `<symbol id="icon-${id}" viewBox="0 0 32 32">${sized(innerOf(svg))}</symbol>`,
   );
   return `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="0" height="0" style="position:absolute">\n${symbols.join('\n')}\n</svg>\n`;
 }
 
 /**
- * How much heavier the small sprite sheet draws an icon that has no small drawing. At 16 pixels on a plain screen the
- * 2.25 outline is 1.1 pixels and the sprite's 1.8 is under one, so both smear to grey; 2.9 lands on a pixel and a half.
+ * How heavy the small sheet draws the lines of an icon that has no small drawing, when nothing says how big it is: at
+ * 16 pixels on a plain screen the 2.25 outline is 1.1 pixels and the sprite's 1.8 is under one, so both smear to grey;
+ * 2.9 lands on a pixel and a half.
  */
 export const SMALL_STROKE = 2.9 / 2.25;
 
@@ -202,18 +325,25 @@ export function unmedalled(inner) {
 }
 
 /**
- * A drawing with its outlines made heavier for small sizes: every line under 3 wide, which is to say the outlines and
- * details, and not the wide strokes some drawings lay under a narrower colored one as an outline of their own, which
- * are heavy enough already and would swallow the color.
+ * A hand-drawn small drawing with its lines on the same curve of weight as the rest, as a share of how it is drawn,
+ * which is for 16 pixels on a plain screen: `--icon-small-line`, which `Icon` sets, 1 meaning as drawn. As in `sized`,
+ * a wide stroke laid under a colored line is never made heavier.
  */
-export const heavier = (inner) =>
-  inner.replace(/stroke-width="([\d.]+)"/g, (m, w) =>
-    Number(w) < 3 ? `stroke-width="${Number((Number(w) * SMALL_STROKE).toFixed(2))}"` : m,
+export const sizedSmall = (inner) =>
+  inner.replace(/stroke-width="([\d.]+)"/g, (_, w) =>
+    Number(w) < 4
+      ? `style="stroke-width:calc(${w} * var(--icon-small-line, 1))"`
+      : `style="stroke-width:calc(${w} * min(var(--icon-small-line, 1), 1))"`,
   );
 
-/** An icon as the small sheet draws it: its small drawing as drawn, or its one drawing made heavier, whiter and unmedalled. */
+/**
+ * An icon as the small sheet draws it: its small drawing, or its one drawing made whiter and unmedalled, either with
+ * its lines as wide as its size calls for.
+ */
 export const madeSmall = (id, inner, small) =>
-  small[id] ? innerOf(small[id]) : heavier(whitened(familyOf(id) === 'award' ? unmedalled(inner) : inner));
+  small[id]
+    ? sizedSmall(innerOf(small[id]))
+    : sized(whitened(familyOf(id) === 'award' ? unmedalled(inner) : inner), SMALL_STROKE);
 
 /**
  * The sprite sheet the interface draws icons from at 20 pixels and under: one symbol per icon, named `icon-small-` and
@@ -258,17 +388,23 @@ export function variantsOf(id) {
 
 /**
  * Where each of the scene's icons sits in the atlas, in pixels from its top left: a cell for each way it is shown, the
- * icon on its own and then in its bubble and the rest, packed across in order of id.
+ * icon on its own and then in its bubble and the rest, packed across in order of id, with a gutter round every cell.
  */
-export function atlasLayout(ids, cell = CELL, columns = ATLAS_COLUMNS) {
+export function atlasLayout(ids, cell = CELL, columns = ATLAS_COLUMNS, gutter = GUTTER) {
   const cells = ids.flatMap((id) => variantsOf(id).map((variant) => ({ id, variant })));
   const rows = Math.ceil(cells.length / columns);
+  const step = cell + gutter;
   const icons = {};
   cells.forEach(({ id, variant }, i) => {
     icons[id] ??= {};
-    icons[id][variant] = { x: (i % columns) * cell, y: Math.floor(i / columns) * cell, w: cell, h: cell };
+    icons[id][variant] = {
+      x: (i % columns) * step + gutter / 2,
+      y: Math.floor(i / columns) * step + gutter / 2,
+      w: cell,
+      h: cell,
+    };
   });
-  return { width: Math.min(cells.length, columns) * cell, height: rows * cell, cell, icons };
+  return { width: Math.min(cells.length, columns) * step, height: rows * step, cell, icons };
 }
 
 /** The purple of the squares staff use furniture from, as the scene's floor overlay draws them. */
@@ -355,14 +491,16 @@ export function atlasCell(variant, inner, at) {
 
 /**
  * The atlas as one SVG drawing, each icon drawn on its cells as `atlasLayout` lays them out. An icon with a small
- * drawing is drawn from it, as a sprite is seen at 13 to 30 pixels from where the game starts and further out.
+ * drawing is drawn from it, as a sprite is seen at 13 to 30 pixels from where the game starts and further out; a
+ * room's sign is drawn from its one drawing, as its small drawing is for the interface alone.
  */
 export function atlasSvg(icons, small = {}) {
   const scene = icons.filter(({ id }) => inScene(id));
   const layout = atlasLayout(scene.map(({ id }) => id));
-  const cells = scene.flatMap(({ id, svg }) =>
-    variantsOf(id).map((variant) => atlasCell(variant, innerOf(small[id] ?? svg), layout.icons[id][variant])),
-  );
+  const cells = scene.flatMap(({ id, svg }) => {
+    const drawn = familyOf(id) === 'room' ? svg : (small[id] ?? svg);
+    return variantsOf(id).map((variant) => atlasCell(variant, innerOf(drawn), layout.icons[id][variant]));
+  });
   // the white edge round an icon on its own, grown out from its shape
   const sticker =
     '<filter id="sticker" x="-25%" y="-25%" width="150%" height="150%">' +
@@ -375,6 +513,101 @@ export function atlasSvg(icons, small = {}) {
       `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" ` +
       `viewBox="0 0 ${layout.width} ${layout.height}"><defs>${sticker}</defs>${cells.join('')}</svg>`,
   };
+}
+
+/** Below this opacity, out of 255, a texel of the atlas is clear, and its color is not its own but bled in. */
+export const CLEAR = 16;
+
+/**
+ * The atlas's pixels with color bled into every clear texel from the nearest inked one, in place. Saved as it is
+ * drawn, a clear texel is black, and the graphics card, blending texels as it shrinks and samples the atlas, darkens
+ * every edge with it: a dark fringe round each icon and a grey ring on a marker's white edge. Bled, a clear texel has
+ * the color of the ink beside it, so an edge fades out in its own color. `rgba` is four bytes a texel, row by row.
+ */
+export function bleed(rgba, width, height) {
+  const n = width * height;
+  const from = new Int32Array(n).fill(-1);
+  const queue = new Int32Array(n);
+  let head = 0;
+  let tail = 0;
+  for (let i = 0; i < n; i++) {
+    if (rgba[i * 4 + 3] >= CLEAR) {
+      from[i] = i;
+      queue[tail++] = i;
+    }
+  }
+  // outward from all the ink at once, a ring at a time, so each clear texel takes the color of the ink nearest it
+  while (head < tail) {
+    const i = queue[head++];
+    const x = i % width;
+    for (const j of [x > 0 ? i - 1 : -1, x < width - 1 ? i + 1 : -1, i - width, i + width]) {
+      if (j < 0 || j >= n || from[j] !== -1) continue;
+      from[j] = from[i];
+      const o = j * 4;
+      const src = from[i] * 4;
+      rgba[o] = rgba[src];
+      rgba[o + 1] = rgba[src + 1];
+      rgba[o + 2] = rgba[src + 2];
+      queue[tail++] = j;
+    }
+  }
+  return rgba;
+}
+
+/** A chunk of a PNG: its length, its type, what it holds and a checksum of the last two. */
+function pngChunk(type, data) {
+  const head = Buffer.alloc(8);
+  head.writeUInt32BE(data.length, 0);
+  head.write(type, 4, 'ascii');
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(Buffer.concat([head.subarray(4), data])), 0);
+  return Buffer.concat([head, data, crc]);
+}
+
+/** A PNG of pixels given four bytes a texel, row by row, each row filtered as best packs it. */
+export function encodePng(rgba, width, height) {
+  const stride = width * 4;
+  const rows = Buffer.alloc((stride + 1) * height);
+  const line = Buffer.alloc(stride);
+  const best = Buffer.alloc(stride);
+  for (let y = 0; y < height; y++) {
+    const at = y * stride;
+    let bestFilter = 0;
+    let bestCost = Infinity;
+    for (let filter = 0; filter < 5; filter++) {
+      let cost = 0;
+      for (let i = 0; i < stride; i++) {
+        const a = i >= 4 ? rgba[at + i - 4] : 0;
+        const b = y > 0 ? rgba[at - stride + i] : 0;
+        const c = i >= 4 && y > 0 ? rgba[at - stride + i - 4] : 0;
+        const p = a + b - c;
+        const pa = Math.abs(p - a);
+        const pb = Math.abs(p - b);
+        const pc = Math.abs(p - c);
+        const predicted = [0, a, b, (a + b) >> 1, pa <= pb && pa <= pc ? a : pb <= pc ? b : c][filter];
+        const v = (rgba[at + i] - predicted) & 0xff;
+        line[i] = v;
+        cost += v < 128 ? v : 256 - v;
+      }
+      if (cost < bestCost) {
+        bestCost = cost;
+        bestFilter = filter;
+        line.copy(best);
+      }
+    }
+    rows[y * (stride + 1)] = bestFilter;
+    best.copy(rows, y * (stride + 1) + 1);
+  }
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 6, 0, 0, 0], 8);
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pngChunk('IHDR', header),
+    pngChunk('IDAT', deflateSync(rows, { level: 9 })),
+    pngChunk('IEND', Buffer.alloc(0)),
+  ]);
 }
 
 /** A fingerprint of everything built from the drawings, so the tests can tell when `yarn icons` is due. */

@@ -218,6 +218,7 @@ export const ICON_IDS = [
   'mishap-storm',
   'mishap-wasps',
   'overlay-calm',
+  'overlay-condition',
   'overlay-decor',
   'overlay-energy',
   'overlay-needs',
