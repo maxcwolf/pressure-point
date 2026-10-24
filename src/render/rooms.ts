@@ -15,7 +15,7 @@ import { mergeStill } from './models/merge';
 import { mat, put, sph } from './models/parts';
 import { buildSignPlaque, type LampState, pulseLamps, setLamp, type SignPlaque } from './models/sign-plaque';
 import { lampStates } from './room-lamp';
-import { type Doorway, roomShape, type WallBox, type WallMaterial } from './room-walls';
+import { type Doorway, roomShape, type WallBox, walledBeyondDoor, type WallMaterial } from './room-walls';
 import { OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, SHELL_TRIM } from './shared';
 import { nearSides, type Sides, type Turn } from './turn';
 import { windowBoxes } from './windows';
@@ -150,16 +150,18 @@ export const BLUEPRINT = new THREE.MeshStandardMaterial({
  * Build a room's walls, windows, door and sign in a building, with the walls facing the camera cut low, in the
  * materials given. A finished room's walls, trim, door and the board of its sign are then drawn in a call each; the
  * glass, and a blueprint, are see-through and drawn part by part; the sign's lamp is left out, to change with the room.
+ * `walled` is the tiles along the door's wall with another room beyond them, whose tall wall the sign keeps clear of.
  */
 export function buildRoom(
   room: Room,
   fp: Footprint,
   near: Sides,
   materials: Record<WallMaterial, THREE.Material>,
+  walled: readonly number[] = [],
 ): { group: THREE.Group; sign: SignPlaque | null } {
   const g = new THREE.Group();
   const wall = room.wall ?? 'standard';
-  const { boxes, doorway } = roomShape(room, fp, near);
+  const { boxes, doorway } = roomShape(room, fp, near, walled);
   addBoxes(g, boxes, materials, room.done, room.done && papered(wall));
   let sign: SignPlaque | null = null;
   if (doorway) {
@@ -230,11 +232,16 @@ export class RoomsLayer {
     const building = `${footprintKey(this.sim.world.building)}|${this.turn}`;
     for (const r of this.sim.s.rooms) {
       liveRooms.add(r.id);
-      const key = `${building}|${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done},${r.wall ?? ''},${r.windows.map((w) => `${w.x}.${w.y}.${w.dx}.${w.dy}`).join('|')}`;
+      // its sign moves for a room built or taken away beyond its door's wall
+      const walled = walledBeyondDoor(r, (x, y) => {
+        const other = this.sim.world.roomAt(x, y);
+        return !!other && other.id !== r.id;
+      });
+      const key = `${building}|${r.x},${r.y},${r.w},${r.h},${r.door.x},${r.door.y},${r.door.dx},${r.door.dy},${r.done},${r.wall ?? ''},${r.windows.map((w) => `${w.x}.${w.y}.${w.dx}.${w.dy}`).join('|')}|${walled.join('.')}`;
       const cur = this.rooms.get(r.id);
       if (cur?.key === key) continue;
       if (cur) this.dispose(cur.group);
-      const drawn = this.build(r);
+      const drawn = this.build(r, walled);
       this.scene.add(drawn.group);
       // a new sign starts as the lamp last showed, until the next frame looks again
       const lamp = this.lamps.get(r.id);
@@ -318,12 +325,12 @@ export class RoomsLayer {
   }
 
   /** Build a room's walls, windows, door and sign, in blueprint blue until it is finished. */
-  private build(room: Room): Omit<Drawn, 'key'> {
+  private build(room: Room, walled: readonly number[]): Omit<Drawn, 'key'> {
     const wall = room.wall ?? 'standard';
     const materials = room.done
       ? this.windowMaterials(mat(ROOMS[room.type].trim, 0.6), wallMaterial(wall))
       : this.blueprintMaterials();
-    return buildRoom(room, this.sim.world.building, nearSides(this.turn), materials);
+    return buildRoom(room, this.sim.world.building, nearSides(this.turn), materials, walled);
   }
 
   /** Take a group out of the scene and free its own shapes and sign. */

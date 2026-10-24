@@ -221,15 +221,46 @@ function doorFrame(side: Side, doorAt: number, hgt: number): WallBox[] {
 /**
  * Where a room's sign stands: on top of its door's frame in a tall wall, where it is seen over the wall from either
  * side; in a wall cut low, on a post beside the doorway, clear of whoever walks through it and of the room's corners.
+ * A wall cut low faces the camera, so another room just beyond it shows its tall wall in front of the sign: the sign
+ * then goes beside the other side of the door, or, if another room is beyond that too, up on a post tall enough to be
+ * seen over its wall. `walled` is the tiles along the wall with another room beyond them.
  */
-export function signSpot(side: Pick<Side, 'a' | 'b' | 'tall'>, doorAt: number): SignSpot {
+export function signSpot(
+  side: Pick<Side, 'a' | 'b' | 'tall'>,
+  doorAt: number,
+  walled: readonly number[] = [],
+): SignSpot {
   const hgt = side.tall ? H_TALL : H_LOW;
   if (side.tall) return { along: doorAt + 0.5, base: hgt + 0.09, post: false };
   const half = PLAQUE_W / 2;
   // beside the latch side if the wall carries on far enough there, before the corner's wall, else beside the hinges
-  const after = doorAt + 1 + half + 0.04;
-  const along = after + half + WALL_T <= side.b ? after : Math.max(side.a + WALL_T + half, doorAt - half - 0.04);
-  return { along, base: PLAQUE_LOW_BASE, post: true };
+  const latch = doorAt + 1 + half + 0.04;
+  const hinge = doorAt - half - 0.04;
+  /** Whether a plaque here is clear of the walls at either end. */
+  const fits = (at: number) => at - half - WALL_T >= side.a && at + half + WALL_T <= side.b;
+  /** Whether another room's tall wall stands just beyond the wall in front of a plaque here. */
+  const hidden = (at: number) => walled.some((t) => t < at + half && t + 1 > at - half);
+  const spots = [latch, hinge].filter(fits);
+  const along = spots.find((at) => !hidden(at)) ?? spots[0] ?? Math.max(side.a + WALL_T + half, hinge);
+  // over the top of a tall wall, as high as a sign on a tall wall's door frame
+  return { along, base: hidden(along) ? H_TALL + 0.09 : PLAQUE_LOW_BASE, post: true };
+}
+
+/**
+ * The tiles along the wall a room's door is in that have another room just beyond them, as `signSpot` wants them.
+ * `inOther` says whether a tile is inside a room other than this one.
+ */
+export function walledBeyondDoor(room: Room, inOther: (x: number, y: number) => boolean): number[] {
+  const d = room.door;
+  const out: number[] = [];
+  if (d.dy) {
+    const y = d.dy < 0 ? room.y - 1 : room.y + room.h;
+    for (let x = room.x; x < room.x + room.w; x++) if (inOther(x, y)) out.push(x);
+  } else {
+    const x = d.dx < 0 ? room.x - 1 : room.x + room.w;
+    for (let y = room.y; y < room.y + room.h; y++) if (inOther(x, y)) out.push(y);
+  }
+  return out;
 }
 
 /**
@@ -263,9 +294,15 @@ const FIRST_VIEW = nearSides(0);
 /**
  * Everything a room is built from: its four walls, with their windows and its door, in a building. The walls on the
  * sides facing the camera are cut low so you can see in. Where a wall runs along the building's outer wall, the outer
- * wall stands in for it, and only its windows are added.
+ * wall stands in for it, and only its windows are added. `walled` is the tiles along the door's wall with another room
+ * beyond them, which its sign keeps clear of.
  */
-export function roomShape(room: Room, fp: Footprint, near: Sides = FIRST_VIEW): RoomShape {
+export function roomShape(
+  room: Room,
+  fp: Footprint,
+  near: Sides = FIRST_VIEW,
+  walled: readonly number[] = [],
+): RoomShape {
   const T = WALL_T;
   const d = room.door;
   const top = room.y;
@@ -340,7 +377,7 @@ export function roomShape(room: Room, fp: Footprint, near: Sides = FIRST_VIEW): 
             tall: withDoor.tall,
             wallHeight: withDoor.tall ? H_TALL : H_LOW,
             inward: withDoor.inward,
-            sign: signSpot(withDoor, withDoor.doorAt),
+            sign: signSpot(withDoor, withDoor.doorAt, walled),
           }
         : null,
   };

@@ -9,7 +9,7 @@ import type { Item, Room, Staff, StaffState, WallSpot } from '../../src/core/sta
 import { mat } from '../../src/render/models/parts';
 import { lampGlow, lampMaterial } from '../../src/render/models/sign-plaque';
 import { lampStates } from '../../src/render/room-lamp';
-import { roomShape, type WallMaterial } from '../../src/render/room-walls';
+import { roomShape, walledBeyondDoor, type WallMaterial } from '../../src/render/room-walls';
 import { DOOR_JAMB, H_LOW, H_TALL, PLAQUE_W, THRESHOLD_DEPTH, THRESHOLD_INSET, WALL_T } from '../../src/render/shared';
 import { nearSides } from '../../src/render/turn';
 
@@ -59,6 +59,48 @@ describe("a room's sign", () => {
       expect(b).toBeLessThanOrEqual(14 - WALL_T);
       expect(sign?.base).toBeGreaterThan(H_LOW + 0.07);
     }
+  });
+
+  it("moves beside the other side of the door when another room's tall wall stands in front of it", () => {
+    // the latch side of a door at 11 is over 12; with a room beyond there, it goes over 10 instead
+    const { doorway } = roomShape(room(SOUTH), BUILDING, undefined, [12, 13]);
+    expect(doorway?.sign.along).toBeLessThanOrEqual(11 - PLAQUE_W / 2);
+    expect(doorway?.sign.base).toBeLessThan(H_TALL);
+    // and a door at the end of its wall, with no room for it by the latch, keeps to the hinge side all the same
+    const end = roomShape(room({ ...SOUTH, x: 13 }), BUILDING, undefined, [10, 11, 12]).doorway?.sign;
+    expect(end?.along).toBeCloseTo(13 - PLAQUE_W / 2 - 0.04);
+  });
+
+  it('stands up over the tall wall in front of it when there is another room beyond both sides of the door', () => {
+    const plain = roomShape(room(SOUTH), BUILDING).doorway?.sign;
+    const sign = roomShape(room(SOUTH), BUILDING, undefined, [10, 12, 13]).doorway?.sign;
+    expect(sign?.along).toBe(plain?.along);
+    expect(sign?.post).toBe(true);
+    expect(sign?.base).toBeGreaterThan(H_TALL + 0.07);
+  });
+
+  it('stands up over the tall wall in front of it when the door is at the end of its wall, with a room beyond the rest', () => {
+    // a door in the one tile of the east wall that reaches past the room next door: only the hinge side has room for
+    // the sign, and that is behind the other room's wall
+    const sign = roomShape(room({ x: 13, y: 12, dx: 1, dy: 0 }), BUILDING, undefined, [10, 11]).doorway?.sign;
+    expect(sign?.along).toBeCloseTo(12 - PLAQUE_W / 2 - 0.04);
+    expect(sign?.post).toBe(true);
+    expect(sign?.base).toBeGreaterThan(H_TALL + 0.07);
+  });
+
+  it('takes no notice of rooms beyond a tall wall, as it stands on top of the door frame', () => {
+    expect(roomShape(room(NORTH), BUILDING, undefined, [10, 11, 12, 13]).doorway?.sign).toEqual(
+      roomShape(room(NORTH), BUILDING).doorway?.sign,
+    );
+  });
+
+  it("finds the tiles with another room beyond the door's wall, on whichever side the door is", () => {
+    /** Other rooms from x 12 on, in the rows just above and just below the room at 10,10. */
+    const other = (x: number, y: number) => x >= 12 && (y === 9 || y === 13);
+    expect(walledBeyondDoor(room(SOUTH), other)).toEqual([12, 13]);
+    expect(walledBeyondDoor(room(NORTH), other)).toEqual([12, 13]);
+    expect(walledBeyondDoor(room({ x: 13, y: 11, dx: 1, dy: 0 }), () => true)).toEqual([10, 11, 12]);
+    expect(walledBeyondDoor(room({ x: 10, y: 11, dx: -1, dy: 0 }), (x, y) => x === 9 && y === 12)).toEqual([12]);
   });
 });
 
