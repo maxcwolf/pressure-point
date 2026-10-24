@@ -10,6 +10,7 @@ import { entranceSpan, type Footprint, inRect } from '../core/footprint';
 import { must } from '../core/util';
 import { buildBeach } from './models/beach';
 import { type Block, buildLamps, buildOffices, buildStreets, buildStreetTrees } from './models/downtown';
+import { buildHedges, buildPavements } from './models/high-street';
 import { mergeStill } from './models/merge';
 import { buildOrchard, orchardRows } from './models/orchard';
 import { cyl, mat, put, rbox, sph } from './models/parts';
@@ -31,6 +32,8 @@ export function buildScenery(
   width: number,
   /** The center's plots of land, kept clear for the building to grow into, and anything standing outdoors. */
   plots: readonly Rect[] = [],
+  /** Whether the lot is on a high street, whose road and pavements run on past it (see `buildHighStreet`). */
+  street = false,
 ): THREE.Group {
   const scene = new THREE.Group();
   // one lawn material, which the light recolors as the seasons turn
@@ -66,11 +69,13 @@ export function buildScenery(
     return scene;
   }
 
-  // trees wherever there is lawn, or snow
+  if (street) scene.add(buildHighStreet(fp, width, plots));
+
+  // trees wherever there is lawn, or snow, and none on a high street's hedges or pavements
   const trees: TreeSpot[] = [];
   for (let y = -3; y < H + 2; y++) {
     for (let x = -4; x < width + 4; x++) {
-      if (keptClear(fp, plots, x, y) || hash(x, y) > 0.2) continue;
+      if (keptClear(fp, plots, x, y) || hash(x, y) > 0.2 || (street && y >= SIDEWALK_Y - 1)) continue;
       trees.push({
         x: x + 0.5 + (hash(x + 9, y) - 0.5) * 0.5,
         z: y + 0.5 + (hash(x, y + 9) - 0.5) * 0.5,
@@ -283,6 +288,69 @@ function buildDowntown(fp: Footprint, width: number, plots: readonly Rect[]): TH
   }
   city.add(buildLamps(lamps));
   return city;
+}
+
+/** How far past each end of the lot a high street runs. */
+const STREET_REACH = 30;
+
+/**
+ * A high street round the lot: the road and its pavements run on past it, with a pavement along the far side too,
+ * hedges on a low wall along the back of the near pavement, broken for the path to the door and for every plot that
+ * reaches the street, and lamp posts along the kerb. None stands along the lot's own frontage, which the opening view
+ * looks over, so the way in stays clear.
+ */
+function buildHighStreet(fp: Footprint, width: number, plots: readonly Rect[]): THREE.Group {
+  const g = new THREE.Group();
+  g.name = 'high-street';
+  const reach = STREET_REACH;
+  const dashes: { x: number; z: number }[] = [];
+  for (let x = -reach; x < width + reach; x += 2)
+    if (x < 0 || x >= width) dashes.push({ x: x + 0.5, z: ROAD_Y[0] + 1 - 1 / 32 });
+  g.add(
+    buildStreets(
+      [
+        { x0: -reach, x1: 0, z0: ROAD_Y[0], z1: ROAD_Y[1] + 1 },
+        { x0: width, x1: width + reach, z0: ROAD_Y[0], z1: ROAD_Y[1] + 1 },
+      ],
+      dashes,
+    ),
+  );
+  g.add(
+    buildPavements([
+      { x0: -reach, x1: 0, z0: SIDEWALK_Y, z1: ROAD_Y[0] },
+      { x0: width, x1: width + reach, z0: SIDEWALK_Y, z1: ROAD_Y[0] },
+      { x0: -reach, x1: width + reach, z0: ROAD_Y[1] + 1, z1: ROAD_Y[1] + 2 },
+    ]),
+  );
+  const openings = streetOpenings(fp, plots);
+  const runs: { x0: number; x1: number; z: number }[] = [];
+  let x0 = -reach;
+  for (const [a, b] of openings) {
+    if (a > x0) runs.push({ x0, x1: a, z: SIDEWALK_Y - 0.25 });
+    x0 = Math.max(x0, b);
+  }
+  runs.push({ x0, x1: width + reach, z: SIDEWALK_Y - 0.25 });
+  g.add(buildHedges(runs));
+  g.add(buildLamps(streetLamps(openings, width)));
+  return g;
+}
+
+/** Where a high street's hedges break, from x to x, in order: the path to the door, and each plot reaching the street. */
+export function streetOpenings(fp: Footprint, plots: readonly Rect[]): [number, number][] {
+  const openings: [number, number][] = [[fp.door[0] - 0.5, fp.door[1] + 1.5]];
+  for (const r of plots) if (r.y1 >= SIDEWALK_Y - 2) openings.push([r.x0 - 0.5, r.x1 + 1.5]);
+  return openings.sort((p, q) => p[0] - q[0]);
+}
+
+/** A high street's lamp posts along the kerb, every six tiles, clear of the openings and of the lot's own frontage. */
+export function streetLamps(openings: readonly [number, number][], width: number): { x: number; z: number }[] {
+  const lamps: { x: number; z: number }[] = [];
+  for (let x = -STREET_REACH; x < width + STREET_REACH; x += 6) {
+    const nearOpening = openings.some(([a, b]) => x + 0.5 > a - 1 && x + 0.5 < b + 1);
+    const frontage = x >= -2 && x <= width + 1;
+    if (!nearOpening && !frontage) lamps.push({ x: x + 0.5, z: SIDEWALK_Y + 0.88 });
+  }
+  return lamps;
 }
 
 /** The sea behind the lot, a row of beach huts along the shore, and dune grass on the sand. */

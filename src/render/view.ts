@@ -118,7 +118,14 @@ export class View {
     lightSetting(this.lights, settingOf(sim.s).light);
 
     this.rig = new CameraRig(sim.world.building, sim.world.w);
-    this.scenery = buildScenery(sim.world.building, settingName(sim.s), settingOf(sim.s), sim.world.w, clearOf(sim));
+    this.scenery = buildScenery(
+      sim.world.building,
+      settingName(sim.s),
+      settingOf(sim.s),
+      sim.world.w,
+      clearOf(sim),
+      centerOf(sim.s).highStreet,
+    );
     this.sceneryPlot = sceneryKey(sim);
     this.scene.add(this.scenery);
     this.shell = buildShell(sim.world.building, nearSides(this.facing));
@@ -226,6 +233,7 @@ export class View {
       settingOf(this.sim.s),
       this.sim.world.w,
       clearOf(this.sim),
+      centerOf(this.sim.s).highStreet,
     );
     this.scene.add(this.scenery);
   }

@@ -99,6 +99,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     blurb: 'Where it all starts: one massage suite, a few loyal regulars, and a lot to learn.',
     plot: { x0: 7, x1: 22, y0: 8, y1: 17, door: [14, 15] },
     width: 40,
+    highStreet: true,
     plots: [
       {
         id: 'unit-next-door',

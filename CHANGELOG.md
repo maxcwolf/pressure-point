@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Willow Lane's high street.** The road and its pavements run on past Willow Lane's lot, with hedges on a low brick wall along the pavement and lamp posts further down the street, so the first center stands on a street rather than in a field. The way in to the door stays clear.
+
 ## v0.33.4
 
 - **Money when it matters.** The tutorial's word on the bank and the loan now comes as a card the first time the bank holds less than a month's wages, with what it holds, what payday takes and when, and a Show me that opens the Loan tab. The Reception Desk step just says that everything comes out of the bank. Hiring the role the tutorial asks for closes the Hire menu, so its next card is not hidden.
