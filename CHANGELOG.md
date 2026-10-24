@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **Money when it matters.** The tutorial's word on the bank and the loan now comes as a card the first time the bank holds less than a month's wages, with what it holds, what payday takes and when, and a Show me that opens the Loan tab. The Reception Desk step just says that everything comes out of the bank. Hiring the role the tutorial asks for closes the Hire menu, so its next card is not hidden.
+- **Room signs stay in sight.** A sign beside a door in a wall cut low no longer hides behind the tall wall of a room just beyond it: it moves to the other side of the door, or, with no clear wall on either side, such as a door at the end of its wall, stands up over that wall.
 
 ## v0.33.3
 
