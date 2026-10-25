@@ -38,7 +38,7 @@ export function placeItemModel(model: THREE.Object3D, type: ItemType, x: number,
 /** What is on fire this frame, and what of it is being put out. */
 interface Fire {
   burning: ReadonlySet<number>;
-  hosed: ReadonlySet<number>;
+  hosed: ReadonlyMap<number, number>;
 }
 
 /**
@@ -281,7 +281,7 @@ export class ItemsLayer {
         stopped: this.stopped(it),
         shade,
         burning,
-        hosed: burning && fire.hosed.has(it.id),
+        ...(burning && fire.hosed.has(it.id) && { hosed: fire.hosed.get(it.id) ?? 0 }),
         burnt: !!it.burnt,
       },
       t,

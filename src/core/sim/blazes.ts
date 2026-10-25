@@ -40,7 +40,7 @@ import { feel } from './feelings';
 import { smoking } from './machines';
 import { floodTiles } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
-import { standBeside } from './staffing';
+import { caretakerSpeed, standBeside } from './staffing';
 import { extinguisherNear } from './visits';
 
 /** What a fire is shown with in messages: the item every room should have near its door for one. */
@@ -387,7 +387,16 @@ function sendToFire(ctx: SimContext, v: Visitor): boolean {
   // how long they look round, should they get there to find it out
   v.timer = SHRUG_SECONDS;
   const room = ctx.world.room(b.room);
-  if (standBeside(ctx, v, it) || (room && goTo(ctx, v, room.door.x, room.door.y))) return true;
+  /** Whether a crewmate stands on a tile beside it, or is on the way there: the other takes another side if there is one. */
+  const taken = (x: number, y: number) =>
+    ctx.s.visitors.some(
+      (o) =>
+        o !== v &&
+        o.visit === 'firefighter' &&
+        (o.dest ? o.dest[0] === x && o.dest[1] === y : o.tx === x && o.ty === y),
+    );
+  if (standBeside(ctx, v, it, (x, y) => !taken(x, y)) || standBeside(ctx, v, it)) return true;
+  if (room && goTo(ctx, v, room.door.x, room.door.y)) return true;
   halt(v);
   startHosing(v, it);
   return true;
@@ -497,11 +506,22 @@ export function rerouteFirefighter(ctx: SimContext, v: Visitor) {
   if (!sendToFire(ctx, v)) nextFire(ctx, v);
 }
 
-/** The items being put out this moment: hosed by a firefighter, or doused by a Caretaker. */
-export function beingPutOut(s: GameState): Set<number> {
-  const out = new Set<number>();
-  for (const v of s.visitors) if (v.state === 'hosing' && v.fire) out.add(v.fire);
-  for (const st of s.staff) if (st.state === 'doingJob' && st.job?.kind === 'douse') out.add(st.job.id);
+/**
+ * The items being put out this moment, hosed by a firefighter or doused by a Caretaker, each with how far it is out,
+ * from 0 as they start to 1 as it goes out: the furthest along of whoever is at it.
+ */
+export function beingPutOut(ctx: SimContext): Map<number, number> {
+  const out = new Map<number, number>();
+  /** Note how far one of them has got with an item. */
+  const note = (id: number, done: number) => {
+    out.set(id, Math.max(out.get(id) ?? 0, Math.min(1, Math.max(0, done))));
+  };
+  for (const v of ctx.s.visitors) if (v.state === 'hosing' && v.fire) note(v.fire, 1 - v.timer / HOSE_SECONDS);
+  for (const st of ctx.s.staff) {
+    if (st.state !== 'doingJob' || st.job?.kind !== 'douse') continue;
+    const it = ctx.world.item(st.job.id);
+    if (it) note(it.id, 1 - st.timer / (douseSeconds(ctx, it) / caretakerSpeed(st)));
+  }
   return out;
 }
 

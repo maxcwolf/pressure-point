@@ -234,6 +234,10 @@ describe('the fire brigade, with no Caretaker', () => {
     // two firefighters out on the pavement beside the cab
     expect(crew(c)).toHaveLength(2);
     for (const v of crew(c)) expect(v.ty).toBe(SIDEWALK_Y);
+    // each hoses it from a side of their own
+    runUntil(sim, () => crew(c).every((v) => v.state === 'hosing'), 30);
+    const [one, two] = crew(c);
+    expect([one?.tx, one?.ty]).not.toEqual([two?.tx, two?.ty]);
     runUntil(sim, () => !burning(c), 60);
     expect(seconds(from, s.day)).toBeLessThan(60);
     expect(s.ledger.upkeep - upkeep).toBe(600 + BRIGADE_FEE);

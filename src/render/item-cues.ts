@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-import { DIRT_FILTHY, HOSE_SECONDS, ITEMS, type ItemType, type MishapId, NOISE_NOTICE, WEAR_WARN } from '../core/data';
+import { DIRT_FILTHY, ITEMS, type ItemType, type MishapId, NOISE_NOTICE, WEAR_WARN } from '../core/data';
 import { clamp } from '../core/util';
 import { isOwned, owned } from './disposal';
 import { BOOST_LOOP } from './gags/clock';
@@ -112,9 +112,12 @@ export interface CueCondition {
   stopped?: StopLook | undefined;
   /** How far it stands in the dark of a power cut, from 0 in the light to 1 inside the building with its lights out. */
   shade?: number;
-  /** It is on fire, and being put out this moment: hosed by a firefighter, or doused by a Caretaker. */
+  /**
+   * It is on fire, and being put out this moment, hosed by a firefighter or doused by a Caretaker: how far it is out,
+   * from 0 as they start to 1 as it goes out.
+   */
   burning?: boolean;
-  hosed?: boolean;
+  hosed?: number;
   /** It burnt in a fire, and has not been repaired since. */
   burnt?: boolean;
 }
@@ -237,16 +240,41 @@ const FLAME = 0xff5a1a;
 const FLAME_HEART = 0xffc23a;
 const STEAM = 0xf4f6f8;
 
-/** How many flames lick up off something on fire, and how much of their height they keep once nearly hosed out. */
-const FLAMES = 4;
+/**
+ * Where the flames stand on something on fire, in shares of its box: four orange ones toward its corners and three
+ * yellow ones at the heart, rising from a little over halfway up so they wrap round its top, whatever its shape, rather
+ * than float over a chimney or a lamp.
+ */
+const FLAME_SPOTS: readonly { x: number; z: number; up: number; heart: boolean }[] = [
+  { x: -0.3, z: -0.25, up: 0.55, heart: false },
+  { x: 0.3, z: -0.25, up: 0.55, heart: false },
+  { x: -0.3, z: 0.25, up: 0.5, heart: false },
+  { x: 0.3, z: 0.25, up: 0.5, heart: false },
+  { x: -0.15, z: 0, up: 0.62, heart: true },
+  { x: 0.15, z: 0.05, up: 0.62, heart: true },
+  { x: 0, z: -0.1, up: 0.66, heart: true },
+];
+
+/** How much of their size the flames keep once nearly hosed out. */
 const HOSED_LEFT = 0.2;
 
 /** A flame: a cone standing on its base, one shape for every flame on every fire. */
-const flame = () => cached('cue-flame', () => new THREE.ConeGeometry(0.13, 0.5, 10).translate(0, 0.25, 0));
+const flame = () => cached('cue-flame', () => new THREE.ConeGeometry(0.16, 0.55, 8).translate(0, 0.275, 0));
+
+/** The flames for a model, made the first time it burns: full strength, as a fire's light is. */
+function flamesFor(model: THREE.Object3D): THREE.Group {
+  const group = cueGroup(model, flame(), FLAME_SPOTS.length, FLAME);
+  group.children.forEach((f, i) => {
+    const m = fadeOf(f);
+    m.color.setHex(FLAME_SPOTS[i]?.heart ? FLAME_HEART : FLAME);
+    m.toneMapped = false;
+  });
+  return group;
+}
 
 /**
- * Flames licking up off the top of something on fire, each flickering on its own, and shrinking over the time it takes
- * to hose them out while a firefighter or a Caretaker is putting them out, with steam rising off it.
+ * Flames licking up round the top of something on fire, each flickering on its own, and shrinking over the time it
+ * takes to hose them out while a firefighter or a Caretaker is putting them out, with steam rising off it.
  */
 function animateFlames(model: THREE.Object3D, c: CueCondition, t: number) {
   let flames = partsOf(model).cues?.flames;
@@ -254,40 +282,37 @@ function animateFlames(model: THREE.Object3D, c: CueCondition, t: number) {
     if (flames) flames.visible = false;
     const steam = partsOf(model).cues?.steam;
     if (steam) steam.visible = false;
-    delete model.userData.hosedSince;
     return;
   }
   const cues = cuesOf(model);
-  flames = cues.flames ??= cueGroup(model, flame(), FLAMES, FLAME);
+  flames = cues.flames ??= flamesFor(model);
   flames.visible = true;
   const { box } = cues;
   const w = box.max.x - box.min.x;
   const d = box.max.z - box.min.z;
+  const h = box.max.y - box.min.y;
   const cx = (box.min.x + box.max.x) / 2;
   const cz = (box.min.z + box.max.z) / 2;
-  // shrinking from the moment the hose or the extinguisher is on it
-  if (c.hosed) model.userData.hosedSince ??= t;
-  else delete model.userData.hosedSince;
-  const since = model.userData.hosedSince as number | undefined;
-  const left = since === undefined ? 1 : 1 - (1 - HOSED_LEFT) * clamp((t - since) / HOSE_SECONDS, 0, 1);
+  // shrinking as the hose or the extinguisher puts it out, in step with the game, so it waits while the game is paused
+  const hosed = c.hosed !== undefined;
+  const left = 1 - (1 - HOSED_LEFT) * clamp(c.hosed ?? 0, 0, 1);
   // big enough to read from the game's usual distance, and bigger on something bigger
-  const size = clamp(Math.max(w, d) * 0.9, 0.9, 1.8) * left;
+  const size = clamp(Math.max(w, d, h) * 0.85, 1, 1.8) * left;
   flames.children.forEach((f, i) => {
-    const heart = i % 2 === 1;
-    const lick = 0.75 + 0.25 * Math.sin(t * (9 + i * 2.3) + c.id + i) + 0.15 * Math.sin(t * 23 + i * 5);
+    const spot = FLAME_SPOTS[i] ?? { x: 0, z: 0, up: 0.6, heart: true };
+    const lick = 0.8 + 0.22 * Math.sin(t * (9 + i * 2.3) + c.id + i) + 0.12 * Math.sin(t * 23 + i * 5);
     f.position.set(
-      cx + (i - (FLAMES - 1) / 2) * w * 0.22 + Math.sin(t * 3 + i) * 0.02,
-      box.max.y - 0.05,
-      cz + (heart ? 0.06 : -0.06) * d,
+      cx + spot.x * w + Math.sin(t * 3 + i) * 0.02,
+      box.min.y + spot.up * h,
+      cz + spot.z * d + Math.cos(t * 2.6 + i) * 0.02,
     );
-    f.scale.set(size * (heart ? 0.7 : 1), size * lick * (heart ? 0.8 : 1.1), size * (heart ? 0.7 : 1));
-    const m = fadeOf(f);
-    m.color.setHex(heart ? FLAME_HEART : FLAME);
-    m.opacity = 0.92;
+    const across = size * (spot.heart ? 0.75 : 1);
+    f.scale.set(across, size * lick * (spot.heart ? 1.25 : 1.1), across);
+    fadeOf(f).opacity = 0.95;
   });
   const steam = (cues.steam ??= cueGroup(model, sph(0.1, 8), 3, STEAM));
-  steam.visible = !!c.hosed;
-  if (!c.hosed) return;
+  steam.visible = hosed;
+  if (!hosed) return;
   steam.children.forEach((p, i) => {
     const f = burst(t + i * 0.4, 1.2, 1.2, c.id);
     p.position.set(cx + Math.sin(f * 4 + i * 2.1) * 0.15, box.max.y + 0.2 + f * 1.1, cz + (i - 1) * 0.1);

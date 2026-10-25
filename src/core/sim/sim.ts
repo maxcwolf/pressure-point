@@ -945,9 +945,9 @@ export class Sim {
     return onFire(this.s, it);
   }
 
-  /** The items being put out this moment, by a firefighter's hose or a Caretaker. */
-  beingPutOut(): Set<number> {
-    return beingPutOut(this.s);
+  /** The items being put out this moment, by a firefighter's hose or a Caretaker, and how far each is out. */
+  beingPutOut(): Map<number, number> {
+    return beingPutOut(this.ctx);
   }
 
   /** Move a room's door to another stretch of its wall. */

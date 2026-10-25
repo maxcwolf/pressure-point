@@ -4,15 +4,7 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import {
-  DIRT_FILTHY,
-  HOSE_SECONDS,
-  ITEMS,
-  type ItemType,
-  NOISE_NOTICE,
-  WEAR_REPAIR,
-  WEAR_WARN,
-} from '../../src/core/data';
+import { DIRT_FILTHY, ITEMS, type ItemType, NOISE_NOTICE, WEAR_REPAIR, WEAR_WARN } from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
 import { spawnGuest } from '../../src/core/sim/guests';
 import {
@@ -428,7 +420,12 @@ describe('a fire on a model', () => {
     const { flames, smoke, box } = partsOf(model).cues!;
     expect(flames?.visible).toBe(true);
     expect(flames!.children.length).toBeGreaterThanOrEqual(3);
-    for (const f of flames!.children) expect(f.position.y).toBeGreaterThan(box.max.y - 0.1);
+    // over the kiln itself, and licking up past the top of it
+    for (const f of flames!.children) {
+      expect(f.position.x).toBeGreaterThan(box.min.x);
+      expect(f.position.x).toBeLessThan(box.max.x);
+    }
+    expect(Math.max(...flames!.children.map((f) => f.position.y + 0.55 * f.scale.y))).toBeGreaterThan(box.max.y);
     expect(smoke?.visible).toBe(true);
     // a flame flickers: the same flame stands at another height a moment later
     const tall = flames!.children[0]!.scale.y;
@@ -444,9 +441,12 @@ describe('a fire on a model', () => {
     /** How big the flames stand, on average, at a moment. */
     const size = () => flames.children.reduce((sum, f) => sum + f.scale.x, 0) / flames.children.length;
     const before = size();
-    animateItemParts(model, condition('stone_kiln', { wear: 100, burning: true, hosed: true }), 1);
+    animateItemParts(model, condition('stone_kiln', { wear: 100, burning: true, hosed: 0 }), 1);
     expect(partsOf(model).cues?.steam?.visible).toBe(true);
-    animateItemParts(model, condition('stone_kiln', { wear: 100, burning: true, hosed: true }), 1 + HOSE_SECONDS);
+    // in step with the game: no smaller for time passing alone, as it does while the game is paused
+    animateItemParts(model, condition('stone_kiln', { wear: 100, burning: true, hosed: 0 }), 30);
+    expect(size()).toBeCloseTo(before, 1);
+    animateItemParts(model, condition('stone_kiln', { wear: 100, burning: true, hosed: 0.95 }), 31);
     expect(size()).toBeLessThan(before / 2);
     animateItemParts(model, condition('stone_kiln', { wear: 100, burnt: true }), 10);
     expect(partsOf(model).cues?.steam?.visible).toBe(false);

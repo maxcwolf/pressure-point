@@ -83,13 +83,19 @@ const BESIDE: readonly (readonly [dx: number, dy: number])[] = [
 
 /**
  * Set someone walking to stand next to an item, on whichever side can be reached, and on the same side of the
- * building's walls. False if no side can be reached.
+ * building's walls, passing over any tile `free` turns down. False if no side can be reached.
  */
-export function standBeside(ctx: SimContext, c: Char, item: Item): boolean {
+export function standBeside(
+  ctx: SimContext,
+  c: Char,
+  item: Item,
+  free: (x: number, y: number) => boolean = () => true,
+): boolean {
   const indoors = ctx.world.inside(item.x, item.y);
   for (const [fx, fy] of footprint(item)) {
     for (const [dx, dy] of BESIDE) {
       const [bx, by] = [fx + dx, fy + dy];
+      if (!free(bx, by)) continue;
       if (ctx.world.walkable(bx, by) && ctx.world.inside(bx, by) === indoors && goTo(ctx, c, bx, by)) return true;
     }
   }
