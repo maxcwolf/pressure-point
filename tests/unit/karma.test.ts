@@ -160,6 +160,7 @@ describe('the campaign kept between games', () => {
       unlocked: [],
       decor: [],
       bonus: 0,
+      lessons: [],
     });
     expect(buyWithKarma('koi_pond')).toBe(true);
     expect(buyWithKarma('koi_pond')).toBe(false);

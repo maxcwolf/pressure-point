@@ -2,11 +2,14 @@
 // hands over once all of it is done; it can be skipped, and stays away from any game it was not switched on for.
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { QUIT_AFTER } from '../../src/core/data';
+import { startTutorial } from '../../src/app/start';
+import { type CenterId, QUIT_AFTER } from '../../src/core/data';
+import { lessonTip } from '../../src/core/sim/lessons';
 import { primerTip } from '../../src/core/sim/primer';
-import type { Sim } from '../../src/core/sim/sim';
+import { Sim } from '../../src/core/sim/sim';
 import { HANDOFF, LOOK_DAYS, wantsHire } from '../../src/core/sim/tutorial';
-import { loadTutorialPref, saveTutorialPref } from '../../src/storage/settings';
+import { newGame } from '../../src/core/state/game';
+import { loadLessonsPref, loadTutorialPref, noteTutorialDone, saveTutorialPref } from '../../src/storage/settings';
 import {
   addConsult,
   addMassage,
@@ -355,13 +358,25 @@ describe('the tutorial', () => {
     expect(sim.s.primer).toBe(true);
   });
 
-  it('can be switched back on in the game', () => {
-    const sim = tutorialGame();
+  it('can be switched back on in a Willow Lane game', () => {
+    const sim = new Sim(newGame('willow'));
+    sim.s.tutorial = sim.s.lessons = true;
     sim.setTutorial(false);
     expect(sim.tutorialLines()).toEqual([]);
     sim.setTutorial(true);
     expect(sim.s.lessons).toBe(true);
     expect(stepOf(sim)).toBe('look');
+  });
+
+  it("switched on anywhere else, brings only the cards that explain things: the steps are Willow Lane's", () => {
+    for (const center of ['exchange', 'orchard', 'sandbox'] as const) {
+      const sim = new Sim(newGame(center));
+      sim.setTutorial(true);
+      expect(sim.s.lessons, center).toBe(true);
+      expect(sim.s.tutorial, center).toBe(false);
+      expect(sim.tutorialOn(), center).toBe(true);
+      expect(sim.tutorialLines(), center).toEqual([]);
+    }
   });
 
   it('stays away from a game it is not on in', () => {
@@ -383,6 +398,37 @@ describe('the tutorial', () => {
     expect(sim.aboutToQuit(therapist)).toBe(true);
     expect(sim.adviceNote().text).toMatch(/is about to quit/);
     expect(sim.adviceNote().step).toBeUndefined();
+  });
+});
+
+describe('a new game in the campaign', () => {
+  /** A new game in a center, started with the tutorial as given. */
+  const started = (center: CenterId, steps: boolean, lessons: boolean) => {
+    const s = newGame(center);
+    startTutorial(s, { steps, lessons, seen: ['guest', 'heal'] });
+    return s;
+  };
+
+  it("walks through Willow Lane's opening alone, and explains things in every center", () => {
+    expect(started('willow', true, true)).toMatchObject({ tutorial: true, lessons: true });
+    expect(started('exchange', true, true)).toMatchObject({ tutorial: false, lessons: true });
+    expect(started('orchard', false, true)).toMatchObject({ tutorial: false, lessons: true });
+    expect(started('willow', false, true)).toMatchObject({ tutorial: false, lessons: true });
+    expect(started('willow', true, false)).toMatchObject({ tutorial: true, lessons: false });
+  });
+
+  it('starts with the lessons the campaign has shown already as seen, so they do not come again', () => {
+    for (const lessons of [true, false]) {
+      const s = started('boardwalk', false, lessons);
+      expect(s.seenTips).toEqual(expect.arrayContaining([lessonTip('guest'), lessonTip('heal')]));
+      expect(s.seenTips).not.toContain(lessonTip('weather'));
+    }
+  });
+
+  it('leaves the sandbox alone', () => {
+    const s = started('sandbox', true, true);
+    expect(s).toMatchObject({ tutorial: false, lessons: false });
+    expect(s.seenTips.filter((tip) => tip.startsWith('lesson-'))).toEqual([]);
   });
 });
 
@@ -410,8 +456,25 @@ describe('the tutorial setting', () => {
     saveTutorialPref(true);
     expect(store.get('pressure-point-tutorial')).toBe('on');
     expect(loadTutorialPref()).toBe(true);
+    expect(loadLessonsPref()).toBe(true);
     store.delete('pressure-point-campaign');
     saveTutorialPref(false);
+    expect(store.get('pressure-point-tutorial')).toBe('off');
     expect(loadTutorialPref()).toBe(false);
+    expect(loadLessonsPref()).toBe(false);
+  });
+
+  it('keeps the cards coming once the walk-through is done, but not the walk-through', () => {
+    noteTutorialDone();
+    expect(store.get('pressure-point-tutorial')).toBe('done');
+    expect(loadTutorialPref()).toBe(false);
+    expect(loadLessonsPref()).toBe(true);
+  });
+
+  it('has the cards on until switched off, stars or not', () => {
+    expect(loadLessonsPref()).toBe(true);
+    store.set('pressure-point-campaign', JSON.stringify({ stars: { willow: 1 } }));
+    expect(loadTutorialPref()).toBe(false);
+    expect(loadLessonsPref()).toBe(true);
   });
 });

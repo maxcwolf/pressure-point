@@ -2,12 +2,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { newGameCenter } from '../../src/app/start';
-import { centerOpen, nextCenter, withStars } from '../../src/core/campaign';
+import { centerOpen, freshCampaign, nextCenter, withStars } from '../../src/core/campaign';
 import { CAMPAIGN, type CenterId, CENTERS } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
 import { admitGuests, guestCap, guestsCounted, INTAKE_CAP_MIN, rollCondition } from '../../src/core/sim/guests';
+import { LESSON_IDS, LESSONS_BEFORE_MEMORY } from '../../src/core/sim/lessons';
 import { monthSoFar } from '../../src/core/sim/records';
 import { Sim } from '../../src/core/sim/sim';
 import {
@@ -23,7 +24,7 @@ import {
 } from '../../src/core/sim/twists';
 import { addWear } from '../../src/core/sim/upkeep';
 import { disciplineHere, disciplineOn, newGame } from '../../src/core/state/game';
-import { loadCampaign, recordGame } from '../../src/storage/campaign';
+import { loadCampaign, recordGame, recordLesson } from '../../src/storage/campaign';
 import { campaignCards } from '../../src/ui/lib/campaign';
 import { openCenter, runUntil } from './helpers';
 
@@ -98,12 +99,46 @@ describe('campaign progress', () => {
 
   it('ignores junk', () => {
     store.set('pressure-point-campaign', 'not json');
-    expect(loadCampaign()).toEqual({ stars: {}, achieved: [], unlocked: [], decor: [], bonus: 0 });
+    expect(loadCampaign()).toEqual({ stars: {}, achieved: [], unlocked: [], decor: [], bonus: 0, lessons: [] });
+    expect(loadCampaign()).toEqual(freshCampaign());
     store.set(
       'pressure-point-campaign',
       JSON.stringify({ stars: { willow: 2, atlantis: 3, exchange: 'lots', sandbox: -1 } }),
     );
     expect(loadCampaign().stars).toEqual({ willow: 2 });
+  });
+
+  it('remembers each lesson shown, once, in whatever game it was shown', () => {
+    expect(loadCampaign().lessons).toEqual([]);
+    recordLesson('guest');
+    recordLesson('weather');
+    recordLesson('guest');
+    expect(loadCampaign().lessons).toEqual(['guest', 'weather']);
+    // kept beside the stars, which go on being recorded as before
+    recordStars('willow', 1);
+    expect(loadCampaign()).toMatchObject({ stars: { willow: 1 }, lessons: ['guest', 'weather'] });
+  });
+
+  it('ignores lessons it does not know', () => {
+    store.set('pressure-point-campaign', JSON.stringify({ lessons: ['heal', 'juggling', 7, 'weather'] }));
+    expect(loadCampaign().lessons).toEqual(['heal', 'weather']);
+    store.set('pressure-point-campaign', JSON.stringify({ stars: { willow: 1 }, lessons: 'all of them' }));
+    expect(loadCampaign().lessons).toEqual([]);
+  });
+
+  it('takes a campaign from before it remembered the lessons, with a star, to have been through the ones there were', () => {
+    expect(LESSONS_BEFORE_MEMORY).toEqual(LESSON_IDS.filter((id) => id !== 'weather'));
+    store.set('pressure-point-campaign', JSON.stringify({ stars: { willow: 2 } }));
+    expect(loadCampaign().lessons).toEqual(LESSONS_BEFORE_MEMORY);
+    // only the lessons added since are still to come
+    expect(LESSON_IDS.filter((id) => !loadCampaign().lessons.includes(id))).toEqual(['weather']);
+    recordLesson('weather');
+    expect(loadCampaign().lessons).toEqual([...LESSONS_BEFORE_MEMORY, 'weather']);
+    // with no star, nothing was seen; and a list kept since is taken as it is
+    store.set('pressure-point-campaign', JSON.stringify({ stars: {} }));
+    expect(loadCampaign().lessons).toEqual([]);
+    store.set('pressure-point-campaign', JSON.stringify({ stars: { willow: 2 }, lessons: ['guest'] }));
+    expect(loadCampaign().lessons).toEqual(['guest']);
   });
 });
 

@@ -3,6 +3,7 @@
 // over once all of it is done.
 
 import {
+  CAMPAIGN,
   GENERAL_COURSES,
   type ItemType,
   LOAN_RATE,
@@ -375,13 +376,15 @@ export function skipTutorial(ctx: SimContext) {
 }
 
 /**
- * Turn the tutorial, and the cards that explain things, on or off in the game in progress. Turned on in a game that
- * has handed over already, or has every step done, only the cards come back: there is nothing left to walk through.
+ * Turn the tutorial, and the cards that explain things, on or off in the game in progress. The steps are Willow Lane's
+ * alone, so anywhere else only the cards come on, as they do in a game that has handed over already or has every step
+ * done: there is nothing left to walk through.
  */
 export function setTutorial(ctx: SimContext, on: boolean) {
   const s = ctx.s;
   s.lessons = on;
-  s.tutorial = on && !s.seenTips.includes(HANDED_OVER_TIP) && !chain(ctx).every((st) => st.done);
+  s.tutorial =
+    on && s.center === CAMPAIGN[0] && !s.seenTips.includes(HANDED_OVER_TIP) && !chain(ctx).every((st) => st.done);
 }
 
 /** Whether the tutorial is on in the game in progress: its steps, or the cards that explain things, or both. */

@@ -9,7 +9,7 @@ import type { GameState } from '../core/state/types';
 import { loadIcons } from '../render/models/icons';
 import { loadCampaign } from '../storage/campaign';
 import { AUTOSAVE_ID, openInAutosave, readSave, startBackup } from '../storage/saves';
-import { loadDisciplinePrefs, loadSandbox, loadTutorialPref } from '../storage/settings';
+import { loadDisciplinePrefs, loadLessonsPref, loadSandbox, loadTutorialPref } from '../storage/settings';
 import { welcomeSeen } from '../storage/welcome';
 import { showTitle } from '../ui';
 import { track } from './analytics';
@@ -19,7 +19,7 @@ import { fullScreen } from './fullscreen';
 import { startGame } from './game';
 import { takeHandoff } from './handoff';
 import { gameProps } from './play-events';
-import { newGameCenter } from './start';
+import { newGameCenter, startTutorial } from './start';
 import { updates } from './updates';
 
 /** Start up: open the game the last page asked for, or show the title screen until one is picked. */
@@ -95,8 +95,10 @@ function open(what: string | null): GameState | 'no-room' | null {
   }
   // a first go at the campaign's first center, with nothing earned yet, looks ahead to what it will soon need
   if (state && center === CAMPAIGN[0] && !Object.keys(loadCampaign().stars).length) state.primer = true;
-  // a new Willow Lane game is walked through its opening while the tutorial is on, the heads-ups among its steps
-  if (state && center === CAMPAIGN[0] && loadTutorialPref()) state.tutorial = state.lessons = true;
+  // a new Willow Lane game is walked through its opening while the tutorial is on, the heads-ups among its steps, and a
+  // new game in any of the campaign's centers explains each thing the first time it happens in the campaign
+  if (state && center)
+    startTutorial(state, { steps: loadTutorialPref(), lessons: loadLessonsPref(), seen: loadCampaign().lessons });
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
   if (state && what !== AUTOSAVE_ID && !openInAutosave(state)) return 'no-room';
   return state;
