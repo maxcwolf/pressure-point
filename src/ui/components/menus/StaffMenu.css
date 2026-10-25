@@ -16,6 +16,10 @@
   font-size: 13px;
 }
 
+.row:not(.head) {
+  cursor: pointer;
+}
+
 .row:hover {
   border-color: var(--teal-dark);
   background: #f0fbf9;
@@ -35,7 +39,8 @@
   background: none;
 }
 
-/* what has a tooltip of its own sits above it, as does the button to promote them or raise their pay */
+/* what has a tooltip of its own sits above it, selecting from the row's own press, as does the button to promote them
+   or raise their pay */
 .row .meters,
 .row .quals > span,
 .row > button.act {
@@ -106,6 +111,7 @@
 
 .menu button.act:hover {
   filter: brightness(1.06);
+  transform: none;
 }
 
 /* to promote everyone waiting, or pay every raise asked for */

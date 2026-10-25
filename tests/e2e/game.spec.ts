@@ -887,6 +887,10 @@ test.describe('staff', () => {
     await all.click();
     expect(await game.eval((pp) => pp.state.staff.slice(0, 2).map((st) => st.skill))).toEqual(skills.map((n) => n + 1));
     await expect(all).toHaveCount(0);
+
+    // the whole row selects them, even its bars, which sit above the row's button for their tooltip
+    await rows.filter({ hasText: second!.name }).locator('.meters').click();
+    await expect(page.locator('#inspector')).toContainText(second!.name);
   });
 
   test('can be compared side by side in the inspector', async ({ game, page }) => {

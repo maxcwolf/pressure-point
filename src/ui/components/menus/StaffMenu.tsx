@@ -153,6 +153,20 @@ export function StaffMenu() {
   // a month of everyone staying on, and what the coming payday owes, by the days each has worked since they were paid
   const payroll = staff.reduce((total, st) => total + (st.state === 'leaving' ? 0 : st.salary), 0);
   const due = wagesDue(sim.s);
+  /**
+   * Select someone from a press on their row outside its buttons: on the bars or a chip, which sit above the stretched
+   * button to show their tooltips. It clicks and redraws as a button would. A press a button took is already handled,
+   * and its target may be gone from the button by now, redrawn with new words.
+   */
+  const pressRow = (e: PointerEvent, id: number) => {
+    if (e.button !== 0 || e.defaultPrevented) return;
+    e.preventDefault();
+    const { audio } = hud.host;
+    audio.unlock();
+    hud.show({ kind: 'staff', id });
+    audio.play('blip');
+    hud.update();
+  };
   return (
     <div class="panel menu">
       <div class="menu-head">
@@ -175,8 +189,14 @@ export function StaffMenu() {
       )}
       {shown.length ? (
         shown.map((st) => (
-          <div key={st.id} class="row">
-            {/* the whole row selects them, from a button stretched under its cells, as a button cannot hold another */}
+          <div
+            key={st.id}
+            class="row"
+            onPointerDown={(e) => {
+              pressRow(e, st.id);
+            }}
+          >
+            {/* the whole row selects them, from a button stretched over its cells, as a button cannot hold another */}
             <Button
               class="pick"
               label={`Show ${st.name}`}

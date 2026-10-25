@@ -151,6 +151,15 @@ describe('morale and pay', () => {
     expect(sim.drain().filter((e) => e.type === 'sfx' && e.name === 'cash')).toHaveLength(1);
   });
 
+  it('pays no raise to someone on their way out', () => {
+    const { sim, therapist } = openCenter(1);
+    therapist.raiseAsked = true;
+    therapist.state = 'leaving';
+    const salary = therapist.salary;
+    expect(sim.giveRaisesAsked()).toBe(0);
+    expect(therapist).toMatchObject({ salary, raiseAsked: true });
+  });
+
   it('leaves a raise asked for to the promotion waiting, which comes with one', () => {
     const { sim, therapist } = openCenter(1);
     therapist.skill = 1;
