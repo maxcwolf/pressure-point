@@ -96,7 +96,7 @@ const scale = css({
 
 /**
  * The key's close button: a white disc ringed in navy, drawn like the inspector's, but in the key's row rather than in a
- * corner. `x` is for the rule in inspector/Inspector.css that still draws it too.
+ * corner. `x` is for the tests.
  */
 const close = css({
   position: 'static',

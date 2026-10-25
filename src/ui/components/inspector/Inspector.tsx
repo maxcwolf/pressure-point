@@ -1,7 +1,5 @@
 // The inspector: details of whatever is selected.
 
-import './Inspector.css';
-
 import type { ComponentChildren } from 'preact';
 
 import { css } from '../../../styled-system/css';

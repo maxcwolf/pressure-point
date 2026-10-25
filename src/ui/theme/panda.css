@@ -1,5 +1,4 @@
-/* Where Panda's styles go (see panda.config.ts). The plain stylesheets sit outside these layers, so they win over
-   Panda wherever both style the same thing; the page-wide resets in global.css are in the base layer for that reason,
-   so a Panda style on a button or a heading is not undone by them. */
+/* Where Panda's styles go, in the order they win: the page-wide and shared styles of src/ui/theme/panda/ in the base
+   layer, under every component's own style (see panda.config.ts). */
 
 @layer reset, base, tokens, recipes, utilities;

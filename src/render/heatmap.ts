@@ -36,7 +36,8 @@ export function overlayColors(): OverlayColors {
   if (typeof document === 'undefined') return FALLBACK;
   const css = getComputedStyle(document.documentElement);
   /** One token, or its fallback when it is not set. */
-  const token = (name: keyof OverlayColors) => css.getPropertyValue(`--overlay-${name}`).trim() || FALLBACK[name];
+  const token = (name: keyof OverlayColors) =>
+    css.getPropertyValue(`--colors-overlay-${name}`).trim() || FALLBACK[name];
   colors = { good: token('good'), fair: token('fair'), bad: token('bad'), cold: token('cold') };
   return colors;
 }

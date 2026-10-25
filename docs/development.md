@@ -83,7 +83,7 @@ Before each commit, a second Husky hook runs ESLint and Prettier over the staged
 | `src/render/`         | The Three.js scene, one file per layer: floor, rooms, items, people, overlays, camera, picking                                                                  |
 | `src/render/models/`  | The procedural models: shared parts, the people, and one file per item in `items/`                                                                              |
 | `src/lab/`            | The model lab: a dev-only page for looking at any one model                                                                                                     |
-| `src/ui/components/`  | The interface, in Preact: one component per panel, menu, inspector and dialog, each with its stylesheet                                                         |
+| `src/ui/components/`  | The interface, in Preact: one component per panel, menu, inspector and dialog, each with its styles in it (Panda CSS)                                           |
 | `src/ui/hooks/`       | How components reach the game and the interface's state                                                                                                         |
 | `src/ui/lib/`         | The interface's decisions as small pure functions: what the menus offer, status text, chart sizing                                                              |
 | `src/ui/theme/`       | The palette, and the styles everything shares                                                                                                                   |
