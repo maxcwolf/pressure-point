@@ -7,6 +7,7 @@ import { CAMPAIGN, centerOf, CENTERS, STAR_KARMA } from '../../../core/data';
 import { money } from '../../../core/format';
 import { loadCampaign } from '../../../storage/campaign';
 import { css } from '../../../styled-system/css';
+import { goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { karmaText } from '../../lib/karma';
 import { newRoomsText, treatmentsUnlockedAt } from '../../lib/unlocks';
@@ -114,7 +115,7 @@ export function StarDialog() {
               : 'Cheats were used in this game, so the campaign keeps none of its stars.'}
       </p>{' '}
       <Button
-        class="go"
+        class={goButton()}
         onPress={() => {
           hud.close();
         }}

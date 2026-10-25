@@ -26,6 +26,7 @@ import { cannotUpgrade, upgradeCost } from '../../../core/sim/upgrades';
 import { starsEarned } from '../../../core/state/game';
 import type { Item } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
+import { dangerButton, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { meterTone } from '../../lib/meters';
@@ -209,11 +210,11 @@ function Thermostat({ item: it }: { item: Item }) {
   return (
     <div class={cx('thermostat', thermostat)}>
       <label>Thermostat</label>
-      <div class="tabs" aria-label="Thermostat">
+      <div class={tabStrip()} aria-label="Thermostat">
         {THERMOSTAT_ORDER.map((k) => (
           <Button
             key={k}
-            class={cx('tab', 'small', k === setting && 'on')}
+            class={cx(tabButton({ size: 'small' }), k === setting && 'on')}
             title={
               k === 'auto'
                 ? 'Auto: works only as hard as the weather calls for, and is off while it is nice'
@@ -375,7 +376,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
       </Button>{' '}
       {sim.canSell(it) ? (
         <Button
-          class="danger"
+          class={dangerButton()}
           quiet
           onPress={() => {
             sim.sellItem(it.id);

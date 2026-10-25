@@ -11,6 +11,7 @@ import { unlockedUpTo } from '../../../core/state/game';
 import { loadCampaign } from '../../../storage/campaign';
 import { loadDisplay } from '../../../storage/display';
 import { css } from '../../../styled-system/css';
+import { guideRing, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { filterItems, ITEM_KINDS, itemOffered, placeFilters, placeLabel, placeName } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
@@ -111,7 +112,7 @@ export function ItemsMenu() {
               short > 0 && 'poor',
               forKarma && 'locked karma',
               detail && t === shown && 'picked',
-              guide === `item:${t}` && 'guide',
+              guide === `item:${t}` && guideRing(),
             )}
             title={short ? "Can't afford it" : stats || undefined}
             richTip={stats ? `item:${t}` : undefined}
@@ -148,16 +149,16 @@ export function ItemsMenu() {
     </div>
   );
   return (
-    <div class={cx('panel', menuPanel)}>
+    <div class={cx(panelCard(), menuPanel)}>
       <div class={menuHead}>
         <h3>Place an item</h3>
         <SortBy list="items" orders={ITEM_SORTS} />
       </div>
-      <div class={cx('tabs', tabRow)} aria-label="Where it goes">
+      <div class={cx(tabStrip(), tabRow)} aria-label="Where it goes">
         {places.map((p) => (
           <Button
             key={p}
-            class={cx('tab', place === p && 'on', p === 'all' && guide === 'filter:place' && 'guide')}
+            class={cx(tabButton(), place === p && 'on', p === 'all' && guide === 'filter:place' && guideRing())}
             onPress={() => {
               hud.itemPlace = p;
             }}
@@ -166,15 +167,14 @@ export function ItemsMenu() {
           </Button>
         ))}
       </div>
-      <div class={cx('tabs', tabRow)} aria-label="What it is for">
+      <div class={cx(tabStrip(), tabRow)} aria-label="What it is for">
         {[{ id: 'all' as const, label: 'Everything' }, ...ITEM_KINDS].map((k) => (
           <Button
             key={k.id}
             class={cx(
-              'tab',
-              'small',
+              tabButton({ size: 'small' }),
               hud.itemKind === k.id && 'on',
-              k.id === 'all' && guide === 'filter:kind' && 'guide',
+              k.id === 'all' && guide === 'filter:kind' && guideRing(),
             )}
             onPress={() => {
               hud.itemKind = k.id;

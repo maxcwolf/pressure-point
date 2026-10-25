@@ -3,6 +3,7 @@
 import { track } from '../../app/analytics';
 import { gameProps } from '../../app/play-events';
 import { css } from '../../styled-system/css';
+import { panelCard } from '../../styled-system/recipes';
 import { useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { OVERLAYS } from '../lib/overlays';
@@ -116,7 +117,7 @@ export function OverlayPicker() {
   const showing = OVERLAYS.find((o) => o.id === hud.overlay);
   if (hud.overlayPicker)
     return (
-      <div id="overlay-picker" class={cx('panel', picker)}>
+      <div id="overlay-picker" class={cx(panelCard(), picker)}>
         <h4 class={heading}>Color the floor by</h4>
         {OVERLAYS.map((o) => (
           <Button
@@ -154,7 +155,7 @@ export function OverlayPicker() {
     );
   if (!showing) return null;
   return (
-    <div id="overlay-key" class={cx('panel', keyPanel)}>
+    <div id="overlay-key" class={cx(panelCard(), keyPanel)}>
       <b class={keyName}>
         <Icon id={showing.icon} size={20} />
         {showing.name}

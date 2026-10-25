@@ -4,6 +4,7 @@ import { centerOf, type IconId } from '../../core/data';
 import { dateOf, money } from '../../core/format';
 import { netOf } from '../../core/sim/economy';
 import { css } from '../../styled-system/css';
+import { guideRing } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { calendarTip, shortDate } from '../lib/seasons';
@@ -202,7 +203,7 @@ export function StatsBar() {
         {SPEEDS.map((sp) => (
           <Button
             key={sp.speed}
-            class={cx('speed', speed, s.speed === sp.speed && 'on', guide === `speed:${sp.speed}` && 'guide')}
+            class={cx('speed', speed, s.speed === sp.speed && 'on', guide === `speed:${sp.speed}` && guideRing())}
             title={sp.title}
             onPress={() => {
               s.speed = sp.speed;

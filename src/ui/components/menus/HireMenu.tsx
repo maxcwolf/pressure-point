@@ -6,6 +6,7 @@ import { applicantCap, rankName } from '../../../core/sim/careers';
 import { wantsHire } from '../../../core/sim/tutorial';
 import { unlockedUpTo } from '../../../core/state/game';
 import { css } from '../../../styled-system/css';
+import { buttonRow, goButton, guideRing, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { hireableRoles } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
@@ -52,16 +53,16 @@ export function HireMenu() {
     hud.sorts.applicants,
   );
   return (
-    <div class={cx('panel', menuPanel)}>
+    <div class={cx(panelCard(), menuPanel)}>
       <div class={menuHead}>
         <h3>Hire staff</h3>
         {applicants.length > 1 && <SortBy list="applicants" orders={APPLICANT_SORTS} />}
       </div>
-      <div class="tabs">
+      <div class={tabStrip()}>
         {roles.map((r) => (
           <Button
             key={r}
-            class={cx('tab', role === r && 'on', guide === `role:${r}` && 'guide')}
+            class={cx(tabButton(), role === r && 'on', guide === `role:${r}` && guideRing())}
             onPress={() => {
               hud.hireRole = r;
             }}
@@ -74,7 +75,7 @@ export function HireMenu() {
         {`${ROLES[role].desc} Up to ${applicantCap(s)} apply for each role at a time, more as stars are earned; a new applicant turns up every few days.`}
       </p>
       {/* the tutorial rings the row, any of them being a hire: the choice is the player's to read off the cards */}
-      <div class={cx(cards, guide === 'hire:any' && 'guide')}>
+      <div class={cx(cards, guide === 'hire:any' && guideRing())}>
         {applicants.map((c) => (
           <div key={c.id} class={cx('card', 'cv', cv)}>
             <b>{c.name}</b>
@@ -95,9 +96,9 @@ export function HireMenu() {
               {money(c.salary)}
               <small>/month</small>
             </span>{' '}
-            <div class="btnrow">
+            <div class={buttonRow()}>
               <Button
-                class="go"
+                class={goButton()}
                 quiet
                 onPress={() => {
                   // the step changes once the hire is done, so what it asked is read before

@@ -218,7 +218,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return e;
 }
 
-// `stage`, `caption` and `panel` are for the screenshot tests to find them by
+// `stage`, `caption` and `lab-panel` are for the screenshot tests to find them by
 const canvas = el('canvas', cx('stage', stageStyle));
 const search = el('input', searchStyle);
 search.type = 'search';
@@ -231,7 +231,7 @@ const modelPanel = el('div', controlsStyle);
 const viewPanel = el('div', controlsStyle);
 const panel = el(
   'details',
-  cx('panel', panelStyle),
+  cx('lab-panel', panelStyle),
   el('summary', '', 'Settings'),
   el('h2', '', 'Model'),
   modelPanel,

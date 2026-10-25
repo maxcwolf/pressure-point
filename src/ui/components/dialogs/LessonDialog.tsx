@@ -6,6 +6,7 @@ import { ITEMS } from '../../../core/data';
 import { an } from '../../../core/format';
 import { lessonCard } from '../../../core/sim/lessons';
 import { css } from '../../../styled-system/css';
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
@@ -87,7 +88,7 @@ export function LessonDialog() {
         ))}
       </ol>
       <p>{lesson.body}</p>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         {showsMe && (
           <Button
             onPress={() => {
@@ -98,7 +99,7 @@ export function LessonDialog() {
           </Button>
         )}
         <Button
-          class={cx(!place && 'go')}
+          class={cx(!place && goButton())}
           onPress={() => {
             hud.close();
           }}
@@ -107,7 +108,7 @@ export function LessonDialog() {
         </Button>
         {place && (
           <Button
-            class="go"
+            class={goButton()}
             onPress={() => {
               hud.showLesson(raised);
             }}

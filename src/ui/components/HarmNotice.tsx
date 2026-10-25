@@ -5,6 +5,7 @@ import { ROLES } from '../../core/data';
 import { an } from '../../core/format';
 import type { HarmNote } from '../../core/state/types';
 import { css } from '../../styled-system/css';
+import { buttonRow, goButton, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import type { HudState } from '../hud';
 import { cx } from '../lib/cx';
@@ -69,7 +70,7 @@ export function HarmNotice() {
   if (!note) return null;
   const { about, fix } = note;
   return (
-    <div class={cx('panel', card)}>
+    <div class={cx(panelCard(), card)}>
       <h3 class={heading}>
         <IconText id="ui-warning">{note.title}</IconText>
       </h3>
@@ -86,10 +87,10 @@ export function HarmNotice() {
         ))}
       </ul>
       <p class={help}>{note.help}</p>
-      <div class={cx('btnrow', buttons)}>
+      <div class={cx(buttonRow(), buttons)}>
         {about && (
           <Button
-            class={fix ? '' : 'go'}
+            class={fix ? '' : goButton()}
             onPress={() => {
               hud.show(about);
             }}
@@ -99,7 +100,7 @@ export function HarmNotice() {
         )}
         {fix && (
           <Button
-            class="go"
+            class={goButton()}
             onPress={() => {
               openFix(hud, fix);
             }}

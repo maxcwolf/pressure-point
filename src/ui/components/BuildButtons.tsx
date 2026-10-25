@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 import type { IconId } from '../../core/data';
 import { css } from '../../styled-system/css';
+import { guideRing, roundButton } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import type { MenuId } from '../hud';
 import { cx } from '../lib/cx';
@@ -71,7 +72,11 @@ export function BuildButtons() {
       {MENUS.map((m) => [
         <Button
           key={m.id}
-          class={cx('round', m.welded && 'welded', hud.menu === m.id && 'on', guide === `menu:${m.id}` && 'guide')}
+          class={cx(
+            roundButton({ welded: m.welded }),
+            hud.menu === m.id && 'on',
+            guide === `menu:${m.id}` && guideRing(),
+          )}
           onPress={() => {
             hud.toggleMenu(m.id);
           }}
@@ -84,7 +89,7 @@ export function BuildButtons() {
         m.id === 'rooms' && (
           <Button
             key="expand"
-            class={cx('round', expanding && 'on')}
+            class={cx(roundButton(), expanding && 'on')}
             title="Buy the land around the building"
             onPress={() => {
               hud.closeMenu();

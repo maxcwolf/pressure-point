@@ -7,6 +7,7 @@ import { conditionOf, EMERGENCY_DAYS, modalityLabel } from '../../core/data';
 import { money } from '../../core/format';
 import type { Sim } from '../../core/sim/sim';
 import { css } from '../../styled-system/css';
+import { buttonRow, goButton, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
@@ -127,7 +128,7 @@ function Emergency() {
     return (
       <>
         <Button
-          class={cx('panel', 'offer-pill', emergencyColor)}
+          class={cx(panelCard(), 'offer-pill', emergencyColor)}
           title="Show the emergency"
           onPress={() => {
             hud.offerAside = null;
@@ -142,7 +143,7 @@ function Emergency() {
     );
   return (
     <>
-      <div class={cx('panel', 'offer', emergencyColor)}>
+      <div class={cx(panelCard(), 'offer', emergencyColor)}>
         <Button
           class="later"
           title="Decide later"
@@ -169,9 +170,9 @@ function Emergency() {
           <span>{`Offer lapses: ${timeLeftLabel(left.days)}`}</span>
           {timer}
         </div>
-        <div class="btnrow">
+        <div class={buttonRow()}>
           <Button
-            class="go"
+            class={goButton()}
             onPress={() => {
               const offer = sim.s.offer;
               sim.acceptEmergency();

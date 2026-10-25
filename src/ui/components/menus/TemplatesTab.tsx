@@ -22,6 +22,7 @@ import {
 } from '../../../core/templates';
 import { loadCampaign } from '../../../storage/campaign';
 import { css } from '../../../styled-system/css';
+import { fileButton, tabButton } from '../../../styled-system/recipes';
 import { download } from '../../dom';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
@@ -205,7 +206,7 @@ export function TemplatesTab() {
         </p>
       )}
       <div class={foot}>
-        <label class="filebtn">
+        <label class={fileButton()}>
           Import a template file
           <input
             type="file"
@@ -218,7 +219,7 @@ export function TemplatesTab() {
         </label>
         {hud.templates.length > 1 && (
           <Button
-            class="tab small"
+            class={tabButton({ size: 'small' })}
             onPress={() => {
               download(templateFilename(), templatesFile(hud.templates));
             }}

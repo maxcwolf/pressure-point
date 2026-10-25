@@ -2,6 +2,7 @@
 
 import { money } from '../../../core/format';
 import { nameInSentence } from '../../../core/land';
+import { buttonRow } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { afterBuying, plotSize } from '../../lib/land';
 import { Button } from '../common/Button';
@@ -17,7 +18,7 @@ export function BuyPlotDialog() {
     return (
       <Dialog>
         <h2>No longer for sale</h2>
-        <div class="btnrow">
+        <div class={buttonRow()}>
           <Button
             onPress={() => {
               hud.close();
@@ -36,7 +37,7 @@ export function BuyPlotDialog() {
       <h2>{`Buy ${nameInSentence(def.name)}?`}</h2>
       <p>{`${def.blurb}. ${plotSize(def)} for ${money(price)}. ${afterBuying(def)}`}</p>
       {short && <p class="sub">{`You have ${money(sim.s.money)}.`}</p>}{' '}
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
           onPress={() => {
             hud.close();

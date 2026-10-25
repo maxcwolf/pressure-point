@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 import { CONSOLE_KEY } from '../../storage/controls';
 import { css } from '../../styled-system/css';
+import { panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { consoleNote, recallStep } from '../lib/console';
 import { cx } from '../lib/cx';
@@ -114,7 +115,7 @@ export function Console() {
 
   const note = consoleNote(sim.s);
   return (
-    <div id="console" class={cx('panel', consoleLook)}>
+    <div id="console" class={cx(panelCard(), consoleLook)}>
       <ol ref={log} class={logLook} aria-live="polite">
         {hud.consoleLines.length ? (
           hud.consoleLines.map((l) => (

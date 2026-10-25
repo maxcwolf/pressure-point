@@ -19,6 +19,7 @@ import { an, money } from '../../../core/format';
 import { roomForModality } from '../../../core/sim/machines';
 import { unlockedUpTo } from '../../../core/state/game';
 import { css } from '../../../styled-system/css';
+import { panelCard } from '../../../styled-system/recipes';
 import { useGame } from '../../hooks/use-hud';
 import { tripNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
@@ -135,7 +136,7 @@ function DisciplineSection({ discipline }: { discipline: Discipline }) {
 export function TreatmentsMenu() {
   const { sim } = useGame();
   return (
-    <div class={cx('panel', menuPanel)}>
+    <div class={cx(panelCard(), menuPanel)}>
       <h3>Treatments</h3>
       <p class="sub">
         A diagnosis prescribes a treatment. It works properly only with someone qualified in it and the right equipment

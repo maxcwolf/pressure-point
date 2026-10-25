@@ -13,6 +13,7 @@ import {
 } from '../../../core/data';
 import { css } from '../../../styled-system/css';
 import { Box } from '../../../styled-system/jsx';
+import { panelCard } from '../../../styled-system/recipes';
 import { useGame } from '../../hooks/use-hud';
 import { percent } from '../../lib/chance';
 import { cx } from '../../lib/cx';
@@ -120,7 +121,7 @@ export function PolicyMenu() {
   const p = sim.s.policy;
   const roles = ROLE_ORDER.filter((r) => sim.s.staff.some((st) => st.role === r));
   return (
-    <div class={cx('panel', menuPanel)}>
+    <div class={cx(panelCard(), menuPanel)}>
       <h3>Policy</h3>
       <Box display="grid" gridTemplateColumns="[repeat(auto-fit, minmax(220px, 1fr))]" gap="l">
         <Card>

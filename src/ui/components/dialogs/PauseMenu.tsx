@@ -2,6 +2,7 @@
 
 import { GAME_TITLE } from '../../../core/data';
 import { loadControls } from '../../../storage/controls';
+import { buttonRow, dangerButton, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { autosaveNote } from '../../lib/keys';
 import { Button } from '../common/Button';
@@ -16,9 +17,9 @@ export function PauseMenu() {
     <Dialog>
       <h2>{GAME_TITLE}</h2>
       <Controls /> <p class="sub">{autosaveNote(loadControls().autosave)} Use Save or load to keep named saves.</p>{' '}
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
-          class="go"
+          class={goButton()}
           onPress={() => {
             hud.close();
           }}
@@ -47,10 +48,10 @@ export function PauseMenu() {
           Give feedback
         </Button>
       </div>{' '}
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button onPress={mainMenu}>Main menu</Button>
         <Button
-          class="danger"
+          class={dangerButton()}
           onPress={() => {
             hud.open('confirm-new');
           }}
@@ -58,7 +59,7 @@ export function PauseMenu() {
           New game
         </Button>{' '}
         {exit && (
-          <Button class="danger" onPress={exit}>
+          <Button class={dangerButton()} onPress={exit}>
             Exit game
           </Button>
         )}

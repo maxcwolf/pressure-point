@@ -2,6 +2,7 @@
 
 import { loadControls } from '../../storage/controls';
 import { css } from '../../styled-system/css';
+import { roundButton } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { keyLabel } from '../lib/keys';
@@ -19,7 +20,7 @@ export function SystemButtons() {
   return (
     <div id="sys" class={row}>
       <Button
-        class="round small turn"
+        class={cx(roundButton({ size: 'small' }), 'turn')}
         title={`Turn the camera (${keyLabel(keys.turnLeft)} and ${keyLabel(keys.turnRight)})`}
         onPress={() => {
           view.turnCamera(1);
@@ -28,7 +29,7 @@ export function SystemButtons() {
         <Icon id="ui-turn" size={22} />
       </Button>{' '}
       <Button
-        class={cx('round small', (hud.overlay !== null || hud.overlayPicker) && 'on')}
+        class={cx(roundButton({ size: 'small' }), (hud.overlay !== null || hud.overlayPicker) && 'on')}
         title="Overlays: color the floor by how things stand"
         onPress={() => {
           hud.overlayPicker = !hud.overlayPicker;
@@ -37,7 +38,7 @@ export function SystemButtons() {
         <Icon id="ui-overlays" size={22} />
       </Button>{' '}
       <Button
-        class="round small"
+        class={roundButton({ size: 'small' })}
         title="Sound effects"
         onPress={() => {
           audio.toggleSound();
@@ -46,7 +47,7 @@ export function SystemButtons() {
         <Icon id={audio.sound ? 'ui-sound' : 'ui-mute'} size={22} />
       </Button>{' '}
       <Button
-        class={cx('round small', !audio.music && 'off')}
+        class={cx(roundButton({ size: 'small' }), !audio.music && 'off')}
         title="Music"
         onPress={() => {
           audio.toggleMusic();
@@ -55,7 +56,7 @@ export function SystemButtons() {
         <Icon id="ui-music" size={22} />
       </Button>{' '}
       <Button
-        class="round small"
+        class={roundButton({ size: 'small' })}
         title="Menu"
         onPress={() => {
           hud.open('pause');

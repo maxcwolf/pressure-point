@@ -4,6 +4,7 @@ import { certificatesLeft } from '../../../core/certificates';
 import { AWARD_REP, AWARDS } from '../../../core/data';
 import { money } from '../../../core/format';
 import { css } from '../../../styled-system/css';
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
@@ -76,7 +77,7 @@ export function AwardsDialog() {
         Trophies won go in a Trophy Cabinet, and are listed under Awards in the Stats menu. Each one earns a Certificate
         of Excellence to hang on a wall, from here or the Items menu.
       </p>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         {certificatesLeft(sim.s).length > 0 && (
           <Button
             onPress={() => {
@@ -88,7 +89,7 @@ export function AwardsDialog() {
           </Button>
         )}
         <Button
-          class="go"
+          class={goButton()}
           onPress={() => {
             hud.close();
           }}

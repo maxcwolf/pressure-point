@@ -7,6 +7,7 @@ import { an, money } from '../../core/format';
 import { callWants } from '../../core/sim/calls';
 import { rankName } from '../../core/sim/careers';
 import { css } from '../../styled-system/css';
+import { buttonRow, dangerButton, goButton, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { callCostNote } from '../lib/calls';
 import { cx } from '../lib/cx';
@@ -45,7 +46,7 @@ export function HouseCallOffer() {
   if (hud.callAside === call.deadline)
     return (
       <Button
-        class={cx('panel', 'offer-pill', callColor)}
+        class={cx(panelCard(), 'offer-pill', callColor)}
         title="Show the house call"
         onPress={() => {
           hud.callAside = null;
@@ -59,7 +60,7 @@ export function HouseCallOffer() {
     );
   const who = sim.whoCanGo();
   return (
-    <div class={cx('panel', 'offer', 'call', callColor)}>
+    <div class={cx(panelCard(), 'offer', 'call', callColor)}>
       <Button
         class="later"
         title="Decide later"
@@ -86,7 +87,7 @@ export function HouseCallOffer() {
           {who.slice(0, 4).map((st) => (
             <Button
               key={st.id}
-              class={cx('go', send)}
+              class={cx(goButton(), send)}
               onPress={() => {
                 const offer = sim.s.callOffer;
                 sim.acceptCall(st.id);
@@ -107,9 +108,9 @@ export function HouseCallOffer() {
         <span>{`Offer lapses: ${timeLeftLabel(left.days)}`}</span>
         {timer}
       </div>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
-          class="danger"
+          class={dangerButton()}
           onPress={() => {
             const offer = sim.s.callOffer;
             sim.declineCall();

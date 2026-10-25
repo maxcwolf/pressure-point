@@ -21,6 +21,7 @@ import { tempFeel } from '../../../core/sim/warmth';
 import { unlockedUpTo } from '../../../core/state/game';
 import type { Item, Room } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
+import { dangerButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
@@ -316,7 +317,7 @@ export function RoomInfo({ room }: { room: Room }) {
       </Button>{' '}
       {room.done && <DecorPicker room={room} />}
       <Button
-        class="danger"
+        class={dangerButton()}
         quiet
         onPress={() => {
           sim.removeRoom(room.id, 0.5);

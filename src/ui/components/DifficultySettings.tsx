@@ -3,6 +3,7 @@
 import { type Difficulty, KNOB_ORDER, KNOBS, PRESET_ORDER, PRESETS } from '../../core/data';
 import { nextLevel, presetLevels, presetOf } from '../../core/difficulty';
 import { css } from '../../styled-system/css';
+import { tabButton, tabStrip } from '../../styled-system/recipes';
 import { cx } from '../lib/cx';
 import { IconText } from './common/Icon';
 
@@ -43,12 +44,12 @@ export function DifficultySettings({ difficulty, onChange }: DifficultySettingsP
   return (
     <>
       <h4>Difficulty</h4>
-      <div class={cx('tabs', presets)} role="radiogroup" aria-label="Difficulty">
+      <div class={cx(tabStrip(), presets)} role="radiogroup" aria-label="Difficulty">
         {PRESET_ORDER.map((p) => (
           <button
             key={p}
             role="radio"
-            class={cx('tab', preset === p && 'on')}
+            class={cx(tabButton(), preset === p && 'on')}
             aria-checked={preset === p ? 'true' : 'false'}
             onClick={() => {
               onChange(presetLevels(p));

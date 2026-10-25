@@ -7,6 +7,7 @@ import { wagesDue } from '../../../core/sim/economy';
 import type { Sim } from '../../../core/sim/sim';
 import type { Staff } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
+import { goButton, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { sorted, STAFF_SORTS } from '../../lib/sorts';
@@ -118,9 +119,9 @@ function KnowsFilter({ staff, knows }: { staff: readonly Staff[]; knows: Modalit
   const treatments = MODALITY_ORDER.filter((m) => staff.some((st) => knowsOrLearning(st, m)));
   if (!treatments.length) return null;
   return (
-    <div class={cx('tabs', 'knows', tabRow, knowsFilter)} role="group" aria-label="Who knows a treatment">
+    <div class={cx(tabStrip(), 'knows', tabRow, knowsFilter)} role="group" aria-label="Who knows a treatment">
       <Button
-        class={cx('tab', 'small', knows === null && 'on')}
+        class={cx(tabButton({ size: 'small' }), knows === null && 'on')}
         onPress={() => {
           hud.staffKnows = null;
         }}
@@ -133,7 +134,7 @@ function KnowsFilter({ staff, knows }: { staff: readonly Staff[]; knows: Modalit
         return (
           <Button
             key={m}
-            class={cx('tab', 'small', knows === m && 'on')}
+            class={cx(tabButton({ size: 'small' }), knows === m && 'on')}
             title={`${qualified} qualified${learning ? `, ${learning} learning` : ''}. Click to show only them.`}
             onPress={() => {
               hud.staffKnows = knows === m ? null : m;
@@ -157,7 +158,7 @@ function RowAction({ staff: st }: { staff: Staff }) {
   if (st.promotion) {
     return (
       <Button
-        class={cx('act', 'go', act)}
+        class={cx('act', goButton(), act)}
         title={`To ${rankName(st.skill + 1)}, on ${money(promotedPay(sim, st))} a month`}
         quiet
         onPress={() => {
@@ -170,7 +171,7 @@ function RowAction({ staff: st }: { staff: Staff }) {
   }
   return (
     <Button
-      class={cx('act', act, st.raiseAsked && 'go')}
+      class={cx('act', act, st.raiseAsked && goButton())}
       title={
         st.raiseAsked
           ? 'They asked for a raise. Paying it lifts their morale.'
@@ -204,7 +205,7 @@ function Requests({ staff }: { staff: readonly Staff[] }) {
     <div class={cx('requests', requests)}>
       {ready.length > 1 && (
         <Button
-          class={cx('act', 'go', act)}
+          class={cx('act', goButton(), act)}
           quiet
           onPress={() => {
             sim.promoteAll();
@@ -215,7 +216,7 @@ function Requests({ staff }: { staff: readonly Staff[] }) {
       )}
       {asking.length > 1 && (
         <Button
-          class={cx('act', 'go', act)}
+          class={cx('act', goButton(), act)}
           quiet
           onPress={() => {
             sim.giveRaisesAsked();
@@ -259,7 +260,7 @@ export function StaffMenu() {
     hud.update();
   };
   return (
-    <div class={cx('panel', menuPanel)}>
+    <div class={cx(panelCard(), menuPanel)}>
       <div class={menuHead}>
         <h3>Your staff</h3>
         {staff.length > 1 && <SortBy list="staff" orders={STAFF_SORTS} />}

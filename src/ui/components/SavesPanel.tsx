@@ -20,6 +20,7 @@ import {
 } from '../../storage/saves';
 import { storeThumb } from '../../storage/thumbnails';
 import { css } from '../../styled-system/css';
+import { dangerButton, fileButton, goButton } from '../../styled-system/recipes';
 import { download } from '../dom';
 import { cx } from '../lib/cx';
 
@@ -240,7 +241,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
             }}
           />
           <button
-            class={cx('go', saveButton)}
+            class={cx(goButton(), saveButton)}
             onClick={act(() => {
               save();
             })}
@@ -263,7 +264,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
               </div>{' '}
               <div class={actions}>
                 <button
-                  class={cx('go', rowButton)}
+                  class={cx(goButton(), rowButton)}
                   onClick={() => {
                     onLoad(s.id);
                   }}
@@ -289,7 +290,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
                   Export
                 </button>
                 <button
-                  class={cx('danger', rowButton)}
+                  class={cx(dangerButton(), rowButton)}
                   onClick={() => {
                     remove(s.id);
                   }}
@@ -304,7 +305,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
         )}
       </ul>{' '}
       <div class={foot}>
-        <label class="filebtn">
+        <label class={fileButton()}>
           Import a save file
           <input
             type="file"

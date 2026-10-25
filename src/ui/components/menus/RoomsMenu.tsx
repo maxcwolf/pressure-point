@@ -5,6 +5,7 @@ import { money } from '../../../core/format';
 import { itemUpkeep } from '../../../core/sim/machines';
 import { unlockedUpTo } from '../../../core/state/game';
 import { loadCampaign } from '../../../storage/campaign';
+import { guideRing, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { RoomsTab } from '../../hud';
 import { available, machineCures, roomKarmaLock, roomOffering } from '../../lib/catalog';
@@ -27,7 +28,7 @@ export function RoomsMenu() {
   const hud = useHud();
   const guide = hud.guide();
   return (
-    <div class={cx('panel', menuPanel)}>
+    <div class={cx(panelCard(), menuPanel)}>
       <div class={menuHead}>
         <h3>Build a room</h3>
         {hud.roomsTab === 'rooms' ? (
@@ -36,11 +37,11 @@ export function RoomsMenu() {
           hud.templates.length > 1 && <SortBy key="templates" list="templates" orders={TEMPLATE_SORTS} />
         )}
       </div>
-      <div class={cx('tabs', tabRow)}>
+      <div class={cx(tabStrip(), tabRow)}>
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx('tab', hud.roomsTab === t.id && 'on', guide === `tab:${t.id}` && 'guide')}
+            class={cx(tabButton(), hud.roomsTab === t.id && 'on', guide === `tab:${t.id}` && guideRing())}
             onPress={() => {
               hud.roomsTab = t.id;
             }}
@@ -82,7 +83,7 @@ function RoomCards() {
         return (
           <Button
             key={t}
-            class={cx('card', card, !locked && s.money < r.cost && 'poor', guide === `room:${t}` && 'guide')}
+            class={cx('card', card, !locked && s.money < r.cost && 'poor', guide === `room:${t}` && guideRing())}
             // a room karma can unlock opens the offer to unlock its machine, rather than refusing outright
             locked={starred}
             onPress={() => {

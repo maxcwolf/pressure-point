@@ -8,6 +8,7 @@ import { money } from '../../core/format';
 import type { Objective } from '../../core/sim/goals';
 import type { TutorialLine } from '../../core/sim/tutorial';
 import { css } from '../../styled-system/css';
+import { panelCard } from '../../styled-system/recipes';
 import { useGame } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { wholeDaysLeft } from '../lib/emergency';
@@ -266,7 +267,7 @@ export function Objectives() {
   const emergency = s.emergency;
   const goals = centerOf(s).goals;
   return (
-    <div id="objectives" class={cx('panel', panel)}>
+    <div id="objectives" class={cx(panelCard(), panel)}>
       {s.center !== 'sandbox' && <p class={centerName}>{centerOf(s).name}</p>}
       <h3>{goals[s.stars] ? `Star ${s.stars + 1} objectives` : 'All stars earned!'}</h3>
       <div class={stars}>

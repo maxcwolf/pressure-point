@@ -4,6 +4,7 @@ import { ITEMS, ROOMS, WINDOW_COST } from '../../core/data';
 import { money } from '../../core/format';
 import { finishCost } from '../../core/sim/building';
 import { css } from '../../styled-system/css';
+import { buttonRow, goButton, guideRing, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { placedFlags } from '../lib/plan';
@@ -78,7 +79,7 @@ export function PlanPanel() {
   };
   return (
     <div id="plan" class={column}>
-      <div class="panel">
+      <div class={panelCard()}>
         <h3 class={heading}>
           <IconText id={def.icon}>{`${def.name} blueprint`}</IconText>{' '}
           <span class={costTag}>{`${money(cost)}${extras ? ` + ${money(extras)}` : ''}`}</span>
@@ -126,7 +127,7 @@ export function PlanPanel() {
           {' Prestige '}
           <Stars count={sim.prestige(room)} />
         </p>
-        <div class={cx('btnrow', buttons)}>
+        <div class={cx(buttonRow(), buttons)}>
           <Button
             onPress={() => {
               tools.cancel();
@@ -135,7 +136,7 @@ export function PlanPanel() {
             Cancel
           </Button>{' '}
           <Button
-            class={cx('go', hud.guide() === 'plan:build' && 'guide')}
+            class={cx(goButton(), hud.guide() === 'plan:build' && guideRing())}
             locked={!ready}
             onPress={() => {
               tools.planBuild();

@@ -7,6 +7,7 @@ import { rankName, rankProgress, xpToNext } from '../../../core/sim/careers';
 import { burntOut } from '../../../core/sim/souls';
 import type { Staff } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
+import { dangerButton, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { meterPercent, meterTone } from '../../lib/meters';
@@ -48,7 +49,7 @@ function Career({ staff: st }: { staff: Staff }) {
       <QualChips quals={st.quals} general={st.general} />
       {st.promotion && st.state !== 'leaving' && (
         <Button
-          class={cx(smallButton, 'raise', 'go')}
+          class={cx(smallButton, 'raise', goButton())}
           onPress={() => {
             sim.promote(st.id);
           }}
@@ -216,7 +217,7 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
       </p>{' '}
       {!leaving && (
         <Button
-          class={cx(smallButton, st.raiseAsked && 'go', 'raise')}
+          class={cx(smallButton, st.raiseAsked && goButton(), 'raise')}
           quiet
           onPress={() => {
             sim.giveRaise(st.id);
@@ -232,7 +233,7 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
       <Courses staff={st} />{' '}
       {!leaving && (
         <Button
-          class="danger"
+          class={dangerButton()}
           onPress={() => {
             hud.askToFire(st.id);
           }}

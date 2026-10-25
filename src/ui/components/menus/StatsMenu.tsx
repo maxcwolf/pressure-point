@@ -7,6 +7,7 @@ import { AWARDS, type IconId } from '../../../core/data';
 import type { MonthRecord } from '../../../core/state/types';
 import { loadStatsView, saveStatsView } from '../../../storage/settings';
 import { css } from '../../../styled-system/css';
+import { buttonRow, goButton, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { StatsTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
@@ -138,13 +139,13 @@ const TABS: readonly { id: StatsTab; icon: IconId; name: string }[] = [
 export function StatsMenu() {
   const hud = useHud();
   return (
-    <div class={cx('panel', menuPanel)}>
+    <div class={cx(panelCard(), menuPanel)}>
       <h3>Stats</h3>
-      <div class={cx('tabs', tabRow)}>
+      <div class={cx(tabStrip(), tabRow)}>
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx('tab', hud.statsTab === t.id && 'on')}
+            class={cx(tabButton(), hud.statsTab === t.id && 'on')}
             onPress={() => {
               hud.statsTab = t.id;
             }}
@@ -177,9 +178,9 @@ function Charts() {
     <>
       <div class={statsHead}>
         <p class="sub">Each chart runs from the oldest month kept, on the left, to this month so far.</p>
-        <div class="btnrow">
+        <div class={buttonRow()}>
           <Button
-            class={cx('choose', choosing && 'go')}
+            class={cx('choose', choosing && goButton())}
             onPress={() => {
               setChoosing(!choosing);
             }}

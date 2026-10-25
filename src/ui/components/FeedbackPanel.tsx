@@ -4,6 +4,7 @@ import { useState } from 'preact/hooks';
 
 import { type FeedbackFrom, feedbackSends, sendFeedback } from '../../app/feedback';
 import { css } from '../../styled-system/css';
+import { goButton } from '../../styled-system/recipes';
 import { cx } from '../lib/cx';
 
 /** The most a player can write, which is plenty for a bug report and keeps one paste from being a whole log. */
@@ -130,7 +131,7 @@ export function FeedbackPanel({ from }: { from: FeedbackFrom }) {
             : 'This copy of the game is a local build, which sends nothing.'}
         </p>
       )}
-      <button class={cx('go', button)} disabled={!ready} onClick={send}>
+      <button class={cx(goButton(), button)} disabled={!ready} onClick={send}>
         {sending === 'sending' ? 'Sending…' : 'Send feedback'}
       </button>
       <p class={small}>Sent with the game’s version and where you are in it. Nothing else about you.</p>

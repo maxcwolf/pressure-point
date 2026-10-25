@@ -4,6 +4,7 @@
 import { INSOLVENCY_DAYS, LOAN_RATE, OVERDRAFT_RATE } from '../../../core/data';
 import { money } from '../../../core/format';
 import { cashflow } from '../../../core/sim/economy';
+import { buttonRow, dangerButton, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { Button } from '../common/Button';
 import { Dialog } from './Dialog';
@@ -39,10 +40,10 @@ export function PayrollDialog() {
           : `The bank will lend no more, so the wages go into the red, to ${money(red)}, at ${rate(OVERDRAFT_RATE)}, and the staff worry.`}
       </p>
       <p class="sub">{`${books}${then}`}</p>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         {due.loan > 0 && (
           <Button
-            class="go"
+            class={goButton()}
             onPress={() => {
               if (sim.takePayrollLoan()) hud.close();
             }}
@@ -51,7 +52,7 @@ export function PayrollDialog() {
           </Button>
         )}
         <Button
-          class={due.loan > 0 ? 'danger' : 'go'}
+          class={due.loan > 0 ? dangerButton() : goButton()}
           onPress={() => {
             sim.payIntoRed();
             hud.close();

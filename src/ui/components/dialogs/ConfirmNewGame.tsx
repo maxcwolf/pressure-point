@@ -1,5 +1,6 @@
 // Asking before starting over.
 
+import { buttonRow, dangerButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { Button } from '../common/Button';
 import { Dialog } from './Dialog';
@@ -12,7 +13,7 @@ export function ConfirmNewGame() {
     <Dialog>
       <h2>Start a new game?</h2>
       <p>Your current center is not lost: it moves to "Previous game" in the saved games list.</p>{' '}
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
           onPress={() => {
             hud.close();
@@ -20,7 +21,7 @@ export function ConfirmNewGame() {
         >
           Keep playing
         </Button>
-        <Button class="danger" onPress={newGame}>
+        <Button class={dangerButton()} onPress={newGame}>
           Start a new game
         </Button>
       </div>

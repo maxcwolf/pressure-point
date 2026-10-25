@@ -3,6 +3,7 @@
 import type { ComponentChildren } from 'preact';
 
 import { css } from '../../../styled-system/css';
+import { panelCard } from '../../../styled-system/recipes';
 import { Still, useExit } from '../../hooks/use-exit';
 import { useGame } from '../../hooks/use-hud';
 import { usePop } from '../../hooks/use-pop';
@@ -148,7 +149,7 @@ export function Inspector() {
       {shown && (
         <Still still={leaving}>
           {/* `insp` is for ui/scroll-cue.ts to find it by, and `x` for the end-to-end tests */}
-          <div class={cx('panel', 'insp', panel)}>
+          <div class={cx(panelCard(), 'insp', panel)}>
             <Button
               class={cx('x', close)}
               onPress={() => {

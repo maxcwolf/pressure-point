@@ -6,6 +6,7 @@ import { DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING, SANDBOX_MONEY } from '..
 import { money } from '../../core/format';
 import { loadDisciplinePrefs, loadSandbox, saveDisciplinePref, saveSandbox } from '../../storage/settings';
 import { css } from '../../styled-system/css';
+import { goButton, tabButton, tabStrip } from '../../styled-system/recipes';
 import { useRedraw } from '../hooks/use-redraw';
 import { cx } from '../lib/cx';
 import { DifficultySettings } from './DifficultySettings';
@@ -42,12 +43,12 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
     <div class={cx(settingsLook, sandboxLook)}>
       <p class="sub">A big lot of your own, with no deadline. Set it up how you like.</p>
       <h4>Starting money</h4>
-      <div class={cx('tabs', amounts)} role="radiogroup" aria-label="Starting money">
+      <div class={cx(tabStrip(), amounts)} role="radiogroup" aria-label="Starting money">
         {SANDBOX_MONEY.map((m) => (
           <button
             key={m}
             role="radio"
-            class={cx('tab', settings.money === m && 'on')}
+            class={cx(tabButton(), settings.money === m && 'on')}
             aria-checked={settings.money === m ? 'true' : 'false'}
             onClick={() => {
               change(() => {
@@ -204,7 +205,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           }}
         />
       </ul>
-      <button class={cx('go', start)} onClick={onStart}>
+      <button class={cx(goButton(), start)} onClick={onStart}>
         Start building
       </button>
     </div>

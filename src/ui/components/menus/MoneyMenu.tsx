@@ -7,6 +7,7 @@ import { netOf } from '../../../core/sim/economy';
 import { INTAKE_CAP_MIN } from '../../../core/sim/guests';
 import type { Ledger } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
+import { buttonRow, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { MoneyTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
@@ -153,7 +154,7 @@ function Prices() {
           {`Put off by prices: ${s.tally.priced} this month, ${s.months.at(-1)?.priced ?? 0} last month`}
         </p>
         <p class="balk">{`${balkText(s.priceLevel, s.reputation)} ${BALK_WHO}`}</p>
-        <div class="btnrow left">
+        <div class={buttonRow({ align: 'left' })}>
           <Button
             locked={s.priceLevel <= PRICE_MIN}
             onPress={() => {
@@ -195,7 +196,7 @@ function IntakeCap() {
         Guests who find the center full go elsewhere, and their fees with them. A way to keep a summer's crowd to what
         your tables can treat, so nobody waits long enough to go home worse off.
       </p>
-      <div class="btnrow left">
+      <div class={buttonRow({ align: 'left' })}>
         <Button
           locked={cap !== null && cap <= INTAKE_CAP_MIN}
           onPress={() => {
@@ -238,7 +239,7 @@ function Loan() {
         {`Costs ${(LOAN_RATE * 100).toFixed(0)}% interest a month, currently ${money(s.loan * LOAN_RATE)}.`}
       </p>
       {payroll.wages > 0 && <p class="sub">{paydayBeside(payroll)}</p>}
-      <div class="btnrow left">
+      <div class={buttonRow({ align: 'left' })}>
         <Button
           quiet
           locked={s.loan + LOAN_STEP > loanLimit(s)}
@@ -276,13 +277,13 @@ const TABS: readonly { id: MoneyTab; icon: IconId; name: string }[] = [
 export function MoneyMenu() {
   const hud = useHud();
   return (
-    <div class={cx('panel', menuPanel)}>
+    <div class={cx(panelCard(), menuPanel)}>
       <h3>Money</h3>
-      <div class={cx('tabs', tabRow)}>
+      <div class={cx(tabStrip(), tabRow)}>
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx('tab', hud.moneyTab === t.id && 'on')}
+            class={cx(tabButton(), hud.moneyTab === t.id && 'on')}
             onPress={() => {
               hud.moneyTab = t.id;
             }}

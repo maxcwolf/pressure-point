@@ -3,6 +3,7 @@
 import type { ComponentChildren } from 'preact';
 
 import { css } from '../../../styled-system/css';
+import { panelCard } from '../../../styled-system/recipes';
 import { cx } from '../../lib/cx';
 import { ScrollTab } from '../common/ScrollTab';
 
@@ -47,7 +48,7 @@ export function Dialog({ wide = false, children }: { wide?: boolean; children: C
   return (
     <div class={veil}>
       {/* `dialog` and `wide` are for the scroll cues (ui/scroll-cue.ts and theme/panda/scroll-cue.ts) and the tests */}
-      <div class={cx('panel dialog', dialog, wide && 'wide')}>
+      <div class={cx(panelCard(), 'dialog', dialog, wide && 'wide')}>
         {children}
         {wide && <ScrollTab />}
       </div>

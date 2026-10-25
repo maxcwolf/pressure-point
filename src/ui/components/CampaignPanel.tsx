@@ -9,6 +9,7 @@ import { CAMPAIGN } from '../../core/data';
 import { buyDecorWithKarma, buyWithKarma, loadCampaign } from '../../storage/campaign';
 import { loadTutorialPref, saveTutorialPref } from '../../storage/settings';
 import { css } from '../../styled-system/css';
+import { goButton, tabButton, tabStrip, toggleSwitch } from '../../styled-system/recipes';
 import { useRedraw } from '../hooks/use-redraw';
 import { campaignCards } from '../lib/campaign';
 import { cx } from '../lib/cx';
@@ -161,12 +162,12 @@ export function CampaignPanel({ onStart, audio }: CampaignPanelProps) {
       <p class={cx('karma', karma)}>
         <IconText id="ui-karma">{karmaText(karmaLeft(progress))}</IconText>
       </p>
-      <div class={cx('tabs', tabs)} role="tablist">
+      <div class={cx(tabStrip(), tabs)} role="tablist">
         {TABS.map((t) => (
           <button
             key={t.id}
             role="tab"
-            class={cx('tab', tab === t.id && 'on')}
+            class={cx(tabButton(), tab === t.id && 'on')}
             aria-selected={tab === t.id ? 'true' : 'false'}
             onClick={() => {
               setTab(t.id);
@@ -190,7 +191,7 @@ function TutorialSwitch({ audio }: { audio: Audio }) {
   return (
     <label class={tutorialSwitch}>
       <button
-        class={cx('switch', on && 'on')}
+        class={cx(toggleSwitch(), on && 'on')}
         role="switch"
         aria-checked={on ? 'true' : 'false'}
         aria-label="Tutorial"
@@ -229,7 +230,7 @@ function Centers({ onStart, audio }: CampaignPanelProps) {
               {c.open ? (
                 <div class={play}>
                   <button
-                    class={cx('go', playButton)}
+                    class={cx(goButton(), playButton)}
                     onClick={() => {
                       onStart(`new:${c.id}`);
                     }}
@@ -272,7 +273,7 @@ function Shop({ onBuy }: { onBuy: () => void }) {
               <em class={price}>Unlocked</em>
             ) : (
               <button
-                class={cx('go', buy)}
+                class={cx(goButton(), buy)}
                 disabled={c.state === 'short'}
                 onClick={() => {
                   buyWithKarma(c.type);
@@ -298,7 +299,7 @@ function Shop({ onBuy }: { onBuy: () => void }) {
               <em class={price}>Unlocked</em>
             ) : (
               <button
-                class={cx('go', buy)}
+                class={cx(goButton(), buy)}
                 disabled={c.state === 'short'}
                 onClick={() => {
                   buyDecorWithKarma(c.key);

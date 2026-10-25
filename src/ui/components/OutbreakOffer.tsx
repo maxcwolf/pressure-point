@@ -4,6 +4,7 @@ import { answerOffer } from '../../app/analytics';
 import { OUTBREAK_DAYS } from '../../core/data';
 import { money } from '../../core/format';
 import { css } from '../../styled-system/css';
+import { buttonRow, goButton, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
@@ -25,7 +26,7 @@ export function OutbreakOffer() {
   if (hud.outbreakAside === offer.deadline)
     return (
       <Button
-        class={cx('panel', 'offer-pill', outbreakColor)}
+        class={cx(panelCard(), 'offer-pill', outbreakColor)}
         title="Show the stress outbreak"
         onPress={() => {
           hud.outbreakAside = null;
@@ -38,7 +39,7 @@ export function OutbreakOffer() {
       </Button>
     );
   return (
-    <div class={cx('panel', 'offer', outbreakColor)}>
+    <div class={cx(panelCard(), 'offer', outbreakColor)}>
       <Button
         class="later"
         title="Decide later"
@@ -65,9 +66,9 @@ export function OutbreakOffer() {
         <span>{`Offer lapses: ${timeLeftLabel(left.days)}`}</span>
         {timer}
       </div>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
-          class="go"
+          class={goButton()}
           onPress={() => {
             const offer = sim.s.outbreakOffer;
             sim.acceptOutbreak();

@@ -2,6 +2,7 @@
 
 import { money } from '../../../core/format';
 import { css } from '../../../styled-system/css';
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { reportHeading, reportSummary, verdictTone } from '../../lib/visits';
@@ -60,7 +61,7 @@ export function VisitDialog() {
       </ul>
       {report.bribe === undefined ? (
         <Button
-          class="go"
+          class={goButton()}
           onPress={() => {
             hud.close();
           }}
@@ -68,9 +69,9 @@ export function VisitDialog() {
           Back to work
         </Button>
       ) : (
-        <div class="btnrow">
+        <div class={buttonRow()}>
           <Button
-            class="go"
+            class={goButton()}
             onPress={() => {
               sim.settleInspection(false);
               hud.close();

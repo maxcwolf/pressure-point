@@ -9,6 +9,7 @@ import { loadDisciplinePrefs } from '../../storage/settings';
 import { readThumb } from '../../storage/thumbnails';
 import { saveWelcomeSeen } from '../../storage/welcome';
 import { css } from '../../styled-system/css';
+import { buttonRow, goButton, roundButton } from '../../styled-system/recipes';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch, UpdateOffer } from '../host';
 import { cx } from '../lib/cx';
@@ -412,7 +413,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
       <div class={backdropLook} style={{ backgroundImage: `url(${picture ?? backdrop})` }} />
       <div class={cx('title-sys', sys)}>
         <button
-          class={cx('round small', !audio.sound && 'off')}
+          class={cx(roundButton({ size: 'small' }), !audio.sound && 'off')}
           title="Sound effects"
           aria-pressed={audio.sound ? 'true' : 'false'}
           onClick={flip(() => {
@@ -422,7 +423,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
           <Icon id={audio.sound ? 'ui-sound' : 'ui-mute'} size={22} />
         </button>{' '}
         <button
-          class={cx('round small', !audio.music && 'off')}
+          class={cx(roundButton({ size: 'small' }), !audio.music && 'off')}
           title="Music"
           aria-pressed={audio.music ? 'true' : 'false'}
           onClick={flip(() => {
@@ -619,9 +620,9 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
           <p class="sub">
             Your feedback decides what comes next. Use Give feedback here, or in the pause menu during a game.
           </p>{' '}
-          <div class="btnrow">
+          <div class={buttonRow()}>
             <button
-              class="go"
+              class={goButton()}
               onClick={() => {
                 saveWelcomeSeen();
                 setWelcoming(false);
@@ -637,7 +638,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
           <h2>Restart to update?</h2>
           <p>{`The game will close, install version ${updateVersion} and open again. Your saved games are kept.`}</p>{' '}
           <p class="sub">Or not now: it installs by itself the next time you quit.</p>{' '}
-          <div class="btnrow">
+          <div class={buttonRow()}>
             <button
               onClick={() => {
                 setAskingToUpdate(false);
@@ -645,7 +646,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
             >
               Not now
             </button>
-            <button class="go" onClick={update.install}>
+            <button class={goButton()} onClick={update.install}>
               Restart and update
             </button>
           </div>

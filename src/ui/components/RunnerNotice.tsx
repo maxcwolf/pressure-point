@@ -4,6 +4,7 @@
 import { DAY_SECONDS } from '../../core/data';
 import type { Guest } from '../../core/state/types';
 import { css } from '../../styled-system/css';
+import { buttonRow, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { calmingNote, doorShare, NOBODY_FREE, runnerLine, runnersShown, sendLabel, sendTitle } from '../lib/calming';
 import { cx } from '../lib/cx';
@@ -65,7 +66,7 @@ function RunnerPill({ guest: g, more }: { guest: Guest; more: number }) {
   const calmer = sim.calmerOf(g);
   const sent = sim.calmerFor(g);
   return (
-    <div class={cx('panel', 'runner-pill', pill)}>
+    <div class={cx(panelCard(), 'runner-pill', pill)}>
       <Button
         class={show}
         title="Show me"
@@ -78,7 +79,7 @@ function RunnerPill({ guest: g, more }: { guest: Guest; more: number }) {
         </span>
         <Bar value={doorShare(left) * 100} class={left < DAY_SECONDS ? 'thin bad' : 'thin need'} />
       </Button>
-      <div class={cx('btnrow', buttons)}>
+      <div class={cx(buttonRow(), buttons)}>
         {calmer ? (
           <span class={onTheWay}>
             <IconText id="bubble-relieved">{calmingNote(calmer.name, calmer.state === 'doingJob')}</IconText>

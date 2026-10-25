@@ -4,6 +4,7 @@ import { ITEMS, MISHAPS } from '../../core/data';
 import { money } from '../../core/format';
 import { mishapDaysLeft, mishapHolder } from '../../core/sim/mishaps';
 import { css } from '../../styled-system/css';
+import { buttonRow, goButton, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { mishapLine, noticeShare, preparedNote, startsIn } from '../lib/mishaps';
@@ -31,7 +32,7 @@ export function MishapNotice() {
   const holder = held && ITEMS[held.type].name;
   if (m.started)
     return (
-      <div class={cx('panel', 'offer-pill', 'mishap-pill', 'on', mishapColor)}>
+      <div class={cx(panelCard(), 'offer-pill', 'mishap-pill', 'on', mishapColor)}>
         <span>
           <IconText id={def.icon}>{mishapLine(def, m, left, holder)}</IconText>
         </span>
@@ -41,7 +42,7 @@ export function MishapNotice() {
   if (m.prepared || holder || m.ward || hud.mishapAside === m.starts)
     return (
       <Button
-        class={cx('panel', 'offer-pill', 'mishap-pill', mishapColor)}
+        class={cx(panelCard(), 'offer-pill', 'mishap-pill', mishapColor)}
         title={
           m.prepared
             ? def.prepare.effect
@@ -60,7 +61,7 @@ export function MishapNotice() {
       </Button>
     );
   return (
-    <div class={cx('panel', 'offer', 'mishap', mishapColor)}>
+    <div class={cx(panelCard(), 'offer', 'mishap', mishapColor)}>
       <h3>
         <IconText id={def.icon}>{`${def.name} coming`}</IconText>
       </h3>
@@ -70,9 +71,9 @@ export function MishapNotice() {
         <span>{startsIn(left)}</span>
         {timer}
       </div>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
-          class="go"
+          class={goButton()}
           locked={s.money < def.prepare.cost}
           title={s.money < def.prepare.cost ? "You can't afford it" : def.prepare.effect}
           quiet

@@ -2,6 +2,7 @@
 
 import type { IconId } from '../../core/data';
 import { css } from '../../styled-system/css';
+import { toggleSwitch } from '../../styled-system/recipes';
 import { cx } from '../lib/cx';
 import { Icon } from './common/Icon';
 
@@ -42,7 +43,7 @@ export function SettingRow({ icon, name, desc, on, locked = '', onToggle }: Sett
         <em>{locked}</em>
       ) : (
         <button
-          class={cx('switch', on && 'on')}
+          class={cx(toggleSwitch(), on && 'on')}
           role="switch"
           aria-checked={on ? 'true' : 'false'}
           aria-label={name}

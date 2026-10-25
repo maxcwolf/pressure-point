@@ -15,6 +15,7 @@ import {
 } from '../../../core/data';
 import { money } from '../../../core/format';
 import { css } from '../../../styled-system/css';
+import { buttonRow } from '../../../styled-system/recipes';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { wholeDaysLeft } from '../../lib/emergency';
@@ -98,7 +99,7 @@ function CampaignCard({ kind }: { kind: CampaignKind }) {
               ))}
             </div>
           )}
-          <div class="btnrow left">
+          <div class={buttonRow({ align: 'left' })}>
             {Array.from({ length: CAMPAIGN_MONTHS_MAX }, (_, i) => i + 1).map((months) => {
               const why = sim.campaignBlocker(kind, months, condition);
               return (

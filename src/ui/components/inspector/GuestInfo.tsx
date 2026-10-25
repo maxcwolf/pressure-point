@@ -16,6 +16,7 @@ import { guestFee } from '../../../core/sim/stations';
 import { upgradeSuccess } from '../../../core/sim/upgrades';
 import type { Guest } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
+import { dangerButton, goButton } from '../../../styled-system/recipes';
 import { useGame } from '../../hooks/use-hud';
 import { calmingNote, NOBODY_FREE, sendLabel, sendTitle } from '../../lib/calming';
 import { chanceText, percent, poorChance } from '../../lib/chance';
@@ -91,7 +92,7 @@ function CalmRunner({ guest: g }: { guest: Guest }) {
   const sent = sim.canCalm(g) ? sim.calmerFor(g) : undefined;
   return (
     <Button
-      class={cx('go', calm)}
+      class={cx(goButton(), calm)}
       locked={!sent}
       title={sent ? sendTitle(sent) : NOBODY_FREE}
       onPress={() => {
@@ -120,7 +121,7 @@ function CalmButton({ guest: g }: { guest: Guest }) {
     );
   return (
     <Button
-      class={cx('go', calm)}
+      class={cx(goButton(), calm)}
       locked={o.calms <= 0}
       title="Spot the stressed by their sweating and fidgeting. A session given to a guest who was fine is wasted."
       onPress={() => {
@@ -255,7 +256,7 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
       <CalmButton guest={g} />
       {g.state !== 'leaving' && g.state !== 'running' && (
         <Button
-          class="danger sendhome"
+          class={cx(dangerButton(), 'sendhome')}
           title="They leave without treatment: no fee, and a small knock to your reputation."
           onPress={() => {
             sim.sendHome(g.id);
