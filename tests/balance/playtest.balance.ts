@@ -2,11 +2,14 @@
 // the money, reputation, guests and waits month by month. Not a pass/fail test: run `yarn balance` before and after
 // a tuning change and compare. The full logs go to test-results/balance.json. `BOT=old` plays as the bot did before
 // it learned prices, marketing, payroll, saving, expansion on profit, house calls, lines, the Posture Lab, upgrades,
-// emergencies it can see through, room layout, mats, classes and courses; `BOT_OFF=prices,calls` switches single ones
-// off, and `BOT_ON` switches on the extras (see `BOT_FLAGS` and `BOT_EXTRAS` in bot.ts). `BOT=baseline` plays as a
-// thoughtless new player: the opening build, a room only once a line has formed, never a price changed or a call
-// taken (see `BotMode`). `BOT=advised` plays as the baseline and also does exactly what the game's toasts and advisor
-// say, so whether the warnings are actionable can be measured.
+// emergencies it can see through, room layout, mats, classes, courses, and the owner's habits (a small loan, an early
+// fit-out, every emergency and outbreak taken, a better applicant in place of the weakest: `loan`, `early`, `brave`,
+// `swap`). `BOT_OFF=prices,calls` switches single ones off, and `BOT_ON` switches on the extras (see `BOT_FLAGS` and
+// `BOT_EXTRAS` in bot.ts; the owner's prices held near 1.1, `modest`, are one). `BOT=baseline` plays as a thoughtless
+// new player: the opening
+// build, a room only once a line has formed, never a price changed or a call taken (see `BotMode`). `BOT=advised`
+// plays as the baseline and also does exactly what the game's toasts and advisor say, so whether the warnings are
+// actionable can be measured.
 //
 // Each center and seed is a run of its own, and the runs are spread over worker slots (`BALANCE_SLOTS`, by default one
 // fewer than the processor's cores; see vitest.balance.config.ts), each writing its log to test-results/balance-parts
