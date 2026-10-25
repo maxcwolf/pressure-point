@@ -547,15 +547,18 @@ const SHIRT: readonly (readonly [number, number])[] = [
 const SHIRT_WIDE = 1.12;
 const SHIRT_DEEP = 0.9;
 
-/** The shirt's radius at a height on the torso, before it is made wider and shallower. */
-function shirtRadius(y: number) {
-  for (let i = 1; i < SHIRT.length; i++) {
-    const [r0, y0] = must(SHIRT[i - 1], 'a point of the shirt');
-    const [r1, y1] = must(SHIRT[i], 'a point of the shirt');
+/** A profile's radius at a height up it, between the points either side. */
+function radiusAt(profile: readonly (readonly [number, number])[], y: number) {
+  for (let i = 1; i < profile.length; i++) {
+    const [r0, y0] = must(profile[i - 1], 'a point of the profile');
+    const [r1, y1] = must(profile[i], 'a point of the profile');
     if (y <= y1) return r0 + ((r1 - r0) * Math.max(0, y - y0)) / (y1 - y0);
   }
   return 0;
 }
+
+/** The shirt's radius at a height on the torso, before it is made wider and shallower. */
+const shirtRadius = (y: number) => radiusAt(SHIRT, y);
 
 /** The shirt, from the hem to the collar, shaped to the chest and waist, as wide and deep as the uniforms are cut. */
 const shirt = () =>
@@ -771,6 +774,167 @@ const coatTails = () =>
 /** Lengthen a shirt into a long coat, as a consultant's white coat. */
 export function detailCoat(torso: THREE.Group, cloth: THREE.Material) {
   put(torso, coatTails(), cloth).name = 'coat';
+}
+
+// A firefighter's turnout gear: a heavy coat cut wider than the shirt and down over the hips, with a stand collar and
+// reflective bands lying flush on it, each a yellow band with a silver stripe through it, and plain bands round the
+// cuffs and the ankles.
+
+/** The turnout coat's profile, [radius, height] from the hem over the hips to the shoulders, and how much wider and
+ * shallower it is than round: a little fuller than the shirt all the way up, so it sits over it. */
+const TURNOUT: readonly (readonly [number, number])[] = [
+  [0.166, -0.17],
+  [0.186, -0.164],
+  [0.187, -0.1],
+  [0.182, -0.02],
+  [0.177, 0.07],
+  [0.18, 0.17],
+  [0.185, 0.26],
+  [0.185, 0.32],
+  [0.178, 0.37],
+  [0.158, 0.42],
+  [0.123, 0.458],
+  [0.083, 0.478],
+  [0, 0.482],
+];
+const TURNOUT_WIDE = 1.12;
+const TURNOUT_DEEP = 0.95;
+
+/** The heights of the coat's two bands, across the chest and round the hem, each [bottom, top]. */
+const COAT_BANDS = [
+  [0.232, 0.284],
+  [-0.138, -0.086],
+] as const;
+
+/** How far proud of the coat a band stands, and its silver stripe proud of the band. */
+const BAND_OUT = 0.006;
+const STRIPE_OUT = 0.011;
+
+/** How tall the silver stripe through the middle of a band is. */
+const STRIPE = 0.016;
+
+/**
+ * A band all round something turned on a lathe, between two heights, standing `out` proud of its profile and following
+ * its shape, its edges turned in so they show its thickness.
+ */
+function bandRound(
+  n: Sides,
+  profile: readonly (readonly [number, number])[],
+  [y0, y1]: readonly [number, number],
+  out: number,
+  sx = 1,
+  sz = 1,
+) {
+  const along = [0, 1 / 3, 2 / 3, 1].map((u): [number, number] => {
+    const y = y0 + (y1 - y0) * u;
+    return [radiusAt(profile, y) + out, y];
+  });
+  /** A point on the band's edge, turned in under its face. */
+  const edge = (y: number): [number, number] => [radiusAt(profile, y) - 0.004, y];
+  return lathe(n, [edge(y0), ...along, edge(y1)], sx, sz, 36);
+}
+
+/** The middle of a band, as tall as its silver stripe. */
+const stripeOf = ([y0, y1]: readonly [number, number]) => [(y0 + y1 - STRIPE) / 2, (y0 + y1 + STRIPE) / 2] as const;
+
+/** The turnout coat, from the hem to the shoulders, with round shoulders over the arms' hinges and a stand collar. */
+const turnoutCoat = () =>
+  fuse('turnout coat', (n) => [
+    lathe(n, TURNOUT, TURNOUT_WIDE, TURNOUT_DEEP, 36),
+    ...[-1, 1].map((s) => smooth(place(ball(0.072, n(18)), [s * 0.236, 0.372, 0], [0, 0, 0], [1, 0.95, 0.95]))),
+    // a collar standing up round the neck, low enough to clear the chin
+    lathe(
+      n,
+      [
+        [0.143, 0.414],
+        [0.158, 0.418],
+        [0.16, 0.468],
+        [0.152, 0.474],
+        [0.145, 0.44],
+      ],
+      1.05,
+      0.98,
+      28,
+    ),
+  ]);
+
+/** The yellow of the coat's bands, across the chest and round the hem. */
+const coatBands = () =>
+  fuse('turnout bands', (n) => COAT_BANDS.map((b) => bandRound(n, TURNOUT, b, BAND_OUT, TURNOUT_WIDE, TURNOUT_DEEP)));
+
+/** The silver stripes through the middle of the coat's bands. */
+const coatStripes = () =>
+  fuse('turnout stripes', (n) =>
+    COAT_BANDS.map((b) => bandRound(n, TURNOUT, stripeOf(b), STRIPE_OUT, TURNOUT_WIDE, TURNOUT_DEEP)),
+  );
+
+/** How much fuller than a shirt's a turnout coat's sleeves are. */
+const SLEEVE_FULL = 1.1;
+
+/** A band round a sleeve above the cuff, measured from the elbow, on a sleeve made fuller. */
+const cuffBand = () =>
+  fuse('cuff band', (n) => [
+    bandRound(
+      n,
+      [
+        [0.054, -0.11],
+        [0.054, -0.06],
+      ],
+      [-0.1, -0.072],
+      0.006,
+    ),
+  ]);
+
+/** A band round a trouser leg above the boot, measured from the knee. */
+const ankleBand = () =>
+  fuse('ankle band', (n) => [
+    bandRound(
+      n,
+      [
+        [0.067, -0.15],
+        [0.068, -0.1],
+      ],
+      [-0.138, -0.108],
+      0.006,
+      1,
+      0.95,
+    ),
+  ]);
+
+/**
+ * Dress a firefighter in turnout gear: the coat in place of their shirt, its sleeves made fuller, yellow bands with a
+ * silver stripe across the chest and round the hem, and a yellow band round each cuff and each ankle. The seat of the
+ * trousers, under the coat, is not drawn.
+ */
+export function detailTurnout(
+  torso: THREE.Group,
+  joints: { foreL: THREE.Group; foreR: THREE.Group; shinL: THREE.Group; shinR: THREE.Group },
+  band: THREE.Material,
+  stripe: THREE.Material,
+) {
+  const coat = torso.getObjectByName('shirt');
+  if (coat instanceof THREE.Mesh) {
+    coat.geometry = turnoutCoat();
+    coat.name = 'coat';
+  }
+  const seat = torso.getObjectByName('trousers');
+  if (seat) seat.visible = false;
+  torso.traverse((o) => {
+    if (o.name === 'sleeve') o.scale.set(SLEEVE_FULL, 1, SLEEVE_FULL);
+  });
+  /** Stop a band casting a shadow: it is thin, and lies on what casts one already. */
+  const flat = (o: THREE.Mesh) => {
+    o.castShadow = false;
+    return o;
+  };
+  flat(put(torso, coatBands(), band)).name = 'bands';
+  flat(put(torso, coatStripes(), stripe)).name = 'stripes';
+  for (const fore of [joints.foreL, joints.foreR]) {
+    const cuff = flat(put(fore, cuffBand(), band));
+    cuff.name = 'bands';
+    cuff.scale.set(SLEEVE_FULL, 1, SLEEVE_FULL);
+  }
+  for (const shin of [joints.shinL, joints.shinR]) flat(put(shin, ankleBand(), band)).name = 'bands';
 }
 
 /** The bib of a pair of overalls, over the front of the shirt. */
