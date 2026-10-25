@@ -1,8 +1,0 @@
-/* Styles for Stars. */
-
-.skill {
-  color: var(--gold);
-  -webkit-text-stroke: 1px var(--navy);
-  paint-order: stroke fill;
-  letter-spacing: 1px;
-}

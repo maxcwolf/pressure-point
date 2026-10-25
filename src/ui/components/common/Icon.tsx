@@ -2,15 +2,27 @@
 // and under, with simpler drawings where an icon has one, and one for everything bigger. Each icon measures the size it
 // comes out at, picks its sheet and the weight of its lines by that, and lands on whole pixels of the screen.
 
-import './Icon.css';
-
 import type { ComponentChildren } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 import type { IconId } from '../../../core/data';
+import { css } from '../../../styled-system/css';
 import sprite from '../../icons/generated/sprite.svg?raw';
 import spriteSmall from '../../icons/generated/sprite-small.svg?raw';
+import { cx } from '../../lib/cx';
 import type { IconLine } from '../../lib/icon-line';
+
+/** An icon sits in a line of words like a letter, and never takes the pointer from what it is on. */
+const iconStyle = css({ display: 'inline-block', flex: 'none', verticalAlign: 'middle', pointerEvents: 'none' });
+
+/** Words with an icon before them: the icon keeps to the first line, and the words wrap beside it. */
+const iconTextStyle = css({
+  display: 'inline-flex',
+  alignItems: 'baseline',
+  gap: '[0.35em]',
+  // centered on the first line, whatever its height; the words, not the icon, set the line's baseline
+  '& > .icon': { alignSelf: 'flex-start', mt: '[calc((1lh - 1.3em) / 2)]' },
+});
 
 let mounted = false;
 
@@ -123,7 +135,7 @@ export function Icon({
   return (
     <svg
       ref={ref}
-      class={className ? `icon ${className}` : 'icon'}
+      class={cx('icon', iconStyle, className)}
       width={size}
       height={size}
       style={{ width: length, height: length, '--icon-line': lineScale(device), '--icon-small-line': smallLine }}
@@ -151,7 +163,7 @@ export function IconText({
 }) {
   if (!id) return className ? <span class={className}>{children}</span> : <>{children}</>;
   return (
-    <span class={className ? `icon-text ${className}` : 'icon-text'}>
+    <span class={cx('icon-text', iconTextStyle, className)}>
       <Icon id={id} size="1.3em" />
       <span>{children}</span>
     </span>

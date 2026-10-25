@@ -4,6 +4,8 @@ import { defineConfig } from '@pandacss/dev';
 
 import { globalCss } from './src/ui/theme/panda/global';
 import { keyframes } from './src/ui/theme/panda/keyframes';
+import { onGamePage } from './src/ui/theme/panda/scope';
+import { scrollCueCss } from './src/ui/theme/panda/scroll-cue';
 import { sharedCss } from './src/ui/theme/panda/shared';
 import { semanticTokens, tokens } from './src/ui/theme/panda/tokens';
 
@@ -32,7 +34,7 @@ export default defineConfig({
       max700: '@media (max-width: 700px)',
     },
   },
-  globalCss: { extend: { ...globalCss, ...sharedCss } },
+  globalCss: { extend: onGamePage({ ...globalCss, ...sharedCss, ...scrollCueCss }) },
   theme: {
     extend: {
       tokens,
