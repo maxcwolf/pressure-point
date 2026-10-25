@@ -1,4 +1,4 @@
-// The campaign's progress: stars, achievements and karma unlocks, kept apart from saved games.
+// The campaign's progress: stars, achievements, karma unlocks and the lessons shown, kept apart from saved games.
 
 import {
   type CampaignProgress,
@@ -18,6 +18,7 @@ import {
   type ItemType,
   KARMA_DECOR,
 } from '../core/data';
+import { type LessonId, LESSONS, LESSONS_BEFORE_MEMORY } from '../core/sim/lessons';
 import type { GameState } from '../core/state/types';
 import { isRecord } from './json';
 
@@ -42,6 +43,9 @@ export function loadCampaign(): CampaignProgress {
     const decor: unknown[] = Array.isArray(raw.decor) ? raw.decor : [];
     p.decor = KARMA_DECOR.filter((key: DecorKey) => decor.includes(key));
     if (typeof raw.bonus === 'number' && Number.isInteger(raw.bonus) && raw.bonus > 0) p.bonus = raw.bonus;
+    // a campaign from before the lessons were remembered, with a star in it, has been through the ones there were then
+    const before = !Object.hasOwn(raw, 'lessons') && Object.keys(p.stars).length > 0;
+    p.lessons = before ? [...LESSONS_BEFORE_MEMORY] : known<LessonId>(raw.lessons, LESSONS);
     return p;
   } catch {
     return freshCampaign();
@@ -86,6 +90,13 @@ export function buyDecorWithKarma(key: DecorKey): boolean {
   if (after === before) return false;
   saveCampaign(after);
   return true;
+}
+
+/** Note that a lesson has been shown, so no game in the campaign shows it again. */
+export function recordLesson(id: LessonId) {
+  const before = loadCampaign();
+  if (before.lessons.includes(id)) return;
+  saveCampaign({ ...before, lessons: [...before.lessons, id] });
 }
 
 /** Add karma from the cheat console, to spend in any center. */

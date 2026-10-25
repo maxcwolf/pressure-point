@@ -1,12 +1,25 @@
-// Centers: each game is set in one, with its own building on the lot and its own goals for each star.
+// Centers: each game is set in one, with its own building on the lot, its own weather and its own goals for each star.
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { type CenterId, CENTERS, DAY_SECONDS, type GoalSpec, plotFits, SANDBOX_PLOT } from '../../src/core/data';
+import {
+  CAMPAIGN,
+  type CenterId,
+  CENTERS,
+  DAY_SECONDS,
+  DAYS_PER_MONTH,
+  DISCOMFORT_NOTICE,
+  type GoalSpec,
+  IDEAL_TEMP,
+  OUTDOOR_BAND,
+  plotFits,
+  SANDBOX_PLOT,
+} from '../../src/core/data';
 import { lotWidth } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
 import { createContext, type SimContext } from '../../src/core/sim/context';
 import { averagePatience, cureRate, objectiveFor } from '../../src/core/sim/goals';
 import { Sim } from '../../src/core/sim/sim';
+import { coldness, discomfort, hotness, indoorTemp, outdoorTemp } from '../../src/core/sim/warmth';
 import { emptyLedger, emptyTally, newGame } from '../../src/core/state/game';
 import type { GameState, Tally } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
@@ -49,6 +62,61 @@ describe('the centers', () => {
     const s = newGame('willow');
     expect(s.center).toBe('willow');
     expect(s.money).toBe(CENTERS.willow.startMoney);
+  });
+});
+
+describe('the weather, center by center', () => {
+  /** Every day of a calendar year at a center: the weather outside, and indoors with nothing to warm or cool it. */
+  const year = (id: CenterId) =>
+    Array.from({ length: 12 * DAYS_PER_MONTH }, (_, day) => {
+      const outside = outdoorTemp(CENTERS[id].climate, day);
+      return { outside, inside: indoorTemp(outside) };
+    });
+  /** Whether it is cold or hot enough indoors for guests and staff to mind. */
+  const minded = (inside: number) => discomfort(inside) >= DISCOMFORT_NOTICE;
+  /** Whether a center's year ever calls for heating, or for cooling. */
+  const callsFor = (id: CenterId) => ({
+    heating: year(id).some((d) => minded(d.inside) && d.inside < IDEAL_TEMP),
+    cooling: year(id).some((d) => minded(d.inside) && d.inside > IDEAL_TEMP),
+  });
+  /** How uncomfortable indoors gets on a center's coldest day and on its hottest. */
+  const worst = (id: CenterId) => ({
+    cold: Math.max(...year(id).map((d) => coldness(d.inside))),
+    hot: Math.max(...year(id).map((d) => hotness(d.inside))),
+  });
+
+  it('keeps Willow Lane mild all year, indoors and out', () => {
+    for (const { outside, inside } of year('willow')) {
+      expect(discomfort(inside)).toBeLessThan(DISCOMFORT_NOTICE);
+      expect(Math.abs(outside - IDEAL_TEMP)).toBeLessThanOrEqual(OUTDOOR_BAND);
+    }
+  });
+
+  it('gives every center after Willow Lane days that someone minds, indoors and out', () => {
+    for (const id of CAMPAIGN.slice(1)) {
+      expect(
+        year(id).some((d) => minded(d.inside)),
+        id,
+      ).toBe(true);
+      expect(
+        year(id).some((d) => Math.abs(d.outside - IDEAL_TEMP) > OUTDOOR_BAND),
+        id,
+      ).toBe(true);
+    }
+  });
+
+  it('calls only for heating at The Exchange and High Pines, and for both at the Boardwalk and the Orchard', () => {
+    expect(callsFor('exchange')).toEqual({ heating: true, cooling: false });
+    expect(callsFor('highpines')).toEqual({ heating: true, cooling: false });
+    expect(callsFor('boardwalk')).toEqual({ heating: true, cooling: true });
+    expect(callsFor('orchard')).toEqual({ heating: true, cooling: true });
+  });
+
+  it("makes The Orchard Estate's coldest and hottest days harder than the Boardwalk's", () => {
+    const orchard = worst('orchard');
+    const boardwalk = worst('boardwalk');
+    expect(orchard.cold).toBeGreaterThan(boardwalk.cold);
+    expect(orchard.hot).toBeGreaterThan(boardwalk.hot);
   });
 });
 

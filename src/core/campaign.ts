@@ -12,6 +12,7 @@ import {
   type ItemType,
   STAR_KARMA,
 } from './data';
+import type { LessonId } from './sim/lessons';
 
 /** The best star count earned in each campaign center. */
 export type CampaignStars = Partial<Record<CenterId, number>>;
@@ -27,11 +28,13 @@ export interface CampaignProgress {
   decor: DecorKey[];
   /** Karma added in the cheat console, on top of what was earned. */
   bonus: number;
+  /** The lessons shown, each once in the campaign. */
+  lessons: LessonId[];
 }
 
 /** A campaign with nothing earned yet. */
 export function freshCampaign(): CampaignProgress {
-  return { stars: {}, achieved: [], unlocked: [], decor: [], bonus: 0 };
+  return { stars: {}, achieved: [], unlocked: [], decor: [], bonus: 0, lessons: [] };
 }
 
 /** Whether a campaign center can be played: the first always can, the rest once the one before has a star. */

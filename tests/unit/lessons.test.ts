@@ -1,9 +1,9 @@
 // The tutorial's lessons come the first time each thing happens, once a game each and never two in a day, about whoever
 // it happened to, and not at all with the lessons off. The one on money comes as the bank first runs short of a payday,
-// the clock paused or not.
+// the clock paused or not, and the one on the weather as it first gets indoors with nothing to warm or cool the place.
 import { describe, expect, it } from 'vitest';
 
-import { DAYS_PER_MONTH } from '../../src/core/data';
+import { type CenterId, DAYS_PER_MONTH, type ItemType } from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
 import { monthlyPayroll } from '../../src/core/sim/economy';
 import type { SimEvent } from '../../src/core/sim/events';
@@ -28,13 +28,12 @@ describe('the lessons', () => {
   it('each have a title, a few pictures and something to say', () => {
     const { s } = lessonGame();
     for (const id of LESSON_IDS) {
-      const l = LESSONS[id];
-      expect(l.title).not.toBe('');
-      expect(l.panels.length).toBeGreaterThanOrEqual(2);
-      expect(l.panels.length).toBeLessThanOrEqual(4);
       // the game's voice: no em-dashes, in the lines worked out from the game as well
-      expect(JSON.stringify(l)).not.toMatch(/—/);
+      expect(JSON.stringify(LESSONS[id])).not.toMatch(/—/);
       const card = lessonCard(id, s);
+      expect(card.title).not.toBe('');
+      expect(card.panels.length).toBeGreaterThanOrEqual(2);
+      expect(card.panels.length).toBeLessThanOrEqual(4);
       expect(card.intro).not.toBe('');
       expect(JSON.stringify(card)).not.toMatch(/—/);
     }
@@ -223,11 +222,113 @@ describe('the lesson on money', () => {
     expect(card.panels.map((p) => p.label)).toEqual(['The bank', 'Payday', 'The red', 'A loan']);
     expect(card.panels[2]?.note).toBe('Below zero the bank charges 5% a month, and the staff start to worry.');
     expect(card.panels[3]?.note).toBe('Borrow up to $50,000 in $5,000 steps at 2% a month: cheaper than the red.');
-    expect(card.showMe).toEqual({ menu: 'finance', moneyTab: 'loan' });
+    expect(card.showMe).toEqual({ kind: 'menu', menu: 'finance', moneyTab: 'loan' });
     // a day out, and on the day itself
     s.day = DAYS_PER_MONTH - 1;
     expect(lessonCard('money', s).intro).toMatch(/ in 1 day\.$/);
     s.day = DAYS_PER_MONTH - 0.2;
     expect(lessonCard('money', s).intro).toMatch(/ today\.$/);
+  });
+});
+
+/**
+ * An open center with the lessons and the weather on, set in a center on the middle of a month, its coldest in January
+ * and its hottest in July.
+ */
+function weatherGame(center: CenterId, month: number) {
+  const game = lessonGame();
+  const s = game.s;
+  s.open = true;
+  s.weatherOn = true;
+  s.center = center;
+  s.startMonth = month;
+  s.day = DAYS_PER_MONTH / 2;
+  return game;
+}
+
+/** Whether the lesson on the weather comes now. */
+function weatherDue(sim: Sim) {
+  checkLessons(ctxOf(sim));
+  return lessons(sim.drain()).some((e) => e.id === 'weather');
+}
+
+/** Put an item down in the hall, clear of the rooms and the desk. */
+function placeInHall(sim: Sim, type: ItemType) {
+  expect(sim.placeItem(type, 20, 14, 0, { free: true })).not.toBeNull();
+}
+
+describe('the lesson on the weather', () => {
+  it('comes on a cold day with nothing to warm the place, saying how cold, with a Radiator to place', () => {
+    const { sim, s } = weatherGame('exchange', 0);
+    checkLessons(ctxOf(sim));
+    expect(lessons(sim.drain())).toEqual([{ type: 'lesson', id: 'weather' }]);
+    const card = lessonCard('weather', s);
+    expect(card.title).toBe('Too cold');
+    expect(card.intro).toBe(
+      'It is 48°F outside today, and about 60°F indoors with nothing to warm it: cold enough that guests and staff mind it.',
+    );
+    expect(card.panels.map((p) => [p.icon, p.label])).toEqual([
+      ['season-winter', 'The weather'],
+      ['overlay-temperature', 'Comfort'],
+      ['item-radiator', 'Radiator'],
+      ['item-air-conditioner', 'Air Conditioner'],
+    ]);
+    expect(card.panels[1]?.note).toBe(
+      'Between 66°F and 76°F everyone is fine. Colder or hotter, guests lose patience faster and staff lose heart.',
+    );
+    expect(card.panels[2]?.note).toBe('Warms the air around it, and its own room most of all, for $300.');
+    expect(card.panels[3]?.note).toBe('Cools the air around it the same way, for $700.');
+    expect(card.showMe).toEqual({ kind: 'place', type: 'radiator' });
+  });
+
+  it('does not come in the cold while a Radiator or a Fireplace stands', () => {
+    for (const type of ['radiator', 'fireplace'] as const) {
+      const { sim } = weatherGame('exchange', 0);
+      placeInHall(sim, type);
+      expect(weatherDue(sim), type).toBe(false);
+    }
+  });
+
+  it('comes on a hot day with nothing to cool the place, the Air Conditioner first', () => {
+    const { sim, s } = weatherGame('boardwalk', 6);
+    // a Radiator is no help in the heat
+    placeInHall(sim, 'radiator');
+    expect(weatherDue(sim)).toBe(true);
+    const card = lessonCard('weather', s);
+    expect(card.title).toBe('Too hot');
+    expect(card.intro).toBe(
+      'It is 90°F outside today, and about 81°F indoors with nothing to cool it: hot enough that guests and staff mind it.',
+    );
+    expect(card.panels.map((p) => p.icon)).toEqual([
+      'season-summer',
+      'overlay-temperature',
+      'item-air-conditioner',
+      'item-radiator',
+    ]);
+    expect(card.panels[2]?.note).toBe('Cools the air around it, and its own room most of all, for $700.');
+    expect(card.panels[3]?.note).toBe('Warms the air around it the same way, for $300.');
+    expect(card.showMe).toEqual({ kind: 'place', type: 'air_conditioner' });
+  });
+
+  it('does not come in the heat while an Air Conditioner stands', () => {
+    const { sim } = weatherGame('boardwalk', 6);
+    placeInHall(sim, 'air_conditioner');
+    expect(weatherDue(sim)).toBe(false);
+  });
+
+  it('does not come with the weather off, or before the center opens', () => {
+    const off = weatherGame('exchange', 0);
+    off.s.weatherOn = false;
+    expect(weatherDue(off.sim)).toBe(false);
+    const shut = weatherGame('exchange', 0);
+    shut.s.open = false;
+    expect(weatherDue(shut.sim)).toBe(false);
+  });
+
+  it('never comes at Willow Lane, whatever the month', () => {
+    for (let month = 0; month < 12; month++) {
+      const { sim } = weatherGame('willow', month);
+      expect(weatherDue(sim), `month ${month}`).toBe(false);
+    }
   });
 });

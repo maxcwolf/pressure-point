@@ -11,7 +11,7 @@ import type { Sim } from '../../core/sim/sim';
 import { disciplineHere, offeringHere } from '../../core/state/game';
 import { loadControls, saveControls } from '../../storage/controls';
 import { ITEM_VIEWS, loadDisplay, MESSAGE_TIMES, saveDisplay, UI_SCALES } from '../../storage/display';
-import { loadDisciplinePrefs, loadTutorialPref, saveDisciplinePref, saveTutorialPref } from '../../storage/settings';
+import { loadDisciplinePrefs, loadLessonsPref, saveDisciplinePref, saveTutorialPref } from '../../storage/settings';
 import { applyDisplay } from '../display';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch } from '../host';
@@ -51,10 +51,11 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
     redraw();
     onChange?.();
   };
-  // the tutorial is Willow Lane's, so in a game there it is that game's switch; anywhere else, the next one's
-  const willowLane = sim?.s.center === CAMPAIGN[0] ? sim : undefined;
-  /** Whether the tutorial is on, in the Willow Lane game in progress or for the next one. */
-  const tutorialOn = () => (willowLane ? willowLane.tutorialOn() : loadTutorialPref());
+  // the tutorial is the campaign's, so in a game in one of its centers it is that game's switch; anywhere else, the
+  // next one's
+  const campaignGame = sim && CAMPAIGN.includes(sim.s.center) ? sim : undefined;
+  /** Whether the tutorial is on, in the campaign game in progress or for the next ones. */
+  const tutorialOn = () => (campaignGame ? campaignGame.tutorialOn() : loadLessonsPref());
   return (
     <div class="settings">
       <h4>Help</h4>
@@ -62,12 +63,12 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
         <SettingRow
           icon="ui-advisor"
           name="Tutorial"
-          desc="Walk a new Willow Lane game through its opening, pointing at what each step wants, and explain each thing the first time it happens. On by itself before your first campaign star, until the opening has been walked through once."
+          desc="Walk a new Willow Lane game through its opening, pointing at what each step wants, and explain each thing the first time it happens in the campaign, such as the first cold snap. On by itself before your first campaign star. The walk-through switches itself off once you have been through it; the cards keep coming, once each, until you turn this off."
           on={tutorialOn()}
           onToggle={flip('tutorial', () => {
             const on = !tutorialOn();
             saveTutorialPref(on);
-            willowLane?.setTutorial(on);
+            campaignGame?.setTutorial(on);
             return on;
           })}
         />

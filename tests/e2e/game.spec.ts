@@ -2554,6 +2554,28 @@ test.describe('the tutorial', () => {
     await expect(page.locator('#menu')).toContainText('Loan: $0 of');
   });
 
+  test('the lesson on the weather puts a Radiator or an Air Conditioner in hand', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.sim.emit({ type: 'lesson', id: 'weather' });
+    });
+    const modal = page.locator('#modal');
+    // the game's center and date decide which
+    await expect(modal).toContainText(/Too cold|Too hot/);
+    const cold = (await modal.locator('h2').textContent()) === 'Too cold';
+    await expect(modal.locator('.lesson-strip li')).toHaveCount(4);
+    await expect(modal.getByRole('button', { name: 'Show me' })).toHaveCount(0);
+    const place = modal.getByRole('button', { name: /^Place a/ });
+    await expect(place).toHaveText(cold ? 'Place a Radiator' : 'Place an Air Conditioner');
+    await place.click();
+    await expect(modal).toBeEmpty();
+    expect(await game.eval((pp) => [pp.tools.tool.kind, pp.tools.tool.type])).toEqual([
+      'item',
+      cold ? 'radiator' : 'air_conditioner',
+    ]);
+  });
+
   test('hiring the role a step asks for closes the Hire menu, and any other hire leaves it open', async ({
     game,
     page,
@@ -2561,7 +2583,8 @@ test.describe('the tutorial', () => {
     await game.start();
     await game.eval((pp) => {
       pp.state.speed = 0;
-      pp.sim.setTutorial(true);
+      // the steps are Willow Lane's, so here in the sandbox they are switched on by hand
+      pp.state.tutorial = pp.state.lessons = true;
       pp.sim.noteLooked();
     });
     await game.give('reception_desk');
