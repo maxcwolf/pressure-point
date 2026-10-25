@@ -173,6 +173,17 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           }}
         />
         <SettingRow
+          icon="ui-fire-truck"
+          name="Fires"
+          desc="A machine smoking with wear can catch fire when it overloads, and the fire brigade comes."
+          on={settings.fires}
+          onToggle={() => {
+            change(() => {
+              saveSandbox({ ...settings, fires: !settings.fires });
+            });
+          }}
+        />
+        <SettingRow
           icon="ui-loan"
           name="Bankruptcy"
           desc="A payday the bank cannot cover asks you to borrow the wages, or pays them into the red. In the red past what it will lend, with the books losing money, the bank gives you ten days to put one of the two right. Fail, and the game is lost. Off, the bank just goes into the red."

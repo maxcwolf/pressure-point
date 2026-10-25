@@ -644,6 +644,8 @@ export interface Stats {
   /** Qi Gong classes held, and the class-goers who came to them. */
   classes: number;
   classgoers: number;
+  /** Machines that have caught fire on their own, not counting what a fire spread to. */
+  fires: number;
 }
 
 /** A month's count of guests: how many came, how each visit ended, and how long they waited. */

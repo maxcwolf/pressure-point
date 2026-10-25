@@ -1,7 +1,17 @@
 // The tutorial's lessons: a card over the game the first time something happens that is worth explaining, such as
 // the first guest walking in or the first payday, each once a game and never two in a day.
 
-import { type IconId, LOAN_RATE, LOAN_STEP, OVERDRAFT_RATE } from '../data';
+import {
+  BRIGADE_FEE,
+  EXTINGUISHER_REACH,
+  type IconId,
+  ITEMS,
+  type ItemType,
+  LOAN_RATE,
+  LOAN_STEP,
+  OVERDRAFT_RATE,
+  SPRINKLER_STAR,
+} from '../data';
 import { money, pct } from '../format';
 import type { GameState } from '../state/types';
 import type { SimContext } from './context';
@@ -13,7 +23,7 @@ import { PRIMER_TIRING } from './primer';
  * The lessons, in the order they are checked. Money comes after Payday: before the first payday it is the only one of
  * the two that can be due, and when both are, Payday explains the red first.
  */
-export const LESSON_IDS = ['guest', 'heal', 'tired', 'payday', 'money', 'failed', 'stormed', 'raise'] as const;
+export const LESSON_IDS = ['guest', 'heal', 'tired', 'payday', 'money', 'failed', 'stormed', 'raise', 'fire'] as const;
 
 export type LessonId = (typeof LESSON_IDS)[number];
 
@@ -22,16 +32,13 @@ export type LessonLine = string | ((s: GameState) => string);
 
 /** A picture in a lesson's strip: an icon, a word under it and a line on it. */
 export interface LessonPanel {
-  icon: IconId;
+  icon: IconId | ((s: GameState) => IconId);
   label: string;
   note: LessonLine;
 }
 
-/** Where a lesson's Show me goes when it is about no one: a menu, at a tab. */
-export interface LessonShowMe {
-  menu: 'finance';
-  moneyTab: 'loan';
-}
+/** Where a lesson's Show me goes when it is about no one: a menu, at a tab, or an item taken in hand to place. */
+export type LessonShowMe = { menu: 'finance'; moneyTab: 'loan' } | { place: ItemType };
 
 /**
  * What a lesson's card says: a title, a line to open with, a strip of pictures, and a closing word, and where Show me
@@ -198,6 +205,35 @@ export const LESSONS: Readonly<Record<LessonId, Lesson>> = {
     ],
     body: 'Select them to see their pay against the going rate. A Staff Room and a pleasant place to work help too.',
   },
+  fire: {
+    title: 'Fire!',
+    intro: 'A worn machine overloaded and caught fire.',
+    panels: [
+      {
+        /** The machine that caught fire, or the kiln, the likeliest to, in a game that has seen none. */
+        icon: (s) => (s.fire ? ITEMS[s.fire.item].icon : 'item-stone-kiln'),
+        label: 'Smoking',
+        note: "A machine smokes as it wears. A Caretaker's repair stops it overloading.",
+      },
+      {
+        icon: 'item-fire-extinguisher',
+        label: 'Extinguisher',
+        note: `One within ${EXTINGUISHER_REACH} tiles of a room's door lets a Caretaker put a fire out before it spreads, and the health inspector fines any room without one. ${money(ITEMS.fire_extinguisher.cost)}.`,
+      },
+      {
+        icon: 'ui-sprinklers',
+        label: 'Sprinklers',
+        note: `From star ${SPRINKLER_STAR}, fit a room with them: a fire goes out on its own, and the room gets soaked.`,
+      },
+      {
+        icon: 'ui-fire-truck',
+        label: 'Fire brigade',
+        note: `Always on its way. They hose out what still burns and charge ${money(BRIGADE_FEE)}, or shrug and leave for nothing.`,
+      },
+    ],
+    body: "Flames spread to what stands beside them, never past the room's walls. The advisor says who is coming.",
+    showMe: { place: 'fire_extinguisher' },
+  },
 };
 
 /** A lesson's card as it reads in the game as it is. */
@@ -206,7 +242,11 @@ export function lessonCard(id: LessonId, s: GameState): LessonCard {
   return {
     title: l.title,
     intro: lineOf(l.intro, s),
-    panels: l.panels.map((p) => ({ icon: p.icon, label: p.label, note: lineOf(p.note, s) })),
+    panels: l.panels.map((p) => ({
+      icon: typeof p.icon === 'string' ? p.icon : p.icon(s),
+      label: p.label,
+      note: lineOf(p.note, s),
+    })),
     body: l.body,
     ...(l.showMe && { showMe: l.showMe }),
   };
@@ -239,6 +279,12 @@ function moment(ctx: SimContext, id: LessonId): { about?: Subject } | null {
     case 'raise': {
       const st = s.staff.find((x) => x.state !== 'leaving' && x.raiseAsked);
       return st ? { about: { kind: 'staff', id: st.id } } : null;
+    }
+    // the fire itself while it still burns, or, once it is out, an extinguisher to place
+    case 'fire': {
+      if (s.stats.fires < 1) return null;
+      const b = s.blazes[0];
+      return b ? { about: { kind: 'item', id: b.item } } : {};
     }
   }
 }

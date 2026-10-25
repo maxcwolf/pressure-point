@@ -1,7 +1,7 @@
 // Visitors who judge the center. A VIP writes ahead, tours a few rooms and judges them by their own tastes, leaving
 // a reward if delighted and a dent in the center's reputation if disappointed. The health inspector calls now and
 // then, ready or not, and checks a few rooms at random, up to six, for dirt, broken equipment and a Fire Extinguisher
-// close by.
+// near its door, or sprinklers. The fire brigade's crew are visitors too, though they judge nothing (see blazes.ts).
 
 import {
   type Aspect,
@@ -279,7 +279,7 @@ function writeAhead(ctx: SimContext, visit: JudgeKind) {
   tipOnce(
     ctx,
     'visits',
-    'A visitor tours a few rooms and judges what they find. A delighted VIP leaves a reward; the inspector fines dirt, broken equipment and a room with no Fire Extinguisher near its door.',
+    'A visitor tours a few rooms and judges what they find. A delighted VIP leaves a reward; the inspector fines dirt, broken equipment and a room with no Fire Extinguisher near its door, or sprinklers.',
   );
 }
 

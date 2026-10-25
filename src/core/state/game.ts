@@ -63,6 +63,7 @@ export const emptyStats = (): Stats => ({
   lastQuit: -1,
   classes: 0,
   classgoers: 0,
+  fires: 0,
 });
 
 /** A ledger with every entry at zero. */

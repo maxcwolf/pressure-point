@@ -12,6 +12,7 @@ import {
   type MishapDef,
   type MishapId,
   MISHAPS,
+  ROOMS,
   traitSpeed,
   WARD_CHANCE,
   WARD_SECONDS,
@@ -224,13 +225,18 @@ export function floodRestroom(ctx: SimContext, def: MishapDef): Room | undefined
   return room;
 }
 
-/** The advisor's line while a restroom is flooded: who will mop it out, or who to hire to. */
+/**
+ * The advisor's line while a room is flooded, a restroom by the storm or any room by its sprinklers: who will mop it
+ * out, or who to hire to.
+ */
 export function floodAdvice(ctx: SimContext): string {
   const s = ctx.s;
-  if (!s.rooms.some((r) => ctx.world.flooded(r))) return '';
+  const room = s.rooms.find((r) => ctx.world.flooded(r));
+  if (!room) return '';
+  const name = ROOMS[room.type].name;
   return s.staff.some((st) => st.role === 'caretaker')
-    ? 'A restroom is flooded and out of action until a Caretaker mops it out.'
-    : 'A restroom is flooded and out of action. Hire a Caretaker to mop it out.';
+    ? `The ${name} is flooded and out of action until a Caretaker mops it out.`
+    : `The ${name} is flooded and out of action. Hire a Caretaker to mop it out.`;
 }
 
 /** End the mishap under way, and set when the next may come. */

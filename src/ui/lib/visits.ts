@@ -1,4 +1,5 @@
-// What the interface says about visitors: the report after a visit, and a visitor's progress round the center.
+// What the interface says about visitors: the report after a visit, and a visitor's progress round the center, or a
+// firefighter's to the fire.
 
 import { ASPECT_NOTES, VIP_DELIGHTED, VIP_DISAPPOINTED } from '../../core/data';
 import { money } from '../../core/format';
@@ -44,13 +45,20 @@ export function verdictTone(v: RoomVerdict): 'good' | 'bad' | '' {
 
 /** Who a visitor is and what they look for, for their inspector. */
 export function visitorLine(v: Visitor): string {
+  if (v.visit === 'firefighter') return 'A firefighter, here for the fire.';
   if (v.visit === 'inspector')
-    return 'The health inspector, checking every room for dirt, broken equipment and a Fire Extinguisher near its door.';
+    return 'The health inspector, checking every room for dirt, broken equipment and a Fire Extinguisher near its door, or sprinklers.';
   return `${v.title.charAt(0).toUpperCase()}${v.title.slice(1)}, who cares most about ${ASPECT_NOTES[v.cares ?? 'decor'].name}.`;
 }
 
 /** What a visitor is doing, in a few words, given the name of the room they are seeing or heading for. */
 export function visitorStatus(v: Visitor, roomName: string | undefined): string {
+  if (v.visit === 'firefighter')
+    return v.state === 'hosing'
+      ? 'Hosing out the fire'
+      : v.state === 'toTruck'
+        ? 'Heading back to the truck'
+        : 'Running to the fire';
   if (v.state === 'leaving') return 'On the way out, to write it all up';
   if (!roomName) return 'Deciding where to look next';
   return v.state === 'looking' ? `Looking round the ${roomName}` : `On the way to the ${roomName}`;

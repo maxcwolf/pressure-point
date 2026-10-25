@@ -341,6 +341,11 @@ export class HudState {
     }
     const showMe = LESSONS[raised.id].showMe;
     if (!showMe) return;
+    if ('place' in showMe) {
+      this.host.tools.startItem(showMe.place);
+      this.update();
+      return;
+    }
     this.host.tools.setAside();
     this.moneyTab = showMe.moneyTab;
     this.menu = showMe.menu;

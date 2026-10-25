@@ -285,6 +285,8 @@ function removeItems(ctx: SimContext, gone: Item[]) {
   ctx.s.items = ctx.s.items.filter((i) => !ids.has(i.id));
   // whatever was burning on them burns no more
   ctx.s.blazes = ctx.s.blazes.filter((b) => !ids.has(b.item));
+  // a fire whose last flames went with what was sold is out, with nothing put out
+  if (!ctx.s.blazes.length && ctx.s.fire && !ctx.s.fire.out) ctx.s.fire = { ...ctx.s.fire, out: true };
   ctx.world.rebuild();
   // a seat on something that is going has nothing left to give back; a seat elsewhere is released as usual
   for (const st of users.staff) if (st.job && st.job.kind !== 'litter') st.job = null;

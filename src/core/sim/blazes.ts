@@ -35,8 +35,9 @@ import { itemsBeside } from './building';
 import { newChar, say, streetEnds, streetTileNear } from './chars';
 import type { SimContext } from './context';
 import { spend } from './economy';
-import { emit, tipOnce, toast } from './events';
+import { emit, type Subject, toast } from './events';
 import { feel } from './feelings';
+import { smoking } from './machines';
 import { floodTiles } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
 import { standBeside } from './staffing';
@@ -142,14 +143,8 @@ export function startFire(ctx: SimContext, it: Item, bill: number) {
     { kind: 'item', id: it.id },
     FIRE_ICON,
   );
-  tipOnce(
-    ctx,
-    'blaze',
-    'A machine smoking with wear can catch fire when it overloads. With a Fire Extinguisher near the room’s door, a Caretaker puts it out before it spreads. From the third star, sprinklers put it out on their own, but soak the room. The fire brigade comes either way, and charges if they have to put it out.',
-    'info',
-    undefined,
-    FIRE_ICON,
-  );
+  // the first in a game brings the tutorial's lesson on fires
+  s.stats.fires++;
   callBrigade(ctx, room);
 }
 
@@ -508,4 +503,52 @@ export function beingPutOut(s: GameState): Set<number> {
   for (const v of s.visitors) if (v.state === 'hosing' && v.fire) out.add(v.fire);
   for (const st of s.staff) if (st.state === 'doingJob' && st.job?.kind === 'douse') out.add(st.job.id);
   return out;
+}
+
+/**
+ * The advisor's alarm while something is on fire: what is burning and where, and who is on the way to put it out, a
+ * Caretaker by name, or the fire brigade at a price when no Caretaker is on duty.
+ */
+export function fireAdvice(ctx: SimContext): { text: string; about: Subject } | null {
+  const s = ctx.s;
+  const first = s.blazes[0];
+  const it = first && ctx.world.item(first.item);
+  if (!it) return null;
+  const room = ctx.world.roomOfItem(it);
+  const more = s.blazes.length - 1;
+  const what =
+    more > 0
+      ? `The ${ITEMS[it.type].name} and ${more === 1 ? 'one thing' : `${more} things`} more${where(room)} are on fire`
+      : `The ${ITEMS[it.type].name}${where(room)} is on fire`;
+  const dousing = s.staff.find((st) => st.job?.kind === 'douse' && st.state !== 'leaving');
+  const crew = s.brigade?.state === 'parked';
+  const who = dousing
+    ? `. ${dousing.name} is on the way.`
+    : crew
+      ? '. The fire brigade is here to put it out, at a price.'
+      : caretakerOnHand(s)
+        ? '. A Caretaker will go to it, and the fire brigade has been called.'
+        : ', and no Caretaker is on duty to put it out. The fire brigade is coming, at a price.';
+  return { text: `${what}${who}`, about: { kind: 'item', id: it.id } };
+}
+
+/**
+ * A tip about a machine smoking with wear that would burn unchecked if it caught fire: no Fire Extinguisher near its
+ * room's door and no sprinklers, and no Caretaker on the way to repair it yet.
+ */
+export function fireRiskAdvice(ctx: SimContext): { text: string; about: Subject } | null {
+  const s = ctx.s;
+  if (!s.blazesOn) return null;
+  const risky = s.items.find((it) => {
+    if (!ITEMS[it.type].machine?.overload?.fire || !smoking(it)) return false;
+    if (s.staff.some((st) => st.id === it.claimedBy && st.job?.id === it.id)) return false;
+    const room = ctx.world.roomOfItem(it);
+    return !!room && !extinguisherNear(ctx, room);
+  });
+  if (!risky) return null;
+  const name = ITEMS[risky.type].name;
+  return {
+    text: `The ${name} is smoking with wear: if it overloads it may catch fire, and with no Fire Extinguisher near the room's door it would spread before a Caretaker beat it out. A repair now stops it.`,
+    about: { kind: 'item', id: risky.id },
+  };
 }

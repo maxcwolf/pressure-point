@@ -145,7 +145,7 @@ describe('catching fire', () => {
     const said = toasts(sim.drain()).join(' ');
     expect(said).toContain('has caught fire');
     expect(said).toContain('fire brigade has been called');
-    expect(s.seenTips).toContain('blaze');
+    expect(s.stats.fires).toBe(1);
   });
 });
 
