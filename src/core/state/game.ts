@@ -64,6 +64,8 @@ export const emptyStats = (): Stats => ({
   classes: 0,
   classgoers: 0,
   fires: 0,
+  busted: 0,
+  mushroomSales: 0,
 });
 
 /** A ledger with every entry at zero. */

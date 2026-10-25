@@ -113,24 +113,44 @@ describe('copying a room', () => {
 });
 
 describe('putting a room down against windows next door', () => {
-  it('takes out a window that would look into a copy, for half its price back, and says so', () => {
+  /** On the suite's east wall, looking out onto the corridor where a copy at 15,5 goes. */
+  const EAST = { x: 14, y: 6, dx: 1, dy: 0 };
+  /** A clock on the suite's west wall, which a copy at 15,5 hangs where the window above comes through. */
+  const CLOCK = { x: 11, y: 6, rot: 3 };
+
+  it('keeps a window that looks into a copy: it comes through into the copy', () => {
     const { sim, s, massage } = openCenter(7);
-    // on the suite's east wall, looking out onto the corridor where the copy goes
-    expect(sim.toggleWindow(massage.id, { x: 14, y: 6, dx: 1, dy: 0 })).toBe('added');
+    expect(sim.toggleWindow(massage.id, EAST)).toBe('added');
     const layout = sim.roomLayout(massage);
     const placed = placeLayout(layout, 15, 5);
-    expect(sim.world.roomRectValid('massage', placed.rect).reason, 'a room drawn there is still refused').toMatch(
-      /window/,
-    );
+    expect(sim.world.roomRectValid('massage', placed.rect).ok, 'a room drawn there is fine too').toBe(true);
     expect(sim.world.layoutValid('massage', placed).ok).toBe(true);
-    expect(sim.world.windowsOnto(placed.rect)).toEqual([{ x: 14, y: 6, dx: 1, dy: 0 }]);
+    expect(sim.world.windowsOnto(placed)).toEqual([]);
     const money = s.money;
     sim.drain();
     const copy = sim.copyRoom(massage.id, placed)!;
     expect(copy).toBeTruthy();
-    expect(massage.windows).toEqual([]);
+    expect(massage.windows).toEqual([EAST]);
     // the copy keeps its own window on its far wall, which looks onto corridor
     expect(copy.windows).toEqual([{ x: 18, y: 6, dx: 1, dy: 0 }]);
+    expect(s.money).toBe(money - copyCost(layout));
+    expect(toasts(sim.drain()).some((t) => t.includes('window'))).toBe(false);
+    // nothing can hang where it comes through the copy's wall
+    expect(sim.world.wallFace({ x: 15, y: 6, dx: -1, dy: 0 }).reason).toBe('There is a window there');
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('takes out a window where a copy hangs something, for half its price back, and says so', () => {
+    const { sim, s, massage } = openCenter(7);
+    expect(sim.toggleWindow(massage.id, EAST)).toBe('added');
+    expect(sim.placeItem('wall_clock', CLOCK.x, CLOCK.y, CLOCK.rot)).toBeTruthy();
+    const layout = sim.roomLayout(massage);
+    const placed = placeLayout(layout, 15, 5);
+    expect(sim.world.windowsOnto(placed)).toEqual([EAST]);
+    const money = s.money;
+    sim.drain();
+    expect(sim.copyRoom(massage.id, placed)).toBeTruthy();
+    expect(massage.windows).toEqual([]);
     expect(s.money).toBe(money - copyCost(layout) + Math.round(WINDOW_COST / 2));
     expect(toasts(sim.drain())).toContain(
       `The Massage Suite's window onto it was taken out and sold for $${Math.round(WINDOW_COST / 2)}.`,
@@ -138,31 +158,33 @@ describe('putting a room down against windows next door', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
-  it('takes out a window that would look into a moved room', () => {
+  it('keeps a window that looks into a moved room', () => {
     const { sim, s, massage } = openCenter(8);
     const staffroom = addStaffRoom(sim);
     // on the Staff Room's west wall, looking onto the corridor the suite moves into
     expect(sim.toggleWindow(staffroom.id, { x: 17, y: 6, dx: -1, dy: 0 })).toBe('added');
     const placed = placeLayout(sim.roomLayout(massage), 13, 5);
-    expect(sim.world.windowsOnto(placed.rect, massage)).toHaveLength(1);
+    expect(sim.world.windowsOnto(placed, massage)).toEqual([]);
     const money = s.money;
     expect(sim.moveRoom(massage.id, placed)).toBe(true);
     expect(massage.x).toBe(13);
-    expect(staffroom.windows).toEqual([]);
-    expect(s.money).toBe(money + Math.round(WINDOW_COST / 2));
+    expect(staffroom.windows).toEqual([{ x: 17, y: 6, dx: -1, dy: 0 }]);
+    expect(s.money).toBe(money);
   });
 
-  it('leaves alone windows that look onto floor the room does not cover', () => {
+  it("keeps a moved room's own windows that end up looking into the room next door", () => {
     const { sim, massage } = openCenter(9);
     const staffroom = addStaffRoom(sim);
-    expect(sim.toggleWindow(staffroom.id, { x: 17, y: 6, dx: -1, dy: 0 })).toBe('added');
-    expect(sim.moveRoom(massage.id, placeLayout(sim.roomLayout(massage), 12, 5))).toBe(true);
-    expect(staffroom.windows).toHaveLength(1);
+    expect(sim.toggleWindow(massage.id, EAST)).toBe('added');
+    // the suite's east wall goes up against the Staff Room's west wall at x 17
+    expect(sim.moveRoom(massage.id, placeLayout(sim.roomLayout(massage), 13, 5))).toBe(true);
+    expect(massage.windows).toEqual([{ x: 16, y: 6, dx: 1, dy: 0 }]);
+    expect(sim.world.zoneAt(17, 6)).toBe(staffroom.id);
   });
 
   it('warns in the hint before the click', () => {
     const { sim, massage } = openCenter(10);
-    expect(sim.toggleWindow(massage.id, { x: 14, y: 6, dx: 1, dy: 0 })).toBe('added');
+    expect(sim.toggleWindow(massage.id, EAST)).toBe('added');
     /** Ignore a call to the scene. */
     const nothing = () => undefined;
     const view = { selected: null, setOverlay: nothing, setMarkers: nothing, setGhost: nothing, setDoor: nothing };
@@ -173,6 +195,13 @@ describe('putting a room down against windows next door', () => {
     // centered on the cursor: a 4×4 suite's corner goes two tiles up and left of it
     tools.pointerMove(17, 7);
     expect(tools.problem).toBe('');
+    expect(tools.hint, 'the window comes through, so nothing is said').toBe(
+      copyRoomHint('massage', copyCost(sim.roomLayout(massage))),
+    );
+    tools.cancel();
+    expect(sim.placeItem('wall_clock', CLOCK.x, CLOCK.y, CLOCK.rot)).toBeTruthy();
+    tools.startMoveRoom(massage.id, true);
+    tools.pointerMove(17, 7);
     expect(tools.hint).toBe(copyRoomHint('massage', copyCost(sim.roomLayout(massage)), 1));
     expect(tools.hint).toContain('takes out a window next door');
     // well clear of it, nothing is said

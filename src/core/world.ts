@@ -677,9 +677,9 @@ export class World {
   layoutValid(type: RoomType, placed: PlacedLayout, moving?: Room): Check {
     return rules.layoutValid(this, type, placed, moving);
   }
-  /** The windows of the rooms next door, other than `moving`, that a room put down on this rectangle takes out. */
-  windowsOnto(r: Rect, moving?: Room): WallSpot[] {
-    return rules.windowsOnto(this, r, moving);
+  /** The windows of the rooms next door, other than `moving`, that a room put down from a layout takes out. */
+  windowsOnto(placed: PlacedLayout, moving?: Room): WallSpot[] {
+    return rules.windowsOnto(this, placed, moving);
   }
   /** Can this stretch of a room's wall take a window? */
   windowValid(room: Room, spot: Room['door']): Check {

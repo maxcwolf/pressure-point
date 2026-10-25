@@ -723,7 +723,7 @@ export class Tools {
     this.problem = check.reason;
     drawing.tiles.push(...layoutTiles(placed, check.ok));
     this.view.setDoor({ door: placed.door, tone: check.ok ? 'ok' : 'bad' });
-    return check.ok ? this.sim.world.windowsOnto(placed.rect, moving).length : 0;
+    return check.ok ? this.sim.world.windowsOnto(placed, moving).length : 0;
   }
 
   /** Recompute overlays, ghost and hint for the current tool state. */

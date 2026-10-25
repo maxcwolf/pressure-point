@@ -14,7 +14,16 @@ import {
   WINDOW_COST,
 } from '../data';
 import { money } from '../format';
-import { carryWallSpot, carryWindows, coveredSize, looksOnto, paidTiles, resizeCost, resizeTiles } from '../resize';
+import {
+  carryWallSpot,
+  carryWindows,
+  coveredSize,
+  farSide,
+  looksOnto,
+  paidTiles,
+  resizeCost,
+  resizeTiles,
+} from '../resize';
 import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { itemStart, roomStart, sameSpot, unlockedUpTo } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
@@ -418,8 +427,8 @@ export function moveDoor(ctx: SimContext, roomId: number, door: WallSpot): boole
 
 /**
  * Give a room a new shape. Floor added past what the room's price covers is paid for, and floor paid for that is
- * taken away half refunded; the door and windows move with their walls, and a window whose stretch of wall is gone, or that would look into another room, is refunded
- * at half. False if the room cannot take that shape or the change cannot be afforded.
+ * taken away half refunded; the door and windows move with their walls, and a window whose stretch of wall is gone is
+ * refunded at half. False if the room cannot take that shape or the change cannot be afforded.
  */
 export function resizeRoom(ctx: SimContext, roomId: number, r: Rect): boolean {
   const room = ctx.world.room(roomId);
@@ -508,8 +517,8 @@ function keepWindows(ctx: SimContext, room: Room, windows: readonly WallSpot[]):
 }
 
 /**
- * Take out the windows of the rooms next door that look onto where a room has been put down, and say so. Each gives
- * back what taking it out by hand would: half its price, or all of it in a blueprint.
+ * Take out the windows of the rooms next door that would come through into a room put down where it has something
+ * hung, and say so. Each gives back what taking it out by hand would: half its price, or all of it in a blueprint.
  */
 function closeWindowsOnto(ctx: SimContext, room: Room) {
   let n = 0;
@@ -517,7 +526,7 @@ function closeWindowsOnto(ctx: SimContext, room: Room) {
   let from: Room | undefined;
   for (const other of ctx.s.rooms) {
     if (other === room) continue;
-    const kept = other.windows.filter((w) => !looksOnto(w, room));
+    const kept = other.windows.filter((w) => !looksOnto(w, room) || !ctx.world.hungAt(farSide(w)));
     const gone = other.windows.length - kept.length;
     if (!gone) continue;
     other.windows = kept;
@@ -539,8 +548,8 @@ function closeWindowsOnto(ctx: SimContext, room: Room) {
 
 /**
  * Pick a built room up, furniture and all, and put it down elsewhere, turned if wanted, for free. Everyone using it
- * starts over, and a window that would now look into another room, its own or one next door, is refunded at half.
- * False if it cannot go there.
+ * starts over. A window next door that would come through where it has something hung is taken out and refunded at
+ * half, as is one of its own with something hung on the far side. False if it cannot go there.
  */
 export function moveRoom(ctx: SimContext, roomId: number, placed: PlacedLayout): boolean {
   const room = ctx.world.room(roomId);
@@ -569,8 +578,8 @@ function refundWindows(ctx: SimContext, count: number) {
 
 /**
  * Build a copy of a room, furniture, windows and all, at a spot. It costs what building it from scratch would, and
- * opens at once; any window next door that looks onto it is taken out. Returns the new room, or null if it cannot go
- * there or cannot be afforded.
+ * opens at once; a window next door comes through into it, unless it hangs something there. Returns the new room, or
+ * null if it cannot go there or cannot be afforded.
  */
 export function copyRoom(ctx: SimContext, roomId: number, placed: PlacedLayout): Room | null {
   const from = ctx.world.room(roomId);

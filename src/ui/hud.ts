@@ -7,12 +7,12 @@ import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
 import { ANNOUNCEMENTS } from '../core/data';
 import type { SimEvent, StaffRequest, Subject, Tone } from '../core/sim/events';
-import { type LessonId, LESSONS } from '../core/sim/lessons';
+import { lessonCard, type LessonId } from '../core/sim/lessons';
 import type { TutorialStep } from '../core/sim/tutorial';
 import type { Template } from '../core/templates';
-import { giveKarma } from '../storage/campaign';
+import { giveKarma, recordLesson } from '../storage/campaign';
 import { loadDisplay } from '../storage/display';
-import { saveTutorialPref } from '../storage/settings';
+import { noteTutorialDone, saveTutorialPref } from '../storage/settings';
 import { loadTemplates } from '../storage/templates';
 import type { GameHost } from './host';
 import { AdviceHold } from './lib/advice-hold';
@@ -329,20 +329,23 @@ export class HudState {
   }
 
   /**
-   * Show the player what a lesson is about, closing its card: take them to who it happened to, or open the menu it
-   * points at, at the tab it names.
+   * Show the player what a lesson is about, closing its card: take them to who it happened to, open the menu it
+   * points at, at the tab it names, or put the item it is about in hand to place.
    */
   showLesson(raised: RaisedLesson) {
+    // as the card read, worked out before the game moves on under it
+    const showMe = lessonCard(raised.id, this.host.sim.s).showMe;
     this.close();
     track('lesson_show_me', { ...gameProps(this.host.sim.s), lesson: raised.id });
     if (raised.about) {
       this.show(raised.about);
       return;
     }
-    const showMe = LESSONS[raised.id].showMe;
     if (!showMe) return;
-    if ('place' in showMe) {
-      this.host.tools.startItem(showMe.place);
+    if (showMe.kind === 'place') {
+      // a build menu shares the space the item's hint needs
+      this.menu = null;
+      this.host.tools.startItem(showMe.type);
       this.update();
       return;
     }
@@ -395,7 +398,11 @@ export class HudState {
     if (dialog === 'saves') this.warn(this.host.save());
     if (dialog === 'lesson') {
       this.lesson = this.lessons.shift() ?? this.lesson;
-      if (this.lesson) track('lesson_shown', { ...gameProps(this.host.sim.s), lesson: this.lesson.id });
+      if (this.lesson) {
+        track('lesson_shown', { ...gameProps(this.host.sim.s), lesson: this.lesson.id });
+        // shown once in the campaign: a new game in any of its centers starts with it seen
+        recordLesson(this.lesson.id);
+      }
     }
     this.dialog = dialog;
     this.update();
@@ -467,11 +474,13 @@ export class HudState {
   }
 
   /**
-   * The tutorial has ended in this game, done or skipped: the next Willow Lane game starts without it, unless it is
-   * switched back on in Settings or on the campaign's card.
+   * The tutorial has ended in this game, done or skipped: the next Willow Lane game starts without its steps, unless
+   * they are switched back on in Settings or on the campaign's card. Done, the cards that explain things carry on
+   * through the campaign; skipped, they stop with the steps.
    */
   private endTutorial(what: 'done' | 'skipped', step: string) {
-    saveTutorialPref(false);
+    if (what === 'done') noteTutorialDone();
+    else saveTutorialPref(false);
     track(what === 'done' ? 'tutorial_done' : 'tutorial_skipped', { ...gameProps(this.host.sim.s), step });
   }
 

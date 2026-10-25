@@ -72,7 +72,8 @@ export function StarDialog() {
           {' to unlock items that stay unlocked in every center. Find them in the Items menu, or the karma shop.'}
         </p>
       )}{' '}
-      {n === 1 && sim.s.lessons && (
+      {/* the first star of the first center, while the cards that explain things are on */}
+      {n === 1 && sim.s.lessons && sim.s.center === CAMPAIGN[0] && (
         <p>
           Each star opens more for the center to grow into: the rooms, treatments and items this one brings are listed
           here, ready in the Rooms and Items menus.

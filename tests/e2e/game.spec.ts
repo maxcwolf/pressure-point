@@ -152,10 +152,10 @@ test.describe('starting out', () => {
     await game.start();
     await game.menu('Items');
     await expect(game.card('Water Cooler')).toContainText('Corridor');
-    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or 3 karma');
+    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or 4 karma');
     await expect(game.card('Aquarium')).toContainText('Star 2, or 5 karma');
     await expect(game.card('Trophy Cabinet')).toContainText('Star 3, or 5 karma');
-    await expect(game.card('Koi Pond')).toContainText('6 karma');
+    await expect(game.card('Koi Pond')).toContainText('7 karma');
   });
 
   test('locked equipment cannot be picked before its star', async ({ game }) => {
@@ -2554,6 +2554,28 @@ test.describe('the tutorial', () => {
     await expect(page.locator('#menu')).toContainText('Loan: $0 of');
   });
 
+  test('the lesson on the weather puts a Radiator or an Air Conditioner in hand', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.sim.emit({ type: 'lesson', id: 'weather' });
+    });
+    const modal = page.locator('#modal');
+    // the game's center and date decide which
+    await expect(modal).toContainText(/Too cold|Too hot/);
+    const cold = (await modal.locator('h2').textContent()) === 'Too cold';
+    await expect(modal.locator('.lesson-strip li')).toHaveCount(4);
+    await expect(modal.getByRole('button', { name: 'Show me' })).toHaveCount(0);
+    const place = modal.getByRole('button', { name: /^Place a/ });
+    await expect(place).toHaveText(cold ? 'Place a Radiator' : 'Place an Air Conditioner');
+    await place.click();
+    await expect(modal).toBeEmpty();
+    expect(await game.eval((pp) => [pp.tools.tool.kind, pp.tools.tool.type])).toEqual([
+      'item',
+      cold ? 'radiator' : 'air_conditioner',
+    ]);
+  });
+
   test('hiring the role a step asks for closes the Hire menu, and any other hire leaves it open', async ({
     game,
     page,
@@ -2561,7 +2583,8 @@ test.describe('the tutorial', () => {
     await game.start();
     await game.eval((pp) => {
       pp.state.speed = 0;
-      pp.sim.setTutorial(true);
+      // the steps are Willow Lane's, so here in the sandbox they are switched on by hand
+      pp.state.tutorial = pp.state.lessons = true;
       pp.sim.noteLooked();
     });
     await game.give('reception_desk');
@@ -2670,15 +2693,15 @@ test.describe('the campaign', () => {
     await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
     await page.goto('/');
     await page.evaluate(() =>
-      localStorage.setItem('pressure-point-campaign', JSON.stringify({ stars: { willow: 3 } })),
+      localStorage.setItem('pressure-point-campaign', JSON.stringify({ stars: { willow: 3, exchange: 1 } })),
     );
     await page.getByRole('button', { name: 'Campaign' }).click();
     const panel = page.locator('#title-campaign');
-    await expect(panel.locator('.karma')).toHaveText('6 karma');
+    await expect(panel.locator('.karma')).toHaveText('8 karma');
     await panel.getByRole('tab', { name: 'Karma shop' }).click();
     await panel.locator('.shop li', { hasText: 'Bonsai' }).getByRole('button').click();
     await expect(panel.locator('.shop li', { hasText: 'Bonsai' })).toContainText('Unlocked');
-    await expect(panel.locator('.karma')).toHaveText('3 karma');
+    await expect(panel.locator('.karma')).toHaveText('5 karma');
     // the koi pond costs more than is left
     await expect(panel.locator('.shop li', { hasText: 'Koi Pond' }).getByRole('button')).toBeDisabled();
 
@@ -2687,10 +2710,10 @@ test.describe('the campaign', () => {
     await page.waitForFunction(() => !!window.pp);
     await game.menu('Items');
     await expect(game.card('Bonsai')).not.toHaveClass(/locked/);
-    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or 3 karma');
+    await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or 4 karma');
     await game.card('Mindfulness Arcade').click();
     await expect(page.locator('#modal')).toContainText('Unlock the Mindfulness Arcade?');
-    await page.getByRole('button', { name: 'Unlock for 3 karma' }).click();
+    await page.getByRole('button', { name: 'Unlock for 4 karma' }).click();
     await expect(page.locator('#modal')).toBeEmpty();
     await expect(game.card('Mindfulness Arcade')).not.toHaveClass(/locked/);
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pressure-point-campaign')!).unlocked)).toEqual([

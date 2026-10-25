@@ -107,6 +107,7 @@ import {
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
+import { flurrying } from './flurries';
 import { objectiveDetail } from './goals';
 import { admitGuests, type ArrivalPace, arrivalPace, guestCap, intakeLimit, setIntakeCap, updateGuest } from './guests';
 import { buyPlot, landOffers, renamePlot, updateLand } from './land';
@@ -402,6 +403,11 @@ export class Sim {
   /** Whether the center is snowed in right now, so nobody new can get here: only in a center that gets snow. */
   snowedIn(): boolean {
     return cutOff(this.ctx);
+  }
+
+  /** Whether a light snow is falling right now, only to look at: never with the weather switched off. */
+  flurrying(): boolean {
+    return this.s.weatherOn && flurrying(this.s.day, centerOf(this.s).climate, this.s.startMonth);
   }
 
   /** The season now: every center has its weather through the year, if not always its crowds. */

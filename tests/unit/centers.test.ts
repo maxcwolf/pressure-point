@@ -1,12 +1,25 @@
-// Centers: each game is set in one, with its own building on the lot and its own goals for each star.
+// Centers: each game is set in one, with its own building on the lot, its own weather and its own goals for each star.
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { type CenterId, CENTERS, DAY_SECONDS, type GoalSpec, plotFits, SANDBOX_PLOT } from '../../src/core/data';
+import {
+  CAMPAIGN,
+  type CenterId,
+  CENTERS,
+  DAY_SECONDS,
+  DAYS_PER_MONTH,
+  DISCOMFORT_NOTICE,
+  type GoalSpec,
+  IDEAL_TEMP,
+  OUTDOOR_BAND,
+  plotFits,
+  SANDBOX_PLOT,
+} from '../../src/core/data';
 import { lotWidth } from '../../src/core/land';
 import { setSeed } from '../../src/core/random';
 import { createContext, type SimContext } from '../../src/core/sim/context';
 import { averagePatience, cureRate, objectiveFor } from '../../src/core/sim/goals';
 import { Sim } from '../../src/core/sim/sim';
+import { coldness, discomfort, hotness, indoorTemp, outdoorTemp } from '../../src/core/sim/warmth';
 import { emptyLedger, emptyTally, newGame } from '../../src/core/state/game';
 import type { GameState, Tally } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
@@ -49,6 +62,61 @@ describe('the centers', () => {
     const s = newGame('willow');
     expect(s.center).toBe('willow');
     expect(s.money).toBe(CENTERS.willow.startMoney);
+  });
+});
+
+describe('the weather, center by center', () => {
+  /** Every day of a calendar year at a center: the weather outside, and indoors with nothing to warm or cool it. */
+  const year = (id: CenterId) =>
+    Array.from({ length: 12 * DAYS_PER_MONTH }, (_, day) => {
+      const outside = outdoorTemp(CENTERS[id].climate, day);
+      return { outside, inside: indoorTemp(outside) };
+    });
+  /** Whether it is cold or hot enough indoors for guests and staff to mind. */
+  const minded = (inside: number) => discomfort(inside) >= DISCOMFORT_NOTICE;
+  /** Whether a center's year ever calls for heating, or for cooling. */
+  const callsFor = (id: CenterId) => ({
+    heating: year(id).some((d) => minded(d.inside) && d.inside < IDEAL_TEMP),
+    cooling: year(id).some((d) => minded(d.inside) && d.inside > IDEAL_TEMP),
+  });
+  /** How uncomfortable indoors gets on a center's coldest day and on its hottest. */
+  const worst = (id: CenterId) => ({
+    cold: Math.max(...year(id).map((d) => coldness(d.inside))),
+    hot: Math.max(...year(id).map((d) => hotness(d.inside))),
+  });
+
+  it('keeps Willow Lane mild all year, indoors and out', () => {
+    for (const { outside, inside } of year('willow')) {
+      expect(discomfort(inside)).toBeLessThan(DISCOMFORT_NOTICE);
+      expect(Math.abs(outside - IDEAL_TEMP)).toBeLessThanOrEqual(OUTDOOR_BAND);
+    }
+  });
+
+  it('gives every center after Willow Lane days that someone minds, indoors and out', () => {
+    for (const id of CAMPAIGN.slice(1)) {
+      expect(
+        year(id).some((d) => minded(d.inside)),
+        id,
+      ).toBe(true);
+      expect(
+        year(id).some((d) => Math.abs(d.outside - IDEAL_TEMP) > OUTDOOR_BAND),
+        id,
+      ).toBe(true);
+    }
+  });
+
+  it('calls only for heating at The Exchange and High Pines, and for both at the Boardwalk and the Orchard', () => {
+    expect(callsFor('exchange')).toEqual({ heating: true, cooling: false });
+    expect(callsFor('highpines')).toEqual({ heating: true, cooling: false });
+    expect(callsFor('boardwalk')).toEqual({ heating: true, cooling: true });
+    expect(callsFor('orchard')).toEqual({ heating: true, cooling: true });
+  });
+
+  it("makes The Orchard Estate's coldest and hottest days harder than the Boardwalk's", () => {
+    const orchard = worst('orchard');
+    const boardwalk = worst('boardwalk');
+    expect(orchard.cold).toBeGreaterThan(boardwalk.cold);
+    expect(orchard.hot).toBeGreaterThan(boardwalk.hot);
   });
 });
 
@@ -135,6 +203,14 @@ describe('saves', () => {
     expect(typeof importSave(file({ ...newGame(), center: undefined }))).toBe('object');
   });
 
+  it('from before the mushrooms were counted start the counts at nothing', () => {
+    const old = JSON.parse(JSON.stringify(newGame('willow'))) as Record<string, any>;
+    delete old.stats.busted;
+    delete old.stats.mushroomSales;
+    upgradeSave(old as GameState);
+    expect(old).toMatchObject({ stats: { busted: 0, mushroomSales: 0 } });
+  });
+
   it('from a center this version does not know are refused', () => {
     expect(importSave(file({ ...newGame(), center: 'atlantis' as CenterId }))).toBe('invalid');
     expect(typeof importSave(file(newGame('willow')))).toBe('object');
@@ -219,6 +295,49 @@ describe('each kind of goal', () => {
     // and one with both is met
     ctx.s.months = [month({ healed: 12, waitCount: 14, waitTotal: 14 * 4 * DAY_SECONDS })];
     expect(check(goal)).toMatchObject({ done: true, progress: 1 });
+  });
+
+  it('asks for so many guests healed in a month with nobody put off by the prices', () => {
+    const goal: GoalSpec = { kind: 'fairMonth', count: 30 };
+    ctx.s.prices = { swedish: 1.3 };
+    ctx.s.tally = { ...emptyTally(), healed: 12 };
+    expect(check(goal)).toEqual({
+      label: 'Heal 30 guests in a month with nobody put off by the prices, charging above standard prices',
+      done: false,
+      progress: 0.4,
+      detail: 'This month: 12 healed, 0 put off by the prices',
+    });
+    // a month with the heals but someone priced out counts for nothing
+    ctx.s.months = [month({ healed: 40, priced: 2 })];
+    expect(check(goal)).toMatchObject({ done: false, progress: 0.4 });
+    expect(check(goal).detail).toBe(
+      'This month: 12 healed, 0 put off by the prices. Last month: 40 healed, 2 put off by the prices',
+    );
+    ctx.s.tally.priced = 1;
+    expect(check(goal)).toMatchObject({ done: false, progress: 0 });
+    // and one with both is met
+    ctx.s.months = [month({ healed: 30 })];
+    expect(check(goal)).toMatchObject({ done: true, progress: 1 });
+    // but not at standard prices, which put nobody off anyway
+    ctx.s.prices = {};
+    expect(check(goal)).toMatchObject({ done: false, progress: 0 });
+  });
+
+  it('counts mushroom finds and takings', () => {
+    expect(check({ kind: 'busted', count: 1 })).toMatchObject({
+      label: 'Have the inspector find the mushrooms (0/1)',
+      done: false,
+    });
+    ctx.s.stats.busted = 1;
+    expect(check({ kind: 'busted', count: 1 })).toMatchObject({ done: true, progress: 1 });
+    ctx.s.stats.mushroomSales = 250;
+    expect(check({ kind: 'mushroomSales', amount: 1000 })).toEqual({
+      label: 'Take $1,000 from mushroom sales',
+      done: false,
+      progress: 0.25,
+    });
+    ctx.s.stats.mushroomSales = 1000;
+    expect(check({ kind: 'mushroomSales', amount: 1000 }).done).toBe(true);
   });
 
   it('counts emergencies seen through and days without anyone quitting', () => {

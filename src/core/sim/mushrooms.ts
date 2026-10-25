@@ -40,6 +40,7 @@ export function sellMushrooms(ctx: SimContext, g: Guest): number {
   if (!mushroomsOnSale(ctx) || random(ctx.s) >= MUSHROOM_CHANCE) return 0;
   const amount = mushroomPrice(rnd(ctx.s, 0.8, 1.2));
   earn(ctx, amount, 'mushrooms', g.x, g.y);
+  ctx.s.stats.mushroomSales += amount;
   g.spent += amount;
   return amount;
 }

@@ -1,6 +1,6 @@
 // Player preferences that outlive any one game: which optional disciplines, and whether Qi Gong classes, new games start with,
 // how a sandbox game is set up, its difficulty among the rest, the Stats menu's charts, the sound and music switches,
-// and whether a new Willow Lane game has the tutorial.
+// and whether a new Willow Lane game has the tutorial and the campaign's games the cards that explain things.
 import { CENTERS, type Difficulty, DISCIPLINE_ORDER, DISCIPLINES, type Offering, SANDBOX_MONEY } from '../core/data';
 import { readDifficulty } from '../core/difficulty';
 import { loadCampaign } from './campaign';
@@ -162,28 +162,51 @@ export function saveAudio(prefs: AudioPrefs) {
   }
 }
 
+/**
+ * The tutorial's one setting: 'on' and 'off' as the player set the switch, for the walk-through and the cards
+ * together, or 'done' once they have been through the walk-through, which leaves the cards on. Unset, it is as a new
+ * player starts.
+ */
 const TUTORIAL_KEY = 'pressure-point-tutorial';
 
+/** The tutorial's setting as stored, or null if unset or out of reach. */
+function tutorialSetting(): string | null {
+  try {
+    return localStorage.getItem(TUTORIAL_KEY);
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Whether a new Willow Lane game walks through its opening with the tutorial: as the player last set it, or until
- * they have, only while the campaign has no stars yet, so a player who has played before is not walked through again.
+ * Whether a new Willow Lane game walks through its opening with the tutorial: as the player last set it, not again
+ * once they have been through it, and until either, only while the campaign has no stars yet, so a player who has
+ * played before is not walked through again.
  */
 export function loadTutorialPref(): boolean {
-  try {
-    const set = localStorage.getItem(TUTORIAL_KEY);
-    if (set === 'on') return true;
-    if (set === 'off') return false;
-  } catch {
-    // as if unset
-  }
+  const set = tutorialSetting();
+  if (set === 'on') return true;
+  if (set === 'off' || set === 'done') return false;
   return !Object.keys(loadCampaign().stars).length;
 }
 
-/** Remember whether the next Willow Lane game has the tutorial, as the player set it or as it ended. */
+/** Whether a new campaign game explains each thing the first time it happens: unless the player switched it off. */
+export const loadLessonsPref = () => tutorialSetting() !== 'off';
+
+/** Remember the player's switch for the tutorial, the walk-through and the cards together, or a skip turning it off. */
 export function saveTutorialPref(on: boolean) {
   try {
     localStorage.setItem(TUTORIAL_KEY, on ? 'on' : 'off');
   } catch {
     // the switch still applies to the game in progress
+  }
+}
+
+/** Remember that the walk-through is over, so the next Willow Lane game starts without it, the cards carrying on. */
+export function noteTutorialDone() {
+  try {
+    localStorage.setItem(TUTORIAL_KEY, 'done');
+  } catch {
+    // the next Willow Lane game is walked through again, which does no harm
   }
 }

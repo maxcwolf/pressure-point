@@ -1,5 +1,5 @@
 // Snow falling over the lot while a center is snowed in, round flakes drifting down outside, never through the roof
-// the game leaves off so its rooms can be seen.
+// the game leaves off so its rooms can be seen; and a light snow, a few flakes drifting slower, in a winter's flurries.
 
 import * as THREE from 'three';
 
@@ -11,6 +11,12 @@ import { hash } from './shared';
 const FLAKES = 2400;
 const TOP = 9;
 const FALL = 1.2;
+/** How many of the flakes fall in a flurry of light snow, and how fast and how big they are. */
+const LIGHT_FLAKES = FLAKES / 5;
+const LIGHT_FALL = 0.8;
+const LIGHT_SIZE = 0.16;
+/** How big a flake of heavy snow is. */
+const SIZE = 0.2;
 /** How far past the edges of the lot the snow reaches, in tiles. */
 const MARGIN = 6;
 /** How many times a spot that falls inside the building is tried again elsewhere before it is left be. */
@@ -39,6 +45,23 @@ export function flakeSpot(i: number, width = LOT_W, indoors?: Indoors): { x: num
 export function flakeHeight(start: number, t: number, fall = FALL): number {
   const through = (start + (t * fall) / TOP) % 1;
   return TOP * (1 - through);
+}
+
+/** How the snow looks: how many flakes fall, how fast in tiles a second, and how big each is. */
+export interface SnowLook {
+  flakes: number;
+  fall: number;
+  size: number;
+}
+
+/**
+ * How the snow looks, if any falls: heavy while the center is snowed in, light in a flurry, and none otherwise. Snowed
+ * in wins over a flurry.
+ */
+export function snowLook(snowedIn: boolean, flurrying: boolean): SnowLook | null {
+  if (snowedIn) return { flakes: FLAKES, fall: FALL, size: SIZE };
+  if (flurrying) return { flakes: LIGHT_FLAKES, fall: LIGHT_FALL, size: LIGHT_SIZE };
+  return null;
 }
 
 /** Whether a point over the ground is inside the building as the sim has it now. */
@@ -79,7 +102,7 @@ export class SnowfallLayer {
       geo,
       new THREE.PointsMaterial({
         color: 0xffffff,
-        size: 0.2,
+        size: SIZE,
         map: flakeTexture(),
         transparent: true,
         opacity: 0.95,
@@ -92,21 +115,27 @@ export class SnowfallLayer {
     scene.add(this.flakes);
   }
 
-  /** Let the snow fall while the center is snowed in, swaying a little as it comes down. */
+  /** Let the snow fall while the center is snowed in, or a light snow in a flurry, swaying a little as it comes down. */
   update(t: number) {
-    this.flakes.visible = this.sim.snowedIn();
-    if (!this.flakes.visible) return;
+    const look = snowLook(this.sim.snowedIn(), this.sim.flurrying());
+    this.flakes.visible = !!look;
+    if (!look) return;
     // laid out again whenever the building may have grown
     if (this.laidFor !== this.sim.world.version) {
       this.laidFor = this.sim.world.version;
       const indoors = indoorsOf(this.sim);
       this.spots = Array.from({ length: FLAKES }, (_, i) => flakeSpot(i, this.sim.world.w, indoors));
     }
-    this.spots.forEach((p, i) => {
+    // a light snow is the first few of the same flakes, so only those move and are drawn
+    for (let i = 0; i < look.flakes; i++) {
+      const p = this.spots[i];
+      if (!p) break;
       this.positions[i * 3] = p.x + Math.sin(t * 0.8 + i) * 0.2;
-      this.positions[i * 3 + 1] = flakeHeight(p.start, t);
+      this.positions[i * 3 + 1] = flakeHeight(p.start, t, look.fall);
       this.positions[i * 3 + 2] = p.z;
-    });
+    }
+    this.flakes.geometry.setDrawRange(0, look.flakes);
+    (this.flakes.material as THREE.PointsMaterial).size = look.size;
     const attr = this.flakes.geometry.getAttribute('position');
     attr.needsUpdate = true;
   }

@@ -646,6 +646,10 @@ export interface Stats {
   classgoers: number;
   /** Machines that have caught fire on their own, not counting what a fire spread to. */
   fires: number;
+  /** Inspections failed because the inspector found the mushrooms under the counter. */
+  busted: number;
+  /** What mushroom sales have taken. */
+  mushroomSales: number;
 }
 
 /** A month's count of guests: how many came, how each visit ended, and how long they waited. */
