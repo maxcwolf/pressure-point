@@ -658,12 +658,14 @@ export function dressStopped(model: THREE.Object3D, look: StopLook | undefined) 
   const cues = cuesOf(model);
   if (cues.dressed === dressed) return;
   cues.dressed = dressed;
-  const keep = animatedMaterials(model);
+  // what burnt is charred all over, its glow and its moving parts too: they stand still until it is repaired
+  const keep = dressed === 'charred' ? new Set() : animatedMaterials(model);
   model.traverse((o) => {
     if (!(o instanceof THREE.Mesh) || o.userData.cue) return;
     const own = (o.userData.asBuilt ??= o.material) as THREE.Material | THREE.Material[];
-    if (Array.isArray(own) || keep.has(own)) return;
-    o.material = dressed ? stoppedMaterial(own, dressed) : own;
+    if (Array.isArray(own)) return;
+    // a part left to animate itself goes back to its own material all the same, should a fire have charred it
+    o.material = dressed && !keep.has(own) ? stoppedMaterial(own, dressed) : own;
   });
 }
 
@@ -813,9 +815,8 @@ export function animateCues(model: THREE.Object3D, c: CueCondition, t: number) {
   if (dress || partsOf(model).cues) dressStopped(model, dress);
   if (dirty) {
     grime(dirty, c.dirt);
-    // the grime is worked out afresh each frame, so the ice or the char goes on over it
+    // the grime is worked out afresh each frame, so the ice goes on over it
     frost(dirty, !charred && c.stopped === 'frost');
-    if (charred) dirty.color.lerp(CHAR, CHAR_BY);
   }
   if (look === 'shudder') animateLean(model, c, t);
   animateChug(model, c, t);
