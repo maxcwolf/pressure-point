@@ -21,6 +21,7 @@ import {
   detailShawl,
   detailShirtFront,
   detailTorso,
+  detailTurnout,
   ELBOW,
   type Face,
   GLASSES_OUT,
@@ -29,7 +30,22 @@ import {
 import { machineSymptom } from './character-machines';
 import type { HeldKind } from './held';
 import { buildMop } from './mop';
-import { bowl, cached, capsule, cyl, ico, joined, mat, type Piece, put, rbox, sph, torus, trimShadows } from './parts';
+import {
+  bowl,
+  cached,
+  capsule,
+  CHROME,
+  cyl,
+  ico,
+  joined,
+  mat,
+  type Piece,
+  put,
+  rbox,
+  sph,
+  torus,
+  trimShadows,
+} from './parts';
 import { buildSage, buildSmoke } from './sage';
 
 export interface CharRig {
@@ -153,29 +169,45 @@ function ramHorn(side: number): THREE.BufferGeometry {
 const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: number }>> = {
   vip: { top: 0x2b2f3a, bottom: 0x23262e },
   inspector: { top: 0xb59a6a, bottom: 0x4a4a52 },
-  firefighter: { top: 0x2b2f3a, bottom: 0x2b2f3a },
+  firefighter: { top: 0x2c3f6e, bottom: 0x23262e },
 };
 
-/** A firefighter's yellow, on their helmet and the hi-vis bands round their coat. */
+/** A firefighter's yellow, on their helmet and the reflective bands on their coat, cuffs and trousers. */
 const HI_VIS = 0xf2c418;
 
+/** The black of a firefighter's boots, and of a VIP's dark glasses. */
+const BLACK = 0x1d1f24;
+
 /**
- * A firefighter's helmet: a deep dome over the head with a brim all round, longer at the back to keep the water off
- * the neck, and a comb along the top from front to back.
+ * A firefighter's helmet: a deep dome over the head with a wide brim all round, longest at the back to keep the water
+ * off the neck, and a comb along the top from front to back.
  */
 const helmet = () =>
   joined('firefighter helmet', [
     [bowl(0.255, 0.2, 0.025, 24), 0, 0.27, 0, Math.PI, 0, 0],
-    [cyl(0.3, 0.3, 0.022, 24), 0, 0.075, -0.035],
+    [cyl(0.34, 0.34, 0.022, 28), 0, 0.075, -0.06],
     [rbox(0.05, 0.06, 0.34, 0.02), 0, 0.285, -0.01],
   ]);
 
-/** The hi-vis bands round a firefighter's coat, one across the chest and one round the waist, shaped to the body. */
-const hiVisBands = () =>
-  joined('hi-vis bands', [
-    [torus(0.2, 0.026), 0, 0.3, 0, Math.PI / 2, 0, 0],
-    [torus(0.18, 0.026), 0, 0.12, 0, Math.PI / 2, 0, 0],
-  ]);
+/** The shield on the front of a firefighter's helmet: rounded across the top and coming to a point below. */
+const helmetShield = () =>
+  cached('helmet shield', () => {
+    const s = new THREE.Shape();
+    s.moveTo(0, -0.068);
+    s.quadraticCurveTo(0.066, -0.036, 0.062, 0.025);
+    s.quadraticCurveTo(0.06, 0.064, 0, 0.064);
+    s.quadraticCurveTo(-0.06, 0.064, -0.062, 0.025);
+    s.quadraticCurveTo(-0.066, -0.036, 0, -0.068);
+    const geo = new THREE.ExtrudeGeometry(s, {
+      depth: 0.01,
+      bevelThickness: 0.006,
+      bevelSize: 0.006,
+      bevelSegments: 2,
+      curveSegments: 6,
+    });
+    geo.translate(0, 0, -0.005);
+    return geo;
+  });
 
 /** Build a person: a uniformed member of staff, a guest showing their symptom, or a visitor dressed for the part. */
 export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor?: VisitorKind): CharRig {
@@ -192,7 +224,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const bottom = mat(role === 'caretaker' ? 0x5c6b33 : (clothes?.bottom ?? look.bottom), 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
 
-  const shoes = mat(SHOES[look.shoes] ?? 0x3a302b, 0.5);
+  // a firefighter's boots are black whatever shoes they would wear
+  const shoes = mat(visitor === 'firefighter' ? BLACK : (SHOES[look.shoes] ?? 0x3a302b), 0.5);
   const { leg: legL, shin: shinL } = detailLeg(body, -0.095, bottom, shoes);
   const { leg: legR, shin: shinR } = detailLeg(body, 0.095, bottom, shoes);
 
@@ -271,19 +304,27 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   }
   if (visitor === 'vip') {
     // dark glasses, a white shirt and a tie in the V of the jacket, and a gold pin on the lapel
-    const shades = mat(0x1d1f24, 0.2);
+    const shades = mat(BLACK, 0.2);
     for (const x of [-0.075, 0.075]) put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2 + GLASSES_OUT);
     put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205 + GLASSES_OUT);
     detailShirtFront(torso, mat(0xf4f1ea, 0.6), shades);
     put(torso, sph(0.025, 8), mat(0xd9a93a, 0.3, 0.3), -0.1, 0.3, 0.13);
   }
   if (visitor === 'firefighter') {
-    // a yellow helmet, and hi-vis bands round the coat to match
+    // a yellow helmet with a silver shield on its front, a turnout coat with reflective bands to match, and boots
+    // broader than shoes
     const yellow = mat(HI_VIS, 0.45);
+    const silver = mat(CHROME, 0.3);
     put(head, helmet(), yellow).name = 'cap';
-    const bands = put(torso, hiVisBands(), yellow);
-    bands.scale.set(1.08, 1, 0.9);
-    bands.castShadow = false;
+    const shield = put(head, helmetShield(), silver, 0, 0.17, 0.235);
+    shield.rotation.x = -0.32;
+    shield.castShadow = false;
+    // the helmet's shadow covers the hair's
+    head.traverse((o) => {
+      if (o.name === 'hair') o.castShadow = false;
+    });
+    detailTurnout(torso, joints, yellow, silver);
+    for (const shin of [shinL, shinR]) shin.getObjectByName('shoe')?.scale.set(1.1, 1, 1.06);
   }
   if (visitor === 'inspector') {
     // a flat cap, and a clipboard held at the ready
