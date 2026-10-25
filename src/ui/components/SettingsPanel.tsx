@@ -1,7 +1,5 @@
 // The settings switches, shared by the title screen and the pause menu.
 
-import './SettingsPanel.css';
-
 import { useEffect } from 'preact/hooks';
 
 import { setSharing, sharing, track } from '../../app/analytics';
@@ -12,6 +10,7 @@ import { disciplineHere, offeringHere } from '../../core/state/game';
 import { loadControls, saveControls } from '../../storage/controls';
 import { ITEM_VIEWS, loadDisplay, MESSAGE_TIMES, saveDisplay, UI_SCALES } from '../../storage/display';
 import { loadDisciplinePrefs, loadLessonsPref, saveDisciplinePref, saveTutorialPref } from '../../storage/settings';
+import { css } from '../../styled-system/css';
 import { applyDisplay } from '../display';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch } from '../host';
@@ -20,7 +19,7 @@ import { nextChoice } from '../lib/keys';
 import { MESSAGE_TIME_NAMES } from '../lib/messages';
 import { Icon } from './common/Icon';
 import { ControlSettings } from './ControlSettings';
-import { SettingRow } from './SettingRow';
+import { choice, SettingRow } from './SettingRow';
 
 export interface SettingsPanelProps {
   audio: Audio;
@@ -31,6 +30,42 @@ export interface SettingsPanelProps {
   /** Called after any switch is flipped. */
   onChange?: (() => void) | undefined;
 }
+
+/**
+ * The settings, in lists under headings: each row an icon, a name over a word on what it does, and a switch, a choice
+ * or why it cannot be changed; the keys in two columns. The rows are drawn by SettingRow.tsx, ControlSettings.tsx and
+ * the panel itself, and the sandbox's settings (SandboxPanel.tsx) are laid out the same.
+ */
+export const settingsLook = css({
+  textAlign: 'left',
+  m: '[8px 0 4px]',
+  '& h4': { fontSize: '[15px]', fontWeight: 'bold', m: '[12px 0 5px]' },
+  '& ul': { listStyle: 'none', p: 'none', display: 'flex', flexDirection: 'column', gap: 's' },
+  '& li': {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '[10px]',
+    bg: 'white',
+    border: 'card',
+    borderRadius: 'card',
+    p: '[7px 11px]',
+  },
+  '& li > .icon': { flex: 'none' },
+  '& li > div': { flex: '1', minW: '[0]' },
+  '& li b': { display: 'block', fontWeight: 'bold', fontSize: '[15px]' },
+  '& li span': { fontSize: 'small', opacity: '[0.75]' },
+  '& li em': {
+    fontStyle: 'normal',
+    fontSize: '[12px]',
+    bg: 'sand',
+    borderRadius: '[8px]',
+    p: '[2px 8px]',
+    whiteSpace: 'nowrap',
+  },
+  '& li.locked > div': { opacity: '[0.6]' },
+  '& .key-list': { display: 'grid', gridTemplateColumns: '[1fr 1fr]', gap: 's' },
+  '& .key-list li': { justifyContent: 'space-between', p: '[5px 9px 5px 12px]', fontSize: '[14px]' },
+});
 
 /**
  * Switches for the tutorial, which treatments are offered, how items show their stats, the controls, how long messages stay, full
@@ -57,7 +92,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
   /** Whether the tutorial is on, in the campaign game in progress or for the next ones. */
   const tutorialOn = () => (campaignGame ? campaignGame.tutorialOn() : loadLessonsPref());
   return (
-    <div class="settings">
+    <div class={settingsLook}>
       <h4>Help</h4>
       <ul>
         <SettingRow
@@ -125,7 +160,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
             <span>Where the Items menu shows what each item does: its decor, noise, warmth and upkeep.</span>
           </div>{' '}
           <button
-            class="choice item-view-choice"
+            class={choice}
             onClick={flip('itemView', () => {
               const prefs = loadDisplay();
               const itemView = nextChoice(ITEM_VIEWS, prefs.itemView);
@@ -166,7 +201,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
             </span>
           </div>{' '}
           <button
-            class="choice ui-scale-choice"
+            class={choice}
             aria-label="Interface size"
             onClick={flip('uiScale', () => {
               const prefs = loadDisplay();
@@ -189,7 +224,7 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
             </span>
           </div>{' '}
           <button
-            class="choice message-time-choice"
+            class={choice}
             onClick={flip('messages', () => {
               const prefs = loadDisplay();
               const messages = nextChoice(MESSAGE_TIMES, prefs.messages);

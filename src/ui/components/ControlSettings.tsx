@@ -12,11 +12,37 @@ import {
   rebind,
   saveControls,
 } from '../../storage/controls';
+import { css } from '../../styled-system/css';
 import { useRedraw } from '../hooks/use-redraw';
 import { cx } from '../lib/cx';
 import { ACTION_NAMES, autosaveLabel, keyLabel, nextChoice } from '../lib/keys';
 import { Icon } from './common/Icon';
-import { SettingRow } from './SettingRow';
+import { choice, SettingRow } from './SettingRow';
+
+/** A key, drawn as a key: press it, then the key to put in its place. It turns sand while it waits. */
+const keycap = css({
+  pointerEvents: 'auto',
+  flex: 'none',
+  minW: '[46px]',
+  fontSize: '[13px]',
+  fontWeight: 'bold',
+  bg: 'white',
+  border: 'control',
+  borderBottomWidth: '[3.5px]',
+  borderRadius: '[7px]',
+  p: '[2px 8px]',
+  '&.waiting': { bg: 'sand' },
+});
+
+/** Reset the keys, as a link in the words under them. */
+const link = css({
+  pointerEvents: 'auto',
+  border: '[none]',
+  bg: '[none]',
+  p: 'none',
+  fontWeight: 'bold',
+  textDecoration: 'underline',
+});
 
 export interface ControlSettingsProps {
   /** Called after any change, with a click. */
@@ -77,7 +103,7 @@ export function ControlSettings({ onChange }: ControlSettingsProps) {
             <span>The game is always saved as you leave it, too.</span>
           </div>{' '}
           <button
-            class="choice autosave-choice"
+            class={choice}
             onClick={() => {
               change({ ...prefs, autosave: nextChoice(AUTOSAVE_CHOICES, prefs.autosave) });
             }}
@@ -87,12 +113,13 @@ export function ControlSettings({ onChange }: ControlSettingsProps) {
         </li>
       </ul>
       <h4>Keys</h4>
+      {/* `key-list` puts the keys in two columns, in the settings' look (SettingsPanel.tsx) */}
       <ul class="key-list">
         {KEY_ACTIONS.map((a) => (
           <li key={a}>
             <span>{ACTION_NAMES[a]}</span>
             <button
-              class={cx('keycap', waiting === a && 'waiting')}
+              class={cx(keycap, waiting === a && 'waiting')}
               aria-label={`${ACTION_NAMES[a]}: ${keyLabel(prefs.keys[a])}`}
               onClick={() => {
                 setWaiting(waiting === a ? null : a);
@@ -107,7 +134,7 @@ export function ControlSettings({ onChange }: ControlSettingsProps) {
         Click a key, then press the one you want in its place. A key already in use swaps over. The arrow keys always
         move the camera, and Esc always cancels.{' '}
         <button
-          class="link reset-keys"
+          class={link}
           onClick={() => {
             setWaiting(null);
             change({ ...prefs, keys: { ...DEFAULT_KEYS } });

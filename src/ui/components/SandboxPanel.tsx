@@ -1,16 +1,25 @@
 // Setting up a sandbox game on the title screen: its money, how hard it is, its treatments, whether everything starts
 // unlocked, and which events and pressures it has.
 
-import './SandboxPanel.css';
-
 import type { Audio } from '../../audio/audio';
 import { DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING, SANDBOX_MONEY } from '../../core/data';
 import { money } from '../../core/format';
 import { loadDisciplinePrefs, loadSandbox, saveDisciplinePref, saveSandbox } from '../../storage/settings';
+import { css } from '../../styled-system/css';
 import { useRedraw } from '../hooks/use-redraw';
 import { cx } from '../lib/cx';
 import { DifficultySettings } from './DifficultySettings';
 import { SettingRow } from './SettingRow';
+import { settingsLook } from './SettingsPanel';
+
+/** The sandbox's settings, laid out as the settings panel's, with the words under the headings in the middle. */
+const sandboxLook = css({ '& > .sub': { textAlign: 'center' } });
+
+/** The amounts of money to start with, a little apart. */
+const amounts = css({ gap: 's' });
+
+/** Start building, big, in the middle under the settings. */
+const start = css({ display: 'block', m: '[14px auto 2px]', fontSize: '[17px]', p: '[8px 22px]' });
 
 export interface SandboxPanelProps {
   audio: Audio;
@@ -30,10 +39,10 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
     redraw();
   };
   return (
-    <div class="sandbox settings">
+    <div class={cx(settingsLook, sandboxLook)}>
       <p class="sub">A big lot of your own, with no deadline. Set it up how you like.</p>
       <h4>Starting money</h4>
-      <div class="tabs money" role="radiogroup" aria-label="Starting money">
+      <div class={cx('tabs', amounts)} role="radiogroup" aria-label="Starting money">
         {SANDBOX_MONEY.map((m) => (
           <button
             key={m}
@@ -184,7 +193,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
           }}
         />
       </ul>
-      <button class="go start" onClick={onStart}>
+      <button class={cx('go', start)} onClick={onStart}>
         Start building
       </button>
     </div>

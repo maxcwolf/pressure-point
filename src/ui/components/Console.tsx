@@ -1,12 +1,68 @@
 // Top middle, under the announcements: the cheat console, opened with ~ once it is switched on in the settings.
 
-import './Console.css';
-
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 import { CONSOLE_KEY } from '../../storage/controls';
+import { css } from '../../styled-system/css';
 import { useGame, useHud } from '../hooks/use-hud';
 import { consoleNote, recallStep } from '../lib/console';
+import { cx } from '../lib/cx';
+
+/** The console: a panel at the top middle, dropping into place as it opens. */
+const consoleLook = css({
+  top: '[64px]',
+  left: '[50%]',
+  transform: 'translateX(-50%)',
+  w: '[min(560px, calc(var(--vw) - 560px))]',
+  minW: '[320px]',
+  p: '[10px 12px]',
+  animation: 'drop 0.2s ease-out',
+});
+
+/** What the console has said, latest at the bottom: what was typed in bold, what worked in green, what did not in red. */
+const logLook = css({
+  listStyle: 'none',
+  m: 'none',
+  p: 'none',
+  maxH: '[210px]',
+  overflowY: 'auto',
+  fontSize: '[13px]',
+  lineHeight: '[1.35]',
+  userSelect: 'text',
+  WebkitUserSelect: 'text',
+  '& li': { p: '[1px 0]', whiteSpace: 'pre-wrap' },
+  '& li.typed': { fontWeight: 'bold' },
+  '& li.typed::before': { content: "'› '", opacity: '[0.55]' },
+  '& li.good': { color: '[#23805a]' },
+  '& li.bad': { color: 'red' },
+  '& li.hint': { opacity: '[0.6]' },
+});
+
+/** The line to type a command in, after a prompt. */
+const lineLook = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 's',
+  mt: 's',
+  p: '[4px 10px]',
+  bg: 'white',
+  border: 'control',
+  borderRadius: '[10px]',
+  fontWeight: '[700]',
+});
+
+/** The command being typed. */
+const commandBox = css({
+  flex: '1',
+  minW: '[0]',
+  border: '[none]',
+  outlineStyle: 'none',
+  bg: '[transparent]',
+  font: 'inherit',
+  fontWeight: '[500]',
+  fontSize: '[14px]',
+  color: 'inherit',
+});
 
 /** The cheat console: what it has said, and a line to type the next command in. */
 export function Console() {
@@ -58,8 +114,8 @@ export function Console() {
 
   const note = consoleNote(sim.s);
   return (
-    <div id="console" class="panel">
-      <ol ref={log} class="console-log" aria-live="polite">
+    <div id="console" class={cx('panel', consoleLook)}>
+      <ol ref={log} class={logLook} aria-live="polite">
         {hud.consoleLines.length ? (
           hud.consoleLines.map((l) => (
             <li key={l.id} class={l.kind}>
@@ -70,10 +126,11 @@ export function Console() {
           <li class="hint">Type help for the list of commands.</li>
         )}
       </ol>
-      <label class="console-line">
+      <label class={lineLook}>
         <span aria-hidden="true">›</span>
         <input
           ref={input}
+          class={commandBox}
           type="text"
           aria-label="Cheat command"
           spellcheck={false}

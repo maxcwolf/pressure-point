@@ -1,7 +1,5 @@
 // The saved-games list, shared by the title screen and the pause menu.
 
-import './SavesPanel.css';
-
 import { useState } from 'preact/hooks';
 
 import { money } from '../../core/format';
@@ -21,6 +19,7 @@ import {
   writeSave,
 } from '../../storage/saves';
 import { storeThumb } from '../../storage/thumbnails';
+import { css } from '../../styled-system/css';
 import { download } from '../dom';
 import { cx } from '../lib/cx';
 
@@ -37,6 +36,112 @@ interface Note {
   text: string;
   bad: boolean;
 }
+
+/** The panel: a box to save the game in progress, the saved games, and a way to import one. */
+const panel = css({ textAlign: 'left', m: '[10px 0 4px]' });
+
+/** The box to name the game in progress in, and its button. */
+const saveNew = css({ display: 'flex', gap: 'm', mb: 'm' });
+
+/** The box for a save's name. */
+const nameBox = css({
+  flex: '1',
+  minW: '[0]',
+  font: 'inherit',
+  fontSize: '[15px]',
+  color: 'navy',
+  bg: 'white',
+  border: '[2.5px solid {colors.navy}]',
+  borderRadius: 'card',
+  p: '[6px 12px]',
+  userSelect: 'text',
+  WebkitUserSelect: 'text',
+});
+
+/** A button on the panel: green to load or save, red to delete, and cream for the rest. */
+const button = css.raw({
+  pointerEvents: 'auto',
+  border: 'control',
+  borderRadius: '[10px]',
+  p: '[3px 10px]',
+  fontSize: '[13px]',
+  fontWeight: 'bold',
+  bg: 'cream',
+  m: 'none',
+  boxShadow: '[0 2px 0 rgba(36, 56, 74, 0.25)]',
+  '&.go': { bg: 'green', color: 'white' },
+  '&.danger': { bg: 'bad-bg', color: 'bad' },
+});
+const rowButton = css(button);
+
+/** Save game, as big as the box beside it. */
+const saveButton = css(button, { fontSize: '[15px]', p: '[6px 16px]' });
+
+/**
+ * What the last thing done came to, in green, or in red where it went wrong. Its size holds in a dialog too, which
+ * draws its words larger.
+ */
+const noteLook = css({
+  fontSize: '[13.5px !important]',
+  bg: 'good-bg',
+  color: 'good',
+  borderRadius: '[10px]',
+  p: '[5px 10px]',
+  mb: 'm',
+  '&.bad': { bg: 'bad-bg', color: 'bad' },
+});
+
+/** The saved games, scrolling once there are more than fit. */
+const list = css({
+  listStyle: 'none',
+  p: 'none',
+  maxH: '[calc(var(--vh) * 0.4)]',
+  overflowY: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 's',
+});
+
+/** A saved game, with its buttons at the right. */
+const row = css.raw({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '[10px]',
+  bg: 'white',
+  border: 'card',
+  borderRadius: 'card',
+  p: '[7px 10px]',
+});
+const saveRow = css(row);
+
+/** The row there is while there are no saved games. */
+const emptyRow = css(row, { justifyContent: 'center', opacity: '[0.7]', fontSize: '[14px]' });
+
+/** What a saved game is: its name, over its date, money, stars and when it was saved. */
+const about = css({ minW: '[0]' });
+const aboutName = css({
+  display: 'block',
+  fontWeight: 'bold',
+  fontSize: '[15px]',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+const aboutFacts = css({ fontSize: '[12px]', opacity: '[0.75]' });
+
+/** A saved game's buttons. */
+const actions = css({ display: 'flex', gap: '[5px]', flex: 'none', flexWrap: 'wrap', justifyContent: 'flex-end' });
+
+/** Importing a save file, and how many named saves there is room for. */
+const foot = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '[10px]',
+  mt: '[9px]',
+  fontSize: '[12px]',
+  opacity: '[0.85]',
+});
 
 /** Whether a save is a named slot rather than the autosave or the previous game. */
 const isSlot = (i: SaveInfo) => i.id !== AUTOSAVE_ID && i.id !== PREVIOUS_ID;
@@ -112,15 +217,17 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
 
   return (
     <div
-      class="saves"
+      // `saves`, `save-note`, `bad`, `save-list` and `filebtn` are for the tests, and `save-list` for the scroll cues
+      class={cx('saves', panel)}
       onKeyDown={(e) => {
         // typing a name must not trigger the game's keyboard shortcuts
         e.stopPropagation();
       }}
     >
       {current && (
-        <div class="save-new">
+        <div class={saveNew}>
           <input
+            class={nameBox}
             type="text"
             maxLength={60}
             value={draft}
@@ -133,7 +240,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
             }}
           />
           <button
-            class="go"
+            class={cx('go', saveButton)}
             onClick={act(() => {
               save();
             })}
@@ -142,21 +249,21 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
           </button>
         </div>
       )}{' '}
-      {note && <p class={cx('save-note', note.bad && 'bad')}>{note.text}</p>}{' '}
-      <ul class="save-list">
+      {note && <p class={cx('save-note', noteLook, note.bad && 'bad')}>{note.text}</p>}{' '}
+      <ul class={cx('save-list', list)}>
         {saves.length ? (
           saves.map((s) => (
-            <li key={s.id} data-id={s.id}>
-              <div class="save-what">
-                <b>{s.name}</b>{' '}
-                <span>
+            <li key={s.id} class={saveRow} data-id={s.id}>
+              <div class={about}>
+                <b class={aboutName}>{s.name}</b>{' '}
+                <span class={aboutFacts}>
                   {gameDate(s.day, s.startMonth)} · {money(s.money)} · {'★'.repeat(s.stars) || 'no stars'} · {s.healed}{' '}
                   healed · saved {timeAgo(s.savedAt)}
                 </span>
               </div>{' '}
-              <div class="save-actions">
+              <div class={actions}>
                 <button
-                  class="go"
+                  class={cx('go', rowButton)}
                   onClick={() => {
                     onLoad(s.id);
                   }}
@@ -165,6 +272,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
                 </button>
                 {current && isSlot(s) && (
                   <button
+                    class={rowButton}
                     onClick={act(() => {
                       save(s.id);
                     })}
@@ -173,6 +281,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
                   </button>
                 )}{' '}
                 <button
+                  class={rowButton}
                   onClick={act(() => {
                     exportTo(s.id);
                   })}
@@ -180,7 +289,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
                   Export
                 </button>
                 <button
-                  class="danger"
+                  class={cx('danger', rowButton)}
                   onClick={() => {
                     remove(s.id);
                   }}
@@ -191,10 +300,10 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
             </li>
           ))
         ) : (
-          <li class="empty">No saved games yet.</li>
+          <li class={emptyRow}>No saved games yet.</li>
         )}
       </ul>{' '}
-      <div class="save-foot">
+      <div class={foot}>
         <label class="filebtn">
           Import a save file
           <input
