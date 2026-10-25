@@ -7,8 +7,9 @@
 // on only the emergencies it can see through, lays rooms out for their kit and dresses them with windows first, fills
 // a Sound Bath Studio's mats, runs Qi Gong classes and picks courses by what guests need. Some things it can also do
 // were measured and found to gain nothing, and are extras switched on with `BOT_ON` (see `BOT_EXTRAS`). And as the
-// owner plays their own games (balance log 46): a small loan paid back fast, decor, a Staff Room and a Training Room in
-// the first month, prices held near 1.1, and every emergency and stress outbreak taken on.
+// owner plays their own games (balance logs 46 and 47): a small loan paid back fast, decor, a Staff Room and a Training
+// Room in the first month, prices held near 1.1, every emergency and stress outbreak taken on, and a clearly better
+// applicant taken on in place of the weakest in their role.
 
 import { itemOpen } from '../../src/core/campaign';
 import {
@@ -37,6 +38,7 @@ import {
   type Modality,
   NOISE_NOTICE,
   type Role,
+  ROLE_ORDER,
   ROLES,
   ROOM_ORDER,
   roomHere,
@@ -62,7 +64,7 @@ import { inRush, SEASON_AHEAD_DAYS, seasonOf } from '../../src/core/sim/twists';
 import { upgradeCost } from '../../src/core/sim/upgrades';
 import { worsenRate } from '../../src/core/sim/worsening';
 import { disciplineOn, newGame, offeringOn, starsEarned, unlockedUpTo } from '../../src/core/state/game';
-import type { Emergency, GameState, Guest, Item, Room, Staff, WallSpot } from '../../src/core/state/types';
+import type { Candidate, Emergency, GameState, Guest, Item, Room, Staff, WallSpot } from '../../src/core/state/types';
 import { footprint, onWall, type Rect } from '../../src/core/world';
 
 /** What the bot does beyond building, staffing and training as it always has. */
@@ -162,6 +164,18 @@ export const BOT_FLAGS = [
    * wins: every emergency is taken on, and its guests still go first while it runs.
    */
   'brave',
+  /**
+   * Take on an applicant a rank or more above the weakest in their role, then let the weakest go, as the owner does:
+   * once open, at most once a month a role, so the headcount (and what `benched` leaves empty) stays as it was. Not
+   * while the advisor says to hire nobody or the bank is calling the overdraft in, nor when the dearer wage would take
+   * the month's books into a loss, nor for a dearer Consultant with `junior`; never anyone on a course or a call, nor
+   * anyone who knows a technique the applicant does not, or has passed a general course (a Caretaker's Mechanics, say,
+   * which no applicant arrives with). The game charges nothing to let someone go: no notice, no severance and no
+   * month's pay, only the wages earned since payday, and nobody else's morale or the reputation falls (only quitting
+   * costs reputation). What goes with them is a guest they were treating, sent back to the line, their station until
+   * the new hire walks in from the street, and their experience toward the next rank.
+   */
+  'swap',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -481,6 +495,16 @@ export interface IncomeBy {
   bonus: number;
 }
 
+/** A member of staff let go for a better applicant, with the `swap` flag: the role, and each one's rank and salary. */
+export interface SwapLog {
+  day: number;
+  role: Role;
+  fromRank: number;
+  toRank: number;
+  fromSalary: number;
+  toSalary: number;
+}
+
 /** A treatment machine the bot built, and how it paid; or one it wanted and found no space for. */
 export interface MachineLog {
   room: RoomType;
@@ -527,6 +551,11 @@ export interface Playtest {
   bankruptDay: number | null;
   /** The treatment machines built, with the `machines` flag. */
   machines: MachineLog[];
+  /**
+   * Everyone let go for a better applicant, with the `swap` flag; left out without it, so the logs without it are as
+   * they were.
+   */
+  swaps?: SwapLog[];
 }
 
 const TREAT_ROOM: Record<Discipline, RoomType> = {
@@ -670,6 +699,7 @@ export class Bot {
       warnings: [],
       bankruptDay: null,
       machines: [],
+      ...(flags.swap ? { swaps: [] } : {}),
     };
     this.watch = this.freshWatch();
   }
@@ -1332,6 +1362,7 @@ export class Bot {
     if (this.flags.triage) this.triage();
     if (this.flags.payroll) this.trimPayroll();
     this.hireToFill();
+    if (this.flags.swap) this.swap();
     this.basics();
     if (this.flags.early) this.earlyTraining();
     this.unlocks();
@@ -2153,6 +2184,62 @@ export class Bot {
     ).length;
     const want = Math.max(1, Math.ceil(upkeep / 14));
     if (this.staffOf('caretaker').length < want && this.s.money > 3000) this.hire('caretaker');
+  }
+
+  /** The day the bot last let someone in each role go for a better applicant, with `swap`. */
+  private swappedOn: Partial<Record<Role, number>> = {};
+
+  /**
+   * With `swap`, in each role with staff and no swap in the last month: the best applicant (the best rank going, then
+   * the cheaper, as `hire` picks), and the weakest member at work who could go without losing what they know (the
+   * lowest rank, then the dearer, as `trimPayroll` picks). An applicant a rank or more above them is taken on, and then
+   * they are let go. A hire that does not go through lets nobody go.
+   */
+  private swap() {
+    const s = this.s;
+    if (this.holdHires || daysUntilBankrupt(s) !== null) return;
+    for (const role of ROLE_ORDER) {
+      if (s.day < (this.swappedOn[role] ?? -Infinity) + DAYS_PER_MONTH) continue;
+      const staff = this.staffOf(role);
+      if (!staff.length) continue;
+      const best = s.candidates
+        .filter((c) => c.role === role)
+        .sort((a, b) => b.skill - a.skill || a.salary - b.salary)[0];
+      if (!best) continue;
+      const go = staff
+        .filter((st) => !st.training && !st.call && st.state !== 'away' && this.nothingLost(st, best))
+        .sort((a, b) => a.skill - b.skill || b.salary - a.salary)[0];
+      if (!go || best.skill < go.skill + 1) continue;
+      const dearer = best.salary - go.salary;
+      // a junior Consultant is kept for being cheap; and a dearer wage only while the month's books stay out of a loss
+      if (dearer > 0 && ((role === 'consultant' && this.flags.junior) || projectedCashflow(s) - dearer < 0)) continue;
+      if (!this.sim.hire(best.id)) continue;
+      this.sim.fire(go.id);
+      this.swappedOn[role] = s.day;
+      const day = Math.floor(s.day);
+      this.note(
+        `day ${day}: swapped a ${role}: rank ${go.skill} for rank ${best.skill}, salary ${go.salary} for ${best.salary}`,
+      );
+      this.log.swaps?.push({
+        day,
+        role,
+        fromRank: go.skill,
+        toRank: best.skill,
+        fromSalary: go.salary,
+        toSalary: best.salary,
+      });
+    }
+  }
+
+  /**
+   * Whether letting a member of staff go for an applicant loses nothing they know: no general course passed (no
+   * applicant arrives with one), and every technique they know, learned here or brought with them, known by the
+   * applicant too, except at the desk and for a Caretaker, whose work takes none.
+   */
+  private nothingLost(st: Staff, c: Candidate): boolean {
+    if (st.general.length) return false;
+    if (st.role === 'receptionist' || st.role === 'caretaker') return true;
+    return st.quals.every((q) => c.quals.includes(q));
   }
 
   // ---- after opening ------------------------------------------------------

@@ -1,16 +1,25 @@
-// The playtest bot's habits from the owner's own games (balance log 46): a small loan paid back fast (`loan`), the
-// center fitted out in its first month (`early`), prices held near 1.1 (`modest`), and every emergency and stress
-// outbreak taken on (`brave`).
+// The playtest bot's habits from the owner's own games (balance logs 46 and 47): a small loan paid back fast (`loan`),
+// the center fitted out in its first month (`early`), prices held near 1.1 (`modest`), every emergency and stress
+// outbreak taken on (`brave`), and a clearly better applicant taken on in place of the weakest in their role (`swap`).
 import { describe, expect, it, vi } from 'vitest';
 
-import { CONDITIONS, ITEMS, LOAN_STEP, MODALITIES, ROOMS } from '../../src/core/data';
+import {
+  CONDITIONS,
+  DAYS_PER_MONTH,
+  DISCIPLINES,
+  ITEMS,
+  LOAN_STEP,
+  MODALITIES,
+  MODALITY_ORDER,
+  ROOMS,
+} from '../../src/core/data';
 import { makeCandidate } from '../../src/core/people';
-import { wagesDue } from '../../src/core/sim/economy';
-import type { Emergency } from '../../src/core/state/types';
+import { projectedCashflow, wagesDue } from '../../src/core/sim/economy';
+import type { Candidate, Emergency, Staff } from '../../src/core/state/types';
 import { Bot, BOT_FLAGS, botFlags } from '../balance/bot';
 
-/** The four flags, as `BOT_OFF` names them. */
-const OWNER: readonly string[] = ['loan', 'early', 'modest', 'brave'];
+/** The owner's flags, as `BOT_OFF` names them. */
+const OWNER: readonly string[] = ['loan', 'early', 'modest', 'brave', 'swap'];
 
 /** The bot's private steps, reached for the tests. */
 interface Steps {
@@ -24,6 +33,7 @@ interface Steps {
   wages(): number;
   canSeeThrough(e: Emergency): boolean;
   calmCarriers(): void;
+  swap(): void;
 }
 /** A bot, with its private steps in reach. */
 const steps = (bot: Bot) => bot as unknown as Steps;
@@ -242,5 +252,122 @@ describe('with `brave`', () => {
     const calm = vi.spyOn(steps(bot), 'calmCarriers');
     bot.play(1);
     expect(calm).not.toHaveBeenCalled();
+  });
+});
+
+describe('with `swap`', () => {
+  /** Willow Lane two days open with no applicants left in the pool, and its one Massage Therapist, made a Trainee. */
+  function opened(off = '') {
+    const bot = willow(off);
+    bot.play(2);
+    expect(bot.s.open).toBe(true);
+    bot.s.candidates = [];
+    const [weak, ...more] = bot.s.staff.filter((st) => st.role === 'therapist');
+    expect(more).toHaveLength(0);
+    weak!.skill = 1;
+    return { bot, weak: weak! };
+  }
+
+  /** An applicant for a role, of a rank, who knows what a member of staff knows and asks what they are paid. */
+  function applicant(bot: Bot, like: Staff, skill: number, more: Partial<Candidate> = {}): Candidate {
+    const c = { ...makeCandidate(bot.s, like.role), skill, salary: like.salary, quals: [...like.quals], ...more };
+    bot.s.candidates.push(c);
+    return c;
+  }
+
+  /** Whether a member of staff is staying on. */
+  const staying = (bot: Bot, st: Staff) => bot.s.staff.some((x) => x.id === st.id && x.state !== 'leaving');
+  /** The names of the Massage Therapists staying on. */
+  const therapists = (bot: Bot) =>
+    bot.s.staff.filter((x) => x.role === 'therapist' && x.state !== 'leaving').map((x) => x.name);
+
+  it('takes on an applicant a rank above the weakest in their role, then lets the weakest go', () => {
+    const { bot, weak } = opened();
+    const better = applicant(bot, weak, 2);
+    const day = Math.floor(bot.s.day);
+    steps(bot).decide();
+    expect(staying(bot, weak)).toBe(false);
+    expect(therapists(bot)).toEqual([better.name]);
+    expect(bot.s.candidates).not.toContain(better);
+    expect(bot.log.notes).toContain(
+      `day ${day}: swapped a therapist: rank 1 for rank 2, salary ${weak.salary} for ${better.salary}`,
+    );
+    expect(bot.log.swaps).toEqual([
+      { day, role: 'therapist', fromRank: 1, toRank: 2, fromSalary: weak.salary, toSalary: better.salary },
+    ]);
+  });
+
+  it('lets nobody go for an applicant of the same rank, however cheap', () => {
+    const { bot, weak } = opened();
+    applicant(bot, weak, 1, { salary: weak.salary - 500 });
+    steps(bot).swap();
+    expect(staying(bot, weak)).toBe(true);
+    expect(bot.s.candidates).toHaveLength(1);
+  });
+
+  it('keeps someone trained in a technique the applicant lacks, until the applicant knows it too', () => {
+    const { bot, weak } = opened();
+    const extra = MODALITY_ORDER.find(
+      (m) => MODALITIES[m].discipline === 'massage' && m !== DISCIPLINES.massage.base && !MODALITIES[m].machine,
+    );
+    weak.quals.push(extra!);
+    const plain = applicant(bot, weak, 4, { quals: [DISCIPLINES.massage.base] });
+    steps(bot).swap();
+    expect(staying(bot, weak)).toBe(true);
+    plain.quals.push(extra!);
+    steps(bot).swap();
+    expect(staying(bot, weak)).toBe(false);
+  });
+
+  it('keeps a Caretaker who has passed Mechanics, which no applicant arrives with', () => {
+    const { bot } = opened();
+    const [caretaker] = bot.s.staff.filter((st) => st.role === 'caretaker');
+    caretaker!.skill = 1;
+    caretaker!.general.push('mechanics');
+    applicant(bot, caretaker!, 4);
+    steps(bot).swap();
+    expect(staying(bot, caretaker!)).toBe(true);
+    caretaker!.general = [];
+    steps(bot).swap();
+    expect(staying(bot, caretaker!)).toBe(false);
+  });
+
+  it('takes on no dearer applicant than the month’s books can carry', () => {
+    const { bot, weak } = opened();
+    // takings that leave the month's books in profit
+    bot.s.ledger.treatment += 20000;
+    const room = projectedCashflow(bot.s);
+    expect(room).toBeGreaterThan(0);
+    const dear = applicant(bot, weak, 2, { salary: weak.salary + room + 10 });
+    steps(bot).swap();
+    expect(staying(bot, weak)).toBe(true);
+    dear.salary = weak.salary + room - 10;
+    steps(bot).swap();
+    expect(staying(bot, weak)).toBe(false);
+  });
+
+  it('swaps in a role once a month at most', () => {
+    const { bot, weak } = opened();
+    const second = applicant(bot, weak, 2);
+    steps(bot).swap();
+    const hired = bot.s.staff.find((st) => st.name === second.name && st.state !== 'leaving')!;
+    const third = applicant(bot, hired, 3);
+    bot.s.day += DAYS_PER_MONTH - 0.5;
+    steps(bot).swap();
+    expect(therapists(bot)).toEqual([second.name]);
+    bot.s.day += 1;
+    steps(bot).swap();
+    expect(therapists(bot)).toEqual([third.name]);
+  });
+
+  it('let nobody go for a better applicant without it', () => {
+    const { bot, weak } = opened('swap');
+    const better = applicant(bot, weak, 3);
+    const swap = vi.spyOn(steps(bot), 'swap');
+    steps(bot).decide();
+    expect(swap).not.toHaveBeenCalled();
+    expect(staying(bot, weak)).toBe(true);
+    expect(bot.s.candidates).toContain(better);
+    expect(bot.log.swaps).toBeUndefined();
   });
 });
