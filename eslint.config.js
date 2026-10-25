@@ -55,6 +55,8 @@ export default tseslint.config(
       'test-results/',
       'playwright-report/',
       '.yarn/',
+      // made by Panda from panda.config.ts
+      'src/styled-system/',
     ],
   },
 

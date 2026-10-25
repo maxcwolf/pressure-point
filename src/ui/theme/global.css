@@ -42,18 +42,21 @@ body {
   --vh: calc(100vh / var(--ui-scale));
 }
 
-button {
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
+/* in Panda's base layer (ui/theme/panda.css), below every class, so Panda's styles on these elements win over them */
+@layer base {
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
 
-h2,
-h3,
-h4,
-p,
-ul {
-  margin: 0;
+  h2,
+  h3,
+  h4,
+  p,
+  ul {
+    margin: 0;
+  }
 }
 
 s {

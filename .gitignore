@@ -18,3 +18,6 @@ playwright-report/
 
 # local Claude Code settings
 .claude/
+
+# made by Panda from panda.config.ts, on install and by the dev server
+src/styled-system/
