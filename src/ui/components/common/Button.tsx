@@ -9,6 +9,8 @@ import { cx } from '../../lib/cx';
 export interface ButtonProps {
   class?: string;
   title?: string | undefined;
+  /** Its name for a screen reader, for a button that shows no words and needs no tooltip. */
+  label?: string;
   /** Shown but refused: pressing it only plays the error sound. */
   locked?: boolean;
   /** Skip the click sound, for actions that make a sound of their own. */
@@ -23,6 +25,7 @@ export interface ButtonProps {
 export function Button({
   class: className,
   title,
+  label,
   locked = false,
   quiet = false,
   richTip,
@@ -47,7 +50,13 @@ export function Button({
     hud.update();
   };
   return (
-    <button class={cx(className, locked && 'locked')} title={title} data-tip-rich={richTip} onPointerDown={press}>
+    <button
+      class={cx(className, locked && 'locked')}
+      title={title}
+      aria-label={label}
+      data-tip-rich={richTip}
+      onPointerDown={press}
+    >
       {children}
     </button>
   );

@@ -1,9 +1,10 @@
 /* Styles for StaffMenu. */
 
 .row {
+  position: relative;
   width: 100%;
   display: grid;
-  grid-template-columns: 30px 1.1fr 1.3fr 96px 64px;
+  grid-template-columns: 30px 1.1fr 1.3fr 96px 64px 112px;
   align-items: center;
   gap: 2px 8px;
   text-align: left;
@@ -15,6 +16,10 @@
   font-size: 13px;
 }
 
+.row:not(.head) {
+  cursor: pointer;
+}
+
 .row:hover {
   border-color: var(--teal-dark);
   background: #f0fbf9;
@@ -22,6 +27,25 @@
 
 .row b {
   font-weight: 600;
+}
+
+/* the whole row selects them, from an empty button stretched over it, which the cells' words show through */
+.row > button.pick {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: inherit;
+  padding: 0;
+  background: none;
+}
+
+/* what has a tooltip of its own sits above it, selecting from the row's own press, as does the button to promote them
+   or raise their pay */
+.row .meters,
+.row .quals > span,
+.row > button.act {
+  position: relative;
+  z-index: 1;
 }
 
 .row .meters {
@@ -64,6 +88,42 @@
 
 .row small {
   text-align: right;
+}
+
+/* small enough that a row keeps to one line however narrow the menu */
+.menu button.act {
+  border: 2px solid var(--navy);
+  border-radius: 10px;
+  background: var(--cream);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 8px;
+  white-space: nowrap;
+  justify-self: end;
+}
+
+.menu button.act.go {
+  background: var(--gold);
+  color: var(--navy);
+  box-shadow: none;
+  margin-top: 0;
+}
+
+.menu button.act:hover {
+  filter: brightness(1.06);
+  transform: none;
+}
+
+/* to promote everyone waiting, or pay every raise asked for */
+.requests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.requests button.act {
+  padding: 3px 10px;
 }
 
 /* their role's icon stands beside both lines, so the line under the name sits close */

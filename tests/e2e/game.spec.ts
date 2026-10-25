@@ -843,6 +843,56 @@ test.describe('staff', () => {
     await expect(page.locator('#menu .sort-by select')).toHaveValue('salary');
   });
 
+  test('are promoted and given raises from the Staff menu, one at a time or all at once', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const [first, second] = await game.eval((pp) => {
+      pp.state.speed = 0;
+      const [a, b] = pp.state.staff;
+      a!.skill = 1;
+      a!.salary = 100;
+      a!.promotion = true;
+      b!.skill = 1;
+      b!.raiseAsked = true;
+      return [a, b].map((st) => ({ id: st!.id, name: st!.name, skill: st!.skill, salary: st!.salary }));
+    });
+    await game.menu('Staff');
+    const rows = page.locator('#menu .row:not(.head)');
+    const promote = rows.filter({ hasText: first!.name }).locator('button.act');
+    const pay = rows.filter({ hasText: second!.name }).locator('button.act');
+    await expect(promote).toHaveText('Promote');
+    await expect(pay).toContainText('Pay $');
+    // one waiting on each is seen to from their row, so there is nothing to do for everyone
+    await expect(page.locator('#menu .requests')).toHaveCount(0);
+    await promote.click();
+    await pay.click();
+    const after = await game.eval((pp) =>
+      pp.state.staff.slice(0, 2).map((st) => ({ skill: st.skill, salary: st.salary, raiseAsked: st.raiseAsked })),
+    );
+    expect(after[0]!.skill).toBe(first!.skill + 1);
+    expect(after[0]!.salary).toBeGreaterThan(first!.salary);
+    expect(after[1]!.salary).toBeGreaterThan(second!.salary);
+    expect(after[1]!.raiseAsked).toBe(false);
+    await expect(promote).not.toHaveText('Promote');
+    await expect(pay).toContainText('Raise to $');
+
+    const skills = await game.eval((pp) =>
+      pp.state.staff.slice(0, 2).map((st) => {
+        st.promotion = true;
+        return st.skill;
+      }),
+    );
+    const all = page.locator('#menu .requests button', { hasText: 'Promote all 2' });
+    await expect(all).toBeVisible();
+    await all.click();
+    expect(await game.eval((pp) => pp.state.staff.slice(0, 2).map((st) => st.skill))).toEqual(skills.map((n) => n + 1));
+    await expect(all).toHaveCount(0);
+
+    // the whole row selects them, even its bars, which sit above the row's button for their tooltip
+    await rows.filter({ hasText: second!.name }).locator('.meters').click();
+    await expect(page.locator('#inspector')).toContainText(second!.name);
+  });
+
   test('can be compared side by side in the inspector', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
