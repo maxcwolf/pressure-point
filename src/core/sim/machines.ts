@@ -18,6 +18,7 @@ import { money } from '../format';
 import { random } from '../random';
 import type { GameState, Item, Room } from '../state/types';
 import { itemCenter } from '../world';
+import { startFire } from './blazes';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { announceOnce, emit, toast } from './events';
@@ -150,13 +151,19 @@ const waitingAt = (ctx: SimContext, it: Item) =>
 
 /**
  * After a session, a machine smoking with wear may overload: out of action at once, with a bill for parts, until a
- * Caretaker sees to it. The guest has already had their session. The toast says who is left waiting and what to do,
- * since a machine's own guests have no table to go to instead.
+ * Caretaker sees to it, or for a machine with a flame or a motor, now and then on fire (see `blazes.ts`). The guest
+ * has already had their session. The toast says who is left waiting and what to do, since a machine's own guests have
+ * no table to go to instead.
  */
 export function maybeOverload(ctx: SimContext, it: Item): boolean {
   const def = ITEMS[it.type];
   const o = def.machine?.overload;
   if (!o || !smoking(it) || random(ctx.s) >= o.chance) return false;
+  // a machine with a flame or a motor sometimes catches fire instead
+  if (ctx.s.blazesOn && o.fire && random(ctx.s) < o.fire) {
+    startFire(ctx, it, o.bill);
+    return true;
+  }
   it.wear = 100;
   it.overloaded = true;
   ctx.world.version++;

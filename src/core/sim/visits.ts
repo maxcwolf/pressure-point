@@ -58,6 +58,7 @@ import type {
 import { clamp } from '../util';
 import { accessTile } from '../world';
 import { prestige } from './ambience';
+import { updateFirefighter } from './blazes';
 import { newChar, say, streetTile } from './chars';
 import type { SimContext } from './context';
 import { changeRep, earn, spend } from './economy';
@@ -157,13 +158,17 @@ export function vipNote(scores: AspectScores, cares: Aspect, vibes: number, temp
   return `${note.charAt(0).toUpperCase()}${note.slice(1)}.`;
 }
 
-/** Whether a Fire Extinguisher that works stands near enough a room's door for the inspector. */
+/**
+ * Whether a room is ready for a fire: sprinklers fitted, or a Fire Extinguisher that works near enough its door, for
+ * the inspector, and for a Caretaker to put a fire out there quickly.
+ */
 export function extinguisherNear(ctx: SimContext, room: Room): boolean {
+  if (room.sprinklers) return true;
   const { x, y } = room.door;
   return ctx.s.items.some(
     (it: Item) =>
       it.type === 'fire_extinguisher' &&
-      ctx.world.usable(it) &&
+      ctx.world.usable(it, true) &&
       Math.max(Math.abs(it.x - x), Math.abs(it.y - y)) <= EXTINGUISHER_REACH,
   );
 }
@@ -364,8 +369,12 @@ export function nextRoom(ctx: SimContext, v: Visitor): boolean {
   return false;
 }
 
-/** Move one visitor forward in time: walking to a room, looking round it, or leaving. */
+/** Move one visitor forward in time: walking to a room, looking round it, or leaving; or for a firefighter, at the fire. */
 export function updateVisitor(ctx: SimContext, v: Visitor, dt: number) {
+  if (v.visit === 'firefighter') {
+    updateFirefighter(ctx, v, dt);
+    return;
+  }
   if (v.bubbleT > 0) v.bubbleT -= dt;
   const arrived = moveAlong(v, dt, 2);
   switch (v.state) {

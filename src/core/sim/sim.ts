@@ -44,6 +44,7 @@ import { type Advice, advice, advise, announce, warnPrimer, warnUnfed } from './
 import { drainFactor, prestige } from './ambience';
 import { assignRoom, clearRooms } from './assignments';
 import { holdAwards, YEAR_MONTHS } from './awards';
+import { beingPutOut, onFire, updateBlazes, updateBrigade } from './blazes';
 import { bottleneck, type Stage } from './bottleneck';
 import type { PlaceOptions } from './building';
 import {
@@ -53,6 +54,7 @@ import {
   copyRoom,
   createRoom,
   finishRoom,
+  fitSprinklers,
   itemsInRoom,
   missingItems,
   moveDoor,
@@ -65,6 +67,7 @@ import {
   sellItem,
   setRugPattern,
   setThermostat,
+  sprinklerBlocker,
   toggleWindow,
 } from './building';
 import { acceptCall, type CallCost, callCost, callFee, declineCall, updateCalls, whoCanGo } from './calls';
@@ -169,7 +172,7 @@ import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
 import { orderUpgrade } from './upgrades';
 import { decayItems, wearByTheDay } from './upkeep';
 import { fadeVibes } from './vibes';
-import { lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
+import { extinguisherNear, lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
 import { outdoorTemp, thermostatShare, todayIndoors, warmthAt } from './warmth';
 import { warnWorsening } from './worsening';
 
@@ -236,6 +239,7 @@ export class Sim {
     for (const g of [...s.guests]) updateGuest(ctx, g, dt);
     for (const st of [...s.staff]) updateStaff(ctx, st, dt);
     for (const v of [...s.visitors]) updateVisitor(ctx, v, dt);
+    updateBrigade(ctx, dt);
     decayItems(ctx, dt);
     fadeVibes(ctx, dt);
     announceSweatLodge(ctx);
@@ -258,6 +262,7 @@ export class Sim {
       updateStanding(ctx);
       updateRival(ctx);
       updateMishaps(ctx);
+      updateBlazes(ctx);
       updateLand(ctx);
       updateOutdoors(ctx);
       warnWorsening(ctx);
@@ -916,6 +921,33 @@ export class Sim {
   /** Add a window to a stretch of wall, or take out the one already there. */
   toggleWindow(roomId: number, spot: WallSpot): 'added' | 'removed' | '' {
     return toggleWindow(this.ctx, roomId, spot);
+  }
+
+  /** Fit sprinklers in a room, from the star that unlocks them. False if they cannot be fitted. */
+  fitSprinklers(roomId: number): boolean {
+    const done = fitSprinklers(this.ctx, roomId);
+    if (done) this.afterSpending();
+    return done;
+  }
+
+  /** Why sprinklers cannot be fitted in a room now, or null if they can. */
+  sprinklerBlocker(room: Room): string | null {
+    return sprinklerBlocker(this.ctx, room);
+  }
+
+  /** Whether a room is ready for a fire: sprinklers, or a Fire Extinguisher that works near its door. */
+  extinguisherNear(room: Room): boolean {
+    return extinguisherNear(this.ctx, room);
+  }
+
+  /** Whether an item is on fire. */
+  onFire(it: Item): boolean {
+    return onFire(this.s, it);
+  }
+
+  /** The items being put out this moment, by a firefighter's hose or a Caretaker. */
+  beingPutOut(): Set<number> {
+    return beingPutOut(this.s);
   }
 
   /** Move a room's door to another stretch of its wall. */

@@ -438,6 +438,8 @@ export interface Visitor extends CharBase {
   tour: number[];
   /** What they made of each room seen so far. */
   seen: RoomVerdict[];
+  /** For a firefighter, the burning item they are running to or hosing, or 0 for none. */
+  fire?: number;
 }
 
 /** A visit written ahead: who is coming, and on which day. */
@@ -500,7 +502,8 @@ export interface Blaze {
 
 /**
  * The fire brigade, called out to a fire: where its truck is along the near lane of the road, coming, parked outside or
- * leaving; the day it was called; the visitor ids of its crew; and whether the call-out fee has been taken.
+ * leaving; the day it was called; the visitor ids of its crew; whether the call-out fee has been taken; and the room the
+ * latest fire was in, for the crew to see for themselves if it is out when they get there.
  */
 export interface Brigade {
   x: number;
@@ -508,6 +511,23 @@ export interface Brigade {
   called: number;
   crew: number[];
   charged: boolean;
+  room: number;
+}
+
+/** How a fire was put out: by a Caretaker with an extinguisher or without one, by sprinklers, or by the fire brigade. */
+export type PutOut = 'extinguisher' | 'beaten' | 'sprinklers' | 'brigade';
+
+/**
+ * A fire, from the first thing that caught until the last of it was out: what caught first, how many things burnt, how
+ * the last of it was put out, and what the fire brigade charged for it.
+ */
+export interface FireReport {
+  item: ItemType;
+  burnt: number;
+  how?: PutOut;
+  fee: number;
+  /** Whether it is out: until then, it is still burning. */
+  out: boolean;
 }
 
 export interface Candidate {
@@ -861,6 +881,8 @@ export interface GameState {
   blazes: Blaze[];
   brigade?: Brigade;
   blazesOn: boolean;
+  /** The fire burning now, or the last one, once there has been one. */
+  fire?: FireReport;
   /** The last year-end awards ceremony, and every award won. */
   ceremony: Ceremony | null;
   trophies: Trophy[];

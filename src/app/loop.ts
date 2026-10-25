@@ -9,6 +9,7 @@ import { edgePan, type MouseSpot } from './edge';
 import { heldPan } from './keyboard';
 import type { Refresh } from './refresh';
 import { rumbleLevel } from './rumble';
+import { sirenLevel } from './siren';
 
 /** Seconds between redraws of the floor overlay. */
 const OVERLAY_EVERY = 0.4;
@@ -30,6 +31,8 @@ export interface LoopParts {
   overlay: (due: boolean) => void;
   /** Play an engine's rumble this loud, from 0 (none) to 1. Called every frame. */
   rumble: (level: number) => void;
+  /** Play the fire truck's siren this loud, from 0 (none) to 1. Called every frame. */
+  siren: (level: number) => void;
 }
 
 /** What the running loop offers the end-to-end tests. */
@@ -39,7 +42,19 @@ export interface Loop {
 }
 
 /** Run the game until the page goes away: move the camera, advance the game, draw it, refresh the interface. */
-export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, overlay, rumble }: LoopParts): Loop {
+export function runLoop({
+  sim,
+  view,
+  ui,
+  held,
+  mouse,
+  refresh,
+  save,
+  record,
+  overlay,
+  rumble,
+  siren,
+}: LoopParts): Loop {
   let prev = performance.now();
   let sinceSave = 0;
   let sinceOverlay = 0;
@@ -76,8 +91,9 @@ export function runLoop({ sim, view, ui, held, mouse, refresh, save, record, ove
     if (overlayDue) sinceOverlay = 0;
     overlay(overlayDue);
     view.render(dt);
-    // a generator carrying the center rumbles, heard as the camera comes near it
+    // a generator carrying the center rumbles, heard as the camera comes near it, and the fire truck's siren wails
     rumble(rumbleLevel(sim.s, ...view.focus()));
+    siren(sirenLevel(sim.s, ...view.focus()));
     const events = sim.drain();
     if (events.length) {
       // karma from a star or an achievement can be spent at once, not only after the next autosave
