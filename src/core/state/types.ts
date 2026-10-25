@@ -281,6 +281,8 @@ export interface Staff extends CharBase {
   yearServed: number;
   /** A Shaman has been asked to retrieve their soul, and has not yet. */
   soulAsked?: boolean;
+  /** Seconds a lone guest has waited at another of their stations while they stood at an empty one. */
+  lineT?: number;
 }
 
 /**
