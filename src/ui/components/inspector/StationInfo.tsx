@@ -51,7 +51,7 @@ const who = css({
   gridArea: 'who',
   textAlign: 'left',
   fontWeight: 'bold',
-  fontSize: 'small',
+  fontSize: '13',
   bg: '[none]',
   border: '[none]',
   p: 'none',
@@ -62,10 +62,10 @@ const who = css({
 });
 
 /** Their chance of success, in small words under their patience. */
-const odds = css({ gridArea: 'odds', fontSize: '[11.5px]' });
+const odds = css({ gridArea: 'odds', fontSize: '12' });
 
 /** How long their condition has left, in small words along the bottom. */
-const conditionStyle = css({ gridArea: 'condition', fontSize: '[11.5px]' });
+const conditionStyle = css({ gridArea: 'condition', fontSize: '12' });
 
 /** A chance or a condition that is poor, in red. */
 const poor = css({ color: 'bad', fontWeight: 'bold' });
@@ -81,7 +81,7 @@ const moves = css({
     border: 'control',
     borderRadius: '[7px]',
     bg: 'white',
-    fontSize: '[11px]',
+    fontSize: '11',
     lineHeight: '[1]',
     p: 'none',
   },

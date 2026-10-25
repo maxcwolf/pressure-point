@@ -25,7 +25,7 @@ const skip = css({
   border: '[0]',
   p: 'none',
   bg: '[none]',
-  fontSize: '[12px]',
+  fontSize: '12',
   color: 'navy',
   opacity: '[0.6]',
   textDecoration: 'underline',
@@ -33,7 +33,7 @@ const skip = css({
 });
 
 /** The step's title, over what it asks. */
-const title = css({ display: 'block', fontSize: '[15.5px]', mb: 'xxs' });
+const title = css({ display: 'block', fontSize: '15', mb: 'xxs' });
 
 /** Show me: a teal button that lifts under the pointer. */
 const show = css({
@@ -43,7 +43,7 @@ const show = css({
   py: '[5px]',
   px: '[14px]',
   fontWeight: 'bold',
-  fontSize: '[14px]',
+  fontSize: '14',
   bg: 'teal',
   color: 'white',
   boxShadow: '[0 3px 0 {colors.ink.30}]',

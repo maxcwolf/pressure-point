@@ -26,7 +26,7 @@ const pill = css.raw({
   borderRadius: '[14px]',
   py: '[7px]',
   px: '[16px]',
-  fontSize: '[14.5px]',
+  fontSize: '15',
   fontWeight: '[500]',
   boxShadow: 'raised',
   textAlign: 'center',
@@ -58,20 +58,20 @@ const phrase = css({
   display: 'inline-flex',
   alignItems: 'center',
   gap: '[5px]',
-  fontSize: '[13px]',
+  fontSize: '13',
   border: '[1.5px solid {colors.ink.25}]',
   bg: 'white',
   borderRadius: 'control',
   py: '[1px]',
   px: 'm',
-  '&.name': { fontSize: '[15px]', fontWeight: 'bold', border: '[none]', bg: '[none]', p: '[0 4px 0 0]' },
+  '&.name': { fontSize: '15', fontWeight: 'bold', border: '[none]', bg: '[none]', p: '[0 4px 0 0]' },
   '&.cost': { bg: 'gold-tint', borderColor: 'gold', fontWeight: 'bold' },
 });
 
 /** A key, drawn as a key. */
 const keyCap = css({
   font: 'inherit',
-  fontSize: '[11.5px]',
+  fontSize: '12',
   fontWeight: 'bold',
   lineHeight: '[1.4]',
   minW: '[18px]',
@@ -122,7 +122,7 @@ const effectList = css({
 
 /** One change, in a white frame: green for the better, red for the worse. */
 const effect = css({
-  fontSize: 'small',
+  fontSize: '13',
   fontWeight: '[500]',
   border: '[1.5px solid {colors.ink.35}]',
   bg: 'white',

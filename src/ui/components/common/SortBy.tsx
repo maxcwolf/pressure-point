@@ -8,7 +8,7 @@ const sortBy = css({
   display: 'inline-flex',
   alignItems: 'center',
   gap: 's',
-  fontSize: '[12px]',
+  fontSize: '12',
   whiteSpace: 'nowrap',
   '& > span': { opacity: 'muted' },
 });
@@ -17,7 +17,7 @@ const sortBy = css({
 const select = css({
   appearance: 'none',
   font: 'inherit',
-  fontSize: 'small',
+  fontSize: '13',
   fontWeight: '[500]',
   color: 'navy',
   background:
@@ -42,7 +42,7 @@ const select = css({
       bg: 'cream',
       boxShadow: 'raised',
     },
-    '& option': { p: '[4px 10px]', borderRadius: '[8px]', fontSize: '[13px]' },
+    '& option': { p: '[4px 10px]', borderRadius: '[8px]', fontSize: '13' },
     '& option::checkmark': { display: 'none' },
     '& option:hover, & option:focus-visible': { outline: '[none]', bg: 'teal-wash' },
     '& option:checked': { bg: 'teal', color: 'white', fontWeight: 'bold' },

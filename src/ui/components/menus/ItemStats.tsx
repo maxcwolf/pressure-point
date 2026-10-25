@@ -20,7 +20,7 @@ const chips = css({
   m: '[auto 0 0]',
   p: '[6px 0 0]',
   '& li': {
-    fontSize: '[11.5px]',
+    fontSize: '12',
     fontWeight: '[500]',
     border: '[1.5px solid #b7a98c]',
     bg: '[#f1ece2]',
@@ -52,7 +52,7 @@ const pips = css({
 /** The tooltip's list of what an item does, a line each, with its icon beside it. */
 const tip = css({
   '& ul': { listStyle: 'none', m: '[3px 0 0]', p: 'none', display: 'flex', flexDirection: 'column', gap: '[3px]' },
-  '& li': { display: 'flex', gap: '[7px]', fontSize: '[13px]', lineHeight: '[1.3]' },
+  '& li': { display: 'flex', gap: '[7px]', fontSize: '13', lineHeight: '[1.3]' },
   '& li > .icon': { mt: '[1px]' },
 });
 
@@ -67,15 +67,15 @@ const detail = css({
   display: 'flex',
   flexDirection: 'column',
   gap: 's',
-  fontSize: 'body',
+  fontSize: '14',
   lineHeight: '[1.3]',
   '& p': { opacity: '[0.8]' },
   // a scale's name, with what it comes to at the far end
-  '& label': { display: 'flex', justifyContent: 'space-between', fontSize: '[12px]' },
+  '& label': { display: 'flex', justifyContent: 'space-between', fontSize: '12' },
   '& label b': { fontWeight: 'bold' },
   '& em': {
     fontStyle: 'normal',
-    fontSize: '[11.5px]',
+    fontSize: '12',
     bg: 'sand',
     borderRadius: '[8px]',
     p: '[2px 7px]',
@@ -88,14 +88,14 @@ const detailHead = css({
   display: 'flex',
   alignItems: 'center',
   gap: '[10px]',
-  '& b': { display: 'block', fontSize: '[17px]', fontWeight: 'bold' },
+  '& b': { display: 'block', fontSize: '17', fontWeight: 'bold' },
   '& .cost': {
     display: 'inline-block',
     bg: 'gold',
     border: 'control',
     borderRadius: 'control',
     p: '[0 7px]',
-    fontSize: '[13px]',
+    fontSize: '13',
     fontWeight: 'bold',
   },
 });
@@ -108,7 +108,7 @@ const factList = css({
   display: 'flex',
   flexDirection: 'column',
   gap: 'xs',
-  '& li': { bg: '[#f6f0e3]', borderRadius: '[9px]', p: '[3px 9px]', fontSize: 'small' },
+  '& li': { bg: '[#f6f0e3]', borderRadius: '[9px]', p: '[3px 9px]', fontSize: '13' },
 });
 
 /** The panel's button: green to place the item, grey while it cannot be. */
@@ -119,7 +119,7 @@ const place = css({
   bg: 'green',
   color: 'white',
   fontWeight: 'bold',
-  fontSize: '[15px]',
+  fontSize: '15',
   p: '[7px 12px]',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
   _locked: { bg: 'stone', color: 'navy', cursor: 'not-allowed' },
@@ -163,7 +163,7 @@ const twoWay = css({
   '& small': {
     display: 'flex',
     justifyContent: 'space-between',
-    fontSize: '[10.5px]',
+    fontSize: '11',
     opacity: '[0.6]',
     mt: '[1px]',
   },

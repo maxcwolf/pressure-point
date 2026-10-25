@@ -91,7 +91,7 @@ function Stepper(props: {
 /** One setting's card: its name, its controls, and a word on what it trades off. */
 function Card(props: { children: ComponentChildren }) {
   return (
-    <Box bg="white" border="card" borderRadius="card" py="m" px="[11px]" fontSize="body">
+    <Box bg="white" border="card" borderRadius="card" py="m" px="[11px]" fontSize="14">
       {props.children}
     </Box>
   );
@@ -109,7 +109,7 @@ function Heading(props: { children: ComponentChildren }) {
 /** What a setting trades off, in smaller and fainter words under it. */
 function Note(props: { children: ComponentChildren }) {
   return (
-    <Box as="p" fontSize="small" opacity="muted" mt="s" mb="[9px]">
+    <Box as="p" fontSize="13" opacity="muted" mt="s" mb="[9px]">
       {props.children}
     </Box>
   );

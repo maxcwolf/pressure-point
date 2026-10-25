@@ -27,7 +27,7 @@ const logLook = css({
   p: 'none',
   maxH: '[210px]',
   overflowY: 'auto',
-  fontSize: '[13px]',
+  fontSize: '13',
   lineHeight: '[1.35]',
   userSelect: 'text',
   WebkitUserSelect: 'text',
@@ -61,7 +61,7 @@ const commandBox = css({
   bg: '[transparent]',
   font: 'inherit',
   fontWeight: '[500]',
-  fontSize: '[14px]',
+  fontSize: '14',
   color: 'inherit',
 });
 

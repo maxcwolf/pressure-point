@@ -47,7 +47,7 @@ const pick = css({
   alignItems: 'center',
   gap: 's',
   textAlign: 'left',
-  fontSize: 'small',
+  fontSize: '13',
   bg: '[none]',
   border: '[1.5px solid transparent]',
   borderRadius: '[8px]',
@@ -63,12 +63,12 @@ const table = css({
   w: '[100%]',
   tableLayout: 'fixed',
   borderCollapse: 'collapse',
-  fontSize: '[12px]',
+  fontSize: '12',
   mb: 's',
   '& th, & td': { p: '[2px 3px]', textAlign: 'left', verticalAlign: 'middle' },
   '& thead th': {
     fontWeight: 'bold',
-    fontSize: 'small',
+    fontSize: '13',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -77,7 +77,7 @@ const table = css({
   // anywhere
   '& tbody th': { fontWeight: '[500]', opacity: '[0.75]', hyphens: 'auto', overflowWrap: 'anywhere' },
   // five stars, small enough to fit their column
-  '& .skill': { fontSize: '[10.5px]', letterSpacing: '[0]', whiteSpace: 'nowrap' },
+  '& .skill': { fontSize: '11', letterSpacing: '[0]', whiteSpace: 'nowrap' },
   '& tbody tr + tr': { borderTop: '[1px solid {colors.ink.10}]' },
   '& tr.section th': { opacity: '[1]', fontWeight: 'bold', pt: '[7px]' },
 });
@@ -92,7 +92,7 @@ const aheadStyle = css({ color: 'green-dark', fontWeight: '[700]' });
 const lacks = css({ opacity: '[0.4]' });
 
 /** Someone who is on the course now, in small slanted words. */
-const studying = css({ fontSize: '[11px]', fontStyle: 'italic', opacity: '[0.8]' });
+const studying = css({ fontSize: '11', fontStyle: 'italic', opacity: '[0.8]' });
 
 /** Someone's first name, short enough for a column. */
 const firstName = (st: Staff) => st.name.split(' ')[0] ?? st.name;

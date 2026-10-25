@@ -50,7 +50,7 @@ const upgrade = css({
   borderRadius: 'card',
   p: '[5px 11px]',
   fontWeight: 'bold',
-  fontSize: '[13px]',
+  fontSize: '13',
   bg: 'gold',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
   m: '[2px 0 6px]',

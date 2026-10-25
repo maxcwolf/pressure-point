@@ -24,7 +24,7 @@ const levelButton = css({
   borderRadius: '[10px]',
   p: '[2px 8px]',
   fontWeight: 'bold',
-  fontSize: '[13px]',
+  fontSize: '13',
   bg: 'cream',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
   minW: '[92px]',

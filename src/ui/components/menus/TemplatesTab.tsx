@@ -41,7 +41,7 @@ const templateCard = css(cardLook, { gap: 'xs', '&.poor': { opacity: '[1]', curs
 /** The template's name, which can be changed in place: plain words on the card until the pointer or the typing is on it. */
 const nameInput = css({
   font: 'inherit',
-  fontSize: '[15px]',
+  fontSize: '15',
   fontWeight: 'bold',
   color: 'navy',
   border: '[2px solid transparent]',
@@ -66,7 +66,7 @@ const actions = css({
     border: 'control',
     borderRadius: 'control',
     p: '[2px 9px]',
-    fontSize: 'small',
+    fontSize: '13',
     fontWeight: 'bold',
     bg: 'white',
   },
@@ -84,7 +84,7 @@ const foot = css({
   flexWrap: 'wrap',
   mt: '[10px]',
   // the count at the far end: `span.sub`, or the menu's own margins for smaller words would win
-  '& span.sub': { m: '[0 0 0 auto]', fontSize: 'small', opacity: '[0.75]' },
+  '& span.sub': { m: '[0 0 0 auto]', fontSize: '13', opacity: '[0.75]' },
 });
 
 /** A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. */

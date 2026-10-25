@@ -66,7 +66,7 @@ const factor = css({
   borderRadius: '[8px]',
   p: '[4px 8px]',
   bg: 'ink.6',
-  '& small': { gridColumn: '[1 / -1]', fontSize: '[11.5px]', opacity: '[0.75]' },
+  '& small': { gridColumn: '[1 / -1]', fontSize: '12', opacity: '[0.75]' },
   '& .bar': { gridColumn: '[1 / -1]', m: '[2px 0 0]' },
   '& em': { gridRow: '[2]', gridColumn: '[2]', fontStyle: 'normal', fontWeight: '[700]' },
   '&.low em': { color: '[#b5482f]' },

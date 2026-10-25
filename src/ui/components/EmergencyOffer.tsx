@@ -36,7 +36,7 @@ const column = css({
   gap: 'm',
   // an offer in full pops in, its words centered
   '& .offer': { position: 'relative', textAlign: 'center', animation: 'pop 0.2s ease-out' },
-  '& .offer p': { fontSize: '[14px]', lineHeight: '[1.3]' },
+  '& .offer p': { fontSize: '14', lineHeight: '[1.3]' },
   // the button to decide later: a faint cross in the top right corner
   '& .offer .later': {
     pointerEvents: 'auto',
@@ -48,19 +48,19 @@ const column = css({
     border: '[none]',
     borderRadius: '[50%]',
     bg: '[none]',
-    fontSize: '[15px]',
+    fontSize: '15',
     opacity: '[0.6]',
     _hover: { opacity: '[1]', bg: 'ink.10' },
   },
   // how long is left to decide, over a bar of it
-  '& .offer .time-left': { fontSize: 'small', fontWeight: 'bold', m: '[8px auto 0]', w: '[70%]' },
+  '& .offer .time-left': { fontSize: '13', fontWeight: 'bold', m: '[8px auto 0]', w: '[70%]' },
   // a pill: its words over a bar, popping in, and lifting a little under the pointer
   '& .offer-pill': {
     display: 'block',
     m: '[0 auto]',
     p: '[7px 14px 8px]',
     font: 'inherit',
-    fontSize: 'body',
+    fontSize: '14',
     fontWeight: 'bold',
     textAlign: 'center',
     animation: 'pop 0.2s ease-out',

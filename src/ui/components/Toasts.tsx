@@ -55,7 +55,7 @@ const card = css.raw({
   borderLeftWidth: '[10px]',
   borderRadius: 'card',
   p: '[8px 12px]',
-  fontSize: 'body',
+  fontSize: '14',
   boxShadow: 'raised',
   animation: 'slide 0.3s ease-out',
   transition: '[opacity 0.4s]',
@@ -71,7 +71,7 @@ const requestCard = css(card, {
   pointerEvents: 'auto',
   textAlign: 'left',
   font: 'inherit',
-  fontSize: 'body',
+  fontSize: '14',
   _hover: { filter: '[brightness(1.04)]', transform: '[translateY(-1px)]' },
   '&::after': { content: "' ›'", fontWeight: '[700]', opacity: '[0.55]' },
 });
@@ -112,7 +112,7 @@ const requestName = css({
   borderRadius: '[6px]',
   bg: '[none]',
   textAlign: 'left',
-  fontSize: 'body',
+  fontSize: '14',
   fontWeight: 'bold',
   _hover: { bg: 'sand' },
 });
@@ -128,7 +128,7 @@ const wordsLink = css({
   pointerEvents: 'auto',
   textAlign: 'left',
   font: 'inherit',
-  fontSize: 'body',
+  fontSize: '14',
 });
 
 /** How many times a message has come up, on a faint tag after it. */
@@ -138,7 +138,7 @@ const countTag = css({
   px: 's',
   borderRadius: '[8px]',
   bg: 'ink.10',
-  fontSize: '[12px]',
+  fontSize: '12',
   fontWeight: 'bold',
   whiteSpace: 'nowrap',
 });
@@ -152,7 +152,7 @@ const close = css({
   border: '[none]',
   borderRadius: '[50%]',
   bg: '[none]',
-  fontSize: '[12px]',
+  fontSize: '12',
   opacity: '[0.45]',
   _hover: { opacity: '[1]', bg: 'ink.10' },
 });

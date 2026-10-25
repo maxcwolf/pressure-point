@@ -13,11 +13,11 @@ const keyList = css({
   listStyle: 'none',
   p: 'none',
   textAlign: 'left',
-  fontSize: 'body',
+  fontSize: '14',
   lineHeight: '[1.9]',
   '& kbd': {
     font: 'inherit',
-    fontSize: '[12px]',
+    fontSize: '12',
     fontWeight: 'bold',
     bg: 'white',
     border: 'control',

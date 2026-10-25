@@ -115,7 +115,7 @@ const back = css({
   borderRadius: '[11px]',
   bg: '[#19bcd6]',
   color: 'white',
-  fontSize: '[15px]',
+  fontSize: '15',
   fontWeight: 'bold',
   p: '[4px 12px 4px 9px]',
   _hover: { bg: '[#33cbe3]' },
@@ -129,7 +129,7 @@ const noteLook = css({
   borderRadius: 'card',
   p: '[9px 12px]',
   mb: '[14px]',
-  fontSize: '[14.5px]',
+  fontSize: '15',
   lineHeight: '[1.35]',
   textAlign: 'left',
 });
@@ -138,7 +138,7 @@ const noteLook = css({
 const saveName = css({ fontSize: '[clamp(18px, 3.2vh, 24px)]', fontWeight: 'bold', mb: '[clamp(4px, 1vh, 10px)]' });
 
 /** The center the latest save is in, close under its name. */
-const centerName = css({ m: '[-8px 0 8px]', fontSize: '[14px]', color: '[#7fe6f2]', fontWeight: 'bold' });
+const centerName = css({ m: '[-8px 0 8px]', fontSize: '14', color: '[#7fe6f2]', fontWeight: 'bold' });
 
 /** The latest save's picture beside its facts. */
 const saveBody = css({
@@ -275,7 +275,7 @@ const version = css({
   position: 'fixed',
   left: '[14px]',
   bottom: '[10px]',
-  fontSize: '[12px]',
+  fontSize: '12',
   fontWeight: 'bold',
   color: 'cream',
   opacity: '[0.75]',
@@ -314,7 +314,7 @@ const news = css.raw({
   borderRadius: '[14px]',
   bg: '[rgba(44, 58, 78, 0.84)]',
   color: 'white',
-  fontSize: '[15px]',
+  fontSize: '15',
   fontWeight: 'bold',
   p: '[6px 13px]',
   boxShadow: '[0 3px 0 rgba(0, 0, 0, 0.3)]',
@@ -334,7 +334,7 @@ const updateLook = css({
   borderRadius: '[14px]',
   bg: '[rgba(44, 58, 78, 0.7)]',
   color: 'white',
-  fontSize: '[13px]',
+  fontSize: '13',
   fontWeight: 'bold',
   p: '[4px 11px]',
   boxShadow: '[0 2px 0 rgba(0, 0, 0, 0.25)]',

@@ -38,10 +38,10 @@ const statCard = css({
   borderRadius: 'card',
   py: 'm',
   px: '[11px]',
-  fontSize: '[13px]',
-  '& h4': { fontWeight: 'bold', fontSize: 'body' },
-  '& b': { fontSize: '[19px]', fontWeight: '[700]' },
-  '& p.sub': { mt: 'xs', fontSize: '[11.5px]' },
+  fontSize: '13',
+  '& h4': { fontWeight: 'bold', fontSize: '14' },
+  '& b': { fontSize: '20', fontWeight: '[700]' },
+  '& p.sub': { mt: 'xs', fontSize: '12' },
 });
 
 /** A card's small chart. */
@@ -59,7 +59,7 @@ const choices = css({
     borderRadius: '[999px]',
     bg: 'white',
     p: '[3px 11px]',
-    fontSize: 'small',
+    fontSize: '13',
     fontWeight: '[500]',
     _hover: { transform: 'translateY(-1px)' },
     _on: { bg: 'teal', borderColor: 'teal-dark', color: 'white' },
@@ -75,14 +75,14 @@ const awardList = css({
     border: '[2px solid {colors.gold}]',
     borderRadius: 'control',
     p: '[2px 8px]',
-    fontSize: '[13px]',
+    fontSize: '13',
   },
 });
 
 /** The pill to look back on the last ceremony. */
 const ceremonyButton = css({
   pointerEvents: 'auto',
-  fontSize: '[13px]',
+  fontSize: '13',
   fontWeight: '[500]',
   border: 'control',
   borderRadius: '[999px]',

@@ -10,7 +10,7 @@ const RELEASES = parseChangelog(changelog);
 /** Every version's notes, one after another, each a list with its own lists under some of its lines. */
 const changelogLook = css({
   textAlign: 'left',
-  fontSize: '[14.5px]',
+  fontSize: '15',
   lineHeight: '[1.4]',
   '& section + section': { mt: '[14px]' },
   '& ul': { pl: '[18px]' },
@@ -23,7 +23,7 @@ const versionName = css({
   display: 'flex',
   alignItems: 'center',
   gap: 'm',
-  fontSize: '[17px]',
+  fontSize: '17',
   fontWeight: 'bold',
   color: 'teal-dark',
   mb: 'xs',
@@ -31,7 +31,7 @@ const versionName = css({
 
 /** This version, on a teal chip. */
 const here = css({
-  fontSize: '[11.5px]',
+  fontSize: '12',
   fontWeight: 'bold',
   color: 'white',
   bg: 'teal',

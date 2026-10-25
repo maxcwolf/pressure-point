@@ -20,7 +20,7 @@ const sandboxLook = css({ '& > .sub': { textAlign: 'center' } });
 const amounts = css({ gap: 's' });
 
 /** Start building, big, in the middle under the settings. */
-const start = css({ display: 'block', m: '[14px auto 2px]', fontSize: '[17px]', p: '[8px 22px]' });
+const start = css({ display: 'block', m: '[14px auto 2px]', fontSize: '17', p: '[8px 22px]' });
 
 export interface SandboxPanelProps {
   audio: Audio;

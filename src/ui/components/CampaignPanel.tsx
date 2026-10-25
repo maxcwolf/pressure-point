@@ -33,7 +33,7 @@ const TABS: readonly { id: Tab; label: string }[] = [
 ];
 
 /** The karma there is to spend, over the tabs. */
-const karma = css({ fontWeight: '[700]', fontSize: '[15px]', m: '[0 0 8px]' });
+const karma = css({ fontWeight: '[700]', fontSize: '15', m: '[0 0 8px]' });
 
 /** The tabs, in the middle. */
 const tabs = css({ justifyContent: 'center', mb: '[10px]' });
@@ -78,25 +78,25 @@ const pin = css({
 const about = css({ bg: 'white', border: 'card', borderRadius: 'card', p: '[8px 11px]' });
 
 /** A center's name. */
-const centerName = css({ fontSize: '[15.5px]' });
+const centerName = css({ fontSize: '15' });
 
 /** The stars earned in a center and to come, beside its name: gold, outlined in navy. */
 const stars = css({
   ml: 'm',
   color: 'gold',
-  fontSize: '[22px]',
+  fontSize: '24',
   letterSpacing: '[2px]',
   WebkitTextStroke: '[1.5px {colors.navy}]',
   paintOrder: 'stroke fill',
 });
 
 /** Small print under a name: where a center is, or what an item or achievement is. */
-const small = css({ display: 'block', fontSize: '[12px]', opacity: '[0.7]' });
+const small = css({ display: 'block', fontSize: '12', opacity: '[0.7]' });
 
 /** A line about a center: what it is like, how it opens, or what opens it. */
-const line = css.raw({ fontSize: '[13px]', m: '[3px 0 6px]' });
+const line = css.raw({ fontSize: '13', m: '[3px 0 6px]' });
 const blurb = css(line);
-const opening = css(line, { fontSize: '[12px]', opacity: '[0.8]' });
+const opening = css(line, { fontSize: '12', opacity: '[0.8]' });
 const why = css(line, { fontWeight: 'bold', mb: 'none' });
 
 /** Play, and Willow Lane's switch for the tutorial beside it. */
@@ -106,7 +106,7 @@ const play = css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap:
 const playButton = css({ mt: 'none' });
 
 /** The switch for the tutorial, with its words. */
-const tutorialSwitch = css({ display: 'flex', alignItems: 'center', gap: 'm', fontSize: '[13px]', cursor: 'pointer' });
+const tutorialSwitch = css({ display: 'flex', alignItems: 'center', gap: 'm', fontSize: '13', cursor: 'pointer' });
 
 /** The karma shop's list, and the achievements'. */
 const list = css({ listStyle: 'none', p: 'none', m: '[8px 0 0]', display: 'grid', gap: 's', textAlign: 'left' });
@@ -131,22 +131,22 @@ const shopCard = css(card, { '&.owned em': { color: 'green' } });
 const featCard = css(card, { '&:not(.done)': { opacity: '[0.7]' }, '&.done em': { color: 'green' } });
 
 /** A name on a card. */
-const cardName = css({ display: 'block', fontSize: '[14.5px]' });
+const cardName = css({ display: 'block', fontSize: '15' });
 
 /** What something costs, or Unlocked, or a tick. */
-const price = css({ fontStyle: 'normal', fontWeight: '[700]', fontSize: '[13px]', whiteSpace: 'nowrap' });
+const price = css({ fontStyle: 'normal', fontWeight: '[700]', fontSize: '13', whiteSpace: 'nowrap' });
 
 /** The button to unlock something with karma, smaller than the go buttons are, and grey while there is not enough. */
 const buy = css({
   m: 'none',
   p: '[4px 10px]',
-  fontSize: '[13px]',
+  fontSize: '13',
   whiteSpace: 'nowrap',
   _disabled: { filter: '[grayscale(1)]', opacity: '[0.55]', cursor: 'default', transform: 'none' },
 });
 
 /** The heading over the floors and walls. */
-const shopHead = css({ m: '[14px 0 0]', textAlign: 'left', fontSize: '[15px]' });
+const shopHead = css({ m: '[14px 0 0]', textAlign: 'left', fontSize: '15' });
 
 /** A floor or a wall, as a swatch of it. */
 const swatch = css({ w: '[26px]', h: '[26px]', borderRadius: '[7px]', border: 'card' });

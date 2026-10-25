@@ -39,7 +39,7 @@ const row = css({
   borderRadius: '[11px]',
   p: '[6px 9px]',
   mb: '[5px]',
-  fontSize: '[13px]',
+  fontSize: '13',
   '&:not(.head)': { cursor: 'pointer' },
   _hover: { borderColor: 'teal-dark', bg: 'teal-tint' },
   '& b': { fontWeight: 'bold' },
@@ -53,14 +53,14 @@ const row = css({
     pt: 'none',
     pb: 'none',
     mb: 'xxs',
-    fontSize: '[11.5px]',
+    fontSize: '12',
     opacity: '[0.7]',
   },
   '&.head:hover': { bg: '[none]', borderColor: 'transparent' },
   '&.head em': { fontStyle: 'normal', fontWeight: 'bold' },
   '& small': { textAlign: 'right' },
   '& > .icon': { gridRow: '[span 2]' },
-  '& .knows': { gridColumn: '[2 / -1]', fontSize: '[11.5px]', opacity: '[0.85]' },
+  '& .knows': { gridColumn: '[2 / -1]', fontSize: '12', opacity: '[0.85]' },
   '& .knows:has(.quals)': { opacity: '[1]' },
   '& .knows .quals': { m: 'none' },
 });
@@ -89,7 +89,7 @@ const act = css({
   border: 'control',
   borderRadius: '[10px]',
   bg: 'cream',
-  fontSize: '[12px]',
+  fontSize: '12',
   fontWeight: 'bold',
   p: '[1px 8px]',
   whiteSpace: 'nowrap',
@@ -108,7 +108,7 @@ const requests = css({
 });
 
 /** The treatments to narrow the list to, each with how many know it. */
-const knowsFilter = css({ '& .tab small': { fontSize: '[11px]', fontWeight: 'bold', opacity: '[0.7]' } });
+const knowsFilter = css({ '& .tab small': { fontSize: '11', fontWeight: 'bold', opacity: '[0.7]' } });
 
 /** Whether someone knows a treatment, or is on its course. */
 const knowsOrLearning = (st: Staff, m: Modality) => st.quals.includes(m) || st.training?.course === m;

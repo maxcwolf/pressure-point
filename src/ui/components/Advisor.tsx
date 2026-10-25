@@ -28,7 +28,7 @@ const advisor = css({
     border: '[3px solid {colors.navy}]',
     borderRadius: '[16px 16px 16px 4px]',
     p: '[9px 13px]',
-    fontSize: '[14px]',
+    fontSize: '14',
     lineHeight: '[1.3]',
     boxShadow: 'raised',
     textAlign: 'left',
@@ -38,7 +38,7 @@ const advisor = css({
   // what kind of note it is, or which step of the tutorial, in small teal capitals over it
   '& .kicker': {
     display: 'block',
-    fontSize: '[11.5px]',
+    fontSize: '12',
     fontWeight: 'bold',
     letterSpacing: '[0.06em]',
     textTransform: 'uppercase',

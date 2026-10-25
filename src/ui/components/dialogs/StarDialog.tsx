@@ -33,7 +33,7 @@ const unlock = css({
   py: 'm',
   px: 'l',
   mt: '[10px]',
-  fontSize: '[14px !important]',
+  fontSize: '14 !important',
 });
 
 /** The new star, the grant that comes with it, and what it unlocks. */

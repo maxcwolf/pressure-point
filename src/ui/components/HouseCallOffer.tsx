@@ -26,10 +26,10 @@ const callColor = css({ borderColor: 'blue' });
 const whoList = css({ display: 'flex', flexDirection: 'column', gap: '[5px]', mt: 'm' });
 
 /** A button to send someone, in smaller words than usual. */
-const send = css({ fontSize: '[13px]' });
+const send = css({ fontSize: '13' });
 
 /** What sending them would cost, on a fainter line under their name. */
-const sendCost = css({ display: 'block', fontSize: '[12px]', opacity: '[0.8]' });
+const sendCost = css({ display: 'block', fontSize: '12', opacity: '[0.8]' });
 
 /** Nobody here can go, in red. */
 const nobody = css({ color: 'bad', fontWeight: 'bold' });

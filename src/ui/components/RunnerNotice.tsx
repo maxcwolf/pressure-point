@@ -22,7 +22,7 @@ const pill = css({
   borderColor: '[#c2457a]',
   p: '[6px 12px 8px]',
   font: 'inherit',
-  fontSize: 'body',
+  fontSize: '14',
   fontWeight: 'bold',
   textAlign: 'center',
   animation: 'pop 0.2s ease-out',
@@ -40,10 +40,10 @@ const show = css({
 });
 
 /** Who to send, or who is on the way, in a smaller row than usual. */
-const buttons = css({ mt: 'xs', '& button': { fontSize: 'body', p: '[4px 12px]', mt: 'xxs' } });
+const buttons = css({ mt: 'xs', '& button': { fontSize: '14', p: '[4px 12px]', mt: 'xxs' } });
 
 /** Who is on the way. */
-const onTheWay = css({ fontSize: '[13px]', fontWeight: 'bold', opacity: '[0.85]' });
+const onTheWay = css({ fontSize: '13', fontWeight: 'bold', opacity: '[0.85]' });
 
 /** The pills for everyone running round on a really bad trip, newest first. */
 export function RunnerNotice() {

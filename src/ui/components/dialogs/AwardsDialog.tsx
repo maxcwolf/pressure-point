@@ -36,8 +36,8 @@ const awards = css({
   '& li.won': { borderColor: 'gold', bg: 'gold-tint' },
   '& li.missed': { opacity: '[0.75]' },
   '& li.missed .icon': { filter: '[grayscale(1)]', opacity: '[0.45]' },
-  '& small': { display: 'block', fontSize: '[12px]', lineHeight: '[1.25]' },
-  '& em': { fontStyle: 'normal', fontWeight: 'bold', fontSize: '[13px]' },
+  '& small': { display: 'block', fontSize: '12', lineHeight: '[1.25]' },
+  '& em': { fontStyle: 'normal', fontWeight: 'bold', fontSize: '13' },
 });
 
 /** Every award at the year's ceremony, won or missed, with how the center did and what the winners took home. */

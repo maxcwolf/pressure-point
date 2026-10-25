@@ -30,12 +30,12 @@ const cv = css(cardLook, {
     border: 'control',
     borderRadius: '[10px]',
     bg: 'white',
-    fontSize: '[12px]',
+    fontSize: '12',
     fontWeight: 'bold',
     p: '[0 8px]',
   },
-  '& .rank': { display: 'flex', alignItems: 'center', gap: '[5px]', fontSize: 'small' },
-  '& small': { fontWeight: '[400]', fontSize: '[11px]' },
+  '& .rank': { display: 'flex', alignItems: 'center', gap: '[5px]', fontSize: '13' },
+  '& small': { fontWeight: '[400]', fontSize: '11' },
 });
 
 /** The applicants for the chosen role, in the order picked. */

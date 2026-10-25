@@ -38,7 +38,7 @@ export const globalCss = defineGlobalStyles({
   'h2, h3, h4, p, ul': { margin: '0' },
   s: { textDecoration: 'none', opacity: '0.25' },
   // smaller, fainter words under a heading or a setting
-  '.sub': { fontSize: '12.5px', opacity: '0.72', marginTop: '6px' },
+  '.sub': { fontSize: '13', opacity: '0.72', marginTop: '6px' },
   // money or a change that is good news, and one that is bad
   '.pos': { color: 'green-dark' },
   '.neg': { color: 'red' },

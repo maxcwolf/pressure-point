@@ -30,15 +30,15 @@ import { TechniquePrices } from './TechniquePrices';
 const sources = css(ledgerLook, {
   mt: 'l',
   '& :is(.head, .source)': { display: 'grid', gridTemplateColumns: '[1fr auto auto]', gap: 'l' },
-  '& .head': { fontSize: '[11.5px]', opacity: '[0.7]' },
+  '& .head': { fontSize: '12', opacity: '[0.7]' },
   '& .source b': { textAlign: 'right' },
   '& .source.side span': { color: 'teal-dark' },
 });
 
 /** The overall price level's card, with how many prices put off this month and last, and who they put off. */
 const priceLevel = css(ledgerLook, {
-  '& .priced': { fontSize: '[13px]', fontWeight: 'bold', mt: 'xs' },
-  '& .balk': { fontSize: '[13px]', mt: 'xxs' },
+  '& .priced': { fontSize: '13', fontWeight: 'bold', mt: 'xs' },
+  '& .balk': { fontSize: '13', mt: 'xxs' },
 });
 
 /** A line of the books: income in green, spending in red. */

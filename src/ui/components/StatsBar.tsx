@@ -61,8 +61,8 @@ const cell = css.raw({
   borderRight: '[2px solid {colors.ink.16}]',
   minW: '[96px]',
   '& > .icon': { gridRow: '[span 2]' },
-  '& b': { fontSize: '[18px]', fontWeight: 'bold', lineHeight: '[1.1]', fontVariantNumeric: 'tabular-nums' },
-  '& small, & .bar': { gridColumn: '[2]', fontSize: '[11.5px]', whiteSpace: 'nowrap', _max720: { display: 'none' } },
+  '& b': { fontSize: '17', fontWeight: 'bold', lineHeight: '[1.1]', fontVariantNumeric: 'tabular-nums' },
+  '& small, & .bar': { gridColumn: '[2]', fontSize: '12', whiteSpace: 'nowrap', _max720: { display: 'none' } },
   _max1540: { py: 'm', px: '[10px]' },
   _max1100: { minW: '[0]', py: 's', px: '[9px]' },
 });
@@ -102,7 +102,7 @@ const when = css({ _max1430: { display: 'none' } });
 /** The temperature beside the day, in bold blue when it needs heating and in bold red when it needs cooling. */
 const temp = css({
   ml: 'm',
-  fontSize: '[15px]',
+  fontSize: '15',
   color: 'navy',
   '&.heat': { fontWeight: '[700]', color: '[#2f6fae]' },
   '&.cool': { fontWeight: '[700]', color: 'red' },
@@ -131,7 +131,7 @@ const speed = css({
   minW: '[36px]',
   py: 'none',
   px: '[7px]',
-  fontSize: '[11px]',
+  fontSize: '11',
   letterSpacing: '[-2px]',
   _on: { bg: 'orange', color: 'white' },
 });

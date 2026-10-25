@@ -31,7 +31,7 @@ const decorCard = css({
   mt: '[10px]',
   borderTop: '[2px dashed {colors.ink.20}]',
   pt: '[7px]',
-  '.insp &': { '& h4': { fontSize: '[14px]', fontWeight: 'bold' } },
+  '.insp &': { '& h4': { fontSize: '14', fontWeight: 'bold' } },
 });
 
 /** What the floor or the walls are now, close over their swatches (under `.insp`, to outdo its paragraphs' spacing). */
@@ -74,7 +74,7 @@ const decorAll = css({
   borderRadius: 'card',
   p: '[5px 11px]',
   fontWeight: 'bold',
-  fontSize: '[13px]',
+  fontSize: '13',
   bg: 'cream',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
   m: '[2px 0 6px]',

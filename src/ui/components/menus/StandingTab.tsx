@@ -22,8 +22,8 @@ import { IconText } from '../common/Icon';
 /** The tab: the grade large at the top, headings partway down with room over them, and the bar to the next grade. */
 const standing = css({
   '& h4': { fontWeight: 'bold', m: '[10px 0 4px]' },
-  '& .grade-now': { fontSize: '[18px]', mt: 'none' },
-  '& label': { display: 'block', m: '[8px 0 2px]', fontSize: '[13px]' },
+  '& .grade-now': { fontSize: '17', mt: 'none' },
+  '& label': { display: 'block', m: '[8px 0 2px]', fontSize: '13' },
 });
 
 /**
@@ -44,17 +44,17 @@ const grades = css({
     border: '[2px solid {colors.ink.20}]',
     borderRadius: '[10px]',
     p: '[5px 8px]',
-    fontSize: 'small',
+    fontSize: '13',
     opacity: '[0.6]',
   },
   '& li.reached': { opacity: '[1]' },
   '& li.now': { bg: 'gold-tint', borderColor: 'gold', fontWeight: 'bold' },
-  '& small': { fontSize: '[11px]', fontWeight: '[400]', opacity: '[0.8]' },
+  '& small': { fontSize: '11', fontWeight: '[400]', opacity: '[0.8]' },
   _max1100: { gridTemplateColumns: '[repeat(3, minmax(0, 1fr))]' },
 });
 
 /** What the grade brings, as a list. */
-const effects = css({ m: '[0 0 4px 18px]', fontSize: '[13px]' });
+const effects = css({ m: '[0 0 4px 18px]', fontSize: '13' });
 
 /**
  * The rival's card: its slogan in italics, the center's standing and the rival's side by side as bars, and its sale in
@@ -75,7 +75,7 @@ const rival = css({
     columnGap: 'm',
     rowGap: 'xs',
     m: '[6px 0]',
-    fontSize: '[13px]',
+    fontSize: '13',
   },
   '& .versus em': { fontStyle: 'normal', fontWeight: 'bold' },
   '& .sale': { color: 'red', fontWeight: 'bold' },

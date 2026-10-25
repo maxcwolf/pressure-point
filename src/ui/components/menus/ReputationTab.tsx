@@ -27,9 +27,9 @@ const part = css({
   border: '[2px solid {colors.ink.20}]',
   borderRadius: '[10px]',
   p: '[6px 10px]',
-  fontSize: '[13px]',
+  fontSize: '13',
   '& span': { gridColumn: '[1 / -1]' },
-  '& small': { fontSize: '[11.5px]', opacity: '[0.8]' },
+  '& small': { fontSize: '12', opacity: '[0.8]' },
   '& em': { fontStyle: 'normal', fontWeight: 'bold' },
 });
 
@@ -45,12 +45,12 @@ const reviews = css({
     border: '[2px solid {colors.ink.20}]',
     borderRadius: '[10px]',
     p: '[6px 10px]',
-    fontSize: '[13px]',
+    fontSize: '13',
     display: 'flex',
     flexDirection: 'column',
     gap: 'xxs',
   },
-  '& small': { fontSize: '[11.5px]', opacity: '[0.75]' },
+  '& small': { fontSize: '12', opacity: '[0.75]' },
 });
 
 /** A review's stars, in gold outlined in navy. */

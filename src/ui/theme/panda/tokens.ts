@@ -61,9 +61,16 @@ export const tokens = defineTokens({
     control: { value: '9px' },
     card: { value: '12px' },
   },
+  /** The type sizes, each its size in pixels: 13 for small print, 14 for the body, 17 for a heading. */
   fontSizes: {
-    small: { value: '12.5px' },
-    body: { value: '13.5px' },
+    11: { value: '11px' },
+    12: { value: '12px' },
+    13: { value: '13px' },
+    14: { value: '14px' },
+    15: { value: '15px' },
+    17: { value: '17px' },
+    20: { value: '20px' },
+    24: { value: '24px' },
   },
   fontWeights: {
     bold: { value: '600' },

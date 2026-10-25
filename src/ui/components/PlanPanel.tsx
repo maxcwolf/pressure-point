@@ -30,7 +30,7 @@ const costTag = css({
   borderRadius: 'control',
   py: 'none',
   px: 'm',
-  fontSize: '[14px]',
+  fontSize: '14',
 });
 
 /** A row of chips. */
@@ -42,7 +42,7 @@ const chips = css({ display: 'flex', flexWrap: 'wrap', gap: 's', mb: '[7px]' });
  */
 const chip = css({
   pointerEvents: 'auto',
-  fontSize: '[13px]',
+  fontSize: '13',
   fontWeight: '[500]',
   border: 'control',
   borderRadius: '[999px]',

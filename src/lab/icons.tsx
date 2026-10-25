@@ -94,7 +94,7 @@ const link = css({ color: 'teal-dark', fontWeight: 'bold' });
 const heading = css({ m: '[18px 0 8px]', fontSize: '[16px]', fontWeight: 'bold' });
 
 /** What a family is for and how it is colored, after its name. */
-const headingNote = css({ fontWeight: '[400]', fontSize: 'small', opacity: '[0.7]', ml: 's' });
+const headingNote = css({ fontWeight: '[400]', fontSize: '13', opacity: '[0.7]', ml: 's' });
 
 /** A family's cards, wrapping onto as many lines as they take. */
 const cards = css({ display: 'flex', flexWrap: 'wrap', gap: 's' });

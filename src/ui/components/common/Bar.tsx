@@ -37,7 +37,7 @@ const meter = css({
 const meterValueStyle = css({
   minW: '[2.2em]',
   textAlign: 'right',
-  fontSize: '[11.5px]',
+  fontSize: '12',
   fontWeight: 'bold',
   fontVariantNumeric: 'tabular-nums',
   lineHeight: '[1]',

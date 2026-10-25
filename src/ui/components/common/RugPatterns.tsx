@@ -12,7 +12,7 @@ const row = css({
   alignItems: 'center',
   justifyContent: 'center',
   gap: '[6px 10px]',
-  fontSize: 'body',
+  fontSize: '14',
   fontWeight: '[500]',
 });
 

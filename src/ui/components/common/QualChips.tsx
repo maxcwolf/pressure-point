@@ -13,7 +13,7 @@ const chips = css({
   gap: 'xs',
   m: '[3px 0 5px]',
   '& > span': {
-    fontSize: '[11.5px]',
+    fontSize: '12',
     fontWeight: '[500]',
     bg: 'violet-tint',
     border: '[1.5px solid {colors.violet}]',

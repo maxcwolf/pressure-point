@@ -59,7 +59,7 @@ const roomButton = css({
   borderRadius: 'card',
   p: '[5px 11px]',
   fontWeight: 'bold',
-  fontSize: '[13px]',
+  fontSize: '13',
   bg: 'cream',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
   mt: 's',

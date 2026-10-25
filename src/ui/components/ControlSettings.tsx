@@ -24,7 +24,7 @@ const keycap = css({
   pointerEvents: 'auto',
   flex: 'none',
   minW: '[46px]',
-  fontSize: '[13px]',
+  fontSize: '13',
   fontWeight: 'bold',
   bg: 'white',
   border: 'control',

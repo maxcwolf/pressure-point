@@ -33,8 +33,8 @@ const dialog = css({
   p: '[22px 26px 24px]',
   animation: 'pop 0.2s ease-out',
   '#modal.leaving &': { animation: 'unpop 0.14s ease-in forwards' },
-  '& h2': { fontSize: '[26px]', fontWeight: '[700]', mb: 'm' },
-  '& p': { fontSize: '[15px]', lineHeight: '[1.35]' },
+  '& h2': { fontSize: '24', fontWeight: '[700]', mb: 'm' },
+  '& p': { fontSize: '15', lineHeight: '[1.35]' },
   '&.wide': {
     w: '[min(640px, calc(var(--vw) - 40px))]',
     maxH: '[calc(var(--vh) - 40px)]',

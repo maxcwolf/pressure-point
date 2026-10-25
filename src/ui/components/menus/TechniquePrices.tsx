@@ -32,7 +32,7 @@ const priceRow = css({
   gridTemplateColumns: '[1fr auto 28px 48px 28px]',
   alignItems: 'center',
   gap: 's',
-  '& small': { fontSize: '[11.5px]', opacity: '[0.75]' },
+  '& small': { fontSize: '12', opacity: '[0.75]' },
   '& b': { textAlign: 'center' },
   '& button': { border: 'control', borderRadius: '[8px]', bg: 'cream', fontWeight: 'bold', h: '[26px]' },
   '& button.locked': { opacity: 'locked' },

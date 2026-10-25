@@ -40,7 +40,7 @@ const modalityCard = css(cardLook, {
 });
 
 /** A discipline's heading, over its modalities. */
-const section = css({ fontSize: '[15px]', fontWeight: 'bold', m: '[12px 0 5px]' });
+const section = css({ fontSize: '15', fontWeight: 'bold', m: '[12px 0 5px]' });
 
 /** What a modality treats, who can give it and whether its equipment is in. */
 function ModalityCard({ modality }: { modality: Modality }) {

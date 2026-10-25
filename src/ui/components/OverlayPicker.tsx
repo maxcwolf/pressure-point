@@ -37,10 +37,10 @@ const choice = css({
   py: 'xs',
   px: 'm',
   fontWeight: 'bold',
-  fontSize: 'body',
+  fontSize: '14',
   _on: { borderColor: 'teal-dark', bg: 'teal-wash' },
   '& i': { display: 'grid', placeItems: 'center' },
-  '& small': { display: 'block', fontWeight: '[400]', fontSize: '[11.5px]' },
+  '& small': { display: 'block', fontWeight: '[400]', fontSize: '12' },
 });
 
 /**
@@ -56,7 +56,7 @@ const keyPanel = css({
   alignItems: 'center',
   gap: '[10px]',
   p: '[0 8px 0 14px]',
-  fontSize: '[13px]',
+  fontSize: '13',
   whiteSpace: 'nowrap',
   _max720: { top: '[calc(14px + 44px + 8px)]', right: '[14px]' },
 });
@@ -107,7 +107,7 @@ const close = css({
   borderRadius: '[50%]',
   border: 'control',
   bg: 'white',
-  fontSize: '[12px]',
+  fontSize: '12',
   lineHeight: '[1]',
 });
 

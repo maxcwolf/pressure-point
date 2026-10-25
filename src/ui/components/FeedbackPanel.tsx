@@ -16,12 +16,12 @@ const MAX_LENGTH = 4000;
 const panel = css({ display: 'flex', flexDirection: 'column', gap: 'm', m: '[6px 0 4px]', textAlign: 'left' });
 
 /** What the box is for, over it. */
-const intro = css({ fontSize: '[14.5px !important]' });
+const intro = css({ fontSize: '15 !important' });
 
 /** A box to type in. */
 const field = css.raw({
   font: 'inherit',
-  fontSize: '[15px]',
+  fontSize: '15',
   color: 'navy',
   bg: 'white',
   border: '[2.5px solid {colors.navy}]',
@@ -43,7 +43,7 @@ const button = css({
   border: '[2.5px solid {colors.navy}]',
   borderRadius: 'card',
   p: '[6px 18px]',
-  fontSize: '[15px]',
+  fontSize: '15',
   fontWeight: 'bold',
   bg: 'cream',
   color: 'navy',
@@ -54,7 +54,7 @@ const button = css({
 
 /** Thanks once it has gone, in green, or why it did not, in red. */
 const noteLook = css({
-  fontSize: '[14px !important]',
+  fontSize: '14 !important',
   bg: 'good-bg',
   color: 'good',
   borderRadius: '[10px]',
@@ -63,7 +63,7 @@ const noteLook = css({
 });
 
 /** What goes with it, in small print under the button. */
-const small = css({ fontSize: '[12px !important]', textAlign: 'center', opacity: '[0.75]' });
+const small = css({ fontSize: '12 !important', textAlign: 'center', opacity: '[0.75]' });
 
 /** How far sending has got. */
 type Sending = 'writing' | 'sending' | 'sent' | 'failed';

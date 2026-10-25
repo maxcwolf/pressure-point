@@ -27,7 +27,7 @@ const day = css({
   borderRadius: 'control',
   p: '[4px 0]',
   fontWeight: 'bold',
-  fontSize: '[12px]',
+  fontSize: '12',
   bg: 'cream',
   boxShadow: '[0 2px 0 {colors.ink.30}]',
   _on: { bg: 'gold' },

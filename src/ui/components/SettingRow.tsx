@@ -14,7 +14,7 @@ export const choice = css({
   borderRadius: '[10px]',
   p: '[4px 12px]',
   fontWeight: 'bold',
-  fontSize: 'body',
+  fontSize: '14',
   bg: 'cream',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
 });

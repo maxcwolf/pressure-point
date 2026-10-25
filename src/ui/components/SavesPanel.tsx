@@ -49,7 +49,7 @@ const nameBox = css({
   flex: '1',
   minW: '[0]',
   font: 'inherit',
-  fontSize: '[15px]',
+  fontSize: '15',
   color: 'navy',
   bg: 'white',
   border: '[2.5px solid {colors.navy}]',
@@ -65,7 +65,7 @@ const button = css.raw({
   border: 'control',
   borderRadius: '[10px]',
   p: '[3px 10px]',
-  fontSize: '[13px]',
+  fontSize: '13',
   fontWeight: 'bold',
   bg: 'cream',
   m: 'none',
@@ -76,14 +76,14 @@ const button = css.raw({
 const rowButton = css(button);
 
 /** Save game, as big as the box beside it. */
-const saveButton = css(button, { fontSize: '[15px]', p: '[6px 16px]' });
+const saveButton = css(button, { fontSize: '15', p: '[6px 16px]' });
 
 /**
  * What the last thing done came to, in green, or in red where it went wrong. Its size holds in a dialog too, which
  * draws its words larger.
  */
 const noteLook = css({
-  fontSize: '[13.5px !important]',
+  fontSize: '14 !important',
   bg: 'good-bg',
   color: 'good',
   borderRadius: '[10px]',
@@ -117,19 +117,19 @@ const row = css.raw({
 const saveRow = css(row);
 
 /** The row there is while there are no saved games. */
-const emptyRow = css(row, { justifyContent: 'center', opacity: '[0.7]', fontSize: '[14px]' });
+const emptyRow = css(row, { justifyContent: 'center', opacity: '[0.7]', fontSize: '14' });
 
 /** What a saved game is: its name, over its date, money, stars and when it was saved. */
 const about = css({ minW: '[0]' });
 const aboutName = css({
   display: 'block',
   fontWeight: 'bold',
-  fontSize: '[15px]',
+  fontSize: '15',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 });
-const aboutFacts = css({ fontSize: '[12px]', opacity: '[0.75]' });
+const aboutFacts = css({ fontSize: '12', opacity: '[0.75]' });
 
 /** A saved game's buttons. */
 const actions = css({ display: 'flex', gap: '[5px]', flex: 'none', flexWrap: 'wrap', justifyContent: 'flex-end' });
@@ -140,7 +140,7 @@ const foot = css({
   alignItems: 'center',
   gap: '[10px]',
   mt: '[9px]',
-  fontSize: '[12px]',
+  fontSize: '12',
   opacity: '[0.85]',
 });
 

@@ -22,7 +22,7 @@ const panel = css({ top: '[14px]', left: '[14px]', w: '[248px]', _max720: { w: '
 
 /** The center's name, in small teal capitals over the heading. */
 const centerName = css({
-  fontSize: '[12px]',
+  fontSize: '12',
   fontWeight: 'bold',
   textTransform: 'uppercase',
   letterSpacing: '[0.06em]',
@@ -32,7 +32,7 @@ const centerName = css({
 /** The stars earned and to come, gold outlined in navy. */
 const stars = css({
   color: 'gold',
-  fontSize: '[22px]',
+  fontSize: '24',
   letterSpacing: '[2px]',
   WebkitTextStroke: '[1.5px {colors.navy}]',
   paintOrder: 'stroke fill',
@@ -45,14 +45,14 @@ const list = css({ listStyle: 'none', p: 'none', mt: 'xs' });
 const tickLine = css.raw({ display: 'flex', gap: '[7px]', '& span': { flex: '1' }, '&.done': { color: 'green-dark' } });
 
 /** An objective, or the line saying there are none left. */
-const objectiveLine = css(tickLine, { fontSize: 'body', py: 'xs' });
+const objectiveLine = css(tickLine, { fontSize: '14', py: 'xs' });
 
 /**
  * One of the things a first game will need soon, or one of the tutorial's steps: the one in hand in bold, those to come
  * grey.
  */
 const stepLine = css(tickLine, {
-  fontSize: '[13px]',
+  fontSize: '13',
   py: 'xxs',
   '&.current': { fontWeight: 'bold' },
   '&.ahead': { color: 'ink.50' },
@@ -80,9 +80,9 @@ const detailList = css({
   m: '[4px 0 2px]',
   bg: 'ink.6',
   borderRadius: '[8px]',
-  fontSize: '[12px]',
+  fontSize: '12',
   color: 'navy',
-  '& li': { display: 'list-item', listStyle: 'none', py: '[1px]', fontSize: '[12px]' },
+  '& li': { display: 'list-item', listStyle: 'none', py: '[1px]', fontSize: '12' },
 });
 
 /** What a first game will need soon, or the tutorial's steps, under a dashed line. */
@@ -91,7 +91,7 @@ const gettingReady = css({ mt: 'm', pt: 's', borderTop: '[2px dashed {colors.ink
 /** Its heading, in small teal capitals. */
 const gettingReadyHeading = css({
   m: 'none',
-  fontSize: '[12px]',
+  fontSize: '12',
   fontWeight: 'bold',
   textTransform: 'uppercase',
   letterSpacing: '[0.06em]',
@@ -99,7 +99,7 @@ const gettingReadyHeading = css({
 });
 
 /** Opening out the tutorial's steps, or folding them again, in small teal words. */
-const moreLabel = css(opener, { fontSize: '[12px]', color: 'teal-dark' });
+const moreLabel = css(opener, { fontSize: '12', color: 'teal-dark' });
 
 /**
  * A card for something under way: an emergency or a stress outbreak in red. `emergency`, `outbreak` and `challenge` are
@@ -112,7 +112,7 @@ const card = css.raw({
   bg: 'bad-bg',
   border: '[2px solid {colors.red}]',
   borderRadius: '[11px]',
-  fontSize: '[13px]',
+  fontSize: '13',
   display: 'flex',
   flexDirection: 'column',
   gap: 'xxs',

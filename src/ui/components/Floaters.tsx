@@ -24,7 +24,7 @@ const floater = css({
   top: '[0]',
   opacity: '[0]',
   fontWeight: '[700]',
-  fontSize: '[19px]',
+  fontSize: '20',
   color: 'white',
   WebkitTextStroke: '[4px {colors.navy}]',
   paintOrder: 'stroke fill',

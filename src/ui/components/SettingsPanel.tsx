@@ -39,7 +39,7 @@ export interface SettingsPanelProps {
 export const settingsLook = css({
   textAlign: 'left',
   m: '[8px 0 4px]',
-  '& h4': { fontSize: '[15px]', fontWeight: 'bold', m: '[12px 0 5px]' },
+  '& h4': { fontSize: '15', fontWeight: 'bold', m: '[12px 0 5px]' },
   '& ul': { listStyle: 'none', p: 'none', display: 'flex', flexDirection: 'column', gap: 's' },
   '& li': {
     display: 'flex',
@@ -52,11 +52,11 @@ export const settingsLook = css({
   },
   '& li > .icon': { flex: 'none' },
   '& li > div': { flex: '1', minW: '[0]' },
-  '& li b': { display: 'block', fontWeight: 'bold', fontSize: '[15px]' },
-  '& li span': { fontSize: 'small', opacity: '[0.75]' },
+  '& li b': { display: 'block', fontWeight: 'bold', fontSize: '15' },
+  '& li span': { fontSize: '13', opacity: '[0.75]' },
   '& li em': {
     fontStyle: 'normal',
-    fontSize: '[12px]',
+    fontSize: '12',
     bg: 'sand',
     borderRadius: '[8px]',
     p: '[2px 8px]',
@@ -64,7 +64,7 @@ export const settingsLook = css({
   },
   '& li.locked > div': { opacity: '[0.6]' },
   '& .key-list': { display: 'grid', gridTemplateColumns: '[1fr 1fr]', gap: 's' },
-  '& .key-list li': { justifyContent: 'space-between', p: '[5px 9px 5px 12px]', fontSize: '[14px]' },
+  '& .key-list li': { justifyContent: 'space-between', p: '[5px 9px 5px 12px]', fontSize: '14' },
 });
 
 /**

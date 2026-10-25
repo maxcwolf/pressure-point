@@ -33,7 +33,7 @@ const column = css({
  */
 const panel = css({
   position: 'relative',
-  fontSize: 'body',
+  fontSize: '14',
   lineHeight: '[1.3]',
   minH: '[0]',
   overflowY: 'auto',
@@ -42,19 +42,19 @@ const panel = css({
   '#inspector.leaving > &': { pointerEvents: 'none', animation: 'unpop 0.14s ease-in forwards' },
   '& h3': { pr: '[26px]' },
   '& p': { mb: '[5px]' },
-  '& label': { display: 'block', fontSize: '[12px]', mt: 'xs' },
+  '& label': { display: 'block', fontSize: '12', mt: 'xs' },
   '& em': {
     display: 'block',
     fontStyle: 'normal',
-    fontSize: '[12px]',
+    fontSize: '12',
     bg: 'sand',
     borderRadius: '[8px]',
     p: '[2px 8px]',
     mb: 'xs',
   },
-  '& h4': { fontSize: 'body', fontWeight: 'bold', m: '[9px 0 4px]' },
+  '& h4': { fontSize: '14', fontWeight: 'bold', m: '[9px 0 4px]' },
   // what someone or something is, under its name
-  '& .tag': { display: 'inline-block', bg: 'sand', borderRadius: '[8px]', p: '[1px 8px]', fontSize: '[12px]' },
+  '& .tag': { display: 'inline-block', bg: 'sand', borderRadius: '[8px]', p: '[1px 8px]', fontSize: '12' },
   // A status line, in the tone of what it says (ui/lib/status.ts): plain news on navy, what wants seeing to in amber,
   // trouble in red, good news in green. The light ones carry a stripe of their color down the left, to be told apart
   // at a glance.
@@ -95,7 +95,7 @@ const close = css({
   borderRadius: '[50%]',
   border: 'control',
   bg: 'white',
-  fontSize: '[12px]',
+  fontSize: '12',
   lineHeight: '[1]',
 });
 

@@ -52,7 +52,7 @@ const conditionChoices = css({
     borderRadius: '[8px]',
     bg: 'cream',
     fontWeight: 'bold',
-    fontSize: '[12px]',
+    fontSize: '12',
     h: 'auto',
     p: '[1px 8px]',
     _hover: { transform: 'translateY(-1px)' },

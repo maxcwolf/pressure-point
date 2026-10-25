@@ -15,7 +15,7 @@ import { Dialog } from './Dialog';
 
 /** The kicker over the title, small and in capitals. */
 const kicker = css({
-  fontSize: '[12px !important]',
+  fontSize: '12 !important',
   fontWeight: 'bold',
   letterSpacing: '[0.06em]',
   textTransform: 'uppercase',
@@ -44,8 +44,8 @@ const strip = css({
     border: '[2px solid {colors.ink.25}]',
     borderRadius: 'card',
   },
-  '& b': { fontSize: '[14px]' },
-  '& small': { fontSize: 'small', lineHeight: '[1.3]' },
+  '& b': { fontSize: '14' },
+  '& small': { fontSize: '13', lineHeight: '[1.3]' },
 });
 
 /** A picture's icon, in a cream circle. */
