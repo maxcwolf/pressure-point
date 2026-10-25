@@ -107,14 +107,21 @@ export function demoStaff(look: Look, role: Role): Staff {
   };
 }
 
-/** A visitor, a VIP or the inspector, partway round a room. */
+/** What the lab calls each kind of visitor. */
+const TITLES: Readonly<Record<VisitorKind, string>> = {
+  vip: 'a lifestyle columnist',
+  inspector: 'the health inspector',
+  firefighter: 'Firefighter',
+};
+
+/** A visitor partway round a room: a VIP or the inspector looking round it, or a firefighter come for a fire. */
 export function demoVisitor(look: Look, visit: VisitorKind): Visitor {
   return {
     ...base(look),
     kind: 'visitor',
     visit,
-    title: visit === 'vip' ? 'a lifestyle columnist' : 'the health inspector',
-    state: 'looking',
+    title: TITLES[visit],
+    state: visit === 'firefighter' ? 'toFire' : 'looking',
     tour: [],
     seen: [],
   };

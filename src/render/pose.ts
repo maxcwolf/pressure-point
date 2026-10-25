@@ -20,12 +20,14 @@ import {
   saying,
 } from './bubbles';
 import { prefersReducedMotion } from './camera-math';
+import { animateEmitter, emitter, type EmitterShape } from './gags/particles';
 import { rattle, RATTLE_PEAK } from './item-cues';
 import { buildBurst, showBurst } from './models/burst';
 import { type CharRig, cureRig, endCure, type Joints } from './models/character';
 import { BACK_Y, type Expression, HIP, KNEE, showExpression, showEyes, SIT_Y } from './models/character-detail';
-import { buildHeld, type HeldKind } from './models/held';
+import { buildHeld, HELD_SIZE, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
+import { blob } from './models/items/machine-kit';
 import { mat } from './models/parts';
 import { driftSmoke } from './models/sage';
 import { buildSoles } from './models/soles';
@@ -244,7 +246,22 @@ const LYING_ARMS = 0.12;
 const SIP_TIP = { drink: 1.1, eat: 0.65 } as const;
 
 /** What each act has in the right hand. */
-const HELD_FOR: Partial<Record<Act, HeldKind>> = { drink: 'cup', eat: 'snack', water: 'can', repair: 'wrench' };
+const HELD_FOR: Partial<Record<Act, HeldKind>> = {
+  drink: 'cup',
+  eat: 'snack',
+  water: 'can',
+  repair: 'wrench',
+  hose: 'hose',
+};
+
+/**
+ * How the water from a hose goes, from the nozzle forward along +z: about a tile and a half out (the nozzle is drawn
+ * `HELD_SIZE` times bigger than life, which this is measured before), arcing up a quarter of a tile on the way.
+ */
+const JET: EmitterShape = { kind: 'jet', reach: 1.4 / HELD_SIZE, spread: 0.2 / HELD_SIZE, speed: 1.8 };
+
+/** The water's blue, as the storm's flood water is. */
+const JET_WATER = 0x5fa8d3;
 
 /** How far into an act's cycle someone is, from 0 to 1, each person at their own point in it. */
 const cycleOf = (act: Act, id: number, t: number) => {
@@ -508,6 +525,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     const a = actPose(act, c, t);
     ({ armL, armR, armOut, lean, headX, side, bodyY } = a);
     if (a.legs !== undefined) legL = legR = a.legs;
+    if (a.stride !== undefined) {
+      legL = -a.stride;
+      legR = a.stride * 0.6;
+    }
   } else if (style === 'qigong') {
     // lifting the sky: both arms rise slowly out and overhead, then float back down, knees softening as they fall
     const rise = (1 - Math.cos(t * 0.9)) / 2;
@@ -759,6 +780,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   // what is held is kept at a tilt of its own, whatever the forearm holding it is doing
   const held = act && !doing.rightHolds ? HELD_FOR[act] : undefined;
   if (held || rig.held) holdFor(rig, held, heldTilt(act, c, t) - (armR + elbowFor(armR) + life.elbowR));
+  if (act === 'hose' || rig.jet) sprayHose(rig, act === 'hose', t);
   const k = Math.min(1, dt * 14);
   const b = rig.body;
   b.rotation.x += (bodyRX - b.rotation.x) * k;
@@ -1230,6 +1252,8 @@ interface ActPose {
   bodyY: number;
   /** Both thighs swung forward, for a crouch. */
   legs?: number;
+  /** The left foot forward and the right back, braced, by this far. */
+  stride?: number;
 }
 
 /** The body and arms of someone doing an act, at a moment. */
@@ -1274,6 +1298,15 @@ function actPose(act: Act, c: Char, t: number): ActPose {
     p.armR = -0.9;
     p.lean = 0.15;
     p.headX = 0.15;
+  } else if (act === 'hose') {
+    // braced, feet apart, both hands forward on the hose and leaning into it against the push of the water
+    p.armR = -1.3;
+    p.armL = -1.0;
+    p.armOut = 0.02;
+    p.lean = 0.14;
+    p.headX = 0.08;
+    p.stride = 0.38;
+    p.bodyY = -0.02;
   } else {
     // crouched on the heels, working at something low down, the other hand steadying on the knee
     p.legs = -1.2;
@@ -1317,6 +1350,15 @@ function actJoints(life: Life, act: Act, c: Char, t: number, armL: number, armR:
     life.kneeL = life.kneeR = 0.9 * u;
     life.elbowR += bendTo(armR, -0.1, u);
     life.elbowL += bendTo(armL, -0.1, u);
+  } else if (act === 'hose') {
+    // the right forearm out straight along the hose, the left hand in behind it, knees soft, and the jet swept slowly
+    // across the fire
+    life.elbowR += bendTo(armR, -0.25, 1);
+    life.elbowL += bendTo(armL, -0.65, 1);
+    life.armInL = 0.4;
+    life.kneeL = 0.25;
+    life.kneeR = 0.12;
+    life.bodyYaw = Math.sin(t * 1.3 + c.id) * 0.14;
   } else if (act === 'repair') {
     life.kneeL = life.kneeR = 1.85;
     life.elbowR += bendTo(armR, -0.6, 1);
@@ -1346,6 +1388,21 @@ function holdFor(rig: CharRig, kind: HeldKind | undefined, turn: number) {
   for (const [k, o] of Object.entries(rig.held)) o.visible = k === kind;
   const o = kind && kind !== 'wrench' ? rig.held[kind] : undefined;
   if (o) o.rotation.x = turn;
+}
+
+/**
+ * Shoot water from a firefighter's nozzle while they hose a fire, making the jet the first time, and stop it once they
+ * put the hose away. The jet hangs from the nozzle, which is held level, so it goes where they face.
+ */
+function sprayHose(rig: CharRig, on: boolean, t: number) {
+  const nozzle = rig.held?.hose;
+  if (!nozzle) return;
+  if (!rig.jet) {
+    rig.jet = emitter(JET, 8, blob(0.035, JET_WATER));
+    rig.jet.position.z = 0.16;
+    nozzle.add(rig.jet);
+  }
+  animateEmitter(rig.jet, on ? 1 : 0, t);
 }
 
 /** What to add to a turn as posed to take it to another, by an amount from 0 to 1. */

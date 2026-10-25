@@ -47,6 +47,7 @@ import { irnd, pick, random } from '../random';
 import type {
   GameState,
   Item,
+  JudgeKind,
   Room,
   RoomVerdict,
   VisitNotice,
@@ -240,7 +241,7 @@ export function chooseTour(ctx: SimContext, visit: VisitorKind): number[] {
 }
 
 /** What a visitor is called and what they care about, for a VIP or the inspector. */
-export function newNotice(ctx: SimContext, visit: VisitorKind): VisitNotice {
+export function newNotice(ctx: SimContext, visit: JudgeKind): VisitNotice {
   const arrives = ctx.s.day + VISIT_NOTICE_DAYS;
   const name = randomName(ctx.s, rollSex(ctx.s, WOMEN_VISIT));
   if (visit === 'inspector') return { visit, name, title: 'the health inspector', arrives };
@@ -249,7 +250,7 @@ export function newNotice(ctx: SimContext, visit: VisitorKind): VisitNotice {
 }
 
 /** Put a visit on the calendar, and say who is coming. */
-function writeAhead(ctx: SimContext, visit: VisitorKind) {
+function writeAhead(ctx: SimContext, visit: JudgeKind) {
   const notice = newNotice(ctx, visit);
   ctx.s.visitNotice = notice;
   emit(ctx, { type: 'announce', text: VISIT_NEWS[visit] });
@@ -409,6 +410,8 @@ export function updateVisitor(ctx: SimContext, v: Visitor, dt: number) {
 export function finishVisit(ctx: SimContext, v: Visitor) {
   const s = ctx.s;
   s.visitors = s.visitors.filter((o) => o !== v);
+  // the fire brigade's crew judge nothing, and leave no report
+  if (v.visit === 'firefighter') return;
   if (v.visit === 'inspector') s.nextInspection = s.day + inspectionGap(s);
   else s.nextVip = s.day + irnd(s, VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
   if (!v.seen.length) {

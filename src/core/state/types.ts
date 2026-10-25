@@ -387,11 +387,17 @@ export interface Regular {
   due: number;
 }
 
-/** Who a visitor is: a VIP, or the health inspector. */
-export type VisitorKind = 'vip' | 'inspector';
+/** Who writes ahead to call and judge the center: a VIP, or the health inspector. */
+export type JudgeKind = 'vip' | 'inspector';
 
-/** What a visitor is doing: on the way to a room, looking round it, or on the way out. */
-export type VisitorState = 'toRoom' | 'looking' | 'leaving';
+/** Who a visitor is: a VIP, the health inspector, or one of the fire brigade's crew, come for a fire. */
+export type VisitorKind = JudgeKind | 'firefighter';
+
+/**
+ * What a visitor is doing: on the way to a room, looking round it, or on the way out; or for a firefighter, running
+ * to a fire, hosing it out, or going back to the truck.
+ */
+export type VisitorState = 'toRoom' | 'looking' | 'leaving' | 'toFire' | 'hosing' | 'toTruck';
 
 /** What a visitor made of one room. */
 export interface RoomVerdict {
@@ -421,7 +427,7 @@ export interface Visitor extends CharBase {
 
 /** A visit written ahead: who is coming, and on which day. */
 export interface VisitNotice {
-  visit: VisitorKind;
+  visit: JudgeKind;
   name: string;
   title: string;
   cares?: Aspect;
@@ -430,7 +436,7 @@ export interface VisitNotice {
 
 /** How a visit went, kept until the next one. */
 export interface VisitReport {
-  visit: VisitorKind;
+  visit: JudgeKind;
   name: string;
   title: string;
   day: number;

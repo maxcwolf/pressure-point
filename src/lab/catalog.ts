@@ -47,6 +47,7 @@ import { buildCharacter, type CharRig, cureRig } from '../render/models/characte
 import { type Expression, showEyes } from '../render/models/character-detail';
 import { buildLamps, buildOffices, buildStreetTrees } from '../render/models/downtown';
 import { buildSite } from '../render/models/fence';
+import { buildFireTruck, flashLamps } from '../render/models/fire-truck';
 import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
 import { buildOrchard, orchardFor } from '../render/models/orchard';
@@ -907,13 +908,23 @@ function actSpecimen(act: Act, label: string): Specimen {
   };
 }
 
-/** A visitor dressed for the part: a VIP in a dark suit, or the inspector with a clipboard. */
+/** What the lab calls each kind of visitor. */
+const VISITOR_NAMES: Readonly<Record<VisitorKind, string>> = {
+  vip: 'VIP',
+  inspector: 'Health inspector',
+  firefighter: 'Firefighter',
+};
+
+/**
+ * A visitor dressed for the part: a VIP in a dark suit, the inspector with a clipboard, or a firefighter in a yellow
+ * helmet.
+ */
 function visitorSpecimen(visit: VisitorKind): Specimen {
   const st: PersonState = { look: { ...LAB_LOOK }, pose: 'stand', bubble: '', act: '' };
   return {
     id: `visitor:${visit}`,
     group: 'Visitors',
-    name: visit === 'vip' ? 'VIP' : 'Health inspector',
+    name: VISITOR_NAMES[visit],
     footprint: [1, 1],
     /** Build them in their outfit. */
     build() {
@@ -925,6 +936,29 @@ function visitorSpecimen(visit: VisitorKind): Specimen {
         /** Pose them. */
         animate(t, dt) {
           posePerson(rig, c, st, t, dt);
+        },
+      };
+    },
+  };
+}
+
+/** A firefighter hosing out a fire in front of them, braced, the water arcing from the nozzle. */
+function hosingSpecimen(): Specimen {
+  return {
+    id: 'act:hose',
+    group: 'Acts',
+    name: 'A firefighter hosing out a fire',
+    footprint: [1, 2],
+    /** Build them, hose in hand. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK, undefined, undefined, 'firefighter');
+      const c = { ...demoVisitor(LAB_LOOK, 'firefighter'), state: 'hosing' as const };
+      return {
+        root: rig.group,
+        controls: [],
+        /** Keep them hosing. */
+        animate(t, dt) {
+          poseChar(rig, c, t, dt, { style: null, act: 'hose' });
         },
       };
     },
@@ -1118,6 +1152,19 @@ const SCENERY: Specimen[] = [
     },
   },
   {
+    id: 'scenery:fire-truck',
+    group: 'Scenery',
+    name: 'The fire truck',
+    footprint: [3, 1],
+    /** The fire brigade's truck, its lamps flashing as they do while it is out, or steady with motion held still. */
+    build: () => {
+      const truck = buildFireTruck();
+      /** Flash its lamps in turn. */
+      const animate = (t: number) => flashLamps(truck, t);
+      return { root: truck.root, animate, controls: [] };
+    },
+  },
+  {
     id: 'scenery:for-sale',
     group: 'Scenery',
     name: 'For Sale boards',
@@ -1192,7 +1239,7 @@ export const CATALOG: readonly Specimen[] = [
   ...LOOKS.map(([key, label, look]) =>
     staffSpecimen('receptionist', { id: `look-${key}`, name: `With ${label}`, look: { ...LAB_LOOK, ...look } }),
   ),
-  ...(['vip', 'inspector'] as const).map(visitorSpecimen),
+  ...(['vip', 'inspector', 'firefighter'] as const).map(visitorSpecimen),
   ...SEATS.map(([type, i]) => seatedSpecimen(type, i)),
   ...MOODS.filter(([mood]) => mood !== 'content').flatMap(([mood, label]) => [
     moodSpecimen(mood, label, false),
@@ -1204,6 +1251,7 @@ export const CATALOG: readonly Specimen[] = [
   moppingSpecimen(),
   curedSpecimen(),
   ...ACTS.map(([act, label]) => actSpecimen(act, label)),
+  hosingSpecimen(),
   ...BEDS.map(lyingSpecimen),
   ...CLIMBS.map((type) => climbSpecimen(type)),
   ...CLIMBS.map((type) => climbSpecimen(type, 'off')),

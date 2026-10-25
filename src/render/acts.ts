@@ -6,23 +6,25 @@ import type { Char } from '../core/state/types';
 
 /**
  * Something a person does with their hands, with a pose of its own and sometimes something held: checking a guest in,
- * having a drink or a snack, playing a game, shopping, picking up litter, watering a plant, or mending something.
+ * having a drink or a snack, playing a game, shopping, picking up litter, watering a plant, mending something, or
+ * hosing out a fire.
  */
-export type Act = 'checkin' | 'drink' | 'eat' | 'play' | 'shop' | 'litter' | 'water' | 'repair';
+export type Act = 'checkin' | 'drink' | 'eat' | 'play' | 'shop' | 'litter' | 'water' | 'repair' | 'hose';
 
 /**
  * What someone is doing at the item they are at, if it is one of the acts: a guest using a machine for a drink, a
  * snack or a game, or being served at a shop counter; a receptionist checking someone in; a member of staff on a chore,
- * or getting themselves a drink or a snack.
+ * or getting themselves a drink or a snack; or a firefighter hosing out a fire.
  */
 export function actOf(c: Char, at?: ItemDef): Act | undefined {
+  if (c.kind === 'visitor') return c.visit === 'firefighter' && c.state === 'hosing' ? 'hose' : undefined;
   if (c.kind === 'guest') {
     if (c.state === 'need' && (c.needKind === 'drink' || c.needKind === 'eat' || c.needKind === 'play'))
       return c.needKind;
     if ((c.state === 'served' || c.state === 'called') && at?.station?.goal === 'shop') return 'shop';
     return undefined;
   }
-  if (c.kind !== 'staff' || !c.busy) return undefined;
+  if (!c.busy) return undefined;
   if (c.state === 'atPost' && c.role === 'receptionist') return 'checkin';
   if (c.state !== 'doingJob') return undefined;
   switch (c.job?.kind) {
