@@ -7,10 +7,11 @@ import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
 import '../ui/theme/panda.css';
 import '../ui/theme/tokens.css';
-import './lab.css';
 
 import { must } from '../core/util';
 import { SETTINGS } from '../render/setting';
+import { css } from '../styled-system/css';
+import { cx } from '../ui/lib/cx';
 import { CATALOG, type Group, type Model, scalePerson, type Specimen } from './catalog';
 import { button, choice, type Control, toggle } from './controls';
 import { Stage, type ViewName, VIEWS } from './stage';
@@ -46,6 +47,166 @@ const view = {
 /** Frames left before the model on show counts as drawn, long enough for a person to settle into a pose. */
 const SETTLE_FRAMES = 20;
 
+/**
+ * The page: a list of models down the side, the stage beside it, and its settings over the stage, filling the window
+ * in the game's font on cream. On a narrow screen the list goes over the stage.
+ */
+const pageStyle = css({
+  '&, & *': { boxSizing: 'border-box' },
+  '&, & body': { m: 'none', h: '[100%]', overflow: 'hidden', bg: 'cream', fontFamily: 'body', color: 'navy' },
+  '& body': {
+    display: 'grid',
+    gridTemplateColumns: '[260px 1fr]',
+    _max760: { gridTemplateColumns: '[1fr]', gridTemplateRows: '[34vh 1fr]' },
+  },
+});
+
+/** The side of the page with the lab's name, the search and the list; along the top, on a narrow screen. */
+const sidebarStyle = css({
+  display: 'flex',
+  flexDirection: 'column',
+  minH: '[0]',
+  borderRight: '[2px solid rgba(36, 56, 74, 0.12)]',
+  bg: 'sand',
+  _max760: { borderRight: '[0]', borderBottom: '[2px solid rgba(36, 56, 74, 0.12)]' },
+});
+
+/** The lab's name, over the search. */
+const brandStyle = css({ p: '[16px 16px 8px]', fontSize: '[20px]', fontWeight: 'bold' });
+
+/** The search box, in the page's font and color rather than the browser's. */
+const searchStyle = css({
+  font: 'inherit',
+  color: 'inherit',
+  m: '[0 16px 8px]',
+  p: '[8px 12px]',
+  border: '[2px solid rgba(36, 56, 74, 0.18)]',
+  borderRadius: '[10px]',
+  bg: 'white',
+  _focusVisible: { outline: '[2px solid {colors.teal}]', outlineOffset: '[1px]' },
+});
+
+/** The list of models, scrolling on its own, with a small heading over each group. */
+const listStyle = css({
+  flex: '1',
+  overflowY: 'auto',
+  p: '[0 8px 16px]',
+  '& h3': {
+    m: '[14px 8px 4px]',
+    fontSize: '[12px]',
+    fontWeight: 'bold',
+    letterSpacing: '[0.04em]',
+    textTransform: 'uppercase',
+    opacity: '[0.6]',
+  },
+});
+
+/** A model in the list, in the page's font and color, and teal while it is the one on show. */
+const entryStyle = css({
+  font: 'inherit',
+  color: 'inherit',
+  display: 'block',
+  w: '[100%]',
+  p: '[5px 8px]',
+  border: '[0]',
+  borderRadius: '[8px]',
+  bg: '[none]',
+  textAlign: 'left',
+  cursor: 'pointer',
+  // shaded under the pointer, all but the one on show, which stays teal (Panda would put `_hover` after `_on`)
+  '&:not(.on):hover': { bg: '[rgba(36, 56, 74, 0.07)]' },
+  _on: { bg: 'teal', color: 'white' },
+});
+
+/** Words for when there is nothing to show: no model matches the search, or a model has nothing to change. */
+const noneStyle = css({ m: 'm', fontSize: '[14px]', opacity: '[0.6]' });
+
+/** The stage's side of the page, with the caption and the settings over it. */
+const mainStyle = css({ position: 'relative', minW: '[0]', minH: '[0]' });
+
+/** The stage, the whole of its side of the page. */
+const stageStyle = css({ display: 'block', w: '[100%]', h: '[100%]', touchAction: 'none' });
+
+/** The model's name and id, over the top left of the stage, letting the pointer through to it. */
+const captionStyle = css({
+  position: 'absolute',
+  top: '[16px]',
+  left: '[16px]',
+  p: '[8px 14px]',
+  borderRadius: 'card',
+  bg: '[rgba(255, 248, 234, 0.9)]',
+  boxShadow: 'raised',
+  pointerEvents: 'none',
+});
+
+/** The model's name. */
+const titleStyle = css({ m: 'none', fontSize: '[20px]', fontWeight: 'bold' });
+
+/** The model's id and size, under its name. */
+const metaStyle = css({ m: '[2px 0 0]', fontSize: '[13px]', opacity: '[0.7]', fontVariantNumeric: 'tabular-nums' });
+
+/** The settings, over the top right of the stage, with a heading over each kind; along its foot, on a narrow screen. */
+const panelStyle = css({
+  position: 'absolute',
+  top: '[16px]',
+  right: '[16px]',
+  w: '[250px]',
+  maxH: '[calc(100% - 32px)]',
+  overflowY: 'auto',
+  p: '[4px 14px 12px]',
+  borderRadius: 'card',
+  bg: '[rgba(255, 248, 234, 0.94)]',
+  boxShadow: 'raised',
+  '& summary': { m: '[0 -14px]', p: '[8px 14px 4px]', fontSize: '[14px]', fontWeight: 'bold', cursor: 'pointer' },
+  '& h2': {
+    m: '[10px 0 6px]',
+    fontSize: '[12px]',
+    fontWeight: 'bold',
+    letterSpacing: '[0.04em]',
+    textTransform: 'uppercase',
+    opacity: '[0.6]',
+  },
+  _max760: { top: 'auto', bottom: '[16px]', left: '[16px]', right: '[16px]', w: 'auto', maxH: '[60%]' },
+});
+
+/** The settings for the model or for the view, wrapping onto as many lines as they take. */
+const controlsStyle = css({ display: 'flex', flexWrap: 'wrap', gap: 's' });
+
+/**
+ * A setting, the whole width of the panel: a switch and its name, or its name and a slider with its value or a menu.
+ * The names before sliders and menus take the same room, so those line up.
+ */
+const controlStyle = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 'm',
+  w: '[100%]',
+  fontSize: '[14px]',
+  '&.range span, &.choice span': { flex: '[0 0 auto]', minW: '[64px]' },
+  "& input[type='range'], & select": { flex: '1', minW: '[0]' },
+  '& output': { w: 'control', textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+  "& input[type='checkbox'], & input[type='range']": { accentColor: 'teal' },
+  '& select': { p: '[3px 6px]', border: '[2px solid rgba(36, 56, 74, 0.18)]', borderRadius: '[8px]', bg: 'white' },
+  // in the page's font and color rather than the browser's
+  '& input, & select': { font: 'inherit', color: 'inherit' },
+});
+
+/** A button among the settings, such as a camera angle, in the page's font and color, its edge teal under the pointer. */
+const buttonStyle = css({
+  font: 'inherit',
+  color: 'inherit',
+  p: '[4px 10px]',
+  border: '[2px solid rgba(36, 56, 74, 0.18)]',
+  borderRadius: '[8px]',
+  bg: 'white',
+  fontSize: '[14px]',
+  cursor: 'pointer',
+  _hover: { borderColor: 'teal' },
+});
+
+/** How to get round the stage, under the settings. */
+const hintStyle = css({ m: '[12px 0 0]', fontSize: '[12px]', opacity: '[0.6]' });
+
 /** Make an element with a class and some children. */
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -58,30 +219,33 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return e;
 }
 
-const canvas = el('canvas', 'stage');
-const search = el('input', 'search');
+// `stage`, `caption` and `panel` are for the screenshot tests to find them by
+const canvas = el('canvas', cx('stage', stageStyle));
+const search = el('input', searchStyle);
 search.type = 'search';
 search.placeholder = 'Find a model';
 search.setAttribute('aria-label', 'Find a model');
-const list = el('nav', 'list');
-const title = el('h1', 'title');
-const meta = el('p', 'meta');
-const modelPanel = el('div', 'controls');
-const viewPanel = el('div', 'controls');
+const list = el('nav', listStyle);
+const title = el('h1', titleStyle);
+const meta = el('p', metaStyle);
+const modelPanel = el('div', controlsStyle);
+const viewPanel = el('div', controlsStyle);
 const panel = el(
   'details',
-  'panel',
+  cx('panel', panelStyle),
   el('summary', '', 'Settings'),
   el('h2', '', 'Model'),
   modelPanel,
   el('h2', '', 'View'),
   viewPanel,
-  el('p', 'hint', 'Drag to turn · scroll to zoom · right-drag to pan · ↑ ↓ to step through'),
+  el('p', hintStyle, 'Drag to turn · scroll to zoom · right-drag to pan · ↑ ↓ to step through'),
 );
 
+// the lab draws its own page, as the game's page-wide styles are kept to the game's
+document.documentElement.className = pageStyle;
 document.body.append(
-  el('aside', 'sidebar', el('header', 'brand', 'Model lab'), search, list),
-  el('main', 'main', canvas, el('div', 'caption', title, meta), panel),
+  el('aside', sidebarStyle, el('header', brandStyle, 'Model lab'), search, list),
+  el('main', mainStyle, canvas, el('div', cx('caption', captionStyle), title, meta), panel),
 );
 
 // on a narrow screen the settings would cover the model, so they start folded away
@@ -96,7 +260,7 @@ const buttons = new Map<string, HTMLButtonElement>();
 /** A control on the page for one setting. It calls back once the setting has changed. */
 function controlEl(c: Control, changed: (rebuild: boolean) => void): HTMLElement {
   if (c.kind === 'button') {
-    const b = el('button', 'button', c.label);
+    const b = el('button', buttonStyle, c.label);
     b.type = 'button';
     b.addEventListener('click', () => {
       c.run();
@@ -104,7 +268,8 @@ function controlEl(c: Control, changed: (rebuild: boolean) => void): HTMLElement
     });
     return b;
   }
-  const label = el('label', `control ${c.kind}`, el('span', '', c.label));
+  // its kind, so the names before sliders and menus can take the same room
+  const label = el('label', cx(controlStyle, c.kind), el('span', '', c.label));
   if (c.kind === 'toggle') {
     const box = el('input');
     box.type = 'checkbox';
@@ -142,7 +307,7 @@ function controlEl(c: Control, changed: (rebuild: boolean) => void): HTMLElement
 /** Fill a panel with controls. */
 function fillPanel(panel: HTMLElement, controls: readonly Control[], changed: (rebuild: boolean) => void) {
   panel.replaceChildren(...controls.map((c) => controlEl(c, changed)));
-  if (!controls.length) panel.append(el('p', 'none', 'Nothing to change on this one.'));
+  if (!controls.length) panel.append(el('p', noneStyle, 'Nothing to change on this one.'));
 }
 
 /** Set the model's settings to any given in the address, for the first model shown. */
@@ -197,14 +362,14 @@ function drawList() {
   for (const [group, specimens] of groups) {
     list.append(el('h3', '', `${group} · ${specimens.length}`));
     for (const s of specimens) {
-      const b = el('button', s.id === current.id ? 'entry on' : 'entry', s.name);
+      const b = el('button', cx(entryStyle, s.id === current.id && 'on'), s.name);
       b.type = 'button';
       b.addEventListener('click', () => select(s));
       buttons.set(s.id, b);
       list.append(b);
     }
   }
-  if (!groups.size) list.append(el('p', 'none', 'No model matches.'));
+  if (!groups.size) list.append(el('p', noneStyle, 'No model matches.'));
 }
 
 /** Step to the next or previous model in the list as it is filtered now. */
