@@ -26,7 +26,7 @@ import {
   sellMushrooms,
 } from '../../src/core/sim/mushrooms';
 import type { Sim } from '../../src/core/sim/sim';
-import { bribeFor, lapseInspection, verdict } from '../../src/core/sim/visits';
+import { bribeFor, finishVisit, lapseInspection, verdict } from '../../src/core/sim/visits';
 import { mushroomNote, mushroomSwitch } from '../../src/ui/lib/ceremonies';
 import { readiness } from '../../src/ui/lib/mishaps';
 import { reportSummary } from '../../src/ui/lib/visits';
@@ -69,6 +69,7 @@ describe('mushrooms under the counter', () => {
     for (let i = 0; i < 40 && !sold; i++) sold = sellMushrooms(ctxOf(sim), g);
     expect(sold).toBeGreaterThan(100);
     expect(s.ledger.mushrooms).toBe(sold);
+    expect(s.stats.mushroomSales).toBe(sold);
     expect(incomeOf(s.ledger)).toBeGreaterThanOrEqual(sold);
     sim.setMushrooms(false);
     for (let i = 0; i < 40; i++) expect(sellMushrooms(ctxOf(sim), g)).toBe(0);
@@ -120,6 +121,24 @@ describe('the inspector and the mushrooms', () => {
       rep: -(INSPECTION_REP + MUSHROOM_REP),
     });
     expect(verdict('inspector', [seen('dirty')], 2).outcome).toBe('passed');
+  });
+
+  it('counts an inspection failed for finding them, and not one failed for anything else', () => {
+    /** An inspection that saw these rooms, with the mushrooms out or put away. */
+    const inspect = (seed: number, out: boolean, rooms: ReturnType<typeof seen>[]) => {
+      const { sim, s } = withCounter(seed);
+      sim.setPolicy({ stashMushrooms: false });
+      sim.setMushrooms(out);
+      s.visitNotice = { visit: 'inspector', name: 'Pat', title: 'the health inspector', arrives: s.day };
+      runUntil(sim, () => s.visitors.length > 0, 30);
+      const v = s.visitors[0]!;
+      v.seen = rooms;
+      finishVisit(ctxOf(sim), v);
+      expect(s.visitReport?.outcome).toBe('failed');
+      return s.stats.busted;
+    };
+    expect(inspect(7, true, [seen()])).toBe(1);
+    expect(inspect(7, false, [seen('dirty', 'grimy')])).toBe(0);
   });
 });
 

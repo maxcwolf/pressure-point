@@ -84,14 +84,14 @@ describe('a locked item', () => {
 
   it('says what unlocks it', () => {
     expect(lockLabel(ITEMS.aquarium)).toBe('Star 2, or 5 karma');
-    expect(lockLabel(ITEMS.koi_pond)).toBe('6 karma');
+    expect(lockLabel(ITEMS.koi_pond)).toBe('7 karma');
     expect(lockLabel(ITEMS.moxa_burner)).toBe('Unlocks at star 2');
   });
 });
 
 describe('the karma shop and achievements on the title screen', () => {
   it('show what is unlocked, affordable and not yet', () => {
-    const cards = shopCards(progress({ stars: { willow: 3 }, unlocked: ['bookcase'] }));
+    const cards = shopCards(progress({ stars: { willow: 3, exchange: 1 }, unlocked: ['bookcase'] }));
     /** How the shop shows an item. */
     const state = (t: string) => cards.find((c) => c.type === t)?.state;
     expect(cards.map((c) => c.type)).toEqual(KARMA_ITEMS);
@@ -99,6 +99,32 @@ describe('the karma shop and achievements on the title screen', () => {
     const feats = achievementCards(progress({ achieved: ['century'] }));
     expect(feats.map((a) => a.id)).toEqual(ACHIEVEMENT_ORDER);
     expect(feats.filter((a) => a.done).map((a) => a.id)).toEqual(['century']);
+  });
+
+  it('keep the hidden achievements a mystery, at the end, until they are earned', () => {
+    const hidden = ['price-is-right', 'busted', 'under-the-counter'];
+    expect(ACHIEVEMENT_ORDER.slice(-3)).toEqual(hidden);
+    const before = achievementCards(freshCampaign());
+    for (const a of before.filter((c) => c.hidden))
+      expect(a).toMatchObject({
+        name: 'Hidden achievement',
+        desc: 'Earned by something nobody will admit to.',
+        karma: ACHIEVEMENTS[a.id].karma,
+        done: false,
+      });
+    expect(before.filter((c) => c.hidden).map((c) => c.id)).toEqual(hidden);
+    expect(before.find((c) => c.id === 'century')).toMatchObject({
+      name: 'Century',
+      desc: 'Heal 100 guests in one center',
+    });
+    const after = achievementCards(progress({ achieved: ['busted'] }));
+    expect(after.find((c) => c.id === 'busted')).toMatchObject({
+      icon: 'achievement-busted',
+      name: 'Busted',
+      desc: 'The jar was for decoration.',
+      done: true,
+    });
+    expect(after.find((c) => c.id === 'under-the-counter')?.name).toBe('Hidden achievement');
   });
 });
 
@@ -120,6 +146,30 @@ describe('achievements', () => {
     expect(toasts(drainEvents(ctx))).toEqual([
       'Achievement: Called In! +2 karma to spend in any center.',
       'Achievement: Century! +3 karma to spend in any center.',
+    ]);
+    checkAchievements(ctx);
+    expect(drainEvents(ctx)).toEqual([]);
+  });
+
+  it('include three hidden ones, for a fair month and the mushrooms', () => {
+    const ctx = game('willow');
+    ctx.s.tally.healed = 30;
+    ctx.s.tally.priced = 1;
+    checkAchievements(ctx);
+    expect(ctx.s.achieved).toEqual([]);
+    ctx.s.tally.priced = 0;
+    // a fair month at standard prices is no feat: they put nobody off
+    checkAchievements(ctx);
+    expect(ctx.s.achieved).toEqual([]);
+    ctx.s.prices = { swedish: 1.3 };
+    ctx.s.stats.busted = 1;
+    ctx.s.stats.mushroomSales = 1000;
+    checkAchievements(ctx);
+    expect(ctx.s.achieved).toEqual(['price-is-right', 'busted', 'under-the-counter']);
+    expect(toasts(drainEvents(ctx))).toEqual([
+      'Achievement: The Price Is Right! +2 karma to spend in any center.',
+      'Achievement: Busted! +1 karma to spend in any center.',
+      'Achievement: Under the Counter! +1 karma to spend in any center.',
     ]);
     checkAchievements(ctx);
     expect(drainEvents(ctx)).toEqual([]);
@@ -166,7 +216,7 @@ describe('the campaign kept between games', () => {
     expect(buyWithKarma('koi_pond')).toBe(false);
     expect(buyWithKarma('trophy_cabinet')).toBe(false);
     expect(loadCampaign().unlocked).toEqual(['koi_pond']);
-    expect(karmaLeft(loadCampaign())).toBe(3);
+    expect(karmaLeft(loadCampaign())).toBe(2);
   });
 
   it('drops achievements and items this version does not know', () => {

@@ -618,7 +618,10 @@ export type AchievementId =
   | 'showpiece'
   | 'one-big-family'
   | 'pins-and-needles'
-  | 'good-vibrations';
+  | 'good-vibrations'
+  | 'price-is-right'
+  | 'busted'
+  | 'under-the-counter';
 
 /** A one-off feat in the campaign, worth some karma the first time it is done in any center. */
 export interface AchievementDef {
@@ -630,6 +633,8 @@ export interface AchievementDef {
   /** Done when this objective is met. */
   goal: GoalSpec;
   karma: number;
+  /** Shown only as a locked mystery card until it is earned. */
+  hidden?: boolean;
 }
 
 export type AwardId =
@@ -740,7 +745,13 @@ export type GoalSpec =
   /** Go this many days without anyone quitting. */
   | { kind: 'noQuits'; days: number }
   /** Reach this grade of standing, counting from 0 for the first. */
-  | { kind: 'grade'; grade: number };
+  | { kind: 'grade'; grade: number }
+  /** Heal at least this many guests in a month in which nobody was put off by the prices. */
+  | { kind: 'fairMonth'; count: number }
+  /** Have the health inspector find the mushrooms under the counter this many times. */
+  | { kind: 'busted'; count: number }
+  /** Take this much from mushroom sales. */
+  | { kind: 'mushroomSales'; amount: number };
 
 /** The objectives for one star: all must be met at once. */
 export type StarGoal = readonly GoalSpec[];

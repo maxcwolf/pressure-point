@@ -93,7 +93,16 @@ type OldSave = Partial<Omit<GameState, Records>> &
   Pick<GameState, Always> & {
     stats: Before<
       Stats,
-      'priced' | 'sent' | 'worse' | 'healedBy' | 'emergencies' | 'lastQuit' | 'classes' | 'classgoers'
+      | 'priced'
+      | 'sent'
+      | 'worse'
+      | 'healedBy'
+      | 'emergencies'
+      | 'lastQuit'
+      | 'classes'
+      | 'classgoers'
+      | 'busted'
+      | 'mushroomSales'
     >;
     tally?: Before<Tally, 'sent' | 'worse' | 'classgoers'>;
     months?: (Before<MonthRecord, 'sent' | 'worse' | 'classgoers' | 'ledger'> & { ledger: OldLedger })[];

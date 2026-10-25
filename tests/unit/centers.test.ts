@@ -203,6 +203,14 @@ describe('saves', () => {
     expect(typeof importSave(file({ ...newGame(), center: undefined }))).toBe('object');
   });
 
+  it('from before the mushrooms were counted start the counts at nothing', () => {
+    const old = JSON.parse(JSON.stringify(newGame('willow'))) as Record<string, any>;
+    delete old.stats.busted;
+    delete old.stats.mushroomSales;
+    upgradeSave(old as GameState);
+    expect(old).toMatchObject({ stats: { busted: 0, mushroomSales: 0 } });
+  });
+
   it('from a center this version does not know are refused', () => {
     expect(importSave(file({ ...newGame(), center: 'atlantis' as CenterId }))).toBe('invalid');
     expect(typeof importSave(file(newGame('willow')))).toBe('object');
@@ -287,6 +295,49 @@ describe('each kind of goal', () => {
     // and one with both is met
     ctx.s.months = [month({ healed: 12, waitCount: 14, waitTotal: 14 * 4 * DAY_SECONDS })];
     expect(check(goal)).toMatchObject({ done: true, progress: 1 });
+  });
+
+  it('asks for so many guests healed in a month with nobody put off by the prices', () => {
+    const goal: GoalSpec = { kind: 'fairMonth', count: 30 };
+    ctx.s.prices = { swedish: 1.3 };
+    ctx.s.tally = { ...emptyTally(), healed: 12 };
+    expect(check(goal)).toEqual({
+      label: 'Heal 30 guests in a month with nobody put off by the prices, charging above standard prices',
+      done: false,
+      progress: 0.4,
+      detail: 'This month: 12 healed, 0 put off by the prices',
+    });
+    // a month with the heals but someone priced out counts for nothing
+    ctx.s.months = [month({ healed: 40, priced: 2 })];
+    expect(check(goal)).toMatchObject({ done: false, progress: 0.4 });
+    expect(check(goal).detail).toBe(
+      'This month: 12 healed, 0 put off by the prices. Last month: 40 healed, 2 put off by the prices',
+    );
+    ctx.s.tally.priced = 1;
+    expect(check(goal)).toMatchObject({ done: false, progress: 0 });
+    // and one with both is met
+    ctx.s.months = [month({ healed: 30 })];
+    expect(check(goal)).toMatchObject({ done: true, progress: 1 });
+    // but not at standard prices, which put nobody off anyway
+    ctx.s.prices = {};
+    expect(check(goal)).toMatchObject({ done: false, progress: 0 });
+  });
+
+  it('counts mushroom finds and takings', () => {
+    expect(check({ kind: 'busted', count: 1 })).toMatchObject({
+      label: 'Have the inspector find the mushrooms (0/1)',
+      done: false,
+    });
+    ctx.s.stats.busted = 1;
+    expect(check({ kind: 'busted', count: 1 })).toMatchObject({ done: true, progress: 1 });
+    ctx.s.stats.mushroomSales = 250;
+    expect(check({ kind: 'mushroomSales', amount: 1000 })).toEqual({
+      label: 'Take $1,000 from mushroom sales',
+      done: false,
+      progress: 0.25,
+    });
+    ctx.s.stats.mushroomSales = 1000;
+    expect(check({ kind: 'mushroomSales', amount: 1000 }).done).toBe(true);
   });
 
   it('counts emergencies seen through and days without anyone quitting', () => {

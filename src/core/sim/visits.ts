@@ -432,7 +432,11 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
   }
   if (v.visit === 'vip' && result.outcome === 'delighted') vipSetback(ctx);
   s.visitReport = { visit: v.visit, name: v.name, title: v.title, day: s.day, rooms: v.seen, ...result };
-  if (failed) s.visitReport.bribe = bribeFor(-result.money);
+  if (failed) {
+    s.visitReport.bribe = bribeFor(-result.money);
+    // caught with the mushrooms out, whether or not it is made to go away
+    if (v.seen.some((r) => r.problems.includes(MUSHROOMS_FOUND))) s.stats.busted++;
+  }
   // the mushrooms come back out only once the inspector has been past the counter
   if (v.visit === 'inspector') inspectorGone(ctx);
   const good = result.outcome === 'delighted' || result.outcome === 'passed';
