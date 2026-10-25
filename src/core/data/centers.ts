@@ -6,6 +6,8 @@ import type { CenterDef, CenterId } from './types';
 /** The starting money a sandbox game can be set to. */
 export const SANDBOX_MONEY: readonly number[] = [10000, 30000, 75000, 200000];
 
+// The weather asks more center by center along the campaign: Willow Lane is mild all year, The Exchange's winters are
+// the first to need heating, The Boardwalk's summers the first to need cooling, and The Orchard Estate has both, harsher.
 export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
   sandbox: {
     id: 'sandbox',
@@ -146,7 +148,9 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       },
     ],
     startMoney: 20000,
-    climate: { average: 60, swing: 12 },
+    // 57°F to 75°F outside, so indoors it is never cold or hot enough for anyone to mind. Not quite as low as 55°F,
+    // which is far enough from just right that a walk between buildings would be minded.
+    climate: { average: 66, swing: 9 },
     disciplines: [],
     goals: [
       [
@@ -293,7 +297,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       },
     ],
     startMoney: 30000,
-    climate: { average: 66, swing: 22 },
+    climate: { average: 68, swing: 22 },
     disciplines: ['acupuncture', 'reiki'],
     conditions: { lobstered: 3, sealegs: 2.5, gull: 2.5 },
     seasons: { summer: 1.9, winter: 0.6 },
@@ -443,7 +447,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
       },
     ],
     startMoney: 45000,
-    climate: { average: 62, swing: 16 },
+    climate: { average: 67, swing: 24 },
     disciplines: ['acupuncture', 'reiki', 'sound', 'shaman'],
     conditions: { windfall: 3, croquet: 2.5, blossom: 2.5, neck: 1.5 },
     unlockedFrom: 2,
