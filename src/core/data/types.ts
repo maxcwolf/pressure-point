@@ -740,8 +740,15 @@ export type GoalSpec =
   /** Go this many days without anyone quitting. */
   | { kind: 'noQuits'; days: number }
   /** Reach this grade of standing, counting from 0 for the first. */
-  | { kind: 'grade'; grade: number };
+  | { kind: 'grade'; grade: number }
+  /** Heal at least this many guests in a month in which nobody was put off by the prices. */
+  | { kind: 'fairMonth'; count: number }
+  /** Have the health inspector find the mushrooms under the counter this many times. */
+  | { kind: 'busted'; count: number }
+  /** Take this much from mushroom sales. */
+  | { kind: 'mushroomSales'; amount: number };
 
+/** The objectives for one star: all must be met at once. */
 /** The objectives for one star: all must be met at once. */
 export type StarGoal = readonly GoalSpec[];
 

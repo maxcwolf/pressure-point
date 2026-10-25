@@ -147,6 +147,31 @@ export function objectiveFor(ctx: SimContext, goal: GoalSpec): Objective {
         progress: s.grade >= goal.grade ? 1 : Math.min(0.99, standingPoints(ctx).total / Math.max(1, want.points)),
       };
     }
+    case 'fairMonth': {
+      const months = recentMonths(ctx);
+      /** How far a month gets: its heals toward the count, and nothing once anyone is put off by the prices. */
+      const score = (t: Tally) => (t.priced ? 0 : Math.min(1, t.healed / goal.count));
+      return {
+        label: `Heal ${goal.count} guests in a month with nobody put off by the prices`,
+        done: months.some((t) => t.healed >= goal.count && t.priced === 0),
+        progress: Math.max(...months.map(score)),
+        detail: monthsDetail(months, (t) => `${t.healed} healed, ${t.priced} put off by the prices`),
+      };
+    }
+    case 'busted':
+      return counted(
+        goal.count === 1
+          ? 'Have the inspector find the mushrooms'
+          : `Have the inspector find the mushrooms ${goal.count} times`,
+        s.stats.busted,
+        goal.count,
+      );
+    case 'mushroomSales':
+      return {
+        label: `Take ${money(goal.amount)} from mushroom sales`,
+        done: s.stats.mushroomSales >= goal.amount,
+        progress: s.stats.mushroomSales / goal.amount,
+      };
     case 'noQuits': {
       const days = daysWithoutQuits(ctx);
       return {
@@ -313,6 +338,22 @@ export function objectiveDetail(ctx: SimContext, goal: GoalSpec): string[] {
       );
       return lines;
     }
+    case 'fairMonth': {
+      /** A month in a line: its heals against the count, and how many were put off by the prices. */
+      const line = (when: string, t: Tally) =>
+        `${when}: ${t.healed} healed (${goal.count} needed), ${t.priced} put off by the prices`;
+      const lines = [line('This month', s.tally)];
+      if (last) lines.push(line('Last month', last));
+      if (recentMonths(ctx).some((t) => t.healed >= goal.count && t.priced === 0)) lines.push('Met');
+      else if (s.tally.priced) lines.push('Cannot be met this month: someone has been put off by the prices');
+      else
+        lines.push(`${plural(goal.count - s.tally.healed, 'more heal')} this month, with nobody put off by the prices`);
+      return lines;
+    }
+    case 'busted':
+      return [`${Math.min(s.stats.busted, goal.count)} of ${goal.count} found`];
+    case 'mushroomSales':
+      return [`${money(Math.min(s.stats.mushroomSales, goal.amount))} of ${money(goal.amount)} taken`];
     case 'noQuits': {
       const days = Math.floor(daysWithoutQuits(ctx));
       const since =

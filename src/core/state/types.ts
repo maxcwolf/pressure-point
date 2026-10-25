@@ -581,6 +581,10 @@ export interface Stats {
   /** Qi Gong classes held, and the class-goers who came to them. */
   classes: number;
   classgoers: number;
+  /** Inspections failed because the inspector found the mushrooms under the counter. */
+  busted: number;
+  /** What mushroom sales have taken. */
+  mushroomSales: number;
 }
 
 /** A month's count of guests: how many came, how each visit ended, and how long they waited. */
