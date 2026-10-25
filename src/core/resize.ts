@@ -44,6 +44,13 @@ export function inRect(r: Rect, x: number, y: number): boolean {
 /** Whether a room's window looks out onto a tile of a rectangle, as it would into a room put down there. */
 export const looksOnto = (w: WallSpot, r: Rect) => inRect(r, w.x + w.dx, w.y + w.dy);
 
+/** The same stretch of wall seen from the tile beyond it: where a window comes through into the room next door. */
+export const farSide = (w: WallSpot): WallSpot => ({ x: w.x + w.dx, y: w.y + w.dy, dx: -w.dx || 0, dy: -w.dy || 0 });
+
+/** The windows of the rooms next door that look onto a room, as the stretches of its own walls they come through. */
+export const windowsInto = (room: Room, rooms: readonly Room[]): WallSpot[] =>
+  rooms.filter((o) => o.id !== room.id).flatMap((o) => o.windows.filter((w) => looksOnto(w, room)).map(farSide));
+
 /** Whether two rectangles are the same. */
 export function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;

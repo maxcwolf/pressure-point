@@ -9,6 +9,7 @@ import {
   type ConditionDef,
   CONDITIONS,
   HAMPER_SIZE,
+  HOSE_SECONDS,
   ITEMS,
   type ItemType,
   MODALITIES,
@@ -47,6 +48,7 @@ import { buildCharacter, type CharRig, cureRig } from '../render/models/characte
 import { type Expression, showEyes } from '../render/models/character-detail';
 import { buildLamps, buildOffices, buildStreetTrees } from '../render/models/downtown';
 import { buildSite } from '../render/models/fence';
+import { buildFireTruck, flashLamps } from '../render/models/fire-truck';
 import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
 import { buildOrchard, orchardFor } from '../render/models/orchard';
@@ -131,6 +133,14 @@ function wallBehind(model: THREE.Group, w: number): THREE.Group {
   return holder;
 }
 
+/** How an item can be on fire in the lab: not at all, burning, being hosed out, or burnt and not yet repaired. */
+const FIRES: readonly Option[] = [
+  ['', 'None'],
+  ['burning', 'On fire'],
+  ['hosed', 'Being hosed out'],
+  ['burnt', 'Burnt'],
+];
+
 /**
  * An item, with sliders and switches for whichever moving parts its model has. A painting can be of any center's
  * view, and something hung on a wall is shown on one.
@@ -138,7 +148,7 @@ function wallBehind(model: THREE.Group, w: number): THREE.Group {
 function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
   const def = ITEMS[type];
   // a full trophy cabinet to begin with, so every cup is in the picture
-  const st: ItemCondition & { session: string; heating: boolean; chugging: boolean; level: number } = {
+  const st: ItemCondition & { session: string; heating: boolean; chugging: boolean; level: number; fire: string } = {
     id: 1,
     type,
     water: 100,
@@ -152,6 +162,7 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
     heating: false,
     chugging: false,
     level: 0,
+    fire: '',
   };
   return {
     id: center ? `item:${type}:${center}` : `item:${type}`,
@@ -174,6 +185,8 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
       if (parts.grime) controls.push(range('Dirt', st, 'dirt'));
       if (parts.ring) controls.push(toggle('Scanning', st, 'scanning'));
       if (def.wear) controls.push(range('Wear', st, 'wear'));
+      // anything that wears out can burn, as a fire spreads to it
+      if (def.wear) controls.push(choice('Fire', st, 'fire', FIRES));
       if (usedNoise(type) >= NOISE_CUE) controls.push(toggle('A guest using it', st, 'inUse'));
       if (def.heat) controls.push(toggle(def.heat > 0 ? 'Heating' : 'Cooling', st, 'heating'));
       if (parts.exhaust) controls.push(toggle('Carrying the center', st, 'chugging'));
@@ -195,6 +208,11 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
         /** Move the item's parts as the game does, and lay out the props for the session picked. */
         animate(t) {
           st.running = st.heating || st.chugging ? 1 : 0;
+          st.burning = st.fire === 'burning' || st.fire === 'hosed';
+          st.burnt = st.fire === 'burnt';
+          // hosed out over and over, so the flames shrinking can be watched
+          if (st.fire === 'hosed') st.hosed = (t % HOSE_SECONDS) / HOSE_SECONDS;
+          else delete st.hosed;
           animateItemParts(root, st, t);
           if (st.level !== plate.level) {
             if (plate.group) root.remove(plate.group);
@@ -907,13 +925,23 @@ function actSpecimen(act: Act, label: string): Specimen {
   };
 }
 
-/** A visitor dressed for the part: a VIP in a dark suit, or the inspector with a clipboard. */
+/** What the lab calls each kind of visitor. */
+const VISITOR_NAMES: Readonly<Record<VisitorKind, string>> = {
+  vip: 'VIP',
+  inspector: 'Health inspector',
+  firefighter: 'Firefighter',
+};
+
+/**
+ * A visitor dressed for the part: a VIP in a dark suit, the inspector with a clipboard, or a firefighter in a yellow
+ * helmet.
+ */
 function visitorSpecimen(visit: VisitorKind): Specimen {
   const st: PersonState = { look: { ...LAB_LOOK }, pose: 'stand', bubble: '', act: '' };
   return {
     id: `visitor:${visit}`,
     group: 'Visitors',
-    name: visit === 'vip' ? 'VIP' : 'Health inspector',
+    name: VISITOR_NAMES[visit],
     footprint: [1, 1],
     /** Build them in their outfit. */
     build() {
@@ -925,6 +953,29 @@ function visitorSpecimen(visit: VisitorKind): Specimen {
         /** Pose them. */
         animate(t, dt) {
           posePerson(rig, c, st, t, dt);
+        },
+      };
+    },
+  };
+}
+
+/** A firefighter hosing out a fire in front of them, braced, the water arcing from the nozzle. */
+function hosingSpecimen(): Specimen {
+  return {
+    id: 'act:hose',
+    group: 'Acts',
+    name: 'A firefighter hosing out a fire',
+    footprint: [1, 2],
+    /** Build them, hose in hand. */
+    build() {
+      const rig = buildCharacter(LAB_LOOK, undefined, undefined, 'firefighter');
+      const c = { ...demoVisitor(LAB_LOOK, 'firefighter'), state: 'hosing' as const };
+      return {
+        root: rig.group,
+        controls: [],
+        /** Keep them hosing. */
+        animate(t, dt) {
+          poseChar(rig, c, t, dt, { style: null, act: 'hose' });
         },
       };
     },
@@ -1118,6 +1169,19 @@ const SCENERY: Specimen[] = [
     },
   },
   {
+    id: 'scenery:fire-truck',
+    group: 'Scenery',
+    name: 'The fire truck',
+    footprint: [3, 1],
+    /** The fire brigade's truck, its lamps flashing as they do while it is out, or steady with motion held still. */
+    build: () => {
+      const truck = buildFireTruck();
+      /** Flash its lamps in turn. */
+      const animate = (t: number) => flashLamps(truck, t);
+      return { root: truck.root, animate, controls: [] };
+    },
+  },
+  {
     id: 'scenery:for-sale',
     group: 'Scenery',
     name: 'For Sale boards',
@@ -1192,7 +1256,7 @@ export const CATALOG: readonly Specimen[] = [
   ...LOOKS.map(([key, label, look]) =>
     staffSpecimen('receptionist', { id: `look-${key}`, name: `With ${label}`, look: { ...LAB_LOOK, ...look } }),
   ),
-  ...(['vip', 'inspector'] as const).map(visitorSpecimen),
+  ...(['vip', 'inspector', 'firefighter'] as const).map(visitorSpecimen),
   ...SEATS.map(([type, i]) => seatedSpecimen(type, i)),
   ...MOODS.filter(([mood]) => mood !== 'content').flatMap(([mood, label]) => [
     moodSpecimen(mood, label, false),
@@ -1204,6 +1268,7 @@ export const CATALOG: readonly Specimen[] = [
   moppingSpecimen(),
   curedSpecimen(),
   ...ACTS.map(([act, label]) => actSpecimen(act, label)),
+  hosingSpecimen(),
   ...BEDS.map(lyingSpecimen),
   ...CLIMBS.map((type) => climbSpecimen(type)),
   ...CLIMBS.map((type) => climbSpecimen(type, 'off')),

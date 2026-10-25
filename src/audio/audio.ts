@@ -64,6 +64,15 @@ const SFX: Record<SfxName, Note[]> = {
     [520, 0, 0.1, 0.14, 'sawtooth'],
     [380, 0.08, 0.16, 0.12, 'sawtooth'],
   ],
+  // something has caught fire: a fire alarm's two notes, high and low, three times over
+  alarm: [
+    [880, 0, 0.18, 0.07, 'square'],
+    [660, 0.2, 0.18, 0.07, 'square'],
+    [880, 0.4, 0.18, 0.07, 'square'],
+    [660, 0.6, 0.18, 0.07, 'square'],
+    [880, 0.8, 0.18, 0.07, 'square'],
+    [660, 1.0, 0.24, 0.07, 'square'],
+  ],
 };
 
 // Dreamy four-chord loop: Fmaj7, Em7, Dm7, Cmaj7
@@ -85,6 +94,14 @@ const VOICE_LEVEL = 0.8;
 const RUMBLE_HZ = 55;
 const RUMBLE_LOWPASS = 180;
 const RUMBLE_LEVEL = 0.04;
+/**
+ * A fire truck's siren: the note it wails about, how far either side of it the wail swings and how many times a second,
+ * and how loud it is at its loudest.
+ */
+const SIREN_HZ = 775;
+const SIREN_SWING = 125;
+const SIREN_RATE = 2;
+const SIREN_LEVEL = 0.035;
 /** How long after the chime starts the announcer begins to speak, in milliseconds. */
 const VOICE_DELAY = 700;
 
@@ -99,6 +116,9 @@ export class Audio {
   /** The loudness an engine's rumble plays at, set while one runs nearby; started the first time it is wanted. */
   private rumbleGain: GainNode | null = null;
   private rumbleAt = 0;
+  /** The loudness the fire truck's siren plays at, set while it comes; started the first time it is wanted. */
+  private sirenGain: GainNode | null = null;
+  private sirenAt = 0;
   sound: boolean;
   music: boolean;
 
@@ -171,6 +191,33 @@ export class Audio {
       osc.start();
     }
     this.rumbleGain.gain.setTargetAtTime(want * RUMBLE_LEVEL, ctx.currentTime, 0.3);
+  }
+
+  /**
+   * Wail like a fire truck's siren, this loud from 0 (silent) to 1: one note swung up and down by a slow oscillator,
+   * left running and faded in and out. Nothing while sound is off.
+   */
+  siren(level: number) {
+    const ctx = this.ctx;
+    const want = this.sound ? level : 0;
+    if (!ctx || (!this.sirenGain && want <= 0) || Math.abs(want - this.sirenAt) < 0.01) return;
+    this.sirenAt = want;
+    if (!this.sirenGain) {
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.value = SIREN_HZ;
+      const wail = ctx.createOscillator();
+      wail.frequency.value = SIREN_RATE;
+      const swing = ctx.createGain();
+      swing.gain.value = SIREN_SWING;
+      wail.connect(swing).connect(osc.frequency);
+      this.sirenGain = ctx.createGain();
+      this.sirenGain.gain.value = 0;
+      osc.connect(this.sirenGain).connect(this.master);
+      osc.start();
+      wail.start();
+    }
+    this.sirenGain.gain.setTargetAtTime(want * SIREN_LEVEL, ctx.currentTime, 0.3);
   }
 
   /** Schedule a single note that fades in quickly and dies away. */

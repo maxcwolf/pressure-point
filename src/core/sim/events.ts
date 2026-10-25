@@ -21,7 +21,8 @@ export type SfxName =
   | 'payday'
   | 'announce'
   | 'fanfare'
-  | 'yelp';
+  | 'yelp'
+  | 'alarm';
 
 /** What a message is about, so clicking it can take the player there. */
 export interface Subject {

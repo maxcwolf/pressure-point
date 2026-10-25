@@ -27,6 +27,7 @@ import { an, article, money } from '../format';
 import { pickFresh, rnd } from '../random';
 import { offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
+import { fireAdvice, fireRiskAdvice } from './blazes';
 import { BOTTLENECK, bottleneck, type Stage, stages } from './bottleneck';
 import type { SimContext } from './context';
 import { capacity, unfedStations } from './demand';
@@ -121,6 +122,8 @@ function nudge(ctx: SimContext): string | Advice {
   if (mishap) return alarm(mishap);
   const flood = floodAdvice(ctx);
   if (flood) return alarm(flood);
+  const fire = fireAdvice(ctx);
+  if (fire) return alarm(fire);
   // someone on a really bad trip, freaking out everyone they pass, and nobody sent to them yet
   const runner = s.guests.find((g) => running(g) && !calmerOf(ctx, g));
   if (runner)
@@ -240,6 +243,8 @@ function nudge(ctx: SimContext): string | Advice {
   if (held) return held;
   const fix = repairAdvice(ctx);
   if (fix) return fix;
+  const risk = fireRiskAdvice(ctx);
+  if (risk) return risk;
   const unfed = unfedAdvice(ctx);
   if (unfed) return unfed;
   if (s.guests.length > 4 && !s.items.some((i) => i.type === 'bench'))

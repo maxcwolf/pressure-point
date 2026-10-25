@@ -1,7 +1,7 @@
 // What an item shows of what it is doing, with no overlay open: smoke, a shudder or a flickering light as it wears out
 // and a dead look once it breaks, grime as it gets dirty, ripples while a guest plays something loud, wisps of warm
-// or cool air off a heater or an air conditioner, and the mark of a mishap that has stopped it: its lights out in a
-// power cut, frost in a freeze, and wasps round it. Each cue is a few small parts added to a model the first time it is
+// or cool air off a heater or an air conditioner, flames and black smoke while it burns and a charred look after, and
+// the mark of a mishap that has stopped it: its lights out in a power cut, frost in a freeze, and wasps round it. Each cue is a few small parts added to a model the first time it is
 // needed, from shapes every model shares, and hidden the rest of the time, so a cue that is off draws nothing. Like the
 // rest of an item's moving parts, each is worked out afresh from the time and the item's state, frame by frame.
 
@@ -112,6 +112,14 @@ export interface CueCondition {
   stopped?: StopLook | undefined;
   /** How far it stands in the dark of a power cut, from 0 in the light to 1 inside the building with its lights out. */
   shade?: number;
+  /**
+   * It is on fire, and being put out this moment, hosed by a firefighter or doused by a Caretaker: how far it is out,
+   * from 0 as they start to 1 as it goes out.
+   */
+  burning?: boolean;
+  hosed?: number;
+  /** It burnt in a fire, and has not been repaired since. */
+  burnt?: boolean;
 }
 
 /**
@@ -123,8 +131,11 @@ const UNLIT_IN_SHADE = 0.45;
 /** The share of its own brightness a cue drawn without light shows, for how far it stands in the dark. */
 export const unlitShare = (c: Pick<CueCondition, 'shade'>) => 1 - (c.shade ?? 0) * (1 - UNLIT_IN_SHADE);
 
-/** How a mishap shows on what it has stopped: switched off at the plug, frozen solid, or swarmed by wasps. */
-export type StopLook = 'off' | 'frost' | 'wasps';
+/**
+ * How a mishap shows on what it has stopped: switched off at the plug, frozen solid, or swarmed by wasps; or how a fire
+ * leaves what it burnt, charred black.
+ */
+export type StopLook = 'off' | 'frost' | 'wasps' | 'charred';
 
 /** How each mishap shows on the items it stops: a storm shuts the Aura Wash down, as a power cut does. */
 export const STOP_LOOKS: Readonly<Record<MishapId, StopLook>> = {
@@ -185,7 +196,8 @@ const fadeOf = (o: THREE.Object3D) => (o as THREE.Mesh<THREE.BufferGeometry, THR
 /** Smoke a worn machine puffs out, or the dust a worn mat gives off, and the dark smoke of a broken machine. */
 function animateSmoke(model: THREE.Object3D, c: CueCondition, look: WearLook | undefined, t: number) {
   const worn = showsWear(c.wear);
-  const dead = c.wear >= 100 && look === 'smoke';
+  // anything on fire gives off black smoke, whatever it shows of its wear
+  const dead = (c.wear >= 100 && look === 'smoke') || !!c.burning;
   const on = (worn && (look === 'smoke' || look === 'dust')) || dead;
   let smoke = partsOf(model).cues?.smoke;
   if (!on) {
@@ -220,6 +232,264 @@ function animateSmoke(model: THREE.Object3D, c: CueCondition, look: WearLook | u
     );
     p.scale.setScalar(size * (0.5 + f * 1.1));
     m.opacity = (dead ? 0.8 : dust ? 0.55 : 0.7) * (1 - f) * Math.min(1, f * 6);
+  });
+}
+
+/** The white of the steam off a fire being put out. */
+const STEAM = 0xf4f6f8;
+
+/**
+ * How a flame's color runs from its foot to its tip, and how see-through it gets: [share of its height, color,
+ * opacity]. The outer tongues go from yellow at the foot through orange to a deep red tip that fades away; the cores
+ * inside them burn nearly white at the foot.
+ */
+type Gradient = readonly (readonly [at: number, color: number, alpha: number])[];
+const FLAME_GRADIENT: Gradient = [
+  [0, 0xffd23f, 0],
+  [0.14, 0xffc23a, 1],
+  [0.35, 0xff9a1f, 1],
+  [0.68, 0xff4a12, 0.9],
+  [1, 0xc8200a, 0],
+];
+const CORE_GRADIENT: Gradient = [
+  [0, 0xfff6cf, 0],
+  [0.12, 0xfff6cf, 1],
+  [0.5, 0xffd84a, 1],
+  [1, 0xff9a1f, 0.1],
+];
+
+/**
+ * How wide a flame is at a share of its height: round at its foot, which fades into what is burning, widest a quarter
+ * of the way up, then drawn out to a long point.
+ */
+function flameWidth(f: number): number {
+  return f < 0.25 ? 0.35 + 0.65 * Math.sin((f / 0.25) * (Math.PI / 2)) : ((1 - f) / 0.75) ** 1.6;
+}
+
+/** Shade a flame's every point by its height, with the color and opacity its gradient has there. */
+function shadeFlame(shape: THREE.BufferGeometry, height: number, gradient: Gradient) {
+  const at = shape.getAttribute('position');
+  const colors = new Float32Array(at.count * 4);
+  const from = new THREE.Color();
+  const to = new THREE.Color();
+  for (let i = 0; i < at.count; i++) {
+    const f = clamp(at.getY(i) / height, 0, 1);
+    const k = Math.max(
+      1,
+      gradient.findIndex(([g]) => g >= f),
+    );
+    const [g0, c0, a0] = gradient[k - 1] ?? [0, 0xffffff, 1];
+    const [g1, c1, a1] = gradient[k] ?? [1, c0, a0];
+    const mix = g1 > g0 ? (f - g0) / (g1 - g0) : 0;
+    from
+      .setHex(c0)
+      .lerp(to.setHex(c1), mix)
+      .toArray(colors, i * 4);
+    colors[i * 4 + 3] = a0 + (a1 - a0) * mix;
+  }
+  shape.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+}
+
+/** A tongue of flame, `height` tall and `width` across at its widest, colored from its foot to its tip. */
+function flameShape(key: string, height: number, width: number, gradient: Gradient): THREE.BufferGeometry {
+  return cached(key, () => {
+    const profile = [0, 0.06, 0.14, 0.25, 0.36, 0.48, 0.6, 0.72, 0.84, 0.93, 1].map(
+      (f) => new THREE.Vector2((width / 2) * flameWidth(f), height * f),
+    );
+    const shape = new THREE.LatheGeometry(profile, 10);
+    shadeFlame(shape, height, gradient);
+    return shape;
+  });
+}
+
+/** The outer tongue of a flame, one shape for every fire. */
+const tongue = () => flameShape('cue-flame', 0.7, 0.3, FLAME_GRADIENT);
+/** The brighter core that burns inside each tongue. */
+const core = () => flameShape('cue-flame-core', 0.42, 0.17, CORE_GRADIENT);
+
+/**
+ * Where the tongues of flame stand on something on fire, in shares of its box, and how big each is: round its edges and
+ * taller in the middle, rising from a little over halfway up so they wrap round its top, whatever its shape, rather
+ * than float over a chimney or a lamp. Each has a core burning inside it, and they all rise from one broad bed of fire.
+ */
+const FLAME_SPOTS: readonly { x: number; z: number; up: number; big: number }[] = [
+  { x: -0.3, z: -0.2, up: 0.55, big: 0.85 },
+  { x: 0.3, z: -0.22, up: 0.55, big: 0.8 },
+  { x: -0.28, z: 0.24, up: 0.5, big: 0.75 },
+  { x: 0.3, z: 0.22, up: 0.5, big: 0.85 },
+  { x: 0, z: -0.3, up: 0.55, big: 0.7 },
+  { x: -0.1, z: 0.02, up: 0.6, big: 1.3 },
+  { x: 0.14, z: -0.05, up: 0.6, big: 1.15 },
+];
+
+/** How high up something on fire its bed of fire lies, in a share of its height, and how much of its top it covers. */
+const BED_UP = 0.45;
+const BED_SPREAD = 0.85;
+
+/** How many licks of flame break off and rise at a time, how long each takes to rise and go, and how many embers. */
+const LICKS = 4;
+const LICK_EVERY = 0.92;
+const EMBERS = 10;
+
+/** How much of their size the flames keep once nearly hosed out. */
+const HOSED_LEFT = 0.2;
+
+/** A flame's own material, colored by its shape and full strength, as a fire's light is, so each can fade on its own. */
+const flameLook = () =>
+  owned(new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, toneMapped: false }));
+
+/** A flame added to a group, drawn over its tongue if it is a core, and never picked. */
+function addFlame(group: THREE.Group, shape: THREE.BufferGeometry, order: number): THREE.Mesh {
+  const m = new THREE.Mesh(shape, flameLook());
+  /** Cues are not there to be clicked: a click goes to the item itself. */
+  m.raycast = () => undefined;
+  m.renderOrder = order;
+  m.userData.cue = true;
+  group.add(m);
+  return m;
+}
+
+/** The flames for a model, made the first time it burns: a tongue and its core at each spot, and the bed under them. */
+function flamesFor(model: THREE.Object3D): THREE.Group {
+  const group = new THREE.Group();
+  FLAME_SPOTS.forEach(() => addFlame(group, tongue(), 2));
+  FLAME_SPOTS.forEach(() => addFlame(group, core(), 3));
+  addFlame(group, tongue(), 2);
+  model.add(group);
+  return group;
+}
+
+/** The licks of flame that break off the tongues and rise, made the first time it burns. */
+function licksFor(model: THREE.Object3D): THREE.Group {
+  const group = new THREE.Group();
+  for (let i = 0; i < LICKS; i++) addFlame(group, tongue(), 2);
+  model.add(group);
+  return group;
+}
+
+/** The embers' look: glowing dots, orange to yellow, shared by every fire. */
+let emberLook: THREE.PointsMaterial | null = null;
+
+/** The embers for a model, made the first time it burns: one cloud of points, drawn at once. */
+function embersFor(model: THREE.Object3D): THREE.Points {
+  const shape = owned(new THREE.BufferGeometry());
+  shape.setAttribute('position', new THREE.BufferAttribute(new Float32Array(EMBERS * 3), 3));
+  const colors = new Float32Array(EMBERS * 3);
+  const color = new THREE.Color();
+  for (let i = 0; i < EMBERS; i++) color.setHex(i % 3 === 0 ? 0xffe27a : 0xff8a1f).toArray(colors, i * 3);
+  shape.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  emberLook ??= new THREE.PointsMaterial({
+    size: 0.09,
+    map: dotTexture(),
+    vertexColors: true,
+    alphaTest: 0.5,
+    toneMapped: false,
+  });
+  const embers = new THREE.Points(shape, emberLook);
+  /** Cues are not there to be clicked: a click goes to the item itself. */
+  embers.raycast = () => undefined;
+  // they move every frame, so their bounds are never worked out
+  embers.frustumCulled = false;
+  embers.userData.cue = true;
+  model.add(embers);
+  return embers;
+}
+
+/** A wavering between about -1 and 1, made of three waves that never fall into step, so a flame never repeats. */
+const waver = (t: number, seed: number) =>
+  (Math.sin(t * 7.3 + seed) + Math.sin(t * 11.9 + seed * 2.7) * 0.6 + Math.sin(t * 17.1 + seed * 4.1) * 0.35) / 1.95;
+
+/**
+ * Flames licking up round the top of something on fire: tongues of flame, yellow at the foot and red at the tip, each
+ * with a bright core, stretching, swaying and twisting on their own; licks of flame breaking off their tips and rising
+ * as they fade; and embers drifting up. They shrink as a firefighter or a Caretaker puts them out, in step with the
+ * game, with steam rising off it.
+ */
+function animateFlames(model: THREE.Object3D, c: CueCondition, t: number) {
+  const parts = partsOf(model).cues;
+  if (!c.burning) {
+    for (const p of [parts?.flames, parts?.licks, parts?.embers, parts?.steam]) if (p) p.visible = false;
+    return;
+  }
+  const cues = cuesOf(model);
+  const flames = (cues.flames ??= flamesFor(model));
+  const licks = (cues.licks ??= licksFor(model));
+  const embers = (cues.embers ??= embersFor(model));
+  flames.visible = licks.visible = embers.visible = true;
+  const { box } = cues;
+  const w = box.max.x - box.min.x;
+  const d = box.max.z - box.min.z;
+  const h = box.max.y - box.min.y;
+  const cx = (box.min.x + box.max.x) / 2;
+  const cz = (box.min.z + box.max.z) / 2;
+  // shrinking as the hose or the extinguisher puts it out, in step with the game, so it waits while the game is paused
+  const hosed = c.hosed !== undefined;
+  const left = 1 - (1 - HOSED_LEFT) * clamp(c.hosed ?? 0, 0, 1);
+  // big enough to read from the game's usual distance, and bigger on something bigger
+  const size = clamp(Math.max(w, d, h) * 0.85, 1, 1.8) * left;
+  // the whole fire leans a little one way and the other, as if in a draught
+  const lean = Math.sin(t * 1.3 + c.id) * 0.08;
+  const n = FLAME_SPOTS.length;
+  /** Where the foot of the flame at a spot stands. */
+  const footOf = (i: number) => {
+    const spot = FLAME_SPOTS[i % n] ?? { x: 0, z: 0, up: 0.6, big: 1 };
+    return { spot, x: cx + spot.x * w, y: box.min.y + spot.up * h, z: cz + spot.z * d };
+  };
+  flames.children.forEach((f, i) => {
+    // the bed of fire: one broad, low flame over the whole top, which the tongues rise out of
+    if (i === n * 2) {
+      const swell = 1 + 0.12 * waver(t * 0.8, c.id);
+      f.position.set(cx, box.min.y + BED_UP * h, cz);
+      f.scale.set(((w * BED_SPREAD) / 0.3) * left, size * 0.75 * swell, ((d * BED_SPREAD) / 0.3) * left);
+      f.rotation.set(0, 0, lean * 0.5);
+      return;
+    }
+    const isCore = i >= n;
+    const { spot, x, y, z } = footOf(i);
+    const seed = c.id * 1.7 + (i % n) * 3.1;
+    const stretch = 1 + 0.28 * waver(t, seed);
+    // taller is thinner, as a flame drawn up is
+    const across = size * spot.big * (1.08 - 0.15 * stretch);
+    f.position.set(x, y + (isCore ? 0.02 : 0), z);
+    f.scale.set(across, size * spot.big * stretch * (isCore ? 1.05 : 1), across);
+    f.rotation.set(
+      0.14 * waver(t * 0.7, seed + 1),
+      t * (1.5 + (i % n) * 0.35),
+      lean + 0.16 * waver(t * 0.6, seed + 2),
+      'YXZ',
+    );
+  });
+  // a lick of flame breaks off the tip of a tongue, rises and shrinks away, one after another
+  licks.children.forEach((l, i) => {
+    // how far through its rise it is, and which rise this is, which picks the tongue it comes off
+    const into = Math.max(0, t + i * LICK_EVERY * 0.23 + offset(c.id + i * 5) * LICK_EVERY);
+    const f = (into % LICK_EVERY) / LICK_EVERY;
+    const { spot, x, y, z } = footOf(i * 2 + Math.floor(into / LICK_EVERY));
+    const top = y + 0.7 * size * spot.big;
+    const s = size * 0.42 * (1 - f) * spot.big;
+    l.visible = s > 0.01;
+    l.position.set(x + Math.sin(f * 5 + i) * 0.06, top - 0.18 * size + f * 0.55 * size, z);
+    l.scale.set(s, s * 1.3, s);
+    l.rotation.set(0, t * 2, lean);
+    (l as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>).material.opacity = 1 - f * f;
+  });
+  // embers drift up off it, wandering as they go, and go out high over it
+  const at = embers.geometry.getAttribute('position') as THREE.BufferAttribute;
+  for (let i = 0; i < EMBERS; i++) {
+    const f = burst(t + i * 0.31, 1.7, 1.7, c.id * 3 + i);
+    const { x, y, z } = footOf(i);
+    const rise = f < 0 ? -100 : y + 0.3 * size + f * 1.6 * size;
+    at.setXYZ(i, x + Math.sin(f * 6 + i * 1.9) * 0.18 * f, rise, z + Math.cos(f * 5 + i * 2.3) * 0.18 * f);
+  }
+  at.needsUpdate = true;
+  const steam = (cues.steam ??= cueGroup(model, sph(0.1, 8), 3, STEAM));
+  steam.visible = hosed;
+  if (!hosed) return;
+  steam.children.forEach((p, i) => {
+    const f = burst(t + i * 0.4, 1.2, 1.2, c.id);
+    p.position.set(cx + Math.sin(f * 4 + i * 2.1) * 0.15, box.max.y + 0.2 + f * 1.1, cz + (i - 1) * 0.1);
+    p.scale.setScalar(2.2 * (0.6 + f));
+    fadeOf(p).opacity = 0.75 * (1 - f) * Math.min(1, f * 5);
   });
 }
 
@@ -517,18 +787,42 @@ function frost(m: THREE.MeshStandardMaterial, on: boolean) {
   m.emissiveIntensity = ICE_GLINT;
 }
 
+/**
+ * The near-black a fire chars everything it burns toward, and how far: colors mix in linear light, where most of a
+ * color's brightness on screen lies in its first few percent, so it takes nearly all the way to look burnt.
+ */
+const CHAR = new THREE.Color(0x221d1a);
+const CHAR_BY = 0.94;
+
+/** The looks an item's parts can be dressed in: switched off, frozen, or charred. */
+type Dress = 'off' | 'frost' | 'charred';
+
 /** Each material's look while stopped, made once from it: a shared material's is shared too. */
-const stoppedLooks = new WeakMap<THREE.Material, Partial<Record<'off' | 'frost', THREE.Material>>>();
+const stoppedLooks = new WeakMap<THREE.Material, Partial<Record<Dress, THREE.Material>>>();
 
 /**
  * A material as it looks on an item a mishap has stopped, or the material itself where it does not change: glazed with
- * ice when frozen; with any glow switched off, and darker, when the power is off.
+ * ice when frozen; with any glow switched off, and darker, when the power is off; and charred nearly black, matt and with
+ * no glow, once it has burnt.
  */
-function stoppedMaterial(m: THREE.Material, look: 'off' | 'frost'): THREE.Material {
+function stoppedMaterial(m: THREE.Material, look: Dress): THREE.Material {
   const made = stoppedLooks.get(m)?.[look];
   if (made) return made;
   let out: THREE.Material = m;
-  if (look === 'off' && m instanceof THREE.MeshStandardMaterial && m.emissiveIntensity > 0 && m.emissive.getHex()) {
+  if (look === 'charred' && (m instanceof THREE.MeshStandardMaterial || m instanceof THREE.MeshBasicMaterial)) {
+    const burnt = m.clone();
+    burnt.color.lerp(CHAR, CHAR_BY);
+    if (burnt instanceof THREE.MeshStandardMaterial) {
+      burnt.emissiveIntensity = 0;
+      burnt.roughness = 0.95;
+    }
+    out = burnt;
+  } else if (
+    look === 'off' &&
+    m instanceof THREE.MeshStandardMaterial &&
+    m.emissiveIntensity > 0 &&
+    m.emissive.getHex()
+  ) {
     const dark = m.clone();
     dark.emissiveIntensity = 0;
     dark.color.multiplyScalar(0.55);
@@ -560,16 +854,18 @@ function animatedMaterials(model: THREE.Object3D): Set<THREE.Material | undefine
  * the mishap is over. Only a change of look does any work, so this is free from frame to frame.
  */
 export function dressStopped(model: THREE.Object3D, look: StopLook | undefined) {
-  const dressed = look === 'off' || look === 'frost' ? look : undefined;
+  const dressed = look === 'off' || look === 'frost' || look === 'charred' ? look : undefined;
   const cues = cuesOf(model);
   if (cues.dressed === dressed) return;
   cues.dressed = dressed;
-  const keep = animatedMaterials(model);
+  // what burnt is charred all over, its glow and its moving parts too: they stand still until it is repaired
+  const keep = dressed === 'charred' ? new Set() : animatedMaterials(model);
   model.traverse((o) => {
     if (!(o instanceof THREE.Mesh) || o.userData.cue) return;
     const own = (o.userData.asBuilt ??= o.material) as THREE.Material | THREE.Material[];
-    if (Array.isArray(own) || keep.has(own)) return;
-    o.material = dressed ? stoppedMaterial(own, dressed) : own;
+    if (Array.isArray(own)) return;
+    // a part left to animate itself goes back to its own material all the same, should a fire have charred it
+    o.material = dressed && !keep.has(own) ? stoppedMaterial(own, dressed) : own;
   });
 }
 
@@ -702,21 +998,25 @@ function animateIcicles(model: THREE.Object3D, c: CueCondition) {
 
 /**
  * Show every cue an item gives: of its wear, its dirt, its noise and its warmth, an engine running, a rattle from next
- * door, and a mishap that has stopped it.
+ * door, a fire, and a mishap that has stopped it. Something on fire, or burnt and not yet repaired, is charred black,
+ * whatever else has stopped it.
  */
 export function animateCues(model: THREE.Object3D, c: CueCondition, t: number) {
   const look = WEAR_LOOKS[c.type];
   const { lamp, grime: dirty, exhaust } = partsOf(model);
+  const charred = !!c.burnt || !!c.burning;
   if (lamp) {
     const bright = (lamp.userData.bright ??= lamp.emissiveIntensity) as number;
-    // an engine's light is full on while it runs, and low while it stands by
-    wearLight(lamp, c.wear, c.id, exhaust && c.running <= 0 ? bright * STANDBY_LIGHT : bright, t, c.stopped === 'off');
+    // an engine's light is full on while it runs, and low while it stands by; out once it has burnt
+    const off = c.stopped === 'off' || charred;
+    wearLight(lamp, c.wear, c.id, exhaust && c.running <= 0 ? bright * STANDBY_LIGHT : bright, t, off);
   }
-  if (c.stopped || partsOf(model).cues) dressStopped(model, c.stopped);
+  const dress = charred ? 'charred' : c.stopped;
+  if (dress || partsOf(model).cues) dressStopped(model, dress);
   if (dirty) {
     grime(dirty, c.dirt);
     // the grime is worked out afresh each frame, so the ice goes on over it
-    frost(dirty, c.stopped === 'frost');
+    frost(dirty, !charred && c.stopped === 'frost');
   }
   if (look === 'shudder') animateLean(model, c, t);
   animateChug(model, c, t);
@@ -727,4 +1027,5 @@ export function animateCues(model: THREE.Object3D, c: CueCondition, t: number) {
   animateFumes(model, c, t);
   animateWasps(model, c, t);
   animateIcicles(model, c);
+  animateFlames(model, c, t);
 }

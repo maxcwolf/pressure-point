@@ -2,7 +2,7 @@
 
 import { type AchievementId, conditionOf, DAYS_PER_MONTH, MODALITIES } from '../core/data';
 import { incomeOf, netOf } from '../core/sim/economy';
-import type { Emergency, GameState, HouseCall, Ledger, Outbreak, VisitReport } from '../core/state/types';
+import type { Emergency, FireReport, GameState, HouseCall, Ledger, Outbreak, VisitReport } from '../core/state/types';
 
 /** What an event says, as PostHog takes it. */
 export type PlayProps = Record<string, string | number | boolean | Partial<Record<string, string | number>>>;
@@ -47,6 +47,8 @@ export interface PlayMark {
   /** The latest visitor's report, and whether it was a failed inspection still to be settled. */
   report: VisitReport | null;
   unsettled: boolean;
+  /** The latest fire, burning or out. */
+  fire: FireReport | null;
 }
 
 /** The offers a game makes, which the player takes on, turns down or lets lapse. */
@@ -84,6 +86,7 @@ export function markOf(s: GameState): PlayMark {
     outbreak: s.outbreak,
     report: s.visitReport,
     unsettled: s.visitReport?.bribe !== undefined,
+    fire: s.fire ?? null,
   };
 }
 
@@ -157,6 +160,14 @@ function happenings(mark: PlayMark, s: GameState, game: PlayProps, known: PlayCo
     const outcome = o.lost <= o.lostMax ? 'contained' : 'escaped';
     out.push({ name: 'outbreak_ended', props: { ...game, outcome, lost: o.lost, lost_max: o.lostMax } });
   }
+  // a fire's record is replaced as it goes out, so it ends the moment the latest one is out and was not before; one
+  // whose flames went with what was sold has nothing that put it out
+  const f = s.fire;
+  if (f?.out && f !== mark.fire)
+    out.push({
+      name: 'fire_ended',
+      props: { ...game, item: f.item, how: f.how ?? 'sold', burnt: f.burnt, fee: f.fee },
+    });
   // a failed inspection is settled by paying it off, or by its fine: the next visit's report settles it first
   const was = mark.report;
   if (was && mark.unsettled && (s.visitReport !== was || was.bribe === undefined))

@@ -19,6 +19,7 @@ import { CLASS_LINES } from '../../src/core/sim/classes';
 import { emergencyNews } from '../../src/core/sim/emergencies';
 import { OPENING_LINES, openingLine } from '../../src/core/sim/progress';
 import { RUNAWAY_LINES } from '../../src/core/sim/runaways';
+import { SEASON_LINES } from '../../src/core/sim/twists';
 
 /** Every line the speakers can say that does not change from game to game. */
 function spokenLines(): string[] {
@@ -38,6 +39,7 @@ function spokenLines(): string[] {
     ...CLASS_LINES,
     ...OPENING_LINES,
     ...RUNAWAY_LINES,
+    ...Object.values(SEASON_LINES),
   ];
 }
 
@@ -61,10 +63,22 @@ describe('the announcer', () => {
     );
     expect(voiceFor(ANNOUNCEMENTS.find((l) => l.includes('urinal')) ?? '')).toMatch(/remove-pants-urinal.*\.m4a$/);
     expect(voiceFor('Summer is here, and so are the crowds.')).toBeUndefined();
+    // a season plays its line, and leaves the numbers after it to the banner
+    expect(voiceFor(`${SEASON_LINES.winter} Until then, about ×0.4 the usual guests.`)).toMatch(
+      /winter-is-here.*\.m4a$/,
+    );
+    expect(voiceFor(RUNAWAY_LINES[0])).toMatch(/walls-not-melting.*\.m4a$/);
+    expect(voiceFor(RUNAWAY_LINES[1]), 'not recorded yet').toBeUndefined();
+    expect(voiceFor(SEASON_LINES.spring)).toMatch(/spring-sprung.*\.m4a$/);
+    expect(
+      voiceFor(`${SEASON_LINES.summer} Until autumn, about ×1.9 the usual guests.`),
+      'not recorded yet',
+    ).toBeUndefined();
+    expect(voiceFor(`${SEASON_LINES.winter.slice(0, -1)}, more or less.`), 'not the line as recorded').toBeUndefined();
   });
 
   it('has recorded every one of the filler lines, or lists it in the to-do list to be recorded', () => {
-    const todo = readFileSync(path.join(import.meta.dirname, '../../docs/todo.md'), 'utf8');
+    const todo = readFileSync(path.join(import.meta.dirname, '../../docs/planning/todo.md'), 'utf8');
     for (const line of ANNOUNCEMENTS) if (!voiceFor(line)) expect(todo, line).toContain(`- [ ] ${line}`);
     expect(ANNOUNCEMENTS.filter((line) => voiceFor(line)).length).toBeGreaterThan(ANNOUNCEMENTS.length / 2);
   });

@@ -90,12 +90,25 @@ export interface AchievementCard {
   desc: string;
   karma: number;
   done: boolean;
+  /** Shown as a mystery until it is earned. */
+  hidden: boolean;
 }
 
-/** A card for every achievement, in order. */
+/** A card for every achievement, in order: a hidden one not yet earned says nothing of what it is. */
 export function achievementCards(p: CampaignProgress): AchievementCard[] {
   return ACHIEVEMENT_ORDER.map((id) => {
     const a = ACHIEVEMENTS[id];
-    return { id, icon: a.icon, name: a.name, desc: a.desc, karma: a.karma, done: p.achieved.includes(id) };
+    const done = p.achieved.includes(id);
+    const hidden = a.hidden === true;
+    const mystery = hidden && !done;
+    return {
+      id,
+      icon: a.icon,
+      name: mystery ? 'Hidden achievement' : a.name,
+      desc: mystery ? 'Earned by something nobody will admit to.' : a.desc,
+      karma: a.karma,
+      done,
+      hidden,
+    };
   });
 }

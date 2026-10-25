@@ -3,14 +3,17 @@
 
 /** Every icon there is. */
 export const ICON_IDS = [
+  'achievement-busted',
   'achievement-called-in',
   'achievement-century',
   'achievement-good-vibrations',
   'achievement-nest-egg',
   'achievement-one-big-family',
   'achievement-pins-and-needles',
+  'achievement-price-is-right',
   'achievement-showpiece',
   'achievement-talk-of-the-town',
+  'achievement-under-the-counter',
   'award-busiest',
   'award-caretaker-of-the-year',
   'award-center-of-the-year',
@@ -308,6 +311,7 @@ export const ICON_IDS = [
   'ui-expand',
   'ui-fast',
   'ui-fastest',
+  'ui-fire-truck',
   'ui-guests',
   'ui-heart-broken',
   'ui-hire',
@@ -339,6 +343,7 @@ export const ICON_IDS = [
   'ui-save',
   'ui-size',
   'ui-sound',
+  'ui-sprinklers',
   'ui-staff',
   'ui-stats',
   'ui-sync',

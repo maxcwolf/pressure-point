@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { SANDBOX_PLOT } from '../../src/core/data';
 import { buildingWindows, footprintOf } from '../../src/core/footprint';
+import { windowsInto } from '../../src/core/resize';
 import type { Room, WallSpot } from '../../src/core/state/types';
 import { roomShape, type WallBox, WINDOW_PANE, WINDOW_SILL } from '../../src/render/room-walls';
 import { H_LOW, H_TALL, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T } from '../../src/render/shared';
@@ -110,6 +111,35 @@ describe('windows side by side', () => {
     expect(glass).toHaveLength(1);
     expect(glass[0]).toMatchObject({ a: 11.06, b: 12.94 });
     expect(two.some((b) => b.material === 'trim' && b.a < 12 && b.b > 12 && b.b - b.a < 0.05)).toBe(true);
+  });
+});
+
+describe('a window next door that looks onto a room', () => {
+  /** A room just west of the test room, its east wall against the test room's west wall. */
+  const beside = (windows: WallSpot[]): Room => ({
+    ...room(windows),
+    id: 2,
+    x: 6,
+    door: { x: 7, y: 13, dx: 0, dy: 1 },
+  });
+
+  it("is a window in the room's own wall too, so it shows through both", () => {
+    const through = windowsInto(room(), [room(), beside([{ x: 9, y: 11, dx: 1, dy: 0 }])]);
+    expect(through).toEqual([WEST]);
+    expect(roomShape(room(), BUILDING, undefined, [], through)).toEqual(roomShape(room([WEST]), BUILDING));
+  });
+
+  it("is one window with the room's own there too", () => {
+    expect(roomShape(room([WEST]), BUILDING, undefined, [], [WEST])).toEqual(roomShape(room([WEST]), BUILDING));
+  });
+
+  it('only counts where it looks onto the room', () => {
+    // the room beside's north wall looks onto corridor, and its west wall onto the outside
+    const away = beside([
+      { x: 7, y: 10, dx: 0, dy: -1 },
+      { x: 6, y: 11, dx: -1, dy: 0 },
+    ]);
+    expect(windowsInto(room(), [room(), away])).toEqual([]);
   });
 });
 

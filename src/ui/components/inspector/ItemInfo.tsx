@@ -266,6 +266,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
   const stoppedBy = sim.world.stoppedByMishap(it) ? sim.s.mishap : null;
   const room = sim.world.roomOfItem(it);
   const flooded = !!room && sim.world.flooded(room);
+  const burning = sim.onFire(it);
   return (
     <>
       <h3>
@@ -298,14 +299,23 @@ export function ItemInfo({ item: it }: { item: Item }) {
           <Bar value={100 - it.wear} tone={meterTone('wear', it.wear)} show />
         </label>
       )}
-      {!!def.wear && it.wear >= 100 && (
-        <p class={statusClass('broken')}>
-          {it.overloaded && def.machine?.overload ? (
-            <IconText id="marker-broken">{`Overloaded: it ${def.machine.overload.mess}. Needs a Caretaker`}</IconText>
-          ) : (
-            <IconText id="marker-broken">Broken: needs a Caretaker</IconText>
-          )}
+      {burning ? (
+        <p class={statusClass('burning')}>
+          <IconText id="item-fire-extinguisher">On fire!</IconText>
         </p>
+      ) : (
+        !!def.wear &&
+        it.wear >= 100 && (
+          <p class={statusClass('broken')}>
+            {it.burnt ? (
+              <IconText id="marker-broken">Burnt out: needs a Caretaker</IconText>
+            ) : it.overloaded && def.machine?.overload ? (
+              <IconText id="marker-broken">{`Overloaded: it ${def.machine.overload.mess}. Needs a Caretaker`}</IconText>
+            ) : (
+              <IconText id="marker-broken">Broken: needs a Caretaker</IconText>
+            )}
+          </p>
+        )
       )}
       {smoking(it) && (
         <p class={statusClass('smoking')}>

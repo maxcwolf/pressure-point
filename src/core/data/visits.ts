@@ -64,5 +64,8 @@ export const INSPECTION_FINE = 800;
 export const INSPECTION_REP = 3;
 /** Reputation gained from passing an inspection with nothing found. */
 export const INSPECTION_CLEAN_REP = 2;
-/** How near a room's door, in tiles, a Fire Extinguisher has to be for the inspector to count it. */
-export const EXTINGUISHER_REACH = 8;
+/**
+ * How near a room's door, in tiles, a Fire Extinguisher has to be for the inspector to count it, and for a Caretaker to
+ * put a fire out with it rather than beat it out.
+ */
+export const EXTINGUISHER_REACH = 10;

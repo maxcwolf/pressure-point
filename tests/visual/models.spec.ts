@@ -40,6 +40,7 @@ const IDS = [
   ].map((look) => `staff:look-${look}`),
   'visitor:vip',
   'visitor:inspector',
+  'visitor:firefighter',
   // someone sitting at each kind of seat, once for each who sits there
   ...Object.entries(ITEMS).flatMap(([type, def]) =>
     def.access.flatMap((a, i, all) =>
@@ -58,7 +59,7 @@ const IDS = [
   'mood:mopping',
   'mood:cured',
   // what people do at an item, a receptionist and a guest at a reception desk among them
-  ...['checkin', 'drink', 'eat', 'play', 'shop', 'litter', 'water', 'repair'].map((act) => `act:${act}`),
+  ...['checkin', 'drink', 'eat', 'play', 'shop', 'litter', 'water', 'repair', 'hose'].map((act) => `act:${act}`),
   // a guest lying on everything that is not a machine: face down on the tables, on their back elsewhere
   ...Object.entries(ITEMS).flatMap(([type, def]) =>
     !def.machine && def.access.some((a) => a.pose === 'lie') ? [`lying:${type}`] : [],
@@ -80,6 +81,7 @@ const IDS = [
   'scenery:storefront',
   'scenery:for-sale',
   'scenery:site',
+  'scenery:fire-truck',
 ];
 
 // a small window keeps the pictures small; the stage is what is left beside the list of models
@@ -111,7 +113,8 @@ test.describe('every model', () => {
 
 /**
  * Items showing what they are doing, as the scene shows it with no overlay open: a machine wearing out, one that has
- * broken, a mat growing grimy, an arcade a guest is playing, a radiator heating and a generator carrying the center. Each is held at the same moment.
+ * broken, a mat growing grimy, an arcade a guest is playing, a radiator heating, a generator carrying the center, and a
+ * kiln on fire and burnt out. Each is held at the same moment.
  */
 const STATES = [
   ['item:snack_machine', 'worn', '&wear=85'],
@@ -120,6 +123,8 @@ const STATES = [
   ['item:arcade_machine', 'played', '&inUse=1'],
   ['item:radiator', 'heating', '&heating=1'],
   ['item:generator', 'running', '&chugging=1'],
+  ['item:stone_kiln', 'burning', '&fire=burning'],
+  ['item:stone_kiln', 'burnt', '&fire=burnt'],
 ] as const;
 
 /** Each machine upgraded as far as it goes, with its plate of stars, as the scene shows one a Mechanic has upgraded. */

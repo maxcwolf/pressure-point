@@ -16,7 +16,7 @@ import {
 } from './data';
 import { doorstep, entranceSteps, type Footprint, spotInWall } from './footprint';
 import { plotGroundAt } from './land';
-import { carryWallSpot, inRect, looksOnto, sameRect } from './resize';
+import { carryWallSpot, farSide, inRect, sameRect } from './resize';
 import type { PlacedLayout } from './room-layout';
 import { sameSpot } from './state/game';
 import type { Room, WallSpot } from './state/types';
@@ -50,10 +50,17 @@ const DIRS4: readonly (readonly [dx: number, dy: number])[] = [
   [0, -1],
 ];
 
+/** Whether the room beyond a stretch of a room's wall has a window there, which comes through it. */
+function windowNextDoor(world: World, spot: WallSpot): boolean {
+  const beyond = world.zoneAt(spot.x + spot.dx, spot.y + spot.dy);
+  return beyond > 0 && !!world.room(beyond)?.windows.some((w) => sameSpot(w, farSide(spot)));
+}
+
 /**
  * Can something hang on this stretch of wall, seen from the tile in front of it? Inside a room, on any of its walls
- * but where its door or a window is. In a corridor, only on the building's outer wall, away from its windows and
- * its entrances: the corridor side of a room's wall is never seen standing tall.
+ * but where its door or a window is, its own or one next door's that comes through. In a corridor, only on the
+ * building's outer wall, away from its windows and its entrances: the corridor side of a room's wall is never seen
+ * standing tall.
  */
 export function wallFace(world: World, spot: WallSpot): Check {
   const { x, y, dx, dy } = spot;
@@ -66,6 +73,7 @@ export function wallFace(world: World, spot: WallSpot): Check {
     if (!room || world.zoneAt(ox, oy) === z) return no('Hang it on a wall');
     if (sameSpot(room.door, spot)) return no('The door is there');
     if (room.windows.some((w) => sameSpot(w, spot))) return no('There is a window there');
+    if (windowNextDoor(world, spot)) return no('There is a window there');
     return OK;
   }
   if (z !== Z_CORRIDOR) return no('Must be inside the building');
@@ -272,22 +280,22 @@ export function canPlaceItem(world: World, type: ItemType, x: number, y: number,
   return world.connected(world.tryOut(s.rooms, [...s.items, it])) ? OK : no('That would block the way');
 }
 
-/** The windows of the rooms next door, other than `moving`, that a room put down on this rectangle takes out. */
-export function windowsOnto(world: World, r: Rect, moving?: Room): WallSpot[] {
-  return world.s.rooms.filter((room) => room !== moving).flatMap((room) => room.windows.filter((w) => looksOnto(w, r)));
+/**
+ * The windows of the rooms next door, other than `moving`, that a room put down from a layout takes out. A window
+ * looking onto it comes through into it, unless the layout hangs something on that stretch of its wall.
+ */
+export function windowsOnto(world: World, placed: PlacedLayout, moving?: Room): WallSpot[] {
+  const hung = placed.items.filter((it) => onWall(it.type)).flatMap((it) => wallSpotsOf(it));
+  return world.s.rooms
+    .filter((room) => room !== moving)
+    .flatMap((room) => room.windows.filter((w) => hung.some((h) => sameSpot(h, farSide(w)))));
 }
 
 /**
  * Can a room of this type cover this rectangle, in the game as it is or in a what-if? A window next door looking out
- * onto it is in the way, unless `overWindows`: a room put down from a layout takes such windows out instead.
+ * onto it is no bar: it comes through into the room.
  */
-export function roomRectValid(
-  world: World,
-  type: RoomType,
-  r: Rect,
-  t: Trial = world.asIs(),
-  overWindows = false,
-): Check {
+export function roomRectValid(world: World, type: RoomType, r: Rect, t: Trial = world.asIs()): Check {
   const def = ROOMS[type];
   for (let y = r.y; y < r.y + r.h; y++) {
     for (let x = r.x; x < r.x + r.w; x++) {
@@ -311,8 +319,6 @@ export function roomRectValid(
     const n = tiles.filter(([x, y]) => within(x, y)).length;
     if (n > 0 && n < tiles.length) return no('Something is in the way');
   }
-  if (!overWindows && t.rooms.some((room) => room.windows.some((w) => looksOnto(w, r))))
-    return no('A window is in the way');
   if (Math.min(r.w, r.h) < def.minShort || Math.max(r.w, r.h) < def.minLong)
     return no(`Too small: needs at least ${def.minShort}×${def.minLong}`);
   return OK;
@@ -408,8 +414,6 @@ export function resizeValid(world: World, room: Room, r: Rect): Check {
     if (footprint(it).some(([x, y]) => inRect(r, x, y)))
       return no(onWall(it.type) ? `Take the ${ITEMS[it.type].name} down first` : 'Something is in the way');
   }
-  for (const other of s.rooms)
-    if (other !== room && other.windows.some((w) => looksOnto(w, r))) return no('A window is in the way');
   const door = carryWallSpot(room.door, r);
   if (!door) return no('That would cut off the door: move it first');
   // try it: the door has to open onto corridor as things will be, and everyone and everything still be reached
@@ -429,15 +433,15 @@ export function resizeValid(world: World, room: Room, r: Rect): Check {
 /**
  * Can a room with this layout be put down here? Pass `moving` to judge it as if that room and its furniture had
  * been lifted out first. The floor has to be free corridor inside the building, the door has to open onto clear
- * corridor, and nobody and nothing may be cut off. A window next door looking onto the floor is no bar: putting the
- * room down takes it out.
+ * corridor, and nobody and nothing may be cut off. A window next door looking onto the floor is no bar: it comes
+ * through into the room, or is taken out if the layout hangs something there.
  */
 export function layoutValid(world: World, type: RoomType, placed: PlacedLayout, moving?: Room): Check {
   // lift the room being moved, and its furniture, out first
   const rooms = world.s.rooms.filter((r) => r !== moving);
   const items = moving ? world.s.items.filter((it) => world.zoneAt(it.x, it.y) !== moving.id) : world.s.items;
   const lifted = moving ? world.tryOut(rooms, items) : world.asIs();
-  const check = roomRectValid(world, type, placed.rect, lifted, true);
+  const check = roomRectValid(world, type, placed.rect, lifted);
   if (!check.ok) return check;
   const { door } = placed;
   const ox = door.x + door.dx;
@@ -469,10 +473,9 @@ export function windowValid(world: World, room: Room, spot: Room['door']): Check
   if (!inside || !outside || Math.abs(spot.dx) + Math.abs(spot.dy) !== 1) return no("Windows go in the room's walls");
   const d = room.door;
   if (d.x === spot.x && d.y === spot.y && d.dx === spot.dx && d.dy === spot.dy) return no('The door is there');
-  const hung = world.hungAt(spot);
+  // a window onto the room next door goes through both walls, so the far side has to be free too
+  if (windowNextDoor(world, spot)) return no('There is a window there');
+  const hung = world.hungAt(spot) ?? world.hungAt(farSide(spot));
   if (hung) return no(`Take the ${ITEMS[hung.type].name} down first`);
-  // a window onto the room next door would just be a hole in two walls
-  const beyond = world.zoneAt(ox, oy);
-  if (beyond > 0 && beyond !== room.id) return no('Another room is on the other side');
   return OK;
 }

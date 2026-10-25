@@ -139,10 +139,13 @@ function choreStatus(st: Staff, sim: Sim): string {
       return `${st.state === 'doingJob' ? 'Calming' : 'Going to calm'} ${sim.guest(job.id)?.name ?? 'someone'} down`;
     case 'refresh':
       return it?.type === 'snack_machine' ? 'Getting a snack' : 'Getting a drink';
-    default:
-      return st.job && sim.s.litter.find((l) => l.id === st.job?.id)?.flood
-        ? 'Mopping out a flooded restroom'
-        : 'Clearing litter';
+    case 'douse':
+      return `${st.state === 'doingJob' ? 'Putting out' : 'Running to put out'} the fire on the ${ITEMS[it?.type ?? 'bin'].name}`;
+    default: {
+      const flood = st.job && sim.s.litter.find((l) => l.id === st.job?.id)?.flood;
+      const room = flood ? sim.world.room(flood) : undefined;
+      return room ? `Mopping out the flooded ${ROOMS[room.type].name}` : flood ? 'Mopping up' : 'Clearing litter';
+    }
   }
 }
 
@@ -250,6 +253,7 @@ export type StatusKind =
   | 'miserable'
   | 'quitting'
   | 'broken'
+  | 'burning'
   | 'stopped'
   | 'flooded';
 
@@ -273,6 +277,7 @@ const STATUS_TONES: Readonly<Record<StatusKind, StatusTone>> = {
   miserable: 'warn',
   quitting: 'bad',
   broken: 'bad',
+  burning: 'bad',
   stopped: 'bad',
   flooded: 'bad',
 };

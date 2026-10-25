@@ -314,9 +314,10 @@ export interface MachineDef {
   runHeat?: number;
   /**
    * It smokes once worn past `from`, and then after each session may overload: out of action until a Caretaker sees
-   * to it, with a bill for parts, and a mess of its own, in a few words for the toast.
+   * to it, with a bill for parts, and a mess of its own, in a few words for the toast. For a machine with a flame or a
+   * motor, `fire` is the share of its overloads that set it on fire instead.
    */
-  overload?: { from: number; chance: number; bill: number; mess: string };
+  overload?: { from: number; chance: number; bill: number; mess: string; fire?: number };
   /** A room next door it works better beside: faster, or likelier to work. */
   beside?: { room: RoomType; seconds?: number; success?: number };
   /** It helps every session in its room, rather than taking guests itself: sessions take this times as long. */
@@ -618,7 +619,10 @@ export type AchievementId =
   | 'showpiece'
   | 'one-big-family'
   | 'pins-and-needles'
-  | 'good-vibrations';
+  | 'good-vibrations'
+  | 'price-is-right'
+  | 'busted'
+  | 'under-the-counter';
 
 /** A one-off feat in the campaign, worth some karma the first time it is done in any center. */
 export interface AchievementDef {
@@ -630,6 +634,8 @@ export interface AchievementDef {
   /** Done when this objective is met. */
   goal: GoalSpec;
   karma: number;
+  /** Shown only as a locked mystery card until it is earned. */
+  hidden?: boolean;
 }
 
 export type AwardId =
@@ -699,7 +705,8 @@ export type FeelingId =
   | 'bad-trip'
   | 'freaked'
   | 'ran-out'
-  | 'cider';
+  | 'cider'
+  | 'blaze';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
 export interface FeelingDef {
@@ -740,7 +747,13 @@ export type GoalSpec =
   /** Go this many days without anyone quitting. */
   | { kind: 'noQuits'; days: number }
   /** Reach this grade of standing, counting from 0 for the first. */
-  | { kind: 'grade'; grade: number };
+  | { kind: 'grade'; grade: number }
+  /** Heal at least this many guests in a month in which nobody was put off by the prices. */
+  | { kind: 'fairMonth'; count: number }
+  /** Have the health inspector find the mushrooms under the counter this many times. */
+  | { kind: 'busted'; count: number }
+  /** Take this much from mushroom sales. */
+  | { kind: 'mushroomSales'; amount: number };
 
 /** The objectives for one star: all must be met at once. */
 export type StarGoal = readonly GoalSpec[];

@@ -63,6 +63,9 @@ export const emptyStats = (): Stats => ({
   lastQuit: -1,
   classes: 0,
   classgoers: 0,
+  fires: 0,
+  busted: 0,
+  mushroomSales: 0,
 });
 
 /** A ledger with every entry at zero. */
@@ -215,6 +218,8 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     mishap: null,
     nextMishap: firstOn(day, MISHAP_FIRST_DAY, MISHAP_GAP_DAYS[0]),
     mishapsOn: true,
+    blazes: [],
+    blazesOn: true,
     ceremony: null,
     trophies: [],
     achieved: [],

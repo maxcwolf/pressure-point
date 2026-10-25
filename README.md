@@ -23,7 +23,7 @@
 **Pressure Point Institute is a healing-center management sim, in the spirit of the classic hospital tycoon games.** Lay out treatment rooms, hire therapists, and send them on courses. Then keep a waiting room full of people with Text Neck, Stagnant Vibes and Gull Shock patient long enough to be seen. Massage, acupuncture, reiki, sound healing and a Shaman are all open for business, and the Qi Gong classes run every week. It runs in your browser with nothing to install, or as a desktop app for macOS and Windows.
 
 <p align="center">
-  <img src="docs/assets/numbers.png" alt="5 campaign centers, 5 healing arts, 23 treatments, 49 ailments" width="100%" />
+  <img src="docs/assets/numbers.png" alt="5 campaign centers, 5 healing arts, 30 treatments, 62 ailments" width="100%" />
 </p>
 
 ## Run the place
@@ -62,7 +62,7 @@ Five centers, each with its own building, guests, goals and quirks, and three st
 ### Karma: unlocks that stay unlocked
 
 <p align="center">
-  <img src="docs/assets/karma.png" alt="Earn karma: 2 for each campaign star and 2 or 3 for each achievement, 48 in all. Spend it on items such as a Koi Pond, a Fireplace and a Massage Chair, and on floors and walls" width="100%" />
+  <img src="docs/assets/karma.png" alt="Earn karma: 2 for each campaign star and 1 to 3 for each achievement, 52 in all. Spend it on items such as a Koi Pond, a Fireplace and a Massage Chair, the Carousel of Rebirth, and floors and walls" width="100%" />
 </p>
 
 Every star and achievement earns **✨ karma**. Spend it in the karma shop on items you can't get any other way, or to unlock one before its star comes round. Whatever you buy stays unlocked in every center and the sandbox.
@@ -84,6 +84,7 @@ Whether in the campaign or the sandbox, four things grow as you play.
 
 - **A campaign of five centers**, three stars each, plus a sandbox at Relaxed, Standard or Demanding, or set pressure by pressure.
 - **A healing art for every taste**, each with its own room, staff, treatments and ailments you can spot on the guests who have them, and weekly Qi Gong classes.
+- **A treatment machine at every center**, from the Kneadmaster 9000 to the Cider Press of Rebirth, each with two ailments of its own, and a Carousel of Rebirth to unlock with karma.
 - **Staff with careers:** ranks, traits, courses, raises, breaks, and duties you can set.
 - **Rooms you can change:** resize them, move them, copy them, save them as templates, and decorate them. Buy the plots of land around it, with the Expand tool, when the building gets too small: some join on, and some are buildings of their own across the grass.
 - **Events to plan for:** emergencies, stress outbreaks, VIPs, the health inspector, mishaps like power cuts and storms, staff challenges and a year-end awards ceremony.
@@ -104,7 +105,7 @@ The Mac app is signed and notarized by Apple, so it opens like any other. The Wi
 
 The desktop app keeps itself up to date. It downloads each new version in the background and offers to restart for it, or installs it the next time you quit.
 
-The game saves itself every few seconds. The browser and the desktop app keep their own saves, and **Save or load**, in the pause menu, can export a game to a file and import it into the other.
+The game saves itself every few minutes, and as you leave it. The browser and the desktop app keep their own saves, and **Save or load**, in the pause menu, can export a game to a file and import it into the other.
 
 See the [changelog](CHANGELOG.md) for what's new.
 
@@ -118,9 +119,10 @@ yarn dev   # play it at http://localhost:5183
 yarn app   # or as a desktop app
 ```
 
-- **[docs/development.md](docs/development.md):** running, testing and building the game, and where the code lives.
-- **[docs/architecture.md](docs/architecture.md):** how the pieces fit together.
-- **[docs/releasing.md](docs/releasing.md):** publishing a release.
+- **[docs/dev/development.md](docs/dev/development.md):** running, testing and building the game, and where the code lives.
+- **[docs/dev/architecture.md](docs/dev/architecture.md):** how the pieces fit together.
+- **[docs/dev/releasing.md](docs/dev/releasing.md):** publishing a release.
+- **[docs/](docs/README.md):** everything else: plans, audits, the balance log and the research behind them.
 
 ## License
 

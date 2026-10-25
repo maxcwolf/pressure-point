@@ -1,6 +1,6 @@
 // The cues an item gives without an overlay: of wear before it breaks and a dead look once it has, of dirt, of noise
-// while a guest uses something loud, and of warmth or cool while a heater or air conditioner runs; and a fountain's
-// running water.
+// while a guest uses something loud, of warmth or cool while a heater or air conditioner runs, and of a fire, its
+// flames and the char it leaves; and a fountain's running water.
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -37,6 +37,10 @@ beforeAll(() => {
     },
   );
   Object.assign(globalThis, {
+    // and an image that never loads, for the icons over an item
+    Image: class {
+      src = '';
+    },
     document: {
       /** A canvas that draws nothing. */
       createElement: () => ({
@@ -404,6 +408,90 @@ describe('a mishap on a model', () => {
     expect(lamp.emissiveIntensity).toBeGreaterThan(0);
     expect(partsOf(model(snack.id)).cues?.wasps?.visible).toBe(true);
     expect(partsOf(model(bin.id)).cues?.wasps?.visible).toBe(true);
+  });
+});
+
+describe('a fire on a model', () => {
+  /** How light a material is, from 0 for black to 1 for white. */
+  const lightness = (m: THREE.Material) => (m as THREE.MeshStandardMaterial).color.getHSL({ h: 0, s: 0, l: 0 }).l;
+
+  it('licks flames up off something on fire, with dark smoke, and puts them out with the fire', () => {
+    const model = shown('stone_kiln', { wear: 100, burning: true });
+    const { flames, smoke, box } = partsOf(model).cues!;
+    expect(flames?.visible).toBe(true);
+    expect(flames!.children.length).toBeGreaterThanOrEqual(3);
+    // over the kiln itself, and licking up past the top of it
+    for (const f of flames!.children) {
+      expect(f.position.x).toBeGreaterThan(box.min.x);
+      expect(f.position.x).toBeLessThan(box.max.x);
+    }
+    expect(Math.max(...flames!.children.map((f) => f.position.y + 0.55 * f.scale.y))).toBeGreaterThan(box.max.y);
+    expect(smoke?.visible).toBe(true);
+    // a flame flickers: the same flame stands at another height a moment later
+    const tall = flames!.children[0]!.scale.y;
+    animateItemParts(model, condition('stone_kiln', { wear: 100, burning: true }), 0.37);
+    expect(flames!.children[0]!.scale.y).not.toBe(tall);
+    animateItemParts(model, condition('stone_kiln', { wear: 100, burnt: true }), 1);
+    expect(flames!.visible).toBe(false);
+  });
+
+  it('shrinks the flames as they are hosed out, with steam rising off them', () => {
+    const model = shown('stone_kiln', { wear: 100, burning: true });
+    const flames = partsOf(model).cues!.flames!;
+    /** How big the flames stand, on average, at a moment. */
+    const size = () => flames.children.reduce((sum, f) => sum + f.scale.x, 0) / flames.children.length;
+    const before = size();
+    animateItemParts(model, condition('stone_kiln', { wear: 100, burning: true, hosed: 0 }), 1);
+    expect(partsOf(model).cues?.steam?.visible).toBe(true);
+    // in step with the game: no smaller for time passing alone, as it does while the game is paused
+    animateItemParts(model, condition('stone_kiln', { wear: 100, burning: true, hosed: 0 }), 30);
+    expect(size()).toBeCloseTo(before, 1);
+    animateItemParts(model, condition('stone_kiln', { wear: 100, burning: true, hosed: 0.95 }), 31);
+    expect(size()).toBeLessThan(before / 2);
+    animateItemParts(model, condition('stone_kiln', { wear: 100, burnt: true }), 10);
+    expect(partsOf(model).cues?.steam?.visible).toBe(false);
+  });
+
+  it('chars what burnt nearly black, its glow out, until it is repaired', () => {
+    for (const type of ['stone_kiln', 'kneadmaster', 'massage_table'] as const) {
+      const model = shown(type);
+      const own = materialsOf(model);
+      const light = own.map(lightness);
+      animateItemParts(model, condition(type, { wear: 100, burnt: true }), 0);
+      const charred = materialsOf(model);
+      charred.forEach((m, i) => {
+        expect(lightness(m), type).toBeLessThanOrEqual(0.12 + light[i]! * 0.25);
+      });
+      expect(glowing(model), type).toEqual([]);
+      animateItemParts(model, condition(type), 0);
+      expect(materialsOf(model), type).toEqual(own);
+      expect(partsOf(model).cues?.flames, type).toBeUndefined();
+    }
+  });
+
+  it('shows on what is burning in the game, and its charring after, with no wrench while it burns', () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    const bin = sim.placeItem('snack_machine', 6, 4, 0)!;
+    const items = new ItemsLayer(new THREE.Scene(), sim);
+    items.sync();
+    const model = items.models().find((m) => m.userData.itemId === bin.id)!;
+    bin.wear = 100;
+    sim.s.blazes = [{ item: bin.id, room: 0, t: 0, spread: 0 }];
+    items.animate(0);
+    expect(partsOf(model).cues?.flames?.visible).toBe(true);
+    expect(partsOf(model).cues?.dressed).toBe('charred');
+    expect(partsOf(model).wrench?.visible ?? false).toBe(false);
+    sim.s.blazes = [];
+    bin.burnt = true;
+    items.animate(1);
+    expect(partsOf(model).cues?.flames?.visible).toBe(false);
+    expect(partsOf(model).cues?.dressed).toBe('charred');
+    expect(partsOf(model).wrench?.visible).toBe(true);
+    bin.burnt = false;
+    bin.wear = 0;
+    items.animate(2);
+    expect(partsOf(model).cues?.dressed).toBeUndefined();
   });
 });
 

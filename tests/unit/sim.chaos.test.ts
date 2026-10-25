@@ -1,6 +1,6 @@
-// A player who cannot sit still: builds, demolishes, sells, moves, hires, fires and trains at random
-// while the center runs, checking after every move that the game's books still balance. The moves
-// are drawn from the game's own seeded random numbers, so a failure replays exactly.
+// A player who cannot sit still: builds, demolishes, sells, moves, hires, fires and trains at random, and now and then
+// something catches fire, while the center runs, checking after every move that the game's books still balance. The
+// moves are drawn from the game's own seeded random numbers, so a failure replays exactly.
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -13,6 +13,8 @@ import {
   SANDBOX_PLOT,
 } from '../../src/core/data';
 import { irnd, pick, random } from '../../src/core/random';
+import { startFire } from '../../src/core/sim/blazes';
+import type { SimContext } from '../../src/core/sim/context';
 import { netOf } from '../../src/core/sim/economy';
 import type { Sim } from '../../src/core/sim/sim';
 import {
@@ -210,6 +212,14 @@ const MOVES: Record<string, (sim: Sim) => void> = {
     const room = sim.s.rooms.length ? pick(sim.s, sim.s.rooms) : undefined;
     if (room) sim.setRoomPriority(room.id, !room.priority);
   },
+  /** Set something that wears alight in a room, as a smoking machine overloading would, or fit sprinklers there. */
+  burn: (sim) => {
+    const worn = sim.s.items.filter((it) => ITEMS[it.type].wear && it.wear < 100 && sim.world.roomOfItem(it));
+    const it = worn.length ? pick(sim.s, worn) : undefined;
+    if (!it) return;
+    if (random(sim.s) < 0.2) sim.fitSprinklers(sim.world.roomOfItem(it)?.id ?? 0);
+    else startFire((sim as unknown as { ctx: SimContext }).ctx, it, 0);
+  },
 };
 
 /** How often each move comes up, compared with the rest. */
@@ -223,6 +233,7 @@ describe('a restless player', () => {
     s.challengesOn = true;
     s.rivalOn = true;
     s.mishapsOn = true;
+    s.blazesOn = true;
     s.nextApplicant = 0;
     // building comes up more often than tearing down, so there is a busy center to disrupt
     const names = Object.entries(MOVES).flatMap(([name]) => Array<string>(WEIGHTS[name] ?? 1).fill(name));

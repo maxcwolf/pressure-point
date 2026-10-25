@@ -38,11 +38,12 @@ import { money } from '../format';
 import { fairSalary, scalePay } from '../people';
 import { pick, random } from '../random';
 import { staffStart } from '../state/game';
-import type { Item, Job, Staff } from '../state/types';
+import type { Char, Item, Job, Staff } from '../state/types';
 import { clamp, must } from '../util';
 import { accessPose, accessTile, footprint } from '../world';
 import { prestige } from './ambience';
 import { worksAt } from './assignments';
+import { blazeAt, douse, douseSeconds, standByFire } from './blazes';
 import { sameRoomCount } from './building';
 import { leaveForCall, returnFromCall } from './calls';
 import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
@@ -79,6 +80,27 @@ const BESIDE: readonly (readonly [dx: number, dy: number])[] = [
   [-1, 0],
   [0, -1],
 ];
+
+/**
+ * Set someone walking to stand next to an item, on whichever side can be reached, and on the same side of the
+ * building's walls, passing over any tile `free` turns down. False if no side can be reached.
+ */
+export function standBeside(
+  ctx: SimContext,
+  c: Char,
+  item: Item,
+  free: (x: number, y: number) => boolean = () => true,
+): boolean {
+  const indoors = ctx.world.inside(item.x, item.y);
+  for (const [fx, fy] of footprint(item)) {
+    for (const [dx, dy] of BESIDE) {
+      const [bx, by] = [fx + dx, fy + dy];
+      if (!free(bx, by)) continue;
+      if (ctx.world.walkable(bx, by) && ctx.world.inside(bx, by) === indoors && goTo(ctx, c, bx, by)) return true;
+    }
+  }
+  return false;
+}
 
 /** Take on an applicant and send them in from the street. */
 export function hire(ctx: SimContext, candidateId: number): Staff | null {
@@ -297,10 +319,15 @@ function inHand(ctx: SimContext, it: Item): boolean {
  */
 function lineWaiting(ctx: SimContext, it: Item): boolean {
   if (isClassLead(it)) return matsOf(ctx, it).some((m) => !!guestById(ctx, m.serving) || lineWaiting(ctx, m));
-  return it.queue.some((id) => {
+  return waitingAt(ctx, it) > 0;
+}
+
+/** How many guests are waiting in a station's own line to be called. */
+function waitingAt(ctx: SimContext, it: Item): number {
+  return it.queue.filter((id) => {
     const g = guestById(ctx, id);
     return g?.station === it.id && (g.state === 'waiting' || g.state === 'toWait');
-  });
+  }).length;
 }
 
 /**
@@ -331,19 +358,45 @@ function wantedElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
  */
 function lineElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
   if (!ITEMS[it.type].machine) return false;
-  return ctx.s.items.some((o) => {
-    const def = ITEMS[o.type].station;
-    return (
+  return ctx.s.items.some(
+    (o) =>
       o !== it &&
-      def?.staff === st.role &&
-      !def.group &&
-      !o.staffId &&
-      ctx.world.usable(o) &&
-      worksAt(ctx, st, o.x, o.y) &&
+      canStaff(ctx, st, o) &&
       // a Sound Healer's line is at the mats their instrument plays for
-      (def.goal === 'lead' ? matsOf(ctx, o).some((m) => lineWaiting(ctx, m)) : lineWaiting(ctx, o))
-    );
-  });
+      (isLeadStation(o) ? matsOf(ctx, o).some((m) => lineWaiting(ctx, m)) : lineWaiting(ctx, o)),
+  );
+}
+
+/** Seconds a lone guest is left waiting at an unworked station before someone idle at another goes over to them. */
+const LONE_WAIT = 3;
+
+/**
+ * Whether a member of staff at a station with nobody to see should go to another of theirs where guests are waiting
+ * with nobody to see them: a line of two or more, or one guest kept waiting a while. Only for a line `findWork` would
+ * choose over the station they are at, so that leaving it does not just post them back to it. Called every step while
+ * they are at their post, to time the lone guest's wait.
+ */
+function waitingElsewhere(ctx: SimContext, st: Staff, here: Item, dt: number): boolean {
+  // someone to see to here first, and the bowls or a class are left only between sessions, which their mats decide
+  if (inHand(ctx, here) || lineWaiting(ctx, here) || isLeadStation(here)) {
+    delete st.lineT;
+    return false;
+  }
+  const stay = postScore(ctx, st, here);
+  let lone = false;
+  for (const o of ctx.s.items) {
+    if (o === here || isLeadStation(o) || !canStaff(ctx, st, o)) continue;
+    const waiting = waitingAt(ctx, o);
+    if (!waiting || postScore(ctx, st, o) <= stay) continue;
+    if (waiting >= 2) return true;
+    lone = true;
+  }
+  if (!lone) {
+    delete st.lineT;
+    return false;
+  }
+  st.lineT = (st.lineT ?? 0) + dt;
+  return st.lineT >= LONE_WAIT;
 }
 
 /**
@@ -377,6 +430,7 @@ function leavePost(ctx: SimContext, st: Staff) {
   }
   st.post = 0;
   st.busy = false;
+  delete st.lineT;
 }
 
 /** Give up the cleaning, watering or repair job they had claimed. */
@@ -456,19 +510,42 @@ export function inPriorityRoom(ctx: SimContext, x: number, y: number): boolean {
   return !!ctx.world.room(ctx.world.zoneAt(x, y))?.priority;
 }
 
+/** Whether a member of staff could take up a station: one for their role that nobody is working, and theirs to work. */
+function canStaff(ctx: SimContext, st: Staff, it: Item): boolean {
+  const def = ITEMS[it.type].station;
+  // a group station has nobody posted at it: it is worked from its room's lead station
+  return (
+    def?.staff === st.role &&
+    !def.group &&
+    !it.staffId &&
+    ctx.world.usable(it) &&
+    onDuty(st, stationDuty(it)) &&
+    worksAt(ctx, st, it.x, it.y)
+  );
+}
+
+/** How much a member of staff would rather work a station than another: its line counts for it, the walk against. */
+function postScore(ctx: SimContext, st: Staff, it: Item): number {
+  const goal = ITEMS[it.type].station?.goal;
+  let score = it.queue.length * 10 - Math.hypot(it.x - st.tx, it.y - st.ty);
+  // a lead station is as busy as the mats it serves
+  if (goal === 'lead') for (const m of matsOf(ctx, it)) score += (m.queue.length + (m.serving ? 1 : 0)) * 10;
+  if (inPriorityRoom(ctx, it.x, it.y)) score += 1000;
+  if (goal === 'treat') {
+    for (const id of it.queue) {
+      const q = guestById(ctx, id);
+      if (q && !deliveryProblem(ctx, it, st, modalityOf(q))) score += 8;
+      // and a line of guests waiting for someone trained in what they need is no work for this one
+      else if (q && leftForSpecialist(ctx, st, q)) score -= 10;
+    }
+  }
+  return score;
+}
+
 /** A station in a priority room that nobody is working and this member of staff could. */
 export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
   if (!ctx.s.rooms.some((r) => r.priority)) return undefined;
-  return ctx.s.items.find(
-    (it) =>
-      ITEMS[it.type].station?.staff === st.role &&
-      !ITEMS[it.type].station?.group &&
-      onDuty(st, stationDuty(it)) &&
-      worksAt(ctx, st, it.x, it.y) &&
-      !it.staffId &&
-      ctx.world.usable(it) &&
-      inPriorityRoom(ctx, it.x, it.y),
-  );
+  return ctx.s.items.find((it) => canStaff(ctx, st, it) && inPriorityRoom(ctx, it.x, it.y));
 }
 
 /** Find something to do: a break if tired, then a job or a station to staff, or else a wander. */
@@ -495,10 +572,16 @@ function findWork(ctx: SimContext, st: Staff) {
       if (!worksAt(ctx, st, x, y)) return;
       tasks.push({ kind, id, x, y, urgency: urgency + (inPriorityRoom(ctx, x, y) ? 0.5 : 0) });
     };
+    // a fire before anything else, whatever their duties or the rooms they keep to
+    for (const b of s.blazes) {
+      const p = ctx.world.item(b.item);
+      if (p && !p.claimedBy) tasks.push({ kind: 'douse', id: p.id, x: p.x, y: p.y, urgency: 3 });
+    }
     // a flooded restroom is out of action until it is mopped out, as urgent as anything broken
     for (const l of s.litter) if (!l.claimedBy) add('litter', l.id, l.x, l.y, l.flood ? 2 : 1);
     for (const p of s.items) {
-      if (p.claimedBy) continue;
+      // something on fire is put out before it is seen to
+      if (p.claimedBy || blazeAt(s, p.id)) continue;
       // a Mechanic installs an upgrade waiting on equipment, which services it too
       if (p.upgradePaid && hasGeneral(st, 'mechanics')) add('install', p.id, p.x, p.y, 1);
       else if (p.wear >= WEAR_REPAIR) add('repair', p.id, p.x, p.y, p.wear >= 100 ? 2 : 0);
@@ -513,22 +596,12 @@ function findWork(ctx: SimContext, st: Staff) {
     const dist = (t: Task) => Math.hypot(t.x - st.tx, t.y - st.ty);
     tasks.sort((a, b) => b.urgency - a.urgency || dist(a) - dist(b));
     for (const task of tasks.slice(0, 4)) {
-      let ok = false;
-      if (task.kind === 'litter') ok = goTo(ctx, st, task.x, task.y);
-      else {
-        // stand next to the item, on whichever side can be reached, and on the same side of the building's walls
-        const item = must(ctx.world.item(task.id), 'item to tend');
-        const indoors = ctx.world.inside(item.x, item.y);
-        search: for (const [fx, fy] of footprint(item)) {
-          for (const [dx, dy] of BESIDE) {
-            const [bx, by] = [fx + dx, fy + dy];
-            if (ctx.world.walkable(bx, by) && ctx.world.inside(bx, by) === indoors && goTo(ctx, st, bx, by)) {
-              ok = true;
-              break search;
-            }
-          }
-        }
-      }
+      const ok =
+        task.kind === 'litter'
+          ? goTo(ctx, st, task.x, task.y)
+          : task.kind === 'douse'
+            ? standByFire(ctx, st, must(ctx.world.item(task.id), 'item on fire'))
+            : standBeside(ctx, st, must(ctx.world.item(task.id), 'item to tend'));
       if (!ok) continue;
       st.job = { kind: task.kind, id: task.id };
       const target = task.kind === 'litter' ? s.litter.find((l) => l.id === task.id) : ctx.world.item(task.id);
@@ -548,26 +621,7 @@ function findWork(ctx: SimContext, st: Staff) {
       return;
     }
     const posts: { it: Item; score: number }[] = [];
-    for (const it of s.items) {
-      const def = ITEMS[it.type].station;
-      // a group station has nobody posted at it: it is worked from its room's lead station
-      if (def?.staff !== st.role || def.group || it.staffId || !ctx.world.usable(it) || !onDuty(st, stationDuty(it)))
-        continue;
-      if (!worksAt(ctx, st, it.x, it.y)) continue;
-      let score = it.queue.length * 10 - Math.hypot(it.x - st.tx, it.y - st.ty);
-      // a lead station is as busy as the mats it serves
-      if (def.goal === 'lead') for (const m of matsOf(ctx, it)) score += (m.queue.length + (m.serving ? 1 : 0)) * 10;
-      if (inPriorityRoom(ctx, it.x, it.y)) score += 1000;
-      if (def.goal === 'treat') {
-        for (const id of it.queue) {
-          const q = guestById(ctx, id);
-          if (q && !deliveryProblem(ctx, it, st, modalityOf(q))) score += 8;
-          // and a line of guests waiting for someone trained in what they need is no work for this one
-          else if (q && leftForSpecialist(ctx, st, q)) score -= 10;
-        }
-      }
-      posts.push({ it, score });
-    }
+    for (const it of s.items) if (canStaff(ctx, st, it)) posts.push({ it, score: postScore(ctx, st, it) });
     // the best post first, and one that cannot be reached is passed over for the next, as a job is
     posts.sort((a, b) => b.score - a.score);
     for (const { it } of posts.slice(0, 4)) {
@@ -678,6 +732,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       if (it?.staffId !== st.id || !ctx.world.usable(it)) staffIdle(ctx, st);
       // free to go, and wanted elsewhere: off to find something else, once whoever is in hand is seen to
       else if (!inHand(ctx, it) && wantedElsewhere(ctx, st, it)) staffIdle(ctx, st);
+      // nobody to see here, and a line at another of their stations with nobody to see it: off to work that instead
+      else if (waitingElsewhere(ctx, st, it, dt)) staffIdle(ctx, st);
       else if (restDue(ctx, st) && !inHand(ctx, it)) {
         st.timer -= dt;
         if (st.timer <= 0) {
@@ -727,7 +783,16 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
           say(st, wants(st) === 'eat' ? 'bubble-hungry' : 'bubble-thirsty', 2);
           break;
         }
-        st.timer = jobSeconds(st.job?.kind) / caretakerSpeed(st);
+        if (st.job?.kind === 'douse') {
+          // out already, by the sprinklers or the fire brigade: nothing left to do here
+          const p = ctx.world.item(st.job.id);
+          if (!p || !blazeAt(ctx.s, p.id)) {
+            staffIdle(ctx, st);
+            break;
+          }
+          st.timer = douseSeconds(ctx, p) / caretakerSpeed(st);
+          say(st, 'bubble-sweaty', 2);
+        } else st.timer = jobSeconds(st.job?.kind) / caretakerSpeed(st);
         if (st.job?.kind === 'install') say(st, 'bubble-installing', 2);
         if (st.job && st.job.kind !== 'litter') {
           const p = ctx.world.item(st.job.id);
@@ -754,6 +819,11 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       }
       // the guest on a table is treated before a Mechanic starts work on it
       if (st.job?.kind === 'install' && ctx.world.item(st.job.id)?.serving) break;
+      // a fire put out meanwhile, by the sprinklers or the fire brigade, leaves nothing to do
+      if (st.job?.kind === 'douse' && !blazeAt(ctx.s, st.job.id)) {
+        staffIdle(ctx, st);
+        break;
+      }
       st.timer -= dt;
       if (st.timer <= 0) {
         const job = st.job;
@@ -770,14 +840,16 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
             if (job.kind === 'repair') {
               p.wear = 0;
               delete p.overloaded;
-            } else if (job.kind === 'install') installUpgrade(ctx, p);
+              delete p.burnt;
+            } else if (job.kind === 'douse') douse(ctx, st, p);
+            else if (job.kind === 'install') installUpgrade(ctx, p);
             else if (job.kind === 'clean') {
               if (!hasLinens(p)) p.dirt = 0;
               else if (changeLinens(ctx, p)) say(st, 'bubble-linens', 2);
             } else if (job.kind === 'launder') launder(p);
             else p.water = 100;
             p.claimedBy = 0;
-            if (job.kind === 'repair') ctx.world.version++;
+            if (job.kind === 'repair' || job.kind === 'douse') ctx.world.version++;
           }
         }
         if (job) {

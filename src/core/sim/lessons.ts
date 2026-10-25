@@ -3,9 +3,11 @@
 // its centers it first happens, and never two in a day.
 
 import {
+  BRIGADE_FEE,
   centerOf,
   COMFORT_BAND,
   DISCOMFORT_NOTICE,
+  EXTINGUISHER_REACH,
   type IconId,
   IDEAL_TEMP,
   ITEMS,
@@ -13,6 +15,7 @@ import {
   LOAN_RATE,
   LOAN_STEP,
   OVERDRAFT_RATE,
+  SPRINKLER_STAR,
 } from '../data';
 import { calendarDay, money, pct } from '../format';
 import type { GameState } from '../state/types';
@@ -37,6 +40,7 @@ export const LESSON_IDS = [
   'failed',
   'stormed',
   'raise',
+  'fire',
 ] as const;
 
 export type LessonId = (typeof LESSON_IDS)[number];
@@ -298,6 +302,35 @@ export const LESSONS: Readonly<Record<LessonId, Lesson>> = {
     ],
     body: 'Select them to see their pay against the going rate. A Staff Room and a pleasant place to work help too.',
   },
+  fire: {
+    title: 'Fire!',
+    intro: 'A worn machine overloaded and caught fire.',
+    /** The machine that caught fire, or the kiln, the likeliest to, in a game that has seen none, then the answers. */
+    panels: (s) => [
+      {
+        icon: s.fire ? ITEMS[s.fire.item].icon : 'item-stone-kiln',
+        label: 'Smoking',
+        note: "A machine smokes as it wears. A Caretaker's repair stops it overloading.",
+      },
+      {
+        icon: 'item-fire-extinguisher',
+        label: 'Extinguisher',
+        note: `One within ${EXTINGUISHER_REACH} tiles of a room's door lets a Caretaker put a fire out before it spreads, and the health inspector fines any room without one. ${money(ITEMS.fire_extinguisher.cost)}.`,
+      },
+      {
+        icon: 'ui-sprinklers',
+        label: 'Sprinklers',
+        note: `From star ${SPRINKLER_STAR}, fit a room with them: a fire goes out on its own, and the room gets soaked.`,
+      },
+      {
+        icon: 'ui-fire-truck',
+        label: 'Fire brigade',
+        note: `Always on its way. They hose out what still burns and charge ${money(BRIGADE_FEE)}, or shrug and leave for nothing.`,
+      },
+    ],
+    body: "Flames spread to what stands beside them, never past the room's walls. The advisor says who is coming.",
+    showMe: { kind: 'place', type: 'fire_extinguisher' },
+  },
 };
 
 /** A lesson's card as it reads in the game as it is. */
@@ -352,6 +385,12 @@ function moment(ctx: SimContext, id: LessonId): { about?: Subject } | null {
     case 'raise': {
       const st = s.staff.find((x) => x.state !== 'leaving' && x.raiseAsked);
       return st ? { about: { kind: 'staff', id: st.id } } : null;
+    }
+    // the fire itself while it still burns, or, once it is out, an extinguisher to place
+    case 'fire': {
+      if (s.stats.fires < 1) return null;
+      const b = s.blazes[0];
+      return b ? { about: { kind: 'item', id: b.item } } : {};
     }
   }
 }

@@ -1,13 +1,14 @@
-// What people hold in their right hand while they do something: a cup, a snack, a watering can or a wrench. Each is one
-// shared shape in one color, so a crowd holding them costs a batch apiece, and is only made the first time it is held.
+// What people hold in their right hand while they do something: a cup, a snack, a watering can, a wrench or a fire
+// hose's nozzle. Each is one shared shape in one color, so a crowd holding them costs a batch apiece, and is only made
+// the first time it is held.
 
 import type * as THREE from 'three';
 
 import { ELBOW } from './character-detail';
-import { cyl, joined, mat, put, rbox, torus } from './parts';
+import { capsule, cyl, joined, mat, put, rbox, torus } from './parts';
 
 /** The things a hand can hold. */
-export type HeldKind = 'cup' | 'snack' | 'can' | 'wrench';
+export type HeldKind = 'cup' | 'snack' | 'can' | 'wrench' | 'hose';
 
 /** Where the hand grips, down the forearm from the elbow, as the sage bundle hangs. */
 const GRIP = -0.31 + ELBOW;
@@ -48,16 +49,25 @@ function shapeOf(kind: HeldKind): THREE.BufferGeometry {
         [cyl(0.012, 0.012, 0.22, 8), 0, 0, 0],
         [rbox(0.05, 0.035, 0.018, 0.006), 0, 0.12, 0],
       ]);
+    case 'hose':
+      // a fire hose's nozzle pointing forward out of the fist, the hose trailing down and back from it
+      return joined('held hose', [
+        [cyl(0.028, 0.04, 0.16, 12), 0, 0, 0.08, Math.PI / 2, 0, 0],
+        [cyl(0.044, 0.044, 0.03, 12), 0, 0, 0.0, Math.PI / 2, 0, 0],
+        [capsule(0.03, 0.14), 0, -0.07, -0.05, 0.6, 0, 0],
+      ]);
   }
 }
 
 /** Each thing held: its color and roughness, and where it sits in the hand and how it is turned there. */
-// a white cup and a bright yellow wrapper, told apart at a glance, and a wrench painted orange as tools are
+// a white cup and a bright yellow wrapper, told apart at a glance, a wrench painted orange as tools are, and a nozzle
+// in the dark of the hose
 const HELD: Readonly<Record<HeldKind, { color: number; rough: number; at: readonly number[] }>> = {
   cup: { color: 0xfaf6ee, rough: 0.5, at: [0, 0.01, 0.06] },
   snack: { color: 0xf6c21c, rough: 0.45, at: [0, 0.01, 0.06] },
   can: { color: 0x4f9a3a, rough: 0.45, at: [0, -0.02, 0.03] },
   wrench: { color: 0xf0802a, rough: 0.35, at: [0, 0, 0.06, Math.PI / 2, 0, 0] },
+  hose: { color: 0x34363c, rough: 0.4, at: [0, 0, 0.05] },
 };
 
 /** Put something in a right hand, held by the forearm it hangs from: hidden, to be shown while it is used. */

@@ -344,12 +344,11 @@ describe('laying out rooms', () => {
     expect(sim.world.roomRectValid('consult', { x: 9, y: 9, w: 4, h: 4 }).ok).toBe(true);
   });
 
-  it('will not wall up the window of the room next door', () => {
+  it('can go right up against the window of the room next door, which then looks into it', () => {
     const sim = freshSim();
     const consult = addConsult(sim);
     expect(sim.toggleWindow(consult.id, { x: 8, y: 5, dx: 1, dy: 0 })).toBe('added');
-    expect(sim.world.roomRectValid('staffroom', { x: 9, y: 4, w: 3, h: 3 }).reason).toMatch(/window/);
-    // a tile further out, leaving the window a strip of corridor to look onto, is fine
+    expect(sim.world.roomRectValid('staffroom', { x: 9, y: 4, w: 3, h: 3 }).ok).toBe(true);
     expect(sim.world.roomRectValid('staffroom', { x: 10, y: 4, w: 3, h: 3 }).ok).toBe(true);
   });
 

@@ -131,18 +131,24 @@ function expectOf(o: SeasonOutlook): string {
   return o.last === null || o.expect === null ? '' : ` Last month ${o.last} came; expect about ${o.expect} a month.`;
 }
 
+/** What the speakers say as each season starts, before the numbers: the part the announcer records. */
+export const SEASON_LINES: Readonly<Record<Season, string>> = {
+  winter: 'Winter is here. The promenade is empty, so watch the budget until spring.',
+  spring: 'Spring has sprung! The first day-trippers are back in town.',
+  summer: 'Summer at last, and the town is packed. Expect a crowd.',
+  autumn: 'Autumn. The visitors are heading home.',
+};
+
 /** What the speakers say as each season starts, in a center that has them, with the numbers. */
 export function seasonNews(s: GameState, season: Season): string {
   const o = seasonOutlook(s, season);
   switch (season) {
     case 'winter':
-      return `Winter is here. The promenade is empty, ${paceOf(o.factor)} until spring.${expectOf(o)} Watch the budget.`;
-    case 'spring':
-      return `Spring! The first day-trippers are back in town.${expectOf(o)}`;
+      return `${SEASON_LINES.winter} Until then, ${paceOf(o.factor)}.${expectOf(o)}`;
     case 'summer':
-      return `Summer at last, and the town is packed: ${paceOf(o.factor)} until autumn.${expectOf(o)} Expect a crowd.`;
-    case 'autumn':
-      return `Autumn. The visitors are heading home.${expectOf(o)}`;
+      return `${SEASON_LINES.summer} Until autumn, ${paceOf(o.factor)}.${expectOf(o)}`;
+    default:
+      return `${SEASON_LINES[season]}${expectOf(o)}`;
   }
 }
 

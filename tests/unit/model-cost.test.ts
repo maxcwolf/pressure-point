@@ -113,9 +113,10 @@ describe('the cost of drawing each model', () => {
     // 2522 with the ten things to hang on walls, each shown in the lab on a stretch of wall, and 3007 once people had
     // knees, elbows, faces and finer hair, and 3579 with the eleven treatment machines and the twelve guests only they
     // cure, and 3798 with a receptionist in the lab for each build, each pair of glasses, white shoes and the two haircuts
-    // men were given on 22 October 2026
+    // men were given on 22 October 2026, and 3864 with the fire truck and the firefighter on 25 October 2026, and 3868
+    // once the firefighter wore turnout gear
     const heaviest = all.sort((a, b) => b.calls - a.calls).slice(0, 10);
-    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(3850);
+    expect(total, `heaviest: ${heaviest.map((m) => `${m.id} ${m.calls}`).join(', ')}`).toBeLessThan(3900);
   });
 
   it('only casts shadows from parts big enough to show one', async () => {
