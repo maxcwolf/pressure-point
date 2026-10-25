@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { CENTERS, ITEMS, ROOMS } from '../../src/core/data';
 import { netOf } from '../../src/core/sim/economy';
@@ -174,6 +174,21 @@ describe('staff', () => {
     expect(inconsistencies(sim)).toEqual([]);
     expect(g.state).not.toBe('served');
     expect(table.serving).toBe(0);
+  });
+
+  it('stay at their post when sent on a course with no way to a desk, and pay nothing', () => {
+    const { sim, s, therapist } = openCenter(3);
+    addTraining(sim);
+    runUntil(sim, () => therapist.state === 'atPost', 120);
+    therapist.quals = ['swedish'];
+    const { money, post } = { money: s.money, post: therapist.post };
+    const lost = vi.spyOn(sim.world, 'findPath').mockReturnValue(null);
+    expect(sim.train(therapist.id, 'stamina')).toBe(false);
+    lost.mockRestore();
+    expect(therapist.state).toBe('atPost');
+    expect(therapist.post).toBe(post);
+    expect(therapist.training).toBeNull();
+    expect(s.money).toBe(money);
   });
 });
 
