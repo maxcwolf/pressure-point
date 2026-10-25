@@ -49,7 +49,7 @@ import { buildLamps, buildOffices, buildStreetTrees } from '../render/models/dow
 import { buildSite } from '../render/models/fence';
 import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
-import { buildOrchard } from '../render/models/orchard';
+import { buildOrchard, orchardFor } from '../render/models/orchard';
 import { mat, partsOf } from '../render/models/parts';
 import { buildPines } from '../render/models/pine';
 import { upgradePlate } from '../render/models/plate';
@@ -1074,12 +1074,19 @@ const SCENERY: Specimen[] = [
     group: 'Scenery',
     name: 'Apple trees',
     footprint: [4, 1],
-    /** Apple trees of every size. */
-    build: () => ({
-      root: buildOrchard([0, 1, 2].map((seed) => ({ x: (seed - 1) * 1.5, z: 0, seed }))),
-      animate: still,
-      controls: [],
-    }),
+    /** Apple trees of every size, in any season. */
+    build: () => {
+      const st = { season: 'summer' as Season };
+      return {
+        root: buildOrchard([0, 1, 2].map((seed) => ({ x: (seed - 1) * 1.5, z: 0, seed }))),
+        /** Turn the trees to the season chosen, the bare branches with the park's leaves. */
+        animate: () => {
+          orchardFor(st.season);
+          leavesFor(st.season);
+        },
+        controls: [choice('Season', st, 'season', SEASONS)],
+      };
+    },
   },
   {
     id: 'scenery:downtown',
