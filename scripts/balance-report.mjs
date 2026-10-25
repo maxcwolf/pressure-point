@@ -1,5 +1,5 @@
 // `yarn balance:report <after.json> [before.json]`: prints the markdown report of one run of `yarn balance`, or of
-// two as before → after (tests/balance/report.ts, docs/balance-harness.md). Plain Node: the report is TypeScript
+// two as before → after (tests/balance/report.ts, docs/balance/harness.md). Plain Node: the report is TypeScript
 // with nothing to compile but its types, which Node strips by itself.
 import { readFileSync } from 'node:fs';
 

@@ -6,11 +6,11 @@ The short version: the game is not too hard in the way Two Point's late levels a
 
 ## How this was measured
 
-Reading the code gives the rules; it does not say how they add up. So a **playtest bot** ([tests/balance/bot.ts](../tests/balance/bot.ts)) plays each campaign center through the real simulation, as a competent but unhurried player would. It opens with reception, a consultation room and a massage suite. It adds a staff room, restroom, seats, drinks, plants, bins, extinguishers, a linen hamper, and heating or cooling as the weather asks. It hires the best applicant for each station (and a second receptionist for a Shop Counter: see the bug in 7), and builds a Training Room as soon as anyone is untrained in something guests arrive with. It trains staff one at a time, builds each discipline's room and equipment as stars unlock them, and adds rooms where lines are long while the center turns a profit. It buys land when it runs out of room, takes a loan when it must, gives raises when asked, promotes, accepts emergencies, prepares for mishaps, and declines outbreaks and house calls.
+Reading the code gives the rules; it does not say how they add up. So a **playtest bot** ([tests/balance/bot.ts](../../tests/balance/bot.ts)) plays each campaign center through the real simulation, as a competent but unhurried player would. It opens with reception, a consultation room and a massage suite. It adds a staff room, restroom, seats, drinks, plants, bins, extinguishers, a linen hamper, and heating or cooling as the weather asks. It hires the best applicant for each station (and a second receptionist for a Shop Counter: see the bug in 7), and builds a Training Room as soon as anyone is untrained in something guests arrive with. It trains staff one at a time, builds each discipline's room and equipment as stars unlock them, and adds rooms where lines are long while the center turns a profit. It buys land when it runs out of room, takes a loan when it must, gives raises when asked, promotes, accepts emergencies, prepares for mishaps, and declines outbreaks and house calls.
 
 `yarn balance` runs it: every center, five seeds, four in-game years each. The runs are deterministic by seed, so a tuning change can be compared against the same games. All the figures below are medians over the five seeds unless they say otherwise.
 
-The bot's limits, so the figures are read fairly (since lifted: see entry 13 in `docs/balance-log.md`, and `BOT=old` for the bot as it was here). It never fires anyone, so it rides out a loss-making winter with a full payroll. It does not save toward a money goal. It does not manage lines, prices, policy or marketing. A good human player will beat it everywhere; a new one will do worse. What matters is where it stalls, and why.
+The bot's limits, so the figures are read fairly (since lifted: see entry 13 in `docs/balance/log.md`, and `BOT=old` for the bot as it was here). It never fires anyone, so it rides out a loss-making winter with a full payroll. It does not save toward a money goal. It does not manage lines, prices, policy or marketing. A good human player will beat it everywhere; a new one will do worse. What matters is where it stalls, and why.
 
 ## The pace in numbers
 
@@ -182,7 +182,7 @@ What it shows:
 ## Tools
 
 - `yarn balance` plays every campaign center with the bot and writes `test-results/balance.json`. Set `BALANCE_CENTERS`, `BALANCE_SEEDS` and `BALANCE_DAYS` to narrow it.
-- The bot is in [tests/balance/bot.ts](../tests/balance/bot.ts), the runner in [tests/balance/playtest.balance.ts](../tests/balance/playtest.balance.ts).
+- The bot is in [tests/balance/bot.ts](../../tests/balance/bot.ts), the runner in [tests/balance/playtest.balance.ts](../../tests/balance/playtest.balance.ts).
 
 ## Research notes: Two Point Hospital
 

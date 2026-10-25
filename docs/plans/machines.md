@@ -1,6 +1,6 @@
 # Treatment machines
 
-A plan, 21 October 2026, for big treatment machines: walk-in machines with an animated gag, each in a signature room of its own, and a few big machines for techniques we already have. What the machines are, and why, is in [machine-ideas.md](machine-ideas.md). This doc is how to build them.
+A plan, 21 October 2026, for big treatment machines: walk-in machines with an animated gag, each in a signature room of its own, and a few big machines for techniques we already have. What the machines are, and why, is in [planning/machine-ideas.md](../planning/machine-ideas.md). This doc is how to build them.
 
 Nothing here is chosen yet. The plan starts with the engine and one flagship machine, the Kneadmaster 9000 at Willow Lane, and then adds one center at a time.
 
@@ -29,7 +29,7 @@ Where it differs from the plan below:
 
 ## What comes first
 
-Two pieces of balance work go in before any machine, so the machines can be priced against them. They come from the review against the balance rework, which is written up in [machine-ideas.md](machine-ideas.md#against-the-balance).
+Two pieces of balance work go in before any machine, so the machines can be priced against them. They come from the review against the balance rework, which is written up in [planning/machine-ideas.md](../planning/machine-ideas.md#against-the-balance).
 
 1. **Demand that grows with every staffed treatment room,** the deep-dive audit's fifth recommendation. A machine room then brings guests because it is a staffed treatment room, with no special rule of its own.
 2. **A sink for the late money.** Four of five centers end with $600,000 to $1,400,000 and nothing to spend it on. Machines should be one place that money goes. They get running costs, set once this work tells us how much a settled center should be spending each month.
@@ -46,9 +46,9 @@ The machines come after both. Their room prices, running costs and fees are then
 
 An access tile _inside_ a footprint doesn't work. `lay()` blocks every tile of an item that isn't walkable, `findPath` refuses a blocked goal, and `connected()` requires every access tile to be reachable. So `canPlaceItem` says "That would block the way".
 
-**Measured, 21 October 2026** ([balance-log.md](balance-log.md) entries 37 and 38, with `BOT_ON=machines`). With demand that grows with the building, a staffed machine room counts as a treatment station by the general rule. The Kneadmaster pays back on its own books by day 601 but heals about 2 guests a month against a Massage Suite's 6 or 7, because it draws no more guests than the table it replaces, and the game with it makes $8.1k a month less. Once the bot stopped knocking a room down to fit one, it built a machine in 1 of 30 games: at the second star every building is full and nearly every plot bought, so the other four machines are unmeasured. What is left is in [next-pass.md](next-pass.md) under "Open findings": land sized for a machine room ([land-plan.md](land-plan.md)), and a machine that draws guests of its own.
+**Measured, 21 October 2026** ([balance/log.md](../balance/log.md) entries 37 and 38, with `BOT_ON=machines`). With demand that grows with the building, a staffed machine room counts as a treatment station by the general rule. The Kneadmaster pays back on its own books by day 601 but heals about 2 guests a month against a Massage Suite's 6 or 7, because it draws no more guests than the table it replaces, and the game with it makes $8.1k a month less. Once the bot stopped knocking a room down to fit one, it built a machine in 1 of 30 games: at the second star every building is full and nearly every plot bought, so the other four machines are unmeasured. What is left is in [plans/next-pass.md](next-pass.md) under "Open findings": land sized for a machine room ([plans/land.md](land.md)), and a machine that draws guests of its own.
 
-**Special cases.** About 25 `type === 'x'` checks in the sim give items their own behavior ([todo.md](todo.md) wants them moved into data). Mishaps list the items they stop by hand (`core/data/mishaps.ts`). The Sweat Lodge's opening line is its own constant (`SWEAT_LODGE_OPEN`, `core/sim/ceremonies.ts`).
+**Special cases.** About 25 `type === 'x'` checks in the sim give items their own behavior ([planning/todo.md](../planning/todo.md) wants them moved into data). Mishaps list the items they stop by hand (`core/data/mishaps.ts`). The Sweat Lodge's opening line is its own constant (`SWEAT_LODGE_OPEN`, `core/sim/ceremonies.ts`).
 
 **Drawing.** Each item has a builder in `BUILDERS` (`render/models/items/index.ts`). Moving parts are named in `ItemParts` (`render/models/parts.ts`), and `mergeStill` leaves named parts unmerged. They are animated in `ItemsLayer.effects` (`render/items.ts`). The extraction cloud and the spirit animal (`render/ceremony.ts`) are the nearest thing we have to a treatment gag. Guests' symptoms are drawn in `render/models/character.ts`, and `poseChar` swaps them for the cured look (`cureRig`) once a guest is healed.
 

@@ -42,7 +42,7 @@ So the gaps below are read in proportion: we have rooms built by dragging, doors
 
 ## The building
 
-**15. More land.** Two Point Hospital lets you buy extra plots, shown as construction sites around the hospital. Done, the Two Point way, in 0.27.0 ([land-plan.md](land-plan.md)): each center has plots designed for it, opening with stars, each with a For Sale board. The Expand tool buys them from the world, and builders fence each off for a few days before the building grows into it. Some stand apart as buildings of their own, with a door and a path from the pavement. Still to come, Campus-style: drawing your own building on a blank plot, and outdoor items. _Large._ ([Twinfinite guide](https://twinfinite.net/guides/two-point-hospital-buy-more-buildings-how-to/))
+**15. More land.** Two Point Hospital lets you buy extra plots, shown as construction sites around the hospital. Done, the Two Point way, in 0.27.0 ([plans/land.md](../plans/land.md)): each center has plots designed for it, opening with stars, each with a For Sale board. The Expand tool buys them from the world, and builders fence each off for a few days before the building grows into it. Some stand apart as buildings of their own, with a door and a path from the pavement. Still to come, Campus-style: drawing your own building on a blank plot, and outdoor items. _Large._ ([Twinfinite guide](https://twinfinite.net/guides/two-point-hospital-buy-more-buildings-how-to/))
 
 **16. Moving, copying and templating rooms.** Two Point Hospital has all three: pick a built room up, furniture and all, to move or rotate it; copy and paste a room (added in 2018); and save rooms as templates (added in 2020). Campus has them too. We have resizing, door moves and windows. Done: moving and copying in 0.18.0, templates in 0.20.0, exported to a file. _Medium each._ ([wiki: Rooms](https://two-point-hospital.fandom.com/wiki/Rooms), [Changelist](https://two-point-hospital.fandom.com/wiki/Changelist), [templates blog](https://community.twopointcounty.com/two-point-studios/two-point-hospital/blogs/9-room-templates-deep-dive))
 
@@ -128,4 +128,4 @@ Left out: Steam Workshop sharing.
 
 ## Plan
 
-The order to build all this in is in [roadmap.md](roadmap.md).
+The order to build all this in is in [planning/roadmap.md](../planning/roadmap.md).

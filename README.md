@@ -118,9 +118,10 @@ yarn dev   # play it at http://localhost:5183
 yarn app   # or as a desktop app
 ```
 
-- **[docs/development.md](docs/development.md):** running, testing and building the game, and where the code lives.
-- **[docs/architecture.md](docs/architecture.md):** how the pieces fit together.
-- **[docs/releasing.md](docs/releasing.md):** publishing a release.
+- **[docs/dev/development.md](docs/dev/development.md):** running, testing and building the game, and where the code lives.
+- **[docs/dev/architecture.md](docs/dev/architecture.md):** how the pieces fit together.
+- **[docs/dev/releasing.md](docs/dev/releasing.md):** publishing a release.
+- **[docs/](docs/README.md):** everything else: plans, audits, the balance log and the research behind them.
 
 ## License
 

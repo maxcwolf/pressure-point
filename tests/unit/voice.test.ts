@@ -64,7 +64,7 @@ describe('the announcer', () => {
   });
 
   it('has recorded every one of the filler lines, or lists it in the to-do list to be recorded', () => {
-    const todo = readFileSync(path.join(import.meta.dirname, '../../docs/todo.md'), 'utf8');
+    const todo = readFileSync(path.join(import.meta.dirname, '../../docs/planning/todo.md'), 'utf8');
     for (const line of ANNOUNCEMENTS) if (!voiceFor(line)) expect(todo, line).toContain(`- [ ] ${line}`);
     expect(ANNOUNCEMENTS.filter((line) => voiceFor(line)).length).toBeGreaterThan(ANNOUNCEMENTS.length / 2);
   });

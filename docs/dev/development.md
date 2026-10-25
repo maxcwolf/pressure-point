@@ -1,6 +1,6 @@
 # Developing Pressure Point Institute
 
-Everything for working on the game: running it from source, the tests, the checks, and where the code lives. How the pieces fit together is in [architecture.md](architecture.md), and how to publish a release is in [releasing.md](releasing.md).
+Everything for working on the game: running it from source, the tests, the checks, and where the code lives. How the pieces fit together is in [dev/architecture.md](architecture.md), and how to publish a release is in [dev/releasing.md](releasing.md).
 
 The game is TypeScript, with Three.js for the 3D scene, Preact for the interface and Electron for the desktop app. It uses Yarn 4 through Corepack: run `corepack enable` once if `yarn` is not found.
 
@@ -59,7 +59,7 @@ yarn format:check   # Prettier
 
 Every function has a one-line JSDoc comment saying what it does, with no tags: the types already say the rest. The linter insists on it.
 
-The rest of the conventions are in [architecture.md](architecture.md#conventions).
+The rest of the conventions are in [dev/architecture.md](architecture.md#conventions).
 
 TypeScript is held at 6.x for now: typescript-eslint needs the compiler's JavaScript API, which TypeScript 7 does not ship yet.
 
@@ -102,6 +102,6 @@ Disciplines, modalities, conditions, courses and equipment are all defined in `s
 
 To give an announcement a voice, put the recording in `brand/announcer/`, run `yarn announcer`, and add the clip to `VOICE_LINES` in `src/audio/voice.ts` under the announcement's exact text. A test fails if that text is not one the game announces. The speaker effect (band, horn, drive and echoes) is in `scripts/pa-speaker.mjs`.
 
-How the pieces fit together, and the conventions the code follows, are in [architecture.md](architecture.md).
+How the pieces fit together, and the conventions the code follows, are in [dev/architecture.md](architecture.md).
 
-Issues found but not yet fixed are listed in [known-issues.md](known-issues.md), planned work in [todo.md](todo.md), the play statistics and what they still miss in [analytics.md](analytics.md), and ideas not yet decided on in [ideas.md](ideas.md).
+Issues found but not yet fixed are listed in [planning/known-issues.md](../planning/known-issues.md), planned work in [planning/todo.md](../planning/todo.md), the play statistics and what they still miss in [dev/analytics.md](analytics.md), and ideas not yet decided on in [planning/ideas.md](../planning/ideas.md).

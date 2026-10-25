@@ -1,8 +1,8 @@
 # Machine ideas
 
-Ideas for big treatment machines, drafted 21 October 2026. Nothing here is planned: an idea moves to [todo.md](todo.md) or [roadmap.md](roadmap.md) once it is chosen. Like [item-ideas.md](item-ideas.md), this is a list to pick from. How the machines would be built is in [machine-plan.md](machine-plan.md).
+Ideas for big treatment machines, drafted 21 October 2026. Nothing here is planned: an idea moves to [planning/todo.md](todo.md) or [planning/roadmap.md](roadmap.md) once it is chosen. Like [planning/item-ideas.md](item-ideas.md), this is a list to pick from. How the machines would be built is in [plans/machines.md](../plans/machines.md).
 
-Every treatment today is a pose on a table or mat, with at most a 1×1 or 2×2 prop beside it costing $600 to $2,600. [two-point-gaps.md](two-point-gaps.md) names this gap (item 31, "Ours pose people on tables"), and [ideas.md](ideas.md) suggests a signature room at each center. This doc fills both in: one big, silly machine room per center, a few big machines for techniques we already have, and one endgame machine bought with karma.
+Every treatment today is a pose on a table or mat, with at most a 1×1 or 2×2 prop beside it costing $600 to $2,600. [audits/two-point-gaps.md](../audits/two-point-gaps.md) names this gap (item 31, "Ours pose people on tables"), and [planning/ideas.md](ideas.md) suggests a signature room at each center. This doc fills both in: one big, silly machine room per center, a few big machines for techniques we already have, and one endgame machine bought with karma.
 
 The machines get sillier center by center. Willow Lane's is something an overpriced spa might really sell, taken too far. By The Orchard Estate they are openly magical.
 
@@ -59,7 +59,7 @@ The prices on each machine below are the room's and the machine's. The running c
 
 **Short courses.** Waits run 8 to 21 days partly because practitioners are away on courses and house calls. A machine's course takes its operator off the floor again just after the room is paid for, so every machine course is short: two or three days.
 
-**The order.** Build the machines in the order [machine-plan.md](machine-plan.md) gives, but only after the demand that grows with every staffed room and a sink for the late money are in. Price the machines against both, or the machines will spend the money problem instead of solving it.
+**The order.** Build the machines in the order [plans/machines.md](../plans/machines.md) gives, but only after the demand that grows with every staffed room and a sink for the late money are in. Price the machines against both, or the machines will spend the money problem instead of solving it.
 
 ## A signature machine room at each center
 
@@ -100,7 +100,7 @@ The gag: the guest stands in the bell. The Sound Healer takes an enormous breath
 
 The gag: the guest climbs into the vat. The Shaman chants and turns the great screw, and the lid comes down. Dark purple juice runs out into the barrel. The lid lifts, and the guest springs up rosy as an apple. Now and then the juice runs gold: "Wrong vintage. That was their inheritance." They press again. Its barrels of Sour Grape Cider aren't sold. A guest is given a glass on the way out, and the estate's picky guests leave kinder reviews for it, which is reputation, not money. But the barrels bring the wasps a day sooner, a trade-off with the estate's own mishap.
 
-**6. Endgame: the Wheel of Rebirth** 🎠. (Built as the Carousel of Rebirth, worked by a Massage Therapist: see [machine-plan.md](machine-plan.md#as-built).) Bought with karma, then open at every center. A reincarnation carousel, 5×5, in a room of at least 7×7 costing about $45,000. Worked by the Shaman at first, and by any practitioner once stations can take more than one kind of staff. It cures:
+**6. Endgame: the Wheel of Rebirth** 🎠. (Built as the Carousel of Rebirth, worked by a Massage Therapist: see [plans/machines.md](../plans/machines.md#as-built).) Bought with karma, then open at every center. A reincarnation carousel, 5×5, in a room of at least 7×7 costing about $45,000. Worked by the Shaman at first, and by any practitioner once stations can take more than one kind of staff. It cures:
 
 - **Old Soul**, about $4,000: "Thirty-four years old. Complains about the price of bread in shillings."
 - **Past Life Hangover**, about $3,800: "Was a Tudor duke last time round and has not let it go."
@@ -151,4 +151,4 @@ These don't bring new ailments. They do a technique we already have in a differe
 
 ## Where to start
 
-After the balance work: demand that grows with each staffed treatment room, and a sink for the late money, so the machines can be priced against both. Then the Kneadmaster 9000 at Willow Lane. It is the least silly, so it tests the machinery without the joke doing all the work. It belongs to the first center, so most players see it. And everything the later machines need (walking in, a gag played over the session, its own ailments, an overload) can be built for it first. [machine-plan.md](machine-plan.md) sets out that order.
+After the balance work: demand that grows with each staffed treatment room, and a sink for the late money, so the machines can be priced against both. Then the Kneadmaster 9000 at Willow Lane. It is the least silly, so it tests the machinery without the joke doing all the work. It belongs to the first center, so most players see it. And everything the later machines need (walking in, a gag played over the session, its own ailments, an overload) can be built for it first. [plans/machines.md](../plans/machines.md) sets out that order.

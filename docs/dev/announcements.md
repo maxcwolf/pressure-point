@@ -1,6 +1,6 @@
 # Announcements
 
-Every line the PA announcer can say, recorded or not, in one place. A recording plays only when its text matches the banner exactly, punctuation included, so record each line word for word. Put the clean recording in `brand/announcer/` as a kebab-case `.mp3`, run `yarn announcer` (macOS) to add the PA speaker effect and write the `.m4a` to `src/sounds/announcer/`, and add it to `VOICE_LINES` in `src/voice.ts`. See [development.md](development.md).
+Every line the PA announcer can say, recorded or not, in one place. A recording plays only when its text matches the banner exactly, punctuation included, so record each line word for word. Put the clean recording in `brand/announcer/` as a kebab-case `.mp3`, run `yarn announcer` (macOS) to add the PA speaker effect and write the `.m4a` to `src/sounds/announcer/`, and add it to `VOICE_LINES` in `src/voice.ts`. See [dev/development.md](development.md).
 
 When a line is added or changed in the code, update this list.
 

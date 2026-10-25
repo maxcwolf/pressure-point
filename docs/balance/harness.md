@@ -1,6 +1,6 @@
 # The balance harness
 
-`yarn balance` has the playtest bot (`tests/balance/bot.ts`) play every campaign center for four years, three seeds each, and writes every game's log to `test-results/balance.json`. `yarn balance:report` turns that log into the tables the [balance log](balance-log.md) uses, plus the fairness checks from [fair-challenge-research.md](fair-challenge-research.md). Neither one passes or fails anything. You run them before and after a change and compare.
+`yarn balance` has the playtest bot (`tests/balance/bot.ts`) play every campaign center for four years, three seeds each, and writes every game's log to `test-results/balance.json`. `yarn balance:report` turns that log into the tables the [balance log](log.md) uses, plus the fairness checks from [research/fair-challenge.md](../research/fair-challenge.md). Neither one passes or fails anything. You run them before and after a change and compare.
 
 ## Running it
 

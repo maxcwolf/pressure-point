@@ -1,10 +1,10 @@
 # Deep-dive audit, 20 October 2026
 
-A second pass over main at `5bc5302` (0.30.14 with the payday and bankruptcy rules in), a day after [gameplay-audit.md](gameplay-audit.md). Five reviewers read the code by subsystem (guests and treatment, staff, events and progression, building and saves, the interface), each writing throwaway probes that were run and deleted; the playtest bot played every center on three seeds for four years (`yarn balance`); and three experiments were run on top of the bot to test what the numbers suggested. Typecheck and all 1,364 unit tests passed before anything was touched. Nothing was played by hand, so the balance findings are the bot's, and the bugs are confirmed by probe or trace as each one says.
+A second pass over main at `5bc5302` (0.30.14 with the payday and bankruptcy rules in), a day after [audits/gameplay-audit.md](gameplay-audit.md). Five reviewers read the code by subsystem (guests and treatment, staff, events and progression, building and saves, the interface), each writing throwaway probes that were run and deleted; the playtest bot played every center on three seeds for four years (`yarn balance`); and three experiments were run on top of the bot to test what the numbers suggested. Typecheck and all 1,364 unit tests passed before anything was touched. Nothing was played by hand, so the balance findings are the bot's, and the bugs are confirmed by probe or trace as each one says.
 
 The aim it is measured against: the campaign should feel about as hard as a Two Point Hospital campaign. Easy to get going, demand that outruns the player, money rarely the worry early on, a reputation that moves slowly, and pressures that arrive one at a time.
 
-Everything already listed in [gameplay-audit.md](gameplay-audit.md) and [known-issues.md](known-issues.md) is left out here unless this pass found something new about it.
+Everything already listed in [audits/gameplay-audit.md](gameplay-audit.md) and [planning/known-issues.md](../planning/known-issues.md) is left out here unless this pass found something new about it.
 
 ## The short version
 

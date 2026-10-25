@@ -1,8 +1,8 @@
 # Item ideas
 
-Ideas for new items, drafted 16 October 2026. Nothing here is planned: an idea moves to [todo.md](todo.md) or [roadmap.md](roadmap.md) once it is chosen. Like [ideas.md](ideas.md), this is a list to pick from.
+Ideas for new items, drafted 16 October 2026. Nothing here is planned: an idea moves to [planning/todo.md](todo.md) or [planning/roadmap.md](roadmap.md) once it is chosen. Like [planning/ideas.md](ideas.md), this is a list to pick from.
 
-**Chosen on 16 October 2026**, and moved to [todo.md](todo.md): Soundproof Panels (1), Wind Chimes (5), the Generator (7), placed outside only (done: the first item outdoors, and the first mishap item, `heldOffBy` on its mishap), the Fortune Teller Machine (10), the Kombucha Tap (11), the Staff Fridge (16) and wall hangings (24). The rest are still open.
+**Chosen on 16 October 2026**, and moved to [planning/todo.md](todo.md): Soundproof Panels (1), Wind Chimes (5), the Generator (7), placed outside only (done: the first item outdoors, and the first mishap item, `heldOffBy` on its mishap), the Fortune Teller Machine (10), the Kombucha Tap (11), the Staff Fridge (16) and wall hangings (24). The rest are still open.
 
 ## What makes a Two Point item fun
 
@@ -16,7 +16,7 @@ Two Point's items are fun for a few reasons, and each idea below aims at one or 
 
 We have most of the basics already: seats, drinks, snacks, an arcade, bins, plants, decor at every price, radiators and air conditioning, a hamper, a bookcase, a coffee machine and a pool table. The gaps are mostly in the last three points: things to watch, things that belong to a place, and items that interact with the systems we've built since the first batch (noise, temperature, linens, bad vibes, regulars, reviews, mishaps, the inspector, stress outbreaks).
 
-Each idea gives its rough numbers in the terms `ItemDef` already uses, says whether it is **data only** (a new entry in [items.ts](../src/core/data/items.ts) and some art) or needs **new code**, and names the Two Point item it echoes where there is one.
+Each idea gives its rough numbers in the terms `ItemDef` already uses, says whether it is **data only** (a new entry in [items.ts](../../src/core/data/items.ts) and some art) or needs **new code**, and names the Two Point item it echoes where there is one.
 
 ## Items that use what we already have
 
@@ -34,7 +34,7 @@ These fit systems already in the sim. Most are data only or need a small hook, s
 
 **6. Stress Ball Bowl** 🔴. A bowl of squishy stress balls on a stand. Corridor, $200, unlock 1. A stressed guest who passes squeezes one and calms down a little, and during a stress outbreak, stress spreads more slowly near it. Every so often a guest walks off with one, and the bowl runs out until a Receptionist refills it. A cheap answer to outbreaks that still needs looking after. _New code, small to medium._
 
-**7. Generator** 🔋. A bulky diesel generator, placed outdoors only (chosen on that condition), 2×1, $2,800, `noise: 8`. Owned, it keeps the power on through every power cut without paying for a hired one each time, but it's loud, so it goes outside, where the building's outer walls hold back its noise. Nothing can be placed outdoors yet, so it needs a first step of phase 7 of [land-plan.md](land-plan.md). The first of the **mishap items**: something the player can buy once, ahead of time, instead of paying each time. Others in the same family: **Storm Shutters** on windows (The Boardwalk), **Pipe Lagging** as a room upgrade (High Pines) and a **Wasp Trap** (The Orchard Estate). _New code, small each_: a mishap checks for its item before it counts as unprepared.
+**7. Generator** 🔋. A bulky diesel generator, placed outdoors only (chosen on that condition), 2×1, $2,800, `noise: 8`. Owned, it keeps the power on through every power cut without paying for a hired one each time, but it's loud, so it goes outside, where the building's outer walls hold back its noise. Nothing can be placed outdoors yet, so it needs a first step of phase 7 of [plans/land.md](../plans/land.md). The first of the **mishap items**: something the player can buy once, ahead of time, instead of paying each time. Others in the same family: **Storm Shutters** on windows (The Boardwalk), **Pipe Lagging** as a room upgrade (High Pines) and a **Wasp Trap** (The Orchard Estate). _New code, small each_: a mishap checks for its item before it counts as unprepared.
 
 **8. Fire Extinguisher, made to matter.** No new item: the inspector already wants one near every room. A broken or missing extinguisher next to a room could appear as a line in the inspector's report, and the Fire Extinguisher could wear a little each month until a Caretaker checks it. _New code, small._
 
@@ -68,7 +68,7 @@ Staff have energy, morale, thirst and hunger now, and only the Staff Room's couc
 
 ## Signature items for each center
 
-These belong to one center, unlocked at its first star and available there only (and in the sandbox), so each center has things to build that the others don't. They pair well with the signature rooms in [ideas.md](ideas.md).
+These belong to one center, unlocked at its first star and available there only (and in the sandbox), so each center has things to build that the others don't. They pair well with the signature rooms in [planning/ideas.md](ideas.md).
 
 **19. Willow Lane: Community Noticeboard** 📌. Covered in flyers for lost cats and drum circles. Corridor, $250, `decor: 1`. Regulars who pass it are a little more loyal, and new guests who read it are more likely to become regulars. A small start for the regulars system at the first center. _New code, small._
 
@@ -93,7 +93,7 @@ These need more than an item, but would make items more fun across the board.
 - and the Motivational Poster from 17.
   _New code, medium to large_: placing on walls, drawing items on walls that turn with the camera, and walls cut low hiding what hangs on them.
 
-**25. Item gags.** Two Point items are worth watching because they do things: the vending machine eats a coin, a radiator clanks. A small animation per item, even just props moving, is to items what treatment gags ([two-point-gaps.md](two-point-gaps.md), item 31) are to rooms. Starting points: the Granola Dispenser shaking a stuck bar loose, the Gong shimmering after it's struck, the Fortune Teller's hands waving over the crystal ball, and the Koi in the pond following a guest along the edge. _Medium overall._
+**25. Item gags.** Two Point items are worth watching because they do things: the vending machine eats a coin, a radiator clanks. A small animation per item, even just props moving, is to items what treatment gags ([audits/two-point-gaps.md](../audits/two-point-gaps.md), item 31) are to rooms. Starting points: the Granola Dispenser shaking a stuck bar loose, the Gong shimmering after it's struck, the Fortune Teller's hands waving over the crystal ball, and the Koi in the pond following a guest along the edge. _Medium overall._
 
 **26. A center cat.** A cat bed (`where: 'any'`, $400, karma 4) brings a cat that wanders the center. Guests it rubs against are happier and more patient, and staff it visits in the Staff Room get a little morale. Sometimes it falls asleep on an empty treatment table, and the next guest can't use it until a member of staff moves it. Two Point has no pets, but Campus's mascots and Museum's ghosts and creatures are the same kind of delight. _New code, medium_: a wandering creature with simple behavior and its own art. "Not a therapy cat. Has not been told."
 
