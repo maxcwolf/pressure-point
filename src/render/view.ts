@@ -6,6 +6,7 @@ import { centerOf, ITEMS, type Rect } from '../core/data';
 import { footprintKey } from '../core/footprint';
 import type { Sim } from '../core/sim/sim';
 import { itemDims } from '../core/world';
+import { BrigadeLayer } from './brigade';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
@@ -91,6 +92,7 @@ export class View {
   private snow: SnowfallLayer;
   private rain: RainLayer;
   private storefront: StorefrontLayer;
+  private brigade: BrigadeLayer;
   readonly overlays: Overlays;
   private heat: Heatmap;
   /** Rings at people's feet for the people overlays. */
@@ -142,6 +144,7 @@ export class View {
     this.snow = new SnowfallLayer(this.scene, sim);
     this.rain = new RainLayer(this.scene, sim);
     this.storefront = new StorefrontLayer(this.scene, sim);
+    this.brigade = new BrigadeLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
     this.halos = new HalosLayer(this.scene, sim);
@@ -259,6 +262,7 @@ export class View {
     this.snow.update(this.time);
     this.rain.update(this.time);
     this.storefront.update();
+    this.brigade.update(this.time, this.rig.reduceMotion());
     this.land.update();
     this.items.animate(this.time);
     this.settling.update(dt);

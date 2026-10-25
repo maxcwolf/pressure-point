@@ -14,7 +14,7 @@ export type Act = 'checkin' | 'drink' | 'eat' | 'play' | 'shop' | 'litter' | 'wa
 /**
  * What someone is doing at the item they are at, if it is one of the acts: a guest using a machine for a drink, a
  * snack or a game, or being served at a shop counter; a receptionist checking someone in; a member of staff on a chore,
- * or getting themselves a drink or a snack; or a firefighter hosing out a fire.
+ * or getting themselves a drink or a snack, or putting out a fire; or a firefighter hosing one out.
  */
 export function actOf(c: Char, at?: ItemDef): Act | undefined {
   if (c.kind === 'visitor') return c.visit === 'firefighter' && c.state === 'hosing' ? 'hose' : undefined;
@@ -37,6 +37,9 @@ export function actOf(c: Char, at?: ItemDef): Act | undefined {
     case 'repair':
     case 'install':
       return 'repair';
+    // a Caretaker putting out a fire sprays it with the extinguisher, as a firefighter hoses one
+    case 'douse':
+      return 'hose';
     case 'refresh':
       return wants(c) === 'eat' ? 'eat' : 'drink';
     default:

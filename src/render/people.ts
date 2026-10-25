@@ -6,7 +6,7 @@ import { conditionOf, type ItemDef, ITEMS, ROLES, SIDEWALK_Y } from '../core/dat
 import { streetEnds } from '../core/sim/chars';
 import type { Sim } from '../core/sim/sim';
 import type { Char, Guest } from '../core/state/types';
-import { actOf, itemIdAt, lyingAt } from './acts';
+import { type Act, actOf, itemIdAt, lyingAt } from './acts';
 import { Crowd, type Viewpoint } from './crowd';
 import { disposeOwned } from './disposal';
 import { applyGuestGag } from './gags/apply';
@@ -116,7 +116,7 @@ export class PeopleLayer {
       poseChar(rig, seen.c, t, dt, {
         style: this.workStyle(c),
         door,
-        act: actOf(c, at),
+        act: this.actFor(c, at),
         lie: seen.lie,
         lying: seen.lying,
         up: seen.up,
@@ -140,6 +140,18 @@ export class PeopleLayer {
       disposeOwned(rig.group);
       this.chars.delete(id);
     }
+  }
+
+  /**
+   * What someone is doing at the item they are at, as the acts have it, but for a Caretaker putting out a fire with no
+   * Fire Extinguisher to hand, who beats it out instead of spraying it.
+   */
+  private actFor(c: Char, at: ItemDef | undefined): Act | undefined {
+    const act = actOf(c, at);
+    if (act !== 'hose' || c.kind !== 'staff') return act;
+    const it = this.sim.s.items.find((i) => i.id === c.job?.id);
+    const room = it && this.sim.world.roomOfItem(it);
+    return room && this.sim.extinguisherNear(room) ? act : 'litter';
   }
 
   /** Whether a Caretaker is cleaning up flood water, which they mop rather than pick up. */

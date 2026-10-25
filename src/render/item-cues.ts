@@ -1,14 +1,14 @@
 // What an item shows of what it is doing, with no overlay open: smoke, a shudder or a flickering light as it wears out
 // and a dead look once it breaks, grime as it gets dirty, ripples while a guest plays something loud, wisps of warm
-// or cool air off a heater or an air conditioner, and the mark of a mishap that has stopped it: its lights out in a
-// power cut, frost in a freeze, and wasps round it. Each cue is a few small parts added to a model the first time it is
+// or cool air off a heater or an air conditioner, flames and black smoke while it burns and a charred look after, and
+// the mark of a mishap that has stopped it: its lights out in a power cut, frost in a freeze, and wasps round it. Each cue is a few small parts added to a model the first time it is
 // needed, from shapes every model shares, and hidden the rest of the time, so a cue that is off draws nothing. Like the
 // rest of an item's moving parts, each is worked out afresh from the time and the item's state, frame by frame.
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-import { DIRT_FILTHY, ITEMS, type ItemType, type MishapId, NOISE_NOTICE, WEAR_WARN } from '../core/data';
+import { DIRT_FILTHY, HOSE_SECONDS, ITEMS, type ItemType, type MishapId, NOISE_NOTICE, WEAR_WARN } from '../core/data';
 import { clamp } from '../core/util';
 import { isOwned, owned } from './disposal';
 import { BOOST_LOOP } from './gags/clock';
@@ -112,6 +112,11 @@ export interface CueCondition {
   stopped?: StopLook | undefined;
   /** How far it stands in the dark of a power cut, from 0 in the light to 1 inside the building with its lights out. */
   shade?: number;
+  /** It is on fire, and being put out this moment: hosed by a firefighter, or doused by a Caretaker. */
+  burning?: boolean;
+  hosed?: boolean;
+  /** It burnt in a fire, and has not been repaired since. */
+  burnt?: boolean;
 }
 
 /**
@@ -123,8 +128,11 @@ const UNLIT_IN_SHADE = 0.45;
 /** The share of its own brightness a cue drawn without light shows, for how far it stands in the dark. */
 export const unlitShare = (c: Pick<CueCondition, 'shade'>) => 1 - (c.shade ?? 0) * (1 - UNLIT_IN_SHADE);
 
-/** How a mishap shows on what it has stopped: switched off at the plug, frozen solid, or swarmed by wasps. */
-export type StopLook = 'off' | 'frost' | 'wasps';
+/**
+ * How a mishap shows on what it has stopped: switched off at the plug, frozen solid, or swarmed by wasps; or how a fire
+ * leaves what it burnt, charred black.
+ */
+export type StopLook = 'off' | 'frost' | 'wasps' | 'charred';
 
 /** How each mishap shows on the items it stops: a storm shuts the Aura Wash down, as a power cut does. */
 export const STOP_LOOKS: Readonly<Record<MishapId, StopLook>> = {
@@ -185,7 +193,8 @@ const fadeOf = (o: THREE.Object3D) => (o as THREE.Mesh<THREE.BufferGeometry, THR
 /** Smoke a worn machine puffs out, or the dust a worn mat gives off, and the dark smoke of a broken machine. */
 function animateSmoke(model: THREE.Object3D, c: CueCondition, look: WearLook | undefined, t: number) {
   const worn = showsWear(c.wear);
-  const dead = c.wear >= 100 && look === 'smoke';
+  // anything on fire gives off black smoke, whatever it shows of its wear
+  const dead = (c.wear >= 100 && look === 'smoke') || !!c.burning;
   const on = (worn && (look === 'smoke' || look === 'dust')) || dead;
   let smoke = partsOf(model).cues?.smoke;
   if (!on) {
@@ -220,6 +229,70 @@ function animateSmoke(model: THREE.Object3D, c: CueCondition, look: WearLook | u
     );
     p.scale.setScalar(size * (0.5 + f * 1.1));
     m.opacity = (dead ? 0.8 : dust ? 0.55 : 0.7) * (1 - f) * Math.min(1, f * 6);
+  });
+}
+
+/** The colors of a fire's flames, orange outside and yellow at the heart, and of the steam off one being put out. */
+const FLAME = 0xff5a1a;
+const FLAME_HEART = 0xffc23a;
+const STEAM = 0xf4f6f8;
+
+/** How many flames lick up off something on fire, and how much of their height they keep once nearly hosed out. */
+const FLAMES = 4;
+const HOSED_LEFT = 0.2;
+
+/** A flame: a cone standing on its base, one shape for every flame on every fire. */
+const flame = () => cached('cue-flame', () => new THREE.ConeGeometry(0.13, 0.5, 10).translate(0, 0.25, 0));
+
+/**
+ * Flames licking up off the top of something on fire, each flickering on its own, and shrinking over the time it takes
+ * to hose them out while a firefighter or a Caretaker is putting them out, with steam rising off it.
+ */
+function animateFlames(model: THREE.Object3D, c: CueCondition, t: number) {
+  let flames = partsOf(model).cues?.flames;
+  if (!c.burning) {
+    if (flames) flames.visible = false;
+    const steam = partsOf(model).cues?.steam;
+    if (steam) steam.visible = false;
+    delete model.userData.hosedSince;
+    return;
+  }
+  const cues = cuesOf(model);
+  flames = cues.flames ??= cueGroup(model, flame(), FLAMES, FLAME);
+  flames.visible = true;
+  const { box } = cues;
+  const w = box.max.x - box.min.x;
+  const d = box.max.z - box.min.z;
+  const cx = (box.min.x + box.max.x) / 2;
+  const cz = (box.min.z + box.max.z) / 2;
+  // shrinking from the moment the hose or the extinguisher is on it
+  if (c.hosed) model.userData.hosedSince ??= t;
+  else delete model.userData.hosedSince;
+  const since = model.userData.hosedSince as number | undefined;
+  const left = since === undefined ? 1 : 1 - (1 - HOSED_LEFT) * clamp((t - since) / HOSE_SECONDS, 0, 1);
+  // big enough to read from the game's usual distance, and bigger on something bigger
+  const size = clamp(Math.max(w, d) * 0.9, 0.9, 1.8) * left;
+  flames.children.forEach((f, i) => {
+    const heart = i % 2 === 1;
+    const lick = 0.75 + 0.25 * Math.sin(t * (9 + i * 2.3) + c.id + i) + 0.15 * Math.sin(t * 23 + i * 5);
+    f.position.set(
+      cx + (i - (FLAMES - 1) / 2) * w * 0.22 + Math.sin(t * 3 + i) * 0.02,
+      box.max.y - 0.05,
+      cz + (heart ? 0.06 : -0.06) * d,
+    );
+    f.scale.set(size * (heart ? 0.7 : 1), size * lick * (heart ? 0.8 : 1.1), size * (heart ? 0.7 : 1));
+    const m = fadeOf(f);
+    m.color.setHex(heart ? FLAME_HEART : FLAME);
+    m.opacity = 0.92;
+  });
+  const steam = (cues.steam ??= cueGroup(model, sph(0.1, 8), 3, STEAM));
+  steam.visible = !!c.hosed;
+  if (!c.hosed) return;
+  steam.children.forEach((p, i) => {
+    const f = burst(t + i * 0.4, 1.2, 1.2, c.id);
+    p.position.set(cx + Math.sin(f * 4 + i * 2.1) * 0.15, box.max.y + 0.2 + f * 1.1, cz + (i - 1) * 0.1);
+    p.scale.setScalar(2.2 * (0.6 + f));
+    fadeOf(p).opacity = 0.75 * (1 - f) * Math.min(1, f * 5);
   });
 }
 
@@ -517,18 +590,39 @@ function frost(m: THREE.MeshStandardMaterial, on: boolean) {
   m.emissiveIntensity = ICE_GLINT;
 }
 
+/** The near-black a fire chars everything it burns toward, and how far. */
+const CHAR = new THREE.Color(0x221d1a);
+const CHAR_BY = 0.8;
+
+/** The looks an item's parts can be dressed in: switched off, frozen, or charred. */
+type Dress = 'off' | 'frost' | 'charred';
+
 /** Each material's look while stopped, made once from it: a shared material's is shared too. */
-const stoppedLooks = new WeakMap<THREE.Material, Partial<Record<'off' | 'frost', THREE.Material>>>();
+const stoppedLooks = new WeakMap<THREE.Material, Partial<Record<Dress, THREE.Material>>>();
 
 /**
  * A material as it looks on an item a mishap has stopped, or the material itself where it does not change: glazed with
- * ice when frozen; with any glow switched off, and darker, when the power is off.
+ * ice when frozen; with any glow switched off, and darker, when the power is off; and charred nearly black, matt and with
+ * no glow, once it has burnt.
  */
-function stoppedMaterial(m: THREE.Material, look: 'off' | 'frost'): THREE.Material {
+function stoppedMaterial(m: THREE.Material, look: Dress): THREE.Material {
   const made = stoppedLooks.get(m)?.[look];
   if (made) return made;
   let out: THREE.Material = m;
-  if (look === 'off' && m instanceof THREE.MeshStandardMaterial && m.emissiveIntensity > 0 && m.emissive.getHex()) {
+  if (look === 'charred' && (m instanceof THREE.MeshStandardMaterial || m instanceof THREE.MeshBasicMaterial)) {
+    const burnt = m.clone();
+    burnt.color.lerp(CHAR, CHAR_BY);
+    if (burnt instanceof THREE.MeshStandardMaterial) {
+      burnt.emissiveIntensity = 0;
+      burnt.roughness = 0.95;
+    }
+    out = burnt;
+  } else if (
+    look === 'off' &&
+    m instanceof THREE.MeshStandardMaterial &&
+    m.emissiveIntensity > 0 &&
+    m.emissive.getHex()
+  ) {
     const dark = m.clone();
     dark.emissiveIntensity = 0;
     dark.color.multiplyScalar(0.55);
@@ -560,7 +654,7 @@ function animatedMaterials(model: THREE.Object3D): Set<THREE.Material | undefine
  * the mishap is over. Only a change of look does any work, so this is free from frame to frame.
  */
 export function dressStopped(model: THREE.Object3D, look: StopLook | undefined) {
-  const dressed = look === 'off' || look === 'frost' ? look : undefined;
+  const dressed = look === 'off' || look === 'frost' || look === 'charred' ? look : undefined;
   const cues = cuesOf(model);
   if (cues.dressed === dressed) return;
   cues.dressed = dressed;
@@ -702,21 +796,26 @@ function animateIcicles(model: THREE.Object3D, c: CueCondition) {
 
 /**
  * Show every cue an item gives: of its wear, its dirt, its noise and its warmth, an engine running, a rattle from next
- * door, and a mishap that has stopped it.
+ * door, a fire, and a mishap that has stopped it. Something on fire, or burnt and not yet repaired, is charred black,
+ * whatever else has stopped it.
  */
 export function animateCues(model: THREE.Object3D, c: CueCondition, t: number) {
   const look = WEAR_LOOKS[c.type];
   const { lamp, grime: dirty, exhaust } = partsOf(model);
+  const charred = !!c.burnt || !!c.burning;
   if (lamp) {
     const bright = (lamp.userData.bright ??= lamp.emissiveIntensity) as number;
-    // an engine's light is full on while it runs, and low while it stands by
-    wearLight(lamp, c.wear, c.id, exhaust && c.running <= 0 ? bright * STANDBY_LIGHT : bright, t, c.stopped === 'off');
+    // an engine's light is full on while it runs, and low while it stands by; out once it has burnt
+    const off = c.stopped === 'off' || charred;
+    wearLight(lamp, c.wear, c.id, exhaust && c.running <= 0 ? bright * STANDBY_LIGHT : bright, t, off);
   }
-  if (c.stopped || partsOf(model).cues) dressStopped(model, c.stopped);
+  const dress = charred ? 'charred' : c.stopped;
+  if (dress || partsOf(model).cues) dressStopped(model, dress);
   if (dirty) {
     grime(dirty, c.dirt);
-    // the grime is worked out afresh each frame, so the ice goes on over it
-    frost(dirty, c.stopped === 'frost');
+    // the grime is worked out afresh each frame, so the ice or the char goes on over it
+    frost(dirty, !charred && c.stopped === 'frost');
+    if (charred) dirty.color.lerp(CHAR, CHAR_BY);
   }
   if (look === 'shudder') animateLean(model, c, t);
   animateChug(model, c, t);
@@ -727,4 +826,5 @@ export function animateCues(model: THREE.Object3D, c: CueCondition, t: number) {
   animateFumes(model, c, t);
   animateWasps(model, c, t);
   animateIcicles(model, c);
+  animateFlames(model, c, t);
 }

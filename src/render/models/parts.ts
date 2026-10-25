@@ -351,7 +351,7 @@ export interface ItemParts {
   shine?: THREE.MeshStandardMaterial;
 }
 
-/** The parts of an item's cues of wear, noise and warmth, each added to its model the first time it is needed. */
+/** The parts of an item's cues of wear, noise, warmth and fire, each added to its model the first time it is needed. */
 export interface CueParts {
   /** The box the model's own parts fill, in its own frame, that the cues rise from and spread around. */
   box: THREE.Box3;
@@ -367,8 +367,11 @@ export interface CueParts {
   wasps?: THREE.Points;
   /** Icicles hanging from something frozen. */
   icicles?: THREE.Mesh;
-  /** The stopped look its parts are dressed in, if any: switched off, or frozen. */
-  dressed?: 'off' | 'frost' | undefined;
+  /** Flames licking up off something on fire, and steam rising off it as it is put out. */
+  flames?: THREE.Group;
+  steam?: THREE.Group;
+  /** The stopped look its parts are dressed in, if any: switched off, frozen, or charred by a fire. */
+  dressed?: 'off' | 'frost' | 'charred' | undefined;
 }
 
 /** The changing parts of an item's model. */
