@@ -48,15 +48,29 @@ describe('windows', () => {
     expect(massage.windows).toEqual([]);
   });
 
-  it('are not allowed onto the room next door, but are onto a corridor or the outside', () => {
+  it('go onto the room next door, a corridor or the outside', () => {
     const sim = freshSim();
     sim.s.money = 100_000;
     const a = sim.createRoom('massage', { x: 3, y: 3, w: 3, h: 3 }, { x: 4, y: 5, dx: 0, dy: 1 });
     sim.createRoom('staffroom', { x: 6, y: 3, w: 3, h: 3 }, { x: 7, y: 5, dx: 0, dy: 1 });
-    expect(sim.world.windowValid(a, { x: 5, y: 4, dx: 1, dy: 0 }).reason).toMatch(/Another room/);
+    expect(sim.world.windowValid(a, { x: 5, y: 4, dx: 1, dy: 0 }).ok).toBe(true);
     // the building's outer wall, and the corridor
     expect(sim.world.windowValid(a, { x: 3, y: 4, dx: -1, dy: 0 }).ok).toBe(true);
     expect(sim.world.windowValid(a, { x: 3, y: 5, dx: 0, dy: 1 }).ok).toBe(true);
+  });
+
+  it('onto the room next door go through both walls, which have to be clear', () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    const a = sim.createRoom('massage', { x: 3, y: 3, w: 3, h: 3 }, { x: 4, y: 5, dx: 0, dy: 1 });
+    const b = sim.createRoom('staffroom', { x: 6, y: 3, w: 3, h: 3 }, { x: 7, y: 5, dx: 0, dy: 1 });
+    expect(sim.toggleWindow(a.id, { x: 5, y: 4, dx: 1, dy: 0 })).toBe('added');
+    // the room next door has a window there already: the same one, from its side
+    expect(sim.world.windowValid(b, { x: 6, y: 4, dx: -1, dy: 0 }).reason).toBe('There is a window there');
+    expect(sim.world.wallFace({ x: 6, y: 4, dx: -1, dy: 0 }).reason).toBe('There is a window there');
+    // something hung on the far side keeps a window out
+    expect(sim.placeItem('wall_clock', 6, 3, 3)).toBeTruthy();
+    expect(sim.world.windowValid(a, { x: 5, y: 3, dx: 1, dy: 0 }).reason).toBe('Take the Wall Clock down first');
   });
 
   it('cannot be bought without the money', () => {
