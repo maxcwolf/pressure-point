@@ -14,7 +14,7 @@ import {
 import { money } from '../../../core/format';
 import { copyCost } from '../../../core/room-layout';
 import { roomLabels } from '../../../core/sim/assignments';
-import { signatureMachine } from '../../../core/sim/machines';
+import { signatureMachine, treatsHere } from '../../../core/sim/machines';
 import { tempFeel } from '../../../core/sim/warmth';
 import type { Item, Room } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
@@ -33,31 +33,40 @@ import { DecorPicker } from './DecorPicker';
 import { StationInfo } from './StationInfo';
 import { Timetable } from './Timetable';
 
-/** Which modalities a treatment room can deliver right now, and what is missing for the rest. */
-function CanDeliver({ table }: { table: Item }) {
+/**
+ * Which modalities a treatment room can deliver right now, and what is missing for the rest. Each is judged at the
+ * stations that take guests for it, the best of them counting, so a machine shows only for its own.
+ */
+function CanDeliver({ stations }: { stations: Item[] }) {
   const { sim } = useGame();
-  const staff = sim.staff(table.staffId);
-  const discipline = ITEMS[table.type].station?.discipline;
+  const rows = MODALITY_ORDER.filter((m) => sim.unlocked(m)).flatMap((m) => {
+    const def = MODALITIES[m];
+    const checks = stations
+      .filter((st) => treatsHere(st, def))
+      .map((st) => {
+        const staff = sim.staff(st.staffId);
+        const problem = sim.deliveryProblem(st, staff, def);
+        return { def, problem, why: deliveryNote(problem, def, staff?.name) };
+      });
+    // staffed and able, then able once staffed, then whatever is missing at the first of them
+    const best = checks.find((c) => !c.why) ?? checks.find((c) => !c.problem) ?? checks[0];
+    return best ? [best] : [];
+  });
   return (
     <>
       <h4>Can deliver</h4>
-      {MODALITY_ORDER.filter((m) => MODALITIES[m].discipline === discipline && sim.unlocked(m)).map((m) => {
-        const def = MODALITIES[m];
-        const problem = sim.deliveryProblem(table, staff, def);
-        const why = deliveryNote(problem, def, staff?.name);
-        return (
-          <em key={m} class={problem ? 'warn' : 'ok'}>
-            {`${problem ? '✗' : '✔'} `}
-            <IconText id={def.icon}>{def.name}</IconText>
-            {why && (
-              <>
-                {' '}
-                <small>({why})</small>
-              </>
-            )}
-          </em>
-        );
-      })}
+      {rows.map(({ def, problem, why }) => (
+        <em key={def.id} class={problem ? 'warn' : 'ok'}>
+          {`${problem ? '✗' : '✔'} `}
+          <IconText id={def.icon}>{def.name}</IconText>
+          {why && (
+            <>
+              {' '}
+              <small>({why})</small>
+            </>
+          )}
+        </em>
+      ))}
     </>
   );
 }
@@ -166,7 +175,7 @@ export function RoomInfo({ room }: { room: Room }) {
       {assigned.length > 0 && (
         <p class="sub assigned">{`Assigned here: ${assigned.map((st) => st.name).join(', ')}`}</p>
       )}{' '}
-      {table && <CanDeliver table={table} />} <Draw room={room} /> <Blessing room={room} />
+      {table && <CanDeliver stations={stations} />} <Draw room={room} /> <Blessing room={room} />
       <p class="sub">{def.desc}</p>{' '}
       <p title="Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.">
         {'Prestige '}
