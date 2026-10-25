@@ -6,7 +6,7 @@ When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-40 recorded, 41 still to record.
+43 recorded, 38 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
@@ -70,14 +70,12 @@ Key: ✅ recorded, ⬜ not recorded yet.
 - ⬜ The Press House is now open. Bring us your bitterness. We are told it has a lovely finish.
 - ⬜ The Carousel of Rebirth is now open. Please remain seated until you are yourself.
 
-## Seasons, at The Boardwalk (`seasonNews` in `src/core/sim/twists.ts`)
+## Seasons, at The Boardwalk (`SEASON_LINES` in `src/core/sim/twists.ts`, each followed on the banner by the numbers, which are not read out)
 
-Each carries last month's guests (the numbers below are an example), so no one recording can match it as it stands. In the first month the sentence "Last month … a month." is left out.
-
-- ⬜ Winter is here. The promenade is empty, about ×0.6 the usual guests until spring. Last month 40 came; expect about 24 a month. Watch the budget.
-- ⬜ Spring! The first day-trippers are back in town. Last month 24 came; expect about 40 a month.
-- ⬜ Summer at last, and the town is packed: about ×1.9 the usual guests until autumn. Last month 40 came; expect about 76 a month. Expect a crowd.
-- ⬜ Autumn. The visitors are heading home. Last month 76 came; expect about 40 a month.
+- ✅ Winter is here. The promenade is empty, so watch the budget until spring.
+- ✅ Spring has sprung! The first day-trippers are back in town.
+- ⬜ Summer at last, and the town is packed. Expect a crowd.
+- ⬜ Autumn. The visitors are heading home.
 
 ## Snow, at High Pines (`SNOW_NEWS` in `src/core/sim/twists.ts`)
 
@@ -103,7 +101,7 @@ Each carries last month's guests (the numbers below are an example), so no one r
 
 ## A really bad trip (`RUNAWAY_LINES` in `src/core/sim/runaways.ts`, one or the other by the guest)
 
-- ⬜ Would the guest running through the lobby please note that the ceiling is not, in fact, melting.
+- ✅ Would the naked guest running through the lobby please note that the walls are not, in fact, melting.
 - ⬜ A reminder that the walls are load-bearing and cannot be reasoned with.
 
 ## Visits, as a visitor writes ahead (`VISIT_NEWS` in `src/core/data/visits.ts`)

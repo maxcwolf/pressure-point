@@ -319,7 +319,7 @@ describe('The Boardwalk', () => {
       {
         type: 'announce',
         text: expect.stringContaining(
-          `about ×${seasons.summer} the usual guests until autumn. Last month 20 came; expect about ${Math.round(20 * seasons.summer)} a month.`,
+          `Until autumn, about ×${seasons.summer} the usual guests. Last month 20 came; expect about ${Math.round(20 * seasons.summer)} a month.`,
         ),
       },
     ]);
