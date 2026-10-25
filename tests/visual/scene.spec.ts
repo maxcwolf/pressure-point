@@ -13,6 +13,8 @@ test.describe('the scene', () => {
   test.use({ draw: true });
 
   test('rooms with windows on every side, at the back, middle and front of the building', async ({ game, page }) => {
+    // four pictures drawn in software, with the camera gliding round between them, which takes a while
+    test.setTimeout(180_000);
     await game.start();
     await game.eval((pp) => {
       const { sim } = pp;
