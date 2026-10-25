@@ -6,7 +6,9 @@
 // to make, takes house calls, and evens out lines. And as a good player also does: it upgrades the equipment, takes
 // on only the emergencies it can see through, lays rooms out for their kit and dresses them with windows first, fills
 // a Sound Bath Studio's mats, runs Qi Gong classes and picks courses by what guests need. Some things it can also do
-// were measured and found to gain nothing, and are extras switched on with `BOT_ON` (see `BOT_EXTRAS`).
+// were measured and found to gain nothing, and are extras switched on with `BOT_ON` (see `BOT_EXTRAS`). And as the
+// owner plays their own games (balance log 46): a small loan paid back fast, decor, a Staff Room and a Training Room in
+// the first month, prices held near 1.1, and every emergency and stress outbreak taken on.
 
 import { itemOpen } from '../../src/core/campaign';
 import {
@@ -37,6 +39,7 @@ import {
   type Role,
   ROLES,
   ROOM_ORDER,
+  roomHere,
   ROOMS,
   type RoomType,
   RUNAWAY_SAVE_DAYS,
@@ -134,6 +137,31 @@ export const BOT_FLAGS = [
    * opening stays as measured: compare `BOT_ON=opening` with the bot without it at The Orchard (balance log 39).
    */
   'opening',
+  /**
+   * Borrow as the owner does, a few thousand for one build at a time, paid back within days of having the cash: never
+   * more than three steps of the loan on its own asking (the bank's loan at a payday aside), and a step paid back
+   * whenever a month's wages and $5,000 are in hand rather than $25,000 (the good style's `loanTop` and `repay`).
+   */
+  'loan',
+  /**
+   * Fit the center out in its first month, as the owner does: a Staff Room before the doors open if the money allows,
+   * a Training Room as soon as the game opens one and it can be paid for keeping back only the wages due, each
+   * treatment room dressed the day it is built, and nothing kept back for decor or the corridor's comforts until the
+   * center has been open a month.
+   */
+  'early',
+  /**
+   * Prices held near 1.1, as the owner holds them: 1.1 from the first day open and no higher after it, a long line's
+   * techniques 1.2 at most (the good style's `priceTop` and `premiumTop`). With the bank calling the overdraft in,
+   * prices still go as high as before.
+   */
+  'modest',
+  /**
+   * Take on every emergency, whatever the staff can see through, and every stress outbreak, calming the guests seen
+   * sweating while it runs, as the owner does (but without `trouble`'s Shaman's ward). With `emergencies` on too, this
+   * wins: every emergency is taken on, and its guests still go first while it runs.
+   */
+  'brave',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -235,6 +263,8 @@ export interface Style {
    * hand.
    */
   borrow: 'payday' | 'build' | 'limit';
+  /** The most it owes the bank on its own asking: past it, only the loan the bank forces on it at a payday. */
+  loanTop: number;
   /** The loan is paid back once the money is over this. */
   repay: Reserve;
   /**
@@ -248,7 +278,7 @@ export interface Style {
   marketing: 'never' | 'pays' | 'always';
 }
 
-/** The good bot: as it has played since entry 23 of the balance log. */
+/** The good bot: as it has played since entry 23 of the balance log, and still plays without `loan` and `modest`. */
 const GOOD: Style = {
   priceTop: 1.4,
   premiumTop: 1.3,
@@ -266,11 +296,20 @@ const GOOD: Style = {
     comforts: { k: 1, c: 2000 },
   },
   borrow: 'build',
+  loanTop: Infinity,
   repay: { k: 1, c: 25000 },
   payback: 12,
   borrowPayback: 6,
   marketing: 'pays',
 };
+
+/**
+ * What the good bot plays differently with `loan`, and with `modest`, as the owner plays (balance log 46): a loan of
+ * three steps at most, a step paid back once a month's wages and $5,000 are in hand; and prices to 1.1 at most, a long
+ * line's techniques to 1.2.
+ */
+const GOOD_LOAN = { loanTop: 3 * LOAN_STEP, repay: { k: 1, c: 5000 } } satisfies Partial<Style>;
+const GOOD_MODEST = { priceTop: 1.1, premiumTop: 1.2 } satisfies Partial<Style>;
 
 /** Every reserve's share of the wages set by a rule, the dollars on top left as the good bot keeps them. */
 const reserves = (k: (good: number) => number) =>
@@ -320,6 +359,15 @@ export function botStyle(env: Record<string, string | undefined> = process.env):
   const name = env.BOT_STYLE ?? 'good';
   if (!(name in STYLES)) throw new Error(`Unknown BOT_STYLE=${name}: use ${Object.keys(STYLES).join(', ')}`);
   return STYLES[name as StyleName];
+}
+
+/**
+ * A style as the bot's flags have it play: the good style with `loan` and `modest` as the owner plays, and any other
+ * style as it is, so the hoarder and the grower keep their own loans and prices.
+ */
+export function flagStyle(style: Style, flags: BotFlags): Style {
+  if (style !== GOOD) return style;
+  return { ...style, ...(flags.loan ? GOOD_LOAN : {}), ...(flags.modest ? GOOD_MODEST : {}) };
 }
 
 /** The share of the time a discipline's staffed tables are kept busy that the bot staffs for. */
@@ -516,6 +564,11 @@ function price(type: RoomType): number {
   return roomCost(type, { w, h });
 }
 
+/** What a room of a type costs at the size the bot builds it, with the furniture it needs. */
+function fitted(type: RoomType): number {
+  return price(type) + ROOMS[type].required.reduce((a, t) => a + ITEMS[t].cost, 0);
+}
+
 /** The chart that helps treatments in a room of each kind. */
 const CHART_FOR: Partial<Record<RoomType, ItemType>> = {
   massage: 'meridian_poster',
@@ -537,6 +590,13 @@ const DRESS: readonly ItemType[] = [
 /** Decor standing on a room's floor, the least prestige for the tile it takes first, to sell for equipment. */
 const FLOOR_DECOR: readonly ItemType[] = ['plant', 'diffuser', 'salt_lamp', 'statue'];
 
+/** What the bot dresses a treatment room by: what it keeps back, the prestige it aims for, and a goal for prestige. */
+interface DecorPlan {
+  reserve: number;
+  target: number;
+  wanted: Extract<GoalSpec, { kind: 'prestige' }> | undefined;
+}
+
 /** What the bot expects its first payroll to come to, before it has hired everyone. */
 const FIRST_PAYROLL = 20000;
 
@@ -544,6 +604,8 @@ export class Bot {
   readonly sim: Sim;
   readonly s: GameState;
   readonly log: Playtest;
+  /** How it plays where a player has a choice of temper, as its flags have it (`flagStyle`). */
+  readonly style: Style;
   private monthStart = { arrived: 0, healed: 0, failed: 0, stormed: 0, worse: 0, priced: 0 };
 
   /** Treatment rooms per type the bot has let the practitioner go from, which it leaves empty until they are needed. */
@@ -584,8 +646,9 @@ export class Bot {
     difficulty: Difficulty = {},
     readonly flags: BotFlags = botFlags(),
     readonly mode: BotMode = botMode(),
-    readonly style: Style = botStyle(),
+    style: Style = botStyle(),
   ) {
+    this.style = flagStyle(style, flags);
     setSeed(seed);
     const s = newGame(center);
     s.difficulty = difficulty;
@@ -653,7 +716,7 @@ export class Bot {
         if (i % 10 === 0) {
           this.sampleTables();
           if (this.flags.machines) this.watchMachines();
-          if (this.flags.trouble) this.calmCarriers();
+          if (this.flags.trouble || this.flags.brave) this.calmCarriers();
           // a runner's pill is at the top of the screen: any player sends someone
           this.calmRunners();
           this.watchRunners();
@@ -851,6 +914,22 @@ export class Bot {
     if (this.flags.prices) this.setPrices();
     if (this.markets()) this.market();
     this.repAtReview = this.s.reputation;
+  }
+
+  /** Whether the bot has set its price for the doors opening, with `modest`. */
+  private pricedOpening = false;
+
+  /**
+   * With `modest`, the price level the owner sets once the doors are open, 1.1 (or the style's top, if lower), on the
+   * first day open rather than at the first month's end.
+   */
+  private openingPrice() {
+    if (this.pricedOpening) return;
+    this.pricedOpening = true;
+    const level = Math.min(GOOD_MODEST.priceTop, this.style.priceTop);
+    if (level === this.s.priceLevel) return;
+    this.sim.setPrice(level);
+    this.note(`day ${Math.floor(this.s.day)}: prices to ${level} as the doors open`);
   }
 
   // ---- prices, marketing, payroll, house calls and lines --------------------
@@ -1245,6 +1324,7 @@ export class Bot {
       this.buildOpening();
       return;
     }
+    if (this.flags.modest) this.openingPrice();
     this.sampleLines();
     if (this.flags.throttle) this.throttle();
     if (this.flags.payroll) this.rescue();
@@ -1253,6 +1333,7 @@ export class Bot {
     if (this.flags.payroll) this.trimPayroll();
     this.hireToFill();
     this.basics();
+    if (this.flags.early) this.earlyTraining();
     this.unlocks();
     if (this.flags.kit) this.equip();
     this.train();
@@ -1260,6 +1341,7 @@ export class Bot {
     if (this.flags.classes) this.classes();
     if (this.flags.lab) this.buildLab();
     if (this.flags.machines) this.machines();
+    if (this.flags.early) this.dressNew();
     this.decorate();
     this.comforts();
   }
@@ -1604,14 +1686,21 @@ export class Bot {
 
   /**
    * Take on emergencies (with `emergencies`, only those the staff can see through, their guests first while one
-   * runs), turn down outbreaks (with `trouble`, take them on unless an emergency is running) and house calls, prepare
-   * for mishaps (with `trouble`, a Shaman's ward where there is one) and pay any fine.
+   * runs; with `brave`, every one), turn down outbreaks (with `trouble`, take them on unless an emergency is running;
+   * with `brave`, take every one) and house calls, prepare for mishaps (with `trouble`, a Shaman's ward where there is
+   * one) and pay any fine.
    */
   private handleEvents() {
     const s = this.s;
     if (s.offer) {
-      if (!this.flags.emergencies || this.canSeeThrough(s.offer)) this.sim.acceptEmergency();
-      else {
+      const sure = !this.flags.emergencies || this.canSeeThrough(s.offer);
+      if (sure || this.flags.brave) {
+        if (!sure)
+          this.note(
+            `day ${Math.floor(s.day)}: took on an emergency all the same (${s.offer.total} with ${s.offer.condition})`,
+          );
+        this.sim.acceptEmergency();
+      } else {
         this.note(`day ${Math.floor(s.day)}: turned down an emergency (${s.offer.total} with ${s.offer.condition})`);
         this.sim.declineEmergency();
       }
@@ -1619,7 +1708,9 @@ export class Bot {
     if (this.flags.emergencies && s.policy.emergenciesFirst !== !!s.emergency)
       this.sim.setPolicy({ emergenciesFirst: !!s.emergency });
     if (s.outbreakOffer) {
-      if (this.flags.trouble && !s.emergency && !s.offer) this.sim.acceptOutbreak();
+      if (this.flags.brave)
+        this.note(`day ${Math.floor(s.day)}: took on a stress outbreak (${s.outbreakOffer.seed} guests)`);
+      if (this.flags.brave || (this.flags.trouble && !s.emergency && !s.offer)) this.sim.acceptOutbreak();
       else this.sim.declineOutbreak();
     }
     if (s.callOffer) {
@@ -1632,20 +1723,32 @@ export class Bot {
     if (s.visitReport?.bribe !== undefined) this.sim.settleInspection(false);
   }
 
-  /** Borrow when nearly broke, and pay the loan back when flush. */
+  /** Borrow when nearly broke, no further than the style asks the bank for, and pay the loan back when flush. */
   private manageLoan() {
     const s = this.s;
     // the days before payday, with the wages not in the bank: borrow what they come to, rather than be asked
     const nearPayday = Math.ceil((Math.floor(s.day / 30) + 1) * 30 - s.day) <= 5;
     // (a style that borrows only what payday forces leaves it to the bank at payday)
     const asks = this.style.borrow !== 'payday';
-    if (asks && s.money < wagesDue(s) && nearPayday) this.sim.borrow();
+    if (asks && s.money < wagesDue(s) && nearPayday && this.underTop() && this.sim.borrow() && this.flags.loan)
+      this.note(`day ${Math.floor(s.day)}: borrowed for the wages, loan now ${s.loan}`);
     // otherwise keep enough of the bank's limit back to borrow for the wages
     if (asks && s.money < 1500 && s.loan + wagesDue(s) <= loanLimit(s)) {
-      if (this.sim.borrow()) this.note(`day ${Math.floor(s.day)}: borrowed, loan now ${s.loan}`);
-    } else if (s.loan > 0 && s.money > this.reserve('repay')) this.sim.repay();
+      if (this.underTop() && this.sim.borrow()) this.note(`day ${Math.floor(s.day)}: borrowed, loan now ${s.loan}`);
+    } else if (s.loan > 0 && s.money > this.reserve('repay')) this.payBack();
     // saving toward a goal that counts the loan against the money, paying it off only saves the interest
-    else if (s.loan > 0 && this.saving() && s.money > 6000 + this.wages()) this.sim.repay();
+    else if (s.loan > 0 && this.saving() && s.money > 6000 + this.wages()) this.payBack();
+  }
+
+  /** Whether the bot may ask the bank for so many steps more of the loan: no further than its style's top. */
+  private underTop(steps = 1): boolean {
+    return this.s.loan + steps * LOAN_STEP <= this.style.loanTop;
+  }
+
+  /** Pay a step of the loan back, and with `loan` note it, to show how soon the loan is cleared. */
+  private payBack() {
+    if (this.sim.repay() && this.flags.loan)
+      this.note(`day ${Math.floor(this.s.day)}: paid a step back, loan now ${this.s.loan}`);
   }
 
   /** The money goal the bot is saving toward: one is open, and the rest of the star is met or it is halfway there. */
@@ -1691,6 +1794,8 @@ export class Bot {
     // (a first month's payroll is not on the books yet while the staff are still being taken on); to the limit, none
     const headroom = limit ? 0 : Math.max(wagesDue(s), FIRST_PAYROLL);
     if (s.loan + headroom > loanLimit(s)) return false;
+    // and no further than the style asks the bank for
+    if (!this.underTop(Math.ceil((cost + Math.max(1000, wagesDue(s)) - s.money) / LOAN_STEP))) return false;
     // and with the next payday still covered, since a payday the bank cannot meet is a loan, or the end
     while (s.money < cost + Math.max(1000, wagesDue(s))) {
       if (s.loan + LOAN_STEP + headroom > loanLimit(s) || !this.sim.borrow()) return false;
@@ -1712,10 +1817,20 @@ export class Bot {
     return this.s.staff.filter((x) => x.state !== 'leaving').reduce((a, x) => a + x.salary, 0);
   }
 
-  /** What the bot's style keeps back for something, or above which it pays the loan back, at today's wages. */
+  /**
+   * What the bot's style keeps back for something, or above which it pays the loan back, at today's wages. With
+   * `early`, nothing for decor or the corridor's comforts until the center has been open a month.
+   */
   private reserve(what: ReservePurpose | 'repay') {
+    if (this.flags.early && (what === 'decor' || what === 'comforts') && this.firstMonth()) return 0;
     const r = what === 'repay' ? this.style.repay : this.style.reserve[what];
     return this.wages() * r.k + r.c;
+  }
+
+  /** Whether the center has yet to be open a month: before the doors open, or in the month after. */
+  private firstMonth(): boolean {
+    const opened = this.log.openedDay;
+    return opened === null || this.s.day < opened + DAYS_PER_MONTH;
   }
 
   /** Whether the bot markets at all: the flag, and a style that does. */
@@ -1730,7 +1845,11 @@ export class Bot {
 
   // ---- building -------------------------------------------------------------
 
-  /** The bare minimum to open, and a couple of seats. */
+  /**
+   * The bare minimum to open, and a couple of seats. With `early`, before the doors open, a Staff Room too if the money
+   * allows after the opening rooms and the first hires, a Training Room if it can be paid for, and then the treatment
+   * room dressed with what is left.
+   */
   private buildOpening() {
     if (!this.has('reception_desk')) this.placeNearEntrance('reception_desk');
     if (!this.sim.hasRoom('consult')) this.buildRoom('consult');
@@ -1738,6 +1857,41 @@ export class Bot {
     this.hireToFill();
     // a few seats in the lobby from the start
     for (let i = this.count('bench'); i < 2; i++) this.placeNearEntrance('bench');
+    if (!this.flags.early) return;
+    if (!this.sim.hasRoom('staffroom') && this.buildRoom('staffroom'))
+      this.note(`day ${Math.floor(this.s.day)}: a Staff Room before the doors open`);
+    this.earlyTraining();
+    this.dressNew();
+  }
+
+  /**
+   * Whether the game lets a room of a type be built here now, by its own rules: a room of this center, its offering
+   * switched on, its star reached, and its furniture not waiting on karma.
+   */
+  private roomOpen(type: RoomType): boolean {
+    const s = this.s;
+    const def = ROOMS[type];
+    const upTo = unlockedUpTo(s);
+    const offering = def.discipline ?? def.offering;
+    return (
+      roomHere(def, s.center) &&
+      (!offering || offeringOn(s, offering)) &&
+      (def.unlock ?? 0) <= upTo &&
+      def.required.every((t) => itemOpen(ITEMS[t], upTo, []))
+    );
+  }
+
+  /**
+   * With `early`, a Training Room from the first day, as the owner builds one in their first few weeks: as soon as the
+   * game opens one here and the money for it is in hand with only the wages due kept back. Nothing is borrowed for it,
+   * so the loan's few steps are left for the rooms that earn.
+   */
+  private earlyTraining() {
+    const s = this.s;
+    if (this.sim.hasRoom('training') || !this.roomOpen('training')) return;
+    if (!this.afford(fitted('training'), wagesDue(s))) return;
+    if (this.buildRoom('training'))
+      this.note(`day ${Math.floor(s.day)}: a Training Room, as soon as it could be paid for`);
   }
 
   /** Whether any item of a type is placed. */
@@ -2773,9 +2927,9 @@ export class Bot {
    * Dress a treatment room as a good player would, the cheapest prestige first and keeping the floor for equipment:
    * a window ($150 for half a star's worth, up to four, onto the street before the corridor, and onto the corridor
    * only where the room is quiet), then a picture or a hanging on the wall, a rug (it lies under the furniture), and
-   * only then lamps and statues. One thing a day.
+   * only then lamps and statues. One thing a day. True if it put something up.
    */
-  private dress(room: Room, reserve: number) {
+  private dress(room: Room, reserve: number): boolean {
     const s = this.s;
     const w = this.sim.world;
     if (room.windows.length < WINDOW_MAX_BONUS && s.money > WINDOW_COST + reserve) {
@@ -2787,37 +2941,64 @@ export class Bot {
           w.windowValid(room, sp).ok,
       );
       const spot = spots.find((sp) => !w.inside(sp.x + sp.dx, sp.y + sp.dy)) ?? (quiet ? spots[0] : undefined);
-      if (spot && this.sim.toggleWindow(room.id, spot) === 'added') return;
+      if (spot && this.sim.toggleWindow(room.id, spot) === 'added') return true;
     }
     const upTo = unlockedUpTo(s);
     for (const t of DRESS) {
       if (!itemOpen(ITEMS[t], upTo, []) || s.money < ITEMS[t].cost + reserve) continue;
-      if (this.placeIn(room, t)) return;
+      if (this.placeIn(room, t)) return true;
     }
+    return false;
   }
 
-  /** Decor in the treatment rooms until each is a star of prestige above what guests expect. */
+  /** Decor in the treatment rooms until each is a star of prestige above what guests expect: a thing a room a day. */
   private decorate() {
+    const plan = this.decorPlan();
+    for (const room of this.s.rooms.filter((r) => r.done && ROOMS[r.type].discipline)) this.decorateRoom(room, plan);
+  }
+
+  /** What the bot keeps back for decor, the prestige it dresses a room to, and an open goal for a room's prestige. */
+  private decorPlan(): DecorPlan {
     const s = this.s;
-    const reserve = this.reserve('decor');
     const picky = CENTERS[s.center].picky?.expects ?? 0;
-    const target = Math.min(5, Math.max(3, 2 + picky + (s.grade >= 2 ? 1 : 0)));
-    const treat = s.rooms.filter((r) => r.done && ROOMS[r.type].discipline);
+    return {
+      reserve: this.reserve('decor'),
+      target: Math.min(5, Math.max(3, 2 + picky + (s.grade >= 2 ? 1 : 0))),
+      wanted: this.openGoal('prestige'),
+    };
+  }
+
+  /** A piece of decor in a treatment room short of the prestige the bot dresses rooms to. True if it put one up. */
+  private decorateRoom(room: Room, { reserve, target, wanted }: DecorPlan): boolean {
+    const s = this.s;
     // saving for a money goal, only what a prestige goal asks for
-    const wanted = this.openGoal('prestige');
-    for (const room of treat) {
-      if (this.saving() && wanted?.room !== room.type) continue;
-      if (this.sim.prestige(room) >= target || s.money < reserve) continue;
-      // with a goal for patience, decor that stands on the floor, which cheers the corridor outside where guests wait
-      // as well as the room (decor carries through walls, and a window adds only to the room)
-      if (this.flags.layout && !this.openGoal('monthHeals')) {
-        this.dress(room, reserve);
-        continue;
-      }
-      for (const t of ['statue', 'salt_lamp', 'diffuser', 'plant'] as const) {
-        if (s.money < ITEMS[t].cost + reserve) continue;
-        if (this.placeIn(room, t)) break;
-      }
+    if (this.saving() && wanted?.room !== room.type) return false;
+    if (this.sim.prestige(room) >= target || s.money < reserve) return false;
+    // with a goal for patience, decor that stands on the floor, which cheers the corridor outside where guests wait
+    // as well as the room (decor carries through walls, and a window adds only to the room)
+    if (this.flags.layout && !this.openGoal('monthHeals')) return this.dress(room, reserve);
+    for (const t of ['statue', 'salt_lamp', 'diffuser', 'plant'] as const) {
+      if (s.money < ITEMS[t].cost + reserve) continue;
+      if (this.placeIn(room, t)) return true;
+    }
+    return false;
+  }
+
+  /** The treatment rooms the bot has dressed on the day they were built, with `early`. */
+  private dressed = new Set<number>();
+
+  /**
+   * With `early`, each treatment room dressed the day it is built, as far as the money goes, rather than a thing a day:
+   * what `decorate` would put in it, in the same order (with `layout`, windows, pictures and hangings, a rug, and then
+   * lamps), up to the same prestige.
+   */
+  private dressNew() {
+    const plan = this.decorPlan();
+    for (const room of this.s.rooms) {
+      if (!room.done || !ROOMS[room.type].discipline || this.dressed.has(room.id)) continue;
+      this.dressed.add(room.id);
+      // a few more than a room takes, in case something will not go up
+      for (let i = 0; i < 16 && this.decorateRoom(room, plan); i++);
     }
   }
 

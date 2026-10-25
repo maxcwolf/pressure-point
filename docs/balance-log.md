@@ -6,6 +6,79 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 24 October 2026, evening: the bot plays as the owner does
+
+Measured with `yarn balance` on `claude/bot-plays-like-max` (uncommitted, on `main` at `ad1afad`, 0.33.5), every campaign center, seeds 1 to 6, four years a game: the good bot with its four new flags against the same code with `BOT_OFF=loan,early,modest,brave`, which plays as the good bot did before them (its logs are the same as on `main`, byte for byte, at Willow Lane, The Exchange and The Orchard, seeds 1 and 2 over 420 days, and so are `BOT=old`'s). Each flag was also measured on its own, the other three off, over the same games. Profit a month is averaged from month 13 on over the games that reached it, each difference paired seed by seed with its standard error; a mean star month counts a star never earned as month 48. Six seeds is the brief's sample, not the 72 that [balance-harness.md](balance-harness.md) asks for before a call: this entry says what moved and how far, not what to merge.
+
+### 46. The owner's four habits in the good bot: together they make it slower and poorer, and the low prices are most of it
+
+**Found:** the owner's own two games in PostHog, played by one player on 0.30.9 to 0.33.3 rather than today's code, earned Willow Lane's three stars by months 0.8, 2.8 and 5.6 and The Exchange's first two by months 3.9 and 6.4. Those months are why this was built and show which habits a good player has; they are not a target for the bot, and they cannot be set beside its months on today's code. Four habits stood out from the good bot's: a loan of 5 to 15 thousand for one build at a time, repaid within days of having the cash; decor, a Staff Room on day 1 or 2 and a Training Room by day 10 to 24; prices set to 1.1 on day 10 and left there for a year, a busy discipline's techniques at 1.1 to 1.2; and every emergency (7 of 7) and stress outbreak (5 of 5) taken on. The measurement is the before → after table below, on today's code over six seeds.
+
+**Done** (`tests/balance/bot.ts`, `tests/unit/bot-owner.test.ts`, `docs/balance-harness.md`): four flags in `BOT_FLAGS`, on for the good bot, off for `BOT=old`, each switched off by name with `BOT_OFF`:
+
+- **`loan`:** the bot asks the bank for no more than three steps ($15,000) in all, for a build, land, equipment or the wages before a payday; past that, only the loan the bank forces at a payday. It pays a step back whenever a month's wages and $5,000 are in hand, rather than $25,000. Both numbers are the good style's (`loanTop`, new, and `repay`), so the hoarder and the grower keep their own.
+- **`early`:** a Staff Room before the doors open if the money allows after the opening rooms and the first hires; a Training Room from the first day, as soon as the game opens one (the room's center, offering and star, and its furniture's `itemOpen`) and its cost is in hand with only the wages due kept back; each treatment room dressed the day it is built, by `decorate`'s own rules and order (with `layout`: windows, a picture or a hanging, a rug, then lamps) up to the prestige it aims for, a prestige goal still dressed for while saving; and nothing kept back for decor or the corridor's comforts until the center has been open a month.
+- **`modest`:** prices to 1.1 on the first day open, and the good style's tops at 1.1, and 1.2 for a long line's techniques, against 1.4 and 1.3. The cuts for a short or falling reputation stay, and the bank's countdown still takes prices to 1.4.
+- **`brave`:** every emergency taken on, whatever the staff can see through, and every stress outbreak, its carriers calmed as `trouble` calms them (without its Shaman's ward). With `emergencies` on too, `brave` wins: every emergency is taken, and its guests still go first while it runs.
+- **Tests** for each: the loan asked for never past $15,000 and a step paid back once the cushion is there; a Staff Room before Willow Lane's doors open and a Training Room within its first month; prices at 1.1 the first day open and never above; an emergency the staff cannot see through taken on, and an outbreak; `BOT=old` with every flag off, and `BOT_OFF=loan,early,modest,brave` switching off exactly those four.
+
+Two choices the brief left open. The Training Room is not borrowed for: borrowed for on the first day, it left most of the loan's three steps spent at The Exchange, which then earned its stars later (seeds 1 and 2), and it changed nothing where the opening money pays for it. And the cushion stays at $5,000: over seeds 1 to 6 and two years, 19 of about 720 paydays had a step paid back and borrowed again before the payday came, against 11 at $7,500 or $10,000, not every payday.
+
+**Result**, all four flags against none, before → after:
+
+| Center             | Stars at month (seed by seed)                                                                                                                                                                                    | Profit a month                      | Months at a loss   | Lowest reputation  | Months below 15% | Bank at the end                            | Bankruptcies                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------ | ------------------ | ---------------- | ------------------------------------------ | ------------------------------------------------ |
+| Willow Lane        | 1.1/6.7/17.0 · 0.9/7.9/12.2 · 0.8/3.9/10.7 · 0.8/4.0/8.7 · 0.7/6.8/bankrupt day 461 · 0.8/5.8/10.4 → 0.9/15.6/24.3 · 0.9/22.8/24.9 · 0.7/5.9/14.5 · 1.0/9.6/11.9 · 1.0/29.9/38.7 · 1.0/bankrupt day 1150/–       | −$8.2k to $39.5k → −$1.4k to $23.6k | 5 to 14 → 7 to 28  | 21 to 30 → 1 to 30 | 0 → 0 to 10      | −$10.4k to $1408.8k → −$3.6k to $824.4k    | seed 5 day 461 → seed 6 day 1150                 |
+| The Exchange       | 7.8/11.8/18.7 · 4.0/7.9/bankrupt day 311 · 5.9/10.3/16.8 · 7.0/11.1/16.7 · 6.6/9.9/22.0 · 6.4/10.5/20.6 → 13.6/17.0/28.9 · 8.3/12.7/17.9 · 9.5/12.8/19.9 · 3.8/14.0/24.9 · 10.3/14.4/24.5 · 7.7/12.6/18.7        | $13.4k to $33.1k → $5.9k to $18.9k  | 7 to 14 → 8 to 18  | 30 → 29 to 30      | 0 (unchanged)    | −$8.9k to $1143.6k → $209.1k to $708.3k    | seed 2 day 311 → none                            |
+| The Boardwalk      | 6.8/15.0/20.5 · 4.8/14.7/20.1 · 5.9/11.7/16.8 · 4.5/8.9/16.2 · 4.8/9.9/15.8 · 4.6/8.7/15.0 → 13.5/bankrupt day 611/– · 8.8/–/– · 9.8/–/– · 11.9/15.0/25.2 · 13.7/–/– · 12.6/25.9/bankrupt day 971                | $8.0k to $21.8k → −$6.3k to $3.8k   | 8 to 13 → 13 to 28 | 28 to 30 → 30      | 0 (unchanged)    | $353.7k to $750.2k → −$23.6k to $133.5k    | none → seed 1 day 611, seed 6 day 971            |
+| High Pines         | 4.4/7.8/18.5 · 3.9/7.9/25.9 · 9.0/bankrupt day 521/– · 5.7/–/– · 3.9/7.5/12.2 · 7.7/11.5/25.1 → 5.9/10.6/20.8 · 5.8/9.1/bankrupt day 371 · 5.6/12.8/19.6 · 3.9/12.8/23.3 · bankrupt day 1180/–/– · 4.9/20.5/30.3 | −$1.5k to $29.0k → −$1.4k to $14.5k | 7 to 17 → 9 to 25  | 6 to 30 → 0 to 30  | 0 to 2 → 0 to 8  | −$5.8k to $970.2k → −$15.3k to $498.9k     | seed 3 day 521 → seed 2 day 371, seed 5 day 1180 |
+| The Orchard Estate | 4.5/9.9/15.1 · 5.4/9.4/15.5 · bankrupt day 161/–/– · 6.4/10.6/15.4 · bankrupt day 130/–/– · 3.8/7.8/12.5 → 5.1/11.6/20.0 · 7.2/11.7/20.6 · 6.5/10.9/17.8 · 4.6/11.2/19.7 · 5.0/10.3/16.0 · 5.2/9.1/13.8          | $58.3k to $72.3k → $38.4k to $55.8k | 4 to 7 → 7 to 12   | 20 to 30 → 5 to 30 | 0 → 0 to 1       | −$16.0k to $2742.4k → $1322.9k to $2004.6k | seed 3 day 161, seed 5 day 130 → none            |
+
+| Center        | Profit a month               | Games lost | Third stars | Mean star month |
+| ------------- | ---------------------------- | ---------- | ----------- | --------------- |
+| Willow Lane   | $22.2k → $7.9k (−14.3 ±7.0)  | 1 → 1      | 5 → 5       | 8.2 → 16.6      |
+| The Exchange  | $24.1k → $12.0k (−13.5 ±4.6) | 1 → 0      | 5 → 6       | 13.4 → 15.1     |
+| The Boardwalk | $16.1k → −$0.6k (−16.8 ±2.5) | 0 → 2      | 6 → 1       | 11.4 → 31.6     |
+| High Pines    | $17.2k → $6.9k (−10.5 ±7.8)  | 1 → 2      | 4 → 4       | 19.1 → 21.0     |
+| The Orchard   | $66.6k → $44.0k (−21.8 ±3.3) | 2 → 0      | 4 → 6       | 22.5 → 11.5     |
+
+**Each flag on its own**, the other three off, against none: the paired difference in profit a month (thousands, ± its standard error) · games lost · mean star month.
+
+| Flags            | Willow Lane           | The Exchange          | The Boardwalk         | High Pines            | The Orchard           |
+| ---------------- | --------------------- | --------------------- | --------------------- | --------------------- | --------------------- |
+| none (before)    | $22.2k · 1 · 8.2      | $24.1k · 1 · 13.4     | $16.1k · 0 · 11.4     | $17.2k · 1 · 19.1     | $66.6k · 2 · 22.5     |
+| `loan`           | −0.8 ±6.9 · 0 · 8.8   | −2.1 ±3.3 · 0 · 11.9  | +4.6 ±4.5 · 0 · 11.2  | −5.2 ±3.3 · 1 · 16.1  | −8.3 ±3.1 · 0 · 11.3  |
+| `early`          | +9.8 ±7.8 · 0 · 7.7   | −2.1 ±2.8 · 0 · 13.7  | −7.2 ±3.4 · 1 · 20.6  | −8.6 ±5.6 · 2 · 19.8  | −5.6 ±13.0 · 2 · 22.0 |
+| `modest`         | −1.6 ±8.1 · 1 · 8.3   | −12.0 ±4.1 · 0 · 15.0 | −14.9 ±3.3 · 1 · 19.5 | −14.7 ±3.0 · 1 · 23.3 | −26.4 ±5.7 · 3 · 28.8 |
+| `brave`          | +8.0 ±7.0 · 0 · 6.7   | +1.6 ±5.0 · 0 · 11.7  | −4.0 ±5.8 · 1 · 14.2  | +0.7 ±3.6 · 1 · 18.9  | −3.8 ±3.1 · 2 · 22.6  |
+| all four (after) | −14.3 ±7.0 · 1 · 16.6 | −13.5 ±4.6 · 0 · 15.1 | −16.8 ±2.5 · 2 · 31.6 | −10.5 ±7.8 · 2 · 21.0 | −21.8 ±3.3 · 0 · 11.5 |
+
+**Each flag on the old bot** (`BOT=old BOT_ON=<flag>`), Willow Lane seeds 1 and 2, 420 days, to see that each does what it says:
+
+| `BOT=old` with | Stars at month (seed 1 · 2) | What its notes and months show                                                                                                                                                                                 |
+| -------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| nothing        | 1.1/–/– · 0.9/3.9/–         | Owes $30,000 and $35,000 at the end, at peaks of $30,000 and $45,000                                                                                                                                           |
+| `loan`         | 1.1/11.9/– · 0.9/–/–        | Never asked past $15,000; the bank's payday loans took it to $20,000 and $25,000; 5 and 4 steps paid back, ending at $10,000 and $15,000 owed, and $8,600 and $14,000 better off net of the loan than without  |
+| `early`        | 0.8/8.0/– · 0.8/–/–         | A Staff Room on day 0 (day 1 without), the Massage Suite at prestige 3 before the doors open, 35% reputation by day 13 on both seeds (22 and 13 without), a Training Room on day 24 and 26 (33 and 28 without) |
+| `modest`       | 1.1/–/– · 0.9/–/–           | Prices at 1.1 from the first day open to the end, where the old bot never moves them from 1                                                                                                                    |
+| `brave`        | 1.1/–/– · 0.9/3.9/–         | The old bot already takes every emergency; seed 2 took on 4 stress outbreaks, seed 1 was offered none                                                                                                          |
+
+Two seeds over 14 months say no more than that: the old bot loses money at Willow Lane on both, and seed 2's second star at month 3.9 comes or goes with any change.
+
+**Read:**
+
+- **The low prices are most of the loss.** `modest` on its own costs $12k to $26k a month at The Exchange, The Boardwalk, High Pines and The Orchard, each by nearly three standard errors or more, and brings stars later at four centers. The good bot only ever raised prices while fewer than one guest in ten was put off by them and reputation was comfortable, so at 1.4 few were put off, and 1.1 can win back at most those while it takes a fifth off every fee. Prices at month 12 are 1.0 to 1.1 after, against 1.2 to 1.4 before.
+- **`loan` saves The Orchard's opening.** On its own it loses none of six Orchard games against two, and the mean star month falls from 22.5 to 11.3. Before, the bot borrowed to $45,000 in its first month to build the opening's rooms (entry 39's cliff), so the first paydays went into the red with no loan left; capped at $15,000 on its own asking, the bank's payday loans still have room. Elsewhere it is about even, and High Pines and The Orchard make $5k to $8k a month less, likely the growth it no longer borrows for. The bot's peak loan falls from $42k to $50k a center to $22k to $45k.
+- **`early` helps Willow Lane** (+$9.8k a month, within the noise, no game lost against one, stars a little sooner) and costs The Boardwalk and High Pines $7k to $9k a month with a game more lost at each. Not looked into.
+- **`brave` is about even:** within the noise at every center, with a game fewer lost at Willow Lane and The Exchange and one more at The Boardwalk. With all four on, the games logged 113 failed emergencies against 64 before, and took on 82 stress outbreaks or more (the bot's notes stop at 150 a game). Calmed as soon as their carriers are seen, the outbreaks rarely last to the end of a day: only 2 were still running at one.
+- **Together they cost $10k to $22k a month at every center**, more than `modest` alone at Willow Lane, The Exchange and The Boardwalk, with the third star in 1 Boardwalk game of 6 against 6, and Willow Lane's mean star month doubled. Low prices with a loan held to three steps likely leave the bot little to grow on: its peak loan and its profit both fall. The Orchard's gain is `loan`'s: no game lost, and every third star.
+- **On today's code these four habits do not make the bot quicker.** Whatever made the owner's games quick on 0.30.9 to 0.33.3, it is not these habits as the bot can play them now, or not all of them together.
+
+**Still open:**
+
+- **Which flags stay on.** As the brief asked, all four are on for the good bot. Measured, `modest` costs it most, `brave` is even, `loan` saves Orchard games, and `early` is mixed; `BOT_OFF=modest` keeps the other three. The call is the owner's, and should be made on the 72 seeds a center the harness asks for.
+- **Why `early` costs The Boardwalk and High Pines.**
+
 ## 23 October 2026, after midnight: a Posture Lab that runs itself
 
 Measured with `yarn balance`, the good bot, four years a game, seeds 1 to 72 a center read as two halves of 36, profit a month averaged from month 13 on over the games that reached it, each difference paired seed by seed with its standard error (each half's mean in brackets). `main` at `db228ab` against `feat/posture-lab-machine` at `05a6ba7`, and that branch against itself with `BOT_OFF=lab`.
