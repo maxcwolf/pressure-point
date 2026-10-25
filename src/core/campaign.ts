@@ -7,6 +7,8 @@ import {
   type CenterId,
   decorDef,
   type DecorKey,
+  FOUNDATION_GIFTS,
+  FOUNDATION_KARMA,
   type ItemDef,
   ITEMS,
   type ItemType,
@@ -16,10 +18,13 @@ import type { LessonId } from './sim/lessons';
 
 /** The best star count earned in each campaign center. */
 export type CampaignStars = Partial<Record<CenterId, number>>;
+/** The most gifts to the Foundation made in each campaign center. */
+export type CampaignGifts = Partial<Record<CenterId, number>>;
 
 /** Everything the campaign remembers between games. */
 export interface CampaignProgress {
   stars: CampaignStars;
+  gifts: CampaignGifts;
   /** Achievements earned, each once, in any center. */
   achieved: AchievementId[];
   /** Items unlocked for good with karma. */
@@ -34,7 +39,7 @@ export interface CampaignProgress {
 
 /** A campaign with nothing earned yet. */
 export function freshCampaign(): CampaignProgress {
-  return { stars: {}, achieved: [], unlocked: [], decor: [], bonus: 0, lessons: [] };
+  return { stars: {}, gifts: {}, achieved: [], unlocked: [], decor: [], bonus: 0, lessons: [] };
 }
 
 /** Whether a campaign center can be played: the first always can, the rest once the one before has a star. */
@@ -51,6 +56,12 @@ export function withStars(stars: CampaignStars, id: CenterId, earned: number): C
   return { ...stars, [id]: earned };
 }
 
+/** The gifts made after a game has made some: the most ever in each center, so a replay never takes any away. */
+export function withGifts(gifts: CampaignGifts, id: CenterId, made: number): CampaignGifts {
+  if (!CAMPAIGN.includes(id) || made <= (gifts[id] ?? 0)) return gifts;
+  return { ...gifts, [id]: Math.min(made, FOUNDATION_GIFTS.length) };
+}
+
 /** The achievements earned after a game, adding any new ones in the order they are listed. */
 export function withAchievements(achieved: readonly AchievementId[], more: readonly AchievementId[]): AchievementId[] {
   return (Object.keys(ACHIEVEMENTS) as AchievementId[]).filter((id) => achieved.includes(id) || more.includes(id));
@@ -62,10 +73,13 @@ export function nextCenter(id: CenterId): CenterId | undefined {
   return i < 0 ? undefined : CAMPAIGN[i + 1];
 }
 
-/** All the karma earned: some for every campaign star, each achievement's own, and any added in the cheat console. */
+/**
+ * All the karma earned: some for every campaign star and every gift to the Foundation, each achievement's own, and any
+ * added in the cheat console.
+ */
 export function karmaEarned(p: CampaignProgress): number {
   let total = p.bonus;
-  for (const id of CAMPAIGN) total += (p.stars[id] ?? 0) * STAR_KARMA;
+  for (const id of CAMPAIGN) total += (p.stars[id] ?? 0) * STAR_KARMA + (p.gifts[id] ?? 0) * FOUNDATION_KARMA;
   for (const id of p.achieved) total += ACHIEVEMENTS[id].karma;
   return total;
 }

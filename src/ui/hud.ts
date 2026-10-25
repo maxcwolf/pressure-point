@@ -459,8 +459,8 @@ export class HudState {
       else if (e.type === 'star') this.raise('star', e.stars);
       else if (e.type === 'awards') this.raise('awards');
       else if (e.type === 'visit') this.raise('visit');
-      // the app notes an achievement for the campaign; its toast says it
-      else if (e.type === 'achievement') continue;
+      // the app notes an achievement or a gift for the campaign; its toast says it
+      else if (e.type === 'achievement' || e.type === 'gift') continue;
       else if (e.type === 'tutorial') this.endTutorial(e.what, e.step);
       else if (e.type === 'lesson') this.raiseLesson(e.id, e.about);
       else this.float(e.text, e.kind, e.x, e.y);

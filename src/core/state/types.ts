@@ -563,6 +563,8 @@ export interface Ledger {
   fines: number;
   /** What treatment machines cost to run, in power and parts each month, and in repairs when they overload. */
   upkeep: number;
+  /** Gifts to the Pressure Point Foundation. */
+  gifts: number;
   /** Fees for places in Qi Gong classes. */
   classes: number;
   /** Magic mushrooms sold under the Shop Counter. */
@@ -896,6 +898,8 @@ export interface GameState {
   trophies: Trophy[];
   /** Campaign achievements earned already, in this game or an earlier one, so none is awarded twice. */
   achieved: AchievementId[];
+  /** How many of the Foundation's gifts have been made in this center, in this game or an earlier one. */
+  gifts: number;
   /**
    * Payday has come and the bank cannot cover the wages: the game waits while the player decides whether to borrow
    * `loan` to cover them or pay them into the red, or, with `loan` 0, hears that the bank will lend no more and the

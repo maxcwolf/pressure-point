@@ -108,6 +108,7 @@ import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } fr
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { flurrying } from './flurries';
+import { endow, foundationOpen, giftBlocker, nextGift } from './foundation';
 import { objectiveDetail } from './goals';
 import { admitGuests, type ArrivalPace, arrivalPace, guestCap, intakeLimit, setIntakeCap, updateGuest } from './guests';
 import { buyPlot, landOffers, renamePlot, updateLand } from './land';
@@ -783,6 +784,25 @@ export class Sim {
   /** Pay for a campaign and start it. */
   startCampaign(kind: CampaignKind, months: number, condition?: ConditionId): boolean {
     const result = startCampaign(this.ctx, kind, months, condition);
+    this.afterSpending();
+    return result;
+  }
+  // ---- The Foundation --------------------------------------------------------
+  /** Whether the Foundation takes gifts from this game: every star here earned. */
+  foundationOpen(): boolean {
+    return foundationOpen(this.s);
+  }
+  /** What the next gift costs, or null once every gift has been made. */
+  nextGift(): number | null {
+    return nextGift(this.s);
+  }
+  /** Why the next gift cannot be made, or '' if it can. */
+  giftBlocker(): string {
+    return giftBlocker(this.s);
+  }
+  /** Make the next gift to the Foundation. */
+  endow(): boolean {
+    const result = endow(this.ctx);
     this.afterSpending();
     return result;
   }
