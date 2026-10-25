@@ -158,6 +158,10 @@ describe('achievements', () => {
     checkAchievements(ctx);
     expect(ctx.s.achieved).toEqual([]);
     ctx.s.tally.priced = 0;
+    // a fair month at standard prices is no feat: they put nobody off
+    checkAchievements(ctx);
+    expect(ctx.s.achieved).toEqual([]);
+    ctx.s.prices = { swedish: 1.3 };
     ctx.s.stats.busted = 1;
     ctx.s.stats.mushroomSales = 1000;
     checkAchievements(ctx);

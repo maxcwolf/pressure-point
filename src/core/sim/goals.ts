@@ -5,7 +5,7 @@ import { money } from '../format';
 import type { Tally } from '../state/types';
 import { prestige, PRESTIGE_STEP, prestigeTerms } from './ambience';
 import type { SimContext } from './context';
-import { projectedCashflow } from './economy';
+import { averagePrice, projectedCashflow } from './economy';
 import { gradeDef, idleNote, standingPoints } from './standing';
 
 /** One objective as the player sees it: what to do, whether it is done, and how far along it is (0 to 1). */
@@ -149,11 +149,13 @@ export function objectiveFor(ctx: SimContext, goal: GoalSpec): Objective {
     }
     case 'fairMonth': {
       const months = recentMonths(ctx);
+      // standard prices put nobody off, so only a center charging more has anything to show for it
+      const above = averagePrice(s) > 1;
       /** How far a month gets: its heals toward the count, and nothing once anyone is put off by the prices. */
-      const score = (t: Tally) => (t.priced ? 0 : Math.min(1, t.healed / goal.count));
+      const score = (t: Tally) => (t.priced || !above ? 0 : Math.min(1, t.healed / goal.count));
       return {
-        label: `Heal ${goal.count} guests in a month with nobody put off by the prices`,
-        done: months.some((t) => t.healed >= goal.count && t.priced === 0),
+        label: `Heal ${goal.count} guests in a month with nobody put off by the prices, charging above standard prices`,
+        done: above && months.some((t) => t.healed >= goal.count && t.priced === 0),
         progress: Math.max(...months.map(score)),
         detail: monthsDetail(months, (t) => `${t.healed} healed, ${t.priced} put off by the prices`),
       };
@@ -344,7 +346,8 @@ export function objectiveDetail(ctx: SimContext, goal: GoalSpec): string[] {
         `${when}: ${t.healed} healed (${goal.count} needed), ${t.priced} put off by the prices`;
       const lines = [line('This month', s.tally)];
       if (last) lines.push(line('Last month', last));
-      if (recentMonths(ctx).some((t) => t.healed >= goal.count && t.priced === 0)) lines.push('Met');
+      if (averagePrice(s) <= 1) lines.push('Prices are at standard: raise them first');
+      else if (recentMonths(ctx).some((t) => t.healed >= goal.count && t.priced === 0)) lines.push('Met');
       else if (s.tally.priced) lines.push('Cannot be met this month: someone has been put off by the prices');
       else
         lines.push(`${plural(goal.count - s.tally.healed, 'more heal')} this month, with nobody put off by the prices`);

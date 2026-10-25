@@ -299,9 +299,10 @@ describe('each kind of goal', () => {
 
   it('asks for so many guests healed in a month with nobody put off by the prices', () => {
     const goal: GoalSpec = { kind: 'fairMonth', count: 30 };
+    ctx.s.prices = { swedish: 1.3 };
     ctx.s.tally = { ...emptyTally(), healed: 12 };
     expect(check(goal)).toEqual({
-      label: 'Heal 30 guests in a month with nobody put off by the prices',
+      label: 'Heal 30 guests in a month with nobody put off by the prices, charging above standard prices',
       done: false,
       progress: 0.4,
       detail: 'This month: 12 healed, 0 put off by the prices',
@@ -317,6 +318,9 @@ describe('each kind of goal', () => {
     // and one with both is met
     ctx.s.months = [month({ healed: 30 })];
     expect(check(goal)).toMatchObject({ done: true, progress: 1 });
+    // but not at standard prices, which put nobody off anyway
+    ctx.s.prices = {};
+    expect(check(goal)).toMatchObject({ done: false, progress: 0 });
   });
 
   it('counts mushroom finds and takings', () => {

@@ -163,4 +163,18 @@ describe('the numbers behind a goal', () => {
       '18 more days',
     ]);
   });
+
+  it('for a fair month: the heals and anyone priced out, and a word when prices are at standard', () => {
+    const { sim, s } = openCenter(1);
+    const goal = { kind: 'fairMonth', count: 30 } as const;
+    s.tally.healed = 12;
+    expect(sim.objectiveDetail(goal)).toEqual([
+      'This month: 12 healed (30 needed), 0 put off by the prices',
+      'Prices are at standard: raise them first',
+    ]);
+    s.prices = { swedish: 1.3 };
+    expect(sim.objectiveDetail(goal).at(-1)).toBe('18 more heals this month, with nobody put off by the prices');
+    s.tally.priced = 1;
+    expect(sim.objectiveDetail(goal).at(-1)).toBe('Cannot be met this month: someone has been put off by the prices');
+  });
 });
