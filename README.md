@@ -62,7 +62,7 @@ Five centers, each with its own building, guests, goals and quirks, and three st
 ### Karma: unlocks that stay unlocked
 
 <p align="center">
-  <img src="docs/assets/karma.png" alt="Earn karma: 2 for each campaign star and 1 to 3 for each achievement, 52 in all. Spend it on items such as a Koi Pond, a Fireplace and a Massage Chair, and on floors and walls" width="100%" />
+  <img src="docs/assets/karma.png" alt="Earn karma: 2 for each campaign star and 1 to 3 for each achievement, 52 in all. Spend it on items such as a Koi Pond, a Fireplace and a Massage Chair, the Carousel of Rebirth, and floors and walls" width="100%" />
 </p>
 
 Every star and achievement earns **✨ karma**. Spend it in the karma shop on items you can't get any other way, or to unlock one before its star comes round. Whatever you buy stays unlocked in every center and the sandbox.

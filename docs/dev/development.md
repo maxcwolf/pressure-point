@@ -99,10 +99,11 @@ Before each commit, a second Husky hook runs ESLint and Prettier over the staged
 | `electron/backup.ts`  | Desktop app: a copy of every save in files, put back if the page's storage loses them                                                                           |
 | `electron/updates.ts` | Desktop app: updates itself from the newest GitHub release ([dev/releasing.md](releasing.md#updates))                                                           |
 | `tests/`              | One folder per suite: `unit/`, `e2e/`, `desktop/`, `visual/`, `perf/`, `bench/`, and `balance/` for the playtest bot                                            |
-| `scripts/`            | The scripts behind `yarn brand`, `yarn icons`, `yarn buttons` and `yarn announcer`, the desktop build and the release notes                                     |
+| `scripts/`            | The scripts behind `yarn brand`, `yarn icons`, `yarn buttons`, `yarn readme` and `yarn announcer`, the desktop build and the release notes                      |
 | `brand/`              | The app icon and the logo, drawn in code. `yarn brand` renders them to `build/` (with a rounded-square `icon-mac.png` for macOS), `public/` and `src/ui/theme/` |
 | `src/ui/icons/`       | The game's icons, one SVG each. `yarn icons` builds the sprite sheet, the atlas and the ids from them; `/icons.html` shows them all                             |
 | `brand/buttons.mjs`   | The README's download buttons, in the game's style. `yarn buttons` renders them to `docs/assets/`                                                               |
+| `brand/readme.mjs`    | The README's pictures of the numbers, karma and progress. `yarn readme` draws them from the game's data to `docs/assets/`                                       |
 | `brand/announcer/`    | The announcer's clean recordings. `yarn announcer` (macOS) adds the speaker effect and writes them to `src/sounds/announcer/`                                   |
 
 Disciplines, modalities, conditions, courses and equipment are all defined in `src/core/data/`. Adding a discipline means an entry in `DISCIPLINES`, a room, its items and a staff role, its modalities and conditions, and a model per item in `render/models/items/`. The simulation, menus and Settings pick it up from the data.
