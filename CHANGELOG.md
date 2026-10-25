@@ -9,6 +9,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **A simpler Willow Lane.** Qi Gong classes are no longer on offer at Willow Lane, so its second star brings the Kneadmaster alone, and no Instructor applies. The campaign meets the classes at The Exchange's second star, as its card now says. Willow Lane sells one plot a star, the unit next door, the old bakery and the yard behind: the back room and the shop to the west are no longer for sale, and a game that bought either keeps the land.
 - **Practice Spots face the Instructor.** A Practice Spot turns to face the Instructor's Mat as it is placed or moved, with an arrow showing which way, and R turns it by hand instead. Spots already placed keep the way they face.
 - **Promote and pay raises from the Staff menu.** Each row has a button to promote whoever is ready or raise their pay, gold for whoever asks, and when several are waiting, one button promotes them all or pays every raise asked for, with what it adds to the monthly payroll.
+- **Three hidden achievements.** Three new achievements show as mystery cards on the Achievements tab until they are earned. One is for a month in which nobody is put off by the prices; the other two are for the mushrooms, and you will know them when you see them. To keep finishing the campaign enough to unlock everything, the Bookcase, Mindfulness Arcade, Espresso Machine and Koi Pond each cost one more karma.
 
 ## v0.33.6
 
