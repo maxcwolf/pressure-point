@@ -92,7 +92,7 @@ test.describe('starting out', () => {
     await page.getByRole('button', { name: 'Sandbox' }).click();
     await page.getByRole('button', { name: 'Start building' }).click();
     await page.waitForFunction(() => !!window.pp);
-    await expect(page.locator('#sys').locator('[data-tip="Music"]')).toHaveClass(/off/);
+    await expect(page.locator('#sys').locator('[data-tip="Music"]')).toContainClass('off');
     await expect(page.locator('#sys').locator('[data-tip="Sound effects"]').locator('use')).toHaveAttribute(
       'href',
       '#icon-ui-mute',
@@ -250,14 +250,14 @@ test.describe('room blueprints', () => {
   test('the Build button stays locked until the required furniture is in', async ({ game, page }) => {
     await startSuite(game);
     const build = page.locator('#plan').getByRole('button', { name: 'Build room' });
-    await expect(build).toHaveClass(/locked/);
+    await expect(build).toContainClass('locked');
     await build.click();
     await page.keyboard.press('Enter');
     expect(await game.eval((pp) => pp.state.rooms[0]!.done)).toBe(false);
     await game.placeHeld();
     await expect(page.locator('#plan .chip.done')).toHaveCount(2);
     await game.placeHeld();
-    await expect(build).not.toHaveClass(/locked/);
+    await expect(build).not.toContainClass('locked');
     await build.click();
     expect(await game.eval((pp) => [pp.state.rooms[0]!.done, pp.state.money])).toEqual([true, 23000]);
     await expect(page.locator('#inspector')).toContainText('Massage Suite');
@@ -923,7 +923,7 @@ test.describe('staff', () => {
     await expect(table.locator('tr', { hasText: 'Role' })).toHaveCount(1);
     const served = table.locator('tr', { hasText: 'Guests served' }).locator('td');
     await expect(served).toHaveText(['12', '30']);
-    await expect(served.nth(1)).toHaveClass(/ahead/);
+    await expect(served.nth(1)).toContainClass('ahead');
     await expect(table.locator('tr', { hasText: 'Swedish' }).locator('td')).toHaveText(['✔', '—']);
 
     // going to the other keeps the two compared, the other way round
@@ -1896,7 +1896,7 @@ test.describe('the Items menu', () => {
     });
     await game.menu('Items');
     const desk = game.card('Reception Desk');
-    await expect(desk).toHaveClass(/poor/);
+    await expect(desk).toContainClass('poor');
     await expect(desk).toContainText('Need $900 more');
     await desk.click();
     expect(await game.eval((pp) => pp.tools.tool.kind)).toBe('none');
@@ -2152,11 +2152,11 @@ test.describe('the business side', () => {
   test('the Shop Counter is in the Items menu from the first star', async ({ game }) => {
     await game.start();
     await game.menu('Items');
-    await expect(game.card('Shop Counter')).toHaveClass(/locked/);
+    await expect(game.card('Shop Counter')).toContainClass('locked');
     await game.eval((pp) => (pp.state.stars = 1));
     await game.menu('Items');
     await game.menu('Items');
-    await expect(game.card('Shop Counter')).not.toHaveClass(/locked/);
+    await expect(game.card('Shop Counter')).not.toContainClass('locked');
   });
 });
 
@@ -2236,7 +2236,7 @@ test.describe('reading the center', () => {
     if (await keepHealing.isVisible()) await keepHealing.click();
     await page.locator('#stats .rep').click();
     const menu = page.locator('#menu');
-    await expect(menu.getByRole('button', { name: /Reputation/ })).toHaveClass(/on/);
+    await expect(menu.getByRole('button', { name: /Reputation/ })).toContainClass('on');
     await expect(menu).toContainText('Word of mouth');
     await expect(menu.locator('.reviews li').first()).toContainText('day');
     await menu.getByRole('button', { name: /Casebook/ }).click();
@@ -2457,17 +2457,17 @@ test.describe('the tutorial', () => {
     await expect(page.locator('#objectives')).toContainText('Tutorial · 1 of');
     // the ring is on the pause button, and pausing moves on to the desk
     const pause = page.locator('#stats').getByRole('button', { name: 'Pause (Space)' });
-    await expect(pause).toHaveClass(/guide/);
+    await expect(pause).toContainClass('guide');
     await pause.click();
     await expect(card).toContainText('step 3 of');
     await expect(card).toContainText('Place a Reception Desk');
     await expect(page.locator('#objectives')).toContainText('Tutorial · 2 of');
     // the ring is on the Items button, then follows into the menu to the card wanted
     const items = page.locator('#buildbtns').getByRole('button', { name: 'Items' });
-    await expect(items).toHaveClass(/guide/);
+    await expect(items).toContainClass('guide');
     await game.menu('Items');
-    await expect(items).not.toHaveClass(/guide/);
-    await expect(game.card('Reception Desk')).toHaveClass(/guide/);
+    await expect(items).not.toContainClass('guide');
+    await expect(game.card('Reception Desk')).toContainClass('guide');
     await expect(page.locator('#menu .guide')).toHaveCount(1);
     await game.menu('Items');
     await card.getByRole('button', { name: 'Skip the tutorial' }).click();
@@ -2709,13 +2709,13 @@ test.describe('the campaign', () => {
     await panel.getByRole('button', { name: 'Play Willow Lane again' }).click();
     await page.waitForFunction(() => !!window.pp);
     await game.menu('Items');
-    await expect(game.card('Bonsai')).not.toHaveClass(/locked/);
+    await expect(game.card('Bonsai')).not.toContainClass('locked');
     await expect(game.card('Mindfulness Arcade')).toContainText('Star 1, or 3 karma');
     await game.card('Mindfulness Arcade').click();
     await expect(page.locator('#modal')).toContainText('Unlock the Mindfulness Arcade?');
     await page.getByRole('button', { name: 'Unlock for 3 karma' }).click();
     await expect(page.locator('#modal')).toBeEmpty();
-    await expect(game.card('Mindfulness Arcade')).not.toHaveClass(/locked/);
+    await expect(game.card('Mindfulness Arcade')).not.toContainClass('locked');
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pressure-point-campaign')!).unlocked)).toEqual([
       'bonsai',
       'arcade_machine',
@@ -2752,9 +2752,9 @@ test.describe('the sandbox', () => {
       ]),
     ).toEqual([200000, true, false, true, false]);
     await game.menu('Items');
-    await expect(game.card('Koi Pond')).not.toHaveClass(/locked/);
+    await expect(game.card('Koi Pond')).not.toContainClass('locked');
     await game.menu('Rooms');
-    await expect(game.card('Acupuncture Clinic')).not.toHaveClass(/locked/);
+    await expect(game.card('Acupuncture Clinic')).not.toContainClass('locked');
 
     // the next sandbox game, from the pause menu, is set up the same way
     await game.eval((pp) => Object.assign(window, { oldState: pp.state }));
