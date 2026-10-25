@@ -416,17 +416,24 @@ export class World {
   roomOfItem(it: Item): Room | undefined {
     return this.roomAt(it.x, it.y);
   }
-  /** Corridor items always work; room items once the room is finished and not flooded. Broken items never do. */
-  usable(it: Item): boolean {
+  /**
+   * Corridor items always work; room items once the room is finished, not flooded and not on fire, unless `fireproof`,
+   * as a Fire Extinguisher is: it is there for a fire. Broken items never do.
+   */
+  usable(it: Item, fireproof = false): boolean {
     if (it.wear >= 100 || this.stoppedByMishap(it)) return false;
     // a Mechanic is on the way to install an upgrade: the guest on it is finished with, and nobody else is called
     if (it.upgradePaid && it.claimedBy && !it.serving) return false;
     const r = this.roomOfItem(it);
-    return !r || (r.done && !this.flooded(r));
+    return !r || (r.done && !this.flooded(r) && (fireproof || !this.burning(r)));
   }
   /** Whether a storm has flooded a room, and the water is not all mopped up yet. */
   flooded(r: Room): boolean {
     return this.s.litter.some((l) => l.flood === r.id);
+  }
+  /** Whether something in a room is on fire. */
+  burning(r: Room): boolean {
+    return this.s.blazes.some((b) => b.room === r.id);
   }
   /** Whether the mishap under way has taken an item out of action, as a power cut does to anything with a plug. */
   stoppedByMishap(it: Item): boolean {

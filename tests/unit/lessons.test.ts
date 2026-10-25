@@ -1,9 +1,10 @@
 // The tutorial's lessons come the first time each thing happens, once a game each and never two in a day, about whoever
 // it happened to, and not at all with the lessons off. The one on money comes as the bank first runs short of a payday,
-// the clock paused or not, and the one on the weather as it first gets indoors with nothing to warm or cool the place.
+// the clock paused or not, the one on the weather as it first gets indoors with nothing to warm or cool the place,
+// and the one on fire with the first fire, about it while it burns.
 import { describe, expect, it } from 'vitest';
 
-import { type CenterId, DAYS_PER_MONTH, type ItemType } from '../../src/core/data';
+import { type CenterId, DAYS_PER_MONTH, ITEMS, type ItemType } from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
 import { monthlyPayroll } from '../../src/core/sim/economy';
 import type { SimEvent } from '../../src/core/sim/events';
@@ -330,5 +331,47 @@ describe('the lesson on the weather', () => {
       const { sim } = weatherGame('willow', month);
       expect(weatherDue(sim), `month ${month}`).toBe(false);
     }
+  });
+});
+
+describe('the lesson on fire', () => {
+  /** A game where every lesson but the one on fire has been shown, so only it can come. */
+  function fireGame() {
+    const game = lessonGame();
+    game.s.seenTips.push(...LESSON_IDS.filter((id) => id !== 'fire').map(lessonTip));
+    return game;
+  }
+
+  it('comes once a machine has caught fire, about the fire while it burns', () => {
+    const { sim, s } = fireGame();
+    const ctx = ctxOf(sim);
+    checkLessons(ctx);
+    expect(lessons(sim.drain())).toEqual([]);
+    s.stats.fires = 1;
+    s.blazes = [{ item: 42, room: 1, t: 0, spread: 0 }];
+    checkLessons(ctx);
+    expect(lessons(sim.drain())).toEqual([{ type: 'lesson', id: 'fire', about: { kind: 'item', id: 42 } }]);
+  });
+
+  it('offers to place a Fire Extinguisher once the fire is out', () => {
+    const { sim, s } = fireGame();
+    s.stats.fires = 1;
+    checkLessons(ctxOf(sim));
+    expect(lessons(sim.drain())).toEqual([{ type: 'lesson', id: 'fire' }]);
+    expect(LESSONS.fire.showMe).toEqual({ kind: 'place', type: 'fire_extinguisher' });
+  });
+
+  it('shows the machine that caught fire, and says what each answer costs', () => {
+    const { s } = fireGame();
+    expect(lessonCard('fire', s).panels[0]?.icon).toBe('item-stone-kiln');
+    s.fire = { item: 'kneadmaster', burnt: 2, fee: 0, out: true };
+    const card = lessonCard('fire', s);
+    expect(card.title).toBe('Fire!');
+    expect(card.panels[0]?.icon).toBe(ITEMS.kneadmaster.icon);
+    expect(card.panels.map((p) => p.label)).toEqual(['Smoking', 'Extinguisher', 'Sprinklers', 'Fire brigade']);
+    expect(card.panels[1]?.note).toContain('within 10 tiles');
+    expect(card.panels[1]?.note).toContain('$80');
+    expect(card.panels[2]?.note).toContain('star 3');
+    expect(card.panels[3]?.note).toContain('$2,500');
   });
 });

@@ -35,6 +35,12 @@ export function placeItemModel(model: THREE.Object3D, type: ItemType, x: number,
   model.rotation.y = (-rot * Math.PI) / 2;
 }
 
+/** What is on fire this frame, and what of it is being put out. */
+interface Fire {
+  burning: ReadonlySet<number>;
+  hosed: ReadonlyMap<number, number>;
+}
+
 /**
  * What an item's moving parts follow: how watered or hot it is (or how full, for a hamper), how dirty it is or its
  * linens, whether it is scanning, how worn, whether a guest is using it and how hard it is heating or cooling.
@@ -223,18 +229,23 @@ export class ItemsLayer {
     return landed;
   }
 
-  /** Update what changes from frame to frame: effects, progress bars and markers for broken or filthy items. */
+  /**
+   * Update what changes from frame to frame: effects, progress bars and markers for broken or filthy items. Something on
+   * fire shows its flames, not a wrench: the wrench comes once the fire is out.
+   */
   animate(t: number) {
     const busy = new Set<number>();
     const rattled = this.sim.rattledRooms();
     const dark = powerOut(this.sim.s.mishap, !!mishapHolder(this.sim.s));
     const marked = itemMarkers(this.sim.s.items);
+    const fire: Fire = { burning: new Set(this.sim.s.blazes.map((b) => b.item)), hosed: this.sim.beingPutOut() };
     for (const it of this.sim.s.items) {
       const model = this.items.get(it.id)?.group;
       if (!model) continue;
       const shade = dark && this.sim.world.inside(it.x, it.y) ? 1 : 0;
-      this.effects(it, model, t, rattled.size > 0 && rattled.has(this.sim.world.zoneAt(it.x, it.y)), shade);
-      this.marker(model, it, 'wrench', 'marker-broken', marked.get(it.id) === 'marker-broken', t);
+      this.effects(it, model, t, rattled.size > 0 && rattled.has(this.sim.world.zoneAt(it.x, it.y)), shade, fire);
+      const broken = marked.get(it.id) === 'marker-broken' && !fire.burning.has(it.id);
+      this.marker(model, it, 'wrench', 'marker-broken', broken, t);
       this.marker(model, it, 'flies', 'marker-filthy', marked.get(it.id) === 'marker-filthy', t);
       if (it.serving && it.progress > 0) {
         busy.add(it.id);
@@ -250,9 +261,10 @@ export class ItemsLayer {
 
   /**
    * The touches particular to each kind of item, and the props laid on a guest during a session, with its room rattled
-   * or not, and as far in the dark of a power cut as it stands.
+   * or not, as far in the dark of a power cut as it stands, and on fire or not.
    */
-  private effects(it: Item, model: THREE.Object3D, t: number, rattled: boolean, shade: number) {
+  private effects(it: Item, model: THREE.Object3D, t: number, rattled: boolean, shade: number, fire: Fire) {
+    const burning = fire.burning.has(it.id);
     animateItemParts(
       model,
       {
@@ -268,6 +280,9 @@ export class ItemsLayer {
         trophies: this.sim.s.trophies.length,
         stopped: this.stopped(it),
         shade,
+        burning,
+        ...(burning && fire.hosed.has(it.id) && { hosed: fire.hosed.get(it.id) ?? 0 }),
+        burnt: !!it.burnt,
       },
       t,
     );
@@ -285,9 +300,9 @@ export class ItemsLayer {
     const script = GAGS[it.type];
     const input = script && this.gags.input(this.sim, it, t);
     if (script && input) applyGag(model, gagFrame(script, input), t);
-    // a machine's glow goes out with the power
+    // a machine's glow goes out with the power, and with a fire
     const { shine } = partsOf(model);
-    if (shine && this.stopped(it) === 'off') shine.emissiveIntensity = 0;
+    if (shine && (this.stopped(it) === 'off' || burning || it.burnt)) shine.emissiveIntensity = 0;
   }
 
   /** How the mishap under way shows on an item it has taken out of action, if it has. */

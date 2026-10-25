@@ -201,6 +201,10 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     rumble: (level) => {
       audio.rumble(level);
     },
+    /** Wail as loud as the fire truck's siren sounds from here. */
+    siren: (level) => {
+      audio.siren(level);
+    },
     /** Note a star or an achievement for the campaign as soon as it is earned. */
     record: () => {
       recordGame(state);

@@ -1,5 +1,6 @@
 // A puddle on the floor: kombucha fizzed over from a worn tap, amber and sticky, or sea water a storm left in a
-// flooded restroom, wider, a bright cyan and lying right across the tile, with rings spreading over it.
+// flooded restroom, wider, a bright cyan and lying right across the tile, with rings spreading over it. And soot, left
+// beside something that burnt: a matt black smudge, laid out like a puddle but lying still.
 
 import * as THREE from 'three';
 
@@ -14,6 +15,7 @@ import { cached, cyl, mat, put } from './parts';
 const LOOK = {
   kombucha: { color: 0xd9a441, pools: 3, r: [0.16, 0.28], spread: 0.35 },
   flood: { color: 0x6fd0f2, pools: 4, r: [0.35, 0.42], spread: 0.13 },
+  soot: { color: 0x2b2725, pools: 4, r: [0.18, 0.3], spread: 0.3 },
 } as const;
 
 /**
@@ -56,20 +58,7 @@ export function buildPuddle(id: number, flood = false): THREE.Group {
         }),
       )
     : mat(look.color, 0.08);
-  const pools: THREE.Mesh[] = [];
-  for (let i = 0; i < look.pools; i++) {
-    const r = look.r[0] + hash(id, i) * (look.r[1] - look.r[0]);
-    pools.push(
-      put(
-        g,
-        cyl(r, r, 0.01, 16),
-        wet,
-        (hash(id, i + 2) - 0.5) * look.spread,
-        0.006 + i * 0.001,
-        (hash(i + 2, id) - 0.5) * look.spread,
-      ),
-    );
-  }
+  const pools = layPools(g, id, look, wet);
   if (!flood) return g;
   // rings spreading over the water, each fading on its own, hidden until the water moves
   const rings = Array.from({ length: RINGS }, () => {
@@ -87,6 +76,32 @@ export function buildPuddle(id: number, flood = false): THREE.Group {
     return ring;
   });
   Object.assign(g.userData, { pools, rings } satisfies FloodParts);
+  return g;
+}
+
+/** Lay a puddle's overlapping pools out on the floor by its id, each in a material, and return them. */
+function layPools(g: THREE.Group, id: number, look: (typeof LOOK)[keyof typeof LOOK], m: THREE.Material) {
+  const pools: THREE.Mesh[] = [];
+  for (let i = 0; i < look.pools; i++) {
+    const r = look.r[0] + hash(id, i) * (look.r[1] - look.r[0]);
+    pools.push(
+      put(
+        g,
+        cyl(r, r, 0.01, 16),
+        m,
+        (hash(id, i + 2) - 0.5) * look.spread,
+        0.006 + i * 0.001,
+        (hash(i + 2, id) - 0.5) * look.spread,
+      ),
+    );
+  }
+  return pools;
+}
+
+/** Soot on the floor beside something that burnt: a few overlapping smudges of matt black, laid out by its id. */
+export function buildSoot(id: number): THREE.Group {
+  const g = new THREE.Group();
+  for (const pool of layPools(g, id, LOOK.soot, mat(LOOK.soot.color, 0.95))) pool.castShadow = false;
   return g;
 }
 

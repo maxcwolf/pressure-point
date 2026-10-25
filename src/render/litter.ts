@@ -1,4 +1,4 @@
-// Litter on the floor, puddles of kombucha, and the sea water in a flooded restroom.
+// Litter on the floor, puddles of kombucha, the sea water in a flooded restroom, and soot where something burnt.
 
 import * as THREE from 'three';
 
@@ -6,7 +6,7 @@ import type { Sim } from '../core/sim/sim';
 import { at } from '../core/util';
 import { disposeOwned } from './disposal';
 import { mat, put, rbox, trimShadows } from './models/parts';
-import { buildPuddle, rippleFlood } from './models/puddle';
+import { buildPuddle, buildSoot, rippleFlood } from './models/puddle';
 import { hash } from './shared';
 
 export class LitterLayer {
@@ -30,9 +30,9 @@ export class LitterLayer {
         if (l.flood) rippleFlood(had, t, l.id);
         continue;
       }
-      const g = l.puddle || l.flood ? buildPuddle(l.id, !!l.flood) : new THREE.Group();
+      const g = l.soot ? buildSoot(l.id) : l.puddle || l.flood ? buildPuddle(l.id, !!l.flood) : new THREE.Group();
       const colors = [0xe76f51, 0xe9c46a, 0x5fa8d3];
-      if (!l.puddle && !l.flood)
+      if (!l.puddle && !l.flood && !l.soot)
         for (let i = 0; i < 3; i++) {
           const m = put(
             g,

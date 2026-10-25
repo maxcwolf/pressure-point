@@ -5,9 +5,9 @@ import * as THREE from 'three';
 
 /**
  * How an emitter's pieces move: rising and growing like smoke or steam, sprayed outward like foam or sparks, falling
- * like snow, or dripping straight down like juice.
+ * like snow, dripping straight down like juice, or shot forward along +z in an arc like water from a hose.
  */
-export type EmitterKind = 'rise' | 'spray' | 'fall' | 'drip';
+export type EmitterKind = 'rise' | 'spray' | 'fall' | 'drip' | 'jet';
 
 /** How far an emitter's pieces go, and how quickly they cycle. */
 export interface EmitterShape {
@@ -56,6 +56,10 @@ export function animateEmitter(g: THREE.Group, rate: number, t: number) {
         Math.sin(a) * f * shape.reach,
       );
       p.scale.setScalar(1 - f * 0.6);
+    } else if (shape.kind === 'jet') {
+      // up and over in an arc as it goes, fanning out a little, and spreading as it nears the end
+      p.position.set(side * f * 0.3, Math.sin(f * Math.PI) * shape.spread, f * shape.reach);
+      p.scale.setScalar(0.7 + f * 0.6);
     } else if (shape.kind === 'fall') {
       p.position.set(side, (1 - f) * shape.reach, back);
       p.scale.setScalar(0.6 + 0.4 * Math.sin(f * Math.PI));

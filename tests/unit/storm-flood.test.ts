@@ -120,7 +120,7 @@ describe('a flooded restroom', () => {
     s.litter.push({ id: s.nextId++, x: caretaker.tx, y: caretaker.ty + 1, claimedBy: 0 });
     runUntil(sim, () => caretaker.job?.kind === 'litter', 60);
     expect(s.litter.find((l) => l.id === caretaker.job?.id)?.flood).toBe(restroom.id);
-    expect(staffStatus(caretaker, sim)).toContain('flooded restroom');
+    expect(staffStatus(caretaker, sim)).toContain('the flooded Restroom');
     runUntil(sim, () => !sim.world.flooded(restroom), 300);
     const toilet = s.items.find((i) => i.type === 'toilet')!;
     expect(sim.world.usable(toilet)).toBe(true);

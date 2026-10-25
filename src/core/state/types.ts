@@ -71,6 +71,8 @@ export interface Room {
   missed?: MissedClass[];
   /** The day a Shaman's blessing on it runs out, once it has had one. */
   blessedUntil?: number;
+  /** Sprinklers have been fitted: they put out a fire in it on their own, and soak the room doing it. */
+  sprinklers?: boolean;
 }
 
 /**
@@ -153,6 +155,8 @@ export interface Item {
   trophy?: Trophy;
   /** A treatment machine that overloaded, out of action until a Caretaker has repaired it. */
   overloaded?: boolean;
+  /** Burnt out in a fire, and broken until a Caretaker has repaired it. */
+  burnt?: boolean;
 }
 
 export interface Look {
@@ -286,13 +290,24 @@ export interface Staff extends CharBase {
 }
 
 /**
- * A chore: the litter or item a Caretaker sees to (changing a table's linens is cleaning it, and laundering is emptying
- * a hamper), the room someone clears of bad vibes, the drink or snack someone goes to for themselves, or the guest on
- * a really bad trip someone is sent to calm down.
+ * A chore: the litter or item a Caretaker sees to (changing a table's linens is cleaning it, laundering is emptying
+ * a hamper, and dousing is putting out a fire in it), the room someone clears of bad vibes, the drink or snack someone
+ * goes to for themselves, or the guest on a really bad trip someone is sent to calm down.
  */
 export interface Job {
   kind:
-    'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh' | 'install' | 'soul' | 'ward' | 'calm';
+    | 'litter'
+    | 'water'
+    | 'repair'
+    | 'clean'
+    | 'smudge'
+    | 'launder'
+    | 'refresh'
+    | 'install'
+    | 'soul'
+    | 'ward'
+    | 'calm'
+    | 'douse';
   id: number;
 }
 
@@ -389,11 +404,17 @@ export interface Regular {
   due: number;
 }
 
-/** Who a visitor is: a VIP, or the health inspector. */
-export type VisitorKind = 'vip' | 'inspector';
+/** Who writes ahead to call and judge the center: a VIP, or the health inspector. */
+export type JudgeKind = 'vip' | 'inspector';
 
-/** What a visitor is doing: on the way to a room, looking round it, or on the way out. */
-export type VisitorState = 'toRoom' | 'looking' | 'leaving';
+/** Who a visitor is: a VIP, the health inspector, or one of the fire brigade's crew, come for a fire. */
+export type VisitorKind = JudgeKind | 'firefighter';
+
+/**
+ * What a visitor is doing: on the way to a room, looking round it, or on the way out; or for a firefighter, running
+ * to a fire, hosing it out, or going back to the truck.
+ */
+export type VisitorState = 'toRoom' | 'looking' | 'leaving' | 'toFire' | 'hosing' | 'toTruck';
 
 /** What a visitor made of one room. */
 export interface RoomVerdict {
@@ -419,11 +440,13 @@ export interface Visitor extends CharBase {
   tour: number[];
   /** What they made of each room seen so far. */
   seen: RoomVerdict[];
+  /** For a firefighter, the burning item they are running to or hosing, or 0 for none. */
+  fire?: number;
 }
 
 /** A visit written ahead: who is coming, and on which day. */
 export interface VisitNotice {
-  visit: VisitorKind;
+  visit: JudgeKind;
   name: string;
   title: string;
   cares?: Aspect;
@@ -432,7 +455,7 @@ export interface VisitNotice {
 
 /** How a visit went, kept until the next one. */
 export interface VisitReport {
-  visit: VisitorKind;
+  visit: JudgeKind;
   name: string;
   title: string;
   day: number;
@@ -467,6 +490,46 @@ export interface Litter {
   puddle?: boolean;
   /** Sea water from a storm, by the id of the restroom it flooded: the room is out of action until it is mopped up. */
   flood?: number;
+  /** Soot left on the floor by a fire, swept up like any other litter. */
+  soot?: boolean;
+}
+
+/** Something on fire: the item, the room it is in, how long it has burned, and how long since it last spread, in seconds. */
+export interface Blaze {
+  item: number;
+  room: number;
+  t: number;
+  spread: number;
+}
+
+/**
+ * The fire brigade, called out to a fire: where its truck is along the near lane of the road, coming, parked outside or
+ * leaving; the day it was called; the visitor ids of its crew; whether the call-out fee has been taken; and the room the
+ * latest fire was in, for the crew to see for themselves if it is out when they get there.
+ */
+export interface Brigade {
+  x: number;
+  state: 'coming' | 'parked' | 'leaving';
+  called: number;
+  crew: number[];
+  charged: boolean;
+  room: number;
+}
+
+/** How a fire was put out: by a Caretaker with an extinguisher or without one, by sprinklers, or by the fire brigade. */
+export type PutOut = 'extinguisher' | 'beaten' | 'sprinklers' | 'brigade';
+
+/**
+ * A fire, from the first thing that caught until the last of it was out: what caught first, how many things burnt, how
+ * the last of it was put out, and what the fire brigade charged for it.
+ */
+export interface FireReport {
+  item: ItemType;
+  burnt: number;
+  how?: PutOut;
+  fee: number;
+  /** Whether it is out: until then, it is still burning. */
+  out: boolean;
 }
 
 export interface Candidate {
@@ -583,6 +646,8 @@ export interface Stats {
   /** Qi Gong classes held, and the class-goers who came to them. */
   classes: number;
   classgoers: number;
+  /** Machines that have caught fire on their own, not counting what a fire spread to. */
+  fires: number;
   /** Inspections failed because the inspector found the mushrooms under the counter. */
   busted: number;
   /** What mushroom sales have taken. */
@@ -817,6 +882,15 @@ export interface GameState {
   mishap: Mishap | null;
   nextMishap: number;
   mishapsOn: boolean;
+  /**
+   * Whatever is on fire now, the fire brigade if it has been called and is not yet gone, and whether anything catches
+   * fire at all (a sandbox setting).
+   */
+  blazes: Blaze[];
+  brigade?: Brigade;
+  blazesOn: boolean;
+  /** The fire burning now, or the last one, once there has been one. */
+  fire?: FireReport;
   /** The last year-end awards ceremony, and every award won. */
   ceremony: Ceremony | null;
   trophies: Trophy[];

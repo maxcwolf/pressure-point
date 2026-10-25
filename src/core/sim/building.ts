@@ -8,6 +8,8 @@ import {
   ROOMS,
   type RoomType,
   type RugPatternId,
+  SPRINKLER_COST,
+  SPRINKLER_STAR,
   type ThermostatSetting,
   WINDOW_COST,
 } from '../data';
@@ -23,9 +25,9 @@ import {
   resizeTiles,
 } from '../resize';
 import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
-import { itemStart, roomStart, sameSpot } from '../state/game';
+import { itemStart, roomStart, sameSpot, unlockedUpTo } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
-import { itemCenter, onWall, type Rect, wallSpotsOf } from '../world';
+import { footprint, itemCenter, onWall, type Rect, wallSpotsOf } from '../world';
 import { forgetRoom } from './assignments';
 import { charById } from './chars';
 import { release } from './claims';
@@ -196,12 +198,21 @@ export function itemsInRoom(ctx: SimContext, room: Room) {
   return ctx.s.items.filter((it) => ctx.world.zoneAt(it.x, it.y) === room.id);
 }
 
+/** The other items standing beside an item: any of their tiles next to any of its own, corners included. */
+export function itemsBeside(ctx: SimContext, it: Item): Item[] {
+  const near = new Set<string>();
+  for (const [x, y] of footprint(it))
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) near.add(`${x + dx},${y + dy}`);
+  return ctx.s.items.filter((o) => o !== it && footprint(o).some(([x, y]) => near.has(`${x},${y}`)));
+}
+
 /** Can this item be picked up and put down here instead? */
 export function canMoveItem(ctx: SimContext, it: Item, x: number, y: number, rot: number) {
   const zone = ctx.world.zoneAt(it.x, it.y);
   const at = ctx.s.items.indexOf(it);
   // an item that is not in the game has nothing to move, and splicing at -1 would lift out the last one instead
   if (at < 0) return { ok: false, reason: 'That item is gone' };
+  if (ctx.s.blazes.some((b) => b.item === it.id)) return { ok: false, reason: 'It is on fire' };
   // judge the new spot as if the item had already been lifted out
   ctx.s.items.splice(at, 1);
   ctx.world.rebuild(true);
@@ -281,6 +292,10 @@ function removeItems(ctx: SimContext, gone: Item[]) {
   const ids = new Set(gone.map((i) => i.id));
   const users = usersOf(ctx, ids);
   ctx.s.items = ctx.s.items.filter((i) => !ids.has(i.id));
+  // whatever was burning on them burns no more
+  ctx.s.blazes = ctx.s.blazes.filter((b) => !ids.has(b.item));
+  // a fire whose last flames went with what was sold is out, with nothing put out
+  if (!ctx.s.blazes.length && ctx.s.fire && !ctx.s.fire.out) ctx.s.fire = { ...ctx.s.fire, out: true };
   ctx.world.rebuild();
   // a seat on something that is going has nothing left to give back; a seat elsewhere is released as usual
   for (const st of users.staff) if (st.job && st.job.kind !== 'litter') st.job = null;
@@ -299,8 +314,9 @@ export function roomRefund(ctx: SimContext, room: Room, refund: number) {
     if (at >= 0) free.splice(at, 1);
     else back += ITEMS[it.type].cost * refund;
   }
-  // floor bought by resizing it was paid for too
+  // floor bought by resizing it was paid for too, and so were its sprinklers
   back += (room.bought ?? 0) * ROOM_TILE_COST * refund;
+  if (room.sprinklers) back += SPRINKLER_COST * refund;
   return back + room.windows.length * WINDOW_COST * refund;
 }
 
@@ -360,6 +376,42 @@ export function toggleWindow(ctx: SimContext, roomId: number, spot: WallSpot): '
   ctx.world.version++;
   emit(ctx, { type: 'sfx', name: 'place' });
   return 'added';
+}
+
+/** Why sprinklers cannot be fitted in a room now, if they cannot: not unlocked yet, there already, or too dear. */
+export function sprinklerBlocker(ctx: SimContext, room: Room): string | null {
+  if (room.sprinklers) return 'Sprinklers fitted';
+  if (unlockedUpTo(ctx.s) < SPRINKLER_STAR) return `Sprinklers unlock at star ${SPRINKLER_STAR}`;
+  if (!room.done) return 'Finish the room first';
+  if (ctx.s.money < SPRINKLER_COST) return `Sprinklers cost ${money(SPRINKLER_COST)}`;
+  return null;
+}
+
+/**
+ * Fit sprinklers in a finished room, from the star that unlocks them: a fire there is put out on its own, before it
+ * can spread, though the room is soaked doing it. False if they cannot be fitted.
+ */
+export function fitSprinklers(ctx: SimContext, roomId: number): boolean {
+  const room = ctx.world.room(roomId);
+  if (!room) return false;
+  const blocker = sprinklerBlocker(ctx, room);
+  if (blocker) {
+    if (!room.sprinklers) toast(ctx, `${blocker}.`, 'bad');
+    emit(ctx, { type: 'sfx', name: 'error' });
+    return false;
+  }
+  spend(ctx, SPRINKLER_COST, 'building');
+  room.sprinklers = true;
+  ctx.world.version++;
+  emit(ctx, { type: 'sfx', name: 'cash' });
+  toast(
+    ctx,
+    `Sprinklers fitted in the ${ROOMS[room.type].name}. A fire there will go out on its own before it spreads, though the room will need mopping after.`,
+    'good',
+    { kind: 'room', id: room.id },
+    'item-fire-extinguisher',
+  );
+  return true;
 }
 
 /** Move a room's door to another stretch of its wall, for free. */

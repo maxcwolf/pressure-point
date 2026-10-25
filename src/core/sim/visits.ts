@@ -1,7 +1,7 @@
 // Visitors who judge the center. A VIP writes ahead, tours a few rooms and judges them by their own tastes, leaving
 // a reward if delighted and a dent in the center's reputation if disappointed. The health inspector calls now and
 // then, ready or not, and checks a few rooms at random, up to six, for dirt, broken equipment and a Fire Extinguisher
-// close by.
+// near its door, or sprinklers. The fire brigade's crew are visitors too, though they judge nothing (see blazes.ts).
 
 import {
   type Aspect,
@@ -47,6 +47,7 @@ import { irnd, pick, random } from '../random';
 import type {
   GameState,
   Item,
+  JudgeKind,
   Room,
   RoomVerdict,
   VisitNotice,
@@ -57,6 +58,7 @@ import type {
 import { clamp } from '../util';
 import { accessTile } from '../world';
 import { prestige } from './ambience';
+import { updateFirefighter } from './blazes';
 import { newChar, say, streetTile } from './chars';
 import type { SimContext } from './context';
 import { changeRep, earn, spend } from './economy';
@@ -156,13 +158,17 @@ export function vipNote(scores: AspectScores, cares: Aspect, vibes: number, temp
   return `${note.charAt(0).toUpperCase()}${note.slice(1)}.`;
 }
 
-/** Whether a Fire Extinguisher that works stands near enough a room's door for the inspector. */
+/**
+ * Whether a room is ready for a fire: sprinklers fitted, or a Fire Extinguisher that works near enough its door, for
+ * the inspector, and for a Caretaker to put a fire out there quickly.
+ */
 export function extinguisherNear(ctx: SimContext, room: Room): boolean {
+  if (room.sprinklers) return true;
   const { x, y } = room.door;
   return ctx.s.items.some(
     (it: Item) =>
       it.type === 'fire_extinguisher' &&
-      ctx.world.usable(it) &&
+      ctx.world.usable(it, true) &&
       Math.max(Math.abs(it.x - x), Math.abs(it.y - y)) <= EXTINGUISHER_REACH,
   );
 }
@@ -240,7 +246,7 @@ export function chooseTour(ctx: SimContext, visit: VisitorKind): number[] {
 }
 
 /** What a visitor is called and what they care about, for a VIP or the inspector. */
-export function newNotice(ctx: SimContext, visit: VisitorKind): VisitNotice {
+export function newNotice(ctx: SimContext, visit: JudgeKind): VisitNotice {
   const arrives = ctx.s.day + VISIT_NOTICE_DAYS;
   const name = randomName(ctx.s, rollSex(ctx.s, WOMEN_VISIT));
   if (visit === 'inspector') return { visit, name, title: 'the health inspector', arrives };
@@ -249,7 +255,7 @@ export function newNotice(ctx: SimContext, visit: VisitorKind): VisitNotice {
 }
 
 /** Put a visit on the calendar, and say who is coming. */
-function writeAhead(ctx: SimContext, visit: VisitorKind) {
+function writeAhead(ctx: SimContext, visit: JudgeKind) {
   const notice = newNotice(ctx, visit);
   ctx.s.visitNotice = notice;
   emit(ctx, { type: 'announce', text: VISIT_NEWS[visit] });
@@ -273,7 +279,7 @@ function writeAhead(ctx: SimContext, visit: VisitorKind) {
   tipOnce(
     ctx,
     'visits',
-    'A visitor tours a few rooms and judges what they find. A delighted VIP leaves a reward; the inspector fines dirt, broken equipment and a room with no Fire Extinguisher near its door.',
+    'A visitor tours a few rooms and judges what they find. A delighted VIP leaves a reward; the inspector fines dirt, broken equipment and a room with no Fire Extinguisher near its door, or sprinklers.',
   );
 }
 
@@ -363,8 +369,12 @@ export function nextRoom(ctx: SimContext, v: Visitor): boolean {
   return false;
 }
 
-/** Move one visitor forward in time: walking to a room, looking round it, or leaving. */
+/** Move one visitor forward in time: walking to a room, looking round it, or leaving; or for a firefighter, at the fire. */
 export function updateVisitor(ctx: SimContext, v: Visitor, dt: number) {
+  if (v.visit === 'firefighter') {
+    updateFirefighter(ctx, v, dt);
+    return;
+  }
   if (v.bubbleT > 0) v.bubbleT -= dt;
   const arrived = moveAlong(v, dt, 2);
   switch (v.state) {
@@ -409,6 +419,8 @@ export function updateVisitor(ctx: SimContext, v: Visitor, dt: number) {
 export function finishVisit(ctx: SimContext, v: Visitor) {
   const s = ctx.s;
   s.visitors = s.visitors.filter((o) => o !== v);
+  // the fire brigade's crew judge nothing, and leave no report
+  if (v.visit === 'firefighter') return;
   if (v.visit === 'inspector') s.nextInspection = s.day + inspectionGap(s);
   else s.nextVip = s.day + irnd(s, VIP_GAP_DAYS[0], VIP_GAP_DAYS[1]);
   if (!v.seen.length) {

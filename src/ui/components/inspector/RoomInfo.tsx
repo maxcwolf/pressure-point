@@ -10,12 +10,15 @@ import {
   NOISE_NOTICE,
   NOISE_PEACEFUL,
   ROOMS,
+  SPRINKLER_COST,
+  SPRINKLER_STAR,
 } from '../../../core/data';
 import { money } from '../../../core/format';
 import { copyCost } from '../../../core/room-layout';
 import { roomLabels } from '../../../core/sim/assignments';
 import { signatureMachine, treatsHere } from '../../../core/sim/machines';
 import { tempFeel } from '../../../core/sim/warmth';
+import { unlockedUpTo } from '../../../core/state/game';
 import type { Item, Room } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { blessingNote } from '../../lib/ceremonies';
@@ -154,6 +157,39 @@ function Comfort({ room }: { room: Room }) {
 }
 
 /**
+ * The button that fits a room with sprinklers, from the star that unlocks them: locked with the star while they are
+ * not, and with the price while it cannot be paid, and saying so once they are fitted.
+ */
+function Sprinklers({ room }: { room: Room }) {
+  const { sim } = useGame();
+  const why = sim.sprinklerBlocker(room);
+  const label = room.sprinklers
+    ? 'Sprinklers fitted'
+    : unlockedUpTo(sim.s) < SPRINKLER_STAR
+      ? `Sprinklers unlock at star ${SPRINKLER_STAR}`
+      : `Fit sprinklers (${money(SPRINKLER_COST)})`;
+  return (
+    <Button
+      class={cx('roomsprinklers', room.sprinklers && 'on')}
+      title={
+        room.sprinklers
+          ? 'A fire here goes out on its own, and soaks the room. The health inspector counts them as an extinguisher.'
+          : (why ??
+            'A fire here goes out on its own before it can spread, though it soaks the room until a Caretaker mops it out. The health inspector counts them as an extinguisher.')
+      }
+      // once fitted it only shows they are, lit like a setting that is on, and pressing it does nothing
+      locked={!room.sprinklers && !!why}
+      quiet={!!room.sprinklers}
+      onPress={() => {
+        if (!room.sprinklers) sim.fitSprinklers(room.id);
+      }}
+    >
+      <IconText id="ui-sprinklers">{label}</IconText>
+    </Button>
+  );
+}
+
+/**
  * A room's details: first who staffs it and anything wrong, then its line and how busy it is, then what it can do, its
  * prestige and comfort, and its buttons.
  */
@@ -181,7 +217,7 @@ export function RoomInfo({ room }: { room: Room }) {
         {'Prestige '}
         <Stars count={sim.prestige(room)} />
         <span class="sub">
-          {` · ${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'}`}
+          {` · ${room.w}×${room.h} tiles · ${room.windows.length} window${room.windows.length === 1 ? '' : 's'}${room.sprinklers ? ' · Sprinklers' : ''}`}
         </span>
       </p>{' '}
       <Comfort room={room} /> {/* priority on a row of its own, then what can be done to the room */}
@@ -229,6 +265,7 @@ export function RoomInfo({ room }: { room: Room }) {
       >
         <IconText id="ui-window">Windows</IconText>
       </Button>{' '}
+      <Sprinklers room={room} />{' '}
       <Button
         class="roomcopy"
         title="Build copies of this room, furniture, windows and all, wherever you click. R turns them."

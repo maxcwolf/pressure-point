@@ -148,11 +148,11 @@ describe('campaign progress', () => {
   });
 
   it('takes a campaign from before it remembered the lessons, with a star, to have been through the ones there were', () => {
-    expect(LESSONS_BEFORE_MEMORY).toEqual(LESSON_IDS.filter((id) => id !== 'weather'));
+    expect(LESSONS_BEFORE_MEMORY).toEqual(LESSON_IDS.filter((id) => id !== 'weather' && id !== 'fire'));
     store.set('pressure-point-campaign', JSON.stringify({ stars: { willow: 2 } }));
     expect(loadCampaign().lessons).toEqual(LESSONS_BEFORE_MEMORY);
     // only the lessons added since are still to come
-    expect(LESSON_IDS.filter((id) => !loadCampaign().lessons.includes(id))).toEqual(['weather']);
+    expect(LESSON_IDS.filter((id) => !loadCampaign().lessons.includes(id))).toEqual(['weather', 'fire']);
     recordLesson('weather');
     expect(loadCampaign().lessons).toEqual([...LESSONS_BEFORE_MEMORY, 'weather']);
     // with no star, nothing was seen; and a list kept since is taken as it is

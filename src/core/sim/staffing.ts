@@ -38,11 +38,12 @@ import { money } from '../format';
 import { fairSalary, scalePay } from '../people';
 import { pick, random } from '../random';
 import { staffStart } from '../state/game';
-import type { Item, Job, Staff } from '../state/types';
+import type { Char, Item, Job, Staff } from '../state/types';
 import { clamp, must } from '../util';
 import { accessPose, accessTile, footprint } from '../world';
 import { prestige } from './ambience';
 import { worksAt } from './assignments';
+import { blazeAt, douse, douseSeconds, standByFire } from './blazes';
 import { sameRoomCount } from './building';
 import { leaveForCall, returnFromCall } from './calls';
 import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
@@ -79,6 +80,27 @@ const BESIDE: readonly (readonly [dx: number, dy: number])[] = [
   [-1, 0],
   [0, -1],
 ];
+
+/**
+ * Set someone walking to stand next to an item, on whichever side can be reached, and on the same side of the
+ * building's walls, passing over any tile `free` turns down. False if no side can be reached.
+ */
+export function standBeside(
+  ctx: SimContext,
+  c: Char,
+  item: Item,
+  free: (x: number, y: number) => boolean = () => true,
+): boolean {
+  const indoors = ctx.world.inside(item.x, item.y);
+  for (const [fx, fy] of footprint(item)) {
+    for (const [dx, dy] of BESIDE) {
+      const [bx, by] = [fx + dx, fy + dy];
+      if (!free(bx, by)) continue;
+      if (ctx.world.walkable(bx, by) && ctx.world.inside(bx, by) === indoors && goTo(ctx, c, bx, by)) return true;
+    }
+  }
+  return false;
+}
 
 /** Take on an applicant and send them in from the street. */
 export function hire(ctx: SimContext, candidateId: number): Staff | null {
@@ -550,10 +572,16 @@ function findWork(ctx: SimContext, st: Staff) {
       if (!worksAt(ctx, st, x, y)) return;
       tasks.push({ kind, id, x, y, urgency: urgency + (inPriorityRoom(ctx, x, y) ? 0.5 : 0) });
     };
+    // a fire before anything else, whatever their duties or the rooms they keep to
+    for (const b of s.blazes) {
+      const p = ctx.world.item(b.item);
+      if (p && !p.claimedBy) tasks.push({ kind: 'douse', id: p.id, x: p.x, y: p.y, urgency: 3 });
+    }
     // a flooded restroom is out of action until it is mopped out, as urgent as anything broken
     for (const l of s.litter) if (!l.claimedBy) add('litter', l.id, l.x, l.y, l.flood ? 2 : 1);
     for (const p of s.items) {
-      if (p.claimedBy) continue;
+      // something on fire is put out before it is seen to
+      if (p.claimedBy || blazeAt(s, p.id)) continue;
       // a Mechanic installs an upgrade waiting on equipment, which services it too
       if (p.upgradePaid && hasGeneral(st, 'mechanics')) add('install', p.id, p.x, p.y, 1);
       else if (p.wear >= WEAR_REPAIR) add('repair', p.id, p.x, p.y, p.wear >= 100 ? 2 : 0);
@@ -568,22 +596,12 @@ function findWork(ctx: SimContext, st: Staff) {
     const dist = (t: Task) => Math.hypot(t.x - st.tx, t.y - st.ty);
     tasks.sort((a, b) => b.urgency - a.urgency || dist(a) - dist(b));
     for (const task of tasks.slice(0, 4)) {
-      let ok = false;
-      if (task.kind === 'litter') ok = goTo(ctx, st, task.x, task.y);
-      else {
-        // stand next to the item, on whichever side can be reached, and on the same side of the building's walls
-        const item = must(ctx.world.item(task.id), 'item to tend');
-        const indoors = ctx.world.inside(item.x, item.y);
-        search: for (const [fx, fy] of footprint(item)) {
-          for (const [dx, dy] of BESIDE) {
-            const [bx, by] = [fx + dx, fy + dy];
-            if (ctx.world.walkable(bx, by) && ctx.world.inside(bx, by) === indoors && goTo(ctx, st, bx, by)) {
-              ok = true;
-              break search;
-            }
-          }
-        }
-      }
+      const ok =
+        task.kind === 'litter'
+          ? goTo(ctx, st, task.x, task.y)
+          : task.kind === 'douse'
+            ? standByFire(ctx, st, must(ctx.world.item(task.id), 'item on fire'))
+            : standBeside(ctx, st, must(ctx.world.item(task.id), 'item to tend'));
       if (!ok) continue;
       st.job = { kind: task.kind, id: task.id };
       const target = task.kind === 'litter' ? s.litter.find((l) => l.id === task.id) : ctx.world.item(task.id);
@@ -765,7 +783,16 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
           say(st, wants(st) === 'eat' ? 'bubble-hungry' : 'bubble-thirsty', 2);
           break;
         }
-        st.timer = jobSeconds(st.job?.kind) / caretakerSpeed(st);
+        if (st.job?.kind === 'douse') {
+          // out already, by the sprinklers or the fire brigade: nothing left to do here
+          const p = ctx.world.item(st.job.id);
+          if (!p || !blazeAt(ctx.s, p.id)) {
+            staffIdle(ctx, st);
+            break;
+          }
+          st.timer = douseSeconds(ctx, p) / caretakerSpeed(st);
+          say(st, 'bubble-sweaty', 2);
+        } else st.timer = jobSeconds(st.job?.kind) / caretakerSpeed(st);
         if (st.job?.kind === 'install') say(st, 'bubble-installing', 2);
         if (st.job && st.job.kind !== 'litter') {
           const p = ctx.world.item(st.job.id);
@@ -792,6 +819,11 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       }
       // the guest on a table is treated before a Mechanic starts work on it
       if (st.job?.kind === 'install' && ctx.world.item(st.job.id)?.serving) break;
+      // a fire put out meanwhile, by the sprinklers or the fire brigade, leaves nothing to do
+      if (st.job?.kind === 'douse' && !blazeAt(ctx.s, st.job.id)) {
+        staffIdle(ctx, st);
+        break;
+      }
       st.timer -= dt;
       if (st.timer <= 0) {
         const job = st.job;
@@ -808,14 +840,16 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
             if (job.kind === 'repair') {
               p.wear = 0;
               delete p.overloaded;
-            } else if (job.kind === 'install') installUpgrade(ctx, p);
+              delete p.burnt;
+            } else if (job.kind === 'douse') douse(ctx, st, p);
+            else if (job.kind === 'install') installUpgrade(ctx, p);
             else if (job.kind === 'clean') {
               if (!hasLinens(p)) p.dirt = 0;
               else if (changeLinens(ctx, p)) say(st, 'bubble-linens', 2);
             } else if (job.kind === 'launder') launder(p);
             else p.water = 100;
             p.claimedBy = 0;
-            if (job.kind === 'repair') ctx.world.version++;
+            if (job.kind === 'repair' || job.kind === 'douse') ctx.world.version++;
           }
         }
         if (job) {

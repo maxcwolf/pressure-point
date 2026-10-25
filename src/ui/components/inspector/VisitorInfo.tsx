@@ -1,4 +1,4 @@
-// The inspector for a visitor: a VIP or the health inspector.
+// The inspector for a visitor: a VIP, the health inspector, or a firefighter.
 
 import '../dialogs/VisitDialog.css';
 
@@ -17,7 +17,9 @@ export function VisitorInfo({ visitor: v }: { visitor: Visitor }) {
     <>
       <h3>{v.name}</h3>
       <p class="tag">
-        {v.visit === 'inspector' ? (
+        {v.visit === 'firefighter' ? (
+          <IconText id="ui-fire-truck">Firefighter</IconText>
+        ) : v.visit === 'inspector' ? (
           <IconText id="bubble-inspecting">Health inspector</IconText>
         ) : (
           <IconText id="ui-vip">VIP</IconText>

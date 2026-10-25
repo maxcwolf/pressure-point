@@ -200,6 +200,23 @@ describe('play events', () => {
     expect(events.find((x) => x.name === 'outbreak_ended')?.props).toMatchObject({ outcome: 'escaped', lost: 4 });
   });
 
+  it('count how a fire ends, once, when the last of it is out', () => {
+    const sim = freshSim();
+    sim.s.fire = { item: 'stone_kiln', burnt: 1, fee: 0, out: false };
+    const burning = markOf(sim.s);
+    sim.s.fire.burnt = 3;
+    expect(playEvents(burning, sim.s).some((x) => x.name === 'fire_ended')).toBe(false);
+    sim.s.fire = { ...sim.s.fire, out: true, how: 'brigade', fee: 2500 };
+    const events = playEvents(burning, sim.s);
+    expect(events.find((x) => x.name === 'fire_ended')?.props).toMatchObject({
+      item: 'stone_kiln',
+      how: 'brigade',
+      burnt: 3,
+      fee: 2500,
+    });
+    expect(playEvents(markOf(sim.s), sim.s).some((x) => x.name === 'fire_ended')).toBe(false);
+  });
+
   it('count how visits end, and how a failed inspection is settled', () => {
     const sim = freshSim();
     const report: VisitReport = {

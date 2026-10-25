@@ -5,6 +5,7 @@ import {
   BRIBE_MIN,
   CENTERS,
   DIRT_FILTHY,
+  EXTINGUISHER_REACH,
   IDEAL_TEMP,
   INSPECTION_CLEAN_REP,
   INSPECTION_FINE,
@@ -120,6 +121,17 @@ describe('the health inspector', () => {
     table.dirt = DIRT_FILTHY;
     table.wear = 100;
     expect(inspectionProblems(createContext(s), massage)).toEqual(['dirty', 'broken equipment']);
+  });
+
+  it('counts a Fire Extinguisher up to 10 tiles from the door, and not one further off', () => {
+    const { sim, s, massage } = openCenter(1);
+    const { x, y } = massage.door;
+    const far = sim.placeItem('fire_extinguisher', x + EXTINGUISHER_REACH + 1, y, 0);
+    expect(far).not.toBeNull();
+    expect(extinguisherNear(createContext(s), massage)).toBe(false);
+    expect(EXTINGUISHER_REACH).toBe(10);
+    expect(sim.placeItem('fire_extinguisher', x + EXTINGUISHER_REACH, y + 1, 0)).not.toBeNull();
+    expect(extinguisherNear(createContext(s), massage)).toBe(true);
   });
 
   it('lets one thing go, and fines each thing found beyond that', () => {

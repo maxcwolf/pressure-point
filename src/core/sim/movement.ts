@@ -3,6 +3,7 @@
 import type { Char, Waypoint } from '../state/types';
 import { clamp } from '../util';
 import type { PosePoint } from '../world';
+import { rerouteFirefighter } from './blazes';
 import { leaveForCall } from './calls';
 import type { SimContext } from './context';
 import { resetGuest } from './guests';
@@ -111,6 +112,8 @@ export function repathAll(ctx: SimContext) {
     // someone on a really bad trip stops where they are, and runs on somewhere else
     if (c.kind === 'guest' && c.state === 'running') halt(c);
     else if (c.kind === 'guest') resetGuest(ctx, c);
+    // a firefighter who can no longer get to a fire goes to the next, or back to the truck
+    else if (c.kind === 'visitor' && c.visit === 'firefighter') rerouteFirefighter(ctx, c);
     // a visitor who can no longer get to a room moves on to the next
     else if (c.kind === 'visitor') nextRoom(ctx, c);
     // someone on their way out with no way out is simply gone, as when they are fired with nowhere to walk
