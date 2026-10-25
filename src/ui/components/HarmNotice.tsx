@@ -26,7 +26,7 @@ const causes = css({
   listStyle: 'none',
   p: '[6px 9px]',
   m: '[8px 0]',
-  bg: '[rgba(36, 56, 74, 0.06)]',
+  bg: 'ink.6',
   borderRadius: 'control',
   fontSize: '[13px]',
   '& li': { display: 'flex', justifyContent: 'space-between', gap: '[10px]', p: '[1px 0]' },

@@ -15,13 +15,13 @@ const chips = css({
   '& > span': {
     fontSize: '[11.5px]',
     fontWeight: '[500]',
-    bg: '[#e4d9f7]',
-    border: '[1.5px solid #8a6fd1]',
+    bg: 'violet-tint',
+    border: '[1.5px solid {colors.violet}]',
     borderRadius: '[8px]',
     p: '[0 6px]',
     whiteSpace: 'nowrap',
   },
-  '& > span.general': { bg: '[#fff6dc]', borderColor: 'gold' },
+  '& > span.general': { bg: 'gold-tint', borderColor: 'gold' },
   // the course they are on, not yet passed
   '& > span.learning': { bg: 'white', borderStyle: 'dashed', opacity: '[0.85]' },
 });

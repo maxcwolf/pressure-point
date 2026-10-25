@@ -58,7 +58,7 @@ export const cardLook = css.raw({
   flexDirection: 'column',
   gap: 'xxs',
   transition: '[transform 0.08s]',
-  '&:is(button):hover': { transform: 'translateY(-3px)', bg: '[#f0fbf9]', borderColor: 'teal-dark' },
+  '&:is(button):hover': { transform: 'translateY(-3px)', bg: 'teal-tint', borderColor: 'teal-dark' },
   '& > .icon': { mb: 'xxs' },
   '& b': { fontSize: '[15px]', fontWeight: 'bold' },
   '& p': { fontSize: '[12px]', lineHeight: '[1.25]', opacity: '[0.8]' },
@@ -73,7 +73,7 @@ export const cardLook = css.raw({
   },
   '& em.none': { opacity: '[0.6]' },
   // an applicant's quirk: green where it helps, red where it costs
-  '& em.good': { bg: '[#dff3e4]', color: '[#1d6a45]' },
+  '& em.good': { bg: 'good-bg', color: 'good' },
   '& em.bad': { bg: 'bad-bg', color: 'bad' },
   // how much more an item needs before it can be bought
   '& em.short': { bg: 'bad-bg', color: 'bad', fontWeight: 'bold' },
@@ -115,7 +115,7 @@ export const ledgerLook = css.raw({
   '& h4': { fontWeight: 'bold', mb: 'xs' },
   '& div': { display: 'flex', p: '[1.5px 0]' },
   '& div:not(.btnrow)': { justifyContent: 'space-between' },
-  '& .total': { borderTop: '[2px solid rgba(36, 56, 74, 0.2)]', mt: 'xs', pt: 'xs', fontWeight: 'bold' },
+  '& .total': { borderTop: '[2px solid {colors.ink.20}]', mt: 'xs', pt: 'xs', fontWeight: 'bold' },
 });
 
 /** One of the Money menu's white cards. */
@@ -157,9 +157,9 @@ export const tableLook = css.raw({
     fontWeight: 'bold',
     fontSize: '[12px]',
     p: '[4px 6px]',
-    borderBottom: '[2px solid rgba(36, 56, 74, 0.2)]',
+    borderBottom: '[2px solid {colors.ink.20}]',
   },
-  '& td': { textAlign: 'right', p: '[3px 6px]', borderBottom: '[1px solid rgba(36, 56, 74, 0.1)]' },
+  '& td': { textAlign: 'right', p: '[3px 6px]', borderBottom: '[1px solid {colors.ink.10}]' },
   '& :is(th, td):first-child': { textAlign: 'left' },
   '& .poor': { color: 'bad', fontWeight: 'bold' },
 });

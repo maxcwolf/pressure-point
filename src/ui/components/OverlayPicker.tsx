@@ -38,7 +38,7 @@ const choice = css({
   px: 'm',
   fontWeight: 'bold',
   fontSize: 'body',
-  _on: { borderColor: 'teal-dark', bg: '[#e6f6f3]' },
+  _on: { borderColor: 'teal-dark', bg: 'teal-wash' },
   '& i': { display: 'grid', placeItems: 'center' },
   '& small': { display: 'block', fontWeight: '[400]', fontSize: '[11.5px]' },
 });
@@ -76,7 +76,7 @@ const scale = css({
     w: '[90px]',
     h: '[10px]',
     borderRadius: '[5px]',
-    boxShadow: '[inset 0 0 0 1px rgba(36, 56, 74, 0.18)]',
+    boxShadow: '[inset 0 0 0 1px {colors.ink.20}]',
     bgColor: 'sand',
   },
   '&.diverging i': {

@@ -11,7 +11,7 @@ import { meterValue } from '../../lib/meters';
 const bar = css({
   h: '[10px]',
   borderRadius: '[6px]',
-  bg: '[rgba(36, 56, 74, 0.16)]',
+  bg: 'ink.16',
   overflow: 'hidden',
   mt: '[3px]',
   '& i': { display: 'block', h: '[100%]', borderRadius: '[6px]', bg: 'green', transition: '[width 0.3s]' },
@@ -21,7 +21,7 @@ const bar = css({
   '&.blue i': { bg: 'blue' },
   '&.bad i': { bg: 'red' },
   '&.need i': { bg: 'orange' },
-  '&.energy i': { bg: '[#8a6fd1]' },
+  '&.energy i': { bg: 'violet' },
 });
 
 /** A bar with its value beside it, the numbers lined up down the panel. */

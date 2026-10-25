@@ -34,7 +34,7 @@ const logLook = css({
   '& li': { p: '[1px 0]', whiteSpace: 'pre-wrap' },
   '& li.typed': { fontWeight: 'bold' },
   '& li.typed::before': { content: "'› '", opacity: '[0.55]' },
-  '& li.good': { color: '[#23805a]' },
+  '& li.good': { color: 'green-dark' },
   '& li.bad': { color: 'red' },
   '& li.hint': { opacity: '[0.6]' },
 });

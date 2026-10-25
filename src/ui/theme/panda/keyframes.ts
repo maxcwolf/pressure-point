@@ -16,7 +16,7 @@ export const keyframes = defineKeyframes({
   'update-spin': { to: { rotate: '360deg' } },
   // a tool hint shaking off a refused click
   'hint-refused': { '30%': { transform: 'scale(1.12)' } },
-  'hint-refused-flash': { '30%': { background: '#fbe3e1' } },
+  'hint-refused-flash': { '30%': { background: 'bad-bg' } },
   // a scroll tab nodding at more below
   'tab-nod': { '0%, 100%': { translate: '-50% 0' }, '50%': { translate: '-50% 3px' } },
   // a tooltip arriving, above or below what it is on

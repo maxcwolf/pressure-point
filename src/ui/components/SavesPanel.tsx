@@ -69,7 +69,7 @@ const button = css.raw({
   fontWeight: 'bold',
   bg: 'cream',
   m: 'none',
-  boxShadow: '[0 2px 0 rgba(36, 56, 74, 0.25)]',
+  boxShadow: '[0 2px 0 {colors.ink.25}]',
   '&.go': { bg: 'green', color: 'white' },
   '&.danger': { bg: 'bad-bg', color: 'bad' },
 });

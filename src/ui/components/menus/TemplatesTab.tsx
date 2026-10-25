@@ -50,7 +50,7 @@ const nameInput = css({
   m: '[0 -6px]',
   w: '[calc(100% + 8px)]',
   bg: '[transparent]',
-  '&:is(:hover, :focus)': { borderColor: 'teal', bg: '[#f0fbf9]', outline: '[none]' },
+  '&:is(:hover, :focus)': { borderColor: 'teal', bg: 'teal-tint', outline: '[none]' },
 });
 
 /**
@@ -70,7 +70,7 @@ const actions = css({
     fontWeight: 'bold',
     bg: 'white',
   },
-  '& button:not(.build, .delete):hover': { bg: '[#f0fbf9]' },
+  '& button:not(.build, .delete):hover': { bg: 'teal-tint' },
   '& button.build': { bg: 'green', color: 'white' },
   '& button.delete': { ml: 'auto', bg: 'bad-bg', color: 'bad' },
   '& button.locked': { opacity: '[0.5]', cursor: 'not-allowed' },

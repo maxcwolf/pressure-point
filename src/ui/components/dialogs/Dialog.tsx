@@ -16,7 +16,7 @@ const veil = css({
   inset: '[0]',
   display: 'grid',
   placeItems: 'center',
-  bg: '[rgba(36, 56, 74, 0.45)]',
+  bg: 'ink.50',
   pointerEvents: 'auto',
   zIndex: '[20]',
   animation: 'fadein 0.2s ease-out',

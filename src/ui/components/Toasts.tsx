@@ -137,7 +137,7 @@ const countTag = css({
   py: 'none',
   px: 's',
   borderRadius: '[8px]',
-  bg: '[rgba(36, 56, 74, 0.1)]',
+  bg: 'ink.10',
   fontSize: '[12px]',
   fontWeight: 'bold',
   whiteSpace: 'nowrap',
@@ -154,7 +154,7 @@ const close = css({
   bg: '[none]',
   fontSize: '[12px]',
   opacity: '[0.45]',
-  _hover: { opacity: '[1]', bg: '[rgba(36, 56, 74, 0.08)]' },
+  _hover: { opacity: '[1]', bg: 'ink.10' },
 });
 
 /** The messages past the first few: a pile of cards, the next ones down peeking out under its face in their colors. */

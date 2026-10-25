@@ -28,14 +28,14 @@ const chips = css({
     p: '[0 6px]',
     whiteSpace: 'nowrap',
   },
-  '& .decor': { bg: '[#fff6dc]', borderColor: 'gold' },
+  '& .decor': { bg: 'gold-tint', borderColor: 'gold' },
   '& :is(.calm, .cool)': { bg: '[#e3f0fb]', borderColor: 'blue' },
   // a calm chip sits a little lower, as it did when it took the inspector's old global .calm, meant for its calm button
   '& .calm': { display: 'block', mt: 'm' },
   '& .loud': { bg: 'bad-bg', borderColor: 'red', color: 'bad' },
   '& .warm': { bg: '[#fde8da]', borderColor: 'orange' },
   '& .earn': { bg: 'good-bg', borderColor: 'green', color: 'good' },
-  '& .seat': { bg: '[#e4d9f7]', borderColor: '[#8a6fd1]' },
+  '& .seat': { bg: 'violet-tint', borderColor: 'violet' },
 });
 
 /** A row of pips, faint on the tooltip's navy, the ones filled in the color of what they count. */
@@ -43,7 +43,7 @@ const pips = css({
   display: 'flex',
   gap: '[3px]',
   m: '[3px 0 1px]',
-  '& i': { w: '[10px]', h: '[10px]', borderRadius: '[3px]', bg: '[rgba(255, 248, 234, 0.16)]' },
+  '& i': { w: '[10px]', h: '[10px]', borderRadius: '[3px]', bg: 'cream/15' },
   '&.decor i.on': { bg: 'gold' },
   '&.calm i.on': { bg: '[#7fc2f2]' },
   '&.loud i.on': { bg: '[#f08a84]' },
@@ -121,8 +121,8 @@ const place = css({
   fontWeight: 'bold',
   fontSize: '[15px]',
   p: '[7px 12px]',
-  boxShadow: '[0 3px 0 rgba(36, 56, 74, 0.32)]',
-  _locked: { bg: '[#d7d2c5]', color: 'navy', cursor: 'not-allowed' },
+  boxShadow: '[0 3px 0 {colors.ink.30}]',
+  _locked: { bg: 'stone', color: 'navy', cursor: 'not-allowed' },
 });
 
 /**
@@ -135,7 +135,7 @@ const twoWay = css({
     position: 'relative',
     h: '[10px]',
     borderRadius: '[6px]',
-    bg: '[rgba(36, 56, 74, 0.16)]',
+    bg: 'ink.16',
     overflow: 'visible',
     mt: '[3px]',
   },
@@ -146,7 +146,7 @@ const twoWay = css({
     bottom: '[-2px]',
     w: '[2px]',
     ml: '[-1px]',
-    bg: '[rgba(36, 56, 74, 0.45)]',
+    bg: 'ink.50',
   },
   '& .bar i': {
     position: 'absolute',

@@ -32,7 +32,7 @@ const campaigns = css({
 
 /** A kind of campaign's card, in gold while one is running, with how long it has left. */
 const campaign = css(ledgerLook, {
-  '&.live': { borderColor: 'gold', bg: '[#fff6dc]' },
+  '&.live': { borderColor: 'gold', bg: 'gold-tint' },
   '& .running': { fontWeight: 'bold', mt: 's' },
 });
 

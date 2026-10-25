@@ -29,7 +29,7 @@ const day = css({
   fontWeight: 'bold',
   fontSize: '[12px]',
   bg: 'cream',
-  boxShadow: '[0 2px 0 rgba(36, 56, 74, 0.3)]',
+  boxShadow: '[0 2px 0 {colors.ink.30}]',
   _on: { bg: 'gold' },
 });
 

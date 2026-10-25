@@ -52,7 +52,7 @@ const upgrade = css({
   fontWeight: 'bold',
   fontSize: '[13px]',
   bg: 'gold',
-  boxShadow: '[0 3px 0 rgba(36, 56, 74, 0.3)]',
+  boxShadow: '[0 3px 0 {colors.ink.30}]',
   m: '[2px 0 6px]',
   _locked: { bg: 'cream', opacity: '[0.7]' },
 });

@@ -24,7 +24,7 @@ const part = css({
   alignItems: 'center',
   columnGap: 'm',
   bg: 'white',
-  border: '[2px solid rgba(36, 56, 74, 0.2)]',
+  border: '[2px solid {colors.ink.20}]',
   borderRadius: '[10px]',
   p: '[6px 10px]',
   fontSize: '[13px]',
@@ -42,7 +42,7 @@ const reviews = css({
   gap: 's',
   '& li': {
     bg: 'white',
-    border: '[2px solid rgba(36, 56, 74, 0.2)]',
+    border: '[2px solid {colors.ink.20}]',
     borderRadius: '[10px]',
     p: '[6px 10px]',
     fontSize: '[13px]',

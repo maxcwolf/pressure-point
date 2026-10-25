@@ -55,7 +55,7 @@ const stop = css({
     left: '[17px]',
     top: '[34px]',
     bottom: '[0]',
-    borderLeft: '[3px dashed rgba(36, 56, 74, 0.35)]',
+    borderLeft: '[3px dashed {colors.ink.35}]',
   },
   // the pin and the card keep their class names for this
   _locked: { '& .about': { opacity: '[0.6]' }, '& .pin': { bg: '[#8a929c]' } },

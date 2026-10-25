@@ -32,7 +32,7 @@ const toggleStyle = css({ display: 'block', m: '[3px 0 2px]' });
  */
 const pickCard = css({
   bg: 'white',
-  border: '[2px solid rgba(36, 56, 74, 0.35)]',
+  border: '[2px solid {colors.ink.35}]',
   borderRadius: '[11px]',
   p: '[4px 8px 8px]',
   m: '[6px 0 4px]',
@@ -52,7 +52,7 @@ const pick = css({
   border: '[1.5px solid transparent]',
   borderRadius: '[8px]',
   p: '[2px 4px]',
-  _hover: { borderColor: 'teal-dark', bg: '[#f0fbf9]' },
+  _hover: { borderColor: 'teal-dark', bg: 'teal-tint' },
 });
 
 /**
@@ -78,7 +78,7 @@ const table = css({
   '& tbody th': { fontWeight: '[500]', opacity: '[0.75]', hyphens: 'auto', overflowWrap: 'anywhere' },
   // five stars, small enough to fit their column
   '& .skill': { fontSize: '[10.5px]', letterSpacing: '[0]', whiteSpace: 'nowrap' },
-  '& tbody tr + tr': { borderTop: '[1px solid rgba(36, 56, 74, 0.12)]' },
+  '& tbody tr + tr': { borderTop: '[1px solid {colors.ink.10}]' },
   '& tr.section th': { opacity: '[1]', fontWeight: 'bold', pt: '[7px]' },
 });
 
@@ -86,7 +86,7 @@ const table = css({
 const labelColumn = css({ w: '[46%]' });
 
 /** The side that comes out ahead, or someone who has passed a course, in green. */
-const aheadStyle = css({ color: '[#23824a]', fontWeight: '[700]' });
+const aheadStyle = css({ color: 'green-dark', fontWeight: '[700]' });
 
 /** Someone who has not passed a course, faded. */
 const lacks = css({ opacity: '[0.4]' });

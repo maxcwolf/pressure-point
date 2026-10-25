@@ -27,7 +27,7 @@ const course = css({
   mb: 'xs',
   fontSize: '[13px]',
   fontWeight: '[500]',
-  _hover: { bg: '[#f0fbf9]' },
+  _hover: { bg: 'teal-tint' },
   '& small': { display: 'block', fontWeight: '[400]', fontSize: '[11px]', opacity: '[0.7]' },
   '& b': {
     bg: 'gold',

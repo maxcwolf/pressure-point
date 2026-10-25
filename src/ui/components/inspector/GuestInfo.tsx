@@ -48,7 +48,7 @@ const feelings = css({
   gap: 'xs',
   mb: '[5px]',
   '& > span': { fontSize: '[11.5px]', borderRadius: '[8px]', p: '[0 6px]', border: '[1.5px solid]' },
-  '& .good': { bg: '[#e3f5e9]', borderColor: '[#3fbf6f]' },
+  '& .good': { bg: 'green-tint', borderColor: '[#3fbf6f]' },
   '& .bad': { bg: 'bad-bg', borderColor: '[#e5484d]' },
 });
 

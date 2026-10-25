@@ -29,7 +29,7 @@ import { Icon, IconText } from '../common/Icon';
  */
 const decorCard = css({
   mt: '[10px]',
-  borderTop: '[2px dashed rgba(36, 56, 74, 0.18)]',
+  borderTop: '[2px dashed {colors.ink.20}]',
   pt: '[7px]',
   '.insp &': { '& h4': { fontSize: '[14px]', fontWeight: 'bold' } },
 });
@@ -49,7 +49,7 @@ const swatch = css({
   w: '[24px]',
   h: '[24px]',
   p: '[2px]',
-  border: '[2px solid rgba(36, 56, 74, 0.35)]',
+  border: '[2px solid {colors.ink.35}]',
   borderRadius: '[8px]',
   bg: 'white',
   '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '[5px]' },
@@ -76,7 +76,7 @@ const decorAll = css({
   fontWeight: 'bold',
   fontSize: '[13px]',
   bg: 'cream',
-  boxShadow: '[0 3px 0 rgba(36, 56, 74, 0.3)]',
+  boxShadow: '[0 3px 0 {colors.ink.30}]',
   m: '[2px 0 6px]',
 });
 

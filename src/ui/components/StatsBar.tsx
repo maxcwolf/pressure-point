@@ -58,7 +58,7 @@ const cell = css.raw({
   alignItems: 'center',
   py: 'm',
   px: '[13px]',
-  borderRight: '[2px solid rgba(36, 56, 74, 0.15)]',
+  borderRight: '[2px solid {colors.ink.16}]',
   minW: '[96px]',
   '& > .icon': { gridRow: '[span 2]' },
   '& b': { fontSize: '[18px]', fontWeight: 'bold', lineHeight: '[1.1]', fontVariantNumeric: 'tabular-nums' },
@@ -80,7 +80,7 @@ const moneyCell = css(cell, { minW: '[150px]', '&.neg b': { color: 'red' }, _max
 const repCell = css(cell, {
   bg: '[none]',
   border: '[none]',
-  borderRight: '[2px solid rgba(36, 56, 74, 0.15)]',
+  borderRight: '[2px solid {colors.ink.16}]',
   borderRadius: '[0]',
   textAlign: 'left',
   font: 'inherit',

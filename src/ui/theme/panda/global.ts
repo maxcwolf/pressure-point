@@ -40,9 +40,9 @@ export const globalCss = defineGlobalStyles({
   // smaller, fainter words under a heading or a setting
   '.sub': { fontSize: '12.5px', opacity: '0.72', marginTop: '6px' },
   // money or a change that is good news, and one that is bad
-  '.pos': { color: '#23805a' },
+  '.pos': { color: 'green-dark' },
   '.neg': { color: 'red' },
   // a short highlighted amount: enough, or short
-  'em.ok': { background: '#d8f1e2 !important', color: '#1c6b49' },
-  'em.warn': { background: '#fbe3e1 !important', color: '#a8322b' },
+  'em.ok': { background: '{colors.good-bg} !important', color: 'good' },
+  'em.warn': { background: '{colors.bad-bg} !important', color: 'bad' },
 });

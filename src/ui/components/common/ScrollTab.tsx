@@ -30,7 +30,7 @@ const tab = css({
   borderRadius: '[999px]',
   background:
     "[{colors.cream} url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3E%3Cpath d='M2 2l6 6 6-6' fill='none' stroke='%2324384a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") center / 15px 10px no-repeat]",
-  boxShadow: '[0 3px 0 rgba(36, 56, 74, 0.3)]',
+  boxShadow: '[0 3px 0 {colors.ink.30}]',
   cursor: 'pointer',
   opacity: '[0]',
   pointerEvents: 'none',
@@ -39,7 +39,7 @@ const tab = css({
   animation: 'tab-nod 1.4s ease-in-out infinite',
   "[data-more~='below'] > .scroll-foot > &": { opacity: '[1]', pointerEvents: 'auto' },
   _hover: { bgColor: 'white' },
-  _active: { translate: '[-50% 2px]', boxShadow: '[0 1px 0 rgba(36, 56, 74, 0.3)]', animation: 'none' },
+  _active: { translate: '[-50% 2px]', boxShadow: '[0 1px 0 {colors.ink.30}]', animation: 'none' },
   _motionReduce: { animation: 'none' },
 });
 

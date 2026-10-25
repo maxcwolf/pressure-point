@@ -5,7 +5,7 @@
 import { defineRecipe } from '@pandacss/dev';
 
 /** The flat drop under a smaller button, nearer the page than a panel's. */
-const LOW_SHADOW = '[0 3px 0 rgba(36, 56, 74, 0.3)]';
+const LOW_SHADOW = '[0 3px 0 {colors.ink.30}]';
 
 /** A button with words on it: the go and danger buttons, and every button in a row of them. */
 const worded = {
@@ -61,8 +61,8 @@ export const roundButton = defineRecipe({
     gap: 'none',
     transition: '[transform 0.08s]',
     '& span': { fontSize: '[12.5px]', fontWeight: 'bold', textShadow: '[0 1px 0 rgba(0, 0, 0, 0.25)]' },
-    _hover: { transform: '[translateY(-3px)]', bg: '[#38bdb4]' },
-    _active: { transform: '[translateY(2px)]', boxShadow: '[0 2px 0 rgba(36, 56, 74, 0.32)]' },
+    _hover: { transform: '[translateY(-3px)]', bg: 'teal-light' },
+    _active: { transform: '[translateY(2px)]', boxShadow: '[0 2px 0 {colors.ink.30}]' },
     // on stays orange under the pointer
     '&.on, &.on:hover': { bg: 'orange' },
     _max1540: { w: '[66px]', h: '[66px]', '& i': { fontSize: '[22px]' }, '& span': { fontSize: '[11px]' } },
@@ -77,7 +77,7 @@ export const roundButton = defineRecipe({
         fontSize: '[19px]',
         bg: 'cream',
         color: 'navy',
-        '&.off': { position: 'relative', bg: '[#d7d2c5]' },
+        '&.off': { position: 'relative', bg: 'stone' },
         '&.off::after': {
           content: "''",
           position: 'absolute',
@@ -106,11 +106,11 @@ export const roundButton = defineRecipe({
           zIndex: '[0]',
           overflow: 'visible',
           pointerEvents: 'none',
-          filter: '[drop-shadow(0 5px 0 rgba(36, 56, 74, 0.32))]',
+          filter: '[drop-shadow(0 5px 0 {colors.ink.30})]',
         },
         '& > .shape .fill': { fill: 'teal', stroke: 'navy', strokeWidth: '3', strokeLinejoin: 'round' },
-        '&:hover > .shape .fill': { fill: '[#38bdb4]' },
-        '&:active > .shape': { filter: '[drop-shadow(0 2px 0 rgba(36, 56, 74, 0.32))]' },
+        '&:hover > .shape .fill': { fill: 'teal-light' },
+        '&:active > .shape': { filter: '[drop-shadow(0 2px 0 {colors.ink.30})]' },
         '&.on > .shape .fill': { fill: 'orange' },
         '& > .icon, & > span': { position: 'relative', zIndex: '[1]' },
       },
@@ -130,7 +130,7 @@ export const goButton = defineRecipe({
 export const dangerButton = defineRecipe({
   className: 'danger',
   description: 'A light red worded button to think twice about',
-  base: { ...worded, bg: '[#fbe3e1]', color: '[#a8322b]' },
+  base: { ...worded, bg: 'bad-bg', color: 'bad' },
 });
 
 /**
@@ -148,7 +148,7 @@ export const buttonRow = defineRecipe({
     mt: '[10px]',
     '& button': { ...worded, fontSize: '[16px]', p: '[8px 20px]' },
     '& button:is(.go)': { bg: 'green' },
-    '& button:is(.danger)': { bg: '[#fbe3e1]' },
+    '& button:is(.danger)': { bg: 'bad-bg' },
     '& button.locked': { opacity: '[0.45]', cursor: 'not-allowed' },
   },
   variants: {
@@ -200,7 +200,7 @@ export const toggleSwitch = defineRecipe({
     h: '[30px]',
     borderRadius: '[999px]',
     border: '[2.5px solid {colors.navy}]',
-    bg: '[#d7d2c5]',
+    bg: 'stone',
     p: 'none',
     position: 'relative',
     transition: '[background 0.15s]',
@@ -234,7 +234,7 @@ export const fileButton = defineRecipe({
     fontSize: '[13px]',
     fontWeight: 'bold',
     bg: 'white',
-    _hover: { bg: '[#f0fbf9]' },
+    _hover: { bg: 'teal-tint' },
   },
 });
 

@@ -42,7 +42,7 @@ const stars = css({
 const list = css({ listStyle: 'none', p: 'none', mt: 'xs' });
 
 /** A line with a tick or a circle before it and its words after, taking the room left; green once done. */
-const tickLine = css.raw({ display: 'flex', gap: '[7px]', '& span': { flex: '1' }, '&.done': { color: '[#23805a]' } });
+const tickLine = css.raw({ display: 'flex', gap: '[7px]', '& span': { flex: '1' }, '&.done': { color: 'green-dark' } });
 
 /** An objective, or the line saying there are none left. */
 const objectiveLine = css(tickLine, { fontSize: 'body', py: 'xs' });
@@ -55,7 +55,7 @@ const stepLine = css(tickLine, {
   fontSize: '[13px]',
   py: 'xxs',
   '&.current': { fontWeight: 'bold' },
-  '&.ahead': { color: '[rgba(36, 56, 74, 0.5)]' },
+  '&.ahead': { color: 'ink.50' },
 });
 
 /** Words that open something out when clicked, as plain as the words around them, underlined under the pointer. */
@@ -78,7 +78,7 @@ const detailList = css({
   listStyle: 'none',
   p: '[5px 8px]',
   m: '[4px 0 2px]',
-  bg: '[rgba(36, 56, 74, 0.06)]',
+  bg: 'ink.6',
   borderRadius: '[8px]',
   fontSize: '[12px]',
   color: 'navy',
@@ -86,7 +86,7 @@ const detailList = css({
 });
 
 /** What a first game will need soon, or the tutorial's steps, under a dashed line. */
-const gettingReady = css({ mt: 'm', pt: 's', borderTop: '[2px dashed rgba(36, 56, 74, 0.2)]' });
+const gettingReady = css({ mt: 'm', pt: 's', borderTop: '[2px dashed {colors.ink.20}]' });
 
 /** Its heading, in small teal capitals. */
 const gettingReadyHeading = css({
@@ -122,7 +122,7 @@ const card = css.raw({
 const emergencyCard = css(card);
 
 /** The card for a staff challenge, in gold. */
-const challengeCard = css(card, { bg: '[#fff6dc]', borderColor: 'gold' });
+const challengeCard = css(card, { bg: 'gold-tint', borderColor: 'gold' });
 
 /** One objective: its label and progress, and on a click the numbers behind it, a line each. */
 function ObjectiveRow({ objective: o, goal }: { objective: Objective; goal: GoalSpec | undefined }) {

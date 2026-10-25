@@ -26,8 +26,8 @@ import { ledgerCard, ledgerLook, ledgers } from './looks';
 const verdict = css(ledgerLook, {
   mb: 'l',
   '& h4': { mb: 'none' },
-  '&.ok': { borderColor: '[#23805a]', bg: '[#e6f4ec]' },
-  '&.warn': { borderColor: 'gold', bg: '[#fff6dc]' },
+  '&.ok': { borderColor: 'green-dark', bg: 'green-tint' },
+  '&.warn': { borderColor: 'gold', bg: 'gold-tint' },
   '&.bad': { borderColor: 'red', bg: 'bad-bg' },
 });
 

@@ -16,10 +16,32 @@ export const tokens = defineTokens({
     green: { value: '#3bb273' },
     blue: { value: '#4a9fe0' },
     white: { value: '#fff' },
+    // the paler and deeper steps of the palette's colors, for a ground under the pointer, a chosen one or a quiet one
+    'teal-light': { value: '#38bdb4' },
+    'teal-tint': { value: '#f0fbf9' },
+    'teal-wash': { value: '#e6f6f3' },
+    'green-dark': { value: '#23805a' },
+    'green-tint': { value: '#e3f5e9' },
+    'gold-tint': { value: '#fff6dc' },
+    violet: { value: '#8a6fd1' },
+    'violet-tint': { value: '#e4d9f7' },
+    stone: { value: '#d7d2c5' },
+    /** Navy laid thin over what is under it, for a hairline, a quiet ground or a shadow: each step its alpha in percent. */
+    ink: {
+      6: { value: 'rgba(36, 56, 74, 0.06)' },
+      10: { value: 'rgba(36, 56, 74, 0.1)' },
+      16: { value: 'rgba(36, 56, 74, 0.16)' },
+      20: { value: 'rgba(36, 56, 74, 0.2)' },
+      25: { value: 'rgba(36, 56, 74, 0.25)' },
+      30: { value: 'rgba(36, 56, 74, 0.3)' },
+      35: { value: 'rgba(36, 56, 74, 0.35)' },
+      50: { value: 'rgba(36, 56, 74, 0.5)' },
+      80: { value: 'rgba(36, 56, 74, 0.8)' },
+    },
   },
   shadows: {
     /** The flat drop under a panel or a button, as if it stood a little off the page. */
-    raised: { value: '0 5px 0 rgba(36, 56, 74, 0.32)' },
+    raised: { value: '0 5px 0 {colors.ink.30}' },
   },
   fonts: {
     body: { value: "'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif" },
@@ -48,7 +70,7 @@ export const tokens = defineTokens({
   },
   borders: {
     control: { value: '2px solid {colors.navy}' },
-    card: { value: '2px solid rgba(36, 56, 74, 0.3)' },
+    card: { value: '2px solid {colors.ink.30}' },
   },
   opacity: {
     muted: { value: '0.72' },

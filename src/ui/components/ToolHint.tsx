@@ -59,13 +59,13 @@ const phrase = css({
   alignItems: 'center',
   gap: '[5px]',
   fontSize: '[13px]',
-  border: '[1.5px solid rgba(36, 56, 74, 0.25)]',
+  border: '[1.5px solid {colors.ink.25}]',
   bg: 'white',
   borderRadius: 'control',
   py: '[1px]',
   px: 'm',
   '&.name': { fontSize: '[15px]', fontWeight: 'bold', border: '[none]', bg: '[none]', p: '[0 4px 0 0]' },
-  '&.cost': { bg: '[#fdf0c8]', borderColor: 'gold', fontWeight: 'bold' },
+  '&.cost': { bg: 'gold-tint', borderColor: 'gold', fontWeight: 'bold' },
 });
 
 /** A key, drawn as a key. */
@@ -88,7 +88,7 @@ const square = css({
   w: '[11px]',
   h: '[11px]',
   borderRadius: '[3px]',
-  border: '[1.5px solid rgba(36, 56, 74, 0.5)]',
+  border: '[1.5px solid {colors.ink.50}]',
   '&.staff': { bg: '[#9b6bff]' },
   '&.guest': { bg: '[#ff8a3c]' },
 });
@@ -124,7 +124,7 @@ const effectList = css({
 const effect = css({
   fontSize: 'small',
   fontWeight: '[500]',
-  border: '[1.5px solid rgba(36, 56, 74, 0.35)]',
+  border: '[1.5px solid {colors.ink.35}]',
   bg: 'white',
   borderRadius: 'control',
   p: '[1px 8px]',

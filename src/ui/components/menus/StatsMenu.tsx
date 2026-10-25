@@ -55,7 +55,7 @@ const choices = css({
   m: '[8px 0 4px]',
   '& .chip': {
     pointerEvents: 'auto',
-    border: '[2px solid rgba(36, 56, 74, 0.35)]',
+    border: '[2px solid {colors.ink.35}]',
     borderRadius: '[999px]',
     bg: 'white',
     p: '[3px 11px]',
@@ -71,7 +71,7 @@ const awardList = css({
   mt: 'l',
   '& ul': { listStyle: 'none', p: 'none', display: 'flex', flexWrap: 'wrap', gap: 's', mb: 's' },
   '& li': {
-    bg: '[#fff6dc]',
+    bg: 'gold-tint',
     border: '[2px solid {colors.gold}]',
     borderRadius: 'control',
     p: '[2px 8px]',

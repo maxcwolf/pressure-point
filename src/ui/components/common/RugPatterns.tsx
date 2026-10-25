@@ -21,7 +21,7 @@ const swatch = css({
   w: 'control',
   h: 'control',
   p: '[2px]',
-  border: '[2px solid rgba(36, 56, 74, 0.35)]',
+  border: '[2px solid {colors.ink.35}]',
   borderRadius: '[8px]',
   bg: 'white',
   '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '[5px]' },

@@ -46,7 +46,7 @@ const show = css({
   fontSize: '[14px]',
   bg: 'teal',
   color: 'white',
-  boxShadow: '[0 3px 0 rgba(36, 56, 74, 0.3)]',
+  boxShadow: '[0 3px 0 {colors.ink.30}]',
   _hover: { filter: '[brightness(1.06)]', transform: '[translateY(-1px)]' },
 });
 

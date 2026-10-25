@@ -50,7 +50,7 @@ const column = css({
     bg: '[none]',
     fontSize: '[15px]',
     opacity: '[0.6]',
-    _hover: { opacity: '[1]', bg: '[rgba(36, 56, 74, 0.08)]' },
+    _hover: { opacity: '[1]', bg: 'ink.10' },
   },
   // how long is left to decide, over a bar of it
   '& .offer .time-left': { fontSize: 'small', fontWeight: 'bold', m: '[8px auto 0]', w: '[70%]' },

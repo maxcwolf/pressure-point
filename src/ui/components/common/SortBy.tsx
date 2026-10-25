@@ -26,7 +26,7 @@ const select = css({
   borderRadius: '[11px]',
   p: '[3px 27px 3px 10px]',
   cursor: 'pointer',
-  _hover: { bgColor: '[#f0fbf9]', borderColor: 'teal-dark' },
+  _hover: { bgColor: 'teal-tint', borderColor: 'teal-dark' },
   _focusVisible: { outline: '[2px solid {colors.teal}]', outlineOffset: '[2px]' },
   // where the browser lets the open list be drawn too, it is drawn as one of the game's panels
   '@supports (appearance: base-select)': {
@@ -44,7 +44,7 @@ const select = css({
     },
     '& option': { p: '[4px 10px]', borderRadius: '[8px]', fontSize: '[13px]' },
     '& option::checkmark': { display: 'none' },
-    '& option:hover, & option:focus-visible': { outline: '[none]', bg: '[#e6f6f3]' },
+    '& option:hover, & option:focus-visible': { outline: '[none]', bg: 'teal-wash' },
     '& option:checked': { bg: 'teal', color: 'white', fontWeight: 'bold' },
   },
 });

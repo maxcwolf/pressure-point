@@ -4,7 +4,7 @@
 import { defineGlobalStyles } from '@pandacss/dev';
 
 /** The navy of a scrollbar's thumb, and of it under the pointer. */
-const THUMB = 'rgba(36, 56, 74, 0.55)';
+const THUMB = '{colors.ink.50}';
 
 export const scrollCueCss = defineGlobalStyles({
   '[data-more]': {
@@ -41,7 +41,7 @@ export const scrollCueCss = defineGlobalStyles({
     borderRadius: '6px',
     backgroundClip: 'padding-box',
   },
-  '[data-more]::-webkit-scrollbar-thumb:hover': { background: 'rgba(36, 56, 74, 0.8)', backgroundClip: 'padding-box' },
+  '[data-more]::-webkit-scrollbar-thumb:hover': { background: '{colors.ink.80}', backgroundClip: 'padding-box' },
   '@supports not selector(::-webkit-scrollbar)': {
     '[data-more]': { scrollbarWidth: 'thin', scrollbarColor: `${THUMB} {colors.sand}` },
   },
@@ -63,7 +63,7 @@ export const scrollCueCss = defineGlobalStyles({
     top: 'calc(-1 * var(--cue-pt))',
     height: 'calc(var(--cue-h) + var(--cue-pt))',
     marginBottom: 'calc(-1 * (var(--cue-h) + var(--cue-pt)))',
-    background: 'linear-gradient(rgba(36, 56, 74, 0.16) var(--cue-pt), rgba(36, 56, 74, 0))',
+    background: 'linear-gradient({colors.ink.16} var(--cue-pt), rgba(36, 56, 74, 0))',
   },
   '[data-more]::after': {
     bottom: 'calc(-1 * var(--cue-pb))',

@@ -41,7 +41,7 @@ const strip = css({
     gap: 'xs',
     p: '[10px 8px]',
     bg: 'white',
-    border: '[2px solid rgba(36, 56, 74, 0.25)]',
+    border: '[2px solid {colors.ink.25}]',
     borderRadius: 'card',
   },
   '& b': { fontSize: '[14px]' },

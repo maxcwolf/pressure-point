@@ -27,8 +27,8 @@ const bigStars = css({
 
 /** What the star unlocks, on a lilac card. */
 const unlock = css({
-  bg: '[#e4d9f7]',
-  border: '[2px solid #8a6fd1]',
+  bg: 'violet-tint',
+  border: '[2px solid {colors.violet}]',
   borderRadius: 'card',
   py: 'm',
   px: 'l',
