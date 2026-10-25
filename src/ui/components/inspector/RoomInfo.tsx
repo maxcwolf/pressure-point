@@ -170,16 +170,18 @@ function Sprinklers({ room }: { room: Room }) {
       : `Fit sprinklers (${money(SPRINKLER_COST)})`;
   return (
     <Button
-      class="roomsprinklers"
+      class={cx('roomsprinklers', room.sprinklers && 'on')}
       title={
         room.sprinklers
           ? 'A fire here goes out on its own, and soaks the room. The health inspector counts them as an extinguisher.'
           : (why ??
             'A fire here goes out on its own before it can spread, though it soaks the room until a Caretaker mops it out. The health inspector counts them as an extinguisher.')
       }
-      locked={!!why}
+      // once fitted it only shows they are, lit like a setting that is on, and pressing it does nothing
+      locked={!room.sprinklers && !!why}
+      quiet={!!room.sprinklers}
       onPress={() => {
-        sim.fitSprinklers(room.id);
+        if (!room.sprinklers) sim.fitSprinklers(room.id);
       }}
     >
       <IconText id="ui-sprinklers">{label}</IconText>

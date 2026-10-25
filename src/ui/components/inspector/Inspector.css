@@ -202,7 +202,8 @@
   font-weight: 600;
 }
 
-.insp button.roompriority.on {
+.insp button.roompriority.on,
+.insp button.roomsprinklers.on {
   background: var(--gold);
 }
 
