@@ -1,7 +1,5 @@
 // The build menu that is open, above the buttons that open it.
 
-import './Menu.css';
-
 import type { ComponentChildren } from 'preact';
 
 import { css } from '../../../styled-system/css';

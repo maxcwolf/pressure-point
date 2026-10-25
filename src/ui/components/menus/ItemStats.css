@@ -1,6 +1,0 @@
-/* An item's tooltip is a little wider than most, for its list of stats. The tooltip is ui/tooltip.tsx's, which marks
-   one drawn by ItemTip as rich, so this stays plain CSS until that draws its rich width itself. */
-
-#tip.rich {
-  max-width: min(300px, calc(var(--vw) - 16px));
-}

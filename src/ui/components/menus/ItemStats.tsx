@@ -1,8 +1,6 @@
 // What an item does, shown three ways in the Items menu: as chips on its card, in its tooltip, or in a panel beside
 // the cards, as the settings choose.
 
-import './ItemStats.css';
-
 import { HEAT_RADIUS, type IconId, ITEMS, type ItemType } from '../../../core/data';
 import { money } from '../../../core/format';
 import { decorReach } from '../../../core/sim/ambience';

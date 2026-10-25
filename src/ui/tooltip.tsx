@@ -63,6 +63,8 @@ const bubble = css({
   },
   '& kbd + kbd': { ml: 'xs' },
   '&.below': { animationName: 'tip-in-below' },
+  // an item's tooltip (ItemTip) is a little wider than most, for its list of stats
+  '&.rich': { maxW: '[min(300px, calc(var(--vw) - 16px))]' },
   _motionReduce: { animation: 'none' },
   // an icon in the navy bubble sits on a cream chip, or its navy outline would vanish
   '& .icon': { bg: 'cream', borderRadius: '[6px]', p: '[1.5px]' },

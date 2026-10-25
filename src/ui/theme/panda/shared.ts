@@ -18,6 +18,20 @@ export const sharedCss = defineGlobalStyles({
   },
   '.panel h3': { fontSize: '17px', fontWeight: '600', marginBottom: '6px' },
 
+  // tabs, such as the Hire menu's roles and the Items menu's filters, the campaign's, the sandbox's starting money, the
+  // difficulty presets and a thermostat's settings
+  '.tabs': { display: 'flex', gap: '6px', flexWrap: 'wrap' },
+  '.tab': {
+    border: '2.5px solid {colors.navy}',
+    background: 'white',
+    borderRadius: '11px',
+    padding: '4px 11px',
+    fontSize: '13.5px',
+    fontWeight: '500',
+  },
+  '.tab.on': { background: 'teal', color: 'white' },
+  '.tab.small': { fontSize: '12.5px', padding: '3px 10px', borderWidth: '2px' },
+
   // round buttons, such as the bar's menus and tools
   '.round': {
     pointerEvents: 'auto',

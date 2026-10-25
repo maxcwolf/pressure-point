@@ -1,7 +1,5 @@
 // The title screen: the logo, the latest save, and the ways into the game, over a blurred view of it.
 
-import './TitleScreen.css';
-
 import { useEffect, useState } from 'preact/hooks';
 
 import type { Audio } from '../../audio/audio';
@@ -45,7 +43,7 @@ export interface TitleScreenProps {
 
 // Everything is sized from the window's height, so the menu fits a short window without scrolling. A panel takes the
 // menu's place under the logo, and scrolls within itself when it is long. The screen itself, and the height of the logo
-// that so much is sized by, are in TitleScreen.css.
+// that so much is sized by, are on the element ui/index.tsx makes for it.
 
 /** The latest game, or a center in full swing, blurred and dimmed behind everything. */
 const backdropLook = css({
@@ -79,7 +77,7 @@ const logoLook = css({
   textAlign: 'center',
 });
 
-/** The logo's picture, as tall as --logo-h, which TitleScreen.css sets. */
+/** The logo's picture, as tall as --logo-h, which ui/index.tsx sets. */
 const logoPicture = css({ h: '[var(--logo-h)]', w: 'auto', maxW: '[100%]', objectFit: 'contain' });
 
 /** The dark panel, tucked up under the bottom of the logo. */

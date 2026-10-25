@@ -3,6 +3,7 @@
 import { render } from 'preact';
 
 import type { Audio } from '../audio/audio';
+import { css } from '../styled-system/css';
 import { FloaterLayer, Hud as HudView } from './components/Hud';
 import { TitleScreen } from './components/TitleScreen';
 import { applyDisplay } from './display';
@@ -27,6 +28,26 @@ export function mountHud(host: GameHost): HudState {
 }
 
 /**
+ * The title screen's own element, over everything, which TitleScreen.tsx draws into. Everything is sized from the
+ * window's height, so the menu fits a short window without scrolling; a panel takes the menu's place under the logo,
+ * and scrolls within itself when it is long.
+ */
+const titleStyle = css({
+  // the logo's height, which also sets how far the panel tucks up under it; the logo is 0.43 as tall as wide
+  '--logo-h': 'min(clamp(80px, 22vh, 268px), calc((100vw - 32px) * 0.43))',
+  position: 'fixed',
+  inset: '[0]',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  p: '[clamp(8px, 2.5vh, 24px) 16px]',
+  overflow: 'hidden',
+  pointerEvents: 'auto',
+  zIndex: '[20]',
+  bg: '[#3d5168]',
+});
+
+/**
  * Show the title screen, with a note if there is one and the welcome to the alpha if it is due, until the player picks
  * 'new' or a save to load, and report which.
  */
@@ -41,6 +62,7 @@ export function showTitle(
   return new Promise((resolve) => {
     const el = document.createElement('div');
     el.id = 'title';
+    el.className = titleStyle;
     document.body.appendChild(el);
     /** Take the title screen away and report what was picked. */
     const finish = (what: string) => {

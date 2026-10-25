@@ -157,7 +157,7 @@ export function CampaignPanel({ onStart, audio }: CampaignPanelProps) {
   const progress = loadCampaign();
   return (
     <div>
-      {/* `karma`, `stop`, `shop` and `shop-head` are for the tests, and `tabs` and `tab` for Menu.css */}
+      {/* `karma`, `stop`, `shop` and `shop-head` are for the tests, and `tabs` and `tab` for the shared tab look */}
       <p class={cx('karma', karma)}>
         <IconText id="ui-karma">{karmaText(karmaLeft(progress))}</IconText>
       </p>

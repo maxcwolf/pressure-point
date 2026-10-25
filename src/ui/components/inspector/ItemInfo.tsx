@@ -58,9 +58,9 @@ const upgrade = css({
 
 /**
  * A heater or air conditioner's thermostat, a little apart from the rest, with the words under its tabs close to them.
- * Its tabs' own spacing is in Inspector.css, by `thermostat`, as it has to outdo the menus' tabs, still plain CSS.
+ * Its tabs sit closer together than the menus' do.
  */
-const thermostat = css({ mt: 'm', '& .sub': { m: '[4px 0 0]' } });
+const thermostat = css({ mt: 'm', '& .sub': { m: '[4px 0 0]' }, '& .tabs': { m: '[3px 0 0]', gap: 'xs' } });
 
 /** Setting every one of its kind alike, faded while they already are. */
 const every = css({ _locked: { opacity: '[0.5]', cursor: 'not-allowed' } });

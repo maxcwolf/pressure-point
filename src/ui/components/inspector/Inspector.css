@@ -1,7 +1,4 @@
-/*
- * What is left of the inspector's plain CSS: rules for markup outside it that took the inspector's looks, and one that
- * has to outdo another stylesheet's plain CSS. The inspector's own styles are in its components.
- */
+/* What is left of the inspector's plain CSS: the overlay key's ✕, which took the inspector's look. */
 
 /* the overlay key's round ✕ (OverlayPicker.tsx), drawn like the inspector's own; it lays it out itself */
 #overlay-key .x {
@@ -12,19 +9,4 @@
   background: #fff;
   font-size: 12px;
   line-height: 1;
-}
-
-/* the Items menu's calm chips (ItemStats.tsx), which took the old global .calm meant for a guest's calm button */
-.stat-chips .calm {
-  display: block;
-  margin-top: 8px;
-}
-
-/*
- * A thermostat's tabs, closer together than the menus' (ItemInfo.tsx). They wear the menus' .tabs, and Menu.css is
- * still plain CSS, which outdoes any Panda style, so this has to be plain CSS too until it is converted.
- */
-.insp .thermostat .tabs {
-  margin: 3px 0 0;
-  gap: 4px;
 }
