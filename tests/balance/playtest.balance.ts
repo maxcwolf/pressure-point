@@ -1,6 +1,6 @@
 // Plays every campaign center with the playtest bot and reports the pace: when it opened, when each star came, and
 // the money, reputation, guests and waits month by month. Not a pass/fail test: run `yarn balance` before and after
-// a tuning change and compare. The full logs go to test-results/balance.json. `BOT=old` plays as the bot did before
+// a tuning change and compare. The full logs go to balance-results/balance.json. `BOT=old` plays as the bot did before
 // it learned prices, marketing, payroll, saving, expansion on profit, house calls, lines, the Posture Lab, upgrades,
 // emergencies it can see through, room layout, mats, classes, courses, and the owner's habits (a small loan, an early
 // fit-out, every emergency and outbreak taken, a better applicant in place of the weakest: `loan`, `early`, `brave`,
@@ -12,31 +12,26 @@
 // actionable can be measured.
 //
 // Each center and seed is a run of its own, and the runs are spread over worker slots (`BALANCE_SLOTS`, by default one
-// fewer than the processor's cores; see vitest.balance.config.ts), each writing its log to test-results/balance-parts
-// for tests/balance/merge.ts to put together in order. The default run (five centers, three seeds, four years) took
+// fewer than the processor's cores; see vitest.balance.config.ts), each writing its log to balance-results/parts for
+// tests/balance/merge.ts to put together in order. The default run (five centers, three seeds, four years) took
 // 488 seconds on one thread and takes 137 seconds over 15 slots, on the 16-core Mac it was measured on (21 October 2026).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { it } from 'vitest';
 
-import { CAMPAIGN, type CenterId, DAYS_PER_MONTH } from '../../src/core/data';
+import { DAYS_PER_MONTH } from '../../src/core/data';
 import { Bot } from './bot';
-import { PARTS } from './merge';
+import { games, PARTS } from './merge';
 
 /** How long each center is played, in in-game days: four years. */
 const DAYS = Number(process.env.BALANCE_DAYS ?? 360 * 4);
-/** Seeds per center, so one lucky run does not mislead. */
-const SEEDS = (process.env.BALANCE_SEEDS ?? '1,2,3').split(',').map(Number);
-const CENTERS = (process.env.BALANCE_CENTERS?.split(',') ?? CAMPAIGN) as CenterId[];
 /** This worker's slot, and how many there are: the slot plays every `SLOTS`-th run, starting with its own number. */
 const SLOT = Number(process.env.BALANCE_SLOT ?? 0);
 const SLOTS = Number(process.env.BALANCE_SLOTS ?? 1);
 
-/** Every run asked for, center by center and seed by seed, numbered in that order. */
-const RUNS = CENTERS.flatMap((center) => SEEDS.map((seed) => ({ center, seed })))
-  .map((run, index) => ({ ...run, index }))
-  .filter((run) => run.index % SLOTS === SLOT);
+/** This slot's share of the runs asked for (`games` in merge.ts, which counts their logs in at the end). */
+const RUNS = games().filter((run) => run.index % SLOTS === SLOT);
 
 /** A day as months into the game, for the summary line. */
 const months = (day: number | null) => (day === null ? '  -  ' : (day / DAYS_PER_MONTH).toFixed(1).padStart(5));

@@ -53,6 +53,7 @@ export default tseslint.config(
       'release/',
       'node_modules/',
       'test-results/',
+      'balance-results/',
       'playwright-report/',
       '.yarn/',
     ],

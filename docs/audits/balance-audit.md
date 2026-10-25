@@ -183,7 +183,7 @@ What it shows:
 
 ## Tools
 
-- `yarn balance` plays every campaign center with the bot and writes `test-results/balance.json`. Set `BALANCE_CENTERS`, `BALANCE_SEEDS` and `BALANCE_DAYS` to narrow it.
+- `yarn balance` plays every campaign center with the bot and writes `balance-results/balance.json`. Set `BALANCE_CENTERS`, `BALANCE_SEEDS` and `BALANCE_DAYS` to narrow it.
 - The bot is in [tests/balance/bot.ts](../../tests/balance/bot.ts), the runner in [tests/balance/playtest.balance.ts](../../tests/balance/playtest.balance.ts).
 
 ## Research notes: Two Point Hospital

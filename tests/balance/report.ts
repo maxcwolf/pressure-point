@@ -1,4 +1,4 @@
-// Turns the playtest logs of `yarn balance` (test-results/balance.json) into the markdown the balance log reads: the
+// Turns the playtest logs of `yarn balance` (balance-results/balance.json) into the markdown the balance log reads: the
 // table of entries 27 to 31, the same table before → after when given a second run, and the fairness slices of
 // docs/research/fair-challenge.md (per-seed survival, the warning before each loss, reputation cliffs, spirals after
 // adverse events, and how much of the income is not treatments). Pure: no files, no game code, so that
