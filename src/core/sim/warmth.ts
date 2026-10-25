@@ -32,6 +32,9 @@ import { gridAt, type Spread, spreader } from './spread';
 /** The month of the year, with a fraction, when summer is at its hottest and winter at its coldest. */
 const MIDSUMMER = 6.5;
 
+/** The day of each year when winter is at its coldest, half a year from the height of summer. */
+export const COLDEST_DAY = (MIDSUMMER - 6) * DAYS_PER_MONTH;
+
 /** How far through the year's swing a day is: 1 at the height of summer, -1 in the depths of winter. */
 export function seasonal(day: number): number {
   const month = (day / DAYS_PER_MONTH) % 12;
