@@ -58,6 +58,7 @@ import { unfedStations } from '../../src/core/sim/demand';
 import { daysUntilBankrupt, loanLimit, projectedCashflow, putOffChance, wagesDue } from '../../src/core/sim/economy';
 import type { SimEvent, Subject } from '../../src/core/sim/events';
 import { INTAKE_CAP_MIN } from '../../src/core/sim/guests';
+import { machineUpkeep } from '../../src/core/sim/machines';
 import { rivalPoints } from '../../src/core/sim/rival';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
@@ -178,6 +179,11 @@ export const BOT_FLAGS = [
    * the new hire walks in from the street, and their experience toward the next rank.
    */
   'swap',
+  /**
+   * Give to the Pressure Point Foundation once every star is earned, the next gift whenever it leaves two months' wages
+   * and machine upkeep in the bank, as a good player with money piling up would.
+   */
+  'endow',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -458,6 +464,8 @@ export interface MonthLog {
   priced: number;
   income: number;
   spending: number;
+  /** Given to the Foundation, in a month with a gift. */
+  gifts?: number;
   wages: number;
   avgWaitDays: number | null;
   inside: number;
@@ -560,6 +568,10 @@ export interface Playtest {
   warnings: { day: number; text: string }[];
   /** The day the game ended in bankruptcy, or null if it did not. */
   bankruptDay: number | null;
+  /** Each payday the bank could not cover from the money in hand, as the player meets it: the day, wages and bank. */
+  heldPaydays?: { day: number; wages: number; money: number; loan: number }[];
+  /** The day each gift to the Foundation was made, with the `endow` flag. */
+  gifts?: number[];
   /** The treatment machines built, with the `machines` flag. */
   machines: MachineLog[];
   /**
@@ -709,6 +721,8 @@ export class Bot {
       adverse: [],
       warnings: [],
       bankruptDay: null,
+      heldPaydays: [],
+      ...(flags.endow ? { gifts: [] } : {}),
       machines: [],
       ...(flags.swap ? { swaps: [] } : {}),
     };
@@ -742,6 +756,13 @@ export class Bot {
         this.hear(events);
         // a payday the bank cannot cover is borrowed for, as the player would, and past the loan paid into the red
         if (this.s.payrollDue) {
+          const { wages } = this.s.payrollDue;
+          this.log.heldPaydays?.push({
+            day: Math.floor(this.s.day),
+            wages,
+            money: Math.round(this.s.money),
+            loan: this.s.loan,
+          });
           if (this.sim.takePayrollLoan())
             this.note(`day ${Math.floor(this.s.day)}: borrowed to make payday, loan now ${this.s.loan}`);
           else if (this.sim.payIntoRed())
@@ -872,6 +893,7 @@ export class Bot {
     const st = s.stats;
     const l = s.lastLedger;
     const income = l.consult + l.treatment + l.classes + l.vending + l.shop + l.mushrooms + l.calls + l.bonus;
+    // what running the center cost: gifts to the Foundation are not, and are logged on their own
     const spending = l.salaries + l.building + l.upkeep + l.training + l.interest + l.marketing + l.fines;
     // the machines' running costs, shared out among those built
     const built = this.log.machines.filter((m) => m.site !== 'skipped');
@@ -904,6 +926,7 @@ export class Bot {
       priced: st.priced - this.monthStart.priced,
       income: Math.round(income),
       spending: Math.round(spending),
+      ...(l.gifts > 0 ? { gifts: l.gifts } : {}),
       wages: Math.round(l.salaries),
       avgWaitDays: wait === null ? null : Math.round(wait * 10) / 10,
       inside: s.guests.length,
@@ -1386,6 +1409,18 @@ export class Bot {
     if (this.flags.early) this.dressNew();
     this.decorate();
     this.comforts();
+    if (this.flags.endow) this.endow();
+  }
+
+  /** The next gift to the Foundation, once every star is earned, if it leaves two months' wages and upkeep in hand. */
+  private endow() {
+    const s = this.s;
+    const price = this.sim.nextGift();
+    if (price === null || this.sim.giftBlocker()) return;
+    if (s.money - price < 2 * (wagesDue(s) + machineUpkeep(s))) return;
+    if (!this.sim.endow()) return;
+    this.log.gifts?.push(Math.floor(s.day));
+    this.note(`day ${Math.floor(s.day)}: gave ${price} to the Foundation`);
   }
 
   /**
