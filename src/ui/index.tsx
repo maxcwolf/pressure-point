@@ -9,10 +9,13 @@ import { applyDisplay } from './display';
 import { byId } from './dom';
 import type { FullScreenSwitch, GameHost, UpdateOffer } from './host';
 import { HudState } from './hud';
+import { installScrollCues } from './scroll-cue';
 import { installTooltips } from './tooltip';
 
-// before anything is drawn, so every title becomes one of the game's tooltips, and the interface is drawn at its size
+// before anything is drawn, so every title becomes one of the game's tooltips, every scrolling panel shows when it holds
+// more, and the interface is drawn at its size
 installTooltips();
+installScrollCues();
 applyDisplay();
 
 /** Draw the in-game interface for a game and return its state, which the rest of the app talks to. */

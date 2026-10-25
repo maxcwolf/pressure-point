@@ -19,6 +19,7 @@ import logo from '../theme/logo.png';
 import { CampaignPanel } from './CampaignPanel';
 import { ChangelogPanel } from './ChangelogPanel';
 import { Icon, IconText } from './common/Icon';
+import { ScrollTab } from './common/ScrollTab';
 import { Dialog } from './dialogs/Dialog';
 import { FeedbackPanel } from './FeedbackPanel';
 import { SandboxPanel } from './SandboxPanel';
@@ -223,6 +224,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
           </div>
           <div id="title-campaign" class="title-sub" hidden={showing !== 'campaign'}>
             {opened.includes('campaign') && <CampaignPanel onStart={onPick} audio={audio} />}
+            <ScrollTab />
           </div>
           <div id="title-sandbox" class="title-sub" hidden={showing !== 'sandbox'}>
             {opened.includes('sandbox') && (
@@ -233,18 +235,23 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
                 }}
               />
             )}
+            <ScrollTab />
           </div>
           <div id="title-saves" class="title-sub" hidden={showing !== 'saves'}>
             {opened.includes('saves') && <SavesPanel onLoad={onPick} />}
+            <ScrollTab />
           </div>
           <div id="title-settings" class="title-sub" hidden={showing !== 'settings'}>
             {opened.includes('settings') && <SettingsPanel audio={audio} fullScreen={fullScreen} onChange={redraw} />}
+            <ScrollTab />
           </div>
           <div id="title-changes" class="title-sub" hidden={showing !== 'changes'}>
             {opened.includes('changes') && <ChangelogPanel />}
+            <ScrollTab />
           </div>
           <div id="title-feedback" class="title-sub" hidden={showing !== 'feedback'}>
             {opened.includes('feedback') && <FeedbackPanel from={{ screen: 'title' }} />}
+            <ScrollTab />
           </div>
         </div>
         <p class="title-version">

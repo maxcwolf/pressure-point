@@ -1,0 +1,63 @@
+/* Styles for ScrollTab. The tab sits on the card's bottom edge, over the fade scroll-cue.css draws, and takes no room. */
+
+.scroll-foot {
+  position: sticky;
+  bottom: calc(-1 * var(--cue-pb, 12px));
+  height: 0;
+  flex: none;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.scroll-tab {
+  position: absolute;
+  bottom: calc(var(--cue-pb, 12px) + 4px);
+  left: 50%;
+  translate: -50% 0;
+  width: 46px;
+  height: 22px;
+  padding: 0;
+  border: 2.5px solid var(--navy);
+  border-radius: 999px;
+  background: var(--cream)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3E%3Cpath d='M2 2l6 6 6-6' fill='none' stroke='%2324384a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 15px 10px no-repeat;
+  box-shadow: 0 3px 0 rgba(36, 56, 74, 0.3);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  animation: tab-nod 1.4s ease-in-out infinite;
+}
+
+[data-more~='below'] > .scroll-foot > .scroll-tab {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.scroll-tab:hover {
+  background-color: #fff;
+}
+
+.scroll-tab:active {
+  translate: -50% 2px;
+  box-shadow: 0 1px 0 rgba(36, 56, 74, 0.3);
+  animation: none;
+}
+
+/* the tab nods, so the eye finds it */
+@keyframes tab-nod {
+  0%,
+  100% {
+    translate: -50% 0;
+  }
+  50% {
+    translate: -50% 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-tab {
+    animation: none;
+  }
+}

@@ -9,6 +9,7 @@ import { useGame } from '../../hooks/use-hud';
 import { usePop } from '../../hooks/use-pop';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
+import { ScrollTab } from '../common/ScrollTab';
 import { GuestInfo } from './GuestInfo';
 import { ItemInfo } from './ItemInfo';
 import { PlotInfo } from './PlotInfo';
@@ -75,6 +76,7 @@ export function Inspector() {
               ✕
             </Button>
             {shown}
+            <ScrollTab />
           </div>
         </Still>
       )}
