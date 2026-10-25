@@ -15,8 +15,10 @@ import { css } from '../../../styled-system/css';
 import { Box } from '../../../styled-system/jsx';
 import { useGame } from '../../hooks/use-hud';
 import { percent } from '../../lib/chance';
+import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
+import { menuPanel } from './looks';
 
 /** The most of one role a break limit can be set to; above it, the limit is off. */
 const MAX_BREAK_LIMIT = 5;
@@ -118,7 +120,7 @@ export function PolicyMenu() {
   const p = sim.s.policy;
   const roles = ROLE_ORDER.filter((r) => sim.s.staff.some((st) => st.role === r));
   return (
-    <div class="panel menu">
+    <div class={cx('panel', menuPanel)}>
       <h3>Policy</h3>
       <Box display="grid" gridTemplateColumns="[repeat(auto-fit, minmax(220px, 1fr))]" gap="l">
         <Card>

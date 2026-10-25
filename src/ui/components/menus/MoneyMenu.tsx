@@ -1,13 +1,12 @@
 // The Money menu: the books, the payroll outlook, prices (overall and per treatment), marketing, the loan, and land, a tab each.
 
-import './MoneyMenu.css';
-
 import { type IconId, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../../../core/data';
 import { money } from '../../../core/format';
 import { loanLimit, payrollOutlook } from '../../../core/sim/economy';
 import { netOf } from '../../../core/sim/economy';
 import { INTAKE_CAP_MIN } from '../../../core/sim/guests';
 import type { Ledger } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { MoneyTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
@@ -18,9 +17,28 @@ import { BALK_WHO, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { LandTab } from './LandTab';
+import { chart, ledgerCard, ledgerLook, ledgers, menuPanel, tabRow } from './looks';
 import { MarketingTab } from './MarketingTab';
 import { PayrollTab } from './PayrollTab';
 import { TechniquePrices } from './TechniquePrices';
+
+/**
+ * Where the money comes from, in columns: each source's take this month, its share and last month, under small
+ * headings. The sources on the side, away from healing, are in teal.
+ */
+const sources = css(ledgerLook, {
+  mt: 'l',
+  '& :is(.head, .source)': { display: 'grid', gridTemplateColumns: '[1fr auto auto]', gap: 'l' },
+  '& .head': { fontSize: '[11.5px]', opacity: '[0.7]' },
+  '& .source b': { textAlign: 'right' },
+  '& .source.side span': { color: 'teal-dark' },
+});
+
+/** The overall price level's card, with how many prices put off this month and last, and who they put off. */
+const priceLevel = css(ledgerLook, {
+  '& .priced': { fontSize: '[13px]', fontWeight: 'bold', mt: 'xs' },
+  '& .balk': { fontSize: '[13px]', mt: 'xxs' },
+});
 
 /** A line of the books: income in green, spending in red. */
 function Line({ name, amount, cost = false }: { name: string; amount: number; cost?: boolean }) {
@@ -39,7 +57,7 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
   // a generator's diesel goes under the machines' upkeep
   const upkeep = sim.s.items.some((it) => it.type === 'generator') ? 'Machines and the Generator' : 'Machine upkeep';
   return (
-    <div class="ledger">
+    <div class={ledgerCard}>
       <h4>{title}</h4>
       <Line name="Consultations" amount={ledger.consult} />
       <Line name="Treatments" amount={ledger.treatment} />
@@ -71,7 +89,7 @@ function IncomeSources() {
   const rows = incomeSources(s.ledger, s.lastLedger);
   const verdict = incomeVerdict(s.ledger);
   return (
-    <div class="ledger sources">
+    <div class={sources}>
       <h4>Where the money comes from</h4>
       <div class="head">
         <span>Source</span>
@@ -79,7 +97,7 @@ function IncomeSources() {
         <b>Last month</b>
       </div>
       {rows.map((r) => (
-        <div key={r.id} class={cx('source', r.healing ? 'healing' : 'side')}>
+        <div key={r.id} class={cx('source', !r.healing && 'side')}>
           <span>{r.name}</span>
           <b>{`${money(r.now)} · ${shareWord(r.share)}`}</b>
           <b>{money(r.last)}</b>
@@ -97,14 +115,14 @@ function Books() {
   const heights = barHeights(s.history);
   return (
     <>
-      <div class="ledgers">
+      <div class={ledgers}>
         <LedgerTable title="This month" ledger={s.ledger} />
         <LedgerTable title="Last month" ledger={s.lastLedger} />
       </div>
       <IncomeSources />
       {heights.length > 0 && (
         <>
-          <div class="chart">
+          <div class={chart}>
             {heights.map((height, i) => {
               const value = s.history[i] ?? 0;
               return (
@@ -128,7 +146,7 @@ function Prices() {
   const s = sim.s;
   return (
     <>
-      <div class="ledger price-level">
+      <div class={priceLevel}>
         <h4>{`Overall: ${Math.round(s.priceLevel * 100)}% of standard`}</h4>
         <p class="sub">Higher prices earn more per guest, but build reputation more slowly and some guests walk out.</p>
         <p class="priced">
@@ -167,7 +185,7 @@ function IntakeCap() {
   const cap = s.intakeCap;
   const building = sim.guestCap();
   return (
-    <div class="ledger intake-cap">
+    <div class={ledgerCard}>
       <h4>
         {cap === null
           ? `Guests at once: no limit of your own (the building takes ${building})`
@@ -214,7 +232,7 @@ function Loan() {
   const s = sim.s;
   const payroll = payrollOutlook(s);
   return (
-    <div class="ledger">
+    <div class={ledgerCard}>
       <h4>{`Loan: ${money(s.loan)} of ${money(loanLimit(s))}`}</h4>
       <p class="sub">
         {`Costs ${(LOAN_RATE * 100).toFixed(0)}% interest a month, currently ${money(s.loan * LOAN_RATE)}.`}
@@ -258,9 +276,9 @@ const TABS: readonly { id: MoneyTab; icon: IconId; name: string }[] = [
 export function MoneyMenu() {
   const hud = useHud();
   return (
-    <div class="panel menu money-menu">
+    <div class={cx('panel', menuPanel)}>
       <h3>Money</h3>
-      <div class="tabs">
+      <div class={cx('tabs', tabRow)}>
         {TABS.map((t) => (
           <Button
             key={t.id}

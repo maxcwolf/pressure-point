@@ -6,17 +6,178 @@ import './ItemStats.css';
 import { HEAT_RADIUS, type IconId, ITEMS, type ItemType } from '../../../core/data';
 import { money } from '../../../core/format';
 import { decorReach } from '../../../core/sim/ambience';
+import { css } from '../../../styled-system/css';
+import { cx } from '../../lib/cx';
 import { DECOR_MOST, HEAT_MOST, type ItemStat, itemStats, NOISE_MOST } from '../../lib/item-stats';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
+
+/** The chips along the bottom of a card, each tinted for what it is: decor, quiet or cool, loud, warm, earning, a seat. */
+const chips = css({
+  listStyle: 'none',
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 'xs',
+  m: '[auto 0 0]',
+  p: '[6px 0 0]',
+  '& li': {
+    fontSize: '[11.5px]',
+    fontWeight: '[500]',
+    border: '[1.5px solid #b7a98c]',
+    bg: '[#f1ece2]',
+    borderRadius: '[8px]',
+    p: '[0 6px]',
+    whiteSpace: 'nowrap',
+  },
+  '& .decor': { bg: '[#fff6dc]', borderColor: 'gold' },
+  '& :is(.calm, .cool)': { bg: '[#e3f0fb]', borderColor: 'blue' },
+  // a calm chip sits a little lower, as it did when it took the inspector's old global .calm, meant for its calm button
+  '& .calm': { display: 'block', mt: 'm' },
+  '& .loud': { bg: 'bad-bg', borderColor: 'red', color: 'bad' },
+  '& .warm': { bg: '[#fde8da]', borderColor: 'orange' },
+  '& .earn': { bg: 'good-bg', borderColor: 'green', color: 'good' },
+  '& .seat': { bg: '[#e4d9f7]', borderColor: '[#8a6fd1]' },
+});
+
+/** A row of pips, faint on the tooltip's navy, the ones filled in the color of what they count. */
+const pips = css({
+  display: 'flex',
+  gap: '[3px]',
+  m: '[3px 0 1px]',
+  '& i': { w: '[10px]', h: '[10px]', borderRadius: '[3px]', bg: '[rgba(255, 248, 234, 0.16)]' },
+  '&.decor i.on': { bg: 'gold' },
+  '&.calm i.on': { bg: '[#7fc2f2]' },
+  '&.loud i.on': { bg: '[#f08a84]' },
+});
+
+/** The tooltip's list of what an item does, a line each, with its icon beside it. */
+const tip = css({
+  '& ul': { listStyle: 'none', m: '[3px 0 0]', p: 'none', display: 'flex', flexDirection: 'column', gap: '[3px]' },
+  '& li': { display: 'flex', gap: '[7px]', fontSize: '[13px]', lineHeight: '[1.3]' },
+  '& li > .icon': { mt: '[1px]' },
+});
+
+/** The panel beside the cards, which stays in view while the cards scroll. */
+const detail = css({
+  position: 'sticky',
+  top: '[0]',
+  bg: 'white',
+  border: '[2.5px solid {colors.navy}]',
+  borderRadius: '[14px]',
+  p: '[11px 13px 12px]',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 's',
+  fontSize: 'body',
+  lineHeight: '[1.3]',
+  '& p': { opacity: '[0.8]' },
+  // a scale's name, with what it comes to at the far end
+  '& label': { display: 'flex', justifyContent: 'space-between', fontSize: '[12px]' },
+  '& label b': { fontWeight: 'bold' },
+  '& em': {
+    fontStyle: 'normal',
+    fontSize: '[11.5px]',
+    bg: 'sand',
+    borderRadius: '[8px]',
+    p: '[2px 7px]',
+    alignSelf: 'flex-start',
+  },
+});
+
+/** The panel's head: the item's icon, its name, and its price in a gold tag. */
+const detailHead = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '[10px]',
+  '& b': { display: 'block', fontSize: '[17px]', fontWeight: 'bold' },
+  '& .cost': {
+    display: 'inline-block',
+    bg: 'gold',
+    border: 'control',
+    borderRadius: 'control',
+    p: '[0 7px]',
+    fontSize: '[13px]',
+    fontWeight: 'bold',
+  },
+});
+
+/** What else the item does, a line each. */
+const factList = css({
+  listStyle: 'none',
+  m: '[2px 0 0]',
+  p: 'none',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'xs',
+  '& li': { bg: '[#f6f0e3]', borderRadius: '[9px]', p: '[3px 9px]', fontSize: 'small' },
+});
+
+/** The panel's button: green to place the item, grey while it cannot be. */
+const place = css({
+  mt: 'xxs',
+  border: '[2.5px solid {colors.navy}]',
+  borderRadius: 'card',
+  bg: 'green',
+  color: 'white',
+  fontWeight: 'bold',
+  fontSize: '[15px]',
+  p: '[7px 12px]',
+  boxShadow: '[0 3px 0 rgba(36, 56, 74, 0.32)]',
+  _locked: { bg: '[#d7d2c5]', color: 'navy', cursor: 'not-allowed' },
+});
+
+/**
+ * A scale with its middle at nothing: a bar like Bar's, with a line down its middle, filling from there one way or
+ * the other, and the two ends named under it. Noise is bad turned up and good turned down; warmth is warm one way and
+ * cool the other.
+ */
+const twoWay = css({
+  '& .bar': {
+    position: 'relative',
+    h: '[10px]',
+    borderRadius: '[6px]',
+    bg: '[rgba(36, 56, 74, 0.16)]',
+    overflow: 'visible',
+    mt: '[3px]',
+  },
+  '& .bar .mid': {
+    position: 'absolute',
+    left: '[50%]',
+    top: '[-2px]',
+    bottom: '[-2px]',
+    w: '[2px]',
+    ml: '[-1px]',
+    bg: '[rgba(36, 56, 74, 0.45)]',
+  },
+  '& .bar i': {
+    position: 'absolute',
+    top: '[0]',
+    display: 'block',
+    h: '[100%]',
+    borderRadius: '[6px]',
+    transition: '[width 0.3s]',
+  },
+  '& .bar i.up': { left: '[50%]' },
+  '& .bar i.down': { right: '[50%]', bg: 'blue' },
+  '&.noise .bar i.up': { bg: 'red' },
+  '&.warmth .bar i.up': { bg: 'orange' },
+  '& small': {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '[10.5px]',
+    opacity: '[0.6]',
+    mt: '[1px]',
+  },
+});
 
 /** An item's stats as chips along the bottom of its card. */
 export function ItemChips({ type }: { type: ItemType }) {
   const stats = itemStats(type);
   if (!stats.length) return null;
   return (
-    <ul class="stat-chips">
+    // `stat-chips` is for the card, which makes room for them
+    <ul class={cx('stat-chips', chips)}>
       {stats.map((s) => (
         <li key={s.id + s.short} class={s.tone}>
           <IconText id={s.icon}>{s.short}</IconText>
@@ -29,7 +190,7 @@ export function ItemChips({ type }: { type: ItemType }) {
 /** A row of pips, so many filled out of so many, for how much decor or noise an item has against the most there is. */
 function Pips({ value, most, tone }: { value: number; most: number; tone: string }) {
   return (
-    <span class={`pips ${tone}`}>
+    <span class={cx(pips, tone)}>
       {Array.from({ length: most }, (_, i) => (
         <i key={i} class={i < value ? 'on' : ''} />
       ))}
@@ -49,7 +210,7 @@ function scaleOf(type: ItemType, s: ItemStat) {
 export function ItemTip({ type }: { type: ItemType }) {
   const def = ITEMS[type];
   return (
-    <div class="item-tip">
+    <div class={tip}>
       <strong>
         <IconText id={def.icon}>{def.name}</IconText>
       </strong>
@@ -86,7 +247,7 @@ function TwoWay({
 }) {
   const share = (Math.min(Math.abs(value), most) / most) * 50;
   return (
-    <div class={`two-way ${kind}`}>
+    <div class={cx(twoWay, kind)}>
       <label>
         <span>{label}</span>
         <b>{text}</b>
@@ -122,8 +283,8 @@ export function ItemDetail({ type, where, action }: { type: ItemType; where: str
   const heat = def.heat ?? 0;
   const facts = itemStats(type).filter((s) => s.id !== 'decor' && s.id !== 'noise' && s.id !== 'heat');
   return (
-    <div class="item-detail">
-      <div class="head">
+    <div class={detail}>
+      <div class={detailHead}>
         <Icon id={def.icon} size={44} />
         <div>
           <b>{def.name}</b>
@@ -131,7 +292,7 @@ export function ItemDetail({ type, where, action }: { type: ItemType; where: str
         </div>
       </div>
       <p>{def.desc}</p>
-      <div class="one-way">
+      <div>
         <label>
           <span>Decor</span>
           <b>{decor ? `+${decor}, ${decorReach(type)} tiles round` : 'None'}</b>
@@ -155,7 +316,7 @@ export function ItemDetail({ type, where, action }: { type: ItemType; where: str
         ends={['Cools', 'Warms']}
       />
       {facts.length > 0 && (
-        <ul class="facts">
+        <ul class={factList}>
           {facts.map((s) => (
             <li key={s.id + s.short}>
               <IconText id={s.icon}>{s.long}</IconText>
@@ -164,7 +325,7 @@ export function ItemDetail({ type, where, action }: { type: ItemType; where: str
         </ul>
       )}
       <em>{where}</em>
-      <Button class="place" title={action.title} locked={action.locked} onPress={action.onPress}>
+      <Button class={place} title={action.title} locked={action.locked} onPress={action.onPress}>
         {action.icon ? <IconText id={action.icon}>{action.label}</IconText> : action.label}
       </Button>
     </div>

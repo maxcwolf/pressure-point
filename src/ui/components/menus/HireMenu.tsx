@@ -1,12 +1,11 @@
 // The Hire menu: the applicants for each role, a tab per role.
 
-import './HireMenu.css';
-
 import { ROLES, traitOf } from '../../../core/data';
 import { money } from '../../../core/format';
 import { applicantCap, rankName } from '../../../core/sim/careers';
 import { wantsHire } from '../../../core/sim/tutorial';
 import { unlockedUpTo } from '../../../core/state/game';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { hireableRoles } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
@@ -16,6 +15,27 @@ import { IconText } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
 import { SortBy } from '../common/SortBy';
 import { Stars } from '../common/Stars';
+import { cardLook, cards, menuHead, menuPanel } from './looks';
+
+/**
+ * An applicant's card: their rank and stars on a line, their pay in the gold tag under their quirks rather than at the
+ * top, and the buttons to hire or turn them down along the bottom.
+ */
+const cv = css(cardLook, {
+  '& .cost': { position: 'static', alignSelf: 'flex-start', mt: '[5px]', mb: 'm' },
+  '& .btnrow': { mt: 'auto', display: 'flex', gap: 's' },
+  '& .btnrow .go': { flex: '1' },
+  '& .reject': {
+    border: 'control',
+    borderRadius: '[10px]',
+    bg: 'white',
+    fontSize: '[12px]',
+    fontWeight: 'bold',
+    p: '[0 8px]',
+  },
+  '& .rank': { display: 'flex', alignItems: 'center', gap: '[5px]', fontSize: 'small' },
+  '& small': { fontWeight: '[400]', fontSize: '[11px]' },
+});
 
 /** The applicants for the chosen role, in the order picked. */
 export function HireMenu() {
@@ -32,8 +52,8 @@ export function HireMenu() {
     hud.sorts.applicants,
   );
   return (
-    <div class="panel menu">
-      <div class="menu-head">
+    <div class={cx('panel', menuPanel)}>
+      <div class={menuHead}>
         <h3>Hire staff</h3>
         {applicants.length > 1 && <SortBy list="applicants" orders={APPLICANT_SORTS} />}
       </div>
@@ -54,9 +74,9 @@ export function HireMenu() {
         {`${ROLES[role].desc} Up to ${applicantCap(s)} apply for each role at a time, more as stars are earned; a new applicant turns up every few days.`}
       </p>
       {/* the tutorial rings the row, any of them being a hire: the choice is the player's to read off the cards */}
-      <div class={cx('cards', guide === 'hire:any' && 'guide')}>
+      <div class={cx(cards, guide === 'hire:any' && 'guide')}>
         {applicants.map((c) => (
-          <div key={c.id} class="card cv">
+          <div key={c.id} class={cx('card', 'cv', cv)}>
             <b>{c.name}</b>
             <span class="rank">
               {rankName(c.skill)} <Stars count={c.skill} />

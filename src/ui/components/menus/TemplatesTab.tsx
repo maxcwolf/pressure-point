@@ -21,6 +21,7 @@ import {
   templatesFile,
 } from '../../../core/templates';
 import { loadCampaign } from '../../../storage/campaign';
+import { css } from '../../../styled-system/css';
 import { download } from '../../dom';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
@@ -28,6 +29,62 @@ import { sorted, TEMPLATE_SORTS } from '../../lib/sorts';
 import { keepTemplates } from '../../templates';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
+import { cardLook, cardsLook } from './looks';
+
+/** The templates' cards, wide enough for their buttons. */
+const templateCards = css(cardsLook, { gridTemplateColumns: '[repeat(auto-fill, minmax(214px, 1fr))]' });
+
+/** A template's card, which stays as bright when its room cannot be afforded, for its own buttons to say so. */
+const templateCard = css(cardLook, { gap: 'xs', '&.poor': { opacity: '[1]', cursor: 'auto' } });
+
+/** The template's name, which can be changed in place: plain words on the card until the pointer or the typing is on it. */
+const nameInput = css({
+  font: 'inherit',
+  fontSize: '[15px]',
+  fontWeight: 'bold',
+  color: 'navy',
+  border: '[2px solid transparent]',
+  borderRadius: '[8px]',
+  p: '[1px 4px]',
+  m: '[0 -6px]',
+  w: '[calc(100% + 8px)]',
+  bg: '[transparent]',
+  '&:is(:hover, :focus)': { borderColor: 'teal', bg: '[#f0fbf9]', outline: '[none]' },
+});
+
+/**
+ * A template's buttons, along the bottom, level with the cards beside it: Build in green, Delete in red at the far end,
+ * and Export lighter under the pointer.
+ */
+const actions = css({
+  display: 'flex',
+  gap: '[5px]',
+  mt: 'auto',
+  pt: 'xs',
+  '& button': {
+    border: 'control',
+    borderRadius: 'control',
+    p: '[2px 9px]',
+    fontSize: 'small',
+    fontWeight: 'bold',
+    bg: 'white',
+  },
+  '& button:not(.build, .delete):hover': { bg: '[#f0fbf9]' },
+  '& button.build': { bg: 'green', color: 'white' },
+  '& button.delete': { ml: 'auto', bg: 'bad-bg', color: 'bad' },
+  '& button.locked': { opacity: '[0.5]', cursor: 'not-allowed' },
+});
+
+/** The way to import more and export them all, with how many there are of how many there can be at the far end. */
+const foot = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 'm',
+  flexWrap: 'wrap',
+  mt: '[10px]',
+  // the count at the far end: `span.sub`, or the menu's own margins for smaller words would win
+  '& span.sub': { m: '[0 0 0 auto]', fontSize: 'small', opacity: '[0.75]' },
+});
 
 /** A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. */
 function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key: DecorKey) => boolean }) {
@@ -39,11 +96,11 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
   // the name as it is being typed: kept here, or the interface redrawing as the game runs would put the old one back
   const [draft, setDraft] = useState<string | null>(null);
   return (
-    <div class={cx('card', 'template', !lock && sim.s.money < cost && 'poor')} data-template={t.name}>
+    <div class={cx('card', 'template', templateCard, !lock && sim.s.money < cost && 'poor')} data-template={t.name}>
       <Icon id={room.icon} size={34} />
       <span class="cost">{money(cost)}</span>
       <input
-        class="tname"
+        class={nameInput}
         aria-label="Template name"
         value={draft ?? t.name}
         maxLength={MAX_NAME}
@@ -64,7 +121,7 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
           <IconText id="ui-lock">{lock}</IconText>
         </em>
       )}
-      <div class="template-actions">
+      <div class={actions}>
         <Button
           class="build"
           title={lock || `Build rooms like this wherever you click, for ${money(cost)} each. R turns them.`}
@@ -78,7 +135,6 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
           Build
         </Button>
         <Button
-          class="export"
           title="Save this template as a file, to keep or to share"
           onPress={() => {
             download(templateFilename(t.name), templatesFile([t]));
@@ -137,7 +193,7 @@ export function TemplatesTab() {
   return (
     <>
       {hud.templates.length ? (
-        <div class="cards templates">
+        <div class={templateCards}>
           {sorted(hud.templates, TEMPLATE_SORTS, hud.sorts.templates).map((t) => (
             <TemplateCard key={t.id} t={t} lock={templateLock(t.layout, allowed)} open={open} />
           ))}
@@ -148,7 +204,7 @@ export function TemplatesTab() {
           build it again from here, in this game or any other.
         </p>
       )}
-      <div class="template-foot">
+      <div class={foot}>
         <label class="filebtn">
           Import a template file
           <input

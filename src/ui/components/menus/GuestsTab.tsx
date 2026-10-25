@@ -3,7 +3,9 @@
 import { centerOf, DISCIPLINES } from '../../../core/data';
 import type { DisciplineDemand } from '../../../core/sim/demand';
 import { guestsCounted } from '../../../core/sim/guests';
+import { css } from '../../../styled-system/css';
 import { useGame } from '../../hooks/use-hud';
+import { cx } from '../../lib/cx';
 import {
   capacityNote,
   DEMAND_INTRO,
@@ -21,10 +23,60 @@ import { rushLine, seasonLine } from '../../lib/seasons';
 import { Bar } from '../common/Bar';
 import { IconText } from '../common/Icon';
 
+/** A discipline's card. */
+const demandRow = css({
+  bg: 'white',
+  border: '[2px solid rgba(36, 56, 74, 0.2)]',
+  borderRadius: '[10px]',
+  p: '[8px 10px]',
+  m: '[8px 0]',
+});
+
+/** Its name, its share of new guests as a bar, and the share in words; in a narrow window, the bar under the two. */
+const demandHead = css({
+  display: 'grid',
+  gridTemplateColumns: '[170px 1fr auto]',
+  alignItems: 'center',
+  gap: '[10px]',
+  '& .bar': { m: 'none' },
+  '& em': { fontStyle: 'normal', fontWeight: 'bold' },
+  _max700: {
+    gridTemplateColumns: '[1fr auto]',
+    '& .bar': { gridColumn: '[1 / -1]', gridRow: '[2]' },
+  },
+});
+
+/** The things that draw guests to it, as many to a line as fit. */
+const factors = css({
+  display: 'grid',
+  gridTemplateColumns: '[repeat(auto-fill, minmax(150px, 1fr))]',
+  gap: 's',
+  m: '[8px 0 4px]',
+});
+
+/**
+ * One of them: its name over what it comes to, and how it multiplies the pull at the far end, red where it holds the
+ * pull down and green where it lifts it.
+ */
+const factor = css({
+  display: 'grid',
+  gridTemplateColumns: '[1fr auto]',
+  alignItems: 'center',
+  columnGap: 's',
+  borderRadius: '[8px]',
+  p: '[4px 8px]',
+  bg: '[rgba(36, 56, 74, 0.06)]',
+  '& small': { gridColumn: '[1 / -1]', fontSize: '[11.5px]', opacity: '[0.75]' },
+  '& .bar': { gridColumn: '[1 / -1]', m: '[2px 0 0]' },
+  '& em': { gridRow: '[2]', gridColumn: '[2]', fontStyle: 'normal', fontWeight: '[700]' },
+  '&.low em': { color: '[#b5482f]' },
+  '&.high em': { color: '[#2f8a57]' },
+});
+
 /** One thing that draws guests to a discipline: what it is, what it comes to, and how it multiplies the pull. */
 function Factor({ name, value, by, bar }: { name: string; value: string; by: number; bar?: number }) {
   return (
-    <div class={by < 0.95 ? 'factor low' : by > 1.05 ? 'factor high' : 'factor'}>
+    <div class={cx(factor, by < 0.95 && 'low', by > 1.05 && 'high')}>
       <small>{name}</small>
       <b>{value}</b>
       {bar !== undefined && <Bar value={bar} class="thin gold" />}
@@ -38,15 +90,15 @@ function Row({ row, healed }: { row: DisciplineDemand; healed: number }) {
   const def = DISCIPLINES[row.discipline];
   const advice = demandAdvice(row);
   return (
-    <div class="demand-row">
-      <div class="demand-head">
+    <div class={demandRow}>
+      <div class={demandHead}>
         <b>
           <IconText id={def.icon}>{def.name}</IconText>
         </b>
         <Bar value={row.share * 100} class="blue" />
         <em>{`${Math.round(row.share * 100)}% of new guests`}</em>
       </div>
-      <div class="factors">
+      <div class={factors}>
         <Factor name="Popularity" value={popularityWord(row.popularity)} by={row.popularity} />
         <Factor
           name="Following"
@@ -84,18 +136,18 @@ export function GuestsTab() {
   const rush = rushLine(sim.s.day, center);
   if (!rows.length) return <p class="sub">No treatment rooms yet: build one, and guests start arriving for it.</p>;
   return (
-    <div class="demand">
+    <div>
       <p class="sub">{DEMAND_INTRO}</p>
       <p class="sub">{paceNote(pace, sim.s.reputation, center)}</p>
       <p class="sub">{limitNote(limit, pace.capacity)}</p>
       {idle && <p class="sub">{idle}</p>}
       {season && (
-        <p class="sub seasons">
+        <p class="sub">
           <IconText id="ui-date">{season}</IconText>
         </p>
       )}
       {rush && (
-        <p class="sub seasons">
+        <p class="sub">
           <IconText id="ui-date">{rush}</IconText>
         </p>
       )}

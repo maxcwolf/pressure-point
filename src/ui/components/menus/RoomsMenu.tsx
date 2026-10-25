@@ -13,6 +13,7 @@ import { ROOM_SORTS, sorted, TEMPLATE_SORTS } from '../../lib/sorts';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 import { SortBy } from '../common/SortBy';
+import { card, cards, menuHead, menuPanel, tabRow } from './looks';
 import { TemplatesTab } from './TemplatesTab';
 
 /** The Rooms menu's tabs. */
@@ -26,8 +27,8 @@ export function RoomsMenu() {
   const hud = useHud();
   const guide = hud.guide();
   return (
-    <div class="panel menu">
-      <div class="menu-head">
+    <div class={cx('panel', menuPanel)}>
+      <div class={menuHead}>
         <h3>Build a room</h3>
         {hud.roomsTab === 'rooms' ? (
           <SortBy key="rooms" list="rooms" orders={ROOM_SORTS} />
@@ -35,7 +36,7 @@ export function RoomsMenu() {
           hud.templates.length > 1 && <SortBy key="templates" list="templates" orders={TEMPLATE_SORTS} />
         )}
       </div>
-      <div class="tabs filters">
+      <div class={cx('tabs', tabRow)}>
         {TABS.map((t) => (
           <Button
             key={t.id}
@@ -70,7 +71,7 @@ function RoomCards() {
     hud.sorts.rooms,
   );
   return (
-    <div class="cards">
+    <div class={cards}>
       {types.map((t) => {
         const r = ROOMS[t];
         const starred = (r.unlock ?? 0) > unlockedUpTo(s);
@@ -81,7 +82,7 @@ function RoomCards() {
         return (
           <Button
             key={t}
-            class={cx('card', !locked && s.money < r.cost && 'poor', guide === `room:${t}` && 'guide')}
+            class={cx('card', card, !locked && s.money < r.cost && 'poor', guide === `room:${t}` && 'guide')}
             // a room karma can unlock opens the offer to unlock its machine, rather than refusing outright
             locked={starred}
             onPress={() => {
@@ -100,7 +101,7 @@ function RoomCards() {
             <span class="cost">{money(r.cost)}</span>
             <p>{r.desc}</p>
             {cures.length > 0 && (
-              <p class="cures">
+              <p>
                 {`Cures ${cures.map((c) => `${c.name} (${money(c.fee)})`).join(' and ')}. Costs ${money(upkeep)} a month to run.`}
               </p>
             )}

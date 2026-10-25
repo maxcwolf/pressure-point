@@ -1,13 +1,12 @@
 // The Stats menu: charts of chosen figures month by month, the center's reputation and reviews, the casebook, and
 // the awards won.
 
-import './StatsMenu.css';
-
 import { useState } from 'preact/hooks';
 
 import { AWARDS, type IconId } from '../../../core/data';
 import type { MonthRecord } from '../../../core/state/types';
 import { loadStatsView, saveStatsView } from '../../../storage/settings';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { StatsTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
@@ -17,9 +16,79 @@ import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { CasebookTab } from './CasebookTab';
 import { GuestsTab } from './GuestsTab';
+import { chartLook, menuPanel, statsHead, tabRow } from './looks';
 import { RegularsTab } from './RegularsTab';
 import { ReputationTab } from './ReputationTab';
 import { StandingTab } from './StandingTab';
+
+/** The charts, three to a line, or two in a narrower window. */
+const grid = css({
+  display: 'grid',
+  gridTemplateColumns: '[repeat(3, minmax(0, 1fr))]',
+  gap: '[10px]',
+  mt: 'm',
+  _max1100: { gridTemplateColumns: '[repeat(2, minmax(0, 1fr))]' },
+});
+
+/** One figure's card: its name, this month's figure large, and a small chart, this month's bar fainter as it is not over. */
+const statCard = css({
+  bg: 'white',
+  border: 'card',
+  borderRadius: 'card',
+  py: 'm',
+  px: '[11px]',
+  fontSize: '[13px]',
+  '& h4': { fontWeight: 'bold', fontSize: 'body' },
+  '& b': { fontSize: '[19px]', fontWeight: '[700]' },
+  '& p.sub': { mt: 'xs', fontSize: '[11.5px]' },
+});
+
+/** A card's small chart. */
+const smallChart = css(chartLook, { h: '[38px]', mt: 's', gap: '[3px]', '& i.now': { opacity: '[0.55]' } });
+
+/** The figures to choose from, as pills in a row, the ones chosen in teal. */
+const choices = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 's',
+  m: '[8px 0 4px]',
+  '& .chip': {
+    pointerEvents: 'auto',
+    border: '[2px solid rgba(36, 56, 74, 0.35)]',
+    borderRadius: '[999px]',
+    bg: 'white',
+    p: '[3px 11px]',
+    fontSize: 'small',
+    fontWeight: '[500]',
+    _hover: { transform: 'translateY(-1px)' },
+    _on: { bg: 'teal', borderColor: 'teal-dark', color: 'white' },
+  },
+});
+
+/** The awards won, as gold tags in a row, and a pill to look back on the last ceremony. */
+const awardList = css({
+  mt: 'l',
+  '& ul': { listStyle: 'none', p: 'none', display: 'flex', flexWrap: 'wrap', gap: 's', mb: 's' },
+  '& li': {
+    bg: '[#fff6dc]',
+    border: '[2px solid {colors.gold}]',
+    borderRadius: 'control',
+    p: '[2px 8px]',
+    fontSize: '[13px]',
+  },
+});
+
+/** The pill to look back on the last ceremony. */
+const ceremonyButton = css({
+  pointerEvents: 'auto',
+  fontSize: '[13px]',
+  fontWeight: '[500]',
+  border: 'control',
+  borderRadius: '[999px]',
+  p: '[3px 11px]',
+  bg: 'white',
+  _hover: { transform: 'translateY(-1px)' },
+});
 
 /** One figure: this month so far and last month, over a bar for each month kept. */
 function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRecord[] }) {
@@ -29,13 +98,14 @@ function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRe
   const now = values.at(-1) ?? null;
   const last = values.length > 1 ? values.at(-2) : undefined;
   return (
-    <div class="stat-card" data-metric={metric.id}>
+    // `stat-card`, `data-metric` and `chart` are for the end-to-end tests
+    <div class={cx('stat-card', statCard)} data-metric={metric.id}>
       <h4>{metric.name}</h4>
       <b>{formatMetric(metric.unit, now)}</b>
       <span class="sub">
         {last === undefined ? ' this month' : ` this month, ${formatMetric(metric.unit, last)} last month`}
       </span>
-      <div class="chart small">
+      <div class={cx('chart', smallChart)}>
         {heights.map((height, i) => {
           const value = values[i] ?? null;
           return (
@@ -68,9 +138,9 @@ const TABS: readonly { id: StatsTab; icon: IconId; name: string }[] = [
 export function StatsMenu() {
   const hud = useHud();
   return (
-    <div class="panel menu stats-menu">
+    <div class={cx('panel', menuPanel)}>
       <h3>Stats</h3>
-      <div class="tabs">
+      <div class={cx('tabs', tabRow)}>
         {TABS.map((t) => (
           <Button
             key={t.id}
@@ -105,7 +175,7 @@ function Charts() {
   const shown = shownMetrics(chosen, enabled);
   return (
     <>
-      <div class="stats-head">
+      <div class={statsHead}>
         <p class="sub">Each chart runs from the oldest month kept, on the left, to this month so far.</p>
         <div class="btnrow">
           <Button
@@ -119,7 +189,7 @@ function Charts() {
         </div>
       </div>
       {choosing && (
-        <div class="stat-choices">
+        <div class={choices}>
           {offeredMetrics(enabled).map((m) => (
             <Button
               key={m.id}
@@ -138,7 +208,7 @@ function Charts() {
           ))}
         </div>
       )}
-      <div class="stat-grid">
+      <div class={grid}>
         {shown.map((m) => (
           <StatCard key={m.id} metric={m} months={months} />
         ))}
@@ -153,7 +223,7 @@ function Trophies() {
   const hud = useHud();
   const { trophies, ceremony } = sim.s;
   return (
-    <div class="trophies">
+    <div class={awardList}>
       {trophies.length ? (
         <ul>
           {trophies.map((t) => (
@@ -171,7 +241,7 @@ function Trophies() {
       )}
       {ceremony && (
         <Button
-          class="chip"
+          class={ceremonyButton}
           onPress={() => {
             hud.open('awards');
           }}

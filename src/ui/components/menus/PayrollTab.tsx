@@ -17,8 +17,19 @@ import {
   shortOfAMonth,
 } from '../../../core/sim/economy';
 import type { Ledger } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
+import { ledgerCard, ledgerLook, ledgers } from './looks';
+
+/** The verdict on payday, over the figures: green when it is covered, gold when it is close, red when it is not. */
+const verdict = css(ledgerLook, {
+  mb: 'l',
+  '& h4': { mb: 'none' },
+  '&.ok': { borderColor: '[#23805a]', bg: '[#e6f4ec]' },
+  '&.warn': { borderColor: 'gold', bg: '[#fff6dc]' },
+  '&.bad': { borderColor: 'red', bg: 'bad-bg' },
+});
 
 /** A figure in the payroll table, red when it is money going out or a shortfall. */
 function Figure({ name, value, look }: { name: string; value: string; look?: 'pos' | 'neg' | undefined }) {
@@ -76,7 +87,7 @@ export function PayrollTab() {
       <div
         class={cx(
           'ledger',
-          'verdict',
+          verdict,
           o.covered === 'no'
             ? 'bad'
             : o.covered === 'borrowing' || (s.bankruptcyOn && shortOfAMonth(h))
@@ -88,8 +99,8 @@ export function PayrollTab() {
         {s.bankruptcyOn && <p class="sub">{runwayNote(daysUntilBankrupt(s))}</p>}
         {s.bankruptcyOn && note && <p class="sub">{note}</p>}
       </div>
-      <div class="ledgers">
-        <div class="ledger">
+      <div class={ledgers}>
+        <div class={cx('ledger', ledgerCard)}>
           <h4>{`Payday: day ${payday.day} of month ${payday.month}, in ${Math.max(1, Math.ceil(o.daysLeft))} days`}</h4>
           <Figure name="Wages due" value={money(o.wages)} look="neg" />
           <Figure name="Bank balance" value={money(s.money)} look={sign(s.money)} />
@@ -102,7 +113,7 @@ export function PayrollTab() {
             look={h.months < 1 ? 'neg' : undefined}
           />
         </div>
-        <div class="ledger">
+        <div class={cx('ledger', ledgerCard)}>
           <h4>A month at this pace</h4>
           <Figure name="Income this month so far" value={money(incomeOf(s.ledger))} look="pos" />
           <Figure name="Income a month at this pace" value={money(flow.income)} look="pos" />

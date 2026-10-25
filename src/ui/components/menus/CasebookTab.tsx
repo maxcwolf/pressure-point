@@ -7,6 +7,7 @@ import { cx } from '../../lib/cx';
 import { CASEBOOK_SORTS, type CaseRow, sorted } from '../../lib/sorts';
 import { IconText } from '../common/Icon';
 import { SortBy } from '../common/SortBy';
+import { statsHead, table } from './looks';
 
 /** A row for each condition seen, most often seen first or in the order picked. */
 export function CasebookTab() {
@@ -16,11 +17,12 @@ export function CasebookTab() {
   if (!rows.length) return <p class="sub">Nobody has left yet. Each visit is entered here as the guest goes.</p>;
   return (
     <>
-      <div class="stats-head">
+      <div class={statsHead}>
         <p class="sub">Every visit since the center opened, by the condition the guest came in with.</p>
         {rows.length > 1 && <SortBy list="casebook" orders={CASEBOOK_SORTS} />}
       </div>
-      <table class="casebook">
+      {/* `casebook` is for the end-to-end tests */}
+      <table class={cx('casebook', table)}>
         <thead>
           <tr>
             <th>Condition</th>

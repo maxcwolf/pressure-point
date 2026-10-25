@@ -14,11 +14,50 @@ import {
   MODALITIES,
 } from '../../../core/data';
 import { money } from '../../../core/format';
+import { css } from '../../../styled-system/css';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { wholeDaysLeft } from '../../lib/emergency';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
+import { ledgerLook } from './looks';
+
+/** The cards, as many to a line as fit. */
+const campaigns = css({
+  display: 'grid',
+  gridTemplateColumns: '[repeat(auto-fit, minmax(220px, 1fr))]',
+  gap: '[10px]',
+});
+
+/** A kind of campaign's card, in gold while one is running, with how long it has left. */
+const campaign = css(ledgerLook, {
+  '&.live': { borderColor: 'gold', bg: '[#fff6dc]' },
+  '& .running': { fontWeight: 'bold', mt: 's' },
+});
+
+/**
+ * The conditions to pick from for a campaign about one, as small buttons in a row, the one picked in gold. It keeps
+ * to a wrapping row however the card lays out its other lines.
+ */
+const conditionChoices = css({
+  display: '[flex !important]',
+  flexWrap: 'wrap',
+  justifyContent: '[flex-start !important]',
+  gap: 'xs',
+  m: '[6px 0]',
+  '& button': {
+    pointerEvents: 'auto',
+    border: 'control',
+    borderRadius: '[8px]',
+    bg: 'cream',
+    fontWeight: 'bold',
+    fontSize: '[12px]',
+    h: 'auto',
+    p: '[1px 8px]',
+    _hover: { transform: 'translateY(-1px)' },
+    _on: { bg: 'gold', color: 'white' },
+  },
+});
 
 /** One kind of campaign: what it does and costs, and either how long it has left or buttons to buy it. */
 function CampaignCard({ kind }: { kind: CampaignKind }) {
@@ -32,7 +71,8 @@ function CampaignCard({ kind }: { kind: CampaignKind }) {
     (c) => conditionHere(c, s.center) && sim.unlocked(c.modality) && sim.offered(MODALITIES[c.modality].discipline),
   );
   return (
-    <div class={cx('ledger', 'campaign', live && 'live')}>
+    // `campaign` is for the end-to-end tests
+    <div class={cx('campaign', campaign, live && 'live')}>
       <h4>
         <IconText id={def.icon}>{def.name}</IconText>
       </h4>
@@ -44,11 +84,11 @@ function CampaignCard({ kind }: { kind: CampaignKind }) {
       ) : (
         <>
           {kind === 'condition' && (
-            <div class="condition-choices">
+            <div class={conditionChoices}>
               {choices.map((c) => (
                 <Button
                   key={c.id}
-                  class={cx('chip', condition === c.id && 'on')}
+                  class={cx(condition === c.id && 'on')}
                   onPress={() => {
                     setCondition(c.id);
                   }}
@@ -85,7 +125,7 @@ function CampaignCard({ kind }: { kind: CampaignKind }) {
 /** A card for each kind of campaign. */
 export function MarketingTab() {
   return (
-    <div class="campaigns">
+    <div class={campaigns}>
       {CAMPAIGN_ORDER.map((k) => (
         <CampaignCard key={k} kind={k} />
       ))}
