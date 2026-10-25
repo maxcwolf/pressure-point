@@ -159,6 +159,8 @@ describe('a Caretaker with a Fire Extinguisher near the door', () => {
     const upkeep = s.ledger.upkeep;
     startFire(ctx, kiln, 600);
     runUntil(sim, () => caretaker.state === 'doingJob' && caretaker.job?.kind === 'douse', 60);
+    // in the room with it, not through the wall from the corridor
+    expect(sim.world.zoneAt(caretaker.tx, caretaker.ty)).toBe(suite.id);
     const from = s.day;
     runUntil(sim, () => !burning(c), 30);
     expect(seconds(from, s.day)).toBeCloseTo(DOUSE_SECONDS / caretakerSpeed(caretaker), 0);
@@ -182,12 +184,14 @@ describe('a Caretaker with a Fire Extinguisher near the door', () => {
 describe('a Caretaker with no Fire Extinguisher near', () => {
   it('beats the fire out slowly, while it spreads to what wears beside it in the room, and nothing else', () => {
     const c = withKiln();
-    const { sim, s, ctx, kiln, table, cart } = c;
+    const { sim, s, ctx, kiln, table, cart, suite } = c;
     const caretaker = caretakerReady(c);
     // a plant just outside the room's wall, beside the kiln but not in its room, and one inside it beside the kiln
     sim.placeItem('plant', 17, 12, 0);
     startFire(ctx, kiln, 600);
     runUntil(sim, () => caretaker.state === 'doingJob' && caretaker.job?.kind === 'douse', 60);
+    // in the room with it, not through the wall from the corridor
+    expect(sim.world.zoneAt(caretaker.tx, caretaker.ty)).toBe(suite.id);
     const from = s.day;
     runUntil(sim, () => !s.blazes.some((b) => b.item === kiln.id), 60);
     expect(seconds(from, s.day)).toBeCloseTo(BEAT_SECONDS / caretakerSpeed(caretaker), 0);
@@ -238,6 +242,7 @@ describe('the fire brigade, with no Caretaker', () => {
     runUntil(sim, () => crew(c).every((v) => v.state === 'hosing'), 30);
     const [one, two] = crew(c);
     expect([one?.tx, one?.ty]).not.toEqual([two?.tx, two?.ty]);
+    for (const v of crew(c)) expect(sim.world.zoneAt(v.tx, v.ty)).toBe(c.suite.id);
     runUntil(sim, () => !burning(c), 60);
     expect(seconds(from, s.day)).toBeLessThan(60);
     expect(s.ledger.upkeep - upkeep).toBe(600 + BRIGADE_FEE);

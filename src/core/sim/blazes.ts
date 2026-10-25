@@ -29,7 +29,7 @@ import {
 import { money } from '../format';
 import { randomLook, randomName, rollSex } from '../people';
 import { pick } from '../random';
-import type { Blaze, Brigade, GameState, Item, PutOut, Room, Staff, Visitor } from '../state/types';
+import type { Blaze, Brigade, Char, GameState, Item, PutOut, Room, Staff, Visitor } from '../state/types';
 import { footprint, itemCenter } from '../world';
 import { itemsBeside } from './building';
 import { newChar, say, streetEnds, streetTileNear } from './chars';
@@ -395,11 +395,33 @@ function sendToFire(ctx: SimContext, v: Visitor): boolean {
         o.visit === 'firefighter' &&
         (o.dest ? o.dest[0] === x && o.dest[1] === y : o.tx === x && o.ty === y),
     );
-  if (standBeside(ctx, v, it, (x, y) => !taken(x, y)) || standBeside(ctx, v, it)) return true;
+  if (standByFire(ctx, v, it, (x, y) => !taken(x, y))) return true;
   if (room && goTo(ctx, v, room.door.x, room.door.y)) return true;
   halt(v);
   startHosing(v, it);
   return true;
+}
+
+/**
+ * Set someone walking to put out the fire on an item: from beside it in its own room, rather than through the wall
+ * from the corridor, on a tile `free` allows if there is one, and from any side they can reach if they must. False if
+ * no side can be reached.
+ */
+export function standByFire(
+  ctx: SimContext,
+  c: Char,
+  it: Item,
+  free: (x: number, y: number) => boolean = () => true,
+): boolean {
+  const zone = ctx.world.zoneAt(it.x, it.y);
+  /** Whether a tile is in the item's own room, or its own stretch of corridor. */
+  const inRoom = (x: number, y: number) => ctx.world.zoneAt(x, y) === zone;
+  return (
+    standBeside(ctx, c, it, (x, y) => inRoom(x, y) && free(x, y)) ||
+    standBeside(ctx, c, it, inRoom) ||
+    standBeside(ctx, c, it, free) ||
+    standBeside(ctx, c, it)
+  );
 }
 
 /** Send a firefighter to a room where a fire was, to see for themselves that it is out. */

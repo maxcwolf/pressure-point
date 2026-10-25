@@ -615,9 +615,12 @@ function frost(m: THREE.MeshStandardMaterial, on: boolean) {
   m.emissiveIntensity = ICE_GLINT;
 }
 
-/** The near-black a fire chars everything it burns toward, and how far. */
+/**
+ * The near-black a fire chars everything it burns toward, and how far: colors mix in linear light, where most of a
+ * color's brightness on screen lies in its first few percent, so it takes nearly all the way to look burnt.
+ */
 const CHAR = new THREE.Color(0x221d1a);
-const CHAR_BY = 0.8;
+const CHAR_BY = 0.94;
 
 /** The looks an item's parts can be dressed in: switched off, frozen, or charred. */
 type Dress = 'off' | 'frost' | 'charred';

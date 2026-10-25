@@ -43,7 +43,7 @@ import { clamp, must } from '../util';
 import { accessPose, accessTile, footprint } from '../world';
 import { prestige } from './ambience';
 import { worksAt } from './assignments';
-import { blazeAt, douse, douseSeconds } from './blazes';
+import { blazeAt, douse, douseSeconds, standByFire } from './blazes';
 import { sameRoomCount } from './building';
 import { leaveForCall, returnFromCall } from './calls';
 import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
@@ -544,7 +544,9 @@ function findWork(ctx: SimContext, st: Staff) {
       const ok =
         task.kind === 'litter'
           ? goTo(ctx, st, task.x, task.y)
-          : standBeside(ctx, st, must(ctx.world.item(task.id), 'item to tend'));
+          : task.kind === 'douse'
+            ? standByFire(ctx, st, must(ctx.world.item(task.id), 'item on fire'))
+            : standBeside(ctx, st, must(ctx.world.item(task.id), 'item to tend'));
       if (!ok) continue;
       st.job = { kind: task.kind, id: task.id };
       const target = task.kind === 'litter' ? s.litter.find((l) => l.id === task.id) : ctx.world.item(task.id);
