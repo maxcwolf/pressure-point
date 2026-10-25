@@ -2,8 +2,9 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.33.6
 
+- **Sort the menus' lists.** Each list in the menus has a Sort by dropdown: items and rooms by name, price, decor, quiet or earnings; staff by name, role, rank, salary, energy, morale or what they know; applicants by rank, salary, what they know or quirks; and templates, the casebook and the regulars by their own figures. A list keeps its order while the game runs.
 - **Small fixes.** Moving a treatment table, or selling its room, keeps the order of the line waiting for it, and whoever was on the table goes back to the front. Staff sent on a house call or a course they cannot get to stay at their post, and staff who cannot reach their best post take the next one. An award cheers up the member of staff who won it, not another with the same name. A guest who cannot reach a Lounger no longer feels rested on it. And the advisor now says the wasps "have" put things out of action, not "has".
 
 ## v0.33.5
