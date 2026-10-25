@@ -10,7 +10,7 @@ import type { SimContext } from './context';
 import { tipOnce } from './events';
 import { feel } from './feelings';
 import { useLinens } from './linens';
-import { goTo } from './movement';
+import { canWalkTo, goTo } from './movement';
 import { modalityOf } from './treatments';
 
 /** Whether a guest's treatment leaves them needing a rest afterwards. */
@@ -33,7 +33,9 @@ export function restPenalty(ctx: SimContext, g: Guest): number {
 export function settleRest(ctx: SimContext, g: Guest): { item: Item; idx: number } | null {
   if (!needsRest(g)) return null;
   const spot = restSpot(ctx, g);
-  if (spot) {
+  // a Lounger they cannot get to is none: they are not glad of it, and its blanket stays fresh for someone who can
+  const [x, y] = spot ? accessTile(spot.item, spot.idx) : [g.tx, g.ty];
+  if (spot && canWalkTo(ctx, g, x, y)) {
     feel(g, 'rested');
     useLinens(ctx, spot.item, g);
     return spot;

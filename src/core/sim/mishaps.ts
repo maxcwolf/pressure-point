@@ -75,7 +75,7 @@ export function daysInWords(days: number): string {
 export function mishapAdvice(s: GameState): string {
   const def = mishapStopping(s);
   if (!def) return '';
-  return `The ${def.name.toLowerCase()} has put ${def.stopsWhat ?? 'some things'} out of action. It will be over in ${daysInWords(mishapDaysLeft(s))}.`;
+  return `The ${def.name.toLowerCase()} ${def.plural ? 'have' : 'has'} put ${def.stopsWhat ?? 'some things'} out of action. It will be over in ${daysInWords(mishapDaysLeft(s))}.`;
 }
 
 /** How many guests arrive while a mishap is under way, against usual. */

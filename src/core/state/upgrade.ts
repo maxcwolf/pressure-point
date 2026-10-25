@@ -143,9 +143,9 @@ export const renamedAward = (id: string): AwardId =>
   (id === 'janitor-of-the-year' ? 'caretaker-of-the-year' : id) as AwardId;
 
 /**
- * The sound bath moved out of reiki into a discipline of its own: Reiki Practitioners forget it, a course in it is
- * called off, and Singing Bowls bought for a Reiki Studio are sold back at what they cost, since they now belong
- * only in a Sound Bath Studio.
+ * The sound bath moved out of reiki into a discipline of its own with version 18: Reiki Practitioners forget it, a
+ * course in it is called off, and Singing Bowls bought for a Reiki Studio are sold back at what they cost, since they
+ * now belong only in a Sound Bath Studio.
  */
 function movedSoundBath(s: OldSave) {
   for (const st of [...s.staff, ...s.candidates]) {
@@ -155,7 +155,7 @@ function movedSoundBath(s: OldSave) {
   for (const st of s.staff) {
     if (st.role !== 'practitioner' || st.training?.course !== 'sound') continue;
     // the course is called off, so its fee comes back, as it does for any course cut short
-    s.money += st.training.cost;
+    refund(s, st.training.cost, 'training');
     st.training = null;
   }
   /** The type of room a tile is in, if any. */
@@ -163,7 +163,15 @@ function movedSoundBath(s: OldSave) {
   const stray = s.items.filter((it) => it.type === 'singing_bowls' && roomAt(it.x, it.y)?.type !== 'sound');
   if (!stray.length) return;
   s.items = s.items.filter((it) => !stray.includes(it));
-  s.money += stray.length * SOLD_BOWLS;
+  refund(s, stray.length * SOLD_BOWLS, 'building');
+}
+
+/** Money paid out coming back, booked as a game under way books it (`recoup`): off this month's cost, the rest as income. */
+function refund(s: OldSave, amount: number, kind: 'training' | 'building') {
+  s.money += amount;
+  const back = Math.min(amount, Math.max(0, s.ledger[kind] ?? 0));
+  s.ledger[kind] = (s.ledger[kind] ?? 0) - back;
+  s.ledger.bonus = (s.ledger.bonus ?? 0) + amount - back;
 }
 
 /** The emoji a speech bubble held before the icons, and the icon each became. */
@@ -261,7 +269,7 @@ export function upgradeSave(save: GameState) {
     st.paidTo ??= Math.floor(s.day / DAYS_PER_MONTH) * DAYS_PER_MONTH;
   }
   for (const c of s.candidates) c.quals ??= baseQuals(c.role);
-  movedSoundBath(s);
+  if (s.version < 18) movedSoundBath(s);
   // before women and men were told apart, a look had no sex, and any hair style went with any name; and Amanda
   // Jablonsky's mohawk came later than she did, so in an older save she may have an ordinary haircut
   for (const p of [...s.staff, ...s.candidates, ...s.guests, ...s.visitors]) settleSex(p);

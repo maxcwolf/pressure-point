@@ -1,5 +1,5 @@
 // The Recovery Lounge: the harder treatments leave a guest needing a lie-down on a Lounger, or they work less often.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ITEMS, MODALITIES, NO_REST_PENALTY, ROOMS } from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
@@ -8,6 +8,7 @@ import { guestNoise } from '../../src/core/sim/noise';
 import { needsRest, restPenalty } from '../../src/core/sim/recovery';
 import type { Sim } from '../../src/core/sim/sim';
 import type { Guest } from '../../src/core/state/types';
+import { accessTile } from '../../src/core/world';
 import { itemIdAt, lyingAt } from '../../src/render/acts';
 import { restNote } from '../../src/ui/lib/recovery';
 import { addRecovery, inconsistencies, openCenter, runUntil, toasts } from './helpers';
@@ -135,6 +136,21 @@ describe('a guest after a hard treatment', () => {
     expect(g.feelings).toContain('woozy');
     expect(g.state).toBe('leaving');
     expect(toasts(sim.drain()).join(' ')).toContain('Without a Recovery Lounge they go home woozy');
+  });
+
+  it('goes home woozy when the Lounger cannot be reached, and leaves its blanket fresh', () => {
+    const { sim, g } = knottedGuest(true);
+    const lounger = loungerOf(sim);
+    const [lx, ly] = accessTile(lounger, 0);
+    const findPath = sim.world.findPath.bind(sim.world);
+    vi.spyOn(sim.world, 'findPath').mockImplementation((sx, sy, tx, ty) =>
+      tx === lx && ty === ly ? null : findPath(sx, sy, tx, ty),
+    );
+    runUntil(sim, () => g.outcome !== '');
+    expect(g.feelings).toContain('woozy');
+    expect(g.feelings).not.toContain('rested');
+    expect(lounger.dirt).toBe(0);
+    expect(lounger.users[0]).toBe(0);
   });
 
   it('goes home woozy when every Lounger is taken, and the advisor suggests more', () => {

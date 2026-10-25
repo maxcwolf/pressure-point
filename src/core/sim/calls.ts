@@ -26,7 +26,7 @@ import { lobbyTile, say, staffById, streetTile } from './chars';
 import type { SimContext } from './context';
 import { earn, priceFor } from './economy';
 import { emit, tipOnce, toast } from './events';
-import { goTo, halt } from './movement';
+import { canWalkTo, goTo, halt } from './movement';
 import { stationStaff } from './sessions';
 import { staffIdle } from './staffing';
 import { offered, unlocked } from './treatments';
@@ -118,12 +118,14 @@ export function acceptCall(ctx: SimContext, staffId: number): boolean {
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
   }
-  staffIdle(ctx, st);
+  // the way out is found before they are stood down, so a call they cannot get to leaves them at what they were doing
   const [x, y] = streetTile(s, ctx.world.building, ctx.world.w);
-  if (!goTo(ctx, st, x, y)) {
+  if (!canWalkTo(ctx, st, x, y)) {
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
   }
+  staffIdle(ctx, st);
+  goTo(ctx, st, x, y);
   // priced on the way back, so a price raised for the days away and dropped again is not paid for
   st.call = {
     client: call.client,

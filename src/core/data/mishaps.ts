@@ -10,6 +10,8 @@ export type MishapId = 'power' | 'storm' | 'freeze' | 'wasps';
 export interface MishapDef {
   id: MishapId;
   name: string;
+  /** Whether the name is a plural, as wasps are, for a line that says what it has done. */
+  plural?: boolean;
   icon: IconId;
   /** What the speakers say a few days before, as it starts, and as it ends. */
   warning: string;
@@ -109,6 +111,7 @@ export const MISHAPS: Readonly<Record<MishapId, MishapDef>> = {
   wasps: {
     id: 'wasps',
     name: 'Wasps',
+    plural: true,
     icon: 'mishap-wasps',
     warning: 'It is harvest week in the orchards, and the wasps have noticed.',
     start: 'Wasps have found the snacks. Please walk calmly and do not wave your arms.',

@@ -46,18 +46,18 @@ See the plan above. All six are in, with tests, and so are these, from the to-do
 
 - [ ] **Bankruptcy and the campaign.** Always on in the campaign centers, and the immediate-loss case is gone but a lost game still has no appeal beyond the grace days. Play The Orchard Estate's opening, and the "Lower" loans setting ($25,000 limit against a payroll of about $15,000), before a release. Since 0.31.0 (`f2feb5a`) the grace days are gone: a short payday is borrowed or paid into the red at 5%, and the bank calls the overdraft in, with ten days to put it right, only when the center is in the red past what it will lend and losing money. Left: the play-through above.
 - [x] **Regulars and emergency guests never balk at a price,** however high. Now capped at 2× rather than 4×, but still no price-off check for them. **Done in 0.31.0** (`0998a00`): a plain regular minds the price half as much as a new guest (`REGULAR_PUT_OFF`, `mindsPrice`). Loyal and devoted regulars and emergency guests still never balk, by design.
-- [ ] **Moving or selling a treatment table re-queues everyone waiting at it,** undoing any hand-ordering of the line and the emergency-first order (`building.ts:194`, `usersOf` and `resetUsers`).
-- [ ] **`upgradeSave` refunds a cancelled Sound course straight into `money`,** off the books, and runs on every load rather than only for old saves (`state/upgrade.ts`, `movedSoundBath`).
-- [ ] **`acceptCall` and `train` idle a member of staff before a walk that can fail,** dropping their post or guest with nothing started (`calls.ts`, `training.ts`).
+- [x] **Moving or selling a treatment table re-queues everyone waiting at it,** undoing any hand-ordering of the line and the emergency-first order (`building.ts:194`, `usersOf` and `resetUsers`). **Done** (`3f64f0d`): a line whose station is only moved keeps its order, and whoever was called or on the table goes back to its front; a line whose station is sold joins another in the order it stood in.
+- [x] **`upgradeSave` refunds a cancelled Sound course straight into `money`,** off the books, and runs on every load rather than only for old saves (`state/upgrade.ts`, `movedSoundBath`). **Done** (`33ce13c`): only for saves before version 18, and the course fee and the bowls come back on the books as `recoup` books them.
+- [x] **`acceptCall` and `train` idle a member of staff before a walk that can fail,** dropping their post or guest with nothing started (`calls.ts`, `training.ts`). **Done** (`4de82f1`): the way is found first (`canWalkTo`), and with none they stay at what they were doing.
 - [ ] **A failed `goTo` in `callGuest` sends a guest home with no outcome** (`stations.ts:263`), so the visit stats drift. No way to reach it found.
 - [ ] **A guest in the `served` state has no timeout** and does not worsen (`guests.ts`, `worsening.ts`). No way to reach it found.
-- [ ] **Staff retry only the single best unreachable post** (`staffing.ts:499`, `findWork`), so a post that becomes unreachable starves the others.
-- [ ] **`settleRest` gives a "rested" feeling and soils a Lounger before the walk to it can fail** (`recovery.ts`).
+- [x] **Staff retry only the single best unreachable post** (`staffing.ts:499`, `findWork`), so a post that becomes unreachable starves the others. **Done** (`dcf27f1`): they try the best four in turn, as they do jobs.
+- [x] **`settleRest` gives a "rested" feeling and soils a Lounger before the walk to it can fail** (`recovery.ts`). **Done** (`499412c`): a Lounger that cannot be reached counts as none.
 - [ ] **The sim's build API trusts the UI** for money, `missingItems`, unlock stars and "room done" (`building.ts`, `upgrades.ts`). Reachable only through `window.pp` or the console.
 - [ ] **Monthly goals can be met on a small sample early in a month** (`goals.ts`: 7 of 10 healed meets a 70% cure rate, with no minimum span). Awards use 20 guests and a full year. Still so at 0.31.0: the cure rate now counts guests sent home, but 10 judged are still enough. The new month-heals goals are counts, so a short span is no shortcut there.
 - [ ] **"Go 30 days without anyone quitting" is free** once day 30 comes if nobody has ever quit (`goals.ts:41`), and so is the 90-day achievement. Probably intended.
 - [ ] **A failed inspection's bribe** is at least $10,000 (`BRIBE_MIN`) against fines of $800 a problem, so it is rarely worth paying; and `settleInspection(false)` runs silently when a later visitor finishes (`visits.ts`).
-- [ ] **The awards ceremony finds a winner by name** (`awards.ts:185`), so two staff with one name get the first match.
+- [x] **The awards ceremony finds a winner by name** (`awards.ts:185`), so two staff with one name get the first match. **Done** (`e03e28b`): a result keeps the winner's id (`winnerId`).
 
 ### Balance and gameplay
 

@@ -17,6 +17,7 @@ import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
 import {
   chooseMishap,
+  mishapAdvice,
   mishapArrivals,
   mishapDaysLeft,
   newMishap,
@@ -259,6 +260,18 @@ describe('the advisor in a mishap', () => {
     const usual = advice(ctx);
     s.mishap = { ...newMishap(s.day, 'power'), started: true, prepared: true };
     expect(advice(ctx)).toBe(usual);
+  });
+
+  it('says what the wasps have put out of action, in the plural', () => {
+    const wasps = withMishaps();
+    expect(wasps.sim.placeItem('bin', 14, 6, 0)).not.toBeNull();
+    wasps.s.mishap = { ...newMishap(wasps.s.day, 'wasps'), started: true };
+    expect(mishapAdvice(wasps.s)).toMatch(/^The wasps have put the snacks, drinks and bins out of action\./);
+    const power = withMishaps();
+    power.s.stars = 2;
+    expect(power.sim.placeItem('stone_warmer', 14, 6, 0)).not.toBeNull();
+    power.s.mishap = { ...newMishap(power.s.day, 'power'), started: true };
+    expect(mishapAdvice(power.s)).toMatch(/^The power cut has put anything with a plug out of action\./);
   });
 });
 

@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Small fixes.** Moving a treatment table, or selling its room, keeps the order of the line waiting for it, and whoever was on the table goes back to the front. Staff sent on a house call or a course they cannot get to stay at their post, and staff who cannot reach their best post take the next one. An award cheers up the member of staff who won it, not another with the same name. A guest who cannot reach a Lounger no longer feels rested on it. And the advisor now says the wasps "have" put things out of action, not "has".
+
 ## v0.33.5
 
 - **Willow Lane's high street.** The road and its pavements run on past Willow Lane's lot, with hedges on a low brick wall along the pavement and lamp posts further down the street, so the first center stands on a street rather than in a field. The way in to the door stays clear.

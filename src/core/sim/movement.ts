@@ -18,6 +18,11 @@ export function turnToward(cur: number, target: number, maxStep: number) {
   return cur + clamp(d, -maxStep, maxStep);
 }
 
+/** Whether someone could walk from where they stand to a tile, without setting off. */
+export function canWalkTo(ctx: SimContext, c: Char, tx: number, ty: number): boolean {
+  return !!ctx.world.findPath(c.tx, c.ty, tx, ty);
+}
+
 /** Set someone walking to a tile, optionally ending in a pose there. False if there is no way. */
 export function goTo(ctx: SimContext, c: Char, tx: number, ty: number, pp?: PosePoint): boolean {
   let sx = c.tx;

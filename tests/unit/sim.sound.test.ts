@@ -475,10 +475,14 @@ describe('a save from before sound healing', () => {
     const { x, y, w, h } = LAYOUT.reiki.rect;
     old.items.push({ ...old.items[0]!, id: 99999, type: 'singing_bowls', x: x + w - 1, y: y + h - 1, rot: 0 });
     old.staff.find((st) => st.id === practitioner.id)!.quals = ['usui', 'sound'];
-    const money = old.money;
+    old.version = 17;
+    const { money, ledger } = structuredClone(old);
+    expect(ledger.building).toBeGreaterThan(SOLD_BOWLS);
     upgradeSave(old);
     expect(old.items.some((i) => i.type === 'singing_bowls')).toBe(false);
+    // sold back on the books, off what building cost this month
     expect(old.money).toBe(money + SOLD_BOWLS);
+    expect(old.ledger.building).toBe(ledger.building - SOLD_BOWLS);
     expect(old.staff.find((st) => st.id === practitioner.id)!.quals).toEqual(['usui']);
   });
 
@@ -490,10 +494,32 @@ describe('a save from before sound healing', () => {
     const old = JSON.parse(JSON.stringify(s)) as GameState;
     const student = old.staff.find((st) => st.id === practitioner.id)!;
     student.training = { course: 'sound', progress: 0.4, seconds: 600, cost: 750 };
-    const money = old.money;
+    old.version = 17;
+    const { money, ledger } = structuredClone(old);
     upgradeSave(old);
     expect(student.training).toBeNull();
     expect(old.money).toBe(money + 750);
+    // paid for before this month's books, so it comes back as income rather than a cost below nothing
+    expect(ledger.training).toBe(0);
+    expect(old.ledger.training).toBe(0);
+    expect(old.ledger.bonus).toBe(ledger.bonus + 750);
+  });
+
+  it('leaves a save from since then alone', () => {
+    const { sim, s } = openCenter(7);
+    s.stars = 3;
+    addReiki(sim);
+    const practitioner = hire(sim, 'practitioner');
+    const old = JSON.parse(JSON.stringify(s)) as GameState;
+    const { x, y, w, h } = LAYOUT.reiki.rect;
+    old.items.push({ ...old.items[0]!, id: 99999, type: 'singing_bowls', x: x + w - 1, y: y + h - 1, rot: 0 });
+    const student = old.staff.find((st) => st.id === practitioner.id)!;
+    student.training = { course: 'sound', progress: 0.4, seconds: 600, cost: 750 };
+    const money = old.money;
+    upgradeSave(old);
+    expect(old.items.some((i) => i.type === 'singing_bowls')).toBe(true);
+    expect(student.training).not.toBeNull();
+    expect(old.money).toBe(money);
   });
 });
 

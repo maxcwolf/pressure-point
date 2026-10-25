@@ -535,8 +535,7 @@ function findWork(ctx: SimContext, st: Staff) {
       startWard(st);
       return;
     }
-    let best: Item | null = null;
-    let bestScore = -1e9;
+    const posts: { it: Item; score: number }[] = [];
     for (const it of s.items) {
       const def = ITEMS[it.type].station;
       // a group station has nobody posted at it: it is worked from its room's lead station
@@ -553,20 +552,18 @@ function findWork(ctx: SimContext, st: Staff) {
           if (q && !deliveryProblem(ctx, it, st, modalityOf(q))) score += 8;
         }
       }
-      if (score > bestScore) {
-        bestScore = score;
-        best = it;
-      }
+      posts.push({ it, score });
     }
-    if (best) {
-      const ai = accessIndex(best, 'staff');
-      const [x, y] = accessTile(best, ai);
-      if (goTo(ctx, st, x, y, accessPose(best, ai))) {
-        best.staffId = st.id;
-        st.post = best.id;
-        st.state = 'toPost';
-        return;
-      }
+    // the best post first, and one that cannot be reached is passed over for the next, as a job is
+    posts.sort((a, b) => b.score - a.score);
+    for (const { it } of posts.slice(0, 4)) {
+      const ai = accessIndex(it, 'staff');
+      const [x, y] = accessTile(it, ai);
+      if (!goTo(ctx, st, x, y, accessPose(it, ai))) continue;
+      it.staffId = st.id;
+      st.post = it.id;
+      st.state = 'toPost';
+      return;
     }
   }
   // nothing to do: amble about, inside their own rooms if they have been assigned some

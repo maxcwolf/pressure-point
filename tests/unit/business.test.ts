@@ -1,5 +1,5 @@
 // The business side: prices per treatment, the Shop Counter, marketing and house calls.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   CALL_PER_DAY,
@@ -325,6 +325,20 @@ describe('a house call', () => {
     expect(therapist.call).toBeNull();
     expect(s.ledger.calls).toBe(fee);
     expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('is not taken by someone with no way out, who stays at their post', () => {
+    const { sim, s, therapist } = openCenter(1);
+    runUntil(sim, () => therapist.state === 'atPost', 120);
+    const post = therapist.post;
+    s.callOffer = call(s.day, { days: 1 });
+    const lost = vi.spyOn(sim.world, 'findPath').mockReturnValue(null);
+    expect(sim.acceptCall(therapist.id)).toBe(false);
+    lost.mockRestore();
+    expect(therapist.state).toBe('atPost');
+    expect(therapist.post).toBe(post);
+    expect(therapist.call).toBeNull();
+    expect(s.callOffer).not.toBeNull();
   });
 
   it('cannot be accepted for someone who cannot go', () => {

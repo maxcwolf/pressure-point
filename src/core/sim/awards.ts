@@ -100,7 +100,7 @@ export function judge(s: GameState, id: AwardId, year: number, t: YearTotals, co
     award: id,
     won,
     note,
-    ...(won && winner && { winner: winner.name }),
+    ...(won && winner && { winner: winner.name, winnerId: winner.id }),
   });
   switch (id) {
     case 'healing-hands': {
@@ -184,7 +184,7 @@ export function holdAwards(ctx: SimContext, year: number) {
     earn(ctx, prize, 'bonus');
     changeRep(ctx, AWARD_REP);
     s.trophies.push({ award: r.award, year });
-    const winner = s.staff.find((st) => st.name === r.winner);
+    const winner = s.staff.find((st) => st.id === r.winnerId);
     if (winner) winner.morale = Math.min(100, winner.morale + AWARD_MORALE);
   }
   for (const st of s.staff) st.yearServed = 0;

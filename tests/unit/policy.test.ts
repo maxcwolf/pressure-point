@@ -1,13 +1,15 @@
 // The player's say in how the center is run: policy, guests' chances, lines, sending home and room priority.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { GUESS_PENALTY, SCAN_SUCCESS, STRUCTURAL_SURE, UPGRADE_SUCCESS } from '../../src/core/data';
+import { accessIndex } from '../../src/core/sim/claims';
 import { createContext, type SimContext } from '../../src/core/sim/context';
 import { breakDue, changedPolicy, onBreak } from '../../src/core/sim/policy';
 import { inLine, sameKind } from '../../src/core/sim/queues';
 import { nextInLine, successChance } from '../../src/core/sim/stations';
 import { defaultPolicy } from '../../src/core/state/game';
 import type { Guest, Item } from '../../src/core/state/types';
+import { accessTile } from '../../src/core/world';
 import {
   addRestroom,
   addStaffRoom,
@@ -223,6 +225,39 @@ describe('a line', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
+  it('keeps its order when its table is moved, and whoever was on the table goes back to its front', () => {
+    const { sim, s, table } = busyCenter();
+    const [a, b, c] = s.guests;
+    lineUp(table, [a!, b!, c!]);
+    expect(sim.moveInLine(c!.id, -2)).toBe(true);
+    // the first in line is called up and lies on the table
+    table.queue = table.queue.filter((id) => id !== c!.id);
+    table.serving = c!.id;
+    c!.state = 'served';
+    expect(sim.moveItem(table.id, table.x, table.y, table.rot)).toBe(true);
+    expect(table.queue).toEqual([c!.id, a!.id, b!.id]);
+    expect(table.serving).toBe(0);
+    expect(c!.placed).toBe(true);
+    run(sim, 3);
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('goes to another table in the order it stood in, when its room is sold', () => {
+    const { sim, s, table } = busyCenter();
+    addSecondSuite(sim);
+    const other = s.items.find((i) => i.type === 'massage_table' && i !== table)!;
+    const [a, b, c] = s.guests;
+    for (const g of [a!, b!, c!]) g.condition = 'slump';
+    lineUp(table, [a!, b!, c!]);
+    expect(sim.moveInLine(c!.id, -2)).toBe(true);
+    const room = s.rooms.find((r) => r.type === 'massage' && table.x >= r.x && table.x < r.x + r.w)!;
+    sim.removeRoom(room.id, 0.5);
+    const moved = new Set([a!.id, b!.id, c!.id]);
+    expect(other.queue.filter((id) => moved.has(id))).toEqual([c!.id, a!.id, b!.id]);
+    run(sim, 3);
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
   it('only moves guests who are waiting', () => {
     const { sim, s, table } = busyCenter();
     const g = s.guests[0]!;
@@ -275,6 +310,21 @@ describe('a priority room', () => {
     expect(inconsistencies(sim)).toEqual([]);
     sim.setRoomPriority(second.id, false);
     expect(second.priority).toBe(false);
+  });
+
+  it('is passed over for the next post when its own cannot be reached', () => {
+    const { sim, s, therapist } = openCenter(1);
+    const second = addSecondSuite(sim);
+    sim.setRoomPriority(second.id, true);
+    const table = s.items.find((i) => i.type === 'massage_table' && sim.world.zoneAt(i.x, i.y) === second.id)!;
+    const [tx, ty] = accessTile(table, accessIndex(table, 'staff'));
+    const findPath = sim.world.findPath.bind(sim.world);
+    vi.spyOn(sim.world, 'findPath').mockImplementation((sx, sy, gx, gy) =>
+      gx === tx && gy === ty ? null : findPath(sx, sy, gx, gy),
+    );
+    runUntil(sim, () => therapist.state === 'atPost', 120);
+    expect(therapist.post).not.toBe(table.id);
+    expect(sim.world.item(therapist.post)?.type).toBe('massage_table');
   });
 
   it('is seen to first by caretakers', () => {

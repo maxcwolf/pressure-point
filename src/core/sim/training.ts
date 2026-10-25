@@ -10,7 +10,7 @@ import { claim, findAccess, release } from './claims';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, toast } from './events';
-import { goTo } from './movement';
+import { canWalkTo, goTo } from './movement';
 import { hasRoom } from './progress';
 import { staffIdle } from './staffing';
 
@@ -67,16 +67,16 @@ export function train(ctx: SimContext, staffId: number, courseId: string): boole
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
   }
+  // the way to a desk is found before they are stood down, so one they cannot get to leaves them at what they were doing
   const desk = findAccess(ctx, 'study', st.tx, st.ty);
-  if (!desk) return false;
-  staffIdle(ctx, st);
-  claim(ctx, st, desk.item, desk.idx);
-  const [x, y] = accessTile(desk.item, desk.idx);
-  if (!goTo(ctx, st, x, y, accessPose(desk.item, desk.idx))) {
-    release(ctx, st);
+  const [x, y] = desk ? accessTile(desk.item, desk.idx) : [st.tx, st.ty];
+  if (!desk || !canWalkTo(ctx, st, x, y)) {
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
   }
+  staffIdle(ctx, st);
+  claim(ctx, st, desk.item, desk.idx);
+  goTo(ctx, st, x, y, accessPose(desk.item, desk.idx));
   spend(ctx, course.cost, 'training');
   st.training = { course: course.id, progress: 0, seconds: course.days * DAY_SECONDS, cost: course.cost };
   st.state = 'toTrain';
