@@ -17,7 +17,8 @@ import {
   SPRINKLER_COST,
   SPRINKLER_SECONDS,
 } from '../../src/core/data';
-import { startFire, truckPark, truckStart, updateBlazes } from '../../src/core/sim/blazes';
+import { advise } from '../../src/core/sim/advisor';
+import { fireRiskAdvice, startFire, truckPark, truckStart, updateBlazes } from '../../src/core/sim/blazes';
 import { roomRefund } from '../../src/core/sim/building';
 import { streetEnds } from '../../src/core/sim/chars';
 import type { SimContext } from '../../src/core/sim/context';
@@ -345,5 +346,39 @@ describe('taking a fire away', () => {
     runUntil(sim, () => crew(c).length === 0, 120);
     runUntil(sim, () => !s.brigade, 60);
     expect(inconsistencies(sim)).toEqual([]);
+  });
+});
+
+describe('the advisor on fires', () => {
+  it('raises the alarm while something burns, saying who is coming to put it out', () => {
+    const c = withKiln();
+    c.kiln.wear = 75;
+    startFire(c.ctx, c.kiln, 100);
+    const alarm = advise(c.ctx);
+    expect(alarm.level).toBe('alarm');
+    expect(alarm.about).toEqual({ kind: 'item', id: c.kiln.id });
+    expect(alarm.text).toContain('The Hot Stone Kiln in the Massage Suite is on fire');
+    expect(alarm.text).toContain('no Caretaker is on duty');
+    expect(alarm.text).toContain('at a price');
+    const st = caretakerReady(c);
+    runUntil(c.sim, () => st.job?.kind === 'douse', 30);
+    expect(advise(c.ctx).text).toContain(`${st.name} is on the way`);
+  });
+
+  it('warns of a smoking machine with nothing near its door to put a fire out quickly, until there is', () => {
+    const c = withKiln();
+    // no Caretaker, so nobody is on the way to repair it
+    c.kiln.wear = 75;
+    const tip = fireRiskAdvice(c.ctx);
+    expect(tip?.about).toEqual({ kind: 'item', id: c.kiln.id });
+    expect(tip?.text).toContain('may catch fire');
+    extinguisherByDoor(c);
+    expect(fireRiskAdvice(c.ctx)).toBeNull();
+    // and never with fires off
+    c.s.items = c.s.items.filter((i) => i.type !== 'fire_extinguisher');
+    c.sim.world.version++;
+    expect(fireRiskAdvice(c.ctx)).not.toBeNull();
+    c.s.blazesOn = false;
+    expect(fireRiskAdvice(c.ctx)).toBeNull();
   });
 });
