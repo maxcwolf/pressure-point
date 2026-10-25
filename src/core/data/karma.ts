@@ -71,6 +71,33 @@ export const ACHIEVEMENTS: Readonly<Record<AchievementId, AchievementDef>> = {
     goal: { kind: 'healed', count: 25, discipline: 'reiki' },
     karma: 2,
   },
+  'price-is-right': {
+    id: 'price-is-right',
+    name: 'The Price Is Right',
+    icon: 'achievement-price-is-right',
+    desc: 'A whole month and not one wince at the till.',
+    goal: { kind: 'fairMonth', count: 30 },
+    karma: 2,
+    hidden: true,
+  },
+  busted: {
+    id: 'busted',
+    name: 'Busted',
+    icon: 'achievement-busted',
+    desc: 'The jar was for decoration.',
+    goal: { kind: 'busted', count: 1 },
+    karma: 1,
+    hidden: true,
+  },
+  'under-the-counter': {
+    id: 'under-the-counter',
+    name: 'Under the Counter',
+    icon: 'achievement-under-the-counter',
+    desc: 'We do not talk about this one.',
+    goal: { kind: 'mushroomSales', amount: 1000 },
+    karma: 1,
+    hidden: true,
+  },
 };
 
 export const ACHIEVEMENT_ORDER = Object.keys(ACHIEVEMENTS) as AchievementId[];

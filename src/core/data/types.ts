@@ -618,7 +618,10 @@ export type AchievementId =
   | 'showpiece'
   | 'one-big-family'
   | 'pins-and-needles'
-  | 'good-vibrations';
+  | 'good-vibrations'
+  | 'price-is-right'
+  | 'busted'
+  | 'under-the-counter';
 
 /** A one-off feat in the campaign, worth some karma the first time it is done in any center. */
 export interface AchievementDef {
@@ -630,6 +633,8 @@ export interface AchievementDef {
   /** Done when this objective is met. */
   goal: GoalSpec;
   karma: number;
+  /** Shown only as a locked mystery card until it is earned. */
+  hidden?: boolean;
 }
 
 export type AwardId =
@@ -748,7 +753,6 @@ export type GoalSpec =
   /** Take this much from mushroom sales. */
   | { kind: 'mushroomSales'; amount: number };
 
-/** The objectives for one star: all must be met at once. */
 /** The objectives for one star: all must be met at once. */
 export type StarGoal = readonly GoalSpec[];
 
