@@ -16,22 +16,25 @@ const chips = css({
   listStyle: 'none',
   display: 'flex',
   flexWrap: 'wrap',
-  gap: 'xs',
-  m: '[auto 0 0]',
-  p: '[6px 0 0]',
+  gap: '4',
+  m: '0',
+  mt: '[auto]',
+  p: '0',
+  pt: '6',
   '& li': {
     fontSize: '12',
     fontWeight: '[500]',
     border: '[1.5px solid #b7a98c]',
     bg: '[#f1ece2]',
     borderRadius: '[8px]',
-    p: '[0 6px]',
+    py: '0',
+    px: '6',
     whiteSpace: 'nowrap',
   },
   '& .decor': { bg: 'gold-tint', borderColor: 'gold' },
   '& :is(.calm, .cool)': { bg: '[#e3f0fb]', borderColor: 'blue' },
   // a calm chip sits a little lower, as it did when it took the inspector's old global .calm, meant for its calm button
-  '& .calm': { display: 'block', mt: 'm' },
+  '& .calm': { display: 'block', mt: '8' },
   '& .loud': { bg: 'bad-bg', borderColor: 'red', color: 'bad' },
   '& .warm': { bg: '[#fde8da]', borderColor: 'orange' },
   '& .earn': { bg: 'good-bg', borderColor: 'green', color: 'good' },
@@ -41,8 +44,10 @@ const chips = css({
 /** A row of pips, faint on the tooltip's navy, the ones filled in the color of what they count. */
 const pips = css({
   display: 'flex',
-  gap: '[3px]',
-  m: '[3px 0 1px]',
+  gap: '2',
+  m: '0',
+  mt: '2',
+  mb: '[1px]',
   '& i': { w: '[10px]', h: '[10px]', borderRadius: '[3px]', bg: 'cream/15' },
   '&.decor i.on': { bg: 'gold' },
   '&.calm i.on': { bg: '[#7fc2f2]' },
@@ -51,8 +56,8 @@ const pips = css({
 
 /** The tooltip's list of what an item does, a line each, with its icon beside it. */
 const tip = css({
-  '& ul': { listStyle: 'none', m: '[3px 0 0]', p: 'none', display: 'flex', flexDirection: 'column', gap: '[3px]' },
-  '& li': { display: 'flex', gap: '[7px]', fontSize: '13', lineHeight: '[1.3]' },
+  '& ul': { listStyle: 'none', m: '0', mt: '2', p: '0', display: 'flex', flexDirection: 'column', gap: '2' },
+  '& li': { display: 'flex', gap: '6', fontSize: '13', lineHeight: '[1.3]' },
   '& li > .icon': { mt: '[1px]' },
 });
 
@@ -63,10 +68,11 @@ const detail = css({
   bg: 'white',
   border: '[2.5px solid {colors.navy}]',
   borderRadius: '[14px]',
-  p: '[11px 13px 12px]',
+  p: '12',
+  pt: '10',
   display: 'flex',
   flexDirection: 'column',
-  gap: 's',
+  gap: '6',
   fontSize: '14',
   lineHeight: '[1.3]',
   '& p': { opacity: '[0.8]' },
@@ -78,7 +84,8 @@ const detail = css({
     fontSize: '12',
     bg: 'sand',
     borderRadius: '[8px]',
-    p: '[2px 7px]',
+    py: '2',
+    px: '6',
     alignSelf: 'flex-start',
   },
 });
@@ -87,14 +94,15 @@ const detail = css({
 const detailHead = css({
   display: 'flex',
   alignItems: 'center',
-  gap: '[10px]',
+  gap: '10',
   '& b': { display: 'block', fontSize: '17', fontWeight: 'bold' },
   '& .cost': {
     display: 'inline-block',
     bg: 'gold',
     border: 'control',
     borderRadius: 'control',
-    p: '[0 7px]',
+    py: '0',
+    px: '6',
     fontSize: '13',
     fontWeight: 'bold',
   },
@@ -103,24 +111,26 @@ const detailHead = css({
 /** What else the item does, a line each. */
 const factList = css({
   listStyle: 'none',
-  m: '[2px 0 0]',
-  p: 'none',
+  m: '0',
+  mt: '2',
+  p: '0',
   display: 'flex',
   flexDirection: 'column',
-  gap: 'xs',
-  '& li': { bg: '[#f6f0e3]', borderRadius: '[9px]', p: '[3px 9px]', fontSize: '13' },
+  gap: '4',
+  '& li': { bg: '[#f6f0e3]', borderRadius: '[9px]', py: '2', px: '8', fontSize: '13' },
 });
 
 /** The panel's button: green to place the item, grey while it cannot be. */
 const place = css({
-  mt: 'xxs',
+  mt: '2',
   border: '[2.5px solid {colors.navy}]',
   borderRadius: 'card',
   bg: 'green',
   color: 'white',
   fontWeight: 'bold',
   fontSize: '15',
-  p: '[7px 12px]',
+  py: '6',
+  px: '12',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
   _locked: { bg: 'stone', color: 'navy', cursor: 'not-allowed' },
 });
@@ -137,7 +147,7 @@ const twoWay = css({
     borderRadius: '[6px]',
     bg: 'ink.16',
     overflow: 'visible',
-    mt: '[3px]',
+    mt: '2',
   },
   '& .bar .mid': {
     position: 'absolute',

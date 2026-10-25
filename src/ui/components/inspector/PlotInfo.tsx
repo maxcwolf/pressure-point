@@ -20,15 +20,17 @@ const nameBox = css({
   color: 'inherit',
   border: '[2px solid transparent]',
   borderRadius: '[8px]',
-  p: '[0 4px]',
-  m: '[0 -6px]',
+  py: '0',
+  px: '4',
+  my: '0',
+  mx: '[-6px]',
   w: '[calc(100% + 8px)]',
   bg: 'transparent',
   '&:hover, &:focus': { borderColor: 'teal', bg: 'teal-tint', outline: '[none]' },
 });
 
 /** The rooms on a plot, a button for each, wrapping. */
-const roomList = css({ listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: 'xs', m: '[4px 0]' });
+const roomList = css({ listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: '4', my: '4', mx: '0' });
 
 /** A bought plot: its name to change, the builders' progress while they are at work, then the rooms on it. */
 export function PlotInfo({ offer }: { offer: PlotOffer }) {

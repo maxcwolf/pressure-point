@@ -19,17 +19,19 @@ const card = css({ position: 'relative', borderColor: 'red', textAlign: 'left', 
 const heading = css({ fontSize: '15' });
 
 /** What the harm is costing, and how many more explanations wait after this one, close under the heading. */
-const cost = css({ fontSize: '14', lineHeight: '[1.3]', mt: 'none' });
+const cost = css({ fontSize: '14', lineHeight: '[1.3]', mt: '0' });
 
 /** What is behind it, a line each with how much it adds, on a faint ground; the first, the biggest, in bold. */
 const causes = css({
   listStyle: 'none',
-  p: '[6px 9px]',
-  m: '[8px 0]',
+  py: '6',
+  px: '8',
+  my: '8',
+  mx: '0',
   bg: 'ink.6',
   borderRadius: 'control',
   fontSize: '13',
-  '& li': { display: 'flex', justifyContent: 'space-between', gap: '[10px]', p: '[1px 0]' },
+  '& li': { display: 'flex', justifyContent: 'space-between', gap: '10', py: '[1px]', px: '0' },
   '& li:first-child': { fontWeight: 'bold' },
   '& b': { color: 'bad', whiteSpace: 'nowrap' },
 });

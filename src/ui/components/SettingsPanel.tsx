@@ -38,17 +38,20 @@ export interface SettingsPanelProps {
  */
 export const settingsLook = css({
   textAlign: 'left',
-  m: '[8px 0 4px]',
-  '& h4': { fontSize: '15', fontWeight: 'bold', m: '[12px 0 5px]' },
-  '& ul': { listStyle: 'none', p: 'none', display: 'flex', flexDirection: 'column', gap: 's' },
+  m: '0',
+  mt: '8',
+  mb: '4',
+  '& h4': { fontSize: '15', fontWeight: 'bold', m: '0', mt: '12', mb: '4' },
+  '& ul': { listStyle: 'none', p: '0', display: 'flex', flexDirection: 'column', gap: '6' },
   '& li': {
     display: 'flex',
     alignItems: 'center',
-    gap: '[10px]',
+    gap: '10',
     bg: 'white',
     border: 'card',
     borderRadius: 'card',
-    p: '[7px 11px]',
+    py: '6',
+    px: '10',
   },
   '& li > .icon': { flex: 'none' },
   '& li > div': { flex: '1', minW: '[0]' },
@@ -59,12 +62,13 @@ export const settingsLook = css({
     fontSize: '12',
     bg: 'sand',
     borderRadius: '[8px]',
-    p: '[2px 8px]',
+    py: '2',
+    px: '8',
     whiteSpace: 'nowrap',
   },
   '& li.locked > div': { opacity: '[0.6]' },
-  '& .key-list': { display: 'grid', gridTemplateColumns: '[1fr 1fr]', gap: 's' },
-  '& .key-list li': { justifyContent: 'space-between', p: '[5px 9px 5px 12px]', fontSize: '14' },
+  '& .key-list': { display: 'grid', gridTemplateColumns: '[1fr 1fr]', gap: '6' },
+  '& .key-list li': { justifyContent: 'space-between', p: '4', pr: '8', pl: '12', fontSize: '14' },
 });
 
 /**

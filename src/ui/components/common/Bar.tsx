@@ -13,7 +13,7 @@ const bar = css({
   borderRadius: '[6px]',
   bg: 'ink.16',
   overflow: 'hidden',
-  mt: '[3px]',
+  mt: '2',
   '& i': { display: 'block', h: '[100%]', borderRadius: '[6px]', bg: 'green', transition: '[width 0.3s]' },
   '&.thin': { h: '[6px]' },
   '&.good i': { bg: 'green' },
@@ -28,9 +28,9 @@ const bar = css({
 const meter = css({
   display: 'flex',
   alignItems: 'center',
-  gap: 's',
-  mt: '[3px]',
-  '& .bar': { flex: '1', mt: 'none' },
+  gap: '6',
+  mt: '2',
+  '& .bar': { flex: '1', mt: '0' },
 });
 
 /** The number beside a bar. */

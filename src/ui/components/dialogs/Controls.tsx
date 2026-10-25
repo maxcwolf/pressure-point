@@ -11,7 +11,7 @@ import { keyLabel } from '../../lib/keys';
  */
 const keyList = css({
   listStyle: 'none',
-  p: 'none',
+  p: '0',
   textAlign: 'left',
   fontSize: '14',
   lineHeight: '[1.9]',
@@ -23,7 +23,8 @@ const keyList = css({
     border: 'control',
     borderBottomWidth: '[3.5px]',
     borderRadius: '[7px]',
-    p: '[1px 7px]',
+    py: '[1px]',
+    px: '6',
   },
 });
 

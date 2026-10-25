@@ -18,24 +18,24 @@ const picker = css({
   zIndex: '[5]',
   display: 'flex',
   flexDirection: 'column',
-  gap: '[5px]',
+  gap: '4',
 });
 
 /** The picker's heading. */
-const heading = css({ fontWeight: 'bold', mb: 'xxs' });
+const heading = css({ fontWeight: 'bold', mb: '2' });
 
 /** An overlay to pick: its icon, then its name over what it shows; tinted teal while it is the one showing. */
 const choice = css({
   display: 'grid',
   gridTemplateColumns: '[26px 1fr]',
   alignItems: 'center',
-  gap: 's',
+  gap: '6',
   textAlign: 'left',
   bg: 'white',
   border: 'card',
   borderRadius: '[10px]',
-  py: 'xs',
-  px: 'm',
+  py: '4',
+  px: '8',
   fontWeight: 'bold',
   fontSize: '14',
   _on: { borderColor: 'teal-dark', bg: 'teal-wash' },
@@ -54,15 +54,17 @@ const keyPanel = css({
   borderRadius: '[22px]',
   display: 'flex',
   alignItems: 'center',
-  gap: '[10px]',
-  p: '[0 8px 0 14px]',
+  gap: '10',
+  p: '0',
+  pr: '8',
+  pl: '14',
   fontSize: '13',
   whiteSpace: 'nowrap',
   _max720: { top: '[calc(14px + 44px + 8px)]', right: '[14px]' },
 });
 
 /** The overlay's icon and name. */
-const keyName = css({ display: 'flex', alignItems: 'center', gap: 's' });
+const keyName = css({ display: 'flex', alignItems: 'center', gap: '6' });
 
 /**
  * The overlay's scale between the words at its ends. The floor's scales fade to clear where things are ordinary, shown
@@ -71,7 +73,7 @@ const keyName = css({ display: 'flex', alignItems: 'center', gap: 's' });
 const scale = css({
   display: 'flex',
   alignItems: 'center',
-  gap: '[5px]',
+  gap: '4',
   '& i': {
     w: '[90px]',
     h: '[10px]',

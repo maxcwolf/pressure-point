@@ -28,8 +28,10 @@ const demandRow = css({
   bg: 'white',
   border: '[2px solid {colors.ink.20}]',
   borderRadius: '[10px]',
-  p: '[8px 10px]',
-  m: '[8px 0]',
+  py: '8',
+  px: '10',
+  my: '8',
+  mx: '0',
 });
 
 /** Its name, its share of new guests as a bar, and the share in words; in a narrow window, the bar under the two. */
@@ -37,8 +39,8 @@ const demandHead = css({
   display: 'grid',
   gridTemplateColumns: '[170px 1fr auto]',
   alignItems: 'center',
-  gap: '[10px]',
-  '& .bar': { m: 'none' },
+  gap: '10',
+  '& .bar': { m: '0' },
   '& em': { fontStyle: 'normal', fontWeight: 'bold' },
   _max700: {
     gridTemplateColumns: '[1fr auto]',
@@ -50,8 +52,10 @@ const demandHead = css({
 const factors = css({
   display: 'grid',
   gridTemplateColumns: '[repeat(auto-fill, minmax(150px, 1fr))]',
-  gap: 's',
-  m: '[8px 0 4px]',
+  gap: '6',
+  m: '0',
+  mt: '8',
+  mb: '4',
 });
 
 /**
@@ -62,12 +66,13 @@ const factor = css({
   display: 'grid',
   gridTemplateColumns: '[1fr auto]',
   alignItems: 'center',
-  columnGap: 's',
+  columnGap: '6',
   borderRadius: '[8px]',
-  p: '[4px 8px]',
+  py: '4',
+  px: '8',
   bg: 'ink.6',
   '& small': { gridColumn: '[1 / -1]', fontSize: '12', opacity: '[0.75]' },
-  '& .bar': { gridColumn: '[1 / -1]', m: '[2px 0 0]' },
+  '& .bar': { gridColumn: '[1 / -1]', m: '0', mt: '2' },
   '& em': { gridRow: '[2]', gridColumn: '[2]', fontStyle: 'normal', fontWeight: '[700]' },
   '&.low em': { color: '[#b5482f]' },
   '&.high em': { color: 'green-dark' },

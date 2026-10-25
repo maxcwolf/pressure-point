@@ -36,7 +36,7 @@ const bar = css({
   pointerEvents: 'auto',
   display: 'flex',
   alignItems: 'stretch',
-  gap: 'none',
+  gap: '0',
   bg: 'cream',
   border: '[3px solid {colors.navy}]',
   borderRadius: '[18px]',
@@ -44,7 +44,7 @@ const bar = css({
   overflow: 'hidden',
   flexShrink: '0',
   ml: 'auto',
-  _max1100: { alignSelf: 'stretch', ml: 'none', justifyContent: 'space-between' },
+  _max1100: { alignSelf: 'stretch', ml: '0', justifyContent: 'space-between' },
 });
 
 /**
@@ -54,17 +54,17 @@ const bar = css({
 const cell = css.raw({
   display: 'grid',
   gridTemplateColumns: '[auto 1fr]',
-  columnGap: '[7px]',
+  columnGap: '6',
   alignItems: 'center',
-  py: 'm',
-  px: '[13px]',
+  py: '8',
+  px: '12',
   borderRight: '[2px solid {colors.ink.16}]',
   minW: '[96px]',
   '& > .icon': { gridRow: '[span 2]' },
   '& b': { fontSize: '17', fontWeight: 'bold', lineHeight: '[1.1]', fontVariantNumeric: 'tabular-nums' },
   '& small, & .bar': { gridColumn: '[2]', fontSize: '12', whiteSpace: 'nowrap', _max720: { display: 'none' } },
-  _max1540: { py: 'm', px: '[10px]' },
-  _max1100: { minW: '[0]', py: 's', px: '[9px]' },
+  _max1540: { py: '8', px: '10' },
+  _max1100: { minW: '[0]', py: '6', px: '8' },
 });
 
 /** A cell with nothing more to it. */
@@ -101,7 +101,7 @@ const when = css({ _max1430: { display: 'none' } });
 
 /** The temperature beside the day, in bold blue when it needs heating and in bold red when it needs cooling. */
 const temp = css({
-  ml: 'm',
+  ml: '8',
   fontSize: '15',
   color: 'navy',
   '&.heat': { fontWeight: '[700]', color: '[#2f6fae]' },
@@ -115,11 +115,11 @@ const rush = css({ fontStyle: 'normal', fontWeight: '[700]', color: 'red' });
 const speeds = css({
   display: 'flex',
   alignItems: 'center',
-  gap: 'xs',
-  py: 'none',
-  px: '[10px]',
+  gap: '4',
+  py: '0',
+  px: '10',
   bg: 'sand',
-  _max1100: { px: 's' },
+  _max1100: { px: '6' },
 });
 
 /** A speed button, orange while it is the speed. `speed` is for the end-to-end tests to find them by. */
@@ -129,8 +129,8 @@ const speed = css({
   borderRadius: '[10px]',
   h: '[36px]',
   minW: '[36px]',
-  py: 'none',
-  px: '[7px]',
+  py: '0',
+  px: '6',
   fontSize: '11',
   letterSpacing: '[-2px]',
   _on: { bg: 'orange', color: 'white' },

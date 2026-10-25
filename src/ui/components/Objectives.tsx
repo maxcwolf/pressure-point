@@ -39,13 +39,13 @@ const stars = css({
 });
 
 /** A list of objectives or steps. */
-const list = css({ listStyle: 'none', p: 'none', mt: 'xs' });
+const list = css({ listStyle: 'none', p: '0', mt: '4' });
 
 /** A line with a tick or a circle before it and its words after, taking the room left; green once done. */
-const tickLine = css.raw({ display: 'flex', gap: '[7px]', '& span': { flex: '1' }, '&.done': { color: 'green-dark' } });
+const tickLine = css.raw({ display: 'flex', gap: '6', '& span': { flex: '1' }, '&.done': { color: 'green-dark' } });
 
 /** An objective, or the line saying there are none left. */
-const objectiveLine = css(tickLine, { fontSize: '14', py: 'xs' });
+const objectiveLine = css(tickLine, { fontSize: '14', py: '4' });
 
 /**
  * One of the things a first game will need soon, or one of the tutorial's steps: the one in hand in bold, those to come
@@ -53,7 +53,7 @@ const objectiveLine = css(tickLine, { fontSize: '14', py: 'xs' });
  */
 const stepLine = css(tickLine, {
   fontSize: '13',
-  py: 'xxs',
+  py: '2',
   '&.current': { fontWeight: 'bold' },
   '&.ahead': { color: 'ink.50' },
 });
@@ -62,7 +62,7 @@ const stepLine = css(tickLine, {
 const opener = css.raw({
   bg: '[none]',
   border: '[none]',
-  p: 'none',
+  p: '0',
   font: 'inherit',
   color: 'inherit',
   textAlign: 'left',
@@ -76,8 +76,11 @@ const objectiveLabel = css(opener);
 /** The numbers behind an objective, a line each, on a faint ground. */
 const detailList = css({
   listStyle: 'none',
-  p: '[5px 8px]',
-  m: '[4px 0 2px]',
+  py: '4',
+  px: '8',
+  m: '0',
+  mt: '4',
+  mb: '2',
   bg: 'ink.6',
   borderRadius: '[8px]',
   fontSize: '12',
@@ -86,11 +89,11 @@ const detailList = css({
 });
 
 /** What a first game will need soon, or the tutorial's steps, under a dashed line. */
-const gettingReady = css({ mt: 'm', pt: 's', borderTop: '[2px dashed {colors.ink.20}]' });
+const gettingReady = css({ mt: '8', pt: '6', borderTop: '[2px dashed {colors.ink.20}]' });
 
 /** Its heading, in small teal capitals. */
 const gettingReadyHeading = css({
-  m: 'none',
+  m: '0',
   fontSize: '12',
   fontWeight: 'bold',
   textTransform: 'uppercase',
@@ -106,16 +109,16 @@ const moreLabel = css(opener, { fontSize: '12', color: 'teal-dark' });
  * for the end-to-end tests to find each by.
  */
 const card = css.raw({
-  mt: 'm',
-  py: '[7px]',
-  px: '[9px]',
+  mt: '8',
+  py: '6',
+  px: '8',
   bg: 'bad-bg',
   border: '[2px solid {colors.red}]',
   borderRadius: '[11px]',
   fontSize: '13',
   display: 'flex',
   flexDirection: 'column',
-  gap: 'xxs',
+  gap: '2',
 });
 
 /** The card for an emergency or a stress outbreak. */

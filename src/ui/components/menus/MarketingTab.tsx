@@ -27,13 +27,13 @@ import { ledgerLook } from './looks';
 const campaigns = css({
   display: 'grid',
   gridTemplateColumns: '[repeat(auto-fit, minmax(220px, 1fr))]',
-  gap: '[10px]',
+  gap: '10',
 });
 
 /** A kind of campaign's card, in gold while one is running, with how long it has left. */
 const campaign = css(ledgerLook, {
   '&.live': { borderColor: 'gold', bg: 'gold-tint' },
-  '& .running': { fontWeight: 'bold', mt: 's' },
+  '& .running': { fontWeight: 'bold', mt: '6' },
 });
 
 /**
@@ -44,8 +44,9 @@ const conditionChoices = css({
   display: '[flex !important]',
   flexWrap: 'wrap',
   justifyContent: '[flex-start !important]',
-  gap: 'xs',
-  m: '[6px 0]',
+  gap: '4',
+  my: '6',
+  mx: '0',
   '& button': {
     pointerEvents: 'auto',
     border: 'control',
@@ -54,7 +55,8 @@ const conditionChoices = css({
     fontWeight: 'bold',
     fontSize: '12',
     h: 'auto',
-    p: '[1px 8px]',
+    py: '[1px]',
+    px: '8',
     _hover: { transform: 'translateY(-1px)' },
     _on: { bg: 'gold', color: 'white' },
   },

@@ -33,21 +33,21 @@ const TABS: readonly { id: Tab; label: string }[] = [
 ];
 
 /** The karma there is to spend, over the tabs. */
-const karma = css({ fontWeight: '[700]', fontSize: '15', m: '[0 0 8px]' });
+const karma = css({ fontWeight: '[700]', fontSize: '15', m: '0', mb: '8' });
 
 /** The tabs, in the middle. */
-const tabs = css({ justifyContent: 'center', mb: '[10px]' });
+const tabs = css({ justifyContent: 'center', mb: '10' });
 
 /** The trail of centers, one under another. */
-const trail = css({ listStyle: 'none', p: 'none', m: 'none', textAlign: 'left' });
+const trail = css({ listStyle: 'none', p: '0', m: '0', textAlign: 'left' });
 
 /** A center on the trail: its pin, and its card beside it. A locked one has a grey pin and a faded card. */
 const stop = css({
   position: 'relative',
   display: 'grid',
   gridTemplateColumns: '[36px 1fr]',
-  gap: '[10px]',
-  pb: 'l',
+  gap: '10',
+  pb: '12',
   // the dotted trail from one center to the next
   '&:not(:last-child)::before': {
     content: "''",
@@ -75,14 +75,14 @@ const pin = css({
 });
 
 /** A center's card. */
-const about = css({ bg: 'white', border: 'card', borderRadius: 'card', p: '[8px 11px]' });
+const about = css({ bg: 'white', border: 'card', borderRadius: 'card', py: '8', px: '10' });
 
 /** A center's name. */
 const centerName = css({ fontSize: '15' });
 
 /** The stars earned in a center and to come, beside its name: gold, outlined in navy. */
 const stars = css({
-  ml: 'm',
+  ml: '8',
   color: 'gold',
   fontSize: '24',
   letterSpacing: '[2px]',
@@ -94,33 +94,34 @@ const stars = css({
 const small = css({ display: 'block', fontSize: '12', opacity: '[0.7]' });
 
 /** A line about a center: what it is like, how it opens, or what opens it. */
-const line = css.raw({ fontSize: '13', m: '[3px 0 6px]' });
+const line = css.raw({ fontSize: '13', m: '0', mt: '2', mb: '6' });
 const blurb = css(line);
 const opening = css(line, { fontSize: '12', opacity: '[0.8]' });
-const why = css(line, { fontWeight: 'bold', mb: 'none' });
+const why = css(line, { fontWeight: 'bold', mb: '0' });
 
 /** Play, and Willow Lane's switch for the tutorial beside it. */
-const play = css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '[8px 14px]' });
+const play = css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', rowGap: '8', columnGap: '14' });
 
 /** Play, without the room the go buttons usually leave above them. */
-const playButton = css({ mt: 'none' });
+const playButton = css({ mt: '0' });
 
 /** The switch for the tutorial, with its words. */
-const tutorialSwitch = css({ display: 'flex', alignItems: 'center', gap: 'm', fontSize: '13', cursor: 'pointer' });
+const tutorialSwitch = css({ display: 'flex', alignItems: 'center', gap: '8', fontSize: '13', cursor: 'pointer' });
 
 /** The karma shop's list, and the achievements'. */
-const list = css({ listStyle: 'none', p: 'none', m: '[8px 0 0]', display: 'grid', gap: 's', textAlign: 'left' });
+const list = css({ listStyle: 'none', p: '0', m: '0', mt: '8', display: 'grid', gap: '6', textAlign: 'left' });
 
 /** A card in the shop or the achievements: its icon, its name over a word on it, and its price or a button to buy it. */
 const card = css.raw({
   display: 'grid',
   gridTemplateColumns: '[30px 1fr auto]',
   alignItems: 'center',
-  gap: '[10px]',
+  gap: '10',
   bg: 'white',
   border: 'card',
   borderRadius: 'card',
-  p: '[6px 10px]',
+  py: '6',
+  px: '10',
   '& > .icon': { justifySelf: 'center' },
 });
 
@@ -138,15 +139,16 @@ const price = css({ fontStyle: 'normal', fontWeight: '[700]', fontSize: '13', wh
 
 /** The button to unlock something with karma, smaller than the go buttons are, and grey while there is not enough. */
 const buy = css({
-  m: 'none',
-  p: '[4px 10px]',
+  m: '0',
+  py: '4',
+  px: '10',
   fontSize: '13',
   whiteSpace: 'nowrap',
   _disabled: { filter: '[grayscale(1)]', opacity: '[0.55]', cursor: 'default', transform: 'none' },
 });
 
 /** The heading over the floors and walls. */
-const shopHead = css({ m: '[14px 0 0]', textAlign: 'left', fontSize: '15' });
+const shopHead = css({ m: '0', mt: '14', textAlign: 'left', fontSize: '15' });
 
 /** A floor or a wall, as a swatch of it. */
 const swatch = css({ w: '[26px]', h: '[26px]', borderRadius: '[7px]', border: 'card' });

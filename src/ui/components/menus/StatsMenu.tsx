@@ -26,8 +26,8 @@ import { StandingTab } from './StandingTab';
 const grid = css({
   display: 'grid',
   gridTemplateColumns: '[repeat(3, minmax(0, 1fr))]',
-  gap: '[10px]',
-  mt: 'm',
+  gap: '10',
+  mt: '8',
   _max1100: { gridTemplateColumns: '[repeat(2, minmax(0, 1fr))]' },
 });
 
@@ -36,29 +36,32 @@ const statCard = css({
   bg: 'white',
   border: 'card',
   borderRadius: 'card',
-  py: 'm',
-  px: '[11px]',
+  py: '8',
+  px: '10',
   fontSize: '13',
   '& h4': { fontWeight: 'bold', fontSize: '14' },
   '& b': { fontSize: '20', fontWeight: '[700]' },
-  '& p.sub': { mt: 'xs', fontSize: '12' },
+  '& p.sub': { mt: '4', fontSize: '12' },
 });
 
 /** A card's small chart. */
-const smallChart = css(chartLook, { h: '[38px]', mt: 's', gap: '[3px]', '& i.now': { opacity: '[0.55]' } });
+const smallChart = css(chartLook, { h: '[38px]', mt: '6', gap: '2', '& i.now': { opacity: '[0.55]' } });
 
 /** The figures to choose from, as pills in a row, the ones chosen in teal. */
 const choices = css({
   display: 'flex',
   flexWrap: 'wrap',
-  gap: 's',
-  m: '[8px 0 4px]',
+  gap: '6',
+  m: '0',
+  mt: '8',
+  mb: '4',
   '& .chip': {
     pointerEvents: 'auto',
     border: '[2px solid {colors.ink.35}]',
     borderRadius: '[999px]',
     bg: 'white',
-    p: '[3px 11px]',
+    py: '2',
+    px: '10',
     fontSize: '13',
     fontWeight: '[500]',
     _hover: { transform: 'translateY(-1px)' },
@@ -68,13 +71,14 @@ const choices = css({
 
 /** The awards won, as gold tags in a row, and a pill to look back on the last ceremony. */
 const awardList = css({
-  mt: 'l',
-  '& ul': { listStyle: 'none', p: 'none', display: 'flex', flexWrap: 'wrap', gap: 's', mb: 's' },
+  mt: '12',
+  '& ul': { listStyle: 'none', p: '0', display: 'flex', flexWrap: 'wrap', gap: '6', mb: '6' },
   '& li': {
     bg: 'gold-tint',
     border: '[2px solid {colors.gold}]',
     borderRadius: 'control',
-    p: '[2px 8px]',
+    py: '2',
+    px: '8',
     fontSize: '13',
   },
 });
@@ -86,7 +90,8 @@ const ceremonyButton = css({
   fontWeight: '[500]',
   border: 'control',
   borderRadius: '[999px]',
-  p: '[3px 11px]',
+  py: '2',
+  px: '10',
   bg: 'white',
   _hover: { transform: 'translateY(-1px)' },
 });

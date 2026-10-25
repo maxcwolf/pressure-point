@@ -15,9 +15,9 @@ const plot = css(ledgerLook, {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: '[10px]',
-  mt: 's',
-  '& h4': { mb: 'none' },
+  gap: '10',
+  mt: '6',
+  '& h4': { mb: '0' },
   '& button': { flexShrink: '0', whiteSpace: 'nowrap' },
 });
 

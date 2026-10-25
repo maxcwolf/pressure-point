@@ -36,8 +36,8 @@ const bottom = css({
   flexWrap: 'wrap-reverse',
   alignItems: 'flex-start',
   justifyContent: 'space-between',
-  gap: '[14px]',
-  _max1100: { flexDirection: 'column-reverse', flexWrap: 'nowrap', alignItems: 'flex-start', gap: '[10px]' },
+  gap: '14',
+  _max1100: { flexDirection: 'column-reverse', flexWrap: 'nowrap', alignItems: 'flex-start', gap: '10' },
 });
 
 /** The right-hand column, under the system buttons and above the bar along the bottom. */
@@ -48,7 +48,7 @@ const side = css({
   w: '[290px]',
   display: 'flex',
   flexDirection: 'column',
-  gap: 'm',
+  gap: '8',
   _max720: { w: '[min(290px, calc(var(--vw) - 28px))]' },
 });
 

@@ -31,28 +31,29 @@ const row = css({
   display: 'grid',
   gridTemplateColumns: '[30px 1.1fr 1.3fr 96px 64px 112px]',
   alignItems: 'center',
-  rowGap: 'xxs',
-  columnGap: 'm',
+  rowGap: '2',
+  columnGap: '8',
   textAlign: 'left',
   bg: 'white',
   border: '[2px solid {colors.ink.35}]',
   borderRadius: '[11px]',
-  p: '[6px 9px]',
-  mb: '[5px]',
+  py: '6',
+  px: '8',
+  mb: '4',
   fontSize: '13',
   '&:not(.head)': { cursor: 'pointer' },
   _hover: { borderColor: 'teal-dark', bg: 'teal-tint' },
   '& b': { fontWeight: 'bold' },
-  '& .meters': { position: 'relative', zIndex: '[1]', display: 'grid', rowGap: '[3px]' },
+  '& .meters': { position: 'relative', zIndex: '[1]', display: 'grid', rowGap: '2' },
   '& .quals > span': { position: 'relative', zIndex: '[1]' },
   '& > button.act': { position: 'relative', zIndex: '[1]' },
-  '& .meters .bar': { mt: 'none' },
+  '& .meters .bar': { mt: '0' },
   '&.head': {
     bg: '[none]',
     borderColor: 'transparent',
-    pt: 'none',
-    pb: 'none',
-    mb: 'xxs',
+    pt: '0',
+    pb: '0',
+    mb: '2',
     fontSize: '12',
     opacity: '[0.7]',
   },
@@ -62,7 +63,7 @@ const row = css({
   '& > .icon': { gridRow: '[span 2]' },
   '& .knows': { gridColumn: '[2 / -1]', fontSize: '12', opacity: '[0.85]' },
   '& .knows:has(.quals)': { opacity: '[1]' },
-  '& .knows .quals': { m: 'none' },
+  '& .knows .quals': { m: '0' },
 });
 
 /** The empty button stretched over a whole row to select them, which the cells' words show through. */
@@ -71,7 +72,7 @@ const pick = css({
   inset: '[0]',
   border: '[0]',
   borderRadius: '[inherit]',
-  p: 'none',
+  p: '0',
   bg: '[none]',
 });
 
@@ -91,10 +92,11 @@ const act = css({
   bg: 'cream',
   fontSize: '12',
   fontWeight: 'bold',
-  p: '[1px 8px]',
+  py: '[1px]',
+  px: '8',
   whiteSpace: 'nowrap',
   justifySelf: 'end',
-  '&.go': { bg: 'gold', color: 'navy', boxShadow: '[none]', mt: 'none' },
+  '&.go': { bg: 'gold', color: 'navy', boxShadow: '[none]', mt: '0' },
   _hover: { filter: '[brightness(1.06)]', transform: 'none' },
 });
 
@@ -102,9 +104,9 @@ const act = css({
 const requests = css({
   display: 'flex',
   flexWrap: 'wrap',
-  gap: 's',
-  mb: 's',
-  '& button.act': { p: '[3px 10px]' },
+  gap: '6',
+  mb: '6',
+  '& button.act': { py: '2', px: '10' },
 });
 
 /** The treatments to narrow the list to, each with how many know it. */

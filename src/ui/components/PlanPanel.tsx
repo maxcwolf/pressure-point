@@ -21,20 +21,20 @@ const column = css({
 });
 
 /** The room's name, and what it will cost at the right. */
-const heading = css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '[10px]' });
+const heading = css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10' });
 
 /** What it will cost, on a gold tag. */
 const costTag = css({
   bg: 'gold',
   border: 'control',
   borderRadius: 'control',
-  py: 'none',
-  px: 'm',
+  py: '0',
+  px: '8',
   fontSize: '14',
 });
 
 /** A row of chips. */
-const chips = css({ display: 'flex', flexWrap: 'wrap', gap: 's', mb: '[7px]' });
+const chips = css({ display: 'flex', flexWrap: 'wrap', gap: '6', mb: '6' });
 
 /**
  * A chip: something the room still needs, or something to add, pressed to take it in hand; green and ticked once in
@@ -46,8 +46,8 @@ const chip = css({
   fontWeight: '[500]',
   border: 'control',
   borderRadius: '[999px]',
-  py: '[3px]',
-  px: '[11px]',
+  py: '2',
+  px: '10',
   bg: 'white',
   '&.done': { bg: 'good-bg', color: 'good', borderColor: 'good' },
   _on: { bg: 'orange', color: 'white' },
@@ -57,10 +57,10 @@ const chip = css({
 const pressable = css({ _hover: { transform: '[translateY(-1px)]' } });
 
 /** What is still needed and the room's prestige, closer to the buttons than usual. */
-const note = css({ m: '[0 0 4px]' });
+const note = css({ m: '0', mb: '4' });
 
 /** Cancel at the left and Build at the right. */
-const buttons = css({ justifyContent: 'space-between', mt: 'xs' });
+const buttons = css({ justifyContent: 'space-between', mt: '4' });
 
 /** The blueprint of the room being planned. */
 export function PlanPanel() {

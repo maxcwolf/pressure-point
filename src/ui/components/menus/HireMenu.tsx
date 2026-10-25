@@ -23,8 +23,8 @@ import { cardLook, cards, menuHead, menuPanel } from './looks';
  * top, and the buttons to hire or turn them down along the bottom.
  */
 const cv = css(cardLook, {
-  '& .cost': { position: 'static', alignSelf: 'flex-start', mt: '[5px]', mb: 'm' },
-  '& .btnrow': { mt: 'auto', display: 'flex', gap: 's' },
+  '& .cost': { position: 'static', alignSelf: 'flex-start', mt: '4', mb: '8' },
+  '& .btnrow': { mt: 'auto', display: 'flex', gap: '6' },
   '& .btnrow .go': { flex: '1' },
   '& .reject': {
     border: 'control',
@@ -32,9 +32,10 @@ const cv = css(cardLook, {
     bg: 'white',
     fontSize: '12',
     fontWeight: 'bold',
-    p: '[0 8px]',
+    py: '0',
+    px: '8',
   },
-  '& .rank': { display: 'flex', alignItems: 'center', gap: '[5px]', fontSize: '13' },
+  '& .rank': { display: 'flex', alignItems: 'center', gap: '4', fontSize: '13' },
   '& small': { fontWeight: '[400]', fontSize: '11' },
 });
 

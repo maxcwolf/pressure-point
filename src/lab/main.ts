@@ -52,7 +52,7 @@ const SETTLE_FRAMES = 20;
  */
 const pageStyle = css({
   '&, & *': { boxSizing: 'border-box' },
-  '&, & body': { m: 'none', h: '[100%]', overflow: 'hidden', bg: 'cream', fontFamily: 'body', color: 'navy' },
+  '&, & body': { m: '0', h: '[100%]', overflow: 'hidden', bg: 'cream', fontFamily: 'body', color: 'navy' },
   '& body': {
     display: 'grid',
     gridTemplateColumns: '[260px 1fr]',
@@ -118,7 +118,7 @@ const entryStyle = css({
 });
 
 /** Words for when there is nothing to show: no model matches the search, or a model has nothing to change. */
-const noneStyle = css({ m: 'm', fontSize: '[14px]', opacity: '[0.6]' });
+const noneStyle = css({ m: '8', fontSize: '[14px]', opacity: '[0.6]' });
 
 /** The stage's side of the page, with the caption and the settings over it. */
 const mainStyle = css({ position: 'relative', minW: '[0]', minH: '[0]' });
@@ -139,7 +139,7 @@ const captionStyle = css({
 });
 
 /** The model's name. */
-const titleStyle = css({ m: 'none', fontSize: '[20px]', fontWeight: 'bold' });
+const titleStyle = css({ m: '0', fontSize: '[20px]', fontWeight: 'bold' });
 
 /** The model's id and size, under its name. */
 const metaStyle = css({ m: '[2px 0 0]', fontSize: '[13px]', opacity: '[0.7]', fontVariantNumeric: 'tabular-nums' });
@@ -169,7 +169,7 @@ const panelStyle = css({
 });
 
 /** The settings for the model or for the view, wrapping onto as many lines as they take. */
-const controlsStyle = css({ display: 'flex', flexWrap: 'wrap', gap: 's' });
+const controlsStyle = css({ display: 'flex', flexWrap: 'wrap', gap: '6' });
 
 /**
  * A setting, the whole width of the panel: a switch and its name, or its name and a slider with its value or a menu.
@@ -178,7 +178,7 @@ const controlsStyle = css({ display: 'flex', flexWrap: 'wrap', gap: 's' });
 const controlStyle = css({
   display: 'flex',
   alignItems: 'center',
-  gap: 'm',
+  gap: '8',
   w: '[100%]',
   fontSize: '[14px]',
   '&.range span, &.choice span': { flex: '[0 0 auto]', minW: '[64px]' },

@@ -30,9 +30,9 @@ const unlock = css({
   bg: 'violet-tint',
   border: '[2px solid {colors.violet}]',
   borderRadius: 'card',
-  py: 'm',
-  px: 'l',
-  mt: '[10px]',
+  py: '8',
+  px: '12',
+  mt: '10',
   fontSize: '14 !important',
 });
 

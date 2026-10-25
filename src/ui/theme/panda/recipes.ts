@@ -12,12 +12,13 @@ const worded = {
   pointerEvents: 'auto',
   border: '[2.5px solid {colors.navy}]',
   borderRadius: '[12px]',
-  p: '[6px 16px]',
+  py: '6',
+  px: '16',
   fontWeight: 'bold',
   fontSize: '15',
   bg: 'cream',
   boxShadow: LOW_SHADOW,
-  mt: 'm',
+  mt: '8',
   _hover: { filter: '[brightness(1.06)]', transform: '[translateY(-1px)]' },
 } as const;
 
@@ -31,8 +32,9 @@ export const panelCard = defineRecipe({
     border: '[3px solid {colors.navy}]',
     borderRadius: '[18px]',
     boxShadow: 'raised',
-    p: '[12px 14px]',
-    '& h3': { fontSize: '17', fontWeight: 'bold', mb: 's' },
+    py: '12',
+    px: '14',
+    '& h3': { fontSize: '17', fontWeight: 'bold', mb: '6' },
   },
 });
 
@@ -58,7 +60,7 @@ export const roundButton = defineRecipe({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 'none',
+    gap: '0',
     transition: '[transform 0.08s]',
     '& span': { fontSize: '13', fontWeight: 'bold', textShadow: '[0 1px 0 rgba(0, 0, 0, 0.25)]' },
     _hover: { transform: '[translateY(-3px)]', bg: 'teal-light' },
@@ -142,11 +144,11 @@ export const buttonRow = defineRecipe({
   description: 'A row of worded buttons',
   base: {
     display: 'flex',
-    gap: '[10px]',
+    gap: '10',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    mt: '[10px]',
-    '& button': { ...worded, fontSize: '17', p: '[8px 20px]' },
+    mt: '10',
+    '& button': { ...worded, fontSize: '17', py: '8', px: '20' },
     '& button:is(.go)': { bg: 'green' },
     '& button:is(.danger)': { bg: 'bad-bg' },
     '& button.locked': { opacity: '[0.45]', cursor: 'not-allowed' },
@@ -154,7 +156,7 @@ export const buttonRow = defineRecipe({
   variants: {
     align: {
       center: {},
-      left: { justifyContent: 'flex-start', mt: 'xs', '& button': { fontSize: '14', p: '[5px 12px]' } },
+      left: { justifyContent: 'flex-start', mt: '4', '& button': { fontSize: '14', py: '4', px: '12' } },
     },
   },
   defaultVariants: { align: 'center' },
@@ -164,7 +166,7 @@ export const buttonRow = defineRecipe({
 export const tabStrip = defineRecipe({
   className: 'tabs',
   description: 'A row of tabs',
-  base: { display: 'flex', gap: 's', flexWrap: 'wrap' },
+  base: { display: 'flex', gap: '6', flexWrap: 'wrap' },
 });
 
 /** One tab, teal while it is the one showing; a small one for a filter. */
@@ -175,7 +177,8 @@ export const tabButton = defineRecipe({
     border: '[2.5px solid {colors.navy}]',
     bg: 'white',
     borderRadius: '[11px]',
-    p: '[4px 11px]',
+    py: '4',
+    px: '10',
     fontSize: '14',
     fontWeight: '[500]',
     _on: { bg: 'teal', color: 'white' },
@@ -183,7 +186,7 @@ export const tabButton = defineRecipe({
   variants: {
     size: {
       normal: {},
-      small: { fontSize: '13', p: '[3px 10px]', borderWidth: '[2px]' },
+      small: { fontSize: '13', py: '2', px: '10', borderWidth: '[2px]' },
     },
   },
   defaultVariants: { size: 'normal' },
@@ -201,7 +204,7 @@ export const toggleSwitch = defineRecipe({
     borderRadius: '[999px]',
     border: '[2.5px solid {colors.navy}]',
     bg: 'stone',
-    p: 'none',
+    p: '0',
     position: 'relative',
     transition: '[background 0.15s]',
     '& span': {
@@ -230,7 +233,8 @@ export const fileButton = defineRecipe({
     cursor: 'pointer',
     border: '[2px dashed {colors.navy}]',
     borderRadius: '[10px]',
-    p: '[4px 11px]',
+    py: '4',
+    px: '10',
     fontSize: '13',
     fontWeight: 'bold',
     bg: 'white',

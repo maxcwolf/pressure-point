@@ -42,18 +42,21 @@ import { smallButton } from './looks';
 import { StationInfo } from './StationInfo';
 
 /** Treatment equipment's upgrades, a little apart from the rest. */
-const upgrades = css({ m: '[8px 0 4px]' });
+const upgrades = css({ m: '0', mt: '8', mb: '4' });
 
 /** The button to buy the next upgrade, in gold; a locked one is cream, and faded. */
 const upgrade = css({
   border: '[2.5px solid {colors.navy}]',
   borderRadius: 'card',
-  p: '[5px 11px]',
+  py: '4',
+  px: '10',
   fontWeight: 'bold',
   fontSize: '13',
   bg: 'gold',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
-  m: '[2px 0 6px]',
+  m: '0',
+  mt: '2',
+  mb: '6',
   _locked: { bg: 'cream', opacity: '[0.7]' },
 });
 
@@ -61,7 +64,7 @@ const upgrade = css({
  * A heater or air conditioner's thermostat, a little apart from the rest, with the words under its tabs close to them.
  * Its tabs sit closer together than the menus' do.
  */
-const thermostat = css({ mt: 'm', '& .sub': { m: '[4px 0 0]' }, '& .tabs': { m: '[3px 0 0]', gap: 'xs' } });
+const thermostat = css({ mt: '8', '& .sub': { m: '0', mt: '4' }, '& .tabs': { m: '0', mt: '2', gap: '4' } });
 
 /** Setting every one of its kind alike, faded while they already are. */
 const every = css({ _locked: { opacity: '[0.5]', cursor: 'not-allowed' } });

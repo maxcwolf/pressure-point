@@ -36,7 +36,7 @@ const chanceStyle = css({ fontWeight: 'bold' });
 const poor = css({ color: 'bad', fontWeight: 'bold' });
 
 /** The button to calm a guest, on a line of its own. */
-const calm = css({ display: 'block', mt: 'm' });
+const calm = css({ display: 'block', mt: '8' });
 
 /**
  * What a guest has felt, each feeling a small pill: green for a good one, red for a bad one. `good` and `bad` are for
@@ -45,9 +45,9 @@ const calm = css({ display: 'block', mt: 'm' });
 const feelings = css({
   display: 'flex',
   flexWrap: 'wrap',
-  gap: 'xs',
-  mb: '[5px]',
-  '& > span': { fontSize: '12', borderRadius: '[8px]', p: '[0 6px]', border: '[1.5px solid]' },
+  gap: '4',
+  mb: '4',
+  '& > span': { fontSize: '12', borderRadius: '[8px]', py: '0', px: '6', border: '[1.5px solid]' },
   '& .good': { bg: 'green-tint', borderColor: '[#3fbf6f]' },
   '& .bad': { bg: 'bad-bg', borderColor: '[#e5484d]' },
 });

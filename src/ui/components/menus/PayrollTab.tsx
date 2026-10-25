@@ -24,8 +24,8 @@ import { ledgerCard, ledgerLook, ledgers } from './looks';
 
 /** The verdict on payday, over the figures: green when it is covered, gold when it is close, red when it is not. */
 const verdict = css(ledgerLook, {
-  mb: 'l',
-  '& h4': { mb: 'none' },
+  mb: '12',
+  '& h4': { mb: '0' },
   '&.ok': { borderColor: 'green-dark', bg: 'green-tint' },
   '&.warn': { borderColor: 'gold', bg: 'gold-tint' },
   '&.bad': { borderColor: 'red', bg: 'bad-bg' },

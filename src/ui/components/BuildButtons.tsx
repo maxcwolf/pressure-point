@@ -25,7 +25,7 @@ const MENUS: readonly { id: MenuId; icon: IconId; label: string; welded?: boolea
 ];
 
 /** The row of round buttons, closer together in a narrow window. */
-const row = css({ display: 'flex', gap: '[9px]', _max720: { gap: '[5px]' } });
+const row = css({ display: 'flex', gap: '8', _max720: { gap: '4' } });
 
 /**
  * The outline behind a welded button: its circle and a plate round its word as one path, drawn again whenever the

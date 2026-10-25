@@ -17,10 +17,10 @@ import { settingsLook } from './SettingsPanel';
 const sandboxLook = css({ '& > .sub': { textAlign: 'center' } });
 
 /** The amounts of money to start with, a little apart. */
-const amounts = css({ gap: 's' });
+const amounts = css({ gap: '6' });
 
 /** Start building, big, in the middle under the settings. */
-const start = css({ display: 'block', m: '[14px auto 2px]', fontSize: '17', p: '[8px 22px]' });
+const start = css({ display: 'block', m: '[auto]', mt: '14', mb: '2', fontSize: '17', py: '8', px: '20' });
 
 export interface SandboxPanelProps {
   audio: Audio;

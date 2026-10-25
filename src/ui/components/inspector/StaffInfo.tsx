@@ -24,7 +24,7 @@ import { duty, dutyRow, smallButton } from './looks';
 import { StaffCompare } from './StaffCompare';
 
 /** Their rank by name, with its stars beside it. */
-const rank = css({ display: 'flex', alignItems: 'center', gap: 's' });
+const rank = css({ display: 'flex', alignItems: 'center', gap: '6' });
 
 /** Their rank, how far they are toward the next, and the qualification slots they have filled. */
 function Career({ staff: st }: { staff: Staff }) {

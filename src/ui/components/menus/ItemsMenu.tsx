@@ -28,7 +28,7 @@ import { cardLook, cardsLook, menuHead, menuPanel, tabRow } from './looks';
 /** The items' cards, a little narrower than the others. With chips along a card's bottom, where it goes sits under them. */
 const itemCards = css(cardsLook, {
   gridTemplateColumns: '[repeat(auto-fill, minmax(158px, 1fr))]',
-  '& .card:has(.stat-chips) em': { mt: '[5px]' },
+  '& .card:has(.stat-chips) em': { mt: '4' },
 });
 
 /**
@@ -46,7 +46,7 @@ const itemCard = css(cardLook, {
 const withDetail = css({
   display: 'grid',
   gridTemplateColumns: '[minmax(0, 1fr) 300px]',
-  gap: 'l',
+  gap: '12',
   alignItems: 'start',
 });
 

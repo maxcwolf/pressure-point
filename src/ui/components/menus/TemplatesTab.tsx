@@ -36,7 +36,7 @@ import { cardLook, cardsLook } from './looks';
 const templateCards = css(cardsLook, { gridTemplateColumns: '[repeat(auto-fill, minmax(214px, 1fr))]' });
 
 /** A template's card, which stays as bright when its room cannot be afforded, for its own buttons to say so. */
-const templateCard = css(cardLook, { gap: 'xs', '&.poor': { opacity: '[1]', cursor: 'auto' } });
+const templateCard = css(cardLook, { gap: '4', '&.poor': { opacity: '[1]', cursor: 'auto' } });
 
 /** The template's name, which can be changed in place: plain words on the card until the pointer or the typing is on it. */
 const nameInput = css({
@@ -46,8 +46,10 @@ const nameInput = css({
   color: 'navy',
   border: '[2px solid transparent]',
   borderRadius: '[8px]',
-  p: '[1px 4px]',
-  m: '[0 -6px]',
+  py: '[1px]',
+  px: '4',
+  my: '0',
+  mx: '[-6px]',
   w: '[calc(100% + 8px)]',
   bg: '[transparent]',
   '&:is(:hover, :focus)': { borderColor: 'teal', bg: 'teal-tint', outline: '[none]' },
@@ -59,13 +61,14 @@ const nameInput = css({
  */
 const actions = css({
   display: 'flex',
-  gap: '[5px]',
+  gap: '4',
   mt: 'auto',
-  pt: 'xs',
+  pt: '4',
   '& button': {
     border: 'control',
     borderRadius: 'control',
-    p: '[2px 9px]',
+    py: '2',
+    px: '8',
     fontSize: '13',
     fontWeight: 'bold',
     bg: 'white',
@@ -80,11 +83,11 @@ const actions = css({
 const foot = css({
   display: 'flex',
   alignItems: 'center',
-  gap: 'm',
+  gap: '8',
   flexWrap: 'wrap',
-  mt: '[10px]',
+  mt: '10',
   // the count at the far end: `span.sub`, or the menu's own margins for smaller words would win
-  '& span.sub': { m: '[0 0 0 auto]', fontSize: '13', opacity: '[0.75]' },
+  '& span.sub': { m: '0', ml: '[auto]', fontSize: '13', opacity: '[0.75]' },
 });
 
 /** A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. */

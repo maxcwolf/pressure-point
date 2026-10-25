@@ -9,17 +9,18 @@ import { css } from '../../../styled-system/css';
 export const smallButton = css({
   border: '[2.5px solid {colors.navy}]',
   borderRadius: 'card',
-  p: '[5px 13px]',
+  py: '4',
+  px: '12',
   fontWeight: 'bold',
   fontSize: '14',
   bg: 'cream',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
-  mt: 's',
+  mt: '6',
   '&.go': { bg: 'gold', color: 'navy' },
 });
 
 /** A row of duty switches, or of the small buttons beside them. */
-export const dutyRow = css({ display: 'flex', flexWrap: 'wrap', gap: 'xs' });
+export const dutyRow = css({ display: 'flex', flexWrap: 'wrap', gap: '4' });
 
 /**
  * A switch for a duty, or a small button beside them. A duty they are on, or the assigning under way, is tinted, while
@@ -28,7 +29,8 @@ export const dutyRow = css({ display: 'flex', flexWrap: 'wrap', gap: 'xs' });
 export const duty = css({
   border: 'control',
   borderRadius: 'control',
-  p: '[2px 8px]',
+  py: '2',
+  px: '8',
   fontSize: '12',
   fontWeight: 'bold',
   bg: 'white',

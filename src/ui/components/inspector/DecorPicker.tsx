@@ -28,17 +28,17 @@ import { Icon, IconText } from '../common/Icon';
  * little bigger than the inspector's others (under `.insp`, to outdo them).
  */
 const decorCard = css({
-  mt: '[10px]',
+  mt: '10',
   borderTop: '[2px dashed {colors.ink.20}]',
-  pt: '[7px]',
+  pt: '6',
   '.insp &': { '& h4': { fontSize: '14', fontWeight: 'bold' } },
 });
 
 /** What the floor or the walls are now, close over their swatches (under `.insp`, to outdo its paragraphs' spacing). */
-const row = css({ '.insp &': { m: '[4px 0 0]' } });
+const row = css({ '.insp &': { m: '0', mt: '4' } });
 
 /** A row of swatches. */
-const swatches = css({ display: 'flex', flexWrap: 'wrap', gap: 'xs', m: '[2px 0 6px]' });
+const swatches = css({ display: 'flex', flexWrap: 'wrap', gap: '4', m: '0', mt: '2', mb: '6' });
 
 /**
  * One floor's or wall's swatch: a small square of it in a frame, ringed in teal while it is the one laid, and faded
@@ -48,7 +48,7 @@ const swatch = css({
   position: 'relative',
   w: '[24px]',
   h: '[24px]',
-  p: '[2px]',
+  p: '2',
   border: '[2px solid {colors.ink.35}]',
   borderRadius: '[8px]',
   bg: 'white',
@@ -72,12 +72,15 @@ const lock = css({
 const decorAll = css({
   border: '[2.5px solid {colors.navy}]',
   borderRadius: 'card',
-  p: '[5px 11px]',
+  py: '4',
+  px: '10',
   fontWeight: 'bold',
   fontSize: '13',
   bg: 'cream',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
-  m: '[2px 0 6px]',
+  m: '0',
+  mt: '2',
+  mb: '6',
 });
 
 /** One row of swatches: the floors or the walls, the room's own picked out, the locked ones marked with their price. */

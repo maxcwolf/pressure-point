@@ -33,7 +33,7 @@ const column = css({
   minW: '[320px]',
   display: 'flex',
   flexDirection: 'column',
-  gap: 'm',
+  gap: '8',
   // an offer in full pops in, its words centered
   '& .offer': { position: 'relative', textAlign: 'center', animation: 'pop 0.2s ease-out' },
   '& .offer p': { fontSize: '14', lineHeight: '[1.3]' },
@@ -53,12 +53,15 @@ const column = css({
     _hover: { opacity: '[1]', bg: 'ink.10' },
   },
   // how long is left to decide, over a bar of it
-  '& .offer .time-left': { fontSize: '13', fontWeight: 'bold', m: '[8px auto 0]', w: '[70%]' },
+  '& .offer .time-left': { fontSize: '13', fontWeight: 'bold', m: '[auto]', mt: '8', mb: '0', w: '[70%]' },
   // a pill: its words over a bar, popping in, and lifting a little under the pointer
   '& .offer-pill': {
     display: 'block',
-    m: '[0 auto]',
-    p: '[7px 14px 8px]',
+    my: '0',
+    mx: '[auto]',
+    p: '14',
+    pt: '6',
+    pb: '8',
     font: 'inherit',
     fontSize: '14',
     fontWeight: 'bold',

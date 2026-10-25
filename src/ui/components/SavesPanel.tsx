@@ -39,10 +39,10 @@ interface Note {
 }
 
 /** The panel: a box to save the game in progress, the saved games, and a way to import one. */
-const panel = css({ textAlign: 'left', m: '[10px 0 4px]' });
+const panel = css({ textAlign: 'left', m: '0', mt: '10', mb: '4' });
 
 /** The box to name the game in progress in, and its button. */
-const saveNew = css({ display: 'flex', gap: 'm', mb: 'm' });
+const saveNew = css({ display: 'flex', gap: '8', mb: '8' });
 
 /** The box for a save's name. */
 const nameBox = css({
@@ -54,7 +54,8 @@ const nameBox = css({
   bg: 'white',
   border: '[2.5px solid {colors.navy}]',
   borderRadius: 'card',
-  p: '[6px 12px]',
+  py: '6',
+  px: '12',
   userSelect: 'text',
   WebkitUserSelect: 'text',
 });
@@ -64,11 +65,12 @@ const button = css.raw({
   pointerEvents: 'auto',
   border: 'control',
   borderRadius: '[10px]',
-  p: '[3px 10px]',
+  py: '2',
+  px: '10',
   fontSize: '13',
   fontWeight: 'bold',
   bg: 'cream',
-  m: 'none',
+  m: '0',
   boxShadow: '[0 2px 0 {colors.ink.25}]',
   '&.go': { bg: 'green', color: 'white' },
   '&.danger': { bg: 'bad-bg', color: 'bad' },
@@ -76,7 +78,7 @@ const button = css.raw({
 const rowButton = css(button);
 
 /** Save game, as big as the box beside it. */
-const saveButton = css(button, { fontSize: '15', p: '[6px 16px]' });
+const saveButton = css(button, { fontSize: '15', py: '6', px: '16' });
 
 /**
  * What the last thing done came to, in green, or in red where it went wrong. Its size holds in a dialog too, which
@@ -87,20 +89,21 @@ const noteLook = css({
   bg: 'good-bg',
   color: 'good',
   borderRadius: '[10px]',
-  p: '[5px 10px]',
-  mb: 'm',
+  py: '4',
+  px: '10',
+  mb: '8',
   '&.bad': { bg: 'bad-bg', color: 'bad' },
 });
 
 /** The saved games, scrolling once there are more than fit. */
 const list = css({
   listStyle: 'none',
-  p: 'none',
+  p: '0',
   maxH: '[calc(var(--vh) * 0.4)]',
   overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column',
-  gap: 's',
+  gap: '6',
 });
 
 /** A saved game, with its buttons at the right. */
@@ -108,11 +111,12 @@ const row = css.raw({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: '[10px]',
+  gap: '10',
   bg: 'white',
   border: 'card',
   borderRadius: 'card',
-  p: '[7px 10px]',
+  py: '6',
+  px: '10',
 });
 const saveRow = css(row);
 
@@ -132,14 +136,14 @@ const aboutName = css({
 const aboutFacts = css({ fontSize: '12', opacity: '[0.75]' });
 
 /** A saved game's buttons. */
-const actions = css({ display: 'flex', gap: '[5px]', flex: 'none', flexWrap: 'wrap', justifyContent: 'flex-end' });
+const actions = css({ display: 'flex', gap: '4', flex: 'none', flexWrap: 'wrap', justifyContent: 'flex-end' });
 
 /** Importing a save file, and how many named saves there is room for. */
 const foot = css({
   display: 'flex',
   alignItems: 'center',
-  gap: '[10px]',
-  mt: '[9px]',
+  gap: '10',
+  mt: '8',
   fontSize: '12',
   opacity: '[0.85]',
 });

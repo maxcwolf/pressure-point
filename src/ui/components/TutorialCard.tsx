@@ -11,10 +11,10 @@ import { Button } from './common/Button';
  * The card: the advisor's note, with a step count, a title and buttons. `note` takes the note's look from the advisor
  * (Advisor.tsx), and `tutorial-card` is for the end-to-end tests to find it by.
  */
-const card = css({ pointerEvents: 'auto', maxW: '[400px]', '& p': { m: 'none' } });
+const card = css({ pointerEvents: 'auto', maxW: '[400px]', '& p': { m: '0' } });
 
 /** The step count, with the way to skip the rest at its right. */
-const top = css({ display: 'flex', alignItems: 'baseline', gap: 'l' });
+const top = css({ display: 'flex', alignItems: 'baseline', gap: '12' });
 
 /** The step count, in the advisor's word over a note (`kicker`), taking the room the skip leaves. */
 const kicker = css({ flex: '1' });
@@ -23,7 +23,7 @@ const kicker = css({ flex: '1' });
 const skip = css({
   flex: 'none',
   border: '[0]',
-  p: 'none',
+  p: '0',
   bg: '[none]',
   fontSize: '12',
   color: 'navy',
@@ -33,15 +33,15 @@ const skip = css({
 });
 
 /** The step's title, over what it asks. */
-const title = css({ display: 'block', fontSize: '15', mb: 'xxs' });
+const title = css({ display: 'block', fontSize: '15', mb: '2' });
 
 /** Show me: a teal button that lifts under the pointer. */
 const show = css({
-  mt: 'm',
+  mt: '8',
   border: '[2.5px solid {colors.navy}]',
   borderRadius: 'card',
-  py: '[5px]',
-  px: '[14px]',
+  py: '4',
+  px: '14',
   fontWeight: 'bold',
   fontSize: '14',
   bg: 'teal',

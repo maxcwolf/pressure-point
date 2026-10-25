@@ -21,7 +21,7 @@ import { IconText } from '../common/Icon';
 import { ledgerLook } from './looks';
 
 /** The card of each treatment's price. */
-const prices = css(ledgerLook, { mt: '[10px]' });
+const prices = css(ledgerLook, { mt: '10' });
 
 /**
  * A treatment's price, on a line of its own: its name, how many it has put off, and its price between a pair of small
@@ -31,7 +31,7 @@ const priceRow = css({
   display: '[grid !important]',
   gridTemplateColumns: '[1fr auto 28px 48px 28px]',
   alignItems: 'center',
-  gap: 's',
+  gap: '6',
   '& small': { fontSize: '12', opacity: '[0.75]' },
   '& b': { textAlign: 'center' },
   '& button': { border: 'control', borderRadius: '[8px]', bg: 'cream', fontWeight: 'bold', h: '[26px]' },

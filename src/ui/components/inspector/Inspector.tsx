@@ -40,44 +40,45 @@ const panel = css({
   '.pop > &': { animation: 'pop 0.16s ease-out' },
   // by the id, so that closing outdoes opening, should it close as it opens
   '#inspector.leaving > &': { pointerEvents: 'none', animation: 'unpop 0.14s ease-in forwards' },
-  '& h3': { pr: '[26px]' },
-  '& p': { mb: '[5px]' },
-  '& label': { display: 'block', fontSize: '12', mt: 'xs' },
+  '& h3': { pr: '24' },
+  '& p': { mb: '4' },
+  '& label': { display: 'block', fontSize: '12', mt: '4' },
   '& em': {
     display: 'block',
     fontStyle: 'normal',
     fontSize: '12',
     bg: 'sand',
     borderRadius: '[8px]',
-    p: '[2px 8px]',
-    mb: 'xs',
+    py: '2',
+    px: '8',
+    mb: '4',
   },
-  '& h4': { fontSize: '14', fontWeight: 'bold', m: '[9px 0 4px]' },
+  '& h4': { fontSize: '14', fontWeight: 'bold', m: '0', mt: '8', mb: '4' },
   // what someone or something is, under its name
-  '& .tag': { display: 'inline-block', bg: 'sand', borderRadius: '[8px]', p: '[1px 8px]', fontSize: '12' },
+  '& .tag': { display: 'inline-block', bg: 'sand', borderRadius: '[8px]', py: '[1px]', px: '8', fontSize: '12' },
   // A status line, in the tone of what it says (ui/lib/status.ts): plain news on navy, what wants seeing to in amber,
   // trouble in red, good news in green. The light ones carry a stripe of their color down the left, to be told apart
   // at a glance.
-  '& .status': { bg: 'navy', color: 'cream', borderRadius: 'control', p: '[4px 9px]', fontWeight: '[500]' },
+  '& .status': { bg: 'navy', color: 'cream', borderRadius: 'control', py: '4', px: '8', fontWeight: '[500]' },
   '& .status.warn': {
     bg: 'warn-bg',
     color: 'warn',
     boxShadow: '[inset 4px 0 0 {colors.gold}]',
-    pl: '[11px]',
+    pl: '10',
     fontWeight: 'bold',
   },
   '& .status.bad': {
     bg: 'bad-bg',
     color: 'bad',
     boxShadow: '[inset 4px 0 0 {colors.red}]',
-    pl: '[11px]',
+    pl: '10',
     fontWeight: 'bold',
   },
   '& .status.good': {
     bg: 'good-bg',
     color: 'good',
     boxShadow: '[inset 4px 0 0 {colors.green}]',
-    pl: '[11px]',
+    pl: '10',
     fontWeight: 'bold',
   },
   // an icon keeps its navy outline on the navy line by sitting on a cream chip; on a light line it needs none
@@ -88,8 +89,8 @@ const panel = css({
 /** The round ✕ in the corner, which closes it. */
 const close = css({
   position: 'absolute',
-  top: 'm',
-  right: 'm',
+  top: '8',
+  right: '8',
   w: '[26px]',
   h: '[26px]',
   borderRadius: '[50%]',

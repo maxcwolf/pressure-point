@@ -12,21 +12,21 @@ const changelogLook = css({
   textAlign: 'left',
   fontSize: '15',
   lineHeight: '[1.4]',
-  '& section + section': { mt: '[14px]' },
-  '& ul': { pl: '[18px]' },
-  '& li + li': { mt: 'xs' },
-  '& li ul': { mt: 'xs' },
+  '& section + section': { mt: '14' },
+  '& ul': { pl: '16' },
+  '& li + li': { mt: '4' },
+  '& li ul': { mt: '4' },
 });
 
 /** A version's name, with This version beside the one being played. */
 const versionName = css({
   display: 'flex',
   alignItems: 'center',
-  gap: 'm',
+  gap: '8',
   fontSize: '17',
   fontWeight: 'bold',
   color: 'teal-dark',
-  mb: 'xs',
+  mb: '4',
 });
 
 /** This version, on a teal chip. */
@@ -36,7 +36,8 @@ const here = css({
   color: 'white',
   bg: 'teal',
   borderRadius: '[8px]',
-  p: '[1px 7px]',
+  py: '[1px]',
+  px: '6',
 });
 
 /** A bold run in a note. */

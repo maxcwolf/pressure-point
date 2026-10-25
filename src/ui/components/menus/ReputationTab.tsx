@@ -13,8 +13,10 @@ import { Bar } from '../common/Bar';
 const partCards = css({
   display: 'grid',
   gridTemplateColumns: '[repeat(auto-fill, minmax(220px, 1fr))]',
-  gap: 'm',
-  m: '[8px 0 10px]',
+  gap: '8',
+  m: '0',
+  mt: '8',
+  mb: '10',
 });
 
 /** A part's card: its name and what it is over the whole width, then its bar and its share. */
@@ -22,11 +24,12 @@ const part = css({
   display: 'grid',
   gridTemplateColumns: '[1fr auto]',
   alignItems: 'center',
-  columnGap: 'm',
+  columnGap: '8',
   bg: 'white',
   border: '[2px solid {colors.ink.20}]',
   borderRadius: '[10px]',
-  p: '[6px 10px]',
+  py: '6',
+  px: '10',
   fontSize: '13',
   '& span': { gridColumn: '[1 / -1]' },
   '& small': { fontSize: '12', opacity: '[0.8]' },
@@ -36,19 +39,20 @@ const part = css({
 /** The reviews, as cards as many to a line as fit: the stars, the words, and who wrote it when. */
 const reviews = css({
   listStyle: 'none',
-  p: 'none',
+  p: '0',
   display: 'grid',
   gridTemplateColumns: '[repeat(auto-fill, minmax(220px, 1fr))]',
-  gap: 's',
+  gap: '6',
   '& li': {
     bg: 'white',
     border: '[2px solid {colors.ink.20}]',
     borderRadius: '[10px]',
-    p: '[6px 10px]',
+    py: '6',
+    px: '10',
     fontSize: '13',
     display: 'flex',
     flexDirection: 'column',
-    gap: 'xxs',
+    gap: '2',
   },
   '& small': { fontSize: '12', opacity: '[0.75]' },
 });

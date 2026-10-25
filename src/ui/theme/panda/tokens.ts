@@ -46,13 +46,20 @@ export const tokens = defineTokens({
   fonts: {
     body: { value: "'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif" },
   },
+  /** The spacing scale, each step its size in pixels, in steps of 2 up to 16 and wider beyond. */
   spacing: {
-    none: { value: '0' },
-    xxs: { value: '2px' },
-    xs: { value: '4px' },
-    s: { value: '6px' },
-    m: { value: '8px' },
-    l: { value: '12px' },
+    0: { value: '0' },
+    2: { value: '2px' },
+    4: { value: '4px' },
+    6: { value: '6px' },
+    8: { value: '8px' },
+    10: { value: '10px' },
+    12: { value: '12px' },
+    14: { value: '14px' },
+    16: { value: '16px' },
+    20: { value: '20px' },
+    24: { value: '24px' },
+    32: { value: '32px' },
   },
   sizes: {
     control: { value: '28px' },

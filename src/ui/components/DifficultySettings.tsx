@@ -8,10 +8,10 @@ import { cx } from '../lib/cx';
 import { IconText } from './common/Icon';
 
 /** The presets, a little apart. */
-const presets = css({ gap: 's' });
+const presets = css({ gap: '6' });
 
 /** What the preset the settings match is like, between the presets and the settings. */
-const presetNote = css({ m: '[6px 0 8px]' });
+const presetNote = css({ m: '0', mt: '6', mb: '8' });
 
 /**
  * A setting's level, to click through: a choice button as the settings have them (SettingRow.tsx), but smaller and all
@@ -22,7 +22,8 @@ const levelButton = css({
   flex: 'none',
   border: '[2.5px solid {colors.navy}]',
   borderRadius: '[10px]',
-  p: '[2px 8px]',
+  py: '2',
+  px: '8',
   fontWeight: 'bold',
   fontSize: '13',
   bg: 'cream',

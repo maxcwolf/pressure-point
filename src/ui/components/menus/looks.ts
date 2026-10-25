@@ -9,7 +9,7 @@ export const menuPanel = css({
   maxH: '[calc(var(--vh) - var(--bar-h) - 116px)]',
   overflowY: 'auto',
   // smaller words under a heading keep a little more room around them in a menu
-  '& .sub': { m: '[7px 0 9px]' },
+  '& .sub': { m: '0', mt: '6', mb: '8' },
 });
 
 /** A menu's title, with the Sort by list for what it lists at the far end. */
@@ -18,14 +18,14 @@ export const menuHead = css({
   alignItems: 'center',
   justifyContent: 'space-between',
   flexWrap: 'wrap',
-  rowGap: 's',
-  columnGap: 'l',
-  mb: 's',
-  '& h3': { mb: 'none' },
+  rowGap: '6',
+  columnGap: '12',
+  mb: '6',
+  '& h3': { mb: '0' },
 });
 
 /** A menu's row of tabs, or of filters over a list, a little apart from what comes under it. */
-export const tabRow = css({ mb: 'm' });
+export const tabRow = css({ mb: '8' });
 
 /**
  * A row of cards, as many to a line as fit. Ringed by the tutorial, a row shrinks to its cards, so the ring wraps them
@@ -34,7 +34,7 @@ export const tabRow = css({ mb: 'm' });
 export const cardsLook = css.raw({
   display: 'grid',
   gridTemplateColumns: '[repeat(auto-fill, minmax(172px, 1fr))]',
-  gap: '[9px]',
+  gap: '8',
   '&.guide': { display: 'flex', flexWrap: 'wrap', w: '[fit-content]', maxW: '[100%]', borderRadius: '[14px]' },
   '&.guide > .card': { flex: '[0 0 172px]' },
 });
@@ -53,13 +53,14 @@ export const cardLook = css.raw({
   bg: 'white',
   border: '[2.5px solid {colors.navy}]',
   borderRadius: '[14px]',
-  p: '[9px 10px 9px]',
+  py: '8',
+  px: '10',
   display: 'flex',
   flexDirection: 'column',
-  gap: 'xxs',
+  gap: '2',
   transition: '[transform 0.08s]',
   '&:is(button):hover': { transform: 'translateY(-3px)', bg: 'teal-tint', borderColor: 'teal-dark' },
-  '& > .icon': { mb: 'xxs' },
+  '& > .icon': { mb: '2' },
   '& b': { fontSize: '15', fontWeight: 'bold' },
   '& p': { fontSize: '12', lineHeight: '[1.25]', opacity: '[0.8]' },
   '& em': {
@@ -67,9 +68,10 @@ export const cardLook = css.raw({
     fontSize: '12',
     bg: 'sand',
     borderRadius: '[8px]',
-    p: '[2px 7px]',
+    py: '2',
+    px: '6',
     alignSelf: 'flex-start',
-    mt: '[3px]',
+    mt: '2',
   },
   '& em.none': { opacity: '[0.6]' },
   // an applicant's quirk: green where it helps, red where it costs
@@ -79,12 +81,13 @@ export const cardLook = css.raw({
   '& em.short': { bg: 'bad-bg', color: 'bad', fontWeight: 'bold' },
   '& .cost': {
     position: 'absolute',
-    top: 'm',
+    top: '8',
     right: '[9px]',
     bg: 'gold',
     border: 'control',
     borderRadius: 'control',
-    p: '[0 7px]',
+    py: '0',
+    px: '6',
     fontSize: '13',
     fontWeight: 'bold',
   },
@@ -109,28 +112,28 @@ export const ledgerLook = css.raw({
   bg: 'white',
   border: 'card',
   borderRadius: 'card',
-  py: 'm',
-  px: '[11px]',
+  py: '8',
+  px: '10',
   fontSize: '14',
-  '& h4': { fontWeight: 'bold', mb: 'xs' },
-  '& div': { display: 'flex', p: '[1.5px 0]' },
+  '& h4': { fontWeight: 'bold', mb: '4' },
+  '& div': { display: 'flex', py: '[1.5px]', px: '0' },
   '& div:not(.btnrow)': { justifyContent: 'space-between' },
-  '& .total': { borderTop: '[2px solid {colors.ink.20}]', mt: 'xs', pt: 'xs', fontWeight: 'bold' },
+  '& .total': { borderTop: '[2px solid {colors.ink.20}]', mt: '4', pt: '4', fontWeight: 'bold' },
 });
 
 /** One of the Money menu's white cards. */
 export const ledgerCard = css(ledgerLook);
 
 /** Two of them side by side. */
-export const ledgers = css({ display: 'grid', gridTemplateColumns: '[1fr 1fr]', gap: 'l' });
+export const ledgers = css({ display: 'grid', gridTemplateColumns: '[1fr 1fr]', gap: '12' });
 
 /** A bar chart, a bar a month along the bottom: green for a month that came out ahead, red for one that did not. */
 export const chartLook = css.raw({
   display: 'flex',
   alignItems: 'flex-end',
-  gap: '[5px]',
+  gap: '4',
   h: '[60px]',
-  mt: 'l',
+  mt: '12',
   '& i': { flex: '1', maxW: '[34px]', bg: 'green', borderRadius: '[5px 5px 0 0]' },
   '& i.neg': { bg: 'red' },
 });
@@ -143,8 +146,8 @@ export const statsHead = css({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  gap: 'l',
-  '& :is(.btnrow, .choose)': { mt: 'none' },
+  gap: '12',
+  '& :is(.btnrow, .choose)': { mt: '0' },
 });
 
 /** A table of figures, a row each: its name on the left, and the numbers lined up on the right. */
@@ -156,10 +159,11 @@ export const tableLook = css.raw({
     textAlign: 'right',
     fontWeight: 'bold',
     fontSize: '12',
-    p: '[4px 6px]',
+    py: '4',
+    px: '6',
     borderBottom: '[2px solid {colors.ink.20}]',
   },
-  '& td': { textAlign: 'right', p: '[3px 6px]', borderBottom: '[1px solid {colors.ink.10}]' },
+  '& td': { textAlign: 'right', py: '2', px: '6', borderBottom: '[1px solid {colors.ink.10}]' },
   '& :is(th, td):first-child': { textAlign: 'left' },
   '& .poor': { color: 'bad', fontWeight: 'bold' },
 });

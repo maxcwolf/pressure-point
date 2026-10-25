@@ -26,7 +26,7 @@ const STRIP = 2;
 const column = css({
   display: 'flex',
   flexDirection: 'column',
-  gap: 'm',
+  gap: '8',
   // opened out, the messages scroll in the room down to the bar at the bottom, over the inspector
   '&.open': { position: 'absolute', inset: '[0 0 14px]', zIndex: '[1]' },
   '&.open .messages': {
@@ -35,18 +35,18 @@ const column = css({
     scrollbarWidth: 'thin',
     pointerEvents: 'auto',
     // room for the last message's shadow
-    pb: '[5px]',
+    pb: '4',
   },
   // over an open inspector, the newest two in a band of their own, each cut to two lines, and a count of the rest, so
   // the inspector keeps its place whatever comes in
   '&.strip': { flex: 'none', h: '[170px]', overflow: 'hidden' },
   // Panda's lineClamp sets the -webkit-box display, its vertical orientation and the hidden overflow it needs
-  '&.strip .messages .words': { lineClamp: '2', pb: 'none', mb: 'm' },
-  '&.strip .pile': { mb: 'none' },
+  '&.strip .messages .words': { lineClamp: '2', pb: '0', mb: '8' },
+  '&.strip .pile': { mb: '0' },
 });
 
 /** The messages, newest first. */
-const messages = css({ display: 'flex', flexDirection: 'column', gap: 'm' });
+const messages = css({ display: 'flex', flexDirection: 'column', gap: '8' });
 
 /** A card: cream, with a thick edge down its left in its color, sliding in, and fading once it is on its way out. */
 const card = css.raw({
@@ -54,7 +54,8 @@ const card = css.raw({
   border: '[3px solid {colors.navy}]',
   borderLeftWidth: '[10px]',
   borderRadius: 'card',
-  p: '[8px 12px]',
+  py: '8',
+  px: '12',
   fontSize: '14',
   boxShadow: 'raised',
   animation: 'slide 0.3s ease-out',
@@ -83,7 +84,9 @@ const requestCard = css(card, {
 const message = css(card, {
   display: 'flex',
   alignItems: 'flex-start',
-  p: '[0 4px 0 0]',
+  py: '0',
+  pl: '0',
+  pr: '4',
   pointerEvents: 'auto',
   '&.good': { borderLeftColor: 'green' },
   '&.bad': { borderLeftColor: 'red' },
@@ -93,8 +96,11 @@ const message = css(card, {
 
 /** The people asking on a card for several, in a list under it, each a click to them. */
 const requestList = css({
-  m: '[-4px 10px 0]',
-  p: '[6px 4px]',
+  m: '10',
+  mt: '[-4px]',
+  mb: '0',
+  py: '6',
+  px: '4',
   listStyle: 'none',
   bg: 'cream',
   border: 'control',
@@ -107,7 +113,8 @@ const requestList = css({
 const requestName = css({
   display: 'block',
   w: '[100%]',
-  p: '[3px 8px]',
+  py: '2',
+  px: '8',
   border: '[none]',
   borderRadius: '[6px]',
   bg: '[none]',
@@ -118,7 +125,7 @@ const requestName = css({
 });
 
 /** A message's words, taking the room beside its close button. */
-const wordsStyle = css({ flex: '1', minW: '[0]', p: '[8px 4px 8px 12px]' });
+const wordsStyle = css({ flex: '1', minW: '[0]', p: '8', pr: '4', pl: '12' });
 
 /** Words that are a click to what they are about. */
 const wordsLink = css({
@@ -133,9 +140,9 @@ const wordsLink = css({
 
 /** How many times a message has come up, on a faint tag after it. */
 const countTag = css({
-  ml: 's',
-  py: 'none',
-  px: 's',
+  ml: '6',
+  py: '0',
+  px: '6',
   borderRadius: '[8px]',
   bg: 'ink.10',
   fontSize: '12',
@@ -148,7 +155,7 @@ const close = css({
   flex: 'none',
   w: '[24px]',
   h: '[24px]',
-  mt: '[5px]',
+  mt: '4',
   border: '[none]',
   borderRadius: '[50%]',
   bg: '[none]',
@@ -158,7 +165,7 @@ const close = css({
 });
 
 /** The messages past the first few: a pile of cards, the next ones down peeking out under its face in their colors. */
-const pile = css({ position: 'relative', flex: 'none', mb: '[14px]', '&.open': { mb: 'none' } });
+const pile = css({ position: 'relative', flex: 'none', mb: '14', '&.open': { mb: '0' } });
 
 /**
  * A card peeking out under the pile's face, in the color of the message it stands for; the deepest casts the pile's
@@ -183,7 +190,9 @@ const sheet = css({
 const face = css(card, {
   display: 'flex',
   alignItems: 'flex-start',
-  p: '[0 4px 0 0]',
+  py: '0',
+  pl: '0',
+  pr: '4',
   pointerEvents: 'auto',
   position: 'relative',
   fontWeight: 'bold',
@@ -192,7 +201,7 @@ const face = css(card, {
 });
 
 /** The chevron after the pile's words, saying it opens out or folds up. */
-const chevron = css({ ml: 's', opacity: '[0.6]' });
+const chevron = css({ ml: '6', opacity: '[0.6]' });
 
 /** The count of warnings among the rest, in red. */
 const warningCount = css({ color: 'bad' });

@@ -21,13 +21,14 @@ const advisor = css({
   maxW: '[470px]',
   display: 'flex',
   alignItems: 'flex-end',
-  gap: 'm',
+  gap: '8',
   // a speech bubble, its corner by the face cut small
   '& .note': {
     bg: 'cream',
     border: '[3px solid {colors.navy}]',
     borderRadius: '[16px 16px 16px 4px]',
-    p: '[9px 13px]',
+    py: '8',
+    px: '12',
     fontSize: '14',
     lineHeight: '[1.3]',
     boxShadow: 'raised',
@@ -43,7 +44,7 @@ const advisor = css({
     letterSpacing: '[0.06em]',
     textTransform: 'uppercase',
     color: 'teal-dark',
-    mb: 'xxs',
+    mb: '2',
   },
 });
 

@@ -11,7 +11,8 @@ const row = css({
   flexWrap: 'wrap',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '[6px 10px]',
+  rowGap: '6',
+  columnGap: '10',
   fontSize: '14',
   fontWeight: '[500]',
 });
@@ -20,7 +21,7 @@ const row = css({
 const swatch = css({
   w: 'control',
   h: 'control',
-  p: '[2px]',
+  p: '2',
   border: '[2px solid {colors.ink.35}]',
   borderRadius: '[8px]',
   bg: 'white',
@@ -33,7 +34,7 @@ export function RugPatterns({ current, onPick }: { current: RugPatternId; onPick
   return (
     <div class={row}>
       <span>{`Pattern: ${RUG_PATTERNS[current].name}`}</span>
-      <div class={css({ display: 'flex', gap: 'xs' })} aria-label="Rug pattern">
+      <div class={css({ display: 'flex', gap: '4' })} aria-label="Rug pattern">
         {RUG_ORDER.map((id) => (
           <Button
             key={id}

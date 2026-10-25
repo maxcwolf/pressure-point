@@ -20,7 +20,7 @@ const kicker = css({
   letterSpacing: '[0.06em]',
   textTransform: 'uppercase',
   color: 'teal-dark',
-  mb: 'xxs',
+  mb: '2',
 });
 
 /**
@@ -29,17 +29,19 @@ const kicker = css({
  */
 const strip = css({
   listStyle: 'none',
-  p: 'none',
-  m: '[14px 0]',
+  p: '0',
+  my: '14',
+  mx: '0',
   display: 'grid',
   gridTemplateColumns: '[repeat(auto-fit, minmax(120px, 1fr))]',
-  gap: '[10px]',
+  gap: '10',
   '& li': {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 'xs',
-    p: '[10px 8px]',
+    gap: '4',
+    py: '10',
+    px: '8',
     bg: 'white',
     border: '[2px solid {colors.ink.25}]',
     borderRadius: 'card',

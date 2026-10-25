@@ -30,7 +30,8 @@ const keycap = css({
   border: 'control',
   borderBottomWidth: '[3.5px]',
   borderRadius: '[7px]',
-  p: '[2px 8px]',
+  py: '2',
+  px: '8',
   '&.waiting': { bg: 'sand' },
 });
 
@@ -39,7 +40,7 @@ const link = css({
   pointerEvents: 'auto',
   border: '[none]',
   bg: '[none]',
-  p: 'none',
+  p: '0',
   fontWeight: 'bold',
   textDecoration: 'underline',
 });

@@ -13,8 +13,8 @@ import { statsHead, tableLook } from './looks';
 
 /** The regulars' table, with how loyal each is in words beside a short bar. */
 const regulars = css(tableLook, {
-  '& td.loyalty': { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'm' },
-  '& td.loyalty .bar': { w: '[90px]', m: 'none' },
+  '& td.loyalty': { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8' },
+  '& td.loyalty .bar': { w: '[90px]', m: '0' },
 });
 
 /** A row for each regular, the most loyal first or in the order picked. */

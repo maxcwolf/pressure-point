@@ -75,17 +75,17 @@ const plainInGame = (id: SceneIconId) => !id.startsWith('bubble-');
 /** The page: every icon by family in cards, then the scene with every icon it draws, in the game's font on cream. */
 const page = css({
   '&, & *': { boxSizing: 'border-box' },
-  '& body': { m: 'none', p: '[16px 16px 0]', bg: 'cream', fontFamily: 'body', color: 'navy' },
+  '& body': { m: '0', p: '[16px 16px 0]', bg: 'cream', fontFamily: 'body', color: 'navy' },
 });
 
 /** The heading over the sheet: the page's name, what is on it, and the way to the model lab, wrapping as it must. */
 const header = css({ display: 'flex', alignItems: 'baseline', gap: '[16px]', flexWrap: 'wrap' });
 
 /** The page's name. */
-const title = css({ m: 'none', fontSize: '[24px]', fontWeight: 'bold' });
+const title = css({ m: '0', fontSize: '[24px]', fontWeight: 'bold' });
 
 /** What is on the page, taking the room between its name and the link. */
-const intro = css({ m: 'none', flex: '1', fontSize: '[13px]', opacity: '[0.8]' });
+const intro = css({ m: '0', flex: '1', fontSize: '[13px]', opacity: '[0.8]' });
 
 /** The way to the model lab. */
 const link = css({ color: 'teal-dark', fontWeight: 'bold' });
@@ -94,16 +94,16 @@ const link = css({ color: 'teal-dark', fontWeight: 'bold' });
 const heading = css({ m: '[18px 0 8px]', fontSize: '[16px]', fontWeight: 'bold' });
 
 /** What a family is for and how it is colored, after its name. */
-const headingNote = css({ fontWeight: '[400]', fontSize: '13', opacity: '[0.7]', ml: 's' });
+const headingNote = css({ fontWeight: '[400]', fontSize: '13', opacity: '[0.7]', ml: '6' });
 
 /** A family's cards, wrapping onto as many lines as they take. */
-const cards = css({ display: 'flex', flexWrap: 'wrap', gap: 's' });
+const cards = css({ display: 'flex', flexWrap: 'wrap', gap: '6' });
 
 /** One card, on sand. */
-const card = css({ m: 'none', p: '[6px 8px 4px]', borderRadius: '[10px]', bg: 'sand' });
+const card = css({ m: '0', p: '[6px 8px 4px]', borderRadius: '[10px]', bg: 'sand' });
 
 /** A card's icons in a row, at each size. */
-const sizes = css({ display: 'flex', alignItems: 'center', gap: 'm' });
+const sizes = css({ display: 'flex', alignItems: 'center', gap: '8' });
 
 /** An icon on a white row, as the interface's lists show them. */
 const onRow = css({
@@ -149,7 +149,7 @@ const controls = css({
   top: '[12px]',
   left: '[16px]',
   display: 'flex',
-  gap: 'l',
+  gap: '12',
   alignItems: 'center',
   flexWrap: 'wrap',
   p: '[8px 12px]',
@@ -157,7 +157,7 @@ const controls = css({
   borderRadius: '[14px]',
   bg: 'cream',
   fontSize: '[13px]',
-  '& label': { display: 'flex', gap: 's', alignItems: 'center', fontWeight: 'bold' },
+  '& label': { display: 'flex', gap: '6', alignItems: 'center', fontWeight: 'bold' },
   '& select': { font: 'inherit', fontWeight: '[400]' },
 });
 

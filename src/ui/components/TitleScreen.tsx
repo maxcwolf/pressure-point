@@ -59,7 +59,8 @@ const backdropLook = css({
 /** The logo and everything under it, in the middle of the window. */
 const stack = css({
   position: 'relative',
-  m: '[auto 0]',
+  my: '[auto]',
+  mx: '0',
   w: '[min(620px, 100%)]',
   maxH: '[100%]',
   minH: '[0]',
@@ -72,7 +73,7 @@ const stack = css({
 const logoLook = css({
   position: 'relative',
   zIndex: '[1]',
-  m: 'none',
+  m: '0',
   flex: 'none',
   lineHeight: '[0]',
   textAlign: 'center',
@@ -101,7 +102,7 @@ const subHead = css({
   display: 'grid',
   gridTemplateColumns: '[1fr auto 1fr]',
   alignItems: 'center',
-  mb: '[10px]',
+  mb: '10',
   flex: 'none',
 });
 
@@ -117,7 +118,9 @@ const back = css({
   color: 'white',
   fontSize: '15',
   fontWeight: 'bold',
-  p: '[4px 12px 4px 9px]',
+  p: '4',
+  pr: '12',
+  pl: '8',
   _hover: { bg: '[#33cbe3]' },
 });
 
@@ -127,8 +130,9 @@ const noteLook = css({
   color: '[#8f2a24]',
   border: '[2px solid {colors.bad}]',
   borderRadius: 'card',
-  p: '[9px 12px]',
-  mb: '[14px]',
+  py: '8',
+  px: '12',
+  mb: '14',
   fontSize: '15',
   lineHeight: '[1.35]',
   textAlign: 'left',
@@ -138,7 +142,7 @@ const noteLook = css({
 const saveName = css({ fontSize: '[clamp(18px, 3.2vh, 24px)]', fontWeight: 'bold', mb: '[clamp(4px, 1vh, 10px)]' });
 
 /** The center the latest save is in, close under its name. */
-const centerName = css({ m: '[-8px 0 8px]', fontSize: '14', color: '[#7fe6f2]', fontWeight: 'bold' });
+const centerName = css({ m: '0', mt: '[-8px]', mb: '8', fontSize: '14', color: '[#7fe6f2]', fontWeight: 'bold' });
 
 /** The latest save's picture beside its facts. */
 const saveBody = css({
@@ -168,21 +172,21 @@ const thumbPicture = css(thumb);
 const noPicture = css(thumb, {
   display: 'grid',
   placeItems: 'center',
-  '& .icon': { bg: 'cream', p: 'xs', borderRadius: 'card' },
+  '& .icon': { bg: 'cream', p: '4', borderRadius: 'card' },
 });
 
 /** The facts about the latest save, in two columns to keep the card short. */
 const facts = css({
   listStyle: 'none',
-  p: 'none',
+  p: '0',
   display: 'grid',
   gridTemplateColumns: '[auto auto]',
-  columnGap: '[16px]',
+  columnGap: '16',
   minW: '[0]',
   fontSize: '[clamp(13px, 2.2vh, 15.5px)]',
   fontWeight: 'bold',
   lineHeight: '[1.4]',
-  rowGap: '[3px]',
+  rowGap: '2',
   // icons on the dark panel sit on cream chips, or their navy outlines would vanish
   '& .icon': { bg: 'cream', borderRadius: '[6px]', p: '[1.5px]' },
 });
@@ -234,7 +238,8 @@ const menuButton = css({
 const sub = css({
   minH: '[0]',
   overflowY: 'auto',
-  p: '[12px 14px]',
+  py: '12',
+  px: '14',
   borderRadius: '[14px]',
   bg: 'cream',
   color: 'navy',
@@ -268,7 +273,7 @@ const badge = css({
 });
 
 /** The sound and music switches, in the top right corner. */
-const sys = css({ position: 'fixed', top: '[14px]', right: '[14px]', display: 'flex', gap: 'm', zIndex: '[1]' });
+const sys = css({ position: 'fixed', top: '[14px]', right: '[14px]', display: 'flex', gap: '8', zIndex: '[1]' });
 
 /** The version, in the bottom left corner. */
 const version = css({
@@ -286,8 +291,9 @@ const version = css({
 /** The game is unfinished, and says so beside its version. */
 const alpha = css({
   display: 'inline-block',
-  mr: 'xs',
-  p: '[1px 7px]',
+  mr: '4',
+  py: '[1px]',
+  px: '6',
   borderRadius: '[7px]',
   bg: 'gold',
   color: 'navy',
@@ -301,11 +307,11 @@ const alpha = css({
 const corner = css({
   position: 'fixed',
   right: '[14px]',
-  bottom: 'l',
+  bottom: '12',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-end',
-  gap: 'm',
+  gap: '8',
 });
 
 /** A button in the corner, such as What's new. */
@@ -316,7 +322,8 @@ const news = css.raw({
   color: 'white',
   fontSize: '15',
   fontWeight: 'bold',
-  p: '[6px 13px]',
+  py: '6',
+  px: '12',
   boxShadow: '[0 3px 0 rgba(0, 0, 0, 0.3)]',
   _hover: { bg: '[#19bcd6]' },
   '&[hidden]': { display: 'none' },
@@ -336,7 +343,8 @@ const updateLook = css({
   color: 'white',
   fontSize: '13',
   fontWeight: 'bold',
-  p: '[4px 11px]',
+  py: '4',
+  px: '10',
   boxShadow: '[0 2px 0 rgba(0, 0, 0, 0.25)]',
   animation: 'pop 0.25s ease-out',
   '& .icon': { bg: 'cream', borderRadius: '[50%]', p: '[1px]' },

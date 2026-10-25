@@ -24,7 +24,7 @@ import { Stars } from '../common/Stars';
 import { duty, dutyRow } from './looks';
 
 /** The switch to start comparing, under their role, as small as the duty switches. */
-const toggleStyle = css({ display: 'block', m: '[3px 0 2px]' });
+const toggleStyle = css({ display: 'block', my: '2', mx: '0' });
 
 /**
  * The white card the others to choose from, or the comparison, are drawn on, its heading close to the top (under
@@ -34,9 +34,12 @@ const pickCard = css({
   bg: 'white',
   border: '[2px solid {colors.ink.35}]',
   borderRadius: '[11px]',
-  p: '[4px 8px 8px]',
-  m: '[6px 0 4px]',
-  '.insp &': { '& h4': { mt: 'xs' } },
+  p: '8',
+  pt: '4',
+  m: '0',
+  mt: '6',
+  mb: '4',
+  '.insp &': { '& h4': { mt: '4' } },
 });
 
 /** Someone to compare them with: their role's icon, their name and their rank, framed in teal under the pointer. */
@@ -45,13 +48,14 @@ const pick = css({
   display: 'grid',
   gridTemplateColumns: '[22px 1fr auto]',
   alignItems: 'center',
-  gap: 's',
+  gap: '6',
   textAlign: 'left',
   fontSize: '13',
   bg: '[none]',
   border: '[1.5px solid transparent]',
   borderRadius: '[8px]',
-  p: '[2px 4px]',
+  py: '2',
+  px: '4',
   _hover: { borderColor: 'teal-dark', bg: 'teal-tint' },
 });
 
@@ -64,8 +68,8 @@ const table = css({
   tableLayout: 'fixed',
   borderCollapse: 'collapse',
   fontSize: '12',
-  mb: 's',
-  '& th, & td': { p: '[2px 3px]', textAlign: 'left', verticalAlign: 'middle' },
+  mb: '6',
+  '& th, & td': { p: '2', textAlign: 'left', verticalAlign: 'middle' },
   '& thead th': {
     fontWeight: 'bold',
     fontSize: '13',
@@ -79,7 +83,7 @@ const table = css({
   // five stars, small enough to fit their column
   '& .skill': { fontSize: '11', letterSpacing: '[0]', whiteSpace: 'nowrap' },
   '& tbody tr + tr': { borderTop: '[1px solid {colors.ink.10}]' },
-  '& tr.section th': { opacity: '[1]', fontWeight: 'bold', pt: '[7px]' },
+  '& tr.section th': { opacity: '[1]', fontWeight: 'bold', pt: '6' },
 });
 
 /** The column of what is compared, a little under half the table. */

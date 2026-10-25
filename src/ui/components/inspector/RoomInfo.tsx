@@ -43,11 +43,13 @@ import { Timetable } from './Timetable';
  * inspector's spacing of paragraphs).
  */
 const vibes = css({
-  m: '[8px 0]',
-  p: '[6px 8px]',
+  my: '8',
+  mx: '0',
+  py: '6',
+  px: '8',
   borderRadius: '[8px]',
   bg: '[rgba(91, 74, 107, 0.12)]',
-  '.insp &': { '& p': { m: '[4px 0 0]' } },
+  '.insp &': { '& p': { m: '0', mt: '4' } },
 });
 
 /**
@@ -57,12 +59,13 @@ const vibes = css({
 const roomButton = css({
   border: '[2.5px solid {colors.navy}]',
   borderRadius: 'card',
-  p: '[5px 11px]',
+  py: '4',
+  px: '10',
   fontWeight: 'bold',
   fontSize: '13',
   bg: 'cream',
   boxShadow: '[0 3px 0 {colors.ink.30}]',
-  mt: 's',
+  mt: '6',
   _on: { bg: 'gold' },
 });
 

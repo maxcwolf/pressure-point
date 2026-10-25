@@ -16,8 +16,8 @@ const column = css({
 const pill = css({
   bg: 'navy',
   color: 'cream',
-  py: 'm',
-  px: '[18px]',
+  py: '8',
+  px: '16',
   borderRadius: '[999px]',
   fontSize: '15',
   boxShadow: '[0 4px 0 rgba(0, 0, 0, 0.2)]',

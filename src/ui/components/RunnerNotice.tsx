@@ -18,9 +18,12 @@ import { IconText } from './common/Icon';
  */
 const pill = css({
   display: 'block',
-  m: '[0 auto]',
+  my: '0',
+  mx: '[auto]',
   borderColor: '[#c2457a]',
-  p: '[6px 12px 8px]',
+  p: '12',
+  pt: '6',
+  pb: '8',
   font: 'inherit',
   fontSize: '14',
   fontWeight: 'bold',
@@ -34,13 +37,13 @@ const show = css({
   w: '[100%]',
   border: '[none]',
   bg: '[none]',
-  p: 'none',
+  p: '0',
   font: 'inherit',
   _hover: { transform: '[translateY(-1px)]' },
 });
 
 /** Who to send, or who is on the way, in a smaller row than usual. */
-const buttons = css({ mt: 'xs', '& button': { fontSize: '14', p: '[4px 12px]', mt: 'xxs' } });
+const buttons = css({ mt: '4', '& button': { fontSize: '14', py: '4', px: '12', mt: '2' } });
 
 /** Who is on the way. */
 const onTheWay = css({ fontSize: '13', fontWeight: 'bold', opacity: '[0.85]' });

@@ -21,9 +21,9 @@ import { IconText } from '../common/Icon';
 
 /** The tab: the grade large at the top, headings partway down with room over them, and the bar to the next grade. */
 const standing = css({
-  '& h4': { fontWeight: 'bold', m: '[10px 0 4px]' },
-  '& .grade-now': { fontSize: '17', mt: 'none' },
-  '& label': { display: 'block', m: '[8px 0 2px]', fontSize: '13' },
+  '& h4': { fontWeight: 'bold', m: '0', mt: '10', mb: '4' },
+  '& .grade-now': { fontSize: '17', mt: '0' },
+  '& label': { display: 'block', m: '0', mt: '8', mb: '2', fontSize: '13' },
 });
 
 /**
@@ -32,18 +32,21 @@ const standing = css({
  */
 const grades = css({
   listStyle: 'none',
-  p: 'none',
+  p: '0',
   display: 'grid',
   gridTemplateColumns: '[repeat(5, minmax(0, 1fr))]',
-  gap: 's',
-  m: '[8px 0 4px]',
+  gap: '6',
+  m: '0',
+  mt: '8',
+  mb: '4',
   '& li': {
     display: 'flex',
     flexDirection: 'column',
     bg: 'white',
     border: '[2px solid {colors.ink.20}]',
     borderRadius: '[10px]',
-    p: '[5px 8px]',
+    py: '4',
+    px: '8',
     fontSize: '13',
     opacity: '[0.6]',
   },
@@ -54,27 +57,29 @@ const grades = css({
 });
 
 /** What the grade brings, as a list. */
-const effects = css({ m: '[0 0 4px 18px]', fontSize: '13' });
+const effects = css({ m: '0', mb: '4', ml: '16', fontSize: '13' });
 
 /**
  * The rival's card: its slogan in italics, the center's standing and the rival's side by side as bars, and its sale in
  * red while it has one on.
  */
 const rival = css({
-  mt: 'l',
+  mt: '12',
   bg: 'white',
   border: '[2px solid {colors.ink.20}]',
   borderRadius: 'card',
-  p: '[8px 12px]',
-  '& h4': { mt: 'none' },
+  py: '8',
+  px: '12',
+  '& h4': { mt: '0' },
   '& .slogan': { fontStyle: 'italic' },
   '& .versus': {
     display: 'grid',
     gridTemplateColumns: '[auto 1fr auto]',
     alignItems: 'center',
-    columnGap: 'm',
-    rowGap: 'xs',
-    m: '[6px 0]',
+    columnGap: '8',
+    rowGap: '4',
+    my: '6',
+    mx: '0',
     fontSize: '13',
   },
   '& .versus em': { fontStyle: 'normal', fontWeight: 'bold' },

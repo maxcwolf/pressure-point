@@ -25,7 +25,7 @@ const tab = css({
   translate: '[-50% 0]',
   w: '[46px]',
   h: '[22px]',
-  p: 'none',
+  p: '0',
   border: '[2.5px solid {colors.navy}]',
   borderRadius: '[999px]',
   background:

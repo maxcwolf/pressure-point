@@ -23,7 +23,7 @@ import { IconText, Line } from './common/Icon';
 const callColor = css({ borderColor: 'blue' });
 
 /** Who could go, a button each, one under another. */
-const whoList = css({ display: 'flex', flexDirection: 'column', gap: '[5px]', mt: 'm' });
+const whoList = css({ display: 'flex', flexDirection: 'column', gap: '4', mt: '8' });
 
 /** A button to send someone, in smaller words than usual. */
 const send = css({ fontSize: '13' });

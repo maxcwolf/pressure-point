@@ -20,11 +20,13 @@ import { Icon, IconText, Line } from '../common/Icon';
 /** The line at a station, a card for each guest in it, top to bottom. */
 const lineStyle = css({
   listStyle: 'none',
-  m: '[6px 0 4px]',
-  p: 'none',
+  m: '0',
+  mt: '6',
+  mb: '4',
+  p: '0',
   display: 'flex',
   flexDirection: 'column',
-  gap: 'xs',
+  gap: '4',
 });
 
 /**
@@ -37,12 +39,13 @@ const inLine = css({
   gridTemplateColumns: '[1fr auto]',
   gridTemplateAreas: "'who who' 'patience moves' 'odds moves' 'condition condition'",
   alignItems: 'center',
-  columnGap: 's',
-  rowGap: 'xxs',
+  columnGap: '6',
+  rowGap: '2',
   bg: 'sand',
   borderRadius: '[8px]',
-  p: '[3px 6px]',
-  '& .patience': { gridArea: 'patience', m: 'none' },
+  py: '2',
+  px: '6',
+  '& .patience': { gridArea: 'patience', m: '0' },
   '& .patience .bar': { h: '[6px]' },
 });
 
@@ -54,7 +57,7 @@ const who = css({
   fontSize: '13',
   bg: '[none]',
   border: '[none]',
-  p: 'none',
+  p: '0',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
@@ -74,7 +77,7 @@ const poor = css({ color: 'bad', fontWeight: 'bold' });
 const moves = css({
   gridArea: 'moves',
   display: 'flex',
-  gap: '[3px]',
+  gap: '2',
   '& button': {
     w: '[24px]',
     h: '[24px]',
@@ -83,7 +86,7 @@ const moves = css({
     bg: 'white',
     fontSize: '11',
     lineHeight: '[1]',
-    p: 'none',
+    p: '0',
   },
   '& button.locked': { opacity: 'locked' },
 });

@@ -35,7 +35,7 @@ const control = css({
 });
 
 /** A switch with words on it, gold while it is on. */
-const toggle = css({ px: 'l', py: 'none', _on: { bg: 'gold' } });
+const toggle = css({ px: '12', py: '0', _on: { bg: 'gold' } });
 
 /** A setting with a value and a pair of buttons to step it down and up, its name above them or, inline, beside them. */
 function Stepper(props: {
@@ -55,9 +55,9 @@ function Stepper(props: {
       display="grid"
       gridTemplateColumns={props.inline ? '[1fr 28px 40px 28px]' : '[28px minmax(90px, auto) 28px 1fr]'}
       alignItems="center"
-      columnGap="s"
-      rowGap="xs"
-      mb="xs"
+      columnGap="6"
+      rowGap="4"
+      mb="4"
     >
       {/* the name takes a line of its own above the buttons, unless it is a short one on the same line */}
       <Box as="span" gridColumn={props.inline ? 'auto' : '[1 / -1]'}>
@@ -91,7 +91,7 @@ function Stepper(props: {
 /** One setting's card: its name, its controls, and a word on what it trades off. */
 function Card(props: { children: ComponentChildren }) {
   return (
-    <Box bg="white" border="card" borderRadius="card" py="m" px="[11px]" fontSize="14">
+    <Box bg="white" border="card" borderRadius="card" py="8" px="10" fontSize="14">
       {props.children}
     </Box>
   );
@@ -100,7 +100,7 @@ function Card(props: { children: ComponentChildren }) {
 /** A card's heading, or a heading partway down one. */
 function Heading(props: { children: ComponentChildren }) {
   return (
-    <Box as="h4" fontWeight="bold" mt="xxs" mb="s">
+    <Box as="h4" fontWeight="bold" mt="2" mb="6">
       {props.children}
     </Box>
   );
@@ -109,7 +109,7 @@ function Heading(props: { children: ComponentChildren }) {
 /** What a setting trades off, in smaller and fainter words under it. */
 function Note(props: { children: ComponentChildren }) {
   return (
-    <Box as="p" fontSize="13" opacity="muted" mt="s" mb="[9px]">
+    <Box as="p" fontSize="13" opacity="muted" mt="6" mb="8">
       {props.children}
     </Box>
   );
@@ -123,7 +123,7 @@ export function PolicyMenu() {
   return (
     <div class={cx(panelCard(), menuPanel)}>
       <h3>Policy</h3>
-      <Box display="grid" gridTemplateColumns="[repeat(auto-fit, minmax(220px, 1fr))]" gap="l">
+      <Box display="grid" gridTemplateColumns="[repeat(auto-fit, minmax(220px, 1fr))]" gap="12">
         <Card>
           <Heading>Diagnosis</Heading>
           <Stepper

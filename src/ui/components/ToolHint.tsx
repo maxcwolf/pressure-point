@@ -24,8 +24,8 @@ const pill = css.raw({
   bg: 'cream',
   border: '[3px solid {colors.teal}]',
   borderRadius: '[14px]',
-  py: '[7px]',
-  px: '[16px]',
+  py: '6',
+  px: '16',
   fontSize: '15',
   fontWeight: '[500]',
   boxShadow: 'raised',
@@ -36,7 +36,7 @@ const pill = css.raw({
 const hint = css(pill, { '&.bad': { borderColor: 'red' } });
 
 /** The patterns to pick from while a rug is in hand, which can be clicked though the hint cannot. */
-const rugPicker = css(pill, { mt: 's', py: '[5px]', px: 'l', pointerEvents: 'auto' });
+const rugPicker = css(pill, { mt: '6', py: '4', px: '12', pointerEvents: 'auto' });
 
 /** The hint's phrases, each a chip: the name first, then what it costs, the keys, and who the squares are for. */
 const phrases = css({
@@ -45,9 +45,9 @@ const phrases = css({
   flexWrap: 'wrap',
   justifyContent: 'center',
   alignItems: 'center',
-  gap: '[5px]',
-  m: 'none',
-  p: 'none',
+  gap: '4',
+  m: '0',
+  p: '0',
 });
 
 /**
@@ -57,14 +57,14 @@ const phrases = css({
 const phrase = css({
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '[5px]',
+  gap: '4',
   fontSize: '13',
   border: '[1.5px solid {colors.ink.25}]',
   bg: 'white',
   borderRadius: 'control',
   py: '[1px]',
-  px: 'm',
-  '&.name': { fontSize: '15', fontWeight: 'bold', border: '[none]', bg: '[none]', p: '[0 4px 0 0]' },
+  px: '8',
+  '&.name': { fontSize: '15', fontWeight: 'bold', border: '[none]', bg: '[none]', p: '0', pr: '4' },
   '&.cost': { bg: 'gold-tint', borderColor: 'gold', fontWeight: 'bold' },
 });
 
@@ -80,7 +80,8 @@ const keyCap = css({
   border: '[1.5px solid {colors.navy}]',
   borderBottomWidth: '[3px]',
   borderRadius: '[6px]',
-  p: '[0 5px]',
+  py: '0',
+  px: '4',
 });
 
 /** A square in the color the scene draws it in. `square` is for the end-to-end tests to find it by. */
@@ -100,7 +101,7 @@ const square = css({
  */
 const problem = css({
   display: 'block',
-  mt: 'xs',
+  mt: '4',
   color: 'red',
   fontWeight: 'bold',
   '&.refused': {
@@ -115,9 +116,11 @@ const effectList = css({
   display: 'flex',
   flexWrap: 'wrap',
   justifyContent: 'center',
-  gap: '[5px]',
-  m: '[6px 0 1px]',
-  p: 'none',
+  gap: '4',
+  m: '0',
+  mt: '6',
+  mb: '[1px]',
+  p: '0',
 });
 
 /** One change, in a white frame: green for the better, red for the worse. */
@@ -127,7 +130,8 @@ const effect = css({
   border: '[1.5px solid {colors.ink.35}]',
   bg: 'white',
   borderRadius: 'control',
-  p: '[1px 8px]',
+  py: '[1px]',
+  px: '8',
   '&.good': { bg: 'good-bg', borderColor: 'green', color: 'good' },
   '&.bad': { bg: 'bad-bg', borderColor: 'red', color: 'bad' },
 });

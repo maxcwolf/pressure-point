@@ -15,17 +15,18 @@ import { Button } from '../common/Button';
 import { IconText, Line } from '../common/Icon';
 
 /** The timetable, a little apart from the rest. */
-const timetable = css({ m: '[8px 0 4px]' });
+const timetable = css({ m: '0', mt: '8', mb: '4' });
 
 /** The days of the week, side by side. */
-const dayRow = css({ display: 'flex', gap: 'xs', m: '[4px 0]' });
+const dayRow = css({ display: 'flex', gap: '4', my: '4', mx: '0' });
 
 /** A day's button, sharing the row with the rest, gold on the days a class is held. */
 const day = css({
   flex: '1',
   border: 'control',
   borderRadius: 'control',
-  p: '[4px 0]',
+  py: '4',
+  px: '0',
   fontWeight: 'bold',
   fontSize: '12',
   bg: 'cream',

@@ -36,11 +36,11 @@ import { cardLook, cards, menuPanel } from './looks';
 const modalityCard = css(cardLook, {
   cursor: 'default',
   _locked: { cursor: 'default' },
-  '& .treats': { opacity: '[1]', fontWeight: '[500]', mt: '[3px]' },
+  '& .treats': { opacity: '[1]', fontWeight: '[500]', mt: '2' },
 });
 
 /** A discipline's heading, over its modalities. */
-const section = css({ fontSize: '15', fontWeight: 'bold', m: '[12px 0 5px]' });
+const section = css({ fontSize: '15', fontWeight: 'bold', m: '0', mt: '12', mb: '4' });
 
 /** What a modality treats, who can give it and whether its equipment is in. */
 function ModalityCard({ modality }: { modality: Modality }) {

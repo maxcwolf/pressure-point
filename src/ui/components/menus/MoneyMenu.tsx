@@ -28,8 +28,8 @@ import { TechniquePrices } from './TechniquePrices';
  * headings. The sources on the side, away from healing, are in teal.
  */
 const sources = css(ledgerLook, {
-  mt: 'l',
-  '& :is(.head, .source)': { display: 'grid', gridTemplateColumns: '[1fr auto auto]', gap: 'l' },
+  mt: '12',
+  '& :is(.head, .source)': { display: 'grid', gridTemplateColumns: '[1fr auto auto]', gap: '12' },
   '& .head': { fontSize: '12', opacity: '[0.7]' },
   '& .source b': { textAlign: 'right' },
   '& .source.side span': { color: 'teal-dark' },
@@ -37,8 +37,8 @@ const sources = css(ledgerLook, {
 
 /** The overall price level's card, with how many prices put off this month and last, and who they put off. */
 const priceLevel = css(ledgerLook, {
-  '& .priced': { fontSize: '13', fontWeight: 'bold', mt: 'xs' },
-  '& .balk': { fontSize: '13', mt: 'xxs' },
+  '& .priced': { fontSize: '13', fontWeight: 'bold', mt: '4' },
+  '& .balk': { fontSize: '13', mt: '2' },
 });
 
 /** A line of the books: income in green, spending in red. */

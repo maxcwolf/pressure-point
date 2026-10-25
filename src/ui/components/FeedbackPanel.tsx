@@ -13,7 +13,7 @@ const MAX_LENGTH = 4000;
 // The words keep their sizes in a dialog too, which draws its words larger.
 
 /** The panel: one thing under another. */
-const panel = css({ display: 'flex', flexDirection: 'column', gap: 'm', m: '[6px 0 4px]', textAlign: 'left' });
+const panel = css({ display: 'flex', flexDirection: 'column', gap: '8', m: '0', mt: '6', mb: '4', textAlign: 'left' });
 
 /** What the box is for, over it. */
 const intro = css({ fontSize: '15 !important' });
@@ -26,7 +26,8 @@ const field = css.raw({
   bg: 'white',
   border: '[2.5px solid {colors.navy}]',
   borderRadius: 'card',
-  p: '[7px 12px]',
+  py: '6',
+  px: '12',
   userSelect: 'text',
   WebkitUserSelect: 'text',
   pointerEvents: 'auto',
@@ -42,7 +43,8 @@ const button = css({
   alignSelf: 'center',
   border: '[2.5px solid {colors.navy}]',
   borderRadius: 'card',
-  p: '[6px 18px]',
+  py: '6',
+  px: '16',
   fontSize: '15',
   fontWeight: 'bold',
   bg: 'cream',
@@ -58,7 +60,8 @@ const noteLook = css({
   bg: 'good-bg',
   color: 'good',
   borderRadius: '[10px]',
-  p: '[7px 11px]',
+  py: '6',
+  px: '10',
   '&.bad': { bg: 'bad-bg', color: 'bad' },
 });
 
