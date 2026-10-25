@@ -23,9 +23,11 @@ import {
   updateTwists,
 } from '../../src/core/sim/twists';
 import { addWear } from '../../src/core/sim/upkeep';
-import { disciplineHere, disciplineOn, newGame } from '../../src/core/state/game';
+import { disciplineHere, disciplineOn, newGame, offeringHere, offeringOn } from '../../src/core/state/game';
 import { loadCampaign, recordGame, recordLesson } from '../../src/storage/campaign';
 import { campaignCards } from '../../src/ui/lib/campaign';
+import { hireableRoles } from '../../src/ui/lib/catalog';
+import { newRoomsText } from '../../src/ui/lib/unlocks';
 import { openCenter, runUntil } from './helpers';
 
 describe('the campaign trail', () => {
@@ -57,9 +59,28 @@ describe('the campaign trail', () => {
     expect(exchange).toMatchObject({
       open: false,
       locked: 'Earn a star at Willow Lane to open',
-      extras: ['Acupuncture'],
+      extras: ['Acupuncture', 'Qi Gong classes'],
     });
     expect(campaignCards({ willow: 2 })[1]?.open).toBe(true);
+  });
+
+  it('keeps the Qi Gong classes out of Willow Lane, and brings them in from The Exchange', () => {
+    const willow = newGame('willow');
+    const exchange = newGame('exchange');
+    expect(offeringHere(willow, 'qigong')).toBe(false);
+    expect(offeringOn(willow, 'qigong')).toBe(false);
+    expect(offeringHere(exchange, 'qigong')).toBe(true);
+    expect(offeringOn(exchange, 'qigong')).toBe(true);
+    // so at Willow Lane's second star, neither the studio nor its Instructor comes up
+    expect(hireableRoles(2, (o) => offeringOn(willow, o))).not.toContain('instructor');
+    expect(newRoomsText(2, (o) => offeringOn(willow, o), 'willow')).not.toContain('Qi Gong');
+    expect(hireableRoles(2, (o) => offeringOn(exchange, o))).toContain('instructor');
+    expect(newRoomsText(2, (o) => offeringOn(exchange, o), 'exchange')).toContain('Qi Gong Studio');
+    // the switch still turns them off where they are on offer
+    exchange.options.qigong = false;
+    expect(offeringHere(exchange, 'qigong')).toBe(true);
+    expect(offeringOn(exchange, 'qigong')).toBe(false);
+    expect(hireableRoles(2, (o) => offeringOn(exchange, o))).not.toContain('instructor');
   });
 
   it('reads the choice that starts a game', () => {

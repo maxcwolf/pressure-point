@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { dragRect, itemSpot, tileOf } from '../../src/app/tools/geometry';
+import { dragRect, itemSpot, rotToward, tileOf } from '../../src/app/tools/geometry';
 import {
   copyRoomHint,
   DOOR_HINT,
@@ -24,7 +24,7 @@ import type { Room } from '../../src/core/state/types';
 import { OV_BAD, OV_BLUE, OV_FREE, OV_GOOD, OV_GUEST, OV_STAFF } from '../../src/render/overlay-codes';
 import type { GhostSpec } from '../../src/render/overlays';
 import type { View } from '../../src/render/view';
-import { freshSim, LAYOUT, openCenter, toasts } from './helpers';
+import { buildRoom, freshSim, LAYOUT, openCenter, toasts } from './helpers';
 
 const ROOM: Room = {
   id: 7,
@@ -55,6 +55,18 @@ describe('cursor geometry', () => {
 
   it('makes a single tile from a press that has not moved', () => {
     expect(dragRect([4, 4], [4, 4])).toEqual({ x: 4, y: 4, w: 1, h: 1 });
+  });
+
+  it('turns to look at an item, and looking corner-on, at its front if it can or else along the map', () => {
+    const mat = { type: 'instructor_mat' as const, x: 7, y: 7, rot: 0 };
+    // straight below the mat, then off to one side by more than it is below
+    expect(rotToward(7.5, 9.5, mat)).toBe(2);
+    expect(rotToward(4.5, 8.5, mat)).toBe(3);
+    // corner-on, up and to the left: the mat looks down the map, so neither way looks at its front
+    expect(rotToward(5.5, 5.5, mat)).toBe(0);
+    // with the mat turned to look left, a spot to its left looks back at it
+    expect(rotToward(5.5, 5.5, { ...mat, rot: 1 })).toBe(3);
+    expect(rotToward(7.5, 7.5, mat), 'on the mat itself').toBeNull();
   });
 
   it('centers an item on the cursor', () => {
@@ -107,6 +119,14 @@ describe('hints', () => {
     expect(placeHint('plant')).toContain('Potted Plant · $');
     expect(placeHint('plant')).toContain('click to place · R rotates · Esc when done');
     expect(moveHint('bench')).toContain('Moving the Bench · click to put it down');
+  });
+
+  it('says an item that faces something turns to face it, and that R turns it by hand instead', () => {
+    const faces = `faces the ${ITEMS.instructor_mat.name}, or R turns it`;
+    expect(placeHint('practice_spot')).toContain(`click to place · ${faces} · Esc when done`);
+    expect(moveHint('practice_spot')).toContain(`click to put it down · ${faces} · Esc cancels`);
+    expect(planHint({ kind: 'item', type: 'practice_spot', rot: 0, required: true }, 2)).toContain(faces);
+    expect(placeHint('practice_spot')).not.toContain('R rotates');
   });
 
   it('asks for a minimum size until the drag starts, then reports the size', () => {
@@ -496,5 +516,141 @@ describe('putting things down', () => {
     const [fx, fy] = plantSpot(tools, sim);
     expect(sim.placeItem('plant', Math.floor(fx), Math.floor(fy), 0, { free: true })).toBeTruthy();
     expect(sim.drain().some((e) => e.type === 'float')).toBe(false);
+  });
+});
+
+describe('holding something that faces something', () => {
+  /** Ignore a call to the scene. */
+  const nothing = () => undefined;
+
+  /**
+   * A 5×5 Qi Gong Studio with the Instructor's Mat in the middle, its front down the map, and the build tools on it,
+   * keeping the last ghost shown, where the cursor is wherever the pointer says.
+   */
+  function withStudio() {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    const room = buildRoom(sim, 'qigong', { x: 5, y: 5, w: 5, h: 5 }, { x: 9, y: 9, dx: 1, dy: 0 }, [
+      ['instructor_mat', 7, 7],
+      ['practice_spot', 5, 5],
+      ['practice_spot', 9, 5],
+    ]);
+    const seen = { ghost: null as GhostSpec | null };
+    const view = {
+      selected: null,
+      setOverlay: nothing,
+      setMarkers: nothing,
+      /** Keep the ghost shown, to look at after. */
+      setGhost: (g: GhostSpec | null) => {
+        seen.ghost = g;
+      },
+      setDoor: nothing,
+      nudge: nothing,
+      /** The cursor is on the ground wherever the pointer says. */
+      groundAt: (x: number, y: number) => ({ x, y }),
+    };
+    const tools = new Tools(sim, view as unknown as View, nothing, nothing);
+    return { sim, room, tools, seen };
+  }
+
+  /** The Practice Spot on a tile, if there is one. */
+  const spotAt = (sim: ReturnType<typeof freshSim>, x: number, y: number) =>
+    sim.s.items.find((it) => it.type === 'practice_spot' && it.x === x && it.y === y);
+
+  /** A tile on each side of the mat, and the way a spot there turns to look at the mat. */
+  const SIDES = [
+    { side: 'below', x: 7, y: 9, rot: 2 },
+    { side: 'above', x: 7, y: 5, rot: 0 },
+    { side: 'left', x: 5, y: 7, rot: 3 },
+    { side: 'right', x: 9, y: 7, rot: 1 },
+  ];
+
+  it('turns a spot to face the mat from each side, shown and placed alike', () => {
+    for (const { side, x, y, rot } of SIDES) {
+      const { sim, tools, seen } = withStudio();
+      tools.startItem('practice_spot');
+      tools.pointerMove(x + 0.5, y + 0.5);
+      expect(seen.ghost, side).toMatchObject({ type: 'practice_spot', x, y, rot, ok: true });
+      tools.pointerUp(x + 0.5, y + 0.5);
+      expect(spotAt(sim, x, y)?.rot, side).toBe(rot);
+    }
+  });
+
+  it('turns a spot being moved to face the mat, whichever way it stood', () => {
+    const { sim, tools, seen } = withStudio();
+    const spot = spotAt(sim, 5, 5)!;
+    spot.rot = 1;
+    tools.startMove(spot.id);
+    tools.pointerMove(7.5, 9.5);
+    expect(seen.ghost).toMatchObject({ x: 7, y: 9, rot: 2 });
+    tools.pointerUp(7.5, 9.5);
+    expect(spot).toMatchObject({ x: 7, y: 9, rot: 2 });
+  });
+
+  it('turns a quarter from the way it is shown with R, then keeps that turn wherever it goes', () => {
+    const { sim, tools, seen } = withStudio();
+    tools.startItem('practice_spot');
+    tools.pointerMove(7.5, 9.5);
+    expect(seen.ghost?.rot).toBe(2);
+    tools.rotate();
+    expect(seen.ghost?.rot).toBe(3);
+    // to the right of the mat, where it would turn itself to 1
+    tools.pointerMove(9.5, 7.5);
+    expect(seen.ghost?.rot).toBe(3);
+    tools.pointerUp(9.5, 7.5);
+    expect(spotAt(sim, 9, 7)?.rot).toBe(3);
+    // the next one in hand is still turned by hand, once the pointer is off the one that went in
+    tools.pointerMove(20.5, 7.5);
+    tools.pointerMove(7.5, 9.5);
+    expect(seen.ghost?.rot).toBe(3);
+  });
+
+  it('faces the mat again once picked afresh, or picked up to move', () => {
+    const { sim, tools, seen } = withStudio();
+    tools.startItem('practice_spot');
+    tools.pointerMove(7.5, 9.5);
+    tools.rotate();
+    expect(seen.ghost?.rot).toBe(3);
+    tools.startItem('practice_spot');
+    tools.pointerMove(7.5, 9.5);
+    expect(seen.ghost?.rot).toBe(2);
+    tools.rotate();
+    tools.startMove(spotAt(sim, 5, 5)!.id);
+    tools.pointerMove(7.5, 9.5);
+    expect(seen.ghost?.rot).toBe(2);
+  });
+
+  it('faces the mat as the blueprint hands each required spot over, and carries a turn by hand to the next', () => {
+    const { sim, tools, seen } = withStudio();
+    const room = sim.createRoom('qigong', { x: 11, y: 5, w: 5, h: 5 }, { x: 15, y: 9, dx: 1, dy: 0 });
+    sim.placeItem('instructor_mat', 13, 7, 0, { free: true, roomId: room.id });
+    tools.tool = { kind: 'room', type: 'qigong', phase: 'plan', room, sub: nextRequired(sim.missingItems(room)) };
+    tools.pointerMove(13.5, 9.5);
+    expect(seen.ghost).toMatchObject({ type: 'practice_spot', x: 13, y: 9, rot: 2 });
+    tools.rotate();
+    tools.pointerUp(13.5, 9.5);
+    expect(spotAt(sim, 13, 9)?.rot).toBe(3);
+    tools.pointerMove(25.5, 9.5);
+    tools.pointerMove(15.5, 7.5);
+    expect(seen.ghost).toMatchObject({ type: 'practice_spot', x: 15, y: 7, rot: 3 });
+  });
+
+  it('keeps the way it is held where there is no mat to face', () => {
+    const { sim, tools, seen } = withStudio();
+    // out in the corridor
+    tools.tool = { kind: 'item', type: 'practice_spot', rot: 1 };
+    tools.pointerMove(12.5, 12.5);
+    expect(seen.ghost).toMatchObject({ x: 12, y: 12, rot: 1 });
+    // in a studio whose mat is not in yet
+    const room = sim.createRoom('qigong', { x: 11, y: 5, w: 5, h: 5 }, { x: 15, y: 9, dx: 1, dy: 0 });
+    tools.tool = {
+      kind: 'room',
+      type: 'qigong',
+      phase: 'plan',
+      room,
+      sub: { kind: 'item', type: 'practice_spot', rot: 1, required: true },
+    };
+    tools.pointerMove(13.5, 9.5);
+    expect(seen.ghost).toMatchObject({ x: 13, y: 9, rot: 1 });
   });
 });

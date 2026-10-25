@@ -29,6 +29,7 @@ import {
 import { footprintOf } from '../core/footprint';
 import { HAIR, randomLook } from '../core/people';
 import { newSeed, stream } from '../core/random';
+import type { Season } from '../core/sim/twists';
 import type { BubbleId, Char, Guest, Look, Room, VisitorKind } from '../core/state/types';
 import { must } from '../core/util';
 import { accessPose, itemCenter } from '../core/world';
@@ -48,14 +49,14 @@ import { buildLamps, buildOffices, buildStreetTrees } from '../render/models/dow
 import { buildSite } from '../render/models/fence';
 import { buildForSaleBoard } from '../render/models/for-sale';
 import { buildItem } from '../render/models/items';
-import { buildOrchard } from '../render/models/orchard';
+import { buildOrchard, orchardFor } from '../render/models/orchard';
 import { mat, partsOf } from '../render/models/parts';
 import { buildPines } from '../render/models/pine';
 import { upgradePlate } from '../render/models/plate';
 import { buildPuddle } from '../render/models/puddle';
 import { LAMP_STATES, type LampState, pulseLamps, setLamp } from '../render/models/sign-plaque';
 import { buildStorefront } from '../render/models/storefront';
-import { buildForest } from '../render/models/tree';
+import { buildForest, leavesFor } from '../render/models/tree';
 import {
   actMoment,
   CURE,
@@ -103,6 +104,14 @@ export interface Specimen {
 
 /** Nothing moves. */
 const still = () => undefined;
+
+/** The seasons, for models that turn with them. */
+const SEASONS: readonly Option[] = [
+  ['spring', 'Spring'],
+  ['summer', 'Summer'],
+  ['autumn', 'Autumn'],
+  ['winter', 'Winter'],
+];
 
 /** Where the shuffled looks come from: the lab has no game to draw from. */
 const looks = stream(newSeed());
@@ -1036,13 +1045,17 @@ const SCENERY: Specimen[] = [
     id: 'scenery:trees',
     group: 'Scenery',
     name: 'Trees',
-    footprint: [4, 1],
-    /** Three trees, one of each color. */
-    build: () => ({
-      root: buildForest([0, 1, 2].map((seed) => ({ x: (seed - 1) * 1.4, z: 0, seed }))),
-      animate: still,
-      controls: [],
-    }),
+    footprint: [6, 1],
+    /** Five trees, one of each color and height, in any season. */
+    build: () => {
+      const st = { season: 'summer' as Season };
+      return {
+        root: buildForest([0, 1, 2, 3, 4].map((i) => ({ x: (i - 2) * 1.4, z: 0, seed: i * 6 }))),
+        /** Turn the leaves to the season chosen. */
+        animate: () => leavesFor(st.season),
+        controls: [choice('Season', st, 'season', SEASONS)],
+      };
+    },
   },
   {
     id: 'scenery:pines',
@@ -1061,12 +1074,19 @@ const SCENERY: Specimen[] = [
     group: 'Scenery',
     name: 'Apple trees',
     footprint: [4, 1],
-    /** Apple trees of every size. */
-    build: () => ({
-      root: buildOrchard([0, 1, 2].map((seed) => ({ x: (seed - 1) * 1.5, z: 0, seed }))),
-      animate: still,
-      controls: [],
-    }),
+    /** Apple trees of every size, in any season. */
+    build: () => {
+      const st = { season: 'summer' as Season };
+      return {
+        root: buildOrchard([0, 1, 2].map((seed) => ({ x: (seed - 1) * 1.5, z: 0, seed }))),
+        /** Turn the trees to the season chosen, the bare branches with the park's leaves. */
+        animate: () => {
+          orchardFor(st.season);
+          leavesFor(st.season);
+        },
+        controls: [choice('Season', st, 'season', SEASONS)],
+      };
+    },
   },
   {
     id: 'scenery:downtown',

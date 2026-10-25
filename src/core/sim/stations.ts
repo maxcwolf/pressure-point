@@ -27,10 +27,11 @@ import {
 } from '../data';
 import { tuning } from '../difficulty';
 import { random, rnd, type Rng } from '../random';
-import type { GameState, Guest, Item, Staff } from '../state/types';
+import type { GameState, Guest, Item, Staff, StaffState } from '../state/types';
 import { at, clamp, must } from '../util';
 import { accessPose, accessTile } from '../world';
 import { prestige } from './ambience';
+import { worksAt } from './assignments';
 import { trackBusy } from './bottleneck';
 import { gainXp, habitOf, hasGeneral } from './careers';
 import { badTrip, blessBonus, goodTrip, isTrip, settingPenalty } from './ceremonies';
@@ -93,12 +94,38 @@ export function stationScore(ctx: SimContext, it: Item, g: Guest) {
   let score = it.queue.length + (it.serving ? 1 : 0) + (staff || !ITEMS[it.type].station?.staff ? 0 : 2.5);
   if (ITEMS[it.type].station?.goal === 'treat') {
     const problem = deliveryProblem(ctx, it, staff, modalityOf(g));
-    if (problem === 'unqualified') score += 6;
+    // someone untrained is a last resort, and no resort at all while a colleague trained for it is about
+    if (problem === 'unqualified') score += staff && leftForSpecialist(ctx, staff, g) ? 40 : 6;
     else if (problem) score += 40;
     // between a table and a machine doing the same work, the machine is quicker, so a tie goes to it
     if (ITEMS[it.type].machine) score -= MACHINE_PULL;
   }
   return score;
+}
+
+/** Staff who will not be seeing anyone for a while: going, or away for days on a course or a house call. */
+const AWAY: readonly StaffState[] = ['leaving', 'toCall', 'away', 'toTrain', 'training'];
+
+/**
+ * Whether a guest should wait for a colleague trained in their treatment rather than be seen by this member of staff,
+ * who is not: there is someone who is, here and free to work a table that does it. A guest the player put in this
+ * line is seen in it all the same.
+ */
+export function leftForSpecialist(ctx: SimContext, staff: Staff, g: Guest): boolean {
+  const mod = modalityOf(g);
+  if (g.placed || staff.quals.includes(mod.id)) return false;
+  return ctx.s.staff.some(
+    (t) =>
+      t.quals.includes(mod.id) &&
+      !AWAY.includes(t.state) &&
+      ctx.s.items.some(
+        (it) =>
+          ITEMS[it.type].station?.goal === 'treat' &&
+          ctx.world.usable(it) &&
+          treatsHere(it, mod) &&
+          worksAt(ctx, t, it.x, it.y),
+      ),
+  );
 }
 
 /** The best usable station for a guest's current goal, if there is one. */
@@ -186,14 +213,17 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
 
 /**
  * The guest a station calls next: the first waiting in line, or the first emergency if the policy puts them first. A
- * Practice Spot passes over anyone in early for a later class than its studio's next.
+ * Practice Spot passes over anyone in early for a later class than its studio's next, and a table passes over anyone
+ * waiting for a colleague trained in what they need.
  */
 export function nextInLine(ctx: SimContext, it: Item): Guest | undefined {
-  const spot = ITEMS[it.type].station?.goal === 'class';
+  const goal = ITEMS[it.type].station?.goal;
+  const staff = goal === 'treat' ? stationStaff(ctx, it) : undefined;
   const waiting = it.queue
     .map((id) => guestById(ctx, id))
     .filter((q): q is Guest => q?.state === 'waiting' || q?.state === 'toWait')
-    .filter((q) => !spot || dueForSpot(ctx, it, q));
+    .filter((q) => goal !== 'class' || dueForSpot(ctx, it, q))
+    .filter((q) => !staff || !leftForSpecialist(ctx, staff, q));
   return (ctx.s.policy.emergenciesFirst ? waiting.find((q) => q.emergency) : undefined) ?? waiting[0];
 }
 

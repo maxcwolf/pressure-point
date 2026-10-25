@@ -8,7 +8,7 @@ import { setSharing, sharing, track } from '../../app/analytics';
 import type { Audio } from '../../audio/audio';
 import { CAMPAIGN, type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
-import { disciplineHere } from '../../core/state/game';
+import { disciplineHere, offeringHere } from '../../core/state/game';
 import { loadControls, saveControls } from '../../storage/controls';
 import { ITEM_VIEWS, loadDisplay, MESSAGE_TIMES, saveDisplay, UI_SCALES } from '../../storage/display';
 import { loadDisciplinePrefs, loadLessonsPref, saveDisciplinePref, saveTutorialPref } from '../../storage/settings';
@@ -96,18 +96,20 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
             />
           );
         })}
-        <SettingRow
-          icon={QIGONG_SETTING.icon}
-          name={QIGONG_SETTING.name}
-          desc={QIGONG_SETTING.desc}
-          on={sim ? sim.enabled('qigong') : loadDisciplinePrefs().qigong !== false}
-          onToggle={flip('qigong', () => {
-            const on = !(sim ? sim.enabled('qigong') : loadDisciplinePrefs().qigong !== false);
-            saveDisciplinePref('qigong', on);
-            sim?.setDiscipline('qigong', on);
-            return on;
-          })}
-        />
+        {(!sim || offeringHere(sim.s, 'qigong')) && (
+          <SettingRow
+            icon={QIGONG_SETTING.icon}
+            name={QIGONG_SETTING.name}
+            desc={QIGONG_SETTING.desc}
+            on={sim ? sim.enabled('qigong') : loadDisciplinePrefs().qigong !== false}
+            onToggle={flip('qigong', () => {
+              const on = !(sim ? sim.enabled('qigong') : loadDisciplinePrefs().qigong !== false);
+              saveDisciplinePref('qigong', on);
+              sim?.setDiscipline('qigong', on);
+              return on;
+            })}
+          />
+        )}
       </ul>
       <p class="sub">
         {sim

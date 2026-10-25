@@ -278,6 +278,11 @@ export interface ItemDef {
   /** It has a front and a back, so a marker shows which way it will face while it is being placed. */
   front?: boolean;
   /**
+   * What it faces: while it is held, it turns to face the nearest such item in the room under the cursor; R turns it by
+   * hand instead.
+   */
+  faces?: ItemType;
+  /**
    * Treatment equipment that can be upgraded, up to `UPGRADE_LEVELS`, by a Caretaker with the Mechanics course: what
    * the upgrades are priced against, each level a share of it (`UPGRADE_PRICE`).
    */
@@ -757,6 +762,8 @@ export interface CenterDef {
   goals: readonly StarGoal[];
   /** The optional disciplines on offer here, each still opened by its room's star. Massage is always on offer. */
   disciplines: readonly Discipline[];
+  /** Whether Qi Gong classes are on offer here, still opened by the studio's star. */
+  qigong: boolean;
   /** How much more (or less) often guests arrive with a condition here than elsewhere. Unlisted ones count once. */
   conditions?: Partial<Record<ConditionId, number>>;
   /** Rush hours: arrivals come in waves every few days, and guests are less patient while they last. */

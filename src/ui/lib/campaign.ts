@@ -18,7 +18,7 @@ export interface CampaignCard {
   open: boolean;
   /** Why a closed center is closed. */
   locked: string;
-  /** The optional disciplines on offer there, by name. */
+  /** The optional disciplines, and the Qi Gong classes, on offer there, by name. */
   extras: string[];
 }
 
@@ -37,7 +37,7 @@ export function campaignCards(stars: CampaignStars): CampaignCard[] {
       of: c.goals.length,
       open: centerOpen(stars, id),
       locked: before ? `Earn a star at ${CENTERS[before].name} to open` : '',
-      extras: c.disciplines.map((d) => DISCIPLINES[d].name),
+      extras: [...c.disciplines.map((d) => DISCIPLINES[d].name), ...(c.qigong ? ['Qi Gong classes'] : [])],
     };
   });
 }

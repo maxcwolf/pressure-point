@@ -15,21 +15,28 @@ export interface Point {
 /** A tile: x then y. */
 export type Tile = [x: number, y: number];
 
-/** An item being carried: what it is and which way it is turned. */
+/**
+ * An item being carried: what it is and which way it is turned. An item that faces something turns itself to face it
+ * until R turns it by hand (`turned`), and from then on keeps the way it was turned.
+ */
 export interface HeldItem {
   type: ItemType;
   rot: number;
+  turned?: boolean;
 }
 
 /** What is in hand while a blueprint is open. */
 export type PlanSub =
-  null | { kind: 'item'; type: ItemType; rot: number; required: boolean } | { kind: 'window' } | { kind: 'door' };
+  | null
+  | { kind: 'item'; type: ItemType; rot: number; turned?: boolean; required: boolean }
+  | { kind: 'window' }
+  | { kind: 'door' };
 
 /** The tool in hand, and how far along it is. */
 export type Tool =
   | { kind: 'none' }
-  | { kind: 'item'; type: ItemType; rot: number }
-  | { kind: 'move'; id: number; type: ItemType; rot: number }
+  | { kind: 'item'; type: ItemType; rot: number; turned?: boolean }
+  | { kind: 'move'; id: number; type: ItemType; rot: number; turned?: boolean }
   // `noFit` says why the room fits nowhere in the building at its smallest, and where the room for it would come from
   | { kind: 'room'; type: RoomType; phase: 'drag'; start: Tile | null; rect: Rect | null; noFit: string }
   | { kind: 'room'; type: RoomType; phase: 'door'; rect: Rect }

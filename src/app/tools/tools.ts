@@ -21,14 +21,14 @@ import type { SfxName } from '../../core/sim/events';
 import type { PlacePreview } from '../../core/sim/preview';
 import type { Sim } from '../../core/sim/sim';
 import { sameSpot } from '../../core/state/game';
-import type { Room, WallSpot } from '../../core/state/types';
-import { onWall, type Rect, Z_CORRIDOR } from '../../core/world';
+import type { Item, Room, WallSpot } from '../../core/state/types';
+import { itemCenter, onWall, type Rect, Z_CORRIDOR } from '../../core/world';
 import { type Marker, OV_BAD, OV_BLUE, OV_GOOD, type OverlayTile } from '../../render/overlay-codes';
 import { nextPick, type Selection } from '../../render/picking';
 import type { View } from '../../render/view';
 import { loadDisplay } from '../../storage/display';
 import { expandHint, plotHeat } from '../../ui/lib/land';
-import { dragRect, itemSpot, tileOf } from './geometry';
+import { dragRect, itemSpot, rotToward, tileOf } from './geometry';
 import {
   assignHint,
   assignProblem,
@@ -373,7 +373,9 @@ export class Tools {
     const held = heldItem(t);
     // something hung on a wall faces out from it, whichever wall it is
     if (!held || onWall(held.type)) return;
-    held.rot = quarterTurn(held.rot);
+    // from the way it is shown facing, and from now on it stays the way it is turned
+    held.rot = quarterTurn(this.spotFor(held)?.rot ?? held.rot);
+    held.turned = true;
     this.sfx('blip');
     this.refresh();
   }
@@ -503,7 +505,14 @@ export class Tools {
         // required furniture is part of the room's price and has to go inside it; extras are bought as they are placed
         const opts = { ...(sub.required && { free: true, roomId: t.room.id }), ...this.looks(sub.type) };
         if (spot && sim.placeItem(sub.type, spot.x, spot.y, spot.rot, opts)) {
-          if (sub.required) t.sub = nextRequired(sim.missingItems(t.room));
+          if (sub.required) {
+            const next = nextRequired(sim.missingItems(t.room));
+            // another of the same kind is held the way R turned this one
+            t.sub =
+              sub.turned && next?.kind === 'item' && next.type === sub.type
+                ? { ...next, rot: sub.rot, turned: true }
+                : next;
+          }
           this.land(clientX, clientY);
         } else if (spot) this.refuse('place_item', this.placeProblem(sub.type, sub.required));
       } else if (sub?.kind === 'window') this.clickWindow(t.room.id);
@@ -536,13 +545,37 @@ export class Tools {
 
   /**
    * Where the item in hand would go: its top-left tile, with the item centered on the cursor, and the way it faces. A
-   * wall item hangs on the wall nearest the cursor, facing out from it, or nowhere if no wall is near.
+   * wall item hangs on the wall nearest the cursor, facing out from it, or nowhere if no wall is near. One that faces
+   * something turns to face it, until R has turned it by hand.
    */
   private spotFor(held: HeldItem): { x: number; y: number; rot: number } | null {
     if (!this.cursor) return null;
     if (onWall(held.type)) return this.sim.world.nearestWall(held.type, this.cursor.x, this.cursor.y);
-    const [x, y] = itemSpot(this.cursor, held.type, held.rot);
-    return { x, y, rot: held.rot };
+    const rot = held.turned ? held.rot : this.facing(this.cursor, held);
+    const [x, y] = itemSpot(this.cursor, held.type, rot);
+    return { x, y, rot };
+  }
+
+  /**
+   * The way an item that faces something turns, held at a point: toward the nearest such item in the room there. Any
+   * other item, or one held where there is nothing to face, keeps the way it is held.
+   */
+  private facing(cursor: Point, held: HeldItem): number {
+    const faces = ITEMS[held.type].faces;
+    if (!faces) return held.rot;
+    const [x, y] = itemSpot(cursor, held.type, held.rot);
+    const room = this.sim.world.roomAt(x, y);
+    if (!room) return held.rot;
+    const [cx, cy] = itemCenter({ type: held.type, x, y, rot: held.rot });
+    /** How far an item's middle is from this one's. */
+    const distance = (it: Item) => {
+      const [ix, iy] = itemCenter(it);
+      return Math.hypot(ix - cx, iy - cy);
+    };
+    const nearest = this.sim.s.items
+      .filter((it) => it.type === faces && this.sim.world.roomOfItem(it)?.id === room.id)
+      .sort((a, b) => distance(a) - distance(b))[0];
+    return (nearest && rotToward(cx, cy, nearest)) ?? held.rot;
   }
 
   /** The stretch of the room's wall nearest the cursor. */

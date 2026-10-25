@@ -64,6 +64,7 @@ import { isLeadStation, matsOf, sessionState } from './sessions';
 import { burntOut, reachSoul, soulStep, soulToRetrieve, startSoul } from './souls';
 import type { BreakRoom } from './staff-needs';
 import { fedUp, goRefresh, growNeeds, refreshed, refreshSeconds, wants, wantsRefresh } from './staff-needs';
+import { leftForSpecialist } from './stations';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
 import { installUpgrade } from './upgrades';
@@ -550,6 +551,8 @@ function findWork(ctx: SimContext, st: Staff) {
         for (const id of it.queue) {
           const q = guestById(ctx, id);
           if (q && !deliveryProblem(ctx, it, st, modalityOf(q))) score += 8;
+          // and a line of guests waiting for someone trained in what they need is no work for this one
+          else if (q && leftForSpecialist(ctx, st, q)) score -= 10;
         }
       }
       posts.push({ it, score });

@@ -65,6 +65,16 @@ describe('item geometry', () => {
     expect(frontOf({ type: 'plant', x: 10, y: 10, rot: 0 }), 'a plant looks the same all round').toBeNull();
   });
 
+  it('stands the guest on a Practice Spot facing its front, which the placing marker shows', () => {
+    const spot = { type: 'practice_spot' as const, x: 10, y: 10, rot: 0 };
+    const guest = accessPose(spot, 0);
+    expect(Math.sin(guest.face)).toBeCloseTo(0);
+    expect(Math.cos(guest.face), 'down the map, +y').toBeCloseTo(1);
+    const front = frontOf(spot);
+    expect(front).not.toBeNull();
+    expect(Math.cos(front!.face - guest.face)).toBeCloseTo(1);
+  });
+
   it('puts the guest at a desk half a tile out from its front, at every rotation', () => {
     for (const type of ['reception_desk', 'consult_desk', 'shop_counter'] as const) {
       const guest = ITEMS[type].access.findIndex((a) => a.role === 'guest');

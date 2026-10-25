@@ -17,6 +17,7 @@ import {
   SCAN_SUCCESS,
   STRUCTURAL_SURE,
 } from '../../src/core/data';
+import { contextAnnouncement } from '../../src/core/sim/advisor';
 import { createContext } from '../../src/core/sim/context';
 import { machineUpkeep } from '../../src/core/sim/machines';
 import type { Sim } from '../../src/core/sim/sim';
@@ -329,6 +330,14 @@ describe('the Posture Lab', () => {
     expect(machineUpkeep(s)).toBe(ITEMS.posture_scanner.upkeep);
     expect(inUse(s, lab)).toBe(true);
     expect(standingPoints(ctx).unstaffed).toBe(0);
+  });
+
+  it('asks the speakers for nobody when guests line up at the scanner', () => {
+    const { sim, s } = openCenter(1);
+    addPostureLab(sim);
+    const scanner = s.items.find((i) => i.type === 'posture_scanner')!;
+    scanner.queue = [101, 102];
+    expect(contextAnnouncement(createContext(s))).toBeNull();
   });
 
   it('is skipped when there is not one', () => {

@@ -28,21 +28,27 @@ export function resizeHint(from: Rect, to: Rect, cost: number): string {
   return `${from.w}×${from.h} → ${to.w}×${to.h} · ${price} · release to resize`;
 }
 
+/** What R does to an item in hand: turns it, or, for one that turns itself to face something, turns it by hand instead. */
+function turnHint(type: ItemType): string {
+  const faces = ITEMS[type].faces;
+  return faces ? `faces the ${ITEMS[faces].name}, or R turns it` : 'R rotates';
+}
+
 /** The hint for placing a new item. */
 export function placeHint(type: ItemType, left = 0): string {
   const def = ITEMS[type];
   if (type === 'certificate') return `${def.name} · ${left} to hang · click a wall to hang it · Esc when done`;
   if (def.mount === 'wall') return `${def.name} · ${money(def.cost)} each · click a wall to hang it · Esc when done`;
   if (def.where === 'outdoors')
-    return `${def.name} · ${money(def.cost)} each · click the grounds beside a path or the pavement · R rotates · Esc when done${legend(type)}`;
-  return `${def.name} · ${money(def.cost)} each · click to place · R rotates · Esc when done${legend(type)}`;
+    return `${def.name} · ${money(def.cost)} each · click the grounds beside a path or the pavement · ${turnHint(type)} · Esc when done${legend(type)}`;
+  return `${def.name} · ${money(def.cost)} each · click to place · ${turnHint(type)} · Esc when done${legend(type)}`;
 }
 
 /** The hint for moving an item that is already placed. */
 export function moveHint(type: ItemType): string {
   const def = ITEMS[type];
   if (def.mount === 'wall') return `Moving the ${def.name} · click a wall to hang it · Esc cancels`;
-  return `Moving the ${def.name} · click to put it down · R rotates · Esc cancels${legend(type)}`;
+  return `Moving the ${def.name} · click to put it down · ${turnHint(type)} · Esc cancels${legend(type)}`;
 }
 
 /**
@@ -90,8 +96,8 @@ export function planHint(sub: PlanSub, missing: number): string {
   if (sub.kind === 'door') return MOVE_DOOR_HINT;
   const def = ITEMS[sub.type];
   return sub.required
-    ? `Place the ${def.name} inside the room · R rotates${legend(sub.type)}`
-    : `${def.name} · ${money(def.cost)} each · click to place · R rotates · Esc puts it down${legend(sub.type)}`;
+    ? `Place the ${def.name} inside the room · ${turnHint(sub.type)}${legend(sub.type)}`
+    : `${def.name} · ${money(def.cost)} each · click to place · ${turnHint(sub.type)} · Esc puts it down${legend(sub.type)}`;
 }
 
 /** The hint while assigning someone to rooms: who, and how many rooms they have so far. */

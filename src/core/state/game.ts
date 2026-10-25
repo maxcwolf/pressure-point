@@ -126,8 +126,9 @@ export const defaultPolicy = (): Policy => ({
  * 37: the tutorial and the cards that explain each thing the first time it happens, and whether the land for
  *     sale has been looked over, for the first game's heads-up on land.
  * 38: the Recliner renamed the Lounger.
+ * 39: the Practice Spot's front turned round to the way its guest faces.
  */
-export const SAVE_VERSION = 38;
+export const SAVE_VERSION = 39;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -293,9 +294,14 @@ export function starsEarned(s: GameState): number {
   return s.unlockAll ? Infinity : s.stars;
 }
 
-/** Whether something Settings can switch off is on in this game: an optional discipline, or the Qi Gong classes. */
+/** Whether something Settings can switch off exists in this game's center at all: an optional discipline, or the classes. */
+export function offeringHere(s: GameState, o: Offering): boolean {
+  return o === 'qigong' ? CENTERS[s.center].qigong : disciplineHere(s, o);
+}
+
+/** Whether something Settings can switch off is on in this game: on offer in its center, and not switched off. */
 export function offeringOn(s: GameState, o: Offering): boolean {
-  return o === 'qigong' ? s.options.qigong !== false : disciplineOn(s, o);
+  return o === 'qigong' ? offeringHere(s, o) && s.options.qigong !== false : disciplineOn(s, o);
 }
 
 /** Whether a discipline exists in this game's center at all. Massage always does. */

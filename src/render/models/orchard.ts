@@ -1,10 +1,11 @@
 // Apple trees for the orchards, planted in rows and drawn as a few instanced meshes: trunks, leaves and apples; in
-// blossom in spring, green with red apples in summer, yellowing with the apples ripe in autumn, and bare in winter.
+// blossom in spring, green with red apples in summer, yellowing with the apples ripe in autumn, and in winter bare,
+// down to a few empty branches like the park's trees.
 import * as THREE from 'three';
 
 import type { Season } from '../../core/sim/twists';
 import { blob, cyl, mat, sph } from './parts';
-import type { TreeSpot } from './tree';
+import { bareCrown, BARK, BRANCHES, type TreeSpot } from './tree';
 
 /** How many apples hang on each tree, and where on the canopy, as a turn round it and a height on it. */
 const APPLES = [
@@ -18,12 +19,15 @@ const APPLES = [
 const CANOPY = 0.6;
 const TRUNK = 0.75;
 
-/** How an orchard looks in each season: the color of its canopies, and whether its apples hang on them. */
-export const ORCHARD_SEASONS: Readonly<Record<Season, { canopy: number; apples: boolean }>> = {
+/**
+ * How an orchard looks in each season: the color of its canopies, or null when they are bare, and whether its apples
+ * hang on them.
+ */
+export const ORCHARD_SEASONS: Readonly<Record<Season, { canopy: number | null; apples: boolean }>> = {
   spring: { canopy: 0xf0c4d4, apples: false },
   summer: { canopy: 0x5aa34f, apples: true },
   autumn: { canopy: 0xa9a443, apples: true },
-  winter: { canopy: 0x9c8e74, apples: false },
+  winter: { canopy: null, apples: false },
 };
 
 /**
@@ -31,16 +35,20 @@ export const ORCHARD_SEASONS: Readonly<Record<Season, { canopy: number; apples: 
  * them all at once with nothing built again.
  */
 const CANOPY_MAT = new THREE.MeshStandardMaterial({
-  color: ORCHARD_SEASONS.summer.canopy,
+  color: 0x5aa34f,
   roughness: 0.78,
   metalness: 0,
 });
 const APPLE_MAT = new THREE.MeshStandardMaterial({ color: 0xd9362f, roughness: 0.45, metalness: 0 });
 
-/** Turn every orchard to a season: its canopies' color, and its apples hung or gone. */
+/**
+ * Turn every orchard to a season: its canopies' color or gone, and its apples hung or gone. Their bare branches show
+ * with the park's, as `leavesFor` turns them.
+ */
 export function orchardFor(season: Season) {
   const look = ORCHARD_SEASONS[season];
-  CANOPY_MAT.color.setHex(look.canopy);
+  CANOPY_MAT.visible = look.canopy !== null;
+  if (look.canopy !== null) CANOPY_MAT.color.setHex(look.canopy);
   APPLE_MAT.visible = look.apples;
 }
 
@@ -69,6 +77,7 @@ export function buildOrchard(spots: readonly TreeSpot[]): THREE.Group {
   const trunks: THREE.Matrix4[] = [];
   const canopies: THREE.Matrix4[] = [];
   const apples: THREE.Matrix4[] = [];
+  const crowns: THREE.Matrix4[] = [];
   const none = new THREE.Quaternion();
   for (const { x, z, seed } of spots) {
     const k = 0.9 + (seed % 3) * 0.1;
@@ -83,6 +92,14 @@ export function buildOrchard(spots: readonly TreeSpot[]): THREE.Group {
         new THREE.Vector3(CANOPY * k, CANOPY * 0.85 * k, CANOPY * k),
       ),
     );
+    // the bare branches of winter, smaller than a park tree's to suit the shorter trunk, and turned their own way
+    crowns.push(
+      new THREE.Matrix4().compose(
+        new THREE.Vector3(x, TRUNK * k, z),
+        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), seed * 2.4),
+        new THREE.Vector3(0.75 * k, 0.75 * k, 0.75 * k),
+      ),
+    );
     for (const [turn, up] of APPLES) {
       const a = turn + seed;
       apples.push(
@@ -95,12 +112,13 @@ export function buildOrchard(spots: readonly TreeSpot[]): THREE.Group {
     }
   }
   const orchard = new THREE.Group();
-  orchard.add(instanced(cyl(0.07, 0.1, 1, 16), mat(0x7a5a3c, 0.9), trunks));
+  orchard.add(instanced(cyl(0.07, 0.1, 1, 16), mat(BARK, 0.9), trunks));
   // a smooth round canopy, like the park's trees and the items' rounded shapes
   orchard.add(instanced(blob(1), CANOPY_MAT, canopies));
   const apple = instanced(sph(0.075, 8), APPLE_MAT, apples);
   // the apples are too small to cast a shadow worth drawing
   apple.castShadow = false;
   orchard.add(apple);
+  if (crowns.length) orchard.add(instanced(bareCrown(), BRANCHES, crowns));
   return orchard;
 }
