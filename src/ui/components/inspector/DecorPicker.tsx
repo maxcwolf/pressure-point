@@ -50,9 +50,9 @@ const swatch = css({
   h: '[24px]',
   p: '2',
   border: '[2px solid {colors.ink.35}]',
-  borderRadius: '[8px]',
+  borderRadius: '8',
   bg: 'white',
-  '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '[5px]' },
+  '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },
   _on: { borderColor: 'teal-dark', boxShadow: '[0 0 0 2px {colors.teal}]' },
   '&.karma i': { opacity: '[0.6]' },
 });
@@ -64,14 +64,14 @@ const lock = css({
   bottom: '[-5px]',
   display: 'flex',
   bg: 'white',
-  borderRadius: '[50%]',
+  borderRadius: 'disc',
   p: '[1px]',
 });
 
 /** The button to give every room of its kind the same look. */
 const decorAll = css({
   border: '[2.5px solid {colors.navy}]',
-  borderRadius: 'card',
+  borderRadius: '12',
   py: '4',
   px: '10',
   fontWeight: 'bold',

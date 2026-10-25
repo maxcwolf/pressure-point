@@ -27,7 +27,7 @@ const tab = css({
   h: '[22px]',
   p: '0',
   border: '[2.5px solid {colors.navy}]',
-  borderRadius: '[999px]',
+  borderRadius: 'pill',
   background:
     "[{colors.cream} url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3E%3Cpath d='M2 2l6 6 6-6' fill='none' stroke='%2324384a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") center / 15px 10px no-repeat]",
   boxShadow: '[0 3px 0 {colors.ink.30}]',

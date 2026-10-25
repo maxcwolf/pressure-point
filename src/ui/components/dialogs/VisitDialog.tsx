@@ -29,7 +29,7 @@ export const visitRooms = css({
     alignItems: 'center',
     columnGap: '8',
     border: '[2px solid {colors.ink.25}]',
-    borderRadius: '[10px]',
+    borderRadius: '10',
     py: '4',
     px: '8',
     bg: 'white',

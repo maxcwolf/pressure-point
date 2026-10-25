@@ -29,7 +29,7 @@ const keycap = css({
   bg: 'white',
   border: 'control',
   borderBottomWidth: '[3.5px]',
-  borderRadius: '[7px]',
+  borderRadius: '6',
   py: '2',
   px: '8',
   '&.waiting': { bg: 'sand' },

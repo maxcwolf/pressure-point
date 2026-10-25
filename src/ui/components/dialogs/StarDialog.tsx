@@ -29,7 +29,7 @@ const bigStars = css({
 const unlock = css({
   bg: 'violet-tint',
   border: '[2px solid {colors.violet}]',
-  borderRadius: 'card',
+  borderRadius: '12',
   py: '8',
   px: '12',
   mt: '10',

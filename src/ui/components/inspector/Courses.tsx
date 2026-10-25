@@ -22,7 +22,7 @@ const course = css({
   textAlign: 'left',
   bg: 'white',
   border: 'control',
-  borderRadius: '[10px]',
+  borderRadius: '10',
   py: '4',
   px: '8',
   mb: '4',
@@ -33,7 +33,7 @@ const course = css({
   '& b': {
     bg: 'gold',
     border: '[1.5px solid {colors.navy}]',
-    borderRadius: '[8px]',
+    borderRadius: '8',
     py: '0',
     px: '6',
     fontSize: '12',

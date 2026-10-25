@@ -35,7 +35,7 @@ const grid = css({
 const statCard = css({
   bg: 'white',
   border: 'card',
-  borderRadius: 'card',
+  borderRadius: '12',
   py: '8',
   px: '10',
   fontSize: '13',
@@ -58,7 +58,7 @@ const choices = css({
   '& .chip': {
     pointerEvents: 'auto',
     border: '[2px solid {colors.ink.35}]',
-    borderRadius: '[999px]',
+    borderRadius: 'pill',
     bg: 'white',
     py: '2',
     px: '10',
@@ -76,7 +76,7 @@ const awardList = css({
   '& li': {
     bg: 'gold-tint',
     border: '[2px solid {colors.gold}]',
-    borderRadius: 'control',
+    borderRadius: '8',
     py: '2',
     px: '8',
     fontSize: '13',
@@ -89,7 +89,7 @@ const ceremonyButton = css({
   fontSize: '13',
   fontWeight: '[500]',
   border: 'control',
-  borderRadius: '[999px]',
+  borderRadius: 'pill',
   py: '2',
   px: '10',
   bg: 'white',

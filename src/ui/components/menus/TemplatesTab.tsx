@@ -45,7 +45,7 @@ const nameInput = css({
   fontWeight: 'bold',
   color: 'navy',
   border: '[2px solid transparent]',
-  borderRadius: '[8px]',
+  borderRadius: '8',
   py: '[1px]',
   px: '4',
   my: '0',
@@ -66,7 +66,7 @@ const actions = css({
   pt: '4',
   '& button': {
     border: 'control',
-    borderRadius: 'control',
+    borderRadius: '8',
     py: '2',
     px: '8',
     fontSize: '13',

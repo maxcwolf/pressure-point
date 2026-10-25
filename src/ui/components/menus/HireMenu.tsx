@@ -28,7 +28,7 @@ const cv = css(cardLook, {
   '& .btnrow .go': { flex: '1' },
   '& .reject': {
     border: 'control',
-    borderRadius: '[10px]',
+    borderRadius: '10',
     bg: 'white',
     fontSize: '12',
     fontWeight: 'bold',

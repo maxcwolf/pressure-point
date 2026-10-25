@@ -27,7 +27,7 @@ const heading = css({ display: 'flex', alignItems: 'center', justifyContent: 'sp
 const costTag = css({
   bg: 'gold',
   border: 'control',
-  borderRadius: 'control',
+  borderRadius: '8',
   py: '0',
   px: '8',
   fontSize: '14',
@@ -45,7 +45,7 @@ const chip = css({
   fontSize: '13',
   fontWeight: '[500]',
   border: 'control',
-  borderRadius: '[999px]',
+  borderRadius: 'pill',
   py: '2',
   px: '10',
   bg: 'white',

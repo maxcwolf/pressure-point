@@ -18,13 +18,13 @@ const pill = css({
   color: 'cream',
   py: '8',
   px: '16',
-  borderRadius: '[999px]',
+  borderRadius: 'pill',
   fontSize: '15',
   boxShadow: '[0 4px 0 rgba(0, 0, 0, 0.2)]',
   animation: 'drop 0.35s ease-out',
   textAlign: 'center',
   // an icon keeps its navy outline on the navy pill by sitting on a cream chip
-  '& .icon': { bg: 'cream', borderRadius: '[6px]', p: '[1.5px]' },
+  '& .icon': { bg: 'cream', borderRadius: '6', p: '[1.5px]' },
 });
 
 /** The current announcement, if there is one, each new line coming in as itself. */

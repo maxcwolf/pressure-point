@@ -50,7 +50,7 @@ const conditionChoices = css({
   '& button': {
     pointerEvents: 'auto',
     border: 'control',
-    borderRadius: '[8px]',
+    borderRadius: '8',
     bg: 'cream',
     fontWeight: 'bold',
     fontSize: '12',

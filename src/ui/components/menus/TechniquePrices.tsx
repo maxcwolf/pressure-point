@@ -34,7 +34,7 @@ const priceRow = css({
   gap: '6',
   '& small': { fontSize: '12', opacity: '[0.75]' },
   '& b': { textAlign: 'center' },
-  '& button': { border: 'control', borderRadius: '[8px]', bg: 'cream', fontWeight: 'bold', h: '[26px]' },
+  '& button': { border: 'control', borderRadius: '8', bg: 'cream', fontWeight: 'bold', h: '[26px]' },
   '& button.locked': { opacity: 'locked' },
 });
 

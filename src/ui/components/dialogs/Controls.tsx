@@ -22,7 +22,7 @@ const keyList = css({
     bg: 'white',
     border: 'control',
     borderBottomWidth: '[3.5px]',
-    borderRadius: '[7px]',
+    borderRadius: '6',
     py: '[1px]',
     px: '6',
   },

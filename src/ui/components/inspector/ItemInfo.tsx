@@ -47,7 +47,7 @@ const upgrades = css({ m: '0', mt: '8', mb: '4' });
 /** The button to buy the next upgrade, in gold; a locked one is cream, and faded. */
 const upgrade = css({
   border: '[2.5px solid {colors.navy}]',
-  borderRadius: 'card',
+  borderRadius: '12',
   py: '4',
   px: '10',
   fontWeight: 'bold',

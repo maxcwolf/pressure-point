@@ -11,7 +11,7 @@ export const choice = css({
   pointerEvents: 'auto',
   flex: 'none',
   border: '[2.5px solid {colors.navy}]',
-  borderRadius: '[10px]',
+  borderRadius: '10',
   py: '4',
   px: '12',
   fontWeight: 'bold',

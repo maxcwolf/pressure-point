@@ -88,7 +88,7 @@ const panelLook = css({
   minH: '[0]',
   mt: '[calc(var(--logo-h) * -0.33)]',
   p: '[calc(var(--logo-h) * 0.28) clamp(14px, 3vh, 26px) clamp(10px, 2.2vh, 22px)]',
-  borderRadius: '[22px]',
+  borderRadius: '18',
   bg: '[rgba(44, 58, 78, 0.84)]',
   color: 'white',
   textAlign: 'center',
@@ -113,7 +113,7 @@ const subName = css({ fontSize: '[clamp(20px, 3.4vh, 26px)]', fontWeight: 'bold'
 const back = css({
   justifySelf: 'start',
   border: '[2.5px solid {colors.white}]',
-  borderRadius: '[11px]',
+  borderRadius: '10',
   bg: '[#19bcd6]',
   color: 'white',
   fontSize: '15',
@@ -129,7 +129,7 @@ const noteLook = css({
   bg: 'bad-bg',
   color: '[#8f2a24]',
   border: '[2px solid {colors.bad}]',
-  borderRadius: 'card',
+  borderRadius: '12',
   py: '8',
   px: '12',
   mb: '14',
@@ -163,7 +163,7 @@ const thumb = css.raw({
   flex: 'none',
   objectFit: 'cover',
   border: '[4px solid {colors.white}]',
-  borderRadius: '[8px]',
+  borderRadius: '8',
   bg: '[#5c708a]',
 });
 const thumbPicture = css(thumb);
@@ -172,7 +172,7 @@ const thumbPicture = css(thumb);
 const noPicture = css(thumb, {
   display: 'grid',
   placeItems: 'center',
-  '& .icon': { bg: 'cream', p: '4', borderRadius: 'card' },
+  '& .icon': { bg: 'cream', p: '4', borderRadius: '12' },
 });
 
 /** The facts about the latest save, in two columns to keep the card short. */
@@ -188,7 +188,7 @@ const facts = css({
   lineHeight: '[1.4]',
   rowGap: '2',
   // icons on the dark panel sit on cream chips, or their navy outlines would vanish
-  '& .icon': { bg: 'cream', borderRadius: '[6px]', p: '[1.5px]' },
+  '& .icon': { bg: 'cream', borderRadius: '6', p: '[1.5px]' },
 });
 
 /** A fact: a long one, like a late date, wraps within its own column, lined up under its text rather than its icon. */
@@ -222,7 +222,7 @@ const menuButton = css({
   flex: 'none',
   h: '[clamp(34px, 6vh, 52px)]',
   border: '[3px solid {colors.white}]',
-  borderRadius: '[14px]',
+  borderRadius: '14',
   bg: '[#19bcd6]',
   color: 'white',
   fontSize: '[clamp(17px, 3.2vh, 25px)]',
@@ -240,7 +240,7 @@ const sub = css({
   overflowY: 'auto',
   py: '12',
   px: '14',
-  borderRadius: '[14px]',
+  borderRadius: '14',
   bg: 'cream',
   color: 'navy',
   textAlign: 'center',
@@ -254,7 +254,7 @@ const tray = css({
   gap: '[clamp(10px, 2vh, 18px)]',
   mt: '[clamp(6px, 1.4vh, 16px)]',
   p: '[clamp(6px, 1.2vh, 12px) 28px]',
-  borderRadius: '[18px]',
+  borderRadius: '18',
   bg: '[rgba(44, 58, 78, 0.78)]',
   '&[hidden]': { display: 'none' },
 });
@@ -265,7 +265,7 @@ const badge = css({
   h: '[clamp(36px, 6.4vh, 58px)]',
   display: 'grid',
   placeItems: 'center',
-  borderRadius: '[50%]',
+  borderRadius: 'disc',
   border: '[3px solid {colors.white}]',
   bg: 'cream',
   boxShadow: '[0 3px 0 rgba(0, 0, 0, 0.3)]',
@@ -294,7 +294,7 @@ const alpha = css({
   mr: '4',
   py: '[1px]',
   px: '6',
-  borderRadius: '[7px]',
+  borderRadius: '6',
   bg: 'gold',
   color: 'navy',
   fontWeight: '[700]',
@@ -317,7 +317,7 @@ const corner = css({
 /** A button in the corner, such as What's new. */
 const news = css.raw({
   border: '[2.5px solid {colors.white}]',
-  borderRadius: '[14px]',
+  borderRadius: '14',
   bg: '[rgba(44, 58, 78, 0.84)]',
   color: 'white',
   fontSize: '15',
@@ -328,7 +328,7 @@ const news = css.raw({
   _hover: { bg: '[#19bcd6]' },
   '&[hidden]': { display: 'none' },
   // icons on the dark panel sit on cream chips, or their navy outlines would vanish
-  '& .icon': { bg: 'cream', borderRadius: '[6px]', p: '[1.5px]' },
+  '& .icon': { bg: 'cream', borderRadius: '6', p: '[1.5px]' },
 });
 const newsButton = css(news);
 
@@ -338,7 +338,7 @@ const updateButton = css(news, { borderColor: 'gold' });
 /** How the look for an update is going, where its button shows once one has downloaded: quieter, with nothing to press. */
 const updateLook = css({
   border: '[2px solid rgba(255, 255, 255, 0.6)]',
-  borderRadius: '[14px]',
+  borderRadius: '14',
   bg: '[rgba(44, 58, 78, 0.7)]',
   color: 'white',
   fontSize: '13',
@@ -347,7 +347,7 @@ const updateLook = css({
   px: '10',
   boxShadow: '[0 2px 0 rgba(0, 0, 0, 0.25)]',
   animation: 'pop 0.25s ease-out',
-  '& .icon': { bg: 'cream', borderRadius: '[50%]', p: '[1px]' },
+  '& .icon': { bg: 'cream', borderRadius: 'disc', p: '[1px]' },
   // the arrows go round while it checks or downloads, inside a chip that stays still
   '&.busy .icon use': {
     transformBox: 'view-box',

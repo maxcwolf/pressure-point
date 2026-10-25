@@ -22,7 +22,7 @@ const bubble = css({
   pb: '8',
   bg: 'navy',
   color: 'cream',
-  borderRadius: '[12px]',
+  borderRadius: '12',
   boxShadow: '[0 4px 0 {colors.ink.30}, 0 10px 22px {colors.ink.20}]',
   fontSize: '14',
   fontWeight: '[500]',
@@ -41,7 +41,7 @@ const bubble = css({
     h: '[12px]',
     ml: '[-6px]',
     bg: 'navy',
-    borderRadius: '[2px]',
+    borderRadius: '2',
     transform: 'rotate(45deg)',
   },
   '&.below::after': { bottom: 'auto', top: '[-5px]' },
@@ -61,7 +61,7 @@ const bubble = css({
     bg: 'cream/15',
     border: '[1.5px solid rgba(255, 248, 234, 0.4)]',
     borderBottomWidth: '[3px]',
-    borderRadius: '[6px]',
+    borderRadius: '6',
     verticalAlign: '[1px]',
   },
   '& kbd + kbd': { ml: '4' },
@@ -70,7 +70,7 @@ const bubble = css({
   '&.rich': { maxW: '[min(300px, calc(var(--vw) - 16px))]' },
   _motionReduce: { animation: 'none' },
   // an icon in the navy bubble sits on a cream chip, or its navy outline would vanish
-  '& .icon': { bg: 'cream', borderRadius: '[6px]', p: '[1.5px]' },
+  '& .icon': { bg: 'cream', borderRadius: '6', p: '[1.5px]' },
 });
 
 /** How long the pointer rests on something before its tooltip shows. */

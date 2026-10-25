@@ -24,7 +24,7 @@ const dayRow = css({ display: 'flex', gap: '4', my: '4', mx: '0' });
 const day = css({
   flex: '1',
   border: 'control',
-  borderRadius: 'control',
+  borderRadius: '8',
   py: '4',
   px: '0',
   fontWeight: 'bold',

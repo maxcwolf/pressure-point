@@ -48,18 +48,18 @@ const panel = css({
     fontStyle: 'normal',
     fontSize: '12',
     bg: 'sand',
-    borderRadius: '[8px]',
+    borderRadius: '8',
     py: '2',
     px: '8',
     mb: '4',
   },
   '& h4': { fontSize: '14', fontWeight: 'bold', m: '0', mt: '8', mb: '4' },
   // what someone or something is, under its name
-  '& .tag': { display: 'inline-block', bg: 'sand', borderRadius: '[8px]', py: '[1px]', px: '8', fontSize: '12' },
+  '& .tag': { display: 'inline-block', bg: 'sand', borderRadius: '8', py: '[1px]', px: '8', fontSize: '12' },
   // A status line, in the tone of what it says (ui/lib/status.ts): plain news on navy, what wants seeing to in amber,
   // trouble in red, good news in green. The light ones carry a stripe of their color down the left, to be told apart
   // at a glance.
-  '& .status': { bg: 'navy', color: 'cream', borderRadius: 'control', py: '4', px: '8', fontWeight: '[500]' },
+  '& .status': { bg: 'navy', color: 'cream', borderRadius: '8', py: '4', px: '8', fontWeight: '[500]' },
   '& .status.warn': {
     bg: 'warn-bg',
     color: 'warn',
@@ -82,7 +82,7 @@ const panel = css({
     fontWeight: 'bold',
   },
   // an icon keeps its navy outline on the navy line by sitting on a cream chip; on a light line it needs none
-  '& .status .icon': { bg: 'cream', borderRadius: '[6px]', p: '[1.5px]' },
+  '& .status .icon': { bg: 'cream', borderRadius: '6', p: '[1.5px]' },
   '& .status:is(.warn, .bad, .good) .icon': { bg: '[none]' },
 });
 
@@ -93,7 +93,7 @@ const close = css({
   right: '8',
   w: '[26px]',
   h: '[26px]',
-  borderRadius: '[50%]',
+  borderRadius: 'disc',
   border: 'control',
   bg: 'white',
   fontSize: '12',

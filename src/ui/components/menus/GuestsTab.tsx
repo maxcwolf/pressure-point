@@ -27,7 +27,7 @@ import { IconText } from '../common/Icon';
 const demandRow = css({
   bg: 'white',
   border: '[2px solid {colors.ink.20}]',
-  borderRadius: '[10px]',
+  borderRadius: '10',
   py: '8',
   px: '10',
   my: '8',
@@ -67,7 +67,7 @@ const factor = css({
   gridTemplateColumns: '[1fr auto]',
   alignItems: 'center',
   columnGap: '6',
-  borderRadius: '[8px]',
+  borderRadius: '8',
   py: '4',
   px: '8',
   bg: 'ink.6',

@@ -27,7 +27,7 @@ const MAX_BREAK_LIMIT = 5;
 /** A small square button, such as a stepper's − and +, or a wider one with words and a little room each side. */
 const control = css({
   border: 'control',
-  borderRadius: 'control',
+  borderRadius: '8',
   bg: 'cream',
   fontWeight: 'bold',
   h: 'control',
@@ -91,7 +91,7 @@ function Stepper(props: {
 /** One setting's card: its name, its controls, and a word on what it trades off. */
 function Card(props: { children: ComponentChildren }) {
   return (
-    <Box bg="white" border="card" borderRadius="card" py="8" px="10" fontSize="14">
+    <Box bg="white" border="card" borderRadius="12" py="8" px="10" fontSize="14">
       {props.children}
     </Box>
   );

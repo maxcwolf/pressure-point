@@ -23,9 +23,9 @@ const swatch = css({
   h: 'control',
   p: '2',
   border: '[2px solid {colors.ink.35}]',
-  borderRadius: '[8px]',
+  borderRadius: '8',
   bg: 'white',
-  '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '[5px]' },
+  '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },
   _on: { borderColor: 'teal-dark', boxShadow: '[0 0 0 2px {colors.teal}]' },
 });
 

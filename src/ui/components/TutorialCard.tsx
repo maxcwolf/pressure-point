@@ -39,7 +39,7 @@ const title = css({ display: 'block', fontSize: '15', mb: '2' });
 const show = css({
   mt: '8',
   border: '[2.5px solid {colors.navy}]',
-  borderRadius: 'card',
+  borderRadius: '12',
   py: '4',
   px: '14',
   fontWeight: 'bold',

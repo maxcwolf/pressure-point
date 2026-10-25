@@ -19,7 +19,7 @@ const nameBox = css({
   font: 'inherit',
   color: 'inherit',
   border: '[2px solid transparent]',
-  borderRadius: '[8px]',
+  borderRadius: '8',
   py: '0',
   px: '4',
   my: '0',

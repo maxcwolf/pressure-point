@@ -10,11 +10,11 @@ import { meterValue } from '../../lib/meters';
  */
 const bar = css({
   h: '[10px]',
-  borderRadius: '[6px]',
+  borderRadius: '6',
   bg: 'ink.16',
   overflow: 'hidden',
   mt: '2',
-  '& i': { display: 'block', h: '[100%]', borderRadius: '[6px]', bg: 'green', transition: '[width 0.3s]' },
+  '& i': { display: 'block', h: '[100%]', borderRadius: '6', bg: 'green', transition: '[width 0.3s]' },
   '&.thin': { h: '[6px]' },
   '&.good i': { bg: 'green' },
   '&:is(.gold, .warn) i': { bg: 'gold' },

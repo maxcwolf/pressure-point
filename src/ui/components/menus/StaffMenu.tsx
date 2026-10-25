@@ -36,7 +36,7 @@ const row = css({
   textAlign: 'left',
   bg: 'white',
   border: '[2px solid {colors.ink.35}]',
-  borderRadius: '[11px]',
+  borderRadius: '10',
   py: '6',
   px: '8',
   mb: '4',
@@ -88,7 +88,7 @@ const moraleKey = css({ color: 'good' });
  */
 const act = css({
   border: 'control',
-  borderRadius: '[10px]',
+  borderRadius: '10',
   bg: 'cream',
   fontSize: '12',
   fontWeight: 'bold',

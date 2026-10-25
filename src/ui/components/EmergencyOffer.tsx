@@ -46,7 +46,7 @@ const column = css({
     w: '[26px]',
     h: '[26px]',
     border: '[none]',
-    borderRadius: '[50%]',
+    borderRadius: 'disc',
     bg: '[none]',
     fontSize: '15',
     opacity: '[0.6]',

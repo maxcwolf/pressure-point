@@ -65,7 +65,7 @@ const stop = css({
 const pin = css({
   w: '[36px]',
   h: '[36px]',
-  borderRadius: '[50%]',
+  borderRadius: 'disc',
   display: 'grid',
   placeItems: 'center',
   bg: 'teal',
@@ -75,7 +75,7 @@ const pin = css({
 });
 
 /** A center's card. */
-const about = css({ bg: 'white', border: 'card', borderRadius: 'card', py: '8', px: '10' });
+const about = css({ bg: 'white', border: 'card', borderRadius: '12', py: '8', px: '10' });
 
 /** A center's name. */
 const centerName = css({ fontSize: '15' });
@@ -119,7 +119,7 @@ const card = css.raw({
   gap: '10',
   bg: 'white',
   border: 'card',
-  borderRadius: 'card',
+  borderRadius: '12',
   py: '6',
   px: '10',
   '& > .icon': { justifySelf: 'center' },
@@ -151,7 +151,7 @@ const buy = css({
 const shopHead = css({ m: '0', mt: '14', textAlign: 'left', fontSize: '15' });
 
 /** A floor or a wall, as a swatch of it. */
-const swatch = css({ w: '[26px]', h: '[26px]', borderRadius: '[7px]', border: 'card' });
+const swatch = css({ w: '[26px]', h: '[26px]', borderRadius: '6', border: 'card' });
 
 /** The campaign's tabs, under the karma there is to spend. */
 export function CampaignPanel({ onStart, audio }: CampaignPanelProps) {

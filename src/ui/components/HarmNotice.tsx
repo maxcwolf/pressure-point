@@ -29,7 +29,7 @@ const causes = css({
   my: '8',
   mx: '0',
   bg: 'ink.6',
-  borderRadius: 'control',
+  borderRadius: '8',
   fontSize: '13',
   '& li': { display: 'flex', justifyContent: 'space-between', gap: '10', py: '[1px]', px: '0' },
   '& li:first-child': { fontWeight: 'bold' },

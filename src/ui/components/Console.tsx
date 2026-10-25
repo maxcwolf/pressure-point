@@ -50,7 +50,7 @@ const lineLook = css({
   px: '10',
   bg: 'white',
   border: 'control',
-  borderRadius: '[10px]',
+  borderRadius: '10',
   fontWeight: '[700]',
 });
 

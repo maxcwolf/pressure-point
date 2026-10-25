@@ -8,7 +8,7 @@ import { css } from '../../../styled-system/css';
  */
 export const smallButton = css({
   border: '[2.5px solid {colors.navy}]',
-  borderRadius: 'card',
+  borderRadius: '12',
   py: '4',
   px: '12',
   fontWeight: 'bold',
@@ -28,7 +28,7 @@ export const dutyRow = css({ display: 'flex', flexWrap: 'wrap', gap: '4' });
  */
 export const duty = css({
   border: 'control',
-  borderRadius: 'control',
+  borderRadius: '8',
   py: '2',
   px: '8',
   fontSize: '12',

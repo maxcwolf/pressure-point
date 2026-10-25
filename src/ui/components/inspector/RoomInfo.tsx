@@ -47,7 +47,7 @@ const vibes = css({
   mx: '0',
   py: '6',
   px: '8',
-  borderRadius: '[8px]',
+  borderRadius: '8',
   bg: '[rgba(91, 74, 107, 0.12)]',
   '.insp &': { '& p': { m: '0', mt: '4' } },
 });
@@ -58,7 +58,7 @@ const vibes = css({
  */
 const roomButton = css({
   border: '[2.5px solid {colors.navy}]',
-  borderRadius: 'card',
+  borderRadius: '12',
   py: '4',
   px: '10',
   fontWeight: 'bold',

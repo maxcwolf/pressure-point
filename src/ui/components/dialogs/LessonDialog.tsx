@@ -44,7 +44,7 @@ const strip = css({
     px: '8',
     bg: 'white',
     border: '[2px solid {colors.ink.25}]',
-    borderRadius: 'card',
+    borderRadius: '12',
   },
   '& b': { fontSize: '14' },
   '& small': { fontSize: '13', lineHeight: '[1.3]' },
@@ -56,7 +56,7 @@ const picture = css({
   h: '[64px]',
   display: 'grid',
   placeItems: 'center',
-  borderRadius: '[50%]',
+  borderRadius: 'disc',
   bg: 'cream',
   border: '[2.5px solid {colors.navy}]',
 });

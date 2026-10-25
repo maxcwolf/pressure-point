@@ -39,7 +39,7 @@ const bar = css({
   gap: '0',
   bg: 'cream',
   border: '[3px solid {colors.navy}]',
-  borderRadius: '[18px]',
+  borderRadius: '18',
   boxShadow: 'raised',
   overflow: 'hidden',
   flexShrink: '0',
@@ -126,7 +126,7 @@ const speeds = css({
 const speed = css({
   border: '[2.5px solid {colors.navy}]',
   bg: 'cream',
-  borderRadius: '[10px]',
+  borderRadius: '10',
   h: '[36px]',
   minW: '[36px]',
   py: '0',

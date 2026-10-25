@@ -19,7 +19,7 @@ const chips = css({
     fontWeight: '[500]',
     bg: 'violet-tint',
     border: '[1.5px solid {colors.violet}]',
-    borderRadius: '[8px]',
+    borderRadius: '8',
     py: '0',
     px: '6',
     whiteSpace: 'nowrap',

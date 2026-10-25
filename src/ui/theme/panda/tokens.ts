@@ -64,9 +64,18 @@ export const tokens = defineTokens({
   sizes: {
     control: { value: '28px' },
   },
+  /** The corner radii, each its size in pixels, with a pill's ends and a disc. */
   radii: {
-    control: { value: '9px' },
-    card: { value: '12px' },
+    2: { value: '2px' },
+    4: { value: '4px' },
+    6: { value: '6px' },
+    8: { value: '8px' },
+    10: { value: '10px' },
+    12: { value: '12px' },
+    14: { value: '14px' },
+    18: { value: '18px' },
+    pill: { value: '999px' },
+    disc: { value: '50%' },
   },
   /** The type sizes, each its size in pixels: 13 for small print, 14 for the body, 17 for a heading. */
   fontSizes: {

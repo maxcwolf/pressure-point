@@ -33,7 +33,7 @@ const toggleStyle = css({ display: 'block', my: '2', mx: '0' });
 const pickCard = css({
   bg: 'white',
   border: '[2px solid {colors.ink.35}]',
-  borderRadius: '[11px]',
+  borderRadius: '10',
   p: '8',
   pt: '4',
   m: '0',
@@ -53,7 +53,7 @@ const pick = css({
   fontSize: '13',
   bg: '[none]',
   border: '[1.5px solid transparent]',
-  borderRadius: '[8px]',
+  borderRadius: '8',
   py: '2',
   px: '4',
   _hover: { borderColor: 'teal-dark', bg: 'teal-tint' },

@@ -53,7 +53,7 @@ const face = css({
   w: '[50px]',
   h: '[50px]',
   flex: 'none',
-  borderRadius: '[50%]',
+  borderRadius: 'disc',
   bg: 'gold',
   border: '[3px solid {colors.navy}]',
   display: 'grid',

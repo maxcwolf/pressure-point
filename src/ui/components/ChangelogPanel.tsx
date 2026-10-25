@@ -35,7 +35,7 @@ const here = css({
   fontWeight: 'bold',
   color: 'white',
   bg: 'teal',
-  borderRadius: '[8px]',
+  borderRadius: '8',
   py: '[1px]',
   px: '6',
 });
