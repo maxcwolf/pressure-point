@@ -2,7 +2,7 @@
 // Nothing here draws anything, so it can be tested without a renderer.
 
 import { type Footprint, inFootprint } from '../core/footprint';
-import type { Room } from '../core/state/types';
+import type { Room, WallSpot } from '../core/state/types';
 import {
   DOOR_CASING,
   DOOR_JAMB,
@@ -295,13 +295,15 @@ const FIRST_VIEW = nearSides(0);
  * Everything a room is built from: its four walls, with their windows and its door, in a building. The walls on the
  * sides facing the camera are cut low so you can see in. Where a wall runs along the building's outer wall, the outer
  * wall stands in for it, and only its windows are added. `walled` is the tiles along the door's wall with another room
- * beyond them, which its sign keeps clear of.
+ * beyond them, which its sign keeps clear of. `through` is the windows of the rooms next door that look onto it, as
+ * stretches of its own walls: each is a window in its wall too, so it shows through both.
  */
 export function roomShape(
   room: Room,
   fp: Footprint,
   near: Sides = FIRST_VIEW,
   walled: readonly number[] = [],
+  through: readonly WallSpot[] = [],
 ): RoomShape {
   const T = WALL_T;
   const d = room.door;
@@ -309,9 +311,9 @@ export function roomShape(
   const bottom = room.y + room.h;
   const left = room.x;
   const right = room.x + room.w;
-  /** Which tiles along one wall have a window. */
+  /** Which tiles along one wall have a window, its own or one next door's. */
   const wins = (dx: number, dy: number) =>
-    room.windows.filter((w) => w.dx === dx && w.dy === dy).map((w) => (dx ? w.y : w.x));
+    [...room.windows, ...through].filter((w) => w.dx === dx && w.dy === dy).map((w) => (dx ? w.y : w.x));
   /** The middle of the building's outer wall, which stands in for a side along it, from its inside face. */
   const outerAt = (face: number, out: number) => face + (out * OUTER_T) / 2;
   const specs: WallSpec[] = [
