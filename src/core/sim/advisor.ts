@@ -583,11 +583,14 @@ export function staffWanted(it: Pick<Item, 'type'>): string {
 /** What the speakers say when litter piles up. */
 export const CARETAKER_WANTED = 'Caretaker needed. The corridors are getting gross.';
 
-/** An announcement about something that needs attention right now, if anything does. */
+/**
+ * An announcement about something that needs attention right now, if anything does. A line at a machine that runs
+ * itself, such as the Posture Scanner, is nobody's to work.
+ */
 export function contextAnnouncement(ctx: SimContext): string | null {
   for (const it of ctx.s.items) {
     const st = ITEMS[it.type].station;
-    if (st && ctx.world.usable(it) && it.queue.length >= 2 && !stationStaff(ctx, it)) return staffWanted(it);
+    if (st?.staff && ctx.world.usable(it) && it.queue.length >= 2 && !stationStaff(ctx, it)) return staffWanted(it);
   }
   if (ctx.s.litter.length >= 4) return CARETAKER_WANTED;
   return null;

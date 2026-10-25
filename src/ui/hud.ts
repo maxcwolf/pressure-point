@@ -548,9 +548,10 @@ export class HudState {
 
   /**
    * Put an announcement on the banner for a few seconds, or in line behind the one showing. A joke over the speakers
-   * while another line shows is let go.
+   * while another line shows is let go, and an empty one never goes up.
    */
   private announce(text: string) {
+    if (!text.trim()) return;
     const flavor = (ANNOUNCEMENTS as readonly string[]).includes(text);
     const shown = this.announcer.offer(text, flavor, performance.now() / 1000);
     if (shown) this.speak(shown);
