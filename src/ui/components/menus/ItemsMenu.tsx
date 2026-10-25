@@ -15,15 +15,17 @@ import { filterItems, ITEM_KINDS, itemOffered, placeFilters, placeLabel, placeNa
 import { cx } from '../../lib/cx';
 import { statsText } from '../../lib/item-stats';
 import { lockLabel } from '../../lib/karma';
+import { ITEM_SORTS, sorted } from '../../lib/sorts';
 import { addRichTip } from '../../tooltip';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
+import { SortBy } from '../common/SortBy';
 import { ItemChips, ItemDetail, ItemTip } from './ItemStats';
 
 // an item card's tooltip lists what the item does
 addRichTip('item', (type) => (type in ITEMS ? <ItemTip type={type as ItemType} /> : null));
 
-/** A card per item, saying where it goes, under filters by place and kind. */
+/** A card per item, saying where it goes, under filters by place and kind, in the order picked. */
 export function ItemsMenu() {
   const hud = useHud();
   const { sim, tools } = useGame();
@@ -37,7 +39,7 @@ export function ItemsMenu() {
   const places = placeFilters(offered);
   // a room switched off since it was chosen falls back to everywhere
   const place = places.includes(hud.itemPlace) ? hud.itemPlace : 'all';
-  const types = filterItems(offered, place, hud.itemKind);
+  const types = sorted(filterItems(offered, place, hud.itemKind), ITEM_SORTS, hud.sorts.items);
   const { unlocked } = loadCampaign();
   /**
    * How an item stands: how many certificates there are to hang, whether it is locked, whether karma unlocks it, and
@@ -119,7 +121,10 @@ export function ItemsMenu() {
   );
   return (
     <div class="panel menu">
-      <h3>Place an item</h3>
+      <div class="menu-head">
+        <h3>Place an item</h3>
+        <SortBy list="items" orders={ITEM_SORTS} />
+      </div>
       <div class="tabs filters" aria-label="Where it goes">
         {places.map((p) => (
           <Button

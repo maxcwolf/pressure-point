@@ -24,6 +24,7 @@ import { loadCampaign } from '../../../storage/campaign';
 import { download } from '../../dom';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
+import { sorted, TEMPLATE_SORTS } from '../../lib/sorts';
 import { keepTemplates } from '../../templates';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
@@ -101,7 +102,7 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
   );
 }
 
-/** Every template saved, with a way to import more from a file and to export them all. */
+/** Every template saved, in the order picked, with a way to import more from a file and to export them all. */
 export function TemplatesTab() {
   const hud = useHud();
   const { sim } = useGame();
@@ -137,7 +138,7 @@ export function TemplatesTab() {
     <>
       {hud.templates.length ? (
         <div class="cards templates">
-          {hud.templates.map((t) => (
+          {sorted(hud.templates, TEMPLATE_SORTS, hud.sorts.templates).map((t) => (
             <TemplateCard key={t.id} t={t} lock={templateLock(t.layout, allowed)} open={open} />
           ))}
         </div>

@@ -9,8 +9,10 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import type { RoomsTab } from '../../hud';
 import { available, machineCures, roomKarmaLock, roomOffering } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
+import { ROOM_SORTS, sorted, TEMPLATE_SORTS } from '../../lib/sorts';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
+import { SortBy } from '../common/SortBy';
 import { TemplatesTab } from './TemplatesTab';
 
 /** The Rooms menu's tabs. */
@@ -25,7 +27,14 @@ export function RoomsMenu() {
   const guide = hud.guide();
   return (
     <div class="panel menu">
-      <h3>Build a room</h3>
+      <div class="menu-head">
+        <h3>Build a room</h3>
+        {hud.roomsTab === 'rooms' ? (
+          <SortBy key="rooms" list="rooms" orders={ROOM_SORTS} />
+        ) : (
+          hud.templates.length > 1 && <SortBy key="templates" list="templates" orders={TEMPLATE_SORTS} />
+        )}
+      </div>
       <div class="tabs filters">
         {TABS.map((t) => (
           <Button
@@ -46,7 +55,8 @@ export function RoomsMenu() {
 
 /**
  * A card per room type that can be built at this center, locked until its star (or until karma unlocks its machine)
- * and dimmed when it cannot be afforded. A machine room says what its machine cures and what it costs to run.
+ * and dimmed when it cannot be afforded, in the order picked. A machine room says what its machine cures and what it
+ * costs to run.
  */
 function RoomCards() {
   const hud = useHud();
@@ -54,8 +64,10 @@ function RoomCards() {
   const s = sim.s;
   const { unlocked } = loadCampaign();
   const guide = hud.guide();
-  const types = ROOM_ORDER.filter(
-    (t) => roomHere(ROOMS[t], s.center) && available(roomOffering(t), (d) => sim.enabled(d)),
+  const types = sorted(
+    ROOM_ORDER.filter((t) => roomHere(ROOMS[t], s.center) && available(roomOffering(t), (d) => sim.enabled(d))),
+    ROOM_SORTS,
+    hud.sorts.rooms,
   );
   return (
     <div class="cards">

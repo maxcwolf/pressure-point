@@ -818,6 +818,31 @@ test.describe('staff', () => {
     await expect(rows).toHaveCount(3);
   });
 
+  test('can be put in order in the Staff menu, as items can in the Items menu', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const bySalary = await game.eval((pp) => {
+      pp.state.speed = 0;
+      return [...pp.state.staff].sort((a, b) => b.salary - a.salary).map((st) => st.name);
+    });
+    await game.menu('Staff');
+    const rows = page.locator('#menu .row:not(.head) > b');
+    await page.locator('#menu .sort-by select').selectOption({ label: 'Highest salary' });
+    await expect(rows).toHaveText(bySalary);
+    // picking an order lets go of the keyboard, which goes back to moving the camera
+    await expect(page.locator('#menu .sort-by select')).not.toBeFocused();
+
+    await game.menu('Items');
+    await page.locator('#menu .sort-by select').selectOption({ label: 'Cheapest first' });
+    const costs = await page
+      .locator('#menu .card .cost')
+      .evaluateAll((els) => els.map((el) => Number(el.textContent.replace(/\D/g, '')) || 0));
+    expect(costs).toEqual([...costs].sort((a, b) => a - b));
+    // each list keeps its own order
+    await game.menu('Staff');
+    await expect(page.locator('#menu .sort-by select')).toHaveValue('salary');
+  });
+
   test('can be compared side by side in the inspector', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

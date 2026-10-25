@@ -45,10 +45,13 @@ export function heldPan(held: ReadonlySet<string>, keys: Readonly<KeyBindings>):
 /** The kinds of input that take no typing, so shortcuts still work with one of them focused. */
 const UNTYPED = new Set(['button', 'checkbox', 'file', 'radio', 'range']);
 
-/** Whether a key went to a field being typed in, such as a template's name, rather than to the game. */
+/**
+ * Whether a key went to a field being typed in, such as a template's name, or to a dropdown and its open list, such as
+ * a menu's Sort by, rather than to the game.
+ */
 export function typingIn(target: unknown): boolean {
   const el = target as { tagName?: string; type?: string } | null;
-  if (el?.tagName === 'TEXTAREA') return true;
+  if (el?.tagName === 'TEXTAREA' || el?.tagName === 'SELECT' || el?.tagName === 'OPTION') return true;
   return el?.tagName === 'INPUT' && !UNTYPED.has(el.type ?? 'text');
 }
 
