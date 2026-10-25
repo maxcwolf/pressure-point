@@ -5,6 +5,7 @@
 import '@fontsource/fredoka/latin-400.css';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
+import '../ui/theme/panda.css';
 import '../ui/theme/tokens.css';
 import './icons.css';
 
