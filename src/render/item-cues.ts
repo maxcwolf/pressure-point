@@ -235,58 +235,187 @@ function animateSmoke(model: THREE.Object3D, c: CueCondition, look: WearLook | u
   });
 }
 
-/** The colors of a fire's flames, orange outside and yellow at the heart, and of the steam off one being put out. */
-const FLAME = 0xff5a1a;
-const FLAME_HEART = 0xffc23a;
+/** The white of the steam off a fire being put out. */
 const STEAM = 0xf4f6f8;
 
 /**
- * Where the flames stand on something on fire, in shares of its box: four orange ones toward its corners and three
- * yellow ones at the heart, rising from a little over halfway up so they wrap round its top, whatever its shape, rather
- * than float over a chimney or a lamp.
+ * How a flame's color runs from its foot to its tip, and how see-through it gets: [share of its height, color,
+ * opacity]. The outer tongues go from yellow at the foot through orange to a deep red tip that fades away; the cores
+ * inside them burn nearly white at the foot.
  */
-const FLAME_SPOTS: readonly { x: number; z: number; up: number; heart: boolean }[] = [
-  { x: -0.3, z: -0.25, up: 0.55, heart: false },
-  { x: 0.3, z: -0.25, up: 0.55, heart: false },
-  { x: -0.3, z: 0.25, up: 0.5, heart: false },
-  { x: 0.3, z: 0.25, up: 0.5, heart: false },
-  { x: -0.15, z: 0, up: 0.62, heart: true },
-  { x: 0.15, z: 0.05, up: 0.62, heart: true },
-  { x: 0, z: -0.1, up: 0.66, heart: true },
+type Gradient = readonly (readonly [at: number, color: number, alpha: number])[];
+const FLAME_GRADIENT: Gradient = [
+  [0, 0xffd23f, 0],
+  [0.14, 0xffc23a, 1],
+  [0.35, 0xff9a1f, 1],
+  [0.68, 0xff4a12, 0.9],
+  [1, 0xc8200a, 0],
 ];
+const CORE_GRADIENT: Gradient = [
+  [0, 0xfff6cf, 0],
+  [0.12, 0xfff6cf, 1],
+  [0.5, 0xffd84a, 1],
+  [1, 0xff9a1f, 0.1],
+];
+
+/**
+ * How wide a flame is at a share of its height: round at its foot, which fades into what is burning, widest a quarter
+ * of the way up, then drawn out to a long point.
+ */
+function flameWidth(f: number): number {
+  return f < 0.25 ? 0.35 + 0.65 * Math.sin((f / 0.25) * (Math.PI / 2)) : ((1 - f) / 0.75) ** 1.6;
+}
+
+/** Shade a flame's every point by its height, with the color and opacity its gradient has there. */
+function shadeFlame(shape: THREE.BufferGeometry, height: number, gradient: Gradient) {
+  const at = shape.getAttribute('position');
+  const colors = new Float32Array(at.count * 4);
+  const from = new THREE.Color();
+  const to = new THREE.Color();
+  for (let i = 0; i < at.count; i++) {
+    const f = clamp(at.getY(i) / height, 0, 1);
+    const k = Math.max(
+      1,
+      gradient.findIndex(([g]) => g >= f),
+    );
+    const [g0, c0, a0] = gradient[k - 1] ?? [0, 0xffffff, 1];
+    const [g1, c1, a1] = gradient[k] ?? [1, c0, a0];
+    const mix = g1 > g0 ? (f - g0) / (g1 - g0) : 0;
+    from
+      .setHex(c0)
+      .lerp(to.setHex(c1), mix)
+      .toArray(colors, i * 4);
+    colors[i * 4 + 3] = a0 + (a1 - a0) * mix;
+  }
+  shape.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+}
+
+/** A tongue of flame, `height` tall and `width` across at its widest, colored from its foot to its tip. */
+function flameShape(key: string, height: number, width: number, gradient: Gradient): THREE.BufferGeometry {
+  return cached(key, () => {
+    const profile = [0, 0.06, 0.14, 0.25, 0.36, 0.48, 0.6, 0.72, 0.84, 0.93, 1].map(
+      (f) => new THREE.Vector2((width / 2) * flameWidth(f), height * f),
+    );
+    const shape = new THREE.LatheGeometry(profile, 10);
+    shadeFlame(shape, height, gradient);
+    return shape;
+  });
+}
+
+/** The outer tongue of a flame, one shape for every fire. */
+const tongue = () => flameShape('cue-flame', 0.7, 0.3, FLAME_GRADIENT);
+/** The brighter core that burns inside each tongue. */
+const core = () => flameShape('cue-flame-core', 0.42, 0.17, CORE_GRADIENT);
+
+/**
+ * Where the tongues of flame stand on something on fire, in shares of its box, and how big each is: round its edges and
+ * taller in the middle, rising from a little over halfway up so they wrap round its top, whatever its shape, rather
+ * than float over a chimney or a lamp. Each has a core burning inside it, and they all rise from one broad bed of fire.
+ */
+const FLAME_SPOTS: readonly { x: number; z: number; up: number; big: number }[] = [
+  { x: -0.3, z: -0.2, up: 0.55, big: 0.85 },
+  { x: 0.3, z: -0.22, up: 0.55, big: 0.8 },
+  { x: -0.28, z: 0.24, up: 0.5, big: 0.75 },
+  { x: 0.3, z: 0.22, up: 0.5, big: 0.85 },
+  { x: 0, z: -0.3, up: 0.55, big: 0.7 },
+  { x: -0.1, z: 0.02, up: 0.6, big: 1.3 },
+  { x: 0.14, z: -0.05, up: 0.6, big: 1.15 },
+];
+
+/** How high up something on fire its bed of fire lies, in a share of its height, and how much of its top it covers. */
+const BED_UP = 0.45;
+const BED_SPREAD = 0.85;
+
+/** How many licks of flame break off and rise at a time, how long each takes to rise and go, and how many embers. */
+const LICKS = 4;
+const LICK_EVERY = 0.92;
+const EMBERS = 10;
 
 /** How much of their size the flames keep once nearly hosed out. */
 const HOSED_LEFT = 0.2;
 
-/** A flame: a cone standing on its base, one shape for every flame on every fire. */
-const flame = () => cached('cue-flame', () => new THREE.ConeGeometry(0.16, 0.55, 8).translate(0, 0.275, 0));
+/** A flame's own material, colored by its shape and full strength, as a fire's light is, so each can fade on its own. */
+const flameLook = () =>
+  owned(new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, toneMapped: false }));
 
-/** The flames for a model, made the first time it burns: full strength, as a fire's light is. */
+/** A flame added to a group, drawn over its tongue if it is a core, and never picked. */
+function addFlame(group: THREE.Group, shape: THREE.BufferGeometry, order: number): THREE.Mesh {
+  const m = new THREE.Mesh(shape, flameLook());
+  /** Cues are not there to be clicked: a click goes to the item itself. */
+  m.raycast = () => undefined;
+  m.renderOrder = order;
+  m.userData.cue = true;
+  group.add(m);
+  return m;
+}
+
+/** The flames for a model, made the first time it burns: a tongue and its core at each spot, and the bed under them. */
 function flamesFor(model: THREE.Object3D): THREE.Group {
-  const group = cueGroup(model, flame(), FLAME_SPOTS.length, FLAME);
-  group.children.forEach((f, i) => {
-    const m = fadeOf(f);
-    m.color.setHex(FLAME_SPOTS[i]?.heart ? FLAME_HEART : FLAME);
-    m.toneMapped = false;
-  });
+  const group = new THREE.Group();
+  FLAME_SPOTS.forEach(() => addFlame(group, tongue(), 2));
+  FLAME_SPOTS.forEach(() => addFlame(group, core(), 3));
+  addFlame(group, tongue(), 2);
+  model.add(group);
   return group;
 }
 
+/** The licks of flame that break off the tongues and rise, made the first time it burns. */
+function licksFor(model: THREE.Object3D): THREE.Group {
+  const group = new THREE.Group();
+  for (let i = 0; i < LICKS; i++) addFlame(group, tongue(), 2);
+  model.add(group);
+  return group;
+}
+
+/** The embers' look: glowing dots, orange to yellow, shared by every fire. */
+let emberLook: THREE.PointsMaterial | null = null;
+
+/** The embers for a model, made the first time it burns: one cloud of points, drawn at once. */
+function embersFor(model: THREE.Object3D): THREE.Points {
+  const shape = owned(new THREE.BufferGeometry());
+  shape.setAttribute('position', new THREE.BufferAttribute(new Float32Array(EMBERS * 3), 3));
+  const colors = new Float32Array(EMBERS * 3);
+  const color = new THREE.Color();
+  for (let i = 0; i < EMBERS; i++) color.setHex(i % 3 === 0 ? 0xffe27a : 0xff8a1f).toArray(colors, i * 3);
+  shape.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  emberLook ??= new THREE.PointsMaterial({
+    size: 0.09,
+    map: dotTexture(),
+    vertexColors: true,
+    alphaTest: 0.5,
+    toneMapped: false,
+  });
+  const embers = new THREE.Points(shape, emberLook);
+  /** Cues are not there to be clicked: a click goes to the item itself. */
+  embers.raycast = () => undefined;
+  // they move every frame, so their bounds are never worked out
+  embers.frustumCulled = false;
+  embers.userData.cue = true;
+  model.add(embers);
+  return embers;
+}
+
+/** A wavering between about -1 and 1, made of three waves that never fall into step, so a flame never repeats. */
+const waver = (t: number, seed: number) =>
+  (Math.sin(t * 7.3 + seed) + Math.sin(t * 11.9 + seed * 2.7) * 0.6 + Math.sin(t * 17.1 + seed * 4.1) * 0.35) / 1.95;
+
 /**
- * Flames licking up round the top of something on fire, each flickering on its own, and shrinking over the time it
- * takes to hose them out while a firefighter or a Caretaker is putting them out, with steam rising off it.
+ * Flames licking up round the top of something on fire: tongues of flame, yellow at the foot and red at the tip, each
+ * with a bright core, stretching, swaying and twisting on their own; licks of flame breaking off their tips and rising
+ * as they fade; and embers drifting up. They shrink as a firefighter or a Caretaker puts them out, in step with the
+ * game, with steam rising off it.
  */
 function animateFlames(model: THREE.Object3D, c: CueCondition, t: number) {
-  let flames = partsOf(model).cues?.flames;
+  const parts = partsOf(model).cues;
   if (!c.burning) {
-    if (flames) flames.visible = false;
-    const steam = partsOf(model).cues?.steam;
-    if (steam) steam.visible = false;
+    for (const p of [parts?.flames, parts?.licks, parts?.embers, parts?.steam]) if (p) p.visible = false;
     return;
   }
   const cues = cuesOf(model);
-  flames = cues.flames ??= flamesFor(model);
-  flames.visible = true;
+  const flames = (cues.flames ??= flamesFor(model));
+  const licks = (cues.licks ??= licksFor(model));
+  const embers = (cues.embers ??= embersFor(model));
+  flames.visible = licks.visible = embers.visible = true;
   const { box } = cues;
   const w = box.max.x - box.min.x;
   const d = box.max.z - box.min.z;
@@ -298,18 +427,61 @@ function animateFlames(model: THREE.Object3D, c: CueCondition, t: number) {
   const left = 1 - (1 - HOSED_LEFT) * clamp(c.hosed ?? 0, 0, 1);
   // big enough to read from the game's usual distance, and bigger on something bigger
   const size = clamp(Math.max(w, d, h) * 0.85, 1, 1.8) * left;
+  // the whole fire leans a little one way and the other, as if in a draught
+  const lean = Math.sin(t * 1.3 + c.id) * 0.08;
+  const n = FLAME_SPOTS.length;
+  /** Where the foot of the flame at a spot stands. */
+  const footOf = (i: number) => {
+    const spot = FLAME_SPOTS[i % n] ?? { x: 0, z: 0, up: 0.6, big: 1 };
+    return { spot, x: cx + spot.x * w, y: box.min.y + spot.up * h, z: cz + spot.z * d };
+  };
   flames.children.forEach((f, i) => {
-    const spot = FLAME_SPOTS[i] ?? { x: 0, z: 0, up: 0.6, heart: true };
-    const lick = 0.8 + 0.22 * Math.sin(t * (9 + i * 2.3) + c.id + i) + 0.12 * Math.sin(t * 23 + i * 5);
-    f.position.set(
-      cx + spot.x * w + Math.sin(t * 3 + i) * 0.02,
-      box.min.y + spot.up * h,
-      cz + spot.z * d + Math.cos(t * 2.6 + i) * 0.02,
+    // the bed of fire: one broad, low flame over the whole top, which the tongues rise out of
+    if (i === n * 2) {
+      const swell = 1 + 0.12 * waver(t * 0.8, c.id);
+      f.position.set(cx, box.min.y + BED_UP * h, cz);
+      f.scale.set(((w * BED_SPREAD) / 0.3) * left, size * 0.75 * swell, ((d * BED_SPREAD) / 0.3) * left);
+      f.rotation.set(0, 0, lean * 0.5);
+      return;
+    }
+    const isCore = i >= n;
+    const { spot, x, y, z } = footOf(i);
+    const seed = c.id * 1.7 + (i % n) * 3.1;
+    const stretch = 1 + 0.28 * waver(t, seed);
+    // taller is thinner, as a flame drawn up is
+    const across = size * spot.big * (1.08 - 0.15 * stretch);
+    f.position.set(x, y + (isCore ? 0.02 : 0), z);
+    f.scale.set(across, size * spot.big * stretch * (isCore ? 1.05 : 1), across);
+    f.rotation.set(
+      0.14 * waver(t * 0.7, seed + 1),
+      t * (1.5 + (i % n) * 0.35),
+      lean + 0.16 * waver(t * 0.6, seed + 2),
+      'YXZ',
     );
-    const across = size * (spot.heart ? 0.75 : 1);
-    f.scale.set(across, size * lick * (spot.heart ? 1.25 : 1.1), across);
-    fadeOf(f).opacity = 0.95;
   });
+  // a lick of flame breaks off the tip of a tongue, rises and shrinks away, one after another
+  licks.children.forEach((l, i) => {
+    // how far through its rise it is, and which rise this is, which picks the tongue it comes off
+    const into = Math.max(0, t + i * LICK_EVERY * 0.23 + offset(c.id + i * 5) * LICK_EVERY);
+    const f = (into % LICK_EVERY) / LICK_EVERY;
+    const { spot, x, y, z } = footOf(i * 2 + Math.floor(into / LICK_EVERY));
+    const top = y + 0.7 * size * spot.big;
+    const s = size * 0.42 * (1 - f) * spot.big;
+    l.visible = s > 0.01;
+    l.position.set(x + Math.sin(f * 5 + i) * 0.06, top - 0.18 * size + f * 0.55 * size, z);
+    l.scale.set(s, s * 1.3, s);
+    l.rotation.set(0, t * 2, lean);
+    (l as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>).material.opacity = 1 - f * f;
+  });
+  // embers drift up off it, wandering as they go, and go out high over it
+  const at = embers.geometry.getAttribute('position') as THREE.BufferAttribute;
+  for (let i = 0; i < EMBERS; i++) {
+    const f = burst(t + i * 0.31, 1.7, 1.7, c.id * 3 + i);
+    const { x, y, z } = footOf(i);
+    const rise = f < 0 ? -100 : y + 0.3 * size + f * 1.6 * size;
+    at.setXYZ(i, x + Math.sin(f * 6 + i * 1.9) * 0.18 * f, rise, z + Math.cos(f * 5 + i * 2.3) * 0.18 * f);
+  }
+  at.needsUpdate = true;
   const steam = (cues.steam ??= cueGroup(model, sph(0.1, 8), 3, STEAM));
   steam.visible = hosed;
   if (!hosed) return;

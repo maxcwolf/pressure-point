@@ -9,6 +9,7 @@ import {
   type ConditionDef,
   CONDITIONS,
   HAMPER_SIZE,
+  HOSE_SECONDS,
   ITEMS,
   type ItemType,
   MODALITIES,
@@ -132,6 +133,14 @@ function wallBehind(model: THREE.Group, w: number): THREE.Group {
   return holder;
 }
 
+/** How an item can be on fire in the lab: not at all, burning, being hosed out, or burnt and not yet repaired. */
+const FIRES: readonly Option[] = [
+  ['', 'None'],
+  ['burning', 'On fire'],
+  ['hosed', 'Being hosed out'],
+  ['burnt', 'Burnt'],
+];
+
 /**
  * An item, with sliders and switches for whichever moving parts its model has. A painting can be of any center's
  * view, and something hung on a wall is shown on one.
@@ -139,7 +148,7 @@ function wallBehind(model: THREE.Group, w: number): THREE.Group {
 function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
   const def = ITEMS[type];
   // a full trophy cabinet to begin with, so every cup is in the picture
-  const st: ItemCondition & { session: string; heating: boolean; chugging: boolean; level: number } = {
+  const st: ItemCondition & { session: string; heating: boolean; chugging: boolean; level: number; fire: string } = {
     id: 1,
     type,
     water: 100,
@@ -153,6 +162,7 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
     heating: false,
     chugging: false,
     level: 0,
+    fire: '',
   };
   return {
     id: center ? `item:${type}:${center}` : `item:${type}`,
@@ -175,6 +185,8 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
       if (parts.grime) controls.push(range('Dirt', st, 'dirt'));
       if (parts.ring) controls.push(toggle('Scanning', st, 'scanning'));
       if (def.wear) controls.push(range('Wear', st, 'wear'));
+      // anything that wears out can burn, as a fire spreads to it
+      if (def.wear) controls.push(choice('Fire', st, 'fire', FIRES));
       if (usedNoise(type) >= NOISE_CUE) controls.push(toggle('A guest using it', st, 'inUse'));
       if (def.heat) controls.push(toggle(def.heat > 0 ? 'Heating' : 'Cooling', st, 'heating'));
       if (parts.exhaust) controls.push(toggle('Carrying the center', st, 'chugging'));
@@ -196,6 +208,11 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
         /** Move the item's parts as the game does, and lay out the props for the session picked. */
         animate(t) {
           st.running = st.heating || st.chugging ? 1 : 0;
+          st.burning = st.fire === 'burning' || st.fire === 'hosed';
+          st.burnt = st.fire === 'burnt';
+          // hosed out over and over, so the flames shrinking can be watched
+          if (st.fire === 'hosed') st.hosed = (t % HOSE_SECONDS) / HOSE_SECONDS;
+          else delete st.hosed;
           animateItemParts(root, st, t);
           if (st.level !== plate.level) {
             if (plate.group) root.remove(plate.group);

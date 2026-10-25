@@ -367,8 +367,13 @@ export interface CueParts {
   wasps?: THREE.Points;
   /** Icicles hanging from something frozen. */
   icicles?: THREE.Mesh;
-  /** Flames licking up off something on fire, and steam rising off it as it is put out. */
+  /**
+   * Flames licking up off something on fire, the licks of flame that break off them and rise, the embers drifting up,
+   * and steam rising off it as it is put out.
+   */
   flames?: THREE.Group;
+  licks?: THREE.Group;
+  embers?: THREE.Points;
   steam?: THREE.Group;
   /** The stopped look its parts are dressed in, if any: switched off, frozen, or charred by a fire. */
   dressed?: 'off' | 'frost' | 'charred' | undefined;
