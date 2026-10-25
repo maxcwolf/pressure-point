@@ -13,8 +13,8 @@ test.describe('the scene', () => {
   test.use({ draw: true });
 
   test('rooms with windows on every side, at the back, middle and front of the building', async ({ game, page }) => {
-    // four pictures drawn in software, with the camera gliding round between them, which takes a while
-    test.setTimeout(180_000);
+    // four pictures drawn in software, with the camera turned between them, which a busy machine takes a while over
+    test.setTimeout(120_000);
     await game.start();
     await game.eval((pp) => {
       const { sim } = pp;
@@ -46,16 +46,8 @@ test.describe('the scene', () => {
     // and from each of the other sides, with the walls facing the camera cut low and the ones across from it tall
     for (const side of ['north-east', 'north-west', 'south-west']) {
       await game.eval((pp) => pp.view.turnCamera(1));
-      // long enough for the camera to glide all the way round
-      await page.evaluate(
-        () =>
-          new Promise<void>((done) => {
-            let frames = 0;
-            /** Count a frame, and finish after enough. */
-            const tick = () => (++frames > 90 ? done() : requestAnimationFrame(tick));
-            tick();
-          }),
-      );
+      // until the camera has glided all the way round
+      await game.cameraStill();
       await expect(page).toHaveScreenshot(`scene-windows-${side}.png`);
     }
   });
@@ -172,17 +164,8 @@ test.describe('the scene', () => {
     });
     await noon(game);
     await page.addStyleTag({ content: '#ui, #floaters { display: none !important; }' });
-    // long enough for the camera to glide all the way round
-    await page.evaluate(
-      () =>
-        new Promise<void>((done) => {
-          let frames = 0;
-          /** Count a frame, and finish after enough. */
-          const tick = () => (++frames > 90 ? done() : requestAnimationFrame(tick));
-          tick();
-        }),
-    );
-    await game.settle();
+    // until the camera has glided all the way round
+    await game.cameraStill();
     await expect(page).toHaveScreenshot('scene-progress-bar-turned.png');
   });
 
