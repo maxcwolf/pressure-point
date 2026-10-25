@@ -124,7 +124,8 @@ describe('the time of day', () => {
 describe('the trees through the year', () => {
   /** The colors of the leaves of a forest and an orchard, and whether its apples show, lit for a game on a day. */
   function trees(day: number) {
-    const forest = buildForest([0, 1, 2].map((seed) => ({ x: seed * 2, z: 0, seed })));
+    // one tree in each of the five colors, which change every five seeds
+    const forest = buildForest([0, 1, 2, 3, 4].map((i) => ({ x: i * 2, z: 0, seed: i * 5 })));
     const street = buildStreetTrees([0, 1].map((seed) => ({ x: seed * 2, z: 0, seed })));
     const orchard = buildOrchard([{ x: 0, z: 0, seed: 1 }]);
     const sim = freshSim();

@@ -1,5 +1,5 @@
-// Trees for the lawn, in leaf through the year: fresh in spring, full in summer, gold and rust in autumn, and bare
-// brown twigs in winter.
+// Trees for the lawn, in leaf through the year: fresh in spring, full in summer, scarlet, orange and gold in autumn,
+// and bare brown twigs in winter.
 import * as THREE from 'three';
 
 import type { Season } from '../../core/sim/twists';
@@ -12,25 +12,32 @@ export interface TreeSpot {
   seed: number;
 }
 
-/** The colors of the leaves in each season, three to a season so neighbouring trees differ. */
-export const LEAF_SEASONS: Readonly<Record<Season, readonly [number, number, number]>> = {
-  spring: [0x78c868, 0x66b860, 0x8fd078],
-  summer: [0x5fae5a, 0x4f9a55, 0x74b85c],
-  autumn: [0xcf8a3c, 0xc2a046, 0xae6038],
-  winter: [0x9c8e74, 0x8c7f68, 0xab9e84],
+/** The colors of the leaves in each season, five to a season so neighbouring trees differ. */
+export const LEAF_SEASONS: Readonly<Record<Season, readonly [number, number, number, number, number]>> = {
+  spring: [0x78c868, 0x66b860, 0x8fd078, 0x9cd66e, 0x5aac66],
+  summer: [0x5fae5a, 0x4f9a55, 0x74b85c, 0x468c4a, 0x82bf62],
+  // scarlet, orange, gold, crimson and a last yellowing green, bright against the lawn's gold
+  autumn: [0xe0452c, 0xf0862a, 0xf2bd30, 0xbe2c42, 0xbcc23a],
+  winter: [0x9c8e74, 0x8c7f68, 0xab9e84, 0x958870, 0xa49478],
 };
 const LEAF_COLORS = LEAF_SEASONS.summer;
 
 /** Leaves of a color, in a material of their own. */
 const leaf = (color: number) => new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0 });
 /**
- * The leaves of every tree, one material for each of the three colors, of their own rather than shared with anything
+ * The leaves of every tree, one material for each of the five colors, of their own rather than shared with anything
  * else, so a change of season repaints every tree at once with nothing built again.
  */
-const LEAVES = [leaf(LEAF_COLORS[0]), leaf(LEAF_COLORS[1]), leaf(LEAF_COLORS[2])] as const;
+const LEAVES = [
+  leaf(LEAF_COLORS[0]),
+  leaf(LEAF_COLORS[1]),
+  leaf(LEAF_COLORS[2]),
+  leaf(LEAF_COLORS[3]),
+  leaf(LEAF_COLORS[4]),
+] as const;
 
-/** The leaves in one of the three colors, for trees built elsewhere, such as the street trees, to turn with the park's. */
-export const leafMaterial = (i: 0 | 1 | 2): THREE.MeshStandardMaterial => LEAVES[i];
+/** The leaves in one of the five colors, for trees built elsewhere, such as the street trees, to turn with the park's. */
+export const leafMaterial = (i: 0 | 1 | 2 | 3 | 4): THREE.MeshStandardMaterial => LEAVES[i];
 
 /** Turn every tree's leaves to a season's colors. */
 export function leavesFor(season: Season) {
@@ -48,6 +55,9 @@ const BLOBS = [
 
 /** How tall a tree's trunk is. */
 export const trunkHeight = (seed: number) => 0.9 + (seed % 5) * 0.12;
+
+/** Which of the colors a tree's leaves are, apart from its height, which also goes by fives. */
+const leafColorOf = (seed: number) => Math.floor(seed / 5) % LEAF_COLORS.length;
 
 /** An instanced mesh holding one copy of a shape for each of these placements, casting and catching shadows. */
 function instanced(geo: THREE.BufferGeometry, material: THREE.Material, placements: THREE.Matrix4[]) {
@@ -80,7 +90,7 @@ export function buildForest(spots: readonly TreeSpot[]): THREE.Group {
         none,
         new THREE.Vector3(r, r * 0.9, r),
       );
-      leaves[seed % 3]?.push(blob);
+      leaves[leafColorOf(seed)]?.push(blob);
     }
   }
   const forest = new THREE.Group();
