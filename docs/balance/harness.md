@@ -1,6 +1,6 @@
 # The balance harness
 
-`yarn balance` has the playtest bot (`tests/balance/bot.ts`) play every campaign center for four years, three seeds each, and writes every game's log to `test-results/balance.json`. `yarn balance:report` turns that log into the tables the [balance log](log.md) uses, plus the fairness checks from [research/fair-challenge.md](../research/fair-challenge.md). Neither one passes or fails anything. You run them before and after a change and compare.
+`yarn balance` has the playtest bot (`tests/balance/bot.ts`) play every campaign center for four years, three seeds each, and writes every game's log to `balance-results/balance.json`. `yarn balance:report` turns that log into the tables the [balance log](log.md) uses, plus the fairness checks from [research/fair-challenge.md](../research/fair-challenge.md). Neither one passes or fails a change. You run them before and after a change and compare.
 
 ## Running it
 
@@ -9,10 +9,10 @@ yarn balance
 ```
 
 ```bash
-yarn balance:report test-results/balance.json
+yarn balance:report balance-results/balance.json
 ```
 
-Each center and seed is a game of its own, and the games are shared out over worker slots: `tests/balance/playtest.balance.ts` runs once per slot, as its own vitest project (`vitest.balance.config.ts`). Slot _k_ plays games _k_, _k_ + slots, and so on, and writes each log to `test-results/balance-parts/`. When every slot is done, `tests/balance/merge.ts` puts the logs together, center by center and seed by seed, in the same shape as before. Each game prints one summary line as it finishes: the day it opened, stars at month, the lowest bank balance, the peak loan, and the goals still open, with a line more for each treatment machine built with `BOT_ON=machines`.
+Each center and seed is a game of its own, and the games are shared out over worker slots: `tests/balance/playtest.balance.ts` runs once per slot, as its own vitest project (`vitest.balance.config.ts`). Slot _k_ plays games _k_, _k_ + slots, and so on, and writes each log to `balance-results/parts/`: not under `test-results/`, which Playwright empties whenever an e2e or screenshot run starts. When every slot is done, `tests/balance/merge.ts` puts the logs together, center by center and seed by seed, in the same shape as before. If any game asked for has no log there, the run fails with the centers and seeds that are missing, after writing the log of the games that did play. A game that failed leaves no log, and neither does a game whose log was deleted before the merge. Each game prints one summary line as it finishes: the day it opened, stars at month, the lowest bank balance, the peak loan, and the goals still open, with a line more for each treatment machine built with `BOT_ON=machines`.
 
 The report runs on plain Node (22.18 or later). `scripts/balance-report.mjs` imports `tests/balance/report.ts` directly, and Node strips the types itself. The report module is pure: it never imports game code, so it can run that way.
 
@@ -23,7 +23,7 @@ The report runs on plain Node (22.18 or later). `scripts/balance-report.mjs` imp
 | `BALANCE_CENTERS` | every campaign center                | Comma-separated center ids, e.g. `willow,orchard`                                                                                                            |
 | `BALANCE_SEEDS`   | `1,2,3`                              | Comma-separated seeds                                                                                                                                        |
 | `BALANCE_DAYS`    | `1440` (four years)                  | In-game days per game                                                                                                                                        |
-| `BALANCE_OUT`     | `test-results/balance.json`          | Where the merged log goes                                                                                                                                    |
+| `BALANCE_OUT`     | `balance-results/balance.json`       | Where the merged log goes                                                                                                                                    |
 | `BALANCE_SLOTS`   | one fewer than the processor's cores | Worker slots (`1` plays every game in one worker, one after another, as before)                                                                              |
 | `BOT`             | the good bot                         | `baseline` plays a thoughtless new player; `advised` plays the baseline and does as the toasts and advisor say; `old` plays as the bot did before it learned |
 | `BOT_OFF`         | none                                 | Turns single behaviours of the good bot off, e.g. `prices,calls` or `loan,early,brave,swap` (`BOT_FLAGS` in bot.ts)                                          |
@@ -77,9 +77,9 @@ Beyond the month-by-month figures (`months`), the star days, the open goals and 
 
 ## A before/after comparison
 
-1. On the code before the change: `BALANCE_OUT=test-results/before.json yarn balance` (and `BOT=baseline BALANCE_OUT=test-results/before-baseline.json yarn balance` if the thoughtless player matters to the change).
+1. On the code before the change: `BALANCE_OUT=balance-results/before.json yarn balance` (and `BOT=baseline BALANCE_OUT=balance-results/before-baseline.json yarn balance` if the thoughtless player matters to the change).
 2. Make the change, then run `yarn balance` again.
-3. `yarn balance:report test-results/balance.json test-results/before.json` prints the table a second time in the "before → after" form of balance-log entry 31. A cell that did not change reads `(unchanged)`. The fairness slices are for the "after" run.
+3. `yarn balance:report balance-results/balance.json balance-results/before.json` prints the table a second time in the "before → after" form of balance-log entry 31. A cell that did not change reads `(unchanged)`. The fairness slices are for the "after" run.
 4. Compare seed by seed, not by the means. In the balance-log entry, copy the table and say what the slices show: a new bankruptcy, a cliff that appeared or went away, a loss without warning.
 
 Logs from before the richer fields existed still work as the "before" run. The report reads their bankruptcy from the bot's note and leaves out what they lack.

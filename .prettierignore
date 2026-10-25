@@ -3,6 +3,7 @@ dist-electron/
 release/
 node_modules/
 test-results/
+balance-results/
 playwright-report/
 .yarn/
 yarn.lock
