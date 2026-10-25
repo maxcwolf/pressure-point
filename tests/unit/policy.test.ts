@@ -223,6 +223,39 @@ describe('a line', () => {
     expect(inconsistencies(sim)).toEqual([]);
   });
 
+  it('keeps its order when its table is moved, and whoever was on the table goes back to its front', () => {
+    const { sim, s, table } = busyCenter();
+    const [a, b, c] = s.guests;
+    lineUp(table, [a!, b!, c!]);
+    expect(sim.moveInLine(c!.id, -2)).toBe(true);
+    // the first in line is called up and lies on the table
+    table.queue = table.queue.filter((id) => id !== c!.id);
+    table.serving = c!.id;
+    c!.state = 'served';
+    expect(sim.moveItem(table.id, table.x, table.y, table.rot)).toBe(true);
+    expect(table.queue).toEqual([c!.id, a!.id, b!.id]);
+    expect(table.serving).toBe(0);
+    expect(c!.placed).toBe(true);
+    run(sim, 3);
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
+  it('goes to another table in the order it stood in, when its room is sold', () => {
+    const { sim, s, table } = busyCenter();
+    addSecondSuite(sim);
+    const other = s.items.find((i) => i.type === 'massage_table' && i !== table)!;
+    const [a, b, c] = s.guests;
+    for (const g of [a!, b!, c!]) g.condition = 'slump';
+    lineUp(table, [a!, b!, c!]);
+    expect(sim.moveInLine(c!.id, -2)).toBe(true);
+    const room = s.rooms.find((r) => r.type === 'massage' && table.x >= r.x && table.x < r.x + r.w)!;
+    sim.removeRoom(room.id, 0.5);
+    const moved = new Set([a!.id, b!.id, c!.id]);
+    expect(other.queue.filter((id) => moved.has(id))).toEqual([c!.id, a!.id, b!.id]);
+    run(sim, 3);
+    expect(inconsistencies(sim)).toEqual([]);
+  });
+
   it('only moves guests who are waiting', () => {
     const { sim, s, table } = busyCenter();
     const g = s.guests[0]!;

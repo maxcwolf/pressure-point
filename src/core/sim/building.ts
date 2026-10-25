@@ -24,8 +24,9 @@ import type { SimContext } from './context';
 import { decorFor, withDecor } from './decor';
 import { recoup, spend } from './economy';
 import { emit, toast } from './events';
-import { resetGuest } from './guests';
-import { repathAll } from './movement';
+import { goWait, resetGuest } from './guests';
+import { halt, repathAll } from './movement';
+import { inLine } from './queues';
 import { staffIdle } from './staffing';
 import { backToStudy } from './training';
 import { upgradeSpent } from './upgrades';
@@ -216,19 +217,40 @@ export function moveItem(ctx: SimContext, id: number, x: number, y: number, rot:
   return true;
 }
 
-/** The guests and staff using, waiting on or heading for any of these items. */
+/** The guests and staff using, waiting on or heading for any of these items: the guests in the order of their lines. */
 export function usersOf(ctx: SimContext, ids: Set<number>) {
+  /** Where a guest stands in their line: the one being seen ahead of the rest, and anyone in none behind. */
+  const place = (g: Guest) => {
+    const st = ctx.world.item(g.station);
+    if (!st) return Number.MAX_SAFE_INTEGER;
+    return st.serving === g.id ? -1 : st.queue.indexOf(g.id);
+  };
   return {
-    guests: ctx.s.guests.filter((g) => ids.has(g.claimItem) || ids.has(g.station)),
+    guests: ctx.s.guests.filter((g) => ids.has(g.claimItem) || ids.has(g.station)).sort((a, b) => place(a) - place(b)),
     staff: ctx.s.staff.filter(
       (st) => ids.has(st.post) || ids.has(st.claimItem) || (!!st.job && st.job.kind !== 'litter' && ids.has(st.job.id)),
     ),
   };
 }
 
-/** Free these people from what they were using and have them start over. */
+/**
+ * Free these people from what they were using and have them start over. A line whose station still stands is kept
+ * as it was: anyone waiting in it keeps their place, and anyone called to it or being seen there goes back to its
+ * front. Anyone whose station has gone joins another line, in the order they stood in theirs.
+ */
 function resetUsers(ctx: SimContext, { guests, staff }: { guests: Guest[]; staff: Staff[] }) {
   for (const g of guests) {
+    const station = ctx.world.item(g.station);
+    if (station && (inLine(g) || station.serving === g.id)) {
+      if (station.serving === g.id) {
+        station.serving = 0;
+        station.progress = 0;
+        station.queue.unshift(g.id);
+      }
+      halt(g);
+      goWait(ctx, g);
+      continue;
+    }
     release(ctx, g);
     resetGuest(ctx, g);
   }
