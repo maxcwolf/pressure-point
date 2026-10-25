@@ -264,9 +264,10 @@ export function updateBlazes(ctx: SimContext) {
   for (const b of [...s.blazes]) {
     if (!s.blazes.includes(b)) continue;
     const it = ctx.world.item(b.item);
-    // gone, sold or knocked down with its room, it burns no more
+    // gone, sold or knocked down with its room, it burns no more, and with nothing else burning the fire is over
     if (!it) {
       s.blazes = s.blazes.filter((o) => o !== b);
+      if (!s.blazes.length && s.fire && !s.fire.out) s.fire = { ...s.fire, out: true };
       continue;
     }
     b.t++;
