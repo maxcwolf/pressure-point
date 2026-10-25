@@ -293,9 +293,14 @@ export function starsEarned(s: GameState): number {
   return s.unlockAll ? Infinity : s.stars;
 }
 
-/** Whether something Settings can switch off is on in this game: an optional discipline, or the Qi Gong classes. */
+/** Whether something Settings can switch off exists in this game's center at all: an optional discipline, or the classes. */
+export function offeringHere(s: GameState, o: Offering): boolean {
+  return o === 'qigong' ? CENTERS[s.center].qigong : disciplineHere(s, o);
+}
+
+/** Whether something Settings can switch off is on in this game: on offer in its center, and not switched off. */
 export function offeringOn(s: GameState, o: Offering): boolean {
-  return o === 'qigong' ? s.options.qigong !== false : disciplineOn(s, o);
+  return o === 'qigong' ? offeringHere(s, o) && s.options.qigong !== false : disciplineOn(s, o);
 }
 
 /** Whether a discipline exists in this game's center at all. Massage always does. */

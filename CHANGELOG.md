@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **A simpler Willow Lane.** Qi Gong classes are no longer on offer at Willow Lane, so its second star brings the Kneadmaster alone, and no Instructor applies. The campaign meets the classes at The Exchange's second star, as its card now says. Willow Lane sells one plot a star, the unit next door, the old bakery and the yard behind: the back room and the shop to the west are no longer for sale, and a game that bought either keeps the land.
+
 ## v0.33.6
 
 - **Sort the menus' lists.** Each list in the menus has a Sort by dropdown: items and rooms by name, price, decor, quiet or earnings; staff by name, role, rank, salary, energy, morale or what they know; applicants by rank, salary, what they know or quirks; and templates, the casebook and the regulars by their own figures. A list keeps its order while the game runs.

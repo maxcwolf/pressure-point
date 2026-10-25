@@ -757,6 +757,8 @@ export interface CenterDef {
   goals: readonly StarGoal[];
   /** The optional disciplines on offer here, each still opened by its room's star. Massage is always on offer. */
   disciplines: readonly Discipline[];
+  /** Whether Qi Gong classes are on offer here, still opened by the studio's star. */
+  qigong: boolean;
   /** How much more (or less) often guests arrive with a condition here than elsewhere. Unlisted ones count once. */
   conditions?: Partial<Record<ConditionId, number>>;
   /** Rush hours: arrivals come in waves every few days, and guests are less patient while they last. */

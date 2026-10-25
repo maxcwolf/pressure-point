@@ -14,10 +14,11 @@ import {
   type RoomType,
   SIDEWALK_Y,
 } from '../../src/core/data';
-import { entranceSteps, footprintOf, footprintTiles, inRect } from '../../src/core/footprint';
+import { entranceSteps, footprintOf, footprintTiles, inFootprint, inRect } from '../../src/core/footprint';
 import { an } from '../../src/core/format';
 import {
   buildDays,
+  buildingsOf,
   LAND_STEP,
   type LandSide,
   lotWidth,
@@ -624,11 +625,27 @@ describe('plot offers', () => {
     s.stars = 3;
     const offers = plotOffers(s, footprintOf(CENTERS.willow.plot));
     // the yard behind the unit comes once the unit next door is the game's
-    expect(offers.map((o) => o.state)).toEqual(['open', 'open', 'open', 'open', 'locked']);
+    expect(offers.map((o) => o.state)).toEqual(['open', 'open', 'locked']);
     expect(offers.map((o) => o.price)).toEqual(CENTERS.willow.plots.map((p) => p.price));
     // a building grown over the unit next door, however it came to be, has it already
     const [unit] = CENTERS.willow.plots;
     const grown = plotOffers(s, footprintOf(CENTERS.willow.plot, unit?.rects));
-    expect(grown.map((o) => o.state)).toEqual(['owned', 'open', 'open', 'open', 'open']);
+    expect(grown.map((o) => o.state)).toEqual(['owned', 'open', 'open']);
+  });
+
+  it('sell one plot a star at Willow Lane, and keep land bought on a plot no longer sold', () => {
+    expect(CENTERS.willow.plots.map((p) => [p.id, p.star])).toEqual([
+      ['unit-next-door', 1],
+      ['old-bakery', 2],
+      ['back-yard', 3],
+    ]);
+    // a save that bought the back room while it was sold keeps the tiles the building grew into
+    const s = newGame('willow');
+    s.stars = 2;
+    const backRoom = { x0: 9, x1: 18, y0: 3, y1: 7 };
+    s.land.push({ plot: 'back-room', rects: [backRoom] });
+    const building = buildingsOf(s);
+    expect(inFootprint(building, 12, 5)).toBe(true);
+    expect(plotOffers(s, building).map((o) => o.def.id)).toEqual(['unit-next-door', 'old-bakery', 'back-yard']);
   });
 });

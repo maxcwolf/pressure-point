@@ -74,6 +74,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     startMoney: 30000,
     climate: { average: 66, swing: 6 },
     disciplines: ['acupuncture', 'reiki', 'sound', 'shaman'],
+    qigong: true,
     mishap: 'power',
     goals: [
       [
@@ -110,22 +111,6 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
         star: 1,
       },
       {
-        id: 'back-room',
-        name: 'The back room',
-        blurb: 'Storage out the back, cleared out at last',
-        rects: [{ x0: 9, x1: 18, y0: 3, y1: 7 }],
-        price: 10000,
-        star: 2,
-      },
-      {
-        id: 'west-unit',
-        name: 'The shop to the west',
-        blurb: 'A narrow unit that used to mend shoes',
-        rects: [{ x0: 2, x1: 6, y0: 11, y1: 17 }],
-        price: 8000,
-        star: 2,
-      },
-      {
         id: 'old-bakery',
         name: 'The old bakery',
         blurb: 'Across the alley, a shop of its own with room for a big machine, and a path from the pavement',
@@ -148,6 +133,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     startMoney: 20000,
     climate: { average: 60, swing: 12 },
     disciplines: [],
+    qigong: false,
     goals: [
       [
         { kind: 'healed', count: 5 },
@@ -170,7 +156,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     name: 'The Exchange',
     place: 'Downtown, between the office towers',
     blurb:
-      'Desk workers by the busload, arriving in waves when the office crowd comes in. Acupuncture opens at the first star.',
+      'Desk workers by the busload, arriving in waves when the office crowd comes in. Acupuncture opens at the first star, and Qi Gong classes at the second.',
     plot: { x0: 5, x1: 25, y0: 6, y1: 17, door: [14, 15] },
     width: 44,
     plots: [
@@ -217,6 +203,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     startMoney: 25000,
     climate: { average: 62, swing: 14 },
     disciplines: ['acupuncture'],
+    qigong: true,
     conditions: { slump: 3, band: 2.5, crick: 2.5, neck: 3, steam: 2 },
     rush: { peak: 2.4, lull: 0.6, impatience: 1.25 },
     mishap: 'power',
@@ -295,6 +282,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     startMoney: 30000,
     climate: { average: 66, swing: 22 },
     disciplines: ['acupuncture', 'reiki'],
+    qigong: true,
     conditions: { lobstered: 3, sealegs: 2.5, gull: 2.5 },
     seasons: { summer: 1.9, winter: 0.6 },
     wear: 1.4,
@@ -368,6 +356,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     startMoney: 35000,
     climate: { average: 44, swing: 18 },
     disciplines: ['acupuncture', 'reiki', 'sound'],
+    qigong: true,
     conditions: { frost: 3, coldfeet: 2.5, steam: 1.5, frozen: 3, wipeout: 2.5, cabin: 2.5 },
     snow: { chance: 0.3, days: 2 },
     // a little busier than the road up suggests, to make up for the days it is snowed in
@@ -445,6 +434,7 @@ export const CENTERS: Readonly<Record<CenterId, CenterDef>> = {
     startMoney: 45000,
     climate: { average: 62, swing: 16 },
     disciplines: ['acupuncture', 'reiki', 'sound', 'shaman'],
+    qigong: true,
     conditions: { windfall: 3, croquet: 2.5, blossom: 2.5, neck: 1.5 },
     unlockedFrom: 2,
     picky: { fee: 1.5, expects: 2 },
