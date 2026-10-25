@@ -47,7 +47,7 @@ import { removeFromStations } from './stations';
 
 /** What the announcer says as a guest starts running, one or the other by who they are. */
 export const RUNAWAY_LINES = [
-  'Would the guest running through the lobby please note that the ceiling is not, in fact, melting.',
+  'Would the naked guest running through the lobby please note that the walls are not, in fact, melting.',
   'A reminder that the walls are load-bearing and cannot be reasoned with.',
 ] as const;
 
