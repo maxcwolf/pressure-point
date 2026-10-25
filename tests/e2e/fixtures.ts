@@ -47,8 +47,8 @@ interface Handle {
     renderer: { info: { render: { triangles: number } } };
     /** What a click would select now, and whether the marker over a selected person shows. */
     overlays: { hovered: { kind: string; id: number } | null; markerShown: boolean; outlineShown: boolean };
-    /** What each room's lamp shows. */
-    rooms: { lampOf(roomId: number): string | undefined };
+    /** What each room's lamp shows, and the lighting and pulsing of the lamps at a moment of the scene's time. */
+    rooms: { lampOf(roomId: number): string | undefined; update(t: number): void };
   };
   tools: {
     tool: any;

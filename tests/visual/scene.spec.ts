@@ -159,6 +159,11 @@ test.describe('the scene', () => {
       table.serving = 1;
       table.progress = 0.4;
       state.speed = 0;
+      // with nobody to work it, the room's lamp pulses amber; held at one moment, the picture holds still
+      const { rooms } = pp.view;
+      const update = rooms.update.bind(rooms);
+      /** Light the lamps as they are at the scene's first moment, whenever it is. */
+      rooms.update = () => update(0);
       pp.view.turnCamera(1);
       pp.view.target.set(14, 0, 10);
     });
