@@ -9,6 +9,7 @@ import emergencyAllHands from '../sounds/announcer/emergency-all-hands.m4a';
 import emergencyFunRun from '../sounds/announcer/emergency-fun-run.m4a';
 import emergencyFurniture from '../sounds/announcer/emergency-furniture.m4a';
 import emergencyYoga from '../sounds/announcer/emergency-yoga.m4a';
+import emotionalBaggage from '../sounds/announcer/emotional-baggage.m4a';
 import faceShapedMarks from '../sounds/announcer/face-shaped-marks.m4a';
 import healingCenterOpen1 from '../sounds/announcer/healing-center-open-1.m4a';
 import healingCenterOpen2 from '../sounds/announcer/healing-center-open-2.m4a';
@@ -16,9 +17,6 @@ import healingCenterOpen3 from '../sounds/announcer/healing-center-open-3.m4a';
 import healingCenterOpen4 from '../sounds/announcer/healing-center-open-4.m4a';
 import healthInspector from '../sounds/announcer/health-inspector.m4a';
 import herbalTea from '../sounds/announcer/herbal-tea.m4a';
-import humAlong from '../sounds/announcer/hum-along.m4a';
-import knotsNotContagious from '../sounds/announcer/knots-not-contagious.m4a';
-import lostAndFound from '../sounds/announcer/lost-and-found.m4a';
 import massageAtMassage from '../sounds/announcer/massage-at-massage.m4a';
 import mercuryNotInRetrograde from '../sounds/announcer/mercury-not-in-retrograde.m4a';
 import pleaseBreatheIn from '../sounds/announcer/please-breathe-in.m4a';
@@ -34,6 +32,7 @@ import relaxationIsMandatory from '../sounds/announcer/relaxation-is-mandatory.m
 import removePantsUrinal from '../sounds/announcer/remove-pants-urinal.m4a';
 import screamingIntoVoid from '../sounds/announcer/screaming-into-void.m4a';
 import sighingNotBreathwork from '../sounds/announcer/sighing-not-breathwork.m4a';
+import stopUsingSingingBowls from '../sounds/announcer/stop-using-singing-bowls.m4a';
 import stormEnded from '../sounds/announcer/storm-ended.m4a';
 import stormIncoming from '../sounds/announcer/storm-incoming.m4a';
 import stormStarted from '../sounds/announcer/storm-started.m4a';
@@ -41,17 +40,12 @@ import sweatShopOpen from '../sounds/announcer/sweat-shop-open.m4a';
 import vipVisiting from '../sounds/announcer/vip-visiting.m4a';
 import welcomeSeekers from '../sounds/announcer/welcome-seekers.m4a';
 import wellnessAtConsultation from '../sounds/announcer/wellness-at-consultation.m4a';
-import whaleSong from '../sounds/announcer/whale-song.m4a';
 
 /** Each recorded announcement, by the exact text shown with it. */
 export const VOICE_LINES: Readonly<Record<string, string>> = {
-  'Guests are reminded that the knots are not contagious.': knotsNotContagious,
-  'Staff members are reminded that whale song is not a valid doctor’s note.': whaleSong,
-  'Guests are asked not to hum along with the fountain.': humAlong,
   'Please keep your chakras aligned and your belongings with you.': chakrasAligned,
   'Guests leaving face-shaped marks on the towels will be charged.': faceShapedMarks,
   'A reminder that relaxation is mandatory.': relaxationIsMandatory,
-  'The lost and found now holds one flip-flop and a sense of urgency.': lostAndFound,
   'Would the owner of a red aura please move it from the fire exit.': redAura,
   'Please do not tip the therapists. They fall over.': doNotTip,
   'The herbal tea is herbal. That is all we are prepared to say.': herbalTea,
@@ -64,6 +58,8 @@ export const VOICE_LINES: Readonly<Record<string, string>> = {
     mercuryNotInRetrograde,
   'Reminder: Screaming into the void is permitted only between the hours of two and four PM.': screamingIntoVoid,
   'Visitors are reminded that sighing heavily does not count as breathwork.': sighingNotBreathwork,
+  'Staff are requested to stop using the singing bowls to mix their salad in the breakroom.': stopUsingSingingBowls,
+  'Would the guest who left their emotional baggage in the hallway please return and retrieve it.': emotionalBaggage,
   'The healing center is now open. Please form an orderly line in order of your aura’s color code.': healingCenterOpen1,
   'The healing center is now open. Praise Rang!': healingCenterOpen2,
   'The healing center is now open. Please align your chakras, empty your wallets, and form an orderly line.':

@@ -6,20 +6,16 @@ When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-42 recorded, 35 still to record.
+40 recorded, 35 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
-- ✅ Guests are reminded that the knots are not contagious.
 - ✅ Would the owner of a red aura please move it from the fire exit.
 - ✅ Please do not tip the therapists. They fall over.
-- ✅ Staff members are reminded that whale song is not a valid doctor’s note.
-- ✅ Guests are asked not to hum along with the fountain.
 - ✅ The herbal tea is herbal. That is all we are prepared to say.
 - ✅ Please keep your chakras aligned and your belongings with you.
 - ✅ Guests leaving face-shaped marks on the towels will be charged.
 - ✅ A reminder that relaxation is mandatory.
-- ✅ The lost and found now holds one flip-flop and a sense of urgency.
 - ✅ Please breathe in. Further instructions will follow.
 - ✅ Guests are reminded that clothing is mandatory in the hallways.
 - ✅ Attention male visitors, please do not completely remove your pants while using the urinal.
@@ -27,6 +23,8 @@ Key: ✅ recorded, ⬜ not recorded yet.
 - ✅ A polite reminder: Mercury is no longer in retrograde, so you have absolutely no excuse for your behavior.
 - ✅ Reminder: Screaming into the void is permitted only between the hours of two and four PM.
 - ✅ Visitors are reminded that sighing heavily does not count as breathwork.
+- ✅ Staff are requested to stop using the singing bowls to mix their salad in the breakroom.
+- ✅ Would the guest who left their emotional baggage in the hallway please return and retrieve it.
 
 ## Opening day (`src/core/sim/progress.ts`)
 
