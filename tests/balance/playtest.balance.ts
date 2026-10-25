@@ -3,9 +3,10 @@
 // a tuning change and compare. The full logs go to test-results/balance.json. `BOT=old` plays as the bot did before
 // it learned prices, marketing, payroll, saving, expansion on profit, house calls, lines, the Posture Lab, upgrades,
 // emergencies it can see through, room layout, mats, classes, courses, and the owner's habits (a small loan, an early
-// fit-out, modest prices, every emergency and outbreak taken, a better applicant in place of the weakest: `loan`,
-// `early`, `modest`, `brave`, `swap`). `BOT_OFF=prices,calls` switches single ones off, and `BOT_ON` switches on the
-// extras (see `BOT_FLAGS` and `BOT_EXTRAS` in bot.ts). `BOT=baseline` plays as a thoughtless new player: the opening
+// fit-out, every emergency and outbreak taken, a better applicant in place of the weakest: `loan`, `early`, `brave`,
+// `swap`). `BOT_OFF=prices,calls` switches single ones off, and `BOT_ON` switches on the extras (see `BOT_FLAGS` and
+// `BOT_EXTRAS` in bot.ts; the owner's prices held near 1.1, `modest`, are one). `BOT=baseline` plays as a thoughtless
+// new player: the opening
 // build, a room only once a line has formed, never a price changed or a call taken (see `BotMode`). `BOT=advised`
 // plays as the baseline and also does exactly what the game's toasts and advisor say, so whether the warnings are
 // actionable can be measured.

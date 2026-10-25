@@ -1,6 +1,7 @@
-// The playtest bot's habits from the owner's own games (balance logs 46 and 47): a small loan paid back fast (`loan`),
-// the center fitted out in its first month (`early`), prices held near 1.1 (`modest`), every emergency and stress
-// outbreak taken on (`brave`), and a clearly better applicant taken on in place of the weakest in their role (`swap`).
+// The playtest bot's habits from the owner's own games (balance logs 46 to 48): a small loan paid back fast (`loan`),
+// the center fitted out in its first month (`early`), every emergency and stress outbreak taken on (`brave`), and a
+// clearly better applicant taken on in place of the weakest in their role (`swap`); and prices held near 1.1
+// (`modest`), an extra since it cost the bot too much.
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -18,8 +19,8 @@ import { projectedCashflow, wagesDue } from '../../src/core/sim/economy';
 import type { Candidate, Emergency, Staff } from '../../src/core/state/types';
 import { Bot, BOT_FLAGS, botFlags } from '../balance/bot';
 
-/** The owner's flags, as `BOT_OFF` names them. */
-const OWNER: readonly string[] = ['loan', 'early', 'modest', 'brave', 'swap'];
+/** The owner's flags that are on for the good bot, as `BOT_OFF` names them; `modest` is an extra. */
+const OWNER: readonly string[] = ['loan', 'early', 'brave', 'swap'];
 
 /** The bot's private steps, reached for the tests. */
 interface Steps {
@@ -38,8 +39,8 @@ interface Steps {
 /** A bot, with its private steps in reach. */
 const steps = (bot: Bot) => bot as unknown as Steps;
 
-/** Willow Lane played by the good bot, with any flags named switched off. */
-const willow = (off = '') => new Bot('willow', 1, {}, botFlags({ BOT_OFF: off }));
+/** Willow Lane played by the good bot, with any flags named switched off, and any extras named switched on. */
+const willow = (off = '', on = '') => new Bot('willow', 1, {}, botFlags({ BOT_OFF: off, BOT_ON: on }));
 
 /** Take on a Massage Therapist, as the opening would. */
 function hireTherapist(bot: Bot) {
@@ -48,9 +49,11 @@ function hireTherapist(bot: Bot) {
 }
 
 describe('the owner’s flags', () => {
-  it('are on for the good bot, all off for the old one, and switched off by name', () => {
+  it('are on for the good bot but `modest`, all off for the old one, and switched off by name', () => {
     const good = botFlags({});
     for (const f of OWNER) expect(good[f as keyof typeof good], f).toBe(true);
+    expect(good.modest).toBe(false);
+    expect(botFlags({ BOT_ON: 'modest' }).modest).toBe(true);
     const old = botFlags({ BOT: 'old' });
     for (const f of BOT_FLAGS) expect(old[f], f).toBe(false);
     const off = botFlags({ BOT_OFF: OWNER.join(',') });
@@ -58,8 +61,9 @@ describe('the owner’s flags', () => {
   });
 
   it('change the good style’s loan and prices, and leave them as they were without', () => {
-    expect(willow().style).toMatchObject({ loanTop: 15000, repay: { k: 1, c: 5000 }, priceTop: 1.1, premiumTop: 1.2 });
-    for (const bot of [willow('loan,modest'), new Bot('willow', 1, {}, botFlags({ BOT: 'old' }))])
+    expect(willow().style).toMatchObject({ loanTop: 15000, repay: { k: 1, c: 5000 }, priceTop: 1.4, premiumTop: 1.3 });
+    expect(willow('', 'modest').style).toMatchObject({ loanTop: 15000, priceTop: 1.1, premiumTop: 1.2 });
+    for (const bot of [willow('loan'), new Bot('willow', 1, {}, botFlags({ BOT: 'old' }))])
       expect(bot.style).toMatchObject({ loanTop: Infinity, repay: { k: 1, c: 25000 }, priceTop: 1.4, premiumTop: 1.3 });
   });
 });
@@ -166,7 +170,7 @@ describe('with `early`', () => {
 
 describe('with `modest`', () => {
   it('sets prices to 1.1 on the first day open, and never above it', () => {
-    const bot = willow();
+    const bot = willow('', 'modest');
     const { s } = bot;
     bot.play(2);
     expect(s.open).toBe(true);
@@ -185,7 +189,7 @@ describe('with `modest`', () => {
   });
 
   it('left them at 1 to start, and took them higher, without it', () => {
-    const bot = willow('modest');
+    const bot = willow();
     const { s } = bot;
     bot.play(2);
     expect(s.priceLevel).toBe(1);

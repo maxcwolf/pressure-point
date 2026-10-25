@@ -7,9 +7,10 @@
 // on only the emergencies it can see through, lays rooms out for their kit and dresses them with windows first, fills
 // a Sound Bath Studio's mats, runs Qi Gong classes and picks courses by what guests need. Some things it can also do
 // were measured and found to gain nothing, and are extras switched on with `BOT_ON` (see `BOT_EXTRAS`). And as the
-// owner plays their own games (balance logs 46 and 47): a small loan paid back fast, decor, a Staff Room and a Training
-// Room in the first month, prices held near 1.1, every emergency and stress outbreak taken on, and a clearly better
-// applicant taken on in place of the weakest in their role.
+// owner plays their own games (balance logs 46 to 48): a small loan paid back fast, decor, a Staff Room and a Training
+// Room in the first month, every emergency and stress outbreak taken on, and a clearly better applicant taken on in
+// place of the weakest in their role. Prices held near 1.1, as the owner holds them, cost the bot too much and are an
+// extra.
 
 import { itemOpen } from '../../src/core/campaign';
 import {
@@ -155,7 +156,8 @@ export const BOT_FLAGS = [
   /**
    * Prices held near 1.1, as the owner holds them: 1.1 from the first day open and no higher after it, a long line's
    * techniques 1.2 at most (the good style's `priceTop` and `premiumTop`). With the bank calling the overdraft in,
-   * prices still go as high as before.
+   * prices still go as high as before. An extra: it cost the bot about $8,000 a month at every center for no star or
+   * game gained (balance log 46 and 48), since at 1.4 few guests are put off.
    */
   'modest',
   /**
@@ -183,7 +185,16 @@ export type BotFlags = Record<BotFlag, boolean>;
  * Flags that are off unless `BOT_ON` names them: a different way to play rather than better play, or play that was
  * measured and found to gain nothing.
  */
-const BOT_EXTRAS: readonly BotFlag[] = ['junior', 'clear', 'trouble', 'triage', 'throttle', 'machines', 'opening'];
+const BOT_EXTRAS: readonly BotFlag[] = [
+  'junior',
+  'clear',
+  'trouble',
+  'triage',
+  'throttle',
+  'machines',
+  'opening',
+  'modest',
+];
 
 /**
  * The bot's flags from the environment. `BOT=old` plays as the bot did before it learned any of them; `BOT_OFF`

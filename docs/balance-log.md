@@ -6,6 +6,66 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 25 October 2026, after midnight: the personas side by side
+
+Measured with `yarn balance` on `claude/bot-plays-like-max` at `c1c5d48`, every campaign center, seeds 1 to 6, four years a game: five bots on the same code. The good bot as it was before the owner's flags (`BOT_OFF=loan,early,modest,brave,swap`), with all five of them, and with four and no `modest`; the thoughtless baseline (`BOT=baseline`); and the advised bot (`BOT=advised`). Profit a month is averaged from month 13 on over the games that reached it; a star never earned counts as month 48 in the mean star month. Six seeds, not the 72 [balance-harness.md](balance-harness.md) asks for before a call.
+
+### 48. Four of the owner's habits make the best bot yet; `modest` is an extra; the baseline and the advised bot never reach a third star
+
+**Found:** entries 46 and 47 measured the owner's five habits one at a time against the good bot, but never set the personas beside each other on one code, and never ran the five with `modest` off. Done here.
+
+| Center             | Persona         | Profit a month | Games lost | Third stars | First star, month | Mean star month |
+| ------------------ | --------------- | -------------- | ---------- | ----------- | ----------------- | --------------- |
+| Willow Lane        | good as it was  | $22.2k         | 1 of 6     | 5 of 6      | 0.9               | 8.2             |
+|                    | all five        | $17.1k         | 1 of 6     | 5 of 6      | 0.9               | 10.0            |
+|                    | four, no modest | $27.0k         | 0 of 6     | 6 of 6      | 0.8               | 8.1             |
+|                    | baseline        | $0.5k          | 3 of 6     | 0 of 6      | 0.9               | 32.3            |
+|                    | advised         | $3.9k          | 0 of 6     | 0 of 6      | 0.9               | 32.3            |
+| The Exchange       | good as it was  | $24.1k         | 1 of 6     | 5 of 6      | 6.3               | 13.4            |
+|                    | all five        | $10.1k         | 0 of 6     | 5 of 6      | 8.1               | 15.3            |
+|                    | four, no modest | $20.7k         | 0 of 6     | 6 of 6      | 7.9               | 13.1            |
+|                    | baseline        | $4.7k          | 0 of 6     | 0 of 6      | 6.0               | 34.0            |
+|                    | advised         | $5.1k          | 0 of 6     | 0 of 6      | 6.0               | 34.0            |
+| The Boardwalk      | good as it was  | $16.1k         | 0 of 6     | 6 of 6      | 5.2               | 11.4            |
+|                    | all five        | $4.2k          | 0 of 6     | 5 of 6      | 9.0               | 17.0            |
+|                    | four, no modest | $13.4k         | 0 of 6     | 5 of 6      | 6.1               | 18.3            |
+|                    | baseline        | $2.0k          | 0 of 6     | 0 of 6      | 8.7               | 23.7            |
+|                    | advised         | $0.0k          | 0 of 6     | 0 of 6      | 8.2               | 21.5            |
+| High Pines         | good as it was  | $17.2k         | 1 of 6     | 4 of 6      | 5.8               | 19.1            |
+|                    | all five        | $4.4k          | 1 of 6     | 6 of 6      | 6.0               | 15.0            |
+|                    | four, no modest | $10.8k         | 1 of 6     | 4 of 6      | 6.2               | 20.2            |
+|                    | baseline        | $3.1k          | 0 of 6     | 0 of 6      | 6.5               | 34.2            |
+|                    | advised         | $5.1k          | 0 of 6     | 0 of 6      | 6.1               | 34.0            |
+| The Orchard Estate | good as it was  | $66.6k         | 2 of 6     | 4 of 6      | 19.3              | 22.5            |
+|                    | all five        | $49.9k         | 0 of 6     | 6 of 6      | 5.0               | 9.8             |
+|                    | four, no modest | $53.6k         | 0 of 6     | 6 of 6      | 4.7               | 10.3            |
+|                    | baseline        | −$0.9k         | 1 of 6     | 0 of 6      | never             | never           |
+|                    | advised         | −$0.9k         | 1 of 6     | 0 of 6      | never             | never           |
+
+All centers together, 30 games each:
+
+| Persona         | Profit a month | Games lost | Third stars | Mean star month |
+| --------------- | -------------- | ---------- | ----------- | --------------- |
+| good as it was  | $26.7k         | 5          | 24          | 14.9            |
+| all five        | $17.1k         | 2          | 27          | 13.4            |
+| four, no modest | $25.1k         | 1          | 27          | 14.0            |
+| baseline        | $1.9k          | 4          | 0           | 34.4            |
+| advised         | $2.7k          | 1          | 0           | 34.0            |
+
+**Read:**
+
+- **The four without `modest` is the best bot so far.** One game lost in thirty against five for the good bot as it was, 27 third stars against 24, and $1.6k a month less profit. The small loan is what saves The Orchard's opening (entry 46), and the swaps bring the stars (entry 47).
+- **`modest` costs about $8k a month at every center** for no star or game gained, as entry 46 found on its own: at 1.4 few guests are put off, so 1.1 only takes a fifth off every fee.
+- **The baseline and the advised bot never reach a third star** in 30 games each, and rarely a second. At The Orchard neither ever opens the doors: the thoughtless opening build cannot be paid for. The advice saves games, one lost against four, and does not make the player any quicker. That is the fairness reading of entries 32 and 33 again, on today's code.
+- For the game's communication: a player who holds prices at 1.0 or 1.1, as the real players in PostHog do, leaves about a fifth of their income on the table, and the only hint the game gives is the put-off chance on the Prices tab. Noted for a later pass, not changed here.
+
+**Done** (`tests/balance/bot.ts`, `tests/unit/bot-owner.test.ts`, `docs/balance-harness.md`): `modest` moved into `BOT_EXTRAS`, off unless `BOT_ON=modest` names it, so the good bot runs `loan`, `early`, `brave` and `swap`. The "four, no modest" column is the good bot as it now plays.
+
+**Still open:**
+
+- **72 seeds a center** before any of this counts as a finding, as the harness asks. The direction is the same at every center for `modest`, and the same at four of five for the four together.
+- **Why `early` costs The Boardwalk and High Pines** (entry 46), still not looked into.
+
 ## 24 October 2026, night: the bot swaps staff for better applicants
 
 Measured with `yarn balance` on `claude/bot-plays-like-max` (uncommitted, on `e3ec295`), every campaign center, seeds 1 to 6, four years a game: the good bot with `swap` against the same code with `BOT_OFF=swap`, which plays as the good bot did at `e3ec295`, the four flags of entry 46 on in both. With `BOT_OFF=swap` the logs are the same as at `e3ec295`, byte for byte, at Willow Lane, The Exchange and The Orchard, seeds 1 and 2 over 420 days, and so are `BOT=old`'s; over the six seeds and four years, the merged log is byte for byte entry 46's "after". `swap` was also measured on its own, the other four flags off, against entry 46's "before". Profit a month is averaged from month 13 on over the games that reached it, each difference paired seed by seed with its standard error; a mean star month counts a star never earned as month 48. Six seeds is below the 72 a center that [balance-harness.md](balance-harness.md) asks for before a call: this entry says what moved and how far, not what to keep.
