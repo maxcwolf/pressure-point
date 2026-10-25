@@ -2,17 +2,29 @@
 
 import './MoneyMenu.css';
 
-import { type IconId, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../../../core/data';
+import {
+  centerOf,
+  FOUNDATION_GIFTS,
+  FOUNDATION_KARMA,
+  type IconId,
+  LOAN_RATE,
+  LOAN_STEP,
+  PRICE_MAX,
+  PRICE_MIN,
+} from '../../../core/data';
 import { money } from '../../../core/format';
 import { loanLimit, payrollOutlook } from '../../../core/sim/economy';
 import { netOf } from '../../../core/sim/economy';
+import { giftsToCome } from '../../../core/sim/foundation';
 import { INTAKE_CAP_MIN } from '../../../core/sim/guests';
 import type { Ledger } from '../../../core/state/types';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { MoneyTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
 import { cx } from '../../lib/cx';
+import { giftList, giftNote } from '../../lib/foundation';
 import { incomeSources, incomeVerdict, shareWord } from '../../lib/income';
+import { karmaText } from '../../lib/karma';
 import { paydayBeside } from '../../lib/loan';
 import { BALK_WHO, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
@@ -56,6 +68,7 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
       <Line name="Marketing" amount={ledger.marketing} cost />
       <Line name="Loan interest" amount={ledger.interest} cost />
       <Line name="Fines" amount={ledger.fines} cost />
+      {(ledger.gifts > 0 || sim.foundationOpen()) && <Line name="Gifts to the Foundation" amount={ledger.gifts} cost />}
       <div class="total">
         <span>Net</span>
         <b class={net < 0 ? 'neg' : 'pos'}>{money(net)}</b>
@@ -90,13 +103,62 @@ function IncomeSources() {
   );
 }
 
-/** This month and last, the monthly net chart, and the running totals. */
+/**
+ * The Pressure Point Foundation, once every star here is earned: the next gift, what it would leave for payday, and the
+ * karma it earns the campaign.
+ */
+function Foundation() {
+  const { sim } = useGame();
+  const s = sim.s;
+  const price = sim.nextGift();
+  const why = sim.giftBlocker();
+  const all = FOUNDATION_GIFTS.length;
+  return (
+    <div class="ledger foundation">
+      <h4>
+        <IconText id="ui-karma">The Pressure Point Foundation</IconText>
+      </h4>
+      {price === null ? (
+        <p class="sub">{`All ${all} gifts are made. ${centerOf(s).name} funds healing for those who could never pay for it.`}</p>
+      ) : (
+        <>
+          <p class="sub">
+            {`Every star here is earned, so spare money can fund healing for those who could never pay for it. Each gift earns +${karmaText(FOUNDATION_KARMA)} for the campaign, once.`}
+          </p>
+          <p class="gift">{`Gift ${s.gifts + 1} of ${all}: ${giftList(giftsToCome(s))}`}</p>
+          <p class="sub">
+            {!why
+              ? giftNote(payrollOutlook(s), price)
+              : s.cheated
+                ? why
+                : `Not enough money yet: ${money(price - s.money)} more is needed in the bank.`}
+          </p>
+          <div class="btnrow left">
+            <Button
+              quiet
+              locked={!!why}
+              title={why || `Give ${money(price)} for +${karmaText(FOUNDATION_KARMA)}`}
+              onPress={() => {
+                sim.endow();
+              }}
+            >
+              <IconText id="ui-karma">{`Give ${money(price)}`}</IconText>
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** This month and last, the monthly net chart, and the running totals, under the Foundation once it is open. */
 function Books() {
   const { sim } = useGame();
   const s = sim.s;
   const heights = barHeights(s.history);
   return (
     <>
+      {sim.foundationOpen() && <Foundation />}
       <div class="ledgers">
         <LedgerTable title="This month" ledger={s.ledger} />
         <LedgerTable title="Last month" ledger={s.lastLedger} />

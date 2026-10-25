@@ -200,3 +200,13 @@
 .ledger.sources .source.side span {
   color: var(--teal-dark);
 }
+
+.ledger.foundation {
+  margin-bottom: 12px;
+  border-color: var(--gold);
+}
+
+.ledger.foundation .gift {
+  font-weight: 600;
+  margin: 4px 0 2px;
+}

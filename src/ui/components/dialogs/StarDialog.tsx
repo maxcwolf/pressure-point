@@ -5,10 +5,12 @@ import './StarDialog.css';
 import { useState } from 'preact/hooks';
 
 import { nextCenter } from '../../../core/campaign';
-import { CAMPAIGN, centerOf, CENTERS, STAR_KARMA } from '../../../core/data';
+import { CAMPAIGN, centerOf, CENTERS, FOUNDATION_KARMA, STAR_KARMA } from '../../../core/data';
 import { money } from '../../../core/format';
+import { giftsToCome } from '../../../core/sim/foundation';
 import { loadCampaign } from '../../../storage/campaign';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { giftList } from '../../lib/foundation';
 import { karmaText } from '../../lib/karma';
 import { newRoomsText, treatmentsUnlockedAt } from '../../lib/unlocks';
 import { Button } from '../common/Button';
@@ -36,6 +38,8 @@ export function StarDialog() {
   const [karma] = useState(
     () => counts && CAMPAIGN.includes(sim.s.center) && n > (loadCampaign().stars[sim.s.center] ?? 0),
   );
+  // every star in a campaign center opens the Foundation, for the gifts not made here already
+  const gifts = n >= goals.length && counts && CAMPAIGN.includes(sim.s.center) ? giftsToCome(sim.s) : [];
   return (
     <Dialog>
       <div class="bigstars">
@@ -77,6 +81,14 @@ export function StarDialog() {
         <p>
           Each star opens more for the center to grow into: the rooms, treatments and items this one brings are listed
           here, ready in the Rooms and Items menus.
+        </p>
+      )}{' '}
+      {gifts.length > 0 && (
+        <p class="unlock">
+          <b>
+            <IconText id="ui-karma">The Pressure Point Foundation is open:</IconText>
+          </b>
+          {` gifts of ${giftList(gifts)}, each worth +${karmaText(FOUNDATION_KARMA)}. Find it in the Money menu, on the Books tab.`}
         </p>
       )}{' '}
       {opens && (

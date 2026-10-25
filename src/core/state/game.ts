@@ -85,6 +85,7 @@ export const emptyLedger = (): Ledger => ({
   marketing: 0,
   fines: 0,
   upkeep: 0,
+  gifts: 0,
 });
 
 /** The day the first house call may be offered. */
@@ -223,6 +224,7 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     ceremony: null,
     trophies: [],
     achieved: [],
+    gifts: 0,
     payrollDue: null,
     insolvency: null,
     redSince: null,

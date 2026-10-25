@@ -59,7 +59,7 @@ export const METRICS: readonly Metric[] = [
   {
     id: 'costs',
     name: 'Costs',
-    desc: 'Salaries, building, machine upkeep, training, marketing, interest and fines.',
+    desc: 'Salaries, building, machine upkeep, training, marketing, interest, fines and gifts.',
     unit: 'money',
   },
   { id: 'shop', name: 'Shop sales', desc: 'Sales at the Shop Counter.', unit: 'money' },

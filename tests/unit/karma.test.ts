@@ -206,6 +206,7 @@ describe('the campaign kept between games', () => {
     recordGame({ ...newGame('exchange'), stars: 0, achieved: ['called-in'] });
     expect(loadCampaign()).toEqual({
       stars: { willow: 2 },
+      gifts: {},
       achieved: ['called-in', 'century'],
       unlocked: [],
       decor: [],

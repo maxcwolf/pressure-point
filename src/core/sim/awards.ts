@@ -68,7 +68,8 @@ export function yearTotals(months: readonly MonthRecord[]): YearTotals {
       t.patienceTotal += m.patienceTotal;
       t.patienceCount += m.waitCount;
     }
-    t.net += netOf(m.ledger);
+    // a gift to the Foundation is not bad business, so the books are judged on the center's trading without it
+    t.net += netOf(m.ledger) + m.ledger.gifts;
   }
   return t;
 }

@@ -42,8 +42,12 @@ export interface GameSetup {
  * reaches for one not yet built: the tools and the saves report back to their callers rather than to the interface.
  */
 export function startGame({ canvas, audio, state, exit, updates, fullScreen }: GameSetup) {
-  // achievements earned in other games are not earned again in this one
-  if (state.center !== 'sandbox') state.achieved = withAchievements(state.achieved, loadCampaign().achieved);
+  // achievements earned in other games are not earned again in this one, nor gifts already made in this center
+  if (state.center !== 'sandbox') {
+    const campaign = loadCampaign();
+    state.achieved = withAchievements(state.achieved, campaign.achieved);
+    state.gifts = Math.max(state.gifts, campaign.gifts[state.center] ?? 0);
+  }
   const sim = new Sim(state);
   // a blueprint still open when the game was last closed is torn up, with anything bought for it refunded
   for (const r of [...state.rooms]) if (!r.done) sim.removeRoom(r.id, 1);
