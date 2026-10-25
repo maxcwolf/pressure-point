@@ -133,6 +133,30 @@ describe('ranks', () => {
     expect(therapist.morale).toBeGreaterThan(50);
   });
 
+  it('are all given at once to everyone waiting, to the sound of one till', () => {
+    const { sim, s, receptionist, consultant, therapist } = openCenter(1);
+    for (const st of s.staff) {
+      st.skill = 1;
+      st.salary = 100;
+    }
+    receptionist.promotion = true;
+    therapist.promotion = true;
+    // someone on their way out is not promoted
+    consultant.promotion = true;
+    consultant.state = 'leaving';
+    sim.drain();
+    expect(sim.promoteAll()).toBe(2);
+    for (const st of [receptionist, therapist]) {
+      expect(st).toMatchObject({ skill: 2, promotion: false });
+      expect(st.salary).toBeGreaterThanOrEqual(sim.fairPay(st));
+    }
+    expect(consultant).toMatchObject({ skill: 1, promotion: true, salary: 100 });
+    const events = sim.drain();
+    expect(events.filter((e) => e.type === 'sfx' && e.name === 'cash')).toHaveLength(1);
+    expect(sim.promoteAll()).toBe(0);
+    expect(sim.drain().filter((e) => e.type === 'sfx')).toHaveLength(0);
+  });
+
   it('are earned in play, from guests served', () => {
     const { sim, therapist } = openCenter(1);
     const xp = therapist.xp;

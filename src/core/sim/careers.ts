@@ -131,7 +131,7 @@ export function offerPromotion(ctx: SimContext, st: Staff) {
 }
 
 /** Promote a member of staff who is ready: a rank up, a new qualification slot, and the raise that comes with it. */
-export function promote(ctx: SimContext, id: number): boolean {
+export function promote(ctx: SimContext, id: number, { sound = true } = {}): boolean {
   const st = staffById(ctx, id);
   if (!st?.promotion || st.state === 'leaving') return false;
   st.skill += 1;
@@ -140,12 +140,20 @@ export function promote(ctx: SimContext, id: number): boolean {
   st.raiseAsked = false;
   st.morale = Math.min(100, st.morale + PROMOTION_CHEER);
   say(st, 'bubble-celebrate', 5);
-  emit(ctx, { type: 'sfx', name: 'cash' });
+  if (sound) emit(ctx, { type: 'sfx', name: 'cash' });
   toast(ctx, `${st.name} is now ${rankName(st.skill)}, on ${money(st.salary)} a month.`, 'good', {
     kind: 'staff',
     id: st.id,
   });
   return true;
+}
+
+/** Promote everyone ready and waiting, in payroll order, to the sound of one till. How many were promoted. */
+export function promoteAll(ctx: SimContext): number {
+  const ready = ctx.s.staff.filter((st) => st.promotion && st.state !== 'leaving');
+  for (const st of ready) promote(ctx, st.id, { sound: false });
+  if (ready.length) emit(ctx, { type: 'sfx', name: 'cash' });
+  return ready.length;
 }
 
 /** The general courses a role can take, beyond its discipline's treatments. */

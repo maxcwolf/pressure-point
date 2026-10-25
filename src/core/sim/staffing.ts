@@ -150,7 +150,7 @@ export function raiseTo(st: Staff, scale = 1): number {
 }
 
 /** Give a member of staff the raise they are due, which lifts their morale. */
-export function giveRaise(ctx: SimContext, id: number) {
+export function giveRaise(ctx: SimContext, id: number, { sound = true } = {}) {
   const st = staffById(ctx, id);
   if (!st || st.state === 'leaving') return;
   st.salary = raiseTo(st, tuning(ctx.s, 'salaries'));
@@ -158,7 +158,18 @@ export function giveRaise(ctx: SimContext, id: number) {
   st.raiseAsked = false;
   st.unhappyT = 0;
   say(st, 'bubble-happy', 4);
-  emit(ctx, { type: 'sfx', name: 'cash' });
+  if (sound) emit(ctx, { type: 'sfx', name: 'cash' });
+}
+
+/**
+ * Give everyone asking for a raise the raise they asked for, to the sound of one till. Those with a promotion waiting
+ * are left to it, as it comes with a raise of its own. How many were raised.
+ */
+export function giveRaisesAsked(ctx: SimContext): number {
+  const asking = ctx.s.staff.filter((st) => st.raiseAsked && !st.promotion && st.state !== 'leaving');
+  for (const st of asking) giveRaise(ctx, st.id, { sound: false });
+  if (asking.length) emit(ctx, { type: 'sfx', name: 'cash' });
+  return asking.length;
 }
 
 /** How much faster than usual a member of staff on a break gets their energy back: quicker with an Espresso Machine or a Wall Clock in the room. */

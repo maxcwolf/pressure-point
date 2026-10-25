@@ -68,7 +68,7 @@ import {
   toggleWindow,
 } from './building';
 import { acceptCall, type CallCost, callCost, callFee, declineCall, updateCalls, whoCanGo } from './calls';
-import { fullyTrained, promote, reject, setDuty, updateApplicants, updateHabits } from './careers';
+import { fullyTrained, promote, promoteAll, reject, setDuty, updateApplicants, updateHabits } from './careers';
 import { announceSweatLodge } from './ceremonies';
 import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
@@ -135,7 +135,17 @@ import { type RivalCourse, rivalCourse, updateRival } from './rival';
 import { calmerFor, calmerOf, canCalm } from './runaways';
 import { playingFor, servedAt, sessionState, stationStaff } from './sessions';
 import { askSoul, canRetrieve } from './souls';
-import { aboutToQuit, daysUntilQuit, fairPay, fire, giveRaise, hire, raiseTo, updateStaff } from './staffing';
+import {
+  aboutToQuit,
+  daysUntilQuit,
+  fairPay,
+  fire,
+  giveRaise,
+  giveRaisesAsked,
+  hire,
+  raiseTo,
+  updateStaff,
+} from './staffing';
 import { type StandingPoints, standingPoints, updateStanding } from './standing';
 import { type Chance, successChance, updateStations } from './stations';
 import { subjectSpot } from './subjects';
@@ -568,6 +578,10 @@ export class Sim {
   promote(id: number): boolean {
     return promote(this.ctx, id);
   }
+  /** Promote everyone ready and waiting. How many were promoted. */
+  promoteAll(): number {
+    return promoteAll(this.ctx);
+  }
   /** Add a room to the rooms a member of staff works in, or take it away. False if there is no work for them there. */
   assignRoom(staffId: number, roomId: number): boolean {
     return assignRoom(this.ctx, staffId, roomId);
@@ -596,6 +610,12 @@ export class Sim {
   giveRaise(id: number) {
     giveRaise(this.ctx, id);
     this.afterSpending();
+  }
+  /** Give everyone asking for a raise the raise they asked for. How many were raised. */
+  giveRaisesAsked(): number {
+    const raised = giveRaisesAsked(this.ctx);
+    this.afterSpending();
+    return raised;
   }
 
   /** Prepare for the mishap coming, at its price. */

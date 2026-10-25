@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Promote and pay raises from the Staff menu.** Each row has a button to promote whoever is ready or raise their pay, gold for whoever asks, and when several are waiting, one button promotes them all or pays every raise asked for, with what it adds to the monthly payroll.
+
 ## v0.33.6
 
 - **Sort the menus' lists.** Each list in the menus has a Sort by dropdown: items and rooms by name, price, decor, quiet or earnings; staff by name, role, rank, salary, energy, morale or what they know; applicants by rank, salary, what they know or quirks; and templates, the casebook and the regulars by their own figures. A list keeps its order while the game runs.

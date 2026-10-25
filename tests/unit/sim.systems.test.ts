@@ -137,6 +137,30 @@ describe('morale and pay', () => {
     expect(therapist.morale).toBeGreaterThan(before);
   });
 
+  it('pays every raise asked for at once, to the sound of one till', () => {
+    const { sim, receptionist, consultant, therapist } = openCenter(1);
+    receptionist.raiseAsked = true;
+    therapist.raiseAsked = true;
+    const raises = [sim.raiseTo(receptionist), sim.raiseTo(therapist)];
+    const unasked = consultant.salary;
+    sim.drain();
+    expect(sim.giveRaisesAsked()).toBe(2);
+    expect([receptionist.salary, therapist.salary]).toEqual(raises);
+    expect([receptionist.raiseAsked, therapist.raiseAsked]).toEqual([false, false]);
+    expect(consultant.salary).toBe(unasked);
+    expect(sim.drain().filter((e) => e.type === 'sfx' && e.name === 'cash')).toHaveLength(1);
+  });
+
+  it('leaves a raise asked for to the promotion waiting, which comes with one', () => {
+    const { sim, therapist } = openCenter(1);
+    therapist.skill = 1;
+    therapist.raiseAsked = true;
+    therapist.promotion = true;
+    const salary = therapist.salary;
+    expect(sim.giveRaisesAsked()).toBe(0);
+    expect(therapist.salary).toBe(salary);
+  });
+
   it('gives a 10% raise to someone already on the going rate', () => {
     const { sim, therapist } = openCenter(1);
     const fair = sim.fairPay(therapist);
