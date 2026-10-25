@@ -9,6 +9,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **A simpler Willow Lane.** Qi Gong classes are no longer on offer at Willow Lane, so its second star brings the Kneadmaster alone, and no Instructor applies. The campaign meets the classes at The Exchange's second star, as its card now says. Willow Lane sells one plot a star, the unit next door, the old bakery and the yard behind: the back room and the shop to the west are no longer for sale, and a game that bought either keeps the land.
 - **Practice Spots face the Instructor.** A Practice Spot turns to face the Instructor's Mat as it is placed or moved, with an arrow showing which way, and R turns it by hand instead. Spots already placed keep the way they face.
 - **Promote and pay raises from the Staff menu.** Each row has a button to promote whoever is ready or raise their pay, gold for whoever asks, and when several are waiting, one button promotes them all or pays every raise asked for, with what it adds to the monthly payroll.
+- **Light snow.** Where winter goes below freezing, a light snow falls once or twice a year for a few days at a time. It is only weather: nothing changes for the center.
 
 ## v0.33.6
 
