@@ -1,25 +1,21 @@
 # Announcements
 
-Every line the PA announcer can say, recorded or not, in one place. A recording plays only when its text matches the banner exactly, punctuation included, so record each line word for word. Put the clean recording in `brand/announcer/` as a kebab-case `.mp3`, run `yarn announcer` (macOS) to add the PA speaker effect and write the `.m4a` to `src/sounds/announcer/`, and add it to `VOICE_LINES` in `src/voice.ts`. See [development.md](development.md).
+Every line the PA announcer can say, recorded or not, in one place. A recording plays only when its text matches the banner exactly, punctuation included, so record each line word for word. Put the clean recording in `brand/announcer/` as a kebab-case `.mp3`, run `yarn announcer` (macOS) to add the PA speaker effect and write the `.m4a` to `src/sounds/announcer/`, and add it to `VOICE_LINES` in `src/audio/voice.ts`. See [development.md](development.md).
 
 When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-42 recorded, 35 still to record.
+43 recorded, 32 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
-- ✅ Guests are reminded that the knots are not contagious.
 - ✅ Would the owner of a red aura please move it from the fire exit.
 - ✅ Please do not tip the therapists. They fall over.
-- ✅ Staff members are reminded that whale song is not a valid doctor’s note.
-- ✅ Guests are asked not to hum along with the fountain.
 - ✅ The herbal tea is herbal. That is all we are prepared to say.
 - ✅ Please keep your chakras aligned and your belongings with you.
 - ✅ Guests leaving face-shaped marks on the towels will be charged.
 - ✅ A reminder that relaxation is mandatory.
-- ✅ The lost and found now holds one flip-flop and a sense of urgency.
 - ✅ Please breathe in. Further instructions will follow.
 - ✅ Guests are reminded that clothing is mandatory in the hallways.
 - ✅ Attention male visitors, please do not completely remove your pants while using the urinal.
@@ -27,6 +23,8 @@ Key: ✅ recorded, ⬜ not recorded yet.
 - ✅ A polite reminder: Mercury is no longer in retrograde, so you have absolutely no excuse for your behavior.
 - ✅ Reminder: Screaming into the void is permitted only between the hours of two and four PM.
 - ✅ Visitors are reminded that sighing heavily does not count as breathwork.
+- ✅ Staff are requested to stop using the singing bowls to mix their salad in the breakroom.
+- ✅ Would the guest who left their emotional baggage in the hallway please return and retrieve it.
 
 ## Opening day (`src/core/sim/progress.ts`)
 
@@ -66,10 +64,10 @@ Key: ✅ recorded, ⬜ not recorded yet.
 - ⬜ The Press House is now open. Bring us your bitterness. We are told it has a lovely finish.
 - ⬜ The Carousel of Rebirth is now open. Please remain seated until you are yourself.
 
-## Seasons, at The Boardwalk (`SEASON_NEWS` in `src/core/sim/twists.ts`)
+## Seasons, at The Boardwalk (`SEASON_LINES` in `src/core/sim/twists.ts`, each followed on the banner by the numbers, which are not read out)
 
-- ⬜ Winter is here. The promenade is empty, so watch the budget until spring.
-- ⬜ Spring! The first day-trippers are back in town.
+- ✅ Winter is here. The promenade is empty, so watch the budget until spring.
+- ✅ Spring has sprung! The first day-trippers are back in town.
 - ⬜ Summer at last, and the town is packed. Expect a crowd.
 - ⬜ Autumn. The visitors are heading home.
 
@@ -97,7 +95,7 @@ Key: ✅ recorded, ⬜ not recorded yet.
 
 ## A really bad trip (`RUNAWAY_LINES` in `src/core/sim/runaways.ts`, one or the other by the guest)
 
-- ⬜ Would the guest running through the lobby please note that the ceiling is not, in fact, melting.
+- ✅ Would the naked guest running through the lobby please note that the walls are not, in fact, melting.
 - ⬜ A reminder that the walls are load-bearing and cannot be reasoned with.
 
 ## Visits, as a visitor writes ahead (`VISIT_NEWS` in `src/core/data/visits.ts`)
