@@ -6,6 +6,7 @@ import { assignableRole, roomLabels } from '../../../core/sim/assignments';
 import { rankName, rankProgress, xpToNext } from '../../../core/sim/careers';
 import { burntOut } from '../../../core/sim/souls';
 import type { Staff } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { meterPercent, meterTone } from '../../lib/meters';
@@ -18,7 +19,11 @@ import { IconText, Line } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
 import { Stars } from '../common/Stars';
 import { Courses } from './Courses';
+import { duty, dutyRow, smallButton } from './looks';
 import { StaffCompare } from './StaffCompare';
+
+/** Their rank by name, with its stars beside it. */
+const rank = css({ display: 'flex', alignItems: 'center', gap: 's' });
 
 /** Their rank, how far they are toward the next, and the qualification slots they have filled. */
 function Career({ staff: st }: { staff: Staff }) {
@@ -27,7 +32,8 @@ function Career({ staff: st }: { staff: Staff }) {
   const note = promotionNote(st, sim.fullyTrained(st));
   return (
     <>
-      <p class="rank">
+      {/* `rank` is for the end-to-end tests to find it by, and `raise` below too */}
+      <p class={cx('rank', rank)}>
         <b>{rankName(st.skill)}</b> <Stars count={st.skill} />
       </p>
       <label>
@@ -42,7 +48,7 @@ function Career({ staff: st }: { staff: Staff }) {
       <QualChips quals={st.quals} general={st.general} />
       {st.promotion && st.state !== 'leaving' && (
         <Button
-          class="raise go"
+          class={cx(smallButton, 'raise', 'go')}
           onPress={() => {
             sim.promote(st.id);
           }}
@@ -62,7 +68,7 @@ function Duties({ staff: st }: { staff: Staff }) {
   return (
     <>
       <h4>Duties</h4>
-      <div class="duties">
+      <div class={dutyRow}>
         {duties.map((d) => {
           const on = !st.off.includes(d);
           // there has to be something left for them to do
@@ -70,7 +76,7 @@ function Duties({ staff: st }: { staff: Staff }) {
           return (
             <Button
               key={d}
-              class={cx('duty', on && 'on')}
+              class={cx(duty, on && 'on')}
               locked={last}
               title={
                 last ? 'Their only duty left' : on ? 'Click to keep them from this' : 'Click to put them back on this'
@@ -100,9 +106,9 @@ function WorksIn({ staff: st }: { staff: Staff }) {
       <p class="sub works-in">
         {st.rooms.length ? st.rooms.map((id) => labels.get(id) ?? 'a room').join(', ') : 'Anywhere'}
       </p>
-      <div class="duties">
+      <div class={dutyRow}>
         <Button
-          class={cx('duty', 'assign', assigning && 'on')}
+          class={cx(duty, 'assign', assigning && 'on')}
           title="Click rooms to have them work only there, and click a room again to take it away"
           onPress={() => {
             if (assigning) tools.cancel();
@@ -113,7 +119,7 @@ function WorksIn({ staff: st }: { staff: Staff }) {
         </Button>
         {st.rooms.length > 0 && (
           <Button
-            class="duty"
+            class={duty}
             title="Let them work anywhere again"
             onPress={() => {
               sim.clearRooms(st.id);
@@ -137,7 +143,7 @@ function Soul({ staff: st }: { staff: Staff }) {
   if (sim.canRetrieve(st))
     return (
       <Button
-        class="raise"
+        class={cx(smallButton, 'raise')}
         quiet
         title="A Shaman comes over and brings their soul back, lifting their morale a long way. It tires the Shaman."
         onPress={() => {
@@ -210,7 +216,7 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
       </p>{' '}
       {!leaving && (
         <Button
-          class={cx(st.raiseAsked && 'go', 'raise')}
+          class={cx(smallButton, st.raiseAsked && 'go', 'raise')}
           quiet
           onPress={() => {
             sim.giveRaise(st.id);

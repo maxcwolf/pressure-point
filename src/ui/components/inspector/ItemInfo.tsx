@@ -25,6 +25,7 @@ import { calmness } from '../../../core/sim/noise';
 import { cannotUpgrade, upgradeCost } from '../../../core/sim/upgrades';
 import { starsEarned } from '../../../core/state/game';
 import type { Item } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { meterTone } from '../../lib/meters';
@@ -36,7 +37,36 @@ import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { RugPatterns } from '../common/RugPatterns';
+import { smallButton } from './looks';
 import { StationInfo } from './StationInfo';
+
+/** Treatment equipment's upgrades, a little apart from the rest. */
+const upgrades = css({ m: '[8px 0 4px]' });
+
+/** The button to buy the next upgrade, in gold; a locked one is cream, and faded. */
+const upgrade = css({
+  border: '[2.5px solid {colors.navy}]',
+  borderRadius: 'card',
+  p: '[5px 11px]',
+  fontWeight: 'bold',
+  fontSize: '[13px]',
+  bg: 'gold',
+  boxShadow: '[0 3px 0 rgba(36, 56, 74, 0.3)]',
+  m: '[2px 0 6px]',
+  _locked: { bg: 'cream', opacity: '[0.7]' },
+});
+
+/**
+ * A heater or air conditioner's thermostat, a little apart from the rest, with the words under its tabs close to them.
+ * Its tabs' own spacing is in Inspector.css, by `thermostat`, as it has to outdo the menus' tabs, still plain CSS.
+ */
+const thermostat = css({ mt: 'm', '& .sub': { m: '[4px 0 0]' } });
+
+/** Setting every one of its kind alike, faded while they already are. */
+const every = css({ _locked: { opacity: '[0.5]', cursor: 'not-allowed' } });
+
+/** The temperature overlay's switch, gold while it is on. */
+const tempOverlay = css({ _on: { bg: 'gold' } });
 
 /** How fresh a table's linens are, and what changing them needs. */
 function Linens({ item: it }: { item: Item }) {
@@ -117,7 +147,8 @@ function Upgrades({ item: it }: { item: Item }) {
   const why = cannotUpgrade(sim.s, it);
   const status = installStatus(it, sim.s.staff);
   return (
-    <div class="upgrades">
+    // `upgrades` is for the end-to-end tests to find it by
+    <div class={cx('upgrades', upgrades)}>
       <p>
         <b>{`Upgrades ${upgradeStars(it.level)}`}</b>
       </p>
@@ -129,7 +160,7 @@ function Upgrades({ item: it }: { item: Item }) {
       )}
       {it.level < UPGRADE_LEVELS && !it.upgradePaid && (
         <Button
-          class="upgrade"
+          class={upgrade}
           title={why || `${upgradeEffect(next)}. A Caretaker with the Mechanics course installs it.`}
           locked={!!why}
           quiet
@@ -176,7 +207,7 @@ function Thermostat({ item: it }: { item: Item }) {
   const others = sim.s.items.filter((x) => x.type === it.type && x.id !== it.id);
   const alike = others.every((x) => (x.thermostat ?? 'auto') === setting);
   return (
-    <div class="thermostat">
+    <div class={cx('thermostat', thermostat)}>
       <label>Thermostat</label>
       <div class="tabs" aria-label="Thermostat">
         {THERMOSTAT_ORDER.map((k) => (
@@ -201,7 +232,7 @@ function Thermostat({ item: it }: { item: Item }) {
       </p>
       {others.length > 0 && (
         <Button
-          class="move every"
+          class={cx(smallButton, every)}
           locked={alike}
           title={alike ? `Every ${def.name} is already on ${THERMOSTAT[setting].name}` : undefined}
           onPress={() => {
@@ -212,7 +243,7 @@ function Thermostat({ item: it }: { item: Item }) {
         </Button>
       )}{' '}
       <Button
-        class={cx('move', 'temp-overlay', overlaid && 'on')}
+        class={cx(smallButton, tempOverlay, overlaid && 'on')}
         title="Color the floor by temperature: blue too cold, red too hot, clear comfortable. It stays on until turned off."
         onPress={() => {
           hud.overlay = overlaid ? null : 'temperature';
@@ -325,7 +356,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
       )}
       {!!def.decor && <p class="sub">{`Decor: +${def.decor} to its surroundings`}</p>}
       <Button
-        class="move"
+        class={smallButton}
         onPress={() => {
           tools.startMove(it.id);
         }}

@@ -1,15 +1,43 @@
 // The year-end awards ceremony.
 
-import './AwardsDialog.css';
-
 import { certificatesLeft } from '../../../core/certificates';
 import { AWARD_REP, AWARDS } from '../../../core/data';
 import { money } from '../../../core/format';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 import { Dialog } from './Dialog';
+
+/**
+ * Every award, each a card with its trophy, its name and how the center did, and the prize or Missed to the right: gold
+ * for one won, and faded, its trophy greyed, for one missed. `awards` is for the end-to-end tests to find it by.
+ */
+const awards = css({
+  listStyle: 'none',
+  p: 'none',
+  m: '[10px 0]',
+  display: 'grid',
+  gridTemplateColumns: '[repeat(auto-fit, minmax(260px, 1fr))]',
+  gap: 's',
+  textAlign: 'left',
+  '& li': {
+    display: 'grid',
+    gridTemplateColumns: '[30px 1fr auto]',
+    alignItems: 'center',
+    gap: 'm',
+    border: '[2px solid rgba(36, 56, 74, 0.25)]',
+    borderRadius: '[10px]',
+    p: '[5px 9px]',
+    bg: 'white',
+  },
+  '& li.won': { borderColor: 'gold', bg: '[#fff6dc]' },
+  '& li.missed': { opacity: '[0.75]' },
+  '& li.missed .icon': { filter: '[grayscale(1)]', opacity: '[0.45]' },
+  '& small': { display: 'block', fontSize: '[12px]', lineHeight: '[1.25]' },
+  '& em': { fontStyle: 'normal', fontWeight: 'bold', fontSize: '[13px]' },
+});
 
 /** Every award at the year's ceremony, won or missed, with how the center did and what the winners took home. */
 export function AwardsDialog() {
@@ -29,7 +57,7 @@ export function AwardsDialog() {
           ? `${won.length} of ${ceremony.results.length} won: ${money(prizes)} in prizes, and +${won.length * AWARD_REP}% reputation.`
           : 'Nothing this year. The judges will be back next year, and the bar only goes up.'}
       </p>
-      <ul class="awards">
+      <ul class={cx('awards', awards)}>
         {ceremony.results.map((r) => {
           const def = AWARDS[r.award];
           return (

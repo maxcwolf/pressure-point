@@ -1,13 +1,12 @@
 // The celebration when a star is earned.
 
-import './StarDialog.css';
-
 import { useState } from 'preact/hooks';
 
 import { nextCenter } from '../../../core/campaign';
 import { CAMPAIGN, centerOf, CENTERS, STAR_KARMA } from '../../../core/data';
 import { money } from '../../../core/format';
 import { loadCampaign } from '../../../storage/campaign';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { karmaText } from '../../lib/karma';
 import { newRoomsText, treatmentsUnlockedAt } from '../../lib/unlocks';
@@ -15,6 +14,26 @@ import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { StarRow } from '../common/Stars';
 import { Dialog } from './Dialog';
+
+/** The stars earned, big and gold, outlined in navy, with the ones still to earn faint. */
+const bigStars = css({
+  color: 'gold',
+  fontSize: '[52px]',
+  letterSpacing: '[6px]',
+  WebkitTextStroke: '[2.5px {colors.navy}]',
+  paintOrder: 'stroke fill',
+});
+
+/** What the star unlocks, on a lilac card. */
+const unlock = css({
+  bg: '[#e4d9f7]',
+  border: '[2px solid #8a6fd1]',
+  borderRadius: 'card',
+  py: 'm',
+  px: 'l',
+  mt: '[10px]',
+  fontSize: '[14px !important]',
+});
 
 /** The new star, the grant that comes with it, and what it unlocks. */
 export function StarDialog() {
@@ -38,19 +57,19 @@ export function StarDialog() {
   );
   return (
     <Dialog>
-      <div class="bigstars">
+      <div class={bigStars}>
         <StarRow earned={n} of={goals.length} />
       </div>{' '}
       <h2>{n >= goals.length ? 'Three stars!' : `Star ${n} earned!`}</h2>{' '}
       <p>{`The wellness inspectors were deeply relaxed by what they saw. Here is a ${money(5000 * n)} grant.`}</p>
       {rooms && (
-        <p class="unlock">
+        <p class={unlock}>
           <b>New room:</b>
           {` ${rooms}`}
         </p>
       )}
       {treatments.length > 0 && (
-        <p class="unlock">
+        <p class={unlock}>
           <b>New treatments:</b>
           {treatments.map((t, i) => (
             <span key={t.text}>
@@ -65,7 +84,7 @@ export function StarDialog() {
         </p>
       )}{' '}
       {karma && (
-        <p class="unlock">
+        <p class={unlock}>
           <b>
             <IconText id="ui-karma">{`+${karmaText(STAR_KARMA)}`}</IconText>
           </b>
@@ -80,7 +99,7 @@ export function StarDialog() {
         </p>
       )}{' '}
       {opens && (
-        <p class="unlock">
+        <p class={unlock}>
           <b>{`${CENTERS[opens].name} is open:`}</b>
           {' choose it from Campaign on the title screen whenever you are ready.'}
         </p>

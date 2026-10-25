@@ -1,7 +1,5 @@
 // Comparing a member of staff with another, side by side in their inspector.
 
-import './StaffCompare.css';
-
 import type { ComponentChildren } from 'preact';
 
 import {
@@ -17,11 +15,84 @@ import {
 import { money } from '../../../core/format';
 import { rankName } from '../../../core/sim/careers';
 import type { CourseId, Staff } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 import { Stars } from '../common/Stars';
+import { duty, dutyRow } from './looks';
+
+/** The switch to start comparing, under their role, as small as the duty switches. */
+const toggleStyle = css({ display: 'block', m: '[3px 0 2px]' });
+
+/**
+ * The white card the others to choose from, or the comparison, are drawn on, its heading close to the top (under
+ * `.insp`, to outdo the inspector's spacing of headings).
+ */
+const pickCard = css({
+  bg: 'white',
+  border: '[2px solid rgba(36, 56, 74, 0.35)]',
+  borderRadius: '[11px]',
+  p: '[4px 8px 8px]',
+  m: '[6px 0 4px]',
+  '.insp &': { '& h4': { mt: 'xs' } },
+});
+
+/** Someone to compare them with: their role's icon, their name and their rank, framed in teal under the pointer. */
+const pick = css({
+  w: '[100%]',
+  display: 'grid',
+  gridTemplateColumns: '[22px 1fr auto]',
+  alignItems: 'center',
+  gap: 's',
+  textAlign: 'left',
+  fontSize: 'small',
+  bg: '[none]',
+  border: '[1.5px solid transparent]',
+  borderRadius: '[8px]',
+  p: '[2px 4px]',
+  _hover: { borderColor: 'teal-dark', bg: '[#f0fbf9]' },
+});
+
+/**
+ * The comparison, in set columns, so a long word or a full row of stars can never push the table out of its card. The
+ * heading of the treatments and courses (its row marked `section`) stands out from the plainer names of the rows.
+ */
+const table = css({
+  w: '[100%]',
+  tableLayout: 'fixed',
+  borderCollapse: 'collapse',
+  fontSize: '[12px]',
+  mb: 's',
+  '& th, & td': { p: '[2px 3px]', textAlign: 'left', verticalAlign: 'middle' },
+  '& thead th': {
+    fontWeight: 'bold',
+    fontSize: 'small',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  // a treatment's name too long for the column is broken at a soft hyphen if it has one, or hyphenated, or broken
+  // anywhere
+  '& tbody th': { fontWeight: '[500]', opacity: '[0.75]', hyphens: 'auto', overflowWrap: 'anywhere' },
+  // five stars, small enough to fit their column
+  '& .skill': { fontSize: '[10.5px]', letterSpacing: '[0]', whiteSpace: 'nowrap' },
+  '& tbody tr + tr': { borderTop: '[1px solid rgba(36, 56, 74, 0.12)]' },
+  '& tr.section th': { opacity: '[1]', fontWeight: 'bold', pt: '[7px]' },
+});
+
+/** The column of what is compared, a little under half the table. */
+const labelColumn = css({ w: '[46%]' });
+
+/** The side that comes out ahead, or someone who has passed a course, in green. */
+const aheadStyle = css({ color: '[#23824a]', fontWeight: '[700]' });
+
+/** Someone who has not passed a course, faded. */
+const lacks = css({ opacity: '[0.4]' });
+
+/** Someone who is on the course now, in small slanted words. */
+const studying = css({ fontSize: '[11px]', fontStyle: 'italic', opacity: '[0.8]' });
 
 /** Someone's first name, short enough for a column. */
 const firstName = (st: Staff) => st.name.split(' ')[0] ?? st.name;
@@ -44,11 +115,13 @@ function Line({
   b: ComponentChildren;
   ahead?: 'a' | 'b' | null;
 }) {
+  // `ahead` is for the end-to-end tests to find the side ahead by
+  const won = cx('ahead', aheadStyle);
   return (
     <tr>
       <th scope="row">{label}</th>
-      <td class={cx(ahead === 'a' && 'ahead')}>{a}</td>
-      <td class={cx(ahead === 'b' && 'ahead')}>{b}</td>
+      <td class={cx(ahead === 'a' && won)}>{a}</td>
+      <td class={cx(ahead === 'b' && won)}>{b}</td>
     </tr>
   );
 }
@@ -57,9 +130,9 @@ function Line({
 function Has({ st, course }: { st: Staff; course: CourseId }) {
   const has =
     (st.quals as readonly CourseId[]).includes(course) || (st.general as readonly CourseId[]).includes(course);
-  if (has) return <span class="has">✔</span>;
-  if (st.training?.course === course) return <span class="studying">Learning</span>;
-  return <span class="lacks">—</span>;
+  if (has) return <span class={aheadStyle}>✔</span>;
+  if (st.training?.course === course) return <span class={studying}>Learning</span>;
+  return <span class={lacks}>—</span>;
 }
 
 /** The two side by side: rank, quirks, mood, pay, work done, and every treatment and course either one has. */
@@ -77,9 +150,10 @@ function Table({ a, b }: { a: Staff; b: Staff }) {
   /** Someone's quirks, by name. */
   const quirks = (st: Staff) => (st.traits.length ? st.traits.map((t) => traitOf(t).name).join(', ') : '—');
   return (
-    <table class="compare-table">
+    // `compare-table` is for the end-to-end tests to find it by
+    <table class={cx('compare-table', table)}>
       <colgroup>
-        <col class="label" />
+        <col class={labelColumn} />
         <col />
         <col />
       </colgroup>
@@ -183,7 +257,7 @@ export function StaffCompare({ staff: st }: { staff: Staff }) {
   const other = open && open.withId !== null ? sim.staff(open.withId) : undefined;
   const toggle = (
     <Button
-      class={cx('duty', 'compare', open && 'on')}
+      class={cx(duty, toggleStyle, open && 'on')}
       title={open ? 'Stop comparing' : 'Compare them with another member of staff'}
       onPress={() => {
         hud.compare = open ? null : { staffId: st.id, withId: null, everyone: false };
@@ -201,12 +275,13 @@ export function StaffCompare({ staff: st }: { staff: Staff }) {
     return (
       <>
         {toggle}
-        <div class="compare-pick">
+        {/* `compare-pick` and `pick` are for the tests to find them by */}
+        <div class={cx('compare-pick', pickCard)}>
           <h4>Compare with</h4>
           {(everyone ? [...sameRole, ...rest] : sameRole).map((o) => (
             <Button
               key={o.id}
-              class="pick"
+              class={cx('pick', pick)}
               onPress={() => {
                 hud.compare = { ...open, withId: o.id };
               }}
@@ -217,9 +292,9 @@ export function StaffCompare({ staff: st }: { staff: Staff }) {
             </Button>
           ))}
           {sameRole.length > 0 && rest.length > 0 && (
-            <div class="duties">
+            <div class={dutyRow}>
               <Button
-                class="duty"
+                class={duty}
                 title={everyone ? `Only other ${ROLES[st.role].name.toLowerCase()}s` : 'Staff in every role'}
                 onPress={() => {
                   hud.compare = { ...open, everyone: !everyone };
@@ -236,11 +311,11 @@ export function StaffCompare({ staff: st }: { staff: Staff }) {
   return (
     <>
       {toggle}
-      <div class="compare-pick">
+      <div class={cx('compare-pick', pickCard)}>
         <Table a={st} b={other} />
-        <div class="duties">
+        <div class={dutyRow}>
           <Button
-            class="duty"
+            class={duty}
             title="Compare them with someone else"
             onPress={() => {
               hud.compare = { ...open, withId: null };
@@ -249,7 +324,7 @@ export function StaffCompare({ staff: st }: { staff: Staff }) {
             Someone else
           </Button>
           <Button
-            class="duty"
+            class={duty}
             title={`Show ${other.name}, still compared with ${st.name}`}
             onPress={() => {
               hud.compare = { staffId: other.id, withId: st.id, everyone: open.everyone };

@@ -17,6 +17,7 @@ import { roomLabels } from '../../../core/sim/assignments';
 import { signatureMachine, treatsHere } from '../../../core/sim/machines';
 import { tempFeel } from '../../../core/sim/warmth';
 import type { Item, Room } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
@@ -32,6 +33,34 @@ import { Stars } from '../common/Stars';
 import { DecorPicker } from './DecorPicker';
 import { StationInfo } from './StationInfo';
 import { Timetable } from './Timetable';
+
+/**
+ * The bad vibes over a room, on a dusky tint, the words under the bar close to it (under `.insp`, to outdo the
+ * inspector's spacing of paragraphs).
+ */
+const vibes = css({
+  m: '[8px 0]',
+  p: '[6px 8px]',
+  borderRadius: '[8px]',
+  bg: '[rgba(91, 74, 107, 0.12)]',
+  '.insp &': { '& p': { m: '[4px 0 0]' } },
+});
+
+/**
+ * A button for what can be done to the room: its priority, moving and resizing it, its door and windows, copying it and
+ * keeping it as a template. Priority is gold while it is on.
+ */
+const roomButton = css({
+  border: '[2.5px solid {colors.navy}]',
+  borderRadius: 'card',
+  p: '[5px 11px]',
+  fontWeight: 'bold',
+  fontSize: '[13px]',
+  bg: 'cream',
+  boxShadow: '[0 3px 0 rgba(36, 56, 74, 0.3)]',
+  mt: 's',
+  _on: { bg: 'gold' },
+});
 
 /**
  * Which modalities a treatment room can deliver right now, and what is missing for the rest. Each is judged at the
@@ -80,7 +109,7 @@ function BadVibes({ room }: { room: Room }) {
     (st) => st.role === 'practitioner' || st.role === 'shaman' || st.general.includes('smudging'),
   );
   return (
-    <div class="vibes">
+    <div class={vibes}>
       <b>
         <IconText id="feeling-bad-vibes">Bad vibes</IconText>
       </b>
@@ -187,7 +216,7 @@ export function RoomInfo({ room }: { room: Room }) {
       <Comfort room={room} /> {/* priority on a row of its own, then what can be done to the room */}
       <div>
         <Button
-          class={cx('roompriority', room.priority && 'on')}
+          class={cx(roomButton, room.priority && 'on')}
           title="Staff fill a priority room's stations first, and Caretakers see to it before anywhere else."
           onPress={() => {
             sim.setRoomPriority(room.id, !room.priority);
@@ -197,7 +226,7 @@ export function RoomInfo({ room }: { room: Room }) {
         </Button>
       </div>
       <Button
-        class="roommove"
+        class={roomButton}
         title="Pick the room up, furniture and all, and put it down somewhere else. R turns it. Free."
         onPress={() => {
           tools.startMoveRoom(room.id);
@@ -206,7 +235,7 @@ export function RoomInfo({ room }: { room: Room }) {
         <IconText id="ui-move">Move</IconText>
       </Button>{' '}
       <Button
-        class="roomresize"
+        class={roomButton}
         onPress={() => {
           tools.startResize(room.id);
         }}
@@ -214,7 +243,7 @@ export function RoomInfo({ room }: { room: Room }) {
         <IconText id="ui-resize">Resize</IconText>
       </Button>{' '}
       <Button
-        class="roomdoor"
+        class={roomButton}
         onPress={() => {
           tools.startMoveDoor(room.id);
         }}
@@ -222,7 +251,7 @@ export function RoomInfo({ room }: { room: Room }) {
         <IconText id="ui-door">Move door</IconText>
       </Button>{' '}
       <Button
-        class="roomwindows"
+        class={roomButton}
         onPress={() => {
           tools.startWindows(room.id);
         }}
@@ -230,7 +259,7 @@ export function RoomInfo({ room }: { room: Room }) {
         <IconText id="ui-window">Windows</IconText>
       </Button>{' '}
       <Button
-        class="roomcopy"
+        class={roomButton}
         title="Build copies of this room, furniture, windows and all, wherever you click. R turns them."
         locked={sim.s.money < copyCost(sim.roomLayout(room))}
         onPress={() => {
@@ -240,7 +269,7 @@ export function RoomInfo({ room }: { room: Room }) {
         <IconText id="ui-copy">{`Copy (${money(copyCost(sim.roomLayout(room)))})`}</IconText>
       </Button>{' '}
       <Button
-        class="roomtemplate"
+        class={roomButton}
         title="Keep this room, furniture, windows and all, to build again from the Rooms menu, in this game or any other."
         onPress={() => {
           saveAsTemplate(hud, sim.roomLayout(room));

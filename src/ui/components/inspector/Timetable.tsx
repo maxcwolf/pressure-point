@@ -4,6 +4,7 @@ import { ROLES, WEEKDAYS } from '../../../core/data';
 import { an } from '../../../core/format';
 import { classDays } from '../../../core/sim/classes';
 import type { Room } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
 import { useGame } from '../../hooks/use-hud';
 import { bookingNote, classNote, demandNote, placesNote, weekNote } from '../../lib/classes';
 import { cx } from '../../lib/cx';
@@ -12,6 +13,25 @@ import { statusClass } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText, Line } from '../common/Icon';
+
+/** The timetable, a little apart from the rest. */
+const timetable = css({ m: '[8px 0 4px]' });
+
+/** The days of the week, side by side. */
+const dayRow = css({ display: 'flex', gap: 'xs', m: '[4px 0]' });
+
+/** A day's button, sharing the row with the rest, gold on the days a class is held. */
+const day = css({
+  flex: '1',
+  border: 'control',
+  borderRadius: 'control',
+  p: '[4px 0]',
+  fontWeight: 'bold',
+  fontSize: '[12px]',
+  bg: 'cream',
+  boxShadow: '[0 2px 0 rgba(36, 56, 74, 0.3)]',
+  _on: { bg: 'gold' },
+});
 
 /**
  * Who leads a studio's classes, how its spots stand, the days it holds classes, how many class-goers a week come for
@@ -27,7 +47,8 @@ export function Timetable({ room }: { room: Room }) {
   const staff = lead && sim.stationStaff(lead);
   const leader = sim.classLeader();
   return (
-    <div class="timetable">
+    // `timetable` is for the end-to-end tests to find it by
+    <div class={cx('timetable', timetable)}>
       <p class={statusClass(staff ? 'staffed' : 'unstaffed')}>
         {staff ? `Led by ${staff.name}` : <IconText id="ui-warning">{`Needs ${an(ROLES.instructor.name)}`}</IconText>}
       </p>{' '}
@@ -41,11 +62,11 @@ export function Timetable({ room }: { room: Room }) {
       <p>
         <b>Timetable</b>
       </p>
-      <div class="days">
+      <div class={dayRow}>
         {WEEKDAYS.map((name, d) => (
           <Button
             key={name}
-            class={cx('day', days.includes(d) && 'on')}
+            class={cx(day, days.includes(d) && 'on')}
             title={days.includes(d) ? `No class on ${name}` : `Hold a class on ${name}`}
             onPress={() => {
               sim.toggleClassDay(room.id, d);
