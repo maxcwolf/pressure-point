@@ -1,14 +1,14 @@
 // Top center: an emergency waiting to be accepted or declined, which can be put aside to decide on later.
 
-import './EmergencyOffer.css';
-
 import { useRef } from 'preact/hooks';
 
 import { answerOffer } from '../../app/analytics';
 import { conditionOf, EMERGENCY_DAYS, modalityLabel } from '../../core/data';
 import { money } from '../../core/format';
 import type { Sim } from '../../core/sim/sim';
+import { css } from '../../styled-system/css';
 import { useGame, useHud } from '../hooks/use-hud';
+import { cx } from '../lib/cx';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
@@ -18,6 +18,57 @@ import { HouseCallOffer } from './HouseCallOffer';
 import { MishapNotice } from './MishapNotice';
 import { OutbreakOffer } from './OutbreakOffer';
 import { RunnerNotice } from './RunnerNotice';
+
+/**
+ * The column at the top center, its parts one under another. The looks the offers share are drawn from here, by the
+ * class names the parts give them: `offer` for an offer in full, with its `later` button and its `time-left`, and
+ * `offer-pill` for one put aside, or for a notice with nothing to decide. Each part gives its panel its own color.
+ */
+const column = css({
+  top: '[62px]',
+  left: '[50%]',
+  transform: '[translateX(-50%)]',
+  w: '[min(430px, calc(var(--vw) - 600px))]',
+  minW: '[320px]',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'm',
+  // an offer in full pops in, its words centered
+  '& .offer': { position: 'relative', textAlign: 'center', animation: 'pop 0.2s ease-out' },
+  '& .offer p': { fontSize: '[14px]', lineHeight: '[1.3]' },
+  // the button to decide later: a faint cross in the top right corner
+  '& .offer .later': {
+    pointerEvents: 'auto',
+    position: 'absolute',
+    top: '[6px]',
+    right: '[8px]',
+    w: '[26px]',
+    h: '[26px]',
+    border: '[none]',
+    borderRadius: '[50%]',
+    bg: '[none]',
+    fontSize: '[15px]',
+    opacity: '[0.6]',
+    _hover: { opacity: '[1]', bg: '[rgba(36, 56, 74, 0.08)]' },
+  },
+  // how long is left to decide, over a bar of it
+  '& .offer .time-left': { fontSize: 'small', fontWeight: 'bold', m: '[8px auto 0]', w: '[70%]' },
+  // a pill: its words over a bar, popping in, and lifting a little under the pointer
+  '& .offer-pill': {
+    display: 'block',
+    m: '[0 auto]',
+    p: '[7px 14px 8px]',
+    font: 'inherit',
+    fontSize: 'body',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    animation: 'pop 0.2s ease-out',
+    _hover: { transform: '[translateY(-1px)]' },
+  },
+});
+
+/** An emergency's panel, in red. */
+const emergencyColor = css({ borderColor: 'red' });
 
 /** What the column at the top can show, in the order they go when several are there at once. */
 const PARTS = {
@@ -54,7 +105,7 @@ export function EmergencyOffer() {
   const now = present(sim.s);
   order.current = [...order.current.filter((p) => now.includes(p)), ...now.filter((p) => !order.current.includes(p))];
   return (
-    <div id="offer">
+    <div id="offer" class={column}>
       {order.current.map((p) => {
         const Shown = PARTS[p];
         return <Shown key={p} />;
@@ -76,7 +127,7 @@ function Emergency() {
     return (
       <>
         <Button
-          class="panel offer-pill"
+          class={cx('panel', 'offer-pill', emergencyColor)}
           title="Show the emergency"
           onPress={() => {
             hud.offerAside = null;
@@ -91,7 +142,7 @@ function Emergency() {
     );
   return (
     <>
-      <div class="panel offer">
+      <div class={cx('panel', 'offer', emergencyColor)}>
         <Button
           class="later"
           title="Decide later"

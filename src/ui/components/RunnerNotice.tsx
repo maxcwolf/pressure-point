@@ -3,11 +3,46 @@
 
 import { DAY_SECONDS } from '../../core/data';
 import type { Guest } from '../../core/state/types';
+import { css } from '../../styled-system/css';
 import { useGame, useHud } from '../hooks/use-hud';
 import { calmingNote, doorShare, NOBODY_FREE, runnerLine, runnersShown, sendLabel, sendTitle } from '../lib/calming';
+import { cx } from '../lib/cx';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
+
+/**
+ * A runner's pill: a panel in pink, popping in, with their name and the time left over a bar, and who to send under
+ * them. `runner-pill` is for the end-to-end tests to find it by.
+ */
+const pill = css({
+  display: 'block',
+  m: '[0 auto]',
+  borderColor: '[#c2457a]',
+  p: '[6px 12px 8px]',
+  font: 'inherit',
+  fontSize: 'body',
+  fontWeight: 'bold',
+  textAlign: 'center',
+  animation: 'pop 0.2s ease-out',
+});
+
+/** Their name and the time left, a click to them, lifting a little under the pointer. */
+const show = css({
+  display: 'block',
+  w: '[100%]',
+  border: '[none]',
+  bg: '[none]',
+  p: 'none',
+  font: 'inherit',
+  _hover: { transform: '[translateY(-1px)]' },
+});
+
+/** Who to send, or who is on the way, in a smaller row than usual. */
+const buttons = css({ mt: 'xs', '& button': { fontSize: 'body', p: '[4px 12px]', mt: 'xxs' } });
+
+/** Who is on the way. */
+const onTheWay = css({ fontSize: '[13px]', fontWeight: 'bold', opacity: '[0.85]' });
 
 /** The pills for everyone running round on a really bad trip, newest first. */
 export function RunnerNotice() {
@@ -30,9 +65,9 @@ function RunnerPill({ guest: g, more }: { guest: Guest; more: number }) {
   const calmer = sim.calmerOf(g);
   const sent = sim.calmerFor(g);
   return (
-    <div class="panel offer-pill runner-pill">
+    <div class={cx('panel', 'runner-pill', pill)}>
       <Button
-        class="runner-show"
+        class={show}
         title="Show me"
         onPress={() => {
           hud.show({ kind: 'guest', id: g.id });
@@ -43,9 +78,9 @@ function RunnerPill({ guest: g, more }: { guest: Guest; more: number }) {
         </span>
         <Bar value={doorShare(left) * 100} class={left < DAY_SECONDS ? 'thin bad' : 'thin need'} />
       </Button>
-      <div class="btnrow">
+      <div class={cx('btnrow', buttons)}>
         {calmer ? (
-          <span class="runner-note">
+          <span class={onTheWay}>
             <IconText id="bubble-relieved">{calmingNote(calmer.name, calmer.state === 'doingJob')}</IconText>
           </span>
         ) : sim.canCalm(g) && sent ? (

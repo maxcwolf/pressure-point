@@ -1,13 +1,15 @@
 // Top right: turning the camera, overlays, sound, music and the pause menu.
 
-import './SystemButtons.css';
-
 import { loadControls } from '../../storage/controls';
+import { css } from '../../styled-system/css';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { keyLabel } from '../lib/keys';
 import { Button } from './common/Button';
 import { Icon } from './common/Icon';
+
+/** Top right, in a row. */
+const row = css({ top: '[14px]', right: '[14px]', display: 'flex', gap: 'm' });
 
 /** The turn, overlay, sound, music and menu buttons. */
 export function SystemButtons() {
@@ -15,7 +17,7 @@ export function SystemButtons() {
   const { audio, view } = useGame();
   const { keys } = loadControls();
   return (
-    <div id="sys">
+    <div id="sys" class={row}>
       <Button
         class="round small turn"
         title={`Turn the camera (${keyLabel(keys.turnLeft)} and ${keyLabel(keys.turnRight)})`}

@@ -1,9 +1,8 @@
 // The whole in-game interface, laid out over the game.
 
-import './Hud.css';
-
 import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
+import { css } from '../../styled-system/css';
 import { HudContext } from '../hooks/use-hud';
 import { useRedraw } from '../hooks/use-redraw';
 import type { HudState } from '../hud';
@@ -23,6 +22,35 @@ import { StatsBar } from './StatsBar';
 import { SystemButtons } from './SystemButtons';
 import { Toasts } from './Toasts';
 import { ToolHint } from './ToolHint';
+
+/**
+ * The build buttons and the stats bar in a row; if a long balance or date leaves no room, the stats bar moves up a row
+ * rather than squeezing its cells, the buttons staying put (wrap-reverse puts the start of the cross axis at the
+ * bottom, so flex-start lines them up along it). In a narrow window the stats bar stacks above the buttons.
+ */
+const bottom = css({
+  left: '[14px]',
+  right: '[14px]',
+  bottom: '[14px]',
+  display: 'flex',
+  flexWrap: 'wrap-reverse',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  gap: '[14px]',
+  _max1100: { flexDirection: 'column-reverse', flexWrap: 'nowrap', alignItems: 'flex-start', gap: '[10px]' },
+});
+
+/** The right-hand column, under the system buttons and above the bar along the bottom. */
+const side = css({
+  top: '[70px]',
+  right: '[14px]',
+  bottom: '[var(--bar-h)]',
+  w: '[290px]',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'm',
+  _max720: { w: '[min(290px, calc(var(--vw) - 28px))]' },
+});
 
 /** Redraw the component calling this whenever the interface's state says to. */
 function useHudUpdates(hud: HudState) {
@@ -69,7 +97,7 @@ export function Hud({ hud }: { hud: HudState }) {
       <SystemButtons />
       <OverlayPicker />
       {/* down the right: the messages, then the inspector, which keeps to its place as messages come and go */}
-      <div id="side">
+      <div id="side" class={side}>
         <Toasts />
         <Inspector />
       </div>
@@ -77,7 +105,7 @@ export function Hud({ hud }: { hud: HudState }) {
       <PlanPanel />
       <Menu />
       <Advisor />
-      <div id="bottom" ref={bar}>
+      <div id="bottom" class={bottom} ref={bar}>
         <BuildButtons />
         <StatsBar />
       </div>
