@@ -2,6 +2,8 @@
 
 Ideas for big treatment machines, drafted 21 October 2026. Nothing here is planned: an idea moves to [planning/todo.md](todo.md) or [planning/roadmap.md](roadmap.md) once it is chosen. Like [planning/item-ideas.md](item-ideas.md), this is a list to pick from. How the machines would be built is in [plans/machines.md](../plans/machines.md).
 
+**Built in 0.31.0**, as [plans/machines.md](../plans/machines.md#as-built) records: the five signature rooms (1 to 5), the Carousel of Rebirth (6) and all five machines for techniques we have (7 to 11). The others to swap in and the Long-Distance Reiki Dish are still open.
+
 Every treatment today is a pose on a table or mat, with at most a 1×1 or 2×2 prop beside it costing $600 to $2,600. [audits/two-point-gaps.md](../audits/two-point-gaps.md) names this gap (item 31, "Ours pose people on tables"), and [planning/ideas.md](ideas.md) suggests a signature room at each center. This doc fills both in: one big, silly machine room per center, a few big machines for techniques we already have, and one endgame machine bought with karma.
 
 The machines get sillier center by center. Willow Lane's is something an overpriced spa might really sell, taken too far. By The Orchard Estate they are openly magical.

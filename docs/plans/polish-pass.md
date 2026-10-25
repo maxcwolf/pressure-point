@@ -4,6 +4,8 @@ A review, 22 October 2026, of what merged to `main` since 0.31.0 (the Unreleased
 
 **The verdict.** The mechanics are sound and every feature has unit tests that read as the rules, an end-to-end test where the player touches it, and a guide sentence. What is thin is presentation and stakes, and almost all of that is in the really bad trip: it is the first guest-driven event in the game and it arrives with a toast, a pose and a button, where a stress outbreak arrives with a pill, an announcement, a countdown and a reward. The flood and the Generator each want one or two touches to be seen working. The rest is finished.
 
+**Status, 25 October 2026: built.** All four pieces were done on `claude/polish-pass-e4b7bd`, a commit a change, merged to `main` on 22 October 2026 (`fb101120`) and released in 0.32.0. A was measured in [balance/log.md](../balance/log.md) entry 43: runners at the rate the constant says, every one calmed within three days by the bot, and The Orchard's stars unmoved. Where the build went another way from the plan, a note marked "As built" says how.
+
 The rule from [research/fair-challenge.md](../research/fair-challenge.md) holds throughout: nothing here makes the game easier. Where a stake is added, the warning and the lever come with it.
 
 Four pieces of work, in this order. A is the one that matters and goes first; B and C are small and independent of A and of each other; D is a bundle of gags, each its own commit.
@@ -73,6 +75,8 @@ Four pieces of work, in this order. A is the one that matters and goes first; B 
 - **Heads turn.** In `poseChar` (`src/render/pose.ts`), beside the stressed glance: for any guest or staff member who is not `lie` or `served`, if a runner is within `FREAK_RANGE + 1` tiles, yaw the head toward them (`headZ` is the side-to-side axis the stressed glance uses; compute the yaw from `Math.atan2` of the offset against `c.facing`, clamp to about ±0.6). The pose function is given a `Char` and not the sim, so pass the runners in through the `WoW`/style argument or a small per-frame list the people layer builds (`src/render/people.ts` already walks every guest each frame: collect those in state `running` once, then hand the list to `poseChar`). Keep it cheap: a runner is rare, so the list is almost always empty and the check is one length test.
 - Tests: a unit case that the bubble lasts the run; the lab specimen's `bubbleT` already does this, so the picture should not change. A new `tests/unit` case in `audio`'s tests if there are any for `SFX` names; otherwise none for the sound.
 
+As built (`9cfa81b3`): heads turn with `life.headYaw`, the yaw a fed-up guest uses to look at the door, not `headZ`, which tilts the head. The runners first reached `poseChar` through an argument of their own; the people pass then folded it, with B.1's mopping flag and D.1's rattle flag, into its `Cues` (`runners`, `mopping`, `rattled`). The two announcer lines are `RUNAWAY_LINES` in `runaways.ts`.
+
 ### A.5 Only in the same room or corridor
 
 - `freakOut`: skip `o` when `ctx.world.zoneAt(o.tx, o.ty) !== ctx.world.zoneAt(g.tx, g.ty)` and when `o.state === 'served'` or `'called'`. The zone of a room is its id and the corridor is `Z_CORRIDOR`; see `src/core/world.ts`.
@@ -132,6 +136,8 @@ Four pieces of work, in this order. A is the one that matters and goes first; B 
 - Sound: `src/audio/audio.ts`: a low rumble (a looped sawtooth at about 55 Hz under a lowpass, gain 0.04, started and stopped like the lounge loop) that plays while any generator is running and the camera is within about 12 tiles of it; the people/items layer or the app's audio hook knows camera distance (find how the gong's or the machines' sounds are placed, if any; if nothing is positional, play it unplaced at low gain and say so in the commit).
 - Lab: the generator's specimen gains a "running" control if specimens take controls (several do: see `controls` in `catalog.ts`); a picture of it running.
 
+As built (`a947904a`): the exhaust is a point in the model's parts (`partsOf(g).exhaust`, a position) rather than a named part, so the stack still merges and the generator draws no more than it did. Nothing in the game's sound was placed before, so the rumble is placed by hand: `src/app/rumble.ts` works out how far the camera is looking from the generator carrying the center, silent past 12 tiles.
+
 ### C.2 A day on diesel costs
 
 - `src/core/data/items.ts`: `dailyCost: 150` on the generator ("What a day carrying the center through a cut costs in diesel"), and `dailyCost?: number` on `ItemDef` in `types.ts` with the same comment.
@@ -150,6 +156,8 @@ Each one commit, one test, no measurement.
 - The room's sign plaque shakes with the furniture: find where plaques are built (`models/sign-plaque.ts`) and whether `animateCues` reaches them; if it does not, skip and say so.
 - Test: `machine-neighbors.test.ts` already checks which rooms rattle; add nothing in the sim. A visual picture is enough.
 
+As built (`63fe5087`): the sign plaque does not shake. It is built with the room in `src/render/rooms.ts`, which `animateCues` never reaches, so it was left alone, as allowed above.
+
 ### D.2 A ride worth reviewing
 
 - A feeling `rebirth-ride` (good, `experience`, icon the carousel's `item-fortune-teller` or a feeling icon that fits): "Had a ride on the Carousel of Rebirth", lines "I rode the carousel. I was briefly a goat. Ten out of ten." and "Went round three times as a seagull. Would go round again." In `guests.ts` where `played` is given after a `play` need, give `rebirth-ride` instead when the item used is `wheel_of_rebirth`.
@@ -159,6 +167,8 @@ Each one commit, one test, no measurement.
 
 - `src/core/sim/rival.ts`: in `updatePoints`, two `tipOnce`s: `'rival-ceiling'` the first time the course becomes `ceiling` ("ZenMart has stopped growing: it cannot stand more than a quarter above you. Grow, and it grows; delight a VIP, and it slips."), and `'rival-passed'` the first time `standingPoints(ctx).total` exceeds `s.rival.points` after the rival has opened ("Your standing has passed ZenMart's. Center of the Year is yours to lose."), kind `good`, with the `ui-rival` icon via a `toast` if `tipOnce` cannot take an icon (it cannot today: add an optional `icon` to `tipOnce`, since it only forwards to `toast`).
 - Test in `standing.test.ts`: each fires once.
+
+As built (`852f200c`): `tipOnce` takes an icon now. The second tip waits until the rival has stood above the center once (`rival.led`), since a fresh center stands above it the day it opens and that is no overtaking.
 
 ### D.4 The runner on the overlays
 

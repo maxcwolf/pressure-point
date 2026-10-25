@@ -1,12 +1,12 @@
 # Announcements
 
-Every line the PA announcer can say, recorded or not, in one place. A recording plays only when its text matches the banner exactly, punctuation included, so record each line word for word. Put the clean recording in `brand/announcer/` as a kebab-case `.mp3`, run `yarn announcer` (macOS) to add the PA speaker effect and write the `.m4a` to `src/sounds/announcer/`, and add it to `VOICE_LINES` in `src/voice.ts`. See [dev/development.md](development.md).
+Every line the PA announcer can say, recorded or not, in one place. A recording plays only when its text matches the banner exactly, punctuation included, so record each line word for word. Put the clean recording in `brand/announcer/` as a kebab-case `.mp3`, run `yarn announcer` (macOS) to add the PA speaker effect and write the `.m4a` to `src/sounds/announcer/`, and add it to `VOICE_LINES` in `src/audio/voice.ts`. See [dev/development.md](development.md).
 
 When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-40 recorded, 35 still to record.
+40 recorded, 41 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
@@ -45,6 +45,12 @@ Key: ✅ recorded, ⬜ not recorded yet.
 - ✅ Qi Gong Instructor needed at the Qi Gong Studio.
 - ⬜ Sound Healer needed at the Sound Bath Studio.
 - ⬜ Shaman needed at the Ceremony Lodge.
+- ⬜ Massage Therapist needed at the Kneadmaster Suite.
+- ⬜ Acupuncturist needed at the Pin Press Room.
+- ⬜ Reiki Practitioner needed at the Aura Wash.
+- ⬜ Sound Healer needed at the Alphorn Hall.
+- ⬜ Shaman needed at the Press House.
+- ⬜ Massage Therapist needed at the Carousel of Rebirth.
 
 ## A Qi Gong class (`CLASS_LINES` in `src/core/sim/classes.ts`, taking turns, at most once every two weeks)
 
@@ -64,12 +70,14 @@ Key: ✅ recorded, ⬜ not recorded yet.
 - ⬜ The Press House is now open. Bring us your bitterness. We are told it has a lovely finish.
 - ⬜ The Carousel of Rebirth is now open. Please remain seated until you are yourself.
 
-## Seasons, at The Boardwalk (`SEASON_NEWS` in `src/core/sim/twists.ts`)
+## Seasons, at The Boardwalk (`seasonNews` in `src/core/sim/twists.ts`)
 
-- ⬜ Winter is here. The promenade is empty, so watch the budget until spring.
-- ⬜ Spring! The first day-trippers are back in town.
-- ⬜ Summer at last, and the town is packed. Expect a crowd.
-- ⬜ Autumn. The visitors are heading home.
+Each carries last month's guests (the numbers below are an example), so no one recording can match it as it stands. In the first month the sentence "Last month … a month." is left out.
+
+- ⬜ Winter is here. The promenade is empty, about ×0.6 the usual guests until spring. Last month 40 came; expect about 24 a month. Watch the budget.
+- ⬜ Spring! The first day-trippers are back in town. Last month 24 came; expect about 40 a month.
+- ⬜ Summer at last, and the town is packed: about ×1.9 the usual guests until autumn. Last month 40 came; expect about 76 a month. Expect a crowd.
+- ⬜ Autumn. The visitors are heading home. Last month 76 came; expect about 40 a month.
 
 ## Snow, at High Pines (`SNOW_NEWS` in `src/core/sim/twists.ts`)
 

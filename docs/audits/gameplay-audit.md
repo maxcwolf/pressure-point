@@ -2,7 +2,9 @@
 
 A read of the code at 0.30.14 for bugs and gameplay problems, by three reviewers (staff, economy and events, treatment flow and the world) and one playtest-bot run (`yarn balance`, one seed per center, 48 months). Typecheck and all unit tests passed before any change. Nothing below was reproduced by hand in play: findings are from reading the code, and the balance numbers are from a single seed each, so read them as hints.
 
-[planning/known-issues.md](../planning/known-issues.md) holds the earlier audit's open issues; this one adds to it, and [audits/deep-dive-audit.md](deep-dive-audit.md) (20 October) follows on from this one.
+Follow-up, as of 25 October 2026: the six planned fixes and the pass's extras came in 0.31.0. Of the 22 to-do items, 13 are done, in 0.31.0, 0.32.0 and 0.33.6; the nine left open are marked below.
+
+[planning/known-issues.md](../planning/known-issues.md) holds the earlier audit's open issues; this one keeps its own in the to-do list below, and [audits/deep-dive-audit.md](deep-dive-audit.md) (20 October) follows on from this one.
 
 ## Decisions
 
@@ -28,7 +30,7 @@ Each fix comes with a test that fails without it (`tests/unit/audit-fixes.test.t
 
 ## Done in this pass
 
-See the plan above. All six are in, with tests, and so are these, from the to-do list, each with a test unless noted:
+See the plan above. All six are in, in 0.31.0, with tests, and so are these, from the to-do list, each with a test unless noted:
 
 - The rival's sale draw follows what the techniques on offer cost on average (`averagePrice`: unlocked, in a discipline that is switched on), not the overall level alone.
 - Price and campaign setters refuse NaN and, for campaigns, fractions of a month.
@@ -46,18 +48,18 @@ See the plan above. All six are in, with tests, and so are these, from the to-do
 
 - [ ] **Bankruptcy and the campaign.** Always on in the campaign centers, and the immediate-loss case is gone but a lost game still has no appeal beyond the grace days. Play The Orchard Estate's opening, and the "Lower" loans setting ($25,000 limit against a payroll of about $15,000), before a release. Since 0.31.0 (`f2feb5a`) the grace days are gone: a short payday is borrowed or paid into the red at 5%, and the bank calls the overdraft in, with ten days to put it right, only when the center is in the red past what it will lend and losing money. Left: the play-through above.
 - [x] **Regulars and emergency guests never balk at a price,** however high. Now capped at 2× rather than 4×, but still no price-off check for them. **Done in 0.31.0** (`0998a00`): a plain regular minds the price half as much as a new guest (`REGULAR_PUT_OFF`, `mindsPrice`). Loyal and devoted regulars and emergency guests still never balk, by design.
-- [x] **Moving or selling a treatment table re-queues everyone waiting at it,** undoing any hand-ordering of the line and the emergency-first order (`building.ts:194`, `usersOf` and `resetUsers`). **Done** (`3f64f0d`): a line whose station is only moved keeps its order, and whoever was called or on the table goes back to its front; a line whose station is sold joins another in the order it stood in.
-- [x] **`upgradeSave` refunds a cancelled Sound course straight into `money`,** off the books, and runs on every load rather than only for old saves (`state/upgrade.ts`, `movedSoundBath`). **Done** (`33ce13c`): only for saves before version 18, and the course fee and the bowls come back on the books as `recoup` books them.
-- [x] **`acceptCall` and `train` idle a member of staff before a walk that can fail,** dropping their post or guest with nothing started (`calls.ts`, `training.ts`). **Done** (`4de82f1`): the way is found first (`canWalkTo`), and with none they stay at what they were doing.
+- [x] **Moving or selling a treatment table re-queues everyone waiting at it,** undoing any hand-ordering of the line and the emergency-first order (`building.ts:194`, `usersOf` and `resetUsers`). **Done in 0.33.6** (`3f64f0d`): a line whose station is only moved keeps its order, and whoever was called or on the table goes back to its front; a line whose station is sold joins another in the order it stood in.
+- [x] **`upgradeSave` refunds a cancelled Sound course straight into `money`,** off the books, and runs on every load rather than only for old saves (`state/upgrade.ts`, `movedSoundBath`). **Done in 0.33.6** (`33ce13c`): only for saves before version 18, and the course fee and the bowls come back on the books as `recoup` books them.
+- [x] **`acceptCall` and `train` idle a member of staff before a walk that can fail,** dropping their post or guest with nothing started (`calls.ts`, `training.ts`). **Done in 0.33.6** (`4de82f1`): the way is found first (`canWalkTo`), and with none they stay at what they were doing.
 - [ ] **A failed `goTo` in `callGuest` sends a guest home with no outcome** (`stations.ts:263`), so the visit stats drift. No way to reach it found.
 - [ ] **A guest in the `served` state has no timeout** and does not worsen (`guests.ts`, `worsening.ts`). No way to reach it found.
-- [x] **Staff retry only the single best unreachable post** (`staffing.ts:499`, `findWork`), so a post that becomes unreachable starves the others. **Done** (`dcf27f1`): they try the best four in turn, as they do jobs.
-- [x] **`settleRest` gives a "rested" feeling and soils a Lounger before the walk to it can fail** (`recovery.ts`). **Done** (`499412c`): a Lounger that cannot be reached counts as none.
+- [x] **Staff retry only the single best unreachable post** (`staffing.ts:499`, `findWork`), so a post that becomes unreachable starves the others. **Done in 0.33.6** (`dcf27f1`): they try the best four in turn, as they do jobs.
+- [x] **`settleRest` gives a "rested" feeling and soils a Lounger before the walk to it can fail** (`recovery.ts`). **Done in 0.33.6** (`499412c`): a Lounger that cannot be reached counts as none.
 - [ ] **The sim's build API trusts the UI** for money, `missingItems`, unlock stars and "room done" (`building.ts`, `upgrades.ts`). Reachable only through `window.pp` or the console.
 - [ ] **Monthly goals can be met on a small sample early in a month** (`goals.ts`: 7 of 10 healed meets a 70% cure rate, with no minimum span). Awards use 20 guests and a full year. Still so at 0.31.0: the cure rate now counts guests sent home, but 10 judged are still enough. The new month-heals goals are counts, so a short span is no shortcut there.
 - [ ] **"Go 30 days without anyone quitting" is free** once day 30 comes if nobody has ever quit (`goals.ts:41`), and so is the 90-day achievement. Probably intended.
 - [ ] **A failed inspection's bribe** is at least $10,000 (`BRIBE_MIN`) against fines of $800 a problem, so it is rarely worth paying; and `settleInspection(false)` runs silently when a later visitor finishes (`visits.ts`).
-- [x] **The awards ceremony finds a winner by name** (`awards.ts:185`), so two staff with one name get the first match. **Done** (`e03e28b`): a result keeps the winner's id (`winnerId`).
+- [x] **The awards ceremony finds a winner by name** (`awards.ts:185`), so two staff with one name get the first match. **Done in 0.33.6** (`e03e28b`): a result keeps the winner's id (`winnerId`).
 
 ### Balance and gameplay
 
@@ -78,7 +80,7 @@ From the bot's 48-month games (one seed per center):
 - [x] **The Exchange's first star comes at about day 322,** against day 22 at Willow Lane. Check its first-star goals ([audits/balance-audit.md](balance-audit.md), item 7). **Done in 0.31.0** (`e20ac47`, `efead03`): "keep 90% of their patience" is now "heal 8 guests in a month, waiting 5 days or less", and the rush-hour impatience applies only in a rush. The first star comes at months 2.8 to 7.9 in balance log 37.
 - [x] **The bot's limits:** it never fires anyone, does not manage lines, prices or marketing, and was run on one seed per center. Run more seeds (`BALANCE_SEEDS`) before tuning anything from these numbers. **Done in 0.31.0:** it already set prices, bought marketing and let staff go at 0.30.14. Since then it plays seeds in parallel (`b178790`), the passes are measured over seeds 1 to 6, and it has play styles (`fff6069`), a thoughtless baseline (`4b56cbe`), an advised player (`50b3e11`) and a summer limit on guests at once for its lines (`1ca2d4b`).
 - [x] **A price sweet spot of about 1.9×.** Income per guest peaks near there (guests balk at `(price − 1) × 0.35`), so the slider has a best setting. Consider a steeper balk curve or a reputation cost for high prices. **Done in 0.31.0** (`a41279f`, `0998a00`, `33d5674`): a put-off curve (`PRICE_PUT_OFF`, `putOffChance`) that is gentle to 1.3× and steep past it, moved by reputation, with nobody put off at standard prices.
-- [ ] **Ideas already in the docs that this run supports:** the really bad trip ([planning/todo.md](../planning/todo.md)) and a signature room per center ([planning/ideas.md](../planning/ideas.md)). The signature room is in 0.31.0, as each center's machine room (`3497db3`); the really bad trip is not.
+- [x] **Ideas already in the docs that this run supports:** the really bad trip ([planning/todo.md](../planning/todo.md)) and a signature room per center ([planning/ideas.md](../planning/ideas.md)). The signature room is in 0.31.0, as each center's machine room (`3497db3`). **Done in 0.32.0:** the really bad trip (`081019c`).
 
 ## Checked and found sound
 

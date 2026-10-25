@@ -2,6 +2,8 @@
 
 A plan, 22 October 2026, for a tutorial that walks a first game at Willow Lane through its opening and explains each thing the first time it happens, on by itself for the first campaign game and switched off (or on again) in Settings. It builds on the first-game heads-ups of 0.32.2 rather than replacing them. The mockups of the options are on the canvas [Tutorial Mode Mockups](https://claude.ai/artifact/2m9vMpKHMt6LeyVsRjqniW).
 
+**Status, 25 October 2026: built.** The recommendation (A and C together) shipped in 0.33.0, all three phases (`86b110d2`, `b5429c8d`, `8d7d334c`), with changes since in 0.33.1 (the pause and play steps, the applicants' ring), 0.33.4 (a lesson on money) and Unreleased (a lesson on the first cold snap, and lessons once each across the campaign). Two things were not done: the announcer's opening line, and drawn pictures for the lessons, whose strips use the game's icons. Where the build went another way from the design below, a note marked "As built" says how.
+
 ## What the Two Point games do
 
 Checked on 22 October 2026 against the fandom wikis (read through their API), Steam discussions, patch notes, reviews and let's-play captions. The interface's finer behavior (whether buttons pulse, whether a card has a Next button) is not documented anywhere readable, so what is said of it below comes from players describing the screen and is marked _unverified_.
@@ -83,6 +85,8 @@ Build A's step card and ring for the opening chain, and C's lesson cards for the
 - **Skip the tutorial** on the step card turns it off for this game and says so in a toast ("The tutorial is off. Settings turns it back on."). The lessons stop too.
 - Turned off in a first game, the heads-ups of 0.32.2 carry on as they are, so a player who skips still gets the Caretaker, Smudging and Staff Room warnings.
 
+As built: one setting covers the steps and the lessons together, stored as `on`, `off` or `done` (`done` once a game has handed over, so the next Willow Lane game starts without the steps but keeps the lessons). The switch on Willow Lane's card is that same setting, not a `tutorialReplay` of its own. The lessons are a flag of their own on the state (`lessons`) and come in every campaign center, not only Willow Lane.
+
 ### The opening chain
 
 Twelve steps, each a small function over the state as `primer.ts` does it (`due` and `done`), in order, with a target to ring:
@@ -102,6 +106,8 @@ Twelve steps, each a small function over the state as `primer.ts` does it (`due`
 
 A Restroom is left to the advisor's "crossing their legs" nudge, since by then the player has built three rooms. The chain ends with a **handoff card** in the advisor's spot: "That's the basics. From here the advisor speaks up when something needs you, and the objectives at the top left earn your first star. Click any objective for the numbers behind it." Then the tutorial is done for good in this game, as the heads-ups are today.
 
+As built (`OPENING` in `src/core/sim/tutorial.ts`): the chain is thirteen steps, not twelve. A **Pause the clock** step comes second and a **Start the clock** step once the desk, both rooms and all three hires are in (0.33.1), then the two Benches, ten for the opening; the Caretaker, Smudging and Staff Room heads-ups follow as steps. Looking around counts as done after two game days rather than 20 seconds. The heads-up on land stayed a heads-up of its own at the first star rather than the chain's last step, and the Benches wait behind any heads-up that is due.
+
 ### The step card
 
 Replaces the advisor's note while a step is in hand, in the same spot, the same cream bubble with the advisor's face:
@@ -117,6 +123,8 @@ The advisor's weightier nudges keep their place above the opening walk-through i
 ### The ring
 
 A gold ring, 4 pixels, with a slow pulse, drawn by a `.guide` class on whichever element the step's target names. `HudState` works the target out each redraw from the step and what is open (`tutorialTarget()`), and the components that can carry it check their own id against it: the build buttons (`menu:items`), a menu's role tab and cards (`hire:receptionist`, `item:reception_desk`, `room:consult`), the plan panel's Build button (`plan:build`). The ring never moves the camera or opens anything by itself; Show me does that.
+
+As built: `HudState.guide()` works out the target, not `tutorialTarget()`. It also rings the clock's buttons (`speed:0`, `speed:1`) and the Items menu's filters, and on a hiring step it rings the whole row of applicants rather than the first Hire button (0.33.1).
 
 ### The Tutorial list
 
@@ -139,13 +147,19 @@ A `LessonDialog` over the game, which pauses it as any dialog does, raised by th
 
 Each lesson has a square picture per panel, drawn in the game's clay style as the Museum cards are (a job for `scripts/`, from the game's own scene at the right moment, or hand drawn). Until the pictures exist the strip shows the icons the game has (`room-`, `role-`, `ui-`), which is enough to ship.
 
+As built (`LESSON_IDS` in `src/core/sim/lessons.ts`): nine lessons. The seven above the star, and the star as a paragraph in the star dialog, as planned; then **Money**, the first time the bank holds less than the next payday takes, with a Show me to the Loan tab (0.33.4), and **the first cold snap**, with a Radiator or an Air Conditioner put in hand (Unreleased). Every trigger is checked once a second from the state (`checkLessons`), not from the events in `guests.ts`, `stations.ts` and the rest. Since Unreleased each lesson comes once across the campaign, in whichever center it first happens (`recordLesson` in `src/storage/campaign.ts`), not once a game. The strips still use the icons: no pictures were drawn.
+
 ### Pacing
 
 Unchanged. Guests arrive only once the center is open, which is Two Point's gate. Time runs; a lesson pauses while it is read, and the step card never does. No scripted first guest and no hidden patience bonus: the memory of this project's balance work is that the first game should communicate, not soften.
 
+As built (0.33.1): the step card still never pauses by itself, but its second step asks the player to pause the clock while the opening is built, and a later step asks them to start it again. A player who never pauses is not asked to start it.
+
 ### Counting it
 
 Three play-statistics events, beside `menu_opened`: `tutorial_step` (step id, day, whether Show me was pressed), `tutorial_skipped` (the step it was skipped at), `lesson_shown` (id, day). With them the dashboard can say where first players stop.
+
+As built: `tutorial_step` carries the step id only (each step counted once as it is first reached, in `src/app/analytics.ts`), and `tutorial_skipped`, `tutorial_done`, `lesson_shown` and `lesson_show_me` are sent from `src/ui/hud.ts`.
 
 ## The plan
 
@@ -167,6 +181,8 @@ Three play-statistics events, beside `menu_opened`: `tutorial_step` (step id, da
 
 Medium: two to three days.
 
+**Done** in 0.33.0 (`86b110d2`). As built, `primer.ts` stays and `tutorial.ts` builds on it rather than replacing it: `tutorial` and `lessons` sit beside `primer` on the state, not in its place (save version 37, as planned), and `warnPrimer` stays in `advisor.ts` beside `warnTutorial`, which is in `tutorial.ts`. The steps are `OPENING`, each with a `want` rather than a `target`, read through `currentStep`, `tutorialLines` and `warnTutorial`; there is no `tutorialStep(ctx)` or `tutorialDone(ctx)`, and no `tutorialTarget()` (see The ring).
+
 ### Phase 2: the lessons
 
 - `src/core/sim/lessons.ts`: the triggers, each a small function over the state checked once a day or on the event that causes it (the first guest in `guests.ts`, the first heal and failure in `stations.ts`, payday in `economy.ts`, a raise in `careers.ts`), raised through `emit(ctx, { type: 'lesson', id })` and kept in `seenTips`.
@@ -177,6 +193,8 @@ Medium: two to three days.
 
 Medium: two days, more for pictures.
 
+**Done** in 0.33.0 (`b5429c8d`), with the icons for pictures; the second pass from rendered scenes was not done.
+
 ### Phase 3: the replay switch and polish
 
 - `src/ui/components/CampaignPanel.tsx`: the Tutorial switch on the Willow Lane card.
@@ -186,9 +204,11 @@ Medium: two days, more for pictures.
 
 Small: a day.
 
+**Done** in 0.33.0 (`8d7d334c`, `ba1c136f`), except the announcer's line: none was added for the tutorial, and the opening-day lines every center has (`src/core/sim/progress.ts`, listed in [dev/announcements.md](../dev/announcements.md)) play as before.
+
 ## Decisions to make
 
-1. **A, C, or both.** The recommendation is both, A for the opening chain and C for the moments. B is the fallback if the whole thing has to be a day's work.
-2. **Where the switch lives.** Settings (Help heading) plus the Willow Lane card, or Settings alone.
-3. **Whether lessons pause.** The recommendation is yes, as every dialog does; the alternative is a card at the top center like the harm cards, which does not pause and can be ignored.
-4. **Pictures or icons** for the lesson strips in the first release.
+1. **A, C, or both.** The recommendation is both, A for the opening chain and C for the moments. B is the fallback if the whole thing has to be a day's work. _Built: both._
+2. **Where the switch lives.** Settings (Help heading) plus the Willow Lane card, or Settings alone. _Built: both._
+3. **Whether lessons pause.** The recommendation is yes, as every dialog does; the alternative is a card at the top center like the harm cards, which does not pause and can be ignored. _Built: they pause, as every dialog does._
+4. **Pictures or icons** for the lesson strips in the first release. _Built: icons, and still icons._

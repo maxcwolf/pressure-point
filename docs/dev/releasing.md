@@ -1,6 +1,6 @@
 # Releasing
 
-Add a short section for the new version to `CHANGELOG.md`; it becomes the release notes. Then push a version tag, which builds the installers on GitHub Actions and publishes them as a GitHub release:
+Add a short section for the new version to `CHANGELOG.md`, headed with its tag (`## v1.2.3`, usually by renaming `## Unreleased`); it becomes the release notes, which `scripts/release-notes.mjs` puts together with `.github/release-notes.md`. The game shows the same changelog in What's new on its title screen, with anything under `## Unreleased` as Coming next. Set `version` in `package.json` to the new version too. Then push a version tag, which builds the installers on GitHub Actions and publishes them as a GitHub release:
 
 ```bash
 git tag v1.2.3
@@ -13,7 +13,7 @@ Once the release is published, the same run publishes the browser build to [GitH
 
 The release also carries the Apple silicon `.dmg` and the Windows `.exe` again under names without the version (`Pressure-Point-Institute-mac-arm64.dmg`, `Pressure-Point-Institute-win-x64.exe`), so the README's download links, to `releases/latest/download/...`, always fetch the newest. The tag sets the version number in the installers. Running the **Release** workflow by hand from the Actions tab builds the installers as downloadable artifacts without publishing a release.
 
-Everything runs on GitHub-hosted machines, which are free for a public repository: `macos-latest` for the macOS `.dmg` files (Apple silicon and Intel), `windows-latest` for the Windows `.exe` installer, and `ubuntu-latest` for publishing and for CI on pushes and pull requests.
+Everything runs on GitHub-hosted machines, which are free for a public repository: `macos-latest` for the macOS `.dmg` files (Apple silicon and Intel), `windows-latest` for the Windows `.exe` installer, and `ubuntu-latest` for publishing and for CI on pushes to main and pull requests (whose desktop tests run on `windows-latest` as well). Each build runs the unit tests before it packages. Setting the repository variable `MAC_RUNNER` to `self-hosted` builds the macOS installers on the Mac mini instead.
 
 ## Signing
 

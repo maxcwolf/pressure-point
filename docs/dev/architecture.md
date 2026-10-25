@@ -4,15 +4,15 @@ Pressure Point Institute is a browser game that also ships as a desktop app. The
 
 ## The layers
 
-| Folder         | What it is                                                             | May import from                           |
-| -------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
-| `src/core/`    | The game itself: rules, state and content. No browser, no drawing.     | Nothing outside itself                    |
-| `src/storage/` | Saved games and preferences, kept in the browser's storage.            | `core`                                    |
-| `src/render/`  | The 3D picture of the game, in Three.js.                               | `core`                                    |
-| `src/audio/`   | Sound effects, music and the announcer's recordings (`src/sounds/`).   | `core`, `storage`                         |
-| `src/ui/`      | The interface over the picture, in Preact.                             | `core`, `storage`, `audio`, and app types |
-| `src/app/`     | Startup, input, the build tools and the frame loop. Wires the rest up. | Everything above                          |
-| `electron/`    | The desktop app's main process and preload script.                     | Nothing in `src/`                         |
+| Folder         | What it is                                                             | May import from                                                                                                            |
+| -------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `src/core/`    | The game itself: rules, state and content. No browser, no drawing.     | Nothing outside itself                                                                                                     |
+| `src/storage/` | Saved games and preferences, kept in the browser's storage.            | `core`                                                                                                                     |
+| `src/render/`  | The 3D picture of the game, in Three.js.                               | `core`                                                                                                                     |
+| `src/audio/`   | Sound effects, music and the announcer's recordings (`src/sounds/`).   | `core`, `storage`                                                                                                          |
+| `src/ui/`      | The interface over the picture, in Preact.                             | `core`, `storage`, `audio`, types from `app` and `render`, and a few `app` helpers (play statistics, feedback, tool hints) |
+| `src/app/`     | Startup, input, the build tools and the frame loop. Wires the rest up. | Everything above                                                                                                           |
+| `electron/`    | The desktop app's main process and preload script.                     | Nothing in `src/`                                                                                                          |
 
 Dependencies point toward `core`. A lint rule and a separate TypeScript project (with no browser types) stop `core` importing anything outside itself, so the whole game can run in a unit test with no page and no renderer. Lint rules hold `storage`, `render` and `audio` to the imports in the table too. Every preference kept between games, the sound and music switches among them, goes through `storage/`.
 
@@ -72,24 +72,25 @@ Buttons act on press, not release, through the shared `Button` component.
 
 ## Desktop app (`electron/`)
 
-`main.ts` opens one window and locks it down: sandboxed, no navigation away from the game, no new windows, every permission refused. `preload.ts` hands the page the small API declared in `api.ts`, and `src/app/desktop.ts` is where the game reads it. In a browser that API is absent and the game hides what depends on it.
+`main.ts` opens one window and locks it down: sandboxed, no navigation away from the game, no new windows, every permission refused. Only one copy of the app runs at a time, since two would save over each other. `preload.ts` hands the page the small API declared in `api.ts`, and `src/app/desktop.ts` is where the game reads it. In a browser that API is absent and the game hides what depends on it. `backup.ts` keeps a copy of every save in files, `prefs.ts` the window's own settings (full screen or not), and `updates.ts` runs the updater ([dev/releasing.md](releasing.md#updates)).
 
 The built game is loaded as a file on purpose. Saved games are kept per address, so serving it any other way would hide every save a player already has.
 
 ## Saved games (`src/storage/`)
 
-The autosave and up to twenty named saves live in the browser's storage, with export and import to move a game between the browser and the app. `SAVE_VERSION` in `core/state/game.ts` marks the format, and `core/state/upgrade.ts` fills in whatever an older save lacks. When a field is added to `GameState`, give it a default there.
+The autosave and up to twenty named saves live in the browser's storage, with export and import to move a game between the browser and the app. The desktop app also keeps a copy of each in files (`electron/backup.ts`) and puts them back if the page's storage loses them. `SAVE_VERSION` in `core/state/game.ts` marks the format, and `core/state/upgrade.ts` fills in whatever an older save lacks. When a field is added to `GameState`, give it a default there.
 
 ## Tests
 
-| Command             | What it covers                                                                                  |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| `yarn test`         | Unit tests: the simulation, the grid, saves, and the pure functions everywhere.                 |
-| `yarn test:e2e`     | The real game in a headless browser, driven by mouse and keyboard.                              |
-| `yarn test:desktop` | The built desktop app: sandbox, preload API, quitting, exporting a save.                        |
-| `yarn test:visual`  | A screenshot of every screen of the interface, and of the scene, compared with stored pictures. |
-| `yarn test:perf`    | Draw calls, GPU memory over a long session and idle work, in the real game in a browser.        |
-| `yarn bench`        | The simulation's time per frame as the crowd grows. Reported, not checked.                      |
+| Command             | What it covers                                                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `yarn test`         | Unit tests: the simulation, the grid, saves, and the pure functions everywhere.                                      |
+| `yarn test:e2e`     | The real game in a headless browser, driven by mouse and keyboard.                                                   |
+| `yarn test:desktop` | The built desktop app: sandbox, preload API, quitting, exporting a save.                                             |
+| `yarn test:visual`  | A screenshot of every screen of the interface, every model and the scene, compared with stored pictures.             |
+| `yarn test:perf`    | Draw calls, GPU memory over a long session and idle work, in the real game in a browser.                             |
+| `yarn bench`        | The simulation's time per frame as the crowd grows. Reported, not checked.                                           |
+| `yarn balance`      | The playtest bot plays every campaign center ([balance/harness.md](../balance/harness.md)). Slow, and not pass/fail. |
 
 End-to-end tests find things by meaning (`game.clickItem('bench')`), not by screen coordinates.
 
