@@ -71,6 +71,8 @@ export interface Room {
   missed?: MissedClass[];
   /** The day a Shaman's blessing on it runs out, once it has had one. */
   blessedUntil?: number;
+  /** Sprinklers have been fitted: they put out a fire in it on their own, and soak the room doing it. */
+  sprinklers?: boolean;
 }
 
 /**
@@ -153,6 +155,8 @@ export interface Item {
   trophy?: Trophy;
   /** A treatment machine that overloaded, out of action until a Caretaker has repaired it. */
   overloaded?: boolean;
+  /** Burnt out in a fire, and broken until a Caretaker has repaired it. */
+  burnt?: boolean;
 }
 
 export interface Look {
@@ -284,13 +288,24 @@ export interface Staff extends CharBase {
 }
 
 /**
- * A chore: the litter or item a Caretaker sees to (changing a table's linens is cleaning it, and laundering is emptying
- * a hamper), the room someone clears of bad vibes, the drink or snack someone goes to for themselves, or the guest on
- * a really bad trip someone is sent to calm down.
+ * A chore: the litter or item a Caretaker sees to (changing a table's linens is cleaning it, laundering is emptying
+ * a hamper, and dousing is putting out a fire in it), the room someone clears of bad vibes, the drink or snack someone
+ * goes to for themselves, or the guest on a really bad trip someone is sent to calm down.
  */
 export interface Job {
   kind:
-    'litter' | 'water' | 'repair' | 'clean' | 'smudge' | 'launder' | 'refresh' | 'install' | 'soul' | 'ward' | 'calm';
+    | 'litter'
+    | 'water'
+    | 'repair'
+    | 'clean'
+    | 'smudge'
+    | 'launder'
+    | 'refresh'
+    | 'install'
+    | 'soul'
+    | 'ward'
+    | 'calm'
+    | 'douse';
   id: number;
 }
 
@@ -471,6 +486,28 @@ export interface Litter {
   puddle?: boolean;
   /** Sea water from a storm, by the id of the restroom it flooded: the room is out of action until it is mopped up. */
   flood?: number;
+  /** Soot left on the floor by a fire, swept up like any other litter. */
+  soot?: boolean;
+}
+
+/** Something on fire: the item, the room it is in, how long it has burned, and how long since it last spread, in seconds. */
+export interface Blaze {
+  item: number;
+  room: number;
+  t: number;
+  spread: number;
+}
+
+/**
+ * The fire brigade, called out to a fire: where its truck is along the near lane of the road, coming, parked outside or
+ * leaving; the day it was called; the visitor ids of its crew; and whether the call-out fee has been taken.
+ */
+export interface Brigade {
+  x: number;
+  state: 'coming' | 'parked' | 'leaving';
+  called: number;
+  crew: number[];
+  charged: boolean;
 }
 
 export interface Candidate {
@@ -817,6 +854,13 @@ export interface GameState {
   mishap: Mishap | null;
   nextMishap: number;
   mishapsOn: boolean;
+  /**
+   * Whatever is on fire now, the fire brigade if it has been called and is not yet gone, and whether anything catches
+   * fire at all (a sandbox setting).
+   */
+  blazes: Blaze[];
+  brigade?: Brigade;
+  blazesOn: boolean;
   /** The last year-end awards ceremony, and every award won. */
   ceremony: Ceremony | null;
   trophies: Trophy[];

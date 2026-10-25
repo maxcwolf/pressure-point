@@ -314,9 +314,10 @@ export interface MachineDef {
   runHeat?: number;
   /**
    * It smokes once worn past `from`, and then after each session may overload: out of action until a Caretaker sees
-   * to it, with a bill for parts, and a mess of its own, in a few words for the toast.
+   * to it, with a bill for parts, and a mess of its own, in a few words for the toast. For a machine with a flame or a
+   * motor, `fire` is the share of its overloads that set it on fire instead.
    */
-  overload?: { from: number; chance: number; bill: number; mess: string };
+  overload?: { from: number; chance: number; bill: number; mess: string; fire?: number };
   /** A room next door it works better beside: faster, or likelier to work. */
   beside?: { room: RoomType; seconds?: number; success?: number };
   /** It helps every session in its room, rather than taking guests itself: sessions take this times as long. */
@@ -699,7 +700,8 @@ export type FeelingId =
   | 'bad-trip'
   | 'freaked'
   | 'ran-out'
-  | 'cider';
+  | 'cider'
+  | 'blaze';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
 export interface FeelingDef {
