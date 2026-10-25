@@ -271,7 +271,7 @@ export type ReservePurpose = (typeof RESERVES)[number];
 /**
  * How the good bot plays where a player has a choice of temper rather than of skill: what it charges, what it keeps
  * back, how far it borrows, how soon a new room must pay, and whether it markets. The same decisions, weighted
- * differently (the persona idea of docs/research/balancing_methods.md), so the styles can be run over the same seeds
+ * differently (the persona idea of docs/research/balancing-methods.md), so the styles can be run over the same seeds
  * and a style that always wins, or an income that always carries, can be seen. `BOT_STYLE` picks one.
  */
 export interface Style {

@@ -319,10 +319,15 @@ function inHand(ctx: SimContext, it: Item): boolean {
  */
 function lineWaiting(ctx: SimContext, it: Item): boolean {
   if (isClassLead(it)) return matsOf(ctx, it).some((m) => !!guestById(ctx, m.serving) || lineWaiting(ctx, m));
-  return it.queue.some((id) => {
+  return waitingAt(ctx, it) > 0;
+}
+
+/** How many guests are waiting in a station's own line to be called. */
+function waitingAt(ctx: SimContext, it: Item): number {
+  return it.queue.filter((id) => {
     const g = guestById(ctx, id);
     return g?.station === it.id && (g.state === 'waiting' || g.state === 'toWait');
-  });
+  }).length;
 }
 
 /**
@@ -353,19 +358,45 @@ function wantedElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
  */
 function lineElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
   if (!ITEMS[it.type].machine) return false;
-  return ctx.s.items.some((o) => {
-    const def = ITEMS[o.type].station;
-    return (
+  return ctx.s.items.some(
+    (o) =>
       o !== it &&
-      def?.staff === st.role &&
-      !def.group &&
-      !o.staffId &&
-      ctx.world.usable(o) &&
-      worksAt(ctx, st, o.x, o.y) &&
+      canStaff(ctx, st, o) &&
       // a Sound Healer's line is at the mats their instrument plays for
-      (def.goal === 'lead' ? matsOf(ctx, o).some((m) => lineWaiting(ctx, m)) : lineWaiting(ctx, o))
-    );
-  });
+      (isLeadStation(o) ? matsOf(ctx, o).some((m) => lineWaiting(ctx, m)) : lineWaiting(ctx, o)),
+  );
+}
+
+/** Seconds a lone guest is left waiting at an unworked station before someone idle at another goes over to them. */
+const LONE_WAIT = 3;
+
+/**
+ * Whether a member of staff at a station with nobody to see should go to another of theirs where guests are waiting
+ * with nobody to see them: a line of two or more, or one guest kept waiting a while. Only for a line `findWork` would
+ * choose over the station they are at, so that leaving it does not just post them back to it. Called every step while
+ * they are at their post, to time the lone guest's wait.
+ */
+function waitingElsewhere(ctx: SimContext, st: Staff, here: Item, dt: number): boolean {
+  // someone to see to here first, and the bowls or a class are left only between sessions, which their mats decide
+  if (inHand(ctx, here) || lineWaiting(ctx, here) || isLeadStation(here)) {
+    delete st.lineT;
+    return false;
+  }
+  const stay = postScore(ctx, st, here);
+  let lone = false;
+  for (const o of ctx.s.items) {
+    if (o === here || isLeadStation(o) || !canStaff(ctx, st, o)) continue;
+    const waiting = waitingAt(ctx, o);
+    if (!waiting || postScore(ctx, st, o) <= stay) continue;
+    if (waiting >= 2) return true;
+    lone = true;
+  }
+  if (!lone) {
+    delete st.lineT;
+    return false;
+  }
+  st.lineT = (st.lineT ?? 0) + dt;
+  return st.lineT >= LONE_WAIT;
 }
 
 /**
@@ -399,6 +430,7 @@ function leavePost(ctx: SimContext, st: Staff) {
   }
   st.post = 0;
   st.busy = false;
+  delete st.lineT;
 }
 
 /** Give up the cleaning, watering or repair job they had claimed. */
@@ -478,19 +510,42 @@ export function inPriorityRoom(ctx: SimContext, x: number, y: number): boolean {
   return !!ctx.world.room(ctx.world.zoneAt(x, y))?.priority;
 }
 
+/** Whether a member of staff could take up a station: one for their role that nobody is working, and theirs to work. */
+function canStaff(ctx: SimContext, st: Staff, it: Item): boolean {
+  const def = ITEMS[it.type].station;
+  // a group station has nobody posted at it: it is worked from its room's lead station
+  return (
+    def?.staff === st.role &&
+    !def.group &&
+    !it.staffId &&
+    ctx.world.usable(it) &&
+    onDuty(st, stationDuty(it)) &&
+    worksAt(ctx, st, it.x, it.y)
+  );
+}
+
+/** How much a member of staff would rather work a station than another: its line counts for it, the walk against. */
+function postScore(ctx: SimContext, st: Staff, it: Item): number {
+  const goal = ITEMS[it.type].station?.goal;
+  let score = it.queue.length * 10 - Math.hypot(it.x - st.tx, it.y - st.ty);
+  // a lead station is as busy as the mats it serves
+  if (goal === 'lead') for (const m of matsOf(ctx, it)) score += (m.queue.length + (m.serving ? 1 : 0)) * 10;
+  if (inPriorityRoom(ctx, it.x, it.y)) score += 1000;
+  if (goal === 'treat') {
+    for (const id of it.queue) {
+      const q = guestById(ctx, id);
+      if (q && !deliveryProblem(ctx, it, st, modalityOf(q))) score += 8;
+      // and a line of guests waiting for someone trained in what they need is no work for this one
+      else if (q && leftForSpecialist(ctx, st, q)) score -= 10;
+    }
+  }
+  return score;
+}
+
 /** A station in a priority room that nobody is working and this member of staff could. */
 export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
   if (!ctx.s.rooms.some((r) => r.priority)) return undefined;
-  return ctx.s.items.find(
-    (it) =>
-      ITEMS[it.type].station?.staff === st.role &&
-      !ITEMS[it.type].station?.group &&
-      onDuty(st, stationDuty(it)) &&
-      worksAt(ctx, st, it.x, it.y) &&
-      !it.staffId &&
-      ctx.world.usable(it) &&
-      inPriorityRoom(ctx, it.x, it.y),
-  );
+  return ctx.s.items.find((it) => canStaff(ctx, st, it) && inPriorityRoom(ctx, it.x, it.y));
 }
 
 /** Find something to do: a break if tired, then a job or a station to staff, or else a wander. */
@@ -566,26 +621,7 @@ function findWork(ctx: SimContext, st: Staff) {
       return;
     }
     const posts: { it: Item; score: number }[] = [];
-    for (const it of s.items) {
-      const def = ITEMS[it.type].station;
-      // a group station has nobody posted at it: it is worked from its room's lead station
-      if (def?.staff !== st.role || def.group || it.staffId || !ctx.world.usable(it) || !onDuty(st, stationDuty(it)))
-        continue;
-      if (!worksAt(ctx, st, it.x, it.y)) continue;
-      let score = it.queue.length * 10 - Math.hypot(it.x - st.tx, it.y - st.ty);
-      // a lead station is as busy as the mats it serves
-      if (def.goal === 'lead') for (const m of matsOf(ctx, it)) score += (m.queue.length + (m.serving ? 1 : 0)) * 10;
-      if (inPriorityRoom(ctx, it.x, it.y)) score += 1000;
-      if (def.goal === 'treat') {
-        for (const id of it.queue) {
-          const q = guestById(ctx, id);
-          if (q && !deliveryProblem(ctx, it, st, modalityOf(q))) score += 8;
-          // and a line of guests waiting for someone trained in what they need is no work for this one
-          else if (q && leftForSpecialist(ctx, st, q)) score -= 10;
-        }
-      }
-      posts.push({ it, score });
-    }
+    for (const it of s.items) if (canStaff(ctx, st, it)) posts.push({ it, score: postScore(ctx, st, it) });
     // the best post first, and one that cannot be reached is passed over for the next, as a job is
     posts.sort((a, b) => b.score - a.score);
     for (const { it } of posts.slice(0, 4)) {
@@ -696,6 +732,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       if (it?.staffId !== st.id || !ctx.world.usable(it)) staffIdle(ctx, st);
       // free to go, and wanted elsewhere: off to find something else, once whoever is in hand is seen to
       else if (!inHand(ctx, it) && wantedElsewhere(ctx, st, it)) staffIdle(ctx, st);
+      // nobody to see here, and a line at another of their stations with nobody to see it: off to work that instead
+      else if (waitingElsewhere(ctx, st, it, dt)) staffIdle(ctx, st);
       else if (restDue(ctx, st) && !inHand(ctx, it)) {
         st.timer -= dt;
         if (st.timer <= 0) {
