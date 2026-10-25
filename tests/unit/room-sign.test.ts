@@ -196,6 +196,12 @@ describe("a room's lamp", () => {
     expect(lamps([sound], [bowls, { ...mat, wear: 100 }], [staff(9, 1, 'atPost')]).get(1)).toBe('broken');
   });
 
+  it('counts a station that runs itself only for being broken: there is nobody to staff it', () => {
+    const lab = room(NORTH, { type: 'assess' });
+    expect(lamps([lab], [item(1, 'posture_scanner')]).get(1)).toBe('working');
+    expect(lamps([lab], [item(1, 'posture_scanner', 100)]).get(1)).toBe('broken');
+  });
+
   it('pulses amber and red gently, and holds green and grey steady', () => {
     /** How brightly a lamp in a state glows over the first part of a second. */
     const at = (state: Parameters<typeof lampGlow>[0]) => [0, 0.2, 0.4, 0.6, 0.8].map((t) => lampGlow(state, t));
