@@ -278,6 +278,11 @@ export interface ItemDef {
   /** It has a front and a back, so a marker shows which way it will face while it is being placed. */
   front?: boolean;
   /**
+   * What it faces: while it is held, it turns to face the nearest such item in the room under the cursor; R turns it by
+   * hand instead.
+   */
+  faces?: ItemType;
+  /**
    * Treatment equipment that can be upgraded, up to `UPGRADE_LEVELS`, by a Caretaker with the Mechanics course: what
    * the upgrades are priced against, each level a share of it (`UPGRADE_PRICE`).
    */

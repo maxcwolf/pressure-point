@@ -126,8 +126,9 @@ export const defaultPolicy = (): Policy => ({
  * 37: the tutorial and the cards that explain each thing the first time it happens, and whether the land for
  *     sale has been looked over, for the first game's heads-up on land.
  * 38: the Recliner renamed the Lounger.
+ * 39: the Practice Spot's front turned round to the way its guest faces.
  */
-export const SAVE_VERSION = 38;
+export const SAVE_VERSION = 39;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

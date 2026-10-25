@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **A simpler Willow Lane.** Qi Gong classes are no longer on offer at Willow Lane, so its second star brings the Kneadmaster alone, and no Instructor applies. The campaign meets the classes at The Exchange's second star, as its card now says. Willow Lane sells one plot a star, the unit next door, the old bakery and the yard behind: the back room and the shop to the west are no longer for sale, and a game that bought either keeps the land.
+- **Practice Spots face the Instructor.** A Practice Spot turns to face the Instructor's Mat as it is placed or moved, with an arrow showing which way, and R turns it by hand instead. Spots already placed keep the way they face.
 
 ## v0.33.6
 

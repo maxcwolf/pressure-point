@@ -197,6 +197,27 @@ describe('loading', () => {
     expect(loaded.items.some((it) => (it.type as string) === 'recliner')).toBe(false);
   });
 
+  it('turns the Practice Spots in a save from before their fronts were turned round, so they face the way they did', () => {
+    /** Load the game as a save of a version, with a Practice Spot at each rotation and something else turned once. */
+    const save = (version: number) => {
+      const old = JSON.parse(JSON.stringify(game())) as Record<string, any>;
+      old.version = version;
+      old.items.push(...[0, 1, 2, 3].map((rot) => ({ ...old.items[0], id: 99990 + rot, type: 'practice_spot', rot })), {
+        ...old.items[0],
+        id: 99999,
+        rot: 1,
+      });
+      store.set('pressure-point-save-v1', JSON.stringify(old));
+      return readSave(AUTOSAVE_ID)!;
+    };
+    const loaded = save(38);
+    expect([0, 1, 2, 3].map((rot) => loaded.items.find((it) => it.id === 99990 + rot)?.rot)).toEqual([2, 3, 0, 1]);
+    expect(loaded.items.find((it) => it.id === 99999)?.rot, 'anything else').toBe(1);
+    // a save from since then is left as it is
+    const since = save(39);
+    expect([0, 1, 2, 3].map((rot) => since.items.find((it) => it.id === 99990 + rot)?.rot)).toEqual([0, 1, 2, 3]);
+  });
+
   it('drops list entries whose data has gone missing', () => {
     const s = game();
     const a = ok(writeSave(s, 'Here'));

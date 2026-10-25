@@ -124,9 +124,9 @@ export function addRecovery(sim: Sim) {
 export function addQigong(sim: Sim) {
   return buildRoom(sim, 'qigong', LAYOUT.qigong.rect, LAYOUT.qigong.door, [
     ['instructor_mat', 6, 11],
-    ['practice_spot', 5, 13],
-    ['practice_spot', 6, 13],
-    ['practice_spot', 7, 13],
+    ['practice_spot', 5, 13, 2],
+    ['practice_spot', 6, 13, 2],
+    ['practice_spot', 7, 13, 2],
   ]);
 }
 

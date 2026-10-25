@@ -282,6 +282,8 @@ export function upgradeSave(save: GameState) {
     it.type = renamedItem(it.type) as ItemType;
     fill(it, itemStart());
   }
+  // up to version 38, the guest on a Practice Spot faced its back: each is turned round, to face the way it did
+  if (s.version < 39) for (const it of s.items) if (it.type === 'practice_spot') it.rot = (it.rot + 2) & 3;
   for (const r of s.rooms) fill(r, roomStart());
   for (const g of s.guests) {
     g.emergency ??= false;
