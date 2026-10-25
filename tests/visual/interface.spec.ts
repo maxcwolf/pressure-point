@@ -165,6 +165,8 @@ test.describe('in a game', () => {
     await page.locator('#inspector button.pick').first().click();
     // the click can scroll the inspector down to its pick first, and the picture is of its top
     await page.locator('#inspector .panel').evaluate((panel) => panel.scrollTo(0, 0));
+    // the pointer, left where the pick was, can rest on the scrolled-up stars and raise their tooltip
+    await page.mouse.move(0, 0);
     await screens.shot('inspector-compare');
   });
 
