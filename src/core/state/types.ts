@@ -647,8 +647,9 @@ export interface AwardResult {
   won: boolean;
   /** How the center did against what it took, in a few words. */
   note: string;
-  /** The member of staff it went to, by name. */
+  /** The member of staff it went to, by name, and by id (a ceremony from before ids were kept has only the name). */
   winner?: string;
+  winnerId?: number;
 }
 
 /** A year-end awards ceremony. */

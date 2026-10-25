@@ -1,7 +1,7 @@
 // Staff challenges and the year-end awards: goals along the way.
 import { describe, expect, it } from 'vitest';
 
-import { AWARD_ORDER, AWARDS, CHALLENGE_MORALE, DAYS_PER_MONTH } from '../../src/core/data';
+import { AWARD_MORALE, AWARD_ORDER, AWARDS, CHALLENGE_MORALE, DAYS_PER_MONTH } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { placeLayout } from '../../src/core/room-layout';
 import { prestige } from '../../src/core/sim/ambience';
@@ -242,6 +242,23 @@ describe('the year-end awards', () => {
     expect(therapist.morale).toBe(70);
     expect(s.staff.every((st) => st.yearServed === 0)).toBe(true);
     expect(drainEvents(ctx)).toContainEqual({ type: 'awards', year: 1 });
+  });
+
+  it('cheer up the one who won, not another of the same name', () => {
+    const { ctx, s, therapist, sim } = withChallenges();
+    const namesake = hire(sim, 'therapist');
+    namesake.name = therapist.name;
+    therapist.yearServed = 0;
+    namesake.yearServed = 30;
+    therapist.morale = 50;
+    namesake.morale = 50;
+    holdAwards(ctx, 1);
+    expect(s.ceremony!.results.find((r) => r.award === 'healer-of-the-year')).toMatchObject({
+      won: true,
+      winnerId: namesake.id,
+    });
+    expect(namesake.morale).toBe(50 + AWARD_MORALE);
+    expect(therapist.morale).toBe(50);
   });
 
   it('are held as each year ends', () => {
