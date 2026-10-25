@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 
 import type { Season } from '../../core/sim/twists';
-import { blob, capsule, cyl, joined, mat, type Piece } from './parts';
+import { blob, cached, cyl, joined, mat, type Piece } from './parts';
 
 /** Where a tree stands on the ground, and the seed its height and color vary with. */
 export interface TreeSpot {
@@ -57,6 +57,13 @@ export function leavesFor(season: Season) {
 
 const UP = new THREE.Vector3(0, 1, 0);
 /**
+ * A capsule for a branch, with far fewer sides than the models' own: a branch is only a few pixels across, and every
+ * broadleaved tree has a dozen, so the models' capsules took a winter frame from about 170,000 triangles to 1,200,000.
+ */
+const limbShape = (r: number, len: number) =>
+  cached(`bare-limb|${r}|${len}`, () => new THREE.CapsuleGeometry(r, len, 2, 6));
+
+/**
  * A branch growing from a point, leaning `lean` from upright toward `turn` round the trunk, `len` long and `r` thick: a
  * capsule laid along it, rounded at the tip like a limb, and the point where it ends.
  */
@@ -64,7 +71,7 @@ function branch(from: THREE.Vector3, turn: number, lean: number, len: number, r:
   const along = new THREE.Vector3(Math.sin(lean) * Math.cos(turn), Math.cos(lean), Math.sin(lean) * Math.sin(turn));
   const mid = from.clone().addScaledVector(along, len / 2);
   const e = new THREE.Euler().setFromQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, along));
-  const piece: Piece = [capsule(r, len), mid.x, mid.y, mid.z, e.x, e.y, e.z];
+  const piece: Piece = [limbShape(r, len), mid.x, mid.y, mid.z, e.x, e.y, e.z];
   return { piece, end: from.clone().addScaledVector(along, len) };
 }
 
