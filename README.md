@@ -121,6 +121,7 @@ yarn app   # or as a desktop app
 
 - **[docs/dev/development.md](docs/dev/development.md):** running, testing and building the game, and where the code lives.
 - **[docs/dev/architecture.md](docs/dev/architecture.md):** how the pieces fit together.
+- **[docs/dev/styling.md](docs/dev/styling.md):** how the interface is styled, and the theme behind it.
 - **[docs/dev/releasing.md](docs/dev/releasing.md):** publishing a release.
 - **[docs/](docs/README.md):** everything else: plans, audits, the balance log and the research behind them.
 

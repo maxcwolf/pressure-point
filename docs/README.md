@@ -10,6 +10,7 @@ Everything about the game beyond the [README](../README.md), by what it is for. 
 
 - [dev/development.md](dev/development.md): running the game from source, the tests and checks, and where the code lives.
 - [dev/architecture.md](dev/architecture.md): how the pieces fit together.
+- [dev/styling.md](dev/styling.md): how the interface is styled, the theme's colors and tokens, and how to add to them.
 - [dev/releasing.md](dev/releasing.md): publishing a release, and the changelog that becomes its notes.
 - [dev/analytics.md](dev/analytics.md): the play statistics sent to PostHog, and what is still to add.
 - [dev/announcements.md](dev/announcements.md): every line the PA announcer can say, and how to record one.
