@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **Pencil rooms in.** The Rooms menu's new Pencil in pill sketches a room's floor and door for later, for nothing: nothing can be built over it, and Build here in its inspector opens its blueprint on the spot when you're ready. A blueprint you can't afford yet can be pencilled in for later too.
+- **Sketches that keep up.** A pencilled-in room whose doorway gets blocked, or that no longer fits, turns amber and says so on its label, and the Pencil in tab counts them. No door may open onto a sketch, and a sketch on a plot stays put once the plot is built on.
 
 ## v0.33.7
 
