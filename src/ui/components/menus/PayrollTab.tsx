@@ -42,7 +42,7 @@ function Figure({ name, value, look }: { name: string; value: string; look?: 'po
 }
 
 /** What a month's books have paid out so far, all told. */
-const spentOf = (l: Ledger) => l.salaries + l.building + l.training + l.marketing + l.fines + l.interest;
+const spentOf = (l: Ledger) => incomeOf(l) - netOf(l);
 
 /** Where the center stands with the bank, in words: content, or calling the overdraft in with so many days to go. */
 export function runwayNote(days: number | null): string {

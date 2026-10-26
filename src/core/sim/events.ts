@@ -42,13 +42,16 @@ export type SimEvent =
   | { type: 'awards'; year: number }
   | { type: 'visit' }
   | { type: 'achievement'; id: AchievementId }
+  /** A gift to the Foundation has been made: how many have been, all told. */
+  | { type: 'gift'; n: number }
   /** The tutorial ended in this game: done, or skipped at a step. */
   | { type: 'tutorial'; what: 'done' | 'skipped'; step: string }
   /** Something has happened for the first time that a lesson explains, about someone if it is. */
   | { type: 'lesson'; id: LessonId; about?: Subject };
 
 /** Whether an event earns something for the campaign, which is noted at once so its karma can be spent straight away. */
-export const earnsForCampaign = (e: SimEvent): boolean => e.type === 'star' || e.type === 'achievement';
+export const earnsForCampaign = (e: SimEvent): boolean =>
+  e.type === 'star' || e.type === 'achievement' || e.type === 'gift';
 
 /** Queue an event for the outside world. */
 export function emit(ctx: SimContext, e: SimEvent) {

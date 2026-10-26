@@ -6,6 +6,13 @@ import type { AchievementDef, AchievementId, ItemType } from './types';
 /** Karma for each star earned in a campaign center, the first time it is earned. */
 export const STAR_KARMA = 2;
 
+/**
+ * The Pressure Point Foundation's gifts, in order, which open once every star in a campaign center is earned: what each
+ * costs (more where guests pay more), and the karma each earns the first time it is made there.
+ */
+export const FOUNDATION_GIFTS: readonly number[] = [50000, 100000, 200000];
+export const FOUNDATION_KARMA = 1;
+
 export const ACHIEVEMENTS: Readonly<Record<AchievementId, AchievementDef>> = {
   'called-in': {
     id: 'called-in',

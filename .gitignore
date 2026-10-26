@@ -3,6 +3,7 @@ dist/
 dist-electron/
 release/
 test-results/
+balance-results/
 playwright-report/
 .DS_Store
 *.log

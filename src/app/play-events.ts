@@ -35,6 +35,8 @@ export interface PlayMark {
   lastQuit: number;
   money: number;
   loan: number;
+  /** The gifts made to the Foundation. */
+  gifts: number;
   priceLevel: number;
   prices: Readonly<Partial<Record<string, number>>>;
   /** The marketing campaigns running. */
@@ -78,6 +80,7 @@ export function markOf(s: GameState): PlayMark {
     lastQuit: s.stats.lastQuit,
     money: s.money,
     loan: s.loan,
+    gifts: s.gifts,
     priceLevel: s.priceLevel,
     prices: { ...s.prices },
     campaigns: new Set(s.campaigns.map(campaignKey)),
@@ -200,7 +203,7 @@ function peopleEvents(mark: PlayMark, s: GameState, game: PlayProps): PlayEvent[
   return out;
 }
 
-/** Going into the red, borrowing and repaying, prices changed and marketing bought. */
+/** Going into the red, borrowing and repaying, prices changed, marketing bought and gifts made to the Foundation. */
 function moneyEvents(mark: PlayMark, s: GameState, game: PlayProps): PlayEvent[] {
   const out: PlayEvent[] = [];
   if (s.money < 0 && mark.money >= 0)
@@ -220,6 +223,8 @@ function moneyEvents(mark: PlayMark, s: GameState, game: PlayProps): PlayEvent[]
     if (c.condition) props.condition = c.condition;
     out.push({ name: 'marketing_started', props });
   }
+  for (let gift = mark.gifts + 1; gift <= s.gifts; gift++)
+    out.push({ name: 'foundation_gift', props: { ...game, gift, money: s.money } });
   return out;
 }
 

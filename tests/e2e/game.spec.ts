@@ -2726,6 +2726,37 @@ test.describe('the campaign', () => {
     await page.locator('#modal').getByRole('button', { name: 'OK', exact: true }).click();
     expect(game.errors).toEqual([]);
   });
+  test('every star at Willow Lane opens the Foundation, whose gifts earn karma for good', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => !!window.pp);
+    await game.menu('Money');
+    const menu = page.locator('#menu');
+    await expect(menu.locator('.foundation')).toHaveCount(0);
+    await expect(menu.locator('.ledgers .ledger').first()).not.toContainText('Gifts to the Foundation');
+
+    await game.eval((pp) => {
+      pp.state.stars = 3;
+      pp.state.money = 120000;
+    });
+    await game.menu('Money');
+    await game.menu('Money');
+    const card = menu.locator('.foundation');
+    await expect(card).toContainText('Gift 1 of 3: $50,000, then $100,000, then $200,000');
+    await expect(card).toContainText('The bank would keep $70,000');
+    await card.getByRole('button', { name: 'Give $50,000' }).click();
+    await expect(card).toContainText('Gift 2 of 3: $100,000, then $200,000');
+    await expect(menu.locator('.ledgers .ledger').first()).toContainText('Gifts to the Foundation-$50,000');
+    expect(await game.eval((pp) => [pp.state.gifts, pp.state.money])).toEqual([1, 70000]);
+    // the gift is noted for the campaign at once, with its karma
+    await expect
+      .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pressure-point-campaign') ?? '{}').gifts))
+      .toEqual({ willow: 1 });
+    await expect(card).toContainText('Not enough money yet: $30,000 more is needed in the bank.');
+    await expect(card.getByRole('button', { name: 'Give $100,000' })).toContainClass('locked');
+  });
 });
 
 test.describe('the sandbox', () => {

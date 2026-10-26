@@ -55,6 +55,7 @@ export default tseslint.config(
       'release/',
       'node_modules/',
       'test-results/',
+      'balance-results/',
       'playwright-report/',
       '.yarn/',
       // made by Panda from panda.config.ts

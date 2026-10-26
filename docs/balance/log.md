@@ -6,6 +6,53 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 25 October 2026, evening: late-game money, and the Pressure Point Foundation
+
+Measured with `yarn balance`, every campaign center, seeds 0 to 12, four years a game, with each payday the bank could not cover now logged (`heldPaydays`). The money curve and the cost options were measured on `claude/money-curve` at `02654cf6`, the Foundation on `claude/foundation` at main `32e85910`. Thirteen seeds, not the 72 [balance/harness.md](harness.md) asks for before a call.
+
+### 49. Money piles up only after the third star; growing costs lose games, so the late game gets a sink instead
+
+**Found:** the gameplay audit's "late-game money has nowhere to go". The good bot's bank tells two stories. Until the third star a center makes about nothing: profit a month is within $3k of zero at every center, and the net worth at the third star is a median $8k (Willow Lane) to $97k (High Pines and The Orchard). After it, the center makes a median $20k to $53k a month with nothing to spend it on, and ends four years with a median $0.5M (High Pines) to $1.4M (The Orchard). The thoughtless baseline and the advised bot never reach a third star (entry 48), and stall on the goals, not on money, so nothing late-game touches them.
+
+Three costs that grow with the center were tried, each against the good bot on the same seeds, with the treatment machines as they are (`BOT_ON=machines`, a running cost the bot can already choose) for comparison:
+
+| Option                                                                             | Games lost (of 65) | Third stars (of 65) | Profit a month, year 2 on | Bank at four years, median by center |
+| ---------------------------------------------------------------------------------- | ------------------ | ------------------- | ------------------------- | ------------------------------------ |
+| today                                                                              | 4                  | 59                  |                           | $0.5M to $1.1M                       |
+| rent by star: $1k, $3k, then $12k a month (×1.5 at The Orchard)                    | 12                 | 56                  | $6k to $16k less          | The Boardwalk below zero, 5 lost     |
+| upkeep for every room: 5% of what the rooms cost each month, faster past six rooms | 13                 | 53                  | $5k to $13k less          | High Pines 7 lost, against 2         |
+| business rates: 40% of a month's profit above $10k (above $15k at The Orchard)     | 3                  | 59                  | $5k to $11k less          | $0.6M to $0.8M                       |
+| the treatment machines, for comparison                                             | 3                  | 57                  | $1k to $6k less           | $0.2M to $1.0M                       |
+
+The bank at four years leaves out The Orchard, whose logs stop short of month 48.
+
+**Read:** rent and room upkeep bite before the third star as well as after it, when the center has no money to spare: they lose 8 and 9 more games, and room upkeep brings the third star later at all five centers. Business rates take a share of a good month only, so they lose nothing, but the pile is still $0.6M to $0.8M at the end and the money has no more purpose than before. None of the three gives the money somewhere to go; they only take it.
+
+**Done:** no new costs. Instead, the **Pressure Point Foundation** (`src/core/sim/foundation.ts`): once every star in a campaign center is earned, three gifts of $50,000, $100,000 and $200,000 (×1.5 at The Orchard), each worth 1 karma for the campaign, once a center. It asks nothing of a center still earning its stars. The bot gives with `endow` (on for the good bot): the next gift whenever it leaves two months' wages and machine upkeep in the bank.
+
+The good bot with `endow` against it without (`BOT_OFF=endow`), on the same 65 games:
+
+| Center             | Three-star games | All three gifts | First gift, months after the third star | Third gift, months after | Bank at the end, median | Lowest bank after the third star, median |
+| ------------------ | ---------------- | --------------- | --------------------------------------- | ------------------------ | ----------------------- | ---------------------------------------- |
+| Willow Lane        | 13               | 12              | 5 to 7                                  | 13 to 18                 | $1,054k → $704k         | $3k → $3k                                |
+| The Exchange       | 13               | 13              | 3 to 10                                 | 11 to 26                 | $735k → $385k           | $6k → $6k                                |
+| The Boardwalk      | 11               | 9               | 0 to 10                                 | 17 to 22                 | $617k → $261k           | $20k → $20k                              |
+| High Pines         | 11               | 9               | 0 to 11                                 | 0 to 24                  | $510k → $160k           | $74k → $49k                              |
+| The Orchard Estate | 11               | 11              | 0 to 3                                  | 7 to 15                  | $1,315k → $790k         | $114k → $65k                             |
+
+**Read:**
+
+- **It costs nothing on the way up.** Stars, games lost (4 of 65), held paydays after the third star (21 in all) and Center of the Year trophies are the same with and without, game for game: a gift comes only after the last star, and the bot keeps two months' wages back.
+- **Nearly every finished center gives.** 57 of the 59 three-star games make a first gift and 54 make all three, over the year or so after the third star. Of the five that fall short, three never have that much spare, one High Pines game earns its third star in month 40 with too little time left, and one goes bankrupt with or without the Foundation.
+- **It gives the money somewhere to go, not a reason to worry.** The bank still ends at a median $160k to $790k: $350k ($525k at The Orchard) is a third to two thirds of what piles up. The pile shrinks by choice, for karma, and a player who would rather keep the money loses nothing.
+
+A switch to borrow for a held payday without the game stopping was also offered, and turned down: the payday dialog stays.
+
+**Still open:**
+
+- **72 seeds a center** before the costs' verdict counts as a finding; the direction was the same at every center for rent and room upkeep.
+- **The advised bot** stalls on the goals before the money matters (entry 48): a pass on what the advisor says, not on the money curve.
+
 ## 25 October 2026, after midnight: the personas side by side
 
 Measured with `yarn balance` on `claude/bot-plays-like-max` at `c1c5d48`, every campaign center, seeds 1 to 6, four years a game: five bots on the same code. The good bot as it was before the owner's flags (`BOT_OFF=loan,early,modest,brave,swap`), with all five of them, and with four and no `modest`; the thoughtless baseline (`BOT=baseline`); and the advised bot (`BOT=advised`). Profit a month is averaged from month 13 on over the games that reached it; a star never earned counts as month 48 in the mean star month. Six seeds, not the 72 [balance/harness.md](harness.md) asks for before a call.

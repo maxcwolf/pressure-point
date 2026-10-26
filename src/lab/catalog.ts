@@ -1097,11 +1097,11 @@ const SCENERY: Specimen[] = [
     group: 'Scenery',
     name: 'Trees',
     footprint: [6, 1],
-    /** Five trees, one of each color and height, in any season. */
+    /** Five trees, one of each color and height, and of each habit their branches grow in, in any season. */
     build: () => {
       const st = { season: 'summer' as Season };
       return {
-        root: buildForest([0, 1, 2, 3, 4].map((i) => ({ x: (i - 2) * 1.4, z: 0, seed: i * 6 }))),
+        root: buildForest([0, 1, 2, 3, 4].map((i) => ({ x: (i - 2) * 1.4, z: 0, seed: i * 6 + (i % 4) * 25 }))),
         /** Turn the leaves to the season chosen. */
         animate: () => leavesFor(st.season),
         controls: [choice('Season', st, 'season', SEASONS)],

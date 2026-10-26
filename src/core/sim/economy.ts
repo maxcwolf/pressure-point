@@ -34,7 +34,7 @@ import { closeMonth } from './records';
 
 /** A ledger's income minus its spending. */
 export function netOf(l: Ledger) {
-  return incomeOf(l) - l.salaries - l.building - l.training - l.interest - l.marketing - l.fines - l.upkeep;
+  return incomeOf(l) - l.salaries - l.building - l.training - l.interest - l.marketing - l.fines - l.upkeep - l.gifts;
 }
 
 /** A ledger's income: fees, class places, sales over and under the counter, house calls and bonuses. */
@@ -46,7 +46,7 @@ export function incomeOf(l: Ledger) {
 export type Income = 'consult' | 'treatment' | 'vending' | 'shop' | 'mushrooms' | 'calls' | 'classes' | 'bonus';
 
 /** Where money goes out to, as the books keep it. */
-export type Cost = 'salaries' | 'building' | 'training' | 'interest' | 'marketing' | 'fines' | 'upkeep';
+export type Cost = 'salaries' | 'building' | 'training' | 'interest' | 'marketing' | 'fines' | 'upkeep' | 'gifts';
 
 /**
  * Take in money and record it. Given where it was taken, the amount floats up there, with the till's ring for a large

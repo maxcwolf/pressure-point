@@ -1,19 +1,23 @@
-// The campaign's progress: stars, achievements, karma unlocks and the lessons shown, kept apart from saved games.
+// The campaign's progress: stars, gifts to the Foundation, achievements, karma unlocks and the lessons shown, kept apart
+// from saved games.
 
 import {
   type CampaignProgress,
   freshCampaign,
   withAchievements,
   withDecorUnlock,
+  withGifts,
   withStars,
   withUnlock,
 } from '../core/campaign';
 import {
   type AchievementId,
   ACHIEVEMENTS,
+  CAMPAIGN,
   type CenterId,
   CENTERS,
   type DecorKey,
+  FOUNDATION_GIFTS,
   ITEMS,
   type ItemType,
   KARMA_DECOR,
@@ -34,6 +38,11 @@ export function loadCampaign(): CampaignProgress {
     for (const [id, n] of Object.entries(stars)) {
       if (Object.hasOwn(CENTERS, id) && typeof n === 'number' && Number.isInteger(n) && n > 0)
         p.stars[id as CenterId] = n;
+    }
+    const gifts = isRecord(raw.gifts) ? raw.gifts : {};
+    for (const [id, n] of Object.entries(gifts)) {
+      if (CAMPAIGN.includes(id as CenterId) && typeof n === 'number' && Number.isInteger(n) && n > 0)
+        p.gifts[id as CenterId] = Math.min(n, FOUNDATION_GIFTS.length);
     }
     /** The entries of a stored list that name something in a table. */
     const known = <T extends string>(list: unknown, table: object): T[] =>
@@ -62,16 +71,17 @@ function saveCampaign(p: CampaignProgress) {
 }
 
 /**
- * Note what a game has earned for the campaign: its stars, if they beat the best there, and its achievements. A game
- * the cheat console has been used in earns nothing more for it.
+ * Note what a game has earned for the campaign: its stars and gifts to the Foundation, if they beat the best there, and
+ * its achievements. A game the cheat console has been used in earns nothing more for it.
  */
 export function recordGame(s: GameState) {
   if (s.cheated) return;
   const before = loadCampaign();
   const stars = withStars(before.stars, s.center, s.stars);
+  const gifts = withGifts(before.gifts, s.center, s.gifts);
   const achieved = withAchievements(before.achieved, s.achieved);
-  if (stars === before.stars && achieved.length === before.achieved.length) return;
-  saveCampaign({ ...before, stars, achieved });
+  if (stars === before.stars && gifts === before.gifts && achieved.length === before.achieved.length) return;
+  saveCampaign({ ...before, stars, gifts, achieved });
 }
 
 /** Unlock an item for good with karma. False if it cannot be: not for karma, already unlocked, or too dear. */

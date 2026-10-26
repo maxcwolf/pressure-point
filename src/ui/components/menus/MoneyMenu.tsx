@@ -1,9 +1,19 @@
 // The Money menu: the books, the payroll outlook, prices (overall and per treatment), marketing, the loan, and land, a tab each.
 
-import { type IconId, LOAN_RATE, LOAN_STEP, PRICE_MAX, PRICE_MIN } from '../../../core/data';
+import {
+  centerOf,
+  FOUNDATION_GIFTS,
+  FOUNDATION_KARMA,
+  type IconId,
+  LOAN_RATE,
+  LOAN_STEP,
+  PRICE_MAX,
+  PRICE_MIN,
+} from '../../../core/data';
 import { money } from '../../../core/format';
 import { loanLimit, payrollOutlook } from '../../../core/sim/economy';
 import { netOf } from '../../../core/sim/economy';
+import { giftsToCome } from '../../../core/sim/foundation';
 import { INTAKE_CAP_MIN } from '../../../core/sim/guests';
 import type { Ledger } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
@@ -12,7 +22,9 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import type { MoneyTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
 import { cx } from '../../lib/cx';
+import { giftList, giftNote } from '../../lib/foundation';
 import { incomeSources, incomeVerdict, shareWord } from '../../lib/income';
+import { karmaText } from '../../lib/karma';
 import { paydayBeside } from '../../lib/loan';
 import { BALK_WHO, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
@@ -41,6 +53,13 @@ const priceLevel = css(ledgerLook, {
   '& .balk': { fontSize: '13', mt: '2' },
 });
 
+/** The Foundation's card, above the books in gold, with the next gift in bold. */
+const foundationCard = css(ledgerLook, {
+  mb: '12',
+  borderColor: 'highlight',
+  '& .gift': { fontWeight: 'bold', m: '0', mt: '4', mb: '2' },
+});
+
 /** A line of the books: income in green, spending in red. */
 function Line({ name, amount, cost = false }: { name: string; amount: number; cost?: boolean }) {
   return (
@@ -58,7 +77,7 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
   // a generator's diesel goes under the machines' upkeep
   const upkeep = sim.s.items.some((it) => it.type === 'generator') ? 'Machines and the Generator' : 'Machine upkeep';
   return (
-    <div class={ledgerCard}>
+    <div class={cx('ledger', ledgerCard)}>
       <h4>{title}</h4>
       <Line name="Consultations" amount={ledger.consult} />
       <Line name="Treatments" amount={ledger.treatment} />
@@ -75,6 +94,7 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
       <Line name="Marketing" amount={ledger.marketing} cost />
       <Line name="Loan interest" amount={ledger.interest} cost />
       <Line name="Fines" amount={ledger.fines} cost />
+      {(ledger.gifts > 0 || sim.foundationOpen()) && <Line name="Gifts to the Foundation" amount={ledger.gifts} cost />}
       <div class="total">
         <span>Net</span>
         <b class={net < 0 ? 'neg' : 'pos'}>{money(net)}</b>
@@ -109,14 +129,65 @@ function IncomeSources() {
   );
 }
 
-/** This month and last, the monthly net chart, and the running totals. */
+/**
+ * The Pressure Point Foundation, once every star here is earned: the next gift, what it would leave for payday, and the
+ * karma it earns the campaign.
+ */
+function Foundation() {
+  const { sim } = useGame();
+  const s = sim.s;
+  const price = sim.nextGift();
+  const why = sim.giftBlocker();
+  const all = FOUNDATION_GIFTS.length;
+  return (
+    // `ledger` and `foundation` are for the end-to-end tests
+    <div class={cx('ledger', 'foundation', foundationCard)}>
+      <h4>
+        <IconText id="ui-karma">The Pressure Point Foundation</IconText>
+      </h4>
+      {price === null ? (
+        <p class="sub">{`All ${all} gifts are made. ${centerOf(s).name} funds healing for those who could never pay for it.`}</p>
+      ) : (
+        <>
+          <p class="sub">
+            {`Every star here is earned, so spare money can fund healing for those who could never pay for it. Each gift earns +${karmaText(FOUNDATION_KARMA)} for the campaign, once.`}
+          </p>
+          <p class="gift">{`Gift ${s.gifts + 1} of ${all}: ${giftList(giftsToCome(s))}`}</p>
+          <p class="sub">
+            {!why
+              ? giftNote(payrollOutlook(s), price)
+              : s.cheated
+                ? why
+                : `Not enough money yet: ${money(price - s.money)} more is needed in the bank.`}
+          </p>
+          <div class={buttonRow({ align: 'left' })}>
+            <Button
+              quiet
+              locked={!!why}
+              title={why || `Give ${money(price)} for +${karmaText(FOUNDATION_KARMA)}`}
+              onPress={() => {
+                sim.endow();
+              }}
+            >
+              <IconText id="ui-karma">{`Give ${money(price)}`}</IconText>
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** This month and last, the monthly net chart, and the running totals, under the Foundation once it is open. */
 function Books() {
   const { sim } = useGame();
   const s = sim.s;
   const heights = barHeights(s.history);
   return (
     <>
-      <div class={ledgers}>
+      {sim.foundationOpen() && <Foundation />}
+      {/* `ledgers`, and `ledger` on each month, are for the end-to-end tests */}
+      <div class={cx('ledgers', ledgers)}>
         <LedgerTable title="This month" ledger={s.ledger} />
         <LedgerTable title="Last month" ledger={s.lastLedger} />
       </div>

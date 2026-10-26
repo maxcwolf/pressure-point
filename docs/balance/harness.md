@@ -1,6 +1,6 @@
 # The balance harness
 
-`yarn balance` has the playtest bot (`tests/balance/bot.ts`) play every campaign center for four years, three seeds each, and writes every game's log to `test-results/balance.json`. `yarn balance:report` turns that log into the tables the [balance log](log.md) uses, plus the fairness checks from [research/fair-challenge.md](../research/fair-challenge.md). Neither one passes or fails anything. You run them before and after a change and compare.
+`yarn balance` has the playtest bot (`tests/balance/bot.ts`) play every campaign center for four years, three seeds each, and writes every game's log to `balance-results/balance.json`. `yarn balance:report` turns that log into the tables the [balance log](log.md) uses, plus the fairness checks from [research/fair-challenge.md](../research/fair-challenge.md). Neither one passes or fails a change. You run them before and after a change and compare.
 
 ## Running it
 
@@ -9,10 +9,10 @@ yarn balance
 ```
 
 ```bash
-yarn balance:report test-results/balance.json
+yarn balance:report balance-results/balance.json
 ```
 
-Each center and seed is a game of its own, and the games are shared out over worker slots: `tests/balance/playtest.balance.ts` runs once per slot, as its own vitest project (`vitest.balance.config.ts`). Slot _k_ plays games _k_, _k_ + slots, and so on, and writes each log to `test-results/balance-parts/`. When every slot is done, `tests/balance/merge.ts` puts the logs together, center by center and seed by seed, in the same shape as before. Each game prints one summary line as it finishes: the day it opened, stars at month, the lowest bank balance, the peak loan, and the goals still open, with a line more for each treatment machine built with `BOT_ON=machines`.
+Each center and seed is a game of its own, and the games are shared out over worker slots: `tests/balance/playtest.balance.ts` runs once per slot, as its own vitest project (`vitest.balance.config.ts`). Slot _k_ plays games _k_, _k_ + slots, and so on, and writes each log to `balance-results/parts/`: not under `test-results/`, which Playwright empties whenever an e2e or screenshot run starts. When every slot is done, `tests/balance/merge.ts` puts the logs together, center by center and seed by seed, in the same shape as before. If any game asked for has no log there, the run fails with the centers and seeds that are missing, after writing the log of the games that did play. A game that failed leaves no log, and neither does a game whose log was deleted before the merge. Each game prints one summary line as it finishes: the day it opened, stars at month, the lowest bank balance, the peak loan, and the goals still open, with a line more for each treatment machine built with `BOT_ON=machines`.
 
 The report runs on plain Node (22.18 or later). `scripts/balance-report.mjs` imports `tests/balance/report.ts` directly, and Node strips the types itself. The report module is pure: it never imports game code, so it can run that way.
 
@@ -23,7 +23,7 @@ The report runs on plain Node (22.18 or later). `scripts/balance-report.mjs` imp
 | `BALANCE_CENTERS` | every campaign center                | Comma-separated center ids, e.g. `willow,orchard`                                                                                                            |
 | `BALANCE_SEEDS`   | `1,2,3`                              | Comma-separated seeds                                                                                                                                        |
 | `BALANCE_DAYS`    | `1440` (four years)                  | In-game days per game                                                                                                                                        |
-| `BALANCE_OUT`     | `test-results/balance.json`          | Where the merged log goes                                                                                                                                    |
+| `BALANCE_OUT`     | `balance-results/balance.json`       | Where the merged log goes                                                                                                                                    |
 | `BALANCE_SLOTS`   | one fewer than the processor's cores | Worker slots (`1` plays every game in one worker, one after another, as before)                                                                              |
 | `BOT`             | the good bot                         | `baseline` plays a thoughtless new player; `advised` plays the baseline and does as the toasts and advisor say; `old` plays as the bot did before it learned |
 | `BOT_OFF`         | none                                 | Turns single behaviours of the good bot off, e.g. `prices,calls` or `loan,early,brave,swap` (`BOT_FLAGS` in bot.ts)                                          |
@@ -37,6 +37,8 @@ The report runs on plain Node (22.18 or later). `scripts/balance-report.mjs` imp
 
 `loan`, `early`, `modest`, `brave` and `swap` are habits taken from the owner's own games (balance-log entries 46 to 48). With `loan`, the bot asks the bank for no more than three steps of the loan ($15,000) in all, the loan the bank forces at a payday aside, and pays a step back whenever a month's wages and $5,000 are in hand. With `early`, it builds a Staff Room before the doors open if the money allows, a Training Room as soon as the game opens one and its cost is in hand with the wages due kept back, and dresses each treatment room the day it is built, keeping nothing back for decor or the corridor's comforts until the center has been open a month. With `modest`, it sets prices to 1.1 on the first day open and takes them no higher, a long line's techniques to 1.2 at most (the bank's countdown still takes them to 1.4). With `brave`, it takes on every emergency and every stress outbreak and calms the outbreak's carriers. With `swap`, once open, it takes on an applicant a rank or more above the weakest member of a role who could go, and then lets that member go, keeping the headcount, at most once a month a role: not while the bank is calling the overdraft in or the advisor says to hire nobody, not when the dearer wage would take the month's books into a loss, and never anyone on a course or a call, or with a technique or general course the applicant lacks. `loan`, `early`, `brave` and `swap` are on for the good bot and off for `BOT=old`; `BOT_OFF=loan,early,brave,swap` plays the good bot as it was before them. `modest` is an extra, `BOT_ON=modest`: it cost the bot about $8,000 a month at every center for no star or game gained (entry 48). `loan` and `modest` change only the good style: `BOT_STYLE=hoarder` and `grower` keep their own loans and prices.
 
+`endow` has the good bot give to the Pressure Point Foundation once every star is earned: the next gift whenever it leaves two months' wages and machine upkeep in the bank. It is on for the good bot and off for `BOT=old`; a gift comes only after the last star, so it changes no star month, only the bank from then on. `BOT_OFF=endow` plays the late game as before the Foundation.
+
 ## What a game's log holds
 
 Beyond the month-by-month figures (`months`), the star days, the open goals and the bot's notes, each log records:
@@ -47,6 +49,8 @@ Beyond the month-by-month figures (`months`), the star days, the open goals and 
 - `months[].incomeBy`: each month's income by source, from the ledger. The sources are treatments, consultations, classes, house calls, the shop, mushrooms, vending, and bonuses (emergency rewards and prizes).
 - `goalDays`: for each star, the day each of its objectives was first met, or null if never.
 - `months[].runners`: each month's bad trips, and the really bad ones: how many ran, were calmed, calmed within 3 days, and found the door.
+- `heldPaydays`: each payday the bank could not cover from the money in hand, as the player meets it (the game stops with the payday dialog): the day, the wages, the bank and the loan before the bot borrowed or paid into the red.
+- `gifts`, only with `endow` on: the day each gift to the Foundation was made. A month with a gift also has `months[].gifts`, the amount; `months[].spending` leaves gifts out, so it stays what running the center cost.
 - `swaps`, only with `swap` on: everyone let go for a better applicant, with the day, the role, and the rank and salary of the one let go and of the one taken on. The bot's notes stop at 150 a game, so count swaps here rather than from the notes.
 
 ## Reading the report
@@ -73,9 +77,9 @@ Beyond the month-by-month figures (`months`), the star days, the open goals and 
 
 ## A before/after comparison
 
-1. On the code before the change: `BALANCE_OUT=test-results/before.json yarn balance` (and `BOT=baseline BALANCE_OUT=test-results/before-baseline.json yarn balance` if the thoughtless player matters to the change).
+1. On the code before the change: `BALANCE_OUT=balance-results/before.json yarn balance` (and `BOT=baseline BALANCE_OUT=balance-results/before-baseline.json yarn balance` if the thoughtless player matters to the change).
 2. Make the change, then run `yarn balance` again.
-3. `yarn balance:report test-results/balance.json test-results/before.json` prints the table a second time in the "before → after" form of balance-log entry 31. A cell that did not change reads `(unchanged)`. The fairness slices are for the "after" run.
+3. `yarn balance:report balance-results/balance.json balance-results/before.json` prints the table a second time in the "before → after" form of balance-log entry 31. A cell that did not change reads `(unchanged)`. The fairness slices are for the "after" run.
 4. Compare seed by seed, not by the means. In the balance-log entry, copy the table and say what the slices show: a new bankruptcy, a cliff that appeared or went away, a loss without warning.
 
 Logs from before the richer fields existed still work as the "before" run. The report reads their bankruptcy from the bot's note and leaves out what they lack.

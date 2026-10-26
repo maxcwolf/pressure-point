@@ -5,7 +5,7 @@ import * as THREE from 'three';
 
 import type { Season } from '../../core/sim/twists';
 import { blob, cyl, mat, sph } from './parts';
-import { bareCrown, BARK, BRANCHES, type TreeSpot } from './tree';
+import { bareCrowns, BARK, crownPlacement, SPREADING, type TreeSpot } from './tree';
 
 /** How many apples hang on each tree, and where on the canopy, as a turn round it and a height on it. */
 const APPLES = [
@@ -77,7 +77,7 @@ export function buildOrchard(spots: readonly TreeSpot[]): THREE.Group {
   const trunks: THREE.Matrix4[] = [];
   const canopies: THREE.Matrix4[] = [];
   const apples: THREE.Matrix4[] = [];
-  const crowns: THREE.Matrix4[] = [];
+  const crowns: { habit: number; placement: THREE.Matrix4 }[] = [];
   const none = new THREE.Quaternion();
   for (const { x, z, seed } of spots) {
     const k = 0.9 + (seed % 3) * 0.1;
@@ -92,14 +92,9 @@ export function buildOrchard(spots: readonly TreeSpot[]): THREE.Group {
         new THREE.Vector3(CANOPY * k, CANOPY * 0.85 * k, CANOPY * k),
       ),
     );
-    // the bare branches of winter, smaller than a park tree's to suit the shorter trunk, and turned their own way
-    crowns.push(
-      new THREE.Matrix4().compose(
-        new THREE.Vector3(x, TRUNK * k, z),
-        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), seed * 2.4),
-        new THREE.Vector3(0.75 * k, 0.75 * k, 0.75 * k),
-      ),
-    );
+    // the bare branches of winter, smaller than a park tree's to suit the shorter trunk, and spreading: an apple tree
+    // is pruned open, its limbs reaching out low
+    crowns.push({ habit: SPREADING, placement: crownPlacement(x, TRUNK * k, z, seed, 0.7 * k) });
     for (const [turn, up] of APPLES) {
       const a = turn + seed;
       apples.push(
@@ -119,6 +114,6 @@ export function buildOrchard(spots: readonly TreeSpot[]): THREE.Group {
   // the apples are too small to cast a shadow worth drawing
   apple.castShadow = false;
   orchard.add(apple);
-  if (crowns.length) orchard.add(instanced(bareCrown(), BRANCHES, crowns));
+  for (const mesh of bareCrowns(crowns)) orchard.add(mesh);
   return orchard;
 }
