@@ -14,6 +14,9 @@ const PACKAGED_APP = process.env.PP_APP;
 /** Lets the game fall back to drawing in software where there is no graphics card, as on CI machines. */
 const SOFTWARE_WEBGL = ['--enable-unsafe-swiftshader'];
 
+/** Keeps a packaged app from sending error reports while the tests drive it (electron/reports.ts). */
+const NO_REPORTS = { ...process.env, PP_NO_REPORTS: '1' };
+
 export interface Desktop {
   /** Where this test's copy of the app keeps its saves and settings. */
   profile: string;
@@ -34,7 +37,9 @@ export const test = base.extend<{ desktop: Desktop }>({
       launch: async () => {
         const args = [`--user-data-dir=${profile}`, ...SOFTWARE_WEBGL];
         const app = await electron.launch(
-          PACKAGED_APP ? { executablePath: PACKAGED_APP, args } : { args: ['.', ...args] },
+          PACKAGED_APP
+            ? { executablePath: PACKAGED_APP, args, env: NO_REPORTS }
+            : { args: ['.', ...args], env: NO_REPORTS },
         );
         apps.push(app);
         const used = await app.evaluate(({ app }) => app.getPath('userData'));

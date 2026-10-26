@@ -85,6 +85,13 @@ test.describe('the desktop shell', () => {
     expect(await page.evaluate(() => window.desktop?.platform)).toBe(process.platform);
   });
 
+  test('sends no error reports while the tests drive it', async ({ desktop }) => {
+    await desktop.launch();
+    // reporting leaves its note and Sentry's folder in the profile as soon as the app starts (electron/reports.ts)
+    expect(existsSync(path.join(desktop.profile, 'heartbeat.json'))).toBe(false);
+    expect(existsSync(path.join(desktop.profile, 'sentry'))).toBe(false);
+  });
+
   test('loads the game as a file, which is where existing saved games live', async ({ desktop }) => {
     const { page } = await desktop.launch();
     // saved games are kept per address: changing how the game is loaded would hide every save players have
