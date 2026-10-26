@@ -120,7 +120,9 @@ function sketchEvents(mark: PlayMark, s: GameState, game: PlayProps): PlayEvent[
     const built = s.rooms.some(
       (r) => r.type === sk.type && r.x < sk.x + sk.w && sk.x < r.x + r.w && r.y < sk.y + sk.h && sk.y < r.y + r.h,
     );
-    out.push({ name: built ? 'sketch_built' : 'sketch_erased', props: { ...game, room: sk.type } });
+    // one that remembered a room was built whole, from its template
+    const template = built && sk.layout ? { template: true } : {};
+    out.push({ name: built ? 'sketch_built' : 'sketch_erased', props: { ...game, room: sk.type, ...template } });
   }
   return out;
 }

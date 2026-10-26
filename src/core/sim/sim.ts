@@ -147,6 +147,8 @@ import {
   buildSketch,
   buildSketchAt,
   eraseSketch,
+  forgetTemplate,
+  pencilTemplate,
   restoreSketch,
   sketchBlueprint,
   sketchById,
@@ -960,14 +962,29 @@ export class Sim {
     return addSketch(this.ctx, type, r, door);
   }
 
+  /** Pencil a template in for later, for nothing, remembering its room. Null if it cannot go there. */
+  pencilTemplate(name: string, layout: Layout, placed: PlacedLayout): Sketch | null {
+    return pencilTemplate(this.ctx, name, layout, placed);
+  }
+
+  /** Forget the room a sketch remembers, keeping its floor and door. */
+  forgetTemplate(id: number): boolean {
+    return forgetTemplate(this.ctx, id);
+  }
+
   /** Rub a sketch out. */
   eraseSketch(id: number): boolean {
     return eraseSketch(this.ctx, id);
   }
 
-  /** Start the blueprint of a sketch where it is. Null, with the sketch kept, if it no longer fits there. */
+  /**
+   * Start the blueprint of a sketch where it is, or, for one that remembers a room, build that room whole. Null, with
+   * the sketch kept, if it no longer fits there, or the room remembered cannot be paid for.
+   */
   buildSketch(id: number): Room | null {
-    return buildSketch(this.ctx, id);
+    const result = buildSketch(this.ctx, id);
+    if (result?.done) this.afterSpending();
+    return result;
   }
 
   /** Start the blueprint of a sketch's room on other floor, the sketch giving way if the room lands on it. */

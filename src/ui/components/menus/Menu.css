@@ -267,6 +267,11 @@ button.card:hover {
   color: #fff;
 }
 
+/* pencilling in, the button is the Pencil in pill's orange */
+.template-actions button.build.pencil {
+  background: var(--orange);
+}
+
 .template-actions button.delete {
   margin-left: auto;
   background: #fbe3e1;

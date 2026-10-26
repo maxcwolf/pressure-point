@@ -472,3 +472,17 @@
   background: var(--cream);
   box-shadow: 0 3px 0 rgba(36, 56, 74, 0.3);
 }
+
+/* a sketch that remembers a room puts Forget template and Build here on lines of their own, under Erase and Move */
+.insp .sketch-buttons .break {
+  flex-basis: 100%;
+  height: 0;
+}
+
+.insp button.forget {
+  border: 2.5px solid var(--navy);
+  border-radius: 12px;
+  font-weight: 600;
+  background: var(--cream);
+  box-shadow: 0 3px 0 rgba(36, 56, 74, 0.3);
+}

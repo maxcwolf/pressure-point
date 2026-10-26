@@ -18,9 +18,10 @@ import { doorstep, entranceSteps, type Footprint, spotInWall } from './footprint
 import { an } from './format';
 import { plotAt, plotGroundAt, plotOffers } from './land';
 import { carryWallSpot, farSide, inRect, sameRect } from './resize';
-import type { PlacedLayout } from './room-layout';
+import { type Layout, type PlacedLayout, placeLayout } from './room-layout';
 import { sameSpot } from './state/game';
 import type { Room, Sketch, WallSpot } from './state/types';
+import { layoutProblem } from './templates';
 import { at } from './util';
 import {
   accessTile,
@@ -422,8 +423,33 @@ export function sketchDoorValid(world: World, r: Rect, door: Room['door']): Chec
 }
 
 /**
+ * What keeps a room remembered by a sketch from being built anywhere, or '' if nothing does: furniture this version does
+ * not know, as in a template from a newer one, or a layout the game no longer allows.
+ */
+export function sketchLayoutProblem(l: Layout): string {
+  if (!Object.hasOwn(ROOMS, l.type) || l.items.some((it) => !Object.hasOwn(ITEMS, it.type)))
+    return "This template needs items this version doesn't have";
+  return layoutProblem(l);
+}
+
+/**
+ * Can a template be pencilled in here, put down as it would be built? Where building it could go today, by
+ * `layoutValid`, and, as for any sketch, not in another sketch's doorway. `spare` is a sketch being moved.
+ */
+export function templateSketchValid(world: World, layout: Layout, placed: PlacedLayout, spare?: number): Check {
+  const doorway = world.s.sketches.find(
+    (sk) => sk.id !== spare && inRect(placed.rect, sk.door.x + sk.door.dx, sk.door.y + sk.door.dy),
+  );
+  if (doorway) return onSketch(doorway);
+  const problem = sketchLayoutProblem(layout);
+  if (problem) return no(problem);
+  return layoutValid(world, layout.type, placed, undefined, spare);
+}
+
+/**
  * Whether a sketch could be built where it is today, and where it stands: on land not built on yet, it waits; inside,
- * its floor has to be free but for itself, and its door able to open onto free corridor without cutting anyone off.
+ * its floor has to be free but for itself, and its door able to open onto free corridor without cutting anyone off. A
+ * sketch that remembers a room is judged as building that room whole there would be.
  */
 export function sketchFit(world: World, sk: Sketch): SketchFit {
   if (!world.inside(sk.x, sk.y)) {
@@ -434,9 +460,15 @@ export function sketchFit(world: World, sk: Sketch): SketchFit {
       standing: 'waits',
     };
   }
+  // a room remembered that this version cannot build no longer fits anywhere, until it is forgotten
+  const problem = sk.layout && sketchLayoutProblem(sk.layout);
+  if (problem) return { fit: no(problem), standing: 'unfit' };
   const floor = roomRectValid(world, sk.type, sk, world.asIs(), sk.id);
   if (!floor.ok) return { fit: floor, standing: 'unfit' };
-  const door = doorValid(world, sk, sk.door);
+  // a room remembered is judged as building it whole would be, so amber means what Build here would say
+  const door = sk.layout
+    ? layoutValid(world, sk.type, placeLayout(sk.layout, sk.x, sk.y), undefined, sk.id)
+    : doorValid(world, sk, sk.door);
   if (door.ok) return { fit: OK, standing: 'fits' };
   // the room would cut someone off, with its doorway itself clear: the room no longer fits, rather than its door
   const [ox, oy] = [sk.door.x + sk.door.dx, sk.door.y + sk.door.dy];
@@ -549,12 +581,19 @@ export function resizeValid(world: World, room: Room, r: Rect): Check {
  * corridor, and nobody and nothing may be cut off. A window next door looking onto the floor is no bar: it comes
  * through into the room, or is taken out if the layout hangs something there.
  */
-export function layoutValid(world: World, type: RoomType, placed: PlacedLayout, moving?: Room): Check {
+export function layoutValid(
+  world: World,
+  type: RoomType,
+  placed: PlacedLayout,
+  moving?: Room,
+  /** A sketch that may be built over: the one this room is being built from. */
+  spare?: number,
+): Check {
   // lift the room being moved, and its furniture, out first
   const rooms = world.s.rooms.filter((r) => r !== moving);
   const items = moving ? world.s.items.filter((it) => world.zoneAt(it.x, it.y) !== moving.id) : world.s.items;
   const lifted = moving ? world.tryOut(rooms, items) : world.asIs();
-  const check = roomRectValid(world, type, placed.rect, lifted);
+  const check = roomRectValid(world, type, placed.rect, lifted, spare);
   if (!check.ok) return check;
   const { door } = placed;
   const ox = door.x + door.dx;

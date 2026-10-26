@@ -21,15 +21,20 @@ import { TemplatesTab } from './TemplatesTab';
 const TABS: readonly { id: RoomsTab; name: string }[] = [
   { id: 'rooms', name: 'Rooms' },
   { id: 'templates', name: 'Templates' },
-  { id: 'pencil', name: '✎ Pencil in' },
 ];
 
-/** The kinds of room, and the templates saved, a tab each, and a third that pencils the rooms in rather than builds them. */
+/** What the note under the tabs says while pencilling in, on each tab. */
+const PENCIL_NOTES: Record<RoomsTab, string> = {
+  rooms: '✎ Drag a room out to keep its space for later. Nothing is charged until you build it.',
+  templates: '✎ Click a template to pencil it in, furniture and all. Nothing is charged until you build it.',
+};
+
+/** The kinds of room and the templates saved, a tab each, and a pill that pencils either in rather than builds them. */
 export function RoomsMenu() {
   const hud = useHud();
   const { sim } = useGame();
   const guide = hud.guide();
-  const pencil = hud.roomsTab === 'pencil';
+  const { pencil } = hud;
   return (
     <div class="panel menu">
       <div class="menu-head">
@@ -44,28 +49,31 @@ export function RoomsMenu() {
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx(
-              'tab',
-              t.id === 'pencil' && 'pencil',
-              hud.roomsTab === t.id && 'on',
-              guide === `tab:${t.id}` && 'guide',
-            )}
+            class={cx('tab', hud.roomsTab === t.id && 'on', guide === `tab:${t.id}` && 'guide')}
             onPress={() => {
-              // pressed again, pencilling in goes off
-              hud.roomsTab = t.id === 'pencil' && pencil ? 'rooms' : t.id;
+              hud.roomsTab = t.id;
             }}
           >
             {t.id === 'templates' && hud.templates.length ? `${t.name} (${hud.templates.length})` : t.name}
           </Button>
         ))}
+        <Button
+          class={cx('tab', 'pencil', pencil && 'on', guide === 'tab:pencil' && 'guide')}
+          onPress={() => {
+            // pressed again, pencilling in goes off
+            hud.pencil = !pencil;
+          }}
+        >
+          ✎ Pencil in
+        </Button>
       </div>
       {pencil && (
         <div class="pencil-note">
-          <p>✎ Drag a room out to keep its space for later. Nothing is charged until you build it.</p>
+          <p>{PENCIL_NOTES[hud.roomsTab]}</p>
           {sim.s.sketches.length > 0 && <p class="sub">{sketchCount(sim.world)}</p>}
         </div>
       )}
-      {hud.roomsTab === 'templates' ? <TemplatesTab /> : <RoomCards pencil={pencil} />}
+      {hud.roomsTab === 'templates' ? <TemplatesTab pencil={pencil} /> : <RoomCards pencil={pencil} />}
     </div>
   );
 }

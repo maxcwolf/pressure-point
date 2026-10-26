@@ -47,6 +47,7 @@ import {
   sketchDoorHint,
   sketchHint,
   templateHint,
+  templateSketchHint,
   WINDOW_HINT,
 } from './hints';
 import { assignTiles, dragTiles, itemTiles, layoutTiles, rectTiles } from './overlay';
@@ -205,15 +206,15 @@ export class Tools {
     return !free && this.sim.s.money < ITEMS[type].cost ? "Can't afford it" : '';
   }
 
-  /** Whether a room can be paid for, at the smallest or at what it costs as planned, saying so if not. */
-  private affords(type: RoomType, cost = ROOMS[type].cost, action = 'build_room'): boolean {
+  /**
+   * Whether a room can be paid for, at the smallest or at what it costs as planned, saying so if not. `what` names it,
+   * as a template's name does a room built from it.
+   */
+  private affords(type: RoomType, cost = ROOMS[type].cost, action = 'build_room', what?: string): boolean {
     const def = ROOMS[type];
     if (this.sim.s.money >= cost) return true;
-    this.sim.emit({
-      type: 'toast',
-      text: `A ${def.name} ${cost > def.cost ? 'this size ' : ''}costs ${money(cost)}. You can't afford it yet.`,
-      kind: 'bad',
-    });
+    const name = what ?? `A ${def.name}${cost > def.cost ? ' this size' : ''}`;
+    this.sim.emit({ type: 'toast', text: `${name} costs ${money(cost)}. You can't afford it yet.`, kind: 'bad' });
     this.refuse(action, "Can't afford it", undefined);
     return false;
   }
@@ -249,6 +250,14 @@ export class Tools {
     if (!sketch) return;
     this.cancel();
     this.sim.eraseSketch(id);
+    // one that remembers a room is picked up whole, as its template is, to put down where it is clicked
+    if (sketch.layout) {
+      const name = sketch.template ?? ROOMS[sketch.type].name;
+      this.tool = { kind: 'template', name, layout: sketch.layout, sketch: true, moving: sketch };
+      this.select(null);
+      this.refresh();
+      return;
+    }
     const rect = { x: sketch.x, y: sketch.y, w: sketch.w, h: sketch.h };
     this.tool = { kind: 'sketch', type: sketch.type, phase: 'drag', start: null, rect, held: true, moving: sketch };
     this.select(null);
@@ -258,12 +267,17 @@ export class Tools {
   /**
    * Build a sketch. Where it still fits, its blueprint opens in its rectangle with its door, and the first required
    * item in hand; where it no longer does, the room tool takes its floor up to be clicked as it is or dragged out
-   * afresh. Turned down, with the sketch kept, if the room's price cannot be paid.
+   * afresh. Turned down, with the sketch kept, if the room's price cannot be paid. One that remembers a room is built
+   * whole, or turned down.
    */
   buildSketch(id: number) {
     const sketch = this.sim.sketch(id);
     if (!sketch) return;
     this.cancel();
+    if (sketch.layout) {
+      this.buildRemembered(sketch, sketch.layout);
+      return;
+    }
     if (!this.affords(sketch.type, ROOMS[sketch.type].cost, 'build_sketch')) return;
     const kept: Sketch = { ...sketch, door: { ...sketch.door } };
     const room = this.sim.world.sketchFits(sketch).ok ? this.sim.buildSketch(id) : null;
@@ -282,6 +296,28 @@ export class Tools {
       this.tool = { kind: 'room', type, phase: 'drag', start: null, rect, noFit: '', held: true, sketch: kept };
     }
     this.select(null);
+    this.refresh();
+  }
+
+  /**
+   * Build the room a sketch remembers, whole, where it is, and select it: turned down, with the sketch kept, with why if
+   * it no longer fits there, or if the bank cannot cover it.
+   */
+  private buildRemembered(sketch: Sketch, layout: Layout) {
+    const { fit } = this.sim.world.sketchFit(sketch);
+    if (!fit.ok) {
+      this.sim.emit({ type: 'toast', text: fit.reason.replace(/[^.]$/, '$&.'), kind: 'bad' });
+      this.refuse('build_sketch', fit.reason, undefined);
+      return;
+    }
+    const what = `"${sketch.template ?? ROOMS[sketch.type].name}"`;
+    if (!this.affords(sketch.type, copyCost(layout), 'build_sketch', what)) return;
+    const room = this.sim.buildSketch(sketch.id);
+    if (!room) {
+      this.refuse('build_sketch', "Can't afford it", undefined);
+      return;
+    }
+    this.select({ kind: 'room', id: room.id });
     this.refresh();
   }
 
@@ -329,10 +365,10 @@ export class Tools {
     this.refresh();
   }
 
-  /** Put down rooms built from a template, as many as are clicked. */
-  startTemplate(name: string, layout: Layout) {
+  /** Put down rooms built from a template, as many as are clicked, or with `sketch`, pencil them in. */
+  startTemplate(name: string, layout: Layout, sketch = false) {
     this.cancel();
-    this.tool = { kind: 'template', name, layout };
+    this.tool = { kind: 'template', name, layout, ...(sketch && { sketch }) };
     this.select(null);
     this.refresh();
   }
@@ -410,7 +446,8 @@ export class Tools {
     const t = this.tool;
     if (t.kind === 'room' && t.phase === 'plan') this.sim.removeRoom(t.room.id, 1);
     // a sketch built from, or picked up to move, is put back as it was
-    const sketch = t.kind === 'room' ? t.sketch : t.kind === 'sketch' ? t.moving : null;
+    const sketch =
+      t.kind === 'room' ? t.sketch : t.kind === 'sketch' ? t.moving : t.kind === 'template' ? t.moving : null;
     this.tool = { kind: 'none' };
     if (sketch && this.sim.restoreSketch(sketch) && !this.selected) this.select({ kind: 'sketch', id: sketch.id });
     this.refresh();
@@ -534,6 +571,8 @@ export class Tools {
       else this.refuse('assign_room', room ? '' : 'Not on a room');
     } else if (t.kind === 'moveRoom') {
       if (this.putRoomDown(t.roomId, t.copy) && t.copy) this.land(clientX, clientY);
+    } else if (t.kind === 'template' && t.sketch) {
+      this.clickTemplateSketch(clientX, clientY);
     } else if (t.kind === 'template') {
       // the tool stays for another
       const placed = this.placedRoom(t);
@@ -649,6 +688,28 @@ export class Tools {
     }
     // the tool stays for another of the same kind
     this.tool = { kind: 'sketch', type: t.type, phase: 'drag', start: null, rect: null, held: false, moving: null };
+    this.land(clientX, clientY);
+  }
+
+  /**
+   * A click with a template being pencilled in: it goes down where it is shown, for nothing, with the tool kept for
+   * another, or, for a sketch being moved, put down and selected.
+   */
+  private clickTemplateSketch(clientX: number, clientY: number) {
+    const t = this.tool;
+    if (t.kind !== 'template') return;
+    const placed = this.placedRoom(t);
+    if (!placed) return;
+    const sketch = this.sim.pencilTemplate(t.name, t.layout, placed);
+    if (!sketch) {
+      this.refuse('pencil_template');
+      return;
+    }
+    if (t.moving) {
+      this.tool = { kind: 'none' };
+      this.select({ kind: 'sketch', id: sketch.id });
+      return;
+    }
     this.land(clientX, clientY);
   }
 
@@ -864,15 +925,17 @@ export class Tools {
    * A room about to be put down from a layout, colored by whether it fits, with its furniture and door. Returns how
    * many windows next door putting it down there would take out.
    */
-  private drawLayout(layout: Layout, drawing: Drawing, moving?: Room): number {
+  private drawLayout(layout: Layout, drawing: Drawing, moving?: Room, pencil = false): number {
     const placed = this.placedRoom({ layout });
     if (!placed) return 0;
-    const check = this.sim.world.layoutValid(layout.type, placed, moving);
+    const world = this.sim.world;
+    // pencilled in, it goes where building it could, and in no other sketch's doorway
+    const check = pencil ? world.templateSketchValid(layout, placed) : world.layoutValid(layout.type, placed, moving);
     this.problem = check.reason;
     this.inTheWay = check.sketch;
     drawing.tiles.push(...layoutTiles(placed, check.ok));
     this.view.setDoor({ door: placed.door, tone: check.ok ? 'ok' : 'bad' });
-    return check.ok ? this.sim.world.windowsOnto(placed, moving).length : 0;
+    return check.ok && !pencil ? world.windowsOnto(placed, moving).length : 0;
   }
 
   /** The sketch tool: the floor being dragged out, colored as a room's, or the rectangle and the door under the cursor. */
@@ -940,6 +1003,10 @@ export class Tools {
     } else if (t.kind === 'moveRoom') {
       view.setGhost(null);
       this.drawRoomMove(t.roomId, t.copy, drawing);
+    } else if (t.kind === 'template' && t.sketch) {
+      view.setGhost(null);
+      this.drawLayout(t.layout, drawing, undefined, true);
+      this.hint = templateSketchHint(t.name, t.layout.type, copyCost(t.layout), !!t.moving);
     } else if (t.kind === 'template') {
       view.setGhost(null);
       this.hint = templateHint(t.name, copyCost(t.layout), this.drawLayout(t.layout, drawing));

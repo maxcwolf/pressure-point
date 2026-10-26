@@ -29,8 +29,21 @@ import { keepTemplates } from '../../templates';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 
-/** A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. */
-function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key: DecorKey) => boolean }) {
+/**
+ * A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. With
+ * `pencil`, its button pencils it in instead, so its price does not dim it.
+ */
+function TemplateCard({
+  t,
+  lock,
+  open,
+  pencil,
+}: {
+  t: Template;
+  lock: string;
+  open: (key: DecorKey) => boolean;
+  pencil: boolean;
+}) {
   const hud = useHud();
   const { sim, tools } = useGame();
   const { layout } = t;
@@ -39,7 +52,7 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
   // the name as it is being typed: kept here, or the interface redrawing as the game runs would put the old one back
   const [draft, setDraft] = useState<string | null>(null);
   return (
-    <div class={cx('card', 'template', !lock && sim.s.money < cost && 'poor')} data-template={t.name}>
+    <div class={cx('card', 'template', !lock && !pencil && sim.s.money < cost && 'poor')} data-template={t.name}>
       <Icon id={room.icon} size={34} />
       <span class="cost">{money(cost)}</span>
       <input
@@ -66,16 +79,21 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
       )}
       <div class="template-actions">
         <Button
-          class="build"
-          title={lock || `Build rooms like this wherever you click, for ${money(cost)} each. R turns them.`}
-          locked={!!lock || sim.s.money < cost}
+          class={pencil ? 'build pencil' : 'build'}
+          title={
+            lock ||
+            (pencil
+              ? `Pencil rooms like this in wherever you click, for nothing now and ${money(cost)} each when built. R turns them.`
+              : `Build rooms like this wherever you click, for ${money(cost)} each. R turns them.`)
+          }
+          locked={!!lock || (!pencil && sim.s.money < cost)}
           onPress={() => {
             hud.menu = null;
             // a floor or walls not unlocked in this game are left standard
-            tools.startTemplate(t.name, openDecor(layout, open));
+            tools.startTemplate(t.name, openDecor(layout, open), pencil);
           }}
         >
-          Build
+          {pencil ? '✎ Pencil in' : 'Build'}
         </Button>
         <Button
           class="export"
@@ -102,8 +120,11 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
   );
 }
 
-/** Every template saved, in the order picked, with a way to import more from a file and to export them all. */
-export function TemplatesTab() {
+/**
+ * Every template saved, in the order picked, with a way to import more from a file and to export them all. With
+ * `pencil`, each pencils its room in rather than builds it.
+ */
+export function TemplatesTab({ pencil }: { pencil: boolean }) {
   const hud = useHud();
   const { sim } = useGame();
   const campaign = loadCampaign();
@@ -139,7 +160,7 @@ export function TemplatesTab() {
       {hud.templates.length ? (
         <div class="cards templates">
           {sorted(hud.templates, TEMPLATE_SORTS, hud.sorts.templates).map((t) => (
-            <TemplateCard key={t.id} t={t} lock={templateLock(t.layout, allowed)} open={open} />
+            <TemplateCard key={t.id} t={t} lock={templateLock(t.layout, allowed)} open={open} pencil={pencil} />
           ))}
         </div>
       ) : (

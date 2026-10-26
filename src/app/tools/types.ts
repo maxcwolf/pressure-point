@@ -73,8 +73,9 @@ export type Tool =
   | { kind: 'assign'; staffId: number }
   // a built room picked up to move it, or to put down copies of it: `layout` is turned as R is pressed
   | { kind: 'moveRoom'; roomId: number; layout: Layout; copy: boolean }
-  // a saved template, to put down rooms built from it: `layout` is turned as R is pressed
-  | { kind: 'template'; name: string; layout: Layout }
+  // a saved template, to put down rooms built from it: `layout` is turned as R is pressed. With `sketch` it pencils them
+  // in instead, and `moving` is a sketch that remembers a room, picked up to put down elsewhere, put back if it is not
+  | { kind: 'template'; name: string; layout: Layout; sketch?: boolean; moving?: Sketch }
   // buying land: the plot pointed at, if any
   | { kind: 'expand'; pointed: string | null };
 

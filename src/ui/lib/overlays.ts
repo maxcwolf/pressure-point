@@ -14,8 +14,9 @@ import type { Guest, Staff } from '../../core/state/types';
 import { footprint } from '../../core/world';
 import type { HeatTile, Palette } from '../../render/heatmap';
 
-/** What the floor can be colored by. */
-export type OverlayMode = 'decor' | 'calm' | 'temperature' | 'patience' | 'condition' | 'needs' | 'energy' | 'upkeep';
+/** What the floor can be colored by, or, for the plans, dimmed under the rooms pencilled in. */
+export type OverlayMode =
+  'decor' | 'calm' | 'temperature' | 'patience' | 'condition' | 'needs' | 'energy' | 'upkeep' | 'plans';
 
 /**
  * How an overlay's key is drawn: `diverging` worse through clear to better, `temperature` cold through clear to hot,
@@ -23,16 +24,16 @@ export type OverlayMode = 'decor' | 'calm' | 'temperature' | 'patience' | 'condi
  */
 export type OverlayKey = 'diverging' | 'temperature' | 'harm' | 'condition';
 
-/** An overlay as the picker lists it, with what its colors mean. */
+/** An overlay as the picker lists it, with what its colors mean. One that colors nothing, as the plans, has no key. */
 export interface OverlayDef {
   id: OverlayMode;
   icon: IconId;
   name: string;
   desc: string;
   palette?: Palette;
-  key: OverlayKey;
+  key?: OverlayKey;
   /** What the two ends of its key say. */
-  ends: readonly [low: string, high: string];
+  ends?: readonly [low: string, high: string];
 }
 
 /** Each overlay, as the picker lists it, with what its colors mean. */
@@ -102,11 +103,21 @@ export const OVERLAYS: readonly OverlayDef[] = [
     key: 'harm',
     ends: ['Neglected', 'Kept'],
   },
+  {
+    id: 'plans',
+    icon: 'overlay-plans',
+    name: 'Plans',
+    desc: 'Every room pencilled in, with its price and whether it still fits, and a list to go to each or build it.',
+  },
 ];
 
 /** The overlays that ring people rather than color the floor. */
 export const ringsPeople = (mode: OverlayMode | null): mode is 'patience' | 'condition' | 'needs' | 'energy' =>
   mode === 'patience' || mode === 'condition' || mode === 'needs' || mode === 'energy';
+
+/** Whether an overlay colors the floor tile by tile: not the ones that ring people, nor the plans. */
+export const colorsFloor = (mode: OverlayMode | null): mode is OverlayMode =>
+  mode !== null && mode !== 'plans' && !ringsPeople(mode);
 
 /** How an overlay's values are colored. */
 export const overlayPalette = (mode: OverlayMode | null): Palette | undefined =>
@@ -193,6 +204,9 @@ export function heatTiles(sim: Sim, mode: OverlayMode, preview: PlacePreview | n
     case 'needs':
     case 'energy':
       // these ring the people themselves, not the floor
+      break;
+    case 'plans':
+      // the plans dim the floor under the sketches instead
       break;
     case 'upkeep':
       for (const it of s.items) {

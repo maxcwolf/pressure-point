@@ -1,5 +1,5 @@
-// The inspector for a room pencilled in: what it is, what it will cost, whether it still fits, and Erase, Move and
-// Build here.
+// The inspector for a room pencilled in: what it is, what it will cost, whether it still fits, the template it
+// remembers if any, and Erase, Move, Forget template and Build here.
 
 import { ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
@@ -30,9 +30,11 @@ export function SketchInfo({ sketch }: { sketch: Sketch }) {
         <span class={cx('chip', fit.ok ? 'done' : standing !== 'waits' && 'unfit')}>
           {fit.ok ? '✔ Fits here today' : standing === 'waits' ? '⌛ Waits for its land' : "⚠ Doesn't fit today"}
         </span>
+        {sketch.template !== undefined && <span class="chip">{`Template: ${sketch.template}`}</span>}
       </div>
       {!fit.ok && <p class={cx('sub', standing !== 'waits' && 'unfit')}>{fit.reason}</p>}
       <p class="sub">{sketchNote(sketch, sim.s)}</p>
+      {/* the panel's two rows of buttons: what to do with the sketch, then what to do with the room */}
       <div class="sketch-buttons">
         <Button
           class="danger"
@@ -53,16 +55,33 @@ export function SketchInfo({ sketch }: { sketch: Sketch }) {
         >
           Move
         </Button>
+        {sketch.layout && <i class="break" />}
+        {sketch.layout && (
+          <Button
+            class="forget"
+            title="Keep the floor and door pencilled in, without the furniture and windows."
+            onPress={() => {
+              sim.forgetTemplate(sketch.id);
+            }}
+          >
+            Forget template
+          </Button>
+        )}
+        {sketch.layout && <i class="break" />}
         <Button
           class="go"
           title={
-            fit.ok ? 'Open its blueprint right here.' : 'Drag its floor out again where it fits, then its blueprint.'
+            sketch.layout
+              ? 'Build the whole room right here, furniture, windows and all.'
+              : fit.ok
+                ? 'Open its blueprint right here.'
+                : 'Drag its floor out again where it fits, then its blueprint.'
           }
           onPress={() => {
             tools.buildSketch(sketch.id);
           }}
         >
-          {`Build here · ${money(ROOMS[sketch.type].cost)}`}
+          {`Build here · ${money(sketch.layout ? cost : ROOMS[sketch.type].cost)}`}
         </Button>
       </div>
     </>

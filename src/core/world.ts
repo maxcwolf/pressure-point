@@ -26,7 +26,7 @@ import {
 } from './footprint';
 import { buildingsOf, lotWidth } from './land';
 import { byId } from './lookup';
-import type { PlacedLayout } from './room-layout';
+import type { Layout, PlacedLayout } from './room-layout';
 import { sameSpot } from './state/game';
 import type { GameState, Item, Room, Sketch, WallSpot, Waypoint } from './state/types';
 import { at } from './util';
@@ -719,8 +719,12 @@ export class World {
     return rules.resizeValid(this, room, r);
   }
   /** Can a room with this layout be put down here, or the room `moving` be moved here? */
-  layoutValid(type: RoomType, placed: PlacedLayout, moving?: Room): Check {
-    return rules.layoutValid(this, type, placed, moving);
+  layoutValid(type: RoomType, placed: PlacedLayout, moving?: Room, spare?: number): Check {
+    return rules.layoutValid(this, type, placed, moving, spare);
+  }
+  /** Can a template be pencilled in here, sketch `spare` aside? */
+  templateSketchValid(layout: Layout, placed: PlacedLayout, spare?: number): Check {
+    return rules.templateSketchValid(this, layout, placed, spare);
   }
   /** The windows of the rooms next door, other than `moving`, that a room put down from a layout takes out. */
   windowsOnto(placed: PlacedLayout, moving?: Room): WallSpot[] {
