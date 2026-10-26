@@ -45,7 +45,7 @@ const statCard = css({
 });
 
 /** A card's small chart. */
-const smallChart = css(chartLook, { h: '[38px]', mt: '6', gap: '2', '& i.now': { opacity: 'faint' } });
+const smallChart = css(chartLook, { h: '36', mt: '6', gap: '2', '& i.now': { opacity: 'faint' } });
 
 /** The figures to choose from, as pills in a row, the ones chosen in teal. */
 const choices = css({

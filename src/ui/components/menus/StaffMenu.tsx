@@ -27,7 +27,7 @@ import { menuHead, menuPanel, tabRow } from './looks';
  */
 const row = css({
   position: 'relative',
-  w: '[100%]',
+  w: 'full',
   display: 'grid',
   gridTemplateColumns: '[30px 1.1fr 1.3fr 96px 64px 112px]',
   alignItems: 'center',
@@ -69,7 +69,7 @@ const row = css({
 /** The empty button stretched over a whole row to select them, which the cells' words show through. */
 const pick = css({
   position: 'absolute',
-  inset: '[0]',
+  inset: '0',
   border: 'none',
   borderRadius: '[inherit]',
   p: '0',

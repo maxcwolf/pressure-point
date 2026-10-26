@@ -23,7 +23,7 @@ import { choice, SettingRow } from './SettingRow';
 const keycap = css({
   pointerEvents: 'auto',
   flex: 'none',
-  minW: '[46px]',
+  minW: '44',
   fontSize: '13',
   fontWeight: 'bold',
   bg: 'bg.card',

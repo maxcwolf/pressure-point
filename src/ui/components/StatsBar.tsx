@@ -59,19 +59,19 @@ const cell = css.raw({
   py: '8',
   px: '12',
   borderRight: 'divider',
-  minW: '[96px]',
+  minW: 'stat',
   '& > .icon': { gridRow: '[span 2]' },
   '& b': { fontSize: '17', fontWeight: 'bold', lineHeight: 'tight', fontVariantNumeric: 'tabular-nums' },
   '& small, & .bar': { gridColumn: '[2]', fontSize: '12', whiteSpace: 'nowrap', _max720: { display: 'none' } },
   _max1540: { py: '8', px: '10' },
-  _max1100: { minW: '[0]', py: '6', px: '8' },
+  _max1100: { minW: '0', py: '6', px: '8' },
 });
 
 /** A cell with nothing more to it. */
 const plainCell = css(cell);
 
 /** The bank balance, given more room, its number red while it is below zero. */
-const moneyCell = css(cell, { minW: '[150px]', '&.neg b': { color: 'bad.solid' }, _max1100: { minW: '[0]' } });
+const moneyCell = css(cell, { minW: 'stat.money', '&.neg b': { color: 'bad.solid' }, _max1100: { minW: '0' } });
 
 /**
  * The reputation, a button to what it is made of: a cell like the others, tinted under the pointer. `rep` is for the
@@ -94,7 +94,7 @@ const repCell = css(cell, {
  * bar moves up a row, and whatever stands above it is kept clear by the bar's measured height. `date` is for the
  * end-to-end tests to find it by.
  */
-const dateCell = css(cell, { _max1430: { minW: '[0]' } });
+const dateCell = css(cell, { _max1430: { minW: '0' } });
 
 /** The month and the year under the day, left to the hover in a compact cell. */
 const when = css({ _max1430: { display: 'none' } });
@@ -127,8 +127,8 @@ const speed = css({
   border: 'outline',
   bg: 'control',
   borderRadius: '10',
-  h: '[36px]',
-  minW: '[36px]',
+  h: '36',
+  minW: '36',
   py: '0',
   px: '6',
   fontSize: '11',

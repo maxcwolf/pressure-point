@@ -52,9 +52,9 @@ const stop = css({
   '&:not(:last-child)::before': {
     content: "''",
     position: 'absolute',
-    left: '[17px]',
-    top: '[34px]',
-    bottom: '[0]',
+    left: '16',
+    top: '32',
+    bottom: '0',
     borderLeft: '[{borderWidths.thick} dashed {colors.border.strong}]',
   },
   // the pin and the card keep their class names for this
@@ -63,8 +63,8 @@ const stop = css({
 
 /** A center's pin on the trail, with its number on it, or a lock. */
 const pin = css({
-  w: '[36px]',
-  h: '[36px]',
+  w: '36',
+  h: '36',
   borderRadius: 'disc',
   display: 'grid',
   placeItems: 'center',
@@ -151,7 +151,7 @@ const buy = css({
 const shopHead = css({ m: '0', mt: '14', textAlign: 'left', fontSize: '15' });
 
 /** A floor or a wall, as a swatch of it. */
-const swatch = css({ w: '[26px]', h: '[26px]', borderRadius: '6', border: 'card' });
+const swatch = css({ w: '24', h: '24', borderRadius: '6', border: 'card' });
 
 /** The campaign's tabs, under the karma there is to spend. */
 export function CampaignPanel({ onStart, audio }: CampaignPanelProps) {

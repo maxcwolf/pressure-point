@@ -22,8 +22,8 @@ import { TreatmentsMenu } from './TreatmentsMenu';
  * beside its cards. Its panel pops in as it opens, and shrinks away as it shuts, taking no more presses.
  */
 const menuStyle = css({
-  left: '[14px]',
-  bottom: '[calc(var(--bar-h) + 4px)]',
+  left: 'gutter',
+  bottom: '[calc(var(--bar-h) + {spacing.4})]',
   w: '[min(780px, calc(var(--vw) - 28px))]',
   '&:has(.items-detail)': { w: '[min(1040px, calc(var(--vw) - 28px))]' },
   '&.leaving > .panel': { pointerEvents: 'none', animation: '[unpop {durations.fast} {easings.in} forwards]' },

@@ -28,7 +28,7 @@ const levelButton = css({
   fontSize: '13',
   bg: 'control',
   boxShadow: 'low',
-  minW: '[92px]',
+  minW: '96',
   '&.easier': { bg: 'good.bg' },
   '&.harder': { bg: 'bad.soft' },
 });

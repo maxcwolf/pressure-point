@@ -12,9 +12,9 @@ import { Icon } from './common/Icon';
 
 /** Under the system buttons, over the panels down the right. */
 const picker = css({
-  top: '[66px]',
-  right: '[14px]',
-  w: '[270px]',
+  top: 'below-bar',
+  right: 'gutter',
+  w: 'panel.picker',
   zIndex: 'popover',
   display: 'flex',
   flexDirection: 'column',
@@ -48,9 +48,9 @@ const choice = css({
  * as tall as they are, or under them where there is no room beside them.
  */
 const keyPanel = css({
-  top: '[14px]',
-  right: '[calc(14px + 5 * 44px + 5 * 8px)]',
-  h: '[44px]',
+  top: 'gutter',
+  right: '[calc({spacing.gutter} + 5 * {sizes.round.small} + 5 * {spacing.8})]',
+  h: '44',
   borderRadius: '18',
   display: 'flex',
   alignItems: 'center',
@@ -60,7 +60,7 @@ const keyPanel = css({
   pl: '14',
   fontSize: '13',
   whiteSpace: 'nowrap',
-  _max720: { top: '[calc(14px + 44px + 8px)]', right: '[14px]' },
+  _max720: { top: 'below-bar', right: 'gutter' },
 });
 
 /** The overlay's icon and name. */
@@ -75,8 +75,8 @@ const scale = css({
   alignItems: 'center',
   gap: '4',
   '& i': {
-    w: '[90px]',
-    h: '[10px]',
+    w: '96',
+    h: '10',
     borderRadius: '4',
     boxShadow: 'inset',
     bgColor: 'bg.inset',
@@ -104,8 +104,8 @@ const scale = css({
 const close = css({
   position: 'static',
   flex: 'none',
-  w: '[26px]',
-  h: '[26px]',
+  w: '24',
+  h: '24',
   borderRadius: 'disc',
   border: 'outline.thin',
   bg: 'bg.card',

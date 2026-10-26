@@ -67,6 +67,7 @@ export const tokens = defineTokens({
   /** The spacing scale, each step its size in pixels, in steps of 2 up to 16 and wider beyond. */
   spacing: {
     0: { value: '0' },
+    1: { value: '1px' },
     2: { value: '2px' },
     4: { value: '4px' },
     6: { value: '6px' },
@@ -78,9 +79,72 @@ export const tokens = defineTokens({
     20: { value: '20px' },
     24: { value: '24px' },
     32: { value: '32px' },
+    half: { value: '50%' },
+    full: { value: '100%' },
+    /** How far the panels stand in from the edge of the screen. */
+    gutter: { value: '14px' },
+    /** Below the system buttons along the top: the gutter, a small round button and a gap. */
+    'below-bar': { value: 'calc({spacing.gutter} + {sizes.round.small} + {spacing.8})' },
   },
+  /** Sizes: a scale named by pixels for icons, swatches and bars, and named sizes for the parts that set a layout. */
   sizes: {
+    0: { value: '0' },
+    full: { value: '100%' },
+    2: { value: '2px' },
+    4: { value: '4px' },
+    6: { value: '6px' },
+    8: { value: '8px' },
+    10: { value: '10px' },
+    12: { value: '12px' },
+    14: { value: '14px' },
+    16: { value: '16px' },
+    20: { value: '20px' },
+    24: { value: '24px' },
+    28: { value: '28px' },
+    32: { value: '32px' },
+    36: { value: '36px' },
+    40: { value: '40px' },
+    44: { value: '44px' },
+    48: { value: '48px' },
+    56: { value: '56px' },
+    64: { value: '64px' },
+    72: { value: '72px' },
+    80: { value: '80px' },
+    96: { value: '96px' },
+    /** The height of a small control, such as a stepper's buttons. */
     control: { value: '28px' },
+    /** A round button, as the bar's menus and tools: smaller as the window narrows, and the system buttons' small one. */
+    round: {
+      DEFAULT: { value: '76px' },
+      md: { value: '66px' },
+      sm: { value: '56px' },
+      small: { value: '44px' },
+    },
+    /** The on and off switch, and its knob. */
+    switch: {
+      DEFAULT: { value: '52px' },
+      height: { value: '30px' },
+      knob: { value: '21px' },
+    },
+    /** How wide the panels round the edge of the screen are. */
+    panel: {
+      hud: { value: '290px' },
+      tooltip: { value: '290px' },
+      inspector: { value: '280px' },
+      objectives: { value: '248px' },
+      'objectives-narrow': { value: '200px' },
+      picker: { value: '270px' },
+      notice: { value: '320px' },
+      tutorial: { value: '400px' },
+      advisor: { value: '470px' },
+      toasts: { value: '170px' },
+      console: { value: '210px' },
+    },
+    /** A cell of the stats bar, and its wider money cell. */
+    stat: {
+      DEFAULT: { value: '96px' },
+      money: { value: '150px' },
+    },
   },
   /** The corner radii, each its size in pixels, with a pill's ends and a disc. */
   radii: {

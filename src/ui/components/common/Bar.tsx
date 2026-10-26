@@ -9,13 +9,13 @@ import { meterValue } from '../../lib/meters';
  * with words such as `thin bad`; `bar` and the tones stay on it for the stylesheets that lay bars out in their own way.
  */
 const bar = css({
-  h: '[10px]',
+  h: '10',
   borderRadius: '6',
   bg: 'meter.track',
   overflow: 'hidden',
   mt: '2',
-  '& i': { display: 'block', h: '[100%]', borderRadius: '6', bg: 'good.solid', transition: '[width {durations.slow}]' },
-  '&.thin': { h: '[6px]' },
+  '& i': { display: 'block', h: 'full', borderRadius: '6', bg: 'good.solid', transition: '[width {durations.slow}]' },
+  '&.thin': { h: '6' },
   '&.good i': { bg: 'good.solid' },
   '&:is(.gold, .warn) i': { bg: 'highlight' },
   '&.blue i': { bg: 'info.solid' },

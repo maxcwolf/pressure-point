@@ -26,11 +26,11 @@ import { RunnerNotice } from './RunnerNotice';
  * `offer-pill` for one put aside, or for a notice with nothing to decide. Each part gives its panel its own color.
  */
 const column = css({
-  top: '[62px]',
-  left: '[50%]',
+  top: 'below-bar',
+  left: 'half',
   transform: '[translateX(-50%)]',
   w: '[min(430px, calc(var(--vw) - 600px))]',
-  minW: '[320px]',
+  minW: 'panel.notice',
   display: 'flex',
   flexDirection: 'column',
   gap: '8',
@@ -41,10 +41,10 @@ const column = css({
   '& .offer .later': {
     pointerEvents: 'auto',
     position: 'absolute',
-    top: '[6px]',
-    right: '[8px]',
-    w: '[26px]',
-    h: '[26px]',
+    top: '6',
+    right: '8',
+    w: '24',
+    h: '24',
     border: 'none',
     borderRadius: 'disc',
     bg: '[none]',

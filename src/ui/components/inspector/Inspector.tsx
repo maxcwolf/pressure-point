@@ -21,8 +21,8 @@ import { VisitorInfo } from './VisitorInfo';
 const column = css({
   mt: 'auto',
   alignSelf: 'flex-end',
-  w: '[280px]',
-  minH: '[0]',
+  w: 'panel.inspector',
+  minH: '0',
   display: 'flex',
   flexDirection: 'column',
 });
@@ -35,7 +35,7 @@ const panel = css({
   position: 'relative',
   fontSize: '14',
   lineHeight: 'snug',
-  minH: '[0]',
+  minH: '0',
   overflowY: 'auto',
   '.pop > &': { animation: '[pop {durations.fast} {easings.out}]' },
   // by the id, so that closing outdoes opening, should it close as it opens
@@ -91,8 +91,8 @@ const close = css({
   position: 'absolute',
   top: '8',
   right: '8',
-  w: '[26px]',
-  h: '[26px]',
+  w: '24',
+  h: '24',
   borderRadius: 'disc',
   border: 'outline.thin',
   bg: 'bg.card',

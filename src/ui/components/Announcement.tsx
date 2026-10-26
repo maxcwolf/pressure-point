@@ -6,8 +6,8 @@ import { IconText } from './common/Icon';
 
 /** Top center, kept to under half the window's width. */
 const column = css({
-  top: '[14px]',
-  left: '[50%]',
+  top: 'gutter',
+  left: 'half',
   transform: '[translateX(-50%)]',
   maxW: '[calc(var(--vw) * 0.46)]',
 });

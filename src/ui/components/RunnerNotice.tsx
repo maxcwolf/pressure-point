@@ -34,7 +34,7 @@ const pill = css({
 /** Their name and the time left, a click to them, lifting a little under the pointer. */
 const show = css({
   display: 'block',
-  w: '[100%]',
+  w: 'full',
   border: 'none',
   bg: '[none]',
   p: '0',

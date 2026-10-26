@@ -20,8 +20,8 @@ const HEIGHT = 1.6;
  */
 const floater = css({
   position: 'absolute',
-  left: '[0]',
-  top: '[0]',
+  left: '0',
+  top: '0',
   opacity: 'hidden',
   fontWeight: 'heavy',
   fontSize: '20',

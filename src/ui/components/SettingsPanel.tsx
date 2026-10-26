@@ -54,7 +54,7 @@ export const settingsLook = css({
     px: '10',
   },
   '& li > .icon': { flex: 'none' },
-  '& li > div': { flex: '1', minW: '[0]' },
+  '& li > div': { flex: '1', minW: '0' },
   '& li b': { display: 'block', fontWeight: 'bold', fontSize: '15' },
   '& li span': { fontSize: '13', opacity: 'muted' },
   '& li em': {

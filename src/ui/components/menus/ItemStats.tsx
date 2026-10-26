@@ -48,7 +48,7 @@ const pips = css({
   m: '0',
   mt: '2',
   mb: '[1px]',
-  '& i': { w: '[10px]', h: '[10px]', borderRadius: '2', bg: 'bg.inverse-subtle' },
+  '& i': { w: '10', h: '10', borderRadius: '2', bg: 'bg.inverse-subtle' },
   '&.decor i.on': { bg: 'highlight' },
   '&.calm i.on': { bg: 'info.light' },
   '&.loud i.on': { bg: 'bad.bright' },
@@ -64,7 +64,7 @@ const tip = css({
 /** The panel beside the cards, which stays in view while the cards scroll. */
 const detail = css({
   position: 'sticky',
-  top: '[0]',
+  top: '0',
   bg: 'bg.card',
   border: 'outline',
   borderRadius: '14',
@@ -143,7 +143,7 @@ const place = css({
 const twoWay = css({
   '& .bar': {
     position: 'relative',
-    h: '[10px]',
+    h: '10',
     borderRadius: '6',
     bg: 'meter.track',
     overflow: 'visible',
@@ -151,23 +151,23 @@ const twoWay = css({
   },
   '& .bar .mid': {
     position: 'absolute',
-    left: '[50%]',
-    top: '[-2px]',
-    bottom: '[-2px]',
-    w: '[2px]',
+    left: 'half',
+    top: '-2',
+    bottom: '-2',
+    w: '2',
     ml: '[-1px]',
     bg: 'bg.backdrop',
   },
   '& .bar i': {
     position: 'absolute',
-    top: '[0]',
+    top: '0',
     display: 'block',
-    h: '[100%]',
+    h: 'full',
     borderRadius: '6',
     transition: '[width {durations.slow}]',
   },
-  '& .bar i.up': { left: '[50%]' },
-  '& .bar i.down': { right: '[50%]', bg: 'info.solid' },
+  '& .bar i.up': { left: 'half' },
+  '& .bar i.down': { right: 'half', bg: 'info.solid' },
   '&.noise .bar i.up': { bg: 'bad.solid' },
   '&.warmth .bar i.up': { bg: 'warm.solid' },
   '& small': {

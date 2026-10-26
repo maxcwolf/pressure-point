@@ -25,7 +25,7 @@ const swatch = css({
   border: 'card',
   borderRadius: '8',
   bg: 'bg.card',
-  '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },
+  '& i': { display: 'block', w: 'full', h: 'full', borderRadius: '4' },
   _on: { borderColor: 'accent.strong', boxShadow: 'ring' },
 });
 

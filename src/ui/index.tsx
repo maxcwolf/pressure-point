@@ -36,7 +36,7 @@ const titleStyle = css({
   // the logo's height, which also sets how far the panel tucks up under it; the logo is 0.43 as tall as wide
   '--logo-h': 'min(clamp(80px, 22vh, 268px), calc((100vw - 32px) * 0.43))',
   position: 'fixed',
-  inset: '[0]',
+  inset: '0',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',

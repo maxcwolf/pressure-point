@@ -14,7 +14,7 @@ import { smallButton } from './looks';
  * gold tag. One that cannot start is faded.
  */
 const course = css({
-  w: '[100%]',
+  w: 'full',
   display: 'grid',
   gridTemplateColumns: '[24px 1fr auto]',
   alignItems: 'center',

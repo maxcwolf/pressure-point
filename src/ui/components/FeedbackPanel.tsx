@@ -34,7 +34,7 @@ const field = css.raw({
 });
 
 /** The box for what the player thinks, a few lines tall and taller if they drag it. */
-const messageBox = css(field, { resize: 'vertical', minH: '[96px]' });
+const messageBox = css(field, { resize: 'vertical', minH: '96' });
 const emailBox = css(field);
 
 /** Send, in green, or Send more, in the middle; faded while there is nothing to send. */

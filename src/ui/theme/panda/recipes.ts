@@ -49,8 +49,8 @@ export const roundButton = defineRecipe({
   description: 'A round button, such as the bar menus, tools and system buttons',
   base: {
     pointerEvents: 'auto',
-    w: '[76px]',
-    h: '[76px]',
+    w: 'round',
+    h: 'round',
     borderRadius: 'disc',
     border: 'outline.thick',
     bg: 'accent',
@@ -67,15 +67,15 @@ export const roundButton = defineRecipe({
     _active: { transform: '[translateY(2px)]', boxShadow: 'pressed' },
     // on stays orange under the pointer
     '&.on, &.on:hover': { bg: 'active' },
-    _max1540: { w: '[66px]', h: '[66px]', '& i': { fontSize: '24' }, '& span': { fontSize: '11' } },
-    _max720: { w: '[56px]', h: '[56px]', '& span': { fontSize: '11' } },
+    _max1540: { w: 'round.md', h: 'round.md', '& i': { fontSize: '24' }, '& span': { fontSize: '11' } },
+    _max720: { w: 'round.sm', h: 'round.sm', '& span': { fontSize: '11' } },
   },
   variants: {
     size: {
       normal: {},
       small: {
-        w: '[44px]',
-        h: '[44px]',
+        w: 'round.small',
+        h: 'round.small',
         fontSize: '20',
         bg: 'control',
         color: 'fg',
@@ -84,7 +84,7 @@ export const roundButton = defineRecipe({
           content: "''",
           position: 'absolute',
           w: '[64%]',
-          h: '[3px]',
+          h: '2',
           borderRadius: '2',
           bg: 'bad.solid',
           transform: 'rotate(-45deg)',
@@ -100,9 +100,9 @@ export const roundButton = defineRecipe({
         boxShadow: 'none',
         '& > .shape': {
           position: 'absolute',
-          inset: '[0]',
-          w: '[100%]',
-          h: '[100%]',
+          inset: '0',
+          w: 'full',
+          h: 'full',
           maxW: 'none',
           maxH: 'none',
           zIndex: 'base',
@@ -199,8 +199,8 @@ export const toggleSwitch = defineRecipe({
   base: {
     pointerEvents: 'auto',
     flex: 'none',
-    w: '[52px]',
-    h: '[30px]',
+    w: 'switch',
+    h: 'switch.height',
     borderRadius: 'pill',
     border: 'outline',
     bg: 'bg.disabled',
@@ -209,10 +209,10 @@ export const toggleSwitch = defineRecipe({
     transition: '[background {durations.fast}]',
     '& span': {
       position: 'absolute',
-      top: '[2px]',
-      left: '[2px]',
-      w: '[21px]',
-      h: '[21px]',
+      top: '2',
+      left: '2',
+      w: 'switch.knob',
+      h: 'switch.knob',
       borderRadius: 'disc',
       bg: 'bg.card',
       border: 'outline.thin',
@@ -220,7 +220,7 @@ export const toggleSwitch = defineRecipe({
       transition: '[left {durations.fast}]',
     },
     _on: { bg: 'good.solid' },
-    '&.on span': { left: '[24px]' },
+    '&.on span': { left: '24' },
   },
 });
 

@@ -10,7 +10,7 @@ import { Button } from './common/Button';
 import { Icon } from './common/Icon';
 
 /** Top right, in a row. */
-const row = css({ top: '[14px]', right: '[14px]', display: 'flex', gap: '8' });
+const row = css({ top: 'gutter', right: 'gutter', display: 'flex', gap: '8' });
 
 /** The turn, overlay, sound, music and menu buttons. */
 export function SystemButtons() {

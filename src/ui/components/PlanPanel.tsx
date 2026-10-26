@@ -14,7 +14,7 @@ import { Stars } from './common/Stars';
 
 /** Bottom center, over the bar along the bottom. */
 const column = css({
-  left: '[50%]',
+  left: 'half',
   transform: '[translateX(-50%)]',
   bottom: '[var(--bar-h)]',
   w: '[min(520px, calc(var(--vw) - 28px))]',

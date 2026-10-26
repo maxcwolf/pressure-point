@@ -11,11 +11,11 @@ import { cx } from '../lib/cx';
 
 /** The console: a panel at the top middle, dropping into place as it opens. */
 const consoleLook = css({
-  top: '[64px]',
-  left: '[50%]',
+  top: 'below-bar',
+  left: 'half',
   transform: 'translateX(-50%)',
   w: '[min(560px, calc(var(--vw) - 560px))]',
-  minW: '[320px]',
+  minW: 'panel.notice',
   py: '10',
   px: '12',
   animation: '[drop {durations.normal} {easings.out}]',
@@ -26,7 +26,7 @@ const logLook = css({
   listStyle: 'none',
   m: '0',
   p: '0',
-  maxH: '[210px]',
+  maxH: 'panel.console',
   overflowY: 'auto',
   fontSize: '13',
   lineHeight: 'snug',
@@ -57,7 +57,7 @@ const lineLook = css({
 /** The command being typed. */
 const commandBox = css({
   flex: '1',
-  minW: '[0]',
+  minW: '0',
   border: 'none',
   outlineStyle: 'none',
   bg: '[transparent]',

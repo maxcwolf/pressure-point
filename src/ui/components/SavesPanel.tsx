@@ -47,7 +47,7 @@ const saveNew = css({ display: 'flex', gap: '8', mb: '8' });
 /** The box for a save's name. */
 const nameBox = css({
   flex: '1',
-  minW: '[0]',
+  minW: '0',
   font: 'inherit',
   fontSize: '15',
   color: 'fg',
@@ -124,7 +124,7 @@ const saveRow = css(row);
 const emptyRow = css(row, { justifyContent: 'center', opacity: 'muted', fontSize: '14' });
 
 /** What a saved game is: its name, over its date, money, stars and when it was saved. */
-const about = css({ minW: '[0]' });
+const about = css({ minW: '0' });
 const aboutName = css({
   display: 'block',
   fontWeight: 'bold',

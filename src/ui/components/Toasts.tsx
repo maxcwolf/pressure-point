@@ -28,9 +28,9 @@ const column = css({
   flexDirection: 'column',
   gap: '8',
   // opened out, the messages scroll in the room down to the bar at the bottom, over the inspector
-  '&.open': { position: 'absolute', inset: '[0 0 14px]', zIndex: 'above' },
+  '&.open': { position: 'absolute', inset: '0', bottom: 'gutter', zIndex: 'above' },
   '&.open .messages': {
-    minH: '[0]',
+    minH: '0',
     overflowY: 'auto',
     scrollbarWidth: 'thin',
     pointerEvents: 'auto',
@@ -39,7 +39,7 @@ const column = css({
   },
   // over an open inspector, the newest two in a band of their own, each cut to two lines, and a count of the rest, so
   // the inspector keeps its place whatever comes in
-  '&.strip': { flex: 'none', h: '[170px]', overflow: 'hidden' },
+  '&.strip': { flex: 'none', h: 'panel.toasts', overflow: 'hidden' },
   // Panda's lineClamp sets the -webkit-box display, its vertical orientation and the hidden overflow it needs
   '&.strip .messages .words': { lineClamp: '2', pb: '0', mb: '8' },
   '&.strip .pile': { mb: '0' },
@@ -112,7 +112,7 @@ const requestList = css({
 /** One of them, by name. */
 const requestName = css({
   display: 'block',
-  w: '[100%]',
+  w: 'full',
   py: '2',
   px: '8',
   border: 'none',
@@ -125,7 +125,7 @@ const requestName = css({
 });
 
 /** A message's words, taking the room beside its close button. */
-const wordsStyle = css({ flex: '1', minW: '[0]', p: '8', pr: '4', pl: '12' });
+const wordsStyle = css({ flex: '1', minW: '0', p: '8', pr: '4', pl: '12' });
 
 /** Words that are a click to what they are about. */
 const wordsLink = css({
@@ -153,8 +153,8 @@ const countTag = css({
 /** A faint round close button, which shows itself under the pointer. */
 const close = css({
   flex: 'none',
-  w: '[24px]',
-  h: '[24px]',
+  w: '24',
+  h: '24',
   mt: '4',
   border: 'none',
   borderRadius: 'disc',
@@ -173,11 +173,12 @@ const pile = css({ position: 'relative', flex: 'none', mb: '14', '&.open': { mb:
  */
 const sheet = css({
   position: 'absolute',
-  inset: '[7px 6px -7px]',
+  inset: '6',
+  bottom: '-6',
   bg: 'bg.inset',
   border: 'outline.thick',
   borderRadius: '12',
-  '&.deep': { inset: '[14px 12px -14px]', boxShadow: 'raised' },
+  '&.deep': { inset: '12', top: 'gutter', bottom: '-14', boxShadow: 'raised' },
   '&.good': { bg: 'good.solid' },
   '&.bad': { bg: 'bad.solid' },
   '&.info': { bg: 'info.solid' },

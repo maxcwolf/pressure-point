@@ -18,7 +18,7 @@ import { IconText } from './common/Icon';
 import { StarRow } from './common/Stars';
 
 /** Top left, narrower in a narrow window. */
-const panel = css({ top: '[14px]', left: '[14px]', w: '[248px]', _max720: { w: '[200px]' } });
+const panel = css({ top: 'gutter', left: 'gutter', w: 'panel.objectives', _max720: { w: 'panel.objectives-narrow' } });
 
 /** The center's name, in small teal capitals over the heading. */
 const centerName = css({

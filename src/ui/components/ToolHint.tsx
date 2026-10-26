@@ -13,8 +13,8 @@ import { RugPatterns } from './common/RugPatterns';
 
 /** Top center, kept to most of the window's width. */
 const column = css({
-  top: '[66px]',
-  left: '[50%]',
+  top: 'below-bar',
+  left: 'half',
   transform: '[translateX(-50%)]',
   maxW: '[calc(var(--vw) * 0.7)]',
 });
@@ -74,7 +74,7 @@ const keyCap = css({
   fontSize: '12',
   fontWeight: 'bold',
   lineHeight: 'normal',
-  minW: '[18px]',
+  minW: '16',
   textAlign: 'center',
   bg: 'control',
   border: 'outline.fine',
@@ -86,8 +86,8 @@ const keyCap = css({
 
 /** A square in the color the scene draws it in. `square` is for the end-to-end tests to find it by. */
 const square = css({
-  w: '[11px]',
-  h: '[11px]',
+  w: '10',
+  h: '10',
   borderRadius: '2',
   border: '[{borderWidths.fine} solid {colors.border.bold}]',
   '&.staff': { bg: 'scene.staff' },

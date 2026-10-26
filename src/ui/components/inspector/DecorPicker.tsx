@@ -46,13 +46,13 @@ const swatches = css({ display: 'flex', flexWrap: 'wrap', gap: '4', m: '0', mt: 
  */
 const swatch = css({
   position: 'relative',
-  w: '[24px]',
-  h: '[24px]',
+  w: '24',
+  h: '24',
   p: '2',
   border: 'card',
   borderRadius: '8',
   bg: 'bg.card',
-  '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },
+  '& i': { display: 'block', w: 'full', h: 'full', borderRadius: '4' },
   _on: { borderColor: 'accent.strong', boxShadow: 'ring' },
   '&.karma i': { opacity: 'quiet' },
 });
@@ -60,8 +60,8 @@ const swatch = css({
 /** A small lock in the corner of a swatch that karma unlocks. */
 const lock = css({
   position: 'absolute',
-  right: '[-5px]',
-  bottom: '[-5px]',
+  right: '-4',
+  bottom: '-4',
   display: 'flex',
   bg: 'bg.card',
   borderRadius: 'disc',

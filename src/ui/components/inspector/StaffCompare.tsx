@@ -44,7 +44,7 @@ const pickCard = css({
 
 /** Someone to compare them with: their role's icon, their name and their rank, framed in teal under the pointer. */
 const pick = css({
-  w: '[100%]',
+  w: 'full',
   display: 'grid',
   gridTemplateColumns: '[22px 1fr auto]',
   alignItems: 'center',
@@ -64,7 +64,7 @@ const pick = css({
  * heading of the treatments and courses (its row marked `section`) stands out from the plainer names of the rows.
  */
 const table = css({
-  w: '[100%]',
+  w: 'full',
   tableLayout: 'fixed',
   borderCollapse: 'collapse',
   fontSize: '12',

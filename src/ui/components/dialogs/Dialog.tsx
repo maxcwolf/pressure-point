@@ -13,7 +13,7 @@ import { ScrollTab } from '../common/ScrollTab';
  */
 const veil = css({
   position: 'fixed',
-  inset: '[0]',
+  inset: '0',
   display: 'grid',
   placeItems: 'center',
   bg: 'bg.backdrop',

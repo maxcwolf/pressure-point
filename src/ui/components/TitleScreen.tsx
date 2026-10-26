@@ -49,11 +49,11 @@ export interface TitleScreenProps {
 /** The latest game, or a center in full swing, blurred and dimmed behind everything. */
 const backdropLook = css({
   position: 'fixed',
-  inset: '[-40px]',
+  inset: '-32',
   backgroundSize: 'cover',
   backgroundPosition: 'center',
   filter: '[blur(14px) brightness(0.72) saturate(0.85)]',
-  '&::after': { content: "''", position: 'absolute', inset: '[0]', bg: 'title.backdrop' },
+  '&::after': { content: "''", position: 'absolute', inset: '0', bg: 'title.backdrop' },
 });
 
 /** The logo and everything under it, in the middle of the window. */
@@ -62,8 +62,8 @@ const stack = css({
   my: '[auto]',
   mx: '0',
   w: '[min(620px, 100%)]',
-  maxH: '[100%]',
-  minH: '[0]',
+  maxH: 'full',
+  minH: '0',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
@@ -80,12 +80,12 @@ const logoLook = css({
 });
 
 /** The logo's picture, as tall as --logo-h, which ui/index.tsx sets. */
-const logoPicture = css({ h: '[var(--logo-h)]', w: 'auto', maxW: '[100%]', objectFit: 'contain' });
+const logoPicture = css({ h: '[var(--logo-h)]', w: 'auto', maxW: 'full', objectFit: 'contain' });
 
 /** The dark panel, tucked up under the bottom of the logo. */
 const panelLook = css({
   w: '[min(530px, 100%)]',
-  minH: '[0]',
+  minH: '0',
   mt: '[calc(var(--logo-h) * -0.33)]',
   p: '[calc(var(--logo-h) * 0.28) clamp(14px, 3vh, 26px) clamp(10px, 2.2vh, 22px)]',
   borderRadius: '18',
@@ -182,7 +182,7 @@ const facts = css({
   display: 'grid',
   gridTemplateColumns: '[auto auto]',
   columnGap: '16',
-  minW: '[0]',
+  minW: '0',
   fontSize: '[clamp(13px, 2.2vh, 15.5px)]',
   fontWeight: 'bold',
   lineHeight: 'normal',
@@ -236,7 +236,7 @@ const menuButton = css({
 
 /** A panel is a light card of its own, scrolling when it is longer than the window allows. */
 const sub = css({
-  minH: '[0]',
+  minH: '0',
   overflowY: 'auto',
   py: '12',
   px: '14',
@@ -273,13 +273,13 @@ const badge = css({
 });
 
 /** The sound and music switches, in the top right corner. */
-const sys = css({ position: 'fixed', top: '[14px]', right: '[14px]', display: 'flex', gap: '8', zIndex: 'above' });
+const sys = css({ position: 'fixed', top: 'gutter', right: 'gutter', display: 'flex', gap: '8', zIndex: 'above' });
 
 /** The version, in the bottom left corner. */
 const version = css({
   position: 'fixed',
-  left: '[14px]',
-  bottom: '[10px]',
+  left: 'gutter',
+  bottom: '10',
   fontSize: '12',
   fontWeight: 'bold',
   color: 'fg.inverse',
@@ -306,7 +306,7 @@ const alpha = css({
 /** The changelog, from the corner across from the version, with a downloaded update offered above it. */
 const corner = css({
   position: 'fixed',
-  right: '[14px]',
+  right: 'gutter',
   bottom: '12',
   display: 'flex',
   flexDirection: 'column',

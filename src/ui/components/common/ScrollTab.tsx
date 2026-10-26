@@ -10,8 +10,8 @@ import { HudContext } from '../../hooks/use-hud';
 /** The foot of the card, stuck to its bottom edge as it scrolls, with no height of its own. */
 const foot = css({
   position: 'sticky',
-  bottom: '[calc(-1 * var(--cue-pb, 12px))]',
-  h: '[0]',
+  bottom: '[calc(-1 * var(--cue-pb, {spacing.12}))]',
+  h: '0',
   flex: 'none',
   zIndex: 'cue',
   pointerEvents: 'none',
@@ -20,11 +20,11 @@ const foot = css({
 /** The tab: a cream pill with a chevron, shown and nodding while the card has more below. */
 const tab = css({
   position: 'absolute',
-  bottom: '[calc(var(--cue-pb, 12px) + 4px)]',
-  left: '[50%]',
+  bottom: '[calc(var(--cue-pb, {spacing.12}) + {spacing.4})]',
+  left: 'half',
   translate: '[-50% 0]',
-  w: '[46px]',
-  h: '[22px]',
+  w: '44',
+  h: '20',
   p: '0',
   border: 'outline',
   borderRadius: 'pill',

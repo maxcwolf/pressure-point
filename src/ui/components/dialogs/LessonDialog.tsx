@@ -52,8 +52,8 @@ const strip = css({
 
 /** A picture's icon, in a cream circle. */
 const picture = css({
-  w: '[64px]',
-  h: '[64px]',
+  w: '64',
+  h: '64',
   display: 'grid',
   placeItems: 'center',
   borderRadius: 'disc',

@@ -11,7 +11,7 @@ import { Button } from './common/Button';
  * The card: the advisor's note, with a step count, a title and buttons. `note` takes the note's look from the advisor
  * (Advisor.tsx), and `tutorial-card` is for the end-to-end tests to find it by.
  */
-const card = css({ pointerEvents: 'auto', maxW: '[400px]', '& p': { m: '0' } });
+const card = css({ pointerEvents: 'auto', maxW: 'panel.tutorial', '& p': { m: '0' } });
 
 /** The step count, with the way to skip the rest at its right. */
 const top = css({ display: 'flex', alignItems: 'baseline', gap: '12' });

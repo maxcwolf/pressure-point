@@ -35,7 +35,7 @@ export const cardsLook = css.raw({
   display: 'grid',
   gridTemplateColumns: '[repeat(auto-fill, minmax(172px, 1fr))]',
   gap: '8',
-  '&.guide': { display: 'flex', flexWrap: 'wrap', w: '[fit-content]', maxW: '[100%]', borderRadius: '14' },
+  '&.guide': { display: 'flex', flexWrap: 'wrap', w: 'fit-content', maxW: 'full', borderRadius: '14' },
   '&.guide > .card': { flex: '[0 0 172px]' },
 });
 
@@ -82,7 +82,7 @@ export const cardLook = css.raw({
   '& .cost': {
     position: 'absolute',
     top: '8',
-    right: '[9px]',
+    right: '8',
     bg: 'highlight',
     border: 'outline.thin',
     borderRadius: '8',
@@ -132,9 +132,9 @@ export const chartLook = css.raw({
   display: 'flex',
   alignItems: 'flex-end',
   gap: '4',
-  h: '[60px]',
+  h: '56',
   mt: '12',
-  '& i': { flex: '1', maxW: '[34px]', bg: 'good.solid', borderRadius: '[5px 5px 0 0]' },
+  '& i': { flex: '1', maxW: '32', bg: 'good.solid', borderRadius: '[5px 5px 0 0]' },
   '& i.neg': { bg: 'bad.solid' },
 });
 
@@ -152,7 +152,7 @@ export const statsHead = css({
 
 /** A table of figures, a row each: its name on the left, and the numbers lined up on the right. */
 export const tableLook = css.raw({
-  w: '[100%]',
+  w: 'full',
   borderCollapse: 'collapse',
   fontSize: '13',
   '& th': {

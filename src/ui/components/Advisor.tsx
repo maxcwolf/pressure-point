@@ -16,9 +16,9 @@ import { TutorialCard } from './TutorialCard';
  * over it by `kicker`.
  */
 const advisor = css({
-  left: '[14px]',
+  left: 'gutter',
   bottom: '[var(--bar-h)]',
-  maxW: '[470px]',
+  maxW: 'panel.advisor',
   display: 'flex',
   alignItems: 'flex-end',
   gap: '8',
@@ -50,8 +50,8 @@ const advisor = css({
 
 /** The advisor's face, on a gold disc. */
 const face = css({
-  w: '[50px]',
-  h: '[50px]',
+  w: '48',
+  h: '48',
   flex: 'none',
   borderRadius: 'disc',
   bg: 'highlight',

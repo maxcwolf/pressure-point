@@ -46,7 +46,7 @@ const inLine = css({
   py: '2',
   px: '6',
   '& .patience': { gridArea: 'patience', m: '0' },
-  '& .patience .bar': { h: '[6px]' },
+  '& .patience .bar': { h: '6' },
 });
 
 /** Their name, which shows them, cut short with an ellipsis if it is too long for the card. */
@@ -79,8 +79,8 @@ const moves = css({
   display: 'flex',
   gap: '2',
   '& button': {
-    w: '[24px]',
-    h: '[24px]',
+    w: '24',
+    h: '24',
     border: 'outline.thin',
     borderRadius: '6',
     bg: 'bg.card',

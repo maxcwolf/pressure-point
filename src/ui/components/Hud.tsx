@@ -29,9 +29,9 @@ import { ToolHint } from './ToolHint';
  * bottom, so flex-start lines them up along it). In a narrow window the stats bar stacks above the buttons.
  */
 const bottom = css({
-  left: '[14px]',
-  right: '[14px]',
-  bottom: '[14px]',
+  left: 'gutter',
+  right: 'gutter',
+  bottom: 'gutter',
   display: 'flex',
   flexWrap: 'wrap-reverse',
   alignItems: 'flex-start',
@@ -42,14 +42,14 @@ const bottom = css({
 
 /** The right-hand column, under the system buttons and above the bar along the bottom. */
 const side = css({
-  top: '[70px]',
-  right: '[14px]',
+  top: 'below-bar',
+  right: 'gutter',
   bottom: '[var(--bar-h)]',
-  w: '[290px]',
+  w: 'panel.hud',
   display: 'flex',
   flexDirection: 'column',
   gap: '8',
-  _max720: { w: '[min(290px, calc(var(--vw) - 28px))]' },
+  _max720: { w: '[min({sizes.panel.hud}, calc(var(--vw) - 28px))]' },
 });
 
 /** Redraw the component calling this whenever the interface's state says to. */
