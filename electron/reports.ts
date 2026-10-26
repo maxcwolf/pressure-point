@@ -44,6 +44,9 @@ export function startReports() {
     ipcMode: Sentry.IPCMode.Protocol,
     // these hooks instrument server libraries as they load, and the app loads none
     enableRuntimeChannelInjection: false,
+    // A message, such as a child process gone, goes without the stack of the code that sent it, which would only
+    // name its issue after the SDK's own function rather than after what it says.
+    attachStacktrace: false,
     initialScope: { tags: { platform: process.platform } },
     integrations: [
       // Besides the crashes, which come with a crash dump of their own, a child process the system kills is reported
@@ -60,13 +63,11 @@ export function startReports() {
     powerMonitor.on('unlock-screen', mainHang.startWorker);
   });
 
-  // A note left over from the last run says it never quit cleanly. Sent as an event of its own rather than with
-  // captureMessage, which would add where this code is and name the issue after it.
+  // a note left over from the last run says it never quit cleanly
   const file = heartbeatFile();
   const last = loadHeartbeat(file);
   if (last) {
-    Sentry.captureEvent({
-      message: 'Previous run did not quit cleanly',
+    Sentry.captureMessage('Previous run did not quit cleanly', {
       level: 'warning',
       // whether the whole computer went down, or the app alone
       tags: { machine_rebooted: machineRebooted(last.last, Date.now(), os.uptime()) },
@@ -94,8 +95,7 @@ export function watchWindow(win: BrowserWindow) {
   /** Send the warning for a hang that has ended. */
   const report = (since: number, recovered: boolean) => {
     const seconds = hungFor(since);
-    Sentry.captureEvent({
-      message: `The game window stopped responding for ${seconds} seconds`,
+    Sentry.captureMessage(`The game window stopped responding for ${seconds} seconds`, {
       level: 'warning',
       // one issue for every hang, however long
       fingerprint: ['game-window-unresponsive'],
