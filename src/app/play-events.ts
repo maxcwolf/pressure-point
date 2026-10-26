@@ -2,7 +2,16 @@
 
 import { type AchievementId, conditionOf, DAYS_PER_MONTH, MODALITIES } from '../core/data';
 import { incomeOf, netOf } from '../core/sim/economy';
-import type { Emergency, FireReport, GameState, HouseCall, Ledger, Outbreak, VisitReport } from '../core/state/types';
+import type {
+  Emergency,
+  FireReport,
+  GameState,
+  HouseCall,
+  Ledger,
+  Outbreak,
+  Sketch,
+  VisitReport,
+} from '../core/state/types';
 
 /** What an event says, as PostHog takes it. */
 export type PlayProps = Record<string, string | number | boolean | Partial<Record<string, string | number>>>;
@@ -24,6 +33,8 @@ export interface PlayMark {
   month: number;
   /** The rooms finished. */
   rooms: ReadonlySet<number>;
+  /** The rooms pencilled in, by id. */
+  sketches: ReadonlyMap<number, Sketch>;
   achieved: ReadonlySet<AchievementId>;
   milestones: ReadonlySet<Milestone>;
   /** The kinds of item in the center. */
@@ -72,6 +83,7 @@ export function markOf(s: GameState): PlayMark {
     stars: s.stars,
     month: monthOf(s),
     rooms: new Set(s.rooms.filter((r) => r.done).map((r) => r.id)),
+    sketches: new Map(s.sketches.map((sk) => [sk.id, { ...sk }])),
     achieved: new Set(s.achieved),
     milestones: new Set(milestonesOf(s)),
     itemTypes: new Set(s.items.map((i) => i.type)),
@@ -91,6 +103,28 @@ export function markOf(s: GameState): PlayMark {
     unsettled: s.visitReport?.bribe !== undefined,
     fire: s.fire ?? null,
   };
+}
+
+/**
+ * Rooms pencilled in, built or erased since the mark. A sketch gone is built if a room of its kind now stands on any
+ * of its floor, as nothing else may be built over it; otherwise it was erased (or picked up to be drawn again).
+ */
+function sketchEvents(mark: PlayMark, s: GameState, game: PlayProps): PlayEvent[] {
+  const out: PlayEvent[] = [];
+  const now = new Set(s.sketches.map((sk) => sk.id));
+  for (const sk of s.sketches)
+    if (!mark.sketches.has(sk.id))
+      out.push({ name: 'sketch_drawn', props: { ...game, room: sk.type, sketches: s.sketches.length } });
+  for (const [id, sk] of mark.sketches) {
+    if (now.has(id)) continue;
+    const built = s.rooms.some(
+      (r) => r.type === sk.type && r.x < sk.x + sk.w && sk.x < r.x + r.w && r.y < sk.y + sk.h && sk.y < r.y + r.h,
+    );
+    // one that remembered a room was built whole, from its template
+    const template = built && sk.layout ? { template: true } : {};
+    out.push({ name: built ? 'sketch_built' : 'sketch_erased', props: { ...game, room: sk.type, ...template } });
+  }
+  return out;
 }
 
 /** The offers on the table. */
@@ -130,6 +164,7 @@ export function playEvents(mark: PlayMark, s: GameState, known: PlayContext = {}
   const last = s.months.at(-1);
   if (monthOf(s) > mark.month && last)
     out.push({ name: 'month_ended', props: { ...game, ...monthProps(s, last), ...known.month } });
+  out.push(...sketchEvents(mark, s, game));
   for (let star = mark.stars + 1; star <= s.stars; star++) out.push({ name: 'star_earned', props: { ...game, star } });
   for (const id of s.achieved)
     if (!mark.achieved.has(id)) out.push({ name: 'achievement_earned', props: { ...game, achievement: id } });

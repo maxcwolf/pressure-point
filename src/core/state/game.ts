@@ -131,8 +131,9 @@ export const defaultPolicy = (): Policy => ({
  *     sale has been looked over, for the first game's heads-up on land.
  * 38: the Recliner renamed the Lounger.
  * 39: the Practice Spot's front turned round to the way its guest faces.
+ * 40: rooms pencilled in for later.
  */
-export const SAVE_VERSION = 39;
+export const SAVE_VERSION = 40;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -160,6 +161,7 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     speed: 1,
     open: false,
     rooms: [],
+    sketches: [],
     items: [],
     staff: [],
     guests: [],

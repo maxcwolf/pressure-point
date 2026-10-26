@@ -56,8 +56,8 @@ const nameInput = css({
 });
 
 /**
- * A template's buttons, along the bottom, level with the cards beside it: Build in green, Delete in red at the far end,
- * and Export lighter under the pointer.
+ * A template's buttons, along the bottom, level with the cards beside it: Build in green, or Pencil in in orange, Delete
+ * in red at the far end, and Export lighter under the pointer. `build` and `pencil` are for these styles to find them by.
  */
 const actions = css({
   display: 'flex',
@@ -75,6 +75,8 @@ const actions = css({
   },
   '& button:not(.build, .delete):hover': { bg: 'bg.hover' },
   '& button.build': { bg: 'go', color: 'fg.on-accent' },
+  // pencilling in, the Pencil in pill's orange
+  '& button.build.pencil': { bg: 'active' },
   '& button.delete': { ml: 'auto', bg: 'bad.bg', color: 'bad' },
   '& button.locked': { opacity: 'faint', cursor: 'not-allowed' },
 });
@@ -90,8 +92,21 @@ const foot = css({
   '& span.sub': { m: '0', ml: 'auto', fontSize: '13', opacity: 'muted' },
 });
 
-/** A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. */
-function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key: DecorKey) => boolean }) {
+/**
+ * A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. With
+ * `pencil`, its button pencils it in instead, so its price does not dim it.
+ */
+function TemplateCard({
+  t,
+  lock,
+  open,
+  pencil,
+}: {
+  t: Template;
+  lock: string;
+  open: (key: DecorKey) => boolean;
+  pencil: boolean;
+}) {
   const hud = useHud();
   const { sim, tools } = useGame();
   const { layout } = t;
@@ -100,7 +115,10 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
   // the name as it is being typed: kept here, or the interface redrawing as the game runs would put the old one back
   const [draft, setDraft] = useState<string | null>(null);
   return (
-    <div class={cx('card', 'template', templateCard, !lock && sim.s.money < cost && 'poor')} data-template={t.name}>
+    <div
+      class={cx('card', 'template', templateCard, !lock && !pencil && sim.s.money < cost && 'poor')}
+      data-template={t.name}
+    >
       <Icon id={room.icon} size={34} />
       <span class="cost">{money(cost)}</span>
       <input
@@ -127,16 +145,21 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
       )}
       <div class={actions}>
         <Button
-          class="build"
-          title={lock || `Build rooms like this wherever you click, for ${money(cost)} each. R turns them.`}
-          locked={!!lock || sim.s.money < cost}
+          class={cx('build', pencil && 'pencil')}
+          title={
+            lock ||
+            (pencil
+              ? `Pencil rooms like this in wherever you click, for nothing now and ${money(cost)} each when built. R turns them.`
+              : `Build rooms like this wherever you click, for ${money(cost)} each. R turns them.`)
+          }
+          locked={!!lock || (!pencil && sim.s.money < cost)}
           onPress={() => {
             hud.menu = null;
             // a floor or walls not unlocked in this game are left standard
-            tools.startTemplate(t.name, openDecor(layout, open));
+            tools.startTemplate(t.name, openDecor(layout, open), pencil);
           }}
         >
-          Build
+          {pencil ? '✎ Pencil in' : 'Build'}
         </Button>
         <Button
           title="Save this template as a file, to keep or to share"
@@ -162,8 +185,11 @@ function TemplateCard({ t, lock, open }: { t: Template; lock: string; open: (key
   );
 }
 
-/** Every template saved, in the order picked, with a way to import more from a file and to export them all. */
-export function TemplatesTab() {
+/**
+ * Every template saved, in the order picked, with a way to import more from a file and to export them all. With
+ * `pencil`, each pencils its room in rather than builds it.
+ */
+export function TemplatesTab({ pencil }: { pencil: boolean }) {
   const hud = useHud();
   const { sim } = useGame();
   const campaign = loadCampaign();
@@ -199,7 +225,7 @@ export function TemplatesTab() {
       {hud.templates.length ? (
         <div class={templateCards}>
           {sorted(hud.templates, TEMPLATE_SORTS, hud.sorts.templates).map((t) => (
-            <TemplateCard key={t.id} t={t} lock={templateLock(t.layout, allowed)} open={open} />
+            <TemplateCard key={t.id} t={t} lock={templateLock(t.layout, allowed)} open={open} pencil={pencil} />
           ))}
         </div>
       ) : (

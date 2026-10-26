@@ -307,7 +307,7 @@ describe('a payday the bank cannot cover', () => {
     const events = ctx.events;
     events.length = 0;
     warnPayday(ctx);
-    expect(toasts(events).join()).toContain('Payday in 5 days: $3,000 in wages, and $500 in the bank.');
+    expect(toasts(events).join()).toContain('Payday in 5 days: $3,000 in wages against $500 in the bank.');
     expect(toasts(events).join()).toContain('Payday is covered by borrowing: $2,500 short');
     // with the loan used up and the books in profit, the red would clear
     s.loan = loanLimit(s);

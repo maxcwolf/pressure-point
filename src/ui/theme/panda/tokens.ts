@@ -139,6 +139,9 @@ export const tokens = defineTokens({
       advisor: { value: '470px' },
       toasts: { value: '170px' },
       console: { value: '210px' },
+      /** The Plans overlay's key, wider than the column it heads, and how tall its list grows before it scrolls. */
+      plans: { value: '330px' },
+      'plans-list': { value: '260px' },
     },
     /** A cell of the stats bar, and its wider money cell. */
     stat: {

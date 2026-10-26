@@ -310,6 +310,13 @@ export class View {
     this.heat.set(tiles, palette);
   }
 
+  /** Lay the Plans overlay's veil over the floor, or take it off, repainting the floor if that changes it. */
+  setPlans(on: boolean) {
+    if (this.floor.veiled === on) return;
+    this.floor.veiled = on;
+    this.floor.draw();
+  }
+
   /** Fade the floor's overlay in from nothing, as another is chosen. */
   fadeHeat() {
     this.heat.fadeIn();

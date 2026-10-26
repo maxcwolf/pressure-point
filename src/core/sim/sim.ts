@@ -33,6 +33,7 @@ import type {
   MonthRecord,
   Room,
   RoomDecor,
+  Sketch,
   Staff,
   Visitor,
   WallSpot,
@@ -95,6 +96,8 @@ import { demand, type DisciplineDemand, fadeFollowing, roomPull } from './demand
 import {
   borrow,
   monthEnd,
+  type PaydayWarning,
+  paydayWarning,
   payIntoRed,
   priceFor,
   repay,
@@ -139,6 +142,17 @@ import { monthSoFar } from './records';
 import { type RivalCourse, rivalCourse, updateRival } from './rival';
 import { calmerFor, calmerOf, canCalm } from './runaways';
 import { playingFor, servedAt, sessionState, stationStaff } from './sessions';
+import {
+  addSketch,
+  buildSketch,
+  buildSketchAt,
+  eraseSketch,
+  forgetTemplate,
+  pencilTemplate,
+  restoreSketch,
+  sketchBlueprint,
+  sketchById,
+} from './sketches';
 import { askSoul, canRetrieve } from './souls';
 import {
   aboutToQuit,
@@ -346,6 +360,10 @@ export class Sim {
   /** The advisor's current nudge, with what it is about, if anything. */
   adviceNote(): Advice {
     return advise(this.ctx);
+  }
+  /** The payday warning as it reads now, while this month's is up, for the message on screen to keep up with. */
+  paydayWarning(): PaydayWarning | null {
+    return paydayWarning(this.ctx.s);
   }
   /** On a first go at the campaign, the checklist of what the center will need, each line ticked once in place. */
   primerLines(): PrimerLine[] {
@@ -932,6 +950,56 @@ export class Sim {
   /** Remove a room, refunding a fraction of what it cost. */
   removeRoom(roomId: number, refund: number) {
     removeRoom(this.ctx, roomId, refund);
+  }
+
+  /** The room pencilled in with this id, if there is one. */
+  sketch(id: number): Sketch | undefined {
+    return sketchById(this.s, id);
+  }
+
+  /** Pencil a room in for later, for nothing. Null if it cannot go there. */
+  addSketch(type: RoomType, r: Rect, door: WallSpot): Sketch | null {
+    return addSketch(this.ctx, type, r, door);
+  }
+
+  /** Pencil a template in for later, for nothing, remembering its room. Null if it cannot go there. */
+  pencilTemplate(name: string, layout: Layout, placed: PlacedLayout): Sketch | null {
+    return pencilTemplate(this.ctx, name, layout, placed);
+  }
+
+  /** Forget the room a sketch remembers, keeping its floor and door. */
+  forgetTemplate(id: number): boolean {
+    return forgetTemplate(this.ctx, id);
+  }
+
+  /** Rub a sketch out. */
+  eraseSketch(id: number): boolean {
+    return eraseSketch(this.ctx, id);
+  }
+
+  /**
+   * Start the blueprint of a sketch where it is, or, for one that remembers a room, build that room whole. Null, with
+   * the sketch kept, if it no longer fits there, or the room remembered cannot be paid for.
+   */
+  buildSketch(id: number): Room | null {
+    const result = buildSketch(this.ctx, id);
+    if (result?.done) this.afterSpending();
+    return result;
+  }
+
+  /** Start the blueprint of a sketch's room on other floor, the sketch giving way if the room lands on it. */
+  buildSketchAt(id: number, r: Rect, door: WallSpot): Room | null {
+    return buildSketchAt(this.ctx, id, r, door);
+  }
+
+  /** Put a sketch back as it was, if its floor is still free. */
+  restoreSketch(sketch: Sketch): boolean {
+    return restoreSketch(this.ctx, sketch);
+  }
+
+  /** Tear a blueprint up, refunded as Cancel does, and pencil it in for later instead. */
+  sketchBlueprint(roomId: number): Sketch | null {
+    return sketchBlueprint(this.ctx, roomId);
   }
 
   /** What removing a room would give back, at this fraction of what was paid. */

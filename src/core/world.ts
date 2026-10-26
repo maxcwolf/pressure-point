@@ -26,9 +26,9 @@ import {
 } from './footprint';
 import { buildingsOf, lotWidth } from './land';
 import { byId } from './lookup';
-import type { PlacedLayout } from './room-layout';
+import type { Layout, PlacedLayout } from './room-layout';
 import { sameSpot } from './state/game';
-import type { GameState, Item, Room, WallSpot, Waypoint } from './state/types';
+import type { GameState, Item, Room, Sketch, WallSpot, Waypoint } from './state/types';
 import { at } from './util';
 
 /** Zone ids: -2 scenery (not walkable), -1 outdoors path, 0 corridor, >0 room id. */
@@ -145,6 +145,19 @@ export interface Rect {
 export interface Check {
   ok: boolean;
   reason: string;
+  /** The sketch in the way, when one is why it is turned down. */
+  sketch?: number;
+}
+
+/**
+ * Where a sketch stands as things are: it fits; it waits for land not built on yet; the tile its door opens onto is not
+ * free; or its floor is taken, or its room would cut someone off.
+ */
+export type SketchStanding = 'fits' | 'waits' | 'doorway' | 'unfit';
+/** Whether a sketch could be built where it is today, why not, and where it stands. */
+export interface SketchFit {
+  fit: Check;
+  standing: SketchStanding;
 }
 
 /** The grids a way through is worked out on: each tile's zone, what blocks it, what is kept clear, and the doors. */
@@ -195,6 +208,9 @@ export class World {
   /** The building's own windows, worked out once for each time the grids change. */
   private panes: BuildingWindow[] = [];
   private panesStamp = -1;
+  /** Each sketch's fit, by its id, while the world stays as it was when `fitsAt` was taken. */
+  private fits = new Map<number, { of: Sketch; fit: SketchFit }>();
+  private fitsAt = '';
   /** The building alone, before any rooms or furniture: each tile's zone, the tiles kept clear and the doors in. */
   private bare: { zone: Int32Array; reserved: Uint8Array; doors: number[] };
   /** Grids to try a change out on without touching the game or the grids it plays on. */
@@ -653,9 +669,38 @@ export class World {
   canPlaceItem(type: ItemType, x: number, y: number, rot: number, roomId?: number): Check {
     return rules.canPlaceItem(this, type, x, y, rot, roomId);
   }
-  /** Can a room of this type cover this rectangle, in the game as it is or in a what-if? */
-  roomRectValid(type: RoomType, r: Rect, t?: Trial): Check {
-    return rules.roomRectValid(this, type, r, t);
+  /** Can a room of this type cover this rectangle, in the game as it is or in a what-if, built over sketch `spare`? */
+  roomRectValid(type: RoomType, r: Rect, t?: Trial, spare?: number): Check {
+    return rules.roomRectValid(this, type, r, t, spare);
+  }
+  /** The sketch pencilled in over a tile, if any. */
+  sketchAt(x: number, y: number): Sketch | undefined {
+    return rules.sketchAt(this, x, y);
+  }
+  /** Can a room of this type be pencilled in over this rectangle, sketch `spare` aside? */
+  sketchRectValid(type: RoomType, r: Rect, spare?: number): Check {
+    return rules.sketchRectValid(this, type, r, spare);
+  }
+  /** Can a sketch have its door here? */
+  sketchDoorValid(r: Rect, door: Room['door']): Check {
+    return rules.sketchDoorValid(this, r, door);
+  }
+  /** Whether a sketch could be built where it is today. */
+  sketchFits(sk: Sketch): Check {
+    return this.sketchFit(sk).fit;
+  }
+  /** Whether a sketch could be built where it is today, and where it stands, worked out once each time the world changes. */
+  sketchFit(sk: Sketch): SketchFit {
+    const now = `${this.version}:${this.stamp}`;
+    if (this.fitsAt !== now) {
+      this.fits.clear();
+      this.fitsAt = now;
+    }
+    const known = this.fits.get(sk.id);
+    if (known?.of === sk) return known.fit;
+    const fit = rules.sketchFit(this, sk);
+    this.fits.set(sk.id, { of: sk, fit });
+    return fit;
   }
   /** Whether a room of a type would fit anywhere in the building at its smallest, as things stand. */
   roomFitsAnywhere(type: RoomType): boolean {
@@ -674,8 +719,12 @@ export class World {
     return rules.resizeValid(this, room, r);
   }
   /** Can a room with this layout be put down here, or the room `moving` be moved here? */
-  layoutValid(type: RoomType, placed: PlacedLayout, moving?: Room): Check {
-    return rules.layoutValid(this, type, placed, moving);
+  layoutValid(type: RoomType, placed: PlacedLayout, moving?: Room, spare?: number): Check {
+    return rules.layoutValid(this, type, placed, moving, spare);
+  }
+  /** Can a template be pencilled in here, sketch `spare` aside? */
+  templateSketchValid(layout: Layout, placed: PlacedLayout, spare?: number): Check {
+    return rules.templateSketchValid(this, layout, placed, spare);
   }
   /** The windows of the rooms next door, other than `moving`, that a room put down from a layout takes out. */
   windowsOnto(placed: PlacedLayout, moving?: Room): WallSpot[] {

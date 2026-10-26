@@ -1,4 +1,5 @@
-// The blueprint panel: what a room being planned still needs, what can be added, and the Build button.
+// The blueprint panel: what a room being planned still needs, what can be added, and the Build button, with a way to
+// pencil the room in for later instead.
 
 import { ITEMS, ROOMS, WINDOW_COST } from '../../core/data';
 import { money } from '../../core/format';
@@ -8,6 +9,7 @@ import { buttonRow, goButton, guideRing, panelCard } from '../../styled-system/r
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { placedFlags } from '../lib/plan';
+import { shortfall } from '../lib/sketches';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
 import { Stars } from './common/Stars';
@@ -59,8 +61,14 @@ const pressable = css({ _hover: { transform: '[translateY(-1px)]' } });
 /** What is still needed and the room's prestige, closer to the buttons than usual. */
 const note = css({ m: '0', mb: '4' });
 
-/** Cancel at the left and Build at the right. */
+/** What the bank is short of, in the color of trouble. */
+const shortLine = css({ '& b': { color: 'bad', fontWeight: 'bold' } });
+
+/** Cancel at the left and Build at the right, Pencil in for later between them. */
 const buttons = css({ justifyContent: 'space-between', mt: '4' });
+
+/** Pencil in for later, in teal. */
+const pencilButton = css({ bg: 'accent', color: 'fg.on-accent' });
 
 /** The blueprint of the room being planned. */
 export function PlanPanel() {
@@ -73,6 +81,7 @@ export function PlanPanel() {
   const placed = placedFlags(def.required, missing);
   const extras = room.windows.length * WINDOW_COST;
   const { cost } = finishCost(room);
+  const short = shortfall(sim.s.money, cost);
   /** Pick up windows or the door, or put them down again. */
   const hold = (what: 'window' | 'door') => {
     tools.planHold(holding === what ? '' : what);
@@ -127,6 +136,11 @@ export function PlanPanel() {
           {' Prestige '}
           <Stars count={sim.prestige(room)} />
         </p>
+        {short && (
+          <p class={cx('sub', note, shortLine)}>
+            <b>{short}</b> Pencil it in and come back when you can.
+          </p>
+        )}
         <div class={cx(buttonRow(), buttons)}>
           <Button
             onPress={() => {
@@ -134,6 +148,15 @@ export function PlanPanel() {
             }}
           >
             Cancel
+          </Button>{' '}
+          <Button
+            class={pencilButton}
+            title="Keep the floor and the door as a sketch, for nothing, and build it later. Windows and extras are refunded."
+            onPress={() => {
+              tools.planSketch();
+            }}
+          >
+            ✎ Pencil in for later
           </Button>{' '}
           <Button
             class={cx(goButton(), hud.guide() === 'plan:build' && guideRing())}

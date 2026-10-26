@@ -6,6 +6,7 @@ import { gameProps } from '../app/play-events';
 import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
 import { ANNOUNCEMENTS } from '../core/data';
+import { PAYDAY_WARNING_KEY } from '../core/sim/economy';
 import type { SimEvent, StaffRequest, Subject, Tone } from '../core/sim/events';
 import { lessonCard, type LessonId } from '../core/sim/lessons';
 import type { TutorialStep } from '../core/sim/tutorial';
@@ -20,7 +21,7 @@ import { Announcer, type Shown } from './lib/announcements';
 import { filterItems, type ItemKind, type Place } from './lib/catalog';
 import { mustAnswer, pendingDialog, raise, type Raised, stillDue } from './lib/dialogs';
 import { addFloater, ageFloaters, amountOf, type Floater } from './lib/floaters';
-import { ageMessages, SHOWN, spareMessages, withMessage } from './lib/messages';
+import { ageMessages, type MessageNow, refreshMessage, SHOWN, spareMessages, withMessage } from './lib/messages';
 import type { OverlayMode } from './lib/overlays';
 import type { SortList } from './lib/sorts';
 
@@ -33,7 +34,7 @@ export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'fina
 /** The tabs of the Money menu. */
 export type MoneyTab = 'books' | 'payroll' | 'prices' | 'marketing' | 'loan' | 'land';
 
-/** The tabs of the Rooms menu. */
+/** The tabs of the Rooms menu: the rooms and the templates, either of which can be pencilled in rather than built. */
 export type RoomsTab = 'rooms' | 'templates';
 
 /** The tabs of the Stats menu. */
@@ -80,6 +81,8 @@ export interface Toast {
   about?: Subject;
   /** The icon before it, if it has one. */
   icon?: IconId;
+  /** Which message it is, if it is kept up to date while on screen, as the payday warning is. */
+  key?: string;
   /** How many times it has come up while on screen, shown once it is more than one. */
   count: number;
   /** Milliseconds it has been up while its clock ran. */
@@ -103,6 +106,8 @@ export class HudState {
   menu: MenuId | null = null;
   /** The tab showing in the Rooms menu. */
   roomsTab: RoomsTab = 'rooms';
+  /** Whether the Rooms menu's cards pencil their rooms in rather than build them. */
+  pencil = false;
   /** The room templates saved, kept for every game. */
   templates: Template[] = loadTemplates();
   /** The tab showing in the Hire menu. */
@@ -233,6 +238,8 @@ export class HudState {
     // an open blueprint stays open while you fetch something from a menu
     this.host.tools.setAside();
     this.menu = this.menu === id ? null : id;
+    // pencilling in is switched on each time it is wanted, so a room is never pencilled in when it was meant to be built
+    if (this.menu === 'rooms') this.pencil = false;
     if (this.menu) track('menu_opened', { ...gameProps(this.host.sim.s), menu: id });
   }
 
@@ -260,8 +267,16 @@ export class HudState {
     this.update();
   }
 
-  /** Close the open build menu, the list of overlays, or every message opened out. False if none was open. */
-  closeMenu(): boolean {
+  /**
+   * Close the open build menu, the list of overlays, or every message opened out. False if none was open. With the
+   * Rooms menu pencilling in, `escape` switches that off first, leaving the menu open.
+   */
+  closeMenu(escape = false): boolean {
+    if (escape && this.menu === 'rooms' && this.pencil) {
+      this.pencil = false;
+      this.update();
+      return true;
+    }
     if (!this.menu && !this.overlayPicker && !this.toastsOpen) return false;
     this.menu = null;
     this.overlayPicker = false;
@@ -296,6 +311,8 @@ export class HudState {
       // dragging out the floor and placing the door have the hint to go by, and a ready blueprint wants building
       if (tool.kind === 'room') return tools.plan?.ready ? 'plan:build' : null;
       if (this.menu !== 'rooms') return 'menu:rooms';
+      // pencilling in is switched off first, at its pill, so the room is built
+      if (this.pencil) return 'tab:pencil';
       return this.roomsTab === 'rooms' ? `room:${want.type}` : 'tab:rooms';
     }
     if (this.menu !== 'hire') return 'menu:hire';
@@ -318,6 +335,7 @@ export class HudState {
       this.menu = 'items';
     } else if (want.kind === 'room') {
       this.roomsTab = 'rooms';
+      this.pencil = false;
       this.menu = 'rooms';
     } else {
       this.hireRole = want.role;
@@ -454,7 +472,7 @@ export class HudState {
       if (e.type === 'sfx') audio.play(e.name);
       // a raise or a promotion asked for waits on the card for everyone asking, which keeps what they said
       else if (e.type === 'toast' && e.request && e.about) this.asked.set(e.about.id, e.text);
-      else if (e.type === 'toast') this.toast(e.text, e.kind, e.about, e.icon);
+      else if (e.type === 'toast') this.toast(e.text, e.kind, e.about, e.icon, e.key);
       else if (e.type === 'announce') this.announce(e.text);
       else if (e.type === 'star') this.raise('star', e.stars);
       else if (e.type === 'awards') this.raise('awards');
@@ -484,16 +502,40 @@ export class HudState {
     track(what === 'done' ? 'tutorial_done' : 'tutorial_skipped', { ...gameProps(this.host.sim.s), step });
   }
 
-  /** Show a message at the top of the right side. One saying the same as one already there takes its place, counted. */
-  toast(text: string, kind: Tone = 'info', about?: Subject, icon?: IconId) {
+  /**
+   * Show a message at the top of the right side. One saying the same as one already there takes its place, counted,
+   * and one with a key takes the place of the message with that key, afresh.
+   */
+  toast(text: string, kind: Tone = 'info', about?: Subject, icon?: IconId, key?: string) {
     this.toasts = withMessage(this.toasts, {
       id: this.nextId++,
       text,
       kind,
       ...(about && { about }),
       ...(icon && { icon }),
+      ...(key && { key }),
     });
     this.update();
+  }
+
+  /**
+   * Bring the message with this key up to what it says now, if it is still on screen, or take it down once it no longer
+   * applies. One dismissed, or faded, stays gone.
+   */
+  refreshToast(key: string, now: MessageNow | null) {
+    const { kept, changed } = refreshMessage(this.toasts, key, now);
+    if (!changed) return;
+    this.toasts = kept;
+    this.update();
+  }
+
+  /**
+   * Keep the payday warning, while it is on screen, up with the bank and the pace, every frame and paused too, since
+   * money is spent while paused. Looked for first, so payday's figures are worked out only while there is one.
+   */
+  refreshPayday() {
+    if (!this.toasts.some((t) => t.key === PAYDAY_WARNING_KEY)) return;
+    this.refreshToast(PAYDAY_WARNING_KEY, this.host.sim.paydayWarning());
   }
 
   /**

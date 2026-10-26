@@ -14,6 +14,7 @@ import { GuestInfo } from './GuestInfo';
 import { ItemInfo } from './ItemInfo';
 import { PlotInfo } from './PlotInfo';
 import { RoomInfo } from './RoomInfo';
+import { SketchInfo } from './SketchInfo';
 import { StaffInfo } from './StaffInfo';
 import { VisitorInfo } from './VisitorInfo';
 
@@ -108,7 +109,10 @@ export function inspecting({ tools }: ReturnType<typeof useGame>): boolean {
   return tools.selected !== null && !(tools.active && tools.tool.kind !== 'assign');
 }
 
-/** The details of the selected guest, member of staff, visitor, item, room or plot of land, if it still exists. */
+/**
+ * The details of the selected guest, member of staff, visitor, item, room, room pencilled in or plot of land, if it
+ * still exists.
+ */
 function useSelectionInfo(): ComponentChildren {
   const game = useGame();
   const { sim, tools } = game;
@@ -129,6 +133,10 @@ function useSelectionInfo(): ComponentChildren {
   if (sel.kind === 'item') {
     const item = sim.world.item(sel.id);
     return item ? <ItemInfo item={item} /> : null;
+  }
+  if (sel.kind === 'sketch') {
+    const sketch = sim.sketch(sel.id);
+    return sketch ? <SketchInfo sketch={sketch} /> : null;
   }
   if (sel.kind === 'plot') {
     const offer = sim.landOffers().find((o) => o.def.id === sel.id);

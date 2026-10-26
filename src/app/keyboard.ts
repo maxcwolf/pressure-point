@@ -83,7 +83,7 @@ export function bindKeyboard({ state, tools, ui, turnCamera, onChange }: Keyboar
       // Esc closes the cheat console, then cancels whatever is in hand; with nothing in hand it opens the pause menu
       if (ui.consoleOpen) ui.toggleConsole();
       else if (tools.active) tools.back();
-      else if (ui.closeMenu()) void 0;
+      else if (ui.closeMenu(true)) void 0;
       else if (tools.selected) tools.select(null);
       else ui.openPauseMenu();
       onChange();

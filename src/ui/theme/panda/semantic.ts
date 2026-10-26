@@ -155,6 +155,11 @@ export const semanticColors = defineSemanticTokens.colors({
     bad: is('red.500'),
     cold: is('blue.500'),
   },
+  /**
+   * A room pencilled in that no longer fits: the edge of its label and its chip, in the amber its paint on the floor is
+   * (render/floor.ts keeps its own, a shade darker).
+   */
+  sketch: { unfit: is('gold.600') },
   /** The tutorial's ring and its glow as it breathes. */
   guide: {
     DEFAULT: is('gold.400'),

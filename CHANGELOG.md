@@ -2,8 +2,15 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.34.0
+
+- **Pencil rooms in.** The Rooms menu's new Pencil in pill sketches a room's floor and door for later, for nothing: nothing can be built over it, and Build here in its inspector opens its blueprint on the spot when you're ready. A blueprint you can't afford yet can be pencilled in for later too.
+- **Sketches that keep up.** A pencilled-in room whose doorway gets blocked, or that no longer fits, turns amber and says so on its label, and the Pencil in tab counts them. No door may open onto a sketch, and a sketch on a plot stays put once the plot is built on.
+- **Pencil templates in, and see every plan.** With Pencil in on, a template pencils in, furniture and windows outlined on the floor, and Build here builds the whole room at once. The new Plans overlay shows every sketch with its price and fit, and lists them to go to or build.
+
 ## v0.33.7
 
+- **The payday warning keeps up.** While the payday warning is on screen, its figures follow the bank and the month's pace, paused too, and once the bank alone holds the wages it turns green to say payday is covered now. It goes once payday has passed, and one dismissed stays gone.
 - **The Pressure Point Foundation.** Once every star in a campaign center is earned, the Money menu's Books tab takes three gifts to the Foundation, of $50,000, $100,000 and $200,000 (half as much again at The Orchard Estate), each worth 1 karma: something to do with the money that piles up after the last star. The card says what a gift would leave for the next payday.
 - **The weather, center by center.** Willow Lane is mild all year, never cold or hot enough for anyone to mind. The Exchange's cold winters are the first that need Radiators, the Boardwalk's summers are now hot enough to need Air Conditioners, and the Orchard Estate's winters and summers are the harshest of both.
 - **The first cold snap, explained.** The first time the weather gets indoors with nothing to warm or cool the place, a card says how cold or hot it is outside and in, what is comfortable and what fixes it, with a button that puts a Radiator or an Air Conditioner in hand. The tutorial's cards now come once each across the campaign, in whichever center a thing first happens, and the Settings switch turns them on or off in any campaign game.

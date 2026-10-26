@@ -44,6 +44,8 @@ export function buyPlot(ctx: SimContext, id: string): boolean {
     ...(def.entrance && { entrance: { ...def.entrance }, path: (def.path ?? []).map((r) => ({ ...r })) }),
     ready: ctx.s.day + days,
   });
+  // nothing on the floor has moved, but a sketch on the plot now waits for the builders rather than the sale
+  ctx.world.version++;
   toast(ctx, `${offer.name} is yours. The builders are at work on it, and will be done in ${days} days.`, 'good');
   emit(ctx, { type: 'sfx', name: 'build' });
   return true;
