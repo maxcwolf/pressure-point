@@ -60,11 +60,13 @@ export function startReports() {
     powerMonitor.on('unlock-screen', mainHang.startWorker);
   });
 
-  // a note left over from the last run says it never quit cleanly
+  // A note left over from the last run says it never quit cleanly. Sent as an event of its own rather than with
+  // captureMessage, which would add where this code is and name the issue after it.
   const file = heartbeatFile();
   const last = loadHeartbeat(file);
   if (last) {
-    Sentry.captureMessage('Previous run did not quit cleanly', {
+    Sentry.captureEvent({
+      message: 'Previous run did not quit cleanly',
       level: 'warning',
       // whether the whole computer went down, or the app alone
       tags: { machine_rebooted: machineRebooted(last.last, Date.now(), os.uptime()) },
@@ -92,7 +94,8 @@ export function watchWindow(win: BrowserWindow) {
   /** Send the warning for a hang that has ended. */
   const report = (since: number, recovered: boolean) => {
     const seconds = hungFor(since);
-    Sentry.captureMessage(`The game window stopped responding for ${seconds} seconds`, {
+    Sentry.captureEvent({
+      message: `The game window stopped responding for ${seconds} seconds`,
       level: 'warning',
       // one issue for every hang, however long
       fingerprint: ['game-window-unresponsive'],
