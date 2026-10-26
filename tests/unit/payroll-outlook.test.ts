@@ -7,6 +7,8 @@ import {
   cashflow,
   loanLimit,
   monthlyPayroll,
+  PAYDAY_WARNING_KEY,
+  paydayWarning,
   payrollOutlook,
   payrollVerdict,
   warnPayday,
@@ -122,7 +124,7 @@ describe('the warnings before payday', () => {
     const { s, ctx } = center(500, 10);
     warnPayday(ctx);
     expect(toasts(ctx.events)).toEqual([
-      "Payday in 20 days: $3,000 in wages against $500 in the bank and about $0 more at this month's pace. Payday is covered by borrowing: $2,500 short at this month's pace, so the loan will stand at $5,000.",
+      "Payday in 20 days: $3,000 in wages against $500 in the bank. Payday is covered by borrowing: $2,500 short at this month's pace, so the loan will stand at $5,000.",
     ]);
     expect(s.paydayWarned).toBe(0);
     ctx.events.length = 0;
@@ -154,12 +156,60 @@ describe('the warnings before payday', () => {
     s.ledger.treatment = 2500;
     warnPayday(ctx);
     expect(toasts(ctx.events)).toEqual([
-      "Payday in 5 days: $3,000 in wages, and $500 in the bank, with about $500 more coming at this month's pace. Payday is covered by borrowing: $2,000 short at this month's pace, so the loan will stand at $5,000.",
+      "Payday in 5 days: $3,000 in wages against $500 in the bank and about $500 more at this month's pace. Payday is covered by borrowing: $2,000 short at this month's pace, so the loan will stand at $5,000.",
     ]);
     // but not when the bank covers them
     ctx.events.length = 0;
     s.money = 3000;
     warnPayday(ctx);
     expect(toasts(ctx.events)).toEqual([]);
+  });
+});
+
+describe('the payday warning on screen', () => {
+  it('is nothing until the month has been warned, and is the warning posted once it has, keyed to be kept up', () => {
+    const { s, ctx } = center(500, 10);
+    expect(paydayWarning(s)).toBeNull();
+    warnPayday(ctx);
+    const posted = ctx.events.find((e) => e.type === 'toast');
+    const now = paydayWarning(s);
+    expect(now).toEqual({
+      text: "Payday in 20 days: $3,000 in wages against $500 in the bank. Payday is covered by borrowing: $2,500 short at this month's pace, so the loan will stand at $5,000.",
+      kind: 'bad',
+      icon: 'ui-warning',
+    });
+    expect(posted).toEqual({ type: 'toast', ...now, key: PAYDAY_WARNING_KEY });
+  });
+
+  it('follows the bank and the pace, and says payday is covered now once the bank alone holds the wages', () => {
+    const { s, ctx } = center(500, 10);
+    warnPayday(ctx);
+    s.ledger.treatment = 1000;
+    expect(paydayWarning(s)?.text).toBe(
+      "Payday in 20 days: $3,000 in wages against $500 in the bank and about $2,000 more at this month's pace. Payday is covered by borrowing: $500 short at this month's pace, so the loan will stand at $5,000.",
+    );
+    // the pace covering the rest, the verdict does not say the numbers twice
+    s.ledger.treatment = 2000;
+    expect(paydayWarning(s)?.text).toBe(
+      "Payday in 20 days: $3,000 in wages against $500 in the bank and about $4,000 more at this month's pace. Payday is covered at this month's pace.",
+    );
+    s.money = 3000;
+    expect(paydayWarning(s)).toEqual({
+      text: 'Payday in 20 days is covered now: $3,000 in wages against $3,000 in the bank.',
+      kind: 'good',
+      icon: 'ui-money',
+    });
+  });
+
+  it('counts down to the last day, and is gone with the new month and with bankruptcy off', () => {
+    const { s, ctx } = center(500, 10);
+    warnPayday(ctx);
+    s.day = DAYS_PER_MONTH - 0.5;
+    expect(paydayWarning(s)?.text).toMatch(/^Payday in 1 day: /);
+    s.bankruptcyOn = false;
+    expect(paydayWarning(s)).toBeNull();
+    s.bankruptcyOn = true;
+    s.day = DAYS_PER_MONTH;
+    expect(paydayWarning(s)).toBeNull();
   });
 });

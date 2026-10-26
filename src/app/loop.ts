@@ -101,6 +101,8 @@ export function runLoop({
       ui.handle(events);
       refresh.request();
     }
+    // the payday warning keeps up with the bank, paused too, since money is spent while paused
+    ui.refreshPayday();
     // the messages on the right fade in their own time, which stands still while the game is paused
     ui.tickToasts(dt);
     if (refresh.due(dt)) ui.update();

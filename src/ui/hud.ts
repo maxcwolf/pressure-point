@@ -6,6 +6,7 @@ import { gameProps } from '../app/play-events';
 import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
 import { ANNOUNCEMENTS } from '../core/data';
+import { PAYDAY_WARNING_KEY } from '../core/sim/economy';
 import type { SimEvent, StaffRequest, Subject, Tone } from '../core/sim/events';
 import { lessonCard, type LessonId } from '../core/sim/lessons';
 import type { TutorialStep } from '../core/sim/tutorial';
@@ -20,7 +21,7 @@ import { Announcer, type Shown } from './lib/announcements';
 import { filterItems, type ItemKind, type Place } from './lib/catalog';
 import { mustAnswer, pendingDialog, raise, type Raised, stillDue } from './lib/dialogs';
 import { addFloater, ageFloaters, amountOf, type Floater } from './lib/floaters';
-import { ageMessages, SHOWN, spareMessages, withMessage } from './lib/messages';
+import { ageMessages, type MessageNow, refreshMessage, SHOWN, spareMessages, withMessage } from './lib/messages';
 import type { OverlayMode } from './lib/overlays';
 import type { SortList } from './lib/sorts';
 
@@ -80,6 +81,8 @@ export interface Toast {
   about?: Subject;
   /** The icon before it, if it has one. */
   icon?: IconId;
+  /** Which message it is, if it is kept up to date while on screen, as the payday warning is. */
+  key?: string;
   /** How many times it has come up while on screen, shown once it is more than one. */
   count: number;
   /** Milliseconds it has been up while its clock ran. */
@@ -454,7 +457,7 @@ export class HudState {
       if (e.type === 'sfx') audio.play(e.name);
       // a raise or a promotion asked for waits on the card for everyone asking, which keeps what they said
       else if (e.type === 'toast' && e.request && e.about) this.asked.set(e.about.id, e.text);
-      else if (e.type === 'toast') this.toast(e.text, e.kind, e.about, e.icon);
+      else if (e.type === 'toast') this.toast(e.text, e.kind, e.about, e.icon, e.key);
       else if (e.type === 'announce') this.announce(e.text);
       else if (e.type === 'star') this.raise('star', e.stars);
       else if (e.type === 'awards') this.raise('awards');
@@ -484,16 +487,40 @@ export class HudState {
     track(what === 'done' ? 'tutorial_done' : 'tutorial_skipped', { ...gameProps(this.host.sim.s), step });
   }
 
-  /** Show a message at the top of the right side. One saying the same as one already there takes its place, counted. */
-  toast(text: string, kind: Tone = 'info', about?: Subject, icon?: IconId) {
+  /**
+   * Show a message at the top of the right side. One saying the same as one already there takes its place, counted,
+   * and one with a key takes the place of the message with that key, afresh.
+   */
+  toast(text: string, kind: Tone = 'info', about?: Subject, icon?: IconId, key?: string) {
     this.toasts = withMessage(this.toasts, {
       id: this.nextId++,
       text,
       kind,
       ...(about && { about }),
       ...(icon && { icon }),
+      ...(key && { key }),
     });
     this.update();
+  }
+
+  /**
+   * Bring the message with this key up to what it says now, if it is still on screen, or take it down once it no longer
+   * applies. One dismissed, or faded, stays gone.
+   */
+  refreshToast(key: string, now: MessageNow | null) {
+    const { kept, changed } = refreshMessage(this.toasts, key, now);
+    if (!changed) return;
+    this.toasts = kept;
+    this.update();
+  }
+
+  /**
+   * Keep the payday warning, while it is on screen, up with the bank and the pace, every frame and paused too, since
+   * money is spent while paused. Looked for first, so payday's figures are worked out only while there is one.
+   */
+  refreshPayday() {
+    if (!this.toasts.some((t) => t.key === PAYDAY_WARNING_KEY)) return;
+    this.refreshToast(PAYDAY_WARNING_KEY, this.host.sim.paydayWarning());
   }
 
   /**

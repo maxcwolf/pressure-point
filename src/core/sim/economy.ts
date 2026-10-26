@@ -1,6 +1,6 @@
 // Money and reputation: income, spending, payday, loans and prices.
 
-import type { CenterDef, Discipline, Role, RoomType } from '../data';
+import type { CenterDef, Discipline, IconId, Role, RoomType } from '../data';
 import {
   CONSULT_FEEDS,
   DAYS_PER_MONTH,
@@ -28,7 +28,7 @@ import { disciplineOn, emptyLedger, unlockedUpTo } from '../state/game';
 import type { GameState, Item, Ledger, Staff } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
-import { emit, toast } from './events';
+import { emit, toast, type Tone } from './events';
 import { machineBuilt, machineUpkeep } from './machines';
 import { closeMonth } from './records';
 
@@ -476,10 +476,47 @@ export function openingLine(o: OpeningCosts): string {
   return `${line} One Consultation Room keeps only ${CONSULT_FEEDS} stations in guests, so the rest draw nobody until a second opens with a ${ROLES.consultant.name} of its own: ${money(ROOMS.consult.cost)} more, and ${money(ROLES.consultant.baseSalary)} a month.`;
 }
 
+/** Which message on the right is the payday warning, so it can be kept up to date while it is on screen. */
+export const PAYDAY_WARNING_KEY = 'payday';
+
+/** The payday warning as it reads now: its words, whether it is good or bad news, and the icon before it. */
+export interface PaydayWarning {
+  text: string;
+  kind: Tone;
+  icon: IconId;
+}
+
+/**
+ * The payday warning as things stand, for as long as there is one this month: the numbers and the verdict while the
+ * bank alone will not cover the wages, and that payday is covered now once it does. Nothing before the month's warning
+ * has been given, and nothing once payday has passed, so the message on screen is taken down with the new month.
+ */
+export function paydayWarning(s: GameState): PaydayWarning | null {
+  if (!s.bankruptcyOn || s.paydayWarned !== Math.floor(s.day / DAYS_PER_MONTH)) return null;
+  const o = payrollOutlook(s);
+  if (o.wages <= 0) return null;
+  const left = Math.max(1, Math.ceil(o.daysLeft));
+  const when = `Payday in ${left} day${left === 1 ? '' : 's'}`;
+  const wages = `${money(o.wages)} in wages${runningOf(o)} against ${money(s.money)} in the bank`;
+  if (o.wages + o.upkeep <= s.money)
+    return { text: `${when} is covered now: ${wages}.`, kind: 'good', icon: 'ui-money' };
+  const pace = o.coming > 0 ? ` and about ${money(o.coming)} more at this month's pace` : '';
+  // covered by the pace, the verdict would only say the same numbers again
+  const verdict = o.covered === 'yes' ? "Payday is covered at this month's pace." : payrollVerdict(o);
+  return { text: `${when}: ${wages}${pace}. ${verdict}`, kind: 'bad', icon: 'ui-warning' };
+}
+
+/** Put the payday warning up as it reads now, in place of any still on screen. */
+function postPaydayWarning(ctx: SimContext) {
+  const w = paydayWarning(ctx.s);
+  if (w) toast(ctx, w.text, w.kind, undefined, w.icon, PAYDAY_WARNING_KEY);
+}
+
 /**
  * Warn of a payday the center is not on course to cover: once, as soon as the pace first says so, and again five days
  * before if the bank alone will not cover the wages, each with the numbers and what the bank will do. Quiet while
- * payday is covered. Run as each day begins.
+ * payday is covered. Run as each day begins. While the warning is on screen it keeps up with the game, from
+ * `paydayWarning`.
  */
 export function warnPayday(ctx: SimContext) {
   const s = ctx.s;
@@ -491,25 +528,12 @@ export function warnPayday(ctx: SimContext) {
   if (left === PAYDAY_WARNING_DAYS) {
     s.paydayWarned = month;
     if (o.wages + o.upkeep <= s.money) return;
-    const pace = o.coming > 0 ? `, with about ${money(o.coming)} more coming at this month's pace` : '';
-    toast(
-      ctx,
-      `Payday in ${PAYDAY_WARNING_DAYS} days: ${money(o.wages)} in wages${runningOf(o)}, and ${money(s.money)} in the bank${pace}. ${payrollVerdict(o)}`,
-      'bad',
-      undefined,
-      'ui-warning',
-    );
+    postPaydayWarning(ctx);
     return;
   }
   if (left < PAYDAY_WARNING_DAYS || o.covered === 'yes' || s.paydayWarned === month) return;
   s.paydayWarned = month;
-  toast(
-    ctx,
-    `Payday in ${left} days: ${money(o.wages)} in wages${runningOf(o)} against ${money(s.money)} in the bank and about ${money(o.coming)} more at this month's pace. ${payrollVerdict(o)}`,
-    'bad',
-    undefined,
-    'ui-warning',
-  );
+  postPaydayWarning(ctx);
 }
 
 /**
