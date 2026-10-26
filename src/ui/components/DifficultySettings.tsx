@@ -20,17 +20,17 @@ const presetNote = css({ m: '0', mt: '6', mb: '8' });
 const levelButton = css({
   pointerEvents: 'auto',
   flex: 'none',
-  border: '[2.5px solid {colors.navy}]',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '10',
   py: '2',
   px: '8',
   fontWeight: 'bold',
   fontSize: '13',
-  bg: 'cream',
-  boxShadow: '[0 3px 0 {colors.ink.30}]',
+  bg: 'control',
+  boxShadow: '[0 3px 0 {colors.shadow}]',
   minW: '[92px]',
-  '&.easier': { bg: 'good-bg' },
-  '&.harder': { bg: '[#f6d6cf]' },
+  '&.easier': { bg: 'good.bg' },
+  '&.harder': { bg: 'bad.soft' },
 });
 
 export interface DifficultySettingsProps {

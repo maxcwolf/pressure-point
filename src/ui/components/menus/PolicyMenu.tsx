@@ -28,14 +28,14 @@ const MAX_BREAK_LIMIT = 5;
 const control = css({
   border: 'control',
   borderRadius: '8',
-  bg: 'cream',
+  bg: 'control',
   fontWeight: 'bold',
   h: 'control',
   _locked: { opacity: 'locked' },
 });
 
 /** A switch with words on it, gold while it is on. */
-const toggle = css({ px: '12', py: '0', _on: { bg: 'gold' } });
+const toggle = css({ px: '12', py: '0', _on: { bg: 'toggle.on' } });
 
 /** A setting with a value and a pair of buttons to step it down and up, its name above them or, inline, beside them. */
 function Stepper(props: {
@@ -91,7 +91,7 @@ function Stepper(props: {
 /** One setting's card: its name, its controls, and a word on what it trades off. */
 function Card(props: { children: ComponentChildren }) {
   return (
-    <Box bg="white" border="card" borderRadius="12" py="8" px="10" fontSize="14">
+    <Box bg="bg.card" border="card" borderRadius="12" py="8" px="10" fontSize="14">
       {props.children}
     </Box>
   );

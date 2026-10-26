@@ -42,8 +42,8 @@ const grades = css({
   '& li': {
     display: 'flex',
     flexDirection: 'column',
-    bg: 'white',
-    border: '[2px solid {colors.ink.20}]',
+    bg: 'bg.card',
+    border: '[2px solid {colors.border}]',
     borderRadius: '10',
     py: '4',
     px: '8',
@@ -51,7 +51,7 @@ const grades = css({
     opacity: '[0.6]',
   },
   '& li.reached': { opacity: '[1]' },
-  '& li.now': { bg: 'gold-tint', borderColor: 'gold', fontWeight: 'bold' },
+  '& li.now': { bg: 'highlight.bg', borderColor: 'highlight', fontWeight: 'bold' },
   '& small': { fontSize: '11', fontWeight: '[400]', opacity: '[0.8]' },
   _max1100: { gridTemplateColumns: '[repeat(3, minmax(0, 1fr))]' },
 });
@@ -65,8 +65,8 @@ const effects = css({ m: '0', mb: '4', ml: '16', fontSize: '13' });
  */
 const rival = css({
   mt: '12',
-  bg: 'white',
-  border: '[2px solid {colors.ink.20}]',
+  bg: 'bg.card',
+  border: '[2px solid {colors.border}]',
   borderRadius: '12',
   py: '8',
   px: '12',
@@ -83,7 +83,7 @@ const rival = css({
     fontSize: '13',
   },
   '& .versus em': { fontStyle: 'normal', fontWeight: 'bold' },
-  '& .sale': { color: 'red', fontWeight: 'bold' },
+  '& .sale': { color: 'bad.solid', fontWeight: 'bold' },
 });
 
 /** The rival across the street: how it stands against the center, its sale, and what it has done so far. */

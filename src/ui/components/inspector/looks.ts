@@ -7,16 +7,16 @@ import { css } from '../../../styled-system/css';
  * raise they asked for, or a promotion, is gold.
  */
 export const smallButton = css({
-  border: '[2.5px solid {colors.navy}]',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '12',
   py: '4',
   px: '12',
   fontWeight: 'bold',
   fontSize: '14',
-  bg: 'cream',
-  boxShadow: '[0 3px 0 {colors.ink.30}]',
+  bg: 'control',
+  boxShadow: '[0 3px 0 {colors.shadow}]',
   mt: '6',
-  '&.go': { bg: 'gold', color: 'navy' },
+  '&.go': { bg: 'highlight', color: 'fg' },
 });
 
 /** A row of duty switches, or of the small buttons beside them. */
@@ -33,7 +33,7 @@ export const duty = css({
   px: '8',
   fontSize: '12',
   fontWeight: 'bold',
-  bg: 'white',
-  _on: { bg: 'good-bg' },
+  bg: 'bg.card',
+  _on: { bg: 'good.bg' },
   _locked: { opacity: '[0.55]', cursor: 'not-allowed' },
 });

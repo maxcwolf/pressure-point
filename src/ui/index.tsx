@@ -44,7 +44,7 @@ const titleStyle = css({
   overflow: 'hidden',
   pointerEvents: 'auto',
   zIndex: '[20]',
-  bg: '[#3d5168]',
+  bg: 'title.bg',
 });
 
 /**

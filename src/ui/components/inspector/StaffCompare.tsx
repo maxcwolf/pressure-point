@@ -31,8 +31,8 @@ const toggleStyle = css({ display: 'block', my: '2', mx: '0' });
  * `.insp`, to outdo the inspector's spacing of headings).
  */
 const pickCard = css({
-  bg: 'white',
-  border: '[2px solid {colors.ink.35}]',
+  bg: 'bg.card',
+  border: '[2px solid {colors.border.strong}]',
   borderRadius: '10',
   p: '8',
   pt: '4',
@@ -56,7 +56,7 @@ const pick = css({
   borderRadius: '8',
   py: '2',
   px: '4',
-  _hover: { borderColor: 'teal-dark', bg: 'teal-tint' },
+  _hover: { borderColor: 'accent.strong', bg: 'bg.hover' },
 });
 
 /**
@@ -82,7 +82,7 @@ const table = css({
   '& tbody th': { fontWeight: '[500]', opacity: '[0.75]', hyphens: 'auto', overflowWrap: 'anywhere' },
   // five stars, small enough to fit their column
   '& .skill': { fontSize: '11', letterSpacing: '[0]', whiteSpace: 'nowrap' },
-  '& tbody tr + tr': { borderTop: '[1px solid {colors.ink.10}]' },
+  '& tbody tr + tr': { borderTop: '[1px solid {colors.border.faint}]' },
   '& tr.section th': { opacity: '[1]', fontWeight: 'bold', pt: '6' },
 });
 
@@ -90,7 +90,7 @@ const table = css({
 const labelColumn = css({ w: '[46%]' });
 
 /** The side that comes out ahead, or someone who has passed a course, in green. */
-const aheadStyle = css({ color: 'green-dark', fontWeight: '[700]' });
+const aheadStyle = css({ color: 'good.strong', fontWeight: '[700]' });
 
 /** Someone who has not passed a course, faded. */
 const lacks = css({ opacity: '[0.4]' });

@@ -4,8 +4,8 @@ import { css } from '../../../styled-system/css';
 
 /** Gold stars outlined in navy, a little apart. */
 const stars = css({
-  color: 'gold',
-  WebkitTextStroke: '[1px {colors.navy}]',
+  color: 'star',
+  WebkitTextStroke: '[1px {colors.outline}]',
   paintOrder: 'stroke fill',
   letterSpacing: '[1px]',
 });

@@ -20,7 +20,7 @@ import { IconText, Line } from './common/Icon';
  * A house call's panel, in blue; it takes the look of an offer from the column it is in (EmergencyOffer.tsx). `call` is
  * for the end-to-end tests to find it by.
  */
-const callColor = css({ borderColor: 'blue' });
+const callColor = css({ borderColor: 'notice.housecall' });
 
 /** Who could go, a button each, one under another. */
 const whoList = css({ display: 'flex', flexDirection: 'column', gap: '4', mt: '8' });

@@ -13,7 +13,12 @@ import { Button } from './common/Button';
 import { IconText } from './common/Icon';
 
 /** The explanation: a panel in red, popping in, its words to the left. */
-const card = css({ position: 'relative', borderColor: 'red', textAlign: 'left', animation: 'pop 0.2s ease-out' });
+const card = css({
+  position: 'relative',
+  borderColor: 'notice.harm',
+  textAlign: 'left',
+  animation: 'pop 0.2s ease-out',
+});
 
 /** Its heading, smaller than a panel's. */
 const heading = css({ fontSize: '15' });
@@ -28,7 +33,7 @@ const causes = css({
   px: '8',
   my: '8',
   mx: '0',
-  bg: 'ink.6',
+  bg: 'bg.subtle',
   borderRadius: '8',
   fontSize: '13',
   '& li': { display: 'flex', justifyContent: 'space-between', gap: '10', py: '[1px]', px: '0' },

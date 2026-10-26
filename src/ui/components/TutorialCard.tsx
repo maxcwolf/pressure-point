@@ -26,7 +26,7 @@ const skip = css({
   p: '0',
   bg: '[none]',
   fontSize: '12',
-  color: 'navy',
+  color: 'fg',
   opacity: '[0.6]',
   textDecoration: 'underline',
   _hover: { opacity: '[1]' },
@@ -38,15 +38,15 @@ const title = css({ display: 'block', fontSize: '15', mb: '2' });
 /** Show me: a teal button that lifts under the pointer. */
 const show = css({
   mt: '8',
-  border: '[2.5px solid {colors.navy}]',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '12',
   py: '4',
   px: '14',
   fontWeight: 'bold',
   fontSize: '14',
-  bg: 'teal',
-  color: 'white',
-  boxShadow: '[0 3px 0 {colors.ink.30}]',
+  bg: 'accent',
+  color: 'fg.on-accent',
+  boxShadow: '[0 3px 0 {colors.shadow}]',
   _hover: { filter: '[brightness(1.06)]', transform: '[translateY(-1px)]' },
 });
 

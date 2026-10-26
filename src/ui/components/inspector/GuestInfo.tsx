@@ -48,8 +48,8 @@ const feelings = css({
   gap: '4',
   mb: '4',
   '& > span': { fontSize: '12', borderRadius: '8', py: '0', px: '6', border: '[1.5px solid]' },
-  '& .good': { bg: 'green-tint', borderColor: '[#3fbf6f]' },
-  '& .bad': { bg: 'bad-bg', borderColor: '[#e5484d]' },
+  '& .good': { bg: 'good.subtle', borderColor: 'good.solid' },
+  '& .bad': { bg: 'bad.bg', borderColor: 'bad.solid' },
 });
 
 /** The chance a diagnosed guest's treatment works, if given now, or what it is waiting on. */

@@ -26,7 +26,7 @@ const nameBox = css({
   mx: '[-6px]',
   w: '[calc(100% + 8px)]',
   bg: 'transparent',
-  '&:hover, &:focus': { borderColor: 'teal', bg: 'teal-tint', outline: '[none]' },
+  '&:hover, &:focus': { borderColor: 'accent', bg: 'bg.hover', outline: '[none]' },
 });
 
 /** The rooms on a plot, a button for each, wrapping. */

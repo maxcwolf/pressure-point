@@ -55,10 +55,10 @@ const stop = css({
     left: '[17px]',
     top: '[34px]',
     bottom: '[0]',
-    borderLeft: '[3px dashed {colors.ink.35}]',
+    borderLeft: '[3px dashed {colors.border.strong}]',
   },
   // the pin and the card keep their class names for this
-  _locked: { '& .about': { opacity: '[0.6]' }, '& .pin': { bg: '[#8a929c]' } },
+  _locked: { '& .about': { opacity: '[0.6]' }, '& .pin': { bg: 'title.off' } },
 });
 
 /** A center's pin on the trail, with its number on it, or a lock. */
@@ -68,14 +68,14 @@ const pin = css({
   borderRadius: 'disc',
   display: 'grid',
   placeItems: 'center',
-  bg: 'teal',
-  border: '[3px solid {colors.navy}]',
-  color: 'white',
+  bg: 'accent',
+  border: '[3px solid {colors.outline}]',
+  color: 'fg.on-accent',
   fontWeight: '[700]',
 });
 
 /** A center's card. */
-const about = css({ bg: 'white', border: 'card', borderRadius: '12', py: '8', px: '10' });
+const about = css({ bg: 'bg.card', border: 'card', borderRadius: '12', py: '8', px: '10' });
 
 /** A center's name. */
 const centerName = css({ fontSize: '15' });
@@ -83,10 +83,10 @@ const centerName = css({ fontSize: '15' });
 /** The stars earned in a center and to come, beside its name: gold, outlined in navy. */
 const stars = css({
   ml: '8',
-  color: 'gold',
+  color: 'star',
   fontSize: '24',
   letterSpacing: '[2px]',
-  WebkitTextStroke: '[1.5px {colors.navy}]',
+  WebkitTextStroke: '[1.5px {colors.outline}]',
   paintOrder: 'stroke fill',
 });
 
@@ -117,7 +117,7 @@ const card = css.raw({
   gridTemplateColumns: '[30px 1fr auto]',
   alignItems: 'center',
   gap: '10',
-  bg: 'white',
+  bg: 'bg.card',
   border: 'card',
   borderRadius: '12',
   py: '6',
@@ -126,10 +126,10 @@ const card = css.raw({
 });
 
 /** Something in the shop, Unlocked in green once it is. */
-const shopCard = css(card, { '&.owned em': { color: 'green' } });
+const shopCard = css(card, { '&.owned em': { color: 'good.solid' } });
 
 /** An achievement, faded until it is earned, and then ticked in green. */
-const featCard = css(card, { '&:not(.done)': { opacity: '[0.7]' }, '&.done em': { color: 'green' } });
+const featCard = css(card, { '&:not(.done)': { opacity: '[0.7]' }, '&.done em': { color: 'good.solid' } });
 
 /** A name on a card. */
 const cardName = css({ display: 'block', fontSize: '15' });

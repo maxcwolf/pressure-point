@@ -34,15 +34,15 @@ const row = css({
   rowGap: '2',
   columnGap: '8',
   textAlign: 'left',
-  bg: 'white',
-  border: '[2px solid {colors.ink.35}]',
+  bg: 'bg.card',
+  border: '[2px solid {colors.border.strong}]',
   borderRadius: '10',
   py: '6',
   px: '8',
   mb: '4',
   fontSize: '13',
   '&:not(.head)': { cursor: 'pointer' },
-  _hover: { borderColor: 'teal-dark', bg: 'teal-tint' },
+  _hover: { borderColor: 'accent.strong', bg: 'bg.hover' },
   '& b': { fontWeight: 'bold' },
   '& .meters': { position: 'relative', zIndex: '[1]', display: 'grid', rowGap: '2' },
   '& .quals > span': { position: 'relative', zIndex: '[1]' },
@@ -77,7 +77,7 @@ const pick = css({
 });
 
 /** The energy in the headings, in the purple of its bar. */
-const energyKey = css({ color: '[#6f55b8]' });
+const energyKey = css({ color: 'special' });
 
 /** Morale in the headings: green while it is fine, amber as it sags and red when low, like the bar in the inspector. */
 const moraleKey = css({ color: 'good' });
@@ -89,14 +89,14 @@ const moraleKey = css({ color: 'good' });
 const act = css({
   border: 'control',
   borderRadius: '10',
-  bg: 'cream',
+  bg: 'control',
   fontSize: '12',
   fontWeight: 'bold',
   py: '[1px]',
   px: '8',
   whiteSpace: 'nowrap',
   justifySelf: 'end',
-  '&.go': { bg: 'gold', color: 'navy', boxShadow: '[none]', mt: '0' },
+  '&.go': { bg: 'highlight', color: 'fg', boxShadow: '[none]', mt: '0' },
   _hover: { filter: '[brightness(1.06)]', transform: 'none' },
 });
 

@@ -50,8 +50,8 @@ const messages = css({ display: 'flex', flexDirection: 'column', gap: '8' });
 
 /** A card: cream, with a thick edge down its left in its color, sliding in, and fading once it is on its way out. */
 const card = css.raw({
-  bg: 'cream',
-  border: '[3px solid {colors.navy}]',
+  bg: 'bg.panel',
+  border: '[3px solid {colors.outline}]',
   borderLeftWidth: '[10px]',
   borderRadius: '12',
   py: '8',
@@ -67,7 +67,7 @@ const card = css.raw({
  * click to it: it lifts a little under the pointer, and ends with an arrow.
  */
 const requestCard = css(card, {
-  borderLeftColor: 'gold',
+  borderLeftColor: 'highlight',
   animation: 'none',
   pointerEvents: 'auto',
   textAlign: 'left',
@@ -88,9 +88,9 @@ const message = css(card, {
   pl: '0',
   pr: '4',
   pointerEvents: 'auto',
-  '&.good': { borderLeftColor: 'green' },
-  '&.bad': { borderLeftColor: 'red' },
-  '&.info': { borderLeftColor: 'blue' },
+  '&.good': { borderLeftColor: 'good.solid' },
+  '&.bad': { borderLeftColor: 'bad.solid' },
+  '&.info': { borderLeftColor: 'info.solid' },
   '&.out': { opacity: '[0]' },
 });
 
@@ -102,7 +102,7 @@ const requestList = css({
   py: '6',
   px: '4',
   listStyle: 'none',
-  bg: 'cream',
+  bg: 'bg.panel',
   border: 'control',
   borderTop: '[none]',
   borderRadius: '[0 0 10px 10px]',
@@ -121,7 +121,7 @@ const requestName = css({
   textAlign: 'left',
   fontSize: '14',
   fontWeight: 'bold',
-  _hover: { bg: 'sand' },
+  _hover: { bg: 'bg.inset' },
 });
 
 /** A message's words, taking the room beside its close button. */
@@ -144,7 +144,7 @@ const countTag = css({
   py: '0',
   px: '6',
   borderRadius: '8',
-  bg: 'ink.10',
+  bg: 'bg.muted',
   fontSize: '12',
   fontWeight: 'bold',
   whiteSpace: 'nowrap',
@@ -161,7 +161,7 @@ const close = css({
   bg: '[none]',
   fontSize: '12',
   opacity: '[0.45]',
-  _hover: { opacity: '[1]', bg: 'ink.10' },
+  _hover: { opacity: '[1]', bg: 'bg.muted' },
 });
 
 /** The messages past the first few: a pile of cards, the next ones down peeking out under its face in their colors. */
@@ -174,13 +174,13 @@ const pile = css({ position: 'relative', flex: 'none', mb: '14', '&.open': { mb:
 const sheet = css({
   position: 'absolute',
   inset: '[7px 6px -7px]',
-  bg: 'sand',
-  border: '[3px solid {colors.navy}]',
+  bg: 'bg.inset',
+  border: '[3px solid {colors.outline}]',
   borderRadius: '12',
   '&.deep': { inset: '[14px 12px -14px]', boxShadow: 'raised' },
-  '&.good': { bg: 'green' },
-  '&.bad': { bg: 'red' },
-  '&.info': { bg: 'blue' },
+  '&.good': { bg: 'good.solid' },
+  '&.bad': { bg: 'bad.solid' },
+  '&.info': { bg: 'info.solid' },
 });
 
 /**

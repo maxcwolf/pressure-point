@@ -18,9 +18,9 @@ export const globalCss = defineGlobalStyles({
     margin: '0',
     height: '100%',
     overflow: 'hidden',
-    background: '#8cc98a',
+    background: '{colors.bg.canvas}',
     fontFamily: 'body',
-    color: 'navy',
+    color: 'fg',
     userSelect: 'none',
     WebkitUserSelect: 'none',
   },
@@ -40,9 +40,9 @@ export const globalCss = defineGlobalStyles({
   // smaller, fainter words under a heading or a setting
   '.sub': { fontSize: '13', opacity: '0.72', marginTop: '6px' },
   // money or a change that is good news, and one that is bad
-  '.pos': { color: 'green-dark' },
-  '.neg': { color: 'red' },
+  '.pos': { color: 'good.strong' },
+  '.neg': { color: 'bad.solid' },
   // a short highlighted amount: enough, or short
-  'em.ok': { background: '{colors.good-bg} !important', color: 'good' },
-  'em.warn': { background: '{colors.bad-bg} !important', color: 'bad' },
+  'em.ok': { background: '{colors.good.bg} !important', color: 'good' },
+  'em.warn': { background: '{colors.bad.bg} !important', color: 'bad' },
 });

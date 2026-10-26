@@ -29,9 +29,9 @@ const day = css({
   px: '0',
   fontWeight: 'bold',
   fontSize: '12',
-  bg: 'cream',
-  boxShadow: '[0 2px 0 {colors.ink.30}]',
-  _on: { bg: 'gold' },
+  bg: 'control',
+  boxShadow: '[0 2px 0 {colors.shadow}]',
+  _on: { bg: 'toggle.on' },
 });
 
 /**

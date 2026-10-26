@@ -24,8 +24,8 @@ const advisor = css({
   gap: '8',
   // a speech bubble, its corner by the face cut small
   '& .note': {
-    bg: 'cream',
-    border: '[3px solid {colors.navy}]',
+    bg: 'bg.panel',
+    border: '[3px solid {colors.outline}]',
     borderRadius: '[16px 16px 16px 4px]',
     py: '8',
     px: '12',
@@ -35,7 +35,7 @@ const advisor = css({
     textAlign: 'left',
   },
   // a note about something going wrong now: a red edge down its left
-  '& .note.alarm': { borderLeft: '[8px solid {colors.red}]' },
+  '& .note.alarm': { borderLeft: '[8px solid {colors.bad.solid}]' },
   // what kind of note it is, or which step of the tutorial, in small teal capitals over it
   '& .kicker': {
     display: 'block',
@@ -43,7 +43,7 @@ const advisor = css({
     fontWeight: 'bold',
     letterSpacing: '[0.06em]',
     textTransform: 'uppercase',
-    color: 'teal-dark',
+    color: 'fg.accent',
     mb: '2',
   },
 });
@@ -54,8 +54,8 @@ const face = css({
   h: '[50px]',
   flex: 'none',
   borderRadius: 'disc',
-  bg: 'gold',
-  border: '[3px solid {colors.navy}]',
+  bg: 'highlight',
+  border: '[3px solid {colors.outline}]',
   display: 'grid',
   placeItems: 'center',
   boxShadow: 'raised',

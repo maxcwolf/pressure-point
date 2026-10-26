@@ -50,8 +50,8 @@ export const cards = css(cardsLook);
 export const cardLook = css.raw({
   position: 'relative',
   textAlign: 'left',
-  bg: 'white',
-  border: '[2.5px solid {colors.navy}]',
+  bg: 'bg.card',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '14',
   py: '8',
   px: '10',
@@ -59,14 +59,14 @@ export const cardLook = css.raw({
   flexDirection: 'column',
   gap: '2',
   transition: '[transform 0.08s]',
-  '&:is(button):hover': { transform: 'translateY(-3px)', bg: 'teal-tint', borderColor: 'teal-dark' },
+  '&:is(button):hover': { transform: 'translateY(-3px)', bg: 'bg.hover', borderColor: 'accent.strong' },
   '& > .icon': { mb: '2' },
   '& b': { fontSize: '15', fontWeight: 'bold' },
   '& p': { fontSize: '12', lineHeight: '[1.25]', opacity: '[0.8]' },
   '& em': {
     fontStyle: 'normal',
     fontSize: '12',
-    bg: 'sand',
+    bg: 'bg.inset',
     borderRadius: '8',
     py: '2',
     px: '6',
@@ -75,15 +75,15 @@ export const cardLook = css.raw({
   },
   '& em.none': { opacity: '[0.6]' },
   // an applicant's quirk: green where it helps, red where it costs
-  '& em.good': { bg: 'good-bg', color: 'good' },
-  '& em.bad': { bg: 'bad-bg', color: 'bad' },
+  '& em.good': { bg: 'good.bg', color: 'good' },
+  '& em.bad': { bg: 'bad.bg', color: 'bad' },
   // how much more an item needs before it can be bought
-  '& em.short': { bg: 'bad-bg', color: 'bad', fontWeight: 'bold' },
+  '& em.short': { bg: 'bad.bg', color: 'bad', fontWeight: 'bold' },
   '& .cost': {
     position: 'absolute',
     top: '8',
     right: '[9px]',
-    bg: 'gold',
+    bg: 'highlight',
     border: 'control',
     borderRadius: '8',
     py: '0',
@@ -92,7 +92,7 @@ export const cardLook = css.raw({
     fontWeight: 'bold',
   },
   '&.poor': { opacity: '[0.6]', cursor: 'not-allowed' },
-  '&.poor .cost': { bg: '[#f3b1ac]' },
+  '&.poor .cost': { bg: 'bad.light' },
   _locked: { opacity: '[0.5]', filter: '[grayscale(0.6)]', cursor: 'not-allowed' },
   // short of money rather than locked: the red of the price and the shortfall stay to see
   '&.poor.locked': { opacity: '[0.6]', filter: 'none' },
@@ -109,7 +109,7 @@ export const card = css(cardLook);
  * buttons do.
  */
 export const ledgerLook = css.raw({
-  bg: 'white',
+  bg: 'bg.card',
   border: 'card',
   borderRadius: '12',
   py: '8',
@@ -118,7 +118,7 @@ export const ledgerLook = css.raw({
   '& h4': { fontWeight: 'bold', mb: '4' },
   '& div': { display: 'flex', py: '[1.5px]', px: '0' },
   '& div:not(.btnrow)': { justifyContent: 'space-between' },
-  '& .total': { borderTop: '[2px solid {colors.ink.20}]', mt: '4', pt: '4', fontWeight: 'bold' },
+  '& .total': { borderTop: '[2px solid {colors.border}]', mt: '4', pt: '4', fontWeight: 'bold' },
 });
 
 /** One of the Money menu's white cards. */
@@ -134,8 +134,8 @@ export const chartLook = css.raw({
   gap: '4',
   h: '[60px]',
   mt: '12',
-  '& i': { flex: '1', maxW: '[34px]', bg: 'green', borderRadius: '[5px 5px 0 0]' },
-  '& i.neg': { bg: 'red' },
+  '& i': { flex: '1', maxW: '[34px]', bg: 'good.solid', borderRadius: '[5px 5px 0 0]' },
+  '& i.neg': { bg: 'bad.solid' },
 });
 
 /** A bar chart. */
@@ -161,9 +161,9 @@ export const tableLook = css.raw({
     fontSize: '12',
     py: '4',
     px: '6',
-    borderBottom: '[2px solid {colors.ink.20}]',
+    borderBottom: '[2px solid {colors.border}]',
   },
-  '& td': { textAlign: 'right', py: '2', px: '6', borderBottom: '[1px solid {colors.ink.10}]' },
+  '& td': { textAlign: 'right', py: '2', px: '6', borderBottom: '[1px solid {colors.border.faint}]' },
   '& :is(th, td):first-child': { textAlign: 'left' },
   '& .poor': { color: 'bad', fontWeight: 'bold' },
 });

@@ -48,7 +48,7 @@ const vibes = css({
   py: '6',
   px: '8',
   borderRadius: '8',
-  bg: '[rgba(91, 74, 107, 0.12)]',
+  bg: 'special.wash',
   '.insp &': { '& p': { m: '0', mt: '4' } },
 });
 
@@ -57,16 +57,16 @@ const vibes = css({
  * keeping it as a template, and fitting sprinklers. Priority and fitted sprinklers are gold.
  */
 const roomButton = css({
-  border: '[2.5px solid {colors.navy}]',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '12',
   py: '4',
   px: '10',
   fontWeight: 'bold',
   fontSize: '13',
-  bg: 'cream',
-  boxShadow: '[0 3px 0 {colors.ink.30}]',
+  bg: 'control',
+  boxShadow: '[0 3px 0 {colors.shadow}]',
   mt: '6',
-  _on: { bg: 'gold' },
+  _on: { bg: 'toggle.on' },
 });
 
 /**

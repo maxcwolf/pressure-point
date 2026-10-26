@@ -21,8 +21,8 @@ const column = css({
 
 /** A cream pill ringed in teal. */
 const pill = css.raw({
-  bg: 'cream',
-  border: '[3px solid {colors.teal}]',
+  bg: 'bg.panel',
+  border: '[3px solid {colors.accent}]',
   borderRadius: '14',
   py: '6',
   px: '16',
@@ -33,7 +33,7 @@ const pill = css.raw({
 });
 
 /** The hint, ringed in red while the tool cannot be used where it is. */
-const hint = css(pill, { '&.bad': { borderColor: 'red' } });
+const hint = css(pill, { '&.bad': { borderColor: 'bad.solid' } });
 
 /** The patterns to pick from while a rug is in hand, which can be clicked though the hint cannot. */
 const rugPicker = css(pill, { mt: '6', py: '4', px: '12', pointerEvents: 'auto' });
@@ -59,13 +59,13 @@ const phrase = css({
   alignItems: 'center',
   gap: '4',
   fontSize: '13',
-  border: '[1.5px solid {colors.ink.25}]',
-  bg: 'white',
+  border: '[1.5px solid {colors.border}]',
+  bg: 'bg.card',
   borderRadius: '8',
   py: '[1px]',
   px: '8',
   '&.name': { fontSize: '15', fontWeight: 'bold', border: '[none]', bg: '[none]', p: '0', pr: '4' },
-  '&.cost': { bg: 'gold-tint', borderColor: 'gold', fontWeight: 'bold' },
+  '&.cost': { bg: 'highlight.bg', borderColor: 'highlight', fontWeight: 'bold' },
 });
 
 /** A key, drawn as a key. */
@@ -76,8 +76,8 @@ const keyCap = css({
   lineHeight: '[1.4]',
   minW: '[18px]',
   textAlign: 'center',
-  bg: 'cream',
-  border: '[1.5px solid {colors.navy}]',
+  bg: 'control',
+  border: '[1.5px solid {colors.outline}]',
   borderBottomWidth: '[3px]',
   borderRadius: '6',
   py: '0',
@@ -89,9 +89,9 @@ const square = css({
   w: '[11px]',
   h: '[11px]',
   borderRadius: '2',
-  border: '[1.5px solid {colors.ink.50}]',
-  '&.staff': { bg: '[#9b6bff]' },
-  '&.guest': { bg: '[#ff8a3c]' },
+  border: '[1.5px solid {colors.border.bold}]',
+  '&.staff': { bg: 'scene.staff' },
+  '&.guest': { bg: 'scene.guest' },
 });
 
 /**
@@ -102,7 +102,7 @@ const square = css({
 const problem = css({
   display: 'block',
   mt: '4',
-  color: 'red',
+  color: 'bad.solid',
   fontWeight: 'bold',
   '&.refused': {
     animation: 'hint-refused 0.4s ease-out',
@@ -127,13 +127,13 @@ const effectList = css({
 const effect = css({
   fontSize: '13',
   fontWeight: '[500]',
-  border: '[1.5px solid {colors.ink.35}]',
-  bg: 'white',
+  border: '[1.5px solid {colors.border.strong}]',
+  bg: 'bg.card',
   borderRadius: '8',
   py: '[1px]',
   px: '8',
-  '&.good': { bg: 'good-bg', borderColor: 'green', color: 'good' },
-  '&.bad': { bg: 'bad-bg', borderColor: 'red', color: 'bad' },
+  '&.good': { bg: 'good.bg', borderColor: 'good.solid', color: 'good' },
+  '&.bad': { bg: 'bad.bg', borderColor: 'bad.solid', color: 'bad' },
 });
 
 /** One phrase of the hint as a chip: the name with the icon of the tool in hand, a key as a key, a square's color. */

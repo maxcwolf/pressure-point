@@ -43,7 +43,7 @@ const nameInput = css({
   font: 'inherit',
   fontSize: '15',
   fontWeight: 'bold',
-  color: 'navy',
+  color: 'fg',
   border: '[2px solid transparent]',
   borderRadius: '8',
   py: '[1px]',
@@ -52,7 +52,7 @@ const nameInput = css({
   mx: '[-6px]',
   w: '[calc(100% + 8px)]',
   bg: '[transparent]',
-  '&:is(:hover, :focus)': { borderColor: 'teal', bg: 'teal-tint', outline: '[none]' },
+  '&:is(:hover, :focus)': { borderColor: 'accent', bg: 'bg.hover', outline: '[none]' },
 });
 
 /**
@@ -71,11 +71,11 @@ const actions = css({
     px: '8',
     fontSize: '13',
     fontWeight: 'bold',
-    bg: 'white',
+    bg: 'bg.card',
   },
-  '& button:not(.build, .delete):hover': { bg: 'teal-tint' },
-  '& button.build': { bg: 'green', color: 'white' },
-  '& button.delete': { ml: 'auto', bg: 'bad-bg', color: 'bad' },
+  '& button:not(.build, .delete):hover': { bg: 'bg.hover' },
+  '& button.build': { bg: 'go', color: 'fg.on-accent' },
+  '& button.delete': { ml: 'auto', bg: 'bad.bg', color: 'bad' },
   '& button.locked': { opacity: '[0.5]', cursor: 'not-allowed' },
 });
 

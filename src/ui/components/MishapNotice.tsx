@@ -16,7 +16,7 @@ import { IconText } from './common/Icon';
  * A mishap's panel, in amber, tinted while it is under way; it takes the look of an offer from the column it is in
  * (EmergencyOffer.tsx). `mishap` and `mishap-pill` are for the end-to-end tests to find them by.
  */
-const mishapColor = css({ borderColor: '[#d08a2c]', _on: { bg: 'gold-tint' } });
+const mishapColor = css({ borderColor: 'notice.mishap', _on: { bg: 'highlight.bg' } });
 
 /** The mishap coming or under way: in full with Prepare while undecided, otherwise a line with its countdown. */
 export function MishapNotice() {

@@ -25,7 +25,7 @@ const heading = css({ display: 'flex', alignItems: 'center', justifyContent: 'sp
 
 /** What it will cost, on a gold tag. */
 const costTag = css({
-  bg: 'gold',
+  bg: 'highlight',
   border: 'control',
   borderRadius: '8',
   py: '0',
@@ -48,9 +48,9 @@ const chip = css({
   borderRadius: 'pill',
   py: '2',
   px: '10',
-  bg: 'white',
-  '&.done': { bg: 'good-bg', color: 'good', borderColor: 'good' },
-  _on: { bg: 'orange', color: 'white' },
+  bg: 'bg.card',
+  '&.done': { bg: 'good.bg', color: 'good', borderColor: 'good' },
+  _on: { bg: 'active', color: 'fg.on-accent' },
 });
 
 /** A chip that can be pressed lifts a little under the pointer. */

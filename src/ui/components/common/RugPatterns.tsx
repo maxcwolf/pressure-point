@@ -22,11 +22,11 @@ const swatch = css({
   w: 'control',
   h: 'control',
   p: '2',
-  border: '[2px solid {colors.ink.35}]',
+  border: '[2px solid {colors.border.strong}]',
   borderRadius: '8',
-  bg: 'white',
+  bg: 'bg.card',
   '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },
-  _on: { borderColor: 'teal-dark', boxShadow: '[0 0 0 2px {colors.teal}]' },
+  _on: { borderColor: 'accent.strong', boxShadow: '[0 0 0 2px {colors.accent}]' },
 });
 
 /** The rug patterns to pick from, the current one picked out and named. */

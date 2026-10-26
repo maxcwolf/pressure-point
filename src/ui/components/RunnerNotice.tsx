@@ -20,7 +20,7 @@ const pill = css({
   display: 'block',
   my: '0',
   mx: '[auto]',
-  borderColor: '[#c2457a]',
+  borderColor: 'notice.runner',
   p: '12',
   pt: '6',
   pb: '8',

@@ -29,7 +29,7 @@ const cv = css(cardLook, {
   '& .reject': {
     border: 'control',
     borderRadius: '10',
-    bg: 'white',
+    bg: 'bg.card',
     fontSize: '12',
     fontWeight: 'bold',
     py: '0',

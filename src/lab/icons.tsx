@@ -75,7 +75,7 @@ const plainInGame = (id: SceneIconId) => !id.startsWith('bubble-');
 /** The page: every icon by family in cards, then the scene with every icon it draws, in the game's font on cream. */
 const page = css({
   '&, & *': { boxSizing: 'border-box' },
-  '& body': { m: '0', p: '[16px 16px 0]', bg: 'cream', fontFamily: 'body', color: 'navy' },
+  '& body': { m: '0', p: '[16px 16px 0]', bg: 'bg.panel', fontFamily: 'body', color: 'fg' },
 });
 
 /** The heading over the sheet: the page's name, what is on it, and the way to the model lab, wrapping as it must. */
@@ -88,7 +88,7 @@ const title = css({ m: '0', fontSize: '[24px]', fontWeight: 'bold' });
 const intro = css({ m: '0', flex: '1', fontSize: '[13px]', opacity: '[0.8]' });
 
 /** The way to the model lab. */
-const link = css({ color: 'teal-dark', fontWeight: 'bold' });
+const link = css({ color: 'fg.accent', fontWeight: 'bold' });
 
 /** A heading over a family of icons, or over the scene. */
 const heading = css({ m: '[18px 0 8px]', fontSize: '[16px]', fontWeight: 'bold' });
@@ -100,7 +100,7 @@ const headingNote = css({ fontWeight: '[400]', fontSize: '13', opacity: '[0.7]',
 const cards = css({ display: 'flex', flexWrap: 'wrap', gap: '6' });
 
 /** One card, on sand. */
-const card = css({ m: '0', p: '[6px 8px 4px]', borderRadius: '[10px]', bg: 'sand' });
+const card = css({ m: '0', p: '[6px 8px 4px]', borderRadius: '[10px]', bg: 'bg.inset' });
 
 /** A card's icons in a row, at each size. */
 const sizes = css({ display: 'flex', alignItems: 'center', gap: '8' });
@@ -110,7 +110,7 @@ const onRow = css({
   display: 'inline-grid',
   placeItems: 'center',
   p: '[3px]',
-  bg: 'white',
+  bg: 'bg.card',
   border: 'card',
   borderRadius: '[8px]',
 });
@@ -122,8 +122,8 @@ const onButton = css({
   w: '[44px]',
   h: '[44px]',
   borderRadius: '[50%]',
-  border: '[3px solid {colors.navy}]',
-  bg: 'teal',
+  border: '[3px solid {colors.outline}]',
+  bg: 'accent',
 });
 
 /** The icon's id, under its card's icons. */
@@ -153,9 +153,9 @@ const controls = css({
   alignItems: 'center',
   flexWrap: 'wrap',
   p: '[8px 12px]',
-  border: '[3px solid {colors.navy}]',
+  border: '[3px solid {colors.outline}]',
   borderRadius: '[14px]',
-  bg: 'cream',
+  bg: 'bg.panel',
   fontSize: '[13px]',
   '& label': { display: 'flex', gap: '6', alignItems: 'center', fontWeight: 'bold' },
   '& select': { font: 'inherit', fontWeight: '[400]' },

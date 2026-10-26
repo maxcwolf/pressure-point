@@ -19,7 +19,7 @@ const keyList = css({
     font: 'inherit',
     fontSize: '12',
     fontWeight: 'bold',
-    bg: 'white',
+    bg: 'bg.card',
     border: 'control',
     borderBottomWidth: '[3.5px]',
     borderRadius: '6',

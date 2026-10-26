@@ -22,9 +22,9 @@ const intro = css({ fontSize: '15 !important' });
 const field = css.raw({
   font: 'inherit',
   fontSize: '15',
-  color: 'navy',
-  bg: 'white',
-  border: '[2.5px solid {colors.navy}]',
+  color: 'fg',
+  bg: 'bg.card',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '12',
   py: '6',
   px: '12',
@@ -41,28 +41,28 @@ const emailBox = css(field);
 const button = css({
   pointerEvents: 'auto',
   alignSelf: 'center',
-  border: '[2.5px solid {colors.navy}]',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '12',
   py: '6',
   px: '16',
   fontSize: '15',
   fontWeight: 'bold',
-  bg: 'cream',
-  color: 'navy',
-  boxShadow: '[0 2px 0 {colors.ink.25}]',
-  '&.go': { bg: 'green', color: 'white' },
+  bg: 'control',
+  color: 'fg',
+  boxShadow: '[0 2px 0 {colors.shadow}]',
+  '&.go': { bg: 'go', color: 'fg.on-accent' },
   _disabled: { opacity: '[0.55]', cursor: 'default' },
 });
 
 /** Thanks once it has gone, in green, or why it did not, in red. */
 const noteLook = css({
   fontSize: '14 !important',
-  bg: 'good-bg',
+  bg: 'good.bg',
   color: 'good',
   borderRadius: '10',
   py: '6',
   px: '10',
-  '&.bad': { bg: 'bad-bg', color: 'bad' },
+  '&.bad': { bg: 'bad.bg', color: 'bad' },
 });
 
 /** What goes with it, in small print under the button. */

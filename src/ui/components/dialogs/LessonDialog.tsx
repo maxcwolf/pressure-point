@@ -19,7 +19,7 @@ const kicker = css({
   fontWeight: 'bold',
   letterSpacing: '[0.06em]',
   textTransform: 'uppercase',
-  color: 'teal-dark',
+  color: 'fg.accent',
   mb: '2',
 });
 
@@ -42,8 +42,8 @@ const strip = css({
     gap: '4',
     py: '10',
     px: '8',
-    bg: 'white',
-    border: '[2px solid {colors.ink.25}]',
+    bg: 'bg.card',
+    border: '[2px solid {colors.border}]',
     borderRadius: '12',
   },
   '& b': { fontSize: '14' },
@@ -57,8 +57,8 @@ const picture = css({
   display: 'grid',
   placeItems: 'center',
   borderRadius: 'disc',
-  bg: 'cream',
-  border: '[2.5px solid {colors.navy}]',
+  bg: 'bg.panel',
+  border: '[2.5px solid {colors.outline}]',
 });
 
 /** The lesson raised last. */

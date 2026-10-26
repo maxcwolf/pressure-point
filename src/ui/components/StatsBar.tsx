@@ -37,8 +37,8 @@ const bar = css({
   display: 'flex',
   alignItems: 'stretch',
   gap: '0',
-  bg: 'cream',
-  border: '[3px solid {colors.navy}]',
+  bg: 'bg.panel',
+  border: '[3px solid {colors.outline}]',
   borderRadius: '18',
   boxShadow: 'raised',
   overflow: 'hidden',
@@ -58,7 +58,7 @@ const cell = css.raw({
   alignItems: 'center',
   py: '8',
   px: '12',
-  borderRight: '[2px solid {colors.ink.16}]',
+  borderRight: '[2px solid {colors.border}]',
   minW: '[96px]',
   '& > .icon': { gridRow: '[span 2]' },
   '& b': { fontSize: '17', fontWeight: 'bold', lineHeight: '[1.1]', fontVariantNumeric: 'tabular-nums' },
@@ -71,7 +71,7 @@ const cell = css.raw({
 const plainCell = css(cell);
 
 /** The bank balance, given more room, its number red while it is below zero. */
-const moneyCell = css(cell, { minW: '[150px]', '&.neg b': { color: 'red' }, _max1100: { minW: '[0]' } });
+const moneyCell = css(cell, { minW: '[150px]', '&.neg b': { color: 'bad.solid' }, _max1100: { minW: '[0]' } });
 
 /**
  * The reputation, a button to what it is made of: a cell like the others, tinted under the pointer. `rep` is for the
@@ -80,12 +80,12 @@ const moneyCell = css(cell, { minW: '[150px]', '&.neg b': { color: 'red' }, _max
 const repCell = css(cell, {
   bg: '[none]',
   border: '[none]',
-  borderRight: '[2px solid {colors.ink.16}]',
+  borderRight: '[2px solid {colors.border}]',
   borderRadius: '[0]',
   textAlign: 'left',
   font: 'inherit',
   color: 'inherit',
-  _hover: { bg: '[#f6eedc]' },
+  _hover: { bg: 'control.hover' },
 });
 
 /**
@@ -103,13 +103,13 @@ const when = css({ _max1430: { display: 'none' } });
 const temp = css({
   ml: '8',
   fontSize: '15',
-  color: 'navy',
-  '&.heat': { fontWeight: '[700]', color: '[#2f6fae]' },
-  '&.cool': { fontWeight: '[700]', color: 'red' },
+  color: 'fg',
+  '&.heat': { fontWeight: '[700]', color: 'info' },
+  '&.cool': { fontWeight: '[700]', color: 'bad.solid' },
 });
 
 /** A rush or the snow, in bold red. */
-const rush = css({ fontStyle: 'normal', fontWeight: '[700]', color: 'red' });
+const rush = css({ fontStyle: 'normal', fontWeight: '[700]', color: 'bad.solid' });
 
 /** The speed buttons, on a sand ground at the right. */
 const speeds = css({
@@ -118,14 +118,14 @@ const speeds = css({
   gap: '4',
   py: '0',
   px: '10',
-  bg: 'sand',
+  bg: 'bg.inset',
   _max1100: { px: '6' },
 });
 
 /** A speed button, orange while it is the speed. `speed` is for the end-to-end tests to find them by. */
 const speed = css({
-  border: '[2.5px solid {colors.navy}]',
-  bg: 'cream',
+  border: '[2.5px solid {colors.outline}]',
+  bg: 'control',
   borderRadius: '10',
   h: '[36px]',
   minW: '[36px]',
@@ -133,7 +133,7 @@ const speed = css({
   px: '6',
   fontSize: '11',
   letterSpacing: '[-2px]',
-  _on: { bg: 'orange', color: 'white' },
+  _on: { bg: 'active', color: 'fg.on-accent' },
 });
 
 /** The center's vital signs and the speed controls. */

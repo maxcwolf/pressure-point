@@ -11,17 +11,17 @@ import { meterValue } from '../../lib/meters';
 const bar = css({
   h: '[10px]',
   borderRadius: '6',
-  bg: 'ink.16',
+  bg: 'meter.track',
   overflow: 'hidden',
   mt: '2',
-  '& i': { display: 'block', h: '[100%]', borderRadius: '6', bg: 'green', transition: '[width 0.3s]' },
+  '& i': { display: 'block', h: '[100%]', borderRadius: '6', bg: 'good.solid', transition: '[width 0.3s]' },
   '&.thin': { h: '[6px]' },
-  '&.good i': { bg: 'green' },
-  '&:is(.gold, .warn) i': { bg: 'gold' },
-  '&.blue i': { bg: 'blue' },
-  '&.bad i': { bg: 'red' },
-  '&.need i': { bg: 'orange' },
-  '&.energy i': { bg: 'violet' },
+  '&.good i': { bg: 'good.solid' },
+  '&:is(.gold, .warn) i': { bg: 'highlight' },
+  '&.blue i': { bg: 'info.solid' },
+  '&.bad i': { bg: 'bad.solid' },
+  '&.need i': { bg: 'warm.solid' },
+  '&.energy i': { bg: 'special.solid' },
 });
 
 /** A bar with its value beside it, the numbers lined up down the panel. */

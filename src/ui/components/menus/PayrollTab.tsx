@@ -26,9 +26,9 @@ import { ledgerCard, ledgerLook, ledgers } from './looks';
 const verdict = css(ledgerLook, {
   mb: '12',
   '& h4': { mb: '0' },
-  '&.ok': { borderColor: 'green-dark', bg: 'green-tint' },
-  '&.warn': { borderColor: 'gold', bg: 'gold-tint' },
-  '&.bad': { borderColor: 'red', bg: 'bad-bg' },
+  '&.ok': { borderColor: 'good.strong', bg: 'good.subtle' },
+  '&.warn': { borderColor: 'highlight', bg: 'highlight.bg' },
+  '&.bad': { borderColor: 'bad.solid', bg: 'bad.bg' },
 });
 
 /** A figure in the payroll table, red when it is money going out or a shortfall. */

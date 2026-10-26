@@ -52,7 +52,7 @@ const SETTLE_FRAMES = 20;
  */
 const pageStyle = css({
   '&, & *': { boxSizing: 'border-box' },
-  '&, & body': { m: '0', h: '[100%]', overflow: 'hidden', bg: 'cream', fontFamily: 'body', color: 'navy' },
+  '&, & body': { m: '0', h: '[100%]', overflow: 'hidden', bg: 'bg.panel', fontFamily: 'body', color: 'fg' },
   '& body': {
     display: 'grid',
     gridTemplateColumns: '[260px 1fr]',
@@ -66,7 +66,7 @@ const sidebarStyle = css({
   flexDirection: 'column',
   minH: '[0]',
   borderRight: '[2px solid rgba(36, 56, 74, 0.12)]',
-  bg: 'sand',
+  bg: 'bg.inset',
   _max760: { borderRight: '[0]', borderBottom: '[2px solid rgba(36, 56, 74, 0.12)]' },
 });
 
@@ -81,8 +81,8 @@ const searchStyle = css({
   p: '[8px 12px]',
   border: '[2px solid rgba(36, 56, 74, 0.18)]',
   borderRadius: '[10px]',
-  bg: 'white',
-  _focusVisible: { outline: '[2px solid {colors.teal}]', outlineOffset: '[1px]' },
+  bg: 'bg.card',
+  _focusVisible: { outline: '[2px solid {colors.accent}]', outlineOffset: '[1px]' },
 });
 
 /** The list of models, scrolling on its own, with a small heading over each group. */
@@ -114,7 +114,7 @@ const entryStyle = css({
   cursor: 'pointer',
   // shaded under the pointer, all but the one on show, which stays teal (Panda would put `_hover` after `_on`)
   '&:not(.on):hover': { bg: '[rgba(36, 56, 74, 0.07)]' },
-  _on: { bg: 'teal', color: 'white' },
+  _on: { bg: 'accent', color: 'fg.on-accent' },
 });
 
 /** Words for when there is nothing to show: no model matches the search, or a model has nothing to change. */
@@ -184,8 +184,8 @@ const controlStyle = css({
   '&.range span, &.choice span': { flex: '[0 0 auto]', minW: '[64px]' },
   "& input[type='range'], & select": { flex: '1', minW: '[0]' },
   '& output': { w: 'control', textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
-  "& input[type='checkbox'], & input[type='range']": { accentColor: 'teal' },
-  '& select': { p: '[3px 6px]', border: '[2px solid rgba(36, 56, 74, 0.18)]', borderRadius: '[8px]', bg: 'white' },
+  "& input[type='checkbox'], & input[type='range']": { accentColor: 'accent' },
+  '& select': { p: '[3px 6px]', border: '[2px solid rgba(36, 56, 74, 0.18)]', borderRadius: '[8px]', bg: 'bg.card' },
   // in the page's font and color rather than the browser's
   '& input, & select': { font: 'inherit', color: 'inherit' },
 });
@@ -197,10 +197,10 @@ const buttonStyle = css({
   p: '[4px 10px]',
   border: '[2px solid rgba(36, 56, 74, 0.18)]',
   borderRadius: '[8px]',
-  bg: 'white',
+  bg: 'bg.card',
   fontSize: '[14px]',
   cursor: 'pointer',
-  _hover: { borderColor: 'teal' },
+  _hover: { borderColor: 'accent' },
 });
 
 /** How to get round the stage, under the settings. */

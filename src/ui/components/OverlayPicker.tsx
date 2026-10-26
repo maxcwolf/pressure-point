@@ -31,14 +31,14 @@ const choice = css({
   alignItems: 'center',
   gap: '6',
   textAlign: 'left',
-  bg: 'white',
+  bg: 'bg.card',
   border: 'card',
   borderRadius: '10',
   py: '4',
   px: '8',
   fontWeight: 'bold',
   fontSize: '14',
-  _on: { borderColor: 'teal-dark', bg: 'teal-wash' },
+  _on: { borderColor: 'accent.strong', bg: 'bg.selected' },
   '& i': { display: 'grid', placeItems: 'center' },
   '& small': { display: 'block', fontWeight: '[400]', fontSize: '12' },
 });
@@ -78,22 +78,22 @@ const scale = css({
     w: '[90px]',
     h: '[10px]',
     borderRadius: '4',
-    boxShadow: '[inset 0 0 0 1px {colors.ink.20}]',
-    bgColor: 'sand',
+    boxShadow: '[inset 0 0 0 1px {colors.shadow.soft}]',
+    bgColor: 'bg.inset',
   },
   '&.diverging i': {
     bgImage:
-      '[linear-gradient(90deg, {colors.overlay-bad}, {colors.overlay-fair} 25%, transparent 45%, transparent 55%, {colors.overlay-good})]',
+      '[linear-gradient(90deg, {colors.overlay.bad}, {colors.overlay.fair} 25%, transparent 45%, transparent 55%, {colors.overlay.good})]',
   },
   '&.temperature i': {
     bgImage:
-      '[linear-gradient(90deg, {colors.overlay-cold}, transparent 45%, transparent 55%, {colors.overlay-fair} 75%, {colors.overlay-bad})]',
+      '[linear-gradient(90deg, {colors.overlay.cold}, transparent 45%, transparent 55%, {colors.overlay.fair} 75%, {colors.overlay.bad})]',
   },
   '&.harm i': {
-    bgImage: '[linear-gradient(90deg, {colors.overlay-bad}, {colors.overlay-fair} 40%, transparent 85%)]',
+    bgImage: '[linear-gradient(90deg, {colors.overlay.bad}, {colors.overlay.fair} 40%, transparent 85%)]',
   },
   '&.condition i': {
-    bgImage: '[linear-gradient(90deg, {colors.overlay-bad}, {colors.overlay-fair}, {colors.overlay-good})]',
+    bgImage: '[linear-gradient(90deg, {colors.overlay.bad}, {colors.overlay.fair}, {colors.overlay.good})]',
   },
 });
 
@@ -108,7 +108,7 @@ const close = css({
   h: '[26px]',
   borderRadius: 'disc',
   border: 'control',
-  bg: 'white',
+  bg: 'bg.card',
   fontSize: '12',
   lineHeight: '[1]',
 });

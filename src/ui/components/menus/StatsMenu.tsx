@@ -33,7 +33,7 @@ const grid = css({
 
 /** One figure's card: its name, this month's figure large, and a small chart, this month's bar fainter as it is not over. */
 const statCard = css({
-  bg: 'white',
+  bg: 'bg.card',
   border: 'card',
   borderRadius: '12',
   py: '8',
@@ -57,15 +57,15 @@ const choices = css({
   mb: '4',
   '& .chip': {
     pointerEvents: 'auto',
-    border: '[2px solid {colors.ink.35}]',
+    border: '[2px solid {colors.border.strong}]',
     borderRadius: 'pill',
-    bg: 'white',
+    bg: 'bg.card',
     py: '2',
     px: '10',
     fontSize: '13',
     fontWeight: '[500]',
     _hover: { transform: 'translateY(-1px)' },
-    _on: { bg: 'teal', borderColor: 'teal-dark', color: 'white' },
+    _on: { bg: 'accent', borderColor: 'accent.strong', color: 'fg.on-accent' },
   },
 });
 
@@ -74,8 +74,8 @@ const awardList = css({
   mt: '12',
   '& ul': { listStyle: 'none', p: '0', display: 'flex', flexWrap: 'wrap', gap: '6', mb: '6' },
   '& li': {
-    bg: 'gold-tint',
-    border: '[2px solid {colors.gold}]',
+    bg: 'highlight.bg',
+    border: '[2px solid {colors.highlight}]',
     borderRadius: '8',
     py: '2',
     px: '8',
@@ -92,7 +92,7 @@ const ceremonyButton = css({
   borderRadius: 'pill',
   py: '2',
   px: '10',
-  bg: 'white',
+  bg: 'bg.card',
   _hover: { transform: 'translateY(-1px)' },
 });
 

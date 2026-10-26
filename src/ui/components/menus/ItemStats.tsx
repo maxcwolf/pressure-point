@@ -24,21 +24,21 @@ const chips = css({
   '& li': {
     fontSize: '12',
     fontWeight: '[500]',
-    border: '[1.5px solid #b7a98c]',
-    bg: '[#f1ece2]',
+    border: '[1.5px solid {colors.chip.border}]',
+    bg: 'chip',
     borderRadius: '8',
     py: '0',
     px: '6',
     whiteSpace: 'nowrap',
   },
-  '& .decor': { bg: 'gold-tint', borderColor: 'gold' },
-  '& :is(.calm, .cool)': { bg: '[#e3f0fb]', borderColor: 'blue' },
+  '& .decor': { bg: 'highlight.bg', borderColor: 'highlight' },
+  '& :is(.calm, .cool)': { bg: 'info.bg', borderColor: 'info.solid' },
   // a calm chip sits a little lower, as it did when it took the inspector's old global .calm, meant for its calm button
   '& .calm': { display: 'block', mt: '8' },
-  '& .loud': { bg: 'bad-bg', borderColor: 'red', color: 'bad' },
-  '& .warm': { bg: '[#fde8da]', borderColor: 'orange' },
-  '& .earn': { bg: 'good-bg', borderColor: 'green', color: 'good' },
-  '& .seat': { bg: 'violet-tint', borderColor: 'violet' },
+  '& .loud': { bg: 'bad.bg', borderColor: 'bad.solid', color: 'bad' },
+  '& .warm': { bg: 'warm.bg', borderColor: 'warm.solid' },
+  '& .earn': { bg: 'good.bg', borderColor: 'good.solid', color: 'good' },
+  '& .seat': { bg: 'special.bg', borderColor: 'special.solid' },
 });
 
 /** A row of pips, faint on the tooltip's navy, the ones filled in the color of what they count. */
@@ -48,10 +48,10 @@ const pips = css({
   m: '0',
   mt: '2',
   mb: '[1px]',
-  '& i': { w: '[10px]', h: '[10px]', borderRadius: '2', bg: 'cream/15' },
-  '&.decor i.on': { bg: 'gold' },
-  '&.calm i.on': { bg: '[#7fc2f2]' },
-  '&.loud i.on': { bg: '[#f08a84]' },
+  '& i': { w: '[10px]', h: '[10px]', borderRadius: '2', bg: 'bg.inverse-subtle' },
+  '&.decor i.on': { bg: 'highlight' },
+  '&.calm i.on': { bg: 'info.light' },
+  '&.loud i.on': { bg: 'bad.bright' },
 });
 
 /** The tooltip's list of what an item does, a line each, with its icon beside it. */
@@ -65,8 +65,8 @@ const tip = css({
 const detail = css({
   position: 'sticky',
   top: '[0]',
-  bg: 'white',
-  border: '[2.5px solid {colors.navy}]',
+  bg: 'bg.card',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '14',
   p: '12',
   pt: '10',
@@ -82,7 +82,7 @@ const detail = css({
   '& em': {
     fontStyle: 'normal',
     fontSize: '12',
-    bg: 'sand',
+    bg: 'bg.inset',
     borderRadius: '8',
     py: '2',
     px: '6',
@@ -98,7 +98,7 @@ const detailHead = css({
   '& b': { display: 'block', fontSize: '17', fontWeight: 'bold' },
   '& .cost': {
     display: 'inline-block',
-    bg: 'gold',
+    bg: 'highlight',
     border: 'control',
     borderRadius: '8',
     py: '0',
@@ -117,22 +117,22 @@ const factList = css({
   display: 'flex',
   flexDirection: 'column',
   gap: '4',
-  '& li': { bg: '[#f6f0e3]', borderRadius: '8', py: '2', px: '8', fontSize: '13' },
+  '& li': { bg: 'chip', borderRadius: '8', py: '2', px: '8', fontSize: '13' },
 });
 
 /** The panel's button: green to place the item, grey while it cannot be. */
 const place = css({
   mt: '2',
-  border: '[2.5px solid {colors.navy}]',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '12',
-  bg: 'green',
-  color: 'white',
+  bg: 'go',
+  color: 'fg.on-accent',
   fontWeight: 'bold',
   fontSize: '15',
   py: '6',
   px: '12',
-  boxShadow: '[0 3px 0 {colors.ink.30}]',
-  _locked: { bg: 'stone', color: 'navy', cursor: 'not-allowed' },
+  boxShadow: '[0 3px 0 {colors.shadow}]',
+  _locked: { bg: 'bg.disabled', color: 'fg', cursor: 'not-allowed' },
 });
 
 /**
@@ -145,7 +145,7 @@ const twoWay = css({
     position: 'relative',
     h: '[10px]',
     borderRadius: '6',
-    bg: 'ink.16',
+    bg: 'meter.track',
     overflow: 'visible',
     mt: '2',
   },
@@ -156,7 +156,7 @@ const twoWay = css({
     bottom: '[-2px]',
     w: '[2px]',
     ml: '[-1px]',
-    bg: 'ink.50',
+    bg: 'bg.backdrop',
   },
   '& .bar i': {
     position: 'absolute',
@@ -167,9 +167,9 @@ const twoWay = css({
     transition: '[width 0.3s]',
   },
   '& .bar i.up': { left: '[50%]' },
-  '& .bar i.down': { right: '[50%]', bg: 'blue' },
-  '&.noise .bar i.up': { bg: 'red' },
-  '&.warmth .bar i.up': { bg: 'orange' },
+  '& .bar i.down': { right: '[50%]', bg: 'info.solid' },
+  '&.noise .bar i.up': { bg: 'bad.solid' },
+  '&.warmth .bar i.up': { bg: 'warm.solid' },
   '& small': {
     display: 'flex',
     justifyContent: 'space-between',

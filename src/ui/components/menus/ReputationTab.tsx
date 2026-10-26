@@ -25,8 +25,8 @@ const part = css({
   gridTemplateColumns: '[1fr auto]',
   alignItems: 'center',
   columnGap: '8',
-  bg: 'white',
-  border: '[2px solid {colors.ink.20}]',
+  bg: 'bg.card',
+  border: '[2px solid {colors.border}]',
   borderRadius: '10',
   py: '6',
   px: '10',
@@ -44,8 +44,8 @@ const reviews = css({
   gridTemplateColumns: '[repeat(auto-fill, minmax(220px, 1fr))]',
   gap: '6',
   '& li': {
-    bg: 'white',
-    border: '[2px solid {colors.ink.20}]',
+    bg: 'bg.card',
+    border: '[2px solid {colors.border}]',
     borderRadius: '10',
     py: '6',
     px: '10',
@@ -58,7 +58,7 @@ const reviews = css({
 });
 
 /** A review's stars, in gold outlined in navy. */
-const stars = css({ color: 'gold', WebkitTextStroke: '[0.6px {colors.navy}]', letterSpacing: '[1px]' });
+const stars = css({ color: 'star', WebkitTextStroke: '[0.6px {colors.outline}]', letterSpacing: '[1px]' });
 
 /** One part of the reputation, as a bar, or a note that nobody has mentioned it yet. */
 function Part({ name, desc, score }: { name: string; desc: string; score: number | null }) {

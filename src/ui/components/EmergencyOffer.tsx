@@ -50,7 +50,7 @@ const column = css({
     bg: '[none]',
     fontSize: '15',
     opacity: '[0.6]',
-    _hover: { opacity: '[1]', bg: 'ink.10' },
+    _hover: { opacity: '[1]', bg: 'bg.muted' },
   },
   // how long is left to decide, over a bar of it
   '& .offer .time-left': { fontSize: '13', fontWeight: 'bold', m: '[auto]', mt: '8', mb: '0', w: '[70%]' },
@@ -72,7 +72,7 @@ const column = css({
 });
 
 /** An emergency's panel, in red. */
-const emergencyColor = css({ borderColor: 'red' });
+const emergencyColor = css({ borderColor: 'notice.emergency' });
 
 /** What the column at the top can show, in the order they go when several are there at once. */
 const PARTS = {

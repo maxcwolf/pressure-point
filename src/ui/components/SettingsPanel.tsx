@@ -47,7 +47,7 @@ export const settingsLook = css({
     display: 'flex',
     alignItems: 'center',
     gap: '10',
-    bg: 'white',
+    bg: 'bg.card',
     border: 'card',
     borderRadius: '12',
     py: '6',
@@ -60,7 +60,7 @@ export const settingsLook = css({
   '& li em': {
     fontStyle: 'normal',
     fontSize: '12',
-    bg: 'sand',
+    bg: 'bg.inset',
     borderRadius: '8',
     py: '2',
     px: '8',

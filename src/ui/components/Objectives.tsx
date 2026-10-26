@@ -26,15 +26,15 @@ const centerName = css({
   fontWeight: 'bold',
   textTransform: 'uppercase',
   letterSpacing: '[0.06em]',
-  color: 'teal-dark',
+  color: 'fg.accent',
 });
 
 /** The stars earned and to come, gold outlined in navy. */
 const stars = css({
-  color: 'gold',
+  color: 'star',
   fontSize: '24',
   letterSpacing: '[2px]',
-  WebkitTextStroke: '[1.5px {colors.navy}]',
+  WebkitTextStroke: '[1.5px {colors.outline}]',
   paintOrder: 'stroke fill',
 });
 
@@ -42,7 +42,7 @@ const stars = css({
 const list = css({ listStyle: 'none', p: '0', mt: '4' });
 
 /** A line with a tick or a circle before it and its words after, taking the room left; green once done. */
-const tickLine = css.raw({ display: 'flex', gap: '6', '& span': { flex: '1' }, '&.done': { color: 'green-dark' } });
+const tickLine = css.raw({ display: 'flex', gap: '6', '& span': { flex: '1' }, '&.done': { color: 'good.strong' } });
 
 /** An objective, or the line saying there are none left. */
 const objectiveLine = css(tickLine, { fontSize: '14', py: '4' });
@@ -55,7 +55,7 @@ const stepLine = css(tickLine, {
   fontSize: '13',
   py: '2',
   '&.current': { fontWeight: 'bold' },
-  '&.ahead': { color: 'ink.50' },
+  '&.ahead': { color: 'fg.muted' },
 });
 
 /** Words that open something out when clicked, as plain as the words around them, underlined under the pointer. */
@@ -81,15 +81,15 @@ const detailList = css({
   m: '0',
   mt: '4',
   mb: '2',
-  bg: 'ink.6',
+  bg: 'bg.subtle',
   borderRadius: '8',
   fontSize: '12',
-  color: 'navy',
+  color: 'fg',
   '& li': { display: 'list-item', listStyle: 'none', py: '[1px]', fontSize: '12' },
 });
 
 /** What a first game will need soon, or the tutorial's steps, under a dashed line. */
-const gettingReady = css({ mt: '8', pt: '6', borderTop: '[2px dashed {colors.ink.20}]' });
+const gettingReady = css({ mt: '8', pt: '6', borderTop: '[2px dashed {colors.border}]' });
 
 /** Its heading, in small teal capitals. */
 const gettingReadyHeading = css({
@@ -98,11 +98,11 @@ const gettingReadyHeading = css({
   fontWeight: 'bold',
   textTransform: 'uppercase',
   letterSpacing: '[0.06em]',
-  color: 'teal-dark',
+  color: 'fg.accent',
 });
 
 /** Opening out the tutorial's steps, or folding them again, in small teal words. */
-const moreLabel = css(opener, { fontSize: '12', color: 'teal-dark' });
+const moreLabel = css(opener, { fontSize: '12', color: 'fg.accent' });
 
 /**
  * A card for something under way: an emergency or a stress outbreak in red. `emergency`, `outbreak` and `challenge` are
@@ -112,8 +112,8 @@ const card = css.raw({
   mt: '8',
   py: '6',
   px: '8',
-  bg: 'bad-bg',
-  border: '[2px solid {colors.red}]',
+  bg: 'bad.bg',
+  border: '[2px solid {colors.bad.solid}]',
   borderRadius: '10',
   fontSize: '13',
   display: 'flex',
@@ -125,7 +125,7 @@ const card = css.raw({
 const emergencyCard = css(card);
 
 /** The card for a staff challenge, in gold. */
-const challengeCard = css(card, { bg: 'gold-tint', borderColor: 'gold' });
+const challengeCard = css(card, { bg: 'highlight.bg', borderColor: 'highlight' });
 
 /** One objective: its label and progress, and on a click the numbers behind it, a line each. */
 function ObjectiveRow({ objective: o, goal }: { objective: Objective; goal: GoalSpec | undefined }) {

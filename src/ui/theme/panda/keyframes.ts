@@ -11,12 +11,12 @@ export const keyframes = defineKeyframes({
   drop: { from: { transform: 'translateY(-20px)', opacity: 0 } },
   fadein: { from: { opacity: 0 } },
   // the tutorial's ring breathing out round what its step wants
-  guide: { '50%': { outlineOffset: '7px', outlineColor: 'rgba(242, 193, 78, 0.55)' } },
+  guide: { '50%': { outlineOffset: '7px', outlineColor: '{colors.guide.glow}' } },
   // the title screen's update button while it fetches
   'update-spin': { to: { rotate: '360deg' } },
   // a tool hint shaking off a refused click
   'hint-refused': { '30%': { transform: 'scale(1.12)' } },
-  'hint-refused-flash': { '30%': { background: 'bad-bg' } },
+  'hint-refused-flash': { '30%': { background: 'bad.bg' } },
   // a scroll tab nodding at more below
   'tab-nod': { '0%, 100%': { translate: '-50% 0' }, '50%': { translate: '-50% 3px' } },
   // a tooltip arriving, above or below what it is on

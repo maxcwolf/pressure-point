@@ -17,16 +17,16 @@ const chips = css({
   '& > span': {
     fontSize: '12',
     fontWeight: '[500]',
-    bg: 'violet-tint',
-    border: '[1.5px solid {colors.violet}]',
+    bg: 'special.bg',
+    border: '[1.5px solid {colors.special.solid}]',
     borderRadius: '8',
     py: '0',
     px: '6',
     whiteSpace: 'nowrap',
   },
-  '& > span.general': { bg: 'gold-tint', borderColor: 'gold' },
+  '& > span.general': { bg: 'highlight.bg', borderColor: 'highlight' },
   // the course they are on, not yet passed
-  '& > span.learning': { bg: 'white', borderStyle: 'dashed', opacity: '[0.85]' },
+  '& > span.learning': { bg: 'bg.card', borderStyle: 'dashed', opacity: '[0.85]' },
 });
 
 /**

@@ -13,7 +13,7 @@ import { Button } from './common/Button';
 import { IconText } from './common/Icon';
 
 /** A stress outbreak's panel, in purple; it takes an offer's look from the column it is in (EmergencyOffer.tsx). */
-const outbreakColor = css({ borderColor: 'violet' });
+const outbreakColor = css({ borderColor: 'notice.outbreak' });
 
 /** The stress outbreak on offer: in full with Accept and Decline, or tucked away as a button showing the time left. */
 export function OutbreakOffer() {

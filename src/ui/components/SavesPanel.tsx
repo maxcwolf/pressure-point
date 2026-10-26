@@ -50,9 +50,9 @@ const nameBox = css({
   minW: '[0]',
   font: 'inherit',
   fontSize: '15',
-  color: 'navy',
-  bg: 'white',
-  border: '[2.5px solid {colors.navy}]',
+  color: 'fg',
+  bg: 'bg.card',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '12',
   py: '6',
   px: '12',
@@ -69,11 +69,11 @@ const button = css.raw({
   px: '10',
   fontSize: '13',
   fontWeight: 'bold',
-  bg: 'cream',
+  bg: 'control',
   m: '0',
-  boxShadow: '[0 2px 0 {colors.ink.25}]',
-  '&.go': { bg: 'green', color: 'white' },
-  '&.danger': { bg: 'bad-bg', color: 'bad' },
+  boxShadow: '[0 2px 0 {colors.shadow}]',
+  '&.go': { bg: 'go', color: 'fg.on-accent' },
+  '&.danger': { bg: 'bad.bg', color: 'bad' },
 });
 const rowButton = css(button);
 
@@ -86,13 +86,13 @@ const saveButton = css(button, { fontSize: '15', py: '6', px: '16' });
  */
 const noteLook = css({
   fontSize: '14 !important',
-  bg: 'good-bg',
+  bg: 'good.bg',
   color: 'good',
   borderRadius: '10',
   py: '4',
   px: '10',
   mb: '8',
-  '&.bad': { bg: 'bad-bg', color: 'bad' },
+  '&.bad': { bg: 'bad.bg', color: 'bad' },
 });
 
 /** The saved games, scrolling once there are more than fit. */
@@ -112,7 +112,7 @@ const row = css.raw({
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: '10',
-  bg: 'white',
+  bg: 'bg.card',
   border: 'card',
   borderRadius: '12',
   py: '6',

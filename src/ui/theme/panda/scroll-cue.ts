@@ -4,12 +4,12 @@
 import { defineGlobalStyles } from '@pandacss/dev';
 
 /** The navy of a scrollbar's thumb, and of it under the pointer. */
-const THUMB = '{colors.ink.50}';
+const THUMB = '{colors.scroll.thumb}';
 
 export const scrollCueCss = defineGlobalStyles({
   '[data-more]': {
     // the color the content fades into: the card's own
-    '--cue-bg': '{colors.cream}',
+    '--cue-bg': '{colors.bg.panel}',
     '--cue-h': '30px',
     // the card's padding, which the fades reach over: a sticky edge stops short of it otherwise
     '--cue-pt': '12px',
@@ -20,7 +20,7 @@ export const scrollCueCss = defineGlobalStyles({
   },
   '.dialog[data-more]': { '--cue-pt': '22px', '--cue-px': '26px', '--cue-pb': '24px' },
   '.title-panel[data-more]': {
-    '--cue-bg': '#2c3a4e',
+    '--cue-bg': '{colors.scroll.cue-dark}',
     '--cue-pt': 'calc(var(--logo-h) * 0.28)',
     '--cue-px': 'clamp(14px, 3vh, 26px)',
     '--cue-pb': 'clamp(10px, 2.2vh, 22px)',
@@ -30,7 +30,7 @@ export const scrollCueCss = defineGlobalStyles({
   // a scrollbar that is always there while there is anything to scroll: a sand channel with a navy thumb
   '[data-more]::-webkit-scrollbar': { width: '11px' },
   '[data-more]::-webkit-scrollbar-track': {
-    background: 'sand',
+    background: 'bg.inset',
     border: '3px solid transparent',
     borderRadius: '6px',
     backgroundClip: 'padding-box',
@@ -41,9 +41,12 @@ export const scrollCueCss = defineGlobalStyles({
     borderRadius: '6px',
     backgroundClip: 'padding-box',
   },
-  '[data-more]::-webkit-scrollbar-thumb:hover': { background: '{colors.ink.80}', backgroundClip: 'padding-box' },
+  '[data-more]::-webkit-scrollbar-thumb:hover': {
+    background: '{colors.scroll.thumb-hover}',
+    backgroundClip: 'padding-box',
+  },
   '@supports not selector(::-webkit-scrollbar)': {
-    '[data-more]': { scrollbarWidth: 'thin', scrollbarColor: `${THUMB} {colors.sand}` },
+    '[data-more]': { scrollbarWidth: 'thin', scrollbarColor: `${THUMB} {colors.bg.inset}` },
   },
 
   // the fades ride the edges of the view as the card scrolls, over its content, taking no room of their own
@@ -63,7 +66,7 @@ export const scrollCueCss = defineGlobalStyles({
     top: 'calc(-1 * var(--cue-pt))',
     height: 'calc(var(--cue-h) + var(--cue-pt))',
     marginBottom: 'calc(-1 * (var(--cue-h) + var(--cue-pt)))',
-    background: 'linear-gradient({colors.ink.16} var(--cue-pt), rgba(36, 56, 74, 0))',
+    background: 'linear-gradient({colors.scroll.cue} var(--cue-pt), transparent)',
   },
   '[data-more]::after': {
     bottom: 'calc(-1 * var(--cue-pb))',

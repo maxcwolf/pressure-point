@@ -25,8 +25,8 @@ import { IconText } from '../common/Icon';
 
 /** A discipline's card. */
 const demandRow = css({
-  bg: 'white',
-  border: '[2px solid {colors.ink.20}]',
+  bg: 'bg.card',
+  border: '[2px solid {colors.border}]',
   borderRadius: '10',
   py: '8',
   px: '10',
@@ -70,12 +70,12 @@ const factor = css({
   borderRadius: '8',
   py: '4',
   px: '8',
-  bg: 'ink.6',
+  bg: 'bg.subtle',
   '& small': { gridColumn: '[1 / -1]', fontSize: '12', opacity: '[0.75]' },
   '& .bar': { gridColumn: '[1 / -1]', m: '0', mt: '2' },
   '& em': { gridRow: '[2]', gridColumn: '[2]', fontStyle: 'normal', fontWeight: '[700]' },
-  '&.low em': { color: '[#b5482f]' },
-  '&.high em': { color: 'green-dark' },
+  '&.low em': { color: 'bad' },
+  '&.high em': { color: 'good.strong' },
 });
 
 /** One thing that draws guests to a discipline: what it is, what it comes to, and how it multiplies the pull. */

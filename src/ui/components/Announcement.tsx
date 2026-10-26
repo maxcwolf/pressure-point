@@ -14,17 +14,17 @@ const column = css({
 
 /** An announcement: a navy pill with cream words, dropping in. */
 const pill = css({
-  bg: 'navy',
-  color: 'cream',
+  bg: 'bg.inverse',
+  color: 'fg.inverse',
   py: '8',
   px: '16',
   borderRadius: 'pill',
   fontSize: '15',
-  boxShadow: '[0 4px 0 rgba(0, 0, 0, 0.2)]',
+  boxShadow: '[0 4px 0 {colors.shadow.dark}]',
   animation: 'drop 0.35s ease-out',
   textAlign: 'center',
   // an icon keeps its navy outline on the navy pill by sitting on a cream chip
-  '& .icon': { bg: 'cream', borderRadius: '6', p: '[1.5px]' },
+  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },
 });
 
 /** The current announcement, if there is one, each new line coming in as itself. */

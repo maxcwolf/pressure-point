@@ -32,7 +32,7 @@ const campaigns = css({
 
 /** A kind of campaign's card, in gold while one is running, with how long it has left. */
 const campaign = css(ledgerLook, {
-  '&.live': { borderColor: 'gold', bg: 'gold-tint' },
+  '&.live': { borderColor: 'highlight', bg: 'highlight.bg' },
   '& .running': { fontWeight: 'bold', mt: '6' },
 });
 
@@ -51,14 +51,14 @@ const conditionChoices = css({
     pointerEvents: 'auto',
     border: 'control',
     borderRadius: '8',
-    bg: 'cream',
+    bg: 'control',
     fontWeight: 'bold',
     fontSize: '12',
     h: 'auto',
     py: '[1px]',
     px: '8',
     _hover: { transform: 'translateY(-1px)' },
-    _on: { bg: 'gold', color: 'white' },
+    _on: { bg: 'toggle.on', color: 'fg.on-accent' },
   },
 });
 

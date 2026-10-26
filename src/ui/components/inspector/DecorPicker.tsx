@@ -29,7 +29,7 @@ import { Icon, IconText } from '../common/Icon';
  */
 const decorCard = css({
   mt: '10',
-  borderTop: '[2px dashed {colors.ink.20}]',
+  borderTop: '[2px dashed {colors.border}]',
   pt: '6',
   '.insp &': { '& h4': { fontSize: '14', fontWeight: 'bold' } },
 });
@@ -49,11 +49,11 @@ const swatch = css({
   w: '[24px]',
   h: '[24px]',
   p: '2',
-  border: '[2px solid {colors.ink.35}]',
+  border: '[2px solid {colors.border.strong}]',
   borderRadius: '8',
-  bg: 'white',
+  bg: 'bg.card',
   '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },
-  _on: { borderColor: 'teal-dark', boxShadow: '[0 0 0 2px {colors.teal}]' },
+  _on: { borderColor: 'accent.strong', boxShadow: '[0 0 0 2px {colors.accent}]' },
   '&.karma i': { opacity: '[0.6]' },
 });
 
@@ -63,21 +63,21 @@ const lock = css({
   right: '[-5px]',
   bottom: '[-5px]',
   display: 'flex',
-  bg: 'white',
+  bg: 'bg.card',
   borderRadius: 'disc',
   p: '[1px]',
 });
 
 /** The button to give every room of its kind the same look. */
 const decorAll = css({
-  border: '[2.5px solid {colors.navy}]',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '12',
   py: '4',
   px: '10',
   fontWeight: 'bold',
   fontSize: '13',
-  bg: 'cream',
-  boxShadow: '[0 3px 0 {colors.ink.30}]',
+  bg: 'control',
+  boxShadow: '[0 3px 0 {colors.shadow}]',
   m: '0',
   mt: '2',
   mb: '6',

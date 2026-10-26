@@ -46,18 +46,18 @@ const upgrades = css({ m: '0', mt: '8', mb: '4' });
 
 /** The button to buy the next upgrade, in gold; a locked one is cream, and faded. */
 const upgrade = css({
-  border: '[2.5px solid {colors.navy}]',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '12',
   py: '4',
   px: '10',
   fontWeight: 'bold',
   fontSize: '13',
-  bg: 'gold',
-  boxShadow: '[0 3px 0 {colors.ink.30}]',
+  bg: 'highlight',
+  boxShadow: '[0 3px 0 {colors.shadow}]',
   m: '0',
   mt: '2',
   mb: '6',
-  _locked: { bg: 'cream', opacity: '[0.7]' },
+  _locked: { bg: 'control', opacity: '[0.7]' },
 });
 
 /**
@@ -70,7 +70,7 @@ const thermostat = css({ mt: '8', '& .sub': { m: '0', mt: '4' }, '& .tabs': { m:
 const every = css({ _locked: { opacity: '[0.5]', cursor: 'not-allowed' } });
 
 /** The temperature overlay's switch, gold while it is on. */
-const tempOverlay = css({ _on: { bg: 'gold' } });
+const tempOverlay = css({ _on: { bg: 'toggle.on' } });
 
 /** How fresh a table's linens are, and what changing them needs. */
 function Linens({ item: it }: { item: Item }) {

@@ -32,7 +32,7 @@ const sources = css(ledgerLook, {
   '& :is(.head, .source)': { display: 'grid', gridTemplateColumns: '[1fr auto auto]', gap: '12' },
   '& .head': { fontSize: '12', opacity: '[0.7]' },
   '& .source b': { textAlign: 'right' },
-  '& .source.side span': { color: 'teal-dark' },
+  '& .source.side span': { color: 'fg.accent' },
 });
 
 /** The overall price level's card, with how many prices put off this month and last, and who they put off. */

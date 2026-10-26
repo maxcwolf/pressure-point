@@ -35,8 +35,8 @@ const logLook = css({
   '& li': { py: '[1px]', px: '0', whiteSpace: 'pre-wrap' },
   '& li.typed': { fontWeight: 'bold' },
   '& li.typed::before': { content: "'› '", opacity: '[0.55]' },
-  '& li.good': { color: 'green-dark' },
-  '& li.bad': { color: 'red' },
+  '& li.good': { color: 'good.strong' },
+  '& li.bad': { color: 'bad.solid' },
   '& li.hint': { opacity: '[0.6]' },
 });
 
@@ -48,7 +48,7 @@ const lineLook = css({
   mt: '6',
   py: '4',
   px: '10',
-  bg: 'white',
+  bg: 'bg.card',
   border: 'control',
   borderRadius: '10',
   fontWeight: '[700]',

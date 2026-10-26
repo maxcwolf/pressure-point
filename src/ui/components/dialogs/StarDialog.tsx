@@ -18,17 +18,17 @@ import { Dialog } from './Dialog';
 
 /** The stars earned, big and gold, outlined in navy, with the ones still to earn faint. */
 const bigStars = css({
-  color: 'gold',
+  color: 'star',
   fontSize: '[52px]',
   letterSpacing: '[6px]',
-  WebkitTextStroke: '[2.5px {colors.navy}]',
+  WebkitTextStroke: '[2.5px {colors.outline}]',
   paintOrder: 'stroke fill',
 });
 
 /** What the star unlocks, on a lilac card. */
 const unlock = css({
-  bg: 'violet-tint',
-  border: '[2px solid {colors.violet}]',
+  bg: 'special.bg',
+  border: '[2px solid {colors.special.solid}]',
   borderRadius: '12',
   py: '8',
   px: '12',

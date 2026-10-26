@@ -25,13 +25,13 @@ const floater = css({
   opacity: '[0]',
   fontWeight: '[700]',
   fontSize: '20',
-  color: 'white',
-  WebkitTextStroke: '[4px {colors.navy}]',
+  color: 'floater',
+  WebkitTextStroke: '[4px {colors.outline}]',
   paintOrder: 'stroke fill',
   whiteSpace: 'nowrap',
   willChange: 'transform, opacity',
-  '&.good': { color: '[#7dffb0]' },
-  '&.bad': { color: '[#ff9a92]' },
+  '&.good': { color: 'floater.good' },
+  '&.bad': { color: 'floater.bad' },
 });
 
 /** The floating text currently on screen. */

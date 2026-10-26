@@ -10,14 +10,14 @@ import { Icon } from './common/Icon';
 export const choice = css({
   pointerEvents: 'auto',
   flex: 'none',
-  border: '[2.5px solid {colors.navy}]',
+  border: '[2.5px solid {colors.outline}]',
   borderRadius: '10',
   py: '4',
   px: '12',
   fontWeight: 'bold',
   fontSize: '14',
-  bg: 'cream',
-  boxShadow: '[0 3px 0 {colors.ink.30}]',
+  bg: 'control',
+  boxShadow: '[0 3px 0 {colors.shadow}]',
 });
 
 export interface SettingRowProps {

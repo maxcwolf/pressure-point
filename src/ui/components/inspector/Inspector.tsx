@@ -47,7 +47,7 @@ const panel = css({
     display: 'block',
     fontStyle: 'normal',
     fontSize: '12',
-    bg: 'sand',
+    bg: 'bg.inset',
     borderRadius: '8',
     py: '2',
     px: '8',
@@ -55,34 +55,34 @@ const panel = css({
   },
   '& h4': { fontSize: '14', fontWeight: 'bold', m: '0', mt: '8', mb: '4' },
   // what someone or something is, under its name
-  '& .tag': { display: 'inline-block', bg: 'sand', borderRadius: '8', py: '[1px]', px: '8', fontSize: '12' },
+  '& .tag': { display: 'inline-block', bg: 'bg.inset', borderRadius: '8', py: '[1px]', px: '8', fontSize: '12' },
   // A status line, in the tone of what it says (ui/lib/status.ts): plain news on navy, what wants seeing to in amber,
   // trouble in red, good news in green. The light ones carry a stripe of their color down the left, to be told apart
   // at a glance.
-  '& .status': { bg: 'navy', color: 'cream', borderRadius: '8', py: '4', px: '8', fontWeight: '[500]' },
+  '& .status': { bg: 'bg.inverse', color: 'fg.inverse', borderRadius: '8', py: '4', px: '8', fontWeight: '[500]' },
   '& .status.warn': {
-    bg: 'warn-bg',
+    bg: 'warn.bg',
     color: 'warn',
-    boxShadow: '[inset 4px 0 0 {colors.gold}]',
+    boxShadow: '[inset 4px 0 0 {colors.warn.solid}]',
     pl: '10',
     fontWeight: 'bold',
   },
   '& .status.bad': {
-    bg: 'bad-bg',
+    bg: 'bad.bg',
     color: 'bad',
-    boxShadow: '[inset 4px 0 0 {colors.red}]',
+    boxShadow: '[inset 4px 0 0 {colors.bad.solid}]',
     pl: '10',
     fontWeight: 'bold',
   },
   '& .status.good': {
-    bg: 'good-bg',
+    bg: 'good.bg',
     color: 'good',
-    boxShadow: '[inset 4px 0 0 {colors.green}]',
+    boxShadow: '[inset 4px 0 0 {colors.good.solid}]',
     pl: '10',
     fontWeight: 'bold',
   },
   // an icon keeps its navy outline on the navy line by sitting on a cream chip; on a light line it needs none
-  '& .status .icon': { bg: 'cream', borderRadius: '6', p: '[1.5px]' },
+  '& .status .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },
   '& .status:is(.warn, .bad, .good) .icon': { bg: '[none]' },
 });
 
@@ -95,7 +95,7 @@ const close = css({
   h: '[26px]',
   borderRadius: 'disc',
   border: 'control',
-  bg: 'white',
+  bg: 'bg.card',
   fontSize: '12',
   lineHeight: '[1]',
 });

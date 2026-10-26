@@ -26,13 +26,13 @@ const keycap = css({
   minW: '[46px]',
   fontSize: '13',
   fontWeight: 'bold',
-  bg: 'white',
+  bg: 'bg.card',
   border: 'control',
   borderBottomWidth: '[3.5px]',
   borderRadius: '6',
   py: '2',
   px: '8',
-  '&.waiting': { bg: 'sand' },
+  '&.waiting': { bg: 'bg.inset' },
 });
 
 /** Reset the keys, as a link in the words under them. */

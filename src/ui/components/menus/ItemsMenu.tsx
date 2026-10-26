@@ -38,7 +38,7 @@ const itemCards = css(cardsLook, {
 const itemCard = css(cardLook, {
   '.items-detail &': {
     '&.poor': { opacity: '[1]', cursor: 'pointer' },
-    '&.picked': { bg: 'teal-tint', borderColor: 'teal-dark', boxShadow: '[0 0 0 3px {colors.teal}]' },
+    '&.picked': { bg: 'bg.hover', borderColor: 'accent.strong', boxShadow: '[0 0 0 3px {colors.accent}]' },
   },
 });
 

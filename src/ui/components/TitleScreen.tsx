@@ -53,7 +53,7 @@ const backdropLook = css({
   backgroundSize: 'cover',
   backgroundPosition: 'center',
   filter: '[blur(14px) brightness(0.72) saturate(0.85)]',
-  '&::after': { content: "''", position: 'absolute', inset: '[0]', bg: '[rgba(46, 66, 92, 0.35)]' },
+  '&::after': { content: "''", position: 'absolute', inset: '[0]', bg: 'title.backdrop' },
 });
 
 /** The logo and everything under it, in the middle of the window. */
@@ -89,8 +89,8 @@ const panelLook = css({
   mt: '[calc(var(--logo-h) * -0.33)]',
   p: '[calc(var(--logo-h) * 0.28) clamp(14px, 3vh, 26px) clamp(10px, 2.2vh, 22px)]',
   borderRadius: '18',
-  bg: '[rgba(44, 58, 78, 0.84)]',
-  color: 'white',
+  bg: 'title.panel',
+  color: 'title.fg',
   textAlign: 'center',
   overflowY: 'auto',
   // with a panel open, its header stays put and the panel below it scrolls
@@ -112,22 +112,22 @@ const subName = css({ fontSize: '[clamp(20px, 3.4vh, 26px)]', fontWeight: 'bold'
 /** Back, from a panel to the menu. */
 const back = css({
   justifySelf: 'start',
-  border: '[2.5px solid {colors.white}]',
+  border: '[2.5px solid {colors.title.border}]',
   borderRadius: '10',
-  bg: '[#19bcd6]',
-  color: 'white',
+  bg: 'title.button',
+  color: 'title.fg',
   fontSize: '15',
   fontWeight: 'bold',
   p: '4',
   pr: '12',
   pl: '8',
-  _hover: { bg: '[#33cbe3]' },
+  _hover: { bg: 'title.button-hover' },
 });
 
 /** Something the player needs to know, in red. */
 const noteLook = css({
-  bg: 'bad-bg',
-  color: '[#8f2a24]',
+  bg: 'bad.bg',
+  color: 'bad.deep',
   border: '[2px solid {colors.bad}]',
   borderRadius: '12',
   py: '8',
@@ -142,7 +142,7 @@ const noteLook = css({
 const saveName = css({ fontSize: '[clamp(18px, 3.2vh, 24px)]', fontWeight: 'bold', mb: '[clamp(4px, 1vh, 10px)]' });
 
 /** The center the latest save is in, close under its name. */
-const centerName = css({ m: '0', mt: '[-8px]', mb: '8', fontSize: '14', color: '[#7fe6f2]', fontWeight: 'bold' });
+const centerName = css({ m: '0', mt: '[-8px]', mb: '8', fontSize: '14', color: 'title.accent', fontWeight: 'bold' });
 
 /** The latest save's picture beside its facts. */
 const saveBody = css({
@@ -162,9 +162,9 @@ const thumb = css.raw({
   aspectRatio: '[1.6]',
   flex: 'none',
   objectFit: 'cover',
-  border: '[4px solid {colors.white}]',
+  border: '[4px solid {colors.title.border}]',
   borderRadius: '8',
-  bg: '[#5c708a]',
+  bg: 'title.off',
 });
 const thumbPicture = css(thumb);
 
@@ -172,7 +172,7 @@ const thumbPicture = css(thumb);
 const noPicture = css(thumb, {
   display: 'grid',
   placeItems: 'center',
-  '& .icon': { bg: 'cream', p: '4', borderRadius: '12' },
+  '& .icon': { bg: 'bg.panel', p: '4', borderRadius: '12' },
 });
 
 /** The facts about the latest save, in two columns to keep the card short. */
@@ -188,7 +188,7 @@ const facts = css({
   lineHeight: '[1.4]',
   rowGap: '2',
   // icons on the dark panel sit on cream chips, or their navy outlines would vanish
-  '& .icon': { bg: 'cream', borderRadius: '6', p: '[1.5px]' },
+  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },
 });
 
 /** A fact: a long one, like a late date, wraps within its own column, lined up under its text rather than its icon. */
@@ -205,7 +205,7 @@ const savedAt = css(factLook, {
   gridColumn: '[1 / -1]',
   display: 'block',
   fontSize: '[0.82em]',
-  color: '[#7fe6f2]',
+  color: 'title.accent',
   pl: '[1.7em]',
 });
 
@@ -221,17 +221,17 @@ const menu = css({
 const menuButton = css({
   flex: 'none',
   h: '[clamp(34px, 6vh, 52px)]',
-  border: '[3px solid {colors.white}]',
+  border: '[3px solid {colors.title.border}]',
   borderRadius: '14',
-  bg: '[#19bcd6]',
-  color: 'white',
+  bg: 'title.button',
+  color: 'title.fg',
   fontSize: '[clamp(17px, 3.2vh, 25px)]',
   fontWeight: 'bold',
-  textShadow: '[0 2px 0 rgba(20, 60, 80, 0.35)]',
-  boxShadow: '[0 4px 0 rgba(0, 0, 0, 0.25)]',
+  textShadow: '[0 2px 0 {colors.shadow.text}]',
+  boxShadow: '[0 4px 0 {colors.shadow.dark}]',
   transition: '[transform 0.08s]',
-  _hover: { bg: '[#33cbe3]', transform: 'translateY(-1px)' },
-  _active: { transform: 'translateY(2px)', boxShadow: '[0 2px 0 rgba(0, 0, 0, 0.25)]' },
+  _hover: { bg: 'title.button-hover', transform: 'translateY(-1px)' },
+  _active: { transform: 'translateY(2px)', boxShadow: '[0 2px 0 {colors.shadow.dark}]' },
 });
 
 /** A panel is a light card of its own, scrolling when it is longer than the window allows. */
@@ -241,8 +241,8 @@ const sub = css({
   py: '12',
   px: '14',
   borderRadius: '14',
-  bg: 'cream',
-  color: 'navy',
+  bg: 'bg.panel',
+  color: 'fg',
   textAlign: 'center',
 });
 
@@ -255,7 +255,7 @@ const tray = css({
   mt: '[clamp(6px, 1.4vh, 16px)]',
   p: '[clamp(6px, 1.2vh, 12px) 28px]',
   borderRadius: '18',
-  bg: '[rgba(44, 58, 78, 0.78)]',
+  bg: 'title.panel',
   '&[hidden]': { display: 'none' },
 });
 
@@ -266,10 +266,10 @@ const badge = css({
   display: 'grid',
   placeItems: 'center',
   borderRadius: 'disc',
-  border: '[3px solid {colors.white}]',
-  bg: 'cream',
-  boxShadow: '[0 3px 0 rgba(0, 0, 0, 0.3)]',
-  '&.off': { bg: '[#7d8794]', borderColor: '[#b9c0c9]', filter: '[grayscale(1)]', opacity: '[0.8]' },
+  border: '[3px solid {colors.title.border}]',
+  bg: 'control',
+  boxShadow: '[0 3px 0 {colors.shadow.dark}]',
+  '&.off': { bg: 'title.off', borderColor: 'title.off-border', filter: '[grayscale(1)]', opacity: '[0.8]' },
 });
 
 /** The sound and music switches, in the top right corner. */
@@ -282,9 +282,9 @@ const version = css({
   bottom: '[10px]',
   fontSize: '12',
   fontWeight: 'bold',
-  color: 'cream',
+  color: 'fg.inverse',
   opacity: '[0.75]',
-  textShadow: '[0 1px 2px rgba(0, 0, 0, 0.5)]',
+  textShadow: '[0 1px 2px {colors.shadow.text-strong}]',
   pointerEvents: 'none',
 });
 
@@ -295,8 +295,8 @@ const alpha = css({
   py: '[1px]',
   px: '6',
   borderRadius: '6',
-  bg: 'gold',
-  color: 'navy',
+  bg: 'highlight',
+  color: 'fg',
   fontWeight: '[700]',
   letterSpacing: '[0.04em]',
   textTransform: 'uppercase',
@@ -316,38 +316,38 @@ const corner = css({
 
 /** A button in the corner, such as What's new. */
 const news = css.raw({
-  border: '[2.5px solid {colors.white}]',
+  border: '[2.5px solid {colors.title.border}]',
   borderRadius: '14',
-  bg: '[rgba(44, 58, 78, 0.84)]',
-  color: 'white',
+  bg: 'title.panel',
+  color: 'title.fg',
   fontSize: '15',
   fontWeight: 'bold',
   py: '6',
   px: '12',
-  boxShadow: '[0 3px 0 rgba(0, 0, 0, 0.3)]',
-  _hover: { bg: '[#19bcd6]' },
+  boxShadow: '[0 3px 0 {colors.shadow.dark}]',
+  _hover: { bg: 'title.button' },
   '&[hidden]': { display: 'none' },
   // icons on the dark panel sit on cream chips, or their navy outlines would vanish
-  '& .icon': { bg: 'cream', borderRadius: '6', p: '[1.5px]' },
+  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },
 });
 const newsButton = css(news);
 
 /** The button for an update that has downloaded, edged in gold. */
-const updateButton = css(news, { borderColor: 'gold' });
+const updateButton = css(news, { borderColor: 'highlight' });
 
 /** How the look for an update is going, where its button shows once one has downloaded: quieter, with nothing to press. */
 const updateLook = css({
-  border: '[2px solid rgba(255, 255, 255, 0.6)]',
+  border: '[2px solid {colors.title.border-soft}]',
   borderRadius: '14',
-  bg: '[rgba(44, 58, 78, 0.7)]',
-  color: 'white',
+  bg: 'title.panel-subtle',
+  color: 'title.fg',
   fontSize: '13',
   fontWeight: 'bold',
   py: '4',
   px: '10',
-  boxShadow: '[0 2px 0 rgba(0, 0, 0, 0.25)]',
+  boxShadow: '[0 2px 0 {colors.shadow.dark}]',
   animation: 'pop 0.25s ease-out',
-  '& .icon': { bg: 'cream', borderRadius: 'disc', p: '[1px]' },
+  '& .icon': { bg: 'bg.panel', borderRadius: 'disc', p: '[1px]' },
   // the arrows go round while it checks or downloads, inside a chip that stays still
   '&.busy .icon use': {
     transformBox: 'view-box',

@@ -25,7 +25,7 @@ const versionName = css({
   gap: '8',
   fontSize: '17',
   fontWeight: 'bold',
-  color: 'teal-dark',
+  color: 'fg.accent',
   mb: '4',
 });
 
@@ -33,8 +33,8 @@ const versionName = css({
 const here = css({
   fontSize: '12',
   fontWeight: 'bold',
-  color: 'white',
-  bg: 'teal',
+  color: 'fg.on-accent',
+  bg: 'accent',
   borderRadius: '8',
   py: '[1px]',
   px: '6',
