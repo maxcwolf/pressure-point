@@ -1,6 +1,7 @@
 // The game lost: the bank called the overdraft in.
 
 import { money } from '../../../core/format';
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame } from '../../hooks/use-hud';
 import { Button } from '../common/Button';
 import { Dialog } from './Dialog';
@@ -17,8 +18,8 @@ export function BankruptDialog() {
         walked out, and the Institute is closed.
       </p>
       <p class="sub">{`${s.stats.healed} guests healed, ${money(-s.money)} in the red and ${money(s.loan)} owed.`}</p>{' '}
-      <div class="btnrow">
-        <Button class="go" onPress={newGame}>
+      <div class={buttonRow()}>
+        <Button class={goButton()} onPress={newGame}>
           Start again
         </Button>
         <Button onPress={mainMenu}>Main menu</Button>

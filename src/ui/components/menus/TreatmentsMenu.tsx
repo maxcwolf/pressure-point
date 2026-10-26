@@ -1,7 +1,5 @@
 // The Treatments menu: each discipline's modalities, and whether the center can deliver them.
 
-import './TreatmentsMenu.css';
-
 import {
   conditionHere,
   conditionOf,
@@ -20,6 +18,8 @@ import {
 import { an, money } from '../../../core/format';
 import { roomForModality } from '../../../core/sim/machines';
 import { unlockedUpTo } from '../../../core/state/game';
+import { css } from '../../../styled-system/css';
+import { panelCard } from '../../../styled-system/recipes';
 import { useGame } from '../../hooks/use-hud';
 import { tripNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
@@ -27,6 +27,20 @@ import { disciplineNote } from '../../lib/delivery';
 import { kitNote } from '../../lib/mishaps';
 import { restNote } from '../../lib/recovery';
 import { Icon, IconText, Line } from '../common/Icon';
+import { cardLook, cards, menuPanel } from './looks';
+
+/**
+ * A modality's card, which is not pressed, so it keeps the plain pointer even while locked. What it treats, and where,
+ * reads as plainly as its name.
+ */
+const modalityCard = css(cardLook, {
+  cursor: 'default',
+  _locked: { cursor: 'default' },
+  '& .treats': { opacity: 'full', fontWeight: 'medium', mt: '2' },
+});
+
+/** A discipline's heading, over its modalities. */
+const section = css({ fontSize: '15', fontWeight: 'bold', m: '0', mt: '12', mb: '4' });
 
 /** What a modality treats, who can give it and whether its equipment is in. */
 function ModalityCard({ modality }: { modality: Modality }) {
@@ -55,7 +69,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
   const rest = restNote(def.rest, sim.hasRoom('recovery'));
   const trip = tripNote(def.trip);
   return (
-    <div class={cx('card mod', locked && 'locked')}>
+    <div class={cx('card', modalityCard, locked && 'locked')}>
       <Icon id={def.icon} size={34} />
       <b>{def.name}</b>
       <p>{def.desc}</p>
@@ -103,11 +117,11 @@ function DisciplineSection({ discipline }: { discipline: Discipline }) {
   const note = disciplineNote(discipline, sim.hasRoom(disc.room), unlockedUpTo(sim.s));
   return (
     <>
-      <h4 class="section">
+      <h4 class={section}>
         <IconText id={disc.icon}>{disc.name}</IconText>
       </h4>
       <p class="sub">{note}</p>
-      <div class="cards">
+      <div class={cards}>
         {MODALITY_ORDER.filter(
           (m) => MODALITIES[m].discipline === discipline && roomHere(ROOMS[roomForModality(m)], sim.s.center),
         ).map((m) => (
@@ -122,7 +136,7 @@ function DisciplineSection({ discipline }: { discipline: Discipline }) {
 export function TreatmentsMenu() {
   const { sim } = useGame();
   return (
-    <div class="panel menu">
+    <div class={cx(panelCard(), menuPanel)}>
       <h3>Treatments</h3>
       <p class="sub">
         A diagnosis prescribes a treatment. It works properly only with someone qualified in it and the right equipment

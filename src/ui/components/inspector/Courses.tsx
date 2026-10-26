@@ -1,12 +1,45 @@
 // The training courses a member of staff can take.
 
-import './Courses.css';
-
 import { money } from '../../../core/format';
 import type { Staff } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { Icon } from '../common/Icon';
+import { smallButton } from './looks';
+
+/**
+ * A course's button, as wide as the panel: its icon, its name with how many days it takes underneath, and its fee on a
+ * gold tag. One that cannot start is faded.
+ */
+const course = css({
+  w: 'full',
+  display: 'grid',
+  gridTemplateColumns: '[24px 1fr auto]',
+  alignItems: 'center',
+  gap: '6',
+  textAlign: 'left',
+  bg: 'bg.card',
+  border: 'outline.thin',
+  borderRadius: '10',
+  py: '4',
+  px: '8',
+  mb: '4',
+  fontSize: '13',
+  fontWeight: 'medium',
+  _hover: { bg: 'bg.hover' },
+  '& small': { display: 'block', fontWeight: 'regular', fontSize: '11', opacity: 'muted' },
+  '& b': {
+    bg: 'highlight',
+    border: 'outline.fine',
+    borderRadius: '8',
+    py: '0',
+    px: '6',
+    fontSize: '12',
+  },
+  _locked: { opacity: 'faint', cursor: 'not-allowed' },
+});
 
 /**
  * A button per course, locked when it cannot start, with the reason underneath; while they are on one, a button to
@@ -20,7 +53,7 @@ export function Courses({ staff: st }: { staff: Staff }) {
       <>
         <h4>Training</h4>
         <Button
-          class="cancel-course"
+          class={smallButton}
           title={`Call them back to work, with the ${money(st.training.cost)} fee refunded`}
           onPress={() => {
             hud.askToCancelCourse(st.id);
@@ -43,7 +76,8 @@ export function Courses({ staff: st }: { staff: Staff }) {
         return (
           <Button
             key={c.id}
-            class="course"
+            // `course` is for the end-to-end tests to find it by
+            class={cx('course', course)}
             locked={!!why}
             quiet
             title={why || c.desc}

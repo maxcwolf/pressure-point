@@ -1,8 +1,24 @@
 // One row of the settings: a switch, or a label saying why it cannot be changed.
 
 import type { IconId } from '../../core/data';
+import { css } from '../../styled-system/css';
+import { toggleSwitch } from '../../styled-system/recipes';
 import { cx } from '../lib/cx';
 import { Icon } from './common/Icon';
+
+/** The button on a row that steps through choices rather than switching, such as how long messages stay. */
+export const choice = css({
+  pointerEvents: 'auto',
+  flex: 'none',
+  border: 'outline',
+  borderRadius: '10',
+  py: '4',
+  px: '12',
+  fontWeight: 'bold',
+  fontSize: '14',
+  bg: 'control',
+  boxShadow: 'low',
+});
 
 export interface SettingRowProps {
   icon: IconId;
@@ -17,6 +33,7 @@ export interface SettingRowProps {
 /** One settings row: a switch, or a label when it cannot be changed. */
 export function SettingRow({ icon, name, desc, on, locked = '', onToggle }: SettingRowProps) {
   return (
+    // `locked` fades the row in the settings' look (SettingsPanel.tsx)
     <li class={locked ? 'locked' : ''}>
       <Icon id={icon} size={26} />
       <div>
@@ -27,7 +44,7 @@ export function SettingRow({ icon, name, desc, on, locked = '', onToggle }: Sett
         <em>{locked}</em>
       ) : (
         <button
-          class={cx('switch', on && 'on')}
+          class={cx(toggleSwitch(), on && 'on')}
           role="switch"
           aria-checked={on ? 'true' : 'false'}
           aria-label={name}

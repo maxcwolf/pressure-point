@@ -1,15 +1,46 @@
 // The year-end awards ceremony.
 
-import './AwardsDialog.css';
-
 import { certificatesLeft } from '../../../core/certificates';
 import { AWARD_REP, AWARDS } from '../../../core/data';
 import { money } from '../../../core/format';
+import { css } from '../../../styled-system/css';
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 import { Dialog } from './Dialog';
+
+/**
+ * Every award, each a card with its trophy, its name and how the center did, and the prize or Missed to the right: gold
+ * for one won, and faded, its trophy greyed, for one missed. `awards` is for the end-to-end tests to find it by.
+ */
+const awards = css({
+  listStyle: 'none',
+  p: '0',
+  my: '10',
+  mx: '0',
+  display: 'grid',
+  gridTemplateColumns: '[repeat(auto-fit, minmax(260px, 1fr))]',
+  gap: '6',
+  textAlign: 'left',
+  '& li': {
+    display: 'grid',
+    gridTemplateColumns: '[30px 1fr auto]',
+    alignItems: 'center',
+    gap: '8',
+    border: 'divider',
+    borderRadius: '10',
+    py: '4',
+    px: '8',
+    bg: 'bg.card',
+  },
+  '& li.won': { borderColor: 'highlight', bg: 'highlight.bg' },
+  '& li.missed': { opacity: 'muted' },
+  '& li.missed .icon': { filter: '[grayscale(1)]', opacity: 'faint' },
+  '& small': { display: 'block', fontSize: '12', lineHeight: 'snug' },
+  '& em': { fontStyle: 'normal', fontWeight: 'bold', fontSize: '13' },
+});
 
 /** Every award at the year's ceremony, won or missed, with how the center did and what the winners took home. */
 export function AwardsDialog() {
@@ -29,7 +60,7 @@ export function AwardsDialog() {
           ? `${won.length} of ${ceremony.results.length} won: ${money(prizes)} in prizes, and +${won.length * AWARD_REP}% reputation.`
           : 'Nothing this year. The judges will be back next year, and the bar only goes up.'}
       </p>
-      <ul class="awards">
+      <ul class={cx('awards', awards)}>
         {ceremony.results.map((r) => {
           const def = AWARDS[r.award];
           return (
@@ -48,7 +79,7 @@ export function AwardsDialog() {
         Trophies won go in a Trophy Cabinet, and are listed under Awards in the Stats menu. Each one earns a Certificate
         of Excellence to hang on a wall, from here or the Items menu.
       </p>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         {certificatesLeft(sim.s).length > 0 && (
           <Button
             onPress={() => {
@@ -60,7 +91,7 @@ export function AwardsDialog() {
           </Button>
         )}
         <Button
-          class="go"
+          class={goButton()}
           onPress={() => {
             hud.close();
           }}

@@ -1,14 +1,15 @@
 // Top center: an emergency waiting to be accepted or declined, which can be put aside to decide on later.
 
-import './EmergencyOffer.css';
-
 import { useRef } from 'preact/hooks';
 
 import { answerOffer } from '../../app/analytics';
 import { conditionOf, EMERGENCY_DAYS, modalityLabel } from '../../core/data';
 import { money } from '../../core/format';
 import type { Sim } from '../../core/sim/sim';
+import { css } from '../../styled-system/css';
+import { buttonRow, goButton, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
+import { cx } from '../lib/cx';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
@@ -18,6 +19,60 @@ import { HouseCallOffer } from './HouseCallOffer';
 import { MishapNotice } from './MishapNotice';
 import { OutbreakOffer } from './OutbreakOffer';
 import { RunnerNotice } from './RunnerNotice';
+
+/**
+ * The column at the top center, its parts one under another. The looks the offers share are drawn from here, by the
+ * class names the parts give them: `offer` for an offer in full, with its `later` button and its `time-left`, and
+ * `offer-pill` for one put aside, or for a notice with nothing to decide. Each part gives its panel its own color.
+ */
+const column = css({
+  top: 'below-bar',
+  left: 'half',
+  transform: '[translateX(-50%)]',
+  w: '[min(430px, calc(var(--vw) - 600px))]',
+  minW: 'panel.notice',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8',
+  // an offer in full pops in, its words centered
+  '& .offer': { position: 'relative', textAlign: 'center', animation: '[pop {durations.normal} {easings.out}]' },
+  '& .offer p': { fontSize: '14', lineHeight: 'snug' },
+  // the button to decide later: a faint cross in the top right corner
+  '& .offer .later': {
+    pointerEvents: 'auto',
+    position: 'absolute',
+    top: '6',
+    right: '8',
+    w: '24',
+    h: '24',
+    border: 'none',
+    borderRadius: 'disc',
+    bg: '[none]',
+    fontSize: '15',
+    opacity: 'quiet',
+    _hover: { opacity: 'full', bg: 'bg.muted' },
+  },
+  // how long is left to decide, over a bar of it
+  '& .offer .time-left': { fontSize: '13', fontWeight: 'bold', m: 'auto', mt: '8', mb: '0', w: '[70%]' },
+  // a pill: its words over a bar, popping in, and lifting a little under the pointer
+  '& .offer-pill': {
+    display: 'block',
+    my: '0',
+    mx: 'auto',
+    p: '14',
+    pt: '6',
+    pb: '8',
+    font: 'inherit',
+    fontSize: '14',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    animation: '[pop {durations.normal} {easings.out}]',
+    _hover: { transform: '[translateY(-1px)]' },
+  },
+});
+
+/** An emergency's panel, in red. */
+const emergencyColor = css({ borderColor: 'notice.emergency' });
 
 /** What the column at the top can show, in the order they go when several are there at once. */
 const PARTS = {
@@ -54,7 +109,7 @@ export function EmergencyOffer() {
   const now = present(sim.s);
   order.current = [...order.current.filter((p) => now.includes(p)), ...now.filter((p) => !order.current.includes(p))];
   return (
-    <div id="offer">
+    <div id="offer" class={column}>
       {order.current.map((p) => {
         const Shown = PARTS[p];
         return <Shown key={p} />;
@@ -76,7 +131,7 @@ function Emergency() {
     return (
       <>
         <Button
-          class="panel offer-pill"
+          class={cx(panelCard(), 'offer-pill', emergencyColor)}
           title="Show the emergency"
           onPress={() => {
             hud.offerAside = null;
@@ -91,7 +146,7 @@ function Emergency() {
     );
   return (
     <>
-      <div class="panel offer">
+      <div class={cx(panelCard(), 'offer', emergencyColor)}>
         <Button
           class="later"
           title="Decide later"
@@ -118,9 +173,9 @@ function Emergency() {
           <span>{`Offer lapses: ${timeLeftLabel(left.days)}`}</span>
           {timer}
         </div>
-        <div class="btnrow">
+        <div class={buttonRow()}>
           <Button
-            class="go"
+            class={goButton()}
             onPress={() => {
               const offer = sim.s.offer;
               sim.acceptEmergency();

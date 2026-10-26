@@ -1,5 +1,6 @@
 // The two buttons at the foot of the dialogs opened from the pause menu.
 
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useHud } from '../../hooks/use-hud';
 import { Button } from '../common/Button';
 
@@ -7,7 +8,7 @@ import { Button } from '../common/Button';
 export function BackOrResume() {
   const hud = useHud();
   return (
-    <div class="btnrow">
+    <div class={buttonRow()}>
       <Button
         onPress={() => {
           hud.open('pause');
@@ -16,7 +17,7 @@ export function BackOrResume() {
         Back
       </Button>
       <Button
-        class="go"
+        class={goButton()}
         onPress={() => {
           hud.close();
         }}

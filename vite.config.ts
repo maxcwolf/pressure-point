@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { readFileSync } from 'node:fs';
 
+import pandacss from '@pandacss/vite';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { defineConfig, type Plugin } from 'vite';
 
@@ -33,6 +34,8 @@ export default defineConfig({
   // relative base so the built game loads from file:// inside Electron
   base: './',
   plugins: [
+    // compiles the Panda styles in the source to class names and plain CSS, so none of Panda runs in the game
+    pandacss({ transform: true }),
     productionPolicy,
     // last, so it sees the finished bundle
     sentryVitePlugin({

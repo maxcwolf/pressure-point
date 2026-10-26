@@ -2,8 +2,36 @@
 
 import { type Difficulty, KNOB_ORDER, KNOBS, PRESET_ORDER, PRESETS } from '../../core/data';
 import { nextLevel, presetLevels, presetOf } from '../../core/difficulty';
+import { css } from '../../styled-system/css';
+import { tabButton, tabStrip } from '../../styled-system/recipes';
 import { cx } from '../lib/cx';
 import { IconText } from './common/Icon';
+
+/** The presets, a little apart. */
+const presets = css({ gap: '6' });
+
+/** What the preset the settings match is like, between the presets and the settings. */
+const presetNote = css({ m: '0', mt: '6', mb: '8' });
+
+/**
+ * A setting's level, to click through: a choice button as the settings have them (SettingRow.tsx), but smaller and all
+ * one width, green while it is easier than usual and red while it is harder.
+ */
+const levelButton = css({
+  pointerEvents: 'auto',
+  flex: 'none',
+  border: 'outline',
+  borderRadius: '10',
+  py: '2',
+  px: '8',
+  fontWeight: 'bold',
+  fontSize: '13',
+  bg: 'control',
+  boxShadow: 'low',
+  minW: '96',
+  '&.easier': { bg: 'good.bg' },
+  '&.harder': { bg: 'bad.soft' },
+});
 
 export interface DifficultySettingsProps {
   difficulty: Difficulty;
@@ -17,12 +45,12 @@ export function DifficultySettings({ difficulty, onChange }: DifficultySettingsP
   return (
     <>
       <h4>Difficulty</h4>
-      <div class="tabs presets" role="radiogroup" aria-label="Difficulty">
+      <div class={cx(tabStrip(), presets)} role="radiogroup" aria-label="Difficulty">
         {PRESET_ORDER.map((p) => (
           <button
             key={p}
             role="radio"
-            class={cx('tab', preset === p && 'on')}
+            class={cx(tabButton(), preset === p && 'on')}
             aria-checked={preset === p ? 'true' : 'false'}
             onClick={() => {
               onChange(presetLevels(p));
@@ -32,11 +60,12 @@ export function DifficultySettings({ difficulty, onChange }: DifficultySettingsP
           </button>
         ))}
       </div>
-      <p class="sub preset-note">
+      <p class={cx('sub', presetNote)}>
         {preset ? PRESETS[preset].desc : 'Custom: each setting chosen on its own.'} Click a setting to change it, or
         point at it to see what it does.
       </p>
-      <ul class="key-list difficulty-list">
+      {/* `key-list` puts the settings in two columns, in the settings' look (SettingsPanel.tsx) */}
+      <ul class="key-list">
         {KNOB_ORDER.map((k) => {
           const def = KNOBS[k];
           const level = difficulty[k] ?? 'usual';
@@ -46,7 +75,7 @@ export function DifficultySettings({ difficulty, onChange }: DifficultySettingsP
                 <IconText id={def.icon}>{def.name}</IconText>
               </span>
               <button
-                class={cx('choice', 'level', level)}
+                class={cx(levelButton, level)}
                 aria-label={`${def.name}: ${def.words[level]}`}
                 onClick={() => {
                   onChange({ ...difficulty, [k]: nextLevel(level) });

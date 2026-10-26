@@ -10,6 +10,8 @@ import { money } from '../../../core/format';
 import { unlockedUpTo } from '../../../core/state/game';
 import { loadCampaign } from '../../../storage/campaign';
 import { loadDisplay } from '../../../storage/display';
+import { css } from '../../../styled-system/css';
+import { guideRing, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { filterItems, ITEM_KINDS, itemOffered, placeFilters, placeLabel, placeName } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
@@ -21,6 +23,32 @@ import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 import { SortBy } from '../common/SortBy';
 import { ItemChips, ItemDetail, ItemTip } from './ItemStats';
+import { cardLook, cardsLook, menuHead, menuPanel, tabRow } from './looks';
+
+/** The items' cards, a little narrower than the others. With chips along a card's bottom, where it goes sits under them. */
+const itemCards = css(cardsLook, {
+  gridTemplateColumns: '[repeat(auto-fill, minmax(158px, 1fr))]',
+  '& .card:has(.stat-chips) em': { mt: '4' },
+});
+
+/**
+ * An item's card. With the panel beside the cards, one short of money is still as bright and as pressable, as picking
+ * it to read about is never refused, and the one picked is ringed.
+ */
+const itemCard = css(cardLook, {
+  '.items-detail &': {
+    '&.poor': { opacity: 'full', cursor: 'pointer' },
+    '&.picked': { bg: 'bg.hover', borderColor: 'accent.strong', boxShadow: 'ring.strong' },
+  },
+});
+
+/** The cards, and the panel beside them. */
+const withDetail = css({
+  display: 'grid',
+  gridTemplateColumns: '[minmax(0, 1fr) 300px]',
+  gap: '12',
+  alignItems: 'start',
+});
 
 // an item card's tooltip lists what the item does
 addRichTip('item', (type) => (type in ITEMS ? <ItemTip type={type as ItemType} /> : null));
@@ -70,7 +98,7 @@ export function ItemsMenu() {
   const shown = picked && types.includes(picked) ? picked : types[0];
   const guide = hud.guide();
   const cards = (
-    <div class="cards small">
+    <div class={itemCards}>
       {types.map((t) => {
         const it = ITEMS[t];
         const { earned, locked, forKarma, short } = standing(t);
@@ -80,10 +108,11 @@ export function ItemsMenu() {
             key={t}
             class={cx(
               'card',
+              itemCard,
               short > 0 && 'poor',
               forKarma && 'locked karma',
               detail && t === shown && 'picked',
-              guide === `item:${t}` && 'guide',
+              guide === `item:${t}` && guideRing(),
             )}
             title={short ? "Can't afford it" : stats || undefined}
             richTip={stats ? `item:${t}` : undefined}
@@ -120,16 +149,16 @@ export function ItemsMenu() {
     </div>
   );
   return (
-    <div class="panel menu">
-      <div class="menu-head">
+    <div class={cx(panelCard(), menuPanel)}>
+      <div class={menuHead}>
         <h3>Place an item</h3>
         <SortBy list="items" orders={ITEM_SORTS} />
       </div>
-      <div class="tabs filters" aria-label="Where it goes">
+      <div class={cx(tabStrip(), tabRow)} aria-label="Where it goes">
         {places.map((p) => (
           <Button
             key={p}
-            class={cx('tab', place === p && 'on', p === 'all' && guide === 'filter:place' && 'guide')}
+            class={cx(tabButton(), place === p && 'on', p === 'all' && guide === 'filter:place' && guideRing())}
             onPress={() => {
               hud.itemPlace = p;
             }}
@@ -138,15 +167,14 @@ export function ItemsMenu() {
           </Button>
         ))}
       </div>
-      <div class="tabs filters" aria-label="What it is for">
+      <div class={cx(tabStrip(), tabRow)} aria-label="What it is for">
         {[{ id: 'all' as const, label: 'Everything' }, ...ITEM_KINDS].map((k) => (
           <Button
             key={k.id}
             class={cx(
-              'tab',
-              'small',
+              tabButton({ size: 'small' }),
               hud.itemKind === k.id && 'on',
-              k.id === 'all' && guide === 'filter:kind' && 'guide',
+              k.id === 'all' && guide === 'filter:kind' && guideRing(),
             )}
             onPress={() => {
               hud.itemKind = k.id;
@@ -159,7 +187,8 @@ export function ItemsMenu() {
       {!types.length ? (
         <p class="sub">Nothing of that kind goes there.</p>
       ) : detail && shown ? (
-        <div class="items-detail">
+        // `items-detail` is for the menu, which widens to make room for the panel, and for the cards beside it
+        <div class={cx('items-detail', withDetail)}>
           {cards}
           <ItemDetail type={shown} where={placeLabel(ITEMS[shown])} action={detailAction(shown)} />
         </div>

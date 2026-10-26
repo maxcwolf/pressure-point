@@ -1,0 +1,4 @@
+/* Where Panda's styles go, in the order they win: the page-wide and shared styles of src/ui/theme/panda/ in the base
+   layer, under every component's own style (see panda.config.ts). */
+
+@layer reset, base, tokens, recipes, utilities;

@@ -2,11 +2,20 @@
 
 import { LOYALTY_NAMES, REGULARS_MAX } from '../../../core/data';
 import { loyaltyLevel, regularHere } from '../../../core/sim/regulars';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { cx } from '../../lib/cx';
 import { loyaltyNote } from '../../lib/regulars';
 import { REGULAR_SORTS, sorted } from '../../lib/sorts';
 import { Bar } from '../common/Bar';
 import { SortBy } from '../common/SortBy';
+import { statsHead, tableLook } from './looks';
+
+/** The regulars' table, with how loyal each is in words beside a short bar. */
+const regulars = css(tableLook, {
+  '& td.loyalty': { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8' },
+  '& td.loyalty .bar': { w: '96', m: '0' },
+});
 
 /** A row for each regular, the most loyal first or in the order picked. */
 export function RegularsTab() {
@@ -23,13 +32,14 @@ export function RegularsTab() {
     );
   return (
     <>
-      <div class="stats-head">
+      <div class={statsHead}>
         <p class="sub">
           {`Guests who come back every few weeks, up to ${REGULARS_MAX} at a time. Good visits make them loyal: more patient, sooner back, and they tip. A bad visit or two and they stop coming.`}
         </p>
         {rows.length > 1 && <SortBy list="regulars" orders={REGULAR_SORTS} />}
       </div>
-      <table class="casebook regulars">
+      {/* `regulars` is for the end-to-end tests */}
+      <table class={cx('regulars', regulars)}>
         <thead>
           <tr>
             <th>Regular</th>

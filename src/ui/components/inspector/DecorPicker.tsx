@@ -16,11 +16,72 @@ import {
 import { unlockedUpTo } from '../../../core/state/game';
 import type { Room } from '../../../core/state/types';
 import { loadCampaign } from '../../../storage/campaign';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { karmaText } from '../../lib/karma';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
+
+/**
+ * Decorating a room: a row of swatches for the floor and one for the walls, under a dashed line, with a heading a
+ * little bigger than the inspector's others (under `.insp`, to outdo them).
+ */
+const decorCard = css({
+  mt: '10',
+  borderTop: 'divider.dashed',
+  pt: '6',
+  '.insp &': { '& h4': { fontSize: '14', fontWeight: 'bold' } },
+});
+
+/** What the floor or the walls are now, close over their swatches (under `.insp`, to outdo its paragraphs' spacing). */
+const row = css({ '.insp &': { m: '0', mt: '4' } });
+
+/** A row of swatches. */
+const swatches = css({ display: 'flex', flexWrap: 'wrap', gap: '4', m: '0', mt: '2', mb: '6' });
+
+/**
+ * One floor's or wall's swatch: a small square of it in a frame, ringed in teal while it is the one laid, and faded
+ * while only karma unlocks it.
+ */
+const swatch = css({
+  position: 'relative',
+  w: '24',
+  h: '24',
+  p: '2',
+  border: 'card',
+  borderRadius: '8',
+  bg: 'bg.card',
+  '& i': { display: 'block', w: 'full', h: 'full', borderRadius: '4' },
+  _on: { borderColor: 'accent.strong', boxShadow: 'ring' },
+  '&.karma i': { opacity: 'quiet' },
+});
+
+/** A small lock in the corner of a swatch that karma unlocks. */
+const lock = css({
+  position: 'absolute',
+  right: '-4',
+  bottom: '-4',
+  display: 'flex',
+  bg: 'bg.card',
+  borderRadius: 'disc',
+  p: '1',
+});
+
+/** The button to give every room of its kind the same look. */
+const decorAll = css({
+  border: 'outline',
+  borderRadius: '12',
+  py: '4',
+  px: '10',
+  fontWeight: 'bold',
+  fontSize: '13',
+  bg: 'control',
+  boxShadow: 'low',
+  m: '0',
+  mt: '2',
+  mb: '6',
+});
 
 /** One row of swatches: the floors or the walls, the room's own picked out, the locked ones marked with their price. */
 function Swatches<Id extends string>({
@@ -43,8 +104,8 @@ function Swatches<Id extends string>({
   const label = part === 'floor' ? 'Floor' : 'Walls';
   return (
     <>
-      <p class="sub decor-row">{`${label}: ${defs[current].name}`}</p>
-      <div class="swatches" aria-label={label}>
+      <p class={cx('sub', row)}>{`${label}: ${defs[current].name}`}</p>
+      <div class={swatches} aria-label={label}>
         {order.map((id) => {
           const def = defs[id];
           const key = `${part}:${id}` as DecorKey;
@@ -52,7 +113,7 @@ function Swatches<Id extends string>({
           return (
             <Button
               key={id}
-              class={cx('swatch', current === id && 'on', locked && 'karma')}
+              class={cx(swatch, current === id && 'on', locked && 'karma')}
               title={locked ? `${def.name}: unlock for ${karmaText(def.karma ?? 0)}` : def.name}
               onPress={() => {
                 if (locked) onLocked(key);
@@ -61,7 +122,7 @@ function Swatches<Id extends string>({
             >
               <i style={{ background: def.swatch }} />
               {locked && (
-                <span class="lock" aria-hidden="true">
+                <span class={lock} aria-hidden="true">
                   <Icon id="ui-lock" size={12} />
                 </span>
               )}
@@ -91,7 +152,8 @@ export function DecorPicker({ room }: { room: Room }) {
   const wall: WallId = room.wall ?? 'standard';
   const name = ROOMS[room.type].name;
   return (
-    <div class="decor">
+    // `decor` is for the end-to-end tests to find it by
+    <div class={cx('decor', decorCard)}>
       <h4>Decorate</h4>
       <Swatches
         part="floor"
@@ -112,7 +174,7 @@ export function DecorPicker({ room }: { room: Room }) {
         onPick={(id) => sim.decorateRoom(room.id, { wall: id })}
       />
       <Button
-        class="roomdecorall"
+        class={decorAll}
         title={`Give every ${name} this floor and these walls, and new ones too`}
         onPress={() => {
           sim.decorateRoom(room.id, {}, true);

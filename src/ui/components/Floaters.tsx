@@ -1,11 +1,11 @@
 // Text that drifts up from a point in the world, such as money earned. It is drawn where that point is on screen every
 // frame, so it stays put in the world as the camera moves, and rises by `transform`, which costs no layout.
 
-import './Floaters.css';
-
 import { useEffect, useRef } from 'preact/hooks';
 
+import { css } from '../../styled-system/css';
 import { useHud } from '../hooks/use-hud';
+import { cx } from '../lib/cx';
 import { FLOAT_LIFE } from '../lib/floaters';
 
 /** How high a floater rises over its life, and how far apart the rows of floaters close together are, in pixels. */
@@ -13,6 +13,26 @@ const RISE = 60;
 const ROW = 24;
 /** How high above the ground the text starts, in meters. */
 const HEIGHT = 1.6;
+
+/**
+ * A floater: white words outlined in navy, green for good news and red for bad. It is placed and faded every frame from
+ * its point in the world (see `Floaters` below); hidden until then.
+ */
+const floater = css({
+  position: 'absolute',
+  left: '0',
+  top: '0',
+  opacity: 'hidden',
+  fontWeight: 'heavy',
+  fontSize: '20',
+  color: 'floater',
+  WebkitTextStroke: '[{borderWidths.heavy} {colors.outline}]',
+  paintOrder: 'stroke fill',
+  whiteSpace: 'nowrap',
+  willChange: 'transform, opacity',
+  '&.good': { color: 'floater.good' },
+  '&.bad': { color: 'floater.bad' },
+});
 
 /** The floating text currently on screen. */
 export function Floaters() {
@@ -49,7 +69,7 @@ export function Floaters() {
     <div class="floaters" ref={layer}>
       {hud.floaters.map((f) => (
         // keyed by the floater, so one that money is added to keeps its place and just says more
-        <div key={f.id} data-id={f.id} class={`floater ${f.kind}`}>
+        <div key={f.id} data-id={f.id} class={cx(floater, f.kind)}>
           {f.text}
         </div>
       ))}

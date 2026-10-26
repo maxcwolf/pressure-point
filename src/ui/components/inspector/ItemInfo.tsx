@@ -25,6 +25,8 @@ import { calmness } from '../../../core/sim/noise';
 import { cannotUpgrade, upgradeCost } from '../../../core/sim/upgrades';
 import { starsEarned } from '../../../core/state/game';
 import type { Item } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
+import { dangerButton, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { meterTone } from '../../lib/meters';
@@ -36,7 +38,39 @@ import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { RugPatterns } from '../common/RugPatterns';
+import { smallButton } from './looks';
 import { StationInfo } from './StationInfo';
+
+/** Treatment equipment's upgrades, a little apart from the rest. */
+const upgrades = css({ m: '0', mt: '8', mb: '4' });
+
+/** The button to buy the next upgrade, in gold; a locked one is cream, and faded. */
+const upgrade = css({
+  border: 'outline',
+  borderRadius: '12',
+  py: '4',
+  px: '10',
+  fontWeight: 'bold',
+  fontSize: '13',
+  bg: 'highlight',
+  boxShadow: 'low',
+  m: '0',
+  mt: '2',
+  mb: '6',
+  _locked: { bg: 'control', opacity: 'muted' },
+});
+
+/**
+ * A heater or air conditioner's thermostat, a little apart from the rest, with the words under its tabs close to them.
+ * Its tabs sit closer together than the menus' do.
+ */
+const thermostat = css({ mt: '8', '& .sub': { m: '0', mt: '4' }, '& .tabs': { m: '0', mt: '2', gap: '4' } });
+
+/** Setting every one of its kind alike, faded while they already are. */
+const every = css({ _locked: { opacity: 'faint', cursor: 'not-allowed' } });
+
+/** The temperature overlay's switch, gold while it is on. */
+const tempOverlay = css({ _on: { bg: 'toggle.on' } });
 
 /** How fresh a table's linens are, and what changing them needs. */
 function Linens({ item: it }: { item: Item }) {
@@ -117,7 +151,8 @@ function Upgrades({ item: it }: { item: Item }) {
   const why = cannotUpgrade(sim.s, it);
   const status = installStatus(it, sim.s.staff);
   return (
-    <div class="upgrades">
+    // `upgrades` is for the end-to-end tests to find it by
+    <div class={cx('upgrades', upgrades)}>
       <p>
         <b>{`Upgrades ${upgradeStars(it.level)}`}</b>
       </p>
@@ -129,7 +164,7 @@ function Upgrades({ item: it }: { item: Item }) {
       )}
       {it.level < UPGRADE_LEVELS && !it.upgradePaid && (
         <Button
-          class="upgrade"
+          class={upgrade}
           title={why || `${upgradeEffect(next)}. A Caretaker with the Mechanics course installs it.`}
           locked={!!why}
           quiet
@@ -176,13 +211,13 @@ function Thermostat({ item: it }: { item: Item }) {
   const others = sim.s.items.filter((x) => x.type === it.type && x.id !== it.id);
   const alike = others.every((x) => (x.thermostat ?? 'auto') === setting);
   return (
-    <div class="thermostat">
+    <div class={cx('thermostat', thermostat)}>
       <label>Thermostat</label>
-      <div class="tabs" aria-label="Thermostat">
+      <div class={tabStrip()} aria-label="Thermostat">
         {THERMOSTAT_ORDER.map((k) => (
           <Button
             key={k}
-            class={cx('tab', 'small', k === setting && 'on')}
+            class={cx(tabButton({ size: 'small' }), k === setting && 'on')}
             title={
               k === 'auto'
                 ? 'Auto: works only as hard as the weather calls for, and is off while it is nice'
@@ -201,7 +236,7 @@ function Thermostat({ item: it }: { item: Item }) {
       </p>
       {others.length > 0 && (
         <Button
-          class="move every"
+          class={cx(smallButton, every)}
           locked={alike}
           title={alike ? `Every ${def.name} is already on ${THERMOSTAT[setting].name}` : undefined}
           onPress={() => {
@@ -212,7 +247,7 @@ function Thermostat({ item: it }: { item: Item }) {
         </Button>
       )}{' '}
       <Button
-        class={cx('move', 'temp-overlay', overlaid && 'on')}
+        class={cx(smallButton, tempOverlay, overlaid && 'on')}
         title="Color the floor by temperature: blue too cold, red too hot, clear comfortable. It stays on until turned off."
         onPress={() => {
           hud.overlay = overlaid ? null : 'temperature';
@@ -335,7 +370,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
       )}
       {!!def.decor && <p class="sub">{`Decor: +${def.decor} to its surroundings`}</p>}
       <Button
-        class="move"
+        class={smallButton}
         onPress={() => {
           tools.startMove(it.id);
         }}
@@ -344,7 +379,7 @@ export function ItemInfo({ item: it }: { item: Item }) {
       </Button>{' '}
       {sim.canSell(it) ? (
         <Button
-          class="danger"
+          class={dangerButton()}
           quiet
           onPress={() => {
             sim.sellItem(it.id);

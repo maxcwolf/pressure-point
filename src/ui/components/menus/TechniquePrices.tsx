@@ -11,11 +11,32 @@ import {
 } from '../../../core/data';
 import { money } from '../../../core/format';
 import { unlockedUpTo } from '../../../core/state/game';
+import { css } from '../../../styled-system/css';
 import { useGame } from '../../hooks/use-hud';
 import { pricedFor } from '../../lib/casebook';
+import { cx } from '../../lib/cx';
 import { balkShort, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
+import { ledgerLook } from './looks';
+
+/** The card of each treatment's price. */
+const prices = css(ledgerLook, { mt: '10' });
+
+/**
+ * A treatment's price, on a line of its own: its name, how many it has put off, and its price between a pair of small
+ * buttons to step it down and up. A grid however the card lays out its other lines.
+ */
+const priceRow = css({
+  display: '[grid !important]',
+  gridTemplateColumns: '[1fr auto 28px 48px 28px]',
+  alignItems: 'center',
+  gap: '6',
+  '& small': { fontSize: '12', opacity: 'muted' },
+  '& b': { textAlign: 'center' },
+  '& button': { border: 'outline.thin', borderRadius: '8', bg: 'control', fontWeight: 'bold', h: '24' },
+  '& button.locked': { opacity: 'locked' },
+});
 
 /** Why a price cannot go higher. */
 const TOP_NOTE = 'Overall level and this price together are at the highest a price can be.';
@@ -49,7 +70,7 @@ export function TechniquePrices() {
   // a place in a class has its price too, once a studio can be built
   const classes = sim.enabled('qigong') && unlockedUpTo(s) >= (ROOMS.qigong.unlock ?? 0);
   return (
-    <div class="ledger technique-prices">
+    <div class={prices}>
       <h4>Each treatment</h4>
       <p class="sub">
         On top of the overall level: charge more for what is in demand, and keep the everyday treatments cheap.
@@ -60,7 +81,8 @@ export function TechniquePrices() {
         const total = sim.priceFor(m);
         const balk = balkShort(total, s.reputation);
         return (
-          <div key={m} class="technique-price">
+          // `technique-price` is for the end-to-end tests
+          <div key={m} class={cx('technique-price', priceRow)}>
             <span>
               <IconText id={def.icon}>{def.name}</IconText>
             </span>
@@ -98,7 +120,7 @@ function ClassPrice() {
   const { sim } = useGame();
   const own = sim.s.prices.qigong ?? 1;
   return (
-    <div class="technique-price">
+    <div class={cx('technique-price', priceRow)}>
       <span>
         <IconText id="technique-qigong">{`Qi Gong class (${money(Math.round(CLASS_FEE * sim.priceFor('qigong')))})`}</IconText>
       </span>

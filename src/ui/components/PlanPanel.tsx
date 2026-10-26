@@ -1,11 +1,11 @@
 // The blueprint panel: what a room being planned still needs, what can be added, and the Build button, with a way to
 // pencil the room in for later instead.
 
-import './PlanPanel.css';
-
 import { ITEMS, ROOMS, WINDOW_COST } from '../../core/data';
 import { money } from '../../core/format';
 import { finishCost } from '../../core/sim/building';
+import { css } from '../../styled-system/css';
+import { buttonRow, goButton, guideRing, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { placedFlags } from '../lib/plan';
@@ -14,12 +14,68 @@ import { Button } from './common/Button';
 import { IconText } from './common/Icon';
 import { Stars } from './common/Stars';
 
+/** Bottom center, over the bar along the bottom. */
+const column = css({
+  left: 'half',
+  transform: '[translateX(-50%)]',
+  bottom: '[var(--bar-h)]',
+  w: '[min(520px, calc(var(--vw) - 28px))]',
+});
+
+/** The room's name, and what it will cost at the right. */
+const heading = css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10' });
+
+/** What it will cost, on a gold tag. */
+const costTag = css({
+  bg: 'highlight',
+  border: 'outline.thin',
+  borderRadius: '8',
+  py: '0',
+  px: '8',
+  fontSize: '14',
+});
+
+/** A row of chips. */
+const chips = css({ display: 'flex', flexWrap: 'wrap', gap: '6', mb: '6' });
+
+/**
+ * A chip: something the room still needs, or something to add, pressed to take it in hand; green and ticked once in
+ * place, orange while in hand. `chip` and `done` are for the end-to-end tests to find them by.
+ */
+const chip = css({
+  pointerEvents: 'auto',
+  fontSize: '13',
+  fontWeight: 'medium',
+  border: 'outline.thin',
+  borderRadius: 'pill',
+  py: '2',
+  px: '10',
+  bg: 'bg.card',
+  '&.done': { bg: 'good.bg', color: 'good', borderColor: 'good' },
+  _on: { bg: 'active', color: 'fg.on-accent' },
+});
+
+/** A chip that can be pressed lifts a little under the pointer. */
+const pressable = css({ _hover: { transform: '[translateY(-1px)]' } });
+
+/** What is still needed and the room's prestige, closer to the buttons than usual. */
+const note = css({ m: '0', mb: '4' });
+
+/** What the bank is short of, in the color of trouble. */
+const shortLine = css({ '& b': { color: 'bad', fontWeight: 'bold' } });
+
+/** Cancel at the left and Build at the right, Pencil in for later between them. */
+const buttons = css({ justifyContent: 'space-between', mt: '4' });
+
+/** Pencil in for later, in teal. */
+const pencilButton = css({ bg: 'accent', color: 'fg.on-accent' });
+
 /** The blueprint of the room being planned. */
 export function PlanPanel() {
   const { sim, tools } = useGame();
   const hud = useHud();
   const plan = tools.plan;
-  if (!plan) return <div id="plan" />;
+  if (!plan) return <div id="plan" class={column} />;
   const { room, missing, holding, ready } = plan;
   const def = ROOMS[room.type];
   const placed = placedFlags(def.required, missing);
@@ -31,21 +87,21 @@ export function PlanPanel() {
     tools.planHold(holding === what ? '' : what);
   };
   return (
-    <div id="plan">
-      <div class="panel plan">
-        <h3>
+    <div id="plan" class={column}>
+      <div class={panelCard()}>
+        <h3 class={heading}>
           <IconText id={def.icon}>{`${def.name} blueprint`}</IconText>{' '}
-          <span class="cost">{`${money(cost)}${extras ? ` + ${money(extras)}` : ''}`}</span>
+          <span class={costTag}>{`${money(cost)}${extras ? ` + ${money(extras)}` : ''}`}</span>
         </h3>
-        <div class="chips">
-          <span class="chip done">✔ Door</span>
+        <div class={chips}>
+          <span class={cx('chip', 'done', chip)}>✔ Door</span>
           {def.required.map((type, i) =>
             placed[i] ? (
-              <span key={i} class="chip done">{`✔ ${ITEMS[type].name}`}</span>
+              <span key={i} class={cx('chip', 'done', chip)}>{`✔ ${ITEMS[type].name}`}</span>
             ) : (
               <Button
                 key={i}
-                class={cx('chip', holding === type && 'on')}
+                class={cx('chip', chip, pressable, holding === type && 'on')}
                 onPress={() => {
                   tools.startItem(type);
                 }}
@@ -55,9 +111,9 @@ export function PlanPanel() {
             ),
           )}
         </div>
-        <div class="chips">
+        <div class={chips}>
           <Button
-            class={cx('chip', holding === 'window' && 'on')}
+            class={cx('chip', chip, pressable, holding === 'window' && 'on')}
             onPress={() => {
               hold('window');
             }}
@@ -65,7 +121,7 @@ export function PlanPanel() {
             <IconText id="ui-window">{`Windows (${room.windows.length}) · ${money(WINDOW_COST)} each`}</IconText>
           </Button>{' '}
           <Button
-            class={cx('chip', holding === 'door' && 'on')}
+            class={cx('chip', chip, pressable, holding === 'door' && 'on')}
             onPress={() => {
               hold('door');
             }}
@@ -73,7 +129,7 @@ export function PlanPanel() {
             <IconText id="ui-door">Move door</IconText>
           </Button>
         </div>
-        <p class="sub">
+        <p class={cx('sub', note)}>
           {ready
             ? 'Ready to build. Add windows, or extras from the Items menu, first if you like.'
             : `Still needed: ${missing.map((t) => ITEMS[t].name).join(', ')}.`}
@@ -81,11 +137,11 @@ export function PlanPanel() {
           <Stars count={sim.prestige(room)} />
         </p>
         {short && (
-          <p class="sub short">
+          <p class={cx('sub', note, shortLine)}>
             <b>{short}</b> Pencil it in and come back when you can.
           </p>
         )}
-        <div class="btnrow">
+        <div class={cx(buttonRow(), buttons)}>
           <Button
             onPress={() => {
               tools.cancel();
@@ -94,7 +150,7 @@ export function PlanPanel() {
             Cancel
           </Button>{' '}
           <Button
-            class="pencil"
+            class={pencilButton}
             title="Keep the floor and the door as a sketch, for nothing, and build it later. Windows and extras are refunded."
             onPress={() => {
               tools.planSketch();
@@ -103,7 +159,7 @@ export function PlanPanel() {
             ✎ Pencil in for later
           </Button>{' '}
           <Button
-            class={cx('go', hud.guide() === 'plan:build' && 'guide')}
+            class={cx(goButton(), hud.guide() === 'plan:build' && guideRing())}
             locked={!ready}
             onPress={() => {
               tools.planBuild();

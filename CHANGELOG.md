@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.34.1
+
+- **Under the hood.** The interface's styles now come from one theme (Panda CSS): every color, size and line in the menus, dialogs and panels is drawn from the same scale, so they line up a pixel or two tighter here and there. Nothing changes for play.
+
 ## v0.34.0
 
 - **Pencil rooms in.** The Rooms menu's new Pencil in pill sketches a room's floor and door for later, for nothing: nothing can be built over it, and Build here in its inspector opens its blueprint on the spot when you're ready. A blueprint you can't afford yet can be pencilled in for later too.

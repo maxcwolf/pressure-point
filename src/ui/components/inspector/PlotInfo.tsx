@@ -7,11 +7,30 @@ import { ROOMS } from '../../../core/data';
 import type { PlotOffer } from '../../../core/land';
 import { roomLabels } from '../../../core/sim/assignments';
 import { PLOT_NAME_MAX } from '../../../core/sim/land';
+import { css } from '../../../styled-system/css';
 import { useGame } from '../../hooks/use-hud';
 import { plotSize, roomsOnPlot } from '../../lib/land';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
+
+/** A plot's name, changed where it stands: a box only while pointed at or typed in. */
+const nameBox = css({
+  font: 'inherit',
+  color: 'inherit',
+  border: '[{borderWidths.thin} solid transparent]',
+  borderRadius: '8',
+  py: '0',
+  px: '4',
+  my: '0',
+  mx: '-6',
+  w: '[calc(100% + 8px)]',
+  bg: 'transparent',
+  '&:hover, &:focus': { borderColor: 'accent', bg: 'bg.hover', outline: 'none' },
+});
+
+/** The rooms on a plot, a button for each, wrapping. */
+const roomList = css({ listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: '4', my: '4', mx: '0' });
 
 /** A bought plot: its name to change, the builders' progress while they are at work, then the rooms on it. */
 export function PlotInfo({ offer }: { offer: PlotOffer }) {
@@ -25,7 +44,7 @@ export function PlotInfo({ offer }: { offer: PlotOffer }) {
     <>
       <h3>
         <input
-          class="pname"
+          class={nameBox}
           aria-label="Plot name"
           value={draft ?? offer.name}
           maxLength={PLOT_NAME_MAX}
@@ -58,7 +77,7 @@ export function PlotInfo({ offer }: { offer: PlotOffer }) {
         <>
           <h4>Rooms on it</h4>
           {rooms.length ? (
-            <ul class="plot-rooms">
+            <ul class={roomList}>
               {rooms.map((r) => (
                 <li key={r.id}>
                   <Button

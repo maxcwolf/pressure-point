@@ -3,11 +3,50 @@
 
 import { DAY_SECONDS } from '../../core/data';
 import type { Guest } from '../../core/state/types';
+import { css } from '../../styled-system/css';
+import { buttonRow, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { calmingNote, doorShare, NOBODY_FREE, runnerLine, runnersShown, sendLabel, sendTitle } from '../lib/calming';
+import { cx } from '../lib/cx';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
+
+/**
+ * A runner's pill: a panel in pink, popping in, with their name and the time left over a bar, and who to send under
+ * them. `runner-pill` is for the end-to-end tests to find it by.
+ */
+const pill = css({
+  display: 'block',
+  my: '0',
+  mx: 'auto',
+  borderColor: 'notice.runner',
+  p: '12',
+  pt: '6',
+  pb: '8',
+  font: 'inherit',
+  fontSize: '14',
+  fontWeight: 'bold',
+  textAlign: 'center',
+  animation: '[pop {durations.normal} {easings.out}]',
+});
+
+/** Their name and the time left, a click to them, lifting a little under the pointer. */
+const show = css({
+  display: 'block',
+  w: 'full',
+  border: 'none',
+  bg: '[none]',
+  p: '0',
+  font: 'inherit',
+  _hover: { transform: '[translateY(-1px)]' },
+});
+
+/** Who to send, or who is on the way, in a smaller row than usual. */
+const buttons = css({ mt: '4', '& button': { fontSize: '14', py: '4', px: '12', mt: '2' } });
+
+/** Who is on the way. */
+const onTheWay = css({ fontSize: '13', fontWeight: 'bold', opacity: 'soft' });
 
 /** The pills for everyone running round on a really bad trip, newest first. */
 export function RunnerNotice() {
@@ -30,9 +69,9 @@ function RunnerPill({ guest: g, more }: { guest: Guest; more: number }) {
   const calmer = sim.calmerOf(g);
   const sent = sim.calmerFor(g);
   return (
-    <div class="panel offer-pill runner-pill">
+    <div class={cx(panelCard(), 'runner-pill', pill)}>
       <Button
-        class="runner-show"
+        class={show}
         title="Show me"
         onPress={() => {
           hud.show({ kind: 'guest', id: g.id });
@@ -43,9 +82,9 @@ function RunnerPill({ guest: g, more }: { guest: Guest; more: number }) {
         </span>
         <Bar value={doorShare(left) * 100} class={left < DAY_SECONDS ? 'thin bad' : 'thin need'} />
       </Button>
-      <div class="btnrow">
+      <div class={cx(buttonRow(), buttons)}>
         {calmer ? (
-          <span class="runner-note">
+          <span class={onTheWay}>
             <IconText id="bubble-relieved">{calmingNote(calmer.name, calmer.state === 'doingJob')}</IconText>
           </span>
         ) : sim.canCalm(g) && sent ? (

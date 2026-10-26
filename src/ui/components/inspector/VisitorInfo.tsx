@@ -1,13 +1,12 @@
 // The inspector for a visitor: a VIP, the health inspector, or a firefighter.
 
-import '../dialogs/VisitDialog.css';
-
 import { ROOMS } from '../../../core/data';
 import type { Visitor } from '../../../core/state/types';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { verdictTone, visitorLine, visitorStatus } from '../../lib/visits';
 import { IconText } from '../common/Icon';
+import { visitRooms } from '../dialogs/VisitDialog';
 
 /** Who the visitor is, what they are doing, and what they have made of each room so far. */
 export function VisitorInfo({ visitor: v }: { visitor: Visitor }) {
@@ -30,7 +29,7 @@ export function VisitorInfo({ visitor: v }: { visitor: Visitor }) {
       {v.seen.length > 0 && (
         <>
           <h4>Their notes so far</h4>
-          <ul class="visit-rooms">
+          <ul class={visitRooms}>
             {v.seen.map((r) => (
               <li key={r.room} class={cx(verdictTone(r))}>
                 <b>{r.name}</b>

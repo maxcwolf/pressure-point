@@ -1,6 +1,7 @@
 // Asking before letting a member of staff go, once their inspector's Let go is pressed. The game waits meanwhile.
 
 import { ROLES } from '../../../core/data';
+import { buttonRow, dangerButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { Button } from '../common/Button';
 import { Dialog } from './Dialog';
@@ -15,7 +16,7 @@ export function ConfirmFire() {
     return (
       <Dialog>
         <h2>Already leaving</h2>
-        <div class="btnrow">
+        <div class={buttonRow()}>
           <Button
             onPress={() => {
               hud.fireAsked = null;
@@ -32,7 +33,7 @@ export function ConfirmFire() {
     <Dialog>
       <h2>{`Are you sure you want to fire ${st.name}?`}</h2>
       <p>{`Your ${ROLES[st.role].name} packs up and leaves the center for good.`}</p>{' '}
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
           onPress={() => {
             hud.fireAsked = null;
@@ -42,7 +43,7 @@ export function ConfirmFire() {
           Keep them on
         </Button>
         <Button
-          class="danger"
+          class={dangerButton()}
           onPress={() => {
             sim.fire(st.id);
             hud.fireAsked = null;

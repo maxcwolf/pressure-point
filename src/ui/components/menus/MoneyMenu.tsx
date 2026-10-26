@@ -1,7 +1,5 @@
 // The Money menu: the books, the payroll outlook, prices (overall and per treatment), marketing, the loan, and land, a tab each.
 
-import './MoneyMenu.css';
-
 import {
   centerOf,
   FOUNDATION_GIFTS,
@@ -18,6 +16,8 @@ import { netOf } from '../../../core/sim/economy';
 import { giftsToCome } from '../../../core/sim/foundation';
 import { INTAKE_CAP_MIN } from '../../../core/sim/guests';
 import type { Ledger } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
+import { buttonRow, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { MoneyTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
@@ -30,9 +30,35 @@ import { BALK_WHO, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { LandTab } from './LandTab';
+import { chart, ledgerCard, ledgerLook, ledgers, menuPanel, tabRow } from './looks';
 import { MarketingTab } from './MarketingTab';
 import { PayrollTab } from './PayrollTab';
 import { TechniquePrices } from './TechniquePrices';
+
+/**
+ * Where the money comes from, in columns: each source's take this month, its share and last month, under small
+ * headings. The sources on the side, away from healing, are in teal.
+ */
+const sources = css(ledgerLook, {
+  mt: '12',
+  '& :is(.head, .source)': { display: 'grid', gridTemplateColumns: '[1fr auto auto]', gap: '12' },
+  '& .head': { fontSize: '12', opacity: 'muted' },
+  '& .source b': { textAlign: 'right' },
+  '& .source.side span': { color: 'fg.accent' },
+});
+
+/** The overall price level's card, with how many prices put off this month and last, and who they put off. */
+const priceLevel = css(ledgerLook, {
+  '& .priced': { fontSize: '13', fontWeight: 'bold', mt: '4' },
+  '& .balk': { fontSize: '13', mt: '2' },
+});
+
+/** The Foundation's card, above the books in gold, with the next gift in bold. */
+const foundationCard = css(ledgerLook, {
+  mb: '12',
+  borderColor: 'highlight',
+  '& .gift': { fontWeight: 'bold', m: '0', mt: '4', mb: '2' },
+});
 
 /** A line of the books: income in green, spending in red. */
 function Line({ name, amount, cost = false }: { name: string; amount: number; cost?: boolean }) {
@@ -51,7 +77,7 @@ function LedgerTable({ title, ledger }: { title: string; ledger: Ledger }) {
   // a generator's diesel goes under the machines' upkeep
   const upkeep = sim.s.items.some((it) => it.type === 'generator') ? 'Machines and the Generator' : 'Machine upkeep';
   return (
-    <div class="ledger">
+    <div class={cx('ledger', ledgerCard)}>
       <h4>{title}</h4>
       <Line name="Consultations" amount={ledger.consult} />
       <Line name="Treatments" amount={ledger.treatment} />
@@ -84,7 +110,7 @@ function IncomeSources() {
   const rows = incomeSources(s.ledger, s.lastLedger);
   const verdict = incomeVerdict(s.ledger);
   return (
-    <div class="ledger sources">
+    <div class={sources}>
       <h4>Where the money comes from</h4>
       <div class="head">
         <span>Source</span>
@@ -92,7 +118,7 @@ function IncomeSources() {
         <b>Last month</b>
       </div>
       {rows.map((r) => (
-        <div key={r.id} class={cx('source', r.healing ? 'healing' : 'side')}>
+        <div key={r.id} class={cx('source', !r.healing && 'side')}>
           <span>{r.name}</span>
           <b>{`${money(r.now)} · ${shareWord(r.share)}`}</b>
           <b>{money(r.last)}</b>
@@ -114,7 +140,8 @@ function Foundation() {
   const why = sim.giftBlocker();
   const all = FOUNDATION_GIFTS.length;
   return (
-    <div class="ledger foundation">
+    // `ledger` and `foundation` are for the end-to-end tests
+    <div class={cx('ledger', 'foundation', foundationCard)}>
       <h4>
         <IconText id="ui-karma">The Pressure Point Foundation</IconText>
       </h4>
@@ -133,7 +160,7 @@ function Foundation() {
                 ? why
                 : `Not enough money yet: ${money(price - s.money)} more is needed in the bank.`}
           </p>
-          <div class="btnrow left">
+          <div class={buttonRow({ align: 'left' })}>
             <Button
               quiet
               locked={!!why}
@@ -159,14 +186,15 @@ function Books() {
   return (
     <>
       {sim.foundationOpen() && <Foundation />}
-      <div class="ledgers">
+      {/* `ledgers`, and `ledger` on each month, are for the end-to-end tests */}
+      <div class={cx('ledgers', ledgers)}>
         <LedgerTable title="This month" ledger={s.ledger} />
         <LedgerTable title="Last month" ledger={s.lastLedger} />
       </div>
       <IncomeSources />
       {heights.length > 0 && (
         <>
-          <div class="chart">
+          <div class={chart}>
             {heights.map((height, i) => {
               const value = s.history[i] ?? 0;
               return (
@@ -190,14 +218,14 @@ function Prices() {
   const s = sim.s;
   return (
     <>
-      <div class="ledger price-level">
+      <div class={priceLevel}>
         <h4>{`Overall: ${Math.round(s.priceLevel * 100)}% of standard`}</h4>
         <p class="sub">Higher prices earn more per guest, but build reputation more slowly and some guests walk out.</p>
         <p class="priced">
           {`Put off by prices: ${s.tally.priced} this month, ${s.months.at(-1)?.priced ?? 0} last month`}
         </p>
         <p class="balk">{`${balkText(s.priceLevel, s.reputation)} ${BALK_WHO}`}</p>
-        <div class="btnrow left">
+        <div class={buttonRow({ align: 'left' })}>
           <Button
             locked={s.priceLevel <= PRICE_MIN}
             onPress={() => {
@@ -229,7 +257,7 @@ function IntakeCap() {
   const cap = s.intakeCap;
   const building = sim.guestCap();
   return (
-    <div class="ledger intake-cap">
+    <div class={ledgerCard}>
       <h4>
         {cap === null
           ? `Guests at once: no limit of your own (the building takes ${building})`
@@ -239,7 +267,7 @@ function IntakeCap() {
         Guests who find the center full go elsewhere, and their fees with them. A way to keep a summer's crowd to what
         your tables can treat, so nobody waits long enough to go home worse off.
       </p>
-      <div class="btnrow left">
+      <div class={buttonRow({ align: 'left' })}>
         <Button
           locked={cap !== null && cap <= INTAKE_CAP_MIN}
           onPress={() => {
@@ -276,13 +304,13 @@ function Loan() {
   const s = sim.s;
   const payroll = payrollOutlook(s);
   return (
-    <div class="ledger">
+    <div class={ledgerCard}>
       <h4>{`Loan: ${money(s.loan)} of ${money(loanLimit(s))}`}</h4>
       <p class="sub">
         {`Costs ${(LOAN_RATE * 100).toFixed(0)}% interest a month, currently ${money(s.loan * LOAN_RATE)}.`}
       </p>
       {payroll.wages > 0 && <p class="sub">{paydayBeside(payroll)}</p>}
-      <div class="btnrow left">
+      <div class={buttonRow({ align: 'left' })}>
         <Button
           quiet
           locked={s.loan + LOAN_STEP > loanLimit(s)}
@@ -320,13 +348,13 @@ const TABS: readonly { id: MoneyTab; icon: IconId; name: string }[] = [
 export function MoneyMenu() {
   const hud = useHud();
   return (
-    <div class="panel menu money-menu">
+    <div class={cx(panelCard(), menuPanel)}>
       <h3>Money</h3>
-      <div class="tabs">
+      <div class={cx(tabStrip(), tabRow)}>
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx('tab', hud.moneyTab === t.id && 'on')}
+            class={cx(tabButton(), hud.moneyTab === t.id && 'on')}
             onPress={() => {
               hud.moneyTab = t.id;
             }}

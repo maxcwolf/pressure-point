@@ -92,7 +92,7 @@ async function openLab(page: Page, id: string, settings = '') {
   await page.goto(
     `/lab.html?model=${encodeURIComponent(id)}&still${FACES.includes(id) ? '&view=head' : ''}${settings}`,
   );
-  await page.addStyleTag({ content: '.caption, .panel { display: none !important; }' });
+  await page.addStyleTag({ content: '.caption, .lab-panel { display: none !important; }' });
   await page.waitForFunction(() => window.lab?.ready);
 }
 
