@@ -64,6 +64,8 @@ Know where a room should go but can't pay for it yet? Press **✎ Pencil in** in
 
 Click a sketch to see what it will cost and whether it still fits. **Build here** opens its blueprint in that spot, door and all, with the first piece of furniture in hand; if something has got in the way since, it hands you its floor to click as it is or drag out afresh. **Move** draws it again elsewhere, and **Erase** rubs it out. A blueprint you can't afford yet can be kept with **✎ Pencil in for later**, which refunds its windows and extras.
 
+A sketch keeps an eye on the floor round it. If something ends up in its doorway, or its room would no longer fit there, it turns amber and its label says "⚠ doorway blocked" or "⚠ no longer fits", and the Pencil in tab counts how many no longer fit. No room's door, nor another sketch's, may open onto a sketch. A sketch on a plot waits for the land: once you buy the plot and the builders are done, it is inside the building and checked like any other, so one whose door faces the new outer wall turns amber.
+
 ## Reading people
 
 Guests and staff show how they are doing before any bubble goes up, so you can see trouble coming from across the building.

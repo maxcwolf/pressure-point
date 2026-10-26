@@ -24,6 +24,8 @@
   --overlay-fair: var(--gold);
   --overlay-bad: var(--red);
   --overlay-cold: var(--blue);
+  /* A room pencilled in that no longer fits: the amber of its paint on the floor (render/floor.ts) and its label's edge. */
+  --sketch-unfit: #c98a1a;
   --shadow: 0 5px 0 rgba(36, 56, 74, 0.32);
   --font: 'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif;
 }

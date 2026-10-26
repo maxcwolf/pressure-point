@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { centerOf, H, ROAD_Y, ROOMS, type RoomType } from '../core/data';
 import { plotAt } from '../core/land';
 import type { Sim } from '../core/sim/sim';
+import { noLongerFits } from '../core/sim/sketches';
 import type { Sketch } from '../core/state/types';
 import { must } from '../core/util';
 import { Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
@@ -150,31 +151,30 @@ function paintLot(
   if (!same(1, 0)) ctx.fillRect(px + TS - c, py, c, TS);
 }
 
-/** A room's trim as a color the canvas takes, with an alpha from 0 to 1. */
-function trimColor(type: RoomType, alpha: number): string {
-  const c = ROOMS[type].trim;
-  return `rgba(${(c >> 16) & 255},${(c >> 8) & 255},${c & 255},${alpha})`;
-}
-
 /** The orange the door of a sketch is marked in, as the door marker is while a door is placed. */
 const SKETCH_DOOR = '#f08a4b';
 /** The cream laid under a sketch's dashed outline, so it reads on any floor. */
 const SKETCH_UNDER = '#fff8ea';
+/** The amber a sketch is painted in, in place of its trim, once it no longer fits or its doorway is blocked. */
+const SKETCH_UNFIT = 0xc98a1a;
 
 /**
- * Paint a room pencilled in over the floor: its trim as a faint wash with diagonal hatching, a dashed outline in the
- * trim over a cream one, and its door as an orange stretch of its edge.
+ * Paint a room pencilled in over the floor: its trim, or amber if it no longer fits, as a faint wash with diagonal
+ * hatching, a dashed outline in the same over a cream one, and its door as an orange stretch of its edge.
  */
-export function paintSketch(ctx: CanvasRenderingContext2D, sk: Sketch) {
+export function paintSketch(ctx: CanvasRenderingContext2D, sk: Sketch, unfit = false) {
   const [x0, y0, w, h] = [sk.x * TS, sk.y * TS, sk.w * TS, sk.h * TS];
+  const c = unfit ? SKETCH_UNFIT : ROOMS[sk.type].trim;
+  /** The sketch's color with an alpha from 0 to 1. */
+  const tint = (alpha: number) => `rgba(${(c >> 16) & 255},${(c >> 8) & 255},${c & 255},${alpha})`;
   ctx.save();
-  ctx.fillStyle = trimColor(sk.type, 0.16);
+  ctx.fillStyle = tint(0.16);
   ctx.fillRect(x0, y0, w, h);
   ctx.beginPath();
   ctx.rect(x0, y0, w, h);
   ctx.clip();
   // the hatching, running down to the right a third of a tile apart
-  ctx.strokeStyle = trimColor(sk.type, 0.55);
+  ctx.strokeStyle = tint(0.55);
   ctx.lineWidth = 1.5 * K;
   ctx.beginPath();
   for (let d = -h; d < w; d += TS / 3) {
@@ -193,7 +193,7 @@ export function paintSketch(ctx: CanvasRenderingContext2D, sk: Sketch) {
     ctx.strokeRect(x0 + inset, y0 + inset, w - 2 * inset, h - 2 * inset);
   };
   edge(SKETCH_UNDER, 4.5 * K, []);
-  edge(trimColor(sk.type, 1), 3 * K, [9 * K, 6 * K]);
+  edge(tint(1), 3 * K, [9 * K, 6 * K]);
   ctx.setLineDash([]);
   // the door: the stretch of edge it is on, in orange
   const { door } = sk;
@@ -331,8 +331,8 @@ export class Floor {
       else if (r.door.dx === -1) ctx.fillRect(px, py + m, d, TS - 2 * m);
       else ctx.fillRect(px + TS - d, py + m, d, TS - 2 * m);
     }
-    // the rooms pencilled in, over whatever floor they are on
-    for (const sk of this.sim.s.sketches) paintSketch(ctx, sk);
+    // the rooms pencilled in, over whatever floor they are on, amber where they no longer fit
+    for (const sk of this.sim.s.sketches) paintSketch(ctx, sk, noLongerFits(world, sk));
     this.texture.needsUpdate = true;
   }
 }

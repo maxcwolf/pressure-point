@@ -62,7 +62,7 @@ export function RoomsMenu() {
       {pencil && (
         <div class="pencil-note">
           <p>✎ Drag a room out to keep its space for later. Nothing is charged until you build it.</p>
-          {sim.s.sketches.length > 0 && <p class="sub">{sketchCount(sim.s)}</p>}
+          {sim.s.sketches.length > 0 && <p class="sub">{sketchCount(sim.world)}</p>}
         </div>
       )}
       {hud.roomsTab === 'templates' ? <TemplatesTab /> : <RoomCards pencil={pencil} />}

@@ -66,3 +66,16 @@ In `core/build-rules.ts`: `sketchAt(world, x, y)` and `sketchOverlap(world, rect
 1. **Pencilled rooms** (this branch): everything above.
 2. **A fit that keeps up.** A sketch rechecks whether it fits as the world changes, says so on its label ("⚠ doorway blocked", amber), and the Pencil in tab's line counts the ones that no longer fit. A sketch on a plot is carried into the building when the builders are done, or flagged if it no longer fits.
 3. **Sketches that remember a room.** A sketch can carry a saved template, built whole when it is built, and a Plans overlay shows every sketch at once.
+
+## Phase 2: a fit that keeps up
+
+A plan, 26 October 2026, for the second phase, built in a branch of its own after phase 1 was merged.
+
+1. **One answer, worked out once.** `world.sketchFit(sk)` says where a sketch stands: it **fits**; it **waits** for its land (it is on a plot not built on yet, so there is no floor to judge it on); its **doorway is blocked** (its floor is free, but the tile its door opens onto is not corridor, has something on it, or is another sketch); or it **no longer fits** (its floor is taken, or the room would cut someone off). The answer is kept per sketch until `world.version` or the grids change, so the floor, the labels, the count line and the panel share one check and none of them pays for it twice. `world.sketchFits` is the same answer as a plain check, as phase 1 had it.
+2. **On the floor.** A sketch that is blocked or no longer fits is painted amber (`#c98a1a`) in place of its trim: the wash, the hatching and the dashed outline. Its door keeps its orange. Its label's small line reads "⚠ doorway blocked" or "⚠ no longer fits" in place of "pencilled in · 4×4", the label in the warn colors with an amber edge. A sketch waiting for its land is painted and labelled as one that fits: nothing has gone wrong with it.
+3. **The count line.** "3 pencilled in · $9,500 to build them all · one no longer fits", or "· 2 no longer fit". Blocked doorways count; sketches waiting for land do not.
+4. **The panel.** A sketch waiting for its land says "⌛ Waits for its land" with the reason ("That land is not yours yet", or "The builders are at work there"), not "⚠ Doesn't fit today".
+5. **No door onto a sketch.** A room's door, its door moved, a room resized so its door opens somewhere new, a template or a moved room, and a sketch's own door, indoors or on a plot, are all turned down where the door would open onto a sketch's floor, with the `onSketch` line and the sketch selected. A sketch drawn over another sketch's doorway is turned down the same way, so no sketch can block another. A room or an item put in front of a sketch's door is still allowed, as in phase 1: that is what "⚠ doorway blocked" is for.
+6. **Sketches on plots.** Buying a plot and the builders finishing it leave every sketch on it where it is. Once the building has grown into the plot the sketch is inside, and is judged as any other: a door left facing the new outer wall, or a floor over the tiles kept clear inside a new entrance, shows amber.
+
+Nothing in the save changes: the answer is worked out, never stored.

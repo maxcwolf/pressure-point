@@ -1,4 +1,5 @@
-// The labels on rooms pencilled in: the room's icon and name, and its size, over the middle of its sketch on the floor.
+// The labels on rooms pencilled in: the room's icon and name, and its size or what has gone wrong with it, over the
+// middle of its sketch on the floor.
 // Like the floating text, each is put where its point is on screen every frame, so it stays on its sketch as the camera
 // moves, and costs no draw calls.
 
@@ -8,6 +9,8 @@ import { useEffect, useRef } from 'preact/hooks';
 
 import { ROOMS } from '../../core/data';
 import { useHud } from '../hooks/use-hud';
+import { cx } from '../lib/cx';
+import { sketchTag } from '../lib/sketches';
 import { Icon } from './common/Icon';
 
 /** The label on each room pencilled in, but the one selected, which its outline and the inspector speak for. */
@@ -41,13 +44,18 @@ export function SketchLabels() {
   }, [sim, view, any]);
   return (
     <div class="sketch-labels" ref={layer}>
-      {shown.map((sk) => (
-        <div key={sk.id} data-id={sk.id} class="sketch-label">
-          <Icon id={ROOMS[sk.type].icon} size={18} />
-          <b>{ROOMS[sk.type].name}</b>
-          <small>{`pencilled in · ${sk.w}×${sk.h}`}</small>
-        </div>
-      ))}
+      {shown.map((sk) => {
+        // worked out once each time the world changes, and shared with the floor and the panel
+        const fit = sim.world.sketchFit(sk);
+        const unfit = fit.standing === 'doorway' || fit.standing === 'unfit';
+        return (
+          <div key={sk.id} data-id={sk.id} class={cx('sketch-label', unfit && 'unfit')}>
+            <Icon id={ROOMS[sk.type].icon} size={18} />
+            <b>{ROOMS[sk.type].name}</b>
+            <small>{sketchTag(sk, fit)}</small>
+          </div>
+        );
+      })}
     </div>
   );
 }

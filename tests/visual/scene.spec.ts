@@ -174,7 +174,7 @@ test.describe('the scene', () => {
     await expect(page).toHaveScreenshot('scene-progress-bar-turned.png');
   });
 
-  test('two rooms pencilled in beside a room built, one of them selected with its inspector open', async ({
+  test('two rooms pencilled in beside a room built, one selected with its inspector open, the other amber', async ({
     game,
     page,
   }) => {
@@ -188,6 +188,8 @@ test.describe('the scene', () => {
       sim.placeItem('massage_table', 13, 5, 0, { free: true, roomId: room.id });
       sim.finishRoom(room);
       sim.addSketch('consult', { x: 18, y: 5, w: 4, h: 4 }, { x: 18, y: 6, dx: -1, dy: 0 });
+      // a plant in its doorway, so it no longer fits: amber, its label saying why
+      sim.placeItem('plant', 17, 6, 0, { free: true });
       const staffroom = sim.addSketch('staffroom', { x: 17, y: 11, w: 4, h: 3 }, { x: 18, y: 11, dx: 0, dy: -1 });
       if (staffroom) pp.tools.select({ kind: 'sketch', id: staffroom.id });
       pp.ui.dismissAllToasts();

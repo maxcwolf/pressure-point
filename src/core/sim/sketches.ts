@@ -5,7 +5,7 @@
 import { ROOMS, type RoomType } from '../data';
 import { roomCost } from '../resize';
 import type { GameState, Room, Sketch, WallSpot } from '../state/types';
-import type { Rect } from '../world';
+import type { Rect, World } from '../world';
 import { createRoom, removeRoom } from './building';
 import type { SimContext } from './context';
 import { emit, tipOnce } from './events';
@@ -19,6 +19,16 @@ export const sketchCost = (sk: Pick<Sketch, 'type' | 'w' | 'h'>) => roomCost(sk.
 
 /** What building every sketch would cost. */
 export const sketchesCost = (s: Pick<GameState, 'sketches'>) => s.sketches.reduce((sum, sk) => sum + sketchCost(sk), 0);
+
+/** Whether a sketch inside the building no longer fits where it is, or its doorway is blocked: not one waiting for land. */
+export function noLongerFits(world: Pick<World, 'sketchFit'>, sk: Sketch): boolean {
+  const { standing } = world.sketchFit(sk);
+  return standing === 'doorway' || standing === 'unfit';
+}
+
+/** How many of the sketches no longer fit where they are. */
+export const unfitCount = (world: Pick<World, 's' | 'sketchFit'>) =>
+  world.s.sketches.filter((sk) => noLongerFits(world, sk)).length;
 
 /** The sketch with this id, if there is one. */
 export const sketchById = (s: Pick<GameState, 'sketches'>, id: number) => s.sketches.find((sk) => sk.id === id);

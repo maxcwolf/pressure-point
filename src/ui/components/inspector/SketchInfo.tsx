@@ -1,13 +1,10 @@
 // The inspector for a room pencilled in: what it is, what it will cost, whether it still fits, and Erase, Move and
 // Build here.
 
-import { useRef } from 'preact/hooks';
-
 import { ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
 import { sketchCost } from '../../../core/sim/sketches';
 import type { Sketch } from '../../../core/state/types';
-import type { Check } from '../../../core/world';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { sketchNote } from '../../lib/sketches';
@@ -19,11 +16,8 @@ export function SketchInfo({ sketch }: { sketch: Sketch }) {
   const { sim, tools } = useGame();
   const def = ROOMS[sketch.type];
   const cost = sketchCost(sketch);
-  // worked out when the panel opens, and again whenever the world changes under it
-  const fits = useRef<{ key: string; fit: Check } | null>(null);
-  const key = `${sketch.id}:${sim.world.version}`;
-  if (fits.current?.key !== key) fits.current = { key, fit: sim.world.sketchFits(sketch) };
-  const { fit } = fits.current;
+  // worked out once each time the world changes under it, and shared with the floor and its label
+  const { fit, standing } = sim.world.sketchFit(sketch);
   return (
     <>
       <h3 class="sketch-head">
@@ -33,11 +27,11 @@ export function SketchInfo({ sketch }: { sketch: Sketch }) {
       <div class="chips sketch-chips">
         <span class="chip">{`${sketch.w}×${sketch.h}`}</span>
         <span class="chip">{`${money(cost)} to build`}</span>
-        <span class={cx('chip', fit.ok ? 'done' : 'unfit')}>
-          {fit.ok ? '✔ Fits here today' : "⚠ Doesn't fit today"}
+        <span class={cx('chip', fit.ok ? 'done' : standing !== 'waits' && 'unfit')}>
+          {fit.ok ? '✔ Fits here today' : standing === 'waits' ? '⌛ Waits for its land' : "⚠ Doesn't fit today"}
         </span>
       </div>
-      {!fit.ok && <p class="sub unfit">{fit.reason}</p>}
+      {!fit.ok && <p class={cx('sub', standing !== 'waits' && 'unfit')}>{fit.reason}</p>}
       <p class="sub">{sketchNote(sketch, sim.s)}</p>
       <div class="sketch-buttons">
         <Button

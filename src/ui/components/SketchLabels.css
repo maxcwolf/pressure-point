@@ -27,3 +27,15 @@
   font-size: 10.5px;
   opacity: 0.75;
 }
+
+/* a sketch that no longer fits, or whose doorway is blocked, in the warn colors with an amber edge */
+.sketch-label.unfit {
+  background: var(--warn-bg);
+  border-color: var(--sketch-unfit);
+  color: var(--warn);
+}
+
+.sketch-label.unfit small {
+  font-weight: 600;
+  opacity: 1;
+}
