@@ -14,7 +14,16 @@ import {
 } from './api';
 import { backupSave, backupsPending, backupsWritten, dropBackup, readBackup } from './backup';
 import { loadWindowPrefs, saveWindowPrefs } from './prefs';
+import { startReports, watchWindow } from './reports';
 import { startUpdates } from './updates';
+
+// One copy of the game at a time: two would autosave over each other's game. A second copy hands over to the
+// first, which comes to the front, and quits.
+const firstCopy = app.requestSingleInstanceLock();
+if (!firstCopy) app.quit();
+// Error reports start before anything else, to cover the rest of the start-up, but only in the first copy: a second
+// one would take the first one's run, still going, for one that never quit.
+if (firstCopy) startReports();
 
 const isMac = process.platform === 'darwin';
 /** Set to the dev server's address to run the game from it instead of from the built files. */
@@ -63,6 +72,7 @@ function createWindow(): BrowserWindow {
   win.once('ready-to-show', () => {
     win.show();
   });
+  watchWindow(win);
   // full screen if the player left it that way, as soon as it can be
   if (prefs.fullScreen) fullScreenAsked.set(win, true);
   win.on('focus', () => {
@@ -158,10 +168,7 @@ const menu: MenuItemConstructorOptions[] = [{ label: 'Game', submenu: gameMenu }
 if (isMac) menu.unshift({ role: 'appMenu' });
 Menu.setApplicationMenu(Menu.buildFromTemplate(menu));
 
-// One copy of the game at a time: two would autosave over each other's game. A second copy hands over to the
-// first, which comes to the front, and quits.
-const firstCopy = app.requestSingleInstanceLock();
-if (!firstCopy) app.quit();
+// the first copy comes to the front when a second one hands over to it
 app.on('second-instance', () => {
   const win = BrowserWindow.getAllWindows()[0];
   if (!win) return;
