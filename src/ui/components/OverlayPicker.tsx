@@ -78,7 +78,7 @@ const scale = css({
     w: '[90px]',
     h: '[10px]',
     borderRadius: '4',
-    boxShadow: '[inset 0 0 0 1px {colors.shadow.soft}]',
+    boxShadow: 'inset',
     bgColor: 'bg.inset',
   },
   '&.diverging i': {

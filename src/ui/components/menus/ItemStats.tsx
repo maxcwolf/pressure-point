@@ -131,7 +131,7 @@ const place = css({
   fontSize: '15',
   py: '6',
   px: '12',
-  boxShadow: '[0 3px 0 {colors.shadow}]',
+  boxShadow: 'low',
   _locked: { bg: 'bg.disabled', color: 'fg', cursor: 'not-allowed' },
 });
 

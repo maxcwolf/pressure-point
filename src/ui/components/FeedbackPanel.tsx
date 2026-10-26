@@ -49,7 +49,7 @@ const button = css({
   fontWeight: 'bold',
   bg: 'control',
   color: 'fg',
-  boxShadow: '[0 2px 0 {colors.shadow}]',
+  boxShadow: 'pressed',
   '&.go': { bg: 'go', color: 'fg.on-accent' },
   _disabled: { opacity: '[0.55]', cursor: 'default' },
 });

@@ -64,7 +64,7 @@ const roomButton = css({
   fontWeight: 'bold',
   fontSize: '13',
   bg: 'control',
-  boxShadow: '[0 3px 0 {colors.shadow}]',
+  boxShadow: 'low',
   mt: '6',
   _on: { bg: 'toggle.on' },
 });

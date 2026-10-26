@@ -17,7 +17,7 @@ export const choice = css({
   fontWeight: 'bold',
   fontSize: '14',
   bg: 'control',
-  boxShadow: '[0 3px 0 {colors.shadow}]',
+  boxShadow: 'low',
 });
 
 export interface SettingRowProps {

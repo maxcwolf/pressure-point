@@ -5,7 +5,7 @@
 import { defineRecipe } from '@pandacss/dev';
 
 /** The flat drop under a smaller button, nearer the page than a panel's. */
-const LOW_SHADOW = '[0 3px 0 {colors.shadow}]';
+const LOW_SHADOW = 'low';
 
 /** A button with words on it: the go and danger buttons, and every button in a row of them. */
 const worded = {
@@ -62,9 +62,9 @@ export const roundButton = defineRecipe({
     justifyContent: 'center',
     gap: '0',
     transition: '[transform 0.08s]',
-    '& span': { fontSize: '13', fontWeight: 'bold', textShadow: '[0 1px 0 {colors.shadow.dark}]' },
+    '& span': { fontSize: '13', fontWeight: 'bold', textShadow: 'text.label' },
     _hover: { transform: '[translateY(-3px)]', bg: 'accent.hover' },
-    _active: { transform: '[translateY(2px)]', boxShadow: '[0 2px 0 {colors.shadow}]' },
+    _active: { transform: '[translateY(2px)]', boxShadow: 'pressed' },
     // on stays orange under the pointer
     '&.on, &.on:hover': { bg: 'active' },
     _max1540: { w: '[66px]', h: '[66px]', '& i': { fontSize: '24' }, '& span': { fontSize: '11' } },
@@ -97,7 +97,7 @@ export const roundButton = defineRecipe({
         position: 'relative',
         bg: '[none]',
         border: 'none',
-        boxShadow: '[none]',
+        boxShadow: 'none',
         '& > .shape': {
           position: 'absolute',
           inset: '[0]',
@@ -108,11 +108,11 @@ export const roundButton = defineRecipe({
           zIndex: '[0]',
           overflow: 'visible',
           pointerEvents: 'none',
-          filter: '[drop-shadow(0 5px 0 {colors.shadow})]',
+          filter: '[drop-shadow({shadows.raised})]',
         },
         '& > .shape .fill': { fill: 'accent', stroke: 'outline', strokeWidth: '3', strokeLinejoin: 'round' },
         '&:hover > .shape .fill': { fill: 'accent.hover' },
-        '&:active > .shape': { filter: '[drop-shadow(0 2px 0 {colors.shadow})]' },
+        '&:active > .shape': { filter: '[drop-shadow({shadows.pressed})]' },
         '&.on > .shape .fill': { fill: 'active' },
         '& > .icon, & > span': { position: 'relative', zIndex: '[1]' },
       },

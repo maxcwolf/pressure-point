@@ -227,11 +227,11 @@ const menuButton = css({
   color: 'title.fg',
   fontSize: '[clamp(17px, 3.2vh, 25px)]',
   fontWeight: 'bold',
-  textShadow: '[0 2px 0 {colors.shadow.text}]',
-  boxShadow: '[0 4px 0 {colors.shadow.dark}]',
+  textShadow: 'text.title',
+  boxShadow: 'raised.dark',
   transition: '[transform 0.08s]',
   _hover: { bg: 'title.button-hover', transform: 'translateY(-1px)' },
-  _active: { transform: 'translateY(2px)', boxShadow: '[0 2px 0 {colors.shadow.dark}]' },
+  _active: { transform: 'translateY(2px)', boxShadow: 'pressed.dark' },
 });
 
 /** A panel is a light card of its own, scrolling when it is longer than the window allows. */
@@ -268,7 +268,7 @@ const badge = css({
   borderRadius: 'disc',
   border: '[{borderWidths.thick} solid {colors.title.border}]',
   bg: 'control',
-  boxShadow: '[0 3px 0 {colors.shadow.dark}]',
+  boxShadow: 'low.dark',
   '&.off': { bg: 'title.off', borderColor: 'title.off-border', filter: '[grayscale(1)]', opacity: '[0.8]' },
 });
 
@@ -284,7 +284,7 @@ const version = css({
   fontWeight: 'bold',
   color: 'fg.inverse',
   opacity: '[0.75]',
-  textShadow: '[0 1px 2px {colors.shadow.text-strong}]',
+  textShadow: 'text.title-strong',
   pointerEvents: 'none',
 });
 
@@ -300,7 +300,7 @@ const alpha = css({
   fontWeight: '[700]',
   letterSpacing: '[0.04em]',
   textTransform: 'uppercase',
-  textShadow: '[none]',
+  textShadow: 'none',
 });
 
 /** The changelog, from the corner across from the version, with a downloaded update offered above it. */
@@ -324,7 +324,7 @@ const news = css.raw({
   fontWeight: 'bold',
   py: '6',
   px: '12',
-  boxShadow: '[0 3px 0 {colors.shadow.dark}]',
+  boxShadow: 'low.dark',
   _hover: { bg: 'title.button' },
   '&[hidden]': { display: 'none' },
   // icons on the dark panel sit on cream chips, or their navy outlines would vanish
@@ -345,7 +345,7 @@ const updateLook = css({
   fontWeight: 'bold',
   py: '4',
   px: '10',
-  boxShadow: '[0 2px 0 {colors.shadow.dark}]',
+  boxShadow: 'pressed.dark',
   animation: 'pop 0.25s ease-out',
   '& .icon': { bg: 'bg.panel', borderRadius: 'disc', p: '[1px]' },
   // the arrows go round while it checks or downloads, inside a chip that stays still

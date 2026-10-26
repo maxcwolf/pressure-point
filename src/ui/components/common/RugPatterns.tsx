@@ -26,7 +26,7 @@ const swatch = css({
   borderRadius: '8',
   bg: 'bg.card',
   '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },
-  _on: { borderColor: 'accent.strong', boxShadow: '[0 0 0 2px {colors.accent}]' },
+  _on: { borderColor: 'accent.strong', boxShadow: 'ring' },
 });
 
 /** The rug patterns to pick from, the current one picked out and named. */

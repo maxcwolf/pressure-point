@@ -71,7 +71,7 @@ const button = css.raw({
   fontWeight: 'bold',
   bg: 'control',
   m: '0',
-  boxShadow: '[0 2px 0 {colors.shadow}]',
+  boxShadow: 'pressed',
   '&.go': { bg: 'go', color: 'fg.on-accent' },
   '&.danger': { bg: 'bad.bg', color: 'bad' },
 });

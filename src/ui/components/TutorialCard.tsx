@@ -46,7 +46,7 @@ const show = css({
   fontSize: '14',
   bg: 'accent',
   color: 'fg.on-accent',
-  boxShadow: '[0 3px 0 {colors.shadow}]',
+  boxShadow: 'low',
   _hover: { filter: '[brightness(1.06)]', transform: '[translateY(-1px)]' },
 });
 

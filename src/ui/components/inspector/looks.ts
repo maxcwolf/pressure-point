@@ -14,7 +14,7 @@ export const smallButton = css({
   fontWeight: 'bold',
   fontSize: '14',
   bg: 'control',
-  boxShadow: '[0 3px 0 {colors.shadow}]',
+  boxShadow: 'low',
   mt: '6',
   '&.go': { bg: 'highlight', color: 'fg' },
 });

@@ -23,7 +23,7 @@ const bubble = css({
   bg: 'bg.inverse',
   color: 'fg.inverse',
   borderRadius: '12',
-  boxShadow: '[0 4px 0 {colors.shadow}, 0 10px 22px {colors.shadow.soft}]',
+  boxShadow: 'float',
   fontSize: '14',
   fontWeight: '[500]',
   lineHeight: '[1.38]',

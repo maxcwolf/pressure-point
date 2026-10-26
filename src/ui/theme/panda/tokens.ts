@@ -8,9 +8,43 @@ import { semanticColors } from './semantic';
 
 export const tokens = defineTokens({
   colors: palette,
+  /** Shadows: the flat drops under things standing off the page, by height, a dark one on the title screen's glass. */
   shadows: {
-    /** The flat drop under a panel or a button, as if it stood a little off the page. */
-    raised: { value: '0 5px 0 {colors.shadow}' },
+    none: { value: 'none' },
+    raised: {
+      DEFAULT: { value: '0 5px 0 {colors.shadow}' },
+      dark: { value: '0 4px 0 {colors.shadow.dark}' },
+    },
+    low: {
+      DEFAULT: { value: '0 3px 0 {colors.shadow}' },
+      dark: { value: '0 3px 0 {colors.shadow.dark}' },
+    },
+    pressed: {
+      DEFAULT: { value: '0 2px 0 {colors.shadow}' },
+      dark: { value: '0 2px 0 {colors.shadow.dark}' },
+    },
+    flat: { value: '0 1px 0 {colors.shadow}' },
+    /** A tooltip's: a drop and a soft blur, as it floats over everything. */
+    float: { value: '0 4px 0 {colors.shadow}, 0 10px 22px {colors.shadow.soft}' },
+    /** A ring round the one picked. */
+    ring: {
+      DEFAULT: { value: '0 0 0 2px {colors.accent}' },
+      strong: { value: '0 0 0 3px {colors.accent}' },
+    },
+    /** A hairline drawn inside the edge. */
+    inset: { value: 'inset 0 0 0 1px {colors.border}' },
+    /** A status's colored edge down its left side. */
+    stripe: {
+      good: { value: 'inset 4px 0 0 {colors.good.solid}' },
+      warn: { value: 'inset 4px 0 0 {colors.warn.solid}' },
+      bad: { value: 'inset 4px 0 0 {colors.bad.solid}' },
+    },
+    /** Under words: a round button's label, and the title screen's. */
+    text: {
+      label: { value: '0 1px 0 {colors.shadow.text}' },
+      title: { value: '0 2px 0 {colors.shadow.text}' },
+      'title-strong': { value: '0 1px 2px {colors.shadow.text-strong}' },
+    },
   },
   fonts: {
     body: { value: "'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif" },

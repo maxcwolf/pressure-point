@@ -30,7 +30,7 @@ const day = css({
   fontWeight: 'bold',
   fontSize: '12',
   bg: 'control',
-  boxShadow: '[0 2px 0 {colors.shadow}]',
+  boxShadow: 'pressed',
   _on: { bg: 'toggle.on' },
 });
 

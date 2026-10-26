@@ -20,7 +20,7 @@ const pill = css({
   px: '16',
   borderRadius: 'pill',
   fontSize: '15',
-  boxShadow: '[0 4px 0 {colors.shadow.dark}]',
+  boxShadow: 'raised.dark',
   animation: 'drop 0.35s ease-out',
   textAlign: 'center',
   // an icon keeps its navy outline on the navy pill by sitting on a cream chip

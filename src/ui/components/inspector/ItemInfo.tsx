@@ -53,7 +53,7 @@ const upgrade = css({
   fontWeight: 'bold',
   fontSize: '13',
   bg: 'highlight',
-  boxShadow: '[0 3px 0 {colors.shadow}]',
+  boxShadow: 'low',
   m: '0',
   mt: '2',
   mb: '6',

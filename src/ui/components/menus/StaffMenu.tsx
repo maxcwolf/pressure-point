@@ -96,7 +96,7 @@ const act = css({
   px: '8',
   whiteSpace: 'nowrap',
   justifySelf: 'end',
-  '&.go': { bg: 'highlight', color: 'fg', boxShadow: '[none]', mt: '0' },
+  '&.go': { bg: 'highlight', color: 'fg', boxShadow: 'none', mt: '0' },
   _hover: { filter: '[brightness(1.06)]', transform: 'none' },
 });
 

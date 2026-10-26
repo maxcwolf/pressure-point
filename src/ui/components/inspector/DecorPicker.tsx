@@ -53,7 +53,7 @@ const swatch = css({
   borderRadius: '8',
   bg: 'bg.card',
   '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },
-  _on: { borderColor: 'accent.strong', boxShadow: '[0 0 0 2px {colors.accent}]' },
+  _on: { borderColor: 'accent.strong', boxShadow: 'ring' },
   '&.karma i': { opacity: '[0.6]' },
 });
 
@@ -77,7 +77,7 @@ const decorAll = css({
   fontWeight: 'bold',
   fontSize: '13',
   bg: 'control',
-  boxShadow: '[0 3px 0 {colors.shadow}]',
+  boxShadow: 'low',
   m: '0',
   mt: '2',
   mb: '6',
