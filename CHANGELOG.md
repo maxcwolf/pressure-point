@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.34.2
+
+- **Under the hood.** The installed app now reports crashes, hangs and runs that ended without quitting to Sentry, including when the whole computer went down, so trouble on players' machines can be seen and fixed. Nothing changes for play.
+
 ## v0.34.1
 
 - **Under the hood.** The interface's styles now come from one theme (Panda CSS): every color, size and line in the menus, dialogs and panels is drawn from the same scale, so they line up a pixel or two tighter here and there. Nothing changes for play.
