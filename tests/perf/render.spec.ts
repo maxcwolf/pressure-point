@@ -60,7 +60,7 @@ test.describe('performance', () => {
     // before the still parts of items were, about 410 while every small part cast a shadow, and about 1090 before the
     // lawn's trees were instanced
     expect(info.calls).toBeLessThan(200);
-    // a new game opens in winter, among bare trees: about 275,000 when this was written, and about 1,190,000 while each
+    // a new game opens in winter, among bare trees: about 235,000 when this was written, and about 1,190,000 while each
     // tree's branches were the models' smooth capsules, which more than doubled the time a frame took
     expect(info.triangles).toBeLessThan(400_000);
   });

@@ -6,7 +6,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 
 import { mergeStill } from './merge';
 import { blob, cached, corner, cyl, DARK, mat, put, sph } from './parts';
-import { bareCrown, BARK, BRANCHES, leafMaterial, type TreeSpot } from './tree';
+import { bareCrowns, BARK, crownPlacement, habitOf, leafMaterial, type TreeSpot } from './tree';
 
 /** An office block: where its middle stands, how wide (along x) and deep (along z) it is, its floors and its seed. */
 export interface Block {
@@ -74,6 +74,7 @@ export function buildStreetTrees(spots: readonly TreeSpot[]): THREE.Group {
   const stone = mat(0xd9d4ca);
   const earth = mat(0x6e5440, 0.75);
   const bark = mat(BARK, 0.9);
+  const crowns: { habit: number; placement: THREE.Matrix4 }[] = [];
   for (const { x, z, seed } of spots) {
     put(g, slab(0.86, 0.26, 0.86), stone, x, 0.13, z);
     put(g, slab(0.7, 0.04, 0.7, 1), earth, x, 0.26, z).castShadow = false;
@@ -82,12 +83,12 @@ export function buildStreetTrees(spots: readonly TreeSpot[]): THREE.Group {
     const leaves = leafMaterial(STREET_LEAVES[seed % STREET_LEAVES.length] ?? 0);
     put(g, blob(0.56), leaves, x, trunk + 0.62, z).scale.set(1, 1.12, 1);
     put(g, blob(0.34), leaves, x + 0.3, trunk + 0.35, z + 0.18);
-    // bare in winter, a little smaller than the park's, turned its own way
-    const bare = put(g, bareCrown(), BRANCHES, x, trunk + 0.2, z);
-    bare.scale.setScalar(0.85);
-    bare.rotation.y = seed * 2.4;
+    // bare in winter, a little smaller than the park's, in a habit and at a size and lean of its own
+    crowns.push({ habit: habitOf(seed), placement: crownPlacement(x, trunk + 0.2, z, seed, 0.85) });
   }
   mergeStill(g);
+  // baked together like the park's (see `bareCrowns`), after the rest is merged
+  for (const mesh of bareCrowns(crowns)) g.add(mesh);
   return g;
 }
 
