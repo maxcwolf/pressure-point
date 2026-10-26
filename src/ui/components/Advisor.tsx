@@ -62,7 +62,11 @@ const face = css({
 });
 
 /** A note's words: a new note fades in where the last one was, its first sentence bold. */
-const words = css({ display: 'block', animation: 'fadein 0.3s ease-out', '& b': { fontWeight: 'bold' } });
+const words = css({
+  display: 'block',
+  animation: '[fadein {durations.slow} {easings.out}]',
+  '& b': { fontWeight: 'bold' },
+});
 
 /** The rest of the note under its bold first sentence, all of it. */
 const restStyle = css({ display: 'block' });

@@ -28,7 +28,7 @@ const pill = css({
   fontSize: '14',
   fontWeight: 'bold',
   textAlign: 'center',
-  animation: 'pop 0.2s ease-out',
+  animation: '[pop {durations.normal} {easings.out}]',
 });
 
 /** Their name and the time left, a click to them, lifting a little under the pointer. */

@@ -229,7 +229,7 @@ const menuButton = css({
   fontWeight: 'bold',
   textShadow: 'text.title',
   boxShadow: 'raised.dark',
-  transition: '[transform 0.08s]',
+  transition: '[transform {durations.instant}]',
   _hover: { bg: 'title.button-hover', transform: 'translateY(-1px)' },
   _active: { transform: 'translateY(2px)', boxShadow: 'pressed.dark' },
 });
@@ -346,13 +346,13 @@ const updateLook = css({
   py: '4',
   px: '10',
   boxShadow: 'pressed.dark',
-  animation: 'pop 0.25s ease-out',
+  animation: '[pop {durations.normal} {easings.out}]',
   '& .icon': { bg: 'bg.panel', borderRadius: 'disc', p: '[1px]' },
   // the arrows go round while it checks or downloads, inside a chip that stays still
   '&.busy .icon use': {
     transformBox: 'view-box',
     transformOrigin: 'center',
-    animation: 'update-spin 1.4s linear infinite',
+    animation: '[update-spin {durations.loop} {easings.linear} infinite]',
     _motionReduce: { animation: 'none' },
   },
   _motionReduce: { animation: 'none' },

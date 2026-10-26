@@ -61,7 +61,7 @@ export const roundButton = defineRecipe({
     alignItems: 'center',
     justifyContent: 'center',
     gap: '0',
-    transition: '[transform 0.08s]',
+    transition: '[transform {durations.instant}]',
     '& span': { fontSize: '13', fontWeight: 'bold', textShadow: 'text.label' },
     _hover: { transform: '[translateY(-3px)]', bg: 'accent.hover' },
     _active: { transform: '[translateY(2px)]', boxShadow: 'pressed' },
@@ -206,7 +206,7 @@ export const toggleSwitch = defineRecipe({
     bg: 'bg.disabled',
     p: '0',
     position: 'relative',
-    transition: '[background 0.15s]',
+    transition: '[background {durations.fast}]',
     '& span': {
       position: 'absolute',
       top: '[2px]',
@@ -217,7 +217,7 @@ export const toggleSwitch = defineRecipe({
       bg: 'bg.card',
       border: 'outline.thin',
       opacity: 'full !important',
-      transition: '[left 0.15s]',
+      transition: '[left {durations.fast}]',
     },
     _on: { bg: 'good.solid' },
     '&.on span': { left: '[24px]' },
@@ -249,7 +249,7 @@ export const guideRing = defineRecipe({
   base: {
     outline: 'guide',
     outlineOffset: '2',
-    animation: 'guide 1.4s ease-in-out infinite',
+    animation: '[guide {durations.loop} {easings.in-out} infinite]',
     _motionReduce: { animation: 'none' },
   },
 });

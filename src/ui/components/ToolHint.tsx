@@ -105,8 +105,8 @@ const problem = css({
   color: 'bad.solid',
   fontWeight: 'bold',
   '&.refused': {
-    animation: 'hint-refused 0.4s ease-out',
-    _motionReduce: { animation: 'hint-refused-flash 0.4s ease-out' },
+    animation: '[hint-refused {durations.slower} {easings.out}]',
+    _motionReduce: { animation: '[hint-refused-flash {durations.slower} {easings.out}]' },
   },
 });
 

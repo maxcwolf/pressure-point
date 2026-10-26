@@ -21,7 +21,7 @@ const pill = css({
   borderRadius: 'pill',
   fontSize: '15',
   boxShadow: 'raised.dark',
-  animation: 'drop 0.35s ease-out',
+  animation: '[drop {durations.slow} {easings.out}]',
   textAlign: 'center',
   // an icon keeps its navy outline on the navy pill by sitting on a cream chip
   '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },

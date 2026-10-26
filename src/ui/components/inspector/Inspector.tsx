@@ -37,9 +37,9 @@ const panel = css({
   lineHeight: 'snug',
   minH: '[0]',
   overflowY: 'auto',
-  '.pop > &': { animation: 'pop 0.16s ease-out' },
+  '.pop > &': { animation: '[pop {durations.fast} {easings.out}]' },
   // by the id, so that closing outdoes opening, should it close as it opens
-  '#inspector.leaving > &': { pointerEvents: 'none', animation: 'unpop 0.14s ease-in forwards' },
+  '#inspector.leaving > &': { pointerEvents: 'none', animation: '[unpop {durations.fast} {easings.in} forwards]' },
   '& h3': { pr: '24' },
   '& p': { mb: '4' },
   '& label': { display: 'block', fontSize: '12', mt: '4' },

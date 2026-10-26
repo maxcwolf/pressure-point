@@ -58,8 +58,8 @@ const card = css.raw({
   px: '12',
   fontSize: '14',
   boxShadow: 'raised',
-  animation: 'slide 0.3s ease-out',
-  transition: '[opacity 0.4s]',
+  animation: '[slide {durations.slow} {easings.out}]',
+  transition: '[opacity {durations.slower}]',
 });
 
 /**

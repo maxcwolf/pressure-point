@@ -58,7 +58,7 @@ export const cardLook = css.raw({
   display: 'flex',
   flexDirection: 'column',
   gap: '2',
-  transition: '[transform 0.08s]',
+  transition: '[transform {durations.instant}]',
   '&:is(button):hover': { transform: 'translateY(-3px)', bg: 'bg.hover', borderColor: 'accent.strong' },
   '& > .icon': { mb: '2' },
   '& b': { fontSize: '15', fontWeight: 'bold' },

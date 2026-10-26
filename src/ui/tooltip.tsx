@@ -29,7 +29,7 @@ const bubble = css({
   lineHeight: 'snug',
   textWrap: 'pretty',
   // it rises a little toward what it explains as it appears
-  animation: 'tip-in 0.14s ease-out',
+  animation: '[tip-in {durations.fast} {easings.out}]',
   '&[hidden]': { display: 'none' },
   // the point, under the bubble or, when it shows below what it explains, over it
   '&::after': {

@@ -164,7 +164,7 @@ const twoWay = css({
     display: 'block',
     h: '[100%]',
     borderRadius: '6',
-    transition: '[width 0.3s]',
+    transition: '[width {durations.slow}]',
   },
   '& .bar i.up': { left: '[50%]' },
   '& .bar i.down': { right: '[50%]', bg: 'info.solid' },

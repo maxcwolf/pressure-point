@@ -14,7 +14,7 @@ const bar = css({
   bg: 'meter.track',
   overflow: 'hidden',
   mt: '2',
-  '& i': { display: 'block', h: '[100%]', borderRadius: '6', bg: 'good.solid', transition: '[width 0.3s]' },
+  '& i': { display: 'block', h: '[100%]', borderRadius: '6', bg: 'good.solid', transition: '[width {durations.slow}]' },
   '&.thin': { h: '[6px]' },
   '&.good i': { bg: 'good.solid' },
   '&:is(.gold, .warn) i': { bg: 'highlight' },

@@ -35,7 +35,7 @@ const column = css({
   flexDirection: 'column',
   gap: '8',
   // an offer in full pops in, its words centered
-  '& .offer': { position: 'relative', textAlign: 'center', animation: 'pop 0.2s ease-out' },
+  '& .offer': { position: 'relative', textAlign: 'center', animation: '[pop {durations.normal} {easings.out}]' },
   '& .offer p': { fontSize: '14', lineHeight: 'snug' },
   // the button to decide later: a faint cross in the top right corner
   '& .offer .later': {
@@ -66,7 +66,7 @@ const column = css({
     fontSize: '14',
     fontWeight: 'bold',
     textAlign: 'center',
-    animation: 'pop 0.2s ease-out',
+    animation: '[pop {durations.normal} {easings.out}]',
     _hover: { transform: '[translateY(-1px)]' },
   },
 });

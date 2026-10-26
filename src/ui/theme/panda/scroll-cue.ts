@@ -59,7 +59,7 @@ export const scrollCueCss = defineGlobalStyles({
     width: 'calc(100% + 2 * var(--cue-px))',
     pointerEvents: 'none',
     opacity: 'hidden',
-    transition: 'opacity 0.15s',
+    transition: '[opacity {durations.fast}]',
     zIndex: '3',
   },
   '[data-more]::before': {

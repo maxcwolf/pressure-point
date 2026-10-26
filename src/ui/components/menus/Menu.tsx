@@ -26,8 +26,8 @@ const menuStyle = css({
   bottom: '[calc(var(--bar-h) + 4px)]',
   w: '[min(780px, calc(var(--vw) - 28px))]',
   '&:has(.items-detail)': { w: '[min(1040px, calc(var(--vw) - 28px))]' },
-  '&.leaving > .panel': { pointerEvents: 'none', animation: 'unpop 0.14s ease-in forwards' },
-  '&.pop > .panel': { animation: 'pop 0.16s ease-out' },
+  '&.leaving > .panel': { pointerEvents: 'none', animation: '[unpop {durations.fast} {easings.in} forwards]' },
+  '&.pop > .panel': { animation: '[pop {durations.fast} {easings.out}]' },
 });
 
 /** The contents of a menu. */

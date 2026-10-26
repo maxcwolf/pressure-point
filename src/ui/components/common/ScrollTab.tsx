@@ -34,9 +34,9 @@ const tab = css({
   cursor: 'pointer',
   opacity: 'hidden',
   pointerEvents: 'none',
-  transition: '[opacity 0.15s]',
+  transition: '[opacity {durations.fast}]',
   // it nods, so the eye finds it
-  animation: 'tab-nod 1.4s ease-in-out infinite',
+  animation: '[tab-nod {durations.loop} {easings.in-out} infinite]',
   "[data-more~='below'] > .scroll-foot > &": { opacity: 'full', pointerEvents: 'auto' },
   _hover: { bgColor: 'bg.card' },
   _active: { translate: '[-50% 2px]', boxShadow: 'flat', animation: 'none' },

@@ -18,7 +18,7 @@ const consoleLook = css({
   minW: '[320px]',
   py: '10',
   px: '12',
-  animation: 'drop 0.2s ease-out',
+  animation: '[drop {durations.normal} {easings.out}]',
 });
 
 /** What the console has said, latest at the bottom: what was typed in bold, what worked in green, what did not in red. */

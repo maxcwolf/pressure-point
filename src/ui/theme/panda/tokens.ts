@@ -46,6 +46,21 @@ export const tokens = defineTokens({
       'title-strong': { value: '0 1px 2px {colors.shadow.text-strong}' },
     },
   },
+  /** How long a move takes: instant for a press, fast for a pop, slow for a bar filling, loop for one that repeats. */
+  durations: {
+    instant: { value: '80ms' },
+    fast: { value: '150ms' },
+    normal: { value: '200ms' },
+    slow: { value: '300ms' },
+    slower: { value: '400ms' },
+    loop: { value: '1400ms' },
+  },
+  easings: {
+    out: { value: 'ease-out' },
+    in: { value: 'ease-in' },
+    'in-out': { value: 'ease-in-out' },
+    linear: { value: 'linear' },
+  },
   fonts: {
     body: { value: "'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif" },
   },

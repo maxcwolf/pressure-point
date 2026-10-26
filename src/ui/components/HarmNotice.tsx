@@ -17,7 +17,7 @@ const card = css({
   position: 'relative',
   borderColor: 'notice.harm',
   textAlign: 'left',
-  animation: 'pop 0.2s ease-out',
+  animation: '[pop {durations.normal} {easings.out}]',
 });
 
 /** Its heading, smaller than a panel's. */
