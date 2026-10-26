@@ -85,7 +85,7 @@ const moves = css({
     borderRadius: '6',
     bg: 'bg.card',
     fontSize: '11',
-    lineHeight: '[1]',
+    lineHeight: 'none',
     p: '0',
   },
   '& button.locked': { opacity: 'locked' },

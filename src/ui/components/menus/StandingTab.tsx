@@ -48,11 +48,11 @@ const grades = css({
     py: '4',
     px: '8',
     fontSize: '13',
-    opacity: '[0.6]',
+    opacity: 'quiet',
   },
-  '& li.reached': { opacity: '[1]' },
+  '& li.reached': { opacity: 'full' },
   '& li.now': { bg: 'highlight.bg', borderColor: 'highlight', fontWeight: 'bold' },
-  '& small': { fontSize: '11', fontWeight: '[400]', opacity: '[0.8]' },
+  '& small': { fontSize: '11', fontWeight: 'regular', opacity: 'soft' },
   _max1100: { gridTemplateColumns: '[repeat(3, minmax(0, 1fr))]' },
 });
 

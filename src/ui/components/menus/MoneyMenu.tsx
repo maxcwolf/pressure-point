@@ -30,7 +30,7 @@ import { TechniquePrices } from './TechniquePrices';
 const sources = css(ledgerLook, {
   mt: '12',
   '& :is(.head, .source)': { display: 'grid', gridTemplateColumns: '[1fr auto auto]', gap: '12' },
-  '& .head': { fontSize: '12', opacity: '[0.7]' },
+  '& .head': { fontSize: '12', opacity: 'muted' },
   '& .source b': { textAlign: 'right' },
   '& .source.side span': { color: 'fg.accent' },
 });

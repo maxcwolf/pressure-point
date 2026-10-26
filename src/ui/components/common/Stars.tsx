@@ -7,7 +7,7 @@ const stars = css({
   color: 'star',
   WebkitTextStroke: '[{borderWidths.hairline} {colors.outline}]',
   paintOrder: 'stroke fill',
-  letterSpacing: '[1px]',
+  letterSpacing: 'stars.small',
 });
 
 /** A row of stars, with the ones not earned shown faintly. */

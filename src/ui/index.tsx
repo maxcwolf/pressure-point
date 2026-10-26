@@ -43,7 +43,7 @@ const titleStyle = css({
   p: '[clamp(8px, 2.5vh, 24px) 16px]',
   overflow: 'hidden',
   pointerEvents: 'auto',
-  zIndex: '[20]',
+  zIndex: 'modal',
   bg: 'title.bg',
 });
 

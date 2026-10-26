@@ -18,7 +18,7 @@ const veil = css({
   placeItems: 'center',
   bg: 'bg.backdrop',
   pointerEvents: 'auto',
-  zIndex: '[20]',
+  zIndex: 'modal',
   animation: 'fadein 0.2s ease-out',
   '#modal.leaving &': { pointerEvents: 'none', animation: 'fadeout 0.14s ease-in forwards' },
 });
@@ -34,8 +34,8 @@ const dialog = css({
   pt: '20',
   animation: 'pop 0.2s ease-out',
   '#modal.leaving &': { animation: 'unpop 0.14s ease-in forwards' },
-  '& h2': { fontSize: '24', fontWeight: '[700]', mb: '8' },
-  '& p': { fontSize: '15', lineHeight: '[1.35]' },
+  '& h2': { fontSize: '24', fontWeight: 'heavy', mb: '8' },
+  '& p': { fontSize: '15', lineHeight: 'snug' },
   '&.wide': {
     w: '[min(640px, calc(var(--vw) - 40px))]',
     maxH: '[calc(var(--vh) - 40px)]',

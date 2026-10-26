@@ -46,7 +46,7 @@ const show = css({
 const buttons = css({ mt: '4', '& button': { fontSize: '14', py: '4', px: '12', mt: '2' } });
 
 /** Who is on the way. */
-const onTheWay = css({ fontSize: '13', fontWeight: 'bold', opacity: '[0.85]' });
+const onTheWay = css({ fontSize: '13', fontWeight: 'bold', opacity: 'soft' });
 
 /** The pills for everyone running round on a really bad trip, newest first. */
 export function RunnerNotice() {

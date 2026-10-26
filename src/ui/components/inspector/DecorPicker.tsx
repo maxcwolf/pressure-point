@@ -54,7 +54,7 @@ const swatch = css({
   bg: 'bg.card',
   '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },
   _on: { borderColor: 'accent.strong', boxShadow: 'ring' },
-  '&.karma i': { opacity: '[0.6]' },
+  '&.karma i': { opacity: 'quiet' },
 });
 
 /** A small lock in the corner of a swatch that karma unlocks. */

@@ -34,7 +34,7 @@ const column = css({
 const panel = css({
   position: 'relative',
   fontSize: '14',
-  lineHeight: '[1.3]',
+  lineHeight: 'snug',
   minH: '[0]',
   overflowY: 'auto',
   '.pop > &': { animation: 'pop 0.16s ease-out' },
@@ -59,7 +59,7 @@ const panel = css({
   // A status line, in the tone of what it says (ui/lib/status.ts): plain news on navy, what wants seeing to in amber,
   // trouble in red, good news in green. The light ones carry a stripe of their color down the left, to be told apart
   // at a glance.
-  '& .status': { bg: 'bg.inverse', color: 'fg.inverse', borderRadius: '8', py: '4', px: '8', fontWeight: '[500]' },
+  '& .status': { bg: 'bg.inverse', color: 'fg.inverse', borderRadius: '8', py: '4', px: '8', fontWeight: 'medium' },
   '& .status.warn': {
     bg: 'warn.bg',
     color: 'warn',
@@ -97,7 +97,7 @@ const close = css({
   border: 'outline.thin',
   bg: 'bg.card',
   fontSize: '12',
-  lineHeight: '[1]',
+  lineHeight: 'none',
 });
 
 /**

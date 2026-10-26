@@ -36,7 +36,7 @@ import { cardLook, cards, menuPanel } from './looks';
 const modalityCard = css(cardLook, {
   cursor: 'default',
   _locked: { cursor: 'default' },
-  '& .treats': { opacity: '[1]', fontWeight: '[500]', mt: '2' },
+  '& .treats': { opacity: 'full', fontWeight: 'medium', mt: '2' },
 });
 
 /** A discipline's heading, over its modalities. */

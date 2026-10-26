@@ -62,7 +62,7 @@ export const cardLook = css.raw({
   '&:is(button):hover': { transform: 'translateY(-3px)', bg: 'bg.hover', borderColor: 'accent.strong' },
   '& > .icon': { mb: '2' },
   '& b': { fontSize: '15', fontWeight: 'bold' },
-  '& p': { fontSize: '12', lineHeight: '[1.25]', opacity: '[0.8]' },
+  '& p': { fontSize: '12', lineHeight: 'snug', opacity: 'soft' },
   '& em': {
     fontStyle: 'normal',
     fontSize: '12',
@@ -73,7 +73,7 @@ export const cardLook = css.raw({
     alignSelf: 'flex-start',
     mt: '2',
   },
-  '& em.none': { opacity: '[0.6]' },
+  '& em.none': { opacity: 'quiet' },
   // an applicant's quirk: green where it helps, red where it costs
   '& em.good': { bg: 'good.bg', color: 'good' },
   '& em.bad': { bg: 'bad.bg', color: 'bad' },
@@ -91,11 +91,11 @@ export const cardLook = css.raw({
     fontSize: '13',
     fontWeight: 'bold',
   },
-  '&.poor': { opacity: '[0.6]', cursor: 'not-allowed' },
+  '&.poor': { opacity: 'quiet', cursor: 'not-allowed' },
   '&.poor .cost': { bg: 'bad.light' },
-  _locked: { opacity: '[0.5]', filter: '[grayscale(0.6)]', cursor: 'not-allowed' },
+  _locked: { opacity: 'faint', filter: '[grayscale(0.6)]', cursor: 'not-allowed' },
   // short of money rather than locked: the red of the price and the shortfall stay to see
-  '&.poor.locked': { opacity: '[0.6]', filter: 'none' },
+  '&.poor.locked': { opacity: 'quiet', filter: 'none' },
   // locked, but karma unlocks it: pressing opens the offer
   '&.locked.karma': { cursor: 'pointer' },
 });

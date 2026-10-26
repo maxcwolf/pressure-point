@@ -29,7 +29,7 @@ const whoList = css({ display: 'flex', flexDirection: 'column', gap: '4', mt: '8
 const send = css({ fontSize: '13' });
 
 /** What sending them would cost, on a fainter line under their name. */
-const sendCost = css({ display: 'block', fontSize: '12', opacity: '[0.8]' });
+const sendCost = css({ display: 'block', fontSize: '12', opacity: 'soft' });
 
 /** Nobody here can go, in red. */
 const nobody = css({ color: 'bad', fontWeight: 'bold' });

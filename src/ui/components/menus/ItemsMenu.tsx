@@ -37,7 +37,7 @@ const itemCards = css(cardsLook, {
  */
 const itemCard = css(cardLook, {
   '.items-detail &': {
-    '&.poor': { opacity: '[1]', cursor: 'pointer' },
+    '&.poor': { opacity: 'full', cursor: 'pointer' },
     '&.picked': { bg: 'bg.hover', borderColor: 'accent.strong', boxShadow: 'ring.strong' },
   },
 });

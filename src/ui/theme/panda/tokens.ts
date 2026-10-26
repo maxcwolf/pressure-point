@@ -92,7 +92,31 @@ export const tokens = defineTokens({
     24: { value: '24px' },
   },
   fontWeights: {
+    regular: { value: '400' },
+    medium: { value: '500' },
     bold: { value: '600' },
+    heavy: { value: '700' },
+  },
+  lineHeights: {
+    collapse: { value: '0' },
+    none: { value: '1' },
+    tight: { value: '1.1' },
+    snug: { value: '1.3' },
+    normal: { value: '1.4' },
+    relaxed: { value: '1.5' },
+    loose: { value: '1.9' },
+  },
+  letterSpacings: {
+    tighter: { value: '-2px' },
+    normal: { value: '0' },
+    wide: { value: '0.04em' },
+    wider: { value: '0.06em' },
+    /** Between a row of stars. */
+    stars: {
+      small: { value: '1px' },
+      DEFAULT: { value: '2px' },
+      large: { value: '6px' },
+    },
   },
   /** How thick a line is: the cartoon outline is medium, a panel's thick, a chip's fine. */
   borderWidths: {
@@ -129,9 +153,24 @@ export const tokens = defineTokens({
     /** The tutorial's ring. */
     guide: { value: '{borderWidths.heavy} solid {colors.guide}' },
   },
+  /** How much of a thing shows: locked is barely there, muted a step back, soft nearly all. */
   opacity: {
-    muted: { value: '0.72' },
+    hidden: { value: '0' },
     locked: { value: '0.35' },
+    faint: { value: '0.5' },
+    quiet: { value: '0.6' },
+    muted: { value: '0.72' },
+    soft: { value: '0.85' },
+    full: { value: '1' },
+  },
+  /** What sits over what, from the page up. */
+  zIndex: {
+    base: { value: '0' },
+    above: { value: '1' },
+    cue: { value: '4' },
+    popover: { value: '5' },
+    modal: { value: '20' },
+    tooltip: { value: '100' },
   },
 });
 

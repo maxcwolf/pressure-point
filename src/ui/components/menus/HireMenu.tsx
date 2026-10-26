@@ -36,7 +36,7 @@ const cv = css(cardLook, {
     px: '8',
   },
   '& .rank': { display: 'flex', alignItems: 'center', gap: '4', fontSize: '13' },
-  '& small': { fontWeight: '[400]', fontSize: '11' },
+  '& small': { fontWeight: 'regular', fontSize: '11' },
 });
 
 /** The applicants for the chosen role, in the order picked. */

@@ -43,7 +43,7 @@ const chips = css({ display: 'flex', flexWrap: 'wrap', gap: '6', mb: '6' });
 const chip = css({
   pointerEvents: 'auto',
   fontSize: '13',
-  fontWeight: '[500]',
+  fontWeight: 'medium',
   border: 'outline.thin',
   borderRadius: 'pill',
   py: '2',

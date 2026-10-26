@@ -14,7 +14,7 @@ const row = css({
   rowGap: '6',
   columnGap: '10',
   fontSize: '14',
-  fontWeight: '[500]',
+  fontWeight: 'medium',
 });
 
 /** One pattern's swatch: a small square of it in a frame, ringed in teal while it is the one laid. */

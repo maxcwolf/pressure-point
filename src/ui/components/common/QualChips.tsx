@@ -16,7 +16,7 @@ const chips = css({
   mb: '4',
   '& > span': {
     fontSize: '12',
-    fontWeight: '[500]',
+    fontWeight: 'medium',
     bg: 'special.bg',
     border: '[{borderWidths.fine} solid {colors.special.solid}]',
     borderRadius: '8',
@@ -26,7 +26,7 @@ const chips = css({
   },
   '& > span.general': { bg: 'highlight.bg', borderColor: 'highlight' },
   // the course they are on, not yet passed
-  '& > span.learning': { bg: 'bg.card', borderStyle: 'dashed', opacity: '[0.85]' },
+  '& > span.learning': { bg: 'bg.card', borderStyle: 'dashed', opacity: 'soft' },
 });
 
 /**

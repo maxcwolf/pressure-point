@@ -40,7 +40,7 @@ const meterValueStyle = css({
   fontSize: '12',
   fontWeight: 'bold',
   fontVariantNumeric: 'tabular-nums',
-  lineHeight: '[1]',
+  lineHeight: 'none',
 });
 
 /**

@@ -11,7 +11,7 @@ const bubble = css({
   position: 'fixed',
   left: '[0]',
   top: '[0]',
-  zIndex: '[100]',
+  zIndex: 'tooltip',
   pointerEvents: 'none',
   w: 'max-content',
   // drawn at the interface's size over the game (set as it shows), and at the usual size elsewhere
@@ -25,8 +25,8 @@ const bubble = css({
   borderRadius: '12',
   boxShadow: 'float',
   fontSize: '14',
-  fontWeight: '[500]',
-  lineHeight: '[1.38]',
+  fontWeight: 'medium',
+  lineHeight: 'snug',
   textWrap: 'pretty',
   // it rises a little toward what it explains as it appears
   animation: 'tip-in 0.14s ease-out',
@@ -51,7 +51,7 @@ const bubble = css({
     fontFamily: 'inherit',
     fontSize: '12',
     fontWeight: 'bold',
-    lineHeight: '[1.5]',
+    lineHeight: 'relaxed',
     minW: '[20px]',
     textAlign: 'center',
     py: '0',

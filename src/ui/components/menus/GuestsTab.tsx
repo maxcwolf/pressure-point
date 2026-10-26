@@ -71,9 +71,9 @@ const factor = css({
   py: '4',
   px: '8',
   bg: 'bg.subtle',
-  '& small': { gridColumn: '[1 / -1]', fontSize: '12', opacity: '[0.75]' },
+  '& small': { gridColumn: '[1 / -1]', fontSize: '12', opacity: 'muted' },
   '& .bar': { gridColumn: '[1 / -1]', m: '0', mt: '2' },
-  '& em': { gridRow: '[2]', gridColumn: '[2]', fontStyle: 'normal', fontWeight: '[700]' },
+  '& em': { gridRow: '[2]', gridColumn: '[2]', fontStyle: 'normal', fontWeight: 'heavy' },
   '&.low em': { color: 'bad' },
   '&.high em': { color: 'good.strong' },
 });

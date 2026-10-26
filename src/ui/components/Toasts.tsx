@@ -28,7 +28,7 @@ const column = css({
   flexDirection: 'column',
   gap: '8',
   // opened out, the messages scroll in the room down to the bar at the bottom, over the inspector
-  '&.open': { position: 'absolute', inset: '[0 0 14px]', zIndex: '[1]' },
+  '&.open': { position: 'absolute', inset: '[0 0 14px]', zIndex: 'above' },
   '&.open .messages': {
     minH: '[0]',
     overflowY: 'auto',
@@ -74,7 +74,7 @@ const requestCard = css(card, {
   font: 'inherit',
   fontSize: '14',
   _hover: { filter: '[brightness(1.04)]', transform: '[translateY(-1px)]' },
-  '&::after': { content: "' ›'", fontWeight: '[700]', opacity: '[0.55]' },
+  '&::after': { content: "' ›'", fontWeight: 'heavy', opacity: 'faint' },
 });
 
 /**
@@ -91,7 +91,7 @@ const message = css(card, {
   '&.good': { borderLeftColor: 'good.solid' },
   '&.bad': { borderLeftColor: 'bad.solid' },
   '&.info': { borderLeftColor: 'info.solid' },
-  '&.out': { opacity: '[0]' },
+  '&.out': { opacity: 'hidden' },
 });
 
 /** The people asking on a card for several, in a list under it, each a click to them. */
@@ -160,8 +160,8 @@ const close = css({
   borderRadius: 'disc',
   bg: '[none]',
   fontSize: '12',
-  opacity: '[0.45]',
-  _hover: { opacity: '[1]', bg: 'bg.muted' },
+  opacity: 'faint',
+  _hover: { opacity: 'full', bg: 'bg.muted' },
 });
 
 /** The messages past the first few: a pile of cards, the next ones down peeking out under its face in their colors. */
@@ -201,7 +201,7 @@ const face = css(card, {
 });
 
 /** The chevron after the pile's words, saying it opens out or folds up. */
-const chevron = css({ ml: '6', opacity: '[0.6]' });
+const chevron = css({ ml: '6', opacity: 'quiet' });
 
 /** The count of warnings among the rest, in red. */
 const warningCount = css({ color: 'bad' });

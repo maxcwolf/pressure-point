@@ -58,7 +58,7 @@ export const scrollCueCss = defineGlobalStyles({
     marginLeft: 'calc(-1 * var(--cue-px))',
     width: 'calc(100% + 2 * var(--cue-px))',
     pointerEvents: 'none',
-    opacity: '0',
+    opacity: 'hidden',
     transition: 'opacity 0.15s',
     zIndex: '3',
   },
@@ -75,5 +75,5 @@ export const scrollCueCss = defineGlobalStyles({
     background:
       'linear-gradient(to top, var(--cue-bg) var(--cue-pb), color-mix(in srgb, var(--cue-bg) 85%, transparent) calc(var(--cue-pb) + 10px), transparent)',
   },
-  "[data-more~='above']::before, [data-more~='below']::after": { opacity: '1' },
+  "[data-more~='above']::before, [data-more~='below']::after": { opacity: 'full' },
 });

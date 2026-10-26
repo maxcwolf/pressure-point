@@ -56,7 +56,7 @@ export const settingsLook = css({
   '& li > .icon': { flex: 'none' },
   '& li > div': { flex: '1', minW: '[0]' },
   '& li b': { display: 'block', fontWeight: 'bold', fontSize: '15' },
-  '& li span': { fontSize: '13', opacity: '[0.75]' },
+  '& li span': { fontSize: '13', opacity: 'muted' },
   '& li em': {
     fontStyle: 'normal',
     fontSize: '12',
@@ -66,7 +66,7 @@ export const settingsLook = css({
     px: '8',
     whiteSpace: 'nowrap',
   },
-  '& li.locked > div': { opacity: '[0.6]' },
+  '& li.locked > div': { opacity: 'quiet' },
   '& .key-list': { display: 'grid', gridTemplateColumns: '[1fr 1fr]', gap: '6' },
   '& .key-list li': { justifyContent: 'space-between', p: '4', pr: '8', pl: '12', fontSize: '14' },
 });

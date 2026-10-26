@@ -20,7 +20,7 @@ import { Dialog } from './Dialog';
 const bigStars = css({
   color: 'star',
   fontSize: '[52px]',
-  letterSpacing: '[6px]',
+  letterSpacing: 'stars.large',
   WebkitTextStroke: '[{borderWidths.medium} {colors.outline}]',
   paintOrder: 'stroke fill',
 });

@@ -17,7 +17,7 @@ import { Dialog } from './Dialog';
 const kicker = css({
   fontSize: '12 !important',
   fontWeight: 'bold',
-  letterSpacing: '[0.06em]',
+  letterSpacing: 'wider',
   textTransform: 'uppercase',
   color: 'fg.accent',
   mb: '2',
@@ -47,7 +47,7 @@ const strip = css({
     borderRadius: '12',
   },
   '& b': { fontSize: '14' },
-  '& small': { fontSize: '13', lineHeight: '[1.3]' },
+  '& small': { fontSize: '13', lineHeight: 'snug' },
 });
 
 /** A picture's icon, in a cream circle. */

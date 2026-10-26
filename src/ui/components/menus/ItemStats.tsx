@@ -23,7 +23,7 @@ const chips = css({
   pt: '6',
   '& li': {
     fontSize: '12',
-    fontWeight: '[500]',
+    fontWeight: 'medium',
     border: '[{borderWidths.fine} solid {colors.chip.border}]',
     bg: 'chip',
     borderRadius: '8',
@@ -57,7 +57,7 @@ const pips = css({
 /** The tooltip's list of what an item does, a line each, with its icon beside it. */
 const tip = css({
   '& ul': { listStyle: 'none', m: '0', mt: '2', p: '0', display: 'flex', flexDirection: 'column', gap: '2' },
-  '& li': { display: 'flex', gap: '6', fontSize: '13', lineHeight: '[1.3]' },
+  '& li': { display: 'flex', gap: '6', fontSize: '13', lineHeight: 'snug' },
   '& li > .icon': { mt: '[1px]' },
 });
 
@@ -74,8 +74,8 @@ const detail = css({
   flexDirection: 'column',
   gap: '6',
   fontSize: '14',
-  lineHeight: '[1.3]',
-  '& p': { opacity: '[0.8]' },
+  lineHeight: 'snug',
+  '& p': { opacity: 'soft' },
   // a scale's name, with what it comes to at the far end
   '& label': { display: 'flex', justifyContent: 'space-between', fontSize: '12' },
   '& label b': { fontWeight: 'bold' },
@@ -174,7 +174,7 @@ const twoWay = css({
     display: 'flex',
     justifyContent: 'space-between',
     fontSize: '11',
-    opacity: '[0.6]',
+    opacity: 'quiet',
     mt: '[1px]',
   },
 });

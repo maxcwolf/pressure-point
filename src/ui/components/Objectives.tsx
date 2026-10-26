@@ -25,7 +25,7 @@ const centerName = css({
   fontSize: '12',
   fontWeight: 'bold',
   textTransform: 'uppercase',
-  letterSpacing: '[0.06em]',
+  letterSpacing: 'wider',
   color: 'fg.accent',
 });
 
@@ -33,7 +33,7 @@ const centerName = css({
 const stars = css({
   color: 'star',
   fontSize: '24',
-  letterSpacing: '[2px]',
+  letterSpacing: 'stars',
   WebkitTextStroke: '[{borderWidths.fine} {colors.outline}]',
   paintOrder: 'stroke fill',
 });
@@ -97,7 +97,7 @@ const gettingReadyHeading = css({
   fontSize: '12',
   fontWeight: 'bold',
   textTransform: 'uppercase',
-  letterSpacing: '[0.06em]',
+  letterSpacing: 'wider',
   color: 'fg.accent',
 });
 

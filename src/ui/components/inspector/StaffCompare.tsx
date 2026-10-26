@@ -79,24 +79,24 @@ const table = css({
   },
   // a treatment's name too long for the column is broken at a soft hyphen if it has one, or hyphenated, or broken
   // anywhere
-  '& tbody th': { fontWeight: '[500]', opacity: '[0.75]', hyphens: 'auto', overflowWrap: 'anywhere' },
+  '& tbody th': { fontWeight: 'medium', opacity: 'muted', hyphens: 'auto', overflowWrap: 'anywhere' },
   // five stars, small enough to fit their column
-  '& .skill': { fontSize: '11', letterSpacing: '[0]', whiteSpace: 'nowrap' },
+  '& .skill': { fontSize: '11', letterSpacing: 'normal', whiteSpace: 'nowrap' },
   '& tbody tr + tr': { borderTop: 'hairline' },
-  '& tr.section th': { opacity: '[1]', fontWeight: 'bold', pt: '6' },
+  '& tr.section th': { opacity: 'full', fontWeight: 'bold', pt: '6' },
 });
 
 /** The column of what is compared, a little under half the table. */
 const labelColumn = css({ w: '[46%]' });
 
 /** The side that comes out ahead, or someone who has passed a course, in green. */
-const aheadStyle = css({ color: 'good.strong', fontWeight: '[700]' });
+const aheadStyle = css({ color: 'good.strong', fontWeight: 'heavy' });
 
 /** Someone who has not passed a course, faded. */
-const lacks = css({ opacity: '[0.4]' });
+const lacks = css({ opacity: 'locked' });
 
 /** Someone who is on the course now, in small slanted words. */
-const studying = css({ fontSize: '11', fontStyle: 'italic', opacity: '[0.8]' });
+const studying = css({ fontSize: '11', fontStyle: 'italic', opacity: 'soft' });
 
 /** Someone's first name, short enough for a column. */
 const firstName = (st: Staff) => st.name.split(' ')[0] ?? st.name;

@@ -14,7 +14,7 @@ const keyList = css({
   p: '0',
   textAlign: 'left',
   fontSize: '14',
-  lineHeight: '[1.9]',
+  lineHeight: 'loose',
   '& kbd': {
     font: 'inherit',
     fontSize: '12',

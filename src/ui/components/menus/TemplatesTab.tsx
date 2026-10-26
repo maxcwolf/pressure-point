@@ -36,7 +36,7 @@ import { cardLook, cardsLook } from './looks';
 const templateCards = css(cardsLook, { gridTemplateColumns: '[repeat(auto-fill, minmax(214px, 1fr))]' });
 
 /** A template's card, which stays as bright when its room cannot be afforded, for its own buttons to say so. */
-const templateCard = css(cardLook, { gap: '4', '&.poor': { opacity: '[1]', cursor: 'auto' } });
+const templateCard = css(cardLook, { gap: '4', '&.poor': { opacity: 'full', cursor: 'auto' } });
 
 /** The template's name, which can be changed in place: plain words on the card until the pointer or the typing is on it. */
 const nameInput = css({
@@ -76,7 +76,7 @@ const actions = css({
   '& button:not(.build, .delete):hover': { bg: 'bg.hover' },
   '& button.build': { bg: 'go', color: 'fg.on-accent' },
   '& button.delete': { ml: 'auto', bg: 'bad.bg', color: 'bad' },
-  '& button.locked': { opacity: '[0.5]', cursor: 'not-allowed' },
+  '& button.locked': { opacity: 'faint', cursor: 'not-allowed' },
 });
 
 /** The way to import more and export them all, with how many there are of how many there can be at the far end. */
@@ -87,7 +87,7 @@ const foot = css({
   flexWrap: 'wrap',
   mt: '10',
   // the count at the far end: `span.sub`, or the menu's own margins for smaller words would win
-  '& span.sub': { m: '0', ml: '[auto]', fontSize: '13', opacity: '[0.75]' },
+  '& span.sub': { m: '0', ml: '[auto]', fontSize: '13', opacity: 'muted' },
 });
 
 /** A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. */

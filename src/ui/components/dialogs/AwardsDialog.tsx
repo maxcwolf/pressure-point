@@ -36,9 +36,9 @@ const awards = css({
     bg: 'bg.card',
   },
   '& li.won': { borderColor: 'highlight', bg: 'highlight.bg' },
-  '& li.missed': { opacity: '[0.75]' },
-  '& li.missed .icon': { filter: '[grayscale(1)]', opacity: '[0.45]' },
-  '& small': { display: 'block', fontSize: '12', lineHeight: '[1.25]' },
+  '& li.missed': { opacity: 'muted' },
+  '& li.missed .icon': { filter: '[grayscale(1)]', opacity: 'faint' },
+  '& small': { display: 'block', fontSize: '12', lineHeight: 'snug' },
   '& em': { fontStyle: 'normal', fontWeight: 'bold', fontSize: '13' },
 });
 

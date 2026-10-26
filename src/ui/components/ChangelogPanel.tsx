@@ -11,7 +11,7 @@ const RELEASES = parseChangelog(changelog);
 const changelogLook = css({
   textAlign: 'left',
   fontSize: '15',
-  lineHeight: '[1.4]',
+  lineHeight: 'normal',
   '& section + section': { mt: '14' },
   '& ul': { pl: '16' },
   '& li + li': { mt: '4' },

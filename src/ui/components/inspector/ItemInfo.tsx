@@ -57,7 +57,7 @@ const upgrade = css({
   m: '0',
   mt: '2',
   mb: '6',
-  _locked: { bg: 'control', opacity: '[0.7]' },
+  _locked: { bg: 'control', opacity: 'muted' },
 });
 
 /**
@@ -67,7 +67,7 @@ const upgrade = css({
 const thermostat = css({ mt: '8', '& .sub': { m: '0', mt: '4' }, '& .tabs': { m: '0', mt: '2', gap: '4' } });
 
 /** Setting every one of its kind alike, faded while they already are. */
-const every = css({ _locked: { opacity: '[0.5]', cursor: 'not-allowed' } });
+const every = css({ _locked: { opacity: 'faint', cursor: 'not-allowed' } });
 
 /** The temperature overlay's switch, gold while it is on. */
 const tempOverlay = css({ _on: { bg: 'toggle.on' } });

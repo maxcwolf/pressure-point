@@ -44,9 +44,9 @@ const row = css({
   '&:not(.head)': { cursor: 'pointer' },
   _hover: { borderColor: 'accent.strong', bg: 'bg.hover' },
   '& b': { fontWeight: 'bold' },
-  '& .meters': { position: 'relative', zIndex: '[1]', display: 'grid', rowGap: '2' },
-  '& .quals > span': { position: 'relative', zIndex: '[1]' },
-  '& > button.act': { position: 'relative', zIndex: '[1]' },
+  '& .meters': { position: 'relative', zIndex: 'above', display: 'grid', rowGap: '2' },
+  '& .quals > span': { position: 'relative', zIndex: 'above' },
+  '& > button.act': { position: 'relative', zIndex: 'above' },
   '& .meters .bar': { mt: '0' },
   '&.head': {
     bg: '[none]',
@@ -55,14 +55,14 @@ const row = css({
     pb: '0',
     mb: '2',
     fontSize: '12',
-    opacity: '[0.7]',
+    opacity: 'muted',
   },
   '&.head:hover': { bg: '[none]', borderColor: 'transparent' },
   '&.head em': { fontStyle: 'normal', fontWeight: 'bold' },
   '& small': { textAlign: 'right' },
   '& > .icon': { gridRow: '[span 2]' },
-  '& .knows': { gridColumn: '[2 / -1]', fontSize: '12', opacity: '[0.85]' },
-  '& .knows:has(.quals)': { opacity: '[1]' },
+  '& .knows': { gridColumn: '[2 / -1]', fontSize: '12', opacity: 'soft' },
+  '& .knows:has(.quals)': { opacity: 'full' },
   '& .knows .quals': { m: '0' },
 });
 
@@ -110,7 +110,7 @@ const requests = css({
 });
 
 /** The treatments to narrow the list to, each with how many know it. */
-const knowsFilter = css({ '& .tab small': { fontSize: '11', fontWeight: 'bold', opacity: '[0.7]' } });
+const knowsFilter = css({ '& .tab small': { fontSize: '11', fontWeight: 'bold', opacity: 'muted' } });
 
 /** Whether someone knows a treatment, or is on its course. */
 const knowsOrLearning = (st: Staff, m: Modality) => st.quals.includes(m) || st.training?.course === m;

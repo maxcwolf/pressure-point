@@ -72,10 +72,10 @@ const stack = css({
 /** The logo, over the top of the panel. */
 const logoLook = css({
   position: 'relative',
-  zIndex: '[1]',
+  zIndex: 'above',
   m: '0',
   flex: 'none',
-  lineHeight: '[0]',
+  lineHeight: 'collapse',
   textAlign: 'center',
 });
 
@@ -134,7 +134,7 @@ const noteLook = css({
   px: '12',
   mb: '14',
   fontSize: '15',
-  lineHeight: '[1.35]',
+  lineHeight: 'snug',
   textAlign: 'left',
 });
 
@@ -185,7 +185,7 @@ const facts = css({
   minW: '[0]',
   fontSize: '[clamp(13px, 2.2vh, 15.5px)]',
   fontWeight: 'bold',
-  lineHeight: '[1.4]',
+  lineHeight: 'normal',
   rowGap: '2',
   // icons on the dark panel sit on cream chips, or their navy outlines would vanish
   '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },
@@ -269,11 +269,11 @@ const badge = css({
   border: '[{borderWidths.thick} solid {colors.title.border}]',
   bg: 'control',
   boxShadow: 'low.dark',
-  '&.off': { bg: 'title.off', borderColor: 'title.off-border', filter: '[grayscale(1)]', opacity: '[0.8]' },
+  '&.off': { bg: 'title.off', borderColor: 'title.off-border', filter: '[grayscale(1)]', opacity: 'soft' },
 });
 
 /** The sound and music switches, in the top right corner. */
-const sys = css({ position: 'fixed', top: '[14px]', right: '[14px]', display: 'flex', gap: '8', zIndex: '[1]' });
+const sys = css({ position: 'fixed', top: '[14px]', right: '[14px]', display: 'flex', gap: '8', zIndex: 'above' });
 
 /** The version, in the bottom left corner. */
 const version = css({
@@ -283,7 +283,7 @@ const version = css({
   fontSize: '12',
   fontWeight: 'bold',
   color: 'fg.inverse',
-  opacity: '[0.75]',
+  opacity: 'muted',
   textShadow: 'text.title-strong',
   pointerEvents: 'none',
 });
@@ -297,8 +297,8 @@ const alpha = css({
   borderRadius: '6',
   bg: 'highlight',
   color: 'fg',
-  fontWeight: '[700]',
-  letterSpacing: '[0.04em]',
+  fontWeight: 'heavy',
+  letterSpacing: 'wide',
   textTransform: 'uppercase',
   textShadow: 'none',
 });

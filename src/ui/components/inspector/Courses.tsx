@@ -27,9 +27,9 @@ const course = css({
   px: '8',
   mb: '4',
   fontSize: '13',
-  fontWeight: '[500]',
+  fontWeight: 'medium',
   _hover: { bg: 'bg.hover' },
-  '& small': { display: 'block', fontWeight: '[400]', fontSize: '11', opacity: '[0.7]' },
+  '& small': { display: 'block', fontWeight: 'regular', fontSize: '11', opacity: 'muted' },
   '& b': {
     bg: 'highlight',
     border: 'outline.fine',
@@ -38,7 +38,7 @@ const course = css({
     px: '6',
     fontSize: '12',
   },
-  _locked: { opacity: '[0.5]', cursor: 'not-allowed' },
+  _locked: { opacity: 'faint', cursor: 'not-allowed' },
 });
 
 /**

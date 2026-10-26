@@ -36,8 +36,8 @@ export const visitRooms = css({
   },
   '& li.good': { borderColor: 'highlight', bg: 'highlight.bg' },
   '& li.bad': { borderColor: 'bad.border', bg: 'bad.bg' },
-  '& small': { gridColumn: '1', fontSize: '12', lineHeight: '[1.25]' },
-  '& em': { gridColumn: '2', gridRow: '[1 / span 2]', fontStyle: 'normal', fontWeight: '[700]', fontSize: '17' },
+  '& small': { gridColumn: '1', fontSize: '12', lineHeight: 'snug' },
+  '& em': { gridColumn: '2', gridRow: '[1 / span 2]', fontStyle: 'normal', fontWeight: 'heavy', fontSize: '17' },
 });
 
 /** How the last visit went: the verdict, and each room the visitor saw with what they made of it. */

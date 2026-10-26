@@ -40,12 +40,12 @@ const statCard = css({
   px: '10',
   fontSize: '13',
   '& h4': { fontWeight: 'bold', fontSize: '14' },
-  '& b': { fontSize: '20', fontWeight: '[700]' },
+  '& b': { fontSize: '20', fontWeight: 'heavy' },
   '& p.sub': { mt: '4', fontSize: '12' },
 });
 
 /** A card's small chart. */
-const smallChart = css(chartLook, { h: '[38px]', mt: '6', gap: '2', '& i.now': { opacity: '[0.55]' } });
+const smallChart = css(chartLook, { h: '[38px]', mt: '6', gap: '2', '& i.now': { opacity: 'faint' } });
 
 /** The figures to choose from, as pills in a row, the ones chosen in teal. */
 const choices = css({
@@ -63,7 +63,7 @@ const choices = css({
     py: '2',
     px: '10',
     fontSize: '13',
-    fontWeight: '[500]',
+    fontWeight: 'medium',
     _hover: { transform: 'translateY(-1px)' },
     _on: { bg: 'accent', borderColor: 'accent.strong', color: 'fg.on-accent' },
   },
@@ -87,7 +87,7 @@ const awardList = css({
 const ceremonyButton = css({
   pointerEvents: 'auto',
   fontSize: '13',
-  fontWeight: '[500]',
+  fontWeight: 'medium',
   border: 'outline.thin',
   borderRadius: 'pill',
   py: '2',

@@ -33,7 +33,7 @@ const TABS: readonly { id: Tab; label: string }[] = [
 ];
 
 /** The karma there is to spend, over the tabs. */
-const karma = css({ fontWeight: '[700]', fontSize: '15', m: '0', mb: '8' });
+const karma = css({ fontWeight: 'heavy', fontSize: '15', m: '0', mb: '8' });
 
 /** The tabs, in the middle. */
 const tabs = css({ justifyContent: 'center', mb: '10' });
@@ -58,7 +58,7 @@ const stop = css({
     borderLeft: '[{borderWidths.thick} dashed {colors.border.strong}]',
   },
   // the pin and the card keep their class names for this
-  _locked: { '& .about': { opacity: '[0.6]' }, '& .pin': { bg: 'title.off' } },
+  _locked: { '& .about': { opacity: 'quiet' }, '& .pin': { bg: 'title.off' } },
 });
 
 /** A center's pin on the trail, with its number on it, or a lock. */
@@ -71,7 +71,7 @@ const pin = css({
   bg: 'accent',
   border: 'outline.thick',
   color: 'fg.on-accent',
-  fontWeight: '[700]',
+  fontWeight: 'heavy',
 });
 
 /** A center's card. */
@@ -85,18 +85,18 @@ const stars = css({
   ml: '8',
   color: 'star',
   fontSize: '24',
-  letterSpacing: '[2px]',
+  letterSpacing: 'stars',
   WebkitTextStroke: '[{borderWidths.fine} {colors.outline}]',
   paintOrder: 'stroke fill',
 });
 
 /** Small print under a name: where a center is, or what an item or achievement is. */
-const small = css({ display: 'block', fontSize: '12', opacity: '[0.7]' });
+const small = css({ display: 'block', fontSize: '12', opacity: 'muted' });
 
 /** A line about a center: what it is like, how it opens, or what opens it. */
 const line = css.raw({ fontSize: '13', m: '0', mt: '2', mb: '6' });
 const blurb = css(line);
-const opening = css(line, { fontSize: '12', opacity: '[0.8]' });
+const opening = css(line, { fontSize: '12', opacity: 'soft' });
 const why = css(line, { fontWeight: 'bold', mb: '0' });
 
 /** Play, and Willow Lane's switch for the tutorial beside it. */
@@ -129,13 +129,13 @@ const card = css.raw({
 const shopCard = css(card, { '&.owned em': { color: 'good.solid' } });
 
 /** An achievement, faded until it is earned, and then ticked in green. */
-const featCard = css(card, { '&:not(.done)': { opacity: '[0.7]' }, '&.done em': { color: 'good.solid' } });
+const featCard = css(card, { '&:not(.done)': { opacity: 'muted' }, '&.done em': { color: 'good.solid' } });
 
 /** A name on a card. */
 const cardName = css({ display: 'block', fontSize: '15' });
 
 /** What something costs, or Unlocked, or a tick. */
-const price = css({ fontStyle: 'normal', fontWeight: '[700]', fontSize: '13', whiteSpace: 'nowrap' });
+const price = css({ fontStyle: 'normal', fontWeight: 'heavy', fontSize: '13', whiteSpace: 'nowrap' });
 
 /** The button to unlock something with karma, smaller than the go buttons are, and grey while there is not enough. */
 const buy = css({
@@ -144,7 +144,7 @@ const buy = css({
   px: '10',
   fontSize: '13',
   whiteSpace: 'nowrap',
-  _disabled: { filter: '[grayscale(1)]', opacity: '[0.55]', cursor: 'default', transform: 'none' },
+  _disabled: { filter: '[grayscale(1)]', opacity: 'faint', cursor: 'default', transform: 'none' },
 });
 
 /** The heading over the floors and walls. */

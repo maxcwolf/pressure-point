@@ -121,7 +121,7 @@ const row = css.raw({
 const saveRow = css(row);
 
 /** The row there is while there are no saved games. */
-const emptyRow = css(row, { justifyContent: 'center', opacity: '[0.7]', fontSize: '14' });
+const emptyRow = css(row, { justifyContent: 'center', opacity: 'muted', fontSize: '14' });
 
 /** What a saved game is: its name, over its date, money, stars and when it was saved. */
 const about = css({ minW: '[0]' });
@@ -133,7 +133,7 @@ const aboutName = css({
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 });
-const aboutFacts = css({ fontSize: '12', opacity: '[0.75]' });
+const aboutFacts = css({ fontSize: '12', opacity: 'muted' });
 
 /** A saved game's buttons. */
 const actions = css({ display: 'flex', gap: '4', flex: 'none', flexWrap: 'wrap', justifyContent: 'flex-end' });
@@ -145,7 +145,7 @@ const foot = css({
   gap: '10',
   mt: '8',
   fontSize: '12',
-  opacity: '[0.85]',
+  opacity: 'soft',
 });
 
 /** Whether a save is a named slot rather than the autosave or the previous game. */

@@ -24,7 +24,7 @@ const card = css({
 const heading = css({ fontSize: '15' });
 
 /** What the harm is costing, and how many more explanations wait after this one, close under the heading. */
-const cost = css({ fontSize: '14', lineHeight: '[1.3]', mt: '0' });
+const cost = css({ fontSize: '14', lineHeight: 'snug', mt: '0' });
 
 /** What is behind it, a line each with how much it adds, on a faint ground; the first, the biggest, in bold. */
 const causes = css({
@@ -42,7 +42,7 @@ const causes = css({
 });
 
 /** The way to the fix, in words. */
-const help = css({ fontSize: '14', lineHeight: '[1.3]' });
+const help = css({ fontSize: '14', lineHeight: 'snug' });
 
 /** Its buttons, at the left. */
 const buttons = css({ justifyContent: 'flex-start' });

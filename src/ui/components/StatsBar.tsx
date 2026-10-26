@@ -61,7 +61,7 @@ const cell = css.raw({
   borderRight: 'divider',
   minW: '[96px]',
   '& > .icon': { gridRow: '[span 2]' },
-  '& b': { fontSize: '17', fontWeight: 'bold', lineHeight: '[1.1]', fontVariantNumeric: 'tabular-nums' },
+  '& b': { fontSize: '17', fontWeight: 'bold', lineHeight: 'tight', fontVariantNumeric: 'tabular-nums' },
   '& small, & .bar': { gridColumn: '[2]', fontSize: '12', whiteSpace: 'nowrap', _max720: { display: 'none' } },
   _max1540: { py: '8', px: '10' },
   _max1100: { minW: '[0]', py: '6', px: '8' },
@@ -104,12 +104,12 @@ const temp = css({
   ml: '8',
   fontSize: '15',
   color: 'fg',
-  '&.heat': { fontWeight: '[700]', color: 'info' },
-  '&.cool': { fontWeight: '[700]', color: 'bad.solid' },
+  '&.heat': { fontWeight: 'heavy', color: 'info' },
+  '&.cool': { fontWeight: 'heavy', color: 'bad.solid' },
 });
 
 /** A rush or the snow, in bold red. */
-const rush = css({ fontStyle: 'normal', fontWeight: '[700]', color: 'bad.solid' });
+const rush = css({ fontStyle: 'normal', fontWeight: 'heavy', color: 'bad.solid' });
 
 /** The speed buttons, on a sand ground at the right. */
 const speeds = css({
@@ -132,7 +132,7 @@ const speed = css({
   py: '0',
   px: '6',
   fontSize: '11',
-  letterSpacing: '[-2px]',
+  letterSpacing: 'tighter',
   _on: { bg: 'active', color: 'fg.on-accent' },
 });
 

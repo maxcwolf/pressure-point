@@ -27,9 +27,9 @@ const skip = css({
   bg: '[none]',
   fontSize: '12',
   color: 'fg',
-  opacity: '[0.6]',
+  opacity: 'quiet',
   textDecoration: 'underline',
-  _hover: { opacity: '[1]' },
+  _hover: { opacity: 'full' },
 });
 
 /** The step's title, over what it asks. */

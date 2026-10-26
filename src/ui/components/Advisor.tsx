@@ -30,7 +30,7 @@ const advisor = css({
     py: '8',
     px: '12',
     fontSize: '14',
-    lineHeight: '[1.3]',
+    lineHeight: 'snug',
     boxShadow: 'raised',
     textAlign: 'left',
   },
@@ -41,7 +41,7 @@ const advisor = css({
     display: 'block',
     fontSize: '12',
     fontWeight: 'bold',
-    letterSpacing: '[0.06em]',
+    letterSpacing: 'wider',
     textTransform: 'uppercase',
     color: 'fg.accent',
     mb: '2',
@@ -74,7 +74,7 @@ const restStyle = css({ display: 'block' });
 const link = css({
   pointerEvents: 'auto',
   _hover: { filter: '[brightness(1.04)]', transform: '[translateY(-1px)]' },
-  '& .words > :last-child::after': { content: "' ›'", fontWeight: '[700]', opacity: '[0.55]' },
+  '& .words > :last-child::after': { content: "' ›'", fontWeight: 'heavy', opacity: 'faint' },
 });
 
 /** The advisor, who steps aside while a build menu or a blueprint is open in the same spot. */

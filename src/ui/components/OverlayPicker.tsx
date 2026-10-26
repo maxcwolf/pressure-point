@@ -15,7 +15,7 @@ const picker = css({
   top: '[66px]',
   right: '[14px]',
   w: '[270px]',
-  zIndex: '[5]',
+  zIndex: 'popover',
   display: 'flex',
   flexDirection: 'column',
   gap: '4',
@@ -40,7 +40,7 @@ const choice = css({
   fontSize: '14',
   _on: { borderColor: 'accent.strong', bg: 'bg.selected' },
   '& i': { display: 'grid', placeItems: 'center' },
-  '& small': { display: 'block', fontWeight: '[400]', fontSize: '12' },
+  '& small': { display: 'block', fontWeight: 'regular', fontSize: '12' },
 });
 
 /**
@@ -110,7 +110,7 @@ const close = css({
   border: 'outline.thin',
   bg: 'bg.card',
   fontSize: '12',
-  lineHeight: '[1]',
+  lineHeight: 'none',
 });
 
 /** The list of overlays while it is open, or the key to the overlay showing. */

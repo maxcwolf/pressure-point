@@ -36,9 +36,9 @@ export const globalCss = defineGlobalStyles({
   },
   button: { font: 'inherit', color: 'inherit', cursor: 'pointer' },
   'h2, h3, h4, p, ul': { margin: '0' },
-  s: { textDecoration: 'none', opacity: '0.25' },
+  s: { textDecoration: 'none', opacity: 'locked' },
   // smaller, fainter words under a heading or a setting
-  '.sub': { fontSize: '13', opacity: '0.72', marginTop: '6px' },
+  '.sub': { fontSize: '13', opacity: 'muted', marginTop: '6' },
   // money or a change that is good news, and one that is bad
   '.pos': { color: 'good.strong' },
   '.neg': { color: 'bad.solid' },

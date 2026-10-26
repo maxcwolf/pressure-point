@@ -51,7 +51,7 @@ const button = css({
   color: 'fg',
   boxShadow: 'pressed',
   '&.go': { bg: 'go', color: 'fg.on-accent' },
-  _disabled: { opacity: '[0.55]', cursor: 'default' },
+  _disabled: { opacity: 'faint', cursor: 'default' },
 });
 
 /** Thanks once it has gone, in green, or why it did not, in red. */
@@ -66,7 +66,7 @@ const noteLook = css({
 });
 
 /** What goes with it, in small print under the button. */
-const small = css({ fontSize: '12 !important', textAlign: 'center', opacity: '[0.75]' });
+const small = css({ fontSize: '12 !important', textAlign: 'center', opacity: 'muted' });
 
 /** How far sending has got. */
 type Sending = 'writing' | 'sending' | 'sent' | 'failed';

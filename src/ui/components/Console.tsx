@@ -29,15 +29,15 @@ const logLook = css({
   maxH: '[210px]',
   overflowY: 'auto',
   fontSize: '13',
-  lineHeight: '[1.35]',
+  lineHeight: 'snug',
   userSelect: 'text',
   WebkitUserSelect: 'text',
   '& li': { py: '[1px]', px: '0', whiteSpace: 'pre-wrap' },
   '& li.typed': { fontWeight: 'bold' },
-  '& li.typed::before': { content: "'› '", opacity: '[0.55]' },
+  '& li.typed::before': { content: "'› '", opacity: 'faint' },
   '& li.good': { color: 'good.strong' },
   '& li.bad': { color: 'bad.solid' },
-  '& li.hint': { opacity: '[0.6]' },
+  '& li.hint': { opacity: 'quiet' },
 });
 
 /** The line to type a command in, after a prompt. */
@@ -51,7 +51,7 @@ const lineLook = css({
   bg: 'bg.card',
   border: 'outline.thin',
   borderRadius: '10',
-  fontWeight: '[700]',
+  fontWeight: 'heavy',
 });
 
 /** The command being typed. */
@@ -62,7 +62,7 @@ const commandBox = css({
   outlineStyle: 'none',
   bg: '[transparent]',
   font: 'inherit',
-  fontWeight: '[500]',
+  fontWeight: 'medium',
   fontSize: '14',
   color: 'inherit',
 });

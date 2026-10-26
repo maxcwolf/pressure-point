@@ -35,5 +35,5 @@ export const duty = css({
   fontWeight: 'bold',
   bg: 'bg.card',
   _on: { bg: 'good.bg' },
-  _locked: { opacity: '[0.55]', cursor: 'not-allowed' },
+  _locked: { opacity: 'faint', cursor: 'not-allowed' },
 });

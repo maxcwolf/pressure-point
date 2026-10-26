@@ -27,7 +27,7 @@ const pill = css.raw({
   py: '6',
   px: '16',
   fontSize: '15',
-  fontWeight: '[500]',
+  fontWeight: 'medium',
   boxShadow: 'raised',
   textAlign: 'center',
 });
@@ -73,7 +73,7 @@ const keyCap = css({
   font: 'inherit',
   fontSize: '12',
   fontWeight: 'bold',
-  lineHeight: '[1.4]',
+  lineHeight: 'normal',
   minW: '[18px]',
   textAlign: 'center',
   bg: 'control',
@@ -126,7 +126,7 @@ const effectList = css({
 /** One change, in a white frame: green for the better, red for the worse. */
 const effect = css({
   fontSize: '13',
-  fontWeight: '[500]',
+  fontWeight: 'medium',
   border: '[{borderWidths.fine} solid {colors.border.strong}]',
   bg: 'bg.card',
   borderRadius: '8',

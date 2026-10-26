@@ -32,7 +32,7 @@ const part = css({
   px: '10',
   fontSize: '13',
   '& span': { gridColumn: '[1 / -1]' },
-  '& small': { fontSize: '12', opacity: '[0.8]' },
+  '& small': { fontSize: '12', opacity: 'soft' },
   '& em': { fontStyle: 'normal', fontWeight: 'bold' },
 });
 
@@ -54,14 +54,14 @@ const reviews = css({
     flexDirection: 'column',
     gap: '2',
   },
-  '& small': { fontSize: '12', opacity: '[0.75]' },
+  '& small': { fontSize: '12', opacity: 'muted' },
 });
 
 /** A review's stars, in gold outlined in navy. */
 const stars = css({
   color: 'star',
   WebkitTextStroke: '[{borderWidths.hairline} {colors.outline}]',
-  letterSpacing: '[1px]',
+  letterSpacing: 'stars.small',
 });
 
 /** One part of the reputation, as a bar, or a note that nobody has mentioned it yet. */
