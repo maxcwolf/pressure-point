@@ -18,7 +18,7 @@ const chips = css({
   flexWrap: 'wrap',
   gap: '4',
   m: '0',
-  mt: '[auto]',
+  mt: 'auto',
   p: '0',
   pt: '6',
   '& li': {

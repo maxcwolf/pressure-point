@@ -59,7 +59,7 @@ const backdropLook = css({
 /** The logo and everything under it, in the middle of the window. */
 const stack = css({
   position: 'relative',
-  my: '[auto]',
+  my: 'auto',
   mx: '0',
   w: '[min(620px, 100%)]',
   maxH: 'full',

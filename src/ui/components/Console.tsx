@@ -60,7 +60,7 @@ const commandBox = css({
   minW: '0',
   border: 'none',
   outlineStyle: 'none',
-  bg: '[transparent]',
+  bg: 'transparent',
   font: 'inherit',
   fontWeight: 'medium',
   fontSize: '14',

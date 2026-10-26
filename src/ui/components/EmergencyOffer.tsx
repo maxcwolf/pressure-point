@@ -53,12 +53,12 @@ const column = css({
     _hover: { opacity: 'full', bg: 'bg.muted' },
   },
   // how long is left to decide, over a bar of it
-  '& .offer .time-left': { fontSize: '13', fontWeight: 'bold', m: '[auto]', mt: '8', mb: '0', w: '[70%]' },
+  '& .offer .time-left': { fontSize: '13', fontWeight: 'bold', m: 'auto', mt: '8', mb: '0', w: '[70%]' },
   // a pill: its words over a bar, popping in, and lifting a little under the pointer
   '& .offer-pill': {
     display: 'block',
     my: '0',
-    mx: '[auto]',
+    mx: 'auto',
     p: '14',
     pt: '6',
     pb: '8',

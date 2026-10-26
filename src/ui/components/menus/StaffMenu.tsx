@@ -71,7 +71,7 @@ const pick = css({
   position: 'absolute',
   inset: '0',
   border: 'none',
-  borderRadius: '[inherit]',
+  borderRadius: 'inherit',
   p: '0',
   bg: '[none]',
 });

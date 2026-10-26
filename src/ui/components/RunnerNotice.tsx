@@ -19,7 +19,7 @@ import { IconText } from './common/Icon';
 const pill = css({
   display: 'block',
   my: '0',
-  mx: '[auto]',
+  mx: 'auto',
   borderColor: 'notice.runner',
   p: '12',
   pt: '6',

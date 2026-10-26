@@ -51,7 +51,7 @@ const nameInput = css({
   my: '0',
   mx: '-6',
   w: '[calc(100% + 8px)]',
-  bg: '[transparent]',
+  bg: 'transparent',
   '&:is(:hover, :focus)': { borderColor: 'accent', bg: 'bg.hover', outline: 'none' },
 });
 
@@ -87,7 +87,7 @@ const foot = css({
   flexWrap: 'wrap',
   mt: '10',
   // the count at the far end: `span.sub`, or the menu's own margins for smaller words would win
-  '& span.sub': { m: '0', ml: '[auto]', fontSize: '13', opacity: 'muted' },
+  '& span.sub': { m: '0', ml: 'auto', fontSize: '13', opacity: 'muted' },
 });
 
 /** A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. */
