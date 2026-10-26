@@ -35,7 +35,7 @@ const row = css({
   columnGap: '8',
   textAlign: 'left',
   bg: 'bg.card',
-  border: '[2px solid {colors.border.strong}]',
+  border: 'card',
   borderRadius: '10',
   py: '6',
   px: '8',
@@ -70,7 +70,7 @@ const row = css({
 const pick = css({
   position: 'absolute',
   inset: '[0]',
-  border: '[0]',
+  border: 'none',
   borderRadius: '[inherit]',
   p: '0',
   bg: '[none]',
@@ -87,7 +87,7 @@ const moraleKey = css({ color: 'good' });
  * menu. One they asked for, or a promotion, is gold.
  */
 const act = css({
-  border: 'control',
+  border: 'outline.thin',
   borderRadius: '10',
   bg: 'control',
   fontSize: '12',

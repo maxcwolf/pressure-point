@@ -18,7 +18,7 @@ import { IconText } from '../common/Icon';
 const nameBox = css({
   font: 'inherit',
   color: 'inherit',
-  border: '[2px solid transparent]',
+  border: '[{borderWidths.thin} solid transparent]',
   borderRadius: '8',
   py: '0',
   px: '4',
@@ -26,7 +26,7 @@ const nameBox = css({
   mx: '[-6px]',
   w: '[calc(100% + 8px)]',
   bg: 'transparent',
-  '&:hover, &:focus': { borderColor: 'accent', bg: 'bg.hover', outline: '[none]' },
+  '&:hover, &:focus': { borderColor: 'accent', bg: 'bg.hover', outline: 'none' },
 });
 
 /** The rooms on a plot, a button for each, wrapping. */

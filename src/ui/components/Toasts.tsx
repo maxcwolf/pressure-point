@@ -51,8 +51,8 @@ const messages = css({ display: 'flex', flexDirection: 'column', gap: '8' });
 /** A card: cream, with a thick edge down its left in its color, sliding in, and fading once it is on its way out. */
 const card = css.raw({
   bg: 'bg.panel',
-  border: '[3px solid {colors.outline}]',
-  borderLeftWidth: '[10px]',
+  border: 'outline.thick',
+  borderLeftWidth: 'stripe',
   borderRadius: '12',
   py: '8',
   px: '12',
@@ -103,8 +103,8 @@ const requestList = css({
   px: '4',
   listStyle: 'none',
   bg: 'bg.panel',
-  border: 'control',
-  borderTop: '[none]',
+  border: 'outline.thin',
+  borderTop: 'none',
   borderRadius: '[0 0 10px 10px]',
   pointerEvents: 'auto',
 });
@@ -115,7 +115,7 @@ const requestName = css({
   w: '[100%]',
   py: '2',
   px: '8',
-  border: '[none]',
+  border: 'none',
   borderRadius: '6',
   bg: '[none]',
   textAlign: 'left',
@@ -129,7 +129,7 @@ const wordsStyle = css({ flex: '1', minW: '[0]', p: '8', pr: '4', pl: '12' });
 
 /** Words that are a click to what they are about. */
 const wordsLink = css({
-  border: '[none]',
+  border: 'none',
   bg: '[none]',
   color: 'inherit',
   pointerEvents: 'auto',
@@ -156,7 +156,7 @@ const close = css({
   w: '[24px]',
   h: '[24px]',
   mt: '4',
-  border: '[none]',
+  border: 'none',
   borderRadius: 'disc',
   bg: '[none]',
   fontSize: '12',
@@ -175,7 +175,7 @@ const sheet = css({
   position: 'absolute',
   inset: '[7px 6px -7px]',
   bg: 'bg.inset',
-  border: '[3px solid {colors.outline}]',
+  border: 'outline.thick',
   borderRadius: '12',
   '&.deep': { inset: '[14px 12px -14px]', boxShadow: 'raised' },
   '&.good': { bg: 'good.solid' },

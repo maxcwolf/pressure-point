@@ -38,7 +38,7 @@ const bar = css({
   alignItems: 'stretch',
   gap: '0',
   bg: 'bg.panel',
-  border: '[3px solid {colors.outline}]',
+  border: 'outline.thick',
   borderRadius: '18',
   boxShadow: 'raised',
   overflow: 'hidden',
@@ -58,7 +58,7 @@ const cell = css.raw({
   alignItems: 'center',
   py: '8',
   px: '12',
-  borderRight: '[2px solid {colors.border}]',
+  borderRight: 'divider',
   minW: '[96px]',
   '& > .icon': { gridRow: '[span 2]' },
   '& b': { fontSize: '17', fontWeight: 'bold', lineHeight: '[1.1]', fontVariantNumeric: 'tabular-nums' },
@@ -79,8 +79,8 @@ const moneyCell = css(cell, { minW: '[150px]', '&.neg b': { color: 'bad.solid' }
  */
 const repCell = css(cell, {
   bg: '[none]',
-  border: '[none]',
-  borderRight: '[2px solid {colors.border}]',
+  border: 'none',
+  borderRight: 'divider',
   borderRadius: '[0]',
   textAlign: 'left',
   font: 'inherit',
@@ -124,7 +124,7 @@ const speeds = css({
 
 /** A speed button, orange while it is the speed. `speed` is for the end-to-end tests to find them by. */
 const speed = css({
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   bg: 'control',
   borderRadius: '10',
   h: '[36px]',

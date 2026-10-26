@@ -32,7 +32,7 @@ const toggleStyle = css({ display: 'block', my: '2', mx: '0' });
  */
 const pickCard = css({
   bg: 'bg.card',
-  border: '[2px solid {colors.border.strong}]',
+  border: 'card',
   borderRadius: '10',
   p: '8',
   pt: '4',
@@ -52,7 +52,7 @@ const pick = css({
   textAlign: 'left',
   fontSize: '13',
   bg: '[none]',
-  border: '[1.5px solid transparent]',
+  border: '[{borderWidths.fine} solid transparent]',
   borderRadius: '8',
   py: '2',
   px: '4',
@@ -82,7 +82,7 @@ const table = css({
   '& tbody th': { fontWeight: '[500]', opacity: '[0.75]', hyphens: 'auto', overflowWrap: 'anywhere' },
   // five stars, small enough to fit their column
   '& .skill': { fontSize: '11', letterSpacing: '[0]', whiteSpace: 'nowrap' },
-  '& tbody tr + tr': { borderTop: '[1px solid {colors.border.faint}]' },
+  '& tbody tr + tr': { borderTop: 'hairline' },
   '& tr.section th': { opacity: '[1]', fontWeight: 'bold', pt: '6' },
 });
 

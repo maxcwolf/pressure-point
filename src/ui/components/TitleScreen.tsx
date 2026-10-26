@@ -112,7 +112,7 @@ const subName = css({ fontSize: '[clamp(20px, 3.4vh, 26px)]', fontWeight: 'bold'
 /** Back, from a panel to the menu. */
 const back = css({
   justifySelf: 'start',
-  border: '[2.5px solid {colors.title.border}]',
+  border: '[{borderWidths.medium} solid {colors.title.border}]',
   borderRadius: '10',
   bg: 'title.button',
   color: 'title.fg',
@@ -128,7 +128,7 @@ const back = css({
 const noteLook = css({
   bg: 'bad.bg',
   color: 'bad.deep',
-  border: '[2px solid {colors.bad}]',
+  border: '[{borderWidths.thin} solid {colors.bad}]',
   borderRadius: '12',
   py: '8',
   px: '12',
@@ -162,7 +162,7 @@ const thumb = css.raw({
   aspectRatio: '[1.6]',
   flex: 'none',
   objectFit: 'cover',
-  border: '[4px solid {colors.title.border}]',
+  border: '[{borderWidths.heavy} solid {colors.title.border}]',
   borderRadius: '8',
   bg: 'title.off',
 });
@@ -221,7 +221,7 @@ const menu = css({
 const menuButton = css({
   flex: 'none',
   h: '[clamp(34px, 6vh, 52px)]',
-  border: '[3px solid {colors.title.border}]',
+  border: '[{borderWidths.thick} solid {colors.title.border}]',
   borderRadius: '14',
   bg: 'title.button',
   color: 'title.fg',
@@ -266,7 +266,7 @@ const badge = css({
   display: 'grid',
   placeItems: 'center',
   borderRadius: 'disc',
-  border: '[3px solid {colors.title.border}]',
+  border: '[{borderWidths.thick} solid {colors.title.border}]',
   bg: 'control',
   boxShadow: '[0 3px 0 {colors.shadow.dark}]',
   '&.off': { bg: 'title.off', borderColor: 'title.off-border', filter: '[grayscale(1)]', opacity: '[0.8]' },
@@ -316,7 +316,7 @@ const corner = css({
 
 /** A button in the corner, such as What's new. */
 const news = css.raw({
-  border: '[2.5px solid {colors.title.border}]',
+  border: '[{borderWidths.medium} solid {colors.title.border}]',
   borderRadius: '14',
   bg: 'title.panel',
   color: 'title.fg',
@@ -337,7 +337,7 @@ const updateButton = css(news, { borderColor: 'highlight' });
 
 /** How the look for an update is going, where its button shows once one has downloaded: quieter, with nothing to press. */
 const updateLook = css({
-  border: '[2px solid {colors.title.border-soft}]',
+  border: '[{borderWidths.thin} solid {colors.title.border-soft}]',
   borderRadius: '14',
   bg: 'title.panel-subtle',
   color: 'title.fg',

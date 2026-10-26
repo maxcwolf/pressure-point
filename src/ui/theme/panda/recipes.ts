@@ -10,7 +10,7 @@ const LOW_SHADOW = '[0 3px 0 {colors.shadow}]';
 /** A button with words on it: the go and danger buttons, and every button in a row of them. */
 const worded = {
   pointerEvents: 'auto',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '12',
   py: '6',
   px: '16',
@@ -29,7 +29,7 @@ export const panelCard = defineRecipe({
   base: {
     pointerEvents: 'auto',
     bg: 'bg.panel',
-    border: '[3px solid {colors.outline}]',
+    border: 'outline.thick',
     borderRadius: '18',
     boxShadow: 'raised',
     py: '12',
@@ -52,7 +52,7 @@ export const roundButton = defineRecipe({
     w: '[76px]',
     h: '[76px]',
     borderRadius: 'disc',
-    border: '[3px solid {colors.outline}]',
+    border: 'outline.thick',
     bg: 'accent',
     color: 'fg.on-accent',
     boxShadow: 'raised',
@@ -96,7 +96,7 @@ export const roundButton = defineRecipe({
       true: {
         position: 'relative',
         bg: '[none]',
-        border: '[0]',
+        border: 'none',
         boxShadow: '[none]',
         '& > .shape': {
           position: 'absolute',
@@ -174,7 +174,7 @@ export const tabButton = defineRecipe({
   className: 'tab',
   description: 'One tab, teal while it is the one showing',
   base: {
-    border: '[2.5px solid {colors.outline}]',
+    border: 'outline',
     bg: 'bg.card',
     borderRadius: '10',
     py: '4',
@@ -186,7 +186,7 @@ export const tabButton = defineRecipe({
   variants: {
     size: {
       normal: {},
-      small: { fontSize: '13', py: '2', px: '10', borderWidth: '[2px]' },
+      small: { fontSize: '13', py: '2', px: '10', borderWidth: 'thin' },
     },
   },
   defaultVariants: { size: 'normal' },
@@ -202,7 +202,7 @@ export const toggleSwitch = defineRecipe({
     w: '[52px]',
     h: '[30px]',
     borderRadius: 'pill',
-    border: '[2.5px solid {colors.outline}]',
+    border: 'outline',
     bg: 'bg.disabled',
     p: '0',
     position: 'relative',
@@ -215,7 +215,7 @@ export const toggleSwitch = defineRecipe({
       h: '[21px]',
       borderRadius: 'disc',
       bg: 'bg.card',
-      border: '[2px solid {colors.outline}]',
+      border: 'outline.thin',
       opacity: '[1 !important]',
       transition: '[left 0.15s]',
     },
@@ -231,7 +231,7 @@ export const fileButton = defineRecipe({
   base: {
     flex: 'none',
     cursor: 'pointer',
-    border: '[2px dashed {colors.outline}]',
+    border: 'outline.dashed',
     borderRadius: '10',
     py: '4',
     px: '10',
@@ -247,8 +247,8 @@ export const guideRing = defineRecipe({
   className: 'guide',
   description: "The tutorial's ring on what its step wants",
   base: {
-    outline: '[4px solid {colors.guide}]',
-    outlineOffset: '[3px]',
+    outline: 'guide',
+    outlineOffset: '2',
     animation: 'guide 1.4s ease-in-out infinite',
     _motionReduce: { animation: 'none' },
   },

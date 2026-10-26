@@ -35,7 +35,7 @@ const pill = css({
 const show = css({
   display: 'block',
   w: '[100%]',
-  border: '[none]',
+  border: 'none',
   bg: '[none]',
   p: '0',
   font: 'inherit',

@@ -31,13 +31,13 @@ export const scrollCueCss = defineGlobalStyles({
   '[data-more]::-webkit-scrollbar': { width: '11px' },
   '[data-more]::-webkit-scrollbar-track': {
     background: 'bg.inset',
-    border: '3px solid transparent',
+    border: '[{borderWidths.thick} solid transparent]',
     borderRadius: '6px',
     backgroundClip: 'padding-box',
   },
   '[data-more]::-webkit-scrollbar-thumb': {
     background: THUMB,
-    border: '3px solid transparent',
+    border: '[{borderWidths.thick} solid transparent]',
     borderRadius: '6px',
     backgroundClip: 'padding-box',
   },

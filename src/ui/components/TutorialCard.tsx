@@ -22,7 +22,7 @@ const kicker = css({ flex: '1' });
 /** Skip the tutorial, as a faint underlined link. */
 const skip = css({
   flex: 'none',
-  border: '[0]',
+  border: 'none',
   p: '0',
   bg: '[none]',
   fontSize: '12',
@@ -38,7 +38,7 @@ const title = css({ display: 'block', fontSize: '15', mb: '2' });
 /** Show me: a teal button that lifts under the pointer. */
 const show = css({
   mt: '8',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '12',
   py: '4',
   px: '14',

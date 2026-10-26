@@ -56,7 +56,7 @@ const who = css({
   fontWeight: 'bold',
   fontSize: '13',
   bg: '[none]',
-  border: '[none]',
+  border: 'none',
   p: '0',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
@@ -81,7 +81,7 @@ const moves = css({
   '& button': {
     w: '[24px]',
     h: '[24px]',
-    border: 'control',
+    border: 'outline.thin',
     borderRadius: '6',
     bg: 'bg.card',
     fontSize: '11',

@@ -49,7 +49,7 @@ const conditionChoices = css({
   mx: '0',
   '& button': {
     pointerEvents: 'auto',
-    border: 'control',
+    border: 'outline.thin',
     borderRadius: '8',
     bg: 'control',
     fontWeight: 'bold',

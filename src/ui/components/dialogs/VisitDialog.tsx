@@ -28,7 +28,7 @@ export const visitRooms = css({
     gridTemplateColumns: '[1fr auto]',
     alignItems: 'center',
     columnGap: '8',
-    border: '[2px solid {colors.border}]',
+    border: 'divider',
     borderRadius: '10',
     py: '4',
     px: '8',

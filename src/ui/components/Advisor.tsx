@@ -25,7 +25,7 @@ const advisor = css({
   // a speech bubble, its corner by the face cut small
   '& .note': {
     bg: 'bg.panel',
-    border: '[3px solid {colors.outline}]',
+    border: 'outline.thick',
     borderRadius: '[16px 16px 16px 4px]',
     py: '8',
     px: '12',
@@ -35,7 +35,7 @@ const advisor = css({
     textAlign: 'left',
   },
   // a note about something going wrong now: a red edge down its left
-  '& .note.alarm': { borderLeft: '[8px solid {colors.bad.solid}]' },
+  '& .note.alarm': { borderLeft: '[{borderWidths.stripe} solid {colors.bad.solid}]' },
   // what kind of note it is, or which step of the tutorial, in small teal capitals over it
   '& .kicker': {
     display: 'block',
@@ -55,7 +55,7 @@ const face = css({
   flex: 'none',
   borderRadius: 'disc',
   bg: 'highlight',
-  border: '[3px solid {colors.outline}]',
+  border: 'outline.thick',
   display: 'grid',
   placeItems: 'center',
   boxShadow: 'raised',

@@ -51,7 +51,7 @@ export const cardLook = css.raw({
   position: 'relative',
   textAlign: 'left',
   bg: 'bg.card',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '14',
   py: '8',
   px: '10',
@@ -84,7 +84,7 @@ export const cardLook = css.raw({
     top: '8',
     right: '[9px]',
     bg: 'highlight',
-    border: 'control',
+    border: 'outline.thin',
     borderRadius: '8',
     py: '0',
     px: '6',
@@ -118,7 +118,7 @@ export const ledgerLook = css.raw({
   '& h4': { fontWeight: 'bold', mb: '4' },
   '& div': { display: 'flex', py: '[1.5px]', px: '0' },
   '& div:not(.btnrow)': { justifyContent: 'space-between' },
-  '& .total': { borderTop: '[2px solid {colors.border}]', mt: '4', pt: '4', fontWeight: 'bold' },
+  '& .total': { borderTop: 'divider', mt: '4', pt: '4', fontWeight: 'bold' },
 });
 
 /** One of the Money menu's white cards. */
@@ -161,9 +161,9 @@ export const tableLook = css.raw({
     fontSize: '12',
     py: '4',
     px: '6',
-    borderBottom: '[2px solid {colors.border}]',
+    borderBottom: 'divider',
   },
-  '& td': { textAlign: 'right', py: '2', px: '6', borderBottom: '[1px solid {colors.border.faint}]' },
+  '& td': { textAlign: 'right', py: '2', px: '6', borderBottom: 'hairline' },
   '& :is(th, td):first-child': { textAlign: 'left' },
   '& .poor': { color: 'bad', fontWeight: 'bold' },
 });

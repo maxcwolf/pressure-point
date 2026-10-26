@@ -24,7 +24,7 @@ const chips = css({
   '& li': {
     fontSize: '12',
     fontWeight: '[500]',
-    border: '[1.5px solid {colors.chip.border}]',
+    border: '[{borderWidths.fine} solid {colors.chip.border}]',
     bg: 'chip',
     borderRadius: '8',
     py: '0',
@@ -66,7 +66,7 @@ const detail = css({
   position: 'sticky',
   top: '[0]',
   bg: 'bg.card',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '14',
   p: '12',
   pt: '10',
@@ -99,7 +99,7 @@ const detailHead = css({
   '& .cost': {
     display: 'inline-block',
     bg: 'highlight',
-    border: 'control',
+    border: 'outline.thin',
     borderRadius: '8',
     py: '0',
     px: '6',
@@ -123,7 +123,7 @@ const factList = css({
 /** The panel's button: green to place the item, grey while it cannot be. */
 const place = css({
   mt: '2',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '12',
   bg: 'go',
   color: 'fg.on-accent',

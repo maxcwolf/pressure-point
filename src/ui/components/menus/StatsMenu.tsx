@@ -57,7 +57,7 @@ const choices = css({
   mb: '4',
   '& .chip': {
     pointerEvents: 'auto',
-    border: '[2px solid {colors.border.strong}]',
+    border: 'card',
     borderRadius: 'pill',
     bg: 'bg.card',
     py: '2',
@@ -75,7 +75,7 @@ const awardList = css({
   '& ul': { listStyle: 'none', p: '0', display: 'flex', flexWrap: 'wrap', gap: '6', mb: '6' },
   '& li': {
     bg: 'highlight.bg',
-    border: '[2px solid {colors.highlight}]',
+    border: '[{borderWidths.thin} solid {colors.highlight}]',
     borderRadius: '8',
     py: '2',
     px: '8',
@@ -88,7 +88,7 @@ const ceremonyButton = css({
   pointerEvents: 'auto',
   fontSize: '13',
   fontWeight: '[500]',
-  border: 'control',
+  border: 'outline.thin',
   borderRadius: 'pill',
   py: '2',
   px: '10',

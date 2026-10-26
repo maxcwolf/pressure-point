@@ -27,7 +27,7 @@ const cv = css(cardLook, {
   '& .btnrow': { mt: 'auto', display: 'flex', gap: '6' },
   '& .btnrow .go': { flex: '1' },
   '& .reject': {
-    border: 'control',
+    border: 'outline.thin',
     borderRadius: '10',
     bg: 'bg.card',
     fontSize: '12',

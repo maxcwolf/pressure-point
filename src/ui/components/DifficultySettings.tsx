@@ -20,7 +20,7 @@ const presetNote = css({ m: '0', mt: '6', mb: '8' });
 const levelButton = css({
   pointerEvents: 'auto',
   flex: 'none',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '10',
   py: '2',
   px: '8',

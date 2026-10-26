@@ -34,7 +34,7 @@ const stars = css({
   color: 'star',
   fontSize: '24',
   letterSpacing: '[2px]',
-  WebkitTextStroke: '[1.5px {colors.outline}]',
+  WebkitTextStroke: '[{borderWidths.fine} {colors.outline}]',
   paintOrder: 'stroke fill',
 });
 
@@ -61,7 +61,7 @@ const stepLine = css(tickLine, {
 /** Words that open something out when clicked, as plain as the words around them, underlined under the pointer. */
 const opener = css.raw({
   bg: '[none]',
-  border: '[none]',
+  border: 'none',
   p: '0',
   font: 'inherit',
   color: 'inherit',
@@ -89,7 +89,7 @@ const detailList = css({
 });
 
 /** What a first game will need soon, or the tutorial's steps, under a dashed line. */
-const gettingReady = css({ mt: '8', pt: '6', borderTop: '[2px dashed {colors.border}]' });
+const gettingReady = css({ mt: '8', pt: '6', borderTop: 'divider.dashed' });
 
 /** Its heading, in small teal capitals. */
 const gettingReadyHeading = css({
@@ -113,7 +113,7 @@ const card = css.raw({
   py: '6',
   px: '8',
   bg: 'bad.bg',
-  border: '[2px solid {colors.bad.solid}]',
+  border: '[{borderWidths.thin} solid {colors.bad.solid}]',
   borderRadius: '10',
   fontSize: '13',
   display: 'flex',

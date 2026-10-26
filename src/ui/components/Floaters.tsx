@@ -26,7 +26,7 @@ const floater = css({
   fontWeight: '[700]',
   fontSize: '20',
   color: 'floater',
-  WebkitTextStroke: '[4px {colors.outline}]',
+  WebkitTextStroke: '[{borderWidths.heavy} {colors.outline}]',
   paintOrder: 'stroke fill',
   whiteSpace: 'nowrap',
   willChange: 'transform, opacity',

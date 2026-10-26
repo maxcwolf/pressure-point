@@ -57,7 +57,7 @@ const vibes = css({
  * keeping it as a template, and fitting sprinklers. Priority and fitted sprinklers are gold.
  */
 const roomButton = css({
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '12',
   py: '4',
   px: '10',

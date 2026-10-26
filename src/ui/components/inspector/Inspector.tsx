@@ -94,7 +94,7 @@ const close = css({
   w: '[26px]',
   h: '[26px]',
   borderRadius: 'disc',
-  border: 'control',
+  border: 'outline.thin',
   bg: 'bg.card',
   fontSize: '12',
   lineHeight: '[1]',

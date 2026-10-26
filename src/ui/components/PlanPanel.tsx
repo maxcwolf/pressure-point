@@ -26,7 +26,7 @@ const heading = css({ display: 'flex', alignItems: 'center', justifyContent: 'sp
 /** What it will cost, on a gold tag. */
 const costTag = css({
   bg: 'highlight',
-  border: 'control',
+  border: 'outline.thin',
   borderRadius: '8',
   py: '0',
   px: '8',
@@ -44,7 +44,7 @@ const chip = css({
   pointerEvents: 'auto',
   fontSize: '13',
   fontWeight: '[500]',
-  border: 'control',
+  border: 'outline.thin',
   borderRadius: 'pill',
   py: '2',
   px: '10',

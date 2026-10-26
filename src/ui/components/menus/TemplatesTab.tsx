@@ -44,7 +44,7 @@ const nameInput = css({
   fontSize: '15',
   fontWeight: 'bold',
   color: 'fg',
-  border: '[2px solid transparent]',
+  border: '[{borderWidths.thin} solid transparent]',
   borderRadius: '8',
   py: '[1px]',
   px: '4',
@@ -52,7 +52,7 @@ const nameInput = css({
   mx: '[-6px]',
   w: '[calc(100% + 8px)]',
   bg: '[transparent]',
-  '&:is(:hover, :focus)': { borderColor: 'accent', bg: 'bg.hover', outline: '[none]' },
+  '&:is(:hover, :focus)': { borderColor: 'accent', bg: 'bg.hover', outline: 'none' },
 });
 
 /**
@@ -65,7 +65,7 @@ const actions = css({
   mt: 'auto',
   pt: '4',
   '& button': {
-    border: 'control',
+    border: 'outline.thin',
     borderRadius: '8',
     py: '2',
     px: '8',

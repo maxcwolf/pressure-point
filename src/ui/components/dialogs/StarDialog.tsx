@@ -21,14 +21,14 @@ const bigStars = css({
   color: 'star',
   fontSize: '[52px]',
   letterSpacing: '[6px]',
-  WebkitTextStroke: '[2.5px {colors.outline}]',
+  WebkitTextStroke: '[{borderWidths.medium} {colors.outline}]',
   paintOrder: 'stroke fill',
 });
 
 /** What the star unlocks, on a lilac card. */
 const unlock = css({
   bg: 'special.bg',
-  border: '[2px solid {colors.special.solid}]',
+  border: '[{borderWidths.thin} solid {colors.special.solid}]',
   borderRadius: '12',
   py: '8',
   px: '12',

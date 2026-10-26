@@ -22,7 +22,7 @@ const swatch = css({
   w: 'control',
   h: 'control',
   p: '2',
-  border: '[2px solid {colors.border.strong}]',
+  border: 'card',
   borderRadius: '8',
   bg: 'bg.card',
   '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },

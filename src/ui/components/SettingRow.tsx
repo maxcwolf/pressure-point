@@ -10,7 +10,7 @@ import { Icon } from './common/Icon';
 export const choice = css({
   pointerEvents: 'auto',
   flex: 'none',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '10',
   py: '4',
   px: '12',

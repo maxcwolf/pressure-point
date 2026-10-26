@@ -23,7 +23,7 @@ const dayRow = css({ display: 'flex', gap: '4', my: '4', mx: '0' });
 /** A day's button, sharing the row with the rest, gold on the days a class is held. */
 const day = css({
   flex: '1',
-  border: 'control',
+  border: 'outline.thin',
   borderRadius: '8',
   py: '4',
   px: '0',

@@ -24,7 +24,7 @@ const field = css.raw({
   fontSize: '15',
   color: 'fg',
   bg: 'bg.card',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '12',
   py: '6',
   px: '12',
@@ -41,7 +41,7 @@ const emailBox = css(field);
 const button = css({
   pointerEvents: 'auto',
   alignSelf: 'center',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '12',
   py: '6',
   px: '16',

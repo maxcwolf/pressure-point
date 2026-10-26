@@ -29,7 +29,7 @@ import { Icon, IconText } from '../common/Icon';
  */
 const decorCard = css({
   mt: '10',
-  borderTop: '[2px dashed {colors.border}]',
+  borderTop: 'divider.dashed',
   pt: '6',
   '.insp &': { '& h4': { fontSize: '14', fontWeight: 'bold' } },
 });
@@ -49,7 +49,7 @@ const swatch = css({
   w: '[24px]',
   h: '[24px]',
   p: '2',
-  border: '[2px solid {colors.border.strong}]',
+  border: 'card',
   borderRadius: '8',
   bg: 'bg.card',
   '& i': { display: 'block', w: '[100%]', h: '[100%]', borderRadius: '4' },
@@ -70,7 +70,7 @@ const lock = css({
 
 /** The button to give every room of its kind the same look. */
 const decorAll = css({
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '12',
   py: '4',
   px: '10',

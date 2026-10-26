@@ -11,7 +11,7 @@ export const keyframes = defineKeyframes({
   drop: { from: { transform: 'translateY(-20px)', opacity: 0 } },
   fadein: { from: { opacity: 0 } },
   // the tutorial's ring breathing out round what its step wants
-  guide: { '50%': { outlineOffset: '7px', outlineColor: '{colors.guide.glow}' } },
+  guide: { '50%': { outlineOffset: '{spacing.6}', outlineColor: '{colors.guide.glow}' } },
   // the title screen's update button while it fetches
   'update-spin': { to: { rotate: '360deg' } },
   // a tool hint shaking off a refused click

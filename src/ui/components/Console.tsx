@@ -49,7 +49,7 @@ const lineLook = css({
   py: '4',
   px: '10',
   bg: 'bg.card',
-  border: 'control',
+  border: 'outline.thin',
   borderRadius: '10',
   fontWeight: '[700]',
 });
@@ -58,7 +58,7 @@ const lineLook = css({
 const commandBox = css({
   flex: '1',
   minW: '[0]',
-  border: '[none]',
+  border: 'none',
   outlineStyle: 'none',
   bg: '[transparent]',
   font: 'inherit',

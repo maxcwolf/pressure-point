@@ -18,7 +18,7 @@ const chips = css({
     fontSize: '12',
     fontWeight: '[500]',
     bg: 'special.bg',
-    border: '[1.5px solid {colors.special.solid}]',
+    border: '[{borderWidths.fine} solid {colors.special.solid}]',
     borderRadius: '8',
     py: '0',
     px: '6',

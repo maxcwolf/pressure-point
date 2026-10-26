@@ -22,7 +22,7 @@ const column = css({
 /** A cream pill ringed in teal. */
 const pill = css.raw({
   bg: 'bg.panel',
-  border: '[3px solid {colors.accent}]',
+  border: '[{borderWidths.thick} solid {colors.accent}]',
   borderRadius: '14',
   py: '6',
   px: '16',
@@ -59,12 +59,12 @@ const phrase = css({
   alignItems: 'center',
   gap: '4',
   fontSize: '13',
-  border: '[1.5px solid {colors.border}]',
+  border: '[{borderWidths.fine} solid {colors.border}]',
   bg: 'bg.card',
   borderRadius: '8',
   py: '[1px]',
   px: '8',
-  '&.name': { fontSize: '15', fontWeight: 'bold', border: '[none]', bg: '[none]', p: '0', pr: '4' },
+  '&.name': { fontSize: '15', fontWeight: 'bold', border: 'none', bg: '[none]', p: '0', pr: '4' },
   '&.cost': { bg: 'highlight.bg', borderColor: 'highlight', fontWeight: 'bold' },
 });
 
@@ -77,8 +77,8 @@ const keyCap = css({
   minW: '[18px]',
   textAlign: 'center',
   bg: 'control',
-  border: '[1.5px solid {colors.outline}]',
-  borderBottomWidth: '[3px]',
+  border: 'outline.fine',
+  borderBottomWidth: 'thick',
   borderRadius: '6',
   py: '0',
   px: '4',
@@ -89,7 +89,7 @@ const square = css({
   w: '[11px]',
   h: '[11px]',
   borderRadius: '2',
-  border: '[1.5px solid {colors.border.bold}]',
+  border: '[{borderWidths.fine} solid {colors.border.bold}]',
   '&.staff': { bg: 'scene.staff' },
   '&.guest': { bg: 'scene.guest' },
 });
@@ -127,7 +127,7 @@ const effectList = css({
 const effect = css({
   fontSize: '13',
   fontWeight: '[500]',
-  border: '[1.5px solid {colors.border.strong}]',
+  border: '[{borderWidths.fine} solid {colors.border.strong}]',
   bg: 'bg.card',
   borderRadius: '8',
   py: '[1px]',

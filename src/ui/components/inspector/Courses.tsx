@@ -21,7 +21,7 @@ const course = css({
   gap: '6',
   textAlign: 'left',
   bg: 'bg.card',
-  border: 'control',
+  border: 'outline.thin',
   borderRadius: '10',
   py: '4',
   px: '8',
@@ -32,7 +32,7 @@ const course = css({
   '& small': { display: 'block', fontWeight: '[400]', fontSize: '11', opacity: '[0.7]' },
   '& b': {
     bg: 'highlight',
-    border: '[1.5px solid {colors.outline}]',
+    border: 'outline.fine',
     borderRadius: '8',
     py: '0',
     px: '6',

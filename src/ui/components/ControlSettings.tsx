@@ -27,8 +27,8 @@ const keycap = css({
   fontSize: '13',
   fontWeight: 'bold',
   bg: 'bg.card',
-  border: 'control',
-  borderBottomWidth: '[3.5px]',
+  border: 'outline.thin',
+  borderBottomWidth: 'thick',
   borderRadius: '6',
   py: '2',
   px: '8',
@@ -38,7 +38,7 @@ const keycap = css({
 /** Reset the keys, as a link in the words under them. */
 const link = css({
   pointerEvents: 'auto',
-  border: '[none]',
+  border: 'none',
   bg: '[none]',
   p: '0',
   fontWeight: 'bold',

@@ -47,7 +47,7 @@ const feelings = css({
   flexWrap: 'wrap',
   gap: '4',
   mb: '4',
-  '& > span': { fontSize: '12', borderRadius: '8', py: '0', px: '6', border: '[1.5px solid]' },
+  '& > span': { fontSize: '12', borderRadius: '8', py: '0', px: '6', border: '[{borderWidths.fine} solid]' },
   '& .good': { bg: 'good.subtle', borderColor: 'good.solid' },
   '& .bad': { bg: 'bad.bg', borderColor: 'bad.solid' },
 });

@@ -26,7 +26,7 @@ import { IconText } from '../common/Icon';
 /** A discipline's card. */
 const demandRow = css({
   bg: 'bg.card',
-  border: '[2px solid {colors.border}]',
+  border: 'divider',
   borderRadius: '10',
   py: '8',
   px: '10',

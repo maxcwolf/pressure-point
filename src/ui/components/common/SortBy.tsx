@@ -22,14 +22,14 @@ const select = css({
   color: 'fg',
   background:
     "[{colors.bg.card} url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2324384a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") no-repeat right 9px center / 10px 6px]",
-  border: '[2px solid {colors.outline}]',
+  border: 'outline.thin',
   borderRadius: '10',
   p: '2',
   pr: '24',
   pl: '10',
   cursor: 'pointer',
   _hover: { bgColor: 'bg.hover', borderColor: 'accent.strong' },
-  _focusVisible: { outline: '[2px solid {colors.accent}]', outlineOffset: '[2px]' },
+  _focusVisible: { outline: 'focus', outlineOffset: '2' },
   // where the browser lets the open list be drawn too, it is drawn as one of the game's panels
   '@supports (appearance: base-select)': {
     '&, &::picker(select)': { appearance: '[base-select]' },
@@ -39,14 +39,14 @@ const select = css({
       positionArea: 'block-end span-inline-start',
       mt: '4',
       p: '4',
-      border: '[2.5px solid {colors.outline}]',
+      border: 'outline',
       borderRadius: '12',
       bg: 'bg.panel',
       boxShadow: 'raised',
     },
     '& option': { py: '4', px: '10', borderRadius: '8', fontSize: '13' },
     '& option::checkmark': { display: 'none' },
-    '& option:hover, & option:focus-visible': { outline: '[none]', bg: 'bg.selected' },
+    '& option:hover, & option:focus-visible': { outline: 'none', bg: 'bg.selected' },
     '& option:checked': { bg: 'accent', color: 'fg.on-accent', fontWeight: 'bold' },
   },
 });

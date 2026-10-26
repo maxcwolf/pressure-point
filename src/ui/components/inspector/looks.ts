@@ -7,7 +7,7 @@ import { css } from '../../../styled-system/css';
  * raise they asked for, or a promotion, is gold.
  */
 export const smallButton = css({
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '12',
   py: '4',
   px: '12',
@@ -27,7 +27,7 @@ export const dutyRow = css({ display: 'flex', flexWrap: 'wrap', gap: '4' });
  * one they are kept from stays plain but just as bright; their only duty left, which cannot be taken away, is faded.
  */
 export const duty = css({
-  border: 'control',
+  border: 'outline.thin',
   borderRadius: '8',
   py: '2',
   px: '8',

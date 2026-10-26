@@ -26,7 +26,7 @@ const part = css({
   alignItems: 'center',
   columnGap: '8',
   bg: 'bg.card',
-  border: '[2px solid {colors.border}]',
+  border: 'divider',
   borderRadius: '10',
   py: '6',
   px: '10',
@@ -45,7 +45,7 @@ const reviews = css({
   gap: '6',
   '& li': {
     bg: 'bg.card',
-    border: '[2px solid {colors.border}]',
+    border: 'divider',
     borderRadius: '10',
     py: '6',
     px: '10',
@@ -58,7 +58,11 @@ const reviews = css({
 });
 
 /** A review's stars, in gold outlined in navy. */
-const stars = css({ color: 'star', WebkitTextStroke: '[0.6px {colors.outline}]', letterSpacing: '[1px]' });
+const stars = css({
+  color: 'star',
+  WebkitTextStroke: '[{borderWidths.hairline} {colors.outline}]',
+  letterSpacing: '[1px]',
+});
 
 /** One part of the reputation, as a bar, or a note that nobody has mentioned it yet. */
 function Part({ name, desc, score }: { name: string; desc: string; score: number | null }) {

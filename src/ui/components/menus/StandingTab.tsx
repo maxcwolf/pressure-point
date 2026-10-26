@@ -43,7 +43,7 @@ const grades = css({
     display: 'flex',
     flexDirection: 'column',
     bg: 'bg.card',
-    border: '[2px solid {colors.border}]',
+    border: 'divider',
     borderRadius: '10',
     py: '4',
     px: '8',
@@ -66,7 +66,7 @@ const effects = css({ m: '0', mb: '4', ml: '16', fontSize: '13' });
 const rival = css({
   mt: '12',
   bg: 'bg.card',
-  border: '[2px solid {colors.border}]',
+  border: 'divider',
   borderRadius: '12',
   py: '8',
   px: '12',

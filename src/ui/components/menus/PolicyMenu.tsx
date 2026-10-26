@@ -26,7 +26,7 @@ const MAX_BREAK_LIMIT = 5;
 
 /** A small square button, such as a stepper's − and +, or a wider one with words and a little room each side. */
 const control = css({
-  border: 'control',
+  border: 'outline.thin',
   borderRadius: '8',
   bg: 'control',
   fontWeight: 'bold',

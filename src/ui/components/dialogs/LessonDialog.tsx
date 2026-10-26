@@ -43,7 +43,7 @@ const strip = css({
     py: '10',
     px: '8',
     bg: 'bg.card',
-    border: '[2px solid {colors.border}]',
+    border: 'divider',
     borderRadius: '12',
   },
   '& b': { fontSize: '14' },
@@ -58,7 +58,7 @@ const picture = css({
   placeItems: 'center',
   borderRadius: 'disc',
   bg: 'bg.panel',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
 });
 
 /** The lesson raised last. */

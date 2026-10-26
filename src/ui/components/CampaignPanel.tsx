@@ -55,7 +55,7 @@ const stop = css({
     left: '[17px]',
     top: '[34px]',
     bottom: '[0]',
-    borderLeft: '[3px dashed {colors.border.strong}]',
+    borderLeft: '[{borderWidths.thick} dashed {colors.border.strong}]',
   },
   // the pin and the card keep their class names for this
   _locked: { '& .about': { opacity: '[0.6]' }, '& .pin': { bg: 'title.off' } },
@@ -69,7 +69,7 @@ const pin = css({
   display: 'grid',
   placeItems: 'center',
   bg: 'accent',
-  border: '[3px solid {colors.outline}]',
+  border: 'outline.thick',
   color: 'fg.on-accent',
   fontWeight: '[700]',
 });
@@ -86,7 +86,7 @@ const stars = css({
   color: 'star',
   fontSize: '24',
   letterSpacing: '[2px]',
-  WebkitTextStroke: '[1.5px {colors.outline}]',
+  WebkitTextStroke: '[{borderWidths.fine} {colors.outline}]',
   paintOrder: 'stroke fill',
 });
 

@@ -45,7 +45,7 @@ const column = css({
     right: '[8px]',
     w: '[26px]',
     h: '[26px]',
-    border: '[none]',
+    border: 'none',
     borderRadius: 'disc',
     bg: '[none]',
     fontSize: '15',

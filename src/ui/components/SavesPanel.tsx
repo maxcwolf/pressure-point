@@ -52,7 +52,7 @@ const nameBox = css({
   fontSize: '15',
   color: 'fg',
   bg: 'bg.card',
-  border: '[2.5px solid {colors.outline}]',
+  border: 'outline',
   borderRadius: '12',
   py: '6',
   px: '12',
@@ -63,7 +63,7 @@ const nameBox = css({
 /** A button on the panel: green to load or save, red to delete, and cream for the rest. */
 const button = css.raw({
   pointerEvents: 'auto',
-  border: 'control',
+  border: 'outline.thin',
   borderRadius: '10',
   py: '2',
   px: '10',

@@ -29,7 +29,7 @@ const awards = css({
     gridTemplateColumns: '[30px 1fr auto]',
     alignItems: 'center',
     gap: '8',
-    border: '[2px solid {colors.border}]',
+    border: 'divider',
     borderRadius: '10',
     py: '4',
     px: '8',
