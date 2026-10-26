@@ -21,6 +21,7 @@ import {
 import { type LandSide, stripsBought } from '../land';
 import { makeCandidate, settleLook, settleSex, settleTop } from '../people';
 import { newSeed } from '../random';
+import { readLayout } from '../templates';
 import {
   defaultPolicy,
   emptyLedger,
@@ -44,6 +45,7 @@ import type {
   Ledger,
   MonthRecord,
   Room,
+  Sketch,
   Staff,
   Stats,
   Tally,
@@ -347,7 +349,24 @@ export function upgradeSave(save: GameState) {
   freeScanners(save);
   // rooms were first pencilled in with version 40, and one of a kind of room from a newer version means nothing here
   save.sketches = save.sketches.filter((sk) => Object.hasOwn(ROOMS, sk.type));
+  for (const sk of save.sketches) rememberedRoom(sk);
   s.version = SAVE_VERSION;
+}
+
+/**
+ * Read the room a sketch remembers as a template file is read, its furniture's old names followed. One this version
+ * cannot make sense of (a kind of room or furniture from a newer version, or not the sketch's size or kind) is forgotten,
+ * and the sketch kept as a plain one.
+ */
+function rememberedRoom(sk: Sketch) {
+  if (sk.layout === undefined && sk.template === undefined) return;
+  const layout = readLayout(sk.layout);
+  if (layout?.type === sk.type && layout.w === sk.w && layout.h === sk.h && typeof sk.template === 'string') {
+    sk.layout = layout;
+    return;
+  }
+  delete sk.layout;
+  delete sk.template;
 }
 
 /**

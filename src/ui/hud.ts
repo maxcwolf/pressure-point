@@ -34,8 +34,8 @@ export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'fina
 /** The tabs of the Money menu. */
 export type MoneyTab = 'books' | 'payroll' | 'prices' | 'marketing' | 'loan' | 'land';
 
-/** The tabs of the Rooms menu: the rooms, the templates, and the rooms again to pencil in rather than build. */
-export type RoomsTab = 'rooms' | 'templates' | 'pencil';
+/** The tabs of the Rooms menu: the rooms and the templates, either of which can be pencilled in rather than built. */
+export type RoomsTab = 'rooms' | 'templates';
 
 /** The tabs of the Stats menu. */
 export type StatsTab = 'charts' | 'guests' | 'reputation' | 'standing' | 'casebook' | 'regulars' | 'awards';
@@ -106,6 +106,8 @@ export class HudState {
   menu: MenuId | null = null;
   /** The tab showing in the Rooms menu. */
   roomsTab: RoomsTab = 'rooms';
+  /** Whether the Rooms menu's cards pencil their rooms in rather than build them. */
+  pencil = false;
   /** The room templates saved, kept for every game. */
   templates: Template[] = loadTemplates();
   /** The tab showing in the Hire menu. */
@@ -237,7 +239,7 @@ export class HudState {
     this.host.tools.setAside();
     this.menu = this.menu === id ? null : id;
     // pencilling in is switched on each time it is wanted, so a room is never pencilled in when it was meant to be built
-    if (this.menu === 'rooms' && this.roomsTab === 'pencil') this.roomsTab = 'rooms';
+    if (this.menu === 'rooms') this.pencil = false;
     if (this.menu) track('menu_opened', { ...gameProps(this.host.sim.s), menu: id });
   }
 
@@ -270,8 +272,8 @@ export class HudState {
    * Rooms menu pencilling in, `escape` switches that off first, leaving the menu open.
    */
   closeMenu(escape = false): boolean {
-    if (escape && this.menu === 'rooms' && this.roomsTab === 'pencil') {
-      this.roomsTab = 'rooms';
+    if (escape && this.menu === 'rooms' && this.pencil) {
+      this.pencil = false;
       this.update();
       return true;
     }
@@ -309,6 +311,8 @@ export class HudState {
       // dragging out the floor and placing the door have the hint to go by, and a ready blueprint wants building
       if (tool.kind === 'room') return tools.plan?.ready ? 'plan:build' : null;
       if (this.menu !== 'rooms') return 'menu:rooms';
+      // pencilling in is switched off first, at its pill, so the room is built
+      if (this.pencil) return 'tab:pencil';
       return this.roomsTab === 'rooms' ? `room:${want.type}` : 'tab:rooms';
     }
     if (this.menu !== 'hire') return 'menu:hire';
@@ -331,6 +335,7 @@ export class HudState {
       this.menu = 'items';
     } else if (want.kind === 'room') {
       this.roomsTab = 'rooms';
+      this.pencil = false;
       this.menu = 'rooms';
     } else {
       this.hireRole = want.role;

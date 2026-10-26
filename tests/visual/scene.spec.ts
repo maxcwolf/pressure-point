@@ -209,6 +209,70 @@ test.describe('the scene', () => {
     await expect(page).toHaveScreenshot('scene-sketches.png');
   });
 
+  test('the Plans overlay on, with three rooms pencilled in, one remembering a template and one amber', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      const { sim, state } = pp;
+      state.money = 100000;
+      // the first-time tip is a message of its own, not part of this picture
+      state.seenTips.push('sketch');
+      const room = sim.createRoom('massage', { x: 12, y: 5, w: 4, h: 4 }, { x: 13, y: 8, dx: 0, dy: 1 });
+      sim.placeItem('massage_table', 13, 5, 0, { free: true, roomId: room.id });
+      sim.finishRoom(room);
+      sim.addSketch('consult', { x: 17, y: 5, w: 4, h: 4 }, { x: 18, y: 8, dx: 0, dy: 1 });
+      // a plant in its doorway, so it no longer fits: amber, its label saying why
+      sim.addSketch('staffroom', { x: 17, y: 12, w: 3, h: 3 }, { x: 18, y: 12, dx: 0, dy: -1 });
+      sim.placeItem('plant', 18, 11, 0, { free: true });
+      // a Massage Suite pencilled in from a template: its furniture outlined, its windows blue
+      const cozy = {
+        type: 'massage' as const,
+        w: 4,
+        h: 4,
+        door: { x: 1, y: 3, dx: 0, dy: 1 },
+        windows: [
+          { x: 0, y: 1, dx: -1, dy: 0 },
+          { x: 3, y: 1, dx: 1, dy: 0 },
+        ],
+        items: [
+          { type: 'massage_table' as const, x: 1, y: 0, rot: 0 },
+          { type: 'oil_trolley' as const, x: 3, y: 0, rot: 0 },
+          { type: 'plant' as const, x: 3, y: 3, rot: 0 },
+        ],
+      };
+      const placed = {
+        rect: { x: 21, y: 8, w: 4, h: 4 },
+        door: { x: 22, y: 11, dx: 0, dy: 1 },
+        windows: [
+          { x: 21, y: 9, dx: -1, dy: 0 },
+          { x: 24, y: 9, dx: 1, dy: 0 },
+        ],
+        items: cozy.items.map((it) => ({ ...it, x: it.x + 21, y: it.y + 8 })),
+      };
+      sim.pencilTemplate('Cozy 4×4', cozy, placed);
+      pp.ui.overlay = 'plans';
+      pp.ui.dismissAllToasts();
+      state.speed = 0;
+      // with nobody to work it, the room's lamp pulses amber; held at one moment, the picture holds still
+      const { rooms } = pp.view;
+      const update = rooms.update.bind(rooms);
+      /** Light the lamps as they are at the scene's first moment, whenever it is. */
+      rooms.update = () => update(0);
+      pp.view.target.set(18, 0, 9);
+    });
+    await noon(game);
+    await game.cameraStill();
+    await page.waitForFunction(() => document.querySelectorAll('#plans-key li').length === 3);
+    // the room built's message comes once the game has run a frame
+    await game.eval((pp) => {
+      pp.ui.dismissAllToasts();
+    });
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-plans.png');
+  });
+
   test('a building grown into every plot of land, with a room against its old wall', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => {

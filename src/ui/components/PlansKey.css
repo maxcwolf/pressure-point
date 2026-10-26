@@ -1,0 +1,123 @@
+/* Styles for PlansKey. */
+
+/* at the head of the right-hand column, over the messages and the inspector, wider than they are */
+#plans-key {
+  flex: none;
+  align-self: flex-end;
+  width: min(330px, calc(var(--vw) - 28px));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+#plans-key h4 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+#plans-key .pencilled {
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1.5px dashed var(--navy);
+  border-radius: 10px;
+  padding: 0 7px;
+}
+
+#plans-key .sub {
+  margin: 0;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* a row per sketch, scrolling once there are many */
+#plans-key ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+#plans-key li {
+  display: grid;
+  grid-template-columns: 20px 1fr auto auto auto auto;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 0;
+  border-top: 1.5px solid rgba(36, 56, 74, 0.15);
+}
+
+#plans-key .what {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+#plans-key .what b {
+  font-weight: 600;
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#plans-key .what small {
+  font-size: 10.5px;
+  opacity: 0.75;
+}
+
+#plans-key .fit {
+  font-size: 10.5px;
+  font-weight: 600;
+  border: 1.5px solid rgba(36, 56, 74, 0.4);
+  border-radius: 8px;
+  padding: 0 5px;
+  white-space: nowrap;
+}
+
+#plans-key .fit.ok {
+  background: var(--good-bg);
+  color: var(--good);
+  border-color: var(--good);
+}
+
+#plans-key .fit.unfit {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-color: var(--sketch-unfit);
+}
+
+#plans-key .price {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+#plans-key li button {
+  color: var(--navy);
+  border: 1.5px solid var(--navy);
+  border-radius: 7px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #fff;
+}
+
+#plans-key li button.build {
+  background: var(--green);
+  color: #fff;
+}
+
+#plans-key button.hide {
+  align-self: flex-start;
+  border: 2.5px solid var(--navy);
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-weight: 600;
+  background: var(--cream);
+  box-shadow: 0 3px 0 rgba(36, 56, 74, 0.3);
+}

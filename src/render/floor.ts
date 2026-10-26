@@ -3,13 +3,13 @@
 
 import * as THREE from 'three';
 
-import { centerOf, H, ROAD_Y, ROOMS, type RoomType } from '../core/data';
+import { centerOf, H, ITEMS, ROAD_Y, ROOMS, type RoomType } from '../core/data';
 import { plotAt } from '../core/land';
 import type { Sim } from '../core/sim/sim';
 import { noLongerFits } from '../core/sim/sketches';
-import type { Sketch } from '../core/state/types';
+import type { Sketch, WallSpot } from '../core/state/types';
 import { must } from '../core/util';
-import { Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
+import { itemDims, onWall, Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
 import { paintFloorTile } from './decor-paint';
 import { type Setting, settingOf } from './setting';
 import { hash } from './shared';
@@ -157,10 +157,25 @@ const SKETCH_DOOR = '#f08a4b';
 const SKETCH_UNDER = '#fff8ea';
 /** The amber a sketch is painted in, in place of its trim, once it no longer fits or its doorway is blocked. */
 const SKETCH_UNFIT = 0xc98a1a;
+/** The blue a window remembered by a sketch is marked in, on its stretch of edge. */
+const SKETCH_WINDOW = '#4a9fe0';
+/** The navy veil laid over the floor, under the sketches, while the Plans overlay is on, so they stand out. */
+const PLANS_VEIL = 'rgba(36,56,74,0.18)';
+
+/** Fill the stretch of a tile's edge that a wall spot is on, `d` deep and `m` in from each end. */
+function edgeStretch(ctx: CanvasRenderingContext2D, spot: WallSpot, d: number, m: number) {
+  const px = spot.x * TS;
+  const py = spot.y * TS;
+  if (spot.dy === -1) ctx.fillRect(px + m, py, TS - 2 * m, d);
+  else if (spot.dy === 1) ctx.fillRect(px + m, py + TS - d, TS - 2 * m, d);
+  else if (spot.dx === -1) ctx.fillRect(px, py + m, d, TS - 2 * m);
+  else ctx.fillRect(px + TS - d, py + m, d, TS - 2 * m);
+}
 
 /**
  * Paint a room pencilled in over the floor: its trim, or amber if it no longer fits, as a faint wash with diagonal
- * hatching, a dashed outline in the same over a cream one, and its door as an orange stretch of its edge.
+ * hatching, a dashed outline in the same over a cream one, and its door as an orange stretch of its edge. One that
+ * remembers a room shows where its furniture would stand, darker with a dashed edge, and its windows in blue.
  */
 export function paintSketch(ctx: CanvasRenderingContext2D, sk: Sketch, unfit = false) {
   const [x0, y0, w, h] = [sk.x * TS, sk.y * TS, sk.w * TS, sk.h * TS];
@@ -182,6 +197,20 @@ export function paintSketch(ctx: CanvasRenderingContext2D, sk: Sketch, unfit = f
     ctx.lineTo(x0 + d + h, y0 + h);
   }
   ctx.stroke();
+  // the floor furniture remembered: a darker wash over its footprint, edged in cream dashes
+  for (const it of sk.layout?.items ?? []) {
+    // furniture this version does not know is not drawn: the sketch shows amber, saying why
+    if (!Object.hasOwn(ITEMS, it.type) || onWall(it.type)) continue;
+    const [fw, fh] = itemDims(it.type, it.rot);
+    const [ix, iy] = [(sk.x + it.x) * TS + 2 * K, (sk.y + it.y) * TS + 2 * K];
+    ctx.fillStyle = tint(0.3);
+    ctx.fillRect(ix, iy, fw * TS - 4 * K, fh * TS - 4 * K);
+    ctx.strokeStyle = SKETCH_UNDER;
+    ctx.lineWidth = 1.5 * K;
+    ctx.setLineDash([5 * K, 4 * K]);
+    ctx.strokeRect(ix, iy, fw * TS - 4 * K, fh * TS - 4 * K);
+    ctx.setLineDash([]);
+  }
   ctx.restore();
   // the outline, just inside the edge: cream, then the trim dashed over it
   const inset = 3 * K;
@@ -195,20 +224,18 @@ export function paintSketch(ctx: CanvasRenderingContext2D, sk: Sketch, unfit = f
   edge(SKETCH_UNDER, 4.5 * K, []);
   edge(tint(1), 3 * K, [9 * K, 6 * K]);
   ctx.setLineDash([]);
+  // the windows remembered, each a blue stretch of the edge it is on
+  ctx.fillStyle = SKETCH_WINDOW;
+  for (const w of sk.layout?.windows ?? [])
+    edgeStretch(ctx, { x: sk.x + w.x, y: sk.y + w.y, dx: w.dx, dy: w.dy }, 5 * K, 8 * K);
   // the door: the stretch of edge it is on, in orange
-  const { door } = sk;
-  const m = 6 * K;
-  const d = 5 * K;
-  const px = door.x * TS;
-  const py = door.y * TS;
   ctx.fillStyle = SKETCH_DOOR;
-  if (door.dy === -1) ctx.fillRect(px + m, py, TS - 2 * m, d);
-  else if (door.dy === 1) ctx.fillRect(px + m, py + TS - d, TS - 2 * m, d);
-  else if (door.dx === -1) ctx.fillRect(px, py + m, d, TS - 2 * m);
-  else ctx.fillRect(px + TS - d, py + m, d, TS - 2 * m);
+  edgeStretch(ctx, sk.door, 5 * K, 6 * K);
 }
 
 export class Floor {
+  /** Whether the Plans overlay's veil lies over the floor, under the sketches. */
+  veiled = false;
   private canvas = document.createElement('canvas');
   private texture: THREE.CanvasTexture;
   /** Tiles of grain, made once, laid over the corridor and the rooms' plain floors. */
@@ -330,6 +357,11 @@ export class Floor {
       else if (r.door.dy === 1) ctx.fillRect(px + m, py + TS - d, TS - 2 * m, d);
       else if (r.door.dx === -1) ctx.fillRect(px, py + m, d, TS - 2 * m);
       else ctx.fillRect(px + TS - d, py + m, d, TS - 2 * m);
+    }
+    // the Plans overlay dims everything else, so the sketches painted over it stand out
+    if (this.veiled) {
+      ctx.fillStyle = PLANS_VEIL;
+      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
     // the rooms pencilled in, over whatever floor they are on, amber where they no longer fit
     for (const sk of this.sim.s.sketches) paintSketch(ctx, sk, noLongerFits(world, sk));

@@ -10,7 +10,7 @@ import { OVERLAYS } from '../lib/overlays';
 import { Button } from './common/Button';
 import { Icon } from './common/Icon';
 
-/** The list of overlays while it is open, or the key to the overlay showing. */
+/** The list of overlays while it is open, or the key to the overlay showing. The plans' list is down the right instead. */
 export function OverlayPicker() {
   const hud = useHud();
   const showing = OVERLAYS.find((o) => o.id === hud.overlay);
@@ -53,6 +53,8 @@ export function OverlayPicker() {
       </div>
     );
   if (!showing) return null;
+  // the plans have no scale: their list heads the right-hand column (PlansKey)
+  if (!showing.key || !showing.ends) return null;
   return (
     <div id="overlay-key" class="panel">
       <b>

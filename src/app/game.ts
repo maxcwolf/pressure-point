@@ -14,7 +14,15 @@ import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
 import type { FullScreenSwitch, UpdateOffer } from '../ui/host';
 import { plotHeat } from '../ui/lib/land';
-import { heatTiles, type OverlayMode, overlayPalette, personValue, previewMode, ringsPeople } from '../ui/lib/overlays';
+import {
+  colorsFloor,
+  heatTiles,
+  type OverlayMode,
+  overlayPalette,
+  personValue,
+  previewMode,
+  ringsPeople,
+} from '../ui/lib/overlays';
 import { refused, watchGame } from './analytics';
 import { trackMouse } from './edge';
 import { reloadInto } from './handoff';
@@ -163,10 +171,12 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
   const drawOverlay = () => {
     previewDrawn = tools.preview;
     const { overlay, land } = ui.floor;
-    if (overlay !== overlayDrawn && overlay) view.fadeHeat();
+    if (overlay !== overlayDrawn && colorsFloor(overlay)) view.fadeHeat();
     overlayDrawn = overlay;
     // the people overlays ring the people, whatever is on the floor
     view.halos.set(ringsPeople(overlay) ? (c) => personValue(overlay, c) : null);
+    // the plans veil the floor under the sketches, whatever else is on it
+    view.setPlans(overlay === 'plans');
     // the Expand tool colors the land itself, as the pointer moves
     if (tools.tool.kind === 'expand') return;
     // an item in hand shows what it would change, over the overlay showing
@@ -188,7 +198,7 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
         ),
         'land',
       );
-    else view.setHeat(overlay && !ringsPeople(overlay) ? heatTiles(sim, overlay) : null, overlayPalette(overlay));
+    else view.setHeat(colorsFloor(overlay) ? heatTiles(sim, overlay) : null, overlayPalette(overlay));
   };
   const loop = runLoop({
     sim,

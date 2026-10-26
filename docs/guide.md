@@ -66,6 +66,8 @@ Click a sketch to see what it will cost and whether it still fits. **Build here*
 
 A sketch keeps an eye on the floor round it. If something ends up in its doorway, or its room would no longer fit there, it turns amber and its label says "⚠ doorway blocked" or "⚠ no longer fits", and the Pencil in tab counts how many no longer fit. No room's door, nor another sketch's, may open onto a sketch. A sketch on a plot waits for the land: once you buy the plot and the builders are done, it is inside the building and checked like any other, so one whose door faces the new outer wall turns amber.
 
+A template can be pencilled in too. With **✎ Pencil in** on, open the Templates tab and press a template's **✎ Pencil in**: it goes down where you click, R turns it, and it costs nothing. The sketch remembers the room, its furniture outlined on the floor and its windows marked in blue, and its panel says what it holds and what building it whole will cost. **Build here** then builds the whole room at once, furniture, windows and all, with no blueprint step; **Forget template** keeps just the floor and door. To see all your plans at once, pick **Plans** from the overlays: the floor dims, every sketch says its price and whether it fits, and a list at the top right gives each one a **Go** to look at it and a **Build** to build it.
+
 ## Reading people
 
 Guests and staff show how they are doing before any bubble goes up, so you can see trouble coming from across the building.

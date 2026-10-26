@@ -110,6 +110,15 @@ export function sketchHint(type: RoomType, dragged: Rect | null, moving = false)
   return `${name} · ${step} · ${together(`${money(def.cost)} when built`, 'nothing charged now')} · Esc ${moving ? 'puts it back' : 'cancels'}`;
 }
 
+/**
+ * The hint while pencilling a template in: its name, its room, what building it whole will cost one day, and that
+ * nothing is charged now.
+ */
+export function templateSketchHint(name: string, type: RoomType, cost: number, moving = false): string {
+  const step = moving ? 'click to put it down' : 'click to pencil it in';
+  return `✎ ${name} · ${ROOMS[type].name} template · ${step} · ${together(`${money(cost)} when built`, 'nothing charged now')} · R turns it · Esc ${moving ? 'puts it back' : 'cancels'}`;
+}
+
 /** The hint for choosing where a sketch's door goes. */
 export const sketchDoorHint = (type: RoomType) =>
   `✎ ${ROOMS[type].name} · click a wall for the door · Esc goes back to the floor`;

@@ -1,5 +1,5 @@
 // The labels on rooms pencilled in: the room's icon and name, and its size or what has gone wrong with it, over the
-// middle of its sketch on the floor.
+// middle of its sketch on the floor. With the Plans overlay on, every sketch has one, saying its price and fit.
 // Like the floating text, each is put where its point is on screen every frame, so it stays on its sketch as the camera
 // moves, and costs no draw calls.
 
@@ -10,15 +10,19 @@ import { useEffect, useRef } from 'preact/hooks';
 import { ROOMS } from '../../core/data';
 import { useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
-import { sketchTag } from '../lib/sketches';
+import { plansTag, sketchTag } from '../lib/sketches';
 import { Icon } from './common/Icon';
 
-/** The label on each room pencilled in, but the one selected, which its outline and the inspector speak for. */
+/**
+ * The label on each room pencilled in, but the one selected, which its outline and the inspector speak for; with the
+ * Plans overlay on, every one, the selected one too.
+ */
 export function SketchLabels() {
   const hud = useHud();
   const { sim, view } = hud.host;
   const layer = useRef<HTMLDivElement>(null);
-  const selected = view.selected?.kind === 'sketch' ? view.selected.id : 0;
+  const plans = hud.overlay === 'plans';
+  const selected = view.selected?.kind === 'sketch' && !plans ? view.selected.id : 0;
   const shown = sim.s.sketches.filter((sk) => sk.id !== selected);
   const any = shown.length > 0;
   // a frame loop only while there is a label to place
@@ -52,7 +56,7 @@ export function SketchLabels() {
           <div key={sk.id} data-id={sk.id} class={cx('sketch-label', unfit && 'unfit')}>
             <Icon id={ROOMS[sk.type].icon} size={18} />
             <b>{ROOMS[sk.type].name}</b>
-            <small>{sketchTag(sk, fit)}</small>
+            <small>{plans ? plansTag(sk, fit) : sketchTag(sk, fit)}</small>
           </div>
         );
       })}

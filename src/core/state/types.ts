@@ -30,6 +30,7 @@ import type {
   TraitId,
   WallId,
 } from '../data';
+import type { Layout } from '../room-layout';
 
 /** An icon that can show in a speech bubble over someone's head. */
 export type BubbleId = Extract<SceneIconId, `bubble-${string}`>;
@@ -134,6 +135,13 @@ export interface Sketch {
   door: WallSpot;
   /** The day it was pencilled in. */
   day: number;
+  /**
+   * The room it remembers, when a template was pencilled in: the template's layout as it was put down, copied into the
+   * save since templates are kept in the browser. Its size, door and kind of room are the sketch's own.
+   */
+  layout?: Layout;
+  /** The name of the template it was pencilled in from, with `layout`. */
+  template?: string;
 }
 
 export interface Item {

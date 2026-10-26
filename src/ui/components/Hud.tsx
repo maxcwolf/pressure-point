@@ -19,6 +19,7 @@ import { Menu } from './menus/Menu';
 import { Objectives } from './Objectives';
 import { OverlayPicker } from './OverlayPicker';
 import { PlanPanel } from './PlanPanel';
+import { PlansKey } from './PlansKey';
 import { SketchLabels } from './SketchLabels';
 import { StatsBar } from './StatsBar';
 import { SystemButtons } from './SystemButtons';
@@ -69,8 +70,10 @@ export function Hud({ hud }: { hud: HudState }) {
       <EmergencyOffer />
       <SystemButtons />
       <OverlayPicker />
-      {/* down the right: the messages, then the inspector, which keeps to its place as messages come and go */}
+      {/* down the right: the plans while their overlay is on, the messages, then the inspector, which keeps to its place
+          as messages come and go */}
       <div id="side">
+        {hud.overlay === 'plans' && <PlansKey />}
         <Toasts />
         <Inspector />
       </div>

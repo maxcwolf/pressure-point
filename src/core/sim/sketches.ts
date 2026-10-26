@@ -1,12 +1,13 @@
 // Rooms pencilled in for later: drawn on the floor for nothing, erased, and built when the player is ready. A sketch
 // is not a room: nothing that reads the rooms sees it, and it blocks nobody's way. It only keeps anything else from
-// being built over it (build-rules.ts).
+// being built over it (build-rules.ts). One pencilled in from a template remembers the room, and is built whole.
 
-import { ROOMS, type RoomType } from '../data';
+import { ITEMS, ROOMS, type RoomType } from '../data';
 import { roomCost } from '../resize';
+import { copyCost, type Layout, type PlacedLayout, placeLayout } from '../room-layout';
 import type { GameState, Room, Sketch, WallSpot } from '../state/types';
 import type { Rect, World } from '../world';
-import { createRoom, removeRoom } from './building';
+import { buildLayout, createRoom, removeRoom } from './building';
 import type { SimContext } from './context';
 import { emit, tipOnce } from './events';
 
@@ -14,8 +15,15 @@ import { emit, tipOnce } from './events';
 export const SKETCH_TIP =
   "Pencilled in. Click it and press Build here when you're ready. Nothing is charged until then.";
 
-/** What building a sketch would cost: its room at its size, as the drag and the blueprint price it. */
-export const sketchCost = (sk: Pick<Sketch, 'type' | 'w' | 'h'>) => roomCost(sk.type, sk);
+/**
+ * What building a sketch would cost: its room at its size, as the drag and the blueprint price it, or, for one that
+ * remembers a room, that room whole, furniture and windows and all, as its template prices it.
+ */
+export const sketchCost = (sk: Pick<Sketch, 'type' | 'w' | 'h' | 'layout'>) =>
+  sk.layout && knownLayout(sk.layout) ? copyCost(sk.layout) : roomCost(sk.type, sk);
+
+/** Whether this version knows every piece of furniture a layout holds, and so can price it. */
+export const knownLayout = (l: Layout) => l.items.every((it) => Object.hasOwn(ITEMS, it.type));
 
 /** What building every sketch would cost. */
 export const sketchesCost = (s: Pick<GameState, 'sketches'>) => s.sketches.reduce((sum, sk) => sum + sketchCost(sk), 0);
@@ -34,7 +42,13 @@ export const unfitCount = (world: Pick<World, 's' | 'sketchFit'>) =>
 export const sketchById = (s: Pick<GameState, 'sketches'>, id: number) => s.sketches.find((sk) => sk.id === id);
 
 /** Put a sketch on the floor, and say what it is for the first time one goes down. The view repaints the floor. */
-function putDown(ctx: SimContext, type: RoomType, r: Rect, door: WallSpot): Sketch {
+function putDown(
+  ctx: SimContext,
+  type: RoomType,
+  r: Rect,
+  door: WallSpot,
+  remembers?: { layout: Layout; template: string },
+): Sketch {
   const sketch: Sketch = {
     id: ctx.s.nextId++,
     type,
@@ -44,6 +58,8 @@ function putDown(ctx: SimContext, type: RoomType, r: Rect, door: WallSpot): Sket
     h: r.h,
     door: { ...door },
     day: Math.floor(ctx.s.day),
+    // a copy, so the template can change or go without the sketch changing with it
+    ...(remembers && { layout: structuredClone(remembers.layout), template: remembers.template }),
   };
   ctx.s.sketches.push(sketch);
   // nothing has moved, but the floor has a sketch to paint
@@ -57,6 +73,27 @@ function putDown(ctx: SimContext, type: RoomType, r: Rect, door: WallSpot): Sket
 export function addSketch(ctx: SimContext, type: RoomType, r: Rect, door: WallSpot): Sketch | null {
   if (!ctx.world.sketchRectValid(type, r).ok || !ctx.world.sketchDoorValid(r, door).ok) return null;
   return putDown(ctx, type, r, door);
+}
+
+/**
+ * Pencil a template in, for nothing, where building it could go today: the sketch remembers its layout as it was put
+ * down, and its name. Null if it cannot go there.
+ */
+export function pencilTemplate(ctx: SimContext, name: string, layout: Layout, placed: PlacedLayout): Sketch | null {
+  if (!ctx.world.templateSketchValid(layout, placed).ok) return null;
+  return putDown(ctx, layout.type, placed.rect, placed.door, { layout, template: name });
+}
+
+/** Forget the room a sketch remembers, leaving its floor and door pencilled in. False if it remembers none. */
+export function forgetTemplate(ctx: SimContext, id: number): boolean {
+  const sketch = sketchById(ctx.s, id);
+  if (!sketch?.layout) return false;
+  delete sketch.layout;
+  delete sketch.template;
+  // its furniture and windows come off the floor
+  ctx.world.version++;
+  emit(ctx, { type: 'sfx', name: 'blip' });
+  return true;
 }
 
 /** Rub a sketch out. False if there is no such sketch. */
@@ -76,8 +113,26 @@ export function eraseSketch(ctx: SimContext, id: number): boolean {
 export function buildSketch(ctx: SimContext, id: number): Room | null {
   const sketch = sketchById(ctx.s, id);
   if (!sketch || !ctx.world.sketchFits(sketch).ok) return null;
+  if (sketch.layout) return buildWhole(ctx, sketch, sketch.layout);
   ctx.s.sketches = ctx.s.sketches.filter((sk) => sk !== sketch);
   return createRoom(ctx, sketch.type, sketch, sketch.door);
+}
+
+/**
+ * Build the room a sketch remembers, furniture, windows and all, where it is, as building its template there would:
+ * paid for at once, and open at once. Null, with the sketch kept, if the bank cannot cover it.
+ */
+function buildWhole(ctx: SimContext, sketch: Sketch, layout: Layout): Room | null {
+  const at = ctx.s.sketches.indexOf(sketch);
+  // out of its own way first, as nothing may be built over a sketch
+  ctx.s.sketches.splice(at, 1);
+  const name = `"${sketch.template ?? ROOMS[layout.type].name}"`;
+  const room = buildLayout(ctx, layout, placeLayout(layout, sketch.x, sketch.y), {
+    cost: name,
+    built: `${name} built`,
+  });
+  if (!room) ctx.s.sketches.splice(at, 0, sketch);
+  return room;
 }
 
 /**
