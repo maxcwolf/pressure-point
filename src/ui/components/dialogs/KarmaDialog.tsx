@@ -1,11 +1,11 @@
 // Unlocking a locked item, floor or walls for good with karma.
 
-import './KarmaDialog.css';
-
 import { cannotBuy, cannotBuyDecor, karmaLeft } from '../../../core/campaign';
 import { decorDef, type DecorKey, decorLabel, type IconId, ITEMS, type ItemType } from '../../../core/data';
 import { decorChange } from '../../../core/sim/decor';
 import { buyDecorWithKarma, buyWithKarma, loadCampaign } from '../../../storage/campaign';
+import { Box } from '../../../styled-system/jsx';
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { karmaText } from '../../lib/karma';
 import { Button } from '../common/Button';
@@ -75,16 +75,16 @@ export function KarmaDialog() {
   };
   return (
     <Dialog>
-      <div class="bigicon">
+      <Box display="flex" justifyContent="center">
         <Icon id={offer.icon} size={60} />
-      </div>
+      </Box>
       <h2>{offer.title}</h2>
       <p>{offer.about}</p>
       <p class="sub">
         <IconText id="ui-karma">{`You have ${karmaText(karmaLeft(loadCampaign()))}.`}</IconText>{' '}
         {offer.short ? 'Earn more with stars and achievements in the campaign.' : ''}
       </p>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
           onPress={() => {
             hud.close();
@@ -94,7 +94,7 @@ export function KarmaDialog() {
         </Button>
         {!offer.short && (
           <Button
-            class="go"
+            class={goButton()}
             quiet
             onPress={() => {
               if (offer.buy()) {

@@ -21,6 +21,8 @@ import {
   templatesFile,
 } from '../../../core/templates';
 import { loadCampaign } from '../../../storage/campaign';
+import { css } from '../../../styled-system/css';
+import { fileButton, tabButton } from '../../../styled-system/recipes';
 import { download } from '../../dom';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
@@ -28,6 +30,67 @@ import { sorted, TEMPLATE_SORTS } from '../../lib/sorts';
 import { keepTemplates } from '../../templates';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
+import { cardLook, cardsLook } from './looks';
+
+/** The templates' cards, wide enough for their buttons. */
+const templateCards = css(cardsLook, { gridTemplateColumns: '[repeat(auto-fill, minmax(214px, 1fr))]' });
+
+/** A template's card, which stays as bright when its room cannot be afforded, for its own buttons to say so. */
+const templateCard = css(cardLook, { gap: '4', '&.poor': { opacity: 'full', cursor: 'auto' } });
+
+/** The template's name, which can be changed in place: plain words on the card until the pointer or the typing is on it. */
+const nameInput = css({
+  font: 'inherit',
+  fontSize: '15',
+  fontWeight: 'bold',
+  color: 'fg',
+  border: '[{borderWidths.thin} solid transparent]',
+  borderRadius: '8',
+  py: '1',
+  px: '4',
+  my: '0',
+  mx: '-6',
+  w: '[calc(100% + 8px)]',
+  bg: 'transparent',
+  '&:is(:hover, :focus)': { borderColor: 'accent', bg: 'bg.hover', outline: 'none' },
+});
+
+/**
+ * A template's buttons, along the bottom, level with the cards beside it: Build in green, or Pencil in in orange, Delete
+ * in red at the far end, and Export lighter under the pointer. `build` and `pencil` are for these styles to find them by.
+ */
+const actions = css({
+  display: 'flex',
+  gap: '4',
+  mt: 'auto',
+  pt: '4',
+  '& button': {
+    border: 'outline.thin',
+    borderRadius: '8',
+    py: '2',
+    px: '8',
+    fontSize: '13',
+    fontWeight: 'bold',
+    bg: 'bg.card',
+  },
+  '& button:not(.build, .delete):hover': { bg: 'bg.hover' },
+  '& button.build': { bg: 'go', color: 'fg.on-accent' },
+  // pencilling in, the Pencil in pill's orange
+  '& button.build.pencil': { bg: 'active' },
+  '& button.delete': { ml: 'auto', bg: 'bad.bg', color: 'bad' },
+  '& button.locked': { opacity: 'faint', cursor: 'not-allowed' },
+});
+
+/** The way to import more and export them all, with how many there are of how many there can be at the far end. */
+const foot = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8',
+  flexWrap: 'wrap',
+  mt: '10',
+  // the count at the far end: `span.sub`, or the menu's own margins for smaller words would win
+  '& span.sub': { m: '0', ml: 'auto', fontSize: '13', opacity: 'muted' },
+});
 
 /**
  * A template: its name, which can be changed, its room, size and cost, and buttons to build, export or delete it. With
@@ -52,11 +115,14 @@ function TemplateCard({
   // the name as it is being typed: kept here, or the interface redrawing as the game runs would put the old one back
   const [draft, setDraft] = useState<string | null>(null);
   return (
-    <div class={cx('card', 'template', !lock && !pencil && sim.s.money < cost && 'poor')} data-template={t.name}>
+    <div
+      class={cx('card', 'template', templateCard, !lock && !pencil && sim.s.money < cost && 'poor')}
+      data-template={t.name}
+    >
       <Icon id={room.icon} size={34} />
       <span class="cost">{money(cost)}</span>
       <input
-        class="tname"
+        class={nameInput}
         aria-label="Template name"
         value={draft ?? t.name}
         maxLength={MAX_NAME}
@@ -77,9 +143,9 @@ function TemplateCard({
           <IconText id="ui-lock">{lock}</IconText>
         </em>
       )}
-      <div class="template-actions">
+      <div class={actions}>
         <Button
-          class={pencil ? 'build pencil' : 'build'}
+          class={cx('build', pencil && 'pencil')}
           title={
             lock ||
             (pencil
@@ -96,7 +162,6 @@ function TemplateCard({
           {pencil ? '✎ Pencil in' : 'Build'}
         </Button>
         <Button
-          class="export"
           title="Save this template as a file, to keep or to share"
           onPress={() => {
             download(templateFilename(t.name), templatesFile([t]));
@@ -158,7 +223,7 @@ export function TemplatesTab({ pencil }: { pencil: boolean }) {
   return (
     <>
       {hud.templates.length ? (
-        <div class="cards templates">
+        <div class={templateCards}>
           {sorted(hud.templates, TEMPLATE_SORTS, hud.sorts.templates).map((t) => (
             <TemplateCard key={t.id} t={t} lock={templateLock(t.layout, allowed)} open={open} pencil={pencil} />
           ))}
@@ -169,8 +234,8 @@ export function TemplatesTab({ pencil }: { pencil: boolean }) {
           build it again from here, in this game or any other.
         </p>
       )}
-      <div class="template-foot">
-        <label class="filebtn">
+      <div class={foot}>
+        <label class={fileButton()}>
           Import a template file
           <input
             type="file"
@@ -183,7 +248,7 @@ export function TemplatesTab({ pencil }: { pencil: boolean }) {
         </label>
         {hud.templates.length > 1 && (
           <Button
-            class="tab small"
+            class={tabButton({ size: 'small' })}
             onPress={() => {
               download(templateFilename(), templatesFile(hud.templates));
             }}

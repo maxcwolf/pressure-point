@@ -6,6 +6,8 @@ import { money } from '../../../core/format';
 import { itemUpkeep } from '../../../core/sim/machines';
 import { unlockedUpTo } from '../../../core/state/game';
 import { loadCampaign } from '../../../storage/campaign';
+import { css } from '../../../styled-system/css';
+import { guideRing, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { RoomsTab } from '../../hud';
 import { available, machineCures, roomKarmaLock, roomOffering } from '../../lib/catalog';
@@ -15,6 +17,7 @@ import { ROOM_SORTS, sorted, TEMPLATE_SORTS } from '../../lib/sorts';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 import { SortBy } from '../common/SortBy';
+import { card, cards, menuHead, menuPanel, tabRow } from './looks';
 import { TemplatesTab } from './TemplatesTab';
 
 /** The Rooms menu's tabs. */
@@ -22,6 +25,22 @@ const TABS: readonly { id: RoomsTab; name: string }[] = [
   { id: 'rooms', name: 'Rooms' },
   { id: 'templates', name: 'Templates' },
 ];
+
+/** The Pencil in pill beside the tabs, orange while it is on, as a tool in hand is. */
+const pencilTab = css({ _on: { bg: 'active' } });
+
+/** The note under the tabs while pencilling in, saying what a drag or a click does now, in bold how many are pencilled. */
+const pencilNote = css({
+  bg: 'warn.bg',
+  border: '[{borderWidths.thin} solid {colors.highlight}]',
+  borderRadius: '10',
+  py: '4',
+  px: '10',
+  mb: '8',
+  fontSize: '13',
+  '& p': { m: '0' },
+  '& .sub': { fontWeight: 'bold' },
+});
 
 /** What the note under the tabs says while pencilling in, on each tab. */
 const PENCIL_NOTES: Record<RoomsTab, string> = {
@@ -36,8 +55,8 @@ export function RoomsMenu() {
   const guide = hud.guide();
   const { pencil } = hud;
   return (
-    <div class="panel menu">
-      <div class="menu-head">
+    <div class={cx(panelCard(), menuPanel)}>
+      <div class={menuHead}>
         <h3>Build a room</h3>
         {hud.roomsTab !== 'templates' ? (
           <SortBy key="rooms" list="rooms" orders={ROOM_SORTS} />
@@ -45,11 +64,11 @@ export function RoomsMenu() {
           hud.templates.length > 1 && <SortBy key="templates" list="templates" orders={TEMPLATE_SORTS} />
         )}
       </div>
-      <div class="tabs filters">
+      <div class={cx(tabStrip(), tabRow)}>
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx('tab', hud.roomsTab === t.id && 'on', guide === `tab:${t.id}` && 'guide')}
+            class={cx(tabButton(), hud.roomsTab === t.id && 'on', guide === `tab:${t.id}` && guideRing())}
             onPress={() => {
               hud.roomsTab = t.id;
             }}
@@ -58,7 +77,7 @@ export function RoomsMenu() {
           </Button>
         ))}
         <Button
-          class={cx('tab', 'pencil', pencil && 'on', guide === 'tab:pencil' && 'guide')}
+          class={cx(tabButton(), pencilTab, pencil && 'on', guide === 'tab:pencil' && guideRing())}
           onPress={() => {
             // pressed again, pencilling in goes off
             hud.pencil = !pencil;
@@ -68,7 +87,7 @@ export function RoomsMenu() {
         </Button>
       </div>
       {pencil && (
-        <div class="pencil-note">
+        <div class={pencilNote}>
           <p>{PENCIL_NOTES[hud.roomsTab]}</p>
           {sim.s.sketches.length > 0 && <p class="sub">{sketchCount(sim.world)}</p>}
         </div>
@@ -95,7 +114,7 @@ function RoomCards({ pencil }: { pencil: boolean }) {
     hud.sorts.rooms,
   );
   return (
-    <div class="cards">
+    <div class={cards}>
       {types.map((t) => {
         const r = ROOMS[t];
         const starred = (r.unlock ?? 0) > unlockedUpTo(s);
@@ -106,7 +125,12 @@ function RoomCards({ pencil }: { pencil: boolean }) {
         return (
           <Button
             key={t}
-            class={cx('card', !locked && !pencil && s.money < r.cost && 'poor', guide === `room:${t}` && 'guide')}
+            class={cx(
+              'card',
+              card,
+              !locked && !pencil && s.money < r.cost && 'poor',
+              guide === `room:${t}` && guideRing(),
+            )}
             // a room karma can unlock opens the offer to unlock its machine, rather than refusing outright
             locked={starred}
             onPress={() => {
@@ -126,7 +150,7 @@ function RoomCards({ pencil }: { pencil: boolean }) {
             <span class="cost">{money(r.cost)}</span>
             <p>{r.desc}</p>
             {cures.length > 0 && (
-              <p class="cures">
+              <p>
                 {`Cures ${cures.map((c) => `${c.name} (${money(c.fee)})`).join(' and ')}. Costs ${money(upkeep)} a month to run.`}
               </p>
             )}

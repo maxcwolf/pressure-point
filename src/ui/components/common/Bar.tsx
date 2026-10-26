@@ -1,9 +1,47 @@
 // A progress bar.
 
-import './Bar.css';
-
+import { css } from '../../../styled-system/css';
 import { cx } from '../../lib/cx';
 import { meterValue } from '../../lib/meters';
+
+/**
+ * The bar and its fill. Its tone and thickness come as classes, from `tone` or from `class`, so a caller can pick them
+ * with words such as `thin bad`; `bar` and the tones stay on it for the stylesheets that lay bars out in their own way.
+ */
+const bar = css({
+  h: '10',
+  borderRadius: '6',
+  bg: 'meter.track',
+  overflow: 'hidden',
+  mt: '2',
+  '& i': { display: 'block', h: 'full', borderRadius: '6', bg: 'good.solid', transition: '[width {durations.slow}]' },
+  '&.thin': { h: '6' },
+  '&.good i': { bg: 'good.solid' },
+  '&:is(.gold, .warn) i': { bg: 'highlight' },
+  '&.blue i': { bg: 'info.solid' },
+  '&.bad i': { bg: 'bad.solid' },
+  '&.need i': { bg: 'warm.solid' },
+  '&.energy i': { bg: 'special.solid' },
+});
+
+/** A bar with its value beside it, the numbers lined up down the panel. */
+const meter = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6',
+  mt: '2',
+  '& .bar': { flex: '1', mt: '0' },
+});
+
+/** The number beside a bar. */
+const meterValueStyle = css({
+  minW: '[2.2em]',
+  textAlign: 'right',
+  fontSize: '12',
+  fontWeight: 'bold',
+  fontVariantNumeric: 'tabular-nums',
+  lineHeight: 'none',
+});
 
 /**
  * A bar filled to a percentage. `tone` colors the fill (good, warn, bad, or one of the plain colors), and `show` puts
@@ -23,16 +61,16 @@ export function Bar({
 }) {
   const width = Math.max(0, Math.min(100, value)).toFixed(0);
   const bare = show === undefined || show === false;
-  const bar = (
-    <div class={cx('bar', bare && className, tone)}>
+  const filled = (
+    <div class={cx('bar', bar, bare && className, tone)}>
       <i style={{ width: `${width}%` }} />
     </div>
   );
-  if (bare) return bar;
+  if (bare) return filled;
   return (
-    <div class={cx('meter', className)}>
-      {bar}
-      <span class="meter-value">{show === true ? meterValue(value) : show}</span>
+    <div class={cx('meter', meter, className)}>
+      {filled}
+      <span class={cx('meter-value', meterValueStyle)}>{show === true ? meterValue(value) : show}</span>
     </div>
   );
 }

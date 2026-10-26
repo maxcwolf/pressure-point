@@ -1,6 +1,7 @@
 // Asking before dismissing every message on the right at once, once the close button on the pile under them is pressed.
 // The game waits meanwhile.
 
+import { buttonRow, dangerButton } from '../../../styled-system/recipes';
 import { useHud } from '../../hooks/use-hud';
 import { Button } from '../common/Button';
 import { Dialog } from './Dialog';
@@ -13,7 +14,7 @@ export function ConfirmDismissMessages() {
     <Dialog>
       <h2>{`Dismiss all ${count} ${count === 1 ? 'message' : 'messages'}?`}</h2>
       <p>Once they are dismissed, they cannot be brought back.</p>{' '}
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
           onPress={() => {
             hud.close();
@@ -22,7 +23,7 @@ export function ConfirmDismissMessages() {
           Keep them
         </Button>
         <Button
-          class="danger"
+          class={dangerButton()}
           onPress={() => {
             hud.dismissAllToasts();
             hud.close();

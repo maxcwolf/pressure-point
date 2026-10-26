@@ -1,10 +1,10 @@
 // Bottom right: money, reputation, guests, the date and the game speed.
 
-import './StatsBar.css';
-
 import { centerOf, type IconId } from '../../core/data';
 import { dateOf, money } from '../../core/format';
 import { netOf } from '../../core/sim/economy';
+import { css } from '../../styled-system/css';
+import { guideRing } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { calendarTip, shortDate } from '../lib/seasons';
@@ -28,6 +28,114 @@ const SPEEDS: readonly { speed: number; icon: IconId; title: string }[] = [
   { speed: 3, icon: 'ui-fastest', title: 'Fastest (3)' },
 ];
 
+/**
+ * The bar: a cream panel of cells, kept to the right of the build buttons, or across the window once it stacks above
+ * them in a narrow one.
+ */
+const bar = css({
+  pointerEvents: 'auto',
+  display: 'flex',
+  alignItems: 'stretch',
+  gap: '0',
+  bg: 'bg.panel',
+  border: 'outline.thick',
+  borderRadius: '18',
+  boxShadow: 'raised',
+  overflow: 'hidden',
+  flexShrink: '0',
+  ml: 'auto',
+  _max1100: { alignSelf: 'stretch', ml: '0', justifyContent: 'space-between' },
+});
+
+/**
+ * A cell: its icon, then its number over a line or a bar of more, the line and the bar left out in a very narrow
+ * window. The cells draw in closer as the window narrows.
+ */
+const cell = css.raw({
+  display: 'grid',
+  gridTemplateColumns: '[auto 1fr]',
+  columnGap: '6',
+  alignItems: 'center',
+  py: '8',
+  px: '12',
+  borderRight: 'divider',
+  minW: 'stat',
+  '& > .icon': { gridRow: '[span 2]' },
+  '& b': { fontSize: '17', fontWeight: 'bold', lineHeight: 'tight', fontVariantNumeric: 'tabular-nums' },
+  '& small, & .bar': { gridColumn: '[2]', fontSize: '12', whiteSpace: 'nowrap', _max720: { display: 'none' } },
+  _max1540: { py: '8', px: '10' },
+  _max1100: { minW: '0', py: '6', px: '8' },
+});
+
+/** A cell with nothing more to it. */
+const plainCell = css(cell);
+
+/** The bank balance, given more room, its number red while it is below zero. */
+const moneyCell = css(cell, { minW: 'stat.money', '&.neg b': { color: 'bad.solid' }, _max1100: { minW: '0' } });
+
+/**
+ * The reputation, a button to what it is made of: a cell like the others, tinted under the pointer. `rep` is for the
+ * end-to-end tests to find it by.
+ */
+const repCell = css(cell, {
+  bg: '[none]',
+  border: 'none',
+  borderRight: 'divider',
+  borderRadius: '[0]',
+  textAlign: 'left',
+  font: 'inherit',
+  color: 'inherit',
+  _hover: { bg: 'control.hover' },
+});
+
+/**
+ * The date. Below 1430 pixels across it keeps to a compact cell: the season's icon, the day and the temperature, and a
+ * rush or the snow when one is on; the season, month and year are in its hover. If even that leaves no room, the stats
+ * bar moves up a row, and whatever stands above it is kept clear by the bar's measured height. `date` is for the
+ * end-to-end tests to find it by.
+ */
+const dateCell = css(cell, { _max1430: { minW: '0' } });
+
+/** The month and the year under the day, left to the hover in a compact cell. */
+const when = css({ _max1430: { display: 'none' } });
+
+/** The temperature beside the day, in bold blue when it needs heating and in bold red when it needs cooling. */
+const temp = css({
+  ml: '8',
+  fontSize: '15',
+  color: 'fg',
+  '&.heat': { fontWeight: 'heavy', color: 'info' },
+  '&.cool': { fontWeight: 'heavy', color: 'bad.solid' },
+});
+
+/** A rush or the snow, in bold red. */
+const rush = css({ fontStyle: 'normal', fontWeight: 'heavy', color: 'bad.solid' });
+
+/** The speed buttons, on a sand ground at the right. */
+const speeds = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4',
+  py: '0',
+  px: '10',
+  bg: 'bg.inset',
+  _max1100: { px: '6' },
+});
+
+/** A speed button, orange while it is the speed. `speed` is for the end-to-end tests to find them by. */
+const speed = css({
+  border: 'outline',
+  bg: 'control',
+  borderRadius: '10',
+  h: '36',
+  minW: '36',
+  py: '0',
+  px: '6',
+  fontSize: '11',
+  letterSpacing: 'tighter',
+  _on: { bg: 'active', color: 'fg.on-accent' },
+});
+
 /** The center's vital signs and the speed controls. */
 export function StatsBar() {
   const { sim } = useGame();
@@ -39,14 +147,14 @@ export function StatsBar() {
   const net = netOf(s.ledger);
   const guide = hud.guide();
   return (
-    <div id="stats">
-      <div class={cx('stat money', s.money < 0 && 'neg')} title="Bank balance">
+    <div id="stats" class={bar}>
+      <div class={cx(moneyCell, s.money < 0 && 'neg')} title="Bank balance">
         <Icon id="ui-money" size={26} />
         <b>{money(s.money)}</b>
         <small class={net < 0 ? 'neg' : 'pos'}>{`${net >= 0 ? '+' : ''}${money(net)} this month`}</small>
       </div>{' '}
       <Button
-        class="stat rep"
+        class={cx('rep', repCell)}
         title="Reputation: click to see what it is made of, and what guests are saying"
         onPress={() => {
           hud.statsTab = 'reputation';
@@ -57,13 +165,13 @@ export function StatsBar() {
         <b>{`${s.reputation.toFixed(0)}%`}</b>
         <Bar value={s.reputation} class="thin gold" />
       </Button>{' '}
-      <div class="stat" title="Guests on site">
+      <div class={plainCell} title="Guests on site">
         <Icon id="ui-guests" size={26} />
         <b>{s.guests.length}</b>
         <small>{`${s.stats.healed} healed`}</small>
       </div>{' '}
       <div
-        class="stat date"
+        class={cx('date', dateCell)}
         title={calendarTip(
           s.day,
           centerOf(s),
@@ -75,7 +183,7 @@ export function StatsBar() {
         <b>
           {`Day ${date.day}`}
           {weather && (
-            <span class={cx('temp', weather.need)} title={weather.title}>
+            <span class={cx(temp, weather.need)} title={weather.title}>
               {weather.text}
             </span>
           )}
@@ -83,19 +191,19 @@ export function StatsBar() {
         {/* in a narrow window only a rush or the snow is said under the day: the season's icon and the hover say the rest */}
         <small>
           {sim.snowedIn() ? (
-            <em class="rush">Snowed in</em>
+            <em class={rush}>Snowed in</em>
           ) : sim.rushHour() ? (
-            <em class="rush">Rush hour</em>
+            <em class={rush}>Rush hour</em>
           ) : (
-            <span class="when">{shortDate(s.day, season, s.startMonth)}</span>
+            <span class={when}>{shortDate(s.day, season, s.startMonth)}</span>
           )}
         </small>
       </div>{' '}
-      <div class="speeds">
+      <div class={speeds}>
         {SPEEDS.map((sp) => (
           <Button
             key={sp.speed}
-            class={cx('speed', s.speed === sp.speed && 'on', guide === `speed:${sp.speed}` && 'guide')}
+            class={cx('speed', speed, s.speed === sp.speed && 'on', guide === `speed:${sp.speed}` && guideRing())}
             title={sp.title}
             onPress={() => {
               s.speed = sp.speed;

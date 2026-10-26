@@ -1,13 +1,13 @@
 // The Staff menu: everyone on the payroll.
 
-import './StaffMenu.css';
-
 import { MODALITIES, type Modality, MODALITY_ORDER, ROLES } from '../../../core/data';
 import { money } from '../../../core/format';
 import { rankName } from '../../../core/sim/careers';
 import { wagesDue } from '../../../core/sim/economy';
 import type { Sim } from '../../../core/sim/sim';
 import type { Staff } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
+import { goButton, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { sorted, STAFF_SORTS } from '../../lib/sorts';
@@ -17,6 +17,100 @@ import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
 import { SortBy } from '../common/SortBy';
+import { menuHead, menuPanel, tabRow } from './looks';
+
+/**
+ * A row for one of the staff, which selects them, and the row of headings over the rows. Their role's icon stands
+ * beside both of a row's lines, so the line under the name sits close; that line holds the treatments they know, or
+ * their role if it has none. What has a tooltip of its own sits above the button stretched over the row, as does the
+ * button to promote them or raise their pay.
+ */
+const row = css({
+  position: 'relative',
+  w: 'full',
+  display: 'grid',
+  gridTemplateColumns: '[30px 1.1fr 1.3fr 96px 64px 112px]',
+  alignItems: 'center',
+  rowGap: '2',
+  columnGap: '8',
+  textAlign: 'left',
+  bg: 'bg.card',
+  border: 'card',
+  borderRadius: '10',
+  py: '6',
+  px: '8',
+  mb: '4',
+  fontSize: '13',
+  '&:not(.head)': { cursor: 'pointer' },
+  _hover: { borderColor: 'accent.strong', bg: 'bg.hover' },
+  '& b': { fontWeight: 'bold' },
+  '& .meters': { position: 'relative', zIndex: 'above', display: 'grid', rowGap: '2' },
+  '& .quals > span': { position: 'relative', zIndex: 'above' },
+  '& > button.act': { position: 'relative', zIndex: 'above' },
+  '& .meters .bar': { mt: '0' },
+  '&.head': {
+    bg: '[none]',
+    borderColor: 'transparent',
+    pt: '0',
+    pb: '0',
+    mb: '2',
+    fontSize: '12',
+    opacity: 'muted',
+  },
+  '&.head:hover': { bg: '[none]', borderColor: 'transparent' },
+  '&.head em': { fontStyle: 'normal', fontWeight: 'bold' },
+  '& small': { textAlign: 'right' },
+  '& > .icon': { gridRow: '[span 2]' },
+  '& .knows': { gridColumn: '[2 / -1]', fontSize: '12', opacity: 'soft' },
+  '& .knows:has(.quals)': { opacity: 'full' },
+  '& .knows .quals': { m: '0' },
+});
+
+/** The empty button stretched over a whole row to select them, which the cells' words show through. */
+const pick = css({
+  position: 'absolute',
+  inset: '0',
+  border: 'none',
+  borderRadius: 'inherit',
+  p: '0',
+  bg: '[none]',
+});
+
+/** The energy in the headings, in the purple of its bar. */
+const energyKey = css({ color: 'special' });
+
+/** Morale in the headings: green while it is fine, amber as it sags and red when low, like the bar in the inspector. */
+const moraleKey = css({ color: 'good' });
+
+/**
+ * The button to promote someone or raise their pay, small enough that a row keeps to one line however narrow the
+ * menu. One they asked for, or a promotion, is gold.
+ */
+const act = css({
+  border: 'outline.thin',
+  borderRadius: '10',
+  bg: 'control',
+  fontSize: '12',
+  fontWeight: 'bold',
+  py: '1',
+  px: '8',
+  whiteSpace: 'nowrap',
+  justifySelf: 'end',
+  '&.go': { bg: 'highlight', color: 'fg', boxShadow: 'none', mt: '0' },
+  _hover: { filter: '[brightness(1.06)]', transform: 'none' },
+});
+
+/** The buttons to promote everyone waiting, or pay every raise asked for. */
+const requests = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '6',
+  mb: '6',
+  '& button.act': { py: '2', px: '10' },
+});
+
+/** The treatments to narrow the list to, each with how many know it. */
+const knowsFilter = css({ '& .tab small': { fontSize: '11', fontWeight: 'bold', opacity: 'muted' } });
 
 /** Whether someone knows a treatment, or is on its course. */
 const knowsOrLearning = (st: Staff, m: Modality) => st.quals.includes(m) || st.training?.course === m;
@@ -27,9 +121,9 @@ function KnowsFilter({ staff, knows }: { staff: readonly Staff[]; knows: Modalit
   const treatments = MODALITY_ORDER.filter((m) => staff.some((st) => knowsOrLearning(st, m)));
   if (!treatments.length) return null;
   return (
-    <div class="tabs filters knows" role="group" aria-label="Who knows a treatment">
+    <div class={cx(tabStrip(), 'knows', tabRow, knowsFilter)} role="group" aria-label="Who knows a treatment">
       <Button
-        class={cx('tab', 'small', knows === null && 'on')}
+        class={cx(tabButton({ size: 'small' }), knows === null && 'on')}
         onPress={() => {
           hud.staffKnows = null;
         }}
@@ -42,7 +136,7 @@ function KnowsFilter({ staff, knows }: { staff: readonly Staff[]; knows: Modalit
         return (
           <Button
             key={m}
-            class={cx('tab', 'small', knows === m && 'on')}
+            class={cx(tabButton({ size: 'small' }), knows === m && 'on')}
             title={`${qualified} qualified${learning ? `, ${learning} learning` : ''}. Click to show only them.`}
             onPress={() => {
               hud.staffKnows = knows === m ? null : m;
@@ -66,7 +160,7 @@ function RowAction({ staff: st }: { staff: Staff }) {
   if (st.promotion) {
     return (
       <Button
-        class="act go"
+        class={cx('act', goButton(), act)}
         title={`To ${rankName(st.skill + 1)}, on ${money(promotedPay(sim, st))} a month`}
         quiet
         onPress={() => {
@@ -79,7 +173,7 @@ function RowAction({ staff: st }: { staff: Staff }) {
   }
   return (
     <Button
-      class={cx('act', st.raiseAsked && 'go')}
+      class={cx('act', act, st.raiseAsked && goButton())}
       title={
         st.raiseAsked
           ? 'They asked for a raise. Paying it lifts their morale.'
@@ -110,10 +204,10 @@ function Requests({ staff }: { staff: readonly Staff[] }) {
   const promoting = ready.reduce((total, st) => total + promotedPay(sim, st) - st.salary, 0);
   const raising = asking.reduce((total, st) => total + sim.raiseTo(st) - st.salary, 0);
   return (
-    <div class="requests">
+    <div class={cx('requests', requests)}>
       {ready.length > 1 && (
         <Button
-          class="act go"
+          class={cx('act', goButton(), act)}
           quiet
           onPress={() => {
             sim.promoteAll();
@@ -124,7 +218,7 @@ function Requests({ staff }: { staff: readonly Staff[] }) {
       )}
       {asking.length > 1 && (
         <Button
-          class="act go"
+          class={cx('act', goButton(), act)}
           quiet
           onPress={() => {
             sim.giveRaisesAsked();
@@ -168,20 +262,20 @@ export function StaffMenu() {
     hud.update();
   };
   return (
-    <div class="panel menu">
-      <div class="menu-head">
+    <div class={cx(panelCard(), menuPanel)}>
+      <div class={menuHead}>
         <h3>Your staff</h3>
         {staff.length > 1 && <SortBy list="staff" orders={STAFF_SORTS} />}
       </div>
       <KnowsFilter staff={staff} knows={knows} />
       <Requests staff={staff} />
       {staff.length > 0 && (
-        <div class="row head" aria-hidden="true">
+        <div class={cx('row', 'head', row)} aria-hidden="true">
           <i />
           <b>Name</b>
           <span>Doing</span>
           <span>
-            <em class="energy-key">Energy</em> / <em class="morale-key">morale</em>
+            <em class={energyKey}>Energy</em> / <em class={moraleKey}>morale</em>
           </span>
           <small>Salary</small>
           <i />
@@ -191,14 +285,14 @@ export function StaffMenu() {
         shown.map((st) => (
           <div
             key={st.id}
-            class="row"
+            class={cx('row', row)}
             onPointerDown={(e) => {
               pressRow(e, st.id);
             }}
           >
             {/* the whole row selects them, from a button stretched over its cells, as a button cannot hold another */}
             <Button
-              class="pick"
+              class={pick}
               label={`Show ${st.name}`}
               onPress={() => {
                 hud.show({ kind: 'staff', id: st.id });

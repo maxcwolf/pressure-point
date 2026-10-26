@@ -3,9 +3,23 @@
 
 import { money } from '../../../core/format';
 import type { PlotOffer } from '../../../core/land';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { cx } from '../../lib/cx';
 import { daysToGo, plotMiddle, plotSize } from '../../lib/land';
 import { Button } from '../common/Button';
+import { ledgerLook } from './looks';
+
+/** A plot's card: its name and what it says under it, with the button to go and look at it at the far end. */
+const plot = css(ledgerLook, {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '10',
+  mt: '6',
+  '& h4': { mb: '0' },
+  '& button': { flexShrink: '0', whiteSpace: 'nowrap' },
+});
 
 /** What a plot's card says under its name: how big it is and whether it is the game's, or what it costs. */
 function landLine(o: PlotOffer): string {
@@ -29,7 +43,8 @@ export function LandTab() {
       {offers.map((o) => (
         <div
           key={o.def.id}
-          class="ledger land"
+          // `ledger` and `land` are for the end-to-end tests
+          class={cx('ledger', 'land', plot)}
           onPointerEnter={() => {
             hud.landPointedAt = o.def.id;
           }}

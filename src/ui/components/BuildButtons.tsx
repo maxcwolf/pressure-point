@@ -1,10 +1,10 @@
 // Bottom left: the round buttons that open the build menus, and the one that takes up the Expand tool to buy land.
 
-import './BuildButtons.css';
-
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 import type { IconId } from '../../core/data';
+import { css } from '../../styled-system/css';
+import { guideRing, roundButton } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import type { MenuId } from '../hud';
 import { cx } from '../lib/cx';
@@ -23,6 +23,9 @@ const MENUS: readonly { id: MenuId; icon: IconId; label: string; welded?: boolea
   { id: 'policy', icon: 'ui-policy', label: 'Policy' },
   { id: 'stats', icon: 'ui-stats', label: 'Stats' },
 ];
+
+/** The row of round buttons, closer together in a narrow window. */
+const row = css({ display: 'flex', gap: '8', _max720: { gap: '4' } });
 
 /**
  * The outline behind a welded button: its circle and a plate round its word as one path, drawn again whenever the
@@ -65,11 +68,15 @@ export function BuildButtons() {
   const expanding = tools.tool.kind === 'expand';
   const guide = hud.guide();
   return (
-    <div id="buildbtns">
+    <div id="buildbtns" class={row}>
       {MENUS.map((m) => [
         <Button
           key={m.id}
-          class={cx('round', m.welded && 'welded', hud.menu === m.id && 'on', guide === `menu:${m.id}` && 'guide')}
+          class={cx(
+            roundButton({ welded: m.welded }),
+            hud.menu === m.id && 'on',
+            guide === `menu:${m.id}` && guideRing(),
+          )}
           onPress={() => {
             hud.toggleMenu(m.id);
           }}
@@ -82,7 +89,7 @@ export function BuildButtons() {
         m.id === 'rooms' && (
           <Button
             key="expand"
-            class={cx('round', expanding && 'on')}
+            class={cx(roundButton(), expanding && 'on')}
             title="Buy the land around the building"
             onPress={() => {
               hud.closeMenu();

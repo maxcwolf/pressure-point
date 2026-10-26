@@ -1,13 +1,13 @@
 // The Stats menu: charts of chosen figures month by month, the center's reputation and reviews, the casebook, and
 // the awards won.
 
-import './StatsMenu.css';
-
 import { useState } from 'preact/hooks';
 
 import { AWARDS, type IconId } from '../../../core/data';
 import type { MonthRecord } from '../../../core/state/types';
 import { loadStatsView, saveStatsView } from '../../../storage/settings';
+import { css } from '../../../styled-system/css';
+import { buttonRow, goButton, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import type { StatsTab } from '../../hud';
 import { barHeights } from '../../lib/chart';
@@ -17,9 +17,84 @@ import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { CasebookTab } from './CasebookTab';
 import { GuestsTab } from './GuestsTab';
+import { chartLook, menuPanel, statsHead, tabRow } from './looks';
 import { RegularsTab } from './RegularsTab';
 import { ReputationTab } from './ReputationTab';
 import { StandingTab } from './StandingTab';
+
+/** The charts, three to a line, or two in a narrower window. */
+const grid = css({
+  display: 'grid',
+  gridTemplateColumns: '[repeat(3, minmax(0, 1fr))]',
+  gap: '10',
+  mt: '8',
+  _max1100: { gridTemplateColumns: '[repeat(2, minmax(0, 1fr))]' },
+});
+
+/** One figure's card: its name, this month's figure large, and a small chart, this month's bar fainter as it is not over. */
+const statCard = css({
+  bg: 'bg.card',
+  border: 'card',
+  borderRadius: '12',
+  py: '8',
+  px: '10',
+  fontSize: '13',
+  '& h4': { fontWeight: 'bold', fontSize: '14' },
+  '& b': { fontSize: '20', fontWeight: 'heavy' },
+  '& p.sub': { mt: '4', fontSize: '12' },
+});
+
+/** A card's small chart. */
+const smallChart = css(chartLook, { h: '36', mt: '6', gap: '2', '& i.now': { opacity: 'faint' } });
+
+/** The figures to choose from, as pills in a row, the ones chosen in teal. */
+const choices = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '6',
+  m: '0',
+  mt: '8',
+  mb: '4',
+  '& .chip': {
+    pointerEvents: 'auto',
+    border: 'card',
+    borderRadius: 'pill',
+    bg: 'bg.card',
+    py: '2',
+    px: '10',
+    fontSize: '13',
+    fontWeight: 'medium',
+    _hover: { transform: 'translateY(-1px)' },
+    _on: { bg: 'accent', borderColor: 'accent.strong', color: 'fg.on-accent' },
+  },
+});
+
+/** The awards won, as gold tags in a row, and a pill to look back on the last ceremony. */
+const awardList = css({
+  mt: '12',
+  '& ul': { listStyle: 'none', p: '0', display: 'flex', flexWrap: 'wrap', gap: '6', mb: '6' },
+  '& li': {
+    bg: 'highlight.bg',
+    border: '[{borderWidths.thin} solid {colors.highlight}]',
+    borderRadius: '8',
+    py: '2',
+    px: '8',
+    fontSize: '13',
+  },
+});
+
+/** The pill to look back on the last ceremony. */
+const ceremonyButton = css({
+  pointerEvents: 'auto',
+  fontSize: '13',
+  fontWeight: 'medium',
+  border: 'outline.thin',
+  borderRadius: 'pill',
+  py: '2',
+  px: '10',
+  bg: 'bg.card',
+  _hover: { transform: 'translateY(-1px)' },
+});
 
 /** One figure: this month so far and last month, over a bar for each month kept. */
 function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRecord[] }) {
@@ -29,13 +104,14 @@ function StatCard({ metric, months }: { metric: Metric; months: readonly MonthRe
   const now = values.at(-1) ?? null;
   const last = values.length > 1 ? values.at(-2) : undefined;
   return (
-    <div class="stat-card" data-metric={metric.id}>
+    // `stat-card`, `data-metric` and `chart` are for the end-to-end tests
+    <div class={cx('stat-card', statCard)} data-metric={metric.id}>
       <h4>{metric.name}</h4>
       <b>{formatMetric(metric.unit, now)}</b>
       <span class="sub">
         {last === undefined ? ' this month' : ` this month, ${formatMetric(metric.unit, last)} last month`}
       </span>
-      <div class="chart small">
+      <div class={cx('chart', smallChart)}>
         {heights.map((height, i) => {
           const value = values[i] ?? null;
           return (
@@ -68,13 +144,13 @@ const TABS: readonly { id: StatsTab; icon: IconId; name: string }[] = [
 export function StatsMenu() {
   const hud = useHud();
   return (
-    <div class="panel menu stats-menu">
+    <div class={cx(panelCard(), menuPanel)}>
       <h3>Stats</h3>
-      <div class="tabs">
+      <div class={cx(tabStrip(), tabRow)}>
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx('tab', hud.statsTab === t.id && 'on')}
+            class={cx(tabButton(), hud.statsTab === t.id && 'on')}
             onPress={() => {
               hud.statsTab = t.id;
             }}
@@ -105,11 +181,11 @@ function Charts() {
   const shown = shownMetrics(chosen, enabled);
   return (
     <>
-      <div class="stats-head">
+      <div class={statsHead}>
         <p class="sub">Each chart runs from the oldest month kept, on the left, to this month so far.</p>
-        <div class="btnrow">
+        <div class={buttonRow()}>
           <Button
-            class={cx('choose', choosing && 'go')}
+            class={cx('choose', choosing && goButton())}
             onPress={() => {
               setChoosing(!choosing);
             }}
@@ -119,7 +195,7 @@ function Charts() {
         </div>
       </div>
       {choosing && (
-        <div class="stat-choices">
+        <div class={choices}>
           {offeredMetrics(enabled).map((m) => (
             <Button
               key={m.id}
@@ -138,7 +214,7 @@ function Charts() {
           ))}
         </div>
       )}
-      <div class="stat-grid">
+      <div class={grid}>
         {shown.map((m) => (
           <StatCard key={m.id} metric={m} months={months} />
         ))}
@@ -153,7 +229,7 @@ function Trophies() {
   const hud = useHud();
   const { trophies, ceremony } = sim.s;
   return (
-    <div class="trophies">
+    <div class={awardList}>
       {trophies.length ? (
         <ul>
           {trophies.map((t) => (
@@ -171,7 +247,7 @@ function Trophies() {
       )}
       {ceremony && (
         <Button
-          class="chip"
+          class={ceremonyButton}
           onPress={() => {
             hud.open('awards');
           }}

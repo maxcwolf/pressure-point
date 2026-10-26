@@ -1,5 +1,6 @@
 // Offering to restart into a newer version of the desktop app.
 
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { Button } from '../common/Button';
 import { Dialog } from './Dialog';
@@ -18,7 +19,7 @@ export function UpdateDialog() {
         screen says what changed.
       </p>{' '}
       <p class="sub">Or keep playing: it installs by itself the next time you quit.</p>{' '}
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
           onPress={() => {
             hud.close();
@@ -26,7 +27,7 @@ export function UpdateDialog() {
         >
           Keep playing
         </Button>
-        <Button class="go" onPress={update.install}>
+        <Button class={goButton()} onPress={update.install}>
           Restart now
         </Button>
       </div>

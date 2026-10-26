@@ -1,7 +1,5 @@
 // The celebration when a star is earned.
 
-import './StarDialog.css';
-
 import { useState } from 'preact/hooks';
 
 import { nextCenter } from '../../../core/campaign';
@@ -9,6 +7,8 @@ import { CAMPAIGN, centerOf, CENTERS, FOUNDATION_KARMA, STAR_KARMA } from '../..
 import { money } from '../../../core/format';
 import { giftsToCome } from '../../../core/sim/foundation';
 import { loadCampaign } from '../../../storage/campaign';
+import { css } from '../../../styled-system/css';
+import { goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { giftList } from '../../lib/foundation';
 import { karmaText } from '../../lib/karma';
@@ -17,6 +17,26 @@ import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { StarRow } from '../common/Stars';
 import { Dialog } from './Dialog';
+
+/** The stars earned, big and gold, outlined in navy, with the ones still to earn faint. */
+const bigStars = css({
+  color: 'star',
+  fontSize: 'display',
+  letterSpacing: 'stars.large',
+  WebkitTextStroke: '[{borderWidths.medium} {colors.outline}]',
+  paintOrder: 'stroke fill',
+});
+
+/** What the star unlocks, on a lilac card. */
+const unlock = css({
+  bg: 'special.bg',
+  border: '[{borderWidths.thin} solid {colors.special.solid}]',
+  borderRadius: '12',
+  py: '8',
+  px: '12',
+  mt: '10',
+  fontSize: '14 !important',
+});
 
 /** The new star, the grant that comes with it, and what it unlocks. */
 export function StarDialog() {
@@ -42,19 +62,19 @@ export function StarDialog() {
   const gifts = n >= goals.length && counts && CAMPAIGN.includes(sim.s.center) ? giftsToCome(sim.s) : [];
   return (
     <Dialog>
-      <div class="bigstars">
+      <div class={bigStars}>
         <StarRow earned={n} of={goals.length} />
       </div>{' '}
       <h2>{n >= goals.length ? 'Three stars!' : `Star ${n} earned!`}</h2>{' '}
       <p>{`The wellness inspectors were deeply relaxed by what they saw. Here is a ${money(5000 * n)} grant.`}</p>
       {rooms && (
-        <p class="unlock">
+        <p class={unlock}>
           <b>New room:</b>
           {` ${rooms}`}
         </p>
       )}
       {treatments.length > 0 && (
-        <p class="unlock">
+        <p class={unlock}>
           <b>New treatments:</b>
           {treatments.map((t, i) => (
             <span key={t.text}>
@@ -69,7 +89,7 @@ export function StarDialog() {
         </p>
       )}{' '}
       {karma && (
-        <p class="unlock">
+        <p class={unlock}>
           <b>
             <IconText id="ui-karma">{`+${karmaText(STAR_KARMA)}`}</IconText>
           </b>
@@ -84,7 +104,7 @@ export function StarDialog() {
         </p>
       )}{' '}
       {gifts.length > 0 && (
-        <p class="unlock">
+        <p class={unlock}>
           <b>
             <IconText id="ui-karma">The Pressure Point Foundation is open:</IconText>
           </b>
@@ -92,7 +112,7 @@ export function StarDialog() {
         </p>
       )}{' '}
       {opens && (
-        <p class="unlock">
+        <p class={unlock}>
           <b>{`${CENTERS[opens].name} is open:`}</b>
           {' choose it from Campaign on the title screen whenever you are ready.'}
         </p>
@@ -107,7 +127,7 @@ export function StarDialog() {
               : 'Cheats were used in this game, so the campaign keeps none of its stars.'}
       </p>{' '}
       <Button
-        class="go"
+        class={goButton()}
         onPress={() => {
           hud.close();
         }}

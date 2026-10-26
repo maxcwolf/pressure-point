@@ -3,6 +3,7 @@
 
 import { money } from '../../../core/format';
 import { courseName } from '../../../core/sim/training';
+import { buttonRow, dangerButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { Button } from '../common/Button';
 import { Dialog } from './Dialog';
@@ -18,7 +19,7 @@ export function ConfirmCancelCourse() {
     return (
       <Dialog>
         <h2>No longer on a course</h2>
-        <div class="btnrow">
+        <div class={buttonRow()}>
           <Button
             onPress={() => {
               hud.cancelAsked = null;
@@ -35,7 +36,7 @@ export function ConfirmCancelCourse() {
     <Dialog>
       <h2>{`Cancel ${st.name}'s ${courseName(t.course)} course?`}</h2>
       <p>{`You'll get ${money(t.cost)} back. What they have learned so far is lost, and they go back to work.`}</p>{' '}
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
           onPress={() => {
             hud.cancelAsked = null;
@@ -45,7 +46,7 @@ export function ConfirmCancelCourse() {
           Keep training
         </Button>
         <Button
-          class="danger"
+          class={dangerButton()}
           onPress={() => {
             sim.cancelTraining(st.id);
             hud.cancelAsked = null;

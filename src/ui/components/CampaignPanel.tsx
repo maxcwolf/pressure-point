@@ -1,7 +1,5 @@
 // The campaign on the title screen: the trail of centers, the karma shop, and the achievements that earn karma.
 
-import './CampaignPanel.css';
-
 import { useState } from 'preact/hooks';
 
 import { track } from '../../app/analytics';
@@ -10,6 +8,8 @@ import { karmaLeft } from '../../core/campaign';
 import { CAMPAIGN } from '../../core/data';
 import { buyDecorWithKarma, buyWithKarma, loadCampaign } from '../../storage/campaign';
 import { loadTutorialPref, saveTutorialPref } from '../../storage/settings';
+import { css } from '../../styled-system/css';
+import { goButton, tabButton, tabStrip, toggleSwitch } from '../../styled-system/recipes';
 import { useRedraw } from '../hooks/use-redraw';
 import { campaignCards } from '../lib/campaign';
 import { cx } from '../lib/cx';
@@ -32,22 +32,144 @@ const TABS: readonly { id: Tab; label: string }[] = [
   { id: 'achievements', label: 'Achievements' },
 ];
 
+/** The karma there is to spend, over the tabs. */
+const karma = css({ fontWeight: 'heavy', fontSize: '15', m: '0', mb: '8' });
+
+/** The tabs, in the middle. */
+const tabs = css({ justifyContent: 'center', mb: '10' });
+
+/** The trail of centers, one under another. */
+const trail = css({ listStyle: 'none', p: '0', m: '0', textAlign: 'left' });
+
+/** A center on the trail: its pin, and its card beside it. A locked one has a grey pin and a faded card. */
+const stop = css({
+  position: 'relative',
+  display: 'grid',
+  gridTemplateColumns: '[36px 1fr]',
+  gap: '10',
+  pb: '12',
+  // the dotted trail from one center to the next
+  '&:not(:last-child)::before': {
+    content: "''",
+    position: 'absolute',
+    left: '16',
+    top: '32',
+    bottom: '0',
+    borderLeft: '[{borderWidths.thick} dashed {colors.border.strong}]',
+  },
+  // the pin and the card keep their class names for this
+  _locked: { '& .about': { opacity: 'quiet' }, '& .pin': { bg: 'title.off' } },
+});
+
+/** A center's pin on the trail, with its number on it, or a lock. */
+const pin = css({
+  w: '36',
+  h: '36',
+  borderRadius: 'disc',
+  display: 'grid',
+  placeItems: 'center',
+  bg: 'accent',
+  border: 'outline.thick',
+  color: 'fg.on-accent',
+  fontWeight: 'heavy',
+});
+
+/** A center's card. */
+const about = css({ bg: 'bg.card', border: 'card', borderRadius: '12', py: '8', px: '10' });
+
+/** A center's name. */
+const centerName = css({ fontSize: '15' });
+
+/** The stars earned in a center and to come, beside its name: gold, outlined in navy. */
+const stars = css({
+  ml: '8',
+  color: 'star',
+  fontSize: '24',
+  letterSpacing: 'stars',
+  WebkitTextStroke: '[{borderWidths.fine} {colors.outline}]',
+  paintOrder: 'stroke fill',
+});
+
+/** Small print under a name: where a center is, or what an item or achievement is. */
+const small = css({ display: 'block', fontSize: '12', opacity: 'muted' });
+
+/** A line about a center: what it is like, how it opens, or what opens it. */
+const line = css.raw({ fontSize: '13', m: '0', mt: '2', mb: '6' });
+const blurb = css(line);
+const opening = css(line, { fontSize: '12', opacity: 'soft' });
+const why = css(line, { fontWeight: 'bold', mb: '0' });
+
+/** Play, and Willow Lane's switch for the tutorial beside it. */
+const play = css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', rowGap: '8', columnGap: '14' });
+
+/** Play, without the room the go buttons usually leave above them. */
+const playButton = css({ mt: '0' });
+
+/** The switch for the tutorial, with its words. */
+const tutorialSwitch = css({ display: 'flex', alignItems: 'center', gap: '8', fontSize: '13', cursor: 'pointer' });
+
+/** The karma shop's list, and the achievements'. */
+const list = css({ listStyle: 'none', p: '0', m: '0', mt: '8', display: 'grid', gap: '6', textAlign: 'left' });
+
+/** A card in the shop or the achievements: its icon, its name over a word on it, and its price or a button to buy it. */
+const card = css.raw({
+  display: 'grid',
+  gridTemplateColumns: '[30px 1fr auto]',
+  alignItems: 'center',
+  gap: '10',
+  bg: 'bg.card',
+  border: 'card',
+  borderRadius: '12',
+  py: '6',
+  px: '10',
+  '& > .icon': { justifySelf: 'center' },
+});
+
+/** Something in the shop, Unlocked in green once it is. */
+const shopCard = css(card, { '&.owned em': { color: 'good.solid' } });
+
+/** An achievement, faded until it is earned, and then ticked in green. */
+const featCard = css(card, { '&:not(.done)': { opacity: 'muted' }, '&.done em': { color: 'good.solid' } });
+
+/** A name on a card. */
+const cardName = css({ display: 'block', fontSize: '15' });
+
+/** What something costs, or Unlocked, or a tick. */
+const price = css({ fontStyle: 'normal', fontWeight: 'heavy', fontSize: '13', whiteSpace: 'nowrap' });
+
+/** The button to unlock something with karma, smaller than the go buttons are, and grey while there is not enough. */
+const buy = css({
+  m: '0',
+  py: '4',
+  px: '10',
+  fontSize: '13',
+  whiteSpace: 'nowrap',
+  _disabled: { filter: '[grayscale(1)]', opacity: 'faint', cursor: 'default', transform: 'none' },
+});
+
+/** The heading over the floors and walls. */
+const shopHead = css({ m: '0', mt: '14', textAlign: 'left', fontSize: '15' });
+
+/** A floor or a wall, as a swatch of it. */
+const swatch = css({ w: '24', h: '24', borderRadius: '6', border: 'card' });
+
 /** The campaign's tabs, under the karma there is to spend. */
 export function CampaignPanel({ onStart, audio }: CampaignPanelProps) {
   const [tab, setTab] = useState<Tab>('centers');
   const redraw = useRedraw();
   const progress = loadCampaign();
   return (
-    <div class="campaign">
-      <p class="karma">
+    <div>
+      {/* `karma`, `stop`, `shop` and `shop-head` are for the tests, and `tabs` and `tab` for the shared tab look */}
+      <p class={cx('karma', karma)}>
         <IconText id="ui-karma">{karmaText(karmaLeft(progress))}</IconText>
       </p>
-      <div class="tabs" role="tablist">
+      <div class={cx(tabStrip(), tabs)} role="tablist">
         {TABS.map((t) => (
           <button
             key={t.id}
             role="tab"
-            class={cx('tab', tab === t.id && 'on')}
+            class={cx(tabButton(), tab === t.id && 'on')}
             aria-selected={tab === t.id ? 'true' : 'false'}
             onClick={() => {
               setTab(t.id);
@@ -69,9 +191,9 @@ function TutorialSwitch({ audio }: { audio: Audio }) {
   const redraw = useRedraw();
   const on = loadTutorialPref();
   return (
-    <label class="tutorial-switch">
+    <label class={tutorialSwitch}>
       <button
-        class={cx('switch', on && 'on')}
+        class={cx(toggleSwitch(), on && 'on')}
         role="switch"
         aria-checked={on ? 'true' : 'false'}
         aria-label="Tutorial"
@@ -95,22 +217,22 @@ function Centers({ onStart, audio }: CampaignPanelProps) {
   const cards = campaignCards(loadCampaign().stars);
   return (
     <>
-      <ol class="trail">
+      <ol class={trail}>
         {cards.map((c, i) => (
-          <li key={c.id} class={cx('stop', !c.open && 'locked')}>
-            <span class="pin">{c.open ? i + 1 : <Icon id="ui-lock" size={22} />}</span>
-            <div class="about">
-              <b>{c.name}</b>
-              <span class="stars">
+          <li key={c.id} class={cx('stop', stop, !c.open && 'locked')}>
+            <span class={cx('pin', pin)}>{c.open ? i + 1 : <Icon id="ui-lock" size={22} />}</span>
+            <div class={cx('about', about)}>
+              <b class={centerName}>{c.name}</b>
+              <span class={stars}>
                 <StarRow earned={c.earned} of={c.of} />
               </span>
-              <small>{c.place}</small>
-              <p>{c.blurb}</p>
-              <p class="opening">{c.opening}</p>
+              <small class={small}>{c.place}</small>
+              <p class={blurb}>{c.blurb}</p>
+              <p class={opening}>{c.opening}</p>
               {c.open ? (
-                <div class="play">
+                <div class={play}>
                   <button
-                    class="go"
+                    class={cx(goButton(), playButton)}
                     onClick={() => {
                       onStart(`new:${c.id}`);
                     }}
@@ -120,7 +242,7 @@ function Centers({ onStart, audio }: CampaignPanelProps) {
                   {c.id === CAMPAIGN[0] && <TutorialSwitch audio={audio} />}
                 </div>
               ) : (
-                <p class="why">{c.locked}</p>
+                <p class={why}>{c.locked}</p>
               )}
             </div>
           </li>
@@ -139,19 +261,21 @@ function Shop({ onBuy }: { onBuy: () => void }) {
         Every star in the campaign earns 2 karma, and each achievement some more. What it unlocks stays unlocked in
         every center and in the sandbox.
       </p>
-      <ul class="shop">
+      <ul class={cx('shop', list)}>
         {shopCards(loadCampaign()).map((c) => (
-          <li key={c.type} class={cx(c.state === 'owned' && 'owned')}>
+          <li key={c.type} class={cx(shopCard, c.state === 'owned' && 'owned')}>
             <Icon id={c.icon} size={28} />
             <div>
-              <b>{c.name}</b>
-              <small>{c.star === undefined ? 'Only with karma' : `Or reach star ${c.star} in each center`}</small>
+              <b class={cardName}>{c.name}</b>
+              <small class={small}>
+                {c.star === undefined ? 'Only with karma' : `Or reach star ${c.star} in each center`}
+              </small>
             </div>
             {c.state === 'owned' ? (
-              <em>Unlocked</em>
+              <em class={price}>Unlocked</em>
             ) : (
               <button
-                class="go"
+                class={cx(goButton(), buy)}
                 disabled={c.state === 'short'}
                 onClick={() => {
                   buyWithKarma(c.type);
@@ -164,20 +288,20 @@ function Shop({ onBuy }: { onBuy: () => void }) {
           </li>
         ))}
       </ul>
-      <h4 class="shop-head">Floors and walls</h4>
-      <ul class="shop">
+      <h4 class={cx('shop-head', shopHead)}>Floors and walls</h4>
+      <ul class={cx('shop', list)}>
         {decorCards(loadCampaign()).map((c) => (
-          <li key={c.key} class={cx(c.state === 'owned' && 'owned')}>
-            <i class="swatch" style={{ background: c.swatch }} />
+          <li key={c.key} class={cx(shopCard, c.state === 'owned' && 'owned')}>
+            <i class={swatch} style={{ background: c.swatch }} />
             <div>
-              <b>{c.name}</b>
-              <small>{`${c.part}, to decorate any room`}</small>
+              <b class={cardName}>{c.name}</b>
+              <small class={small}>{`${c.part}, to decorate any room`}</small>
             </div>
             {c.state === 'owned' ? (
-              <em>Unlocked</em>
+              <em class={price}>Unlocked</em>
             ) : (
               <button
-                class="go"
+                class={cx(goButton(), buy)}
                 disabled={c.state === 'short'}
                 onClick={() => {
                   buyDecorWithKarma(c.key);
@@ -199,15 +323,15 @@ function Achievements() {
   return (
     <>
       <p class="sub">Each is earned once, in whichever campaign center you do it first.</p>
-      <ul class="feats">
+      <ul class={list}>
         {achievementCards(loadCampaign()).map((a) => (
-          <li key={a.id} class={cx(a.done && 'done')}>
+          <li key={a.id} class={cx(featCard, a.done && 'done')}>
             <Icon id={a.done ? a.icon : 'ui-lock'} size={28} />
             <div>
-              <b>{a.name}</b>
-              <small>{a.desc}</small>
+              <b class={cardName}>{a.name}</b>
+              <small class={small}>{a.desc}</small>
             </div>
-            <em>{a.done ? '✓' : <IconText id="ui-karma">{karmaText(a.karma)}</IconText>}</em>
+            <em class={price}>{a.done ? '✓' : <IconText id="ui-karma">{karmaText(a.karma)}</IconText>}</em>
           </li>
         ))}
       </ul>

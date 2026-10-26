@@ -15,6 +15,8 @@ import { regularOf } from '../../../core/sim/regulars';
 import { guestFee } from '../../../core/sim/stations';
 import { upgradeSuccess } from '../../../core/sim/upgrades';
 import type { Guest } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
+import { dangerButton, goButton } from '../../../styled-system/recipes';
 import { useGame } from '../../hooks/use-hud';
 import { calmingNote, NOBODY_FREE, sendLabel, sendTitle } from '../../lib/calming';
 import { chanceText, percent, poorChance } from '../../lib/chance';
@@ -27,16 +29,40 @@ import { Button } from '../common/Button';
 import { IconText, Line } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
 
+/** The chance of success, in bold. */
+const chanceStyle = css({ fontWeight: 'bold' });
+
+/** A chance, a guess or a condition that is poor, in red. */
+const poor = css({ color: 'bad', fontWeight: 'bold' });
+
+/** The button to calm a guest, on a line of its own. */
+const calm = css({ display: 'block', mt: '8' });
+
+/**
+ * What a guest has felt, each feeling a small pill: green for a good one, red for a bad one. `good` and `bad` are for
+ * the end-to-end tests to find them by, as is `feelings`.
+ */
+const feelings = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '4',
+  mb: '4',
+  '& > span': { fontSize: '12', borderRadius: '8', py: '0', px: '6', border: '[{borderWidths.fine} solid]' },
+  '& .good': { bg: 'good.subtle', borderColor: 'good.solid' },
+  '& .bad': { bg: 'bad.bg', borderColor: 'bad.solid' },
+});
+
 /** The chance a diagnosed guest's treatment works, if given now, or what it is waiting on. */
 function ChanceLine({ guest: g }: { guest: Guest }) {
   const { sim } = useGame();
   if (g.goal !== 'treat') return null;
   const chance = sim.chanceFor(g);
   const staff = sim.staff(sim.world.item(g.station)?.staffId ?? 0);
-  if (!chance || !staff) return <p class="sub chance">Chance of success: not known until someone is at the table</p>;
+  if (!chance || !staff)
+    return <p class={cx('sub', chanceStyle)}>Chance of success: not known until someone is at the table</p>;
   const def = MODALITIES[conditionOf(g.condition).modality];
   return (
-    <p class={cx('sub', 'chance', poorChance(chance) && 'poor')}>
+    <p class={cx('sub', chanceStyle, poorChance(chance) && poor)}>
       {`Chance of success: ${chanceText(chance, def, staff.name)}`}
     </p>
   );
@@ -47,7 +73,7 @@ function ConditionLine({ guest: g }: { guest: Guest }) {
   const note = conditionNote(g);
   if (!note) return null;
   return (
-    <p class={cx('sub', 'condition', note.poor && 'poor')}>
+    <p class={cx('sub', note.poor && poor)}>
       <Line line={note} />
     </p>
   );
@@ -66,7 +92,7 @@ function CalmRunner({ guest: g }: { guest: Guest }) {
   const sent = sim.canCalm(g) ? sim.calmerFor(g) : undefined;
   return (
     <Button
-      class="go calm"
+      class={cx(goButton(), calm)}
       locked={!sent}
       title={sent ? sendTitle(sent) : NOBODY_FREE}
       onPress={() => {
@@ -95,7 +121,7 @@ function CalmButton({ guest: g }: { guest: Guest }) {
     );
   return (
     <Button
-      class="go calm"
+      class={cx(goButton(), calm)}
       locked={o.calms <= 0}
       title="Spot the stressed by their sweating and fidgeting. A session given to a guest who was fine is wasted."
       onPress={() => {
@@ -135,7 +161,7 @@ function Feelings({ guest: g }: { guest: Guest }) {
   return (
     <>
       <h4>How they feel</h4>
-      <div class="feelings">
+      <div class={cx('feelings', feelings)}>
         {g.feelings.map((f) => (
           <span key={f} class={FEELINGS[f].good ? 'good' : 'bad'}>
             <IconText id={FEELINGS[f].icon}>{FEELINGS[f].text}</IconText>
@@ -193,7 +219,7 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
         </p>
       )}{' '}
       {g.guessed && (
-        <p class="sub guessed poor">
+        <p class={cx('sub', poor)}>
           <IconText id="ui-warning">{`Best guess, not scanned: ${percent(GUESS_PENALTY)} less chance of success`}</IconText>
         </p>
       )}{' '}
@@ -230,7 +256,7 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
       <CalmButton guest={g} />
       {g.state !== 'leaving' && g.state !== 'running' && (
         <Button
-          class="danger sendhome"
+          class={cx(dangerButton(), 'sendhome')}
           title="They leave without treatment: no fee, and a small knock to your reputation."
           onPress={() => {
             sim.sendHome(g.id);

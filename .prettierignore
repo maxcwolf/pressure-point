@@ -7,3 +7,4 @@ balance-results/
 playwright-report/
 .yarn/
 yarn.lock
+src/styled-system/

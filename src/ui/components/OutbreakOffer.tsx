@@ -3,11 +3,17 @@
 import { answerOffer } from '../../app/analytics';
 import { OUTBREAK_DAYS } from '../../core/data';
 import { money } from '../../core/format';
+import { css } from '../../styled-system/css';
+import { buttonRow, goButton, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
+import { cx } from '../lib/cx';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
+
+/** A stress outbreak's panel, in purple; it takes an offer's look from the column it is in (EmergencyOffer.tsx). */
+const outbreakColor = css({ borderColor: 'notice.outbreak' });
 
 /** The stress outbreak on offer: in full with Accept and Decline, or tucked away as a button showing the time left. */
 export function OutbreakOffer() {
@@ -20,7 +26,7 @@ export function OutbreakOffer() {
   if (hud.outbreakAside === offer.deadline)
     return (
       <Button
-        class="panel offer-pill outbreak-pill"
+        class={cx(panelCard(), 'offer-pill', outbreakColor)}
         title="Show the stress outbreak"
         onPress={() => {
           hud.outbreakAside = null;
@@ -33,7 +39,7 @@ export function OutbreakOffer() {
       </Button>
     );
   return (
-    <div class="panel offer outbreak">
+    <div class={cx(panelCard(), 'offer', outbreakColor)}>
       <Button
         class="later"
         title="Decide later"
@@ -60,9 +66,9 @@ export function OutbreakOffer() {
         <span>{`Offer lapses: ${timeLeftLabel(left.days)}`}</span>
         {timer}
       </div>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
-          class="go"
+          class={goButton()}
           onPress={() => {
             const offer = sim.s.outbreakOffer;
             sim.acceptOutbreak();

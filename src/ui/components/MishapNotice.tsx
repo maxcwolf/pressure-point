@@ -3,11 +3,20 @@
 import { ITEMS, MISHAPS } from '../../core/data';
 import { money } from '../../core/format';
 import { mishapDaysLeft, mishapHolder } from '../../core/sim/mishaps';
+import { css } from '../../styled-system/css';
+import { buttonRow, goButton, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
+import { cx } from '../lib/cx';
 import { mishapLine, noticeShare, preparedNote, startsIn } from '../lib/mishaps';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
+
+/**
+ * A mishap's panel, in amber, tinted while it is under way; it takes the look of an offer from the column it is in
+ * (EmergencyOffer.tsx). `mishap` and `mishap-pill` are for the end-to-end tests to find them by.
+ */
+const mishapColor = css({ borderColor: 'notice.mishap', _on: { bg: 'highlight.bg' } });
 
 /** The mishap coming or under way: in full with Prepare while undecided, otherwise a line with its countdown. */
 export function MishapNotice() {
@@ -23,7 +32,7 @@ export function MishapNotice() {
   const holder = held && ITEMS[held.type].name;
   if (m.started)
     return (
-      <div class="panel offer-pill mishap-pill on">
+      <div class={cx(panelCard(), 'offer-pill', 'mishap-pill', 'on', mishapColor)}>
         <span>
           <IconText id={def.icon}>{mishapLine(def, m, left, holder)}</IconText>
         </span>
@@ -33,7 +42,7 @@ export function MishapNotice() {
   if (m.prepared || holder || m.ward || hud.mishapAside === m.starts)
     return (
       <Button
-        class="panel offer-pill mishap-pill"
+        class={cx(panelCard(), 'offer-pill', 'mishap-pill', mishapColor)}
         title={
           m.prepared
             ? def.prepare.effect
@@ -52,7 +61,7 @@ export function MishapNotice() {
       </Button>
     );
   return (
-    <div class="panel offer mishap">
+    <div class={cx(panelCard(), 'offer', 'mishap', mishapColor)}>
       <h3>
         <IconText id={def.icon}>{`${def.name} coming`}</IconText>
       </h3>
@@ -62,9 +71,9 @@ export function MishapNotice() {
         <span>{startsIn(left)}</span>
         {timer}
       </div>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         <Button
-          class="go"
+          class={goButton()}
           locked={s.money < def.prepare.cost}
           title={s.money < def.prepare.cost ? "You can't afford it" : def.prepare.effect}
           quiet

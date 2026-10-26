@@ -1,10 +1,47 @@
 // The More tab at the foot of a card that scrolls.
 
-import './ScrollTab.css';
-
 import { useContext } from 'preact/hooks';
 
+import { css } from '../../../styled-system/css';
 import { HudContext } from '../../hooks/use-hud';
+
+// The tab sits on the card's bottom edge, over the fade ui/scroll-cue.ts draws, and takes no room.
+
+/** The foot of the card, stuck to its bottom edge as it scrolls, with no height of its own. */
+const foot = css({
+  position: 'sticky',
+  bottom: '[calc(-1 * var(--cue-pb, {spacing.12}))]',
+  h: '0',
+  flex: 'none',
+  zIndex: 'cue',
+  pointerEvents: 'none',
+});
+
+/** The tab: a cream pill with a chevron, shown and nodding while the card has more below. */
+const tab = css({
+  position: 'absolute',
+  bottom: '[calc(var(--cue-pb, {spacing.12}) + {spacing.4})]',
+  left: 'half',
+  translate: '[-50% 0]',
+  w: '44',
+  h: '20',
+  p: '0',
+  border: 'outline',
+  borderRadius: 'pill',
+  background:
+    "[{colors.control} url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3E%3Cpath d='M2 2l6 6 6-6' fill='none' stroke='%2324384a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") center / {sizes.16} {sizes.10} no-repeat]",
+  boxShadow: 'low',
+  cursor: 'pointer',
+  opacity: 'hidden',
+  pointerEvents: 'none',
+  transition: '[opacity {durations.fast}]',
+  // it nods, so the eye finds it
+  animation: '[tab-nod {durations.loop} {easings.in-out} infinite]',
+  "[data-more~='below'] > .scroll-foot > &": { opacity: 'full', pointerEvents: 'auto' },
+  _hover: { bgColor: 'bg.card' },
+  _active: { translate: '[-50% 2px]', boxShadow: 'flat', animation: 'none' },
+  _motionReduce: { animation: 'none' },
+});
 
 /** How much of what a card shows one press of its tab scrolls past. */
 const PAGE = 0.8;
@@ -17,10 +54,10 @@ const PAGE = 0.8;
 export function ScrollTab() {
   const hud = useContext(HudContext);
   return (
-    <div class="scroll-foot">
+    <div class={`scroll-foot ${foot}`}>
       <button
         type="button"
-        class="scroll-tab"
+        class={tab}
         tabIndex={-1}
         title="More below"
         onPointerDown={(e) => {

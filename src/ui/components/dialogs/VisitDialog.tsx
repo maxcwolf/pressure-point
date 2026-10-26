@@ -1,14 +1,44 @@
 // The report after a VIP's visit or an inspection.
 
-import './VisitDialog.css';
-
 import { money } from '../../../core/format';
+import { css } from '../../../styled-system/css';
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { reportHeading, reportSummary, verdictTone } from '../../lib/visits';
 import { Button } from '../common/Button';
 import { IconText, Line } from '../common/Icon';
 import { Dialog } from './Dialog';
+
+/**
+ * The rooms a visitor saw, each a card with its name and their note on it, the VIP's score to the right; a room they
+ * loved is gold, and one they did not like red. The visitor's inspector lists them the same way. `visit-rooms`, on the
+ * dialog's list, is for the end-to-end tests to find it by.
+ */
+export const visitRooms = css({
+  listStyle: 'none',
+  p: '0',
+  my: '10',
+  mx: '0',
+  display: 'grid',
+  gap: '6',
+  textAlign: 'left',
+  '& li': {
+    display: 'grid',
+    gridTemplateColumns: '[1fr auto]',
+    alignItems: 'center',
+    columnGap: '8',
+    border: 'divider',
+    borderRadius: '10',
+    py: '4',
+    px: '8',
+    bg: 'bg.card',
+  },
+  '& li.good': { borderColor: 'highlight', bg: 'highlight.bg' },
+  '& li.bad': { borderColor: 'bad.border', bg: 'bad.bg' },
+  '& small': { gridColumn: '1', fontSize: '12', lineHeight: 'snug' },
+  '& em': { gridColumn: '2', gridRow: '[1 / span 2]', fontStyle: 'normal', fontWeight: 'heavy', fontSize: '17' },
+});
 
 /** How the last visit went: the verdict, and each room the visitor saw with what they made of it. */
 export function VisitDialog() {
@@ -22,7 +52,7 @@ export function VisitDialog() {
         <Line line={reportHeading(report)} />
       </h2>
       <p>{reportSummary(report)}</p>
-      <ul class="visit-rooms">
+      <ul class={cx('visit-rooms', visitRooms)}>
         {report.rooms.map((r) => (
           <li key={r.room} class={cx(verdictTone(r))}>
             <b>{r.name}</b>
@@ -33,7 +63,7 @@ export function VisitDialog() {
       </ul>
       {report.bribe === undefined ? (
         <Button
-          class="go"
+          class={goButton()}
           onPress={() => {
             hud.close();
           }}
@@ -41,9 +71,9 @@ export function VisitDialog() {
           Back to work
         </Button>
       ) : (
-        <div class="btnrow">
+        <div class={buttonRow()}>
           <Button
-            class="go"
+            class={goButton()}
             onPress={() => {
               sim.settleInspection(false);
               hud.close();

@@ -2,16 +2,64 @@
 // each, a closing word, and Show me when it is about someone or points at a menu, or a button to place the item it
 // is about.
 
-import './LessonDialog.css';
-
 import { ITEMS } from '../../../core/data';
 import { an } from '../../../core/format';
 import { lessonCard } from '../../../core/sim/lessons';
+import { css } from '../../../styled-system/css';
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { Icon } from '../common/Icon';
 import { Dialog } from './Dialog';
+
+/** The kicker over the title, small and in capitals. */
+const kicker = css({
+  fontSize: '12 !important',
+  fontWeight: 'bold',
+  letterSpacing: 'wider',
+  textTransform: 'uppercase',
+  color: 'fg.accent',
+  mb: '2',
+});
+
+/**
+ * The strip of pictures, each on a white card with its label and a line under it. `lesson-strip` is for the end-to-end
+ * tests to find it by.
+ */
+const strip = css({
+  listStyle: 'none',
+  p: '0',
+  my: '14',
+  mx: '0',
+  display: 'grid',
+  gridTemplateColumns: '[repeat(auto-fit, minmax(120px, 1fr))]',
+  gap: '10',
+  '& li': {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '4',
+    py: '10',
+    px: '8',
+    bg: 'bg.card',
+    border: 'divider',
+    borderRadius: '12',
+  },
+  '& b': { fontSize: '14' },
+  '& small': { fontSize: '13', lineHeight: 'snug' },
+});
+
+/** A picture's icon, in a cream circle. */
+const picture = css({
+  w: '64',
+  h: '64',
+  display: 'grid',
+  placeItems: 'center',
+  borderRadius: 'disc',
+  bg: 'bg.panel',
+  border: 'outline',
+});
 
 /** The lesson raised last. */
 export function LessonDialog() {
@@ -27,13 +75,13 @@ export function LessonDialog() {
   const showsMe = !place && (!!raised.about || !!lesson.showMe);
   return (
     <Dialog wide>
-      <p class="lesson-kicker">Tutorial</p>
+      <p class={kicker}>Tutorial</p>
       <h2>{lesson.title}</h2>
       <p>{lesson.intro}</p>
-      <ol class="lesson-strip">
+      <ol class={cx('lesson-strip', strip)}>
         {lesson.panels.map((p) => (
           <li key={p.label}>
-            <span class="picture">
+            <span class={picture}>
               <Icon id={p.icon} size={44} />
             </span>
             <b>{p.label}</b>
@@ -42,7 +90,7 @@ export function LessonDialog() {
         ))}
       </ol>
       <p>{lesson.body}</p>
-      <div class="btnrow">
+      <div class={buttonRow()}>
         {showsMe && (
           <Button
             onPress={() => {
@@ -53,7 +101,7 @@ export function LessonDialog() {
           </Button>
         )}
         <Button
-          class={cx(!place && 'go')}
+          class={cx(!place && goButton())}
           onPress={() => {
             hud.close();
           }}
@@ -62,7 +110,7 @@ export function LessonDialog() {
         </Button>
         {place && (
           <Button
-            class="go"
+            class={goButton()}
             onPress={() => {
               hud.showLesson(raised);
             }}

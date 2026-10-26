@@ -1,6 +1,6 @@
 // The Policy menu: how sure a diagnosis must be, who goes first, and when staff take breaks.
 
-import './PolicyMenu.css';
+import type { ComponentChildren } from 'preact';
 
 import {
   BREAK_AT_MAX,
@@ -11,14 +11,31 @@ import {
   ROLE_ORDER,
   ROLES,
 } from '../../../core/data';
+import { css } from '../../../styled-system/css';
+import { Box } from '../../../styled-system/jsx';
+import { panelCard } from '../../../styled-system/recipes';
 import { useGame } from '../../hooks/use-hud';
 import { percent } from '../../lib/chance';
 import { cx } from '../../lib/cx';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
+import { menuPanel } from './looks';
 
 /** The most of one role a break limit can be set to; above it, the limit is off. */
 const MAX_BREAK_LIMIT = 5;
+
+/** A small square button, such as a stepper's − and +, or a wider one with words and a little room each side. */
+const control = css({
+  border: 'outline.thin',
+  borderRadius: '8',
+  bg: 'control',
+  fontWeight: 'bold',
+  h: 'control',
+  _locked: { opacity: 'locked' },
+});
+
+/** A switch with words on it, gold while it is on. */
+const toggle = css({ px: '12', py: '0', _on: { bg: 'toggle.on' } });
 
 /** A setting with a value and a pair of buttons to step it down and up, its name above them or, inline, beside them. */
 function Stepper(props: {
@@ -32,11 +49,22 @@ function Stepper(props: {
   onStep: (by: number) => void;
 }) {
   return (
-    <div class={cx('stepper', props.inline && 'inline')}>
-      <span>
+    // `stepper` is for the end-to-end tests to find it by
+    <Box
+      className="stepper"
+      display="grid"
+      gridTemplateColumns={props.inline ? '[1fr 28px 40px 28px]' : '[28px minmax(90px, auto) 28px 1fr]'}
+      alignItems="center"
+      columnGap="6"
+      rowGap="4"
+      mb="4"
+    >
+      {/* the name takes a line of its own above the buttons, unless it is a short one on the same line */}
+      <Box as="span" gridColumn={props.inline ? 'auto' : '[1 / -1]'}>
         <IconText id={props.icon}>{props.name}</IconText>
-      </span>
+      </Box>
       <Button
+        class={control}
         locked={props.atMin}
         onPress={() => {
           props.onStep(-1);
@@ -44,8 +72,11 @@ function Stepper(props: {
       >
         −
       </Button>
-      <b>{props.value}</b>
+      <Box as="b" textAlign="center">
+        {props.value}
+      </Box>
       <Button
+        class={control}
         locked={props.atMax}
         onPress={() => {
           props.onStep(1);
@@ -53,7 +84,34 @@ function Stepper(props: {
       >
         +
       </Button>
-    </div>
+    </Box>
+  );
+}
+
+/** One setting's card: its name, its controls, and a word on what it trades off. */
+function Card(props: { children: ComponentChildren }) {
+  return (
+    <Box bg="bg.card" border="card" borderRadius="12" py="8" px="10" fontSize="14">
+      {props.children}
+    </Box>
+  );
+}
+
+/** A card's heading, or a heading partway down one. */
+function Heading(props: { children: ComponentChildren }) {
+  return (
+    <Box as="h4" fontWeight="bold" mt="2" mb="6">
+      {props.children}
+    </Box>
+  );
+}
+
+/** What a setting trades off, in smaller and fainter words under it. */
+function Note(props: { children: ComponentChildren }) {
+  return (
+    <Box as="p" fontSize="13" opacity="muted" mt="6" mb="8">
+      {props.children}
+    </Box>
   );
 }
 
@@ -63,11 +121,11 @@ export function PolicyMenu() {
   const p = sim.s.policy;
   const roles = ROLE_ORDER.filter((r) => sim.s.staff.some((st) => st.role === r));
   return (
-    <div class="panel menu policy-menu">
+    <div class={cx(panelCard(), menuPanel)}>
       <h3>Policy</h3>
-      <div class="policy-cards">
-        <div class="policy-card">
-          <h4>Diagnosis</h4>
+      <Box display="grid" gridTemplateColumns="[repeat(auto-fit, minmax(220px, 1fr))]" gap="12">
+        <Card>
+          <Heading>Diagnosis</Heading>
           <Stepper
             name="Treat once a diagnosis is"
             value={`${percent(p.diagnosis)} sure`}
@@ -77,15 +135,15 @@ export function PolicyMenu() {
               sim.setPolicy({ diagnosis: p.diagnosis + by * 0.05 });
             }}
           />
-          <p class="sub">
+          <Note>
             Surer diagnoses make treatments likelier to work, but take more consultations and longer waits. Nobody is
             consulted more than four times.
-          </p>
-        </div>
-        <div class="policy-card">
-          <h4>Emergencies</h4>
+          </Note>
+        </Card>
+        <Card>
+          <Heading>Emergencies</Heading>
           <Button
-            class={cx('toggle', 'emergencies-first', p.emergenciesFirst && 'on')}
+            class={`${control} ${toggle}${p.emergenciesFirst ? ' on' : ''}`}
             onPress={() => {
               sim.setPolicy({ emergenciesFirst: !p.emergenciesFirst });
             }}
@@ -94,13 +152,13 @@ export function PolicyMenu() {
               {p.emergenciesFirst ? 'Emergencies first: on' : 'Emergencies first: off'}
             </IconText>
           </Button>
-          <p class="sub">Emergency guests are called ahead of everyone else in line, whatever their place in it.</p>
-        </div>
+          <Note>Emergency guests are called ahead of everyone else in line, whatever their place in it.</Note>
+        </Card>
         {sim.mushroomSupplier() && (
-          <div class="policy-card">
-            <h4>Mushrooms</h4>
+          <Card>
+            <Heading>Mushrooms</Heading>
             <Button
-              class={cx('toggle', 'stash-mushrooms', p.stashMushrooms && 'on')}
+              class={`${control} ${toggle}${p.stashMushrooms ? ' on' : ''}`}
               onPress={() => {
                 sim.setPolicy({ stashMushrooms: !p.stashMushrooms });
               }}
@@ -109,14 +167,14 @@ export function PolicyMenu() {
                 {p.stashMushrooms ? 'Hide from inspector: on' : 'Hide from inspector: off'}
               </IconText>
             </Button>
-            <p class="sub">
+            <Note>
               The mushrooms under the Shop Counter are put away as soon as the health inspector writes ahead, and come
               back out once they have gone.
-            </p>
-          </div>
+            </Note>
+          </Card>
         )}
-        <div class="policy-card">
-          <h4>Breaks</h4>
+        <Card>
+          <Heading>Breaks</Heading>
           <Stepper
             name="Take a break below"
             value={`${p.breakAt} energy`}
@@ -126,8 +184,8 @@ export function PolicyMenu() {
               sim.setPolicy({ breakAt: p.breakAt + by * 5 });
             }}
           />
-          <p class="sub">Earlier breaks keep staff fresher, but leave their stations empty more often.</p>
-          {roles.length > 0 && <h4>On a break at once</h4>}
+          <Note>Earlier breaks keep staff fresher, but leave their stations empty more often.</Note>
+          {roles.length > 0 && <Heading>On a break at once</Heading>}
           {roles.map((role) => {
             const limit = p.breakLimit[role] ?? 0;
             return (
@@ -147,8 +205,8 @@ export function PolicyMenu() {
               />
             );
           })}
-        </div>
-      </div>
+        </Card>
+      </Box>
     </div>
   );
 }

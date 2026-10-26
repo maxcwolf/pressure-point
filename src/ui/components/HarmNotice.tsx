@@ -4,10 +4,48 @@
 import { ROLES } from '../../core/data';
 import { an } from '../../core/format';
 import type { HarmNote } from '../../core/state/types';
+import { css } from '../../styled-system/css';
+import { buttonRow, goButton, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import type { HudState } from '../hud';
+import { cx } from '../lib/cx';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
+
+/** The explanation: a panel in red, popping in, its words to the left. */
+const card = css({
+  position: 'relative',
+  borderColor: 'notice.harm',
+  textAlign: 'left',
+  animation: '[pop {durations.normal} {easings.out}]',
+});
+
+/** Its heading, smaller than a panel's. */
+const heading = css({ fontSize: '15' });
+
+/** What the harm is costing, and how many more explanations wait after this one, close under the heading. */
+const cost = css({ fontSize: '14', lineHeight: 'snug', mt: '0' });
+
+/** What is behind it, a line each with how much it adds, on a faint ground; the first, the biggest, in bold. */
+const causes = css({
+  listStyle: 'none',
+  py: '6',
+  px: '8',
+  my: '8',
+  mx: '0',
+  bg: 'bg.subtle',
+  borderRadius: '8',
+  fontSize: '13',
+  '& li': { display: 'flex', justifyContent: 'space-between', gap: '10', py: '1', px: '0' },
+  '& li:first-child': { fontWeight: 'bold' },
+  '& b': { color: 'bad', whiteSpace: 'nowrap' },
+});
+
+/** The way to the fix, in words. */
+const help = css({ fontSize: '14', lineHeight: 'snug' });
+
+/** Its buttons, at the left. */
+const buttons = css({ justifyContent: 'flex-start' });
 
 /** What the button to the fix says. */
 function fixLabel(fix: NonNullable<HarmNote['fix']>): string {
@@ -39,15 +77,15 @@ export function HarmNotice() {
   if (!note) return null;
   const { about, fix } = note;
   return (
-    <div class="panel offer harm">
-      <h3>
+    <div class={cx(panelCard(), card)}>
+      <h3 class={heading}>
         <IconText id="ui-warning">{note.title}</IconText>
       </h3>
-      <p class="sub">
+      <p class={cx('sub', cost)}>
         {note.cost}
         {sim.s.harmNotes.length > 1 && ` · ${sim.s.harmNotes.length - 1} more after this`}
       </p>
-      <ul class="causes">
+      <ul class={causes}>
         {note.causes.map((c) => (
           <li key={c.label}>
             <span>{c.label}</span>
@@ -55,11 +93,11 @@ export function HarmNotice() {
           </li>
         ))}
       </ul>
-      <p class="help">{note.help}</p>
-      <div class="btnrow">
+      <p class={help}>{note.help}</p>
+      <div class={cx(buttonRow(), buttons)}>
         {about && (
           <Button
-            class={fix ? '' : 'go'}
+            class={fix ? '' : goButton()}
             onPress={() => {
               hud.show(about);
             }}
@@ -69,7 +107,7 @@ export function HarmNotice() {
         )}
         {fix && (
           <Button
-            class="go"
+            class={goButton()}
             onPress={() => {
               openFix(hud, fix);
             }}

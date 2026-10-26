@@ -5,8 +5,7 @@
 import '@fontsource/fredoka/latin-400.css';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
-import '../ui/theme/tokens.css';
-import './icons.css';
+import '../ui/theme/panda.css';
 
 import { render } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -22,7 +21,9 @@ import { iconTexture, loadIcons } from '../render/models/icons';
 import { buildItem } from '../render/models/items';
 import { poseChar } from '../render/pose';
 import { H_TALL, WALL_T } from '../render/shared';
+import { css } from '../styled-system/css';
 import { Icon } from '../ui/components/common/Icon';
+import { cx } from '../ui/lib/cx';
 import { demoGuest, demoStaff, LAB_LOOK } from './people';
 
 /** What the page offers tests: whether the scene has been drawn with the atlas in. */
@@ -71,23 +72,115 @@ type Variant = 'game' | 'plain' | 'bubble';
 /** Whether an icon is meant to be drawn plain in the scene: a sign or a marker rather than something said. */
 const plainInGame = (id: SceneIconId) => !id.startsWith('bubble-');
 
+/** The page: every icon by family in cards, then the scene with every icon it draws, in the game's font on cream. */
+const page = css({
+  '&, & *': { boxSizing: 'border-box' },
+  '& body': { m: '0', p: '[16px 16px 0]', bg: 'bg.panel', fontFamily: 'body', color: 'fg' },
+});
+
+/** The heading over the sheet: the page's name, what is on it, and the way to the model lab, wrapping as it must. */
+const header = css({ display: 'flex', alignItems: 'baseline', gap: '[16px]', flexWrap: 'wrap' });
+
+/** The page's name. */
+const title = css({ m: '0', fontSize: '[24px]', fontWeight: 'bold' });
+
+/** What is on the page, taking the room between its name and the link. */
+const intro = css({ m: '0', flex: '1', fontSize: '[13px]', opacity: '[0.8]' });
+
+/** The way to the model lab. */
+const link = css({ color: 'fg.accent', fontWeight: 'bold' });
+
+/** A heading over a family of icons, or over the scene. */
+const heading = css({ m: '[18px 0 8px]', fontSize: '[16px]', fontWeight: 'bold' });
+
+/** What a family is for and how it is colored, after its name. */
+const headingNote = css({ fontWeight: '[400]', fontSize: '13', opacity: '[0.7]', ml: '6' });
+
+/** A family's cards, wrapping onto as many lines as they take. */
+const cards = css({ display: 'flex', flexWrap: 'wrap', gap: '6' });
+
+/** One card, on sand. */
+const card = css({ m: '0', p: '[6px 8px 4px]', borderRadius: '[10px]', bg: 'bg.inset' });
+
+/** A card's icons in a row, at each size. */
+const sizes = css({ display: 'flex', alignItems: 'center', gap: '8' });
+
+/** An icon on a white row, as the interface's lists show them. */
+const onRow = css({
+  display: 'inline-grid',
+  placeItems: 'center',
+  p: '[3px]',
+  bg: 'bg.card',
+  border: 'card',
+  borderRadius: '[8px]',
+});
+
+/** An icon on a HUD button: a teal disc edged in navy. */
+const onButton = css({
+  display: 'inline-grid',
+  placeItems: 'center',
+  w: '[44px]',
+  h: '[44px]',
+  borderRadius: '[50%]',
+  border: '[3px solid {colors.outline}]',
+  bg: 'accent',
+});
+
+/** The icon's id, under its card's icons. */
+const caption = css({ mt: '[3px]', fontSize: '[11px]', fontFamily: '[ui-monospace, monospace]' });
+
+/** The heading over the scene, a little further from the sheet. */
+const sceneTitle = css({ mt: '[24px]' });
+
+/**
+ * The scene, the full width of the page. It is as tall as the window, as the game's own view is, so the sprites come
+ * out the size a player sees them.
+ */
+const sceneStyle = css({
+  position: 'relative',
+  m: '[0 -16px]',
+  h: '[100vh]',
+  '& canvas': { display: 'block', w: '[100%]', h: '[100%]' },
+});
+
+/** The scene's settings, in a cream box over its top left. */
+const controls = css({
+  position: 'absolute',
+  top: '[12px]',
+  left: '[16px]',
+  display: 'flex',
+  gap: '12',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  p: '[8px 12px]',
+  border: '[3px solid {colors.outline}]',
+  borderRadius: '[14px]',
+  bg: 'bg.panel',
+  fontSize: '[13px]',
+  '& label': { display: 'flex', gap: '6', alignItems: 'center', fontWeight: 'bold' },
+  '& select': { font: 'inherit', fontWeight: '[400]' },
+});
+
+/** How to get round the scene, after its settings. */
+const hint = css({ opacity: '[0.7]' });
+
 /** One card on the sheet: an icon at 12 and 16 pixels, at 24 on cream and on a white row, on a HUD button, and at 48. */
 function Card({ id }: { id: IconId }) {
   return (
-    <figure class="card">
-      <div class="sizes">
+    <figure class={card}>
+      <div class={sizes}>
         <Icon id={id} size={12} />
         <Icon id={id} size={16} />
         <Icon id={id} size={24} />
-        <span class="row">
+        <span class={onRow}>
           <Icon id={id} size={24} />
         </span>
-        <span class="round">
+        <span class={onButton}>
           <Icon id={id} size={26} />
         </span>
         <Icon id={id} size={48} />
       </div>
-      <figcaption>{id}</figcaption>
+      <figcaption class={caption}>{id}</figcaption>
     </figure>
   );
 }
@@ -251,9 +344,10 @@ function Scene() {
   }, [distance, variant]);
 
   return (
-    <section class="scene">
+    // `scene` and `controls` are for the screenshot tests to find the scene by, and to hide its settings
+    <section class={cx('scene', sceneStyle)}>
       <canvas ref={canvas} />
-      <div class="controls">
+      <div class={cx('controls', controls)}>
         <label>
           Camera
           <select value={distance} onChange={(e) => setDistance(e.currentTarget.value as Distance)}>
@@ -270,7 +364,7 @@ function Scene() {
             <option value="bubble">All in bubbles</option>
           </select>
         </label>
-        <span class="hint">Drag to turn · scroll to zoom · right-drag to pan</span>
+        <span class={hint}>Drag to turn · scroll to zoom · right-drag to pan</span>
       </div>
     </section>
   );
@@ -280,23 +374,26 @@ function Scene() {
 function Page() {
   return (
     <>
+      {/* `sheet` is for the screenshot tests to find it by */}
       <div class="sheet">
-        <header>
-          <h1>Icons</h1>
-          <p>
+        <header class={header}>
+          <h1 class={title}>Icons</h1>
+          <p class={intro}>
             {`${ICON_IDS.length} icons, ${SCENE_ICON_IDS.length} of them drawn in the scene. `}
             Each card: 12 and 16 pixels (the small sheet), 24 on cream and on a white row, on a HUD button, and 48. The
             drawings are in src/ui/icons/, with simpler ones for small sizes in small/; run <code>yarn icons</code>{' '}
             after changing one.
           </p>
-          <a href="/lab.html">Model lab</a>
+          <a class={link} href="/lab.html">
+            Model lab
+          </a>
         </header>
         {FAMILIES.map(([prefix, name, note]) => (
-          <section key={prefix} class="family">
-            <h2>
-              {name} <small>{note}</small>
+          <section key={prefix}>
+            <h2 class={heading}>
+              {name} <small class={headingNote}>{note}</small>
             </h2>
-            <div class="cards">
+            <div class={cards}>
               {ICON_IDS.filter((id) => id.startsWith(`${prefix}-`)).map((id) => (
                 <Card key={id} id={id} />
               ))}
@@ -304,14 +401,19 @@ function Page() {
           </section>
         ))}
       </div>
-      <h2 class="scene-title">
-        In the scene <small>Speech bubbles over people, signs over doorways, markers over squares and furniture</small>
+      <h2 class={cx(heading, sceneTitle)}>
+        In the scene{' '}
+        <small class={headingNote}>
+          Speech bubbles over people, signs over doorways, markers over squares and furniture
+        </small>
       </h2>
       <Scene />
     </>
   );
 }
 
+// the sheet draws its own page, as the game's page-wide styles are kept to the game's
+document.documentElement.className = page;
 // a page of its own rather than the body, which the sprite sheet is put into
 const root = document.createElement('div');
 document.body.append(root);

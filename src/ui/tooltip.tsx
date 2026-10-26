@@ -1,11 +1,77 @@
 // Tooltips: the words a control shows while the pointer rests on it, drawn in the game's own style rather than the browser's.
 
-import './tooltip.css';
-
 import { type ComponentChild, options, render, type VNode } from 'preact';
 
 import { loadDisplay } from '../storage/display';
+import { css } from '../styled-system/css';
 import { Icon } from './components/common/Icon';
+
+/** The tooltip: a navy bubble with a point toward what it explains, a gold heading and keys drawn as keys. */
+const bubble = css({
+  position: 'fixed',
+  left: '0',
+  top: '0',
+  zIndex: 'tooltip',
+  pointerEvents: 'none',
+  w: 'max-content',
+  // drawn at the interface's size over the game (set as it shows), and at the usual size elsewhere
+  zoom: 'var(--ui-scale)',
+  maxW: '[min({sizes.panel.tooltip}, calc(100vw / var(--ui-scale) - 16px))]',
+  p: '12',
+  pt: '6',
+  pb: '8',
+  bg: 'bg.inverse',
+  color: 'fg.inverse',
+  borderRadius: '12',
+  boxShadow: 'float',
+  fontSize: '14',
+  fontWeight: 'medium',
+  lineHeight: 'normal',
+  textWrap: 'pretty',
+  // it rises a little toward what it explains as it appears
+  animation: '[tip-in {durations.fast} {easings.out}]',
+  '&[hidden]': { display: 'none' },
+  // the point, under the bubble or, when it shows below what it explains, over it
+  '&::after': {
+    content: "''",
+    position: 'absolute',
+    left: '[var(--arrow-x, 50%)]',
+    bottom: '-4',
+    w: '12',
+    h: '12',
+    ml: '-6',
+    bg: 'bg.inverse',
+    borderRadius: '2',
+    transform: 'rotate(45deg)',
+  },
+  '&.below::after': { bottom: 'auto', top: '-4' },
+  '& strong': { display: 'block', color: 'star', fontSize: '14', fontWeight: 'bold', mb: '1' },
+  '& kbd': {
+    display: 'inline-block',
+    fontFamily: 'inherit',
+    fontSize: '12',
+    fontWeight: 'bold',
+    lineHeight: 'relaxed',
+    minW: '20',
+    textAlign: 'center',
+    py: '0',
+    px: '6',
+    ml: '6',
+    color: 'fg.inverse',
+    bg: 'bg.inverse-subtle',
+    border: '[{borderWidths.fine} solid {colors.border.inverse}]',
+    borderBottomWidth: 'thick',
+    borderRadius: '6',
+    verticalAlign: '[1px]',
+  },
+  '& kbd + kbd': { ml: '4' },
+  '&.below': { animationName: 'tip-in-below' },
+  // an item's tooltip (ItemTip) is a little wider than most, for its list of stats
+  '&.rich': { maxW: '[min(300px, calc(var(--vw) - 16px))]' },
+  _motionReduce: { animation: 'none' },
+  // an icon in the navy bubble sits on a cream chip, or its navy outline would vanish
+  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '1' },
+});
 
 /** How long the pointer rests on something before its tooltip shows. */
 const DELAY = 380;
@@ -113,6 +179,7 @@ export function installTooltips() {
 
   const tip = document.createElement('div');
   tip.id = 'tip';
+  tip.className = bubble;
   // the element it explains already carries the same words for a screen reader, so this is for the eye alone
   tip.setAttribute('aria-hidden', 'true');
   tip.hidden = true;

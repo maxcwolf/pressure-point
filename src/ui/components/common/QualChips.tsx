@@ -1,10 +1,33 @@
 // Chips naming treatments.
 
-import './QualChips.css';
-
 import { GENERAL_COURSES, type GeneralId, isGeneral, MODALITIES, type Modality } from '../../../core/data';
 import type { CourseId } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
+import { cx } from '../../lib/cx';
 import { IconText } from './Icon';
+
+/** The row of chips, each a treatment or a course in a small lilac pill. */
+const chips = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '4',
+  m: '0',
+  mt: '2',
+  mb: '4',
+  '& > span': {
+    fontSize: '12',
+    fontWeight: 'medium',
+    bg: 'special.bg',
+    border: '[{borderWidths.fine} solid {colors.special.solid}]',
+    borderRadius: '8',
+    py: '0',
+    px: '6',
+    whiteSpace: 'nowrap',
+  },
+  '& > span.general': { bg: 'highlight.bg', borderColor: 'highlight' },
+  // the course they are on, not yet passed
+  '& > span.learning': { bg: 'bg.card', borderStyle: 'dashed', opacity: 'soft' },
+});
 
 /**
  * Chips naming the treatments someone is qualified in, and the general courses they have passed, with a dashed one
@@ -23,7 +46,7 @@ export function QualChips({
   if (!quals.length && !general.length && !course) return null;
   const studied = course && (isGeneral(course) ? GENERAL_COURSES[course] : MODALITIES[course]);
   return (
-    <div class="quals">
+    <div class={cx('quals', chips)}>
       {quals.map((m) => (
         <span key={m} title={MODALITIES[m].name}>
           <IconText id={MODALITIES[m].icon}>{MODALITIES[m].name}</IconText>

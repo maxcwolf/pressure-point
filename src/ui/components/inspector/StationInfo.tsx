@@ -1,10 +1,9 @@
 // Who staffs a station and who is in line at it, with the player's hand in the order.
 
-import './StationInfo.css';
-
 import { conditionOf, ITEMS, MODALITIES, ROLES } from '../../../core/data';
 import { matsPlayed } from '../../../core/sim/sessions';
 import type { Guest, Item } from '../../../core/state/types';
+import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { busyNote } from '../../lib/busy';
 import { mushroomNote, mushroomSwitch } from '../../lib/ceremonies';
@@ -18,6 +17,80 @@ import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { Icon, IconText, Line } from '../common/Icon';
 
+/** The line at a station, a card for each guest in it, top to bottom. */
+const lineStyle = css({
+  listStyle: 'none',
+  m: '0',
+  mt: '6',
+  mb: '4',
+  p: '0',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4',
+});
+
+/**
+ * One guest's card in the line: their name across the top, their patience and chances down the left beside the buttons
+ * that move them, and how their condition is holding up along the bottom. Their patience is a thin bar, with no room
+ * above it.
+ */
+const inLine = css({
+  display: 'grid',
+  gridTemplateColumns: '[1fr auto]',
+  gridTemplateAreas: "'who who' 'patience moves' 'odds moves' 'condition condition'",
+  alignItems: 'center',
+  columnGap: '6',
+  rowGap: '2',
+  bg: 'bg.inset',
+  borderRadius: '8',
+  py: '2',
+  px: '6',
+  '& .patience': { gridArea: 'patience', m: '0' },
+  '& .patience .bar': { h: '6' },
+});
+
+/** Their name, which shows them, cut short with an ellipsis if it is too long for the card. */
+const who = css({
+  gridArea: 'who',
+  textAlign: 'left',
+  fontWeight: 'bold',
+  fontSize: '13',
+  bg: '[none]',
+  border: 'none',
+  p: '0',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  _hover: { textDecoration: 'underline' },
+});
+
+/** Their chance of success, in small words under their patience. */
+const odds = css({ gridArea: 'odds', fontSize: '12' });
+
+/** How long their condition has left, in small words along the bottom. */
+const conditionStyle = css({ gridArea: 'condition', fontSize: '12' });
+
+/** A chance or a condition that is poor, in red. */
+const poor = css({ color: 'bad', fontWeight: 'bold' });
+
+/** The small square buttons that move them up or down the line, to another line or home. */
+const moves = css({
+  gridArea: 'moves',
+  display: 'flex',
+  gap: '2',
+  '& button': {
+    w: '24',
+    h: '24',
+    border: 'outline.thin',
+    borderRadius: '6',
+    bg: 'bg.card',
+    fontSize: '11',
+    lineHeight: 'none',
+    p: '0',
+  },
+  '& button.locked': { opacity: 'locked' },
+});
+
 /** One guest in a station's line: who they are, how they are holding up, and buttons to move them or send them home. */
 function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: number }) {
   const { sim } = useGame();
@@ -28,9 +101,10 @@ function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: nu
   const def = MODALITIES[conditionOf(g.condition).modality];
   const condition = conditionNote(g);
   return (
-    <li class="in-line">
+    // `in-line` is for the end-to-end tests to find it by
+    <li class={cx('in-line', inLine)}>
       <Button
-        class="who"
+        class={who}
         title="Show this guest"
         onPress={() => {
           hud.show({ kind: 'guest', id: g.id });
@@ -40,10 +114,10 @@ function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: nu
       </Button>
       <Bar value={g.patience} class="patience" tone={meterTone('patience', g.patience)} show />
       {chance && staff && (
-        <span class={cx('odds', poorChance(chance) && 'poor')}>{`Chance ${chanceText(chance, def, staff.name)}`}</span>
+        <span class={cx(odds, poorChance(chance) && poor)}>{`Chance ${chanceText(chance, def, staff.name)}`}</span>
       )}
-      {condition && <Line line={condition} class={cx('condition', condition.poor && 'poor')} />}
-      <span class="moves">
+      {condition && <Line line={condition} class={cx(conditionStyle, condition.poor && poor)} />}
+      <span class={moves}>
         <Button
           title="Up the line"
           locked={index === 0}
@@ -132,7 +206,7 @@ export function StationInfo({ item }: { item: Item }) {
       {guest && <Bar value={item.progress * 100} tone="blue" show={meterPercent(item.progress * 100)} />}
       {busy && <p class="sub">{busy}</p>}
       {line.length > 0 && (
-        <ol class="line">
+        <ol class={lineStyle}>
           {line.map((g, i) => (
             <InLine key={g.id} item={item} guest={g} index={i} />
           ))}
