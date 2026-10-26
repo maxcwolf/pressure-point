@@ -35,7 +35,16 @@ export type StaffRequest = 'raise' | 'promotion';
 
 export type SimEvent =
   | { type: 'float'; text: string; x: number; y: number; kind: Tone }
-  | { type: 'toast'; text: string; kind: Tone; about?: Subject; icon?: IconId; request?: StaffRequest }
+  | {
+      type: 'toast';
+      text: string;
+      kind: Tone;
+      about?: Subject;
+      icon?: IconId;
+      request?: StaffRequest;
+      /** Which message this is, if it is kept up to date: one with the same key on screen gives way to it. */
+      key?: string;
+    }
   | { type: 'sfx'; name: SfxName }
   | { type: 'announce'; text: string }
   | { type: 'star'; stars: number }
@@ -66,11 +75,18 @@ export function drainEvents(ctx: SimContext): SimEvent[] {
 }
 
 /**
- * Show the player a short message, optionally about someone or something they can be taken to, and with an icon
- * before it that says at a glance what it is about.
+ * Show the player a short message, optionally about someone or something they can be taken to, with an icon before
+ * it that says at a glance what it is about, and with a key if it is kept up to date while it is on screen.
  */
-export function toast(ctx: SimContext, text: string, kind: Tone = 'info', about?: Subject, icon?: IconId) {
-  emit(ctx, { type: 'toast', text, kind, ...(about && { about }), ...(icon && { icon }) });
+export function toast(
+  ctx: SimContext,
+  text: string,
+  kind: Tone = 'info',
+  about?: Subject,
+  icon?: IconId,
+  key?: string,
+) {
+  emit(ctx, { type: 'toast', text, kind, ...(about && { about }), ...(icon && { icon }), ...(key && { key }) });
 }
 
 /**

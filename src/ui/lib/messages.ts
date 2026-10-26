@@ -1,6 +1,7 @@
 // How long a message on the right stays: long enough to read its words, longer for bad news and with the setting at
 // Long, or until it is dismissed. Which messages show in full, and which wait in the pile under them.
 
+import type { IconId } from '../../core/data';
 import type { Tone } from '../../core/sim/events';
 import type { MessageTime } from '../../storage/display';
 import type { Toast } from '../hud';
@@ -42,11 +43,45 @@ export function pileUp<T>(oldestFirst: readonly T[]): { shown: T[]; piled: T[] }
   return { shown: newest.slice(0, SHOWN), piled: newest.slice(SHOWN) };
 }
 
-/** The messages with one more at the top. One saying the same as one already there takes its place, counted. */
+/**
+ * The messages with one more at the top. One with the same key, or without a key saying the same as one already
+ * there, takes its place: counted when it says the same, and afresh when it is the same message kept up to date.
+ */
 export function withMessage(oldestFirst: readonly Toast[], message: Omit<Toast, 'count' | 'age' | 'leaving'>): Toast[] {
-  const same = oldestFirst.find((t) => t.text === message.text && t.kind === message.kind);
+  const keyed = message.key === undefined ? undefined : oldestFirst.find((t) => t.key === message.key);
+  const same = keyed ? undefined : oldestFirst.find((t) => t.text === message.text && t.kind === message.kind);
   const added: Toast = { ...message, count: (same?.count ?? 0) + 1, age: 0, leaving: false };
-  return [...oldestFirst.filter((t) => t !== same), added].slice(-KEPT);
+  return [...oldestFirst.filter((t) => t !== same && t !== keyed), added].slice(-KEPT);
+}
+
+/** What a message kept up to date says now, or nothing once it no longer applies. */
+export interface MessageNow {
+  text: string;
+  kind: Tone;
+  icon?: IconId;
+}
+
+/**
+ * Bring the message with this key, if one is on screen, up to what it says now, and whether that changed anything.
+ * Gone once it no longer applies. New words keep its time, so it fades when it would have; a change of good or bad
+ * news shows it afresh, to be read for what it now says. One dismissed, or faded, is not brought back.
+ */
+export function refreshMessage(
+  messages: readonly Toast[],
+  key: string,
+  now: MessageNow | null,
+): { kept: Toast[]; changed: boolean } {
+  const old = messages.find((t) => t.key === key);
+  if (!old) return { kept: [...messages], changed: false };
+  if (!now) return { kept: messages.filter((t) => t !== old), changed: true };
+  if (now.text === old.text && now.kind === old.kind) return { kept: [...messages], changed: false };
+  let fresh: Toast;
+  if (now.kind === old.kind) fresh = { ...old, text: now.text };
+  else {
+    const { icon: _, ...rest } = old;
+    fresh = { ...rest, text: now.text, kind: now.kind, ...(now.icon && { icon: now.icon }), age: 0, leaving: false };
+  }
+  return { kept: messages.map((t) => (t === old ? fresh : t)), changed: true };
 }
 
 /**

@@ -95,6 +95,8 @@ import { demand, type DisciplineDemand, fadeFollowing, roomPull } from './demand
 import {
   borrow,
   monthEnd,
+  type PaydayWarning,
+  paydayWarning,
   payIntoRed,
   priceFor,
   repay,
@@ -346,6 +348,10 @@ export class Sim {
   /** The advisor's current nudge, with what it is about, if anything. */
   adviceNote(): Advice {
     return advise(this.ctx);
+  }
+  /** The payday warning as it reads now, while this month's is up, for the message on screen to keep up with. */
+  paydayWarning(): PaydayWarning | null {
+    return paydayWarning(this.ctx.s);
   }
   /** On a first go at the campaign, the checklist of what the center will need, each line ticked once in place. */
   primerLines(): PrimerLine[] {

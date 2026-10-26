@@ -1,5 +1,5 @@
-// The messages on the right: how long each stays, repeats counted, a moment more once read, and the pile past the first
-// few. When their clock stands still is in the end-to-end tests, with the interface it belongs to.
+// The messages on the right: how long each stays, repeats counted, a moment more once read, the pile past the first
+// few, and the ones kept up to date. When their clock stands still is in the end-to-end tests, with the interface it belongs to.
 import { describe, expect, it } from 'vitest';
 
 import type { Toast } from '../../src/ui/hud';
@@ -10,6 +10,7 @@ import {
   KEPT,
   messageLife,
   pileUp,
+  refreshMessage,
   SHOWN,
   spareMessages,
   withMessage,
@@ -108,5 +109,61 @@ describe('messages past the first few', () => {
     const list = said(...Array.from({ length: KEPT + 3 }, (_, i) => `Message ${i + 1}`));
     expect(list).toHaveLength(KEPT);
     expect(list[0]?.text).toBe('Message 4');
+  });
+});
+
+describe('a message kept up to date', () => {
+  const BAD = 'Payday in 5 days: $3,000 in wages against $500 in the bank.';
+  const WORSE = 'Payday in 5 days: $3,000 in wages against $200 in the bank.';
+  const GOOD = 'Payday in 5 days is covered now: $3,000 in wages against $4,000 in the bank.';
+
+  /** The payday warning, up for 3 seconds, with another message posted after it. */
+  function warned(): Toast[] {
+    let list = withMessage([], { id: 1, text: BAD, kind: 'bad', icon: 'ui-warning', key: 'payday' });
+    list = withMessage(list, { id: 2, text: SHORT, kind: 'info' });
+    return run(list, 3000);
+  }
+
+  it('posted again takes the place of the one on screen, afresh rather than counted', () => {
+    const list = withMessage(warned(), { id: 3, text: WORSE, kind: 'bad', icon: 'ui-warning', key: 'payday' });
+    expect(list.map((t) => [t.id, t.text, t.count, t.age])).toEqual([
+      [2, SHORT, 1, 3000],
+      [3, WORSE, 1, 0],
+    ]);
+  });
+
+  it('takes new words in place, keeping its time', () => {
+    const { kept, changed } = refreshMessage(warned(), 'payday', { text: WORSE, kind: 'bad', icon: 'ui-warning' });
+    expect(changed).toBe(true);
+    expect(kept.map((t) => [t.id, t.text, t.age])).toEqual([
+      [1, WORSE, 3000],
+      [2, SHORT, 3000],
+    ]);
+  });
+
+  it('turned to good news shows afresh, with its icon', () => {
+    const list = warned();
+    list[0]!.leaving = true;
+    const { kept } = refreshMessage(list, 'payday', { text: GOOD, kind: 'good', icon: 'ui-money' });
+    expect(kept[0]).toMatchObject({ id: 1, text: GOOD, kind: 'good', icon: 'ui-money', age: 0, leaving: false });
+  });
+
+  it('is left alone while it says the same, and taken down once it no longer applies', () => {
+    const list = warned();
+    expect(refreshMessage(list, 'payday', { text: BAD, kind: 'bad', icon: 'ui-warning' })).toEqual({
+      kept: list,
+      changed: false,
+    });
+    const { kept, changed } = refreshMessage(list, 'payday', null);
+    expect(changed).toBe(true);
+    expect(kept.map((t) => t.text)).toEqual([SHORT]);
+  });
+
+  it('once dismissed or faded is not brought back', () => {
+    const list = warned().filter((t) => t.key !== 'payday');
+    expect(refreshMessage(list, 'payday', { text: GOOD, kind: 'good', icon: 'ui-money' })).toEqual({
+      kept: list,
+      changed: false,
+    });
   });
 });

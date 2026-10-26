@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## v0.33.7
 
+- **The payday warning keeps up.** While the payday warning is on screen, its figures follow the bank and the month's pace, paused too, and once the bank alone holds the wages it turns green to say payday is covered now. It goes once payday has passed, and one dismissed stays gone.
 - **The Pressure Point Foundation.** Once every star in a campaign center is earned, the Money menu's Books tab takes three gifts to the Foundation, of $50,000, $100,000 and $200,000 (half as much again at The Orchard Estate), each worth 1 karma: something to do with the money that piles up after the last star. The card says what a gift would leave for the next payday.
 - **The weather, center by center.** Willow Lane is mild all year, never cold or hot enough for anyone to mind. The Exchange's cold winters are the first that need Radiators, the Boardwalk's summers are now hot enough to need Air Conditioners, and the Orchard Estate's winters and summers are the harshest of both.
 - **The first cold snap, explained.** The first time the weather gets indoors with nothing to warm or cool the place, a card says how cold or hot it is outside and in, what is comfortable and what fixes it, with a button that puts a Radiator or an Air Conditioner in hand. The tutorial's cards now come once each across the campaign, in whichever center a thing first happens, and the Settings switch turns them on or off in any campaign game.
