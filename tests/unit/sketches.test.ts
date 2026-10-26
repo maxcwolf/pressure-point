@@ -1,13 +1,15 @@
 // Rooms pencilled in for later: where a sketch can go, what it keeps from being built over it, building it, a blueprint
-// pencilled in instead, and saves from before there were any.
+// pencilled in instead, saves from before there were any, whether it still fits as the world changes, doors onto it,
+// and a sketch on a plot that is bought and built on.
 import { describe, expect, it } from 'vitest';
 
 import { ITEMS, ROOM_TILE_COST, ROOMS, WINDOW_COST } from '../../src/core/data';
 import { placeLayout } from '../../src/core/room-layout';
-import { SKETCH_TIP, sketchCost, sketchesCost } from '../../src/core/sim/sketches';
+import type { Sim } from '../../src/core/sim/sim';
+import { noLongerFits, SKETCH_TIP, sketchCost, sketchesCost, unfitCount } from '../../src/core/sim/sketches';
 import type { GameState, Sketch } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { freshSim, LAYOUT, openCenter } from './helpers';
+import { freshSim, LAYOUT, openCenter, run } from './helpers';
 
 // The sandbox: its building runs from x 3 to 27 and y 3 to 17. Its east wing, for sale, runs from x 28 to 35 and y 3 to
 // 17; the open standard little center leaves the floor from x 16 to 26 and y 9 to 12 or so free.
@@ -275,5 +277,168 @@ describe('saves', () => {
     save.sketches.push({ ...sketch, id: 999, type: 'teleporter' as Sketch['type'] });
     upgradeSave(save);
     expect(save.sketches).toEqual([sketch]);
+  });
+});
+
+describe('a fit that keeps up', () => {
+  it('is worked out once while the world stays as it was, and again once it changes', () => {
+    const { sim, sketch } = sketched();
+    const fit = sim.world.sketchFit(sketch);
+    expect(fit).toEqual({ fit: { ok: true, reason: '' }, standing: 'fits' });
+    expect(sim.world.sketchFit(sketch)).toBe(fit);
+    // a plant in its doorway, the tile its door opens onto
+    expect(sim.placeItem('plant', 21, 10, 0)).not.toBeNull();
+    const blocked = sim.world.sketchFit(sketch);
+    expect(blocked).not.toBe(fit);
+    expect(blocked).toMatchObject({ fit: { ok: false, reason: 'Something is blocking that doorway' } });
+    expect(blocked.standing).toBe('doorway');
+    expect(sim.world.sketchFits(sketch)).toBe(blocked.fit);
+  });
+
+  it('says a doorway is blocked when a room next door takes the tile its door opens onto', () => {
+    const { sim, sketch } = sketched();
+    sim.createRoom('staffroom', { x: 20, y: 10, w: 3, h: 3 }, { x: 21, y: 12, dx: 0, dy: 1 });
+    expect(sim.world.sketchFit(sketch).standing).toBe('doorway');
+    expect(noLongerFits(sim.world, sketch)).toBe(true);
+  });
+
+  it('says it no longer fits when its floor is taken', () => {
+    const { sim, sketch } = sketched();
+    const room = sim.createRoom('staffroom', { x: 16, y: 11, w: 3, h: 3 }, { x: 17, y: 11, dx: 0, dy: -1 });
+    // moved over half of it behind the rules' back, as a save from before them could have it
+    Object.assign(room, { x: 18, y: 6, door: { x: 19, y: 8, dx: 0, dy: 1 } });
+    sim.world.rebuild();
+    expect(sim.world.sketchFit(sketch)).toMatchObject({ fit: { reason: 'Overlaps another room' }, standing: 'unfit' });
+  });
+
+  it('counts the sketches that no longer fit, not the ones waiting for their land', () => {
+    const { sim, sketch } = sketched();
+    sim.addSketch('consult', { x: 29, y: 5, w: 4, h: 4 }, { x: 29, y: 6, dx: -1, dy: 0 });
+    expect(unfitCount(sim.world)).toBe(0);
+    sim.placeItem('plant', 21, 10, 0);
+    expect(unfitCount(sim.world)).toBe(1);
+    expect(noLongerFits(sim.world, sketch)).toBe(true);
+  });
+});
+
+describe('no door opens onto a sketch', () => {
+  const NAMED = "That's pencilled in for a Consultation Room. Erase the sketch first.";
+
+  it("turns down a room's door, naming it", () => {
+    const { sim, sketch } = sketched();
+    const door = { x: 19, y: 7, dx: 1, dy: 0 };
+    expect(sim.world.doorValid('staffroom', { x: 17, y: 6, w: 3, h: 3 }, door)).toEqual({
+      ok: false,
+      reason: NAMED,
+      sketch: sketch.id,
+    });
+    // the same door opening the other way is fine
+    expect(sim.world.doorValid('staffroom', { x: 17, y: 6, w: 3, h: 3 }, { x: 17, y: 7, dx: -1, dy: 0 }).ok).toBe(true);
+  });
+
+  it('turns down a room resized so its door would open onto one', () => {
+    const { sim, sketch } = sketched();
+    const room = sim.createRoom('staffroom', { x: 16, y: 6, w: 3, h: 3 }, { x: 18, y: 7, dx: 1, dy: 0 });
+    expect(sim.world.resizeValid(room, { x: 16, y: 6, w: 4, h: 3 })).toEqual({
+      ok: false,
+      reason: NAMED,
+      sketch: sketch.id,
+    });
+  });
+
+  it('turns down a room moved so its door would open onto one', () => {
+    const { sim, consult } = openCenter();
+    const sketch = sim.addSketch('staffroom', { x: 20, y: 6, w: 3, h: 3 }, { x: 21, y: 6, dx: 0, dy: -1 });
+    // the Consultation Room's door is on its east wall, two rows down, so it opens onto (20, 8)
+    const placed = placeLayout(sim.roomLayout(consult), 16, 6);
+    expect(placed.door).toMatchObject({ x: 19, y: 8, dx: 1 });
+    expect(sim.world.layoutValid('consult', placed, consult).sketch).toBe(sketch?.id);
+  });
+
+  it("turns down a sketch's door onto another sketch, inside or on a plot", () => {
+    const { sim, sketch } = sketched();
+    expect(sim.world.sketchDoorValid({ x: 24, y: 6, w: 3, h: 3 }, { x: 24, y: 7, dx: -1, dy: 0 }).sketch).toBe(
+      sketch.id,
+    );
+    const onPlot = sim.addSketch('consult', { x: 29, y: 5, w: 4, h: 4 }, { x: 29, y: 6, dx: -1, dy: 0 });
+    const next = { x: 29, y: 9, w: 4, h: 4 };
+    expect(sim.world.sketchDoorValid(next, { x: 30, y: 9, dx: 0, dy: -1 }).sketch).toBe(onPlot?.id);
+    expect(sim.addSketch('consult', next, { x: 30, y: 9, dx: 0, dy: -1 })).toBeNull();
+    expect(sim.world.sketchDoorValid(next, { x: 30, y: 12, dx: 0, dy: 1 }).ok).toBe(true);
+  });
+
+  it("turns down a sketch over another sketch's doorway", () => {
+    const { sim, sketch } = sketched();
+    // the Consultation Room's door opens onto (21, 10)
+    expect(sim.world.sketchRectValid('staffroom', { x: 20, y: 10, w: 3, h: 3 })).toEqual({
+      ok: false,
+      reason: NAMED,
+      sketch: sketch.id,
+    });
+    expect(sim.world.sketchRectValid('staffroom', { x: 20, y: 11, w: 3, h: 3 }).ok).toBe(true);
+  });
+});
+
+describe('a sketch on a plot', () => {
+  /** A sandbox game with money, every plot for sale, and two sketches on the east wing: one whose door will face in. */
+  function onTheWing() {
+    const sim = freshSim();
+    sim.s.money = 1_000_000;
+    sim.s.unlockAll = true;
+    const inward = sim.addSketch('consult', { x: 29, y: 5, w: 4, h: 4 }, { x: 29, y: 6, dx: -1, dy: 0 });
+    // its door on the wing's east edge, which will be the building's outer wall
+    const outward = sim.addSketch('consult', { x: 32, y: 10, w: 4, h: 4 }, { x: 35, y: 11, dx: 1, dy: 0 });
+    if (!inward || !outward) throw new Error('could not pencil the rooms in');
+    return { sim, inward, outward };
+  }
+
+  /** Have the builders finish every plot they are at, as if the days had passed. */
+  function finishWork(sim: Sim) {
+    for (const l of sim.s.land) if (l.ready !== undefined) l.ready = sim.s.day;
+    run(sim, 1.1);
+  }
+
+  it('waits for its land, and is not counted as no longer fitting meanwhile', () => {
+    const { sim, inward } = onTheWing();
+    expect(sim.world.sketchFit(inward)).toEqual({
+      fit: { ok: false, reason: 'That land is not yours yet' },
+      standing: 'waits',
+    });
+    expect(sim.buyPlot('east-wing')).toBe(true);
+    expect(sim.world.sketchFit(inward)).toMatchObject({ fit: { reason: 'The builders are at work there' } });
+    expect(unfitCount(sim.world)).toBe(0);
+  });
+
+  it('is kept when its plot is bought and built on, and judged as any other inside', () => {
+    const { sim, inward, outward } = onTheWing();
+    expect(sim.buyPlot('east-wing')).toBe(true);
+    finishWork(sim);
+    expect(sim.s.sketches).toEqual([inward, outward]);
+    expect(sim.world.inside(inward.x, inward.y)).toBe(true);
+    expect(sim.world.sketchFit(inward).standing).toBe('fits');
+    // its door faces the new outer wall
+    expect(sim.world.sketchFit(outward)).toMatchObject({
+      fit: { ok: false, reason: 'Doors must open onto a corridor' },
+      standing: 'doorway',
+    });
+    expect(unfitCount(sim.world)).toBe(1);
+    // and the one that fits can be built where it is
+    expect(sim.buildSketch(inward.id)).toMatchObject({ type: 'consult', x: 29, y: 5 });
+  });
+
+  it("no longer fits once the building's new entrance needs its floor kept clear", () => {
+    const { sim } = onTheWing();
+    expect(sim.buyPlot('east-wing')).toBe(true);
+    finishWork(sim);
+    // over the tiles inside the garden pavilion's own front door, which opens at (39, 17)
+    const sketch = sim.addSketch('consult', { x: 39, y: 14, w: 4, h: 4 }, { x: 40, y: 14, dx: 0, dy: -1 });
+    if (!sketch) throw new Error('could not pencil the room in');
+    expect(sim.buyPlot('garden-block')).toBe(true);
+    finishWork(sim);
+    expect(sim.s.sketches).toContain(sketch);
+    expect(sim.world.sketchFit(sketch)).toMatchObject({
+      fit: { ok: false, reason: 'Keep doorways and access spots clear' },
+      standing: 'unfit',
+    });
   });
 });

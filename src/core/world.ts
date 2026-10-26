@@ -149,6 +149,17 @@ export interface Check {
   sketch?: number;
 }
 
+/**
+ * Where a sketch stands as things are: it fits; it waits for land not built on yet; the tile its door opens onto is not
+ * free; or its floor is taken, or its room would cut someone off.
+ */
+export type SketchStanding = 'fits' | 'waits' | 'doorway' | 'unfit';
+/** Whether a sketch could be built where it is today, why not, and where it stands. */
+export interface SketchFit {
+  fit: Check;
+  standing: SketchStanding;
+}
+
 /** The grids a way through is worked out on: each tile's zone, what blocks it, what is kept clear, and the doors. */
 export interface Grid {
   zone: Int32Array;
@@ -197,6 +208,9 @@ export class World {
   /** The building's own windows, worked out once for each time the grids change. */
   private panes: BuildingWindow[] = [];
   private panesStamp = -1;
+  /** Each sketch's fit, by its id, while the world stays as it was when `fitsAt` was taken. */
+  private fits = new Map<number, { of: Sketch; fit: SketchFit }>();
+  private fitsAt = '';
   /** The building alone, before any rooms or furniture: each tile's zone, the tiles kept clear and the doors in. */
   private bare: { zone: Int32Array; reserved: Uint8Array; doors: number[] };
   /** Grids to try a change out on without touching the game or the grids it plays on. */
@@ -673,7 +687,20 @@ export class World {
   }
   /** Whether a sketch could be built where it is today. */
   sketchFits(sk: Sketch): Check {
-    return rules.sketchFits(this, sk);
+    return this.sketchFit(sk).fit;
+  }
+  /** Whether a sketch could be built where it is today, and where it stands, worked out once each time the world changes. */
+  sketchFit(sk: Sketch): SketchFit {
+    const now = `${this.version}:${this.stamp}`;
+    if (this.fitsAt !== now) {
+      this.fits.clear();
+      this.fitsAt = now;
+    }
+    const known = this.fits.get(sk.id);
+    if (known?.of === sk) return known.fit;
+    const fit = rules.sketchFit(this, sk);
+    this.fits.set(sk.id, { of: sk, fit });
+    return fit;
   }
   /** Whether a room of a type would fit anywhere in the building at its smallest, as things stand. */
   roomFitsAnywhere(type: RoomType): boolean {

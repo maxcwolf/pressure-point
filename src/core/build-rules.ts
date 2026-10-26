@@ -31,6 +31,7 @@ import {
   type Rect,
   type RoomShape,
   rotFacing,
+  type SketchFit,
   type Trial,
   wallSpotsOf,
   type World,
@@ -390,6 +391,11 @@ export function sketchRectValid(world: World, type: RoomType, r: Rect, spare?: n
   const def = ROOMS[type];
   let indoors = 0;
   for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (world.inside(x, y)) indoors++;
+  // no sketch may stand in another's doorway, so none blocks another the day it is built
+  const doorway = world.s.sketches.find(
+    (sk) => sk.id !== spare && inRect(r, sk.door.x + sk.door.dx, sk.door.y + sk.door.dy),
+  );
+  if (doorway) return onSketch(doorway);
   if (indoors === r.w * r.h) return roomRectValid(world, type, r, world.asIs(), spare);
   if (indoors > 0) return no('Keep it all inside the building, or all on one plot for sale');
   const plots = centerOf(world.s).plots;
@@ -407,17 +413,40 @@ export function sketchRectValid(world: World, type: RoomType, r: Rect, spare?: n
 
 /**
  * Can a sketch have its door here? Inside the building, wherever the room's door could go today; on land for sale, any
- * edge will do for now, as there is nothing there yet for it to open onto.
+ * edge will do for now, as there is nothing there yet for it to open onto, but another sketch.
  */
 export function sketchDoorValid(world: World, r: Rect, door: Room['door']): Check {
-  return world.inside(door.x, door.y) ? doorValid(world, r, door) : OK;
+  if (world.inside(door.x, door.y)) return doorValid(world, r, door);
+  const onto = sketchAt(world, door.x + door.dx, door.y + door.dy);
+  return onto ? onSketch(onto) : OK;
 }
 
-/** Whether a sketch could be built where it is today: its floor free but for itself, and its door able to open. */
-export function sketchFits(world: World, sk: Sketch): Check {
+/**
+ * Whether a sketch could be built where it is today, and where it stands: on land not built on yet, it waits; inside,
+ * its floor has to be free but for itself, and its door able to open onto free corridor without cutting anyone off.
+ */
+export function sketchFit(world: World, sk: Sketch): SketchFit {
+  if (!world.inside(sk.x, sk.y)) {
+    const plot = plotAt(centerOf(world.s).plots, sk.x, sk.y);
+    const building = world.s.land.some((l) => l.plot === plot?.id && l.ready !== undefined);
+    return {
+      fit: no(building ? 'The builders are at work there' : 'That land is not yours yet'),
+      standing: 'waits',
+    };
+  }
   const floor = roomRectValid(world, sk.type, sk, world.asIs(), sk.id);
-  return floor.ok ? doorValid(world, sk, sk.door) : floor;
+  if (!floor.ok) return { fit: floor, standing: 'unfit' };
+  const door = doorValid(world, sk, sk.door);
+  if (door.ok) return { fit: OK, standing: 'fits' };
+  // the room would cut someone off, with its doorway itself clear: the room no longer fits, rather than its door
+  const [ox, oy] = [sk.door.x + sk.door.dx, sk.door.y + sk.door.dy];
+  const clear =
+    world.inside(ox, oy) && world.zoneAt(ox, oy) === Z_CORRIDOR && !world.blocked[world.idx(ox, oy)] && !door.sketch;
+  return { fit: door, standing: clear ? 'unfit' : 'doorway' };
 }
+
+/** Whether a sketch could be built where it is today. */
+export const sketchFits = (world: World, sk: Sketch): Check => sketchFit(world, sk).fit;
 
 /** The doorway on the room edge nearest a ground position. */
 export function nearestDoor(r: Rect, fx: number, fy: number): Room['door'] {
@@ -443,6 +472,9 @@ export function doorValid(world: World, r: Rect, door: Room['door'], replacing?:
   if (!world.inside(ox, oy) || world.zone[world.idx(ox, oy)] !== Z_CORRIDOR)
     return no('Doors must open onto a corridor');
   if (world.blocked[world.idx(ox, oy)]) return no('Something is blocking that doorway');
+  // a door onto a room pencilled in would be blocked the day it is built
+  const onto = sketchAt(world, ox, oy);
+  if (onto) return onSketch(onto);
   if (replacing) {
     if (replacing.windows.some((w) => w.x === door.x && w.y === door.y && w.dx === door.dx && w.dy === door.dy))
       return no('There is a window there');
@@ -506,6 +538,8 @@ export function resizeValid(world: World, room: Room, r: Rect): Check {
   if (!world.inside(ox, oy) || t.zone[world.idx(ox, oy)] !== Z_CORRIDOR)
     return no('The door must open onto a corridor');
   if (t.blocked[world.idx(ox, oy)]) return no('Something is blocking the doorway');
+  const onto = sketchAt(world, ox, oy);
+  if (onto) return onSketch(onto);
   return world.connected(t) ? OK : no('That would block the way');
 }
 
@@ -528,6 +562,8 @@ export function layoutValid(world: World, type: RoomType, placed: PlacedLayout, 
   if (!world.inside(ox, oy) || lifted.zone[world.idx(ox, oy)] !== Z_CORRIDOR)
     return no('The door must open onto a corridor');
   if (lifted.blocked[world.idx(ox, oy)]) return no('Something is blocking the doorway');
+  const onto = sketchAt(world, ox, oy);
+  if (onto) return onSketch(onto);
   // a rug lies flat on the floor, but not on another rug, such as one left in the corridor
   const rugTiles = new Set(
     items.filter((it) => ITEMS[it.type].walkable).flatMap((it) => footprint(it).map(([tx, ty]) => world.idx(tx, ty))),
