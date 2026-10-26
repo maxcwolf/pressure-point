@@ -12,7 +12,7 @@
 import { certificatesLeft } from '../../core/certificates';
 import { centerOf, ITEMS, type ItemType, ROOMS, type RoomType, type RugPatternId } from '../../core/data';
 import { money } from '../../core/format';
-import { plotAt } from '../../core/land';
+import { plotAt, plotOffers } from '../../core/land';
 import { resizeCost, roomCost, sameRect } from '../../core/resize';
 import { copyCost, cornerFor, type Layout, type PlacedLayout, placeLayout, turnLayout } from '../../core/room-layout';
 import { canWorkIn } from '../../core/sim/assignments';
@@ -21,7 +21,7 @@ import type { SfxName } from '../../core/sim/events';
 import type { PlacePreview } from '../../core/sim/preview';
 import type { Sim } from '../../core/sim/sim';
 import { sameSpot } from '../../core/state/game';
-import type { Item, Room, WallSpot } from '../../core/state/types';
+import type { Item, Room, Sketch, WallSpot } from '../../core/state/types';
 import { itemCenter, onWall, type Rect, Z_CORRIDOR } from '../../core/world';
 import { type Marker, OV_BAD, OV_BLUE, OV_GOOD, type OverlayTile } from '../../render/overlay-codes';
 import { nextPick, type Selection } from '../../render/picking';
@@ -35,6 +35,7 @@ import {
   copyRoomHint,
   DOOR_HINT,
   dragHint,
+  heldHint,
   MOVE_DOOR_HINT,
   moveHint,
   moveRoomHint,
@@ -43,6 +44,8 @@ import {
   planHint,
   RESIZE_HINT,
   resizeHint,
+  sketchDoorHint,
+  sketchHint,
   templateHint,
   WINDOW_HINT,
 } from './hints';
@@ -87,6 +90,8 @@ export class Tools {
   /** How many clicks have been turned down, and when the last was, so the hint can pulse its problem line at each. */
   refusals = 0;
   private refusedAt = -Infinity;
+  /** The sketch in the way where the tool in hand is, if one is why it cannot go there: selected if the click is. */
+  private inTheWay: number | undefined;
 
   constructor(
     private sim: Sim,
@@ -164,9 +169,11 @@ export class Tools {
    * Turn down what the player tried, with the error sound, and count it in the play statistics with why: the problem
    * shown under the cursor, unless there is a better reason.
    */
-  private refuse(action: string, reason = this.problem) {
+  private refuse(action: string, reason = this.problem, sketch = this.inTheWay) {
     this.sfx('error');
     this.refused?.(action, reason);
+    // a sketch in the way is selected, so its Erase button is to hand once the tool is put down
+    if (sketch !== undefined && this.sim.sketch(sketch)) this.select({ kind: 'sketch', id: sketch });
     // the preview shakes and the problem line pulses, so the click is seen to have been turned down as well as heard
     this.refusals++;
     this.refusedAt = performance.now();
@@ -199,7 +206,7 @@ export class Tools {
   }
 
   /** Whether a room can be paid for, at the smallest or at what it costs as planned, saying so if not. */
-  private affords(type: RoomType, cost = ROOMS[type].cost): boolean {
+  private affords(type: RoomType, cost = ROOMS[type].cost, action = 'build_room'): boolean {
     const def = ROOMS[type];
     if (this.sim.s.money >= cost) return true;
     this.sim.emit({
@@ -207,7 +214,7 @@ export class Tools {
       text: `A ${def.name} ${cost > def.cost ? 'this size ' : ''}costs ${money(cost)}. You can't afford it yet.`,
       kind: 'bad',
     });
-    this.refuse('build_room', "Can't afford it");
+    this.refuse(action, "Can't afford it", undefined);
     return false;
   }
 
@@ -222,6 +229,69 @@ export class Tools {
     this.tool = { kind: 'room', type, phase: 'drag', start: null, rect: null, noFit };
     this.noFitSaid = false;
     this.select(null);
+    this.refresh();
+  }
+
+  /** Pencil rooms of a type in, as many as are drawn, for nothing. */
+  startSketch(type: RoomType) {
+    this.cancel();
+    this.tool = { kind: 'sketch', type, phase: 'drag', start: null, rect: null, held: false, moving: null };
+    this.select(null);
+    this.refresh();
+  }
+
+  /**
+   * Pick a sketch up to draw it again elsewhere: its floor is offered where it was, which a click keeps and a drag
+   * replaces, and it goes back as it was if the tool is put down first.
+   */
+  moveSketch(id: number) {
+    const sketch = this.sim.sketch(id);
+    if (!sketch) return;
+    this.cancel();
+    this.sim.eraseSketch(id);
+    const rect = { x: sketch.x, y: sketch.y, w: sketch.w, h: sketch.h };
+    this.tool = { kind: 'sketch', type: sketch.type, phase: 'drag', start: null, rect, held: true, moving: sketch };
+    this.select(null);
+    this.refresh();
+  }
+
+  /**
+   * Build a sketch. Where it still fits, its blueprint opens in its rectangle with its door, and the first required
+   * item in hand; where it no longer does, the room tool takes its floor up to be clicked as it is or dragged out
+   * afresh. Turned down, with the sketch kept, if the room's price cannot be paid.
+   */
+  buildSketch(id: number) {
+    const sketch = this.sim.sketch(id);
+    if (!sketch) return;
+    this.cancel();
+    if (!this.affords(sketch.type, ROOMS[sketch.type].cost, 'build_sketch')) return;
+    const kept: Sketch = { ...sketch, door: { ...sketch.door } };
+    const room = this.sim.world.sketchFits(sketch).ok ? this.sim.buildSketch(id) : null;
+    const { type } = sketch;
+    if (room) {
+      this.tool = {
+        kind: 'room',
+        type,
+        phase: 'plan',
+        room,
+        sub: nextRequired(this.sim.missingItems(room)),
+        sketch: kept,
+      };
+    } else {
+      const rect = { x: sketch.x, y: sketch.y, w: sketch.w, h: sketch.h };
+      this.tool = { kind: 'room', type, phase: 'drag', start: null, rect, noFit: '', held: true, sketch: kept };
+    }
+    this.select(null);
+    this.refresh();
+  }
+
+  /** Pencil the open blueprint in for later instead: torn up and refunded as Cancel does, and kept as a sketch. */
+  planSketch() {
+    const t = this.tool;
+    if (t.kind !== 'room' || t.phase !== 'plan') return;
+    const sketch = this.sim.sketchBlueprint(t.room.id);
+    this.tool = { kind: 'none' };
+    this.select(sketch ? { kind: 'sketch', id: sketch.id } : null);
     this.refresh();
   }
 
@@ -308,7 +378,9 @@ export class Tools {
   /** Whether the pointer is dragging something out (a new room's floor or a wall), so its release counts. */
   get dragging(): boolean {
     const t = this.tool;
-    return (t.kind === 'room' && t.phase === 'drag') || (t.kind === 'resize' && t.edge !== null);
+    return (
+      ((t.kind === 'room' || t.kind === 'sketch') && t.phase === 'drag') || (t.kind === 'resize' && t.edge !== null)
+    );
   }
 
   /** In a blueprint: take up the door, the window tool, or nothing. */
@@ -337,7 +409,10 @@ export class Tools {
     this.landed = null;
     const t = this.tool;
     if (t.kind === 'room' && t.phase === 'plan') this.sim.removeRoom(t.room.id, 1);
+    // a sketch built from, or picked up to move, is put back as it was
+    const sketch = t.kind === 'room' ? t.sketch : t.kind === 'sketch' ? t.moving : null;
     this.tool = { kind: 'none' };
+    if (sketch && this.sim.restoreSketch(sketch) && !this.selected) this.select({ kind: 'sketch', id: sketch.id });
     this.refresh();
   }
 
@@ -355,6 +430,10 @@ export class Tools {
     const t = this.tool;
     if (t.kind === 'room' && t.phase === 'plan' && t.sub) {
       t.sub = null;
+      this.refresh();
+    } else if (t.kind === 'sketch' && t.phase === 'door') {
+      // back to the floor, which a click keeps as it was dragged
+      this.tool = { ...t, phase: 'drag', start: null, rect: t.rect, held: true };
       this.refresh();
     } else this.cancel();
   }
@@ -386,8 +465,13 @@ export class Tools {
     const landed = this.landed;
     if (landed && Math.hypot(clientX - landed.x, clientY - landed.y) >= LANDED_PX) this.landed = null;
     const t = this.tool;
-    if (t.kind === 'room' && t.phase === 'drag' && t.start && this.cursor) {
-      t.rect = dragRect(t.start, tileOf(this.cursor));
+    if ((t.kind === 'room' || t.kind === 'sketch') && t.phase === 'drag' && t.start && this.cursor) {
+      const tile = tileOf(this.cursor);
+      // floor offered as it is stays until the pointer is dragged off the tile it was pressed on
+      if (!t.held || tile[0] !== t.start[0] || tile[1] !== t.start[1]) {
+        t.rect = dragRect(t.start, tile);
+        t.held = false;
+      }
     }
     const room = t.kind === 'resize' ? this.sim.world.room(t.roomId) : undefined;
     if (t.kind === 'resize' && t.edge && room && this.cursor) t.rect = dragEdge(room, t.edge, this.cursor);
@@ -399,9 +483,9 @@ export class Tools {
   pointerDown(clientX: number, clientY: number) {
     this.cursor = this.view.groundAt(clientX, clientY);
     const t = this.tool;
-    if (t.kind === 'room' && t.phase === 'drag' && this.cursor) {
+    if ((t.kind === 'room' || t.kind === 'sketch') && t.phase === 'drag' && this.cursor) {
       t.start = tileOf(this.cursor);
-      t.rect = dragRect(t.start, t.start);
+      if (!t.held || !t.rect) t.rect = dragRect(t.start, t.start);
       this.refresh();
     }
     const room = t.kind === 'resize' ? this.sim.world.room(t.roomId) : undefined;
@@ -473,11 +557,14 @@ export class Tools {
       t.edge = null;
       t.rect = null;
       if (room && rect && !sameRect(room, rect) && !sim.resizeRoom(room.id, rect)) this.refuse('resize_room');
+    } else if (t.kind === 'sketch') {
+      this.clickSketch(clientX, clientY);
     } else if (t.phase === 'drag') {
       const rect = t.rect;
       t.start = null;
-      if (rect && sim.world.roomRectValid(t.type, rect).ok) {
-        this.tool = { kind: 'room', type: t.type, phase: 'door', rect };
+      t.held = false;
+      if (rect && sim.world.roomRectValid(t.type, rect, undefined, t.sketch?.id).ok) {
+        this.tool = { kind: 'room', type: t.type, phase: 'door', rect, ...(t.sketch && { sketch: t.sketch }) };
         this.sfx('place');
       } else {
         if (rect && rect.w * rect.h > 1) {
@@ -493,9 +580,11 @@ export class Tools {
       if (!this.cursor) return null;
       const door = sim.world.nearestDoor(t.rect, this.cursor.x, this.cursor.y);
       if (sim.world.doorValid(t.type, t.rect, door).ok) {
-        const room = sim.createRoom(t.type, t.rect, door);
+        // a sketch being built gives way if the room lands on it
+        const room = (t.sketch && sim.buildSketchAt(t.sketch.id, t.rect, door)) ?? sim.createRoom(t.type, t.rect, door);
         // straight on to the first piece of required furniture
-        this.tool = { kind: 'room', type: t.type, phase: 'plan', room, sub: nextRequired(sim.missingItems(room)) };
+        const sub = nextRequired(sim.missingItems(room));
+        this.tool = { kind: 'room', type: t.type, phase: 'plan', room, sub, ...(t.sketch && { sketch: t.sketch }) };
         this.land(clientX, clientY);
       } else this.refuse('place_door');
     } else {
@@ -522,6 +611,45 @@ export class Tools {
     }
     this.refresh();
     return toBuy;
+  }
+
+  /**
+   * A click with the sketch tool: let go of the floor dragged out, on to its door if it can go there; or put the door
+   * down and pencil the room in, with the tool kept for another, or, for a sketch being moved, put down and selected.
+   */
+  private clickSketch(clientX: number, clientY: number) {
+    const t = this.tool;
+    if (t.kind !== 'sketch') return;
+    const sim = this.sim;
+    if (t.phase === 'drag') {
+      const rect = t.rect;
+      t.start = null;
+      t.held = false;
+      const check = rect ? sim.world.sketchRectValid(t.type, rect) : null;
+      if (rect && check?.ok) {
+        this.tool = { kind: 'sketch', type: t.type, phase: 'door', rect, moving: t.moving };
+        this.sfx('place');
+      } else {
+        if (rect && rect.w * rect.h > 1) this.refuse('draw_sketch', check?.reason, check?.sketch);
+        t.rect = null;
+      }
+      return;
+    }
+    if (!this.cursor) return;
+    const door = sim.world.nearestDoor(t.rect, this.cursor.x, this.cursor.y);
+    const sketch = sim.world.sketchDoorValid(t.rect, door).ok ? sim.addSketch(t.type, t.rect, door) : null;
+    if (!sketch) {
+      this.refuse('place_sketch_door');
+      return;
+    }
+    if (t.moving) {
+      this.tool = { kind: 'none' };
+      this.select({ kind: 'sketch', id: sketch.id });
+      return;
+    }
+    // the tool stays for another of the same kind
+    this.tool = { kind: 'sketch', type: t.type, phase: 'drag', start: null, rect: null, held: false, moving: null };
+    this.land(clientX, clientY);
   }
 
   /**
@@ -597,11 +725,29 @@ export class Tools {
     return false;
   }
 
-  /** Whether a tile is open corridor floor that a new room could take. */
-  private isFree(x: number, y: number): boolean {
+  /** Whether a tile is open corridor floor that a new room could take, pencilled in for none but sketch `spare`. */
+  private isFree(x: number, y: number, spare?: number): boolean {
     const world = this.sim.world;
     const i = world.idx(x, y);
+    const sketch = world.sketchAt(x, y);
+    if (sketch && sketch.id !== spare) return false;
     return world.inside(x, y) && world.zone[i] === Z_CORRIDOR && !world.blocked[i] && !world.reserved[i];
+  }
+
+  /** Whether a room could be pencilled in over a tile: free corridor floor, or land not the game's yet, with no sketch. */
+  private sketchFree(): (x: number, y: number) => boolean {
+    const world = this.sim.world;
+    const plots = centerOf(this.sim.s).plots;
+    const owned = new Set(
+      plotOffers(this.sim.s, world.building)
+        .filter((o) => o.state === 'owned')
+        .map((o) => o.def.id),
+    );
+    return (x, y) => {
+      if (world.inside(x, y)) return this.isFree(x, y);
+      const plot = plotAt(plots, x, y);
+      return !!plot && !owned.has(plot.id) && !world.sketchAt(x, y);
+    };
   }
 
   /** Ghost, footprint and the squares people will use, marked by who they are for. */
@@ -631,6 +777,7 @@ export class Tools {
     }
     // where it fits but the bank cannot pay for it, it shows red before the click, not only after
     this.problem = check.reason || (affordable ? '' : "Can't afford it");
+    this.inTheWay = check.sketch;
     // what a new item would change, worked out once for each spot it is held over, and again once another is down
     if (!moving && ok && loadDisplay().placePreview) {
       const key = `${type}:${x},${y}:${rot}:${this.sim.s.items.length}`;
@@ -672,6 +819,7 @@ export class Tools {
       const same = sameRect(room, rect);
       if (!same) {
         this.problem = check.reason;
+        this.inTheWay = check.sketch;
         this.hint = resizeHint(room, rect, resizeCost(room, rect));
       }
       drawing.tiles.push(...rectTiles(rect, same || check.ok ? OV_GOOD : OV_BAD));
@@ -721,9 +869,38 @@ export class Tools {
     if (!placed) return 0;
     const check = this.sim.world.layoutValid(layout.type, placed, moving);
     this.problem = check.reason;
+    this.inTheWay = check.sketch;
     drawing.tiles.push(...layoutTiles(placed, check.ok));
     this.view.setDoor({ door: placed.door, tone: check.ok ? 'ok' : 'bad' });
     return check.ok ? this.sim.world.windowsOnto(placed, moving).length : 0;
+  }
+
+  /** The sketch tool: the floor being dragged out, colored as a room's, or the rectangle and the door under the cursor. */
+  private drawSketch(drawing: Drawing) {
+    const t = this.tool;
+    if (t.kind !== 'sketch') return;
+    const world = this.sim.world;
+    if (t.phase === 'door') {
+      this.hint = sketchDoorHint(t.type);
+      drawing.tiles.push(...rectTiles(t.rect, OV_BLUE));
+      if (!this.cursor) return;
+      const door = world.nearestDoor(t.rect, this.cursor.x, this.cursor.y);
+      const check = world.sketchDoorValid(t.rect, door);
+      this.problem = check.reason;
+      this.view.setDoor({ door, tone: check.ok ? 'ok' : 'bad' });
+      return;
+    }
+    this.hint = sketchHint(t.type, t.start && !t.held ? t.rect : null, !!t.moving);
+    const free = this.sketchFree();
+    if (t.rect) {
+      const check = world.sketchRectValid(t.type, t.rect);
+      this.problem = check.reason;
+      this.inTheWay = check.sketch;
+      drawing.tiles.push(...dragTiles(t.rect, check.ok, free));
+    } else if (this.cursor) {
+      const [x, y] = tileOf(this.cursor);
+      drawing.tiles.push([x, y, free(x, y) ? OV_GOOD : OV_BAD]);
+    }
   }
 
   /** Recompute overlays, ghost and hint for the current tool state. */
@@ -735,6 +912,7 @@ export class Tools {
     this.problem = '';
     this.hint = '';
     this.preview = null;
+    this.inTheWay = undefined;
     view.setDoor(null);
     if (t.kind === 'none') {
       view.setGhost(null);
@@ -776,19 +954,26 @@ export class Tools {
       this.hint = expandHint(pointed);
       if (pointed?.state === 'locked') this.problem = pointed.why;
       view.setHeat(plotHeat(offers, t.pointed), 'land');
+    } else if (t.kind === 'sketch') {
+      view.setGhost(null);
+      this.drawSketch(drawing);
     } else if (t.phase === 'drag') {
       view.setGhost(null);
+      const spare = t.sketch?.id;
       this.hint =
-        t.noFit && !t.start
-          ? `${t.noFit} · Esc cancels`
-          : dragHint(t.type, t.start ? t.rect : null, t.rect ? roomCost(t.type, t.rect) : 0);
+        t.held && t.rect
+          ? heldHint(t.type, t.rect, roomCost(t.type, t.rect))
+          : t.noFit && !t.start
+            ? `${t.noFit} · Esc cancels`
+            : dragHint(t.type, t.start ? t.rect : null, t.rect ? roomCost(t.type, t.rect) : 0);
       if (t.rect) {
-        const check = world.roomRectValid(t.type, t.rect);
+        const check = world.roomRectValid(t.type, t.rect, undefined, spare);
         this.problem = check.reason;
-        drawing.tiles.push(...dragTiles(t.rect, check.ok, (x, y) => this.isFree(x, y)));
+        this.inTheWay = check.sketch;
+        drawing.tiles.push(...dragTiles(t.rect, check.ok, (x, y) => this.isFree(x, y, spare)));
       } else if (this.cursor) {
         const [x, y] = tileOf(this.cursor);
-        drawing.tiles.push([x, y, this.isFree(x, y) ? OV_GOOD : OV_BAD]);
+        drawing.tiles.push([x, y, this.isFree(x, y, spare) ? OV_GOOD : OV_BAD]);
       }
     } else if (t.phase === 'door') {
       view.setGhost(null);

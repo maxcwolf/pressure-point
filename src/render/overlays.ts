@@ -8,7 +8,7 @@ import type { ItemType, RugPatternId } from '../core/data';
 import type { Sim } from '../core/sim/sim';
 import type { Room } from '../core/state/types';
 import { at } from '../core/util';
-import { frontOf, itemCenter, itemDims, onWall } from '../core/world';
+import { frontOf, itemCenter, itemDims, onWall, type Rect } from '../core/world';
 import { hangPlace, placeHung } from './hung';
 import { placeItemModel } from './items';
 import { iconTexture } from './models/icons';
@@ -402,13 +402,17 @@ export class Overlays {
     } else if (sel?.kind === 'room') {
       const room = this.sim.world.room(sel.id);
       if (room) this.outlineRoom(room);
+    } else if (sel?.kind === 'sketch') {
+      // a room pencilled in is outlined just as one built, just inside its edge
+      const sketch = this.sim.sketch(sel.id);
+      if (sketch) this.outlineRoom(sketch);
     }
     this.shake(t);
     this.updateGlow(t);
   }
 
-  /** Lay the gold outline round a room's floor, built afresh for a room of another size. */
-  private outlineRoom(room: Room) {
+  /** Lay the gold outline round a room's floor, or a sketch's, built afresh for one of another size. */
+  private outlineRoom(room: Rect) {
     const size = `${room.w}x${room.h}`;
     if (size !== this.outlineSize) {
       this.outlineSize = size;
@@ -458,7 +462,12 @@ export class Overlays {
       });
     }
     for (const copy of this.glow.children) copy.visible = shown(copy.userData.part as THREE.Object3D);
-    const room = hov?.kind === 'room' ? this.sim.s.rooms.find((r) => r.id === hov.id) : undefined;
+    const room =
+      hov?.kind === 'room'
+        ? this.sim.s.rooms.find((r) => r.id === hov.id)
+        : hov?.kind === 'sketch'
+          ? this.sim.sketch(hov.id)
+          : undefined;
     this.roomGlow.visible = !!room;
     if (room) {
       this.roomGlow.position.set(room.x + room.w / 2, 0.03, room.y + room.h / 2);

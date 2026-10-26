@@ -1,4 +1,5 @@
-// The Rooms menu: every kind of room that can be built, and the templates saved to build again.
+// The Rooms menu: every kind of room that can be built, the templates saved to build again, and the rooms again to
+// pencil in for later.
 
 import { ITEMS, ROLES, ROOM_ORDER, roomHere, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
@@ -9,6 +10,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import type { RoomsTab } from '../../hud';
 import { available, machineCures, roomKarmaLock, roomOffering } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
+import { sketchCount } from '../../lib/sketches';
 import { ROOM_SORTS, sorted, TEMPLATE_SORTS } from '../../lib/sorts';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
@@ -19,17 +21,20 @@ import { TemplatesTab } from './TemplatesTab';
 const TABS: readonly { id: RoomsTab; name: string }[] = [
   { id: 'rooms', name: 'Rooms' },
   { id: 'templates', name: 'Templates' },
+  { id: 'pencil', name: '✎ Pencil in' },
 ];
 
-/** The kinds of room, and the templates saved, a tab each. */
+/** The kinds of room, and the templates saved, a tab each, and a third that pencils the rooms in rather than builds them. */
 export function RoomsMenu() {
   const hud = useHud();
+  const { sim } = useGame();
   const guide = hud.guide();
+  const pencil = hud.roomsTab === 'pencil';
   return (
     <div class="panel menu">
       <div class="menu-head">
         <h3>Build a room</h3>
-        {hud.roomsTab === 'rooms' ? (
+        {hud.roomsTab !== 'templates' ? (
           <SortBy key="rooms" list="rooms" orders={ROOM_SORTS} />
         ) : (
           hud.templates.length > 1 && <SortBy key="templates" list="templates" orders={TEMPLATE_SORTS} />
@@ -39,16 +44,28 @@ export function RoomsMenu() {
         {TABS.map((t) => (
           <Button
             key={t.id}
-            class={cx('tab', hud.roomsTab === t.id && 'on', guide === `tab:${t.id}` && 'guide')}
+            class={cx(
+              'tab',
+              t.id === 'pencil' && 'pencil',
+              hud.roomsTab === t.id && 'on',
+              guide === `tab:${t.id}` && 'guide',
+            )}
             onPress={() => {
-              hud.roomsTab = t.id;
+              // pressed again, pencilling in goes off
+              hud.roomsTab = t.id === 'pencil' && pencil ? 'rooms' : t.id;
             }}
           >
             {t.id === 'templates' && hud.templates.length ? `${t.name} (${hud.templates.length})` : t.name}
           </Button>
         ))}
       </div>
-      {hud.roomsTab === 'rooms' ? <RoomCards /> : <TemplatesTab />}
+      {pencil && (
+        <div class="pencil-note">
+          <p>✎ Drag a room out to keep its space for later. Nothing is charged until you build it.</p>
+          {sim.s.sketches.length > 0 && <p class="sub">{sketchCount(sim.s)}</p>}
+        </div>
+      )}
+      {hud.roomsTab === 'templates' ? <TemplatesTab /> : <RoomCards pencil={pencil} />}
     </div>
   );
 }
@@ -56,9 +73,9 @@ export function RoomsMenu() {
 /**
  * A card per room type that can be built at this center, locked until its star (or until karma unlocks its machine)
  * and dimmed when it cannot be afforded, in the order picked. A machine room says what its machine cures and what it
- * costs to run.
+ * costs to run. With `pencil`, a card pencils its room in rather than building it, so none is dimmed for its price.
  */
-function RoomCards() {
+function RoomCards({ pencil }: { pencil: boolean }) {
   const hud = useHud();
   const { sim, tools } = useGame();
   const s = sim.s;
@@ -81,7 +98,7 @@ function RoomCards() {
         return (
           <Button
             key={t}
-            class={cx('card', !locked && s.money < r.cost && 'poor', guide === `room:${t}` && 'guide')}
+            class={cx('card', !locked && !pencil && s.money < r.cost && 'poor', guide === `room:${t}` && 'guide')}
             // a room karma can unlock opens the offer to unlock its machine, rather than refusing outright
             locked={starred}
             onPress={() => {
@@ -92,7 +109,8 @@ function RoomCards() {
                 return;
               }
               hud.menu = null;
-              tools.startRoom(t);
+              if (pencil) tools.startSketch(t);
+              else tools.startRoom(t);
             }}
           >
             <Icon id={r.icon} size={34} />

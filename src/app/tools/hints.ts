@@ -13,7 +13,7 @@ import {
 } from '../../core/data';
 import { money } from '../../core/format';
 import { nameInSentence, type PlotOffer } from '../../core/land';
-import { coveredSize } from '../../core/resize';
+import { coveredSize, roomCost } from '../../core/resize';
 import type { Rect } from '../../core/world';
 import { legend } from './squares';
 import type { PlanSub, Tool } from './types';
@@ -83,6 +83,37 @@ export function noFitHint(type: RoomType, offers: readonly PlotOffer[]): string 
   return `${head} Every plot is yours: move a room, make one smaller or knock one down to make space.`;
 }
 
+/**
+ * Two phrases kept in one chip: the hint is cut into chips at its middle dots, which this one has spaces round it
+ * that do not break.
+ */
+const together = (a: string, b: string) => `${a}\u00a0·\u00a0${b}`;
+
+/** The hint while a room's floor is offered before any drag, as a sketch's is: a click keeps it, a drag replaces it. */
+export function heldHint(type: RoomType, rect: Rect, cost: number): string {
+  return `${ROOMS[type].name} · ${rect.w}×${rect.h} · ${money(cost)} · click to keep this floor, or drag out another · Esc cancels`;
+}
+
+/**
+ * The hint for pencilling a room in: its minimum size and what it will cost when built, and that nothing is charged
+ * now; once a drag is under way, its size and what it will cost at that size. A sketch picked up to move says to drag
+ * it out again, or click to keep it where it was.
+ */
+export function sketchHint(type: RoomType, dragged: Rect | null, moving = false): string {
+  const def = ROOMS[type];
+  const name = `✎ ${def.name}`;
+  if (dragged)
+    return `${name} · ${dragged.w}×${dragged.h} · ${together(`${money(roomCost(type, dragged))} when built`, 'nothing charged now')} · release to pencil it in`;
+  const step = moving
+    ? 'drag it out again, or click to keep it where it was'
+    : `drag out the floor to pencil it in (at least ${def.minShort}×${def.minLong})`;
+  return `${name} · ${step} · ${together(`${money(def.cost)} when built`, 'nothing charged now')} · Esc ${moving ? 'puts it back' : 'cancels'}`;
+}
+
+/** The hint for choosing where a sketch's door goes. */
+export const sketchDoorHint = (type: RoomType) =>
+  `✎ ${ROOMS[type].name} · click a wall for the door · Esc goes back to the floor`;
+
 /** The hint for choosing where a new room's door goes. */
 export const DOOR_HINT = 'Now click a wall to place the door · Esc cancels';
 
@@ -151,6 +182,8 @@ export function toolIcon(tool: Tool): IconId | null {
       return ROOMS[tool.layout.type].icon;
     case 'expand':
       return 'ui-expand';
+    case 'sketch':
+      return ROOMS[tool.type].icon;
     case 'room': {
       if (tool.phase !== 'plan' || !tool.sub) return ROOMS[tool.type].icon;
       const sub = tool.sub;

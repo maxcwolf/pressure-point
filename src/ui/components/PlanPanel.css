@@ -62,3 +62,14 @@ button.chip:hover {
 .plan .sub {
   margin: 0 0 4px;
 }
+
+/* what the bank is short of, in the color of trouble */
+.plan .short b {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+.plan .btnrow button.pencil {
+  background: var(--teal);
+  color: #fff;
+}

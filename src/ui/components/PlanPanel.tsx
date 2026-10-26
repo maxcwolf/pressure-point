@@ -1,4 +1,5 @@
-// The blueprint panel: what a room being planned still needs, what can be added, and the Build button.
+// The blueprint panel: what a room being planned still needs, what can be added, and the Build button, with a way to
+// pencil the room in for later instead.
 
 import './PlanPanel.css';
 
@@ -8,6 +9,7 @@ import { finishCost } from '../../core/sim/building';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { placedFlags } from '../lib/plan';
+import { shortfall } from '../lib/sketches';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
 import { Stars } from './common/Stars';
@@ -23,6 +25,7 @@ export function PlanPanel() {
   const placed = placedFlags(def.required, missing);
   const extras = room.windows.length * WINDOW_COST;
   const { cost } = finishCost(room);
+  const short = shortfall(sim.s.money, cost);
   /** Pick up windows or the door, or put them down again. */
   const hold = (what: 'window' | 'door') => {
     tools.planHold(holding === what ? '' : what);
@@ -77,6 +80,11 @@ export function PlanPanel() {
           {' Prestige '}
           <Stars count={sim.prestige(room)} />
         </p>
+        {short && (
+          <p class="sub short">
+            <b>{short}</b> Pencil it in and come back when you can.
+          </p>
+        )}
         <div class="btnrow">
           <Button
             onPress={() => {
@@ -84,6 +92,15 @@ export function PlanPanel() {
             }}
           >
             Cancel
+          </Button>{' '}
+          <Button
+            class="pencil"
+            title="Keep the floor and the door as a sketch, for nothing, and build it later. Windows and extras are refunded."
+            onPress={() => {
+              tools.planSketch();
+            }}
+          >
+            ✎ Pencil in for later
           </Button>{' '}
           <Button
             class={cx('go', hud.guide() === 'plan:build' && 'guide')}
