@@ -10,7 +10,7 @@ import { ITEMS, ROOMS, WINDOW_COST } from '../../src/core/data';
 import type { Sim } from '../../src/core/sim/sim';
 import type { View } from '../../src/render/view';
 import { hintChips } from '../../src/ui/lib/hint-chips';
-import { shortfall, sketchCount, sketchDay, sketchNote } from '../../src/ui/lib/sketches';
+import { shortfall, sketchCount, sketchDay, sketchNote, sketchTag } from '../../src/ui/lib/sketches';
 import { addConsult, freshSim, hire } from './helpers';
 
 /** Ignore a call to the scene. */
@@ -258,13 +258,38 @@ describe('a blueprint pencilled in for later', () => {
 describe('what the interface says', () => {
   it('counts the sketches and what building them all would cost', () => {
     const sim = freshSim();
-    expect(sketchCount(sim.s)).toBe('Nothing pencilled in yet');
+    expect(sketchCount(sim.world)).toBe('Nothing pencilled in yet');
     sim.addSketch('consult', { x: 20, y: 6, w: 4, h: 4 }, { x: 21, y: 9, dx: 0, dy: 1 });
-    expect(sketchCount(sim.s)).toBe('1 pencilled in · $4,000 to build it');
+    expect(sketchCount(sim.world)).toBe('1 pencilled in · $4,000 to build it');
     sim.addSketch('staffroom', { x: 20, y: 11, w: 3, h: 3 }, { x: 21, y: 11, dx: 0, dy: -1 });
-    expect(sketchCount(sim.s)).toBe(
+    expect(sketchCount(sim.world)).toBe(
       `2 pencilled in · $${(4000 + ROOMS.staffroom.cost).toLocaleString('en-US')} to build them all`,
     );
+  });
+
+  it('counts the sketches that no longer fit, one or more', () => {
+    const sim = freshSim();
+    sim.addSketch('consult', { x: 20, y: 6, w: 4, h: 4 }, { x: 21, y: 9, dx: 0, dy: 1 });
+    sim.addSketch('staffroom', { x: 16, y: 11, w: 3, h: 3 }, { x: 17, y: 11, dx: 0, dy: -1 });
+    const cost = `$${(4000 + ROOMS.staffroom.cost).toLocaleString('en-US')}`;
+    // a plant in each doorway
+    sim.placeItem('plant', 21, 10, 0);
+    expect(sketchCount(sim.world)).toBe(`2 pencilled in · ${cost} to build them all · one no longer fits`);
+    sim.placeItem('plant', 17, 10, 0);
+    expect(sketchCount(sim.world)).toBe(`2 pencilled in · ${cost} to build them all · 2 no longer fit`);
+  });
+
+  it('labels a sketch with its size, or what has gone wrong with it', () => {
+    const sim = freshSim();
+    const sketch = sim.addSketch('consult', { x: 20, y: 6, w: 4, h: 4 }, { x: 21, y: 9, dx: 0, dy: 1 });
+    if (!sketch) throw new Error('no sketch');
+    expect(sketchTag(sketch, sim.world.sketchFit(sketch))).toBe('pencilled in · 4×4');
+    const fit = { ok: false, reason: '' };
+    expect(sketchTag(sketch, { fit, standing: 'waits' })).toBe('pencilled in · 4×4');
+    expect(sketchTag(sketch, { fit, standing: 'doorway' })).toBe('⚠ doorway blocked');
+    expect(sketchTag(sketch, { fit, standing: 'unfit' })).toBe('⚠ no longer fits');
+    sim.placeItem('plant', 21, 10, 0);
+    expect(sketchTag(sketch, sim.world.sketchFit(sketch))).toBe('⚠ doorway blocked');
   });
 
   it('says when a sketch was drawn and who its room needs', () => {

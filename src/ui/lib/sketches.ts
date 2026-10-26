@@ -2,14 +2,27 @@
 
 import { ROLES, ROOMS } from '../../core/data';
 import { an, dateOf, money } from '../../core/format';
-import { sketchesCost } from '../../core/sim/sketches';
+import { sketchesCost, unfitCount } from '../../core/sim/sketches';
 import type { GameState, Sketch } from '../../core/state/types';
+import type { SketchFit, World } from '../../core/world';
 
-/** The Pencil in tab's one line: how many rooms are pencilled in, and what building them all would cost. */
-export function sketchCount(s: Pick<GameState, 'sketches'>): string {
-  const n = s.sketches.length;
+/**
+ * The Pencil in tab's one line: how many rooms are pencilled in, what building them all would cost, and how many of
+ * them no longer fit where they are, if any.
+ */
+export function sketchCount(world: Pick<World, 's' | 'sketchFit'>): string {
+  const n = world.s.sketches.length;
   if (!n) return 'Nothing pencilled in yet';
-  return `${n} pencilled in · ${money(sketchesCost(s))} to build ${n === 1 ? 'it' : 'them all'}`;
+  const unfit = unfitCount(world);
+  const trouble = unfit === 0 ? '' : unfit === 1 ? ' · one no longer fits' : ` · ${unfit} no longer fit`;
+  return `${n} pencilled in · ${money(sketchesCost(world.s))} to build ${n === 1 ? 'it' : 'them all'}${trouble}`;
+}
+
+/** The small line on a sketch's floor label: its size, or what has gone wrong, in a word or two. */
+export function sketchTag(sk: Pick<Sketch, 'w' | 'h'>, { standing }: SketchFit): string {
+  if (standing === 'doorway') return '⚠ doorway blocked';
+  if (standing === 'unfit') return '⚠ no longer fits';
+  return `pencilled in · ${sk.w}×${sk.h}`;
 }
 
 /** The day a sketch was drawn, as the bottom bar dates a day: "Day 21", and the month and year if not this month's. */
