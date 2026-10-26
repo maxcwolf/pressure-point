@@ -65,7 +65,7 @@ const lock = css({
   display: 'flex',
   bg: 'bg.card',
   borderRadius: 'disc',
-  p: '[1px]',
+  p: '1',
 });
 
 /** The button to give every room of its kind the same look. */

@@ -26,7 +26,8 @@ const advisor = css({
   '& .note': {
     bg: 'bg.panel',
     border: 'outline.thick',
-    borderRadius: '[16px 16px 16px 4px]',
+    borderRadius: '14',
+    borderBottomLeftRadius: '4',
     py: '8',
     px: '12',
     fontSize: '14',

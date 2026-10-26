@@ -116,7 +116,7 @@ export const ledgerLook = css.raw({
   px: '10',
   fontSize: '14',
   '& h4': { fontWeight: 'bold', mb: '4' },
-  '& div': { display: 'flex', py: '[1.5px]', px: '0' },
+  '& div': { display: 'flex', py: '1', px: '0' },
   '& div:not(.btnrow)': { justifyContent: 'space-between' },
   '& .total': { borderTop: 'divider', mt: '4', pt: '4', fontWeight: 'bold' },
 });
@@ -134,7 +134,7 @@ export const chartLook = css.raw({
   gap: '4',
   h: '56',
   mt: '12',
-  '& i': { flex: '1', maxW: '32', bg: 'good.solid', borderRadius: '[5px 5px 0 0]' },
+  '& i': { flex: '1', maxW: '32', bg: 'good.solid', borderTopRadius: '4', borderBottomRadius: 'none' },
   '& i.neg': { bg: 'bad.solid' },
 });
 

@@ -36,7 +36,7 @@ const here = css({
   color: 'fg.on-accent',
   bg: 'accent',
   borderRadius: '8',
-  py: '[1px]',
+  py: '1',
   px: '6',
 });
 

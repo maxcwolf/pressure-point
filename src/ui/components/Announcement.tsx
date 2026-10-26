@@ -24,7 +24,7 @@ const pill = css({
   animation: '[drop {durations.slow} {easings.out}]',
   textAlign: 'center',
   // an icon keeps its navy outline on the navy pill by sitting on a cream chip
-  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },
+  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '1' },
 });
 
 /** The current announcement, if there is one, each new line coming in as itself. */

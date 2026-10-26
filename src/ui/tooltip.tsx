@@ -39,13 +39,13 @@ const bubble = css({
     bottom: '-4',
     w: '12',
     h: '12',
-    ml: '[-6px]',
+    ml: '-6',
     bg: 'bg.inverse',
     borderRadius: '2',
     transform: 'rotate(45deg)',
   },
   '&.below::after': { bottom: 'auto', top: '-4' },
-  '& strong': { display: 'block', color: 'star', fontSize: '14', fontWeight: 'bold', mb: '[1px]' },
+  '& strong': { display: 'block', color: 'star', fontSize: '14', fontWeight: 'bold', mb: '1' },
   '& kbd': {
     display: 'inline-block',
     fontFamily: 'inherit',
@@ -70,7 +70,7 @@ const bubble = css({
   '&.rich': { maxW: '[min(300px, calc(var(--vw) - 16px))]' },
   _motionReduce: { animation: 'none' },
   // an icon in the navy bubble sits on a cream chip, or its navy outline would vanish
-  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },
+  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '1' },
 });
 
 /** How long the pointer rests on something before its tooltip shows. */

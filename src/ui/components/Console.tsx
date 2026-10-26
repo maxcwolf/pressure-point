@@ -32,7 +32,7 @@ const logLook = css({
   lineHeight: 'snug',
   userSelect: 'text',
   WebkitUserSelect: 'text',
-  '& li': { py: '[1px]', px: '0', whiteSpace: 'pre-wrap' },
+  '& li': { py: '1', px: '0', whiteSpace: 'pre-wrap' },
   '& li.typed': { fontWeight: 'bold' },
   '& li.typed::before': { content: "'› '", opacity: 'faint' },
   '& li.good': { color: 'good.strong' },

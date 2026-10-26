@@ -36,7 +36,7 @@ const causes = css({
   bg: 'bg.subtle',
   borderRadius: '8',
   fontSize: '13',
-  '& li': { display: 'flex', justifyContent: 'space-between', gap: '10', py: '[1px]', px: '0' },
+  '& li': { display: 'flex', justifyContent: 'space-between', gap: '10', py: '1', px: '0' },
   '& li:first-child': { fontWeight: 'bold' },
   '& b': { color: 'bad', whiteSpace: 'nowrap' },
 });

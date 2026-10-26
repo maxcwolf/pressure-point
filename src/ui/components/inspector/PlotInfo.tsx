@@ -23,7 +23,7 @@ const nameBox = css({
   py: '0',
   px: '4',
   my: '0',
-  mx: '[-6px]',
+  mx: '-6',
   w: '[calc(100% + 8px)]',
   bg: 'transparent',
   '&:hover, &:focus': { borderColor: 'accent', bg: 'bg.hover', outline: 'none' },

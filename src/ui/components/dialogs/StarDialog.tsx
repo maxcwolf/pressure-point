@@ -19,7 +19,7 @@ import { Dialog } from './Dialog';
 /** The stars earned, big and gold, outlined in navy, with the ones still to earn faint. */
 const bigStars = css({
   color: 'star',
-  fontSize: '[52px]',
+  fontSize: 'display',
   letterSpacing: 'stars.large',
   WebkitTextStroke: '[{borderWidths.medium} {colors.outline}]',
   paintOrder: 'stroke fill',

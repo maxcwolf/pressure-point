@@ -7,6 +7,8 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+import themeTokens from './scripts/eslint-theme-tokens.mjs';
+
 /** Imports no game code may use, wherever it lives. */
 const notInTheGame = {
   paths: [{ name: 'electron', message: 'The game cannot use Electron. Add what it needs to electron/api.ts.' }],
@@ -130,6 +132,26 @@ export default tseslint.config(
     files: ['src/ui/**'],
     plugins: { 'react-hooks': reactHooks },
     rules: { 'react-hooks/rules-of-hooks': 'error', 'react-hooks/exhaustive-deps': 'error' },
+  },
+
+  // the interface's styles stay on the theme: semantic colors and tokens, no hex values, palette colors or numbers
+  {
+    files: ['src/ui/**/*.{ts,tsx}'],
+    ignores: ['src/ui/theme/panda/palette.ts', 'src/ui/theme/panda/semantic.ts', 'src/ui/theme/panda/tokens.ts'],
+    plugins: { theme: themeTokens },
+    rules: {
+      'theme/tokens': [
+        'error',
+        {
+          themeFiles: [
+            'theme/panda/global.ts',
+            'theme/panda/keyframes.ts',
+            'theme/panda/scroll-cue.ts',
+            'theme/panda/recipes.ts',
+          ],
+        },
+      ],
+    },
   },
 
   // the game core is plain logic: no drawing, no interface, no browser. It imports only from itself.

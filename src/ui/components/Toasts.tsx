@@ -97,7 +97,7 @@ const message = css(card, {
 /** The people asking on a card for several, in a list under it, each a click to them. */
 const requestList = css({
   m: '10',
-  mt: '[-4px]',
+  mt: '-4',
   mb: '0',
   py: '6',
   px: '4',
@@ -105,7 +105,8 @@ const requestList = css({
   bg: 'bg.panel',
   border: 'outline.thin',
   borderTop: 'none',
-  borderRadius: '[0 0 10px 10px]',
+  borderTopRadius: 'none',
+  borderBottomRadius: '10',
   pointerEvents: 'auto',
 });
 

@@ -55,7 +55,7 @@ const panel = css({
   },
   '& h4': { fontSize: '14', fontWeight: 'bold', m: '0', mt: '8', mb: '4' },
   // what someone or something is, under its name
-  '& .tag': { display: 'inline-block', bg: 'bg.inset', borderRadius: '8', py: '[1px]', px: '8', fontSize: '12' },
+  '& .tag': { display: 'inline-block', bg: 'bg.inset', borderRadius: '8', py: '1', px: '8', fontSize: '12' },
   // A status line, in the tone of what it says (ui/lib/status.ts): plain news on navy, what wants seeing to in amber,
   // trouble in red, good news in green. The light ones carry a stripe of their color down the left, to be told apart
   // at a glance.
@@ -82,7 +82,7 @@ const panel = css({
     fontWeight: 'bold',
   },
   // an icon keeps its navy outline on the navy line by sitting on a cream chip; on a light line it needs none
-  '& .status .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },
+  '& .status .icon': { bg: 'bg.panel', borderRadius: '6', p: '1' },
   '& .status:is(.warn, .bad, .good) .icon': { bg: '[none]' },
 });
 

@@ -85,7 +85,7 @@ const detailList = css({
   borderRadius: '8',
   fontSize: '12',
   color: 'fg',
-  '& li': { display: 'list-item', listStyle: 'none', py: '[1px]', fontSize: '12' },
+  '& li': { display: 'list-item', listStyle: 'none', py: '1', fontSize: '12' },
 });
 
 /** What a first game will need soon, or the tutorial's steps, under a dashed line. */

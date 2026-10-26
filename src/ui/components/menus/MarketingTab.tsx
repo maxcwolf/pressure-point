@@ -55,7 +55,7 @@ const conditionChoices = css({
     fontWeight: 'bold',
     fontSize: '12',
     h: 'auto',
-    py: '[1px]',
+    py: '1',
     px: '8',
     _hover: { transform: 'translateY(-1px)' },
     _on: { bg: 'toggle.on', color: 'fg.on-accent' },

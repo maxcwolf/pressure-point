@@ -28,17 +28,17 @@ export const scrollCueCss = defineGlobalStyles({
   '.save-list[data-more]': { '--cue-pt': '0px', '--cue-px': '0px', '--cue-pb': '0px' },
 
   // a scrollbar that is always there while there is anything to scroll: a sand channel with a navy thumb
-  '[data-more]::-webkit-scrollbar': { width: '11px' },
+  '[data-more]::-webkit-scrollbar': { width: '{sizes.10}' },
   '[data-more]::-webkit-scrollbar-track': {
     background: 'bg.inset',
     border: '[{borderWidths.thick} solid transparent]',
-    borderRadius: '6px',
+    borderRadius: '6',
     backgroundClip: 'padding-box',
   },
   '[data-more]::-webkit-scrollbar-thumb': {
     background: THUMB,
     border: '[{borderWidths.thick} solid transparent]',
-    borderRadius: '6px',
+    borderRadius: '6',
     backgroundClip: 'padding-box',
   },
   '[data-more]::-webkit-scrollbar-thumb:hover': {

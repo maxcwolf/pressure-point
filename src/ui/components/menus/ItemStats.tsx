@@ -47,7 +47,7 @@ const pips = css({
   gap: '2',
   m: '0',
   mt: '2',
-  mb: '[1px]',
+  mb: '1',
   '& i': { w: '10', h: '10', borderRadius: '2', bg: 'bg.inverse-subtle' },
   '&.decor i.on': { bg: 'highlight' },
   '&.calm i.on': { bg: 'info.light' },
@@ -58,7 +58,7 @@ const pips = css({
 const tip = css({
   '& ul': { listStyle: 'none', m: '0', mt: '2', p: '0', display: 'flex', flexDirection: 'column', gap: '2' },
   '& li': { display: 'flex', gap: '6', fontSize: '13', lineHeight: 'snug' },
-  '& li > .icon': { mt: '[1px]' },
+  '& li > .icon': { mt: '1' },
 });
 
 /** The panel beside the cards, which stays in view while the cards scroll. */
@@ -155,7 +155,7 @@ const twoWay = css({
     top: '-2',
     bottom: '-2',
     w: '2',
-    ml: '[-1px]',
+    ml: '-1',
     bg: 'bg.backdrop',
   },
   '& .bar i': {
@@ -175,7 +175,7 @@ const twoWay = css({
     justifyContent: 'space-between',
     fontSize: '11',
     opacity: 'quiet',
-    mt: '[1px]',
+    mt: '1',
   },
 });
 

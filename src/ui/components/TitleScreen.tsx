@@ -142,7 +142,7 @@ const noteLook = css({
 const saveName = css({ fontSize: '[clamp(18px, 3.2vh, 24px)]', fontWeight: 'bold', mb: '[clamp(4px, 1vh, 10px)]' });
 
 /** The center the latest save is in, close under its name. */
-const centerName = css({ m: '0', mt: '[-8px]', mb: '8', fontSize: '14', color: 'title.accent', fontWeight: 'bold' });
+const centerName = css({ m: '0', mt: '-8', mb: '8', fontSize: '14', color: 'title.accent', fontWeight: 'bold' });
 
 /** The latest save's picture beside its facts. */
 const saveBody = css({
@@ -188,7 +188,7 @@ const facts = css({
   lineHeight: 'normal',
   rowGap: '2',
   // icons on the dark panel sit on cream chips, or their navy outlines would vanish
-  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },
+  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '1' },
 });
 
 /** A fact: a long one, like a late date, wraps within its own column, lined up under its text rather than its icon. */
@@ -253,7 +253,8 @@ const tray = css({
   justifyContent: 'center',
   gap: '[clamp(10px, 2vh, 18px)]',
   mt: '[clamp(6px, 1.4vh, 16px)]',
-  p: '[clamp(6px, 1.2vh, 12px) 28px]',
+  py: '[clamp(6px, 1.2vh, 12px)]',
+  px: '24',
   borderRadius: '18',
   bg: 'title.panel',
   '&[hidden]': { display: 'none' },
@@ -292,7 +293,7 @@ const version = css({
 const alpha = css({
   display: 'inline-block',
   mr: '4',
-  py: '[1px]',
+  py: '1',
   px: '6',
   borderRadius: '6',
   bg: 'highlight',
@@ -328,7 +329,7 @@ const news = css.raw({
   _hover: { bg: 'title.button' },
   '&[hidden]': { display: 'none' },
   // icons on the dark panel sit on cream chips, or their navy outlines would vanish
-  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '[1.5px]' },
+  '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '1' },
 });
 const newsButton = css(news);
 
@@ -347,7 +348,7 @@ const updateLook = css({
   px: '10',
   boxShadow: 'pressed.dark',
   animation: '[pop {durations.normal} {easings.out}]',
-  '& .icon': { bg: 'bg.panel', borderRadius: 'disc', p: '[1px]' },
+  '& .icon': { bg: 'bg.panel', borderRadius: 'disc', p: '1' },
   // the arrows go round while it checks or downloads, inside a chip that stays still
   '&.busy .icon use': {
     transformBox: 'view-box',

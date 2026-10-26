@@ -148,6 +148,7 @@ export const tokens = defineTokens({
   },
   /** The corner radii, each its size in pixels, with a pill's ends and a disc. */
   radii: {
+    none: { value: '0' },
     2: { value: '2px' },
     4: { value: '4px' },
     6: { value: '6px' },
@@ -169,6 +170,8 @@ export const tokens = defineTokens({
     17: { value: '17px' },
     20: { value: '20px' },
     24: { value: '24px' },
+    /** The title's big stars. */
+    display: { value: '52px' },
   },
   fontWeights: {
     regular: { value: '400' },

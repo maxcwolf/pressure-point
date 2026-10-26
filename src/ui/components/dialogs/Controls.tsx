@@ -23,7 +23,7 @@ const keyList = css({
     border: 'outline.thin',
     borderBottomWidth: 'thick',
     borderRadius: '6',
-    py: '[1px]',
+    py: '1',
     px: '6',
   },
 });

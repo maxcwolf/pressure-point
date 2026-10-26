@@ -62,7 +62,7 @@ const phrase = css({
   border: '[{borderWidths.fine} solid {colors.border}]',
   bg: 'bg.card',
   borderRadius: '8',
-  py: '[1px]',
+  py: '1',
   px: '8',
   '&.name': { fontSize: '15', fontWeight: 'bold', border: 'none', bg: '[none]', p: '0', pr: '4' },
   '&.cost': { bg: 'highlight.bg', borderColor: 'highlight', fontWeight: 'bold' },
@@ -119,7 +119,7 @@ const effectList = css({
   gap: '4',
   m: '0',
   mt: '6',
-  mb: '[1px]',
+  mb: '1',
   p: '0',
 });
 
@@ -130,7 +130,7 @@ const effect = css({
   border: '[{borderWidths.fine} solid {colors.border.strong}]',
   bg: 'bg.card',
   borderRadius: '8',
-  py: '[1px]',
+  py: '1',
   px: '8',
   '&.good': { bg: 'good.bg', borderColor: 'good.solid', color: 'good' },
   '&.bad': { bg: 'bad.bg', borderColor: 'bad.solid', color: 'bad' },

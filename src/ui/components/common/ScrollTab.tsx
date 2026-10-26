@@ -29,7 +29,7 @@ const tab = css({
   border: 'outline',
   borderRadius: 'pill',
   background:
-    "[{colors.control} url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3E%3Cpath d='M2 2l6 6 6-6' fill='none' stroke='%2324384a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") center / 15px 10px no-repeat]",
+    "[{colors.control} url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3E%3Cpath d='M2 2l6 6 6-6' fill='none' stroke='%2324384a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") center / {sizes.16} {sizes.10} no-repeat]",
   boxShadow: 'low',
   cursor: 'pointer',
   opacity: 'hidden',

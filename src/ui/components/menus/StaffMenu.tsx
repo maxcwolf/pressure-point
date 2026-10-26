@@ -92,7 +92,7 @@ const act = css({
   bg: 'control',
   fontSize: '12',
   fontWeight: 'bold',
-  py: '[1px]',
+  py: '1',
   px: '8',
   whiteSpace: 'nowrap',
   justifySelf: 'end',
