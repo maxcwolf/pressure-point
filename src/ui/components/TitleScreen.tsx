@@ -164,7 +164,7 @@ const thumb = css.raw({
   objectFit: 'cover',
   border: '[{borderWidths.heavy} solid {colors.title.border}]',
   borderRadius: '8',
-  bg: 'title.off',
+  bg: 'title.thumb',
 });
 const thumbPicture = css(thumb);
 

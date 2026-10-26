@@ -193,6 +193,8 @@ export const semanticColors = defineSemanticTokens.colors({
     'button-hover': is('cyan.400'),
     border: is('white'),
     'border-soft': thin('white', 60),
+    /** A save's picture before it loads. */
+    thumb: is('navy.500'),
     off: is('navy.300'),
     'off-border': is('navy.100'),
   },
