@@ -119,6 +119,23 @@ export interface WallSpot {
   dy: number;
 }
 
+/**
+ * A room pencilled in: a kind of room, the floor it would cover and its door, kept for later. It costs nothing, does
+ * nothing and blocks nobody's way; it only keeps anything else from being built over it until it is built or erased.
+ */
+export interface Sketch {
+  id: number;
+  type: RoomType;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Inside tile of the door plus the outward direction, as a room's. */
+  door: WallSpot;
+  /** The day it was pencilled in. */
+  day: number;
+}
+
 export interface Item {
   id: number;
   type: ItemType;
@@ -806,6 +823,8 @@ export interface GameState {
   rooms: Room[];
   /** How new rooms of each kind are decorated, as chosen with "every room like this"; standard where unset. */
   roomDecor?: Partial<Record<RoomType, RoomDecor>>;
+  /** Rooms pencilled in for later, which hold their floor until they are built or erased. */
+  sketches: Sketch[];
   items: Item[];
   staff: Staff[];
   guests: Guest[];

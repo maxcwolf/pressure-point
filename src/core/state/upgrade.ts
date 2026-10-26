@@ -16,6 +16,7 @@ import {
   RIVAL_START_POINTS,
   type Role,
   ROLES,
+  ROOMS,
 } from '../data';
 import { type LandSide, stripsBought } from '../land';
 import { makeCandidate, settleLook, settleSex, settleTop } from '../people';
@@ -344,6 +345,8 @@ export function upgradeSave(save: GameState) {
     for (const v of s.visitors) iconBubble(v, v.visit === 'inspector');
   }
   freeScanners(save);
+  // rooms were first pencilled in with version 40, and one of a kind of room from a newer version means nothing here
+  save.sketches = save.sketches.filter((sk) => Object.hasOwn(ROOMS, sk.type));
   s.version = SAVE_VERSION;
 }
 

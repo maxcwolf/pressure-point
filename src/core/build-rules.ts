@@ -15,11 +15,12 @@ import {
   SIDEWALK_Y,
 } from './data';
 import { doorstep, entranceSteps, type Footprint, spotInWall } from './footprint';
-import { plotGroundAt } from './land';
+import { an } from './format';
+import { plotAt, plotGroundAt, plotOffers } from './land';
 import { carryWallSpot, farSide, inRect, sameRect } from './resize';
 import type { PlacedLayout } from './room-layout';
 import { sameSpot } from './state/game';
-import type { Room, WallSpot } from './state/types';
+import type { Room, Sketch, WallSpot } from './state/types';
 import { at } from './util';
 import {
   accessTile,
@@ -41,6 +42,27 @@ import {
 const OK: Check = { ok: true, reason: '' };
 /** A failed check, with the reason why. */
 const no = (reason: string): Check => ({ ok: false, reason });
+
+/** The sketch pencilled in over a tile, if any. */
+export function sketchAt(world: World, x: number, y: number): Sketch | undefined {
+  return world.s.sketches.find((sk) => inRect(sk, x, y));
+}
+
+/** The first sketch a rectangle covers any of, but the one numbered `spare` (a sketch being built), if any. */
+export function sketchOverlap(world: World, r: Rect, spare?: number): Sketch | undefined {
+  return world.s.sketches.find(
+    (sk) => sk.id !== spare && sk.x < r.x + r.w && r.x < sk.x + sk.w && sk.y < r.y + r.h && r.y < sk.y + sk.h,
+  );
+}
+
+/** Building over a sketch, turned down: the line names the room it is pencilled in for, and `sketch` which it is. */
+export function onSketch(sk: Sketch): Check {
+  return {
+    ok: false,
+    reason: `That's pencilled in for ${an(ROOMS[sk.type].name)}. Erase the sketch first.`,
+    sketch: sk.id,
+  };
+}
 
 /** Steps to the four straight neighbors. */
 const DIRS4: readonly (readonly [dx: number, dy: number])[] = [
@@ -200,6 +222,8 @@ export function onGrounds(world: World, x: number, y: number): Check {
   if (y >= SIDEWALK_Y) return no('Keep it off the street');
   if (world.zoneAt(x, y) !== Z_SCENERY) return no('Keep it off the paths');
   const { s } = world;
+  const sketch = sketchAt(world, x, y);
+  if (sketch) return onSketch(sketch);
   // a plot not yet built on is kept clear, and so is the path it will have
   const plot = plotGroundAt(centerOf(s).plots, x, y);
   if (plot)
@@ -245,12 +269,18 @@ export function canPlaceItem(world: World, type: ItemType, x: number, y: number,
   const { s } = world;
   if (type === 'certificate' && !certificatesLeft(s).length)
     return no('Win an award at the year-end ceremony to earn one');
-  if (onWall(type)) return canHang(world, type, x, y, rot, roomId);
   if (ITEMS[type].where === 'outdoors')
     return roomId === undefined ? canPlaceOutdoors(world, { type, x, y, rot }) : no('Goes outdoors, not in a room');
   const def = ITEMS[type];
   const it: Placed = { type, x, y, rot };
   const tiles = footprint(it);
+  // nothing goes on a room pencilled in, nor is used from it: hung on a wall, it covers the floor in front
+  const spots = onWall(type) ? tiles : [...tiles, ...def.access.map((_, i) => accessTile(it, i))];
+  for (const [tx, ty] of spots) {
+    const sketch = sketchAt(world, tx, ty);
+    if (sketch) return onSketch(sketch);
+  }
+  if (onWall(type)) return canHang(world, type, x, y, rot, roomId);
   let z: number | null = null;
   for (const [tx, ty] of tiles) {
     if (!world.inside(tx, ty)) return no('Must be inside the building');
@@ -295,8 +325,17 @@ export function windowsOnto(world: World, placed: PlacedLayout, moving?: Room): 
  * Can a room of this type cover this rectangle, in the game as it is or in a what-if? A window next door looking out
  * onto it is no bar: it comes through into the room.
  */
-export function roomRectValid(world: World, type: RoomType, r: Rect, t: Trial = world.asIs()): Check {
+export function roomRectValid(
+  world: World,
+  type: RoomType,
+  r: Rect,
+  t: Trial = world.asIs(),
+  /** A sketch that may be built over: the one this room is being built from. */
+  spare?: number,
+): Check {
   const def = ROOMS[type];
+  const sketch = sketchOverlap(world, r, spare);
+  if (sketch) return onSketch(sketch);
   for (let y = r.y; y < r.y + r.h; y++) {
     for (let x = r.x; x < r.x + r.w; x++) {
       if (!world.inside(x, y)) return no('Must be inside the building');
@@ -340,6 +379,44 @@ export function roomFitsAnywhere(world: World, type: RoomType): boolean {
     for (let y = b.y0; y + h - 1 <= b.y1; y++)
       for (let x = b.x0; x + w - 1 <= b.x1; x++) if (roomRectValid(world, type, { x, y, w, h }, t).ok) return true;
   return false;
+}
+
+/**
+ * Can a room of this type be pencilled in over this rectangle? Inside the building, wherever the room itself could go
+ * today; or wholly on one plot of land not the game's yet, clear of any other sketch, at the room's smallest or more.
+ * Never half in and half out, nor anywhere else outdoors. `spare` is a sketch being moved, which is no bar to itself.
+ */
+export function sketchRectValid(world: World, type: RoomType, r: Rect, spare?: number): Check {
+  const def = ROOMS[type];
+  let indoors = 0;
+  for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (world.inside(x, y)) indoors++;
+  if (indoors === r.w * r.h) return roomRectValid(world, type, r, world.asIs(), spare);
+  if (indoors > 0) return no('Keep it all inside the building, or all on one plot for sale');
+  const plots = centerOf(world.s).plots;
+  const plot = plotAt(plots, r.x, r.y);
+  const owned = plotOffers(world.s, world.building).find((o) => o.def.id === plot?.id)?.state === 'owned';
+  if (!plot || owned) return no('Must be inside the building, or on land for sale');
+  for (let y = r.y; y < r.y + r.h; y++)
+    for (let x = r.x; x < r.x + r.w; x++) if (plotAt(plots, x, y) !== plot) return no('Keep it on one plot for sale');
+  const sketch = sketchOverlap(world, r, spare);
+  if (sketch) return onSketch(sketch);
+  if (Math.min(r.w, r.h) < def.minShort || Math.max(r.w, r.h) < def.minLong)
+    return no(`Too small: needs at least ${def.minShort}×${def.minLong}`);
+  return OK;
+}
+
+/**
+ * Can a sketch have its door here? Inside the building, wherever the room's door could go today; on land for sale, any
+ * edge will do for now, as there is nothing there yet for it to open onto.
+ */
+export function sketchDoorValid(world: World, r: Rect, door: Room['door']): Check {
+  return world.inside(door.x, door.y) ? doorValid(world, r, door) : OK;
+}
+
+/** Whether a sketch could be built where it is today: its floor free but for itself, and its door able to open. */
+export function sketchFits(world: World, sk: Sketch): Check {
+  const floor = roomRectValid(world, sk.type, sk, world.asIs(), sk.id);
+  return floor.ok ? doorValid(world, sk, sk.door) : floor;
 }
 
 /** The doorway on the room edge nearest a ground position. */
@@ -389,6 +466,8 @@ export function resizeValid(world: World, room: Room, r: Rect): Check {
   if (sameRect(room, r)) return no('Drag a wall in or out');
   if (Math.min(r.w, r.h) < def.minShort || Math.max(r.w, r.h) < def.minLong)
     return no(`Too small: needs at least ${def.minShort}×${def.minLong}`);
+  const sketch = sketchOverlap(world, r);
+  if (sketch) return onSketch(sketch);
   const ownDoorway = world.idx(room.door.x + room.door.dx, room.door.y + room.door.dy);
   for (let y = r.y; y < r.y + r.h; y++) {
     for (let x = r.x; x < r.x + r.w; x++) {
