@@ -57,7 +57,10 @@ interface Handle {
     plan: { room: Room } | null;
     selected: { kind: string; id: number } | null;
     select(
-      sel: { kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room'; id: number } | { kind: 'plot'; id: string } | null,
+      sel:
+        | { kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room' | 'sketch'; id: number }
+        | { kind: 'plot'; id: string }
+        | null,
     ): void;
     startResize(roomId: number): void;
     startExpand(pointed?: string | null): void;
@@ -72,6 +75,8 @@ interface Handle {
     toasts: { text: string; count: number }[];
     /** Run the messages' clock for a frame of so many seconds. */
     tickToasts(dt: number): void;
+    /** Clear every message on the right. */
+    dismissAllToasts(): void;
   };
   loop: { saveSoon(): void };
   data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };

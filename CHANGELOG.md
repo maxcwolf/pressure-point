@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Pencil rooms in.** The Rooms menu's new Pencil in pill sketches a room's floor and door for later, for nothing: nothing can be built over it, and Build here in its inspector opens its blueprint on the spot when you're ready. A blueprint you can't afford yet can be pencilled in for later too.
+
 ## v0.33.7
 
 - **The payday warning keeps up.** While the payday warning is on screen, its figures follow the bank and the month's pace, paused too, and once the bank alone holds the wages it turns green to say payday is covered now. It goes once payday has passed, and one dismissed stays gone.

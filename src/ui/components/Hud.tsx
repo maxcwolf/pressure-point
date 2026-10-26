@@ -19,6 +19,7 @@ import { Menu } from './menus/Menu';
 import { Objectives } from './Objectives';
 import { OverlayPicker } from './OverlayPicker';
 import { PlanPanel } from './PlanPanel';
+import { SketchLabels } from './SketchLabels';
 import { StatsBar } from './StatsBar';
 import { SystemButtons } from './SystemButtons';
 import { Toasts } from './Toasts';
@@ -86,11 +87,12 @@ export function Hud({ hud }: { hud: HudState }) {
   );
 }
 
-/** The floating text layer, which sits in its own element beneath the interface. */
+/** The layer over the scene and beneath the interface: the floating text, and the labels on rooms pencilled in. */
 export function FloaterLayer({ hud }: { hud: HudState }) {
   useHudUpdates(hud);
   return (
     <HudContext.Provider value={hud}>
+      <SketchLabels />
       <Floaters />
     </HudContext.Provider>
   );

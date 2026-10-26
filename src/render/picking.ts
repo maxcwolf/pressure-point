@@ -22,9 +22,12 @@ export function shown(o: THREE.Object3D | null): boolean {
   return true;
 }
 
-/** What the player has selected: a person, an item or a room by its number, or a plot of land by its id. */
+/**
+ * What the player has selected: a person, an item, a room or a room pencilled in by its number, or a plot of land by
+ * its id.
+ */
 export type Selection =
-  | { kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room'; id: number }
+  | { kind: 'guest' | 'staff' | 'visitor' | 'item' | 'room' | 'sketch'; id: number }
   /** A plot of land, by its id. */
   | { kind: 'plot'; id: string };
 
@@ -66,7 +69,7 @@ export class Picker {
   }
   /**
    * Everything under the cursor, so a click can step through a stack: the people nearest first, then the
-   * items nearest first. Only when there are neither is it the room, or a plot being built.
+   * items nearest first. Only when there are neither is it the room, a room pencilled in, or a plot being built.
    */
   pickAll(clientX: number, clientY: number): Selection[] {
     this.setRay(clientX, clientY);
@@ -88,6 +91,8 @@ export class Picker {
     if (g) {
       const room = this.sim.world.roomAt(Math.floor(g.x), Math.floor(g.y));
       if (room) return [{ kind: 'room', id: room.id }];
+      const sketch = this.sim.world.sketchAt(Math.floor(g.x), Math.floor(g.y));
+      if (sketch) return [{ kind: 'sketch', id: sketch.id }];
       // a plot the builders are at, behind its fence: a finished one is the building's floor, and is picked with Expand
       const site = this.sim
         .landOffers()

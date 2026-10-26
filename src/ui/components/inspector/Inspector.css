@@ -418,3 +418,57 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* a room pencilled in: its name with a dashed chip saying so, its figures as chips, and its three buttons in a row */
+.insp .sketch-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.insp .pencilled {
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1.5px dashed var(--navy);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+.insp .sketch-chips .chip {
+  padding: 2px 9px;
+  font-size: 12px;
+}
+
+.insp .chip.unfit {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.insp p.unfit {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.insp .sketch-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.insp .sketch-buttons button {
+  margin-top: 4px;
+  padding: 5px 12px;
+  font-size: 13.5px;
+}
+
+.insp button.sketchmove {
+  border: 2.5px solid var(--navy);
+  border-radius: 12px;
+  font-weight: 600;
+  background: var(--cream);
+  box-shadow: 0 3px 0 rgba(36, 56, 74, 0.3);
+}

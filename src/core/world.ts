@@ -28,7 +28,7 @@ import { buildingsOf, lotWidth } from './land';
 import { byId } from './lookup';
 import type { PlacedLayout } from './room-layout';
 import { sameSpot } from './state/game';
-import type { GameState, Item, Room, WallSpot, Waypoint } from './state/types';
+import type { GameState, Item, Room, Sketch, WallSpot, Waypoint } from './state/types';
 import { at } from './util';
 
 /** Zone ids: -2 scenery (not walkable), -1 outdoors path, 0 corridor, >0 room id. */
@@ -145,6 +145,8 @@ export interface Rect {
 export interface Check {
   ok: boolean;
   reason: string;
+  /** The sketch in the way, when one is why it is turned down. */
+  sketch?: number;
 }
 
 /** The grids a way through is worked out on: each tile's zone, what blocks it, what is kept clear, and the doors. */
@@ -653,9 +655,25 @@ export class World {
   canPlaceItem(type: ItemType, x: number, y: number, rot: number, roomId?: number): Check {
     return rules.canPlaceItem(this, type, x, y, rot, roomId);
   }
-  /** Can a room of this type cover this rectangle, in the game as it is or in a what-if? */
-  roomRectValid(type: RoomType, r: Rect, t?: Trial): Check {
-    return rules.roomRectValid(this, type, r, t);
+  /** Can a room of this type cover this rectangle, in the game as it is or in a what-if, built over sketch `spare`? */
+  roomRectValid(type: RoomType, r: Rect, t?: Trial, spare?: number): Check {
+    return rules.roomRectValid(this, type, r, t, spare);
+  }
+  /** The sketch pencilled in over a tile, if any. */
+  sketchAt(x: number, y: number): Sketch | undefined {
+    return rules.sketchAt(this, x, y);
+  }
+  /** Can a room of this type be pencilled in over this rectangle, sketch `spare` aside? */
+  sketchRectValid(type: RoomType, r: Rect, spare?: number): Check {
+    return rules.sketchRectValid(this, type, r, spare);
+  }
+  /** Can a sketch have its door here? */
+  sketchDoorValid(r: Rect, door: Room['door']): Check {
+    return rules.sketchDoorValid(this, r, door);
+  }
+  /** Whether a sketch could be built where it is today. */
+  sketchFits(sk: Sketch): Check {
+    return rules.sketchFits(this, sk);
   }
   /** Whether a room of a type would fit anywhere in the building at its smallest, as things stand. */
   roomFitsAnywhere(type: RoomType): boolean {

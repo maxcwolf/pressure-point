@@ -33,6 +33,7 @@ import type {
   MonthRecord,
   Room,
   RoomDecor,
+  Sketch,
   Staff,
   Visitor,
   WallSpot,
@@ -141,6 +142,15 @@ import { monthSoFar } from './records';
 import { type RivalCourse, rivalCourse, updateRival } from './rival';
 import { calmerFor, calmerOf, canCalm } from './runaways';
 import { playingFor, servedAt, sessionState, stationStaff } from './sessions';
+import {
+  addSketch,
+  buildSketch,
+  buildSketchAt,
+  eraseSketch,
+  restoreSketch,
+  sketchBlueprint,
+  sketchById,
+} from './sketches';
 import { askSoul, canRetrieve } from './souls';
 import {
   aboutToQuit,
@@ -938,6 +948,41 @@ export class Sim {
   /** Remove a room, refunding a fraction of what it cost. */
   removeRoom(roomId: number, refund: number) {
     removeRoom(this.ctx, roomId, refund);
+  }
+
+  /** The room pencilled in with this id, if there is one. */
+  sketch(id: number): Sketch | undefined {
+    return sketchById(this.s, id);
+  }
+
+  /** Pencil a room in for later, for nothing. Null if it cannot go there. */
+  addSketch(type: RoomType, r: Rect, door: WallSpot): Sketch | null {
+    return addSketch(this.ctx, type, r, door);
+  }
+
+  /** Rub a sketch out. */
+  eraseSketch(id: number): boolean {
+    return eraseSketch(this.ctx, id);
+  }
+
+  /** Start the blueprint of a sketch where it is. Null, with the sketch kept, if it no longer fits there. */
+  buildSketch(id: number): Room | null {
+    return buildSketch(this.ctx, id);
+  }
+
+  /** Start the blueprint of a sketch's room on other floor, the sketch giving way if the room lands on it. */
+  buildSketchAt(id: number, r: Rect, door: WallSpot): Room | null {
+    return buildSketchAt(this.ctx, id, r, door);
+  }
+
+  /** Put a sketch back as it was, if its floor is still free. */
+  restoreSketch(sketch: Sketch): boolean {
+    return restoreSketch(this.ctx, sketch);
+  }
+
+  /** Tear a blueprint up, refunded as Cancel does, and pencil it in for later instead. */
+  sketchBlueprint(roomId: number): Sketch | null {
+    return sketchBlueprint(this.ctx, roomId);
   }
 
   /** What removing a room would give back, at this fraction of what was paid. */

@@ -34,8 +34,8 @@ export type MenuId = 'rooms' | 'items' | 'hire' | 'staff' | 'treatments' | 'fina
 /** The tabs of the Money menu. */
 export type MoneyTab = 'books' | 'payroll' | 'prices' | 'marketing' | 'loan' | 'land';
 
-/** The tabs of the Rooms menu. */
-export type RoomsTab = 'rooms' | 'templates';
+/** The tabs of the Rooms menu: the rooms, the templates, and the rooms again to pencil in rather than build. */
+export type RoomsTab = 'rooms' | 'templates' | 'pencil';
 
 /** The tabs of the Stats menu. */
 export type StatsTab = 'charts' | 'guests' | 'reputation' | 'standing' | 'casebook' | 'regulars' | 'awards';
@@ -236,6 +236,8 @@ export class HudState {
     // an open blueprint stays open while you fetch something from a menu
     this.host.tools.setAside();
     this.menu = this.menu === id ? null : id;
+    // pencilling in is switched on each time it is wanted, so a room is never pencilled in when it was meant to be built
+    if (this.menu === 'rooms' && this.roomsTab === 'pencil') this.roomsTab = 'rooms';
     if (this.menu) track('menu_opened', { ...gameProps(this.host.sim.s), menu: id });
   }
 
@@ -263,8 +265,16 @@ export class HudState {
     this.update();
   }
 
-  /** Close the open build menu, the list of overlays, or every message opened out. False if none was open. */
-  closeMenu(): boolean {
+  /**
+   * Close the open build menu, the list of overlays, or every message opened out. False if none was open. With the
+   * Rooms menu pencilling in, `escape` switches that off first, leaving the menu open.
+   */
+  closeMenu(escape = false): boolean {
+    if (escape && this.menu === 'rooms' && this.roomsTab === 'pencil') {
+      this.roomsTab = 'rooms';
+      this.update();
+      return true;
+    }
     if (!this.menu && !this.overlayPicker && !this.toastsOpen) return false;
     this.menu = null;
     this.overlayPicker = false;

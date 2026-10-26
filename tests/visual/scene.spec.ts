@@ -174,6 +174,39 @@ test.describe('the scene', () => {
     await expect(page).toHaveScreenshot('scene-progress-bar-turned.png');
   });
 
+  test('two rooms pencilled in beside a room built, one of them selected with its inspector open', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => {
+      const { sim, state } = pp;
+      state.money = 100000;
+      // the first-time tip is a message of its own, not part of this picture
+      state.seenTips.push('sketch');
+      const room = sim.createRoom('massage', { x: 12, y: 5, w: 4, h: 4 }, { x: 13, y: 8, dx: 0, dy: 1 });
+      sim.placeItem('massage_table', 13, 5, 0, { free: true, roomId: room.id });
+      sim.finishRoom(room);
+      sim.addSketch('consult', { x: 18, y: 5, w: 4, h: 4 }, { x: 18, y: 6, dx: -1, dy: 0 });
+      const staffroom = sim.addSketch('staffroom', { x: 17, y: 11, w: 4, h: 3 }, { x: 18, y: 11, dx: 0, dy: -1 });
+      if (staffroom) pp.tools.select({ kind: 'sketch', id: staffroom.id });
+      pp.ui.dismissAllToasts();
+      state.speed = 0;
+      // with nobody to work it, the room's lamp pulses amber; held at one moment, the picture holds still
+      const { rooms } = pp.view;
+      const update = rooms.update.bind(rooms);
+      /** Light the lamps as they are at the scene's first moment, whenever it is. */
+      rooms.update = () => update(0);
+      pp.view.target.set(17, 0, 9);
+    });
+    await noon(game);
+    await game.cameraStill();
+    // until the inspector has popped in
+    await page.waitForFunction(() => !document.querySelector('.pop') && !!document.querySelector('.sketch-head'));
+    await game.settle();
+    await expect(page).toHaveScreenshot('scene-sketches.png');
+  });
+
   test('a building grown into every plot of land, with a room against its old wall', async ({ game, page }) => {
     await game.start();
     await game.eval((pp) => {
