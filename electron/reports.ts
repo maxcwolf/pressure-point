@@ -83,7 +83,7 @@ export function startReports() {
 
 /**
  * Report the game's window hanging: a warning with how long it hung once it responds again, or once it is closed
- * still hung.
+ * still hung. Electron only says it has stopped responding some fifteen seconds in, so that is where the count starts.
  */
 export function watchWindow(win: BrowserWindow) {
   if (!reporting) return;
