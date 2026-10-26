@@ -60,7 +60,7 @@ const reviews = css({
 /** A review's stars, in gold outlined in navy. */
 const stars = css({
   color: 'star',
-  WebkitTextStroke: '[{borderWidths.hairline} {colors.outline}]',
+  WebkitTextStroke: '[{borderWidths.trace} {colors.outline}]',
   letterSpacing: 'stars.small',
 });
 

@@ -65,7 +65,7 @@ const phrase = css({
   py: '1',
   px: '8',
   '&.name': { fontSize: '15', fontWeight: 'bold', border: 'none', bg: '[none]', p: '0', pr: '4' },
-  '&.cost': { bg: 'highlight.bg', borderColor: 'highlight', fontWeight: 'bold' },
+  '&.cost': { bg: 'warn.bg', borderColor: 'highlight', fontWeight: 'bold' },
 });
 
 /** A key, drawn as a key. */

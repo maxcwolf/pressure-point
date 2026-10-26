@@ -26,7 +26,7 @@ const bubble = css({
   boxShadow: 'float',
   fontSize: '14',
   fontWeight: 'medium',
-  lineHeight: 'snug',
+  lineHeight: 'normal',
   textWrap: 'pretty',
   // it rises a little toward what it explains as it appears
   animation: '[tip-in {durations.fast} {easings.out}]',

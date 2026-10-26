@@ -202,6 +202,8 @@ export const tokens = defineTokens({
   },
   /** How thick a line is: the cartoon outline is medium, a panel's thick, a chip's fine. */
   borderWidths: {
+    /** a 13px star's outline */
+    trace: { value: '0.6px' },
     hairline: { value: '1px' },
     fine: { value: '1.5px' },
     thin: { value: '2px' },
@@ -235,9 +237,10 @@ export const tokens = defineTokens({
     /** The tutorial's ring. */
     guide: { value: '{borderWidths.heavy} solid {colors.guide}' },
   },
-  /** How much of a thing shows: locked is barely there, muted a step back, soft nearly all. */
+  /** How much of a thing shows: dim is an unearned star, locked is barely there, muted a step back, soft nearly all. */
   opacity: {
     hidden: { value: '0' },
+    dim: { value: '0.25' },
     locked: { value: '0.35' },
     faint: { value: '0.5' },
     quiet: { value: '0.6' },

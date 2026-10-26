@@ -51,7 +51,7 @@ const keyPanel = css({
   top: 'gutter',
   right: '[calc({spacing.gutter} + 5 * {sizes.round.small} + 5 * {spacing.8})]',
   h: '44',
-  borderRadius: '18',
+  borderRadius: 'pill',
   display: 'flex',
   alignItems: 'center',
   gap: '10',

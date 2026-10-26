@@ -70,7 +70,8 @@ const rival = css({
   borderRadius: '12',
   py: '8',
   px: '12',
-  '& h4': { mt: '0' },
+  // `&.rival` out-specifies the Standing tab's own `& h4`, whose atomic class would otherwise win
+  '&.rival h4': { mt: '0' },
   '& .slogan': { fontStyle: 'italic' },
   '& .versus': {
     display: 'grid',
@@ -97,7 +98,7 @@ function Rival() {
   const most = Math.max(ours, theirs, 1);
   const { course, ceiling } = sim.rivalCourse();
   return (
-    <div class={rival}>
+    <div class={cx('rival', rival)}>
       <h4>
         <IconText id="ui-rival">{`${RIVAL_NAME}, across the street`}</IconText>
       </h4>
