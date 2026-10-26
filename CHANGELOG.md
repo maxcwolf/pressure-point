@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Pencil rooms in.** The Rooms menu's new Pencil in pill sketches a room's floor and door for later, for nothing: nothing can be built over it, and Build here in its inspector opens its blueprint on the spot when you're ready. A blueprint you can't afford yet can be pencilled in for later too.
+
 ## v0.33.7
 
 - **The Pressure Point Foundation.** Once every star in a campaign center is earned, the Money menu's Books tab takes three gifts to the Foundation, of $50,000, $100,000 and $200,000 (half as much again at The Orchard Estate), each worth 1 karma: something to do with the money that piles up after the last star. The card says what a gift would leave for the next payday.
