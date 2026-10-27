@@ -27,6 +27,7 @@ import { disciplineNote } from '../../lib/delivery';
 import { kitNote } from '../../lib/mishaps';
 import { restNote } from '../../lib/recovery';
 import { Icon, IconText, Line } from '../common/Icon';
+import { DripLadder, dripLocked, dripMock, DripTreatmentsHeader } from '../DripMocks';
 import { cardLook, cards, menuPanel } from './looks';
 
 /**
@@ -69,20 +70,22 @@ function ModalityCard({ modality }: { modality: Modality }) {
   const rest = restNote(def.rest, sim.hasRoom('recovery'));
   const trip = tripNote(def.trip);
   return (
-    <div class={cx('card', modalityCard, locked && 'locked')}>
+    <div class={cx('card', modalityCard, locked && !(dripMock() === 'research' && dripLocked(modality)) && 'locked')}>
       <Icon id={def.icon} size={34} />
       <b>{def.name}</b>
       <p>{def.desc}</p>
       <p class="treats">{`Treats: ${treats}`}</p>
       {def.machine && <p class="treats">{`Done in the ${ROOMS[roomForModality(modality)].name}`}</p>}
       {locked ? (
-        <em>
-          <IconText id="ui-lock">
-            {def.machine && def.star <= unlockedUpTo(s)
-              ? `Build ${an(ROOMS[roomForModality(modality)].name)} to offer it`
-              : `Unlocks at star ${def.star}`}
-          </IconText>
-        </em>
+        (dripLocked(modality) ?? (
+          <em>
+            <IconText id="ui-lock">
+              {def.machine && def.star <= unlockedUpTo(s)
+                ? `Build ${an(ROOMS[roomForModality(modality)].name)} to offer it`
+                : `Unlocks at star ${def.star}`}
+            </IconText>
+          </em>
+        ))
       ) : (
         <>
           <em class={qualified ? 'ok' : 'warn'}>
@@ -121,6 +124,7 @@ function DisciplineSection({ discipline }: { discipline: Discipline }) {
         <IconText id={disc.icon}>{disc.name}</IconText>
       </h4>
       <p class="sub">{note}</p>
+      <DripLadder discipline={discipline} />
       <div class={cards}>
         {MODALITY_ORDER.filter(
           (m) => MODALITIES[m].discipline === discipline && roomHere(ROOMS[roomForModality(m)], sim.s.center),
@@ -143,6 +147,7 @@ export function TreatmentsMenu() {
         in the room. Staff learn new ones in a Training Room. The harder ones leave guests needing a rest in a Recovery
         Lounge after.
       </p>
+      <DripTreatmentsHeader />
       {DISCIPLINE_ORDER.filter((d) => sim.enabled(d)).map((d) => (
         <DisciplineSection key={d} discipline={d} />
       ))}

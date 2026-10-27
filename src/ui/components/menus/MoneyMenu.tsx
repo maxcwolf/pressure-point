@@ -29,6 +29,7 @@ import { paydayBeside } from '../../lib/loan';
 import { BALK_WHO, balkText } from '../../lib/prices';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
+import { CatalogTab, dripMock } from '../DripMocks';
 import { LandTab } from './LandTab';
 import { chart, ledgerCard, ledgerLook, ledgers, menuPanel, tabRow } from './looks';
 import { MarketingTab } from './MarketingTab';
@@ -351,7 +352,12 @@ export function MoneyMenu() {
     <div class={cx(panelCard(), menuPanel)}>
       <h3>Money</h3>
       <div class={cx(tabStrip(), tabRow)}>
-        {TABS.map((t) => (
+        {[
+          ...TABS,
+          ...(dripMock() === 'catalog'
+            ? [{ id: 'catalog' as MoneyTab, icon: 'ui-news' as IconId, name: 'Catalog' }]
+            : []),
+        ].map((t) => (
           <Button
             key={t.id}
             class={cx(tabButton(), hud.moneyTab === t.id && 'on')}
@@ -369,6 +375,7 @@ export function MoneyMenu() {
       {hud.moneyTab === 'marketing' && <MarketingTab />}
       {hud.moneyTab === 'loan' && <Loan />}
       {hud.moneyTab === 'land' && <LandTab />}
+      {(hud.moneyTab as string) === 'catalog' && <CatalogTab />}
     </div>
   );
 }
