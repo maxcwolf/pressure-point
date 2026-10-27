@@ -31,7 +31,8 @@ import { blob } from './models/items/machine-kit';
 import { mat } from './models/parts';
 import { driftSmoke } from './models/sage';
 import { buildSoles } from './models/soles';
-import { SYMPTOM_OPTION } from './symptom-options';
+import { pottedWalk } from './models/symptom-proposals';
+import { SYMPTOM_OPTION, variantOf } from './symptom-options';
 import { walkSymptom } from './walk-symptoms';
 
 /**
@@ -786,6 +787,21 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     });
     ({ legL, legR, armL, armR, armOut, lean, side, headX, headZ, bodyY } = moved);
   }
+  if (SYMPTOM_OPTION === 'body' && visual === 'cactus' && variantOf('cactus') >= 2 && c.pose !== 'lie' && !act) {
+    const moved = pottedWalk(variantOf('cactus'), c.pose, phase, {
+      legL,
+      legR,
+      armL,
+      armR,
+      armOut,
+      lean,
+      side,
+      headX,
+      headZ,
+      bodyY,
+    });
+    ({ legL, legR, armL, armR, armOut, lean, side, headX, headZ, bodyY } = moved);
+  }
   if (c.pose === 'lie' && cues.lie) {
     life.elbowL += bendTo(armL, -0.08, 1);
     life.elbowR += bendTo(armR, -0.08, 1);
@@ -1014,6 +1030,12 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
     elbowL = elbowR = 0;
     twist = 0;
   } else if (visual === 'flex' && c.pose !== 'lie') elbowL = elbowR = -1.5;
+  // walking potted, the feet kept in under the pot: the knees barely bend for a shuffle, and not at all for a hop
+  if (SYMPTOM_OPTION === 'body' && visual === 'cactus' && variantOf('cactus') >= 2 && c.pose === 'walk') {
+    const bend = variantOf('cactus') === 2 ? 0.2 : 0;
+    kneeL = 0.06 + (kneeL - 0.08) * bend;
+    kneeR = 0.06 + (kneeR - 0.08) * bend;
+  }
   kneeL += life.kneeL;
   kneeR += life.kneeR;
   elbowL += life.elbowL;

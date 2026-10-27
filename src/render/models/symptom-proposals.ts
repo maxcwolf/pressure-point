@@ -1,9 +1,12 @@
 // New models for approval (see docs/planning/fun/options/symptoms/approvals/), each asked for by number in the address
-// under ?symptoms=body: two cacti for someone spiritually dehydrated (`&cactus=1`). The face stays on every one, so how
-// the guest feels still shows.
+// under ?symptoms=body: cacti for someone spiritually dehydrated (`&cactus=1`), and for the potted one, two ways to walk
+// in a pot without the legs going through it: a shuffle (`&cactus=2`) and a hop (`&cactus=3`). The face stays on every
+// one, so how the guest feels still shows.
 
 import * as THREE from 'three';
 
+import type { Char } from '../../core/state/types';
+import type { Turns } from '../walk-symptoms';
 import type { CharRig } from './character';
 import { faceOut, hideUntilCured, named, props } from './character-heads';
 import { cached, capsule, cyl, joined, mat, type Piece, put, sph } from './parts';
@@ -80,14 +83,14 @@ function cactusHead(rig: CharRig) {
 }
 
 /**
- * Spiritually dehydrated: 1, the head a cactus, ribbed and prickly, an arm off one side and a pink flower on top; 2,
- * the same cactus head, the shirt and sleeves gone cactus green, and a terracotta pot round them from the waist down,
+ * Spiritually dehydrated: 1, the head a cactus, ribbed and prickly, an arm off one side and a pink flower on top; 2 and
+ * 3, the same cactus head, the shirt and sleeves gone cactus green, and a terracotta pot round them from the waist down,
  * their feet out of the bottom to walk on.
  */
 export function cactus(rig: CharRig, variant: number) {
   dropOld(rig);
   cactusHead(rig);
-  if (variant !== 2) return;
+  if (variant < 2) return;
   const shirt = rig.torso.getObjectByName('shirt') as THREE.Mesh | undefined;
   const top = shirt?.material;
   const green = mat(CACTUS, 0.7);
@@ -104,4 +107,32 @@ export function cactus(rig: CharRig, variant: number) {
   put(pot, cyl(0.25, 0.25, 0.02, 28), mat(0x6b4a2a, 0.9), 0, 0.495, 0);
   props(rig, pot);
   rig.body.add(pot);
+}
+
+/**
+ * Standing, walking or sitting potted, the legs kept inside the pot: walking, 2, a shuffle, the feet taking tiny steps
+ * and the pot waddling from side to side; 3, a hop, the feet together and the whole pot bouncing along. Sitting, the
+ * legs stay straight down in the pot, which sits on the seat.
+ */
+export function pottedWalk(variant: number, pose: Char['pose'], phase: number, p: Turns): Turns {
+  const q = { ...p };
+  if (pose === 'sit') {
+    q.legL = q.legR = 0;
+    return q;
+  }
+  if (pose !== 'walk') return q;
+  if (variant === 2) {
+    const s = Math.sin(phase);
+    q.legL = s * 0.1;
+    q.legR = -s * 0.1;
+    q.side += s * 0.14;
+    q.bodyY = Math.abs(Math.cos(phase)) * 0.015;
+  } else {
+    q.legL = q.legR = 0;
+    q.bodyY = Math.abs(Math.sin(phase)) * 0.16;
+    q.lean += 0.08 - Math.abs(Math.sin(phase)) * 0.1;
+  }
+  q.armL *= 0.4;
+  q.armR *= 0.4;
+  return q;
 }
