@@ -1,6 +1,6 @@
 // The symptoms a guest wears whole, so the ailment reads from across the room at the game's usual distance: someone
-// bottled up stands in a big green bottle, corked over their head, and someone spiritually dehydrated is a cactus
-// potted from the waist down. The face still shows, through the glass or on the cactus, so how they feel does too, and
+// bottled up stands in a big green bottle, corked over their head, someone glass half empty in a tall tumbler with the
+// water up to their waist, and someone spiritually dehydrated is a cactus potted from the waist down. The face still shows, through the glass or on the cactus, so how they feel does too, and
 // it all goes in the puff of the cure.
 
 import * as THREE from 'three';
@@ -25,6 +25,27 @@ const GLASS = new THREE.MeshStandardMaterial({
 /** How far up the body the middle of the bottle is, which it shrinks toward with the cure. */
 const MIDDLE = 1;
 
+/** A tumbler's clear glass and the water in it, one of each for every guest who has them, drawn as the bottle is. */
+const CLEAR = new THREE.MeshStandardMaterial({
+  color: 0xdcecf2,
+  transparent: true,
+  opacity: 0.32,
+  roughness: 0.05,
+  depthWrite: false,
+});
+const WATER = new THREE.MeshStandardMaterial({
+  color: 0x4f9fd6,
+  transparent: true,
+  opacity: 0.55,
+  roughness: 0.1,
+  depthWrite: false,
+});
+/** The water's surface, at the waist. */
+const SURFACE = 0x9fd0ee;
+
+/** How far up the body the middle of the tumbler is, which it shrinks toward with the cure. */
+const TUMBLER_MIDDLE = 0.95;
+
 /**
  * Bottled up: the whole person in a big green bottle, the cork in its neck above their head and a cream label with a
  * red stripe round the middle, their legs out of the bottom to walk on.
@@ -43,6 +64,24 @@ function bottle(rig: CharRig) {
   bottle.position.y = MIDDLE;
   props(rig, bottle);
   rig.body.add(bottle);
+}
+
+/**
+ * Glass half empty: the whole person standing in a tall clear tumbler, the water up to the waist and the top half
+ * empty, their own head and face dry in the empty half and their legs out of the bottom.
+ */
+function tumbler(rig: CharRig) {
+  const glass = new THREE.Group();
+  /** A height up the body, as a height in the tumbler, whose middle is at `TUMBLER_MIDDLE`. */
+  const at = (y: number) => y - TUMBLER_MIDDLE;
+  put(glass, cyl(0.34, 0.29, 1.3, 28), CLEAR, 0, at(0.92), 0);
+  put(glass, torus(0.34, 0.018), CLEAR, 0, at(1.57), 0).rotation.x = Math.PI / 2;
+  put(glass, cyl(0.29, 0.29, 0.06, 28), CLEAR, 0, at(0.3), 0);
+  put(glass, cyl(0.31, 0.285, 0.55, 28), WATER, 0, at(0.6), 0);
+  put(glass, cyl(0.312, 0.312, 0.012, 28), mat(SURFACE, 0.1), 0, at(0.88), 0);
+  glass.position.y = TUMBLER_MIDDLE;
+  props(rig, glass);
+  rig.body.add(glass);
 }
 
 /** A cactus's green, its spines, its flower and the flower's middle, and its pot and the soil in it. */
@@ -135,5 +174,6 @@ function cactus(rig: CharRig) {
 /** Draw a symptom the guest wears whole, if it is one. */
 export function bodySymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'cork') bottle(rig);
+  else if (visual === 'glass') tumbler(rig);
   else if (visual === 'cactus') cactus(rig);
 }

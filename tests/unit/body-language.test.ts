@@ -710,6 +710,31 @@ describe('a symptom worn whole', () => {
     expect(bottleOf(rig).visible).toBe(false);
   });
 
+  it('stands someone glass half empty in a tumbler, the water at the waist and their head dry above it', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'glass');
+    expect(rig.props).toHaveLength(1);
+    expect(rig.bob).toBeUndefined();
+    expect(rig.headMesh.visible).toBe(true);
+    const tumbler = rig.props[0]!;
+    rig.group.updateMatrixWorld(true);
+    // the see-through parts are the glass, made the same throughout, and the water, its own
+    const glass = (tumbler.children[0] as THREE.Mesh).material as THREE.Material;
+    const water = tumbler.children.find((o) => {
+      const m = (o as THREE.Mesh).material as THREE.Material;
+      return m.transparent && m !== glass;
+    })!;
+    const waterTop = new THREE.Box3().setFromObject(water).max.y;
+    const whole = new THREE.Box3().setFromObject(tumbler);
+    const head = new THREE.Box3().setFromObject(rig.headMesh);
+    // half full: the water stops about halfway up the glass, well below the face, and the glass reaches over the head
+    expect((waterTop - whole.min.y) / (whole.max.y - whole.min.y)).toBeCloseTo(0.5, 1);
+    expect(waterTop).toBeLessThan((head.min.y + head.max.y) / 2 - 0.1);
+    expect(whole.max.y).toBeGreaterThan(head.max.y);
+    // and the tumbler is the same see-through glass for everyone
+    const again = buildCharacter(LAB_LOOK, undefined, 'glass').props[0]!;
+    expect((again.children[0] as THREE.Mesh).material).toBe((tumbler.children[0] as THREE.Mesh).material);
+  });
+
   /** How far someone's legs swing out at most over a few strides of walking. */
   const swing = (rig: CharRig, g: Char) => {
     let most = 0;

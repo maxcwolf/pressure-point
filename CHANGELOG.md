@@ -9,6 +9,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **A flat battery for a head.** A guest with a Flat Battery now has a battery for a head, its last cell blinking red, with their face on its label.
 - **A stress head that whistles.** A guest with Stress Head now has a red kettle for a head, with a steel handle and a spout the steam puffs out of.
 - **Spiritually dehydrated, potted.** A Spiritually Dehydrated guest is now a cactus in a terracotta pot from the waist down, shuffling along in tiny steps. The pot goes in the puff when they are cured, and they walk normally again.
+- **Glass half empty, literally.** A Glass Half Empty guest now stands in a tall tumbler, the water up to their waist and the top half empty.
 
 ## v0.34.3
 

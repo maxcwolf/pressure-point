@@ -592,13 +592,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.orbit.position.y = 0.02;
     head.add(rig.orbit);
   } else if (visual === 'glass') {
-    // a glass, half empty, hanging over them like a cloud
-    const glass = new THREE.Group();
-    put(glass, cyl(0.06, 0.05, 0.14, 12), mat(0xe8f1f6, 0.1), 0, 0, 0).castShadow = false;
-    put(glass, cyl(0.052, 0.048, 0.06, 12), mat(0x6fb5e0, 0.2), 0, -0.035, 0).castShadow = false;
-    glass.position.y = 0.42;
-    head.add(glass);
-    rig.bob = glass;
+    bodySymptom(rig, visual);
   } else if (visual === 'gears') {
     // a cog turning over the head
     rig.orbit = new THREE.Group();

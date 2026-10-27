@@ -24,7 +24,7 @@ function dropOld(rig: CharRig) {
 /** The head and what grows on it, hidden while something stands in for it. */
 const wholeHead = (rig: CharRig) => [rig.headMesh, ...named(rig.head, 'hair', 'moustache', 'beard', 'glasses')];
 
-/** See-through materials, one for every guest who has them: clear glass, and the water in it. */
+/** Clear glass, one for every guest who has it, see-through so drawn by itself. */
 const CLEAR = new THREE.MeshStandardMaterial({
   color: 0xdcecf2,
   transparent: true,
@@ -32,51 +32,6 @@ const CLEAR = new THREE.MeshStandardMaterial({
   roughness: 0.05,
   depthWrite: false,
 });
-const FROSTED = new THREE.MeshStandardMaterial({
-  color: 0xe6f0f4,
-  transparent: true,
-  opacity: 0.55,
-  roughness: 0.2,
-  depthWrite: false,
-});
-const WATER = new THREE.MeshStandardMaterial({
-  color: 0x4f9fd6,
-  transparent: true,
-  opacity: 0.55,
-  roughness: 0.1,
-  depthWrite: false,
-});
-
-/**
- * Glass half empty: 1, the whole person standing in a tall clear tumbler, the water up to the waist and the top half
- * empty, the legs out of the bottom; 2, the head a frosted tumbler, the water halfway up it and the face on its front.
- */
-export function glass(rig: CharRig, variant: number) {
-  dropOld(rig);
-  const g = new THREE.Group();
-  if (variant === 1) {
-    const middle = 0.95;
-    put(g, cyl(0.34, 0.29, 1.3, 28), CLEAR, 0, 0.92 - middle, 0);
-    put(g, torus(0.34, 0.018), CLEAR, 0, 1.57 - middle, 0).rotation.x = Math.PI / 2;
-    put(g, cyl(0.29, 0.29, 0.06, 28), CLEAR, 0, 0.3 - middle, 0);
-    put(g, cyl(0.31, 0.285, 0.55, 28), WATER, 0, 0.6 - middle, 0);
-    put(g, cyl(0.312, 0.312, 0.012, 28), mat(0x9fd0ee, 0.1), 0, 0.88 - middle, 0);
-    g.position.y = middle;
-    props(rig, g);
-    rig.body.add(g);
-  } else {
-    hideUntilCured(rig, wholeHead(rig));
-    put(g, cyl(0.22, 0.19, 0.46, 28), FROSTED, 0, 0.0, 0);
-    put(g, torus(0.22, 0.012), FROSTED, 0, 0.23, 0).rotation.x = Math.PI / 2;
-    put(g, cyl(0.205, 0.185, 0.2, 28), WATER, 0, -0.12, 0);
-    put(g, cyl(0.207, 0.207, 0.008, 28), mat(0x9fd0ee, 0.1), 0, -0.02, 0);
-    // the face out on the front of the glass, in front of the water
-    faceOut(rig, { eyes: 0.035, brows: 0.035, mouth: 0.045 });
-    props(rig, g);
-    rig.head.add(g);
-    swell(rig, 1.1, 1.1);
-  }
-}
 
 /** A cog `r` across, `thick` deep, lying flat with `teeth` teeth round it, as one shape. */
 const cog = (r: number, thick: number, teeth: number) => {
