@@ -481,6 +481,7 @@ export type Visual =
   | 'dizzy'
   | 'egg'
   | 'cloud'
+  | 'storm'
   | 'jitter'
   | 'aura'
   | 'cork'

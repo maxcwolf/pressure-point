@@ -17,6 +17,7 @@ import {
   blinkAt,
   CURE,
   expressionOf,
+  flashAt,
   hasNothingToDo,
   IDLE,
   idleAct,
@@ -657,6 +658,31 @@ describe('a symptom in place of the head', () => {
     expect(rig.head.scale.y).toBe(1);
   });
 
+  it("makes a noisy mind's head a boombox blaring, notes rising off it and its speakers pumping", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'gears');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    // the cog that used to turn over the head is gone
+    expect(rig.orbit).toBeUndefined();
+    expect(rig.steam?.children).toHaveLength(3);
+    const g = demoGuest(LAB_LOOK, 'noisy');
+    /** How big each pumping part is at a moment. */
+    const sizes = (t: number) => {
+      poseChar(rig, g, t, 1, { style: null });
+      return (rig.spin ?? []).map((o) => o.scale.x);
+    };
+    const beats = Array.from({ length: 20 }, (_, i) => sizes(i * 0.037));
+    expect(new Set(beats.map((b) => b.join())).size).toBeGreaterThan(1);
+  });
+
+  it('gives a noisy mind their head back with the cure', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'gears');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'noisy'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(rig.head.scale.y).toBe(1);
+    expect(rig.props.some(shown)).toBe(false);
+  });
+
   it('gives a flat battery their head back with the cure', () => {
     const rig = buildCharacter(LAB_LOOK, undefined, 'battery');
     poseChar(rig, { ...demoGuest(LAB_LOOK, 'battery'), outcome: 'healed' }, 5, 1, { style: null });
@@ -733,6 +759,33 @@ describe('a symptom worn whole', () => {
     // and the tumbler is the same see-through glass for everyone
     const again = buildCharacter(LAB_LOOK, undefined, 'glass').props[0]!;
     expect((again.children[0] as THREE.Mesh).material).toBe((tumbler.children[0] as THREE.Mesh).material);
+  });
+
+  it('storms round the chest of someone with blocked qi, lightning flashing in it a bolt at a time', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'storm');
+    const g = demoGuest(LAB_LOOK, 'qi');
+    const { bolts, glow } = rig.flash!;
+    expect(rig.drips).toBeDefined();
+    let flashes = 0;
+    let dark = 0;
+    for (let t = 0; t < 8; t += 0.02) {
+      poseChar(rig, g, t, 1, { style: null });
+      const lit = bolts.filter((b) => b.visible).length;
+      // never more than one bolt at once, and the cloud glows only while one shows
+      expect(lit).toBeLessThanOrEqual(1);
+      expect(glow[0]!.emissiveIntensity > 0).toBe(lit === 1);
+      if (flashAt(g.id, t) > 0) flashes++;
+      else dark++;
+    }
+    // a flash now and then, dark most of the time
+    expect(flashes).toBeGreaterThan(0);
+    expect(dark).toBeGreaterThan(flashes * 5);
+  });
+
+  it('leaves midlife fog its own cloud over the head', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cloud');
+    expect(rig.flash).toBeUndefined();
+    expect(rig.bob).toBeDefined();
   });
 
   /** How far someone's legs swing out at most over a few strides of walking. */

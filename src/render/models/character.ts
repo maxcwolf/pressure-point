@@ -440,6 +440,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     cloud.position.y = 0.4;
     head.add(cloud);
     rig.bob = cloud;
+  } else if (visual === 'storm') {
+    bodySymptom(rig, visual);
   } else if (visual === 'aura') {
     rig.orbit = new THREE.Group();
     const ring = put(rig.orbit, torus(0.36, 0.035), mat(0x7a4f9a, 0.5, 0.5), 0, 0, 0);
@@ -596,17 +598,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   } else if (visual === 'glass') {
     bodySymptom(rig, visual);
   } else if (visual === 'gears') {
-    // a cog turning over the head
-    rig.orbit = new THREE.Group();
-    const steel = mat(0x8c939c, 0.35);
-    put(rig.orbit, torus(0.07, 0.025), steel, 0, 0, 0).rotation.x = Math.PI / 2;
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2;
-      const tooth = put(rig.orbit, rbox(0.04, 0.03, 0.04, 0.005), steel, Math.cos(a) * 0.105, 0, Math.sin(a) * 0.105);
-      tooth.rotation.y = -a;
-    }
-    rig.orbit.position.y = 0.36;
-    head.add(rig.orbit);
+    headSymptom(rig, visual);
   } else if (visual === 'chakra') {
     // seven glowing centers down the front, the third gone dark
     const colors = [0x9b6fd1, 0x5b5fc7, 0x4a9fe0, 0x3bb273, 0xf2c14e, 0xf08a4b, 0xe5484d];

@@ -104,7 +104,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     treatment: 'Needling Unblocking',
     modality: 'needling',
     fee: 1000,
-    visual: 'cloud',
+    visual: 'storm',
   },
   {
     id: 'pins',

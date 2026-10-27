@@ -1,14 +1,16 @@
 // The symptoms a guest wears whole, so the ailment reads from across the room at the game's usual distance: someone
 // bottled up stands in a big green bottle, corked over their head, someone glass half empty in a tall tumbler with the
-// water up to their waist, and someone spiritually dehydrated is a cactus potted from the waist down. The face still shows, through the glass or on the cactus, so how they feel does too, and
+// water up to their waist, someone spiritually dehydrated is a cactus potted from the waist down, and someone with
+// blocked qi has a storm going on round their chest. The face still shows, through the glass or on the cactus, so how they feel does too, and
 // it all goes in the puff of the cure.
 
 import * as THREE from 'three';
 
 import type { Visual } from '../../core/data';
+import { owned } from '../disposal';
 import type { CharRig } from './character';
-import { faceOut, hideUntilCured, named, props } from './character-heads';
-import { cached, capsule, cyl, joined, mat, type Piece, put, sph, torus } from './parts';
+import { faceOut, hideUntilCured, named, props, spin } from './character-heads';
+import { cached, capsule, cyl, joined, mat, type Piece, put, rbox, sph, torus } from './parts';
 
 /**
  * The bottle's green glass, one for every bottled guest. It is see-through, so the crowd cannot draw it in a batch and
@@ -171,9 +173,90 @@ function cactus(rig: CharRig) {
   rig.body.add(pot);
 }
 
+/** A storm cloud's gray and its darker gray, the pale glow of lightning in it, the bolts, and the rain. */
+const STORM = 0x7d8894;
+const STORM_DARK = 0x5d6672;
+const LIGHTNING = 0xfff4c2;
+const BOLT = 0xf2c14e;
+const RAIN = 0x6fb5e0;
+
+/** A zigzag of lightning, pointing down, as one shape. */
+const bolt = () =>
+  joined('bolt', [
+    [rbox(0.04, 0.12, 0.02, 0.005), 0, 0.06, 0, 0, 0, 0.45],
+    [rbox(0.04, 0.12, 0.02, 0.005), 0.01, -0.03, 0, 0, 0, -0.45],
+    [rbox(0.035, 0.1, 0.02, 0.005), 0, -0.11, 0, 0, 0, 0.45],
+  ]);
+
+/**
+ * A storm cloud's puffs in a ring round the chest, the light ones or the dark, each as one shape: every third of ten
+ * round the ring dark, and two more light ones over the front.
+ */
+const puffs = (dark: boolean) =>
+  joined(`storm puffs ${dark}`, [
+    ...Array.from({ length: 10 }, (_, i) => i)
+      .filter((i) => (i % 3 === 0) === dark)
+      .map((i) => {
+        const a = (i / 10) * Math.PI * 2;
+        return [sph(i % 2 ? 0.12 : 0.14, 14), Math.cos(a) * 0.25, (i % 2) * 0.05, Math.sin(a) * 0.2] as const;
+      }),
+    ...(dark
+      ? []
+      : ([
+          [sph(0.13, 14), 0.05, 0.13, 0.16],
+          [sph(0.11, 14), -0.1, 0.12, 0.17],
+        ] as const)),
+  ]);
+
+/**
+ * Blocked qi: the weather system backed up at the sternum, as the ailment says, a gray storm cloud round the chest
+ * churning slowly round them, rain falling from under it, and every few seconds lightning flashing in it, a bolt out of
+ * the front or one side and the whole cloud lit pale from inside (see `pose`).
+ */
+function storm(rig: CharRig) {
+  const weather = new THREE.Group();
+  // the puffs' own materials, as they glow with the lightning when this guest's storm flashes
+  const lit = owned(new THREE.MeshStandardMaterial({ color: STORM, roughness: 0.95, emissive: LIGHTNING }));
+  const litDark = owned(new THREE.MeshStandardMaterial({ color: STORM_DARK, roughness: 0.95, emissive: LIGHTNING }));
+  const ring = new THREE.Group();
+  put(ring, puffs(false), lit, 0, 0, 0);
+  put(ring, puffs(true), litDark, 0, 0, 0);
+  weather.add(ring);
+  spin(rig, ring, 0.35);
+  const flash = owned(
+    new THREE.MeshStandardMaterial({ color: BOLT, roughness: 0.4, emissive: BOLT, emissiveIntensity: 1.2 }),
+  );
+  const bolts = (
+    [
+      [0.02, 0.3, 0],
+      [0.32, 0.05, Math.PI / 2],
+      [-0.32, 0.05, -Math.PI / 2],
+    ] as const
+  ).map(([x, z, ry]) => {
+    const b = put(weather, bolt(), flash, x, -0.14, z);
+    b.rotation.set(-0.3, ry, 0);
+    // dark until it flashes
+    b.visible = false;
+    return b;
+  });
+  rig.flash = { bolts, glow: [lit, litDark] };
+  // the rain, falling as drops off a wet blanket do
+  rig.drips = new THREE.Group();
+  const rain = mat(RAIN, 0.2);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 + 0.3;
+    const drop = put(rig.drips, cyl(0.008, 0.008, 0.07, 4), rain, Math.cos(a) * 0.24, 0.3, Math.sin(a) * 0.19);
+    drop.userData.y = 0.3;
+  }
+  weather.position.y = 0.42;
+  props(rig, weather, rig.drips);
+  rig.torso.add(weather, rig.drips);
+}
+
 /** Draw a symptom the guest wears whole, if it is one. */
 export function bodySymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'cork') bottle(rig);
   else if (visual === 'glass') tumbler(rig);
   else if (visual === 'cactus') cactus(rig);
+  else if (visual === 'storm') storm(rig);
 }

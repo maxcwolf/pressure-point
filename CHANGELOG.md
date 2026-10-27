@@ -10,6 +10,8 @@ Each release's notes are taken from its section here. Keep them short.
 - **A stress head that whistles.** A guest with Stress Head now has a red kettle for a head, with a steel handle and a spout the steam puffs out of.
 - **Spiritually dehydrated, potted.** A Spiritually Dehydrated guest is now a cactus in a terracotta pot from the waist down, shuffling along in tiny steps. The pot goes in the puff when they are cured, and they walk normally again.
 - **Glass half empty, literally.** A Glass Half Empty guest now stands in a tall tumbler, the water up to their waist and the top half empty.
+- **A noisy mind, turned up.** A guest with Noisy Mind now has a boombox for a head, its speakers pumping, its aerial rattling and notes of music rising off it.
+- **Blocked qi, stormy.** A guest with Blocked Qi now has a storm cloud round their chest, with rain falling from it and lightning flashing in it every few seconds. Midlife Fog keeps its cloud over the head.
 
 ## v0.34.3
 

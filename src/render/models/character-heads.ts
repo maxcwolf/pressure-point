@@ -1,6 +1,6 @@
 // The symptoms that take the place of a guest's head, so the ailment reads from across the room at the game's usual
 // distance rather than as a speck over the head: a scrambled noggin's head is an egg with its top knocked off, a flat
-// battery's a battery on its side, and a stress head's a whistling kettle. The face stays on, so how the guest feels
+// battery's a battery on its side, a stress head's a whistling kettle, and a noisy mind's a boombox left on too loud. The face stays on, so how the guest feels
 // still shows, and the head comes back halfway through the cure.
 
 import * as THREE from 'three';
@@ -9,7 +9,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { Visual } from '../../core/data';
 import { owned } from '../disposal';
 import type { CharRig } from './character';
-import { cached, cyl, mat, put, rbox, sph } from './parts';
+import { cached, cyl, joined, mat, put, rbox, sph, torus } from './parts';
 
 /** Keep a symptom's parts from casting shadows, and note them as the symptom's, to go when the guest is healed. */
 export function props(rig: CharRig, ...parts: THREE.Object3D[]) {
@@ -17,6 +17,17 @@ export function props(rig: CharRig, ...parts: THREE.Object3D[]) {
     p.traverse((o) => (o.castShadow = false));
     rig.props.push(p);
   }
+}
+
+/**
+ * Set a symptom's part turning about its upright by so much a second, rattling side to side, or pulsing bigger on a
+ * beat (see `pose`).
+ */
+export function spin(rig: CharRig, o: THREE.Object3D, turn: number, rattle = 0, pulse = 0) {
+  o.userData.spin = turn;
+  o.userData.rattle = rattle;
+  o.userData.pulse = pulse;
+  (rig.spin ??= []).push(o);
 }
 
 /** Hide parts of a person while a symptom stands in for them, to be shown again halfway through the cure. */
@@ -216,9 +227,104 @@ function kettle(rig: CharRig) {
   swell(rig, 1.2, 1.2);
 }
 
+/** A note of music, its head, stem and flag, as one shape. */
+const note = () =>
+  joined('note', [
+    [sph(0.035, 10), 0, 0, 0],
+    [cyl(0.008, 0.008, 0.12, 6), 0.03, 0.06, 0],
+    [rbox(0.05, 0.02, 0.012, 0.004), 0.05, 0.11, 0, 0, 0, -0.5],
+  ]);
+
+/** A boombox's black case, its speakers' cones and their middles, its silver, and its red record button. */
+const CASE = 0x24272d;
+const CONE = 0x2b2f36;
+const CONE_MIDDLE = 0x4a4f57;
+const BOOMBOX_SILVER = 0xc9ced6;
+const RECORD = 0xd9362f;
+
+/** Where a boombox's two speakers are on its front, and how big they are across. */
+const SPEAKERS = { x: 0.24, y: -0.03, z: 0.095, r: 0.13 } as const;
+
+/**
+ * A boombox's silver, as one shape: the cassette deck the face is on, the rims of its speakers, four of the buttons
+ * along the top, and the handle over it on its two posts.
+ */
+const boomboxSilver = () =>
+  joined('boombox silver', [
+    [rbox(0.24, 0.28, 0.02, 0.02), 0, -0.03, 0.09],
+    ...[-1, 1].map(
+      (side) => [torus(SPEAKERS.r, SPEAKERS.r * 0.12), side * SPEAKERS.x, SPEAKERS.y, SPEAKERS.z + 0.012] as const,
+    ),
+    ...[0, 1, 2, 3].map((i) => [rbox(0.04, 0.025, 0.05, 0.006), -0.1 + i * 0.05, 0.17, 0.02] as const),
+    ...[-1, 1].map((side) => [cyl(0.014, 0.014, 0.1, 8), side * 0.26, 0.2, -0.04] as const),
+    [cyl(0.016, 0.016, 0.54, 8), 0, 0.25, -0.04, 0, 0, Math.PI / 2],
+  ]);
+
+/** An aerial, its rod and the ball on its tip, as one shape. */
+const aerial = (length: number) =>
+  joined(`aerial ${length}`, [
+    [cyl(0.006, 0.01, length, 6), 0, length / 2, 0],
+    [sph(0.016, 8), 0, length, 0],
+  ]);
+
+/**
+ * A noisy mind: the head a black boombox left on too loud, wider than the shoulders, a big speaker either side of the
+ * face on its silver cassette deck, buttons along the top and a handle over it. The speakers pump on the beat, the
+ * aerial rattles, the whole set shakes a little, and notes of music rise off it as steam off a stress head (see `pose`).
+ */
+function boombox(rig: CharRig) {
+  const { head } = rig;
+  hideUntilCured(rig, [rig.headMesh, ...named(head, 'hair', 'moustache', 'beard', 'glasses')]);
+  const box = new THREE.Group();
+  const silver = mat(BOOMBOX_SILVER, 0.25);
+  put(box, rbox(0.74, 0.36, 0.22, 0.05), mat(CASE, 0.45), 0, -0.02, -0.02);
+  put(box, boomboxSilver(), silver, 0, 0, 0);
+  put(box, rbox(0.04, 0.025, 0.05, 0.006), mat(RECORD, 0.4), 0.1, 0.17, 0.02);
+  // the speakers' cones, pumping on the beat
+  for (const side of [-1, 1]) {
+    const cone = put(
+      box,
+      cyl(SPEAKERS.r * 0.92, SPEAKERS.r * 0.5, 0.03, 20),
+      mat(CONE, 0.7),
+      side * SPEAKERS.x,
+      SPEAKERS.y,
+      SPEAKERS.z,
+    );
+    cone.rotation.x = Math.PI / 2;
+    const middle = put(
+      box,
+      sph(SPEAKERS.r * 0.3, 12),
+      mat(CONE_MIDDLE, 0.5),
+      side * SPEAKERS.x,
+      SPEAKERS.y,
+      SPEAKERS.z + 0.01,
+    );
+    middle.scale.z = 0.5;
+    spin(rig, cone, 0, 0, 0.14);
+    spin(rig, middle, 0, 0, 0.3);
+  }
+  // the aerial out of one end, leaning out and rattling
+  const lean = new THREE.Group();
+  lean.rotation.z = 0.4;
+  const rod = put(lean, aerial(0.46), silver, -0.32, 0.16, -0.06);
+  box.add(lean);
+  spin(rig, rod, 0, 0.1);
+  spin(rig, box, 0, 0.025);
+  rig.steam = new THREE.Group();
+  const ink = mat(0x1d1f24, 0.4);
+  for (let i = 0; i < 3; i++) put(rig.steam, note(), ink, (i - 1) * 0.16, 0, 0);
+  rig.steam.position.set(0, 0.27, 0.02);
+  box.add(rig.steam);
+  faceOut(rig, { eyes: -0.02, brows: -0.025, mouth: -0.02 });
+  props(rig, box);
+  head.add(box);
+  swell(rig, 1.05, 1.05);
+}
+
 /** Draw a symptom that stands in for the head, if it is one. */
 export function headSymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'egg') egg(rig);
   else if (visual === 'battery') battery(rig);
   else if (visual === 'steam') kettle(rig);
+  else if (visual === 'gears') boombox(rig);
 }

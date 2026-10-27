@@ -902,7 +902,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     o.rotation.y = t * spin;
     o.rotation.z = Math.sin(t * 38 + c.id) * rattle;
     // pumping on a beat of about two a second
-    if (pulse) o.scale.setScalar(1 + pulse * Math.max(0, Math.sin(t * 13 + c.id)) ** 6);
+    if (pulse) {
+      // from the shape it was built in, which may be squashed
+      const built = (o.userData.built ??= o.scale.clone()) as THREE.Vector3;
+      o.scale.copy(built).multiplyScalar(1 + pulse * Math.max(0, Math.sin(t * 13 + c.id)) ** 6);
+    }
   }
   if (rig.steam?.visible) {
     rig.steam.children.forEach((p, i) => {
