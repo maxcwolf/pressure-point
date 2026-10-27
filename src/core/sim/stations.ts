@@ -22,6 +22,7 @@ import {
   SHOP_SPEND,
   STONE_USE,
   STRUCTURAL_SURE,
+  traitMost,
   traitSpeed,
   XP_PER_GUEST,
 } from '../data';
@@ -33,7 +34,7 @@ import { accessPose, accessTile } from '../world';
 import { prestige } from './ambience';
 import { worksAt } from './assignments';
 import { trackBusy } from './bottleneck';
-import { gainXp, habitOf, hasGeneral } from './careers';
+import { gainXp, habitOf, hasGeneral, heldSpace } from './careers';
 import { badTrip, blessBonus, goodTrip, isTrip, settingPenalty } from './ceremonies';
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
@@ -146,10 +147,13 @@ export function pickStation(ctx: SimContext, g: Guest): Item | null {
   return best;
 }
 
-/** How long a service takes this member of staff, given their skill, traits, courses, energy and morale. */
-export function serviceSeconds(base: number, st: Staff) {
+/**
+ * How long a service takes this member of staff, given their skill, traits, courses, energy and morale, and how much
+ * faster a colleague who Holds Space beside them makes them (`heldSpace`).
+ */
+export function serviceSeconds(base: number, st: Staff, held = 1) {
   let speed = 0.85 + st.skill * 0.05;
-  speed *= traitSpeed(st.traits);
+  speed *= traitSpeed(st.traits) * held;
   if (hasGeneral(st, 'motivation')) speed *= MOTIVATION_SPEED;
   if (hasGeneral(st, 'service')) speed *= SERVICE_SPEED;
   if (st.energy < 15) speed *= 0.6;
@@ -161,6 +165,21 @@ export function serviceSeconds(base: number, st: Staff) {
 function prestigeBonus(ctx: SimContext, it: Item): number {
   const room = ctx.world.roomOfItem(it);
   return room ? (prestige(ctx, room) - 1) * 0.02 : 0;
+}
+
+/** A Former Influencer posts about a guest they healed, and the post earns the center a little more reputation. */
+export function postAboutIt(ctx: SimContext, st: Staff) {
+  const posted = traitMost(st.traits, 'rep');
+  if (posted) changeRep(ctx, posted);
+}
+
+/**
+ * Whether a treatment that failed works anyway, in Healing Hands. The dice are only rolled for someone who has them,
+ * so a center without them keeps its random numbers.
+ */
+export function worksAnyway(ctx: SimContext, st: Staff): boolean {
+  const rescue = traitMost(st.traits, 'rescue');
+  return rescue > 0 && random(ctx.s) < rescue;
 }
 
 /** A treatment's chance of working, and what, if anything, stops it being delivered properly. */
@@ -293,7 +312,9 @@ export function updateStations(ctx: SimContext, dt: number) {
       // on a mat, the session sets how busy the healer is, and the treatment only goes on while it plays
       if (lead) {
         if (served && sessionPlaying(lead.progress)) {
-          it.progress += dt / (serviceSeconds(mod ? mod.seconds : def.seconds, staff) * machineSeconds(ctx, it));
+          it.progress +=
+            dt /
+            (serviceSeconds(mod ? mod.seconds : def.seconds, staff, heldSpace(ctx, staff)) * machineSeconds(ctx, it));
           if (it.progress >= 1) completeService(ctx, it, served, staff);
         }
         continue;
@@ -301,7 +322,9 @@ export function updateStations(ctx: SimContext, dt: number) {
       staff.busy = !!served;
       staff.strain = (mod ? mod.strain : 1) * machineStrain(it);
       if (served) {
-        it.progress += dt / (serviceSeconds(mod ? mod.seconds : def.seconds, staff) * machineSeconds(ctx, it));
+        it.progress +=
+          dt /
+          (serviceSeconds(mod ? mod.seconds : def.seconds, staff, heldSpace(ctx, staff)) * machineSeconds(ctx, it));
         if (it.progress >= 1) completeService(ctx, it, served, staff);
       }
     }
@@ -526,7 +549,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       if (warmer) warmer.water -= STONE_USE;
     }
     g.goal = 'leave';
-    if (random(ctx.s) < chance) {
+    if (random(ctx.s) < chance || worksAnyway(ctx, staff)) {
       g.outcome = 'healed';
       // feeling better takes the stress out of them too
       g.stressed = false;
@@ -539,6 +562,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       g.spent += fee;
       // good value earns a better name than a steep bill does
       changeRep(ctx, (1.8 + kept / 100) * (1.25 - 0.25 * treatPrice) * (grump ? GRUMP_REP : 1));
+      postAboutIt(ctx, staff);
       if (g.emergency && ctx.s.emergency) ctx.s.emergency.healed++;
       // and a machine may send them off with something, a glass of cider, say
       const gift = ITEMS[it.type].machine?.gift;

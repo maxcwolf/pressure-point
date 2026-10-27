@@ -133,8 +133,8 @@ export const STAFF_SORTS: readonly SortOrder<Staff>[] = [
   { id: 'knows', name: 'Knows the most', compare: most((st) => st.quals.length + st.general.length) },
 ];
 
-/** How an applicant's quirks weigh up: one for each that helps, less one for each that costs. */
-const quirks = (c: Candidate) => c.traits.reduce((sum, t) => sum + (traitOf(t).bad ? -1 : 1), 0);
+/** How an applicant's quirks weigh up: one for each that helps, two for a rare one, less one for each that costs. */
+const quirks = (c: Candidate) => c.traits.reduce((sum, t) => sum + (traitOf(t).rare ? 2 : traitOf(t).bad ? -1 : 1), 0);
 
 /** The Hire menu's orders, of the applicants for a role. */
 export const APPLICANT_SORTS: readonly SortOrder<Candidate>[] = [

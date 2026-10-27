@@ -125,7 +125,65 @@ export const TRAITS: readonly TraitDef[] = [
   { id: 'sunny', name: 'Ray of Sunshine', desc: 'Lifts the morale of colleagues nearby.', pay: 1.1, habit: 'cheer' },
   { id: 'quick', name: 'Quick Study', desc: 'Gets through courses 40% faster.', pay: 1.05, learn: 1.4 },
   { id: 'green', name: 'Green Thumb', desc: 'Waters thirsty plants in passing.', habit: 'water' },
+  {
+    id: 'influencer',
+    name: 'Former Influencer',
+    desc: 'Every guest they heal posts about it: +1 reputation each. Stops to film it: 10% slower.',
+    speed: 0.9,
+    pay: 1.25,
+    rep: 1,
+    rare: true,
+  },
+  {
+    id: 'survivor',
+    name: 'Burnout Survivor',
+    desc: 'Morale never falls below 35. Has a mug about it.',
+    pay: 1.25,
+    floor: 35,
+    rare: true,
+  },
+  {
+    id: 'hands',
+    name: 'Healing Hands',
+    desc: 'One treatment in ten that would have failed works anyway.',
+    pay: 1.25,
+    rescue: 0.1,
+    rare: true,
+  },
+  {
+    id: 'space',
+    name: 'Holds Space',
+    desc: 'Colleagues working in the same room work 10% faster. Mentions it.',
+    pay: 1.25,
+    hold: 1.1,
+    rare: true,
+  },
 ];
+
+/** The common quirks, of which every applicant has one to three. */
+export const COMMON_TRAITS: readonly TraitDef[] = TRAITS.filter((t) => !t.rare);
+
+/** The rare quirks, of which about one applicant in seven has one as well. */
+export const RARE_TRAITS: readonly TraitDef[] = TRAITS.filter((t) => t.rare);
+
+/** How many common quirks an applicant has, at fewest and at most. */
+export const QUIRKS_MIN = 1;
+export const QUIRKS_MAX = 3;
+
+/** The chance an applicant has a rare quirk too. */
+export const RARE_CHANCE = 1 / 7;
+
+/** Quirks that cannot both be on one person, each pair the opposite of the other. */
+export const CLASHES: readonly (readonly [TraitId, TraitId])[] = [
+  ['brisk', 'chatty'],
+  ['tireless', 'sleepy'],
+  ['speedy', 'dawdler'],
+  ['grump', 'sunny'],
+];
+
+/** Whether two quirks cannot both be on one person. */
+export const clashes = (a: TraitId, b: TraitId) =>
+  CLASHES.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
 
 /**
  * A massage therapist who now and then applies: at least three stars and one above the best of the other applicants, and trained in every massage technique but
@@ -152,6 +210,16 @@ export function traitOf(id: TraitId): TraitDef {
   if (!def) throw new Error(`unknown trait "${id}"`);
   return def;
 }
+
+/** The product of one number their quirks each set, such as `stamina`, with 1 for a quirk that leaves it alone. */
+export const traitProduct = (
+  traits: readonly TraitId[],
+  key: 'speed' | 'stamina' | 'walk' | 'learn' | 'pay' | 'hold',
+) => traits.reduce((x, t) => x * (traitOf(t)[key] ?? 1), 1);
+
+/** The highest of one number their quirks each set, such as `floor`, or 0 if none sets it. */
+export const traitMost = (traits: readonly TraitId[], key: 'rep' | 'floor' | 'rescue') =>
+  traits.reduce((x, t) => Math.max(x, traitOf(t)[key] ?? 0), 0);
 
 /** How much faster than usual someone's quirks make them work: Brisk quicker, Chatterbox slower. */
 export function traitSpeed(traits: readonly TraitId[]): number {

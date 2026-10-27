@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Staff with more to them.** Every applicant now has one to three quirks, never more than one that costs you, and about one in seven has a rare one as well: a Former Influencer, a Burnout Survivor, Healing Hands or someone who Holds Space. Each shows as a chip on their card, their row and their inspector, with what it does when you point at it, and pay follows them. Staff you already have keep the quirks they came with.
+
 ## v0.34.3
 
 - **Under the hood.** On a Mac, an app that updated itself no longer has all its files dated hours in the future for players west of Greenwich, which could make Spotlight complain. Nothing changes for play.

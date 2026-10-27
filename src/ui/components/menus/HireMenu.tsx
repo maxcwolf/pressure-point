@@ -1,6 +1,6 @@
 // The Hire menu: the applicants for each role, a tab per role.
 
-import { ROLES, traitOf } from '../../../core/data';
+import { ROLES } from '../../../core/data';
 import { money } from '../../../core/format';
 import { applicantCap, rankName } from '../../../core/sim/careers';
 import { wantsHire } from '../../../core/sim/tutorial';
@@ -14,6 +14,7 @@ import { APPLICANT_SORTS, sorted } from '../../lib/sorts';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
+import { QuirkChips } from '../common/QuirkChips';
 import { SortBy } from '../common/SortBy';
 import { Stars } from '../common/Stars';
 import { cardLook, cards, menuHead, menuPanel } from './looks';
@@ -84,15 +85,8 @@ export function HireMenu() {
               {rankName(c.skill)} <Stars count={c.skill} />
             </span>
             <QualChips quals={c.quals} />
-            {c.traits.length ? (
-              c.traits.map((t) => (
-                <em key={t} class={traitOf(t).bad ? 'bad' : 'good'} title={traitOf(t).desc}>
-                  {`${traitOf(t).name}: ${traitOf(t).desc}`}
-                </em>
-              ))
-            ) : (
-              <em class="none">No notable quirks</em>
-            )}{' '}
+            {/* an applicant from an older game can have none */}
+            {c.traits.length ? <QuirkChips traits={c.traits} spell /> : <em class="none">No notable quirks</em>}{' '}
             <span class="cost">
               {money(c.salary)}
               <small>/month</small>

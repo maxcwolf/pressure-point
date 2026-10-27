@@ -240,6 +240,8 @@ describe('general courses', () => {
     const { sim } = openCenter(1);
     const caretaker = hire(sim, 'caretaker');
     caretaker.general = [];
+    // with no quirk to make them quicker or slower
+    caretaker.traits = [];
     expect(caretakerSpeed(caretaker)).toBe(1);
     caretaker.general = ['maintenance'];
     expect(caretakerSpeed(caretaker)).toBeCloseTo(MAINTENANCE_SPEED, 6);

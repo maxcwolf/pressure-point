@@ -76,7 +76,7 @@ const OPENING: readonly Opening[] = [
   {
     id: 'receptionist',
     title: 'Hire a Receptionist',
-    text: "A desk needs a face behind it. Open the Hire menu and take on a Receptionist. Each applicant's card gives their rank, a star for each, their pay a month, and a quirk, green where it helps and red where it costs you. Any of them will do to open, and the lower the rank, the less they ask.",
+    text: "A desk needs a face behind it. Open the Hire menu and take on a Receptionist. Each applicant's card gives their rank, a star for each, their pay a month, and their quirks, green where they help and red where they cost you. Any of them will do to open, and the lower the rank, the less they ask.",
     want: { kind: 'hire', role: 'receptionist' },
   },
   {

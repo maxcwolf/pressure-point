@@ -132,8 +132,9 @@ export const defaultPolicy = (): Policy => ({
  * 38: the Recliner renamed the Lounger.
  * 39: the Practice Spot's front turned round to the way its guest faces.
  * 40: rooms pencilled in for later.
+ * 41: the four rare quirks. Staff and applicants already in a save keep the quirks they have.
  */
-export const SAVE_VERSION = 40;
+export const SAVE_VERSION = 41;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

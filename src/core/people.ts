@@ -4,6 +4,8 @@ import {
   AMANDA,
   CAMEO_CHANCE,
   CAMEOS,
+  clashes,
+  COMMON_TRAITS,
   DISCIPLINES,
   GRADE_APPLICANT_SKILL,
   LAST_NAMES,
@@ -11,6 +13,10 @@ import {
   MODALITIES,
   type Modality,
   MODALITY_ORDER,
+  QUIRKS_MAX,
+  QUIRKS_MIN,
+  RARE_CHANCE,
+  RARE_TRAITS,
   RECRUIT_SKILL,
   type Role,
   ROLE_ORDER,
@@ -18,7 +24,6 @@ import {
   type Sex,
   type TraitId,
   traitOf,
-  TRAITS,
   WOMEN_APPLY,
   WOMEN_NAMES,
 } from './data';
@@ -196,8 +201,7 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   // and a center standing higher, better still
   const reach = 3.4 + s.stars * 0.6 + s.grade * GRADE_APPLICANT_SKILL;
   const skill = clamp(Math.round(rnd(s, 0.6, reach)) + drive, 1, 5);
-  const traits: TraitId[] = [];
-  if (random(s) < 0.65) traits.push(pick(s, TRAITS).id);
+  const traits = rollQuirks(s);
   // practitioners all know their discipline's basic modality; a few arrive trained in something more
   const quals: Modality[] = [];
   const discipline = ROLES[role].discipline;
@@ -232,6 +236,25 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   }
   const salary = scalePay(fairSalary(role, skill, traits, quals), tuning(s, 'salaries'));
   return { id: s.nextId++, name: randomName(s, sex), role, skill, salary, traits, quals, look };
+}
+
+/**
+ * An applicant's quirks: one to three common ones, none of them clashing with another and at most one of them a
+ * flaw, and now and then a rare one as well, last.
+ */
+export function rollQuirks(r: Rng): TraitId[] {
+  const count = QUIRKS_MIN + Math.floor(random(r) * (QUIRKS_MAX - QUIRKS_MIN + 1));
+  const quirks: TraitId[] = [];
+  while (quirks.length < count) {
+    const flawed = quirks.some((q) => traitOf(q).bad);
+    const free = COMMON_TRAITS.filter(
+      (t) => !quirks.includes(t.id) && !quirks.some((q) => clashes(q, t.id)) && !(flawed && t.bad),
+    );
+    if (!free.length) break;
+    quirks.push(pick(r, free).id);
+  }
+  if (random(r) < RARE_CHANCE) quirks.push(pick(r, RARE_TRAITS).id);
+  return quirks;
 }
 
 /** A salary scaled up or down, to the nearest $10. Scaled by 1, a salary from `fairSalary` is unchanged. */

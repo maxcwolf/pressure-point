@@ -24,6 +24,7 @@ import {
   ROLES,
   type TraitDef,
   traitOf,
+  traitProduct,
 } from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
@@ -237,12 +238,35 @@ export const habitOf = (st: Staff, habit: NonNullable<TraitDef['habit']>) =>
 export const CHEER_RANGE = 5;
 export const CHEER_MORALE = 6;
 
+/** Whether a colleague is near enough to someone to lift them: a Ray of Sunshine's cheer, or someone who Holds Space. */
+export const withinReach = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+  Math.hypot(a.x - b.x, a.y - b.y) <= CHEER_RANGE;
+
 /** Whether someone cheerful is near this member of staff (not counting themselves). */
 export function cheeredUp(s: GameState, st: Staff): boolean {
-  return s.staff.some(
-    (o) =>
-      o !== st && o.state !== 'leaving' && habitOf(o, 'cheer') && Math.hypot(o.x - st.x, o.y - st.y) <= CHEER_RANGE,
-  );
+  return s.staff.some((o) => o !== st && o.state !== 'leaving' && habitOf(o, 'cheer') && withinReach(o, st));
+}
+
+/** The room of the station someone is posted at, if they are at it. */
+function roomAtPost(ctx: SimContext, st: Staff) {
+  const post = st.state === 'atPost' ? ctx.world.item(st.post) : undefined;
+  return post ? ctx.world.roomOfItem(post) : undefined;
+}
+
+/**
+ * How much faster a colleague who Holds Space makes someone work: posted in the same room as them, and within a Ray
+ * of Sunshine's reach. Two who Hold Space in one room do not add up; the stronger counts.
+ */
+export function heldSpace(ctx: SimContext, st: Staff): number {
+  const room = roomAtPost(ctx, st);
+  if (!room) return 1;
+  let held = 1;
+  for (const o of ctx.s.staff) {
+    const hold = traitProduct(o.traits, 'hold');
+    if (o === st || hold <= held || !withinReach(o, st) || roomAtPost(ctx, o) !== room) continue;
+    held = hold;
+  }
+  return held;
 }
 
 /** Once a second, the habits that show: litter dropped on the way, plants watered in passing, a cheery or a sour face. */

@@ -27,6 +27,7 @@ import {
   ROLES,
   STAFF_NEED_MORALE,
   STAMINA_DRAIN,
+  traitMost,
   traitOf,
   traitSpeed,
   VIBES_MORALE,
@@ -244,6 +245,9 @@ export function moraleTarget(ctx: SimContext, st: Staff): number {
   return target;
 }
 
+/** The lowest someone's morale can fall: a Burnout Survivor's floor, or 0. */
+export const moraleFloor = (st: Staff) => traitMost(st.traits, 'floor');
+
 /** Days until a miserable member of staff walks out, or null while they are not on course to quit. */
 export function daysUntilQuit(st: Staff): number | null {
   if (st.state === 'leaving' || st.morale >= MISERABLE_MORALE || st.unhappyT <= 0) return null;
@@ -261,7 +265,7 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   if (st.state === 'leaving' || st.state === 'arriving' || st.state === 'toCall' || st.state === 'away') return;
   const fair = fairPay(st, tuning(ctx.s, 'salaries'));
   const target = moraleTarget(ctx, st);
-  st.morale = clamp(st.morale + (target - st.morale) * Math.min(1, dt * 0.03), 0, 100);
+  st.morale = clamp(st.morale + (target - st.morale) * Math.min(1, dt * 0.03), moraleFloor(st), 100);
   // cheered up before a Shaman could come: there is no soul to retrieve, and they can be asked for again if need be
   if (st.soulAsked && !burntOut(st.morale)) st.soulAsked = false;
 

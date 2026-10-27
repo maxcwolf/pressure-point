@@ -16,6 +16,7 @@ import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
+import { QuirkChips } from '../common/QuirkChips';
 import { SortBy } from '../common/SortBy';
 import { menuHead, menuPanel, tabRow } from './looks';
 
@@ -61,9 +62,17 @@ const row = css({
   '&.head em': { fontStyle: 'normal', fontWeight: 'bold' },
   '& small': { textAlign: 'right' },
   '& > .icon': { gridRow: '[span 2]' },
-  '& .knows': { gridColumn: '[2 / -1]', fontSize: '12', opacity: 'soft' },
-  '& .knows:has(.quals)': { opacity: 'full' },
-  '& .knows .quals': { m: '0' },
+  // the treatments they know, or their role, then their quirks, on the one line while they fit
+  '& .knows': {
+    gridColumn: '[2 / -1]',
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '4',
+    fontSize: '12',
+  },
+  '& .knows .role': { opacity: 'soft' },
+  '& .knows .quals, & .knows .quirks': { m: '0', position: 'relative', zIndex: 'above' },
 });
 
 /** The empty button stretched over a whole row to select them, which the cells' words show through. */
@@ -315,8 +324,9 @@ export function StaffMenu() {
               {st.quals.length || st.general.length || (st.training && st.training.course !== 'skill') ? (
                 <QualChips quals={st.quals} general={st.general} learning={st.training?.course} />
               ) : (
-                ROLES[st.role].name
+                <span class="role">{ROLES[st.role].name}</span>
               )}
+              <QuirkChips traits={st.traits} />
             </span>
           </div>
         ))

@@ -1,6 +1,6 @@
 // The inspector for a member of staff.
 
-import { DUTIES, DUTY_NAMES, ROLES, traitOf } from '../../../core/data';
+import { DUTIES, DUTY_NAMES, ROLES } from '../../../core/data';
 import { money } from '../../../core/format';
 import { assignableRole, roomLabels } from '../../../core/sim/assignments';
 import { rankName, rankProgress, xpToNext } from '../../../core/sim/careers';
@@ -18,6 +18,7 @@ import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText, Line } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
+import { QuirkChips } from '../common/QuirkChips';
 import { Stars } from '../common/Stars';
 import { Courses } from './Courses';
 import { duty, dutyRow, smallButton } from './looks';
@@ -186,9 +187,7 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
       )}{' '}
       <StaffCompare staff={st} />
       <Career staff={st} />
-      {st.traits.map((t) => (
-        <em key={t}>{`${traitOf(t).name}: ${traitOf(t).desc}`}</em>
-      ))}{' '}
+      <QuirkChips traits={st.traits} spell />{' '}
       {st.training && (
         <label>
           Course progress

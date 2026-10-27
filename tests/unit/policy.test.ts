@@ -163,8 +163,11 @@ describe("a guest's chance of success", () => {
     const g = s.guests[0]!;
     lineUp(table, [g]);
     Object.assign(g, { condition: 'slump', diagnosis: 1, scanned: true, guessed: false });
+    // a Trainee, so the chance is well short of the cap and the whole bonus shows
+    therapist.skill = 1;
     const ctx = (sim as unknown as { ctx: SimContext }).ctx;
     const plain = successChance(ctx, table, therapist, g).chance;
+    expect(plain).toBeLessThan(0.98 - 2 * UPGRADE_SUCCESS);
     g.scanLevel = 2;
     expect(successChance(ctx, table, therapist, g).chance).toBeCloseTo(plain + 2 * UPGRADE_SUCCESS);
   });

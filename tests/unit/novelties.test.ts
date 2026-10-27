@@ -146,7 +146,8 @@ describe('the kombucha tap', () => {
   });
 
   it('is drunk from for more than tea, and its puddles are mopped up by a Caretaker', () => {
-    const { sim, s, consultant } = openCenter(5);
+    // a seed whose guests reach the tap: on some, those waiting are lined up too far off ever to go to it
+    const { sim, s, consultant } = openCenter(4);
     s.stars = 2;
     const tap = sim.placeItem('kombucha_tap', 18, 13, 0)!;
     tap.wear = 90;

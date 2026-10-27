@@ -360,7 +360,11 @@ export type TraitId =
   | 'grump'
   | 'sunny'
   | 'quick'
-  | 'green';
+  | 'green'
+  | 'influencer'
+  | 'survivor'
+  | 'hands'
+  | 'space';
 
 export interface TraitDef {
   id: TraitId;
@@ -376,6 +380,16 @@ export interface TraitDef {
   habit?: 'litter' | 'grump' | 'cheer' | 'water';
   /** Whether it costs you, in slower work, faster tiring, litter or put-off guests: shown red, where the rest show green. */
   bad?: boolean;
+  /** A rare quirk: stronger than the rest, rolled by about one applicant in seven, on top of their common ones. */
+  rare?: boolean;
+  /** Reputation earned on top for each guest they heal. */
+  rep?: number;
+  /** The lowest their morale can fall. */
+  floor?: number;
+  /** The chance that a treatment of theirs that failed works anyway. */
+  rescue?: number;
+  /** How much faster colleagues work beside them, in the same room. */
+  hold?: number;
 }
 
 /** A course any member of staff (or any in some roles) can take, beyond the treatments of their discipline. */

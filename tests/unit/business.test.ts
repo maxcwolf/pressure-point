@@ -98,9 +98,10 @@ describe('the Shop Counter', () => {
     g.feelings = [];
     /** How many of so many guests like this one would stop at the counter. */
     const tries = (n: number) => Array.from({ length: n }, () => wantsToShop(ctx, g)).filter(Boolean).length;
-    expect(tries(40)).toBeGreaterThan(20);
+    // enough tries that the dice cannot sink it
+    expect(tries(400)).toBeGreaterThan(160);
     counter.queue = [9001, 9002, 9003, 9004];
-    expect(tries(40)).toBeGreaterThan(20);
+    expect(tries(400)).toBeGreaterThan(160);
     counter.queue.push(9005);
     expect(SHOP_LINE_SKIP).toBe(5);
     expect(tries(40)).toBe(0);
