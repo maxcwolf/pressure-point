@@ -1,0 +1,996 @@
+<title>Staff You Remember</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" />
+<style>
+  /* Layout: one reading column; each option opens with its pictures in a wide-and-narrow pair (a menu beside the
+     inspector), then a pitch, the three decisions it changes, cost and risks. The game's own palette and Fredoka. */
+  :root {
+    --bg: #fff8ea; /* cream.50, the game's panel */
+    --surface: #ffffff; /* bg.card */
+    --inset: #f3e7cf; /* cream.200 */
+    --fg: #24384a; /* navy.900 */
+    --soft: #5c708a; /* navy.500 */
+    --line: #d7d2c5; /* cream.300 */
+    --accent: #23827c; /* teal.700 */
+    --gold: #f2c14e; /* gold.400, the game's highlight */
+    --gold-ink: #7a4e0c; /* gold.900 */
+    --gold-wash: #fff6dc; /* gold.50 */
+    --good: #1c6b49; /* green.800 */
+    --good-wash: #d8f1e2;
+    --bad: #a8322b; /* red.700 */
+    --bad-wash: #fbe3e1;
+    --scrim: rgba(36, 56, 74, 0.82);
+    --display: 'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif;
+    --body: 'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #1b2a38;
+      --surface: #24384a;
+      --inset: #2c3a4e;
+      --fg: #f6f0e3;
+      --soft: #b9c0c9;
+      --line: #3d5168;
+      --accent: #38bdb4;
+      --gold: #f2c14e;
+      --gold-ink: #fbedc6;
+      --gold-wash: #3a3220;
+      --good: #7fd8a4;
+      --good-wash: #1f3b30;
+      --bad: #f3b1ac;
+      --bad-wash: #43262a;
+      --scrim: rgba(10, 16, 22, 0.88);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #1b2a38;
+    --surface: #24384a;
+    --inset: #2c3a4e;
+    --fg: #f6f0e3;
+    --soft: #b9c0c9;
+    --line: #3d5168;
+    --accent: #38bdb4;
+    --gold: #f2c14e;
+    --gold-ink: #fbedc6;
+    --gold-wash: #3a3220;
+    --good: #7fd8a4;
+    --good-wash: #1f3b30;
+    --bad: #f3b1ac;
+    --bad-wash: #43262a;
+    --scrim: rgba(10, 16, 22, 0.88);
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 40px 72px;
+    display: grid;
+    gap: 56px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    text-wrap: balance;
+    margin: 0;
+    line-height: 1.15;
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    font-weight: 700;
+  }
+  h2 {
+    font-size: 26px;
+    font-weight: 700;
+  }
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--soft);
+  }
+  p {
+    margin: 0;
+    max-width: 68ch;
+  }
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  header {
+    display: grid;
+    gap: 14px;
+  }
+  header .lede {
+    font-size: 18px;
+  }
+  .meta {
+    font-size: 14px;
+    color: var(--soft);
+  }
+
+  section {
+    display: grid;
+    gap: 18px;
+  }
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px 14px;
+  }
+  .num {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--soft);
+    font-variant-numeric: tabular-nums;
+  }
+  .pitch {
+    font-size: 19px;
+    font-weight: 500;
+  }
+
+  /* pictures */
+  .shots {
+    display: grid;
+    grid-template-columns: 2.6fr 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  .shots.three {
+    grid-template-columns: 1.6fr 1.6fr 1fr;
+  }
+  .shots.wide {
+    grid-template-columns: 1fr;
+  }
+  figure {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+  .pic {
+    position: relative;
+    display: block;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface);
+    cursor: zoom-in;
+    width: 100%;
+  }
+  .pic img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .pic:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+  figcaption {
+    font-size: 13px;
+    color: var(--soft);
+  }
+
+  /* the recommended option's pictures: a heavy gold frame and a tag on the image itself */
+  .rec .pic,
+  .lightbox.rec .frame {
+    border: 6px solid var(--gold);
+    box-shadow:
+      0 0 0 3px var(--gold-wash),
+      0 10px 28px rgba(201, 138, 26, 0.35);
+  }
+  .rec .pic::after,
+  .lightbox.rec .frame::after {
+    content: '★ Recommended';
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: var(--gold);
+    color: #24384a;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    box-shadow: 0 2px 0 rgba(36, 56, 74, 0.35);
+  }
+
+  .decide {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .decide div {
+    background: var(--inset);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 15px;
+  }
+  .decide b {
+    display: block;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+  }
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 28px;
+  }
+  .facts > div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    align-content: start;
+  }
+  .facts p,
+  .facts li {
+    font-size: 15px;
+  }
+  ul {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 4px;
+  }
+  .days {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .staged {
+    font-size: 13px;
+    color: var(--soft);
+    font-style: italic;
+  }
+  hr {
+    border: none;
+    border-top: 2px dashed var(--line);
+    margin: 0;
+  }
+
+  .rec-chip {
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--gold);
+    color: #24384a;
+    border-radius: 999px;
+    padding: 2px 10px;
+  }
+
+  /* comparison */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 760px;
+    font-size: 14px;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--soft);
+    font-weight: 600;
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  td.n {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  tr.recrow td {
+    background: var(--gold-wash);
+  }
+  .s {
+    font-weight: 600;
+  }
+  .s.hi {
+    color: var(--good);
+  }
+  .s.lo {
+    color: var(--soft);
+  }
+
+  .verdict {
+    background: var(--gold-wash);
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: grid;
+    gap: 10px;
+  }
+  .verdict h2 {
+    font-size: 24px;
+  }
+
+  /* lightbox */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    display: grid;
+    place-items: center;
+    z-index: 20;
+    padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+      max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    cursor: zoom-out;
+    overflow: auto;
+  }
+  .lightbox[hidden] {
+    display: none;
+  }
+  .lightbox .frame {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface);
+    max-width: min(1400px, 100%);
+  }
+  .lightbox img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 64px);
+    width: auto;
+    height: auto;
+  }
+
+  @media (max-width: 760px) {
+    .shots,
+    .shots.three {
+      grid-template-columns: 1fr;
+    }
+    .decide,
+    .facts {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<main class="page">
+  <header>
+    <span class="eyebrow">Pressure Point Institute · options for gap 4 · 27 October 2026</span>
+    <h1>Staff you remember</h1>
+    <p class="lede">
+      In Two Point Hospital a member of staff has a face, up to three traits, a line of bio and a breakdown of why they
+      are unhappy, so hiring is an argument about a person and letting one go is a small wrench. Here someone has at
+      most one of twelve quirks, and 35% of applicants have none: six of the seven therapists applying in a late-game
+      Orchard read “No notable quirks”. Morale is a bar with no reason, though <code>moraleTarget</code>
+      knows every reason. So the hire is rank against salary, and the best play churns staff (the bot swapped 404 times
+      in 30 games). Five ways to fix that follow, each with pictures first. One is recommended.
+    </p>
+    <p class="meta">
+      Every picture is the real game: a three-star Orchard Estate the playtest bot built over 900 days, loaded as a
+      save, with the Preact components edited for each mockup. Portraits are drawn by the game’s own character model
+      from each person’s own look. Click any picture to see it larger.
+    </p>
+  </header>
+
+  <section aria-labelledby="today">
+    <div class="tag-row">
+      <span class="num">Today</span>
+      <h2 id="today">Before</h2>
+    </div>
+    <div class="shots three">
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/before-hire.png"
+            alt="Hire menu, massage therapists: six of seven cards say No notable quirks"
+            width="1560"
+            height="1204"
+          />
+        </button>
+        <figcaption>Hire menu: rank, salary, and “No notable quirks” six times out of seven.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/before-staff.png"
+            alt="Staff menu rows with role icon, doing, bars, salary and a raise button"
+            width="1560"
+            height="925"
+          />
+        </button>
+        <figcaption>Staff menu: an icon per role, two bars, a raise button.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/before-inspector.png"
+            alt="Staff inspector for Tamsin Glide: one quirk and a morale bar at 57"
+            width="560"
+            height="1110"
+          />
+        </button>
+        <figcaption>Inspector: one quirk, and morale 57 with no reason.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <hr />
+
+  <section aria-labelledby="o1">
+    <div class="tag-row">
+      <span class="num">Option 1</span>
+      <h2 id="o1">Faces</h2>
+    </div>
+    <div class="shots three">
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/faces-hire.png"
+            alt="Hire cards with a round portrait beside each name"
+            width="1560"
+            height="1270"
+          />
+        </button>
+        <figcaption>Hire cards with a portrait each.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/faces-staff.png"
+            alt="Staff rows with a small portrait in place of the role icon"
+            width="1560"
+            height="925"
+          />
+        </button>
+        <figcaption>Staff rows: the portrait replaces the role icon.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/faces-inspector.png"
+            alt="Inspector with a large portrait of Tamsin Glide"
+            width="560"
+            height="1150"
+          />
+        </button>
+        <figcaption>The inspector, head and shoulders.</figcaption>
+      </figure>
+    </div>
+    <p class="pitch">
+      A head-and-shoulders portrait of each person on every card, row and inspector, drawn from their own look.
+    </p>
+    <div class="decide">
+      <div>
+        <b>At hiring</b>A face to pick, which feels like a person. It does not change which applicant is better.
+      </div>
+      <div><b>At a raise</b>Nothing changes.</div>
+      <div><b>At letting go</b>You see who you are firing. A small wrench, with nothing behind it.</div>
+    </div>
+    <div class="facts">
+      <div>
+        <h3>The verb and the rule</h3>
+        <p>
+          No new verb and no sim rule: it is presentation. It makes every other option land, because a quirk or a record
+          belongs to a face.
+        </p>
+      </div>
+      <div>
+        <h3>Cost</h3>
+        <p>
+          <span class="days">First slice 2 days:</span> one offscreen renderer that draws a look in its uniform and
+          keeps the image, on the Hire cards. <span class="days">Whole 5 days:</span> rows, inspector, Let Go dialog,
+          raise and quit cards, awards, toasts.
+        </p>
+      </div>
+      <div>
+        <h3>What could go wrong</h3>
+        <ul>
+          <li>At 30 pixels everyone in one role is the same uniform: hair and skin are all that tell them apart.</li>
+          <li>Fifty portraits at load on a slow laptop; draw them when idle and keep them.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Fits Staff Room Politics</h3>
+        <p>The noticeboard’s photos become these portraits.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <section aria-labelledby="o2">
+    <div class="tag-row">
+      <span class="num">Option 2</span>
+      <h2 id="o2">Why the mood</h2>
+    </div>
+    <div class="shots">
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/why-staff.png"
+            alt="Staff rows each with a red line naming the worst drag on morale"
+            width="1560"
+            height="925"
+          />
+        </button>
+        <figcaption>Each row names the worst drag on that person’s morale.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/why-inspector.png"
+            alt="Inspector morale breakdown: 62 base, minus 13 underpaid, minus 10 too hot, plus 15 nice room, settles at 54"
+            width="560"
+            height="1350"
+          />
+        </button>
+        <figcaption>Under the bar: every reason, its points, the fix.</figcaption>
+      </figure>
+    </div>
+    <p class="staged">
+      Staged for the picture: Rosalind Calmley’s pay cut to 86% of the going rate. The reasons and points are the real
+      <code>moraleTarget</code> terms, read from the running game.
+    </p>
+    <p class="pitch">
+      Under the morale bar, the reasons the simulation already has, each with its points and the fix beside it.
+    </p>
+    <div class="decide">
+      <div><b>At hiring</b>Nothing changes.</div>
+      <div>
+        <b>At a raise</b>The big one. Rosalind wants $3,640, which fixes 13 points; an Air Conditioner fixes 10 and
+        helps everyone in the room. You pick which, or both.
+      </div>
+      <div>
+        <b>At letting go</b>You see whether the problem is the person or the place, before you let someone go for the
+        room’s fault.
+      </div>
+    </div>
+    <div class="facts">
+      <div>
+        <h3>The verb and the rule</h3>
+        <p>
+          The verb is diagnose and fix. No new rule: <code>moraleTarget</code> becomes the sum of a list of named
+          reasons, so the two can never disagree.
+        </p>
+      </div>
+      <div>
+        <h3>Cost</h3>
+        <p>
+          <span class="days">First slice 1.5 days:</span> the reasons list, the sum, a test that it equals today’s
+          target, the inspector list. <span class="days">Whole 3 days:</span> the worst reason on each row and on the
+          raise request.
+        </p>
+      </div>
+      <div>
+        <h3>What could go wrong</h3>
+        <ul>
+          <li>
+            It reads as a spreadsheet and makes nobody memorable: it fixes the communication half of the gap, not the
+            people half.
+          </li>
+          <li>In a well-run center there are few reasons to show; in the bot’s save most people had one or two.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Fits challenging but fair</h3>
+        <p>Nothing gets easier; the player finally sees what the game already counts.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <section aria-labelledby="o3" class="rec">
+    <div class="tag-row">
+      <span class="num">Option 3</span>
+      <h2 id="o3">Quirks with weight</h2>
+      <span class="rec-chip">Recommended</span>
+    </div>
+    <div class="shots">
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/quirks-hire.png"
+            alt="Hire cards with one to three quirk chips each, one card with a rare gold quirk, Holds Space"
+            width="1560"
+            height="1380"
+          />
+        </button>
+        <figcaption>
+          One to three quirks each, the price following them. Tamsin Kinkaid’s rare one costs a quarter more.
+        </figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/quirks-inspector.png"
+            alt="Inspector with a rare gold quirk, Burnout Survivor, and two common quirks"
+            width="560"
+            height="1330"
+          />
+        </button>
+        <figcaption>The rare quirk spelled out, with how it shows on the floor.</figcaption>
+      </figure>
+    </div>
+    <p class="staged">
+      Staged for the picture: Tamsin Glide given the rare Burnout Survivor quirk. The other quirks are rolled by the
+      mockup from each person’s id.
+    </p>
+    <p class="pitch">
+      Everyone has one to three quirks, good and bad together, and one person in seven has a rare one that is stronger
+      and shows on the floor.
+    </p>
+    <div class="decide">
+      <div>
+        <b>At hiring</b>An argument with yourself. Brisk but a Grump, or Undervalued but a Sleepyhead? The Senior with
+        nothing special, or the Experienced one who Holds Space, at $2,660?
+      </div>
+      <div><b>At a raise</b>A rare quirk is worth paying for, and nobody else in the pool has it.</div>
+      <div>
+        <b>At letting go</b>The real wrench: a better rank comes along every few days, a Burnout Survivor does not. That
+        is a reason not to churn, earned by keeping someone, not a penalty for letting go.
+      </div>
+    </div>
+    <div class="facts">
+      <div>
+        <h3>The verb and the rule</h3>
+        <p>
+          The verb is weighing a person. One rule: an applicant rolls up to three common quirks that do not clash (Brisk
+          and Chatterbox cannot meet), and one in seven a rare one at 1.25× pay. Proven with four rare quirks, each
+          through a hook the sim already has:
+        </p>
+        <ul>
+          <li><b>Former Influencer:</b> +1 reputation a heal, 10% slower (the heal and speed hooks).</li>
+          <li><b>Burnout Survivor:</b> morale floor of 35, a mug about it (<code>updateMorale</code>).</li>
+          <li><b>Healing Hands:</b> one failed treatment in ten works anyway (the outcome roll).</li>
+          <li>
+            <b>Holds Space:</b> colleagues in the room work 10% faster (the <code>cheeredUp</code> distance check).
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h3>Cost</h3>
+        <p>
+          <span class="days">First slice 5 days:</span> the roll, the clash list, chips on cards and rows, the four rare
+          quirks, pay, a save bump that leaves old staff as they are, and a bot rerun.
+          <span class="days">Whole 10 to 12 days:</span> a floor prop for each rare quirk (the mug, the phone held up,
+          the glow) checked in the model lab, and a quirk filter in the Hire menu.
+        </p>
+        <h3 style="margin-top: 14px">What could go wrong</h3>
+        <ul>
+          <li>
+            Easier by stealth: rare quirks are power. Their pay is the price; the bot rerun must show star months and
+            quits within the noise, or the base morale comes down.
+          </li>
+          <li>
+            A wall of text on a card. Chips with the effect on hover keep it short; only the rare one is spelled out.
+          </li>
+          <li>Three bad quirks on one person: fine if visible and cheaper, as Undervalued already is.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Fits Staff Room Politics</h3>
+        <p>
+          Its two quirk rules (a Grump sours rapport, a Ray of Sunshine never does) matter more when more people carry a
+          quirk. The two never touch the same code beyond <code>habitOf</code>.
+        </p>
+      </div>
+      <div>
+        <h3>Existing cast first</h3>
+        <p>
+          The twelve quirks stay; nothing is renamed. The Grump, Ray of Sunshine, Litterbug and Green Thumb already show
+          on the floor, which is the model for the rare four.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <section aria-labelledby="o4">
+    <div class="tag-row">
+      <span class="num">Option 4</span>
+      <h2 id="o4">Likes and dislikes</h2>
+    </div>
+    <div class="shots three">
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/likes-hire.png"
+            alt="Hire cards each with a like and a dislike line"
+            width="1560"
+            height="1380"
+          />
+        </button>
+        <figcaption>On the card: one like, one dislike.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/likes-staff.png"
+            alt="Staff rows with a green heart line where a like is met and a red line where a dislike hurts"
+            width="1560"
+            height="925"
+          />
+        </button>
+        <figcaption>On a row, only what is met or hurting now.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/likes-inspector.png"
+            alt="Inspector: likes a warm room, met, plus 5; can't stand being moved about, minus 5, assign to rooms"
+            width="560"
+            height="1190"
+          />
+        </button>
+        <figcaption>In the inspector, whether each is met and the fix.</figcaption>
+      </figure>
+    </div>
+    <p class="pitch">
+      Each person likes one place or thing in the building and can’t stand another: a room, a warm room, the Koi Pond,
+      quiet; Wind Chimes, the cold, being moved about.
+    </p>
+    <div class="decide">
+      <div><b>At hiring</b>Some weight: the one who likes the Sound Bath Studio when you have one.</div>
+      <div><b>At a raise</b>A cheaper fix than money: move the chimes, assign them to one room.</div>
+      <div><b>At letting go</b>Little change.</div>
+    </div>
+    <div class="facts">
+      <div>
+        <h3>The verb and the rule</h3>
+        <p>
+          The verb is suiting the building to a person. One rule: ±5 to the morale target while a like is met or a
+          dislike is near, read from things <code>moraleTarget</code> can already see (room, warmth, items, assignment).
+          Colleagues are left out on purpose: those belong to Staff Room Politics.
+        </p>
+      </div>
+      <div>
+        <h3>Cost</h3>
+        <p>
+          <span class="days">First slice 4 days:</span> eight conditions, the roll, card and inspector lines, a save
+          bump, a bot rerun. <span class="days">Whole 7 days:</span> rows, a heart bubble when a like is met, a dislike
+          shown in Assign to rooms.
+        </p>
+      </div>
+      <div>
+        <h3>What could go wrong</h3>
+        <ul>
+          <li>
+            It shares a verb with Staff Room Politics (where people are posted), so the two compete for one decision.
+          </li>
+          <li>Thirty staff, sixty small conditions: chores, not people.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Fits challenging but fair</h3>
+        <p>Every condition is visible on the card before hiring; nothing is hidden until later.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <section aria-labelledby="o5">
+    <div class="tag-row">
+      <span class="num">Option 5</span>
+      <h2 id="o5">A file, and a local</h2>
+    </div>
+    <div class="shots">
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/file-hire.png"
+            alt="Hire cards with a line of bio each; the first is Clementine Hale, a local who applies once"
+            width="1560"
+            height="1380"
+          />
+        </button>
+        <figcaption>A line of bio on each card, and the center’s one local, Clementine Hale.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/file-inspector.png"
+            alt="Amanda Jablonsky's file: a bio line, joined Fall Year 2, Employee of the Year, soul retrieved, set a challenge"
+            width="560"
+            height="1040"
+          />
+        </button>
+        <figcaption>Amanda Jablonsky’s file: bio and record.</figcaption>
+      </figure>
+    </div>
+    <p class="staged">
+      Invented for the picture: Clementine Hale, and the record’s dates and events. Guests seen is real.
+    </p>
+    <p class="pitch">
+      A line of bio per person and a record the game writes as they work (joined, guests seen, awards, a soul retrieved,
+      a challenge met, ZenMart turned down), plus one named local per center with a small arc, the way Amanda Jablonsky
+      is now.
+    </p>
+    <div class="decide">
+      <div>
+        <b>At hiring</b>Only for the local: she applies once, and after a season sets you a challenge of her own.
+      </div>
+      <div><b>At a raise</b>Nothing changes.</div>
+      <div><b>At letting go</b>A wrench: three years, Employee of the Year, the one who turned ZenMart down twice.</div>
+    </div>
+    <div class="facts">
+      <div>
+        <h3>The verb and the rule</h3>
+        <p>
+          No verb for the record; it is memory. The local’s rule is one instance of the staff challenge with her name on
+          it, proven at the Orchard first.
+        </p>
+      </div>
+      <div>
+        <h3>Cost</h3>
+        <p>
+          <span class="days">First slice 3 days:</span> the day hired and a short record kept on each person, 30 bio
+          lines by role and quirk, the Let Go line. <span class="days">Whole 10+ days:</span> one local per center with
+          a three-beat arc, five times over, and the writing.
+        </p>
+      </div>
+      <div>
+        <h3>What could go wrong</h3>
+        <ul>
+          <li>It answers “nobody reads the text” with text.</li>
+          <li>Thirty bio lines repeat across twenty staff within a year.</li>
+          <li>Five locals is the “five of everything” the review warned about.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Fits Staff Room Politics</h3>
+        <p>“Friends with Mo” and a feud are natural lines in the record.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <section aria-labelledby="cmp">
+    <h2 id="cmp">Side by side</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>New verb</th>
+            <th>Hiring</th>
+            <th>A raise</th>
+            <th>Letting go</th>
+            <th>New sim rule</th>
+            <th>First slice</th>
+            <th>Whole</th>
+            <th>Balance risk</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1 · Faces</td>
+            <td>None</td>
+            <td class="s lo">Small</td>
+            <td class="s lo">None</td>
+            <td class="s">Some</td>
+            <td>None</td>
+            <td class="n">2 days</td>
+            <td class="n">5 days</td>
+            <td>None</td>
+          </tr>
+          <tr>
+            <td>2 · Why the mood</td>
+            <td>Diagnose and fix</td>
+            <td class="s lo">None</td>
+            <td class="s hi">Large</td>
+            <td class="s">Some</td>
+            <td>None (a refactor)</td>
+            <td class="n">1.5 days</td>
+            <td class="n">3 days</td>
+            <td>None</td>
+          </tr>
+          <tr class="recrow">
+            <td><b>3 · Quirks with weight ★</b></td>
+            <td>Weigh a person</td>
+            <td class="s hi">Large</td>
+            <td class="s">Some</td>
+            <td class="s hi">Large</td>
+            <td>Up to three quirks, one in seven rare</td>
+            <td class="n">5 days</td>
+            <td class="n">10–12 days</td>
+            <td>Medium: bot rerun</td>
+          </tr>
+          <tr>
+            <td>4 · Likes and dislikes</td>
+            <td>Suit the building</td>
+            <td class="s">Some</td>
+            <td class="s">Some</td>
+            <td class="s lo">Small</td>
+            <td>±5 for a like or dislike</td>
+            <td class="n">4 days</td>
+            <td class="n">7 days</td>
+            <td>Medium: bot rerun</td>
+          </tr>
+          <tr>
+            <td>5 · A file, and a local</td>
+            <td>None (the local: keep her)</td>
+            <td class="s lo">Small</td>
+            <td class="s lo">None</td>
+            <td class="s hi">Large</td>
+            <td>One named challenge</td>
+            <td class="n">3 days</td>
+            <td class="n">10+ days</td>
+            <td>Low</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="verdict" aria-labelledby="rec">
+    <span class="eyebrow">Recommendation</span>
+    <h2 id="rec">Build Quirks with weight</h2>
+    <p>
+      It is the only option that turns the hire from rank against salary into an argument about a person, and the only
+      one that makes letting someone go cost something you can name: a rare quirk you may not see again. That is the
+      reason to stop churning, earned by keeping people, with no penalty on firing. It grows the system the game already
+      has (twelve quirks, pay that follows them, four that already show on the floor), it is one rule proven with four
+      instances, and the rare quirks put a person’s character on the floor rather than in text. It also feeds Staff Room
+      Politics, whose Grump and Ray of Sunshine rules need more people carrying a quirk.
+    </p>
+    <p>
+      The first slice is about five days and needs a bot rerun to prove it is not easier. Faces would be the natural
+      next step, since a rare quirk belongs to a face. Why the mood is small and pure communication, if you want it
+      alongside.
+    </p>
+  </section>
+</main>
+
+<div class="lightbox" id="lightbox" hidden>
+  <div class="frame"><img id="lightbox-img" alt="" /></div>
+</div>
+
+<script>
+  const box = document.getElementById('lightbox');
+  const big = document.getElementById('lightbox-img');
+  for (const pic of document.querySelectorAll('.pic')) {
+    pic.addEventListener('click', () => {
+      const img = pic.querySelector('img');
+      big.src = img.src;
+      big.alt = img.alt;
+      box.classList.toggle('rec', !!pic.closest('.rec'));
+      box.hidden = false;
+    });
+  }
+  box.addEventListener('click', () => {
+    box.hidden = true;
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') box.hidden = true;
+  });
+</script>
