@@ -10,6 +10,20 @@ A month is 180 seconds of game time (30 days of 6 seconds).
 
 Measured with `yarn balance` at The Exchange only, seeds 1 to 12, four years a game, three ways: the feature off; on with every wave let pass (`BOT_WAVES=1`); and on with every wave chased (`BOT_WAVES=1 BOT_ON=chase`, which trains someone in the technique it opens first and buys its kit). The design is [planning/fun/whats-going-around.md](../planning/fun/whats-going-around.md).
 
+### 51. Ready means a Recovery Lounge too, and a wave guest healed after the month is counted
+
+**Done:** a wave's guests come in only once the center has a Recovery Lounge as well, when the technique needs a rest after (`waveReady` in `src/core/sim/waves.ts`); until then they turn back at the door. The advisor names the next thing missing (`waveTodo`), and the PA line as the guests start, if the center is not ready, no longer names one fix: "Guests with Cold Feet will come back later, once we are ready for them." The chasing bot builds the lounge first while a wave needs one. And a counting bug: a wave guest healed after the wave's month ended was not counted (`countVisit` only counted into the wave still running), which is part of why entry 50 found only 9 healed; they now count toward the wave they came with.
+
+The chased run again, same twelve seeds:
+
+| Run                     | Games lost (of 12) | Second star, median month | Third star, median month | Bank at month 47, median | Wave guests: came in / healed / turned back |
+| ----------------------- | ------------------ | ------------------------- | ------------------------ | ------------------------ | ------------------------------------------- |
+| off                     | 0                  | 12.4                      | 18.7                     | $418k                    |                                             |
+| chased, before          | 0                  | 12.6                      | 17.1                     | $436k                    | 52 / 9 (undercounted) / 11                  |
+| chased, lounge required | 0                  | 11.7                      | 18.2                     | $440k                    | 30 / 17 / 35                                |
+
+**Read:** with the lounge required, 17 of the 30 wave guests who came in were healed (57%), against 73% for every Cold Feet guest over the four years, most of them after the second star with the center grown. The rest were put off by the price, went home worse, failed or stormed out, as any guest can; the bot meets a wave with one Acupuncturist. In 5 of the 12 games the bot never had the lounge up in time and every wave guest turned back, at no cost. Stars and the bank are within the twelve seeds' noise of the feature off. Still to see: how a good player's chase goes.
+
 ### 50. A wave costs nothing to let pass, and the bot gains little by chasing one
 
 **Found:** every game got its wave (Cold Feet, 4 to 16 months in), and no game was lost in any of the three runs.
