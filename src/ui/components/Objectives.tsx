@@ -3,7 +3,7 @@
 
 import { useState } from 'preact/hooks';
 
-import { centerOf, conditionOf, DISCIPLINES, type GoalSpec, ITEMS, MODALITIES, ROOMS } from '../../core/data';
+import { centerOf, conditionOf, DISCIPLINES, type GoalSpec, ITEMS, MODALITIES, ROLES, ROOMS } from '../../core/data';
 import { an, money } from '../../core/format';
 import type { Objective } from '../../core/sim/goals';
 import type { TutorialLine } from '../../core/sim/tutorial';
@@ -212,6 +212,13 @@ function WaveCard() {
       checks.rest,
       checks.rest ? 'Recovery Lounge for the rest after' : 'Build a Recovery Lounge for the rest after',
     ]);
+  // once someone does it, whether the wave's guests share them with the discipline's own line
+  const role = ROLES[DISCIPLINES[m.discipline].role].name;
+  const staff = s.staff.filter((st) => st.role === DISCIPLINES[m.discipline].role && st.state !== 'leaving').length;
+  if (checks.qualified)
+    lines.push([staff > 1, staff > 1 ? `${staff} ${role}s to share the line` : `Only one ${role}: the line will grow`]);
+  // the wave's guests in the center now, being seen or waiting
+  const here = s.guests.filter((g) => g.wave && g.state !== 'leaving').length;
   return (
     <div class={cx('wave', waveCard)}>
       <b>
@@ -220,7 +227,7 @@ function WaveCard() {
       <span>
         {before
           ? `In ${wholeDaysLeft(w.starts - s.day)} days · for ${Math.round(w.ends - w.starts)} days`
-          : `${wholeDaysLeft(w.ends - s.day)} days left · ${w.healed} healed${w.turned ? ` · ${w.turned} came back later` : ''}`}
+          : `${wholeDaysLeft(w.ends - s.day)} days left · ${here} in now · ${w.healed} healed${w.turned ? ` · ${w.turned} came back later` : ''}`}
       </span>
       {lines.map(([ok, text]) => (
         <p key={text} class={cx('ready', ok ? 'ok' : 'warn')}>

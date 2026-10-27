@@ -6,6 +6,7 @@ import {
   centerOf,
   type ConditionId,
   conditionOf,
+  DAYS_PER_MONTH,
   DISCIPLINES,
   ITEMS,
   MODALITIES,
@@ -106,6 +107,9 @@ export function waveChecks(ctx: SimContext, m: Modality): WaveChecks {
 /** Whether a wave's guests are coming now. */
 export const waveRunning = (s: GameState): boolean =>
   !!s.wave && featureOn(s, 'waves') && s.day >= s.wave.starts && s.day < s.wave.ends;
+
+/** How many guests a wave brings a week, at a pace of `tables` usual guests a month, for the dialog to say. */
+export const wavePerWeek = (tables: number): number => (tables * WAVE_SHARE * 7) / DAYS_PER_MONTH;
 
 /** A wave's guests a month, on top of the usual guests come for the tables, while it runs; none otherwise. */
 export const waveGuests = (s: GameState, tables: number): number => (waveRunning(s) ? tables * WAVE_SHARE : 0);

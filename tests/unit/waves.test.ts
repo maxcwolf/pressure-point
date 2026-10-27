@@ -25,6 +25,7 @@ import {
   waveArrival,
   waveChecks,
   waveClash,
+  wavePerWeek,
   waveReady,
   waveTodo,
 } from '../../src/core/sim/waves';
@@ -138,6 +139,10 @@ describe('an ailment going around', () => {
     s.nextWave = { day: s.day, moves: 0 };
     updateWaves(ctx);
     expect(s.wave).toBeNull();
+  });
+
+  it('says its size as guests a week: a third of the usual guests, spread over the month', () => {
+    expect(wavePerWeek(30)).toBeCloseTo((30 / 3) * (7 / 30));
   });
 
   it('brings guests on top of the usual ones only while it runs', () => {

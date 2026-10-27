@@ -1,7 +1,8 @@
 // The news that an ailment is going around, a week before its guests come.
 
-import { conditionOf, DISCIPLINES, ITEMS, MODALITIES, ROLES, ROOMS, WAVES } from '../../../core/data';
+import { conditionOf, DAYS_PER_MONTH, DISCIPLINES, ITEMS, MODALITIES, ROLES, ROOMS, WAVES } from '../../../core/data';
 import { an } from '../../../core/format';
+import { wavePerWeek } from '../../../core/sim/waves';
 import { css } from '../../../styled-system/css';
 import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
@@ -45,6 +46,13 @@ export function WaveDialog() {
   const kit = m.equipment ? ITEMS[m.equipment].name : '';
   const cause = WAVES[s.center]?.condition === w.condition ? WAVES[s.center]?.cause : '';
   const nextStar = s.stars + 1;
+  // the size of the wave in guests a week, from the usual pace now: something a player can weigh against their staff
+  const perWeek = wavePerWeek(sim.arrivalPace().tables);
+  // under one a week, as in a center still small, it is said a month, so a quiet wave does not sound like more
+  const size =
+    perWeek >= 1
+      ? `${Math.round(perWeek)} a week`
+      : `${Math.max(1, Math.round((perWeek * DAYS_PER_MONTH) / 7))} a month`;
   return (
     <Dialog>
       <p class={headline}>Going around town</p>
@@ -57,7 +65,7 @@ export function WaveDialog() {
       </p>
       <p class={card}>
         <b>{`From day ${Math.ceil(w.starts)}, for ${Math.round(w.ends - w.starts)} days:`}</b>
-        {` guests with ${c.name} come on top of the usual ones, about a quarter of all new guests.`}
+        {` guests with ${c.name} come on top of the usual ones, about ${size} at today’s pace, all for ${m.name}.`}
       </p>
       <p class={`${card} opens`}>
         <b>{w.opened ? `New treatment, ahead of star ${nextStar}:` : 'Treated with:'}</b>
@@ -67,7 +75,10 @@ export function WaveDialog() {
           !sim.hasRoom('recovery') &&
           ' Its guests need a rest after, so they come in only once there is a Recovery Lounge too.'}
       </p>
-      <p class="sub">Not ready in time? They turn back at the door and come another time. Nothing is lost.</p>
+      <p class="sub">
+        Not ready? They turn back at the door and come another time, at no cost. Ready, they come in like any guest, so
+        keep the line short.
+      </p>
       <div class={buttonRow()}>
         <Button
           quiet
