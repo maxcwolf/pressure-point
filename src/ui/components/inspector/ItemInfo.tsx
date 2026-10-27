@@ -38,7 +38,6 @@ import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { RugPatterns } from '../common/RugPatterns';
-import { dripUpgradeLocked } from '../DripMocks';
 import { smallButton } from './looks';
 import { StationInfo } from './StationInfo';
 
@@ -167,7 +166,7 @@ function Upgrades({ item: it }: { item: Item }) {
         <Button
           class={upgrade}
           title={why || `${upgradeEffect(next)}. A Caretaker with the Mechanics course installs it.`}
-          locked={!!why && !dripUpgradeLocked(next)}
+          locked={!!why}
           quiet
           onPress={() => {
             sim.orderUpgrade(it.id);
@@ -175,7 +174,7 @@ function Upgrades({ item: it }: { item: Item }) {
         >
           <IconText id="ui-upgrade">
             {next > starsEarned(sim.s)
-              ? (dripUpgradeLocked(next) ?? `Level ${next} unlocks at star ${next}`)
+              ? `Level ${next} unlocks at star ${next}`
               : `Upgrade to level ${next} (${money(upgradeCost(it.type, next))})`}
           </IconText>
         </Button>

@@ -6,7 +6,6 @@ import { Still, useExit } from '../../hooks/use-exit';
 import { useHud } from '../../hooks/use-hud';
 import type { DialogId } from '../../hud';
 import { cx } from '../../lib/cx';
-import { dripMock, TrendDialog } from '../DripMocks';
 import { AwardsDialog } from './AwardsDialog';
 import { BankruptDialog } from './BankruptDialog';
 import { BuyPlotDialog } from './BuyPlotDialog';
@@ -45,7 +44,7 @@ function contents(dialog: DialogId): ComponentChildren {
     case 'confirm-dismiss':
       return <ConfirmDismissMessages />;
     case 'star':
-      return dripMock() === 'trend' ? <TrendDialog /> : <StarDialog />;
+      return <StarDialog />;
     case 'karma':
       return <KarmaDialog />;
     case 'awards':
