@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## v0.34.3
+
+- **Under the hood.** On a Mac, an app that updated itself no longer has all its files dated hours in the future for players west of Greenwich, which could make Spotlight complain. Nothing changes for play.
+
 ## v0.34.2
 
 - **Under the hood.** The installed app now reports crashes, hangs and runs that ended without quitting to Sentry, including when the whole computer went down, so trouble on players' machines can be seen and fixed. Nothing changes for play.
