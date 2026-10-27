@@ -47,7 +47,7 @@ A day is 6 seconds (`DAY_SECONDS`) and a month 30 days (`DAYS_PER_MONTH`), both 
 ```ts
 wave: { condition: ConditionId; warned: number; starts: number; ends: number; opened: boolean; came: number; healed: number; turned: number } | null;
 nextWave: number; // the day the next wave is announced; Infinity while none is scheduled
-wavesOn: boolean; // a switch, as outbreaksOn and mishapsOn are, so the bot can measure with and without
+features: Partial<Record<FeatureId, boolean>>; // the features being tested, each on or off in this game (see below)
 opened: Modality[]; // techniques opened early by a wave, kept for good
 ```
 
@@ -161,8 +161,8 @@ Goals are measured in `objectiveFor` (`src/core/sim/goals.ts`, line 69). Monthly
 
 ### 8. Saves, the sandbox, the switches
 
-- **Saves.** `SAVE_VERSION` in `game.ts` is 40 (line 136). The new fields (`wave`, `nextWave`, `wavesOn`, `opened`, and `later` in the stats) get defaults in `startingState`, and `upgradeSave` in `src/core/state/upgrade.ts` (line 259) fills any missing key from `startingState` through `fill`, so an old game loads with no wave, nothing opened, and `nextWave` at `Infinity` until its next star. The version goes to the next free number with a line in the changelog comment above it; other branches bump it too, so the number is set at merge time.
-- **The sandbox.** No waves in the first slice: it is The Exchange only. Later, a sandbox switch "Ailments going around" beside the outbreaks and mishaps switches, read into `wavesOn` at boot (`src/app/boot.ts`). With `unlockAll` on, a wave still brings its crowd and opens nothing, since everything is open.
+- **Saves.** `SAVE_VERSION` in `game.ts` is 40 (line 136). The new fields (`wave`, `nextWave`, `features`, `opened`, and `later` in the stats) get defaults in `startingState`, and `upgradeSave` in `src/core/state/upgrade.ts` (line 259) fills any missing key from `startingState` through `fill`, so an old game loads with no wave, nothing opened, and `nextWave` at `Infinity` until its next star. The version goes to the next free number with a line in the changelog comment above it; other branches bump it too, so the number is set at merge time.
+- **The sandbox.** No waves in the first slice: it is The Exchange only. Later, the sandbox takes the same Feature testing switch as every other game (see [Switching it on and off](#switching-it-on-and-off)), rather than a switch of its own on the sandbox panel. With `unlockAll` on, a wave still brings its crowd and opens nothing, since everything is open.
 - **Discipline switches.** A wave is never picked for a discipline switched off. If the player switches its discipline off during the warning or the wave, the wave ends quietly, as `setDiscipline` in `treatments.ts` withdraws an emergency today.
 - **Analytics.** One event, `wave_ended`, in `happenings` in `src/app/play-events.ts`, compared once a second as `emergency_ended` is: `condition`, `technique`, `opened_early`, `came`, `healed`, `turned`, and `chased` (true if anyone was trained in the technique, or a kit bought, between the warning and the end). A row in [analytics.md](../../dev/analytics.md) and a case in `tests/unit/play-events.test.ts`. It answers the one question that matters: do players chase, and does passing happen.
 
@@ -177,7 +177,7 @@ Left alone, the bot would chase every wave by accident: Moxibustion becomes unlo
 - **Chase** when all of these hold: a second practitioner of the discipline, or its line at 4 or fewer, so the course does not empty the room; the course, the kit and a month's wages in hand; and the discipline's room built. Then it trains, buys the kit, and builds a Recovery Lounge if the technique needs a rest and there is none.
 - **Pass** otherwise. `bestCourse` and `unlocks` skip techniques in `s.opened` that are not yet past their star unless the bot chose to chase, so passing really is passing.
 
-**The rerun.** The first slice is one wave at one center, so `BALANCE_CENTERS=exchange`, 12 seeds, four years, three runs: waves off (`wavesOn` false), waves on with `chase`, and waves on with every wave passed. What it has to show:
+**The rerun.** The first slice is one wave at one center, so `BALANCE_CENTERS=exchange`, 12 seeds, four years, three runs: waves off (`features.waves` false), waves on with `chase`, and waves on with every wave passed. What it has to show:
 
 - **Passing costs nothing.** With every wave passed, star months, profit and the lowest reputation match waves off, seed for seed, within noise.
 - **Chasing is worth something, usually.** With `chase`, more heals and more profit over the year on average.
@@ -185,6 +185,37 @@ Left alone, the bot would chase every wave by accident: Moxibustion becomes unlo
 - **No star much sooner.** The second star no more than half a month earlier on average with `chase` than with waves off.
 
 [balance/harness.md](../../balance/harness.md) asks for 72 seeds before a call; 12 are enough to see which way it leans and to set the first numbers.
+
+## Switching it on and off
+
+Max asked for the feature to be one that can be turned on and off while it is being tested. Waves get a switch in Settings, under a new heading, **Feature testing**, which every feature still being tried out shares, so the next one (an occasion, a Make It Right card) is a row more, not a new design.
+
+**Where it goes.** Settings is one list under headings, drawn by `SettingsPanel` in `src/ui/components/SettingsPanel.tsx` and shared by the title screen and the in-game Settings dialog (`SettingsDialog.tsx`, opened from the pause menu). Feature testing is a heading of its own, just above Cheats, with one `SettingRow` per feature: an icon, the name, a line on what it does, and the switch.
+
+> **Ailments going around** · Testing
+> Every six to eight weeks an ailment goes around town, a week's warning first, and opens its treatment early. For now only The Exchange, after its first star.
+
+**What the switch is.** The Treatments rows already show the pattern (`isOn` in `SettingsPanel`): in a game, the switch is that game's own; on the title screen, it is the default for new games.
+
+- **In a game:** the row flips `s.features.waves` through a sim method, `sim.setFeature('waves', on)`, so it is saved with the game, and a save keeps the setting it was played with. Loading an old save gives it the default.
+- **On the title screen:** the row sets the default for new games, kept in local storage under a new key, `pressure-point-features`, beside the discipline prefs in `src/storage/settings.ts` (`loadFeaturePrefs`, `saveFeaturePref`). A new game copies it into `s.features` in `startingState`'s caller at boot (`src/app/boot.ts`), as the sandbox's switches and the discipline prefs are copied in today.
+- **The list of features** is one table in `src/core/data/features.ts`: `FEATURES: Record<FeatureId, { name, desc, icon, default }>`, with `featureOn(s, id)` in `game.ts` returning `s.features[id] ?? FEATURES[id].default`. Every check in this doc that says "while waves are on" is `featureOn(s, 'waves')`: `updateWaves`, the wave term in `arrivalPace`, `sentFor`'s early-technique check, the objectives card and `waveAdvice`.
+
+**Turning it off mid-game.**
+
+- A wave in its warning week or running **ends quietly**: no more wave guests come, the card goes, and no PA line plays. Guests already inside stay and are treated as any guest.
+- **What a wave opened stays open.** Moxibustion and its burner stay in the menus, since the player may have paid for the course and the kit already, and taking them away would cost them for a switch they flipped. An early technique keeps drawing guests only once someone can do it, as in step 5.
+- `nextWave` is kept, so turning it back on resumes the schedule.
+
+**Turning it on mid-game.** If the center is The Exchange with one star and its wave has not come yet, the wave is announced 7 days later, clock checks and all, so a tester does not wait 38 days. Anywhere else nothing happens until the conditions in step 1 are met.
+
+**Getting a wave now.** A cheat console command, `wave`, in `src/core/sim/cheats.ts` beside `star` and `money`: it announces the wave at once, skipping the clock checks, and `wave end` ends it. Like every cheat it marks a campaign game as cheated (`s.cheated`), so it is for testing, not for play.
+
+**Telling games apart in the play statistics.** `setting_changed` already records the flip (`track` in the `flip` helper in `SettingsPanel`). Every event also carries the game's properties from `gameProps` in `src/app/analytics.ts`; adding `features: ['waves']` there lets every chart split games with waves from games without, which is how the first slice is judged in real play as well as by the bot. A row in [analytics.md](../../dev/analytics.md).
+
+**The bot** sets `s.features.waves` directly for each run, and the three-way rerun in step 9 is the switch, off and on.
+
+**The default.** Off (recommended, decision 8): the build that carries it plays exactly as before for anyone who has not turned it on, Max and chosen testers turn it on, and the default flips to on, the row leaving Feature testing, once the first slice is judged.
 
 ## After the last star
 
@@ -216,11 +247,12 @@ Exactly what the page promised, plus what the walkthrough found it needs to be f
 - **The warning:** the dialog (new `DialogId`, `SimEvent` and Modal case), the warning PA line as text, the objectives card with its three readiness lines, and `waveAdvice`.
 - **The rule:** wave arrivals as a share of the pace beside `machineArrival`, and the door (`waveReady`, the "Next time" bubble, the `later` ending).
 - **The plumbing:** `s.opened` in `unlocked`, `itemOpen`, `averagePrice`, the Treatments menu chip and `treatmentsUnlockedAt`; `sentFor` asking `waveReady` for early techniques.
-- **State and save:** `wave`, `nextWave`, `wavesOn`, `opened`, `later`; the save version; `wave_ended`.
+- **The switch:** the Feature testing section in Settings, `features` on the game, the new-game default, the `wave` cheat command, and `features` in the play statistics' game properties.
+- **State and save:** `wave`, `nextWave`, `features`, `opened`, `later`; the save version; `wave_ended`.
 - **Tests:** unit tests for the clock and its clash check, the door, the item gate, the star dialog not announcing Moxibustion twice, and an old save loading; the play-events test.
 - **The bot:** `chase`, and the three-way rerun at The Exchange.
 
-About 5 to 7 days, as the page said. It ships with the picture-only mock commit (`8949d53a`, `src/ui/components/DripMocks.tsx`) dropped.
+About 6 to 8 days: the page's 5 to 7, and a day for the Feature testing switch. It ships with the picture-only mock commit (`8949d53a`, `src/ui/components/DripMocks.tsx`) dropped.
 
 ## Decisions for Max
 
@@ -233,6 +265,7 @@ Each has the answer this doc assumes.
 5. **Which clocks a wave makes room for.** Emergencies, outbreaks, mishaps and the inspector, for the warning week and the first week of the wave, by moving the wave up to four times a week later (recommended). Not VIPs, house calls, staff challenges, ZenMart or rush hours.
 6. **Applicants already trained in an early technique.** No (recommended): training is the cost of chasing, and a lucky hire would skip it.
 7. **A lesson card for the first wave.** No (recommended): the dialog explains every time; a section in the guide.
+8. **The Feature testing switch's default.** Off (recommended) until the first slice is judged, so nobody meets waves who has not turned them on; then on, and the row leaves Feature testing. The other way, on from the first build, puts it in front of every playtester at once, with the switch to turn it off.
 
 ## Risks
 
