@@ -25,3 +25,12 @@ export const GROW_START: number = (() => {
   if (typeof location === 'undefined') return 1;
   return Number(new URLSearchParams(location.search).get('grow')) || 1;
 })();
+
+/**
+ * Which variant of an ailment's model under `body` the address asks for, by its look's name: `&steam=2` for the second
+ * kettle, say. Without it, the first prototype.
+ */
+export function variantOf(visual: string): number {
+  if (typeof location === 'undefined') return 0;
+  return Number(new URLSearchParams(location.search).get(visual)) || 0;
+}

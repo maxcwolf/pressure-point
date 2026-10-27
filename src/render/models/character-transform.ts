@@ -9,12 +9,13 @@ import type { Visual } from '../../core/data';
 import type { Viewpoint } from '../crowd';
 import { owned } from '../disposal';
 import { pixelsPerMeter } from '../readable';
-import { GROW, GROW_START, SYMPTOM_OPTION } from '../symptom-options';
+import { GROW, GROW_START, SYMPTOM_OPTION, variantOf } from '../symptom-options';
 import type { CharRig } from './character';
 import { capsule, cyl, mat, put, rbox, sph, torus } from './parts';
+import { egg, kettle } from './symptom-heads';
 
 /** Hide parts of a person while a symptom stands in for them, to be shown again halfway through the cure. */
-function hideUntilCured(rig: CharRig, parts: THREE.Object3D[]) {
+export function hideUntilCured(rig: CharRig, parts: THREE.Object3D[]) {
   for (const p of parts) {
     if (!p.visible) continue;
     p.visible = false;
@@ -23,16 +24,16 @@ function hideUntilCured(rig: CharRig, parts: THREE.Object3D[]) {
 }
 
 /** The parts of a head with these names: its hair, moustache and beard, say. */
-const named = (head: THREE.Object3D, ...names: string[]) => head.children.filter((o) => names.includes(o.name));
+export const named = (head: THREE.Object3D, ...names: string[]) => head.children.filter((o) => names.includes(o.name));
 
 /** Swell the head while the symptom lasts, across and up, to go down again with the cure. */
-function swell(rig: CharRig, across: number, up: number) {
+export function swell(rig: CharRig, across: number, up: number) {
   rig.swell = [across, up];
   rig.head.scale.set(across / rig.wide, up, across / rig.wide);
 }
 
 /** Keep small parts from casting shadows, and note them as the symptom's, to go when the guest is healed. */
-function props(rig: CharRig, ...parts: THREE.Object3D[]) {
+export function props(rig: CharRig, ...parts: THREE.Object3D[]) {
   for (const p of parts) {
     p.traverse((o) => (o.castShadow = false));
     rig.props.push(p);
@@ -63,7 +64,9 @@ function propParts(rig: CharRig) {
 /** The whole body as the symptom, for the ailments prototyped under `body`. */
 function bodySymptom(rig: CharRig, visual: Visual) {
   const { head } = rig;
-  if (visual === 'steam') {
+  if (visual === 'steam' && variantOf('steam')) kettle(rig, variantOf('steam'));
+  else if (visual === 'dizzy' && variantOf('dizzy')) egg(rig, variantOf('dizzy'));
+  else if (visual === 'steam') {
     // the head a whistling kettle: red enamel where the skin was, a steel lid for hair, a black handle arching over the
     // top, and a spout the steam comes out of, the face still on it to show how they feel
     rig.headMesh.material = mat(0xd9452f, 0.4);
