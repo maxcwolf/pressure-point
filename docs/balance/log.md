@@ -6,6 +6,24 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 27 October 2026: ailments going around, the first slice
+
+Measured with `yarn balance` at The Exchange only, seeds 1 to 12, four years a game, three ways: the feature off; on with every wave let pass (`BOT_WAVES=1`); and on with every wave chased (`BOT_WAVES=1 BOT_ON=chase`, which trains someone in the technique it opens first and buys its kit). The design is [planning/fun/whats-going-around.md](../planning/fun/whats-going-around.md).
+
+### 50. A wave costs nothing to let pass, and the bot gains little by chasing one
+
+**Found:** every game got its wave (Cold Feet, 4 to 16 months in), and no game was lost in any of the three runs.
+
+| Run        | Games lost (of 12) | Second star, median month | Third star, median month | Bank at month 24, median | Bank at month 47, median | Wave guests: came in / healed / turned back |
+| ---------- | ------------------ | ------------------------- | ------------------------ | ------------------------ | ------------------------ | ------------------------------------------- |
+| off        | 0                  | 12.4                      | 18.7                     | $57k                     | $418k                    |                                             |
+| on, passed | 0                  | 12.6                      | 16.8                     | $84k                     | $352k                    | 0 / 0 / 87                                  |
+| on, chased | 0                  | 12.6                      | 17.1                     | $77k                     | $436k                    | 52 / 9 / 11                                 |
+
+**Read:** passing changes none of the bot's choices, only the dice the wave's arrivals roll, so the gap between off and passed (the third star two months sooner, the bank $66k lower at the end) is the noise in twelve seeds, not the wave. Turning back at the door costs nothing, as it should: 87 guests turned back and no game went worse for it. Chasing brought 52 wave guests in, but only 9 were healed while the wave ran. Four seeds played again to the wave's end show why: the bot chases with one Acupuncturist, newly trained, sharing one table with Acupuncture's own guests, and in three of the four without a Recovery Lounge, so Moxibustion loses its rest and wave guests fail or storm out. The center counts as ready once the room, someone trained and the kit are there; the Recovery Lounge is only a warning on the card.
+
+**Not done yet:** whether a good player's chase pays (Max's own play, with the switch on), and whether "ready" should wait for the Recovery Lounge, or for a second Acupuncturist, before wave guests come in rather than turn back. The feature stays off by default.
+
 ## 25 October 2026, evening: late-game money, and the Pressure Point Foundation
 
 Measured with `yarn balance`, every campaign center, seeds 0 to 12, four years a game, with each payday the bank could not cover now logged (`heldPaydays`). The money curve and the cost options were measured on `claude/money-curve` at `02654cf6`, the Foundation on `claude/foundation` at main `32e85910`. Thirteen seeds, not the 72 [balance/harness.md](harness.md) asks for before a call.
