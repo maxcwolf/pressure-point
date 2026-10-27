@@ -153,9 +153,9 @@ export const TRAITS: readonly TraitDef[] = [
   {
     id: 'space',
     name: 'Holds Space',
-    desc: 'Colleagues working in the same room work 10% faster. Mentions it.',
+    desc: 'Colleagues working nearby work 15% faster, through walls. Mentions it.',
     pay: 1.25,
-    hold: 1.1,
+    hold: 1.15,
     rare: true,
   },
 ];

@@ -388,7 +388,7 @@ export interface TraitDef {
   floor?: number;
   /** The chance that a treatment of theirs that failed works anyway. */
   rescue?: number;
-  /** How much faster colleagues work beside them, in the same room. */
+  /** How much faster colleagues work near them, through walls. */
   hold?: number;
 }
 

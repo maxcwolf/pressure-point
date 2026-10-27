@@ -247,23 +247,16 @@ export function cheeredUp(s: GameState, st: Staff): boolean {
   return s.staff.some((o) => o !== st && o.state !== 'leaving' && habitOf(o, 'cheer') && withinReach(o, st));
 }
 
-/** The room of the station someone is posted at, if they are at it. */
-function roomAtPost(ctx: SimContext, st: Staff) {
-  const post = st.state === 'atPost' ? ctx.world.item(st.post) : undefined;
-  return post ? ctx.world.roomOfItem(post) : undefined;
-}
-
 /**
- * How much faster a colleague who Holds Space makes someone work: posted in the same room as them, and within a Ray
- * of Sunshine's reach. Two who Hold Space in one room do not add up; the stronger counts.
+ * How much faster a colleague who Holds Space makes someone work: both at their posts, within a Ray of Sunshine's
+ * reach, whatever room each is in, since it goes through walls. Two who Hold Space do not add up; the stronger counts.
  */
 export function heldSpace(ctx: SimContext, st: Staff): number {
-  const room = roomAtPost(ctx, st);
-  if (!room) return 1;
+  if (st.state !== 'atPost') return 1;
   let held = 1;
   for (const o of ctx.s.staff) {
     const hold = traitProduct(o.traits, 'hold');
-    if (o === st || hold <= held || !withinReach(o, st) || roomAtPost(ctx, o) !== room) continue;
+    if (o === st || hold <= held || o.state !== 'atPost' || !withinReach(o, st)) continue;
     held = hold;
   }
   return held;

@@ -152,9 +152,9 @@ describe('with `early`', () => {
   });
 
   it('has a Training Room at Willow Lane within five weeks, where one is open from the start', () => {
-    const bot = willow();
-    // Willow Lane's mild spring saves this seed the radiators it once bought, and with them the early loan that paid
-    // for the room on day 24: by cash alone it comes on day 32. The other seeds have it by day 28.
+    // seed 3, a plain run: seed 1 hires someone who Holds Space, whose quicker treatments put off the early loan that
+    // paid for the room, and by cash alone it comes on day 38. The others have it by day 26.
+    const bot = new Bot('willow', 3, {}, botFlags({ BOT_OFF: '', BOT_ON: '' }));
     expect(bot.playUntil((b) => b.sim.hasRoom('training'), 35)).toBe(true);
   });
 

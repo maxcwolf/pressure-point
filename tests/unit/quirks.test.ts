@@ -146,7 +146,7 @@ describe('the rare quirks', () => {
     expect(saved / 20000).toBeCloseTo(traitMost(['hands'], 'rescue'), 1.5);
   });
 
-  it('Holds Space speeds up colleagues posted in the same room, within reach, and nobody elsewhere', () => {
+  it('Holds Space speeds up colleagues at work within reach, through walls, and nobody further off', () => {
     const { sim, therapist, consultant } = openCenter(1);
     const ctx = ctxOf(sim);
     therapist.traits = [];
@@ -154,17 +154,21 @@ describe('the rare quirks', () => {
     const table = sim.s.items.find((i) => i.type === 'massage_table')!;
     const desk = sim.s.items.find((i) => i.type === 'consult_desk')!;
     Object.assign(therapist, { state: 'atPost', post: table.id, x: 12.5, y: 6.5 });
-    // posted in the consultation room, near enough but not in the same room
+    // posted in the consultation room, through the wall but within reach
     Object.assign(consultant, { state: 'atPost', post: desk.id, x: 10.5, y: 6.5 });
-    expect(heldSpace(ctx, therapist)).toBe(1);
-    // posted at the same table's room
-    consultant.post = therapist.post;
-    expect(heldSpace(ctx, therapist)).toBeCloseTo(1.1);
+    expect(heldSpace(ctx, therapist)).toBeCloseTo(1.15);
     // and their own speed is untouched
     expect(heldSpace(ctx, consultant)).toBe(1);
-    // out of reach, even in the same room's post
+    // not while either is away from their post
+    consultant.state = 'toPost';
+    expect(heldSpace(ctx, therapist)).toBe(1);
+    consultant.state = 'atPost';
+    therapist.state = 'toPost';
+    expect(heldSpace(ctx, therapist)).toBe(1);
+    therapist.state = 'atPost';
+    // out of reach
     Object.assign(consultant, { x: 30, y: 30 });
     expect(heldSpace(ctx, therapist)).toBe(1);
-    expect(serviceSeconds(60, therapist, 1.1)).toBeCloseTo(serviceSeconds(60, therapist) / 1.1);
+    expect(serviceSeconds(60, therapist, 1.15)).toBeCloseTo(serviceSeconds(60, therapist) / 1.15);
   });
 });

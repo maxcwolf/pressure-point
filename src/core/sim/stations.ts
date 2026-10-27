@@ -149,7 +149,7 @@ export function pickStation(ctx: SimContext, g: Guest): Item | null {
 
 /**
  * How long a service takes this member of staff, given their skill, traits, courses, energy and morale, and how much
- * faster a colleague who Holds Space beside them makes them (`heldSpace`).
+ * faster a colleague who Holds Space nearby makes them (`heldSpace`).
  */
 export function serviceSeconds(base: number, st: Staff, held = 1) {
   let speed = 0.85 + st.skill * 0.05;
