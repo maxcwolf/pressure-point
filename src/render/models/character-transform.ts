@@ -11,18 +11,10 @@ import { owned } from '../disposal';
 import { pixelsPerMeter } from '../readable';
 import { GROW, GROW_START, SYMPTOM_OPTION, variantOf } from '../symptom-options';
 import type { CharRig } from './character';
-import { hideUntilCured, named, swell } from './character-heads';
+import { hideUntilCured, named, props, swell } from './character-heads';
 import { cyl, mat, put, sph, torus } from './parts';
 import { kettle } from './symptom-heads';
-import { battery, cactus } from './symptom-proposals';
-
-/** Keep small parts from casting shadows, and note them as the symptom's, to go when the guest is healed. */
-export function props(rig: CharRig, ...parts: THREE.Object3D[]) {
-  for (const p of parts) {
-    p.traverse((o) => (o.castShadow = false));
-    rig.props.push(p);
-  }
-}
+import { cactus } from './symptom-proposals';
 
 /**
  * Recolor every part of a person, each shared material swapped for the shared one of its new color so the crowd still
@@ -49,7 +41,6 @@ function propParts(rig: CharRig) {
 function bodySymptom(rig: CharRig, visual: Visual) {
   const { head } = rig;
   if (visual === 'steam' && variantOf('steam')) kettle(rig, variantOf('steam'));
-  else if (visual === 'battery' && variantOf('battery')) battery(rig, variantOf('battery'));
   else if (visual === 'cactus' && variantOf('cactus')) cactus(rig, variantOf('cactus'));
   else if (visual === 'steam') {
     // the head a whistling kettle: red enamel where the skin was, a steel lid for hair, a black handle arching over the
@@ -69,29 +60,6 @@ function bodySymptom(rig: CharRig, visual: Visual) {
     head.add(kettle);
     rig.steam?.position.set(0.38, 0.14, 0.04);
     swell(rig, 1.25, 1.2);
-  } else if (visual === 'cork') {
-    // the whole person in a big green bottle, the cork in its neck above their head and a label round the middle,
-    // their legs out of the bottom to walk on
-    for (const p of rig.props) p.visible = false;
-    const glass = owned(
-      new THREE.MeshStandardMaterial({
-        color: 0x3f9a5c,
-        transparent: true,
-        opacity: 0.45,
-        roughness: 0.1,
-        depthWrite: false,
-      }),
-    );
-    const bottle = new THREE.Group();
-    put(bottle, cyl(0.31, 0.31, 1.05, 24), glass, 0, 0.78, 0);
-    put(bottle, cyl(0.13, 0.31, 0.16, 24), glass, 0, 1.38, 0);
-    put(bottle, cyl(0.13, 0.13, 0.15, 20), glass, 0, 1.535, 0);
-    put(bottle, torus(0.135, 0.022), glass, 0, 1.61, 0).rotation.x = Math.PI / 2;
-    put(bottle, cyl(0.115, 0.1, 0.16, 14), mat(0xc9a56a, 0.95), 0, 1.66, 0);
-    put(bottle, cyl(0.315, 0.315, 0.3, 24), mat(0xf2e6c8, 0.8), 0, 0.62, 0);
-    put(bottle, cyl(0.317, 0.317, 0.05, 24), mat(0xd9362f, 0.6), 0, 0.68, 0);
-    props(rig, bottle);
-    rig.body.add(bottle);
   }
 }
 
@@ -159,10 +127,9 @@ function mount(rig: CharRig, at: number, meters: number, parts: THREE.Object3D[]
 
 /** The props of the ailments prototyped under `grow`, set to grow from afar. */
 function growSymptom(rig: CharRig, visual: Visual) {
-  if (visual === 'cork') mount(rig, 0.18, 0.17, rig.props.slice());
-  else if ((visual === 'glass' || visual === 'battery') && rig.bob) {
+  if (visual === 'glass' && rig.bob) {
     rig.bobAt = rig.bob.position.y;
-    mount(rig, 0.24, visual === 'glass' ? 0.14 : 0.26, [rig.bob]);
+    mount(rig, 0.24, 0.14, [rig.bob]);
   }
 }
 

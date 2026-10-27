@@ -1,13 +1,23 @@
 // The symptoms that take the place of a guest's head, so the ailment reads from across the room at the game's usual
-// distance rather than as a speck over the head: a scrambled noggin's head is an egg with its top knocked off. The
-// face stays on, so how the guest feels still shows, and the head comes back halfway through the cure.
+// distance rather than as a speck over the head: a scrambled noggin's head is an egg with its top knocked off, and a
+// flat battery's a battery on its side. The face stays on, so how the guest feels still shows, and the head comes back
+// halfway through the cure.
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 import type { Visual } from '../../core/data';
+import { owned } from '../disposal';
 import type { CharRig } from './character';
-import { cached, mat, put, sph } from './parts';
+import { cached, mat, put, rbox, sph } from './parts';
+
+/** Keep a symptom's parts from casting shadows, and note them as the symptom's, to go when the guest is healed. */
+export function props(rig: CharRig, ...parts: THREE.Object3D[]) {
+  for (const p of parts) {
+    p.traverse((o) => (o.castShadow = false));
+    rig.props.push(p);
+  }
+}
 
 /** Hide parts of a person while a symptom stands in for them, to be shown again halfway through the cure. */
 export function hideUntilCured(rig: CharRig, parts: THREE.Object3D[]) {
@@ -121,7 +131,39 @@ function egg(rig: CharRig) {
   swell(rig, 1.08, 1.08);
 }
 
+/** A battery's casing, its band and its silver end, and the empty cells of its gauge. */
+const CASING = 0x2b2f36;
+const BAND = 0x8cc63f;
+const SILVER = 0xc9ced6;
+const EMPTY = 0x4a4f57;
+/** The cream of the label the face is on, which would be lost on the dark casing. */
+const LABEL = 0xf2e6c8;
+
+/**
+ * A flat battery: the head a battery lying on its side, its band to one side and its silver end out of the other, the
+ * gauge along the top with three cells empty and the last one blinking red, and the face on a cream label on its front.
+ */
+function battery(rig: CharRig) {
+  const { head } = rig;
+  hideUntilCured(rig, [rig.headMesh, ...named(head, 'hair', 'moustache', 'beard', 'glasses')]);
+  const cell = new THREE.Group();
+  put(cell, rbox(0.46, 0.34, 0.36, 0.08), mat(CASING, 0.45), 0, 0.02, 0);
+  put(cell, rbox(0.12, 0.345, 0.365, 0.06), mat(BAND, 0.45), -0.17, 0.02, 0);
+  put(cell, rbox(0.04, 0.12, 0.12, 0.02), mat(SILVER, 0.25), 0.25, 0.02, 0);
+  // the gauge along the top, where the camera sees it
+  const empty = mat(EMPTY, 0.5);
+  for (let i = 0; i < 3; i++) put(cell, rbox(0.06, 0.02, 0.1, 0.005), empty, 0.03 + i * 0.07, 0.195, 0);
+  rig.blink = owned(new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 }));
+  put(cell, rbox(0.06, 0.02, 0.1, 0.005), rig.blink, -0.04, 0.195, 0);
+  put(cell, rbox(0.3, 0.27, 0.012, 0.006), mat(LABEL, 0.7), 0.02, 0, 0.181);
+  faceOut(rig, { eyes: 0.006, brows: 0.004, mouth: 0.004 });
+  props(rig, cell);
+  head.add(cell);
+  swell(rig, 1.1, 1.1);
+}
+
 /** Draw a symptom that stands in for the head, if it is one. */
 export function headSymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'egg') egg(rig);
+  else if (visual === 'battery') battery(rig);
 }

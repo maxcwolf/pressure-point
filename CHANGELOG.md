@@ -5,6 +5,8 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **A scrambled noggin you can see.** A guest with Scrambled Noggin now has an egg for a head, its top knocked off and the yolk showing, so they stand out in a crowd. Their face stays on it, and the egg goes in the puff when they are cured.
+- **Bottled up, in a bottle.** A guest who is Bottled Up now stands in a big green bottle, corked over their head, their legs out of the bottom. You can still see their face through the glass, and the bottle shrinks away when they are cured.
+- **A flat battery for a head.** A guest with a Flat Battery now has a battery for a head, its last cell blinking red, with their face on its label.
 
 ## v0.34.3
 

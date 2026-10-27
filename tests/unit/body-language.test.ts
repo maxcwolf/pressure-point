@@ -622,6 +622,73 @@ describe('a symptom in place of the head', () => {
     poseChar(rig, { ...demoGuest(LAB_LOOK, 'dizzy'), pose: 'lie' }, 0, 1, { style: null });
     expect(rig.bob?.visible).toBe(false);
   });
+
+  it("makes a flat battery's head a battery, its last cell blinking and the face on its label", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'battery');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(hair(rig).some(shown)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    expect(rig.blink).toBeDefined();
+    // the battery is the head now, so nothing hovers over it
+    expect(rig.bob).toBeUndefined();
+    poseChar(rig, demoGuest(LAB_LOOK, 'battery'), 0, 1, { style: null });
+    const lit = rig.blink!.emissiveIntensity;
+    poseChar(rig, demoGuest(LAB_LOOK, 'battery'), Math.PI / 6, 1, { style: null });
+    expect(rig.blink!.emissiveIntensity).not.toBe(lit);
+  });
+
+  it('gives a flat battery their head back with the cure', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'battery');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'battery'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(rig.head.scale.y).toBe(1);
+  });
+});
+
+describe('a symptom worn whole', () => {
+  /** The bottle someone bottled up stands in. */
+  const bottleOf = (rig: CharRig) => rig.props[0]!;
+
+  it('stands someone bottled up in a bottle, their head and face still there through the glass', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cork');
+    expect(rig.props).toHaveLength(1);
+    expect(bottleOf(rig).parent).toBe(rig.body);
+    expect(rig.headMesh.visible).toBe(true);
+    expect(rig.face.eyes.visible).toBe(true);
+    // the bottle reaches from below the knees to over the head
+    const box = new THREE.Box3().setFromObject(bottleOf(rig));
+    const head = new THREE.Box3().setFromObject(rig.headMesh);
+    expect(box.max.y).toBeGreaterThan(head.max.y);
+    expect(box.min.y).toBeLessThan(0.4);
+  });
+
+  it('shares one glass between everyone bottled up, drawn by itself as it is see-through', () => {
+    /** The see-through parts of someone's bottle. */
+    const glass = (rig: CharRig) => {
+      const found = new Set<THREE.Material>();
+      bottleOf(rig).traverse((o) => {
+        const m = (o as THREE.Mesh).material as THREE.Material | undefined;
+        if (m?.transparent) found.add(m);
+      });
+      return [...found];
+    };
+    const a = glass(buildCharacter(LAB_LOOK, undefined, 'cork'));
+    expect(a).toHaveLength(1);
+    expect(glass(buildCharacter(LAB_LOOK, undefined, 'cork'))).toEqual(a);
+  });
+
+  it('shrinks the bottle away round them with the cure, not down to their feet', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cork');
+    const g = demoGuest(LAB_LOOK, 'bottled');
+    poseChar(rig, g, -1, 1, { style: null });
+    cureRig(rig, 0);
+    const healed = { ...g, outcome: 'healed' as const };
+    poseChar(rig, healed, CURE * 0.5, 1, { style: null });
+    expect(bottleOf(rig).scale.y).toBeCloseTo(0.5);
+    expect(bottleOf(rig).position.y).toBeGreaterThan(0.8);
+    poseChar(rig, healed, CURE * 2, 1, { style: null });
+    expect(bottleOf(rig).visible).toBe(false);
+  });
 });
 
 describe('shoes', () => {

@@ -9,6 +9,7 @@ import { owned } from '../disposal';
 import { type Motion, newMotion } from '../motion';
 import { BUBBLE_PX, readable } from '../readable';
 import type { Burst } from './burst';
+import { bodySymptom } from './character-bodies';
 import {
   detailArm,
   detailBib,
@@ -443,10 +444,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.orbit.position.y = 0.22;
     torso.add(rig.orbit);
   } else if (visual === 'cork') {
-    rig.props.push(put(head, cyl(0.07, 0.09, 0.15, 12), mat(0xc9a56a, 0.95), 0, 0.26, 0));
-    const neck = put(head, torus(0.095, 0.025), mat(0x3f6b52, 0.3), 0, 0.2, 0);
-    neck.rotation.x = Math.PI / 2;
-    rig.props.push(neck);
+    bodySymptom(rig, visual);
   } else if (visual === 'coldfeet') {
     const ice = mat(0xcdeeff, 0.15, 0.25);
     for (const leg of [shinL, shinR])
@@ -500,14 +498,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     torso.add(rig.drips);
     rig.props.push(rig.drips);
   } else if (visual === 'battery') {
-    const cell = new THREE.Group();
-    put(cell, rbox(0.26, 0.13, 0.09, 0.02), mat(0x2f3136, 0.6), 0, 0, 0).castShadow = false;
-    put(cell, rbox(0.03, 0.06, 0.05, 0.01), mat(0x2f3136, 0.6), 0.145, 0, 0).castShadow = false;
-    rig.blink = owned(new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 }));
-    put(cell, rbox(0.05, 0.09, 0.1, 0.01), rig.blink, -0.085, 0, 0).castShadow = false;
-    cell.position.y = 0.4;
-    head.add(cell);
-    rig.bob = cell;
+    headSymptom(rig, visual);
   } else if (visual === 'wires') {
     const tangle = new THREE.Group();
     const knot = cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8));

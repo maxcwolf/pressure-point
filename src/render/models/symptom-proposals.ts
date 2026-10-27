@@ -1,73 +1,16 @@
-// Round 2's new models for approval (see docs/planning/fun/options/symptoms/approvals/), each asked for by number in
-// the address under ?symptoms=body: two batteries for a flat battery (`&battery=1`) and two cacti for someone
-// spiritually dehydrated (`&cactus=1`). The face stays on every one, so how the guest feels still shows.
+// New models for approval (see docs/planning/fun/options/symptoms/approvals/), each asked for by number in the address
+// under ?symptoms=body: two cacti for someone spiritually dehydrated (`&cactus=1`). The face stays on every one, so how
+// the guest feels still shows.
 
 import * as THREE from 'three';
 
-import { owned } from '../disposal';
 import type { CharRig } from './character';
-import { faceOut, hideUntilCured, named, swell } from './character-heads';
-import { props } from './character-transform';
-import { cached, capsule, cyl, joined, mat, type Piece, put, rbox, sph } from './parts';
+import { faceOut, hideUntilCured, named, props } from './character-heads';
+import { cached, capsule, cyl, joined, mat, type Piece, put, sph } from './parts';
 
-/** A battery's casing, its band, its silver ends, and the cell of its gauge that is left, blinking red. */
-const CASING = 0x2b2f36;
-const BAND = 0x8cc63f;
-const SILVER = 0xc9ced6;
-
-/** Take away the symptom drawn before, standing in for it: the battery over the head, or the cactus on it. */
+/** Take away the symptom drawn before, standing in for it: the cactus on the head. */
 function dropOld(rig: CharRig) {
-  const old = rig.bob;
   for (const p of rig.props) p.visible = false;
-  if (old) {
-    old.removeFromParent();
-    rig.props = rig.props.filter((p) => p !== old);
-    delete rig.bob;
-  }
-}
-
-/** A blinking red cell of charge, the last one left. */
-function lastCell(rig: CharRig) {
-  rig.blink = owned(new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 }));
-  return rig.blink;
-}
-
-/**
- * A flat battery: 1, the body a big battery from the hips to the shoulders, a green band round the top and a gauge on
- * the front with one red cell left, blinking, the head on top where the terminal would be; 2, the head a battery lying
- * on its side, its terminal out to one side and the gauge along the top, the face on a cream label on its front.
- */
-export function battery(rig: CharRig, variant: number) {
-  dropOld(rig);
-  const empty = mat(0x4a4f57, 0.5);
-  const kit = new THREE.Group();
-  if (variant === 1) {
-    hideUntilCured(rig, named(rig.torso, 'shirt'));
-    put(kit, cyl(0.2, 0.2, 0.6, 28), mat(CASING, 0.45), 0, 0.25, 0);
-    put(kit, cyl(0.203, 0.203, 0.14, 28), mat(BAND, 0.45), 0, 0.47, 0);
-    put(kit, cyl(0.16, 0.2, 0.04, 28), mat(SILVER, 0.25), 0, 0.57, 0);
-    put(kit, cyl(0.19, 0.2, 0.03, 28), mat(SILVER, 0.25), 0, -0.06, 0);
-    // the gauge on the chest: a dark frame, three empty cells and the last one, at the bottom
-    put(kit, rbox(0.11, 0.27, 0.03, 0.01), mat(0x1d1f24, 0.4), 0, 0.2, 0.195);
-    for (let i = 0; i < 3; i++) put(kit, rbox(0.075, 0.05, 0.02, 0.005), empty, 0, 0.28 - i * 0.06, 0.205);
-    put(kit, rbox(0.075, 0.05, 0.02, 0.005), lastCell(rig), 0, 0.1, 0.205);
-    props(rig, kit);
-    rig.torso.add(kit);
-  } else {
-    hideUntilCured(rig, [rig.headMesh, ...named(rig.head, 'hair', 'moustache', 'beard', 'glasses')]);
-    put(kit, rbox(0.46, 0.34, 0.36, 0.08), mat(CASING, 0.45), 0, 0.02, 0);
-    put(kit, rbox(0.12, 0.345, 0.365, 0.06), mat(BAND, 0.45), -0.17, 0.02, 0);
-    put(kit, rbox(0.04, 0.12, 0.12, 0.02), mat(SILVER, 0.25), 0.25, 0.02, 0);
-    // the gauge along the top, where the camera sees it: three empty cells and the last one
-    for (let i = 0; i < 3; i++) put(kit, rbox(0.06, 0.02, 0.1, 0.005), empty, 0.03 + i * 0.07, 0.195, 0);
-    put(kit, rbox(0.06, 0.02, 0.1, 0.005), lastCell(rig), -0.04, 0.195, 0);
-    // a cream label on the front for the face, which would be lost on the dark casing
-    put(kit, rbox(0.3, 0.27, 0.012, 0.006), mat(0xf2e6c8, 0.7), 0.02, 0.0, 0.181);
-    faceOut(rig, { eyes: 0.006, brows: 0.004, mouth: 0.004 });
-    props(rig, kit);
-    rig.head.add(kit);
-    swell(rig, 1.1, 1.1);
-  }
 }
 
 /** A cactus's green, its spines, and its flower. */

@@ -4,8 +4,7 @@
 import * as THREE from 'three';
 
 import type { CharRig } from './character';
-import { faceOut, hideUntilCured, named, swell } from './character-heads';
-import { props } from './character-transform';
+import { faceOut, hideUntilCured, named, props, swell } from './character-heads';
 import { cached, cyl, mat, put, sph } from './parts';
 
 /** The black of handles and knobs, and the steel of lids and spouts. */
