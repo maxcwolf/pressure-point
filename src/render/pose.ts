@@ -23,7 +23,7 @@ import { prefersReducedMotion } from './camera-math';
 import { animateEmitter, emitter, type EmitterShape } from './gags/particles';
 import { rattle, RATTLE_PEAK } from './item-cues';
 import { buildBurst, showBurst } from './models/burst';
-import { type CharRig, cureRig, endCure, type Joints } from './models/character';
+import { type CharRig, cureRig, endCure, type Joints, restoreRig } from './models/character';
 import { BACK_Y, type Expression, HIP, KNEE, showExpression, showEyes, SIT_Y } from './models/character-detail';
 import { buildHeld, HELD_SIZE, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
@@ -31,6 +31,8 @@ import { blob } from './models/items/machine-kit';
 import { mat } from './models/parts';
 import { driftSmoke } from './models/sage';
 import { buildSoles } from './models/soles';
+import { SYMPTOM_OPTION } from './symptom-options';
+import { walkSymptom } from './walk-symptoms';
 
 /**
  * A hip's rotation that points its thigh along `along` and turns it on its own length so the knee hinges about
@@ -211,11 +213,15 @@ function showCure(rig: CharRig, c: Char, t: number) {
     o.scale.copy(rest.scale).multiplyScalar(Math.max(0.001, 1 - u));
     o.position.y = rest.y + 0.25 * u;
   });
-  if (rig.visual === 'bighead') {
-    const size = 1.45 - 0.45 * u;
-    rig.head.scale.set(size / rig.wide, size, size / rig.wide);
+  if (rig.swell) {
+    const [across, up] = rig.swell;
+    const a = across - (across - 1) * u;
+    rig.head.scale.set(a / rig.wide, up - (up - 1) * u, a / rig.wide);
   }
-  if (u > 0.5) rig.headMesh.material = mat(c.look.skin, 0.65);
+  if (u > 0.5) {
+    rig.headMesh.material = mat(c.look.skin, 0.65);
+    restoreRig(rig);
+  }
   rig.burst ??= buildBurst(rig.group);
   showBurst(rig.burst, u, c.pose === 'lie' ? 0.3 : 1.3 * rig.scale);
 }
@@ -765,6 +771,21 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   armR += life.armR;
   armOut += life.armOut;
   legR -= life.stamp;
+  if (SYMPTOM_OPTION === 'walk' && visual && c.pose !== 'lie' && !act) {
+    const moved = walkSymptom(visual, c, t, phase, life, {
+      legL,
+      legR,
+      armL,
+      armR,
+      armOut,
+      lean,
+      side,
+      headX,
+      headZ,
+      bodyY,
+    });
+    ({ legL, legR, armL, armR, armOut, lean, side, headX, headZ, bodyY } = moved);
+  }
   if (c.pose === 'lie' && cues.lie) {
     life.elbowL += bendTo(armL, -0.08, 1);
     life.elbowR += bendTo(armR, -0.08, 1);
@@ -1033,7 +1054,7 @@ interface Doing {
 }
 
 /** What liveliness adds to a pose: turns in radians and shifts in meters, on top of what the pose sets. */
-interface Life {
+export interface Life {
   lean: number;
   side: number;
   headX: number;

@@ -28,6 +28,7 @@ import {
   KNEE,
 } from './character-detail';
 import { machineSymptom } from './character-machines';
+import { transformSymptom } from './character-transform';
 import type { HeldKind } from './held';
 import { buildMop } from './mop';
 import {
@@ -108,6 +109,12 @@ export interface CharRig {
   rest?: { scale: THREE.Vector3; y: number }[];
   /** A puff of sparkles round them as the symptom goes, made the first time it is needed. */
   burst?: Burst;
+  /** How much bigger than usual the symptom makes the head, across and up, to go down with the cure. */
+  swell?: [number, number];
+  /** What puts back the parts and colors a symptom stands in for, done halfway through the cure. */
+  restore?: (() => void)[];
+  /** Symptom props kept at least so many pixels across from afar, as bubbles are, under the `grow` prototype. */
+  grow?: THREE.Object3D[];
   /** Pale soles turned up, shown while they lie face down, made the first time they do. */
   soles?: THREE.Mesh[];
   scale: number;
@@ -819,6 +826,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.props.push(pot);
   } else if (visual === 'bighead') {
     // a head swollen to half as big again, and a smug little crown on it
+    rig.swell = [1.45, 1.45];
     head.scale.set(1.45 / wide, 1.45, 1.45 / wide);
     rig.props.push(put(head, cyl(0.1, 0.08, 0.07, 6), mat(0xd9a93a, 0.3, 0.2), 0, 0.24, 0));
   } else if (visual === 'compass') {
@@ -855,6 +863,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.props.push(phone);
   } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
   for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
+  transformSymptom(rig, visual);
   if (rig.bob) rig.bobAt = rig.bob.position.y;
   if (role === 'practitioner' || role === 'caretaker') {
     const { bundle, tip } = buildSage();
@@ -897,7 +906,14 @@ export function endCure(rig: CharRig, look: Look) {
     o.position.y = rest.y;
   });
   if (rig.glasses) rig.glasses.visible = true;
+  restoreRig(rig);
   rig.head.scale.set(1 / rig.wide, 1, 1 / rig.wide);
   rig.headMesh.material = mat(look.skin, 0.65);
   if (rig.burst) rig.burst.group.visible = false;
+}
+
+/** Put back the parts and colors a symptom stood in for, once. */
+export function restoreRig(rig: CharRig) {
+  for (const undo of rig.restore ?? []) undo();
+  delete rig.restore;
 }

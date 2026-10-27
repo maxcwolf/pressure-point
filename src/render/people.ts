@@ -14,8 +14,10 @@ import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
 import { buildCharacter, type CharRig } from './models/character';
+import { growProps } from './models/character-transform';
 import { keepApart, type Placed, showMotion, type Shown } from './motion';
 import { poseChar, type WorkStyle } from './pose';
+import { SYMPTOM_OPTION } from './symptom-options';
 
 /** Over how many tiles of pavement people grow from nothing, or shrink away, where they arrive and leave. */
 const FADE_TILES = 1;
@@ -187,6 +189,7 @@ export class PeopleLayer {
    * positions are final.
    */
   gather(view: Viewpoint) {
+    if (SYMPTOM_OPTION === 'grow') for (const rig of this.chars.values()) growProps(rig, view);
     this.crowd.gather(
       [...this.chars.values()].map((r) => r.group),
       view,

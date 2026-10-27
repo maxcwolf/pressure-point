@@ -1,0 +1,220 @@
+// Prototypes for symptoms that read from the game's usual distance (see `SYMPTOM_OPTION`): under `body`, the head or
+// the whole body becomes the joke (a kettle for a stress head, a bottle for someone bottled up, an egg for a scrambled
+// noggin); under `color`, the whole person wears it (a ghost for someone out of their body, frosted for a cold
+// shoulder, pond green for stagnant vibes). Each is put back halfway through the cure, as the skin is.
+
+import * as THREE from 'three';
+
+import type { Visual } from '../../core/data';
+import type { Viewpoint } from '../crowd';
+import { owned } from '../disposal';
+import { pixelsPerMeter } from '../readable';
+import { GROW, GROW_START, SYMPTOM_OPTION } from '../symptom-options';
+import type { CharRig } from './character';
+import { capsule, cyl, mat, put, rbox, sph, torus } from './parts';
+
+/** Hide parts of a person while a symptom stands in for them, to be shown again halfway through the cure. */
+function hideUntilCured(rig: CharRig, parts: THREE.Object3D[]) {
+  for (const p of parts) {
+    if (!p.visible) continue;
+    p.visible = false;
+    (rig.restore ??= []).push(() => (p.visible = true));
+  }
+}
+
+/** The parts of a head with these names: its hair, moustache and beard, say. */
+const named = (head: THREE.Object3D, ...names: string[]) => head.children.filter((o) => names.includes(o.name));
+
+/** Swell the head while the symptom lasts, across and up, to go down again with the cure. */
+function swell(rig: CharRig, across: number, up: number) {
+  rig.swell = [across, up];
+  rig.head.scale.set(across / rig.wide, up, across / rig.wide);
+}
+
+/** Keep small parts from casting shadows, and note them as the symptom's, to go when the guest is healed. */
+function props(rig: CharRig, ...parts: THREE.Object3D[]) {
+  for (const p of parts) {
+    p.traverse((o) => (o.castShadow = false));
+    rig.props.push(p);
+  }
+}
+
+/**
+ * Recolor every part of a person, each shared material swapped for the shared one of its new color so the crowd still
+ * draws them in batches, and put each back halfway through the cure.
+ */
+function recolor(rig: CharRig, to: (c: THREE.Color) => THREE.Color, skip: Set<THREE.Object3D>) {
+  rig.body.traverse((o) => {
+    const m = o as THREE.Mesh;
+    const was = m.material;
+    if (skip.has(o) || !(was instanceof THREE.MeshStandardMaterial) || was.emissive.getHex() !== 0) return;
+    m.material = mat(to(was.color.clone()).getHex(), was.roughness);
+    (rig.restore ??= []).push(() => (m.material = was));
+  });
+}
+
+/** Everything under the symptom's props, which keep their own colors. */
+function propParts(rig: CharRig) {
+  const parts = new Set<THREE.Object3D>();
+  for (const p of rig.props) p.traverse((o) => parts.add(o));
+  return parts;
+}
+
+/** The whole body as the symptom, for the ailments prototyped under `body`. */
+function bodySymptom(rig: CharRig, visual: Visual) {
+  const { head } = rig;
+  if (visual === 'steam') {
+    // the head a whistling kettle: red enamel where the skin was, a steel lid for hair, a black handle arching over the
+    // top, and a spout the steam comes out of, the face still on it to show how they feel
+    rig.headMesh.material = mat(0xd9452f, 0.4);
+    hideUntilCured(rig, named(head, 'hair', 'moustache', 'beard', 'glasses'));
+    const kettle = new THREE.Group();
+    const steel = mat(0xc9ced6, 0.3);
+    const black = mat(0x1d1f24, 0.4);
+    put(kettle, cyl(0.15, 0.2, 0.06, 20), steel, 0, 0.2, 0);
+    put(kettle, sph(0.045, 10), black, 0, 0.26, 0);
+    put(kettle, torus(0.19, 0.03), black, 0, 0.2, -0.02);
+    const spout = put(kettle, cyl(0.035, 0.065, 0.24, 12), steel, 0.27, 0.03, 0.04);
+    spout.rotation.z = -0.85;
+    put(kettle, sph(0.045, 10), black, 0.36, 0.12, 0.04);
+    props(rig, kettle);
+    head.add(kettle);
+    rig.steam?.position.set(0.38, 0.14, 0.04);
+    swell(rig, 1.25, 1.2);
+  } else if (visual === 'cork') {
+    // the whole person in a big green bottle, the cork in its neck above their head and a label round the middle,
+    // their legs out of the bottom to walk on
+    for (const p of rig.props) p.visible = false;
+    const glass = owned(
+      new THREE.MeshStandardMaterial({
+        color: 0x3f9a5c,
+        transparent: true,
+        opacity: 0.45,
+        roughness: 0.1,
+        depthWrite: false,
+      }),
+    );
+    const bottle = new THREE.Group();
+    put(bottle, cyl(0.31, 0.31, 1.05, 24), glass, 0, 0.78, 0);
+    put(bottle, cyl(0.13, 0.31, 0.16, 24), glass, 0, 1.38, 0);
+    put(bottle, cyl(0.13, 0.13, 0.15, 20), glass, 0, 1.535, 0);
+    put(bottle, torus(0.135, 0.022), glass, 0, 1.61, 0).rotation.x = Math.PI / 2;
+    put(bottle, cyl(0.115, 0.1, 0.16, 14), mat(0xc9a56a, 0.95), 0, 1.66, 0);
+    put(bottle, cyl(0.315, 0.315, 0.3, 24), mat(0xf2e6c8, 0.8), 0, 0.62, 0);
+    put(bottle, cyl(0.317, 0.317, 0.05, 24), mat(0xd9362f, 0.6), 0, 0.68, 0);
+    props(rig, bottle);
+    rig.body.add(bottle);
+  } else if (visual === 'dizzy') {
+    // the head an egg, tall and white, cracked across the crown with the yolk running out of it, the stars still going
+    // round
+    rig.headMesh.material = mat(0xf7f0e1, 0.5);
+    hideUntilCured(rig, named(head, 'hair', 'moustache', 'beard'));
+    const dark = mat(0x5a4a3a, 0.6);
+    const crack = new THREE.Group();
+    for (let i = 0; i < 5; i++) {
+      const bit = put(crack, rbox(0.075, 0.014, 0.014, 0.004), dark, -0.14 + i * 0.065, 0.2 + (i % 2) * 0.02, 0.06);
+      bit.rotation.z = i % 2 ? -0.45 : 0.45;
+    }
+    const yolk = mat(0xf2a81e, 0.3);
+    const pool = put(crack, sph(0.075, 12), yolk, 0.05, 0.22, 0.02);
+    pool.scale.set(1.2, 0.4, 1);
+    put(crack, capsule(0.03, 0.09), yolk, 0.16, 0.13, 0.08).rotation.z = 0.5;
+    props(rig, crack);
+    head.add(crack);
+    swell(rig, 1.12, 1.4);
+  }
+}
+
+/** The whole person wearing the symptom as color, for the ailments prototyped under `color`. */
+function colorSymptom(rig: CharRig, visual: Visual) {
+  const skip = propParts(rig);
+  if (visual === 'pale') {
+    // half there: see-through and faintly glowing, as a ghost of themselves
+    rig.body.traverse((o) => {
+      const m = o as THREE.Mesh;
+      const was = m.material;
+      if (!(was instanceof THREE.MeshStandardMaterial)) return;
+      const ghost = owned(was.clone());
+      ghost.color.lerp(new THREE.Color(0xdfe9ff), 0.6);
+      ghost.transparent = true;
+      ghost.opacity = 0.42;
+      ghost.depthWrite = false;
+      ghost.emissive = new THREE.Color(0x9fb8ff);
+      ghost.emissiveIntensity = 0.35;
+      m.material = ghost;
+      m.castShadow = false;
+      (rig.restore ??= []).push(() => {
+        m.material = was;
+        m.castShadow = true;
+      });
+    });
+  } else if (visual === 'frost') {
+    // frosted all over, clothes, skin and hair, as if just in from a blizzard
+    const ice = new THREE.Color(0xa8d8f4);
+    recolor(rig, (c) => c.lerp(ice, 0.72), skip);
+  } else if (visual === 'aura') {
+    // gone the murky green of a pond nobody cleans, with flies about them
+    const pond = new THREE.Color(0x7a8a3a);
+    recolor(rig, (c) => c.lerp(pond, 0.68), skip);
+    const flies = new THREE.Group();
+    const black = mat(0x1d1f24, 0.4);
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2;
+      put(flies, sph(0.022, 6), black, Math.cos(a) * 0.32, (i % 2) * 0.12, Math.sin(a) * 0.32);
+    }
+    flies.position.y = 0.3;
+    rig.head.add(flies);
+    props(rig, flies);
+    rig.orbit = flies;
+  }
+}
+
+/**
+ * Hang a symptom's props from a mount on the head, `at` up it, which grows from afar to keep them `meters` across at
+ * least `GROW.px` pixels on screen: the props rise as they grow, clear of the head.
+ */
+function mount(rig: CharRig, at: number, meters: number, parts: THREE.Object3D[]) {
+  const grower = new THREE.Group();
+  grower.position.y = at;
+  grower.scale.setScalar(GROW_START);
+  grower.userData.meters = meters;
+  for (const p of parts) {
+    p.position.y -= at;
+    if (p === rig.bob) rig.bobAt -= at;
+    grower.add(p);
+  }
+  rig.head.add(grower);
+  (rig.grow ??= []).push(grower);
+}
+
+/** The props of the ailments prototyped under `grow`, set to grow from afar. */
+function growSymptom(rig: CharRig, visual: Visual) {
+  if (visual === 'cork') mount(rig, 0.18, 0.17, rig.props.slice());
+  else if ((visual === 'glass' || visual === 'battery') && rig.bob) {
+    rig.bobAt = rig.bob.position.y;
+    mount(rig, 0.24, visual === 'glass' ? 0.14 : 0.26, [rig.bob]);
+  }
+}
+
+/** Grow each mounted symptom to stay readable from a viewpoint, as speech bubbles do, up to `GROW.most` times its size. */
+export function growProps(rig: CharRig, view: Viewpoint) {
+  if (!rig.grow || rig.cured) return;
+  const { camera, height } = view;
+  if (!(camera instanceof THREE.PerspectiveCamera)) return;
+  for (const g of rig.grow) {
+    const eye = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
+    const at = new THREE.Vector3().setFromMatrixPosition(g.matrixWorld);
+    const perMeter = pixelsPerMeter(camera.fov, eye.distanceTo(at), height);
+    const across = (g.userData.meters as number) * (g.parent?.matrixWorld.getMaxScaleOnAxis() ?? 1);
+    g.scale.setScalar(Math.min(GROW.most, Math.max(1, GROW.px / (across * perMeter))));
+    g.updateMatrixWorld(true);
+  }
+}
+
+/** Draw a symptom as the prototype option asked for in the address does, for the ailments it has been tried on. */
+export function transformSymptom(rig: CharRig, visual: Visual | undefined) {
+  if (!visual) return;
+  if (SYMPTOM_OPTION === 'body') bodySymptom(rig, visual);
+  else if (SYMPTOM_OPTION === 'color') colorSymptom(rig, visual);
+  else if (SYMPTOM_OPTION === 'grow') growSymptom(rig, visual);
+}
