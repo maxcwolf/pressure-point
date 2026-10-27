@@ -117,7 +117,7 @@ export interface CharRig {
   restore?: (() => void)[];
   /** Bolts of lightning that show one at a time in a flash, and the materials that glow with it (see `pose`). */
   flash?: { bolts: THREE.Object3D[]; glow: THREE.MeshStandardMaterial[] };
-  /** Symptom parts that turn about their upright, rattle side to side or pulse on a beat, by `userData.spin`, `rattle` and `pulse`. */
+  /** Symptom parts that turn, rattle, pulse or drift up and down: by `userData.spin`, `rattle`, `pulse` and `drift`. */
   spin?: THREE.Object3D[];
   /** Symptom props kept at least so many pixels across from afar, as bubbles are, under the `grow` prototype. */
   grow?: THREE.Object3D[];
