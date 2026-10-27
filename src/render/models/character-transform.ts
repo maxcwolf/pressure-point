@@ -14,6 +14,7 @@ import type { CharRig } from './character';
 import { hideUntilCured, named, swell } from './character-heads';
 import { cyl, mat, put, sph, torus } from './parts';
 import { kettle } from './symptom-heads';
+import { battery, cactus } from './symptom-proposals';
 
 /** Keep small parts from casting shadows, and note them as the symptom's, to go when the guest is healed. */
 export function props(rig: CharRig, ...parts: THREE.Object3D[]) {
@@ -48,6 +49,8 @@ function propParts(rig: CharRig) {
 function bodySymptom(rig: CharRig, visual: Visual) {
   const { head } = rig;
   if (visual === 'steam' && variantOf('steam')) kettle(rig, variantOf('steam'));
+  else if (visual === 'battery' && variantOf('battery')) battery(rig, variantOf('battery'));
+  else if (visual === 'cactus' && variantOf('cactus')) cactus(rig, variantOf('cactus'));
   else if (visual === 'steam') {
     // the head a whistling kettle: red enamel where the skin was, a steel lid for hair, a black handle arching over the
     // top, and a spout the steam comes out of, the face still on it to show how they feel
