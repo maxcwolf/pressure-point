@@ -479,6 +479,7 @@ export type Visual =
   | 'flex'
   | 'frost'
   | 'dizzy'
+  | 'egg'
   | 'cloud'
   | 'jitter'
   | 'aura'

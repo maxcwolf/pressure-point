@@ -11,26 +11,9 @@ import { owned } from '../disposal';
 import { pixelsPerMeter } from '../readable';
 import { GROW, GROW_START, SYMPTOM_OPTION, variantOf } from '../symptom-options';
 import type { CharRig } from './character';
-import { capsule, cyl, mat, put, rbox, sph, torus } from './parts';
-import { egg, kettle } from './symptom-heads';
-
-/** Hide parts of a person while a symptom stands in for them, to be shown again halfway through the cure. */
-export function hideUntilCured(rig: CharRig, parts: THREE.Object3D[]) {
-  for (const p of parts) {
-    if (!p.visible) continue;
-    p.visible = false;
-    (rig.restore ??= []).push(() => (p.visible = true));
-  }
-}
-
-/** The parts of a head with these names: its hair, moustache and beard, say. */
-export const named = (head: THREE.Object3D, ...names: string[]) => head.children.filter((o) => names.includes(o.name));
-
-/** Swell the head while the symptom lasts, across and up, to go down again with the cure. */
-export function swell(rig: CharRig, across: number, up: number) {
-  rig.swell = [across, up];
-  rig.head.scale.set(across / rig.wide, up, across / rig.wide);
-}
+import { hideUntilCured, named, swell } from './character-heads';
+import { cyl, mat, put, sph, torus } from './parts';
+import { kettle } from './symptom-heads';
 
 /** Keep small parts from casting shadows, and note them as the symptom's, to go when the guest is healed. */
 export function props(rig: CharRig, ...parts: THREE.Object3D[]) {
@@ -65,7 +48,6 @@ function propParts(rig: CharRig) {
 function bodySymptom(rig: CharRig, visual: Visual) {
   const { head } = rig;
   if (visual === 'steam' && variantOf('steam')) kettle(rig, variantOf('steam'));
-  else if (visual === 'dizzy' && variantOf('dizzy')) egg(rig, variantOf('dizzy'));
   else if (visual === 'steam') {
     // the head a whistling kettle: red enamel where the skin was, a steel lid for hair, a black handle arching over the
     // top, and a spout the steam comes out of, the face still on it to show how they feel
@@ -107,24 +89,6 @@ function bodySymptom(rig: CharRig, visual: Visual) {
     put(bottle, cyl(0.317, 0.317, 0.05, 24), mat(0xd9362f, 0.6), 0, 0.68, 0);
     props(rig, bottle);
     rig.body.add(bottle);
-  } else if (visual === 'dizzy') {
-    // the head an egg, tall and white, cracked across the crown with the yolk running out of it, the stars still going
-    // round
-    rig.headMesh.material = mat(0xf7f0e1, 0.5);
-    hideUntilCured(rig, named(head, 'hair', 'moustache', 'beard'));
-    const dark = mat(0x5a4a3a, 0.6);
-    const crack = new THREE.Group();
-    for (let i = 0; i < 5; i++) {
-      const bit = put(crack, rbox(0.075, 0.014, 0.014, 0.004), dark, -0.14 + i * 0.065, 0.2 + (i % 2) * 0.02, 0.06);
-      bit.rotation.z = i % 2 ? -0.45 : 0.45;
-    }
-    const yolk = mat(0xf2a81e, 0.3);
-    const pool = put(crack, sph(0.075, 12), yolk, 0.05, 0.22, 0.02);
-    pool.scale.set(1.2, 0.4, 1);
-    put(crack, capsule(0.03, 0.09), yolk, 0.16, 0.13, 0.08).rotation.z = 0.5;
-    props(rig, crack);
-    head.add(crack);
-    swell(rig, 1.12, 1.4);
   }
 }
 

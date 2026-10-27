@@ -27,6 +27,7 @@ import {
   GLASSES_OUT,
   KNEE,
 } from './character-detail';
+import { headSymptom } from './character-heads';
 import { machineSymptom } from './character-machines';
 import { transformSymptom } from './character-transform';
 import type { HeldKind } from './held';
@@ -405,7 +406,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.props.push(put(torso, ico(0.135), ice, 0.21, 0.4, 0));
     const icicle = put(torso, cyl(0.035, 0.001, 0.16, 6), ice, 0.3, 0.26, 0.02);
     rig.props.push(icicle, put(torso, cyl(0.03, 0.001, 0.11, 6), ice, 0.2, 0.25, 0.1));
-  } else if (visual === 'dizzy') {
+  } else if (visual === 'dizzy' || visual === 'egg') {
+    // stars going round the head, and for a scrambled noggin, the head an egg
+    headSymptom(rig, visual);
     rig.orbit = new THREE.Group();
     for (let i = 0; i < 3; i++) {
       const a = (i / 3) * Math.PI * 2;

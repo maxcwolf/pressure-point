@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **A scrambled noggin you can see.** A guest with Scrambled Noggin now has an egg for a head, its top knocked off and the yolk showing, so they stand out in a crowd. Their face stays on it, and the egg goes in the puff when they are cured.
+
 ## v0.34.3
 
 - **Under the hood.** On a Mac, an app that updated itself no longer has all its files dated hours in the future for players west of Greenwich, which could make Spotlight complain. Nothing changes for play.

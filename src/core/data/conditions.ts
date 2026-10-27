@@ -95,7 +95,7 @@ export const CONDITIONS: readonly ConditionDef[] = [
     treatment: 'Cranio-sacral Unscrambling',
     modality: 'cranio',
     fee: 2000,
-    visual: 'dizzy',
+    visual: 'egg',
   },
   {
     id: 'qi',

@@ -563,6 +563,67 @@ describe('symptoms over the head', () => {
   });
 });
 
+describe('a symptom in place of the head', () => {
+  /** Whether a part of someone is drawn: shown itself, and every parent of it shown too. */
+  const shown = (o: THREE.Object3D) => {
+    for (let p: THREE.Object3D | null = o; p; p = p.parent) if (!p.visible) return false;
+    return true;
+  };
+  /** The hair on someone's head. */
+  const hair = (rig: CharRig) => rig.head.children.filter((o) => o.name === 'hair');
+
+  it("makes a scrambled noggin's head an egg with its top knocked off, the face still on it", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'egg');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(hair(rig).some(shown)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    expect(shown(rig.face.mouth)).toBe(true);
+    // the broken cap floats over it, among the stars
+    expect(rig.bob?.position.y).toBeGreaterThan(0.3);
+    expect(rig.orbit).toBeDefined();
+    expect(rig.head.scale.y).toBeGreaterThan(1);
+  });
+
+  it('leaves someone far out their own head, with the stars going round it', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'dizzy');
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(hair(rig).some(shown)).toBe(true);
+    expect(rig.orbit).toBeDefined();
+    expect(rig.head.scale.y).toBe(1);
+  });
+
+  it('gives the head back halfway through the cure, with the face where it was', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'egg');
+    const face = buildCharacter(LAB_LOOK).face.eyes.position.z;
+    const healed = { ...demoGuest(LAB_LOOK, 'dizzy'), outcome: 'healed' as const };
+    poseChar(rig, { ...healed, outcome: '' }, -1, 1, { style: null });
+    cureRig(rig, 0);
+    poseChar(rig, healed, CURE * 0.25, 1, { style: null });
+    expect(shown(rig.headMesh)).toBe(false);
+    poseChar(rig, healed, CURE * 0.75, 1, { style: null });
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(hair(rig).every(shown)).toBe(true);
+    expect(rig.face.eyes.position.z).toBeCloseTo(face);
+    poseChar(rig, healed, CURE * 2, 1, { style: null });
+    expect(rig.head.scale.y).toBe(1);
+    expect(rig.props.some(shown)).toBe(false);
+  });
+
+  it('is simply gone for someone seen first already healed, as from a save', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'egg');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'dizzy'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(rig.head.scale.y).toBe(1);
+    expect(rig.burst).toBeUndefined();
+  });
+
+  it('puts the floating cap away while they lie down', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'egg');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'dizzy'), pose: 'lie' }, 0, 1, { style: null });
+    expect(rig.bob?.visible).toBe(false);
+  });
+});
+
 describe('shoes', () => {
   it('come in the color of the look, sharing the shape everyone has', () => {
     /** The material of someone's shoes, by part name. */
