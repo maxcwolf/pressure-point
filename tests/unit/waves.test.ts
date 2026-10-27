@@ -15,14 +15,24 @@ import { setSeed } from '../../src/core/random';
 import { waveAdvice } from '../../src/core/sim/advisor';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
-import { arrivalPace } from '../../src/core/sim/guests';
+import { arrivalPace, spawnGuest } from '../../src/core/sim/guests';
 import { awardStar } from '../../src/core/sim/progress';
+import { countVisit } from '../../src/core/sim/records';
 import { Sim } from '../../src/core/sim/sim';
-import { announceWave, updateWaves, waveArrival, waveChecks, waveClash } from '../../src/core/sim/waves';
+import {
+  announceWave,
+  updateWaves,
+  waveArrival,
+  waveChecks,
+  waveClash,
+  waveReady,
+  waveTodo,
+} from '../../src/core/sim/waves';
 import { newGame, openedKit, techniqueOpen } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
+import { addAcupuncture, addRecovery, hire, openCenter } from './helpers';
 
 /** A game at The Exchange, with ailments going around switched on or off, and a context on it. */
 function exchange(on = true) {
@@ -155,13 +165,51 @@ describe('an ailment going around', () => {
 
   it('has the advisor say what getting ready takes, or that it may pass', () => {
     const { s, ctx } = announced();
-    expect(waveAdvice(ctx)).toBe(
-      'Cold Feet goes around in 7 days. Train an Acupuncturist in Moxibustion, or let it pass.',
-    );
+    expect(waveAdvice(ctx)).toBe('Cold Feet goes around in 7 days. Build an Acupuncture Clinic, or let it pass.');
     s.day = s.wave!.starts;
     expect(waveAdvice(ctx)).toBe('');
     s.wave!.turned = 1;
-    expect(waveAdvice(ctx)).toBe('Guests with Cold Feet are coming back later: nobody here does Moxibustion yet.');
+    expect(waveAdvice(ctx)).toBe(
+      'Guests with Cold Feet are coming back later. Build an Acupuncture Clinic to see them.',
+    );
+  });
+
+  it('counts a guest of its healed after its month is over', () => {
+    const { sim, s } = openCenter();
+    const ctx = createContext(s);
+    const g = spawnGuest(ctx, 'coldfeet')!;
+    g.wave = true;
+    s.pastWaves = [
+      {
+        condition: 'coldfeet',
+        warned: 0,
+        starts: 7,
+        ends: 37,
+        opened: true,
+        begun: true,
+        came: 1,
+        healed: 0,
+        turned: 0,
+      },
+    ];
+    countVisit(ctx, g, 'healed');
+    expect(s.pastWaves[0]?.healed).toBe(1);
+    expect(sim.s.wave).toBeNull();
+  });
+
+  it('lets its guests in only once the Recovery Lounge is built too, when its technique needs a rest', () => {
+    const { sim, s } = openCenter();
+    const ctx = createContext(s);
+    s.opened = ['moxa'];
+    addAcupuncture(sim);
+    expect(sim.placeItem('moxa_burner', 27, 9, 0)).not.toBeNull();
+    hire(sim, 'acupuncturist').quals.push('moxa');
+    expect(waveChecks(ctx, 'moxa')).toEqual({ room: true, qualified: true, kit: true, rest: false });
+    expect(waveReady(ctx, 'moxa')).toBe(false);
+    expect(waveTodo(ctx, 'moxa')).toBe('Build a Recovery Lounge for the rest after Moxibustion');
+    addRecovery(sim);
+    expect(waveReady(ctx, 'moxa')).toBe(true);
+    expect(waveTodo(ctx, 'moxa')).toBe('');
   });
 });
 

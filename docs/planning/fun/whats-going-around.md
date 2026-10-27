@@ -89,14 +89,14 @@ If any clashes, the wave moves 7 days later and checks again, at most four times
 
 - Warning (12): "Cold Feet is going around. Moxibustion is open; train an Acupuncturist now."
 - Start (13): "Guests with Cold Feet arrive from today. Moxibustion is in the Acupuncture Clinic."
-- Start, if nobody is ready (12): "Guests with Cold Feet will come back later. Train an Acupuncturist to see them."
+- Start, if the center is not ready (12): "Guests with Cold Feet will come back later, once we are ready for them." (Built so: one line whatever is missing, so it can be recorded; the advisor names what is missing.)
 
 They are templates: `{ailment} is going around. {technique} is open; train {a role} now.` The wave's end is a toast, not a PA line.
 
 **The advisor.** `nudge` in `src/core/sim/advisor.ts` is first-match-wins. A new `waveAdvice(ctx)` goes just after the emergency offer's line (`s.offer`, step 7 of the chain), as a tip, never an alarm:
 
-- In the warning week, while not ready: "Cold Feet goes around in 5 days. Train an Acupuncturist in Moxibustion, or let it pass." With `about` on the Training Room.
-- During the wave, while guests are turning back: "Guests with Cold Feet are coming back later: nobody here does Moxibustion yet."
+- In the warning week, while not ready: "Cold Feet goes around in 5 days. Train an Acupuncturist in Moxibustion, or let it pass.", naming the next thing missing: the room, the course, the kit or the Recovery Lounge.
+- During the wave, while guests are turning back: "Guests with Cold Feet are coming back later. Build a Recovery Lounge for the rest after Moxibustion to see them.", with the same next thing missing.
 
 **The lesson.** None. The dialog is the explanation, every time, in two lines, and a lesson card queued behind it would say the same thing twice. The guide gets a short section.
 
@@ -130,7 +130,7 @@ They are templates: `{ailment} is going around. {technique} is open; train {a ro
 - **Regulars** keep taking a new guest's place (`dueRegular`); a regular is never a wave guest.
 - **Seeded games outside a wave** roll exactly as today, since `waveArrival` rolls only while a wave runs, as `machineArrival` does.
 
-**Change: the door.** A wave guest is spawned by `spawnGuest` (line 241) like anyone. At the moment they arrive, `waveArrival` asks `waveReady(ctx)`: is anyone on the staff, not leaving, qualified in the technique (`quals`), is there a usable kit (`ctx.world.usable`) in a finished room of its discipline, and is that room offered? If not, the guest is spawned already leaving (`goal: 'leave'`), turns around on the path with a "Next time" bubble, is never counted by `guestsCounted`, and adds one to `s.wave.turned`. Nobody waits, nobody worsens, no fee, no reputation. If the player gets ready halfway through, the next wave guest comes in.
+**Change: the door.** A wave guest is spawned by `spawnGuest` (line 241) like anyone. At the moment they arrive, `waveArrival` asks `waveReady(ctx)`: is anyone on the staff, not leaving, qualified in the technique (`quals`), is there a usable kit (`ctx.world.usable`) in a finished room of its discipline, and is that room offered? And, for a technique that needs a rest after, is there a Recovery Lounge? (Added after the first rerun, balance log 50: without it the bot's chased waves healed 9 of 52.) If not, the guest is spawned already leaving (`goal: 'leave'`), turns around on the path with a "Next time" bubble, is never counted by `guestsCounted`, and adds one to `s.wave.turned`. Nobody waits, nobody worsens, no fee, no reputation. If the player gets ready halfway through, the next wave guest comes in.
 
 **Why the door and not Reception.** Today a guest with an ailment nobody can treat properly is not sent away: Reception and the consultation never check (`completeService` in `src/core/sim/stations.ts`, line 434), `pickStation` finds any table of the discipline (`treatsHere` in `machines.ts` checks the discipline only), and the session is botched. `successChance` (`stations.ts`, line 179) multiplies the chance by `BOTCH_FACTOR` (0.35, `rules.ts` line 22) for `'unqualified'` or `'no-equipment'`, and a failure costs 2.5 reputation, 3 points of the discipline's following and a puff of bad vibes. With no table of the discipline at all, the guest waits by the door until they storm out (3 reputation) or go home worse (`WORSE_REP`, 6). Sending a guest home by hand costs `SEND_HOME_REP` (1). So without the door, letting a wave pass would cost a botch or a storm-out per guest: about 25 reputation over a month at The Exchange. With it, passing costs nothing, and the costs of chasing are the honest ones: the course and the week it takes, the kit, a Recovery Lounge, the line.
 

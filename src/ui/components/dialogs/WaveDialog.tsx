@@ -63,7 +63,9 @@ export function WaveDialog() {
         <b>{w.opened ? `New treatment, ahead of star ${nextStar}:` : 'Treated with:'}</b>
         {` ${m.name}, in the ${ROOMS[disc.room].name}. Train ${an(role)} in a Training Room`}
         {kit ? `; the ${kit} is in the Items menu.` : '.'}
-        {m.rest && !sim.hasRoom('recovery') && ' It leaves guests needing a rest in a Recovery Lounge.'}
+        {m.rest &&
+          !sim.hasRoom('recovery') &&
+          ' Its guests need a rest after, so they come in only once there is a Recovery Lounge too.'}
       </p>
       <p class="sub">Not ready in time? They turn back at the door and come another time. Nothing is lost.</p>
       <div class={buttonRow()}>

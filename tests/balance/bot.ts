@@ -599,6 +599,8 @@ export interface Playtest {
   swaps?: SwapLog[];
   /** The ailments that went around, with `BOT_WAVES`; left out without it, so the logs without it are as they were. */
   waves?: Wave[];
+  /** How every guest with a wave's ailment ended, during the wave and after it, from the casebook, with `BOT_WAVES`. */
+  waveCases?: GameState['casebook'];
 }
 
 const TREAT_ROOM: Record<Discipline, RoomType> = {
@@ -829,7 +831,10 @@ export class Bot {
       }
     }
     met ||= done(this);
-    if (this.s.features.waves) this.log.waves = [...this.s.pastWaves, ...(this.s.wave ? [this.s.wave] : [])];
+    if (this.s.features.waves) {
+      this.log.waves = [...this.s.pastWaves, ...(this.s.wave ? [this.s.wave] : [])];
+      this.log.waveCases = Object.fromEntries(this.log.waves.map((w) => [w.condition, this.s.casebook[w.condition]]));
+    }
     this.log.openGoals = this.sim
       .objectives()
       .filter((o) => !o.done)
@@ -2389,8 +2394,10 @@ export class Bot {
     }
     const restNeeded = Object.values(MODALITIES).some((m) => m.rest && this.open(m.id));
     // where it fits: a Recovery Room is worth no plot of land of its own
-    if (restNeeded && upTo >= 1 && !this.sim.hasRoom('recovery') && s.money > 6000 + reserve)
-      this.buildRoom('recovery', [], [], 0);
+    // chasing an ailment going around whose technique needs a rest, its guests wait on the lounge, so it comes first
+    const chasing = this.flags.chase && !!s.wave && MODALITIES[conditionOf(s.wave.condition).modality].rest;
+    const lounge = chasing ? this.afford(price('recovery') + 400, 0, true) : s.money > 6000 + reserve;
+    if (restNeeded && upTo >= 1 && !this.sim.hasRoom('recovery') && lounge) this.buildRoom('recovery', [], [], 0);
     if (upTo >= 1 && !this.has('shop_counter') && s.money > 4000 + reserve) this.placeNearEntrance('shop_counter');
   }
 

@@ -58,7 +58,7 @@ import { enabled, unlocked } from './treatments';
 import { currentStep, HANDED_OVER_TIP, type TutorialStep, WALKTHROUGH_IDS } from './tutorial';
 import { hasMechanic } from './upgrades';
 import { discomfort, warmthAt } from './warmth';
-import { waveReady } from './waves';
+import { waveTodo } from './waves';
 import { aboutToWorsen, conditionDays } from './worsening';
 
 /** Make an announcement over the speakers every so often. */
@@ -612,13 +612,12 @@ export function waveAdvice(ctx: SimContext): string {
   const s = ctx.s;
   const w = s.wave;
   if (!w || !featureOn(s, 'waves')) return '';
-  const m = MODALITIES[conditionOf(w.condition).modality];
-  if (waveReady(ctx, m.id)) return '';
+  const todo = waveTodo(ctx, conditionOf(w.condition).modality);
+  if (!todo) return '';
   const name = conditionOf(w.condition).name;
-  const role = ROLES[DISCIPLINES[m.discipline].role].name;
   if (s.day < w.starts) {
     const days = Math.max(1, Math.ceil(w.starts - s.day));
-    return `${name} goes around in ${days} day${days === 1 ? '' : 's'}. Train ${an(role)} in ${m.name}, or let it pass.`;
+    return `${name} goes around in ${days} day${days === 1 ? '' : 's'}. ${todo}, or let it pass.`;
   }
-  return w.turned ? `Guests with ${name} are coming back later: nobody here does ${m.name} yet.` : '';
+  return w.turned ? `Guests with ${name} are coming back later. ${todo} to see them.` : '';
 }
