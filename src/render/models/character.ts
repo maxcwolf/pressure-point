@@ -115,6 +115,8 @@ export interface CharRig {
   swell?: [number, number];
   /** What puts back the parts and colors a symptom stands in for, done halfway through the cure. */
   restore?: (() => void)[];
+  /** Bolts of lightning that show one at a time in a flash, and the materials that glow with it (see `pose`). */
+  flash?: { bolts: THREE.Object3D[]; glow: THREE.MeshStandardMaterial[] };
   /** Symptom parts that turn about their upright, or rattle side to side, each by `userData.spin` and `rattle`. */
   spin?: THREE.Object3D[];
   /** Symptom props kept at least so many pixels across from afar, as bubbles are, under the `grow` prototype. */

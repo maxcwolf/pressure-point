@@ -232,6 +232,21 @@ function showCure(rig: CharRig, c: Char, t: number) {
  */
 export const POTTED = { stride: 0.1, waddle: 0.14, knees: 0.2 } as const;
 
+/** How often lightning flashes in someone's storm cloud, in seconds, each person at their own pace. */
+const flashPeriod = (id: number) => 2.6 + hash(id * 1.3) * 1.8;
+
+/**
+ * How bright the lightning in someone's storm cloud is at a moment, from 0 (dark) to 1: a flash, a flicker of dark,
+ * and a second flash, once a period.
+ */
+export function flashAt(id: number, t: number) {
+  const s = (t + id * 0.77) % flashPeriod(id);
+  if (s < 0.07) return 1;
+  if (s < 0.13) return 0;
+  if (s < 0.25) return 0.75;
+  return 0;
+}
+
 /** How long a blink lasts, in seconds. */
 export const BLINK = 0.13;
 
@@ -875,6 +890,13 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     rig.orbit.visible = c.pose !== 'lie';
   }
   if (rig.knot?.visible) rig.knot.rotation.z = Math.sin(t * 2 + c.id) * 0.2;
+  if (rig.flash) {
+    const { bolts, glow } = rig.flash;
+    const f = flashAt(c.id, t);
+    const which = Math.floor((t + c.id * 0.77) / flashPeriod(c.id)) % bolts.length;
+    bolts.forEach((b, i) => (b.visible = f > 0 && i === which));
+    for (const m of glow) m.emissiveIntensity = f * 0.9;
+  }
   for (const o of rig.spin ?? []) {
     const { spin = 0, rattle = 0 } = o.userData as { spin?: number; rattle?: number };
     o.rotation.y = t * spin;
