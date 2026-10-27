@@ -270,6 +270,11 @@
   .cure img {
     width: 100%;
   }
+  .walks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
   @media (min-width: 1100px) {
     .cards {
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -326,7 +331,7 @@
 
 <main>
   <header>
-    <span class="eyebrow">Symptoms you can see &#183; Round 2 &#183; 27 October 2026</span>
+    <span class="eyebrow">Symptoms you can see &#183; Round 3 &#183; 27 October 2026</span>
     <h1>Symptom model approvals</h1>
     <p>
       Option A, where the guest's body becomes the joke, goes in one ailment at a time, and only once you have approved
@@ -336,14 +341,20 @@
     </p>
     <ul class="summary">
       <li><a href="#steam">Stress Head</a> <span class="status proposed">Proposed</span></li>
-      <li><a href="#bottled">Bottled Up</a> <span class="status proposed">Proposed</span></li>
-      <li><a href="#battery">Flat Battery</a> <span class="status proposed">Proposed</span></li>
       <li><a href="#parched">Spiritually Dehydrated</a> <span class="status proposed">Proposed</span></li>
+      <li><a href="#bottled">Bottled Up</a> <span class="status approved">Approved</span></li>
+      <li><a href="#battery">Flat Battery</a> <span class="status approved">Approved</span></li>
       <li><a href="#dizzy">Scrambled Noggin</a> <span class="status approved">Approved</span></li>
     </ul>
     <div class="howto history">
       <b>Decided so far</b>
       <ul>
+        <li>
+          <b>27 Oct, round 2.</b> Bottle approved, now built in. Battery 2 approved, now built in; Battery 1 dropped.
+          Stress Head: Kettle 1&#x27;s spout is better, but the handle should be taller, and &quot;less pronounced&quot;
+          meant less thick; maybe a grip at the top. Cactus 2 &quot;is great&quot;, but the legs may clip through the
+          pot walking; Cactus 1 dropped.
+        </li>
         <li>
           <b>27 Oct, round 1.</b> Scrambled Noggin: Egg 3 approved, now built in. Stress Head: Kettle 1 liked, with the
           spout to join the kettle cleanly and the handle less prominent. Bottle: &quot;looks great&quot;, not yet
@@ -373,17 +384,113 @@
       <span class="room">Treated with Hot Stone (massage)</span>
     </div>
     <p class="said">
-      <b>Max:</b> &quot;I like 1, but ensure that the spout connects nicely to the main part of the kettle. Also, make
-      the handle less prominent.&quot;
-      <span>Say &quot;approve the kettle&quot; to have it built in, or what to change.</span>
+      <b>Max:</b> &quot;Kettle 1 is better on the spout, but the handle should be taller. When I said less pronounced I
+      meant less thick. Maybe there should be a grip at the apex too.&quot;
+      <span>Pick 1C or 1D and say &quot;approve the kettle&quot;, or say what to change.</span>
     </p>
     <div class="cards">
       <article class="card">
-        <h3>Kettle 1 &#183; Round 2</h3>
+        <h3>Kettle 1C &#183; Dark wire, black grip</h3>
         <p class="line">
-          The spout now grows out of the cheek from deep inside the head, with no seam at its root. The handle is
-          thinner, sits low over the lid and is dark gray rather than black.
+          The handle back up to its old height but a thin wire, drawn out tall so it stays as thin at the top as at the
+          feet, with a black grip across the top. Spout as approved last round.
         </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="kettle1c-front.webp">
+              <img
+                src="kettle1c-front.webp"
+                alt="Kettle 1C &#183; Dark wire, black grip, from the front"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="kettle1c-side.webp">
+              <img
+                src="kettle1c-side.webp"
+                alt="Kettle 1C &#183; Dark wire, black grip, from the side"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r31-full.webp">
+              <img src="kettle1c-play.webp" alt="Kettle 1C &#183; Dark wire, black grip at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="kettle1c-cure.webp">
+            <img
+              src="kettle1c-cure.webp"
+              alt="Kettle 1C &#183; Dark wire, black grip cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Kettle 1D &#183; Steel wire, wooden grip</h3>
+        <p class="line">
+          The same tall thin handle in bright steel, with a wooden grip across the top, like an old stovetop kettle.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="kettle1d-front.webp">
+              <img
+                src="kettle1d-front.webp"
+                alt="Kettle 1D &#183; Steel wire, wooden grip, from the front"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="kettle1d-side.webp">
+              <img
+                src="kettle1d-side.webp"
+                alt="Kettle 1D &#183; Steel wire, wooden grip, from the side"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r32-full.webp">
+              <img
+                src="kettle1d-play.webp"
+                alt="Kettle 1D &#183; Steel wire, wooden grip at play size"
+                loading="lazy"
+              />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="kettle1d-cure.webp">
+            <img
+              src="kettle1d-cure.webp"
+              alt="Kettle 1D &#183; Steel wire, wooden grip cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card ref">
+        <h3>Kettle 1 &#183; Round 2</h3>
+        <p class="line">As you saw it: the spout you liked, and the thin handle kept low over the lid.</p>
         <div class="views">
           <figure>
             <button type="button" class="shot" data-full="kettle1b-front.webp">
@@ -406,191 +513,12 @@
           </div>
           <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
         </figure>
+
         <figure>
           <button type="button" class="shot cure" data-full="kettle1b-cure.webp">
             <img
               src="kettle1b-cure.webp"
               alt="Kettle 1 &#183; Round 2 cured: before, in the puff, after"
-              loading="lazy"
-            />
-          </button>
-          <figcaption>The cure: before, in the puff, after</figcaption>
-        </figure>
-      </article>
-      <article class="card ref">
-        <h3>Kettle 1 &#183; Round 1</h3>
-        <p class="line">
-          As you saw it: the spout rooted at the surface, its wide end showing below, and a thick black handle standing
-          tall.
-        </p>
-        <div class="views">
-          <figure>
-            <button type="button" class="shot" data-full="steam-1-front.webp">
-              <img src="steam-1-front.webp" alt="Kettle 1 &#183; Round 1, from the front" loading="lazy" />
-            </button>
-            <figcaption>Front</figcaption>
-          </figure>
-          <figure>
-            <button type="button" class="shot" data-full="steam-1-side.webp">
-              <img src="steam-1-side.webp" alt="Kettle 1 &#183; Round 1, from the side" loading="lazy" />
-            </button>
-            <figcaption>Side</figcaption>
-          </figure>
-        </div>
-        <figure class="play">
-          <div class="play-pair">
-            <button type="button" class="shot native" data-full="corridor-1-full.webp">
-              <img src="steam-1-play.webp" alt="Kettle 1 &#183; Round 1 at play size" loading="lazy" />
-            </button>
-          </div>
-          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
-        </figure>
-        <figure>
-          <button type="button" class="shot cure" data-full="steam-1-cure.webp">
-            <img
-              src="steam-1-cure.webp"
-              alt="Kettle 1 &#183; Round 1 cured: before, in the puff, after"
-              loading="lazy"
-            />
-          </button>
-          <figcaption>The cure: before, in the puff, after</figcaption>
-        </figure>
-      </article>
-    </div>
-  </section>
-  <section class="ailment" id="bottled">
-    <div class="ail-head">
-      <h2>Bottled Up</h2>
-      <span class="status proposed">Proposed</span>
-      <span class="room">Treated with Cupping (acupuncture)</span>
-    </div>
-    <p class="said">
-      <b>Max:</b> &quot;The bottle looks great!&quot;
-      <span
-        >Unchanged. Say &quot;approve the bottle&quot; to have it built in for real, lying on a table included.</span
-      >
-    </p>
-    <div class="cards">
-      <article class="card">
-        <h3>Bottle</h3>
-        <p class="line">
-          The whole guest inside a big green bottle, the cork above the head, a cream label with a red stripe round the
-          middle, legs out of the bottom.
-        </p>
-        <div class="views">
-          <figure>
-            <button type="button" class="shot" data-full="bottled-0-front.webp">
-              <img src="bottled-0-front.webp" alt="Bottle, from the front" loading="lazy" />
-            </button>
-            <figcaption>Front</figcaption>
-          </figure>
-          <figure>
-            <button type="button" class="shot" data-full="bottled-0-side.webp">
-              <img src="bottled-0-side.webp" alt="Bottle, from the side" loading="lazy" />
-            </button>
-            <figcaption>Side</figcaption>
-          </figure>
-        </div>
-        <figure class="play">
-          <div class="play-pair">
-            <button type="button" class="shot native" data-full="corridor-0-full.webp">
-              <img src="bottled-0-play.webp" alt="Bottle at play size" loading="lazy" />
-            </button>
-          </div>
-          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
-        </figure>
-        <figure>
-          <button type="button" class="shot cure" data-full="bottled-0-cure.webp">
-            <img src="bottled-0-cure.webp" alt="Bottle cured: before, in the puff, after" loading="lazy" />
-          </button>
-          <figcaption>The cure: before, in the puff, after</figcaption>
-        </figure>
-      </article>
-    </div>
-  </section>
-  <section class="ailment" id="battery">
-    <div class="ail-head">
-      <h2>Flat Battery</h2>
-      <span class="status proposed">Proposed</span>
-      <span class="room">Treated with Electro-acupuncture (acupuncture)</span>
-    </div>
-    <p class="said">
-      <b></b> New this round, from the first ten.
-      <span>Today: a small battery hovering over the head. Pick one, or say what to change.</span>
-    </p>
-    <div class="cards">
-      <article class="card">
-        <h3>Battery 1 &#183; Battery body</h3>
-        <p class="line">
-          The body a big battery from the hips to the shoulders, a green band round the top and a gauge on the chest
-          with one red cell left, blinking. The head stays their own, on top where the terminal would be.
-        </p>
-        <div class="views">
-          <figure>
-            <button type="button" class="shot" data-full="battery1-front.webp">
-              <img src="battery1-front.webp" alt="Battery 1 &#183; Battery body, from the front" loading="lazy" />
-            </button>
-            <figcaption>Front</figcaption>
-          </figure>
-          <figure>
-            <button type="button" class="shot" data-full="battery1-side.webp">
-              <img src="battery1-side.webp" alt="Battery 1 &#183; Battery body, from the side" loading="lazy" />
-            </button>
-            <figcaption>Side</figcaption>
-          </figure>
-        </div>
-        <figure class="play">
-          <div class="play-pair">
-            <button type="button" class="shot native" data-full="corridor-r21-full.webp">
-              <img src="battery1-play.webp" alt="Battery 1 &#183; Battery body at play size" loading="lazy" />
-            </button>
-          </div>
-          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
-        </figure>
-        <figure>
-          <button type="button" class="shot cure" data-full="battery1-cure.webp">
-            <img
-              src="battery1-cure.webp"
-              alt="Battery 1 &#183; Battery body cured: before, in the puff, after"
-              loading="lazy"
-            />
-          </button>
-          <figcaption>The cure: before, in the puff, after</figcaption>
-        </figure>
-      </article>
-      <article class="card">
-        <h3>Battery 2 &#183; Battery head</h3>
-        <p class="line">
-          The head a battery lying on its side, the terminal out to one side, the gauge along the top with the last cell
-          blinking red, and the face on a cream label on its front.
-        </p>
-        <div class="views">
-          <figure>
-            <button type="button" class="shot" data-full="battery2-front.webp">
-              <img src="battery2-front.webp" alt="Battery 2 &#183; Battery head, from the front" loading="lazy" />
-            </button>
-            <figcaption>Front</figcaption>
-          </figure>
-          <figure>
-            <button type="button" class="shot" data-full="battery2-side.webp">
-              <img src="battery2-side.webp" alt="Battery 2 &#183; Battery head, from the side" loading="lazy" />
-            </button>
-            <figcaption>Side</figcaption>
-          </figure>
-        </div>
-        <figure class="play">
-          <div class="play-pair">
-            <button type="button" class="shot native" data-full="corridor-r22-full.webp">
-              <img src="battery2-play.webp" alt="Battery 2 &#183; Battery head at play size" loading="lazy" />
-            </button>
-          </div>
-          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
-        </figure>
-        <figure>
-          <button type="button" class="shot cure" data-full="battery2-cure.webp">
-            <img
-              src="battery2-cure.webp"
-              alt="Battery 2 &#183; Battery head cured: before, in the puff, after"
               loading="lazy"
             />
           </button>
@@ -606,43 +534,60 @@
       <span class="room">Treated with Sweat Lodge (shaman)</span>
     </div>
     <p class="said">
-      <b></b> New this round, from the first ten.
-      <span>Today: a little potted cactus balanced on the head. Pick one, or say what to change.</span>
+      <b>Max:</b> &quot;Cactus 2 is great, but I worry about the legs clipping through the pot when walking.&quot;
+      <span
+        >Same model, two walks that keep the legs in the pot. Pick the shuffle or the hop and say &quot;approve the
+        cactus&quot;, or say what to change.</span
+      >
     </p>
     <div class="cards">
       <article class="card">
-        <h3>Cactus 1 &#183; Cactus head</h3>
+        <h3>Cactus 2 &#183; Shuffle</h3>
         <p class="line">
-          The head a ribbed green cactus, prickly, with an arm bent up off one side and a pink flower on top. The face
-          stays on its front.
+          Tiny steps, the knees barely bending, so the feet stay under the pot, and the pot waddles from side to side.
+          Seated, the legs stay straight down in the pot, which sits on the seat.
         </p>
         <div class="views">
           <figure>
-            <button type="button" class="shot" data-full="cactus1-front.webp">
-              <img src="cactus1-front.webp" alt="Cactus 1 &#183; Cactus head, from the front" loading="lazy" />
+            <button type="button" class="shot" data-full="cactus2s-front.webp">
+              <img src="cactus2s-front.webp" alt="Cactus 2 &#183; Shuffle, from the front" loading="lazy" />
             </button>
             <figcaption>Front</figcaption>
           </figure>
           <figure>
-            <button type="button" class="shot" data-full="cactus1-side.webp">
-              <img src="cactus1-side.webp" alt="Cactus 1 &#183; Cactus head, from the side" loading="lazy" />
+            <button type="button" class="shot" data-full="cactus2s-side.webp">
+              <img src="cactus2s-side.webp" alt="Cactus 2 &#183; Shuffle, from the side" loading="lazy" />
             </button>
             <figcaption>Side</figcaption>
           </figure>
         </div>
         <figure class="play">
           <div class="play-pair">
-            <button type="button" class="shot native" data-full="corridor-r21-full.webp">
-              <img src="cactus1-play.webp" alt="Cactus 1 &#183; Cactus head at play size" loading="lazy" />
+            <button type="button" class="shot native" data-full="corridor-r31-full.webp">
+              <img src="cactus2s-play.webp" alt="Cactus 2 &#183; Shuffle at play size" loading="lazy" />
             </button>
           </div>
           <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
         </figure>
         <figure>
-          <button type="button" class="shot cure" data-full="cactus1-cure.webp">
+          <div class="walks">
+            <button type="button" class="shot" data-full="cactus2s-walk-side.webp">
+              <img
+                src="cactus2s-walk-side.webp"
+                alt="Cactus 2 &#183; Shuffle walking, from the side"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="cactus2s-walk-game.webp">
+              <img src="cactus2s-walk-game.webp" alt="Cactus 2 &#183; Shuffle walking, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Walking, moving: from the side and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="cactus2s-cure.webp">
             <img
-              src="cactus1-cure.webp"
-              alt="Cactus 1 &#183; Cactus head cured: before, in the puff, after"
+              src="cactus2s-cure.webp"
+              alt="Cactus 2 &#183; Shuffle cured: before, in the puff, after"
               loading="lazy"
             />
           </button>
@@ -650,42 +595,216 @@
         </figure>
       </article>
       <article class="card">
-        <h3>Cactus 2 &#183; Potted</h3>
+        <h3>Cactus 2 &#183; Hop</h3>
         <p class="line">
-          The same cactus head, the shirt and sleeves gone cactus green, and a terracotta pot round them from the waist
-          down, their feet out of the bottom to walk on.
+          Feet together, knees straight, the whole pot bouncing along in little hops. Seated the same as the shuffle.
         </p>
         <div class="views">
           <figure>
-            <button type="button" class="shot" data-full="cactus2-front.webp">
-              <img src="cactus2-front.webp" alt="Cactus 2 &#183; Potted, from the front" loading="lazy" />
+            <button type="button" class="shot" data-full="cactus2h-front.webp">
+              <img src="cactus2h-front.webp" alt="Cactus 2 &#183; Hop, from the front" loading="lazy" />
             </button>
             <figcaption>Front</figcaption>
           </figure>
           <figure>
-            <button type="button" class="shot" data-full="cactus2-side.webp">
-              <img src="cactus2-side.webp" alt="Cactus 2 &#183; Potted, from the side" loading="lazy" />
+            <button type="button" class="shot" data-full="cactus2h-side.webp">
+              <img src="cactus2h-side.webp" alt="Cactus 2 &#183; Hop, from the side" loading="lazy" />
             </button>
             <figcaption>Side</figcaption>
           </figure>
         </div>
         <figure class="play">
           <div class="play-pair">
-            <button type="button" class="shot native" data-full="corridor-r22-full.webp">
-              <img src="cactus2-play.webp" alt="Cactus 2 &#183; Potted at play size" loading="lazy" />
+            <button type="button" class="shot native" data-full="corridor-r32-full.webp">
+              <img src="cactus2h-play.webp" alt="Cactus 2 &#183; Hop at play size" loading="lazy" />
             </button>
           </div>
           <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
         </figure>
         <figure>
-          <button type="button" class="shot cure" data-full="cactus2-cure.webp">
+          <div class="walks">
+            <button type="button" class="shot" data-full="cactus2h-walk-side.webp">
+              <img
+                src="cactus2h-walk-side.webp"
+                alt="Cactus 2 &#183; Hop walking, from the side"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="cactus2h-walk-game.webp">
+              <img src="cactus2h-walk-game.webp" alt="Cactus 2 &#183; Hop walking, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Walking, moving: from the side and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="cactus2h-cure.webp">
+            <img src="cactus2h-cure.webp" alt="Cactus 2 &#183; Hop cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>In the game, potted</h3>
+        <p class="line">The shuffle in the day-900 Orchard save, every unwell guest Spiritually Dehydrated.</p>
+        <figure>
+          <button type="button" class="shot" data-full="cactus-sit.webp">
+            <img src="cactus-sit.webp" alt="Seated in the waiting room" loading="lazy" />
+          </button>
+          <figcaption>Seated in the waiting room</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="cactus-lie.webp">
+            <img src="cactus-lie.webp" alt="Lying down for treatment" loading="lazy" />
+          </button>
+          <figcaption>Lying down for treatment</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="bottled">
+    <div class="ail-head">
+      <h2>Bottled Up</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Cupping (acupuncture)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Bottle is approved.&quot;
+      <span>Built in: every guest who is Bottled Up has it, no switch needed.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Bottle &#183; Built in</h3>
+        <p class="line">
+          The whole guest in a big green bottle, corked over the head, a cream label with a red stripe round the middle,
+          legs out of the bottom. One see-through glass shared by every bottled guest. The bottle shrinks away round its
+          middle in the cure.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="bottle-front.webp">
+              <img src="bottle-front.webp" alt="Bottle &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="bottle-side.webp">
+              <img src="bottle-side.webp" alt="Bottle &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r31-full.webp">
+              <img src="bottle-play.webp" alt="Bottle &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="bottle-cure.webp">
+            <img src="bottle-cure.webp" alt="Bottle &#183; Built in cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest Bottled Up, and climbing onto a table in the lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="bottle-table.webp">
+            <img src="bottle-table.webp" alt="Face down on a massage table" loading="lazy" />
+          </button>
+          <figcaption>Face down on a massage table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="bottle-mat.webp">
+            <img src="bottle-mat.webp" alt="Lying back on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying back on a sound-bath mat</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="bottle-desk.webp">
+            <img src="bottle-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="bottle-climb.webp">
+            <img src="bottle-climb.webp" alt="Climbing onto a massage table" loading="lazy" />
+          </button>
+          <figcaption>Climbing onto a massage table</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="battery">
+    <div class="ail-head">
+      <h2>Flat Battery</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Electro-acupuncture (acupuncture)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Battery 2, battery head is good. Approve.&quot;
+      <span>Built in: every guest with a Flat Battery has it, no switch needed. The slump stays.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Battery 2 &#183; Built in</h3>
+        <p class="line">
+          The head a battery on its side, the silver end out to one side, the gauge along the top with the last cell
+          blinking red, and the face on a cream label on its front.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="battery-front.webp">
+              <img src="battery-front.webp" alt="Battery 2 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="battery-side.webp">
+              <img src="battery-side.webp" alt="Battery 2 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r31-full.webp">
+              <img src="battery-play.webp" alt="Battery 2 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="battery-cure.webp">
             <img
-              src="cactus2-cure.webp"
-              alt="Cactus 2 &#183; Potted cured: before, in the puff, after"
+              src="battery-cure.webp"
+              alt="Battery 2 &#183; Built in cured: before, in the puff, after"
               loading="lazy"
             />
           </button>
           <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">Checked in the day-900 Orchard save with every unwell guest given a Flat Battery.</p>
+        <figure>
+          <button type="button" class="shot" data-full="battery-mat.webp">
+            <img src="battery-mat.webp" alt="Lying back on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying back on a sound-bath mat</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="battery-desk.webp">
+            <img src="battery-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
         </figure>
       </article>
     </div>
@@ -707,9 +826,8 @@
       <article class="card built">
         <h3>Egg 3 &#183; Built in</h3>
         <p class="line">
-          The head an egg with its top knocked off and the yolk showing, the cap floating among the stars. Now also: the
-          shell has a rim you can see, the cap is put away lying down, and the head and face come back halfway through
-          the cure.
+          The head an egg with its top knocked off and the yolk showing, the cap floating among the stars. The shell has
+          a rim you can see, the cap is put away lying down, and the head and face come back halfway through the cure.
         </p>
         <div class="views">
           <figure>
@@ -733,6 +851,7 @@
           </div>
           <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
         </figure>
+
         <figure>
           <button type="button" class="shot cure" data-full="egg-cure.webp">
             <img src="egg-cure.webp" alt="Egg 3 &#183; Built in cured: before, in the puff, after" loading="lazy" />
