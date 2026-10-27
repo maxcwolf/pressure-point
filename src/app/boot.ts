@@ -9,7 +9,13 @@ import type { GameState } from '../core/state/types';
 import { loadIcons } from '../render/models/icons';
 import { loadCampaign } from '../storage/campaign';
 import { AUTOSAVE_ID, openInAutosave, readSave, startBackup } from '../storage/saves';
-import { loadDisciplinePrefs, loadLessonsPref, loadSandbox, loadTutorialPref } from '../storage/settings';
+import {
+  loadDisciplinePrefs,
+  loadFeaturePrefs,
+  loadLessonsPref,
+  loadSandbox,
+  loadTutorialPref,
+} from '../storage/settings';
 import { welcomeSeen } from '../storage/welcome';
 import { showTitle } from '../ui';
 import { track } from './analytics';
@@ -94,6 +100,8 @@ function open(what: string | null): GameState | 'no-room' | null {
     state.bankruptcyOn = bankruptcy;
     state.difficulty = difficulty;
   }
+  // every new game, in the campaign or the sandbox, has the features still being tried out as switched in Settings
+  if (state && center) state.features = loadFeaturePrefs();
   // a first go at the campaign's first center, with nothing earned yet, looks ahead to what it will soon need
   if (state && center === CAMPAIGN[0] && !Object.keys(loadCampaign().stars).length) state.primer = true;
   // a new Willow Lane game is walked through its opening while the tutorial is on, the heads-ups among its steps, and a

@@ -9,6 +9,7 @@ import {
   DAYS_PER_MONTH,
   type Discipline,
   type Duty,
+  type FeatureId,
   type GoalSpec,
   ITEMS,
   type ItemType,
@@ -24,7 +25,7 @@ import { tuning } from '../difficulty';
 import { calendarDay } from '../format';
 import type { PlotOffer } from '../land';
 import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
-import { offeringOn } from '../state/game';
+import { featureOn, offeringOn } from '../state/game';
 import type {
   Char,
   GameState,
@@ -190,7 +191,11 @@ import { decayItems, wearByTheDay } from './upkeep';
 import { fadeVibes } from './vibes';
 import { extinguisherNear, lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
 import { outdoorTemp, thermostatShare, todayIndoors, warmthAt } from './warmth';
+import { updateWaves, type WaveChecks, waveChecks, waveReady, wavesSwitched } from './waves';
 import { warnWorsening } from './worsening';
+
+/** What switching each feature being tried out on or off part way through a game does to it. */
+const FEATURE_SWITCHED: Record<FeatureId, (ctx: SimContext, on: boolean) => void> = { waves: wavesSwitched };
 
 export class Sim {
   readonly world: World;
@@ -278,6 +283,7 @@ export class Sim {
       updateStanding(ctx);
       updateRival(ctx);
       updateMishaps(ctx);
+      updateWaves(ctx);
       updateBlazes(ctx);
       updateLand(ctx);
       updateOutdoors(ctx);
@@ -513,6 +519,27 @@ export class Sim {
   /** Whether a discipline, or the Qi Gong classes, is switched on for this game. */
   enabled(d: Offering): boolean {
     return offeringOn(this.s, d);
+  }
+
+  /** Whether a feature still being tried out is on in this game. */
+  featureOn(f: FeatureId): boolean {
+    return featureOn(this.s, f);
+  }
+
+  /** Switch a feature still being tried out on or off for this game. */
+  setFeature(f: FeatureId, on: boolean) {
+    this.s.features[f] = on;
+    FEATURE_SWITCHED[f](this.ctx, on);
+  }
+
+  /** How ready the center is for a technique, part by part: its room, someone qualified, its kit, a rest after. */
+  waveChecks(m: Modality): WaveChecks {
+    return waveChecks(this.ctx, m);
+  }
+
+  /** Whether the center can treat a technique properly now: someone qualified, its kit, and its room. */
+  waveReady(m: Modality): boolean {
+    return waveReady(this.ctx, m);
   }
 
   /** Switch an optional discipline, or the Qi Gong classes, on or off. */

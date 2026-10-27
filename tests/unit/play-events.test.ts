@@ -200,6 +200,41 @@ describe('play events', () => {
     expect(events.find((x) => x.name === 'outbreak_ended')?.props).toMatchObject({ outcome: 'escaped', lost: 4 });
   });
 
+  it('count how an ailment going around went, once, as it ends', () => {
+    const sim = freshSim();
+    sim.s.wave = {
+      condition: 'coldfeet',
+      warned: 0,
+      starts: 7,
+      ends: 37,
+      opened: true,
+      begun: true,
+      came: 0,
+      healed: 0,
+      turned: 5,
+    };
+    const mark = markOf(sim.s);
+    sim.s.pastWaves.push(sim.s.wave);
+    sim.s.wave = null;
+    const events = playEvents(mark, sim.s).filter((e) => e.name === 'wave_ended');
+    expect(events).toHaveLength(1);
+    expect(events[0]?.props).toMatchObject({
+      condition: 'coldfeet',
+      technique: 'moxa',
+      opened_early: true,
+      turned: 5,
+      chased: false,
+    });
+    expect(playEvents(markOf(sim.s), sim.s).filter((e) => e.name === 'wave_ended')).toEqual([]);
+  });
+
+  it('say which features being tried out are on', () => {
+    const sim = freshSim();
+    expect(gameProps(sim.s).features).toBe('');
+    sim.setFeature('waves', true);
+    expect(gameProps(sim.s).features).toBe('waves');
+  });
+
   it('count how a fire ends, once, when the last of it is out', () => {
     const sim = freshSim();
     sim.s.fire = { item: 'stone_kiln', burnt: 1, fee: 0, out: false };
@@ -242,7 +277,7 @@ describe('play events', () => {
 
   it('never say what the player named the game', () => {
     const sim = freshSim();
-    expect(Object.keys(gameProps(sim.s)).sort()).toEqual(['center', 'cheated', 'day', 'stars']);
+    expect(Object.keys(gameProps(sim.s)).sort()).toEqual(['center', 'cheated', 'day', 'features', 'stars']);
   });
 });
 

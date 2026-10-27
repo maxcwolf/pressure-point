@@ -399,6 +399,7 @@ describe('the pace, in words', () => {
     difficulty: 1,
     tables: 28,
     machines: [],
+    wave: 0,
     seconds: 180 / 28,
     perMonth: 28,
     ...over,

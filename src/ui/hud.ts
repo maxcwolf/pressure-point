@@ -50,6 +50,7 @@ export type DialogId =
   | 'confirm-cancel-course'
   | 'confirm-dismiss'
   | 'star'
+  | 'wave'
   | 'karma'
   | 'awards'
   | 'visit'
@@ -477,6 +478,7 @@ export class HudState {
       else if (e.type === 'star') this.raise('star', e.stars);
       else if (e.type === 'awards') this.raise('awards');
       else if (e.type === 'visit') this.raise('visit');
+      else if (e.type === 'wave') this.raise('wave');
       // the app notes an achievement or a gift for the campaign; its toast says it
       else if (e.type === 'achievement' || e.type === 'gift') continue;
       else if (e.type === 'tutorial') this.endTutorial(e.what, e.step);

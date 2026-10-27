@@ -25,7 +25,7 @@ import {
 } from '../data';
 import { an, article, money } from '../format';
 import { pickFresh, rnd } from '../random';
-import { offeringOn, unlockedUpTo } from '../state/game';
+import { featureOn, offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import { fireAdvice, fireRiskAdvice } from './blazes';
 import { BOTTLENECK, bottleneck, type Stage, stages } from './bottleneck';
@@ -58,6 +58,7 @@ import { enabled, unlocked } from './treatments';
 import { currentStep, HANDED_OVER_TIP, type TutorialStep, WALKTHROUGH_IDS } from './tutorial';
 import { hasMechanic } from './upgrades';
 import { discomfort, warmthAt } from './warmth';
+import { waveReady } from './waves';
 import { aboutToWorsen, conditionDays } from './worsening';
 
 /** Make an announcement over the speakers every so often. */
@@ -186,6 +187,8 @@ function nudge(ctx: SimContext): string | Advice {
     );
   }
   if (s.offer) return 'There is an emergency on offer at the top of the screen. Accept it only if you can cope.';
+  const wave = waveAdvice(ctx);
+  if (wave) return wave;
   // with a Caretaker on the payroll, a breakdown waits below the money, the lines and comfort: it is in hand
   const broken = s.items.find((i) => i.wear >= 100);
   if (broken && !hasStaff(ctx, 'caretaker'))
@@ -599,4 +602,23 @@ export function contextAnnouncement(ctx: SimContext): string | null {
   }
   if (ctx.s.litter.length >= 4) return CARETAKER_WANTED;
   return null;
+}
+
+/**
+ * An ailment going around that the center is not ready for: in its warning week, what getting ready takes, or that it
+ * may pass; while its guests come, that they are turning back. '' when there is none, or the center is ready.
+ */
+export function waveAdvice(ctx: SimContext): string {
+  const s = ctx.s;
+  const w = s.wave;
+  if (!w || !featureOn(s, 'waves')) return '';
+  const m = MODALITIES[conditionOf(w.condition).modality];
+  if (waveReady(ctx, m.id)) return '';
+  const name = conditionOf(w.condition).name;
+  const role = ROLES[DISCIPLINES[m.discipline].role].name;
+  if (s.day < w.starts) {
+    const days = Math.max(1, Math.ceil(w.starts - s.day));
+    return `${name} goes around in ${days} day${days === 1 ? '' : 's'}. Train ${an(role)} in ${m.name}, or let it pass.`;
+  }
+  return w.turned ? `Guests with ${name} are coming back later: nobody here does ${m.name} yet.` : '';
 }

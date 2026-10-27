@@ -52,7 +52,7 @@ export function StarDialog() {
   const enabled = sim.enabled.bind(sim);
   // with everything unlocked from the start, a star opens nothing new
   const rooms = sim.s.unlockAll ? '' : newRoomsText(n, enabled, sim.s.center);
-  const treatments = sim.s.unlockAll ? [] : treatmentsUnlockedAt(n, enabled);
+  const treatments = sim.s.unlockAll ? [] : treatmentsUnlockedAt(n, enabled, sim.s.opened);
   // karma comes with a campaign star the first time it is earned; a replay that only matches the best earns none
   // (worked out once, as the dialog opens, since an autosave while it is open records the star)
   const [karma] = useState(

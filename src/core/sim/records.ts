@@ -34,6 +34,7 @@ export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
     return;
   }
   const { stats, tally, casebook } = ctx.s;
+  if (end === 'healed' && g.wave && ctx.s.wave) ctx.s.wave.healed++;
   stats[end]++;
   tally[end]++;
   const record = (casebook[g.condition] ??= { healed: 0, failed: 0, stormed: 0, sent: 0, priced: 0, worse: 0 });

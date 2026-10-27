@@ -12,12 +12,13 @@ import {
 } from '../data';
 import { refillCandidates } from '../people';
 import { rnd } from '../random';
-import { disciplineOn, unlockedUpTo } from '../state/game';
+import { disciplineOn, techniqueOpen } from '../state/game';
 import type { Emergency, Guest, Item, Staff } from '../state/types';
 import type { SimContext } from './context';
 import { toast } from './events';
 import { machineBuilt } from './machines';
 import { hasRoom } from './progress';
+import { endWave } from './waves';
 
 /** Why a table cannot deliver a modality properly right now ('' when it can). */
 export type DeliveryProblem = '' | 'unqualified' | 'no-equipment' | 'out-of-action' | 'cold';
@@ -35,9 +36,12 @@ export function setDiscipline(ctx: SimContext, d: Discipline, on: boolean) {
   refillCandidates(s);
   if (on) return;
   /** Whether an emergency is for this discipline. */
-  const forThis = (e: Emergency | null) => !!e && MODALITIES[conditionOf(e.condition).modality].discipline === d;
+  const forThis = (e: Pick<Emergency, 'condition'> | null) =>
+    !!e && MODALITIES[conditionOf(e.condition).modality].discipline === d;
   // an emergency on the table for a discipline switched off is withdrawn: its guests would have nowhere to go
   if (forThis(s.offer)) s.offer = null;
+  // and an ailment going around for it stops going around, quietly
+  if (forThis(s.wave)) endWave(ctx, true);
   // and one under way is called off, not failed: those already here stay to be seen, but nobody more is sent
   if (forThis(s.emergency)) {
     for (const g of s.guests) g.emergency = false;
@@ -53,11 +57,11 @@ export function offered(ctx: SimContext, d: Discipline) {
 }
 
 /**
- * Whether a modality is available: enough stars (or everything unlocked), its discipline switched on, and for one done
- * only on a machine, that machine's room built.
+ * Whether a modality is available: enough stars (or everything unlocked), or opened early by an ailment going around;
+ * its discipline switched on; and for one done only on a machine, that machine's room built.
  */
 export function unlocked(ctx: SimContext, m: Modality) {
-  return unlockedUpTo(ctx.s) >= MODALITIES[m].star && enabled(ctx, MODALITIES[m].discipline) && machineBuilt(ctx.s, m);
+  return techniqueOpen(ctx.s, m) && enabled(ctx, MODALITIES[m].discipline) && machineBuilt(ctx.s, m);
 }
 
 /** The modality that treats a guest's condition. */

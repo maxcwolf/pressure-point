@@ -1,7 +1,8 @@
 // The moments in a game worth counting in the play statistics, found by comparing the game with how it last stood.
 
-import { type AchievementId, conditionOf, DAYS_PER_MONTH, MODALITIES } from '../core/data';
+import { type AchievementId, conditionOf, DAYS_PER_MONTH, FEATURE_ORDER, MODALITIES } from '../core/data';
 import { incomeOf, netOf } from '../core/sim/economy';
+import { featureOn } from '../core/state/game';
 import type {
   Emergency,
   FireReport,
@@ -11,6 +12,7 @@ import type {
   Outbreak,
   Sketch,
   VisitReport,
+  Wave,
 } from '../core/state/types';
 
 /** What an event says, as PostHog takes it. */
@@ -57,6 +59,8 @@ export interface PlayMark {
   /** The emergency and outbreak under way. */
   emergency: Emergency | null;
   outbreak: Outbreak | null;
+  /** The ailment going around, warned of or under way. */
+  wave: Wave | null;
   /** The latest visitor's report, and whether it was a failed inspection still to be settled. */
   report: VisitReport | null;
   unsettled: boolean;
@@ -99,6 +103,7 @@ export function markOf(s: GameState): PlayMark {
     offers: offersOf(s),
     emergency: s.emergency,
     outbreak: s.outbreak,
+    wave: s.wave,
     report: s.visitReport,
     unsettled: s.visitReport?.bribe !== undefined,
     fire: s.fire ?? null,
@@ -149,7 +154,9 @@ const campaignKey = (c: GameState['campaigns'][number]) => `${c.kind}:${c.condit
 
 /** What every event says about the game it came from. Never the save's name, which is the player's own. */
 export function gameProps(s: GameState): PlayProps {
-  return { center: s.center, day: Math.floor(s.day), stars: s.stars, cheated: s.cheated };
+  // the features being tried out that are on in this game, so a chart can split the games that have them
+  const features = FEATURE_ORDER.filter((f) => featureOn(s, f)).join(',');
+  return { center: s.center, day: Math.floor(s.day), stars: s.stars, cheated: s.cheated, features };
 }
 
 /** What has happened in a game since it stood as marked, oldest first. */
@@ -197,6 +204,25 @@ function happenings(mark: PlayMark, s: GameState, game: PlayProps, known: PlayCo
   if (o && s.outbreak !== o) {
     const outcome = o.lost <= o.lostMax ? 'contained' : 'escaped';
     out.push({ name: 'outbreak_ended', props: { ...game, outcome, lost: o.lost, lost_max: o.lostMax } });
+  }
+  // a wave ends at the end of its month, or quietly when it is switched off or its discipline is
+  const w = mark.wave;
+  if (w && s.wave !== w) {
+    const technique = conditionOf(w.condition).modality;
+    out.push({
+      name: 'wave_ended',
+      props: {
+        ...game,
+        condition: w.condition,
+        technique,
+        opened_early: w.opened,
+        came: w.came,
+        healed: w.healed,
+        turned: w.turned,
+        // a wave guest only comes in once the center is ready for them, so any who came means it was chased
+        chased: w.came > 0,
+      },
+    });
   }
   // a fire's record is replaced as it goes out, so it ends the moment the latest one is out and was not before; one
   // whose flames went with what was sold has nothing that put it out

@@ -4,12 +4,27 @@ import { useEffect } from 'preact/hooks';
 
 import { setSharing, sharing, track } from '../../app/analytics';
 import type { Audio } from '../../audio/audio';
-import { CAMPAIGN, type Discipline, DISCIPLINE_ORDER, DISCIPLINES, QIGONG_SETTING } from '../../core/data';
+import {
+  CAMPAIGN,
+  type Discipline,
+  DISCIPLINE_ORDER,
+  DISCIPLINES,
+  FEATURE_ORDER,
+  FEATURES,
+  QIGONG_SETTING,
+} from '../../core/data';
 import type { Sim } from '../../core/sim/sim';
 import { disciplineHere, offeringHere } from '../../core/state/game';
 import { loadControls, saveControls } from '../../storage/controls';
 import { ITEM_VIEWS, loadDisplay, MESSAGE_TIMES, saveDisplay, UI_SCALES } from '../../storage/display';
-import { loadDisciplinePrefs, loadLessonsPref, saveDisciplinePref, saveTutorialPref } from '../../storage/settings';
+import {
+  loadDisciplinePrefs,
+  loadFeaturePrefs,
+  loadLessonsPref,
+  saveDisciplinePref,
+  saveFeaturePref,
+  saveTutorialPref,
+} from '../../storage/settings';
 import { css } from '../../styled-system/css';
 import { applyDisplay } from '../display';
 import { useRedraw } from '../hooks/use-redraw';
@@ -276,6 +291,35 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
           })}
         />
       </ul>
+      <h4>Feature testing</h4>
+      <ul>
+        {FEATURE_ORDER.map((f) => {
+          const def = FEATURES[f];
+          /** Whether the feature is on, in this game or for new ones. */
+          const featureOn = () => (sim ? sim.featureOn(f) : (loadFeaturePrefs()[f] ?? def.on));
+          return (
+            <SettingRow
+              key={f}
+              icon={def.icon}
+              name={def.name}
+              desc={def.desc}
+              on={featureOn()}
+              onToggle={flip(`feature:${f}`, () => {
+                const on = !featureOn();
+                // remembered for future games, and applied to this one if there is one
+                saveFeaturePref(f, on);
+                sim?.setFeature(f, on);
+                return on;
+              })}
+            />
+          );
+        })}
+      </ul>
+      <p class="sub">
+        {sim
+          ? 'Features still being tried out. Each is on or off for this game, and for new games.'
+          : 'Features still being tried out. These choices apply to new games; a game in progress keeps its own.'}
+      </p>
       <h4>Cheats</h4>
       <ul>
         <SettingRow

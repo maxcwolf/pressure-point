@@ -7,7 +7,7 @@ import { itemOpen } from '../../../core/campaign';
 import { certificatesLeft } from '../../../core/certificates';
 import { centerOf, type IconId, ITEM_MENU, ITEMS, type ItemType } from '../../../core/data';
 import { money } from '../../../core/format';
-import { unlockedUpTo } from '../../../core/state/game';
+import { openedKit, unlockedUpTo } from '../../../core/state/game';
 import { loadCampaign } from '../../../storage/campaign';
 import { loadDisplay } from '../../../storage/display';
 import { css } from '../../../styled-system/css';
@@ -68,7 +68,8 @@ export function ItemsMenu() {
   // a room switched off since it was chosen falls back to everywhere
   const place = places.includes(hud.itemPlace) ? hud.itemPlace : 'all';
   const types = sorted(filterItems(offered, place, hud.itemKind), ITEM_SORTS, hud.sorts.items);
-  const { unlocked } = loadCampaign();
+  // karma's unlocks for good, and the kit of any technique opened early by an ailment going around
+  const unlocked = [...loadCampaign().unlocked, ...openedKit(s)];
   /**
    * How an item stands: how many certificates there are to hang, whether it is locked, whether karma unlocks it, and
    * how much more money it needs, if it cannot be paid for.

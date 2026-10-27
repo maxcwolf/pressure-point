@@ -64,9 +64,20 @@ import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
 import { inRush, SEASON_AHEAD_DAYS, seasonOf } from '../../src/core/sim/twists';
 import { upgradeCost } from '../../src/core/sim/upgrades';
+import { openedEarly } from '../../src/core/sim/waves';
 import { worsenRate } from '../../src/core/sim/worsening';
 import { disciplineOn, newGame, offeringOn, starsEarned, unlockedUpTo } from '../../src/core/state/game';
-import type { Candidate, Emergency, GameState, Guest, Item, Room, Staff, WallSpot } from '../../src/core/state/types';
+import type {
+  Candidate,
+  Emergency,
+  GameState,
+  Guest,
+  Item,
+  Room,
+  Staff,
+  WallSpot,
+  Wave,
+} from '../../src/core/state/types';
 import { footprint, onWall, type Rect } from '../../src/core/world';
 
 /** What the bot does beyond building, staffing and training as it always has. */
@@ -184,6 +195,12 @@ export const BOT_FLAGS = [
    * and machine upkeep in the bank, as a good player with money piling up would.
    */
   'endow',
+  /**
+   * Chase an ailment going around (with `BOT_WAVES=1`, which switches the feature on): treat the technique it opens
+   * early as open, train someone in it first and buy its kit. Off, the bot lets every wave pass, as if the technique
+   * were still waiting on its star. An extra, so the rerun can compare waves chased, passed and off.
+   */
+  'chase',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -200,6 +217,7 @@ const BOT_EXTRAS: readonly BotFlag[] = [
   'machines',
   'opening',
   'modest',
+  'chase',
 ];
 
 /**
@@ -579,6 +597,8 @@ export interface Playtest {
    * they were.
    */
   swaps?: SwapLog[];
+  /** The ailments that went around, with `BOT_WAVES`; left out without it, so the logs without it are as they were. */
+  waves?: Wave[];
 }
 
 const TREAT_ROOM: Record<Discipline, RoomType> = {
@@ -704,6 +724,8 @@ export class Bot {
     setSeed(seed);
     const s = newGame(center);
     s.difficulty = difficulty;
+    // ailments going around, a feature being tried out: on for this run only if asked
+    if (process.env.BOT_WAVES) s.features.waves = process.env.BOT_WAVES !== '0';
     this.sim = new Sim(s);
     this.s = this.sim.s;
     this.log = {
@@ -807,6 +829,7 @@ export class Bot {
       }
     }
     met ||= done(this);
+    if (this.s.features.waves) this.log.waves = [...this.s.pastWaves, ...(this.s.wave ? [this.s.wave] : [])];
     this.log.openGoals = this.sim
       .objectives()
       .filter((o) => !o.done)
@@ -1082,7 +1105,7 @@ export class Bot {
       (c) =>
         MODALITIES[c.modality].discipline === d &&
         conditionHere(c, this.s.center) &&
-        this.sim.unlocked(c.modality) &&
+        this.open(c.modality) &&
         staff.some((st) => st.quals.includes(c.modality)),
     ).sort((a, b) => b.fee - a.fee)[0]?.id;
   }
@@ -1338,7 +1361,7 @@ export class Bot {
   private feeFor(d: Discipline): number {
     const s = this.s;
     const conds = CONDITIONS.filter(
-      (c) => MODALITIES[c.modality].discipline === d && conditionHere(c, s.center) && this.sim.unlocked(c.modality),
+      (c) => MODALITIES[c.modality].discipline === d && conditionHere(c, s.center) && this.open(c.modality),
     );
     if (!conds.length) return 0;
     const picky = CENTERS[s.center].picky?.fee ?? 1;
@@ -2330,7 +2353,7 @@ export class Bot {
     const reserve = this.reserve('unlocks');
     // a Training Room as soon as anyone on the payroll is not trained in something guests now arrive needing
     const untrained =
-      s.staff.some((st) => this.sim.courses(st).some((c) => c.id in MODALITIES)) ||
+      s.staff.some((st) => this.coursesOf(st).some((c) => c.id in MODALITIES)) ||
       (this.flags.kit && upTo >= 1 && !this.mechanic());
     if (untrained && !this.sim.hasRoom('training') && this.afford(price('training') + 400, 0, true))
       this.buildRoom('training');
@@ -2346,7 +2369,7 @@ export class Bot {
     // equipment for every unlocked technique, in every room of its discipline; with `courses`, as soon as someone is
     // trained in it, borrowing if need be, since without it every guest who needs it is botched
     for (const m of Object.values(MODALITIES)) {
-      if (!m.equipment || !this.sim.unlocked(m.id)) continue;
+      if (!m.equipment || !this.open(m.id)) continue;
       const cost = ITEMS[m.equipment].cost;
       const wanted = this.flags.courses && s.staff.some((st) => st.state !== 'leaving' && st.quals.includes(m.id));
       for (const room of this.rooms(TREAT_ROOM[m.discipline])) {
@@ -2364,7 +2387,7 @@ export class Bot {
           this.placeOrMakeRoom(room, 'sound_mat');
       }
     }
-    const restNeeded = Object.values(MODALITIES).some((m) => m.rest && this.sim.unlocked(m.id));
+    const restNeeded = Object.values(MODALITIES).some((m) => m.rest && this.open(m.id));
     // where it fits: a Recovery Room is worth no plot of land of its own
     if (restNeeded && upTo >= 1 && !this.sim.hasRoom('recovery') && s.money > 6000 + reserve)
       this.buildRoom('recovery', [], [], 0);
@@ -2405,6 +2428,19 @@ export class Bot {
     return built;
   }
 
+  /**
+   * Whether the bot treats a technique as open: unlocked, and, if an ailment going around opened it early, only while
+   * it chases waves.
+   */
+  private open(m: Modality): boolean {
+    return this.sim.unlocked(m) && (this.flags.chase || !openedEarly(this.s, m));
+  }
+
+  /** The courses a member of staff could take that the bot treats as open. */
+  private coursesOf(st: Staff) {
+    return this.sim.courses(st).filter((c) => !(c.id in MODALITIES) || this.open(c.id as Modality));
+  }
+
   /** Send treatment staff on the courses for what is unlocked, one at a time each, keeping a reserve. */
   private train() {
     const s = this.s;
@@ -2423,8 +2459,7 @@ export class Bot {
       if (st.state === 'leaving' || st.training || st.call) continue;
       const course = this.flags.courses
         ? this.bestCourse(st)
-        : this.sim
-            .courses(st)
+        : this.coursesOf(st)
             .filter((c) => c.id in MODALITIES)
             .sort((a, b) => a.cost - b.cost)[0];
       if (!course || !this.afford(course.cost, reserve, true)) continue;
@@ -3014,10 +3049,12 @@ export class Bot {
         (a, c) => a + (local[c.id] ?? 1) * c.fee,
         0,
       );
+      // chasing an ailment going around, its technique comes first while nobody else is trained in it
+      const wave = this.flags.chase && this.s.wave && conditionOf(this.s.wave.condition).modality === m;
+      if (wave && !covered) return Infinity;
       return worth * (0.9 - MODALITIES[m].difficulty) * (covered ? 0.35 : 1);
     };
-    return this.sim
-      .courses(st)
+    return this.coursesOf(st)
       .filter((c): c is typeof c & { id: Modality } => c.id in MODALITIES)
       .sort((a, b) => value(b.id) - value(a.id) || a.cost - b.cost)[0];
   }

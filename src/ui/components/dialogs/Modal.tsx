@@ -23,6 +23,7 @@ import { SettingsDialog } from './SettingsDialog';
 import { StarDialog } from './StarDialog';
 import { UpdateDialog } from './UpdateDialog';
 import { VisitDialog } from './VisitDialog';
+import { WaveDialog } from './WaveDialog';
 
 /** The contents of a dialog. */
 function contents(dialog: DialogId): ComponentChildren {
@@ -45,6 +46,8 @@ function contents(dialog: DialogId): ComponentChildren {
       return <ConfirmDismissMessages />;
     case 'star':
       return <StarDialog />;
+    case 'wave':
+      return <WaveDialog />;
     case 'karma':
       return <KarmaDialog />;
     case 'awards':

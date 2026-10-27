@@ -1,7 +1,17 @@
-// Player preferences that outlive any one game: which optional disciplines, and whether Qi Gong classes, new games start with,
+// Player preferences that outlive any one game: which optional disciplines, and whether Qi Gong classes and the features
+// still being tried out, new games start with,
 // how a sandbox game is set up, its difficulty among the rest, the Stats menu's charts, the sound and music switches,
 // and whether a new Willow Lane game has the tutorial and the campaign's games the cards that explain things.
-import { CENTERS, type Difficulty, DISCIPLINE_ORDER, DISCIPLINES, type Offering, SANDBOX_MONEY } from '../core/data';
+import {
+  CENTERS,
+  type Difficulty,
+  DISCIPLINE_ORDER,
+  DISCIPLINES,
+  FEATURE_ORDER,
+  type FeatureId,
+  type Offering,
+  SANDBOX_MONEY,
+} from '../core/data';
 import { readDifficulty } from '../core/difficulty';
 import { loadCampaign } from './campaign';
 import { isRecord } from './json';
@@ -30,6 +40,31 @@ export function loadDisciplinePrefs(): DisciplinePrefs {
 export function saveDisciplinePref(d: Offering, on: boolean) {
   try {
     localStorage.setItem(KEY, JSON.stringify({ disciplines: { ...loadDisciplinePrefs(), [d]: on } }));
+  } catch {
+    // the choice still applies to the current game
+  }
+}
+
+const FEATURES_KEY = 'pressure-point-features';
+export type FeaturePrefs = Partial<Record<FeatureId, boolean>>;
+
+/** Which features still being tried out new games start with on or off; one left out is as its default. */
+export function loadFeaturePrefs(): FeaturePrefs {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(FEATURES_KEY) ?? '{}');
+    const out: FeaturePrefs = {};
+    if (!isRecord(raw)) return out;
+    for (const f of FEATURE_ORDER) if (typeof raw[f] === 'boolean') out[f] = raw[f];
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/** Remember whether new games start with a feature still being tried out on. */
+export function saveFeaturePref(f: FeatureId, on: boolean) {
+  try {
+    localStorage.setItem(FEATURES_KEY, JSON.stringify({ ...loadFeaturePrefs(), [f]: on }));
   } catch {
     // the choice still applies to the current game
   }

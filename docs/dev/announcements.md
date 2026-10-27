@@ -6,7 +6,7 @@ When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-43 recorded, 38 still to record.
+43 recorded, 41 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
@@ -98,6 +98,17 @@ Key: ✅ recorded, ⬜ not recorded yet.
 - ⬜ Stress outbreak! A wedding party has arrived, and the seating plan did not go well.
 - ⬜ Stress outbreak! The phone network went down for an hour.
 - ⬜ Stress outbreak! A yoga retreat let out early and nobody is speaking to each other.
+
+## Ailments going around (`waveWarning` and `waveStarting` in `src/core/sim/waves.ts`)
+
+As the week's warning is given:
+
+- ⬜ Cold Feet is going around. Moxibustion is open; train an Acupuncturist now.
+
+As its guests start to come, one or the other by whether the center is ready:
+
+- ⬜ Guests with Cold Feet arrive from today. Moxibustion is in the Acupuncture Clinic.
+- ⬜ Guests with Cold Feet will come back later. Train an Acupuncturist to see them.
 
 ## A really bad trip (`RUNAWAY_LINES` in `src/core/sim/runaways.ts`, one or the other by the guest)
 

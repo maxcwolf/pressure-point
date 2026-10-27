@@ -10,6 +10,7 @@ import type {
   Difficulty,
   Discipline,
   Duty,
+  FeatureId,
   FeelingId,
   FloorId,
   GeneralId,
@@ -412,6 +413,8 @@ export interface Guest extends CharBase {
   missed?: ClassMiss;
   /** For a regular back for another visit, who they are among the regulars. */
   regular?: number;
+  /** Came with the ailment going around. */
+  wave?: boolean;
 }
 
 /** A guest who enjoyed their visit and comes back every few weeks, greeted by name. */
@@ -662,6 +665,8 @@ export interface Stats {
   /** Got worse while they waited, and left. */
   worse: number;
   arrived: number;
+  /** Came with an ailment going around, and turned back at the door: nobody here could treat it yet. */
+  later: number;
   /** Would have come, but found the center full: at the building's limit, or the player's own. */
   turnedAway: number;
   /** Guests healed, by the discipline that healed them. */
@@ -748,6 +753,24 @@ export interface AwardResult {
   /** The member of staff it went to, by name, and by id (a ceremony from before ids were kept has only the name). */
   winner?: string;
   winnerId?: number;
+}
+
+/**
+ * An ailment going around town: which, the day it was announced, the days its guests come from and until, whether it
+ * opened its treatment early, and how its guests have fared so far: come in, healed, or turned back at the door because
+ * nobody here could treat them yet.
+ */
+export interface Wave {
+  condition: ConditionId;
+  warned: number;
+  starts: number;
+  ends: number;
+  opened: boolean;
+  /** Its guests have started to come, which the PA has said. */
+  begun: boolean;
+  came: number;
+  healed: number;
+  turned: number;
 }
 
 /** A year-end awards ceremony. */
@@ -911,6 +934,17 @@ export interface GameState {
   mishap: Mishap | null;
   nextMishap: number;
   mishapsOn: boolean;
+  /**
+   * The ailment going around, from its warning to its end; the ones that have been, oldest first; and the day the next
+   * is due to be announced, if one is, with how often it has moved on to keep clear of other events.
+   */
+  wave: Wave | null;
+  pastWaves: Wave[];
+  nextWave: { day: number; moves: number } | null;
+  /** Techniques opened early by an ailment going around, which stay open. */
+  opened: Modality[];
+  /** The features being tried out, each switched on or off for this game; one left out is as its default. */
+  features: Partial<Record<FeatureId, boolean>>;
   /**
    * Whatever is on fire now, the fire brigade if it has been called and is not yet gone, and whether anything catches
    * fire at all (a sandbox setting).

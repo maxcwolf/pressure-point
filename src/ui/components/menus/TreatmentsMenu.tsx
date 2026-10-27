@@ -37,6 +37,7 @@ const modalityCard = css(cardLook, {
   cursor: 'default',
   _locked: { cursor: 'default' },
   '& .treats': { opacity: 'full', fontWeight: 'medium', mt: '2' },
+  '& em.early': { bg: 'warm.bg', color: 'fg' },
 });
 
 /** A discipline's heading, over its modalities. */
@@ -68,6 +69,8 @@ function ModalityCard({ modality }: { modality: Modality }) {
     );
   const rest = restNote(def.rest, sim.hasRoom('recovery'));
   const trip = tripNote(def.trip);
+  // opened early by an ailment going around, before its star
+  const early = !locked && s.opened.includes(modality) && unlockedUpTo(s) < def.star;
   return (
     <div class={cx('card', modalityCard, locked && 'locked')}>
       <Icon id={def.icon} size={34} />
@@ -85,6 +88,11 @@ function ModalityCard({ modality }: { modality: Modality }) {
         </em>
       ) : (
         <>
+          {early && (
+            <em class="early">
+              <IconText id="bubble-sick">{`Open early, before star ${def.star}`}</IconText>
+            </em>
+          )}{' '}
           <em class={qualified ? 'ok' : 'warn'}>
             {qualified ? `✔ ${qualified} qualified` : <IconText id="ui-warning">0 qualified</IconText>}
           </em>{' '}
