@@ -31,6 +31,8 @@ The desktop app updates itself with `electron-updater` (`electron/updates.ts`). 
 
 It reads `latest.yml` (Windows) and `latest-mac.yml` (macOS) from the newest release, so the workflow uploads those along with the `.zip` the macOS app updates from and the blockmaps that let it download only what changed. A release missing them is invisible to installed apps. Builds from manual runs are never published, so they are never offered.
 
+The workflow remakes the macOS zips with `ditto` once electron-builder is done (`scripts/rezip-mac.mjs`, which `yarn dist:mac` runs too), and with them their blockmaps and the size and hash `latest-mac.yml` gives for each, which an installed app checks before it will update. electron-builder zips with 7-Zip, which dates every file by the runner's clock, in UTC, in a form the updater's unzip reads as the player's local time, so west of UTC an updated app's files were all dated hours in the future. Setting the runner's time zone would only move the problem to everyone else; a zip `ditto` made comes out right everywhere.
+
 The macOS app only accepts an update signed by the same team, so an ad hoc signed build can neither update nor be updated. Apps from 0.27.1 and earlier have no updater: those players download one new version by hand, and update automatically from then on.
 
 ## Error reports

@@ -36,7 +36,7 @@
     "balance:report": "node --disable-warning=ExperimentalWarning scripts/balance-report.mjs",
     "preview": "vite preview",
     "app": "yarn build && electron .",
-    "dist:mac": "yarn build && electron-builder --mac --arm64 --x64 -c.mac.identity=- -c.mac.hardenedRuntime=false",
+    "dist:mac": "yarn build && electron-builder --mac --arm64 --x64 -c.mac.identity=- -c.mac.hardenedRuntime=false && node scripts/rezip-mac.mjs",
     "dist:win": "yarn build && electron-builder --win --x64"
   },
   "build": {

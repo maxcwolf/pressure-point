@@ -100,6 +100,10 @@ jobs:
             fi
           fi
           yarn electron-builder "${args[@]}" --publish never -c.extraMetadata.version="$VERSION"
+          # electron-builder's update zips would install with every file dated in the future west of UTC
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            node scripts/rezip-mac.mjs
+          fi
       - uses: actions/upload-artifact@v7
         with:
           name: installers-${{ matrix.name }}
