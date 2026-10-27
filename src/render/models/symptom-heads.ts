@@ -40,8 +40,8 @@ function spout(
 }
 
 /**
- * A stress head's kettle: 1, the head itself in red enamel, round, under a steel lid, with a black handle arching over
- * and a thick spout from the cheek; 2, a tapering blue enamel stovetop kettle in place of the head, a long steel spout
+ * A stress head's kettle: 1, the head itself in red enamel, round, under a steel lid, with a thin dark handle low over
+ * it and a thick spout growing out of the cheek; 2, a tapering blue enamel stovetop kettle in place of the head, a long steel spout
  * and a black handle; 3, the same stovetop kettle in polished chrome with a red knob and whistle.
  */
 export function kettle(rig: CharRig, variant: number) {
@@ -55,9 +55,11 @@ export function kettle(rig: CharRig, variant: number) {
     const lid = put(kettle, sph(0.15, 20), mat(STEEL, 0.25), 0, 0.19, 0);
     lid.scale.y = 0.4;
     put(kettle, sph(0.04, 12), black, 0, 0.26, 0);
-    const handle = put(kettle, arch(0.17, 0.03), black, 0, 0.1, -0.02);
-    handle.scale.y = 1.5;
-    spout(rig, kettle, [0.17, -0.07], 0.8, 0.3, enamel);
+    // a thin dark handle kept low over the lid, its feet in the head, and the spout rooted deep in the head, so it
+    // grows out of the side without a seam
+    const handle = put(kettle, arch(0.15, 0.018), mat(0x3a3f47, 0.4), 0, 0.12, -0.02);
+    handle.scale.y = 1.15;
+    spout(rig, kettle, [0.03, -0.1], 0.88, 0.44, enamel);
     swell(rig, 1.2, 1.2);
   } else {
     const chrome = variant === 3;
