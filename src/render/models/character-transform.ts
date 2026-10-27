@@ -12,7 +12,7 @@ import { GROW, GROW_START, SYMPTOM_OPTION, variantOf } from '../symptom-options'
 import type { CharRig } from './character';
 import { props } from './character-heads';
 import { mat, put, sph } from './parts';
-import { clockwork, noisy, storm } from './symptom-proposals';
+import { radio, storm } from './symptom-proposals';
 
 /**
  * Recolor every part of a person, each shared material swapped for the shared one of its new color so the crowd still
@@ -39,8 +39,7 @@ function propParts(rig: CharRig) {
 function bodySymptom(rig: CharRig, visual: Visual) {
   const variant = variantOf(visual);
   if (!variant) return;
-  if (visual === 'gears' && variant <= 2) clockwork(rig, variant);
-  else if (visual === 'gears') noisy(rig, variant);
+  if (visual === 'gears') radio(rig, variant);
   else if (visual === 'cloud') storm(rig, variant);
 }
 

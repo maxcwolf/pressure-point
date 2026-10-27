@@ -1,6 +1,7 @@
 // New models for approval (see docs/planning/fun/options/symptoms/approvals/), each asked for by number in the address
-// under ?symptoms=body: heads for a noisy mind (`&gears=1`): two clockwork, a beehive, a radio and a popcorn bucket; and
-// two storm clouds for blocked qi (`&cloud=1`), the second a working storm, lightning flashing in it and rain falling.
+// under ?symptoms=body: three radios for a noisy mind (`&gears=1`), each blaring, its speakers pumping and notes of music
+// rising off it; and two storm clouds for blocked qi (`&cloud=1`), the second a working storm, lightning flashing in it
+// and rain falling.
 // The face stays on every one, so how the guest feels still shows.
 
 import * as THREE from 'three';
@@ -8,9 +9,9 @@ import * as THREE from 'three';
 import { owned } from '../disposal';
 import type { CharRig } from './character';
 import { faceOut, hideUntilCured, named, props, swell } from './character-heads';
-import { cached, cyl, joined, mat, type Piece, put, rbox, sph, torus } from './parts';
+import { cyl, joined, mat, put, rbox, sph, torus } from './parts';
 
-/** Take away the symptom drawn before, standing in for it: the glass over the head, the cog, or the cloud. */
+/** Take away the symptom drawn before, standing in for it: the cog over the head, or the cloud. */
 function dropOld(rig: CharRig) {
   for (const p of rig.props) p.visible = false;
   for (const old of [rig.bob, rig.orbit]) {
@@ -25,93 +26,15 @@ function dropOld(rig: CharRig) {
 /** The head and what grows on it, hidden while something stands in for it. */
 const wholeHead = (rig: CharRig) => [rig.headMesh, ...named(rig.head, 'hair', 'moustache', 'beard', 'glasses')];
 
-/** Clear glass, one for every guest who has it, see-through so drawn by itself. */
-const CLEAR = new THREE.MeshStandardMaterial({
-  color: 0xdcecf2,
-  transparent: true,
-  opacity: 0.32,
-  roughness: 0.05,
-  depthWrite: false,
-});
-
-/** A cog `r` across, `thick` deep, lying flat with `teeth` teeth round it, as one shape. */
-const cog = (r: number, thick: number, teeth: number) => {
-  const pieces: Piece[] = [[cyl(r, r, thick, 20), 0, 0, 0]];
-  for (let i = 0; i < teeth; i++) {
-    const a = (i / teeth) * Math.PI * 2;
-    pieces.push([rbox(0.03, thick, 0.03, 0.004), Math.cos(a) * (r + 0.01), 0, Math.sin(a) * (r + 0.01), 0, -a, 0]);
-  }
-  return joined(`cog ${r}|${thick}|${teeth}`, pieces);
-};
-
-const BRASS = 0xc9a13a;
-const STEEL = 0x8c939c;
-
-/** Set something turning about its upright, or rattling side to side, by so much a second (see `pose`). */
-function spin(rig: CharRig, o: THREE.Object3D, turn: number, rattle = 0) {
+/**
+ * Set something turning about its upright by so much a second, rattling side to side, or pulsing bigger on a beat (see
+ * `pose`).
+ */
+function spin(rig: CharRig, o: THREE.Object3D, turn: number, rattle = 0, pulse = 0) {
   o.userData.spin = turn;
   o.userData.rattle = rattle;
+  o.userData.pulse = pulse;
   (rig.spin ??= []).push(o);
-}
-
-/**
- * A noisy mind: 1, clockwork, the top of the head a glass dome on a brass band with cogs turning inside it, each its
- * own way; 2, the head a red twin-bell alarm clock going off, the face on its white dial and the bells rattling.
- */
-export function clockwork(rig: CharRig, variant: number) {
-  dropOld(rig);
-  const g = new THREE.Group();
-  if (variant === 1) {
-    hideUntilCured(rig, named(rig.head, 'hair'));
-    put(g, torus(0.235, 0.035), mat(BRASS, 0.3), 0, 0.1, 0).rotation.x = Math.PI / 2;
-    const dome = cached('clock dome', () => new THREE.SphereGeometry(0.24, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2));
-    put(g, dome, CLEAR, 0, 0.1, 0).scale.y = 1.35;
-    for (const [r, x, y, z, turn, color] of [
-      [0.12, -0.03, 0.24, 0.0, 1.6, BRASS],
-      [0.085, 0.08, 0.3, 0.04, -2.3, STEEL],
-      [0.065, -0.04, 0.36, -0.04, 2.9, BRASS],
-    ] as const) {
-      const c = put(g, cog(r, 0.03, Math.round(r * 110)), mat(color, 0.3), x, y, z);
-      spin(rig, c, turn);
-    }
-    props(rig, g);
-    rig.head.add(g);
-    swell(rig, 1.05, 1.05);
-  } else {
-    hideUntilCured(rig, wholeHead(rig));
-    const red = mat(0xd9362f, 0.35);
-    const body = put(g, cyl(0.22, 0.22, 0.16, 32), red, 0, 0, -0.01);
-    body.rotation.x = Math.PI / 2;
-    const dial = put(g, cyl(0.19, 0.19, 0.02, 32), mat(0xfbfaf6, 0.6), 0, 0, 0.07);
-    dial.rotation.x = Math.PI / 2;
-    put(g, torus(0.2, 0.015), mat(STEEL, 0.25), 0, 0, 0.075);
-    // the hours round the dial, past the face
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2;
-      put(
-        g,
-        rbox(0.014, i % 3 ? 0.02 : 0.035, 0.01, 0.003),
-        mat(0x1d1f24, 0.4),
-        Math.sin(a) * 0.165,
-        Math.cos(a) * 0.165,
-        0.082,
-      ).rotation.z = -a;
-    }
-    // the bells and the hammer between them, rattling
-    const bells = new THREE.Group();
-    const bell = cached('clock bell', () => new THREE.SphereGeometry(0.09, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2));
-    for (const side of [-1, 1]) put(bells, bell, mat(STEEL, 0.2), side * 0.13, 0.19, -0.01).rotation.z = -side * 0.55;
-    put(bells, cyl(0.012, 0.012, 0.1, 8), mat(STEEL, 0.25), 0, 0.27, -0.01);
-    put(bells, sph(0.025, 10), mat(STEEL, 0.25), 0, 0.32, -0.01);
-    g.add(bells);
-    spin(rig, bells, 0, 0.12);
-    // little feet under it
-    for (const side of [-1, 1]) put(g, cyl(0.02, 0.03, 0.05, 8), red, side * 0.13, -0.22, 0);
-    faceOut(rig, { eyes: 0.0, brows: -0.005, mouth: -0.005 });
-    props(rig, g);
-    rig.head.add(g);
-    swell(rig, 1.1, 1.1);
-  }
 }
 
 const STORM = 0x7d8894;
@@ -221,18 +144,6 @@ export function storm(rig: CharRig, variant: number) {
   }
 }
 
-const HONEY = 0xd9a441;
-const BEE = 0xf2c14e;
-
-/** A bee, yellow with a black stripe and pale wings, as one shape. */
-const bee = () =>
-  joined('bee', [
-    [sph(0.028, 8), 0, 0, 0],
-    [cyl(0.029, 0.029, 0.014, 8), 0, 0, 0, 0, 0, Math.PI / 2],
-    [sph(0.02, 6), -0.008, 0.025, 0.01],
-    [sph(0.02, 6), 0.008, 0.025, -0.01],
-  ]);
-
 /** A note of music, its head, stem and flag, as one shape. */
 const note = () =>
   joined('note', [
@@ -241,92 +152,111 @@ const note = () =>
     [rbox(0.05, 0.02, 0.012, 0.004), 0.05, 0.11, 0, 0, 0, -0.5],
   ]);
 
+/** The dark of speakers and the silver of their rims, aerials, handles and knobs. */
+const SPEAKER = 0x2b2f36;
+const CONE = 0x4a4f57;
+const SILVER = 0xc9ced6;
+
 /**
- * A noisy mind, more ways: 3, the head a straw beehive, the face on its front and bees buzzing round it; 4, the head an
- * old two-tone transistor radio, the face on its cream front under the tuning dial, the aerial rattling and notes of
- * music rising off it; 5, the head a red-and-white striped popcorn bucket heaped over the top, the face on its front
- * and kernels popping up out of it.
+ * A speaker `r` across at a place on a radio, facing out along `facing` (0 the front, a quarter turn either side), its
+ * cone pumping on the beat.
  */
-export function noisy(rig: CharRig, variant: number) {
+function speaker(rig: CharRig, g: THREE.Group, r: number, at: [number, number, number], facing = 0) {
+  const mount = new THREE.Group();
+  mount.position.set(...at);
+  mount.rotation.y = facing;
+  put(mount, torus(r, r * 0.12), mat(SILVER, 0.25), 0, 0, 0.012);
+  const cone = put(mount, cyl(r * 0.92, r * 0.5, 0.03, 20), mat(SPEAKER, 0.7), 0, 0, 0);
+  cone.rotation.x = Math.PI / 2;
+  const middle = put(mount, sph(r * 0.3, 12), mat(CONE, 0.5), 0, 0, 0.01);
+  middle.scale.z = 0.5;
+  spin(rig, cone, 0, 0, 0.14);
+  spin(rig, middle, 0, 0, 0.3);
+  g.add(mount);
+}
+
+/** An aerial up out of a radio at a place, leaning out, rattling with the noise. */
+function aerial(rig: CharRig, g: THREE.Group, at: [number, number, number], lean: number, length = 0.42) {
+  const rod = new THREE.Group();
+  put(rod, cyl(0.006, 0.01, length, 6), mat(SILVER, 0.25), 0, length / 2, 0);
+  put(rod, sph(0.016, 8), mat(SILVER, 0.25), 0, length, 0);
+  rod.position.set(...at);
+  const tilt = new THREE.Group();
+  tilt.rotation.z = lean;
+  tilt.add(rod);
+  g.add(tilt);
+  spin(rig, rod, 0, 0.1);
+}
+
+/**
+ * A noisy mind, the head a radio left on too loud: 1, an old two-tone transistor radio, teal with a cream front for the
+ * face under the tuning dial and a speaker on either side; 2, a black boombox, wide, a big speaker either side of the
+ * face on the cassette deck and a handle over the top; 3, a wooden tabletop radio, arched over the top, the face on its
+ * cloth speaker grille and the dial and knobs underneath. Every one with its aerial rattling, its speakers pumping, and
+ * notes of music rising off it.
+ */
+export function radio(rig: CharRig, variant: number) {
   dropOld(rig);
   hideUntilCured(rig, wholeHead(rig));
   const g = new THREE.Group();
-  if (variant === 3) {
-    // a straw skep, coil on coil, narrowing to the top
-    const straw = mat(HONEY, 0.8);
-    for (let i = 0; i < 7; i++) {
-      const r = 0.22 * Math.cos((i / 7) * 1.25) + 0.01;
-      put(g, torus(r, 0.045), straw, 0, -0.18 + i * 0.075, 0).rotation.x = Math.PI / 2;
-    }
-    put(g, cyl(0.23, 0.23, 0.42, 24), mat(HONEY, 0.85), 0, -0.02, 0);
-    put(g, sph(0.05, 12), straw, 0, 0.3, 0);
-    // the door at the bottom, and the bees
-    put(g, sph(0.05, 10), mat(0x2a1c10, 0.9), 0, -0.17, 0.2).scale.set(1.3, 0.7, 0.5);
-    const swarm = new THREE.Group();
-    const black = mat(0x1d1f24, 0.6);
-    for (let i = 0; i < 7; i++) {
-      const a = (i / 7) * Math.PI * 2;
-      const r = 0.33 + (i % 3) * 0.05;
-      put(swarm, bee(), i % 2 ? mat(BEE, 0.5) : black, Math.cos(a) * r, -0.05 + ((i * 3) % 5) * 0.07, Math.sin(a) * r);
-    }
-    g.add(swarm);
-    spin(rig, swarm, 2.6, 0.08);
-    faceOut(rig, { eyes: 0.045, brows: 0.045, mouth: 0.045 });
-    swell(rig, 1.05, 1.05);
-  } else if (variant === 4) {
-    const teal = mat(0x2a9d8f, 0.4);
-    const cream = mat(0xf2e6c8, 0.6);
-    put(g, rbox(0.48, 0.38, 0.22, 0.06), teal, 0, -0.01, -0.02);
-    put(g, rbox(0.4, 0.3, 0.02, 0.04), cream, 0, -0.03, 0.09);
-    // the tuning dial along the top, with its red needle, and speaker grilles on either side
+  let top = 0.22;
+  if (variant === 1) {
+    put(g, rbox(0.48, 0.38, 0.22, 0.06), mat(0x2a9d8f, 0.4), 0, -0.01, -0.02);
+    put(g, rbox(0.4, 0.3, 0.02, 0.04), mat(0xf2e6c8, 0.6), 0, -0.03, 0.09);
+    // the tuning dial along the top, with its red needle
     put(g, rbox(0.32, 0.05, 0.02, 0.01), mat(0xfbfaf6, 0.5), 0, 0.12, 0.1);
     put(g, rbox(0.008, 0.045, 0.01, 0.002), mat(0xd9362f, 0.4), 0.05, 0.12, 0.112);
-    for (const side of [-1, 1]) {
-      const grille = put(g, cyl(0.1, 0.1, 0.02, 20), mat(0x3b3f4a, 0.7), side * 0.245, -0.02, 0);
-      grille.rotation.z = Math.PI / 2;
-    }
-    put(g, rbox(0.04, 0.05, 0.03, 0.01), mat(0x3b3f4a, 0.5), 0.17, 0.2, -0.02);
-    const aerial = new THREE.Group();
-    put(aerial, cyl(0.006, 0.01, 0.42, 6), mat(0xc9ced6, 0.25), 0, 0.21, 0);
-    put(aerial, sph(0.016, 8), mat(0xc9ced6, 0.25), 0, 0.42, 0);
-    aerial.position.set(0.17, 0.22, -0.02);
-    aerial.rotation.z = -0.35;
-    g.add(aerial);
-    spin(rig, aerial, 0, 0.1);
-    // notes of music rising off it, as steam off a stress head (see `pose`)
-    rig.steam = new THREE.Group();
-    const ink = mat(0x1d1f24, 0.4);
-    for (let i = 0; i < 3; i++) put(rig.steam, note(), ink, (i - 1) * 0.16, 0, 0);
-    rig.steam.position.set(0, 0.22, 0.02);
-    g.add(rig.steam);
+    speaker(rig, g, 0.1, [-0.25, -0.02, -0.02], -Math.PI / 2);
+    speaker(rig, g, 0.1, [0.25, -0.02, -0.02], Math.PI / 2);
+    aerial(rig, g, [0.17, 0.18, -0.02], -0.35);
     faceOut(rig, { eyes: -0.02, brows: -0.025, mouth: -0.02 });
     swell(rig, 1.08, 1.08);
+  } else if (variant === 2) {
+    put(g, rbox(0.74, 0.36, 0.22, 0.05), mat(0x24272d, 0.45), 0, -0.02, -0.02);
+    // the cassette deck in the middle for the face, its window above the mouth
+    put(g, rbox(0.24, 0.28, 0.02, 0.02), mat(SILVER, 0.3), 0, -0.03, 0.09);
+    speaker(rig, g, 0.13, [-0.24, -0.03, 0.095]);
+    speaker(rig, g, 0.13, [0.24, -0.03, 0.095]);
+    // the buttons along the top and the handle over it
+    for (let i = 0; i < 5; i++)
+      put(g, rbox(0.04, 0.025, 0.05, 0.006), mat(i === 4 ? 0xd9362f : SILVER, 0.4), -0.1 + i * 0.05, 0.17, 0.02);
+    for (const side of [-1, 1]) put(g, cyl(0.014, 0.014, 0.1, 8), mat(SILVER, 0.25), side * 0.26, 0.2, -0.04);
+    put(g, cyl(0.016, 0.016, 0.54, 8), mat(SILVER, 0.25), 0, 0.25, -0.04).rotation.z = Math.PI / 2;
+    aerial(rig, g, [-0.32, 0.16, -0.06], 0.4, 0.46);
+    top = 0.27;
+    faceOut(rig, { eyes: -0.02, brows: -0.025, mouth: -0.02 });
+    swell(rig, 1.05, 1.05);
   } else {
-    // a striped bucket, wider at the top, heaped with popcorn
-    const red = mat(0xd9362f, 0.5);
-    const white = mat(0xfbfaf6, 0.6);
-    put(g, cyl(0.25, 0.19, 0.44, 24), white, 0, -0.02, 0);
-    // red stripes round it, leaning out with its sides, a white one down the front for the face
-    for (let i = 0; i < 6; i++) {
-      const arm = new THREE.Group();
-      arm.rotation.y = ((i + 0.5) / 6) * Math.PI * 2;
-      put(arm, rbox(0.075, 0.44, 0.02, 0.005), red, 0, -0.02, 0.222).rotation.x = 0.135;
-      g.add(arm);
+    const wood = mat(0x9a5f32, 0.5);
+    put(g, rbox(0.44, 0.34, 0.24, 0.04), wood, 0, -0.06, -0.02);
+    // the arch over the top
+    const arch = put(g, cyl(0.22, 0.22, 0.24, 28), wood, 0, 0.1, -0.02);
+    arch.rotation.x = Math.PI / 2;
+    arch.scale.set(1, 1, 0.8);
+    // the cloth grille the face is on, in its arched frame, and the dial and knobs under it
+    const cloth = put(g, cyl(0.17, 0.17, 0.02, 28), mat(0xe2c99a, 0.9), 0, 0.03, 0.1);
+    cloth.rotation.x = Math.PI / 2;
+    put(g, rbox(0.34, 0.2, 0.02, 0.02), mat(0xe2c99a, 0.9), 0, -0.04, 0.1);
+    put(g, rbox(0.2, 0.04, 0.02, 0.01), mat(0xf5ecdb, 0.4), 0, -0.18, 0.11);
+    for (const side of [-1, 1]) {
+      const knob = put(g, cyl(0.03, 0.03, 0.03, 12), mat(0x5a2e22, 0.4), side * 0.15, -0.18, 0.11);
+      knob.rotation.x = Math.PI / 2;
     }
-    const corn = mat(0xf7e8b8, 0.8);
-    for (let i = 0; i < 11; i++) {
-      const a = i * 2.4;
-      const r = 0.06 + (i % 4) * 0.045;
-      put(g, sph(0.055, 8), corn, Math.cos(a) * r, 0.22 + (i % 3) * 0.04 - r * 0.25, Math.sin(a) * r);
-    }
-    // kernels popping up out of it, as steam off a stress head (see `pose`)
-    rig.steam = new THREE.Group();
-    for (let i = 0; i < 3; i++) put(rig.steam, sph(0.05, 8), corn, (i - 1) * 0.12, 0, 0);
-    rig.steam.position.set(0, 0.3, 0);
-    g.add(rig.steam);
-    faceOut(rig, { eyes: 0.045, brows: 0.045, mouth: 0.04 });
+    // the cloth pumping with the speaker behind it
+    spin(rig, cloth, 0, 0, 0.05);
+    aerial(rig, g, [0.14, 0.24, -0.06], -0.3, 0.36);
+    top = 0.32;
+    faceOut(rig, { eyes: 0.0, brows: -0.005, mouth: -0.005 });
     swell(rig, 1.08, 1.08);
   }
+  // the whole set shaking a little with the noise
+  spin(rig, g, 0, 0.025);
+  // notes of music rising off it, as steam off a stress head (see `pose`)
+  rig.steam = new THREE.Group();
+  const ink = mat(0x1d1f24, 0.4);
+  for (let i = 0; i < 3; i++) put(rig.steam, note(), ink, (i - 1) * 0.16, 0, 0);
+  rig.steam.position.set(0, top, 0.02);
+  g.add(rig.steam);
   props(rig, g);
   rig.head.add(g);
 }

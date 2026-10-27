@@ -898,9 +898,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     for (const m of glow) m.emissiveIntensity = f * 0.9;
   }
   for (const o of rig.spin ?? []) {
-    const { spin = 0, rattle = 0 } = o.userData as { spin?: number; rattle?: number };
+    const { spin = 0, rattle = 0, pulse = 0 } = o.userData as { spin?: number; rattle?: number; pulse?: number };
     o.rotation.y = t * spin;
     o.rotation.z = Math.sin(t * 38 + c.id) * rattle;
+    // pumping on a beat of about two a second
+    if (pulse) o.scale.setScalar(1 + pulse * Math.max(0, Math.sin(t * 13 + c.id)) ** 6);
   }
   if (rig.steam?.visible) {
     rig.steam.children.forEach((p, i) => {
